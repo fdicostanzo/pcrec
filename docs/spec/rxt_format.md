@@ -5,10 +5,15 @@ harness that runs it: what a `.rxt` file may say, what `tests/harness/run.sh`
 does with each line, and what `tests/harness/driver.c` prints and exits with.
 Read this before adding a `.rxt` file or a new component test directory.
 
-Every claim below is checked against `tests/harness/run.sh` and
-`tests/harness/driver.c` at this worktree's branch point (`d39ce94`); code
-citations are `file:line`. Where this document and the parser disagreed, the
-parser won — see "Drift found and fixed" at the bottom.
+**THE FORMAT HAS THREE READERS AND THIS DOCUMENT IS THE CONTRACT ALL
+THREE ANSWER TO**: `pcrec` itself (`--source`/`--list-source`, the only
+reader of a file's HEAD), `tests/harness/run.sh`, and
+`tests/harness/verify_rxt.py`. Every claim below is checked by RUNNING
+them rather than by reading a design; where a stated rule and a reader
+disagreed, the reader won — see "Drift found and fixed" at the bottom.
+Where a rule is enforced by only some of the three, this document says
+which, and `pcrec --list-schema`'s `validated_by` column is the
+per-line-kind answer a consumer fetches instead of remembering.
 
 Battery composition (`make test`'s eight scripts, runtimes, the sanitizer
 battery, the `timeout` binary, `PROCS`/load-guard mechanics) is process
@@ -40,7 +45,9 @@ can never be confused.
 
 ### The head
 
-Four file-level declarations exist in this build:
+Eleven file-level declarations exist in this build, and the authoritative
+roster is `pcrec --list-schema`'s `file`-scope rows rather than this
+table — which restates them for a reader, and says what each MEANS:
 
 | declaration | means |
 |---|---|
@@ -48,29 +55,41 @@ Four file-level declarations exist in this build:
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
+| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only `--source` could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). Repeatable |
+| `vocabulary <key> <v1> <v2> …` | **[DD-13b.W23.3]** declares a CLOSED SET named `<key>`, whose members are the remaining words. It is how a FILE declares the members of a schema `closed` constraint whose row names no members (see "The `constraints` column's clause spellings" below); the keys it can close are `tag`'s own keys, `under`'s convention and `variant`'s `kind`. The key is an identifier; a set with no members is refused by name, because a closed set nothing satisfies can only ever refuse. **One line per key**: a second `vocabulary` for a key already declared is refused, naming the earlier line. Its value may use the block-scalar continuation form (`vocabulary <key> \|` with the members on indented lines) |
+| `oracle <engine-ref>[/<version>]` | **[DD-13b.W23.3]** the file-level default oracle (see "Oracle verification"). **At most ONE per file** |
+| `tag <item>{, <item>}` | **[DD-13b.W23.3]** file-level classification. Each item is a bare LABEL or a `key=value`, and neither half may carry whitespace. Repeatable |
+| `use <c1,c2>` | **[DD-13b.W23.3]** a config list, in `with`/`from`'s own `config-list` grammar. Parsed and validated as a list; it composes nothing in this build. Repeatable |
+| `freq <name>` | **[DD-13b.W23.3]** a DATA block, with an indented body (see "`freq` — the data block" below). Repeatable |
+| `ext <consumer>` | **[DD-13b.W23.3]** an AUX block: consumer-namespaced data pcrec carries and does not interpret (see "`ext` — the aux production" below). Repeatable |
 
 A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
-`features`, `encoding`, `engine` and `budget` lines — the same
-productions a pattern block's own directives use, so the two cannot
-disagree about what `budget frames=` means.
+`features`, `encoding`, `engine`, `budget` and `analysis` lines — the
+same productions a pattern block's own directives use, so the two cannot
+disagree about what `budget frames=` means. `analysis <list>` names
+`freq` data blocks; its value shape is checked and its names are not
+resolved in this build.
 
-Keywords belonging to a later wave of this format (`include`, `tag`,
-`freq`, `use`, `oracle`, `analysis`, `mc`, `variant`, `vocabulary`,
-`under`, `provenance`, `ext`, `pattern-esc`)
-are recognised and refused **by name, as NOT IN THIS BUILD** — never as
-unknown. They are real, spelled correctly, and simply not implemented
-here; reporting them as unknown would send a reader hunting a typo in a
-word they just read in the format's own documentation.
+**NOT IN THIS BUILD, AND THE LIST IS DERIVED RATHER THAN HAND-KEPT**
+([DD-13b.W23.1]): every line kind the format has is a row in a declared
+schema (`pcrec --list-schema`), and a row whose `wave` column is above
+the one this build implements is recognised and refused **by name, as
+NOT IN THIS BUILD** — never as unknown, which would send a reader
+hunting a typo in a word they just read in this document. **At this
+build the derived list is EMPTY**: `--list-schema`'s `# wave-built:`
+trailer names the wave every non-reserved row carries, so there is
+nothing above it. The refusal is kept for the next wave's rollout, and
+the emptiness is a fact a reader can fetch rather than a claim to
+believe.
 
-**THE LIST IS DERIVED, NOT HAND-KEPT** ([DD-13b.W23.1]): every line kind
-the format has is a row in a declared schema (`pcrec --list-schema`), and
-a row whose `wave` column is above the one this build implements refuses
-by name. So a keyword cannot be forgotten in a list, and a WITHDRAWN
-production cannot linger in one — it has no row, so it has no wave, so it
-refuses as an unknown token in its scope, which is the truth about it.
-`config … testee` and `config … option` left the format that way (D99):
-they were named here as later-wave keywords and are not keywords at all
-any more.
+A WITHDRAWN production cannot linger in that list either — it has no
+row, so it has no wave, so it refuses as an unknown token in its scope,
+which is the truth about it. `config … testee` and `config … option`
+left the format that way (D99): they were once named here as later-wave
+keywords and are not keywords at all any more.
+
+**`version` is the one word that is neither**, and "The schema and its
+surface" below states it.
 
 ### The delivering call — reaching a definition's exported groups
 
@@ -136,6 +155,18 @@ the FORMAT rather than to the CLI is this:
 - **No `target` and anything else builds NOTHING.** The file is a library
   of definitions; `pcrec` says so and exits 0. It is not an error, and it
   is a different outcome from a file `pcrec` refuses.
+- **A FILE WITH NO `target` AND NO `config` PARSES, BUILDS NOTHING, AND
+  EXITS 0 — PERMANENTLY, AS A CONTRACT.** This is the shape a set of
+  patterns carried purely as data has: definitions, expectations,
+  provenance, tags, aux blocks and nothing that names an artifact. A
+  consumer may rely on it, and on the distinction it rests on: building
+  nothing is a successful outcome that writes no output file, and it is
+  never reported as, nor confusable with, a file `pcrec` could not read
+  (which exits 1 with a diagnostic naming the file, the line and the
+  construct). The behaviour has always shipped; this sentence makes it a
+  promise rather than an observation, so that a file format used as a
+  data carrier cannot be broken by a later build deciding a target is
+  mandatory.
 - **One definition may be named by several targets**, which is the point
   of the `with` list: three targets naming one definition under three
   configs are three artifacts with three prefixes and ONE
@@ -246,14 +277,30 @@ off.
   silent no-op, never a comment. Nothing is a keyword everywhere: `pcrec` is
   a `config`-body line and not a block one; `perr` is a block line and not a
   head one.
-- **Cardinality is declared per row.** `at-most-one` refuses a second
-  occurrence in its scope, naming the earlier line; `repeat` permits one;
-  `accumulate` joins (`budget` accumulates over its FIELD set, which is why
-  `budget steps=` and `budget frames=` are legal in one block and a repeated
-  FIELD is not).
+- **Cardinality is declared per row.** `one` requires exactly one
+  occurrence in its scope; `at-most-one` refuses a second, naming the
+  earlier line; `repeat` permits one; `accumulate` joins (`budget`
+  accumulates over its FIELD set, which is why `budget steps=` and `budget
+  frames=` are legal in one block and a repeated FIELD is not).
 - **Constraints** are drawn from a closed vocabulary of SEVEN kinds:
   `required`, `required-if`, `forbidden-if`, `exactly-one-of`, `closed`,
-  `unique-by`, `functional-binding`.
+  `unique-by`, `functional-binding`. The vocabulary is what a row MAY
+  declare, not what some row does: `functional-binding` has no row in this
+  build (its one rule, the subject id's, lives on a CASE line, and this
+  parser recognises case lines without reading them — see "Named subjects"
+  below, which states who enforces it). A reader takes the set of kinds
+  actually in use from the dump, not from this sentence.
+- **WHEN each constraint is answered is part of the contract**, because it
+  decides what a refusal can name. `closed` and `unique-by` are answered
+  AT THE LINE — which is what lets a duplicate-key refusal name both
+  lines. Every other kind is answered when the SCOPE CLOSES, because each
+  of them names a SIBLING and siblings arrive in any order (`url` may
+  precede the `source authored` that forbids it), and because `required`
+  cannot be answered before the scope's last line has been read. Such a
+  refusal is reported at the line that CLOSED the scope (or at the file's
+  last line), because where the offence is a MISSING line there is no
+  offending line to point at — the one exception being `forbidden-if`,
+  which has an offending line and names it.
 - The whole table is printed by `pcrec --list-schema` (see "The schema and
   its surface" below), and the parser is its reader: one derivation, two
   readers, so a dump that disagrees with the parser is not expressible.
@@ -299,9 +346,53 @@ off.
   quoting, no escaping). **A NUL byte anywhere in the file is refused**, by
   name, naming the file and the 1-based line it falls on — never silently
   truncated. The format is line-oriented text and NUL has no
-  representation in any production today; a future escaped-pattern
-  spelling would carry a NUL as a DECODED escape value, never as a raw
-  file byte, so this refusal does not narrow that grammar when it lands.
+  representation in any production today: the escaped spelling below
+  refuses `\x00` on its own, separate grounds, so no production expresses
+  a NUL pattern and this refusal narrows nothing.
+- `pattern-esc "<quoted>"` — **[DD-13b.W23.3] THE SECOND BLOCK STARTER.**
+  It starts a block exactly as `pattern` does, and is the second and only
+  other member of the block-opener set (S2). Its value is DOUBLE-QUOTED
+  text and the block's pattern is the DECODED bytes.
+
+  - **The escape vocabulary is the format's OWN subject vocabulary and
+    there is no second vocabulary** — the seven escapes of the
+    `<subject>` table below, `\" \\ \n \t \r \f \v \xHH`, byte for byte.
+    An unknown escape, a trailing backslash, an unescaped `"` inside the
+    text, an unquoted operand, and `\x` without exactly two hex digits are
+    each refused by name. This is what buys multi-line CAPABILITY (a
+    `(?x)` body written across lines, a raw high byte, a trailing CR)
+    without multi-line SYNTAX: every reader's line-oriented loop is
+    intact, and a `.rxt` author already knows the table.
+  - **`\x00` IS REFUSED, and the refusal names K9.** `pcrec`'s compile
+    entry takes no pattern length (`docs/dev/known_issues.md` K9), so a
+    NUL-bearing pattern would compile as its PREFIX and report success —
+    the same silent-wrong-artifact trap the whole-file NUL refusal closes
+    for `pattern` lines. Expressing a NUL pattern is therefore a KNOWN
+    LIMIT with a named owner and a **stated lifting trigger**, not a
+    silence: the refusal is lifted when the compile entry takes a length
+    (`rx_info.pattern_len`'s API half). Nothing else in the escape table
+    is restricted.
+  - **`pattern` itself is untouched**: rest-of-line, verbatim, byte-exact.
+    The two spellings are alternatives for one block, not layers.
+  - **A block carries exactly one pattern line, and that is structural
+    rather than a refusal anybody wrote**: both spellings are block
+    OPENERS, so a second opener starts the NEXT block (S2).
+  - **The decoding has ONE home, and the CLI exposes it**:
+    `pcrec --pattern-esc` (`docs/spec/cli.md` §1) takes the pattern
+    OPERAND in this same quoted-escape form and runs it through this same
+    decoder, which is how a harness passes a block's text through
+    undecoded instead of re-implementing the table.
+  - **[DD-13b.W23.5] THE DUMP-VALUE SEAM: `--list-source`'s `pattern`
+    column carries the DECODED bytes (below); a harness reading the raw
+    file — as `tests/harness/run.sh` and `tests/harness/verify_rxt.py`
+    both do, to avoid a second and a third copy of the escape table —
+    reports the text AS WRITTEN, quotes included, and passes it through
+    `pcrec --pattern-esc` for compilation instead of decoding it
+    themselves. So a THIRD READER of a `.rxt` file (one that is not
+    `pcrec` itself) sees the operand form, never the decoded bytes,
+    unless it either decodes independently or calls `pcrec
+    --list-source`. This is stated here because it is observable by any
+    caller comparing the two, not only by the two harness legs above.
 - `flags <letters>` — compile options for the current block, block-scoped
   (does not carry to the next block). Only `i` is defined (case-insensitive,
   `pcrec -i`). An unknown letter is a hard error, not a silent no-op.
@@ -375,13 +466,40 @@ off.
 
   - **A definition name is neither a PCRE2 group name nor a C
     identifier**, and both halves of that matter. It is not a group name,
-    so a definition whose name carries `-` or `.` **cannot be called from
-    a pattern**: `(?&some-id)` goes through PCRE2's own group-name
-    grammar and is refused there. It is not a C identifier, so it cannot
-    be a symbol prefix as written — `-` and `.` **map to `_`** to produce
-    one (see `target` below). A definition meant to be COMPOSED into
-    another pattern must therefore be named with an identifier; a
-    definition meant only to be BUILT may use the wider set.
+    so a definition whose name carries `-` or `.` **cannot be called by
+    that SPELLING**: `(?&some-id)` goes through PCRE2's own group-name
+    grammar and is refused there, and under D26 that grammar is PCRE2's
+    and not one this format may widen. It is not a C identifier, so it
+    cannot be a symbol prefix as written — `-` and `.` **map to `_`** to
+    produce one (see `target` below).
+  - **[DD-13b.W23.3] THE DEFINITION IS NEVERTHELESS REACHABLE, THROUGH
+    ITS DERIVED IDENTIFIER.** A by-name call binds to the definition
+    whose name, mapped by that same `-`/`.` → `_` derivation, equals the
+    call's identifier: `(?&cls_upto_64)` reaches `name cls-upto-64`. It
+    is a second key on the same set, produced by the same one mapping the
+    `target` prefix is produced by — no second namespace and no change to
+    the name grammar. So the sentence that survives is exactly the one
+    about SPELLING: `(?&cls-upto-64)` is still refused, by PCRE2.
+  - **A call whose identifier TWO definitions derive is REFUSED, naming
+    BOTH**, with each definition's own file and line and the identifier
+    they share. **An exact spelling does not win the tie**: `x_y` beside
+    `x-y` both derive `x_y`, and "exact" is only the identity case of the
+    same mapping, so a silent tie-break would make the mapping's
+    non-injectivity free exactly where it bites. The refusal is at the
+    CALL, not at the declaration — two colliding definitions coexist for
+    as long as nothing calls the shared identifier — and the repair is to
+    rename one, which is why the diagnostic names both rather than only
+    the identifier.
+  - **The LENGTH rule is: refuse BEFORE mapping.** A `target`'s own
+    prefix and definition-name fields are length-capped and refused by a
+    diagnostic naming the cap (`docs/spec/limits.md`) before any
+    derivation runs, so no two names can ever collide by being cut.
+  - **CALLABILITY carries a 128-byte bound, and it is PCRE2's, not
+    pcrec's.** A call's name is capped at `PCREC_MAX_GROUP_NAME` bytes,
+    inherited under D26 from libpcre2's own limit rather than declared
+    here as a pcrec choice. A call naming a longer definition is refused
+    with the bound and the definition's own line stated — never left to
+    read as a misspelling.
   - The wider set exists because an exported set of patterns carries ids
     a person chose (`cls-upto-64`, `w-512`), and requiring an identifier
     would force every such export to carry a name map beside it — a
@@ -454,6 +572,27 @@ off.
   block may carry both. On a DFA artifact every route answers identically,
   because that engine's `_in` entries take a descriptor and ignore it.
 
+**[DD-13b.W23.3] Seven more block-scoped lines**, each with its own
+subsection below because each carries more than a sentence:
+
+- `mc "<subject>" <n>` — a FIND-ALL COUNT case ("`mc` — the find-all
+  count").
+- `under <convention> <case-line>` — a second correct answer, qualified
+  by convention ("`under`").
+- `tag <item>{, <item>}` — block-level classification, the same grammar
+  the file-level `tag` uses: each item a bare LABEL or a `key=value`,
+  neither half carrying whitespace. A `key=value` whose KEY a
+  `vocabulary` line declares is checked against that set; a bare label is
+  keyless and is never checked. Repeatable.
+- `oracle <engine-ref>[/<version>]` — this block's oracle, overriding the
+  file's ("Oracle verification"). At most one per block.
+- `provenance` — a sub-block saying where the pattern came from
+  ("`provenance`"). At most one per block.
+- `variant <testee>` — a sub-block carrying a named testee's own spelling
+  ("`variant`"). Repeatable.
+- `ext <consumer>` — a consumer's own data, which pcrec carries and does
+  not interpret ("`ext` — the aux production"). Repeatable.
+
 The `RXTROUTE` environment variable sets the INITIAL route for every block
 in a run (same four-way grammar), overridden per block by a
 `frames-buffer=` line; `RXTFLAGS` appends extra `pcrec` flags to every
@@ -477,6 +616,351 @@ others:
 | `\f`   | form feed |
 | `\v`   | vertical tab |
 | `\xHH` | byte `0xHH` (exactly two hex digits) |
+
+### Named subjects — the `@file:` form
+
+**[DD-13b.W23.3]** A case's subject may be the CONTENTS OF A FILE instead
+of quoted text:
+
+```
+m  @file:"path" [as <id>] [sha256 <hex64>] <start> <end>
+n  @file:"path" [as <id>] [sha256 <hex64>]
+ms <P> @file:"path" [as <id>] [sha256 <hex64>] <start> <end>
+ns <P> @file:"path" [as <id>] [sha256 <hex64>]
+mc @file:"path" [as <id>] [sha256 <hex64>] <n>
+```
+
+The two suffixes are INDEPENDENTLY OPTIONAL and, when both are written,
+`as` precedes `sha256`. Everything else about the case line is unchanged:
+`ms`/`ns` carry their startpos before the subject and `m`/`n`/`mc` carry
+none, exactly as their quoted forms do.
+
+- **THE BYTES ARE THE FILE'S, BYTE-EXACT.** No escape decoding, no
+  encoding assumption, no trailing-newline rule of any kind — not
+  stripped, not required, not added. A subject carrying a NUL byte or
+  ill-formed UTF-8 reaches the matcher as the file holds it, which is
+  precisely what an argv-carried escape vocabulary cannot express (argv
+  cannot carry a NUL at all). An EMPTY file is a legitimate empty
+  subject, not an error.
+- **The path resolves against the `.rxt` file's OWN directory** (an
+  absolute path is used as written). A path naming no readable file is a
+  failure that names both the written path and what it resolved to.
+- **`as <id>` names the subject**, in a per-FILE id namespace. The id is
+  spelled in the wide `defname` grammar, since the ids a set carries are
+  a person's.
+- **THE BINDING IS FUNCTIONAL, NOT A UNIQUENESS KEY**, and the
+  distinction is the production's whole point. One id maps to one
+  `(path, sha256)` pair. **Restating the SAME binding on many case lines
+  is the NORMAL spelling** — every case line naming the subject carries
+  it again — so equal ids with equal values is the common case and
+  nothing is refused. Only a CONFLICTING re-binding is refused (the same
+  id with a different path or a different hash), and the refusal **names
+  both lines**, because the repair needs to know where the other one is.
+  Two different ids for one path are legal, pointless and harmless.
+- **`sha256 <hex64>` pins the file's contents**, exactly 64 hex digits,
+  case-insensitively compared. A `sha256` keyword with anything else
+  after it is refused as a value-shape error.
+- **WHO CHECKS THE HASH: whatever READS the subject, which is the
+  harness.** `tests/harness/run.sh` and `tests/harness/verify_rxt.py`
+  each digest the resolved file and refuse on mismatch, naming the path,
+  the digest the line claims and the digest the file has; `run.sh`
+  additionally refuses — rather than silently passing — when no sha256
+  tool is available at all, because a digest nobody computed must not
+  read as a digest that matched. **`pcrec` checks neither the hash nor
+  the 64-digit syntax**: `--list-source` performs no file I/O and reads a
+  case line without parsing it (`--list-schema`'s `#section surface` row
+  `subject-content` is where that non-coverage is declared).
+
+### `mc` — the find-all count
+
+**[DD-13b.W23.3]** `mc "<subject>" <n>` (or the `@file:` form above)
+asserts that the find-all protocol over the subject reports exactly `<n>`
+matches. It takes no startpos.
+
+**THE COUNTING RULE HAS ONE HOME AND THIS IS NOT IT**: the rule is
+`docs/spec/match_api.md` §3.1's shipped find-all protocol, by reference —
+searching from a position, resuming at a non-empty match's END, and, off
+an EMPTY match, resuming one CHARACTER past the match's own **REPORTED
+START** (`<prefix>_next_pos(caps[0][0])`), with no empty-match retry.
+That section states the loop, and an `mc` line asks for its count and
+nothing else.
+
+Two consequences are worth stating here, where an author meets them:
+
+- **The advance is off the REPORTED START, not off the loop variable**,
+  and the two differ: an empty match can be found at a position later
+  than the one searched from, so advancing off the searched-from position
+  double-counts it. `(?=a)` over `"xax"` is **1**, not 2.
+- **An `mc` count is NOT a `re.finditer` count on an empty-preferring
+  pattern.** §3.1 names the class: engines that RETRY at the same
+  position under an "empty match not permitted here" constraint report
+  the non-empty match as well, and pcrec's entry points cannot express
+  that retry — so the protocol's spans are always a strict SUBSET.
+  `a*?` over `"aaa"` is 4 under the protocol and 7 under `finditer`. An
+  author takes the number from the protocol.
+
+**THE ADVANCE OVER ILL-FORMED UTF-8 IS NORMATIVE AND IS STATED IN BOTH
+PLACES A READER MEETS IT** (here and in `match_api.md` §3.1.1): under an
+encoding with multi-byte characters, the one-character step is *from
+`pos + 1`, then past every byte in the range `0x80`-`0xBF`*, landing on
+the next non-continuation byte or on the end of the subject. It is the
+rule the emitted artifacts already implement, and it is written down
+rather than left to "the next character boundary" because for ill-formed
+input that phrase has no single reading and an `mc` count is exactly what
+a foreign consumer compares against.
+
+### `under` — a second correct answer, per convention
+
+**[DD-13b.W23.3]** `under <convention> <case-line>`, where `<case-line>`
+is an UNCHANGED `m`/`n`/`ms`/`ns`/`mc` line. One pattern and one subject
+can have two different CORRECT answers — `a|ab` on `"ab"` is `0 1`
+leftmost-first and `0 2` leftmost-longest — and an unqualified case line
+has no room to say which it means.
+
+- **An UNQUALIFIED case line is unchanged**: it means the expectation
+  under the file's or block's own canonical convention. A file declaring
+  no conventions behaves exactly as it did before this production
+  existed, which is what makes `under` purely additive.
+- **FALLBACK**: a consumer whose convention has no `under` line for a
+  case falls back to that case's unqualified line.
+- **`<convention>` is a tag value, closable by `vocabulary convention`.**
+  With such a line in the file, a convention outside the declared set is
+  refused naming the vocabulary line and its members; with no such line
+  any name is accepted. The format does not know what
+  `posix-leftmost-longest` MEANS — scoring against the right expectation
+  is the consumer's act, not the format's.
+- **DUPLICATES ARE REFUSED, NOT LAST-WINS.** Two `under` lines stating
+  the same `(convention, case kind, startpos, subject)` are refused as a
+  duplicate, naming the earlier line. The key is that four-part tuple and
+  not the whole line: two `under` lines that differ only in their
+  EXPECTATION are the contradiction this refuses.
+- **`under` NEVER wraps `g`, `gp` or `gu`**, and `g`/`gp` attach only to
+  unqualified `m`/`ms` cases. A capture expectation under a foreign
+  convention has no consumer today, and admitting one would force the
+  attachment rule to answer a question nobody has asked.
+- **pcrec's own harness treats every `under` line as a COUNTED, LABELLED
+  SKIP**, never a silent one and never a scored case. Scoring one would
+  require the harness to know pcrec's own convention BY NAME, which is
+  engine knowledge a test runner must not hold. The summary prints
+  `under expectations skipped: N` unconditionally, so a file whose
+  expectations are all qualified reads as "0 cases, N under-skips"
+  instead of as a file that quietly tested nothing. Scoring is the
+  consuming runner's.
+
+### `provenance` — where a pattern came from
+
+**[DD-13b.W23.3]** `provenance` takes no value and opens a SUB-BLOCK of
+indented fields. **At most one per parent**, and it has two parents — a
+pattern block and a `freq` data block — which are **one record, not two
+productions**: the eleven fields are the same eleven at both, and what
+differs is which of them are REQUIRED.
+
+| field | value | notes |
+|---|---|---|
+| `source` | token | **required at both parents.** The literal value `authored` means the pattern was written here |
+| `url` | token | **required unless `source authored`; FORBIDDEN when `source authored`** |
+| `ref` | token | the same rule as `url` |
+| `retrieved` | token | **required at both parents** |
+| `license` | token | **required under a PATTERN block** |
+| `license-note` | prose | optional; takes the block-scalar form |
+| `fidelity` | token | **required under a PATTERN block**; a closed set — `verbatim`, `adapted`, `synthesized` |
+| `adaptation` | prose | **required when `fidelity` is not `verbatim`** — adaptation iff not verbatim |
+| `attribution` | prose | optional |
+| `bytes` | int | **required under a DATA block** |
+| `sha256` | token | **required under a DATA block** |
+
+Every field is at-most-one within the record.
+
+- **The per-parent split is a property of the ROWS, not a second
+  record.** The conditions are spelled over the reserved field `parent`
+  (see "The `constraints` column's clause spellings" below), so a pattern
+  block requires `{source, license, retrieved, fidelity}` and a data
+  block requires `{source, retrieved, bytes, sha256}` off one set of
+  fields. Duplicating the scope would have produced two records that
+  rhyme: an exemplar owes no `license` (a user's own log file has none to
+  state) and no `fidelity` (nothing about a byte histogram was adapted),
+  and that is the whole of the difference.
+- **The spelling is `license` and `license-note`**, two fields: the
+  identifier and the prose about it. A note is not a longer licence.
+- **Every condition names a SIBLING**, so the whole record is read before
+  any of them is answered — `url` may be written above the `source
+  authored` that forbids it, and a missing `adaptation` cannot be
+  detected until the record ends.
+
+### `freq` — the data block
+
+**[DD-13b.W23.3]** `freq <name>` is a file-level DATA block with an
+indented body. Its name is a `defname`, in its own namespace — `config
+prod` and `freq prod` do not collide. Repeatable.
+
+| body line | cardinality |
+|---|---|
+| `question <text>` | **exactly one, required** — what this table answers |
+| `reader <text>` | **exactly one, required** — the selection point that consumes it |
+| `analyzer <text>` | **exactly one, required** — the tool that produced the table |
+| `row <values>` | repeatable — the table itself, inline |
+| `provenance` | at most one — the SAME record the section above describes |
+
+`question` and `reader` being required is what makes "a block nobody
+reads is not emitted" a parse-time fact rather than a review convention.
+**`provenance` under a `freq` block is the same eleven-field record a
+pattern block takes** — five one-off fields (`exemplar`, `date`, `bytes`,
+`sha256`, and a per-block licence idea) were replaced by it rather than
+kept beside it, because two vocabularies for one idea is what a schema
+exists to prevent: the exemplar IS the `source`, and the date IS
+`retrieved`. `analyzer` stays on the data block, because it names the
+TOOL that produced the table and not where the data came from.
+
+A `config` body's `analysis <list>` line names data blocks. Its value
+shape is checked; the names are not resolved in this build.
+
+### `variant` — a testee's own spelling
+
+**[DD-13b.W23.3]** `variant <testee>` opens a SUB-BLOCK carrying the
+pattern text a NAMED testee needs, for the same case. Repeatable within a
+block.
+
+| attribute | value shape | what it says |
+|---|---|---|
+| `text` | rest-of-line, verbatim | the replacement pattern for this testee |
+| `unsupported` | line | this testee cannot express the pattern, and why |
+| `kind` | token | what KIND of difference this is; closable by `vocabulary kind` |
+| `groups` | list | the group correspondence |
+| `note` | prose | free prose, block-scalar form available |
+
+- **EXACTLY ONE of `text` and `unsupported`.** A variant that states
+  neither says nothing; one that states both contradicts itself. Each is
+  at most one.
+- **`kind`, `groups` and `note` are legal only BESIDE `text`**: a
+  declared refusal has no replacement text to classify, so each is
+  refused when `unsupported` is present.
+- **`kind`'s vocabulary is a FILE hook**: with a `vocabulary kind …` line
+  the value is checked against that set, naming the vocabulary line and
+  its members on a miss; with no such line the key is free.
+- **THE TESTEE NAME IS A `defname`, NOT AN `ident`** — the wide grammar,
+  because real testee names are hyphenated slugs (`pcre2-dfa`,
+  `pcre2-interp`) and an identifier-only rule would make them unspellable.
+- **It is validated as a name, as UNIQUE within its block — and against
+  NOTHING ELSE.** Two `variant` blocks naming one testee in one pattern
+  block are refused, naming the earlier line. There is no roster of
+  testees in this format and pcrec does not know what engines exist, so
+  an unknown name is accepted. **This is a deliberate non-check**: the
+  absence of a `closed` clause on the row is where a reader fetches it,
+  and cross-checking a testee name against a real roster is the
+  consuming tooling's job.
+
+### `ext` — the aux production
+
+**[DD-13b.W23.3] The format carries one production whose defining
+property is that pcrec does not understand it.** `ext <consumer>` opens a
+block of structured data belonging to a named consumer: **pcrec parses
+the structure, dumps it faithfully, and interprets nothing.**
+
+**[DD-13b.W23.4] "Dumps it faithfully" is `--list-source`'s `#section
+aux`**, above: one row per line of the tree, the opener included at
+depth 0, in source order, every value the line's own token remainder and
+nothing more. That section is the whole of what pcrec ever does with an
+`ext` body's contents.
+
+```
+ext bench
+  roster pcre2 re2 hyperscan
+  matrix
+    rows 16
+    columns 4
+  policy strict
+```
+
+- **Two parents, one production**: FILE scope and BLOCK scope. File scope
+  carries what is true of the whole set, block scope what is true of one
+  pattern.
+- **`<consumer>` is a free `defname`, RESOLVED AGAINST NOTHING.** There
+  is no registry of consumers, no refusal for an unknown one, and adding
+  one is not a format change.
+- **`cardinality: repeat`, at BOTH scopes.** Several `ext` blocks for one
+  consumer are legal and several consumers are the point. Nothing
+  accumulates, nothing last-wins, and there is no duplicate refusal —
+  because a duplicate refusal is a judgement about what the data MEANS,
+  which is exactly what this production declines to make. It is the one
+  place in the format where "at most one" would have been wrong.
+- **The body is ordinary indented records under the SAME structure rules
+  as everything else.** S0's line classes and S1's attachment apply
+  verbatim, to any depth; a key inside the body may be spelled
+  identically to a format keyword and is still just a key.
+- **Its row carries `children: tree`, which makes the body an OPEN
+  SUBTREE — structure-layer parameter 3.** Two consequences a reader gets
+  by FETCHING that column rather than by knowing about `ext`: **no line
+  inside an `ext` body opens a group** (S2's opener set is empty there,
+  `pattern` and `pattern-esc` included), and **no bare `|` there opens a
+  prose region** (S3 never opens inside an open subtree, so a trimmed `|`
+  is the literal value `|`). Therefore **every aux value is ONE LINE**,
+  and a paragraph is written as child lines a reader hands back in source
+  order.
+- **The body's own contents are never schema-checked.** There are no rows
+  for an aux key, no value shapes, no cardinalities and no vocabulary
+  hook — a `vocabulary` line naming an aux key constrains nothing,
+  because checking a key's values would be interpreting them.
+  `--list-schema`'s `#section surface` row `ext-tree-contents` is where
+  that non-coverage is declared. What IS checked is the STRUCTURE, and
+  that is the point of checking it at all: a malformed body is a
+  structure error REPORTED ON ITS OWN LINE, never a silent mis-parse that
+  reattributes the lines after it.
+
+**THE GRADUATION RULE, normative.** *The day something in an `ext` block
+needs pcrec to ACT on it, it must GRADUATE to a real production. Aux
+never grows semantics in place.* Five clauses make that testable:
+
+1. **"Act on" means any of**: a build reads it, a check reads it, a
+   diagnostic cites its VALUE (as opposed to a structure error on its
+   own line), a config resolution consults it, the composer looks in it,
+   or any pcrec surface other than the faithful dump reports it. A change
+   making any of those true of an aux body IS the graduation event and is
+   refused as an aux change.
+2. **Graduating costs the ordinary price**: a production in this
+   document, a schema row with its scope, value shape, cardinality,
+   constraints and `validated_by`, and a place in the wave table. That
+   cost is the POINT — it is what a format-level commitment is, and `ext`
+   exists so that a consumer's experiment need not pay it before anyone
+   knows whether the idea survives.
+3. **A graduated spelling need not keep its aux spelling**, and usually
+   should not: an aux key was never held to the naming standard a
+   production is held to.
+4. **The failure mode this rule names** is the one every extension
+   namespace eventually has: a field everybody writes, that one tool
+   reads "just this once", that becomes load-bearing without ever being
+   specified — after which the format has a production nobody designed,
+   cannot change and does not document.
+5. **AND THE VALUE RULE, which is what polices the routes AROUND clauses
+   1-4.** Clauses 1-4 enumerate READERS; two routes reach the same place
+   without reading anything. A schema constraint on the `ext` OPENER (a
+   cardinality, a uniqueness rule over the consumer token) would make a
+   refusal depend on how many aux blocks a file has; a derived COUNT (an
+   aux-row total in a summary, a number pinned by a check) would make an
+   aux edit turn a tree red. So the clause is stated over VALUES:
+
+   > **Nothing in pcrec — no test, no dump summary or count, no refusal,
+   > no diagnostic, no selection — may take a value that CHANGES when an
+   > aux body changes, except the faithful per-line rows reporting that
+   > body itself.**
+
+   That is a property of pcrec's OUTPUTS, so it holds however a reading
+   is spelled, and it is checkable in the direction that matters: edit an
+   aux body, and every pcrec output except those rows must be
+   byte-identical.
+
+**The disambiguating sentence, because the two are easy to confuse**: *an
+`ext` block extends what a file CARRIES, never what the format MEANS.*
+It is not a config — nothing in it reaches a compile, a flag, a limit or
+an axis, in any mode, and there is no mode. It is not a second `tag`:
+`tag` is a pattern-level classification pcrec's own harness reads,
+validates the shape of and reports, while aux is a consumer's tree pcrec
+repeats. They differ in who the data is for, which is the only
+distinction that needed drawing.
+
+**This is the one place the format promises something by promising NOT to
+do it**, and that is why it is spec text rather than a design note: a
+consumer who cannot cite a sentence saying *pcrec will not read this* has
+no basis for putting anything there.
 
 ### The schema and its surface — `pcrec --list-schema`
 
@@ -510,6 +994,19 @@ Ten columns, in two named sections.
 | `validated_by` | `pcrec`, `all-readers` (pcrec, `tests/harness/run.sh` and `tests/harness/verify_rxt.py`, with a fixture proving the three agree), or `none` |
 | `wave` | which delivery introduces the kind |
 
+**`value` is the SHAPE, and it is asserted at the level every row shares**
+([DD-13b.W23.3]). `none` takes no value; `int` takes digits and nothing
+else; every other shape takes a non-empty value, except `prose`, whose
+empty form is legal. The precise grammar of a `token`, a `list` or a
+`qualified-line` belongs to the production that owns it and is stated
+where that production is — `lib "a path"` is a `token` row whose value
+carries a space, so a generic no-whitespace test would refuse a shipped
+spelling. The column is published, so it under-claims rather than
+over-claims on purpose: a reader can act on what it says. `frames-buffer=`
+is declared `token` for exactly this reason — its four routes are
+`default`, `null`, `<n>` and `<frames>,<trail>`, and only the third is an
+integer.
+
 `#section surface` is the second section: the **declared non-coverage**,
 one row per thing the schema deliberately does not validate, with its
 reason. An absence in a table reads as something nobody got to; a declared
@@ -522,7 +1019,9 @@ DERIVED from the `wave` column and is not kept by hand anywhere, so a
 keyword cannot be forgotten in it and a WITHDRAWN production cannot linger
 in one: a withdrawn production has no row, therefore no wave, therefore no
 entry, and it refuses as an unknown token in its scope, which is the truth
-about it.
+about it. **At this build the derived list is empty** — no row's wave is
+above `# wave-built:` — so the branch is reachable only by the next wave's
+rollout, and a consumer confirms that from the dump rather than from here.
 
 **`version` is RESERVED** — recognised as a word the format owns, with no
 production behind it in any build. It is one line of insurance against the
@@ -530,6 +1029,33 @@ day a change to this format is not additive; nothing today is. Its schema
 row carries the RESERVED sentinel wave (`--list-schema`'s `# wave-reserved:`
 trailer names the value), and it refuses BY NAME as RESERVED — not as NOT
 IN THIS BUILD, which would promise a wave that is not coming.
+
+#### The `constraints` column's clause spellings
+
+**[DD-13b.W23.3]** Three clause spellings carry an argument, and the dump
+publishes them, so a consumer reads the rule off the row rather than
+remembering it:
+
+- **`closed <selector> [member…]`** — the SELECTOR names the SET and the
+  remaining words are the FORMAT-declared members. **No members means the
+  set is FILE-declared only**: it is whatever a `vocabulary <selector> …`
+  line in the file declares, and with no such line the key keeps
+  FREE-VOCABULARY behaviour and nothing is refused. Both halves therefore
+  read the same way — `closed fidelity verbatim adapted synthesized` is a
+  format-declared set, `closed kind` a file-declared one — and adding a
+  `vocabulary` line is what turns the second from free into closed.
+- **`closed per-key`** — the value is a LIST of `key=value` items and
+  **each item's own KEY selects the set**. A per-row selector cannot
+  express this, because the set is chosen per item rather than per row. A
+  BARE label in such a list is keyless and is therefore never
+  vocabulary-checked.
+- **`required-if` / `forbidden-if <field> <op> [value]`** — `op` is `==`,
+  `!=` or `present`. `<field>` names a SIBLING row in the same scope,
+  except for **`parent`, the ONE reserved field name**, which reads the
+  ENCLOSING scope's own name. `parent` is how ONE `provenance` record
+  serves two different parents without being two records: `required-if
+  parent == block` and `required-if parent == data` select the two
+  required sets off a single set of rows.
 
 ### Example
 
@@ -571,10 +1097,10 @@ boundary comes from the one head parser, and the two cannot drift.
 
 | # | column | on | value |
 |---|---|---|---|
-| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` |
+| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` \| `include` |
 | 2 | `line` | all | 1-based first line of the declaration or block |
-| 3 | `name` | target, config, pattern | the target's PREFIX; the config's name; the block's `name` (empty if unnamed) |
-| 4 | `value` | lib, target, description, pattern | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description` |
+| 3 | `name` | target, config, pattern, include | the target's PREFIX; the config's name; the block's `name` (empty if unnamed); an `include`'s RESOLVED REAL PATH |
+| 4 | `value` | lib, target, description, pattern, include | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description`; `include`'s path AS WRITTEN |
 | 5 | `pattern` | pattern | the block's pattern text |
 | 6 | `flags` | pattern, config | the letters |
 | 7 | `features` | pattern, config | the module list |
@@ -587,6 +1113,96 @@ boundary comes from the one head parser, and the two cannot drift.
 | 14 | `from` | config | the config list, as written |
 | 15 | `pcrec` | config | the raw flag text |
 | 16 | `export` | pattern | the block's `export` list, as written ([DD-13b.W1.3]) |
+| 17 | `tags` | pattern | every `tag` line's items, comma-joined in source order ([DD-13b.W23.4]) |
+| 18 | `oracle` | pattern | the block's own `oracle <ref>` override, or empty ([DD-13b.W23.4]) |
+| 19 | `esc` | pattern | non-empty exactly when the block opened with `pattern-esc` ([DD-13b.W23.4]) |
+
+Column 1's value set also gains four head-scoped kinds, each printed as
+its own row ([DD-13b.W23.4], `lib`'s own one-row-per-line convention):
+`vocabulary` (`name` = the key, `value` = the escaped member list),
+`oracle` (the file-level override, `value` = the reference text), `tag`
+(`value` = the item list as written) and `use` (`value` = the
+comma-separated config list).
+
+**A `pattern-esc` BLOCK IS REPORTED AS A `pattern` ROW, WITH ITS DECODED
+BYTES** ([DD-13b.W23.3]/[DD-13b.W23.4]). The decoding is pcrec's own, so
+the row's `pattern` column carries the same bytes a compile sees,
+re-escaped in the dump's own vocabulary below — a byte-exact round trip,
+the same table in both directions. **Column 19 (`esc`) is the marker**
+that disambiguates which spelling wrote them, once thought to be a gap
+this dump could not close; read `pattern` together with `esc` to
+reproduce a file as written, and read `pattern` alone for the bytes,
+since both spellings deliver the same bytes.
+
+**THE W23 PRODUCTIONS ARE NOW REPORTED** ([DD-13b.W23.4], superseding the
+"parse and are not reported" rule this section stated through W23.3).
+`include` gained its row at [DD-13b.W23.3a]; `vocabulary`/`oracle`/`tag`/
+`use` gain theirs above; the block-scoped `tag`/`oracle` lines reach
+columns 17-18; and `provenance`, `variant`, the eight CASE-kind lines
+(`m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/`gp`, `under`-wrapped ones included) and
+`ext` reach the four `#section` blocks below. `freq`'s own body (the
+`question`/`reader`/`analyzer`/`row` fields) remains parsed and not
+reported — no `#section freq` exists, and a `freq` block's own
+`provenance` sub-record rides `#section provenance` on the same terms as
+a pattern block's.
+
+### The four `#section` blocks
+
+Emitted **unconditionally when non-empty, always AFTER the main table,
+never interleaved with it** (table_contract.md's `#section` mechanism,
+one header comment line per section naming its columns). A file using no
+W23 production emits no `#section` line at all, so its stream differs
+from a pre-W23.4 one only in the header row's three appended columns —
+`table_contract.md`'s own compatible-evolution rule, resolved by name.
+**No `#section` row's field 1 may equal any main-table `kind` token**:
+every section's own field 1 is the integer `line`, which can never equal
+a kind word — the invariant an EQUALITY-reading consumer (one that tests
+`$1 == "pattern"`) relies on, and the reason sections are declared to
+follow the main table unconditionally rather than interleave with it.
+
+- **`#section provenance`** — one row per `provenance` sub-block, on
+  either parent: `line`, `block_line`, `block_name`, then the record's
+  eleven fields as columns — `source`, `url`, `ref`, `retrieved`,
+  `license`, `license-note`, `fidelity`, `adaptation`, `attribution`,
+  `bytes`, `sha256` (see "`provenance`" below for what each means).
+- **`#section variants`** — one row per `variant <testee>` sub-block:
+  `line`, `block_line`, `block_name`, `testee`, `kind`, `text`, `groups`,
+  `note`, `unsupported`.
+- **`#section cases`** — one row per CASE-kind line, in source order,
+  including one wrapped in an `under` line: `line`, `block_line`,
+  `block_name`, `kind`, `under` (the qualifying convention, or empty),
+  `startpos` (the effective value — `0` for `m`/`n`/`mc`/`gu`, the
+  written value for `ms`/`ns`, empty for `g`/`gp`, which have none of
+  their own), `subject_form` (`inline` | `file`, empty for `g`/`gp`),
+  `subject` (the quoted text AS WRITTEN, or the `@file:` path, empty for
+  `g`/`gp`), `subject_id`, `sha256`, `start`, `end` (decimal, or the
+  literal `-1` pair for `g`/`gp`'s own `RX_UNSET`), `count` (`mc` only),
+  `giveup` (`gu` only), `slot` (`g`/`gp` only), `route` (the
+  `frames-buffer=` route live at that line — always set, `default`
+  initially).
+- **`#section aux`** — one row per LINE of an `ext` tree, the opener line
+  itself included: `line`, `block_line` (empty at file scope), `block_name`
+  (empty at file scope), `consumer`, `depth` (`0` for the opener),
+  `key` (the line's first token — `ext` for the opener, whose `value`
+  is then the consumer token), `value` (everything after the key's
+  separating whitespace, verbatim to end of line, escaped — empty for a
+  bare key), `parent_line` (empty for the opener; otherwise the `line` of
+  the row it attaches under). Row order is source order, guaranteed —
+  the only semantics an aux tree has that pcrec preserves. This section
+  is where "dumped faithfully" (§2.27's own promise) is discharged and is
+  the ONLY surface that reads an `ext` tree at all: a `value` is escaped
+  bytes, never interpreted, never decided to be a number, a list or a
+  boolean.
+
+**The dump VALIDATES what it emits and no more**: a row's own
+`validated_by` column, printed by `pcrec --list-schema`, is the live,
+derivable answer to "does the dump check this line's value" — `pcrec`
+(this parser alone), `all-readers` (every one of the three `.rxt`
+readers must agree), or `none`, in which case `--list-schema`'s own
+`#section surface` names the reason. Subject content (a `sha256` digest,
+a `@file:` path's readability) and pattern text are never validated here
+regardless of section — `--list-source` performs no file I/O and
+compiles nothing.
 
 **`kind` carries the DECLARATION NAME**, not a `head`/`body`
 supercategory. There is no column saying whether a row is a head row and
@@ -628,14 +1244,14 @@ parser of the same file; a resolved dump would report something only
 pcrec computes, against no counterpart. `--list-source --resolved` is
 named and unbuilt.
 
-**Sectionless**, and the trigger for that changing is concrete. The table
-contract's `#section` mechanism exists for one command emitting several
-tables with different columns; it is declined here because the head/body
-INTERLEAVING is exactly what a consumer of this output checks, and that
-is expressible only as row order in ONE stream. Adopting sections later
-is free (a stream with no `#section` line is a single anonymous section),
-and what would earn it is a data block whose rows cannot be columns of
-this table under any reading.
+**THE MAIN TABLE STAYS SECTIONLESS**, and the head/body INTERLEAVING that
+reasoning was always about — a consumer's row-order check over ONE
+stream — is unaffected by [DD-13b.W23.4]'s four `#section` blocks above:
+those carry data whose rows genuinely cannot be columns of the main table
+under any reading (`provenance`/`variant`/`ext` sub-records, one-row-
+per-case-line and one-row-per-aux-line data), which is exactly the
+trigger this paragraph named in advance. The main table's own rows never
+move into a section.
 
 ## Oracle verification
 
@@ -668,6 +1284,45 @@ have no python equivalent at all. A new per-module directory that needs the
 same treatment follows that precedent rather than inventing a new one; see
 that directory's own CLAUDE.md for the worked example.
 
+### `oracle` — declaring which engine an expectation was checked against
+
+**[DD-13b.W23.3]** `oracle <engine-ref>` is a DECLARATION, legal at FILE
+scope and at BLOCK scope, at most one of each. A block's own line is the
+more specific of the two. It is recorded and shape-checked; no reader in
+this build RESOLVES an oracle declaration to a verification — the default
+python-`re` tier and the `# pcre2-only` convention above are unchanged by
+it, and a declaration's effect today is the counted skip below.
+
+**`<engine-ref>` is an engine name, optionally `/` and a version.** The
+ENGINE half is an identifier (a letter or `_`, then letters, digits or
+`_` — no `-` and no `.`); the VERSION half, when written, additionally
+admits `.` and `-`. A `/` with nothing after it is refused by name.
+
+- **`oracle python` and `oracle pcre2` keep their EXACT current
+  meanings** — they are engine-refs with no version — so nothing in the
+  existing corpus moves.
+- **A version PINS what a correctness claim was checked against**:
+  `oracle pcre2/10.46`. It is part of the DECLARATION and is not a
+  dispatch key — a consumer holding that engine at another version
+  reports the mismatch as its own finding.
+- **NAMING AN ORACLE A READER CANNOT REACH IS A LABELLED SKIP, NEVER A
+  REFUSAL.** `oracle tre/0.8.0` names an engine this repository has no
+  binding for, and that is not an error: pcrec's harness drives pcrec's
+  own artifacts and has no second engine to consult, so it COUNTS the
+  declaration and prints `oracle declarations skipped: N` in its summary
+  rather than failing a block for naming something true. That rule is
+  what makes widening the enum safe rather than a portability hazard: an
+  absent oracle degrades to a counted, named skip, never a silent pass
+  and never a hard failure.
+- **`oracle` names the ENGINE, not the METHOD**, and it never selects
+  what pcrec COMPILES — only what an expectation is checked against. A
+  verification METHOD (including non-oracle methods) is written as a
+  `tag method=<name>`, free-vocabulary like any other tag; folding the
+  two would make a method with no engine behind it unspellable.
+- `# pcre2-only` immediately before a `pattern` line is untouched by this
+  production and keeps exactly the meaning "Oracle verification" above
+  gives it.
+
 ## How the harness evaluates a block
 
 For each pattern block, `run.sh` (`tests/harness/run.sh`):
@@ -696,13 +1351,56 @@ outcomes are distinct and stay distinct: the call FAILS (a harness
 failure carrying pcrec's own diagnostic), the file has a head and no
 `pattern` rows (zero blocks run, and the existing "no pattern blocks
 parsed from file" failure fires on its own), or the loop starts at the
-body. MEASURED: no file in `tests/` is head-bearing, so no existing file
-makes the call.
+body. MEASURED: no file in `tests/` is head-bearing on its own, so no
+plain corpus file makes the call by itself — an `include`-bearing file
+(below) is the one shape that always does.
+
+**[DD-13b.W23.3a] `include` AND THE ACCOUNTING UNIT.** A file whose head
+carries one or more `include "path"` lines is an **entry**, and its
+**closure** is the entry's own body plus every fragment its `include`
+lines name, walked **depth first, in include order** — a fragment may
+itself carry `include` lines, and those are followed the same way. A
+**cell** is what the closure produces: one (block, cases) unit per
+`pattern` block anywhere in the closure, entry or fragment, run as part
+of the entry's own turn (never as an independent file of its own).
+
+Three rules the harness enforces, each because a check needs it to be a
+rule rather than an emergent property:
+
+1. **A fragment is never its own entry.** A file that is BOTH separately
+   discoverable (`.rxt`) and named by another file's `include` line is
+   counted once, under the includer, whether or not it was also named
+   explicitly — if it was named explicitly the summary says
+   `<file>: named, absorbed into <entry>`.
+2. **A failure names the FRAGMENT's own `file:line`**, never the entry's.
+   The closure is one accounting unit; a diagnostic inside it still points
+   at the physical file and line the author would open to fix it.
+3. **An unresolved `include`, a second `include` of the same resolved real
+   path in one closure, or a cycle is a RESOLUTION failure** — a fourth
+   failure class beside a pattern-compile failure, a harness-level
+   failure and an ordinary case failure. It is reported separately (a
+   line tagged `[resolution]`) and counted toward the "pattern-compile
+   failures" total for the ENTRY, on the same rule a `perr` block already
+   follows: "this pattern does not compile" is true whether the resolver
+   or `pcrec` said so, and the entry's own body still runs — a broken
+   fragment does not delete the entry's own cases.
+
+The summary gains two lines for this, printed unconditionally:
+`entry files: N` (files run as entries, after the subtraction above) and
+`fragments spliced: M` (fragments actually added to some entry's
+closure). MEASURED: no file in `tests/` carries an `include` line today,
+so `M` is 0 and `N` equals the corpus's own file count on every run.
 
 Failures print as `file:line: expected ... got ...` beside the pattern
 under test. The final summary reports total cases passed/failed, a
 per-file failure breakdown, the distinct count of patterns that failed to
-compile, and the `group cases pending-vm: N` count.
+compile, the `group cases pending-vm: N` count, and **[DD-13b.W23.3]** two
+counted, labelled skips — `under expectations skipped: N` and `oracle
+declarations skipped: N`. Both lines print unconditionally, including at
+zero, which is the point of counting them: a skip nobody counts is
+indistinguishable from a line nobody parsed, and a file whose expectations
+are all convention-qualified must read as "0 cases, N under-skips" rather
+than as a file that quietly tested nothing.
 
 ## The driver protocol
 
@@ -710,7 +1408,7 @@ compile, and the `group cases pending-vm: N` count.
 adapts the generated match API to a CLI:
 
 ```
-t <subject> [startpos] [route]
+t <subject> [startpos] [route] [mode]
 ```
 
 `<subject>` is the case's subject text with escapes still encoded exactly as
@@ -721,11 +1419,37 @@ and selects WHICH ENTRY answers — it changes nothing else about the call or
 the protocol below, which is what makes a route a control rather than a
 variant.
 
+**[DD-13b.W23.3] `@<path>` AS THE SUBJECT ARGUMENT.** If the subject
+argument's first byte is `@`, the rest of it is a PATH and the file's
+bytes are the subject, **byte-exact**: no escape decoding, no NUL
+handling, no encoding assumption, and no trailing-newline rule in either
+direction. That is what makes the `@file:` case form of "Named subjects"
+real rather than approximated — a subject carrying a NUL or ill-formed
+UTF-8 reaches the matcher as the file holds it, which argv cannot express
+at all. An empty file is a legitimate empty subject; an unreadable path
+prints to stderr and **exits `2`**.
+
+**The `@` prefix is a MARKER and therefore a collision, and it is closed
+on the OTHER side**: a literal quoted subject whose first byte is `@` is
+handed to the driver with that byte written `\x40`, which the decoder
+below already produces as `@`. The escape is byte-exact rather than a
+special case, so no quoted subject is unreachable.
+
+**[DD-13b.W23.3] `[mode]` selects WHAT IS ASKED**, and its set is CLOSED
+at two. `one` (or absent) is the single-search question every existing
+invocation asks, unchanged. `count` runs `docs/spec/match_api.md` §3.1's
+find-all loop and prints `count <n>` — the `mc` line's question, with the
+empty-match advance going through the artifact's own `<prefix>_next_pos`
+residual off the match's REPORTED START. An unrecognised mode is a usage
+error (**exit `2`**), never a silent fall back to `one`: a mis-spelled
+`count` would otherwise answer the wrong question and pass.
+
 The driver:
 
 1. Decodes escapes into a length-tracked byte buffer (the decoded bytes may
    include `\0`, so it never uses `strlen` on the result). An invalid
-   escape prints to stderr and **exits `2`**.
+   escape prints to stderr and **exits `2`**. A `@<path>` subject skips
+   this step entirely — its bytes are never decoded.
 2. Parses `[startpos]`, if given, as a non-negative decimal integer; a
    malformed value **exits `2`**.
 3. Calls the search entry named by `[route]` with `caps` declared
@@ -760,9 +1484,19 @@ The driver:
    un-suffixed call). A disagreement outside that allowance **exits `4`**,
    the driver's own outcome, checked by `run.sh` ahead of every other
    branch (including `gu`) so no case kind can hide it.
+7. **[DD-13b.W23.3] In mode `count` only**, steps 3-6 are replaced by the
+   find-all loop: it prints `count <n>\n` and **exits `0`**. A GIVE-UP
+   anywhere inside the loop is NOT a count — it prints its own word and
+   **exits `3`** exactly as the single-search path does, because a
+   partial count reported as a count is a wrong answer where a give-up is
+   a named outcome. The routed cross-check of step 6 is not offered in
+   this mode and `run.sh` keeps an `mc`-bearing case off the routed path:
+   `mc` asks about the artifact's ANSWER, and the `_in` entries answer
+   the same question through different storage.
 
-Exit codes, summarized: `0` match/nomatch, `2` malformed CLI input
-(startpos or escape), `3` give-up or internal-error code (HARD failure
+Exit codes, summarized: `0` match/nomatch or a `count`, `2` malformed CLI
+input (startpos, escape, unreadable `@<path>` or unknown mode), `3`
+give-up or internal-error code (HARD failure
 unless the case is `gu`), `4` an anchored `_in` entry disagreeing with its
 sibling beyond the give-up allowance (HARD failure for every case kind).
 `run.sh` additionally treats `>=124` as a compile/run timeout and `>=126`

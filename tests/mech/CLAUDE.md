@@ -2413,3 +2413,126 @@ than on a later drift.
   lines are still bytes, and bytes reach no validity check — so a
   normative column would carry a corruption with NO DETECTOR. Its
   detectors are the fixtures that assert a region's DECODED VALUE.
+
+## [DD-13b.W23.3] rows S240 and S245 (the productions' own two)
+
+S239/S241/S244 plant into the format SCHEMA and so do these, and the two
+of them together are the schema's first test as a CONTRACT rather than as
+a table: W23.1 declared `value` and `constraints` and nothing read them,
+and W23.3 is the step that made both columns load-bearing.
+
+- **S240** deletes the ONE declared conditional in the table —
+  `provenance`'s `required-if fidelity != verbatim`. The plant is an
+  ERASURE and not a flip, and the reason is discriminating power: a wrong
+  CONDITION (`fidelity == verbatim`) turns BOTH halves of the fixture pair
+  red, which proves something broke and not that this rule is the thing
+  checking. Deleting the clause leaves the accept half green and turns
+  exactly one cell red. Re-homed to this repo at r57 S-M3 — the bench's
+  own C5/C6 test the same rule over there, and a row whose only detector
+  lives in another repository scores UNDETECTED here and is right to.
+- **S245** flips BOTH `ext` rows' `children` from `tree` to a named
+  scope, so the OPEN SUBTREE stops existing and every aux line is
+  dispatched against a vocabulary. Three detectors: aux NARROWED
+  (`aux_arbitrary_keys.rxtin`, leg A refuses what it must accept), aux
+  INTERPRETED (`aux_deep_tree.rxtin`, whose body's keys are real format
+  keywords three levels deep), and a structural one.
+  **The structural detector's SYMPTOM is masked and the row says so**:
+  under this plant `separator |` is refused as an unknown token before
+  S3's trigger is consulted, so `aux_literal_pipe.rxtin` goes red on the
+  DISPATCH rather than on a swallowed sibling. Re-arming S3 without also
+  changing the dispatch would need a scope whose vocabulary contains every
+  aux key, and no scope does — so parameter 3's STRUCTURAL half has no
+  plant in this table, recorded rather than left looking like coverage.
+
+Both are `rxtsource`-suite rows, and that is forced rather than chosen:
+the corpus carries no `provenance` record and no `ext` line and cannot
+acquire one, so their whole population lives in fixtures.
+
+## [DD-13b.W23.4] rows S242, S243 and S246 (the four `#section` blocks'
+## own three)
+
+S239-S245 pin the STRUCTURE layer and the SCHEMA-as-contract; these pin
+the `#section` mechanism `--list-source` gained to actually REPORT what
+the schema had already validated. All three plant into
+`src/parse/rxt_schema.def`; S246 additionally plants into
+`tests/rxtsource/run_rxtsource_tests.sh` itself.
+
+- **S242** (S-R4a) removes `opens_group` from `pattern-esc`'s row. THE
+  MEASURED SYMPTOM IS SHARPER THAN A FIRST READING PREDICTS: rather than
+  merely misattributing a SECOND `pattern-esc` line's case rows to the
+  wrong block, the FIRST `pattern-esc` line in a file has no other route
+  into BLOCK scope at all (the ROOT frame's `f->base` only maps FILE ->
+  BLOCK through the opener transition), so `opener_pattern_esc_pair
+  .rxtin` refuses outright — `[unknown-token-in-scope] 'pattern-esc' is
+  not a file-level directive`.
+- **S243** (S-R4b) adds `opens_group` to `m`. Because
+  `pcrec_rxt_schema_opener` is a SCOPE-FREE kind lookup and the gate that
+  matters reads the ROOT FRAME's `.base` — which stays `RXT_SCOPE_FILE`
+  for the frame's entire lifetime, block after block — every `m` line
+  anywhere in the file starts acting like a block opener, not only ones
+  positioned at file scope. `opener_m_not_opener.rxtin` (one block, two
+  `m` cases) becomes three blocks / zero cases; on the full corpus the
+  SAME plant produced 15,513 spurious block rows in this row's own
+  hand-verification. **Splitting S242/S243 rather than bundling them (as
+  revision 3.1 first did) is what makes each one's OWN detection
+  provable**: the opener set is a first-match-wins query, so a bundled
+  plant leaves one half silently riding the other's detection.
+- **S246**, TWO VARIANTS (format_design §2.27.3 clause 5's own two named
+  STRUCTURAL routes): (a) `ext`'s BLOCK-scope row loses `cardinality:
+  repeat` — **corrected from an initial FILE-scope draft this lane's own
+  hand-verify caught undetected**, because `aux_identity_edited.rxtin`'s
+  two `ext` blocks are both BLOCK-scoped; the FILE-scope row's own
+  cardinality is exercised by nothing in this fixture pair. (b)
+  `tests/rxtsource/run_rxtsource_tests.sh`'s `section_count()` helper —
+  the SHARED mechanism every W23.4 fixture check routes through, not the
+  corpus-only `a_blocks` snippet the design's own prose names, which the
+  corpus's zero-`ext` population could never arm — is corrupted to fold
+  an aux tree's own `ext`-OPENER rows into the main-table count it
+  reports for `want=""`. Reachable through `aux_deep_tree.rxtin`'s own
+  `ext bench` opener with no dedicated fixture needed; both variants
+  verified DETECTED separately and together.
+
+All three are `rxtsource`-suite rows: the corpus carries no `ext` line
+and no `pattern-esc`/`m` collision shape and cannot acquire either, so
+their population lives entirely in fixtures, same as S240/S245 above.
+
+## [DD-13b.W23.3a] row S247 (retroactively documented) and
+## [DD-13b.W23.5] row S248
+
+**S247, `include`'s closure recursion, was never entered here** — a real
+gap in `w233a_report.md`'s own delivery, closed as a drive-by by this
+step rather than left for a future reader to notice the section missing.
+`rxt_expand_closure`'s own recursive call (`tests/harness/run.sh`) is
+deleted, so a fragment's OWN nested `include` lines are silently never
+followed — the walk records the fragment itself and stops one level
+short. Only `include_nested.rxtin` (whose first fragment includes a
+second) can see it: `fragments spliced` moves 2 -> 1 and
+`include_nested_frag2.rxtfrag`'s own `leaf` pattern and case are
+silently dropped. `include_basic.rxtin` (nothing at depth two to lose)
+and the corpus control (zero `include` lines at this pin) both stay
+green under the SAME plant — the FIXTURE-arm-red/corpus-arm-green split
+§6.3a's own acceptance line names, and the reason the row needs the
+nested fixture and not only the flat one. `rxtsource` suite; `SAB_REACH`
+confirms the recursive call still exists in the clean tree before
+planting over it.
+
+**S248, R-B's own detector aimed at itself**: a `PCREC_RXT_SCHEMA(CONFIG,
+"testee", ...)` row is added to `src/parse/rxt_schema.def`, reviving the
+`config`-body roster directive D99 withdrew (item N-42). This is exactly
+the shape the withdrawal-absence check's landing bar (`w23_impl.md` §4.3)
+exists to catch — a withdrawn keyword returning as an ACTIVE production,
+spelled precisely as the check's own PARSER ARM looks for it (a quoted
+token in the schema table, the ONE dispatch table since W23.1). MEASURED:
+under the plant the PARSER ARM alone goes red
+(`tests/rxtsource/run_rxtsource_tests.sh`'s "withdrawal-absence, parser
+arm" check, 1 hit naming the new row); the DATA ARM stays green (no
+`.rxt`/`.rxtin` file in the tree WRITES `testee` at a config-body
+first-token position, plant or no plant) and the aux-subtree self-check
+stays green (it exercises two scratch files that never touch
+`rxt_schema.def`). Three independent arms, three independent readings —
+this row confirms the third by planting the one thing that should move
+only it. `rxtsource` suite; `SAB_REACH` confirms no `config testee` row
+exists on the clean tree (a population-of-zero floor, per this
+directory's `SAB_REACH_POP`-vs-`SAB_REACH` distinction — this is a
+`SAB_REACH` count, not a population floor, since the clean tree's count
+must be EXACTLY zero rather than merely at-least-some).

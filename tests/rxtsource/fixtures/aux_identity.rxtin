@@ -1,0 +1,5 @@
+# [DD-13b.W23.4] W23-S6's fixture pair. See tests/rxtsource/CLAUDE.md.
+pattern a+
+m "aaa" 0 3
+ext bench
+  testee pcre2/10.46

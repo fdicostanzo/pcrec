@@ -4407,7 +4407,7 @@ typedef struct {
  * token, which is K14's shape (sending a reader hunting a typo in a word
  * that is in the spec). One home, so the "not in this build" list is
  * derived rather than hand-kept. */
-#define PCREC_RXT_WAVE_BUILT 1
+#define PCREC_RXT_WAVE_BUILT 23
 
 /* RESERVED — a word the format OWNS with no production behind it in any
  * build, which is a different answer from "a later wave builds it". It is
@@ -4494,7 +4494,24 @@ typedef enum {
     RXT_DECL_TARGET,       /* `target p = def [with c,...]`  — name/value */
     RXT_DECL_CONFIG,       /* `config c [from a,b]` + body   — name       */
     RXT_DECL_DESCRIPTION,  /* file-level `description`       — value      */
-    RXT_DECL_PATTERN       /* a pattern BLOCK                — value=text */
+    RXT_DECL_PATTERN,      /* a pattern BLOCK                — value=text */
+    /* [DD-13b.W23.3a] `include "path"` — value=path AS WRITTEN (quotes
+     * kept, `lib`'s own convention), name=the RESOLVED REAL PATH. UNLIKE
+     * every row above, resolving this one touches the filesystem AT PARSE
+     * TIME rather than at `pcrec_rxt_source_resolve` — the deliberate
+     * exception `w23_impl.md` §1.10.2 rule 2 states: `--list-source` is
+     * the ONLY call legs B and C ever make, so a resolution only
+     * `--source` could see would leave them nothing to read. */
+    RXT_DECL_INCLUDE,
+    /* [DD-13b.W23.4] the four remaining head ROW kinds `format_design`
+     * §2.24 names ("New head ROW kinds — the existing 'kind carries the
+     * declaration name' rule"), ONE ROW PER LINE exactly as `lib`'s own
+     * REPEAT cardinality already prints one row per `lib` line. */
+    RXT_DECL_VOCABULARY,   /* `vocabulary <key> <v…>` — name=key,
+                             * value=the escaped member list             */
+    RXT_DECL_ORACLE,       /* file-level `oracle <ref>` — value          */
+    RXT_DECL_TAG,          /* file-level `tag <item>{,<item>}` — value   */
+    RXT_DECL_USE           /* file-level `use <config-list>` — value     */
 } RxtDeclKind;
 
 typedef struct {
@@ -4522,13 +4539,115 @@ typedef struct {
      * group the definition declares is the COMPOSER's question, asked where
      * the sub-parse's `named_groups` is in hand. */
     const char *exports;
+    /* [DD-13b.W23.4] THREE APPENDED PATTERN-ROW COLUMNS (format_design
+     * §2.24). `tags` ACCUMULATES every `tag` line's items, comma-joined in
+     * source order — `tag`'s own cardinality is REPEAT, so a block may
+     * carry several, and one column serving all of them is `pcrec_raw`'s
+     * own accumulate-by-join precedent (config scope, above) applied to a
+     * block-scoped repeatable line. `oracle` is the block's own
+     * `oracle <ref>` value, AT_MOST_ONE, or NULL for "no override" (the
+     * file-level `oracle` row, if any, is a SEPARATE head row — this
+     * column reports the block's own line and nothing it inherits). `esc`
+     * is non-NULL exactly when the block opened with `pattern-esc` rather
+     * than `pattern` (both spellings deliver the same decoded `value`;
+     * this is the marker that disambiguates which was WRITTEN). */
+    const char *tags;
+    const char *oracle;
+    const char *esc;
 } RxtRow;
+
+/* [DD-13b.W23.4] THE FOUR `#section` RECORD TYPES (format_design §2.24).
+ * `--list-source` at W1 reports only `RxtRow` — one row per head
+ * declaration and per pattern block. W23.3 taught leg A to RECOGNISE
+ * `provenance`/`variant`/`ext`/the eight case kinds; it deliberately
+ * stored nothing beyond validation (§2.2's step boundary: "W23.3 touches
+ * no dump SHAPE"). These four are what W23.4 accumulates so the dump can
+ * report them: one array per section, on `RxtSource`, in FILE ORDER
+ * (`format_design` §2.24's own "row order is source order" rule for aux
+ * generalises to every section — nothing here is ever sorted). Every
+ * field is a `const char *` (never a numeric type) so an absent field is
+ * NULL with no numeric sentinel to collide with a real value that
+ * happens to equal it (`g -1 -1`'s own `RX_UNSET` spelling is exactly
+ * such a collision-prone value). */
+
+typedef struct {
+    size_t      line;          /* the `provenance` line itself              */
+    size_t      block_line;    /* the owning pattern/`freq` block's line     */
+    const char *block_name;    /* that block's own `name`, or NULL           */
+    const char *source, *url, *ref, *retrieved, *license, *license_note,
+               *fidelity, *adaptation, *attribution, *bytes, *sha256;
+} RxtProv;
+
+typedef struct {
+    size_t      line;          /* the `variant <testee>` line itself         */
+    size_t      block_line;
+    const char *block_name;
+    const char *testee;
+    const char *kind, *text, *groups, *note, *unsupported;
+} RxtVariant;
+
+/* [DD-13b.W23.4] one row per CASE-kind line (`m`/`n`/`ms`/`ns`/`mc`/`gu`/
+ * `g`/`gp`), including one wrapped inside an `under` line. Every CASE-kind
+ * value is `validated_by: none` (`check_value_shape`'s own CASE arm) — the
+ * dump performs no file I/O and checks neither a subject's bytes nor its
+ * `sha256`'s syntax (`docs/spec/rxt_format.md`'s "Named subjects" section)
+ * — so this is a STRUCTURAL split of the documented grammar and never a
+ * second validator: a shape a field's own reader does not recognise leaves
+ * that field NULL rather than refusing the line (§2.2: "W23.4 adds no
+ * production and no refusal"). */
+typedef struct {
+    size_t      line;
+    size_t      block_line;
+    const char *block_name;
+    const char *kind;          /* "m"/"n"/"ms"/"ns"/"mc"/"gu"/"g"/"gp"       */
+    const char *under;         /* the qualifying convention, or NULL         */
+    const char *startpos;      /* decimal text; NULL for g/gp, which have no
+                                 * startpos of their own                     */
+    const char *subject_form;  /* "inline" | "file" | NULL (g/gp)            */
+    const char *subject;       /* the quoted text AS WRITTEN, or the file's
+                                 * bare path (§2.24's own "escaped text or
+                                 * path") — NULL for g/gp                    */
+    const char *subject_id;    /* the `@file:`'s own `as <id>`, or NULL      */
+    const char *sha256;        /* the `@file:`'s own `sha256 <hex>`, or NULL */
+    const char *start, *end;   /* decimal, or the literal "-1" pair (g/gp's
+                                 * own RX_UNSET spelling); NULL where the
+                                 * kind's grammar has no such field          */
+    const char *count;         /* `mc`'s own `<n>`, else NULL                */
+    const char *giveup;        /* `gu`'s own code word, else NULL            */
+    const char *slot;          /* `g`/`gp`'s own `<slot>`, else NULL         */
+    const char *route;         /* the `frames-buffer=` route live at this
+                                 * line, always set ("default" initially)    */
+} RxtCase;
+
+/* [DD-13b.W23.4] one row per LINE of an `ext` tree, opener included
+ * (format_design §2.24's three normative facts at 3.4.1: the opener line
+ * gets a row and IS the block's identity; row order is source order,
+ * guaranteed; every value is its own line's token remainder). `depth` 0 is
+ * the `ext <consumer>` line itself; `parent_line` is empty (0) only for
+ * that opener row. */
+typedef struct {
+    size_t      line;
+    size_t      block_line;    /* empty (0) at FILE scope                    */
+    const char *block_name;    /* empty (NULL) at FILE scope                 */
+    const char *consumer;      /* the `ext` line's own namespace token       */
+    size_t      depth;
+    const char *key;           /* the line's first token                    */
+    const char *value;         /* the line's token remainder, verbatim,
+                                 * escaped — empty for a bare key            */
+    size_t      parent_line;   /* 0 for the depth-0 opener row itself        */
+} RxtAux;
 
 typedef struct RxtSource RxtSource;
 struct RxtSource {
     const char *path;
     RxtRow     *rows;
     size_t      nrows, rowcap;
+    /* [DD-13b.W23.4] the four `#section` arrays, growable exactly as `rows`
+     * is (see `row_push`'s own shape) and arena-owned with it. */
+    RxtProv    *provs;    size_t nprovs,    provcap;
+    RxtVariant *variants; size_t nvariants, variantcap;
+    RxtCase    *cases;    size_t ncases,    casecap;
+    RxtAux     *auxes;    size_t nauxes,    auxcap;
     /* THE SEAM'S ONE NUMBER: the 1-based line of the FIRST `pattern` row,
      * which is where the head ends and run.sh starts its own per-line
      * loop. 0 means the file has no pattern block at all — a legal shape
@@ -4555,6 +4674,20 @@ struct RxtSource {
  * hold `strlen(name) + 1`; the result is truncated to `dstsz` and always
  * NUL-terminated. */
 void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz);
+
+/* [DD-13b.W23.3] `pattern-esc`'s DECODER — the format's own subject escape
+ * vocabulary (`\" \\ \n \t \r \f \v \xHH`) and NO SECOND VOCABULARY. `v` is
+ * the quoted text INCLUDING its quotes; the decoded bytes are arena-copied
+ * into `*out`. Returns -1 with a sentence in `err` (never a `pcrec_error`:
+ * the caller owns the file:line framing). `\x00` is refused BY NAME citing
+ * K9 — the compile entry takes no pattern length, so a NUL-bearing pattern
+ * would compile as its prefix and report success.
+ *
+ * ONE DECODER, THREE CALLERS: the `--pattern-esc` CLI flag, `--source` and
+ * `--list-source`, so a bash-side `printf %b` approximation (a SECOND escape
+ * set, drifting by construction) is never needed anywhere. */
+int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
+                             char *err, size_t errsz);
 
 /* Parses `path`. NULL on failure with `err` filled — every diagnostic
  * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */

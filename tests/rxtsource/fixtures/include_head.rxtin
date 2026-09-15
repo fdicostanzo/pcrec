@@ -1,0 +1,32 @@
+# [DD-13b.W23.3] `include` PARSES NOW, AND THIS FILE REPLACES THE ONE THAT
+# ASSERTED IT DID NOT.
+#
+# `wave2_keyword.rxtin` was this fixture's predecessor: it carried an
+# `include` line and asserted the NOT-IN-THIS-BUILD refusal, which was the
+# K14 shape's witness — a real keyword, spelled correctly, in the format's
+# own documentation, refused by name rather than as a typo. W23.3 builds
+# the production, so the fixture's PREMISE shipped and no edit could keep
+# it honest: a file named `wave2_keyword` asserting acceptance would be a
+# lie about itself, and inverting an assertion in place is how a fixture
+# stops meaning what its header says.
+#
+# WHAT IS LEFT OF THE WAVE TIER, stated so the absence is a decision: at
+# this pin NO schema row sits strictly between this build's wave and the
+# RESERVED sentinel, so `refuse_wave`'s NOT-IN-THIS-BUILD branch has no
+# reachable input and no fixture can construct one (the table is
+# compile-time). format_design §1.3 and w23_impl §2.3 both say so in
+# advance — "its population is empty at the FINAL pin" — and the branch is
+# kept because the NEXT wave's rollout is when it matters. W23-S3 arm 4
+# is where that zero is reported honestly rather than silently;
+# `version_reserved.rxtin` is the RESERVED tier's live witness, and it is
+# the only one of the two tiers a build can reach today.
+#
+# LEG A ONLY: `include` is a HEAD declaration and the head has one parser
+# (the seam ruling, w1_impl §1.1). Legs B and C never read these bytes.
+# Resolving the path, subtracting the fragment from the entry set and
+# splicing its blocks is W23.3a's — this file asserts the GRAMMAR and
+# nothing about what the path names.
+include "common.rxt"
+
+pattern a+
+m "aaa" 0 3

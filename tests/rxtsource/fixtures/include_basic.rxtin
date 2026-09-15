@@ -1,0 +1,29 @@
+# [DD-13b.W23.3a] §1.10's WHOLE MECHANISM IN ONE CELL: a flat splice, one
+# fragment, no nesting.
+#
+# `include_basic_frag.rxtfrag` is NOT independently discoverable — the
+# `.rxtfrag` extension is load-bearing, `tests/rxtsource/CLAUDE.md`'s own
+# rule: a fragment copied in as `.rxt` would become its own discoverable
+# entry and this fixture would test the opposite of its own subject — but
+# IS present in the same scratch directory this entry resolves its
+# `include` line against, so the resolution succeeds.
+#
+# W23-S7 asserts legs A and B agree on the closure's shape (§1.10.2's
+# rules 2 and 4): leg A's `--list-source` reports the resolved `include`
+# row (`name` = the real path, `value` = the path as written); leg B's
+# `run.sh` reports `entry files: 1` / `fragments spliced: 1`, and the
+# entry's own case count EXCEEDS its own file's case count by the
+# fragment's own — K35's own lesson, a splice check satisfied by a
+# closure of zero would prove nothing.
+#
+# LEG C DOES NOT PARTICIPATE, and this is a RULING (w233a_report.md §2,
+# accepted by the manager): `include` is head-scoped by design (§2.5),
+# so this file is head-bearing, and `verify_rxt.py`'s seam-ruling
+# refusal — UNCHANGED — already raises on it before any body line is
+# reached, exactly as it does for `dup_head_description.rxtin` one
+# production over. Three legs cannot compare a block count leg C is
+# structurally refused from ever seeing.
+include "include_basic_frag.rxtfrag"
+
+pattern top
+m "top" 0 3

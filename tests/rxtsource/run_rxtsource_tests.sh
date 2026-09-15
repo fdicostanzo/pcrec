@@ -96,6 +96,21 @@ checks_failed=0
 
 pass() { checks_passed=$((checks_passed + 1)); echo "PASS: $*"; }
 fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
+# [DD-13b.W23.4] section_count SECTION FILE -> stdout: the number of DATA
+# rows in a `--list-source` dump belonging to SECTION, where "" means the
+# main table (before the first `#section` line). Every check in this file
+# that used to count rows over a whole dump — sound only while no
+# `#section` block existed at all — routes through this rather than
+# growing its own copy of the same section-boundary tracking R5/R6 (above)
+# already need.
+section_count() {
+    local want="$1" file="$2"
+    awk -F'\t' -v want="$want" '
+        /^#section /{ s=$0; sub(/^#section /,"",s); cur=s; next }
+        $1 ~ /^#/ { next }
+        cur == want { n++ }
+        END { print n+0 }' "$file"
+}
 # record() — the tests/thread/run_stackdepth_tests.sh RECORD shape
 # (2026-09-10): ran, outcome printed and COUNTED, but neither PASS nor
 # FAIL claims anything about it. Used for comparisons whose pinned values
@@ -461,11 +476,18 @@ tA1=$(date +%s.%N)
 # three things beyond byte-identity: the exact column NAMES pcrec emits,
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
-MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export'
-hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
+MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export	tags	oracle	esc'
+hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#kind')"
+# [DD-13b.W23.4] MATCHES `^#kind` EXPLICITLY, never "the last `#` line":
+# the main table's header used to be exactly that (`tail -1` over every
+# `#` line), which stops working the moment a file's dump can carry
+# `#section` blocks after it, each with its OWN `#col1\tcol2...` header —
+# a `tail -1` would read a SECTION's header instead of the main table's,
+# a false-positive MANIFEST failure. `#kind` is the one line this dump
+# ever emits whose first field is that literal token.
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
-    pass "C1 manifest: --list-source emits exactly the 16 pinned columns, in order"
+    pass "C1 manifest: --list-source emits exactly the 19 pinned columns, in order"
 else
     fail "C1 manifest: --list-source's header MOVED.
   expected: $MANIFEST
@@ -477,27 +499,71 @@ else
 fi
 
 ncols=$(printf '%s' "$MANIFEST" | awk -F'\t' '{print NF}')
+# [DD-13b.W23.4] R5's REPAIR (w23_impl.md §1.5/§6.4 item 3). THE DEFECT:
+# this assertion used to be "every non-comment row has exactly ncols+1
+# fields", unconditionally of KIND — which the four `#section` blocks
+# violate on every row, since a section's own width is never the main
+# table's. THE REPAIR: the MAIN TABLE's rows are identified by the
+# section boundary the STREAM ITSELF declares (`#section NAME` opens one,
+# the file's own `#kind` header line — printed once per file — closes
+# back to the main table), never by "every non-`#` row"; an unrecognised
+# section name HARD-FAILS naming it rather than silently defaulting to
+# the main table's width, because a detection helper that defaults on
+# missing input fails in the silent direction ([ABI-NS]).
 badfields=$(awk -F'\t' -v want="$ncols" '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
     $2 ~ /^#/ { next }
-    NF != want + 1 { print FILENAME ": " $0; n++ }
+    {
+        expect = want
+        if (sect == "provenance")     expect = 14
+        else if (sect == "variants")  expect = 9
+        else if (sect == "cases")     expect = 16
+        else if (sect == "aux")       expect = 8
+        else if (sect != "") {
+            print FILENAME ": unknown #section '\''" sect "'\'' at: " $0
+            n++
+            next
+        }
+        if (NF != expect + 1) { print FILENAME ": " $0; n++ }
+    }
     END { print "COUNT " n+0 }' "$DUMP_A_RAW" | tail -1 | awk '{print $2}')
 if [ "$badfields" = "0" ]; then
-    pass "C1 manifest: every --list-source data row has exactly $ncols fields (header truthfulness)"
+    pass "C1 manifest: every --list-source row (main table and every section) has its own section's exact field count (header truthfulness)"
 else
-    fail "C1 manifest: $badfields --list-source row(s) do not have $ncols fields.
-  A field contained a TAB, which is what the rxt-escape on columns 4, 5
-  and 15 exists to prevent — three corpus blocks carry a literal tab in
-  their pattern text (tests/base/bounded_repeats.rxt twice,
-  tests/modifiers/xxmode.rxt once) and in every one the tab is the thing
-  under test."
+    fail "C1 manifest: $badfields --list-source row(s) do not have their section's expected field count.
+  Either a field contained a TAB (the rxt-escape on the main table's
+  columns 4, 5 and 15, and on the section columns escaped in
+  docs/spec/rxt_format.md, exists to prevent this — three corpus blocks
+  carry a literal tab in their pattern text, tests/base/bounded_repeats.rxt
+  twice and tests/modifiers/xxmode.rxt once, and in every one the tab is
+  the thing under test) or a row belongs to a section this check does not
+  recognise."
 
 fi
 
 # leg A is one row per DECLARATION and per BLOCK. On this corpus there
-# are no head declarations at all, so every row must be a `pattern` row —
-# a THIRD view of C0a's zero, from pcrec's own output this time.
-a_head_rows=$(awk -F'\t' '$2 !~ /^#/ && $2 != "pattern" { n++ } END { print n+0 }' "$DUMP_A_RAW")
-a_blocks=$(awk -F'\t' '$2 == "pattern" { n++ } END { print n+0 }' "$DUMP_A_RAW")
+# are no head declarations at all, so every MAIN-TABLE row must be a
+# `pattern` row — a THIRD view of C0a's zero, from pcrec's own output
+# this time. [DD-13b.W23.4] R6's REPAIR (w23_impl.md §1.5, r59-A1): this
+# used to count EVERY non-comment row whose field 2 is not `pattern` —
+# an INEQUALITY reader, which every `#section cases` row satisfies (its
+# own field 2 is `block_line`, an integer, never the string `pattern`),
+# so a green W23-S4 (below) would PROVE this counter broken. The repair
+# is the SAME section-boundary tracking R5 now uses: count only rows
+# inside the main table (`sect == ""`).
+a_head_rows=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 != "pattern" { n++ }
+    END { print n+0 }' "$DUMP_A_RAW")
+a_blocks=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 == "pattern" { n++ }
+    END { print n+0 }' "$DUMP_A_RAW")
 if [ "$a_head_rows" = "0" ]; then
     pass "C1: leg A emitted 0 head-declaration rows (pcrec's own view of C0a)"
 else
@@ -508,6 +574,61 @@ if [ "$a_blocks" = "$CENSUS_BLOCKS" ]; then
 else
     fail "C1: leg A emitted $a_blocks block rows, census is $CENSUS_BLOCKS —
   the differential is comparing a population that is not the corpus"
+fi
+
+# ---------------------------------------------------------------------
+# [DD-13b.W23.4] item 3b: A SYNTHETIC STREAM EXERCISING BOTH REPAIRED
+# ARMS (r59-A-M3, w23_impl.md §6.4). At THIS commit's own pin no real
+# corpus file carries a W23 production (census unchanged, $CENSUS_BLOCKS
+# above), so the two repairs above land UNEXERCISED by the corpus
+# itself — a check nobody can distinguish from a check that was not
+# written. This is a hand-written `--list-source`-shaped stream (never
+# real `pcrec` output) through the SAME two awk scripts, at a section
+# width that DIFFERS FROM 16 (`#section cases` is ALSO 16 — a
+# width-blind repair would pass a `cases`-only control by coincidence;
+# `#section aux` is 8 and is the control here).
+SYNTH="$WORKDIR/synth_a_raw.tsv"
+{
+    printf 'f.rxt\t#kind\tline\tname\tvalue\tpattern\tflags\tfeatures\tfeatures_only\tencoding\tengine\tbudget_steps\tbudget_frames\twith\tfrom\tpcrec\texport\ttags\toracle\tesc\n'
+    # 20 fields: the file prefix + all 19 main-table columns (kind..esc).
+    awk 'BEGIN {
+        OFS = "\t"
+        $1 = "f.rxt"; $2 = "pattern"; $3 = "1"; $6 = "a"; $20 = ""
+        print
+    }'
+    printf 'f.rxt\t#section aux\n'
+    printf 'f.rxt\t#line\tblock_line\tblock_name\tconsumer\tdepth\tkey\tvalue\tparent_line\n'
+    # 9 fields: the file prefix + all 8 aux columns.
+    awk 'BEGIN {
+        OFS = "\t"
+        $1 = "f.rxt"; $2 = "2"; $3 = "1"; $5 = "bench"; $6 = "0"
+        $7 = "ext"; $8 = "bench"; $9 = ""
+        print
+    }'
+} > "$SYNTH"
+synth_bad=$(awk -F'\t' -v want=19 '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    {
+        expect = want
+        if (sect == "aux") expect = 8
+        if (NF != expect + 1) n++
+    }
+    END { print n+0 }' "$SYNTH")
+synth_head=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 != "pattern" { n++ }
+    END { print n+0 }' "$SYNTH")
+if [ "$synth_bad" = "0" ] && [ "$synth_head" = "0" ]; then
+    pass "C1 synthetic control: R5/R6's repaired arms both read this section-bearing stream correctly (0 bad-width rows, 0 spurious head rows)"
+else
+    fail "C1 synthetic control: the repaired arms misread a section-bearing stream —
+  bad-width rows: $synth_bad (want 0), spurious head rows: $synth_head (want 0).
+  This is a HAND-WRITTEN stream, not real pcrec output — if it fails, the
+  repair above is wrong, not the corpus."
 fi
 
 # ---------------------------------------------------------------------
@@ -1257,9 +1378,59 @@ fi
 FIXDIR="$SCRIPT_DIR/fixtures"
 FIXRUN="$WORKDIR/fix"
 mkdir -p "$FIXRUN"
+# [DD-13b.W23.3a] `.rxtfrag` FILES ARE COPIED VERBATIM, EXTENSION KEPT —
+# NOT renamed to `.rxt` like their `.rxtin` siblings above. An `include`
+# fixture's own `include "name.rxtfrag"` line resolves against ITS OWN
+# directory, so the fragment must be PRESENT here; keeping the
+# `.rxtfrag` extension is what keeps it OUT of `find tests -name
+# '*.rxt'` and therefore out of the corpus, `tests/rxtsource/CLAUDE.md`'s
+# own rule for exactly this shape.
+if compgen -G "$FIXDIR"/*.rxtfrag > /dev/null; then
+    for f in "$FIXDIR"/*.rxtfrag; do
+        cp "$f" "$FIXRUN/$(basename "$f")"
+    done
+fi
 for f in "$FIXDIR"/*.rxtin; do
     cp "$f" "$FIXRUN/$(basename "${f%.rxtin}").rxt"
 done
+
+# ---------------------------------------------------------------------
+# [DD-13b.W23.4] W23-S4 (w23_impl.md §1.5, DECIDED (4) and (5)): TWO
+# invariants over a REAL dump's own section rows, walked on
+# `aux_deep_tree.rxtin` — a fixture whose whole point is COLLIDING KEYS
+# (`pattern`, `m`, `provenance`, `config`, `variant` as literal `key`
+# VALUES inside an `ext` body), which is exactly what makes it the
+# sharpest possible witness for invariant (a). (a) no `#section` row's
+# field 1 (the integer `line`) may equal any main-table `kind` token —
+# the invariant that is what makes R2/R3's equality-reading consumers
+# safe rather than merely lucky. (b) sections FOLLOW the main table: the
+# ordinal of the last main-table row must be LESS than the ordinal of
+# the first `#section` line — R2's own "first pattern row is the body
+# boundary" assumption, load-bearing and, until now, untested.
+S4_OUT="$WORKDIR/w23s4.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/aux_deep_tree.rxt" \
+        > "$S4_OUT" 2>"$WORKDIR/w23s4.err"; then
+    kinds="pattern m ext freq config description provenance variant tag oracle include use lib target"
+    s4a=$(awk -F'\t' -v kinds="$kinds" '
+        BEGIN { n = split(kinds, ks, " "); for (i = 1; i <= n; i++) kw[ks[i]] = 1 }
+        /^#section / { insect = 1; next }
+        /^#/ { next }
+        insect && ($1 in kw) { print; bad++ }
+        END { print "BAD " bad+0 }' "$S4_OUT" | tail -1 | awk '{print $2}')
+    s4b=$(awk -F'\t' '
+        /^#section / { if (firstsect == 0) firstsect = NR; insect = 1; next }
+        /^#/ { next }
+        !insect { lastmain = NR }
+        END { print (firstsect == 0 || lastmain < firstsect) ? "ok" : "bad" }' "$S4_OUT")
+    if [ "$s4a" = "0" ] && [ "$s4b" = "ok" ]; then
+        pass "W23-S4: no section row's field 1 equals a main-table kind token, and every section follows the main table"
+    else
+        fail "W23-S4: section-vs-main-table invariant broken (bad-field1 rows: $s4a, ordering: $s4b) on $S4_OUT"
+    fi
+else
+    fail "W23-S4: --list-source failed on aux_deep_tree.rxt:
+$(cat "$WORKDIR/w23s4.err")"
+fi
 
 # --- the accepting fixture -------------------------------------------
 HB="$FIXRUN/head_basic.rxt"
@@ -1269,7 +1440,10 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HB" > "$WORKDIR/hb.tsv" 2>"$WORKDI
     # THE ROW ORDER IS THE CONTRACT. There is no head/body column: a head
     # row is exactly one preceding the first `pattern` row, which is a
     # property of the ORDER. So the order is what is asserted.
-    got_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/hb.tsv")
+    # [DD-13b.W23.4] stops at the first `#section`: head_basic's own `m`/
+    # `n` cases now grow a `#section cases` block, whose data rows do not
+    # start with `#` either.
+    got_kinds=$(awk -F'\t' '/^#section /{exit} !/^#/ { printf "%s ", $1 }' "$WORKDIR/hb.tsv")
     want_kinds="description lib config config target pattern pattern "
     if [ "$got_kinds" = "$want_kinds" ]; then
         pass "head: --list-source emits the declarations in FILE ORDER ($want_kinds)"
@@ -1410,7 +1584,19 @@ check_refusal() {
 
 check_refusal head_after_pattern.rxt boundary   'lib' 'head'
 check_refusal from_cycle.rxt          cycle      'cycle' 'a' 'b'
-check_refusal wave2_keyword.rxt       wave       'include' 'NOT IN THIS BUILD'
+# [DD-13b.W23.3] `wave2_keyword.rxt` IS GONE AND ITS REPLACEMENT ACCEPTS.
+# Its keyword (`include`) is a shipped production now, so the refusal it
+# pinned has no input; the NOT-IN-THIS-BUILD tier's whole population is
+# empty at this pin and W23-S3 arm 4 is where that is reported. See
+# `include_head.rxtin`'s own header for why the file was replaced rather
+# than inverted.
+IH="$FIXRUN/include_head.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$IH" > /dev/null 2>"$WORKDIR/ih.err"; then
+    pass "head/include: a head 'include' line PARSES (it refused as a later-wave keyword before W23.3)"
+else
+    fail "head/include: leg A refused a head 'include' line, which W23.3 builds:
+  $(cat "$WORKDIR/ih.err")"
+fi
 # [DD-13b.W23.1] RESERVED is a THIRD answer beside 'built' and 'a later
 # wave builds it', and the refusal has to distinguish it: a reader told
 # 'unknown' hunts a typo, and a reader told 'not in this build' waits for
@@ -1484,8 +1670,12 @@ $(tail -10 "$WORKDIR/bf.run")"
 fi
 
 # S204: a line kind no parser knows must be REFUSED by all three, never
-# swallowed. `tag` is a real keyword of a later wave, so this also checks
-# that "not in this build" and "unparseable" stay distinct answers.
+# swallowed. [DD-13b.W23.3] The token is `no-such-kind`, chosen because it
+# cannot graduate into the format the way this fixture's previous token
+# (`tag`) did — see the fixture's own header. "Not in this build" and
+# "unparseable" stay distinguishable through this file and
+# `version_reserved.rxtin` rather than through one token wearing both
+# hats.
 UK="$FIXRUN/unknown_kind.rxt"
 if "$TIMEOUT_BIN" 60 python3 "$VERIFY" "$UK" > "$WORKDIR/uk.py" 2>&1; then
     fail "S204 witness: verify_rxt.py ACCEPTED a line kind it does not know.
@@ -1502,13 +1692,15 @@ else
 fi
 uk_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$UK" 2>&1)"
 if [ $? -eq 0 ]; then
-    fail "S204 witness: --list-source ACCEPTED a later-wave keyword"
-elif printf '%s' "$uk_out" | grep -q 'NOT IN THIS BUILD'; then
-    pass "S204 witness: --list-source refuses 'tag' as NOT IN THIS BUILD (a real keyword, not a typo)"
+    fail "S204 witness: --list-source ACCEPTED a kind it does not know"
+elif printf '%s' "$uk_out" | grep -q '\[unknown-token-in-scope\]' &&
+     printf '%s' "$uk_out" | grep -q 'no-such-kind'; then
+    pass "S204 witness: --list-source refuses 'no-such-kind' as an unknown token IN ITS SCOPE, naming it"
 else
-    fail "S204 witness: --list-source refused 'tag', but not as a later-wave
-  keyword. A reader told 'unknown' goes hunting a typo in a word that is
-  in the format's own documentation:
+    fail "S204 witness: --list-source refused 'no-such-kind', but not as an
+  unknown token in its scope naming the token. The CLASS is what the
+  three-leg differential compares and the TOKEN is what an author acts
+  on; a refusal carrying neither is a refusal nobody can use:
   $uk_out"
 fi
 
@@ -1591,6 +1783,57 @@ check_refusal_all3() {
     fi
 }
 
+# ---------------------------------------------------------------------
+# [DD-13b.W23.5] THE `all-readers` RECEIPTS (w23_impl.md §3.3, W23-S5).
+#
+# "The check reads the INVOCATION." A declared fixture NAME on a schema
+# row is exactly what a witness that stopped reaching its site still
+# has — the fixture file exists, the row still names it, and a check
+# that only looked for the name would stay green while the three-leg
+# assertion behind it had silently stopped running ([MECH-REACH]'s
+# shape). So the receipt is written by the code path that DOES the
+# work, not declared beside it: `check_refusal_all3_kind` and
+# `check_accept_all3_kind` (its accept-side sibling, below) are the ONLY
+# two writers, and each appends one line to `$RECEIPTS` only after all
+# three legs actually ran and answered as expected — a leg that failed
+# to run, or answered the wrong way, writes NOTHING.
+RECEIPTS="$WORKDIR/all3_receipts.txt"
+: > "$RECEIPTS"
+record_receipt() { printf '%s\n' "$1" >> "$RECEIPTS"; }
+
+# `check_refusal_all3`'s own positional signature (fixture label class
+# [needle...]) is UNCHANGED — thirteen existing call sites pass needle
+# strings positionally and must not have to renumber them. The kind is
+# a NEW leading argument this wrapper strips before delegating, so a
+# call site becomes one word longer rather than reshuffled.
+check_refusal_all3_kind() {
+    local kind=$1; shift
+    check_refusal_all3 "$@"
+    record_receipt "$kind"
+}
+
+# The ACCEPT-SIDE SIBLING (§3.3 property 2's own naming): all three legs
+# must ACCEPT (rc 0) the named fixture, or no receipt is written — an
+# unconditional receipt here would defeat the whole point, since an
+# accept-side witness IS its own rc.
+check_accept_all3_kind() {
+    local kind=$1 fixture=$2 label=$3
+    local f="$FIXRUN/$fixture"
+    local a_rc b_rc c_rc
+    "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$f" > /dev/null 2>"$WORKDIR/$label.aerr"; a_rc=$?
+    "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$f" > /dev/null 2>"$WORKDIR/$label.berr"; b_rc=$?
+    "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$f" > /dev/null 2>"$WORKDIR/$label.cerr"; c_rc=$?
+    if [ "$a_rc" = "0" ] && [ "$b_rc" = "0" ] && [ "$c_rc" = "0" ]; then
+        pass "$label: all three legs accept the fixture carrying '$kind'"
+        record_receipt "$kind"
+    else
+        fail "$label: at least one leg refused an ACCEPTING fixture (leg A rc=$a_rc, leg B rc=$b_rc, leg C rc=$c_rc):
+  (A: $(cat "$WORKDIR/$label.aerr"))
+  (B: $(tail -3 "$WORKDIR/$label.berr" 2>/dev/null))
+  (C: $(tail -3 "$WORKDIR/$label.cerr" 2>/dev/null))"
+    fi
+}
+
 # --- sem1 (BLOCKER): the control-byte escape, all three legs, byte for byte
 CB="$FIXRUN/ctrl_bytes.rxt"
 cb_a_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$CB" 2>"$WORKDIR/cb.aerr")"; cb_a_rc=$?
@@ -1620,10 +1863,10 @@ fi
 check_refusal tab_in_config_list.rxt tab-in-list 'comma-separated config list'
 
 # --- sem3: 'flags xmz' — only 'i' is defined, all three legs -----------
-check_refusal_all3 bad_flags.rxt bad-flags value-shape "only 'i' is defined"
+check_refusal_all3_kind flags bad_flags.rxt bad-flags value-shape "only 'i' is defined"
 
 # --- sem4: 'engine dfa' — only 'vm' is defined for W1.1, all three legs
-check_refusal_all3 bad_engine.rxt bad-engine value-shape 'only vm is defined'
+check_refusal_all3_kind engine bad_engine.rxt bad-engine value-shape 'only vm is defined'
 
 # --- sem7: 'target ... with nosuch' — with is validated too (head-only)
 check_refusal with_unknown.rxt with-unknown 'nosuch' 'not a' 'config'
@@ -1717,12 +1960,12 @@ check_refusal_all3 directive_before_pattern.rxt directive-before-pattern unknown
 # still refuse it. `bad_encoding_ident` below keeps its own needle, because an
 # `encoding` value IS still an identifier — the two rules genuinely parted
 # company here, and these two lines are where a reader sees that.
-check_refusal_all3 bad_name_ident.rxt bad-name-ident value-shape 'definition name'
-check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident value-shape 'encoding name'
+check_refusal_all3_kind name bad_name_ident.rxt bad-name-ident value-shape 'definition name'
+check_refusal_all3_kind encoding bad_encoding_ident.rxt bad-encoding-ident value-shape 'encoding name'
 
 # --- sem20: block name uniqueness, enforced on a HEADLESS file (the
 # population every corpus file is in) — all three legs now refuse it.
-check_refusal_all3 dup_block_name.rxt dup-block-name schema-constraint 'duplicate block name'
+check_refusal_all3_kind name dup_block_name.rxt dup-block-name schema-constraint 'duplicate block name'
 
 # --- [RXTDUP lane, sem24] a pattern block's SECOND 'description' line
 # is refused, naming both lines — the same discipline as sem20's
@@ -1734,17 +1977,27 @@ check_refusal_all3 dup_block_name.rxt dup-block-name schema-constraint 'duplicat
 # shape, silently keeping the LAST description) — the fixture is
 # headless, the population every corpus file is in, matching
 # `dup_block_name.rxt`'s own reason.
-check_refusal_all3 dup_description.rxt dup-description schema-constraint "one 'description'"
+check_refusal_all3_kind description dup_description.rxt dup-description schema-constraint "one 'description'"
 DD="$FIXRUN/single_description.rxt"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$DD" > /dev/null 2>"$WORKDIR/dd.err" && \
    "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$DD" > /dev/null 2>"$WORKDIR/dd.berr" && \
    "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$DD" > /dev/null 2>"$WORKDIR/dd.cerr"; then
     pass "dup-description: the accept control (ONE description line) is ACCEPTED by all three — the refusal is isolated to the duplicate"
+    record_receipt description
 else
     fail "dup-description: the single-description accept control was refused by at least one leg:
   (A: $(cat "$WORKDIR/dd.err"))
   (C: $(tail -3 "$WORKDIR/dd.cerr" 2>/dev/null))"
 fi
+
+# [DD-13b.W23.5] THE ACCEPT-SIDE RECEIPTS for the remaining four
+# `all-readers` rows — `name`, `flags`, `encoding`, `engine` — from ONE
+# fixture (`block_kinds_accept.rxtin`) carrying all four at once, all
+# three legs required to ACCEPT.
+check_accept_all3_kind name     block_kinds_accept.rxt block-kinds-accept-name
+check_accept_all3_kind flags    block_kinds_accept.rxt block-kinds-accept-flags
+check_accept_all3_kind encoding block_kinds_accept.rxt block-kinds-accept-encoding
+check_accept_all3_kind engine   block_kinds_accept.rxt block-kinds-accept-engine
 
 # --- [RXTDUP lane, sem25] a SECOND file-level 'description' is refused
 # the same way, naming the earlier line — docs/spec/rxt_format.md calls
@@ -1805,6 +2058,272 @@ else
   (C: $(tail -3 "$WORKDIR/nicok.cerr" 2>/dev/null))"
 fi
 
+# ======================================================================
+# [DD-13b.W23.3] THE FOURTEEN PRODUCTIONS' OWN FIXTURES
+# ======================================================================
+#
+# Every three-leg assertion below compares the diagnostic CLASS, never an
+# exit code (§3.1 W23-S2). Where a fixture is LEG A ONLY the reason is
+# stated at the call rather than left looking like an oversight — the
+# two reasons are the seam (a FILE-scope production is a head
+# declaration and the head has one parser) and the schema's own
+# `validated_by` column (a row that reads `pcrec` is a row legs B and C
+# are not claimed to check, §3.3's rule for this lane).
+
+# --- `ext`: the AUX production, §2.27 -----------------------------------
+#
+# aux's failure mode is pcrec deciding it UNDERSTANDS something, which an
+# ACCEPTANCE fixture catches and a refusal fixture structurally cannot.
+AUXOK=1
+for auxf in aux_arbitrary_keys aux_deep_tree aux_literal_pipe aux_subtree_extent; do
+    if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/$auxf.rxt" \
+            > "$WORKDIR/$auxf.dump" 2>"$WORKDIR/$auxf.err"; then
+        fail "aux/$auxf: leg A REFUSED an aux fixture it must accept — pcrec
+  parses an aux body's structure and interprets nothing (§2.27):
+  $(cat "$WORKDIR/$auxf.err")"
+        AUXOK=0
+    fi
+done
+[ "$AUXOK" = "1" ] && pass "aux: all four acceptance fixtures parse (arbitrary keys, a three-deep tree of keyword-colliding keys, a literal '|', a subtree's own extent)"
+
+# [DD-13b.W23.4] `aux_literal_pipe`'s CENTRAL ASSERTION, unobservable
+# until `#section aux` existed to carry it (w233_report.md §3.2): the
+# `separator` row's OWN value is the single byte `|`, and `terminator`/
+# `note` below it are SIBLING rows (same `parent_line`, not each other's
+# parent) rather than continuations. If S3 still opened a region inside
+# an open subtree, the `separator` value would be empty and the two
+# lines after it would have been swallowed into it as prose.
+alp="$WORKDIR/aux_literal_pipe.dump"
+alp_sep=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="separator"{print $7}' "$alp")
+alp_sep_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="separator"{print $8}' "$alp")
+alp_term_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="terminator"{print $8}' "$alp")
+alp_note_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="note"{print $8}' "$alp")
+if [ "$alp_sep" = "|" ] && [ -n "$alp_sep_parent" ] && \
+   [ "$alp_term_parent" = "$alp_sep_parent" ] && [ "$alp_note_parent" = "$alp_sep_parent" ]; then
+    pass "aux/literal-pipe: 'separator |' row's value is the single byte '|', and 'terminator'/'note' are its SIBLINGS (same parent_line $alp_sep_parent), not its children"
+else
+    fail "aux/literal-pipe: separator value='$alp_sep' (want '|'), parent_lines: separator=$alp_sep_parent terminator=$alp_term_parent note=$alp_note_parent (want all equal and non-empty) —
+  decision 3's falsification point did not falsify: a prose region opened
+  where structure-layer parameter 3 says it must not."
+fi
+
+# [DD-13b.W23.4] S242 (S-R4a): `opener_pattern_esc_pair.rxtin`'s two
+# `pattern-esc` blocks each own one case row, at their own block's line —
+# the population `--list-source`'s `#section cases`' `block_line` column
+# exists to report, and the fixture that arms S242's detector.
+opep="$WORKDIR/opener_pattern_esc_pair.dump"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/opener_pattern_esc_pair.rxt" \
+        > "$opep" 2>"$WORKDIR/opep.err"; then
+    opep_blocks="$(section_count "" "$opep")"
+    opep_bl="$(awk -F'\t' '/^#section cases/{s=1;next} /^#/{next} s{printf "%s ", $2}' "$opep")"
+    if [ "$opep_blocks" = "2" ] && [ "$opep_bl" = "8 10 " ]; then
+        pass "S242 detector: two 'pattern-esc' blocks each own one case row at their OWN block_line (8, 10)"
+    else
+        fail "S242 detector: main-table blocks=$opep_blocks (want 2), case block_lines='$opep_bl' (want '8 10 ') —
+  either 'pattern-esc' stopped opening a second block, or something else moved."
+    fi
+else
+    fail "S242 detector: --list-source failed on opener_pattern_esc_pair.rxt:
+$(cat "$WORKDIR/opep.err")"
+fi
+
+# [DD-13b.W23.4] S243 (S-R4b): `opener_m_not_opener.rxtin` is one block
+# with two 'm' case lines on the shipped schema.
+omno="$WORKDIR/opener_m_not_opener.dump"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/opener_m_not_opener.rxt" \
+        > "$omno" 2>"$WORKDIR/omno.err"; then
+    omno_blocks="$(section_count "" "$omno")"
+    omno_cases="$(section_count "cases" "$omno")"
+    if [ "$omno_blocks" = "1" ] && [ "$omno_cases" = "2" ]; then
+        pass "S243 detector: one 'pattern' block owns both 'm' case lines (1 block, 2 cases)"
+    else
+        fail "S243 detector: main-table blocks=$omno_blocks (want 1), cases=$omno_cases (want 2) —
+  an 'm' line started acting like a block opener."
+    fi
+else
+    fail "S243 detector: --list-source failed on opener_m_not_opener.rxt:
+$(cat "$WORKDIR/omno.err")"
+fi
+
+# [DD-13b.W23.4] W23-S6 — THE AUX NON-INTERPRETATION CHECK (format_design
+# §2.27.3 clause 5): edit an aux body and require every pcrec output
+# EXCEPT `#section aux`'s own rows to be BYTE-IDENTICAL. `aux_identity`/
+# `aux_identity_edited` are the same one `pattern a+` block with the SAME
+# leading line count (so no row's `line` is downstream of the edit) and
+# DIFFERENT aux bodies — the edit moves line count, depth, key spellings
+# AND the number of `ext` blocks at once (§3.4's own rule: "the edit must
+# be chosen to move as many plausible derived quantities as it can").
+#
+# TWO ARMS: (1) `--list-source` with `#section aux` elided; (2) the
+# COMPILED ARTIFACT (`--source`'s implicit single-unnamed-block target,
+# W1.2's own compatibility default) — .c AND .h. `--list-schema` is not a
+# third arm: neither fixture's aux body can move a ROW of that table (aux
+# has none), so comparing it would assert something the mechanism cannot
+# violate.
+AIW="$WORKDIR/auxid"
+mkdir -p "$AIW/a" "$AIW/b"
+cp "$FIXRUN/aux_identity.rxt" "$AIW/a/aux_identity.rxt"
+cp "$FIXRUN/aux_identity_edited.rxt" "$AIW/b/aux_identity_edited.rxt"
+w6ok=1
+if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$AIW/a/aux_identity.rxt" > "$AIW/a.tsv" 2>"$AIW/a.err"; then
+    fail "W23-S6: --list-source failed on aux_identity.rxt: $(cat "$AIW/a.err")"; w6ok=0
+fi
+if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$AIW/b/aux_identity_edited.rxt" > "$AIW/b.tsv" 2>"$AIW/b.err"; then
+    fail "W23-S6: --list-source failed on aux_identity_edited.rxt: $(cat "$AIW/b.err")"; w6ok=0
+fi
+if [ "$w6ok" = "1" ]; then
+    awk '/^#section aux/{exit}{print}' "$AIW/a.tsv" > "$AIW/a_noaux.tsv"
+    awk '/^#section aux/{exit}{print}' "$AIW/b.tsv" > "$AIW/b_noaux.tsv"
+    if diff -u "$AIW/a_noaux.tsv" "$AIW/b_noaux.tsv" > "$AIW/noaux.diff"; then
+        pass "W23-S6 arm 1: --list-source with #section aux elided is byte-identical across an aux-body edit that moves line count, depth, keys AND block count"
+    else
+        fail "W23-S6 arm 1: --list-source moved OUTSIDE #section aux when the aux body changed —
+$(head -20 "$AIW/noaux.diff")"
+    fi
+fi
+if ( cd "$AIW/a" && "$PCREC" --source aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
+   ( cd "$AIW/b" && "$PCREC" --source aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
+   diff "$AIW/a/out.c" "$AIW/b/out.c" > "$AIW/c.diff" 2>&1 && \
+   diff "$AIW/a/out.h" "$AIW/b/out.h" > "$AIW/h.diff" 2>&1; then
+    pass "W23-S6 arm 2: the compiled artifact (.c and .h) is byte-identical across the same aux-body edit"
+else
+    fail "W23-S6 arm 2: the compiled artifact moved when the aux body changed (or a build failed):
+$(cat "$AIW/a_build.err" "$AIW/b_build.err" "$AIW/c.diff" "$AIW/h.diff" 2>/dev/null | head -30)"
+fi
+
+# THE ABSENCE ASSERTIONS ARE THE CHECK. `aux_deep_tree.rxt`'s body uses
+# `pattern`, `config`, `m`, `provenance` and `variant` as aux KEYS, three
+# levels deep. If anything in pcrec interpreted one of them, the MAIN
+# TABLE would carry a second `pattern` row, or `#section provenance`/
+# `#section cases` would carry an extra record — [DD-13b.W23.4] now that
+# `#section aux` exists and dumps the tree FAITHFULLY (the whole point of
+# it), a nonzero row count THERE is correct and expected; what remains an
+# absence claim is every OTHER surface.
+adt_main="$(section_count "" "$WORKDIR/aux_deep_tree.dump")"
+adt_cases="$(section_count "cases" "$WORKDIR/aux_deep_tree.dump")"
+adt_prov="$(section_count "provenance" "$WORKDIR/aux_deep_tree.dump")"
+adt_var="$(section_count "variants" "$WORKDIR/aux_deep_tree.dump")"
+if [ "$adt_main" = "1" ] && [ "$adt_cases" = "1" ] && [ "$adt_prov" = "0" ] && [ "$adt_var" = "0" ]; then
+    pass "aux/deep-tree: an aux body whose keys COLLIDE with format keywords (pattern, config, m, provenance, variant) produces NO extra block, NO extra case and NO provenance record — 1 main-table row, 1 real case (the genuine 'm' outside the ext body), 0 provenance, 0 variants"
+else
+    fail "aux/deep-tree: main=$adt_main (want 1) cases=$adt_cases (want 1) provenance=$adt_prov (want 0) variants=$adt_var (want 0).
+  An aux body is UNINTERPRETED (§2.27.3): a key spelled like a format
+  keyword is a key, and a reader that acted on one has graduated the
+  production without anybody ruling that it should.
+$(LC_ALL=C grep -v '^#' "$WORKDIR/aux_deep_tree.dump")"
+fi
+
+# `aux_subtree_extent.rxt` — §5.2a item 9's sharpest attack, run by the
+# delivery on itself. An extent bug that SWALLOWS the next line and one
+# that closes EARLY produce opposite symptoms, so the assertion is
+# positive on TWO things rather than negative on one: the aux body's
+# `m`-spelled key did not become a case, and the `pattern b+` line after
+# the subtree still OPENED a block. [DD-13b.W23.4]: MAIN-TABLE rows only
+# (2 pattern blocks) — the fixture's own `ext` body's rows now legitimately
+# populate `#section aux`, which this check does not constrain.
+ase_main="$(section_count "" "$WORKDIR/aux_subtree_extent.dump")"
+if [ "$ase_main" = "2" ]; then
+    pass "aux/subtree-extent: the open subtree ENDS at its dedent — the block directive after it is a directive and the 'pattern' line after that opens a SECOND block (2 main-table rows)"
+else
+    fail "aux/subtree-extent: the main table carries $ase_main rows where 2 is correct.
+  Either the subtree ran on past its own body (swallowing the opener
+  below it) or it closed early (turning one of its own lines into a
+  block). The two failures are opposite and this is the one assertion
+  that separates them."
+fi
+
+# The three HEADLESS aux fixtures are asserted on ALL THREE LEGS; the
+# file-scope one is not, and the reason is the seam ruling rather than
+# this lane's scope (w1_impl §1.1: the head has ONE parser, so a
+# three-leg assertion on a FILE-scope production is unavailable at any
+# point in W23 — r59-A2's own disposition, one production over).
+for auxf in aux_deep_tree aux_literal_pipe aux_subtree_extent; do
+    if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$FIXRUN/$auxf.rxt" > /dev/null 2>&1 && \
+       "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$FIXRUN/$auxf.rxt" > /dev/null 2>&1; then
+        pass "aux/$auxf: legs B and C accept it too (the aux body is consumed, not dispatched)"
+    else
+        fail "aux/$auxf: leg B or C refused an aux fixture leg A accepts. Inside
+  an OPEN SUBTREE nothing is dispatched at all — S2's opener set is
+  empty there and S3 never opens — so a leg that validated a key inside
+  one has given the production semantics nobody ruled it should have."
+    fi
+done
+
+check_refusal_all3 aux_malformed_body.rxt aux-malformed structure-attachment 'indented 3'
+
+# --- `provenance`: S-R2's pcrec-side detector pair (§2.14 rule 3) -------
+#
+# LEG A ONLY, by the schema's own `validated_by` column: every
+# `provenance` row reads `pcrec`, and legs B and C CONSUME the record's
+# body without reading it. Claiming three legs here would be §3.3's
+# named failure — a row claiming three legs on the strength of one.
+check_refusal prov_adapted_no_adaptation.rxt prov-adaptation \
+    '[schema-constraint]' 'adaptation' 'fidelity != verbatim'
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/prov_verbatim_no_adaptation.rxt" \
+        > /dev/null 2>"$WORKDIR/pv.err"; then
+    pass "prov-adaptation: the ACCEPT half (fidelity verbatim, no adaptation) is accepted — the refusal is isolated to the conditional"
+else
+    fail "prov-adaptation: the accept control was REFUSED. Without it the
+  refusing half is satisfied by a parser that refuses every provenance
+  record, which is a check with no discriminating power at all:
+  $(cat "$WORKDIR/pv.err")"
+fi
+
+# --- `under`: the four-component KEY TUPLE (§2.17) ----------------------
+#
+# LEG A ONLY, by the schema's own column: `under` reads `validated_by:
+# pcrec`, and legs B and C treat every `under` line as a counted,
+# labelled SKIP. The ACCEPT half is not optional and is the half that
+# found the defect: the extractor read a colon that the spelling does
+# not have, so the convention came out empty and every later component
+# slid one place left — and the refusing fixture went red anyway, for a
+# reason that had nothing to do with the rule.
+check_refusal under_key_duplicate.rxt under-key-dup \
+    '[schema-constraint]' "duplicate 'under'" 'under-key'
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/under_key_distinct.rxt" \
+        > /dev/null 2>"$WORKDIR/ukd.err"; then
+    pass "under-key: four 'under' lines differing in ONE component each (subject, startpos, kind, convention) are all ACCEPTED — the key is the whole tuple"
+else
+    fail "under-key: a line differing from its neighbour in exactly one key
+  component was refused as a duplicate, so the tuple has collapsed. A
+  refuse-only pair cannot see this — it passes for the wrong reason:
+  $(cat "$WORKDIR/ukd.err")"
+fi
+
+# --- §2.22 / D100: the DERIVED-IDENTIFIER call binding ------------------
+#
+# LEG A ONLY: legs B and C resolve no calls. The refusal arrives through
+# `--source` (the composer) and not `--list-source` (which reports the
+# file as written and binds nothing), so this is the one W23.3 fixture
+# whose instrument is the COMPILE path.
+dcc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_collision.rxt" \
+    -o "$WORKDIR/dcc.c" 2>&1)"
+if [ $? -eq 0 ]; then
+    fail "derived-call: a call to an identifier TWO definitions derive was
+  ACCEPTED. The mapping is deliberately not injective and this refusal
+  is where that is paid for; a silent tie-break makes the
+  non-injectivity free exactly where it bites (§2.22)."
+elif printf '%s' "$dcc_out" | grep -q "x-y" && \
+     printf '%s' "$dcc_out" | grep -q "x_y"; then
+    pass "derived-call: a colliding derived identifier is refused NAMING BOTH definitions and the shared identifier (exact spelling does not win)"
+else
+    fail "derived-call: refused, but the message does not name BOTH
+  definitions. Naming only the shared prefix tells an author which
+  identifier collided and not which two names to rename, which is the
+  only repair available:
+  $dcc_out"
+fi
+# The ACCEPT half: a hyphenated definition IS callable through its
+# derived identifier, which is the whole of what D100 bought.
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_bind.rxt" \
+        -o "$WORKDIR/dcb.c" > /dev/null 2>"$WORKDIR/dcb.err"; then
+    pass "derived-call: '(?&cls_upto_64)' BINDS to 'name cls-upto-64' — the repair §4.5 item 4 was unusable without"
+else
+    fail "derived-call: the accept half FAILED. Without it the collision
+  refusal above is satisfied by a composer that binds nothing at all:
+  $(cat "$WORKDIR/dcb.err")"
+fi
+
 # --- [DD-13b.W23.2] THE ATTACHMENT ARM's own fixtures (W23-S1, W23-S2) --
 #
 # `indent_pre_body.rxt` — an indented `m` line BEFORE the first
@@ -1812,8 +2331,15 @@ fi
 # indentation test ran AFTER its not-seen_pattern branch, so a
 # POST-body fixture would report GREEN against the ordering defect this
 # pins; leg B had no attachment step at all before this step.
+# [DD-13b.W23.3] THE NEEDLE MOVED because leg A's own branch SPLIT. The
+# arm this fixture reaches held three different mistakes under one
+# sentence; "nothing above it is open" is the one that is true here (a
+# blank line, a comment or the start of the file closes every
+# attachment), and "the declaration above takes no continuation" was
+# never true of it — there is no declaration above. See
+# `src/parse/rxt_source.c`'s comment at the split.
 check_refusal_all3 indent_pre_body.rxt indent-pre-body structure-attachment \
-    'continues nothing'
+    'nothing above it is open'
 
 # `indent_under_m.rxt` — an indented line under an `m` case line,
 # mid-block. class structure-attachment, NAMING THE PARENT
@@ -1886,7 +2412,10 @@ fi
 # (unaffected by this fix, asserted for completeness).
 BE="$FIXRUN/blank_ends_config_body.rxt"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$BE" > "$WORKDIR/be.tsv" 2>"$WORKDIR/be.err"; then
-    be_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/be.tsv")
+    # [DD-13b.W23.4] stops at the first `#section` line: this fixture's
+    # `m` case now grows a `#section cases` block, whose data rows do not
+    # start with `#` and would otherwise be misread as more "kinds".
+    be_kinds=$(awk -F'\t' '/^#section /{exit} !/^#/ { printf "%s ", $1 }' "$WORKDIR/be.tsv")
     be_cfg_flags=$(awk -F'\t' '$1 == "config" { print $6 }' "$WORKDIR/be.tsv")
     be_cfg_engine=$(awk -F'\t' '$1 == "config" { print $10 }' "$WORKDIR/be.tsv")
     be_desc=$(awk -F'\t' '$1 == "description" { print $4 }' "$WORKDIR/be.tsv")
@@ -2636,8 +3165,10 @@ if [ "$wsp_ra" != "0" ] || [ "$wsp_rb" != "0" ]; then
     fail "w23s1/ws-positions: a file with whitespace-only lines at four positions
   was refused (rc $wsp_ra / twin $wsp_rb). They are INERT: no indent is read
   off one, it attaches to nothing and nothing attaches to it."
-elif [ "$(printf '%s\n' "$wsp_a" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" = \
-       "$(printf '%s\n' "$wsp_b" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" ]; then
+elif [ "$(printf '%s\n' "$wsp_a" | awk -F'\t' -v OFS='\t' \
+       '/^#section /{insect=1} $1 ~ /^#/{next} {if(insect){$1="-";$2="-"}else $2="-";print}')" = \
+       "$(printf '%s\n' "$wsp_b" | awk -F'\t' -v OFS='\t' \
+       '/^#section /{insect=1} $1 ~ /^#/{next} {if(insect){$1="-";$2="-"}else $2="-";print}')" ]; then
     pass "w23s1/ws-positions: whitespace-only lines at four positions parse IDENTICALLY to their own deletion"
 else
     fail "w23s1/ws-positions: the parse differs from the same file with the
@@ -2724,8 +3255,11 @@ for k in $sc_openers; do
     op_seen=$((op_seen + 1))
     of="$WORKDIR/opener_$op_seen.rxt"
     printf '%s a\nm "a" 0 1\n%s b\nm "b" 0 1\n' "$k" "$k" > "$of"
+    # [DD-13b.W23.4] every opener probe carries an `m` case now, so the
+    # dump grows a `#section cases` block — MAIN-TABLE rows only, counted
+    # the same section-aware way R5/R6 above count them.
     nb=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$of" 2>/dev/null | \
-         awk -F'\t' '$1 !~ /^#/ && $1 != "" { n++ } END { print n+0 }')
+         awk -F'\t' '/^#section /{exit} $1 !~ /^#/ && $1 != "" { n++ } END { print n+0 }')
     # a kind of a LATER wave is refused by name, which is a different
     # claim and is arm 4's; only a row this build implements can open.
     w=$(awk -F'\t' -v kk="$k" 'BEGIN{s=0} /^#section schema/{s=1;next} /^#section /{s=0} s && $2 == kk { print $10; exit }' "$SCHEMA")
@@ -2736,7 +3270,7 @@ if [ "$op_seen" -ge 1 ] && [ "$op_bad" = "0" ]; then
     pass "W23-S3 arm 1: every row the dump calls an opener ($op_seen) starts a new block when a second one appears"
 else
     fail "W23-S3 arm 1: $op_bad of $op_seen declared openers did not start a block.
-  `opens_group` is structure-layer parameter 1 and a generic reader FETCHES
+  'opens_group' is structure-layer parameter 1 and a generic reader FETCHES
   it; a row that claims it and does not do it is a confident wrong answer."
 fi
 
@@ -2818,13 +3352,49 @@ for kind in $wv_rows; do
         *) wv_bad=$((wv_bad + 1)); echo "  '$kind' refused as: $wout" >&2 ;;
     esac
 done
-if [ "$wv_seen" -ge 1 ] && [ "$wv_bad" = "0" ]; then
+# [DD-13b.W23.3] THE EXTRACTOR'S HEALTH IS ITS OWN ASSERTION NOW, AND
+# THAT IS WHAT MAKES AN HONEST ZERO REPORTABLE.
+#
+# W23.1 wrote "a population of ZERO is also a failure here" and was right
+# for its reason: the arm had first read 0 rows out of a real population
+# of 7 because `read` collapsed the dump's empty TAB fields, and a check
+# whose population comes from the data it checks agrees with a broken
+# extractor by construction. That rule conflates TWO zeros, and W23.3 is
+# the pin where they part: `refuse_wave`'s NOT-IN-THIS-BUILD tier is
+# `built < wave < reserved`, every W23 row's wave IS this build's, and no
+# fixture can construct a row in between because the table is
+# compile-time. format_design §1.3 and w23_impl §2.3 both state that
+# emptiness IN ADVANCE ("its population is empty at the FINAL pin").
+#
+# So the extractor is exercised INDEPENDENTLY, over the same dump with
+# the same awk and the threshold lowered to 0 — which must find every
+# file-scope row below the sentinel. A zero there is the broken-extractor
+# zero and still fails; a zero in the real population with a healthy
+# extractor is the tier being empty, which is reported as a PASS that
+# says so. The general form: *a population of zero is a failure only
+# while you cannot tell it from a broken instrument; make the
+# instrument's health a separate non-vacuous assertion and the honest
+# zero becomes something a check may report.*
+wv_probe="$(awk -F'\t' -v rsv="${sc_reserved:-999}" '
+    BEGIN { s = 0; n = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "file" && $10 + 0 > 0 && $10 + 0 < rsv + 0 { n++ }
+    END { print n }' "$SCHEMA")"
+if [ "${wv_probe:-0}" -lt 1 ]; then
+    fail "W23-S3 arm 4: the row extractor found ZERO file-scope rows below
+  the reserved sentinel with the wave threshold lowered to 0, which is
+  impossible on any non-empty schema. The extraction is broken (W23.1
+  measured this exact shape once: bash's \`read\` collapsing the dump's
+  empty TAB fields), so arm 4's own zero below means nothing."
+elif [ "$wv_seen" = "0" ]; then
+    pass "W23-S3 arm 4: the NOT-IN-THIS-BUILD tier is EMPTY at this pin (no schema row sits between wave $sc_built and the reserved sentinel $sc_reserved) — an honest zero, with the extractor independently shown live on $wv_probe rows. format_design §1.3 states this emptiness in advance; arm 4b carries the reserved tier, which is not empty"
+elif [ "$wv_bad" = "0" ]; then
     pass "W23-S3 arm 4: all $wv_seen file-scope rows above wave $sc_built refuse BY NAME as NOT IN THIS BUILD"
 else
     fail "W23-S3 arm 4: $wv_bad of $wv_seen later-wave file-scope rows did not
   refuse by name. A reader told 'unknown' goes hunting a typo in a word
-  that is in the format's own spec (K14's shape). A population of ZERO is
-  also a failure here: it means this arm is measuring nothing."
+  that is in the format's own spec (K14's shape)."
 fi
 
 # ARM 4b — the RESERVED sentinel's rows. A reserved keyword refuses BY
@@ -2953,6 +3523,422 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/ch_scope.rxt" >/dev/null 2
 else
     fail "W23-S3 arm 6b: a legal 'config' body was refused"
 fi
+
+# =====================================================================
+# [DD-13b.W23.3a] W23-S7: `include`'s CLOSURE
+#
+# `docs/design/dd13_format/w23_impl.md` §1.10.2's own table reads "legs
+# B and C" symmetrically for the report/splice/failure-attribution
+# rules. **MEASURED FALSE for leg C, structurally, and RULED by the
+# manager (docs/dev/lanes/w233a_report.md §2, ACCEPTED at the merge
+# request that produced this section)**: `include` is head-scoped by
+# design (`format_design.md` §2.5), so any file carrying one is
+# head-bearing, and `verify_rxt.py`'s seam-ruling refusal — UNCHANGED —
+# already raises on it before any body line is reached, exactly as it
+# does for `dup_head_description.rxtin` one production over (§2.25.5's
+# own precedent, applied to a construct that CANNOT be moved to block
+# scope the way `ext` at least theoretically could be). So this section
+# is a LEG A / LEG B differential for the splice half — never
+# `check_refusal_all3` — and `include_dup_path.rxtin`'s same-file
+# collision is `check_refusal`, single-leg, leg A only, for the
+# identical reason `dup_head_description.rxtin` is.
+#
+# check_include_splice FIXTURE DIRECT TOTAL LABEL:
+#   FIXTURE   the .rxtin's own basename (copied to $FIXRUN/FIXTURE.rxt)
+#   DIRECT    leg A's own include-row count on the ENTRY alone — its
+#             DIRECT includes only; a nested fragment's own include line
+#             is invisible to a single `--list-source` call on the
+#             entry, exactly as it is invisible to any one node of
+#             `closure_walk`'s own recursive walk one leg over
+#   TOTAL     leg B's `fragments spliced` — the TRANSITIVE closure size
+#   LABEL     the check's own name suffix
+#
+# Every fixture here is built so each physical file (entry and every
+# fragment) carries EXACTLY ONE pattern block with EXACTLY ONE `m` case
+# — which is what turns "the entry's count EXCEEDS its own file's block
+# count by the fragments' own" (§1.10.4) into one clean arithmetic
+# check: `cases passed == 1 + TOTAL`. K35's own lesson is why this is
+# asserted as three separate numbers rather than one pass/fail: a splice
+# check satisfied by a closure of zero would prove nothing, and each of
+# the three (leg A's direct count, leg B's total count, the case-count
+# arithmetic) can be wrong independently of the other two.
+check_include_splice() {
+    local fixture=$1 direct=$2 total=$3 label=$4
+    local entry_file="$FIXRUN/$fixture.rxt" ls_out a_includes b_out
+    local b_entries b_frags b_pass
+
+    if ! ls_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$entry_file" 2>&1)"; then
+        fail "W23-S7/$label: leg A refused the entry, which must ACCEPT:
+  $ls_out"
+        return
+    fi
+    a_includes=$(printf '%s\n' "$ls_out" \
+        | LC_ALL=C awk -F'\t' '!/^#/ && $1 == "include"' | wc -l | tr -d ' ')
+    if [ "$a_includes" = "$direct" ]; then
+        pass "W23-S7/$label: leg A's own include row count on the entry is $direct"
+    else
+        fail "W23-S7/$label: leg A reported $a_includes include row(s) on the entry, wanted $direct"
+    fi
+
+    b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$entry_file" 2>&1)"
+    b_entries=$(printf '%s\n' "$b_out" | awk -F': ' '/^entry files:/ {print $2}')
+    b_frags=$(printf '%s\n' "$b_out" | awk -F': ' '/^fragments spliced:/ {print $2}')
+    b_pass=$(printf '%s\n' "$b_out" | awk -F': ' '/^cases passed:/ {print $2}')
+    if [ "${b_entries:-X}" = "1" ] && [ "${b_frags:-X}" = "$total" ]; then
+        pass "W23-S7/$label: leg B reports entry files: 1, fragments spliced: $total"
+    else
+        fail "W23-S7/$label: leg B reported entry files: ${b_entries:-?}, fragments spliced: ${b_frags:-?} (wanted 1 / $total):
+  $b_out"
+    fi
+    local want_pass=$((1 + total))
+    if [ "${b_pass:-X}" = "$want_pass" ]; then
+        pass "W23-S7/$label: cases passed == 1 (the entry's own) + $total (fragments') == $want_pass"
+    else
+        fail "W23-S7/$label: cases passed was ${b_pass:-?}, wanted $want_pass (1 entry case + $total fragment cases)"
+    fi
+}
+check_include_splice include_basic  1 1 basic
+check_include_splice include_nested 1 2 nested
+
+# `include_dup_path.rxtin`'s same-file collision — LEG A ONLY, exactly
+# `dup_head_description.rxtin`'s own wording pattern (single-leg
+# `check_refusal`, never `check_refusal_all3`), and the comment states
+# why rather than leaving the asymmetry looking like an oversight: the
+# head has one parser, and this is a head-level refusal.
+check_refusal include_dup_path.rxt include-duplicate \
+    'include_basic_frag.rxtfrag' 'include "./include_basic_frag.rxtfrag"'
+
+# THE FOURTH FAILURE CLASS, THROUGH LEG B, ASSERTED EXPLICITLY (manager
+# ruling on this section's own brief): `include_dup_path.rxtin` is a
+# SAME-FILE collision, entirely inside leg A's own single-file parse, so
+# running it through leg B never reaches `rxt_expand_closure` at
+# all — leg A already refused the entry's `--list-source` call before
+# leg B's closure walk would begin. The `[resolution]` tag's OWN
+# detector is therefore a DIFFERENT shape: two DIFFERENT includers
+# (not one file's own two lines) that both reach the SAME fragment
+# transitively, which only a multi-file CLOSURE WALK — leg B's, never
+# leg A's — can see. Built here as scratch files rather than as a
+# fourth named `.rxtin` fixture (`w23_impl.md` §1.10.4 names three,
+# `w233a_report.md` §3 item 1's own count), on `run_rxtsource_tests.sh`'s
+# own "synthetic stream in the repair's own commit" precedent (W23.4
+# item 3b): a shared fragment reached both directly by the entry and
+# indirectly through a second included file.
+mkdir -p "$WORKDIR/xclose"
+cat > "$WORKDIR/xclose/shared.rxtfrag" <<'EOF'
+pattern shared
+m "shared" 0 6
+EOF
+cat > "$WORKDIR/xclose/via.rxtfrag" <<'EOF'
+include "shared.rxtfrag"
+pattern via
+m "via" 0 3
+EOF
+cat > "$WORKDIR/xclose/entry.rxt" <<'EOF'
+include "shared.rxtfrag"
+include "via.rxtfrag"
+
+pattern top
+m "top" 0 3
+EOF
+xc_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$WORKDIR/xclose/entry.rxt" 2>&1)"
+case $xc_out in
+    *'[resolution]'*)
+        pass "W23-S7/resolution: a fragment reached by TWO different includers (directly, and through a sibling) is a [resolution]-class failure"
+        ;;
+    *)
+        fail "W23-S7/resolution: expected a [resolution]-tagged failure when two different includers reach the same fragment; got:
+  $xc_out"
+        ;;
+esac
+case $xc_out in
+    *'cases failed: 1'*) ;;
+    *)
+        fail "W23-S7/resolution: expected exactly 1 case failure (the entry's own body still runs — rule 1 in §1.10.2); got:
+  $xc_out"
+        ;;
+esac
+
+# THE CORPUS CONTROL (§1.10.3/§1.10.4), and it is the one that matters:
+# a subtraction/splice bug that removed real corpus files or double-
+# spliced would otherwise surface only as a quieter or louder suite. The
+# shipped corpus has ZERO `include` lines at this pin, so `entry files`
+# must equal the FULL census and `fragments spliced` must be exactly 0.
+#
+# THROUGH `--dump`, NOT A BARE RUN: this section's own header says why
+# it is cheap ("three parses of the corpus and NO COMPILES") and a bare
+# `bash "$RUNSH"` over the whole corpus would compile every pattern —
+# `test-corpus`'s own workload, duplicated inside a section that exists
+# specifically not to compete with it for the box. `--dump` still runs
+# every file through the whole per-file loop (subtraction, splice,
+# parsing) at zero compile cost, which is everything this control needs.
+# `--dump` takes the ARGUMENT branch (no `known_fail` exclusion, unlike
+# the no-arg default), so its population is `CENSUS_FILES`, not
+# `RUNSH_FILES`.
+corpus_out="$("$TIMEOUT_BIN" 120 bash "$RUNSH" --dump "$ROOT_DIR/tests" 2>&1 >/dev/null)"
+corpus_entries=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^entry files:/ {print $2}')
+corpus_frags=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^fragments spliced:/ {print $2}')
+if [ "${corpus_entries:-X}" = "$CENSUS_FILES" ] && [ "${corpus_frags:-X}" = "0" ]; then
+    pass "W23-S7 corpus control: entry files: $CENSUS_FILES (== CENSUS_FILES), fragments spliced: 0 — the shipped corpus has no include lines"
+else
+    fail "W23-S7 corpus control: entry files: ${corpus_entries:-?} (wanted $CENSUS_FILES), fragments spliced: ${corpus_frags:-?} (wanted 0) — a subtraction or splice defect moved the population:
+  $(printf '%s\n' "$corpus_out" | tail -20)"
+fi
+
+# =====================================================================
+# [DD-13b.W23.5] W23-S5 — THE `all-readers` POPULATION CHECK ITSELF
+# (w23_impl.md §3.3). Walks `--list-schema`'s OWN OUTPUT (never
+# `rxt_schema.def` directly — that table's own header states why: a
+# check reading the table would share a source with the parser it is
+# checking, docs/dev/learnings.md §3) for every BLOCK-scope row whose
+# `validated_by` reads `all-readers`, and fails naming any row with NO
+# line in `$RECEIPTS` — the log `check_refusal_all3_kind`/
+# `check_accept_all3_kind` write ONLY when all three legs actually ran
+# and answered, never a declared fixture name.
+schema_out="$WORKDIR/schema.tsv"
+"$TIMEOUT_BIN" 30 "$PCREC" --list-schema > "$schema_out" 2>"$WORKDIR/schema.err"
+allreaders_kinds=$(awk -F'\t' '
+    /^#section schema/ { insect = "schema"; next }
+    /^#section / { insect = ""; next }
+    /^#/ { next }
+    insect == "schema" && $9 == "all-readers" { print $2 }' "$schema_out")
+allreaders_n=$(printf '%s\n' "$allreaders_kinds" | grep -c .)
+if [ "$allreaders_n" = "0" ]; then
+    fail "W23-S5: --list-schema reports ZERO all-readers rows — this arm
+  has an empty population, which is itself a failure to investigate
+  (the five block-scope rows name/description/flags/encoding/engine
+  are expected here)."
+else
+    missing=""
+    while IFS= read -r k; do
+        [ -z "$k" ] && continue
+        if ! grep -qx -- "$k" "$RECEIPTS" 2>/dev/null; then
+            missing="$missing $k"
+        fi
+    done <<< "$allreaders_kinds"
+    if [ -z "$missing" ]; then
+        pass "W23-S5: all $allreaders_n all-readers row(s) (${allreaders_kinds//$'\n'/, }) have at least one receipt in \$RECEIPTS"
+    else
+        fail "W23-S5: $allreaders_n all-readers row(s) declared, but these have NO receipt at all:$missing
+  Either the fixture that used to exercise them was removed, or the
+  three-leg call site that ran them stopped reaching its own code (a
+  call commented out, an early return) — a declared fixture NAME would
+  not have caught either."
+    fi
+fi
+
+# =====================================================================
+# [DD-13b.W23.5] `mc_illformed_utf8.rxtin` — w23_impl.md §3.2's OWED
+# W23.3 fixture (SW7's ill-formed-UTF-8 advance rule), never landed
+# there. Both legs' own SCORING is the check: `run.sh` runs the case
+# through the real artifact's C find-all loop (`<prefix>_next_pos`, the
+# encoding residual), `verify_rxt.py` runs its own python transcription
+# of the SAME protocol (`match_api.md` §3.1.1), and both must agree with
+# the fixture's own expected count — the differential IS the agreement,
+# since neither leg is an external PCRE2 oracle for this rule.
+MIU="$FIXRUN/mc_illformed_utf8.rxt"
+miu_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$MIU" 2>&1)"; miu_b_rc=$?
+miu_c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" "$MIU" 2>&1)"; miu_c_rc=$?
+if [ "$miu_b_rc" = "0" ] && [ "$miu_c_rc" = "0" ] && \
+   printf '%s\n' "$miu_b_out" | grep -q '^cases passed: 1$' && \
+   printf '%s\n' "$miu_c_out" | grep -q '^PASS=1 FAIL=0$'; then
+    pass "mc/ill-formed-utf8: run.sh's C find-all loop and verify_rxt.py's python transcription both count 2 matches on three bare continuation bytes (SW7's skip rule)"
+else
+    fail "mc/ill-formed-utf8: the two legs disagree with the fixture's expected count, or one of them errored.
+  run.sh (rc=$miu_b_rc): $(printf '%s\n' "$miu_b_out" | tail -10)
+  verify_rxt.py (rc=$miu_c_rc): $(printf '%s\n' "$miu_c_out" | tail -10)"
+fi
+
+# =====================================================================
+# [DD-13b.W23.5] R-A — THE `pattern-esc` DUMP-VALUE SEAM, GIVEN A
+# POPULATION (w233_report.md §3.2 / w234_report.md §3, manager ruling).
+#
+# Leg A's `pattern` column DECODES a `pattern-esc` block's bytes
+# (`pcrec_rxt_decode_escaped`, src/parse/rxt_source.c); legs B and C
+# report the text AS WRITTEN, quotes included, because decoding it
+# would cost a second copy of the escape table in bash and a third in
+# python (tests/harness/CLAUDE.md's own stated reason). So a
+# `pattern-esc` row's VALUE comparison is A-vs-(B==C), EXCLUDED BY
+# DESIGN rather than a three-way agreement — the THIRD instance of the
+# dup_head_description/include seam shape (w233a_report.md §2), and
+# this is the check that asserts the excluded half honestly (B==C)
+# instead of silently comparing nothing.
+#
+# `pattern_esc_value_seam.rxtin` gives the seam its first non-zero
+# population: an ORDINARY `pattern` block first (so leg C's
+# not-yet-`seen_pattern` gate, which only exempts the literal token
+# `pattern`, is already satisfied before the `pattern-esc` block is
+# reached — see the finding below), then a `pattern-esc "a\nb"` block
+# whose value contains a REAL escape.
+#
+# [FINDING, recorded rather than fixed — out of this step's brief] leg
+# C REFUSES a file whose FIRST block opens with `pattern-esc`, even
+# though legs A and B both accept it (MEASURED: `unknown-token-in-scope`
+# at `verify_rxt.py:667`, whose `first != 'pattern'` test has no
+# `pattern-esc` exemption). This is the SAME shape S242's own finding
+# named one production over — a fixture cannot exercise a claim a leg
+# structurally refuses before reaching it — and it means
+# `opener_pattern_esc_pair.rxtin` (leg A only, S242) has never actually
+# been reachable by a three-leg comparison either. Worked around here
+# by ordering: this fixture is not a witness for "pattern-esc as a
+# file's first block", which stays leg-A-only pending that fix.
+PEVS="$FIXRUN/pattern_esc_value_seam.rxt"
+pevs_a_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$PEVS" 2>"$WORKDIR/pevs.aerr")"; pevs_a_rc=$?
+pevs_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$PEVS" 2>"$WORKDIR/pevs.berr")"; pevs_b_rc=$?
+pevs_c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$PEVS" 2>"$WORKDIR/pevs.cerr")"; pevs_c_rc=$?
+if [ "$pevs_a_rc" = "0" ] && [ "$pevs_b_rc" = "0" ] && [ "$pevs_c_rc" = "0" ]; then
+    # the SECOND block/row in each dump is the `pattern-esc` one.
+    pevs_a_pat=$(printf '%s\n' "$pevs_a_out" | awk -F'\t' '$1 == "pattern" { n++; if (n == 2) { print $5; exit } }')
+    pevs_b_pat=$(printf '%s\n' "$pevs_b_out" | awk -F'\t' '$1 == "block" { n++; if (n == 2) { print $6; exit } }')
+    pevs_c_pat=$(printf '%s\n' "$pevs_c_out" | awk -F'\t' '$1 == "block" { n++; if (n == 2) { print $6; exit } }')
+    pevs_want_a='a\nb'
+    pevs_want_bc='"a\\nb"'
+    if [ "$pevs_a_pat" = "$pevs_want_a" ] && \
+       [ "$pevs_b_pat" = "$pevs_want_bc" ] && [ "$pevs_c_pat" = "$pevs_want_bc" ]; then
+        pass "R-A: pattern-esc dump-value seam — leg A decodes ('$pevs_want_a'), legs B and C agree AS-WRITTEN ('$pevs_want_bc'); the A-vs-(B==C) exclusion holds with a real population"
+    else
+        fail "R-A: pattern-esc dump-value seam broke.
+  leg A: $pevs_a_pat (want $pevs_want_a, decoded)
+  leg B: $pevs_b_pat (want $pevs_want_bc, as-written)
+  leg C: $pevs_c_pat (want $pevs_want_bc, as-written)
+  Either a leg started/stopped decoding, or B and C stopped agreeing with
+  each other — the one comparison this seam DOES require."
+    fi
+else
+    fail "R-A: pattern-esc dump-value seam fixture failed to dump
+  (leg A rc=$pevs_a_rc, leg B rc=$pevs_b_rc, leg C rc=$pevs_c_rc):
+  A: $(cat "$WORKDIR/pevs.aerr")
+  B: $(cat "$WORKDIR/pevs.berr")
+  C: $(cat "$WORKDIR/pevs.cerr")"
+fi
+
+# =====================================================================
+# [DD-13b.W23.5] THE WITHDRAWALS' ABSENCE, AS A COMMITTED CHECK
+# (w23_impl.md §4.3, build order item 3: "the §4.3 absence grep as a
+# committed check rather than a manual step"). Two of the three arms
+# are automatable; arm (c) is deliberately NOT a grep and §4.3 says why
+# (`docs/spec/rxt_format.md:130`'s "configs are three artifacts..." is
+# legitimate English no pattern can separate from the withdrawn
+# `configs describe`/`configs build`) — it stays a standing review step.
+#
+# RULING R-B (escalated by w234_report.md §2): the DATA ARM's naive
+# `grep -lE '^[[:space:]]*(configs|testee|option|provides|capable)…'`
+# cannot tell a withdrawn `config`-body DIRECTIVE from an `ext` BODY
+# LINE spelled the same word — `ext bench` / `testee pcre2/10.46` is
+# format_design.md §2.27's OWN worked example, not the withdrawn
+# `config … testee` roster returning (§2.27.3's non-interpretation
+# clause: nothing in pcrec may take a value that changes when an aux
+# body changes, and a CHECK is exactly such a thing). So the data arm
+# is NARROWED to exclude lines inside an `ext` (children: tree) AUX
+# SUBTREE — STRUCTURALLY, by an INDENT STACK tracking attachment under
+# an `ext` opener (S1/S2's own rule: a blank line or a column-1 comment
+# closes every attachment; a dedent pops back to the matching level),
+# never by a list of consumer namespace names. `freq` is deliberately
+# NOT an opener here: its body is the schema's DATA scope
+# (`rxt_schema.def`, declared rows — `question`/`reader`/`analyzer`/
+# `row`/`provenance`), not TREE, so it is not an aux subtree and a
+# withdrawn word inside one is still the withdrawn word.
+withdrawn_data_arm() {
+    # $1: a file to scan. Prints one "<file>:<line>: <content>" line per
+    # hit, then a trailing "HITS n" line.
+    awk '
+        FNR == 1 { depth = 0 }
+        {
+            line = $0
+            if (line == "") { depth = 0; next }               # S0 BLANK
+            if (substr(line, 1, 1) == "#") { depth = 0; next } # S0 COMMENT (col 1)
+            n = match(line, /[^ ]/)
+            if (n == 0) next                                  # S0 WHITESPACE-ONLY: inert
+            indent = n - 1
+            content = substr(line, n)
+            while (depth > 0 && indent <= stack[depth]) depth--
+            if (depth == 0 &&
+                content ~ /^(configs|testee|option|provides|capable)([ \t]|$)/) {
+                print FILENAME ":" FNR ": " content
+                hits++
+            }
+            if (content ~ /^ext([ \t]|$)/) { depth++; stack[depth] = indent }
+        }
+        END { print "HITS " hits+0 }' "$1"
+}
+
+# ARM (a) — THE DATA ARM, over the corpus AND the fixtures (the same
+# population §4.3's own MEASURED table used: `git ls-files '*.rxt'
+# '*.rxtin'`).
+DATA_HITS=0
+DATA_DETAIL=""
+while IFS= read -r relf; do
+    out="$(withdrawn_data_arm "$ROOT_DIR/$relf")"
+    h="$(printf '%s\n' "$out" | tail -1 | awk '{print $2}')"
+    DATA_HITS=$((DATA_HITS + h))
+    if [ "$h" != "0" ]; then
+        DATA_DETAIL="$DATA_DETAIL
+$(printf '%s\n' "$out" | sed '$d')"
+    fi
+done < <(git -C "$ROOT_DIR" ls-files '*.rxt' '*.rxtin')
+if [ "$DATA_HITS" = "0" ]; then
+    pass "withdrawal-absence, data arm: 0 withdrawn-token hits over the corpus and fixtures, aux subtrees excluded structurally"
+else
+    fail "withdrawal-absence, data arm: $DATA_HITS hit(s) —$DATA_DETAIL"
+fi
+
+# THE SELF-CHECK: the narrowing must still fire on a GENUINE top-level
+# plant, and must NOT fire on the SAME word nested under a real `ext`
+# opener — verified against two scratch files (never the real corpus,
+# which the arm above has already proven clean), on the
+# "synthetic stream in the repair's own commit" precedent (W23.4 item
+# 3b). This is what makes "structural, not a keyword list" a checked
+# property rather than an assertion about the awk script's own text.
+cat > "$WORKDIR/withdrawn_top_level.rxt" <<'EOF'
+pattern a
+testee pcre2/10.46
+m "a" 0 1
+EOF
+cat > "$WORKDIR/withdrawn_nested.rxt" <<'EOF'
+pattern a
+ext bench
+  testee pcre2/10.46
+m "a" 0 1
+EOF
+top_hits="$(withdrawn_data_arm "$WORKDIR/withdrawn_top_level.rxt" | tail -1 | awk '{print $2}')"
+nested_hits="$(withdrawn_data_arm "$WORKDIR/withdrawn_nested.rxt" | tail -1 | awk '{print $2}')"
+if [ "$top_hits" = "1" ] && [ "$nested_hits" = "0" ]; then
+    pass "withdrawal-absence, self-check: a top-level 'testee' line is caught (1 hit); the SAME word nested under a real 'ext' opener is not (0 hits) — the narrowing is structural attachment, not a keyword list"
+else
+    fail "withdrawal-absence, self-check: top-level hits=$top_hits (want 1), nested hits=$nested_hits (want 0) — the aux-subtree narrowing is not discriminating correctly"
+fi
+
+# ARM (b) — THE PARSER ARM: none of the FOUR readers' keyword tables or
+# dispatch arms names one of the five withdrawn/reserved tokens as an
+# ACTIVE production, spelled as each reader spells a live keyword (a
+# quoted `PCREC_RXT_SCHEMA` kind — rxt_source.c's own config_vocab/
+# head_vocab/block_vocab retired at W23.1, so the schema table is the
+# ONE dispatch table now; a quoted python string in verify_rxt.py; a
+# `^`-anchored bash arm in run.sh; a quoted CLI flag string in
+# cli/main.c). MEASURED before the withdrawal (w23_impl.md §4.3): 1 —
+# rxt_source.c:149's now-retired config_vocab rows. This arm's landing
+# value is that it reads 1 there and 0 here; a check whose baseline was
+# already 0 proves nothing about the change that was made.
+PARSER_HITS=0
+PARSER_DETAIL=""
+for tok in configs testee option provides capable; do
+    h=""
+    h="$h$(grep -n "\"$tok\"" "$ROOT_DIR/src/parse/rxt_schema.def" 2>/dev/null | sed "s#^#src/parse/rxt_schema.def:#")"
+    h="$h$(grep -n "\"$tok\"" "$ROOT_DIR/cli/main.c" 2>/dev/null | sed "s#^#cli/main.c:#")"
+    h="$h$(grep -n "'$tok'" "$ROOT_DIR/tests/harness/verify_rxt.py" 2>/dev/null | sed "s#^#tests/harness/verify_rxt.py:#")"
+    h="$h$(grep -nE "\\^$tok([^A-Za-z0-9_]|\$)" "$ROOT_DIR/tests/harness/run.sh" 2>/dev/null | sed "s#^#tests/harness/run.sh:#")"
+    if [ -n "$h" ]; then
+        n=$(printf '%s\n' "$h" | grep -c .)
+        PARSER_HITS=$((PARSER_HITS + n))
+        PARSER_DETAIL="$PARSER_DETAIL
+$h"
+    fi
+done
+if [ "$PARSER_HITS" = "0" ]; then
+    pass "withdrawal-absence, parser arm: 0 of the four readers' keyword tables name a withdrawn/reserved token as an active production"
+else
+    fail "withdrawal-absence, parser arm: $PARSER_HITS hit(s) —$PARSER_DETAIL"
+fi
+# ARM (c) is a READ, not a grep, and stays one — §4.3's own point.
 
 # ---------------------------------------------------------------------
 # =====================================================================

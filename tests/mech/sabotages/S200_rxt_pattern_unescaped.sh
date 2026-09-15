@@ -19,7 +19,13 @@
 SAB_ID="S200-rxt-pattern-unescaped"
 SAB_FILE="src/parse/rxt_source.c"
 SAB_SUITES="rxtsource"
-SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 16 fields where the header declares 15, and every column after the pattern column shifts on exactly those rows"
+SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 20 fields where the header declares 19, and every column after the pattern column shifts on exactly those rows"
+# [DD-13b.W23.4] STALE-COUNT RE-STATEMENT, w23_impl.md §6.4 item 6/r59-A-M2:
+# this row's own detector (R5, tests/rxtsource/run_rxtsource_tests.sh) is
+# now SECTION-AWARE and its plain-English failure message no longer quotes
+# a field count at all, but SAB_DESC above is re-derived from a live count
+# regardless — 19 main-table columns (`kind`..`esc`) is this pin's real
+# number, not the "15"/"16" this row has carried at earlier pins.
 # [mechreach fix, 2026-09-09] `grep -cP` needs libpcre-backed grep; the real
 # `/usr/bin/grep` this driver actually runs under on this box is BSD grep
 # 2.6.0-FreeBSD, which has no -P at all ("invalid option -- P", exit 2 --

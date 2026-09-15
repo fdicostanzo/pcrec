@@ -1,0 +1,23 @@
+# [DD-13b.W23.3] DECISION 3's FALSIFICATION POINT (§2.27.2, RULED at
+# r58): inside an OPEN SUBTREE a trimmed bare `|` is the LITERAL byte `|`
+# and opens nothing.
+#
+# This is the one production whose key space pcrec does not control, so a
+# literal `|` has to stay writable there — and S3 opening a prose region
+# would take it away silently. The two assertions are separate on
+# purpose: the `separator` row's value is the single byte `|`, AND the
+# sibling below it at the SAME indent is a SIBLING ROW rather than a
+# continuation. If S3 still opened inside an open subtree, the value
+# would be empty and the sibling would have been swallowed — two
+# symptoms, and a fixture asserting only "the file is accepted" sees
+# neither.
+#
+# It REPLACES revision 3.4's `aux_prose_value.rxtin`, which asserted the
+# opposite; the ruling that removed prose values from aux bodies is what
+# inverted it.
+pattern a+
+ext bench
+  separator |
+  terminator ;
+  note this line is a sibling of both, not a continuation of either
+m "aaa" 0 3

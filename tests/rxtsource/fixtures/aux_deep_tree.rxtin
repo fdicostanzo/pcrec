@@ -1,0 +1,27 @@
+# [DD-13b.W23.3] THE SHARPER HALF OF THE PAIR: `aux_arbitrary_keys.rxtin`
+# catches aux being NARROWED, this one catches aux being INTERPRETED.
+#
+# Every key below is deliberately a REAL FORMAT KEYWORD — `pattern`, `m`,
+# `provenance`, `config`, `variant` — three levels deep inside an `ext`
+# body. The assertions are ABSENCES and they are the check: the file is
+# accepted, and the dump contains NO extra block, NO extra case and NO
+# provenance record. The colliding keys appear only as `#section aux`
+# rows once W23.4 emits that section; until then they appear nowhere at
+# all, which is the same claim one surface earlier.
+#
+# WHY THIS FIXTURE WAS RIGHT BEFORE THE RULE WAS: at revision 3.4 it
+# asserted something the SPECIFICATION contradicted — S2's opener set
+# ranged over siblings at any depth, so an indented `pattern` inside an
+# aux body would have opened a block. The fixture was right and the rule
+# was wrong, which is what produced structure-layer PARAMETER 3 (the OPEN
+# SUBTREE, r58 ruling R1); this file is that parameter's first
+# regression.
+pattern a+
+ext bench
+  pattern this-is-not-a-pattern
+  config
+    m also-not-a-case
+    provenance
+      source not-a-provenance-record
+      variant not-a-variant
+m "aaa" 0 3

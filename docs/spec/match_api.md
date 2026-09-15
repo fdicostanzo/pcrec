@@ -215,6 +215,20 @@ DFA stamps (verified live on `--no-captures '(?:foo|bar)\z'` and
 "byte-class-bounded"`/`"memchr-bounded"` — the `-bounded` forms §6.3
 already documents for a `\z` view).
 
+**[DD-13b.W23.3] revision (2026-09-15) — one rule, stated where it was
+missing.** §3.1.1 gains the `utf8` advance as NORMATIVE text: *from
+`pos + 1`, past every byte in `0x80`-`0xBF`*, which defines the entry on
+ILL-FORMED input where "the next character boundary" had no single
+reading. The rule is not new behaviour — it is what [M5.0] stage 2's body
+already does — and the block is quoted verbatim from a fresh `-e utf8`
+build of `'a(b|c)+d'`. It is written down because a foreign consumer
+comparing find-all counts against a pcrec artifact — the `mc` production
+in `docs/spec/rxt_format.md` — cannot derive it from prose otherwise.
+One stale clause was corrected in the same paragraph: §3.1.1 called
+`byte` "the only one implemented today" three lines above its own
+statement that [M5.0] stage 2 landed the `utf8` body. No entry point,
+signature or return value changed, and W23 carries no `abi` event.
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -800,9 +814,9 @@ Four consequences a caller can rely on:
   what lets the loop above terminate with no special case.
 - **The result is always strictly greater than `pos`.**
 
-**Under the byte encoding — the only one implemented today — the body IS
-`pos + 1`**, and this is measurement, not intention. The whole definition,
-verbatim from the same artifact:
+**Under the byte encoding the body IS `pos + 1`**, and this is
+measurement, not intention. The whole definition, verbatim from the same
+artifact:
 
 ```c
 /* byte encoding: one byte is one character, so the next boundary after pos
@@ -813,6 +827,45 @@ size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos)
     return pos + 1;
 }
 ```
+
+**UNDER `utf8` THE ADVANCE IS DEFINED ON EVERY INPUT, WELL-FORMED OR
+NOT, AND THE RULE IS NORMATIVE** ([DD-13b.W23.3]). "The next character
+boundary" has no single reading on ill-formed input, and a consumer
+comparing counts against a pcrec artifact needs one — so the byte rule
+the artifacts implement is stated here rather than left to be inferred:
+
+> **From `pos + 1`, advance past every byte in the range `0x80`-`0xBF`,
+> stopping at the first byte outside that range or at `n`.**
+
+So a well-formed character is skipped whole; a truncated or otherwise
+ill-formed sequence degrades to *the next non-continuation byte* rather
+than to a position in the middle of the garbage; and the entry's four
+promises above hold unchanged, including that the result is strictly
+greater than `pos`. The loop is bounded by `n` rather than by a
+well-formed character's maximum of three continuation bytes, which is
+what makes the degradation total rather than partial. Verbatim from a
+`-e utf8` artifact:
+
+```c
+/* utf8 encoding: skip forward over continuation bytes. A well-formed
+ * character's continuations are at most 3, but the loop is bounded by n
+ * rather than by 4 so that ill-formed input degrades to "next
+ * non-continuation byte" instead of to a mid-garbage position. */
+size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos)
+{
+    size_t i = pos + 1;
+    while (i < n && (s[i] & 0xC0) == 0x80) i++;
+    return i;
+}
+```
+
+It is adopted because it is what the emitted artifacts already do — it is
+this entry's own rule, the encoding seam's, and `[K49]`'s retry advance —
+not because it is the most principled reading of UTF-8; a reader who
+wants the principle gets the byte rule anyway, which is the point of
+writing it down. `docs/spec/rxt_format.md`'s `mc` production is the
+consumer that reads this paragraph, and it states the same rule where its
+own author meets it.
 
 **This resolves a caveat this section carried until [M5-SEAM], and the
 history is worth keeping rather than deleting.** The loop's advance used

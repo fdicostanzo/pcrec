@@ -111,6 +111,10 @@ static void usage(FILE *f)
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
+          "  --pattern-esc  the PATTERN operand is the .rxt format's quoted-\n"
+          "                 escape form (\\\" \\\\ \\n \\t \\r \\f \\v \\xHH), decoded by\n"
+          "                 pcrec's own decoder. Lets a multi-line or high-byte\n"
+          "                 pattern be written on one line; \\x00 is refused (K9)\n"
           "  --no-captures  emit a matcher with no capture output (RX_NCAPS 1,\n"
           "                 DFA engine). Captures are ON by default; this is\n"
           "                 the generation axis that recovers the pre-M4.5\n"
@@ -316,6 +320,9 @@ typedef struct {
     int         list_schema;
     int         count_groups;
     int         emit_ir;
+    /* [DD-13b.W23.3] the pattern OPERAND is the `.rxt` format's
+     * quoted-escape form, decoded by pcrec's one decoder (§2.19). */
+    int         pattern_esc;
     int         saw_prefix;
     int         want_help;
     const char *explain;
@@ -387,6 +394,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts && !strcmp(a, "--trace"))
             opt.flags |= PCREC_TRACE;
         else if (!no_more_opts && !strcmp(a, "--emit-ir")) st->emit_ir = 1;
+        else if (!no_more_opts && !strcmp(a, "--pattern-esc"))
+            st->pattern_esc = 1;
         else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [ENG-BREP] the first of D47.3's DENY family. Spelled `-fno-` in the
@@ -1523,12 +1532,41 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    /* [DD-13b.W23.3] `--pattern-esc`: THE OPERAND IS THE `.rxt` FORMAT'S
+     * QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
+     *
+     * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
+     * exists so a multi-line or high-byte pattern is expressible without
+     * multi-line SYNTAX, which keeps every reader's line-oriented loop
+     * intact — and that only pays if the DECODING has one home. `run.sh`
+     * passes the still-encoded text through with this flag rather than
+     * approximating it with `printf %b`, which would be a SECOND escape
+     * vocabulary drifting from this one by construction;
+     * `verify_rxt.py` decodes with the table it already has for subjects,
+     * which is the same table.
+     *
+     * The arena is local and freed on every path out, so the decoded bytes
+     * outlive `pcrec_compile` (which copies what it needs into its own
+     * arena) and nothing outlives this function. */
+    Arena esc = { 0 };
+    if (st.pattern_esc) {
+        char emsg[192];
+        const char *dec = NULL;
+        if (pcrec_rxt_decode_escaped(pattern, &esc, &dec, emsg,
+                                     sizeof emsg) != 0) {
+            fprintf(stderr, "pcrec: --pattern-esc: %s\n", emsg);
+            arena_free(&esc);
+            return 1;
+        }
+        pattern = dec;
+    }
+
     int to_stdout = !strcmp(outpath, "-");
     char *hpath = NULL;
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); return 1; }
+        if (!hpath) { perror("malloc"); arena_free(&esc); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -1540,6 +1578,7 @@ int main(int argc, char **argv)
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
         fprintf(stderr, "pcrec: %s (pattern offset %zu)\n", err.msg, err.pos);
         free(hpath);
+        arena_free(&esc);
         return 1;
     }
 
@@ -1553,5 +1592,6 @@ int main(int argc, char **argv)
     }
     pcrec_output_free(&out);
     free(hpath);
+    arena_free(&esc);
     return rc;
 }

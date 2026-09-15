@@ -18,7 +18,17 @@ SAB_FILE="tests/harness/run.sh"
 SAB_SUITES="rxtsource harness"
 SAB_DESC="run.sh stops resetting cur_flags at a pattern line, so 'flags i' leaks into every following block in the same file"
 SAB_REACH_POP="tests/base/caseless.rxt|^flags |1"
-SAB_COUNT=1
+# [DD-13b.W23.3] RE-ANCHORED, AND THE COUNT MOVED 1 -> 2 FOR A REASON
+# THE ROW'S OWN INTENT REQUIRES. `pattern-esc` is S2's SECOND BLOCK
+# OPENER, so the per-block reset sequence this row plants into now exists
+# TWICE — once in each opener's arm — and a plant landing in only one of
+# them would leave `pattern-esc` blocks resetting correctly, i.e. would
+# plant HALF the hazard the row describes ("cur_flags leaks into every
+# following block"). The two sites are byte-identical for these two
+# lines, which is what lets one BEFORE/AFTER pair cover both; the count
+# is what makes the runner refuse a tree where only one survives. Anchor
+# re-derived from the live source, not from `git show HEAD:`.
+SAB_COUNT=2
 SAB_BEFORE='            cur_is_perr=0
             cur_flags=""'
 SAB_AFTER='            cur_is_perr=0

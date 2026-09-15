@@ -804,3 +804,147 @@ never edited afterwards.
   become dump-driven and TWO-DIRECTIONAL before S241 had a detector at
   all: the plant moves a row OUT of the at-most-one set, so an arm
   checking only that set passes under it completely.
+
+- `w233_report.md` — [DD-13b.W23.3] (2026-09-15, lane w233, opus): THE
+  FOURTEEN PRODUCTIONS. `pattern-esc` + `--pattern-esc`, `provenance`,
+  `variant`, `ext`, the head declarations, `under`/`mc`/`@file:`, §2.22's
+  derived-identifier call binding, the schema's `value` and `constraints`
+  columns read for the first time, eleven fixtures, S240/S245, and the
+  D80 spec delta. Read §4 first: it is **the two defects this step
+  shipped and then found, both by measuring a production against all
+  three legs rather than by reading it**. The sharper one is `under`'s
+  KEY TUPLE — the extractor read a colon that the spelling does not have
+  (`under <convention> <case-line>` is space-separated; leg C REFUSES
+  the colon form by name), so the convention came out empty and every
+  later component slid one place left: two `under` lines differing only
+  in SUBJECT or only in STARTPOS were refused as duplicates **while the
+  refusing fixture went red anyway**, for a reason with nothing to do
+  with the rule. The regression is therefore the ACCEPT half, and the
+  transferable form is that *a refuse-only pair proves a refusal
+  happened and never that it happened for its rule.* The second is
+  `prose_value` reading the whole line on an INDENTED one — `tok_len`
+  stops at the first whitespace byte, so it measured zero — which every
+  W1 caller was structurally unable to see because all of them sat at
+  indent 0.
+  §5 is what neither document named, headed by **the attachment branch
+  holding three mistakes under one sentence** (a deeper indent under a
+  childless kind; nothing open at all; a RAGGED DEDENT — and inside an
+  OPEN SUBTREE the shared sentence named a rule the subtree does not
+  have) and by **the wave tier's population going to zero**, which ate
+  two fixtures and forced W23-S3 arm 4's repair: W23.1's *"a population
+  of ZERO is also a failure here"* conflates the broken-extractor zero
+  with the empty-tier one, and the fix is to assert the EXTRACTOR's
+  health independently and then report the honest zero.
+  §3 is six places the tree and the documents disagree, each with the
+  resolution taken — headed by four aux fixtures that had to become
+  HEADLESS (a FILE-scope production is a head declaration and the head
+  has one parser, so §3.2's "all three ACCEPT" is unavailable at any
+  point in W23 — r59-A2's disposition one production over) and by four
+  design sentences the build measured FALSE (`oracle none <reason>` did
+  not exist; an oracle's engine half was a strict `ident` while
+  `variant`'s testee name was not; `provenance` was not required on a
+  `freq` block; §2.18's sha256-syntax claim is structurally unavailable
+  at this seam, and the `--list-schema` `surface` row that declares the
+  non-coverage ended MID-CLAUSE about to claim the opposite).
+  `make test` and `make mech` are OWED (§6) — a battery held the box for
+  the lane's whole working period.
+
+- `w233a_report.md` — [DD-13b.W23.3a] (2026-09-15, lane w233a, sonnet):
+  `include`'s HARNESS HALF, **PARKED, NOT DONE** — legs A and B are
+  built and verified, leg C is built for the one thing it can do, the
+  three fixtures/W23-S7/S247/the census pin/SW20 are OWED. Read §3
+  first for the OWED list; §2 is the load-bearing finding a fresh
+  agent must not re-litigate: **leg C cannot splice**, structurally,
+  because `include` sits in `parse_rxt`'s `head_words` tuple (it is
+  inherently head-scoped) and the seam ruling's head-bearing refusal —
+  UNCHANGED — already raises an uncaught `ValueError` on any file with
+  an `include` line, in both plain and `--dump` mode, VERIFIED live.
+  §1.10.2's table reads "legs B and C" symmetrically for report/splice/
+  failure-attribution; the tree says leg C's half is discovery
+  SUBTRACTION only, never a three-way block-count comparison — the same
+  r59-A2 disposition w233's own report already recorded for file-scope
+  `ext`, recurring here because `include` cannot be moved to block
+  scope at all.
+  §1.1 is leg A: W23.3 never emitted an `include` ROW at all (§6.3a
+  item 1's "a COLUMN on a row W23.3 already emits" was wrong about the
+  starting state, though right about the SIZE of the fix) —
+  `RXT_DECL_INCLUDE` now does, `value`=path as written, `name`=the
+  RESOLVED REAL PATH, resolved AT PARSE TIME (a deliberate, one-
+  construct exception to "the head parser touches no filesystem",
+  because `--list-source` is the only call the harness ever makes over
+  an `include` line).
+  §1.2 is leg B: entry-set SUBTRACTION (a pre-pass over the whole
+  discovered set, before either dispatch branch) and SPLICE (each
+  entry's closure walked depth-first, fragments INSERTED into `files[]`
+  right after their entry rather than concatenated into one stream —
+  which is what keeps every diagnostic correctly attributed to its own
+  physical file for free, and what makes PROCS>1 correct with no
+  fragment-aware code in the dispatch loop at all). Two real bugs
+  before it worked, both worth reading for the general lesson: caching
+  through `x="$(fn)"` is a no-op (command substitution forks a
+  subshell; the cache write never escapes it) and `cd DIR && pwd` is
+  LOGICAL, not `realpath(3)`'s resolved path (macOS's `/tmp` -> `/private/
+  tmp` symlink silently broke every cross-directory include-target
+  lookup). Verified by hand against six constructed scenarios (flat/
+  nested/cross-file-duplicate/PROCS=2/named-absorbed/corpus-control) —
+  the shipped corpus has zero `include` lines and cannot exercise any
+  of it structurally.
+
+- `w234_report.md` — [DD-13b.W23.4] (2026-09-15, lane w234, sonnet):
+  `--list-source`'s FOUR `#section` blocks (`provenance`/`variants`/
+  `cases`/`aux`), three appended pattern-row columns (`tags`/`oracle`/
+  `esc`), four new head-row kinds, and the FORMAT-READER SURVEY's own
+  R5/R6 repair (both made SECTION-AWARE, never a hand-written section
+  list). Read §1.4 first: **six PRE-EXISTING checks needed the same
+  repair** the moment a fixture's own case line legitimately grew a
+  `#section cases` block, each reproduced as a genuine regression
+  against a scratch build of the branch point before being attributed
+  to this change. §1.5 is S242/S243/S246 and W23-S6, worth reading for
+  two corrections the hand-verify caught rather than the first draft: S242's
+  actual symptom is a stronger, TOTAL refusal (not the block_line drift
+  a first reading predicts — the root frame's `f->base` only reaches
+  BLOCK scope through the opener transition at all), and S246 variant
+  (a)'s first draft sabotaged the WRONG scope's `ext` row (FILE instead
+  of BLOCK, caught because `aux_identity_edited.rxtin`'s own two `ext`
+  blocks are block-scoped and the plant went silently unexercised). §2
+  is a FINDING: the withdrawal-absence check's data arm cannot tell a
+  withdrawn `config`-body directive from an `ext` BODY line spelled the
+  same way — this lane's own first-draft fixture used `testee`,
+  `format_design.md`'s OWN worked example's exact word, and tripped it;
+  fixed by renaming rather than narrowing the check (a design question
+  left to the manager). §3 dispositions (does not resolve) the
+  `w233_report.md` §3.2 OPEN ITEM on a `pattern-esc` row's dump VALUE
+  disagreement between leg A and legs B/C — population zero, the `esc`
+  column added here answers a different question, and which of the two
+  should change is escalated rather than guessed. 191/0/0 (was 184/0/0
+  at the branch point), census 210/3936/28943 unchanged, no `abi` event.
+
+- `w235_report.md` — [DD-13b.W23.5] (2026-09-15, lane w235, sonnet): THE
+  FINAL W23 STEP. Two manager rulings implemented — R-A (the pattern-esc
+  dump-value seam, A-vs-(B==C) excluded by design, given its first
+  non-zero population by `pattern_esc_value_seam.rxtin`) and R-B (the
+  withdrawal-absence check's data arm narrowed STRUCTURALLY, an indent
+  stack tracking attachment under an `ext` opener rather than a keyword
+  list, restoring `aux_identity.rxtin`'s `testee` spelling and reverting
+  w234's `ref` workaround) — plus `mc_illformed_utf8.rxtin` (SW7's owed
+  W23.3 fixture) and W23-S5, the `all-readers` population check
+  (receipts written only when all three legs actually ran, by two
+  functions and nothing else). Read §2 for two NEW findings the dry run
+  surfaced: leg C refuses any file whose FIRST block opens with
+  `pattern-esc` (S242's own finding one leg over, meaning
+  `opener_pattern_esc_pair.rxtin` has never been three-leg-reachable
+  either), and `--source`/`--target`'s config resolution silently
+  prefers a target's `engine vm` over an explicit CLI `--engine=dfa`
+  with no diagnostic (`cli/main.c:890-891`) — exactly the "silence is
+  not acceptable" shape bench check F2 asks about. §3 is the bench
+  41-check dry run itself: 25 of 41 runnable, 20 green, 3 red with an
+  already-documented cause (A1/A2/B5, each reproducing `w23_impl.md`
+  §5's own predicted findings live), 1 red and new (F2), 1 the
+  dissolved-premise shape (B6), 16 not-runnable (missing tool/sibling
+  repo, or the box constraint on G1). §4 is the consolidated
+  `w23_impl.md` correction list gathered from all five step reports
+  (two real corrections, both already recorded in their own reports:
+  w232's `indent_under_m.rxtin` class, w233a's `include` two-leg
+  symmetry). 201/0 (was 191/0), mech field validation 256/256 valid
+  including new sabotage S248 (a withdrawn `config testee` row's return,
+  hand-verified DETECTED against the parser arm alone).

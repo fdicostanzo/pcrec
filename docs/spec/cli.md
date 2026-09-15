@@ -143,6 +143,36 @@ reference oracle's version, exactly as the property tables are. A libpcre2 at
 a different Unicode version will disagree about recently-assigned code points;
 that is a re-measurement event under D26, not a defect.
 
+### `--pattern-esc` — the pattern operand in `.rxt` escaped form
+
+**[DD-13b.W23.3]** Takes the PATTERN OPERAND as double-quoted, escaped
+text and decodes it before compiling. The vocabulary is the `.rxt`
+format's own subject vocabulary and no other — `\"` `\\` `\n` `\t` `\r`
+`\f` `\v` `\xHH` — decoded by the very function that decodes a
+`pattern-esc` block, so this flag, `--source` and `--list-source` cannot
+drift into three tables that only agree today.
+
+```
+pcrec --pattern-esc -o out.c '"a\tb\x41"'     # compiles the 4 bytes a<TAB>bA
+```
+
+- **The operand must be double-quoted**, quotes included, and an operand
+  that is not is refused by name. An unescaped `"` inside the text, a
+  trailing backslash, an unknown escape, and `\x` without exactly two
+  hex digits are each refused with what was wrong; every refusal exits
+  `1` before anything is compiled or written.
+- **`\x00` is refused, naming K9**: the compile entry takes no pattern
+  length, so a NUL-bearing pattern would compile as its prefix and report
+  success. The diagnostic states the lifting trigger
+  (`rx_info.pattern_len`) rather than leaving the limit silent.
+- **It composes with everything and changes only how the OPERAND is
+  read.** `--` still ends option parsing, and the artifact's own header
+  comment carries the DECODED pattern. In a mode that takes no pattern
+  operand (`--source`, any listing surface) the flag has nothing to
+  decode and is inert.
+- `docs/spec/rxt_format.md`'s `pattern-esc` production is the format half
+  and owns the escape table itself.
+
 ### `--emit-main` — a runnable binary
 
 Appends a standalone `main()` taking the subject as `argv[1]`
@@ -643,9 +673,12 @@ pattern is the same file format whichever dialect the pattern is in.
 ### `--list-source FILE`
 
 The `.rxt` SOURCE file named by the option's own value, AS WRITTEN: one
-row per head declaration and per pattern block, in FILE ORDER, fifteen
-columns. **The full column table, the `kind` vocabulary, the escaping
-rule and the "as written, never resolved" contract are
+row per head declaration and per pattern block, in FILE ORDER, nineteen
+columns, **plus [DD-13b.W23.4]'s four `#section` blocks
+(`provenance`/`variants`/`cases`/`aux`) emitted unconditionally when
+non-empty, always after the main table**. **The full column table, the
+`kind` vocabulary, every section's own column list, the escaping rule and
+the "as written, never resolved" contract are
 `docs/spec/rxt_format.md`'s** — this section does not restate them.
 
 It takes its file as the option's VALUE rather than as the bare

@@ -1,0 +1,18 @@
+# [DD-13b.W23.3] S-R2's ACCEPT half. A `provenance` record whose fidelity
+# is `verbatim` owes no `adaptation` line, and this file is what says so
+# — the pair's refusing half (`prov_adapted_no_adaptation.rxtin`) is
+# satisfiable by a parser that simply refuses every `provenance` record,
+# which is why the accept control is not optional.
+#
+# WHY THE PAIR LIVES HERE AND NOT IN THE BENCH (r57 S-M3): the bench's
+# own acceptance checks C5/C6 test this same rule in the OTHER repo, and
+# a sabotage row planted into pcrec whose only detector is in pcrec-bench
+# would score UNDETECTED in `make mech` and be RIGHT to — a row's
+# detector must live in this repo's matrix.
+pattern a+
+provenance
+  source authored
+  retrieved 2026-09-15
+  license MIT
+  fidelity verbatim
+m "aaa" 0 3

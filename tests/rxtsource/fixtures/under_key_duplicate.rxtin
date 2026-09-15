@@ -1,0 +1,21 @@
+# [DD-13b.W23.3] `under`'s duplicate refusal — the other half of
+# `under_key_distinct.rxtin`, and neither is an instrument without the
+# other.
+#
+# The two lines below agree on ALL FOUR key components (convention
+# `pcre2`, kind `m`, no startpos, subject `"ab"`) and disagree only on
+# the EXPECTATION, which is the one thing two `under` lines are never
+# allowed to disagree about: a second correct answer per convention is
+# the production's whole point, and two answers under ONE convention is
+# a contradiction rather than a second answer. Class `schema-constraint`
+# — the line attached correctly, `under` is legal here, and what failed
+# is a DECLARED rule (`unique-by under-key`) over the scope.
+#
+# LEG A ONLY: `under`'s schema row reads `validated_by: pcrec`, and legs
+# B and C treat every `under` line as a COUNTED, LABELLED SKIP (§2.17) —
+# scoring a second correct answer is the consumer's act, not the
+# harness's. Claiming three legs here would be §3.3's named failure.
+pattern a|ab
+under pcre2 m "ab" 0 1
+under pcre2 m "ab" 0 2
+m "ab" 0 1

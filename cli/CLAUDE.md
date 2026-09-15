@@ -280,3 +280,29 @@ FILE FORMAT, which has no flavour axis at all — a flavour is a
 PATTERN-syntax dialect (SR-7), and the file format that carries a pattern
 is the same format whichever dialect the pattern is in. Contract:
 `docs/spec/cli.md` §2 and `docs/spec/rxt_format.md`'s schema section.
+
+## [DD-13b.W23.3] `--pattern-esc`
+
+The PATTERN operand is taken in the `.rxt` format's own quoted-escape
+form and decoded by `pcrec_rxt_decode_escaped` (`src/parse/rxt_source.c`)
+before anything else sees it. **It is in `--help`**, unlike the deny
+family above, and the difference is the point: those are testing and
+tuning axes, this is an INPUT SPELLING a user chooses.
+
+**ONE DECODER, THREE CALLERS** — this flag, `--source` and
+`--list-source` — which is the whole reason the flag exists rather than
+the harness approximating the decode with `printf %b`. A second escape
+vocabulary drifts from the first by construction (D24's shape at the
+lexer), and `format_design.md` §2.19 rules it out by name: *no bash
+decoding anywhere*.
+
+`\x00` is refused by name citing K9 (`docs/dev/known_issues.md`): the
+compile entry takes no pattern length, so a NUL-bearing pattern would
+compile as its prefix and report SUCCESS. The refusal names the lifting
+trigger (`rx_info.pattern_len`'s API half), so the limit is a known one
+with an owner rather than a silence.
+
+The flag lives in `CliState`'s TAIL, past `opt`, so `cli_extras_clean`
+refuses it inside a `config` block's `pcrec` line with no edit — a
+definition that decoded its own pattern differently from its caller is
+exactly the escape that span exists to close.

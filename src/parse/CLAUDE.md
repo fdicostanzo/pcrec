@@ -1355,6 +1355,139 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   MEASURED at the landing: `--list-source` byte-identical on all 210
   corpus files against a scratch build of the branch point.
 
+  **[DD-13b.W23.3] THE OTHER TWO SCHEMA COLUMNS ARE READ NOW, AND THE
+  FOURTEEN PRODUCTIONS RIDE THEM.** W23.1 declared `value` and
+  `constraints` and nothing consumed either, which the `.def`'s own
+  header said rather than implying otherwise. This step is where both
+  become load-bearing, and the placement is forced rather than chosen:
+
+  - **`value` at the LINE** (`check_value_shape`), because a shape is a
+    property of the line's own text. It asserts only what is UNIFORM
+    across every row carrying a shape — `none` takes no value, `int`
+    takes digits, everything but `prose` takes a non-empty one — and the
+    PRECISE grammar of a token, a list or a qualified line stays with the
+    production that owns it. `lib "a path"` is a `token` row whose value
+    carries a space, so a generic no-whitespace test would refuse a
+    shipped spelling; a check that over-claims is worse here than one
+    that under-claims, because `--list-schema` publishes the column and a
+    reader would act on it.
+  - **`constraints` at the FRAME CLOSE** (`frame_constraints`), because
+    every condition names a SIBLING and siblings arrive in any order —
+    `url` may precede the `source authored` that forbids it — and because
+    `required` cannot be answered before the last line of the scope has
+    been read. A frame closes at THREE sites (a lesser indent pops it, a
+    new group replaces its contents, end of file), and the third is the
+    one a reader misses.
+  - **`closed` and `unique-by` at the LINE** (`line_constraints`),
+    because their refusals name an offending VALUE and a value has a
+    line.
+
+  **THE THREE CLAUSE SPELLINGS ARE DECLARED IN THE `.def`'s HEADER**, not
+  remembered here: `closed <selector> [member…]` (no members means the
+  set is FILE-declared by a `vocabulary` line, and with no such line the
+  key is FREE — §2.15's compatibility rule), `closed per-key` (a LIST of
+  `key=value` items, each item's own key selecting the set), and
+  `<field> <op> [value]` with `parent` as the ONE reserved field name,
+  reading the ENCLOSING scope so one `provenance` record serves two
+  parents instead of being two records that rhyme.
+
+  **`under`'s KEY TUPLE IS THE ONE NAMED PARSER-CODE EXCEPTION**
+  (§2.25.3) and it shipped WRONG for one commit: `under_key` read the
+  convention with `strchr(v, ':')` on a spelling that has no colon
+  (`under <convention> <case-line>`, space-separated — leg B's arm has no
+  colon and leg C REFUSES the colon form by name), so the convention came
+  out empty and every later component slid one place left. Two `under`
+  lines differing only in SUBJECT or only in STARTPOS were refused as
+  duplicates while the refusing fixture went red for an unrelated reason.
+  `under_key_distinct.rxtin` is the accept half that now cannot pass
+  while the tuple is collapsed; the lesson is that a refuse-only pair
+  proves a refusal happened and never that it happened for its rule.
+
+  **`pcrec_rxt_decode_escaped` IS THE FORMAT'S ONE DECODER**, called by
+  `pattern-esc`, by `--source`/`--list-source` through it, and by the
+  CLI's `--pattern-esc`. `\x00` is refused by name citing K9.
+
+  **`prose_value` SUBTRACTS THE INDENT BEFORE READING ITS VALUE**, and
+  that one line is a bug every W1 caller was structurally unable to see:
+  `tok_len` stops at the first whitespace byte, so on an INDENTED line it
+  measures ZERO and `line_value` hands back the whole line including its
+  kind. Every W1 prose row sat at indent 0; a `variant`'s `note |` sits
+  at indent 2, and without the subtraction its region silently does not
+  open and its own continuation reaches S1 as an orphan.
+
+  **THE ATTACHMENT BRANCH HELD THREE MISTAKES UNDER ONE SENTENCE.**
+  "Indented line continues nothing (the declaration above it takes no
+  continuation)" is true of a deeper indent under a childless kind and
+  false in two other ways — nothing is open at all (a blank, a comment or
+  the file's start closes every attachment), and a RAGGED DEDENT closing
+  back to a depth nobody opened. Inside an OPEN SUBTREE, where no kind
+  takes or refuses continuation, the shared sentence named a rule the
+  subtree does not have. All three legs carry all three sentences now.
+
+  **[DD-13b.W23.4] THE FOUR `#section` RECORD TYPES ARE ACCUMULATED HERE
+  AND DUMPED HERE**, and nowhere else in the tree ever reads them:
+  `RxtProv`/`RxtVariant`/`RxtCase`/`RxtAux` (internal.h), one growable
+  array each on `RxtSource`, in FILE ORDER. W23.3 taught this file to
+  RECOGNISE `provenance`/`variant`/`ext`/the eight CASE kinds and
+  deliberately stored nothing beyond validation (§2.2's own step
+  boundary); this is where that data starts being kept.
+
+  **PROVENANCE/VARIANT: captured at FRAME CLOSE**, inside
+  `RXT_CLOSE_FRAME` (`close_section_frame`) — the same point
+  `frame_constraints` already runs at, so a record missing a `required`
+  field never reaches the push at all. `RxtFrame` gained `open_line`/
+  `open_value` (the sub-block's own opener line and scalar — a
+  `provenance` line's `line`, a `variant <testee>`'s `line` AND
+  `testee`), refreshed on EVERY dispatched row via two new loop locals
+  (`last_row_line`/`last_row_value`) so whichever row a following
+  indented line attaches under, they are always that opener's own facts.
+  `frame_field()` is `cond_holds`'s own (scope, kind-name) lookup shape,
+  reused rather than re-invented, so a constraint's field reference and
+  the dump's own field read cannot disagree about what a name means.
+
+  **AUX: captured PER LINE, not at frame close** — `#section aux`'s own
+  normative fact that row order is source order falls out for free from
+  pushing one row as each line is read, rather than buffering a subtree
+  and flushing it. The opener row (depth 0) is pushed directly at the
+  `ext`/`freq` dispatch arm (both FILE and BLOCK scope), unconditionally,
+  even when the body turns out empty — "the opener line IS the block's
+  identity" (format_design §2.24 at 3.4.1) has no other way to hold when
+  nothing is ever indented under it. `RxtFrame` gained `depth`/
+  `consumer` (tree-frame-only, inherited unchanged from parent to child
+  push) and reuses `open_line` as the level's own `parent_line` — the
+  SAME two fields provenance/variant use for a different purpose, on the
+  header comment's own "never both apply to the same frame" rule. A
+  SEPARATE local, `last_aux_line`, tracks "the line of the most recently
+  emitted aux row" for a DEEPER push to read as its `parent_line`;
+  provenance/variant's `last_row_line` is not reused for this because aux
+  content bypasses the generic schema-dispatch block entirely (`if
+  (f->tree) {...}` intercepts BEFORE it).
+
+  **CASE LINES: `parse_case_body`, DELIBERATELY NOT A SECOND VALIDATOR.**
+  Every CASE-kind row is `validated_by: none` (`check_value_shape`'s own
+  CASE arm returns unconditionally), and §2.2's own step boundary for
+  this delivery reads "W23.4 adds no production and no refusal" — so the
+  parser is a best-effort STRUCTURAL split of the documented grammar
+  (`docs/spec/rxt_format.md`'s case-line and "Named subjects" sections):
+  a shape it does not recognise leaves the corresponding `RxtCase` field
+  NULL rather than raising anything. `is_case_kind` gates an `under`
+  line's wrapped tail the same way, so a malformed wrapped kind is not
+  misparsed into some real kind's fields. `startpos`'s "0" default
+  covers `m`/`n`/`mc`/`gu` (all four are "search from byte offset 0" —
+  `gu` was missed in the FIRST draft, since its own grammar line shows no
+  explicit `<P>` form and it reads, at a glance, like `g`/`gp`'s
+  genuinely-no-startpos shape; caught by hand-testing a `gu` line's dump
+  row before committing, not by a review). `g`/`gp` carry NO subject spec
+  of their own (they attach to a preceding `m`/`ms` case) and their
+  `start`/`end` fields admit a leading `-` for `RX_UNSET`'s own `-1 -1`
+  spelling, which no other kind's numeric fields do.
+
+  **`section_count()`, `tests/rxtsource/run_rxtsource_tests.sh`'s own
+  shared helper (not this file's), is what every W23.4 fixture check
+  routes through** rather than growing five copies of one section-
+  boundary-tracking awk script. S246's second variant plants against it
+  directly — see that sabotage row and `tests/rxtsource/CLAUDE.md`.
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be
@@ -1400,6 +1533,36 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   **A NO-OP WHEN `cx->defs` IS NULL**, by an early return, which is what
   makes every non-`--source` artifact byte-identical to before this file
   existed and the identity gate's comparison (A) a real check of it.
+
+  **[DD-13b.W23.3, D100] A BY-NAME CALL BINDS THROUGH THE DERIVED
+  IDENTIFIER** (`format_design.md` §2.22). `def_by_name` and
+  `bound_by_name` map every definition's name through
+  `pcrec_rxt_prefix_from_name` — its ONE home, the same function
+  `target = <name>` derives a C prefix with — and compare THAT, so
+  `(?&cls_upto_64)` reaches `name cls-upto-64`. §4.5 item 4's mechanism
+  was MEASURED unusable without it: a call goes through PCRE2's own
+  group-name grammar, which refuses `-` and `.`, and every id in all five
+  pcrec-bench sets is a hyphenated slug. It is a SECOND KEY on the SAME
+  set, built with the same function, consulted by the same lookup — no
+  new pass, no new namespace, and no change to the name grammar's three
+  readers.
+
+  **TRUNCATION IS UNREACHABLE BY CONSTRUCTION RATHER THAN BY AN
+  ORDERING.** §2.22 states the hazard against the mapping's OTHER
+  consumer, which derives into a fixed `char def[RXT_TARGET_DEF_MAX + 1]`
+  and is safe only because `parse_target` refuses an over-long name two
+  refusals earlier — an order nobody had written down as a rule. This
+  consumer sizes the destination at `strlen(name) + 1`, the mapping's own
+  documented contract, so there is no length at which two names collide
+  by being cut. The 128-byte CALLABILITY bound is a separate real fact
+  and is refused by name.
+
+  **EXACT SPELLING DOES NOT WIN**: `x_y` beside `x-y` is a refusal naming
+  BOTH and the shared identifier. "Exact" is only the identity case of
+  the same mapping, and a tie-break would make the mapping's
+  non-injectivity free exactly where it bites. That NARROWS the format
+  (§1.6.1a case (5), a CHOSEN narrowing, measured population 0 in both
+  repos), and nothing is refused at DECLARATION time.
 
 - **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
   axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the

@@ -23,7 +23,7 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-families` | the construct-family index (D71 item 3) | conforming producer today |
 | `--list-axes` | the optimization-axis registry ([CHK-2] piece 1) | conforming producer today |
 | `--list-limits` | the numeric-limits table (D90/[LIM-1]) | conforming producer today |
-| `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today |
+| `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today; gained the Sections mechanism at [DD-13b.W23.4] (`provenance`/`variants`/`cases`/`aux`, emitted unconditionally when non-empty, always after the main table) |
 | `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
@@ -116,6 +116,16 @@ single-table dump may stay anonymous, but a multi-section one may not
 leave one section unnameable: consumer rule 4 requires a reader to SELECT
 its section by name, and an anonymous first section is the one table no
 conforming consumer can ask for.
+
+**[DD-13b.W23.4] `--list-source` IS THE MECHANISM'S SECOND PRODUCER, AND
+THE FIRST WHOSE MAIN TABLE STAYS ANONYMOUS WHILE GAINING NAMED SECTIONS
+AFTER IT** (`provenance`/`variants`/`cases`/`aux`) — a shape rule 2's own
+wording already permits ("a single-table dump may stay anonymous") but
+`--list-schema` never exercised, since both of ITS sections are named.
+`--list-source`'s own main table pre-dates the Sections mechanism by two
+steps ([DD-13b.W1.1]) and stays unnamed for the same backwards-
+compatibility reason a pre-existing table always may; only the FOUR
+BLOCKS APPENDED AFTER IT are named, per rule 3.
 
 ## The checks ([SR-11] lands these)
 

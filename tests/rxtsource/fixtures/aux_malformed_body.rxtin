@@ -1,0 +1,38 @@
+# [DD-13b.W23.3] D99's PARENTHESIS AS A CHECK: an aux block is parsed
+# STRUCTURALLY, so a malformed one is a LOCAL error and cannot corrupt
+# what follows.
+#
+# The `weight` line below is mis-indented: at indent 3 it is SHALLOWER
+# than `seed` (5) and DEEPER than `roster` (2), so it closes back to a
+# level that was never open and attaches to nothing. All three legs
+# refuse with class `structure-attachment`, naming the MIS-INDENTED LINE.
+#
+# THE SHAPE HAD TO BE A RAGGED DEDENT AND NOT A DEEP INDENT, which is a
+# fact about the OPEN SUBTREE worth stating where the fixture is: inside
+# a subtree ANY deeper indent is a legal child, because the subtree has
+# no rows and therefore no kind that "takes no continuation". The first
+# version of this file indented a line further than its neighbour and was
+# ACCEPTED — correctly. What a free tree can still get wrong is closing
+# back to a level nobody opened, and that is the one structural error an
+# aux body has left.
+#
+# HEADLESS ON PURPOSE, so all three legs can answer: `ext` at BLOCK scope
+# is a body line, where legs B and C have their own parsers. The FILE
+# scope is the head and the head has one parser, which is why
+# `aux_arbitrary_keys.rxtin` is leg A only.
+#
+# THE ASSERTION THAT MATTERS IS THE SECOND HALF: the `pattern b+` block
+# below is NOT implicated. A refusal that names the right line proves the
+# error is local, which is the entire argument for parsing an aux body's
+# STRUCTURE rather than treating it as opaque bytes — opaque bytes have
+# no line to blame and no end anyone can find.
+pattern a+
+m "aaa" 0 3
+ext bench
+  roster pcre2 re2
+     seed 20260915
+   weight 3
+  policy strict
+
+pattern b+
+m "bbb" 0 3

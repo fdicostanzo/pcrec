@@ -20,7 +20,10 @@
 SAB_ID="S202-rxt-manifest-column-dropped"
 SAB_FILE="src/parse/rxt_source.c"
 SAB_SUITES="rxtsource"
-SAB_DESC="the 'encoding' name is removed from --list-source's column list, so the emitted header declares 14 columns while every data row still carries 15 fields; the rows are unchanged and only the manifest can see it"
+SAB_DESC="the 'encoding' name is removed from --list-source's column list, so the emitted header declares 18 columns while every data row still carries 19 fields; the rows are unchanged and only the manifest can see it"
+# [DD-13b.W23.4] STALE-COUNT RE-STATEMENT (w23_impl.md §6.4 item 6): 19
+# main-table columns (`kind`..`esc`) is this pin's live number, re-derived
+# rather than carried forward from the "14"/"15" an earlier pin had.
 SAB_COUNT=1
 SAB_BEFORE='    "features_only", "encoding", "engine", "budget_steps", "budget_frames",'
 SAB_AFTER='    "features_only", "engine", "budget_steps", "budget_frames",   /* SABOTAGE S202 */'

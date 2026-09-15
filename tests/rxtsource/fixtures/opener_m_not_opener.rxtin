@@ -1,0 +1,10 @@
+# [DD-13b.W23.4] S243 (S-R4b)'s own detector: one block, two `m` case
+# lines. On the shipped schema `m` is NOT a block opener, so this is one
+# `pattern` row and two #section cases rows. Under S243's plant (a THIRD
+# member added to `opens_group`, `m`) each `m` line closes the block
+# above it and opens a NEW one — three `pattern` rows and ZERO case
+# rows, since every `m` line is consumed as an opener rather than
+# dispatched as a case.
+pattern a
+m "x" 0 1
+m "y" 0 1
