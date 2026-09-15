@@ -729,6 +729,20 @@ survives this fold-in.
 | 6 | **NAMED-AND-ABSORBED**: a file both named on the command line and included by another entry in the same run is counted ONCE, under the includer, and the summary says `named, absorbed into <entry>` | — | the one case where the subtraction must REPORT rather than silently drop |
 | 7 | **FOURTH FAILURE CLASS**: an unresolved include, a duplicate include in one closure, and a cycle are RESOLUTION failures — reported separately in the summary, and scored as a pattern-compile failure for the block (§2.11) | raises it | reports it in the new class |
 
+**CORRECTED AT THE W23.3a MERGE (2026-09-15, manager, lane w233a's
+ruled finding — w233a_report.md §0/§2): rows 3-7's "legs B and C"
+column overstates leg C.** An include-bearing file is HEAD-BEARING by
+construction (`include` is a head production), and the seam ruling's
+head-bearing refusal in `verify_rxt.py` — unchanged, r59-A2's own
+disposition class — already refuses it, so **leg C's half is rule 3's
+discovery subtraction ONLY**; rules 4-7's splice/tally/absorbed/fourth-
+class cells are LEG B's alone, and W23-S7's acceptance ("the three
+legs' block counts are equal" as §6.3a first worded it) is a TWO-leg
+(A/B) comparison, with `include_dup_path` through single-leg
+`check_refusal` on `dup_head_description`'s own precedent. The table
+below is retained as revision 1.1 wrote it; read its B/C cells for
+rules 4-7 as "leg B".
+
 **Rule 2 is the design decision of this fold-in and it needs its
 reason.** `--list-source` is deliberately AS-WRITTEN — **CITED**,
 `rxt_source.c:1388-1389`: *"resolution is a third thing only pcrec
