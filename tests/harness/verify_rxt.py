@@ -663,7 +663,17 @@ def parse_rxt(path):
                     "head grammar has one parser, pcrec's `--list-source`. A "
                     "head-bearing .rxt file is not verifiable by this script "
                     "in this build (DD-13b W1.1; W1.3 closes it)")
-            if first != 'pattern':
+            # [RULEFIX, 2026-09-15] `pattern-esc` is S2's SECOND block
+            # opener (format_design.md §2.19, the schema table's own
+            # `opens_group` column) -- wherever `pattern` may open the
+            # first block of a file, `pattern-esc` may too. This leg used
+            # to refuse a file whose FIRST block opened with `pattern-esc`
+            # (Frank's ruling, w235 finding 1: FIX, not a documented seam)
+            # -- legs A and B both accepted it. The `pattern-esc` ARM
+            # below still reports the block's `pattern` column AS WRITTEN,
+            # never decoded (the R-A seam, unchanged and ruled separately
+            # -- see that arm's own comment).
+            if first not in ('pattern', 'pattern-esc'):
                 _fail(path, lineno, 'unknown-token-in-scope',
                       f"'{first}' line before any pattern block -- a body "
                       "directive has no open block to attach to (matches "
