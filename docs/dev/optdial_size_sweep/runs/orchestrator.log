@@ -82,3 +82,15 @@ entry files: 209
 fragments spliced: 0
 parallel: 209 of 209 file workers reported (PROCS=8)
 run_sweep.sh: === pass offset_skip finished rc=0, 956s,     3478 size rows ===
+run_sweep.sh: WIP-committed offset_skip
+
+run_sweep.sh: === pass anchored_dfa (RXTFLAGS="-fno-anchored-dfa") starting 21:29:35 ===
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 3478
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
+run_sweep.sh: === pass anchored_dfa finished rc=0, 945s,     3478 size rows ===

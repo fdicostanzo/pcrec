@@ -1,0 +1,1 @@
+[MACPORT] CC=gcc-16 (default 'gcc' is not GNU gcc on this box; tests/lib/cc_resolve.sh)
