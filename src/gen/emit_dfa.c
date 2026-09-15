@@ -5885,7 +5885,18 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
             kw = "else if";
         }
     }
-    if (edges) sb_printf(c, "%s  %s:\n", ind, lv);
+    /* [PORTFIX] THE LABEL IS FOLLOWED BY AN EMPTY STATEMENT, ALWAYS. Where
+     * `f->view->emit` is non-NULL its first line is `view_decl`'s
+     * declaration (`<dir>_view_state = <dir>_state;`) — a label immediately
+     * followed by a C DECLARATION with no statement between, which gcc
+     * accepts as a long-standing extension under `-std=gnu11` and clang 21
+     * rejects as `-Wc23-extensions` (anticipating C23's relaxation of the
+     * "label must be followed by a statement" rule), an error under the
+     * harness's own `-Werror` (docs/dev/lanes/anchtriage_report.md §1). The
+     * `;` costs nothing on every other path — where the view is `none` or
+     * the next line is already a statement — and removes the hazard for
+     * good rather than only at today's one reproduced site. */
+    if (edges) sb_printf(c, "%s  %s:;\n", ind, lv);
     if (f->view->emit) f->view->emit(c, f);
     if (f->acc->emit_after_view) f->acc->emit_after_view(c, f);
     f->acc->emit_tail(c, f);
@@ -5930,7 +5941,12 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * The alternative idiom in this file, `__attribute__((unused))` on the
      * label (`<p>_dead`'s), would say "nothing may jump here" of a label that
      * IS jumped to on the other half of the population. */
-    if (seedhead) sb_printf(c, "%s  %s:\n", ind, le);
+    /* [PORTFIX] Same reason as `lv`'s label above: nothing today emits a
+     * declaration as the first line after THIS label (`f->acc->emit_top` is
+     * an `if`, and `f->pf->emit`'s first line is always a `//` comment), but
+     * the `;` is free and closes the class off rather than leaving it to the
+     * next form that starts with a local. */
+    if (seedhead) sb_printf(c, "%s  %s:;\n", ind, le);
     /* The head's own accept probe. It is the one loop-top statement the edge
      * path genuinely REPLAYS: an edge whose class test fails advances nothing
      * and changes nothing, so without this a head's accepting position would
