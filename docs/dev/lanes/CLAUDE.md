@@ -804,3 +804,47 @@ never edited afterwards.
   become dump-driven and TWO-DIRECTIONAL before S241 had a detector at
   all: the plant moves a row OUT of the at-most-one set, so an arm
   checking only that set passes under it completely.
+
+- `w233_report.md` — [DD-13b.W23.3] (2026-09-15, lane w233, opus): THE
+  FOURTEEN PRODUCTIONS. `pattern-esc` + `--pattern-esc`, `provenance`,
+  `variant`, `ext`, the head declarations, `under`/`mc`/`@file:`, §2.22's
+  derived-identifier call binding, the schema's `value` and `constraints`
+  columns read for the first time, eleven fixtures, S240/S245, and the
+  D80 spec delta. Read §4 first: it is **the two defects this step
+  shipped and then found, both by measuring a production against all
+  three legs rather than by reading it**. The sharper one is `under`'s
+  KEY TUPLE — the extractor read a colon that the spelling does not have
+  (`under <convention> <case-line>` is space-separated; leg C REFUSES
+  the colon form by name), so the convention came out empty and every
+  later component slid one place left: two `under` lines differing only
+  in SUBJECT or only in STARTPOS were refused as duplicates **while the
+  refusing fixture went red anyway**, for a reason with nothing to do
+  with the rule. The regression is therefore the ACCEPT half, and the
+  transferable form is that *a refuse-only pair proves a refusal
+  happened and never that it happened for its rule.* The second is
+  `prose_value` reading the whole line on an INDENTED one — `tok_len`
+  stops at the first whitespace byte, so it measured zero — which every
+  W1 caller was structurally unable to see because all of them sat at
+  indent 0.
+  §5 is what neither document named, headed by **the attachment branch
+  holding three mistakes under one sentence** (a deeper indent under a
+  childless kind; nothing open at all; a RAGGED DEDENT — and inside an
+  OPEN SUBTREE the shared sentence named a rule the subtree does not
+  have) and by **the wave tier's population going to zero**, which ate
+  two fixtures and forced W23-S3 arm 4's repair: W23.1's *"a population
+  of ZERO is also a failure here"* conflates the broken-extractor zero
+  with the empty-tier one, and the fix is to assert the EXTRACTOR's
+  health independently and then report the honest zero.
+  §3 is six places the tree and the documents disagree, each with the
+  resolution taken — headed by four aux fixtures that had to become
+  HEADLESS (a FILE-scope production is a head declaration and the head
+  has one parser, so §3.2's "all three ACCEPT" is unavailable at any
+  point in W23 — r59-A2's disposition one production over) and by four
+  design sentences the build measured FALSE (`oracle none <reason>` did
+  not exist; an oracle's engine half was a strict `ident` while
+  `variant`'s testee name was not; `provenance` was not required on a
+  `freq` block; §2.18's sha256-syntax claim is structurally unavailable
+  at this seam, and the `--list-schema` `surface` row that declares the
+  non-coverage ended MID-CLAUSE about to claim the opposite).
+  `make test` and `make mech` are OWED (§6) — a battery held the box for
+  the lane's whole working period.
