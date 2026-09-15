@@ -120,7 +120,13 @@ between its summary and its trailing sub-checks; NOT trusted as green,
 re-runs with the fixed env; (3) whether darwin `make san` is now
 FEASIBLE end-to-end is being measured (first fixed-env battery run,
 2026-09-14) — if still infeasible, option (c)'s "san is a LINUX stage"
-ruling returns to Frank. Fix awaits Frank's morning ratification.
+ruling returns to Frank. **Fix RATIFIED by Frank 2026-09-14 morning.**
+The two-box oddity (LSan no-op on Linux, exit-hang on darwin — no
+working leak tier anywhere, two unrelated-looking defects) drew Frank's
+curiosity, and he DELIBERATELY DECLINED to plan a follow-up item ("so
+off focus that I don't even want to plan it") — this sentence exists so
+no future session invents one; K26's canary obligation remains the only
+standing leak-tier work.
 
 ## K55 — INFRASTRUCTURE (2026-09-09, fifty-seventh session, found by lane axtriage triaging the stage-5 merge battery's `axes` stage, rc=2): `make test-axes` was RED on the just-merged tree — `--engine=vm` reported 3 UNDOCUMENTED refusals with zero answer mismatches
 
