@@ -771,6 +771,34 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in a follow-up commit that
 # touches no src, [ENG-ISL]'s precedent); the manager re-pins to the MERGE
 # when it lands.
+#
+# [PORTFIX], 2026-09-14 — abi 24 -> 25 (or later if a concurrent lane's event
+# serializes ahead; the merging session renumbers, D94): A CLANG-COMPATIBILITY
+# LABEL FIX. Every scan-edge-bearing DFA machine (or VM-hybrid inlined
+# prefilter) gains a trailing `;` on its `scan_views` and `scan_edge` labels
+# (`<p>_<m>_scan_views:` -> `<p>_<m>_scan_views:;`, same for `scan_edge`),
+# closing a label-immediately-followed-by-a-declaration shape (`view_decl`'s
+# `<dir>_view_state` assignment) that gcc accepts as a `-std=gnu11` extension
+# and clang 21 rejects as `-Wc23-extensions` under `-Werror`
+# (docs/dev/lanes/anchtriage_report.md §1) — so (B) re-pins on the whole
+# scan-edge-bearing population; an artifact with NO scan edge at all gains
+# nothing.
+#
+# **(A) IS UNTOUCHED BY THIS ONE TOO, and for the same structural reason
+# [OPT-EDGE] STEP 1's abi-18-19 entry above gives**: `prog_region()` extracts
+# only `goto <p>_L0;` through `<p>_accept:`, the VM's own program, and both
+# labels this row touches live inside `pcrec_emit_dfa_engine` — called from
+# `emit_vm.c`'s prefilter block ABOVE that marker for a HYBRID, and reached
+# with no `goto <p>_L0;` in the file at all for a non-hybrid DFA artifact, so
+# `prog_region()` returns empty on both sides either way.
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in the same commit that
+# lands the label fix, since the fix touches no other src file — opt5i's and
+# ccdiff1's precedent for what a lane branch's pin CANNOT be: a pin must name
+# a commit reachable after the merge, and a lane branch's own commit is not
+# one yet). **LEFT UNSET here, deliberately** — the manager re-pins to the
+# MERGE when it lands; see docs/dev/lanes/portfix_report.md for the commit
+# this event's src changes land in.
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e0fe77f}"
 
 WORKDIR="$(mktemp -d)"
