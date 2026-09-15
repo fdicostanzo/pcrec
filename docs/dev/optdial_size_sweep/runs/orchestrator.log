@@ -46,3 +46,15 @@ fragments spliced: 0
 parallel: 209 of 209 file workers reported (PROCS=8)
 run_sweep.sh: === pass altcls_merge finished rc=1, 990s,     3477 size rows ===
 run_sweep.sh: WARNING: pass altcls_merge exited 1 — see /Users/fdicostanzo/pcrec/worktrees/dialsweep/docs/dev/optdial_size_sweep/runs/altcls_merge.err (still WIP-committing whatever it produced)
+run_sweep.sh: WIP-committed altcls_merge
+
+run_sweep.sh: === pass altcls_factor (RXTFLAGS="-fno-altcls-factor") starting 20:40:36 ===
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 3478
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
+run_sweep.sh: === pass altcls_factor finished rc=0, 1001s,     3478 size rows ===
