@@ -2127,6 +2127,30 @@ else
 $(cat "$WORKDIR/opep.err")"
 fi
 
+# [RULEFIX, 2026-09-15] S242's fixture opens with `pattern-esc`, and
+# `tests/harness/verify_rxt.py`'s leg C used to refuse any file shaped
+# that way (`first != 'pattern'` at its old attachment check, with no
+# `pattern-esc` exemption — MEASURED, and recorded as a finding in
+# w235_report.md rather than fixed there). That made this fixture leg-A
+# only despite it being exactly what S242's own header describes as its
+# population: `opener_pattern_esc_pair.rxtin` was never reachable by a
+# three-leg comparison. Frank's ruling: FIX legs C's recognition (never
+# change what R-A already rules about the VALUE column below — leg C
+# still reports a `pattern-esc` block's text AS WRITTEN). Re-verifies
+# S242's own claim (two blocks, not one) through legs B and C too.
+opep_b_out="$("$TIMEOUT_BIN" 30 bash "$RUNSH" --dump "$FIXRUN/opener_pattern_esc_pair.rxt" 2>"$WORKDIR/opep_b.err")"; opep_b_rc=$?
+opep_c_out="$("$TIMEOUT_BIN" 30 python3 "$VERIFY" --dump "$FIXRUN/opener_pattern_esc_pair.rxt" 2>"$WORKDIR/opep_c.err")"; opep_c_rc=$?
+opep_b_lines="$(printf '%s\n' "$opep_b_out" | awk -F'\t' '$1 == "block" { print $3 }' | tr '\n' ' ')"
+opep_c_lines="$(printf '%s\n' "$opep_c_out" | awk -F'\t' '$1 == "block" { print $3 }' | tr '\n' ' ')"
+if [ "$opep_b_rc" = "0" ] && [ "$opep_c_rc" = "0" ] && \
+   [ "$opep_b_lines" = "8 10 " ] && [ "$opep_c_lines" = "8 10 " ]; then
+    pass "S242 detector, three-legged: a file whose FIRST block opens with 'pattern-esc' is now accepted by leg C too (legs B and C both report blocks at lines 8, 10) — the fix makes opener_pattern_esc_pair.rxt reachable by all three legs"
+else
+    fail "S242 detector, three-legged: leg B or leg C still refuses (or misreads) a file opening with 'pattern-esc':
+  leg B rc=$opep_b_rc blocks='$opep_b_lines' (want '8 10 '): $(cat "$WORKDIR/opep_b.err")
+  leg C rc=$opep_c_rc blocks='$opep_c_lines' (want '8 10 '): $(cat "$WORKDIR/opep_c.err")"
+fi
+
 # [DD-13b.W23.4] S243 (S-R4b): `opener_m_not_opener.rxtin` is one block
 # with two 'm' case lines on the shipped schema.
 omno="$WORKDIR/opener_m_not_opener.dump"
@@ -2734,6 +2758,71 @@ else
 $(cat "$W12/lone.err")"
 fi
 
+# --- [RULEFIX] `--engine` CLI-vs-config precedence (2026-09-15) -------
+#
+# Frank's ruling (w235 finding 2, cli/main.c:890-891): a target's own
+# `engine vm` row silently overrode an explicit CLI `--engine=dfa` with no
+# diagnostic. Fixed so an EXPLICIT CLI `--engine=` wins, with a non-fatal
+# stderr diagnostic naming both sources and both values. Both directions,
+# on `engine_cli_precedence.rxt` (one unnamed block, block-scoped
+# `engine vm`, the implicit `target rx` default this section already
+# established above).
+EP="$FIXRUN/engine_cli_precedence.rxt"
+
+# Direction 1: the CLI is silent (no --engine at all) — the file's row
+# applies, exactly as every OTHER axis's file-wins rule already does, and
+# nothing is printed about it.
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$EP" -o "$W12/ep_silent.c" 2>"$W12/ep_silent.err"; then
+    if grep -q '^#define RX_ENGINE "vm"' "$W12/ep_silent.c" && \
+       [ ! -s "$W12/ep_silent.err" ]; then
+        pass "W1.2 (RULEFIX): CLI silent -> the file's \`engine vm\` row applies, no diagnostic"
+    else
+        fail "W1.2 (RULEFIX): CLI-silent build did not stamp RX_ENGINE \"vm\" cleanly:
+  RX_ENGINE line: $(grep '^#define RX_ENGINE' "$W12/ep_silent.c")
+  stderr (want empty): $(cat "$W12/ep_silent.err")"
+    fi
+else
+    fail "W1.2 (RULEFIX): --source refused the CLI-silent engine-precedence fixture:
+$(cat "$W12/ep_silent.err")"
+fi
+
+# Direction 2: an EXPLICIT, CONFLICTING CLI --engine=dfa must WIN over the
+# file's `engine vm` row (not be silently discarded by it), and the
+# conflict must be reported on stderr naming both sources and both
+# values, non-fatally (exit 0, artifact still written).
+if "$TIMEOUT_BIN" 60 "$PCREC" --engine=dfa --source "$EP" -o "$W12/ep_conflict.c" \
+        2>"$W12/ep_conflict.err"; then
+    if grep -q '^#define RX_ENGINE "dfa"' "$W12/ep_conflict.c" && \
+       grep -q -- '--engine=dfa' "$W12/ep_conflict.err" && \
+       grep -q 'engine vm' "$W12/ep_conflict.err"; then
+        pass "W1.2 (RULEFIX): explicit CLI --engine=dfa WINS over the file's \`engine vm\`, with a diagnostic naming both"
+    else
+        fail "W1.2 (RULEFIX): CLI --engine=dfa did not win over the file's \`engine vm\` row, or the diagnostic did not name both sides:
+  RX_ENGINE line: $(grep '^#define RX_ENGINE' "$W12/ep_conflict.c")
+  stderr: $(cat "$W12/ep_conflict.err")"
+    fi
+else
+    fail "W1.2 (RULEFIX): --engine=dfa --source refused the engine-precedence fixture (the conflict must be a non-fatal diagnostic, not a refusal):
+$(cat "$W12/ep_conflict.err")"
+fi
+
+# Direction 2b: an explicit CLI --engine=vm that AGREES with the file's
+# `engine vm` row must build silently — no conflict to report, since the
+# two sides say the same thing.
+if "$TIMEOUT_BIN" 60 "$PCREC" --engine=vm --source "$EP" -o "$W12/ep_agree.c" \
+        2>"$W12/ep_agree.err"; then
+    if grep -q '^#define RX_ENGINE "vm"' "$W12/ep_agree.c" && \
+       [ ! -s "$W12/ep_agree.err" ]; then
+        pass "W1.2 (RULEFIX): CLI --engine=vm agreeing with the file's \`engine vm\` builds silently (no conflict to report)"
+    else
+        fail "W1.2 (RULEFIX): an agreeing CLI --engine=vm printed a spurious diagnostic or the wrong stamp:
+  RX_ENGINE line: $(grep '^#define RX_ENGINE' "$W12/ep_agree.c")
+  stderr (want empty): $(cat "$W12/ep_agree.err")"
+    fi
+else
+    fail "W1.2 (RULEFIX): --engine=vm --source refused the engine-precedence fixture:
+$(cat "$W12/ep_agree.err")"
+fi
 
 # =====================================================================
 # [DD-13b.W1.3] COMPOSITION, THE NAME GRAMMAR, AND THE DOGFOOD
@@ -3764,23 +3853,25 @@ fi
 # instead of silently comparing nothing.
 #
 # `pattern_esc_value_seam.rxtin` gives the seam its first non-zero
-# population: an ORDINARY `pattern` block first (so leg C's
-# not-yet-`seen_pattern` gate, which only exempts the literal token
-# `pattern`, is already satisfied before the `pattern-esc` block is
-# reached — see the finding below), then a `pattern-esc "a\nb"` block
-# whose value contains a REAL escape.
+# population: an ORDINARY `pattern` block first, then a `pattern-esc
+# "a\nb"` block whose value contains a REAL escape. This fixture's own
+# claim is about the VALUE column and does not need `pattern-esc` to be
+# the file's first block, so the ordering is kept as originally written
+# even though it is no longer load-bearing — see the finding below.
 #
-# [FINDING, recorded rather than fixed — out of this step's brief] leg
-# C REFUSES a file whose FIRST block opens with `pattern-esc`, even
-# though legs A and B both accept it (MEASURED: `unknown-token-in-scope`
-# at `verify_rxt.py:667`, whose `first != 'pattern'` test has no
-# `pattern-esc` exemption). This is the SAME shape S242's own finding
-# named one production over — a fixture cannot exercise a claim a leg
-# structurally refuses before reaching it — and it means
-# `opener_pattern_esc_pair.rxtin` (leg A only, S242) has never actually
-# been reachable by a three-leg comparison either. Worked around here
-# by ordering: this fixture is not a witness for "pattern-esc as a
-# file's first block", which stays leg-A-only pending that fix.
+# [RULEFIX, 2026-09-15 — FIXED, was recorded rather than fixed at W23.5]
+# Leg C used to REFUSE a file whose FIRST block opened with
+# `pattern-esc`, even though legs A and B both accepted it (MEASURED at
+# the time: `unknown-token-in-scope` at `verify_rxt.py:667`, whose
+# `first != 'pattern'` test had no `pattern-esc` exemption — the SAME
+# shape S242's own finding named one production over, since a fixture
+# cannot exercise a claim a leg structurally refuses before reaching
+# it). Frank's ruling: fix legs C's OPENER recognition (`first not in
+# ('pattern', 'pattern-esc')`), leaving the VALUE seam this check itself
+# asserts (leg C reports a `pattern-esc` row's text AS WRITTEN, never
+# decoded) untouched. `opener_pattern_esc_pair.rxtin` (S242's own
+# fixture, which opens with `pattern-esc`) is now reachable by all three
+# legs — re-verified three-legged where S242's own check lives, above.
 PEVS="$FIXRUN/pattern_esc_value_seam.rxt"
 pevs_a_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$PEVS" 2>"$WORKDIR/pevs.aerr")"; pevs_a_rc=$?
 pevs_b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$PEVS" 2>"$WORKDIR/pevs.berr")"; pevs_b_rc=$?

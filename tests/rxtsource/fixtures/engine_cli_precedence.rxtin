@@ -1,0 +1,13 @@
+# [RULEFIX] Frank's ruling, 2026-09-15 (w235 finding 2, cli/main.c:890-891):
+# an explicit CLI `--engine=` wins over a target's own `engine vm` row,
+# with a non-fatal stderr diagnostic naming both sources and both values.
+# One unnamed block (the compatibility-default `target rx`), block-scoped
+# `engine vm` (the same field a `target`'s own `pcrec` line or a `config`
+# reach through the identical `--engine=` flag). Used TWICE by the W1.2
+# section below: once with the CLI silent (the file's row applies, per
+# the general "the file wins" rule this exception carves out of), and
+# once with an explicit, conflicting `--engine=dfa` (the CLI's choice
+# must win and the conflict must be reported).
+pattern abc
+engine vm
+m "abc" 0 3

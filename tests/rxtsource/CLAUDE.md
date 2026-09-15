@@ -781,6 +781,21 @@ refuses before reaching it — and it means `opener_pattern_esc_pair
 three-leg comparison either. Not fixed here (out of this step's brief);
 `pattern_esc_value_seam.rxtin` works around it by ordering.
 
+**[RULEFIX, 2026-09-15] FIXED, per Frank's ruling** (not left as a
+documented seam): `verify_rxt.py`'s check is now `first not in
+('pattern', 'pattern-esc')`. This did NOT change the finding directly
+above — leg C still reports a `pattern-esc` row's VALUE as written, never
+decoded, exactly as R-A's own check asserts — only the OPENER
+recognition was broken. `opener_pattern_esc_pair.rxtin` is now
+reachable by all three legs; S242's own check (above) gained a
+three-legged extension confirming legs B and C both report its two
+blocks at their own lines (8, 10), matching leg A. The ordering
+workaround this section names in `pattern_esc_value_seam.rxtin` is no
+longer load-bearing (leg C would now accept a `pattern-esc`-first
+file) but was left as originally written — that fixture's own claim is
+about the VALUE column, not about opener position, so its ordering was
+never the thing under test.
+
 **R-B — the withdrawal-absence check (`w23_impl.md` §4.3) is a COMMITTED
 CHECK now**, two of its three arms. The DATA ARM is NARROWED
 structurally: an INDENT STACK tracks attachment under an `ext` (and only

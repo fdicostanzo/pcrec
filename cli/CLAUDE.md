@@ -306,3 +306,33 @@ The flag lives in `CliState`'s TAIL, past `opt`, so `cli_extras_clean`
 refuses it inside a `config` block's `pcrec` line with no edit — a
 definition that decoded its own pattern differently from its caller is
 exactly the escape that span exists to close.
+
+## [RULEFIX] `apply_target`'s `engine` row is the one axis the CLI can win
+
+Frank's ruling, 2026-09-15 (w235 finding 2): `apply_target` used to let a
+target's own `engine vm` row silently overwrite `ts.opt.engine`
+regardless of whether the actual command line had asked for `--engine=`
+explicitly — `docs/spec/cli.md`'s own "the file wins" rule, applied with
+no exception. An explicit CLI `--engine=` now wins instead, with a
+non-fatal stderr diagnostic naming both sources and both values;
+`engine_name()` (right above `apply_target`) exists only to render the
+three values back as text for that message.
+
+**"Explicit" is `ts.opt.engine != PCREC_ENGINE_AUTO` at the point this
+function reaches the `engine` row, and nothing more elaborate — there is
+no separate tracking field.** The only two writers of `pcrec_options
+.engine` in the whole tree are this exact `--engine=` flag (parsed
+identically whether it came from the real argv or from a `config`
+block's own `pcrec <raw>` line, reparsed above through the SAME
+`cli_parse`) and the `engine` row itself, so a non-AUTO value at that
+point can only mean a flag was typed. `--engine=auto` typed explicitly
+is INDISTINGUISHABLE from no flag at all (`PCREC_ENGINE_AUTO` is both the
+field's zero default and `auto`'s own value) and this is DELIBERATE, per
+the ruling's own terms: inventing machinery to tell the two apart was
+explicitly declined, because the two cases want the identical outcome —
+the general "file wins" rule — regardless of which one happened.
+
+Every other axis `target`/`config` can set (`flags`, `encoding`,
+`budget`) is UNCHANGED by this ruling and still follows the plain
+file-wins rule `docs/spec/cli.md` states. `engine` is the one named
+exception, not a precedent for widening.

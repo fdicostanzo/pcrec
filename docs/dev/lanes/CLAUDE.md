@@ -948,3 +948,26 @@ never edited afterwards.
   symmetry). 201/0 (was 191/0), mech field validation 256/256 valid
   including new sabotage S248 (a withdrawn `config testee` row's return,
   hand-verified DETECTED against the parser arm alone).
+
+- `rulefix_report.md` — (2026-09-15, lane rulefix, sonnet): Frank's two
+  rulings on w235's two findings above, implemented. **Ruling 1**: an
+  explicit CLI `--engine=` now wins over a target's `engine vm` row in
+  `cli/main.c:890-891` (was silent), with a non-fatal stderr diagnostic
+  naming both sources and values — "explicit" is `ts.opt.engine !=
+  PCREC_ENGINE_AUTO` at the point `apply_target` reaches the row, since
+  that field has exactly two writers in the tree and no separate
+  tracking machinery was invented for the `--engine=auto`-vs-unset
+  ambiguity the ruling itself names as acceptable to leave unresolved.
+  `docs/spec/cli.md`'s "the file wins" rule gains the one named
+  exception. **Ruling 2**: `verify_rxt.py`'s leg C now accepts
+  `pattern-esc` as a file's first block opener (`first not in
+  ('pattern', 'pattern-esc')`), fixing the defect w235 found rather than
+  documenting it as a seam. `opener_pattern_esc_pair.rxtin` (S242's own
+  fixture) is now reachable by all three legs — re-verified live and
+  given a permanent three-legged extension of S242's check, not just a
+  hand-verify. Zero corpus population moved either way (0 shipped files
+  open with `pattern-esc`). `tests/rxtsource` 205/0 (was 201/0: +3
+  ruling-1 checks, +1 ruling-2 three-legged check), `tests/cli` 284/0,
+  `make strict` clean. PARKED on `lane/rulefix`, not merged — a battery
+  was in flight for the lane's whole working period; full `make test`
+  is owed to the manager at the next one.
