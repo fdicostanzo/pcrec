@@ -382,6 +382,17 @@ off.
     OPERAND in this same quoted-escape form and runs it through this same
     decoder, which is how a harness passes a block's text through
     undecoded instead of re-implementing the table.
+  - **[DD-13b.W23.5] THE DUMP-VALUE SEAM: `--list-source`'s `pattern`
+    column carries the DECODED bytes (below); a harness reading the raw
+    file — as `tests/harness/run.sh` and `tests/harness/verify_rxt.py`
+    both do, to avoid a second and a third copy of the escape table —
+    reports the text AS WRITTEN, quotes included, and passes it through
+    `pcrec --pattern-esc` for compilation instead of decoding it
+    themselves. So a THIRD READER of a `.rxt` file (one that is not
+    `pcrec` itself) sees the operand form, never the decoded bytes,
+    unless it either decodes independently or calls `pcrec
+    --list-source`. This is stated here because it is observable by any
+    caller comparing the two, not only by the two harness legs above.
 - `flags <letters>` — compile options for the current block, block-scoped
   (does not carry to the next block). Only `i` is defined (case-insensitive,
   `pcrec -i`). An unknown letter is a hard error, not a silent no-op.

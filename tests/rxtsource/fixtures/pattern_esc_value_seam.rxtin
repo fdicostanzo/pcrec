@@ -1,0 +1,17 @@
+# [DD-13b.W23.5] R-A (escalated by w233_report.md §3.2 / w234_report.md
+# §3; manager ruling): the ONLY fixture whose `pattern-esc` block
+# contains a REAL escape (`\n`), so the dump-value seam the two prior
+# reports found at population ZERO has a population of one.
+#
+# Leg A's `pattern` column is the DECODED bytes (pcrec's one decoder,
+# `pcrec_rxt_decode_escaped`); legs B and C report the text AS WRITTEN,
+# quotes included, because decoding it would mean a second copy of the
+# escape table in bash and a third in python. So this is the third
+# instance of the dup_head_description/include SEAM shape (w233a_report
+# .md §2's own naming): the three-leg VALUE comparison for a
+# `pattern-esc` row is A-vs-(B==C), EXCLUDED BY DESIGN rather than a
+# three-way agreement — see the check below.
+pattern a+
+m "aaa" 0 3
+pattern-esc "a\nb"
+m "a\nb" 0 3

@@ -1,0 +1,25 @@
+# [DD-13b.W23.5] w23_impl.md §3.2's OWED W23.3 row, never landed there
+# (0 hits searched before this fixture existed) — SW7's ILL-FORMED-UTF-8
+# ADVANCE RULE (`docs/spec/match_api.md` §3.1.1 / `docs/spec/
+# rxt_format.md`'s `mc` paragraph), stated NORMATIVELY: from an empty
+# match's own start `pos + 1`, then skip every byte in `0x80`-`0xBF`
+# (a continuation byte with no lead byte before it).
+#
+# `x?` is NULLABLE (the advance rule only fires on a ZERO-WIDTH match,
+# never on `en > st`) and the subject `\x80\x80\x80` is three ill-formed
+# continuation bytes with no lead byte anywhere — the sharpest witness:
+# EVERY byte in it is skip-eligible.
+#
+#   WITH the rule: pos=0 matches empty, skip 0->3 in one step (three
+#     continuation bytes), pos=3 matches empty (end of subject) — count 2.
+#   WITHOUT it (naive `pos + 1` alone): pos=0,1,2,3 each match empty —
+#     count 4.
+#
+# MEASURED (this fixture, both legs): `run.sh`'s C loop
+# (`<prefix>_next_pos`, the real encoding residual) and
+# `verify_rxt.py`'s independent python transcription both report 2, and
+# both FAIL loudly if the expected count here is changed to the naive
+# 4 — verified by hand before landing, not assumed.
+pattern x?
+encoding utf8
+mc "\x80\x80\x80" 2

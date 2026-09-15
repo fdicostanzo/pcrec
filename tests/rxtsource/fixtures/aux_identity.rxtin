@@ -2,4 +2,4 @@
 pattern a+
 m "aaa" 0 3
 ext bench
-  ref pcre2/10.46
+  testee pcre2/10.46
