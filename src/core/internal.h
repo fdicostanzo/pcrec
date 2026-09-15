@@ -4494,7 +4494,15 @@ typedef enum {
     RXT_DECL_TARGET,       /* `target p = def [with c,...]`  — name/value */
     RXT_DECL_CONFIG,       /* `config c [from a,b]` + body   — name       */
     RXT_DECL_DESCRIPTION,  /* file-level `description`       — value      */
-    RXT_DECL_PATTERN       /* a pattern BLOCK                — value=text */
+    RXT_DECL_PATTERN,      /* a pattern BLOCK                — value=text */
+    /* [DD-13b.W23.3a] `include "path"` — value=path AS WRITTEN (quotes
+     * kept, `lib`'s own convention), name=the RESOLVED REAL PATH. UNLIKE
+     * every row above, resolving this one touches the filesystem AT PARSE
+     * TIME rather than at `pcrec_rxt_source_resolve` — the deliberate
+     * exception `w23_impl.md` §1.10.2 rule 2 states: `--list-source` is
+     * the ONLY call legs B and C ever make, so a resolution only
+     * `--source` could see would leave them nothing to read. */
+    RXT_DECL_INCLUDE
 } RxtDeclKind;
 
 typedef struct {

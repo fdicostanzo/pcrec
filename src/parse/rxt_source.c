@@ -1755,6 +1755,17 @@ static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
     return 0;
 }
 
+/* [DD-13b.W23.3a] Forward declarations: `include`'s resolution runs INSIDE
+ * `pcrec_rxt_source_parse` below (§1.10.2 rule 2 — resolution must be
+ * visible to `--list-source`, which never calls `pcrec_rxt_source_resolve`),
+ * but the three helpers it needs are defined further down, in `lib`'s own
+ * "path resolution" section, where they have lived since W1.2. Moving them
+ * would be a bigger diff for no reason; declaring them here is the smaller
+ * one. */
+static int path_is_file(const char *p);
+static const char *source_dir(RxtSource *src);
+static char *join_path(Arena *a, const char *dir, const char *rest);
+
 /* ------------------------------------------------------------- the entry */
 
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
@@ -2086,11 +2097,23 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * `closed` constraint one scope down has to read it. */
             if (tok_is(tok, "include")) {
                 /* A PATH, in `lib`'s own quoted spelling and no other, so
-                 * the format has ONE way to write a path. Nothing is
-                 * opened here: this parser touches no filesystem, which is
-                 * what keeps `--list-source` a pure function of the file's
-                 * bytes — resolution and the closure accounting are the
-                 * HARNESS half, W23.3a. */
+                 * the format has ONE way to write a path (docs/spec/
+                 * rxt_format.md's own `include` row: `<store>` is refused
+                 * by value shape, unlike `lib`).
+                 *
+                 * [DD-13b.W23.3a] UNLIKE EVERY OTHER HEAD DECLARATION IN
+                 * THIS BLOCK, this one IS resolved here, against the
+                 * filesystem, at PARSE time. §1.10.2 rule 2 is why:
+                 * `--list-source` is the ONLY call legs B and C ever make
+                 * over an `include` line (they never parse the keyword
+                 * itself), so a resolution that only `--source`'s later
+                 * `pcrec_rxt_source_resolve` could see would leave them
+                 * nothing to read. This row therefore breaks the
+                 * "`--list-source` is a pure function of the file's bytes"
+                 * property `lib` keeps — a departure §1.10.2 argues for
+                 * directly, since an include path has TWO counterparts
+                 * (all three legs must resolve it) where a `lib`/definition
+                 * resolution has none. */
                 const char *v = value_trimmed(&p, tok);
                 size_t n = strlen(v);
                 if (n < 3 || v[0] != '"' || v[n - 1] != '"') {
@@ -2099,6 +2122,51 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              v);
                     goto fail;
                 }
+                const char *ref = arena_strndup(&src->arena, v + 1, n - 2);
+                const char *cand = ref[0] == '/'
+                    ? ref
+                    : join_path(&src->arena, source_dir(src), ref);
+                if (!path_is_file(cand)) {
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                             "'include %s' names no readable file (looked "
+                             "for %s)", v, cand);
+                    goto fail;
+                }
+                /* `realpath(3)` with a NULL buffer (POSIX.1-2008): it
+                 * mallocs the result, so a caller with no `PATH_MAX`
+                 * opinion never has to guess one. Freed right after the
+                 * arena copy — the SAME malloc/free-beside-an-arena shape
+                 * `closure_walk`'s own `realloc`d kid array already uses a
+                 * few hundred lines down. */
+                char *realp = realpath(cand, NULL);
+                if (!realp) {
+                    rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                             "'include %s' could not be resolved: %s", v,
+                             strerror(errno));
+                    goto fail;
+                }
+                const char *rp = arena_strdup(&src->arena, realp);
+                free(realp);
+                /* A second `include` of the SAME resolved real path is a
+                 * refusal naming BOTH sites (`format_design.md` §2.5) — the
+                 * closure-wide rule's own slice that ONE file's own parse
+                 * can decide without walking anything else (two DIFFERENT
+                 * spellings inside this file that resolve to the SAME real
+                 * path). The transitive, cross-file half of the rule is
+                 * legs B and C's, over the closures they walk. */
+                for (size_t k = 0; k < src->nrows; k++) {
+                    if (src->rows[k].kind != RXT_DECL_INCLUDE) continue;
+                    if (strcmp(src->rows[k].name, rp) != 0) continue;
+                    rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
+                             "'include %s' names the same file as line "
+                             "%zu's 'include %s'", v, src->rows[k].line,
+                             src->rows[k].value);
+                    goto fail;
+                }
+                RxtRow *r = row_push(&p, src, RXT_DECL_INCLUDE, line);
+                r->value = arena_strdup(&src->arena, v);
+                r->name = rp;
+                last_rxtrow = r;
                 continue;
             }
             if (tok_is(tok, "vocabulary")) {
@@ -3172,6 +3240,7 @@ static const char *kind_name(RxtDeclKind k)
     case RXT_DECL_CONFIG:      return "config";
     case RXT_DECL_DESCRIPTION: return "description";
     case RXT_DECL_PATTERN:     return "pattern";
+    case RXT_DECL_INCLUDE:     return "include";
     }
     return "?";
 }
