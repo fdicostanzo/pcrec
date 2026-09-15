@@ -1,0 +1,35 @@
+# [DD-13b.W23.3] THE OPEN SUBTREE'S EXTENT — WHERE IT ENDS.
+#
+# `w23fix3_report.md` §5 named this fixture as OWED and said why the
+# existing pair does not cover it: *"§9.1's plan has no fixture for an
+# open subtree's own EXTENT (where it ends). `aux_malformed_body` probes
+# an attachment error INSIDE the subtree, not the boundary at its foot."*
+# §5.2a item 9's sharpest attack on the whole delivery is *"construct a
+# file where the open subtree's extent under S1 differs from what
+# `--list-source` reports"*. This file IS that attack, run by the
+# delivery on itself.
+#
+# HEADLESS ON PURPOSE (see `aux_malformed_body.rxtin`'s own note): every
+# line here is block-scoped, so all three legs answer.
+#
+# THREE POSITIVE ASSERTIONS, not one negative one, because an extent bug
+# that SWALLOWS the next declaration and an extent bug that closes EARLY
+# produce opposite symptoms and a fixture asserting only "the file is
+# accepted" sees neither:
+#
+#   1. the `oracle` line after the aux body is a BLOCK DIRECTIVE, not an
+#      aux row — the subtree ended at the dedent to column 1;
+#   2. the `pattern b+` line below it is a BLOCK OPENER — the opener set
+#      is live again outside the subtree, which it is not inside one;
+#   3. `#section aux` (W23.4) holds exactly the body's own lines and no
+#      more — the `m` line's key is spelled identically to one INSIDE the
+#      aux body, so a subtree that ran on would claim it.
+pattern a+
+ext bench
+  policy strict
+  m this-key-is-spelled-like-a-case-kind
+oracle pcre2
+m "aaa" 0 3
+
+pattern b+
+m "bbb" 0 3

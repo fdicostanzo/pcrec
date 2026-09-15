@@ -1,11 +1,41 @@
 /*
  * driver.c — runs a single generated matcher against one subject string.
  *
- * Usage: t <subject> [startpos] [route]
+ * Usage: t <subject> [startpos] [route] [mode]
  *   <subject> is the inner text of a .rxt `m`/`n`/`ms`/`ns` line's
  *   double-quoted subject, with surrounding quotes already stripped by
  *   run.sh but its escapes (\" \\ \n \t \r \f \v \xHH) still encoded as
  *   literal backslash sequences — this program decodes them.
+ *
+ *   [DD-13b.W23.3, H15/H6] AN `@`-PREFIXED SUBJECT NAMES A FILE, and its
+ *   bytes are taken BYTE-EXACT: no escape decoding, no NUL handling, no
+ *   encoding assumption, no trailing-newline rule. `@path` is the whole
+ *   argument and the rest of it is the path. That is what makes
+ *   `format_design.md` §2.18's `@file:"path"` subject real rather than
+ *   approximated — a subject carrying a NUL and invalid UTF-8 reaches the
+ *   matcher as the file holds it, which no escape vocabulary routed
+ *   through argv could express (argv cannot carry a NUL at all).
+ *
+ *   THE PREFIX IS A MARKER AND THEREFORE A COLLISION, and run.sh closes it
+ *   on the OTHER side: a literal quoted subject whose first byte is `@`
+ *   is staged with that byte written `\x40`, which this decoder already
+ *   produces as `@`. Three corpus subjects begin with `@` (MEASURED), so
+ *   the collision is live rather than theoretical, and the escape is
+ *   byte-exact rather than a special case here.
+ *
+ *   [mode] ([DD-13b.W23.3], H7) selects WHAT IS ASKED, and defaults to the
+ *   single-search question every existing invocation asks:
+ *     "one" (or absent)  one `<prefix>_search` from [startpos]; the
+ *                        match/nomatch/give-up protocol below, unchanged.
+ *     "count"            `docs/spec/match_api.md` §3.1's FIND-ALL LOOP,
+ *                        printing `count <n>`. This is the `mc` line's
+ *                        question (format_design §2.21) and the loop is
+ *                        §3.1's, transcribed — the empty-match advance
+ *                        goes through the artifact's own
+ *                        `<prefix>_next_pos` residual, never a literal
+ *                        `+ 1` and never the bench's `max(end, pos+1)`,
+ *                        which double-counts an empty match found beyond
+ *                        the scan position.
  *   [startpos] is an optional non-negative decimal integer passed as
  *   rx_search's startpos argument; if omitted, startpos defaults to 0
  *   (the `m`/`n` directives always mean startpos 0; `ms`/`ns` pass it
@@ -43,6 +73,13 @@
  *                        capture-expectation line picks its slot's pair out
  *                        of these fields by position; see docs/testing.md)
  *   "nomatch\n"         (rx_search found no match) — exits 0
+ *   "count %zu\n"       ([DD-13b.W23.3], mode `count` only) the number of
+ *                        matches §3.1's find-all loop reports — exits 0. A
+ *                        give-up anywhere in the loop is NOT a count: it
+ *                        prints its own word and exits 3 exactly as the
+ *                        single-search path does, because a partial count
+ *                        reported as a count is a wrong answer where a
+ *                        give-up is a named outcome.
  *   "steps\n" / "frames\n" / "work\n" / "recurse\n"
  *                       ([K21-class fix, 2026-08-15; [DD-14] wave A,
  *                        2026-08-24, named the fourth code] rx_search found
@@ -198,6 +235,62 @@ static unsigned char *decode(const char *src, size_t *out_len) {
 }
 
 /*
+ * [DD-13b.W23.3, H15/H6] Read a whole file into a freshly malloc'd buffer,
+ * BYTE-EXACT. *out_len is the file's length; the buffer may hold NULs and
+ * ill-formed UTF-8 and neither is interpreted. Returns the buffer, or NULL
+ * with a message already printed to stderr.
+ *
+ * NO `\n` RULE OF ANY KIND — not stripped, not required, not added. A
+ * subject file IS its bytes (`format_design.md` §2.18: "The bytes are taken
+ * BYTE-EXACT from the file"), and a driver that trimmed a trailing newline
+ * would make every subject's own length a property of this program rather
+ * than of the file, which is the one thing `sha256` exists to pin.
+ *
+ * An EMPTY file is a legitimate empty subject, so a 0-byte read is not an
+ * error; `malloc(1)` keeps the pointer non-NULL, matching `decode`'s own
+ * handling of an empty argument.
+ */
+static unsigned char *read_subject_file(const char *path, size_t *out_len) {
+    FILE *f = fopen(path, "rb");
+    size_t cap, n;
+    unsigned char *buf;
+
+    if (!f) {
+        fprintf(stderr, "driver: cannot open subject file '%s'\n", path);
+        return NULL;
+    }
+    cap = 4096; n = 0;
+    buf = malloc(cap);
+    if (!buf) {
+        fprintf(stderr, "driver: out of memory\n");
+        fclose(f);
+        return NULL;
+    }
+    for (;;) {
+        size_t got = fread(buf + n, 1, cap - n, f);
+        n += got;
+        if (n < cap) break;                 /* short read: EOF or error */
+        {
+            unsigned char *nb = realloc(buf, cap * 2);
+            if (!nb) {
+                fprintf(stderr, "driver: out of memory reading '%s'\n", path);
+                free(buf); fclose(f);
+                return NULL;
+            }
+            buf = nb; cap *= 2;
+        }
+    }
+    if (ferror(f)) {
+        fprintf(stderr, "driver: read error on subject file '%s'\n", path);
+        free(buf); fclose(f);
+        return NULL;
+    }
+    fclose(f);
+    *out_len = n;
+    return buf;
+}
+
+/*
  * Parse a startpos argument: must be all decimal digits (at least one),
  * fitting in a size_t. Returns 0 on success with *out set, -1 on a
  * malformed argument (message already printed to stderr).
@@ -261,8 +354,8 @@ static int parse_route(const char *s, int *use_in, int *have_buffers,
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 4) {
-        fprintf(stderr, "usage: %s <subject> [startpos] [route]\n", argc > 0 ? argv[0] : "t");
+    if (argc < 2 || argc > 5) {
+        fprintf(stderr, "usage: %s <subject> [startpos] [route] [mode]\n", argc > 0 ? argv[0] : "t");
         return 2;
     }
 
@@ -274,9 +367,72 @@ int main(int argc, char **argv) {
     if (argc >= 4 && parse_route(argv[3], &use_in, &have_buffers, &nframes, &ntrail) != 0)
         return 2;
 
+    /* [DD-13b.W23.3] the MODE, a CLOSED set of two — an unknown mode is a
+     * usage error rather than a silent fall back to `one`, because falling
+     * back would make a mis-spelled `count` answer the wrong question and
+     * pass. */
+    int mode_count = 0;
+    if (argc >= 5) {
+        if (strcmp(argv[4], "count") == 0)    mode_count = 1;
+        else if (strcmp(argv[4], "one") != 0) {
+            fprintf(stderr, "driver: invalid mode '%s' (want one|count)\n", argv[4]);
+            return 2;
+        }
+    }
+
+    /* [DD-13b.W23.3, H15] `@path` names a FILE whose bytes are the subject,
+     * byte-exact; anything else is the escaped inline form. */
     size_t len = 0;
-    unsigned char *buf = decode(argv[1], &len);
+    unsigned char *buf = argv[1][0] == '@' ? read_subject_file(argv[1] + 1, &len)
+                                           : decode(argv[1], &len);
     if (!buf) return 2;
+
+    /* [DD-13b.W23.3, H7] THE FIND-ALL LOOP, which is the `mc` line's whole
+     * question. It is `docs/spec/match_api.md` §3.1's loop TRANSCRIBED —
+     * the same transcription `tests/encseam/findall_driver.c` carries, and
+     * deliberately so: if the two ever differ, one of them has stopped
+     * meaning what the spec says. The advance off an EMPTY match goes
+     * through the artifact's own `<prefix>_next_pos` residual and off the
+     * MATCH'S OWN START (`caps[0][0]`), never off the loop variable — an
+     * empty match can be found at a position later than the one searched
+     * from, which is exactly where the bench's `pos = max(end, pos+1)`
+     * formula double-counts it (`(?=a)` on `"xax"` is 1, not 2;
+     * format_design §2.21's measured table).
+     *
+     * A non-default route is not offered here and the reason is stated
+     * rather than assumed: `mc` asks about the artifact's ANSWER, and the
+     * `_in` entries answer the same question through different storage —
+     * a find-all count is not the place that distinction is observable,
+     * and run.sh keeps an `mc`-bearing block off the routed path. */
+    if (mode_count) {
+        ptrdiff_t fa[RXMAC(_NCAPS)][2];
+        size_t p = startpos, nmatch = 0;
+        while (p <= len) {
+            int r = RXFN(_search)(buf, len, p, fa);
+            if (r != 1) {
+                if (r < 0) {
+                    const char *w = r == PCREC_ERR_STEPS    ? "steps"
+                                  : r == PCREC_ERR_FRAMES   ? "frames"
+                                  : r == PCREC_ERR_WORK     ? "work"
+                                  : r == PCREC_ERR_RECURSE  ? "recurse"
+                                  : r == PCREC_ERR_INTERNAL ? "internal"
+                                  : NULL;
+                    if (w) printf("%s\n", w);
+                    else printf("giveup %d\n", r);
+                    free(buf);
+                    return 3;
+                }
+                break;                      /* 0 = done */
+            }
+            nmatch++;
+            p = (fa[0][1] > fa[0][0])
+                  ? (size_t)fa[0][1]
+                  : RXFN(_next_pos)(buf, len, (size_t)fa[0][0]);
+        }
+        printf("count %zu\n", nmatch);
+        free(buf);
+        return 0;
+    }
 
     /* [DD-14.FB] The caller-supplied regions, when the route asks for them.
      * Sized in BYTES from the artifact's own RX_*_FRAME_SIZE macros, which is

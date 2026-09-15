@@ -1,0 +1,31 @@
+# [DD-13b.W23.3, D100] §2.22's NARROWING, PINNED — and it is a narrowing
+# CHOSEN rather than forced (§1.6.1a case (5)): this file COMPILES on the
+# pre-W23.3 binary, with a byte-identical artifact, because `(?&x_y)`
+# bound to the definition literally spelled `x_y` and the hyphenated one
+# beside it was simply unreachable.
+#
+# Under the derived-identifier binding BOTH definitions derive `x_y`, so
+# the call is a refusal naming BOTH definitions and the shared
+# identifier. EXACT SPELLING DOES NOT WIN: "exact" is only the identity
+# case of the same mapping, and a silent tie-break would make the
+# mapping's non-injectivity free exactly where it bites.
+#
+# A refusal naming only the prefix is a RED — the whole content of the
+# rule is that an author is told which two names collided, because the
+# repair is renaming one of them and the prefix does not say which.
+#
+# LEG A ONLY: legs B and C resolve no calls at all, so there is nothing
+# for them to agree or disagree about. The refusal arrives through
+# `--source` (the composer), not through `--list-source` (which reports
+# the file as written and binds nothing).
+target rx = caller
+
+pattern [0-9]
+name x-y
+
+pattern [a-z]
+name x_y
+
+pattern ^(?&x_y)$
+name caller
+features recursion,named-groups

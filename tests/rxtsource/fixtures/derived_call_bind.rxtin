@@ -1,0 +1,31 @@
+# [DD-13b.W23.3, D100] §2.22's ACCEPT HALF, and it is the half that says
+# what the repair BOUGHT.
+#
+# §4.5 item 4's mechanism — the canonical pattern once as a `name`d
+# definition, one block per regime whose pattern is a subroutine call —
+# was MEASURED UNUSABLE for every pcrec-bench pattern id: a `(?&…)` call
+# goes through PCRE2's own group-name grammar, which refuses `-` and `.`,
+# and every id in all five bench sets is a hyphenated slug. The NAME
+# grammar was widened for those ids and the CALL grammar cannot be (D26 —
+# it is PCRE2's), so before the derived-identifier binding there was no
+# spelling at all that reached a hyphenated definition.
+#
+# `(?&cls_upto_64)` reaches `name cls-upto-64` here. Without this fixture
+# `derived_call_collision.rxtin`'s refusal is satisfied by a composer that
+# binds nothing — a refusal fixture and its accept control are one
+# instrument, not two.
+#
+# THE HYPHENATED SPELLING IS STILL REFUSED, and that is deliberate rather
+# than a residual: `(?&cls-upto-64)` goes through PCRE2's grammar, which
+# D26 makes PCRE2's rule and not one this format may widen.
+#
+# LEG A ONLY: legs B and C resolve no calls, and the instrument is
+# `--source` (the composer) rather than `--list-source`.
+target rx = caller
+
+pattern [0-9][0-9]
+name cls-upto-64
+
+pattern ^(?&cls_upto_64)-(?&cls_upto_64)$
+name caller
+features recursion,named-groups

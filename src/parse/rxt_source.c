@@ -1848,9 +1848,42 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 ndepth--;
             }
             if (indent != st[ndepth - 1].indent) {
-                rxt_fail(&p, RXTD_STRUCTURE, line,
-                         "indented line continues nothing (the declaration "
-                         "above it takes no continuation)");
+                /* [DD-13b.W23.3] THIS BRANCH HELD THREE DIFFERENT MISTAKES
+                 * UNDER ONE SENTENCE, and splitting them is the finding
+                 * rather than the tidying. "Indented line continues
+                 * nothing (the declaration above it takes no
+                 * continuation)" is TRUE of the case one arm up — a
+                 * deeper indent under a childless kind — and false here
+                 * in two distinct ways:
+                 *
+                 *   (a) NOTHING IS OPEN. A blank line, a column-1 comment
+                 *       or the start of the file closes every attachment,
+                 *       so there is no declaration above to take or
+                 *       refuse a continuation. Legs B and C have said so
+                 *       in their own words since W23.2; leg A did not.
+                 *   (b) A RAGGED DEDENT — the line closes back to a depth
+                 *       NOBODY OPENED, shallower than the level it left
+                 *       and deeper than the one below it. Inside an OPEN
+                 *       SUBTREE, where no kind takes or refuses
+                 *       continuation at all, the shared sentence named a
+                 *       rule the subtree does not have.
+                 *
+                 * The repairs differ (delete the indent; match an
+                 * enclosing depth), which is the test for whether two
+                 * refusals want one sentence or two. */
+                if (!last_was_content)
+                    rxt_fail(&p, RXTD_STRUCTURE, line,
+                             "this line is indented and nothing above it is "
+                             "open to attach it to (a blank line, a comment "
+                             "or the start of the file closes every "
+                             "attachment)");
+                else
+                    rxt_fail(&p, RXTD_STRUCTURE, line,
+                             "this line is indented %zu, which closes back "
+                             "to a depth nothing opened (the enclosing level "
+                             "is indented %zu); indentation must return to a "
+                             "depth already open",
+                             indent, st[ndepth - 1].indent);
                 goto fail;
             }
         }

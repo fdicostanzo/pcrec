@@ -1,0 +1,23 @@
+# [DD-13b.W23.3] S-R2's REFUSING half: `adaptation` is REQUIRED when
+# `fidelity` is not `verbatim` (format_design §2.14 rule 3), and the
+# schema row carries that as `required-if fidelity != verbatim` rather
+# than as parser code — so a plant that DROPS the clause makes this file
+# accepted while its twin stays accepted, and only the pair can tell the
+# rule from its absence.
+#
+# CLASS `schema-constraint`: the line attached correctly, the record's
+# own kinds are all legal, and what failed is a DECLARED rule over the
+# scope. The refusal points at the record rather than at a line, because
+# there is no offending line — the offence is one that is missing.
+#
+# The condition names a SIBLING, which is why the whole record has to be
+# read before it can be answered: `fidelity` may be written above or
+# below `adaptation`, and leg A evaluates every scope-ranging constraint
+# when the frame CLOSES for exactly that reason.
+pattern a+
+provenance
+  source authored
+  retrieved 2026-09-15
+  license MIT
+  fidelity adapted
+m "aaa" 0 3

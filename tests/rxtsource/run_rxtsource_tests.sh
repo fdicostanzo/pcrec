@@ -1410,7 +1410,19 @@ check_refusal() {
 
 check_refusal head_after_pattern.rxt boundary   'lib' 'head'
 check_refusal from_cycle.rxt          cycle      'cycle' 'a' 'b'
-check_refusal wave2_keyword.rxt       wave       'include' 'NOT IN THIS BUILD'
+# [DD-13b.W23.3] `wave2_keyword.rxt` IS GONE AND ITS REPLACEMENT ACCEPTS.
+# Its keyword (`include`) is a shipped production now, so the refusal it
+# pinned has no input; the NOT-IN-THIS-BUILD tier's whole population is
+# empty at this pin and W23-S3 arm 4 is where that is reported. See
+# `include_head.rxtin`'s own header for why the file was replaced rather
+# than inverted.
+IH="$FIXRUN/include_head.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$IH" > /dev/null 2>"$WORKDIR/ih.err"; then
+    pass "head/include: a head 'include' line PARSES (it refused as a later-wave keyword before W23.3)"
+else
+    fail "head/include: leg A refused a head 'include' line, which W23.3 builds:
+  $(cat "$WORKDIR/ih.err")"
+fi
 # [DD-13b.W23.1] RESERVED is a THIRD answer beside 'built' and 'a later
 # wave builds it', and the refusal has to distinguish it: a reader told
 # 'unknown' hunts a typo, and a reader told 'not in this build' waits for
@@ -1484,8 +1496,12 @@ $(tail -10 "$WORKDIR/bf.run")"
 fi
 
 # S204: a line kind no parser knows must be REFUSED by all three, never
-# swallowed. `tag` is a real keyword of a later wave, so this also checks
-# that "not in this build" and "unparseable" stay distinct answers.
+# swallowed. [DD-13b.W23.3] The token is `no-such-kind`, chosen because it
+# cannot graduate into the format the way this fixture's previous token
+# (`tag`) did — see the fixture's own header. "Not in this build" and
+# "unparseable" stay distinguishable through this file and
+# `version_reserved.rxtin` rather than through one token wearing both
+# hats.
 UK="$FIXRUN/unknown_kind.rxt"
 if "$TIMEOUT_BIN" 60 python3 "$VERIFY" "$UK" > "$WORKDIR/uk.py" 2>&1; then
     fail "S204 witness: verify_rxt.py ACCEPTED a line kind it does not know.
@@ -1502,13 +1518,15 @@ else
 fi
 uk_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$UK" 2>&1)"
 if [ $? -eq 0 ]; then
-    fail "S204 witness: --list-source ACCEPTED a later-wave keyword"
-elif printf '%s' "$uk_out" | grep -q 'NOT IN THIS BUILD'; then
-    pass "S204 witness: --list-source refuses 'tag' as NOT IN THIS BUILD (a real keyword, not a typo)"
+    fail "S204 witness: --list-source ACCEPTED a kind it does not know"
+elif printf '%s' "$uk_out" | grep -q '\[unknown-token-in-scope\]' &&
+     printf '%s' "$uk_out" | grep -q 'no-such-kind'; then
+    pass "S204 witness: --list-source refuses 'no-such-kind' as an unknown token IN ITS SCOPE, naming it"
 else
-    fail "S204 witness: --list-source refused 'tag', but not as a later-wave
-  keyword. A reader told 'unknown' goes hunting a typo in a word that is
-  in the format's own documentation:
+    fail "S204 witness: --list-source refused 'no-such-kind', but not as an
+  unknown token in its scope naming the token. The CLASS is what the
+  three-leg differential compares and the TOKEN is what an author acts
+  on; a refusal carrying neither is a refusal nobody can use:
   $uk_out"
 fi
 
@@ -1805,6 +1823,138 @@ else
   (C: $(tail -3 "$WORKDIR/nicok.cerr" 2>/dev/null))"
 fi
 
+# ======================================================================
+# [DD-13b.W23.3] THE FOURTEEN PRODUCTIONS' OWN FIXTURES
+# ======================================================================
+#
+# Every three-leg assertion below compares the diagnostic CLASS, never an
+# exit code (§3.1 W23-S2). Where a fixture is LEG A ONLY the reason is
+# stated at the call rather than left looking like an oversight — the
+# two reasons are the seam (a FILE-scope production is a head
+# declaration and the head has one parser) and the schema's own
+# `validated_by` column (a row that reads `pcrec` is a row legs B and C
+# are not claimed to check, §3.3's rule for this lane).
+
+# --- `ext`: the AUX production, §2.27 -----------------------------------
+#
+# aux's failure mode is pcrec deciding it UNDERSTANDS something, which an
+# ACCEPTANCE fixture catches and a refusal fixture structurally cannot.
+AUXOK=1
+for auxf in aux_arbitrary_keys aux_deep_tree aux_literal_pipe aux_subtree_extent; do
+    if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/$auxf.rxt" \
+            > "$WORKDIR/$auxf.dump" 2>"$WORKDIR/$auxf.err"; then
+        fail "aux/$auxf: leg A REFUSED an aux fixture it must accept — pcrec
+  parses an aux body's structure and interprets nothing (§2.27):
+  $(cat "$WORKDIR/$auxf.err")"
+        AUXOK=0
+    fi
+done
+[ "$AUXOK" = "1" ] && pass "aux: all four acceptance fixtures parse (arbitrary keys, a three-deep tree of keyword-colliding keys, a literal '|', a subtree's own extent)"
+
+# THE ABSENCE ASSERTIONS ARE THE CHECK. `aux_deep_tree.rxt`'s body uses
+# `pattern`, `config`, `m`, `provenance` and `variant` as aux KEYS, three
+# levels deep. If anything in pcrec interpreted one of them, the dump
+# would carry a second `pattern` row; it carries exactly one, which is
+# the same claim `#section aux` will make one surface up at W23.4.
+adt_rows="$(LC_ALL=C grep -vc '^#' "$WORKDIR/aux_deep_tree.dump" || true)"
+if [ "$adt_rows" = "1" ]; then
+    pass "aux/deep-tree: an aux body whose keys COLLIDE with format keywords (pattern, config, m, provenance, variant) produces NO extra block, NO extra case and NO provenance record — the dump carries exactly the one real block"
+else
+    fail "aux/deep-tree: the dump carries $adt_rows rows where exactly 1 is
+  correct. An aux body is UNINTERPRETED (§2.27.3): a key spelled like a
+  format keyword is a key, and a reader that acted on one has graduated
+  the production without anybody ruling that it should.
+$(LC_ALL=C grep -v '^#' "$WORKDIR/aux_deep_tree.dump")"
+fi
+
+# `aux_subtree_extent.rxt` — §5.2a item 9's sharpest attack, run by the
+# delivery on itself. An extent bug that SWALLOWS the next line and one
+# that closes EARLY produce opposite symptoms, so the assertion is
+# positive on TWO things rather than negative on one: the aux body's
+# `m`-spelled key did not become a case, and the `pattern b+` line after
+# the subtree still OPENED a block.
+ase_rows="$(LC_ALL=C grep -vc '^#' "$WORKDIR/aux_subtree_extent.dump" || true)"
+if [ "$ase_rows" = "2" ]; then
+    pass "aux/subtree-extent: the open subtree ENDS at its dedent — the block directive after it is a directive and the 'pattern' line after that opens a SECOND block (2 dump rows)"
+else
+    fail "aux/subtree-extent: the dump carries $ase_rows rows where 2 is correct.
+  Either the subtree ran on past its own body (swallowing the opener
+  below it) or it closed early (turning one of its own lines into a
+  block). The two failures are opposite and this is the one assertion
+  that separates them."
+fi
+
+# The three HEADLESS aux fixtures are asserted on ALL THREE LEGS; the
+# file-scope one is not, and the reason is the seam ruling rather than
+# this lane's scope (w1_impl §1.1: the head has ONE parser, so a
+# three-leg assertion on a FILE-scope production is unavailable at any
+# point in W23 — r59-A2's own disposition, one production over).
+for auxf in aux_deep_tree aux_literal_pipe aux_subtree_extent; do
+    if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$FIXRUN/$auxf.rxt" > /dev/null 2>&1 && \
+       "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$FIXRUN/$auxf.rxt" > /dev/null 2>&1; then
+        pass "aux/$auxf: legs B and C accept it too (the aux body is consumed, not dispatched)"
+    else
+        fail "aux/$auxf: leg B or C refused an aux fixture leg A accepts. Inside
+  an OPEN SUBTREE nothing is dispatched at all — S2's opener set is
+  empty there and S3 never opens — so a leg that validated a key inside
+  one has given the production semantics nobody ruled it should have."
+    fi
+done
+
+check_refusal_all3 aux_malformed_body.rxt aux-malformed structure-attachment 'indented 3'
+
+# --- `provenance`: S-R2's pcrec-side detector pair (§2.14 rule 3) -------
+#
+# LEG A ONLY, by the schema's own `validated_by` column: every
+# `provenance` row reads `pcrec`, and legs B and C CONSUME the record's
+# body without reading it. Claiming three legs here would be §3.3's
+# named failure — a row claiming three legs on the strength of one.
+check_refusal prov_adapted_no_adaptation.rxt prov-adaptation \
+    '[schema-constraint]' 'adaptation' 'fidelity != verbatim'
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/prov_verbatim_no_adaptation.rxt" \
+        > /dev/null 2>"$WORKDIR/pv.err"; then
+    pass "prov-adaptation: the ACCEPT half (fidelity verbatim, no adaptation) is accepted — the refusal is isolated to the conditional"
+else
+    fail "prov-adaptation: the accept control was REFUSED. Without it the
+  refusing half is satisfied by a parser that refuses every provenance
+  record, which is a check with no discriminating power at all:
+  $(cat "$WORKDIR/pv.err")"
+fi
+
+# --- §2.22 / D100: the DERIVED-IDENTIFIER call binding ------------------
+#
+# LEG A ONLY: legs B and C resolve no calls. The refusal arrives through
+# `--source` (the composer) and not `--list-source` (which reports the
+# file as written and binds nothing), so this is the one W23.3 fixture
+# whose instrument is the COMPILE path.
+dcc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_collision.rxt" \
+    -o "$WORKDIR/dcc.c" 2>&1)"
+if [ $? -eq 0 ]; then
+    fail "derived-call: a call to an identifier TWO definitions derive was
+  ACCEPTED. The mapping is deliberately not injective and this refusal
+  is where that is paid for; a silent tie-break makes the
+  non-injectivity free exactly where it bites (§2.22)."
+elif printf '%s' "$dcc_out" | grep -q "x-y" && \
+     printf '%s' "$dcc_out" | grep -q "x_y"; then
+    pass "derived-call: a colliding derived identifier is refused NAMING BOTH definitions and the shared identifier (exact spelling does not win)"
+else
+    fail "derived-call: refused, but the message does not name BOTH
+  definitions. Naming only the shared prefix tells an author which
+  identifier collided and not which two names to rename, which is the
+  only repair available:
+  $dcc_out"
+fi
+# The ACCEPT half: a hyphenated definition IS callable through its
+# derived identifier, which is the whole of what D100 bought.
+if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_bind.rxt" \
+        -o "$WORKDIR/dcb.c" > /dev/null 2>"$WORKDIR/dcb.err"; then
+    pass "derived-call: '(?&cls_upto_64)' BINDS to 'name cls-upto-64' — the repair §4.5 item 4 was unusable without"
+else
+    fail "derived-call: the accept half FAILED. Without it the collision
+  refusal above is satisfied by a composer that binds nothing at all:
+  $(cat "$WORKDIR/dcb.err")"
+fi
+
 # --- [DD-13b.W23.2] THE ATTACHMENT ARM's own fixtures (W23-S1, W23-S2) --
 #
 # `indent_pre_body.rxt` — an indented `m` line BEFORE the first
@@ -1812,8 +1962,15 @@ fi
 # indentation test ran AFTER its not-seen_pattern branch, so a
 # POST-body fixture would report GREEN against the ordering defect this
 # pins; leg B had no attachment step at all before this step.
+# [DD-13b.W23.3] THE NEEDLE MOVED because leg A's own branch SPLIT. The
+# arm this fixture reaches held three different mistakes under one
+# sentence; "nothing above it is open" is the one that is true here (a
+# blank line, a comment or the start of the file closes every
+# attachment), and "the declaration above takes no continuation" was
+# never true of it — there is no declaration above. See
+# `src/parse/rxt_source.c`'s comment at the split.
 check_refusal_all3 indent_pre_body.rxt indent-pre-body structure-attachment \
-    'continues nothing'
+    'nothing above it is open'
 
 # `indent_under_m.rxt` — an indented line under an `m` case line,
 # mid-block. class structure-attachment, NAMING THE PARENT
@@ -2818,13 +2975,49 @@ for kind in $wv_rows; do
         *) wv_bad=$((wv_bad + 1)); echo "  '$kind' refused as: $wout" >&2 ;;
     esac
 done
-if [ "$wv_seen" -ge 1 ] && [ "$wv_bad" = "0" ]; then
+# [DD-13b.W23.3] THE EXTRACTOR'S HEALTH IS ITS OWN ASSERTION NOW, AND
+# THAT IS WHAT MAKES AN HONEST ZERO REPORTABLE.
+#
+# W23.1 wrote "a population of ZERO is also a failure here" and was right
+# for its reason: the arm had first read 0 rows out of a real population
+# of 7 because `read` collapsed the dump's empty TAB fields, and a check
+# whose population comes from the data it checks agrees with a broken
+# extractor by construction. That rule conflates TWO zeros, and W23.3 is
+# the pin where they part: `refuse_wave`'s NOT-IN-THIS-BUILD tier is
+# `built < wave < reserved`, every W23 row's wave IS this build's, and no
+# fixture can construct a row in between because the table is
+# compile-time. format_design §1.3 and w23_impl §2.3 both state that
+# emptiness IN ADVANCE ("its population is empty at the FINAL pin").
+#
+# So the extractor is exercised INDEPENDENTLY, over the same dump with
+# the same awk and the threshold lowered to 0 — which must find every
+# file-scope row below the sentinel. A zero there is the broken-extractor
+# zero and still fails; a zero in the real population with a healthy
+# extractor is the tier being empty, which is reported as a PASS that
+# says so. The general form: *a population of zero is a failure only
+# while you cannot tell it from a broken instrument; make the
+# instrument's health a separate non-vacuous assertion and the honest
+# zero becomes something a check may report.*
+wv_probe="$(awk -F'\t' -v rsv="${sc_reserved:-999}" '
+    BEGIN { s = 0; n = 0 }
+    /^#section schema/ { s = 1; next }
+    /^#section /       { s = 0 }
+    s && $1 == "file" && $10 + 0 > 0 && $10 + 0 < rsv + 0 { n++ }
+    END { print n }' "$SCHEMA")"
+if [ "${wv_probe:-0}" -lt 1 ]; then
+    fail "W23-S3 arm 4: the row extractor found ZERO file-scope rows below
+  the reserved sentinel with the wave threshold lowered to 0, which is
+  impossible on any non-empty schema. The extraction is broken (W23.1
+  measured this exact shape once: bash's \`read\` collapsing the dump's
+  empty TAB fields), so arm 4's own zero below means nothing."
+elif [ "$wv_seen" = "0" ]; then
+    pass "W23-S3 arm 4: the NOT-IN-THIS-BUILD tier is EMPTY at this pin (no schema row sits between wave $sc_built and the reserved sentinel $sc_reserved) — an honest zero, with the extractor independently shown live on $wv_probe rows. format_design §1.3 states this emptiness in advance; arm 4b carries the reserved tier, which is not empty"
+elif [ "$wv_bad" = "0" ]; then
     pass "W23-S3 arm 4: all $wv_seen file-scope rows above wave $sc_built refuse BY NAME as NOT IN THIS BUILD"
 else
     fail "W23-S3 arm 4: $wv_bad of $wv_seen later-wave file-scope rows did not
   refuse by name. A reader told 'unknown' goes hunting a typo in a word
-  that is in the format's own spec (K14's shape). A population of ZERO is
-  also a failure here: it means this arm is measuring nothing."
+  that is in the format's own spec (K14's shape)."
 fi
 
 # ARM 4b — the RESERVED sentinel's rows. A reserved keyword refuses BY

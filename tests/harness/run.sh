@@ -365,6 +365,8 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     total_cfail=0
     total_pending=0
     total_sizelog=0
+    total_under_skips=0
+    total_oracle_skips=0
     summaries=0
     fail_files=()
 
@@ -392,6 +394,8 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         c="$(grep -m1 '^pattern-compile failures (distinct):' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         gp="$(grep -m1 '^group cases pending-vm:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         sl="$(grep -m1 '^size-log rows:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        us="$(grep -m1 '^under expectations skipped:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        os_="$(grep -m1 '^oracle declarations skipped:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         if [ -z "$p" ] || [ -z "$x" ]; then
             echo "$f: HARNESS FAILURE: worker produced no summary (crashed or was killed) — counting as failed" >&2
             total_fail=$((total_fail + 1))
@@ -404,6 +408,8 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         total_cfail=$((total_cfail + ${c:-0}))
         total_pending=$((total_pending + ${gp:-0}))
         total_sizelog=$((total_sizelog + ${sl:-0}))
+        total_under_skips=$((total_under_skips + ${us:-0}))
+        total_oracle_skips=$((total_oracle_skips + ${os_:-0}))
         [ "$x" -gt 0 ] && fail_files+=("$f: $x")
     done
 
@@ -418,6 +424,8 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     echo "pattern-compile failures (distinct): $total_cfail"
     echo "group cases pending-vm: $total_pending"
     [ -n "$SIZELOG" ] && echo "size-log rows: $total_sizelog"
+    echo "under expectations skipped: $total_under_skips"
+    echo "oracle declarations skipped: $total_oracle_skips"
     echo "parallel: $summaries of ${#files[@]} file workers reported (PROCS=$PROCS)"
 
     if [ "$summaries" -ne "${#files[@]}" ]; then
@@ -439,6 +447,13 @@ total_fail=0
 total_pending=0        # [M4.5a] 'gp' (pending-VM) capture-group cases: out of
                         # the artifact's RX_NCAPS range, population-accounted
                         # separately from pass/fail — not skipped silently
+# [DD-13b.W23.3] the two COUNTED, LABELLED SKIPS the W23 productions add.
+# Both are printed unconditionally, which is the point of counting them: a
+# population nobody counts is not a population (AR-3), and a file whose
+# expectations are all convention-qualified must read as "0 cases, N
+# under-skips" rather than as a file that quietly tested nothing.
+total_under_skips=0
+total_oracle_skips=0
 total_sizelog=0         # [ART-SIZE.1b] SIZELOG rows actually written — read
                         # back by the PROCS>1 aggregation above and by
                         # tests/size/run_size_log.sh's own header stamp.
@@ -534,6 +549,225 @@ record_fail_class() {
     record_fail "$f" "$ln" "[$cls] $*"
 }
 
+# [DD-13b.W23.3] ONE literal TAB, resolved ONCE rather than by a
+# `$(printf '\t')` subshell per line of every `.rxt` file in the corpus.
+RXT_TAB="$(printf '\t')"
+
+# [DD-13b.W23.3] S3's OPAQUE REGION, as STREAMING STATE rather than as a
+# lookahead. Leg A reads the whole file into an array and can scan forward
+# for the region's end; this loop reads one line at a time, so the same
+# extent rule is expressed as "a region is open, and this line either
+# belongs to it or ends it". The two are the same rule, which is the point:
+# `read_prose_region`'s own boundary set (a CONTENT line at or left of the
+# opener's indent, a BLANK, a COMMENT) is tested at the top of the line
+# loop, and every other line in the region is bytes.
+#
+# THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE, and that is
+# K57 (docs/dev/known_issues.md) REPRODUCED DELIBERATELY: a continuation
+# line indented LESS than the first silently loses content. Leg A does
+# exactly this and `prose_dedent.rxtin` asserts today's wrong value in all
+# three legs with K57 named beside it, so the day K57 is fixed all three go
+# red together rather than one leg quietly disagreeing.
+prose_take() {
+    local ln="$1" ws body
+    if [ "$prose_dedent" -lt 0 ]; then
+        ws="${ln%%[! $RXT_TAB]*}"
+        prose_dedent=${#ws}
+    fi
+    body="${ln:$prose_dedent}"
+    if [ "$prose_nlines" -eq 0 ]; then
+        prose_text="$body"
+    else
+        prose_text="$prose_text
+$body"
+    fi
+    prose_nlines=$((prose_nlines + 1))
+}
+
+# [DD-13b.W23.3] A `tag` LIST's own grammar, restated here for the reason
+# every grammar in this file is restated: leg B has no shared header with
+# leg A to call into, and the three-leg differential is what makes the
+# restatements agree. Each item is a bare LABEL or a `key=value` with no
+# whitespace in either half (format_design §2.15; r58 R3 removed the quoted
+# `tag-prose` alternative, so a value is one word and a sentence lives in
+# `variant note`). An empty list is refused — `tag` with nothing on it says
+# it tags something and does not.
+rxt_tag_list_ok() {
+    local v="$1" item key nitem=0
+    local IFS=$' \t,'
+    for item in $v; do
+        [ -z "$item" ] && continue
+        key="${item%%=*}"
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || return 1
+        case "$item" in *=) return 1 ;; esac
+        nitem=$((nitem + 1))
+    done
+    [ "$nitem" -gt 0 ]
+}
+
+# [DD-13b.W23.3] `@file:"path" [as <id>] [sha256 <hex64>]` — H15/H6.
+#
+# THE FOUR THINGS IT DOES, and the order matters only for the diagnostic a
+# reader gets first: resolve the path against the `.rxt` file's OWN
+# directory (a fragment's subjects travel with the fragment); check the
+# digest if one is written, which is §2.18's "checked by whatever READS the
+# subject"; enforce the `as` binding; and push the case with the RESOLVED
+# PATH in `case_file`, which is what `run_case_loop` turns into driver.c's
+# `@<path>` argument.
+#
+# THE BINDING IS A FUNCTIONAL DEPENDENCY AND NOT A UNIQUENESS KEY, and
+# getting that backwards would refuse the production's own documented
+# NORMAL spelling: every case line naming a subject carries `as <id>`
+# again, so equal keys with EQUAL values is the common case and only equal
+# keys with UNEQUAL values is an error. That is why the map stores the
+# (path, sha256) pair and the line, and why the refusal names BOTH lines.
+rxt_file_case() {
+    local f="$1" ln="$2" kind="$3" pos="$4" path="$5" tail="$6"
+    local id="" sha="" abs bound bpath bsha bline dgst
+
+    tail="${tail#"${tail%%[! $RXT_TAB]*}"}"
+    if [[ "$tail" =~ ^as[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)(.*)$ ]]; then
+        id="${BASH_REMATCH[1]}"
+        tail="${BASH_REMATCH[2]}"
+        tail="${tail#"${tail%%[! $RXT_TAB]*}"}"
+    fi
+    if [[ "$tail" =~ ^sha256[[:space:]]+([0-9a-fA-F]{64})(.*)$ ]]; then
+        sha="${BASH_REMATCH[1]}"
+        tail="${BASH_REMATCH[2]}"
+        tail="${tail#"${tail%%[! $RXT_TAB]*}"}"
+    elif [[ "$tail" =~ ^sha256([[:space:]]|$) ]]; then
+        record_fail_class value-shape "$f" "$ln" \
+            "'sha256' wants exactly 64 hex digits"
+        return 0
+    fi
+    tail="${tail%"${tail##*[! $RXT_TAB]}"}"
+
+    if [ "$have_block" != "1" ]; then
+        record_fail_class unknown-token-in-scope "$f" "$ln" "'$kind' line before any pattern block"
+        return 0
+    fi
+
+    # The STARTPOS half of the kind: `ms`/`ns` carry one and `m`/`n`/`mc`
+    # carry none, exactly as their inline spellings do. The format DEFINES
+    # `m` as `ms` with P fixed at 0, so the two forms must not disagree here
+    # about which is which.
+    case "$kind" in
+        ms|ns)
+            if [ -z "$pos" ]; then
+                record_fail_class value-shape "$f" "$ln" "'$kind' wants a startpos before its subject"
+                return 0
+            fi ;;
+        *)
+            if [ -n "$pos" ]; then
+                record_fail_class value-shape "$f" "$ln" "'$kind' takes no startpos (write '${kind}s' for that)"
+                return 0
+            fi
+            pos=0 ;;
+    esac
+
+    case "$path" in
+        /*) abs="$path" ;;
+        *)  abs="$(dirname "$f")/$path" ;;
+    esac
+    if [ ! -f "$abs" ] || [ ! -r "$abs" ]; then
+        record_fail_class value-shape "$f" "$ln" \
+            "'@file:' names no readable file: '$path' (resolved to '$abs')"
+        return 0
+    fi
+
+    if [ -n "$sha" ]; then
+        dgst="$(rxt_sha256 "$abs")"
+        if [ -z "$dgst" ]; then
+            record_fail_class value-shape "$f" "$ln" \
+                "'sha256' was written but no sha256 tool is available to check it"
+            return 0
+        fi
+        if [ "$dgst" != "$(printf '%s' "$sha" | tr 'A-F' 'a-f')" ]; then
+            record_fail_class value-shape "$f" "$ln" \
+                "'@file:\"$path\"' sha256 MISMATCH: the line says $sha, the file is $dgst"
+            return 0
+        fi
+    fi
+
+    if [ -n "$id" ]; then
+        if assoc_has subject_ids "$id"; then
+            bound="$(assoc_get subject_ids "$id")"
+            bpath="${bound%%$'\x01'*}"
+            bound="${bound#*$'\x01'}"
+            bsha="${bound%%$'\x01'*}"
+            bline="${bound#*$'\x01'}"
+            if [ "$bpath" != "$abs" ] || [ "$bsha" != "$sha" ]; then
+                record_fail_class schema-constraint "$f" "$ln" \
+                    "subject id '$id' is re-bound to a different (path, sha256) than on line $bline — a subject id is a FUNCTIONAL binding, so restating the SAME binding is normal and a conflicting one is not"
+                return 0
+            fi
+        else
+            assoc_set subject_ids "$id" "$abs"$'\x01'"$sha"$'\x01'"$ln"
+        fi
+    fi
+
+    case "$kind" in
+        m|ms)
+            if [[ ! "$tail" =~ ^([0-9]+)[[:space:]]+([0-9]+)$ ]]; then
+                record_fail_class value-shape "$f" "$ln" "bad '$kind' line tail '$tail' (want <start> <end>)"
+                return 0
+            fi
+            case_kind+=("m"); case_start+=("${BASH_REMATCH[1]}"); case_end+=("${BASH_REMATCH[2]}") ;;
+        n|ns)
+            if [ -n "$tail" ]; then
+                record_fail_class value-shape "$f" "$ln" "unexpected trailing content on '$kind' line: '$tail'"
+                return 0
+            fi
+            case_kind+=("n"); case_start+=(""); case_end+=("") ;;
+        mc)
+            if [[ ! "$tail" =~ ^([0-9]+)$ ]]; then
+                record_fail_class value-shape "$f" "$ln" "bad 'mc' line tail '$tail' (want a match count)"
+                return 0
+            fi
+            case_kind+=("mc"); case_start+=("${BASH_REMATCH[1]}"); case_end+=("") ;;
+    esac
+    case_line+=("$ln")
+    case_subject+=("@file:$path")
+    case_startpos+=("$pos")
+    case_gspec+=("")
+    case_gucode+=("")
+    case_route+=("$cur_route")
+    case_file+=("$abs")
+}
+
+# ONE sha256 spelling, resolved once: `shasum -a 256` on darwin, GNU
+# `sha256sum` on Linux. Empty output means neither exists, which the caller
+# reports rather than treating as a pass — a digest nobody computed must
+# not read as a digest that matched.
+rxt_sha256() {
+    if [ -z "${RXT_SHA_TOOL+x}" ]; then
+        if command -v sha256sum >/dev/null 2>&1; then RXT_SHA_TOOL=sha256sum
+        elif command -v shasum >/dev/null 2>&1; then RXT_SHA_TOOL=shasum
+        else RXT_SHA_TOOL=""; fi
+    fi
+    case "$RXT_SHA_TOOL" in
+        sha256sum) sha256sum "$1" 2>/dev/null | cut -d' ' -f1 ;;
+        shasum)    shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1 ;;
+        *)         printf '' ;;
+    esac
+}
+
+# Close the open region. A `|` with NO continuation line under it is a
+# structure error in leg A (`read_prose_region`'s own refusal) and is one
+# here — the value of a `|` IS the indented lines below it, so an opener
+# with none is a line that says it has a value and does not.
+prose_finish() {
+    prose_open=0
+    if [ "$prose_nlines" -eq 0 ]; then
+        record_fail_class structure-attachment "$cur_file" "$prose_owner_line" \
+            "block scalar '|' has no indented continuation lines (a '|' value is the indented lines below it)"
+        return
+    fi
+    if [ "$prose_owner" = "description" ]; then
+        cur_description="$prose_text"
+    fi
+}
+
 # [DD-14.FB] valid_route <spec> — the ONE definition of the route grammar,
 # shared by the `frames-buffer=` directive and the RXTROUTE env var so the two
 # cannot drift into accepting different spellings. driver.c parses the same
@@ -598,6 +832,7 @@ rxt_escape() {
     local s=$1
     s=${s//\\/\\\\}
     s=${s//$'\t'/\\t}
+    s=${s//$'\n'/\\n}
     s=${s//$'\r'/\\r}
     case $s in
         *[$'\x01'-$'\x08\x0b\x0c\x0e'-$'\x1f\x7f']*)
@@ -708,10 +943,32 @@ run_case_loop() {
         # and watchdog's fixed per-invocation cost belongs on per-pattern
         # and long-run sites, not here. $RUN_SECS is computed once above.
         local route="${case_route[$i]:-}"
+        # [DD-13b.W23.3] THE DRIVER'S SUBJECT ARGUMENT AND ITS MODE.
+        #
+        # A `@file:` case is handed `@<path>` and driver.c reads the file's
+        # bytes BYTE-EXACT — the only way a subject carrying a NUL and
+        # ill-formed UTF-8 can reach the matcher at all, since argv cannot
+        # carry a NUL.
+        #
+        # THE PREFIX IS A MARKER, SO AN ORDINARY SUBJECT WHOSE FIRST BYTE IS
+        # `@` HAS TO SAY SO, and this is where it does: its leading byte is
+        # rewritten `\x40`, an escape driver.c's own decoder already turns
+        # back into `@`. MEASURED: three corpus subjects begin with `@`, so
+        # the collision is live rather than theoretical. The BATCHED path
+        # does NOT rewrite and must not — `dispatch.c` implements no `@`
+        # rule, so `@foo` there already decodes to `@foo`, and a `@file:`
+        # case never joins a batch (its block is ineligible).
+        local darg="$subj" dmode="one"
+        [ "${case_kind[$i]}" = "mc" ] && dmode="count"
         if [ "$mode" = "batched" ]; then
             out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$bidx" "$subj" "$pos")"
         else
-            out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$subj" "$pos" "$route")"
+            if [ -n "${case_file[$i]:-}" ]; then
+                darg="@${case_file[$i]}"
+            else
+                case "$darg" in '@'*) darg='\x40'"${darg:1}" ;; esac
+            fi
+            out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$darg" "$pos" "$route" "$dmode")"
         fi
         trc=$?
         if [ "$mode" = "standalone" ]; then
@@ -744,7 +1001,7 @@ run_case_loop() {
             local _ti
             for _ti in ${tgt_bin[@]+"${!tgt_bin[@]}"}; do
                 local tout trc2
-                tout="$("$TIMEOUT_BIN" "$RUN_SECS" "${tgt_bin[$_ti]}" "$subj" "$pos" "$route")"
+                tout="$("$TIMEOUT_BIN" "$RUN_SECS" "${tgt_bin[$_ti]}" "$darg" "$pos" "$route" "$dmode")"
                 trc2=$?
                 if [ "$tout" != "$out" ] || [ "$trc2" -ne "$trc" ]; then
                     record_fail "$cur_file" "$line" \
@@ -805,6 +1062,24 @@ run_case_loop() {
             record_fail "$cur_file" "$line" \
                 "test binary GAVE UP ($out — VM budget exhausted) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             record_case_group_fail "$cur_file" "$i" "test binary gave up ($out)"
+            continue
+        fi
+        # [DD-13b.W23.3] `mc` — THE FIND-ALL COUNT (format_design §2.21).
+        # Its own branch rather than a variant of `m`, because the question
+        # is different: `m` asks where the FIRST match is and `mc` asks how
+        # many the §3.1 protocol reports. driver.c ran the loop; this
+        # compares its one number. It carries no `g`/`gp` expectations (a
+        # capture expectation over a find-all has no meaning — WHICH match's
+        # captures?) and cannot, since the `g` arm attaches to `m` alone.
+        if [ "$kind" = "mc" ]; then
+            expect="count ${case_start[$i]}"
+            if [ "$out" = "$expect" ]; then
+                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: mc '$cur_pattern' subject=\"$subj\" expect=${case_start[$i]}"
+                record_pass
+            else
+                record_fail "$cur_file" "$line" \
+                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\"$rtag"
+            fi
             continue
         fi
         local base_ok=0
@@ -920,7 +1195,7 @@ unpack_batch_member() {
     cur_pattern="${bm_pattern[$mi]}"
     artifact_ncaps="${bm_ncaps[$mi]}"
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=()
-    case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
+    case_startpos=(); case_gspec=(); case_gucode=(); case_route=(); case_file=()
     local _k _l _s _st _e _p _g _u
     while IFS=$'\x01' read -r _k _l _s _st _e _p _g _u; do
         [ -n "${_l:-}" ] || continue
@@ -1014,7 +1289,7 @@ flush_batch() {
 
     local cur_pattern artifact_ncaps
     local -a case_kind case_line case_subject case_start case_end \
-             case_startpos case_gspec case_gucode case_route
+             case_startpos case_gspec case_gucode case_route case_file
 
     local n_members=${#bm_prefix[@]}
     local -a member_ok=()
@@ -1208,6 +1483,14 @@ stage_block_for_batch() {
 }
 
 flush_block() {
+    # [DD-13b.W23.3] WHICH SPELLING OPENED THIS BLOCK, taken and CLEARED at
+    # the top. The clear is what lets `pattern-esc` be a second opener
+    # without editing the hash-pinned `pattern` arm: that arm calls this
+    # function to close the PREVIOUS block before it sets its own state, so
+    # clearing here leaves the flag at 0 for a plain `pattern` and the
+    # `pattern-esc` arm re-raises it after its own flush.
+    local blk_esc="$cur_pattern_esc"
+    cur_pattern_esc=0
     # [DD-13b.W1.1] leg B: report what the parse understood and compile
     # NOTHING. Placed at the top of the one function every block already
     # passes through, so the dump cannot see a different set of blocks
@@ -1224,6 +1507,15 @@ flush_block() {
     # is rejected at parse time, so this can only hold letters we map here
     local pflags=()
     [[ "$cur_flags" == *i* ]] && pflags+=(-i)
+    # [DD-13b.W23.3] `pattern-esc`: THE STILL-ENCODED TEXT GOES THROUGH,
+    # and NOTHING IN THIS FILE DECODES IT (format_design §2.19). A
+    # `printf %b` approximation would be a SECOND escape vocabulary — a
+    # different set from `\" \\ \n \t \r \f \v \xHH`, with its own opinion
+    # about `\0` and `\e` — drifting from pcrec's by construction, with no
+    # differential able to see it, because bash would be the only thing
+    # that had ever read the bytes. pcrec decodes, once, and the `\x00`
+    # refusal (K9) comes back as an ordinary compile diagnostic.
+    [ "$blk_esc" = "1" ] && pflags+=(--pattern-esc)
 
     # per-block enabled modules (the `features` directive, MOD-0.3c). The
     # SPEC is validated once per distinct list against a trivially-valid
@@ -1299,7 +1591,7 @@ flush_block() {
     # served by this landing's dispatch.c, which only reproduces the
     # DEFAULT route. All three stay OUT of the batching unit entirely,
     # compiling/running exactly as today.
-    if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ]; then
+    if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ] && [ "$blk_esc" != "1" ]; then
         local _batch_excluded=0
         if [ "${#head_target_def[@]}" -gt 0 ] && [ -n "$cur_name" ]; then
             local _hti
@@ -1315,6 +1607,20 @@ flush_block() {
             for _bri in "${!case_kind[@]}"; do
                 local _brt="${case_route[$_bri]:-}"
                 if [ -n "$_brt" ] && [ "$_brt" != "default" ]; then
+                    _batch_excluded=1
+                    break
+                fi
+                # [DD-13b.W23.3] A FOURTH EXCLUSION, on the same ground as
+                # the routed cell: `dispatch.c` reproduces the DEFAULT
+                # driver invocation only — it has no `@`-prefixed subject
+                # rule and no find-all mode — so a block carrying a
+                # `@file:` subject or an `mc` count stays out of the
+                # batching unit and compiles/runs exactly as today. It is
+                # an exclusion rather than a dispatch.c change because
+                # `tests/harness/dispatch_gen.sh` is the batching landing's
+                # own generator and a second escape/counting vocabulary
+                # inside it is the drift this format keeps declining.
+                if [ -n "${case_file[$_bri]:-}" ] || [ "${case_kind[$_bri]}" = "mc" ]; then
                     _batch_excluded=1
                     break
                 fi
@@ -1580,9 +1886,10 @@ for file in "${files[@]}"; do
     cur_description=""
     cur_encoding=""
     cur_features_only=0
+    cur_pattern_esc=0
     cur_route="$RXTROUTE"
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
-    case_route=()
+    case_route=(); case_file=()
     have_block=0
     blocks_in_file=0
     # [DD-13b.W23.2] THE ATTACHMENT ARM's own state: the immediately
@@ -1593,6 +1900,45 @@ for file in "${files[@]}"; do
     # misname the line an indented one continues.
     last_kind=""
     last_kind_line=0
+    # [DD-13b.W23.3] THE ATTACHMENT STACK and the two CHILD-CONSUMPTION
+    # devices the W23 productions are the first customers of.
+    #
+    # `att_ind[]` is one entry per OPEN ATTACHMENT LEVEL (leg A's `RxtFrame`
+    # stack, `src/parse/rxt_source.c`'s S1), `att_tree[]` its OPEN-SUBTREE
+    # bit. Level 0 is the file itself at indent 0. The stack is what makes a
+    # DEDENT checkable at all: a line that pops back has to land EXACTLY on
+    # an open level, which is what turns `aux_malformed_body.rxtin`'s
+    # mis-indented aux line into a LOCAL error naming its own line rather
+    # than into bytes nobody accounted for.
+    #
+    # `last_opens_scope`/`last_opens_tree` are the parent's own answer to
+    # "may a deeper line attach to me": a `provenance`/`variant` line opens
+    # a SCOPED body (leg A schema-checks it; legs B and C consume it —
+    # format_design §2.14's own sentence, and `validated_by: pcrec` on every
+    # one of those rows is where that split is published), and an `ext` line
+    # opens an OPEN SUBTREE, inside which nothing is dispatched by anybody.
+    #
+    # `prose_open` is S3's opaque region, which is NOT the stack's business
+    # and must not be: a region's lines may be RAGGED (`prose_ragged.rxtin`
+    # asserts all three legs accept them), so the exact-indent rule the
+    # stack enforces would refuse a shape all three legs accept. The extent
+    # is leg A's `read_prose_region`: up to, and not including, the first
+    # CONTENT line whose indent is <= the opener's, a BLANK line, or a
+    # COMMENT line — a whitespace-only line ends nothing and is bytes.
+    att_ind=(0)
+    att_tree=(0)
+    att_depth=1
+    last_indent=0
+    last_was_content=0
+    last_opens_scope=0
+    last_opens_tree=0
+    prose_open=0
+    prose_ind=0
+    prose_nlines=0
+    prose_dedent=-1
+    prose_text=""
+    prose_owner=""
+    prose_owner_line=0
     # [TT-4M] STEP 2c — the pending HARNESS_BATCH batch, reset PER FILE: a
     # batch never spans two files (docs/design/tt4m_harness_batching.md
     # item 1). By the time this loop reaches a new file, the previous
@@ -1607,6 +1953,11 @@ for file in "${files[@]}"; do
     # PER FILE, never per block -- the whole point is to catch a SECOND
     # block naming itself the same thing.
     assoc_new declared_names
+    # [DD-13b.W23.3] the SUBJECT-ID namespace is PER FILE (format_design
+    # §2.18: "the physical file that writes the line"), so a fragment's ids
+    # are the fragment's and two files may name the same id for different
+    # bytes without either being wrong.
+    assoc_new subject_ids
 
     # ---- [DD-13b.W1.1] THE SEAM (w1_impl §1.1, the manager's ruling) ----
     #
@@ -1744,16 +2095,67 @@ for file in "${files[@]}"; do
     while IFS= read -r line || [ -n "$line" ]; do
         lineno=$((lineno + 1))
         [ "$lineno" -le "$head_skip" ] && continue
-        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
-        [[ "$line" =~ ^# ]] && continue
-        if [ "${line:0:1}" = " " ] || [ "${line:0:1}" = "$(printf '\t')" ]; then
-            indent_run="${line%%[! ]*}"
-            if [ "${line:${#indent_run}:1}" = "$(printf '\t')" ]; then
+
+        # [DD-13b.W23.3] S3 — AN OPEN PROSE REGION SWALLOWS THE LINE BEFORE
+        # ANYTHING ELSE LOOKS AT IT, which is what "opaque" means: S0 does
+        # not classify it, S1 does not attach it, no arm tokenises it. The
+        # extent is leg A's `read_prose_region` — the region ends at the
+        # FIRST of a CONTENT line whose indent is <= the opener's, a BLANK
+        # line, or a COMMENT line; a whitespace-only line ends nothing and
+        # is bytes. The ending line is NOT consumed: it falls through and is
+        # read as whatever it is.
+        if [ "$prose_open" = "1" ]; then
+            if [ -z "$line" ] || [ "${line:0:1}" = "#" ]; then
+                prose_finish
+            elif [[ "$line" =~ ^[[:space:]]+$ ]]; then
+                prose_take "$line"
+                continue
+            else
+                _pr_ws="${line%%[! ]*}"
+                if [ "${#_pr_ws}" -gt "$prose_ind" ]; then
+                    prose_take "$line"
+                    continue
+                fi
+                prose_finish
+            fi
+        fi
+
+        # S0: a BLANK line and a COMMENT each CLOSE every open attachment and
+        # return to indent 0 (leg A's `ndepth = 1`); a WHITESPACE-ONLY line
+        # is INERT and disturbs nothing.
+        if [ -z "$line" ] || [ "${line:0:1}" = "#" ]; then
+            att_ind=(0); att_tree=(0); att_depth=1
+            last_was_content=0; last_indent=0; last_kind=""
+            last_opens_scope=0; last_opens_tree=0
+            continue
+        fi
+        [[ "$line" =~ ^[[:space:]]+$ ]] && continue
+
+        indent_run="${line%%[! ]*}"
+        cur_ind=${#indent_run}
+        if [ "${line:$cur_ind:1}" = "$RXT_TAB" ]; then
+            record_fail_class structure-attachment "$file" "$lineno" \
+                "indentation is spaces; this line is indented with a TAB (a tab inside a value is still data, but a tab in the indentation has no agreed depth)"
+            continue
+        fi
+
+        # [DD-13b.W23.3] S1 — ATTACHMENT, over the stack rather than over one
+        # remembered indent. A deeper line is a CHILD of the line above and
+        # is admitted only when that line's kind says so; a shallower one
+        # POPS back and must land EXACTLY on an open level, which is the half
+        # a single `last_indent` could not express and the half that makes a
+        # mis-indented line inside an aux body a LOCAL error.
+        if [ "$last_was_content" = "1" ] && [ "$cur_ind" -gt "$last_indent" ]; then
+            if [ "${att_tree[$((att_depth - 1))]}" = "1" ] || [ "$last_opens_tree" = "1" ]; then
+                # inside an OPEN SUBTREE (or at its root): every depth below
+                # is more subtree, and nothing in it is ever dispatched.
+                att_ind+=("$cur_ind"); att_tree+=(1); att_depth=$((att_depth + 1))
+            elif [ "$last_opens_scope" = "1" ]; then
+                att_ind+=("$cur_ind"); att_tree+=(0); att_depth=$((att_depth + 1))
+            elif [ "$have_block" != "1" ] && [ "$att_depth" -eq 1 ]; then
                 record_fail_class structure-attachment "$file" "$lineno" \
-                    "indentation is spaces; this line is indented with a TAB (a tab inside a value is still data, but a tab in the indentation has no agreed depth)"
-            elif [ "$have_block" != "1" ]; then
-                record_fail_class structure-attachment "$file" "$lineno" \
-                    "an indented line appears before any pattern block (nothing is open to attach it to)"
+                    "this line is indented and nothing above it is open to attach it to (a blank line, a comment or the start of the file closes every attachment)"
+                continue
             elif [ -n "$last_kind" ]; then
                 # [DD-13b.W23.2 FINDING] leg A's OWN `rxt_source.c:1169`
                 # files this under RXTD_STRUCTURE, not RXTD_SCHEMA_CONSTRAINT
@@ -1765,14 +2167,73 @@ for file in "${files[@]}"; do
                 # the discrepancy is reported rather than improvised past.
                 record_fail_class structure-attachment "$file" "$lineno" \
                     "indented line continues nothing ('$last_kind' takes no continuation, declared on line $last_kind_line)"
+                continue
             else
                 record_fail_class structure-attachment "$file" "$lineno" \
                     "indented line continues nothing (the declaration above it takes no continuation)"
+                continue
+            fi
+        else
+            while [ "$att_depth" -gt 1 ] && [ "$cur_ind" -lt "${att_ind[$((att_depth - 1))]}" ]; do
+                att_depth=$((att_depth - 1))
+                unset 'att_ind[att_depth]'
+                unset 'att_tree[att_depth]'
+            done
+            if [ "$cur_ind" -ne "${att_ind[$((att_depth - 1))]}" ]; then
+                if [ "$have_block" != "1" ] && [ "$att_depth" -eq 1 ]; then
+                    record_fail_class structure-attachment "$file" "$lineno" \
+                        "this line is indented and nothing above it is open to attach it to (a blank line, a comment or the start of the file closes every attachment)"
+                else
+                    # [DD-13b.W23.3] A RAGGED DEDENT IS ITS OWN SENTENCE, in
+                    # all three legs. This arm is a line closing back to a
+                    # depth NOBODY OPENED, which is a different mistake from
+                    # "the line above takes no continuation" and has a
+                    # different repair — and inside an OPEN SUBTREE, where no
+                    # kind takes or refuses continuation, the shared sentence
+                    # named a rule the subtree does not have.
+                    record_fail_class structure-attachment "$file" "$lineno" \
+                        "this line is indented $cur_ind, which closes back to a depth nothing opened (the enclosing level is indented ${att_ind[$((att_depth - 1))]}); indentation must return to a depth already open"
+                fi
+                continue
+            fi
+        fi
+        last_indent=$cur_ind
+        last_was_content=1
+        last_opens_scope=0
+        last_opens_tree=0
+        cur_tok="${line:$cur_ind}"
+        cur_tok="${cur_tok%%[ $RXT_TAB]*}"
+        last_kind="$cur_tok"
+        last_kind_line=$lineno
+
+        # [DD-13b.W23.3] INSIDE A CONSUMED BODY NOTHING IS DISPATCHED.
+        # `provenance` and `variant` are schema-checked by leg A alone
+        # (`validated_by: pcrec` on every row in those scopes — the
+        # RECOGNISE-vs-VALIDATE split format_design §2.14 states and §2.24's
+        # D4 table publishes), and an `ext` body is interpreted by nobody at
+        # all. What legs B and C owe is the EXTENT, so the body's lines do
+        # not reach the arm chain as orphans — and a body line whose value is
+        # a bare `|` still opens a prose region, because a `variant`'s
+        # `note |` sits at indent 2 and its continuation must not escape.
+        # NEVER inside an OPEN SUBTREE: there a bare `|` is the literal byte
+        # (`aux_literal_pipe.rxtin`).
+        if [ "$att_depth" -gt 1 ]; then
+            if [ "${att_tree[$((att_depth - 1))]}" != "1" ]; then
+                case " description license-note adaptation attribution note " in
+                    *" $cur_tok "*)
+                        _pv="${line:$((cur_ind + ${#cur_tok}))}"
+                        _pv="${_pv#"${_pv%%[! $RXT_TAB]*}"}"
+                        _pv="${_pv%"${_pv##*[! $RXT_TAB]}"}"
+                        if [ "$_pv" = "|" ]; then
+                            prose_open=1; prose_ind=$cur_ind; prose_nlines=0
+                            prose_dedent=-1; prose_text=""; prose_owner=""
+                            prose_owner_line=$lineno
+                        fi
+                        ;;
+                esac
             fi
             continue
         fi
-        last_kind="${line%%[ $(printf '\t')]*}"
-        last_kind_line=$lineno
 
         # [DD-13b.W1.1 / R-COMPAT-1] Everything between these two markers is
         # the arm chain 3,265 existing blocks and 26,691 existing expectation
@@ -2185,14 +2646,33 @@ for file in "${files[@]}"; do
             # literal text "| " -- the one place THIS leg was looser than
             # its siblings rather than in step with them.
             blk_desc_trimmed="${blk_desc%"${blk_desc##*[![:space:]]}"}"
+            # [DD-13b.W23.3] THE `|` FORM IS ACCEPTED NOW, and the reversal is
+            # W23.1's rather than this step's: `format_design.md` §1.2.5
+            # widened a block `description` to the full `prose-value`
+            # production the day the grammar became two layers, because the
+            # rule that used to forbid it here ("a pattern block's lines are
+            # not indented") was a LEXICAL rule and there is no lexical layer
+            # left for it to live in — S1 attaches a deeper line to the line
+            # above it everywhere, and S3 owns the region's extent. Leg A
+            # accepts it since W23.1 (`block_scalar_in_body.rxtin` is the
+            # fixture, and it was leg-A-only at that pin precisely because
+            # legs B and C had no attachment arm yet); this is legs B and C
+            # catching up, not a second decision.
             if [ "$have_block" != "1" ]; then
                 record_fail_class unknown-token-in-scope "$file" "$lineno" "'description' line before any pattern block"
-            elif [ "$blk_desc_trimmed" = "|" ]; then
-                record_fail_class structure-attachment "$file" "$lineno" \
-                    "a pattern block's 'description' takes the one-line form only: the '|' block scalar is continuation, and a pattern block's lines are not indented (the head is where '|' belongs)"
             elif [ "$cur_description_line" -ne 0 ]; then
                 record_fail_class schema-constraint "$file" "$lineno" \
                     "a pattern block has one 'description' (already given on line $cur_description_line)"
+            elif [ "$blk_desc_trimmed" = "|" ]; then
+                cur_description=""
+                cur_description_line=$lineno
+                prose_open=1
+                prose_ind=0
+                prose_nlines=0
+                prose_dedent=-1
+                prose_text=""
+                prose_owner="description"
+                prose_owner_line=$lineno
             else
                 cur_description="$blk_desc"
                 cur_description_line=$lineno
@@ -2219,6 +2699,177 @@ for file in "${files[@]}"; do
             else
                 cur_encoding="$blk_enc"
             fi
+        # ---- [DD-13b.W23.3] THE BLOCK-SCOPED W23 ARMS ----
+        #
+        # Appended, like every arm since W1.1, after the pinned region and
+        # in an order that cannot change which arm an EXISTING line reaches:
+        # none of the tokens below is a prefix of a token any arm above
+        # matches (`pattern-esc` carries a `-` where `pattern`'s arm demands
+        # a space; `mc` carries a `c` where `m`'s arm demands whitespace).
+        elif [[ "$line" =~ ^pattern-esc[[:space:]](.*)$ ]]; then
+            # THE SECOND BLOCK OPENER (format_design §2.19). It resets the
+            # same block state the `pattern` arm does, for the same reason —
+            # block-scoped means block-scoped — and raises the ESC flag
+            # `flush_block` reads to add `--pattern-esc`. The value is the
+            # QUOTED text INCLUDING its quotes, because that is the operand
+            # form the CLI flag takes and this arm's whole contract is to
+            # pass the bytes through undecoded.
+            [ "$have_block" = "1" ] && flush_block
+            blocks_in_file=$((blocks_in_file + 1))
+            cur_pattern="${BASH_REMATCH[1]}"
+            cur_pattern_line=$lineno
+            cur_pattern_esc=1
+            cur_is_perr=0
+            cur_flags=""
+            cur_features=""
+            cur_engine=""
+            cur_stepbudget=""
+            cur_framebudget=""
+            cur_name=""
+            cur_exports=""
+            cur_description=""
+            cur_description_line=0
+            cur_encoding=""
+            cur_features_only=0
+            cur_route="$RXTROUTE"
+            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=(); case_file=()
+            have_block=1
+        elif [[ "$line" =~ ^mc[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
+            # `mc "<subject>" <n>` — the FIND-ALL COUNT (format_design
+            # §2.21). The rule is `docs/spec/match_api.md` §3.1's shipped
+            # protocol BY REFERENCE and the loop lives in driver.c; this arm
+            # only carries the question. It is emphatically NOT the bench's
+            # `pos = max(end, pos+1)`, which double-counts an empty match
+            # found beyond the scan position.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'mc' line before any pattern block"
+            else
+                case_kind+=("mc")
+                case_line+=("$lineno")
+                case_subject+=("${BASH_REMATCH[1]}")
+                case_start+=("${BASH_REMATCH[2]}")
+                case_end+=("")
+                case_startpos+=("0")
+                case_gspec+=("")
+                case_gucode+=("")
+                case_route+=("$cur_route")
+                case_file+=("")
+            fi
+        elif [[ "$line" =~ ^(m|n|ms|ns|mc)[[:space:]]+(([0-9]+)[[:space:]]+)?@file:\"([^\"]*)\"(.*)$ ]]; then
+            # [DD-13b.W23.3, H15/H6] A `@file:` SUBJECT, with `as <id>` and
+            # `sha256 <hex64>` as INDEPENDENTLY OPTIONAL suffixes
+            # (format_design §2.18). The bytes are the file's, byte-exact —
+            # `rxt_file_case` resolves the path against the `.rxt` file's own
+            # directory, validates the two suffixes, enforces the FUNCTIONAL
+            # BINDING (`as` is a dependency, not a uniqueness key: restating
+            # the same id on many case lines is the NORMAL spelling and only
+            # a CONFLICTING re-binding is refused) and pushes the case.
+            rxt_file_case "$file" "$lineno" "${BASH_REMATCH[1]}" \
+                "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" "${BASH_REMATCH[5]}"
+        elif [[ "$line" =~ ^under[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]+(.*)$ ]]; then
+            # [DD-13b.W23.3] `under <convention> <case-line>` — A COUNTED,
+            # LABELLED SKIP AND NEVER A SILENT ONE (format_design §2.17).
+            #
+            # SCORING ONE IS THE CONSUMER'S ACT, not this harness's: an
+            # `under posix-leftmost-longest` line states the answer a testee
+            # under THAT convention is scored against, and scoring it here
+            # would require run.sh to know pcrec's own convention BY NAME —
+            # engine knowledge the harness must not hold. So the expectation
+            # is read, recognised and set aside.
+            #
+            # COUNTED is the load-bearing half, and AR-3 is why: a skip
+            # nobody counts is indistinguishable from a line nobody parsed.
+            # The summary prints the total, so a file whose expectations are
+            # all qualified reads as "0 cases, N under-skips" rather than as
+            # a file that quietly tested nothing.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'under' line before any pattern block"
+            elif [[ ! "${BASH_REMATCH[2]}" =~ ^(m|n|ms|ns|mc)[[:space:]] ]]; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'under <convention>' wraps an m/n/ms/ns/mc case line (got '${BASH_REMATCH[2]}')"
+            else
+                total_under_skips=$((total_under_skips + 1))
+            fi
+        elif [[ "$line" =~ ^tag[[:space:]]+(.*)$ ]]; then
+            # [DD-13b.W23.3] `tag` — a LIST whose items are a bare label or
+            # `key=value`, neither half carrying whitespace (format_design
+            # §2.15, and r58 R3 which removed the quoted `tag-prose`
+            # alternative: a tag value is one word and a sentence lives in
+            # `variant note`). RECOGNISED AND VALUE-CHECKED; the VOCABULARY
+            # half (`closed per-key`, a `vocabulary` line's declared set) is
+            # leg A's — every W23 row reads `validated_by: pcrec`.
+            tag_val="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'tag' line before any pattern block"
+            elif ! rxt_tag_list_ok "$tag_val"; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'tag' wants labels or key=value items (got '$tag_val')"
+            fi
+        elif [[ "$line" =~ ^oracle[[:space:]]+(.*)$ ]]; then
+            # [DD-13b.W23.3] `oracle <engine-ref>[/<version>]` (§2.9,
+            # widened at W23). RECOGNISED and SHAPE-CHECKED; NAMING AN
+            # ORACLE THIS HARNESS CANNOT REACH IS A LABELLED SKIP AND NEVER
+            # A REFUSAL — run.sh drives pcrec's own artifacts and has no
+            # second engine to consult, so the honest answer is to count the
+            # declaration and say so in the summary rather than to fail a
+            # block for naming something true.
+            oracle_ref="${BASH_REMATCH[1]}"
+            oracle_ref="${oracle_ref%"${oracle_ref##*[![:space:]]}"}"
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'oracle' line before any pattern block"
+            elif [[ ! "$oracle_ref" =~ ^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$ ]]; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'oracle' wants an engine reference, optionally '/<version>' (got '$oracle_ref')"
+            else
+                total_oracle_skips=$((total_oracle_skips + 1))
+            fi
+        elif [[ "$line" =~ ^provenance[[:space:]]*$ ]]; then
+            # [DD-13b.W23.3] A SUB-BLOCK OPENER. Legs B and C RECOGNISE the
+            # record and CONSUME its body without reading it; pcrec
+            # VALIDATES it (format_design §2.14's own last paragraph, and
+            # `validated_by: pcrec` on all eleven PROVENANCE rows, which is
+            # where that split is published rather than remembered). What
+            # this arm owes is the EXTENT — `last_opens_scope` is what tells
+            # S1 the indented lines below have somewhere to attach.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'provenance' line before any pattern block"
+            else
+                last_opens_scope=1
+            fi
+        elif [[ "$line" =~ ^variant[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]*$ ]]; then
+            # [DD-13b.W23.3] `variant <testee>` — the same sub-block shape
+            # (§2.23). The testee name is a FREE IDENTIFIER validated as a
+            # name and against nothing else: with `config … testee`
+            # withdrawn (D99) there is no roster in the format to resolve
+            # against, which the ABSENCE of a `closed` clause on the schema
+            # row states where a reader can fetch it.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'variant' line before any pattern block"
+            else
+                last_opens_scope=1
+            fi
+        elif [[ "$line" =~ ^variant([[:space:]]|$) ]]; then
+            record_fail_class value-shape "$file" "$lineno" \
+                "'variant' wants a testee name — a letter or '_' then letters, digits, '_', '-' or '.'"
+        elif [[ "$line" =~ ^ext[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]*$ ]]; then
+            # [DD-13b.W23.3] `ext <consumer>` — THE AUX PRODUCTION, and the
+            # CHEAPEST of the three: it opens an OPEN SUBTREE, inside which
+            # nothing is dispatched by any leg. No key is validated, no
+            # value is normalised, no row is counted, and a body key
+            # colliding with a format keyword (`pattern`, `m`,
+            # `provenance`) produces NO extra block, NO extra case and NO
+            # provenance record — which is `aux_deep_tree.rxtin`'s whole
+            # assertion and the property §2.27.3's graduation rule exists to
+            # protect. The reviewable question is not "does this read an aux
+            # body" but "does any output change when an aux body changes".
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'ext' line before any pattern block"
+            else
+                last_opens_tree=1
+            fi
+        elif [[ "$line" =~ ^ext([[:space:]]|$) ]]; then
+            record_fail_class value-shape "$file" "$lineno" \
+                "'ext' wants a consumer name — a letter or '_' then letters, digits, '_', '-' or '.'"
         else
             # unparseable non-blank/non-comment lines are hard errors: a
             # corrupted corpus must not silently degrade to zero coverage
@@ -2227,7 +2878,31 @@ for file in "${files[@]}"; do
             # same fact `unknown_token()` states in leg A.
             record_fail_class unknown-token-in-scope "$file" "$lineno" "unparseable .rxt line (hard error): $line"
         fi
+
+        # [DD-13b.W23.3] KEEP THE CASE ARRAYS DENSE. The hash-pinned arms
+        # push nine arrays and know nothing about the tenth (`case_file`),
+        # so it is backfilled HERE — outside the pinned region, after
+        # whichever arm ran — rather than by editing ten arm bodies inside a
+        # region whose whole purpose is that it does not move. A sparse
+        # parallel array is the `tt4m3` TAB-collapse defect one level up:
+        # every index after the first gap reads the wrong case's value.
+        # The `pattern` arm sits INSIDE the pinned region and resets the
+        # nine arrays it knows about, so `case_file` can also be LONGER
+        # than `case_kind` here — that is what a block boundary looks like
+        # from outside the pin, and clearing it is the whole repair.
+        # Re-pinning the arm hash to add one `case_file=()` inside the
+        # region would have been a change to the chain 3,936 blocks are
+        # parsed by, bought for a variable those arms never read.
+        if [ "${#case_file[@]}" -gt "${#case_kind[@]}" ]; then case_file=(); fi
+        while [ "${#case_file[@]}" -lt "${#case_kind[@]}" ]; do case_file+=(""); done
     done < "$file"
+
+    # [DD-13b.W23.3] END OF FILE CLOSES AN OPEN PROSE REGION, which is leg
+    # A's third `read_prose_region` boundary (its scan stops at `L->n`).
+    # Without it a `description |` whose region runs to the last line of the
+    # file would never have its value assigned, and an EMPTY one would never
+    # be refused — the failure mode is silent in both directions.
+    [ "$prose_open" = "1" ] && prose_finish
 
     [ "$have_block" = "1" ] && flush_block
     # [TT-4M] STEP 2c: a batch never spans two files, so whatever this
@@ -2286,6 +2961,10 @@ fi
 echo "pattern-compile failures (distinct): ${#compile_fail_set[@]}"
 echo "group cases pending-vm: $total_pending"
 [ -n "$SIZELOG" ] && echo "size-log rows: $total_sizelog"
+# [DD-13b.W23.3] the two labelled skips, printed unconditionally (0 is a
+# real answer and an absent line is not).
+echo "under expectations skipped: $total_under_skips"
+echo "oracle declarations skipped: $total_oracle_skips"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
     echo "run.sh: NO CASES RUN — corpus missing or fully unparseable" >&2

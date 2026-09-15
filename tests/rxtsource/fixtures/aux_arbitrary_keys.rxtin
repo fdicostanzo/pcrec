@@ -1,0 +1,41 @@
+# [DD-13b.W23.3] §2.27's WHOLE PROMISE IN ONE CELL, and it is an
+# ACCEPTANCE fixture on purpose.
+#
+# `ext <consumer>` is the AUX production: consumer-namespaced, parsed
+# STRUCTURALLY so a malformed aux block cannot corrupt what follows, and
+# semantically UNINTERPRETED — dumped faithfully and read by no build, no
+# check and no config resolution. Its failure mode is therefore pcrec
+# deciding it UNDERSTANDS something, and that is a failure an acceptance
+# fixture catches and a refusal fixture structurally cannot: every key
+# below is a word pcrec has never heard of, and all three legs must take
+# them without asking what any of them means.
+#
+# The consumer name is a free `defname` resolved against nothing at all.
+# S-R6 (S245) is the plant this is the first detector for: flipping the
+# `ext` rows' `children` from `tree` to a named scope makes leg A refuse
+# what it must accept, which is aux being NARROWED.
+#
+# LEG A ONLY, AND THE REASON IS THE SEAM RULING RATHER THAN THIS LANE'S
+# SCOPE. `ext` at FILE scope is a HEAD declaration, the head has exactly
+# one parser (w1_impl §1.1), and legs B and C never read those bytes —
+# leg B takes the body's start line off `--list-source` and leg C refuses
+# a head-bearing file by name. So a three-leg assertion on a file-scope
+# `ext` is not available at any point in W23, exactly as r59-A2 found for
+# `dup_head_description.rxtin`. The BLOCK-scope half of the same
+# production is asserted on all three legs by `aux_deep_tree.rxtin`,
+# `aux_literal_pipe.rxtin`, `aux_malformed_body.rxtin` and
+# `aux_subtree_extent.rxtin`, every one of which is headless on purpose.
+ext bench
+  roster pcre2 re2 hyperscan
+  matrix
+    rows 16
+    columns 4
+    seed 20260915
+  policy strict
+  weighting inverse-frequency
+
+pattern a+
+ext bench
+  weight 3
+  regime throughput
+m "aaa" 0 3

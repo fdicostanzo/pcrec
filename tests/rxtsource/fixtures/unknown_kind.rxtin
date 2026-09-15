@@ -3,11 +3,25 @@
 # line reaches its unknown-kind branch any more. Fixing the gap is what
 # emptied the population of the row that guards it.
 #
-# `tag` is a real .rxt keyword of a LATER WAVE. All three parsers must
-# refuse it rather than swallow it: pcrec by name ("not in this build"),
-# run.sh through its catch-all hard error, verify_rxt.py by raising. A
-# parser that treats a kind it does not know as a comment verifies
-# nothing and says nothing, which is the quiet failure S204 plants.
+# All three parsers must REFUSE a kind they do not know rather than
+# swallow it: leg A by name in its scope, run.sh through its catch-all
+# hard error, verify_rxt.py by raising. A parser that treats a kind it
+# does not know as a comment verifies nothing and says nothing, which is
+# the quiet failure S204 plants.
+#
+# [DD-13b.W23.3] THE TOKEN MOVED, AND IT MOVED BECAUSE THE OLD ONE
+# SHIPPED. This fixture used to carry `tag beta` and assert the
+# NOT-IN-THIS-BUILD refusal, on the reasoning that a real later-wave
+# keyword also proves "not in this build" and "unparseable" stay distinct
+# answers. `tag` is a BLOCK production now, so that spelling asserts
+# nothing — the fixture would be accepted by all three legs while the
+# check named after it still reported a refusal it no longer gets.
+# `no-such-kind` is chosen instead precisely because it is NOT a keyword
+# and cannot become one: a hyphen-bearing token the format has never
+# owned. The two answers stay distinguishable through a DIFFERENT pair —
+# this file and `version_reserved.rxtin` — which is the general repair
+# for a witness whose subject graduates: re-aim it at something that
+# cannot graduate, and let a second fixture carry the tier it left.
 pattern a+
-tag beta
+no-such-kind beta
 m "aaa" 0 3

@@ -33,6 +33,7 @@ store does not cover the question at all (a STORE-UNCOVERED clean miss —
 falls back to today's python-only verdict, i.e. FAILURE, counted in its own
 bucket so the population is visible rather than silently absorbed into an
 ordinary failure)."""
+import hashlib
 import re
 import sys
 import os
@@ -340,6 +341,45 @@ def prefix_from_name(s):
     return s.replace('-', '_').replace('.', '_')
 
 
+def _findall_protocol(compiled, subj, encoding):
+    r"""`docs/spec/match_api.md` §3.1's find-all loop, in python, counting
+    matches. TRANSCRIBED from the spec's own C, like `tests/harness/
+    driver.c`'s copy and `tests/encseam/findall_driver.c`'s — if the three
+    ever differ, one of them has stopped meaning what the spec says.
+
+    THE ADVANCE OFF AN EMPTY MATCH IS OFF THE MATCH'S OWN START, not off the
+    loop variable: an empty match can be found at a position LATER than the
+    one searched from, and advancing off `pos` is exactly where the bench's
+    `pos = max(end, pos+1)` formula double-counts it (`(?=a)` on `"xax"` is
+    1, not 2).
+
+    THE ONE-CHARACTER STEP IS `<prefix>_next_pos` BY REFERENCE and this leg
+    cannot call it, so it carries SW7's normative spelling instead: from
+    `pos + 1`, skip bytes in the range 0x80-0xBF. That is a second
+    implementation and it is paid for by a differential — the same cell is
+    counted by driver.c's C loop and by leg A's own parse — which is the
+    distinction §2.21 draws against the `printf %b` decoder it refuses one
+    production over: a second implementation WITH a differential is a cost,
+    one without is a defect."""
+    n = len(subj)
+    pos = 0
+    count = 0
+    while pos <= n:
+        mo = compiled.search(subj, pos)
+        if mo is None:
+            break
+        count += 1
+        st, en = mo.span()
+        if en > st:
+            pos = en
+        else:
+            pos = st + 1
+            if encoding == 'utf8':
+                while pos < n and 0x80 <= ord(subj[pos]) <= 0xBF:
+                    pos += 1
+    return count
+
+
 def _fail(path, lineno, cls, msg):
     """[DD-13b.W23.2] THE DIAGNOSTIC CLASS TAG, this leg's own copy of
     src/parse/rxt_source.c's `rxt_fail` format -- `[class] file:line: msg`,
@@ -398,6 +438,10 @@ def parse_rxt(path):
     pcre2_only_next = False
     seen_pattern = False
     seen_names = {}
+    # [DD-13b.W23.3] the SUBJECT-ID namespace is PER FILE (format_design
+    # §2.18: "the physical file that writes the line"), so a fragment's
+    # ids are the fragment's.
+    subject_ids = {}
     # [DD-13b.W23.2] THE ATTACHMENT ARM's own state (S1, format_design
     # §1.2.1): the immediately preceding NON-INDENTED content line's own
     # first token and line number -- the PARENT an indented line under it
@@ -405,8 +449,60 @@ def parse_rxt(path):
     last_kind = None
     last_kind_line = 0
     cur_desc_line = 0
+    # [DD-13b.W23.3] THE ATTACHMENT STACK (leg A's `RxtFrame` stack, S1) and
+    # S3's OPAQUE REGION, in the same two shapes tests/harness/run.sh
+    # carries them and for the same reasons. `att` is one entry per open
+    # level, `(indent, is_open_subtree)`; level 0 is the file at indent 0.
+    # The stack is what makes a DEDENT checkable: a line popping back must
+    # land EXACTLY on an open level, which is what turns a mis-indented line
+    # inside an `ext` body into a local error naming its own line.
+    #
+    # THE PROSE REGION IS DELIBERATELY NOT THE STACK'S BUSINESS: a region's
+    # lines may be RAGGED (all three legs accept that — `prose_ragged`), so
+    # the stack's exact-indent rule would refuse a shape leg A accepts. Its
+    # extent is leg A's `read_prose_region`: to the first CONTENT line whose
+    # indent is <= the opener's, a BLANK, or a COMMENT; a whitespace-only
+    # line ends nothing and is bytes.
+    att = [(0, False)]
+    last_indent = 0
+    last_was_content = False
+    last_opens_scope = False
+    last_opens_tree = False
+    # THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE, K57
+    # reproduced deliberately in all three legs (see run.sh's `prose_take`).
+    prose = None      # None, or {'ind', 'lines', 'dedent', 'owner', 'line'}
+    PROSE_KINDS = ('description', 'license-note', 'adaptation',
+                   'attribution', 'note')
+
+    def prose_finish():
+        """Close the open region. A `|` with NO continuation under it is a
+        structure error in leg A (`read_prose_region`'s own refusal) and is
+        one here: the value of a `|` IS the indented lines below it."""
+        nonlocal prose, cur_desc_line
+        pr, prose = prose, None
+        if not pr['lines']:
+            _fail(path, pr['line'], 'structure-attachment',
+                  "block scalar '|' has no indented continuation lines "
+                  "(a '|' value is the indented lines below it)")
+        if pr['owner'] == 'description':
+            results.append((pr['line'], 'description', '\n'.join(pr['lines'])))
+
     for lineno, raw_line in enumerate(lines, 1):
         line = raw_line.rstrip('\n')
+        # [DD-13b.W23.3] S3 FIRST, because "opaque" means exactly that: S0
+        # does not classify a region's lines, S1 does not attach them and no
+        # arm tokenises them. The line that ENDS the region is not consumed
+        # — it falls through and is read as whatever it is.
+        if prose is not None:
+            if line == '' or line.startswith('#'):
+                prose_finish()
+            elif line.strip() == '' or (len(line) - len(line.lstrip(' '))) > prose['ind']:
+                if prose['dedent'] < 0:
+                    prose['dedent'] = len(line) - len(line.lstrip(' \t'))
+                prose['lines'].append(line[prose['dedent']:])
+                continue
+            else:
+                prose_finish()
         if line.strip() == '# pcre2-only':
             pcre2_only_next = True
             continue
@@ -422,7 +518,19 @@ def parse_rxt(path):
         # indentation check exactly as it did before, matching legs A/B's
         # refusal of an indented `#` (column 1 is the only comment
         # column).
-        if line.strip() == '' or line.startswith('#'):
+        # [DD-13b.W23.3] S0, split three ways as leg A splits it: a BLANK
+        # line and a COMMENT each CLOSE every open attachment and return to
+        # indent 0; a WHITESPACE-ONLY line is INERT and disturbs nothing.
+        # Before this step all three were one `continue`, which was correct
+        # while nothing could be open.
+        if line == '' or line.startswith('#'):
+            del att[1:]
+            last_was_content = False
+            last_indent = 0
+            last_kind = None
+            last_opens_scope = last_opens_tree = False
+            continue
+        if line.strip() == '':
             continue
         # [DD-13b.W1.1] THE HEAD IS NOT THIS PARSER'S, AND IT SAYS SO.
         # The head ends at the first `pattern` line, and pcrec owns its
@@ -467,34 +575,83 @@ def parse_rxt(path):
         # immediately preceding CONTENT line, which takes no
         # continuation. A leading TAB never opens an indent at all (S0),
         # checked first, before either question is asked.
-        if line[:1] in (' ', '\t'):
-            indent_run = len(line) - len(line.lstrip(' '))
-            if indent_run < len(line) and line[indent_run] == '\t':
-                _fail(path, lineno, 'structure-attachment',
-                      "indentation is spaces; this line is indented with a "
-                      "TAB (a tab inside a value is still data, but a tab "
-                      "in the indentation has no agreed depth)")
-            if not seen_pattern:
+        cur_ind = len(line) - len(line.lstrip(' '))
+        if line[cur_ind:cur_ind + 1] == '\t':
+            _fail(path, lineno, 'structure-attachment',
+                  "indentation is spaces; this line is indented with a "
+                  "TAB (a tab inside a value is still data, but a tab "
+                  "in the indentation has no agreed depth)")
+        # [DD-13b.W23.3] S1 — ATTACHMENT, over the stack. A deeper line is a
+        # CHILD of the line above and is admitted only when that line's kind
+        # says so; a shallower one POPS back and must land EXACTLY on an
+        # open level.
+        if last_was_content and cur_ind > last_indent:
+            if att[-1][1] or last_opens_tree:
+                att.append((cur_ind, True))
+            elif last_opens_scope:
+                att.append((cur_ind, False))
+            elif not seen_pattern and len(att) == 1:
                 _fail(path, lineno, 'structure-attachment',
                       "an indented line appears before any pattern block "
                       "(nothing is open to attach it to)")
-            # [DD-13b.W23.2 FINDING] leg A's OWN `rxt_source.c:1169` files
-            # this under RXTD_STRUCTURE, not RXTD_SCHEMA_CONSTRAINT -- the
-            # fixture table in `w23_impl.md` §3.2 says `indent_under_m.
-            # rxtin` should be schema-constraint, and the DELIVERED W23.1
-            # code disagrees with its own design note. Legs B and C match
-            # leg A (the schema table is leg A's, deliberately -- §2.25.5),
-            # which this step must not re-edit; the discrepancy is
-            # reported rather than improvised past.
-            if last_kind:
+            elif last_kind:
+                # [DD-13b.W23.2 FINDING] leg A's OWN `rxt_source.c:1169`
+                # files this under RXTD_STRUCTURE, not
+                # RXTD_SCHEMA_CONSTRAINT -- the fixture table in
+                # `w23_impl.md` §3.2 says `indent_under_m.rxtin` should be
+                # schema-constraint, and the DELIVERED W23.1 code disagrees
+                # with its own design note. Legs B and C match leg A (the
+                # schema table is leg A's, deliberately -- §2.25.5); the
+                # discrepancy is reported rather than improvised past.
                 _fail(path, lineno, 'structure-attachment',
                       f"indented line continues nothing ('{last_kind}' "
                       f"takes no continuation, declared on line {last_kind_line})")
-            _fail(path, lineno, 'structure-attachment',
-                  "indented line continues nothing (the declaration above "
-                  "it takes no continuation)")
-        last_kind = line.split(None, 1)[0].split('=')[0] if line.split() else None
+            else:
+                _fail(path, lineno, 'structure-attachment',
+                      "indented line continues nothing (the declaration "
+                      "above it takes no continuation)")
+        else:
+            while len(att) > 1 and cur_ind < att[-1][0]:
+                att.pop()
+            if cur_ind != att[-1][0]:
+                if not seen_pattern and len(att) == 1:
+                    _fail(path, lineno, 'structure-attachment',
+                          "this line is indented and nothing above it "
+                          "is open to attach it to (a blank line, a comment "
+                          "or the start of the file closes every attachment)")
+                # [DD-13b.W23.3] A RAGGED DEDENT IS ITS OWN SENTENCE, in
+                # all three legs: a line closing back to a depth NOBODY
+                # OPENED is a different mistake from "the line above takes
+                # no continuation", and inside an OPEN SUBTREE the shared
+                # sentence named a rule the subtree does not have.
+                _fail(path, lineno, 'structure-attachment',
+                      f"this line is indented {cur_ind}, which closes back "
+                      f"to a depth nothing opened (the enclosing level is "
+                      f"indented {att[-1][0]}); indentation must return to "
+                      f"a depth already open")
+        last_indent = cur_ind
+        last_was_content = True
+        last_opens_scope = last_opens_tree = False
+        body = line[cur_ind:]
+        last_kind = body.split(None, 1)[0].split('=')[0] if body.split() else None
         last_kind_line = lineno
+
+        # [DD-13b.W23.3] INSIDE A CONSUMED BODY NOTHING IS DISPATCHED.
+        # `provenance` and `variant` bodies are schema-checked by leg A
+        # alone (`validated_by: pcrec` on every row in those scopes — the
+        # RECOGNISE-vs-VALIDATE split format_design §2.14 states and §2.24's
+        # D4 table publishes) and an `ext` body is interpreted by nobody.
+        # What legs B and C owe is the EXTENT. A body line whose value is a
+        # bare `|` still opens a prose region — a `variant`'s `note |` sits
+        # at indent 2 and its continuation must not escape — but NEVER
+        # inside an OPEN SUBTREE, where a bare `|` is the literal byte.
+        if len(att) > 1:
+            if not att[-1][1] and last_kind in PROSE_KINDS:
+                if body[len(last_kind):].strip(' \t') == '|':
+                    prose = {'ind': cur_ind, 'lines': [], 'dedent': -1,
+                             'owner': '', 'line': lineno}
+            continue
+        line = body
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
             head_words = ('lib', 'target', 'config', 'description',
@@ -579,10 +736,6 @@ def parse_rxt(path):
             # lines are not indented (format_design §1.2 vs §1.3 -- the
             # body's rule wins, since 3,265 blocks depend on it).
             v = line[len('description '):]
-            if v.strip() == '|':
-                _fail(path, lineno, 'structure-attachment',
-                      "a pattern block's 'description' takes the one-line "
-                      "form only: '|' is a head form")
             # [DD-13b.W23.2, §1.8 FOLD-IN 1] A SECOND `description` LINE IN
             # ONE BLOCK IS REFUSED, naming both lines -- [RXTNUL]'s own gap
             # for legs B and C, closed at leg A already
@@ -593,7 +746,22 @@ def parse_rxt(path):
                       f"a pattern block has one 'description' (already "
                       f"given on line {cur_desc_line})")
             cur_desc_line = lineno
-            results.append((lineno, 'description', v))
+            if v.strip(' \t') == '|':
+                # [DD-13b.W23.3] THE `|` FORM IS ACCEPTED NOW. The reversal
+                # is W23.1's, not this step's: format_design §1.2.5 widened
+                # a block `description` to the full `prose-value` production
+                # the day the grammar became two layers, because the rule
+                # that forbade it here ("a pattern block's lines are not
+                # indented") was a LEXICAL rule and there is no lexical
+                # layer left for it to live in. Leg A has accepted it since
+                # W23.1 (`block_scalar_in_body.rxtin`); this is legs B and C
+                # catching up rather than a second decision. The region's
+                # own `results` row is appended when it CLOSES, because its
+                # value is not known until then.
+                prose = {'ind': 0, 'lines': [], 'dedent': -1,
+                         'owner': 'description', 'line': lineno}
+            else:
+                results.append((lineno, 'description', v))
         elif line.startswith('export '):
             # [DD-13b.W1.3] THE DEFINITION'S DECLARED INTERFACE (D89
             # addendum point 2). A `config-list` of GROUP names — plain
@@ -711,13 +879,241 @@ def parse_rxt(path):
             except ValueError as e:
                 _fail(path, lineno, 'value-shape', str(e))
             results.append((lineno, 'g', (slot, start, end)))
+        # ---- [DD-13b.W23.3] THE BLOCK-SCOPED W23 ARMS ----
+        elif line.startswith('pattern-esc '):
+            # THE SECOND BLOCK OPENER (format_design §2.19). Its value is
+            # the DECODED bytes, by THE SAME EIGHT-ESCAPE TABLE this file
+            # already uses for subjects (`decode_subject`) — not a second
+            # vocabulary. Leg B passes the encoded text through to pcrec's
+            # own decoder and this leg decodes with the table it has; the
+            # two are the same eight escapes and the differential is what
+            # keeps them so. `\x00` is refused BY NAME citing K9, exactly as
+            # leg A refuses it: the compile entry takes no pattern length,
+            # so a NUL-bearing pattern would compile as its prefix and
+            # report success.
+            seen_pattern = True
+            cur_desc_line = 0
+            raw = line[len('pattern-esc '):].strip()
+            if len(raw) < 2 or raw[0] != '"' or raw[-1] != '"':
+                _fail(path, lineno, 'value-shape',
+                      "an escaped pattern is double-quoted text "
+                      f"(got {raw!r})")
+            try:
+                pat = decode_subject(raw[1:-1])
+            except ValueError as e:
+                _fail(path, lineno, 'value-shape', f"'pattern-esc': {e}")
+            if '\x00' in pat:
+                _fail(path, lineno, 'value-shape',
+                      "'\\x00' is refused (K9): the compile entry takes no "
+                      "pattern length, so a NUL-bearing pattern compiles as "
+                      "its prefix and reports success. Lifts with "
+                      "rx_info.pattern_len")
+            results.append((lineno, 'pattern', (pat, pcre2_only_next)))
+            # [DD-13b.W23.3] THE DUMP CARRIES THE TEXT AS WRITTEN, and the
+            # split is deliberate and reported: the ORACLE needs the DECODED
+            # bytes (that is what the block matches) while the `--dump`
+            # differential compares leg B against leg C, and leg B CANNOT
+            # decode — §2.19 forbids a bash decoder outright, so the only
+            # spelling both harness legs can produce for this column is the
+            # source text. Leg A reports the DECODED text in that column
+            # (`rxt_source.c`'s `pattern-esc` arm), so the three do NOT all
+            # agree here; the population at this pin is ZERO (no corpus file
+            # carries the keyword and the fixtures are `.rxtin`), and the
+            # column that settles it is the `esc` column W23.4 adds.
+            results.append((lineno, 'pattern_src', raw))
+            pcre2_only_next = False
+        elif line.startswith('mc '):
+            # `mc "<subject>" <n>` / `mc @file:"…" <n>` — the FIND-ALL COUNT
+            # (format_design §2.21). The rule is match_api.md §3.1's shipped
+            # protocol; this leg VERIFIES it by running that protocol loop
+            # in python, and NEVER `re.finditer`, which differs on an
+            # empty-preferring pattern (`a*?` over "aaa": 7 against 4).
+            rest = line[len('mc '):].lstrip()
+            if rest.startswith('@file:'):
+                subj, tail = _parse_file_subject(path, lineno, rest, subject_ids)
+            else:
+                subj, tail = parse_quoted(rest)
+            tail = tail.strip()
+            if not tail.isdigit():
+                _fail(path, lineno, 'value-shape',
+                      f"bad mc line tail {tail!r} (want a match count)")
+            results.append((lineno, 'mc', (subj, int(tail))))
+        elif (line.startswith('m @file:') or line.startswith('n @file:')
+              or line.startswith('ms ') and '@file:' in line
+              or line.startswith('ns ') and '@file:' in line):
+            # [DD-13b.W23.3, H15] A `@file:` SUBJECT on an ordinary case
+            # line. The bytes are the FILE'S, byte-exact — which is the
+            # whole point, since an inline subject cannot carry a NUL at all
+            # and the escape table has no spelling that survives argv.
+            kw = line.split(None, 1)[0]
+            rest = line[len(kw):].lstrip()
+            pos = 0
+            if kw in ('ms', 'ns'):
+                num, rest = rest.split(None, 1)
+                pos = int(num)
+                rest = rest.lstrip()
+            subj, tail = _parse_file_subject(path, lineno, rest, subject_ids)
+            tail = tail.strip()
+            if kw in ('m', 'ms'):
+                parts = tail.split()
+                if len(parts) != 2:
+                    _fail(path, lineno, 'value-shape', f"bad {kw} line tail {tail!r}")
+                results.append((lineno, 'm' if kw == 'm' else 'ms',
+                                (subj, int(parts[0]), int(parts[1])) if kw == 'm'
+                                else (pos, subj, int(parts[0]), int(parts[1]))))
+            else:
+                if tail != '':
+                    _fail(path, lineno, 'value-shape',
+                          f"unexpected trailing content on {kw} line: {tail!r}")
+                results.append((lineno, 'n' if kw == 'n' else 'ns',
+                                subj if kw == 'n' else (pos, subj)))
+        elif line.startswith('under '):
+            # [DD-13b.W23.3] `under <convention> <case-line>` — A COUNTED,
+            # LABELLED SKIP AND NEVER A SILENT ONE (format_design §2.17).
+            # Scoring a second correct answer is the CONSUMER's act: it
+            # requires knowing pcrec's own convention BY NAME, which is
+            # engine knowledge an oracle harness must not hold. AR-3's
+            # failure mode is exactly a skip nobody counted, so the line is
+            # recognised, its shape checked, and the skip counted in main().
+            rest = line[len('under '):].lstrip()
+            conv = rest.split(None, 1)[0] if rest.split() else ''
+            wrapped = rest[len(conv):].lstrip()
+            if not NAME_RE.match(conv):
+                _fail(path, lineno, 'value-shape',
+                      f"'under' wants a convention name (got {conv!r})")
+            wkind = wrapped.split(None, 1)[0] if wrapped.split() else ''
+            if wkind not in ('m', 'n', 'ms', 'ns', 'mc'):
+                _fail(path, lineno, 'value-shape',
+                      "'under <convention>' wraps an m/n/ms/ns/mc case line "
+                      f"(got {wrapped!r})")
+            results.append((lineno, 'under', conv))
+        elif line.startswith('tag '):
+            # [DD-13b.W23.3] `tag` — a LIST of bare LABELS or `key=value`
+            # items with no whitespace in either half (§2.15; r58 R3 removed
+            # the quoted `tag-prose` alternative). RECOGNISED and
+            # VALUE-CHECKED; the VOCABULARY half (`closed per-key`) is leg
+            # A's, since every W23 row reads `validated_by: pcrec`.
+            v = line[len('tag '):].strip()
+            items = [x for x in re.split(r'[\s,]+', v) if x]
+            if not items or not all(
+                    IDENT_RE.match(x.split('=', 1)[0]) and not x.endswith('=')
+                    for x in items):
+                _fail(path, lineno, 'value-shape',
+                      f"'tag' wants labels or key=value items (got {v!r})")
+            results.append((lineno, 'tag', v))
+        elif line.startswith('oracle '):
+            # [DD-13b.W23.3] `oracle <engine-ref>[/<version>]` (§2.9).
+            # RECOGNISED and SHAPE-CHECKED; naming an oracle this script
+            # cannot reach is a LABELLED SKIP, never a refusal — python `re`
+            # is the one oracle here and a block naming another is stating a
+            # true fact about somebody else's runner.
+            v = line[len('oracle '):].strip()
+            if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z0-9._-]+)?$', v):
+                _fail(path, lineno, 'value-shape',
+                      "'oracle' wants an engine reference, optionally "
+                      f"'/<version>' (got {v!r})")
+            results.append((lineno, 'oracle', v))
+        elif line == 'provenance':
+            # [DD-13b.W23.3] A SUB-BLOCK OPENER. Legs B and C RECOGNISE the
+            # record and CONSUME its body without reading it; pcrec
+            # VALIDATES it (format_design §2.14's last paragraph, published
+            # per-row as `validated_by: pcrec`). What this arm owes is the
+            # EXTENT — `last_opens_scope` is what tells S1 the indented
+            # lines below have somewhere to attach.
+            last_opens_scope = True
+        elif line.startswith('variant '):
+            v = line[len('variant '):].strip()
+            if not NAME_RE.match(v):
+                _fail(path, lineno, 'value-shape',
+                      "'variant' wants a testee name -- a letter or '_' then "
+                      f"letters, digits, '_', '-' or '.' (got {v!r})")
+            last_opens_scope = True
+        elif line.startswith('ext '):
+            # [DD-13b.W23.3] `ext <consumer>` — THE AUX PRODUCTION, and the
+            # cheapest of the three: it opens an OPEN SUBTREE inside which
+            # nothing is dispatched by any leg. No key is validated, no
+            # value normalised, no row counted — so a body key colliding
+            # with a format keyword (`pattern`, `m`, `provenance`) produces
+            # NO extra block, NO extra case and NO record anywhere, which is
+            # §2.27.3's graduation rule made structural rather than
+            # promised.
+            v = line[len('ext '):].strip()
+            if not NAME_RE.match(v):
+                _fail(path, lineno, 'value-shape',
+                      "'ext' wants a consumer name -- a letter or '_' then "
+                      f"letters, digits, '_', '-' or '.' (got {v!r})")
+            last_opens_tree = True
         else:
             # [DD-13b.W23.2] unknown-token-in-scope: the first token has
             # no schema row in this scope at all -- the same fact leg A's
             # `unknown_token()` and leg B's catch-all now state.
             _fail(path, lineno, 'unknown-token-in-scope',
                   f"unrecognized line: {line!r}")
+    # [DD-13b.W23.3] END OF FILE CLOSES AN OPEN PROSE REGION, leg A's third
+    # `read_prose_region` boundary. Without it a region running to the last
+    # line of the file would never yield its value and an EMPTY one would
+    # never be refused — silent in both directions.
+    if prose is not None:
+        prose_finish()
     return results
+
+
+# [DD-13b.W23.3] `@file:"path" [as <id>] [sha256 <hex64>]` — H15/H6, the
+# leg-C half. The bytes are read BYTE-EXACT and carried as one python
+# character per byte (`latin-1`), which is the same representation
+# `decode_subject`'s own `\xHH` arm produces, so an `@file:` subject and an
+# inline one are the same kind of object to every check below.
+#
+# THE DIGEST IS CHECKED BY WHATEVER READS THE SUBJECT (§2.18) and this leg
+# reads it, so it checks. The `as` binding is validated by leg B, which owns
+# the per-file id namespace; duplicating the map here would be a second
+# place one rule lives, and the differential compares the legs' VERDICTS.
+def _parse_file_subject(path, lineno, rest, subject_ids):
+    m = re.match(r'@file:"([^"]*)"(.*)$', rest)
+    if not m:
+        _fail(path, lineno, 'value-shape',
+              f"'@file:' wants a double-quoted path (got {rest!r})")
+    rel, tail = m.group(1), m.group(2).lstrip()
+    m2 = re.match(r'as[ \t]+([A-Za-z_][A-Za-z0-9_.-]*)(.*)$', tail)
+    sid = m2.group(1) if m2 else None
+    if m2:
+        tail = m2.group(2).lstrip()
+    want_sha = None
+    m3 = re.match(r'sha256[ \t]+([0-9a-fA-F]{64})(.*)$', tail)
+    if m3:
+        want_sha, tail = m3.group(1).lower(), m3.group(2).lstrip()
+    elif re.match(r'sha256([ \t]|$)', tail):
+        _fail(path, lineno, 'value-shape', "'sha256' wants exactly 64 hex digits")
+    abspath = rel if os.path.isabs(rel) else os.path.join(os.path.dirname(path), rel)
+    try:
+        with open(abspath, 'rb') as fh:
+            raw = fh.read()
+    except OSError:
+        _fail(path, lineno, 'value-shape',
+              f"'@file:' names no readable file: {rel!r} (resolved to {abspath!r})")
+    if want_sha is not None:
+        got = hashlib.sha256(raw).hexdigest()
+        if got != want_sha:
+            _fail(path, lineno, 'value-shape',
+                  f"'@file:\"{rel}\"' sha256 MISMATCH: the line says "
+                  f"{want_sha}, the file is {got}")
+    # THE BINDING IS A FUNCTIONAL DEPENDENCY, NOT A UNIQUENESS KEY: every
+    # case line naming a subject restates `as <id>`, so equal keys with
+    # EQUAL values is the NORMAL spelling and only equal keys with UNEQUAL
+    # values is an error. `unique-by` would have refused this production's
+    # own documented normal form on its second occurrence (§2.18, r57
+    # S-BL1(c)); the refusal names BOTH lines.
+    if sid is not None:
+        prev = subject_ids.get(sid)
+        if prev is None:
+            subject_ids[sid] = (abspath, want_sha, lineno)
+        elif prev[0] != abspath or prev[1] != want_sha:
+            _fail(path, lineno, 'schema-constraint',
+                  f"subject id {sid!r} is re-bound to a different (path, "
+                  f"sha256) than on line {prev[2]} -- a subject id is a "
+                  "FUNCTIONAL binding, so restating the SAME binding is "
+                  "normal and a conflicting one is not")
+    return raw.decode('latin-1'), tail
 
 
 # [DD-13b.W1.1] LEG C of the C1 parse differential. Same row schema as
@@ -787,18 +1183,20 @@ def dump_file(path, entries):
         elif kind == 'features':   blk['features'], blk['only'] = data[0], ('1' if data[1] else '')
         elif kind == 'name':       blk['name'] = data
         elif kind == 'description':blk['desc'] = data
+        elif kind == 'pattern_src': blk['pat'] = data
         elif kind == 'encoding':   blk['encoding'] = data
         elif kind == 'export':     blk['exports'] = data
         elif kind == 'engine':     blk['engine'] = data
         elif kind == 'budget':
             blk['steps' if data[0] == 'steps' else 'frames'] = str(data[1])
         elif kind == 'perr':       blk['perr'] = '1'
-        elif kind in ('m', 'ms', 'n', 'ns', 'gu'):
+        elif kind in ('m', 'ms', 'n', 'ns', 'gu', 'mc'):
             # leg B stores `ms`/`ns` under `m`/`n` with an explicit
             # startpos, which is not a loss: the format DEFINES m/n as
             # ms/ns with P fixed at 0 (docs/spec/rxt_format.md), so the
             # two spellings of one case must dump identically.
             if kind == 'm':    cases.append([lineno, 'm', 0, ''])
+            elif kind == 'mc': cases.append([lineno, 'mc', 0, ''])
             elif kind == 'n':  cases.append([lineno, 'n', 0, ''])
             elif kind == 'ms': cases.append([lineno, 'm', data[0], ''])
             elif kind == 'ns': cases.append([lineno, 'n', data[0], ''])
@@ -879,7 +1277,7 @@ def run_supervised(files, timeout, min_files, allow_timeouts=0):
     import subprocess
 
     SKIP_KEYS = ('pcre2-only', 'giveup', 'composed', 'no-python-expression',
-                 'perr-python-accepts', 'own-oracle')
+                 'perr-python-accepts', 'own-oracle', 'under-convention')
     tot_pass = tot_fail = tot_skip = tot_info = tot_storeuncovered = 0
     tot_reason = {k: 0 for k in SKIP_KEYS}
     timed_out = []
@@ -1086,6 +1484,12 @@ def main():
     total_skip_no_python = 0
     total_skip_perr_accept = 0
     total_skip_own_oracle = 0
+    # [DD-13b.W23.3] `under`'s COUNTED, LABELLED SKIP. Its own bucket
+    # rather than a share of an existing one: an `under` line is a real
+    # expectation this oracle declines to score for a stated reason
+    # (scoring a second correct answer needs pcrec's convention BY NAME),
+    # and AR-3's failure mode is exactly a skip nobody counted.
+    total_skip_under = 0
     per_file_counts = {}
 
     for path in files:
@@ -1116,6 +1520,8 @@ def main():
         skipped_no_python = 0
         skipped_perr_accept = 0
         skipped_own_oracle = 0
+        skipped_under = 0
+        mc_count = 0
         file_own_oracle = declares_own_oracle(path)
         cur_skip = False
         cur_composed_skip = False
@@ -1128,6 +1534,13 @@ def main():
         # one that references it). `cur_name` was written at the 'name'
         # branch below and never read anywhere -- dead, removed with it.
         cur_reflags = 0
+        # [DD-13b.W23.3] the BLOCK's declared encoding, tracked for exactly
+        # one consumer: `mc`'s empty-match advance. SW7 makes that advance
+        # normative on ill-formed UTF-8 ("from pos + 1, skip bytes in the
+        # range 0x80-0xBF"), so a leg reimplementing the protocol has to
+        # know which encoding the block asked for. Nothing else here reads
+        # it -- the `encoding` directive stays a pcrec-side axis.
+        cur_encoding = ''
         file_failures = []
         file_info = []
 
@@ -1138,6 +1551,7 @@ def main():
                 compile_error = None
                 compiled = None
                 cur_reflags = 0
+                cur_encoding = ''
                 last_case_kind = None
                 last_case_subj = None
                 last_case_pos = None
@@ -1150,8 +1564,22 @@ def main():
                         compile_error = e
                 continue
 
+            if kind == 'encoding':
+                cur_encoding = data
             if kind in ('name', 'description', 'encoding', 'engine',
-                        'budget', 'frames_buffer'):
+                        'budget', 'frames_buffer', 'tag', 'oracle',
+                        'pattern_src'):
+                # [DD-13b.W23.3] `tag` and `oracle` join the list for the
+                # same reason every other member is on it: they are BLOCK
+                # DECLARATIONS with no meaning for python `re`. `tag` is
+                # metadata whose vocabulary half is leg A's; `oracle` names
+                # an engine THIS SCRIPT IS NOT — python is its one oracle —
+                # so recognising the declaration and continuing is the
+                # honest answer, and a block does not stop being
+                # python-verifiable because it names somebody else's
+                # reference engine. They are PARSED and value-checked at
+                # parse time (a control that refuses to read a line is no
+                # control for it) and then deliberately ignored here.
                 # [DD-13b.W1] W1's new block-scoped directives, plus the
                 # two [DD-14] ones this oracle never learned. None has a
                 # meaning for python `re`: `name`/`description` are
@@ -1237,6 +1665,41 @@ def main():
                 # this oracle has no notion of. Counted, never ignored.
                 skipped += 1
                 skipped_giveup += 1
+                continue
+
+            if kind == 'under':
+                # [DD-13b.W23.3] `under <convention>` — A COUNTED, LABELLED
+                # SKIP (format_design §2.17). Scoring a second correct
+                # answer per convention would need this script to know
+                # pcrec's own convention BY NAME, which is engine knowledge
+                # an oracle must not hold; the bench's runner is the scorer.
+                # Counted rather than ignored: AR-3's failure mode is
+                # exactly a skip nobody counted.
+                skipped += 1
+                skipped_under += 1
+                continue
+
+            if kind == 'mc':
+                # [DD-13b.W23.3] `mc` — THE FIND-ALL COUNT, verified by
+                # RUNNING `docs/spec/match_api.md` §3.1's PROTOCOL LOOP in
+                # python and NEVER by `re.finditer` (format_design §2.21).
+                # The two disagree on an empty-PREFERRING pattern — `a*?`
+                # over "aaa" is 4 by the protocol and 7 by `finditer`,
+                # because finditer implements PCRE2's NOTEMPTY retry, a span
+                # set pcrec's own entry points cannot express. Reaching for
+                # `finditer` here would therefore import a divergence rather
+                # than check for one.
+                mc_count += 1
+                subj, want = data
+                if compiled is None:
+                    skipped += 1
+                    skipped_no_python += 1
+                    continue
+                got = _findall_protocol(compiled, subj, cur_encoding)
+                if got == want:
+                    total_pass += 1
+                else:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected {want} find-all match(es) but the §3.1 protocol reports {got}"))
                 continue
 
             if kind == 'perr':
@@ -1464,12 +1927,14 @@ def main():
         total_skip_no_python += skipped_no_python
         total_skip_perr_accept += skipped_perr_accept
         total_skip_own_oracle += skipped_own_oracle
+        total_skip_under += skipped_under
         if skipped:
             print(f"  {fname}: {skipped} case(s) skipped, not python-verifiable "
                   f"(pcre2-only {skipped_pcre2_only}, give-up {skipped_giveup}, "
                   f"composed {skipped_composed}, no-python-expression "
                   f"{skipped_no_python}, perr-python-accepts "
-                  f"{skipped_perr_accept}, own-oracle {skipped_own_oracle})")
+                  f"{skipped_perr_accept}, own-oracle {skipped_own_oracle}, "
+                  f"under-convention {skipped_under})")
         # [C3 THREE-WAY VERDICT] ALWAYS PRINTED, per file, same shape as the
         # FAILURES block below -- an informational cell that is silent by
         # default is exactly the "quiet bucket" shape this project's own
@@ -1532,7 +1997,8 @@ def main():
           f"composed={total_skip_composed} "
           f"no-python-expression={total_skip_no_python} "
           f"perr-python-accepts={total_skip_perr_accept} "
-          f"own-oracle={total_skip_own_oracle})")
+          f"own-oracle={total_skip_own_oracle} "
+          f"under-convention={total_skip_under})")
     if grand_f == 0:
         print("ALL CHECKS PASSED (100%)")
     else:
