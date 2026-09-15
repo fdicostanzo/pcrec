@@ -889,3 +889,32 @@ never edited afterwards.
   nested/cross-file-duplicate/PROCS=2/named-absorbed/corpus-control) —
   the shipped corpus has zero `include` lines and cannot exercise any
   of it structurally.
+
+- `w234_report.md` — [DD-13b.W23.4] (2026-09-15, lane w234, sonnet):
+  `--list-source`'s FOUR `#section` blocks (`provenance`/`variants`/
+  `cases`/`aux`), three appended pattern-row columns (`tags`/`oracle`/
+  `esc`), four new head-row kinds, and the FORMAT-READER SURVEY's own
+  R5/R6 repair (both made SECTION-AWARE, never a hand-written section
+  list). Read §1.4 first: **six PRE-EXISTING checks needed the same
+  repair** the moment a fixture's own case line legitimately grew a
+  `#section cases` block, each reproduced as a genuine regression
+  against a scratch build of the branch point before being attributed
+  to this change. §1.5 is S242/S243/S246 and W23-S6, worth reading for
+  two corrections the hand-verify caught rather than the first draft: S242's
+  actual symptom is a stronger, TOTAL refusal (not the block_line drift
+  a first reading predicts — the root frame's `f->base` only reaches
+  BLOCK scope through the opener transition at all), and S246 variant
+  (a)'s first draft sabotaged the WRONG scope's `ext` row (FILE instead
+  of BLOCK, caught because `aux_identity_edited.rxtin`'s own two `ext`
+  blocks are block-scoped and the plant went silently unexercised). §2
+  is a FINDING: the withdrawal-absence check's data arm cannot tell a
+  withdrawn `config`-body directive from an `ext` BODY line spelled the
+  same way — this lane's own first-draft fixture used `testee`,
+  `format_design.md`'s OWN worked example's exact word, and tripped it;
+  fixed by renaming rather than narrowing the check (a design question
+  left to the manager). §3 dispositions (does not resolve) the
+  `w233_report.md` §3.2 OPEN ITEM on a `pattern-esc` row's dump VALUE
+  disagreement between leg A and legs B/C — population zero, the `esc`
+  column added here answers a different question, and which of the two
+  should change is escalated rather than guessed. 191/0/0 (was 184/0/0
+  at the branch point), census 210/3936/28943 unchanged, no `abi` event.
