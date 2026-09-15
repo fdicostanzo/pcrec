@@ -518,6 +518,28 @@ explicit flag beats a file, so if you need the command line to win on an
 axis the file sets, remove it from the file rather than expecting the flag
 to override it.
 
+**`--engine` IS THE ONE NAMED EXCEPTION** (Frank's ruling, 2026-09-15,
+w235 finding 2). An EXPLICIT `--engine=` on the actual command line wins
+over a target's `engine vm` row rather than being silently discarded by
+it, and a conflict is reported on stderr — non-fatal, naming both sources
+and both values — with the compile proceeding under the CLI's choice:
+
+```
+pcrec: FILE:LINE: target 'PREFIX': CLI --engine=dfa and this file's
+`engine vm` disagree; using the CLI's explicit choice
+```
+
+"Explicit" means a `--engine=dfa` or `--engine=vm` was actually typed —
+`PCREC_ENGINE_AUTO` is both the field's zero default AND `--engine=auto`'s
+own value, so an explicitly-typed `auto` is indistinguishable from no flag
+at all; both cases yield the general rule above (the file's `engine` row
+applies, silently) rather than a stated boundary case. No tracking
+machinery exists to tell the two apart, on the ruling's own terms: the
+substance is that an explicit NON-DEFAULT CLI choice is never silently
+overridden, and `auto` is the default. This exception applies to `engine`
+alone; every other axis `target`/`config` can set (`flags`, `encoding`,
+`budget`) still follows the file-wins rule stated above unchanged.
+
 **A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
 parser**, so a flag cannot mean one thing on the command line and another in
 a config block. It may set COMPILE OPTIONS only: an output path, a pattern,

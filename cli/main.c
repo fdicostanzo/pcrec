@@ -803,6 +803,17 @@ static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
     return 0;
 }
 
+/* [M4.5b] `pcrec_options.engine`'s three values, for a diagnostic only —
+ * `PCREC_ENGINE_AUTO` is the only `enum` member (`lib/pcrec.h`'s [ABI-NS]
+ * comment explains why DFA/VM are `#define`s instead), so this is the one
+ * place that needs all three spellings back as text. */
+static const char *engine_name(int e)
+{
+    if (e == PCREC_ENGINE_DFA) return "dfa";
+    if (e == PCREC_ENGINE_VM)  return "vm";
+    return "auto";
+}
+
 /* The target's composed settings, ON TOP OF the command line's options.
  *
  * THE FILE WINS, and the precedent is in the tree rather than invented
@@ -816,7 +827,24 @@ static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
  * on top. The typed spellings are the format's own named axes and are the
  * only ones a pattern BLOCK can write, so they are the more specific of the
  * two; `pcrec` is the general escape hatch, which is what makes it the
- * base rather than the override. */
+ * base rather than the override.
+ *
+ * **`engine` IS THE ONE NAMED EXCEPTION** (Frank's ruling, w235 finding 2,
+ * 2026-09-15): an EXPLICIT `--engine=` on the actual command line wins over
+ * a target's `engine vm` row rather than being silently discarded by it, and
+ * a conflict is reported (stderr, non-fatal) naming both sources and both
+ * values. "Explicit" is exactly `ts.opt.engine != PCREC_ENGINE_AUTO` at the
+ * point this function reaches the `engine` row: the only two writers of that
+ * field are this exact `--engine=` flag (parsed identically whether it came
+ * from the real argv or from a `config` block's own `pcrec <raw>` line,
+ * reparsed above through the SAME `cli_parse`) and the `engine` row below —
+ * so a non-AUTO value here can only mean an explicit flag was typed, never
+ * an inferred default. `--engine=auto` typed explicitly is INDISTINGUISHABLE
+ * from no flag at all (both leave the field at its zero default) and this
+ * function does not try to tell them apart — AUTO is what "the CLI is
+ * silent" already means, so the two cases want the identical outcome
+ * (the file's `engine` row applies) regardless of which one actually
+ * happened. */
 static int apply_target(const CliState *cli, const RxtTarget *t,
                         pcrec_options *out)
 {
@@ -888,13 +916,29 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         return 1;
     }
     if (t->engine) {
-        if (!strcmp(t->engine, "vm")) ts.opt.engine = PCREC_ENGINE_VM;
+        int want;
+        if (!strcmp(t->engine, "vm")) want = PCREC_ENGINE_VM;
         else {
             fprintf(stderr,
                     "pcrec: %s:%zu: `engine %s` is not a value this format "
                     "accepts (only `vm`)\n",
                     cli->source, t->block_line, t->engine);
             return 1;
+        }
+        /* An explicit CLI `--engine=` (this invocation's own argv, or a
+         * `config` block's `pcrec <raw>` line reparsed above) WINS over this
+         * row rather than being silently overridden by it — see this
+         * function's own header comment for why `!= PCREC_ENGINE_AUTO` here
+         * is exactly "a flag was typed". */
+        if (ts.opt.engine != PCREC_ENGINE_AUTO && ts.opt.engine != want) {
+            fprintf(stderr,
+                    "pcrec: %s:%zu: target '%s': CLI --engine=%s and this "
+                    "file's `engine %s` disagree; using the CLI's explicit "
+                    "choice\n",
+                    cli->source, t->block_line, t->prefix,
+                    engine_name(ts.opt.engine), t->engine);
+        } else {
+            ts.opt.engine = want;
         }
     }
     /* `budget frames=` sizes the ARTIFACT's resume stack, which is
