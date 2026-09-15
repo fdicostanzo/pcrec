@@ -752,3 +752,86 @@ diagnostic arm is discharged for free by the cardinality-corrupted half
 of S246's OWN plant, whose detection is exactly a diagnostic changing
 (`aux_identity_edited.rxt` starts refusing where it used to accept) —
 recorded here as a deliberate narrowing rather than an omission.
+
+## [DD-13b.W23.5] the pattern-esc seam, the `all-readers` receipts, the
+## withdrawal-absence check, and the owed `mc` fixture
+
+Four additions, and the receipts mechanism is the one worth understanding
+before touching `check_refusal_all3` again.
+
+**R-A — `pattern_esc_value_seam.rxtin`** gives the dump-value seam
+`w233_report.md`/`w234_report.md` left at population ZERO its first
+population of one: a `pattern` block first (leg C's `seen_pattern` gate
+only exempts the literal token `pattern`, a gap named below), then a
+`pattern-esc "a\nb"` block. Leg A's `pattern` column DECODES
+(`a\nb` — one literal byte, one real newline, one literal byte);
+legs B and C report the text AS WRITTEN (`"a\\nb"`, quotes and the
+doubled backslash both present). The check asserts B == C and states
+the exclusion of A explicitly, rather than comparing three legs on a
+column two of them cannot agree with the third about by design.
+
+**[FINDING] leg C refuses a file whose FIRST block opens with
+`pattern-esc`.** `verify_rxt.py:667`'s `first != 'pattern'` test has no
+`pattern-esc` exemption, so `[unknown-token-in-scope] '...': 'pattern-esc'
+line before any pattern block` fires even though legs A and B both
+accept the identical file. This is S242's own finding one production
+over — a fixture cannot exercise a three-leg claim a leg structurally
+refuses before reaching it — and it means `opener_pattern_esc_pair
+.rxtin` (leg A only, S242) has never actually been reachable by a
+three-leg comparison either. Not fixed here (out of this step's brief);
+`pattern_esc_value_seam.rxtin` works around it by ordering.
+
+**R-B — the withdrawal-absence check (`w23_impl.md` §4.3) is a COMMITTED
+CHECK now**, two of its three arms. The DATA ARM is NARROWED
+structurally: an INDENT STACK tracks attachment under an `ext` (and only
+`ext` — `freq`'s body is the schema's DATA scope, not TREE, so it is not
+an aux subtree) opener, exactly S1/S2's own rule (a blank line or a
+column-1 comment closes every attachment; a dedent pops to the matching
+level), so `ext bench` / `testee pcre2/10.46` — `format_design.md`
+§2.27's own worked example, now restored verbatim in `aux_identity
+.rxtin`/`aux_identity_edited.rxtin` (this step reverted `w234_report.md`'s
+`ref` workaround per the manager's ruling) — is correctly excluded while
+a top-level `testee` line is still caught. `withdrawn_data_arm()`'s own
+self-check proves the discrimination on two scratch files built inline,
+never on the real corpus (which the arm above has already proven
+clean). The PARSER ARM greps each of the four readers' own live-keyword
+spelling (a quoted `PCREC_RXT_SCHEMA` kind in `rxt_schema.def` — the ONE
+dispatch table since W23.1 retired `config_vocab`/`head_vocab`/
+`block_vocab` — a quoted string in `verify_rxt.py`, a `^`-anchored bash
+arm in `run.sh`, a quoted flag in `cli/main.c`). **Sabotage S248**
+(`tests/mech/sabotages/S248_withdrawn_testee_returns.sh`) plants a
+`config`-scope `testee` row back into `rxt_schema.def` and the PARSER
+ARM alone goes red — the DATA ARM and the self-check are unaffected,
+three independent arms seeing three independent things. The SPEC ARM
+(§4.3(c)) is deliberately NOT a grep, and stays a standing review step.
+
+**W23-S5, the `all-readers` POPULATION check (§3.3), walks
+`--list-schema`'s OWN output** for every BLOCK-scope row reading
+`validated_by: all-readers` (today: `name`, `description`, `flags`,
+`encoding`, `engine`) and fails naming any row with no line in
+`$RECEIPTS`. The log is written by exactly two functions and nothing
+else — `check_refusal_all3_kind KIND ...` (a thin wrapper around
+`check_refusal_all3` that appends a receipt after it runs, so all
+thirteen existing call sites keep their positional needle arguments
+unchanged; five of them were renamed to the `_kind` form) and
+`check_accept_all3_kind KIND FIXTURE LABEL` (the accept-side sibling
+§3.3 names, built here for the first time — `block_kinds_accept.rxtin`
+carries `name`/`flags`/`encoding`/`engine` together, `description`'s own
+receipt rides the pre-existing `single_description.rxtin` accept
+control). **A receipt is written only when all three legs actually ran
+and answered** — never a declared fixture name — which is the whole
+point: a fixture that stopped reaching its own call site (a call
+commented out, an early return) would still exist on disk and would
+still be named by the schema row; only the invocation log notices its
+absence.
+
+**`mc_illformed_utf8.rxtin`** is `w23_impl.md` §3.2's OWED W23.3 fixture
+that never landed there (SW7's ill-formed-UTF-8 advance rule). `x?`
+(nullable) over three bare continuation bytes `\x80\x80\x80` under
+`-e utf8`: WITH the skip rule the loop finds an empty match at 0, skips
+all three continuation bytes in one step, and finds a second empty match
+at 3 — count 2; WITHOUT it (naive `pos + 1` alone) it would find four.
+Both `run.sh`'s C loop (the real `<prefix>_next_pos` residual) and
+`verify_rxt.py`'s independent python transcription report 2, and both
+were confirmed to FAIL loudly against the naive 4 before this fixture
+was committed.

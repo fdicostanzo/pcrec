@@ -191,6 +191,16 @@ measurement — this directory's rows carry their history, and the matrix output
 is the citation, never a number copied into prose. When a corpus edit moves a
 figure a row's `SAB_REACH_POP` states, move the row in the same change.
 
+**Newest ([DD-13b.W23.5], 2026-09-15, lane w235):** one row, **S248**, plus
+S247's own missing writeup in `../CLAUDE.md` closed retroactively (it was
+built and field-validated at [DD-13b.W23.3a] but never entered there — a
+real gap, not a rename). S248 plants a withdrawn `config testee` row back
+into `src/parse/rxt_schema.def`, validating the withdrawal-absence check's
+PARSER ARM built this step; the highest id on this worktree before it was
+S247 (the census `ls tests/mech/sabotages | sed 's/^S\([0-9]*\)_.*/\1/' |
+sort -n | tail -1` command this file's own "Numbering" section names). See
+`../CLAUDE.md`'s own new section for the per-row narrative.
+
 **Newest ([K50], 2026-09-06, lane k50bnd):** four rows on the caller-startpos
 boundary axis and the engine gate behind it, all on the new `startbnd` arm
 (`tests/utf8/run_startbnd_diff.sh`), all carrying `SAB_REACH` from birth.

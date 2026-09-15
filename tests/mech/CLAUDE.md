@@ -2495,3 +2495,44 @@ the schema had already validated. All three plant into
 All three are `rxtsource`-suite rows: the corpus carries no `ext` line
 and no `pattern-esc`/`m` collision shape and cannot acquire either, so
 their population lives entirely in fixtures, same as S240/S245 above.
+
+## [DD-13b.W23.3a] row S247 (retroactively documented) and
+## [DD-13b.W23.5] row S248
+
+**S247, `include`'s closure recursion, was never entered here** — a real
+gap in `w233a_report.md`'s own delivery, closed as a drive-by by this
+step rather than left for a future reader to notice the section missing.
+`rxt_expand_closure`'s own recursive call (`tests/harness/run.sh`) is
+deleted, so a fragment's OWN nested `include` lines are silently never
+followed — the walk records the fragment itself and stops one level
+short. Only `include_nested.rxtin` (whose first fragment includes a
+second) can see it: `fragments spliced` moves 2 -> 1 and
+`include_nested_frag2.rxtfrag`'s own `leaf` pattern and case are
+silently dropped. `include_basic.rxtin` (nothing at depth two to lose)
+and the corpus control (zero `include` lines at this pin) both stay
+green under the SAME plant — the FIXTURE-arm-red/corpus-arm-green split
+§6.3a's own acceptance line names, and the reason the row needs the
+nested fixture and not only the flat one. `rxtsource` suite; `SAB_REACH`
+confirms the recursive call still exists in the clean tree before
+planting over it.
+
+**S248, R-B's own detector aimed at itself**: a `PCREC_RXT_SCHEMA(CONFIG,
+"testee", ...)` row is added to `src/parse/rxt_schema.def`, reviving the
+`config`-body roster directive D99 withdrew (item N-42). This is exactly
+the shape the withdrawal-absence check's landing bar (`w23_impl.md` §4.3)
+exists to catch — a withdrawn keyword returning as an ACTIVE production,
+spelled precisely as the check's own PARSER ARM looks for it (a quoted
+token in the schema table, the ONE dispatch table since W23.1). MEASURED:
+under the plant the PARSER ARM alone goes red
+(`tests/rxtsource/run_rxtsource_tests.sh`'s "withdrawal-absence, parser
+arm" check, 1 hit naming the new row); the DATA ARM stays green (no
+`.rxt`/`.rxtin` file in the tree WRITES `testee` at a config-body
+first-token position, plant or no plant) and the aux-subtree self-check
+stays green (it exercises two scratch files that never touch
+`rxt_schema.def`). Three independent arms, three independent readings —
+this row confirms the third by planting the one thing that should move
+only it. `rxtsource` suite; `SAB_REACH` confirms no `config testee` row
+exists on the clean tree (a population-of-zero floor, per this
+directory's `SAB_REACH_POP`-vs-`SAB_REACH` distinction — this is a
+`SAB_REACH` count, not a population floor, since the clean tree's count
+must be EXACTLY zero rather than merely at-least-some).
