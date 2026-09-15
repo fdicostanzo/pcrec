@@ -163,17 +163,88 @@ typedef struct {
 
 /* ---- looking a name up ------------------------------------------------- */
 
-static const RxtDef *def_by_name(const Ctx *cx, const char *name)
+/* ---- [DD-13b.W23.3] THE DERIVED-IDENTIFIER CALL BINDING (§2.22, D100) --
+ *
+ * §4.5 item 4's mechanism — the canonical pattern once as a `name`d
+ * definition, one block per regime whose pattern is a subroutine call — was
+ * MEASURED UNUSABLE for every bench pattern id: a `(?&…)` call goes through
+ * PCRE2's own group-name grammar, which refuses `-` and `.`, and every id
+ * in all five bench sets is a hyphenated slug. The NAME grammar was widened
+ * for those ids (`defname_ok`); the CALL grammar cannot be — D26 makes it
+ * PCRE2's.
+ *
+ * SO A CALL BINDS THROUGH THE DERIVATION, and that is the whole repair: a
+ * by-name call binds to the definition whose name, mapped through
+ * `pcrec_rxt_prefix_from_name` (its ONE home, the same function
+ * `target = <name>` already derives a C prefix with), equals the call's
+ * identifier. `(?&cls_upto_1024)` reaches `name cls-upto-1024`. It is a
+ * SECOND KEY on the SAME set, built with the same function, consulted by
+ * the same lookup: no new pass, no new namespace, and no change to the
+ * three-reader name grammar, which is what makes the repair cheap.
+ *
+ * TRUNCATION IS UNREACHABLE BY CONSTRUCTION RATHER THAN BY AN ORDERING.
+ * §2.22 states the hazard against the mapping's OTHER consumer, which
+ * derives into a fixed `char def[RXT_TARGET_DEF_MAX + 1]` and is safe only
+ * because `parse_target` refuses an over-long name two refusals earlier —
+ * an order nobody had written down as a rule. This consumer sizes the
+ * destination at `strlen(name) + 1`, which is the mapping's own documented
+ * contract, so there is no length at which two names could collide by being
+ * cut. The 128-byte CALLABILITY bound is a separate and real fact
+ * (`PCREC_MAX_GROUP_NAME`, PCRE2's error 148, inherited under D26): a
+ * longer definition is buildable as a target and unreachable from a
+ * pattern, and the refusal below names that rather than letting the call
+ * read as a misspelling.
+ *
+ * EXACT SPELLING DOES NOT WIN. `x_y` beside `x-y` is a refusal naming BOTH
+ * and the shared identifier, not a silent tie-break to the exact one —
+ * "exact" is only the identity case of the same mapping, and tie-breaking
+ * would make the mapping's non-injectivity free exactly where it bites.
+ * This NARROWS the format (§1.6.1a case (5), a CHOSEN narrowing with a
+ * measured population of 0 in both repos), and nothing is refused at
+ * DECLARATION time: two colliding definitions coexist happily while
+ * nothing calls the shared identifier. */
+static const char *rc_derived_id(Arena *a, const char *name)
 {
-    for (size_t i = 0; i < cx->defs->n; i++)
-        if (strcmp(cx->defs->v[i].name, name) == 0) return &cx->defs->v[i];
-    return NULL;
+    size_t n = strlen(name) + 1;
+    char *d = arena_alloc(a, n);
+    pcrec_rxt_prefix_from_name(name, d, n);
+    return d;
 }
 
-static Bound *bound_by_name(Composer *co, const char *name)
+static const RxtDef *def_by_name(Ctx *cx, const char *ident, size_t at,
+                                 const char *what)
+{
+    const RxtDef *hit = NULL;
+    for (size_t i = 0; i < cx->defs->n; i++) {
+        const RxtDef *d = &cx->defs->v[i];
+        if (strcmp(rc_derived_id(&cx->arena, d->name), ident) != 0) continue;
+        if (strlen(d->name) > PCREC_MAX_GROUP_NAME)
+            ctx_fail(cx, at,
+                     "%s names definition '%s' (%s:%zu), which is %zu bytes; "
+                     "a call's name is capped at %d, so that definition is "
+                     "buildable as a target and not callable",
+                     what, d->name, d->file, d->line, strlen(d->name),
+                     PCREC_MAX_GROUP_NAME);
+        if (hit)
+            ctx_fail(cx, at,
+                     "%s names '%s', which two definitions derive: '%s' "
+                     "(%s:%zu) and '%s' (%s:%zu). Rename one — an exact "
+                     "spelling does not win the tie",
+                     what, ident, hit->name, hit->file, hit->line,
+                     d->name, d->file, d->line);
+        hit = d;
+    }
+    return hit;
+}
+
+/* The visited set reads the SAME key, or a hyphenated definition already
+ * bound would be bound a second time under its derived identifier. */
+static Bound *bound_by_name(Composer *co, const char *ident)
 {
     for (size_t i = 0; i < co->nbound; i++)
-        if (strcmp(co->bound[i].def->name, name) == 0) return &co->bound[i];
+        if (strcmp(rc_derived_id(&co->cx->arena, co->bound[i].def->name),
+                   ident) == 0)
+            return &co->bound[i];
     return NULL;
 }
 
@@ -631,7 +702,7 @@ static const RxtDef *rc_next_wanted(Composer *co, PendingRef *list,
     for (PendingRef *pr = list; pr; pr = pr->next) {
         if (!pr->deferred || !pr->name) continue;
         if (bound_by_name(co, pr->name)) continue;
-        const RxtDef *d = def_by_name(co->cx, pr->name);
+        const RxtDef *d = def_by_name(co->cx, pr->name, pr->at, pr->what);
         if (!d) {
             /* A name the set does not declare: not this pass's business, and
              * NOT an error here either — the re-resolution raises it, once,

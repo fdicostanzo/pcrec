@@ -59,6 +59,30 @@
  *                `default:`-less switch in rxt_schema.c, so an eighth kind
  *                added later is a compile error at exactly the site that must
  *                handle it (`src/opt/mrl.c:39-45`'s stated house rule).
+ *
+ *                THREE CLAUSE SPELLINGS THE DESIGN LEAVES TO THE TABLE, each
+ *                DECLARED here so `--list-schema` carries them and no reader
+ *                has to remember a rule ([DD-13b.W23.3]):
+ *
+ *                (a) `closed <selector> [member…]` — the SELECTOR names the
+ *                    SET and the remaining words are the FORMAT-declared
+ *                    members. NO members means the set is FILE-declared only
+ *                    (a `vocabulary <selector> …` line, §2.15) and, with no
+ *                    such line, the key keeps free-vocabulary behaviour.
+ *                    That is §2.15's "ONE constraint kind whose members may
+ *                    come from either" spelled so both cases READ the same:
+ *                    `closed fidelity verbatim adapted synthesized` is the
+ *                    format half and `closed kind` the file half.
+ *                (b) `closed per-key` — the value is a LIST of `key=value`
+ *                    items and EACH ITEM'S OWN KEY selects the set (§2.15's
+ *                    "any `vocabulary`-declared key checked at its own `tag`
+ *                    site"). A per-row selector cannot express this, because
+ *                    the set is chosen per item and not per row.
+ *                (c) `required-if`/`forbidden-if <field> <op> [value]` — `op`
+ *                    is `==`, `!=` or `present`. The field `parent` is the
+ *                    ONE reserved name: it reads the ENCLOSING scope's own
+ *                    name, which is how one `provenance` record serves two
+ *                    parents without being two records (§2.14).
  *   source       FORMAT (pcrec declares this row) | FILE (a `vocabulary`
  *                line declares it, §2.15). Every row below is FORMAT; the
  *                FILE half arrives with `vocabulary`'s production.
@@ -115,9 +139,9 @@ PCREC_RXT_SCHEMA(FILE, "description", PROSE, 0, PROSE,      AT_MOST_ONE, "", FOR
  * with its wave — which is the gap §2.3 measured (`vocabulary` reads "not a
  * file-level directive" on the pre-W23 binary, the K14 shape). */
 PCREC_RXT_SCHEMA(FILE, "include",     TOKEN, 0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
-PCREC_RXT_SCHEMA(FILE, "vocabulary",  LIST,  0, PROSE,      REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "vocabulary",  LIST,  0, PROSE,      REPEAT,      "unique-by first-word", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(FILE, "oracle",      TOKEN, 0, NONE,       AT_MOST_ONE, "", FORMAT, PCREC,      23)
-PCREC_RXT_SCHEMA(FILE, "tag",         LIST,  0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
+PCREC_RXT_SCHEMA(FILE, "tag",         LIST,  0, NONE,       REPEAT,      "closed per-key", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(FILE, "use",         LIST,  0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
 PCREC_RXT_SCHEMA(FILE, "freq",        TOKEN, 0, DATA,       REPEAT,      "", FORMAT, PCREC,      23)
 PCREC_RXT_SCHEMA(FILE, "ext",         TOKEN, 0, TREE,       REPEAT,      "", FORMAT, PCREC,      23)
@@ -160,7 +184,7 @@ PCREC_RXT_SCHEMA(BLOCK, "features",       LIST,  0, NONE,  AT_MOST_ONE, "", FORM
 PCREC_RXT_SCHEMA(BLOCK, "encoding",       TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
 PCREC_RXT_SCHEMA(BLOCK, "engine",         TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, ALL_READERS, 1)
 PCREC_RXT_SCHEMA(BLOCK, "budget",         PAIR,  0, NONE,  ACCUMULATE,  "", FORMAT, PCREC,       1)
-PCREC_RXT_SCHEMA(BLOCK, "frames-buffer=", INT,   0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
+PCREC_RXT_SCHEMA(BLOCK, "frames-buffer=", TOKEN, 0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "perr",           NONE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "m",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
 PCREC_RXT_SCHEMA(BLOCK, "n",              CASE,  0, NONE,  REPEAT,      "", FORMAT, NONE,        1)
@@ -171,12 +195,18 @@ PCREC_RXT_SCHEMA(BLOCK, "gp",             CASE,  0, NONE,  REPEAT,      "", FORM
 PCREC_RXT_SCHEMA(BLOCK, "gu",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 
 /* W23's block lines — rows only at W23.1, arms at W23.3. */
-PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "closed per-key",       FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)
-PCREC_RXT_SCHEMA(BLOCK, "under",      QUALIFIED, 0, NONE,       REPEAT,      "unique-by under-key",  FORMAT, PCREC, 23)
+/* `under`'s two declared rules, and the `closed` one is why `qualified-line`
+ * is a VALUE SHAPE rather than a free line: a qualified line's first
+ * component IS its qualifier, so `closed convention` selects the same set a
+ * `vocabulary convention …` line declares without a second mechanism. The
+ * KEY TUPLE behind `unique-by under-key` is the one named parser-code
+ * exception §2.25.3 records (the tuple ranges over fields INSIDE the value). */
+PCREC_RXT_SCHEMA(BLOCK, "under",      QUALIFIED, 0, NONE,       REPEAT,      "closed convention;unique-by under-key", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "oracle",     TOKEN,     0, NONE,       AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "provenance", NONE,      0, PROVENANCE, AT_MOST_ONE, "",                     FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(BLOCK, "variant",    TOKEN,     0, VARIANT,    REPEAT,      "",                     FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BLOCK, "variant",    TOKEN,     0, VARIANT,    REPEAT,      "unique-by value",      FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "ext",        TOKEN,     0, TREE,       REPEAT,      "",                     FORMAT, PCREC, 23)
 
 /* ---- PROVENANCE scope — §2.14's ELEVEN fields, ONE record at TWO parents
@@ -196,7 +226,7 @@ PCREC_RXT_SCHEMA(PROVENANCE, "ref",          TOKEN, 0, NONE,  AT_MOST_ONE, "requ
 PCREC_RXT_SCHEMA(PROVENANCE, "retrieved",    TOKEN, 0, NONE,  AT_MOST_ONE, "required",                                              FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "license",      TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block",                           FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "license-note", PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(PROVENANCE, "fidelity",     TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block;closed verbatim adapted synthesized", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "fidelity",     TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block;closed fidelity verbatim adapted synthesized", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "adaptation",   PROSE, 0, PROSE, AT_MOST_ONE, "required-if fidelity != verbatim",                      FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "attribution",  PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "bytes",        INT,   0, NONE,  AT_MOST_ONE, "required-if parent == data",                            FORMAT, PCREC, 23)
@@ -206,9 +236,14 @@ PCREC_RXT_SCHEMA(PROVENANCE, "sha256",       TOKEN, 0, NONE,  AT_MOST_ONE, "requ
 
 PCREC_RXT_SCHEMA(VARIANT, "text",        RAW,   0, NONE,  AT_MOST_ONE, "exactly-one-of text unsupported", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(VARIANT, "unsupported", LINE,  0, NONE,  AT_MOST_ONE, "exactly-one-of text unsupported", FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(VARIANT, "kind",        TOKEN, 0, NONE,  AT_MOST_ONE, "closed kind",                     FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(VARIANT, "groups",      LIST,  0, NONE,  AT_MOST_ONE, "",                                FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(VARIANT, "note",        PROSE, 0, PROSE, AT_MOST_ONE, "",                                FORMAT, PCREC, 23)
+/* `kind`/`groups`/`note` are legal only BESIDE `text`: a declared refusal has
+ * no replacement text to classify (§2.23). `forbidden-if <field> present` is
+ * the clause that says so — the third op, admitted because three rows in this
+ * one scope need it and the two-operand form (`==`/`!=`) cannot express
+ * PRESENCE of a line whose value is unconstrained. */
+PCREC_RXT_SCHEMA(VARIANT, "kind",        TOKEN, 0, NONE,  AT_MOST_ONE, "closed kind;forbidden-if unsupported present", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "groups",      LIST,  0, NONE,  AT_MOST_ONE, "forbidden-if unsupported present", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(VARIANT, "note",        PROSE, 0, PROSE, AT_MOST_ONE, "forbidden-if unsupported present", FORMAT, PCREC, 23)
 
 /* ---- DATA scope — the `freq <name>` block's body (§2.10) -------------- */
 

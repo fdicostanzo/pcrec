@@ -4407,7 +4407,7 @@ typedef struct {
  * token, which is K14's shape (sending a reader hunting a typo in a word
  * that is in the spec). One home, so the "not in this build" list is
  * derived rather than hand-kept. */
-#define PCREC_RXT_WAVE_BUILT 1
+#define PCREC_RXT_WAVE_BUILT 23
 
 /* RESERVED — a word the format OWNS with no production behind it in any
  * build, which is a different answer from "a later wave builds it". It is
@@ -4555,6 +4555,20 @@ struct RxtSource {
  * hold `strlen(name) + 1`; the result is truncated to `dstsz` and always
  * NUL-terminated. */
 void pcrec_rxt_prefix_from_name(const char *name, char *dst, size_t dstsz);
+
+/* [DD-13b.W23.3] `pattern-esc`'s DECODER — the format's own subject escape
+ * vocabulary (`\" \\ \n \t \r \f \v \xHH`) and NO SECOND VOCABULARY. `v` is
+ * the quoted text INCLUDING its quotes; the decoded bytes are arena-copied
+ * into `*out`. Returns -1 with a sentence in `err` (never a `pcrec_error`:
+ * the caller owns the file:line framing). `\x00` is refused BY NAME citing
+ * K9 — the compile entry takes no pattern length, so a NUL-bearing pattern
+ * would compile as its prefix and report success.
+ *
+ * ONE DECODER, THREE CALLERS: the `--pattern-esc` CLI flag, `--source` and
+ * `--list-source`, so a bash-side `printf %b` approximation (a SECOND escape
+ * set, drifting by construction) is never needed anywhere. */
+int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
+                             char *err, size_t errsz);
 
 /* Parses `path`. NULL on failure with `err` filled — every diagnostic
  * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */
