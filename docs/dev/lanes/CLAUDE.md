@@ -991,4 +991,24 @@ never edited afterwards.
   never cite an abi digit at all but whose byte-count VALUES move anyway
   — a second reader class ("content depends on the scaffolding" vs. "text
   cites the abi number") the ritual's grep needs to widen to cover.
+- `k57fix_report.md` — [K57] FIXED (2026-09-15, lane k57fix, sonnet): a
+  `|` block scalar's dedent strip was a byte count, so a continuation
+  line indented less than the block's own dedent depth had content
+  silently deleted; now a REFUSAL by name, class `value-shape`, in all
+  three legs (`src/parse/rxt_source.c`'s `read_prose_region`, `run.sh`'s
+  `prose_take`, `verify_rxt.py`'s prose-region arm). Worth reading for
+  the leg-B finding: a streaming per-line reader cannot just clear
+  `prose_open` on the first refusal, because the region's remaining
+  lines then fall through to the top-level dispatch and raise a SECOND,
+  unrelated `structure-attachment` failure that `extract_class`'s
+  last-bracket read reports instead of the real one — found live on the
+  new three-leg fixture (`prose_dedent_body.rxtin`), fixed with a
+  per-region latch (`prose_bad`). `prose_dedent.rxtin` is unchanged in
+  content and inverted in assertion, exactly as r59-R4 predicted.
+  `docs/spec/rxt_format.md`'s S3 section gains the dedent-decode rule it
+  never stated (only the region's extent, before this). PARKED on
+  `lane/k57fix`, not merged — the box was under BOILERPLATE's
+  one-heavy-suite rule (lane dialsweep) for the lane's whole working
+  period, so only rxtsource + strict ran; full `make test` is owed to
+  the manager at the next merge battery.
 
