@@ -2046,6 +2046,90 @@ else
   where structure-layer parameter 3 says it must not."
 fi
 
+# [DD-13b.W23.4] S242 (S-R4a): `opener_pattern_esc_pair.rxtin`'s two
+# `pattern-esc` blocks each own one case row, at their own block's line —
+# the population `--list-source`'s `#section cases`' `block_line` column
+# exists to report, and the fixture that arms S242's detector.
+opep="$WORKDIR/opener_pattern_esc_pair.dump"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/opener_pattern_esc_pair.rxt" \
+        > "$opep" 2>"$WORKDIR/opep.err"; then
+    opep_blocks="$(section_count "" "$opep")"
+    opep_bl="$(awk -F'\t' '/^#section cases/{s=1;next} /^#/{next} s{printf "%s ", $2}' "$opep")"
+    if [ "$opep_blocks" = "2" ] && [ "$opep_bl" = "8 10 " ]; then
+        pass "S242 detector: two 'pattern-esc' blocks each own one case row at their OWN block_line (8, 10)"
+    else
+        fail "S242 detector: main-table blocks=$opep_blocks (want 2), case block_lines='$opep_bl' (want '8 10 ') —
+  either 'pattern-esc' stopped opening a second block, or something else moved."
+    fi
+else
+    fail "S242 detector: --list-source failed on opener_pattern_esc_pair.rxt:
+$(cat "$WORKDIR/opep.err")"
+fi
+
+# [DD-13b.W23.4] S243 (S-R4b): `opener_m_not_opener.rxtin` is one block
+# with two 'm' case lines on the shipped schema.
+omno="$WORKDIR/opener_m_not_opener.dump"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/opener_m_not_opener.rxt" \
+        > "$omno" 2>"$WORKDIR/omno.err"; then
+    omno_blocks="$(section_count "" "$omno")"
+    omno_cases="$(section_count "cases" "$omno")"
+    if [ "$omno_blocks" = "1" ] && [ "$omno_cases" = "2" ]; then
+        pass "S243 detector: one 'pattern' block owns both 'm' case lines (1 block, 2 cases)"
+    else
+        fail "S243 detector: main-table blocks=$omno_blocks (want 1), cases=$omno_cases (want 2) —
+  an 'm' line started acting like a block opener."
+    fi
+else
+    fail "S243 detector: --list-source failed on opener_m_not_opener.rxt:
+$(cat "$WORKDIR/omno.err")"
+fi
+
+# [DD-13b.W23.4] W23-S6 — THE AUX NON-INTERPRETATION CHECK (format_design
+# §2.27.3 clause 5): edit an aux body and require every pcrec output
+# EXCEPT `#section aux`'s own rows to be BYTE-IDENTICAL. `aux_identity`/
+# `aux_identity_edited` are the same one `pattern a+` block with the SAME
+# leading line count (so no row's `line` is downstream of the edit) and
+# DIFFERENT aux bodies — the edit moves line count, depth, key spellings
+# AND the number of `ext` blocks at once (§3.4's own rule: "the edit must
+# be chosen to move as many plausible derived quantities as it can").
+#
+# TWO ARMS: (1) `--list-source` with `#section aux` elided; (2) the
+# COMPILED ARTIFACT (`--source`'s implicit single-unnamed-block target,
+# W1.2's own compatibility default) — .c AND .h. `--list-schema` is not a
+# third arm: neither fixture's aux body can move a ROW of that table (aux
+# has none), so comparing it would assert something the mechanism cannot
+# violate.
+AIW="$WORKDIR/auxid"
+mkdir -p "$AIW/a" "$AIW/b"
+cp "$FIXRUN/aux_identity.rxt" "$AIW/a/aux_identity.rxt"
+cp "$FIXRUN/aux_identity_edited.rxt" "$AIW/b/aux_identity_edited.rxt"
+w6ok=1
+if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$AIW/a/aux_identity.rxt" > "$AIW/a.tsv" 2>"$AIW/a.err"; then
+    fail "W23-S6: --list-source failed on aux_identity.rxt: $(cat "$AIW/a.err")"; w6ok=0
+fi
+if ! "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$AIW/b/aux_identity_edited.rxt" > "$AIW/b.tsv" 2>"$AIW/b.err"; then
+    fail "W23-S6: --list-source failed on aux_identity_edited.rxt: $(cat "$AIW/b.err")"; w6ok=0
+fi
+if [ "$w6ok" = "1" ]; then
+    awk '/^#section aux/{exit}{print}' "$AIW/a.tsv" > "$AIW/a_noaux.tsv"
+    awk '/^#section aux/{exit}{print}' "$AIW/b.tsv" > "$AIW/b_noaux.tsv"
+    if diff -u "$AIW/a_noaux.tsv" "$AIW/b_noaux.tsv" > "$AIW/noaux.diff"; then
+        pass "W23-S6 arm 1: --list-source with #section aux elided is byte-identical across an aux-body edit that moves line count, depth, keys AND block count"
+    else
+        fail "W23-S6 arm 1: --list-source moved OUTSIDE #section aux when the aux body changed —
+$(head -20 "$AIW/noaux.diff")"
+    fi
+fi
+if ( cd "$AIW/a" && "$PCREC" --source aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
+   ( cd "$AIW/b" && "$PCREC" --source aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
+   diff "$AIW/a/out.c" "$AIW/b/out.c" > "$AIW/c.diff" 2>&1 && \
+   diff "$AIW/a/out.h" "$AIW/b/out.h" > "$AIW/h.diff" 2>&1; then
+    pass "W23-S6 arm 2: the compiled artifact (.c and .h) is byte-identical across the same aux-body edit"
+else
+    fail "W23-S6 arm 2: the compiled artifact moved when the aux body changed (or a build failed):
+$(cat "$AIW/a_build.err" "$AIW/b_build.err" "$AIW/c.diff" "$AIW/h.diff" 2>/dev/null | head -30)"
+fi
+
 # THE ABSENCE ASSERTIONS ARE THE CHECK. `aux_deep_tree.rxt`'s body uses
 # `pattern`, `config`, `m`, `provenance` and `variant` as aux KEYS, three
 # levels deep. If anything in pcrec interpreted one of them, the MAIN

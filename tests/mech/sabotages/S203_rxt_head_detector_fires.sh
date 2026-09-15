@@ -22,7 +22,10 @@
 SAB_ID="S203-rxt-head-detector-fires"
 SAB_FILE="tests/harness/run.sh"
 SAB_SUITES="rxtsource harness"
-SAB_DESC="run.sh treats every file as head-bearing, so all 179 corpus files take the --list-source path they are supposed to skip entirely"
+SAB_DESC="run.sh treats every file as head-bearing, so all 210 corpus files take the --list-source path they are supposed to skip entirely"
+# [DD-13b.W23.4] STALE-COUNT RE-STATEMENT (w23_impl.md §6.4 item 6): 210 is
+# the corpus's live CENSUS_FILES count at this pin, not the "179" an
+# earlier pin had.
 SAB_COUNT=1
 SAB_BEFORE='    if [ -n "$head_probe" ] && [ "$head_probe" != "pattern" ]; then'
 SAB_AFTER='    if [ -n "$head_probe" ]; then   # SABOTAGE S203: every file looks head-bearing'

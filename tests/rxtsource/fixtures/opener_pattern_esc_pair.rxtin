@@ -1,0 +1,11 @@
+# [DD-13b.W23.4] S242 (S-R4a)'s own detector: two `pattern-esc` blocks in a
+# row, each carrying one case line. On the shipped schema `pattern-esc`
+# is a block opener (opens_group), so this is two blocks and two
+# #section cases rows at block_line 1 and 3. Under S242's plant
+# (`opens_group` removed from `pattern-esc`'s row) the second
+# `pattern-esc` line stops opening anything and attaches to the FIRST
+# block instead — one block, and both case rows read block_line 1.
+pattern-esc "a"
+m "x" 0 1
+pattern-esc "b"
+n "y"
