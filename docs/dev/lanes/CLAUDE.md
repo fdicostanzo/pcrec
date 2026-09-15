@@ -918,3 +918,33 @@ never edited afterwards.
   column added here answers a different question, and which of the two
   should change is escalated rather than guessed. 191/0/0 (was 184/0/0
   at the branch point), census 210/3936/28943 unchanged, no `abi` event.
+
+- `w235_report.md` — [DD-13b.W23.5] (2026-09-15, lane w235, sonnet): THE
+  FINAL W23 STEP. Two manager rulings implemented — R-A (the pattern-esc
+  dump-value seam, A-vs-(B==C) excluded by design, given its first
+  non-zero population by `pattern_esc_value_seam.rxtin`) and R-B (the
+  withdrawal-absence check's data arm narrowed STRUCTURALLY, an indent
+  stack tracking attachment under an `ext` opener rather than a keyword
+  list, restoring `aux_identity.rxtin`'s `testee` spelling and reverting
+  w234's `ref` workaround) — plus `mc_illformed_utf8.rxtin` (SW7's owed
+  W23.3 fixture) and W23-S5, the `all-readers` population check
+  (receipts written only when all three legs actually ran, by two
+  functions and nothing else). Read §2 for two NEW findings the dry run
+  surfaced: leg C refuses any file whose FIRST block opens with
+  `pattern-esc` (S242's own finding one leg over, meaning
+  `opener_pattern_esc_pair.rxtin` has never been three-leg-reachable
+  either), and `--source`/`--target`'s config resolution silently
+  prefers a target's `engine vm` over an explicit CLI `--engine=dfa`
+  with no diagnostic (`cli/main.c:890-891`) — exactly the "silence is
+  not acceptable" shape bench check F2 asks about. §3 is the bench
+  41-check dry run itself: 25 of 41 runnable, 20 green, 3 red with an
+  already-documented cause (A1/A2/B5, each reproducing `w23_impl.md`
+  §5's own predicted findings live), 1 red and new (F2), 1 the
+  dissolved-premise shape (B6), 16 not-runnable (missing tool/sibling
+  repo, or the box constraint on G1). §4 is the consolidated
+  `w23_impl.md` correction list gathered from all five step reports
+  (two real corrections, both already recorded in their own reports:
+  w232's `indent_under_m.rxtin` class, w233a's `include` two-leg
+  symmetry). 201/0 (was 191/0), mech field validation 256/256 valid
+  including new sabotage S248 (a withdrawn `config testee` row's return,
+  hand-verified DETECTED against the parser arm alone).
