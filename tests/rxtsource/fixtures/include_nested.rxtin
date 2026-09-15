@@ -1,0 +1,19 @@
+# [DD-13b.W23.3a] TWO DEEP: `include_nested.rxtin` includes
+# `include_nested_frag1.rxtfrag`, which itself includes
+# `include_nested_frag2.rxtfrag` — §1.10.2 rule 4's "in include order,
+# depth first" needs a second level or a flat splice (`include_basic`)
+# proves it by coincidence.
+#
+# W23-S7 asserts: leg A's OWN row count for THIS file is 1 (its direct
+# include — frag2 is invisible to a single `--list-source` call on the
+# entry, exactly as `closure_walk`'s own recursive nature makes it
+# invisible to any single-file caller); leg B's closure walk recurses
+# and reports `entry files: 1` / `fragments spliced: 2`; the case count
+# is `top` + `mid` + `leaf` = 3, in that order (depth first — `mid`'s
+# own body comes before `leaf`'s, matching `closure_walk`'s DFS).
+#
+# LEG C DOES NOT PARTICIPATE — see `include_basic.rxtin`'s own header.
+include "include_nested_frag1.rxtfrag"
+
+pattern top
+m "top" 0 3

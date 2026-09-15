@@ -570,3 +570,58 @@ schema's own `validated_by` column (a row reading `pcrec` is a row legs B
 and C are not claimed to check — §3.3's rule, and claiming otherwise
 would be the named failure of asserting three legs on the strength of
 one).
+
+## [DD-13b.W23.3a] `include`'s harness half, and why it is TWO-LEG not three
+
+`include` is head-scoped by design (`format_design.md` §2.5): any file
+carrying one is head-bearing, and `verify_rxt.py`'s seam-ruling refusal —
+UNCHANGED — already raises on it, in both plain and `--dump` mode,
+before any body line is reached. **`w23_impl.md` §1.10.2's own table
+reads "legs B and C" symmetrically for report/splice/failure-attribution;
+the tree says leg C's half is discovery SUBTRACTION only, never a
+three-way block-count comparison** — the same disposition class
+`dup_head_description.rxtin` already established one production over
+(§3.1's own "the head has one parser" reasoning), recurring here because
+`include` cannot be moved to block scope the way `ext` at least
+theoretically could be. Ruled by the manager on the merge request that
+produced this section; `docs/dev/lanes/w233a_report.md` §2 carries the
+full argument, and `w23_impl.md`'s own text is corrected AT THE MERGE
+(w232's own precedent — a lane does not edit the ruled design note).
+
+**W23-S7** (§3.1) is therefore a LEG A / LEG B differential over three
+fixtures, `include_dup_path.rxtin` checked single-leg
+(`check_refusal`, `dup_head_description.rxtin`'s own wording pattern):
+
+| new fixture | what it makes reachable |
+|---|---|
+| `include_basic` + `include_basic_frag.rxtfrag` | §1.10's whole mechanism in one cell: a flat splice, one fragment, no nesting. Leg A's own include-row count, leg B's `entry files`/`fragments spliced`, and the case-count arithmetic (`1 + fragments'`) are asserted as three independent numbers |
+| `include_nested` + `include_nested_frag1.rxtfrag` + `include_nested_frag2.rxtfrag` | TWO DEEP — `include_nested_frag1` itself includes `include_nested_frag2` — the fixture "in include order, depth first" needs. Leg A's own row count on the entry stays 1 (a nested fragment's own include is invisible to a single `--list-source` call on the entry, `closure_walk`'s own recursion made visible), leg B's total is 2 |
+| `include_dup_path` (reuses `include_basic_frag.rxtfrag` as its collision target) | the same resolved real path, reached by two spellings, in ONE file's own `include` lines — leg A's own duplicate-target refusal, single-leg for the same reason `dup_head_description` is |
+
+**The FOURTH FAILURE CLASS is asserted through leg B on a scenario built
+inline in `run_rxtsource_tests.sh` itself** (the W23.4 item 3b
+"synthetic stream" precedent, one production over): two DIFFERENT
+includers that both reach the same fragment, transitively, which only a
+multi-file closure walk can see (a same-file duplicate, like
+`include_dup_path`, never reaches `rxt_expand_closure` at all — leg A
+already refused the entry's own `--list-source` call). The entry's own
+body still runs (rule 1 of §1.10.2 — a broken closure does not delete
+the entry's own cases), asserted as `cases failed: 1`.
+
+**THE CORPUS CONTROL** (§1.10.3/§1.10.4) runs through `--dump`, never a
+bare `bash run.sh`: this section's own header says it is cheap because it
+compiles nothing, and a bare full-corpus run would duplicate
+`test-corpus`'s own compile workload inside a section built specifically
+not to compete with it for the box. `--dump` still walks every file
+through subtraction and splice (parsing only), so it answers the same
+question — `entry files == CENSUS_FILES`, `fragments spliced == 0` — at
+zero compile cost. The two lines print to STDERR under `--dump`
+specifically so they never join the rows the C1 differential compares.
+
+**S247** plants the one thing that would make `include_nested` alone
+insufficient: `rxt_expand_closure`'s own recursive call deleted, so a
+fragment's OWN nested includes are silently never followed. Detected on
+`include_nested` (`fragments spliced` 2 -> 1) and invisible on
+`include_basic` (nothing at depth two to lose) and on the corpus control
+(zero include lines to begin with) — the FIXTURE-arm-red/corpus-arm-green
+split §6.3a's own acceptance line names.

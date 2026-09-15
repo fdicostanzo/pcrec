@@ -1,0 +1,4 @@
+# [DD-13b.W23.3a] `include_nested.rxtin`'s leaf fragment — no head, no
+# further nesting, the bottom of the closure walk.
+pattern leaf
+m "leaf" 0 4

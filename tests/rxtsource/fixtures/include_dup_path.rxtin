@@ -1,0 +1,20 @@
+# [DD-13b.W23.3a] THE SAME RESOLVED REAL PATH, REACHED BY TWO SPELLINGS,
+# IN ONE FILE'S OWN `include` LINES — §2.5's collision rule, the one
+# slice of it a SINGLE file's own parse can decide without walking
+# anything else (`src/parse/rxt_source.c`'s duplicate-target loop, added
+# alongside the row itself). `"include_basic_frag.rxtfrag"` and
+# `"./include_basic_frag.rxtfrag"` are two different STRINGS that
+# `realpath(3)` resolves to the same file.
+#
+# `check_refusal` — SINGLE-LEG, leg A only — exactly `dup_head_
+# description.rxtin`'s own wording pattern and for the identical reason:
+# this file is head-bearing (`include` is a head declaration), the head
+# has one parser by the seam ruling (`w1_impl.md` §1.1), and a three-leg
+# assertion on a head-level refusal is not available at any point in
+# this format's life. Naming BOTH lines is the assertion: a refusal
+# naming one is a RED, because a collision has two ends.
+include "include_basic_frag.rxtfrag"
+include "./include_basic_frag.rxtfrag"
+
+pattern top
+m "top" 0 3

@@ -1257,6 +1257,18 @@ fi
 FIXDIR="$SCRIPT_DIR/fixtures"
 FIXRUN="$WORKDIR/fix"
 mkdir -p "$FIXRUN"
+# [DD-13b.W23.3a] `.rxtfrag` FILES ARE COPIED VERBATIM, EXTENSION KEPT —
+# NOT renamed to `.rxt` like their `.rxtin` siblings above. An `include`
+# fixture's own `include "name.rxtfrag"` line resolves against ITS OWN
+# directory, so the fragment must be PRESENT here; keeping the
+# `.rxtfrag` extension is what keeps it OUT of `find tests -name
+# '*.rxt'` and therefore out of the corpus, `tests/rxtsource/CLAUDE.md`'s
+# own rule for exactly this shape.
+if compgen -G "$FIXDIR"/*.rxtfrag > /dev/null; then
+    for f in "$FIXDIR"/*.rxtfrag; do
+        cp "$f" "$FIXRUN/$(basename "$f")"
+    done
+fi
 for f in "$FIXDIR"/*.rxtin; do
     cp "$f" "$FIXRUN/$(basename "${f%.rxtin}").rxt"
 done
@@ -3166,6 +3178,166 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$WORKDIR/ch_scope.rxt" >/dev/null 2
     pass "W23-S3 arm 6b: an indented line under a row naming a scope is accepted (arm 6a's control)"
 else
     fail "W23-S3 arm 6b: a legal 'config' body was refused"
+fi
+
+# =====================================================================
+# [DD-13b.W23.3a] W23-S7: `include`'s CLOSURE
+#
+# `docs/design/dd13_format/w23_impl.md` §1.10.2's own table reads "legs
+# B and C" symmetrically for the report/splice/failure-attribution
+# rules. **MEASURED FALSE for leg C, structurally, and RULED by the
+# manager (docs/dev/lanes/w233a_report.md §2, ACCEPTED at the merge
+# request that produced this section)**: `include` is head-scoped by
+# design (`format_design.md` §2.5), so any file carrying one is
+# head-bearing, and `verify_rxt.py`'s seam-ruling refusal — UNCHANGED —
+# already raises on it before any body line is reached, exactly as it
+# does for `dup_head_description.rxtin` one production over (§2.25.5's
+# own precedent, applied to a construct that CANNOT be moved to block
+# scope the way `ext` at least theoretically could be). So this section
+# is a LEG A / LEG B differential for the splice half — never
+# `check_refusal_all3` — and `include_dup_path.rxtin`'s same-file
+# collision is `check_refusal`, single-leg, leg A only, for the
+# identical reason `dup_head_description.rxtin` is.
+#
+# check_include_splice FIXTURE DIRECT TOTAL LABEL:
+#   FIXTURE   the .rxtin's own basename (copied to $FIXRUN/FIXTURE.rxt)
+#   DIRECT    leg A's own include-row count on the ENTRY alone — its
+#             DIRECT includes only; a nested fragment's own include line
+#             is invisible to a single `--list-source` call on the
+#             entry, exactly as it is invisible to any one node of
+#             `closure_walk`'s own recursive walk one leg over
+#   TOTAL     leg B's `fragments spliced` — the TRANSITIVE closure size
+#   LABEL     the check's own name suffix
+#
+# Every fixture here is built so each physical file (entry and every
+# fragment) carries EXACTLY ONE pattern block with EXACTLY ONE `m` case
+# — which is what turns "the entry's count EXCEEDS its own file's block
+# count by the fragments' own" (§1.10.4) into one clean arithmetic
+# check: `cases passed == 1 + TOTAL`. K35's own lesson is why this is
+# asserted as three separate numbers rather than one pass/fail: a splice
+# check satisfied by a closure of zero would prove nothing, and each of
+# the three (leg A's direct count, leg B's total count, the case-count
+# arithmetic) can be wrong independently of the other two.
+check_include_splice() {
+    local fixture=$1 direct=$2 total=$3 label=$4
+    local entry_file="$FIXRUN/$fixture.rxt" ls_out a_includes b_out
+    local b_entries b_frags b_pass
+
+    if ! ls_out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$entry_file" 2>&1)"; then
+        fail "W23-S7/$label: leg A refused the entry, which must ACCEPT:
+  $ls_out"
+        return
+    fi
+    a_includes=$(printf '%s\n' "$ls_out" \
+        | LC_ALL=C awk -F'\t' '!/^#/ && $1 == "include"' | wc -l | tr -d ' ')
+    if [ "$a_includes" = "$direct" ]; then
+        pass "W23-S7/$label: leg A's own include row count on the entry is $direct"
+    else
+        fail "W23-S7/$label: leg A reported $a_includes include row(s) on the entry, wanted $direct"
+    fi
+
+    b_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$entry_file" 2>&1)"
+    b_entries=$(printf '%s\n' "$b_out" | awk -F': ' '/^entry files:/ {print $2}')
+    b_frags=$(printf '%s\n' "$b_out" | awk -F': ' '/^fragments spliced:/ {print $2}')
+    b_pass=$(printf '%s\n' "$b_out" | awk -F': ' '/^cases passed:/ {print $2}')
+    if [ "${b_entries:-X}" = "1" ] && [ "${b_frags:-X}" = "$total" ]; then
+        pass "W23-S7/$label: leg B reports entry files: 1, fragments spliced: $total"
+    else
+        fail "W23-S7/$label: leg B reported entry files: ${b_entries:-?}, fragments spliced: ${b_frags:-?} (wanted 1 / $total):
+  $b_out"
+    fi
+    local want_pass=$((1 + total))
+    if [ "${b_pass:-X}" = "$want_pass" ]; then
+        pass "W23-S7/$label: cases passed == 1 (the entry's own) + $total (fragments') == $want_pass"
+    else
+        fail "W23-S7/$label: cases passed was ${b_pass:-?}, wanted $want_pass (1 entry case + $total fragment cases)"
+    fi
+}
+check_include_splice include_basic  1 1 basic
+check_include_splice include_nested 1 2 nested
+
+# `include_dup_path.rxtin`'s same-file collision — LEG A ONLY, exactly
+# `dup_head_description.rxtin`'s own wording pattern (single-leg
+# `check_refusal`, never `check_refusal_all3`), and the comment states
+# why rather than leaving the asymmetry looking like an oversight: the
+# head has one parser, and this is a head-level refusal.
+check_refusal include_dup_path.rxt include-duplicate \
+    'include_basic_frag.rxtfrag' 'include "./include_basic_frag.rxtfrag"'
+
+# THE FOURTH FAILURE CLASS, THROUGH LEG B, ASSERTED EXPLICITLY (manager
+# ruling on this section's own brief): `include_dup_path.rxtin` is a
+# SAME-FILE collision, entirely inside leg A's own single-file parse, so
+# running it through leg B never reaches `rxt_expand_closure` at
+# all — leg A already refused the entry's `--list-source` call before
+# leg B's closure walk would begin. The `[resolution]` tag's OWN
+# detector is therefore a DIFFERENT shape: two DIFFERENT includers
+# (not one file's own two lines) that both reach the SAME fragment
+# transitively, which only a multi-file CLOSURE WALK — leg B's, never
+# leg A's — can see. Built here as scratch files rather than as a
+# fourth named `.rxtin` fixture (`w23_impl.md` §1.10.4 names three,
+# `w233a_report.md` §3 item 1's own count), on `run_rxtsource_tests.sh`'s
+# own "synthetic stream in the repair's own commit" precedent (W23.4
+# item 3b): a shared fragment reached both directly by the entry and
+# indirectly through a second included file.
+mkdir -p "$WORKDIR/xclose"
+cat > "$WORKDIR/xclose/shared.rxtfrag" <<'EOF'
+pattern shared
+m "shared" 0 6
+EOF
+cat > "$WORKDIR/xclose/via.rxtfrag" <<'EOF'
+include "shared.rxtfrag"
+pattern via
+m "via" 0 3
+EOF
+cat > "$WORKDIR/xclose/entry.rxt" <<'EOF'
+include "shared.rxtfrag"
+include "via.rxtfrag"
+
+pattern top
+m "top" 0 3
+EOF
+xc_out="$("$TIMEOUT_BIN" 60 bash "$RUNSH" "$WORKDIR/xclose/entry.rxt" 2>&1)"
+case $xc_out in
+    *'[resolution]'*)
+        pass "W23-S7/resolution: a fragment reached by TWO different includers (directly, and through a sibling) is a [resolution]-class failure"
+        ;;
+    *)
+        fail "W23-S7/resolution: expected a [resolution]-tagged failure when two different includers reach the same fragment; got:
+  $xc_out"
+        ;;
+esac
+case $xc_out in
+    *'cases failed: 1'*) ;;
+    *)
+        fail "W23-S7/resolution: expected exactly 1 case failure (the entry's own body still runs — rule 1 in §1.10.2); got:
+  $xc_out"
+        ;;
+esac
+
+# THE CORPUS CONTROL (§1.10.3/§1.10.4), and it is the one that matters:
+# a subtraction/splice bug that removed real corpus files or double-
+# spliced would otherwise surface only as a quieter or louder suite. The
+# shipped corpus has ZERO `include` lines at this pin, so `entry files`
+# must equal the FULL census and `fragments spliced` must be exactly 0.
+#
+# THROUGH `--dump`, NOT A BARE RUN: this section's own header says why
+# it is cheap ("three parses of the corpus and NO COMPILES") and a bare
+# `bash "$RUNSH"` over the whole corpus would compile every pattern —
+# `test-corpus`'s own workload, duplicated inside a section that exists
+# specifically not to compete with it for the box. `--dump` still runs
+# every file through the whole per-file loop (subtraction, splice,
+# parsing) at zero compile cost, which is everything this control needs.
+# `--dump` takes the ARGUMENT branch (no `known_fail` exclusion, unlike
+# the no-arg default), so its population is `CENSUS_FILES`, not
+# `RUNSH_FILES`.
+corpus_out="$("$TIMEOUT_BIN" 120 bash "$RUNSH" --dump "$ROOT_DIR/tests" 2>&1 >/dev/null)"
+corpus_entries=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^entry files:/ {print $2}')
+corpus_frags=$(printf '%s\n' "$corpus_out" | awk -F': ' '/^fragments spliced:/ {print $2}')
+if [ "${corpus_entries:-X}" = "$CENSUS_FILES" ] && [ "${corpus_frags:-X}" = "0" ]; then
+    pass "W23-S7 corpus control: entry files: $CENSUS_FILES (== CENSUS_FILES), fragments spliced: 0 — the shipped corpus has no include lines"
+else
+    fail "W23-S7 corpus control: entry files: ${corpus_entries:-?} (wanted $CENSUS_FILES), fragments spliced: ${corpus_frags:-?} (wanted 0) — a subtraction or splice defect moved the population:
+  $(printf '%s\n' "$corpus_out" | tail -20)"
 fi
 
 # ---------------------------------------------------------------------

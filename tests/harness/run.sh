@@ -3182,6 +3182,16 @@ done
 # which is the same absence-reads-as-success shape the short-list hard
 # fail exists to refuse one directory over.
 if [ "$RXT_DUMP" = "1" ]; then
+    # [DD-13b.W23.3a] TO STDERR, NEVER STDOUT: `--dump`'s stdout is what
+    # the C1 three-way differential compares byte for byte against legs
+    # A and C, so these two lines ride the same channel the "named,
+    # absorbed" message above already uses rather than joining the rows
+    # C1 diffs. `--dump` still runs the whole per-file loop (parsing,
+    # never compiling — `flush_block`'s own branch), so it is the CHEAP
+    # way to ask the closure-subtraction question over the WHOLE corpus
+    # without paying test-corpus's own compile cost.
+    echo "entry files: $rxt_entry_count" >&2
+    echo "fragments spliced: $rxt_fragment_count" >&2
     [ "$total_fail" -eq 0 ] || exit 1
     exit 0
 fi

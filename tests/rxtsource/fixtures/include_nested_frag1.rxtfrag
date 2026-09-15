@@ -1,0 +1,9 @@
+# [DD-13b.W23.3a] `include_nested.rxtin`'s first-level fragment. Its own
+# `include` line is what makes this file itself head-bearing (the SAME
+# rule that makes `include_nested.rxtin` head-bearing one level up) —
+# an included file's own included lines are a legal, ordinary
+# continuation of the closure, per format_design §2.5.
+include "include_nested_frag2.rxtfrag"
+
+pattern mid
+m "mid" 0 3

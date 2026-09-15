@@ -1,0 +1,9 @@
+# [DD-13b.W23.3a] `include_basic.rxtin`'s own fragment. No head: an
+# included file may contain pattern blocks and `include` lines, nothing
+# else (format_design §2.5) — this one carries no nested `include`, the
+# simplest case in the closure. Also reused, unmodified, by
+# `include_dup_path.rxtin` as the SAME-FILE collision target — one
+# fragment, two roles, on purpose: the duplicate rule is about the
+# TARGET path, not about a fragment having any property of its own.
+pattern frag
+m "frag" 0 4

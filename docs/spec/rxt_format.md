@@ -1259,8 +1259,45 @@ outcomes are distinct and stay distinct: the call FAILS (a harness
 failure carrying pcrec's own diagnostic), the file has a head and no
 `pattern` rows (zero blocks run, and the existing "no pattern blocks
 parsed from file" failure fires on its own), or the loop starts at the
-body. MEASURED: no file in `tests/` is head-bearing, so no existing file
-makes the call.
+body. MEASURED: no file in `tests/` is head-bearing on its own, so no
+plain corpus file makes the call by itself — an `include`-bearing file
+(below) is the one shape that always does.
+
+**[DD-13b.W23.3a] `include` AND THE ACCOUNTING UNIT.** A file whose head
+carries one or more `include "path"` lines is an **entry**, and its
+**closure** is the entry's own body plus every fragment its `include`
+lines name, walked **depth first, in include order** — a fragment may
+itself carry `include` lines, and those are followed the same way. A
+**cell** is what the closure produces: one (block, cases) unit per
+`pattern` block anywhere in the closure, entry or fragment, run as part
+of the entry's own turn (never as an independent file of its own).
+
+Three rules the harness enforces, each because a check needs it to be a
+rule rather than an emergent property:
+
+1. **A fragment is never its own entry.** A file that is BOTH separately
+   discoverable (`.rxt`) and named by another file's `include` line is
+   counted once, under the includer, whether or not it was also named
+   explicitly — if it was named explicitly the summary says
+   `<file>: named, absorbed into <entry>`.
+2. **A failure names the FRAGMENT's own `file:line`**, never the entry's.
+   The closure is one accounting unit; a diagnostic inside it still points
+   at the physical file and line the author would open to fix it.
+3. **An unresolved `include`, a second `include` of the same resolved real
+   path in one closure, or a cycle is a RESOLUTION failure** — a fourth
+   failure class beside a pattern-compile failure, a harness-level
+   failure and an ordinary case failure. It is reported separately (a
+   line tagged `[resolution]`) and counted toward the "pattern-compile
+   failures" total for the ENTRY, on the same rule a `perr` block already
+   follows: "this pattern does not compile" is true whether the resolver
+   or `pcrec` said so, and the entry's own body still runs — a broken
+   fragment does not delete the entry's own cases.
+
+The summary gains two lines for this, printed unconditionally:
+`entry files: N` (files run as entries, after the subtraction above) and
+`fragments spliced: M` (fragments actually added to some entry's
+closure). MEASURED: no file in `tests/` carries an `include` line today,
+so `M` is 0 and `N` equals the corpus's own file count on every run.
 
 Failures print as `file:line: expected ... got ...` beside the pattern
 under test. The final summary reports total cases passed/failed, a
