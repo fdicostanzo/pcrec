@@ -30,7 +30,7 @@ a(b|c)+d	EMITTED_BYTES	47973
 [a-z]+@[a-z]+	RX_ENGINE_SEL	"selected"
 [a-z]+@[a-z]+	RX_DFA_TABLE	"premultiplied"
 [a-z]+@[a-z]+	RX_DFA_PREFILTER	"byte-class"
-[a-z]+@[a-z]+	EMITTED_BYTES	39496
+[a-z]+@[a-z]+	EMITTED_BYTES	39499
 ^foo$	RX_ENGINE	"dfa"
 ^foo$	RX_ENGINE_SEL	"selected"
 ^foo$	RX_DFA_TABLE	"none"
@@ -45,7 +45,7 @@ a(b|c)+d	EMITTED_BYTES	47973
 (?i)HeLLo	RX_ENGINE_SEL	"selected"
 (?i)HeLLo	RX_DFA_TABLE	"premultiplied"
 (?i)HeLLo	RX_DFA_PREFILTER	"byte-class"
-(?i)HeLLo	EMITTED_BYTES	42414
+(?i)HeLLo	EMITTED_BYTES	42416
 cat|dog|cow|calf|camel	RX_ENGINE	"dfa"
 cat|dog|cow|calf|camel	RX_ENGINE_SEL	"selected"
 cat|dog|cow|calf|camel	RX_DFA_TABLE	"premultiplied"
