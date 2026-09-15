@@ -23268,3 +23268,65 @@ snapshots of short-lived workers oversample the slow tail — a
 15s-per-call read of a 76ms-per-call population. (4) A `git add -A`
 commit in a worktree that ran the full suite picks up regenerated
 logs; diff-stat every commit before accepting it.
+
+## 2026-09-15 (EDT, overnight autonomous), sixty-fifth session — the K54 re-run GREEN end to end; W23.2 + PORTFIX built in parallel and MERGED; the S5-ARM Linux discharge
+
+Frank present early (ruled: token headroom, "use em or lose em" — start
+parallel dev; bench box available), absent overnight. Session resumed an
+interrupted sixty-fourth-session close: the san/lint/mech re-run battery
+(build/battery_20260914_021456, launched 02:14 on fcfdd944) had SURVIVED
+the interruption detached and was mid-mech. A box sleep gap (~08:14 →
+~22:40) made the mech tail look pathological; Frank's correction ("don't
+base timing on wall clock") resolved it — the rows were healthy.
+
+**THE RE-RUN VERDICT (battery done 02:17): GREEN.** san rc=0 (2h25m —
+the FIRST end-to-end darwin `make san` ever, the K54 detect_leaks=0 fix
+working), lint rc=0, mech rc=0 — 248 rows, unexpected 0, anomalies 0,
+10 undetected-expected, 1 unreached-expected (S121's documented
+derivation). Frank's ratification note committed (15f36715); the
+local-unpushed hold discharged; main pushed.
+
+**PARALLEL DEV under the battery (Frank's headroom order):**
+- **[W23.2] lane w232 (sonnet, worktree off fcfdd944)**: all seven §6.2
+  build items; rxtsource 160/0/1 over the unmoved census. Its own
+  acceptance run caught a REAL self-regression before delivery
+  (str.splitlines() splits on VT/FF — sem1's ctrl_bytes BLOCKER fixture
+  fired exactly as designed; fixed to split('\n')). Three manager
+  rulings mid-flight: reserved-`version` keeps [unknown-token-in-scope]
+  (§2.25.5's own "wave above this build's" clause — RESERVED is its
+  maximal case); indent_under_m is structure-attachment (measured,
+  rxt_source.c:1169/:1173/:1184 — note corrected at merge, lane kept off
+  the note per its boundary); "no spec hunk" stated explicitly in report
+  + commit. MERGED after the trailer.
+- **PORTFIX lane (sonnet)**: the chartered emitted-code portability fix —
+  clang 21 -Werror rejects label-then-declaration in every viewed
+  scan-edge machine; fixed at the ONE templated source (emit_scan_loop,
+  both labels, `:;`), witness 6/6 clang error→clean, gcc clean
+  throughout. abi 24→25 with the grep-derived reader list; merged
+  6d15f19a; the (B) FILEPIN re-pinned to the merge by the manager
+  (bb750dce), opt5i/ccdiff1's precedent. Validation: strict green,
+  anchored diff 7/0 under plain CC (the triage chain's original symptom
+  retired), test-codegen 7/8 = the chartered inline_capability red only.
+- **THE S5-ARM LINUX DISCHARGE (Frank offered the bench box)**: the owed
+  abifix §5 six-stage re-run executed on ubuntubudu at aa983157 (which
+  already carries the pcre2_abi.h fix) — build/san/registry/uprops-byte/
+  uprops-utf8/atomic ALL rc=0 in 75 min; verified on content: san 35/35
+  scripts (detect_leaks=1 fine on glibc — the K54 derivation's other arm
+  confirmed), PC-4 62,872 cells/0, [STORE] 387/387 exact, atomic 8/0.
+  Logs: ubuntubudu:/home/duxevents/pcrec/build/linux_rerun_20260914/.
+  S5-ARM is fully discharged per the report's own bar.
+
+**Merge train (battery-clean tree)**: 15f36715 known_issues → push →
+6d15f19a portfix merge → bb750dce B-pin → w232 merge → note correction +
+plan + this entry. Post-merge full battery launched on the merged tree
+(covers w232's owed make test + S239's first real mech run + portfix
+under everything); W23.3 chartered off the merged tree.
+
+**Lessons**: (1) a watcher keyed on top-level mtimes false-stalls on a
+chunked runner — key on RECURSIVE activity or row-count movement; (2) a
+box sleep gap poisons every wall-clock inference — check accumulated CPU
+before calling a process slow; (3) the lane background-run wake-up gap
+recurred TWICE in one lane (w232) — the ladder's artifact check + ping
+worked both times, cheap; (4) cross-machine validation needs no push when
+the remote pin already contains the fix under test — check before
+sequencing a push into the plan.
