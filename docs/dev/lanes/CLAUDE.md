@@ -948,3 +948,23 @@ never edited afterwards.
   symmetry). 201/0 (was 191/0), mech field validation 256/256 valid
   including new sabotage S248 (a withdrawn `config testee` row's return,
   hand-verified DETECTED against the parser arm alone).
+
+- `battriage_report.md` — triage of the 2026-09-15 W23 merge battery's two
+  non-chartered reds (2026-09-15, lane battriage, sonnet; log-reading +
+  targeted fixes only, `make test`/`mech`/`san`/`axes`/`lint` never run —
+  the battery's own mech/san/axes/lint stages were still running for this
+  lane's whole working period). Both fixed and PARKED, not merged. [K37]:
+  `tests/rxtsource/run_rxtsource_tests.sh`'s W23-S6 arm-2 build invoked
+  `"$PCREC" --source` bare in two subshells; wrapped in `"$TIMEOUT_BIN" 30`
+  to match arm 1 and every other `--source` site in the file. The
+  `run_cpset_structure.sh` CHECK 3 manifest drift is the sharper one: both
+  moved `EMITTED_BYTES` rows are traced EXACTLY (byte for byte, verified
+  by recompiling both witnesses with `--emit-main`) to the already-ratified
+  `05c27b43`/`e1bf0025` [PORTFIX] abi-25 label fix already on this branch
+  — a legitimate consequence, not a regression — and re-recorded
+  deliberately. **The finding worth carrying forward**: `e1bf0025`'s own
+  grep-based abi-bump re-pin sweep (grepping for the literal old abi
+  number) structurally cannot find a manifest like this one, whose rows
+  never cite an abi digit at all but whose byte-count VALUES move anyway
+  — a second reader class ("content depends on the scaffolding" vs. "text
+  cites the abi number") the ritual's grep needs to widen to cover.
