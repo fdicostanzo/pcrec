@@ -55,7 +55,7 @@ table — which restates them for a reader, and says what each MEANS:
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
-| `include "path"` | **[DD-13b.W23.3]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **`pcrec` opens nothing**: the head parser touches no filesystem, so `--list-source` stays a pure function of the file's own bytes and a path naming no file is not a parse error here. Repeatable |
+| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only `--source` could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). Repeatable |
 | `vocabulary <key> <v1> <v2> …` | **[DD-13b.W23.3]** declares a CLOSED SET named `<key>`, whose members are the remaining words. It is how a FILE declares the members of a schema `closed` constraint whose row names no members (see "The `constraints` column's clause spellings" below); the keys it can close are `tag`'s own keys, `under`'s convention and `variant`'s `kind`. The key is an identifier; a set with no members is refused by name, because a closed set nothing satisfies can only ever refuse. **One line per key**: a second `vocabulary` for a key already declared is refused, naming the earlier line. Its value may use the block-scalar continuation form (`vocabulary <key> \|` with the members on indented lines) |
 | `oracle <engine-ref>[/<version>]` | **[DD-13b.W23.3]** the file-level default oracle (see "Oracle verification"). **At most ONE per file** |
 | `tag <item>{, <item>}` | **[DD-13b.W23.3]** file-level classification. Each item is a bare LABEL or a `key=value`, and neither half may carry whitespace. Repeatable |
@@ -1080,10 +1080,10 @@ boundary comes from the one head parser, and the two cannot drift.
 
 | # | column | on | value |
 |---|---|---|---|
-| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` |
+| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` \| `include` |
 | 2 | `line` | all | 1-based first line of the declaration or block |
-| 3 | `name` | target, config, pattern | the target's PREFIX; the config's name; the block's `name` (empty if unnamed) |
-| 4 | `value` | lib, target, description, pattern | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description` |
+| 3 | `name` | target, config, pattern, include | the target's PREFIX; the config's name; the block's `name` (empty if unnamed); an `include`'s RESOLVED REAL PATH |
+| 4 | `value` | lib, target, description, pattern, include | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description`; `include`'s path AS WRITTEN |
 | 5 | `pattern` | pattern | the block's pattern text |
 | 6 | `flags` | pattern, config | the letters |
 | 7 | `features` | pattern, config | the module list |

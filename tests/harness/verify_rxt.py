@@ -1215,6 +1215,56 @@ def dump_file(path, entries):
     flush()
 
 
+def _rxt_head_probe(path):
+    """The first token of the first non-comment, non-blank line, or ''
+    for a file with no content -- the SAME cheap test tests/harness/
+    run.sh's own `rxt_head_probe` runs, kept in that one shape so this
+    leg and leg B cannot silently disagree about what "head-bearing"
+    means."""
+    try:
+        with open(path, 'rb') as f:
+            raw = f.read()
+    except OSError:
+        return ''
+    for line in raw.decode('utf-8', errors='surrogateescape').split('\n'):
+        s = line.strip()
+        if not s or s.startswith('#'):
+            continue
+        return s.split(None, 1)[0]
+    return ''
+
+
+_RXT_LS_CACHE = {}
+
+
+def _rxt_list_source(path):
+    """pcrec --list-source's raw stdout, cached by REALPATH so no file's
+    head is parsed twice in one process (discover()'s subtraction pass
+    below is the one caller today). None on failure. `os.path.realpath`
+    is python's own `realpath(3)` binding -- the SAME symlink-resolving
+    semantics `src/parse/rxt_source.c`'s `include` row `name` column
+    comes from, which is the identity this cache's key must agree with
+    (tests/harness/run.sh's own `rxt_realpath` needed the identical fix
+    after a LOGICAL `cd`+`pwd` silently disagreed with it on a box where
+    /tmp is a symlink)."""
+    import subprocess
+    key = os.path.realpath(path)
+    if key in _RXT_LS_CACHE:
+        return _RXT_LS_CACHE[key]
+    pcrec = os.environ.get('PCREC', os.path.join(_ROOT, 'build', 'pcrec'))
+    try:
+        r = subprocess.run([pcrec, '--list-source', path],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if r.returncode != 0:
+        return None
+    out = r.stdout.decode('utf-8', errors='surrogateescape')
+    _RXT_LS_CACHE[key] = out
+    return out
+
+
 def discover(args):
     """A directory argument is searched RECURSIVELY (os.walk), matching
     tests/assertions/verify_pcre2.py's own discovery and NOT this
@@ -1224,8 +1274,23 @@ def discover(args):
     matched `tests/*.rxt`, of which there are none, so it verified ZERO
     files and exited reporting success. A discovery that can silently
     narrow to nothing and still read as a pass is the one property this
-    script must not have -- see --min-files below for the other half."""
+    script must not have -- see --min-files below for the other half.
+
+    [DD-13b.W23.3a] ENTRY-SET SUBTRACTION (w23_impl.md §1.10.2 rule 3):
+    a file this walk turns up that is ALSO the resolved target of some
+    OTHER discovered file's `include` line is not counted here -- it is
+    part of that file's closure, and leg B (tests/harness/run.sh) is
+    where the closure actually gets WALKED (this leg structurally cannot
+    open an `include`-bearing entry at all: `include` sits in
+    `head_words` above, so parse_rxt raises its head-bearing ValueError
+    on the entry itself, exactly as it always has for `lib`/`target`/
+    `config` -- the seam ruling, UNCHANGED). What this leg owes is
+    narrower than leg B's: not double-counting a fragment that happens
+    to ALSO be independently `.rxt`-discoverable, which is the corpus
+    control's own claim ("entries == CENSUS_FILES") and the only thing
+    THIS leg's population can get wrong."""
     files = []
+    named = set()
     for a in args:
         if os.path.isdir(a):
             for root, _dirs, names in os.walk(a):
@@ -1233,7 +1298,38 @@ def discover(args):
                           if n.endswith('.rxt')]
         else:
             files.append(a)
-    return sorted(files)
+            named.add(a)
+    files = sorted(files)
+
+    included_by = {}
+    for f in files:
+        probe = _rxt_head_probe(f)
+        if not probe or probe == 'pattern':
+            continue
+        out = _rxt_list_source(f)
+        if out is None:
+            continue
+        for line in out.split('\n'):
+            if not line or line.startswith('#'):
+                continue
+            cols = line.split('\t')
+            if len(cols) < 3 or cols[0] != 'include':
+                continue
+            target = cols[2]
+            if not target:
+                continue
+            included_by.setdefault(target, f)
+
+    kept = []
+    for f in files:
+        rp = os.path.realpath(f)
+        if rp in included_by:
+            if f in named:
+                print(f"{f}: named, absorbed into {included_by[rp]}",
+                      file=sys.stderr)
+            continue
+        kept.append(f)
+    return kept
 
 
 # [DD-13b.W1.1] THE PER-FILE WALL BOUND, and the reason it had to exist
