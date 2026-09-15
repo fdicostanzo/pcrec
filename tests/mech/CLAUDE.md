@@ -2447,3 +2447,51 @@ and W23.3 is the step that made both columns load-bearing.
 Both are `rxtsource`-suite rows, and that is forced rather than chosen:
 the corpus carries no `provenance` record and no `ext` line and cannot
 acquire one, so their whole population lives in fixtures.
+
+## [DD-13b.W23.4] rows S242, S243 and S246 (the four `#section` blocks'
+## own three)
+
+S239-S245 pin the STRUCTURE layer and the SCHEMA-as-contract; these pin
+the `#section` mechanism `--list-source` gained to actually REPORT what
+the schema had already validated. All three plant into
+`src/parse/rxt_schema.def`; S246 additionally plants into
+`tests/rxtsource/run_rxtsource_tests.sh` itself.
+
+- **S242** (S-R4a) removes `opens_group` from `pattern-esc`'s row. THE
+  MEASURED SYMPTOM IS SHARPER THAN A FIRST READING PREDICTS: rather than
+  merely misattributing a SECOND `pattern-esc` line's case rows to the
+  wrong block, the FIRST `pattern-esc` line in a file has no other route
+  into BLOCK scope at all (the ROOT frame's `f->base` only maps FILE ->
+  BLOCK through the opener transition), so `opener_pattern_esc_pair
+  .rxtin` refuses outright — `[unknown-token-in-scope] 'pattern-esc' is
+  not a file-level directive`.
+- **S243** (S-R4b) adds `opens_group` to `m`. Because
+  `pcrec_rxt_schema_opener` is a SCOPE-FREE kind lookup and the gate that
+  matters reads the ROOT FRAME's `.base` — which stays `RXT_SCOPE_FILE`
+  for the frame's entire lifetime, block after block — every `m` line
+  anywhere in the file starts acting like a block opener, not only ones
+  positioned at file scope. `opener_m_not_opener.rxtin` (one block, two
+  `m` cases) becomes three blocks / zero cases; on the full corpus the
+  SAME plant produced 15,513 spurious block rows in this row's own
+  hand-verification. **Splitting S242/S243 rather than bundling them (as
+  revision 3.1 first did) is what makes each one's OWN detection
+  provable**: the opener set is a first-match-wins query, so a bundled
+  plant leaves one half silently riding the other's detection.
+- **S246**, TWO VARIANTS (format_design §2.27.3 clause 5's own two named
+  STRUCTURAL routes): (a) `ext`'s BLOCK-scope row loses `cardinality:
+  repeat` — **corrected from an initial FILE-scope draft this lane's own
+  hand-verify caught undetected**, because `aux_identity_edited.rxtin`'s
+  two `ext` blocks are both BLOCK-scoped; the FILE-scope row's own
+  cardinality is exercised by nothing in this fixture pair. (b)
+  `tests/rxtsource/run_rxtsource_tests.sh`'s `section_count()` helper —
+  the SHARED mechanism every W23.4 fixture check routes through, not the
+  corpus-only `a_blocks` snippet the design's own prose names, which the
+  corpus's zero-`ext` population could never arm — is corrupted to fold
+  an aux tree's own `ext`-OPENER rows into the main-table count it
+  reports for `want=""`. Reachable through `aux_deep_tree.rxtin`'s own
+  `ext bench` opener with no dedicated fixture needed; both variants
+  verified DETECTED separately and together.
+
+All three are `rxtsource`-suite rows: the corpus carries no `ext` line
+and no `pattern-esc`/`m` collision shape and cannot acquire either, so
+their population lives entirely in fixtures, same as S240/S245 above.

@@ -673,9 +673,12 @@ pattern is the same file format whichever dialect the pattern is in.
 ### `--list-source FILE`
 
 The `.rxt` SOURCE file named by the option's own value, AS WRITTEN: one
-row per head declaration and per pattern block, in FILE ORDER, sixteen
-columns. **The full column table, the `kind` vocabulary, the escaping
-rule and the "as written, never resolved" contract are
+row per head declaration and per pattern block, in FILE ORDER, nineteen
+columns, **plus [DD-13b.W23.4]'s four `#section` blocks
+(`provenance`/`variants`/`cases`/`aux`) emitted unconditionally when
+non-empty, always after the main table**. **The full column table, the
+`kind` vocabulary, every section's own column list, the escaping rule and
+the "as written, never resolved" contract are
 `docs/spec/rxt_format.md`'s** — this section does not restate them.
 
 It takes its file as the option's VALUE rather than as the bare

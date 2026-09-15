@@ -845,6 +845,12 @@ property is that pcrec does not understand it.** `ext <consumer>` opens a
 block of structured data belonging to a named consumer: **pcrec parses
 the structure, dumps it faithfully, and interprets nothing.**
 
+**[DD-13b.W23.4] "Dumps it faithfully" is `--list-source`'s `#section
+aux`**, above: one row per line of the tree, the opener included at
+depth 0, in source order, every value the line's own token remainder and
+nothing more. That section is the whole of what pcrec ever does with an
+`ext` body's contents.
+
 ```
 ext bench
   roster pcre2 re2 hyperscan
@@ -1096,21 +1102,96 @@ boundary comes from the one head parser, and the two cannot drift.
 | 14 | `from` | config | the config list, as written |
 | 15 | `pcrec` | config | the raw flag text |
 | 16 | `export` | pattern | the block's `export` list, as written ([DD-13b.W1.3]) |
+| 17 | `tags` | pattern | every `tag` line's items, comma-joined in source order ([DD-13b.W23.4]) |
+| 18 | `oracle` | pattern | the block's own `oracle <ref>` override, or empty ([DD-13b.W23.4]) |
+| 19 | `esc` | pattern | non-empty exactly when the block opened with `pattern-esc` ([DD-13b.W23.4]) |
+
+Column 1's value set also gains four head-scoped kinds, each printed as
+its own row ([DD-13b.W23.4], `lib`'s own one-row-per-line convention):
+`vocabulary` (`name` = the key, `value` = the escaped member list),
+`oracle` (the file-level override, `value` = the reference text), `tag`
+(`value` = the item list as written) and `use` (`value` = the
+comma-separated config list).
 
 **A `pattern-esc` BLOCK IS REPORTED AS A `pattern` ROW, WITH ITS DECODED
-BYTES AND NO MARKER** ([DD-13b.W23.3]). The decoding is pcrec's own, so
+BYTES** ([DD-13b.W23.3]/[DD-13b.W23.4]). The decoding is pcrec's own, so
 the row's `pattern` column carries the same bytes a compile sees,
 re-escaped in the dump's own vocabulary below — a byte-exact round trip,
-the same table in both directions. Nothing in the row records WHICH
-spelling the file used; a consumer reproducing a file as written cannot
-recover that from this dump today. The population of such rows in this
-tree is ZERO: no corpus file carries the keyword.
+the same table in both directions. **Column 19 (`esc`) is the marker**
+that disambiguates which spelling wrote them, once thought to be a gap
+this dump could not close; read `pattern` together with `esc` to
+reproduce a file as written, and read `pattern` alone for the bytes,
+since both spellings deliver the same bytes.
 
-**The W23 productions PARSE AND ARE NOT REPORTED.** `include`,
-`vocabulary`, `oracle`, `tag`, `use`, `freq` and `ext` are recognised,
-value-checked and refused when malformed, and none of them pushes a row
-into this dump; the block-scoped W23 lines likewise change no block row.
-The column table above is unchanged by W23.
+**THE W23 PRODUCTIONS ARE NOW REPORTED** ([DD-13b.W23.4], superseding the
+"parse and are not reported" rule this section stated through W23.3).
+`include` gained its row at [DD-13b.W23.3a]; `vocabulary`/`oracle`/`tag`/
+`use` gain theirs above; the block-scoped `tag`/`oracle` lines reach
+columns 17-18; and `provenance`, `variant`, the eight CASE-kind lines
+(`m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/`gp`, `under`-wrapped ones included) and
+`ext` reach the four `#section` blocks below. `freq`'s own body (the
+`question`/`reader`/`analyzer`/`row` fields) remains parsed and not
+reported — no `#section freq` exists, and a `freq` block's own
+`provenance` sub-record rides `#section provenance` on the same terms as
+a pattern block's.
+
+### The four `#section` blocks
+
+Emitted **unconditionally when non-empty, always AFTER the main table,
+never interleaved with it** (table_contract.md's `#section` mechanism,
+one header comment line per section naming its columns). A file using no
+W23 production emits no `#section` line at all, so its stream differs
+from a pre-W23.4 one only in the header row's three appended columns —
+`table_contract.md`'s own compatible-evolution rule, resolved by name.
+**No `#section` row's field 1 may equal any main-table `kind` token**:
+every section's own field 1 is the integer `line`, which can never equal
+a kind word — the invariant an EQUALITY-reading consumer (one that tests
+`$1 == "pattern"`) relies on, and the reason sections are declared to
+follow the main table unconditionally rather than interleave with it.
+
+- **`#section provenance`** — one row per `provenance` sub-block, on
+  either parent: `line`, `block_line`, `block_name`, then the record's
+  eleven fields as columns — `source`, `url`, `ref`, `retrieved`,
+  `license`, `license-note`, `fidelity`, `adaptation`, `attribution`,
+  `bytes`, `sha256` (see "`provenance`" below for what each means).
+- **`#section variants`** — one row per `variant <testee>` sub-block:
+  `line`, `block_line`, `block_name`, `testee`, `kind`, `text`, `groups`,
+  `note`, `unsupported`.
+- **`#section cases`** — one row per CASE-kind line, in source order,
+  including one wrapped in an `under` line: `line`, `block_line`,
+  `block_name`, `kind`, `under` (the qualifying convention, or empty),
+  `startpos` (the effective value — `0` for `m`/`n`/`mc`/`gu`, the
+  written value for `ms`/`ns`, empty for `g`/`gp`, which have none of
+  their own), `subject_form` (`inline` | `file`, empty for `g`/`gp`),
+  `subject` (the quoted text AS WRITTEN, or the `@file:` path, empty for
+  `g`/`gp`), `subject_id`, `sha256`, `start`, `end` (decimal, or the
+  literal `-1` pair for `g`/`gp`'s own `RX_UNSET`), `count` (`mc` only),
+  `giveup` (`gu` only), `slot` (`g`/`gp` only), `route` (the
+  `frames-buffer=` route live at that line — always set, `default`
+  initially).
+- **`#section aux`** — one row per LINE of an `ext` tree, the opener line
+  itself included: `line`, `block_line` (empty at file scope), `block_name`
+  (empty at file scope), `consumer`, `depth` (`0` for the opener),
+  `key` (the line's first token — `ext` for the opener, whose `value`
+  is then the consumer token), `value` (everything after the key's
+  separating whitespace, verbatim to end of line, escaped — empty for a
+  bare key), `parent_line` (empty for the opener; otherwise the `line` of
+  the row it attaches under). Row order is source order, guaranteed —
+  the only semantics an aux tree has that pcrec preserves. This section
+  is where "dumped faithfully" (§2.27's own promise) is discharged and is
+  the ONLY surface that reads an `ext` tree at all: a `value` is escaped
+  bytes, never interpreted, never decided to be a number, a list or a
+  boolean.
+
+**The dump VALIDATES what it emits and no more**: a row's own
+`validated_by` column, printed by `pcrec --list-schema`, is the live,
+derivable answer to "does the dump check this line's value" — `pcrec`
+(this parser alone), `all-readers` (every one of the three `.rxt`
+readers must agree), or `none`, in which case `--list-schema`'s own
+`#section surface` names the reason. Subject content (a `sha256` digest,
+a `@file:` path's readability) and pattern text are never validated here
+regardless of section — `--list-source` performs no file I/O and
+compiles nothing.
 
 **`kind` carries the DECLARATION NAME**, not a `head`/`body`
 supercategory. There is no column saying whether a row is a head row and
@@ -1152,14 +1233,14 @@ parser of the same file; a resolved dump would report something only
 pcrec computes, against no counterpart. `--list-source --resolved` is
 named and unbuilt.
 
-**Sectionless**, and the trigger for that changing is concrete. The table
-contract's `#section` mechanism exists for one command emitting several
-tables with different columns; it is declined here because the head/body
-INTERLEAVING is exactly what a consumer of this output checks, and that
-is expressible only as row order in ONE stream. Adopting sections later
-is free (a stream with no `#section` line is a single anonymous section),
-and what would earn it is a data block whose rows cannot be columns of
-this table under any reading.
+**THE MAIN TABLE STAYS SECTIONLESS**, and the head/body INTERLEAVING that
+reasoning was always about — a consumer's row-order check over ONE
+stream — is unaffected by [DD-13b.W23.4]'s four `#section` blocks above:
+those carry data whose rows genuinely cannot be columns of the main table
+under any reading (`provenance`/`variant`/`ext` sub-records, one-row-
+per-case-line and one-row-per-aux-line data), which is exactly the
+trigger this paragraph named in advance. The main table's own rows never
+move into a section.
 
 ## Oracle verification
 

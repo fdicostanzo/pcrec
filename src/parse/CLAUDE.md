@@ -1424,6 +1424,70 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   takes or refuses continuation, the shared sentence named a rule the
   subtree does not have. All three legs carry all three sentences now.
 
+  **[DD-13b.W23.4] THE FOUR `#section` RECORD TYPES ARE ACCUMULATED HERE
+  AND DUMPED HERE**, and nowhere else in the tree ever reads them:
+  `RxtProv`/`RxtVariant`/`RxtCase`/`RxtAux` (internal.h), one growable
+  array each on `RxtSource`, in FILE ORDER. W23.3 taught this file to
+  RECOGNISE `provenance`/`variant`/`ext`/the eight CASE kinds and
+  deliberately stored nothing beyond validation (§2.2's own step
+  boundary); this is where that data starts being kept.
+
+  **PROVENANCE/VARIANT: captured at FRAME CLOSE**, inside
+  `RXT_CLOSE_FRAME` (`close_section_frame`) — the same point
+  `frame_constraints` already runs at, so a record missing a `required`
+  field never reaches the push at all. `RxtFrame` gained `open_line`/
+  `open_value` (the sub-block's own opener line and scalar — a
+  `provenance` line's `line`, a `variant <testee>`'s `line` AND
+  `testee`), refreshed on EVERY dispatched row via two new loop locals
+  (`last_row_line`/`last_row_value`) so whichever row a following
+  indented line attaches under, they are always that opener's own facts.
+  `frame_field()` is `cond_holds`'s own (scope, kind-name) lookup shape,
+  reused rather than re-invented, so a constraint's field reference and
+  the dump's own field read cannot disagree about what a name means.
+
+  **AUX: captured PER LINE, not at frame close** — `#section aux`'s own
+  normative fact that row order is source order falls out for free from
+  pushing one row as each line is read, rather than buffering a subtree
+  and flushing it. The opener row (depth 0) is pushed directly at the
+  `ext`/`freq` dispatch arm (both FILE and BLOCK scope), unconditionally,
+  even when the body turns out empty — "the opener line IS the block's
+  identity" (format_design §2.24 at 3.4.1) has no other way to hold when
+  nothing is ever indented under it. `RxtFrame` gained `depth`/
+  `consumer` (tree-frame-only, inherited unchanged from parent to child
+  push) and reuses `open_line` as the level's own `parent_line` — the
+  SAME two fields provenance/variant use for a different purpose, on the
+  header comment's own "never both apply to the same frame" rule. A
+  SEPARATE local, `last_aux_line`, tracks "the line of the most recently
+  emitted aux row" for a DEEPER push to read as its `parent_line`;
+  provenance/variant's `last_row_line` is not reused for this because aux
+  content bypasses the generic schema-dispatch block entirely (`if
+  (f->tree) {...}` intercepts BEFORE it).
+
+  **CASE LINES: `parse_case_body`, DELIBERATELY NOT A SECOND VALIDATOR.**
+  Every CASE-kind row is `validated_by: none` (`check_value_shape`'s own
+  CASE arm returns unconditionally), and §2.2's own step boundary for
+  this delivery reads "W23.4 adds no production and no refusal" — so the
+  parser is a best-effort STRUCTURAL split of the documented grammar
+  (`docs/spec/rxt_format.md`'s case-line and "Named subjects" sections):
+  a shape it does not recognise leaves the corresponding `RxtCase` field
+  NULL rather than raising anything. `is_case_kind` gates an `under`
+  line's wrapped tail the same way, so a malformed wrapped kind is not
+  misparsed into some real kind's fields. `startpos`'s "0" default
+  covers `m`/`n`/`mc`/`gu` (all four are "search from byte offset 0" —
+  `gu` was missed in the FIRST draft, since its own grammar line shows no
+  explicit `<P>` form and it reads, at a glance, like `g`/`gp`'s
+  genuinely-no-startpos shape; caught by hand-testing a `gu` line's dump
+  row before committing, not by a review). `g`/`gp` carry NO subject spec
+  of their own (they attach to a preceding `m`/`ms` case) and their
+  `start`/`end` fields admit a leading `-` for `RX_UNSET`'s own `-1 -1`
+  spelling, which no other kind's numeric fields do.
+
+  **`section_count()`, `tests/rxtsource/run_rxtsource_tests.sh`'s own
+  shared helper (not this file's), is what every W23.4 fixture check
+  routes through** rather than growing five copies of one section-
+  boundary-tracking awk script. S246's second variant plants against it
+  directly — see that sabotage row and `tests/rxtsource/CLAUDE.md`.
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be

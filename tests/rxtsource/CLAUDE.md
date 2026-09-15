@@ -625,3 +625,130 @@ fragment's OWN nested includes are silently never followed. Detected on
 `include_basic` (nothing at depth two to lose) and on the corpus control
 (zero include lines to begin with) — the FIXTURE-arm-red/corpus-arm-green
 split §6.3a's own acceptance line names.
+
+## [DD-13b.W23.4] the four `#section` blocks, R5/R6's repair, and six
+## pre-existing checks made section-aware
+
+`--list-source` now carries `#section provenance`/`variants`/`cases`/
+`aux` after its main table — everything W23.3's leg A recognised and
+validated but did not store. `src/core/internal.h`'s `RxtProv`/
+`RxtVariant`/`RxtCase`/`RxtAux` and `src/parse/rxt_source.c`'s own
+CLAUDE.md entry carry the mechanism; this file is the CHECK side.
+
+**`section_count SECTION FILE` is the one shared helper** (defined
+beside `pass`/`fail`, near the top of `run_rxtsource_tests.sh`) every
+fixture check below routes through, so there is one section-boundary-
+tracking awk script rather than five hand-rolled copies. `SECTION=""`
+means the main table.
+
+**R5 AND R6, REPAIRED** (w23_impl.md §1.5, the `NF != 15`-shaped defect
+this tree had inherited): both assertions used to read EVERY non-`#`
+row of `$DUMP_A_RAW` as if it belonged to the main table, which four
+`#section` blocks violate on every row — R5's own field-count check and
+R6's head-declaration counter (an INEQUALITY reader, broken by the exact
+same fact an equality reader like R2/R3 survives by luck: every
+section's own field 1 is the `line` integer, which can equal no `kind`
+token, but a COUNT of rows whose field 2 is not `"pattern"` catches
+every `#section cases` row too). Both are now SECTION-AWARE: they track
+the stream's own `#section NAME` / `#kind` boundaries and use the
+matching section's own expected width, hard-failing on an unrecognised
+section name rather than defaulting to the main table's — a detection
+helper that defaults on missing input fails in the silent direction
+([ABI-NS]). **The synthetic-stream control** (item 3b, a hand-written
+stream never real `pcrec` output, at a section width that differs from
+16 — `#section cases` is ALSO 16, so a width-blind repair would pass a
+`cases`-only control by coincidence) exercises both repaired arms.
+**W23-S4** asserts the invariant that makes R2/R3 safe rather than
+merely lucky (no section row's field 1 equals a main-table `kind`
+token) and that sections FOLLOW the main table, on `aux_deep_tree.rxtin`
+— the fixture whose whole point is colliding keys is also the sharpest
+witness that a section row's `key` VALUE containing "pattern" never
+collides with its `line` FIELD 1.
+
+**SIX PRE-EXISTING CHECKS HAD TO LEARN THE SAME LESSON** the corpus
+itself is too clean to teach: any fixture whose block carries a real
+case line (`m`/`n`/etc.) now legitimately grows a `#section cases`
+block, and a check that read "every non-`#` row" as if it were the main
+table now mis-reads section data rows as extra "kinds" or extra
+"blocks". `sem10`'s `be_kinds`, `w23s1/ws-positions`'s twin-file
+diff (which also had to blank section rows' OWN `line`/`block_line`
+fields, not just the main table's `line` column — the two dumps'
+absolute line numbers genuinely differ once whitespace-only lines are
+deleted), `head/head_basic`'s row-order check, `W23-S3 arm 1`'s opener
+probe (whose synthetic two-block file now carries an `m` case each) all
+stop at the first `#section` line or route through `section_count`.
+Every one of these was reproduced as a genuine regression against a
+scratch build of the branch point (`b9a49d35`, 184/0/0) before being
+attributed to this change — BOILERPLATE's own rule.
+
+**`aux/deep-tree` and `aux/subtree-extent`'s "exactly N rows" assertions
+were OBSOLETE BY DESIGN**, not merely stale: W23.3 asserted a total dump
+row count of 1 (or 2) because aux content was structurally invisible;
+W23.4's whole point is making it visible via `#section aux`, so a
+nonzero row count there is now CORRECT and the absence claim narrows to
+the surfaces that must still show nothing — the main table (`section_count
+""`), `#section cases` and `#section provenance`/`variants`. Both checks
+now assert each population explicitly rather than one combined total.
+
+**`aux_literal_pipe`'s central assertion, owed since W23.3**
+(`w233_report.md` §3.2: "the VALUE half is W23.4's"), is now built: the
+`separator |` row's own `#section aux` value is the single byte `|`, and
+`terminator`/`note` below it share its `parent_line` as SIBLINGS rather
+than being swallowed as its children.
+
+**Two new fixture pairs, `opener_pattern_esc_pair`/`opener_m_not_opener`
+and `aux_identity`/`aux_identity_edited`**, and their own checks (S242/
+S243/W23-S6 below). `aux_identity`'s pair shares an IDENTICAL one-line
+preamble on purpose — format_design §3.4(a)'s own constraint, so no
+row's `line` is downstream of the aux-body edit the check makes.
+
+**S242 (S-R4a) MEASURED A DIFFERENT SYMPTOM THAN THE DESIGN PREDICTS,
+AND IT IS THE STRONGER ONE.** `pattern-esc` losing `opens_group` does
+not merely misattribute a SECOND `pattern-esc` line's case rows (the
+design's own first reading) — the FIRST `pattern-esc` line in a file has
+no OTHER way to reach BLOCK scope (`f->base == RXT_SCOPE_FILE` maps to
+BLOCK exclusively through the opener transition), so a file whose first
+block opens with `pattern-esc` refuses outright. `opener_pattern_esc_pair
+.rxtin` catches this at its own first line, before the block_line-drift
+shape is ever reached.
+
+**S243 (S-R4b): `m` gaining `opens_group` reaches every `m` line in the
+file, not only ones at file scope** — because `pcrec_rxt_schema_opener`
+is scope-FREE (a kind-text lookup over every `opens_group` row) and the
+gate that matters, `pcrec_rxt_schema_group_scope(f->base)`, reads the
+ROOT FRAME's `.base`, which stays `RXT_SCOPE_FILE` for the frame's whole
+lifetime — block after block, case line after case line. `opener_m_not
+_opener.rxtin` (one block, two `m` cases) becomes three blocks and zero
+cases under the plant; on the shipped corpus the same mechanism produced
+15,513 spurious block rows in this lane's own hand-verification run.
+
+**S246, TWO VARIANTS, and the FIRST DRAFT OF VARIANT (a) TARGETED THE
+WRONG SCOPE.** `ext`'s `cardinality: repeat` is declared at BOTH FILE
+and BLOCK scope as two separate schema rows; `aux_identity_edited
+.rxtin`'s own two `ext` blocks (`bench`, `other`) are BLOCK-scoped
+(inside its one pattern block), so a plant against the FILE-scope row
+alone is exercised by nothing — caught only by re-running the hand-
+verify rather than trusting the first draft, and fixed to the BLOCK-scope
+row. Variant (b) corrupts `section_count()` itself (the SHARED helper,
+never the corpus-only `a_blocks` snippet the design's own text names,
+which the corpus's zero-`ext` population cannot arm) to fold an aux
+tree's `ext`-opener rows into the main-table count — reachable through
+`aux_deep_tree.rxtin`'s own opener, no dedicated fixture needed.
+
+**W23-S6** (format_design §2.27.3 clause 5): edit `aux_identity`'s own
+body and require every pcrec output except `#section aux`'s rows to stay
+byte-identical. TWO ARMS built — `--list-source` with the section
+elided, and the COMPILED ARTIFACT (`.c` AND `.h`, via `--source`'s
+implicit-single-unnamed-block default, W1.2's own compatibility rule).
+**THE THIRD ARM THE DESIGN SKETCHES — "every diagnostic the file
+produces" — IS DELIBERATELY NOT BUILT AS A SEPARATE FIXTURE PAIR**:
+`--list-source` performs no pattern-TEXT validation at all
+(`validated_by: none` on every `pattern`/`pattern-esc` row, §2.24's own
+table), so a `pattern a(` fixture does not refuse under `--list-source`
+— it is accepted, rc 0, exactly like any other rest-of-line text — and a
+genuine format-level refusal (a malformed `provenance` field, say) would
+introduce content unrelated to the aux edit into the comparison. The
+diagnostic arm is discharged for free by the cardinality-corrupted half
+of S246's OWN plant, whose detection is exactly a diagnostic changing
+(`aux_identity_edited.rxt` starts refusing where it used to accept) —
+recorded here as a deliberate narrowing rather than an omission.
