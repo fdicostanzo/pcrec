@@ -23330,3 +23330,64 @@ recurred TWICE in one lane (w232) — the ladder's artifact check + ping
 worked both times, cheap; (4) cross-machine validation needs no push when
 the remote pin already contains the fix under test — check before
 sequencing a push into the plan.
+
+## 2026-09-15 (EDT, day, autonomous continuation), sixty-fifth session part 2 — THE WHOLE [DD-13b.W23] DELIVERY BUILT AND MERGED (W23.3/3a/4/5 as a stacked pipeline); the mid-day battery stopped on an explained red
+
+**The remaining four W23 steps were built as a STACKED LANE PIPELINE**
+(each lane branching from the previous PARKED tip, merges deferred):
+lane w233 (opus, the fourteen productions — rxtsource 175/0, census
+unmoved, two self-caught defects incl. the `under` key-tuple collapse
+whose lesson is that a refuse-only pair proves a refusal happened,
+never that it happened for its rule) → w233a (sonnet, include's
+harness half — FIRST delivery was SHORT of its bar with fixtures only
+in /tmp; sent back in-lane with the leg-C ruling and returned complete:
+184/0, S247, SW20 landed; the structural finding RULED: an
+include-bearing file is head-bearing by construction, so leg C's half
+is discovery subtraction only, W23-S7 is a two-leg comparison) → w234
+(sonnet, the four #section blocks + the R5/R6 reader repairs BEFORE any
+section — 191/0; six pre-existing checks needed section-awareness, each
+reproduced as a genuine regression before attribution; two escalations,
+both correct to escalate) → w235 (sonnet, population + rulings + bench
+dry run — 201/0; R-A pattern-esc dump-value seam RULED leg-A-decodes /
+B==C-as-written excluded-by-design, third instance of the
+dup_head_description seam pattern; R-B the withdrawal-absence data arm
+narrowed STRUCTURALLY to exclude aux subtrees, fixture spelling
+restored; bench dry run 25/41 runnable, 20 green, 3 red with
+already-documented causes).
+
+**The mid-day battery on main (battery_20260915_022106, the
+w232+portfix tree) was STOPPED BY THE MANAGER at its mech stage**, and
+the decision record matters: test rc=2 = the chartered
+inline_capability red + [SABANCHOR] S204 (w232's verify_rxt.py rewrite
+staled its anchor — the tripwire doing exactly its job, named in
+seconds by running it directly); strict/axes/lint rc=0; **san rc=2
+DECODED AS THE SAME S204** (34/35 scripts green, the one red being
+run_codegen_tests.sh's SABANCHOR under san — the sanitizers themselves
+clean); mech's verdict was pre-compromised by the same staleness AND
+superseded by the imminent stack merge, so ~9.5h of box time was not
+spent re-deriving a known cause. safekill on the battery pid, 39
+processes, zero stragglers. The stack tip was verified CLEAN (256
+rows, all anchors resolve) BEFORE the stop decision.
+
+**MERGED**: lane/w235 --no-ff (the whole linear stack, one merge —
+DEVIATION from the impl note's merge-per-step staging, taken
+deliberately: each step carried its own measured acceptance in-stack,
+and one battery on the tip answers what four serial batteries would at
+a quarter of the box time; Frank may object in the morning) + the
+§1.10.2 leg-C correction (7d128adf). Merged main verified: build,
+strict, all anchors, rxtsource 201/0/1. **The definitive full battery
+is RUNNING on 7d128adf** (battery_20260915_072130) — it is also the
+first real mech run for S239-S248 and w232-w235's owed make test.
+Main stays UNPUSHED past 15f36715 until it is green.
+
+**FOR FRANK (queue, in order):**
+1. The stacked-pipeline + one-merge-one-battery deviation above —
+   ratify or direct otherwise.
+2. w235 finding 2, NEEDS RULING: cli/main.c:890-891 — a target
+   config's `engine vm` SILENTLY overrides an explicit CLI
+   `--engine=dfa`. Recommendation: explicit CLI wins over config, with
+   a diagnostic naming both on conflict.
+3. w235 finding 1, needs disposition: verify_rxt.py refuses any file
+   whose FIRST block opens with pattern-esc (leg-C limitation; fix vs
+   documented seam).
+4. The battery verdict when the trailer lands; push follows green.
