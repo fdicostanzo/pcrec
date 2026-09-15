@@ -156,8 +156,15 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `24`
-([K50], CANDIDATE MATCH STARTS ARE CHARACTER BOUNDARIES — every artifact
+events but never stated the general rule; `rx_info.abi` is `25`
+([PORTFIX], A CLANG-COMPATIBILITY LABEL FIX — every scan-edge-bearing DFA
+machine (or VM-hybrid inlined prefilter) gains a trailing `;` on its
+`scan_views` and `scan_edge` labels, closing a label-immediately-followed-
+by-a-declaration shape that gcc accepts as a `-std=gnu11` extension and
+clang 21 rejects as `-Wc23-extensions` under `-Werror`; no answer moves and
+the VM program region is unmoved on every axis, for the same structural
+reason [OPT-EDGE] STEP 1's own bump below states; `24` was
+[K50], CANDIDATE MATCH STARTS ARE CHARACTER BOUNDARIES — every artifact
 gains `#define PCREC_ERR_STARTPOS (-7)` in the shared ABI block, and under a
 multi-byte encoding the unanchored machine, `ENG_ATTEMPT`'s start loop and
 the entries' new boundary guard all move; see §3.1's startpos paragraph,
@@ -1909,7 +1916,22 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `24` on every artifact today ([K50] bumped it from 23:
+- **`rx_info.abi` is `25` on every artifact today ([PORTFIX] bumped it from
+  24: A CLANG-COMPATIBILITY LABEL FIX. Every scan-edge-bearing DFA machine
+  (or VM-hybrid inlined prefilter), of either direction, gains a trailing
+  `;` on its `scan_views` and `scan_edge` labels — closing a label-
+  immediately-followed-by-a-declaration shape (`view_decl`'s
+  `<dir>_view_state` assignment) that gcc accepts as a long-standing
+  `-std=gnu11` extension and clang 21 rejects under `-Werror` as
+  `-Wc23-extensions` (docs/dev/lanes/anchtriage_report.md §1). An artifact
+  with no scan edge at all gains nothing, exactly as `-fno-scan-edge`
+  already excuses it from every earlier scan-edge bump, and no answer moves
+  on either compiler. The VM PROGRAM REGION is unmoved — both labels live
+  inside `pcrec_emit_dfa_engine`, above the region a VM hybrid inlines its
+  prefilter through, or in a file with no such region at all on a
+  non-hybrid DFA artifact — so `tests/codegen/run_recursion_identity.sh`'s
+  comparison (A) needs no new deny-axis IFF, [OPT-EDGE] STEP 1's own abi-
+  18-19 bump's precedent. `24` was [K50], which bumped it from 23:
   CANDIDATE MATCH STARTS ARE THE ENCODING'S CHARACTER BOUNDARIES. Every
   artifact of both engines gains one line in the shared ABI block —
   `#define PCREC_ERR_STARTPOS (-7)`, §4's second below-the-floor code — and

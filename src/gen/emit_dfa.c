@@ -1840,7 +1840,52 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76/D94 (the lane pins its own last src commit; the
      * manager re-pins to the merge). */
-    sb_puts(c,   "    .abi = 24,\n");
+    /* [PORTFIX] abi 24 -> 25 (D76): A CLANG-COMPATIBILITY LABEL FIX, the
+     * `[CC-CLANG]` abi-13-14 event's own shape one axis over — emitted
+     * SCAFFOLDING only, no answer moves either way, per artifact kind:
+     *
+     *  - EVERY DFA artifact (or VM HYBRID's inlined prefilter) WHOSE MACHINE
+     *    CARRIES A SCAN EDGE gains one BYTE on its `scan_views` label —
+     *    `<p>_<m>_scan_views:` becomes `<p>_<m>_scan_views:;` — for EVERY
+     *    scan-edge-bearing machine of either direction, whether or not it
+     *    also carries a position view. The `;` is what closes the actual
+     *    hazard: under a view, `view_decl`'s declaration
+     *    (`<dir>_view_state = <dir>_state;`) is emitted immediately after
+     *    the label with no statement between, which gcc accepts as a
+     *    long-standing extension under `-std=gnu11` and clang 21 rejects as
+     *    `-Wc23-extensions` (anticipating C23's relaxation of the "label
+     *    must be followed by a statement" rule), an error under the
+     *    harness's own `-Werror` (docs/dev/lanes/anchtriage_report.md §1).
+     *    Machines with no view were never hazardous — nothing declares
+     *    there — and gain the byte anyway, because the label is emitted by
+     *    ONE templated site (`emit_scan_loop`, shared by Forward/Reverse/
+     *    Anchored through the `DfaDir` fold) and a conditional `;` would
+     *    reopen the hazard the day a future view or accessor form starts
+     *    with a local.
+     *  - EVERY scan-edge-bearing machine ALSO gains one byte on its
+     *    `scan_edge` label (`<p>_<m>_scan_edge:` -> `<p>_<m>_scan_edge:;`,
+     *    emitted whenever the entry seed can land on a head), for the same
+     *    reason: nothing declares there TODAY, but the fold is templated
+     *    and the fix is at the label's one source rather than at today's
+     *    one reproduced site.
+     *  - EVERY OTHER artifact — no scan edge at all — gains NOTHING: both
+     *    labels are emitted only where a scan edge exists, and an empty
+     *    statement changes no answer on any compiler.
+     *  - No struct offset moves, no `rx_info` member is added or changed,
+     *    and no macro VALUE changes.
+     *
+     * COMPARISON (A) OF run_recursion_identity.sh MOVES ON THE SCAN-EDGE-
+     * BEARING POPULATION, the same population [OPT-EDGE] STEP 1's own abi
+     * 18 -> 19 event already moves for a different reason (the edge heads'
+     * renumbering) — this row adds one or two bytes per machine on TOP of
+     * that, with no new deny-axis IFF needed: `-fno-scan-edge` already
+     * excuses the whole class (an artifact with no edge emits neither
+     * label), so a scan-edge-free artifact stays byte-identical to abi 24
+     * exactly as it did to every scan-edge-touching bump before it.
+     * Comparison (B) compares whole files and is re-pinned in this same
+     * change, per D76 (the lane pins its own last src commit; the manager
+     * re-pins to the merge, opt5i's/ccdiff1's precedent). */
+    sb_puts(c,   "    .abi = 25,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -5885,7 +5930,18 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
             kw = "else if";
         }
     }
-    if (edges) sb_printf(c, "%s  %s:\n", ind, lv);
+    /* [PORTFIX] THE LABEL IS FOLLOWED BY AN EMPTY STATEMENT, ALWAYS. Where
+     * `f->view->emit` is non-NULL its first line is `view_decl`'s
+     * declaration (`<dir>_view_state = <dir>_state;`) — a label immediately
+     * followed by a C DECLARATION with no statement between, which gcc
+     * accepts as a long-standing extension under `-std=gnu11` and clang 21
+     * rejects as `-Wc23-extensions` (anticipating C23's relaxation of the
+     * "label must be followed by a statement" rule), an error under the
+     * harness's own `-Werror` (docs/dev/lanes/anchtriage_report.md §1). The
+     * `;` costs nothing on every other path — where the view is `none` or
+     * the next line is already a statement — and removes the hazard for
+     * good rather than only at today's one reproduced site. */
+    if (edges) sb_printf(c, "%s  %s:;\n", ind, lv);
     if (f->view->emit) f->view->emit(c, f);
     if (f->acc->emit_after_view) f->acc->emit_after_view(c, f);
     f->acc->emit_tail(c, f);
@@ -5930,7 +5986,12 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
      * The alternative idiom in this file, `__attribute__((unused))` on the
      * label (`<p>_dead`'s), would say "nothing may jump here" of a label that
      * IS jumped to on the other half of the population. */
-    if (seedhead) sb_printf(c, "%s  %s:\n", ind, le);
+    /* [PORTFIX] Same reason as `lv`'s label above: nothing today emits a
+     * declaration as the first line after THIS label (`f->acc->emit_top` is
+     * an `if`, and `f->pf->emit`'s first line is always a `//` comment), but
+     * the `;` is free and closes the class off rather than leaving it to the
+     * next form that starts with a local. */
+    if (seedhead) sb_printf(c, "%s  %s:;\n", ind, le);
     /* The head's own accept probe. It is the one loop-top statement the edge
      * path genuinely REPLAYS: an edge whose class test fails advances nothing
      * and changes nothing, so without this a head's accepting position would
