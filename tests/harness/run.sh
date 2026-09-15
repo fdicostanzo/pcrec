@@ -291,6 +291,13 @@ if [ $# -gt 0 ] && [ "$1" = "--dump" ]; then
 fi
 
 files=()
+# [DD-13b.W23.3a] files reaching files[] via a BARE argv token rather than
+# a `find` walk (a directory argument still walks — only the "else" branch
+# below is a NAME). §2.11 rule 6's "named, absorbed into <entry>" report
+# applies only to these; a file `find` turned up that also happens to be
+# someone's include target is subtracted with no message at all, because
+# nobody asked for it by name.
+named_files=()
 if [ $# -eq 0 ]; then
     while IFS= read -r f; do files+=("$f"); done \
         < <(find "$ROOT_DIR/tests" -name '*.rxt' \
@@ -302,8 +309,123 @@ else
                 < <(find "$arg" -name '*.rxt' | LC_ALL=C sort)
         else
             files+=("$arg")
+            named_files+=("$arg")
         fi
     done
+fi
+
+# ---- [DD-13b.W23.3a] include DISCOVERY: entry-set subtraction -------------
+#
+# `docs/design/dd13_format/w23_impl.md` §1.10.2 rule 3: "an entry file is
+# a discovered file that is not included by any [other] entry in the run."
+# `include` is head-scoped — it can only appear before the first `pattern`
+# line — so only a file whose own head differs from a bare `pattern`
+# opener can possibly name one, which is the SAME cheap probe the per-file
+# loop below runs (`rxt_head_probe`, factored out so the two cannot
+# silently disagree about what "head-bearing" means).
+#
+# THIS MUST RUN ONCE, OVER THE WHOLE DISCOVERED SET, BEFORE EITHER
+# DISPATCH BRANCH. A PROCS>1 worker is re-invoked with ONLY its own single
+# file as "$@" (line ~347 below) and cannot rebuild this picture from
+# inside its own re-invocation — which is also why running this pass a
+# second time, inside a worker, over its own one-element files[] is
+# harmless: with nothing else in scope to compare against, it subtracts
+# nothing, which is the correct answer for a file the parent has already
+# confirmed is an entry.
+#
+# MEASURED FREE for the corpus: 0 of the discovered files are head-bearing
+# today, so this block calls pcrec zero times and the whole pass is one
+# empty loop.
+rxt_head_probe() {
+    # rxt_head_probe FILE -> stdout: the first token of the first
+    # non-comment, non-blank line, or empty for a file with no content.
+    local f="$1" pl
+    while IFS= read -r pl || [ -n "$pl" ]; do
+        case $pl in ('#'*) continue ;; esac
+        case $pl in (*[![:space:]]*) ;; (*) continue ;; esac
+        printf '%s' "${pl%%[[:space:]]*}"
+        return 0
+    done < "$f"
+    printf ''
+}
+assoc_new rxt_lsrc_cache
+# rxt_list_source_cached FILE -> sets RXT_LS_OUT (global) to pcrec
+# --list-source's output, cached by resolved path so no file's head is
+# parsed twice in one run.sh process (entry-set discovery below and
+# closure expansion further down both want it). Nonzero return, RXT_LS_OUT
+# unset/stale on failure.
+#
+# A GLOBAL OUT-VARIABLE, DELIBERATELY NOT A `$(...)` RETURN: command
+# substitution forks a subshell, and `assoc_set`'s write into that
+# subshell's copy of the cache array is invisible the instant the
+# subshell exits — the cache would silently cache NOTHING and every
+# caller would re-invoke pcrec, which is exactly what the first version
+# of this function did (found live: `tests/rxtsource`'s own "--list-source
+# called exactly once" checks went from 1 to 3, `head`/`sem10`).
+# rxt_realpath FILE -> stdout: an absolute, symlink-resolved path,
+# matching `realpath(3)` — which is what `src/parse/rxt_source.c`'s own
+# `include`-resolution uses for the `name` column this file's keys must
+# agree with (§1.10.2 rule 2). NOT `cd "$(dirname "$f")" && pwd`: plain
+# `pwd` is LOGICAL (it does not resolve a symlinked ancestor directory —
+# `/tmp` on this very box is `/private/tmp`), so that idiom's "resolved"
+# path silently disagreed with pcrec's real one and every include-target
+# lookup against it missed. `realpath` is present on both this box and
+# Linux's coreutils; the `cd`+`pwd` form is the fallback for a box with
+# neither, on the same "degrades, never hard-fails" precedent
+# tests/lib/cc_resolve.sh and friends already use.
+rxt_realpath() {
+    if command -v realpath >/dev/null 2>&1; then
+        realpath "$1"
+    else
+        printf '%s/%s\n' "$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)" "$(basename "$1")"
+    fi
+}
+RXT_LS_OUT=""
+rxt_list_source_cached() {
+    local f="$1" key
+    key="$(rxt_realpath "$f")"
+    if assoc_has rxt_lsrc_cache "$key"; then
+        RXT_LS_OUT="$(assoc_get rxt_lsrc_cache "$key")"
+        return 0
+    fi
+    if ! RXT_LS_OUT="$(pcrec_run "$PCREC" --list-source "$f" 2>&1)"; then
+        return 1
+    fi
+    assoc_set rxt_lsrc_cache "$key" "$RXT_LS_OUT"
+    return 0
+}
+if [ "${#files[@]}" -gt 0 ]; then
+    assoc_new rxt_include_target      # resolved include target -> includer
+    for _rxt_f in "${files[@]}"; do
+        _rxt_probe="$(rxt_head_probe "$_rxt_f")"
+        [ -n "$_rxt_probe" ] && [ "$_rxt_probe" != "pattern" ] || continue
+        rxt_list_source_cached "$_rxt_f" || continue
+        _rxt_ls="$RXT_LS_OUT"
+        while IFS=$'\t' read -r _rxt_k _rxt_l _rxt_n _rxt_v _rxt_rest; do
+            [ "$_rxt_k" = "include" ] || continue
+            [ -n "$_rxt_n" ] || continue    # unresolved: pcrec already refused
+                                             # the CALL above; nothing to union
+            assoc_has rxt_include_target "$_rxt_n" \
+                || assoc_set rxt_include_target "$_rxt_n" "$_rxt_f"
+        done < <(printf '%s\n' "$_rxt_ls" | LC_ALL=C grep -v '^#')
+    done
+
+    _rxt_kept=()
+    for _rxt_f in "${files[@]}"; do
+        _rxt_rp="$(rxt_realpath "$_rxt_f")"
+        if assoc_has rxt_include_target "$_rxt_rp"; then
+            _rxt_by="$(assoc_get rxt_include_target "$_rxt_rp")"
+            for _rxt_nf in "${named_files[@]:-}"; do
+                if [ "$_rxt_nf" = "$_rxt_f" ]; then
+                    echo "$_rxt_f: named, absorbed into $_rxt_by" >&2
+                    break
+                fi
+            done
+            continue
+        fi
+        _rxt_kept+=("$_rxt_f")
+    done
+    files=("${_rxt_kept[@]}")
 fi
 
 # ---- parallel dispatch (PROCS > 1): one worker per FILE ---------------------
@@ -367,6 +489,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     total_sizelog=0
     total_under_skips=0
     total_oracle_skips=0
+    total_fragments=0
     summaries=0
     fail_files=()
 
@@ -396,6 +519,12 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         sl="$(grep -m1 '^size-log rows:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         us="$(grep -m1 '^under expectations skipped:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         os_="$(grep -m1 '^oracle declarations skipped:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        # [DD-13b.W23.3a] one worker == one ENTRY by construction (the
+        # subtraction pass ran before this dispatch loop, so files[] here
+        # is entries-only) — its own fragment count is the only one of the
+        # two new numbers a worker can answer; "entry files" is just
+        # ${#files[@]} below, no summing needed.
+        fr="$(grep -m1 '^fragments spliced:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         if [ -z "$p" ] || [ -z "$x" ]; then
             echo "$f: HARNESS FAILURE: worker produced no summary (crashed or was killed) — counting as failed" >&2
             total_fail=$((total_fail + 1))
@@ -410,6 +539,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         total_sizelog=$((total_sizelog + ${sl:-0}))
         total_under_skips=$((total_under_skips + ${us:-0}))
         total_oracle_skips=$((total_oracle_skips + ${os_:-0}))
+        total_fragments=$((total_fragments + ${fr:-0}))
         [ "$x" -gt 0 ] && fail_files+=("$f: $x")
     done
 
@@ -426,6 +556,12 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     [ -n "$SIZELOG" ] && echo "size-log rows: $total_sizelog"
     echo "under expectations skipped: $total_under_skips"
     echo "oracle declarations skipped: $total_oracle_skips"
+    # [DD-13b.W23.3a] §2.11 rule 2's two closure numbers. "entry files" is
+    # ${#files[@]} directly — subtraction ran BEFORE this dispatch loop, so
+    # one worker IS one entry, and no per-worker sum could say it better
+    # than the count this parent already has.
+    echo "entry files: ${#files[@]}"
+    echo "fragments spliced: $total_fragments"
     echo "parallel: $summaries of ${#files[@]} file workers reported (PROCS=$PROCS)"
 
     if [ "$summaries" -ne "${#files[@]}" ]; then
@@ -1865,6 +2001,96 @@ flush_block() {
     run_case_loop "$bdir/t" standalone
 }
 
+# ---- [DD-13b.W23.3a] include SPLICE: expand each entry's own closure ------
+#
+# §1.10.2 rule 4: "after the entry's own body is parsed, each fragment's
+# blocks are parsed and appended in include order, depth first" — and
+# rule 5: a failure still prints the FRAGMENT's own file:line, which is
+# why this does NOT concatenate text into one combined stream (that would
+# need every diagnostic site in the per-file loop below to be told which
+# physical file a given line came from). Instead it EXTENDS files[] in
+# place: an entry keeps its own array slot, and each of its fragments
+# (recursively, in include order, depth first) is inserted right after
+# it — so the loop below, unmodified, processes each physical file with
+# `$file` genuinely equal to that file's own path, and every diagnostic in
+# it is correctly attributed for free. This also settles rule 1 for
+# PROCS>1: a fragment reached only through an entry is never independently
+# discovered (§1.10.2 rule 3 already dropped it from files[] above if it
+# somehow was), so injecting it here is the ONLY way it is ever dispatched
+# — as its own worker if PROCS>1, or its own turn of this same serial loop
+# otherwise; either way it runs, and it runs under its own name.
+#
+# THE FOURTH FAILURE CLASS (§2.11): an unresolved include, a duplicate
+# include, or a cycle anywhere in an entry's closure is a RESOLUTION
+# failure, "scored as a pattern-compile failure for the block" — recorded
+# against the ENTRY (rule 1: "the tally is the entry's") at line 1, added
+# to compile_fail_set exactly as an ordinary whole-pattern compile failure
+# is, and tagged `[resolution]` so it is visibly a fourth kind and not a
+# fifth spelling of the four diagnostic CLASS tags (those are a property
+# of ONE parse-time refusal; this is a property of a CLOSURE). An entry
+# whose closure fails to complete still runs its OWN body — a broken
+# fragment must not silently delete the entry's own cases too.
+rxt_entry_count=0
+rxt_fragment_count=0
+rxt_expand_closure() {
+    # rxt_expand_closure FILE SEEN_ASSOC_NAME -> appends FILE's own
+    # direct-and-transitive include targets to the global rxt_expansion
+    # array, in include order, depth first (`src/parse/rxt_source.c`'s
+    # `closure_walk` is the sibling walk one leg over — same DFS order).
+    # A resolved path already present in SEEN_ASSOC_NAME is a DUPLICATE or
+    # a CYCLE (a DFS that never revisits a node cannot tell the two apart,
+    # and §2.5 refuses both identically: "a second include of the same
+    # resolved real path in one closure is REFUSED").
+    local src="$1" seen="$2" probe
+    probe="$(rxt_head_probe "$src")"
+    [ -n "$probe" ] && [ "$probe" != "pattern" ] || return 0
+    if ! rxt_list_source_cached "$src"; then
+        rxt_expand_failed=1
+        echo "$src: [resolution] this file's own head does not parse — its includer's closure cannot complete" >&2
+        return 1
+    fi
+    while IFS=$'\t' read -r _k _l _n _v _rest; do
+        [ "$_k" = "include" ] || continue
+        if [ -z "$_n" ]; then
+            rxt_expand_failed=1
+            echo "$src:$_l: [resolution] 'include $_v' did not resolve" >&2
+            return 1
+        fi
+        if assoc_has "$seen" "$_n"; then
+            rxt_expand_failed=1
+            echo "$src:$_l: [resolution] 'include $_v' repeats a file already in this closure ($_n) — a duplicate include or a cycle" >&2
+            return 1
+        fi
+        assoc_set "$seen" "$_n" 1
+        rxt_expansion+=("$_n")
+        rxt_expand_closure "$_n" "$seen" || return 1
+    done < <(printf '%s\n' "$RXT_LS_OUT" | LC_ALL=C grep -v '^#')
+    return 0
+}
+if [ "${#files[@]}" -gt 0 ]; then
+    rxt_entry_count=${#files[@]}
+    _rxt_new_files=()
+    for _rxt_f in "${files[@]}"; do
+        _rxt_new_files+=("$_rxt_f")
+        rxt_expansion=()
+        rxt_expand_failed=0
+        assoc_new rxt_closure_seen
+        rxt_expand_closure "$_rxt_f" rxt_closure_seen
+        if [ "$rxt_expand_failed" -eq 1 ]; then
+            _rxt_key="$_rxt_f:1"
+            contains_fail "$_rxt_key" || compile_fail_set+=("$_rxt_key")
+            record_fail "$_rxt_f" 1 \
+                "[resolution] this entry's include closure did not resolve — see the [resolution] line(s) above"
+            continue
+        fi
+        for _rxt_frag in "${rxt_expansion[@]:-}"; do
+            [ -n "$_rxt_frag" ] && _rxt_new_files+=("$_rxt_frag")
+        done
+        rxt_fragment_count=$((rxt_fragment_count + ${#rxt_expansion[@]}))
+    done
+    files=("${_rxt_new_files[@]}")
+fi
+
 # ---- parse and run each file ----------------------------------------------
 
 for file in "${files[@]}"; do
@@ -2013,8 +2239,19 @@ for file in "${files[@]}"; do
         # unbounded-looking invocation. Routing through the house wrapper
         # is the fix the check names, and it is better anyway: one place
         # decides what a pcrec invocation's budget is.
+        #
+        # [DD-13b.W23.3a] THROUGH THE CACHE, not a second bare call: the
+        # entry-set subtraction pass and the closure-expansion walk above
+        # both already called `--list-source` on every head-bearing file
+        # they touched, and a head-bearing file with no `include` at all
+        # is the common case this cache must not tax — `rxt_list_source_
+        # cached` is the one function every reader of a file's head goes
+        # through, so "one call per file" (`sem10`/`head`'s own count) is
+        # a PROPERTY of that function rather than a count three call sites
+        # each had to remember to keep.
         ls_out=""
-        if ! ls_out="$(pcrec_run "$PCREC" --list-source "$file" 2>&1)"; then
+        if ! rxt_list_source_cached "$file"; then
+            ls_out="$(pcrec_run "$PCREC" --list-source "$file" 2>&1)"
             # THE CALL FAILED. A distinct observable from "the file has no
             # pattern rows" (below): different exit status, and pcrec's own
             # diagnostic — which names the file, the line and the construct
@@ -2022,6 +2259,8 @@ for file in "${files[@]}"; do
             record_fail "$file" 1 \
                 "HARNESS FAILURE: pcrec --list-source failed on this head-bearing file: $ls_out"
             continue
+        else
+            ls_out="$RXT_LS_OUT"
         fi
         head_body_line="$(printf '%s\n' "$ls_out" \
             | LC_ALL=C awk -F'\t' '$1 == "pattern" { print $2; exit }')"
@@ -2965,6 +3204,14 @@ echo "group cases pending-vm: $total_pending"
 # real answer and an absent line is not).
 echo "under expectations skipped: $total_under_skips"
 echo "oracle declarations skipped: $total_oracle_skips"
+# [DD-13b.W23.3a] §2.11 rule 2's two closure numbers, unconditionally —
+# 0 fragments spliced over a whole corpus with no `include` line is the
+# CORPUS CONTROL on the subtraction+splice mechanism itself
+# (w23_impl.md §1.10.3/§6.3a: if this ever moves on a corpus run with no
+# fixture involved, a fixture leaked into the corpus, or the mechanism
+# itself is wrong).
+echo "entry files: $rxt_entry_count"
+echo "fragments spliced: $rxt_fragment_count"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
     echo "run.sh: NO CASES RUN — corpus missing or fully unparseable" >&2
