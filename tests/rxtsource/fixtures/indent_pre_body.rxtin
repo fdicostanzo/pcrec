@@ -1,0 +1,12 @@
+# [DD-13b.W23.2] `indent_pre_body.rxtin` — AN INDENTED `m` LINE BEFORE THE
+# FIRST `pattern`, in a headless file. THE POSITION IS THE CHECK (r57
+# S-M5, `w23_impl.md` §3.2): leg C's old indentation test was unconditional
+# once a block was open but ran AFTER its own not-seen_pattern branch, so a
+# fixture at the POST-body position would report GREEN against the
+# ordering defect this fixture exists to pin. Leg B had no attachment step
+# at all before this fixture's own step landed one. All three legs must
+# refuse, class structure-attachment — the line has nothing to attach to,
+# regardless of what token it carries.
+  m "a" 0 1
+pattern a+
+m "aaa" 0 3

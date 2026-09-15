@@ -340,6 +340,17 @@ def prefix_from_name(s):
     return s.replace('-', '_').replace('.', '_')
 
 
+def _fail(path, lineno, cls, msg):
+    """[DD-13b.W23.2] THE DIAGNOSTIC CLASS TAG, this leg's own copy of
+    src/parse/rxt_source.c's `rxt_fail` format -- `[class] file:line: msg`,
+    the tag LEADING. The three-leg differential (tests/rxtsource/) reads
+    the bracketed word off each leg's own stderr and compares it, never
+    the sentence beside it (D26 governs wording, not the tag). The four
+    classes are format_design.md §2.25.5's: structure-attachment /
+    unknown-token-in-scope / schema-constraint / value-shape."""
+    raise ValueError(f"[{cls}] {path}:{lineno}: {msg}")
+
+
 def parse_rxt(path):
     """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr','g','gp'}."""
     # [DD-13b.W1.1 r46sem finding 17] `errors='surrogateescape'` makes this
@@ -352,12 +363,48 @@ def parse_rxt(path):
     # round-trips every byte through a str without raising, which is the
     # python-native way to keep that property; it does not make this
     # parser understand non-ASCII text, only stop crashing on it.
-    with open(path, 'r', encoding='utf-8', errors='surrogateescape') as f:
-        lines = f.readlines()
+    with open(path, 'rb') as f:
+        raw_bytes = f.read()
+    # [DD-13b.W23.2, §1.8 FOLD-IN 1] A NUL BYTE ANYWHERE IN THE FILE IS
+    # DETECTED HERE, ONCE, BEFORE ANY LINE IS READ -- matching leg A's
+    # whole-file scan ahead of the line split, and NOT the `.decode`-time
+    # crash this leg's `surrogateescape` reading would otherwise turn it
+    # into. §1.8 item 3's rule: the NUL rule has ONE SCOPE in all three
+    # legs, the whole file, before any line is interpreted -- a
+    # decoder-scoped test (only inside a quoted subject) would miss a NUL
+    # inside a `#` comment line, which is `nul_in_comment.rxtin`'s point.
+    if b'\x00' in raw_bytes:
+        _fail(path, 0, 'value-shape', 'embedded NUL byte in .rxt source file')
+    # [DD-13b.W1.1 r46sem finding 17] `errors='surrogateescape'` makes this
+    # parser BYTE-CLEAN like legs A and B, rather than crashing on the
+    # first invalid-UTF-8 byte anywhere in the file. Legs A and B both
+    # treat bytes opaquely (`rxt_source.c` reads "rb"; bash's `read -r` is
+    # byte-clean) and the .rxt escape vocabulary is explicitly byte-
+    # oriented ("the escape exists to protect the FRAMING, not to
+    # transcode the content", docs/spec/rxt_format.md). `surrogateescape`
+    # round-trips every byte through a str without raising, which is the
+    # python-native way to keep that property; it does not make this
+    # parser understand non-ASCII text, only stop crashing on it.
+    # [DD-13b.W23.2 FIX] `.splitlines()` treats VT/FF and several other
+    # Unicode line-break characters as separators, not only `\n` -- the
+    # exact control bytes `ctrl_bytes.rxtin` (sem1, the r46 panel's own
+    # BLOCKER) carries literally inside a `pattern` line. `readlines()`
+    # (what this used to be) splits on `\n` alone; `.split('\n')` matches
+    # that, at the cost of one harmless trailing '' entry when the file
+    # ends in a newline, which the blank-line skip below already treats
+    # as inert.
+    lines = raw_bytes.decode('utf-8', errors='surrogateescape').split('\n')
     results = []
     pcre2_only_next = False
     seen_pattern = False
     seen_names = {}
+    # [DD-13b.W23.2] THE ATTACHMENT ARM's own state (S1, format_design
+    # §1.2.1): the immediately preceding NON-INDENTED content line's own
+    # first token and line number -- the PARENT an indented line under it
+    # would attach to.
+    last_kind = None
+    last_kind_line = 0
+    cur_desc_line = 0
     for lineno, raw_line in enumerate(lines, 1):
         line = raw_line.rstrip('\n')
         if line.strip() == '# pcre2-only':
@@ -404,6 +451,50 @@ def parse_rxt(path):
         # this line really is a HEAD declaration in a head-bearing file —
         # is exactly the named-word branch just above, so anything that
         # reaches here is the bug shape and not a legitimate head.
+        #
+        # [DD-13b.W23.2] THE ATTACHMENT ARM RUNS FIRST -- S1, ahead of
+        # first-token dispatch (format_design §1.2.1), and it is why the
+        # indentation test moved above the not-seen_pattern block rather
+        # than staying where it was, below every other check. Under the
+        # OLD order an indented line before the first `pattern` reached
+        # the not-seen_pattern branch first and raised its "before any
+        # pattern block" message -- the right VERDICT, the wrong CLASS
+        # (`indent_pre_body.rxtin` needs structure-attachment, not
+        # unknown-token-in-scope). Nothing this build's BLOCK scope
+        # declares admits a child, so an indented line is ALWAYS a
+        # structural error: before the first `pattern` there is no
+        # PARENT at all; once a block is open the parent is the
+        # immediately preceding CONTENT line, which takes no
+        # continuation. A leading TAB never opens an indent at all (S0),
+        # checked first, before either question is asked.
+        if line[:1] in (' ', '\t'):
+            indent_run = len(line) - len(line.lstrip(' '))
+            if indent_run < len(line) and line[indent_run] == '\t':
+                _fail(path, lineno, 'structure-attachment',
+                      "indentation is spaces; this line is indented with a "
+                      "TAB (a tab inside a value is still data, but a tab "
+                      "in the indentation has no agreed depth)")
+            if not seen_pattern:
+                _fail(path, lineno, 'structure-attachment',
+                      "an indented line appears before any pattern block "
+                      "(nothing is open to attach it to)")
+            # [DD-13b.W23.2 FINDING] leg A's OWN `rxt_source.c:1169` files
+            # this under RXTD_STRUCTURE, not RXTD_SCHEMA_CONSTRAINT -- the
+            # fixture table in `w23_impl.md` §3.2 says `indent_under_m.
+            # rxtin` should be schema-constraint, and the DELIVERED W23.1
+            # code disagrees with its own design note. Legs B and C match
+            # leg A (the schema table is leg A's, deliberately -- §2.25.5),
+            # which this step must not re-edit; the discrepancy is
+            # reported rather than improvised past.
+            if last_kind:
+                _fail(path, lineno, 'structure-attachment',
+                      f"indented line continues nothing ('{last_kind}' "
+                      f"takes no continuation, declared on line {last_kind_line})")
+            _fail(path, lineno, 'structure-attachment',
+                  "indented line continues nothing (the declaration above "
+                  "it takes no continuation)")
+        last_kind = line.split(None, 1)[0].split('=')[0] if line.split() else None
+        last_kind_line = lineno
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
             head_words = ('lib', 'target', 'config', 'description',
@@ -416,17 +507,14 @@ def parse_rxt(path):
                     "head-bearing .rxt file is not verifiable by this script "
                     "in this build (DD-13b W1.1; W1.3 closes it)")
             if first != 'pattern':
-                raise ValueError(
-                    f"{path}:{lineno}: '{first}' line before any pattern "
-                    "block -- a body directive has no open block to attach "
-                    "to (matches tests/harness/run.sh's and "
-                    "src/parse/rxt_source.c's own refusal of this line)")
-        if line.startswith(' ') or line.startswith('\t'):
-            raise ValueError(
-                f"{path}:{lineno}: a pattern block's lines are not indented "
-                "(indentation is continuation, and that is a head rule)")
+                _fail(path, lineno, 'unknown-token-in-scope',
+                      f"'{first}' line before any pattern block -- a body "
+                      "directive has no open block to attach to (matches "
+                      "tests/harness/run.sh's and src/parse/rxt_source.c's "
+                      "own refusal of this line)")
         if line.startswith('pattern '):
             seen_pattern = True
+            cur_desc_line = 0
             pat = line[len('pattern '):]
             results.append((lineno, 'pattern', (pat, pcre2_only_next)))
             pcre2_only_next = False
@@ -443,8 +531,8 @@ def parse_rxt(path):
             # nothing to python and nothing to the differential either.
             v = line[len('flags '):].strip()
             if v != 'i':
-                raise ValueError(f"{path}:{lineno}: unknown flag letter(s) "
-                                 f"{v!r} (only 'i' is defined)")
+                _fail(path, lineno, 'value-shape',
+                      f"unknown flag letter(s) {v!r} (only 'i' is defined)")
             results.append((lineno, 'flags', v))
         elif line.startswith('features '):
             # [DD-13b.W1] `features only <list>` (M14): the list REPLACES
@@ -476,12 +564,12 @@ def parse_rxt(path):
             # for the population that actually reaches this oracle.
             v = line[len('name '):].strip()
             if not name_ok(v):
-                raise ValueError(f"{path}:{lineno}: 'name' wants a definition "
-                                 f"name (got {v!r})")
+                _fail(path, lineno, 'value-shape',
+                      f"'name' wants a definition name (got {v!r})")
             if v in seen_names:
-                raise ValueError(
-                    f"{path}:{lineno}: duplicate block name {v!r} (already "
-                    f"named on line {seen_names[v]})")
+                _fail(path, lineno, 'schema-constraint',
+                      f"duplicate block name {v!r} (already "
+                      f"named on line {seen_names[v]})")
             seen_names[v] = lineno
             results.append((lineno, 'name', v))
         elif line.startswith('description '):
@@ -492,9 +580,19 @@ def parse_rxt(path):
             # body's rule wins, since 3,265 blocks depend on it).
             v = line[len('description '):]
             if v.strip() == '|':
-                raise ValueError(f"{path}:{lineno}: a pattern block's "
-                                 "'description' takes the one-line form only: "
-                                 "'|' is a head form")
+                _fail(path, lineno, 'structure-attachment',
+                      "a pattern block's 'description' takes the one-line "
+                      "form only: '|' is a head form")
+            # [DD-13b.W23.2, §1.8 FOLD-IN 1] A SECOND `description` LINE IN
+            # ONE BLOCK IS REFUSED, naming both lines -- [RXTNUL]'s own gap
+            # for legs B and C, closed at leg A already
+            # (`docs/design/dd13_format/rxtnul_report.md`). `cur_desc_line`
+            # is reset to 0 at every `pattern` line below.
+            if cur_desc_line:
+                _fail(path, lineno, 'schema-constraint',
+                      f"a pattern block has one 'description' (already "
+                      f"given on line {cur_desc_line})")
+            cur_desc_line = lineno
             results.append((lineno, 'description', v))
         elif line.startswith('export '):
             # [DD-13b.W1.3] THE DEFINITION'S DECLARED INTERFACE (D89
@@ -510,17 +608,17 @@ def parse_rxt(path):
             v = line[len('export '):].strip()
             parts = [e.strip() for e in v.split(',')]
             if not v or not all(IDENT_RE.match(e) for e in parts):
-                raise ValueError(f"{path}:{lineno}: 'export' wants a "
-                                 f"comma-separated list of group names "
-                                 f"(got {v!r})")
+                _fail(path, lineno, 'value-shape',
+                      f"'export' wants a comma-separated list of group "
+                      f"names (got {v!r})")
             results.append((lineno, 'export', ', '.join(parts)))
         elif line.startswith('encoding '):
             # [DD-13b.W1.1 r46sem finding 19] see the 'name' arm above --
             # the same "leg C accepts a strict superset" gap.
             v = line[len('encoding '):].strip()
             if not ident_ok(v):
-                raise ValueError(f"{path}:{lineno}: 'encoding' wants an "
-                                 f"identifier (got {v!r})")
+                _fail(path, lineno, 'value-shape',
+                      f"'encoding' wants an identifier (got {v!r})")
             results.append((lineno, 'encoding', v))
         elif line.startswith('engine '):
             # [DD-13b.W1.1 r46sem finding 4, RULED] ONLY `vm` FOR W1.1 --
@@ -529,8 +627,8 @@ def parse_rxt(path):
             # refused it -- the D80 defect this step's remedy targets.
             v = line[len('engine '):].strip()
             if v != 'vm':
-                raise ValueError(f"{path}:{lineno}: unknown 'engine' value "
-                                 f"{v!r} (only vm is defined)")
+                _fail(path, lineno, 'value-shape',
+                      f"unknown 'engine' value {v!r} (only vm is defined)")
             results.append((lineno, 'engine', v))
         elif line.startswith('budget '):
             v = line[len('budget '):].strip()
@@ -539,8 +637,8 @@ def parse_rxt(path):
             elif v.startswith('frames='):
                 results.append((lineno, 'budget', ('frames', int(v[7:]))))
             else:
-                raise ValueError(f"{path}:{lineno}: unknown 'budget' spec "
-                                 f"{v!r} (want steps=<n> or frames=<n>)")
+                _fail(path, lineno, 'value-shape',
+                      f"unknown 'budget' spec {v!r} (want steps=<n> or frames=<n>)")
         elif line.startswith('frames-buffer='):
             results.append((lineno, 'frames_buffer', line[len('frames-buffer='):]))
         elif line.startswith('gu '):
@@ -554,17 +652,18 @@ def parse_rxt(path):
             rest = line[len('gu '):].lstrip()
             code = rest.split(' ', 1)[0].split('\t', 1)[0]
             if code == 'internal':
-                raise ValueError(f"{path}:{lineno}: 'gu internal' is refused: "
-                                 "PCREC_ERR_INTERNAL is the artifact catching "
-                                 "its own inconsistency, never a planned "
-                                 "outcome a .rxt block may expect")
+                _fail(path, lineno, 'value-shape',
+                      "'gu internal' is refused: PCREC_ERR_INTERNAL is the "
+                      "artifact catching its own inconsistency, never a "
+                      "planned outcome a .rxt block may expect")
             if code not in ('steps', 'frames', 'work', 'recurse'):
-                raise ValueError(f"{path}:{lineno}: unknown 'gu' code {code!r} "
-                                 "(want steps, frames, work or recurse)")
+                _fail(path, lineno, 'value-shape',
+                      f"unknown 'gu' code {code!r} (want steps, frames, "
+                      "work or recurse)")
             subj, tail = parse_quoted(rest[len(code):].lstrip())
             if tail.strip() != '':
-                raise ValueError(f"{path}:{lineno}: unexpected trailing "
-                                 f"content on gu line: {tail.strip()!r}")
+                _fail(path, lineno, 'value-shape',
+                      f"unexpected trailing content on gu line: {tail.strip()!r}")
             results.append((lineno, 'gu', (code, subj)))
         elif line.startswith('m "'):
             rest = line[2:]  # keep leading quote
@@ -572,7 +671,7 @@ def parse_rxt(path):
             tail = tail.strip()
             parts = tail.split()
             if len(parts) != 2:
-                raise ValueError(f"{path}:{lineno}: bad m line tail {tail!r}")
+                _fail(path, lineno, 'value-shape', f"bad m line tail {tail!r}")
             start, end = int(parts[0]), int(parts[1])
             results.append((lineno, 'm', (subj, start, end)))
         elif line.startswith('n "'):
@@ -580,7 +679,8 @@ def parse_rxt(path):
             subj, tail = parse_quoted(rest)
             tail = tail.strip()
             if tail != '':
-                raise ValueError(f"{path}:{lineno}: unexpected trailing content on n line: {tail!r}")
+                _fail(path, lineno, 'value-shape',
+                      f"unexpected trailing content on n line: {tail!r}")
             results.append((lineno, 'n', subj))
         elif line.startswith('ms '):
             p, rest = parse_startpos_tail(line, 'ms ')
@@ -588,7 +688,7 @@ def parse_rxt(path):
             tail = tail.strip()
             parts = tail.split()
             if len(parts) != 2:
-                raise ValueError(f"{path}:{lineno}: bad ms line tail {tail!r}")
+                _fail(path, lineno, 'value-shape', f"bad ms line tail {tail!r}")
             start, end = int(parts[0]), int(parts[1])
             results.append((lineno, 'ms', (p, subj, start, end)))
         elif line.startswith('ns '):
@@ -596,22 +696,27 @@ def parse_rxt(path):
             subj, tail = parse_quoted(rest)
             tail = tail.strip()
             if tail != '':
-                raise ValueError(f"{path}:{lineno}: unexpected trailing content on ns line: {tail!r}")
+                _fail(path, lineno, 'value-shape',
+                      f"unexpected trailing content on ns line: {tail!r}")
             results.append((lineno, 'ns', (p, subj)))
         elif line.startswith('gp '):
             try:
                 slot, start, end = parse_group_tail(line, 'gp ')
             except ValueError as e:
-                raise ValueError(f"{path}:{lineno}: {e}")
+                _fail(path, lineno, 'value-shape', str(e))
             results.append((lineno, 'gp', (slot, start, end)))
         elif line.startswith('g '):
             try:
                 slot, start, end = parse_group_tail(line, 'g ')
             except ValueError as e:
-                raise ValueError(f"{path}:{lineno}: {e}")
+                _fail(path, lineno, 'value-shape', str(e))
             results.append((lineno, 'g', (slot, start, end)))
         else:
-            raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")
+            # [DD-13b.W23.2] unknown-token-in-scope: the first token has
+            # no schema row in this scope at all -- the same fact leg A's
+            # `unknown_token()` and leg B's catch-all now state.
+            _fail(path, lineno, 'unknown-token-in-scope',
+                  f"unrecognized line: {line!r}")
     return results
 
 

@@ -518,6 +518,22 @@ record_pass() {
     total_pass=$(( total_pass + 1 ))
 }
 
+# [DD-13b.W23.2] record_fail_class <class> <file> <line> <message...> —
+# record_fail's twin, carrying the DIAGNOSTIC CLASS TAG format_design.md
+# §2.25.5 names: structure-attachment / unknown-token-in-scope /
+# schema-constraint / value-shape. The tag LEADS, `[class] file:line: msg`,
+# matching src/parse/rxt_source.c's `rxt_fail` byte for byte — the
+# three-leg differential (tests/rxtsource/) reads the bracketed word off
+# each leg's own output and compares it, never the sentence beside it
+# (D26 governs wording, not the tag). A helper with no class parameter is
+# what a hurried author reaches for; after this step every call site in
+# this file goes through here, none through the older signature.
+record_fail_class() {
+    local cls="$1" f="$2" ln="$3"
+    shift 3
+    record_fail "$f" "$ln" "[$cls] $*"
+}
+
 # [DD-14.FB] valid_route <spec> — the ONE definition of the route grammar,
 # shared by the `frames-buffer=` directive and the RXTROUTE env var so the two
 # cannot drift into accepting different spellings. driver.c parses the same
@@ -1569,6 +1585,14 @@ for file in "${files[@]}"; do
     case_route=()
     have_block=0
     blocks_in_file=0
+    # [DD-13b.W23.2] THE ATTACHMENT ARM's own state: the immediately
+    # preceding NON-INDENTED content line's first token and its own line
+    # number, which is the PARENT an indented line under it would attach
+    # to (S1, format_design §1.2.1). Reset per file like every other
+    # per-file state above -- a stale parent from the previous file would
+    # misname the line an indented one continues.
+    last_kind=""
+    last_kind_line=0
     # [TT-4M] STEP 2c — the pending HARNESS_BATCH batch, reset PER FILE: a
     # batch never spans two files (docs/design/tt4m_harness_batching.md
     # item 1). By the time this loop reaches a new file, the previous
@@ -1685,12 +1709,70 @@ for file in "${files[@]}"; do
         fi
     fi
 
+    # [DD-13b.W23.2, §1.8 FOLD-IN 1] A NUL BYTE ANYWHERE IN THE FILE IS
+    # DETECTED HERE, ONCE, BEFORE ANY LINE IS READ — matching leg A
+    # (`src/parse/rxt_source.c`'s `slurp_lines`, a whole-file scan ahead
+    # of the line split) rather than a per-line or decoder-scoped test.
+    # §1.8 item 3's rule: the NUL rule has ONE SCOPE IN ALL THREE LEGS,
+    # the whole file, before any line is interpreted — a decoder-scoped
+    # test would see a NUL inside a quoted subject and never one in a `#`
+    # comment line, which is exactly `nul_in_comment.rxtin`'s own point.
+    # Bash's `read` silently DROPS a NUL from whatever it reads, so
+    # without this scan `pattern ab<NUL>cd` parses as `ab`, exit 0 — the
+    # defect `docs/design/dd13_format/rxtnul_report.md:140-155` named and
+    # left to this step. `tr -d` is the cheapest whole-file NUL probe
+    # available in this loop's own vocabulary (the fixture twin below
+    # already uses the identical idiom to build the NUL-free control).
+    if [ "$(LC_ALL=C tr -d '\000' < "$file" | wc -c)" != "$(wc -c < "$file")" ]; then
+        record_fail_class value-shape "$file" 0 "embedded NUL byte in .rxt source file"
+        continue
+    fi
+
+    # [DD-13b.W23.2] THE ATTACHMENT ARM — S1, ahead of first-token
+    # dispatch (format_design §1.2.1). A line with leading whitespace is
+    # CONTENT ATTACHING TO SOMETHING, never a directive in its own right,
+    # and nothing this build's BLOCK scope declares admits a child (every
+    # BLOCK-scope kind at this pin is `children: none`) — so an indented
+    # line is ALWAYS a structural error and the only question is WHICH
+    # one: before the first `pattern` there is no PARENT at all
+    # (structure-attachment); once a block is open the parent is the
+    # immediately preceding CONTENT line, which the schema says takes no
+    # continuation (schema-constraint), named by ITS OWN kind and line.
+    # A leading TAB never opens an indent at all (S0): refused the same
+    # way, naming the tab, before either of those two questions is asked.
     lineno=0
     while IFS= read -r line || [ -n "$line" ]; do
         lineno=$((lineno + 1))
         [ "$lineno" -le "$head_skip" ] && continue
         [[ "$line" =~ ^[[:space:]]*$ ]] && continue
         [[ "$line" =~ ^# ]] && continue
+        if [ "${line:0:1}" = " " ] || [ "${line:0:1}" = "$(printf '\t')" ]; then
+            indent_run="${line%%[! ]*}"
+            if [ "${line:${#indent_run}:1}" = "$(printf '\t')" ]; then
+                record_fail_class structure-attachment "$file" "$lineno" \
+                    "indentation is spaces; this line is indented with a TAB (a tab inside a value is still data, but a tab in the indentation has no agreed depth)"
+            elif [ "$have_block" != "1" ]; then
+                record_fail_class structure-attachment "$file" "$lineno" \
+                    "an indented line appears before any pattern block (nothing is open to attach it to)"
+            elif [ -n "$last_kind" ]; then
+                # [DD-13b.W23.2 FINDING] leg A's OWN `rxt_source.c:1169`
+                # files this under RXTD_STRUCTURE, not RXTD_SCHEMA_CONSTRAINT
+                # -- the fixture table in `w23_impl.md` §3.2 says
+                # `indent_under_m.rxtin` should be schema-constraint, and the
+                # DELIVERED W23.1 code disagrees with its own design note.
+                # Legs B and C match leg A (the schema table is leg A's,
+                # deliberately -- §2.25.5), which we must not re-edit here;
+                # the discrepancy is reported rather than improvised past.
+                record_fail_class structure-attachment "$file" "$lineno" \
+                    "indented line continues nothing ('$last_kind' takes no continuation, declared on line $last_kind_line)"
+            else
+                record_fail_class structure-attachment "$file" "$lineno" \
+                    "indented line continues nothing (the declaration above it takes no continuation)"
+            fi
+            continue
+        fi
+        last_kind="${line%%[ $(printf '\t')]*}"
+        last_kind_line=$lineno
 
         # [DD-13b.W1.1 / R-COMPAT-1] Everything between these two markers is
         # the arm chain 3,265 existing blocks and 26,691 existing expectation
@@ -1730,6 +1812,15 @@ for file in "${files[@]}"; do
             cur_name=""
             cur_exports=""
             cur_description=""
+            # [DD-13b.W23.2, §1.8 FOLD-IN 1] A SECOND `description` LINE
+            # IN ONE BLOCK IS NOW REFUSED, naming both lines -- the M5
+            # gap this step closes for legs B and C (leg A closed it at
+            # [RXTDUP], `docs/design/dd13_format/rxtnul_report.md`).
+            # Before this fix the second silently WON, `cur_description`
+            # being a single field unconditionally overwritten; this line
+            # is what a duplicate check needs and a bare string cannot
+            # give it, the FIRST line's own number.
+            cur_description_line=0
             cur_encoding=""
             cur_features_only=0
             # [DD-14.FB] the route resets with the block, like every other
@@ -1749,9 +1840,9 @@ for file in "${files[@]}"; do
             # BASH_REMATCH out from under us
             flag_letters="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'flags' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'flags' line before any pattern block"
             elif [ "$flag_letters" != "i" ]; then
-                record_fail "$file" "$lineno" \
+                record_fail_class value-shape "$file" "$lineno" \
                     "unknown flag letter(s) '$flag_letters' (only 'i' is defined)"
             else
                 cur_flags="$flag_letters"
@@ -1760,7 +1851,7 @@ for file in "${files[@]}"; do
             # captured BEFORE any further [[ =~ ]] clobbers BASH_REMATCH
             feat_list="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'features' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'features' line before any pattern block"
             else
                 cur_features="$feat_list"
             fi
@@ -1771,12 +1862,12 @@ for file in "${files[@]}"; do
             # the next block, unknown value is a hard error). Only "vm" is
             # defined -- there is no `--engine=dfa` cell this wave needs.
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'engine' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'engine' line before any pattern block"
             else
                 cur_engine="vm"
             fi
         elif [[ "$line" =~ ^engine[[:space:]] ]]; then
-            record_fail "$file" "$lineno" \
+            record_fail_class value-shape "$file" "$lineno" \
                 "unknown 'engine' value (only 'vm' is defined)"
         elif [[ "$line" =~ ^budget[[:space:]]+steps=([0-9]+)[[:space:]]*$ ]]; then
             # [DD-14 wave A commit 3] the minimal BUDGET knob §10.3 asks
@@ -1785,18 +1876,18 @@ for file in "${files[@]}"; do
             # SAME two pcrec flags this line and the next route into pflags)
             # -- this is the .rxt corpus's first way to reach either one.
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'budget' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'budget' line before any pattern block"
             else
                 cur_stepbudget="${BASH_REMATCH[1]}"
             fi
         elif [[ "$line" =~ ^budget[[:space:]]+frames=([0-9]+)[[:space:]]*$ ]]; then
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'budget' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'budget' line before any pattern block"
             else
                 cur_framebudget="${BASH_REMATCH[1]}"
             fi
         elif [[ "$line" =~ ^budget[[:space:]] ]]; then
-            record_fail "$file" "$lineno" \
+            record_fail_class value-shape "$file" "$lineno" \
                 "unknown 'budget' spec (only 'steps=<n>' and 'frames=<n>' are defined)"
         elif [[ "$line" =~ ^frames-buffer=(.*)$ ]]; then
             # [DD-14.FB] (D71 item 2, spec §10) THE ENTRY ROUTE, and it is
@@ -1817,9 +1908,9 @@ for file in "${files[@]}"; do
             # capacity), where this sizes the CALL. A block can carry both.
             route_spec="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'frames-buffer=' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'frames-buffer=' line before any pattern block"
             elif ! valid_route "$route_spec"; then
-                record_fail "$file" "$lineno" \
+                record_fail_class value-shape "$file" "$lineno" \
                     "unknown 'frames-buffer=' route '$route_spec' (want default, null, <n>, or <frames>,<trail>)"
             else
                 cur_route="$route_spec"
@@ -1836,7 +1927,7 @@ for file in "${files[@]}"; do
             # any of these new branches. It is what makes S-C10's "line
             # reported too late, several blocks" case LOUD instead of silent.
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'perr' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'perr' line before any pattern block"
             else
                 cur_is_perr=1
             fi
@@ -1844,7 +1935,7 @@ for file in "${files[@]}"; do
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'m' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'m' line before any pattern block"
             else
                 case_kind+=("m")
                 case_line+=("$lineno")
@@ -1860,7 +1951,7 @@ for file in "${files[@]}"; do
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'n' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'n' line before any pattern block"
             else
                 case_kind+=("n")
                 case_line+=("$lineno")
@@ -1876,7 +1967,7 @@ for file in "${files[@]}"; do
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'ms' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'ms' line before any pattern block"
             else
                 case_kind+=("m")
                 case_line+=("$lineno")
@@ -1892,7 +1983,7 @@ for file in "${files[@]}"; do
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'ns' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'ns' line before any pattern block"
             else
                 case_kind+=("n")
                 case_line+=("$lineno")
@@ -1913,7 +2004,7 @@ for file in "${files[@]}"; do
             # rows are for (S136 exercises this exact code today). A clear,
             # named refusal here is the same discipline `flags`'s unknown-
             # letter check already applies two elif arms up.
-            record_fail "$file" "$lineno" \
+            record_fail_class value-shape "$file" "$lineno" \
                 "'gu internal' is refused: PCREC_ERR_INTERNAL is the artifact catching its own inconsistency, never a planned outcome a .rxt block may EXPECT (docs/testing.md's 'gu' directive; see tests/mech/sabotages/S136 for how this code IS exercised)"
         elif [[ "$line" =~ ^gu[[:space:]]+(steps|frames|work|recurse)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             # [DD-14 wave A commit 3, §10.3] asserts the search GAVE UP with
@@ -1927,7 +2018,7 @@ for file in "${files[@]}"; do
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'gu' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'gu' line before any pattern block"
             else
                 case_kind+=("gu")
                 case_line+=("$lineno")
@@ -1953,10 +2044,10 @@ for file in "${files[@]}"; do
             gstart="${BASH_REMATCH[3]}"
             gend="${BASH_REMATCH[4]}"
             if { [ "$gstart" = "-1" ] && [ "$gend" != "-1" ]; } || { [ "$gstart" != "-1" ] && [ "$gend" = "-1" ]; }; then
-                record_fail "$file" "$lineno" \
+                record_fail_class value-shape "$file" "$lineno" \
                     "'$gkind' line: RX_UNSET must be '-1 -1' in BOTH slots, not one (got '$gstart $gend')"
             elif [ "$have_block" != "1" ] || [ "${#case_kind[@]}" -eq 0 ] || [ "${case_kind[$((${#case_kind[@]} - 1))]}" != "m" ]; then
-                record_fail "$file" "$lineno" \
+                record_fail_class schema-constraint "$file" "$lineno" \
                     "'$gkind' line must immediately follow (or otherwise attach to) an 'm'/'ms' case in the same block — no such case precedes it"
             else
                 last_idx=$((${#case_kind[@]} - 1))
@@ -1992,7 +2083,7 @@ for file in "${files[@]}"; do
             # region, and `only` is a real word a module could be called.
             feat_list="${BASH_REMATCH[1]}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'features' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'features' line before any pattern block"
             else
                 cur_features="$feat_list"
                 cur_features_only=1
@@ -2008,11 +2099,11 @@ for file in "${files[@]}"; do
             # COMPOSED artifact delivers, and this script compiles a block
             # from its own text. Leg A (pcrec) is where it becomes operative.
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'export' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'export' line before any pattern block"
             else
                 cur_exports="${BASH_REMATCH[1]}"
             fi
-        elif [[ "$line" =~ ^name[[:space:]]+([A-Za-z_][A-Za-z0-9_.-]*)[[:space:]]*$ ]]; then
+        elif [[ "$line" =~ ^name[[:space:]]+(.*)$ ]]; then
             # [DD-13b.W1] the block's NAME. It is in the FILE namespace, not
             # the pattern's (w1_impl DECIDED (7)).
             #
@@ -2044,11 +2135,24 @@ for file in "${files[@]}"; do
             # spec's own uniqueness rule for the population that actually
             # reaches this parser. `declared_names` is reset PER FILE
             # (above), matching `name`'s FILE-namespace scope.
+            # [DD-13b.W23.2] THE MATCH IS NOW ANY VALUE, VALIDATED INSIDE
+            # THE ARM, not baked into the regex. A regex that only matches
+            # a WELL-FORMED name sends a malformed one to the catch-all
+            # below, which cannot tell "not a name" from "not a directive"
+            # — exactly the class confusion `bad_name_ident.rxtin` exists
+            # to catch (the value's shape is wrong, the KIND is not
+            # unknown). `defname_ok` is `src/parse/rxt_source.c`'s own
+            # grammar, restated here since leg B has no shared header with
+            # leg A to call into.
             blk_name="${BASH_REMATCH[1]}"
+            blk_name="${blk_name%"${blk_name##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'name' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'name' line before any pattern block"
+            elif [[ ! "$blk_name" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]]; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'name' wants a definition name (got '$blk_name')"
             elif assoc_has declared_names "$blk_name"; then
-                record_fail "$file" "$lineno" \
+                record_fail_class schema-constraint "$file" "$lineno" \
                     "duplicate block name '$blk_name' (already named on line $(assoc_get declared_names "$blk_name"))"
             else
                 cur_name="$blk_name"
@@ -2082,31 +2186,46 @@ for file in "${files[@]}"; do
             # its siblings rather than in step with them.
             blk_desc_trimmed="${blk_desc%"${blk_desc##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'description' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'description' line before any pattern block"
             elif [ "$blk_desc_trimmed" = "|" ]; then
-                record_fail "$file" "$lineno" \
+                record_fail_class structure-attachment "$file" "$lineno" \
                     "a pattern block's 'description' takes the one-line form only: the '|' block scalar is continuation, and a pattern block's lines are not indented (the head is where '|' belongs)"
+            elif [ "$cur_description_line" -ne 0 ]; then
+                record_fail_class schema-constraint "$file" "$lineno" \
+                    "a pattern block has one 'description' (already given on line $cur_description_line)"
             else
                 cur_description="$blk_desc"
+                cur_description_line=$lineno
             fi
-        elif [[ "$line" =~ ^encoding[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
+        elif [[ "$line" =~ ^encoding[[:space:]]+(.*)$ ]]; then
             # [DD-13b.W1] D58's PER-PATTERN encoding axis reaching the corpus.
             # Block-scoped like `flags`/`features`/`engine`/`budget`, and it
             # routes to `--encoding=` in flush_block. WHETHER the named
             # encoding is implemented is pcrec's refusal to make, not this
             # loop's — `utf8` is refused until M5 and a block asking for it
             # should hear that from the compiler, in the compiler's words.
+            # [DD-13b.W23.2] widened and validated inside the arm, the
+            # `name` arm's own reason: a regex that only matches a
+            # well-formed value sends a malformed one to the catch-all,
+            # which cannot tell "not an identifier" from "not a
+            # directive" (`bad_encoding_ident.rxtin`).
             blk_enc="${BASH_REMATCH[1]}"
+            blk_enc="${blk_enc%"${blk_enc##*[![:space:]]}"}"
             if [ "$have_block" != "1" ]; then
-                record_fail "$file" "$lineno" "'encoding' line before any pattern block"
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'encoding' line before any pattern block"
+            elif [[ ! "$blk_enc" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+                record_fail_class value-shape "$file" "$lineno" \
+                    "'encoding' wants an encoding name (got '$blk_enc')"
             else
                 cur_encoding="$blk_enc"
             fi
         else
             # unparseable non-blank/non-comment lines are hard errors: a
             # corrupted corpus must not silently degrade to zero coverage
-            # (R1 review P-C2)
-            record_fail "$file" "$lineno" "unparseable .rxt line (hard error): $line"
+            # (R1 review P-C2). [DD-13b.W23.2] class unknown-token-in-scope:
+            # the first token has no schema row in this scope at all, the
+            # same fact `unknown_token()` states in leg A.
+            record_fail_class unknown-token-in-scope "$file" "$lineno" "unparseable .rxt line (hard error): $line"
         fi
     done < "$file"
 

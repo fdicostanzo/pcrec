@@ -1117,7 +1117,18 @@ END_MARK='# --- END PINNED ARM REGION ---'
 # to the next block would compile the following pattern under something
 # nobody wrote. The pin did its job: it caught an edit inside the arm chain
 # and made someone say why. Previous: 3e945390... (W1.1).
-ARM_PIN='8ea2cd29e4f53d52f1144f65b53c26abac4707e9276405179de835154b95604e'
+#
+# [DD-13b.W23.2] MOVED AGAIN, deliberately. Every `record_fail` call
+# inside the region gained the DIAGNOSTIC CLASS TAG (`record_fail_class`,
+# W23-S2 — format_design.md §2.25.5), and the `pattern` line's
+# block-reset arm gained `cur_description_line=0` (the duplicate-
+# `description` refusal's own state, §1.8 FOLD-IN 1). THE ATTACHMENT
+# ARM's own new state reset and its indentation dispatch (S1,
+# format_design §1.2.1) sit OUTSIDE the region, ahead of the BEGIN
+# marker — an append that cannot move the pin, on the same reasoning
+# W1.1's own new arms went AFTER the END marker. See this step's own
+# lane report for the full list. Previous: 8ea2cd29... (W1.3).
+ARM_PIN='b5a00e6142d024f2978bce13bd8debd9733818df3ab4023ce7e4075d62036356'
 
 region="$WORKDIR/armregion.txt"
 awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
@@ -1520,25 +1531,63 @@ fi
 # with identical dump, or refuse in all three naming the refusal) or, for
 # the head-only constructs no body parser ever sees, leg A alone.
 
+# --- extract_class <text> — the ONE place a class tag is pulled out of a
+# leg's own output (W23-S2's instrument). Reads the LAST `[a-z-]+`
+# bracketed tag rather than the first: leg C's `--dump` path has no
+# top-level try/except (pre-existing, unrelated to this step), so a
+# ValueError propagates as a full python TRACEBACK and the class tag is
+# in its OWN final "ValueError: [class] ..." line — the first bracket in
+# a long traceback is never guaranteed to be the tag, but the LAST one
+# always is, because `_fail`/`rxt_fail`/`record_fail_class` all put the
+# tag at the very front of the message they raise, and nothing after it
+# is a second bracket in these three legs' own output.
+extract_class() {
+    printf '%s\n' "$1" | LC_ALL=C grep -o '\[[a-z-]\{1,\}\]' | tail -1 | tr -d '[]'
+}
+
 # --- a REFUSAL helper for a construct all three legs parse (the body) --
 #
 # `check_refusal` (above) already asserts leg A's message; this adds
-# legs B and C's own refusal, which is the part a head-only witness
-# cannot exercise (run.sh/verify_rxt.py never read the head at all).
+# legs B and C's own refusal AND compares DIAGNOSTIC CLASS across all
+# three (W23-S2, format_design.md §2.25.5 / w23_impl.md §3.1) — never
+# exit code alone, which is satisfiable by accident on a population of
+# one message since leg B used to refuse everything identically. The
+# class is read off EACH LEG'S OWN OUTPUT INDEPENDENTLY (the failure
+# mode this instrument is built against: a tag leg B derives from the
+# same arm that produced the message, and leg A from a lookup, agreeing
+# because both are reading one implementation's opinion twice — see
+# `run.sh`'s `record_fail_class` and `verify_rxt.py`'s `_fail`, each its
+# own site, tagging AT THE RULE THAT FIRED).
 check_refusal_all3() {
-    local fixture=$1 label=$2
-    shift 2
-    check_refusal "$fixture" "$label" "$@"
+    local fixture=$1 label=$2 class=$3
+    shift 3
+    check_refusal "$fixture" "$label" "[$class]" "$@"
     local f="$FIXRUN/$fixture"
-    if "$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$f" > /dev/null 2>&1; then
+    local b_out b_class
+    b_out="$("$TIMEOUT_BIN" 300 bash "$RUNSH" --dump "$f" 2>&1)"
+    if [ $? -eq 0 ]; then
         fail "head/$label: run.sh --dump ACCEPTED $fixture; it must be refused too"
     else
-        pass "head/$label: run.sh --dump refuses it too"
+        b_class="$(extract_class "$b_out")"
+        if [ "$b_class" = "$class" ]; then
+            pass "head/$label: run.sh --dump refuses it too, class [$class] agrees with leg A"
+        else
+            fail "head/$label: run.sh --dump refuses $fixture but its class is '${b_class:-<none>}', not leg A's '$class':
+  got: $b_out"
+        fi
     fi
-    if "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$f" > /dev/null 2>&1; then
+    local c_out c_class
+    c_out="$("$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$f" 2>&1)"
+    if [ $? -eq 0 ]; then
         fail "head/$label: verify_rxt.py --dump ACCEPTED $fixture; it must be refused too"
     else
-        pass "head/$label: verify_rxt.py --dump refuses it too — all three parsers agree"
+        c_class="$(extract_class "$c_out")"
+        if [ "$c_class" = "$class" ]; then
+            pass "head/$label: verify_rxt.py --dump refuses it too, class [$class] agrees with leg A — all three parsers agree"
+        else
+            fail "head/$label: verify_rxt.py --dump refuses $fixture but its class is '${c_class:-<none>}', not leg A's '$class':
+  got: $c_out"
+        fi
     fi
 }
 
@@ -1571,10 +1620,10 @@ fi
 check_refusal tab_in_config_list.rxt tab-in-list 'comma-separated config list'
 
 # --- sem3: 'flags xmz' — only 'i' is defined, all three legs -----------
-check_refusal_all3 bad_flags.rxt bad-flags "only 'i' is defined"
+check_refusal_all3 bad_flags.rxt bad-flags value-shape "only 'i' is defined"
 
 # --- sem4: 'engine dfa' — only 'vm' is defined for W1.1, all three legs
-check_refusal_all3 bad_engine.rxt bad-engine 'only vm is defined'
+check_refusal_all3 bad_engine.rxt bad-engine value-shape 'only vm is defined'
 
 # --- sem7: 'target ... with nosuch' — with is validated too (head-only)
 check_refusal with_unknown.rxt with-unknown 'nosuch' 'not a' 'config'
@@ -1630,7 +1679,7 @@ fi
 # block form is now legal (§1.2.5), so leg A refuses this file for the
 # region being EMPTY rather than for the form being a head-only one. The
 # fixture is the same three-leg agreement; the needle follows the rule.
-check_refusal_all3 desc_pipe_trailing_space.rxt desc-pipe-trailing-ws \
+check_refusal_all3 desc_pipe_trailing_space.rxt desc-pipe-trailing-ws structure-attachment \
     'no indented continuation'
 
 # --- sem15: a whitespace-only line between cases is ACCEPTED (ignored)
@@ -1654,7 +1703,7 @@ fi
 # DIFFERENT sentence from legs B/C's "before any pattern block" — D26
 # does not pin wording across legs, only that each names something the
 # author can act on, so the needle here is leg A's own text.
-check_refusal_all3 directive_before_pattern.rxt directive-before-pattern \
+check_refusal_all3 directive_before_pattern.rxt directive-before-pattern unknown-token-in-scope \
     'file-level'
 
 # --- sem19: leg C validates 'name'/'encoding' too --------------------
@@ -1668,27 +1717,33 @@ check_refusal_all3 directive_before_pattern.rxt directive-before-pattern \
 # still refuse it. `bad_encoding_ident` below keeps its own needle, because an
 # `encoding` value IS still an identifier — the two rules genuinely parted
 # company here, and these two lines are where a reader sees that.
-check_refusal_all3 bad_name_ident.rxt bad-name-ident 'definition name'
-check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident 'encoding name'
+check_refusal_all3 bad_name_ident.rxt bad-name-ident value-shape 'definition name'
+check_refusal_all3 bad_encoding_ident.rxt bad-encoding-ident value-shape 'encoding name'
 
 # --- sem20: block name uniqueness, enforced on a HEADLESS file (the
 # population every corpus file is in) — all three legs now refuse it.
-check_refusal_all3 dup_block_name.rxt dup-block-name 'duplicate block name'
+check_refusal_all3 dup_block_name.rxt dup-block-name schema-constraint 'duplicate block name'
 
 # --- [RXTDUP lane, sem24] a pattern block's SECOND 'description' line
 # is refused, naming both lines — the same discipline as sem20's
 # duplicate block name, one field over. Before this fix the second line
-# silently WON (M5, bench_rxt_needs_v1.md §1.9). Leg A only: legs B and
-# C each keep the LAST description silently today (the pre-fix shape,
-# just not yet fixed at those two legs — out of this lane's scope,
-# src/parse/rxt_source.c only).
-check_refusal dup_description.rxt dup-description "one 'description'"
+# silently WON (M5, bench_rxt_needs_v1.md §1.9).
+#
+# [DD-13b.W23.2, §1.8 FOLD-IN 1] NOW check_refusal_all3, HEADLESS: legs B
+# and C each closed their own gap in this step (previously the pre-fix
+# shape, silently keeping the LAST description) — the fixture is
+# headless, the population every corpus file is in, matching
+# `dup_block_name.rxt`'s own reason.
+check_refusal_all3 dup_description.rxt dup-description schema-constraint "one 'description'"
 DD="$FIXRUN/single_description.rxt"
-if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$DD" > /dev/null 2>"$WORKDIR/dd.err"; then
-    pass "dup-description: the accept control (ONE description line) is ACCEPTED — the refusal is isolated to the duplicate"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$DD" > /dev/null 2>"$WORKDIR/dd.err" && \
+   "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$DD" > /dev/null 2>"$WORKDIR/dd.berr" && \
+   "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$DD" > /dev/null 2>"$WORKDIR/dd.cerr"; then
+    pass "dup-description: the accept control (ONE description line) is ACCEPTED by all three — the refusal is isolated to the duplicate"
 else
-    fail "dup-description: the single-description accept control was refused:
-  $(cat "$WORKDIR/dd.err")"
+    fail "dup-description: the single-description accept control was refused by at least one leg:
+  (A: $(cat "$WORKDIR/dd.err"))
+  (C: $(tail -3 "$WORKDIR/dd.cerr" 2>/dev/null))"
 fi
 
 # --- [RXTDUP lane, sem25] a SECOND file-level 'description' is refused
@@ -1709,21 +1764,70 @@ fi
 # refused BY NAME (the file, the 1-based line, and that it is a NUL
 # byte), naming M1's own shape (bench_rxt_needs_v1.md §1.9/§2.7): before
 # this fix `pattern ab<NUL>cd` silently truncated to `ab`, exit 0, no
-# diagnostic. Leg A only, deliberately NOT check_refusal_all3 — legs B
-# and C each mishandle the byte a DIFFERENT way today (bash's own `read`
-# drops it silently, verify_rxt.py's decoder does not), which is a defect
-# in each leg's own body reader and out of this lane's scope
-# (src/parse/rxt_source.c only).
-check_refusal nul_byte.rxt nul-byte 'NUL byte'
+# diagnostic.
+#
+# [DD-13b.W23.2, §1.8 FOLD-IN 1] NOW check_refusal_all3, HEADLESS: legs B
+# and C each closed their own gap this step (bash's own `read` used to
+# drop the byte silently, verify_rxt.py's decoder used to replace it with
+# a space) — both now scan the WHOLE FILE for one before any line is
+# interpreted, the same single scope leg A has always used.
+check_refusal_all3 nul_byte.rxt nul-byte value-shape 'NUL byte'
 NB="$FIXRUN/nul_byte.rxt"
 NBOK="$WORKDIR/nul_byte_free.rxt"
 tr -d '\000' < "$NB" > "$NBOK"
-if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$NBOK" > /dev/null 2>"$WORKDIR/nbok.err"; then
-    pass "nul-byte: the SAME file with the NUL stripped is ACCEPTED — the refusal is isolated to the byte, not the shape"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$NBOK" > /dev/null 2>"$WORKDIR/nbok.err" && \
+   "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$NBOK" > /dev/null 2>"$WORKDIR/nbok.berr" && \
+   "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$NBOK" > /dev/null 2>"$WORKDIR/nbok.cerr"; then
+    pass "nul-byte: the SAME file with the NUL stripped is ACCEPTED by all three — the refusal is isolated to the byte, not the shape"
 else
-    fail "nul-byte: the NUL-free twin of the fixture was refused too:
-  $(cat "$WORKDIR/nbok.err")"
+    fail "nul-byte: the NUL-free twin of the fixture was refused by at least one leg:
+  (A: $(cat "$WORKDIR/nbok.err"))
+  (C: $(tail -3 "$WORKDIR/nbok.cerr" 2>/dev/null))"
 fi
+
+# --- [DD-13b.W23.2, §1.8 FOLD-IN 1] nul_in_comment: the fixture that
+# DISCRIMINATES between the whole-file pre-parse scan and a line-
+# interpreting one. `nul_byte.rxt`'s NUL sits mid `pattern` line, which
+# every candidate scope catches; this one sits inside a `#` COMMENT
+# line, which only a whole-file scan reaches — a per-line or decoder-
+# scoped test would skip the line as a comment and never see the byte.
+check_refusal_all3 nul_in_comment.rxt nul-in-comment value-shape 'NUL byte'
+NIC="$FIXRUN/nul_in_comment.rxt"
+NICOK="$WORKDIR/nul_in_comment_free.rxt"
+tr -d '\000' < "$NIC" > "$NICOK"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$NICOK" > /dev/null 2>"$WORKDIR/nicok.err" && \
+   "$TIMEOUT_BIN" 60 bash "$RUNSH" --dump "$NICOK" > /dev/null 2>"$WORKDIR/nicok.berr" && \
+   "$TIMEOUT_BIN" 60 python3 "$VERIFY" --dump "$NICOK" > /dev/null 2>"$WORKDIR/nicok.cerr"; then
+    pass "nul-in-comment: the SAME file with the NUL stripped is ACCEPTED by all three"
+else
+    fail "nul-in-comment: the NUL-free twin was refused by at least one leg:
+  (A: $(cat "$WORKDIR/nicok.err"))
+  (C: $(tail -3 "$WORKDIR/nicok.cerr" 2>/dev/null))"
+fi
+
+# --- [DD-13b.W23.2] THE ATTACHMENT ARM's own fixtures (W23-S1, W23-S2) --
+#
+# `indent_pre_body.rxt` — an indented `m` line BEFORE the first
+# `pattern`. THE POSITION IS THE CHECK (r57 S-M5): leg C's old
+# indentation test ran AFTER its not-seen_pattern branch, so a
+# POST-body fixture would report GREEN against the ordering defect this
+# pins; leg B had no attachment step at all before this step.
+check_refusal_all3 indent_pre_body.rxt indent-pre-body structure-attachment \
+    'continues nothing'
+
+# `indent_under_m.rxt` — an indented line under an `m` case line,
+# mid-block. class structure-attachment, NAMING THE PARENT
+# (`m` declares `children: none`) — S-R1's own detector (S239): flipping
+# `m`'s `children` column makes leg A ACCEPT while legs B and C still
+# REFUSE, so only the three-leg DIFFERENTIAL sees the row move.
+#
+# [FINDING] `w23_impl.md` §3.2's fixture table says this class is
+# schema-constraint; the DELIVERED W23.1 code files every "indented line
+# continues nothing" S1 failure under structure-attachment regardless of
+# WHY (see the fixture's own header and this step's lane report). Legs B
+# and C match leg A rather than the note.
+check_refusal_all3 indent_under_m.rxt indent-under-m structure-attachment \
+    "'m' takes no continuation"
 
 # --- sem21: 'with'/'from' trailing whitespace is trimmed (head-only) --
 WT="$FIXRUN/with_trailing_ws.rxt"

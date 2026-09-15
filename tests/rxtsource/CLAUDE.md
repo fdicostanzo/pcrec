@@ -317,26 +317,33 @@ readable prose FIELD" is singular), even though the head's mechanism was
 never the same silent-overwrite shape: a second head-level `description`
 just became its own row with no cardinality check, never lost data.
 
-**Leg A only, deliberately.** All three fixtures below are checked with
-the single-leg `check_refusal`, not `check_refusal_all3` — unlike
-`dup_block_name.rxtin` (which legs B and C already detect
-independently), neither NUL handling nor duplicate-description detection
-exists in `tests/harness/run.sh`'s arm chain or `verify_rxt.py`'s
-`parse_rxt` today. Measured directly: on a headless NUL fixture, `run.sh`
-silently DROPS the byte (bash's own `read` behaviour) and `verify_rxt.py`
-silently REPLACES it with a space (its own decoder), each a different
-wrong answer; on a headless duplicate-description fixture, both legs
-silently keep the LAST line, the exact pre-fix pcrec behaviour. Fixing
-those two legs is out of this lane's scope
-(`src/parse/rxt_source.c` only, per its own brief) and is named here so
-it is not mistaken for done.
+**`dup_head_description` stays leg-A-only, and its reason does not
+expire.** Checked with the single-leg `check_refusal`, never
+`check_refusal_all3`: its fixture opens with two FILE-level
+`description` lines above the `pattern` block, so it is head-bearing,
+and the head has exactly one parser by the manager's seam ruling
+(w1_impl.md §1.1) — a three-leg assertion on it is not available at any
+point in this format's life, not merely not-yet-built. `head_basic.rxt`
+is its accept control (it already carries exactly one).
+
+**[DD-13b.W23.2] `nul_byte` AND `dup_description` MOVED TO
+`check_refusal_all3`, and are no longer leg-A-only.** The "out of this
+lane's scope" reason above was a temporary boundary and has expired:
+legs B and C each closed their own gap in the attachment-arm step (the
+same NUL rule now has ONE SCOPE in all three legs — the whole file,
+before any line is interpreted — and both legs now refuse a second
+block-level `description`, naming both lines). A scope note that
+outlives its scope is the staleness shape this tree keeps catching, and
+deleting a note two thirds of which is still true is the same defect
+with the sign flipped — see `w23_impl.md` §1.8 item 5.
 
 | new fixture | what it makes reachable |
 |---|---|
-| `nul_byte` | M1: a NUL byte mid `pattern` line, refused naming the file/line/byte kind |
-| `dup_description` | M5: a pattern block's second `description` line, refused naming both lines |
-| `single_description` | the accept control for `dup_description` — byte-identical shape, one line |
-| `dup_head_description` | the head's own duplicate `description`, refused for consistency (`head_basic.rxt` is its accept control — it already carries exactly one) |
+| `nul_byte` | M1: a NUL byte mid `pattern` line, refused by all three legs, class value-shape |
+| `nul_in_comment` | [DD-13b.W23.2] the fixture that DISCRIMINATES a whole-file pre-parse scan from a line-interpreting one — `nul_byte`'s own NUL sits mid `pattern` line, which every candidate scope catches |
+| `dup_description` | M5: a pattern block's second `description` line, refused by all three legs naming both lines, class schema-constraint |
+| `single_description` | the accept control for `dup_description` — byte-identical shape, one line, accepted by all three |
+| `dup_head_description` | the head's own duplicate `description`, refused for consistency (leg A only, see above) |
 
 ## Maintenance
 
@@ -459,3 +466,44 @@ rather than the rule: legs B and C gain their attachment arm and their
 child consumption at W23.2. `block_scalar_in_body.rxtin` is the visible
 edge of it — a shipped refusal that changed DIRECTION (§1.2.5's widening)
 and is asserted against leg A alone until the other two legs are taught.
+
+## [DD-13b.W23.2] the ATTACHMENT ARM, legs B and C, and CLASS agreement
+
+Legs B (`tests/harness/run.sh`) and C (`tests/harness/verify_rxt.py`)
+each gain S1's attachment mechanism — an indented line's PARENT is the
+immediately preceding non-indented content line, and nothing this
+build's BLOCK scope declares admits a child, so an indented line is
+ALWAYS a structural error — and the DIAGNOSTIC CLASS TAG on every
+per-line refusal (`record_fail_class`/`_fail`, format_design.md
+§2.25.5), not only the two new fixtures below. `check_refusal_all3`
+(this directory's own three-leg helper) now compares CLASS across all
+three legs rather than exit code alone (W23-S2), reading each leg's
+class off ITS OWN OUTPUT independently — never the dump against the
+table, and never one leg's tag inferred from another's.
+
+| new fixture | what it makes reachable |
+|---|---|
+| `indent_pre_body` | an indented `m` line BEFORE the first `pattern`. THE POSITION IS THE CHECK (r57 S-M5) — leg C's old indentation test ran AFTER its not-seen_pattern branch, so a post-body fixture would have reported GREEN against the ordering defect |
+| `indent_under_m` | an indented line under an `m` case line, mid-block, naming the PARENT — S-R1's detector (S239): flipping `m`'s `children` column makes leg A ACCEPT while legs B/C still REFUSE, so only the three-leg differential sees the row move |
+
+**[FINDING] `w23_impl.md` §3.2's fixture table says `indent_under_m`'s
+class is schema-constraint; the DELIVERED W23.1 code disagrees with its
+own design note.** `src/parse/rxt_source.c`'s S1 attachment block files
+EVERY "indented line continues nothing" failure under RXTD_STRUCTURE
+(`structure-attachment`) regardless of WHY there is nowhere to attach —
+no parent open at all, or a parent whose `children` column is NONE —
+MEASURED against the shipped binary at three call sites
+(`rxt_source.c:1169`, `:1173`, `:1184`). Per this step's own boundary
+("must not touch `rxt_source.c`'s grammar"), legs B and C are made to
+MATCH leg A rather than the note: all three legs read
+`structure-attachment` for `indent_under_m.rxtin`, and the fixture's own
+header records the discrepancy. See `docs/dev/lanes/w232_report.md` for
+the full account.
+
+**THE CLASS-TAG RETROFIT REACHES EVERY PER-LINE REFUSAL IN LEGS B AND
+C**, not only the two new fixtures — including the existing seven
+`check_refusal_all3` call sites (`bad_flags`, `bad_engine`,
+`desc_pipe_trailing_space`, `directive_before_pattern`,
+`bad_name_ident`, `bad_encoding_ident`, `dup_block_name`), each now
+naming its class, and the catch-all ("unrecognized line" / "unparseable
+.rxt line") in both legs, which reads `unknown-token-in-scope`.
