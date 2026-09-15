@@ -1,0 +1,14 @@
+
+== Summary ==
+cases passed: 28930
+cases failed: 2
+failures by file:
+  /Users/fdicostanzo/pcrec/worktrees/dialsweep/tests/size/size_term.rxt: 2
+pattern-compile failures (distinct): 1
+group cases pending-vm: 0
+size-log rows: 3477
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
