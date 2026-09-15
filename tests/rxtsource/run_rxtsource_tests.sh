@@ -2181,8 +2181,8 @@ if [ "$w6ok" = "1" ]; then
 $(head -20 "$AIW/noaux.diff")"
     fi
 fi
-if ( cd "$AIW/a" && "$PCREC" --source aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
-   ( cd "$AIW/b" && "$PCREC" --source aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
+if ( cd "$AIW/a" && "$TIMEOUT_BIN" 30 "$PCREC" --source aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
+   ( cd "$AIW/b" && "$TIMEOUT_BIN" 30 "$PCREC" --source aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
    diff "$AIW/a/out.c" "$AIW/b/out.c" > "$AIW/c.diff" 2>&1 && \
    diff "$AIW/a/out.h" "$AIW/b/out.h" > "$AIW/h.diff" 2>&1; then
     pass "W23-S6 arm 2: the compiled artifact (.c and .h) is byte-identical across the same aux-body edit"
