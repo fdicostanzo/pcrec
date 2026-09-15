@@ -1,0 +1,15 @@
+# [K57FIX] THE THREE-LEG SIBLING OF `prose_dedent.rxtin`: the SAME
+# shallow-continuation shape, at BLOCK scope (a pattern block's own
+# `description`) rather than the file's head, so all three parsers reach
+# it — legs B (`tests/harness/run.sh`'s `prose_take`) and C
+# (`tests/harness/verify_rxt.py`'s prose-region arm) carry the identical
+# byte-count dedent K57 named in leg A, and this is what makes that
+# reachable and REFUSED rather than merely present-but-unexercised. All
+# three refuse, class value-shape, naming the shallower line's own depth
+# and the depth the first continuation line set.
+pattern a+
+description |
+    line one at four
+  line two at two
+    line three at four
+m "aaa" 0 3

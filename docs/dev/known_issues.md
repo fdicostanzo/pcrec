@@ -11,13 +11,14 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K57 — a `|` block scalar's dedent strip is a BYTE COUNT, so a continuation line indented LESS than the block's first line silently loses content
+## K57 — FIXED 2026-09-15 (lane k57fix) — a `|` block scalar's dedent strip was a BYTE COUNT, so a continuation line indented LESS than the block's first line silently lost content
 
 Filed 2026-09-12 (sixty-first session), lane w23fix, found by the r57
 panel's grammar critic (G-B2 N2) and reproduced here on `build/pcrec`
-at `04ec3942`. Status: **deferred** — it is a `docs/spec/rxt_format.md`
-production's decoding bug, and [DD-13b.W23]'s H12/SW16 work is the wave
-that touches this code.
+at `04ec3942`. Was **deferred** — it was a `docs/spec/rxt_format.md`
+production's decoding bug, and [DD-13b.W23]'s H12/SW16 work was the wave
+that touched this code; the hold expired when W23 delivered and merged
+(30b1f7f2).
 
 **The repro** (three lines, no build required beyond `build/pcrec`):
 
@@ -48,20 +49,34 @@ exception, MEASURED). It is also independent of [DD-13b]'s revision
 history: the line is wrong under revision 3's rules, revision 3.1's and
 revision 3.2's alike, so no design decision fixes it by arriving.
 
-**The fix, when the wave takes it**, is one of two and the choice is the
-implementer's: REFUSE a continuation line indented less than the
-block's first (a narrowing — population 0, and it would join
-`format_design.md` §1.6.1a's census as case (6) with the full package),
-or strip only the whitespace prefix actually present and keep the rest
-(a widening of the decoded value, no refusal). The second is the
-smaller change and preserves more files; the first makes a genuinely
-ambiguous shape loud. Either way the fixture is the repro above, run in
-all three legs (leg C decodes prose python-side and must agree).
+**The fix chosen** is the first of the two the entry left open: REFUSE
+a continuation line indented less than the block's own dedent depth,
+class `value-shape`, naming the shallower line's own indent and the
+depth the first continuation line set — a narrowing (population 0 at
+the fix's own pin, matching this entry's own measurement) rather than
+the silent-widening alternative, because a byte count cannot strip a
+line shorter than itself without deleting content and this format never
+loses bytes silently (the standing house rule the entry itself invokes:
+"a silent wrong VALUE... the class this project treats as the worst
+outcome"). Built the same way in all three legs — `src/parse/
+rxt_source.c`'s `read_prose_region` (leg A), `tests/harness/run.sh`'s
+`prose_take` (leg B, which carried the identical byte-count dedent and
+now LATCHES the refusal for the rest of the region rather than letting
+the remaining lines cascade into an unrelated `structure-attachment`
+error under the top-level per-line dispatch), and `tests/harness/
+verify_rxt.py`'s prose-region arm (leg C, which raises immediately and
+needed no latch). `tests/rxtsource/fixtures/prose_dedent.rxtin` is the
+original repro, unchanged, now asserting the refusal (leg A only — it
+is head-scoped, and the head has one parser); `prose_dedent_body.rxtin`
+is its three-leg sibling, the identical shape at BLOCK scope, confirming
+legs B and C reach and agree on the same class. `docs/spec/rxt_format.md`
+§3's S3 section states the decode rule normatively.
 
-**Population today: 0.** No corpus file and no fixture carries a
-`description` at all, and pcrec-bench holds no `.rxt`/`.rxtin` file.
-The entry exists so the wave that grows prose fields does not grow them
-on top of this.
+**Population at the fix's own pin: still 0** in the shipped corpus (no
+`description` at all), which is exactly why the entry was worth keeping
+open rather than silently narrowing — the wave that grows prose fields
+now inherits a REFUSAL, not a silent loss, the day one exercises this
+shape.
 
 ---
 

@@ -3229,16 +3229,25 @@ accept_value prose_ragged.rxt prose-ragged description 4 \
 accept_value prose_paragraph_break.rxt prose-para description 4 \
     'first paragraph\n\nsecond paragraph'
 
-# K57, PINNED AS A DEFECT AND NOT AS A PROMISE (manager ruling r59-R4).
-# The dedent strip is a BYTE COUNT, so a continuation line indented LESS
-# than the block's first silently loses content at exit 0: `  line two at
-# two` under a four-space block decodes as `ne two at two`. That is the
-# value asserted here. THE DAY K57 IS FIXED THIS CHECK GOES RED, and the
-# red is the signal to invert it to the correct value — the cheapest form
-# of a pinned bug in a suite with no known-fail bucket, because the fix
-# breaks the pin rather than outliving it silently.
-accept_value prose_dedent.rxt prose-dedent-K57 description 4 \
-    'line one at four\nne two at two\nline three at four'
+# [K57FIX] K57 IS FIXED: a continuation line indented LESS than the
+# block's own dedent depth is now REFUSED by name, class value-shape —
+# r59-R4's own predicted signal (this WAS an `accept_value` pin on
+# today's wrong decoded value; the fix broke it, and it is inverted here
+# rather than left red). HEAD-SCOPED, so leg A only — legs B and C never
+# read the head (the seam ruling); `prose-dedent-body` below is their
+# three-leg sibling.
+check_refusal prose_dedent.rxt prose-dedent-K57 \
+    'continuation is indented' 'less than' 'delete content'
+
+# [K57FIX] THE THREE-LEG SIBLING: the identical shape at BLOCK scope, so
+# legs B (`run.sh`'s `prose_take`) and C (`verify_rxt.py`'s prose-region
+# arm) — which carry the SAME byte-count dedent K57 named in leg A — are
+# exercised too, not merely fixed and unreached. Class-compared like every
+# other `check_refusal_all3_kind` row; `description` already carries
+# `validated_by: all-readers` (§3.3), so this row's receipt joins the
+# kind's existing population.
+check_refusal_all3_kind description prose_dedent_body.rxt prose-dedent-body \
+    value-shape 'continuation is indented' 'less than'
 
 # S0: whitespace-only lines are INERT at every position, asserted as "the
 # parse is IDENTICAL to the same file with them deleted" rather than as

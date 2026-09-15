@@ -1488,6 +1488,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   boundary-tracking awk script. S246's second variant plants against it
   directly — see that sabotage row and `tests/rxtsource/CLAUDE.md`.
 
+  **[K57FIX, 2026-09-15] `read_prose_region`'s DEDENT IS NO LONGER A BARE
+  BYTE COUNT.** K57 (docs/dev/known_issues.md, FIXED): the region's dedent
+  depth is set by the first continuation line, same as always, but every
+  later line is now validated BEFORE any stripping — a CONTENT line (one
+  with a non-whitespace byte) whose own leading whitespace run is SHORTER
+  than that depth is refused, class `value-shape`, naming both indents and
+  the line that set the deeper one, rather than having the shortfall
+  silently eaten out of its content. A WHITESPACE-ONLY line is unaffected
+  (the format's own paragraph break, §1.2.5). `tests/harness/run.sh`'s
+  `prose_take` and `tests/harness/verify_rxt.py`'s prose-region arm carry
+  the identical rule; `tests/rxtsource/CLAUDE.md`'s own "[K57FIX lane,
+  2026-09-15]" section has the full three-leg record.
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be
