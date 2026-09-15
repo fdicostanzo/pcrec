@@ -96,6 +96,21 @@ checks_failed=0
 
 pass() { checks_passed=$((checks_passed + 1)); echo "PASS: $*"; }
 fail() { checks_failed=$((checks_failed + 1)); echo "FAIL: $*" >&2; }
+# [DD-13b.W23.4] section_count SECTION FILE -> stdout: the number of DATA
+# rows in a `--list-source` dump belonging to SECTION, where "" means the
+# main table (before the first `#section` line). Every check in this file
+# that used to count rows over a whole dump — sound only while no
+# `#section` block existed at all — routes through this rather than
+# growing its own copy of the same section-boundary tracking R5/R6 (above)
+# already need.
+section_count() {
+    local want="$1" file="$2"
+    awk -F'\t' -v want="$want" '
+        /^#section /{ s=$0; sub(/^#section /,"",s); cur=s; next }
+        $1 ~ /^#/ { next }
+        cur == want { n++ }
+        END { print n+0 }' "$file"
+}
 # record() — the tests/thread/run_stackdepth_tests.sh RECORD shape
 # (2026-09-10): ran, outcome printed and COUNTED, but neither PASS nor
 # FAIL claims anything about it. Used for comparisons whose pinned values
@@ -461,11 +476,18 @@ tA1=$(date +%s.%N)
 # three things beyond byte-identity: the exact column NAMES pcrec emits,
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
-MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export'
-hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#' | tail -1)"
+MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export	tags	oracle	esc'
+hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#kind')"
+# [DD-13b.W23.4] MATCHES `^#kind` EXPLICITLY, never "the last `#` line":
+# the main table's header used to be exactly that (`tail -1` over every
+# `#` line), which stops working the moment a file's dump can carry
+# `#section` blocks after it, each with its OWN `#col1\tcol2...` header —
+# a `tail -1` would read a SECTION's header instead of the main table's,
+# a false-positive MANIFEST failure. `#kind` is the one line this dump
+# ever emits whose first field is that literal token.
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
-    pass "C1 manifest: --list-source emits exactly the 16 pinned columns, in order"
+    pass "C1 manifest: --list-source emits exactly the 19 pinned columns, in order"
 else
     fail "C1 manifest: --list-source's header MOVED.
   expected: $MANIFEST
@@ -477,27 +499,71 @@ else
 fi
 
 ncols=$(printf '%s' "$MANIFEST" | awk -F'\t' '{print NF}')
+# [DD-13b.W23.4] R5's REPAIR (w23_impl.md §1.5/§6.4 item 3). THE DEFECT:
+# this assertion used to be "every non-comment row has exactly ncols+1
+# fields", unconditionally of KIND — which the four `#section` blocks
+# violate on every row, since a section's own width is never the main
+# table's. THE REPAIR: the MAIN TABLE's rows are identified by the
+# section boundary the STREAM ITSELF declares (`#section NAME` opens one,
+# the file's own `#kind` header line — printed once per file — closes
+# back to the main table), never by "every non-`#` row"; an unrecognised
+# section name HARD-FAILS naming it rather than silently defaulting to
+# the main table's width, because a detection helper that defaults on
+# missing input fails in the silent direction ([ABI-NS]).
 badfields=$(awk -F'\t' -v want="$ncols" '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
     $2 ~ /^#/ { next }
-    NF != want + 1 { print FILENAME ": " $0; n++ }
+    {
+        expect = want
+        if (sect == "provenance")     expect = 14
+        else if (sect == "variants")  expect = 9
+        else if (sect == "cases")     expect = 16
+        else if (sect == "aux")       expect = 8
+        else if (sect != "") {
+            print FILENAME ": unknown #section '\''" sect "'\'' at: " $0
+            n++
+            next
+        }
+        if (NF != expect + 1) { print FILENAME ": " $0; n++ }
+    }
     END { print "COUNT " n+0 }' "$DUMP_A_RAW" | tail -1 | awk '{print $2}')
 if [ "$badfields" = "0" ]; then
-    pass "C1 manifest: every --list-source data row has exactly $ncols fields (header truthfulness)"
+    pass "C1 manifest: every --list-source row (main table and every section) has its own section's exact field count (header truthfulness)"
 else
-    fail "C1 manifest: $badfields --list-source row(s) do not have $ncols fields.
-  A field contained a TAB, which is what the rxt-escape on columns 4, 5
-  and 15 exists to prevent — three corpus blocks carry a literal tab in
-  their pattern text (tests/base/bounded_repeats.rxt twice,
-  tests/modifiers/xxmode.rxt once) and in every one the tab is the thing
-  under test."
+    fail "C1 manifest: $badfields --list-source row(s) do not have their section's expected field count.
+  Either a field contained a TAB (the rxt-escape on the main table's
+  columns 4, 5 and 15, and on the section columns escaped in
+  docs/spec/rxt_format.md, exists to prevent this — three corpus blocks
+  carry a literal tab in their pattern text, tests/base/bounded_repeats.rxt
+  twice and tests/modifiers/xxmode.rxt once, and in every one the tab is
+  the thing under test) or a row belongs to a section this check does not
+  recognise."
 
 fi
 
 # leg A is one row per DECLARATION and per BLOCK. On this corpus there
-# are no head declarations at all, so every row must be a `pattern` row —
-# a THIRD view of C0a's zero, from pcrec's own output this time.
-a_head_rows=$(awk -F'\t' '$2 !~ /^#/ && $2 != "pattern" { n++ } END { print n+0 }' "$DUMP_A_RAW")
-a_blocks=$(awk -F'\t' '$2 == "pattern" { n++ } END { print n+0 }' "$DUMP_A_RAW")
+# are no head declarations at all, so every MAIN-TABLE row must be a
+# `pattern` row — a THIRD view of C0a's zero, from pcrec's own output
+# this time. [DD-13b.W23.4] R6's REPAIR (w23_impl.md §1.5, r59-A1): this
+# used to count EVERY non-comment row whose field 2 is not `pattern` —
+# an INEQUALITY reader, which every `#section cases` row satisfies (its
+# own field 2 is `block_line`, an integer, never the string `pattern`),
+# so a green W23-S4 (below) would PROVE this counter broken. The repair
+# is the SAME section-boundary tracking R5 now uses: count only rows
+# inside the main table (`sect == ""`).
+a_head_rows=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 != "pattern" { n++ }
+    END { print n+0 }' "$DUMP_A_RAW")
+a_blocks=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 == "pattern" { n++ }
+    END { print n+0 }' "$DUMP_A_RAW")
 if [ "$a_head_rows" = "0" ]; then
     pass "C1: leg A emitted 0 head-declaration rows (pcrec's own view of C0a)"
 else
@@ -508,6 +574,61 @@ if [ "$a_blocks" = "$CENSUS_BLOCKS" ]; then
 else
     fail "C1: leg A emitted $a_blocks block rows, census is $CENSUS_BLOCKS —
   the differential is comparing a population that is not the corpus"
+fi
+
+# ---------------------------------------------------------------------
+# [DD-13b.W23.4] item 3b: A SYNTHETIC STREAM EXERCISING BOTH REPAIRED
+# ARMS (r59-A-M3, w23_impl.md §6.4). At THIS commit's own pin no real
+# corpus file carries a W23 production (census unchanged, $CENSUS_BLOCKS
+# above), so the two repairs above land UNEXERCISED by the corpus
+# itself — a check nobody can distinguish from a check that was not
+# written. This is a hand-written `--list-source`-shaped stream (never
+# real `pcrec` output) through the SAME two awk scripts, at a section
+# width that DIFFERS FROM 16 (`#section cases` is ALSO 16 — a
+# width-blind repair would pass a `cases`-only control by coincidence;
+# `#section aux` is 8 and is the control here).
+SYNTH="$WORKDIR/synth_a_raw.tsv"
+{
+    printf 'f.rxt\t#kind\tline\tname\tvalue\tpattern\tflags\tfeatures\tfeatures_only\tencoding\tengine\tbudget_steps\tbudget_frames\twith\tfrom\tpcrec\texport\ttags\toracle\tesc\n'
+    # 20 fields: the file prefix + all 19 main-table columns (kind..esc).
+    awk 'BEGIN {
+        OFS = "\t"
+        $1 = "f.rxt"; $2 = "pattern"; $3 = "1"; $6 = "a"; $20 = ""
+        print
+    }'
+    printf 'f.rxt\t#section aux\n'
+    printf 'f.rxt\t#line\tblock_line\tblock_name\tconsumer\tdepth\tkey\tvalue\tparent_line\n'
+    # 9 fields: the file prefix + all 8 aux columns.
+    awk 'BEGIN {
+        OFS = "\t"
+        $1 = "f.rxt"; $2 = "2"; $3 = "1"; $5 = "bench"; $6 = "0"
+        $7 = "ext"; $8 = "bench"; $9 = ""
+        print
+    }'
+} > "$SYNTH"
+synth_bad=$(awk -F'\t' -v want=19 '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    {
+        expect = want
+        if (sect == "aux") expect = 8
+        if (NF != expect + 1) n++
+    }
+    END { print n+0 }' "$SYNTH")
+synth_head=$(awk -F'\t' '
+    $2 == "#kind" { sect = ""; next }
+    $2 ~ /^#section / { sect = $2; sub(/^#section /, "", sect); next }
+    $2 ~ /^#/ { next }
+    sect == "" && $2 != "pattern" { n++ }
+    END { print n+0 }' "$SYNTH")
+if [ "$synth_bad" = "0" ] && [ "$synth_head" = "0" ]; then
+    pass "C1 synthetic control: R5/R6's repaired arms both read this section-bearing stream correctly (0 bad-width rows, 0 spurious head rows)"
+else
+    fail "C1 synthetic control: the repaired arms misread a section-bearing stream —
+  bad-width rows: $synth_bad (want 0), spurious head rows: $synth_head (want 0).
+  This is a HAND-WRITTEN stream, not real pcrec output — if it fails, the
+  repair above is wrong, not the corpus."
 fi
 
 # ---------------------------------------------------------------------
@@ -1273,6 +1394,44 @@ for f in "$FIXDIR"/*.rxtin; do
     cp "$f" "$FIXRUN/$(basename "${f%.rxtin}").rxt"
 done
 
+# ---------------------------------------------------------------------
+# [DD-13b.W23.4] W23-S4 (w23_impl.md §1.5, DECIDED (4) and (5)): TWO
+# invariants over a REAL dump's own section rows, walked on
+# `aux_deep_tree.rxtin` — a fixture whose whole point is COLLIDING KEYS
+# (`pattern`, `m`, `provenance`, `config`, `variant` as literal `key`
+# VALUES inside an `ext` body), which is exactly what makes it the
+# sharpest possible witness for invariant (a). (a) no `#section` row's
+# field 1 (the integer `line`) may equal any main-table `kind` token —
+# the invariant that is what makes R2/R3's equality-reading consumers
+# safe rather than merely lucky. (b) sections FOLLOW the main table: the
+# ordinal of the last main-table row must be LESS than the ordinal of
+# the first `#section` line — R2's own "first pattern row is the body
+# boundary" assumption, load-bearing and, until now, untested.
+S4_OUT="$WORKDIR/w23s4.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/aux_deep_tree.rxt" \
+        > "$S4_OUT" 2>"$WORKDIR/w23s4.err"; then
+    kinds="pattern m ext freq config description provenance variant tag oracle include use lib target"
+    s4a=$(awk -F'\t' -v kinds="$kinds" '
+        BEGIN { n = split(kinds, ks, " "); for (i = 1; i <= n; i++) kw[ks[i]] = 1 }
+        /^#section / { insect = 1; next }
+        /^#/ { next }
+        insect && ($1 in kw) { print; bad++ }
+        END { print "BAD " bad+0 }' "$S4_OUT" | tail -1 | awk '{print $2}')
+    s4b=$(awk -F'\t' '
+        /^#section / { if (firstsect == 0) firstsect = NR; insect = 1; next }
+        /^#/ { next }
+        !insect { lastmain = NR }
+        END { print (firstsect == 0 || lastmain < firstsect) ? "ok" : "bad" }' "$S4_OUT")
+    if [ "$s4a" = "0" ] && [ "$s4b" = "ok" ]; then
+        pass "W23-S4: no section row's field 1 equals a main-table kind token, and every section follows the main table"
+    else
+        fail "W23-S4: section-vs-main-table invariant broken (bad-field1 rows: $s4a, ordering: $s4b) on $S4_OUT"
+    fi
+else
+    fail "W23-S4: --list-source failed on aux_deep_tree.rxt:
+$(cat "$WORKDIR/w23s4.err")"
+fi
+
 # --- the accepting fixture -------------------------------------------
 HB="$FIXRUN/head_basic.rxt"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HB" > "$WORKDIR/hb.tsv" 2>"$WORKDIR/hb.err"; then
@@ -1281,7 +1440,10 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$HB" > "$WORKDIR/hb.tsv" 2>"$WORKDI
     # THE ROW ORDER IS THE CONTRACT. There is no head/body column: a head
     # row is exactly one preceding the first `pattern` row, which is a
     # property of the ORDER. So the order is what is asserted.
-    got_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/hb.tsv")
+    # [DD-13b.W23.4] stops at the first `#section`: head_basic's own `m`/
+    # `n` cases now grow a `#section cases` block, whose data rows do not
+    # start with `#` either.
+    got_kinds=$(awk -F'\t' '/^#section /{exit} !/^#/ { printf "%s ", $1 }' "$WORKDIR/hb.tsv")
     want_kinds="description lib config config target pattern pattern "
     if [ "$got_kinds" = "$want_kinds" ]; then
         pass "head: --list-source emits the declarations in FILE ORDER ($want_kinds)"
@@ -1863,19 +2025,46 @@ for auxf in aux_arbitrary_keys aux_deep_tree aux_literal_pipe aux_subtree_extent
 done
 [ "$AUXOK" = "1" ] && pass "aux: all four acceptance fixtures parse (arbitrary keys, a three-deep tree of keyword-colliding keys, a literal '|', a subtree's own extent)"
 
+# [DD-13b.W23.4] `aux_literal_pipe`'s CENTRAL ASSERTION, unobservable
+# until `#section aux` existed to carry it (w233_report.md §3.2): the
+# `separator` row's OWN value is the single byte `|`, and `terminator`/
+# `note` below it are SIBLING rows (same `parent_line`, not each other's
+# parent) rather than continuations. If S3 still opened a region inside
+# an open subtree, the `separator` value would be empty and the two
+# lines after it would have been swallowed into it as prose.
+alp="$WORKDIR/aux_literal_pipe.dump"
+alp_sep=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="separator"{print $7}' "$alp")
+alp_sep_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="separator"{print $8}' "$alp")
+alp_term_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="terminator"{print $8}' "$alp")
+alp_note_parent=$(awk -F'\t' '/^#section aux/{s=1;next} /^#/{next} s && $6=="note"{print $8}' "$alp")
+if [ "$alp_sep" = "|" ] && [ -n "$alp_sep_parent" ] && \
+   [ "$alp_term_parent" = "$alp_sep_parent" ] && [ "$alp_note_parent" = "$alp_sep_parent" ]; then
+    pass "aux/literal-pipe: 'separator |' row's value is the single byte '|', and 'terminator'/'note' are its SIBLINGS (same parent_line $alp_sep_parent), not its children"
+else
+    fail "aux/literal-pipe: separator value='$alp_sep' (want '|'), parent_lines: separator=$alp_sep_parent terminator=$alp_term_parent note=$alp_note_parent (want all equal and non-empty) —
+  decision 3's falsification point did not falsify: a prose region opened
+  where structure-layer parameter 3 says it must not."
+fi
+
 # THE ABSENCE ASSERTIONS ARE THE CHECK. `aux_deep_tree.rxt`'s body uses
 # `pattern`, `config`, `m`, `provenance` and `variant` as aux KEYS, three
-# levels deep. If anything in pcrec interpreted one of them, the dump
-# would carry a second `pattern` row; it carries exactly one, which is
-# the same claim `#section aux` will make one surface up at W23.4.
-adt_rows="$(LC_ALL=C grep -vc '^#' "$WORKDIR/aux_deep_tree.dump" || true)"
-if [ "$adt_rows" = "1" ]; then
-    pass "aux/deep-tree: an aux body whose keys COLLIDE with format keywords (pattern, config, m, provenance, variant) produces NO extra block, NO extra case and NO provenance record — the dump carries exactly the one real block"
+# levels deep. If anything in pcrec interpreted one of them, the MAIN
+# TABLE would carry a second `pattern` row, or `#section provenance`/
+# `#section cases` would carry an extra record — [DD-13b.W23.4] now that
+# `#section aux` exists and dumps the tree FAITHFULLY (the whole point of
+# it), a nonzero row count THERE is correct and expected; what remains an
+# absence claim is every OTHER surface.
+adt_main="$(section_count "" "$WORKDIR/aux_deep_tree.dump")"
+adt_cases="$(section_count "cases" "$WORKDIR/aux_deep_tree.dump")"
+adt_prov="$(section_count "provenance" "$WORKDIR/aux_deep_tree.dump")"
+adt_var="$(section_count "variants" "$WORKDIR/aux_deep_tree.dump")"
+if [ "$adt_main" = "1" ] && [ "$adt_cases" = "1" ] && [ "$adt_prov" = "0" ] && [ "$adt_var" = "0" ]; then
+    pass "aux/deep-tree: an aux body whose keys COLLIDE with format keywords (pattern, config, m, provenance, variant) produces NO extra block, NO extra case and NO provenance record — 1 main-table row, 1 real case (the genuine 'm' outside the ext body), 0 provenance, 0 variants"
 else
-    fail "aux/deep-tree: the dump carries $adt_rows rows where exactly 1 is
-  correct. An aux body is UNINTERPRETED (§2.27.3): a key spelled like a
-  format keyword is a key, and a reader that acted on one has graduated
-  the production without anybody ruling that it should.
+    fail "aux/deep-tree: main=$adt_main (want 1) cases=$adt_cases (want 1) provenance=$adt_prov (want 0) variants=$adt_var (want 0).
+  An aux body is UNINTERPRETED (§2.27.3): a key spelled like a format
+  keyword is a key, and a reader that acted on one has graduated the
+  production without anybody ruling that it should.
 $(LC_ALL=C grep -v '^#' "$WORKDIR/aux_deep_tree.dump")"
 fi
 
@@ -1884,12 +2073,14 @@ fi
 # that closes EARLY produce opposite symptoms, so the assertion is
 # positive on TWO things rather than negative on one: the aux body's
 # `m`-spelled key did not become a case, and the `pattern b+` line after
-# the subtree still OPENED a block.
-ase_rows="$(LC_ALL=C grep -vc '^#' "$WORKDIR/aux_subtree_extent.dump" || true)"
-if [ "$ase_rows" = "2" ]; then
-    pass "aux/subtree-extent: the open subtree ENDS at its dedent — the block directive after it is a directive and the 'pattern' line after that opens a SECOND block (2 dump rows)"
+# the subtree still OPENED a block. [DD-13b.W23.4]: MAIN-TABLE rows only
+# (2 pattern blocks) — the fixture's own `ext` body's rows now legitimately
+# populate `#section aux`, which this check does not constrain.
+ase_main="$(section_count "" "$WORKDIR/aux_subtree_extent.dump")"
+if [ "$ase_main" = "2" ]; then
+    pass "aux/subtree-extent: the open subtree ENDS at its dedent — the block directive after it is a directive and the 'pattern' line after that opens a SECOND block (2 main-table rows)"
 else
-    fail "aux/subtree-extent: the dump carries $ase_rows rows where 2 is correct.
+    fail "aux/subtree-extent: the main table carries $ase_main rows where 2 is correct.
   Either the subtree ran on past its own body (swallowing the opener
   below it) or it closed early (turning one of its own lines into a
   block). The two failures are opposite and this is the one assertion
@@ -2076,7 +2267,10 @@ fi
 # (unaffected by this fix, asserted for completeness).
 BE="$FIXRUN/blank_ends_config_body.rxt"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$BE" > "$WORKDIR/be.tsv" 2>"$WORKDIR/be.err"; then
-    be_kinds=$(awk -F'\t' '!/^#/ { printf "%s ", $1 }' "$WORKDIR/be.tsv")
+    # [DD-13b.W23.4] stops at the first `#section` line: this fixture's
+    # `m` case now grows a `#section cases` block, whose data rows do not
+    # start with `#` and would otherwise be misread as more "kinds".
+    be_kinds=$(awk -F'\t' '/^#section /{exit} !/^#/ { printf "%s ", $1 }' "$WORKDIR/be.tsv")
     be_cfg_flags=$(awk -F'\t' '$1 == "config" { print $6 }' "$WORKDIR/be.tsv")
     be_cfg_engine=$(awk -F'\t' '$1 == "config" { print $10 }' "$WORKDIR/be.tsv")
     be_desc=$(awk -F'\t' '$1 == "description" { print $4 }' "$WORKDIR/be.tsv")
@@ -2826,8 +3020,10 @@ if [ "$wsp_ra" != "0" ] || [ "$wsp_rb" != "0" ]; then
     fail "w23s1/ws-positions: a file with whitespace-only lines at four positions
   was refused (rc $wsp_ra / twin $wsp_rb). They are INERT: no indent is read
   off one, it attaches to nothing and nothing attaches to it."
-elif [ "$(printf '%s\n' "$wsp_a" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" = \
-       "$(printf '%s\n' "$wsp_b" | awk -F'\t' '$1 !~ /^#/ { $2 = "-"; print }')" ]; then
+elif [ "$(printf '%s\n' "$wsp_a" | awk -F'\t' -v OFS='\t' \
+       '/^#section /{insect=1} $1 ~ /^#/{next} {if(insect){$1="-";$2="-"}else $2="-";print}')" = \
+       "$(printf '%s\n' "$wsp_b" | awk -F'\t' -v OFS='\t' \
+       '/^#section /{insect=1} $1 ~ /^#/{next} {if(insect){$1="-";$2="-"}else $2="-";print}')" ]; then
     pass "w23s1/ws-positions: whitespace-only lines at four positions parse IDENTICALLY to their own deletion"
 else
     fail "w23s1/ws-positions: the parse differs from the same file with the
@@ -2914,8 +3110,11 @@ for k in $sc_openers; do
     op_seen=$((op_seen + 1))
     of="$WORKDIR/opener_$op_seen.rxt"
     printf '%s a\nm "a" 0 1\n%s b\nm "b" 0 1\n' "$k" "$k" > "$of"
+    # [DD-13b.W23.4] every opener probe carries an `m` case now, so the
+    # dump grows a `#section cases` block — MAIN-TABLE rows only, counted
+    # the same section-aware way R5/R6 above count them.
     nb=$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$of" 2>/dev/null | \
-         awk -F'\t' '$1 !~ /^#/ && $1 != "" { n++ } END { print n+0 }')
+         awk -F'\t' '/^#section /{exit} $1 !~ /^#/ && $1 != "" { n++ } END { print n+0 }')
     # a kind of a LATER wave is refused by name, which is a different
     # claim and is arm 4's; only a row this build implements can open.
     w=$(awk -F'\t' -v kk="$k" 'BEGIN{s=0} /^#section schema/{s=1;next} /^#section /{s=0} s && $2 == kk { print $10; exit }' "$SCHEMA")
@@ -2926,7 +3125,7 @@ if [ "$op_seen" -ge 1 ] && [ "$op_bad" = "0" ]; then
     pass "W23-S3 arm 1: every row the dump calls an opener ($op_seen) starts a new block when a second one appears"
 else
     fail "W23-S3 arm 1: $op_bad of $op_seen declared openers did not start a block.
-  `opens_group` is structure-layer parameter 1 and a generic reader FETCHES
+  'opens_group' is structure-layer parameter 1 and a generic reader FETCHES
   it; a row that claims it and does not do it is a confident wrong answer."
 fi
 

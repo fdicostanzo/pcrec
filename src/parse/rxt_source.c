@@ -1458,16 +1458,17 @@ static void parse_case_body(const char *rest, const char *kind, RxtCase *c,
 {
     const char *s = skip_ws(rest);
 
-    /* `ms`/`ns` carry an explicit startpos BEFORE the subject; `m`/`n`/`mc`
-     * are exactly that with `<P>` fixed at 0 (rxt_format.md's own words).
-     * `g`/`gp`/`gu` have no startpos of their own — see the field's
-     * comment in internal.h. */
+    /* `ms`/`ns` carry an explicit startpos BEFORE the subject; `m`/`n`/`mc`/
+     * `gu` are all "search from byte offset 0" (rxt_format.md's own words
+     * for each), so their startpos is the implicit constant. `g`/`gp` have
+     * no startpos of their own — see the field's comment in internal.h. */
     if (!strcmp(kind, "ms") || !strcmp(kind, "ns")) {
         const char *w = s;
         while (isdigit((unsigned char)*s)) s++;
         if (s > w) c->startpos = arena_strndup(a, w, (size_t)(s - w));
         s = skip_ws(s);
-    } else if (!strcmp(kind, "m") || !strcmp(kind, "n") || !strcmp(kind, "mc")) {
+    } else if (!strcmp(kind, "m") || !strcmp(kind, "n") || !strcmp(kind, "mc") ||
+              !strcmp(kind, "gu")) {
         c->startpos = "0";
     }
 
@@ -2548,16 +2549,25 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              vo->key);
                     goto fail;
                 }
+                /* [DD-13b.W23.4] name=key, value=the escaped member list
+                 * (format_design §2.24's own words for this row). */
+                {
+                    RxtRow *r = row_push(&p, src, RXT_DECL_VOCABULARY, line);
+                    r->name = vo->key;
+                    r->value = vo->members;
+                }
                 continue;
             }
             if (tok_is(tok, "oracle")) {
-                if (oracle_ref_ok(&p, line, value_trimmed(&p, tok)) != 0)
-                    goto fail;
+                const char *v = value_trimmed(&p, tok);
+                if (oracle_ref_ok(&p, line, v) != 0) goto fail;
+                row_push(&p, src, RXT_DECL_ORACLE, line)->value = v;
                 continue;
             }
             if (tok_is(tok, "tag")) {
-                if (tag_list_ok(&p, line, value_trimmed(&p, tok)) != 0)
-                    goto fail;
+                const char *v = value_trimmed(&p, tok);
+                if (tag_list_ok(&p, line, v) != 0) goto fail;
+                row_push(&p, src, RXT_DECL_TAG, line)->value = v;
                 continue;
             }
             if (tok_is(tok, "use")) {
@@ -2568,6 +2578,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              "'%s')", v);
                     goto fail;
                 }
+                row_push(&p, src, RXT_DECL_USE, line)->value = v;
                 continue;
             }
             if (tok_is(tok, "freq") || tok_is(tok, "ext")) {
@@ -2693,11 +2704,10 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * identically downstream however it was spelled, and
                  * `--list-source` reports the decoded text (re-escaped in
                  * the same vocabulary, a byte-exact round trip by
-                 * construction). The `esc` COLUMN that marks which
-                 * spelling was used arrives at W23.4; between the two pins
-                 * a `pattern-esc` row is reported as `pattern` with no
-                 * marker, whose population in this tree is ZERO (no corpus
-                 * file carries the keyword). */
+                 * construction). [DD-13b.W23.4] THE `esc` COLUMN now marks
+                 * which spelling was used — non-NULL exactly when this
+                 * block opened with `pattern-esc`. */
+                block->esc = "1";
                 char msg[192];
                 const char *dec = NULL;
                 if (pcrec_rxt_decode_escaped(value_trimmed(&p, tok),
@@ -2756,11 +2766,26 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
          * expectation kind and was consumed by the `RXT_VAL_CASE` skip.
          * What is left is three one-line value rules. */
         if (tok_is(tok, "tag")) {
-            if (tag_list_ok(&p, line, value_trimmed(&p, tok)) != 0) goto fail;
+            const char *v = value_trimmed(&p, tok);
+            if (tag_list_ok(&p, line, v) != 0) goto fail;
+            /* [DD-13b.W23.4] ACCUMULATE, comma-joined in source order —
+             * `tag`'s own cardinality is REPEAT, so the dump's `tags`
+             * column has to serve every line the same way `pcrec_raw`'s
+             * space-join already serves several `pcrec` lines. */
+            if (block->tags) {
+                size_t n = strlen(block->tags) + 1 + strlen(v) + 1;
+                char *j = arena_alloc(&src->arena, n);
+                snprintf(j, n, "%s,%s", block->tags, v);
+                block->tags = j;
+            } else {
+                block->tags = v;
+            }
             continue;
         }
         if (tok_is(tok, "oracle")) {
-            if (oracle_ref_ok(&p, line, value_trimmed(&p, tok)) != 0) goto fail;
+            const char *v = value_trimmed(&p, tok);
+            if (oracle_ref_ok(&p, line, v) != 0) goto fail;
+            block->oracle = v;
             continue;
         }
         if (tok_is(tok, "under")) {
@@ -3666,6 +3691,10 @@ static const char *kind_name(RxtDeclKind k)
     case RXT_DECL_DESCRIPTION: return "description";
     case RXT_DECL_PATTERN:     return "pattern";
     case RXT_DECL_INCLUDE:     return "include";
+    case RXT_DECL_VOCABULARY:  return "vocabulary";
+    case RXT_DECL_ORACLE:      return "oracle";
+    case RXT_DECL_TAG:         return "tag";
+    case RXT_DECL_USE:         return "use";
     }
     return "?";
 }
@@ -3684,8 +3713,21 @@ static const char *const rxt_columns[] = {
      * and this dump's own rule: a consumer's positional read of columns 1-15
      * must survive. */
     "export",
+    /* [DD-13b.W23.4] THREE MORE, same rule: append-only, positions 1-16
+     * unchanged (format_design §2.24). */
+    "tags", "oracle", "esc",
 };
 #define RXT_NCOLS (sizeof rxt_columns / sizeof *rxt_columns)
+
+/* [DD-13b.W23.4] one `#section` block: the NAME line, the header comment
+ * (the same shape `schema_dump.c`'s own two sections use), then rows. The
+ * header parameter is the PRE-BUILT `"#col1\tcol2\t...\n"` line so every
+ * section writes it identically rather than five variations on one loop. */
+static void section_open(StrBuf *sb, const char *name, const char *header)
+{
+    sb_printf(sb, "#section %s\n", name);
+    sb_puts(sb, header);
+}
 
 size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
 
@@ -3707,9 +3749,22 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         "# Columns 4 (`value`), 5 (`pattern`) and 15 (`pcrec`) are escaped in\n"
         "# the .rxt format's own subject-escape vocabulary (\\t \\n \\r \\\\ \\xNN):\n"
         "# a `pattern` line is rest-of-line verbatim and may contain a TAB.\n"
-        "# Empty field = none. Sectionless: `#section` arrives with W2's\n"
-        "# `freq` data block, whose `row <offset> <16 counts>` cannot be a\n"
-        "# column here under any reading.\n");
+        "# Empty field = none.\n"
+        "#\n"
+        "# [DD-13b.W23.4] Column 5's `pattern` now means TWO things,\n"
+        "# disambiguated by column 19 (`esc`): for a `pattern` block it is\n"
+        "# the line's bytes verbatim; for `pattern-esc` it is the DECODED\n"
+        "# bytes, re-escaped in this same vocabulary. Both deliver the same\n"
+        "# bytes; `esc` says which spelling wrote them.\n"
+        "#\n"
+        "# FOUR `#section` BLOCKS follow the main table, unconditionally\n"
+        "# WHEN NON-EMPTY, never interleaved with it: `provenance`,\n"
+        "# `variants`, `cases` (one row per `m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/\n"
+        "# `gp` line, `under`-wrapped ones included), `aux` (one row per\n"
+        "# LINE of an `ext` tree, the opener included at depth 0 — its\n"
+        "# contents are dumped faithfully and interpreted by nothing here,\n"
+        "# format_design.md §2.27). No section row's field 1 (always the\n"
+        "# integer `line`) can equal a main-table `kind` token.\n");
 
     sb_putc(&sb, '#');
     for (size_t c = 0; c < RXT_NCOLS; c++) {
@@ -3758,7 +3813,141 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         if (is_cfg) put_escaped(&sb, r->pcrec_raw);             /* 15 pcrec */
         sb_putc(&sb, '\t');
         if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
+        sb_putc(&sb, '\t');
+        if (r->tags) sb_puts(&sb, r->tags);                     /* 17 tags */
+        sb_putc(&sb, '\t');
+        if (r->oracle) sb_puts(&sb, r->oracle);                 /* 18 oracle */
+        sb_putc(&sb, '\t');
+        if (r->esc) sb_puts(&sb, r->esc);                       /* 19 esc */
         sb_putc(&sb, '\n');
     }
+
+    /* [DD-13b.W23.4] THE FOUR `#section` BLOCKS, unconditionally when
+     * non-empty, ALWAYS AFTER the main table and never interleaved with it
+     * (format_design §2.24; DECIDED (5), w23_impl §1.5 — R2's "first
+     * `pattern` row is the body boundary" invariant depends on it). A file
+     * using no W23 production emits NO `#section` line at all, so its
+     * stream differs from a pre-W23 one only in the header row's three
+     * appended columns. */
+    if (src->nprovs) {
+        section_open(&sb, "provenance",
+            "#line\tblock_line\tblock_name\tsource\turl\tref\tretrieved"
+            "\tlicense\tlicense-note\tfidelity\tadaptation\tattribution"
+            "\tbytes\tsha256\n");
+        for (size_t i = 0; i < src->nprovs; i++) {
+            const RxtProv *r = &src->provs[i];
+            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) sb_puts(&sb, r->block_name);
+            sb_putc(&sb, '\t');
+            if (r->source) sb_puts(&sb, r->source);
+            sb_putc(&sb, '\t');
+            if (r->url) sb_puts(&sb, r->url);
+            sb_putc(&sb, '\t');
+            if (r->ref) sb_puts(&sb, r->ref);
+            sb_putc(&sb, '\t');
+            if (r->retrieved) sb_puts(&sb, r->retrieved);
+            sb_putc(&sb, '\t');
+            if (r->license) sb_puts(&sb, r->license);
+            sb_putc(&sb, '\t');
+            if (r->license_note) put_escaped(&sb, r->license_note);
+            sb_putc(&sb, '\t');
+            if (r->fidelity) sb_puts(&sb, r->fidelity);
+            sb_putc(&sb, '\t');
+            if (r->adaptation) put_escaped(&sb, r->adaptation);
+            sb_putc(&sb, '\t');
+            if (r->attribution) put_escaped(&sb, r->attribution);
+            sb_putc(&sb, '\t');
+            if (r->bytes) sb_puts(&sb, r->bytes);
+            sb_putc(&sb, '\t');
+            if (r->sha256) sb_puts(&sb, r->sha256);
+            sb_putc(&sb, '\n');
+        }
+    }
+
+    if (src->nvariants) {
+        section_open(&sb, "variants",
+            "#line\tblock_line\tblock_name\ttestee\tkind\ttext\tgroups"
+            "\tnote\tunsupported\n");
+        for (size_t i = 0; i < src->nvariants; i++) {
+            const RxtVariant *r = &src->variants[i];
+            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) sb_puts(&sb, r->block_name);
+            sb_putc(&sb, '\t');
+            if (r->testee) sb_puts(&sb, r->testee);
+            sb_putc(&sb, '\t');
+            if (r->kind) sb_puts(&sb, r->kind);
+            sb_putc(&sb, '\t');
+            if (r->text) put_escaped(&sb, r->text);
+            sb_putc(&sb, '\t');
+            if (r->groups) sb_puts(&sb, r->groups);
+            sb_putc(&sb, '\t');
+            if (r->note) put_escaped(&sb, r->note);
+            sb_putc(&sb, '\t');
+            if (r->unsupported) put_escaped(&sb, r->unsupported);
+            sb_putc(&sb, '\n');
+        }
+    }
+
+    if (src->ncases) {
+        section_open(&sb, "cases",
+            "#line\tblock_line\tblock_name\tkind\tunder\tstartpos"
+            "\tsubject_form\tsubject\tsubject_id\tsha256\tstart\tend"
+            "\tcount\tgiveup\tslot\troute\n");
+        for (size_t i = 0; i < src->ncases; i++) {
+            const RxtCase *r = &src->cases[i];
+            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) sb_puts(&sb, r->block_name);
+            sb_putc(&sb, '\t');
+            sb_puts(&sb, r->kind);
+            sb_putc(&sb, '\t');
+            if (r->under) sb_puts(&sb, r->under);
+            sb_putc(&sb, '\t');
+            if (r->startpos) sb_puts(&sb, r->startpos);
+            sb_putc(&sb, '\t');
+            if (r->subject_form) sb_puts(&sb, r->subject_form);
+            sb_putc(&sb, '\t');
+            if (r->subject) put_escaped(&sb, r->subject);
+            sb_putc(&sb, '\t');
+            if (r->subject_id) sb_puts(&sb, r->subject_id);
+            sb_putc(&sb, '\t');
+            if (r->sha256) sb_puts(&sb, r->sha256);
+            sb_putc(&sb, '\t');
+            if (r->start) sb_puts(&sb, r->start);
+            sb_putc(&sb, '\t');
+            if (r->end) sb_puts(&sb, r->end);
+            sb_putc(&sb, '\t');
+            if (r->count) sb_puts(&sb, r->count);
+            sb_putc(&sb, '\t');
+            if (r->giveup) sb_puts(&sb, r->giveup);
+            sb_putc(&sb, '\t');
+            if (r->slot) sb_puts(&sb, r->slot);
+            sb_putc(&sb, '\t');
+            sb_puts(&sb, r->route);
+            sb_putc(&sb, '\n');
+        }
+    }
+
+    if (src->nauxes) {
+        section_open(&sb, "aux",
+            "#line\tblock_line\tblock_name\tconsumer\tdepth\tkey\tvalue"
+            "\tparent_line\n");
+        for (size_t i = 0; i < src->nauxes; i++) {
+            const RxtAux *r = &src->auxes[i];
+            sb_printf(&sb, "%zu\t", r->line);
+            if (r->block_line) sb_printf(&sb, "%zu", r->block_line);
+            sb_putc(&sb, '\t');
+            if (r->block_name) sb_puts(&sb, r->block_name);
+            sb_putc(&sb, '\t');
+            if (r->consumer) sb_puts(&sb, r->consumer);
+            sb_printf(&sb, "\t%zu\t", r->depth);
+            sb_puts(&sb, r->key);
+            sb_putc(&sb, '\t');
+            put_escaped(&sb, r->value);
+            sb_putc(&sb, '\t');
+            if (r->parent_line) sb_printf(&sb, "%zu", r->parent_line);
+            sb_putc(&sb, '\n');
+        }
+    }
+
     return sb_take(&sb);
 }

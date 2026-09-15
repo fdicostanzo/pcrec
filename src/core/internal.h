@@ -4502,7 +4502,16 @@ typedef enum {
      * exception `w23_impl.md` §1.10.2 rule 2 states: `--list-source` is
      * the ONLY call legs B and C ever make, so a resolution only
      * `--source` could see would leave them nothing to read. */
-    RXT_DECL_INCLUDE
+    RXT_DECL_INCLUDE,
+    /* [DD-13b.W23.4] the four remaining head ROW kinds `format_design`
+     * §2.24 names ("New head ROW kinds — the existing 'kind carries the
+     * declaration name' rule"), ONE ROW PER LINE exactly as `lib`'s own
+     * REPEAT cardinality already prints one row per `lib` line. */
+    RXT_DECL_VOCABULARY,   /* `vocabulary <key> <v…>` — name=key,
+                             * value=the escaped member list             */
+    RXT_DECL_ORACLE,       /* file-level `oracle <ref>` — value          */
+    RXT_DECL_TAG,          /* file-level `tag <item>{,<item>}` — value   */
+    RXT_DECL_USE           /* file-level `use <config-list>` — value     */
 } RxtDeclKind;
 
 typedef struct {
@@ -4530,6 +4539,21 @@ typedef struct {
      * group the definition declares is the COMPOSER's question, asked where
      * the sub-parse's `named_groups` is in hand. */
     const char *exports;
+    /* [DD-13b.W23.4] THREE APPENDED PATTERN-ROW COLUMNS (format_design
+     * §2.24). `tags` ACCUMULATES every `tag` line's items, comma-joined in
+     * source order — `tag`'s own cardinality is REPEAT, so a block may
+     * carry several, and one column serving all of them is `pcrec_raw`'s
+     * own accumulate-by-join precedent (config scope, above) applied to a
+     * block-scoped repeatable line. `oracle` is the block's own
+     * `oracle <ref>` value, AT_MOST_ONE, or NULL for "no override" (the
+     * file-level `oracle` row, if any, is a SEPARATE head row — this
+     * column reports the block's own line and nothing it inherits). `esc`
+     * is non-NULL exactly when the block opened with `pattern-esc` rather
+     * than `pattern` (both spellings deliver the same decoded `value`;
+     * this is the marker that disambiguates which was WRITTEN). */
+    const char *tags;
+    const char *oracle;
+    const char *esc;
 } RxtRow;
 
 /* [DD-13b.W23.4] THE FOUR `#section` RECORD TYPES (format_design §2.24).
