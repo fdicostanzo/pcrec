@@ -792,14 +792,12 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # with no `goto <p>_L0;` in the file at all for a non-hybrid DFA artifact, so
 # `prog_region()` returns empty on both sides either way.
 #
-# THE PIN IS THIS LANE'S OWN LAST src COMMIT (set in the same commit that
-# lands the label fix, since the fix touches no other src file — opt5i's and
-# ccdiff1's precedent for what a lane branch's pin CANNOT be: a pin must name
-# a commit reachable after the merge, and a lane branch's own commit is not
-# one yet). **LEFT UNSET here, deliberately** — the manager re-pins to the
-# MERGE when it lands; see docs/dev/lanes/portfix_report.md for the commit
-# this event's src changes land in.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e0fe77f}"
+# THE PIN IS THE MERGE COMMIT (re-pinned by the manager at the lane/portfix
+# merge, 2026-09-15, per D76 and the opt5i/ccdiff1 precedent the lane's own
+# note here anticipated: a pin must name a commit reachable after the merge,
+# and the lane deliberately left it unset for the manager to set — see
+# docs/dev/lanes/portfix_report.md).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6d15f19a}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
