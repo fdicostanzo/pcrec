@@ -698,17 +698,28 @@ RXT_TAB="$(printf '\t')"
 # opener's indent, a BLANK, a COMMENT) is tested at the top of the line
 # loop, and every other line in the region is bytes.
 #
-# THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE, and that is
-# K57 (docs/dev/known_issues.md) REPRODUCED DELIBERATELY: a continuation
-# line indented LESS than the first silently loses content. Leg A does
-# exactly this and `prose_dedent.rxtin` asserts today's wrong value in all
-# three legs with K57 named beside it, so the day K57 is fixed all three go
-# red together rather than one leg quietly disagreeing.
+# THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE (K57,
+# docs/dev/known_issues.md, FIXED): a continuation line indented LESS than
+# the first would silently lose content if stripped by that same count.
+# The manager's standing ruling for this shape (a value the byte-count
+# decode cannot represent) is REFUSAL BY NAME, class value-shape — matching
+# src/parse/rxt_source.c's `read_prose_region` fix exactly, so
+# `prose_dedent.rxtin` (`check_refusal_all3`) sees all three legs agree. A
+# WHITESPACE-ONLY line (this function's OTHER caller, the paragraph break)
+# is exempt: it decodes to an empty line whatever its own width.
 prose_take() {
-    local ln="$1" ws body
+    local ln="$1" ws body lw
     if [ "$prose_dedent" -lt 0 ]; then
         ws="${ln%%[! $RXT_TAB]*}"
         prose_dedent=${#ws}
+    fi
+    ws="${ln%%[! $RXT_TAB]*}"
+    lw=${#ws}
+    if [ "$lw" -lt "${#ln}" ] && [ "$lw" -lt "$prose_dedent" ]; then
+        record_fail_class value-shape "$cur_file" "$lineno" \
+            "block scalar '|' continuation is indented $lw, less than the block's own indent $prose_dedent -- dedenting would delete content"
+        prose_open=0
+        return 1
     fi
     body="${ln:$prose_dedent}"
     if [ "$prose_nlines" -eq 0 ]; then

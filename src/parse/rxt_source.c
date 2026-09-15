@@ -649,12 +649,22 @@ static RxtRow *row_push(RxtP *p, RxtSource *src, RxtDeclKind kind, size_t line)
  * produce an opener with TWO DISJOINT prose regions, a shape the
  * single-extent rule cannot express at all.
  *
- * THE DEDENT IS A BYTE COUNT AND THAT IS K57 (docs/dev/known_issues.md),
- * kept DELIBERATELY: a continuation line indented less than the block's
- * first silently loses content. It is not fixed here — two independent
- * reds must not share a step, and `prose_dedent.rxtin` asserts today's
- * wrong value with K57 named beside it, so the day K57 is fixed that
- * fixture goes red and says so. */
+ * THE DEDENT IS A BYTE COUNT, WHICH IS WHY A SHALLOWER LINE MUST BE
+ * REFUSED RATHER THAN SILENTLY STRIPPED (K57, docs/dev/known_issues.md,
+ * FIXED). The dedent depth is set by the FIRST continuation line; every
+ * later line in the region is stripped by that same byte count, which is
+ * only safe when the byte count being removed is entirely whitespace. A
+ * CONTENT line whose own leading whitespace run is SHORTER than that
+ * depth would have real bytes deleted — the design (format_design.md
+ * §1.2.1 S3 / §1.2.5's `prose-value`) states the region's EXTENT but
+ * deliberately leaves this decode case to the implementer ("the choice is
+ * the implementer's"), and the manager's standing ruling for this shape
+ * (a value the decode cannot represent) is REFUSAL BY NAME, class
+ * `value-shape` — never silent loss, never silent reinterpretation. A
+ * WHITESPACE-ONLY line is exempt: format_design.md §1.2.5's paragraph
+ * break decodes to an empty line whatever its own width, and this fix
+ * must not narrow that. `prose_dedent.rxtin` used to assert the byte-loss
+ * value with K57 named beside it and now asserts this refusal instead. */
 static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
                              size_t opener_indent, const char **out)
 {
@@ -674,6 +684,24 @@ static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
 
     size_t indent = 0;
     while (L->v[start][indent] == ' ' || L->v[start][indent] == '\t') indent++;
+
+    /* K57's fix: any CONTENT line (one with a non-whitespace byte) whose
+     * own leading whitespace run is shorter than `indent` cannot be
+     * dedented by a byte count without deleting content. Checked as its
+     * own pass, before any stripping, so a refused file never even
+     * partially decodes. */
+    for (size_t k = start; k < end; k++) {
+        const char *ln = L->v[k];
+        size_t lw = 0;
+        while (ln[lw] == ' ' || ln[lw] == '\t') lw++;
+        if (!ln[lw]) continue;        /* whitespace-only: the paragraph break */
+        if (lw < indent)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, k + 1,
+                            "block scalar '|' continuation is indented %zu, "
+                            "less than the block's own indent %zu set by line "
+                            "%zu -- dedenting would delete content",
+                            lw, indent, start + 1);
+    }
 
     size_t total = 0;
     for (size_t k = start; k < end; k++) {

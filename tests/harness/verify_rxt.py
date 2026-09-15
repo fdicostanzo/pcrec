@@ -468,8 +468,11 @@ def parse_rxt(path):
     last_was_content = False
     last_opens_scope = False
     last_opens_tree = False
-    # THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE, K57
-    # reproduced deliberately in all three legs (see run.sh's `prose_take`).
+    # THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE (K57,
+    # docs/dev/known_issues.md, FIXED): a shallower continuation line is now
+    # refused by name, class value-shape, rather than silently stripped --
+    # see the loop body below and src/parse/rxt_source.c's
+    # `read_prose_region` / run.sh's `prose_take`, all three matching.
     prose = None      # None, or {'ind', 'lines', 'dedent', 'owner', 'line'}
     PROSE_KINDS = ('description', 'license-note', 'adaptation',
                    'attribution', 'note')
@@ -499,6 +502,22 @@ def parse_rxt(path):
             elif line.strip() == '' or (len(line) - len(line.lstrip(' '))) > prose['ind']:
                 if prose['dedent'] < 0:
                     prose['dedent'] = len(line) - len(line.lstrip(' \t'))
+                # [RXTFIX K57] a CONTENT line (non-whitespace-only) whose own
+                # leading whitespace run is SHORTER than the block's dedent
+                # cannot be stripped by that byte count without deleting
+                # content -- refused by name, matching
+                # src/parse/rxt_source.c's read_prose_region fix and
+                # run.sh's prose_take exactly. A WHITESPACE-ONLY line is
+                # exempt: it decodes to an empty paragraph-break line
+                # whatever its own width (format_design.md §1.2.5).
+                if line.strip() != '':
+                    own_ws = len(line) - len(line.lstrip(' \t'))
+                    if own_ws < prose['dedent']:
+                        _fail(path, lineno, 'value-shape',
+                              "block scalar '|' continuation is indented "
+                              f"{own_ws}, less than the block's own indent "
+                              f"{prose['dedent']} -- dedenting would delete "
+                              "content")
                 prose['lines'].append(line[prose['dedent']:])
                 continue
             else:
