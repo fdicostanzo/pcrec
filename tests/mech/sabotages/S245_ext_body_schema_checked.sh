@@ -19,10 +19,22 @@
 #      check rather than a sentence.
 #   3. `aux_literal_pipe.rxtin` — the STRUCTURAL axis. Because `children`
 #      IS parameter 3, the same flip RE-ARMS S2 and S3 inside the
-#      subtree, so a trimmed bare `|` opens a prose region and swallows
-#      its own siblings. A plant on a semantic column that also moves a
-#      structural one is worth naming: it is why the parameter reads
-#      `children` rather than taking a column of its own.
+#      subtree. A plant on a semantic column that also moves a structural
+#      one is worth naming: it is why the parameter reads `children`
+#      rather than taking a column of its own.
+#
+#      **MEASURED, AND THE SYMPTOM IS NOT THE ONE THE DESIGN PREDICTS**:
+#      under THIS plant the structural effect is MASKED. `separator |`
+#      inside a body dispatched as `provenance` is refused as an unknown
+#      token before S3's trigger is ever consulted, so the fixture goes
+#      red on the DISPATCH and not on a swallowed sibling. The detection
+#      is real and the row is honest about which of its three detectors
+#      is showing its own mechanism: 1 and 2 are, 3 is not. A plant that
+#      re-armed S3 WITHOUT changing the dispatch would need a `children`
+#      value that is a scope whose vocabulary happens to contain every
+#      aux key, which no scope does — so the structural half of
+#      parameter 3 has no plant in this table today, and that absence is
+#      recorded here rather than left to look like coverage.
 #
 # The SUITE is `rxtsource` for all three; the corpus has no `ext` line
 # and cannot acquire one, which is the honest reason this row's

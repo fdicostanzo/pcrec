@@ -2413,3 +2413,37 @@ than on a later drift.
   lines are still bytes, and bytes reach no validity check — so a
   normative column would carry a corruption with NO DETECTOR. Its
   detectors are the fixtures that assert a region's DECODED VALUE.
+
+## [DD-13b.W23.3] rows S240 and S245 (the productions' own two)
+
+S239/S241/S244 plant into the format SCHEMA and so do these, and the two
+of them together are the schema's first test as a CONTRACT rather than as
+a table: W23.1 declared `value` and `constraints` and nothing read them,
+and W23.3 is the step that made both columns load-bearing.
+
+- **S240** deletes the ONE declared conditional in the table —
+  `provenance`'s `required-if fidelity != verbatim`. The plant is an
+  ERASURE and not a flip, and the reason is discriminating power: a wrong
+  CONDITION (`fidelity == verbatim`) turns BOTH halves of the fixture pair
+  red, which proves something broke and not that this rule is the thing
+  checking. Deleting the clause leaves the accept half green and turns
+  exactly one cell red. Re-homed to this repo at r57 S-M3 — the bench's
+  own C5/C6 test the same rule over there, and a row whose only detector
+  lives in another repository scores UNDETECTED here and is right to.
+- **S245** flips BOTH `ext` rows' `children` from `tree` to a named
+  scope, so the OPEN SUBTREE stops existing and every aux line is
+  dispatched against a vocabulary. Three detectors: aux NARROWED
+  (`aux_arbitrary_keys.rxtin`, leg A refuses what it must accept), aux
+  INTERPRETED (`aux_deep_tree.rxtin`, whose body's keys are real format
+  keywords three levels deep), and a structural one.
+  **The structural detector's SYMPTOM is masked and the row says so**:
+  under this plant `separator |` is refused as an unknown token before
+  S3's trigger is consulted, so `aux_literal_pipe.rxtin` goes red on the
+  DISPATCH rather than on a swallowed sibling. Re-arming S3 without also
+  changing the dispatch would need a scope whose vocabulary contains every
+  aux key, and no scope does — so parameter 3's STRUCTURAL half has no
+  plant in this table, recorded rather than left looking like coverage.
+
+Both are `rxtsource`-suite rows, and that is forced rather than chosen:
+the corpus carries no `provenance` record and no `ext` line and cannot
+acquire one, so their whole population lives in fixtures.

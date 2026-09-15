@@ -1024,8 +1024,13 @@ static int closed_apply(RxtP *p, const RxtSchemaRow *row, size_t line,
     const char *val = v;
     size_t vlen = strlen(v);
     if (row->value == RXT_VAL_QUALIFIED) {
+        /* A qualified line's QUALIFIER is its first token, space-
+         * delimited — `under <convention> <case-line>`, §2.17's own
+         * production. There is no colon in the spelling; the first
+         * version of this read stopped at one and would have taken a
+         * colon inside a SUBJECT as the qualifier's end. */
         vlen = 0;
-        while (val[vlen] && val[vlen] != ' ' && val[vlen] != ':') vlen++;
+        while (val[vlen] && val[vlen] != ' ' && val[vlen] != '\t') vlen++;
     }
     return closed_check(p, line, row->kind, sel, sellen, mbuf, val, vlen);
 }
@@ -1043,18 +1048,29 @@ static int closed_apply(RxtP *p, const RxtSchemaRow *row, size_t line,
  * contain, so the comparison is a `strcmp` and the refusal can print it. */
 static const char *under_key(Arena *a, const char *v)
 {
-    /* `under <convention>: <case-line>` — the convention is the qualifier,
-     * the case line is `<kind> <startpos?> "<subject>" …`. The tuple takes
-     * the convention, the case kind, the startpos when written, and the
-     * quoted subject; everything after the subject is the EXPECTATION,
-     * which is the thing two `under` lines are allowed to disagree about
-     * only by being two different keys. */
-    const char *colon = strchr(v, ':');
+    /* `under <convention> <case-line>` — SPACE-SEPARATED, no colon
+     * (format_design §2.17's own production, and the spelling both
+     * harness legs implement: leg B's arm has no colon and leg C REFUSES
+     * the colon form by name). The first token is the qualifier and the
+     * rest of the line is an UNCHANGED `m`/`n`/`ms`/`ns`/`mc` line.
+     *
+     * The first version of this function read the convention with
+     * `strchr(v, ':')`, which on the real spelling found no colon, left
+     * the convention EMPTY and slid the whole tuple one component left —
+     * so two `under` lines differing only in SUBJECT or in STARTPOS were
+     * refused as duplicates while the refusing fixture still went red for
+     * an unrelated reason. Found by the spec lane MEASURING the
+     * production against all three legs rather than reading it.
+     *
+     * The tuple takes the convention, the case kind, the startpos when
+     * written, and the quoted subject; everything after the subject is
+     * the EXPECTATION, which is the thing two `under` lines are allowed
+     * to disagree about only by being two different keys. */
     const char *conv = v;
-    size_t convlen = colon ? (size_t)(colon - v) : 0;
-    while (convlen && (conv[convlen - 1] == ' ' || conv[convlen - 1] == '\t'))
-        convlen--;
-    const char *rest = colon ? skip_ws(colon + 1) : v;
+    size_t convlen = 0;
+    while (conv[convlen] && conv[convlen] != ' ' && conv[convlen] != '\t')
+        convlen++;
+    const char *rest = skip_ws(conv + convlen);
 
     const char *kind = rest;
     size_t kindlen = 0;
@@ -1328,9 +1344,33 @@ static int read_wrapped_value(RxtP *p, RxtLines *L, size_t *i,
  * reach is a labelled skip in the harness, never a refusal here. */
 static int oracle_ref_ok(RxtP *p, size_t line, const char *v)
 {
+    /* `oracle none <reason>` is the SECOND spelling (§2.9), and it is not
+     * an engine-ref at all: it declares a counted, PRINTED skip and
+     * carries the reason as rest-of-line prose. R-RXT-7's obligation
+     * rides it (an exclusion still owes an upstream_issues entry), which
+     * is why the reason is required rather than optional — a skip with
+     * no stated reason is the silent pass the production exists to
+     * replace. */
+    if (!strncmp(v, "none", 4) && (v[4] == ' ' || v[4] == '\t')) {
+        if (!*skip_ws(v + 4))
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'oracle none' needs a reason (the skip is "
+                            "counted and PRINTED, and an exclusion owes an "
+                            "upstream_issues.md entry)");
+        return 0;
+    }
+    if (!strcmp(v, "none"))
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'oracle none' needs a reason after it");
     const char *slash = strchr(v, '/');
+    /* THE ENGINE HALF IS A `defname`, NOT AN `ident`, for the reason
+     * `variant`'s testee name is: real engine names are hyphenated slugs
+     * (`pcre2-dfa`, `pcre2-interp`), and a grammar that admits a testee
+     * called `pcre2-dfa` while refusing an ORACLE called `pcre2-dfa`
+     * would be two answers to one question. pcrec resolves neither. */
     size_t nlen = slash ? (size_t)(slash - v) : strlen(v);
-    if (!ident_ok_n(v, nlen))
+    char *nm = arena_strndup(p->arena, v, nlen);
+    if (!defname_ok(nm))
         return rxt_fail(p, RXTD_VALUE_SHAPE, line,
                         "'oracle' wants an engine reference, optionally "
                         "'/<version>' (got '%s')", v);

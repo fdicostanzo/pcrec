@@ -37,8 +37,22 @@ SAB_FILE="tests/harness/verify_rxt.py"
 SAB_SUITES="rxtsource"
 SAB_DESC="verify_rxt.py's parser swallows an unrecognised .rxt line kind as a comment instead of refusing it, so every expectation of that kind is silently unverified and uncounted"
 SAB_REACH_POP="tests/rxtsource/fixtures/unknown_kind.rxtin|^tag |1"
+# [DD-13b.W23.3] RE-ANCHORED. Leg C's catch-all moved and changed shape
+# at W23.2 (it raises through `_fail`, which attaches the diagnostic
+# CLASS) and again at W23.3 (the arm chain grew the new productions
+# above it). The INTENT is unchanged and was re-verified rather than
+# assumed: the plant still makes the parser SWALLOW a kind it does not
+# know instead of refusing it, which is the quiet failure — an unknown
+# kind treated as a comment verifies nothing, reports nothing, and
+# subtracts from a total nobody compares. Anchor re-derived from the
+# live source, not from `git show HEAD:`.
 SAB_COUNT=1
-SAB_BEFORE='        else:
-            raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")'
-SAB_AFTER='        else:
-            continue   # SABOTAGE S204: unknown kind swallowed as a comment'
+# THE ANCHOR IS THE TWO `_fail` LINES AND NOT THE `else:` ABOVE THEM, so
+# the plant replaces the refusal with a `continue` at the same
+# indentation and the enclosing branch is untouched. Double-quoted
+# because the text carries apostrophes (a bash single-quoted string
+# cannot hold one at all) — the shape 43 other rows in this directory
+# already use.
+SAB_BEFORE="            _fail(path, lineno, 'unknown-token-in-scope',
+                  f\"unrecognized line: {line!r}\")"
+SAB_AFTER="            continue   # SABOTAGE S204: unknown kind swallowed as a comment"

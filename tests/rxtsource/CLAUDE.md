@@ -507,3 +507,66 @@ C**, not only the two new fixtures — including the existing seven
 `bad_name_ident`, `bad_encoding_ident`, `dup_block_name`), each now
 naming its class, and the catch-all ("unrecognized line" / "unparseable
 .rxt line") in both legs, which reads `unknown-token-in-scope`.
+
+## [DD-13b.W23.3] the fourteen productions, and two witnesses the step ATE
+
+Eleven fixtures land, one is deleted and one is re-aimed. The deletions
+are the part worth reading, because they are this step consuming its own
+population rather than anything going wrong.
+
+**THE WAVE TIER'S POPULATION WENT TO ZERO.** `refuse_wave`'s
+NOT-IN-THIS-BUILD branch fires for a row whose `wave` sits strictly
+between this build's and the RESERVED sentinel. Every W23 row's wave IS
+this build's now, so the tier is empty and no fixture can construct a
+member — the table is compile-time. `format_design.md` §1.3 and
+`w23_impl.md` §2.3 both state that emptiness IN ADVANCE, which is why it
+is a staging fact rather than a finding:
+
+- **`wave2_keyword.rxtin` is DELETED** (its keyword, `include`, shipped)
+  and **`include_head.rxtin` replaces it**, asserting the acceptance. A
+  file named for the refusal it pinned, asserting the opposite, would be
+  a lie about itself; inverting an assertion in place is how a fixture
+  stops meaning what its header says.
+- **`unknown_kind.rxtin`'s token moves `tag` → `no-such-kind`**, chosen
+  because it cannot graduate the way `tag` did. "Not in this build" and
+  "unparseable" stay distinguishable through this file and
+  `version_reserved.rxtin` rather than through one token wearing both
+  hats — the general repair for a witness whose subject graduates.
+- **W23-S3 arm 4 gains an EXTRACTOR-HEALTH assertion** and then reports
+  an honest zero as a PASS. W23.1 wrote "a population of ZERO is also a
+  failure here" and was right for its reason (the arm had read 0 rows out
+  of a real population of 7 because `read` collapsed the dump's empty TAB
+  fields). That rule conflates two zeros. The repair runs the SAME awk
+  with the wave threshold lowered to 0, which must find rows; a zero
+  there is still the broken-extractor zero and still fails. **The general
+  form: a population of zero is a failure only while you cannot tell it
+  from a broken instrument — make the instrument's health a separate
+  non-vacuous assertion and the honest zero becomes reportable.**
+
+**THE HEADLESS/HEAD-BEARING SPLIT IS WHY FOUR AUX FIXTURES LOOK ALIKE.**
+A FILE-scope production is a head declaration and the head has ONE parser
+(the seam ruling), so a three-leg assertion on one is unavailable at any
+point in W23 — r59-A2's disposition for `dup_head_description.rxtin`, one
+production over. `aux_arbitrary_keys.rxtin` is leg A only and says so;
+`aux_deep_tree`, `aux_literal_pipe`, `aux_malformed_body` and
+`aux_subtree_extent` are HEADLESS ON PURPOSE so all three legs answer.
+
+| new fixture | what it makes reachable |
+|---|---|
+| `aux_arbitrary_keys` | §2.27's whole promise in one cell, as an ACCEPTANCE fixture: aux's failure mode is pcrec deciding it UNDERSTANDS something, which a refusal fixture structurally cannot catch. S245's first detector |
+| `aux_deep_tree` | aux being INTERPRETED — keys that are real format keywords three levels deep, and the assertion is an ABSENCE (no extra block, no extra case, no provenance record) |
+| `aux_literal_pipe` | §2.27.2 decision 3's falsification point: inside an open subtree a trimmed bare `\|` is the LITERAL byte. Its VALUE-level half activates with `#section aux` at W23.4; what it asserts here is acceptance and three-leg agreement |
+| `aux_malformed_body` | a RAGGED DEDENT inside a subtree, refused locally with the `pattern` block below NOT implicated. **The shape had to be a ragged dedent and not a deep indent**: inside a subtree any deeper indent is a legal child, because the subtree has no rows and so no kind that takes no continuation |
+| `aux_subtree_extent` | §5.2a item 9's sharpest attack, run by the delivery on itself. THREE positive assertions, because an extent bug that swallows the next line and one that closes early produce opposite symptoms |
+| `prov_verbatim_no_adaptation` + `prov_adapted_no_adaptation` | S-R2 (S240)'s pcrec-side pair. LEG A ONLY by the schema's own `validated_by` column — legs B and C CONSUME a provenance body without reading it |
+| `derived_call_collision` + `derived_call_bind` | §2.22/D100, and the accept half is what stops the refusal being satisfied by a composer that binds nothing. Leg A only, and the instrument is `--source` rather than `--list-source` |
+| `under_key_distinct` + `under_key_duplicate` | `under`'s four-component key tuple. **The accept half found a defect the refuse half could not**: the extractor read a colon the spelling does not have, so the tuple collapsed and the refusing fixture still went red — for a reason with nothing to do with the rule |
+| `include_head` | a head `include` line PARSES (it refused as a later-wave keyword before this step) |
+
+**EVERY THREE-LEG ASSERTION COMPARES CLASS, and where a fixture is leg A
+only the reason is stated at the call**, never left looking like an
+oversight. The two reasons are the seam (a FILE-scope production) and the
+schema's own `validated_by` column (a row reading `pcrec` is a row legs B
+and C are not claimed to check — §3.3's rule, and claiming otherwise
+would be the named failure of asserting three legs on the strength of
+one).

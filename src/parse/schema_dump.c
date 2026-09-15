@@ -61,9 +61,17 @@ typedef struct {
 } SurfaceRow;
 
 static const SurfaceRow g_surface[] = {
+    /* [DD-13b.W23.3] THE SENTENCE USED TO END MID-CLAUSE — "the 64-hex-"
+     * "digit SYNTAX is" — and what it was about to claim was false as
+     * well as unfinished: this parser recognises every expectation kind
+     * as `value: case` and reads NONE of them, so it checks neither the
+     * digest nor its spelling. The harness legs check both, which is
+     * where the claim belongs. A declared non-coverage that overstates
+     * its own coverage is worse than one that does not exist. */
     { "subject-content", "block", "m/n/ms/ns/mc",
-      "the dump performs no file I/O, so a subject's sha256 digest is never "
-      "checked against the file's bytes; the 64-hex-digit SYNTAX is" },
+      "an expectation line is recognised and never read here, so neither "
+      "a subject's sha256 digest nor its 64-hex spelling is checked by "
+      "this parser; both are the harness legs' (docs/spec/rxt_format.md)" },
     { "pattern-text", "block", "pattern/pattern-esc",
       "the dump is parse-only; pattern text is the compiler's" },
     { "config-resolution", "", "",

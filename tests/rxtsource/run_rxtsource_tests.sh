@@ -1921,6 +1921,27 @@ else
   $(cat "$WORKDIR/pv.err")"
 fi
 
+# --- `under`: the four-component KEY TUPLE (§2.17) ----------------------
+#
+# LEG A ONLY, by the schema's own column: `under` reads `validated_by:
+# pcrec`, and legs B and C treat every `under` line as a counted,
+# labelled SKIP. The ACCEPT half is not optional and is the half that
+# found the defect: the extractor read a colon that the spelling does
+# not have, so the convention came out empty and every later component
+# slid one place left — and the refusing fixture went red anyway, for a
+# reason that had nothing to do with the rule.
+check_refusal under_key_duplicate.rxt under-key-dup \
+    '[schema-constraint]' "duplicate 'under'" 'under-key'
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/under_key_distinct.rxt" \
+        > /dev/null 2>"$WORKDIR/ukd.err"; then
+    pass "under-key: four 'under' lines differing in ONE component each (subject, startpos, kind, convention) are all ACCEPTED — the key is the whole tuple"
+else
+    fail "under-key: a line differing from its neighbour in exactly one key
+  component was refused as a duplicate, so the tuple has collapsed. A
+  refuse-only pair cannot see this — it passes for the wrong reason:
+  $(cat "$WORKDIR/ukd.err")"
+fi
+
 # --- §2.22 / D100: the DERIVED-IDENTIFIER call binding ------------------
 #
 # LEG A ONLY: legs B and C resolve no calls. The refusal arrives through

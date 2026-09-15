@@ -1,0 +1,27 @@
+# [DD-13b.W23.3] `under`'s KEY TUPLE IS FOUR COMPONENTS, and this file is
+# the regression for a bug that shipped between two commits of one step.
+#
+# §2.17: two `under` lines for one (convention, subject, kind, startpos)
+# are REFUSED as a duplicate, not last-wins. The tuple ranges over fields
+# INSIDE the `qualified-line` value, so extracting it is parser code —
+# the ONE named exception §2.25.3 records — which is exactly the kind of
+# rule a schema cannot check on its owner's behalf.
+#
+# THE BUG: the extractor read the convention with `strchr(v, ':')`, on a
+# spelling that has no colon (`under <convention> <case-line>`, SPACE-
+# separated — leg B's arm has no colon and leg C REFUSES the colon form
+# by name). With no colon the convention came out EMPTY and every later
+# component slid one place left, so two lines differing only in SUBJECT
+# or only in STARTPOS were refused as duplicates while the REFUSING
+# fixture still went red for an unrelated reason. A refuse-only pair
+# cannot see that: it passes for the wrong reason.
+#
+# So the four lines below differ in ONE component each, and all four must
+# be ACCEPTED. `under_key_duplicate.rxtin` is the refusing half.
+pattern a|ab
+under pcre2 m "ab" 0 1
+under pcre2 m "cd" 0 1
+under pcre2 m 1 "ab" 1 2
+under pcre2 n "zz"
+under posix m "ab" 0 2
+m "ab" 0 1

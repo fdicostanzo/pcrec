@@ -251,6 +251,6 @@ PCREC_RXT_SCHEMA(DATA, "question",   LINE,  0, NONE,       ONE,         "require
 PCREC_RXT_SCHEMA(DATA, "reader",     LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "analyzer",   LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "row",        LIST,  0, NONE,       REPEAT,      "",         FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(DATA, "provenance", NONE,  0, PROVENANCE, AT_MOST_ONE, "",         FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "provenance", NONE,  0, PROVENANCE, AT_MOST_ONE, "required", FORMAT, PCREC, 23)
 
 #undef PCREC_RXT_SCHEMA
