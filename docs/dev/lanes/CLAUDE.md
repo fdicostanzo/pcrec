@@ -848,3 +848,44 @@ never edited afterwards.
   non-coverage ended MID-CLAUSE about to claim the opposite).
   `make test` and `make mech` are OWED (§6) — a battery held the box for
   the lane's whole working period.
+
+- `w233a_report.md` — [DD-13b.W23.3a] (2026-09-15, lane w233a, sonnet):
+  `include`'s HARNESS HALF, **PARKED, NOT DONE** — legs A and B are
+  built and verified, leg C is built for the one thing it can do, the
+  three fixtures/W23-S7/S247/the census pin/SW20 are OWED. Read §3
+  first for the OWED list; §2 is the load-bearing finding a fresh
+  agent must not re-litigate: **leg C cannot splice**, structurally,
+  because `include` sits in `parse_rxt`'s `head_words` tuple (it is
+  inherently head-scoped) and the seam ruling's head-bearing refusal —
+  UNCHANGED — already raises an uncaught `ValueError` on any file with
+  an `include` line, in both plain and `--dump` mode, VERIFIED live.
+  §1.10.2's table reads "legs B and C" symmetrically for report/splice/
+  failure-attribution; the tree says leg C's half is discovery
+  SUBTRACTION only, never a three-way block-count comparison — the same
+  r59-A2 disposition w233's own report already recorded for file-scope
+  `ext`, recurring here because `include` cannot be moved to block
+  scope at all.
+  §1.1 is leg A: W23.3 never emitted an `include` ROW at all (§6.3a
+  item 1's "a COLUMN on a row W23.3 already emits" was wrong about the
+  starting state, though right about the SIZE of the fix) —
+  `RXT_DECL_INCLUDE` now does, `value`=path as written, `name`=the
+  RESOLVED REAL PATH, resolved AT PARSE TIME (a deliberate, one-
+  construct exception to "the head parser touches no filesystem",
+  because `--list-source` is the only call the harness ever makes over
+  an `include` line).
+  §1.2 is leg B: entry-set SUBTRACTION (a pre-pass over the whole
+  discovered set, before either dispatch branch) and SPLICE (each
+  entry's closure walked depth-first, fragments INSERTED into `files[]`
+  right after their entry rather than concatenated into one stream —
+  which is what keeps every diagnostic correctly attributed to its own
+  physical file for free, and what makes PROCS>1 correct with no
+  fragment-aware code in the dispatch loop at all). Two real bugs
+  before it worked, both worth reading for the general lesson: caching
+  through `x="$(fn)"` is a no-op (command substitution forks a
+  subshell; the cache write never escapes it) and `cd DIR && pwd` is
+  LOGICAL, not `realpath(3)`'s resolved path (macOS's `/tmp` -> `/private/
+  tmp` symlink silently broke every cross-directory include-target
+  lookup). Verified by hand against six constructed scenarios (flat/
+  nested/cross-file-duplicate/PROCS=2/named-absorbed/corpus-control) —
+  the shipped corpus has zero `include` lines and cannot exercise any
+  of it structurally.
