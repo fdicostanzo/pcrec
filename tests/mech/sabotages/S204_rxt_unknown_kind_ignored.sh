@@ -36,7 +36,12 @@ SAB_ID="S204-rxt-unknown-kind-ignored"
 SAB_FILE="tests/harness/verify_rxt.py"
 SAB_SUITES="rxtsource"
 SAB_DESC="verify_rxt.py's parser swallows an unrecognised .rxt line kind as a comment instead of refusing it, so every expectation of that kind is silently unverified and uncounted"
-SAB_REACH_POP="tests/rxtsource/fixtures/unknown_kind.rxtin|^tag |1"
+# [W23-MERGE FIX 2026-09-15] the witness token moved `tag` -> `no-such-kind`
+# when W23.3 made `tag` a REAL production (lane w233's own re-aim); the
+# Linux validation battery's mech run caught this row UNREACHED-unexpected
+# because this pop regex still grepped the old token — [MECH-REACH] firing
+# as designed. Re-pointed at the fixture's live token.
+SAB_REACH_POP="tests/rxtsource/fixtures/unknown_kind.rxtin|^no-such-kind |1"
 # [DD-13b.W23.3] RE-ANCHORED. Leg C's catch-all moved and changed shape
 # at W23.2 (it raises through `_fail`, which attaches the diagnostic
 # CLASS) and again at W23.3 (the arm chain grew the new productions
