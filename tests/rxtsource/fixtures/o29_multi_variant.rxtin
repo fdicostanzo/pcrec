@@ -1,0 +1,28 @@
+# [O-29] pcrec-bench 2026-09-16, the `variant` TWIN of
+# `o29_multi_provenance.rxtin`. Same mechanism, same three closing
+# sites (blank line / comment line / end of file), same reason: `S0`'s
+# "a BLANK and a COMMENT each close every open attachment" used to skip
+# `RXT_CLOSE_FRAME` (and therefore `close_section_frame`) entirely via a
+# raw `ndepth = 1` reset, so a `variant` sub-block that is the last
+# content before a blank or comment line never reached
+# `#section variants` — only the textually LAST block's variant survived,
+# because only IT closes at end of file, the one site that was never
+# broken.
+#
+# `variant <testee>`'s cardinality is REPEAT/`unique-by value` — distinct
+# per block — so each block's testee differs from its own siblings (there
+# are none here) and need not differ across blocks; kept distinct anyway
+# for readability. `unsupported <reason>` satisfies the VARIANT schema's
+# "exactly-one-of text unsupported" constraint with the simpler of the two
+# LINE-shaped alternatives.
+pattern p1 a
+variant re2
+  unsupported no per-engine spelling preserves the objective
+
+pattern p2 b
+variant tre
+  unsupported no per-engine spelling preserves the objective
+# a comment, not a blank line, separates block 2 from block 3
+pattern p3 c
+variant onig
+  unsupported no per-engine spelling preserves the objective

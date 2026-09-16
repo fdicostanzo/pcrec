@@ -1,0 +1,53 @@
+# [O-29] pcrec-bench 2026-09-16: three blocks, each carrying its own
+# `provenance` sub-block as the LAST content of its block. Before the
+# fix, `--list-source`'s `#section provenance` carried only the LAST
+# block's record — the others vanished, exit 0, no diagnostic.
+#
+# The real mechanism (found by reading `src/parse/rxt_source.c`, not
+# assumed from the bench's own hypothesis): it is NOT the arrival of the
+# next `pattern`/`pattern-esc` opener that drops the record — that path
+# runs the ordinary dedent-pop while loop, which calls `RXT_CLOSE_FRAME`
+# (and therefore `close_section_frame`) correctly, exactly as it always
+# has. It is a BLANK line or a COMMENT line closing the attachment
+# first (S0's own rule — "a BLANK and a COMMENT each close every open
+# attachment") that skipped the macro entirely, resetting `ndepth = 1`
+# directly. Since two `pattern` blocks are ordinarily separated by a
+# blank line (or, as here, sometimes a comment), the shape reproduces on
+# essentially any real multi-block file that uses `provenance`.
+#
+# This fixture exercises all THREE closing sites in one file: block 1's
+# provenance closes via a BLANK line, block 2's via a COMMENT line, block
+# 3's via END OF FILE (the one site that was never broken — a fixed-point
+# control proving the other two moved to match it, not the reverse).
+# `tag t1` sits BEFORE block 1's `provenance`, per the bench's own
+# observation that a `tag` line AFTER a block's provenance suppresses the
+# drop (it triggers the correctly-working dedent-pop path); here it sits
+# on the side that does NOT mask anything.
+#
+# Every block carries the full REQUIRED set for BLOCK-scope provenance
+# (`source`, `retrieved`, `license`, `fidelity` — the PROVENANCE schema
+# rows' own `required`/`required-if parent == block` constraints; without
+# them the file would be REFUSED outright, which is a different failure
+# mode from the silent drop this fixture is for).
+pattern p1 a
+tag t1
+provenance
+  source authored
+  retrieved 2026-09-16
+  license MIT
+  fidelity verbatim
+
+pattern p2 b
+provenance
+  source authored
+  retrieved 2026-09-16
+  license MIT
+  fidelity adapted
+  adaptation trimmed the trailing anchor for this corpus
+# a comment, not a blank line, separates block 2 from block 3
+pattern p3 c
+provenance
+  source authored
+  retrieved 2026-09-16
+  license MIT
+  fidelity verbatim

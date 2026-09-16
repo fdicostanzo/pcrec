@@ -2293,6 +2293,134 @@ else
   $(cat "$WORKDIR/pv.err")"
 fi
 
+# --- O-29 (pcrec-bench, 2026-09-16): the multi-block #section DROP ------
+#
+# See `o29_multi_provenance.rxtin`'s own header for the full mechanism.
+# In short: a `provenance`/`variant` sub-block that is a block's LAST
+# content, closed by a BLANK line or a COMMENT line (S0's "each closes
+# every open attachment") rather than by a dedent onto another content
+# line or by end of file, used to lose its `#section` row entirely — a
+# raw `ndepth = 1` reset in `rxt_source.c`'s main loop skipped
+# `RXT_CLOSE_FRAME` (and therefore `close_section_frame`) instead of
+# calling it, which the dedent-pop while loop and the end-of-file loop
+# both already did correctly. Only the textually LAST block's record
+# survived, because only it closes at end of file — the one site that
+# was never broken.
+#
+# LEG A ONLY, both `provenance`'s and `variant`'s own `validated_by`
+# column (as the pre-existing prov-* checks above): legs B and C consume
+# a sub-block's body without reading it, so a three-leg assertion here
+# would claim coverage §3.3 rules out.
+#
+# `section_field SECTION COLUMN FILE` -> stdout: one line per row of
+# SECTION, column COLUMN (1-based, tab-separated) — `section_count`'s own
+# boundary tracking, extended to return a value instead of a count, so
+# this and any future per-row assertion route through the ONE awk that
+# knows where a `#section` block starts and ends.
+section_field() {
+    local want="$1" col="$2" file="$3"
+    awk -F'\t' -v want="$want" -v col="$col" '
+        /^#section /{ s=$0; sub(/^#section /,"",s); cur=s; next }
+        $1 ~ /^#/ { next }
+        cur == want { print $col }' "$file"
+}
+
+O29P="$FIXRUN/o29_multi_provenance.rxt"
+O29P_OUT="$WORKDIR/o29p.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29P" > "$O29P_OUT" 2>"$WORKDIR/o29p.err"; then
+    o29p_n="$(section_count provenance "$O29P_OUT")"
+    o29p_lines="$(section_field provenance 1 "$O29P_OUT" | tr '\n' ' ')"
+    o29p_blk="$(section_field provenance 2 "$O29P_OUT" | tr '\n' ' ')"
+    o29p_names="$(section_field provenance 3 "$O29P_OUT" | tr '\n' ' ')"
+    o29p_fid="$(section_field provenance 10 "$O29P_OUT" | tr '\n' ' ')"
+    if [ "$o29p_n" = "3" ] && [ "$o29p_lines" = "34 41 49 " ] && \
+       [ "$o29p_blk" = "32 40 48 " ] && [ "$o29p_names" = "p1 p2 p3 " ] && \
+       [ "$o29p_fid" = "verbatim adapted verbatim " ]; then
+        pass "O-29/provenance: all THREE blocks' provenance records are present (count=3), each attributed to its own block (line 34/41/49 -> block_line 32/40/48, name p1/p2/p3, fidelity verbatim/adapted/verbatim) — the blank-line (block 1), comment-line (block 2) and end-of-file (block 3) closing sites all flush the record"
+    else
+        fail "O-29/provenance: expected 3 rows at lines '34 41 49' / block_lines
+  '32 40 48' / names 'p1 p2 p3' / fidelity 'verbatim adapted verbatim';
+  got n=$o29p_n lines='$o29p_lines' block_lines='$o29p_blk'
+  names='$o29p_names' fidelity='$o29p_fid' — a provenance record was
+  dropped when its block's closing line was a blank or a comment (the
+  bug this section exists to catch)."
+    fi
+else
+    fail "O-29/provenance: --list-source refused the fixture (rc=$?): $(cat "$WORKDIR/o29p.err")"
+fi
+
+O29V="$FIXRUN/o29_multi_variant.rxt"
+O29V_OUT="$WORKDIR/o29v.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29V" > "$O29V_OUT" 2>"$WORKDIR/o29v.err"; then
+    o29v_n="$(section_count variants "$O29V_OUT")"
+    o29v_lines="$(section_field variants 1 "$O29V_OUT" | tr '\n' ' ')"
+    o29v_blk="$(section_field variants 2 "$O29V_OUT" | tr '\n' ' ')"
+    o29v_names="$(section_field variants 3 "$O29V_OUT" | tr '\n' ' ')"
+    o29v_testee="$(section_field variants 4 "$O29V_OUT" | tr '\n' ' ')"
+    if [ "$o29v_n" = "3" ] && [ "$o29v_lines" = "19 23 27 " ] && \
+       [ "$o29v_blk" = "18 22 26 " ] && [ "$o29v_names" = "p1 p2 p3 " ] && \
+       [ "$o29v_testee" = "re2 tre onig " ]; then
+        pass "O-29/variant: all THREE blocks' variant records are present (count=3), each attributed to its own block (line 19/23/27 -> block_line 18/22/26, name p1/p2/p3, testee re2/tre/onig) — the same blank/comment/EOF closing sites, the general mechanism rather than a provenance special case"
+    else
+        fail "O-29/variant: expected 3 rows at lines '19 23 27' / block_lines
+  '18 22 26' / names 'p1 p2 p3' / testees 're2 tre onig'; got n=$o29v_n
+  lines='$o29v_lines' block_lines='$o29v_blk' names='$o29v_names'
+  testees='$o29v_testee' — the fix is not general enough to cover
+  'variant', or covers 'provenance' by a scope-specific path."
+    fi
+else
+    fail "O-29/variant: --list-source refused the fixture (rc=$?): $(cat "$WORKDIR/o29v.err")"
+fi
+
+# The SUPPRESSED-ORDER control: a `tag` line AFTER a block's `provenance`
+# closes it through the (always-correct) dedent-pop path before any
+# blank line is reached — pinning that this shape needed no fix and gets
+# none, in the same direction the bench's own observation ran.
+O29S="$FIXRUN/o29_suppressed_order.rxt"
+O29S_OUT="$WORKDIR/o29s.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29S" > "$O29S_OUT" 2>"$WORKDIR/o29s.err"; then
+    o29s_n="$(section_count provenance "$O29S_OUT")"
+    o29s_lines="$(section_field provenance 1 "$O29S_OUT" | tr '\n' ' ')"
+    o29s_blk="$(section_field provenance 2 "$O29S_OUT" | tr '\n' ' ')"
+    if [ "$o29s_n" = "2" ] && [ "$o29s_lines" = "13 21 " ] && [ "$o29s_blk" = "12 20 " ]; then
+        pass "O-29/suppressed-order: a 'tag' line AFTER provenance closes it via the dedent-pop path (always correct) — both blocks' records present, unaffected by the fix"
+    else
+        fail "O-29/suppressed-order: expected 2 rows at lines '13 21' / block_lines
+  '12 20'; got n=$o29s_n lines='$o29s_lines' block_lines='$o29s_blk'"
+    fi
+else
+    fail "O-29/suppressed-order: --list-source refused the fixture (rc=$?): $(cat "$WORKDIR/o29s.err")"
+fi
+
+# The `ext`/AUX CONTROL: `#section aux` rows are pushed PER LINE, never
+# deferred to `RXT_CLOSE_FRAME`, and that macro is ALSO a no-op for a
+# tree frame (`if (!(F)->tree)` guards both halves) — so this shape never
+# shared O-29's bug, before or after the fix. Checked as a POPULATION
+# (6 rows: an opener + one 'note' child per block, times 3 blocks) with
+# per-block attribution, the same shape as the provenance/variant checks,
+# to make "aux is unaffected" a measured artifact rather than an
+# assertion.
+O29A="$FIXRUN/o29_multi_aux_control.rxt"
+O29A_OUT="$WORKDIR/o29a.tsv"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29A" > "$O29A_OUT" 2>"$WORKDIR/o29a.err"; then
+    o29a_n="$(section_count aux "$O29A_OUT")"
+    o29a_lines="$(section_field aux 1 "$O29A_OUT" | tr '\n' ' ')"
+    o29a_blk="$(section_field aux 2 "$O29A_OUT" | tr '\n' ' ')"
+    o29a_keys="$(section_field aux 6 "$O29A_OUT" | tr '\n' ' ')"
+    if [ "$o29a_n" = "6" ] && [ "$o29a_lines" = "15 16 19 20 23 24 " ] && \
+       [ "$o29a_blk" = "14 14 18 18 22 22 " ] && \
+       [ "$o29a_keys" = "ext note ext note ext note " ]; then
+        pass "O-29/aux-control: all THREE blocks' aux rows (opener + one child each, 6 total) are present at lines 15/16, 19/20, 23/24, correctly attributed to blocks 14/18/22 — 'ext' bodies never shared O-29's bug (their rows are pushed per line, and RXT_CLOSE_FRAME is a no-op on a tree frame either way)"
+    else
+        fail "O-29/aux-control: expected 6 rows at lines '15 16 19 20 23 24' /
+  block_lines '14 14 18 18 22 22' / keys 'ext note ext note ext note';
+  got n=$o29a_n lines='$o29a_lines' block_lines='$o29a_blk'
+  keys='$o29a_keys'"
+    fi
+else
+    fail "O-29/aux-control: --list-source refused the fixture (rc=$?): $(cat "$WORKDIR/o29a.err")"
+fi
+
 # --- `under`: the four-component KEY TUPLE (§2.17) ----------------------
 #
 # LEG A ONLY, by the schema's own column: `under` reads `validated_by:

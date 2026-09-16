@@ -1501,6 +1501,30 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   the identical rule; `tests/rxtsource/CLAUDE.md`'s own "[K57FIX lane,
   2026-09-15]" section has the full three-leg record.
 
+  **[O29FIX, 2026-09-16] `RXT_CLOSE_FRAME` HAD A FOURTH SITE AND ITS OWN
+  COMMENT DID NOT NAME IT.** pcrec-bench's O-29: several `pattern` blocks
+  each carrying their own `provenance`/`variant` sub-block, only the
+  TEXTUALLY LAST one's `#section` row surviving. The dedent-pop while
+  loop and the end-of-file loop both call the macro correctly — including
+  when the next line is a `pattern`/`pattern-esc` opener, since the S2
+  reopen REUSES the top-level frame rather than pushing a fresh one, so a
+  dedent onto it pops every deeper frame first. **The missed site was S0
+  itself**: "a BLANK and a COMMENT each close every open attachment" was
+  a bare `ndepth = 1` reset, never a call to the macro — so a
+  provenance/variant frame still open when a blank line or a comment
+  arrived (which is how two blocks are ordinarily separated) was
+  discarded with neither its `constraints` re-checked nor its record
+  pushed. Fixed by running the SAME closing loop there
+  (`while (ndepth > 1) RXT_CLOSE_FRAME(...)`), which is what makes it a
+  fourth call to one mechanism rather than a fifth one. `cases` never had
+  a pending record to lose (`case_push` runs at the line, not at any
+  close); `aux`/`ext` is doubly immune — its rows are ALSO pushed per
+  line, and `RXT_CLOSE_FRAME` is a no-op for a tree frame regardless
+  (`if (!(F)->tree)` guards both halves) — so the bug and its fix are
+  behaviourally identical there, measured rather than assumed
+  (`tests/rxtsource/fixtures/o29_multi_aux_control.rxtin`). See
+  `tests/rxtsource/CLAUDE.md`'s own "[O29FIX lane, 2026-09-16]" section.
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be

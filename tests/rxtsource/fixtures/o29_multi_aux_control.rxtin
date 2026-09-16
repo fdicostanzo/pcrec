@@ -1,0 +1,24 @@
+# [O-29] pcrec-bench 2026-09-16: the `ext`/AUX CONTROL. This shape
+# (an `ext` subtree as the last content of a block, immediately followed
+# by a blank line, a comment line, or end of file) does NOT share O-29's
+# drop, and this fixture is the artifact-backed reason why, not just the
+# claim: `#section aux` rows are pushed PER LINE as each is read
+# (`aux_push`, at the moment the opener or a deeper line is dispatched),
+# never deferred to `RXT_CLOSE_FRAME`/`close_section_frame` — and that
+# macro is ALSO a no-op for a tree frame regardless (`if (!(F)->tree)`
+# guards both the constraint check and the section push), so the old
+# buggy `ndepth = 1` reset and the fixed closing loop behave IDENTICALLY
+# here: neither one had, or has, anything to do when a tree frame closes.
+# Same three closing sites as the provenance/variant fixtures, purely for
+# symmetry — none of the three is special for `ext`.
+pattern p1 a
+ext bench
+  note aux content under block 1
+
+pattern p2 b
+ext bench
+  note aux content under block 2
+# a comment, not a blank line, separates block 2 from block 3
+pattern p3 c
+ext bench
+  note aux content under block 3

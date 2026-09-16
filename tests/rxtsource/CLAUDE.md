@@ -904,3 +904,64 @@ free by never re-entering per-line dispatch inside a region at all.
 depth, the paragraph-break exemption for a whitespace-only line, and the
 refusal) normatively — it previously stated only the region's EXTENT and
 left the decode to `docs/dev/known_issues.md` K57's own text.
+
+## [O29FIX lane, 2026-09-16] a FOURTH closing site, and it was missing
+
+pcrec-bench's O-29 (found at pin cd371441): with several `pattern` blocks
+in one file, each carrying its own valid `provenance` (or `variant`)
+sub-block, `--list-source`'s `#section provenance`/`variants` rows
+appeared for the TEXTUALLY LAST block only — the others vanished, exit
+0, no diagnostic. The brief's working hypothesis (a pending accumulator
+flushed by a following content line and by EOF, but not by the next
+`pattern` opener) turned out to be WRONG when read against the code:
+that path (the S1 "else" branch's dedent-pop while loop, `rxt_source.c`
+around the main loop's S1 attachment logic) already calls
+`RXT_CLOSE_FRAME` correctly whenever the next line is ordinary CONTENT —
+including a `pattern`/`pattern-esc` opener, which reuses the SAME
+top-level frame rather than pushing a new one, so the dedent that lands
+on it pops every deeper frame first. Traced by hand line by line, that
+path could not reproduce the drop.
+
+**The real fourth site was in S0**, right above the attachment logic:
+"a BLANK and a COMMENT each close every open attachment" was implemented
+as a bare `ndepth = 1` reset rather than a call to `RXT_CLOSE_FRAME` —
+`rxt_source.c`'s own comment on the macro had said "three sites" for as
+long as the macro existed, and the fourth was the omission itself. Since
+two `pattern` blocks are ordinarily separated by a blank line (or a
+comment), this is the shape that actually reproduces O-29 on essentially
+any real multi-block file using `provenance`/`variant`: a `tag` line
+placed AFTER a block's provenance (the bench's own "suppresses the
+drop" observation) works because `tag` is CONTENT and closes the frame
+through the already-correct dedent-pop path before any blank line is
+reached; with nothing but a blank/comment between the provenance body
+and the next block, nothing ever called the macro.
+
+**The fix is the general mechanism, not a `provenance` special case**:
+the S0 branch now runs the SAME closing loop the dedent-pop and
+end-of-file sites already use (`while (ndepth > 1) RXT_CLOSE_FRAME(...)`),
+so any currently-open frame of ANY scope gets its `constraints` checked
+and, for PROVENANCE/VARIANT, its `#section` row pushed — never a
+provenance-specific branch. `cases` and `aux`/`ext` were measured
+UNAFFECTED and the reason each is different: a CASE row (`m`/`n`/`mc`/…)
+is pushed immediately when its own line is read, never deferred to any
+frame close, so there was never a pending record to lose. An aux row is
+ALSO pushed per line (`aux_push`, at dispatch), but on top of that
+`RXT_CLOSE_FRAME` is a no-op for a tree frame regardless — its whole
+body is `if (!(F)->tree) { ...constraints...; ...push...; }` — so the
+old buggy reset and the fixed closing loop behave IDENTICALLY for `ext`;
+neither one ever had anything to do there. `o29_multi_aux_control.rxtin`
+below is a measured artifact for that claim, not just the assertion.
+
+Four fixtures, all LEG A ONLY (`provenance`'s and `variant`'s own
+`validated_by: PCREC` column — legs B and C consume a sub-block's body
+without reading it):
+
+| fixture | what it makes reachable |
+|---|---|
+| `o29_multi_provenance` | THE REPRODUCTION: three blocks, each provenance the block's last content, closed by a blank line (block 1), a comment line (block 2) and end of file (block 3) in turn — one fixture exercising all three real closing sites, with per-block line/block_line/name/fidelity attribution asserted, not just a count |
+| `o29_multi_variant` | the same shape for `variant` — the GENERAL-mechanism claim's own witness: a second scope reached by the identical fix with no scope-specific code |
+| `o29_suppressed_order` | the CONTROL: `provenance` then `tag` (not the reverse) in each of two blocks — pins that this order needed no fix and gets none, both before and after |
+| `o29_multi_aux_control` | the CONTROL for `ext`: the same three-closing-site shape, asserting all 6 aux rows (opener + one child, times 3 blocks) present and correctly attributed — `ext` never shared this bug, and this fixture is the measured reason rather than the claim |
+
+See `docs/dev/lanes/o29fix_report.md` for the diagnosis-vs-hypothesis
+account and the validation numbers.
