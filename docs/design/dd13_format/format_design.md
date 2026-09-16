@@ -2512,7 +2512,11 @@ content, MEASURED §0.8). That is wrong today and wrong under every
 revision of this note; it is filed as `docs/dev/known_issues.md` **K57**
 and fixed there, not here. S3's extent rule is deliberately silent
 about it: extent is structure, the strip is a value decoding, and K57
-lives in the second.
+lives in the second. *[Manager status, at the k57fix merge 2026-09-16:
+K57 is FIXED — a shallower CONTENT continuation line now REFUSES by
+name, class `value-shape`, in all three legs; `docs/spec/rxt_format.md`
+S3 carries the decode rule normatively. This note's other K57 mentions
+stay as the historical record.]*
 
 **(4) TAB INDENTATION — taken, CHOSEN, and the choice is stated as
 one.**
