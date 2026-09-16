@@ -992,3 +992,22 @@ never edited afterwards.
   — a second reader class ("content depends on the scaffolding" vs. "text
   cites the abi number") the ritual's grep needs to widen to cover.
 
+- `dialsweep_report.md` — [OPT-DIAL] §7 SIZE SWEEP (2026-09-15, lane
+  dialsweep, sonnet; measurement only, nothing under `src/`/`tests/`).
+  Eight full-corpus passes (baseline + the six switches §7 names plus one
+  bonus, `-fno-anchored-dfa`, §7 item 3) through `tests/harness/run.sh`'s
+  existing `SIZELOG`/`RXTDUMP` hooks. Headline: `-fno-tiered-entry`
+  graduates to a clean MEASURED TRADE (every one of 330 movers shrinks by
+  a near-fixed ~1,953 B against the inventory's already-measured ~5x
+  per-call win); `-fno-anchored-dfa` turns out to have the LARGEST reach
+  of any switch in the whole inventory (43.39% of the corpus, monotone,
+  worst case -266,794 B), replacing its old pathological-population-only
+  size number. `-fno-altcls-merge`/`-fno-altcls-factor` mostly confirm the
+  inventory's "likely a PURE WIN" hypothesis but each carries one real
+  non-monotone counter-example, the same shape `--unroll=K`'s own curve
+  warns about. `-fno-possessify`/`-fno-revdet` stay fully UNMEASURED —
+  neither had a TIME number before or after; this sweep supplies only
+  their size half. See `docs/dev/optdial_size_sweep.md` for the full
+  per-switch memo and `docs/dev/optdial_size_sweep/` for the reproduction
+  pieces. Does not edit `docs/design/opt_dial_inventory.md` itself (D80).
+

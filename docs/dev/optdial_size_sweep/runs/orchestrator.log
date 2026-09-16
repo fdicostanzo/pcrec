@@ -94,3 +94,6 @@ entry files: 209
 fragments spliced: 0
 parallel: 209 of 209 file workers reported (PROCS=8)
 run_sweep.sh: === pass anchored_dfa finished rc=0, 945s,     3478 size rows ===
+run_sweep.sh: WIP-committed anchored_dfa
+
+run_sweep.sh: done. Raw tables in /Users/fdicostanzo/pcrec/worktrees/dialsweep/docs/dev/optdial_size_sweep/runs/*_size.tsv (+ *_dump.tsv for refusal accounting).
