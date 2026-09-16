@@ -15,14 +15,17 @@
 # for readability. `unsupported <reason>` satisfies the VARIANT schema's
 # "exactly-one-of text unsupported" constraint with the simpler of the two
 # LINE-shaped alternatives.
-pattern p1 a
+pattern a
+name p1
 variant re2
   unsupported no per-engine spelling preserves the objective
 
-pattern p2 b
+pattern b
+name p2
 variant tre
   unsupported no per-engine spelling preserves the objective
 # a comment, not a blank line, separates block 2 from block 3
-pattern p3 c
+pattern c
+name p3
 variant onig
   unsupported no per-engine spelling preserves the objective

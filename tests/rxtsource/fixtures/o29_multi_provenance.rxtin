@@ -29,7 +29,8 @@
 # rows' own `required`/`required-if parent == block` constraints; without
 # them the file would be REFUSED outright, which is a different failure
 # mode from the silent drop this fixture is for).
-pattern p1 a
+pattern a
+name p1
 tag t1
 provenance
   source authored
@@ -37,7 +38,8 @@ provenance
   license MIT
   fidelity verbatim
 
-pattern p2 b
+pattern b
+name p2
 provenance
   source authored
   retrieved 2026-09-16
@@ -45,7 +47,8 @@ provenance
   fidelity adapted
   adaptation trimmed the trailing anchor for this corpus
 # a comment, not a blank line, separates block 2 from block 3
-pattern p3 c
+pattern c
+name p3
 provenance
   source authored
   retrieved 2026-09-16

@@ -2333,13 +2333,13 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29P" > "$O29P_OUT" 2>"$WORKDIR/o2
     o29p_blk="$(section_field provenance 2 "$O29P_OUT" | tr '\n' ' ')"
     o29p_names="$(section_field provenance 3 "$O29P_OUT" | tr '\n' ' ')"
     o29p_fid="$(section_field provenance 10 "$O29P_OUT" | tr '\n' ' ')"
-    if [ "$o29p_n" = "3" ] && [ "$o29p_lines" = "34 41 49 " ] && \
-       [ "$o29p_blk" = "32 40 48 " ] && [ "$o29p_names" = "p1 p2 p3 " ] && \
+    if [ "$o29p_n" = "3" ] && [ "$o29p_lines" = "35 43 52 " ] && \
+       [ "$o29p_blk" = "32 41 50 " ] && [ "$o29p_names" = "p1 p2 p3 " ] && \
        [ "$o29p_fid" = "verbatim adapted verbatim " ]; then
-        pass "O-29/provenance: all THREE blocks' provenance records are present (count=3), each attributed to its own block (line 34/41/49 -> block_line 32/40/48, name p1/p2/p3, fidelity verbatim/adapted/verbatim) — the blank-line (block 1), comment-line (block 2) and end-of-file (block 3) closing sites all flush the record"
+        pass "O-29/provenance: all THREE blocks' provenance records are present (count=3), each attributed to its own block (line 35/43/52 -> block_line 32/41/50, name p1/p2/p3, fidelity verbatim/adapted/verbatim) — the blank-line (block 1), comment-line (block 2) and end-of-file (block 3) closing sites all flush the record"
     else
-        fail "O-29/provenance: expected 3 rows at lines '34 41 49' / block_lines
-  '32 40 48' / names 'p1 p2 p3' / fidelity 'verbatim adapted verbatim';
+        fail "O-29/provenance: expected 3 rows at lines '35 43 52' / block_lines
+  '32 41 50' / names 'p1 p2 p3' / fidelity 'verbatim adapted verbatim';
   got n=$o29p_n lines='$o29p_lines' block_lines='$o29p_blk'
   names='$o29p_names' fidelity='$o29p_fid' — a provenance record was
   dropped when its block's closing line was a blank or a comment (the
@@ -2357,13 +2357,13 @@ if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$O29V" > "$O29V_OUT" 2>"$WORKDIR/o2
     o29v_blk="$(section_field variants 2 "$O29V_OUT" | tr '\n' ' ')"
     o29v_names="$(section_field variants 3 "$O29V_OUT" | tr '\n' ' ')"
     o29v_testee="$(section_field variants 4 "$O29V_OUT" | tr '\n' ' ')"
-    if [ "$o29v_n" = "3" ] && [ "$o29v_lines" = "19 23 27 " ] && \
-       [ "$o29v_blk" = "18 22 26 " ] && [ "$o29v_names" = "p1 p2 p3 " ] && \
+    if [ "$o29v_n" = "3" ] && [ "$o29v_lines" = "20 25 30 " ] && \
+       [ "$o29v_blk" = "18 23 28 " ] && [ "$o29v_names" = "p1 p2 p3 " ] && \
        [ "$o29v_testee" = "re2 tre onig " ]; then
-        pass "O-29/variant: all THREE blocks' variant records are present (count=3), each attributed to its own block (line 19/23/27 -> block_line 18/22/26, name p1/p2/p3, testee re2/tre/onig) — the same blank/comment/EOF closing sites, the general mechanism rather than a provenance special case"
+        pass "O-29/variant: all THREE blocks' variant records are present (count=3), each attributed to its own block (line 20/25/30 -> block_line 18/23/28, name p1/p2/p3, testee re2/tre/onig) — the same blank/comment/EOF closing sites, the general mechanism rather than a provenance special case"
     else
-        fail "O-29/variant: expected 3 rows at lines '19 23 27' / block_lines
-  '18 22 26' / names 'p1 p2 p3' / testees 're2 tre onig'; got n=$o29v_n
+        fail "O-29/variant: expected 3 rows at lines '20 25 30' / block_lines
+  '18 23 28' / names 'p1 p2 p3' / testees 're2 tre onig'; got n=$o29v_n
   lines='$o29v_lines' block_lines='$o29v_blk' names='$o29v_names'
   testees='$o29v_testee' — the fix is not general enough to cover
   'variant', or covers 'provenance' by a scope-specific path."
