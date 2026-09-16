@@ -698,17 +698,45 @@ RXT_TAB="$(printf '\t')"
 # opener's indent, a BLANK, a COMMENT) is tested at the top of the line
 # loop, and every other line in the region is bytes.
 #
-# THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE, and that is
-# K57 (docs/dev/known_issues.md) REPRODUCED DELIBERATELY: a continuation
-# line indented LESS than the first silently loses content. Leg A does
-# exactly this and `prose_dedent.rxtin` asserts today's wrong value in all
-# three legs with K57 named beside it, so the day K57 is fixed all three go
-# red together rather than one leg quietly disagreeing.
+# THE DEDENT IS A BYTE COUNT TAKEN FROM THE FIRST REGION LINE (K57,
+# docs/dev/known_issues.md, FIXED): a continuation line indented LESS than
+# the first would silently lose content if stripped by that same count.
+# The manager's standing ruling for this shape (a value the byte-count
+# decode cannot represent) is REFUSAL BY NAME, class value-shape — matching
+# src/parse/rxt_source.c's `read_prose_region` fix exactly, so
+# `prose_dedent.rxtin`/`prose_dedent_body.rxtin` (`check_refusal`/
+# `check_refusal_all3_kind`) see all three legs agree. A WHITESPACE-ONLY
+# line (this function's OTHER caller, the paragraph break) is exempt: it
+# decodes to an empty line whatever its own width.
+#
+# `prose_bad` LATCHES the region once refused, rather than clearing
+# `prose_open` on the spot: this is a STREAMING reader, so the line after
+# the refused one is still going to arrive here (or fall through to S1's
+# top-level dispatch if the region were closed early) — and record_fail
+# never aborts the file the way leg A's `return` does. Closing the region
+# immediately would hand the region's REMAINING lines to the per-line
+# dispatch as if they were ordinary top-level directives, producing a
+# SECOND, unrelated failure (an indented line with nowhere to attach)
+# whose class overwrites the real one in `extract_class`'s last-bracket
+# read. Latching keeps swallowing lines under the SAME open region — no
+# second record, no second class — until S3's own extent test ends it
+# exactly where leg A's single-pass scan would have.
 prose_take() {
-    local ln="$1" ws body
+    local ln="$1" ws body lw
     if [ "$prose_dedent" -lt 0 ]; then
         ws="${ln%%[! $RXT_TAB]*}"
         prose_dedent=${#ws}
+    fi
+    if [ "$prose_bad" = "1" ]; then
+        return 0
+    fi
+    ws="${ln%%[! $RXT_TAB]*}"
+    lw=${#ws}
+    if [ "$lw" -lt "${#ln}" ] && [ "$lw" -lt "$prose_dedent" ]; then
+        record_fail_class value-shape "$cur_file" "$lineno" \
+            "block scalar '|' continuation is indented $lw, less than the block's own indent $prose_dedent -- dedenting would delete content"
+        prose_bad=1
+        return 0
     fi
     body="${ln:$prose_dedent}"
     if [ "$prose_nlines" -eq 0 ]; then
@@ -2162,6 +2190,7 @@ for file in "${files[@]}"; do
     prose_ind=0
     prose_nlines=0
     prose_dedent=-1
+    prose_bad=0
     prose_text=""
     prose_owner=""
     prose_owner_line=0
@@ -2465,7 +2494,8 @@ for file in "${files[@]}"; do
                         _pv="${_pv%"${_pv##*[! $RXT_TAB]}"}"
                         if [ "$_pv" = "|" ]; then
                             prose_open=1; prose_ind=$cur_ind; prose_nlines=0
-                            prose_dedent=-1; prose_text=""; prose_owner=""
+                            prose_dedent=-1; prose_bad=0
+                            prose_text=""; prose_owner=""
                             prose_owner_line=$lineno
                         fi
                         ;;
@@ -2909,6 +2939,7 @@ for file in "${files[@]}"; do
                 prose_ind=0
                 prose_nlines=0
                 prose_dedent=-1
+                prose_bad=0
                 prose_text=""
                 prose_owner="description"
                 prose_owner_line=$lineno

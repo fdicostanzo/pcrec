@@ -435,13 +435,15 @@ before and are accepted still. They exist because a later wave that
 weakens S3 would re-create three narrowings SILENTLY; an avoidance needs a
 cell exactly as much as a decision does, and an accident does not get one.
 
-**A DEFECT, PINNED AS A DEFECT.** `prose_dedent.rxtin` asserts TODAY'S
-WRONG decoded value — the dedent strip is a byte count, so a continuation
-line indented less than the block's first silently loses content — with
+**A DEFECT, PINNED AS A DEFECT (AT LANDING; FIXED — see "[K57FIX lane,
+2026-09-15]" below).** `prose_dedent.rxtin` used to assert TODAY'S WRONG
+decoded value — the dedent strip was a byte count, so a continuation
+line indented less than the block's first silently lost content — with
 K57 named beside it. `tests/rxtsource/` has no known-fail bucket, so the
-pin is the assertion itself: **the day K57 is fixed this fixture goes
+pin was the assertion itself: **the day K57 is fixed this fixture goes
 RED**, and that red is the signal to invert it. A pin that cannot outlive
 its defect is the cheapest form available here, because the fix breaks it.
+That is exactly what happened; the fixture now asserts the refusal.
 
 **EVERY PROSE CELL ASSERTS THE VALUE, NEVER THE VERDICT.** A reader that
 opens a region and throws its content away still "accepts" the file. The
@@ -850,3 +852,55 @@ Both `run.sh`'s C loop (the real `<prefix>_next_pos` residual) and
 `verify_rxt.py`'s independent python transcription report 2, and both
 were confirmed to FAIL loudly against the naive 4 before this fixture
 was committed.
+
+## [K57FIX lane, 2026-09-15] K57 fixed — the dedent refusal, and its
+## three-leg sibling
+
+`docs/dev/known_issues.md` K57's hold expired when [DD-13b.W23]
+delivered and merged (30b1f7f2). The manager's standing ruling: a
+continuation line indented LESS than the block's own dedent depth (set
+by the first continuation line) is a REFUSAL by name, class
+`value-shape`, naming the shallower line's own indent and the depth the
+first line set — never the silent byte-loss the entry filed, and never
+a silent reinterpretation either. `src/parse/rxt_source.c`'s
+`read_prose_region` (leg A), `tests/harness/run.sh`'s `prose_take` (leg
+B) and `tests/harness/verify_rxt.py`'s prose-region arm (leg C) all
+carried the identical byte-count dedent and all three now refuse it
+identically.
+
+**`prose_dedent.rxtin` is UNCHANGED IN CONTENT and INVERTED IN
+ASSERTION**, exactly as its own header and this file's note above
+predicted: the fixture that used to pin the wrong decoded VALUE now pins
+the refusal. It stays LEG-A-ONLY — it is head-scoped (`description |`
+above the first `pattern`), and the head has one parser by the seam
+ruling, so legs B and C never reach it regardless of what their own
+dedent code does.
+
+**`prose_dedent_body.rxtin` is NEW, and it exists because leg-A-only
+would have left legs B's and C's own dedent fix UNREACHED by any check**
+— the identical shallow-continuation shape, at BLOCK scope (a pattern
+block's own `description`) rather than the file's head, so all three
+legs parse it. Checked with `check_refusal_all3_kind description ...`:
+all three refuse, class `value-shape` agrees, and `description`'s
+existing `all-readers` receipt population (W23-S5) gains another entry
+rather than a new kind.
+
+**LEG B NEEDED A LATCH, not just the validation check.** `prose_take` is
+called per streaming line, and `record_fail` never aborts the file the
+way leg A's C-level `return` does — so the naive fix (validate, record,
+clear `prose_open`) let the region's REMAINING lines fall through to the
+top-level per-line dispatch as if they were ordinary directives, which
+raised a SECOND, unrelated `structure-attachment` failure ("indented
+line continues nothing") that `extract_class`'s last-bracket read then
+reported instead of the real one — caught live on
+`prose_dedent_body.rxtin` before this note was written, not assumed. The
+fix is `prose_bad`, a per-region latch (reset at all three sites that
+open a region, alongside `prose_dedent`): once set, `prose_take` keeps
+swallowing the region's lines silently rather than handing them back to
+the dispatcher, which is what leg A's single-pass extent scan does for
+free by never re-entering per-line dispatch inside a region at all.
+
+`docs/spec/rxt_format.md`'s S3 section states the decode rule (dedent
+depth, the paragraph-break exemption for a whitespace-only line, and the
+refusal) normatively — it previously stated only the region's EXTENT and
+left the decode to `docs/dev/known_issues.md` K57's own text.

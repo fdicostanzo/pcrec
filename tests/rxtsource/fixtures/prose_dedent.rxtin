@@ -1,18 +1,26 @@
-# [DD-13b.W23.1] A CONTINUATION LINE INDENTED LESS THAN THE BLOCK'S FIRST.
+# [K57FIX] A CONTINUATION LINE INDENTED LESS THAN THE BLOCK'S FIRST.
 #
-# THIS FIXTURE ASSERTS A DEFECT, NOT A PROMISE. The dedent strip is a BYTE
-# COUNT, so a line indented less than the first silently LOSES content and
-# the file still exits 0 — filed as K57 (docs/dev/known_issues.md), wrong
-# under every revision of the design, and deliberately NOT fixed in this
-# step: two independent reds must not share a step, and a step whose
-# acceptance is the structure layer would then have two unrelated causes
-# behind one failure (w23_impl §7.3, manager ruling R4).
+# THIS FIXTURE USED TO ASSERT A DEFECT (K57, docs/dev/known_issues.md):
+# the dedent strip was a BYTE COUNT, so `  line two at two`'s own two-space
+# indent, stripped by the four-space depth `    line one at four` set, lost
+# its first two content bytes and decoded as `ne two at two` at exit 0 —
+# wrong under every revision of the design, and deliberately held open
+# through [DD-13b.W23] (w23_impl §7.3, manager ruling r59-R4: two
+# independent reds must not share a step).
 #
-# `tests/rxtsource/` has no known-fail bucket, so the pin is the
-# assertion itself: the check asserts TODAY'S WRONG VALUE, and the day K57
-# is fixed this fixture goes RED. That red is the signal to invert it to
-# the correct value — the pin cannot outlive the defect silently, because
-# the fix breaks it.
+# NOW FIXED: the manager's standing K57FIX ruling is that a continuation
+# line indented less than the block's own dedent depth is a REFUSAL by
+# name, class value-shape — never silent loss, never silent
+# reinterpretation. `tests/rxtsource/` has no known-fail bucket, so this
+# fixture is exactly what r59-R4 predicted: the pin (an ACCEPTING check
+# asserting the wrong value) went RED the moment the fix landed, and the
+# check below is inverted to assert the refusal instead. The file's own
+# content is UNCHANGED — same three lines, same shallow second line — so
+# the flip is entirely in what the harness now expects of it. HEAD-SCOPED
+# (`description` above the first `pattern`), so this fixture is leg-A-only
+# by the seam ruling; `prose_dedent_body.rxtin` is the three-leg sibling,
+# reaching the same refusal in legs B and C, which carry the identical
+# byte-count dedent in their own prose-region code.
 description |
     line one at four
   line two at two

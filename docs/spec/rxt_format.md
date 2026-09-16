@@ -259,6 +259,20 @@ end without tokenising a single line inside it**.
 Inside a region an indented `#` is PROSE and ragged indentation is legal
 prose shape; outside one the indented-`#` refusal is unchanged.
 
+**Decoding the region into a value.** The region's DEDENT DEPTH is set once,
+by the FIRST line's own leading whitespace, and every line's decoded text is
+that same byte count stripped from its front — so a line indented DEEPER
+than the first keeps its relative indentation (`prose_ragged`'s shape) and a
+WHITESPACE-ONLY line, having nothing but whitespace to strip, decodes to an
+empty line regardless of its own width (the format's only paragraph break).
+**A CONTENT line indented LESS than the first — one with a non-whitespace
+byte inside the dedent depth — is REFUSED, class `value-shape`, naming both
+the line's own indent and the depth the first line set**, rather than having
+that byte silently stripped away: a byte count cannot dedent a line shorter
+than itself without deleting content, and this format never loses bytes
+silently. All three parsers enforce this identically (`prose_dedent.rxtin`/
+`prose_dedent_body.rxtin`).
+
 #### The OPEN SUBTREE — structure-layer parameter 3
 
 A CONTENT line whose kind carries `children: tree` roots an **open
