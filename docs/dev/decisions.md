@@ -6922,3 +6922,49 @@ shows a substantially larger win there.
 
 Cross-notes: docs/dev/tt4m_time.md, tt4m_batch_customers.md,
 tt4m_harness_batching.md, [TT-4M] rows in plan.md.
+
+## D102 — Batched checkpoint batteries + per-merge risk speculation (2026-09-16)
+
+**Decision (Frank, 2026-09-16, discussion ratified live):** individual
+merges land on `make test` + the lane's targeted suites + `make strict`;
+the FULL battery (test/strict/axes/san/lint/mech) runs per BATCH of
+merges — nightly on the checkpoint tip (ubuntubudu when free, per the
+Linux-for-batteries rule) — not per merge. Four binding conditions:
+
+1. **Consumers only ever take batteried pins.** External pin
+   announcements (bench inbox, any future consumer) name only tips a
+   battery has validated. Unbatteried merges are internal main state;
+   nothing downstream inherits a battery-only defect.
+2. **Batch window ≈ one day, not longer.** The deferred-detection cost
+   is cold context, and a day keeps the authoring lane's reasoning
+   warm. Nightly checkpoint, or sooner when a consumer waits on a pin.
+3. **Attribution protocol:** a red batch battery goes to a TRIAGE LANE
+   that isolates the single failing check and replays THAT CHECK across
+   the batch's merge commits (minutes per candidate) — never
+   battery-per-bisect-step.
+4. **Risk-tier escape hatch:** docs/measurement merges need no battery
+   (unchanged); harness/parser merges ride the batch by default; an
+   engine-semantics or emitter-touching merge CAN demand a solo battery
+   at the manager's discretion.
+
+**Risk speculation per merge (Frank's addition, same ruling):** every
+merge commit message carries a short `RISK:` block written AT THE MERGE
+— blast radius, what only the battery could catch, which checks are
+expected to fire if the speculation is wrong — echoed in one journal
+line. Contemporaneous notes so an error caught at the checkpoint (or
+later) is assessed against what the merge REVIEWER believed, not
+against reconstruction. The triage protocol in (3) reads these first.
+
+**Why:** measured — the battery is 7.5h (Linux) / ~13h (Mac) against
+~30-45 min of per-merge suites, and its recent per-run yield has been
+check-infrastructure staleness rather than product miscompiles (the
+per-lane oracle/targeted-suite bar catches those earlier). Precedent
+measured twice: the sixty-fifth session's stacked pipeline (four steps,
+one battery, a quarter of the box time) and 2026-09-16's o29fix battery
+validating two merges in one run.
+
+**Explicitly NOT taken:** splitting mech into targeted-per-batch +
+full-weekly tiers — mech's value is staleness in UNTOUCHED areas, and
+the tier is mechanism ahead of measured need (D77). Revisit-when:
+velocity is still battery-bound after a few weeks of nightly
+checkpoints.
