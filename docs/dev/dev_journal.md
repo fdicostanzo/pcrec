@@ -23429,3 +23429,74 @@ byte-count-manifest reader class.
 as EDT manufactured a 4h phantom stall; earlier the Mac's sleep gap
 did the same in the other direction. Check the box's OWN clock and
 accumulated CPU before calling anything slow or stuck.
+
+## 2026-09-16 (EDT, midnight), sixty-sixth session — bench WOKEN for the [B42] restart (new Fable pcrecdev2, remote control); k57fix MERGED; the validation battery runs ON THE MAC
+
+**[This entry was written while the battery ran and committed at its
+verdict — HEAD stays pinned at 9c3646a3 for mech's whole run.]**
+
+**BENCH WOKEN (Frank's order ~00:05 EDT: "wake them up and coordinate
+linux box usage"; bench had not been awake since their 09-12 [B42]
+parking item — outbox unchanged at 39fedb7, no reply to I-68).** The
+mechanism mattered more than the message and three of Frank's rulings
+arrived mid-flight: (1) the old `claude -n pcrecdev2` process (pts/2,
+up since 09-06) turned out to be the BENCH MANAGER parked post-/clear,
+not the executor my memory had; (2) NEVER `claude -p` — it bills API
+credits, not the subscription (two -p relay attempts were made before
+this ruling; both failed anyway — print mode lacks the cross-session
+tools); (3) after the bootstrap, tmux send-keys to a Claude session is
+BANNED — interprocess (SendMessage) only. What shipped: I-69 to their
+inbox (25c50ff — restart GO, box theirs through 2026-09-16 EOD, K57
+prose caveat, autonomous-window discipline), the old session STOOD
+DOWN by relayed message, a NEW manager launched in tmux `bench` on
+ubuntubudu (`claude -n pcrecdev2 --model claude-fable-5`, auto mode,
+Remote Control connected via /remote-control, started with
+/pcrec-bench-manager + the restart charter). Verified orienting
+(searching, heartbeat cron) before the relay session was closed.
+Cross-machine SendMessage from THIS session still needs Frank to run
+/remote-control here; asked.
+
+**k57fix MERGED (bf3a8b59)** after report review + diff spot-check
+(leg C's refusal placement verified against the region-extent rule):
+the block-scalar dedent refuses a shallower CONTENT line by name
+(class value-shape) in all three legs; leg B's prose_bad latch; the
+prose_dedent flip per r59-R4; new three-leg prose_dedent_body fixture.
+Merge-time manager one-liners: format_design.md K57 status note +
+plan.md [K57 CODA] (9c3646a3). Baseline verified on the merged tree:
+build clean, strict clean, rxtsource 208/0/1, census 210/3936/28943
+unmoved.
+
+**THE BATTERY RUNS ON THE MAC** (Frank's call: bench owns ubuntubudu
+tonight; "it might take longer on the mac but you are otherwise
+blocked"): build/battery_20260916_002230 at pin 9c3646a3, launched
+00:22 EDT, expect ~14h+ on this box (vs 7.5h Linux), watcher
+bcv3qh1ra on the trailer (4h cap, relaunch on cap). Main UNPUSHED past
+cfcedb0f until the verdict. NO commits to main while it runs.
+dialsweep's merge (measurement memo, no battery needed) PARKED until
+the trailer regardless, to keep the tree byte-stable.
+
+**Queue after the verdict**: push; inbox item announcing the k57fix
+merge (K57 caveat lifts); dialsweep accept/merge; the 45s-CPU-budget
+known_issues note; move [DD-13b.W23] to plan_completed.md; D94
+addendum (battriage's manifest reader class); read bench outbox for
+restart findings.
+
+**BATTERY VERDICT (battery_20260916_002230 @ 9c3646a3, 12h46m on the
+Mac): GREEN IN SUBSTANCE.** test rc=2 = the chartered darwin
+inline_capability nm red ALONE (triage lane bat6triage: exhaustive
+enumeration, one failure in the whole log, k57fix surface fully green,
+none of bat4triage's other darwin noise fired this run);
+strict/axes/san/lint rc=0 (san 2h27m — K54's detect_leaks derivation
+holding on darwin); mech rc=0 — 256 rows, unexpected 0, anomalies 0,
+unreached 1 (S121, its documented EXPECTED structural state), 8h0m
+(the matrix's first full darwin run; lexicographic row order, the
+long wall time is the 256-row rebuild-per-row shape on this box, not
+a stall). Main pushed through 9c3646a3. Mid-battery the day also
+produced: O-29 from the bench's L4 loader lane (multi-block
+provenance/variant #section rows dropped — lane o29fix diagnosed the
+S0 blank/comment close path resetting ndepth without RXT_CLOSE_FRAME,
+fix parked on lane/o29fix with fixtures for all three closing sites,
+cases/aux measured immune) and the I-70 WINDOW SWAP (bench ceded
+today's remainder; O-30 granted from tonight's pin item through
+09-17 morning; their build program 398/398 green, first sample waits
+on the o29fix pin).
