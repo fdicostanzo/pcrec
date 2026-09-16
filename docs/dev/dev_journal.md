@@ -23500,3 +23500,22 @@ cases/aux measured immune) and the I-70 WINDOW SWAP (bench ceded
 today's remainder; O-30 granted from tonight's pin item through
 09-17 morning; their build program 398/398 green, first sample waits
 on the o29fix pin).
+
+**O29FIX BATTERY VERDICT (battery_20260916_131617 on ubuntubudu,
+worktrees/validate @ a770139e, 6h16m): FULLY GREEN, rc=0 on all six
+stages** — test rc=0 in 23m (the 45s-CPU-budget cells held on the
+quiet box; the known_issues note on their headroom is still owed),
+mech 256 rows / 0 unexpected / 0 anomalies / S121's expected
+UNREACHED. The pin a770139e validates BOTH the k57fix and o29fix
+merges in one run — the first deliberate instance of D102's batched
+checkpoint shape, ratified by Frank earlier today (D102, 1f676be9:
+nightly batch batteries, consumers take batteried pins only, RISK:
+block per merge commit, triage-lane check-replay attribution).
+o29fix's landing bar included one manager fixture repair (7c2a54f5:
+the lane spelled block names inside the pattern line; names added,
+pins re-derived) and the 64-block live repro (pre-fix 0 rows — a
+trailing blank drops even the LAST block — post-fix 64/64). Main
+pushed; I-71 to bench announces the pin, lifts the K57 caveat, and
+starts their O-30 window (through 09-17 morning). Owed tomorrow:
+dialsweep accept/merge, the 45s-budget known_issues note, the W23
+plan_completed move, the D94 addendum.
