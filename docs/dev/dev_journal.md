@@ -23391,3 +23391,41 @@ Main stays UNPUSHED past 15f36715 until it is green.
    whose FIRST block opens with pattern-esc (leg-C limitation; fix vs
    documented seam).
 4. The battery verdict when the trailer lands; push follows green.
+
+## 2026-09-15 (EDT, evening), sixty-fifth session CLOSE — the Linux validation battery GREEN in substance; W23 PUSHED; I-68 sent; session reset on Frank's order
+
+**THE LINUX BATTERY VERDICT (battery_20260915_152035 on ubuntubudu,
+worktrees/validate @ 30b1f7f2, 7h35m)**: strict/axes/san/lint rc=0;
+test rc=2 = THREE box-margin artifacts (30k-count compiles at ~31-34s
+CPU against a 45s budget on this slower box under battery load —
+DISPOSITIONED by direct A/B against pre-W23 aa983157: within noise,
+one cell FASTER; the budget-headroom finding is next session's
+known_issues note); mech rc=2 = 256 rows, 0 anomalies, ONE unexpected
+— S204 scoring UNREACHED because its SAB_REACH_POP still grepped the
+`tag` token w233 deliberately re-aimed to `no-such-kind` ([MECH-REACH]
+firing as designed; one-line re-point, cd371441). Frank's "run it on
+Linux" call cut the validation from ~14h (Mac) to ~7.5h and validated
+the Linux arm in the same stroke.
+
+**PUSHED**: main aa983157-era origin → cd371441 (the whole W23
+delivery + rulefix + battriage + S204). validate-w23 branch and the
+ubuntubudu worktree cleaned up. **I-68 SENT** (bench inbox, single-file
+commit eba1f64): delivery announcement at the pin, corrections BY
+REFERENCE to format_design §9, three new numbered items (the engine-
+precedence ruling; the 41-check dry-run verdicts; K57 fixed-but-parked).
+The bench restart is unblocked.
+
+**PARKED FOR NEXT SESSION'S MERGE TRAIN**: lane/k57fix (COMPLETE,
+208/0 — the dedent refusal in all three legs + the leg-B streaming
+fall-through latch; merge + battery + the K57 one-line status updates
+in format_design/plan); lane/dialsweep ([OPT-DIAL] §7 size sweep —
+passes committed incrementally, wrap-up ordered at close; merge the
+memo, measurement-only). ALSO OWED next session: the 45s-CPU-budget
+known_issues note; moving the completed [DD-13b.W23] row to
+plan_completed.md verbatim; the D94 addendum for battriage's
+byte-count-manifest reader class.
+
+**Timing-inference lessons (twice today)**: a lane quoting UTC read
+as EDT manufactured a 4h phantom stall; earlier the Mac's sleep gap
+did the same in the other direction. Check the box's OWN clock and
+accumulated CPU before calling anything slow or stuck.
