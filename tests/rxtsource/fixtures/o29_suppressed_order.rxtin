@@ -1,0 +1,26 @@
+# [O-29] pcrec-bench 2026-09-16: the SUPPRESSED-ORDER CONTROL. A `tag`
+# line placed AFTER a block's `provenance` sub-block (rather than before,
+# or absent) was observed by the bench to hide the drop, and this pins
+# why: `tag` is an ordinary CONTENT line, so its own arrival closes the
+# still-open provenance frame through the dedent-pop while loop — the
+# path that has always called `RXT_CLOSE_FRAME` correctly, both before
+# and after the O-29 fix. Nothing about this shape ever needed fixing;
+# it is the control that proves the fix did not change what already
+# worked. Both blocks below end `provenance` ... `tag` ... <blank line>,
+# so the blank line closes nothing (the frame is already closed by the
+# time it arrives).
+pattern p1 a
+provenance
+  source authored
+  retrieved 2026-09-16
+  license MIT
+  fidelity verbatim
+tag t1
+
+pattern p2 b
+provenance
+  source authored
+  retrieved 2026-09-16
+  license MIT
+  fidelity verbatim
+tag t2

@@ -2122,9 +2122,24 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     } while (0)
 
 /* A frame CLOSES when a lesser indent pops it, when a new group replaces
- * its contents, and at end of file — three sites, one helper, because the
+ * its contents, when a BLANK line or a COMMENT closes every attachment
+ * (S0), and at end of file — FOUR sites, one helper, because the
  * scope-ranging constraints have to be answered at every one of them or a
- * record missing a `required` line at the foot of a file goes unreported. */
+ * record missing a `required` line at the foot of a file goes unreported.
+ *
+ * [O-29 FIX, 2026-09-16] The blank/comment site is the one this comment
+ * used to leave out, and the omission was not editorial: the code itself
+ * skipped the macro there, closing every open frame with a raw `ndepth =
+ * 1` reset instead of calling it. S0's own rule ("a BLANK and a COMMENT
+ * each close every open attachment") is silent about WHAT closing an
+ * attachment costs — `frame_constraints` re-checked, and for a
+ * PROVENANCE/VARIANT frame, `close_section_frame` pushing its
+ * `#section` row — and a bare `ndepth = 1` pays neither. A provenance or
+ * variant sub-block that is the last content before a blank line or a
+ * comment (which is how two `pattern` blocks are ordinarily separated)
+ * closed silently, exit 0, its record never pushed — pcrec-bench's O-29.
+ * The fix is not a fifth mechanism: it is this same macro, called in a
+ * loop exactly like the dedent-pop and EOF sites already do. */
 #define RXT_CLOSE_FRAME(F, LINE)                                            \
     do {                                                                    \
         if (!(F)->tree) {                                                   \
@@ -2162,10 +2177,22 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
         RxtLineClass lc = line_class(l, &indent);
 
         /* S0: a WHITESPACE-ONLY line is INERT, a BLANK and a COMMENT each
-         * close every open attachment and return to indent 0. */
+         * close every open attachment and return to indent 0.
+         *
+         * [O-29 FIX] "close every open attachment" is RXT_CLOSE_FRAME's
+         * fourth site (see its own comment above), not a bare depth
+         * reset: every frame between here and the file level is popped
+         * through the SAME macro the dedent-pop while loop and the EOF
+         * loop use, top-down, so a PROVENANCE/VARIANT frame still open
+         * at a blank line or a comment gets its `constraints` checked
+         * and its `#section` row pushed exactly as it would at any
+         * other closing site. */
         if (lc == LC_WS) continue;
         if (lc == LC_BLANK || lc == LC_COMMENT) {
-            ndepth = 1;
+            while (ndepth > 1) {
+                RXT_CLOSE_FRAME(&st[ndepth - 1], line);
+                ndepth--;
+            }
             last_was_content = 0;
             last_row = NULL;
             last_rxtrow = NULL;
