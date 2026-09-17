@@ -1168,3 +1168,22 @@ never edited afterwards.
   the scope mandate; the report carries the two candidate fixes (pass
   raw `bytes` in argv directly, or decode with
   `errors="surrogateescape"`) for the manager to relay.
+
+- `mechfix_report.md` — the mech arm missing-log default (2026-09-17, lane
+  mechfix, sonnet): every suite arm's `[ "${f:-1}" -gt 0 ]` scored a
+  MISSING/unscrapeable suite log as f=1 → a false DETECTED (S249's first
+  run is the incident, flagged by dialimpl as pre-existing across all
+  arms). Fixed at ONE general site — `score_arm`, the single place a
+  scraped count becomes a verdict bit, all 52 sites routed through it
+  (50 uniform + framebuffer/registry variants) — rendering
+  `NAME:NO-LOG(<file>)` or the documented `ERRfail/?pass` cell and
+  scoring `any_unmeasured` → ANOMALY (S155's vocabulary, outranked by a
+  real `any_fail`), never a synthesized count in either direction. Read
+  the report for the failing-direction transcript (the false DETECTED
+  reproduced pre-fix on a temp tree, both anomaly variants shown
+  post-fix), the healthy-path A/B (pre-fix vs post-fix driver
+  byte-identical counts at the same HEAD), and the finding that S249's
+  recorded `8fail/9pass` had already drifted to `11fail/9pass` under the
+  k59rung merge — through both drivers, so the drift is the tree's, not
+  the scorer's. PARKED on `lane/mechfix`; full `make mech` owed to the
+  nightly checkpoint.
