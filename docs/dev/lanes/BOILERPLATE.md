@@ -51,6 +51,10 @@ of your branch point before claiming a red as yours or pre-existing.
 - Kill only by `scripts/safekill PID`; wrap hang/allocation risks in
   `scripts/watchdog -s WALL -m RSS_KB -c CPU -S label -- cmd`.
 - ONE heavy suite at a time on this box; coordinate via the manager.
+- If your task WRITES CODE (anything under `src/`, `cli/`, `lib/`): read
+  docs/dev/coding_guide.md before your first edit — house disciplines, the
+  taught primitives in their current state, emitted-text and anchor-column
+  rules, the altitude rubric, the do-nots.
 - Before writing/altering any CHECK: docs/dev/learnings.md §3.
 - D26: never gold-plate diagnostic wording. D80: caller-observable changes
   carry their docs/spec/ hunk in the same change. D76/D94: emitted-
