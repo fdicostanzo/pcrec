@@ -315,3 +315,116 @@ reads exactly like a four-rung one to anyone quoting the last line.
 
 [TT-12] STEP 1's pairwise execution absorbs the jobs two at a time, so the
 default costs about one run's wall time and the battery about two.
+
+## [OPT-DIAL] — the dial joins the sweep as a FIFTH KIND OF AXIS, plus
+## DIAL-S3, the refusal set as KEYS (2026-09-17)
+
+`--tune=N`'s four non-default positions (`-2`/`-1`/`1`/`2` — see
+`docs/spec/tuning.md` §5, `docs/design/opt_dial_design.md` §6.1/§6.2) join
+the job list the same mechanical way `--engine=`/`--vm-entry-shape=` do:
+`RXTFLAGS` accepts an arbitrary extra flag, so a `--tune=` spelling composes
+before the pattern's own `--` exactly as those two already do. Position 0
+(`balanced`) needs no arm — it is a structural no-op by construction
+(`src/core/tune.c`'s own header), which `tests/codegen/run_tune_dial.sh`
+section 1 asserts; this sweep only has work to do at the four non-default
+positions. `lost_ok` is 0 on all four, filtered by the same `AXES=`
+substring-match convention `--engine`/`--vm-entry-shape` use (`AXES` naming
+anything containing `--tune` runs the whole family; there is no
+per-position filter, matching those two axes' own granularity).
+
+`--tune=2` (`max-speed`) is DECLARED VACUOUS against `--tune=1` (`speed`)
+at the first build — identical on every moving cell of `tuning.md` §5.4's
+policy table, differing only in the `RX_TUNE` stamp string — and the sweep
+SAYS SO, printed before the job runs (S219's precedent: a vacuous arm ships
+its derivation and its become-reachable condition, never hidden). Become-
+reachable: `[CLS-TREE]` landing (λ's frontier point moves 64 → 256 at this
+position) or the speed-notch floor `s` being ruled below 1.03.
+`--tune=-1` (`size`) is explicitly printed as NOT vacuous in the same run —
+both `[ART-SIZE]` ladder parameters move (bar 0.85, threshold 80,000) and
+the ladder's population below 120,000 bytes is real (81 shapes the ladder
+had never run at 120,000, design §6.1b) — so a measured zero-diff result on
+a given corpus slice is reported as a genuine finding, never assumed.
+
+**No `REFUSAL_PATTERN` entry exists for any `--tune=` flag, and that is
+deliberate, not an oversight to fill in later.** `tuning.md` §5.5 states the
+dial's own rule as one sentence — no position may move the refusal set, in
+either direction — which is the opposite promise the K45 `REFUSAL_PATTERN`
+mechanism exists to make for an ordinary axis (a flag nobody ships,
+legitimately exercised in both arms). Adding an entry here would be
+building the K45 exemption for a family whose whole acceptance bar forbids
+what that exemption is for. The consequence: ANY `REFUSED` case under a
+tune position is promoted to a real failure by the existing per-axis
+machinery with no further code — but that per-axis promotion counts, and a
+count is not enough (see DIAL-S3 below).
+
+### DIAL-S3 — the refusal set, compared as KEYS, never a count
+
+Design §6.2/§6.2a's own reason a count cannot stand in for this check: this
+design carries two hazards that move the refusal set in OPPOSITE
+directions — `-fno-anchored-dfa`-shaped patterns can LOSE an answer
+(refuse where they compiled), and a pattern near an emitted-size cap can
+GAIN one (compile where it refused) if a position's growth pushed it over
+a cap. A count-only comparison is the one shape of check that both hazards
+could slip through AT ONCE, because a lost answer here and a gained one
+there can net to zero.
+
+**The check**: for each of the four non-default positions, compare its
+`RXTDUMP`-derived set of `REFUSED` `file:line` keys against position 0's
+own set, in BOTH directions, reported separately:
+
+- **gained-an-answer** — refused at position 0, NOT refused (compiles) at
+  the tune position. A position accepting a WIDER language than balanced.
+- **lost-an-answer** — compiles at position 0, refused at the tune
+  position. A position accepting a NARROWER language than balanced.
+
+Either non-empty is a hard failure, naming the offending keys (capped at
+20 printed, the tree's own convention).
+
+**Mechanism**: reuses the RXTDUMP files the tune axis runs above already
+produce, rather than recompiling a sixth time. `run_one_axis` gained a
+fourth positional parameter, `save_dump` — a path it `cp`s its own RXTDUMP
+to, right after confirming the dump exists and BEFORE that axis's own
+pass/fail verdict is computed (DIAL-S3 asks an independent question and
+must not be starved of a dump merely because the ordinary answer-identity
+check on that same run came back red). Every non-dial axis passes an empty
+`save_dump` and the copy is a no-op for it. The job-list's parallel
+`job_savedump[]` array is populated by EXPLICIT INDEX (`job_savedump[$((...
+- 1))]=...`), not by append, because `job_label`/`job_flags`/`job_lost_ok`
+already have entries from every other axis by the time the dial's own loop
+runs — an append here would misalign against their index. `run_one_axis`'s
+positional-argument shift moved from 3 to 4 in lockstep (see its own header
+comment; the file has shipped one bug from exactly this class of drift
+before, on `"$@"` and the file/dir arguments).
+
+The keyed diff itself is `awk -F'\t' '$5=="REFUSED"{print $1":"$2}' | sort
+-u` per dump, then `comm` on the two sorted sets (`comm -23` for
+gained-an-answer, `comm -13` for lost-an-answer) — the identical
+RXTDUMP-keyed-by-`file:line` mechanism `docs/dev/optdial_size_sweep.md` §0
+used for its own cross-check (K35), reused rather than reinvented.
+
+**The empty-population floor (W23.1's own lesson,
+`docs/dev/lanes/w233_report.md` §5): an arm deriving its population from
+the data it checks must FAIL when that population is empty, or the first
+thing that breaks its extraction turns it green.** Before reading any
+refused-key set, DIAL-S3 asserts each dump it reads (position 0's own
+baseline dump, and each tune position's saved copy) has at least half of
+the baseline's own total line count — the identical floor
+`run_one_axis`'s own "harness-level failure" branch uses, applied here
+independently since DIAL-S3 reads the raw dumps directly rather than
+trusting that axis's own verdict. A dump failing this floor is reported as
+an EXTRACTOR-UNHEALTHY failure, distinct from a real refusal-set move, so a
+reader is never left wondering whether a clean "0 gained, 0 lost" line
+means the dial kept its promise or the extractor read nothing.
+
+**Measured** (small-slice development runs, `tests/base/alternation.rxt`,
+`tests/size/size_term.rxt`, `tests/utf8/axis12_scripts.rxt` — the K45 tower
+and the near-`PCREC_MAX_EMIT_BYTES` `\P{Unknown}` witness respectively):
+0 refused at every one of the five positions on every slice tried, 0
+gained, 0 lost, extractor health floor satisfied on every dump. The
+full-corpus run is `AXES="--tune" bash tests/axes/run_axes.sh` (no
+file/dir arguments) — **owed**, not yet run at delivery time: `make
+test-axes` in full is ~175 s per axis/26 axes on this box
+(`tt12_step0_profile.md`) and this lane developed against slices per its
+own brief rather than contend for the box against concurrently-running
+lanes; run it in the background with a log and poll the tail, never in the
+foreground.
