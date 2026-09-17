@@ -24,6 +24,7 @@ import re, sys, json, collections
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from count_runs import (strip_map, find_calls, split_args, is_string_literal,
                         literal_body, conversions, PREFIX_EXPRS)
+from decompose_652 import expand_macros
 
 
 def unescape_len(body):
@@ -62,7 +63,7 @@ def main():
                 continue
             fmt = literal_body(a1t, a1k)
             convs = conversions(fmt)
-            rest = [a.strip() for a, _ in args[2:]]
+            rest = expand_macros([a.strip() for a, _ in args[2:]])
             nprefix = sum(1 for r in rest if r in PREFIX_EXPRS)
             # source lines the format literal spans
             lit_start = c["argstart"] + a1t.index('"') if '"' in a1t else c["argstart"]
