@@ -264,6 +264,7 @@ going red). `rxt_format.md` gains the directive and column 20.
 | **S250 / S251 through the mech driver** | `bash tests/mech/run_sabotage_matrix.sh S250` (and S251). Both hand-verified (11/5, 14/2); S249 is confirmed DETECTED through the real driver and the other two are the same shape |
 | **DIAL-S5, the ladder's own acceptance at `−2`'s threshold** | `run_size_term.sh` re-run per position. §6.1b's population is 167 patterns against 86 — **81 shapes the ladder has never run on** — and the two things to watch are §7b's zero-inhabitant pin (which may go red for a LEGITIMATE reason: lowering the threshold is precisely an "inhabitant appears" event) and the trial/abort machinery, whose sufficiency argument is structural and unmeasured at this population. `run_tune_dial.sh` §5 asserts the DIRECTION of the population move; it does not run the ladder's own arms |
 | **F2's mechanism is not exercised** | the F2 witness's VM program (~499 KB) is far past even the raised 8,192-byte term, so it pins the CAP but not the mechanism §6.2b names. A witness combining a term-straddling program with a near-cap artifact was not constructed |
+| **`run_inline_capability.sh`** | PRE-EXISTING red, see §5.1 — not this lane's, A/B'd against the branch point |
 | **the end-to-end dial measurement** | nobody has built one artifact at `−2` and at `0` and compared them (design §6.3). Every rate in the table is a per-switch measurement from its own ledger, and the composition of individually correct rates can still be wrong |
 | **`-fno-anchored-dfa`'s owed A/B** | `rx_match` default against `-fno-anchored-dfa` on `opt2`'s own 85 subjects. Cheap, and the single owed measurement most likely to move a cell |
 
@@ -274,6 +275,35 @@ ladder) — no check here would notice either being narrowed, which §6.3 alread
 says.
 
 ---
+
+## 5.1 A PRE-EXISTING RED, A/B'd rather than assumed
+
+`make test-codegen` is **7/8** at this delivery, and the one red is
+**`run_inline_capability.sh`**, [CC-DIFF] STEP 2's capability probe:
+
+```
+FAIL: nm could not read arm_a.o (no rx_search symbol) — no verdict is evidence here
+```
+
+**IT IS NOT THIS LANE'S.** A/B'd the way `BOILERPLATE.md` asks — a scratch
+`git archive` of this branch's own base commit (`5b79927d`), built with the
+same `CC=gcc-16`, running the same script — and it **fails identically
+there**. The probe is red on main.
+
+Two things that make the attribution safe rather than merely convenient. The
+dial cannot reach this at all: position `balanced` is a structural no-op and
+the probe drives `--engine=vm --vm-entry-shape=4` explicitly, so the only
+byte of the artifact this lane moves is the `RX_TUNE` stamp line. And the
+symbol the probe says is missing IS PRESENT — compiling the probe's own
+witness by hand (`\d{1,16}`, same flags, `gcc-16 -O2 -c`) and running `nm`
+finds `_rx_search` along with every sibling entry, so the failure is inside
+the script's own arm rather than in the emitted artifact.
+
+The script's own CLAUDE.md entry says it is red on exactly two things, both
+failures of the PROBE rather than verdicts — the witness ceasing to be
+frameless, and a symbol table that cannot be read — and this is the second.
+Triage belongs to whoever owns that probe; it is named here so the merge
+battery's `test-codegen` red is not attributed to this lane.
 
 ## 6. FINDINGS, collected
 
