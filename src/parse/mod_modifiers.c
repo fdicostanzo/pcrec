@@ -467,7 +467,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
         if (cx->pos >= n || p[cx->pos] != ')') {
             *cx->mods = saved_mods;
             cx->pos = saved_pos;
-            return modport_refuse(want, at, "missing closing ) for group");
+            return modport_refuse(want, at, PCREC_MISSING_CLOSE_PAREN_MSG);
         }
         size_t end = cx->pos + 1;
         *cx->mods = saved_mods;

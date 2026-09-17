@@ -1796,10 +1796,13 @@ know whether a module fired.
 static, so ext.c cannot call them, and `pcrec_parse_info` is the WRONG entry
 point for a nested body — it requires end-of-pattern and ctx_fails on `)`.
 `pcrec_parse_body` parses a body and stops AT its terminator without consuming
-it; the CALLER consumes its own `)` and owns its own unterminated diagnostic,
-which is what keeps "missing closing ) for group" single-homed (the base grammar
-owns it for `(` and `(?:`; a module owns a different message for a different
-construct, so this is not the D24 two-homes shape).
+it; the CALLER consumes its own `)` and owns its own unterminated diagnostic.
+That is ownership, not wording — every parenthesized-construct doorway raises
+the SAME shared message, `PCREC_MISSING_CLOSE_PAREN_MSG` (internal.h; L3-F5,
+2026-09-17 code review, corrected from an earlier claim that modules worded
+this differently, which measurably seven of them do not) — which is not the
+D24 two-homes shape: D24 is about who ATTRIBUTES a construct to a module, and
+each caller still raises its OWN refusal at its OWN offset.
 
 **What PARSE-1 did NOT fix, recorded with its repro.** If `pcrec_ext_group` ever
 returns a node, control still falls through into the body parse and **the node

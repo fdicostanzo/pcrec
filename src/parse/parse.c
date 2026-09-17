@@ -1401,7 +1401,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     ParseMods saved_mods = *cx->mods;
     Ast *body = p_alt(cx);
     if (nextc(cx) != ')')
-        ctx_fail(cx, apos, "missing closing ) for group");
+        ctx_fail(cx, apos, PCREC_MISSING_CLOSE_PAREN_MSG);
     *cx->mods = saved_mods;
     body = pcrec_wrap_bare_anchor(cx, body);
     /* The capture wrap goes OUTSIDE the bare-anchor wrap above, so `(^)`'s
@@ -1899,10 +1899,16 @@ Ast *pcrec_parse(Ctx *cx)
  *   the CALLER consumes its own `)` and raises its own diagnostic for a missing
  *   one, because it alone knows which construct is unterminated
  *
- * That last clause is what keeps "missing closing ) for group" single-homed:
- * the base grammar owns that message for its own two forms (`(` and `(?:`), and
- * a module owns a DIFFERENT message for its own construct. Different
- * constructs, different grammars, so this is not the D24 two-homes shape. */
+ * That last clause is about OWNERSHIP, not wording: the CALLER decides
+ * whether its own construct is unterminated, because it alone knows which
+ * one it is. The message itself is shared rather than different — every
+ * parenthesized-construct doorway raises the identical
+ * PCREC_MISSING_CLOSE_PAREN_MSG (internal.h, beside REFUSE), measured at
+ * the 2026-09-17 code review (L3-F5): seven modules spelled it out by hand,
+ * byte for byte. That is fine and is not the D24 two-homes shape — D24 is
+ * about who ATTRIBUTES a construct to a module, and every one of these
+ * raises its OWN refusal at its OWN offset; they just happen to agree on
+ * what to say. */
 /* [M6.2 wave A] SEED THE SCOPED PARSE STATE (§8.6). This replaces the two
  * `cx.mods = (ModState){...}` assignments src/core/compile.c used to make: the
  * state is now behind an incomplete type, so the only code that CAN build one

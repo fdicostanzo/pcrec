@@ -412,7 +412,7 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * what `ExtResult.row` promises here. */
     if (c2 < 0) {
         *elected = NULL;
-        REFUSE(at, "missing closing ) for group");
+        REFUSE(at, PCREC_MISSING_CLOSE_PAREN_MSG);
     }
 
     /* THE PATTERN ENDS INSIDE A TAILED BUCKET (R20/OPTRUN-1) — R17's
@@ -444,7 +444,7 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * that this fix must not disturb. Measured after: exactly one of the 21
      * truncated `(?X` cells moved. */
     if (avail == 0 && r->diag == RD_FIXED && bucket_has_tail(RK_GROUP, c2))
-        REFUSE(at, "missing closing ) for group");
+        REFUSE(at, PCREC_MISSING_CLOSE_PAREN_MSG);
 
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);

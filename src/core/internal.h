@@ -4308,6 +4308,16 @@ ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want);
         snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
+/* [L3-F5] the base grammar and seven parenthesized-construct doorways/modules
+ * all raise this EXACT refusal, and that is by design: `pcrec_parse_body`
+ * stops at a construct's terminator without consuming it, and the CALLER
+ * consumes its own `)` and raises its own diagnostic because it alone knows
+ * which construct is unterminated (parse.c's comment at its own site has the
+ * full contract). What varies is WHO raises, never the wording — measured,
+ * 2026-09-17 code review: eight sites carried the identical hand-typed
+ * string. One #define stops them drifting; parse.c:1404's own contract
+ * comment used to (wrongly) call this a two-message situation. */
+#define PCREC_MISSING_CLOSE_PAREN_MSG "missing closing ) for group"
 /* THE ENABLED-BUT-UNBUILT REFUSAL, promoted out of ext.c at [M6.6.2] when a
  * SECOND consumer arrived (src/parse/mod_lookaround.c's wave B+C tail
  * decline) — `pcrec_ext_gate`'s move at MOD-0.4, one construct later, and for

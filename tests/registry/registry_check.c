@@ -1479,7 +1479,7 @@ static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
              * pins `(?P` by hand, and PC-3's tail sweep now generates
              * truncated completions against libpcre2. */
             if (selpos + 1 == plen && sweep_bucket_has_tail(k, c))
-                want = "missing closing ) for group";
+                want = PCREC_MISSING_CLOSE_PAREN_MSG;
             if (!rejected || strcmp(got, want) != 0) {
                 bad("%s: byte 0x%02x ('%c') — the row promises \"%s\", parser %s",
                     what, c, c >= 32 && c < 127 ? c : '?', want,

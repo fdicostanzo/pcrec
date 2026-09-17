@@ -87,7 +87,7 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
     if (cx->pos >= n || p[cx->pos] != ')') {
         *cx->mods = saved_mods;
         cx->pos = saved_pos;
-        REFUSE(at, "missing closing ) for group");
+        REFUSE(at, PCREC_MISSING_CLOSE_PAREN_MSG);
     }
     size_t end = cx->pos + 1;
     *cx->mods = saved_mods;
