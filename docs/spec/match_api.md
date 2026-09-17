@@ -3197,9 +3197,20 @@ itself; nothing in `pcrec_compile()`'s signature enforces that.
 ### 8.0 A complete compile, start to finish
 
 This is the whole calling sequence, and it compiles and runs exactly as
-written (verified: built with `gcc -Wall -Wextra -Werror` against
-`lib/pcrec.h` and `libpcrec.a`, run, and its `matcher.c`/`matcher.h`
-output compiled in turn):
+written (verified: built with `gcc -Wall -Wextra -Werror -Wl,-dead_strip`
+against `lib/pcrec.h` and `libpcrec.a`, run, and its `matcher.c`/`matcher.h`
+output compiled in turn).
+
+**Link with `-Wl,-dead_strip` (ld64) or `-Wl,--gc-sections` (GNU ld).**
+`libpcrec.a` is a static archive with `.rxt`-source-file support (the
+`--source` composer) statically reachable from the ordinary compile path;
+a consumer that never calls `pcrec_compile_defs`/`pcrec_rxt_source_parse`
+pulls those object files in anyway unless the linker is told to drop
+unreachable sections. MEASURED (2026-09-17 code review, L6 §1.3): this one
+flag, with no source change anywhere, recovers 43,968 of the 44,448 bytes
+those objects add to a minimal consumer's `__text` — leaving 480 bytes and
+two symbols the composer's own early-return path still reaches. Omitting
+it is not wrong, only larger than it needs to be:
 
 ```c
 #include <stdio.h>
