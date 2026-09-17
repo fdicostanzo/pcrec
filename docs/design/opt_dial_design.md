@@ -1979,7 +1979,7 @@ disclosed dependencies (§3.5a's declared-capacity floor, §3.5b's 167-vs-86
 population and §6.1b's ladder arm) are the table's stated price, not a
 separate ask.
 
-**3 — the D93 precedence ruling (§1.2), on arguments 2-3 only (S2, unchanged by D103).**
+**3 — the D93 precedence ruling (§1.2) — RULED (Frank, 2026-09-16, sixty-sixth session; decisions.md D93 addendum 2026-09-16): the FILE WINS, with the loud non-fatal conflict diagnostic; no `--force-tune`; the `--engine` exception stays unique.** The recommendation below was adopted as written and stays as the record of the argument.
 Does an explicit CLI `--tune` beat a target's `tune` row?
 **Recommendation: NO — the general D93 rule stands, the file wins, with a
 loud non-fatal conflict diagnostic.** Two arguments, and revision 1's third
@@ -1993,7 +1993,7 @@ revisit-when names the right shape (an explicit loud override flag, never a
 silent precedence flip)**, and that ruling is also the trigger for §1.3's
 general explicit-set-provenance form.
 
-**4 — the force-pair / CLI-spelling question (B4, unchanged by D103).**
+**4 — the force-pair / CLI-spelling question (B4) — RULED (Frank, 2026-09-16): option (3) now, option (1) when someone needs a flag — the ruled property narrows in the spec to "where a spelling exists", force twins arrive on demand.** The option analysis below stays as the record.
 "Explicit flags beat the dial" is RULED and is unimplementable on **five of
 the seven moving cells** — `-fno-premul-table`, `-fno-anchored-dfa` and
 `-fno-tiered-entry` are deny-only with no force twin, and the `[ART-SIZE]`
@@ -2006,7 +2006,7 @@ the spec to "where a spelling exists". **Recommendation: (3) now, (1) when
 someone needs one** — the dial should be honest about what it does rather
 than grow five flags nobody has asked for (D77).
 
-**5 — does the dial's landing demand a SOLO battery (§6.1, unchanged by D103)?**
+**5 — the solo battery — RULED (Frank, 2026-09-16): YES, the dial's implementation merge gets its own validation battery (D102's escape hatch), not the nightly batch.**
 D102's risk-tier escape hatch lets the manager demand one for an
 emitter-touching merge. This carries an `abi` event plus four new
 answer-identity axes. **Recommendation: yes, solo** — and this is the
