@@ -7204,3 +7204,67 @@ mechanism-adoption change mixes two risk classes.
 **Revisit when:** wave 1's table-row primitive lands (the gate); the
 scope question is answered; `--emit-dot` / enriched-trace remain
 separately not-started within the row.
+
+## D106 ADDENDUM — --emit-ir scope refined (Frank, 2026-09-17, sixty-seventh session): machine-first output; the completeness/DFA/IR-as-back-end direction
+
+Frank's five follow-ups at the DD-8 opening, recorded:
+
+1. **MACHINE-FIRST OUTPUT, RULED.** The adopted `--emit-ir` renders as
+   the table-contract TSV (every section, including the PROGRAM body, is
+   a `#section` with its own columns — `label|op|args|target|note`); a
+   wrapper script pretty-prints for humans if wanted. One rendering, one
+   source of truth (the `VEvent` walk), no drift. Settles the earlier
+   a-vs-(a+b) scope question: the body fits columns, so NO separate
+   "sibling line-oriented contract" is needed — it is all option (a).
+
+2. **COMPLETENESS — measured PARTIAL.** Today's listing is complete for
+   CONTROL STRUCTURE (every label, op, branch target, `PUSH resume`
+   label, and the CHOICE POINTS preference order — the full backtracker
+   logic) but LOSSY on operands: a class scan (`\w+`) shows its rung role
+   ("span-loop cursor {1,}, POSSESSIFIED") and NOT the class membership;
+   MRL clamp arithmetic, encoding-seam specifics and exact budgets are
+   summarized, not serialized. So a reader can reconstruct the SHAPE and
+   backtracking behavior but cannot regenerate the matcher. It is a
+   debugging listing, not a serialization — and making it LOSSLESS is a
+   separable design choice AND the precondition for item 5.
+
+3. **PREFILTER DFA — mentioned, not described; could be.** A hybrid's
+   inlined prefilter DFA appears as one header line + the PRUNING ceiling
+   line; no states, tables or scan structure. It could be added cheaply:
+   the prefilter is emitted by the shared `pcrec_emit_dfa_engine` (full
+   DFA in hand), and `emit_dfa.c` ALREADY builds a human-readable state
+   legend (`emit_state_legend`, the D105 function) as C comments.
+
+4. **DFA OUTPUT — future, well-motivated.** `--emit-ir` REFUSES on a
+   pure-DFA artifact today (VM-only). A DFA section (states, transition
+   tables, scan edges, accept states, the legend) is the "automaton
+   picture" §10 said DD-8's NAME suggests; its content largely EXISTS
+   (D105's legend, the tables). Items 3 and 4 are one future section — a
+   DFA listing covering both the hybrid prefilter and pure-DFA artifacts.
+   `--emit-dot` is its graphical sibling (still not-started).
+
+5. **IR-AS-CONSUMED-BACK-END (gcc-style) — a named DIRECTION, not
+   chartered (D77).** Frank's question: divide workload by emitting a
+   real IR that a SEPARATE C back-end consumes, the way gcc stages
+   front-end -> GIMPLE -> RTL -> back-end. Assessment: pcrec is already
+   staged (parse->NFA->DFA->opt->gen) and already carries back-end-shaped
+   seams (the D58 encoding seam; the lens-10 emission kit factors text
+   production into primitives — the back-end's text layer). But today
+   `gen/` walks the DFA/AST and emits C in ONE pass; `--emit-ir` is a
+   BYPRODUCT (the VEvent stream), not a consumed input. Making it a real
+   IR INVERTS the derive-from-the-walk rule (the IR becomes the source of
+   truth; C is derived from it) and splits `gen/` into "AST/DFA -> IR" and
+   "IR -> C". Benefits: testability (a back-end checked against IR
+   fixtures; the IR is the checkable contract the byte-identity gates
+   struggle to be), retargeting (IR -> Rust/LLVM/bytecode), independent
+   front/back-end development. Cost/tension: pcrec's whole value is
+   per-pattern SPECIALIZATION (the axes, the rungs — hundreds of
+   pattern-specific form decisions), so the IR must carry ALL of them or
+   the back-end loses the speed that justifies the project — which is
+   exactly item 2's completeness requirement. THE PATH: items 2->3->4 ARE
+   item 5's first three steps — a lossless VM IR (2), extended over the
+   DFA (3,4), IS the consumable contract (5) needs; each step is
+   independently useful as better debugging. Build under a measured
+   trigger (a second back-end target, or the workload-division actually
+   needed), never speculatively. Recorded as direction; a design note is
+   its charter when the trigger appears.
