@@ -1116,3 +1116,22 @@ never edited afterwards.
   drops the probe commit at merge.
 
 - `dfam12_probe_m2.patch` — the [PROBE-M2] measurement instrumentation (gated on PCREC_PROBE_M2, no-op by default), DROPPED at merge per the OPT5M2-PROBE precedent; durable copy kept because studies/lim2_m2/ links its extern counters (that directory's CLAUDE.md explains). Re-apply it to rebuild the M2 harness.
+
+- `mojfix_report.md` — O-31 finding F4 triage (2026-09-17, lane mojfix,
+  sonnet): **NOT A PCREC DEFECT, no `src`/`tests`/`docs/spec` change.**
+  pcrec compiles and matches raw high-byte (>= 0x80) pattern-text
+  literals correctly on every engine/capture axis, verified both on
+  darwin/arm64 (default `char` unsigned, and again forced
+  `-fsigned-char`) and as a light probe against the bench's own PINNED
+  binary at the exact commit (a770139e) on the real x86_64 reference
+  box. The bench's own `testees/pcrec/adapter.py:2961`
+  (`pattern.decode("latin-1")` feeding a Python `str` into
+  `subprocess.run`'s argv) corrupts every pattern byte >= 0x80 into a
+  2-byte UTF-8 sequence before pcrec ever sees it — `os.fsencode`'s
+  `surrogateescape` re-encode does not invert a plain `latin-1` decode,
+  only a `surrogateescape` one — confirmed by direct `/proc/self/cmdline`
+  measurement and by showing pcrec answers CORRECTLY on the exact
+  (corrupted) bytes it was actually handed. Read-only to pcrec-bench per
+  the scope mandate; the report carries the two candidate fixes (pass
+  raw `bytes` in argv directly, or decode with
+  `errors="surrogateescape"`) for the manager to relay.
