@@ -324,3 +324,120 @@ battery's `test-codegen` red is not attributed to this lane.
    from the dial, for two independent reasons: a HIGHER bar is a WEAKER gate,
    so `−1`/`−2` move away from a decline; and cap-rescue additionally needs a
    fixed emit-size cap to force it, which no dial position touches.
+
+---
+
+## dialval: owed validation results
+
+Lane `dialval` (sonnet), worktree `worktrees/dialimpl`, branch `lane/dialimpl`,
+run against the tip this report already describes (`5a192924`). Ran the three
+mechanical items §5 left OWED. All three are clean; the axes sweep runs
+roughly 5× longer than this report's own estimate, and that estimate is
+corrected below rather than quietly left wrong for the next reader.
+
+### 1. The full tune axes sweep
+
+`AXES="--tune" bash tests/axes/run_axes.sh`, log `/tmp/dialval_logs/axes_tune_sweep.log`
+(not committed — session-temporary, per the scope mandate; quoted here in
+full).
+
+**GREEN, no K59 divergence.** All four non-default positions (`--tune=-2`,
+`-1`, `1`, `2`) are answer-identical to `balanced` over the whole corpus
+(24,250 cases each; `agree=24250`, `mismatches=0`, `lost=0`, `gained=0`).
+**DIAL-S3** — the refusal-set keys check — reports **0 refused at every one
+of the five positions**, hence 0 gained/0 lost in both directions at all
+four non-default positions:
+
+```
+axes: DIAL-S3 — the dial's refusal set, compared as KEYS across all five positions...
+  position 0 (balanced):    24250 total dump lines,        0 refused
+  --tune=-2 (min-size):    24250 total dump lines,        0 refused; vs position 0:        0 gained-an-answer,        0 lost-an-answer
+  --tune=-1 (size):    24250 total dump lines,        0 refused; vs position 0:        0 gained-an-answer,        0 lost-an-answer
+  --tune=1 (speed):    24250 total dump lines,        0 refused; vs position 0:        0 gained-an-answer,        0 lost-an-answer
+  --tune=2 (max-speed):    24250 total dump lines,        0 refused; vs position 0:        0 gained-an-answer,        0 lost-an-answer
+  OK — refusal set identical (as file:line keys, both directions) across all five positions; extractor health asserted independently, not assumed
+```
+
+**This is the expected shape, not a gap in the K59 check.** §1 already pins
+K59's population at ZERO on the shipped corpus — the witness
+(`[^\p{C}\p{M}\p{P}]` under `-e utf8 --features unicode-props`) is
+constructed, not a corpus member, so nothing in the real 24,250-case
+population reaches the hazard. A red DIAL-S3 row would have been the K59
+signature (`--tune=-2 ... now COMPILES N pattern(s) that REFUSE at position
+0`); none fired, on any of the four positions, in either direction. The PC-4
+oracle cross-check (`-fno-premul-table` vs plain, both against live
+libpcre2) is also 0-failure.
+
+**The estimate correction.** The report's §OWED called this "~12 min"; the
+real run is **3598s wall (~60 min)**, not 12: the baseline pass alone (full
+209-file corpus, PROCS=10) took 850s, and each of the four `--tune=` axes —
+paired two-at-a-time at PROCS=5 once the baseline freed capacity — took
+1328-1330s apiece. Whatever "~12 min" was measured against (a slice, an
+idle box, a different PROCS), it is not this box's full-corpus number; a
+future re-run should budget ~60 min, not 12.
+
+### 2. S250 and S251 through the real mech driver
+
+`bash tests/mech/run_sabotage_matrix.sh S250` and `...S251`, each against
+the committed HEAD (mech always builds from `git archive HEAD`, never the
+dirty working tree — the run's own banner says so).
+
+Both reproduce the report's hand-verified counts exactly and score
+**DETECTED**:
+
+| id | mech driver output | report's hand-verified count | match |
+|---|---|---|---|
+| S250 (wrong deny bit) | `reach:ok(3/3)`, `tunedial:5fail/11pass` | 11/5 (pass/fail) | yes — 11 pass, 5 fail |
+| S251 (ladder threshold dropped) | `reach:ok(2/2)`, `tunedial:2fail/14pass` | 14/2 (pass/fail) | yes — 14 pass, 2 fail |
+
+`mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0,
+anomalies: 0, oracle-skipped: 0)` on both runs. Together with S249's
+already-confirmed `tunedial:8fail/9pass` DETECTED, all three sabotage rows
+in §3's failing-direction table are now verified through the real driver,
+not just the hand plant.
+
+### 3. DIAL-S5 — the ladder's own acceptance at `−2`'s threshold
+
+Built a one-line wrapper (`exec build/pcrec --tune=-2 "$@"`, verified live to
+stamp `RX_TUNE "min-size"`) and re-ran the whole of `tests/codegen/
+run_size_term.sh` with `PCREC=` that wrapper, over the whole corpus (same
+mechanism §5's own wrapper technique in `run_axes.sh` uses for
+`-fno-premul-table`'s PC-4 cross-check).
+
+**31/31 checks passed, 0 failed.** In particular, the two populations §OWED
+named to watch:
+
+- **§6, the natural cap-rescue population**: **still 0** — `"natural
+  cap-rescue population is 0 (the ceiling holds; the branch is reachable
+  only through a lowered-cap build)"`.
+- **§7b, the declared-capacity-floor population — the pin predicted to
+  possibly go red**: **did NOT go red, stayed at 0** — `"natural
+  capacity-floor population is 0 (no corpus pattern has BOTH the counter
+  rung and a K-sensitive declared capacity)"`.
+
+**Why §7b held at 0 rather than showing the predicted legitimate red, and
+this is a real finding about the check's own reach, not a contradiction of
+§3.5b's math.** §7b's `natcap` loop force-compiles every corpus pattern at
+`--unroll=8` and `--unroll=1` explicitly on the CLI — it does not let the
+dial's threshold decide whether the ladder runs at all; it directly tests
+every pattern for the AND of two structural properties (the counter rung
+present, and a K-sensitive declared capacity). Design §3.5b's own measurement
+is that **none of the corpus's 69 K-sensitive-capacity patterns has the
+counter rung**, a fact stated over the WHOLE corpus and independent of any
+threshold — so there is no pattern lowering the threshold to 40,000 could
+ever hand this specific gate, regardless of how many more patterns the
+ladder now evaluates. The 167-vs-86 population growth §6.1b describes is real
+(more patterns reach `st_phase == ST_FINAL`, i.e. leave `UNROLL_K_WHY`
+`"default"`), but it is orthogonal to §7b's AND-gate population, which this
+run measured directly rather than assumed. This lane did not separately
+recount the 167-vs-86 figure by instrumenting `UNROLL_K_WHY` across the
+corpus at both thresholds — a probe for that was drafted and launched, then
+killed immediately on noticing it would run concurrently with the axes
+sweep (one-heavy-suite-at-a-time); §OWED's own `run_size_term.sh` re-run is
+what this item asked for and it is done, but the raw 167/86 count itself
+remains an unmeasured design-doc claim rather than one this delivery
+re-derived. Flagging so nobody assumes it was.
+
+**Verdict: DIAL-S5 is clean at `−2`'s threshold — no defect, and the one pin
+predicted to possibly move did not move, for a structural reason now on
+record.**
