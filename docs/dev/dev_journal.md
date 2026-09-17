@@ -23678,3 +23678,38 @@ tour of the report, then the refactor waves (U nets first). wake.md carries the
 full merge order and the standing "never merge to main while a battery is in
 flight" note (the battery box is separate; Mac-local ruling commits did not
 touch it).
+
+## 2026-09-17 (sixty-eighth session) — battery GREEN; the review close-out chain executed
+
+**The dial+K59 solo battery finished green**: `battery_20260917_102334`
+(ubuntubudu, cf0962e3, 10:23–16:53 EDT) — strict/axes/san/lint/mech all
+rc=0; **mech 261 rows: unexpected 0, anomalies 0, undetected 10 (documented),
+unreached 1 (S121, expected)**. The test stage's rc=2 was btriage's
+already-triaged stale test-side pins; the pin never slipped.
+
+**Close-out chain (wake.md's), all steps done:**
+1. All 15 parked review branches merged to main, one `git merge` per
+   command: btriage (the pin fixes), revtools, lens{1dup,2sep,3cfg,4clar,
+   5unit,6dep,8err,9pub,10kit,11alt}, emitpass2, collate, codeguide. Six
+   add/add conflicts, all on `docs/dev/reviews/lens_reports/CLAUDE.md`
+   (each lane wrote its own preamble + row) — resolved by union: one
+   preamble, every row kept. Post-merge the manager added the missing
+   index rows for lens2/3/4/9 + lens10_evidence (their lanes predated the
+   index convention) and repaired a self-inflicted lost lead line on the
+   lens5 row (b2082111).
+2. Validation: `make -j4` + `make strict` OK; the two btriage-touched
+   suites green (rxtsource 211 files / 3,938 blocks INV-COMPAT PASS;
+   resource 25/25, darwin skip standing).
+3. **main PUSHED** (1486e2b8..b2082111) — the two-machine-split backlog
+   cleared.
+4. Remote cleanup: no stragglers by /proc cwd scan; `worktrees/validate`
+   removed on ubuntubudu; the box's main ff-pulled to b2082111.
+5. Local cleanup: all 15 review worktrees removed (lsof cwd check clean);
+   lane branches kept per precedent.
+6. **I-73 sent to the bench** (single-file [inbox] commit 8da6878, no
+   push): checkpoint pin cf0962e3 (successor b2082111), battery green
+   with the mech counts, dial+K59+F1-fix carried, review internal-only.
+
+**Next:** Frank's guided tour of `docs/dev/reviews/2026-09-17-code-review.md`,
+then the refactor waves (U first) — neither starts unprompted. FIX-NOW pile
+can batch after the tour.
