@@ -797,7 +797,29 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # note here anticipated: a pin must name a commit reachable after the merge,
 # and the lane deliberately left it unset for the manager to set — see
 # docs/dev/lanes/portfix_report.md).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6d15f19a}"
+#
+# [OPT-DIAL], 2026-09-16 — abi 25 -> 26 (or later if a concurrent lane's
+# event serializes ahead; the merging session renumbers, D94): THE
+# SPEED-VS-SIZE DIAL. Every artifact of both engines gains exactly ONE line
+# in the shared prologue, `#define <PREFIX>_TUNE "<token>"` — a closed
+# five-token selection stamp, 23-28 bytes by token — so (B) re-pins on the
+# WHOLE population, `byte` and `utf8`, DFA and VM alike.
+#
+# **(A) IS UNTOUCHED, for the plainest reason any row in this list has
+# given.** The stamp line sits in the shared prologue, above `goto
+# <p>_L0;`, so `prog_region()` reads neither side of it. Nothing else moves
+# at the DEFAULT dial position `balanced` either: every cell of that row in
+# `src/core/tune.c` is the em-dash sentinel and its deny mask is empty, so a
+# `balanced` build cannot differ from a build with no `--tune` flag at all
+# on any axis this file or any other checks — a non-default `--tune`
+# position is a separate population this corpus never reaches (this script
+# passes no `--tune` flag anywhere), so a red here from this change would
+# mean the DEFAULT position itself moved, which is the finding, not a
+# re-pin exemption.
+#
+# THE PIN IS THIS LANE'S OWN LAST src COMMIT ([ENG-ISL]'s precedent,
+# restated above); the manager re-pins to the MERGE when it lands.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-94ef3836}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
