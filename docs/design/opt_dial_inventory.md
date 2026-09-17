@@ -6,6 +6,28 @@ relative desire of speed vs size. Say there was a dial of N which indicated
 max speed vs min size then these switches could be set as a group depending
 on the dial setting."*
 
+> **REVISION 2 — 2026-09-16, lane `dialdesign`, at `[OPT-DIAL]` STEP 1.**
+> `docs/dev/optdial_size_sweep.md` (lane `dialsweep`, 2026-09-15) ran the
+> one sweep §7 item 2 names, and §7 item 3 with it. **Four switches move
+> out of UNMEASURED into the policy table; one moves from
+> pathological-population-only to corpus-general and turns out to have the
+> LARGEST reach in the inventory; two stay UNMEASURED with only their size
+> half discharged.** Two further axes have landed in
+> `docs/spec/tuning.md` since STEP 0 was written and were never
+> inventoried at all (§2.24, §2.25) — so the headline's own denominator
+> moved from twenty-one to twenty-three. Every §2 entry the sweep touches
+> carries its own **SIZE SWEEP** block; §3 is rewritten; §7's items 2 and
+> 3 are marked DONE. **House style applies: nothing below is silently
+> rewritten.** Where the sweep contradicts a STEP 0 verdict the original
+> sentence stays and the correction sits under it, because a reader who
+> remembers the first version has to be able to see what moved.
+>
+> The relative (percentage) size figures this revision cites are NOT in
+> the sweep memo, which reports absolute byte deltas and three summary
+> ratio columns. They were recomputed by this lane directly from the
+> sweep's own committed per-pattern tables, which is why every one of
+> them carries the command that reproduces it (§3.0).
+
 **This document does not build the dial.** It is D77 in its purest form: the
 dial's whole premise is that a switch group can be set from MEASURED trade-offs,
 so STEP 0 is the audit of which switches actually have one. The finding up
@@ -23,6 +45,33 @@ The four are `--vm-entry-shape` (this wave's own, `[CC-DIFF]` STEP 2),
 and `-fno-splice-calls` are measured on both axes but trade TIME FOR TIME
 depending on the workload, which is a different kind of switch and is argued
 in §4.
+
+**REVISION 2's count, against the same question.** The sweep changes the
+answer and the denominator at once:
+
+> **Of pcrec's TWENTY-THREE generation-time axes, TEN now carry a measured
+> two-axis exchange rate. SIX of the ten produce a policy row that is
+> actually different at different dial positions** — `--vm-entry-shape`,
+> `--unroll=K`, `-fno-premul-table`, and the sweep's three graduates
+> `-fno-tiered-entry`, `-fno-offset-skip`, `-fno-anchored-dfa` — **and the
+> other four are measured and DELIBERATELY FLAT** (`--engine`,
+> `-fno-scan-edge`, `-fno-altcls-merge`, `-fno-altcls-factor`: a row that
+> reads the same in every column is a measurement result, not an omission).
+> Two remain measured PURE WINS. **Two are STRUCTURALLY excluded for
+> reasons no measurement can lift** (§2.24, §2.25) — a distinction STEP 0
+> had no bucket for. The rest stay off, and only FOUR of them are off for
+> the original reason that a number is missing.
+
+Two arithmetic notes, because an adversarial reader will check them.
+**(i)** the STEP 0 headline above says "the remaining fifteen are UNMEASURED
+on at least one axis" while §3's own tally of those same fifteen counts two
+measured PURE WINS and three fully-measured non-rungs among them — the
+blockquote's wording was loose where §3's list was exact, and this revision
+does not repeat it. **(ii)** twenty-one became twenty-three by axis
+ARRIVALS, not by recount: `-fno-cls-fold` (bit 24) and
+`-fno-startpos-guard` (bit 25) landed in `docs/spec/tuning.md` after
+2026-09-04. Eighteen bit-axes plus three value axes was twenty-one; twenty
+bit-axes plus three is twenty-three.
 
 ---
 
@@ -72,6 +121,20 @@ effect is which VM strategy bit fires; the cited example moves `frame_capacity`
 **Bucket: UNMEASURED.** Admitting it needs an artifact-size and throughput A/B
 over the possessified population, which nothing has run.
 
+**SIZE SWEEP (2026-09-15) — HALF DISCHARGED, BUCKET UNCHANGED.** The size
+half of that A/B has now run (`docs/dev/optdial_size_sweep.md` §2.1) and the
+throughput half has not, so **this entry stays UNMEASURED** and the sweep's
+own §3 says so in those words. What the size half found: 236 movers (6.79%
+reach), 202 growing and 34 shrinking under denial, median **+1.69% of the
+artifact**, extremes −14.00% to +1.42% (this lane's recomputation, §3.0).
+The lean is that possessify SAVES bytes when on, weakly — and note the
+asymmetry the memo's absolute numbers hide: the biggest single grower is
++4,056 B but the biggest PROPORTIONAL move is a 14% SHRINK under denial,
+so the two tails are not the same patterns. **The named missing
+measurement, unchanged and now the only one:** throughput, default against
+`-fno-possessify`, over the possessified population.
+`tests/possessify/`'s own differential driver already compiles both sides.
+
 ### 2.2 `-fno-revdet` (bit 5)
 
 **Trades:** cursor-rung strategy only; no size or time number exists.
@@ -80,6 +143,17 @@ over the possessified population, which nothing has run.
 diverged, 395,757 cells. Identity, not exchange.
 
 **Bucket: UNMEASURED.** Same A/B as §2.1.
+
+**SIZE SWEEP (2026-09-15) — HALF DISCHARGED, BUCKET UNCHANGED.**
+`docs/dev/optdial_size_sweep.md` §2.2: **53 movers, the smallest reach of
+the seven swept (1.52%)**, and genuinely two-directional — 24 grow, 29
+shrink, median **+0.51%** (this lane's recomputation, §3.0), spread −27.79%
+to +11.65%. This is not a weak lean like possessify's; it is a switch whose
+size effect points both ways on a population of fifty-three. **On the whole
+corpus it is a wash to four decimal places: −1,543 bytes of 115,198,573,
+i.e. −0.001%.** Throughput is still entirely unmeasured; the bucket stays
+UNMEASURED and the named missing measurement is §2.1's, over
+`tests/rungselect/`'s population.
 
 ### 2.3 `-fno-counter` (bit 6)
 
@@ -136,6 +210,51 @@ mean.
 emitted-bytes delta over the same corpus. If it lands where the shape of the
 mechanism predicts, this is a pure win and leaves the dial rather than joining
 it.
+
+**SIZE SWEEP (2026-09-15) — MEASURED, AND THE "LIKELY A PURE WIN"
+HYPOTHESIS IS CONFIRMED IN BULK AND REFUTED AT THE EDGE.** Both flags were
+swept separately (`docs/dev/optdial_size_sweep.md` §2.6, §2.7); the TIME
+number remains the combined `-7.61%` for denying both together, which is
+why neither can reach a clean per-flag verdict no matter what the size axis
+says.
+
+| | `-fno-altcls-merge` | `-fno-altcls-factor` |
+|---|---|---|
+| movers / reach | 101 / 2.90% | 54 / 1.55% |
+| grow : shrink under denial | 84 : 17 | **52 : 2** |
+| median size change | +2.40% | +0.56% |
+| range | −23.39% … +16.75% | −2.89% … +3.78% |
+| whole-corpus cost of denial | +42,833 B (+0.037%) | +10,008 B (+0.009%) |
+
+(Percentages recomputed by this lane, §3.0; the memo's own absolute figures
+are `−4,490`/`+3,114` and `−900`/`+910` bytes.) On the bulk of each reached
+population the mechanism does what it was predicted to do — most artifacts
+are smaller with it on, and denial also costs throughput. **What blocks the
+PURE WIN verdict is a single counter-example each**, and §1's definition is
+a universal over the reached population, which one counter-example breaks:
+`tests/base/k18_arm_order.rxt:256` is **23.4% SMALLER** with merge denied,
+and `tests/base/d27_bodies.rxt:100` is 2.9% smaller with factor denied.
+
+**Two consequences, and the second is the one that keeps these rows OUT of
+the dial's moving part.** (a) The verdict is MEASURED TRADE, not PURE WIN —
+they stay in the inventory rather than leaving it. (b) But a trade whose
+size lean is 0.037% of the corpus and whose counter-examples are
+proportionally larger than its median gain is not a trade a DIAL POSITION
+should express: a min-size setting that denied these would make the typical
+artifact BIGGER and one known artifact 16.75% bigger, to save 23.4% on
+another. §3 therefore gives both a FLAT row — `allow` at every position —
+with the counter-examples carried as named caveats. This is the treatment
+`docs/dev/optdial_size_sweep.md` §4 itself recommends, and it is the same
+warning label `--unroll=K`'s own non-monotone byte curve already carries.
+
+**`-fno-altcls-merge` also loses one pattern to a refusal** —
+`tests/size/size_term.rxt:32`, the nested-repeat tower, above the
+131,072-node emitted cap without the merge. That is `tests/axes/
+run_axes.sh`'s own already-documented K45 `REFUSAL_PATTERN` entry and not a
+defect the sweep found; it matters here because it means this flag is not
+answer-identity-preserving in the trivial sense — see §2.25 and the STEP 1
+design note's acceptance section for why a REFUSAL-moving flag is a dial
+hazard of its own kind.
 
 ### 2.8 `-fno-atomic-discharge` (bit 12)
 
@@ -213,6 +332,33 @@ function costs code bytes nobody has counted. It is very likely a near-pure
 win. Admitting it needs the `.text` delta of a tiered against a single-tier
 build on the tiered population.
 
+**SIZE SWEEP (2026-09-15) — MEASURED, AND IT IS THE CLEANEST TWO-AXIS
+RESULT IN THE WHOLE INVENTORY. THIS ENTRY GRADUATES TO THE DIAL.** The
+"very likely a near-pure win" guess above is the one the sweep overturns:
+the tier costs real, countable, monotone bytes.
+
+`docs/dev/optdial_size_sweep.md` §2.12: **330 movers (9.49% reach), and all
+330 move the same way** — every one SHRINKS under denial, by a near-fixed
+−1,953 B (a handful at −1,957). There is no grower anywhere in the
+population. In proportional terms (this lane's recomputation, §3.0) that is
+a median **7.48%** of the artifact, p10 6.25% / p90 8.76%, never above
+9.47%; **312 of the 330 save at least 5% and not one saves 10%**, which is
+the tightest distribution any switch here produces. Whole-corpus, the tier
+costs **644,522 B, 0.559% of all emitted bytes**.
+
+**The exchange rate, stated once, both axes from their own sources:**
+≈1,953 bytes (≈7.5% of the artifact) buys the ~5× per-call entry latency
+`two_tier_entry.md` §1 measures (233.8 ns → 46.2 ns) on the ~9.5% of the
+corpus whose stamped default storage will not fit one 4 KB page. Nothing
+else in this inventory has both halves that clean.
+
+**One reading note the sweep itself flags and this entry repeats**, because
+it is a check-design lesson and not a number: an analysis script that
+always prints a biggest-grower/biggest-shrinker pair MISLABELS an
+all-one-sign population — this row's "biggest grow" is −1,953, a least-
+shrink. A reader who takes that column at face value reads a growth that
+does not exist.
+
 ### 2.13 `-fno-premul-table` (bit 15)
 
 **Trades:** a wider accept table for a shorter loop-carried dependency chain.
@@ -243,6 +389,25 @@ byte cost.
 **Bucket: UNMEASURED on size.** Admitting it needs the emitted-bytes delta on
 the offset-set-adopting population. Expected small.
 
+**SIZE SWEEP (2026-09-15) — MEASURED, "EXPECTED SMALL" CONFIRMED, AND THE
+ENTRY GRADUATES WITH THAT AS ITS QUALIFICATION RATHER THAN ITS FOOTNOTE.**
+`docs/dev/optdial_size_sweep.md` §2.14: **491 movers (14.12% reach, the
+second-largest here)**, 464 shrinking under denial and 27 growing. Median
+**−1.30%** of the artifact, p90 −1.78%, extremes −3.60% … +3.12% (this
+lane's recomputation, §3.0). **451 of 491 movers save at least 1% and only
+20 save 2%** — the whole distribution lives inside a two-percent band.
+Whole-corpus the machinery costs **144,994 B, 0.126%**.
+
+Against the 2× materiality bar `offset_k_skip.md` §4.5 already holds the
+mechanism to, the rate is: **a little over one percent of the artifact for
+up to 2× on the log-line-shaped population it targets.** That is a real
+MEASURED TRADE and this entry graduates — but it is also the WEAKEST size
+lever admitted here, and §3's table says so: at a size notch it is the last
+row to fire, not the first. The 27 growers are the caveat: on ~5% of the
+reached population the plain offset-0 filter is BIGGER than the offset-k
+form it replaces, so denial is not universally a size win even on its own
+reached set.
+
 ### 2.15 `-fno-anchored-dfa` (bit 17)
 
 **Trades:** an additional anchored machine (bytes, gcc time) for a much faster
@@ -260,6 +425,41 @@ match-here entry.
 comes from a 30,000-count shape, not from the corpus. It is the closest of the
 UNMEASURED entries to admissible; what it needs is the same size delta over
 the ordinary corpus.
+
+**SIZE SWEEP (2026-09-15) — MEASURED OVER THE ORDINARY CORPUS, AND THE
+FRAMING ABOVE IS THE ONE THING IN THIS DOCUMENT THE SWEEP FLATLY
+CONTRADICTS.** "Pathological population only" is wrong, and not by a
+little.
+
+`docs/dev/optdial_size_sweep.md` §2.15: **1,509 movers — 43.39% of the
+corpus, an order of magnitude more reach than anything else in this
+inventory** — and **every single one shrinks under denial**; the
+least-negative mover is −6 B and there is no grower at all. Proportionally
+(this lane's recomputation, §3.0) the median artifact is **15.32%** smaller
+without the anchored machine, p10 12.73% / p90 21.18%, worst case
+**39.60%**; 1,493 of 1,509 save at least 10% and 163 save at least 20%. The
+absolute extreme is `tests/utf8/axis12_scripts.rxt:296` at **−266,794 B**
+(999,925 → 733,131). **Whole-corpus, the optional anchored machine is
+12,260,289 bytes — 10.64% of everything pcrec emits over its own test
+corpus.**
+
+**Three things follow, and the third is a correction to this document's own
+structure.**
+
+1. The rate is now corpus-general on both axes: ≈15% of the artifact on 43%
+   of patterns, against `opt2_anchored_match_measurement.md`'s measured
+   match-regime win (2.077× behind the VM without it → 1.046× with it, i.e.
+   ≈1.99× on matching subjects).
+2. **A min-size dial position should DENY this by default.** It is the
+   single largest byte lever the dial can legitimately pull — `--engine` is
+   larger and is excluded for violence (§3), and this one is monotone.
+3. **The "pathological population" reading was an artefact of the witness,
+   not of the mechanism.** The 30,000-count shape said +50% on one hostile
+   input; the corpus says +15% on nearly half of everything. An entry whose
+   only size number comes from a hand-picked witness will describe the
+   witness, and this document's §7 item 3 asked for exactly this
+   replacement — it is worth recording that the request was right and the
+   expected answer was too small.
 
 ### 2.16 `-fno-size-term` (bit 18)
 
@@ -386,6 +586,87 @@ EXPLICITLY UNMEASURED (plan commit `41337a2`); there is no ledger. The
 `[OPT-DIAL]` charter names DFA cell representations as a candidate — the
 premultiplied half is §2.13 and admissible, the class-representation half is
 not yet a switch at all.
+
+### 2.24 `-fno-cls-fold` (bit 24) — ADDED IN REVISION 2, AND OFF THE DIAL BY RULING
+
+**Not in STEP 0's inventory because it did not exist then.** It is
+`docs/spec/tuning.md` §2.22 — the axis is numbered differently in the two
+documents, and this section's number follows ARRIVAL ORDER here while
+tuning.md's follows its own bit order. Cite by flag name, not by section
+number.
+
+**Trades:** which shape a two-member VM pool class's membership test takes
+— an ASCII fold pair as `(byte | 0x20) == lower` against a 32-byte bitmap
+plus load.
+
+**Measured, on both axes, and the speed half is closed WITHOUT a stopwatch:**
+`docs/dev/form_char_step0.md` §2 family A — −38% `.text` on the six-site
+witness with its class-table `.rodata` deleted entirely, and a `gcc -O2 -S`
+equivalence check showing `c=='a'||c=='A'`, `(c=='a')|(c=='A')` and
+`(c|0x20)=='a'` all compile to the same branchless mask+compare+sete with
+no load, so there is nothing for the table form's load-latency argument to
+beat. Against that, `docs/dev/plan.md` `[FORM-CHAR2]` records the bench
+measuring the shipped fold SLOWER on its one corpus witness (`ci-256`
+forced-VM ×1.027 search / ×1.045 throughput / ×1.095 match against a 1.34%
+noise floor).
+
+**Bucket: OFF THE DIAL BY RULING, not by measurement.** Frank, 2026-09-11
+(`[FORM-CHAR2]`): cls-fold is **SUBSUMED INTO THE `[CLS-TREE]` DESIGN
+NOTE** — its end state is one kit member among several (the `m = 0x20`
+one-cube instance of the study's general cube form), selected by the
+sectioning DP and priced by λ, and there is **no standalone dial placement
+for a special case** (the general-mechanisms rule). `[FORM-CHAR2]`'s
+instruction counts still run, but as calibration inputs to that note's
+op-pricing model rather than as evidence for a placement here.
+
+**This is the inventory's first entry whose dial answer is "it becomes λ".**
+It is therefore the worked example for `opt_dial_design.md` §4: a switch
+that would have been a discrete policy row is replaced by a continuous
+currency the same dial position sets. `docs/dev/cls_tree_study.md` §4.3
+measures why — the general cube form reaches **8 of the 41 corpus byte
+classes where today's fold classifier sees only 4**, so the special case
+covers half its own general form's population in this tree's own corpus.
+
+### 2.25 `-fno-startpos-guard` (bit 25) — ADDED IN REVISION 2, AND STRUCTURALLY INELIGIBLE
+
+`docs/spec/tuning.md` §2.23. Same numbering caveat as §2.24.
+
+**Trades:** nothing on either axis. It selects between two ruled SEMANTICS
+for a caller-supplied `startpos` inside a multi-byte character — refuse with
+`PCREC_ERR_STARTPOS` (guarded, the default, libpcre2's own behaviour under
+`PCRE2_UTF`) or answer at the position named (permissive). Under the `byte`
+encoding the two builds are byte-identical.
+
+**Bucket: STRUCTURALLY INELIGIBLE — and this is a bucket STEP 0 did not
+have.** It is the ONE axis in `docs/spec/tuning.md` that is **not
+answer-identity-preserving**, by its own declaration and on purpose: the two
+arms give different answers on one input class (`(?<!.)` at offset 1 of
+`CE B1 CE B2` reports `(1,1)` permissive and `PCREC_ERR_STARTPOS` guarded).
+
+`[OPT-DIAL]`'s charter makes **answer identity across every dial value the
+ACCEPTANCE**. A switch whose two settings disagree about answers therefore
+cannot be on the dial *whatever* its exchange rate turns out to be — no
+future measurement can admit it, which is what separates this bucket from
+UNMEASURED. It is a contract choice wearing a tuning flag's spelling, and a
+contract is not something a speed-vs-size preference gets to pick.
+
+The general form of the rule, which `opt_dial_design.md` §6 states as an
+eligibility precondition rather than leaving implicit: **the dial's
+allowlist is gated on answer identity FIRST and on a measured rate SECOND,
+and the first gate is quantified over the values the dial can actually
+set.** Two switches meet it differently, and the difference matters:
+
+- **`-fno-startpos-guard` fails it outright.** Its two arms disagree about
+  answers, so no dial position may name either — the axis is off the
+  allowlist permanently.
+- **`-fno-altcls-merge` fails it in ONE ARM ONLY.** Denying the merge moves
+  the REFUSAL SET (§2.6's K45 row: one corpus tower stops compiling), which
+  is an answer-identity break in the weaker sense that a pattern's answer
+  becomes "refused". The axis is therefore eligible **provided no dial
+  position ever selects the denying arm** — which is exactly the flat row
+  §3 gives it, now forced from two independent directions at once: the size
+  measurement does not justify denial, and denial would move the refusal
+  set even if it did.
 
 ---
 
