@@ -97,6 +97,13 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   runs at depth 1 and was 231x on the broken prototype, invisible to any
   depth-based gate)
 - **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967294 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
+- **comment_escape.rxt** — pcrec-bench O-31 finding F1's regression net: a
+  pattern whose own bytes contain a comment-closing STAR THEN SLASH (the same
+  shape as the bench's WAF witness, `/*!*/` SQL-comment obfuscation), which
+  used to corrupt the DFA emitter's per-state "shortest input" legend and
+  fail to compile — see `src/gen/emit_dfa.c`'s `emit_comment_safe_byte` and
+  `tests/codegen/run_comment_escape.sh`'s structural check for the mechanism.
+  Two blocks, both oracle-verified against python3 `re`
 - **possess_lazy_guard.rxt** — the 20 D47.6 lazy-possessification guard cells (docs/dev/decisions.md D47 ruling 6): every quantifier `eng_brep_design.md`'s repaired possessification analysis declines under its lazy non-nullable-remainder conjunct, whose "20 false declines" turned out to be a probe defect, not a real cost — `probe_possess.py`'s subject alphabet omitted the prefix byte `z` these 20 patterns are built from, so it could not reach the subjects (`za{1,3}?` on "zaa", `(?:ab){3,}?` on "abababab", …) where all 20 GENUINELY diverge lazy-vs-possessive. The possessification pass now EXISTS (src/opt/possessify.c, merged 2026-08-16), so these cells are live-fire: 79 cases (span + capture-slot) pin the lazy behavior the shipped pass must preserve by declining, oracle-verified three ways (python3 `re`, libpcre2, pcrec's own build). Extended 2026-08-16 (nested-lazy lane follow-up) with the lazy-`$` family — a bare `$` follow makes the remainder nullable REGARDLESS of `(?m)`, so the lazy conjunct declines it even though the greedy twin possessifies under the D47.5 `$` exemption; discriminating subjects end in `\n` (`$` holds before a final newline, so a wrongly-possessified lazy loop swallows it), plus the greedy control pinning the exemption's own soundness on the same subjects
 
 ## Conventions

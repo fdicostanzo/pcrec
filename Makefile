@@ -369,6 +369,9 @@ test-definitions: all
 # `mktemp -d`, read-only against build/pcrec), for the reason the two above
 # are grouped rather than sharded: it is a corpus-wide compile-only sweep
 # (~2,000 DFA artifacts, no gcc), so it rides the same group parallelism.
+# [O-31 F1] run_comment_escape.sh joins the group the same way: a handful of
+# small compiles (a fraction of a second), not a corpus sweep — the
+# comment-escaping regression net for the DFA emitter's per-state legend.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
@@ -379,7 +382,8 @@ test-codegen: all
 	    'bash tests/codegen/run_inline_capability.sh' \
 	    'bash tests/codegen/run_trie_identity.sh' \
 	    'bash tests/codegen/run_scan_edge_census.sh' \
-	    'bash tests/codegen/run_n1_budget.sh'
+	    'bash tests/codegen/run_n1_budget.sh' \
+	    'bash tests/codegen/run_comment_escape.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

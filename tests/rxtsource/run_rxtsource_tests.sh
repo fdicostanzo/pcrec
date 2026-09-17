@@ -208,9 +208,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # dragged the four `\p{Unknown}` script blocks into axis04 as duplicates.
 # No test failed — the duplicates compiled and answered correctly. Only the
 # census could see it.
-CENSUS_FILES=210
-CENSUS_BLOCKS=3936
-CENSUS_LINES=28943
+# 2026-09-17 (lane cmtfix, [O-31 F1] the comment-escape fix) — +1 file, +2
+# blocks, +6 lines for the new tests/base/comment_escape.rxt (two pattern
+# blocks, three m/n lines each). Not under tests/known_fail/, so RUNSH_*
+# below moves by the SAME +1/+2/+6.
+CENSUS_FILES=211
+CENSUS_BLOCKS=3938
+CENSUS_LINES=28949
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -237,9 +241,11 @@ CENSUS_LINES=28943
 # run.sh's own population: the census minus tests/known_fail/ (§3.0).
 # Recorded here because C1 and C2 differ by exactly this file and a
 # reader who assumes one population finds the 191/190 split inexplicable.
-RUNSH_FILES=209
-RUNSH_BLOCKS=3933
-RUNSH_LINES=28932
+# 2026-09-17 (lane cmtfix, [O-31 F1]) — +1/+2/+6, the SAME delta as
+# CENSUS_* above (comment_escape.rxt is not under tests/known_fail/).
+RUNSH_FILES=210
+RUNSH_BLOCKS=3935
+RUNSH_LINES=28938
 # 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
 # widest divergence this pair has shown. A known_fail file being RETIRED moves
 # the two in different directions on every column: the census loses a file
