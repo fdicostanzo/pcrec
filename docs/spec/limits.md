@@ -591,6 +591,22 @@ the diagnostic quotes are the SMALLER artifact's — the smallest pcrec could
 make without changing an answer, which is the honest number for a caller
 deciding how far to raise a cap.
 
+**THE DROP LADDER HAS ONE RUNG, AND A `+2`-INDUCED OVERFLOW HAS NONE —
+RECORDED HERE AS A GAP, NOT A PROMISE** (`docs/design/opt_dial_design.md`
+§6.2b). `--tune=speed`/`--tune=max-speed` (`docs/spec/tuning.md` §5) raise
+`VM_INLINE_CHAIN_MAX_BYTES`, which admits more inlining and can push a
+near-cap artifact over one of these two caps. The general form that would
+rescue it — drop an optional contributor and re-emit, exactly what the
+one rung above does for the anchored machine — covers this case too,
+because the extra inlining a raised term buys is optional by the term's
+own contract ("forward only where it costs nothing"). It is **not built**
+(D77): a second rung needs an ORDER, and an order is a measured
+per-contributor run-time cost that a sample of one rung cannot supply. A
+caller who hits this refuses today with the ordinary "Handling an
+oversized artifact" recourse below; the trigger for building the second
+rung is named rather than guessed — a fixture (`F2` in the design's own
+check plan) going red.
+
 **Neither is deniable, both are overridable UPWARD.**
 `-fno-size-term` denies the unroll-ladder SELECTION and never reaches a
 limit: a safety refusal a flag turns off is not one. To accept a larger
@@ -603,6 +619,12 @@ succeeded). The effective TOTAL cap is stamped on every artifact as
 pure-DFA artifact has no counter rung and so no code/table split to
 bound separately (verified live: `tests/codegen/run_size_term.sh`'s own
 "the VM-only size stamps are ABSENT on a DFA artifact" check).
+
+**`--tune=N` (`docs/spec/tuning.md` §5) NEVER LOWERS either cap.** A dial
+position that lowered one would manufacture a refusal on someone else's
+build — exactly what the raise-only overrides above exist to prevent —
+and no position does: every size-side position only ever tightens the
+`[ART-SIZE]` ladder's own selection (below), never a hard limit.
 
 ### `--warn-emit-bytes=N` — an ADVISORY warning, never a refusal
 
@@ -741,3 +763,35 @@ sr_depth.rxt` that MATCH at the default `K` return a frames give-up under
    `<PREFIX>_UNROLL_K_WHY "capacity-declined"`. A compiler-chosen `K` that
    turns a match into a give-up would be an answer change no flag asked for,
    and §8's "refuse and document" does not cover it.
+
+## 8b. Two `limits.def` knees `--tune=N` moves
+
+`docs/spec/tuning.md` §2.20 states the general rule: a `selection knee` —
+a `limits.def` row that steers WHICH lowering the emitter takes rather
+than what pcrec accepts or refuses — carries no anchor in this document
+on its own, because this document promises resource BOUNDS and a knee
+promises nothing. **[OPT-DIAL] (2026-09-16) is why two of them earn one
+anyway**: `--tune=N` (`docs/spec/tuning.md` §5) now sets both per
+POSITION, so a caller reading this page needs the values a dial position
+actually ships, not only the constant a plain build compiles with.
+
+| constant | override | −2 | −1 | 0 (default) | +1 | +2 |
+|---|---|---:|---:|---:|---:|---:|
+| `PCREC_SIZE_TERM_THRESHOLD` (bytes) | `-D` | **40,000** | **80,000** | 120,000 | — | — |
+| `VM_INLINE_CHAIN_MAX_BYTES` (bytes) | `flag` | — | — | 4,096 | **8,192** | **8,192** |
+
+Both are `selection knee` rows of `pcrec --list-limits`
+(`src/core/limits.def:161`, `:352`). `PCREC_SIZE_TERM_THRESHOLD`'s
+override is `-D`, which means **no CLI override exists for it** — unlike
+the raise-only flags in §3.3, this constant moves only at pcrec's OWN
+build time, so `--tune=N` is the only way a caller moves it per compile.
+`VM_INLINE_CHAIN_MAX_BYTES`'s override is `flag`: `--vm-entry-shape=N`
+(`docs/spec/tuning.md` §2.21) overrides the term's decision outright, per
+`docs/spec/tuning.md` §1's narrowed property that explicit spelling beats
+the dial — one of only two rows in the whole policy table where a
+spelling already existed before the dial did.
+
+These are the two size-side ladder rows and the one speed-side entry-chain
+row `docs/spec/tuning.md` §5.4's policy table carries; that table is the
+one home for WHY each cell is what it is, and this page states only the
+numbers a caller building against a resource bound needs.

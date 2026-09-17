@@ -227,6 +227,55 @@ before this row, because a caller who named the engine or forced the
 prefilter explicitly asked for the machine that cannot be built. See
 `docs/spec/tuning.md` §2.11 for the mechanism and the cost bound.
 
+### `--tune=N` — the SPEED-VS-SIZE DIAL
+
+**[OPT-DIAL] (2026-09-16).** An ordinal in `-2..+2`, `0` the default, or
+one of five mnemonic aliases accepted on equal terms —
+`min-size`/`size`/`balanced`/`speed`/`max-speed` (`cli/main.c:595-625`,
+parsing both spellings through `pcrec_tune_parse`, `src/core/tune.c`, so
+the CLI and the artifact's stamp cannot drift). Sets a GROUP of the
+`docs/spec/tuning.md` §2 axes from one pinned policy table instead of a
+caller composing them one flag at a time; the full table, the reason
+codes and the acceptance are `docs/spec/tuning.md` §5.
+
+**A negative value needs the `=` form.** Verified live:
+
+```
+$ build/pcrec -p rx --tune -2 -o /tmp/x.c -- 'abc'
+pcrec: --tune takes its value with '=' (--tune=-2, --tune=min-size)
+$ build/pcrec -p rx --tune=-2 -o /tmp/x.c -- 'abc'
+$
+```
+
+`--tune -2` is two tokens whose second begins with `-`; the separated
+form is refused BY NAME rather than accepted by look-ahead, which would
+make `--tune -o out.c` mean something nobody typed. The aliases have no
+leading dash and are the preferred spelling for exactly this reason.
+
+**Out of range is refused, never clamped.** Verified live:
+
+```
+$ build/pcrec -p rx --tune=3 -o /tmp/x.c -- 'abc'
+pcrec: --tune wants -2..2 or one of min-size, size, balanced, speed, max-speed (got '3')
+```
+
+A clamp would let a caller believe they had asked for something the
+artifact does not have.
+
+**Every position answers identically**, over the whole corpus — the same
+D46 observable/forceable principle every axis in this document's tuning
+family carries, at the dial's own coarser grain. `<PREFIX>_TUNE`, a
+closed five-token stamp, is emitted on every artifact regardless of
+engine, including at `balanced` (verified live: `build/pcrec -p rx -o -
+-- 'abc' | grep RX_TUNE` reads `#define RX_TUNE "balanced"`).
+
+**The `tune` config-block directive.** A `tune` line in a `.rxt`
+`config`/`target` block takes the identical vocabulary, per D93's own
+framing that a config block's directive set is the format's named axes
+(`docs/spec/rxt_format.md`). Its precedence against an explicit CLI
+`--tune=` is stated in this document's own file-wins section below —
+`tune` is **not** a second exception to it.
+
 ### `--step-budget=N`, `--work-budget=N`, `--fno-step-budget`
 
 Two SEPARATE counters on the emitted VM — step (backtrack resumptions) and
@@ -538,7 +587,34 @@ machinery exists to tell the two apart, on the ruling's own terms: the
 substance is that an explicit NON-DEFAULT CLI choice is never silently
 overridden, and `auto` is the default. This exception applies to `engine`
 alone; every other axis `target`/`config` can set (`flags`, `encoding`,
-`budget`) still follows the file-wins rule stated above unchanged.
+`budget`, `tune`) still follows the file-wins rule stated above unchanged.
+
+**`tune` IS NOT A SECOND EXCEPTION** (D93 addendum, Frank's ruling
+2026-09-16 — `docs/spec/tuning.md` §5.1 states the option in full). The
+structure above invites a reader to assume a new axis joins the
+exception list the moment it feels forceable; `tune` does not, and the
+reasoning is worth a sentence because it is not the same reasoning
+`--engine`'s exception rests on: `tune` is answer-preserving by its own
+acceptance criterion, so it carries none of the H11 free-identity-control
+stake `--engine`'s definition argument turns on, and it has no
+`--engine=dfa`-shaped power to make a pattern refuse — an exception needs
+a reason, and copying the shape of the last one is not one. A conflict
+between an explicit non-default CLI `--tune=` and the file's own `tune`
+row is reported the same way `--engine`'s is, with the FILE winning
+rather than the CLI:
+
+```
+pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
+`tune speed` disagree; using the file's value (--tune is not the
+--engine exception)
+```
+
+**There is no `--force-tune`.** A diagnostic advertising a flag no
+section of this document defines would be worse than one naming no
+recourse at all; if a caller needs the command line to win on this axis,
+D93's own revisit-when names the shape such an override would take (an
+explicit loud flag, never a silent precedence flip), which this document
+does not promise today.
 
 **A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
 parser**, so a flag cannot mean one thing on the command line and another in
