@@ -753,13 +753,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
          * failed malloc anywhere below is a diagnosed refusal instead of an
          * abort() that would take the CALLER's process down with it. The arena is
-         * attached before anything allocates from it; the four Job buffers are
-         * attached as soon as the Job exists. */
+         * attached before anything allocates from it; the RULE is that every
+         * StrBuf the Job owns gets its .cx back-pointer as soon as the Job
+         * exists, not "these four" — L8-F1 (2026-09-17 code review) found
+         * scr_test/scr_desc missing it, a live caller-abort() on OOM. */
         cx.arena.cx = &cx;
         cx.job = calloc(1, sizeof(Job));
         if (cx.job) {
             cx.job->csb.cx = cx.job->hsb.cx = &cx;
             cx.job->vmsb.cx = cx.job->irsb.cx = &cx;
+            cx.job->scr_test.cx = cx.job->scr_desc.cx = &cx;
         }
         if (!cx.job || !out || !pattern) {
             job_cleanup(&cx);
