@@ -11,6 +11,71 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K58 — INFRASTRUCTURE, deferred (2026-09-16, sixty-sixth session, filed from the sixty-fifth session's Linux merge-battery verdict): the resource/codegen size-cap checks' 45s CPU budget has ~11s of headroom on a QUIET box and NONE under battery load
+
+Filed 2026-09-16 from `dev_journal.md`'s 2026-09-15 evening "sixty-fifth
+session CLOSE" entry: `battery_20260915_152035` (ubuntubudu,
+worktrees/validate @ `30b1f7f2`, 7h35m) came back `test` rc=2 with
+THREE reds, all the same shape — a 30,000-count compile cell landing at
+31-34s CPU against its 45s budget.
+
+**The mechanism.** `tests/resource/run_resource_tests.sh`'s `K7_CPU`
+(default 45; see the script's own header) is the per-compile CPU budget
+`scripts/watchdog` enforces over section 1's 30,000-count family
+(`(ab){0,30000}`, `[a-z]{0,30000}`, `(a|b){0,30000}`, and their
+`{5,30000}`/`{1,30000}` siblings a few lines down; the same shape of
+witness recurs in `tests/codegen/run_anchored_match.sh`'s own
+`[a-z]{0,30000}` cell at its :306 comment). The budget's own header is
+explicit that its cost is **K25** — Moore partition refinement needing
+O(n) rounds on an n-state chain, measured there at 15.3 of 15.4s total
+for `a{0,25000}` — NOT anything charged to this session's work, sized
+at "~3x the measured 15.4s" with D45's own stated ~2x-inflation-under-
+load headroom reasoning already folded in.
+
+**Measured, both directions, same box.** A direct A/B at the battery's
+own pin (`30b1f7f2`) against the pre-W23 baseline (`aa983157`) put both
+trees at 31-34s CPU on the same three cells — within noise, one cell
+measurably FASTER post-W23 — which is why the sixty-fifth session
+dispositioned the reds as box-margin, not a regression: quiet-box
+headroom over the 45s budget is only ~11-14s, and this run carried
+concurrent battery load (san/lint/axes stages sharing the box).
+
+**The counter-datum, cited to keep the diagnosis honest.** The very
+next merge battery, `battery_20260916_131617` (ubuntubudu,
+worktrees/validate @ `a770139e`, o29fix's landing validation, 6h16m),
+ran the identical `test` stage rc=0 in 23m on a QUIET box — none of
+these cells came near the budget. The variable is LOAD, not the tree:
+the same 31-34s-baseline cells pass cleanly whenever nothing else is
+contending for CPU, and the margin the budget assumes is exactly what a
+concurrent battery stage consumes.
+
+**Disposition: DEFERRED, not fixed here.** Two directions, neither
+taken, both requiring a stated reason rather than a silent bump (this
+file's own convention, matching D45's budget-revisit rule):
+1. Raise `K7_CPU`. The header's "~3x measured cost" sizing already
+   assumes SOME load headroom; the failure observed here is that the
+   underlying K25 cost (31-34s) leaves only ~25-30% margin on a box
+   already running at the busy end of D45's assumed range under battery
+   conditions specifically — a raise widens the SAME formula for a
+   busier box, it does not correct a wrong one.
+2. Reduce this section's own concurrency, or the battery's scheduling,
+   so these cells are not competing with san/lint/axes/mech for CPU at
+   the moment they run.
+Neither is built here. **K25 (DFA minimization time) remains the
+underlying cost this entry rides**; fixing K25 would restore the
+budget's own stated ~10s target and close this margin as a side effect,
+which is why this entry is filed as riding K25 rather than as its own
+independent repair target.
+
+**Minimal repro pointer.** No new fixture — the population is
+`tests/resource/run_resource_tests.sh`'s own existing section-1
+30,000-count size-cap cells, reproducible by running that section under
+CPU contention on ubuntubudu (e.g. concurrently with another battery
+stage); a quiet-box run of the same file and cells does not reproduce
+it (`battery_20260916_131617`, above).
+
+---
+
 ## K57 — FIXED 2026-09-15 (lane k57fix) — a `|` block scalar's dedent strip was a BYTE COUNT, so a continuation line indented LESS than the block's first line silently lost content
 
 Filed 2026-09-12 (sixty-first session), lane w23fix, found by the r57
