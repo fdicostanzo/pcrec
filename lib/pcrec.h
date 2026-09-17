@@ -23,7 +23,8 @@
  * is no compatibility alias: `-e ascii` is now an unknown encoding. */
 enum {
     PCREC_ENC_BYTE = 0,   /* byte semantics, 8-bit clean; the default */
-    PCREC_ENC_UTF8 = 1    /* not yet implemented (arrives with milestone M5) */
+    PCREC_ENC_UTF8 = 1    /* UTF-8; a character is 1-4 bytes ([M5.0] stage 2).
+                             docs/spec/match_api.md §8.2 is the contract. */
 };
 
 /* [M4.4] (D43.2/D44.8): pcrec's own boolean options, one bit each in
@@ -36,7 +37,7 @@ enum {
  * this header does not need revisiting when M4.5 wires it.
  *
  * [M4.5b] PCREC_NO_CAPTURES is now LIVE (D42.1: captures are ON by default;
- * this bit recovers the pre-M4.5 pure-DFA artifact, RX_NCAPS 1). */
+ * this bit recovers the pre-M4.5 pure-DFA artifact, <PREFIX>_NCAPS 1). */
 enum {
     PCREC_CASELESS    = 1u << 0,  /* was pcrec_options.caseless */
     PCREC_EMIT_MAIN   = 1u << 1,  /* was pcrec_options.emit_main */
@@ -794,7 +795,7 @@ typedef struct {
      * inflates the entry — STEP 0 measured 1.032 there). Rungs 2 and 3 need
      * more than that: the forward binds a NULL descriptor, so they are taken
      * only where the artifact provably never WRITES the working storage —
-     * no `RX_PUSH`, no linked call, and no `RX_SET` (the trail is real
+     * no `<PREFIX>_PUSH`, no linked call, and no `<PREFIX>_SET` (the trail is real
      * storage even on a frameless artifact: `(abc)(def)` is frameless and
      * saves two capture slots). A request the artifact cannot honour falls
      * back to the highest rung it can, and every rung ANSWERS IDENTICALLY.
@@ -881,7 +882,7 @@ typedef struct {
      * sets it can never break a downstream consumer.
      *
      * 0 DISABLES IT. The default is `PCREC_DEFAULT_WARN_EMIT_BYTES`
-     * (250,000 total bytes), chosen an order of magnitude under
+     * (250,000 total bytes), chosen well under
      * `PCREC_MAX_EMIT_BYTES` so the line arrives while a pattern can still be
      * changed rather than at the moment it is refused. Unlike the caps this is
      * NOT raise-only: lowering it is exactly what a project that wants tighter
@@ -974,7 +975,7 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
 /* Generated searcher contract, RESHAPED at [M4.4] (D44.2, docs/design/
  * match_api_m4.md §1.0) — the prior `<prefix>_span` out-struct form is
  * RETIRED, with no compatibility alias, in favor of a caps-array parameter
- * that is already the FINAL shape (RX_NCAPS simply grows from 1 upward at
+ * that is already the FINAL shape (<PREFIX>_NCAPS simply grows from 1 upward at
  * [M4.5] with no further signature change):
  *
  *   int <prefix>_search(const unsigned char *s, size_t n, size_t startpos,
@@ -1000,15 +1001,15 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * rather than trapping on it — trapping is what a COMPOSED call site
  * (one `rx_matchfn` invoking another) must do, not a top-level entry.
  * `caps` may be NULL (existence-only search, today's entire caller
- * population). On a match, if caps != NULL, RX_NCAPS pairs are written as
+ * population). On a match, if caps != NULL, <PREFIX>_NCAPS pairs are written as
  * half-open [start, end) byte offsets; caps[0] IS the whole-match span (no
  * second name for it). On no match — and on a give-up, which is a failure
  * for this rule too — caps (if non-NULL) is left UNTOUCHED; the int return
  * value alone communicates the outcome. startpos > n returns 0. `^` anchors
  * to absolute offset 0 regardless of startpos. s may be NULL only when
- * n == 0, and the matcher never reads s[n]. RX_NCAPS is 1 on any
+ * n == 0, and the matcher never reads s[n]. <PREFIX>_NCAPS is 1 on any
  * DFA-compiled artifact (which is every artifact built `--no-captures`);
- * RX_NCAPS > 1 implies the VM engine ([M4.5], where captures became the
+ * <PREFIX>_NCAPS > 1 implies the VM engine ([M4.5], where captures became the
  * default).
  *
  * Every generated matcher also exports, unconditionally: `<prefix>_match`
