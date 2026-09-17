@@ -1,0 +1,145 @@
+# tests/size/tune_dial_fixtures.rxtin — [OPT-DIAL] design section 6.2a's
+# NEAR-CAP FIXTURE FAMILY (F1/F2/F3), on the r53 precedent that synthetic
+# ladders are corpus members.
+#
+# `.rxtin`, NOT `.rxt` — a DELIBERATE departure from the design's own framing
+# and stated here rather than silently: `tests/rxtsource/run_rxtsource_tests.sh`
+# pins a CENSUS_FILES/CENSUS_BLOCKS/CENSUS_LINES count over every `*.rxt` file
+# in the tree, and that script is outside this lane's mandate (tests/mech/ and
+# tests/size/ only). A plain `.rxt` file here would move that pin in a commit
+# that cannot also fix it. `.rxtin` is kept out of `find tests -name '*.rxt'`
+# by convention (`tests/rxtsource/fixtures/`'s own precedent) and is therefore
+# invisible to the automatic corpus sweep AND to the census — at the cost of
+# also being invisible to `make test`'s own harness run. See this directory's
+# CLAUDE.md for who is expected to read this file and how.
+#
+# Each block below is ordinary `.rxt` syntax and compiles/runs correctly
+# against `tests/harness/run.sh` if invoked EXPLICITLY on this path
+# (`bash tests/harness/run.sh tests/size/tune_dial_fixtures.rxtin`) — it is
+# only the zero-argument, tree-wide discovery that skips it.
+#
+# =========================================================================
+# F1 — just under PCREC_MAX_EMIT_BYTES (1,000,000) at position 0
+# =========================================================================
+# Must show: `+1`/`+2` do NOT push it over — the GROWTH direction (design
+# section 6.2b's own concern, generalised past the one rung it names).
+#
+# A SYNTHETIC unicode-property DFA artifact (deliberately NOT the real
+# witness named below — this is what the design calls a family a purely
+# real-corpus population would not have). `[^\p{C}\p{M}\p{S}]` — everything
+# that is not an Other/Mark/Symbol code point — measured (build/pcrec,
+# 2026-09-17, `--warn-emit-bytes=1`, comment-excluded emitted C+H):
+#
+#   --tune=balanced   967,510 B  (12,446 of code)
+#   --tune=size       967,502 B  (12,438 of code)
+#   --tune=min-size   578,203 B  (13,208 of code)  -- SEE THE FINDING BELOW
+#   --tune=speed      967,504 B  (12,440 of code)
+#   --tune=max-speed  967,512 B  (12,448 of code)
+#
+# GROWTH DIRECTION HOLDS: `+1`/`+2` move the total by at most 8 bytes (the
+# `RX_TUNE` stamp string's own length difference — "balanced" is 8 characters,
+# "speed" is 5, "max-speed" is 9 -- not the entry-chain term, which this
+# artifact's own VM... except this artifact has NO VM PROGRAM AT ALL (DFA
+# engine, "prefilter language n/a"), so `VM_INLINE_CHAIN_MAX_BYTES` cannot
+# touch it by construction. `+1`/`+2` therefore change nothing observable
+# here, which is a true (if structurally trivial) instance of "does not push
+# it over" -- see this file's own CLAUDE.md entry for why a witness that
+# ALSO exercises the entry-chain term's threshold could not be constructed
+# in the time this row had, and what was tried.
+#
+# *** A FINDING, NOT PART OF F1'S OWN CLAIM: `--tune=min-size` DROPS THIS
+# ARTIFACT TO 578,203 B -- A 40% SHRINK, FROM `-fno-premul-table`'s
+# UNCONDITIONAL DENIAL AT `-2`. THAT SAME MECHANISM IS WHAT F3 BELOW TURNS
+# INTO A REFUSAL-SET VIOLATION. *** Read F3's header before assuming this
+# row is only about growth.
+pattern [^\p{C}\p{M}\p{S}]
+encoding utf8
+features unicode-props
+m "A" 0 1
+n "\x01"
+n ""
+
+# =========================================================================
+# F2 — just under PCREC_MAX_VM_EMIT_CODE_BYTES (500,000) at position 0,
+# VM-compiled
+# =========================================================================
+# Must show: the sharper growth case per design's own framing -- the
+# entry-chain term's raise is CODE bytes, which is the cap `+1` actually
+# moves. **MEASURED LIMIT, STATED RATHER THAN HIDDEN**: for THIS witness
+# (272 branches of a 19-byte literal alternation, chosen because it lands
+# within ~1,000 bytes of the code cap and is otherwise plain and
+# python-oracle-verifiable) the entry-chain term does NOT move the needle,
+# because this pattern's own emitted VM PROGRAM (`job->vmsb.len`, the
+# quantity `VM_INLINE_CHAIN_MAX_BYTES` actually compares against) is
+# ~499,000 bytes at every position -- five orders of magnitude past even
+# the raised 8,192-byte threshold, so the entry-chain rung is `shared` at
+# EVERY `--tune` position and the raise is a no-op on this artifact BY
+# CONSTRUCTION, not because the mechanism was checked and found safe.
+#
+# Measured (build/pcrec, 2026-09-17, `--engine=vm --warn-emit-bytes=1`):
+#
+#   --tune=balanced    499,092 B code
+#   --tune=size        499,084 B code
+#   --tune=min-size    499,092 B code
+#   --tune=speed       499,086 B code
+#   --tune=max-speed   499,094 B code
+#
+# All five sit 906-916 bytes under the 500,000-byte cap; the +/-8-byte
+# spread is the RX_TUNE stamp string length again, not the entry-chain term.
+# GROWTH DIRECTION HOLDS (the artifact never crosses the cap at any
+# position) but the SHARPER claim design section 6.2b makes -- that the
+# entry-chain term specifically is what could push a near-cap VM artifact
+# over -- is UNTESTED by this witness. See CLAUDE.md: a program whose own
+# CODE bytes approach 500,000 appears, on the analysis this row's
+# construction attempt produced, to structurally have `job->vmsb.len` far
+# past 8,192 already for any plain (non-hybrid) VM artifact, because code
+# bytes for such an artifact are very close to `job->vmsb.len` itself. A
+# witness combining a small (4,096-8,192-byte) VM program with ~490,000
+# bytes of NON-table CODE from some other source is what F2's sharper claim
+# would need, and none was found in the time this row had.
+pattern (?:lit000000xyzabcdef|lit000001xyzabcdef|lit000002xyzabcdef|lit000003xyzabcdef|lit000004xyzabcdef|lit000005xyzabcdef|lit000006xyzabcdef|lit000007xyzabcdef|lit000008xyzabcdef|lit000009xyzabcdef|lit000010xyzabcdef|lit000011xyzabcdef|lit000012xyzabcdef|lit000013xyzabcdef|lit000014xyzabcdef|lit000015xyzabcdef|lit000016xyzabcdef|lit000017xyzabcdef|lit000018xyzabcdef|lit000019xyzabcdef|lit000020xyzabcdef|lit000021xyzabcdef|lit000022xyzabcdef|lit000023xyzabcdef|lit000024xyzabcdef|lit000025xyzabcdef|lit000026xyzabcdef|lit000027xyzabcdef|lit000028xyzabcdef|lit000029xyzabcdef|lit000030xyzabcdef|lit000031xyzabcdef|lit000032xyzabcdef|lit000033xyzabcdef|lit000034xyzabcdef|lit000035xyzabcdef|lit000036xyzabcdef|lit000037xyzabcdef|lit000038xyzabcdef|lit000039xyzabcdef|lit000040xyzabcdef|lit000041xyzabcdef|lit000042xyzabcdef|lit000043xyzabcdef|lit000044xyzabcdef|lit000045xyzabcdef|lit000046xyzabcdef|lit000047xyzabcdef|lit000048xyzabcdef|lit000049xyzabcdef|lit000050xyzabcdef|lit000051xyzabcdef|lit000052xyzabcdef|lit000053xyzabcdef|lit000054xyzabcdef|lit000055xyzabcdef|lit000056xyzabcdef|lit000057xyzabcdef|lit000058xyzabcdef|lit000059xyzabcdef|lit000060xyzabcdef|lit000061xyzabcdef|lit000062xyzabcdef|lit000063xyzabcdef|lit000064xyzabcdef|lit000065xyzabcdef|lit000066xyzabcdef|lit000067xyzabcdef|lit000068xyzabcdef|lit000069xyzabcdef|lit000070xyzabcdef|lit000071xyzabcdef|lit000072xyzabcdef|lit000073xyzabcdef|lit000074xyzabcdef|lit000075xyzabcdef|lit000076xyzabcdef|lit000077xyzabcdef|lit000078xyzabcdef|lit000079xyzabcdef|lit000080xyzabcdef|lit000081xyzabcdef|lit000082xyzabcdef|lit000083xyzabcdef|lit000084xyzabcdef|lit000085xyzabcdef|lit000086xyzabcdef|lit000087xyzabcdef|lit000088xyzabcdef|lit000089xyzabcdef|lit000090xyzabcdef|lit000091xyzabcdef|lit000092xyzabcdef|lit000093xyzabcdef|lit000094xyzabcdef|lit000095xyzabcdef|lit000096xyzabcdef|lit000097xyzabcdef|lit000098xyzabcdef|lit000099xyzabcdef|lit000100xyzabcdef|lit000101xyzabcdef|lit000102xyzabcdef|lit000103xyzabcdef|lit000104xyzabcdef|lit000105xyzabcdef|lit000106xyzabcdef|lit000107xyzabcdef|lit000108xyzabcdef|lit000109xyzabcdef|lit000110xyzabcdef|lit000111xyzabcdef|lit000112xyzabcdef|lit000113xyzabcdef|lit000114xyzabcdef|lit000115xyzabcdef|lit000116xyzabcdef|lit000117xyzabcdef|lit000118xyzabcdef|lit000119xyzabcdef|lit000120xyzabcdef|lit000121xyzabcdef|lit000122xyzabcdef|lit000123xyzabcdef|lit000124xyzabcdef|lit000125xyzabcdef|lit000126xyzabcdef|lit000127xyzabcdef|lit000128xyzabcdef|lit000129xyzabcdef|lit000130xyzabcdef|lit000131xyzabcdef|lit000132xyzabcdef|lit000133xyzabcdef|lit000134xyzabcdef|lit000135xyzabcdef|lit000136xyzabcdef|lit000137xyzabcdef|lit000138xyzabcdef|lit000139xyzabcdef|lit000140xyzabcdef|lit000141xyzabcdef|lit000142xyzabcdef|lit000143xyzabcdef|lit000144xyzabcdef|lit000145xyzabcdef|lit000146xyzabcdef|lit000147xyzabcdef|lit000148xyzabcdef|lit000149xyzabcdef|lit000150xyzabcdef|lit000151xyzabcdef|lit000152xyzabcdef|lit000153xyzabcdef|lit000154xyzabcdef|lit000155xyzabcdef|lit000156xyzabcdef|lit000157xyzabcdef|lit000158xyzabcdef|lit000159xyzabcdef|lit000160xyzabcdef|lit000161xyzabcdef|lit000162xyzabcdef|lit000163xyzabcdef|lit000164xyzabcdef|lit000165xyzabcdef|lit000166xyzabcdef|lit000167xyzabcdef|lit000168xyzabcdef|lit000169xyzabcdef|lit000170xyzabcdef|lit000171xyzabcdef|lit000172xyzabcdef|lit000173xyzabcdef|lit000174xyzabcdef|lit000175xyzabcdef|lit000176xyzabcdef|lit000177xyzabcdef|lit000178xyzabcdef|lit000179xyzabcdef|lit000180xyzabcdef|lit000181xyzabcdef|lit000182xyzabcdef|lit000183xyzabcdef|lit000184xyzabcdef|lit000185xyzabcdef|lit000186xyzabcdef|lit000187xyzabcdef|lit000188xyzabcdef|lit000189xyzabcdef|lit000190xyzabcdef|lit000191xyzabcdef|lit000192xyzabcdef|lit000193xyzabcdef|lit000194xyzabcdef|lit000195xyzabcdef|lit000196xyzabcdef|lit000197xyzabcdef|lit000198xyzabcdef|lit000199xyzabcdef|lit000200xyzabcdef|lit000201xyzabcdef|lit000202xyzabcdef|lit000203xyzabcdef|lit000204xyzabcdef|lit000205xyzabcdef|lit000206xyzabcdef|lit000207xyzabcdef|lit000208xyzabcdef|lit000209xyzabcdef|lit000210xyzabcdef|lit000211xyzabcdef|lit000212xyzabcdef|lit000213xyzabcdef|lit000214xyzabcdef|lit000215xyzabcdef|lit000216xyzabcdef|lit000217xyzabcdef|lit000218xyzabcdef|lit000219xyzabcdef|lit000220xyzabcdef|lit000221xyzabcdef|lit000222xyzabcdef|lit000223xyzabcdef|lit000224xyzabcdef|lit000225xyzabcdef|lit000226xyzabcdef|lit000227xyzabcdef|lit000228xyzabcdef|lit000229xyzabcdef|lit000230xyzabcdef|lit000231xyzabcdef|lit000232xyzabcdef|lit000233xyzabcdef|lit000234xyzabcdef|lit000235xyzabcdef|lit000236xyzabcdef|lit000237xyzabcdef|lit000238xyzabcdef|lit000239xyzabcdef|lit000240xyzabcdef|lit000241xyzabcdef|lit000242xyzabcdef|lit000243xyzabcdef|lit000244xyzabcdef|lit000245xyzabcdef|lit000246xyzabcdef|lit000247xyzabcdef|lit000248xyzabcdef|lit000249xyzabcdef|lit000250xyzabcdef|lit000251xyzabcdef|lit000252xyzabcdef|lit000253xyzabcdef|lit000254xyzabcdef|lit000255xyzabcdef|lit000256xyzabcdef|lit000257xyzabcdef|lit000258xyzabcdef|lit000259xyzabcdef|lit000260xyzabcdef|lit000261xyzabcdef|lit000262xyzabcdef|lit000263xyzabcdef|lit000264xyzabcdef|lit000265xyzabcdef|lit000266xyzabcdef|lit000267xyzabcdef|lit000268xyzabcdef|lit000269xyzabcdef|lit000270xyzabcdef|lit000271xyzabcdef)z
+engine vm
+m "lit000135xyzabcdefz" 0 19
+n "lit000272xyzabcdefz"
+n ""
+
+# =========================================================================
+# F3 — REFUSES at position 0, COMPILES at position -2
+# =========================================================================
+# The OPPOSITE direction design section 6.2's own rule forbids ("no dial
+# position may select a switch value that moves the refusal set, in either
+# direction") and a count-based check cannot see. `perr`, because the
+# pattern is refused at every position this file's own harness invocation
+# would build it at (the DEFAULT, i.e. `balanced`).
+#
+# *** THIS IS NOT A HYPOTHETICAL RISK -- IT IS A MEASURED VIOLATION OF THE
+# CURRENT SHIPPED [OPT-DIAL] TABLE, FOUND BY CONSTRUCTING THIS FIXTURE. ***
+# `[^\p{C}\p{M}\p{P}]` (build/pcrec, 2026-09-17):
+#
+#   --tune=balanced    REFUSES: "pattern too large: 1,027,199 bytes of
+#                      emitted code (limit 1,000,000)"
+#   --tune=size        REFUSES: 1,027,196 bytes, same limit
+#   --tune=min-size    COMPILES: 608,196 bytes -- GAINS AN ANSWER
+#   --tune=speed       REFUSES: 1,027,198 bytes, same limit
+#   --tune=max-speed   REFUSES: 1,027,206 bytes, same limit
+#
+# THE CAUSE, isolated: `build/pcrec -p rx --encoding=utf8 --features
+# unicode-props -fno-premul-table -- '[^\p{C}\p{M}\p{P}]'` (the bare flag,
+# no dial involved) ALSO compiles, at 608,197 bytes. `-fno-premul-table`'s
+# own documented savings (docs/spec/tuning.md section 2.13: "sigma =
+# 22...25%") are large enough on a sufficiently table-heavy DFA machine to
+# cross PCREC_MAX_EMIT_BYTES's refusal boundary -- and `--tune=min-size`
+# denies that flag UNCONDITIONALLY (section 5.4's ratified `-2` cell), so
+# the dial inherits a refusal-set-moving property of a flag that predates
+# it. `docs/spec/tuning.md` section 2.13 carries NO "GATE 2" annotation for
+# `-fno-premul-table` (unlike section 2.6/2.7's altcls rows, which do, and
+# are excluded from the dial FOR EXACTLY THIS REASON: "the deny arm moves
+# the refusal set"). This fixture is the measurement that says
+# `-fno-premul-table` belongs in that same excluded company, or that the
+# `-2` cell needs its own mitigation -- a ruling this lane is not chartered
+# to make (src/core/tune.c is out of this lane's scope), reported here and
+# in the lane's handback instead.
+pattern [^\p{C}\p{M}\p{P}]
+encoding utf8
+features unicode-props
+perr

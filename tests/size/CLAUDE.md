@@ -135,3 +135,70 @@ format changes.
   the pattern refuses earlier at NFA construction, and the cell would then
   pass for a reason unrelated to what it tests.
 
+- **tune_dial_fixtures.rxtin** — [OPT-DIAL] design section 6.2a's NEAR-CAP
+  FIXTURE FAMILY (added 2026-09-17, lane dialimpl), the r53 precedent
+  ("synthetic ladders are corpus members") applied to `--tune=N`'s own
+  refusal-set acceptance (design section 6.2: "no dial position may select a
+  switch value that moves the refusal set, in either direction"). Three
+  blocks, F1/F2/F3 in the design's own naming, each with the exact measured
+  byte counts at every `--tune` position in its own header comment so a
+  reader (or `tests/codegen/run_tune_dial.sh`, being built concurrently by a
+  sibling lane at the time this file was written) does not have to re-derive
+  them:
+
+  - **F1** sits just under `PCREC_MAX_EMIT_BYTES` (1,000,000) at `balanced`
+    (`[^\p{C}\p{M}\p{S}]`, a synthetic property-class DFA artifact,
+    967,510 B) and shows the GROWTH direction holds: `+1`/`+2` move it by at
+    most 8 bytes (the `RX_TUNE` stamp string's own length, not the
+    entry-chain term — this artifact has no VM program at all to raise a
+    term on). It ALSO carries a finding that is not F1's own claim: at
+    `--tune=min-size` the SAME artifact drops to 578,203 B (a 40% shrink),
+    which is `-fno-premul-table`'s own documented savings landing on an
+    unusually table-heavy machine — see F3.
+  - **F2** sits just under `PCREC_MAX_VM_EMIT_CODE_BYTES` (500,000) at
+    `balanced`, VM-compiled (a 272-branch literal alternation,
+    python-oracle-verified, 499,092 B of code) and holds under the cap at
+    every position (906-916 B of headroom throughout). **The entry-chain
+    term itself is NOT exercised here** — this witness's own emitted VM
+    program is ~499,000 bytes, five orders of magnitude past even the
+    raised 8,192-byte threshold, so `shared` is selected at every position
+    and the raise is a structural no-op on it. A witness whose OWN program
+    sits inside 4,096-8,192 bytes while its surrounding artifact ALSO
+    approaches the code cap would need CODE bytes from something other than
+    the VM program itself (a hybrid's code overhead is small and roughly
+    constant regardless of its table size, since table bytes are excluded
+    from "code" by definition) — none was found in the time this row had;
+    stated here rather than silently substituted with a weaker claim.
+  - **F3** is the OPPOSITE direction, `perr` at `balanced` (the default axis
+    every zero-argument harness run compiles at) — and it is not a
+    hypothetical risk fixture. `[^\p{C}\p{M}\p{P}]` REFUSES at `balanced`/
+    `size`/`speed`/`max-speed` (1,027,196-1,027,206 B, over
+    `PCREC_MAX_EMIT_BYTES`) and COMPILES at `--tune=min-size` (608,196 B) —
+    a MEASURED violation of design section 6.2's own rule, in the
+    shipped table, TODAY. The cause is `-fno-premul-table`'s unconditional
+    `-2` denial: the bare flag alone (no dial involved) drops the SAME
+    over-cap pattern to 608,197 B, and `docs/spec/tuning.md` section 2.13
+    carries no "GATE 2" annotation for that axis the way section 2.6/2.7's
+    altcls rows do (those are excluded from the dial for precisely this
+    property: "the deny arm moves the refusal set"). Reported here and in
+    the lane's handback; `src/core/tune.c` is outside this lane's mandate; a
+    ruling on the `-2` cell is owed elsewhere.
+
+  `.rxtin`, not `.rxt`, and that is a departure from the r53 precedent's
+  letter forced by this lane's own scope: `tests/rxtsource/
+  run_rxtsource_tests.sh` pins a `CENSUS_FILES`/`_BLOCKS`/`_LINES` count over
+  every `*.rxt` file in the tree and that script sits outside `tests/mech/`
+  and `tests/size/`, so a plain `.rxt` here would move a pin this lane
+  cannot also re-pin in the same commit. Kept off `find tests -name
+  '*.rxt'` and off the automatic `make test` sweep by the same convention
+  `tests/rxtsource/fixtures/*.rxtin` already uses; invoke it explicitly
+  (`bash tests/harness/run.sh tests/size/tune_dial_fixtures.rxtin` — 7/7 at
+  authoring, confirmed) or `python3 tests/harness/verify_rxt.py tests/size/
+  tune_dial_fixtures.rxtin` (F1's three cells use `\p{...}`, which python
+  `re` cannot parse at all — SKIP, not `# pcre2-only`, since there is no
+  python EXPRESSION to mark; F2 and F3 verify against python `re` directly).
+  Whoever wires `run_tune_dial.sh`'s own acceptance should read the sizes
+  from this file's own header comments rather than re-measuring them,
+  and re-measure only if `src/core/tune.c`'s table or `SIZE_TERM_BAR_DEFAULT`
+  moves under it.
+
