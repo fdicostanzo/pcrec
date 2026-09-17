@@ -7160,3 +7160,47 @@ replaced by a pointer to it in the same change.
 **Revisit when:** a second silent-degradation site appears (the rule is
 now zero exceptions — lens 8's probed-and-held list verified 75 of 76
 sites already conform, and F1+this row close the last two).
+
+## D106 — [DD-8] OPENED for the table-mechanism adoption, sequenced as a wave-1 emission-kit customer; scope (tabular-only vs +sibling line contract) left to Frank (Frank, 2026-09-17, sixty-seventh session)
+
+**Decision.** Frank opens [DD-8] (`docs/dev/plan.md`, STATE:started) for
+the long-planned adoption of `docs/spec/table_contract.md` by
+`--emit-ir`. The plan (table_contract.md's "Sections" note, added by
+Frank 2026-08-21) was to bring `--emit-ir`'s tabular sections under the
+ruled `#section`/`#header` contract so its consumers parse BY
+DECLARATION rather than by remembered shape; the 2026-09-17 code review
+independently confirmed the need (EP2 + lens 10: the `--emit-ir` listing
+`irsb` sits OUTSIDE all four byte-identity gates, its only comparator is
+`tests/codegen/run_ir_listing.sh`, whose extractors have gone stale once
+already).
+
+**Correction recorded at the opening:** the "standard table emit
+mechanism" is a shared *library* only on the CONSUMER side
+(`tests/lib/table.sh`). On the PRODUCER (C) side there is NO shared
+emitter today — lens 2 counted five independent TSV row emitters and two
+incompatible escapers — and building the one kit is exactly the review's
+wave-1 charter (lens 10, `sb_field`/`sb_row`/`sb_join`). So DD-8's
+adoption is sequenced as a CUSTOMER of that kit, gated on its table-row
+primitive: the IR sections emit through the kit, not a one-off producer
+built now that wave 1 would then reconcile (the general-mechanism rule).
+
+**The absolute constraint (DD-8's own, unchanged):** the listing derives
+from the same walk the emitter does — the `VEvent` stream — never a
+parallel description. Adoption re-shapes how that stream RENDERS; it adds
+no second table producer.
+
+**Left open for Frank — SCOPE:** (a) the tabular SECTIONS only (slot
+legend, label table, the RUNGS/STRATEGIES/PRUNES sections) adopt the
+already-ruled Sections mechanism — a low-risk mechanism-adoption on an
+existing ruled format; or (b) that PLUS a NEW sibling line-oriented
+contract for the program-listing BODY (a header-declared line grammar so
+`run_ir_listing.sh`'s body extractors also parse by declaration). (b) is
+genuinely new design (a new contract document/section), not adoption of
+an existing one. Manager lean: do (a) as the wave-1-customer change, and
+decide (b) separately AFTER seeing whether the tabular conversion alone
+quiets `run_ir_listing.sh` — bundling a new-contract design into a
+mechanism-adoption change mixes two risk classes.
+
+**Revisit when:** wave 1's table-row primitive lands (the gate); the
+scope question is answered; `--emit-dot` / enriched-trace remain
+separately not-started within the row.
