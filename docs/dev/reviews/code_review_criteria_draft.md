@@ -1,9 +1,35 @@
-# CODE REVIEW CRITERIA — DRAFT FOR FRANK'S PERSONAL EDIT
+# CODE REVIEW CRITERIA — RATIFIED
 
-Status: DRAFT (manager, 2026-09-17, incorporating Frank's six seed
-concerns + four manager additions from the same-day spot perusal).
-Frank edits/ratifies this document personally before any review lens
-launches (his ruling). Nothing below is binding until his mark.
+Status: **RATIFIED by Frank, 2026-09-17** ("i reviewed code review
+criteria and agree"), with TWO ADDENDA recorded verbatim in the
+ratification block below. Drafted by the manager 2026-09-17
+(Frank's six seed concerns + four manager additions from the
+same-day spot perusal + lens 11, his function-altitude rubric).
+The filename keeps its `_draft` spelling because prior citations
+(wake.md, the journal) point at it; this header is the authority.
+
+## Ratification addenda (Frank, 2026-09-17, binding)
+
+- **ADDENDUM 1 — length loops with extraction**: "function length
+  heuristics should include or follow or loop with the pulling of
+  common semantic extracts." Lens 11's length trigger is not a
+  standalone split-it verdict: the remedy for a too-long function is
+  FIRST the common semantic extracts lens 1 identifies (the shared
+  idioms/missing-library operations), and the two lenses LOOP — an
+  extraction proposed by lens 1 re-scores the lens 11 population,
+  and a lens 11 over-N function is examined for lens 1 extract
+  candidates before any ad-hoc split is proposed. In the synthesis,
+  lens 11 findings on a function cite the lens 1 extractions that
+  apply to it (or state that none do) before proposing
+  function-specific restructuring.
+- **ADDENDUM 2 — all functions, length-ordered**: "functions should
+  generally be reviewed for function criteria but length dictates
+  priority." The five-question function rubric (lens 11) applies to
+  the function population GENERALLY, not only to the over-N tail —
+  length is the PRIORITY ORDER of review, not an admission filter.
+  Practically: the census ranks every function by length; lenses
+  work that ranking top-down as budget allows and say where they
+  stopped (no silent caps — the unreviewed remainder is named).
 
 ## The initiative, restated
 
@@ -143,6 +169,11 @@ installs; reproducible both boxes; outputs committed as evidence):
 function census (name/file/line/length/depth via ctags), token-shingle
 clone candidates (winnowing), literal census (numbers/strings with
 context), include graph + layer matrix, churn×size hotspots (git).
+Per the ratification addenda: the census is LENGTH-RANKED over the
+whole function population (ADDENDUM 2's priority order), and the
+census and clone-candidate outputs share join keys (file, function,
+line span) so lens 11's over-N rows can be joined directly to lens
+1's extract candidates (ADDENDUM 1's loop).
 `gcc -fanalyzer` findings ride the existing `make lint`. Heavier
 third-party tools (cppcheck, clang-tidy, lizard) require Frank's
 explicit ok for machine installs — proposed only if the scripts prove
@@ -162,11 +193,24 @@ insufficient.
 6. Refactor waves in later sessions: one family per wave, checkpoint
    battery between, anchor re-aims travel IN the wave.
 
-## Open for Frank at ratification
+## Open items — dispositioned at ratification
 
-- Merge 7 into 4 and 10 into 2? (Manager's lean: yes for 7/4, keep
-  10 separate as the wave-1 charter.)
-- The secondary tier (tests/lib+harness): this round or the next?
-- Machine installs for heavier static analysis: yes/no.
-- Token appetite per lens (one opus lane each is the floor; lens 1
-  and 4 may want two passes over the emitters given their size).
+Frank's ratification did not rule these individually; the manager
+dispositions them under standing delegation, each re-openable by
+Frank at any time:
+
+- Merge 7 into 4 and 10 into 2? → **7 merges into 4** (one lane,
+  lens 4 carries the archaeology-migration deliverable); **10 stays
+  separate** as the wave-1 charter. (The manager's stated leans,
+  now taken.)
+- The secondary tier (tests/lib+harness): → **next round.** This
+  round is the primary tier only; keeps the report reviewable and
+  the lens budget on the product tree.
+- Machine installs for heavier static analysis: → **no** (the
+  doc's own default stands — repo-owned python-stdlib scripts;
+  installs only on Frank's explicit ok if the scripts prove
+  insufficient).
+- Token appetite per lens: → **the floor** (one opus lane each);
+  lens 1 and lens 4 may charter a second pass over the emitters if
+  their first pass names the need — per ADDENDUM 2 they state where
+  the length-ranked sweep stopped, which is the trigger.
