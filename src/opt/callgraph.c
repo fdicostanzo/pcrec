@@ -470,6 +470,13 @@ static long long cg_sat_mul(long long a, long long b)
     return a * b;
 }
 
+/* Decides each target's linkage — CALL_SPLICE (an exact finite inlining) or
+ * link — and fills `cg->exp` with the composed expansion size a splice
+ * would cost. `-fno-splice-calls` denies every splice unconditionally and
+ * FIRST, before any budget arithmetic runs, so the denied build is exactly
+ * the pre-splice artifact (§9.2's control) rather than a differently-priced
+ * fourth variant. Cyclic targets (`pcrec_callgraph_reaches(cg, i, i)`) never
+ * splice; the rest are evaluated cycles-first, then over the DAG. */
 static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
 {
     const int n = cg->ntarget;
@@ -645,6 +652,13 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
 
 /* ------------------------------------------------------------------------- */
 
+/* Builds `cx->callgraph` (NULL for a call-free pattern, which is what keeps
+ * such a compile byte-identical to one built with no call graph at all):
+ * finds every called group, binds `Ast.u.call.body` to each call's target
+ * over the FINAL tree (this pass's own reason for its placement — see the
+ * file header), then runs the minw/nonnullable/maxw fixpoints and
+ * `cg_eligibility`'s splice/link decision. Must run after every pass that
+ * REBUILDS a node and before engine selection, which reads the linkage. */
 void pcrec_callgraph_build(Ctx *cx, Ast *root)
 {
     const int ncap = (int)cx->ncap;

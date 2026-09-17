@@ -1467,6 +1467,13 @@ static unsigned ng_count_caller_scope(const Ctx *cx)
     return n;
 }
 
+/* Emits the shared `extern const rx_info <prefix>_info` definition every
+ * artifact carries — the D46 stamps (`st`), the named-groups reflection
+ * table (only when the pattern declared a name, so a name-free pattern
+ * stays byte-identical to before this field existed), and every field
+ * `docs/spec/match_api.md` §6 promises. Called identically by the DFA and
+ * VM emitters, which is what keeps the struct's population rule ("what
+ * every artifact reports about itself") from drifting between engines. */
 static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                           const char *upper, const InfoStamp *st)
 {
@@ -3597,6 +3604,12 @@ static void emit_class_legend(StrBuf *c, const Dfa *d)
  * something other than what it is. */
 static bool legend_extra_escape(unsigned char ch) { return ch == '"' || ch == '\\'; }
 
+/* Emits the human-readable comment above the byte-class table, showing an
+ * EXAMPLE input reaching the deepest state (a BFS from `d->s0`, backtracked
+ * through `from`/`via`). Degrades SILENTLY on allocation failure (F3, the
+ * review's own finding — a legend is never worth failing a compile over,
+ * but the artifact then carries no comment saying one was dropped). Purely
+ * cosmetic: nothing downstream reads what this writes. */
 static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
 {
     int *dist  = malloc((size_t)d->n * sizeof(int));
@@ -5622,6 +5635,14 @@ static void scan_test(StrBuf *c, const DfaForm *f, int head)
     dfa_scan_of(f->cx, f->d, head)->emit_test(c, f, head);
 }
 
+/* Emits the [OPT-5] scan edge for chain head `head`: a bounded-count loop
+ * over one class instead of `m` per-byte table steps, replacing every
+ * state `scanedge.c` deleted from this chain. `head` must already be a
+ * chain head at PERIOD 1 (`ctx_fail`s loudly otherwise — a caller that
+ * hands this a mid-chain state or a period-k chain is a defect in the
+ * scan-edge analysis, not something to emit around). `nx`/`acc`/`facc`
+ * decide the loop's exit shape: what state it lands in and whether that
+ * state or the edge's own run accept. */
 static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 {
     const DState *st = &f->d->st[head];
@@ -5949,6 +5970,13 @@ static bool dfa_seed_can_be_scan_head(const Dfa *d)
 static void scan_label(char *buf, size_t n, const DfaForm *f, const char *tag)
 { snprintf(buf, n, "%s_%s_scan_%s", f->p, f->dir->c.name, tag); }
 
+/* Emits `f`'s whole per-byte state-machine loop: the ordinary table-step
+ * body, plus one dispatch to each [OPT-5] scan edge's own bounded-count
+ * body via `emit_scan_edge`. The entry test is the loop's OWN stop test
+ * (`is_stop && !is_dead`), not an equality against a fixed start state —
+ * [OPT-EDGE] STEP 1.1's fix, needed because a `seeded` machine's
+ * initializer can land the state variable on any member of the seed
+ * family, not only `s0`. `s0head`/`seedhead` decide which shape applies. */
 static void emit_scan_loop(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->ind;
@@ -6364,12 +6392,23 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
 
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
 
+/* One `&&label` target for computed-goto tables below: `tgt < 0` is the
+ * dead state's own label, everything else `<prefix>_s<tgt>`. */
 static void emit_target(StrBuf *c, const char *p, int tgt)
 {
     if (tgt < 0) sb_printf(c, "&&%s_dead", p);
     else         sb_printf(c, "&&%s_s%d", p, tgt);
 }
 
+/* Emits the ENG_ATTEMPT engine's whole search function `fn`: the per-start
+ * attempt loop that re-tries the pattern from every byte position with a
+ * FRESH re-seeded state (this rung's own §3.8.2 property — it is not "seed
+ * once per search," it is "seed once per attempt," n+1 times), a
+ * computed-goto state machine, and the byte-class/accept/seed tables that
+ * drive it. `storage` is only forwarded to `emit_search_head`'s
+ * caller-facing declarations — this engine has no captures, no frames and
+ * no trail of its own. The empty-machine case (`dfa_engine_is_empty`)
+ * short-circuits before any of that. */
 static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 {
     Job *job = cx->job;
@@ -7114,6 +7153,14 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
     sb_puts(c, " * ===================================================================== */\n\n");
 }
 
+/* Emits the SHARED artifact prologue both engines call: the optional
+ * paired `.h`, the pattern/feature comments, the feature and altcls
+ * macros, `#include <string.h>` when the body needs `memchr`, and every
+ * D46 stamp that is a property of the ARTIFACT (both engine-selection and
+ * both entries) rather than of one engine's own body — which is why this
+ * lives here and not inside either `emit_attempt`/`emit_vm`'s own text.
+ * `bs` is the frame-buffer sizing surface; `pcrec_bufsurface_inert()` on a
+ * DFA artifact, computed by the VM emitter otherwise. */
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          const BufSurface *bs)
 {

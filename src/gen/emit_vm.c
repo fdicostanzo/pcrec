@@ -2196,6 +2196,14 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
     return c;
 }
 
+/* The resume-frame/trail/slot COST of emitting `a` — the analysis
+ * `vm_count_slots`/`vm_render_listing`'s sizing arms and the caller-frame
+ * buffer surface all read, emitting no text itself. `under_atomic` narrows
+ * the frame charge for a body a cut will discard on failure. Every arm's
+ * cost must match what the corresponding emitting function (`vm_emit` and
+ * its rung helpers) actually writes — a leaf that emits a trail entry
+ * (`\K`) and is priced as free here undersizes `<PREFIX>_TRAIL_FRAMES` and
+ * the artifact answers a give-up on a pattern it can match. */
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 {
     Cost c = { 0, 0, 0, 0, false, false };
@@ -3843,6 +3851,13 @@ static void vm_isl_die(Vm *v, VmIsl *t, int x)
     else                    vm_goto(v, t->nd[t->nd[x].chain].chainlbl);
 }
 
+/* Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,
+ * which does no emission at all): one dispatch state per trie node,
+ * iteratively over an explicit stack rather than recursively (the trie can
+ * be as deep as the alternation's shared-prefix run), each node charging
+ * the work budget per trie byte examined. The root takes the caller's own
+ * `entry` — the island IS the alternation's entry point — and every
+ * accepting node gets its own `chainlbl` to jump to on a completed match. */
 static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 {
     StrBuf *b = v->b;
@@ -4666,6 +4681,15 @@ static int vm_rev_index(const Rev *R, int capno)
     return -1;
 }
 
+/* Emits `a`'s BACKWARD walk for the reverse-deterministic rung: one state
+ * per node, testing the byte just before `R->cur` and decrementing it on
+ * success, so `vm_revdet_rep` can recover a bounded repeat's per-iteration
+ * captures after the fact instead of writing them on every forward step.
+ * `R` carries the shared cursor/floor/fail-label names every arm reads.
+ * Reversal is NOT emitted as the forward walk mirrored — a distinct
+ * program, not a parameterisation (the second pass's own finding) — and
+ * this function is reached only on a body `revdet.c`'s analysis already
+ * approved as reversal-eligible. */
 static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 {
     StrBuf *b = v->b;
@@ -4824,6 +4848,15 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
     ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
 }
 
+/* Emits the reverse-deterministic rung's forward scan for bounded repeat
+ * `a`: ONE body copy that counts iterations without saving per-iteration
+ * captures, followed (on exit) by `vm_rev_emit`'s backward walk over the
+ * scanned span to recover the last iteration's slots from the RIGHT. What
+ * distinguishes this from `vm_rep`'s frame-based emission is exactly that
+ * trade — one forward pass plus a bounded backward recovery, instead of a
+ * resume frame per iteration — and it is reached only when `revdet.c` has
+ * already certified the body's forward AND reverse unique-iteration proof
+ * (`Ast.u.rep.revbody` non-NULL). */
 static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
                           bool under_atomic)
 {
@@ -5685,6 +5718,14 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
     vm_lbl(v, exit, "unbounded repeat: the exit");
     vm_goto(v, next);}
 
+/* Emits a bounded/unbounded repeat's FRAME-based rung: one resume frame
+ * per iteration, pushed on entry and popped on backtrack, the fallback
+ * shape every quantifier this file's other rungs (possessify's frameless
+ * cut, revdet's forward/backward pair, the counter unroll) exist to avoid
+ * where they can prove it safe. `under_atomic` decides whether a failed
+ * iteration's frame is discarded outright (a cut above it) or kept for a
+ * real backtrack. Reached whenever no cheaper rung applies — the ladder's
+ * last rung, never itself declined. */
 static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
     uint8_t seq[VM_MAX_STRIDE][32];
@@ -6445,6 +6486,14 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
     (void)mslot;
 }
 
+/* Emits one lookaround assertion — all four polarity/direction
+ * combinations (lookahead/lookbehind × positive/negative), atomic or not —
+ * dispatching each branch to `vm_emit`/`vm_look_behind`. §3.2.1's save/
+ * zero/restore around the body (`v->fmin`/`fdyn`) is what stops the
+ * assertion's own scan-edge accounting leaking into the caller's; the
+ * lookbehind branches additionally record a mark slot and re-check the
+ * cursor lands exactly where the width analysis said it would (the
+ * "END-CHECK", this function's only runtime evidence that the two agree). */
 static void vm_look(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
@@ -7126,6 +7175,14 @@ static void vm_region(Vm *v, int i)
           "return to the caller through the frame's own label");
 }
 
+/* THE DISPATCHER: emits `a`'s VM code at label `entry`, continuing at
+ * `next` on success and falling to the enclosing fail label otherwise —
+ * recursively, one exhaustive `AKind` arm per construct, each choosing
+ * among that construct's own rungs (possessify's frameless cut, revdet's
+ * reverse walk, the counter unroll, the plain frame) via the fields
+ * `select_engine.c`/`possessify.c`/`revdet.c` already decided. Every arm's
+ * emission must match `vm_cost`'s charge for the same node exactly — the
+ * two are read together, never audited separately. */
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
@@ -7774,6 +7831,14 @@ static void vm_strats_describe(unsigned mask, StrBuf *o)
     }
 }
 
+/* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
+ * from the emitted `.c`, so byte-identity gates over the artifact say
+ * nothing about this function and it has its own arm
+ * (`run_ir_listing.sh`). Reads the `VEvent` stream `pcrec_emit_vm` already
+ * recorded during real emission (labels, choice points and their
+ * preference order, capture slots, island boundaries, callout sites) and
+ * `st`'s summary stamps, so the listing cannot drift from the code it
+ * describes — it never re-walks the AST. */
 static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 {
     Ctx *cx = v->cx;
@@ -8536,6 +8601,21 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
     }
 }
 
+/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
+ * `root` into `job->csb` (and, under `--emit-ir`, the listing into
+ * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
+ * `<prefix>_match*` entries, the resume/trail frame types and their sizing
+ * macros, the program body (`vm_emit`'s recursive walk plus its own
+ * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
+ * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
+ * run first and consumed by the emission that follows — the root's
+ * minimum width (this comment's own subject, immediately below: read HERE
+ * because only this emitter writes a search entry to guard), the cost/slot
+ * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
+ * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
+ * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
+ * it discovers the call regions it must save/restore across. */
 void pcrec_emit_vm(Ctx *cx, Ast *root)
 {
     Job *job = cx->job;

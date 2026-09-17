@@ -553,6 +553,19 @@ static void size_drop_note(const char *what, const char *cost)
             what, cost);
 }
 
+/* THE PIPELINE, and the tree's only `setjmp`: parse -> altcls -> discharge
+ * atomic -> compose (`--source` only) -> call graph -> select engine ->
+ * postresolve -> NFA -> DFA(s) -> emit, wrapped in a BOUNDED ONE-SHOT
+ * RETRY loop (`COMPILE_MAX_ATTEMPTS = 2`). A failed attempt's `ctx_fail`
+ * lands in the catch branch here; if it was an `auto`-route DFA overflow
+ * ([SEL-1]) or an emitted-size-cap refusal with `Job.anchored_ok`/premul
+ * available ([K53-SELRETRY]), the WHOLE pipeline reruns once more with one
+ * more bit set (`dfa_disabled`, `size_drop_rung`) rather than a second,
+ * local recovery point — this compiler has exactly one `setjmp` and this is
+ * how it is reused. `pcrec_compile` and `pcrec_emit_ir` are both thin
+ * callers of this one function, differing in whether the emitted C is kept
+ * or thrown away, per engine_m4.md §10's "a listing describes a compile
+ * that really happened" guarantee. */
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
                           const RxtDefs *defs)

@@ -940,6 +940,14 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
 
 /* ---- [...] classes ---- */
 
+/* Parses a `[...]` bracket expression starting just past `[`: the leading
+ * `^`/`]` special cases, POSIX/extended-class doorway dispatch per member,
+ * escape and range handling, folding each contribution at its own
+ * constructor rather than the accumulated whole (§4's caseless rule — see
+ * the comment below on why). The `A_CLASS` node is allocated up front but
+ * published (its interval set attached) only at the bottom, because any of
+ * several paths through this loop `ctx_fail`s mid-accumulation and every
+ * one abandons the node. Caller has already consumed the `[`. */
 static Ast *p_class(Ctx *cx)
 {
     size_t opening = cx->pos - 1; /* at '[' */
@@ -1640,6 +1648,15 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     return true;
 }
 
+/* Parses one atom (`p_atom`) followed by zero or more quantifier suffixes,
+ * applying each as an `A_REP` wrap and folding a chain of quantifiers on
+ * one atom the way PCRE2 does. Handles the possessive `+`/lazy `?` suffix,
+ * `{m,n}`'s two-phase overflow rule (K5/K6/K8), and MOD-0.5d's
+ * quantifier-binds-across-skipped-bytes rule under `(?x)`. `xskip` at the
+ * top of the loop is a no-op inside an open `\Q...\E` quote (except at its
+ * own `\E`), which is what keeps a quoted quantifier-lookalike byte a
+ * literal rather than a suffix — see the loop's own comment for the D27
+ * miscompile this guards. */
 static Ast *p_rep(Ctx *cx)
 {
     Ast *a = p_atom(cx);

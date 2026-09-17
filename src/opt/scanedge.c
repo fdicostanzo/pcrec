@@ -464,6 +464,15 @@ static int chain_cmp(const void *a, const void *b)
     return x->head - y->head;
 }
 
+/* Finds every maximal SCAN CHAIN in `d` — a run of states sharing one
+ * (class, exit, accept) shape, the file header's "counted class run"
+ * property — and DELETES the chain, leaving one edge the emitter turns
+ * into a bounded loop instead of `m` table steps. `prefilter_reseeds`
+ * threads axis-B's own reseed fact through to precondition (8), narrowed at
+ * [OPT-EDGE] STEP 1.1 to the ONE hazard it actually guards (a mid-body
+ * state-variable write the emitted loop's stop test cannot see). A no-op
+ * under `-fno-scan-edge`, which is the soundness gate, not merely an
+ * observability flag — see the file's own comment at that check. */
 void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
 {
     /* THE DENIAL IS HERE AND NOWHERE ELSE THAT MATTERS. The emitter's own

@@ -1230,6 +1230,17 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
     return intern(cx, d, vw[V_BASE], eolvar, endvar);
 }
 
+/* Priority subset construction over `nfa`, rooted at `root` — `nfa->start`
+ * for the ordinary unanchored machine, `nfa->anch_start` for the anchored
+ * MATCH-HERE machine (`[ENG-ABS]`) — writing the interned states into `d`.
+ * `prune` accept-prunes lower-priority threads (on for every forward
+ * machine, off for the reverse machine, which must keep every thread to
+ * find the earliest start); `reverse` selects which side of a `(?m)$`-style
+ * assertion each closure reads. `optional` means an overflow RECORDS on
+ * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `ctx_fail`ing — a
+ * selection outcome for a machine nothing needs, never a diagnostic, per
+ * `[SEL-1]`. Resets `d`'s per-machine fields unconditionally at entry: one
+ * `Dfa` is reused across a compile's several builds. */
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                      int maxstates, int root, bool optional)
 {

@@ -300,6 +300,15 @@ static Ast *altcls_factor_run(Ctx *cx, Ast **branches, size_t n, int depth)
 
 /* ---- stage 1 + dispatch ------------------------------------------------- */
 
+/* Stage 1 + dispatch over an A_ALT spine: flattens the maximal left-nested
+ * run (transparent through non-capturing groups, so `(?:a|b)|c` flattens
+ * identically to `a|b|c`), walks each branch through `altcls_walk` (stage
+ * 2's factoring), then merges any maximal ADJACENT run of bare single-char
+ * A_CLASS branches into one class holding their union, then stage 2's prefix factoring.
+ * Returns `a` unchanged when both stages decline (a pattern with nothing
+ * to merge or factor pays one spine flatten and no allocation). Introduces
+ * no capturing group, ever —
+ * only A_CLASS/A_CAT/A_ALT/A_EMPTY nodes leave this function. */
 static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
 {
     /* Flatten the maximal LEFT-NESTED A_ALT spine. Transparent non-capturing

@@ -417,6 +417,17 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
     a->u.look.widths = w;
 }
 
+/* ONE group port for all six lookaround registry rows (three lookaheads,
+ * three `(?<`-tailed lookbehinds) and, since wave F, the twelve `(*` alpha
+ * spellings that resolve to them through `family`. `la_kind(rw)` decides
+ * which of `Ast.u.look`'s three flags to set — the single place the
+ * `(?<`-tail split happens, so no second port can decide it differently.
+ * Saves/restores the scoped inline-option state around the body exactly as
+ * a plain group does, refuses a body carrying `\K` (§2.7, permanent per
+ * Frank's ruling), and — for a lookbehind whose body has no call — settles
+ * the §2.5 fixed-width rule immediately; a call-bearing body instead
+ * records its offset for `pcrec_postresolve` to re-ask once the call graph
+ * exists. */
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)
 {

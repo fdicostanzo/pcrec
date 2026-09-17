@@ -130,6 +130,14 @@ static bool ng_is_duplicate(const Ctx *cx, const char *name, size_t len)
     return false;
 }
 
+/* The shared producer for all three declaring spellings — `(?<name>...)`,
+ * `(?'name'...)`, `(?P<name>...)` — dispatching on the elected row's own
+ * `sel`/`tail` to know which closing delimiter to expect. Validates the
+ * name grammar (128-byte cap, PCRE2 error 148 above it), assigns the group
+ * number UNCONDITIONALLY (a named group captures even under `(?n)`, unlike
+ * a plain group), refuses a duplicate name, and records the (name, number)
+ * pair on `cx->named_groups` regardless of `want_caps` — a lexical fact,
+ * not a build output. */
 ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from)
 {

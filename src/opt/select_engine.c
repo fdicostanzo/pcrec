@@ -477,6 +477,13 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
     (void)pcrec_revdet(cx, root);
 }
 
+/* Decides which of ENGM_DFA/ENGM_VM this pattern may build, and whether the
+ * VM's hybrid prefilter runs ahead of it — a bounded fixpoint (§5.1/§5.2)
+ * over the request-derived forcing rules (captures, `--engine=` overrides)
+ * and the registry's per-construct SR-8 rows, driving `possessify`/`atomic`'s
+ * discharge hooks to their own fixpoints along the way. Writes `cx->job->fit`;
+ * the file header has the full rule catalogue and why each fires where it
+ * does — read it before adding a new forcing condition here. */
 void pcrec_select_engine(Ctx *cx, Ast *root)
 {
     EngineFit fit;

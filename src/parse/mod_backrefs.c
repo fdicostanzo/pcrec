@@ -646,6 +646,16 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
     }
 }
 
+/* End-of-parse: settles every `PendingRef` a port queued (a numeric,
+ * relative or by-name backreference, or — since [DD-14] — a subroutine
+ * call, sharing this one pass because both need the final group count and
+ * every declaration of a duplicated name), then — independently, under
+ * `--no-captures` — strips the `A_CAP` wrappers nothing reads, marking
+ * first (`pcrec_bref_mark`) whichever groups a surviving reference still
+ * names. Forward references resolve here by construction — nothing was
+ * answerable at the port itself. A pattern with no pending reference marks
+ * nothing, so every wrapper goes: the tree a `--no-captures` parse has
+ * always produced. */
 Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
 {
     /* THE EARLY RETURN IS ON THE RESOLUTION HALF ONLY, and putting it in front

@@ -383,6 +383,14 @@ static int disjoint_run_len(const TItem *items, int n, int depth)
     return n;
 }
 
+/* Builds the priority-preserving prefix trie fragment for a flat
+ * alternation's `items[n]` at nesting `depth`, recursively but ITERATIVELY
+ * in the branch dimension (D9/D10): it never recurses once per branch, only
+ * once per shared-prefix SPLIT, which is what keeps a 9,000-branch flat
+ * alternation off the C stack (the file's own regression record). Falls
+ * back to `trie_flat` past `TRIE_MAX_RDEPTH`, a decline that is always
+ * safe and never a wrong answer. `-DPCREC_NO_TRIE` compiles this whole path
+ * out for `run_trie_identity.sh`'s reference build. */
 static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
 {
     Frag head = { -1, {0} };
@@ -548,6 +556,16 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     return true;
 }
 
+/* Lowers one AST subtree to its NFA fragment, recursively — the tree's
+ * one exhaustive `AKind` switch with no `default:` arm, so a new kind is a
+ * compile error here rather than a silent miscompile. Re-applies `ast_bare`
+ * at entry (D31's group erasure), so a fragment is identical whether or not
+ * captures were requested. See the file header for the four kinds that are
+ * NOT ordinary lowerings: `\K`/A_LOOK erase to N_EPS (exactly for `\K`,
+ * soundly-superset for a lookaround), a backreference and a linked call are
+ * loud internal errors (nothing may build a machine for either), and a
+ * spliceable call inlines its callee's fragment by following the tree's one
+ * sanctioned back edge, `u.call.body`. */
 static Frag compile_ast(NB *b, const Ast *a)
 {
     a = ast_bare(a);   /* [M4.5b]: the group erasure, re-applied — see above */

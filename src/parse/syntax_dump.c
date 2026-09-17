@@ -1505,6 +1505,16 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
                                                              : "not-askable");
 }
 
+/* `--explain SYNTAX`: renders what the registry ROW says about `query`
+ * beside what a LIVE doorway call actually answers, per candidate row, and
+ * flags a DISSENT where they disagree (`*ndissent` counts them — a nonzero
+ * result is a defect, never a display choice). Builds ONE throwaway `Ctx`,
+ * reused across every candidate row's call through `doorway_call` (this
+ * file's shared router with `--probe-ask`) rather than the compile
+ * pipeline's, since this is a query surface with no pattern to compile.
+ * Returns a malloc'd string;
+ * `err` is filled only on the CLI-facing failure paths (malformed query),
+ * never on a dissent, which is reported in the text itself. */
 char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
                            pcrec_error *err)
 {

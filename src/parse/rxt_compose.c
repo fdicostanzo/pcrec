@@ -715,6 +715,16 @@ static const RxtDef *rc_next_wanted(Composer *co, PendingRef *list,
     return best;
 }
 
+/* Binds `cx->defs`'s definitions into `root`: a fixpoint (pass 1) resolves
+ * every name the target's own tree reaches, transitively, injecting each
+ * bound definition as `A_REP{0,0}(A_CAP{base}(body))` (the shape
+ * `(?(DEFINE)…)` already builds); a re-basing pass (2) then folds each
+ * survivor's group numbers past the target's own `ncap`, respecting D89's
+ * three delivery tiers (delivered/hidden/erased — an erased definition's
+ * `A_CAP` is deleted and spends no number, which is why the map is a map
+ * and not a flat `+base`). A no-op when `cx->defs` is NULL or empty, which
+ * is what keeps a non-`--source` compile byte-identical to before this
+ * file existed. */
 Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
 {
     /* THE EARLY RETURN IS THE IDENTITY CLAIM. Without a definition set this

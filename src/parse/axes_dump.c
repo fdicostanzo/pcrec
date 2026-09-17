@@ -372,6 +372,15 @@ static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
              cli_flag, applies);
 }
 
+/* `--list-axes`' eleven hand-stated VM/engine-selection axis rows — the
+ * ones with no candidate-list-as-data anywhere in the tree yet, unlike the
+ * six DFA layer-1 axes above this function, which are walked live off
+ * `emit_dfa.c`'s own candidate arrays. Each block is one axis: its rungs
+ * in preference order, the deny flag and stamp bit that address it, and a
+ * one-line description transcribed from `docs/spec/tuning.md`. No `if`, no
+ * loop — a straight-line list of `emit_pred_row` calls, one axis-table
+ * centralization away from its own remedy (not built here; see the file's
+ * own header for what the dump proves and does not). */
 static void emit_predicate_axes(StrBuf *sb)
 {
     /* possessify — tuning.md §2.1, RX_VM_STRATS's own named pair */

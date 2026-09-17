@@ -63,6 +63,14 @@ static void state_sig(const Dfa *d, const int *part, int i, int *sig,
     }
 }
 
+/* Moore-style partition refinement over `d`'s states, in place: merges
+ * states with identical transitions and identical `eolvar`/`endvar`
+ * views, remapping `d->s0`/`s1`/`s1w`/`s1g` to the merged numbering.
+ * Behavior-preserving by construction — priority/leftmost-first semantics
+ * are already baked into the transition structure before this runs — and a
+ * no-op below two states. Its five local tables are the only allocations
+ * on the compile path the Job does not own, so this is the one pass that
+ * frees by hand before `ctx_nomem` rather than leaving it to job_cleanup. */
 void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
 {
     int n = d->n;

@@ -270,6 +270,15 @@ static Ast *rd_node(Ctx *cx, const Ast *src)
     return n;
 }
 
+/* Builds `a`'s REVERSED AST — the material `Ast.u.rep.revbody` holds when
+ * the reverse-deterministic rung applies (revdet.c's own file header). Runs
+ * only on a body `rd_shape` has already approved, so every arm here may
+ * assume its construct is reversal-eligible; a construct `rd_shape` should
+ * have declined reaching here (`\K`, a linked call) is a loud internal
+ * error rather than a silently wrong reversed copy. A_CLASS/A_EMPTY and the
+ * six position/context predicates are their own reverse (each is a
+ * PREDICATE, symmetric or absolute); A_CAT/A_ALT/A_REP rebuild recursively,
+ * spine-iteratively per the file's D10/DD-10/K20 obligation. */
 static Ast *rd_reverse(Ctx *cx, const Ast *a)
 {
     switch (a->k) {

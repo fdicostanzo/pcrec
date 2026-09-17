@@ -239,6 +239,14 @@ static ExtResult modport_refuse(ExtWant want, size_t at, const char *msg)
     return res;
 }
 
+/* The `(?` doorway's OPTION-RUN semantic port: validates the whole run
+ * (`from` points past the run's own selector byte, per the option-run
+ * branch's convention — see ext.c's comment on the two `group_answer`
+ * shapes), then either mutates `cx->mods` for a bare run whose caller
+ * splice deliberately escapes the group save/restore (the measured
+ * leak-to-enclosing-`)` rule), or save/apply/`pcrec_parse_body`/restore for
+ * the `:`-scoped form. `m` sets the SCOPED multiline state D62 resolves
+ * onto `^`/`$` at the assertion itself, never read back downstream. */
 ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from)
 {

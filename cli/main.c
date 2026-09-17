@@ -1225,6 +1225,15 @@ static int compile_source(const CliState *cli)
     return rc;
 }
 
+/* Parses the command line via `cli_parse`, then dispatches: a syntax/
+ * registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
+ * — no pattern, no `-o`, each returning before anything else runs), a
+ * `.rxt` `--source` compile (`compile_source`, one or more targets), or an
+ * ordinary single-pattern compile to `-o`. `--target`/`--lib-path` are
+ * refused above every query since they apply to `--source` alone (the one
+ * refusal that also has to free `st.libdirs`, this CLI's only allocation
+ * outside that path). Returns 0 on success, 1 on any refusal or compile
+ * failure. */
 int main(int argc, char **argv)
 {
     CliState st;

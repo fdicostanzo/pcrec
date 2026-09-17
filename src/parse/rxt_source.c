@@ -2092,6 +2092,15 @@ static char *join_path(Arena *a, const char *dir, const char *rest);
 
 /* ------------------------------------------------------------- the entry */
 
+/* Reads `path` and returns its `.rxt` HEAD as written — every `lib`/
+ * `name`/`target`/`config` row plus every pattern block, in file order —
+ * or NULL with `err` filled. Touches no OTHER filesystem path (no `lib`
+ * resolution, no composition): that is `pcrec_rxt_source_resolve`'s job,
+ * kept separate so `--list-source`'s dump stays a pure function of this
+ * one file's bytes. Runs before any `Ctx` exists, so every error is
+ * RETURNED rather than raised through `ctx_fail` — see the file header for
+ * why. The structure layer (S0-S3, the attachment stack `st` below) is the
+ * dispatch; `rxt_schema.def`'s rows say what is legal where. */
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
 {
     if (err) { err->msg[0] = 0; err->pos = 0; }
@@ -3401,6 +3410,12 @@ static const char *lib_ref_text(Arena *a, const char *value)
     return value;
 }
 
+/* Loads and walks `s` (already resolved to `respath`) into `cl`'s LIBRARY
+ * CLOSURE: records `s` as a kid of `cl->root`, records every readable `lib`
+ * reference `s` names, and recurses into each — a fixpoint over the
+ * `lib`-reaches-`lib` graph, keyed on the RESOLVED PATH so a diamond is
+ * read once and a cycle terminates (`closure_seen`). Returns nonzero on the
+ * first unreadable/malformed child, which `err` already names. */
 static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
 {
     if (closure_seen(cl, respath)) return 0;
@@ -3488,6 +3503,14 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
 
 /* ---- the entry ---- */
 
+/* Answers the three questions `--source` must answer before it can call
+ * `pcrec_compile` even once: WHICH artifacts (every `target` row, or the
+ * implicit `target rx` for a file with no head and exactly one unnamed
+ * block), FROM WHICH block (a definition name resolved in the FILE
+ * namespace, walking the `lib` closure `closure_walk` builds), and UNDER
+ * WHICH SETTINGS (`with`/`from`'s flat later-wins merge, applied once per
+ * block). Fills `*out`/`*nout` with the resolved `RxtTarget` array, or
+ * returns nonzero with `err` naming the first unresolvable reference. */
 int pcrec_rxt_source_resolve(RxtSource *src,
                              const char *const *libdirs, size_t nlib,
                              RxtTarget **out, size_t *nout,
@@ -3813,6 +3836,14 @@ static void section_open(StrBuf *sb, const char *name, const char *header)
 
 size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
 
+/* Renders `--list-source`'s TSV: one row per head declaration and per
+ * pattern block, in file order, plus the `#section` blocks
+ * (`provenance`/`variants`/`cases`/`aux`) `src`'s own row scan already
+ * accumulated. AS WRITTEN, never resolved — matches `pcrec_rxt_source_
+ * parse`'s own promise so the two cannot silently disagree about what the
+ * file says. Returns a malloc'd string the caller frees. The header comment
+ * embedded in the output IS the contract (docs/spec/table_contract.md);
+ * changing a column here is a `docs/spec/` change in the same commit (D80). */
 char *pcrec_rxt_source_tsv(const RxtSource *src)
 {
     StrBuf sb = { 0 };

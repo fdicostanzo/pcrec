@@ -160,6 +160,13 @@ static First fst_seq(First x, First rest)
     return r;
 }
 
+/* The byte SET a node can begin with, plus whether it can match empty.
+ * Reads no Ctx, mutates nothing — a pure structural fold over `a`, walked
+ * TRANSPARENTLY through A_CAP/A_ATOMIC (a bracketing construct's FIRST is
+ * its body's). Every set is computed in the SOUND direction: anything
+ * unmodellable (a wide class, a backreference) widens to ALL BYTES rather
+ * than refusing, which can only cost a possessification, never a wrong
+ * answer. Feeds §2.2's disjointness test in `pss_walk` below. */
 static First first_of(const Ast *a)
 {
     switch (a->k) {
@@ -528,6 +535,14 @@ static void gk_link(Gk *g, const uint8_t *lasts, const uint8_t *firsts)
     }
 }
 
+/* Builds `a`'s fragment of the Glushkov position automaton `g` accumulates:
+ * one interned POSITION per leaf byte-set, with the fragment's own FIRST
+ * and LAST position sets returned so the caller can wire them into the
+ * enclosing construct. This is what `pss_walk`'s (U1)/(U2) unique-iteration
+ * test runs over. `g->ok` false means an earlier subtree already declined
+ * the whole construction (a backreference, a wide class outside the byte
+ * range, or the position budget) — every arm checks it first and refuses to
+ * add positions to a build that has already given up. */
 static GkParts gk_build(Gk *g, const Ast *a)
 {
     if (!g->ok) return gk_parts_empty(true);
@@ -848,6 +863,14 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     pss_walk(P, a->l, eff, may_end, inner);
 }
 
+/* Descends `a` computing §2.2's possessification verdict for every A_REP it
+ * finds, threading FOLLOW (the byte set that can come next) and `may_end`
+ * (can the surrounding context end right here) down the tree exactly as the
+ * construct being walked would consume them. `encl` is the innermost
+ * enclosing loop's own follow, needed for the lazy-quantifier conjunct.
+ * Marks `Ast.u.rep.possessive` in place; every conjunct in the verdict is a
+ * measured refutation of a simpler rule (file header) — do not simplify it
+ * without re-reading which counterexample it exists to catch. */
 static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl)
 {
