@@ -23564,3 +23564,28 @@ survives — the split) and F3 (captures arms HANG where pcre2 gives up
 — the VM step budget structurally failed to fire) → proposed rows for
 Frank this morning. Box released; D103 measurement slots handshake as
 they charter.
+
+**Afternoon (sixty-sixth, continued): the whole O-31 finding set
+dispositioned in one day + the code-review initiative chartered.**
+F2 (f2rescue): the captures decline is [OPT-4.2]'s collapse-agnostic
+GLOBAL nullability test; capture location structurally irrelevant
+(disjoint-capture witness); narrowing would reintroduce the measured
+prefilter loss — no change, memo merged. F3 (f3budget): the step
+budget FIRES (typed steps give-up 3-9s both boxes incl. bench's pin;
+71-166M steps/s >= D51's calibration) — the reported hang did not
+reproduce; likely their per-attempt timeout killing an honest ~7-9s
+give-up mid-flight; subject bytes + timeout requested from pcrecdev2
+live. mechfix: 52 mech-arm scoring sites -> ONE score_arm helper,
+missing/unscrapeable logs = ANOMALY both directions, false-DETECTED
+reproduced then killed; S249 figure addendum (11/9 post-k59rung =
+suite growth, A/B-proven). byteid: the train's +27B single-bucket
+histogram, zero non-constant movers. Dial train + K59 rung MERGED
+(cf0962e3, abi 26) and its solo battery runs on ubuntubudu
+(battery_20260917_102334, trailer ~18:00). CODE REVIEW chartered by
+Frank (report-first, opus lenses, refactor waves later): criteria
+DRAFT committed (code_review_criteria_draft.md — his six lenses + the
+manager's four from a personal spot perusal: emit_vm.c 11.5K lines
+with 500-line functions; comment ARCHAEOLOGY as the real comment
+problem; multiple coexisting text-emission mechanisms; the parse tier
+healthy) awaiting Frank's personal ratification; tools = repo-owned
+metric scripts, no system installs without his ok.
