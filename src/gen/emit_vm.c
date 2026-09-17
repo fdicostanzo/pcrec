@@ -9849,7 +9849,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * the artifact takes what it took before this change: INLINE below
          * the term (STEP 1(a)'s shape) and PLAIN above it (the pre-[CC-DIFF]
          * shape). Neither step is novel code. */
-        if ((long long)job->vmsb.len <= VM_INLINE_CHAIN_MAX_BYTES)
+        /* [OPT-DIAL] THE DIAL MOVES THE TERM, NEVER THE RUNG. `--tune=+1`
+         * raises it to 8,192 — the measured band just above today's 4,096,
+         * where a forwarded entry costs 0.061-0.067 bytes per ns/call saved,
+         * five times better than the next cell up. The em-dash sentinel (0)
+         * falls back to this file's own built-in, which stays this limit's
+         * one home. The dial names the TERM and never a rung because rung
+         * `shared` has no measured run time and the allowlist forbids
+         * naming it (design §3.4); an explicit `--vm-entry-shape=N` still
+         * overrides the decision outright, since it never reaches AUTO. */
+        long long term = pcrec_tune_vm_inline_chain_max(cx->opt->tune);
+        if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
+        if ((long long)job->vmsb.len <= term)
             shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
         else
             shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;

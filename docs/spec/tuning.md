@@ -61,6 +61,32 @@ evidence. A stranger tuning performance needs the same table read the
 other way: which knobs are safe to flip without re-verifying correctness,
 and which one is a `--engine`-shaped do-or-die request.
 
+**[OPT-DIAL] (2026-09-16) EVERY AXIS BELOW HAS A PER-POSITION DEFAULT, NOT
+A SINGLE ONE.** `--tune=N` (§5) is a PROFILE: one option whose value sets a
+GROUP of the axes below from a pinned table, in place of a caller
+composing them one flag at a time. Reading an axis's "default" in §2 below
+now means its value at `--tune=balanced` (`N=0`) specifically — the value
+pcrec has always shipped — and §5's table is where the other four
+positions' values live. **The allowlist**: the dial may set an axis only
+where a citable measurement justifies the position, so most of §2's axes
+carry no dial cell at all (§5 states each one's reason).
+
+**EXPLICIT PER-SWITCH FLAGS BEAT THE DIAL — WHERE A SPELLING EXISTS**
+(Frank, 2026-09-16, ruling on the design's §7.2a option 3). That is
+narrower than "explicit always wins," and the narrowing is not
+theoretical: three of the axes the dial moves are **DENY-ONLY**, with no
+force twin a caller could use to keep the optimization at a size-leaning
+position — `-fno-premul-table` (§2.13), `-fno-anchored-dfa` (§2.15) and
+`-fno-tiered-entry` (§2.12) — and the `[ART-SIZE]` ladder's two parameters
+(§2.10/§2.16) have **no CLI spelling at all**: the materiality bar is a
+constant beside `size_term_choose` and the threshold is
+`PCREC_SIZE_TERM_THRESHOLD`, a `limits.def` `BUILD_D` row precisely
+because it is a compile-time constant and not a flag (`docs/spec/
+limits.md` §3.3). A caller who wants to override the dial on one of
+these five cells has no spelling to do it with today; force twins and
+value flags are on-demand additions (design §7.2a option 1/2), not
+promised by this property.
+
 ## 2. The axes
 
 Each subsection: what it controls, the default, the stamp it leaves in an
@@ -117,6 +143,11 @@ possdiff: 107 of 155 had at least one POSSESSIFIED quantifier
 possdiff: 77725 pattern-subject-startpos cells compared
 ```
 
+**Not on the dial — GATE 3.** Size is measured and wrong-signed (`σ` =
+−1.69%: denying costs bytes rather than saving them); time is unmeasured
+(`docs/design/opt_dial_inventory.md` §7.1 item 6). A future throughput
+sweep is the missing half.
+
 ### 2.2 `-fno-revdet` — `PCREC_NO_REVDET` (bit 5)
 
 **Denies** the REVERSE-DETERMINISTIC cursor rung (`docs/design/
@@ -147,6 +178,10 @@ rungdiff: 106 of 205 took the REVERSE-DETERMINISTIC rung
 rungdiff: 395757 pattern-subject-startpos cells compared
 ```
 
+**Not on the dial — GATE 3.** Size is measured and roughly a wash
+(−0.001% of the corpus); time is unmeasured
+(`docs/design/opt_dial_inventory.md` §7.1 item 6).
+
 ### 2.3 `-fno-counter` — `PCREC_NO_COUNTER` (bit 6)
 
 **Denies** the COUNTER rung (`docs/design/counterk_impl/
@@ -172,6 +207,11 @@ counterkdiff: 59 patterns agreed, 0 diverged, 0 refused by pcrec
 counterkdiff: 45 of 59 took the COUNTER rung
 counterkdiff: 541899 pattern-subject-startpos cells compared
 ```
+
+**Not on the dial — NOT A RUNG.** The counter rung is a correctness-shaped
+floor (`docs/design/opt_dial_design.md` §3.3): below the replication cap
+it is the ONLY ground truth the ladder above it has, so denying it is a
+differential control, not a lever a caller trades size or speed against.
 
 ### 2.4 `-fno-length-prune` — `PCREC_NO_LENGTH_PRUNE` (bit 7)
 
@@ -200,6 +240,10 @@ mrldiff: 22 cell(s) excused by the answer-more asymmetry (pinned expectation 22)
 mrldiff: 22 excused cell(s) refereed against the pure DFA engine; 0 pattern-engine pair(s) had no referee available
 mrldiff: rung coverage complete (mask 0x1f): every rung MRL emits a form for was reached
 ```
+
+**Not on the dial — NOT A RUNG.** MRL trades nothing: a denied artifact is
+claimed byte-for-byte the pre-MRL emitter's own output, so there is no
+size or speed exchange for a dial position to spend.
 
 ### 2.5 `-fno-prefilter` / `-fprefilter` — `PCREC_NO_PREFILTER` (bit 8) / `PCREC_FORCE_PREFILTER` (bit 9)
 
@@ -285,6 +329,11 @@ the flag asked for the machine that overflows. See §2.11 for the mechanism
 the cost bound; this entry states the PREFILTER-side half of the same single
 mechanism, not a second one.
 
+**Not on the dial — GATE 3.** The axis is measured only through an
+engine-changing proxy — its own trade is entangled with `--engine`'s
+(§2.11), so no clean two-axis rate exists for `-fno-prefilter`/`-fprefilter`
+on their own.
+
 ### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
 
 **Denies** stage 1 of the ALTERNATION→CLASS normalization pass
@@ -299,6 +348,11 @@ to solve an addressing problem for. **Unlike §2.1-2.4, this pass is NOT
 VM-only** — it runs before either engine is built, so a capture-free
 pattern's DFA artifact carries its stamp too. **Reason it exists:** same
 D47.3 claim, applied to a pass that predates engine selection.
+
+**Not on the dial.** `σ` = −2.40%: wrong-signed (denying this merge costs
+bytes, it does not save them). Independently GATE 2 — the deny arm moves
+the refusal set (K45: `tests/size/size_term.rxt:32`'s nested-repeat tower
+compiles only above the merge cap without it).
 
 ### 2.7 `-fno-altcls-factor` — `PCREC_NO_ALTCLS_FACTOR` (bit 11)
 
@@ -330,6 +384,8 @@ altdiff: 41 patterns agreed, 0 diverged, 0 refused by pcrec
 altdiff: 30 of 41 had at least one ALTCLS merge or factor
 altdiff: 35995 pattern-subject-startpos cells compared
 ```
+
+**Not on the dial.** `σ` = −0.56%: wrong-signed, the same shape as §2.6.
 
 ### 2.8 `-fno-atomic-discharge` — `PCREC_NO_ATOMIC_DISCHARGE` (bit 12)
 
@@ -370,6 +426,9 @@ carries subject sweeps against libpcre2 (§1, §2) in addition to §3's
 pcrec-vs-pcrec arm, and the brief scopes this lane to the flags' own
 identity/diff instruments; `tests/atomic_groups/CLAUDE.md` and the
 script's own header (read this session) are the citation.
+
+**Not on the dial — GATE 3.** No two-axis rate exists; the axis it moves
+is engine selection, which the dial does not second-guess (§5).
 
 ### 2.9 `-fno-splice-calls` — `PCREC_NO_SPLICE_CALLS` (bit 13)
 
@@ -431,6 +490,11 @@ summary line):
 PASS: §5 A == B: 279 of 322 corpus patterns compiled on BOTH linkages (43 refused on both), 28458 cells compared over 24 subjects x every startpos, span AND every group span, 0 disagreements between the SPLICE-linked and the LINKAGE-linked artifact
 ```
 
+**Not on the dial — GATE 4.** The time cost reverses sign with the subject
+population (`docs/design/opt_dial_inventory.md` §4): faster for some
+subjects, slower for others, so "I want speed more than bytes" does not
+select a side.
+
 ### 2.10 `--unroll=K` — the counter rung's value parameter
 
 Not a bit in `pcrec_options.flags`; a separate `int unroll_k` field
@@ -448,6 +512,28 @@ rung's ANSWER-IDENTITY claim: unrolling by a different K changes the
 emitted loop's shape, never what it accepts. **Reason it exists:** it is
 the one shape parameter the counter rung's design left open (`docs/
 design/counterk_impl/counterk_design.md` §4.1).
+
+**THE DIAL SETS §2.16's LADDER PARAMETERS, NEVER K DIRECTLY, AND THIS ROW
+IS NOT A RUNG ON THE DIAL'S OWN TABLE.** `--tune=N` moves the `[ART-SIZE]`
+materiality bar and the size threshold above which the ladder runs at all
+(§2.16); the ladder's existing per-pattern mechanism still derives K from
+those two numbers, one pattern at a time. A dial that set K itself would
+duplicate a decision an existing mechanism already makes better, on bytes
+it measures rather than models — the general-mechanisms rule
+(`docs/design/opt_dial_design.md` §3.5).
+
+**THE DECLARED-CAPACITY FLOOR (§3.5a) IS A STATED PRECONDITION OF BOTH
+LADDER ROWS.** `K` is answer-identical in the LANGUAGE, not in the DEPTH:
+a smaller `K` raises the per-iteration frame need, so the same
+`<PREFIX>_BT_FRAMES` carries a SHORTER subject at a smaller `K`
+(`^(a(?1)?b)$`'s `.subject_ceiling` moves 512 → 341 between `--unroll=8`
+and `--unroll=1`). What makes the `−2`/`−1` ladder cells admissible at all
+is `artifact_size_term.md` §3.3a's floor: a candidate rung whose artifact
+declares LESS capacity than the default K's — on `.frame_capacity` OR on
+`.subject_ceiling` — is not a candidate, stamped `capacity-declined`.
+Without that floor, lowering the dial's threshold would be a
+`match → give-up` answer change no flag asked for, which is exactly what
+`docs/spec/limits.md` §7's answer-identity promise is for.
 
 ### 2.11 `--engine=dfa|vm|auto` — the coarsest-grained tuning-adjacent axis
 
@@ -557,6 +643,13 @@ pcrec correctness defect, and the fix direction (a VM-side emitted-PROGRAM-SIZE
 cap, refusing before emission the way the DFA-side caps already do) is
 chartered separately rather than built here — see K41's own entry.
 
+**Not on the dial — GATE 5, and independently GATE 2.** The time cost's
+range is violent (up to 173,580× on the fail path,
+`docs/design/opt_dial_design.md` §3.1) — a dial position that can turn a
+0.2 µs answer into a 35 ms one is not a dial position at any size saving.
+Independently, `--engine=dfa` refuses a captures-default pattern (D44.6),
+which is a refusal-set move gate 2 forbids on its own terms.
+
 ### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
 
 **ANSWER-IDENTITY-preserving**, and the strongest such claim in this
@@ -610,6 +703,15 @@ $ build/pcrec -p rx --engine=vm --features recursion -fno-tiered-entry -o - \
 
 (47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,
 and `FAST == RESUME`/`TRAIL` is how a reader tells that the tier is off.)
+
+**ON THE DIAL, CONDITIONALLY, AND UNRATIFIED AT EITHER SIZE POSITION
+TODAY.** `σ` = 7.48% clears the dial's savings floor. Converted through
+`docs/design/opt_dial_design.md` §3.2's per-regime rule, `m = 1 +
+4.06·φ_entry`, so `−2` would deny this axis for any `φ_entry ≤ 0.246` and
+`−1` for any `φ_entry ≤ 0.0246` — but `φ_entry` is unmeasured, chartered
+on demand (§5), and `src/core/tune.c`'s pinned table denies nothing on
+this bit at either position until that measurement lands and the cell is
+ratified as its own diff.
 
 ### 2.13 `-fno-premul-table` — `PCREC_NO_PREMUL_TABLE` (bit 15)
 
@@ -684,6 +786,34 @@ k=12  [36,864]  RX_DFA_TABLE "premultiplied"
 k=13  [73,728]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
 ```
 
+**ON THE DIAL — `−2` DENIES UNCONDITIONALLY.** `σ` = 22…25% clears the
+dial's savings floor by a wide margin. Converted through §3.2's
+per-regime rule, `m = 1 + 0.794·φ_scan`, which stays inside `x₂` = 2.00
+for **every** `φ_scan ≤ 1` — the one cell in this whole table that needs
+no measurement to admit, because the conversion is safe at its own worst
+case. `−1` is the conditional half: it denies iff `φ_scan ≤ 0.126`, unmeasured,
+so the pinned table leaves `−1`'s cell an em-dash until that measurement
+ratifies it as its own diff (§5).
+
+**[K59-PREMUL] (2026-09-17) `compile_driver` MAY ALSO SET THIS AXIS ITSELF,
+INDEPENDENTLY OF THE DIAL — [K53-SELRETRY]'s optional-contributor drop
+ladder's second rung.** `docs/dev/known_issues.md` K59: `−2`'s own
+unconditional denial of this flag was rescuing a pattern the other four
+dial positions refused at `PCREC_MAX_EMIT_BYTES`, in violation of the
+"no dial position moves the refusal set" rule (§6.2 of the design). Fixed
+by generalizing the rescue rather than narrowing the cell: on a size-cap
+refusal, `compile_driver` may deny this flag for a DFA-engine artifact's
+own retry — appended after §2.15's anchored-machine drop, tried only when
+that one declined (fired and still insufficient, or never applicable) —
+stamping `RX_ENGINE_SEL "size-cap-retry"` and `RX_DFA_TABLE` off
+`"premultiplied"`, the same pair §2.15's own rung reads. Loud on firing: a
+non-fatal stderr note names the drop, cites the ~1.27x scan-dispatch cost
+(`docs/dev/opt3_dfa_scan_measurement.md`), and points at
+`--max-emit-bytes`/`--max-emit-code-bytes` as the recourse. Not built for a
+VM hybrid's embedded prefilter table (D77 — no measured population).
+`docs/spec/limits.md`'s "optional-contributor drop" section has the full
+two-rung account.
+
 ### 2.14 `-fno-offset-skip` — `PCREC_NO_OFFSET_SKIP` (bit 16)
 
 **ANSWER-IDENTITY-preserving.** The axis changes WHERE the forward DFA
@@ -757,6 +887,11 @@ exactly one line**, the `_DFA_PREFILTER_OFFSETS` stamp every `abi` 9
 artifact carries. That is the whole of the axis's footprint on a pattern
 it declines, and it is what makes the denied build the identity
 comparison's control.
+
+**Not on the dial — measured and flat.** `σ` = 1.30% median, and the
+whole distribution sits inside a 2% band: it fails the dial's 5%
+materiality bar (`y`) on its own, with no gate needed
+(`docs/design/optdial_size_sweep.md` §2.14).
 
 ### 2.15 `-fno-anchored-dfa` — `PCREC_NO_ANCHORED_DFA` (bit 17)
 
@@ -849,6 +984,40 @@ selection outcome). **The flag's meaning is unchanged**: passing it still
 denies the machine unconditionally, and passing it on one of those six
 patterns is the way to get the same artifact with the ordinary stamp.
 
+**[K59-PREMUL] (2026-09-17) THE LADDER GAINED A SECOND RUNG, SHARING THIS
+ONE'S `RX_ENGINE_SEL "size-cap-retry"` VALUE.** On a refusal this rung's own
+drop does not clear, `compile_driver` may ALSO deny `-fno-premul-table`
+(§2.13) for the same retry — APPENDED after this rung, tried only when it
+declined. A DFA-engine artifact whose retry dropped BOTH reads
+`RX_DFA_MATCH "search-filter"` (this rung) AND `RX_DFA_TABLE` off
+`"premultiplied"` (§2.13's rung); one without the other identifies which
+fired alone. `docs/dev/known_issues.md` K59 is the finding this rung
+closes: `--tune=min-size` used to compile a pattern the other four dial
+positions refused, because the dial's own unconditional `-2` denial of
+`-fno-premul-table` was doing by hand exactly what this second rung now
+does automatically on any refusal, at every position.
+
+**ON THE DIAL IN PRINCIPLE — DELIBERATELY EXCLUDED FROM `min-size` AT THE
+FIRST BUILD.** This is the largest size lever the dial has (`σ` = 15.32%
+median, **10.64%** of every byte pcrec emits over its own corpus), and it
+is the one row where the design's draft table and the ratified table
+disagree, so the disagreement is worth reading in full rather than
+picking a side silently. The axis's time cost is not one number but a
+**three-population distribution** (`docs/dev/opt2_anchored_match_measurement.md:293-295`):
+`m` = **1.161×** on non-matching subjects, **1.986×** on matching subjects
+overall, and **2.114×** on the 35 short matching subjects. A caller does
+not choose their subjects, so the dial's rule is to admit a penalty at
+its WORST measured population, never at its median — and 2.114× fails the
+working bound `x₂` = 2.00 by 5.7%. **At `x₂` = 2.00 the min-size column
+loses its largest row.** `src/core/tune.c`'s `−2` cell therefore denies
+`-fno-premul-table` and the `[ART-SIZE]` ladder alone; this axis is an
+em-dash at every position today. It returns only on its own owed A/B —
+**the shipped flag has never been measured**: the 1.161/1.986/2.114
+ledger is a ratio measured on a hand patch deleting the `\z` artifact's
+reverse pass, a cost-isolation experiment on the mechanism's
+*predecessor*, not on `-fno-anchored-dfa` itself — and that A/B is
+chartered on demand (§5) rather than run here.
+
 ### 2.16 `-fno-size-term` — `PCREC_NO_SIZE_TERM` (bit 18)
 
 
@@ -890,6 +1059,31 @@ oversized artifact acceptable. To accept a larger artifact, RAISE a cap
 distinguishable reasons and a check must be able to tell them apart. Both are unconditional on every VM artifact
 (D81).
 
+**THE DIAL SETS THIS MECHANISM'S TWO PARAMETERS — NOT A RUNG ITSELF.**
+`-fno-size-term` is `-fno-counter`'s shape, not a dial cell: it is the
+NAME of the ladder §2.10's fold describes, and there is nothing for a
+dial position to deny or force beyond the bar and the threshold below —
+denying the mechanism outright is a caller's own choice, orthogonal to
+where the dial sits.
+
+| `--tune=` | materiality bar | threshold (bytes) |
+|---|---:|---:|
+| `-2` `min-size` | **0.95** (save ≥5%) | **40,000** |
+| `-1` `size` | **0.85** (save ≥15%) | **80,000** |
+| `0` `balanced` | 0.75 (save ≥25%, today's default) | 120,000 |
+| `+1`/`+2` | — | — |
+
+The speed side is deliberately em-dashed (`docs/design/opt_dial_design.md`
+§3.5, **M13**): the speed a laxer bar or a lower threshold would buy is at
+most the 1-3% noise effect this section's own measurement reports, which
+fails the dial's speed-notch floor (`s` = 1.10×) by an order of magnitude.
+**§2.10's declared-capacity floor is a stated precondition of both
+size-side rows** — lowering the threshold to 40,000 runs the ladder on 81
+patterns it has never run on (`docs/design/opt_dial_design.md` §3.5b),
+and that population is admissible only because
+`artifact_size_term.md` §3.3a's floor excludes any candidate rung
+declaring less `.frame_capacity` or `.subject_ceiling` than the default
+K's.
 
 ### 2.17 `-fno-prefilter-collapse` / `-fprefilter-collapse` — `PCREC_NO_PREFILTER_COLLAPSE` (bit 19) / `PCREC_FORCE_PREFILTER_COLLAPSE` (bit 20)
 
@@ -1163,6 +1357,11 @@ finds a reachable witness — the argument above says where to look (a
 collapsed-nullable language whose exact language is NOT nullable, which
 the identity makes empty).
 
+**Not on the dial — GATE 4, the same shape as §2.9.** The time cost
+reverses sign with the subject population (the worst-case row above is a
+loss on some subjects and a win on others), so a size-vs-speed preference
+does not select between the two languages.
+
 ### 2.18 `-fno-scan-edge` — `PCREC_NO_SCAN_EDGE` (bit 21)
 
 **What it controls.** Whether a DFA machine's *counted class runs* are
@@ -1347,6 +1546,15 @@ pattern) is not eligible at all: its states are code labels and a step is
 `goto *targets_K[class]`, so there is no loop-carried table load to shorten,
 which is `[OPT-3]`'s own reason for exempting that engine.
 
+**Not on the dial — flat on an inference, not on two independent
+counts.** The row fails `y` alone: its size cost is quoted absolutely
+(+364…612 B per edge-carrying machine, never converted to a fraction), so
+there is no `σ` to compare against the dial's bar. Under
+`docs/design/opt_dial_design.md` §3.2's conversion the row's throughput
+ratio (2.71-3.03×) only exceeds `x₂` = 2.00 for `φ_scan ≥ 0.493` — a
+conditional failure, not an independent one — which is why this is the
+one flat row in the table resting on a single argument rather than two
+(design §3.3, **N1**).
 
 ### 2.19 `-fno-start-pinned` — `PCREC_NO_START_PINNED` (bit 22)
 
@@ -1422,6 +1630,14 @@ it. The elision is safe there for a second reason worth stating: the hybrid
 consumes the span as a BOUND (`attempt_position = window[0][0]`), never as the
 answer, and `search_from` is the strongest sound lower bound there is.
 
+**PURE WIN — off the dial because there is nothing for a dial position to
+trade.** Measured smaller AND faster on both axes: −3,232 B per pinned
+artifact AND ×1.985 faster (`docs/design/opt_dial_inventory.md` §2.19). A
+dial position that could turn this off would have a strictly-worse
+setting on it than the ordinary default, so it is not a candidate for any
+notch — the code's own comment records this as one of two rows an
+earlier inventory table dropped for want of a PURE WIN vocabulary
+(`docs/design/opt_dial_design.md` §3.3, **B3**).
 
 ### 2.20 `-fno-alt-island` — `PCREC_NO_ALT_ISLAND` (bit 23)
 
@@ -1552,6 +1768,10 @@ why its artifacts are byte-identical under a branch reorder where the VM's are
 not), so there is nothing for this axis to select there and no DFA artifact
 carries the stamp.
 
+**PURE WIN — off the dial for §2.19's own reason.** Max growth 1.03×, 0
+refused, prefix-free islands at 0.140-0.175× of chain time
+(`docs/design/opt_dial_inventory.md` §2.20). The second row `B3` found
+missing from the inventory's first table.
 
 ### 2.21 `--vm-entry-shape=N` — the VM entry chain's ORDINAL rung
 
@@ -1650,15 +1870,38 @@ not say which.
 **Not masked out of `rx_info.flags`**, because it is not a flags bit at all;
 it has no reflection-surface question to answer.
 
-**[OPT-DIAL] MAY SUBSUME THIS SPELLING, AND THE ORDINAL SURVIVES EITHER WAY.**
-`docs/dev/plan.md` `[OPT-DIAL]` charters a SPEED-vs-SIZE DIAL — one option
-whose value sets a GROUP of switches from a policy table — and this axis is its
-first native rung, the reason being that the dial wants per-switch ORDINALS and
-this is one (`docs/design/opt_dial_inventory.md` §2.21 carries the measured
-exchange rate that admits it). When the dial lands, the profile SETS this value
-and an explicit `--vm-entry-shape=N` OVERRIDES the profile — explicit beats
-profile, as D93's file-wins beats the command line — so nothing documented above
-is withdrawn; what may change is that most callers stop spelling it.
+**[OPT-DIAL] NAMES THE TERM, AND ONLY THE TERM — NEVER A RUNG.** `--tune=N`
+(§5) is the dial's first native customer for this axis, and it moves
+`VM_INLINE_CHAIN_MAX_BYTES` alone:
+
+| `--tune=` | term (bytes) |
+|---|---:|
+| `-2`/`-1`/`0` | — (4,096, today's default) |
+| `+1`/`+2` | **8,192** |
+
+The size side is em-dashed: below 4,096 bytes of program the INLINE/SHARED
+`.text` ratio is already 1.01× — the default term exists precisely to take
+forwarding only where it costs nothing, so there is nothing for a size
+notch to recover. `+1` = 8,192 admits the three measured cells just above
+today's term (program 5,183 / 5,985 / 6,954 bytes, five times better
+bytes-per-ns/call than the next cell up) and nothing beyond them; `+2` is
+identical to `+1` (**M12**, `docs/design/opt_dial_design.md` §3.4) — a
+13,312-byte `+2` cell was withdrawn because it traced to a plan row's
+recommendation PHRASE ("8-13 kB") rather than a measurement, and there is
+no measured cell above program 6,954 B to cite.
+
+**THE DIAL NAMES THE TERM AND NEVER A RUNG, and that is an allowlist
+consequence rather than a stylistic choice.** Rung `shared` has no
+measured run time (its ns/call figure above is `plain`'s, not its own),
+so §5's allowlist forbids naming it directly; rung `forward`'s run time is
+established STRUCTURALLY (no entry frame, no canary, no out-of-line
+chain symbol) rather than measured. The TERM is the object with a
+measured rate on both sides, so it is what the dial spends. An explicit
+`--vm-entry-shape=N` still OVERRIDES whatever the dial set — explicit
+beats the dial where a spelling exists (§1), and this axis is one of the
+two rows where that spelling already existed before the dial did — so
+nothing documented above is withdrawn; what changes is that most callers
+stop spelling it.
 
 ### 2.22 `-fno-cls-fold` — `PCREC_NO_CLS_FOLD` (bit 24)
 
@@ -1724,6 +1967,14 @@ reference. What the emitter DID is reported by `<PREFIX>_VM_CLS_FOLDS`
 **VM route only.** The DFA route's class machinery is the byte-class
 partition and the scan edge's own axis-I bodies; nothing there reads
 `vm_cls_shape`, and no DFA artifact carries the stamp.
+
+**NOT A RUNG — off by RULING, not by a gate.** Frank ruled (2026-09-11)
+that this axis is SUBSUMED into `[CLS-TREE]`'s kit rather than placed on
+the dial standalone: its end state is the `m = 0x20` one-cube instance of
+that kit's general cube form, selected by the sectioning DP and priced by
+λ (§5). This is a different KIND of "no" from §2.23 below — a design
+decision that a special case folds into a general mechanism, not a
+measured or structural disqualification.
 
 ### 2.23 `-fno-startpos-guard` — `PCREC_NO_STARTPOS_GUARD` (bit 25)
 
@@ -1825,6 +2076,13 @@ guard and is a failure (§3's floor is 150 and rising), while an empty one in
 the corpus sweep means the corpus is blind to the axis by construction — which
 was known before the guard was built. The axis is watched by the instrument
 that can see it, and swept for identity by the one that cannot.
+
+**NOT ON THE DIAL — GATE 1, and a different kind of "no" from §2.22's
+above.** This section opened by saying the two arms give DIFFERENT
+ANSWERS on purpose, so no measurement could ever admit this axis to a
+mechanism whose entire acceptance criterion is answer identity (§5).
+Where §2.22 is off the dial by a RULING that could in principle be
+revisited, this axis is PERMANENTLY flat — structurally, not by choice.
 
 ## 3. The DFA side's own stamps
 
@@ -1958,6 +2216,12 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
 
+**`RX_TUNE` ([OPT-DIAL], 2026-09-16) is NOT a `RX_DFA_*` stamp — it belongs
+to neither engine and is emitted UNCONDITIONALLY on every artifact of
+BOTH engines**, in the shared prologue above `goto <prefix>_L0;`. §5
+states its full contract; it is named here because it is the one stamp in
+this document that does not sit in either engine's own bucket.
+
 ### 3.1 A VM HYBRID carries these too (`[DD-13c]`, 2026-08-25)
 
 The stamps belong to the MECHANISM, not to the artifact kind that usually
@@ -2080,8 +2344,206 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
+| `tune` (`PCREC_TUNE_MIN_SIZE` … `_MAX_SPEED`, `-2..+2`) | `--tune=N` | §5 |
 
 `step_budget`, `work_budget` and `frame_capacity` are resource-bound
 fields, not strategy-selection tuning axes — `docs/spec/limits.md` is
 their home, not this document.
+
+**`tune` has NO `PCREC_TUNE_SET` bit, and the absence is a recorded
+decision.** Every other field above has one representation; `tune`'s
+default (`0`/`balanced`) collides with an explicitly-typed `balanced` the
+same way `PCREC_ENGINE_AUTO` collides with an explicit `--engine=auto`
+(§2.11) — a caller cannot tell "no flag" from "the flag, typed at its
+default value" from the field alone. The general fix is EXPLICIT-SET
+PROVENANCE for every D93-composed axis (one enum per axis recording WHICH
+source wrote it: CLI, `.rxt` config/target, or default), not a per-axis
+bit — and it is deferred to its own measured trigger (D77): the trigger is
+the THIRD axis that needs the distinction. `--engine` is the first and
+shipped without it; `tune` is the second and does not need it either,
+because §5's file-wins rule makes an explicitly-typed `balanced` and an
+absent flag behave identically regardless.
+
+## 5. The `--tune` dial
+
+**THIS SECTION IS THE CONTRACT** (`docs/dev/decisions.md` D103; the design
+record is `docs/design/opt_dial_design.md`, cited informationally below
+for the reasoning, never normatively). §5.1's table is a PINNED CONTRACT:
+a cell changes only by an explicit ruled diff TO THIS SECTION, never
+because a measurement lands. `tests/codegen/run_tune_dial.sh` reads its
+expectation side from this table rather than from `src/core/tune.c`'s
+own copy, deliberately, so the check does not share a source with the
+compiler it checks (`docs/dev/learnings.md` §3). `docs/design/
+opt_dial_design.md` §3.2, THE PROPOSAL RUBRIC, is cited by reference for
+HOW a future cell is argued and does NOT move into this section — a
+caller reads this table, an author proposing a change to it reads the
+rubric.
+
+### 5.1 The five positions
+
+**`--tune=N`, an ordinal `N` in `-2..+2`, `0` the default, with five
+mnemonic aliases accepted on equal terms** (`src/core/tune.c` owns both
+spellings, so the CLI and the stamp cannot drift):
+
+| N | alias | direction |
+|---|---|---|
+| −2 | `min-size` | smallest artifact the measured rates justify |
+| −1 | `size` | size-leaning |
+| 0 | `balanced` | **today's defaults, unchanged, byte for byte** |
+| +1 | `speed` | speed-leaning |
+| +2 | `max-speed` | fastest the measured rates justify |
+
+**A negative value needs the `=` form.** `--tune -2` is refused by name,
+naming the `=` spelling (`--tune=-2`), rather than accepted by
+look-ahead: the separated form is two tokens whose second begins with
+`-`, and a look-ahead that guessed would make `--tune -o out.c` mean
+something nobody typed. The aliases have no leading dash and are the
+preferred spelling for exactly this reason. **Out of range is refused,
+never clamped** — a clamp would let a caller believe they had asked for
+something the artifact does not have, and `<PREFIX>_TUNE` (§5.3) exists
+precisely so an artifact says how it was built.
+
+**A `tune` line in a `.rxt` `config`/`target` block takes the identical
+vocabulary**, per D93's own framing that a config block's directives are
+the format's named axes. **THE FILE WINS, and `tune` is NOT a second
+exception to it** — see `docs/spec/cli.md`'s file-wins section, which
+states the ruling and the reason `--engine` is a poor precedent here:
+`tune` is answer-preserving by its own acceptance criterion (§5.5), so
+the H11 free-identity-control support behind `--engine`'s exception is
+vacuous for it, and `tune` has no comparability-facility forcing reason
+either (it cannot make a pattern refuse, unlike `--engine=dfa`). A
+conflict between an explicit non-default CLI `--tune=` and the file's own
+`tune` row is reported — non-fatal, on stderr, naming both sources and
+both values — with the file's value winning:
+
+```
+pcrec: FILE:LINE: target 'PREFIX': CLI --tune=min-size and this file's
+`tune speed` disagree; using the file's value (--tune is not the
+--engine exception)
+```
+
+**There is no `--force-tune`.** If a caller needs the command line to win
+on this axis, D93's own revisit-when names the shape such an override
+would take (an explicit loud flag, never a silent precedence flip) — this
+document promises no such flag today.
+
+### 5.2 Sign and unit conventions
+
+Every number in §5.4's table is stated in exactly one of two quantities.
+
+- **`σ` — SIZE, as a fraction of the default artifact.**
+  `σ = 1 − bytes(denied) / bytes(default)`, median over the switch's own
+  movers, on comment-excluded emitted C source bytes. `σ > 0` means the
+  optimization COSTS those bytes (denying it saves them); `σ < 0` means
+  denying it costs bytes instead ("wrong-signed").
+- **`m` — TIME, as a multiplicative slowdown of end-to-end match time.**
+  `m = time(denied) / time(default)`. `m > 1` means denying the switch is
+  slower.
+
+A cell citing a bound (`x₁`, `x₂`, `t_mid`) or a floor (`s`) is an `m`
+value; a cell citing a savings floor (`y`, `z_mid`) or a whole-artifact
+size budget (`Z₁`, `Z₂`) is a `σ` fraction or an artifact multiple. Where a
+ledger reports a penalty as a DISTRIBUTION over named subject
+populations, the cell is admitted at its WORST measured population, never
+at its median (gate 6, §5.4) — a dial position is a promise to a caller
+who does not choose their subjects.
+
+### 5.3 The stamp
+
+`<PREFIX>_TUNE`, a closed five-token string — the alias spelling, never
+the number — emitted UNCONDITIONALLY on every artifact of both engines,
+in the shared prologue, including at `balanced`:
+
+```c
+#define RX_TUNE "balanced"
+```
+
+A consumer buckets on the token; a number would invite arithmetic on an
+ordinal whose spacing means nothing. There is deliberately **no `rx_info`
+mirror**: nothing at run time behaves differently because of the dial (it
+is answer-preserving by construction), so a mirror would be a field no
+consumer can act on — the same reasoning `RX_DFA_TABLE` is refused one on
+(D77: build a mirror when a measured consumer asks; none has been named
+for `tune`). Nor does `tune` join `rx_info.flags`: every member of that
+mask changes an emitted SHAPE for one language (§2.23's own statement of
+the rule), and `tune` is precisely such a case, already covered.
+
+### 5.4 The policy table
+
+**Twenty-seven rows: the 23 `tuning.md` §2 axes, λ, the `[ART-SIZE]`
+ladder's two parameters, and the emitted-size caps** (the last three are
+not §2 axes in their own right — the ladder's parameters are
+`-fno-size-term`'s sub-parameters, listed separately because the dial
+sets them separately, and the caps are `limits.def` boundaries).
+
+**A cell is either a value, or an em-dash meaning the dial does not touch
+this axis at this position.** A cell equal to the default is an em-dash,
+not a restatement of the default — a `0`-column cell states the default;
+every other column states what the dial CHANGES. `†` marks a cell that
+remains an em-dash TODAY pending an unmeasured quantity (`φ_scan`,
+`φ_entry`, or `-fno-anchored-dfa`'s own owed A/B) named in the "why"
+column — a condition is not a cell, and it becomes one only by its own
+ruled diff to this table, never automatically when the measurement
+lands.
+
+| axis | −2 `min-size` | −1 `size` | 0 `balanced` | +1 `speed` | +2 `max-speed` | why |
+|---|---|---|---|---|---|---|
+| λ (class-matcher kit) | reservation | reservation | reservation | reservation | reservation | `[CLS-TREE]` unbuilt; `docs/design/opt_dial_design.md` §4 states the five pinned frontier constants (4/16/16/64/256) it will read the day it lands |
+| `[ART-SIZE]` ladder — bar | **0.95** | **0.85** | **0.75** | — | — | §2.16; `artifact_size_term.md` §3.3. Speed side em-dashed (**M13**): the speed it would buy is ≤3%, below `s` = 1.10 |
+| `[ART-SIZE]` ladder — threshold | **40,000** | **80,000** | **120,000** | — | — | §2.16; `limits.def:161`, `PCREC_SIZE_TERM_THRESHOLD` |
+| `-fno-premul-table` | **deny** | — `†` | **allow** | — | — | §2.13; `σ` = 22…25% ≥ `y`; `m` ≤ `x₂` = 2.00 for every `φ_scan` ≤ 1, so `−2` needs no measurement; `−1` iff `φ_scan` ≤ 0.126 (unmeasured) |
+| `-fno-anchored-dfa` | — (EXCLUDED `†`) | — | **allow** | — | — | §2.15; `m` is a three-population distribution 1.161×/1.986×/**2.114×**; the worst population fails `x₂` = 2.00 by 5.7%. Returns only on its own owed A/B, never run on the shipped flag |
+| `-fno-tiered-entry` | — `†` | — `†` | **allow** | — | — | §2.12; `σ` = 7.48% ≥ `y`; `−2` iff `φ_entry` ≤ 0.246, `−1` iff `φ_entry` ≤ 0.0246 (both unmeasured) |
+| `--vm-entry-shape` term | — | — | **4,096** | **8,192** | **8,192** (= `+1`) | §2.21; the raise's measured cheap band tops out at program 6,954 B, which 8,192 covers |
+| `--unroll=K` | — | — | — | — | — | **NOT A RUNG** — set BY the ladder rows above, never directly (§2.10) |
+| `-fno-offset-skip` | — | — | **allow** | — | — | §2.14; `σ` = 1.30% median, whole distribution inside a 2% band — fails `y` |
+| `-fno-scan-edge` | — | — | **allow** | — | — | §2.18; fails `y` alone, on an inference never converted to a fraction (**N1**) |
+| `-fno-altcls-merge` | — | — | **allow** | — | — | §2.6; `σ` = **−2.40%**: wrong-signed; independently GATE 2 (deny arm moves the refusal set, K45) |
+| `-fno-altcls-factor` | — | — | **allow** | — | — | §2.7; `σ` = **−0.56%**: wrong-signed |
+| `--engine` | — | — | **auto** | — | — | §2.11; **GATE 5** (up to 173,580× on the fail path) AND **GATE 2** (`--engine=dfa` refuses captures-default patterns, D44.6) |
+| `-fno-possessify` | — | — | — | — | — | §2.1; **GATE 3**: size measured (`σ` = −1.69%, wrong-signed), time unmeasured |
+| `-fno-revdet` | — | — | — | — | — | §2.2; **GATE 3**: size measured (a wash, −0.001%), time unmeasured |
+| `-fno-prefilter` | — | — | — | — | — | §2.5; **GATE 3**: measured only through an engine-changing proxy |
+| `-fno-atomic-discharge` | — | — | — | — | — | §2.8; **GATE 3**; the axis it moves is engine selection |
+| `-fno-splice-calls` | — | — | — | — | — | §2.9; **GATE 4** — the time cost reverses sign with the subject population |
+| `-fno-prefilter-collapse` | — | — | — | — | — | §2.17; **GATE 4** — same |
+| `-fno-counter` | — | — | — | — | — | §2.3; **NOT A RUNG** — a correctness-shaped floor |
+| `-fno-length-prune` | — | — | — | — | — | §2.4; **NOT A RUNG** — denial is byte-identical; trades nothing |
+| `-fno-start-pinned` | — | — | — | — | — | §2.19; **PURE WIN** — −3,232 B per pinned artifact AND ×1.985 faster |
+| `-fno-alt-island` | — | — | — | — | — | §2.20; **PURE WIN** — max growth 1.03×, 0 refused, prefix-free islands at 0.140-0.175× of chain time |
+| `-fno-cls-fold` | — | — | — | — | — | §2.22; **NOT A RUNG** — off by RULING (Frank, 2026-09-11); absorbed into λ |
+| `-fno-startpos-guard` | — | — | — | — | — | §2.23; **GATE 1** — the two arms disagree about answers on purpose; permanently flat |
+| `-fno-size-term` | — | — | — | — | — | §2.16; **NOT A RUNG** — it is the MECHANISM the two ladder rows parameterise |
+| emitted-size caps | — | — | — | — | — | `limits.md` §8; **NOT A RUNG** — raise-only refusal boundaries; a dial that lowered one would manufacture refusals |
+
+**The seven reason codes**, one per flat row above:
+
+| code | means |
+|---|---|
+| **PURE WIN** | measured better on BOTH axes; a dial position that could turn it off would have a strictly-worse setting on it |
+| **GATE 1** | structurally answer-changing; permanently flat |
+| **GATE 2** | its deny arm moves the refusal set |
+| **GATE 3** | one axis has no number; contingently flat, with the measurement named |
+| **GATE 4** | the time cost reverses sign with the workload |
+| **GATE 5** | the time cost's range is violent |
+| **NOT A RUNG** | a floor, a boundary, a no-op, or a PARAMETER of another row |
+
+**Four rows carry a ratified cell at the first build**: the `[ART-SIZE]`
+ladder's bar and threshold (both size-side), `-fno-premul-table`'s `−2`
+denial, and the entry-chain term's `+1`/`+2` raise. **Twenty-three rows
+carry none** — twenty of them permanently or by gate (one of the seven
+codes above), and three (`-fno-anchored-dfa`, `-fno-tiered-entry`, λ)
+CONTINGENTLY, pending an unmeasured quantity named in their own row. That
+is the difference between an allowlist and a list of things nobody got
+round to.
+
+### 5.5 Acceptance
+
+`--tune`'s acceptance is answer identity across all five positions, over
+the whole corpus — `make test-axes` treats the dial as a fifth kind of
+axis on its existing sweep, and no dial position may move the REFUSAL SET
+in either direction. This section states the promise; it is not this
+document's job to restate the check plan (`docs/design/
+opt_dial_design.md` §6/§8 carries the check IDs and sabotage rows for an
+implementer).
 

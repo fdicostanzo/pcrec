@@ -97,6 +97,22 @@
 # happened to agree with pcrec's own (possibly-buggy) default, this is the
 # check that would still see it, because its ground truth is external.
 #
+# [OPT-DIAL] THE DIAL, AS A FIFTH KIND OF AXIS (docs/spec/tuning.md §5.5;
+# docs/design/opt_dial_design.md §6.1). Four non-default `--tune=` positions
+# (`-2`/`-1`/`1`/`2` — position `0`, `balanced`, is a structural no-op and
+# needs no arm here) join the identical RXTFLAGS/RXTDUMP mechanism every
+# other axis in this file uses. `lost_ok` is 0 on all four — the dial's own
+# rule (tuning.md §5.5) is that NO position may refuse a pattern position 0
+# compiles, so unlike `--engine=dfa`'s legitimate do-or-die refusals, any
+# REFUSED case here is a real failure and this file carries no
+# REFUSAL_PATTERN entry for any `--tune=` flag. That per-axis rule is
+# necessary but not sufficient: **DIAL-S3**, a separate arm after the main
+# job loop, compares the dial's REFUSED-key SETS across all five positions
+# in both directions — a count-only comparison is the one shape that could
+# miss two of this design's hazards (a lost answer, a gained one) moving
+# past each other at once. See the job-list build and DIAL-S3's own header
+# below for the full design citation.
+#
 # THE DETECT DEMONSTRATION (docs/dev/learnings.md §3: "ask of any new guard
 # ... what would have to be true for it to fail, and who chose that input").
 # Performed once, 2026-08-26, in a SCRATCH copy under the session scratchpad
@@ -133,7 +149,10 @@
 #   AXES        space-separated list of CLI flag spellings (e.g.
 #               "-fno-possessify -fno-revdet") to restrict the sweep to —
 #               empty (default) runs all twelve bit-flag axes plus both
-#               engine directions. For a QUICK check, not the delivered run.
+#               engine directions plus the [OPT-DIAL] `--tune=` positions
+#               (matched by the substring "--tune", same shape "--engine"/
+#               "--vm-entry-shape" already use). For a QUICK check, not the
+#               delivered run.
 #   PCREC/CC/GENCFLAGS   forwarded to tests/harness/run.sh verbatim.
 #   PROCS       forwarded to tests/harness/run.sh (default: nproc, matching
 #               test-corpus's own default).
@@ -499,8 +518,8 @@ echo "axes: baseline: $base_keys cases dumped, $((t1 - t0))s"
 
 declare -a axis_results=()
 run_one_axis() {
-    # run_one_axis <label> <extra-flags-string> <force-population-not-failure>
-    local label="$1" flags="$2" lost_is_ok="$3"
+    # run_one_axis <label> <extra-flags-string> <force-population-not-failure> <save-dump-path>
+    local label="$1" flags="$2" lost_is_ok="$3" save_dump="$4"
     # $lost_is_ok's original job (blanket-accept a nonzero LOST count for
     # the one documented do-or-die bit-flag and the coarse engine axis) is
     # SUPERSEDED by REFUSAL_PATTERN/REFUSAL_FLOOR below (2026-08-26,
@@ -508,7 +527,7 @@ run_one_axis() {
     # by its own diagnostic TEXT, per axis, never by a blanket per-axis
     # flag — kept as a parameter (call sites still pass it, harmlessly)
     # rather than touched, since it is no longer read for the verdict.
-    shift 3   # THE BUG (found 2026-08-26, live full-corpus run): without this,
+    shift 4   # THE BUG (found 2026-08-26, live full-corpus run): without this,
     # "$@" below still refers to THIS FUNCTION's own full positional list
     # (label, flags, lost_is_ok, ...) rather than the trailing file/dir
     # arguments the caller forwarded — so those three strings got passed to
@@ -521,6 +540,10 @@ run_one_axis() {
     # in this file's own two-file spot check (real file args among the
     # three bogus ones still got processed and dominated the small
     # population) and only showed up on the delivered full-corpus run.
+    # [OPT-DIAL] the count moved from 3 to 4 with `save_dump`'s own
+    # addition above — the shift count is the number of THIS FUNCTION's own
+    # positional parameters, so it moves in lockstep with that list rather
+    # than being a magic number to remember to bump.
     # [TT-12 STEP 1] per-label, not fixed, names for the harness's own
     # stdout/stderr and the diff-awk stderr: with two axes now able to run
     # CONCURRENTLY (the pairing loop below), a fixed `$WORKDIR/axis.out`/
@@ -554,6 +577,17 @@ run_one_axis() {
         fail=1
         axis_results+=("$label|FAIL|no-dump|$((t1 - t0))s")
         return
+    fi
+    # [OPT-DIAL] SAVE THE RAW DUMP FOR DIAL-S3, before anything below can
+    # delete it. Only the dial's four jobs pass a non-empty $save_dump (see
+    # the job-list build above); every other axis's $save_dump is empty and
+    # this is a no-op for it. Copied unconditionally on dump existence,
+    # BEFORE this axis's own pass/fail verdict is computed — DIAL-S3 reads
+    # the raw REFUSED rows directly and does its own independent population
+    # check, so it must not be starved of a dump merely because this axis's
+    # ORDINARY answer-identity verdict (a different question) came back RED.
+    if [ -n "$save_dump" ]; then
+        cp "$dump" "$save_dump"
     fi
     local rowsfile="$WORKDIR/rows_$slug.tsv"
     : > "$rowsfile"
@@ -673,6 +707,13 @@ run_one_axis() {
 # ============================================================================
 
 declare -a job_label=() job_flags=() job_lost_ok=()
+# job_savedump[idx], set ONLY for the dial's four jobs below (left unset —
+# read with `:-` — for every other axis): the path run_one_axis copies its
+# own RXTDUMP to before cleanup, so DIAL-S3 (after the job loop) can read
+# it without recompiling. A plain array append here would misalign against
+# job_label's own index the moment any OTHER job type appended after it, so
+# every writer sets it by EXPLICIT INDEX instead (see the dial block below).
+declare -a job_savedump=()
 for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
     macro="${bit_macro[$bit]}"
     flagtext="${macro_flag[$macro]}"
@@ -743,6 +784,55 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
 fi
 
 # ============================================================================
+# [OPT-DIAL] THE DIAL, AS A FIFTH KIND OF AXIS (docs/design/opt_dial_design.md
+# §6.1; docs/spec/tuning.md §5.5). Four non-default positions join the job
+# list the identical mechanical way `--engine=`/`--vm-entry-shape=` do:
+# RXTFLAGS accepts an arbitrary extra flag, verified live that a `--tune=`
+# spelling composes exactly as those two do (lands in `pflags` before the
+# pattern's own `--`). Position 0 (`balanced`) needs no arm here —
+# `src/core/tune.c`'s own header states it is a structural no-op, byte-
+# identical to no flag at all — that is `tests/codegen/run_tune_dial.sh`
+# section 1's job, not this sweep's.
+#
+# `lost_ok` IS 0 ON ALL FOUR, and DELIBERATELY. `docs/spec/tuning.md` §5.5
+# and design §6.2 both state the dial's own rule as ONE SENTENCE: no
+# position may move the refusal set, in EITHER direction — so unlike
+# `--engine=dfa`'s legitimate do-or-die refusals, ANY refused case under a
+# tune position is a real failure here, and this sweep carries NO
+# REFUSAL_PATTERN entry for any `--tune=` flag on purpose: a documented
+# exemption is exactly the K45 mechanism §6.2 rules out for this axis (right
+# for an axis whose job is to exercise a flag nobody ships; wrong for a
+# dial position that DOES ship). That per-axis "undocumented refusal is a
+# failure" rule is necessary but not sufficient on its own, though — a
+# COUNT of undocumented refusals can be equal on both sides of a comparison
+# while naming two different patterns, which is exactly the shape design
+# §6.2 warns both of this design's hazards (`-fno-anchored-dfa`'s and the
+# emitted-size caps') could slip through AT ONCE, since they run in
+# OPPOSITE directions. DIAL-S3, after the job loop below, is the SEPARATE
+# keyed-set check that rules out that shape — it reuses these same runs'
+# own saved RXTDUMP output rather than recompiling.
+declare -A DIAL_POSITIONS=( ["-2"]="min-size" ["-1"]="size" ["1"]="speed" ["2"]="max-speed" )
+declare -a DIAL_ORDER=("-2" "-1" "1" "2")
+declare -A dial_dump_file=()   # position -> saved RXTDUMP path, for DIAL-S3
+if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--tune'; then
+    echo "axes: --tune=-1 (size) is NOT declared vacuous at first build: both [ART-SIZE] ladder parameters move (bar 0.85, threshold 80,000) and the ladder's population below 120,000 bytes is real -- 81 shapes the ladder has never run at 120,000 (opt_dial_design.md §6.1b). A measured zero-diff result on this corpus is reported as a genuine finding below, not assumed as a construction."
+    for _pos in "${DIAL_ORDER[@]}"; do
+        _alias="${DIAL_POSITIONS[$_pos]}"
+        if [ "$_pos" = "2" ]; then
+            echo "axes: --tune=2 (max-speed) is DECLARED VACUOUS against --tune=1 (speed) at first build: identical on every moving cell (tuning.md §5.4's policy table — both set the entry-chain term to 8,192 and nothing else), differing only in the RX_TUNE stamp string. It runs anyway and is swept for real (S219's precedent: a check that ships UNREACHED/vacuous ships its derivation, and its runner fires the day it stops being vacuous). Become-reachable: the day [CLS-TREE] lands (lambda's frontier point moves 64 -> 256 at this position) or the speed-notch floor s is ruled below 1.03 (opt_dial_design.md §3.6(d))."
+        fi
+        _slug="dial_$(echo "$_pos" | tr -c 'A-Za-z0-9' '_')"
+        dial_dump_file["$_pos"]="$WORKDIR/${_slug}_saved.tsv"
+        job_label+=("--tune=$_pos ($_alias, tuning.md §5.1)")
+        job_flags+=("--tune=$_pos")
+        job_lost_ok+=("0")
+        job_savedump[$((${#job_label[@]} - 1))]="${dial_dump_file[$_pos]}"
+    done
+else
+    echo "axes: --tune positions not run (filtered out by AXES=)"
+fi
+
+# ============================================================================
 # [TT-12 STEP 1] RUN THE JOB LIST PAIRWISE — two axes concurrently, each at
 # PROCS/2 (rounded up). docs/dev/tt12_step0_profile.md §4 measured why this
 # should be close to additive rather than contending: a single axis's own
@@ -798,7 +888,7 @@ while [ "$i" -lt "$n_jobs" ]; do
         (
             trap - EXIT
             PROCS="$PAIR_PROCS"
-            run_one_axis "${job_label[$idx]}" "${job_flags[$idx]}" "${job_lost_ok[$idx]}" "$@"
+            run_one_axis "${job_label[$idx]}" "${job_flags[$idx]}" "${job_lost_ok[$idx]}" "${job_savedump[$idx]:-}" "$@"
             printf '%s\n' "${axis_results[-1]}" > "$res"
             echo "$fail" >> "$res"
         ) > "$out" 2>&1 &
@@ -820,6 +910,119 @@ while [ "$i" -lt "$n_jobs" ]; do
     done
     i=$((i + 2))
 done
+
+# ============================================================================
+# DIAL-S3 — THE DIAL'S REFUSAL SET, COMPARED AS KEYS (docs/spec/tuning.md
+# §5.5; docs/design/opt_dial_design.md §6.2/§6.2a). NOT the REFUSAL_PATTERN
+# mechanism above, and deliberately does not touch it: that mechanism is
+# right for an AXIS SWEEP (exercise a flag in both arms including arms
+# nobody ships, floor a documented population) and wrong for the DIAL,
+# whose rule is one sentence — no position may move the refusal set, in
+# EITHER direction, because "refused" is an answer a caller can observe and
+# depend on and a dial whose positions accept different LANGUAGES is not a
+# tuning knob. A count-only comparison is the ONE shape that could pass
+# while both of this design's hazards fired at once — `-fno-anchored-dfa`
+# losing a pattern's answer and the emitted-size caps gaining one run in
+# OPPOSITE directions, so equal counts on both sides can hide two different
+# patterns moving past each other. So: SETS of `file:line` keys, both
+# directions, named separately, never a count.
+#
+# MECHANISM: reuses the RXTDUMP files run_one_axis already saved above (the
+# dial's own tune-axis runs, `job_savedump`) plus `$BASE_DUMP` (position 0,
+# `balanced` — the sweep's own baseline, already computed). No pattern is
+# recompiled a sixth time for this arm — docs/dev/optdial_size_sweep.md §0
+# used this identical RXTDUMP-keyed-by-file:line mechanism for exactly this
+# kind of cross-check (K35), and this arm reuses it rather than inventing a
+# second one.
+#
+# THE EMPTY-POPULATION FAILURE MODE (W23.1's own lesson, w233_report.md
+# §5): an arm deriving its population from the data it checks must FAIL
+# when that population is empty, or the first thing that breaks its
+# extraction turns it green. Position 0's own refused-key set is expected
+# to be near-empty (the corpus's ordinary `pattern` blocks compile at
+# default by construction — a `pattern` block that failed to compile at
+# `balanced` would already be red in plain `make test`), so a near-zero
+# diff on this arm must be told apart from an extractor reading nothing at
+# all. Before reporting any refused-set diff as a real (possibly zero) one,
+# this arm asserts each dump it reads is HEALTHY on its own terms — at
+# least half of $base_keys total lines, the identical floor run_one_axis's
+# own harness-level-failure branch uses above, applied here independently
+# since this arm reads the raw dumps directly rather than trusting that
+# axis's own verdict.
+dial_s3_verdict="SKIPPED (no --tune positions ran under this AXES= filter)"
+if [ "${#dial_dump_file[@]}" -gt 0 ]; then
+    echo
+    echo "axes: DIAL-S3 — the dial's refusal set, compared as KEYS across all five positions..."
+    dial_s3_fail=0
+    dial_s3_extractor_unhealthy=0
+
+    base_refused="$WORKDIR/dial_refused_0.keys"
+    awk -F'\t' '$5=="REFUSED"{print $1":"$2}' "$BASE_DUMP" | LC_ALL=C sort -u > "$base_refused"
+    base_refused_n=$(wc -l < "$base_refused")
+    base_total_lines=$(wc -l < "$BASE_DUMP")
+    echo "  position 0 (balanced): $base_total_lines total dump lines, $base_refused_n refused"
+    if [ "$base_total_lines" -lt "$((base_keys / 2))" ]; then
+        echo "DIAL-S3 FAIL: position 0's own baseline dump has only $base_total_lines lines against a $base_keys-line baseline population — the extractor is not reading a healthy dump; a zero-diff result below would be an extraction failure wearing one, not a real zero (docs/dev/learnings.md §3, w233_report.md §5)" >&2
+        dial_s3_fail=1
+        dial_s3_extractor_unhealthy=1
+    fi
+
+    for _pos in "${DIAL_ORDER[@]}"; do
+        _alias="${DIAL_POSITIONS[$_pos]}"
+        _dump="${dial_dump_file[$_pos]}"
+        if [ ! -f "$_dump" ]; then
+            echo "DIAL-S3 FAIL: --tune=$_pos ($_alias): no saved RXTDUMP at $_dump — that position's own axis run above must have failed before producing one (see its AXIS FAIL lines)" >&2
+            dial_s3_fail=1
+            continue
+        fi
+        _total=$(wc -l < "$_dump")
+        if [ "$_total" -lt "$((base_keys / 2))" ]; then
+            echo "DIAL-S3 FAIL: --tune=$_pos ($_alias): dump has only $_total lines against a $base_keys-line baseline population — extractor unhealthy for this position, not a real population" >&2
+            dial_s3_fail=1
+            dial_s3_extractor_unhealthy=1
+            continue
+        fi
+        _pslug="${_pos//-/m}"
+        _refused="$WORKDIR/dial_refused_${_pslug}.keys"
+        awk -F'\t' '$5=="REFUSED"{print $1":"$2}' "$_dump" | LC_ALL=C sort -u > "$_refused"
+        _refused_n=$(wc -l < "$_refused")
+        # BOTH DIRECTIONS, named separately (never a count): `comm` on two
+        # LC_ALL=C-sorted key sets. -23 keeps column 1 alone (unique to
+        # base_refused): refused at 0, NOT refused (compiles) at P — the
+        # pattern GAINED an answer it did not have at balanced. -13 keeps
+        # column 2 alone (unique to $_refused): not refused (compiled) at
+        # 0, refused at P — the pattern LOST the answer balanced gave it.
+        _gained="$WORKDIR/dial_gained_${_pslug}.keys"
+        _lost="$WORKDIR/dial_lost_${_pslug}.keys"
+        comm -23 "$base_refused" "$_refused" > "$_gained"
+        comm -13 "$base_refused" "$_refused" > "$_lost"
+        _gained_n=$(wc -l < "$_gained")
+        _lost_n=$(wc -l < "$_lost")
+        echo "  --tune=$_pos ($_alias): $_total total dump lines, $_refused_n refused; vs position 0: $_gained_n gained-an-answer, $_lost_n lost-an-answer"
+        if [ "$_gained_n" -gt 0 ]; then
+            dial_s3_fail=1
+            echo "DIAL-S3 FAIL: --tune=$_pos ($_alias) now COMPILES $_gained_n pattern(s) that REFUSE at position 0 — the pattern gained an answer it did not have at balanced, a language change tuning.md §5.5 forbids:" >&2
+            head -20 "$_gained" | sed 's/^/    /' >&2
+        fi
+        if [ "$_lost_n" -gt 0 ]; then
+            dial_s3_fail=1
+            echo "DIAL-S3 FAIL: --tune=$_pos ($_alias) now REFUSES $_lost_n pattern(s) that COMPILE at position 0 — the pattern lost the answer balanced gave it, the opposite forbidden direction:" >&2
+            head -20 "$_lost" | sed 's/^/    /' >&2
+        fi
+    done
+
+    if [ "$dial_s3_fail" -ne 0 ]; then
+        if [ "$dial_s3_extractor_unhealthy" -ne 0 ]; then
+            dial_s3_verdict="FAIL — extractor unhealthy on at least one position, see DIAL-S3 FAIL lines above (not a scored refusal-set diff)"
+        else
+            dial_s3_verdict="FAIL — the refusal set moved, see DIAL-S3 FAIL lines above"
+        fi
+        fail=1
+    else
+        dial_s3_verdict="OK — refusal set identical (as file:line keys, both directions) across all five positions; extractor health asserted independently, not assumed"
+    fi
+    echo "  $dial_s3_verdict"
+fi
 
 # ============================================================================
 # THE ORACLE CROSS-CHECK — PC-4 (live libpcre2) under -fno-premul-table
@@ -886,6 +1089,7 @@ for r in "${axis_results[@]}"; do
 done
 echo "oracle cross-check: $oracle_verdict"
 echo "--vm-entry-shape tier: $_shape_tier"
+echo "DIAL-S3 (tune refusal-set, keyed): $dial_s3_verdict"
 echo "HARNESS_BATCH: $HARNESS_BATCH"
 echo "total wall time: $((t_end - t_start))s"
 if [ "$fail" -ne 0 ]; then
@@ -895,6 +1099,9 @@ fi
 # THE CLOSING SENTENCE NAMES THE TIER, because since [CC-DIFF] STEP 2 "all
 # axes" is a claim whose SCOPE depends on AXES_FULL: a default run swept two
 # of `--vm-entry-shape`'s four rungs, and a summary that read the same either
-# way would let a two-rung result be quoted as a four-rung one.
-echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict"
+# way would let a two-rung result be quoted as a four-rung one. DIAL-S3's own
+# verdict is named too, for the identical reason — "all axes answer-identical"
+# says nothing about the refusal SET, which is a different property this
+# script checks separately.
+echo "run_axes.sh: all axes answer-identical to default (documented refusal populations excepted); --vm-entry-shape tier: $_shape_tier; oracle cross-check $oracle_verdict; DIAL-S3 $dial_s3_verdict"
 exit 0

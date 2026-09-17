@@ -482,7 +482,7 @@ tA1=$(date +%s.%N)
 # three things beyond byte-identity: the exact column NAMES pcrec emits,
 # the exact field COUNT of every data row (the table contract's HEADER
 # TRUTHFULNESS check), and the exact TOTAL row counts against the census.
-MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export	tags	oracle	esc'
+MANIFEST='kind	line	name	value	pattern	flags	features	features_only	encoding	engine	budget_steps	budget_frames	with	from	pcrec	export	tags	oracle	esc	tune'
 hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#kind')"
 # [DD-13b.W23.4] MATCHES `^#kind` EXPLICITLY, never "the last `#` line":
 # the main table's header used to be exactly that (`tail -1` over every
@@ -493,7 +493,7 @@ hdr="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$(head -1 "$FILES")" | grep '^#
 # ever emits whose first field is that literal token.
 hdr="${hdr#\#}"
 if [ "$hdr" = "$MANIFEST" ]; then
-    pass "C1 manifest: --list-source emits exactly the 19 pinned columns, in order"
+    pass "C1 manifest: --list-source emits exactly the 20 pinned columns, in order"
 else
     fail "C1 manifest: --list-source's header MOVED.
   expected: $MANIFEST

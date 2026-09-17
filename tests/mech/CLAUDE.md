@@ -376,6 +376,41 @@ is EXPECTED to time out"*, and neither would a separate arm.
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
   artifact's STRATS stamp in both directions).
+- `tunedial` → `tests/codegen/run_tune_dial.sh` ([OPT-DIAL] design §6.1a's
+  MECHANISM-STATE CROSS-CHECK), **NOT YET REGISTERED IN THIS DRIVER'S
+  DISPATCH as of 2026-09-17** — a sibling lane is building the script
+  concurrently. `sabotages/S249_tune_columns_swapped.sh`,
+  `S250_tune_wrong_deny_bit.sh` and `S251_tune_ladder_threshold_dropped.sh`
+  all name this word already (R31 C11's "register before the rows that need
+  it" is therefore violated in the direction the rule exists to make LOUD
+  rather than silent: each row's own `SAB_DOC_FIGURE` records a solo run
+  showing `reach:ok` and a clean apply/build, then `UNKNOWN-SUITE:tunedial`
+  → `ANOMALY (no suite ran)` — never a false DETECTED/UNDETECTED). Register
+  the case arm and re-run all three (`bash tests/mech/run_sabotage_matrix.sh
+  S249`, `S250`, `S251`) in the same change that adds it. Each plants
+  `src/core/tune.c`'s policy table so every ANSWER check in the tree stays
+  green (the dial's own allowlist is answer-identity-preserving by
+  construction, docs/spec/tuning.md §5.4) and only a check that recovers
+  each moving mechanism's ACTUAL state from the emitted text — never from
+  the stamp or from `src/core/tune.c`'s own copy, `docs/dev/learnings.md`
+  §3 — can see it: **S249** swaps the `−2`/`−1` value tuples (design's own
+  candidate SAB-D1, the row proving the cross-check is not vacuous — it
+  must fire on the `−2` witness's premultiplied-table state AND both
+  ladder parameters); **S250** denies `-fno-tiered-entry`'s bit at `−2`
+  where the table says `-fno-premul-table` (SAB-D2 — two cells wrong in
+  OPPOSITE directions, so an arm that only COUNTED denials would pass);
+  **S251** drops the ladder threshold to its em-dash sentinel at `−2` while
+  leaving the bar at 95 (SAB-D3 — the two ladder parameters move together
+  by design §3.5's fold, so an arm reading only one of them passes).
+
+**[OPT-DIAL] S192 WAS RE-ANCHORED THE SAME DAY** (`src/core/compile.c`'s
+literal `75` became a `bar` parameter the dial's table feeds), intent
+re-verified rather than assumed per the house re-anchor rule: solo re-run,
+`sizeterm:3fail/28pass, corpus:0fail/21pass, reach:ok(1/1)` — DETECTED,
+unchanged from its pre-dial figure. See the row's own header for the
+second-witness question this re-anchor also had to ask and answer (whether
+the bar becoming a dial cell gives its DECLINE a second, non-reference-
+compiler witness — measured NO, on two independent grounds stated there).
 
 The last three landed 2026-08-12 (MOD-0.8c slice 1), and **neither arm runs
 `run_registry_tests.sh` itself** even though that is what `make test` runs.

@@ -212,6 +212,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+      test-tune-dial \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops
@@ -394,6 +395,16 @@ test-codegen: all
 # AND compiles-and-runs sixteen matchers (measured ~6 min). It IS part of
 # `make test`, which is where the merge/close standard lives; only the smoke
 # wrapper is spared it.
+# [OPT-DIAL] the speed-vs-size dial's own checks. Its OWN section rather than
+# a script in `test-codegen`'s group, on `test-premul-table`'s measured
+# argument one section up: `make smoke` includes `test-codegen` and is already
+# at its 60s target, and this script emits ~60 artifacts across five dial
+# positions (measured ~25 s). It IS part of `make test`, which is where the
+# merge/close standard lives; only the smoke wrapper is spared it.
+test-tune-dial: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-tune-dial.ran"; fi
+	bash tests/codegen/run_tune_dial.sh
+
 test-premul-table: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-premul-table.ran"; fi
 	bash tests/codegen/run_premul_table.sh

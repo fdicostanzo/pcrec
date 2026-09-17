@@ -34,6 +34,14 @@ SAB_COUNT=1
 SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
 SAB_BEFORE='                cx.size_cap_refused &&
-                size_drop_rung < SDR_MAX &&
+                size_drop_rung == SDR_NONE &&
                 cx.job && cx.job->anchored_ok;'
 SAB_AFTER='                false;   /* SABOTAGE S237: the rung is never offered. */'
+# RE-ANCHORED 2026-09-17 (lane k59rung): [K59-PREMUL] tightened this rung's
+# own budget conjunct from `size_drop_rung < SDR_MAX` to
+# `size_drop_rung == SDR_NONE` (SDR_MAX grew to 2 with the second rung, and
+# the old spelling was only ever correct by the coincidence that
+# `anchored_ok` also goes false once this rung fires -- see internal.h's
+# own comment). Text only; intent unchanged and re-verified: `false;`
+# still makes this rung never eligible, `drop_eligible` still governs
+# ONLY the anchored-machine drop.

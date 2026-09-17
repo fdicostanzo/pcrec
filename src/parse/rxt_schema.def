@@ -163,6 +163,12 @@ PCREC_RXT_SCHEMA(CONFIG, "features", LIST,  0, NONE, AT_MOST_ONE, "", FORMAT, PC
 PCREC_RXT_SCHEMA(CONFIG, "encoding", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
 PCREC_RXT_SCHEMA(CONFIG, "engine",   TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
 PCREC_RXT_SCHEMA(CONFIG, "budget",   PAIR,  0, NONE, ACCUMULATE,  "", FORMAT, PCREC, 1)
+/* [OPT-DIAL] the speed-vs-size dial, `engine`'s row shape exactly: a TOKEN,
+ * AT_MOST_ONE, validated by pcrec alone (the harness never resolves it —
+ * `--source` does). Its value set is the CLI's own, checked by the ONE
+ * parser in src/core/tune.c rather than by a constraint spelled here, the
+ * same way `engine`'s `vm` is checked in rxt_source.c. */
+PCREC_RXT_SCHEMA(CONFIG, "tune",     TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
 PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PCREC, 23)
 
 /* ---- BLOCK scope — a pattern block's own lines ------------------------

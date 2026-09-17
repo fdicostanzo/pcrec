@@ -156,8 +156,18 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `25`
-([PORTFIX], A CLANG-COMPATIBILITY LABEL FIX — every scan-edge-bearing DFA
+events but never stated the general rule; `rx_info.abi` is `26`
+([OPT-DIAL], THE SPEED-VS-SIZE DIAL — every artifact of both engines gains
+exactly one line in the shared prologue, `#define <PREFIX>_TUNE
+"<token>"`, a closed five-token selection stamp (23-28 bytes by token);
+nothing else moves at the default position `balanced`, which is
+STRUCTURAL rather than measured because every cell of that row in
+`src/core/tune.c` is the em-dash sentinel and its deny mask is empty; a
+non-default position may move far more, which is the dial's point, but no
+struct offset moves, no `rx_info` member is added or changed, and no
+answer moves at any position, which is the dial's own acceptance
+criterion; `25` was
+[PORTFIX], A CLANG-COMPATIBILITY LABEL FIX — every scan-edge-bearing DFA
 machine (or VM-hybrid inlined prefilter) gains a trailing `;` on its
 `scan_views` and `scan_edge` labels, closing a label-immediately-followed-
 by-a-declaration shape that gcc accepts as a `-std=gnu11` extension and
@@ -1969,8 +1979,21 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `25` on every artifact today ([PORTFIX] bumped it from
-  24: A CLANG-COMPATIBILITY LABEL FIX. Every scan-edge-bearing DFA machine
+- **`rx_info.abi` is `26` on every artifact today ([OPT-DIAL] bumped it
+  from 25: THE SPEED-VS-SIZE DIAL. Every artifact of both engines gains
+  exactly one line in the shared prologue, `#define <PREFIX>_TUNE
+  "<token>"` — a closed five-token selection stamp, 23-28 bytes by token.
+  Nothing else moves at the default position `balanced`: STRUCTURAL rather
+  than measured, because every cell of that row in `src/core/tune.c` is
+  the em-dash sentinel and its deny mask is empty, so there is no code
+  path on which a `balanced` build can differ from one built with no
+  `--tune` flag at all. A non-default position may move far more, which is
+  the dial's own point, but no struct offset moves, no `rx_info` member is
+  added or changed, and no answer moves at any position — that invariance
+  is the dial's own acceptance criterion (`src/core/tune.c`'s own header),
+  not a claim this document is first to make. `25` was
+  [PORTFIX], which bumped it from 24: A CLANG-COMPATIBILITY LABEL FIX.
+  Every scan-edge-bearing DFA machine
   (or VM-hybrid inlined prefilter), of either direction, gains a trailing
   `;` on its `scan_views` and `scan_edge` labels — closing a label-
   immediately-followed-by-a-declaration shape (`view_decl`'s

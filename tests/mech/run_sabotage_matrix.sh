@@ -1122,6 +1122,32 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            tunedial)
+                # [OPT-DIAL] tests/codegen/run_tune_dial.sh — the dial's
+                # MECHANISM-STATE CROSS-CHECK, plus the stamp, the position-0
+                # no-op, the nesting and K59. ITS OWN ARM rather than
+                # `codegen`, for the reason `searchpinned` and `vmframeless`
+                # are split from each other and from it: what it guards is a
+                # POLICY TABLE, which is orthogonal to every emitter property
+                # those two check. REGISTERED BEFORE THE ROWS THAT NAME IT
+                # (S249-S251), per R31 C11.
+                #
+                # A ROW ON THIS ARM SCORES `corpus:0fail` BY CONSTRUCTION, and
+                # that is the arm working rather than a half-detection. Every
+                # switch the dial moves is independently answer-preserving —
+                # that is the allowlist's whole point — so a miswired policy
+                # table changes no answer anywhere in the tree, at any
+                # position, ever. If a row here ever DOES move the corpus, the
+                # dial has stopped being answer-identical and that is a
+                # different and larger finding than the row was written for.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_tune_dial.sh" \
+                    > "$work/tunedial.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/tunedial.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/tunedial.log" | grep -oE '[0-9]+')"
+                suite_bits+=("tunedial:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
                 # tests/codegen/run_vm_frameless.sh — `<PREFIX>_VM_FRAMELESS`

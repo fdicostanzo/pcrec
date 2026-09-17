@@ -1819,19 +1819,37 @@ enum {
      * `collapse_reason == CR_SIZECAP` (src/core/compile.c) with a prefilter
      * that survived", which described the one rung the driver had. The value
      * means what its name says — an emitted-SIZE cap forced a retry and the
-     * retry succeeded — so the OPTIONAL-CONTRIBUTOR DROP rung
+     * retry succeeded — so the OPTIONAL-CONTRIBUTOR DROP LADDER
      * (`Ctx.size_drop_rung != SDR_NONE`) reads it too, rather than minting a
-     * second home for one event. WHICH contributor a retry dropped is
-     * answered by the artifact's own axis stamps and the two rungs are
-     * mutually exclusive by ENGINE, so the pair is exact:
+     * second home for one event.
+     *
+     * [K59-PREMUL] (2026-09-17) THE DROP LADDER GAINED A SECOND RUNG, AND
+     * THE TABLE BELOW IS NO LONGER "MUTUALLY EXCLUSIVE BY ENGINE" FOR ALL
+     * THREE ROWS — only [OPT-4]'s VM-hybrid collapse is exclusive against
+     * the other two; rungs 1 and 2 of the drop ladder BOTH require the DFA
+     * engine and MAY co-occur on one artifact (`Ctx.size_drop_rung`'s own
+     * ordinal — "every contributor up to and including this rung"). WHICH
+     * contributor (or contributors) a retry dropped is still answered by
+     * the artifact's own axis stamps, combined rather than singly:
      *
      *   | rung | engine | what the artifact stamps |
      *   |---|---|---|
      *   | [OPT-4] prefilter collapse | VM hybrid | `_DFA_PREFILTER` set, `_PREFILTER_LANG_WHY "count-collapsed"` |
-     *   | [K53-SELRETRY] optional drop | DFA | `_DFA_MATCH "search-filter"` |
+     *   | [K53-SELRETRY] anchored drop | DFA | `_DFA_MATCH "search-filter"` (unaffected: `_DFA_TABLE`) |
+     *   | [K59-PREMUL] premul drop | DFA | `_DFA_TABLE` "indexed"/"mixed" where it would otherwise read "premultiplied" (unaffected: `_DFA_MATCH`, unless rung 1 ALSO fired) |
      *
-     * Witnesses: tests/resource's `(a|b){1,30000}` cell for the first rung,
-     * `\p{L}` under `-e utf8 --features unicode-props` for the second. */
+     * A DFA-engine artifact reading this value with BOTH `_DFA_MATCH
+     * "search-filter"` and `_DFA_TABLE` off "premultiplied" had both rungs
+     * fire; either alone identifies which one did. `tests/codegen/
+     * run_tune_dial.sh`'s ladder arm asserts the combination live rather
+     * than only claiming it (K59's own disposition note).
+     *
+     * Witnesses: tests/resource's `(a|b){1,30000}` cell for the first row,
+     * `\p{L}` under `-e utf8 --features unicode-props` for the second,
+     * `[^\p{C}\p{M}\p{P}]` under the same axes for the third (K59's own
+     * filed repro — refuses at every position but `--tune=-2`/bare
+     * `-fno-premul-table` before this rung; compiles at every position
+     * after). */
     ESEL_SIZE_CAP_RETRY       = 7
 };
 
@@ -1881,10 +1899,33 @@ enum {
  * WHAT MAY JOIN IT. A contributor belongs here only if dropping it is
  * ANSWER-PRESERVING (it is a form axis, not a language one), OBSERVABLE in
  * the artifact's own stamps, and SMALLER — the three properties the anchored
- * machine has and that make its loss strictly better than a refusal. The
- * ORDER of a two-rung ladder is a measured question (what does dropping each
- * cost at run time?) and is deliberately unanswered here: this row had one
- * contributor and therefore nothing to order. */
+ * machine has and that make its loss strictly better than a refusal.
+ *
+ * [K59-PREMUL] THE ORDER OF THE TWO-RUNG LADDER IS RULED, NOT MEASURED
+ * (Frank, 2026-09-17): APPEND. `SDR_NO_ANCHORED` stays rung 1, undisturbed
+ * for its own population; the premultiplied DFA table (`PCREC_NO_PREMUL_
+ * TABLE`, K59) is rung 2, tried only when rung 1 declined to fire — whether
+ * because it already fired and the artifact is STILL over the cap, or
+ * because THIS artifact never had a contributor for it to drop (a caller's
+ * own explicit `-fno-anchored-dfa`, or the anchored machine's own STATE cap
+ * overflow, both independent of this ladder). Both rungs MAY fire on one
+ * artifact, which the ordinal shape already buys ("every contributor up to
+ * and including this one"). Unlike rung 1, rung 2 needs no new gate at a
+ * build site: `PCREC_NO_PREMUL_TABLE` is already a `pcrec_options.flags`
+ * bit the emitter's own candidate list filters on (`-fno-premul-table`,
+ * `src/gen/emit_dfa.c`'s `dfa_premul`), so the rung is spelled as the flag
+ * itself — OR it into the driver's `defo.flags` for every attempt from here
+ * on, exactly as `[OPT-DIAL]`'s `--tune=-2` already does at driver entry.
+ * That is also what makes an explicit `-fno-premul-table` from the CALLER
+ * a naturally INELIGIBLE case rather than a second code path: the flag is
+ * already set, the rung's own OR adds nothing, and the eligibility test
+ * says so. There is no explicit FORCE spelling (`-fpremul-table`) to check
+ * against — `docs/spec/tuning.md` §2.13 and `lib/pcrec.h`'s own comment:
+ * deny-only, "there is one table form per machine and the compiler picks
+ * it, so there is nothing to address and nothing to force" — so the
+ * explicit-beats-rescue exclusion a force flag would need is vacuous today,
+ * not merely unbuilt; if one is ever added, rung 2's eligibility test needs
+ * the same conjunct `-fprefilter` gets against `[OPT-4]`'s own rung. */
 enum {
     SDR_NONE        = 0,
     /* [ENG-ABS]'s optional anchored match-here machine. Its loss costs
@@ -1892,7 +1933,23 @@ enum {
      * reads `search-filter` instead of `unwrapped`, and `RX_ENGINE_SEL`
      * reads `size-cap-retry`. */
     SDR_NO_ANCHORED = 1,
-    SDR_MAX         = 1
+    /* [K59-PREMUL] the premultiplied DFA transition table (every machine's,
+     * forward and reverse and the anchored one if it survived rung 1): its
+     * loss costs the scan its [OPT-3] per-byte speed-up (measured ~1.27x on
+     * scan-bound subjects, docs/dev/opt3_dfa_scan_measurement.md) and no
+     * answer; `RX_DFA_TABLE` reads `"indexed"`/`"mixed"` instead of
+     * `"premultiplied"` on whichever machine(s) it would otherwise have
+     * applied to, and `RX_ENGINE_SEL` reads `size-cap-retry`, exactly as
+     * rung 1's own stamps do (the two are not mutually exclusive by engine
+     * the way rung 1 and [OPT-4]'s VM-hybrid collapse rung are — see
+     * `ESEL_SIZE_CAP_RETRY`'s own comment). Scoped to the DFA engine only
+     * (`Job.fit.chosen == ENGM_DFA`, `compile_driver`'s own conjunct): a VM
+     * hybrid's embedded prefilter table can ALSO be premultiplied, but
+     * extending the rung there would let it re-enter the VM's own size-term
+     * ladder mid-ladder with no measured need to justify the interaction —
+     * D77, wait for one. */
+    SDR_NO_PREMUL   = 2,
+    SDR_MAX         = 2
 };
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
@@ -4527,6 +4584,10 @@ typedef struct {
     int         features_only;/* the block wrote `features only` (M14)    */
     const char *encoding;
     const char *engine;       /* "vm" | "dfa"                             */
+    /* [OPT-DIAL] the `tune` directive's value AS WRITTEN — the ordinal or
+     * one of the five aliases, kept verbatim so `--list-source` reports what
+     * the author typed rather than a normalisation of it. NULL when unset. */
+    const char *tune;
     long        budget_steps; /* -1 when unset — 0 is a legal budget      */
     long        budget_frames;
     const char *with_list;    /* target's `with` config list, as written  */
@@ -4793,6 +4854,10 @@ typedef struct {
     int         features_only;
     const char *encoding;
     const char *engine;
+    /* [OPT-DIAL] the composed `tune` value as written, or NULL. The CLI
+     * resolves it to an ordinal; this side keeps the author's spelling so a
+     * conflict diagnostic can quote the file's own text. */
+    const char *tune;
     long        budget_steps, budget_frames;
     const char *pcrec_raw;     /* every composed `pcrec` line's text, in
                                 * composition order, space-joined — re-parsed
@@ -5427,5 +5492,31 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long budget, long long work, long long frames,
                      long long ceiling, const BufSurface *bs);
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
+
+/* [OPT-DIAL] THE DIAL'S PINNED POLICY TABLE (src/core/tune.c, which is its
+ * ONE home; the contract is docs/spec/tuning.md §5).
+ *
+ * ONE ROW PER POSITION. Every value cell uses 0 as the EM-DASH SENTINEL —
+ * "the dial does not touch this axis at this position" — and each consuming
+ * SITE resolves the sentinel against its own built-in default, so this type
+ * does not become a second home for `PCREC_SIZE_TERM_THRESHOLD`,
+ * `VM_INLINE_CHAIN_MAX_BYTES` or the materiality bar. */
+typedef struct {
+    int         pos;                  /* −2..+2, PCREC_TUNE_* */
+    const char *token;                /* the closed five-token set; the stamp's value */
+    int         size_term_bar;        /* [ART-SIZE] ladder materiality bar, PERCENT */
+    long long   size_term_threshold;  /* [ART-SIZE] ladder trigger, emitted CODE bytes */
+    long long   vm_inline_chain_max;  /* [CC-DIFF] VM entry-chain size term, bytes */
+    uint64_t    deny_flags;           /* PCREC_NO_* bits the position DENIES */
+} PcrecTuneRow;
+
+bool                pcrec_tune_valid(int tune);
+const PcrecTuneRow *pcrec_tune_row(int tune);
+const char         *pcrec_tune_token(int tune);
+int                 pcrec_tune_parse(const char *s, int *out);
+int                 pcrec_tune_size_term_bar(int tune);
+long long           pcrec_tune_size_term_threshold(int tune);
+long long           pcrec_tune_vm_inline_chain_max(int tune);
+uint64_t            pcrec_tune_deny_flags(int tune);
 
 #endif /* PCREC_INTERNAL_H */

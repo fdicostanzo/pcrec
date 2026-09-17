@@ -161,12 +161,73 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   only for `ENGM_VM`; [OPT-4]'s size rung requires `!= ENGM_DFA`. So a drop
   attempt can never enter the ladder, and the two size rungs are MUTUALLY
   EXCLUSIVE on every pattern — which is why their order in the catch chain is
-  free today, and why a droppable contributor on the VM side is the event that
-  makes ordering a real question. The rung is an ORDINAL and not a bool so
-  rungs compose ("everything up to and including this one is dropped"); what a
-  second rung owes is a MEASURED run-time cost per contributor to order them
-  by, which this row had exactly one contributor and therefore nothing to
-  derive. `SDR_*`'s own comment states the obligation.
+  free today.
+
+  **[K59-PREMUL] (2026-09-17) THE SECOND CONTRIBUTOR ARRIVED, AND IT DID NOT
+  NEED THE ORDER QUESTION ANSWERED.** K59 (docs/dev/known_issues.md): the
+  premultiplied DFA transition table (`PCREC_NO_PREMUL_TABLE`) is a
+  `.rodata` cost with the same three properties (answer-preserving,
+  observable in `RX_DFA_TABLE`, smaller) — and it is ALSO scoped to
+  `fit.chosen == ENGM_DFA` (deliberately: extending it to a VM hybrid's
+  embedded prefilter table would let a retry re-enter the size-term ladder
+  MID-LADDER with no measured need to justify the interaction, D77), so it
+  is STILL mutually exclusive with [OPT-4]'s rung and the "order the two
+  size rungs" question this comment predicted remains open. What the
+  ordering question this row DID answer, by Frank's ruling rather than by
+  measurement: `SDR_NO_ANCHORED` stays first (APPEND, undisturbed for its
+  own population), `SDR_NO_PREMUL` is tried only when it declines. Both may
+  fire on one artifact — the ordinal's own "everything up to and including
+  this rung" shape composes them for free. A third contributor on the VM
+  side is still the event that forces a MEASURED order between rungs that
+  are not mutually exclusive by engine.
+- **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
+  its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
+  `docs/design/opt_dial_design.md` the design record, D103 the governance).
+  `--tune=N` names a POSITION in −2..+2 and a position names a set of
+  per-axis values; this file is the table, the five-token alias set, and the
+  accessors every consuming site asks.
+
+  **THE VALUES COULD HAVE LIVED AT THE SITES THAT SPEND THEM** — a
+  conditional in `compile.c` for the `[ART-SIZE]` ladder, one in
+  `emit_vm.c` for the entry-chain term, a flag bit set in `cli/main.c` — and
+  every one of them would then be a second place the contract lives. The
+  table is DATA, in one file, and the sites ask it.
+
+  **THE EM-DASH SENTINEL IS 0 AND EACH SITE RESOLVES IT AGAINST ITS OWN
+  DEFAULT.** That is what stops this file becoming a second home for
+  `PCREC_SIZE_TERM_THRESHOLD` (`limits.def`), `VM_INLINE_CHAIN_MAX_BYTES`
+  (`emit_vm.c`'s own `EMIT_VM` home) or the materiality bar
+  (`SIZE_TERM_BAR_DEFAULT`, beside `size_term_choose` in `compile.c`). The
+  sentinel means "the dial does not touch this axis here", never "zero".
+
+  **POSITION 0 IS A STRUCTURAL NO-OP BY CONSTRUCTION, not by care**: every
+  cell of the `balanced` row is the sentinel and its deny mask is empty, so
+  there is no code path on which a `balanced` artifact can differ from a
+  no-flag one. `tests/codegen/run_tune_dial.sh` §2 is its acceptance cell.
+
+  **WHERE THE DIAL IS APPLIED**, and it is three places and no more:
+  `compile_driver` validates the position (REFUSED, never clamped — a clamp
+  would let a caller believe they had asked for something the artifact does
+  not have) and OR's the deny mask into `defo.flags`; `size_term_choose` and
+  the ladder's trigger read the two `[ART-SIZE]` cells; `emit_vm.c`'s AUTO
+  rung selection reads the entry-chain term. `pcrec_options.tune` carries
+  the ordinal and `<PREFIX>_TUNE` stamps the token.
+
+  **AND `-fno-anchored-dfa` IS DELIBERATELY ABSENT from the `min-size` row**,
+  which is the one thing about the table a reader will want explained: it is
+  the largest size lever the dial has and its penalty is a three-population
+  distribution whose WORST population fails the working bound. The file's own
+  header carries the numbers. **K59 FIXED (2026-09-17, lane k59rung): the row
+  that IS there, `-fno-premul-table`, had the same hazard and was never asked
+  about it** — the `−2` position was moving the refusal set (it compiled
+  `[^\p{C}\p{M}\p{P}]`, which the other four positions refused), which the
+  design's own gate 2 forbids. Closed by disposition 2 (Frank's ruling) —
+  `[K53-SELRETRY]`'s drop ladder (`compile.c`, below) gained a second rung
+  that denies this flag on any DFA-engine size-cap retry, so the rescue the
+  `−2` cell was reaching alone is now reached from every position on the
+  patterns that need it. `-2`'s cell itself is UNCHANGED (narrowing it was
+  disposition 1, not taken).
+
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte

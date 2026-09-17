@@ -388,14 +388,18 @@ enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LAD
  * TWICE — once for the exact attempt and once after the collapse. `+1` for
  * that rung's own transition. Derived rather than typed, so adding a ladder
  * rung cannot silently truncate the search. */
-/* [K53-SELRETRY] `+ SDR_MAX` for the optional-contributor drop ladder: one
- * attempt per rung. It costs ONE and not one-ladder's-worth, and that is the
- * exclusivity argument stated as arithmetic — a drop rung is offered only to
- * an artifact whose engine is the DFA (`Job.anchored_ok` implies it), and the
- * size-term ladder runs only for the VM, so a drop attempt can never enter
- * the ladder and never doubles the ladder-bearing half the way [OPT-4]'s size
- * rung does. Derived from `SDR_MAX` rather than typed, for the reason both
- * paragraphs above give for their own terms. */
+/* [K53-SELRETRY]/[K59-PREMUL] `+ SDR_MAX` for the optional-contributor drop
+ * ladder: one attempt per rung, now TWO (`SDR_NO_ANCHORED`, `SDR_NO_PREMUL`).
+ * Both cost ONE and not one-ladder's-worth each, and that is the same
+ * exclusivity argument stated as arithmetic for a second rung: rung 1 is
+ * offered only to a DFA-engine artifact (`Job.anchored_ok` implies it) and
+ * rung 2 is DELIBERATELY SCOPED to the same engine
+ * (`compile_driver`'s own `fit.chosen == ENGM_DFA` conjunct, K59), while the
+ * size-term ladder runs only for the VM — so NEITHER drop attempt can ever
+ * enter it, and neither doubles the ladder-bearing half the way [OPT-4]'s
+ * size rung does. Derived from `SDR_MAX` rather than typed, for the reason
+ * both paragraphs above give for their own terms — a third rung raises
+ * `SDR_MAX` and this formula grows with it automatically. */
 enum { COMPILE_MAX_ATTEMPTS = 3 + 2 * (SIZE_TERM_LADDER_N + 1) + 1 + SDR_MAX };
 
 /* [ART-SIZE] Which phase an attempt is in. The phases run in a fixed order and
@@ -445,11 +449,19 @@ static bool size_term_capacity_holds(const long long *fc, const long long *sc, i
            cap_or_inf(sc[i]) >= cap_or_inf(sc[0]);
 }
 
+/* [ART-SIZE] THE MATERIALITY BAR's own home, in PERCENT of the default K's
+ * bytes: a smaller K ships only if it saves at least a quarter of them.
+ * [OPT-DIAL] made this a dial cell (`--tune=-2` raises it to 95, `-1` to 85),
+ * so the constant moved out of the expression below and into a name — but
+ * the DEFAULT still lives here, beside its one reader, which is why
+ * `src/core/tune.c` carries an em-dash sentinel rather than a copy of it. */
+#define SIZE_TERM_BAR_DEFAULT 75
+
 static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
                              const size_t *code, const size_t *total,
                              const long long *fc, const long long *sc, int n,
                              unsigned long long cap_code,
-                             unsigned long long cap_total,
+                             unsigned long long cap_total, int bar,
                              int *out_k, bool *out_rescue, bool *out_capexcl)
 {
     *out_rescue = false;
@@ -487,7 +499,7 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
             best = i;
     /* the materiality bar, in bytes, against the default */
     int sel = 0;
-    if (best != 0 && total[best] * 100 <= total[0] * 75) sel = best;
+    if (best != 0 && total[best] * 100 <= total[0] * (size_t)bar) sel = best;
 
     if (code[sel] <= cap_code && total[sel] <= cap_total) { *out_k = k[sel]; return; }
 
@@ -518,6 +530,29 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
     *out_k = k[0];
 }
 
+/* [K53-SELRETRY]/[K59-PREMUL] THE DROP LADDER'S VERBOSE NOTE (Frank's
+ * addendum, 2026-09-17): EVERY rung firing — the pre-existing anchored rung
+ * too, which shipped with the opposite ruling ("no stderr note", K53's own
+ * report §2) — now says so, loudly and non-fatally, naming what was
+ * dropped, the cost direction in one honest clause, and the caller's
+ * recourse. ONE HELPER for both rungs rather than two copies: the SHAPE is
+ * identical (what/cost/recourse) and only the two clauses differ, which is
+ * exactly what a shared emission point is for. Printed only for a rung that
+ * ACTUALLY FIRED on this compile (`dropped_anchored`/`dropped_premul`, not
+ * `size_drop_rung`'s ordinal — see their own declaration comment for why the
+ * ordinal alone cannot tell "fired" from "never applicable"), at the same
+ * placement rule the `WARN_EMIT_BYTES`/`[LIM-2]` N1 notes already use: past
+ * the recovery point, on the attempt that is about to succeed, never on a
+ * trial the driver discarded. */
+static void size_drop_note(const char *what, const char *cost)
+{
+    fprintf(stderr,
+            "pcrec: note: the emitted-size cap forced a smaller artifact: "
+            "dropped %s -- %s. Raise --max-emit-bytes/--max-emit-code-bytes "
+            "to keep the faster form, or accept the fit.\n",
+            what, cost);
+}
+
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
                           const RxtDefs *defs)
@@ -527,6 +562,30 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     if (opt) defo = *opt;   /* local copy: keeps params setjmp-safe */
     if (out) memset(out, 0, sizeof(*out));
     if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+
+    /* [OPT-DIAL] THE DIAL IS APPLIED ONCE, HERE, BEFORE ANY PASS RUNS.
+     *
+     * It is REFUSED rather than clamped: a clamp would let a caller believe
+     * they had asked for a position the artifact does not have, and the
+     * whole point of `<PREFIX>_TUNE` is that an artifact says how it was
+     * built. The CLI refuses the same value with its own wording; this is
+     * the LIBRARY's guard, and it exists because `pcrec_options.tune` is a
+     * plain `int` that any caller can set to anything.
+     *
+     * THE DENY MASK IS OR'D, NEVER ASSIGNED. A caller who typed
+     * `-fno-premul-table` at `+1` keeps their denial — the dial sets a
+     * policy and does not revoke an explicit request. The two VALUE cells
+     * are NOT applied here: each is read at the site that spends it
+     * (`size_term_choose`'s bar and the ladder's trigger below;
+     * `emit_vm.c`'s entry-chain term), because that site is where the
+     * built-in default the em-dash sentinel falls back to already lives. */
+    if (!pcrec_tune_valid(defo.tune)) {
+        if (err)
+            snprintf(err->msg, sizeof(err->msg),
+                     "invalid tune position %d (the dial is -2..2)", defo.tune);
+        return -1;
+    }
+    defo.flags |= pcrec_tune_deny_flags(defo.tune);
 
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis
@@ -550,6 +609,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * field comment and the `SDR_*` enum). `volatile` for `collapse_reason`'s
      * reason. */
     volatile unsigned char size_drop_rung = SDR_NONE;
+    /* [K53-SELRETRY]/[K59-PREMUL] WHICH rung(s) actually FIRED on THIS
+     * compile, tracked separately from `size_drop_rung`'s ordinal because the
+     * ordinal alone cannot say so: rung 2 can reach `SDR_NO_PREMUL` directly
+     * when rung 1 was never applicable (`size_drop_rung >= SDR_NO_ANCHORED`
+     * is then true without rung 1 ever having fired), and the verbose note
+     * below (Frank, 2026-09-17) must name only what THIS retry actually
+     * dropped, never a contributor that was simply never there to drop. */
+    volatile bool dropped_anchored = false;
+    volatile bool dropped_premul   = false;
     /* [OPT-4] the size refusal that triggered CR_SIZECAP, carried across the
      * retry the way `overflow_why` is: `job_cleanup` has already run on the
      * attempt that measured it. */
@@ -575,6 +643,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      *
      * `st_k[i]`/`st_ok[i]`/`st_code[i]`/`st_total[i]` are the ladder's record,
      * index 0 being the DEFAULT attempt's K and figures. */
+    /* [OPT-DIAL] the ladder's TWO parameters, resolved ONCE from the dial's
+     * pinned row. The em-dash sentinel (0) means the dial does not touch this
+     * axis at this position, and each falls back to the built-in default that
+     * already lives at this site — `src/core/tune.c` deliberately holds no
+     * copy of either. They are `const` locals rather than `Ctx` fields
+     * because the ladder is `compile_driver`'s own machinery and nothing
+     * downstream of it reads them. */
+    const int bar0 = pcrec_tune_size_term_bar(defo.tune);
+    const int size_term_bar = bar0 ? bar0 : SIZE_TERM_BAR_DEFAULT;
+    const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
+    const long long size_term_threshold =
+        thr0 ? thr0 : (long long)PCREC_SIZE_TERM_THRESHOLD;
+
     volatile SizeTermPhase st_phase = ST_DEFAULT;
     volatile int  st_idx = 0;          /* next ladder rung to try */
     volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
@@ -772,6 +853,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                                               : PCREC_MAX_VM_EMIT_CODE_BYTES,
                                      defo.max_emit_bytes ? defo.max_emit_bytes
                                                          : PCREC_MAX_EMIT_BYTES,
+                                     size_term_bar,
                                      &final_k, &rescue, &capexcl);
                     st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
                     st_phase = ST_FINAL;
@@ -894,9 +976,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * and pays [OPT-2]'s reverse pass in `<prefix>_match`, which is
              * strictly better than the refusal it gets today.
              *
-             * OFFERED AT MOST ONCE PER RUNG (`size_drop_rung < SDR_MAX`), so
-             * a pattern still over the cap with everything droppable dropped
-             * refuses after one more attempt rather than looping.
+             * OFFERED AT MOST ONCE (`size_drop_rung == SDR_NONE` — spelled
+             * against rung 1's OWN value now that a second rung exists,
+             * [K59-PREMUL]; `< SDR_MAX` would have kept working today only by
+             * accident, through `anchored_ok` going false once rung 1 fires,
+             * and that coincidence is exactly the kind of coupling a second
+             * rung is supposed to break rather than inherit), so a pattern
+             * still over the cap with the anchored machine dropped falls
+             * through to rung 2 below rather than looping here.
              *
              * `anchored_ok` IS THE CONTRIBUTOR-PRESENT TEST, and it is exact
              * rather than approximate: it is set only when this emitter writes
@@ -913,23 +1000,86 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * this one requires `anchored_ok`, which implies `fit.chosen ==
              * ENGM_DFA`. The two are mutually exclusive on every pattern, so
              * no attempt can take both and their relative position in this
-             * chain is free. A future droppable contributor on the VM side
-             * would end that, and is the point at which the two rungs have to
-             * become an ordered ladder with a measured order (`SDR_*`'s own
-             * comment states the obligation).
+             * chain is free.
              *
-             * THE SIZE-TERM LADDER'S STATE IS NOT RESET, unlike the rung
+             * [K59-PREMUL] THE SECOND DROPPABLE CONTRIBUTOR HAS ARRIVED, AND
+             * IT IS RUNG 2 BELOW RATHER THAN A REORDERING HERE — Frank's
+             * ruling (2026-09-17): APPEND. Rung 1 stays exactly as shipped
+             * for its own population; rung 2 is tried only when this rung
+             * declines (fired already and insufficient, or never applicable
+             * to this artifact at all).
+             *
+             * THE SIZE-TERM LADDER'S STATE IS NOT RESET, unlike [OPT-4]'s rung
              * above, and the reason is the same exclusivity: that ladder runs
              * only for `fit.chosen == ENGM_VM` (`run`'s own conjunct at the
              * measurement below), so an attempt eligible here has never
              * entered it and its record is still the untouched entry state. */
             const bool drop_eligible =
                 cx.size_cap_refused &&
-                size_drop_rung < SDR_MAX &&
+                size_drop_rung == SDR_NONE &&
                 cx.job && cx.job->anchored_ok;
             if (drop_eligible) {
                 job_cleanup(&cx);
                 size_drop_rung = SDR_NO_ANCHORED;
+                dropped_anchored = true;
+                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+                continue;
+            }
+            /* [K59-PREMUL] THE DROP LADDER'S SECOND RUNG — the premultiplied
+             * DFA transition table (docs/dev/known_issues.md K59;
+             * docs/dev/lanes/dialimpl_report.md §1). `--tune=min-size`
+             * already denies `-fno-premul-table` UNCONDITIONALLY, and that
+             * denial alone was already rescuing this rung's own witness
+             * (`[^\p{C}\p{M}\p{P}]` under `-e utf8 --features unicode-props`)
+             * at every dial position but the one that carries the flag —
+             * K59's finding. The dial did not create the lever, and neither
+             * does this rung: `PCREC_NO_PREMUL_TABLE` is an ordinary
+             * `pcrec_options.flags` bit the emitter's candidate list already
+             * filters on (`src/gen/emit_dfa.c`'s `dfa_premul`), so the rung
+             * needs no new gate at a build site the way rung 1 needed
+             * `build_anchored_dfa`'s own read — it is spelled as the flag
+             * itself, OR'd into `defo.flags` for every attempt from here on,
+             * exactly the way `[OPT-DIAL]`'s `--tune=-2` already ORs it in at
+             * driver entry. That is also what makes an explicit
+             * `-fno-premul-table` from the CALLER a naturally INELIGIBLE case
+             * (the flag is already set; this rung's OR adds nothing) rather
+             * than a second code path.
+             *
+             * NO FORCE-FLAG CONJUNCT: THERE IS NO FORCE FLAG. `-fprefilter`
+             * has a conjunct on [OPT-4]'s own size rung because an explicit
+             * force beats a rescue; `-fno-premul-table` is DENY-ONLY
+             * (`docs/spec/tuning.md` §2.13, `lib/pcrec.h`'s own comment:
+             * "there is one table form per machine and the compiler picks
+             * it, so there is nothing to address and nothing to force") —
+             * checked, not assumed, by grep over `cli/main.c` and
+             * `lib/pcrec.h` before this rung was written. If a force
+             * spelling is ever added, it needs the identical conjunct here.
+             *
+             * SCOPED TO THE DFA ENGINE (`fit.chosen == ENGM_DFA`), matching
+             * rung 1's own scope rather than the axis's own reach (a VM
+             * hybrid's embedded prefilter table can be premultiplied too):
+             * extending this rung to `ENGM_VM` would let a retry re-enter the
+             * size-term ladder above MID-LADDER with no measured population
+             * to justify the interaction (D77) — `SDR_*`'s own comment states
+             * the same narrowing. THE SIZE-TERM LADDER'S STATE THEREFORE
+             * NEEDS NO RESET HERE EITHER, for rung 1's own reason: an attempt
+             * eligible here has never entered it.
+             *
+             * OFFERED AT MOST ONCE (`size_drop_rung < SDR_NO_PREMUL`, spelled
+             * against THIS rung's own value for the identical reason rung 1's
+             * check now is), so a pattern still over the cap with everything
+             * this ladder can drop already dropped refuses after one more
+             * attempt rather than looping. */
+            const bool premul_eligible =
+                cx.size_cap_refused &&
+                size_drop_rung < SDR_NO_PREMUL &&
+                cx.job && cx.job->fit.chosen == ENGM_DFA &&
+                !(defo.flags & PCREC_NO_PREMUL_TABLE);
+            if (premul_eligible) {
+                job_cleanup(&cx);
+                size_drop_rung = SDR_NO_PREMUL;
+                defo.flags |= PCREC_NO_PREMUL_TABLE;
+                dropped_premul = true;
                 if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 continue;
             }
@@ -1440,7 +1590,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                        defo.unroll_k == 0 &&
                        !(defo.flags & PCREC_NO_SIZE_TERM) &&
                        (cx.job->vm_rungs & 0x10u) != 0 &&
-                       emit_code > (size_t)PCREC_SIZE_TERM_THRESHOLD;
+                       emit_code > (size_t)size_term_threshold;
             if (run) {
                 st_phase = ST_LADDER; st_idx = 0;
                 job_cleanup(&cx);
@@ -1461,7 +1611,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 int fk = 0; bool rescue = false, capexcl = false;
                 size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
                                  st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
-                                 cap_code, cap_tot, &fk, &rescue, &capexcl);
+                                 cap_code, cap_tot, size_term_bar,
+                                 &fk, &rescue, &capexcl);
                 st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
             }
             st_phase = ST_FINAL;
@@ -1593,6 +1744,23 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                     "work budget (--max-auto-dfa-elems); falling back to "
                     "the VM instead of refusing. --engine=dfa pays the "
                     "full --max-subset-elems cap instead.\n");
+        /* [K53-SELRETRY]/[K59-PREMUL] THE DROP LADDER'S OWN NOTES. Both may
+         * fire on one artifact (the ordinal's own "up to and including"
+         * shape), in RUNG ORDER, each naming only the ONE thing it dropped —
+         * a single combined sentence would have to choose an order to name
+         * two facts in, and this reads better as two short notes than one
+         * long one. */
+        if (dropped_anchored)
+            size_drop_note("the optional anchored match-here machine",
+                            "loses the [OPT-2] fast path -- <prefix>_match "
+                            "falls back to search-and-filter, which the "
+                            "anchored machine exists specifically to avoid "
+                            "(docs/design/anchored_match_unwrapped.md)");
+        if (dropped_premul)
+            size_drop_note("the premultiplied DFA transition table",
+                            "slower per-byte scan dispatch, measured ~1.27x "
+                            "on scan-bound subjects "
+                            "(docs/dev/opt3_dfa_scan_measurement.md)");
         cx.job->out_c  = sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
@@ -1604,12 +1772,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     }
     /* EXHAUSTION IS A DEFECT, AND IT MUST SAY SO (r42 critic-sem S8).
      * `COMPILE_MAX_ATTEMPTS` is tight — a DFA attempt, [SEL-1]'s two overflow
-     * rungs, [OPT-4]'s size rung, and up to TWO full runs of the five ladder
-     * rungs plus their FINAL re-emission (the size rung restarts the term) —
-     * so a future rung, or a second retry, silently converts "one attempt too
-     * few" into a bare `-1` with `err->msg` still cleared from entry: a caller
-     * sees failure with no diagnostic at all, which is the one outcome this
-     * driver is built never to produce. Name it instead. */
+     * rungs, [OPT-4]'s size rung, up to TWO full runs of the five ladder
+     * rungs plus their FINAL re-emission (the size rung restarts the term),
+     * and [K53-SELRETRY]/[K59-PREMUL]'s own `SDR_MAX` (two) drop-ladder
+     * rungs — so a future rung, or a second retry, silently converts "one
+     * attempt too few" into a bare `-1` with `err->msg` still cleared from
+     * entry: a caller sees failure with no diagnostic at all, which is the
+     * one outcome this driver is built never to produce. Name it instead. */
     if (err && err->msg[0] == 0)
         snprintf(err->msg, sizeof err->msg,
                  "internal error: compile attempts exhausted (%d) without a "

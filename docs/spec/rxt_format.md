@@ -64,9 +64,9 @@ table — which restates them for a reader, and says what each MEANS:
 | `ext <consumer>` | **[DD-13b.W23.3]** an AUX block: consumer-namespaced data pcrec carries and does not interpret (see "`ext` — the aux production" below). Repeatable |
 
 A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
-`features`, `encoding`, `engine`, `budget` and `analysis` lines — the
-same productions a pattern block's own directives use, so the two cannot
-disagree about what `budget frames=` means. `analysis <list>` names
+`features`, `encoding`, `engine`, `tune`, `budget` and `analysis` lines —
+the same productions a pattern block's own directives use, so the two
+cannot disagree about what `budget frames=` means. `analysis <list>` names
 `freq` data blocks; its value shape is checked and its names are not
 resolved in this build.
 
@@ -563,6 +563,25 @@ off.
   what a `config` would otherwise contribute rather than being unioned
   with it. Parsed and recorded in this build; it becomes operative when
   `config` composition lands.
+- `tune <position>` — **[OPT-DIAL]** config-scoped: the SPEED-VS-SIZE
+  DIAL for everything built under this config. Its value set is exactly
+  `--tune=`'s — the ordinal `-2` `-1` `0` `1` `2`, or equivalently
+  `min-size` `size` `balanced` `speed` `max-speed` — and both spellings
+  are accepted on equal terms. The ordinal needs no `=` here: the `=`
+  form is a command-line requirement about argv, not a property of the
+  value. An unknown value is refused by name, class `value-shape`.
+
+  **THE FILE WINS OVER AN EXPLICIT CLI `--tune=`**, which is the general
+  rule of this format's config resolution rather than an exception to it.
+  A disagreement is REPORTED — one non-fatal line on stderr naming both
+  sources and both values — and the file's value is used. `tune` is
+  deliberately NOT a second `--engine` exception: `--engine` is a
+  comparability facility that a caller types precisely to compare two
+  builds of one pattern, and it can make a pattern refuse, while a dial
+  position can do neither (every position answers identically). There is
+  no override flag. `docs/spec/cli.md` carries the diagnostic's wording
+  and `docs/spec/tuning.md` §5 carries the per-position switch table.
+
 - `engine vm` — block-scoped: forces `--engine=vm` for the current block's
   compile. Only `vm` is defined.
 - `budget steps=<n>` / `budget frames=<n>` — block-scoped: passes
@@ -1130,6 +1149,7 @@ boundary comes from the one head parser, and the two cannot drift.
 | 17 | `tags` | pattern | every `tag` line's items, comma-joined in source order ([DD-13b.W23.4]) |
 | 18 | `oracle` | pattern | the block's own `oracle <ref>` override, or empty ([DD-13b.W23.4]) |
 | 19 | `esc` | pattern | non-empty exactly when the block opened with `pattern-esc` ([DD-13b.W23.4]) |
+| 20 | `tune` | config | the `tune` position AS WRITTEN — the ordinal or the alias the author typed, never a normalisation of it ([OPT-DIAL]) |
 
 Column 1's value set also gains four head-scoped kinds, each printed as
 its own row ([DD-13b.W23.4], `lib`'s own one-row-per-line convention):

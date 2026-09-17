@@ -640,6 +640,19 @@ enum {
     PCREC_VM_ENTRY_INLINE  = 4   /* six bodies — [CC-DIFF] STEP 1(a)      */
 };
 
+/* [OPT-DIAL] the five positions of `pcrec_options.tune`, in the dial's own
+ * direction (min size .. max speed). The field's own comment below carries
+ * what the dial IS and what it may not do; these are only its spelling, and
+ * the NUMBERS are the surface — the alias tokens below are what the stamp
+ * carries and what a `.rxt` `config` block may write. */
+enum {
+    PCREC_TUNE_MIN_SIZE  = -2,   /* "min-size"  */
+    PCREC_TUNE_SIZE      = -1,   /* "size"      */
+    PCREC_TUNE_BALANCED  =  0,   /* "balanced" — today's defaults, byte for byte */
+    PCREC_TUNE_SPEED     =  1,   /* "speed"     */
+    PCREC_TUNE_MAX_SPEED =  2    /* "max-speed" */
+};
+
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
  * AUTO is APPROACH §2's "automatic per pattern"; the other two are diagnostic
  * (reproduce a bug, measure the hybrid against VM-only) and REFUSE cleanly
@@ -894,6 +907,40 @@ typedef struct {
      * identifier syntax. `.rxt`'s own `name` grammar (docs/spec/rxt_format.md)
      * is stricter, and that is that format's rule rather than this field's. */
     const char *name;
+
+    /* [OPT-DIAL] THE SPEED-VS-SIZE DIAL — an ORDINAL in −2..+2, 0 the
+     * default middle (docs/design/opt_dial_design.md, D103; the contract is
+     * docs/spec/tuning.md §5).
+     *
+     * A dial position is a claim about the CALLER's preference, never about
+     * the pattern. It does not decide anything per pattern: it sets the
+     * PARAMETERS that existing per-pattern mechanisms then spend (the
+     * `[ART-SIZE]` ladder still chooses K per pattern; the dial moves its
+     * materiality bar and the threshold above which it runs at all).
+     *
+     * **THE POLICY TABLE IS PINNED** (D103 point 1): a position's switch set
+     * changes only by an explicit ruled diff to `docs/spec/tuning.md` §5,
+     * never because a measurement lands, so the same `--tune=N` compiles to
+     * the same switch set across releases. `src/core/tune.c` is its one home.
+     *
+     * **POSITION 0 IS A STRUCTURAL NO-OP.** Every cell of its row is the
+     * em-dash sentinel, so an artifact built at `balanced` is byte-identical
+     * to one built with no flag at all — which is an acceptance cell
+     * (`tests/codegen/run_tune_dial.sh`), not a promise.
+     *
+     * **EXPLICIT PER-SWITCH FLAGS BEAT THE DIAL WHERE A SPELLING EXISTS**
+     * (Frank, 2026-09-16, ruling on §7.2a option 3). Three of the axes the
+     * dial moves are DENY-ONLY with no force twin and two have no CLI
+     * spelling at all, so the property is narrowed in the spec to exactly
+     * that clause rather than quietly restated in full.
+     *
+     * ANSWER-PRESERVING BY ITS OWN ACCEPTANCE CRITERION: every position
+     * answers identically over the whole corpus, and no position may move
+     * the REFUSAL SET in either direction. That is why there is no
+     * `rx_info` mirror — nothing at run time behaves differently because of
+     * it, so a mirror would be a field no consumer can act on. The artifact
+     * records the request in the compile-time stamp `<PREFIX>_TUNE`. */
+    int         tune;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos
