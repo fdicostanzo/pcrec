@@ -1223,3 +1223,24 @@ never edited afterwards.
   k59rung merge — through both drivers, so the drift is the tree's, not
   the scorer's. PARKED on `lane/mechfix`; full `make mech` owed to the
   nightly checkpoint.
+
+- `f3search_report.md`, `f3search_driver.c` — O-31 finding 3 ROUND 2
+  (2026-09-17, lane f3search, sonnet; measurement only, nothing under
+  `src/`/`tests/`): the bench's refutation of round 1 (`b"a"*17+b"!"`,
+  all three captures arms >60 s, "first iteration never returning")
+  answered with verdict **(a)** — the step budget is initialized ONCE
+  per `<prefix>_search` call, shared across the per-startpos attempts,
+  STEPS propagates out immediately, the reset does not refill, and the
+  only re-arm (the deep tier) is FRAMES-gated. One call on the exact
+  subject: 2.5-2.8 s typed `PCREC_ERR_STEPS` at both the tip and the
+  bench's pin `a770139e`, all three arms; n=17 is exactly the first n
+  where the budget fires (n=16 completes nomatch under budget). The
+  >60 s is the BENCH's regime: `PROBE_ITERS["search_short"]=200`
+  batches the subject 200×, each iteration legally re-pays the
+  per-call budget (D51's own ~10 s-per-call envelope, pcre2's
+  per-match-call shape too), and the 60 s alarm fires around iteration
+  8 — the first iteration RETURNS at 2.73 s, measured with the bench
+  driver's own loop shape. Recommends a bench-side fix only (break the
+  batch on a first-iteration give-up; wall-cap the probe). The driver
+  is the committed reproduction piece (encseam §3.1 shape + the bench
+  batch loop).
