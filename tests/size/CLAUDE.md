@@ -169,20 +169,27 @@ format changes.
     constant regardless of its table size, since table bytes are excluded
     from "code" by definition) — none was found in the time this row had;
     stated here rather than silently substituted with a weaker claim.
-  - **F3** is the OPPOSITE direction, `perr` at `balanced` (the default axis
-    every zero-argument harness run compiles at) — and it is not a
-    hypothetical risk fixture. `[^\p{C}\p{M}\p{P}]` REFUSES at `balanced`/
-    `size`/`speed`/`max-speed` (1,027,196-1,027,206 B, over
-    `PCREC_MAX_EMIT_BYTES`) and COMPILES at `--tune=min-size` (608,196 B) —
-    a MEASURED violation of design section 6.2's own rule, in the
-    shipped table, TODAY. The cause is `-fno-premul-table`'s unconditional
-    `-2` denial: the bare flag alone (no dial involved) drops the SAME
-    over-cap pattern to 608,197 B, and `docs/spec/tuning.md` section 2.13
-    carries no "GATE 2" annotation for that axis the way section 2.6/2.7's
-    altcls rows do (those are excluded from the dial for precisely this
-    property: "the deny arm moves the refusal set"). Reported here and in
-    the lane's handback; `src/core/tune.c` is outside this lane's mandate; a
-    ruling on the `-2` cell is owed elsewhere.
+  - **F3 WAS the OPPOSITE direction and is now the FIXED shape**
+    (2026-09-17, lane k59rung). It was authored `perr` at `balanced` — a
+    MEASURED violation of design section 6.2's own rule, filed as
+    `docs/dev/known_issues.md` K59: `[^\p{C}\p{M}\p{P}]` refused at
+    `balanced`/`size`/`speed`/`max-speed` (1,027,196-1,027,206 B, over
+    `PCREC_MAX_EMIT_BYTES`) and compiled at `--tune=min-size` (608,196 B),
+    because `-fno-premul-table`'s unconditional `-2` denial was rescuing a
+    pattern no other position could reach. **The fix generalizes rather
+    than narrows**: `[K53-SELRETRY]`'s drop ladder gained a second rung
+    (`SDR_NO_PREMUL`) that denies the same flag on a DFA-engine artifact's
+    own retry, so the rescue the `-2` cell was reaching alone now fires
+    from every position on the patterns that need it. The block is now a
+    live `pattern`/`m`/`n` block (not `perr`) asserting the fix directly:
+    all five positions compile, and match "A" / refuse "!" / "" / "\x01"
+    identically at every one of them — the refusal-set-move claim inverted
+    into an answer-identity one. `tests/codegen/run_tune_dial.sh` section 6
+    re-derives the same table per position and additionally asserts WHICH
+    drop-ladder rung(s) fired (via `RX_ENGINE_SEL`/`RX_DFA_MATCH`/
+    `RX_DFA_TABLE`) and that the verbose stderr note (Frank's addendum
+    ruling) fires exactly there. `src/core/tune.c`'s `-2` cell is
+    UNCHANGED — narrowing it was disposition 1, not taken.
 
   `.rxtin`, not `.rxt`, and that is a departure from the r53 precedent's
   letter forced by this lane's own scope: `tests/rxtsource/
