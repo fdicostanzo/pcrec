@@ -582,7 +582,7 @@ also touched — the directory index entry for the two files in scope — becaus
 leaving it would have published revision 1's WITHDRAWN headline as the
 directory's summary of the note. Flagged rather than assumed.
 
-**VALIDATION: `timeout 300 make strict` — see the handback for the
-measured result.** This round is docs-only and no build input moves, so
-`make strict` is a confirmation that the tree is unchanged rather than a
-test of the change; there is nothing here `make test` could observe.
+**VALIDATION: `timeout 300 make strict` — GREEN, rc 0, "strict: whole tree
+compiles clean with -Werror -Wshadow".** This round is docs-only and no
+build input moves, so `make strict` confirms the tree is unchanged rather
+than testing the change; there is nothing here `make test` could observe.
