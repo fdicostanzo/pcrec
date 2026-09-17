@@ -446,3 +446,4 @@ Maintenance: add a file per checkpoint and list it here.
   worth keeping: every fix round's own instrument, swept across the
   whole delivery rather than the finding's section, found the next
   round's defect.
+- `2026-09-17-r60-opt-dial-design.md` — three-critic panel on [OPT-DIAL] STEP 1 (lane dialdesign, parked): 6 blockers / 16 must-fix / 8 should / 3 nit; the lambda arithmetic and ~25 numbers verified exact; fix round (lane dialfix) ordered; the Frank queue REFRAMED (Q2/Q2b/Q3 not decidable as delivered; phi graduates to the blocking measurement).
