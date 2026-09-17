@@ -28,17 +28,17 @@ says so**. §5 is that half of the deliverable and it is not short.
 
 ## 0. THE HEADLINE
 
-**This tree does not have a function-length problem. It has eight functions
-with one.** The census's own distribution says so: 860 functions, 18,913
+**This tree does not have a function-length problem. It has roughly a dozen
+functions with one.** The census's own distribution says so: 860 functions, 18,913
 code lines, **median 10 code lines**, 644 of 860 at or under 20. The 31
 functions at 100+ code lines are 3.6% of the population and hold **31.4%**
 of the primary tier's code (5,933 lines). The tail is not a symptom of a
-loose house style; it is eight or nine specific places where one function
+loose house style; it is a dozen specific places where one function
 kept accreting, surrounded by a population composed about as well as C
 allows.
 
 That matters for the anti-perversion clause, because it means a blanket
-"split everything over N" would do violence to ~23 of the 31 and buy
+"split everything over N" would do violence to most of the 31 and buy
 nothing: **13 of the 31 pass all five questions and should stay exactly as
 long as they are** (§5), and most of the rest need one or two named
 extractions, not a decomposition.
@@ -767,10 +767,11 @@ with `rxt_line_include`, `rxt_line_vocabulary`, `rxt_line_under`,
 the 73-line `include` arm already is in everything but name.
 
 **Why the severity carries the "trending" half.** The parse loop keeps
-fourteen pieces of carry-over state across iterations (`last_indent`,
-`last_was_content`, `last_row`, `last_rxtrow`, `last_row_line`,
-`last_row_value`, `cur_route`, `last_aux_line`, plus the frame stack), and
-every inline arm can read and write all of them. The lane reports from W23.3
+ten named locals of carry-over state across iterations (`block`,
+`last_indent`, `last_was_content`, `last_row`, `last_rxtrow`,
+`last_row_line`, `last_row_value`, `cur_route`, `last_aux_line`, and the
+frame stack triple `st`/`ndepth`/`depthcap`), and every inline arm can read
+and write all of them. The lane reports from W23.3
 and W23.5 record three defects of exactly that family — `under`'s key tuple
 sliding one component left, `prose_value` measuring zero on an indented
 line, the attachment branch holding three distinct mistakes under one
@@ -848,7 +849,8 @@ called at `:11312`, `:11470` and `:11484` — the file's own comment at
 three"*.
 
 **Q5 passes, emphatically.** This is the most heavily explained function in
-the tree by absolute comment volume (2,259 comment/blank lines), and the
+the tree by absolute comment volume (3,037 span lines against 778 code lines — 2,259 lines of comment and
+blank), and the
 comments are doing question 5's job rather than narrating: `:8570-8597`
 records that a check was placed at the wrong site and why the conclusion
 survived a pass reorder; `:8586-8592` deletes a *wrong reason* for a right
@@ -1098,19 +1100,20 @@ population**, so the claims they support are not limited to the read set:
 
 **Named remainder, NOT reviewed:**
 
-1. **The 50-99 code-line band, 29 functions I did not open** — including
-   `vm_cost` (98), `clo_walk` (96), `vm_rev_emit` (96), `emit_state_legend`
-   (95), `apply_target` (94), `pcrec_modport_uprops` (88), `trie_build`
-   (86), `pcrec_build_dfa` (86), `intern` (84), `vm_rep` (84), `gk_build`
-   (82). This band holds 2,303 code lines (12% of the tier). On the two
+1. **The 50-99 code-line band: 45 functions, 3,194 code lines (16.9% of
+   the tier), of which I opened nine opportunistically — 36 unopened** —
+   including `vm_cost` (98), `clo_walk` (96), `vm_rev_emit` (96),
+   `emit_state_legend` (95), `apply_target` (94), `pcrec_modport_uprops`
+   (88), `trie_build` (86), `pcrec_build_dfa` (86), `intern` (84),
+   `vm_rep` (84), `gk_build` (82). On the two
    mechanical axes above it is clean, so what is unreviewed here is
    questions 1, 2 and 5 — altitude, naming and explanation — which need a
    reading and cannot be scanned for. **If a second lens 11 pass is
    chartered, this band is where it goes**, and `vm_cost` + `vm_rep` +
    `vm_rev_emit` first, since F7 and F12 both land next to them.
 
-2. **The 800 functions at or under 49 code lines** (~9,800 code lines,
-   52% of the tier). Not individually reviewed. The distributional evidence
+2. **The 784 functions at or under 49 code lines** (9,786 code lines,
+   51.7% of the tier). Not individually reviewed. The distributional evidence
    says the risk here is low — median 10 lines, 644 of 860 at or under 20 —
    and the two scans found nothing in this band except the two X12 members.
    The question the scans cannot answer is question 1's *other* direction
