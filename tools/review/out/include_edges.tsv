@@ -1,4 +1,4 @@
-# include_graph.py -- commit 1edd6c5eb643d9b3b0c559ff686c35ecfb645493 -- generated 2026-09-17 -- rows 197
+# include_graph.py -- commit 998af0669fc120e1a20580c60027826b3fcfb429 -- generated 2026-09-17 -- rows 197
 from_file	line	spelling	kind	resolved_to	from_layer	to_layer
 cli/main.c	7	stddef.h	SYSTEM	<system>	cli	external
 cli/main.c	8	stdio.h	SYSTEM	<system>	cli	external
@@ -25,7 +25,7 @@ src/core/compile.c	14	gen/enc/enc.h	LOCAL	src/gen/enc/enc.h	core	gen
 src/core/cpset.c	58	string.h	SYSTEM	<system>	core	external
 src/core/cpset.c	60	core/internal.h	LOCAL	src/core/internal.h	core	core
 src/core/fold.c	57	core/internal.h	LOCAL	src/core/internal.h	core	core
-src/core/fold.c	93	fold_tables.inc	LOCAL	UNRESOLVED	core	unresolved
+src/core/fold.c	93	fold_tables.inc	LOCAL	src/core/fold_tables.inc	core	core
 src/core/internal.h	5	setjmp.h	SYSTEM	<system>	core	external
 src/core/internal.h	6	stdbool.h	SYSTEM	<system>	core	external
 src/core/internal.h	7	stddef.h	SYSTEM	<system>	core	external
@@ -40,7 +40,7 @@ src/core/sb.c	3	stdlib.h	SYSTEM	<system>	core	external
 src/core/sb.c	4	string.h	SYSTEM	<system>	core	external
 src/core/sb.c	6	core/internal.h	LOCAL	src/core/internal.h	core	core
 src/core/tune.c	50	string.h	SYSTEM	<system>	core	external
-src/core/tune.c	52	internal.h	LOCAL	UNRESOLVED	core	unresolved
+src/core/tune.c	52	internal.h	LOCAL	src/core/internal.h	core	core
 src/gen/emit_dfa.c	35	ctype.h	SYSTEM	<system>	gen	external
 src/gen/emit_dfa.c	36	stdio.h	SYSTEM	<system>	gen	external
 src/gen/emit_dfa.c	37	stdlib.h	SYSTEM	<system>	gen	external
@@ -58,7 +58,7 @@ src/gen/enc/enc.c	15	gen/enc/enc.h	LOCAL	src/gen/enc/enc.h	gen	gen
 src/gen/enc/enc.h	33	core/internal.h	LOCAL	src/core/internal.h	gen	core
 src/gen/enc/enc_byte.c	13	gen/enc/enc.h	LOCAL	src/gen/enc/enc.h	gen	gen
 src/gen/enc/enc_utf8.c	25	gen/enc/enc.h	LOCAL	src/gen/enc/enc.h	gen	gen
-src/gen/enc/enc_utf8.c	159	utf8_fold_pairs.inc	LOCAL	UNRESOLVED	gen	unresolved
+src/gen/enc/enc_utf8.c	159	utf8_fold_pairs.inc	LOCAL	src/gen/enc/utf8_fold_pairs.inc	gen	gen
 src/ir/dfa.c	104	stdio.h	SYSTEM	<system>	ir	external
 src/ir/dfa.c	105	stdlib.h	SYSTEM	<system>	ir	external
 src/ir/dfa.c	106	string.h	SYSTEM	<system>	ir	external
@@ -104,7 +104,7 @@ src/parse/definitions.c	23	assert.h	SYSTEM	<system>	parse	external
 src/parse/definitions.c	24	ctype.h	SYSTEM	<system>	parse	external
 src/parse/definitions.c	25	string.h	SYSTEM	<system>	parse	external
 src/parse/definitions.c	27	core/internal.h	LOCAL	src/core/internal.h	parse	core
-src/parse/definitions.c	28	parse_mods.h	LOCAL	UNRESOLVED	parse	unresolved
+src/parse/definitions.c	28	parse_mods.h	LOCAL	src/parse/parse_mods.h	parse	parse
 src/parse/enabled.c	33	stdio.h	SYSTEM	<system>	parse	external
 src/parse/enabled.c	34	string.h	SYSTEM	<system>	parse	external
 src/parse/enabled.c	36	core/internal.h	LOCAL	src/core/internal.h	parse	core
@@ -131,7 +131,7 @@ src/parse/mod_backrefs.c	57	parse/parse_mods.h	LOCAL	src/parse/parse_mods.h	pars
 src/parse/mod_backrefs.c	67	core/limits.def	LOCAL	src/core/limits.def	parse	core
 src/parse/mod_classes.c	19	string.h	SYSTEM	<system>	parse	external
 src/parse/mod_classes.c	21	core/internal.h	LOCAL	src/core/internal.h	parse	core
-src/parse/mod_classes.c	23	cls_bits.inc	LOCAL	UNRESOLVED	parse	unresolved
+src/parse/mod_classes.c	23	cls_bits.inc	LOCAL	src/parse/cls_bits.inc	parse	parse
 src/parse/mod_lookaround.c	85	limits.h	SYSTEM	<system>	parse	external
 src/parse/mod_lookaround.c	86	stdio.h	SYSTEM	<system>	parse	external
 src/parse/mod_lookaround.c	87	string.h	SYSTEM	<system>	parse	external
@@ -155,8 +155,8 @@ src/parse/mod_recursion.c	86	core/limits.def	LOCAL	src/core/limits.def	parse	cor
 src/parse/mod_uprops.c	135	stdio.h	SYSTEM	<system>	parse	external
 src/parse/mod_uprops.c	136	string.h	SYSTEM	<system>	parse	external
 src/parse/mod_uprops.c	138	core/internal.h	LOCAL	src/core/internal.h	parse	core
-src/parse/mod_uprops.c	139	parse_mods.h	LOCAL	UNRESOLVED	parse	unresolved
-src/parse/mod_uprops.c	142	uprops_tables.inc	LOCAL	UNRESOLVED	parse	unresolved
+src/parse/mod_uprops.c	139	parse_mods.h	LOCAL	src/parse/parse_mods.h	parse	parse
+src/parse/mod_uprops.c	142	uprops_tables.inc	LOCAL	src/parse/uprops_tables.inc	parse	parse
 src/parse/mod_verbs.c	113	stdio.h	SYSTEM	<system>	parse	external
 src/parse/mod_verbs.c	114	string.h	SYSTEM	<system>	parse	external
 src/parse/mod_verbs.c	116	core/internal.h	LOCAL	src/core/internal.h	parse	core

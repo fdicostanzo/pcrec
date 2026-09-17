@@ -16,10 +16,12 @@ walks). No preprocessing, no compilation: this is what the SOURCE TEXT
 says it includes, which is what a human reader (and this review) cares
 about -- not what a particular build's -D flags would make a
 conditionally-compiled #include resolve to. A quoted include is resolved
-against this repo's OWN include path, taken directly from the Makefile
+against this repo's OWN include path, matching gcc's actual quoted-
+include search order: the INCLUDING file's own directory first (this
+caught a real early-draft gap -- see resolve_local()'s docstring), then
+this repo's `-I` list, taken directly from the Makefile
 (`ALLFLAGS = ... -Ilib -Isrc`, checked -- `git log`/`grep` this file if
-that ever changes): `lib/<path>` is tried first, then `src/<path>`,
-matching gcc's actual search order.
+that ever changes): `lib/<path>` is tried before `src/<path>`.
 
 Layers and the nominal order: lib (public API surface, depended on by
 everything, should depend on nothing internal) -> core -> parse -> ir ->
@@ -93,7 +95,18 @@ def layer_of(relpath: str) -> str:
     return "other"
 
 
-def resolve_local(inc_path: str, root: Path) -> str | None:
+def resolve_local(inc_path: str, root: Path, from_dir_rel: str) -> str | None:
+    """Resolve a quoted #include the way gcc actually does: the INCLUDING
+    file's own directory is searched first, then the -I list (this repo's
+    Makefile: `-Ilib -Isrc`). Skipping the same-directory step was an
+    early-draft bug that reported false UNRESOLVED rows for
+    `src/parse/definitions.c`/`mod_uprops.c`'s bare `"parse_mods.h"`
+    spelling (same-directory as the includer), while every OTHER module
+    file spells it `"parse/parse_mods.h"` relative to `-Isrc` -- both are
+    valid C, and both must resolve to the SAME target file."""
+    same_dir = root / from_dir_rel / inc_path
+    if same_dir.is_file():
+        return rl.rel(same_dir.resolve())
     for base in ("lib", "src"):
         cand = root / base / inc_path
         if cand.is_file():
@@ -119,7 +132,7 @@ def scan() -> list[tuple]:
                     (relpath, lineno, inc_path, "SYSTEM", "<system>", from_layer, "external")
                 )
                 continue
-            resolved = resolve_local(inc_path, root)
+            resolved = resolve_local(inc_path, root, str(Path(relpath).parent))
             if resolved is None:
                 rows.append(
                     (relpath, lineno, inc_path, "LOCAL", "UNRESOLVED", from_layer, "unresolved")
