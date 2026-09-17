@@ -1790,6 +1790,69 @@ alone cannot tell a refactor from a no-op.
   does not. The check states the two constraints it can stand behind and NAMES
   the third as open.
 
+## `run_tune_dial.sh` — [OPT-DIAL]'s MECHANISM-STATE CROSS-CHECK (2026-09-17)
+
+The speed-vs-size dial (`--tune=-2..+2`, `docs/spec/tuning.md` §5), held to
+the ARTIFACT rather than to its stamp or to the compiler's own table. Its own
+section, `make test-tune-dial`, part of `make test` and NOT of `make smoke` —
+`run_premul_table.sh`'s measured argument (~60 artifacts across five
+positions, ~25 s).
+
+- **WHY IT EXISTS, and it is this directory's founding charter in a new
+  shape.** Every switch the dial moves is INDEPENDENTLY ANSWER-PRESERVING —
+  that is the allowlist's whole point — so an artifact built at `-2` that
+  denied the WRONG BIT would pass every answer check in this tree, at every
+  position, forever. **A sweep that only compares answers cannot see the
+  table it is sweeping.** And the stamp does not help: `<PREFIX>_TUNE`
+  records what was REQUESTED, and the defect lives between the request and
+  the build.
+- **THE EXPECTATION SIDE IS PARSED OUT OF `docs/spec/tuning.md` §5.4's
+  TABLE — the CONTRACT — never out of `src/core/tune.c`.** A check reading
+  the compiler's own table would compare the implementation to itself, and
+  this design has already been bitten by exactly that shape once: STEP 0's
+  draft policy table violated STEP 0's own allowlist rule, in STEP 0's own
+  document, because the rule was in one section and the table in another.
+  A drift between spec and compiler is RED here, which under D103 is the
+  point: the table is a PINNED CONTRACT and a cell changes only by an
+  explicit ruled diff to that spec section.
+- **THE RECOVERED SIDE IS EMITTED TEXT, three mechanisms.** The step
+  accessor's own SUBSCRIPT EXPRESSION (`transitions[s + cl]` premultiplied
+  vs `transitions[s * N + cl]` indexed, written by the representation
+  object's `emit_token` rather than by `dfa_table_name`); the `always_inline`
+  attributes on the entry chain (not `RX_VM_ENTRY_SHAPE`); and the ladder's
+  selected `K` cross-read against `RX_UNROLL_K_WHY`, where
+  `capacity-declined` is a LEGAL outcome (the declared-capacity floor).
+- **EVERY ARM ASSERTS ITS OWN NON-VACUITY, and two of them earned it.** The
+  ladder witness is pinned to a shape whose K MOVES between positions and
+  the arm FAILS if it stops moving; the entry witness must STRADDLE the term
+  (4,244 program bytes, between the middle's 4,096 and `+1`'s 8,192); the
+  nesting arm fails if `-2`'s recovered denial set is EMPTY, because the
+  nesting loops are trivially satisfied over an empty set.
+- **§6 ASSERTS A KNOWN VIOLATION AS MEASURED, WHICH IS THE ARM TO READ
+  FIRST.** `--tune=min-size` MOVES THE REFUSAL SET — it compiles
+  `[^\p{C}\p{M}\p{P}]`, which the other four positions refuse at the
+  emitted-size cap — and the design's §6.2 rule forbids that in either
+  direction. The cell is Frank's own ratified ruling, so the lane FILED the
+  finding (`docs/dev/known_issues.md` K59) rather than narrowing the table,
+  and the arm asserts TODAY'S SHAPE so it goes red the day any of the three
+  dispositions lands. A `#`-comment saying "known violation" would go stale
+  silently; an assertion cannot.
+- **Validated in three failing directions** (planted in `src/core/tune.c`,
+  rebuilt, run, reverted; clean baseline 17/0), and these are the shapes
+  sabotage rows S249/S250/S251 carry: adjacent position columns SWAPPED →
+  **9/8**, with §3a red in BOTH directions at once and §1/§2 correctly GREEN
+  (the check localising, not going uniformly red); the WRONG DENY BIT at one
+  position → **11/5**; one ladder parameter DROPPED → **14/2**, the narrowest
+  and the reason §3.5's fold needs its own row.
+- **AND THE VALIDATION FOUND A DEFECT IN THE FILE'S OWN FAILURE MESSAGES**,
+  recorded because it is worth more than the plants. Under plants 2 and 3 two
+  arms went red saying the arm was VACUOUS and the WITNESS should be
+  re-chosen — while the witness was good and the TABLE was wrong. *A check's
+  failure message is a SECOND, UNDECLARED CLAIM about the space of causes,
+  and it goes stale independently of the assertion it accompanies*
+  (`w23impl_report.md`'s own generalisation, met here from the other side).
+  Both messages now name BOTH causes and say which other arm discriminates.
+
 ## TRAPS THIS DIRECTORY HAS PAID FOR — read before writing a `sed` or resolving a `CC`
 
 | about to… | know this |

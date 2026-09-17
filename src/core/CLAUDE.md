@@ -167,6 +167,48 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   second rung owes is a MEASURED run-time cost per contributor to order them
   by, which this row had exactly one contributor and therefore nothing to
   derive. `SDR_*`'s own comment states the obligation.
+- **tune.c** — [OPT-DIAL] THE SPEED-VS-SIZE DIAL'S PINNED POLICY TABLE, and
+  its ONE HOME (`docs/spec/tuning.md` §5 is the contract,
+  `docs/design/opt_dial_design.md` the design record, D103 the governance).
+  `--tune=N` names a POSITION in −2..+2 and a position names a set of
+  per-axis values; this file is the table, the five-token alias set, and the
+  accessors every consuming site asks.
+
+  **THE VALUES COULD HAVE LIVED AT THE SITES THAT SPEND THEM** — a
+  conditional in `compile.c` for the `[ART-SIZE]` ladder, one in
+  `emit_vm.c` for the entry-chain term, a flag bit set in `cli/main.c` — and
+  every one of them would then be a second place the contract lives. The
+  table is DATA, in one file, and the sites ask it.
+
+  **THE EM-DASH SENTINEL IS 0 AND EACH SITE RESOLVES IT AGAINST ITS OWN
+  DEFAULT.** That is what stops this file becoming a second home for
+  `PCREC_SIZE_TERM_THRESHOLD` (`limits.def`), `VM_INLINE_CHAIN_MAX_BYTES`
+  (`emit_vm.c`'s own `EMIT_VM` home) or the materiality bar
+  (`SIZE_TERM_BAR_DEFAULT`, beside `size_term_choose` in `compile.c`). The
+  sentinel means "the dial does not touch this axis here", never "zero".
+
+  **POSITION 0 IS A STRUCTURAL NO-OP BY CONSTRUCTION, not by care**: every
+  cell of the `balanced` row is the sentinel and its deny mask is empty, so
+  there is no code path on which a `balanced` artifact can differ from a
+  no-flag one. `tests/codegen/run_tune_dial.sh` §2 is its acceptance cell.
+
+  **WHERE THE DIAL IS APPLIED**, and it is three places and no more:
+  `compile_driver` validates the position (REFUSED, never clamped — a clamp
+  would let a caller believe they had asked for something the artifact does
+  not have) and OR's the deny mask into `defo.flags`; `size_term_choose` and
+  the ladder's trigger read the two `[ART-SIZE]` cells; `emit_vm.c`'s AUTO
+  rung selection reads the entry-chain term. `pcrec_options.tune` carries
+  the ordinal and `<PREFIX>_TUNE` stamps the token.
+
+  **AND `-fno-anchored-dfa` IS DELIBERATELY ABSENT from the `min-size` row**,
+  which is the one thing about the table a reader will want explained: it is
+  the largest size lever the dial has and its penalty is a three-population
+  distribution whose WORST population fails the working bound. The file's own
+  header carries the numbers. **K59 records that the row that IS there,
+  `-fno-premul-table`, has the same hazard and was never asked about it** —
+  the `−2` position moves the refusal set, which the design's own gate 2
+  forbids, and the disposition is Frank's.
+
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte

@@ -11,6 +11,88 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K59 — [OPT-DIAL], deferred (2026-09-17, lane dialimpl, found by the fixture family the design's own §6.2a chartered, on its first run): `--tune=min-size` MOVES THE REFUSAL SET — it compiles a pattern the other four positions refuse
+
+**This is a refutation of the RATIFIED policy table, not of the
+implementation**, and it is filed rather than fixed because the `−2`
+cell is Frank's own ruling (`opt_dial_design.md` §9 item 2, ratified
+2026-09-16) and narrowing it is a ruling, not a patch.
+
+**MINIMAL REPRO**, reproduced independently of the lane's own fixture:
+
+```
+$ build/pcrec -e utf8 --features unicode-props -o /dev/null '[^\p{C}\p{M}\p{P}]'
+pcrec: pattern too large: 1027195 bytes of emitted C source (limit 1000000, ...)
+
+$ build/pcrec --tune=min-size -e utf8 --features unicode-props -o OUT.c '[^\p{C}\p{M}\p{P}]'
+$                                      # compiles, 616,523 bytes
+```
+
+`balanced`, `size`, `speed` and `max-speed` all refuse (1,027,191-1,027,195
+bytes against `PCREC_MAX_EMIT_BYTES` = 1,000,000); `min-size` compiles.
+
+**THE CAUSE IS `-fno-premul-table`'s UNCONDITIONAL DENIAL AT `−2`, AND IT
+IS INDEPENDENT OF THE DIAL** — the bare flag alone does the same thing
+(`-fno-premul-table` on the same pattern compiles, at the identical
+616,523 bytes). The dial did not create the lever; it made a position
+pull it, which is what turned a flag nobody had pointed at this
+population into a refusal-set move.
+
+**WHY THE RATIFIED TABLE DID NOT CATCH IT.** `opt_dial_design.md` §3.1
+gate 2 says an axis reaches a moving cell only if its deny arm does not
+move the refusal set, in either direction. The design ASKED that question
+of three rows and answered it: `-fno-altcls-merge` fails it (K45) and is
+flat; `--engine` fails it (D44.6) and is flat; `-fno-anchored-dfa`
+passes it ONLY because `[K53-SELRETRY]`'s drop ladder already drops the
+optional machine on a size-cap refusal, which §3.3 records as a
+DEPENDENCY rather than a property. **It never asked gate 2 of
+`-fno-premul-table` at all** — that row's citation argues `y`, `x₂` and
+`φ_scan`, which are the SIZE and TIME gates, and the refusal gate is
+simply absent from it. The premultiplied transition table is a `.rodata`
+cost that counts toward `PCREC_MAX_EMIT_BYTES` exactly as the anchored
+machine's bytes do, so the two rows had the same hazard and only one was
+examined.
+
+**THE GENERAL SHAPE, which is worth more than this cell**: *any* size
+lever large enough to matter can rescue a pattern the caps refuse, so
+GATE 2 is a question every size-side cell must be asked, not one that a
+few rows happen to raise. The design's own §6.2 states the rule and its
+§3.3 applies it three times out of a possible five.
+
+**WHY IT IS DEFERRED AND NOT FIXED HERE.** Three dispositions are
+available and all three are Frank's, not a lane's:
+
+1. **Narrow the cell** — drop `-fno-premul-table` from `−2`, which
+   leaves `min-size` with the two `[ART-SIZE]` ladder parameters alone
+   and costs the column its largest measured saving (`σ` = 22-25%).
+2. **Give it `-fno-anchored-dfa`'s treatment** — admit the cell as a
+   DEPENDENCY on a drop-ladder rung that does not exist yet.
+   `[K53-SELRETRY]`'s ladder has ONE rung and it drops the anchored
+   machine; the general form ("drop an optional contributor and
+   re-emit") covers a premultiplied table exactly, and this would be its
+   second customer and therefore its second sample — which is what
+   `utf8k53_report.md` §1.2 says a second rung has been waiting for.
+3. **Amend §6.2's rule** to permit the GAINING direction only, on the
+   argument that a pattern that gains an answer has lost nothing. The
+   design considered and rejected this (a dial whose positions accept
+   different LANGUAGES is not a tuning knob), so re-opening it is a
+   ruling against a stated position rather than a gap.
+
+**POPULATION.** ZERO on the shipped corpus — `tests/axes`' own
+DIAL-S3 arm measures 0 gained / 0 lost across all five positions on
+every slice run so far. The witness is a constructed one, which is
+exactly why the design bought the synthetic near-cap family (§6.2a, the
+r53 precedent that *synthetic ladders are corpus members*): with no
+synthetic F3 this hazard had no witness anywhere in the tree and would
+have shipped unobserved.
+
+**DETECTOR.** `tests/size/tune_dial_fixtures.rxtin`'s F3 and
+`tests/codegen/run_tune_dial.sh`'s gate-2 section, both of which assert
+the MEASURED CURRENT BEHAVIOUR and name this entry — so they go red the
+day the disposition changes, in whichever direction it changes.
+
+---
+
 ## K58 — INFRASTRUCTURE, deferred (2026-09-16, sixty-sixth session, filed from the sixty-fifth session's Linux merge-battery verdict): the resource/codegen size-cap checks' 45s CPU budget has ~11s of headroom on a QUIET box and NONE under battery load
 
 Filed 2026-09-16 from `dev_journal.md`'s 2026-09-15 evening "sixty-fifth
