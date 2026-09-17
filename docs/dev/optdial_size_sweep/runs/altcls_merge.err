@@ -1,0 +1,3 @@
+[MACPORT] CC=gcc-16 (default 'gcc' is not GNU gcc on this box; tests/lib/cc_resolve.sh)
+/Users/fdicostanzo/pcrec/worktrees/dialsweep/tests/size/size_term.rxt:34: pattern '(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}' failed to compile: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+/Users/fdicostanzo/pcrec/worktrees/dialsweep/tests/size/size_term.rxt:35: pattern '(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}' failed to compile: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)

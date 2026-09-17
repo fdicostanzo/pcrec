@@ -1,0 +1,8 @@
+flag	macro	bit	section	n_matched	n_lost	n_gained	n_movers	pct_movers	delta_min	delta_p50	delta_p90	delta_p99	delta_max	ratio_min	ratio_p50	ratio_max	biggest_shrink_key	biggest_shrink_delta	biggest_grow_key	biggest_grow_delta
+-fno-possessify				3478	0	0	236	6.786	-409	465.0	601.0	3438.1500000000037	4056	0.9858	1.0169	1.1400	tests/rungselect/rungselect.rxt:972	-409	tests/counterk/counterk.rxt:1259	4056
+-fno-revdet				3478	0	0	53	1.524	-2793	-125.0	1083.8	8359.319999999994	9365	0.8835	0.9949	1.2779	tests/rungselect/rungselect.rxt:1695	-2793	tests/counterk/counterk.rxt:1444	9365
+-fno-altcls-merge				3477	1	0	101	2.905	-4490	507.0	1210.0	3078.0	3114	0.7661	1.0240	1.1675	tests/base/k18_arm_order.rxt:256	-4490	tests/base/precedence.rxt:36	3114
+-fno-altcls-factor				3478	0	0	54	1.553	-900	158.5	436.0	908.94	910	0.9711	1.0056	1.0378	tests/base/d27_bodies.rxt:100	-900	tests/base/alternation_trie.rxt:105	910
+-fno-tiered-entry				3478	0	0	330	9.488	-1957	-1953.0	-1953.0	-1953.0	-1953	0.9053	0.9252	0.9970	tests/base/d27_k23_ambiguous_decomposition.rxt:100	-1957	tests/atomic_groups/d27/atomic_in_quantifiers.rxt:21	-1953
+-fno-offset-skip				3478	0	0	491	14.117	-878	-332.0	-332.0	635.0	635	0.9640	0.9870	1.0312	tests/offsetskip/offset_skip.rxt:220	-878	tests/offsetskip/offset_skip.rxt:326	635
+-fno-anchored-dfa				3478	0	0	1509	43.387	-266794	-3075.0	-2482.0	-179.67999999984204	-6	0.6040	0.8468	1.0000	tests/utf8/axis12_scripts.rxt:296	-266794	tests/utf8/axis04_p_categories.rxt:1921	-6

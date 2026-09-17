@@ -490,3 +490,39 @@ change.
   by static read; the actual Linux-side sanitizer probe is owed, K54 blocks
   it on this box). Docs `docs/dev/artifact_size_log.tsv`'s regeneration by
   both runs as NOT to be committed (batch-mode SIZELOG caveats, warm box).
+- `optdial_size_sweep.md` — [OPT-DIAL] §7 SIZE SWEEP (2026-09-15, lane
+  dialsweep, measurement only, nothing under `src/`/`tests/`): the ONE run
+  `docs/design/opt_dial_inventory.md` §7 names as moving six UNMEASURED
+  switches at once, over the full 3,478-row corpus population (matching
+  `docs/dev/artifact_size_log.tsv`'s own row count at a nearby commit).
+  Reuses `tests/harness/run.sh`'s existing `RXTFLAGS`/`RXTDUMP`/`SIZELOG`
+  hooks — the identical mechanism `tests/axes/run_axes.sh` already drives
+  — read-only, nothing under `tests/` touched. **Headline: `-fno-tiered-entry`
+  is the cleanest two-axis result in the sweep** — every one of its 330
+  movers (9.49% reach) shrinks by a near-fixed ~1,953-1,957 B, against the
+  inventory's already-measured ~5x per-call TIME win, a clean
+  MEASURED-TRADE graduation. **`-fno-anchored-dfa` (the bonus switch §7
+  item 3 names) has by far the largest reach of anything in the whole
+  inventory — 43.39% of the corpus, monotone, median -3,075 B, worst
+  -266,794 B** — replacing the inventory's own "not from the corpus"
+  caveat (its size number came from one hand-picked 30,000-count shape)
+  with a real corpus-general one. `-fno-altcls-merge`/`-fno-altcls-factor`
+  mostly confirm the inventory's own "likely a PURE WIN" hypothesis on
+  size (~90%+ of the reached population favors keeping each ON) but each
+  has a real, single, non-monotone counter-example that blocks a strict
+  PURE WIN verdict — the same shape `--unroll=K`'s own non-monotone byte
+  curve already warns about. `-fno-offset-skip` graduates to a clean
+  MEASURED TRADE too. `-fno-possessify` and `-fno-revdet` — the two
+  switches that had NO time number before this sweep either — stay fully
+  UNMEASURED: this sweep discharges only their size half, and a matching
+  throughput sweep (not built here) is what would finish the job.
+  `-fno-altcls-merge` also hits ONE already-documented K45 refusal
+  (`tests/size/size_term.rxt`'s nested-repeat tower, the same
+  `REFUSAL_PATTERN` entry `tests/axes/run_axes.sh` already carries) — not
+  a defect this lane found, cross-checked against every pass's own
+  `RXTDUMP` (K35: zero undocumented refusals on any of the seven flags).
+  Reproduction: `docs/dev/optdial_size_sweep/` (own CLAUDE.md) — the
+  orchestrator, the join/analysis script, and the raw per-pass tables.
+  Does NOT edit `docs/design/opt_dial_inventory.md` itself (D80: a design
+  document's own revision is its own change) — this memo is the evidence
+  a follow-on revision would cite.

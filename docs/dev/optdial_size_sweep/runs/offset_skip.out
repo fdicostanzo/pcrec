@@ -1,0 +1,12 @@
+
+== Summary ==
+cases passed: 28932
+cases failed: 0
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+size-log rows: 3478
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 209
+fragments spliced: 0
+parallel: 209 of 209 file workers reported (PROCS=8)
