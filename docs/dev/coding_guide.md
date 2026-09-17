@@ -134,7 +134,7 @@ abi number can still hold byte COUNTS that move (lane `battriage`, 2026-09-17), 
 recompile the witnesses a manifest pins. Run `make test-codegen` before delivering.
 
 **3.2 Escape every pattern-derived byte you put in an emitted comment.**
-`emit_comment_safe_byte` (`src/gen/emit_dfa.c:81`) is the shared primitive: it
+`emit_comment_safe_byte` (`src/gen/emit_dfa.c:80`) is the shared primitive: it
 hex-escapes anything that would complete `*/` **or** `/*` with the previous byte
 (threaded via `*prevp` across calls), plus whatever the caller's `extra_escape`
 predicate asks for. Both hazards are real — gcc's `-Wcomment` fires on an unclosed
