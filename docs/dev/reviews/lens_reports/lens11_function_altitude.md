@@ -173,9 +173,11 @@ five questions: `+` pass, `~` weak, `!` fail.
 | 30 | `pcrec_callgraph_build` | opt/callgraph.c:648 | 102 | 2.01 | 2 | + | + | + | + | + | PASSES (§5) |
 | 31 | `first_of` | opt/possessify.c:163 | 100 | 2.81 | 4 | + | + | + | + | + | PASSES (§5) |
 
-Tally: **13 PASS all five and stay long** (§5); 15 carry a filed finding;
-3 carry a mild one. Not one of the 31 is a candidate for the mechanical
-"split at N lines" the rubric warns about.
+Tally: **13 of the 31 PASS all five and stay long** (§5); the other 18 are
+covered by the fifteen findings F1-F15 in §3 — two of them (`compile_ast`
+under F7, `pcrec_scanedge_dfa` under F15) marked *mild*. Not one of the 31
+is a candidate for the mechanical "split at N lines" the rubric warns
+about.
 
 ---
 
