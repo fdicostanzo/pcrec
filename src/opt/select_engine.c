@@ -500,13 +500,14 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     const char *node_why = NULL;
     size_t node_why_pos = 0;
 
-    /* [M6.4.2] THE FREE DISCHARGE runs ONCE, before the analysis loop — NOT as
-     * a registered `discharge` hook. src/opt/atomic.c's own header has the
-     * three reasons, one of them measured: the fixpoint below never CALLS a
-     * registered hook, so registering would run the analysis 8 times and
-     * rewrite nothing. Running it first is what makes the consultation's
-     * per-ROW column produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'`
-     * succeeds because the node is GONE by the time `forces_registry` looks.
+    /* [M6.4.2] UNTIL [DD-14] WAVE G, THE FREE DISCHARGE ran ONCE HERE, before
+     * the analysis loop — NOT as a registered `discharge` hook.
+     * src/opt/atomic.c's own header has the three reasons, one of them
+     * measured: the fixpoint below never CALLS a registered hook, so
+     * registering would run the analysis 8 times and rewrite nothing.
+     * Running it first is what makes the consultation's per-ROW column
+     * produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'` succeeds
+     * because the node is GONE by the time `forces_registry` looks.
      *
      * [DD-14 wave G] IT NO LONGER RUNS *HERE*. It is `src/core/compile.c`'s
      * own line now, immediately after `pcrec_altcls` and before
