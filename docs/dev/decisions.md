@@ -6451,6 +6451,19 @@ flip.
 Cross-notes: [DD-13b.W1.2], docs/spec/cli.md, tests/harness `RXTFLAGS`,
 lane report docs/dev/lanes/w12_report.md §3.2.
 
+
+**ADDENDUM (Frank, 2026-09-16, sixty-sixth session — the `tune` axis):
+the rule HOLDS for `--tune`, and the `--engine` exception stays
+unique.** A target's `tune` config line wins over an explicit CLI
+`--tune`, with a loud non-fatal stderr diagnostic naming both sources
+and values; no override flag is added. Rationale (r60/D103 record,
+opt_dial_design.md §1.2 as revised): `--engine`'s CLI-wins exception
+had a forcing reason (a config engine can cause refusals in
+comparability work) that an answer-preserving axis lacks, and a second
+exception starts turning this rule into a list. The r60 panel's S2
+stands: "answer-preserving ⇒ exception candidate" is explicitly NOT
+the rule.
+
 ## D94 — THE ABI RITUAL'S SITE LIST IS "EVERY READER OF THE NUMBER, FOUND BY GREP", NEVER A HAND-ENUMERATED FOUR (Frank, 2026-09-01, forty-ninth session, ruling opt5d's Q6 — "agree. this is the right direction")
 
 Decision: D76's re-pin ritual stops naming FOUR sites. At every abi bump
