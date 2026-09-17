@@ -71,6 +71,15 @@
 # of a measurement, and reporting it as "the guards missed it" is a claim
 # about the CODE and a false one.
 #
+# THE SAME RULE HOLDS FOR AN ARM'S OWN LOG (lane mechfix, 2026-09-17): a
+# suite log that is MISSING/EMPTY (`NAME:NO-LOG(<file>)`) or holds no
+# scrapeable failure total (the `ERRfail/?pass` cell) is **ANOMALY**, never
+# a synthesized count in either direction -- neither DETECTED (the old
+# `${f:-1}` default, which scored a suite that NEVER RAN as having caught
+# the plant; S249's first run is the incident) nor UNDETECTED. `score_arm`
+# below is the one place a scraped count becomes a verdict bit; a real
+# failure from another arm still outranks the anomaly, S155's own rule.
+#
 # WHY (docs/dev/plan.md [MECH-REACH]; D69 addendum). S70's four escape
 # witnesses were retired ONE PER WAVE as module `assertions` implemented the
 # constructs they probed, and after [M6.5.2] retired the last one not a single
@@ -639,6 +648,60 @@ SELFTEST_BAD
 }
 _sab_bt_selftest
 
+# ---- score one suite arm's scraped counts ---------------------------------
+#
+# THE ONE PLACE A SUITE ARM'S FAILURE COUNT BECOMES A VERDICT BIT (lane
+# mechfix, 2026-09-17; the defect is dialimpl_report.md's "pre-existing
+# across every arm" finding). Every arm scrapes `p`/`f` out of its own log
+# and used to score with `[ "${f:-1}" -gt 0 ] && any_fail=1` -- so a MISSING
+# suite log, or one the scrape pulled no number from, DEFAULTED the failure
+# count to 1 and the row scored DETECTED as if the plant had been caught.
+# The distinguishing evidence (the `ERRfail/?pass`-shaped cell) was printed
+# on every such row and nothing read it; S249's first run is the incident
+# (its SAB_DOC_FIGURE carries the superseded false-DETECTED reading). A
+# detection helper that defaults on missing input fails in the SILENT
+# direction: the absence of a count is the ABSENCE OF A MEASUREMENT, and
+# the vocabulary for that already exists -- `any_unmeasured` (Frank's S155
+# ruling), which the verdict block renders as ANOMALY, with a real
+# `any_fail` from another arm still outranking it. A count is synthesized
+# in NEITHER direction: a missing log must not read UNDETECTED either,
+# which scoring `f=0` would.
+#
+#   score_arm LOGFILE FCOUNT CELL
+#
+#   LOGFILE  the arm's own suite log. Missing or EMPTY means the suite left
+#            no evidence it ran at all -> cell `NAME:NO-LOG(<file>)`,
+#            unmeasured.
+#   FCOUNT   the scraped failure count. Non-numeric (usually empty: the log
+#            exists but holds no total -- e.g. the suite script itself was
+#            absent from the archived tree and bash's error text is the
+#            whole log, the S249 incident's exact shape) -> the CELL still
+#            renders its documented `ERRfail/?pass` reading, unmeasured.
+#   CELL     the pre-rendered results cell (`NAME:...`), pushed verbatim on
+#            the healthy path so no arm's cell format moved; NAME (the text
+#            before the first `:`) is what `unmeasured_arms` reports.
+#
+# Called inside run_one's subshell, so the flag/array writes land on that
+# row's own copies exactly as the inline spellings did.
+score_arm() {
+    local log="$1" fc="$2" cell="$3" name="${3%%:*}"
+    if [ ! -s "$log" ]; then
+        suite_bits+=("$name:NO-LOG(${log##*/})")
+        any_unmeasured=1
+        unmeasured_arms+=("$name:no-log:${log##*/}")
+        return 0
+    fi
+    if ! [ "$fc" -ge 0 ] 2>/dev/null; then
+        suite_bits+=("$cell")
+        any_unmeasured=1
+        unmeasured_arms+=("$name:no-count-scraped:${log##*/}")
+        return 0
+    fi
+    suite_bits+=("$cell")
+    [ "$fc" -gt 0 ] && any_fail=1
+    any_ran=1
+}
+
 # ---- run one sabotage: fresh tree, verify-apply, build, run suites ----
 
 run_one() {
@@ -1063,9 +1126,7 @@ run_one() {
                     > "$work/codegen.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/codegen.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/codegen.log" | grep -oE '[0-9]+')"
-                suite_bits+=("codegen:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/codegen.log" "$f" "codegen:${f:-ERR}fail/${p:-?}pass"
                 ;;
             offsetskip)
                 # [OPT-K] tests/codegen/run_offset_skip.sh — the offset-k
@@ -1086,9 +1147,7 @@ run_one() {
                     > "$work/offsetskip.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
-                suite_bits+=("offsetskip:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/offsetskip.log" "$f" "offsetskip:${f:-ERR}fail/${p:-?}pass"
                 ;;
             anchoredmatch)
                 # [ENG-ABS] tests/codegen/run_anchored_match.sh — the anchored
@@ -1098,9 +1157,7 @@ run_one() {
                     > "$work/anchoredmatch.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
-                suite_bits+=("anchoredmatch:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/anchoredmatch.log" "$f" "anchoredmatch:${f:-ERR}fail/${p:-?}pass"
                 ;;
             searchpinned)
                 # [OPT-5] STEP 2 tests/codegen/run_search_pinned.sh — the
@@ -1118,9 +1175,7 @@ run_one() {
                     > "$work/searchpinned.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/searchpinned.log" | grep -oE '[0-9]+')"
-                suite_bits+=("searchpinned:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/searchpinned.log" "$f" "searchpinned:${f:-ERR}fail/${p:-?}pass"
                 ;;
             tunedial)
                 # [OPT-DIAL] tests/codegen/run_tune_dial.sh — the dial's
@@ -1144,9 +1199,7 @@ run_one() {
                     > "$work/tunedial.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/tunedial.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/tunedial.log" | grep -oE '[0-9]+')"
-                suite_bits+=("tunedial:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/tunedial.log" "$f" "tunedial:${f:-ERR}fail/${p:-?}pass"
                 ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
@@ -1170,9 +1223,7 @@ run_one() {
                     > "$work/vmframeless.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmframeless.log" | grep -oE '[0-9]+')"
-                suite_bits+=("vmframeless:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/vmframeless.log" "$f" "vmframeless:${f:-ERR}fail/${p:-?}pass"
                 ;;
             scanedge)
                 # [OPT-EDGE] STEP 1.1
@@ -1201,9 +1252,7 @@ run_one() {
                     > "$work/scanedge.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/scanedge.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/scanedge.log" | grep -oE '[0-9]+')"
-                suite_bits+=("scanedge:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/scanedge.log" "$f" "scanedge:${f:-ERR}fail/${p:-?}pass"
                 ;;
             anchdiff)
                 # [ENG-ABS] tests/anchored/run_anchored_diff.sh — the ANSWER
@@ -1220,9 +1269,7 @@ run_one() {
                     > "$work/anchdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("anchdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/anchdiff.log" "$f" "anchdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             sizeterm)
                 # [ART-SIZE] tests/codegen/run_size_term.sh — the size term's
@@ -1245,9 +1292,7 @@ run_one() {
                     > "$work/sizeterm.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/sizeterm.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/sizeterm.log" | grep -oE '[0-9]+')"
-                suite_bits+=("sizeterm:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/sizeterm.log" "$f" "sizeterm:${f:-ERR}fail/${p:-?}pass"
                 ;;
             pfcollapse)
                 # [OPT-4]/[OPT-4.1] tests/codegen/run_prefilter_collapse.sh —
@@ -1273,9 +1318,7 @@ run_one() {
                     > "$work/pfcollapse.log" 2>&1
                 p="$(grep -m1 '^prefilter-collapse:' "$work/pfcollapse.log" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^prefilter-collapse:' "$work/pfcollapse.log" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+')"
-                suite_bits+=("pfcollapse:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/pfcollapse.log" "$f" "pfcollapse:${f:-ERR}fail/${p:-?}pass"
                 ;;
             resource)
                 # [M4.7b]/[ART-SIZE] tests/resource/run_resource_tests.sh —
@@ -1292,18 +1335,14 @@ run_one() {
                     > "$work/resource.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/resource.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/resource.log" | grep -oE '[0-9]+')"
-                suite_bits+=("resource:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/resource.log" "$f" "resource:${f:-ERR}fail/${p:-?}pass"
                 ;;
             trie)
                 PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_trie_identity.sh" \
                     > "$work/trie.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/trie.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/trie.log" | grep -oE '[0-9]+')"
-                suite_bits+=("trie:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/trie.log" "$f" "trie:${f:-ERR}fail/${p:-?}pass"
                 ;;
             vmidentity)
                 # [M4.5b] the §5.4 zero-regression gate. A separate arm from
@@ -1315,9 +1354,7 @@ run_one() {
                     > "$work/vmidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("vmid:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/vmidentity.log" "$f" "vmid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             endvaridentity)
                 # [M6.2 wave A] the `\z`-free byte-identity gate. Its own arm
@@ -1331,9 +1368,7 @@ run_one() {
                     > "$work/endvaridentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("endvarid:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/endvaridentity.log" "$f" "endvarid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             wordctxidentity)
                 # [M6.2 wave B] the `\b`-free byte-identity gate. Its own arm
@@ -1347,9 +1382,7 @@ run_one() {
                     > "$work/wordctxidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("wordctxid:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/wordctxidentity.log" "$f" "wordctxid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             mlinectxidentity)
                 # [M6.2 wave C] the `(?m)`-free byte-identity gate. Its own arm
@@ -1363,9 +1396,7 @@ run_one() {
                     > "$work/mlinectxidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("mlinectxid:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/mlinectxidentity.log" "$f" "mlinectxid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             mlinediff)
                 # [M6.2 wave C] the `(?m)$`-family differential against
@@ -1380,9 +1411,7 @@ run_one() {
                     > "$work/mlinediff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("mlinediff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/mlinediff.log" "$f" "mlinediff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             gstartidentity)
                 # [M6.2 wave D] the `\G`-free byte-identity gate. Its own arm
@@ -1397,9 +1426,7 @@ run_one() {
                     > "$work/gstartidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/gstartidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/gstartidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("gstartid:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/gstartidentity.log" "$f" "gstartid:${f:-ERR}fail/${p:-?}pass"
                 ;;
             gstartdiff)
                 # [M6.2 wave D] `\G`'s behavioural instrument. Its own arm
@@ -1412,9 +1439,7 @@ run_one() {
                     > "$work/gstartdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("gstartdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/gstartdiff.log" "$f" "gstartdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             atomicdiff)
                 # [M6.4.2] module `atomic-groups`' behavioural instrument, and
@@ -1431,9 +1456,7 @@ run_one() {
                     > "$work/atomicdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/atomicdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/atomicdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("atomicdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/atomicdiff.log" "$f" "atomicdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             atomicidentity)
                 # [M6.4.2] the byte-identity gate, and the one arm in this
@@ -1449,9 +1472,7 @@ run_one() {
                     > "$work/atomicidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("atomicidentity:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/atomicidentity.log" "$f" "atomicidentity:${f:-ERR}fail/${p:-?}pass"
                 ;;
             brefdiff)
                 # [M6.5.2] module `backrefs`' behavioural instrument, and the
@@ -1471,9 +1492,7 @@ run_one() {
                     > "$work/brefdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/brefdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/brefdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("brefdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/brefdiff.log" "$f" "brefdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             dupnamesdiff)
                 # [M6.5.2] §8.3's RESOLUTION RULE, swept rather than sampled.
@@ -1488,9 +1507,7 @@ run_one() {
                     > "$work/dupnamesdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/dupnamesdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/dupnamesdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("dupnamesdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/dupnamesdiff.log" "$f" "dupnamesdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             brefidentity)
                 # [M6.5.2] the byte-identity gate, pinned-commit reference like
@@ -1504,9 +1521,7 @@ run_one() {
                     > "$work/brefidentity.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
-                suite_bits+=("brefidentity:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/brefidentity.log" "$f" "brefidentity:${f:-ERR}fail/${p:-?}pass"
                 ;;
             lookaround)
                 # [M6.6.2 wave B+C] module `lookaround`'s behavioural
@@ -1539,9 +1554,7 @@ run_one() {
                     > "$work/lookaround.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
-                suite_bits+=("laround:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/lookaround.log" "$f" "laround:${f:-ERR}fail/${p:-?}pass"
                 ;;
             recursion)
                 # [DD-14] wave B+C: module `recursion`'s behavioural
@@ -1581,9 +1594,7 @@ run_one() {
                     > "$work/recursion.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/recursion.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/recursion.log" | grep -oE '[0-9]+')"
-                suite_bits+=("recdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/recursion.log" "$f" "recdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             framebuffer)
                 # [DD-14.FB] tests/recursion/run_frame_buffer.sh — the caller
@@ -1627,9 +1638,12 @@ run_one() {
                 # THE TOTALS ARE READ FIRST AND THE EXIT STATUS SECOND, on
                 # purpose: a red §1 or §3 is a real catch and must stay one
                 # even on a box with no sanitizer. Only `exit 3` with nothing
-                # failing means "the instrument was missing".
-                if [ "${f:-1}" -gt 0 ] 2>/dev/null; then
-                    suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
+                # failing means "the instrument was missing". A NON-NUMERIC f
+                # (nothing scraped) falls through: to UNMEASURED-no-asan when
+                # the preflight said so, else to score_arm's own
+                # missing-count handling -- it must never read as a catch.
+                if [ "$f" -gt 0 ] 2>/dev/null; then
+                    suite_bits+=("framebuf:${f}fail/${p:-?}pass")
                     any_fail=1
                     any_ran=1
                 elif [ "$fb_rc" -eq 3 ]; then
@@ -1637,8 +1651,7 @@ run_one() {
                     any_unmeasured=1
                     unmeasured_arms+=("framebuffer")
                 else
-                    suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
-                    any_ran=1
+                    score_arm "$work/framebuffer.log" "$f" "framebuf:${f:-ERR}fail/${p:-?}pass"
                 fi
                 ;;
             stackdepth)
@@ -1656,9 +1669,7 @@ run_one() {
                     > "$work/stackdepth.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
-                suite_bits+=("stackdep:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/stackdepth.log" "$f" "stackdep:${f:-ERR}fail/${p:-?}pass"
                 ;;
             laexpand)
                 # [M6.6.2 wave E2] THE SUBSTITUTION DRIVER (design §6.3),
@@ -1708,9 +1719,7 @@ run_one() {
                 else
                     p="$(grep -m1 '^checks passed:' "$work/laexpand.log" | grep -oE '[0-9]+')"
                     f="$(grep -m1 '^checks failed:' "$work/laexpand.log" | grep -oE '[0-9]+')"
-                    suite_bits+=("laexpand:${f:-ERR}fail/${p:-?}pass")
-                    [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                    any_ran=1
+                    score_arm "$work/laexpand.log" "$f" "laexpand:${f:-ERR}fail/${p:-?}pass"
                 fi
                 ;;
             kresetdiff)
@@ -1727,9 +1736,7 @@ run_one() {
                     > "$work/kresetdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/kresetdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/kresetdiff.log" | grep -oE '[0-9]+')"
-                suite_bits+=("kresetdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/kresetdiff.log" "$f" "kresetdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             assertions)
                 # [M6.2 wave A] module `assertions`' own structural checks:
@@ -1740,9 +1747,7 @@ run_one() {
                     > "$work/assertions.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/assertions.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/assertions.log" | grep -oE '[0-9]+')"
-                suite_bits+=("asrt:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/assertions.log" "$f" "asrt:${f:-ERR}fail/${p:-?}pass"
                 ;;
             encoding)
                 # [M5.0] STAGE 2 tests/codegen/run_encoding_checks.sh — the
@@ -1766,9 +1771,7 @@ run_one() {
                     > "$work/encoding.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/encoding.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/encoding.log" | grep -oE '[0-9]+')"
-                suite_bits+=("encoding:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/encoding.log" "$f" "encoding:${f:-ERR}fail/${p:-?}pass"
                 ;;
             gentimeout)
                 # [M4.5c fix] D45's own checks. Its own arm because what it
@@ -1778,9 +1781,7 @@ run_one() {
                     > "$work/gentimeout.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/gentimeout.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/gentimeout.log" | grep -oE '[0-9]+')"
-                suite_bits+=("gentmo:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/gentimeout.log" "$f" "gentmo:${f:-ERR}fail/${p:-?}pass"
                 ;;
             irlisting)
                 # [M4.5c] DD-8's program listing held to the artifact it
@@ -1792,9 +1793,7 @@ run_one() {
                     > "$work/irlisting.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/irlisting.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/irlisting.log" | grep -oE '[0-9]+')"
-                suite_bits+=("irlist:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/irlisting.log" "$f" "irlist:${f:-ERR}fail/${p:-?}pass"
                 ;;
             vm)
                 # [M4.5b] the VM engine section: the two bounds, the stamps,
@@ -1806,9 +1805,7 @@ run_one() {
                     bash "$tree/tests/vm/run_vm_tests.sh" > "$work/vm.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/vm.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vm.log" | grep -oE '[0-9]+')"
-                suite_bits+=("vm:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/vm.log" "$f" "vm:${f:-ERR}fail/${p:-?}pass"
                 ;;
             possdiff)
                 # [ENG-BREP] the possessification differential. The arm exists
@@ -1822,9 +1819,7 @@ run_one() {
                     > "$work/possdiff.log" 2>&1
                 p="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
-                suite_bits+=("possdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/possdiff.log" "$f" "possdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             rungdiff)
                 # [ENG-BREP] the REVERSE-DETERMINISTIC rung's differential, and
@@ -1838,9 +1833,7 @@ run_one() {
                     > "$work/rungdiff.log" 2>&1
                 p="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
-                suite_bits+=("rungdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/rungdiff.log" "$f" "rungdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             counterkdiff)
                 # [ENG-BREP] the COUNTER rung's differential, the third arm of
@@ -1856,9 +1849,7 @@ run_one() {
                     > "$work/counterkdiff.log" 2>&1
                 p="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
-                suite_bits+=("counterkdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/counterkdiff.log" "$f" "counterkdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             mrldiff)
                 # [M4.6d] MRL pruning's differential, the fourth arm of the
@@ -1880,9 +1871,7 @@ run_one() {
                     > "$work/mrldiff.log" 2>&1
                 p="$(grep -m1 '^mrldiff: [0-9]* pattern-engine pairs agreed' "$work/mrldiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^mrldiff: [0-9]* pattern-engine pairs agreed' "$work/mrldiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
-                suite_bits+=("mrldiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/mrldiff.log" "$f" "mrldiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             mrl)
                 # [M4.6d] MRL's STRUCTURAL checks and acceptance cells. This
@@ -1899,9 +1888,7 @@ run_one() {
                     > "$work/mrl.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/mrl.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/mrl.log" | grep -oE '[0-9]+')"
-                suite_bits+=("mrl:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/mrl.log" "$f" "mrl:${f:-ERR}fail/${p:-?}pass"
                 ;;
             prefilter)
                 # [M4.6f] the D46 close-out for the PREFILTER axis: the stamp
@@ -1918,9 +1905,7 @@ run_one() {
                     > "$work/prefilter.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
-                suite_bits+=("prefilter:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/prefilter.log" "$f" "prefilter:${f:-ERR}fail/${p:-?}pass"
                 ;;
             altdiff)
                 # [OPT-ALTCLS] the pass's PRIMARY validation instrument: the
@@ -1936,9 +1921,7 @@ run_one() {
                     > "$work/altdiff.log" 2>&1
                 p="$(grep -m1 '^altdiff: [0-9]* patterns agreed' "$work/altdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^altdiff: [0-9]* patterns agreed' "$work/altdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
-                suite_bits+=("altdiff:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/altdiff.log" "$f" "altdiff:${f:-ERR}fail/${p:-?}pass"
                 ;;
             altcls)
                 # [OPT-ALTCLS] the pass's STRUCTURAL checks: the D46 stamp
@@ -1951,9 +1934,7 @@ run_one() {
                     > "$work/altcls.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/altcls.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/altcls.log" | grep -oE '[0-9]+')"
-                suite_bits+=("altcls:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/altcls.log" "$f" "altcls:${f:-ERR}fail/${p:-?}pass"
                 ;;
             reject)
                 # [TT-8 FIX] PROCS explicit, never inherited: see INNER_PROCS
@@ -1964,9 +1945,7 @@ run_one() {
                     > "$work/reject.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/reject.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/reject.log" | grep -oE '[0-9]+')"
-                suite_bits+=("reject:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/reject.log" "$f" "reject:${f:-ERR}fail/${p:-?}pass"
                 ;;
             harness)
                 local target_arg=()
@@ -1979,9 +1958,7 @@ run_one() {
                     > "$work/harness.log" 2>&1
                 p="$(grep -m1 '^cases passed:' "$work/harness.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^cases failed:' "$work/harness.log" | grep -oE '[0-9]+')"
-                suite_bits+=("corpus:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/harness.log" "$f" "corpus:${f:-ERR}fail/${p:-?}pass"
                 ;;
             registry)
                 # tests/registry/ MINUS its libpcre2 half: registry_check.c
@@ -2011,13 +1988,16 @@ run_one() {
                     PCREC="$pcrec" python3 "$tree/tests/registry/compliance_section.py" --names \
                         >> "$work/registry.log" 2>&1 || cf=1
                     if [ "$cf" = "1" ]; then
+                        # a compliance failure is a REAL catch regardless of
+                        # whether registry_check's own totals scraped, so this
+                        # branch scores directly; only the cf=0 branch routes
+                        # through score_arm's missing-count handling.
                         suite_bits+=("registry:${f:-ERR}fail/${p:-?}pass+compliance-FAIL")
                         any_fail=1
+                        any_ran=1
                     else
-                        suite_bits+=("registry:${f:-ERR}fail/${p:-?}pass")
+                        score_arm "$work/registry.log" "$f" "registry:${f:-ERR}fail/${p:-?}pass"
                     fi
-                    [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                    any_ran=1
                 fi
                 ;;
             pc3)
@@ -2056,9 +2036,7 @@ run_one() {
                     else
                         p="$(grep -m1 '^checks passed:' "$work/pc3.log" | grep -oE '[0-9]+')"
                         f="$(grep -m1 '^checks failed:' "$work/pc3.log" | grep -oE '[0-9]+')"
-                        suite_bits+=("pc3:${f:-ERR}fail/${p:-?}pass")
-                        [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                        any_ran=1
+                        score_arm "$work/pc3.log" "$f" "pc3:${f:-ERR}fail/${p:-?}pass"
                     fi
                 fi
                 ;;
@@ -2125,9 +2103,7 @@ run_one() {
                         skipped_arms+=("pc4")
                     else
                         f="$(grep -c '^FAIL: pc4: 1:n fold' "$work/pc4.log" || true)"
-                        suite_bits+=("pc4:${f:-ERR}fail/1n-fold-only")
-                        [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                        any_ran=1
+                        score_arm "$work/pc4.log" "$f" "pc4:${f:-ERR}fail/1n-fold-only"
                     fi
                 fi
                 ;;
@@ -2139,9 +2115,7 @@ run_one() {
                     > "$work/cli.log" 2>&1
                 p="$(grep -m1 '^cases passed:' "$work/cli.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^cases failed:' "$work/cli.log" | grep -oE '[0-9]+')"
-                suite_bits+=("cli:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/cli.log" "$f" "cli:${f:-ERR}fail/${p:-?}pass"
                 ;;
             rxtsource)
                 # [DD-13b.W1.1] tests/rxtsource/run_rxtsource_tests.sh —
@@ -2166,9 +2140,7 @@ run_one() {
                     > "$work/rxtsource.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/rxtsource.log" | grep -oE '[0-9]+')"
-                suite_bits+=("rxtsource:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/rxtsource.log" "$f" "rxtsource:${f:-ERR}fail/${p:-?}pass"
                 ;;
             startbnd)
                 # [K50] tests/utf8/run_startbnd_diff.sh — the caller-startpos
@@ -2199,9 +2171,7 @@ run_one() {
                     > "$work/startbnd.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/startbnd.log" | grep -oE '[0-9]+')"
-                suite_bits+=("startbnd:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/startbnd.log" "$f" "startbnd:${f:-ERR}fail/${p:-?}pass"
                 ;;
             limits)
                 # [LIM-1] tests/registry/limits_check.sh — the numeric-limits
@@ -2226,9 +2196,7 @@ run_one() {
                     > "$work/limits.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/limits.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
-                suite_bits+=("limits:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                score_arm "$work/limits.log" "$f" "limits:${f:-ERR}fail/${p:-?}pass"
                 ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")
@@ -2248,6 +2216,11 @@ run_one() {
             verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
             verdict="ANOMALY (every assigned check binary failed to build)"
+        elif [ "$any_ran" -eq 0 ] && [ "$any_unmeasured" -eq 1 ]; then
+            # score_arm's outcome when EVERY assigned arm was unmeasured:
+            # name the arms (each token carries no-log/no-count-scraped plus
+            # the log file), never fall through to the bare "no suite ran".
+            verdict="ANOMALY (no assigned arm produced a measurement: $(IFS=' '; echo "${unmeasured_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ]; then
             verdict="ANOMALY (no suite ran)"
         elif [ "$any_fail" -eq 0 ] && [ "$any_unmeasured" -eq 1 ]; then
