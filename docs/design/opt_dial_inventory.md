@@ -27,6 +27,18 @@ on the dial setting."*
 > ratio columns. They were recomputed by this lane directly from the
 > sweep's own committed per-pattern tables, which is why every one of
 > them carries the command that reproduces it (§3.0).
+>
+> **REVISION 2.1 — 2026-09-17, lane `dialfix`, the r60 fix round.** Three
+> corrections, all of them places where this document reported a
+> DISTRIBUTION as a point estimate or described a sibling document
+> inaccurately: §2.15a (`-fno-anchored-dfa`'s penalty is three
+> populations, and its time number has never been measured on the shipped
+> flag), §3.1's `-fno-anchored-dfa` time cell, and §3.2's closing
+> paragraph, which described a per-regime §3.2 in `opt_dial_design.md`
+> that revision 1 of that note did not contain — two documents disagreeing
+> about what one of them says (r60 design-20). Nothing else moves; the
+> r60 num critic re-derived this document's percentages and found them
+> exact.
 
 **This document does not build the dial.** It is D77 in its purest form: the
 dial's whole premise is that a switch group can be set from MEASURED trade-offs,
@@ -317,6 +329,14 @@ loudest caveat.** A ratio of 10^5 is not a dial rung in the same sense as a
 factor of 3; the min-size column would have to accept a pathological fail
 path. §3 puts it in its own row with that stated.
 
+**REVISION 2.1 — THE ROW HAS A SECOND, INDEPENDENT REASON and this entry
+named only one** (r60 S4). `--engine=dfa` REFUSES a captures-default
+pattern (D44.6), so the deny arm moves the REFUSAL SET as well as the time
+range — which fails `opt_dial_design.md` §3.1's gate 2 on its own, without
+gate 5's violence argument. Citing both is the stronger position to be in,
+and it is the standard this document already applies to
+`-fno-altcls-merge` (§2.6's "flat for a second, independent reason").
+
 ### 2.12 `-fno-tiered-entry` (bit 14)
 
 **Trades:** call time for STACK FRAME size, which is not the emitted-bytes axis
@@ -449,7 +469,8 @@ structure.**
 1. The rate is now corpus-general on both axes: ≈15% of the artifact on 43%
    of patterns, against `opt2_anchored_match_measurement.md`'s measured
    match-regime win (2.077× behind the VM without it → 1.046× with it, i.e.
-   ≈1.99× on matching subjects).
+   ≈1.99× on matching subjects). **[REVISION 2.1: that "≈1.99×" is a POINT
+   ESTIMATE OF A DISTRIBUTION and §2.15a below is the correction.]**
 2. **A min-size dial position should DENY this by default.** It is the
    single largest byte lever the dial can legitimately pull — `--engine` is
    larger and is excluded for violence (§3), and this one is monotone.
@@ -460,6 +481,40 @@ structure.**
    witness, and this document's §7 item 3 asked for exactly this
    replacement — it is worth recording that the request was right and the
    expected answer was too small.
+
+### 2.15a `-fno-anchored-dfa`'s TIME half — the r60 corrections (REVISION 2.1)
+
+Two, and the second is the larger.
+
+**(a) THE PENALTY IS A THREE-POPULATION DISTRIBUTION, NOT ≈1.99×.**
+`opt2_anchored_match_measurement.md:292-296` reports five splits, and the
+cost of denial is the ratio of its two measured columns:
+
+| split | n | vs VM (whole) | vs VM (reverse deleted) | cost of denial |
+|---|---:|---:|---:|---:|
+| ALL | 85 | 2.133× | 1.281× | 1.665× |
+| MATCHING | 40 | 2.077× | 1.046× | **1.986×** |
+| NON-MATCHING | 45 | 2.301× | 1.981× | **1.161×** |
+| matching, short (<256 B) | 35 | 1.207× | 0.571× | **2.114×** |
+| matching, long (≥256 B) | 5 | 2.114× | 1.066× | 1.983× |
+
+The spread is 1.161× to 2.114×, a factor of 1.82 across populations the
+caller does not choose. `opt_dial_design.md` §3.1 gate 6 rules that a
+penalty is admitted at its WORST measured population, which puts this row's
+`m` at **2.114×** and takes it out of a `x₂` = 2.00 min-size column. The
+median was never a safe summary of it, and the ≈1.99 figure is the MATCHING
+row alone.
+
+**(b) NOBODY HAS MEASURED THIS AXIS.** The ledger above is a COST-ISOLATION
+experiment: a hand patch deleting the `\z` artifact's reverse pass, run to
+size the lever, whose own recommendation was that `[ENG-ABS]` build an
+unwrapped anchored entry — which was then built and is what
+`-fno-anchored-dfa` denies. So the whole time half of this entry is a PROXY
+measured on the mechanism's predecessor. **The A/B that would replace it is
+one afternoon**: `rx_match`, default against `-fno-anchored-dfa`, over
+`opt2`'s own 85 compliance subjects, split the same five ways. It is added
+to §7's list as item 8 and it is the single owed measurement most likely to
+move a dial cell.
 
 ### 2.16 `-fno-size-term` (bit 18)
 
@@ -771,7 +826,7 @@ regime, deliberately not normalised** — §3.2 is about why that matters.
 |---|---:|---|---:|---|---|---|
 | `--unroll=K` (K=8→1) | nested-repeat shapes | −75…−79% | not swept | no measured cost (nested); 1-3% noise (single-level) | throughput | TRADE, non-monotone |
 | `-fno-premul-table` | DFA-scan-bearing | −22…−25% | not swept | **1.794×** slower | throughput | TRADE |
-| `-fno-anchored-dfa` | **43.39%** | **−15.32%** (−39.60…0.00) | **−10.643%** | **≈1.99×** slower | whole match, matching subjects | TRADE |
+| `-fno-anchored-dfa` | **43.39%** | **−15.32%** (−39.60…0.00) | **−10.643%** | **1.161× / 1.986× / 2.114×** — three populations, §2.15a | whole match; non-matching / matching / matching-short | TRADE |
 | `-fno-tiered-entry` | 9.49% | **−7.48%** (−9.47…−0.30) | −0.559% | **5.06×** slower | **per-call ENTRY** | TRADE |
 | `-fno-scan-edge` | edge-carrying machines | −364…−612 B (abs) | not swept | 2.71-3.03× slower (letters); 1.08× faster (digits) | throughput | TRADE, flat |
 | `-fno-offset-skip` | 14.12% | −1.30% (−3.60…+3.12) | −0.126% | up to 2× slower | throughput, log-line shapes | TRADE, sub-material |
@@ -813,10 +868,27 @@ Specifically: what fraction of a matcher's run time is entry cost, and what
 fraction is class-membership probing. Both are subject-dependent.
 
 This is D77 in its own inventory: the honest move is to NAME the
-measurement rather than invent the constant. `opt_dial_design.md` §3.2
-carries the consequence — the rule is stated PER REGIME, with two regimes
-and two threshold pairs, and the cross-regime ratio flagged as the single
-number a future measurement would replace.
+measurement rather than invent the constant.
+
+> **REVISION 2.1 CORRECTS THIS PARAGRAPH, because it described a sibling
+> document rather than reading it.** The original sentence read: *"`opt_dial_design.md`
+> §3.2 carries the consequence — the rule is stated PER REGIME, with two
+> regimes and two threshold pairs, and the cross-regime ratio flagged as
+> the single number a future measurement would replace."* **Revision 1 of
+> that note did not state the rule per regime at all** — it declared match
+> time as THE unit and then put four throughput ratios in it, which is the
+> r60 panel's blocker B5, and design-20's finding is precisely that this
+> paragraph and that note disagreed about what that note said. Two
+> documents written by one lane on one day, one describing the other from
+> intent rather than from text.
+>
+> **What `opt_dial_design.md` REVISION 2 §3.2 actually carries**: FOUR
+> regimes (whole match, DFA-scan throughput, per-call entry, class
+> membership), ONE set of threshold parameters stated in two quantities
+> (§3.0's `σ` and `m`), and a per-regime CONVERSION `1 + φ·(m_c − 1)` with
+> **three** named unknowns — `φ = (φ_scan, φ_entry, φ_cls)`, not one
+> cross-regime ratio. Only `-fno-anchored-dfa` is measured end to end and
+> needs no conversion.
 
 **And it is why `-fno-tiered-entry` is not simply the best row in the
 table.** Its size half is the cleanest measurement here; its time half is
@@ -1090,3 +1162,25 @@ Without it, Frank's threshold rule cannot be evaluated across regimes and
 λ cannot be calibrated against the discrete rows in any units-exact way.
 This is the highest-value unrun measurement the dial now has, and it
 replaces item 2 in that position.
+
+**REVISION 2.1 — ITEM 7 IS THREE COMPONENTS, NOT TWO, AND IT IS NOW
+BLOCKING.** The r60 panel found the DFA-SCAN regime missing from this
+item's own wording: `-fno-premul-table`, `-fno-scan-edge` and
+`-fno-offset-skip` are throughput ratios and need `φ_scan` exactly as
+`-fno-tiered-entry` needs `φ_entry`. So the measurement is
+**`φ = (φ_scan, φ_entry, φ_cls)`** — one instrument, three populations,
+the hand-twin method `docs/dev/form_char_step0.md` and
+`docs/dev/ccdiff_step0_evidence/` already use. The panel GRADUATED it from
+"highest-value unrun" to **the blocking measurement for the whole threshold
+apparatus**, chartered before implementation
+(`opt_dial_design.md` §9 Q1).
+
+**NEW ITEM 8 — `-fno-anchored-dfa`'s OWN A/B (REVISION 2.1, §2.15a).**
+This row's entire time half is a proxy measured on a cost-isolation patch
+against the mechanism's predecessor; nobody has run the shipped flag.
+`rx_match`, default against `-fno-anchored-dfa`, over
+`opt2_anchored_match_measurement.md`'s own 85 compliance subjects, split
+the same five ways. **It is the cheapest owed measurement here and the one
+most likely to move a dial cell**, because the row it prices is the dial's
+largest legitimate size lever and its admission to the min-size column now
+turns on whether its worst population is above or below 2.00×.

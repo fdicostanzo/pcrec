@@ -1726,52 +1726,78 @@ append-only or historical records.
   lacked: STRUCTURALLY INELIGIBLE, since its two arms disagree about
   ANSWERS on purpose, so no future measurement can ever admit it to a dial
   whose acceptance IS answer identity.
+  **REVISION 2.1 (2026-09-17, lane `dialfix`, the r60 fix round)** carries
+  three corrections, all of them places this document reported a
+  DISTRIBUTION as a point estimate or described a sibling from intent
+  rather than from text. New **§2.15a**: `-fno-anchored-dfa`'s "≈1.99×" is
+  the MATCHING split of a five-way table spanning **1.161× to 2.114×**
+  (`../dev/opt2_anchored_match_measurement.md:292-296`), and — the larger
+  of the two — **that whole time half is a PROXY**, measured on a
+  cost-isolation patch deleting the reverse pass, i.e. on the mechanism's
+  PREDECESSOR; nobody has ever run the shipped flag. Its own A/B is §7's
+  **new item 8** and the cheapest owed measurement in the row. §3.1's time
+  cell carries the distribution. §2.11 gains `--engine`'s SECOND
+  independent exclusion reason (D44.6's refusal-set move, not only the
+  time range). And §3.2's closing paragraph is corrected in place: it
+  described a per-regime §3.2 in `opt_dial_design.md` that revision 1 of
+  that note did not contain — two documents written by one lane on one day,
+  one describing the other from intent (r60 design-20) — where revision 2
+  carries FOUR regimes and **three** unknowns, `φ = (φ_scan, φ_entry,
+  φ_cls)`, with item 7 graduated from "highest-value unrun" to BLOCKING.
 
-- `opt_dial_design.md` — **[OPT-DIAL] STEP 1, PROPOSED, NOT YET PANELED**
-  (2026-09-16, lane `dialdesign`, opus; design only — nothing under
+- `opt_dial_design.md` — **[OPT-DIAL] STEP 1, PROPOSED; PANELED (r60) AND
+  REVISED** (rev 1 2026-09-16, lane `dialdesign`; **REVISION 2** 2026-09-17,
+  lane `dialfix`, both opus; design only — nothing under
   `src/`/`tests/`/`docs/spec/`). The dial itself: the option's spelling
   (`--tune=-2..+2` with five mnemonic aliases, the `tune` config line, the
   D93 precedence question), the allowlist-disciplined policy table across
-  all twenty-three generation axes × five positions, the mapping from those
-  positions to λ, the stamp and its `abi` consequence, the acceptance, the
-  four standing lenses, the spec plan, and the ruling queue. **Every
-  threshold in it is marked PROPOSED FOR FRANK'S RULING**; §9 is the queue.
-  Read it for five things.
-  **§0's headline is a property of the measured population, not of the
-  numbers**: the FIRST SIZE NOTCH IS EMPTY on every discrete row, because
-  pcrec's switches have a hole in their penalty distribution between
-  `--unroll`'s ~1.00× and `-fno-premul-table`'s 1.794×, so no tier-one
-  bound below 1.794 makes `−1` differ from the middle on any discrete row.
-  **§3.2 collapses the four-units problem into ONE unknown**: the rule is
-  stated in whole-match multipliers, and a row measuring a COMPONENT
-  converts exactly as `1 + φ(m−1)`, so `-fno-tiered-entry`'s admission to
-  the min-size column is *exactly* the claim that per-call entry cost is at
-  most 24.6% of match time — a falsifiable sentence in place of a guessed
-  threshold. **§4.4 is the hardest section and its result is NEGATIVE**:
-  the λ mapping and the discrete table are consistent iff `ρ/σ` is constant
-  across positions (a ratio test checkable WITHOUT the calibration
-  constant), and they are not — because `x₂` is a hard SAFETY CAP while
-  λ=0 is a pure objective with no safety term, a structural shape
-  difference no choice of λ repairs. The repair gives the DP the same cap,
-  `ops ≤ x₂ · ops(middle)`, which `\p{L}` passes at **1.91× against 2.00×**
-  — and the note flags the agreement with `-fno-anchored-dfa`'s own
-  1.99-against-2.00 as suspicious rather than corroborating, since the two
-  share no mechanism. **§4.2 DERIVES the middle's λ** from the
-  default-middle principle plus the measured frontier (λ=16 buys 47.6% of
-  the probe ops for 0.95% of the bytes) and lands on the study's own "mid"
-  naming by a different route — and λ is the only row in the whole design
-  admitted under the middle principle prospectively rather than
-  grandfathered, since every discrete row's middle cell is today's default
-  by Frank's keep-the-defaults ruling and one of them (`-fno-premul-table`,
-  ~30% of bytes for 1.794×) fails the window. And **§6.2 states the K45
-  rule in one sentence** — no dial position may move the refusal set IN
-  EITHER DIRECTION, since a pattern that refuses at `0` and answers at `−2`
-  has gained an answer — which makes `-fno-anchored-dfa`'s min-size cell
-  admissible only as a DEPENDENCY on `[K53-SELRETRY]`'s drop ladder, and
-  requires a check the axes sweep structurally cannot be (the refusing set
-  compared as a SET of keys, never as a count, because this design's two
-  refusal hazards run in opposite directions and a count would let both
-  slip through at once).
+  all twenty-three `tuning.md` §2 axes × five positions, the mapping from
+  those positions to λ, the stamp and its `abi` consequence, the
+  acceptance, the four standing lenses, the spec plan, and the ruling
+  queue. **Every threshold in it is marked PROPOSED FOR FRANK'S RULING**;
+  §9 is the queue. **Read the PANEL OUTCOME block at the top before any
+  section** — `../dev/reviews/2026-09-17-r60-opt-dial-design.md` returned
+  6 blockers / 16 must-fix / 8 should / 3 nit, and the λ apparatus, ~25
+  numbers, the two-search `abi` plan and the `--unroll` fold all SURVIVED
+  while the failures concentrated in unit discipline, population honesty,
+  and the allowlist applied to itself. Read the revision for five things.
+  **REVISION 1's HEADLINE IS WITHDRAWN**: "the first size notch is EMPTY,
+  a property of the measured population" was a property of a UNIT ERROR
+  (a DFA-scan throughput ratio, a per-call-entry ratio and a whole-match
+  ratio lined up on one axis). Under §3.2's PER-REGIME conversion every
+  component row's penalty is `1 + φ·(m−1)`, continuous in an unmeasured
+  share, so there is no hole — and **the cell revision 1 thought was safe
+  is the one that fails**: `-fno-anchored-dfa`'s penalty is a
+  three-population distribution (**1.161× / 1.986× / 2.114×**,
+  `../dev/opt2_anchored_match_measurement.md:292-296`) whose worst
+  population fails a doubling by 5.7%, so the dial's largest legitimate
+  size lever leaves the min-size column at `x₂` = 2.00 and returns at
+  2.114. **§4 IS REWRITTEN UNDER THE S1 MANAGER RULING: λ is a SELECTION,
+  not five constants** — a position carries a CAP and the DP selects the
+  frontier point that best serves the position's direction under it, which
+  is one mechanism instead of a constrained-path problem beside the DP.
+  λ=0's both-axes-dominated inversion dissolves (a dominated point can
+  never be an argmin), Q5 with it, the recalibration warning discharges
+  automatically, and λ=12 — revision 1's own "weakest number on this page"
+  — ceases to exist. **§4.2 IS WHERE M7's UNIT PUN IS FIXED BY
+  CONSTRUCTION**: revision 1 wrote "κ is `x₂`, the same parameter", but κ
+  bounds PROBE OPS and `x₂` bounds MATCH TIME; the caps are now derived
+  explicitly as `κ = 1 + (x−1)/φ_cls`, marked provisional at `φ_cls = 1`,
+  and the note records that the SIZE notches need `φ_cls` while the SPEED
+  notches do not, because their cap is a size budget. **§3.2a CHECKS BOTH
+  HALVES OF THE MIDDLE PRINCIPLE and both have exactly one violating
+  shipped default, in opposite directions** — `-fno-premul-table` costs
+  22-25% of the artifact against `z_mid`, and `-fno-cls-fold` costs ×1.095
+  of match time against `t_mid` = 1.02, a failure by ≈5× that revision 1
+  never found because it proposed `t_mid` and applied it to nothing. And
+  **§6.2a is a measured PUSHBACK on the panel**: B2 called the refusal
+  check's population empty on a p99 `.o` size of 14,364 B compared against
+  SOURCE-byte caps — a unit mismatch of M7's own class — where the caps'
+  own quantity puts the corpus maximum at **999,925 B, 75 bytes under
+  `PCREC_MAX_EMIT_BYTES`** (`tests/utf8/axis12_scripts.rxt:296`). B2's
+  synthetic near-cap fixture family is adopted anyway, because `n = 1` is
+  not a population, and the named real artifact rides beside it as a
+  control a purely synthetic family would not have.
 
 - `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
   (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s
