@@ -23519,3 +23519,48 @@ pushed; I-71 to bench announces the pin, lifts the K57 caveat, and
 starts their O-30 window (through 09-17 morning). Owed tomorrow:
 dialsweep accept/merge, the 45s-budget known_issues note, the W23
 plan_completed move, the D94 addendum.
+
+## 2026-09-17 (EDT, overnight into morning), sixty-sixth session continued — the dial built end-to-end in one night; M1/M2 a legitimate no; the bench's FIRST SAMPLE lands four real findings
+
+**[OPT-DIAL], evening → dawn**: Frank's too-complicated challenge →
+the D103 synthesis (pinned-table contract / rubric-not-rule / φ
+on-demand) → rev 3 (lane dialgov) → Q6/Q7/Q8 RULED (file-wins + D93
+addendum; spec-narrowed override; solo battery) → THE TABLE RATIFIED
+with the art-over-science philosophy recorded verbatim (D103
+addendum) → +2's placement direction for [CLS-TREE] (the full-table
+class forms ARE +2's content) → IMPLEMENTATION DELIVERED (lane
+dialimpl, opus, 16 commits, parked on lane/dialimpl @ 5a192924):
+--tune + aliases, the pinned table in src/core/tune.c (position 0 a
+measured structural no-op), file-wins diagnostic, RX_TUNE, abi 25→26
+ritual both searches + the D94 manifest class (all TWELVE
+EMITTED_BYTES rows moved +27B — the design's list was short by two;
+the real near-cap witness moved +31B to 44B headroom),
+run_tune_dial.sh 17/0 validated in THREE failing directions, S249
+DETECTED through the real driver. **HEADLINE: K59** — the ratified
+−2 cell VIOLATES gate 2: min-size COMPILES [^\p{C}\p{M}\p{P}] (utf8)
+that every other position refuses at the byte cap, via premul's
+rescue; caught ONLY by the synthetic F3 family (corpus population
+zero — r53's argument earning its keep). Ruling owed to Frank; lane
++ manager recommend a premul rung on K53-SELRETRY's drop ladder.
+MERGE PARKED on that ruling; owed make test running under watcher;
+solo battery (ruled) follows on ubuntubudu.
+
+**[LIM-2]/dfamin M1+M2 (lane dfam12) MERGED — a legitimate no**:
+M1 zero yield on K25's chains; M2's dominance prize narrow (4.6%
+aggregate K7 relief) and MEASURABLY HARMFUL on the chartering witness
+(k18_cost_gates.rxt:66 compile→refusal under the most permissive
+stand-in — §4.3 B2's prediction, now a number). Candidates stay
+unbuilt; probe preserved as dfam12_probe_m2.patch.
+
+**THE BENCH'S FIRST SAMPLE (O-31, their e51a659)**: 7/7 cells at
+a770139e, store 168, O-29 verified 9/9 two-sided, the set loading
+WHOLE-FILE from .rxt (Q3 landed). Four pcrec findings, dispositioned:
+F1 comment-escape DFA-emitter bug (pattern bytes unescaped in an
+emitted annotation comment) — lane cmtfix chartered immediately;
+F4 mojibake-curly-quote wrong on all four pcrec configs — their span
+probe accepted, investigation charters on it; F2 (captures strips the
+nullable-collapse rescue at ×2.1e5 while the hybrid-prefilter rescue
+survives — the split) and F3 (captures arms HANG where pcre2 gives up
+— the VM step budget structurally failed to fire) → proposed rows for
+Frank this morning. Box released; D103 measurement slots handshake as
+they charter.
