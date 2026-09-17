@@ -1,7 +1,10 @@
 # [OPT-DIAL] STEP 1 — the speed-vs-size dial: option, policy table, λ
 
 Lane `dialdesign`, 2026-09-16. **REVISION 2 — 2026-09-17, lane `dialfix`,
-the r60 fix round.** **DESIGN ONLY — nothing under `src/`, `tests/` or
+the r60 fix round.** **REVISION 3 — 2026-09-17, lane `dialgov`, D103's
+governance revision** (`docs/dev/decisions.md` D103, Frank's ruling on
+the manager's synthesis after his too-complicated/too-unpredictable
+challenge to revision 2). **DESIGN ONLY — nothing under `src/`, `tests/` or
 `docs/spec/` lands from this lane.** §8 is the spec plan the implementation
 lane executes under D80; §9 is the ruling queue.
 
@@ -10,8 +13,10 @@ Inputs, all of them read in full: `docs/dev/plan.md`'s `[OPT-DIAL]` row
 (STEP 0, as revised by this same lane),
 `docs/dev/optdial_size_sweep.md` (the merged size sweep),
 `docs/dev/cls_tree_study.md` §5 (the sectioning DP, where λ comes from),
-`docs/dev/lanes/ccd2_report.md` §9, and — for revision 2 —
-`docs/dev/reviews/2026-09-17-r60-opt-dial-design.md`.
+`docs/dev/lanes/ccd2_report.md` §9, `docs/dev/reviews/
+2026-09-17-r60-opt-dial-design.md` (revision 2's panel), and — for
+revision 3 — `docs/dev/decisions.md` D103 itself, the governance ruling
+this revision executes rather than argues.
 
 ---
 
@@ -51,23 +56,77 @@ mismatch of the same class as M7). The finding-by-finding record is
 
 ---
 
+## GOVERNANCE OUTCOME — D103, and what it restructures
+
+Frank found revision 2 too complicated and too unpredictable and issued
+D103 on the manager's synthesis. **D103 does not touch a verified number
+in this note — it restructures how the table is GOVERNED, and every
+verified citation below is unchanged from revision 2.** Four rulings,
+applied throughout revision 3:
+
+1. **§3's policy table is now THE PINNED CONTRACT.** A cell changes only
+   by an explicit ruled diff — never because a measurement lands. The
+   same `--tune=N` therefore never silently produces a different switch
+   set across releases, which revision 2's live-conditional cells
+   (`†`-marked, moving the day φ arrived) could not promise.
+2. **§3.2's threshold rule-shape (the `x`/`y`/`z`/`t_mid` windows, gate 6,
+   the sensitivity table) DEMOTES from an assignment rule to THE PROPOSAL
+   RUBRIC.** It is kept in full, because it is how a cell proposal is
+   argued consistently — the manager applies it to a measurement, Frank
+   ratifies the result — and it is explicitly NOT an assignment
+   mechanism any more. The per-regime unit discipline and the `φ`
+   conversion algebra STAY unconditionally: they are how the rubric
+   reads a measurement honestly, and D103's ruling changes who acts on
+   the reading, not the reading itself.
+3. **`φ` drops from THE BLOCKING MEASUREMENT to ON-DEMAND.** It is
+   chartered narrowly only when a specific contested cell needs it — the
+   two named customers are `-fno-anchored-dfa`'s `−2` admission and
+   `t_mid` before `[CLS-TREE]`'s middle admission. Nothing else in this
+   note waits on it.
+4. **The allowlist discipline (§3.1) is UNCHANGED.** No cell without a
+   cited two-axis measurement — this is the half of revision 2 with the
+   proven catch record (STEP 0's `shared` cells, revision 1's
+   anchored-dfa point estimate, both caught by citation discipline
+   rather than by taste) and D103 does not touch it.
+
+**§9 is restructured to match**: Q1 (φ) closes as ruled-on-demand; Q2,
+Q2b and Q3 collapse into ONE ratification item, THE FIRST-BUILD TABLE —
+the four decidable positions as the fix round derived them, presented for
+one yes/no ratification rather than as three separate numeric asks; Q4
+folds into that table's cells. Q6, Q7 and Q8 stand unchanged as separate
+items, renumbered. §4 (λ) keeps the verified frontier table and the
+selection RULE's arithmetic, and reframes what the arithmetic IS: the
+argument that chose five now-PINNED constants, not a live per-class
+mechanism. The finding-by-finding record for this revision is
+`docs/dev/lanes/dialdesign_report.md` § "D103 revision (rev 3)".
+
+---
+
 ## 0. What this note decides, and the one thing it cannot
 
-It decides: the option's spelling and its precedence against D93; which of
+It decides: the option's spelling and its precedence against D93; the
+policy table — **now, under D103, THE PINNED CONTRACT** — across which of
 pcrec's twenty-three generation axes the dial may touch and what it sets
 them to at each of five positions; how those positions map onto λ, the
 class-matcher kit's own currency; the stamp and its `abi` consequence; and
 what acceptance means.
 
-**It cannot fix the thresholds numerically, and the reason is a missing
-measurement rather than a missing opinion.** Frank's rule-shape is stated
-in one unit — *"performance penalty under x% AND size savings over y%"* —
-and the inventory's rows carry their penalties in four different ones
-(`opt_dial_inventory.md` §3.2). §3.2 below converts every row exactly,
-**per regime**, with one named unknown per regime; §9 Q1 charters the
-measurement. Every number in §3 and §4 is marked **PROPOSED FOR FRANK'S
-RULING**; nothing here is a ruling and nothing here is presented as
-measured that is not.
+**It does not fill the table by running a rule over a measurement, and
+that is D103's ruling rather than a missing measurement.** Frank's
+rule-shape — *"performance penalty under x% AND size savings over y%"* —
+is kept in full below (§3.2) as **THE PROPOSAL RUBRIC**: the argued path
+from a citation to a cell, applied by the manager and ratified by Frank,
+never itself an assignment mechanism. §3.2's per-regime conversion (every
+component row's penalty as `1 + φ·(m − 1)`, one named unknown `φ` per
+regime) is how the rubric reads a measurement honestly, and it stays
+unconditional; what changes is that `φ` is no longer a blocking
+measurement gating the whole table — it is chartered on demand, only when
+a specific contested cell needs it (§9). **§9 collapses what would have
+been separate numeric asks into ONE ratification item, THE FIRST-BUILD
+TABLE**: the four decidable positions, argued by the rubric below and
+presented for a single yes/no. Every number in §3 and §4 is marked
+**PROPOSED FOR FRANK'S RATIFICATION**; nothing here is a ruling until §9's
+table is ratified, and nothing here is presented as measured that is not.
 
 ### 0.1 THE HEADLINE — revision 1's is withdrawn, and here is the re-derivation
 
@@ -112,16 +171,21 @@ check it rather than be walked to it:**
 > Both corrections run the same way: **a point estimate stood where a
 > distribution or a conversion belonged.**
 
-**What this leaves at the FIRST BUILD** (φ unmeasured, λ unimplemented
-until `[CLS-TREE]` lands): four distinct positions, not five. `−2` is the
-`[ART-SIZE]` ladder's two parameters plus `-fno-premul-table` denied
-UNCONDITIONALLY (§3.3 — the conversion makes that cell safe at every
-`φ_scan ≤ 1`, which is a strengthening revision 1 could not see); `−1` is
-the ladder's two parameters alone; `0` is today's defaults byte for byte;
-`+1` is the entry-chain term's raise; and **`+2` is identical to `+1`**,
-because M12 removes its one unmeasured cell and the λ row that would
-separate them is a reservation. §6.3 states that as the acceptance's own
-limit rather than leaving a reader to discover it.
+**What this leaves for §9's FIRST-BUILD TABLE** (φ unmeasured on demand, λ
+unimplemented until `[CLS-TREE]` lands): four distinct positions, not
+five, argued by the rubric above and PINNED once ratified rather than
+left to move as `φ` arrives. `−2` is the `[ART-SIZE]` ladder's two
+parameters plus `-fno-premul-table` denied UNCONDITIONALLY (§3.3 — the
+conversion makes that cell safe at every `φ_scan ≤ 1`, which is a
+strengthening revision 1 could not see); `−1` is the ladder's two
+parameters alone; `0` is today's defaults byte for byte; `+1` is the
+entry-chain term's raise; and **`+2` is identical to `+1`**, because M12
+removes its one unmeasured cell and the λ row that would separate them is
+a reservation. §6.3 states that as the acceptance's own limit rather than
+leaving a reader to discover it. **A future measurement of `φ_scan` or
+`φ_entry` does not silently move any of these four cells** — it is
+evidence for a NEW proposal, argued by the same rubric and ratified as
+its own ruled diff (D103 point 1).
 
 ---
 
@@ -287,6 +351,22 @@ switches, and why that is a feature.
 
 ## 3. THE POLICY TABLE
 
+**§3.3's table is THE PINNED CONTRACT (D103, point 1).** A cell changes
+only by an explicit ruled diff — never because a measurement lands. The
+same `--tune=N` therefore compiles to the same switch set across releases
+until Frank rules a diff, whatever `φ` or a later sweep goes on to find.
+§3.1's allowlist (no cell without a cited two-axis measurement) is
+UNCHANGED and still governs what may EVER be proposed into the contract;
+what D103 removes is the idea that a citation, once made, assigns its own
+cell automatically. §3.2's threshold rule-shape — the windows, the `x`/
+`y`/`z`/`t_mid` parameters, gate 6, the sensitivity table — is kept in
+full below, reframed as **THE PROPOSAL RUBRIC**: the documented way a
+cell proposal is argued (the manager applies it to a measurement, Frank
+ratifies), explicitly NOT the mechanism that assigns a cell. The
+per-regime unit discipline and the `φ` conversion algebra inside it STAY
+exactly as derived, because they are how the rubric reads a measurement
+honestly — D103 changes who acts on a reading, not the reading itself.
+
 ### 3.0 SIGN AND UNIT CONVENTIONS, stated once and applied mechanically (M1)
 
 The panel found revision 1 carrying three quantities under two names, with
@@ -416,7 +496,17 @@ neither is the cell's value.
 | **GATE 5** | the time cost's range is violent |
 | **NOT A RUNG** | a floor, a boundary, a no-op, or a PARAMETER of another row |
 
-### 3.2 THE THRESHOLD RULE, STATED PER REGIME (B5)
+### 3.2 THE PROPOSAL RUBRIC, STATED PER REGIME (B5; DEMOTED FROM ASSIGNMENT RULE BY D103)
+
+**This section is now the rubric, not the assignment mechanism (D103
+point 2).** Everything below — the windows, `x₁`/`x₂`/`y`/`z_mid`/`t_mid`/
+`s`/`Z₁`/`Z₂`, gate 6, the sensitivity table in §3.6 — is the documented,
+checkable way a cell PROPOSAL is argued: the manager applies the rubric
+to a citation, Frank ratifies the resulting table (§9). No cell in §3.3
+is filled by running this rule over a measurement as it lands; a cell is
+filled only by an explicit ruled diff. The per-regime conversion below is
+kept because it is what makes an argument honest, not because it assigns
+anything by itself.
 
 Frank's rule-shape (2026-09-06): *a switch whose measured trade is
 "performance penalty under x% AND size savings over y%" becomes a tier-one
@@ -458,7 +548,8 @@ a value** — which is more useful than a guess, because a condition tells
 the measurement what answer would change it, and because a condition is
 implementable as an em-dash today and as a cell the day φ lands.
 
-**PROPOSED VALUES — FOR FRANK'S RULING, none of these is measured:**
+**THE RUBRIC'S OWN PARAMETERS — argued here, none of these is measured,
+ratified as part of §9's first-build table rather than one at a time:**
 
 | parameter | quantity | proposed | what it says |
 |---|---|---:|---|
@@ -854,7 +945,7 @@ identical to `+1` at the first build".
 
 ---
 
-## 4. λ — A SELECTION UNDER A CAP (S1, MANAGER-RULED)
+## 4. λ — FIVE PINNED FRONTIER CONSTANTS (D103 point 4; S1's selection rule DEMOTED to the rubric that derived them)
 
 `docs/dev/cls_tree_study.md` §5.1 chooses a class matcher's sectioning by
 minimising, over contiguous partitions,
@@ -869,7 +960,37 @@ words are that λ **is** `[OPT-DIAL]`'s dial "arrived at from the algorithm
 rather than fitted to it". This section is the seam: the `[CLS-TREE]`
 design note, which follows this one, consumes it.
 
-### 4.1 What revision 1 did, and why it is replaced
+**D103's own text**: *"λ becomes five PINNED frontier constants from
+cls_tree_study's verified table."* §4.1-§4.3 below are UNCHANGED as
+ARITHMETIC — the verified frontier table, the caps, and the worked
+selection on `\p{L}` all survive exactly as revision 2 derived them — and
+they are reframed as what they now are: **THE RUBRIC that chose the five
+constants once, not a live per-class mechanism the compiler runs.** The
+five values, pinned:
+
+| position | λ | condition |
+|---|---:|---|
+| `−2` | **4** | unconditional — λ=0 is dominated at every `φ_cls` (§4.3) |
+| `−1` | **16** | pinned CONSERVATIVELY at the middle's own value, since the alternative (λ=4) is admissible only for `φ_cls ≤ 0.161` — an UNMEASURED condition. `−1` and `0` are therefore the SAME pinned constant until `φ_cls` is measured, at which point a change to `−1` alone is its own ruled diff, not an automatic promotion |
+| `0` | **16** | unconditional — derived from the size-minimal frontier point alone (§4.4), no `φ_cls` dependency |
+| `+1` | **64** | unconditional — a size BUDGET (`Z₁` = 1.30×), no `φ_cls` dependency |
+| `+2` | **256** | unconditional — a size BUDGET (`Z₂` = 2.0×), no `φ_cls` dependency |
+
+**One correction §4.1 point 3 needs, now that the constants are pinned
+rather than live.** Revision 2 said a cost-model recalibration "discharges
+automatically" because the cap test and the objective read the same
+model. That is still true of the ARITHMETIC — a recalibration would still
+move the argmin the same way it always did — but it is no longer true of
+GOVERNANCE: under D103 a recalibration is exactly "a measurement lands",
+and a measurement landing must NOT silently move a pinned cell. A future
+recalibration is evidence for a NEW proposal, re-argued by this same
+rubric and re-ratified as its own diff — never an automatic table update.
+The warning revision 1 gave (all five values need hand re-derivation on
+recalibration) turns out to have been the right OPERATIONAL answer for
+the wrong reason: not because the mechanism cannot re-derive them
+automatically, but because D103 says it must not.
+
+### 4.1 What revision 1 did, and why the selection rule was the right ARGUMENT (kept as the rubric, not the mechanism)
 
 Revision 1 assigned **five hard-coded λ constants** (0 / 12 / 16 / 64 /
 256), then discovered in its own §4.4 that a constant cannot express a
@@ -882,15 +1003,25 @@ and a standing warning that all five must be re-derived by hand if the
 study's cost model is ever recalibrated.
 
 **MANAGER-RULED (S1), and it is the general-mechanisms rule applied to
-this design's own λ row:**
+this design's own λ row — READ AS THE RUBRIC THAT PRODUCED THE FIVE
+PINNED CONSTANTS ABOVE, not as the live mechanism (D103 point 4 re-pins
+this one level up: the same lens that killed a per-axis
+`PCREC_TUNE_SET` bit in §1.3 does not exempt λ from D103's own
+pinned-contract rule — a position carrying a live cap that reselects on
+every recalibration is exactly the "cell moves because a measurement
+landed" shape D103 forbids elsewhere in this table):**
 
-> **λ IS NOT A CONSTANT PER POSITION. A DIAL POSITION CARRIES A CAP, AND λ
-> IS SELECTED — per class, by the same DP, over the same swept frontier —
-> AS THE POINT THAT BEST SERVES THE POSITION'S DIRECTION SUBJECT TO THAT
-> POSITION'S CAP.**
+> **λ IS NOT A CONSTANT PER POSITION, AND THE SELECTION ARGUMENT BELOW IS
+> HOW THE FIVE CONSTANTS ABOVE WERE CHOSEN. A DIAL POSITION CARRIES A CAP,
+> AND λ IS SELECTED — per class, by the same DP, over the same swept
+> frontier — AS THE POINT THAT BEST SERVES THE POSITION'S DIRECTION
+> SUBJECT TO THAT POSITION'S CAP.** Once selected and ratified, the result
+> is pinned; a future recalibration re-runs this argument as a NEW
+> proposal, not as a live re-selection.
 
 Four things fall out at once, and each of them was a separate open item in
-revision 1:
+revision 1 — each now describing the RUBRIC's own correctness, not a
+runtime property of the compiler:
 
 1. **There is one mechanism, not two.** The cap is not bolted beside the
    DP; the cap is the position and the DP is the solver. Revision 1's §4.4
@@ -900,14 +1031,20 @@ revision 1:
    always been.
 2. **λ=0's inversion dissolves, and Q5 with it** (§4.3). A frontier point
    DOMINATED ON BOTH AXES can never be the argmin of either objective, so
-   the selection simply never proposes it. Revision 1 needed an object-size
-   sweep to decide between λ=0 and λ=4; the selection decides it from data
-   already committed, and re-decides it the day the data change.
-3. **The recalibration warning discharges automatically.** Revision 1
-   warned that if the study's cost model is recalibrated all five λ values
-   must be re-derived. Under selection, the cap test and the objective read
-   the SAME cost model, so a recalibration moves the selection with it.
-   Nothing is hand-derived and nothing goes stale.
+   the rubric never PROPOSES it. Revision 1 needed an object-size sweep to
+   decide between λ=0 and λ=4; the rubric decides it from data already
+   committed — a proposal ratified once, at this revision, into the pinned
+   `−2` = 4 above, not a live re-decision on future data.
+3. **The recalibration warning is answered by GOVERNANCE, not by
+   arithmetic, and D103 is what supplies the governance.** Revision 1
+   warned that all five λ values must be re-derived by hand if the study's
+   cost model is recalibrated. Under the rubric the cap test and the
+   objective read the SAME cost model, so a recalibration would move a
+   LIVE selection with it automatically — which is exactly the property
+   D103 does not want in a pinned table. A recalibration is instead a new
+   measurement that argues a NEW proposal through this same rubric,
+   ratified as its own diff. Nothing is hand-derived in the ARGUMENT;
+   nothing moves SILENTLY in the CONTRACT.
 4. **`−1` stops being a hand-chosen number.** λ = 12 was revision 1's own
    "weakest number on this page" precisely because it was not a swept
    point. There is no λ = 12 any more.
@@ -954,9 +1091,10 @@ inside a match-time bound `x` gives
 | `+1` | `Z₁` | `bytes ≤ Z₁ · bytes(middle)` | 1.30× |
 | `+2` | `Z₂` | `bytes ≤ Z₂ · bytes(middle)` | 2.0× |
 
-### 4.3 THE SELECTION RULE, and what it picks on `\p{L}` today
+### 4.3 THE RUBRIC'S RULE, and what it picked on `\p{L}` (the values now pinned at §4's top)
 
-**THE RULE, stated once:**
+**THE RUBRIC, stated once — this is the argument that produced the five
+pinned constants, not a rule the compiler evaluates:**
 
 > At position `p`, over the swept frontier points, λ(p) is:
 > - at a SIZE position: **`argmin` total bytes subject to `ops ≤ κ(p)·P₀`**;
@@ -1140,35 +1278,54 @@ principle. Under S1 it is stronger still: a new kit member changes what the
 SELECTION can choose without changing the dial's surface at all, because
 the position carries a cap and not a value.
 
-### 4.7 What the selection COSTS, named rather than assumed (D77)
+### 4.7 What the selection COSTS — DISSOLVED FOR THE COMPILER BY D103's PINNING, kept as the rubric's own cost record
+
+**D103's pinning removes this section's live cost from the shipped
+compiler.** Everything below describes what a LIVE per-class selection
+under a cap would cost, which was the right question while §4.1-§4.3
+were a runtime mechanism. Under D103 the compiler never runs the
+selection at build time at all: `[CLS-TREE]` reads the pinned constant
+for the requested position (§4's table) and solves the DP ONCE, with
+that one fixed λ — the same cost as any single-λ build, and no different
+from what revision 1's five hard-coded constants would have cost. The
+six-frontier-point cost below was the rubric's OWN cost, paid once by
+this note (and by whoever re-argues a cell later), never paid per
+compile. It is kept for that reason — a future re-argument re-pays
+exactly this cost, and it is worth having named.
 
 The selection needs the DP solved at every swept frontier point, not at
-one. `cls_tree_study.md` §6 measures C discovery at the middle policy at
+one, WHEN RE-ARGUING A CELL. `cls_tree_study.md` §6 measures C discovery
+at the middle policy at
 **mean 4.19 ms / max 25.86 ms** over the 60 largest property sets, against
 the 144 ms `build/pcrec` already spends compiling that one pattern — from
 which the study concludes CONSTRAINT 2's pre-analysis cache is NOT
 triggered.
 
-**Six frontier points is up to 6× that**, which on the worst real set is
-~155 ms against 144 ms of existing compile time — i.e. it roughly doubles
-that pattern's compile cost. **That is a real number and this note does not
-wave at it.** Three things, in order:
+**Six frontier points is up to 6× that, and it was the cost of ARGUING the
+five constants above — not the cost of using them.** On the worst real
+set that argument cost ~155 ms against 144 ms of existing compile time,
+paid once by this revision (and payable again, at the same price, the
+day a cell is re-argued). Three things, in order, now answered by D103
+rather than left open:
 
-1. **The SHAPE is what S1 rules and it does not depend on the cost.** A
-   position carries a cap; λ is whatever satisfies it.
-2. **Whether the selection runs PER CLASS or once against a reference set
-   is `[CLS-TREE]`'s implementation decision, not this note's**, and it is
-   the cheaper variant if the cost matters: resolve λ once per position
-   against a reference set and apply the constant. That variant loses
-   property 2 of §4.1 (the per-class dissolution of the inversion) on any
-   set whose frontier differs from the reference's, which is exactly
-   §10's one-set limitation.
-3. **The measurement that decides it is named**: discovery time at all six
-   frontier points, over the 60 largest property sets, against the same
-   baseline §6 used. It is a re-run of an instrument that already exists
-   (`discover.c`), it costs one lane-hour, and it is owed to `[CLS-TREE]`
-   rather than to this note — because nothing here is implementable until
-   the kit is.
+1. **The SHAPE that mattered — a position carries a cap, λ is whatever
+   satisfies it — is what produced the pinned table, and S1's rule is
+   preserved as exactly that argument.**
+2. **`[CLS-TREE]`'s per-compile question is no longer "per class or per
+   reference set" — it is moot.** Each position now carries ONE fixed λ
+   (§4's table), so `[CLS-TREE]` runs the ordinary sectioning DP under
+   that one constant, per class, at the SAME cost `cls_tree_study.md` §6
+   already measured for the middle policy (mean 4.19 ms / max 25.86 ms) —
+   identical to what revision 1's five hard-coded constants would have
+   cost, and with none of §4.1's per-class dissolution of the λ=0
+   inversion lost, because that dissolution happened once, in the
+   argument, not at every compile.
+3. **The six-frontier-point measurement stays owed, but to a different
+   customer.** It is what a future re-argument of a contested λ cell
+   would cost, not a cost `[CLS-TREE]`'s shipped compiler ever pays. It is
+   a re-run of an instrument that already exists (`discover.c`), costs one
+   lane-hour, and is owed to whichever lane next re-argues a cell — never
+   to a compile.
 
 ---
 
@@ -1702,9 +1859,15 @@ This section is the PLAN; no spec file is touched by this lane.
    the full policy table (this note's §3.3 as the contract), §3.0's sign
    and unit conventions, the seven reason codes, the stamp's token set, and
    the D93 precedence rule as ruled. **The policy table lives HERE — the
-   design note is not the contract**, and §6.1a's cross-check reads its
-   expectation side from this table precisely so that the check does not
-   share a source with what it checks.
+   design note is not the contract, and D103 makes that literal: this
+   table is THE PINNED CONTRACT, a cell changes only by an explicit ruled
+   diff to THIS spec section, never by a later measurement.** §6.1a's
+   cross-check reads its expectation side from this table precisely so
+   that the check does not share a source with what it checks. The
+   design note's §3.2 (the PROPOSAL RUBRIC) is cited by reference for
+   HOW a future cell is argued, but the rubric itself does not move into
+   the spec — a caller reads the contract, an author proposing a change
+   to it reads the rubric.
 3. **Every §2 entry gains ONE policy line.** Twenty-three entries, and
    twenty of them say "not on the dial" with which reason code. This is
    deliberate volume: §7.3's lens says a central table the per-axis
@@ -1769,98 +1932,54 @@ check described in a design note and never named is a check nobody builds:
 
 ## 9. THE FRANK QUEUE
 
-**REWRITTEN to the r60 panel's REFRAMED section.** Revision 1's Q2, Q2b and
-Q3 were not decidable as posed, and must not reach Frank in that form. Q5
-dissolves under S1. Q1 graduates.
+**RESTRUCTURED BY D103.** The r60 revision left five live asks (Q1, Q2,
+Q2b, Q3, Q4) plus a dissolved one (Q5) and three unrelated ones (Q6, Q7,
+Q8). D103 point 3 collapses the five into two: Q1 CLOSES as
+ruled-on-demand, and Q2/Q2b/Q3/Q4 COLLAPSE into ONE ratification item —
+**THE FIRST-BUILD TABLE**, presented below for a single yes/no rather
+than as four separate numeric asks. Q5 stays dissolved (S1, unaffected by
+D103). Q6, Q7 and Q8 survive unchanged and are renumbered to follow.
 
-**Q1 — `φ = (φ_scan, φ_entry, φ_cls)`: THE BLOCKING MEASUREMENT, CHARTERED
-BEFORE IMPLEMENTATION.** What fraction of a matcher's run time is (a) the
-DFA scan loop, (b) per-call entry cost, and (c) class-membership probing,
-on the populations that matter? **This is no longer merely recommended.**
-B5, M7, M8 and M11 all bottom out in it: it is what converts four of the
-six moving rows out of their own regimes, what states the λ caps in ops
-units, and what lets `t_mid` speak about λ at all. **Recommendation:
-charter it as its own lane before any implementation.** It is cheap — all
-three components are isolable by the hand-twin method
-`form_char_step0.md` and `ccdiff_step0_evidence/` already use — and every
-other open number is downstream of it. **Not a ruling; a lane.**
+**1 — `φ = (φ_scan, φ_entry, φ_cls)`: CLOSED AS RULED-ON-DEMAND (D103
+point 3), not chartered as a blocking lane.** What fraction of a
+matcher's run time is (a) the DFA scan loop, (b) per-call entry cost, and
+(c) class-membership probing, on the populations that matter, is real
+evidence for a future proposal — but nothing in the table below waits on
+it. `φ` is chartered narrowly, and only, the day a specific contested
+cell needs it: `-fno-anchored-dfa`'s `−2` admission (below, EXCLUDED for
+now) and `t_mid` before `[CLS-TREE]`'s middle admission. No lane is asked
+for here.
 
-**Q2 — `x₂`, and it is a NUMBER, not the word "doubling" (B5, B6).**
-Revision 1 asked "is a doubling of match time acceptable at the extreme
-size notch". That question is not decidable as posed: five of the six
-moving rows are not measured in match time at all, and the sixth is a
-distribution straddling the threshold. **The decidable form:**
+**2 — THE FIRST-BUILD TABLE, for ONE ratification (D103 point 3, folding
+in the r60 revision's Q2, Q2b, Q3 and Q4).** The four decidable positions,
+exactly as the fix round derived them, presented as one table rather than
+as separate numeric questions:
 
-> `-fno-anchored-dfa` — the dial's largest legitimate size lever, 15.32% of
-> the artifact on 43.39% of the corpus, 10.64% of every byte pcrec emits —
-> costs **1.161× on non-matching subjects, 1.986× on matching subjects, and
-> 2.114× on the 35 short matching subjects**. Under gate 6 (admit at the
-> worst measured population) the cell requires **`x₂` ≥ 2.114**. **Is
-> `x₂` = 2.12, or is it 2.00 and the row leaves the min-size column?**
+| position | ships with |
+|---|---|
+| `−2` (`min-size`) | `[ART-SIZE]` ladder bar **0.95**, threshold **40,000**; `-fno-premul-table` **denied** (unconditional at every `φ_scan ≤ 1`, §3.3); `-fno-anchored-dfa` **EXCLUDED** — its worst measured population (2.114×) fails the working `x₂` = 2.00 by 5.7%, and rather than ratify a specific `x₂` between 2.00 and 2.114 now, the cell is left OUT pending its own on-demand A/B (item 1) |
+| `−1` (`size`) | `[ART-SIZE]` ladder bar **0.85**, threshold **80,000**; nothing else — the three `φ`-conditional cells (premul, tiered-entry, λ) stay em-dashed until their own on-demand measurement |
+| `0` (`balanced`) | **today's defaults, byte for byte** (Frank's keep-the-defaults ruling; unaffected by any of the above) |
+| `+1` (`speed`) | `--vm-entry-shape` term raised to **8,192** |
+| `+2` (`max-speed`) | **DECLARED VACUOUS**, identical to `+1` on every cell — the day either λ lands (`[CLS-TREE]`) or `s` is ruled below 1.03 (§3.6) is its become-reachable condition, and the table says so rather than leaving a reader to discover it |
 
-Two riders. **(a)** The time number is a PROXY — measured on a reverse-pass
-deletion patch, not on the shipped flag (§3.3) — and the axis's own A/B is
-cheap and owed; if Frank prefers, the ruling can wait for it. **(b)** The
-remaining rows' bounds are RATIOS conditioned on φ and are stated as such
-in §3.3, so they need no separate ruling: `x₂` = 2.00 already admits
-`-fno-premul-table` unconditionally and `-fno-tiered-entry` for any
-`φ_entry ≤ 0.246`. The other thresholds (`y`, `x₁`, `s`, `Z₁`, `Z₂`) are
-sensitivity-flat or condition-moving per §3.6 and this lane proposes
-5% / 1.10× / 1.10× / 1.30× / 2.0× without asking separately.
+Two things this table deliberately does NOT ask for, because ratifying
+the table does not need them. **The `x₂`/`x₁`/`y`/`s`/`Z₁`/`Z₂` numbers
+behind it** (2.00, 1.10×, 5%, 1.10×, 1.30×, 2.0×) are the rubric's own
+working parameters (§3.2), not separately ruled — a future re-argument of
+any cell above reopens them, ratified with that cell, not before. **The
+middle's asymmetry ratio** (the r60 revision's Q2b, `t_mid` against
+`z_mid`) stays an open rubric detail rather than a blocking ask: both
+windows already have exactly one violating shipped default in opposite
+directions (`-fno-premul-table` against `z_mid`, `-fno-cls-fold` against
+`t_mid` by ≈5×, §3.2a), neither of which this table's five cells touch,
+and `t_mid` is owed against `-fno-cls-fold`'s number before `[CLS-TREE]`
+lands regardless of how the ratio is eventually ruled. `[ART-SIZE]`'s own
+disclosed dependencies (§3.5a's declared-capacity floor, §3.5b's 167-vs-86
+population and §6.1b's ladder arm) are the table's stated price, not a
+separate ask.
 
-**Q2b — the MIDDLE'S ASYMMETRY, as a RATIO (M10).** Frank ruled the
-direction: a size optimization pays a stricter performance bar at the
-middle than a speed optimization pays a size bar. **The ruled object is the
-ratio and the queue should ask for it**, because the two numbers are not
-independently meaningful and calibrating either against today's incumbents
-moves the ruled asymmetry (revision 1's pair implied ~10×; calibrating
-`z_mid` to admit premul takes it to ~17.5×). **And BOTH windows now have
-exactly one violating shipped default, in opposite directions** (§3.2a):
-`-fno-premul-table` costs 22-25% of the artifact against `z_mid`, and
-`-fno-cls-fold` costs ×1.095 of match time against `t_mid` = 1.02 — a
-failure by ≈5×, the larger of the two, and one revision 1 never checked
-because it proposed `t_mid` and applied it to nothing. **Recommendation:
-rule the RATIO, and run `t_mid` against cls-fold's number first**, since
-cls-fold is subsumed into `[CLS-TREE]` and `t_mid` is one of the two
-parameters the kit's own middle policy will be admitted under.
-
-**Q3 — REFRAMED after the φ correction; the corroboration claim is
-WITHDRAWN (M8).** Revision 1 asked whether a nearly-empty `−1` is
-acceptable, and supported it with "the two halves of the dial agree,
-independently". **They are not independent — both read `x₁`** — and under
-§3.2's conversion `−1` is not empty but UNDECIDED: `-fno-premul-table`
-enters it for any `φ_scan ≤ 0.126`, `-fno-tiered-entry` for any
-`φ_entry ≤ 0.0246`, and λ's cell for any `φ_cls ≤ 0.161`. **So the question
-is no longer "is an empty notch acceptable" but "does `−1` ship before φ
-is measured".** Recommendation: **yes** — `−1` moves the two `[ART-SIZE]`
-ladder parameters today, which reaches 81 patterns the ladder has never
-run on, and the three conditional cells join it when Q1's lane lands. That
-is Frank's own 2026-09-04 framing ("the dial is a theoretical at this point
-and will look better with more options") arriving as a mechanism rather
-than as a hope.
-
-**Q4 — the `[ART-SIZE]` ladder fold (§3.5).** The dial sets the materiality
-bar and the threshold; K is derived per pattern. Two things revision 1 did
-not disclose and Frank should rule with: the rows' answer identity rests on
-`artifact_size_term.md` §3.3a's declared-capacity floor (§3.5a), and `−2`'s
-threshold runs the ladder on **167 patterns against today's 86** while
-turning that note's §7b zero-inhabitant pin red for a non-defect (§3.5b).
-**Recommendation: take the fold, with §6.1b's ladder arm as its price; take
-the narrower variant if the interpolation worries him** — move only the
-THRESHOLD per position, leave the bar at 0.75 everywhere, which keeps every
-dialled value measured at the cost of a smaller size lever.
-
-**Q5 — DISSOLVED by S1.** Revision 1 asked whether λ's `−2` should be 0 or
-4, given that λ=0 is dominated on both axes by λ=4 on `\p{L}`, and proposed
-resolving it with an object-size sweep of the frontier over several sets.
-**Under the selection rule a dominated frontier point can never be the
-argmin of either objective, so the selection simply never proposes it**
-(§4.3). The answer is 4, on this set, today, from data already committed —
-and it re-answers itself if the study's 3% byte-model error ever moves. The
-object-size sweep is no longer needed to decide a dial cell; it remains
-worth having as a cost-model improvement, and it belongs to `[CLS-TREE]`.
-
-**Q6 — the D93 precedence ruling (§1.2), on arguments 2-3 only (S2).**
+**3 — the D93 precedence ruling (§1.2), on arguments 2-3 only (S2, unchanged by D103).**
 Does an explicit CLI `--tune` beat a target's `tune` row?
 **Recommendation: NO — the general D93 rule stands, the file wins, with a
 loud non-fatal conflict diagnostic.** Two arguments, and revision 1's third
@@ -1874,9 +1993,9 @@ revisit-when names the right shape (an explicit loud override flag, never a
 silent precedence flip)**, and that ruling is also the trigger for §1.3's
 general explicit-set-provenance form.
 
-**Q7 — NEW (B4): the force-pair / CLI-spelling question.** "Explicit flags
-beat the dial" is RULED and is unimplementable on **five of the seven
-moving cells** — `-fno-premul-table`, `-fno-anchored-dfa` and
+**4 — the force-pair / CLI-spelling question (B4, unchanged by D103).**
+"Explicit flags beat the dial" is RULED and is unimplementable on **five of
+the seven moving cells** — `-fno-premul-table`, `-fno-anchored-dfa` and
 `-fno-tiered-entry` are deny-only with no force twin, and the `[ART-SIZE]`
 ladder's bar and threshold have no CLI spelling at all (§7.2a). **Which
 of the three options?** (1) three force twins (cheapest; the real cost is
@@ -1887,11 +2006,22 @@ the spec to "where a spelling exists". **Recommendation: (3) now, (1) when
 someone needs one** — the dial should be honest about what it does rather
 than grow five flags nobody has asked for (D77).
 
-**Q8 — does the dial's landing demand a SOLO battery (§6.1)?** D102's
-risk-tier escape hatch lets the manager demand one for an emitter-touching
-merge. This carries an `abi` event plus four new answer-identity axes.
-**Recommendation: yes, solo** — and this is the manager's call rather than
-Frank's; it is listed here so the queue is complete.
+**5 — does the dial's landing demand a SOLO battery (§6.1, unchanged by D103)?**
+D102's risk-tier escape hatch lets the manager demand one for an
+emitter-touching merge. This carries an `abi` event plus four new
+answer-identity axes. **Recommendation: yes, solo** — and this is the
+manager's call rather than Frank's; it is listed here so the queue is
+complete.
+
+**Q5, for the historical record, DISSOLVED by S1 and untouched by D103.**
+Revision 1 asked whether λ's `−2` should be 0 or 4, given that λ=0 is
+dominated on both axes by λ=4 on `\p{L}`, and proposed resolving it with
+an object-size sweep of the frontier over several sets. Under the
+rubric's own selection rule a dominated frontier point can never be the
+argmin of either objective, so it is never proposed (§4.3) — the answer
+is 4, and it is one of the five constants §4 now pins. The object-size
+sweep is no longer needed to decide this cell; it remains worth having as
+a cost-model improvement, and it belongs to `[CLS-TREE]`.
 
 ---
 
@@ -1919,13 +2049,21 @@ Named, not hidden, in the house's style.
 - **λ's frontier numbers come from ONE set (`\p{L}`)** at the per-set
   resolution, with population-wide section shares as the only cross-check.
   §4.3's selections and §4.4's derivation both rest on that single set.
-  **S1 narrows this rather than removing it**: under a PER-CLASS selection
-  the one-set limitation applies only to the CAPS' calibration, not to the
-  λ values, because each class solves its own frontier. Under the cheaper
-  reference-set variant (§4.7) it applies to both.
-- **The selection's compile-time cost is estimated, not measured** (§4.7):
-  six frontier points against a 25.86 ms worst-case single-policy
-  discovery. Owed to `[CLS-TREE]`.
+  **D103 WIDENS this limitation rather than narrowing it, and this is a
+  correction against S1's own claim.** S1 said a PER-CLASS selection
+  confines the one-set limitation to the caps' calibration, because each
+  class would solve its own frontier and the pinned VALUES would not be
+  the one-set concern. Under D103's pinning there is no per-class
+  selection any more — the five constants are fixed once, from `\p{L}`'s
+  frontier alone, and applied to EVERY class `[CLS-TREE]` ever sections.
+  The one-set limitation therefore applies to the pinned λ VALUES
+  themselves, not only to their derivation, until a second real set is
+  swept and the constants are re-argued.
+- **§4.7's six-frontier-point argument cost is estimated, not measured**:
+  ~155 ms worst-case against a 25.86 ms single-policy discovery, paid once
+  by this revision and again by any future re-argument — NOT a per-compile
+  cost (§4.7 corrects this from the pre-D103 framing). Owed to whichever
+  lane next contests a cell, not to `[CLS-TREE]`'s build.
 - **`-fno-scan-edge`'s size cost is never converted to a fraction**, and
   after r60 the row's flatness rests on that inference ALONE (§3.3, N1).
   It is cited absolutely (+364…612 B per edge-carrying machine) because the

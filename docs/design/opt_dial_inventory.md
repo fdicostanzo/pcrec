@@ -1170,10 +1170,16 @@ item's own wording: `-fno-premul-table`, `-fno-scan-edge` and
 `-fno-tiered-entry` needs `φ_entry`. So the measurement is
 **`φ = (φ_scan, φ_entry, φ_cls)`** — one instrument, three populations,
 the hand-twin method `docs/dev/form_char_step0.md` and
-`docs/dev/ccdiff_step0_evidence/` already use. The panel GRADUATED it from
-"highest-value unrun" to **the blocking measurement for the whole threshold
-apparatus**, chartered before implementation
-(`opt_dial_design.md` §9 Q1).
+`docs/dev/ccdiff_step0_evidence/` already use. The r60 panel GRADUATED it
+from "highest-value unrun" to the blocking measurement for the whole
+threshold apparatus, chartered before implementation
+(`opt_dial_design.md` §9 Q1 in revision 2). **D103 (2026-09-17) REVERSES
+that graduation as a matter of GOVERNANCE, not of measurement value**:
+`φ` is no longer blocking anything — it drops to ON-DEMAND, chartered
+only when a specific contested cell needs it (revision 3, `opt_dial_
+design.md` §9 item 1), and the note's first-build table ships without
+waiting on it. The measurement itself is unchanged and remains the
+highest-value one this row names.
 
 **NEW ITEM 8 — `-fno-anchored-dfa`'s OWN A/B (REVISION 2.1, §2.15a).**
 This row's entire time half is a proxy measured on a cost-isolation patch

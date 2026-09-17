@@ -1746,8 +1746,10 @@ append-only or historical records.
   φ_cls)`, with item 7 graduated from "highest-value unrun" to BLOCKING.
 
 - `opt_dial_design.md` — **[OPT-DIAL] STEP 1, PROPOSED; PANELED (r60) AND
-  REVISED** (rev 1 2026-09-16, lane `dialdesign`; **REVISION 2** 2026-09-17,
-  lane `dialfix`, both opus; design only — nothing under
+  REVISED, THEN RESTRUCTURED BY GOVERNANCE RULING** (rev 1 2026-09-16,
+  lane `dialdesign`; **REVISION 2** 2026-09-17, lane `dialfix`;
+  **REVISION 3** 2026-09-17, lane `dialgov`, sonnet, executing
+  `../dev/decisions.md` D103; design only — nothing under
   `src/`/`tests/`/`docs/spec/`). The dial itself: the option's spelling
   (`--tune=-2..+2` with five mnemonic aliases, the `tune` config line, the
   D93 precedence question), the allowlist-disciplined policy table across
@@ -1798,6 +1800,37 @@ append-only or historical records.
   synthetic near-cap fixture family is adopted anyway, because `n = 1` is
   not a population, and the named real artifact rides beside it as a
   control a purely synthetic family would not have.
+  **REVISION 3 (2026-09-17, lane `dialgov`) EXECUTES D103, Frank's ruling
+  on the manager's synthesis after his too-complicated/too-unpredictable
+  challenge to revision 2 — a GOVERNANCE change, not a re-derivation; no
+  verified number moves.** §3's policy table is now THE PINNED CONTRACT (a
+  cell changes only by an explicit ruled diff, never by a measurement
+  landing); §3.2's threshold rule-shape DEMOTES from an assignment rule to
+  THE PROPOSAL RUBRIC (kept in full — the windows, the per-regime `φ`
+  conversion, gate 6, the sensitivity table — as the documented way a cell
+  proposal is argued, never itself an assignment mechanism); `φ` drops
+  from the blocking measurement to ON-DEMAND, chartered only when a named
+  contested cell needs it (`-fno-anchored-dfa`'s `−2` admission, `t_mid`
+  before `[CLS-TREE]`'s middle admission); the allowlist (§3.1) is
+  unchanged. **§4 (λ) reverses S1's own framing**: the five positions
+  become PINNED FRONTIER CONSTANTS from `cls_tree_study.md`'s verified
+  table (`−2`=4, `−1`=16 conservatively pending `φ_cls`, `0`=16, `+1`=64,
+  `+2`=256), and S1's selection-under-a-cap argument DEMOTES to the
+  rubric that chose them rather than a live per-compile mechanism — which
+  also DISSOLVES §4.7's six-frontier-point compile-cost concern for the
+  shipped compiler (paid once by the argument, never per compile) and
+  WIDENS, rather than narrows, the one-set (`\p{L}`)-only limitation §10
+  already named, since the pinned VALUES now rest on that one set rather
+  than only their calibration. **§9 collapses the r60 revision's Q1/Q2/
+  Q2b/Q3/Q4 into two items** — φ closed as ruled-on-demand, and ONE
+  ratification table (the four decidable positions: `−2` = ladder
+  bar 0.95/threshold 40,000/premul denied/anchored-dfa EXCLUDED pending
+  its on-demand A/B; `−1` = bar 0.85/threshold 80,000; `0` = defaults;
+  `+1` = entry term 8,192; `+2` declared-vacuous with its become-reachable
+  condition) — with Q6 (D93 file-wins), Q7 (the force-pair question) and
+  Q8 (solo battery) surviving unchanged as separate, renumbered items.
+  See `../dev/lanes/dialdesign_report.md` § "D103 revision (rev 3)" for
+  the finding-by-finding record.
 
 - `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
   (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s
