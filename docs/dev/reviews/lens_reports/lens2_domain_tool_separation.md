@@ -84,7 +84,7 @@ three are omitted; the list is exhaustive over `src/`, `cli/`, `lib/`.
 | `src/gen/enc/enc.c` | 2 | 0 | 0 |
 | `src/core/compile.c` | 0 | 3 | 4 |
 | `cli/main.c` | 0 | **93** | 3 |
-| eleven other `src/` files | 0 | 0 | 1–9 each |
+| nine other `src/` files (`parse.c`, `dfa.c`, `ext.c`, `enabled.c`, `select_engine.c`, and four `mod_*.c`) | 0 | 0 | 1–9 each |
 
 Two facts fall straight out. **Stdio is confined to `cli/main.c` plus
 three sites in `compile.c` and eighteen in the emitters** — the library
