@@ -7012,3 +7012,40 @@ full-weekly tiers — mech's value is staleness in UNTOUCHED areas, and
 the tier is mechanism ahead of measured need (D77). Revisit-when:
 velocity is still battery-bound after a few weeks of nightly
 checkpoints.
+
+## D103 — The dial's governance: pinned-table contract, rubric-not-rule, φ on demand (2026-09-17)
+
+**Decision (Frank, 2026-09-17, on the manager's synthesis after his
+too-complicated/too-unpredictable challenge to the r60-revised STEP 1
+design):**
+
+1. **The policy table is the CONTRACT and it is PINNED.** A cell
+   changes only by an explicit ruled diff — never because a
+   measurement landed. Same `--tune=N` therefore never silently
+   produces a different switch set across releases.
+2. **The threshold rule-shape DEMOTES from assignment-rule to
+   PROPOSAL RUBRIC.** It is how a cell proposal is argued
+   consistently (manager applies it to the measurement, Frank
+   ratifies); it never fills a cell by itself.
+3. **The allowlist discipline is UNCHANGED** — no cell without a
+   cited two-axis measurement. This is the half with the proven catch
+   record (STEP 0's `shared` cells; rev 1's anchored-dfa point
+   estimate — both caught by citation discipline, not by taste).
+4. **φ drops from blocking measurement to ON-DEMAND.** The first
+   build ships the four decidable positions now; φ components are
+   chartered narrowly only when a specific contested cell needs one
+   (anchored-dfa's −2 admission; t_mid before [CLS-TREE]'s middle
+   admission). λ becomes five PINNED frontier constants from
+   cls_tree_study's verified table.
+
+**Why:** the runtime artifact is identical under both framings (a
+static table); the dispute was design-process only. Hand placement
+failed in both prior table versions; automatic assignment would let
+re-measurement migrate cells silently. The pinned-contract +
+rubric split keeps the demonstrated error-catching and deletes both
+the migration hazard and a measurement campaign whose customers are
+two cells (D77).
+
+**Revisit-when:** the table's row count grows enough that per-cell
+ratification becomes the bottleneck (the rubric is then re-considered
+as the assignment rule it was first ruled to be, with the pin kept).
