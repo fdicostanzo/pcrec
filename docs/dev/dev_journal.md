@@ -23601,3 +23601,80 @@ lanes closed and merged; the dial train's solo battery runs detached
 on ubuntubudu (trailer ~18:00) — the fresh session runs the verdict
 chain and sends I-73 (the pin + F1 + F2/F3 answers). wake.md rewritten;
 heartbeat cron dies with the session.
+
+## 2026-09-17 (sixty-seventh session) — the code review executed end to end; dial battery running; six rulings
+
+**Woke** to the dial+K59 train's solo battery already running on ubuntubudu
+(`battery_20260917_102334` @ cf0962e3, launched 10:23 EDT) and the code-review
+criteria draft awaiting Frank's ratification.
+
+**THE BATTERY (in flight at session reset):** test rc=2 (TRIAGED — stale pins,
+not the train; lane btriage), strict/axes/san/lint all rc=0, **mech running**
+(started 13:24 EDT, ~126/261 rows at 15:00, ETA ~16:30-17:00). Pinned at
+cf0962e3 on ubuntubudu; runs detached, survives this reset. Watch:
+`ssh duxevents@100.69.121.107 'tail .../battery_20260917_102334/trailer.log'`
+for `== stage mech rc=` / `== BATTERY DONE`.
+
+**btriage (triage lane, merged-pending):** the test-stage red was TWO stale
+test-side pins, verdict = cf0962e3 pin does NOT slip. (1)/(2) tests/resource
+size witnesses rescued below the cap by K59's SDR_NO_PREMUL rung (row 1
+re-witnessed at {1,13000}; row 2 flipped to an acceptance check); (3)
+tests/rxtsource C3_PASS 13708->13714 (stale from cmtfix's comment_escape.rxt,
+unrelated to k59rung). Parked lane/btriage.
+
+**THE CODE REVIEW — chartered, ratified, executed to REPORT, all parked:**
+- Criteria RATIFIED by Frank (7d444f9e) + two addenda: length loops with
+  common-semantic extraction (lens 11<->lens 1); the function rubric applies
+  generally, length dictates priority. Open items dispositioned (7->4, 10
+  separate, secondary tier next round, no installs, floor budget).
+- Tools lane `revtools`: tools/review/ metric scripts (function census 860 fns,
+  clone candidates, literal census, include graph, churn) — cited by every lens.
+- ELEVEN lens reports + the emit_vm.c SECOND PASS (EP2) all DELIVERED, parked
+  on lane/lens{1dup,2sep,3cfg,4clar,5unit,6dep,8err,9pub,10kit,11alt},
+  lane/emitpass2. Collation on lane/collate (synthesis_collation.md, 12 sources,
+  8 overlap clusters, rulings/fix-now/probed-held/follow-on registers).
+- SYNTHESIS committed on main: docs/dev/reviews/2026-09-17-code-review.md
+  (ranked, deduped, wave plan U->1->2->3->4->5, FIX-NOW list, method §5).
+- Wired coding guide `codeguide`: docs/dev/coding_guide.md (271 lines) + root
+  CLAUDE.md situation-index row + BOILERPLATE.md rule. Parked lane/codeguide.
+- Headline findings: L8-F1 (live caller-abort, K7 class reintroduced by
+  [ART-SIZE]'s Job buffers — FIX-NOW one-liner); the five INSTRUMENT-BLINDNESS
+  findings (§5, the review's strongest output — controls sharing a source with
+  what they control, on five surfaces); the emission-kit missing primitives
+  (walk ×75, prefix interp ×652, buffers ×58); EP2's anchor mechanics
+  (SAB_BEFORE is whole-file/line-agnostic — re-INDENTATION breaks anchors, not
+  relocation).
+
+**SIX RULINGS (Frank), D104-D108 + DD-8 opened, all on main (unpushed):**
+- D104: linker namespace — the 12 unprefixed exports rename to pcrec_*
+  name-by-name (nfa_* first); build-time localization refused (D2).
+- D105: emit_state_legend OOM — refuse via ctx_nomem, IMPLEMENTED BY
+  RESTRUCTURING (path -> fixed 40-int local, unbounded alloc deleted; BFS
+  scratch -> arena, bespoke failure path deleted; brief mode halves scratch).
+  Reviewed the algorithm live per Frank's rider.
+- D106 (+3 addenda): opened [DD-8] for the --emit-ir table-contract adoption
+  as a wave-1 emission-kit customer; scope RESOLVED — machine-first TSV, the
+  PROGRAM body fits columns (label|op|args|target|note) so ONE mechanism, no
+  sibling contract; --emit-ir stays DEBUG-tier; completeness measured PARTIAL
+  (class membership not serialized); prefilter/pure-DFA listing sections are
+  FUTURE (content largely exists via D105's legend); Q3 folded (column width
+  not a contract -> slot[48] truncation free in wave 2); the IR-as-consumed-
+  back-end (gcc-style, retarget Rust/C++/JS) recorded as a D77-gated DIRECTION,
+  items 2->3->4 as its path, NOT to be conflated with the debug listing.
+- D107: invert the limits detector's name-keyed filter (scan ALL numeric
+  defines; second allowlist for sentinels/enums/schema versions) — the name
+  filter has missed a live constant twice. Wave 4.
+- D108: the emission kit is built as a data-in/text-out back-end TEXT LAYER
+  with a clean walk->event->render seam, forward-compatible with the future IR
+  back-end WITHOUT building it now (Frank's non-foreclosure constraint). Wired
+  into the wave-1 charter and the DD-8 row.
+
+**Minors (manager-decided):** F2 (ART-SIZE bar) -> limits.def row, rides D107;
+P5 (namespace split) stays a standing v1 trigger.
+
+**Next session:** battery trailer -> close-out chain (merge the 14 parked
+branches, push, remote worktree cleanup, I-73 to bench). Then Frank's guided
+tour of the report, then the refactor waves (U nets first). wake.md carries the
+full merge order and the standing "never merge to main while a battery is in
+flight" note (the battery box is separate; Mac-local ruling commits did not
+touch it).
