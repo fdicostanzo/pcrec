@@ -31,6 +31,26 @@ next wave re-arguing it.
   spine sites, 48 exhaustive `AKind` switches. Read §5 before acting on
   X1: the nine `atomic.c` predicates must NOT be merged into one function,
   only their traversal extracted.
+- `lens2_domain_tool_separation.md` — LENS 2 (domain/tool separation),
+  lane `lens2sep`. The text-emission mechanism map and the ONE kit
+  proposal. Corrects the charter's own seed: the emitters do not bypass
+  `core/sb.c` — they are its two largest customers (441 + 330 `sb_*`
+  calls against 18 stdio) — so the finding is missing PRIMITIVES on top
+  of one shared mechanism, not multiple mechanisms. Census table names
+  the nine residual snprintf-only files.
+- `lens3_config_centralization.md` — LENS 3 (magic numbers / config
+  centralization), lane `lens3cfg`. Anchored to D90 (limits.def is the
+  central table) and its enforcement's shape; 7 findings + 9
+  probed-and-held, A1/A3/A4/A5 discharged. Source of the F3/F5 FIX-NOW
+  items (FNV constant + message dedup) and the D107 detector-inversion
+  evidence.
+- `lens4_clarity_archaeology.md` — LENS 4 (clarity) carrying LENS 7
+  (archaeology migration), lane `lens4clar`. Inverts the charter's
+  premise: measured tree-wide, only TWO comment blocks are multi-event
+  change logs — one of 431 lines (`emit_dfa.c:1534-1964`, 17 events)
+  and one of 31 — not a diffuse archaeology problem. 4 clarity + 3
+  archaeology findings, the migration inventory, A3 check-coupling
+  annex, 5 probed-and-held, and the ADDENDUM-2 stopping point.
 - `lens5_unit_seams.md` — **lens 5, unit-testing recommendations** (lane
   `lens5unit`, base `main` @ `7d444f9e`). **Corrects the charter's own
   premise: the repo already HAS a unit tier** — ten C programs in six
@@ -120,6 +140,14 @@ next wave re-arguing it.
   `volatile` discipline across `setjmp` backed mechanically by
   `-Wclobbered`, zero `free()` of an arena-backed pointer across 76
   sites, and zero function-local statics (library re-entry is clean).
+- `lens9_public_surface.md` — LENS 9 (public-surface tightness), lane
+  `lens9pub`. 8 findings P1-P8 + probed-and-held, headed by P1: 12
+  unprefixed exports in `libpcrec.a` (`arena_alloc`, `sb_puts`,
+  `ctx_fail`, …) — a consumer link collision, reproduced — the finding
+  D104 rules on. Also P2 (the header still calls utf8 "not yet
+  implemented"), P3 (spec quotes a 9-member `pcrec_options` where the
+  shipped struct has 19), P4 (contract limits a consumer cannot read),
+  P5 (the flat `PCREC_*` namespace, standing v1 trigger).
 - `lens10_emission_kit_charter.md` — **lens 10, emission-kit unification: the
   WAVE 1 CHARTER** (lane `lens10kit`, opus, review + measurement). Chartered
   from lens 2's mechanism map to be precise enough to brief implementation
@@ -164,6 +192,10 @@ next wave re-arguing it.
   answering it — a distinction a lane brief must keep, or it will produce a
   lane that thinks it has audited something it has only deleted.
   Evidence and reproduction: `lens10_evidence/` (own CLAUDE.md).
+- `lens10_evidence/` — lane lens10kit's five read-only measurement
+  scripts (python stdlib, run from the repo root; `count_runs.py` is the
+  base module the other four import). Own CLAUDE.md; nothing here is
+  built, run by `make`, or read by any check.
 - `lens11_function_altitude.md` — LENS 11 (Frank's function rubric), lane
   `lens11alt`. All 31 functions at 100+ code lines scored against the five
   questions, 15 findings (F1-F15) ranked MECHANICAL-first, the
