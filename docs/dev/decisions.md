@@ -7118,3 +7118,45 @@ reopens there as a deliberate design), or a new unprefixed export
 appears (the review's follow-on register carries the static-ability
 census that would catch it; until that check exists, lens 9's nm
 methodology is the manual re-check).
+
+## D105 — emit_state_legend OOM: refuse via ctx_nomem, implemented by RESTRUCTURING the allocation rather than rerouting the failure (Frank, 2026-09-17, sixty-seventh session)
+
+**Decision.** The 2026-09-17 code review (lens 8, F3) found
+`emit_state_legend` (src/gen/emit_dfa.c:3600) is the compile path's ONE
+allocation site that neither refuses nor aborts on failure — it silently
+emits an artifact without the legend, so pcrec can emit two different
+exit-0 artifacts for one input with allocator state the only difference,
+under the byte-identity gates' feet. Frank rules the (a) option — the
+compile REFUSES via ctx_nomem, consistent with K7's tree-wide rule — and
+adds an algorithm rider: review for an incremental construction that
+reduces the failure chance itself. The review (manager, same session,
+from the code) found the rider dissolves most of the problem:
+
+1. The `path` array is allocated at `maxd+1` ints where `maxd` is the
+   deepest BYTE distance — unbounded by state count (a scan edge costs
+   its whole span; `[a-z]{0,16384}` puts maxd at 16,384, the function's
+   own :3606 comment) — while rendering reads only `path[0..39]`
+   (`LEGEND_MAX_EXAMPLE`). It becomes a fixed 40-int stack array (store
+   only when the fill index is below 40); the unbounded allocation is
+   DELETED.
+2. The four BFS arrays (dist/from/via/queue, 16n bytes) move from raw
+   malloc to the Job's arena with the Ctx attached — ruling (a) lands
+   through the EXISTING general mechanism (arena failure routes through
+   ctx_nomem), the bespoke free-and-return failure path is deleted
+   rather than patched, and the frees go with it (arena frees
+   wholesale). Proportionality: 16n bytes of scratch beside an n*ncls
+   transition table means a failure here was a doomed compile anyway.
+3. Brief mode (n > LEGEND_MAX_STATES — every large machine) reads only
+   `dist`, so `from`/`via` are not allocated there: the scratch halves
+   exactly where machines are biggest.
+
+**NOT an abi event**: the emitted legend bytes are unchanged; the
+validation bar is a full-corpus emit-diff (cmtfix methodology) proving
+byte identity, plus the ordinary battery. Lands in the review's FIX-NOW
+wave with lens 8's other items. The ":3616 'a legend is never worth
+failing a compile over'" comment is superseded by this row and is
+replaced by a pointer to it in the same change.
+
+**Revisit when:** a second silent-degradation site appears (the rule is
+now zero exceptions — lens 8's probed-and-held list verified 75 of 76
+sites already conform, and F1+this row close the last two).
