@@ -1,0 +1,36 @@
+# .rxt files found: 211
+# total pattern/pattern-esc lines: 3938
+
+=== RESULTS ===
+identical:      0
+both_refuse:    2438
+newly_fixed:    0
+newly_broken:   0
+movers:         1500
+total:          3938
+
+=== MOVER DETAIL ===
+Delta histogram (bytes fixed - baseline -> count):
+  +27  x1500
+
+First 20 movers:
+  idx=0 delta=+27 baseline=35277 fixed=35304 first_diff_offset=276 pattern='a(b|c)+d'
+  idx=1 delta=+27 baseline=34437 fixed=34464 first_diff_offset=273 pattern='(b|c)'
+  idx=2 delta=+27 baseline=23158 fixed=23185 first_diff_offset=271 pattern='b|c'
+  idx=3 delta=+27 baseline=23176 fixed=23203 first_diff_offset=277 pattern='[ab]|[cd]'
+  idx=4 delta=+27 baseline=23167 fixed=23194 first_diff_offset=274 pattern='b|[cd]'
+  idx=5 delta=+27 baseline=23176 fixed=23203 first_diff_offset=277 pattern='a|b|c|d|e'
+  idx=6 delta=+27 baseline=24886 fixed=24913 first_diff_offset=278 pattern='frank|fred'
+  idx=7 delta=+27 baseline=32730 fixed=32757 first_diff_offset=295 pattern='frank|fred|brad|bobby|janet'
+  idx=8 delta=+27 baseline=22288 fixed=22315 first_diff_offset=275 pattern='f|frank'
+  idx=9 delta=+27 baseline=22988 fixed=23015 first_diff_offset=275 pattern='frank|f'
+  idx=10 delta=+27 baseline=23338 fixed=23365 first_diff_offset=279 pattern='fo|foo|fool'
+  idx=11 delta=+27 baseline=25183 fixed=25210 first_diff_offset=283 pattern='cat|car|cap|dog'
+  idx=12 delta=+27 baseline=28815 fixed=28842 first_diff_offset=283 pattern='frank|zred|brad'
+  idx=13 delta=+27 baseline=34855 fixed=34882 first_diff_offset=273 pattern='(b)|c'
+  idx=14 delta=+27 baseline=36903 fixed=36930 first_diff_offset=280 pattern='(frank)|fred'
+  idx=15 delta=+27 baseline=37141 fixed=37168 first_diff_offset=283 pattern='fra(n|m)k|frost'
+  idx=16 delta=+27 baseline=17251 fixed=17278 first_diff_offset=276 pattern='(?:a||b)'
+  idx=17 delta=+27 baseline=21861 fixed=21888 first_diff_offset=277 pattern='(?:a||b)c'
+  idx=18 delta=+27 baseline=21900 fixed=21927 first_diff_offset=281 pattern='(?:a|b||c|d)x'
+  idx=21 delta=+27 baseline=24651 fixed=24678 first_diff_offset=270 pattern='b$'

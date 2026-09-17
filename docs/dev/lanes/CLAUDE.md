@@ -650,6 +650,16 @@ never edited afterwards.
   `format_design.md` corrections the lane deliberately did NOT apply,
   each with its evidence, since the brief scoped the drive-by to SW12.
 
+- `byteid_report.md` — [K59RUNG-BYTEID] (2026-09-17, lane byteid,
+  measurement only): the corpus-wide byte-identity sweep confirming the
+  dial+K59 train (merge `cf0962e3`) moves no emitted byte beyond the
+  `RX_TUNE` stamp's own known, constant delta. 3,938 corpus pattern lines,
+  1,500 movers, every one exactly +27 bytes (the unconditional
+  `RX_TUNE "balanced"` line plus a same-length `.abi: 25 -> 26`
+  substitution), verified by full-diff inspection across the corpus's
+  whole size range, not just by size. See `docs/dev/dialtrain_byteid.md`
+  for the full memo.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the

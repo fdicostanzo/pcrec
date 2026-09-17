@@ -526,3 +526,26 @@ change.
   Does NOT edit `docs/design/opt_dial_inventory.md` itself (D80: a design
   document's own revision is its own change) — this memo is the evidence
   a follow-on revision would cite.
+- `dialtrain_byteid.md` — [K59RUNG-BYTEID] (2026-09-17, lane byteid,
+  measurement only, nothing under `src/`/`tests/`): the corpus-wide
+  emit-diff confirmation `k59rung_report.md` left OWED — does the
+  dial+K59 train (merge `cf0962e3`) move any emitted byte for an artifact
+  that already compiled at the branch point? `cmtfix_report.md`'s own
+  methodology (baseline via `git archive` of the branch point's first
+  parent, fixed = the merged tip, every corpus `pattern`/`pattern-esc`
+  line compiled by both at default flags, byte-diffed). Over 3,938
+  pattern lines (211 files): 0 identical, 2,438 both-refuse
+  (module-gated, unrelated), 0 newly-fixed/newly-broken, and **1,500
+  movers, every one of them exactly +27 bytes** — the unconditional
+  `RX_TUNE "balanced"` stamp line plus a same-length `.abi: 25 -> 26`
+  digit substitution, confirmed by full-diff inspection across the
+  corpus's whole size range (35 KB to 665 KB), not merely by the size
+  delta. Reconciles against `dialimpl_report.md`'s own `+23-28`-byte
+  §5.3a prediction and its `+31`-byte real witness (a longer, non-`rx`
+  prefix this sweep's default-prefix driver does not reach) rather than
+  re-deriving it. K59's own drop-ladder rung requires a prior
+  size-cap-refused attempt (`src/core/compile.c:1074`), which nothing in
+  this corpus reaches at default flags — corroborates
+  `k59rung_report.md`'s structural no-move argument without independently
+  exercising the rung itself. Reproduction:
+  `docs/dev/dialtrain_byteid_evidence/` (own CLAUDE.md).
