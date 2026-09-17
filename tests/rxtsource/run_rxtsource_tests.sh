@@ -1079,7 +1079,21 @@ C3_FILES=179
 # is exactly what this re-pin closes). giveup/composed/no-python-
 # expression/perr-python-accepts/own-oracle are untouched (measured 0
 # movement in all four isolated runs above) and are NOT re-pinned here.
-C3_PASS=13708
+#
+# [cmtfix re-pin, 2026-09-17, lane btriage] +6 PASS, nothing else moved --
+# the SAME gap recurring one commit later. `e0bc115b` ([O-31 F1], the DFA
+# comment-escaping fix) landed `tests/base/comment_escape.rxt` and its own
+# message says "tests/rxtsource census re-pinned +1/+2/+6", which it did
+# for CENSUS_*/RUNSH_* (211/3938/28949) but not for C3's own PASS/SKIP
+# breakdown -- caught here because the dial+K59 train's merge battery
+# (cf0962e3) is the first `make test` run after e0bc115b landed. ISOLATED
+# directly: `python3 tests/harness/verify_rxt.py tests/base/
+# comment_escape.rxt` reports `PASS=6 FAIL=0 ... SKIP=0`, all six cells
+# (two `pattern` blocks, three m/n lines each) are plain literal-escape/
+# character-class patterns with nothing PCRE2-only about them, so the
+# entire delta is PASS and no C3_SKIP_* reason moves. Reconciliation:
+# 13714+15146+89 = 28949 = CENSUS_LINES (matches the pin above).
+C3_PASS=13714
 C3_SKIP=15146
 C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=23
