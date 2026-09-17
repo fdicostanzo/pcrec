@@ -7077,3 +7077,44 @@ measurement; edge cases are placed by discussion and judgment; no cell
 placement is ever refused solely because a rubric window says so, and
 none is admitted without its measurement (the allowlist is the floor,
 the rubric is advice, the ruling is the decision).
+
+## D104 — The library's LINKER namespace: unprefixed exports are renamed `pcrec_*`, name by name; no build-time symbol localization (Frank, 2026-09-17, sixty-seventh session)
+
+**Decision.** The 2026-09-17 code review (lens 9, P1) found libpcrec.a
+exports 259 symbols against lib/pcrec.h's 3 declarations, twelve with
+no namespace prefix at all (`arena_alloc`, `arena_free`, `ctx_fail`,
+`ctx_nomem`, `sb_puts`, `sb_putc`, `sb_printf`, `sb_free`, `sb_take`,
+`nfa_has_asserts`, `nfa_has_bot`, `nfa_wrap_unanchored`) — a REPRODUCED
+duplicate-symbol link failure against a consumer defining its own
+`arena_alloc`/`sb_puts` (transcript in
+docs/dev/reviews/lens_reports/lens9_public_surface.md §2.2). No prior
+D-row ruled the linker namespace (D38 rules the flag-constant surface
+only). Frank rules option A: **rename the twelve to `pcrec_*`, landed
+NAME BY NAME** — `nfa_*` first (37 sites, one test file) as the
+pattern-prover, `ctx_fail` last (249 sites, 30 files, 8 sabotage rows
+re-aimed intent-verified) — each rename its own mechanical commit with
+the battery between, sabotage re-aim populations found by grep per the
+review's floor rule. Build-time archive symbol localization (the
+option-B shape: fix all 256 non-public exports at once in the
+Makefile) is REFUSED on three grounds: it is per-platform machinery
+against D2's plain-GNU-make ruling (Apple vs GNU binutils diverge and
+both boxes are first-class); the partial-link technique collapses
+archive-member granularity, undoing the selective-member linking lens
+6's rxt-cut measurement just valued; and it hides the over-export
+rather than fixing the names.
+
+**Scope.** The other ~244 exports are `pcrec_`-prefixed and
+collision-safe by convention; their over-export is NOT fixed by this
+row. A deliberate export-control story (localization done right, or a
+visibility regime) belongs to the v1 API-versioning event lens 9's P5
+names as its trigger — this row deliberately does not pre-empt it.
+The P5 rider rides the same wave: `PCREC_DEFAULT_FEATURES` (an
+exported data symbol, the naming rule's second unstated exception)
+renames to `pcrec_default_features`, keeping match_api.md §8.2's
+exception list exhaustive.
+
+**Revisit when:** the v1 versioning event arrives (localization
+reopens there as a deliberate design), or a new unprefixed export
+appears (the review's follow-on register carries the static-ability
+census that would catch it; until that check exists, lens 9's nm
+methodology is the manual re-check).
