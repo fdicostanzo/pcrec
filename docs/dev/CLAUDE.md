@@ -156,6 +156,27 @@ Append-only where noted; the restart/status-recovery record for the project.
   the journal TAIL remains the mandatory session-start read for current
   work; update this file at session close only when a NEW lesson class
   appears.
+- `coding_guide.md` — THE WIRED CODING GUIDE (2026-09-17, lane codeguide;
+  Frank's added deliverable at the Q1 ruling, `reviews/2026-09-17-code-review.md`
+  §3): the rules a session WRITING C under `src/`/`cli/`/`lib/` follows,
+  distilled from the twelve-lens code review. Six sections — the house
+  disciplines the review verified tree-wide (ctx_nomem routing and the
+  Job-buffer attachment rule stated as a RULE not a count; the no-`default:`
+  exhaustive switch as the `-Wswitch` alarm; `volatile` across `setjmp`; zero
+  function-local statics; the emitters' single-letter locals as house
+  convention; D90's limits.def boundary in BOTH directions), the taught
+  primitives IN THEIR CURRENT STATE (sb.c, `PCREC_MAX_EMIT_NAME_LEN`,
+  `vm_slot_expr`, the K20 spine-walk discipline, arena/Ctx ownership — each
+  marked `[wave N]` where a refactor wave will change it, so the guide never
+  instructs use of an unbuilt primitive), the emitted-text rules (abi events
+  found BY GREP, comment escaping, what the identity gates do NOT see, keep
+  columns near sabotage anchors), Frank's five-question altitude rubric with
+  the anti-perversion clause verbatim, check-writing (points at
+  `learnings.md` §3, adds the review's five new instances), and the
+  probed-and-held do-nots. **WIRED** by a root-CLAUDE.md situation-index row
+  and a `lanes/BOILERPLATE.md` line, so a writer lane reads it before its
+  first edit. Rules, not findings: when a wave lands, the `[wave N]` marker
+  is deleted and the rule restated.
 - `tt4_measurement.md` — [TT-4.1] MEASUREMENT memo (Frank's order: measure
   before any harness change to `make test`'s batched compilation).
   Stage A: a `gcc`/`cc`/`pcrec` invocation-census shim over one full
