@@ -1699,6 +1699,79 @@ append-only or historical records.
   `-fno-prefilter-collapse` are measured on both axes and REVERSE SIGN on
   time with the subject population, which a speed-vs-size ordinal cannot
   express at all.
+  **REVISION 2 (2026-09-16, lane `dialdesign`, at STEP 1)** folds in
+  `docs/dev/optdial_size_sweep.md`. Four switches leave UNMEASURED; one
+  (`-fno-anchored-dfa`) goes from pathological-population-only to the
+  LARGEST reach in the inventory (43.39% of the corpus, monotone, median
+  −15.32% of the artifact, **10.64% of all the bytes pcrec emits over its
+  own corpus**); two (`possessify`, `revdet`) get only their size half and
+  stay UNMEASURED, which the revision states rather than glosses. §3 stops
+  being a "draft policy table" and becomes a RATE table — the five-column
+  POLICY table moves to `opt_dial_design.md` §3 and lives there only, since
+  two documents carrying one table is a drift hazard this house has
+  recorded. Read it for four things. **§3.2 is the revision's real
+  finding**: the rows carry their time penalties in FOUR incommensurable
+  units (% throughput, whole-match multiplier, per-call-ENTRY multiplier,
+  materiality-bar ratio) where Frank's threshold rule is stated in one, and
+  the conversion exists nowhere in this repository — named as a
+  measurement (D77), not invented. **§3.5 is what the STEP 0 draft table
+  got wrong, and none of it because a number moved** — headed by the draft
+  naming rung `shared` in two cells, which STEP 0's OWN allowlist rule
+  forbids in STEP 0's own document (the rule was in §6, the table in §3,
+  and nothing checked one against the other). **§3.3 makes λ a row** — the
+  only one that is not a switch, and the one that ABSORBS switches rather
+  than joining them. And **§2.24/§2.25 are two axes that postdate STEP 0
+  and were never inventoried at all** (`-fno-cls-fold`,
+  `-fno-startpos-guard`), the second of which introduces a bucket STEP 0
+  lacked: STRUCTURALLY INELIGIBLE, since its two arms disagree about
+  ANSWERS on purpose, so no future measurement can ever admit it to a dial
+  whose acceptance IS answer identity.
+
+- `opt_dial_design.md` — **[OPT-DIAL] STEP 1, PROPOSED, NOT YET PANELED**
+  (2026-09-16, lane `dialdesign`, opus; design only — nothing under
+  `src/`/`tests/`/`docs/spec/`). The dial itself: the option's spelling
+  (`--tune=-2..+2` with five mnemonic aliases, the `tune` config line, the
+  D93 precedence question), the allowlist-disciplined policy table across
+  all twenty-three generation axes × five positions, the mapping from those
+  positions to λ, the stamp and its `abi` consequence, the acceptance, the
+  four standing lenses, the spec plan, and the ruling queue. **Every
+  threshold in it is marked PROPOSED FOR FRANK'S RULING**; §9 is the queue.
+  Read it for five things.
+  **§0's headline is a property of the measured population, not of the
+  numbers**: the FIRST SIZE NOTCH IS EMPTY on every discrete row, because
+  pcrec's switches have a hole in their penalty distribution between
+  `--unroll`'s ~1.00× and `-fno-premul-table`'s 1.794×, so no tier-one
+  bound below 1.794 makes `−1` differ from the middle on any discrete row.
+  **§3.2 collapses the four-units problem into ONE unknown**: the rule is
+  stated in whole-match multipliers, and a row measuring a COMPONENT
+  converts exactly as `1 + φ(m−1)`, so `-fno-tiered-entry`'s admission to
+  the min-size column is *exactly* the claim that per-call entry cost is at
+  most 24.6% of match time — a falsifiable sentence in place of a guessed
+  threshold. **§4.4 is the hardest section and its result is NEGATIVE**:
+  the λ mapping and the discrete table are consistent iff `ρ/σ` is constant
+  across positions (a ratio test checkable WITHOUT the calibration
+  constant), and they are not — because `x₂` is a hard SAFETY CAP while
+  λ=0 is a pure objective with no safety term, a structural shape
+  difference no choice of λ repairs. The repair gives the DP the same cap,
+  `ops ≤ x₂ · ops(middle)`, which `\p{L}` passes at **1.91× against 2.00×**
+  — and the note flags the agreement with `-fno-anchored-dfa`'s own
+  1.99-against-2.00 as suspicious rather than corroborating, since the two
+  share no mechanism. **§4.2 DERIVES the middle's λ** from the
+  default-middle principle plus the measured frontier (λ=16 buys 47.6% of
+  the probe ops for 0.95% of the bytes) and lands on the study's own "mid"
+  naming by a different route — and λ is the only row in the whole design
+  admitted under the middle principle prospectively rather than
+  grandfathered, since every discrete row's middle cell is today's default
+  by Frank's keep-the-defaults ruling and one of them (`-fno-premul-table`,
+  ~30% of bytes for 1.794×) fails the window. And **§6.2 states the K45
+  rule in one sentence** — no dial position may move the refusal set IN
+  EITHER DIRECTION, since a pattern that refuses at `0` and answers at `−2`
+  has gained an answer — which makes `-fno-anchored-dfa`'s min-size cell
+  admissible only as a DEPENDENCY on `[K53-SELRETRY]`'s drop ladder, and
+  requires a check the axes sweep structurally cannot be (the refusing set
+  compared as a SET of keys, never as a count, because this design's two
+  refusal hazards run in opposite directions and a count would let both
+  slip through at once).
 
 - `alt_dispatch_study.md` — **[ENG-ISL.S0]**, the alternation-dispatch study
   (2026-09-03, lane altstudy): the measurement note behind `[ENG-ISL]`'s

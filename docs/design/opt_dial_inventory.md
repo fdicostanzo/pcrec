@@ -790,7 +790,7 @@ Four notes a reader should not have to derive:
 - **`-fno-offset-skip` is SUB-MATERIAL.** Its entire mover distribution
   lives inside a two-percent band. Whether that clears a materiality floor
   is a threshold question, and the threshold is Frank's (`opt_dial_design.md`
-  §8).
+  §9 Q2).
 - **`-fno-tiered-entry`'s 5.06× is NOT a whole-match number**, and nothing
   in this inventory converts it into one. §3.2.
 - **`--engine`'s row is flat and that is the point** — STEP 0's own
