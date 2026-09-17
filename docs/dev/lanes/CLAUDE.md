@@ -1244,3 +1244,24 @@ never edited afterwards.
   batch on a first-iteration give-up; wall-cap the probe). The driver
   is the committed reproduction piece (encseam §3.1 shape + the bench
   batch loop).
+
+- `codeguide_report.md` — THE WIRED CODING GUIDE (2026-09-17, lane
+  codeguide, opus; docs only): delivers `docs/dev/coding_guide.md` (271
+  lines) plus its three wiring edits — a root-CLAUDE.md situation-index
+  row, a `BOILERPLATE.md` rule for code-writing lanes, and the
+  `docs/dev/CLAUDE.md` entry — distilling the 2026-09-17 twelve-lens code
+  review into rules a session writing C follows. Read the report for its
+  CITATION VERIFICATION table (all eleven `file:line` cites opened on the
+  lane's own tree rather than copied from a report; one corrected) and for
+  three findings: the guide states the CURRENT `abi` value deliberately,
+  accepting a known drift point the D76/D94 grep sweep will find, because
+  a writer needs to know what to grep for; TWO of the review's rules have
+  no home in the tree's own comments and this guide is now their only one
+  (EP2's finding that no byte-identity gate reads the `--emit-ir` listing,
+  and `replace.py`'s whole-file/line-agnostic anchor matching, which makes
+  verbatim relocation free and RE-INDENTATION the thing that breaks an
+  anchor); and the charter's comment-escape rule is narrower than the
+  incident that produced it — lane `cmtfix` found TWO hazards, `*/` and
+  `/*` (gcc `-Wcomment` under the harness's own `-Werror` `GENCFLAGS`),
+  the second reachable with no `*/` anywhere in the file, so the guide
+  states both.
