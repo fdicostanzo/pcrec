@@ -44,5 +44,11 @@ effort / blast radius), A5 (cite the metric artifact under
   treats as elsewhere. Also: the non-emitting passes must NOT move to
   `src/opt/` — `src/core/internal.h:5412-5418` rules the split, and
   `Vm` is 364 lines of file-private state.
+- `emitvm_evidence/` — that report's six reproduction scripts (python3
+  stdlib + bash, no installs): the anchor extractor and locator, the
+  per-candidate anchor ranges, the re-indent sensitivity count, the layer
+  table and the per-function emit/compute census. See its own CLAUDE.md,
+  which also names the one piece that is judgment rather than measurement
+  (the layer boundaries are a hand list derived from the source's banners).
 
 Maintenance: add a row per lens report as it lands.

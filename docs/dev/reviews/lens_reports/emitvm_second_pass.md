@@ -10,7 +10,9 @@ where lens 1 stopped.
 
 Everything numeric below was re-derived by this lane at `7d444f9e` from the
 file itself and from `tests/mech/sabotages/`, never copied from another lens
-report. Where a number disagrees with a prior report, the disagreement is
+report; the six scripts that produce it are archived at
+`emitvm_evidence/` (own CLAUDE.md) so every table here regenerates at a later
+commit. Where a number disagrees with a prior report, the disagreement is
 stated and the instrument difference named — lens 10 §2.4's warning that
 "every buffer count differs by instrument" turned out to apply to the anchor
 counts too.
@@ -458,7 +460,9 @@ specifies — the four standing identity gates plus a full-corpus emit-diff on
 `SAB_FILE`/`SAB_FILE2` naming `emit_vm.c` yielded its `SAB_BEFORE` text; each
 was located by exact string search in `src/gen/emit_vm.c` at `7d444f9e` and
 mapped to a census function. **94 anchor records found, 0 NOT-FOUND, 0
-straddling a candidate boundary.**
+straddling a candidate boundary.** Reproduction:
+`emitvm_evidence/` (own CLAUDE.md) — `extract_anchors.sh` then
+`locate_anchors.py`, `anchors_per_candidate.py`, `reindent_sensitivity.py`.
 
 **Reconciling the three numbers in circulation, all of which are right at
 their own resolution:**
