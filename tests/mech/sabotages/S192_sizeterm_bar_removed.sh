@@ -9,6 +9,19 @@
 # counts (§3.4), so a 3 % size win is not worth taking — and removing it makes
 # the term take every improvement however small.
 #
+# RE-ANCHORED 2026-09-17 ([OPT-DIAL], lane dialimpl): the 75 that used to sit
+# as a literal in the `if` below is now `SIZE_TERM_BAR_DEFAULT` (still 75,
+# still beside `size_term_choose`, `src/core/compile.c`) and the function
+# reads a `bar` PARAMETER instead of the literal, because `--tune=N` moves
+# the bar (`docs/spec/tuning.md` §5.4: 95 at `-2`, 85 at `-1`, 75 -- the same
+# default, unmoved -- at `0`). The row's INTENT is unchanged: the plant still
+# removes the bar entirely, so the argmin rung is taken however small the
+# saving, regardless of which value `bar` was resolved to. Nothing about
+# WHERE the plant is visible moves either -- the reach probe below compiles
+# at the dial's OWN default position (`balanced`, `bar` resolving to the
+# same `SIZE_TERM_BAR_DEFAULT` 75 the pre-dial build always used), so
+# [OPT-DIAL] changes no cited figure in this row.
+#
 # WHERE THE PLANT IS VISIBLE, AND WHY THAT IS EXACTLY ONE PLACE. The bar can
 # only be observed where it DECLINES, and a decline is invisible from the
 # outside: the artifact is simply the one the caller's own options produce.
@@ -49,5 +62,5 @@ SAB_REACH_EXPECT="#define RX_UNROLL_K_WHY \"size-model\""
 SAB_REACH_POP="tests/codegen/run_size_term.sh|RESCUE=|1
 tests/codegen/run_size_term.sh|DPCREC_SIZE_TERM_THRESHOLD=20000|1"
 SAB_COUNT=1
-SAB_BEFORE='    if (best != 0 && total[best] * 100 <= total[0] * 75) sel = best;'
+SAB_BEFORE='    if (best != 0 && total[best] * 100 <= total[0] * (size_t)bar) sel = best;'
 SAB_AFTER='    if (best != 0) sel = best;   /* SABOTAGE S192 */'
