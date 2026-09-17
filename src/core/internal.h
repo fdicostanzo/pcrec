@@ -1031,6 +1031,20 @@ struct Ast {
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
 static inline bool cls_has(const uint8_t *b, unsigned c){ return (b[c >> 3] >> (c & 7)) & 1u; }
 
+/* ---- FNV-1a 32-bit fold (L3-F3, 2026-09-17 code review) ----------------
+ * The published FNV-1a constants were open-coded at 9 sites in two files
+ * (src/ir/dfa.c's state-interning `dhash`, src/opt/minimize.c's signature
+ * hash) with nothing naming the algorithm. Both fold to the same
+ * init/xor/multiply shape; this pair is that shape, not a new one — the
+ * arithmetic and evaluation order are unchanged, so this is byte-preserving
+ * (neither hash's VALUE reaches an emitted artifact: dfa.c's own comment
+ * says the hash picks a probe sequence, never a state number). A caller
+ * needing a salted term (dfa.c's per-class-view salt) still open-codes the
+ * xor/multiply around `fnv1a_32_mix` — the salt is not part of FNV-1a and
+ * must not be folded into this pair. */
+static inline uint32_t fnv1a_32_init(void) { return 2166136261u; }
+static inline uint32_t fnv1a_32_mix(uint32_t h, uint32_t v) { h ^= v; return h * 16777619u; }
+
 /* ---- [M5.0 stage 1] THE CODE-POINT INTERVAL SET (src/core/cpset.c) --------
  *
  * The `A_CLASS` payload's builder and its readers. `cpset.c`'s header carries

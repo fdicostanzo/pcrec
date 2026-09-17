@@ -127,11 +127,9 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         int next = 0;
         for (int i = 0; i < n; i++) {
             state_sig(d, part, i, sig, has_end);
-            uint32_t h = 2166136261u;
-            for (int k = 0; k < siglen; k++) {
-                h ^= (uint32_t)sig[k];
-                h *= 16777619u;
-            }
+            uint32_t h = fnv1a_32_init();
+            for (int k = 0; k < siglen; k++)
+                h = fnv1a_32_mix(h, (uint32_t)sig[k]);
             size_t hi = h & (hcap - 1);
             for (;;) {
                 int rep = htab[hi];

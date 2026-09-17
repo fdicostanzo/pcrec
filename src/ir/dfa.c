@@ -296,10 +296,17 @@ static void *arena_regrow(Arena *ar, void *old, size_t oldsz, size_t newsz)
     return p;
 }
 
+/* The FNV 64-bit prime, used below at both sites as a plain Knuth-style
+ * multiplicative-hash multiplier (a single multiply-and-shift, never the
+ * xor/multiply FOLD `fnv1a_32_mix` implements) -- named so a reader does
+ * not have to guess whether the specific value is load-bearing (it is,
+ * mildly: it is odd and well-distributed) or arbitrary (L3-F3). */
+#define PCREC_HASH64_MUL 1099511628211ull
+
 static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
 {
     uint64_t k = ((uint64_t)(uint32_t)parent << 32) | (uint32_t)loop;
-    size_t i = (size_t)((k * 1099511628211ull) >> 20) & (t->tabcap - 1);
+    size_t i = (size_t)((k * PCREC_HASH64_MUL) >> 20) & (t->tabcap - 1);
     while (t->tab[i] >= 0 &&
            !(t->v[t->tab[i]].parent == parent && t->v[t->tab[i]].loop == loop))
         i = (i + 1) & (t->tabcap - 1);
@@ -380,7 +387,7 @@ static void pmemo_next(PMemo *m)
 
 static size_t pmemo_slot(const PMemo *m, uint64_t k)
 {
-    size_t i = (size_t)((k * 1099511628211ull) >> 20) & (m->cap - 1);
+    size_t i = (size_t)((k * PCREC_HASH64_MUL) >> 20) & (m->cap - 1);
     while (m->gen[i] == m->g && m->key[i] != k) i = (i + 1) & (m->cap - 1);
     return i;
 }
@@ -849,19 +856,16 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
  * different views from cancelling. */
 static uint32_t dhash(const DView *up, int eolvar, int endvar)
 {
-    uint32_t h = 2166136261u;
+    uint32_t h = fnv1a_32_init();
     for (int u = 0; u < UPC_N; u++) {
-        for (int i = 0; i < up[u].nlist; i++) {
-            h ^= (uint32_t)up[u].list[i];
-            h *= 16777619u;
-        }
-        h ^= (uint32_t)up[u].accept + 0x9e37u + (uint32_t)u * 0x2545u;
-        h *= 16777619u;
+        for (int i = 0; i < up[u].nlist; i++)
+            h = fnv1a_32_mix(h, (uint32_t)up[u].list[i]);
+        /* per-view salt, not part of FNV-1a — kept open-coded, internal.h's
+         * fnv1a_32_mix header says why. */
+        h = fnv1a_32_mix(h, (uint32_t)up[u].accept + 0x9e37u + (uint32_t)u * 0x2545u);
     }
-    h ^= (uint32_t)(eolvar + 2);
-    h *= 16777619u;
-    h ^= (uint32_t)(endvar + 2);
-    h *= 16777619u;
+    h = fnv1a_32_mix(h, (uint32_t)(eolvar + 2));
+    h = fnv1a_32_mix(h, (uint32_t)(endvar + 2));
     return h;
 }
 
