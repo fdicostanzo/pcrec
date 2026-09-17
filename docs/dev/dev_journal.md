@@ -23589,3 +23589,15 @@ with 500-line functions; comment ARCHAEOLOGY as the real comment
 problem; multiple coexisting text-emission mechanisms; the parse tier
 healthy) awaiting Frank's personal ratification; tools = repo-owned
 metric scripts, no system installs without his ok.
+
+**SESSION CLOSE (~15:1x EDT, Frank's reset order).** F3 round 2
+(f3search) closed the last O-31 finding before the bell: ONE budget
+per search call, give-up in 2.5-2.8s on the bench's exact subject at
+both pins — their 60s alarm was catching a 200-iteration probe batch
+re-paying the per-call give-up (~540s); no pcrec change, bench-side
+batching fix recommended and relayed live. Lens 11 (Frank's
+function-altitude rubric, verbatim) added to the criteria draft. All
+lanes closed and merged; the dial train's solo battery runs detached
+on ubuntubudu (trailer ~18:00) — the fresh session runs the verdict
+chain and sends I-73 (the pin + F1 + F2/F3 answers). wake.md rewritten;
+heartbeat cron dies with the session.
