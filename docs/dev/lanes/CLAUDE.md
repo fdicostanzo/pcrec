@@ -1083,3 +1083,35 @@ never edited afterwards.
   per-switch memo and `docs/dev/optdial_size_sweep/` for the reproduction
   pieces. Does not edit `docs/design/opt_dial_inventory.md` itself (D80).
 
+- `dfam12_report.md` — [LIM-2]/dfamin M1+M2 (2026-09-16, lane dfam12,
+  sonnet; measurement only). M1 (candidate C's paper-partition-rule yield)
+  was already fully measured by m1part (2026-09-04); this lane adds ONE
+  new population m1part's own force-includes did not cover — K25's own
+  chain shapes (`a{0,N}`/`(?:abcdefghij){N}`) — and finds ZERO yield
+  anywhere on it (raw_n == min_n on every row; these are strict sequential
+  chains with no redundancy for any candidate to find). M2 (candidate B's
+  dominance prize) was DORMANT since 2026-09-04 and is built fresh here as
+  a real, measurement-only `[PROBE-M2]` edit to `src/ir/nfa.c`/`src/ir/
+  dfa.c`/`src/core/internal.h` (tags each `X{m,n}` tail-loop copy's NFA
+  nodes, prunes a closure's position list the instant it is built, gated
+  on `getenv("PCREC_PROBE_M2")`, byte-identical by default — measured, not
+  argued). Real but NARROW over the shipped corpus (14.3% of 1,232 rows
+  touched, 4.0% see raw-state relief, aggregate K7 relief 4.6%), rich and
+  MIXED on `tests/counterk/counterk.rxt` (raw state count roughly halves
+  on some rows; K7 charge alone drops up to ~2,000x on others with raw
+  count UNCHANGED — two separable wins), ZERO on K25's chain shapes for
+  the same structural reason M1 finds zero there, and — the sharpest
+  finding — a REGRESSION on the study's own chartering witness: the K18
+  census pattern goes from a clean 27,575-state compile to a hard refusal
+  under the stand-in, exactly the open-loop-context brittleness
+  `dfa_online_minimization_study.md` §4.3 (B2) predicted, now measured
+  concretely. Read the memo (`docs/dev/dfamin_m1m2.md`) §8 for the lane's
+  own B-vs-C read: neither measurement justifies building either candidate
+  now, and a real verdict on B needs the general context-aware simulation
+  preorder (never built here) plus the cross-product safety corpus §4.3
+  already names as a precondition. The probe is committed SEPARATELY
+  (not reverted) per the OPT5M2-PROBE precedent's second option, since
+  `studies/lim2_m2/`'s harness links its `extern` counters directly — see
+  that directory's own CLAUDE.md for what happens to it once the manager
+  drops the probe commit at merge.
+
