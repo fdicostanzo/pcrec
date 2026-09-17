@@ -226,10 +226,42 @@ echo
 # prefilter, have nothing to collapse and refuse at the default untouched,
 # which is why they carry no flag.
 size_moved=(
-    '(?:[a-z][0-9]){1,8000}:1065432:'
-    'a{5,25000}:1104674:-fno-scan-edge -fno-start-pinned'
+    '(?:[a-z][0-9]){1,13000}:1034779:'
     '(a|b){5,30000}:1335297:-fno-scan-edge -fno-prefilter-collapse -fprefilter -fno-start-pinned'
 )
+# [K59RUNG] 2026-09-17 (lane btriage, triage of the dial+K59 train's own
+# merge battery, cf0962e3) — ROW 1 MOVED AGAIN, and ROW 2 IS GONE FROM THIS
+# LOOP ENTIRELY. `[K59-PREMUL]`'s drop ladder (docs/dev/known_issues.md K59,
+# `src/core/compile.c`'s `SDR_NO_PREMUL` rung) is a SECOND automatic retry on
+# ANY emitted-size-cap refusal whose artifact is DFA-engine and still carries
+# a premultiplied transition table — unconditionally, at every `--tune`
+# position, not only `min-size` — so it fires here exactly as it fires on
+# K59's own witness. `(?:[a-z][0-9]){1,8000}` (no flags) now compiles at
+# 634,778 bytes (`the emitted-size cap forced a smaller artifact: dropped
+# the premultiplied DFA transition table`, MEASURED); `{1,13000}` still
+# reaches both rungs and refuses at 1,034,779 — the CAP still works, the
+# WITNESS stopped reaching it, the same sentence every prior event in this
+# file has needed.
+#
+# `a{5,25000}` (row 2, `-fno-scan-edge -fno-start-pinned`) has NO larger
+# witness in this loop's shape: the rung is scoped to `fit.chosen ==
+# ENGM_DFA` alone (row 3 keeps its old 1,335,297-byte refusal untouched
+# because `-fprefilter` forces the VM engine, which the rung structurally
+# cannot reach), and `a{5,N}`'s single-byte-class CHAIN is exactly K25's
+# pathological minimization shape — MEASURED: raising N past ~31,500 under
+# these same deny flags moves from "refuses at ~955-971 KB, still under the
+# rescued size" straight into 20+ second single-compile stalls with no
+# refusal reached (K25, not this row's own defect), and two substitute
+# shapes tried under the identical flags (a two-position alternating chain
+# at the same order of N; two independent `{5,16000}` chains concatenated)
+# either hit the SAME slow zone or fell out of the DFA engine before ever
+# reaching the byte cap (`auto route's DFA attempt exceeded the work
+# budget`). No safe default-reaching witness was found in this budget, so
+# row 2 is retired from the refusal loop and re-pinned as an ACCEPTANCE
+# below instead, following the exact precedent this file already used for
+# [OPT-4.1]'s nullable twin and [OPT-4.2]'s tripwire flip: a mechanism that
+# generally rescues a shape does not leave that shape asserting nothing,
+# it flips what the shape asserts.
 # [CC-DIFF] STEP 1, 2026-09-03 — ROWS 2-3 MOVED AGAIN, and the mechanism is a
 # THIRD one: the UNIFORM-TABLE FOLD. `a{0,25000}` and `(a|b){0,30000}` both
 # have MIN 0, so EVERY reachable state of their automaton accepts (a prefix
@@ -345,6 +377,29 @@ for entry in "${size_moved[@]}"; do
         bad "'$pat' still refused with --max-emit-bytes=9000000 (rc $rc): $log"
     fi
 done
+
+# [K59RUNG] `a{5,25000} -fno-scan-edge -fno-start-pinned`'s OWN NEW DEFAULT,
+# PINNED FROM A RUN — the comment above the loop names why this row left
+# it. MEASURED: 769,836 bytes (was 1,104,674), rung 2's own diagnostic note
+# naming the dropped premultiplied table, and RX_ENGINE_SEL still names an
+# ordinary DFA route (the rung is a size-term retry, not an engine change —
+# unlike [OPT-4.1]/[OPT-4.2]'s VM-side rungs, there is no distinct
+# RX_ENGINE_SEL value for this one to check, exactly [K59-PREMUL]'s own "no
+# force flag, no new gate" design). A compiler that stopped taking this rung
+# would make this cell refuse again — its own inverse of the loop above.
+out="$WORKDIR/o.c"; rm -f "$out"
+log="$("$ROOT_DIR/scripts/watchdog" -l "k59premul a{5,25000}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -o "$out" 'a{5,25000}' 2>&1)"
+rc=$?
+if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DFA transition table'; then
+    sz=$(wc -c <"$out" | tr -d ' ')
+    if [ "$sz" -eq 769835 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 769835 bytes (was 1104674 before the rung existed) — the cap still works, this witness no longer reaches it"
+    else
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 769835 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+    fi
+else
+    bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"
+fi
 
 # [OPT-4] THE THIRD SHAPE'S NEW DEFAULT, PINNED FROM A RUN. Without this the
 # only record that `(a|b){0,30000}` stopped being oversize would be the
