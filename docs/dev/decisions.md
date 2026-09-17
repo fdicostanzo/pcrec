@@ -7268,3 +7268,18 @@ Frank's five follow-ups at the DD-8 opening, recorded:
    trigger (a second back-end target, or the workload-division actually
    needed), never speculatively. Recorded as direction; a design note is
    its charter when the trigger appears.
+
+## D106 ADDENDUM 2 — --emit-ir stays a DEBUG tool; multi-target back-end (Rust/C++/JS) recorded as an undetailed future direction (Frank, 2026-09-17)
+
+Frank's refinement of item 5 above: `--emit-ir` stays a DEBUGGING-level
+tool — it is NOT being elevated into the lossless IR contract, and the
+completeness gap (item 2) is fine to leave as-is for a debug listing.
+SEPARATELY, the retargeting value is real: a future effort could split
+the chain so a back-end consumes an internal representation and emits
+**Rust, C++, or JavaScript** instead of (or beside) C. Recorded as a
+direction only, deliberately UNDETAILED and D77-gated — no design, no
+plan row, no IR-format work now. The trigger is a concrete second-target
+need; when it appears, a design note is its charter. Note the split this
+implies is a REAL internal IR consumed by a back-end (item 5's
+inversion), which is a different artifact from today's debug `--emit-ir`
+byproduct — the two should not be conflated.
