@@ -1064,6 +1064,39 @@ never edited afterwards.
   slip through at once). §4 is the method note on where the percentages
   came from and which denominator the threshold rule uses; §6 is the
   seven-item Frank queue. `make strict` GREEN; nothing owed.
+- `dialimpl_report.md` — [OPT-DIAL] THE IMPLEMENTATION (2026-09-16/17, lane
+  dialimpl, opus): `--tune=N` and its five aliases, the pinned policy table
+  (`src/core/tune.c`), the `tune` config directive with D93's file-wins
+  precedence, the `<PREFIX>_TUNE` stamp, abi 25 -> 26, six checks, three
+  sabotage rows and the D80 spec delta. **Read §1 first: the RATIFIED `−2`
+  cell violates the design's own eligibility gate, and the check the design
+  chartered found it on its first run.** `--tune=min-size` COMPILES
+  `[^\p{C}\p{M}\p{P}]`, which the other four positions refuse at
+  `PCREC_MAX_EMIT_BYTES` — a refusal-set move, which §6.2 forbids in either
+  direction. The cause is `-fno-premul-table`'s unconditional `−2` denial,
+  verified independent of the dial (the bare flag does the same thing at the
+  identical byte count), and the reason the table missed it is that **§3.1's
+  gate 2 was asked of three rows and never of that one**: its citation argues
+  `y`, `x₂` and `φ_scan`, the size and time gates, with the refusal gate
+  simply absent. The general form is worth more than the cell — *any size
+  lever large enough to matter can rescue a pattern the caps refuse, so gate 2
+  is a question every size-side cell must be asked*. Filed as **K59** with
+  three dispositions, all Frank's, rather than narrowed by the lane (k49fix's
+  precedent); the corpus population is ZERO, which is exactly why the design
+  bought the synthetic near-cap family and why with no F3 the hazard would
+  have shipped unobserved.
+  Also worth reading for four smaller findings. **The design's §5.3a manifest
+  list is short by two** (it names ten `EMITTED_BYTES` rows; the file carries
+  twelve), and **the named real witness moved +31 bytes where the design
+  predicted 23-28** — its prefix is longer than `rx`, which is the design's own
+  "compute the delta PER READER" instruction catching something. **A check's
+  FAILURE MESSAGE is a second, undeclared claim about the space of causes**,
+  found by this lane's own failing-direction validation: two arms went red
+  blaming the WITNESS while the TABLE was wrong — `w23impl_report.md`'s
+  generalisation met from the other side. And **the mech arm's `${f:-1}`
+  default reads a MISSING suite log as DETECTED** rather than as ANOMALY,
+  which is pre-existing across every arm and cost this lane one false
+  DETECTED before the suite was committed.
 - `dialsweep_report.md` — [OPT-DIAL] §7 SIZE SWEEP (2026-09-15, lane
   dialsweep, sonnet; measurement only, nothing under `src/`/`tests/`).
   Eight full-corpus passes (baseline + the six switches §7 names plus one
