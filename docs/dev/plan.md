@@ -1117,6 +1117,46 @@ spine, not before):
   where full PCRE semantics + AOT beats both the subset engines (no
   captures/templates) and pcre2 (runtime template interpretation)
 
+## The 2026-09-17 code-review refactor (Frank, 2026-09-18: fix-now, then the waves, in order; the guided tour happens AFTER all refactoring)
+
+Authority: `docs/dev/reviews/2026-09-17-code-review.md` (the synthesis — §1
+fix-now order, §3 wave plan, §4 rulings all made: D104-D108 + DD-8). Two
+method rules bind every wave brief (synthesis §3): anchor populations are
+FLOORS re-grepped on the wave's own tree; re-INDENTATION breaks anchors, not
+relocation — price "does the moved text keep its column". Checkpoint battery
+between waves (D102); box slots handshake with the bench.
+
+- [REVW.FIX] STATE:started — the FIX-NOW pile, synthesis §1 items 1-10 in
+  its landing order (L8-F1 first; L1-X2 the pilot, last). D105/Q2 already
+  landed at the ruling. Lane fixnow.
+- [REVW.U] STATE:not-started — wave U (nets first): L5-R0 name-the-unit-tier,
+  L5-R2 sat-arith agreement check, the allocation-failure injector (M2,
+  LOCAL, L5's `-include`+BUILD_DIR shape, acceptance = red on F1 unrepaired
+  — build against a pre-fix tree or revert-in-worktree), L8-F6(a)/(b)/(c).
+- [REVW.1] STATE:not-started — wave 1 (emission kit, outer): L10 stage 0
+  (long-prefix full-corpus sweep + irsb byte-neutrality arm + listing-reach
+  census) then stages 1-2. Template layer CLOSED. **D108 binds**: data-in/
+  text-out primitives, clean walk->event->render seam, IR-back-end
+  forward-compatible without building it.
+- [REVW.2] STATE:not-started — wave 2 (emit_vm.c interior): EP2's 16-step
+  sequence authoritative (E1 `vm_slot_ref` first), fragment retirement under
+  the REPAIRED floor (58/66, three sizing categories; emit_dfa.c
+  third-category census first). X8 rides stage 3 (M1). DD-8's --emit-ir
+  adoption rides this wave. Q3 folded (D106 add.3): slot[48] truncation free.
+- [REVW.3] STATE:not-started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
+  (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
+  cut (2 files, 0 anchors), L4-dump relocation rider, internal.h
+  declaration-grouping (split deferred). M4: no compile.c move.
+- [REVW.4] STATE:not-started — wave 4 (CLI+config): the cli_parse table
+  (L11+L2+L1-X10 one item, M3), mode mutual-exclusion written once, D107
+  filter inversion, F2 bar->limits.def; X9/axes.def PROPOSED to Frank, not
+  built (its A3 cost deletes two checks — design event).
+- [REVW.5] STATE:not-started — wave 5 (public surface): L9 §8 order; D104
+  renames name-by-name (nfa_* first, ctx_fail last); P3/P6 spec hunks may
+  ride any earlier wave's D80 batch.
+- [REVW.A1] STATE:not-started — LAST: L4-A1 abi-log reconciliation as its
+  own change (three drifting homes, two transitions recorded nowhere).
+
 ## Design-debt ledger (from R1; resolve before the milestone that hits each)
 
 - [DD-2] STATE:not-started — VM engine match/step limits (with M4 design) (R1 A-8). DOWNGRADED by D22: adversarial patterns are out of scope, so this is a ROBUSTNESS feature (a pathological pattern should fail honestly rather than hang), NOT a security boundary, and it must not be designed as one or traded against execution speed. AMENDED 2026-08-14 (D42.6): the row names TWO bounds — the step budget (a step = one backtrack resumption, counted only at the fail label) AND the backtrack-frame/trail capacity that allocation-freedom forces — different failures, different diagnoses (RX_ERR_STEPS vs RX_ERR_FRAMES on the search entry; −1 on match-here per D42.3). Design: engine_m4.md §4
