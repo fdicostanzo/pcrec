@@ -52,7 +52,7 @@ easy stuff first.
   (below) where one applies; a "this is repeated" claim cites the
   clone-detector row; a "too long" claim cites the census row.
 
-## The ten lenses (one opus lane each; Frank's 1-6, manager's 7-10)
+## The eleven lenses (one opus lane each; Frank's 1-6 + 11, manager's 7-10)
 
 1. **Semantic duplication / missing libraries** (Frank #1). Beyond
    textual clones: separable semantic operations — error paths, text
@@ -110,6 +110,32 @@ easy stuff first.
     everything sits on it, and one kit taught once makes waves 2..n
     cheaper. May fold into 2 at Frank's edit.)
 
+11. **Function composition & altitude** (Frank, 2026-09-17, verbatim
+    framing). C functions target a code-line limit — the rule of
+    thumb is "fits on a screen" — BUT stated with its own warning:
+    *"this is the kind of rule that can be perverted into doing
+    violence against good design. It's a tool that can be used for
+    good and evil."* So length is a TRIGGER, never a verdict: a
+    function over N lines (N ≈ a screen; the census supplies the
+    over-N population — emit_vm.c alone has functions at 300-527
+    lines) gets reviewed against five questions:
+    1. Is all the code at the RIGHT LEVEL — not too detailed
+       (extract it) and not too general? A function's body should
+       sit at roughly ONE semantic level.
+    2. Is it all part of the same simple semantic purpose — and is
+       that purpose clear from the NAME?
+    3. Is it appropriately code-driven vs DATA-driven for what it
+       does (a switch ladder that should be a table, or a table
+       that should be code)?
+    4. Are variations LOOPED rather than inlined N times?
+    5. Are optimizations weighed — never taken at the expense of
+       clarity and simplicity unless the cost is clearly understood,
+       and *"if the code can't explain itself the comments should."*
+    A long function that passes all five STAYS LONG, and the finding
+    says so (the anti-perversion half). The editing principle governs
+    the whole lens: *"Editing is equally as important as writing. Cut
+    away everything that is not the elephant."*
+
 ## Metric artifacts (built first, by the tools/inventory lane)
 
 Repo-owned python-stdlib scripts under `tools/review/` (no system
@@ -126,7 +152,7 @@ insufficient.
 
 1. Frank edits/ratifies THIS DOCUMENT.
 2. Tools/inventory lane builds the metric artifacts (sonnet).
-3. Ten lenses launch (opus, read-only, 2-3 at a time vs the box and
+3. The lenses launch (opus, read-only, 2-3 at a time vs the box and
    token budget), each citing metric artifacts per A5.
 4. Manager synthesis: ONE report (docs/dev/reviews/YYYY-MM-DD-
    code-review.md), findings deduped across lenses, ranked per A4,
