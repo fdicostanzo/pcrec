@@ -6565,6 +6565,50 @@ is spelled `(?&*=name)`, not `*.name` — consistent with `site=name`: the
 left of `=` is the destination scope and `*` is the caller's own. Owes
 the §1.5 libpcre2-refusal measurement before adoption, like `site=`.
 
+### D94 addendum (2026-09-16, from lane battriage's triage of the 2026-09-15 W23 merge battery)
+
+D94's original 2026-09-01 lesson was that the abi-bump re-pin ritual's
+site list is "every reader of the number, found by grep" rather than a
+hand-enumerated checklist — because a hand-enumerated four missed a
+fifth reader (docs/spec/match_api.md's own "abi is N" sentence). The
+grep half of that fix has a gap of its own, found live rather than by
+inspection: `e1bf0025`'s already-ratified `[PORTFIX]` fix (the
+gcc-vs-clang21 label-declaration fix, abi 24→25) re-pinned every site
+its own grep found by searching for the literal old abi digit and the
+two known abi-citing strings (`.abi = 24`, `ABI_EXPECT=24`, the
+`match_api.md` history-chain sentences) — and that sweep, BY
+CONSTRUCTION, cannot find a manifest whose rows never cite an abi
+number at all but whose recorded VALUES move anyway as a consequence of
+the same scaffolding change.
+
+`tests/codegen/run_cpset_structure.sh`'s CHECK 3 (the [M5.0] stage-1
+stamp-census manifest, `tests/codegen/manifests/m5_stage1_stamps.tsv`)
+is exactly that manifest: `e1bf0025`'s label-emission change
+(`"%s  %s:\n"` → `"%s  %s:;\n"` in `emit_scan_loop`) adds one byte per
+label instance actually emitted, which moved two of the manifest's 76
+`EMITTED_BYTES` rows by a small amount (+3 and +2 bytes) with the
+manifest text itself never mentioning "24", "25", or `.abi` anywhere —
+so grepping the old abi number, however completely, structurally
+cannot surface this reader. Found live 2026-09-15 by lane `battriage`
+triaging the W23 merge battery's non-chartered reds (`docs/dev/lanes/
+battriage_report.md`, item (c)): the two moved rows were traced BYTE
+FOR BYTE to `e1bf0025` by recompiling both witnesses with
+`--emit-main` before being re-recorded, so the drift is a legitimate,
+fully-accounted consequence of an already-ratified change and not an
+unreviewed movement — but the ritual's own sweep did not, and could
+not, have found it.
+
+**The site-list rule (D94/CLAUDE.md's situation-index row) gains a
+named reader class**, alongside "text cites the abi number":
+**manifests (or any other stored artifact) recording a SIZE OR BYTE
+COUNT derived from the emitted text.** These are found by asking a
+different question than the grep — not "what cites the abi digit" but
+"what reads a number derived from the emitted text" (`.abi` stamps,
+size-log rows, identity-gate manifests, any per-pattern byte-count
+pin) — and checking whether the scaffolding change being bumped moves
+any of them, independent of whether their own text names the abi
+value at all.
+
 ## D95 — K43 IS DISCHARGED BY AN EXCLUSION LIST IN THE LINTGEN RUNNER, NOT BY CHANGING EMITTED CODE (2026-09-04 08:4x EDT, Frank, fifty-first session)
 
 Direction (b) (a designated-range initializer) was REFUTED by measurement
