@@ -2630,3 +2630,64 @@ The group-root-ADDRESS check (R2's owed stage-2 check) is NOT here — it is in
 the COMPILER (`src/opt/lower_enc.c`'s `cap_sig`), asserting on every compile
 that no `A_CAP`'s address moves across the lowering, which is stronger than a
 corpus sweep of it.
+
+## `run_comment_escape.sh` — pcrec-bench O-31 finding F1's regression net (2026-09-17)
+
+The DFA emitter's per-state "shortest input" legend
+(`src/gen/emit_dfa.c`'s `emit_state_legend`) wrote a byte-class
+representative straight into a `/* ... */` block comment with no check for
+the comment-closing sequence, so a pattern whose own bytes contain a raw
+STAR THEN SLASH — the bench's WAF witness
+(`wild-waf-crs-942500-comment-obfuscation`, the literal SQL-comment-
+obfuscation bytes `/*!*/`) — corrupted every byte the emitter wrote
+afterward: a missing terminating string quote cascading into
+undeclared-identifier errors, a genuine C COMPILE FAILURE rather than a
+wrong answer.
+
+**THE FIX IS ONE SHARED PRIMITIVE, `emit_comment_safe_byte`**, applied at
+every site in the tree that writes pattern-derived text into a comment:
+the banner (`emit_pattern_comment`) and the per-state legend
+(`emit_state_legend`). It guards TWO hazard pairs, not one — a SLASH THEN
+STAR also trips gcc's `-Wcomment` under the harness's own `-Wall -Wextra
+-Werror` GENCFLAGS default, found live while building this script's own
+checks, on a pattern that never trips the first hazard at all. Printable
+ASCII passes through unless it would complete either pair with the byte
+just rendered, in which case (like any other non-printable byte) it
+becomes `\xNN`. `emit_orientation_block`'s own one-line pattern-map
+paragraph deliberately does NOT route through the shared primitive — see
+its own comment: doing so was tried and MEASURED to move 115 currently-
+compiling corpus artifacts' bytes (every UTF-8 multi-byte literal and
+every pattern with a literal tab), because that site's policy has always
+been broader (pass everything through except the hazard pairs and a
+newline) than the shared primitive's printable-ASCII-or-hex-escape
+contract. It keeps its own loop instead, fixed for the SAME two hazard
+pairs and for a duplication bug the fix's own construction (backward
+lookup instead of a two-character lookahead) cannot reproduce.
+
+**EIGHT CHECKS, covering both hazards, both engines' state legend
+(`rx_search`'s forward machine and `rx_match`'s reverse one — the same
+byte pair reproduces on the reverse machine's own legend), non-vacuity
+(the hazard bytes are confirmed to reach the escaper rather than the
+witness silently routing around the fixed site), the definitive
+regression net (the artifact compiles under the harness's own default
+GENCFLAGS, `-Wall -Wextra -Werror`), and answer correctness against the
+oracle bytes.** A dedicated SLASH-STAR-only witness (`a\/\*b`, no closing
+pair) isolates the second hazard from the first — the check that would
+have stayed green if only the STAR-SLASH half of the fix had been built.
+
+**MEASURED, IN BOTH DIRECTIONS.** Against the pre-fix compiler this
+script fails 5 of 9 checks with exactly the reported cascade (missing
+terminating `"` character, `-Wcomment` errors under `-Werror`); against
+the fixed compiler all 9 pass. A corpus-wide byte-diff (baseline vs.
+fixed compiler, same basename in different directories per
+`run_trie_identity.sh`'s own trap, 2,856 corpus patterns) found **ZERO
+movers and zero newly-broken patterns** — every byte this fix moves
+belongs to a pattern that failed to compile before it, which the fix's
+own predicate structure (the hazard pairs are exactly what a
+pre-fix build could not survive) makes true by construction and not
+merely by measurement on today's corpus. No `abi` event.
+
+`tests/base/comment_escape.rxt` is the corpus-level acceptance: two
+blocks, oracle-verified against python3 `re`, riding `test-corpus` like
+any other `tests/base/` file — this script owns the MECHANISM and the
+GENCFLAGS bar, that file owns the ANSWER.

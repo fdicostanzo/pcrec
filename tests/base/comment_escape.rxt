@@ -1,0 +1,27 @@
+# pcrec-bench O-31 finding F1: a pattern whose own bytes contain a
+# comment-closing STAR THEN SLASH must compile and match correctly. The DFA
+# emitter's per-state "shortest input" legend used to write a byte-class
+# representative straight into a `/* ... */` block comment with no check
+# for the comment-closing sequence, so a pattern whose bytes match this
+# file's own witness -- the same shape as pcrec-bench's WAF witness
+# (wild-waf-crs-942500-comment-obfuscation, `/*!*/` SQL-comment
+# obfuscation) -- corrupted every byte the emitter wrote afterward and the
+# generated C failed to compile. See src/gen/emit_dfa.c's
+# emit_comment_safe_byte and tests/codegen/run_comment_escape.sh's
+# structural check for the mechanism; this file is the corpus's own
+# regression net -- if the escaping regresses, these blocks stop
+# compiling entirely rather than merely answering wrong, exactly the
+# failure mode a corpus expectation must survive.
+
+pattern a\/\*!\*\/b
+m "a/*!*/b" 0 7
+m "xa/*!*/bx" 1 8
+n "a/*!*b"
+
+# The raw two-byte sequence lives in the PATTERN'S OWN SOURCE TEXT here
+# (not only in a derived state-legend example), exercising the top-of-file
+# banner comment and the orientation-block map paragraph as well.
+pattern a[*/]b
+m "a*b" 0 3
+m "a/b" 0 3
+n "axb"
