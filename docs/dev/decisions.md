@@ -7309,3 +7309,56 @@ byproduct — the two should not be conflated.
     standing trigger (v1 versioning, or a second collision). D104 already
     closes the immediate linker-collision problem (the 12 unprefixed
     exports). The trigger stands; re-opens there.
+
+## D107 — limits detector: INVERT the name-keyed filter (Frank, 2026-09-17, sixty-seventh session)
+
+Q6 ruled. `tests/registry/limits_check.sh`'s D90 enforcement stops
+filtering candidate numeric `#define`s by ceiling-vocabulary in the
+IDENTIFIER (`MAX|_MIN_|CAP|LIMIT|BUDGET|THRESHOLD|_LEN|DEPTH|NEST`) and
+instead scans ALL numeric `#define`s/enum members in `src`/`cli`/`lib`,
+requiring each to be a `limits.def` row, on the limits allowlist, or on a
+NEW second allowlist for the non-limit kinds (sentinels, API enum values,
+schema versions). Rationale: the name filter has now missed a live
+constant TWICE (r53/[ENG-ISL] `VM_ISL_MIN_BRANCHES`; lens 3 F1's 14
+name-invisible constants, 8 of them argued-at-site but never offered for
+a ruling), and both prior repairs WIDENED the vocabulary — the patch that
+fails again the next time a knee is spelled `C_ENTER` or `WEIGHT`.
+Inverting converts "the check knows the words people used" into "every
+number is dispositioned," which is what D90's text claims. One-time cost:
+~14 allowlist lines with reasons; the arm gains its own sabotage row (a
+name-shape-invisible `#define`; none plants one today). Lands in review
+wave 4 (CLI+config); F2's `SIZE_TERM_BAR_DEFAULT` -> limits.def row is
+one of the 14 dispositions (D106 addendum 3). Blast radius: one check
+file, zero source, zero emitted bytes.
+
+## D108 — the emission kit is built as a back-end TEXT LAYER, forward-compatible with the future IR-consuming back-end (Frank, 2026-09-17, sixty-seventh session)
+
+Frank's constraint on the 2026-09-17 code review's WAVE 1 (the lens-10
+emission kit) and DD-8's `--emit-ir` table adoption: build them so they
+would still fit when the future IR-emitter structure (D106 item 5 /
+addendum 2 — the gcc-style front-end -> IR -> separate back-end split,
+possibly emitting Rust/C++/JS) arrives, WITHOUT building that structure
+now. Concretely, two design rules the wave-1 and DD-8 briefs carry:
+
+1. **The kit's primitives take DATA and produce TEXT; they do not reach
+   back into compiler state.** `sb_field`/`sb_row`/`sb_join` and the
+   fragment primitives operate on values handed to them, never on the
+   live walk / `Ctx` / DFA. A back-end that gets its data from a
+   DESERIALIZED IR instead of the live walk must be able to call the same
+   primitives unchanged — so no primitive may assume "the walk is
+   happening right now."
+2. **Keep the walk -> event -> render boundary clean.** The walk APPENDS
+   to the event stream (today the `VEvent` stream); a RENDERER consumes
+   that stream to produce text/tables. This is already DD-8's
+   derive-from-the-walk rule; the forward-compat addition is that the
+   render step must consume the EVENT STREAM, not re-walk the AST/DFA, so
+   that a future back-end producing the same event stream from a
+   deserialized IR gets the same rendering for free. That makes the event
+   stream the natural seam the IR would later serialize.
+
+This is a NON-FORECLOSURE constraint, not a build order: it costs the
+kit nothing today (a data-in/text-out primitive and a stream-consuming
+renderer are the right shape regardless) and it means the eventual IR
+back-end reuses the text layer and the render path rather than rebuilding
+them. D77 still gates actually building the IR back-end; this only
+ensures the kit does not have to be redone when it is.
