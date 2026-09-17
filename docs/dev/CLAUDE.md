@@ -526,3 +526,48 @@ change.
   Does NOT edit `docs/design/opt_dial_inventory.md` itself (D80: a design
   document's own revision is its own change) — this memo is the evidence
   a follow-on revision would cite.
+- `f2_rescue_split.md` — [O-31 F2] (2026-09-17, lane f2rescue, measurement
+  only, nothing under `src/`/`tests/`): why the captures axis strips
+  pcrec's own prefilter rescue on `trim-nested-star` and whether the
+  decline boundary can narrow to "declines only when a capture
+  intersects the collapsed region." **Corrects the ask's own premise on
+  two points before answering it.** The witness (`trim-nested-star`,
+  and a second corpus instance found here, `evil-alt-nested`) never
+  reaches the count-collapse rung at all — `(\s+)*`/`(([a-z]+)*)+` have
+  no counted `{m,n}` to collapse — so what fires is [OPT-4.2]'s
+  collapse-agnostic DEFAULT decline, not [OPT-4.1]'s rung-scoped
+  "nullable-collapse rescue" the ask names. And `winpath-near-miss`
+  (zero capturing groups; `auto` selects the DFA identically with and
+  without `--no-captures`) is not in this population at all — its own
+  ledger row is the unrelated `auto`-vs-forced-`--engine=vm` comparison,
+  which the O-31 outbox's "mirrors" phrasing folds together with the
+  real captures-axis finding. Both declines derive from ONE local,
+  `lang_nullable_declinable` (`select_engine.c:888`), with **no capture
+  conjunct at all** — captures matter only as one of several routes
+  that force VM selection (`forces_captures`, `select_engine.c:99-135`,
+  wholly independent of nullability); once VM is chosen by any route,
+  the same whole-pattern-nullability test (`pcrec_minw(root)==0`)
+  applies uniformly. A constructed witness family
+  (`[a-z]{0,60000}` bare / capture spanning it / capture disjoint but
+  still whole-nullable / capture disjoint and whole-pattern
+  non-nullable) shows the RUNG-scoped decline is **structurally
+  unreachable whenever captures are present** — captures route to VM
+  before the exact DFA build the retry mechanism exists to catch the
+  overflow of ever runs — confirmed corpus-wide (3,938 shipped `pattern`
+  lines + the bench's 58-pattern capability set, both at default flags:
+  56+2 hit the DEFAULT decline, **zero** hit the rung form in either).
+  **Verdict: the boundary cannot narrow by capture location** — not as
+  a small change, and not at all: two of three real witnesses have no
+  "collapsed region" to intersect, the rung form the ask names is
+  already unreachable under captures on any witness, and even a
+  constructed disjoint-capture case (`(x)?[a-z]{0,60000}`, capture
+  outside the quantifier, whole pattern still nullable via the
+  capture's own optionality) shows the decline is correctly keyed on
+  GLOBAL emptiness-admission — the exact property that makes a
+  position-skip prefilter valueless — which has no relationship to
+  where any one capture sits. `phone-list-nested-plus` survives not by
+  escaping a captures constraint but because it was never subject to
+  one: `pcrec_minw(root)==1`, non-nullable, full stop. Recommends two
+  design-event candidates instead (a partial-admission prefilter; a VM
+  step budget, the same lever O-31 finding 3 already asks for) — neither
+  built or measured further here (D77).

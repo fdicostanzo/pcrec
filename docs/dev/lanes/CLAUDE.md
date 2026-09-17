@@ -1168,3 +1168,30 @@ never edited afterwards.
   the scope mandate; the report carries the two candidate fixes (pass
   raw `bytes` in argv directly, or decode with
   `errors="surrogateescape"`) for the manager to relay.
+
+- `f2rescue_report.md` — O-31 F2 (2026-09-17, lane f2rescue, sonnet;
+  measurement only, nothing under `src/`/`tests/`): why the captures
+  axis strips pcrec's own prefilter rescue on `trim-nested-star`, and
+  whether the decline boundary can narrow to "declines only when a
+  capture intersects the collapsed region." See
+  `docs/dev/f2_rescue_split.md` for the full memo. Headline: the ask's
+  premise needed two corrections first — `trim-nested-star` (and a
+  second corpus instance found here, `evil-alt-nested`) never reaches
+  the count-collapse rung at all (no counted `{m,n}` to collapse), so
+  what fires is the collapse-AGNOSTIC default decline, not the
+  rung-scoped one the ask names; and `winpath-near-miss` has zero
+  capturing groups and is not in this population at all (its ledger row
+  is the unrelated `auto`-vs-forced-`--engine=vm` comparison). Both
+  declines derive from one local with **no capture conjunct** — captures
+  matter only as one of several routes that force VM selection,
+  independent of nullability. A constructed witness family shows the
+  rung-scoped decline is STRUCTURALLY UNREACHABLE whenever captures are
+  present (confirmed corpus-wide: 56+2 DEFAULT-decline hits, zero
+  rung-form hits, across the shipped corpus and the bench's capability
+  set). Verdict: the boundary cannot narrow by capture location at
+  all — it is correctly testing GLOBAL emptiness-admission, which has no
+  relationship to where a capture sits (demonstrated with a disjoint-
+  capture witness that would wrongly build a lossy prefilter under the
+  proposed narrowing). Recommends two design-event alternatives instead
+  (a partial-admission prefilter; a VM step budget, the same lever O-31
+  finding 3 already asks for), neither built here.
