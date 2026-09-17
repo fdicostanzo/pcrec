@@ -7062,3 +7062,18 @@ two cells (D77).
 **Revisit-when:** the table's row count grows enough that per-cell
 ratification becomes the bottleneck (the rubric is then re-considered
 as the assignment rule it was first ruled to be, with the pin kept).
+
+**D103 ADDENDUM (Frank, 2026-09-16 ~23:3x EDT, at the first-build
+table's ratification):** the FIRST-BUILD TABLE IS RATIFIED as
+presented (−2: ladder 0.95/40,000 + premul denied, anchored-dfa
+excluded pending its A/B; −1: ladder 0.85/80,000; 0: defaults byte for
+byte; +1: entry term 8,192; +2 declared vacuous with its
+become-reachable condition). And the governing philosophy, his words:
+**"in the end the dial chart is art over science. the measurements can
+give us an initial placement but, edge cases in particular, we can
+discuss and place where it makes sense rather than a rigid rule set."**
+Operationally: the rubric proposes an INITIAL placement from the
+measurement; edge cases are placed by discussion and judgment; no cell
+placement is ever refused solely because a rubric window says so, and
+none is admitted without its measurement (the allowlist is the floor,
+the rubric is advice, the ruling is the decision).
