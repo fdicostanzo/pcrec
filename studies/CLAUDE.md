@@ -112,6 +112,29 @@ re-measure before load-bearing use.
   `docs/dev/lim2_m1_partition_measurement.md`. See its own README.md/CLAUDE.md
   (`make CC=gcc-16` builds it against `../../build/libpcrec.a`, `make sweep`
   re-runs the population).
+
+- `lim2_m2/` -- [LIM-2]/dfamin M2, the dominance-prize measurement (lane
+  `dfam12`, 2026-09-16): candidate B's Tier-1 dominated-position pruning,
+  sized using the study's own named "deliberately illegitimate stand-in"
+  (`docs/dev/dfa_online_minimization_study.md` §3.7 -- "drop a position
+  when an earlier copy of the same unrolled repeat is present in the
+  list"), implemented as a REAL, measurement-only edit to this worktree's
+  `src/` (`[PROBE-M2]`, gated on `getenv("PCREC_PROBE_M2")`, committed
+  SEPARATELY for the manager to drop at merge -- this directory's harness
+  will not link once that commit is dropped, by design; see its own
+  CLAUDE.md). Real but NARROW over the shipped corpus (14.3% of 1,232 rows
+  see any drop, 4.0% see raw-state relief, aggregate K7 charge relief a
+  modest 4.6%), rich and MIXED on `tests/counterk/counterk.rxt` (raw state
+  count roughly halves on some rows, K7 charge alone drops up to ~2,000x on
+  others with the raw count UNCHANGED), ZERO on K25's own chain shapes
+  (`a{0,N}`/`(?:abcdefghij){N}` -- structurally no two copies' positions
+  ever coexist in one subset), and -- the sharpest finding -- a
+  REGRESSION on the study's own chartering witness: the K18 census pattern
+  (`tests/base/k18_cost_gates.rxt:66`) goes from a clean 27,575-state
+  compile to a hard refusal (`>32,000 states`) under the stand-in, exactly
+  the open-loop-context brittleness the study's §4.3 (B2) predicted, now
+  measured rather than argued. Backs `docs/dev/dfamin_m1m2.md`. See its own
+  CLAUDE.md (`make CC=gcc-16`, `bash run_m2.sh` re-runs both passes).
 - `form_char_twins/` — [FORM-CHAR] STEP 0 + [OPT-CLSPACK] STEP 0 hand-twins
   (lane form0, 2026-09-04): four families of mechanical hand-twins over
   emitted `build/pcrec` artifacts — the VM literal chain under

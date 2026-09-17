@@ -1,0 +1,6 @@
+== [LIM-2]/dfamin M2 summary (mode=PRUNED) ==
+  pattern lines seen : 3941
+  refused            : 2548
+  no DFA route       : 56
+  ENG_ATTEMPT (bot)  : 62
+  measured (rows)    : 1275

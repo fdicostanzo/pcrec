@@ -1,0 +1,16 @@
+# [LIM-2]/dfamin M1+M2, lane dfam12 (2026-09-16). K25's own chain shapes
+# (docs/dev/known_issues.md K25: "a{0,n} after the unanchored wrap is
+# precisely [a Theta(n^2) Moore-refinement] shape"), as an M1/M2 population
+# in their own right per this lane's brief -- a size ladder around K25's own
+# witness (a{0,25000}) plus K25's own second, unattributed case. NOT a pcrec
+# test file: never read by tests/harness/run.sh or make test. Force-included
+# by studies/lim2_m1/run_m1.sh's --force convention and by studies/lim2_m2's
+# own driver.
+pattern a{0,100}
+pattern a{0,1000}
+pattern a{0,5000}
+pattern a{0,10000}
+pattern a{0,25000}
+pattern (?:abcdefghij){500}
+pattern (?:abcdefghij){1500}
+pattern (?:abcdefghij){3000}
