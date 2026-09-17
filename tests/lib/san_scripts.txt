@@ -30,6 +30,7 @@ tests/reject/run_reject_tests.sh
 tests/registry/run_registry_tests.sh
 tests/parse/run_parse_tests.sh
 tests/codegen/run_codegen_tests.sh
+tests/codegen/run_cpset_structure.sh
 tests/codegen/run_trie_identity.sh
 tests/codegen/run_endvar_identity.sh
 tests/codegen/run_wordctx_identity.sh
@@ -38,6 +39,7 @@ tests/codegen/run_gstart_identity.sh
 tests/codegen/run_vm_identity.sh
 tests/codegen/run_ir_listing.sh
 tests/vm/run_vm_tests.sh
+tests/mrl/run_mrl_tests.sh
 tests/encseam/run_encseam_tests.sh
 tests/possessify/run_possdiff.sh
 tests/possessify/run_possessify_tests.sh
