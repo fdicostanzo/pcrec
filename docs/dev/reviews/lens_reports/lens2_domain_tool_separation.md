@@ -37,7 +37,7 @@ it**, each of which the policy code re-implements at every site:
 |---|---|---|
 | append to a growing buffer | **YES** — `StrBuf`/`sb_*` | 0 |
 | a library diagnostic | **YES** — `ctx_fail` | 0 |
-| interpolate a prefix into fixed C text | **YES, but sealed into one seam** — `pcrec_enc_emit_text` | ~495 `sb_printf` calls in `src/gen` |
+| interpolate a prefix into fixed C text | **YES, but sealed into one seam** — `pcrec_enc_emit_text` | **652** `%s_` substitutions in `src/gen` |
 | build a bounded text FRAGMENT to interpolate later | **NO** | 105 `snprintf`-into-`char[N]` sites in `src/gen` |
 | escape and frame a TSV field/row | **HALF** — two incompatible escapers, neither shared | 5 row emitters, 3 with no escaping at all |
 | join names with a separator | **NO** | 5 implementations |
@@ -49,7 +49,17 @@ tree already contains the taught primitive for the biggest instance
 its own header explains exactly why it is better than the alternative —
 and it is reachable from two call sites inside `src/gen/enc/` and
 nowhere else, while the two emitters perform the identical operation by
-hand roughly five hundred times.
+hand six hundred and fifty-two times.
+
+**Three numbers in this report were measured twice**, because the first
+instrument was wrong each time, and the corrections are recorded where
+they belong rather than quietly fixed: the source-text check count (§4.2 —
+a literal-path grep counted 14 scripts, all of them matching in COMMENTS;
+the real answer is 8), the prefix-interpolation count (§M3 — counting
+`sb_printf` CALLS understates it, since one call can carry several `%s_`
+substitutions; the real answer is 652), and `usage`'s span (§3 rank 1).
+Two of the three moved in the direction that WEAKENS a finding, which is
+the direction worth stating out loud.
 
 ---
 
@@ -91,7 +101,9 @@ them.
   size_t abort_over; } StrBuf;` — append a char, a C string, or a
   `printf`-attributed format; `sb_take` transfers ownership and resets;
   `sb_free` releases.
-- **Users.** ~1,069 call sites across 9 files (the `sb_*` column above).
+- **Users.** 1,069 `sb_*` lines across 10 files (the column above), of
+  which 6 are the declarations (`internal.h:62-67`) and definitions
+  (`sb.c`) themselves — so ~1,063 call sites.
 - **What it does that nothing else can.** Three things, each earned by a
   recorded incident. (i) It cannot truncate — `sb_grow` (`sb.c:8-31`) is
   the one place a buffer's length grows. (ii) `cx` upgrades a buffer from
@@ -171,10 +183,11 @@ them.
   shape a reader must mentally reassemble.
 - **Cost of folding.** None — **and that is the finding.** The operation
   it generalizes is the single commonest thing the two emitters do:
-  `"%s_"`-shaped prefix composition appears in 19 distinct format-string
-  spellings in `emit_dfa.c` and 23 in `emit_vm.c`, spread over 495
-  `sb_printf` calls, 200 of which name `v->p` or `v->up` directly
-  (grep). Every one of those is `pcrec_enc_emit_text` performed by hand.
+  a `%s_` substitution — one prefix-composed emitted identifier — occurs
+  **347 times in `emit_vm.c` and 305 times in `emit_dfa.c`, 652 in all,
+  across 450 source lines** (grep). Every one of those is
+  `pcrec_enc_emit_text`'s `$` performed by hand, through `printf`
+  positional arguments instead of a placeholder in readable C.
 - **Why it is confined, and why that reason does not bind the
   mechanism.** D58/DD-12(7) scoped the *seam*, not the *primitive*, and
   the one constraint the seam imposes on template text (*"residual text
@@ -470,7 +483,7 @@ dispatched by `raise_only_match` (`:89-98`), whose header comment
 already made the lens's argument about itself, once, for six flags, and
 left the other fifty-six in the chain.
 
-The compounding cost is `usage` (`:99-272`): **161 literal continuation
+The compounding cost is `usage` (`cli/main.c:99-263`): **162 literal continuation
 lines** inside a single `fputs`, with no machine-readable relationship to
 the chain that parses those flags. A flag can be added to one and not the
 other with nothing failing.
@@ -580,25 +593,44 @@ per-row human work, not a script.
 2 of §2.4 touch 2 anchors between them; step 3 touches 24 directly and
 puts 89 more in its blast radius.
 
-### 4.2 Codegen text greps
+### 4.2 Checks that grep pcrec's own SOURCE text
 
-`tests/codegen/` holds 33 scripts. **14 of them grep pcrec's own SOURCE
-text** (not just emitted output): `run_comment_escape.sh`,
-`run_encoding_checks.sh`, `run_codegen_tests.sh`, `run_form_census.sh`,
-`run_backref_identity.sh`, `run_dfa_stamps.sh`, `run_atomic_identity.sh`,
-`run_cpset_structure.sh`, `run_lookaround_identity.sh`,
-`run_ir_listing.sh`, `run_tiered_entry.sh`, `run_premul_table.sh`,
-`run_search_pinned.sh`, `run_recursion_identity.sh`. Three more outside
-that directory do the same (`tests/assertions/`, `tests/axes/`,
-`tests/bench/`).
+**This number was measured twice, and the first measurement was wrong —
+recorded because the correction is the useful part.** Grepping the test
+tree for the literal string `src/gen/emit` returns 14 `tests/codegen`
+scripts, and **every one of those hits is inside a COMMENT.** The real
+checks reach source through a variable (`SRC="$ROOT_DIR/src"`,
+`run_cpset_structure.sh:49`), so the literal-path grep cannot see them
+and over-counts by finding prose instead. The honest instrument is "a
+non-comment line whose command is `grep`/`sed`/`awk`/`nl`/`wc` and whose
+argument resolves under `src/`, `cli/` or `lib/`."
 
-This class has bitten the tree before and the incident is on record:
-`bat4triage_report.md` found `run_cpset_structure.sh`'s `[1c]`/`[2d]`
-needles going red because `[M5.0]` stage 4 *legitimately moved the
-source text they grepped for* — *"a check-staleness class, not a
-correctness regression."* A source-text migration re-runs that incident
-by design, so **every one of the 17 must be read before step 3, not
-after it goes red.**
+Measured that way, **8 scripts in the whole test tree read pcrec source
+text**, and **5 of them read `src/gen/`**:
+
+| script | reads |
+|---|---|
+| `tests/codegen/run_atomic_identity.sh` | `src/gen/` |
+| `tests/codegen/run_backref_identity.sh` | `src/gen/` |
+| `tests/codegen/run_cpset_structure.sh` | `src/gen/` + `src/core/`, `src/parse/`, `src/opt/` |
+| `tests/codegen/run_lookaround_identity.sh` | `src/gen/` |
+| `tests/codegen/run_search_pinned.sh` | `src/gen/` |
+| `tests/axes/run_axes.sh` | `src/` |
+| `tests/registry/axes_registry_check.sh` | `src/` |
+| `tests/rxtsource/run_rxtsource_tests.sh` | `src/parse/` |
+
+**That is a materially smaller and more tractable coupling than the
+first count suggested**, and it is good news for §2.4 step 3: the
+overwhelming majority of `tests/codegen`'s 33 scripts grep **emitted
+artifacts**, which a byte-neutral migration does not move.
+
+The class has still bitten the tree before, and the incident is on
+record: `bat4triage_report.md` found `run_cpset_structure.sh`'s
+`[1c]`/`[2d]` needles going red because `[M5.0]` stage 4 *legitimately
+moved the source text they grepped for* — *"a check-staleness class, not
+a correctness regression."* So **all 8 must be read before step 3, not
+after they go red** — and the five `src/gen/` readers are the ones a
+fragment-layer migration can actually disturb.
 
 ### 4.3 abi-pinned scaffolding
 
@@ -749,12 +781,12 @@ tier, dispositioned to next round); emitted C; `studies/`; `docs/`.
 
 | id | finding | severity | effort | blast radius |
 |---|---|---|---|---|
-| **L2-1** | 49 emitter fragment buffers hand-pick a size where `PCREC_MAX_EMIT_NAME_LEN` exists; `snprintf` truncates silently and K38 is the recorded miscompile of exactly this. (`emit_vm.c` 41, `emit_dfa.c` 8; comments at `emit_vm.c:944`, `:6813`, `:10765`) | **CORRECTNESS-RISK** | LOCAL (as a size sweep) / CROSS-CUTTING (as the `txt_f` fold) | 2 files; 24 sabotage anchors directly, 89 in radius; 17 source-grepping checks; **no abi event** |
+| **L2-1** | 49 emitter fragment buffers hand-pick a size where `PCREC_MAX_EMIT_NAME_LEN` exists; `snprintf` truncates silently and K38 is the recorded miscompile of exactly this. (`emit_vm.c` 41, `emit_dfa.c` 8; comments at `emit_vm.c:944`, `:6813`, `:10765`) | **CORRECTNESS-RISK** | LOCAL (as a size sweep) / CROSS-CUTTING (as the `txt_f` fold) | 2 files; 24 sabotage anchors directly, 89 in radius; 5 of the 8 source-grepping checks; **no abi event** |
 | **L2-2** | No fragment primitive exists. ~105 `snprintf`-into-`char[N]` sites re-derive "how big" and "did it fit"; `vm_rolef` (`emit_vm.c:754`) is 90% of the primitive and truncates at 160 anyway (`:764-765`) | MAINTAINABILITY | CROSS-CUTTING | as L2-1 (same wave) |
-| **L2-3** | The taught primitive for prefix interpolation **already exists** (`pcrec_enc_emit_text`, `enc.c:88-94`, 2 call sites) while the two emitters perform the identical operation across ~495 `sb_printf` calls / 42 distinct `"%s_"` spellings | MAINTAINABILITY | **DESIGN-EVENT** | emitted bytes move ⇒ **abi bump + full D76/D94 re-pin**. §2.4 recommends AGAINST until the run-length population is measured (D77) |
+| **L2-3** | The taught primitive for prefix interpolation **already exists** (`pcrec_enc_emit_text`, `enc.c:88-94`, 2 call sites) while the two emitters perform the identical operation across **652 `%s_` substitutions** on 450 lines (`emit_vm.c` 347, `emit_dfa.c` 305) | MAINTAINABILITY | **DESIGN-EVENT** | emitted bytes move ⇒ **abi bump + full D76/D94 re-pin**. §2.4 recommends AGAINST until the run-length population is measured (D77) |
 | **L2-4** | Five independent TSV row emitters; two incompatible escapers; **three dump files escape nothing**, and the corruption they are exposed to is already diagnosed in a fourth (`rxt_source.c:3735-3742`). `syntax_dump.c` has an escaper its TSV path does not call | MAINTAINABILITY (+ latent CORRECTNESS-RISK) | LOCAL | 5 files; **2 sabotage anchors**; `tests/rxtsource` field-count pins; no abi event |
 | **L2-5** | `cli/main.c` has no diagnostic channel: 76 open-coded `fprintf(stderr, …)`, 72 hand-writing `"pcrec: "`, `"missing value for %s"` × 8 — while the library side has exactly one `ctx_fail` | MAINTAINABILITY | **MECHANICAL** | 1 file; **0 sabotage anchors**; `tests/cli` wording pins (D26: wording unchanged); no abi event |
-| **L2-6** | `cli_parse` is a 64-arm `if`/`else if` chain over 62 option spellings; the file's own `raise_only_limits[]` comment (`:48-65`) argues for the table it did not generalize; `usage`'s 161 literal lines have no machine relation to the chain | MAINTAINABILITY | CROSS-CUTTING | 1 file; 0 anchors; `tests/cli`; no abi event |
+| **L2-6** | `cli_parse` is a 64-arm `if`/`else if` chain over 62 option spellings; the file's own `raise_only_limits[]` comment (`:48-65`) argues for the table it did not generalize; `usage`'s 162 literal lines (`:101-262`) have no machine relation to the chain | MAINTAINABILITY | CROSS-CUTTING | 1 file; 0 anchors; `tests/cli`; no abi event |
 | **L2-7** | 8 valid-value menus, 1 table-driven. `--tune`'s (`:614-616`) is a second spelling of `tune.c`'s alias table, which D103 makes the dial's one home | MAINTAINABILITY | LOCAL | 1 file + 2 registries; no abi event |
 | **L2-8** | Growable-array append has 7 open-coded copies (clone groups 10 and 3; four at `group_frac` 1.000 in one file) | POLISH | LOCAL | 3 files; **shared with lens 1 — dedupe in synthesis** |
 | **L2-9** | DFA table *writing* is unfactored (clone groups 11 and 7, `group_frac` to 1.000) though table *selection* is the tree's exemplary taught primitive (D82 layer 1) | POLISH | LOCAL | `emit_dfa.c`; inside the 113-anchor radius ⇒ ride step 3 or skip |
