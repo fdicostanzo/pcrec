@@ -1,13 +1,15 @@
 # CODE REVIEW SYNTHESIS COLLATION (2026-09-17)
 
 Lane `collate` (sonnet, mechanical collation — no judgment exercised on
-finding validity). Inputs: the ten delivered lens reports on their parked
-branches (lens 7's deliverable is folded into lens 4's report per the
-ratification's "7 merges into 4" disposition). `emitvm_second_pass.md` is
-still being written by a live lane and is explicitly excluded per brief;
-the manager adds it later.
+finding validity). Inputs: the ten delivered lens reports (lens 7's
+deliverable is folded into lens 4's report per the ratification's "7
+merges into 4" disposition), **plus `emitvm_second_pass.md`, added as a
+twelfth source once delivered** (cited `EP2` below) — the chartered
+second pass over `src/gen/emit_vm.c` that lenses 1, 2, 5 and 10 all
+separately named as owed (§2.7/§6).
 
-Source paths (each lens cited below by `L<n>` + its own finding ID):
+Source paths (each lens cited below by `L<n>` + its own finding ID; EP2
+uses the same convention):
 
 - L1 `worktrees/lens1dup/docs/dev/reviews/lens_reports/lens1_semantic_duplication.md`
 - L2 `worktrees/lens2sep/docs/dev/reviews/lens_reports/lens2_domain_tool_separation.md`
@@ -19,6 +21,7 @@ Source paths (each lens cited below by `L<n>` + its own finding ID):
 - L9 `worktrees/lens9pub/docs/dev/reviews/lens_reports/lens9_public_surface.md`
 - L10 `worktrees/lens10kit/docs/dev/reviews/lens_reports/lens10_emission_kit_charter.md`
 - L11 `worktrees/lens11alt/docs/dev/reviews/lens_reports/lens11_function_altitude.md`
+- EP2 `worktrees/emitpass2/docs/dev/reviews/lens_reports/emitvm_second_pass.md`
 
 (There is no lens 7 file — its charter is carried inside L4 §2/§3/§4 per
 the ratification.)
@@ -50,7 +53,7 @@ than a shared site. Severity/effort as each report states verbatim.
 | L1-X5 | Growable arena array invented ~10 times (double-on-full, arena copy, zero new element) | `src/parse/rxt_source.c` (6 sites), `cpset.c:72-81`, `atomic.c:376-387`, `lower_enc.c:202-212`, `cli/main.c:362-373` | MAINTAINABILITY | LOCAL | 5 files, 1 sabotage row re-aimed (S201) | **OVERLAP CLUSTER — see §2.1.** L2-L2-8 (7), L5-R3 (13), L11 §6 item 1 (28) |
 | L1-X6 | `mod_backrefs.c`/`mod_recursion.c` share 6 clone groups; group-relative-offset arithmetic factored in one file, re-typed inline in the other | `mod_backrefs.c` vs `mod_recursion.c`, multiple functions | MAINTAINABILITY | LOCAL | 3 files, 5 sabotage rows name backrefs.c + 1 names recursion.c, 2 codegen checks | L11-F10 (the *intra-function* triplication inside `pcrec_brport_g`'s `\g` parse — X6's cross-file framing does not reach it) |
 | L1-X7 | DFA table emitter written 6 times (header/16-per-line wrap/indent/brace identical; only cell type/length/expression vary) | `src/gen/emit_dfa.c` 6 functions, 2610-3530 | MAINTAINABILITY | MECHANICAL | 1 file, `run_premul_table.sh`, 0 sabotage rows, byte-identity gate is the proof | L2-rank4 (table *writing* unfactored vs. table *selection* being the tree's model instance); L5-R6 (conditional unit net, pending a population census of `N∈{0,1,15,16,17}` and mod-16 residues) |
-| L1-X8 | 73 hand-typed `#define <PREFIX>_NAME` stamp sites, no `emit_stamp_str/int/bool` helper | `src/gen/emit_vm.c` (52 sites), `emit_dfa.c` (21 sites) | MAINTAINABILITY (real D94 benefit) | LOCAL | 2 files, every codegen/abi check that greps a stamp name | L10 kit item (3) (adopts X8 verbatim, recommends it ride stage 3); **L11-F1 CONFIRMS X8 EXACTLY — all 52 `emit_vm.c` sites are inside `pcrec_emit_vm`, zero in `vm_render_listing`, which corrects L1's own ADDENDUM-1 join-table row** (L11 §0, §6 correction) |
+| L1-X8 | 73 hand-typed `#define <PREFIX>_NAME` stamp sites, no `emit_stamp_str/int/bool` helper | `src/gen/emit_vm.c` (52 sites), `emit_dfa.c` (21 sites) | MAINTAINABILITY (real D94 benefit) | LOCAL | 2 files, every codegen/abi check that greps a stamp name | L10 kit item (3) (adopts X8 verbatim, recommends it ride stage 3); **L11-F1 CONFIRMS X8 EXACTLY — all 52 `emit_vm.c` sites are inside `pcrec_emit_vm`, zero in `vm_render_listing`, which corrects L1's own ADDENDUM-1 join-table row** (L11 §0, §6 correction); **EP2 §2.1 independently RE-CONFIRMS the exact count** (52 sites, all at line ≥8539, 36 through `sb_printf`) and places X8 as step 10 of its wave sequence — riding L10's stage 3 rather than leading it, since it is the sequence's only abi-adjacent step and needs L10's `sb_name`/`sb_upper` substrate first (§2.8 item 4) |
 | L1-X9 | Optimization-axis table has 3 hand-maintained sources + 2 awk scrapers reconciling them; `cli_parse` 20 `-fno-X` arms, `axes_dump.c` 178-line hand-written function | `cli/main.c:379-809`, `src/parse/axes_dump.c:375-668`, `lib/pcrec.h` | MAINTAINABILITY, trending CORRECTNESS-RISK | DESIGN-EVENT | `cli/main.c`, `axes_dump.c`, `lib/pcrec.h`; DELETES 2 awk scrapers rather than re-aiming them | **OVERLAP CLUSTER — see §2.2.** L2-L2-7 (`--tune` menu duplication), L11-F6 (`emit_predicate_axes` — X9 IS THE WHOLE REMEDY, no split proposed), L11-F3 (`cli_parse` — X9+X10 remove ~1/3 of the body) |
 | L1-X10 | CLI integer-valued option arm written 5×; magic prefix-length numbers repeated | `cli/main.c:568,585,647,660,701` | POLISH | MECHANICAL | `cli/main.c` only; 13 codegen scripts reference the file but none plants inside these arms | L11-F3 (used directly for `cli_parse`'s 5 `strtol` arms) |
 | L1-X11 | Enum-to-string family: 14 switches, all `group_frac` 1.000; `RxtSchemaScope` rendered 3 ways in one file | `src/parse/rxt_schema.c` (7), `syntax_dump.c` (4), `rxt_source.c` (2), `definitions.c` (1) | MAINTAINABILITY | LOCAL | 4 files, 1 sabotage row re-aimed (S241) | L2-rank5 (**different files, same class** — L2 recommends NO CHANGE for `syntax_dump.c`'s 4 mappers under D82 bound 3; not a contradiction, disjoint populations) |
@@ -175,7 +178,7 @@ than a shared site. Severity/effort as each report states verbatim.
 | cite | claim | file:line | severity | effort | blast radius | cross-ref |
 |---|---|---|---|---|---|---|
 | L11-F8 | `vm_render_listing`: 3 identical 12-line section loops + 6 identical slot loops (Q4 fails twice) | `emit_vm.c:8067-8131`, `8019-8054` | MAINTAINABILITY | MECHANICAL | 1 file, 0 sabotage rows, `run_vm_tests.sh` names the function | **corrects L1's join table** (X8 does NOT apply here — 0 stamp sites); recommended as the cheapest first move to prove the review's method |
-| L11-F12 | `vm_cursor_rep`: the emitted bounded span-scan loop is written TWICE (identical 8-line C fragment, differing in one bound token), 140 lines apart, with NO agreement check | `emit_vm.c:4151-4158,4292-4303` | MAINTAINABILITY (emitted-text divergence risk) | MECHANICAL | 1 file, **5 sabotage rows** attribute inside; identity gate must prove no byte moves | L1 ADDENDUM-2 item 1 (this IS inside the unreviewed `emit_vm.c` surface L1 flagged); cites k49fix's twice-spelled-boundary-needs-an-agreement-check precedent |
+| L11-F12 | `vm_cursor_rep`: the emitted bounded span-scan loop is written TWICE (identical 8-line C fragment, differing in one bound token), 140 lines apart, with NO agreement check | `emit_vm.c:4151-4158,4292-4303` | MAINTAINABILITY (emitted-text divergence risk) | MECHANICAL | 1 file, **5 sabotage rows** attribute inside; identity gate must prove no byte moves | L1 ADDENDUM-2 item 1 (this IS inside the unreviewed `emit_vm.c` surface L1 flagged); cites k49fix's twice-spelled-boundary-needs-an-agreement-check precedent; **CONFIRMED by EP2-E2, which also finds the proposed `(…, test, bound)` signature cannot express the greedy arm's extra in-block declaration (`lim_`) — see §2.8 item 5 for the corrected `clamp`-parameter signature** |
 | L11-F10 | `pcrec_brport_g`: three `\g`-delimiter branches (brace/angle/bare) are ONE parse triplicated; **lowest comment ratio in the 31-function population (1.20)** | `mod_backrefs.c:318-467` | MAINTAINABILITY | LOCAL | 1 file, 0 sabotage rows inside this function | L1-X6 (applies to the FILE's cross-module sharing, NOT to this intra-function repetition — X6 doesn't reach it) |
 | L11-F13 | `p_class`: the class-endpoint read (low/high) is spelled twice with the same 3-way program; K12's own ruling records the order as load-bearing | `parse.c:1069-1073` vs `:1165-1170` | MAINTAINABILITY, ruled-record argument in favor | LOCAL | 1 file, 2 sabotage rows attribute inside (incl. S-U1, outside the moved region) | K12 (`docs/dev/known_issues.md`) cited as an argument FOR the extraction |
 | L11-F6 | `emit_predicate_axes`: 178 lines with NOT ONE `if` or loop — a data table written as code | `axes_dump.c:375-668` | MAINTAINABILITY | **DESIGN-EVENT** (it IS X9, not a local edit) | per L1-X9's blast radius | **X9 IS THE WHOLE REMEDY — no lens-11 split proposed at all** (ADDENDUM-1's pure case) |
@@ -188,9 +191,37 @@ than a shared site. Severity/effort as each report states verbatim.
 | L11-F4 | `main`: 7 modes; the mutual-exclusion relation is written 6 TIMES with 4 DIFFERENT memberships, correct today only because of BLOCK ORDER | `cli/main.c:1223-1736` | MAINTAINABILITY trending CORRECTNESS-RISK | LOCAL (after F3) | `cli/main.c`, 0 sabotage rows, `tests/cli` pins 35 refusal diagnostics, D80 spec hunk required | sequenced to ride AFTER F3 |
 | L11-F5 | `compile_driver`: 402-line pipeline with a 266-line RETRY POLICY (5 rungs) inlined in the middle; the pipeline region itself is clean and uniform — the failure is that the setjmp handler and the pipeline share one function | `core/compile.c:556-1789` (setjmp block: `822-1088`) | MAINTAINABILITY | LOCAL, stated technical constraint (`volatile`/setjmp) | `core/compile.c`, **7 sabotage rows attribute inside** | **A1 cites and does NOT contradict** `utf8k53_report.md`'s ruled rejection of a rung-table at N=1; explicitly notes the ruled event that WOULD reopen the table question (`SDR_NO_PREMUL`) has now arrived, ruled by Frank 2026-09-17, making the ladder N=2 |
 | L11-F2 | `pcrec_rxt_source_parse`: 25 productions inlined in one 548-line loop, BESIDE the schema table that was supposed to end exactly this (W23.1 already declared STRUCTURE; per-production SEMANTICS stayed inline) | `rxt_source.c:2095-3069` | MAINTAINABILITY trending CORRECTNESS-RISK | CROSS-CUTTING | `rxt_source.c` (4,037 lines), 1 sabotage row attributes inside; D80 spec event if any refusal moves | L1's own X5/X12 "not enough" admission for this file; L1 ADDENDUM-2 item 2 (names file as unreviewed remainder); L4/L5 both separately name this file for a second pass |
-| L11-F1 | `pcrec_emit_vm`: an ANALYSIS pass (2 fixpoints, ~30% of the body, emits NO text) + a CONFIGURATION pass + an EMITTER share one 778-line body; the most anchor-dense function in the tree | `emit_vm.c:8539-11575` | MAINTAINABILITY (code is correct; cost is read/edit time) | CROSS-CUTTING, STAGEABLE | 1 file, **26 sabotage rows attribute inside — 10% of the tree's whole failing-direction net** | **CONFIRMS L1-X8 exactly** (all 52 stamp sites are inside this function); **IS, in large part, the "second pass over `emit_vm.c`" every other lens named as owed** — see §6 register |
+| L11-F1 | `pcrec_emit_vm`: an ANALYSIS pass (2 fixpoints, ~30% of the body, emits NO text) + a CONFIGURATION pass + an EMITTER share one 778-line body; the most anchor-dense function in the tree | `emit_vm.c:8539-11575` | MAINTAINABILITY (code is correct; cost is read/edit time) | CROSS-CUTTING, STAGEABLE | 1 file, **26 sabotage rows attribute inside — 10% of the tree's whole failing-direction net** [EP2 MEASURES 29 rows / 32 records, 11.1% — see §2.8 item 1] | **CONFIRMS L1-X8 exactly** (all 52 stamp sites are inside this function); **IS, in large part, the "second pass over `emit_vm.c`" every other lens named as owed** — see §6 register; **EP2 IS THAT PASS, FORMALLY, AND CORRECTS THIS FINDING IN FIVE PLACES — see §2.8** (anchor count; `vm_build_region_saves`'s signature cannot compile; a second clean extraction `vm_plan_regions` is missing from this table; the proposed 4-commit order is wrong in 3 places; EP2-E0 additionally reaches an X1-cluster duplication L11 did not find) |
 
 **PASSES (13 functions, §5) and PROBED-AND-HELD (7 items, §5.1)** — see §5.
+
+### Lens emitpass2 — `src/gen/emit_vm.c`, the second pass (chartered by L1 §4 item 1, sequenced by L10 §4.3)
+
+Every number below was RE-DERIVED by EP2 at `7d444f9e` directly from the
+file and from `tests/mech/sabotages/`, never copied from a prior report;
+where a number disagrees with one already in this table, the row states
+the disagreement and the instrument difference (per EP2's own framing,
+echoing L10 §2.4's warning that instruments disagree — which EP2 finds
+applies to anchor counts too, not only buffer counts).
+
+| cite | claim | file:line | severity | effort | blast radius | cross-ref |
+|---|---|---|---|---|---|---|
+| EP2-E0 | The 4 walks at `emit_vm.c:6613-6748` are ONE 28-line spine walker duplicated into TWO genuinely different edge-policy pairs (stop-leaf-then-descend vs. act-leaf-then-plain-descend at `A_CALL`); merge the traversal, keep both edge policies as two callbacks | `emit_vm.c:6613-6748` (`vm_grp_set`, `vm_w_caps`, `vm_publish_nonnull`, `vm_publish_saves`) | MAINTAINABILITY | MECHANICAL | 1 file, 1 anchor re-aim (S149), 0 abi | **L1-X1** (the whole-tree walk extract reaches this cluster materially — EP2's own §2.1 finding); explicit anti-perversion note: "the verdict merges the TRAVERSAL and keeps both VERDICTS," exactly L1-X1's `atomic.c` framing |
+| EP2-E1 | The file's OWN declared helper (`vm_slot_expr`) is re-derived by hand at 4 sites (`vm_call`, `vm_splice` ×3), each with its own pair of buffers; an arena-returning sibling (`vm_slot_ref`) retires **8 of the 40 category-(a) buffers in one edit**, 20% of stage 3's population, with ZERO anchors inside | `emit_vm.c:6818-6825,6942-6949,7009-7020,7023-7031` | MAINTAINABILITY (the file's own comment calls the pattern a defect class) | MECHANICAL | 1 file, 0 anchors inside (2 abut: S147, S173), 0 abi (byte-identical by construction) | **L2-L2-1/L2-2, L10-L10-1** (this is the single highest-value, lowest-cost slice of the whole fragment-layer population — not named by any prior report) |
+| EP2-E2 | **CONFIRMS L11-F12** (the emitted bounded span-scan written twice, `vm_cursor_rep`/`emit_vm.c:4151-4158,4295-4303`) by direct source verification — **but L11's proposed signature `(v, a, stride, test, bound)` cannot compile**: the greedy arm emits an extra declaration (`lim_`) INSIDE the block it opens, which the shared bound expression then names, so the helper needs a `clamp` parameter that owns opening the block | `emit_vm.c:4151-4158,4295-4304` | MAINTAINABILITY | MECHANICAL | 1 file, 0 anchors inside, 0 abi | **CORRECTS L11-F12** — see §2.8 |
+| EP2-E3 | `{m,n}` bound text rendered 4 times, 3 different spellings (2× `bounds[32]`, 1× `fbounds[32]`, 1× inline in two `vm_rolef` calls with no buffer); one arena-returning helper retires 3 more category-(a) buffers; reaches BOTH the `.c` artifact (via a `// %s` comment) and the `--emit-ir` listing | `emit_vm.c:4105-4107,4862-4864,5761-5764,5506,5510` | POLISH | MECHANICAL | 1 file, 0 anchors, 0 abi; both byte-streams must be compared | new finding, no prior report reached this site |
+| EP2-P1 | The call-target nullability fixpoint (`:8792-8810`, emits nothing, mutates the AST via `vm_publish_nonnull`) extracts cleanly as `vm_resolve_nonnull(Vm*, Ast*)`; the `nt+1`-round settle assertion (`ctx_fail` at `:8806`) must travel | `emit_vm.c:8792-8810` | MAINTAINABILITY | LOCAL | 1 file, 0 anchors inside, not an abi event (emits no text) | refines **L11-F1**'s region-8539-9000 row — see §2.8 |
+| EP2-P2 | A SECOND clean, zero-anchor fixpoint (region-linkage flags + transitive group set + `spl_nw`) sits inside L11's own 8539-9000 span and is **not named by L11's table at all** — `vm_plan_regions(Vm*)` | `emit_vm.c:8826-8865` | MAINTAINABILITY | LOCAL | 1 file, 0 anchors inside, not an abi event | new finding within L11's own region — see §2.8 |
+| EP2-P3 | The `W` save-set build (`:9000-9150`) is the one candidate whose seam is NOT free: **L11's proposed `vm_build_region_saves(Vm*, Ast*, int nstate)` cannot compile** — it reads `snap_before[]`/`snap_after[]` (7 family ranges per region) produced by an INTERLEAVED counting pass L11's table treats as part of a different, contiguous region; the snapshots must become parameters. Carries the `spl_nw` agreement `ctx_fail` (`:9138-9143`), which must travel with its comment | `emit_vm.c:9000-9150` | MAINTAINABILITY | LOCAL | 1 file, **6 anchors inside** (S148,S150,S151,S152×2,S153) | **CORRECTS L11-F1's proposed signature** — see §2.8 |
+| EP2-P4 | The region cost fixpoint (cyclic targets settled first, then readiness-ordered DAG evaluation) extracts cleanly as `vm_memo_region_costs(Vm*)`, zero anchors, depends only on P2 | `emit_vm.c:9150-9186` | MAINTAINABILITY | LOCAL | 1 file, 0 anchors inside, not an abi event | refines L11-F1's region-9000-9189 row |
+| EP2 (anchor correction) | L11-F1's "26 sabotage rows attribute inside `pcrec_emit_vm`, 10% of the tree's net" is a measured UNDERCOUNT: the true figure is **29 distinct rows / 32 anchor records (11.1% of 261 rows)**, located by sourcing every `S*.sh` and exact-string-locating its `SAB_BEFORE` — L1's own 85-rows-in-the-whole-file figure reproduces exactly | `emit_vm.c` (whole function, `:8539-11575`) | — (correction) | — | — | **CORRECTS L11-F1** — see §2.8 |
+| EP2 (sequencing correction) | L11's proposed 4-commit order (X8 first, then `vm_resolve_nonnull`, `vm_build_region_saves`, `vm_plan_capacities`) is corrected in three places: **X8 must NOT go first** (it is the only step with an abi question, and depends on L10's `sb_name`/`sb_upper`, which L10's stage 3 supplies — X8 rides stage 3, per L10 §4.3 item 4, not step 1); **P2 (`vm_plan_regions`) is missing from L11's order entirely**, a free zero-anchor extraction that must precede P3/P4; **P3 before P4 is backwards** — P4 is zero-anchor and depends only on P2, P3 is six-anchor and needs the snapshot parameters, so doing P4 first means a red in P3 bisects to P3 alone | — | — (correction) | — | — | **CORRECTS L11-F1's staging** — see §2.8 |
+| EP2-§3.5 | The tree's sabotage-application mechanism (`tests/mech/lib/replace.py`) matches `SAB_BEFORE` as a WHOLE-FILE, LINE-AGNOSTIC substring — so a verbatim same-file RELOCATION costs zero re-aims, and only a TEXT CHANGE (chiefly re-indentation: 92 of 94 `emit_vm.c` anchors carry leading whitespace) breaks an anchor. Reframes the cost model for every wave touching this file: price by "does the moved text keep its column," not by lines moved | `tests/mech/lib/replace.py` | — (methodological finding) | — | — | governs the ordering of every `emit_vm.c` step in EP2's own §5 sequence table and should govern L10's stage 3 ordering too |
+| EP2-§4 | The buffer population is **58 declaration statements / 66 declarators in THREE sizing categories**, not 40/48 — category (c) (5 sites, `DERIVED_CONSTANT + literal margin`, e.g. `PCREC_MAX_EMIT_NAME_LEN + 64`) is uncounted by every prior instrument and would **pass L10's stage-3 acceptance criterion untouched**, which the criterion was explicitly written to avoid (the K35 shape, one category over) | `emit_vm.c:4989,5079,5137,7800,11381` | CORRECTNESS-RISK (the criterion gap) | — | 1 file; recommends the criterion be restated over `char <ident>[` with ANY size expression, floor at 58/66 not 40/48 | **OVERLAP CLUSTER, EXTENDED — see §2.3** |
+| EP2 §1 (`irsb`/L12 finding) | `vm_render_listing` (L12) writes a DIFFERENT output stream (`job->irsb`, the `--emit-ir` listing) that NONE of lens 10's four standing byte-identity gates or its full-corpus emit-diff (both `.c`-artifact-only) can see; the only comparator is `tests/codegen/run_ir_listing.sh`; 6 of stage 3's category-(a)/(c) buffers write only to this stream | `emit_vm.c:7645-8278` (L12), `:11557` (the one call site) | CORRECTNESS-RISK (instrument gap) | — | any stage touching L12's 6 buffers owes this arm explicitly | **new named-owed item for L10's stage 3 — see §6 follow-on register** |
+| EP2 A1 (ruled-record confirmation) | The non-emitting fixpoints (P1-P4) may NOT move to `src/opt/`: `src/core/internal.h:5412-5418` rules `vm_nullable`'s recurrence file-`static` to the emitter (10 call sites across L3/L5/L8), and all four candidates write into `Vm`, a file-local, unexported `typedef struct` — moving either would export `Vm` or split the recurrence across the ruled boundary. The realistic home is file-static helpers in `emit_vm.c` itself (what L11-F1 already proposed) | `src/core/internal.h:5412-5418` | — (A1 ruled-record check; not a new finding) | — | — | **confirms and narrows L11-F1's proposed home** — recorded in the follow-on register (§6) per the team lead's instruction |
+
+**PROBED-AND-HELD (8 items, EP2 §6)** — see §5.
 
 ---
 
@@ -243,9 +274,9 @@ No population disagreement here — all four cite the same table's
 existence and location; they differ only in which CONSUMER of the
 missing table each lens was looking at.
 
-### 2.3 The emitter scratch-buffer family — POPULATION DISAGREEMENT: 94 / 49 / 48
+### 2.3 The emitter scratch-buffer family — POPULATION DISAGREEMENT: 94 / 49 / 48 / 58 (66 declarators)
 
-Three countings of "fixed-size `char NAME[N]` scratch buffers fed by
+Four countings of "fixed-size `char NAME[N]` scratch buffers fed by
 `snprintf`, unnamed-sized, in the emitters":
 
 | source | count | scope | instrument |
@@ -253,16 +284,23 @@ Three countings of "fixed-size `char NAME[N]` scratch buffers fed by
 | L3-F6 | **94** | whole `src/`+`cli/` tree | grep for `char NAME[<literal>]` declarations across 19 distinct sizes |
 | L2-L2-1 | **49** (41 `emit_vm.c` + 8 `emit_dfa.c`), plus 34 already named by `PCREC_MAX_EMIT_NAME_LEN` | the two emitters only | grep census |
 | L10-L10-1 | **48** (40 `emit_vm.c` + 8 `emit_dfa.c`) declaration statements at code positions; author's own script's caveat: a per-LINE grep gives 53 (6 in comments), and ~14 same-line continuation declarators are additional buffer OBJECTS the declaration count doesn't separate | the two emitters only | `lens10_evidence/buf_risk.py`, re-run independently |
+| EP2-§4 | **58 declaration statements / 66 declarators** in `emit_vm.c` ALONE (not both emitters), across **three** sizing categories: (a) bare literal — 40 statements/45 declarators, reconciling L10's own 40 exactly, but at a DIFFERENT resolution (L10's 40 is statements; EP2 separately counts 45 declarators, since 5 lines declare 2-3 each); (b) bare `PCREC_MAX_EMIT_NAME_LEN` — 13 statements/16 declarators, reconciling L10's 16 exactly (also a statements-vs-declarators reading of L10's OWN two numbers); (c) **`DERIVED_CONSTANT + literal margin`** (e.g. `PCREC_MAX_EMIT_NAME_LEN + 64`) — **5 sites, matched by NO prior instrument** | `emit_vm.c` only | `emitvm_evidence/` scripts, re-derived independently at `7d444f9e` |
 
 **L10 §2.4's own instruction, stated explicitly and preserved here
 verbatim in spirit: "all three instruments agree on the shape and NONE
 of them should be cited as an exact site list without being re-run."**
+**EP2 confirms this applies even to its own two numbers** — L10's "40"
+and "16" turn out to be counted at different resolutions internally
+(statements vs. declarators), reconciled only once EP2 separated the
+two axes explicitly.
 
-The three counts are not contradictory — L3's 94 is whole-tree, L2/L10's
-49/48 are the two-emitters subset — but L2 and L10 measuring the SAME
-scope 1 apart (49 vs 48) is itself evidence that even a same-scope,
-same-method re-run moves the number by 1-2%, which is the point L10
-makes explicitly about not citing any of the three as exact.
+The counts are not simply contradictory — L3's 94 is whole-tree, the
+others are `emit_vm.c`-only or two-emitters subsets — but the
+resolution differences (statements vs. declarators, and now a THIRD
+sizing category no earlier instrument's grep pattern could match) are
+themselves the finding: each re-run of "the same" measurement has moved
+the number, which is the point every instrument in this cluster now
+makes explicitly about not citing any single count as exact.
 
 **Severity disagreement riding the same population**: L2 files this
 CORRECTNESS-RISK on K38's precedent. L10, having measured the actual
@@ -275,6 +313,23 @@ independently reaches the same "latent, not live" disposition from the
 whole-tree side. This is a genuine severity DOWNGRADE across the
 review's own timeline (L2 → L10), not resolved here — flagged for the
 manager.
+
+**EP2 then finds a GAP in L10's own repaired acceptance criterion**,
+riding the same population: L10's stage-3 completeness criterion
+("zero literal-sized `char NAME[…]` scratch buffers remain … floor of
+48 declarations") would be satisfied with EP2's category (c) — 5 sites
+— left completely untouched, since a grep for a bare integer literal or
+for `PCREC_MAX_EMIT_NAME_LEN` alone does not match
+`PCREC_MAX_EMIT_NAME_LEN + 64`. EP2 files this CORRECTNESS-RISK (the
+criterion gap, not the buffers themselves — none of the 5 is shown to
+truncate) and recommends restating the criterion over `char <ident>[`
+with ANY size expression, with the floor moved to 58 declaration
+statements / 66 declarators in `emit_vm.c` alone (not 48 across both
+emitters). **This is the K35 shape — a population nobody counted —
+recurring inside the very criterion L10 wrote to retire an earlier
+instance of it**, one category over. Not resolved here; the manager
+should treat L10's stage-3 acceptance number as still open pending this
+repair.
 
 ### 2.4 The template-layer question (`pcrec_enc_emit_text`) — SUPERSEDED, not a disagreement
 
@@ -332,7 +387,7 @@ on the TIER the injector itself belongs in.
 proposed mechanism's effort classification — flagged for the manager
 in §3, not resolved here.**
 
-### 2.7 `emit_vm.c`'s "second pass" — five lenses converge on the same surface, three different angles
+### 2.7 `emit_vm.c`'s "second pass" — five lenses converge on the same surface; NOW DELIVERED as EP2, which corrects L11 in five places
 
 L1 §4 item 1 names the need explicitly: *"the single largest unreviewed
 surface in the primary tier ... I am naming the need."* L2 §6 (residual
@@ -345,19 +400,90 @@ kind"*). L10 §4.3 goes further and SEQUENCES it — explicitly ordering a
 because stage 3 works in exactly that surface and a post-hoc review
 would be reviewing the refactor rather than the original design.
 
-**L11's report is, in substantial part, that second pass**, though it
+**L11's report substantially anticipated that second pass**, though it
 was not chartered as one: F1 (`pcrec_emit_vm` — the analysis/config/
 emit split), F7 (`vm_emit`'s fat arms), F8 (`vm_render_listing`'s
 repetition), and F12 (`vm_cursor_rep`'s duplicated span-scan) all live
-inside exactly the surface L1/L2/L5/L10 named as unreviewed. L11 §7
-states explicitly it is NOT naming a further second-pass need on the
-emitters, because its own findings plus L1's already-named duplication
-charter cover the surface between them. **This is the review's clearest
-case of one lens's follow-on request being substantially discharged by
-another lens's independently-scoped work** — the manager should
-reconcile L10's sequencing instruction (second pass BEFORE stage 3)
-against the fact that L11 has, in this same review round, largely
-supplied it.
+inside exactly the surface L1/L2/L5/L10 named as unreviewed, and L11 §7
+stated it was NOT naming a further second-pass need on the emitters for
+exactly that reason.
+
+**EP2 is now that formally-chartered second pass, and it independently
+re-derived every number rather than inheriting L11's** (per its own
+§0 discipline: "where a number disagrees with a prior report, the
+disagreement is stated and the instrument difference named"). It
+confirms L11's central diagnosis (an analysis pass, a configuration
+pass and an emitter share one body) while correcting it in five
+measured places — see §2.8. **This is the review's clearest instance of
+a follow-on request being both substantially anticipated by one lens
+(L11) and then formally discharged, with corrections, by the lane
+chartered to do it (EP2)** — the manager should treat EP2's §5
+sequence table as the authoritative wave-1 ordering for `emit_vm.c`
+work, superseding L11-F1's own four-commit proposal, and should update
+L10's stage plan with EP2's two named repairs (§2.3's buffer-floor
+repair; the `irsb`/listing-reach items in §6).
+
+### 2.8 L11-F1 vs. EP2 — five corrections, itemized
+
+EP2 verified L11-F1's proposal against the actual source (rather than
+reviewing it as prose) and found five measured corrections, each
+recorded here as prior-number + EP2's-number + the instrument
+difference, per the team lead's instruction:
+
+1. **Anchor count: 26 → 29 rows / 32 anchor records.** L11-F1 states
+   "26 sabotage rows attribute inside this function ... 10% of the
+   whole failing-direction net," derived by L11's own general-purpose
+   attribution method (§1 of L11's report: parse `SAB_FILE` + first
+   non-blank `SAB_BEFORE` line, locate by span). EP2's dedicated
+   anchor-mapping pass over the same function — sourcing every `S*.sh`,
+   exact-string-locating each `SAB_BEFORE`, and separately counting
+   ROWS vs. anchor RECORDS (a row with `SAB_FILE2` contributes 2) —
+   finds **29 distinct rows / 32 records, 11.1% of the tree's 261
+   rows**, not 26/10%. L11's own report explicitly flagged its
+   attribution counts as FLOORS (~24 of 261 tree-wide anchors didn't
+   match today's source byte-for-byte in L11's pass); this is that
+   floor being met from inside the one function it undercounted most.
+2. **`vm_build_region_saves`'s proposed signature cannot compile.**
+   L11-F1 proposes `static void vm_build_region_saves(Vm *v, Ast *root,
+   int nstate);`. EP2, reading the span line by line, finds the region
+   reads `snap_before[i].guard/.low/.mark/.rev/.ctr/.lookmark/.lookpos`
+   and the matching `snap_after[i]` — seven family ranges per region
+   produced by an INTERLEAVED counting pass — which are `VmSnap`-typed
+   locals in `pcrec_emit_vm`, not derivable from `(v, root, nstate)`
+   alone. The corrected signature adds `const VmSnap *before, const
+   VmSnap *after` parameters (EP2-P3).
+3. **A second clean extraction (`vm_plan_regions`) is missing from
+   L11's table entirely**, folded invisibly into its `8539-9000` region
+   row (L11 measured that row as one 13%-share region; EP2 finds it is
+   actually TWO non-emitting fixpoints back to back — `vm_resolve_
+   nonnull` and `vm_plan_regions`, EP2-P1/P2 — with a separate
+   already-a-function snapshot pass between them and P3's true start).
+4. **L11's proposed 4-commit order is corrected in three places** (all
+   filed as EP2 §5, echoed in the EP2 findings table above): X8 does
+   NOT go first (it is the sequence's only abi-adjacent step and
+   depends on L10's `sb_name`/`sb_upper` substrate, which L10's stage 3
+   supplies — X8 rides stage 3, matching L10 §4.3 item 4's own
+   recommendation, rather than leading the whole sequence); the missing
+   `vm_plan_regions` extraction (correction 3) must precede P3 and P4;
+   and P3-before-P4 is backwards on cost grounds — P4 is zero-anchor
+   and depends only on P2, P3 is six-anchor, so taking P4 first means a
+   red in P3 bisects to P3 alone.
+5. **L11-F12 (`vm_cursor_rep`'s duplicated span-scan) is CONFIRMED but
+   its proposed signature is wrong.** L11 proposes
+   `vm_emit_span_scan(StrBuf*, const Vm*, const Ast*, int stride, const
+   char *test, const char *bound)`. EP2 finds the greedy arm emits an
+   extra declaration (`lim_`) INSIDE the block the helper would open,
+   which the shared bound expression then names — so a `bound`
+   STRING parameter cannot express it; the corrected signature takes a
+   `clamp` parameter that owns opening the block (EP2-E2).
+
+None of these five corrections changes L11-F1's underlying diagnosis
+(the split is real and the seam is clean); all five are measured
+repairs to L11's proposed IMPLEMENTATION, found by EP2 verifying against
+source rather than inheriting L11's read. **Flagged for the manager: any
+wave brief drawn from L11-F1 as currently written will discover
+correction 2 and 5 at compile time; EP2's §5 sequence table is the
+version that compiles.**
 
 ---
 
@@ -426,6 +552,8 @@ Findings any report marked as immediate/one-line/independent-of-waves.
 | **L11-F8** | Collapse `vm_render_listing`'s 3 section loops + 6 slot loops | Author: *"the cheapest possible first move for a refactor wave that wants to prove its method."* 0 sabotage anchors. |
 | **L8-F2, L8-F5** | `cli_parse`/`apply_target` leak fix; `write_file`/stdout `ferror()` check | MECHANICAL, CLI-local, independent of everything — author's own ranking (tier 3). |
 | **L6 §5 step 1** | Add `-Wl,-dead_strip` to `match_api.md` §8.0's worked example, with the reason | Doc-only, MECHANICAL; recovers 43,968 of 44,448 rxt-tier bytes for every consumer who copies the example, with zero code change. |
+| **EP2-E1** | `vm_slot_ref`, the arena-returning sibling of the file's OWN already-declared `vm_slot_expr`, over 4 hand-rolled sites in `vm_call`/`vm_splice` | Author's own ranking: step 1 of EP2's wave sequence, 0 anchors inside, retires 8 of 40 category-(a) buffers (20% of the fragment-layer population) in one edit — the highest-value, lowest-cost item the whole `emit_vm.c` surface offers. |
+| **EP2-E0, E2, E3, P1, P2, P4** | The six zero-anchor extractions in EP2's own §5 sequence (steps 2-7): the merged X1 walkers (1 anchor, near-zero), `vm_emit_span_scan`, `vm_bounds_text`, `vm_resolve_nonnull`, `vm_plan_regions`, `vm_memo_region_costs` | All verified byte-neutral by construction (zero `sb_*`/L6-primitive calls in the moved spans); author's own cost model (§3.5) ranks these first precisely because they cost zero sabotage re-aims. |
 
 ---
 
@@ -604,6 +732,44 @@ L5-R1).
    held; the labels are one control-flow graph in the emitted program's
    own order.
 
+**`emit_vm.c` second-pass candidates held (EP2 §6, 8 items):**
+1. Unifying the rung emitters (cursor/reverse-deterministic/counter-K/
+   frames/island/lookaround) into ONE table-driven emitter — declined;
+   the table would have to carry the emitted control-flow graph itself
+   (differing label counts, slot families, frame discipline, fail-label
+   semantics), which is question 3 answering "correctly code-driven."
+2. Merging `vm_cost_rep`/`vm_count_slots`'s `A_REP` arm/the rung
+   emitters' own rung selection into one decision pass — real, and the
+   file's OWN comment (`:4046-4055`) is already aware of the
+   triplication and states the cross-agreement invariant instead of
+   merging; a DESIGN-EVENT with its own argument, not a review finding.
+3. `vm_fadd`/`vm_fmul` merging with the tree's other saturating helpers
+   — already L1-X3's territory; these two saturate at `PCREC_MINW_MAX`
+   for a stated follow-min-accumulator reason.
+4. `vm_emit_f`/`vm_emit_fd` collapsing into one defaulted-argument
+   function — declined; `vm_emit_f`'s header states it is "THE ONLY
+   MUTATOR of `v->fmin`," and collapsing makes that single-mutator claim
+   harder to check for a six-line saving.
+5. Retiring `Vm.up[80]` (~110 readers) — L10 already scopes this out of
+   wave 1 (a data-flow change through the central struct with a
+   different byte-neutrality argument); EP2 concurs and adds it is the
+   file's 59th declaration and belongs in a later `Vm`-field-touching
+   wave.
+6. `vm_emit`'s six SHORT leaf arms (`A_CLASS`, `A_EMPTY`, `A_BOL`,
+   `A_EOL`, `A_END`, `A_GSTART`) as extracted functions — declined; each
+   is 4-20 lines and reads correctly as a dispatcher arm. L11-F7's fat-
+   arm argument applies only to the four FAT arms, which is how L11
+   scoped it.
+7. `vm_isl_build` as a candidate for the non-emitting-pass (P1-P4)
+   treatment — declined; it emits nothing, matching P1-P4's shape, but
+   it is ALREADY its own named function, which is the whole remedy.
+8. The `L14` emitting regions (`:9405-11575`, 1,170 span lines of
+   prologue/stamps/macros/trailers/entries) as extraction candidates —
+   declined, matching L11-F1's own Q5-passes verdict for `emit_attempt`/
+   `emit_info_def`'s shape; EP2 adds the measurement that these regions
+   hold 22 of the function's 32 anchor records, making a speculative
+   split there the sequence's most expensive move for its least benefit.
+
 **13 functions PASS all five of lens 11's questions and should stay
 exactly as long as they are** (full list and per-function rationale in
 L11 §5): `emit_info_def`, `pcrec_select_engine`, `emit_attempt`,
@@ -699,7 +865,61 @@ Every named-but-not-chartered follow-on found in the reports' own text.
     L5, L11**), dispositioned to the next review round per the
     ratification.
 
-14. **`emitvm_second_pass.md`** — per the brief, this is being written by
-    a live lane (worktree `emitpass2`) and is explicitly excluded from
-    this collation; the manager will add it. Items 1 and 2 above are the
-    context that lane inherits.
+14. **`emitvm_second_pass.md`** — DELIVERED (worktree `emitpass2`, cited
+    `EP2` throughout this document) and now folded into this collation
+    as a twelfth source, per the team lead's follow-up scope addition.
+    Items 1 and 2 above are the context EP2 inherited and built on
+    (§2.7, §2.8).
+
+15. **The `irsb`/`run_ir_listing.sh` byte-neutrality arm** — named by
+    **EP2** (§1, §3.3) as an item L10's stage 3 now OWES: `vm_render_
+    listing` (layer L12) writes a SEPARATE output stream (the
+    `--emit-ir` listing, `job->irsb`) that none of L10's four standing
+    `.c`-artifact identity gates or its full-corpus emit-diff can see;
+    6 of stage 3's category-(a)/(c) buffers write only to this stream,
+    so any stage touching L12 must add `run_ir_listing.sh` as an
+    explicit comparator rather than relying on the gates already named.
+
+16. **The listing-reach census** — named by **EP2** (§7, "the one thing
+    I would want measured before wave 1 starts and did not measure — no
+    `make` allowed in this lane"): whether `run_ir_listing.sh`'s
+    population actually reaches L8's rung emitters, whose `vm_rolef`
+    role text is the listing's own content — the CONVERSE of the `irsb`
+    finding above (item 15 shows the `.c` gates don't reach the
+    listing; nobody has checked whether the listing check itself
+    reaches everything a wave step touches). EP2 proposes this ride
+    alongside L10's stage 0 (the long-prefix corpus control) as one
+    `RXTDUMP`-style census.
+
+17. **The A1 ruled-record boundary on `emit_vm.c`'s non-emitting
+    passes** — confirmed, not reopened, by **EP2** (§3.1): `src/core/
+    internal.h:5412-5418` rules the nullability fixpoint's recurrence
+    (`vm_nullable`, 10 call sites across three of the file's layers)
+    file-`static` to the emitter, and all four fixpoint candidates
+    (EP2-P1 through P4) write into `Vm`, a file-local unexported
+    struct — so NONE of them may move to `src/opt/` or an `ir/`-
+    adjacent home without exporting `Vm` or splitting the recurrence
+    across a ruled boundary. The realistic home stays file-static
+    helpers in `emit_vm.c` itself, which is what L11-F1 already
+    proposed; a sibling TU behind a private header is named as a
+    legitimate LATER option, explicitly not recommended for wave 1
+    (it converts a text change into a build-graph change for no
+    capability the statics lack).
+
+18. **`vm_isl_*`, the alternation-island layer (685 lines / 312 code, 9
+    functions) — a ZERO-ANCHOR layer, named by EP2 (§7 item 1) as a
+    gap somebody should price, framed explicitly as a `tests/mech`
+    question rather than a lens question**: it is the only substantial
+    layer in the whole file with no failing-direction coverage at all,
+    and EP2 read only its banners and `vm_isl_emit`'s emission surface
+    — `vm_isl_build`, `vm_isl_words`, and the trie insert were not read
+    at line level.
+
+19. **`emit_dfa.c`'s unrun third buffer category** — EP2's category-(c)
+    finding (§4, DERIVED_CONSTANT + literal margin, 5 sites in
+    `emit_vm.c`) was explicitly NOT run against `emit_dfa.c`, which is
+    out of EP2's chartered scope. EP2 states plainly: "if `emit_dfa.c`
+    has derived-constant-sized buffers too, stage 3's floor moves
+    again" — the §2.3 buffer-population repair may be incomplete until
+    someone runs the same category-(c) grep against the second
+    emitter.
