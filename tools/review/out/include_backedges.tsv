@@ -1,0 +1,8 @@
+# include_graph.py --out-backedges -- commit 1edd6c5eb643d9b3b0c559ff686c35ecfb645493 -- generated 2026-09-17 -- rows 6
+from_file	line	spelling	resolved_to	from_layer	to_layer
+src/core/compile.c	14	gen/enc/enc.h	src/gen/enc/enc.h	core	gen
+src/ir/dfa.c	111	gen/enc/enc.h	src/gen/enc/enc.h	ir	gen
+src/ir/nfa.c	35	gen/enc/enc.h	src/gen/enc/enc.h	ir	gen
+src/opt/lower_enc.c	134	gen/enc/enc.h	src/gen/enc/enc.h	opt	gen
+src/parse/parse.c	36	gen/enc/enc.h	src/gen/enc/enc.h	parse	gen
+src/parse/rxt_compose.c	75	gen/enc/enc.h	src/gen/enc/enc.h	parse	gen
