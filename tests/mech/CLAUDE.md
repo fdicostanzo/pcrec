@@ -50,6 +50,36 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   its mktemp'd scratch root and parallel-mode row dir on exit (KEEP=1
   preserves both; a scratch root passed in via MECH_SCRATCH is never
   removed).
+
+  **A MISSING OR UNSCRAPEABLE SUITE LOG SCORES ANOMALY, NEVER A SYNTHESIZED
+  COUNT** (lane mechfix, 2026-09-17). Every arm used to score its scraped
+  failure count with `[ "${f:-1}" -gt 0 ] && any_fail=1`, so a suite whose
+  log was missing, or held no `checks failed:` total at all, DEFAULTED to
+  f=1 and the row read **DETECTED** — a suite that never ran scored as
+  having caught the plant. The distinguishing evidence (the
+  `ERRfail/?pass`-shaped cell) was printed on every such row and nothing
+  read it; the incident is S249's first run (its suite script was
+  uncommitted, so `git archive HEAD` produced a tree without it — recorded
+  as superseded in that row's own `SAB_DOC_FIGURE`, found by lane
+  dialimpl). The fix is ONE general site, `score_arm` in
+  `run_sabotage_matrix.sh` — the single place a scraped count becomes a
+  verdict bit, which all ~52 arm sites now route through: a missing/EMPTY
+  log renders `NAME:NO-LOG(<file>)`, an unscrapeable count keeps the
+  documented `ERRfail/?pass` cell, and both score `any_unmeasured`
+  (Frank's S155 vocabulary: ANOMALY, with a real `any_fail` from another
+  arm still outranking it) — a count is synthesized in NEITHER direction,
+  since scoring the absence as f=0 would be the UNDETECTED lie instead.
+  When EVERY assigned arm is unmeasured the verdict names the arms and
+  their logs (`ANOMALY (no assigned arm produced a measurement: ...)`)
+  rather than falling through to the bare "no suite ran". Validated in the
+  failing direction FIRST: with the tunedial suite script removed from a
+  temp HEAD, the pre-fix driver reproduced the false
+  `tunedial:ERRfail/?pass DETECTED, anomalies: 0` exactly, and the fixed
+  driver reads ANOMALY on the same tree in both variants (bash's
+  no-such-file text as the whole log → `no-count-scraped`; a silent stub →
+  `NO-LOG`); then S249 and S204 re-driven solo, both DETECTED with real
+  counts, and the pre-fix driver A/B'd at the same HEAD to confirm the
+  healthy path's counts are byte-identical.
 - **lib/replace.py** — the ONLY thing that edits a sabotaged file. Takes a
   target file plus literal BEFORE/AFTER text and a required occurrence count;
   refuses to run if the anchor text is not found exactly that many times

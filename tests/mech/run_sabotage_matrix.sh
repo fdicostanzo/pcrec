@@ -71,6 +71,15 @@
 # of a measurement, and reporting it as "the guards missed it" is a claim
 # about the CODE and a false one.
 #
+# THE SAME RULE HOLDS FOR AN ARM'S OWN LOG (lane mechfix, 2026-09-17): a
+# suite log that is MISSING/EMPTY (`NAME:NO-LOG(<file>)`) or holds no
+# scrapeable failure total (the `ERRfail/?pass` cell) is **ANOMALY**, never
+# a synthesized count in either direction -- neither DETECTED (the old
+# `${f:-1}` default, which scored a suite that NEVER RAN as having caught
+# the plant; S249's first run is the incident) nor UNDETECTED. `score_arm`
+# below is the one place a scraped count becomes a verdict bit; a real
+# failure from another arm still outranks the anomaly, S155's own rule.
+#
 # WHY (docs/dev/plan.md [MECH-REACH]; D69 addendum). S70's four escape
 # witnesses were retired ONE PER WAVE as module `assertions` implemented the
 # constructs they probed, and after [M6.5.2] retired the last one not a single
