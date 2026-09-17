@@ -660,6 +660,40 @@ never edited afterwards.
   whole size range, not just by size. See `docs/dev/dialtrain_byteid.md`
   for the full memo.
 
+- `btriage_20260917_report.md` — triage of `battery_20260917_102334`'s
+  `test`-stage red (2026-09-17, lane btriage, sonnet; log-reading +
+  targeted fixes only — the dial+K59 train's own merge battery on
+  ubuntubudu was still running its axes/san/lint/mech stages for this
+  lane's whole working period). Named with a date suffix because an
+  earlier, unrelated lane (`btriage2`, 2026-09-10) already committed a
+  report at the un-suffixed `btriage_report.md`. **Verdict: the red does
+  not block the `cf0962e3` pin** — both failures are stale test-side
+  pins, neither a defect in the `--tune`/K59RUNG mechanism. (1)/(2):
+  `tests/resource/run_resource_tests.sh`'s two `size_moved` witnesses
+  were rescued below the 1,000,000-byte cap by K59's new `SDR_NO_PREMUL`
+  drop-ladder rung, which — unlike `min-size`'s own dial position — fires
+  at EVERY `--tune` position on any DFA-engine artifact the cap refuses;
+  a real, intended, verified consequence the merge's own delivery should
+  have re-pinned and didn't. Row 1 re-witnessed at a larger count
+  (`{1,8000}` → `{1,13000}`, still refuses at 1,034,779 bytes); row 2
+  (`a{5,25000}`) has NO safe larger witness — raising `N` past ~31,500
+  under its deny flags hits K25's own chain-minimization slow zone before
+  ever regaining the cap (measured, two substitute shapes tried and
+  rejected) — so it is retired from the refusal loop and flipped to a
+  dedicated acceptance check asserting the rescue itself, the same
+  flip-the-assertion precedent this file's own [OPT-4.1]/[OPT-4.2] cells
+  already used. (3): `tests/rxtsource/run_rxtsource_tests.sh`'s
+  `C3_PASS` pin (13708) predates `e0bc115b` (lane `cmtfix`, [O-31 F1],
+  merged hours before k59rung the same day) adding
+  `tests/base/comment_escape.rxt`'s 6 python-verifiable cases without
+  re-pinning C3 — pre-existing staleness unrelated to k59rung's own diff,
+  surfaced only because this battery is the first `make test` run after
+  both commits landed. Re-pinned to 13714, isolated-verified via
+  `verify_rxt.py` on the single new file. Both fixes re-validated locally
+  (25/0 resource, was 20/2; 212/0/1-recorded rxtsource, was 211/1) — the
+  one `RECORD:` line is this box's pre-existing darwin C3
+  non-native-pin behavior, unrelated to either fix.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
