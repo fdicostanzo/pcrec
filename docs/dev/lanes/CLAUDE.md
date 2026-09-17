@@ -1012,6 +1012,58 @@ never edited afterwards.
   period, so only rxtsource + strict ran; full `make test` is owed to
   the manager at the next merge battery.
 
+- `dialdesign_report.md` — [OPT-DIAL] STEP 1, THE DESIGN (2026-09-16, lane
+  dialdesign, opus; design only, nothing under `src/`/`tests/`/`docs/spec/`).
+  Delivers `docs/design/opt_dial_design.md` and REVISION 2 of
+  `docs/design/opt_dial_inventory.md`. Read §1 first — three findings, each
+  of which a D6 panel should attack.
+  **§1.1: the FIRST SIZE NOTCH IS EMPTY and no threshold fixes it.** Among
+  the axes whose denial SAVES bytes, the measured penalties jump from
+  1.00× straight to 1.794× — so every tier-one bound below 1.794 makes
+  notch `−1` identical to the middle on every discrete row, and the first
+  bound that does anything makes it identical to `−2` instead. The λ row
+  reaches the same conclusion by an independent route (its ops cap admits
+  nothing between the middle's 108 probe ops and the frontier's next point
+  at 175), which the report flags as a confirmation with the caveat that
+  one set is all the λ evidence there is.
+  **§1.2: the FOUR-UNITS problem collapsed to ONE unknown.** Frank's
+  threshold rule is stated in one unit and the inventory's rows carry
+  penalties in four; the note fixes the unit as the whole-match multiplier
+  and converts a COMPONENT row exactly as `1 + φ(m−1)`, which turns a
+  guessed threshold into a falsifiable sentence — *`-fno-tiered-entry`
+  belongs in the min-size column iff per-call entry cost is at most 24.6%
+  of match time.* The report records the near-miss: an earlier draft
+  invented a second "regime" with a guessed cross-regime factor, produced
+  the identical table, and hid the unknown inside the guess.
+  **§1.3: λ and the discrete table are NOT consistent at the extreme, and
+  the reason is structural.** The consistency test is a ratio test
+  checkable TODAY without the calibration constant (`ρ/σ` constant across
+  positions), and it fails at `−2` — because `x₂` is a hard SAFETY CAP
+  while λ=0 is a pure objective with no safety term, a shape difference no
+  choice of λ repairs. The repair gives the DP the same cap
+  (`ops ≤ x₂ · ops(middle)`), which `\p{L}` passes at 1.91× against 2.00×
+  — and the report declines to treat that near-agreement with
+  `-fno-anchored-dfa`'s own 1.99-against-2.00 as corroboration, since the
+  two share no mechanism.
+  §2 is what REVISION 2 found wrong in STEP 0, **none of it because a
+  number moved**: the draft policy table violates STEP 0's own allowlist
+  rule in STEP 0's own document (the rule in §6, the table in §3, nothing
+  tying them — `learnings.md` §3's shape one document earlier in the
+  pipeline); the dial's flagship `--vm-entry-shape` row has its two axes
+  measured on two DIFFERENT PAIRS of rungs and the rung the default selects
+  has no measured run time at all; and two axes had landed in `tuning.md`
+  since STEP 0 and were never inventoried, one of which
+  (`-fno-startpos-guard`) is the one axis in that document that is not
+  answer-identity-preserving and so introduces a bucket STEP 0 lacked.
+  §3 carries five findings the brief did not anticipate, headed by
+  `-fno-anchored-dfa`'s min-size cell being admissible only as a
+  DEPENDENCY on `[K53-SELRETRY]`'s drop ladder, and by the K45 check the
+  dial needs being one the axes sweep structurally cannot be (the refusing
+  SET compared as keys, never as a count, because this design's two
+  refusal hazards run in opposite directions and a count would let both
+  slip through at once). §4 is the method note on where the percentages
+  came from and which denominator the threshold rule uses; §6 is the
+  seven-item Frank queue. `make strict` GREEN; nothing owed.
 - `dialsweep_report.md` — [OPT-DIAL] §7 SIZE SWEEP (2026-09-15, lane
   dialsweep, sonnet; measurement only, nothing under `src/`/`tests/`).
   Eight full-corpus passes (baseline + the six switches §7 names plus one

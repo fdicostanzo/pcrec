@@ -37,15 +37,22 @@ not.
 should be able to check it rather than be walked to it:
 
 > **THE FIRST SIZE NOTCH IS EMPTY ON EVERY DISCRETE ROW, AND NOT BECAUSE
-> OF THE THRESHOLDS.** pcrec's measured switches have a GAP in their
-> penalty distribution: `--unroll`'s K ladder costs essentially nothing,
-> and the next cheapest thing the dial can deny costs **1.794×**
-> (`-fno-premul-table`). There is no measured switch in between. So for
-> any tier-one bound below 1.794 the notch-`−1` column is identical to the
-> middle on every discrete row, and the only rows that distinguish them are
-> λ and the `[ART-SIZE]` ladder. **This is a property of the measured
-> population, not of the numbers Frank picks**, and it will not be fixed by
-> moving x.
+> OF THE THRESHOLDS.** Among the axes whose DENIAL SAVES BYTES — the only
+> ones a size notch could ever want — pcrec's measured penalties have a
+> GAP: `--unroll`'s K ladder costs essentially nothing, and the next
+> cheapest costs **1.794×** (`-fno-premul-table`); the rest run 1.99×,
+> 2.00×, 2.71-3.03× and 5.06×. So for any tier-one bound below 1.794 the
+> notch-`−1` column is identical to the middle on every discrete row, and
+> the only rows that distinguish them are λ and the `[ART-SIZE]` ladder.
+> **This is a property of the measured population, not of the numbers Frank
+> picks**, and it will not be fixed by moving x.
+>
+> The qualifier is load-bearing and a reader should check it. There IS a
+> measured penalty inside the gap — `-fno-altcls-merge`/`-fno-altcls-factor`
+> at 7.61% throughput, i.e. 1.082× — and it is not a candidate, because
+> denying those two also makes the typical artifact BIGGER
+> (`opt_dial_inventory.md` §2.6). A switch that is worse on both axes is not
+> a trade, so it never enters the distribution a size notch draws from.
 
 ---
 
@@ -456,8 +463,8 @@ its largest legitimate lever. So the ruling's real question is not "what is
 x₂" but "is a doubling of match time acceptable at the extreme size notch",
 and if the answer is yes at all, the exact value barely matters.
 
-**(b) `x₁` is nearly inert, and §0's headline is why.** The measured
-penalty distribution has a hole between 1.00× and 1.794×. No value of `x₁`
+**(b) `x₁` is nearly inert, and §0's headline is why.** Among size-SAVING
+axes the measured penalties jump from 1.00× to 1.794×. No value of `x₁`
 below 1.794 changes anything; the first value that does is 1.80, and it
 makes notch `−1` identical to notch `−2` on the discrete rows. **There is
 no `x₁` that makes `−1` a distinct, non-empty, non-extreme column on
@@ -733,10 +740,12 @@ this change is two searches, not one:
 
 `make test-codegen` before delivering, per the situation index.
 
-**One sizing note for the implementation lane.** The added line is ~28
-bytes of source per artifact on a corpus baseline of 115,198,573 bytes —
-about 0.00008%. It is below the artifact-size tripwire's resolution but it
-is NOT below the byte-exact manifests', which is the whole point of (2).
+**One sizing note for the implementation lane.** The added line is ~30
+bytes of source per artifact (`#define RX_TUNE "balanced"` plus its
+newline, and one byte more or fewer per token) against a corpus baseline of
+115,198,573 bytes — about 0.00009%. It is far below the artifact-size
+tripwire's resolution and it is NOT below the byte-exact manifests', which
+is the whole point of (2).
 
 ---
 
