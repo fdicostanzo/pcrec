@@ -4527,6 +4527,10 @@ typedef struct {
     int         features_only;/* the block wrote `features only` (M14)    */
     const char *encoding;
     const char *engine;       /* "vm" | "dfa"                             */
+    /* [OPT-DIAL] the `tune` directive's value AS WRITTEN — the ordinal or
+     * one of the five aliases, kept verbatim so `--list-source` reports what
+     * the author typed rather than a normalisation of it. NULL when unset. */
+    const char *tune;
     long        budget_steps; /* -1 when unset — 0 is a legal budget      */
     long        budget_frames;
     const char *with_list;    /* target's `with` config list, as written  */
@@ -4793,6 +4797,10 @@ typedef struct {
     int         features_only;
     const char *encoding;
     const char *engine;
+    /* [OPT-DIAL] the composed `tune` value as written, or NULL. The CLI
+     * resolves it to an ordinal; this side keeps the author's spelling so a
+     * conflict diagnostic can quote the file's own text. */
+    const char *tune;
     long        budget_steps, budget_frames;
     const char *pcrec_raw;     /* every composed `pcrec` line's text, in
                                 * composition order, space-joined — re-parsed

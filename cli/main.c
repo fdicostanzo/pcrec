@@ -983,6 +983,59 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
             ts.opt.engine = want;
         }
     }
+    /* [OPT-DIAL] `tune` IS NOT A SECOND `--engine` EXCEPTION: THE FILE WINS
+     * (Frank's ruling 2026-09-16, decisions.md D93's addendum), which is the
+     * GENERAL D93 rule unchanged, plus a loud non-fatal conflict diagnostic.
+     *
+     * The shape below is `--engine`'s own, with the OPPOSITE winner, and the
+     * asymmetry is ruled rather than accidental. D93 rests on two supports:
+     * a target is the artifact's DEFINITION, and letting an ambient flag
+     * reshape a target breaks H11's free identity control. The second is
+     * VACUOUS for `tune`, which is answer-preserving by its own acceptance
+     * criterion — so H11's control survives either precedence and only the
+     * definition argument is left standing, and that one says the file wins.
+     * `--engine`'s exception had a forcing reason `tune` lacks: it is a
+     * comparability facility (a caller types `--engine=vm` precisely to
+     * compare two builds of one pattern) and it can make a pattern REFUSE.
+     * `tune` can do neither.
+     *
+     * "AN EXPLICIT CLI --tune" IS `ts.opt.tune != PCREC_TUNE_BALANCED`, and
+     * that carries the same accepted residual `--engine`'s does: a caller
+     * who types `--tune=balanced` is indistinguishable from one who typed
+     * nothing, because both leave the field at its zero default. Here that
+     * costs nothing at all — under file-wins the two want the identical
+     * outcome (the file's row applies), so there is no case to tell apart.
+     * The general fix is explicit-set PROVENANCE for every D93-composed
+     * axis, and it is DEFERRED to its own trigger (D77): the THIRD axis that
+     * needs the distinction. `--engine` is the first and shipped without it;
+     * this is the second and does not need it.
+     *
+     * THERE IS NO `--force-tune`. If an override is ever wanted, D93's own
+     * revisit-when already names its shape — an explicit loud override flag,
+     * never a silent precedence flip — and this diagnostic deliberately does
+     * not advertise a flag no section of the spec defines. */
+    if (t->tune) {
+        int want = 0;
+        if (pcrec_tune_parse(t->tune, &want) != 0) {
+            /* Unreachable through `--source`: the parser validated this row
+             * with this same function. It is a diagnosed internal error
+             * rather than an assert because a library caller can build an
+             * RxtTarget of its own. */
+            fprintf(stderr,
+                    "pcrec: %s:%zu: internal error: `tune %s` reached the "
+                    "CLI unvalidated\n",
+                    cli->source, t->block_line, t->tune);
+            return 1;
+        }
+        if (ts.opt.tune != PCREC_TUNE_BALANCED && ts.opt.tune != want)
+            fprintf(stderr,
+                    "pcrec: %s:%zu: target '%s': CLI --tune=%s and this "
+                    "file's `tune %s` disagree; using the file's value "
+                    "(--tune is not the --engine exception)\n",
+                    cli->source, t->block_line, t->prefix,
+                    pcrec_tune_token(ts.opt.tune), t->tune);
+        ts.opt.tune = want;
+    }
     /* `budget frames=` sizes the ARTIFACT's resume stack, which is
      * `--backtrack-frames`, not the caller-supplied buffer of §10 —
      * tests/harness/run.sh maps the same directive the same way. */

@@ -833,6 +833,26 @@ static int parse_setting(RxtP *p, RxtRow *r, size_t line, const char *l,
         r->engine = arena_strdup(p->arena, v);
         return 0;
     }
+    /* [OPT-DIAL] `tune <position>` — the speed-vs-size dial, in the
+     * IDENTICAL vocabulary the CLI's `--tune=` takes (D93's own framing:
+     * a config block's directives are the format's named axes). Both
+     * spellings on equal terms, and the ORDINAL is legal here with no `=`
+     * problem to solve — the `=` form is a command-line requirement about
+     * argv, not a property of the value.
+     *
+     * VALIDATED HERE BY THE ONE PARSER (`src/core/tune.c`), never by a
+     * second list of five tokens: a token set spelled twice is a token set
+     * that will one day be spelled differently. The value is kept AS
+     * WRITTEN so `--list-source` reports the author's own spelling. */
+    if (tok_is(l, "tune")) {
+        int pos = 0;
+        if (pcrec_tune_parse(v, &pos) != 0)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'tune' wants -2..2 or one of min-size, size, "
+                            "balanced, speed, max-speed (got '%s')", v);
+        r->tune = arena_strdup(p->arena, v);
+        return 0;
+    }
     if (tok_is(l, "budget")) {
         long *slot = NULL;
         const char *num = NULL;
@@ -3108,7 +3128,7 @@ static int list_next(const char **cur, RxtItem *out)
  * PER-KIND table (features UNION, everything else more-specific-wins) is
  * applied exactly once, at the block, by `resolve_one` below. */
 typedef struct {
-    const char *flags, *features, *encoding, *engine;
+    const char *flags, *features, *encoding, *engine, *tune;
     int         features_only;
     long        budget_steps, budget_frames;
     const char *pcrec_raw;
@@ -3135,6 +3155,7 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
     if (add->features)  dst->features = add->features;
     if (add->encoding)  dst->encoding = add->encoding;
     if (add->engine)    dst->engine = add->engine;
+    if (add->tune)      dst->tune = add->tune;
     if (add->budget_steps  >= 0) dst->budget_steps  = add->budget_steps;
     if (add->budget_frames >= 0) dst->budget_frames = add->budget_frames;
     if (add->pcrec_raw) {
@@ -3156,6 +3177,7 @@ static void set_from_row(RxtSet *s, const RxtRow *r)
     s->features_only = r->features_only;
     s->encoding = r->encoding;
     s->engine = r->engine;
+    s->tune = r->tune;
     s->budget_steps = r->budget_steps;
     s->budget_frames = r->budget_frames;
     s->pcrec_raw = r->pcrec_raw;
@@ -3577,6 +3599,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
             t->features_only = lone->features_only;
             t->encoding = lone->encoding;
             t->engine = lone->engine;
+            t->tune = lone->tune;
             t->budget_steps = lone->budget_steps;
             t->budget_frames = lone->budget_frames;
             t->pcrec_raw = NULL;
@@ -3690,6 +3713,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->flags    = blk->flags    ? blk->flags    : s.flags;
         t->encoding = blk->encoding ? blk->encoding : s.encoding;
         t->engine   = blk->engine   ? blk->engine   : s.engine;
+        t->tune     = blk->tune     ? blk->tune     : s.tune;
         t->budget_steps  = blk->budget_steps  >= 0 ? blk->budget_steps
                                                    : s.budget_steps;
         t->budget_frames = blk->budget_frames >= 0 ? blk->budget_frames
@@ -3771,6 +3795,9 @@ static const char *const rxt_columns[] = {
     /* [DD-13b.W23.4] THREE MORE, same rule: append-only, positions 1-16
      * unchanged (format_design §2.24). */
     "tags", "oracle", "esc",
+    /* [OPT-DIAL] APPENDED, same append-only rule: positions 1-19 unchanged,
+     * so every positional reader of the earlier columns survives. */
+    "tune",
 };
 #define RXT_NCOLS (sizeof rxt_columns / sizeof *rxt_columns)
 
@@ -3874,6 +3901,8 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         if (r->oracle) sb_puts(&sb, r->oracle);                 /* 18 oracle */
         sb_putc(&sb, '\t');
         if (r->esc) sb_puts(&sb, r->esc);                       /* 19 esc */
+        sb_putc(&sb, '\t');
+        if (r->tune) sb_puts(&sb, r->tune);                     /* 20 tune */
         sb_putc(&sb, '\n');
     }
 
