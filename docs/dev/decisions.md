@@ -7283,3 +7283,29 @@ need; when it appears, a design note is its charter. Note the split this
 implies is a REAL internal IR consumed by a back-end (item 5's
 inversion), which is a different artifact from today's debug `--emit-ir`
 byproduct — the two should not be conflated.
+
+## D106 ADDENDUM 3 — review ruling cleanup: Q3 resolved by the machine-first decision; two minors dispositioned by the manager (2026-09-17)
+
+- **Q3 (lens 10 L10-6, the `--emit-ir` listing column width) — RESOLVED
+  by D106's machine-first decision, Frank agreeing.** The adopted
+  `--emit-ir` renders as unpadded tab-separated fields, so column WIDTH
+  is not part of the contract at all. Therefore `emit_vm.c:8165`'s
+  `slot[48]` listing-column truncation is FREE to move when that buffer
+  retires in the emission-kit's fragment stage (review wave 2) — it is
+  not a contract width. No separate ruling needed; folded here.
+
+- **MINOR, manager-decided (Frank: "you decide minor"):**
+  - **F2 (lens 3, the [ART-SIZE] bar/threshold split)** — resolve by
+    MOVING `SIZE_TERM_BAR_DEFAULT` (src/core/compile.c) into `limits.def`
+    as a row, so both parameters of the one unroll-K size-term ladder
+    live in the one ruled home (D90's spirit; the "beside its one reader"
+    rationale applied equally to the threshold, which is already a row).
+    It rides the same config-consolidation change as Q6's outcome
+    (`SIZE_TERM_BAR_DEFAULT` is one of the 8 name-invisible constants Q6
+    would force to be classified, and "make it a row" IS its
+    classification). Wave 4.
+  - **P5 (lens 9, the `PCREC_*` 47-contract/113-internal namespace
+    split)** — NO ACTION now; it is correctly a DESIGN-EVENT on a
+    standing trigger (v1 versioning, or a second collision). D104 already
+    closes the immediate linker-collision problem (the 12 unprefixed
+    exports). The trigger stands; re-opens there.
