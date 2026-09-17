@@ -445,11 +445,19 @@ static bool size_term_capacity_holds(const long long *fc, const long long *sc, i
            cap_or_inf(sc[i]) >= cap_or_inf(sc[0]);
 }
 
+/* [ART-SIZE] THE MATERIALITY BAR's own home, in PERCENT of the default K's
+ * bytes: a smaller K ships only if it saves at least a quarter of them.
+ * [OPT-DIAL] made this a dial cell (`--tune=-2` raises it to 95, `-1` to 85),
+ * so the constant moved out of the expression below and into a name — but
+ * the DEFAULT still lives here, beside its one reader, which is why
+ * `src/core/tune.c` carries an em-dash sentinel rather than a copy of it. */
+#define SIZE_TERM_BAR_DEFAULT 75
+
 static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
                              const size_t *code, const size_t *total,
                              const long long *fc, const long long *sc, int n,
                              unsigned long long cap_code,
-                             unsigned long long cap_total,
+                             unsigned long long cap_total, int bar,
                              int *out_k, bool *out_rescue, bool *out_capexcl)
 {
     *out_rescue = false;
@@ -487,7 +495,7 @@ static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
             best = i;
     /* the materiality bar, in bytes, against the default */
     int sel = 0;
-    if (best != 0 && total[best] * 100 <= total[0] * 75) sel = best;
+    if (best != 0 && total[best] * 100 <= total[0] * (size_t)bar) sel = best;
 
     if (code[sel] <= cap_code && total[sel] <= cap_total) { *out_k = k[sel]; return; }
 
@@ -527,6 +535,30 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     if (opt) defo = *opt;   /* local copy: keeps params setjmp-safe */
     if (out) memset(out, 0, sizeof(*out));
     if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
+
+    /* [OPT-DIAL] THE DIAL IS APPLIED ONCE, HERE, BEFORE ANY PASS RUNS.
+     *
+     * It is REFUSED rather than clamped: a clamp would let a caller believe
+     * they had asked for a position the artifact does not have, and the
+     * whole point of `<PREFIX>_TUNE` is that an artifact says how it was
+     * built. The CLI refuses the same value with its own wording; this is
+     * the LIBRARY's guard, and it exists because `pcrec_options.tune` is a
+     * plain `int` that any caller can set to anything.
+     *
+     * THE DENY MASK IS OR'D, NEVER ASSIGNED. A caller who typed
+     * `-fno-premul-table` at `+1` keeps their denial — the dial sets a
+     * policy and does not revoke an explicit request. The two VALUE cells
+     * are NOT applied here: each is read at the site that spends it
+     * (`size_term_choose`'s bar and the ladder's trigger below;
+     * `emit_vm.c`'s entry-chain term), because that site is where the
+     * built-in default the em-dash sentinel falls back to already lives. */
+    if (!pcrec_tune_valid(defo.tune)) {
+        if (err)
+            snprintf(err->msg, sizeof(err->msg),
+                     "invalid tune position %d (the dial is -2..2)", defo.tune);
+        return -1;
+    }
+    defo.flags |= pcrec_tune_deny_flags(defo.tune);
 
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis
@@ -575,6 +607,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      *
      * `st_k[i]`/`st_ok[i]`/`st_code[i]`/`st_total[i]` are the ladder's record,
      * index 0 being the DEFAULT attempt's K and figures. */
+    /* [OPT-DIAL] the ladder's TWO parameters, resolved ONCE from the dial's
+     * pinned row. The em-dash sentinel (0) means the dial does not touch this
+     * axis at this position, and each falls back to the built-in default that
+     * already lives at this site — `src/core/tune.c` deliberately holds no
+     * copy of either. They are `const` locals rather than `Ctx` fields
+     * because the ladder is `compile_driver`'s own machinery and nothing
+     * downstream of it reads them. */
+    const int bar0 = pcrec_tune_size_term_bar(defo.tune);
+    const int size_term_bar = bar0 ? bar0 : SIZE_TERM_BAR_DEFAULT;
+    const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
+    const long long size_term_threshold =
+        thr0 ? thr0 : (long long)PCREC_SIZE_TERM_THRESHOLD;
+
     volatile SizeTermPhase st_phase = ST_DEFAULT;
     volatile int  st_idx = 0;          /* next ladder rung to try */
     volatile int  st_final_k = 0;      /* the K the FINAL attempt re-emits */
@@ -772,6 +817,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                                               : PCREC_MAX_VM_EMIT_CODE_BYTES,
                                      defo.max_emit_bytes ? defo.max_emit_bytes
                                                          : PCREC_MAX_EMIT_BYTES,
+                                     size_term_bar,
                                      &final_k, &rescue, &capexcl);
                     st_final_k = final_k; st_rescue = rescue; st_capexcl = capexcl;
                     st_phase = ST_FINAL;
@@ -1440,7 +1486,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                        defo.unroll_k == 0 &&
                        !(defo.flags & PCREC_NO_SIZE_TERM) &&
                        (cx.job->vm_rungs & 0x10u) != 0 &&
-                       emit_code > (size_t)PCREC_SIZE_TERM_THRESHOLD;
+                       emit_code > (size_t)size_term_threshold;
             if (run) {
                 st_phase = ST_LADDER; st_idx = 0;
                 job_cleanup(&cx);
@@ -1461,7 +1507,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 int fk = 0; bool rescue = false, capexcl = false;
                 size_term_choose(st_k, st_ok, st_nodes, st_code, st_total,
                                  st_fc, st_sc, SIZE_TERM_LADDER_N + 1,
-                                 cap_code, cap_tot, &fk, &rescue, &capexcl);
+                                 cap_code, cap_tot, size_term_bar,
+                                 &fk, &rescue, &capexcl);
                 st_final_k = fk; st_rescue = rescue; st_capexcl = capexcl;
             }
             st_phase = ST_FINAL;

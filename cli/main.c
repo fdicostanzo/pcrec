@@ -135,6 +135,16 @@ static void usage(FILE *f)
           "                 DFA prefilter, so the VM derives the whole span\n"
           "                 independently -- which is what makes it usable as a\n"
           "                 cross-check against the DFA rather than an echo of it\n"
+          "  --tune=N       the SPEED-VS-SIZE DIAL: -2 | -1 | 0 | 1 | 2, or\n"
+          "                 equivalently min-size | size | balanced | speed |\n"
+          "                 max-speed (default 0/balanced, today's defaults\n"
+          "                 byte for byte). A NEGATIVE value needs the = form\n"
+          "                 (--tune=-2); the aliases have no leading dash and\n"
+          "                 are the preferred spelling. Out of range is an\n"
+          "                 error, never a clamp. Every position answers\n"
+          "                 identically; the artifact stamps <PREFIX>_TUNE.\n"
+          "                 The per-position switch table is docs/spec/\n"
+          "                 tuning.md section 5\n"
           "  --step-budget=N  backtrack resumptions the emitted VM may spend\n"
           "                 before returning PCREC_ERR_STEPS (default:\n"
           "                 500,000,000, D51; docs/spec/limits.md)\n"
@@ -581,6 +591,38 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
                 return 1;
             }
             opt.vm_entry_shape = (int)v;
+        }
+        /* [OPT-DIAL] `--tune=N` — the speed-vs-size dial, an ORDINAL in
+         * -2..+2 with five mnemonic aliases accepted on equal terms
+         * (`src/core/tune.c` owns both spellings, so the CLI cannot drift
+         * from the stamp). `--vm-entry-shape=`'s value-parameter shape.
+         *
+         * THE `=` FORM IS REQUIRED FOR A NEGATIVE VALUE, and the separated
+         * form is REFUSED BY NAME rather than accepted by look-ahead:
+         * `--tune -2` is two tokens whose second begins with `-`, which
+         * every argv parser in this CLI would have to special-case, and a
+         * look-ahead that guessed would make `--tune -o out.c` mean
+         * something nobody typed. The diagnostic names the `=` spelling.
+         *
+         * OUT OF RANGE IS AN ERROR, NEVER A CLAMP. A clamp would let a
+         * caller believe they had asked for something the artifact does not
+         * have, and `<PREFIX>_TUNE` exists precisely so an artifact says how
+         * it was built. */
+        else if (!no_more_opts && !strncmp(a, "--tune=", 7)) {
+            int v = 0;
+            if (pcrec_tune_parse(a + 7, &v) != 0) {
+                fprintf(stderr,
+                        "pcrec: --tune wants -2..2 or one of min-size, size, "
+                        "balanced, speed, max-speed (got '%s')\n", a + 7);
+                return 1;
+            }
+            opt.tune = v;
+        }
+        else if (!no_more_opts && !strcmp(a, "--tune")) {
+            fprintf(stderr,
+                    "pcrec: --tune takes its value with '=' "
+                    "(--tune=-2, --tune=min-size)\n");
+            return 1;
         }
         /* [M5-SEAM] (D58) `--encoding=` is the long spelling of `-e`, in the
          * `=value` MODE form `--engine=` already uses (the separate-argument

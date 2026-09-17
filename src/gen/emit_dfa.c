@@ -1885,7 +1885,41 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * Comparison (B) compares whole files and is re-pinned in this same
      * change, per D76 (the lane pins its own last src commit; the manager
      * re-pins to the merge, opt5i's/ccdiff1's precedent). */
-    sb_puts(c,   "    .abi = 25,\n");
+    /* [OPT-DIAL] abi 25 -> 26 (D76/D94): THE SPEED-VS-SIZE DIAL'S STAMP.
+     * Emitted SCAFFOLDING only — no answer moves at any dial position, which
+     * is the dial's own acceptance criterion — and the per-artifact-kind
+     * breakdown is the simplest this list has carried:
+     *
+     *  - EVERY artifact of BOTH engines gains exactly ONE LINE,
+     *    `#define <PREFIX>_TUNE "<token>"`, in the shared prologue: 27 bytes
+     *    at the default `rx` prefix and `balanced`, and 23 / 27 / 27 / 24 /
+     *    28 across the five tokens. There is no second line and no comment
+     *    line, so a comment-EXCLUDING byte counter (the size log) and a
+     *    comment-INCLUDING one (`run_cpset_structure.sh`'s `EMITTED_BYTES`
+     *    manifest) move by the SAME delta — which is what lets both be
+     *    re-recorded as a POSITIVE assertion rather than a re-baseline.
+     *  - NOTHING ELSE MOVES AT POSITION 0, and that is structural rather
+     *    than measured: every cell of the `balanced` row in
+     *    `src/core/tune.c` is the em-dash sentinel and its deny mask is
+     *    empty, so there is no code path on which the dial can reach the
+     *    ladder's bar, the ladder's threshold, the entry-chain term or the
+     *    flags word. A `balanced` artifact is a no-flag artifact plus this
+     *    one line.
+     *  - AT A NON-DEFAULT POSITION the artifact may differ far more than one
+     *    line — that is the point of the dial — but no `rx_info` member is
+     *    added or changed, no struct offset moves, and the only macro whose
+     *    VALUE is new is this one.
+     *
+     * COMPARISON (A) of run_recursion_identity.sh does NOT move: the stamp
+     * is in the prologue, above `goto <prefix>_L0;`, and the suite compiles
+     * at the default position. Comparison (B) compares whole files and is
+     * re-pinned in this same change, per D76 (the lane pins its own last src
+     * commit; the manager re-pins to the merge, opt5i's/ccdiff1's
+     * precedent). And the D94-addendum reader class — a manifest whose rows
+     * cite no abi digit but whose byte-count VALUES move anyway,
+     * `battriage_report.md`'s 2026-09-15 finding — is re-recorded here too;
+     * a grep for the literal `25` structurally cannot find it. */
+    sb_puts(c,   "    .abi = 26,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -7033,6 +7067,34 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                                              "p", "s", "n")
                       ? "guarded" : "permissive");
     }
+    /* [OPT-DIAL] `<PREFIX>_TUNE` — THE DIAL POSITION THE ARTIFACT WAS BUILT
+     * AT. A §6.3 family-(a) SELECTION FACT: unconditional, on every artifact
+     * of both engines, with the same value shape on each, riding the SHARED
+     * prologue because the dial is neither engine's.
+     *
+     * A CLOSED TOKEN AND NEVER THE NUMBER, `<PREFIX>_ENGINE_SEL`'s shape. A
+     * consumer buckets on a value; a number invites arithmetic on an ordinal
+     * whose SPACING means nothing, and the token set extends without
+     * renumbering. `src/core/tune.c` owns the five spellings, so the stamp
+     * and the CLI's own alias table cannot drift — they are one table read
+     * twice.
+     *
+     * UNCONDITIONAL, INCLUDING AT `balanced`, and the tempting alternative
+     * (stamp only when non-default, so today's artifacts stay byte-identical
+     * and there is no `abi` event) is the anti-pattern `ccdiff1` recorded
+     * when it ruled `RX_DFA_UNIFORM_FOLDS` ships: this tree has twice had to
+     * remove a check reading a fact off a macro's ABSENCE. Absence here would
+     * mean "built at balanced" and "built by a pcrec too old to have a dial"
+     * identically.
+     *
+     * NO EMITTED COMMENT LINE, deliberately. The design's §5.3a names the
+     * hazard of one: the size log counts comment-EXCLUDED bytes and the
+     * `EMITTED_BYTES` manifest counts them all, so a comment would give the
+     * two readers DIFFERENT deltas for one change. With this one line the
+     * delta is 23-28 bytes (by token) for both, which is what makes the
+     * manifest re-record a POSITIVE assertion rather than a re-baseline. */
+    sb_printf(c, "#define %s_TUNE \"%s\"\n", g->upper,
+              pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {

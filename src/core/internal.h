@@ -5428,4 +5428,30 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long ceiling, const BufSurface *bs);
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
 
+/* [OPT-DIAL] THE DIAL'S PINNED POLICY TABLE (src/core/tune.c, which is its
+ * ONE home; the contract is docs/spec/tuning.md §5).
+ *
+ * ONE ROW PER POSITION. Every value cell uses 0 as the EM-DASH SENTINEL —
+ * "the dial does not touch this axis at this position" — and each consuming
+ * SITE resolves the sentinel against its own built-in default, so this type
+ * does not become a second home for `PCREC_SIZE_TERM_THRESHOLD`,
+ * `VM_INLINE_CHAIN_MAX_BYTES` or the materiality bar. */
+typedef struct {
+    int         pos;                  /* −2..+2, PCREC_TUNE_* */
+    const char *token;                /* the closed five-token set; the stamp's value */
+    int         size_term_bar;        /* [ART-SIZE] ladder materiality bar, PERCENT */
+    long long   size_term_threshold;  /* [ART-SIZE] ladder trigger, emitted CODE bytes */
+    long long   vm_inline_chain_max;  /* [CC-DIFF] VM entry-chain size term, bytes */
+    uint64_t    deny_flags;           /* PCREC_NO_* bits the position DENIES */
+} PcrecTuneRow;
+
+bool                pcrec_tune_valid(int tune);
+const PcrecTuneRow *pcrec_tune_row(int tune);
+const char         *pcrec_tune_token(int tune);
+int                 pcrec_tune_parse(const char *s, int *out);
+int                 pcrec_tune_size_term_bar(int tune);
+long long           pcrec_tune_size_term_threshold(int tune);
+long long           pcrec_tune_vm_inline_chain_max(int tune);
+uint64_t            pcrec_tune_deny_flags(int tune);
+
 #endif /* PCREC_INTERNAL_H */
