@@ -104,42 +104,48 @@ n "lit000272xyzabcdefz"
 n ""
 
 # =========================================================================
-# F3 — REFUSES at position 0, COMPILES at position -2
+# F3 — WAS: REFUSES at balanced/size/speed/max-speed, COMPILES at -2 alone.
+# NOW: COMPILES AT EVERY POSITION ([K59-PREMUL], 2026-09-17).
 # =========================================================================
-# The OPPOSITE direction design section 6.2's own rule forbids ("no dial
-# position may select a switch value that moves the refusal set, in either
-# direction") and a count-based check cannot see. `perr`, because the
-# pattern is refused at every position this file's own harness invocation
-# would build it at (the DEFAULT, i.e. `balanced`).
+# This fixture is K59's OWN FILED REPRO, first written as a `perr` block by
+# lane dialimpl on the ratified `--tune` table: the pattern moved the
+# REFUSAL SET (compiled at `-2`, refused everywhere else), which design
+# section 6.2's own rule forbids in EITHER direction — the violation
+# `docs/dev/known_issues.md` K59 filed and this lane's drop-ladder second
+# rung fixes.
 #
-# *** THIS IS NOT A HYPOTHETICAL RISK -- IT IS A MEASURED VIOLATION OF THE
-# CURRENT SHIPPED [OPT-DIAL] TABLE, FOUND BY CONSTRUCTING THIS FIXTURE. ***
-# `[^\p{C}\p{M}\p{P}]` (build/pcrec, 2026-09-17):
+# THE FIX, measured (build/pcrec, this commit): `compile_driver`'s drop
+# ladder gains a rung that denies `-fno-premul-table` on a DFA-engine
+# artifact still refused after the anchored machine (rung 1) is dropped —
+# `src/core/internal.h`'s `SDR_NO_PREMUL`, `src/core/compile.c`'s
+# `premul_eligible` block. All five positions now compile:
 #
-#   --tune=balanced    REFUSES: "pattern too large: 1,027,199 bytes of
-#                      emitted code (limit 1,000,000)"
-#   --tune=size        REFUSES: 1,027,196 bytes, same limit
-#   --tune=min-size    COMPILES: 608,196 bytes -- GAINS AN ANSWER
-#   --tune=speed       REFUSES: 1,027,198 bytes, same limit
-#   --tune=max-speed   REFUSES: 1,027,206 bytes, same limit
+#   --tune=balanced    COMPILES: 453,525 B (both rungs fire — see stamps)
+#   --tune=size        COMPILES: 453,521 B (both rungs fire)
+#   --tune=min-size    COMPILES: 608,196 B (CALLER's own `-fno-premul-table`
+#                      denial alone is sufficient; NEITHER drop-ladder rung
+#                      fires — `RX_ENGINE_SEL "selected"`, not
+#                      `"size-cap-retry"`; `RX_DFA_MATCH "unwrapped"`, the
+#                      anchored machine SURVIVES, unlike the other four
+#                      positions — the K53 report's own §3.1a control shape,
+#                      reproduced live rather than only argued)
+#   --tune=speed       COMPILES: 453,522 B (both rungs fire)
+#   --tune=max-speed   COMPILES: 453,526 B (both rungs fire)
 #
-# THE CAUSE, isolated: `build/pcrec -p rx --encoding=utf8 --features
-# unicode-props -fno-premul-table -- '[^\p{C}\p{M}\p{P}]'` (the bare flag,
-# no dial involved) ALSO compiles, at 608,197 bytes. `-fno-premul-table`'s
-# own documented savings (docs/spec/tuning.md section 2.13: "sigma =
-# 22...25%") are large enough on a sufficiently table-heavy DFA machine to
-# cross PCREC_MAX_EMIT_BYTES's refusal boundary -- and `--tune=min-size`
-# denies that flag UNCONDITIONALLY (section 5.4's ratified `-2` cell), so
-# the dial inherits a refusal-set-moving property of a flag that predates
-# it. `docs/spec/tuning.md` section 2.13 carries NO "GATE 2" annotation for
-# `-fno-premul-table` (unlike section 2.6/2.7's altcls rows, which do, and
-# are excluded from the dial FOR EXACTLY THIS REASON: "the deny arm moves
-# the refusal set"). This fixture is the measurement that says
-# `-fno-premul-table` belongs in that same excluded company, or that the
-# `-2` cell needs its own mitigation -- a ruling this lane is not chartered
-# to make (src/core/tune.c is out of this lane's scope), reported here and
-# in the lane's handback instead.
+# THE REFUSAL SET IS IDENTICAL AGAIN, BY MECHANISM: every position answers
+# the same language now (a DFA-engine artifact whose optional anchored
+# machine and/or premultiplied table were dropped answers exactly as the
+# undropped one does — both rungs are ANSWER-PRESERVING FORM axes, never
+# language ones), which is what the `m`/`n` cells below assert directly
+# rather than only via a byte count. `tests/codegen/run_tune_dial.sh` §6
+# is the check that reproduces the table above per position and asserts
+# the [K59-PREMUL] verbose stderr note fires at exactly the four positions
+# where a rung actually ran.
 pattern [^\p{C}\p{M}\p{P}]
 encoding utf8
 features unicode-props
-perr
+# pcre2-only (python re has no \p{...} support at all)
+m "A" 0 1
+n "!"
+n ""
+n "\x01"

@@ -555,57 +555,93 @@ worst is 283,083 code bytes and 651,415 total, on every optimization
 axis — and both are checked AFTER emission and BEFORE anything is
 written, so an over-limit compile produces a refusal and no file.
 
-### The optional-contributor drop, before either cap refuses ([K53-SELRETRY])
+### The optional-contributor drop, before either cap refuses ([K53-SELRETRY], [K59-PREMUL])
 
 **Before either limit refuses, pcrec drops what the artifact did not need
 and tries once more.** An artifact can contain an OPTIONAL contributor: a
 machine or a table pcrec emitted to make the artifact FASTER, whose absence
-changes no answer. Today there is exactly one, the anchored match-here
-automaton behind `<PREFIX>_DFA_MATCH "unwrapped"` (`docs/spec/tuning.md`
-§2.15). If a size cap is exceeded on an artifact carrying one, the compile
-re-runs without it rather than refusing.
+changes no answer. The ladder has TWO rungs today, tried in order, APPEND
+(each tried only when the one before it declined — already fired and still
+insufficient, or never applicable to this artifact — and both may fire on
+one artifact):
+
+1. **The anchored match-here automaton** behind `<PREFIX>_DFA_MATCH
+   "unwrapped"` (`docs/spec/tuning.md` §2.15). Scoped to the DFA engine.
+2. **The premultiplied DFA transition table** behind `<PREFIX>_DFA_TABLE
+   "premultiplied"` (`docs/spec/tuning.md` §2.13; the `-fno-premul-table`
+   form, `[K59-PREMUL]`, 2026-09-17). Also scoped to the DFA engine —
+   dropping it for a VM hybrid's embedded prefilter table is not built,
+   D77: no measured need has been shown.
+
+If a size cap is exceeded on an artifact carrying either, the compile
+re-runs without it rather than refusing; if still refused, it re-runs
+without both.
 
 **What the caller sees.** An artifact instead of a diagnostic, matching
 identically, with `<PREFIX>_DFA_MATCH "search-filter"` where an unconstrained
-build would read `"unwrapped"`, and — **under `--engine=auto`, the default** —
-`<PREFIX>_ENGINE_SEL "size-cap-retry"` where it would read `"selected"`. Under
-an explicit `--engine=dfa` the drop still happens (it changes an entry-point
-FORM, not the engine the caller demanded, so honouring the request and dropping
-the machine are compatible) but that macro reads `"forced"` and does not name
-the retry — `match_api.md` §6.3 has the full account, and it is a pre-existing
-property of `"forced"`'s precedence rather than something this rescue
-introduced. The cost is `<prefix>_match`'s reverse pass
-(measured at ~50 % of the DFA's time on a matching subject), which is what
-the dropped machine existed to avoid. The caps themselves are unmoved: this
-is a smaller artifact, not a larger allowance.
+build would read `"unwrapped"` (rung 1 fired), `<PREFIX>_DFA_TABLE` reading
+`"indexed"`/`"mixed"` where it would otherwise read `"premultiplied"` (rung 2
+fired), and — **under `--engine=auto`, the default** —
+`<PREFIX>_ENGINE_SEL "size-cap-retry"` where it would read `"selected"`
+whenever EITHER rung fired. Under an explicit `--engine=dfa` the drop still
+happens (it changes an entry-point FORM, not the engine the caller demanded,
+so honouring the request and dropping either contributor is compatible) but
+that macro reads `"forced"` and does not name the retry — `match_api.md`
+§6.3 has the full account, and it is a pre-existing property of `"forced"`'s
+precedence rather than something either rescue introduced.
+
+**Every rung firing prints a loud, non-fatal stderr note** (Frank's ruling,
+2026-09-17) naming what was dropped, the cost direction, and the recourse:
+
+```
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the
+optional anchored match-here machine -- loses the [OPT-2] fast path --
+<prefix>_match falls back to search-and-filter, which the anchored machine
+exists specifically to avoid (docs/design/anchored_match_unwrapped.md).
+Raise --max-emit-bytes/--max-emit-code-bytes to keep the faster form, or
+accept the fit.
+pcrec: note: the emitted-size cap forced a smaller artifact: dropped the
+premultiplied DFA transition table -- slower per-byte scan dispatch,
+measured ~1.27x on scan-bound subjects
+(docs/dev/opt3_dfa_scan_measurement.md). Raise --max-emit-bytes/
+--max-emit-code-bytes to keep the faster form, or accept the fit.
+```
+
+Rung 1's cost is `<prefix>_match`'s reverse pass (measured at ~50% of the
+DFA's time on a matching subject); rung 2's is the scan's per-byte dispatch
+(measured ~1.27x on scan-bound subjects, `docs/dev/
+opt3_dfa_scan_measurement.md`). The caps themselves are unmoved: this is a
+smaller artifact, not a larger allowance.
 
 **Measured population.** Six of the 45 property names module `unicode-props`
-ships refused under `--encoding=utf8` at default axes before this landed —
-`\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`, `\p{Xwd}` (both polarities) and the
-one script set spelled `\p{Unknown}` / `\p{sc=Unknown}` /
+ships refused under `--encoding=utf8` at default axes before rung 1
+landed — `\p{C}`, `\p{Cn}`, `\p{L}`, `\p{Xan}`, `\p{Xwd}` (both polarities)
+and the one script set spelled `\p{Unknown}` / `\p{sc=Unknown}` /
 `\p{scx=Unknown}` / `\p{Zzzz}` — and every one compiles now. No pattern that
 compiled before changes by a byte: the retry is reached only from a refusal.
+Rung 2's own filed witness (K59, `[^\p{C}\p{M}\p{P}]` under `-e utf8
+--features unicode-props`) needs BOTH rungs to fit — the shipped corpus's
+own population for it is zero, exactly as rung 1's was before it landed.
 
 **If it still does not fit**, the compile refuses as before, and the figures
 the diagnostic quotes are the SMALLER artifact's — the smallest pcrec could
 make without changing an answer, which is the honest number for a caller
 deciding how far to raise a cap.
 
-**THE DROP LADDER HAS ONE RUNG, AND A `+2`-INDUCED OVERFLOW HAS NONE —
-RECORDED HERE AS A GAP, NOT A PROMISE** (`docs/design/opt_dial_design.md`
-§6.2b). `--tune=speed`/`--tune=max-speed` (`docs/spec/tuning.md` §5) raise
+**A `+2`-INDUCED OVERFLOW STILL HAS NO RUNG — RECORDED HERE AS A GAP, NOT A
+PROMISE** (`docs/design/opt_dial_design.md` §6.2b). `--tune=speed`/
+`--tune=max-speed` (`docs/spec/tuning.md` §5) raise
 `VM_INLINE_CHAIN_MAX_BYTES`, which admits more inlining and can push a
-near-cap artifact over one of these two caps. The general form that would
-rescue it — drop an optional contributor and re-emit, exactly what the
-one rung above does for the anchored machine — covers this case too,
-because the extra inlining a raised term buys is optional by the term's
-own contract ("forward only where it costs nothing"). It is **not built**
-(D77): a second rung needs an ORDER, and an order is a measured
-per-contributor run-time cost that a sample of one rung cannot supply. A
-caller who hits this refuses today with the ordinary "Handling an
-oversized artifact" recourse below; the trigger for building the second
-rung is named rather than guessed — a fixture (`F2` in the design's own
-check plan) going red.
+near-cap VM artifact over one of these two caps. The general form that
+would rescue it — drop an optional contributor and re-emit, exactly what
+the two rungs above do — covers this case too in principle, because the
+extra inlining a raised term buys is optional by the term's own contract
+("forward only where it costs nothing"). It is **not built** (D77): this
+would be a THIRD rung and, unlike rung 2, one whose natural scope is the
+VM engine rather than the DFA — a caller who hits this refuses today with
+the ordinary "Handling an oversized artifact" recourse below; the trigger
+for building it is named rather than guessed — a fixture (`F2` in the
+design's own check plan) going red.
 
 **Neither is deniable, both are overridable UPWARD.**
 `-fno-size-term` denies the unroll-ladder SELECTION and never reaches a

@@ -69,8 +69,10 @@
 #                denies `-2` denies too.
 #   §5           §6.1b's LADDER POPULATION — `-2`'s threshold reaches strictly
 #                more patterns than the middle's.
-#   §6           K59 — GATE 2 IS VIOLATED TODAY, asserted as the MEASURED
-#                CURRENT BEHAVIOUR so the day the disposition changes is RED.
+#   §6           K59, FIXED — the drop ladder's second rung ([K59-PREMUL])
+#                closes the refusal-set-move gate 2 violation; asserted live
+#                (compiles at all five positions, stamps distinguish which
+#                rung(s) fired, the verbose note fires exactly there).
 #
 # =========================================================================
 # WHAT THIS FILE DOES NOT COVER, named rather than left to be discovered
@@ -520,45 +522,81 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# §6 — K59: GATE 2 IS VIOLATED TODAY, AND THIS ARM ASSERTS THE VIOLATION.
+# §6 — K59, FIXED (2026-09-17, lane k59rung): GATE 2's VIOLATION IS CLOSED BY
+# MECHANISM, AND THIS ARM ASSERTS THE FIX.
 #
 # `docs/spec/tuning.md` §5.5 and design §6.2: NO DIAL POSITION MAY MOVE THE
-# REFUSAL SET, IN EITHER DIRECTION. `--tune=min-size` does — it compiles a
-# pattern the other four positions refuse, because `-fno-premul-table`'s
-# unconditional denial at `-2` removes enough `.rodata` to bring the artifact
-# under `PCREC_MAX_EMIT_BYTES`.
+# REFUSAL SET, IN EITHER DIRECTION. `--tune=min-size` USED TO — it compiled a
+# pattern the other four positions refused, because `-fno-premul-table`'s
+# unconditional denial at `-2` removed enough `.rodata` to bring the artifact
+# under `PCREC_MAX_EMIT_BYTES` where nothing else did.
 #
-# **THE CELL IS FRANK'S OWN RATIFIED RULING, so this lane FILED the finding
-# (docs/dev/known_issues.md K59) rather than narrowing the table.** The arm
-# therefore asserts the MEASURED CURRENT BEHAVIOUR, which makes it a live
-# detector in BOTH directions: it goes red the day the cell is narrowed
-# (disposition 1), the day a drop-ladder rung closes the gap (disposition 2),
-# and the day the rule itself is amended (disposition 3). A `#`-comment saying
-# "known violation" would go stale silently; an assertion cannot.
+# **THE FIX IS [K53-SELRETRY]'s DROP LADDER GAINING A SECOND RUNG**
+# (`SDR_NO_PREMUL`, `src/core/internal.h`/`compile.c`): on an emitted-size
+# cap refusal, the driver may now ALSO deny `-fno-premul-table` for the
+# artifact's own retry, exactly what `--tune=min-size`'s explicit flag
+# already did — so the four positions that used to refuse now reach the
+# SAME rescue `-2` was reaching alone, and all five compile.
 #
-# The population on the SHIPPED CORPUS is zero — `tests/axes`' DIAL-S3 arm
-# measures 0 gained / 0 lost — which is exactly why this witness is
-# constructed. With no synthetic witness the hazard had none anywhere in the
-# tree and would have shipped unobserved.
+# **THIS ARM NOW ASSERTS THREE THINGS, not one**, each closing a way the fix
+# could be wrong without a plain byte-count check noticing: (a) all five
+# positions COMPILE; (b) which rung(s) fired is LEGIBLE from the artifact's
+# own stamps, never claimed from the driver's own bookkeeping (K59's own
+# disposition note: "VERIFY this distinguishability... rather than claiming
+# it"); (c) the [K59-PREMUL] verbose stderr note (Frank's addendum) fires at
+# exactly the positions where a rung actually ran, and ONLY there. The
+# population on the SHIPPED CORPUS is still zero — `tests/axes`' DIAL-S3 arm
+# measures 0 gained / 0 lost at every position — so this constructed witness
+# remains the only thing in the tree that reaches the mechanism at all.
 # ---------------------------------------------------------------------------
-echo "== §6 — K59: the refusal-set move, asserted as measured =="
+echo "== §6 — K59: the refusal-set move, CLOSED, asserted as fixed =="
 
 K59_PATTERN='[^\p{C}\p{M}\p{P}]'
-k59_ref=0; k59_ok=0
+k59_bad_compile=0; k59_bad_stamp=0; k59_bad_note=0
+
 for pos in $POSITIONS; do
-    if emit "--tune=$pos" -e utf8 --features unicode-props -- "$K59_PATTERN"; then
-        k59_ok="$k59_ok $pos"
+    if ! emit "--tune=$pos" -e utf8 --features unicode-props -- "$K59_PATTERN"; then
+        bad "§6: --tune=$pos REFUSED the K59 witness — the fix regressed: $(head -1 "$WORKDIR/err.txt")"
+        k59_bad_compile=$((k59_bad_compile + 1))
+        continue
+    fi
+
+    esel="$(grep -oE '^#define RX_ENGINE_SEL "[^"]*"' "$OUT" | sed 's/.*"\(.*\)"/\1/')"
+    dmatch="$(grep -oE '^#define RX_DFA_MATCH "[^"]*"' "$OUT" | sed 's/.*"\(.*\)"/\1/')"
+    dtable="$(grep -oE '^#define RX_DFA_TABLE "[^"]*"' "$OUT" | sed 's/.*"\(.*\)"/\1/')"
+    note_anchored=0; grep -qF 'dropped the optional anchored match-here machine' "$WORKDIR/err.txt" && note_anchored=1
+    note_premul=0;   grep -qF 'dropped the premultiplied DFA transition table' "$WORKDIR/err.txt" && note_premul=1
+
+    if [ "$pos" = "-2" ]; then
+        # THE CONTROL CELL: the CALLER's own explicit `-fno-premul-table`
+        # (via the dial) is what shrinks this artifact, not the drop
+        # ladder — so NEITHER rung fires, ESEL reads "selected", and the
+        # anchored machine SURVIVES (K53's own §3.1a shape, reproduced).
+        if [ "$esel" != "selected" ] || [ "$dmatch" != "unwrapped" ] || [ "$dtable" = "premultiplied" ]; then
+            bad "§6: --tune=-2 stamped ESEL='$esel' DFA_MATCH='$dmatch' DFA_TABLE='$dtable' -- expected 'selected'/'unwrapped'/non-'premultiplied' (the caller's own flag alone, no ladder rung)"
+            k59_bad_stamp=$((k59_bad_stamp + 1))
+        fi
+        if [ "$note_anchored" = "1" ] || [ "$note_premul" = "1" ]; then
+            bad "§6: --tune=-2 printed a drop-ladder note but no rung fired for it — the caller's own explicit flag must not be reported as this ladder's own action"
+            k59_bad_note=$((k59_bad_note + 1))
+        fi
     else
-        grep -q 'pattern too large' "$WORKDIR/err.txt" || {
-            bad "§6: --tune=$pos refused the K59 witness for a reason that is not the emitted-size cap: $(head -1 "$WORKDIR/err.txt")"
-        }
-        k59_ref="$k59_ref $pos"
+        # THE OTHER FOUR: the ladder does the whole rescue — rung 1 drops
+        # the anchored machine, rung 2 drops premul, BOTH legible on the
+        # artifact and BOTH notes present.
+        if [ "$esel" != "size-cap-retry" ] || [ "$dmatch" != "search-filter" ] || [ "$dtable" = "premultiplied" ]; then
+            bad "§6: --tune=$pos stamped ESEL='$esel' DFA_MATCH='$dmatch' DFA_TABLE='$dtable' -- expected 'size-cap-retry'/'search-filter'/non-'premultiplied' (both drop-ladder rungs fired)"
+            k59_bad_stamp=$((k59_bad_stamp + 1))
+        fi
+        if [ "$note_anchored" != "1" ] || [ "$note_premul" != "1" ]; then
+            bad "§6: --tune=$pos printed anchored-note=$note_anchored premul-note=$note_premul -- both drop-ladder notes must fire when both rungs run"
+            k59_bad_note=$((k59_bad_note + 1))
+        fi
     fi
 done
-if [ "$k59_ok" = "0 -2" ] && [ "$k59_ref" = "0 -1 0 1 2" ]; then
-    ok "§6: K59 reproduces EXACTLY as filed — '$K59_PATTERN' compiles at -2 alone and is refused by the emitted-size cap at -1/0/+1/+2. This is a KNOWN VIOLATION of the no-refusal-set-move rule, deferred to Frank's disposition; when that disposition lands, THIS ARM IS THE THING THAT GOES RED"
-else
-    bad "§6: K59's measured shape MOVED — compiles at '${k59_ok# }', refuses at '${k59_ref# }', where the filed entry records compiles at '-2' and refuses at '-1 0 1 2'. Either the disposition landed (update docs/dev/known_issues.md K59 and this arm together) or something else moved the cap"
+
+if [ "$k59_bad_compile" -eq 0 ] && [ "$k59_bad_stamp" -eq 0 ] && [ "$k59_bad_note" -eq 0 ]; then
+    ok "§6: K59 is FIXED and verified live — '$K59_PATTERN' compiles at all five positions; ESEL/DFA_MATCH/DFA_TABLE distinguish which rung(s) fired at each; the verbose note fires exactly where a rung ran and nowhere else"
 fi
 
 # ---------------------------------------------------------------------------

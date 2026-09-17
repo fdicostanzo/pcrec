@@ -795,6 +795,25 @@ case. `−1` is the conditional half: it denies iff `φ_scan ≤ 0.126`, unmeasu
 so the pinned table leaves `−1`'s cell an em-dash until that measurement
 ratifies it as its own diff (§5).
 
+**[K59-PREMUL] (2026-09-17) `compile_driver` MAY ALSO SET THIS AXIS ITSELF,
+INDEPENDENTLY OF THE DIAL — [K53-SELRETRY]'s optional-contributor drop
+ladder's second rung.** `docs/dev/known_issues.md` K59: `−2`'s own
+unconditional denial of this flag was rescuing a pattern the other four
+dial positions refused at `PCREC_MAX_EMIT_BYTES`, in violation of the
+"no dial position moves the refusal set" rule (§6.2 of the design). Fixed
+by generalizing the rescue rather than narrowing the cell: on a size-cap
+refusal, `compile_driver` may deny this flag for a DFA-engine artifact's
+own retry — appended after §2.15's anchored-machine drop, tried only when
+that one declined (fired and still insufficient, or never applicable) —
+stamping `RX_ENGINE_SEL "size-cap-retry"` and `RX_DFA_TABLE` off
+`"premultiplied"`, the same pair §2.15's own rung reads. Loud on firing: a
+non-fatal stderr note names the drop, cites the ~1.27x scan-dispatch cost
+(`docs/dev/opt3_dfa_scan_measurement.md`), and points at
+`--max-emit-bytes`/`--max-emit-code-bytes` as the recourse. Not built for a
+VM hybrid's embedded prefilter table (D77 — no measured population).
+`docs/spec/limits.md`'s "optional-contributor drop" section has the full
+two-rung account.
+
 ### 2.14 `-fno-offset-skip` — `PCREC_NO_OFFSET_SKIP` (bit 16)
 
 **ANSWER-IDENTITY-preserving.** The axis changes WHERE the forward DFA
@@ -964,6 +983,19 @@ dropped it to fit" from "the caller passed the flag" (`"selected"`) and from
 selection outcome). **The flag's meaning is unchanged**: passing it still
 denies the machine unconditionally, and passing it on one of those six
 patterns is the way to get the same artifact with the ordinary stamp.
+
+**[K59-PREMUL] (2026-09-17) THE LADDER GAINED A SECOND RUNG, SHARING THIS
+ONE'S `RX_ENGINE_SEL "size-cap-retry"` VALUE.** On a refusal this rung's own
+drop does not clear, `compile_driver` may ALSO deny `-fno-premul-table`
+(§2.13) for the same retry — APPENDED after this rung, tried only when it
+declined. A DFA-engine artifact whose retry dropped BOTH reads
+`RX_DFA_MATCH "search-filter"` (this rung) AND `RX_DFA_TABLE` off
+`"premultiplied"` (§2.13's rung); one without the other identifies which
+fired alone. `docs/dev/known_issues.md` K59 is the finding this rung
+closes: `--tune=min-size` used to compile a pattern the other four dial
+positions refused, because the dial's own unconditional `-2` denial of
+`-fno-premul-table` was doing by hand exactly what this second rung now
+does automatically on any refusal, at every position.
 
 **ON THE DIAL IN PRINCIPLE — DELIBERATELY EXCLUDED FROM `min-size` AT THE
 FIRST BUILD.** This is the largest size lever the dial has (`σ` = 15.32%

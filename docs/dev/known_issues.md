@@ -11,7 +11,27 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K59 — [OPT-DIAL], deferred (2026-09-17, lane dialimpl, found by the fixture family the design's own §6.2a chartered, on its first run): `--tune=min-size` MOVES THE REFUSAL SET — it compiles a pattern the other four positions refuse
+## K59 — [OPT-DIAL], FIXED 2026-09-17 (lane k59rung, disposition 2, ratified): `--tune=min-size` MOVES THE REFUSAL SET — it compiles a pattern the other four positions refuse
+
+**FIXED. Disposition 2 landed**: `[K53-SELRETRY]`'s optional-contributor
+drop ladder gained a second rung, `SDR_NO_PREMUL`
+(`src/core/internal.h`/`src/core/compile.c`) — on an emitted-size cap
+refusal a DFA-engine artifact may now ALSO have `-fno-premul-table` denied
+for its own retry, APPENDED after rung 1 (the anchored-machine drop):
+rung 1 is tried first and stays undisturbed for its own population; rung 2
+is tried only when rung 1 declined (fired and still insufficient, or never
+applicable to this artifact); both may fire on one artifact. The minimal
+repro below now compiles at every position, verified live
+(`tests/codegen/run_tune_dial.sh` §6, `tests/size/tune_dial_fixtures.rxtin`
+F3, both re-aimed from asserting the violation to asserting the fix).
+`docs/dev/lanes/k59rung_report.md` carries the measured rescue population,
+the note wording and the inverted-pin list.
+
+**The text below is the ORIGINAL FILED ENTRY, preserved verbatim.**
+
+---
+
+Original entry (2026-09-17, lane dialimpl, found by the fixture family the design's own §6.2a chartered, on its first run): `--tune=min-size` MOVES THE REFUSAL SET — it compiles a pattern the other four positions refuse
 
 **This is a refutation of the RATIFIED policy table, not of the
 implementation**, and it is filed rather than fixed because the `−2`
@@ -86,10 +106,15 @@ r53 precedent that *synthetic ladders are corpus members*): with no
 synthetic F3 this hazard had no witness anywhere in the tree and would
 have shipped unobserved.
 
-**DETECTOR.** `tests/size/tune_dial_fixtures.rxtin`'s F3 and
-`tests/codegen/run_tune_dial.sh`'s gate-2 section, both of which assert
-the MEASURED CURRENT BEHAVIOUR and name this entry — so they go red the
-day the disposition changes, in whichever direction it changes.
+**DETECTOR (historical description of the pre-fix state).**
+`tests/size/tune_dial_fixtures.rxtin`'s F3 and
+`tests/codegen/run_tune_dial.sh`'s §6 asserted the MEASURED CURRENT
+BEHAVIOUR and named this entry, so they would go red the day the
+disposition changed. The disposition landed 2026-09-17 (lane k59rung) and
+both were RE-AIMED in the same change to assert the FIXED shape instead
+(all five positions compile; the artifact's own stamps distinguish which
+drop-ladder rung(s) fired; the verbose stderr note fires exactly there) —
+see the FIXED marker above.
 
 ---
 
