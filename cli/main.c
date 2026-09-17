@@ -294,6 +294,7 @@ static int write_file(const char *path, const char *text)
     FILE *f = fopen(path, "w");
     if (!f) { perror(path); return -1; }
     fputs(text, f);
+    if (ferror(f)) { fclose(f); fprintf(stderr, "%s: write error\n", path); return -1; }
     if (fclose(f) != 0) { perror(path); return -1; }
     return 0;
 }
@@ -910,7 +911,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         snprintf(where, sizeof where, "`pcrec` line of target '%s'", t->prefix);
         int rc = cli_parse(n, v, &ts, where);
         free(v); free(buf);
-        if (rc != 0) return 1;
+        if (rc != 0) { free(ts.libdirs); return 1; }
         /* THE CONTAINMENT, and it is one test rather than a list. A config
          * block sets COMPILE OPTIONS; anything else it could have set — an
          * output path, a pattern, a query mode, another source file, `-h`,
@@ -1207,6 +1208,10 @@ static int compile_source(const CliState *cli)
         }
         if (to_stdout) {
             fputs(out.c_src, stdout);
+            if (fflush(stdout) != 0 || ferror(stdout)) {
+                fprintf(stderr, "pcrec: write error on stdout\n");
+                rc = 1;
+            }
         } else if (write_file(cpath, out.c_src) != 0 ||
                    write_file(hpath, out.h_src) != 0) {
             rc = 1;
@@ -1225,7 +1230,10 @@ int main(int argc, char **argv)
     CliState st;
     memset(&st, 0, sizeof st);
     pcrec_default_options(&st.opt);
-    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) return 1;
+    if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) {
+        free(st.libdirs);
+        return 1;
+    }
     if (st.want_help) { usage(stdout); return 0; }
 
     /* [DD-13b.W1.2] `--target`/`--lib-path` APPLY TO `--source` ALONE, and
@@ -1724,6 +1732,10 @@ int main(int argc, char **argv)
     int rc = 0;
     if (to_stdout) {
         fputs(out.c_src, stdout);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            fprintf(stderr, "pcrec: write error on stdout\n");
+            rc = 1;
+        }
     } else {
         if (write_file(outpath, out.c_src) != 0 ||
             write_file(hpath, out.h_src) != 0)
