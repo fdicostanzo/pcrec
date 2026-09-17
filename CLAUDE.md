@@ -101,6 +101,11 @@ tier, and PCRE2 is a moving target with no specification.
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
 - `studies/` — adopted exploratory work (reference material, own Makefiles,
   never built or tested by pcrec's make). See studies/CLAUDE.md.
+- `tools/` — repo-owned developer/review tooling (analyzes the tree
+  itself; never built or run by `make`). `tools/review/` carries the
+  code-review metric artifacts (function census, clone candidates,
+  literal census, include graph, churn hotspots) chartered by
+  `docs/dev/reviews/code_review_criteria_draft.md`. See tools/CLAUDE.md.
 - `third_party/` — VENDORED OUTSIDE DATA, and the shape it lives in
   ([M5.0] stage 3, Frank's ASK 2 ruling): one directory per source with the
   version in its name, a `PROVENANCE.md` naming **what derives from** it, and
