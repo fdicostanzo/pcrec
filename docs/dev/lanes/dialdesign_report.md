@@ -585,4 +585,177 @@ directory's summary of the note. Flagged rather than assumed.
 **VALIDATION: `timeout 300 make strict` — GREEN, rc 0, "strict: whole tree
 compiles clean with -Werror -Wshadow".** This round is docs-only and no
 build input moves, so `make strict` confirms the tree is unchanged rather
+than that it works — the appropriate bar for a design-only change.
+
+---
+
+# D103 revision (rev 3)
+
+2026-09-17, lane `dialgov`, sonnet, same branch. Executes
+`docs/dev/decisions.md` D103 — Frank's ruling on the manager's synthesis
+after his too-complicated/too-unpredictable challenge to revision 2.
+Docs only; nothing under `src/`, `tests/` or `docs/spec/`. **This is a
+GOVERNANCE change, not a re-derivation**: no verified citation, number,
+or measurement in revision 2 is touched. What moves is who is allowed to
+fill a table cell and when.
+
+## What moved
+
+**§3 (the policy table) becomes THE PINNED CONTRACT.** A governing
+sentence states it directly at the top of §3: a cell changes only by an
+explicit ruled diff, never because a measurement lands. §3.1's allowlist
+(no cell without a cited two-axis measurement) is UNCHANGED — it still
+governs what may ever be PROPOSED — but a citation no longer assigns its
+own cell automatically.
+
+**§3.2 (the threshold rule-shape) DEMOTES from assignment rule to
+PROPOSAL RUBRIC.** Retitled in place: "THE PROPOSAL RUBRIC, STATED PER
+REGIME (B5; DEMOTED FROM ASSIGNMENT RULE BY D103)". Every number and every
+line of algebra in it survives unchanged — the windows, `x₁`/`x₂`/`y`/
+`z_mid`/`t_mid`/`s`/`Z₁`/`Z₂`, gate 6, the per-regime conversion
+`1 + φ·(m_c − 1)`, §3.6's sensitivity table — because D103 point 2 keeps
+the per-regime unit discipline and the `φ` algebra exactly as derived: it
+is how the rubric reads a measurement honestly. What changed is the
+framing sentence at the top of every subsection that used to say "this
+assigns a cell" — it now says "this is how a cell proposal is argued."
+
+**`φ` drops from THE BLOCKING MEASUREMENT to ON-DEMAND.** §0's "It cannot
+fix the thresholds numerically… the reason is a missing measurement"
+paragraph is rewritten: the note no longer waits on `φ` at all. `φ` is
+chartered narrowly, only when a specific contested cell needs it — the
+two named customers are `-fno-anchored-dfa`'s `−2` admission and `t_mid`
+before `[CLS-TREE]`'s middle admission (D103 point 3, verbatim). §9's
+former Q1 ("THE BLOCKING MEASUREMENT, CHARTERED BEFORE IMPLEMENTATION")
+closes as item 1, "CLOSED AS RULED-ON-DEMAND" — no lane is asked for.
+
+**§4 (λ) reverses S1's OWN reversal.** Revision 2's S1 ruling replaced
+revision 1's five hard-coded constants with a live per-class selection
+under a cap, on the general-mechanisms lens. D103 point 4 reverses that
+one level up: λ becomes **five PINNED frontier constants** again — but
+now DERIVED BY THE SAME RUBRIC S1 built, rather than chosen by hand as
+revision 1 did. The five values, computed at `φ_cls = 1` (the
+conservative reading — see §4.2's own "provisional… a cell that qualifies
+at the stated cap qualifies at every `φ_cls`" argument, which now decides
+a PINNED value rather than a live one):
+
+| position | λ | why |
+|---|---:|---|
+| `−2` | 4 | unconditional — λ=0 is dominated at every `φ_cls` |
+| `−1` | 16 | pinned CONSERVATIVELY at the middle's value; the alternative (4) needs `φ_cls ≤ 0.161`, unmeasured — `−1` and `0` are the same pinned constant until that measurement re-argues `−1` as its own diff |
+| `0` | 16 | unconditional — the size-minimal frontier point, no `φ_cls` dependency |
+| `+1` | 64 | unconditional — a size budget (`Z₁` = 1.30×) |
+| `+2` | 256 | unconditional — a size budget (`Z₂` = 2.0×) |
+
+Three consequences this lane found while writing the pin, none of them
+anticipated by the brief:
+
+1. **§4.7's six-frontier-point compile-cost concern DISSOLVES for the
+   shipped compiler.** Under a live selection, `[CLS-TREE]` would have had
+   to solve the DP at all six swept points to know which one wins; under
+   pinning it reads ONE fixed constant per position and solves the DP
+   once, at the SAME cost `cls_tree_study.md` §6 already measured for the
+   middle policy (mean 4.19 ms / max 25.86 ms) — identical to what
+   revision 1's hard-coded constants would have cost. The six-point cost
+   is real, but it is the RUBRIC's own argument cost, paid once by this
+   revision and again by any future re-argument, never by a compile. §10's
+   corresponding bullet is corrected to say so.
+2. **D103 WIDENS §10's one-set (`\p{L}`)-only limitation rather than
+   narrowing it, reversing what S1 claimed.** S1 said a per-class
+   selection confines the one-set limitation to the CAPS' calibration,
+   because each class would solve its own frontier and the pinned values
+   would not be single-set-dependent. Under pinning there is no per-class
+   selection left — the five constants are fixed once, from `\p{L}`
+   alone, and applied to every class `[CLS-TREE]` ever sections. The
+   limitation now covers the VALUES, not only their derivation, until a
+   second real set is swept.
+3. **§4.1 point 3's "recalibration warning discharges automatically" needed
+   a correction, not a deletion.** The arithmetic claim is still true (the
+   cap test and the objective read the same cost model, so a live
+   selection would move with a recalibration); the GOVERNANCE claim is
+   now false, because a recalibration is exactly "a measurement lands,"
+   and D103 forbids a pinned cell moving on that event. Revision 1's own
+   warning turns out to have been the right operational answer for the
+   wrong reason.
+
+**§9 collapses five asks into two, per D103 point 3.** The r60 revision's
+Q1/Q2/Q2b/Q3/Q4 become:
+
+- **item 1** — `φ`, CLOSED as ruled-on-demand (above).
+- **item 2** — **THE FIRST-BUILD TABLE**, ONE ratification rather than
+  four separate numeric asks:
+
+  | position | ships with |
+  |---|---|
+  | `−2` (`min-size`) | `[ART-SIZE]` ladder bar **0.95**, threshold **40,000**; `-fno-premul-table` **denied** (unconditional); `-fno-anchored-dfa` **EXCLUDED** — its worst measured population (2.114×) fails the working `x₂` = 2.00 by 5.7%, and the cell is left OUT pending its own on-demand A/B rather than ratifying a specific `x₂` between 2.00 and 2.114 now |
+  | `−1` (`size`) | `[ART-SIZE]` ladder bar **0.85**, threshold **80,000**; nothing else — the three `φ`-conditional cells (premul, tiered-entry, λ) stay em-dashed until their own on-demand measurement |
+  | `0` (`balanced`) | today's defaults, byte for byte |
+  | `+1` (`speed`) | `--vm-entry-shape` term raised to **8,192** |
+  | `+2` (`max-speed`) | DECLARED VACUOUS, identical to `+1` — becomes distinct the day either λ lands or `s` is ruled below 1.03 |
+
+  Two things this table deliberately does not ask for: the rubric's own
+  working parameters behind it (`x₂`=2.00, `x₁`=1.10×, `y`=5%, `s`=1.10×,
+  `Z₁`=1.30×, `Z₂`=2.0×) are not separately ruled — a future re-argument
+  of any cell reopens them with that cell, not before — and the r60
+  revision's Q2b (the middle's asymmetry as a ratio) stays an open rubric
+  detail rather than a blocking ask, since neither of this table's five
+  cells touches it.
+
+Q5 stays dissolved (S1, untouched by D103 — it is now simply "the λ`−2`
+row above reads 4"). Q6 (D93 file-wins), Q7 (the force-pair question) and
+Q8 (solo battery) survive unchanged, renumbered to items 3, 4 and 5.
+
+**§0/§8 and both `docs/design/CLAUDE.md` entries (this file and
+`opt_dial_inventory.md`'s own governance-forced correction) are updated to
+the D103 shape** — the headline no longer promises a filled table pending
+one measurement; it promises a pinned contract, a rubric, and one
+ratification-ready table.
+
+## What deliberately did NOT move
+
+- **No number in §3.2's rubric, §3.3's citations, §3.4's term ladder,
+  §3.5's `[ART-SIZE]` fold, or §4.2-§4.4's caps/middle derivation was
+  re-derived.** Every verified measurement this revision cites is
+  revision 2's, unchanged.
+- **§6 (acceptance) is UNCHANGED, verbatim, checked directly**: a grep of
+  the acceptance section for `φ` (literal and `φ_scan`/`φ_entry`/`φ_cls`)
+  returns zero hits, so D103's "§6 unchanged except φ references" clause
+  has nothing to apply to. The mechanism-state cross-check, the sabotage
+  candidates (SAB-D1/D2/D3), the near-cap fixtures (F1/F2/F3), and S6's
+  declared-vacuous `+2` arm all stay exactly as revision 2 built them —
+  they check the pinned table, which D103 does not change the CONTENT of.
+- **`opt_dial_inventory.md` was touched at exactly ONE site** — §7.1
+  item 7's "GRADUATED… to the blocking measurement… (§9 Q1)" sentence,
+  which D103 makes factually wrong by cross-reference (φ is no longer
+  blocking, and §9's Q1 no longer exists under that name). Annotated in
+  place, house style, rather than rewritten: the measurement's own value
+  is unchanged, only its governance status. No other inventory content —
+  the rate table, the verdicts, the STEP 0/2.1 revision history — was
+  touched, per the brief's "only if a cross-reference forces it."
+- **The four decidable positions' CONTENT is unchanged from what revision
+  2 already concluded** (§0.1's "what this leaves at the FIRST BUILD" and
+  §3.3's table already said `−2` excludes anchored-dfa and denies premul
+  unconditionally, `−1` moves only the ladder, `0` is the untouched
+  defaults, `+1`/`+2` collapse). D103's table in §9 packages that
+  conclusion for ratification; it does not change it.
+
+## The final ratification-ready §9 item list
+
+1. `φ = (φ_scan, φ_entry, φ_cls)` — CLOSED as ruled-on-demand; no lane
+   asked for.
+2. **THE FIRST-BUILD TABLE** — one yes/no ratification (table above).
+3. The D93 precedence ruling (§1.2) — does an explicit CLI `--tune` beat
+   a target's `tune` row? Recommendation: NO, file wins, loud non-fatal
+   diagnostic.
+4. The force-pair / CLI-spelling question (B4) — which of three options
+   for "explicit flags beat the dial" on the five cells with no force
+   twin or CLI spelling? Recommendation: narrow the ruled property in the
+   spec now, add flags when someone needs one.
+5. Does the dial's landing demand a SOLO battery? Recommendation: yes —
+   manager's call, listed for completeness.
+
+## Validation
+
+`timeout 300 make strict` — GREEN, rc 0, "strict: whole tree compiles
+clean with `-Werror -Wshadow`". This round is docs-only and no build
+input moves, so `make strict` confirms the tree is unchanged rather
 than testing the change; there is nothing here `make test` could observe.
