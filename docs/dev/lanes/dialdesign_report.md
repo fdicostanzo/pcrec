@@ -339,3 +339,250 @@ Full statements with recommendations and what would change each answer are
 | (this) | the two claim corrections §1.1 names, and this report |
 
 Nothing is owed except the `make strict` line in §5.1 and the queue above.
+
+---
+
+# r60 fix round
+
+2026-09-17, lane `dialfix`, opus, same branch. Against
+`docs/dev/reviews/2026-09-17-r60-opt-dial-design.md` — 6 blockers, 16
+must-fix, 8 should, 3 nit, every finding FIX-NOW. Docs only; nothing under
+`src/`, `tests/` or `docs/spec/`.
+
+This section is the finding-by-finding record (§R1), then what the fixes
+REVEALED that the review did not anticipate (§R2), then the one place this
+lane PUSHED BACK with measurement (§R3).
+
+## R1. Finding by finding
+
+### Blockers
+
+| id | what moved |
+|---|---|
+| **B1** | `opt_dial_design.md` §6.1a, the MECHANISM-STATE CROSS-CHECK. Five mechanisms recovered from EMITTED TEXT (premul's stride, the anchored machine's second table, the deep-tier `noinline` function, the entry rung's shape, the selected `K`) × five positions, in `run_premul_table.sh`'s shape. **The expectation side reads `docs/spec/tuning.md` §5's table and never the `src/` table the compiler consults** — otherwise the check compares the implementation to itself, which is the shape §3.5(a) of the inventory already caught inside this design's own STEP 0. Three named sabotage rows, SAB-D1 (swap two adjacent position columns), SAB-D2 (deny the wrong bit at one position — two cells wrong in opposite directions, so a denial COUNT passes), SAB-D3 (drop one ladder parameter — the two move together by §3.5's fold). N2's stamp well-formedness arm is folded in as its PRECONDITION rather than its cheap substitute, because the cross-check reads the position off the stamp to know which cell set to expect. |
+| **B2** | §6.2a. **PUSHED BACK with measurement (§R3) and ADOPTED ANYWAY.** The population is named and counted on the caps' own quantity; the synthetic F1/F2/F3 family lands, with the named real near-cap artifact beside it as a control. |
+| **B3** | §3.1 gains the **PURE WIN** reason code, which is the ROOT CAUSE the review named — the inventory's own first bucket had no cell shape in this table, so its two members (`-fno-start-pinned`, `-fno-alt-island`) had nowhere to go and silently left. Both rows restored with their citations. Arithmetic restated so it can be checked: **23 `tuning.md` §2 axes + λ + 3 non-§2 rows = 27**. The seven reason codes are now a table, and every flat row carries exactly one. |
+| **B4** | §7.2a. No flags invented. All five affected cells enumerated with today's spelling and what "explicit beats the dial" would need (three deny-only bits with no force twin; the `[ART-SIZE]` bar and threshold with no CLI spelling at all — `PCREC_SIZE_TERM_THRESHOLD` is `limits.def:161` kind `BUILD_D`, which exists precisely to say a constant is not a flag). Three options costed, including the ~9 minutes three force arms add to `make test-axes`. New queue item **Q7**; this lane recommends option (3) — narrow the ruled property IN THE SPEC — with (1) when someone needs a flag. |
+| **B5** | §3.2 restated PER REGIME: four regimes, one threshold set in §3.0's two quantities, conversion `1 + φ·(m_c − 1)` per regime. **φ is three components, not two** — revision 1 named `φ_entry` and `φ_cls` and silently left `φ_scan`'s four rows in the wrong unit. §0's headline re-derived (§R2.1). |
+| **B6** | §3.1 **gate 6** — a penalty is admitted at its WORST measured population, never its median, because a dial position is a promise to a caller who does not choose their subjects. `-fno-anchored-dfa`'s cell carries all five splits from `opt2_anchored_match_measurement.md:292-296`; §3.6's sensitivity re-derived off the distribution. The asymmetry with the SIZE side (median, tail reported) is stated deliberately so nobody "fixes" it: a bound protects and must hold everywhere, a benefit describes. |
+
+### Must-fix
+
+| id | what moved |
+|---|---|
+| **M1** | §3.0, new. ONE size quantity (`σ`, the inventory §3.0 convention verbatim) and ONE time quantity (`m`), applied mechanically. Premul's "+29…33%" was the reciprocal of its neighbours' quantity and is now `σ` = 22-25% like everything else. `z₁`/`z₂` are respelled **`Z₁`/`Z₂`** because they are a whole-ARTIFACT budget, a different object from `z_mid`'s per-optimization admission bar — a conflation revision 1 carried in one notation. |
+| **M2** | 0.00009% → **0.000026%**, with the note that comparing one artifact's bytes against the whole corpus's total is a comparison that cannot fail; the corpus-wide figure (~104 KB, 0.091%) stated beside it. |
+| **M3** | §3.6 no longer sweeps `x₁` past `x₂`. Every sweep is capped at its neighbour and the nesting invariant is stated as the cap's reason. |
+| **M4** | §6.2b, the growth direction, with the population named — and a mechanism gap the review did not ask for (§R2.3). |
+| **M5** | §6.1b, the `−2` ladder arm, with `artifact_size_term.md` §2.2b's finding R1 CITED and its sufficiency argument marked STRUCTURAL rather than measured. |
+| **M6** | §5.3a. The aggregate percentage is replaced by a check BY NAME: `tests/codegen/manifests/m5_stage1_stamps.tsv`'s **ten** `EMITTED_BYTES` rows (all ten listed), each moving by a COMPUTABLE 23-28 B, asserted POSITIVELY. Plus the tripwire's pins and `MAX_SIZE_BYTES` guard, plus the finding that the two readers may not agree on the delta (§R2.2). |
+| **M7** | Fixed by construction under S1: §4.2 derives `κ = 1 + (x−1)/φ_cls`, shows the arithmetic, names `φ_cls` as its unknown, marks the caps PROVISIONAL at `φ_cls = 1` (the tightest reading, so a qualifying cell qualifies everywhere), and records that `κ ≥ x` always — the identification was conservative in direction and wrong in kind. |
+| **M8** | **APPLIED, and it runs against this note.** The "two halves agree independently" claim is WITHDRAWN in §4.5: both halves read `x₁`. What survives is weaker and true — they agree because they are the same rule. |
+| **M9**, **N3** | Moot with §4.4's retirement (S1 removes the ratio test). Both retractions are recorded in §4.5 rather than deleted, because a reader who remembers revision 1 needs to know the quantity is gone. |
+| **M10** | §3.2a **window B**, new: `t_mid` checked against three default-ON size optimizations for the first time. `-fno-cls-fold` fails it at ×1.095 against 1.02 — **by a factor of ≈5, the larger of the middle's two violations** — with both qualifications carried (one witness, forced-VM; and the fold is subsumed into `[CLS-TREE]`, which is why `t_mid` must be ruled BEFORE the kit lands rather than after). |
+| **M11** | §4.4 states plainly that λ(0) = 16 is derived from ONE HALF of the middle principle and that any `t_mid` gives the same answer, and names `φ_cls` as what would complete it. Revision 1's claim that λ is the design's one prospective application of the whole principle is reduced to the true, smaller claim. |
+| **M12** | §3.4. **`+2` = 13,312 WITHDRAWN** — it came from the plan row's phrase "into 8-13 kB", a recommendation written before the rate table existed, promoted into a cell of a table built to forbid uncited cells. `+1` = 8,192 stands and covers the measured band (program 5,183 / 5,985 / 6,954). Revision 1's "better-measured rate of the two" is corrected against `opt_dial_inventory.md:573-577`: both rungs' rates are cross-pair assemblies. The measurement that would fill `+2` is named. |
+| **M13** | `s` is applied rather than proposed: the `[ART-SIZE]` ladder's speed side is EM-DASHED (the speed it buys is ≤3%, an order of magnitude below `s` = 1.10), making it a size-side-only row mirroring §3.4's speed-side-only one. And §3.1 gains the corollary that a cell EQUAL to the default is an em-dash — revision 1 wrote `allow` into `+1`/`+2` cells that change nothing, which made three flat rows look like moving ones. |
+| **M14** | §3.5a and §3.5b, both new. The DECLARED-CAPACITY FLOOR is disclosed, cited (`artifact_size_term.md` §3.3a), quantified (`.subject_ceiling` 512 → 341; five corpus cells flip match → FRAMES give-up under `--unroll=1` on a 684-byte subject), and added to §6.3's not-covered list — mirroring the `[K53-SELRETRY]` treatment §3.3 already models, which is why the omission was a discipline failure rather than an oversight. §3.5b quantifies the zero-inhabitant-pin hazard from the sweep's own committed baseline (see §R2.4). |
+| **M15** | `--force-tune` DELETED from the §1.2 diagnostic. It advertised a flag no section defined, and had it been defined it would have been D93's own revisit-when shape — an answer to Q6 smuggled into a diagnostic string. |
+| **M16** | MANAGER-RULED, applied. §1.3: the general explicit-set-provenance form is the recommendation, its build DEFERRED with the trigger named (the second axis that needs the distinction; `--engine` is the first and has shipped without it), and the tune-only bit DROPPED. §5.2 records that this removes the section's own inconsistency — revision 1 refused the `rx_info` mirror on D77 and landed a consumer-less bit in the same note. |
+
+### Should / nit
+
+**S1** — MANAGER-RULED, adopted; §4 rewritten (§R2.5 is what it turned out
+to buy beyond what the ruling promised). **S2** — Q6's argument 1 withdrawn
+in §1.2 and §9; the note says WHY (a precedent argument standing beside two
+reason arguments). **S3** — gate 1 restated as PERMANENTLY-flat vs
+CONTINGENTLY-flat, with the critic's finding that nothing but
+`-fno-startpos-guard` belongs in the first bucket recorded as part of the
+gate. **S4** — `--engine` cites gate 2 as well as gate 5, in both
+documents. **S5** — subsumed by B5; the inventory's own claim is corrected
+in place with the original quoted (§R2.6). **S6** — the `+2` arm ships
+DECLARED vacuous on S219's precedent with its become-reachable condition
+stated; §6.3's distinct-position count corrected to **FOUR**, and the
+correction notes that revision 1's "three" and its reasoning were wrong in
+opposite directions. **S7** — six checks (DIAL-S1..S6) get ids, homes and
+sabotage rows in §8. **N1** — scan-edge's flat row now rests on the `y`
+INFERENCE alone, because under the conversion its `x₂` failure is
+conditional on `φ_scan ≥ 0.493`; the independence revision 1 relied on is
+gone and §10 says so. **N2** — folded into §6.1a as the cross-check's
+precondition.
+
+### The Frank queue
+
+§9 rewritten to the review's REFRAMED shape. Q1 (φ) graduates to THE
+blocking measurement chartered before implementation. Q2 asks for a NUMBER
+(`x₂` ≥ 2.114?) instead of the word "doubling", with the proxy caveat as a
+rider. Q2b asks for the middle's RATIO and runs `t_mid` against cls-fold
+first. Q3 is reframed with its corroboration withdrawn — the question is no
+longer "is an empty notch acceptable" but "does `−1` ship before φ". Q4
+gains its two disclosed dependencies. Q5 DISSOLVES. Q6 stands on arguments
+2-3. Q7 is NEW (B4). Q8 (solo battery) is revision 1's Q7 renumbered.
+
+## R2. What the fixes revealed
+
+### R2.1 The re-derived headline inverts which cell is in trouble
+
+The review expected §0's empty notch to repopulate under the corrected
+units, and it does — `-fno-premul-table` enters `−1` for any
+`φ_scan ≤ 0.126`, `-fno-tiered-entry` for any `φ_entry ≤ 0.0246`, λ's cell
+for any `φ_cls ≤ 0.161`. **What the re-derivation also produced, and the
+review did not predict, is that the conversion makes premul's `−2` cell
+UNCONDITIONAL** (`1 + 0.794·φ_scan ≤ 2.00` for every `φ_scan ≤ 1`), so the
+min-size column gains a row it did not securely have — while gate 6 takes
+away the biggest one it thought it had. The honest summary is that **both
+of revision 1's errors ran the same way: a point estimate stood where a
+distribution or a conversion belonged**, and correcting them moved cells in
+both directions rather than only tightening the table.
+
+### R2.2 Two byte-count readers with two definitions of "byte"
+
+M6 asks for a check by name, and writing it surfaced that the two readers
+of this change's byte delta do not count the same bytes.
+`docs/dev/artifact_size_log.tsv`'s counts are comment-EXCLUDED;
+`m5_stage1_stamps.tsv`'s `EMITTED_BYTES` are not obviously so, and under
+`[M6-READ]`'s commented-artifact style the new `#define` arrives with a
+comment line. **So the delta must be computed PER READER, not once.** This
+is `docs/CLAUDE.md`'s wave-E class one quantity over: *two surfaces with
+different definitions of one word, where the word looks like it can only
+mean one thing.* The design states it as a requirement on the
+implementation rather than guessing which reader is which.
+
+### R2.3 A `+2`-induced size-cap overflow has no drop-ladder rung
+
+Answering M4 in the growth direction surfaced a mechanism gap neither
+document names. `[K53-SELRETRY]`'s drop ladder has ONE rung and it drops
+the ANCHORED MACHINE. The extra inlining a raised entry-chain term buys at
+`+1`/`+2` is ALSO an optional contributor — optional by the term's own
+contract, "forward only where it costs nothing" — so the ladder's general
+form covers it and the ladder itself does not. Under §6.2's rule a `+2`
+build that refuses where `0` compiles is an acceptance FAILURE, so the only
+consistent behaviour is a second rung that backs the dial toward the
+middle. **Not built (D77), and the trigger is named: fixture F2 going
+red.** `utf8k53_report.md` §1.2 already explains why the ladder shipped
+with one rung — a second needs an ORDER, and an order is a measured
+per-contributor cost that a sample of one cannot supply. This design would
+give it its second sample.
+
+### R2.4 `−2`'s threshold nearly doubles the ladder's population
+
+M14's second half asked whether `−2`'s 40,000 threshold can turn
+`run_size_term.sh` §7b's zero-inhabitant pin red for a non-defect. Counted
+from `docs/dev/optdial_size_sweep/runs/baseline_size.tsv` (3,478 rows, the
+sweep's own committed baseline, reproduced by `opt_dial_inventory.md`
+§3.0's command): **86 artifacts sit at or above 120,000 bytes today; 81
+more sit in [40,000, 120,000)**, so `−2` takes the ladder from 86 patterns
+to **167, a 1.94× population increase**, on shapes it has never run on.
+That is what makes M5's trial-machinery question a CHECK (§6.1b) rather
+than an argument, and it is the sharpest concrete number the round
+produced about the `[ART-SIZE]` fold.
+
+### R2.5 S1 bought more than the ruling promised
+
+The ruling's stated prizes were dissolving Q5 and §4.3's inversion. Two
+more fell out while writing §4:
+
+1. **The recalibration warning discharges for free.** Revision 1 warned
+   that all five λ values must be re-derived by hand if
+   `cls_tree_study.md`'s cost model is recalibrated. Under selection the
+   cap test and the objective read the SAME model, so a recalibration moves
+   the selection with it. Nothing is hand-derived and nothing goes stale —
+   which is a property of the mechanism, not a claim about the numbers.
+2. **`Z₁` moved from 2.0× to 1.30× on a DERIVATION.** Solving the
+   selection at revision 1's proposed budgets shows that `Z₁` = 2.0 and
+   `Z₂` = 4.0 select the SAME frontier point (λ = 256), making `+1` and
+   `+2` identical on the one row that was supposed to separate them. The
+   frontier's breakpoints are 1.229 (λ=64), 1.342 (λ=256) and 5.734 (λ=∞),
+   so **`Z₁ ∈ [1.229, 1.342)` is the only window that separates them** and
+   1.30 is inside it. Revision 1 could not have found this, because with
+   five hard-coded λ constants the budgets were decorative.
+
+And one thing S1 costs, named rather than absorbed: a per-class selection
+needs the DP solved at all six frontier points, up to 6× the study's
+measured 25.86 ms worst-case discovery, against `build/pcrec`'s existing
+144 ms on that pattern. §4.7 states the number, names the cheaper
+reference-set variant and what it gives up, and hands the measurement to
+`[CLS-TREE]` — because nothing here is implementable until the kit is.
+
+### R2.6 One lane, one day, two documents that disagreed about each other
+
+S5's finding is worth keeping as a shape. `opt_dial_inventory.md`:823-827
+asserted that `opt_dial_design.md` §3.2 "states the rule PER REGIME, with
+two regimes and two threshold pairs". Revision 1 of that note stated it
+per-regime nowhere and had one threshold set. **Both documents were written
+by this lane on 2026-09-16, and the inventory described the design from
+INTENT rather than from text** — the author's memory of what the sibling
+was going to say, committed as a claim about what it does say. The
+correction keeps the original sentence quoted, because the failure mode is
+invisible to a grep (nothing is misspelled) and to an inverse walk (the
+design has a §3.2 and it is about units). *A cross-document claim is only
+as good as the last time somebody OPENED the other document* — which is
+`w23implfix_report.md`'s citation-provenance class arriving at the level of
+a whole section instead of a `file:line`.
+
+## R3. The one PUSHBACK, with its measurement — FOR THE MANAGER
+
+**B2's premise is wrong; B2's fix is right and is adopted anyway.**
+
+B2 states that §6.2's refusal-set check has an "(almost certainly) EMPTY
+corpus population (p99 artifact 14,364 B vs 500K/1M caps)" and calls it
+K35. The 14,364 B is `artifact_size_census.md`'s **p99 `.o` OBJECT size**
+over 2,488 artifacts. `PCREC_MAX_EMIT_BYTES` and
+`PCREC_MAX_VM_EMIT_CODE_BYTES` are **comment-excluded emitted C SOURCE
+bytes** (D84, and both notes say so). Comparing them is comparing two
+quantities that differ by roughly the object/source ratio — **a unit
+mismatch of exactly the class the panel's own M7 names**, arrived at from
+the other side.
+
+Measured on the caps' own quantity, from the sweep's committed baseline:
+
+| statistic | value |
+|---|---:|
+| rows | 3,478 |
+| median artifact | 23,557 B |
+| p99 artifact | 393,733 B |
+| **maximum** | **999,925 B** — `tests/utf8/axis12_scripts.rxt:296` |
+| **headroom against `PCREC_MAX_EMIT_BYTES`** | **75 bytes** |
+
+**One shipped corpus artifact sits 75 bytes below a hard refusal cap**, and
+the unconditional `RX_TUNE` stamp this design adds to every artifact is
+23-28 of them. That does not refuse it — 27 leaves 48 — but it retires
+§5.3's "far below the artifact-size tripwire's resolution" outright, and it
+is the reason §5.3a is a check by name rather than a percentage.
+
+**B2's fix stands and is taken**, for a better-stated reason than B2 gave:
+`n = 1` is not a population, and the one inhabitant is a `dfa` artifact
+that no dial position grows at the first build (the entry-chain term is a
+VM row, λ is a reservation, the ladder's speed side is now em-dashed) — so
+the GROWTH direction's natural population is genuinely empty even though
+the near-cap population is not. §6.2a therefore lands the synthetic F1/F2/F3
+family **with the named real artifact beside it as a control**, which is
+strictly better than either alone: a synthetic family proves the check can
+fire, and the real witness proves the cap is reachable by something
+somebody actually shipped.
+
+One residual, stated because it bounds the claim: the sweep's `size_bytes`
+and the cap's own post-emission counter are both comment-excluded source
+bytes and are believed byte-identical (`docs/testing.md`, the `[ART-SIZE]`
+census's own classifier), but this lane did not cross-check them
+byte-for-byte. If they differ the headroom is not exactly 75; it is not
+large under any reading, which is what the finding turns on.
+
+## R4. Commits and validation
+
+| commit | contents |
+|---|---|
+| `1cc8912f` | `opt_dial_design.md` REVISION 2 — every r60 finding |
+| `b00c39dc` | `opt_dial_inventory.md` REVISION 2.1 (§2.15a, §2.11, §3.1, §3.2, §7.1 item 7 + new item 8) and both `docs/design/CLAUDE.md` entries |
+| (this) | this section |
+
+**SCOPE NOTE.** The brief scoped this round to `opt_dial_design.md`,
+`opt_dial_inventory.md` and `docs/dev/lanes/`. `docs/design/CLAUDE.md` was
+also touched — the directory index entry for the two files in scope — because
+leaving it would have published revision 1's WITHDRAWN headline as the
+directory's summary of the note. Flagged rather than assumed.
+
+**VALIDATION: `timeout 300 make strict` — see the handback for the
+measured result.** This round is docs-only and no build input moves, so
+`make strict` is a confirmation that the tree is unchanged rather than a
+test of the change; there is nothing here `make test` could observe.
