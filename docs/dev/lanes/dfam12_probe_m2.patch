@@ -1,0 +1,182 @@
+From 442a244b0fa58d75d330f251ef0897a9356d8b07 Mon Sep 17 00:00:00 2001
+From: Frank DiCostanzo <frank@dicostanzo.com>
+Date: Wed, 16 Sep 2026 23:35:55 -0400
+Subject: [PATCH] [PROBE-M2] measurement-only instrumentation for
+ [LIM-2]/dfamin M2, lane dfam12
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Tags each X{m,n} tail-loop copy's NFA nodes with (probe_rep_id,
+probe_copy_idx) in src/ir/nfa.c, and prunes a closure's position list to
+the earliest-copy survivor in src/ir/dfa.c's make_state (before intern()'s
+K7 charge / dhash / view_same ever see it) -- the study's own named
+"deliberately illegitimate stand-in" for candidate B's dominance pruning
+(docs/dev/dfa_online_minimization_study.md §3.7), used ONLY to size the
+win per that section's explicit sanction, never as a landing.
+
+Gated on getenv("PCREC_PROBE_M2"); a no-op by default -- confirmed
+byte-identical emitted C on four representative patterns against a
+scratch build from this commit's own parent. make strict clean.
+
+DOES NOT LAND. Committed separately, per BOILERPLATE.md's OPT5M2-PROBE
+precedent, because studies/lim2_m2/ (next commit) links this commit's
+pcrec_probe_m2_dropped/pcrec_probe_m2_total externs directly -- the
+manager drops this commit at merge; studies/lim2_m2/'s own CLAUDE.md
+states what that does to its harness.
+
+RISK: this commit alone is dead weight without studies/lim2_m2/ (next
+commit), which is the only caller of its counters -- reviewable only as
+a pair with it.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012qmA4DMsyqHSJopw3iYieU
+---
+ src/core/internal.h | 10 ++++++++
+ src/ir/dfa.c        | 60 +++++++++++++++++++++++++++++++++++++++++++++
+ src/ir/nfa.c        | 21 ++++++++++++++++
+ 3 files changed, 91 insertions(+)
+
+diff --git a/src/core/internal.h b/src/core/internal.h
+index 1588b9d1..dd13ebb6 100644
+--- a/src/core/internal.h
++++ b/src/core/internal.h
+@@ -1159,6 +1159,16 @@ typedef struct {
+     int     t1, t2;
+     uint8_t loop;        /* star/plus loop-entry split */
+     uint8_t exit_is_t2;  /* which edge leaves the loop (greedy: t2) */
++    /* [PROBE-M2] MEASUREMENT-ONLY, lane dfam12 (2026-09-16), docs/dev/
++     * dfa_online_minimization_study.md §3.7/§5.2 M2. -1 unless this state
++     * belongs to an X{m,n} tail loop's unrolled optional copy
++     * (src/ir/nfa.c's A_REP arm), in which case probe_rep_id identifies
++     * WHICH repeat instance and probe_copy_idx identifies which of its
++     * copies (0 = earliest/most-permissive). Read only by src/ir/dfa.c's
++     * probe_m2_prune, itself gated on getenv("PCREC_PROBE_M2"). Does NOT
++     * land — see docs/dev/dfamin_m1m2.md's disposition note. */
++    int     probe_rep_id;
++    int     probe_copy_idx;
+ } NState;
+ 
+ typedef struct {
+diff --git a/src/ir/dfa.c b/src/ir/dfa.c
+index 2af41b48..085406ad 100644
+--- a/src/ir/dfa.c
++++ b/src/ir/dfa.c
+@@ -1166,6 +1166,63 @@ static Sides sides_of(const Mach *m, int cons_upc, int up_upc)
+  *    pays no closure, no arena and no `subset_elems` for the axis — which is
+  *    the whole content of the byte-identity claim
+  *    tests/codegen/run_wordctx_identity.sh gates. */
++
++/* [PROBE-M2] MEASUREMENT-ONLY, lane dfam12 (2026-09-16). docs/dev/
++ * dfa_online_minimization_study.md §3.7/§5.2 M2, candidate B's "dominance
++ * prize": a deliberately illegitimate stand-in for the general simulation
++ * preorder — "drop a position when an earlier copy of the same unrolled
++ * repeat is present in the list" — the study names as legitimate ONLY for
++ * sizing the win, never as a landing (its own §3.7 "one tempting shortcut").
++ * Gated on getenv("PCREC_PROBE_M2") so ONE binary serves both the baseline
++ * and pruned measurement. Counts are process-global because this probe's
++ * only callers are single-pattern-per-process measurement harnesses
++ * (studies/lim2_m2/), matching lim2_m1.c's own precedent of reading finished
++ * Ctx/Dfa fields directly rather than adding a public accessor. DOES NOT
++ * LAND — see docs/dev/dfamin_m1m2.md's disposition note. */
++long long pcrec_probe_m2_dropped = 0;
++long long pcrec_probe_m2_total = 0;
++
++static int probe_m2_enabled(void)
++{
++    static int cached = -1;
++    if (cached < 0) cached = getenv("PCREC_PROBE_M2") ? 1 : 0;
++    return cached;
++}
++
++/* Applied to a just-closed position list (`buf[0..nout)`, the SAME buffer
++ * `closure()` just filled) before it becomes a DView's `list`/`nlist` — i.e.
++ * before intern()'s K7 charge, dhash and view_same ever see it, so a pruned
++ * run's raw state count, minimized count and `cx->subset_elems` are all the
++ * REAL construction's numbers under the stand-in rule, not a post-hoc
++ * estimate. `probe_rep_id < 0` (no tag, or two different repeats) never
++ * drops anything, matching intent: only positions the NFA builder tagged as
++ * copies of the SAME unrolled X{m,n} tail are compared, and among those the
++ * SMALLEST copy_idx (§1.2/§3.7: the earliest copy has the largest residual
++ * language and dominates) survives. O(nout^2), acceptable here because
++ * nout is the position-list width the construction already pays to build. */
++static int probe_m2_prune(const Nfa *nfa, int *buf, int nout)
++{
++    if (!probe_m2_enabled()) return nout;
++    int kept = 0;
++    for (int i = 0; i < nout; i++) {
++        int s = buf[i];
++        int rid = nfa->st[s].probe_rep_id;
++        int dominated = 0;
++        if (rid >= 0) {
++            int ci = nfa->st[s].probe_copy_idx;
++            for (int j = 0; j < nout; j++) {
++                if (j == i) continue;
++                int s2 = buf[j];
++                if (nfa->st[s2].probe_rep_id == rid &&
++                    nfa->st[s2].probe_copy_idx < ci) { dominated = 1; break; }
++            }
++        }
++        if (!dominated) buf[kept++] = s;
++    }
++    pcrec_probe_m2_total += nout;
++    pcrec_probe_m2_dropped += (nout - kept);
++    return kept;
++}
+ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
+                       const int *pre, int npre, bool bot_ok, bool gst_ok,
+                       int cons_upc, CloScratch *sc, int *scratch)
+@@ -1192,6 +1249,9 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
+              * from 0), so it is a caller's parameter and not a fourth view. */
+             closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
+                     sides_of(m, cons_upc, u), m->prune, sc, buf, &nout, &acc);
++            /* [PROBE-M2] measurement-only, no-op unless PCREC_PROBE_M2 is
++             * set — see probe_m2_prune above. */
++            nout = probe_m2_prune(nfa, buf, nout);
+             vw[v][u].list   = buf;
+             vw[v][u].nlist  = nout;
+             vw[v][u].accept = acc;
+diff --git a/src/ir/nfa.c b/src/ir/nfa.c
+index 97534d99..82ef74f7 100644
+--- a/src/ir/nfa.c
++++ b/src/ir/nfa.c
+@@ -147,6 +147,9 @@ static int nst(NB *b, NKind k)
+     memset(s, 0, sizeof(*s));
+     s->k = k;
+     s->t1 = s->t2 = -1;
++    /* [PROBE-M2] measurement-only default: not part of any tagged repeat
++     * copy until the A_REP arm below says otherwise. */
++    s->probe_rep_id = s->probe_copy_idx = -1;
+     return nfa->n++;
+ }
+ 
+@@ -764,8 +767,26 @@ static Frag compile_ast(NB *b, const Ast *a)
+              * PCRE2/python give [0,4)). Built innermost-first and
+              * iteratively, so depth cannot overflow the C stack. */
+             Frag tail = frag_single(b, N_EPS);
++            /* [PROBE-M2] measurement-only, lane dfam12 (2026-09-16): a
++             * snapshot of the node count identifies THIS repeat instance
++             * uniquely (nfa->n only grows), so every copy tagged below
++             * shares one probe_rep_id and is distinguished by copy_idx —
++             * the (rep_id, copy_idx) pair docs/dev/dfa_online_minimization_
++             * study.md §3.7 names as "the same unrolled repeat"/"an earlier
++             * copy". Read only by src/ir/dfa.c's probe_m2_prune. */
++            int probe_rep_id = b->nfa->n;
+             for (int i = rmin; i < rmax; i++) {
++                int probe_seg_start = b->nfa->n;
+                 Frag body = compile_ast(b, a->l);
++                /* Tag every node this copy's body created that a NESTED
++                 * repeat's own tagging did not already claim (rep_id still
++                 * -1) — leaves an inner counted repeat's own copies tagged
++                 * with ITS rep_id, untouched. */
++                for (int ni = probe_seg_start; ni < b->nfa->n; ni++)
++                    if (b->nfa->st[ni].probe_rep_id < 0) {
++                        b->nfa->st[ni].probe_rep_id = probe_rep_id;
++                        b->nfa->st[ni].probe_copy_idx = i - rmin;
++                    }
+                 Frag cat = frag_cat2(b, body, tail);
+                 int s = nst(b, N_SPLIT);
+                 Nfa *nfa = b->nfa;
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1115,3 +1115,4 @@ never edited afterwards.
   that directory's own CLAUDE.md for what happens to it once the manager
   drops the probe commit at merge.
 
+- `dfam12_probe_m2.patch` — the [PROBE-M2] measurement instrumentation (gated on PCREC_PROBE_M2, no-op by default), DROPPED at merge per the OPT5M2-PROBE precedent; durable copy kept because studies/lim2_m2/ links its extern counters (that directory's CLAUDE.md explains). Re-apply it to rebuild the M2 harness.
