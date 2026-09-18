@@ -1537,3 +1537,30 @@ never edited afterwards.
   byte-identity sweep (`identical=0 differing=1158` on a comment-only
   probe), the fourth recorded instance — the durable fix is a shared
   fixture and this lane did not build one.
+
+- `d105_report.md` — [D105] (2026-09-18, lane d105, opus): `emit_state_legend`'s
+  silent-degradation path DELETED, built as Frank re-ruled it — `path` becomes
+  a fixed `LEGEND_MAX_EXAMPLE`-int local and its unbounded allocation goes, the
+  four BFS arrays move to the compile's arena so refusal rides the existing
+  `ctx_nomem` mechanism, and brief mode allocates neither `from` nor `via`.
+  K60's LEGEND class (40 of 148 absorptions) closed: `make alloc` reads W1
+  15 → 0 and W3 25 → 0 in both sweeps; W4's 108 is the disjoint ladder class
+  and is untouched. Read it for four things. **§3.2's REACH census is the
+  methodological point**: byte identity over artifacts that contain no legend
+  proves nothing, so the second full-corpus arm counts them — 3,024 of 3,517
+  compared artifacts carry one, with all three arms of the rewritten function
+  represented, against zero movers in either arm (3,938 corpus pattern lines,
+  1,500 compared at default axes and 3,517 at `--features all`). **§2 is a
+  check-design result that arrived sideways**: the per-witness POPULATION pin
+  was added for K35's reason and turned out to be the ONLY arm that fails on
+  W3's sustained sweep against the unrepaired library, because that sweep
+  absorbs zero even with the defect present — the absorption pin alone reads
+  PASS there. **§5.2 declines sabotage row S260 with its mechanism**: a plant
+  reverting the function to raw `malloc` with a silent return is undetectable
+  by any arm `make mech` runs, because the `resource` arm's section 2b greps
+  only for `KILLED THE PROCESS BY SIGNAL` and a silent absorption produces
+  none — the trigger for building the row (K60's ladder class landing, so
+  section 2b can assert the pins without taxing `make test`) is named instead.
+  And **§1.2 is a defect found while validating**: `run_alloc_tests.sh` counted
+  `^FAIL` out of a stdout-only log while `alloc_check` writes FAIL to stderr,
+  so every red run reported "0 witness(es) misbehaved".
