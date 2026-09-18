@@ -69,8 +69,13 @@ fi
 OUT="$WORKDIR/alloc_check.out"
 ALLOC_ARGS="${ALLOC_ARGS:---both}"
 # Unquoted on purpose: ALLOC_ARGS is a word list of flags, not one argument.
+# `2>&1` BEFORE the pipe, because alloc_check.c writes its PASS lines to
+# stdout and its FAIL lines to stderr: without it the FAIL lines never reach
+# "$OUT" and the failure message below counted them out of a file that
+# structurally could not contain any, reporting "0 witness(es) misbehaved"
+# on every red run (found while validating D105, 2026-09-18).
 # shellcheck disable=SC2086
-"$BIN" $ALLOC_ARGS | tee "$OUT"
+"$BIN" $ALLOC_ARGS 2>&1 | tee "$OUT"
 bin_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN's
 if [ "$bin_rc" -eq 0 ]; then
     ok "alloc_check: $(grep -c '^PASS' "$OUT") witness(es) — every forced allocation failure was diagnosed"
