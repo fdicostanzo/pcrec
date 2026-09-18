@@ -3606,29 +3606,47 @@ static bool legend_extra_escape(unsigned char ch) { return ch == '"' || ch == '\
 
 /* Emits the human-readable comment above the byte-class table, showing an
  * EXAMPLE input reaching the deepest state (a BFS from `d->s0`, backtracked
- * through `from`/`via`). Degrades SILENTLY on allocation failure (F3, the
- * review's own finding — a legend is never worth failing a compile over,
- * but the artifact then carries no comment saying one was dropped). Purely
- * cosmetic: nothing downstream reads what this writes. */
-static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
+ * through `from`/`via`). Purely cosmetic: nothing downstream reads what this
+ * writes, and the emitted bytes are unchanged by D105's restructuring below.
+ *
+ * Reads `cx->arena` (and nothing else off the Ctx) for its scratch, so an
+ * allocation failure here REFUSES THE COMPILE through the one general
+ * mechanism every other allocation in this tree uses — D105, which deleted
+ * the silent-degradation path this function used to carry rather than giving
+ * it a better diagnostic. There is nothing left to announce: `path` is a
+ * fixed local, and the BFS arrays route through `arena_alloc` -> `ctx_nomem`.
+ * The arena dies with the attempt, so there is nothing to free here either
+ * (coding guide §1.6). */
+static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
 {
-    int *dist  = malloc((size_t)d->n * sizeof(int));
-    int *from  = malloc((size_t)d->n * sizeof(int));
-    int *via   = malloc((size_t)d->n * sizeof(int));
-    int *queue = malloc((size_t)d->n * sizeof(int));
-    /* [OPT-5] `path` IS NOT SIZED BY THE STATE COUNT ANY MORE, and the change
-     * is a bounds fix rather than a tidy-up. It holds the example input for
-     * the deepest state, which used to be at most one byte per state because
-     * every edge cost one byte — and a SCAN EDGE costs its whole span, so
-     * `[a-z]{0,16384}`'s two-state machine has a state 16,384 bytes deep. It
-     * is allocated after the walk, from the deepest distance the walk
-     * actually found. */
-    int *path  = NULL;
-    if (!dist || !from || !via || !queue) {
-        free(dist); free(from); free(via); free(queue);
-        return;                    /* a legend is never worth failing a compile over */
+    /* A SUMMARY (below) reads `dist` and the accept flags and nothing else,
+     * so the backtrack arrays are not built for it: the scratch halves
+     * exactly where the machines are biggest. `from` is NULL iff `brief`,
+     * and the BFS's own writes to `from`/`via` are skipped with it — the
+     * walk's reachability and distances do not depend on either. */
+    const bool brief = d->n > LEGEND_MAX_STATES;
+    int *dist  = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+    int *queue = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+    int *from = NULL, *via = NULL;
+    /* [OPT-5] `path` IS NOT SIZED BY THE STATE COUNT, and that was already a
+     * bounds fix rather than a tidy-up: it holds the example input for the
+     * deepest state, which used to be at most one byte per state because every
+     * edge cost one byte — and a SCAN EDGE costs its whole span, so
+     * `[a-z]{0,16384}`'s two-state machine has a state 16,384 bytes deep.
+     * [D105] It is now a FIXED LOCAL rather than an allocation sized by that
+     * unbounded depth: the renderer below shows at most `LEGEND_MAX_EXAMPLE`
+     * bytes and therefore reads only `path[0..LEGEND_MAX_EXAMPLE-1]`, so the
+     * backtrack stores everything at or above that index into nothing. The
+     * bytes shown are identical either way — the walk fills DOWNWARD from
+     * `len-1`, so the low indices it keeps do not depend on the high ones it
+     * drops. */
+    int path[LEGEND_MAX_EXAMPLE];
+    for (int i = 0; i < d->n; i++) dist[i] = -1;
+    if (!brief) {
+        from = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+        via  = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+        for (int i = 0; i < d->n; i++) { from[i] = -1; via[i] = -1; }
     }
-    for (int i = 0; i < d->n; i++) { dist[i] = -1; from[i] = -1; via[i] = -1; }
     int head = 0, tail = 0;
     if (d->s0 >= 0 && d->s0 < d->n) { dist[d->s0] = 0; queue[tail++] = d->s0; }
     while (head < tail) {
@@ -3636,7 +3654,8 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
         for (int cl = 0; cl < d->ncls; cl++) {
             int nx = d->st[s].tr[cl];
             if (nx < 0 || nx >= d->n || dist[nx] >= 0) continue;
-            dist[nx] = dist[s] + 1; from[nx] = s; via[nx] = cl;
+            dist[nx] = dist[s] + 1;
+            if (!brief) { from[nx] = s; via[nx] = cl; }
             queue[tail++] = nx;
         }
         /* [OPT-5] THE SCAN EDGE IS AN EDGE, and this walk has to follow it or
@@ -3649,16 +3668,11 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
          * self-loop and adds no reachability. */
         int span = d->st[s].scan_span, nx = d->st[s].scan_next;
         if (span > 0 && nx >= 0 && nx < d->n && dist[nx] < 0) {
-            dist[nx] = dist[s] + span; from[nx] = s;
-            via[nx] = d->st[s].scan_cls;
+            dist[nx] = dist[s] + span;
+            if (!brief) { from[nx] = s; via[nx] = d->st[s].scan_cls; }
             queue[tail++] = nx;
         }
     }
-
-    int maxd = 0;
-    for (int i = 0; i < d->n; i++) if (dist[i] > maxd) maxd = dist[i];
-    path = malloc((size_t)(maxd + 1) * sizeof(int));
-    if (!path) { free(dist); free(from); free(via); free(queue); return; }
 
     /* How many states accept? In a big machine this decides whether a listing
      * is orientation or noise -- `((a)|b){0,4000}c` has 4002 accepting states,
@@ -3667,7 +3681,6 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
     int nacc = 0;
     for (int i = 0; i < d->n; i++) if (d->st[i].up[UPC_PLAIN].accept) nacc++;
 
-    bool brief = d->n > LEGEND_MAX_STATES;
     if (brief) {
         /* A SUMMARY, not a truncated list. Which particular states accept is
          * not orientation once there are thousands of them; how many there
@@ -3684,7 +3697,6 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
                          "     * shortest input reaching an accepting state is %d byte(s) long",
                       dist[shortest]);
         sb_puts(c, ".\n");
-        free(dist); free(from); free(via); free(queue); free(path);
         return;
     }
     if (reverse)
@@ -3713,7 +3725,8 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
              * exactly how many copies of its class this example needs. */
             while (k > 0 && from[s] >= 0) {
                 int p = from[s], step = dist[s] - dist[p];
-                for (int j = 0; j < step && k > 0; j++) path[--k] = via[s];
+                for (int j = 0; j < step && k > 0; j++)
+                    if (--k < LEGEND_MAX_EXAMPLE) path[k] = via[s];
                 s = p;
             }
             sb_puts(c, "\"");
@@ -3744,7 +3757,6 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
                       d->st[i].scan_span, d->st[i].scan_cls, d->st[i].scan_next);
         sb_puts(c, "\n");
     }
-    free(dist); free(from); free(via); free(queue); free(path);
 }
 
 /* M2.7 put `$`-bearing patterns on this engine; M2.12 gave them back the
@@ -5869,7 +5881,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
      * reader of the emitted C meets the constant. */
     if (!f->tr_fold.folded) {
         f->repr->emit_tr_comment(c, f);
-        emit_state_legend(c, f->d, f->dir->reverse);
+        emit_state_legend(f->cx, c, f->d, f->dir->reverse);
         sb_puts(c, "     */\n");
         snprintf(tag, sizeof tag, "%s_next_state", m);
         emit_tr_table(c, p, tag, f->d, f->repr);
@@ -6525,7 +6537,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  "     * A cell is the label to jump to for that class; %s_dead ends\n"
                  "     * the attempt. %d states, %d classes.\n"
                  "     *\n", p, d->n, d->ncls);
-    emit_state_legend(c, d, false);
+    emit_state_legend(cx, c, d, false);
     sb_puts(c, "     */\n");
     for (int i = 0; i < d->n; i++) {
         sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
