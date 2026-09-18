@@ -364,6 +364,27 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   abort. `sb_grow` also reallocs into a temporary now — assigning a failed
   realloc straight into `sb->p` would lose the only pointer to the live buffer
   the error path is about to free
+
+  **[REVW.2] wave 2 stage 3 (2026-09-18) ADDS `sb_fragf`, THE FRAGMENT** —
+  lens 10's item 1 and the retirement primitive for the emitters' `char
+  NAME[N]; snprintf(NAME, sizeof NAME, …)` idiom, the class K38 is the
+  recorded miscompile of. `const char *sb_fragf(Arena *, fmt, …)`: text in
+  arena-owned storage sized exactly to the result, so truncation is impossible
+  BY CONSTRUCTION rather than by a per-site size argument somebody has to get
+  right. It is the file's first primitive that takes an `Arena *` rather than
+  a `StrBuf *`, and deliberately takes nothing else — D108's data-in/text-out
+  rule again, so an emitter helper calling it is still callable from a
+  back-end fed by a deserialized IR. Failure routes through `ctx_nomem` via
+  the arena's `.cx`, `arena_alloc`'s own discipline.
+
+  **KNOW WHICH HALF OF THE PROMISE IS CHECKED.** `tests/core/sb_fragf_check.c`
+  detects a wrong `vsnprintf` SIZE argument loudly (5 of its 6 sub-checks go
+  red). It does NOT detect an allocation one byte short — and neither does
+  AddressSanitizer, measured both ways rather than argued: `arena_alloc`
+  rounds every request to 16 bytes and zeroes the slice, and ASan sees only
+  the arena's own 64 KiB block `malloc`, never the intra-block slice bounds.
+  So "sized exactly to the result" is enforced at the format call and is
+  unobservable at the allocation.
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
   syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),

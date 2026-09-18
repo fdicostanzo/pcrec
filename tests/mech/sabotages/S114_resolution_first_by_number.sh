@@ -14,7 +14,16 @@
 # S114 AND S113 ARE SEPARATE ROWS ON PURPOSE (design §11.4's closing note):
 # each is a plausible implementation, each passes the majority of the corpus,
 # and each is caught by exactly one cell. A single "the rule is wrong"
-# sabotage would not show that the corpus DISCRIMINATES between them.
+# sabotage would not show that the corpus DISCRIMINATES between them.#
+# RE-AIMED 2026-09-18 (lane w2b, [REVW.2] wave 2 stage 3). The anchor's SECOND
+# line was `char ns[144], ne[144];` -- the pair of hand-sized buffers the
+# backreference chain wrote its two slot expressions into. Stage 3 retired
+# them: `vm_slot_expr` now RETURNS arena-owned text, so the line is
+# `const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);` and the second
+# declarator moved to its own line below. The PLANT and its INTENT are
+# UNCHANGED -- the loop header, which is what this row truncates to its first
+# member, is byte-identical and still at column 8 -- and the row was re-driven
+# SOLO after the re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_ID="S114-resolution-first-by-number"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="dupnamesdiff harness"
@@ -23,6 +32,6 @@ SAB_DESC="The emitted else-if chain over a duplicated name's run is truncated to
 SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"yy\" cell of dupnames.rxt's resolution block. Canonical figure owed from run_sabotage_matrix.sh S114."
 SAB_COUNT=1
 SAB_BEFORE='        for (int i = 0; i < a->u.bref.nrefs; i++) {
-            char ns[144], ne[144];'
+            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);'
 SAB_AFTER='        for (int i = 0; i < 1 && i < a->u.bref.nrefs; i++) {   /* SABOTAGE S114 */
-            char ns[144], ne[144];'
+            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);'

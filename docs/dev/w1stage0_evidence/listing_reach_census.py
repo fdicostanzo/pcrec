@@ -171,14 +171,39 @@ def rung_family(fn):
 
 
 def extract_patterns_from_run_ir_listing():
+    """The (pattern, features) rows run_ir_listing.sh actually runs.
+
+    [REVW.2] wave 2 stage 3, 2026-09-18 (lane w2b): that script gained a
+    PATTERN_FEATURES array positionally parallel to PATTERNS, because four of
+    the families this census reports as UNREACHED are module-gated and refuse
+    to compile at all without the matching --features flag -- which is what
+    w2census_report.md's TASK 2 found to be the real cause of the reach gap
+    w1stage0 recorded. Reading PATTERNS alone here would compile the widened
+    rows with no features, they would refuse, and this instrument would keep
+    reporting the OLD number while the arm it measures had already improved:
+    the instrument going stale silently in the optimistic-looking direction.
+
+    A row count mismatch between the two arrays is a hard error rather than a
+    zip-truncation, for the same reason the script itself asserts it.
+    """
     with open(RUN_IR_LISTING, encoding="utf-8") as fh:
         text = fh.read()
     m = re.search(r'PATTERNS=\(\n(.*?)\n\)', text, re.S)
     if not m:
         raise SystemExit("could not find PATTERNS=( ... ) in run_ir_listing.sh")
-    body = m.group(1)
-    pats = re.findall(r"'((?:[^'\\]|\\.)*)'", body)
-    return pats
+    pats = re.findall(r"'((?:[^'\\]|\\.)*)'", m.group(1))
+
+    mf = re.search(r'PATTERN_FEATURES=\(\n(.*?)\n\)', text, re.S)
+    if not mf:
+        # Pre-widening shape: no features array, every row is base grammar.
+        return [(p, "") for p in pats]
+    feats = re.findall(r"'((?:[^'\\]|\\.)*)'", mf.group(1))
+    if len(feats) != len(pats):
+        raise SystemExit(
+            "run_ir_listing.sh: PATTERNS has %d rows and PATTERN_FEATURES has %d; "
+            "this census cannot guess which pattern needs which module"
+            % (len(pats), len(feats)))
+    return list(zip(pats, feats))
 
 
 def decode_rxt_escape(s: str) -> bytes:
@@ -237,10 +262,12 @@ def corpus_patterns():
     return pats
 
 
-def emit_ir_text(pattern_bytes_or_str, engine_vm_forced):
+def emit_ir_text(pattern_bytes_or_str, engine_vm_forced, features=""):
     argv = [PCREC, "-p", "rx"]
     if engine_vm_forced:
         argv += ["--engine=vm"]
+    if features:
+        argv += ["--features", features]
     argv += ["--emit-ir", "--", pattern_bytes_or_str]
     try:
         r = subprocess.run(argv, capture_output=True, timeout=30)
@@ -255,8 +282,14 @@ def run_census(sites, patterns, engine_vm_forced, label):
     combined = []
     n_compiled = 0
     n_vm = 0
-    for pat in patterns:
-        txt = emit_ir_text(pat, engine_vm_forced)
+    for row in patterns:
+        # A row is either a bare pattern (the corpus arm) or a
+        # (pattern, features) pair (the run_ir_listing.sh arm).
+        if isinstance(row, tuple):
+            pat, feats = row
+        else:
+            pat, feats = row, ""
+        txt = emit_ir_text(pat, engine_vm_forced, feats)
         if txt is None:
             continue
         n_compiled += 1

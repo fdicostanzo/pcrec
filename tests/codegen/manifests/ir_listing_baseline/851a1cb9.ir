@@ -1,0 +1,95 @@
+; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+;
+; Produced BY the emitter's own walk, not by a second walk over the
+; AST: every line below was written by the same call that wrote the
+; corresponding C. S10's one constraint -- "the dump must be derived
+; from the same structure the emitter walks, never a parallel
+; description" -- is therefore structural here, not a discipline.
+;
+; pattern      (?<=a|bc)x
+; engine       vm (forced by: (?<=...) at pattern offset 0)
+; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
+; rungs        none -- see the RUNGS section below for which quantifier took which
+; strategies   none -- see the STRATEGIES section below for which quantifier took which
+; possessify   0 of 0 source quantifiers possessified (eng_brep_design.md S2)
+; caps         RX_NCAPS 1 (0 capturing groups in the pattern text)
+; step budget  500000000 backtrack resumptions
+; capacities   5 resume frames, 3 trail entries (exact: no subject ceiling)
+; program      11 labels, 42 events
+; resume pts   2
+; max replicas 0 (limit 64, checked before emission)
+
+SLOTS (the slot_values array, engine_m4.md S2.4)
+  slot         holds                  note
+   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
+  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
+  (no span-loop low-water slots: no cursor rung in this program)
+  2            lookaround cut mark    resume-stack depth at the assertion's entry -- the atomic and negative forms commit ([M6.6.2])
+  3            lookaround cursor      the entry position the assertion restores: a lookaround keeps the VERDICT and discards the POSITION
+
+RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
+  (none: no quantifier in this program consulted the rung ladder at all)
+
+STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
+  (none: this program has no quantifier to possessify)
+
+PRUNING (k23_design.md; D51's per-quantifier stamp)
+  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
+  bound sites emitted: 0
+  runtime-term length retreats: 0
+  (none: this program has no quantifier to bound)
+
+PROGRAM
+  L0      ; positive lookbehind (atomic): record the resume-stack depth to cut back to, and the cursor to come back to (which is also what the END-CHECK compares against)
+         set     slot_values[2] <- scan_position ; lookaround cut mark (resume-stack depth at the assertion's entry)
+         set     slot_values[3] <- scan_position ; lookaround: the cursor to restore -- the assertion consumes nothing
+         -> L4
+  L4      ; lookbehind branch 1 of 2, fixed width 1: step back and run the branch FORWARD
+         assert  lookbehind: fewer than 1 characters precede the cursor, so try the next branch -> L7
+         PUSH    resume L7                    ; lookbehind: the NEXT-BRANCH continuation -- this branch's body failing retreats into the branch written after it
+         ; work charge: the back-step, charged as the compile-time width rather than the runtime cost so the accounting does not depend on the encoding backend
+         ; lookbehind: the ENCODING SEAM's back-step, 1 character
+         ; lookbehind: the back-step ran off the start of the subject -- dead under the byte backend, where the guard above is exact
+         -> L5
+  L5
+         consume 'a'                          -> L6
+         -> fail (backtrack)
+  L6      ; lookbehind END-CHECK: the branch must finish exactly where the assertion started -- the only runtime evidence that the width analysis and this emission agree
+         ; lookbehind end-check FAILED -- this branch declines
+         -> L3
+  L7      ; lookbehind branch 2 of 2, fixed width 2: step back and run the branch FORWARD (the LAST branch: no retry frame)
+         ; lookbehind: fewer than 2 characters precede the cursor, and this is the last branch -- the assertion fails here
+         ; work charge: the back-step, charged as the compile-time width rather than the runtime cost so the accounting does not depend on the encoding backend
+         ; lookbehind: the ENCODING SEAM's back-step, 2 characters
+         ; lookbehind: the back-step ran off the start of the subject -- dead under the byte backend, where the guard above is exact
+         -> L8
+  L8
+         consume 'b'                          -> L10
+         -> fail (backtrack)
+  L10
+         consume 'c'                          -> L9
+         -> fail (backtrack)
+  L9      ; lookbehind END-CHECK: the branch must finish exactly where the assertion started -- the only runtime evidence that the width analysis and this emission agree
+         ; lookbehind end-check FAILED -- this branch declines
+         -> L3
+  L3      ; positive lookaround: the body's FIRST success -- cut, restore the cursor, and never reconsider
+         ; work charge: frames discarded by this cut
+         CUT     frames <- slot_values[2]     ; cut: the assertion is committed; every choice point the body created is discarded, dead or not
+         ; lookaround: the position is DISCARDED -- the cursor goes back to the assertion's entry
+         -> L2
+  L2
+         consume 'x'                          -> L1
+         -> fail (backtrack)
+  L1      ; the pattern is complete
+         -> accept
+  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
+  at L4      resume L7      lookbehind: the NEXT-BRANCH continuation -- this branch's body failing retreats into the branch written after it
+
+DFA ISLANDS (0)
+  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+
+CALLOUT SITES (0)
+  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)

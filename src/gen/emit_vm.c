@@ -750,22 +750,38 @@ static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
     v->nev++;
 }
 
-/* Arena-owned formatted text for a role string. */
+/* Arena-owned formatted text for a role string — the compile's arena taken
+ * from `v`, which is the only thing this adapter adds over `sb_fragfv`.
+ *
+ * [REVW.2] WAVE 2 STAGE 3: this used to format into a `char buf[160]` and
+ * TRUNCATE (`if (sz > sizeof buf) sz = sizeof buf;`), which
+ * `lens10_emission_kit_charter.md` names as the one fragment builder in the
+ * file that was already the primitive and already truncating anyway. It is
+ * now `sb_fragfv`, so truncation is impossible by construction.
+ *
+ * THAT REMOVAL COULD HAVE MOVED A BYTE AND IS MEASURED NOT TO. Before the
+ * edit, a probe printed `n` at every call over the whole corpus compiled at
+ * BOTH prefixes (`-p rx` and a legal 60-byte one), `--features all`, default
+ * engine and forced VM: 7,876 compiles per prefix, **0 truncating calls, the
+ * longest role 135 bytes against the 160 bound at both** — so the old buffer
+ * had 25 bytes of margin and no artifact in this tree was ever short. A role
+ * long enough to truncate would now come out LONGER than before, which is a
+ * byte move and a deliberate one; there is no such role today.
+ *
+ * ALSO GONE: the `n < 0` NULL return. `sb_fragfv` aborts there, matching
+ * `sb_printf`'s own policy — a negative `vsnprintf` return is an encoding
+ * fault in a format string this file wrote itself, not something a pattern
+ * can provoke, and the one caller that tests a role for emptiness
+ * (`:2981`'s `if (role && *role)`) is testing for a deliberately empty role,
+ * never for this. */
 static const char *vm_rolef(Vm *v, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 static const char *vm_rolef(Vm *v, const char *fmt, ...)
 {
-    char buf[160];
     va_list ap;
     va_start(ap, fmt);
-    int n = vsnprintf(buf, sizeof buf, fmt, ap);
+    const char *q = sb_fragfv(&v->cx->arena, fmt, ap);
     va_end(ap);
-    if (n < 0) return NULL;
-    size_t sz = (size_t)n + 1;
-    if (sz > sizeof buf) sz = sizeof buf;
-    char *q = arena_alloc(&v->cx->arena, sz);
-    memcpy(q, buf, sz - 1);
-    q[sz - 1] = 0;
     return q;
 }
 
@@ -866,7 +882,13 @@ static int vm_slot_rev(Vm *v, int loop, int which)
  * Writes the SUFFIX only; the caller prefixes. Returns false for a slot the
  * layout does not account for, which is a bug rather than a naming gap, so the
  * caller falls back to the bare number rather than inventing a name. */
-static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
+/* [REVW.2] wave 2 stage 3: returns ARENA-OWNED text, or NULL when the layout
+ * does not account for the slot (what the old `bool` return said). The name
+ * used to be written into a caller-sized `char buf[48]`, replicated at all
+ * three call sites; `vm_slot_expr`'s own header already called that "three
+ * spellings of one convention" one level up, and the buffer was the same
+ * defect one level down. */
+static const char *vm_slot_name(Vm *v, int slot)
 {
     int ngroup_slots = 2 * (v->ngroups + 1);
     int base_guard   = ngroup_slots;
@@ -875,35 +897,29 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
     int base_rev     = base_mark  + v->nmark_total;
     int base_ctr     = base_rev   + 3 * v->nrev_total;
 
-    if (slot < 0) return false;
+    if (slot < 0) return NULL;
     if (slot < ngroup_slots) {
         int g = slot / 2;
         const char *half = (slot % 2) ? "END" : "START";
-        if (g == 0) snprintf(buf, bufsz, "SLOT_WHOLE_%s", half);
-        else        snprintf(buf, bufsz, "SLOT_GROUP%d_%s", g, half);
-        return true;
+        if (g == 0) return vm_rolef(v, "SLOT_WHOLE_%s", half);
+        else        return vm_rolef(v, "SLOT_GROUP%d_%s", g, half);
     }
     if (slot < base_low) {
-        snprintf(buf, bufsz, "SLOT_EMPTY_GUARD%d", slot - base_guard);
-        return true;
+        return vm_rolef(v, "SLOT_EMPTY_GUARD%d", slot - base_guard);
     }
     if (slot < base_mark) {
-        snprintf(buf, bufsz, "SLOT_SPAN_LOW%d", slot - base_low);
-        return true;
+        return vm_rolef(v, "SLOT_SPAN_LOW%d", slot - base_low);
     }
     if (slot < base_rev) {
-        snprintf(buf, bufsz, "SLOT_CUT_MARK%d", slot - base_mark);
-        return true;
+        return vm_rolef(v, "SLOT_CUT_MARK%d", slot - base_mark);
     }
     if (slot < base_ctr) {
         static const char *which[3] = { "ENTRY", "LOW", "HI" };
         int off = slot - base_rev;
-        snprintf(buf, bufsz, "SLOT_REVDET%d_%s", off / 3, which[off % 3]);
-        return true;
+        return vm_rolef(v, "SLOT_REVDET%d_%s", off / 3, which[off % 3]);
     }
     if (slot < base_ctr + v->nctr_total) {
-        snprintf(buf, bufsz, "SLOT_COUNTER%d", slot - base_ctr);
-        return true;
+        return vm_rolef(v, "SLOT_COUNTER%d", slot - base_ctr);
     }
     /* [M6.5.2] the pending block, named by its GROUP rather than by its index
      * — `SLOT_GROUP3_PENDING` beside `SLOT_GROUP3_START`/`_END` is what makes
@@ -917,10 +933,9 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
         int off = slot - base_pend;
         for (int g = 1; g <= v->ngroups; g++)
             if (v->pend_of && v->pend_of[g] == off) {
-                snprintf(buf, bufsz, "SLOT_GROUP%d_PENDING", g);
-                return true;
+                return vm_rolef(v, "SLOT_GROUP%d_PENDING", g);
             }
-        return false;
+        return NULL;
     }
     /* [M6.6.2] the lookaround's two families, at the TOP of the layout. The
      * bound above is what keeps the pending search from claiming them: before
@@ -928,22 +943,19 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
      * unbounded search would have named a LOOK slot "not accounted for" and
      * silently fallen back to the bare number. */
     if (slot < base_lookpos) {
-        snprintf(buf, bufsz, "SLOT_LOOK_MARK%d", slot - base_lookmark);
-        return true;
+        return vm_rolef(v, "SLOT_LOOK_MARK%d", slot - base_lookmark);
     }
     if (slot < base_lookpos + v->nlookpos_total) {
-        snprintf(buf, bufsz, "SLOT_LOOK_POS%d", slot - base_lookpos);
-        return true;
+        return vm_rolef(v, "SLOT_LOOK_POS%d", slot - base_lookpos);
     }
     /* [DD-14 wave G] the splice family, above the lookaround block for the
      * same reason that one is above the pending block: every base below it is
      * unmoved, so a splice-free artifact's numbering is byte-identical. */
     int base_splice = base_lookpos + v->nlookpos_total;
     if (slot < base_splice + v->nsplice_total) {
-        snprintf(buf, bufsz, "SLOT_SPLICE_SAVE%d", slot - base_splice);
-        return true;
+        return vm_rolef(v, "SLOT_SPLICE_SAVE%d", slot - base_splice);
     }
-    return false;
+    return NULL;
 }
 
 /* [M6-READ] The slot as it is WRITTEN IN THE ARTIFACT: the legend macro when
@@ -951,17 +963,17 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
  * helper, so every site that names a slot inside an emitted expression spells
  * it the same way `vm_set` does — the alternative is each site re-deriving
  * `<PREFIX>_` + `vm_slot_name`, which is three spellings of one convention. */
-static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
+static const char *vm_slot_expr(Vm *v, int slot)
 {
-    /* Sized from what it holds — `up` is at most 80 bytes and `vm_slot_name`
-     * writes at most 48 — because a silently TRUNCATED slot name is an
-     * artifact that names the wrong cell, and this file has already been bitten
-     * once by a too-small snprintf buffer (see the listing's VE_SET arm). */
-    char nm[48];
-    if (vm_slot_name(v, slot, nm, sizeof nm))
-        snprintf(buf, bufsz, "%s_%s", v->up, nm);
-    else
-        snprintf(buf, bufsz, "%d", slot);
+    /* [REVW.2] wave 2 stage 3: arena-owned, and the two hand-sized buffers
+     * this used to need — its own `char nm[48]` and the caller's `buf` — are
+     * both gone. The old comment argued the 48 from what it holds, which was
+     * a correct answer to the wrong question: a silently TRUNCATED slot name
+     * is an artifact that names the WRONG CELL, so the right answer is a
+     * fragment that cannot truncate rather than a size that happens to fit. */
+    const char *nm = vm_slot_name(v, slot);
+    if (nm) return vm_rolef(v, "%s_%s", v->up, nm);
+    return vm_rolef(v, "%d", slot);
 }
 
 /* [EP2-E1] The slot as an emitted LVALUE — `vm_slot_expr`'s sibling, one
@@ -976,11 +988,7 @@ static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
  * Reads `v->up` and the slot layout; writes nothing but the arena. */
 static const char *vm_slot_ref(Vm *v, int slot)
 {
-    /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, never a hand-picked literal —
-     * `vm_slot_expr`'s content reaches prefix + "_" + a 47-byte slot name. */
-    char ex[PCREC_MAX_EMIT_NAME_LEN];
-    vm_slot_expr(v, slot, ex, sizeof ex);
-    return vm_rolef(v, "slot_values[%s]", ex);
+    return vm_rolef(v, "slot_values[%s]", vm_slot_expr(v, slot));
 }
 
 static int vm_slot_ctr(Vm *v, int i)
@@ -3022,8 +3030,8 @@ static void vm_push(Vm *v, int lblid, const char *role)
 static void vm_set(Vm *v, int slot, const char *val, const char *role)
 {
     {
-        char nm[48];
-        if (vm_slot_name(v, slot, nm, sizeof nm))
+        const char *nm = vm_slot_name(v, slot);
+        if (nm)
             sb_printf(v->b, "    %s_SET(%s_%s, %s);\n", v->up, v->up, nm, val);
         else
             sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
@@ -3104,9 +3112,8 @@ static void vm_cut(Vm *v, int slot, const char *role)
     /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
      * so after it runs the count this charge needs no longer exists. */
     {
-        char cnt[192];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
-        vm_work(v, cnt, "work charge: frames discarded by this cut");
+        vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot),
+                "work charge: frames discarded by this cut");
     }
     sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
     vm_ev(v, VE_CUT, slot, 0, role);
@@ -3878,9 +3885,7 @@ static void vm_isl_cands(VmIsl *t, int x, VmIslAcc *out)
 static void vm_isl_die(Vm *v, VmIsl *t, int x)
 {
     if (t->nd[x].depth > 0) {
-        char cnt[32];
-        snprintf(cnt, sizeof cnt, "%d", t->nd[x].depth);
-        vm_work(v, cnt,
+        vm_work(v, vm_rolef(v, "%d", t->nd[x].depth),
                 "work charge: alternation-island trie bytes examined on this "
                 "path, which the fail label never sees");
     }
@@ -4159,9 +4164,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     int retry = poss ? -1 : vm_label(v), again = poss ? -1 : vm_label(v);
     long long lo_off = (long long)a->u.rep.rmin * stride;
     /* The loop's entry position, spelled for whichever of the two it is. */
-    char entrypos[32];
-    if (poss) snprintf(entrypos, sizeof entrypos, "(ptrdiff_t)scan_position");
-    else      snprintf(entrypos, sizeof entrypos, "slot_values[%d]", low);
+    const char *entrypos = poss ? "(ptrdiff_t)scan_position"
+                                : vm_rolef(v, "slot_values[%d]", low);
 
     /* class ids first, so the pool is stable before any test is written */
     int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
@@ -4177,9 +4181,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     for (int i = 0; i < stride; i++) {
         /* K38: was char byte[64] -- "subject[" + prefix + "_span_cursor + "
          * + digits + "]" exceeds 64 at the 60-char prefix maximum, and
-         * truncated mid-suffix ("..._sp"), losing the closing ']'. */
-        char byte[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(byte, sizeof byte, "subject[%s_span_cursor + %d]", v->p, i);
+         * truncated mid-suffix ("..._sp"), losing the closing ']'. Now
+         * arena-owned, so there is no size here to widen a second time. */
+        const char *byte = vm_rolef(v, "subject[%s_span_cursor + %d]", v->p, i);
         sb_puts(t, " && (");
         vm_cls_test(v, t, ci[i], byte);
         sb_puts(t, ")");
@@ -4248,10 +4252,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * iterations is what ships. Recorded as a residual rather than decided
          * here. */
         {
-            char cnt[192];
-            snprintf(cnt, sizeof cnt,
-                     "((ptrdiff_t)(%s_span_cursor - %s)) / %d", v->p, entrypos, stride);
-            vm_work(v, cnt, "work charge: frameless scan iterations");
+            vm_work(v, vm_rolef(v, "((ptrdiff_t)(%s_span_cursor - %s)) / %d",
+                                v->p, entrypos, stride),
+                    "work charge: frameless scan iterations");
         }
         sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < %s + %lld) goto %s_fail;\n",
                   v->p, entrypos, lo_off, v->p);
@@ -4274,9 +4277,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         {
             /* K38: was char cx[64] -- prefix + "_span_cursor" reaches 72
              * bytes at the 60-char prefix maximum, truncating to "..._sp". */
-            char cx[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
-            vm_mrl_test(v, cx, mrl, -1,
+            vm_mrl_test(v, vm_rolef(v, "%s_span_cursor", v->p), mrl, -1,
                         "MRL: too few bytes remain after the loop's one exit "
                         "position for any accepting continuation");
         }
@@ -4284,18 +4285,18 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
             sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n",
                       v->p, entrypos, stride);
             for (int i = 0; i < ncaps; i++) {
-                /* K38: widened alongside the family above (was 96); this
-                 * one had margin at 60 chars but shares the source and the
-                 * fix removes the per-site guess. */
-                char val[PCREC_MAX_EMIT_NAME_LEN];
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                         stride - caps[i].off);
-                vm_set(v, 2 * caps[i].group, val,
+                /* K38: the per-site size guess is gone entirely -- this was
+                 * widened to PCREC_MAX_EMIT_NAME_LEN alongside the family
+                 * above (from 96) and is now arena-owned, so the ONE buffer
+                 * that was written twice is two independent fragments. */
+                vm_set(v, 2 * caps[i].group,
+                       vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                                stride - caps[i].off),
                        vm_rolef(v, "group %d open, derived from the cursor",
                                 caps[i].group));
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                         stride - caps[i].off - caps[i].len);
-                vm_set(v, 2 * caps[i].group + 1, val,
+                vm_set(v, 2 * caps[i].group + 1,
+                       vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                                stride - caps[i].off - caps[i].len),
                        vm_rolef(v, "group %d close, derived from the cursor",
                                 caps[i].group));
             }
@@ -4411,9 +4412,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * too and the whole remaining ascent is cut by this one comparison. */
         {
             /* K38: same family as the possessive arm's cx above -- was 64. */
-            char cx[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
-            vm_mrl_test(v, cx, mrl, -1,
+            vm_mrl_test(v, vm_rolef(v, "%s_span_cursor", v->p), mrl, -1,
                         "MRL: the ascent has passed the last position an "
                         "accepting continuation could attempt_position from");
         }
@@ -4421,9 +4420,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
 
     {
         /* K38: was char cur[64] -- identical overflow to cx above. */
-        char cur[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(cur, sizeof cur, "%s_span_cursor", v->p);
-        vm_push_at(v, again, cur, a->u.rep.greedy
+        vm_push_at(v, again, vm_rolef(v, "%s_span_cursor", v->p), a->u.rep.greedy
                    ? "shorter run is the resume (retreat one stride)"
                    : "longer run is the resume (extend one stride)");
     }
@@ -4436,17 +4433,17 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n",
                   v->p, low, stride);
         for (int i = 0; i < ncaps; i++) {
-            /* K38: widened alongside the family above (was 96). */
-            char val[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                     stride - caps[i].off);
-            vm_set(v, 2 * caps[i].group, val,
+            /* K38: widened alongside the family above (was 96); arena-owned
+             * now, so the twice-written buffer is two fragments. */
+            vm_set(v, 2 * caps[i].group,
+                   vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                            stride - caps[i].off),
                    vm_rolef(v, "group %d open, derived from the cursor "
                                "(D44.1: not written per iteration)",
                             caps[i].group));
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                     stride - caps[i].off - caps[i].len);
-            vm_set(v, 2 * caps[i].group + 1, val,
+            vm_set(v, 2 * caps[i].group + 1,
+                   vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                            stride - caps[i].off - caps[i].len),
                    vm_rolef(v, "group %d close, derived from the cursor",
                             caps[i].group));
         }
@@ -4746,9 +4743,8 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
     /* K38: was char byte[80] -- "subject[" + R->cur (a prefix + "_rv%d_cursor"
      * name, up to ~81 bytes at the 60-char prefix maximum) + " - 1]" exceeds
      * 80, truncating the closing bracket ("expected ']'" on the artifact). */
-    char byte[PCREC_MAX_EMIT_NAME_LEN];
     vm_charge(v);
-    snprintf(byte, sizeof byte, "subject[%s - 1]", R->cur);
+    const char *byte = vm_rolef(v, "subject[%s - 1]", R->cur);
 
     switch (a->k) {
     case A_CLASS: {
@@ -4932,15 +4928,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * prove an array element is written before it is read, so the array form
      * failed -Wmaybe-uninitialized on four corpus patterns. A scalar carries
      * its own `= 0` at its declaration and the question does not arise. */
-    /* K38: rv/cur widened from 80/96 to the shared emitted-name size -- both
-     * carried a real margin at today's realistic loop-index widths, but they
-     * feed byte[80] below (fixed separately) and belong to the same family
-     * of prefix-plus-suffix buffers this fix stops hand-sizing one at a
-     * time. flr carries no prefix and is unaffected. */
-    char rv[PCREC_MAX_EMIT_NAME_LEN], cur[PCREC_MAX_EMIT_NAME_LEN], flr[32];
-    snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
-    snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
-    snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
+    /* K38: rv/cur were hand-sized 80/96, widened once to the shared
+     * emitted-name size, and are now arena-owned -- the family of
+     * prefix-plus-suffix buffers this file stopped hand-sizing one at a time
+     * has stopped being buffers at all. `flr` carries no prefix and never had
+     * the hazard; it goes with them because the three are one statement and
+     * one idea, not because it was at risk. */
+    const char *rv  = vm_rolef(v, "%s_rv%d", v->p, loop);
+    const char *cur = vm_rolef(v, "%s_rv%d_cursor", v->p, loop);
+    const char *flr = vm_rolef(v, "(size_t)slot_values[%d]", se);
 
     const char *bounds = vm_bounds_text(v, a);
     const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
@@ -5062,14 +5058,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * every frame the body pushed — and it is charged like one, even though it
      * never goes near the RX_CUT macro. */
     {
-        /* K38: widened (was 192) alongside `rv`'s own widening -- gcc's
-         * -Wformat-truncation now sizes `rv`'s worst case off ITS buffer
-         * capacity (PCREC_MAX_EMIT_NAME_LEN), so this destination has to
-         * cover that worst case plus its own literal text even though rv's
-         * REAL content never approaches it. */
-        char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
-        vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
+        /* K38: this was 192, then PCREC_MAX_EMIT_NAME_LEN + 64 -- widened
+         * not because its real content grew but because gcc's
+         * -Wformat-truncation sized `rv`'s worst case off ITS buffer
+         * CAPACITY, so a destination had to cover a worst case nothing ever
+         * produced. That whole second-order sizing problem is gone with the
+         * buffers: an arena fragment has no capacity to propagate. */
+        vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv),
+                "work charge: frames discarded by the revdet scan cut");
     }
     sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
@@ -5111,11 +5107,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * their first 18 suffix bytes), which is why the artifact's group-
          * span write and group-seen flag collapsed onto one wrong
          * identifier. ns ("%s_rv%d_groups_seen") truncated the same way. */
-        char ga[PCREC_MAX_EMIT_NAME_LEN], gs[PCREC_MAX_EMIT_NAME_LEN],
-             ns[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(ga, sizeof ga, "%s_revdet_group_span", v->p);
-        snprintf(gs, sizeof gs, "%s_revdet_group_seen", v->p);
-        snprintf(ns, sizeof ns, "%s_rv%d_groups_seen", v->p, loop);
+        const char *ga = vm_rolef(v, "%s_revdet_group_span", v->p);
+        const char *gs = vm_rolef(v, "%s_revdet_group_seen", v->p);
+        const char *ns = vm_rolef(v, "%s_rv%d_groups_seen", v->p, loop);
         R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
         R.grp = grp; R.ngrp = ng; R.faill = wendl;
 
@@ -5155,13 +5149,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * instead of accumulating them (the cursor rung's own ordering rule). */
     if (move) {
         if (greedy) {
-            /* K38: widened (was 112) alongside `rv`'s own widening -- see
-             * the cnt[192] site above for why. */
-            char pv[PCREC_MAX_EMIT_NAME_LEN + 32];
-            snprintf(pv, sizeof pv, "(size_t)%s_prev_position", rv);
+            /* K38: was 112, then PCREC_MAX_EMIT_NAME_LEN + 32 -- see the
+             * scan-cut site above for the capacity-propagation reason, now
+             * retired with the buffer. */
             sb_printf(b, "    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n",
                       sl, rv);
-            vm_push_at(v, commitl, pv,
+            vm_push_at(v, commitl, vm_rolef(v, "(size_t)%s_prev_position", rv),
                        "retreat: resume this very label with scan_position at the "
                        "PREVIOUS boundary, and re-derive from there");
             sb_puts(b, "    }\n");
@@ -5178,14 +5171,11 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * truncated string is textually IDENTICAL to ga's own truncation,
          * which is why gcc's dedup ("each undeclared identifier is reported
          * only once") hid it as a distinct error during the repro. */
-        char val[PCREC_MAX_EMIT_NAME_LEN];
         sb_printf(b, "    if (%s_revdet_group_seen[%d]) {\n", v->p, j);
-        snprintf(val, sizeof val, "%s_revdet_group_span[%d][0]", v->p, j);
-        vm_set(v, 2 * grp[j], val,
+        vm_set(v, 2 * grp[j], vm_rolef(v, "%s_revdet_group_span[%d][0]", v->p, j),
                vm_rolef(v, "group %d open, recovered by the backward walk",
                         grp[j]));
-        snprintf(val, sizeof val, "%s_revdet_group_span[%d][1]", v->p, j);
-        vm_set(v, 2 * grp[j] + 1, val,
+        vm_set(v, 2 * grp[j] + 1, vm_rolef(v, "%s_revdet_group_span[%d][1]", v->p, j),
                vm_rolef(v, "group %d close, recovered by the backward walk",
                         grp[j]));
         sb_puts(b, "    }\n");
@@ -5213,12 +5203,10 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
         {
-            /* K38: widened (was 192), same reason as the scan-cut site
-             * above. */
-            char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
-            snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
-            vm_work(v, cnt, "work charge: frames discarded by the revdet "
-                            "extra-iteration cut");
+            /* K38: was 192, same reason as the scan-cut site above. */
+            vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv),
+                    "work charge: frames discarded by the revdet "
+                    "extra-iteration cut");
         }
         sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
         vm_goto(v, commitl);
@@ -5423,9 +5411,8 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         }
         vm_lbl(v, cur, "counter trip complete: charge K and go round");
         {
-            char val[64];
-            snprintf(val, sizeof val, "slot_values[%d] + %d", ctr, K);
-            vm_set(v, ctr, val, "counter rung: += K, once per TRIP");
+            vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + %d", ctr, K),
+                   "counter rung: += K, once per TRIP");
         }
         vm_goto(v, trip);
     }
@@ -5538,9 +5525,8 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_lbl(v, step, "counter iteration committed: cut, count, go round");
     vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
     {
-        char val[64];
-        snprintf(val, sizeof val, "slot_values[%d] + 1", ctr);
-        vm_set(v, ctr, val, "counter rung: += 1 (possessive: no trip, no K)");
+        vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + 1", ctr),
+               "counter rung: += 1 (possessive: no trip, no K)");
     }
     vm_goto(v, trip);
 
@@ -6466,12 +6452,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
         }
 
         {
-            char cnt[32];
-            snprintf(cnt, sizeof cnt, "%d", k);
-            vm_work(v, cnt, "work charge: the back-step, charged as the "
-                            "compile-time width rather than the runtime cost "
-                            "so the accounting does not depend on the "
-                            "encoding backend");
+            vm_work(v, vm_rolef(v, "%d", k),
+                    "work charge: the back-step, charged as the "
+                    "compile-time width rather than the runtime cost "
+                    "so the accounting does not depend on the "
+                    "encoding backend");
         }
 
         /* THE SEAM CALL. Never `scan_position - k` here: that is byte
@@ -6505,12 +6490,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                  "the assertion started -- the only runtime evidence that the "
                  "width analysis and this emission agree");
         {
-            /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, not a hand-picked 64
-             * -- vm_slot_expr's own content can reach prefix + "_" + a
-             * 47-byte slot name (108 bytes at the 60-char prefix maximum),
-             * which 64 silently truncated. */
-            char sl[PCREC_MAX_EMIT_NAME_LEN];
-            vm_slot_expr(v, pslot, sl, sizeof sl);
+            /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
+             * there is no size here to get wrong. It used to be a hand-picked
+             * 64, which silently truncated -- its content reaches prefix +
+             * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
+            const char *sl = vm_slot_expr(v, pslot);
             if (neg) {
                 /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
                  * see this function's header comment, note 3, "WHICH
@@ -6628,9 +6612,7 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
             vm_cut(v, mslot, "cut: the assertion is committed; every choice "
                              "point the body created is discarded, dead or not");
         {
-            /* K38: see the lookbehind end-check's identical buffer above. */
-            char sl[PCREC_MAX_EMIT_NAME_LEN];
-            vm_slot_expr(v, pslot, sl, sizeof sl);
+            const char *sl = vm_slot_expr(v, pslot);
             sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);
             vm_ev(v, VE_NOTE, 0, 0,
                   "lookaround: the position is DISCARDED -- the cursor goes "
@@ -7625,11 +7607,9 @@ static void vm_region(Vm *v, int i)
            vm_rolef(v, "the callee region for %s returns",
                     g == 0 ? "the whole pattern" : "a capture group"));
     for (int j = 0; j < v->rgn_nw[i]; j++) {
-        char val[192];
-        snprintf(val, sizeof val,
-                 "run->trail[run->resume_stack[run->call_top].trail_mark + %d]"
-                 ".saved_value", j);
-        vm_set(v, v->rgn_w[i][j], val,
+        vm_set(v, v->rgn_w[i][j],
+               vm_rolef(v, "run->trail[run->resume_stack[run->call_top]"
+                           ".trail_mark + %d].saved_value", j),
                "restore the caller's value, itself TRAILED so a retreat into "
                "this callee re-establishes the callee's own");
     }
@@ -7946,10 +7926,11 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
         if (!v->nocap) {
             if (marked) {
-                char sl[144], val[176];
-                vm_slot_expr(v, vm_slot_pend(v, a->u.cap.no), sl, sizeof sl);
-                snprintf(val, sizeof val, "slot_values[%s]", sl);
-                vm_set(v, 2 * a->u.cap.no, val,
+                /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
+                 * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
+                 * E1) builds, and E1's own four sites were all in
+                 * `vm_call`/`vm_splice`, so this one was never reached. */
+                vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
                        vm_rolef(v, "group %d PUBLISHED: the pair goes out "
                                    "together, so a reference never sees a "
                                    "half-open span", a->u.cap.no));
@@ -8022,7 +8003,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * is its only possible detector: inlining changes NO ANSWER under the
          * byte backend. */
         StrBuf *bb = v->b;
-        char fn[96];
+        const char *fn;
         /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
          * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
          * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
@@ -8053,17 +8034,16 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
                      "not declared engine-callable, so it cannot be routed "
                      "through the seam from an engine body");
         v->enc_mask |= seam_entry;
-        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
-                 a->u.bref.caseless ? "_caseless" : "");
+        fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                      a->u.bref.caseless ? "_caseless" : "");
         vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
                                   a->u.bref.nrefs == 1 ? "one group" : "a name-run",
                                   a->u.bref.caseless ? ", caseless" : ""));
         sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
                     "ref_end = PCREC_UNSET, took;\n");
         for (int i = 0; i < a->u.bref.nrefs; i++) {
-            char ns[144], ne[144];
-            vm_slot_expr(v, 2 * a->u.bref.refs[i], ns, sizeof ns);
-            vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1, ne, sizeof ne);
+            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
+            const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
             sb_printf(bb,
                 "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
                 "            ref_start = slot_values[%s];\n"
@@ -8221,17 +8201,18 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
         if (shown++ == 0) sb_puts(o, count == 1 ? "" : "[");
         else sb_puts(o, "");
         int hi = c - 1;
-        char a[8], b[8];
+        /* [REVW.2] the pair was `char a[8], b[8]` written through a
+         * `char *dst = k ? b : a` alias; arena-owned fragments cannot be
+         * aliased that way, so the loop fills the array it is building. */
+        const char *ab[2];
         for (int k = 0; k < 2; k++) {
             int ch = k ? hi : lo;
-            char *dst = k ? b : a;
-            if (ch >= 32 && ch < 127 && ch != '\\' && ch != ']' && ch != '\'')
-                snprintf(dst, 8, "%c", ch);
-            else
-                snprintf(dst, 8, "\\x%02x", ch);
+            ab[k] = (ch >= 32 && ch < 127 && ch != '\\' && ch != ']' && ch != '\'')
+                  ? vm_rolef(v, "%c", ch)
+                  : vm_rolef(v, "\\x%02x", ch);
         }
-        if (lo == hi) sb_printf(o, count == 1 ? "'%s'" : "%s", a);
-        else          sb_printf(o, "%s-%s", a, b);
+        if (lo == hi) sb_printf(o, count == 1 ? "'%s'" : "%s", ab[0]);
+        else          sb_printf(o, "%s-%s", ab[0], ab[1]);
     }
     if (nr > 8) {
         sb_printf(o, "...%d ranges, %d bytes]", nr, count);
@@ -8349,16 +8330,19 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * PREFILTER specifically, which the overflow decided regardless of which
      * reason won the ENGINE). Left empty (and unread) unless
      * `cx->dfa_disabled` fires. */
-    /* +160: the static text around `cx->dfa_overflow_why` is 142 bytes
-     * ("NO (" + ") -- the auto-selected ... (SEL-1)"), measured; +160 is
-     * this file's own K38-precedent margin over that worst case rather
-     * than a tight fit that reopens the next time either string grows. */
-    char sel1_prefilter_reason[PCREC_DFA_OVERFLOW_WHY_LEN + 160];
-    if (cx->dfa_disabled)
-        snprintf(sel1_prefilter_reason, sizeof sel1_prefilter_reason,
-                 "NO (%s) -- the auto-selected prefilter's own DFA build hit"
-                 " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
-                 " instead of refusing (SEL-1)", cx->dfa_overflow_why);
+    /* [REVW.2] EP2 called this "the file's best-documented buffer and the one
+     * most likely to survive a sloppy migration": it carried a MEASURED
+     * 142-byte worst case and a deliberate +160 K38-precedent margin over it,
+     * which is a correct answer FOR ONE SITE and is exactly the question
+     * `sb_fragf` dissolves. NULL when `cx->dfa_disabled` is false, which is
+     * safe because the ONE read below sits behind that same test -- and is
+     * an improvement on the old shape, where the unread buffer was
+     * uninitialized rather than merely unread. */
+    const char *sel1_prefilter_reason =
+        !cx->dfa_disabled ? NULL
+        : vm_rolef(v, "NO (%s) -- the auto-selected prefilter's own DFA build hit"
+                      " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
+                      " instead of refusing (SEL-1)", cx->dfa_overflow_why);
 
     sb_puts(o, "; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
     sb_puts(o, ";\n");
@@ -8556,9 +8540,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         for (int i = 0; i < v->nev; i++)
             if (v->ev[i].k == VE_SET && (v->ev[i].a == 2 * k || v->ev[i].a == 2 * k + 1))
                 w++;
-        char what[32];
-        if (k == 0) snprintf(what, sizeof what, "$0 whole match");
-        else        snprintf(what, sizeof what, "group %d", k);
+        const char *what = k == 0 ? "$0 whole match" : vm_rolef(v, "group %d", k);
         sb_printf(o, "  %2d,%-9d %-22s %s\n", 2 * k, 2 * k + 1, what,
                   /* [M6.2 wave E] slot 0 STOPS being entry-only the moment a
                    * `\K` exists: that is the whole of the construct's
@@ -8709,8 +8691,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                       e->role ? e->role : "?", e->a);
             break;
         case VE_PUSH: {
-            char tgt[24];
-            snprintf(tgt, sizeof tgt, "resume L%d", e->a);
+            const char *tgt = vm_rolef(v, "resume L%d", e->a);
             sb_printf(o, "         PUSH    %-28s ; %s\n", tgt,
                       e->role ? e->role : "choice point");
             break;
@@ -8720,8 +8701,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
              * `slot_values[2] <- scan_position` is 30 and snprintf silently
              * TRUNCATED it to `slot_values[2] <- scan_`. A rename that moves
              * emitted names has to check the listing's column widths too. */
-            char slot[48];
-            snprintf(slot, sizeof slot, "slot_values[%d] <- scan_position", e->a);
+            const char *slot = vm_rolef(v, "slot_values[%d] <- scan_position", e->a);
             sb_printf(o, "         set     %-28s ; %s\n", slot,
                       e->role ? e->role : "");
             break;
@@ -8753,8 +8733,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
          * VE_RUNG/VE_STRAT/VE_PRUNE they belong in the straight-line trace:
          * a call and a return are things that EXECUTE. */
         case VE_CALL: {
-            char tgt[40];
-            snprintf(tgt, sizeof tgt, "callee L%d, return L%d", e->a, e->b);
+            const char *tgt = vm_rolef(v, "callee L%d, return L%d", e->a, e->b);
             sb_printf(o, "         CALL    %-28s ; %s\n", tgt,
                       e->role ? e->role : "subroutine call");
             break;
@@ -8768,8 +8747,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         case VE_CUT: {
             /* [ENG-BREP] this one DOES write C, so unlike the two above it
              * belongs in the trace. */
-            char slot[32];
-            snprintf(slot, sizeof slot, "frames <- slot_values[%d]", e->a);
+            const char *slot = vm_rolef(v, "frames <- slot_values[%d]", e->a);
             sb_printf(o, "         CUT     %-28s ; %s\n", slot,
                       e->role ? e->role : "commit: discard the loop's frames");
             break;
@@ -9645,8 +9623,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * K38 sweep replaced everywhere, including here, with the shared
      * PCREC_MAX_EMIT_NAME_LEN -- a second hand-picked constant for the same
      * problem is exactly the mistake this fix exists to stop repeating. */
-    char frames_sentinel[PCREC_MAX_EMIT_NAME_LEN];
-    snprintf(frames_sentinel, sizeof frames_sentinel, "%s_R_FRAMES", v.up);
+    const char *frames_sentinel = vm_rolef(&v, "%s_R_FRAMES", v.up);
 
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
@@ -10279,8 +10256,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
         for (int sl = 0; sl < nstate; sl++) {
-            char nm[48];
-            if (!vm_slot_name(&v, sl, nm, sizeof nm)) continue;
+            const char *nm = vm_slot_name(&v, sl);
+            if (!nm) continue;
             sb_printf(c, "#define %s_%-24s %d\n", v.up, nm, sl);
         }
         sb_putc(c, '\n');
@@ -10623,14 +10600,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* The ceiling parameter's spelling, written once: the declaration, the
      * definition and the three call sites all read these two strings rather
      * than re-deriving the name, so a rename cannot leave one of them behind. */
-    char mrl_param[96];
-    snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_window_end", v.p);
+    const char *mrl_param = vm_rolef(&v, ", const size_t %s_window_end", v.p);
     /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
      * appended AFTER the ceiling's so the two are order-independent at every
      * site: each is emitted or omitted on its own flag, and a program with
      * both gets `(ctx, w, ceil, startpos)`. */
-    char gst_param[96];
-    snprintf(gst_param, sizeof gst_param, ", const size_t %s_search_from", v.p);
+    const char *gst_param = vm_rolef(&v, ", const size_t %s_search_from", v.p);
 
     if (v.nclamp > 0) {
         sb_printf(c,
@@ -10840,11 +10815,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `call_top` joins the FIRST group, not the second, because an attempt at
      * the next start position must not inherit the previous attempt's
      * activation. */
-    char reset_call_top[160];
-    reset_call_top[0] = 0;
-    if (v.has_linked_calls)
-        snprintf(reset_call_top, sizeof reset_call_top,
-                 "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
+    /* THE EMPTY DEFAULT IS A BYTE-IDENTITY CONTRACT, not an absence: an
+     * artifact with no linked calls emits this insert as nothing at all, and
+     * `""` is what makes that byte-identical. So this is a `const char *`
+     * initialised to `""` and conditionally reassigned, never `sb_fragf`
+     * called unconditionally -- the shape lens10's charter marks JUDGED. */
+    const char *reset_call_top =
+        !v.has_linked_calls ? ""
+        : vm_rolef(&v, "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
 
     sb_printf(c,
         "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
@@ -11016,8 +10994,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * longer, and snprintf TRUNCATES rather than failing. gcc's
      * -Wformat-truncation caught two of the three; the third is widened with
      * them because a silently cut trace line is a debugging tool that lies. */
-    char accept_tr[288], fail_tr[288], exhaust_tr[192];
-    accept_tr[0] = fail_tr[0] = exhaust_tr[0] = 0;
+    /* Three more of the JUDGED shape above: an UNTRACED artifact's bytes are
+     * identical because each insert is simply empty, which is what
+     * run_vm_identity.sh's gate cares about and what a debug flag has no
+     * business changing. The old comment below says so in those words. */
+    const char *accept_tr = "", *fail_tr = "", *exhaust_tr = "";
     if (v.tracing) {
         /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
          * on such an artifact they are different and one of them alone is
@@ -11028,23 +11009,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * nothing connecting them. Emitted only where a `\K` exists, so a
          * `\K`-free traced artifact keeps its line byte for byte. */
         if (v.nkreset > 0)
-            snprintf(accept_tr, sizeof accept_tr,
+            accept_tr = vm_rolef(&v,
                      "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
                      " reported [%%td,%%zu)\\n\", ctx->pos, scan_position,"
                      " slot_values[0] != PCREC_UNSET ? slot_values[0] : (ptrdiff_t)ctx->pos,"
                      " scan_position);\n", v.p);
         else
-            snprintf(accept_tr, sizeof accept_tr,
+            accept_tr = vm_rolef(&v,
                      "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
                      " ctx->pos, scan_position);\n", v.p);
-        snprintf(fail_tr, sizeof fail_tr,
+        fail_tr = vm_rolef(&v,
                  "    fprintf(stderr, \"[%s] backtrack: %%zu frame(subject), trail %%zu\\n\","
                  " run->resume_depth, run->trail_depth);\n", v.p);
         /* A separate guarded statement rather than a brace around the
          * existing one: that keeps the UNTRACED artifact's bytes identical
          * (the insert is simply empty), which is what run_vm_identity.sh's
          * gate cares about and what a debug flag has no business changing. */
-        snprintf(exhaust_tr, sizeof exhaust_tr,
+        exhaust_tr = vm_rolef(&v,
                  "    if (run->resume_depth == 0)\n"
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
@@ -11116,10 +11097,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * this file's own header counts (the fail label) down to none. */
         sb_puts(c, "}\n\n");
     } else {
-        char pop_tr[352];
-        pop_tr[0] = 0;
+        const char *pop_tr = "";
         if (v.tracing)
-            snprintf(pop_tr, sizeof pop_tr,
+            pop_tr = vm_rolef(&v,
                      "        fprintf(stderr, \"[%s] pop   #%%zu resume L%%d at"
                      " scan_position %%zu (rewind trail %%zu -> %%zu)\\n\",\n"
                      "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
@@ -11372,15 +11352,16 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "internal error: this encoding's unanchored retry advance is "
                  "missing or does not fit the emitter's buffer");
 
-    /* The recompute, spelled once and used only where a bound reads it. */
-    char retry_win[512];
-    retry_win[0] = 0;
+    /* The recompute, spelled once and used only where a bound reads it.
+     * `""` again: an artifact with no clamp or no prefilter emits nothing
+     * here and must stay byte-identical. */
+    const char *retry_win = "";
     if (v.nclamp > 0 && prefn)
         /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a
          * cut-bearing artifact — it re-seeds `attempt_position` from the
          * prefilter, which is H2 and is sound, and D51 ruling 2 is why it
          * exists at all. Only the CEILING it also computed is dropped. */
-        snprintf(retry_win, sizeof retry_win,
+        retry_win = vm_rolef(&v,
                  "        {\n"
                  "            ptrdiff_t window[1][2];\n"
                  "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"

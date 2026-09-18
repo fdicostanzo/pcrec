@@ -23,6 +23,18 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="counterkdiff"
 SAB_DESC="the counter's per-trip increment becomes a plain untrailed store, so a resume into a body choice point reads the wrong iteration count"
 SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §2.2"
+#
+# RE-AIMED 2026-09-18 (lane w2b, [REVW.2] wave 2 stage 3). The trip increment's value text was a `char val[64]`
+# and is now an inline `vm_rolef` fragment, so the anchored `vm_set` call
+# carries the value expression instead of a variable name and wraps onto a
+# second line. The plant is unchanged in substance: the SAME value text goes
+# out through a plain untrailed store instead of through `vm_set`, which is
+# what this row tests -- so the AFTER now spells the value expression where it
+# used to spell `val`.
+# The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
+# re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
-SAB_BEFORE='            vm_set(v, ctr, val, "counter rung: += K, once per TRIP");'
-SAB_AFTER='            sb_printf(v->b, "    stv[%d] = %s;\n", ctr, val);  /* SABOTAGE S53 */'
+SAB_BEFORE='            vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + %d", ctr, K),
+                   "counter rung: += K, once per TRIP");'
+SAB_AFTER='            sb_printf(v->b, "    stv[%d] = %s;\n", ctr,
+                      vm_rolef(v, "slot_values[%d] + %d", ctr, K));  /* SABOTAGE S53 */'

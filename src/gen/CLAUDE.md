@@ -991,6 +991,53 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     `vm_plan_regions` and it, and are the only place a region's own per-copy
     slot indices exist.
 
+  **[REVW.2 wave 2 STAGE 3, lane w2b, 2026-09-18] THE FIXED SCRATCH BUFFERS
+  ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `sb_fragf` /
+  `sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
+  primitive itself): arena-owned formatted text sized exactly to the result,
+  so truncation is impossible BY CONSTRUCTION rather than by a per-site size
+  argument. Each emitter reaches it through a three-line adapter that supplies
+  the arena — `vm_rolef` from `Vm` (which WAS one of these buffers, a
+  `char buf[160]` that truncated), `dfa_fragf` from `Ctx` (and `derived_name`
+  is now a one-liner over it rather than a second implementation).
+
+  - **THE NUMBERS.** `tools/review/fragment_census.py` over both files under
+    the repaired criterion (ANY size expression): **91 declarators at
+    `w2census.md`'s floor, 81 after w2a's slice, 7 now.** Of the seven, one
+    is `Vm.up` (lens 10's own standing SCOPE NOTE — a struct FIELD read at
+    ~110 sites, a data-flow change, out of wave 1 and not claimed here) and
+    six are the ENCODING-SEAM GUARD/ADVANCE FAMILY, named with their reason
+    in `docs/dev/lanes/w2b_report.md`: they hold the output of `enc.h` seam
+    entries whose buffer+cap+`trunc` contract belongs to the encoding module,
+    and their content carries no `-p` prefix, which puts the whole family
+    outside the K38 class this stage exists to retire.
+  - **FOUR HELPERS STOPPED TAKING A CALLER BUFFER** and return arena text
+    instead, which is what retired most of the call-site declarators as well
+    as their own: `vm_slot_name` and `vm_slot_expr` here, `fold_arg`,
+    `ofsk_tbl_name` and `scan_label` in `emit_dfa.c`. `vm_slot_expr`'s own
+    header had called hand-derivation "three spellings of one convention" one
+    level up while its buffer was the same defect one level down.
+  - **THE CONDITIONALLY-WRITTEN BUFFERS DID NOT BECOME UNCONDITIONAL CALLS.**
+    Six sites (`reset_call_top`, the three trace inserts, `pop_tr`,
+    `retry_win`) are written only under a flag and read always, and their
+    EMPTY value is a byte-identity contract — an untraced artifact's bytes
+    are identical because the insert is simply empty, which this file's own
+    comment at the trace block already said in those words. They are
+    `const char *x = "";` plus a conditional assignment, the shape lens 10's
+    charter marks JUDGED.
+  - **A FIFTH HAND-ROLLED SLOT-REF**, in `vm_cap`'s publish-at-close: it
+    built `slot_values[` + `vm_slot_expr` + `]` by hand, which is exactly
+    what `vm_slot_ref` builds. w2a's E1 retired four such sites and all four
+    were in `vm_call`/`vm_splice`, so this one was never reached.
+  - **BYTE-NEUTRAL, MEASURED ON THREE STREAMS PER BATCH** against a pinned
+    `git archive` binary of the branch point: the 3,938-row corpus argv sweep
+    at three argv shapes (`.c` default, `.c --engine=vm`, `--emit-ir`), the
+    304-file composition sweep (the only arm that reaches `vm_splice`'s
+    DELIVER block), and `run_ir_listing.sh`. Zero movers on every batch.
+    `vm_rolef`'s own truncation removal was measured separately BEFORE the
+    edit: 7,876 compiles per prefix at `-p rx` and at a legal 60-byte prefix,
+    0 truncating calls, longest role 135 bytes against the 160 bound.
+
   **[M6.6.2 wave B+C] `vm_look` — THE LOOKAROUND, and it is `vm_atomic`'s
   shape with two lines added.** Wave A2 landed five inert `A_LOOK` arms, two
   of them deliberately incomplete, behind a LOUD `ctx_fail` in `vm_emit`;

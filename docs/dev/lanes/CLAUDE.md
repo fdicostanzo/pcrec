@@ -736,6 +736,50 @@ never edited afterwards.
   `rxtsource:2fail/210pass` and `1fail/211pass`. PARKED on `lane/w1kit`;
   `make test` launched as the lane's last act, log path in the report.
 
+- `w2b_report.md` — [REVW.2] WAVE 2 SLICE C, EP2 step 11 / lens 10 STAGE 3
+  (2026-09-18, lane w2b, opus): the FRAGMENT RETIREMENT. `sb_fragf` /
+  `sb_fragfv` landed in `src/core/sb.c` with a unit check, each emitter given
+  a three-line adapter (`vm_rolef` rebuilt on it, `dfa_fragf` new), and the
+  fixed scratch buffers retired across BOTH emitters in eight batches —
+  **81 declarators inherited, 75 retired, 6 left on a named exclusion list**.
+  Every batch byte-neutral on three independent artifact streams against a
+  pinned branch-point binary (3,938-row corpus argv sweep at three argv
+  shapes, 304-file composition sweep, `run_ir_listing.sh`), zero movers
+  anywhere. Read it for five things.
+  **§2 is the exclusion list and its reason is structural**: one standing
+  scope exclusion (`Vm.up`, lens 10's own note) plus the six-buffer
+  ENCODING-SEAM GUARD/ADVANCE family, whose text carries the caller's indent
+  and the backend's expression and **never the `-p` prefix** — which is what
+  puts it outside the K38 class the stage exists to retire, and what
+  `limits.def:360` already said.
+  **§3.1 measured `vm_rolef`'s truncation removal BEFORE taking it**: the
+  charter names it as the one fragment builder that truncates, so removing
+  the truncation could have moved a byte; a probe over the whole corpus at
+  both prefixes found 7,876 compiles each, **0 truncating calls, longest role
+  135 bytes against the 160 bound**.
+  **§4.3 is the anchor finding.** The charter predicted 4 directly-broken
+  rows by name and all four broke — but SIX did. The two it missed share a
+  shape its own rule cannot see: it counted rows quoting an `snprintf` or a
+  `char NAME[…]` declaration, while `S37` quotes an ARGUMENT LINE of such a
+  call and `S53` quotes the CONSUMER that passes the buffer VARIABLE. *A
+  buffer's blast radius is not the lines that mention the buffer; it is the
+  whole statement that writes it, every continuation line of that statement,
+  and every call that reads the variable.* §4.2 carries the two re-aims that
+  needed thought rather than substitution — `S37`'s one anchor matches TWO
+  emission paths only because it carries the shallower arm's indent, and
+  `S53`'s AFTER had to change too.
+  **§5.3 is a check's own blind spot, measured**: `sb_fragf`'s no-truncation
+  promise is enforced by the `vsnprintf` SIZE argument and the exactness of
+  the ALLOCATION is unobservable — an allocation one byte short moves neither
+  `tests/core/sb_fragf_check.c` nor AddressSanitizer, because `arena_alloc`
+  rounds to 16 and zeroes and ASan sees only the arena's own block `malloc`.
+  And **§5.2 is what the stage's own item 0 bought immediately**: widening
+  `run_ir_listing.sh` from 11 patterns to 16 with per-row `--features` (reach
+  30 → 42 of 44 `vm_rolef` sites) found TWO defects in a pre-existing check
+  the old eleven could not reach — an extraction counting `RX_CALL` return
+  addresses as resume points, and an EQUALITY assertion where the cap's
+  soundness is only an INEQUALITY.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the

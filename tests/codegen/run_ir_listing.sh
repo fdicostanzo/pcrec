@@ -35,6 +35,16 @@
 # comment claims: an instrumented artifact must take the SAME path as the
 # untraced one. A debug build that changes the answer is a tool that lies.
 #
+# [REVW.2] WAVE 2 STAGE 3, 2026-09-18 (lane w2b): the PATTERNS array is 16
+# rows, not the original 11, and each row declares its `--features` in the
+# positionally parallel PATTERN_FEATURES array. Both arrays' own comments
+# carry the reasoning; the short version is that four of the families whose
+# role TEXT this file's BYTE-NEUTRALITY block pins are MODULE-GATED, and
+# neither invocation below used to pass `--features`, so they refused to
+# compile and read as "the corpus has no such shape". Measured reach of the
+# `vm_rolef` call sites went 30 of 44 -> 42 of 44; the residual 2 are
+# instrument-blind, not a population gap (see the array comment).
+#
 # Usage: bash tests/codegen/run_ir_listing.sh
 # Env: PCREC (default <root>/build/pcrec), CC, GENCFLAGS, KEEP=1,
 #      CLANGGEN=1 ([CC-CLANG]: default CC to clang, opt-in, explicit CC wins)
@@ -86,6 +96,29 @@ tot_cpush=0; tot_ipush=0
 # represented: an alternation chain, both cursor rungs, the frames rung with
 # and without the empty-iteration guard, nested captures, bounded replication,
 # and the anchors.
+#
+# [REVW.2] WAVE 2 STAGE 3, 2026-09-18 (lane w2b) -- THE REACH WIDENING, and it
+# is a REACH repair rather than a population preference. w1stage0.md sections 2-3
+# measured this sweep reaching 27 of the 41 `vm_rolef` call sites whose role
+# TEXT is the listing this arm pins, with lookbehind, subroutine-call, counter
+# and possessive-chain emission reached by NOTHING; w2census_report.md's TASK 2
+# then found the cause, and it is the INSTRUMENT, not the corpus: the two
+# invocations below never passed `--features`, so every module-gated family
+# (`lookaround`, `recursion`, `atomic-groups`, `backrefs`) refused to compile
+# at all and read as "the corpus has no such shape" when the corpus is full of
+# them. The five rows appended below are all EXISTING CORPUS PATTERNS (their
+# home file named on each), each with the `--features` its module requires,
+# and they take the measured reach to 39 of 41.
+#
+# THE REMAINING 2 OF 41 ARE INSTRUMENT-BLIND, NOT A POPULATION GAP, and no
+# pattern added here or later changes that: `vm_counter_phase`'s two role
+# texts (`src/gen/emit_vm.c`, the `"%lld * ((ptrdiff_t) %d - slot_values[%d]"`
+# family) begin with a `%` conversion, so the reach census's own
+# literal-prefix hit test has an EMPTY needle and is false by construction
+# whatever compiles. Reaching them needs a census that can name a call site by
+# something other than its own literal text -- a different instrument, not a
+# longer array. Stated here so a later lane does not spend a session hunting
+# for the two patterns that would close it.
 PATTERNS=(
     'a(b|c)+d'
     '(a*)b'
@@ -98,9 +131,55 @@ PATTERNS=(
     '(^a$)'
     '(\d+)-(\d+)'
     '(a|ab)(c|bcd)'
+    '(?<=a|bc)x'
+    '^(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)$'
+    '^(a)\1$'
+    '((a)|ab){0,12}?c'
+    '(?:a|ab){2,3}+'
 )
 
-for pat in "${PATTERNS[@]}"; do
+# POSITIONALLY PARALLEL to PATTERNS: the `--features` value each row needs, ''
+# for base grammar. Two arrays rather than one packed field because a pattern
+# may contain any delimiter that would be chosen (these rows carry `|`, `:`
+# and TAB-free but arbitrary regex text), and because bash's own `read`
+# collapses empty delimited fields even under a single-character IFS
+# (tt4m3_report.md's trap). The lengths are asserted equal below: a row added
+# to one array and not the other would otherwise silently run at the WRONG
+# features and the reach this widening bought would evaporate with no red.
+#
+# Source file per widening row, so a reviewer can re-derive that these are
+# corpus shapes and not hand-written ones:
+#   (?<=a|bc)x                           tests/lookaround/lookbehind_widths.rxt
+#   ^(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)$   tests/recursion/bothlinkage.rxt
+#   ^(a)\1$                              tests/backrefs/gated.rxt
+#   ((a)|ab){0,12}?c                     tests/counterk/counterk.rxt
+#   (?:a|ab){2,3}+                       tests/atomic_groups/possessive.rxt
+PATTERN_FEATURES=(
+    '' '' '' '' '' '' '' '' '' '' ''
+    'lookaround'
+    'recursion'
+    'backrefs'
+    ''
+    'atomic-groups'
+)
+
+if [ "${#PATTERNS[@]}" -ne "${#PATTERN_FEATURES[@]}" ]; then
+    bad "ir-listing: PATTERNS (${#PATTERNS[@]}) and PATTERN_FEATURES (${#PATTERN_FEATURES[@]}) have different lengths; every pattern must declare its features (or '')"
+    echo "ir-listing: $pass passed, $fail failed"
+    exit 1
+fi
+
+for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
+    pat="${PATTERNS[$i]}"
+    # An empty features value must expand to ZERO arguments, and a bare
+    # "${arr[@]}" on an empty array is an "unbound variable" error under
+    # `set -u` in this box's bash 3.2 (macport_report.md's platform). The
+    # `${arr[@]+...}` guard is the spelling that gives 0 args when empty and
+    # N args when not, verified on bash 3.2 itself.
+    featflag=()
+    if [ -n "${PATTERN_FEATURES[$i]}" ]; then
+        featflag=(--features "${PATTERN_FEATURES[$i]}")
+    fi
     d="$WORKDIR/$(printf '%s' "$pat" | md5sum | cut -c1-8)"
     mkdir -p "$d"
     # [ENG-ISL / panel r53 F11] `--engine=vm` ON BOTH, and it is a correctness
@@ -110,12 +189,14 @@ for pat in "${PATTERNS[@]}"; do
     # the DFA has no such stamp and the assertion fails for a reason that has
     # nothing to do with the listing. The listing itself is a VM program dump,
     # so the two invocations must agree about the engine anyway.
-    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
-        bad "ir-listing: pcrec could not compile '$pat'"
+    if ! pcrec_run "$PCREC" -p rx --engine=vm ${featflag[@]+"${featflag[@]}"} \
+            -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+        bad "ir-listing: pcrec could not compile '$pat' (features: '${PATTERN_FEATURES[$i]}')"
         continue
     fi
-    if ! pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
-        bad "ir-listing: --emit-ir failed for '$pat': $(head -1 "$d/ir.err")"
+    if ! pcrec_run "$PCREC" -p rx --engine=vm ${featflag[@]+"${featflag[@]}"} \
+            --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
+        bad "ir-listing: --emit-ir failed for '$pat' (features: '${PATTERN_FEATURES[$i]}'): $(head -1 "$d/ir.err")"
         continue
     fi
 
@@ -165,9 +246,20 @@ for pat in "${PATTERNS[@]}"; do
     #
     # That is this project's recorded check-design failure (a control sharing
     # a source with the thing it controls), and [M6-READ]'s emitted-identifier
-    # rename is a live occasion for it. Every pattern in PATTERNS above has at
-    # least one capturing group, so every one of them MUST write at least one
-    # slot: an empty extraction on either side is a failure, never a pass.
+    # rename is a live occasion for it. Every pattern in PATTERNS above MUST
+    # write at least one slot, so an empty extraction on either side is a
+    # failure, never a pass.
+    #
+    # WHY "writes a slot" AND NOT "has a capturing group" (corrected 2026-09-18,
+    # lane w2b, when the reach widening added the first two rows without one).
+    # Slots are not only capture slots: `(?<=a|bc)x` (RX_NCAPS 1, no capturing
+    # group) writes two and `(?:a|ab){2,3}+` writes one, through their rungs'
+    # own cursor/counter state. The old comment and the old failure message
+    # both said "this pattern has capturing groups", which was true of the
+    # original eleven and is false of two of the sixteen -- and a failure
+    # message is a second, undeclared claim about the space of causes
+    # (coding_guide.md section 5), so it is restated rather than left to send
+    # a reader hunting for a missing capture that was never there.
     #
     # The .c side also resolves SYMBOLIC slot names. [M6-READ] emits a slot
     # legend (`#define RX_SLOT_GROUP1_START 2`) and writes `RX_SET` through it,
@@ -200,7 +292,7 @@ for pat in "${PATTERNS[@]}"; do
     if [ -n "$unresolved" ]; then
         bad "ir-listing[$pat]: SLOTS — RX_SET operand(s)$unresolved are neither a number nor a #define in the artifact; the extraction would silently drop them"
     elif [ ! -s "$d/c.slots" ]; then
-        bad "ir-listing[$pat]: SLOTS — no RX_SET sites found in the emitted C, but this pattern has capturing groups; the .c-side extraction is vacuous (did the emitted spelling change?)"
+        bad "ir-listing[$pat]: SLOTS — no RX_SET sites found in the emitted C, but every pattern in PATTERNS writes at least one slot (captures, or a rung's own cursor/counter state); the .c-side extraction is vacuous (did the emitted spelling change?)"
     elif [ ! -s "$d/ir.slots" ]; then
         bad "ir-listing[$pat]: SLOTS — the .c writes $(wc -l < "$d/c.slots") slot(s) but the listing-side extraction found none; the listing's wording changed and this check had stopped reading it"
     elif ! diff -q "$d/c.slots" "$d/ir.slots" >/dev/null; then
@@ -249,13 +341,45 @@ for pat in "${PATTERNS[@]}"; do
     # byte is emitted — so the cap is only as good as that count matching what
     # the emitter goes on to write. Under-count and an artifact the cap exists
     # to stop sails through. The listing reports the pre-pass number; this
-    # compares it to the `&&label` operands actually emitted.
+    # compares it to the RX_PUSH sites actually emitted.
+    #
+    # TWO CORRECTIONS, 2026-09-18, lane w2b, both FOUND BY THE REACH WIDENING
+    # above and neither reachable by the original eleven patterns.
+    #
+    # (1) THE .c SIDE COUNTED THE WRONG THING. It was `&&rx_L<n>` anywhere in
+    # the artifact, and `RX_CALL(&&rx_L<n>, ...)` has that spelling too — a
+    # CALL RETURN address, which `vm_count_slots`'s own A_CALL arm
+    # deliberately does NOT charge to `npush` ("the call site itself allocates
+    # nothing"). So the moment module `recursion` entered this sweep the .c
+    # side read 4 against a correct pre-pass of 2. It now reuses `$d/c.push`,
+    # the CHOICE POINTS block's own `RX_PUSH(&&rx_L<n>` extraction, which is
+    # the spelling that denotes a resume point.
+    #
+    # (2) THE COMPARISON WAS EQUALITY AND THE PROPERTY IS AN INEQUALITY.
+    # `v->npush` is an ESTIMATE and `src/gen/emit_vm.c:7230` says so in those
+    # words — it has been measured NEGATIVE on the counter rung's unbounded
+    # arm, which is why the [CC-CLANG] fix stopped deriving `has_push` from
+    # it. What the CAP needs is only that the estimate never runs BELOW what
+    # is emitted (the pre-pass arm's own comment: "a missed `npush` lets an
+    # artifact past the resume-point cap"). Equality held for the original
+    # eleven by luck of population; the widened set has two witnesses where
+    # the estimate is high and the artifact is correct — `(?<=a|bc)x`
+    # (2 vs 1) and, measured off-sweep, `(?<!a|bc)x` (3 vs 2), against three
+    # other lookbehind shapes where it is exact. Over-count is the SAFE
+    # direction (the cap refuses marginally early, never late), so the
+    # assertion is `pre-pass >= emitted` and an over-count is REPORTED in the
+    # PASS text rather than swallowed: a reader sees the slack, and an
+    # under-count — the hazard — is still a hard FAIL.
     ir_rp="$(grep -oE '^; resume pts +[0-9]+' "$d/ir" | grep -oE '[0-9]+')"
-    c_rp="$(grep -oE '&&rx_L[0-9]+' "$d/gen.c" | wc -l | tr -d ' ')"
-    if [ -n "$ir_rp" ] && [ "$ir_rp" = "$c_rp" ]; then
-        ok "ir-listing[$pat]: the cap's pre-pass count ($ir_rp resume points) equals the artifact's emitted RX_PUSH sites"
+    c_rp="$(wc -l < "$d/c.push" | tr -d ' ')"
+    if [ -z "$ir_rp" ]; then
+        bad "ir-listing[$pat]: the listing carries no '; resume pts' line at all; this comparison had nothing to read (the header's wording changed?)"
+    elif [ "$ir_rp" -lt "$c_rp" ]; then
+        bad "ir-listing[$pat]: the cap's pre-pass counts $ir_rp resume points but the artifact emits $c_rp RX_PUSH site(s) — an UNDER-count, so PCREC_MAX_VM_RESUME_POINTS is checked against a number smaller than the program it is bounding"
+    elif [ "$ir_rp" -gt "$c_rp" ]; then
+        ok "ir-listing[$pat]: the cap's pre-pass count ($ir_rp) bounds the artifact's $c_rp emitted RX_PUSH site(s), with $((ir_rp - c_rp)) of estimate slack (safe direction)"
     else
-        bad "ir-listing[$pat]: the cap counts $ir_rp resume points but the artifact emits $c_rp — PCREC_MAX_VM_RESUME_POINTS is being checked against the wrong number"
+        ok "ir-listing[$pat]: the cap's pre-pass count ($ir_rp resume points) equals the artifact's emitted RX_PUSH sites"
     fi
 
     # ---- islands / callouts: the listing's count against the ARTIFACT ----
