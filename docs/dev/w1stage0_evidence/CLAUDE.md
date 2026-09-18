@@ -44,6 +44,16 @@ plus EP2's two additions from `emitvm_second_pass.md`). See
   census over the whole `tests/**/*.rxt` corpus at default engine
   selection. Usage: `python3 listing_reach_census.py <pcrec> <repo-root>
   [--corpus]`.
+  **AMENDED 2026-09-18 ([REVW.2] wave 2 stage 3, lane w2b): it now reads
+  `run_ir_listing.sh`'s `PATTERN_FEATURES` array alongside `PATTERNS` and
+  passes each row's `--features`.** Without that it would have compiled the
+  five module-gated rows that stage added with no features, they would have
+  refused, and this instrument would have gone on reporting the OLD reach
+  number while the arm it measures had already improved -- a control going
+  stale silently in the flattering direction. A length mismatch between the
+  two arrays is a hard error here, not a zip truncation; a file with no
+  `PATTERN_FEATURES` array at all (the pre-widening shape) still reads
+  correctly as all-base-grammar.
 - `listing_reach_census.log` — the census's own stdout at this wave's
   branch point: the primary census reaches 27 of 41 `vm_rolef` call sites
   (66%) — every L8 rung family that fires at all fires completely (`vm_alt`,
@@ -58,6 +68,13 @@ plus EP2's two additions from `emitvm_second_pass.md`). See
   lane's population choice for the `irsb` byte-neutrality arm specifically
   (`tests/codegen/run_ir_listing.sh`'s new BYTE-NEUTRALITY block, deliverable
   2) — it inherits this same population and therefore this same reach gap.
+  **THAT GAP IS CLOSED** (2026-09-18, [REVW.2] wave 2 stage 3, lane w2b):
+  `run_ir_listing.sh`'s population is now 16 patterns with per-row
+  `--features`, and this same census re-run on that tree reads **42 of 44**
+  `vm_rolef` sites (the population has grown from 41 since this log was
+  taken) against 30 of 44 for the pre-widening array. The log in this
+  directory is w1stage0's own branch-point record and is deliberately NOT
+  overwritten; the re-measured numbers live in `docs/dev/lanes/w2b_report.md`.
 
 Not archived: the `pcrec` binary used (rebuild from this branch's HEAD) and
 the per-pattern `.ir`/`.c` intermediate files the sweeps generate and delete

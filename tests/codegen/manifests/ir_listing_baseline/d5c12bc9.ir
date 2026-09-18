@@ -1,0 +1,148 @@
+; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+;
+; Produced BY the emitter's own walk, not by a second walk over the
+; AST: every line below was written by the same call that wrote the
+; corresponding C. S10's one constraint -- "the dump must be derived
+; from the same structure the emitter walks, never a parallel
+; description" -- is therefore structural here, not a discipline.
+;
+; pattern      ^(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)$
+; engine       vm (forced by: (?1) at pattern offset 11)
+; prefilter    NO (LINKED subroutine call) -- erasing a call is a DIFFERENT language, not a superset (S8.2), and a call in a cycle has no finite inlining either; no flag changes this, and -fprefilter refuses. A SPLICED call is not a reason: its callee is inlined EXACTLY (S8.3, S6.3)
+; rungs        cursor, frames-bounded -- see the RUNGS section below for which quantifier took which
+; strategies   backtracking -- see the STRATEGIES section below for which quantifier took which
+; possessify   0 of 3 source quantifiers possessified (eng_brep_design.md S2)
+; caps         RX_NCAPS 3 (2 capturing groups in the pattern text)
+; step budget  500000000 backtrack resumptions
+; capacities   2048 resume frames, 3072 trail entries (exact: no subject ceiling)
+; program      23 labels, 97 events
+; resume pts   2
+; max replicas 1 (limit 64, checked before emission)
+
+SLOTS (the slot_values array, engine_m4.md S2.4)
+  slot         holds                  note
+   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
+   2,3         group 1                written on traverse, trailed
+   4,5         group 2                written on traverse, trailed
+  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
+  6            span-loop low-water    the loop's entry position (S2.5)
+
+RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
+  at L13     cursor             span-loop cursor {2,5}, stride 1, greedy
+  at L15     frames-bounded     frames rung, bounded {0,1}, greedy
+
+STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
+  at L13     backtracking   span-loop cursor {2,5}, stride 1, greedy
+  at L15     backtracking   frames rung, bounded {0,1}, greedy
+
+PRUNING (k23_design.md; D51's per-quantifier stamp)
+  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
+  bound sites emitted: 2
+  runtime-term length retreats: 0
+  at L13     clamped      span-loop cursor {2,5}, stride 1, greedy
+  at L15     clamped      frames rung, bounded {0,1}, greedy
+
+PROGRAM
+  L0
+         assert  ^ attempt_position of subject (absolute offset 0) -> L4
+         -> fail (backtrack)
+  L4      ; X{0}: matches empty, no code
+         -> L5
+  L5      ; splice a capture group's pattern inline
+         set     slot_values[9] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         set     slot_values[10] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         set     slot_values[11] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         set     slot_values[12] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         set     slot_values[13] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         set     slot_values[14] <- scan_position ; park this site's caller value (a trailed write into this splice's own save slot)
+         CALL    callee L7, return L8         ; splice group 2 inline; no frame, no return label
+         -> L7
+  L7      ; group 2 opens
+         set     slot_values[8] <- scan_position ; group 2 open, PENDING until this iteration closes
+         -> L9
+  L9      ; call a capture group's pattern
+         CALL    callee L2, return L12        ; call group 1; the frame carries the return label
+         set     slot_values[2] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[3] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[6] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[7] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         -> L2
+  L12     ; the call returned; continue here
+         -> L11
+  L11
+         consume 'c'                          -> L10
+         -> fail (backtrack)
+  L10     ; group 2 closes
+         set     slot_values[4] <- scan_position ; group 2 PUBLISHED: the pair goes out together, so a reference never sees a half-open span
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L8
+  L8      ; the spliced callee is complete; restore and continue
+         set     slot_values[2] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         set     slot_values[3] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         set     slot_values[4] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         set     slot_values[5] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         set     slot_values[7] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         set     slot_values[8] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this splice re-establishes the callee's own
+         RETURN  goto* frame.call_ret         ; the splice's own exit (never the lexical occurrence's)
+         -> L6
+  L6
+         assert  $ end of subject, or before a final newline -> L1
+         -> fail (backtrack)
+  L1      ; the pattern is complete
+         -> accept
+  L2      ; group 1 opens
+         set     slot_values[7] <- scan_position ; group 1 open, PENDING until this iteration closes
+         -> L13
+  L13     ; span-loop cursor {2,5}, stride 1, greedy
+         set     slot_values[6] <- scan_position ; span-loop low-water mark (loop entry scan_position)
+         ; MRL: the continuation cannot fit from this loop's entry at all
+         ; MRL: the clamp IS the scan's own bound, so the doomed suffix is never scanned and never retreated over -- and the bound is self-rounding, since the cursor only ever moves by W
+         -> L16
+  L16     ; span-loop: take the continuation at the cursor
+         ; below the low-water mark: exhausted
+         PUSH    resume L17                   ; shorter run is the resume (retreat one stride)
+         -> L15
+  L17     ; span-loop retreat (resumed from the frame)
+         -> L16
+  L15     ; optional copy (1 remaining), greedy
+         ; MRL: no room for another iteration and the follow -- take the skip, push nothing
+         PUSH    resume L20                   ; body preferred; resume SKIPS this copy
+         -> L19
+  L20     ; optional copy: the skip
+         -> L18
+  L19     ; call a capture group's pattern
+         CALL    callee L2, return L22        ; call group 1; the frame carries the return label
+         set     slot_values[2] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[3] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[6] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         set     slot_values[7] <- scan_position ; park this activation's value on the trail (a trailed SELF-write)
+         -> L2
+  L22     ; the call returned; continue here
+         -> L21
+  L21     ; bounded repeat: all optional copies exhausted
+         -> L18
+  L18
+         consume 'b'                          -> L14
+         -> fail (backtrack)
+  L14     ; group 1 closes
+         set     slot_values[2] <- scan_position ; group 1 PUBLISHED: the pair goes out together, so a reference never sees a half-open span
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L3
+  L3      ; the callee region for a capture group returns
+         set     slot_values[2] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
+         set     slot_values[3] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
+         set     slot_values[6] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
+         set     slot_values[7] <- scan_position ; restore the caller's value, itself TRAILED so a retreat into this callee re-establishes the callee's own
+         RETURN  goto* frame.call_ret         ; return to the caller through the frame's own label
+  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
+  at L16     resume L17     shorter run is the resume (retreat one stride)
+  at L15     resume L20     body preferred; resume SKIPS this copy
+
+DFA ISLANDS (0)
+  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+
+CALLOUT SITES (0)
+  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)

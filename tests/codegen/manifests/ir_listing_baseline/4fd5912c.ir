@@ -1,0 +1,464 @@
+; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+;
+; Produced BY the emitter's own walk, not by a second walk over the
+; AST: every line below was written by the same call that wrote the
+; corresponding C. S10's one constraint -- "the dump must be derived
+; from the same structure the emitter walks, never a parallel
+; description" -- is therefore structural here, not a discipline.
+;
+; pattern      ((a)|ab){0,12}?c
+; engine       vm (forced by: capture group at pattern offset 0)
+; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
+; rungs        counter -- see the RUNGS section below for which quantifier took which
+; strategies   backtracking -- see the STRATEGIES section below for which quantifier took which
+; possessify   0 of 1 source quantifier possessified (eng_brep_design.md S2)
+; caps         RX_NCAPS 3 (2 capturing groups in the pattern text)
+; step budget  500000000 backtrack resumptions
+; capacities   25 resume frames, 51 trail entries (exact: no subject ceiling)
+; program      132 labels, 391 events
+; resume pts   24
+; max replicas 12 (limit 64, checked before emission)
+
+SLOTS (the slot_values array, engine_m4.md S2.4)
+  slot         holds                  note
+   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
+   2,3         group 1                written on traverse, trailed
+   4,5         group 2                written on traverse, trailed
+  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
+  (no span-loop low-water slots: no cursor rung in this program)
+
+RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
+  at L0      counter            counter rung, {0,12}, K=8, lazy (mandatory replicated, optional counted)
+
+STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
+  at L0      backtracking   counter rung, {0,12}, K=8, lazy (mandatory replicated, optional counted)
+
+PRUNING (k23_design.md; D51's per-quantifier stamp)
+  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
+  bound sites emitted: 12
+  runtime-term length retreats: 0
+  at L0      clamped      counter rung, {0,12}, K=8, lazy (mandatory replicated, optional counted)
+
+PROGRAM
+  L0      ; counter rung, {0,12}, K=8, lazy (mandatory replicated, optional counted)
+         -> L3
+  L3      ; counter: optional phase begins
+         set     slot_values[6] <- scan_position ; counter rung: iteration counter (trailed)
+         -> L4
+  L4      ; counter trip: another K iterations, or the residue
+         ; trip guard: the residue is a compile-time constant
+         -> L7
+  L7      ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L9                    ; lazy: taking another iteration is the resume
+         -> L6
+  L9      ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L10
+  L10     ; alternation entry (2 branches)
+         PUSH    resume L14                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L12
+  L14     ; alternation resume: try branch 2 of 2
+         -> L13
+  L12     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L15
+  L15
+         consume 'a'                          -> L16
+         -> fail (backtrack)
+  L16     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L11
+  L13
+         consume 'a'                          -> L17
+         -> fail (backtrack)
+  L17
+         consume 'b'                          -> L11
+         -> fail (backtrack)
+  L11     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L8
+  L8      ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L19                   ; lazy: taking another iteration is the resume
+         -> L6
+  L19     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L20
+  L20     ; alternation entry (2 branches)
+         PUSH    resume L24                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L22
+  L24     ; alternation resume: try branch 2 of 2
+         -> L23
+  L22     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L25
+  L25
+         consume 'a'                          -> L26
+         -> fail (backtrack)
+  L26     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L21
+  L23
+         consume 'a'                          -> L27
+         -> fail (backtrack)
+  L27
+         consume 'b'                          -> L21
+         -> fail (backtrack)
+  L21     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L18
+  L18     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L29                   ; lazy: taking another iteration is the resume
+         -> L6
+  L29     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L30
+  L30     ; alternation entry (2 branches)
+         PUSH    resume L34                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L32
+  L34     ; alternation resume: try branch 2 of 2
+         -> L33
+  L32     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L35
+  L35
+         consume 'a'                          -> L36
+         -> fail (backtrack)
+  L36     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L31
+  L33
+         consume 'a'                          -> L37
+         -> fail (backtrack)
+  L37
+         consume 'b'                          -> L31
+         -> fail (backtrack)
+  L31     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L28
+  L28     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L39                   ; lazy: taking another iteration is the resume
+         -> L6
+  L39     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L40
+  L40     ; alternation entry (2 branches)
+         PUSH    resume L44                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L42
+  L44     ; alternation resume: try branch 2 of 2
+         -> L43
+  L42     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L45
+  L45
+         consume 'a'                          -> L46
+         -> fail (backtrack)
+  L46     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L41
+  L43
+         consume 'a'                          -> L47
+         -> fail (backtrack)
+  L47
+         consume 'b'                          -> L41
+         -> fail (backtrack)
+  L41     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L38
+  L38     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L49                   ; lazy: taking another iteration is the resume
+         -> L6
+  L49     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L50
+  L50     ; alternation entry (2 branches)
+         PUSH    resume L54                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L52
+  L54     ; alternation resume: try branch 2 of 2
+         -> L53
+  L52     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L55
+  L55
+         consume 'a'                          -> L56
+         -> fail (backtrack)
+  L56     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L51
+  L53
+         consume 'a'                          -> L57
+         -> fail (backtrack)
+  L57
+         consume 'b'                          -> L51
+         -> fail (backtrack)
+  L51     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L48
+  L48     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L59                   ; lazy: taking another iteration is the resume
+         -> L6
+  L59     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L60
+  L60     ; alternation entry (2 branches)
+         PUSH    resume L64                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L62
+  L64     ; alternation resume: try branch 2 of 2
+         -> L63
+  L62     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L65
+  L65
+         consume 'a'                          -> L66
+         -> fail (backtrack)
+  L66     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L61
+  L63
+         consume 'a'                          -> L67
+         -> fail (backtrack)
+  L67
+         consume 'b'                          -> L61
+         -> fail (backtrack)
+  L61     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L58
+  L58     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L69                   ; lazy: taking another iteration is the resume
+         -> L6
+  L69     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L70
+  L70     ; alternation entry (2 branches)
+         PUSH    resume L74                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L72
+  L74     ; alternation resume: try branch 2 of 2
+         -> L73
+  L72     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L75
+  L75
+         consume 'a'                          -> L76
+         -> fail (backtrack)
+  L76     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L71
+  L73
+         consume 'a'                          -> L77
+         -> fail (backtrack)
+  L77
+         consume 'b'                          -> L71
+         -> fail (backtrack)
+  L71     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L68
+  L68     ; counter iteration (lazy): leaving preferred
+         ; MRL: no room for another iteration and the follow
+         PUSH    resume L79                   ; lazy: taking another iteration is the resume
+         -> L6
+  L79     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L80
+  L80     ; alternation entry (2 branches)
+         PUSH    resume L84                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L82
+  L84     ; alternation resume: try branch 2 of 2
+         -> L83
+  L82     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L85
+  L85
+         consume 'a'                          -> L86
+         -> fail (backtrack)
+  L86     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L81
+  L83
+         consume 'a'                          -> L87
+         -> fail (backtrack)
+  L87
+         consume 'b'                          -> L81
+         -> fail (backtrack)
+  L81     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L78
+  L78     ; counter trip complete: charge K and go round
+         set     slot_values[6] <- scan_position ; counter rung: += K, once per TRIP
+         -> L4
+  L5      ; optional copy (4 remaining), lazy
+         ; MRL: no room for another iteration and the follow -- take the skip, push nothing
+         PUSH    resume L89                   ; skip preferred; resume TAKES this copy
+         -> L2
+  L89     ; optional copy: the body
+         -> L88
+  L88     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L91
+  L91     ; alternation entry (2 branches)
+         PUSH    resume L95                   ; branch 1 of 2 preferred; resume tries branch 2
+         -> L93
+  L95     ; alternation resume: try branch 2 of 2
+         -> L94
+  L93     ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L96
+  L96
+         consume 'a'                          -> L97
+         -> fail (backtrack)
+  L97     ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L92
+  L94
+         consume 'a'                          -> L98
+         -> fail (backtrack)
+  L98
+         consume 'b'                          -> L92
+         -> fail (backtrack)
+  L92     ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L90
+  L90     ; optional copy (3 remaining), lazy
+         ; MRL: no room for another iteration and the follow -- take the skip, push nothing
+         PUSH    resume L100                  ; skip preferred; resume TAKES this copy
+         -> L2
+  L100    ; optional copy: the body
+         -> L99
+  L99     ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L102
+  L102    ; alternation entry (2 branches)
+         PUSH    resume L106                  ; branch 1 of 2 preferred; resume tries branch 2
+         -> L104
+  L106    ; alternation resume: try branch 2 of 2
+         -> L105
+  L104    ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L107
+  L107
+         consume 'a'                          -> L108
+         -> fail (backtrack)
+  L108    ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L103
+  L105
+         consume 'a'                          -> L109
+         -> fail (backtrack)
+  L109
+         consume 'b'                          -> L103
+         -> fail (backtrack)
+  L103    ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L101
+  L101    ; optional copy (2 remaining), lazy
+         ; MRL: no room for another iteration and the follow -- take the skip, push nothing
+         PUSH    resume L111                  ; skip preferred; resume TAKES this copy
+         -> L2
+  L111    ; optional copy: the body
+         -> L110
+  L110    ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L113
+  L113    ; alternation entry (2 branches)
+         PUSH    resume L117                  ; branch 1 of 2 preferred; resume tries branch 2
+         -> L115
+  L117    ; alternation resume: try branch 2 of 2
+         -> L116
+  L115    ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L118
+  L118
+         consume 'a'                          -> L119
+         -> fail (backtrack)
+  L119    ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L114
+  L116
+         consume 'a'                          -> L120
+         -> fail (backtrack)
+  L120
+         consume 'b'                          -> L114
+         -> fail (backtrack)
+  L114    ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L112
+  L112    ; optional copy (1 remaining), lazy
+         ; MRL: no room for another iteration and the follow -- take the skip, push nothing
+         PUSH    resume L122                  ; skip preferred; resume TAKES this copy
+         -> L2
+  L122    ; optional copy: the body
+         -> L121
+  L121    ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L124
+  L124    ; alternation entry (2 branches)
+         PUSH    resume L128                  ; branch 1 of 2 preferred; resume tries branch 2
+         -> L126
+  L128    ; alternation resume: try branch 2 of 2
+         -> L127
+  L126    ; group 2 opens
+         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
+         -> L129
+  L129
+         consume 'a'                          -> L130
+         -> fail (backtrack)
+  L130    ; group 2 closes
+         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
+         -> L125
+  L127
+         consume 'a'                          -> L131
+         -> fail (backtrack)
+  L131
+         consume 'b'                          -> L125
+         -> fail (backtrack)
+  L125    ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L123
+  L123    ; bounded repeat: all optional copies exhausted
+         -> L2
+  L6      ; counter: the loop is done, take the continuation
+         -> L2
+  L2
+         consume 'c'                          -> L1
+         -> fail (backtrack)
+  L1      ; the pattern is complete
+         -> accept
+  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
+  at L7      resume L9      lazy: taking another iteration is the resume
+  at L10     resume L14     branch 1 of 2 preferred; resume tries branch 2
+  at L8      resume L19     lazy: taking another iteration is the resume
+  at L20     resume L24     branch 1 of 2 preferred; resume tries branch 2
+  at L18     resume L29     lazy: taking another iteration is the resume
+  at L30     resume L34     branch 1 of 2 preferred; resume tries branch 2
+  at L28     resume L39     lazy: taking another iteration is the resume
+  at L40     resume L44     branch 1 of 2 preferred; resume tries branch 2
+  at L38     resume L49     lazy: taking another iteration is the resume
+  at L50     resume L54     branch 1 of 2 preferred; resume tries branch 2
+  at L48     resume L59     lazy: taking another iteration is the resume
+  at L60     resume L64     branch 1 of 2 preferred; resume tries branch 2
+  at L58     resume L69     lazy: taking another iteration is the resume
+  at L70     resume L74     branch 1 of 2 preferred; resume tries branch 2
+  at L68     resume L79     lazy: taking another iteration is the resume
+  at L80     resume L84     branch 1 of 2 preferred; resume tries branch 2
+  at L5      resume L89     skip preferred; resume TAKES this copy
+  at L91     resume L95     branch 1 of 2 preferred; resume tries branch 2
+  at L90     resume L100    skip preferred; resume TAKES this copy
+  at L102    resume L106    branch 1 of 2 preferred; resume tries branch 2
+  at L101    resume L111    skip preferred; resume TAKES this copy
+  at L113    resume L117    branch 1 of 2 preferred; resume tries branch 2
+  at L112    resume L122    skip preferred; resume TAKES this copy
+  at L124    resume L128    branch 1 of 2 preferred; resume tries branch 2
+
+DFA ISLANDS (0)
+  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+
+CALLOUT SITES (0)
+  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)

@@ -322,6 +322,40 @@ decides whether to perform it — and then run the row through
   would catch) is DETECTED. See `docs/dev/w1stage0.md` §2 and
   `docs/dev/w1stage0_evidence/CLAUDE.md`.
 
+  **[REVW.2] wave 2 stage 3 (2026-09-18, lane w2b) WIDENS THE POPULATION
+  FROM 11 PATTERNS TO 16, AND THAT IS A REACH REPAIR, not a preference.**
+  w1stage0's own census measured this sweep reaching 27 of the 41 `vm_rolef`
+  call sites whose role TEXT is the listing the block above pins, with
+  lookbehind, subroutine-call, counter-rung and possessive-chain emission
+  reached by nothing at all; `w2census_report.md`'s TASK 2 then found the
+  cause to be THE INSTRUMENT rather than the corpus — neither of this
+  script's two `pcrec` invocations passed `--features`, so every module-gated
+  family refused to compile and read as an absent population. The five added
+  rows are all EXISTING CORPUS PATTERNS (each one's home file named in the
+  array's own comment) and a new `PATTERN_FEATURES` array, positionally
+  parallel and length-asserted, carries the `--features` each needs.
+  MEASURED ON THIS TREE, whose `vm_rolef` population has since grown to 44
+  sites: **30 of 44 reached before, 42 of 44 after** — i.e. every site the
+  census instrument can see. The residual 2 are `vm_counter_phase`'s two
+  role texts, which begin with a `%` conversion and so present an EMPTY
+  literal-prefix needle to the census's own hit test: instrument-blind by
+  construction, closed only by a different instrument and never by a longer
+  array. Stage-3 lanes inherit this population for the `irsb` arm.
+
+  The widening immediately found TWO defects in the pre-existing
+  resume-point block, neither reachable by the old eleven patterns, and both
+  are repaired in the same change: its `.c` side counted `&&rx_L<n>`
+  ANYWHERE, which `RX_CALL` also spells (a call RETURN address,
+  deliberately not charged to `npush`), so module `recursion` read 4 against
+  a correct pre-pass of 2; and it asserted EQUALITY where the cap's
+  soundness is an INEQUALITY — `v->npush` is an estimate
+  (`src/gen/emit_vm.c:7230` says so, and it has been measured negative), the
+  hazard is an under-count, and `(?<=a|bc)x` is a witness where the estimate
+  is legitimately high (2) and the artifact correct (1). The block now
+  reuses the CHOICE POINTS block's own `RX_PUSH(&&rx_L<n>` extraction,
+  asserts `pre-pass >= emitted`, and REPORTS the slack in its PASS text
+  rather than swallowing it.
+
 - **run_longprefix_sweep.sh** — [REVW.1] wave 1 stage 0's long-prefix
   full-corpus sweep (2026-09-18), an OPT-IN tool (`run_object_neutrality.sh`'s
   "not in `make test`, needs a heavier compile pass" shape), NOT a
