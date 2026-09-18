@@ -33,7 +33,7 @@ criterion — ANY size expression, `Vm.up` excluded by name):
 | point | statements | declarators |
 |---|---:|---:|
 | `w2census.md`'s floor at `f6474777` | 80 | 91 |
-| this lane's branch point (after w2a) | 69 | 80 |
+| this lane's branch point (after w2a) | 70 | 81 |
 | batch 2 | 61 | 70 |
 | batch 3 | 50 | 59 |
 | batch 4 | 44 | 49 |
@@ -44,7 +44,8 @@ criterion — ANY size expression, `Vm.up` excluded by name):
 
 (The table's own numbers exclude `Vm.up`; the tool's raw totals are one
 higher in both columns at every row, and the commit messages quote the raw
-form.)
+form. **75 of the 81 declarators this lane inherited are retired**; the other
+six are §2's named family. w2a's slice accounts for the 91 → 81 step.)
 
 ---
 
