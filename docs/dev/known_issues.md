@@ -93,6 +93,47 @@ mechanism is entirely absent from W2 (11 total allocations, no retry
 ladder ever engages for a pattern this small), which is what makes it
 the clean witness for F1 specifically and not for K60.
 
+**MANAGER AMENDMENT 2026-09-18 (lane k60meas's measurement, Frank-chartered
+after he rejected the manager's flag-shaped first proposal). THIS ENTRY'S
+DIAGNOSIS IS WRONG IN THREE PLACES; READ THE MEMO
+(`docs/dev/k60_measurement.md`) BEFORE ACTING ON ANY SENTENCE ABOVE.**
+
+1. **The "ONE CONFIRMED MECHANISM" above DOES NOT EXIST.** `Ctx cx` is
+   declared INSIDE the attempt loop and `memset` at the top of every
+   iteration (`src/core/compile.c:704-706`), so `size_cap_refused` and
+   `dfa_overflowed` are per-attempt BY CONSTRUCTION — there is nothing to
+   reset and no staleness to carry. `build_anchored_dfa` additionally
+   saves/restores `dfa_overflowed` around the optional build (`:285`/`:298`)
+   for exactly the reason this entry imagined was unhandled. **Disposition
+   (1) below is a fix for a defect that is not there.** Zero of 148 measured
+   absorptions are attributable to a stale eligibility flag. One narrow
+   intra-attempt window survives (a `ctx_nomem` escaping `build_anchored_dfa`
+   between the flag write and the restore) — named, no witness, not measured.
+2. **The real attribution, 148 absorptions each cited by `file:line`:**
+   **108 (73%)** the `[ART-SIZE]` ladder's blanket catch discarding genuine
+   `ctx_nomem`-routed OOMs as "this K is out"; **40 (27%)**
+   `emit_state_legend`'s raw mallocs returning silently on NULL
+   (`src/gen/emit_dfa.c:3615-3618`, `:3660`) — a path that never calls
+   `ctx_nomem`, never longjmps, and never reaches the recovery point, which
+   is why no property of the recovery point can fix it. **That 27% IS D105'S
+   OWN UNBUILT RULING** (see the D105 status note in `decisions.md`), not a
+   new finding.
+3. **The defect is far narrower than the filed rates suggest.** Under
+   SUSTAINED failure (fail allocation N and every one after it — the
+   experiment that separates graceful degradation from luck) absorption
+   collapses: 0.0% on `\p{L}` and on the new size-term-ladder witness, and
+   W1's five survivors are its LAST FIVE allocations, where nothing needs
+   memory afterwards. Against a genuinely failing allocator **564 of 569
+   forced failures still produce a correct refusal** (0.9% residual). The
+   reachable population is **2 of 3,159 corpus patterns (0.06%)** at default
+   axes, 17 (0.54%) under `-e utf8`.
+4. **Candidate fix, measured not argued** (prototyped behind `PCREC_K60_FIX`,
+   NOT landed): carrying the OOM in the `longjmp` VALUE rather than in
+   stored state eliminates **108 of 108** ladder absorptions and **0 of 40**
+   legend ones — sound and complete for the `ctx_nomem`-routed class,
+   structurally unable to reach the legend class. `v = setjmp(env)` is
+   outside C11 7.13.1.1p2, so a landed version uses the memo §4.4 spelling.
+
 **Three dispositions, left to Frank** (K59's own precedent for a filed
 retry-ladder finding): (1) reset `cx.size_cap_refused`/`cx.dfa_overflowed`
 (and any sibling per-attempt flag the ladder shares) to their entry
