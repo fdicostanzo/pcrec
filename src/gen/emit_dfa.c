@@ -2343,9 +2343,15 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
 {
     StrBuf *h = &cx->job->hsb;
     const char *p = cx->opt->prefix;
-    char guard[80];
+    /* [REVW.2] wave 2 stage 3: arena storage sized FROM THE PREFIX rather
+     * than a fixed 80, so the loop's own `gi < sizeof(guard) - 1` bound --
+     * the thing that would have silently truncated an include guard -- is
+     * gone rather than merely generous. This is a per-byte TRANSFORM and not
+     * a format, so it does not go through `dfa_fragf`; what it needed was an
+     * allocation whose size the input decides. */
+    char *guard = arena_alloc(&cx->arena, strlen(p) + 1);
     size_t gi = 0;
-    for (const char *q = p; *q && gi < sizeof(guard) - 1; q++)
+    for (const char *q = p; *q; q++)
         guard[gi++] = (char)(isalnum((unsigned char)*q) ? toupper((unsigned char)*q) : '_');
     guard[gi] = 0;
 
@@ -4129,9 +4135,9 @@ static void token_stop(StrBuf *c, const DfaForm *f)
             p, m, p, m);
         return;
     }
-    char heads[48];
-    if (f->nscan == 1) snprintf(heads, sizeof heads, "the scan-edge head");
-    else snprintf(heads, sizeof heads, "one of the %d scan-edge heads", f->nscan);
+    const char *heads = f->nscan == 1
+        ? "the scan-edge head"
+        : dfa_fragf(f->cx, "one of the %d scan-edge heads", f->nscan);
     sb_printf(c,
         "/* [OPT-EDGE] Dead, or %s -- which %s the machine's\n"
         " * TOP row%s, so ONE unsigned compare answers both. */\n"
@@ -4220,9 +4226,8 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
     /* The indexed form scales the token by the column count, so its two index
      * expressions carry `ncls` and are built here rather than written as
      * literals in the shared emitter above. */
-    char tr_ix[64], acc_ix[64];
-    snprintf(tr_ix, sizeof tr_ix, "transitions[s * %d + cl]", nc);
-    snprintf(acc_ix, sizeof acc_ix, "accepting[s * %d + cl]", nc);
+    const char *tr_ix  = dfa_fragf(f->cx, "transitions[s * %d + cl]", nc);
+    const char *acc_ix = dfa_fragf(f->cx, "accepting[s * %d + cl]", nc);
     token_step(c, f, "short", tr_ix);
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s < 0; }\n",
               p, m, p, m);
@@ -4681,7 +4686,6 @@ static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
 {
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
-        char tag[PCREC_MAX_EMIT_NAME_LEN];
         if (i == f->ofsk->scan || k->count <= 1) continue;
         sb_printf(c, "    /* 1 for each byte a match MAY BEGIN WITH %d byte%s before\n"
                      "     * its own start -- i.e. which bytes may sit at offset %d of a\n"
@@ -4692,8 +4696,7 @@ static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
                      "     * filter probes this before entering the transition loop;\n"
                      "     * speed only, it never changes the answer. */\n",
                   k->k, k->k == 1 ? "" : "s", k->k);
-        snprintf(tag, sizeof tag, "ofs_k%d", k->k);
-        emit_u8_table(c, f->p, tag, k->set, 256);
+        emit_u8_table(c, f->p, dfa_fragf(f->cx, "ofs_k%d", k->k), k->set, 256);
     }
 }
 
@@ -4856,9 +4859,7 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s    if (cand >= subject_length) return 0;\n", ind);
     sb_printf(c, "%s    scan_position = cand;\n", ind);
     {
-        char sub[64];
-        snprintf(sub, sizeof sub, "%s    ", ind);
-        pf_emit_ofs_reseed(c, f, sub);
+        pf_emit_ofs_reseed(c, f, dfa_fragf(f->cx, "%s    ", ind));
     }
     sb_printf(c, "%s}\n", ind);
 }
@@ -4878,16 +4879,12 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s    if (cand < subject_length) {\n", ind);
     sb_printf(c, "%s        scan_position = cand;\n", ind);
     {
-        char sub[64];
-        snprintf(sub, sizeof sub, "%s        ", ind);
-        pf_emit_ofs_reseed(c, f, sub);
+        pf_emit_ofs_reseed(c, f, dfa_fragf(f->cx, "%s        ", ind));
     }
     sb_printf(c, "%s    } else if (scan_position + 1 < subject_length) {\n", ind);
     sb_printf(c, "%s        scan_position = subject_length - 1;\n", ind);
     {
-        char sub[64];
-        snprintf(sub, sizeof sub, "%s        ", ind);
-        pf_emit_ofs_reseed(c, f, sub);
+        pf_emit_ofs_reseed(c, f, dfa_fragf(f->cx, "%s        ", ind));
     }
     sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
@@ -5874,7 +5871,6 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
 static void emit_machine_tables(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
-    char tag[PCREC_MAX_EMIT_NAME_LEN];
 
     /* [M6-READ] The tables are the artifact's data structures, and each gets
      * a block comment: what it is, how it is indexed, what a cell means, and
@@ -5882,8 +5878,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     sb_puts(c, f->dir->tbl_hdr);
     emit_class_legend(c, f->d);
     sb_puts(c, "     */\n");
-    snprintf(tag, sizeof tag, "%s_byte_class", m);
-    emit_u8_table(c, p, tag, f->d->clsmap, 256);
+    emit_u8_table(c, p, dfa_fragf(f->cx, "%s_byte_class", m), f->d->clsmap, 256);
 
     /* [CC-DIFF] (b) A FOLDED TABLE IS NOT EMITTED AT ALL, and its comment and
      * state legend go with it: the legend names the states a cell could hold,
@@ -5894,41 +5889,39 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
         f->repr->emit_tr_comment(c, f);
         emit_state_legend(f->cx, c, f->d, f->dir->reverse);
         sb_puts(c, "     */\n");
-        snprintf(tag, sizeof tag, "%s_next_state", m);
-        emit_tr_table(c, p, tag, f->d, f->repr);
+        emit_tr_table(c, p, dfa_fragf(f->cx, "%s_next_state", m), f->d, f->repr);
     }
 
     if (!f->acc_fold.folded) {
         f->repr->emit_acc_comment(c, f);
-        snprintf(tag, sizeof tag, "%s_is_accepting", m);
-        emit_acc_table(c, p, tag, f->d, f->repr);
+        emit_acc_table(c, p, dfa_fragf(f->cx, "%s_is_accepting", m), f->d, f->repr);
     }
 
     if (f->acc->wide_table) {
-        snprintf(tag, sizeof tag, "%s_is_accepting_by_class", m);
-        emit_acc_cls_table(c, p, tag, f->d);
+        emit_acc_cls_table(c, p, dfa_fragf(f->cx, "%s_is_accepting_by_class", m),
+                           f->d);
     }
     if (f->seed->table) {
-        snprintf(tag, sizeof tag, "%s_seed_state", m);
-        emit_seed_table(c, p, tag, f->d, f->d->s1u, f->repr);
+        emit_seed_table(c, p, dfa_fragf(f->cx, "%s_seed_state", m),
+                        f->d, f->d->s1u, f->repr);
     }
     if (f->viewsel) {
         /* The two view tables exist independently of which SELECTOR the
          * machine took: `end+eol` needs both, `eol`/`end` one each. The
          * object's name is the authority on which. */
         if (strcmp(f->view->c.name, "end")) {
-            snprintf(tag, sizeof tag, "%s_eol_view", m);
-            emit_eol_table(c, p, tag, f->d, f->repr);
+            emit_eol_table(c, p, dfa_fragf(f->cx, "%s_eol_view", m),
+                           f->d, f->repr);
         }
         if (strcmp(f->view->c.name, "eol")) {
-            snprintf(tag, sizeof tag, "%s_end_view", m);
-            emit_end_table(c, p, tag, f->d, f->repr);
+            emit_end_table(c, p, dfa_fragf(f->cx, "%s_end_view", m),
+                           f->d, f->repr);
         }
     }
     if (f->pf->emit_tables) f->pf->emit_tables(c, f);
-    snprintf(tag, sizeof tag, "%s_stay", m);
+    const char *stay_tag = dfa_fragf(f->cx, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
-        emit_stay_table(f->cx, c, p, tag, f->skip[k], f->d);
+        emit_stay_table(f->cx, c, p, stay_tag, f->skip[k], f->d);
     /* [OPT-5] and whatever table each edge's own BODY OBJECT owns — the
      * object is asked here and at the emitted test, so a table can never be
      * emitted for a body that compares against immediates, nor omitted for
