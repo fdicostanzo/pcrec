@@ -6890,6 +6890,66 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
     vm_publish_nonnull(v, root, nn);
 }
 
+/* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
+ * targets still need a shared region, and what each one's transitive GROUP
+ * set is.
+ *
+ * PRODUCES: `v->rgn_emit`, `v->has_linked_calls`, `v->rgn_grp`, `v->spl_nw`.
+ * READS: `v->cg`, `v->nregion`, `v->ngroups`, and `v->pend_of` through
+ * `vm_marked`.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs BEFORE a slot is counted.
+ * `vm_count_slots` needs `spl_nw` (a spliced site's save-block size) and the
+ * region pre-pass needs `rgn_emit`, so both decisions are made here rather
+ * than where they are consumed. `vm_build_region_saves` and
+ * `vm_memo_region_costs` read its outputs and therefore follow it.
+ *
+ * A target every one of whose sites splices needs NO region: no entry label,
+ * no exit label, no `RX_RETURN`, no second `goto *` and — the part that
+ * matters for the size claim — none of its slot instances. §6.3 makes the
+ * linkage a per-TARGET decision, so this is one flag per target and not a
+ * survey of sites.
+ *
+ * THE UNION IS TAKEN FROM THE UNMODIFIED SETS, for `W`'s own reason in
+ * `vm_build_region_saves`: `reaches` is already transitive, so one pass
+ * suffices — but only if the right-hand side reads the ORIGINAL sets. OR-ing
+ * in place would make the answer depend on iteration order. */
+static void vm_plan_regions(Vm *v)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+
+    v->rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_emit);
+    v->has_linked_calls = false;
+    for (int i = 0; i < nt; i++) {
+        v->rgn_emit[i] = !pcrec_callgraph_spliced(v->cg, i);
+        if (v->rgn_emit[i]) v->has_linked_calls = true;
+    }
+
+    const int ng = v->ngroups + 1;
+    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    for (int i = 0; i < nt; i++) {
+        base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
+        memset(base[i], 0, (size_t)ng * sizeof **base);
+        vm_grp_set(v, pcrec_callgraph_body(v->cg, i), base[i]);
+    }
+    bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
+    int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
+    for (int i = 0; i < nt; i++) {
+        grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
+        memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
+        for (int j = 0; j < nt; j++) {
+            if (j == i || !pcrec_callgraph_reaches(v->cg, i, j)) continue;
+            for (int q = 0; q < ng; q++) if (base[j][q]) grp[i][q] = true;
+        }
+        int n = 0;
+        for (int q = 1; q < ng; q++)
+            if (grp[i][q]) n += 2 + (vm_marked(v, q) ? 1 : 0);
+        snw[i] = n;
+    }
+    v->rgn_grp = grp;
+    v->spl_nw  = snw;
+}
+
 static void vm_w_range(bool *w, int nstate, int lo, int hi)
 {
     for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
@@ -8940,53 +9000,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         v.rgn_cost = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
         for (int i = 0; i < nt; i++) { v.rgn_w[i] = NULL; v.rgn_nw[i] = 0; }
 
-        /* [DD-14 wave G] WHICH TARGETS STILL NEED A SHARED REGION, and how big
-         * a SPLICED site's save block is. Both are decided here, before a slot
-         * is counted, because `vm_count_slots` needs the second and the region
-         * pre-pass needs the first.
-         *
-         * A target every one of whose sites splices needs NO region: no entry
-         * label, no exit label, no `RX_RETURN`, no second `goto *` and — the
-         * part that matters for the size claim — none of its slot instances.
-         * §6.3 makes the linkage a per-TARGET decision, so this is one flag
-         * per target and not a survey of sites. */
-        v.rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_emit);
-        v.has_linked_calls = false;
-        for (int i = 0; i < nt; i++) {
-            v.rgn_emit[i] = !pcrec_callgraph_spliced(v.cg, i);
-            if (v.rgn_emit[i]) v.has_linked_calls = true;
-        }
-
-        /* THE TRANSITIVE GROUP SET PER TARGET, and the union is taken from the
-         * UNMODIFIED sets for `W`'s own reason one function down: `reaches` is
-         * already transitive, so one pass suffices — but only if the
-         * right-hand side reads the ORIGINAL sets. OR-ing in place would make
-         * the answer depend on iteration order. */
-        {
-            const int ng = v.ngroups + 1;
-            bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
-            for (int i = 0; i < nt; i++) {
-                base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
-                memset(base[i], 0, (size_t)ng * sizeof **base);
-                vm_grp_set(&v, pcrec_callgraph_body(v.cg, i), base[i]);
-            }
-            bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
-            int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
-            for (int i = 0; i < nt; i++) {
-                grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
-                memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
-                for (int j = 0; j < nt; j++) {
-                    if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
-                    for (int q = 0; q < ng; q++) if (base[j][q]) grp[i][q] = true;
-                }
-                int n = 0;
-                for (int q = 1; q < ng; q++)
-                    if (grp[i][q]) n += 2 + (vm_marked(&v, q) ? 1 : 0);
-                snw[i] = n;
-            }
-            v.rgn_grp = grp;
-            v.spl_nw  = snw;
-        }
+        vm_plan_regions(&v);
     }
 
     /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
