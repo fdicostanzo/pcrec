@@ -331,7 +331,32 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   outcome a caller who set a memory limit was specifically trying to avoid.
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
   everything wholesale, so nothing leaks and nothing half-built is read again
-- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf.
+- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
+  sb_printf — **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
+  `sb_text`/`sb_textn`/`sb_field` (the two escape vocabularies), `sb_join` and
+  `sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
+  and no machine, so the future IR-consuming back-end calls them unchanged.
+
+  **TWO VOCABULARIES, ONE `\xNN` TAIL, AND THEY ARE NOT INTERCHANGEABLE.**
+  `sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
+  every printable byte, BACKSLASH INCLUDED, passes through. That is
+  `--explain`'s vocabulary and every registry TSV dump's, whose contract
+  (`docs/spec/table_contract.md` rule 5) says only that a field never contains
+  a TAB. `sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
+  plus that tail — which `tests/harness/driver.c`'s `decode()` reads back.
+  MEASURED at the landing: **150 data rows** across `--list-syntax`/
+  `--list-axes`/`--list-limits`/`--list-definitions`/`--list-families` carry a
+  raw backslash, so `sb_field` at a registry dump would DOUBLE it — a contract
+  break, not insurance. The wave-1 charter proposed exactly that one
+  vocabulary everywhere and is wrong about this tree; the declarations in
+  `internal.h` carry the measurement.
+
+  Before the layer existed the `\xNN` tail was written TWICE
+  (`syntax_dump.c`'s `put_text`, `rxt_source.c`'s `put_escaped`) and only
+  `--explain` called its own copy, so three dump files escaped nothing.
+  `sb_row` is `sb_join` with `"\t"`, `sb_text` per cell and a newline — the
+  COUNT is its point, since a row whose field count differs from its header's
+  is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
   NULL is a legitimate state here. `src/parse/syntax_dump.c` builds
   `--features`/syntax-query text in bare `StrBuf sb = {0}` locals belonging to

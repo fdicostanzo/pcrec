@@ -974,7 +974,8 @@ record_case_group_fail() {
 # arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec/
 # case_gucode -- the last holding a "gu" case's expected give-up word).
 # [DD-13b.W1.1] THE RXT-ESCAPE, leg B's half. Same vocabulary as
-# src/parse/rxt_source.c's `put_escaped` and as the .rxt format's own
+# `sb_field` (src/core/sb.c, where rxt_source.c's `put_escaped` moved
+# verbatim at [REVW.1] wave 1) and as the .rxt format's own
 # subject escape (`\t \n \r \\ \xNN`, docs/spec/rxt_format.md) — one
 # vocabulary, three implementations, which is what a differential over
 # three parsers requires and is why no second decoder is invented.
@@ -1010,7 +1011,7 @@ rxt_escape() {
             # rendered as `\x09`, which DECODES TO A TAB — the exact
             # framing hazard this escape exists to prevent. An arithmetic
             # test on the byte's own numeric value has no second source to
-            # disagree with `src/parse/rxt_source.c`'s `put_escaped`
+            # disagree with `src/core/sb.c`'s `sb_field`
             # (`*q < 0x20 || *q == 0x7f`), which this mirrors byte for
             # byte; there is no CTRL table left to drift out of step with
             # it. Rare path by construction (0 corpus patterns reach it

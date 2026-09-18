@@ -254,7 +254,14 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
   compare has NO automaton representation whatsoever — forbidding the call
   forbids the construct.
 - **enc.c** — the registry TABLE (the encoding namespace's one definition),
-  the by-id/by-name lookups, the rendered name menu for diagnostics, and the
+  the by-id/by-name lookups, the rendered name menu for diagnostics
+  (**[REVW.1] wave 1, L10-2: `pcrec_enc_names`' over-long policy is an
+  ordered PREFIX now, the same one `src/parse/enabled.c`'s `render_modules`
+  states** — it had TWO ways to lie, a name skipped while later ones were
+  appended AND a separator written under a different bound from the name, so
+  a tight cap produced `"byte, "` with a dangling separator. Both unreachable
+  today at 10 bytes into every caller's 128; read that function's comment for
+  why neither bounded join reaches the kit's `sb_join`), and the
   `$`-to-prefix substitution every backend's text goes through. The table
   carries a row for `utf8` with NO backend on purpose: a name pcrec knows
   but cannot compile must be refused BY ITS OWN NAME (`src/core/compile.c`

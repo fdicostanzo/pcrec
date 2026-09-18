@@ -33,7 +33,15 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   resolved the current set and its rendered (mask-derived, so it cannot
   drift) module list — static, fixed-size buffers filled once by `install()`
   at spec-parse time, matching the file's existing write-once/read-many
-  contract; src/gen's artifact stamping is their only consumer today
+  contract; src/gen's artifact stamping is their only consumer today.
+  **[REVW.1] wave 1 (L10-2, 2026-09-18): `render_modules`' OVER-LONG POLICY
+  IS AN ORDERED PREFIX** -- it used to skip a name that did not fit and keep
+  appending SHORTER LATER ONES, so an over-long list came back gap-toothed
+  and out of order while reading exactly like a complete one, and that list
+  is EMITTED (`PCREC_FEATURE_MODULES`). LATENT rather than live (measured:
+  179 bytes of a 512-byte buffer at `--features all`); the function's own
+  comment carries the measurement and the reason it is one keyword rather
+  than the kit's `sb_join`
 - **parse.c** — **[M4.5b]: the capturing-`(` hook now also builds the AST's
   capture node.** `p_group_body`'s existing hook is the one place that knows
   "is this `(` a capturing group", so `Ctx.ncap++`, the group NUMBER and the
