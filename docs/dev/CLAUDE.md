@@ -636,3 +636,43 @@ change.
   missing lookbehind and subroutine-call emission entirely — recorded as a
   finding for a future stage-3 lane's population choice, not acted on
   here.
+- `k60_measurement.md` — **K60 THE MEASUREMENT** (2026-09-18, lane k60meas,
+  opus; measurement only — the one `src/` change is a clearly-marked
+  `[K60-PROBE]` commit the manager drops at merge). Chartered by Frank after
+  a first disposition proposal was rejected for being flag-shaped.
+  **It refutes three of `known_issues.md` K60's own claims, so read §5
+  before citing that entry.** (1) K60's "ONE CONFIRMED MECHANISM" — a
+  never-reset `cx.size_cap_refused`/`cx.dfa_overflowed` — is wrong: the
+  `Ctx` is a loop-local `memset` at the top of every attempt
+  (`compile.c:704-706`), so both flags are per-attempt by construction and
+  **zero of 148 measured absorptions involve a stale flag**; K60's
+  disposition (1) is therefore a fix for a defect that does not exist.
+  (2) W1's absorptions are not the ladder catch — the ladder cannot run for
+  a DFA-engine artifact at all. (3) The THIRD mechanism K60 suspected is
+  real and is the ONLY one either of its own witnesses has:
+  `emit_state_legend` (`src/gen/emit_dfa.c:3615-3618,3660`) allocates five
+  buffers with raw `malloc` and returns silently on NULL — a deliberate,
+  documented cosmetic degradation that never calls `ctx_nomem` and never
+  reaches the recovery point.
+  **Four deliverables, each with its method.** (1) The instrument gained a
+  SUSTAINED mode (fail N and everything after): W3 collapses 25 absorbed →
+  **0**, W4 108 → **0**, W1 15 → **5**, and those five are the compile's
+  LAST five allocations — so absorption is real and unconditional, while a
+  *real* failing allocator still yields a correct refusal in 564 of 569
+  forced failures. (2) All 148 absorptions attributed by call site: 40
+  (27%) `emit_state_legend`, 108 (73%) the `[ART-SIZE]` ladder's blanket
+  catch swallowing `ctx_nomem`-routed failures, 0 stale-flag. (3) **The
+  population is 2 of 3,159 corpus patterns (0.06%) at default axes and 17
+  (0.54%) under `-e utf8`** — a handful, not thousands — broken down by
+  rung. (4) The candidate (give `ctx_nomem` its own `longjmp` value, since
+  the tree has one `longjmp` and all five `setjmp` sites test it as a
+  boolean) **eliminates 108 of 108 ladder absorptions and 0 of 40 legend
+  absorptions**: sound and complete for the mechanism it addresses,
+  structurally unable to reach the other, which is the memo's most useful
+  result. Also records a constraint on any LANDED version (C11 7.13.1.1p2
+  does not permit `v = setjmp(env)`; the standards-clean spelling with the
+  same per-arrival property is named) and the probe-off corpus byte
+  identity (3,159 lines: 1,158 identical, 0 differing).
+  **§6 is the recommendation**: take disposition (2) for the ladder, strike
+  disposition (1) as refuted, and treat the legend as a SEPARATE defect
+  none of K60's three dispositions fits — Frank's call, three options given.

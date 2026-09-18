@@ -118,4 +118,48 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   because an address-space limit cannot be steered to a non-final
   attempt specifically.
 
+  **[K60MEAS] (2026-09-18, lane k60meas) — TWO NEW MODES AND A FOURTH
+  WITNESS, and the K60 text above is now WRONG about the mechanism.**
+  `docs/dev/k60_measurement.md` is the memo; read §5 before citing K60.
+  The instrument gained:
+  - **SUSTAINED mode** (`--sustained`/`--both`): fail allocation N *and
+    every allocation after it*, against today's single-shot mode. What it
+    settles is that single-shot cannot tell "degraded gracefully" from "the
+    next allocation happened to succeed", because in single-shot mode it
+    always does. Measured: W3 collapses 25 absorbed → **0**, W4 108 → **0**,
+    W1 15 → **5** (and those five are the compile's LAST five allocations,
+    so nothing needs memory after them).
+  - **CALL-SITE attribution** (`--sites`): the four macros carry
+    `__FILE__`/`__LINE__` through to the injector, which reports the forced
+    allocation's own site. Text substitution rather than `backtrace()`,
+    because on darwin `backtrace_symbols` cannot name a `static` function
+    in a statically linked archive and every allocation site here is in one.
+    This is what turns "15 of 72 absorbed" into an attributed mechanism.
+  - **W4, the SIZE-TERM LADDER witness** — a real corpus pattern, found by
+    sweeping the corpus with an attempt-counting probe. It exists because
+    the `[ART-SIZE]` ladder's blanket catch is one of the two mechanisms
+    K60 names and **W1-W3 structurally cannot reach it** (the ladder's own
+    `fit.chosen == ENGM_VM` conjunct excludes the two DFA witnesses; W2 is
+    far below the `emit_code` threshold). On its first run it measured
+    **108 of 158 (68.4%)** — the worst rate in the file — all of them
+    genuine `ctx_nomem`-routed allocations.
+
+  **The four injector symbols are `pcrec_inject_*_at` now, and the rename
+  is the point.** This header is `-include`d and the Makefile's object rule
+  names its prerequisites by hand (no `-MMD` in this tree), so editing
+  `alloc_inject.h` leaves `build-alloc/` STALE — and the four functions are
+  resolved at LINK time from a separate TU with no shared prototype, so a
+  stale one-argument call against a four-argument definition is a wild
+  pointer and a SIGSEGV *inside the injector*, indistinguishable from the
+  abort/signal outcome the check exists to detect. Measured on this
+  instrument's first extension: 60 of 72 trials read "killed by signal 11",
+  entirely a stale tree. Changing the injector's ABI now changes its symbol
+  NAMES, so a stale object fails to link instead.
+
+  **`run_alloc_tests.sh` defaults to `ALLOC_ARGS=--both`**, so `make alloc`
+  runs both sweeps. `tests/resource/run_resource_tests.sh` section 2b —
+  the `make test` caller — runs this binary **argument-free** and is
+  deliberately left on the single-shot sweep alone: its claim is K7's
+  abort/signal outcome, which needs one sweep.
+
 Maintenance: update this file when files are added/removed or their roles change.
