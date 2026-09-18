@@ -4,6 +4,7 @@
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +21,40 @@
  * defined by, so this file maps no encoding name of its own (see D58/SR-10). */
 #include "gen/enc/enc.h"
 
+/* ---- THE CLI DIAGNOSTIC CHANNEL ([REVW.1] wave 1) -----------------------
+ *
+ * ONE diagnostic: `"pcrec: "`, the message, a newline, on stderr. Returns 1,
+ * so a call site that refuses stays `return cli_err(...)`; a site that only
+ * WARNS ignores it.
+ *
+ * IT IS CLI-LOCAL AND STAYS THAT WAY. The library does not print — every
+ * refusal below `lib/pcrec.h` travels as a `pcrec_error`, and `src/`'s only
+ * stdio is the four dump surfaces handing back finished text. That separation
+ * is already right and this channel must not become the crack in it.
+ *
+ * D26: THE WORDING DOES NOT MOVE. This function owns the PREFIX and the
+ * NEWLINE — the two things 73 call sites were each spelling by hand — and
+ * nothing else. Every word of every message is the word it was.
+ *
+ * NO `where` PARAMETER. Lens 2's sketch and the wave-1 charter both give this
+ * a leading `const char *where` rendered as `" (<where>)"`; MEASURED on this
+ * tree, not one of the 79 stderr sites has that shape — the parentheticals in
+ * these messages are prose inside the sentence, at a dozen different
+ * positions, and none of them is a location this channel could compose. A
+ * parameter with no caller is machinery ahead of a measured need (D77), so it
+ * is not built; the day a site wants one, it is a two-line change here. */
+static int cli_err(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static int cli_err(const char *fmt, ...)
+{
+    va_list ap;
+    fputs("pcrec: ", stderr);
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr);
+    return 1;
+}
+
 /* [ART-SIZE] Parse a RAISE-ONLY size override. Shared by both caps so the
  * two cannot drift in what they accept, and so the "below the default is a
  * malformed option" rule has exactly one implementation. */
@@ -29,15 +64,15 @@ static int parse_raise_only(const char *arg, const char *flag,
     char *end = NULL;
     unsigned long long v = strtoull(arg, &end, 10);
     if (!end || *end || arg[0] == '-' || v == 0) {
-        fprintf(stderr, "pcrec: %s wants a positive integer (got '%s')\n",
+        cli_err("%s wants a positive integer (got '%s')",
                 flag, arg);
         return 1;
     }
     if (v < floor) {
-        fprintf(stderr, "pcrec: %s is RAISE-ONLY: %llu is below the built-in "
+        cli_err("%s is RAISE-ONLY: %llu is below the built-in "
                         "limit of %llu. These overrides exist to let a caller "
                         "accept a larger artifact, never to make a build "
-                        "refuse one it would have accepted\n",
+                        "refuse one it would have accepted",
                 flag, v, floor);
         return 1;
     }
@@ -276,7 +311,7 @@ static int set_encoding(pcrec_options *opt, const char *v)
     if (!e) {
         char names[128];
         pcrec_enc_names(names, sizeof names);
-        fprintf(stderr, "pcrec: unknown encoding '%s' (want %s)\n", v, names);
+        cli_err("unknown encoding '%s' (want %s)", v, names);
         return -1;
     }
     opt->encoding = e->id;
@@ -568,8 +603,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             long v = strtol(a + 9, &end, 10);
             if (!end || *end || v < 1 || v > 4096) {
-                fprintf(stderr, "pcrec: --unroll wants an integer in 1..4096 "
-                                "(got '%s')\n", a + 9);
+                cli_err("--unroll wants an integer in 1..4096 "
+                                "(got '%s')", a + 9);
                 return 1;
             }
             opt.unroll_k = (int)v;
@@ -585,9 +620,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             long v = strtol(a + 17, &end, 10);
             if (!end || *end || v < 0 || v > PCREC_VM_ENTRY_INLINE) {
-                fprintf(stderr, "pcrec: --vm-entry-shape wants an integer in "
+                cli_err("--vm-entry-shape wants an integer in "
                                 "0..%d (0 auto, 1 plain, 2 shared, 3 forward, "
-                                "4 inline; got '%s')\n",
+                                "4 inline; got '%s')",
                         PCREC_VM_ENTRY_INLINE, a + 17);
                 return 1;
             }
@@ -612,17 +647,15 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts && !strncmp(a, "--tune=", 7)) {
             int v = 0;
             if (pcrec_tune_parse(a + 7, &v) != 0) {
-                fprintf(stderr,
-                        "pcrec: --tune wants -2..2 or one of min-size, size, "
-                        "balanced, speed, max-speed (got '%s')\n", a + 7);
+                cli_err("--tune wants -2..2 or one of min-size, size, "
+                        "balanced, speed, max-speed (got '%s')", a + 7);
                 return 1;
             }
             opt.tune = v;
         }
         else if (!no_more_opts && !strcmp(a, "--tune")) {
-            fprintf(stderr,
-                    "pcrec: --tune takes its value with '=' "
-                    "(--tune=-2, --tune=min-size)\n");
+            cli_err("--tune takes its value with '=' "
+                    "(--tune=-2, --tune=min-size)");
             return 1;
         }
         /* [M5-SEAM] (D58) `--encoding=` is the long spelling of `-e`, in the
@@ -638,8 +671,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             else if (!strcmp(v, "dfa"))  opt.engine = PCREC_ENGINE_DFA;
             else if (!strcmp(v, "vm"))   opt.engine = PCREC_ENGINE_VM;
             else {
-                fprintf(stderr, "pcrec: --engine must be auto, dfa or vm "
-                                "(got '%s')\n", v);
+                cli_err("--engine must be auto, dfa or vm "
+                                "(got '%s')", v);
                 return 1;
             }
         }
@@ -647,8 +680,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             long long v = strtoll(a + 14, &end, 10);
             if (!end || *end || v < 1) {
-                fprintf(stderr, "pcrec: --step-budget wants a positive integer "
-                                "(use --fno-step-budget for no counter)\n");
+                cli_err("--step-budget wants a positive integer "
+                                "(use --fno-step-budget for no counter)");
                 return 1;
             }
             opt.step_budget = v;
@@ -660,8 +693,8 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             long long v = strtoll(a + 14, &end, 10);
             if (!end || *end || v < 1) {
-                fprintf(stderr, "pcrec: --work-budget wants a positive integer "
-                                "(use --fno-step-budget for no counters)\n");
+                cli_err("--work-budget wants a positive integer "
+                                "(use --fno-step-budget for no counters)");
                 return 1;
             }
             opt.work_budget = v;
@@ -690,9 +723,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             unsigned long long v = strtoull(a + 18, &end, 10);
             if (!end || *end || a[18] == '\0') {
-                fprintf(stderr, "pcrec: --warn-emit-bytes wants a "
+                cli_err("--warn-emit-bytes wants a "
                                 "non-negative integer (0 disables the "
-                                "warning)\n");
+                                "warning)");
                 return 1;
             }
             opt.warn_emit_bytes = (uint64_t)v;
@@ -701,9 +734,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             char *end = NULL;
             long v = strtol(a + 19, &end, 10);
             if (!end || *end || v < 1 || v > 1000000) {
-                fprintf(stderr, "pcrec: --backtrack-frames wants a positive "
+                cli_err("--backtrack-frames wants a positive "
                                 "integer (the array is a LOCAL of the search "
-                                "entry, so this is stack)\n");
+                                "entry, so this is stack)");
                 return 1;
             }
             opt.frame_capacity = (int)v;
@@ -724,21 +757,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * a file named after a regex. */
         else if (!no_more_opts && !strcmp(a, "--list-source")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             st->list_source = argv[++i];
         }
         else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             st->probe_want = argv[++i];
         }
         else if (!no_more_opts && !strcmp(a, "--features")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             st->features = argv[++i];
@@ -746,7 +779,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             const char *v = argv[++i];
@@ -755,7 +788,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts &&
                  (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             const char *v = argv[++i];
@@ -769,14 +802,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * the three things that spelling is for. */
         else if (!no_more_opts && !strcmp(a, "--source")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             st->source = argv[++i];
         }
         else if (!no_more_opts && !strcmp(a, "--target")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             st->target = argv[++i];
@@ -786,21 +819,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * --lib-path would make two libraries an either/or. */
         else if (!no_more_opts && !strcmp(a, "--lib-path")) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                cli_err("missing value for %s", a);
                 return 1;
             }
             if (libdir_push(st, argv[++i]) != 0) return 1;
         }
         else if (!no_more_opts && a[0] == '-' && a[1]) {
-            fprintf(stderr, "pcrec: unknown option '%s' in the %s (use -- "
-                            "before a pattern that starts with '-')\n",
+            cli_err("unknown option '%s' in the %s (use -- "
+                            "before a pattern that starts with '-')",
                     a, where);
             if (!strcmp(where, "command line")) usage(stderr);
             return 1;
         }
         else if (!st->pattern) st->pattern = a;
         else {
-            fprintf(stderr, "pcrec: exactly one pattern expected (%s)\n",
+            cli_err("exactly one pattern expected (%s)",
                     where);
             return 1;
         }
@@ -928,9 +961,8 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * "shorten the prose, keep the path and the raw line" rule applies. */
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
-            fprintf(stderr,
-                    "pcrec: %s:%zu: `pcrec` line: compile options only, "
-                    "not output/pattern/prefix/query/source: '%s'\n",
+            cli_err("%s:%zu: `pcrec` line: compile options only, "
+                    "not output/pattern/prefix/query/source: '%s'",
                     cli->source, t->line, t->pcrec_raw);
             return 1;
         }
@@ -945,16 +977,15 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         unsigned long long f = 0;
         char bad = 0;
         if (pcrec_rxt_flags_from_letters(t->flags, &f, &bad) != 0) {
-            fprintf(stderr,
-                    "pcrec: %s:%zu: unknown flag letter '%c' in "
-                    "`flags %s`\n", cli->source, t->block_line, bad,
+            cli_err("%s:%zu: unknown flag letter '%c' in "
+                    "`flags %s`", cli->source, t->block_line, bad,
                     t->flags);
             return 1;
         }
         ts.opt.flags |= f;
     }
     if (t->encoding && set_encoding(&ts.opt, t->encoding) != 0) {
-        fprintf(stderr, "pcrec: %s:%zu: in `encoding %s`\n",
+        cli_err("%s:%zu: in `encoding %s`",
                 cli->source, t->block_line, t->encoding);
         return 1;
     }
@@ -962,9 +993,8 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         int want;
         if (!strcmp(t->engine, "vm")) want = PCREC_ENGINE_VM;
         else {
-            fprintf(stderr,
-                    "pcrec: %s:%zu: `engine %s` is not a value this format "
-                    "accepts (only `vm`)\n",
+            cli_err("%s:%zu: `engine %s` is not a value this format "
+                    "accepts (only `vm`)",
                     cli->source, t->block_line, t->engine);
             return 1;
         }
@@ -974,10 +1004,9 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * function's own header comment for why `!= PCREC_ENGINE_AUTO` here
          * is exactly "a flag was typed". */
         if (ts.opt.engine != PCREC_ENGINE_AUTO && ts.opt.engine != want) {
-            fprintf(stderr,
-                    "pcrec: %s:%zu: target '%s': CLI --engine=%s and this "
+            cli_err("%s:%zu: target '%s': CLI --engine=%s and this "
                     "file's `engine %s` disagree; using the CLI's explicit "
-                    "choice\n",
+                    "choice",
                     cli->source, t->block_line, t->prefix,
                     engine_name(ts.opt.engine), t->engine);
         } else {
@@ -1022,17 +1051,15 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
              * with this same function. It is a diagnosed internal error
              * rather than an assert because a library caller can build an
              * RxtTarget of its own. */
-            fprintf(stderr,
-                    "pcrec: %s:%zu: internal error: `tune %s` reached the "
-                    "CLI unvalidated\n",
+            cli_err("%s:%zu: internal error: `tune %s` reached the "
+                    "CLI unvalidated",
                     cli->source, t->block_line, t->tune);
             return 1;
         }
         if (ts.opt.tune != PCREC_TUNE_BALANCED && ts.opt.tune != want)
-            fprintf(stderr,
-                    "pcrec: %s:%zu: target '%s': CLI --tune=%s and this "
+            cli_err("%s:%zu: target '%s': CLI --tune=%s and this "
                     "file's `tune %s` disagree; using the file's value "
-                    "(--tune is not the --engine exception)\n",
+                    "(--tune is not the --engine exception)",
                     cli->source, t->block_line, t->prefix,
                     pcrec_tune_token(ts.opt.tune), t->tune);
         ts.opt.tune = want;
@@ -1051,8 +1078,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                           : (cli->features ? cli->features
                                            : PCREC_DEFAULT_FEATURES);
         if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
-            fprintf(stderr,
-                    "pcrec: %s:%zu: features: %s%s\n",
+            cli_err("%s:%zu: features: %s%s",
                     cli->source, t->block_line, ferr,
                     (t->features && !t->features_only)
                         ? ".\n       This list is the UNION of the target's "
@@ -1084,13 +1110,13 @@ static int compile_source(const CliState *cli)
 {
     pcrec_error err = { 0 };
     RxtSource *src = pcrec_rxt_source_parse(cli->source, &err);
-    if (!src) { fprintf(stderr, "pcrec: %s\n", err.msg); return 1; }
+    if (!src) { cli_err("%s", err.msg); return 1; }
 
     RxtTarget *ts = NULL;
     size_t nt = 0;
     if (pcrec_rxt_source_resolve(src, cli->libdirs, cli->nlibdirs,
                                  &ts, &nt, &err) != 0) {
-        fprintf(stderr, "pcrec: %s\n", err.msg);
+        cli_err("%s", err.msg);
         pcrec_rxt_source_free(src);
         return 1;
     }
@@ -1124,11 +1150,10 @@ static int compile_source(const CliState *cli)
      * surprising enough at a build step that it says so, on stderr, at exit
      * 0, where a script that meant it is unaffected. */
     if (nt == 0) {
-        fprintf(stderr,
-                "pcrec: %s declares no target and is not a single unnamed "
+        cli_err("%s declares no target and is not a single unnamed "
                 "pattern block, so it builds nothing (it is a library of "
                 "definitions). Add a `target <prefix> = <definition>` line "
-                "to build from it\n", cli->source);
+                "to build from it", cli->source);
         pcrec_rxt_source_free(src);
         return 0;
     }
@@ -1199,8 +1224,8 @@ static int compile_source(const CliState *cli)
              * A `.rxt` author's coordinates are file:line; the pattern
              * offset is still printed, because it is the only thing that
              * locates a failure INSIDE a pattern. */
-            fprintf(stderr, "pcrec: %s:%zu: target '%s': %s (pattern offset "
-                            "%zu)\n",
+            cli_err("%s:%zu: target '%s': %s (pattern offset "
+                            "%zu)",
                     cli->source, t->block_line, t->prefix, cerr.msg, cerr.pos);
             free(cpath); free(hpath);
             rc = 1;
@@ -1209,7 +1234,7 @@ static int compile_source(const CliState *cli)
         if (to_stdout) {
             fputs(out.c_src, stdout);
             if (fflush(stdout) != 0 || ferror(stdout)) {
-                fprintf(stderr, "pcrec: write error on stdout\n");
+                cli_err("write error on stdout");
                 rc = 1;
             }
         } else if (write_file(cpath, out.c_src) != 0 ||
@@ -1256,7 +1281,7 @@ int main(int argc, char **argv)
      * free, which is why none of them carries a `free` that a reader would
      * have to keep in step. */
     if (!st.source && (st.target || st.libdirs)) {
-        fprintf(stderr, "pcrec: %s applies to --source only\n",
+        cli_err("%s applies to --source only",
                 st.target ? "--target" : "--lib-path");
         free(st.libdirs);
         return 1;
@@ -1311,7 +1336,7 @@ int main(int argc, char **argv)
         char ferr[256];
         const char *fspec = features ? features : PCREC_DEFAULT_FEATURES;
         if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
-            fprintf(stderr, "pcrec: --features: %s\n", ferr);
+            cli_err("--features: %s", ferr);
             return 1;
         }
     }
@@ -1326,9 +1351,9 @@ int main(int argc, char **argv)
                       list_families || list_axes || list_limits || list_schema ||
                       explain || count_groups || emit_ir || probe_want || list_source ||
                       flavour)) {
-        fprintf(stderr, "pcrec: --source COMPILES a .rxt file; it does not "
+        cli_err("--source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
-                        "one)\n");
+                        "one)");
         free(st.libdirs);
         return 1;
     }
@@ -1354,19 +1379,19 @@ int main(int argc, char **argv)
             list_axes || list_limits || list_schema || explain ||
             count_groups || emit_ir ||
             probe_want || st.source) {
-            fprintf(stderr, "pcrec: --list-source is a separate query; use one "
+            cli_err("--list-source is a separate query; use one "
                             "(--list-source READS a .rxt file, --source "
-                            "COMPILES one)\n");
+                            "COMPILES one)");
             return 1;
         }
         if (pattern || outpath) {
-            fprintf(stderr, "pcrec: --list-source takes no pattern and no -o "
-                            "(it reads the file named by its own value)\n");
+            cli_err("--list-source takes no pattern and no -o "
+                            "(it reads the file named by its own value)");
             return 1;
         }
         if (flavour) {
-            fprintf(stderr, "pcrec: --flavour applies to --list-syntax, "
-                            "--list-definitions and --explain only\n");
+            cli_err("--flavour applies to --list-syntax, "
+                            "--list-definitions and --explain only");
             return 1;
         }
         /* [DD-13b.W1.1 r46sem finding 24, FIXED] initialized at the call
@@ -1381,7 +1406,7 @@ int main(int argc, char **argv)
         pcrec_error serr = { 0 };
         RxtSource *src = pcrec_rxt_source_parse(list_source, &serr);
         if (!src) {
-            fprintf(stderr, "pcrec: %s\n", serr.msg);
+            cli_err("%s", serr.msg);
             return 1;
         }
         char *text = pcrec_rxt_source_tsv(src);
@@ -1399,20 +1424,20 @@ int main(int argc, char **argv)
      * refusal" from "measured nothing". */
     if (probe_want) {
         if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
-            fprintf(stderr, "pcrec: --probe-ask is a separate query; use one\n");
+            cli_err("--probe-ask is a separate query; use one");
             return 1;
         }
         if (outpath) {
-            fprintf(stderr, "pcrec: --probe-ask takes no -o\n");
+            cli_err("--probe-ask takes no -o");
             return 1;
         }
         if (flavour) {
-            fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
-                            "--explain only\n");
+            cli_err("--flavour applies to --list-syntax and "
+                            "--explain only");
             return 1;
         }
         if (!pattern) {
-            fprintf(stderr, "pcrec: --probe-ask needs a construct\n");
+            cli_err("--probe-ask needs a construct");
             return 1;
         }
         /* Two NULLs with different causes (R20/MOD07-1): a port that RAISED
@@ -1422,16 +1447,16 @@ int main(int argc, char **argv)
         pcrec_error perr;
         char *line = pcrec_probe_ask(probe_want, pattern, &perr);
         if (!line && perr.msg[0]) {
-            fprintf(stderr, "pcrec: --probe-ask: %s (pattern offset %zu)\n",
+            cli_err("--probe-ask: %s (pattern offset %zu)",
                     perr.msg, perr.pos);
             return 1;
         }
         if (!line) {
-            fprintf(stderr, "pcrec: --probe-ask: WANT must be claim, verdict "
+            cli_err("--probe-ask: WANT must be claim, verdict "
                             "or result, and the construct must reach a "
                             "doorway (start with '\\', '(?', '(*' or '[' — "
                             "except '(?:', which the base grammar answers "
-                            "before any doorway is consulted)\n");
+                            "before any doorway is consulted)");
             return 1;
         }
         fputs(line, stdout);
@@ -1445,23 +1470,23 @@ int main(int argc, char **argv)
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
         if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
-            fprintf(stderr, "pcrec: --emit-ir is a separate query; use one\n");
+            cli_err("--emit-ir is a separate query; use one");
             return 1;
         }
         if (outpath) {
-            fprintf(stderr, "pcrec: --emit-ir takes no -o (it prints the "
-                            "listing, not C)\n");
+            cli_err("--emit-ir takes no -o (it prints the "
+                            "listing, not C)");
             return 1;
         }
         if (!pattern) {
-            fprintf(stderr, "pcrec: --emit-ir needs a pattern\n");
+            cli_err("--emit-ir needs a pattern");
             return 1;
         }
         {
             pcrec_error err;
             char *text = pcrec_emit_ir(pattern, &opt, &err);
             if (!text) {
-                fprintf(stderr, "pcrec: %s (pattern offset %zu)\n",
+                cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);
                 return 1;
             }
@@ -1473,26 +1498,26 @@ int main(int argc, char **argv)
 
     if (count_groups) {
         if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain) {
-            fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
+            cli_err("--count-groups is a separate query; use one");
             return 1;
         }
         if (outpath) {
-            fprintf(stderr, "pcrec: --count-groups takes no -o\n");
+            cli_err("--count-groups takes no -o");
             return 1;
         }
         if (flavour) {
-            fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
-                            "--explain only\n");
+            cli_err("--flavour applies to --list-syntax and "
+                            "--explain only");
             return 1;
         }
         if (!pattern) {
-            fprintf(stderr, "pcrec: --count-groups needs a pattern\n");
+            cli_err("--count-groups needs a pattern");
             return 1;
         }
         pcrec_error err;
         int n = pcrec_count_groups(pattern, &err);
         if (n < 0) {
-            fprintf(stderr, "pcrec: %s (pattern offset %zu)\n", err.msg, err.pos);
+            cli_err("%s (pattern offset %zu)", err.msg, err.pos);
             return 1;
         }
         printf("%d\n", n);
@@ -1505,13 +1530,13 @@ int main(int argc, char **argv)
      * half of it. */
     if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits || list_schema) {
         if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + list_schema + (explain != NULL) > 1) {
-            fprintf(stderr, "pcrec: --list-syntax, --list-definitions, --list-verbs, "
+            cli_err("--list-syntax, --list-definitions, --list-verbs, "
                             "--list-families, --list-axes, --list-limits, --list-schema "
-                            "and --explain are separate queries; use one\n");
+                            "and --explain are separate queries; use one");
             return 1;
         }
         if (pattern || outpath) {
-            fprintf(stderr, "pcrec: %s takes no pattern and no -o\n",
+            cli_err("%s takes no pattern and no -o",
                     list_syntax      ? "--list-syntax" :
                     list_definitions ? "--list-definitions" :
                     list_verbs       ? "--list-verbs"  :
@@ -1551,8 +1576,8 @@ int main(int argc, char **argv)
          * at all. */
         if ((list_verbs || list_families || list_axes || list_limits ||
              list_schema) && flavour) {
-            fprintf(stderr, "pcrec: --flavour applies to --list-syntax, "
-                            "--list-definitions and --explain only\n");
+            cli_err("--flavour applies to --list-syntax, "
+                            "--list-definitions and --explain only");
             return 1;
         }
         if (list_verbs) {
@@ -1593,8 +1618,8 @@ int main(int argc, char **argv)
         }
         unsigned fl = 0;
         if (flavour && !(fl = pcrec_flavour_by_name(flavour))) {
-            fprintf(stderr, "pcrec: unknown flavour '%s' (only 'pcre2' exists; "
-                            "more arrive with SR-7)\n", flavour);
+            cli_err("unknown flavour '%s' (only 'pcre2' exists; "
+                            "more arrive with SR-7)", flavour);
             return 1;
         }
         if (list_definitions) {
@@ -1613,14 +1638,14 @@ int main(int argc, char **argv)
          * parse failed. Same shape a compile error gets, so an operator who
          * has seen one recognises the other. */
         if (!text && eerr.msg[0]) {
-            fprintf(stderr, "pcrec: --explain: %s (pattern offset %zu)\n",
+            cli_err("--explain: %s (pattern offset %zu)",
                     eerr.msg, eerr.pos);
             return 1;
         }
         if (!text) {
             /* --explain only; the TSV always has rows */
-            fprintf(stderr, "pcrec: no construct matches '%s' — it is either "
-                            "base syntax or not a construct pcrec knows\n",
+            cli_err("no construct matches '%s' — it is either "
+                            "base syntax or not a construct pcrec knows",
                     explain);
             return 1;
         }
@@ -1636,9 +1661,9 @@ int main(int argc, char **argv)
         if (ndissent > 0) {
             /* the VERB agrees too (R20/MOD07-9): "1 row DISAGREES", "2 rows
              * DISAGREE". The old form pluralized only the noun. */
-            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE%s with the live "
+            cli_err("--explain: %d row%s DISAGREE%s with the live "
                             "doorway (see the 'agree' lines) — this is a pcrec "
-                            "defect, not a bad query\n",
+                            "defect, not a bad query",
                     ndissent, ndissent == 1 ? "" : "s",
                     ndissent == 1 ? "S" : "");
             return 3;
@@ -1646,8 +1671,8 @@ int main(int argc, char **argv)
         return 0;
     }
     if (flavour) {
-        fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
-                        "--explain only\n");
+        cli_err("--flavour applies to --list-syntax and "
+                        "--explain only");
         return 1;
     }
 
@@ -1662,17 +1687,17 @@ int main(int argc, char **argv)
         /* the query conflict was refused above, before any query could
          * return; what is left is this mode's own two requirements. */
         if (pattern) {
-            fprintf(stderr, "pcrec: --source takes no pattern argument — the "
+            cli_err("--source takes no pattern argument — the "
                             "file's `pattern` blocks are the patterns (got "
-                            "'%s')\n", pattern);
+                            "'%s')", pattern);
             free(st.libdirs);
             return 1;
         }
         if (!outpath) {
-            fprintf(stderr, "pcrec: --source needs -o: a FILE for one target, "
+            cli_err("--source needs -o: a FILE for one target, "
                             "an existing DIRECTORY for several (which writes "
                             "<dir>/<prefix>.c and .h per target), or '-' for "
-                            "one target on stdout\n");
+                            "one target on stdout");
             free(st.libdirs);
             return 1;
         }
@@ -1683,7 +1708,7 @@ int main(int argc, char **argv)
         }
     }
     if (!pattern || !outpath) {
-        fprintf(stderr, "pcrec: pattern and -o are required\n");
+        cli_err("pattern and -o are required");
         usage(stderr);
         return 1;
     }
@@ -1710,7 +1735,7 @@ int main(int argc, char **argv)
         const char *dec = NULL;
         if (pcrec_rxt_decode_escaped(pattern, &esc, &dec, emsg,
                                      sizeof emsg) != 0) {
-            fprintf(stderr, "pcrec: --pattern-esc: %s\n", emsg);
+            cli_err("--pattern-esc: %s", emsg);
             arena_free(&esc);
             return 1;
         }
@@ -1732,7 +1757,7 @@ int main(int argc, char **argv)
     pcrec_output out;
     pcrec_error err;
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
-        fprintf(stderr, "pcrec: %s (pattern offset %zu)\n", err.msg, err.pos);
+        cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
         arena_free(&esc);
         return 1;
@@ -1742,7 +1767,7 @@ int main(int argc, char **argv)
     if (to_stdout) {
         fputs(out.c_src, stdout);
         if (fflush(stdout) != 0 || ferror(stdout)) {
-            fprintf(stderr, "pcrec: write error on stdout\n");
+            cli_err("write error on stdout");
             rc = 1;
         }
     } else {
