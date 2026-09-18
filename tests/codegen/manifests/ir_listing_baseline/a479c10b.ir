@@ -1,0 +1,81 @@
+; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+;
+; Produced BY the emitter's own walk, not by a second walk over the
+; AST: every line below was written by the same call that wrote the
+; corresponding C. S10's one constraint -- "the dump must be derived
+; from the same structure the emitter walks, never a parallel
+; description" -- is therefore structural here, not a discipline.
+;
+; pattern      (a*)*
+; engine       vm (forced by: capture group at pattern offset 0)
+; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
+; rungs        cursor, frames-unbounded -- see the RUNGS section below for which quantifier took which
+; strategies   backtracking -- see the STRATEGIES section below for which quantifier took which
+; possessify   0 of 2 source quantifiers possessified (eng_brep_design.md S2)
+; caps         RX_NCAPS 2 (1 capturing group in the pattern text)
+; step budget  500000000 backtrack resumptions
+; capacities   2048 resume frames, 3072 trail entries (subject ceiling 768 bytes)
+; program      9 labels, 31 events
+; resume pts   2
+; max replicas 1 (limit 64, checked before emission)
+
+SLOTS (the slot_values array, engine_m4.md S2.4)
+  slot         holds                  note
+   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
+   2,3         group 1                written on traverse, trailed
+  4            empty-iteration guard  where the current iteration began (S3.3)
+  5            span-loop low-water    the loop's entry position (S2.5)
+
+RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
+  at L0      frames-unbounded   frames rung, unbounded {0,}, greedy
+  at L5      cursor             span-loop cursor {0,}, stride 1, greedy
+
+STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
+  at L0      backtracking   frames rung, unbounded {0,}, greedy
+  at L5      backtracking   span-loop cursor {0,}, stride 1, greedy
+
+PRUNING (k23_design.md; D51's per-quantifier stamp)
+  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
+  bound sites emitted: 0
+  runtime-term length retreats: 0
+  at L0      unclamped    frames rung, unbounded {0,}, greedy
+  at L5      unclamped    span-loop cursor {0,}, stride 1, greedy
+
+PROGRAM
+  L0      ; unbounded repeat, greedy, frames rung, nullable body (empty-iteration guard)
+         set     slot_values[4] <- scan_position ; empty-iteration guard: where this iteration began
+         PUSH    resume L4                    ; another iteration preferred; resume is the EXIT
+         -> L2
+  L2      ; group 1 opens
+         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
+         -> L5
+  L5      ; span-loop cursor {0,}, stride 1, greedy
+         set     slot_values[5] <- scan_position ; span-loop low-water mark (loop entry scan_position)
+         -> L7
+  L7      ; span-loop: take the continuation at the cursor
+         ; below the low-water mark: exhausted
+         PUSH    resume L8                    ; shorter run is the resume (retreat one stride)
+         -> L6
+  L8      ; span-loop retreat (resumed from the frame)
+         -> L7
+  L6      ; group 1 closes
+         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
+         -> L3
+  L3      ; unbounded repeat: one iteration done
+         -> L4
+  L4      ; unbounded repeat: the exit
+         -> L1
+  L1      ; the pattern is complete
+         -> accept
+  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+
+CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
+  at L0      resume L4      another iteration preferred; resume is the EXIT
+  at L7      resume L8      shorter run is the resume (retreat one stride)
+
+DFA ISLANDS (0)
+  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+
+CALLOUT SITES (0)
+  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)

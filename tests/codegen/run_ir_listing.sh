@@ -303,6 +303,43 @@ for pat in "${PATTERNS[@]}"; do
     else
         ok "ir-listing[$pat]: the listing's $isl island(s) match the artifact's own RX_VM_ALT_ISLANDS stamp and its emitted text"
     fi
+
+    # ---- [REVW.1] wave 1 stage 0: THE irsb BYTE-NEUTRALITY ARM ------------
+    #
+    # WHY THIS EXISTS. emitvm_second_pass.md §1/§5 (EP2): `vm_render_listing`
+    # writes `&job->irsb` (the --emit-ir listing), a DIFFERENT byte stream
+    # from the `.c` artifact the four standing identity gates and the
+    # full-corpus emit-diff compare — none of those gates sees `irsb`. Wave 2
+    # (not built here) moves emitter interior text around; a stage-3 lane's
+    # "byte-neutral" claim about `irsb` is unverifiable without a control that
+    # predates the move. This arm IS that control: it pins this listing's own
+    # bytes, PER PATTERN, at this wave's branch point, so a later diff is
+    # against a real prior state rather than against nothing.
+    #
+    # PINS THE OUTPUT, NOT THE MECHANISM (D108): the comparison is the
+    # listing's raw bytes end to end — no section is parsed, no call
+    # structure is assumed — so it stays valid across the future
+    # walk->event->render seam the kit is chartered to become.
+    #
+    # CAPTURE_IR_BASELINE=1 (opt-in, this lane's own use, and any future
+    # DELIBERATE re-baseline — never run casually): (re)writes the baseline
+    # file instead of comparing. Default: compares, and a MISSING baseline is
+    # a hard FAIL naming the file to capture, never a silent skip (K35 shape
+    # — a check that shrugs at an absent baseline certifies nothing).
+    ir_base_dir="$ROOT_DIR/tests/codegen/manifests/ir_listing_baseline"
+    ir_base_id="$(printf '%s' "$pat" | md5sum | cut -c1-8)"
+    ir_base_file="$ir_base_dir/$ir_base_id.ir"
+    if [ "${CAPTURE_IR_BASELINE:-0}" = "1" ]; then
+        mkdir -p "$ir_base_dir"
+        cp "$d/ir" "$ir_base_file"
+        ok "ir-listing[$pat]: BYTE-NEUTRALITY baseline captured -> $ir_base_file"
+    elif [ ! -f "$ir_base_file" ]; then
+        bad "ir-listing[$pat]: BYTE-NEUTRALITY — no baseline at $ir_base_file; re-run with CAPTURE_IR_BASELINE=1 to create one deliberately (never silently)"
+    elif diff -q "$ir_base_file" "$d/ir" >/dev/null; then
+        ok "ir-listing[$pat]: BYTE-NEUTRALITY — the listing is byte-identical to its stage-0 baseline"
+    else
+        bad "ir-listing[$pat]: BYTE-NEUTRALITY — the listing MOVED against its stage-0 baseline ($ir_base_file): $(diff "$ir_base_file" "$d/ir" | head -6 | tr '\n' ' ' | cut -c1-300)"
+    fi
 done
 
 # ---- CHOICE POINTS: the sweep-wide non-vacuity guard --------------------
