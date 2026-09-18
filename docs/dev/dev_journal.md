@@ -23872,3 +23872,17 @@ Frank ruled all three open questions at the bell:
 
 wake.md rewritten with the work queue; heartbeat cron deleted; tree clean,
 main pushed; no lanes, no worktrees, box free.
+
+## 2026-09-18 — sixty-ninth session: K60 ladder fix + D105 build launched in parallel
+
+Woke on Frank's "proceed with next item". Main clean at 6c9dac09 = origin.
+Heartbeat cron created (13,43). The queue's items 1 and 2 partition cleanly
+(compile.c's recovery point vs emit_dfa.c's legend), so both launched as
+lanes: **k60fix** (sonnet, [K60-FIX]) and **d105** (opus, [D105-BUILD]),
+rows added to plan.md beside [REVW.2]. Both briefed to keep their
+alloc_check.c pin edits in separate commits (shared file; the manager
+reconciles W4 vs W1/W3 at merge), S259/S260 reserved respectively, and to
+run LIGHT targets only — d105 owns the box's one heavy item (the full-corpus
+emit-diff); the full battery is the manager's after both merge. Stall
+watcher script running in background (zero model calls, 25-min quiet
+threshold, 4h cap). Wave 2 waits for both to merge.
