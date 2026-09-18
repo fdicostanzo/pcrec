@@ -51,7 +51,9 @@ if ! unit_build "$BIN" "$SCRIPT_DIR/sat_arith_check.c"; then
     exit 1
 fi
 OUT="$WORKDIR/sat_arith_check.out"
-if "$BIN" | tee "$OUT"; then
+"$BIN" | tee "$OUT"
+bin_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN's
+if [ "$bin_rc" -eq 0 ]; then
     ok "sat_arith_check: $(grep -c '^PASS' "$OUT") sub-checks green"
 else
     bad "sat_arith_check: $(grep -c '^FAIL' "$OUT") sub-check(s) failed — see above"

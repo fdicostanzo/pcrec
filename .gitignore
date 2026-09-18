@@ -5,6 +5,9 @@ build-ubsan/
 build-asan/
 # [TT-7]: build-san/ is the combined ASan+UBSan tree (make san), same shape.
 build-san/
+# [REVW.U L5-R1]: build-alloc/ is the allocation-failure-injected tree
+# (make alloc), same shape one axis over.
+build-alloc/
 *.o
 *.a
 # Core dumps only — anchored, because an unanchored `core` also matches the

@@ -76,4 +76,46 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   unification changed nothing, and the six declarations in `internal.h`
   retire with it, not before.
 
+- **alloc_inject.h** / **alloc_check.c** / **run_alloc_tests.sh** —
+  [REVW.U L5-R1] THE ALLOCATION-FAILURE INJECTOR (`make alloc`, opt-in,
+  NOT part of `make test`). `alloc_inject.h` is `-include`d ahead of
+  every source file in a SEPARATE build tree (`ALLOC_DIR := build-alloc`
+  in the Makefile — the `make ubsan`/`make asan` shape one axis over;
+  nothing under `src/`/`cli/`/`lib/` is edited, `build/` is never
+  touched), redirecting every `malloc`/`calloc`/`realloc`/`strdup` call
+  to a `pcrec_inject_*` function `alloc_check.c` defines, so the check
+  can force the Nth allocation in a real `pcrec_compile()` call to
+  return NULL and assert the library never `abort()`s, segfaults, or
+  silently succeeds — only diagnoses. One `fork()` per trial (the
+  outcomes under audit include SIGABRT, which cannot run in-process
+  without taking the whole sweep with it), K (allocations per witness)
+  measured by a "never fail" profiling pass rather than guessed, over
+  three fixed witnesses (R0.4's tier budget: no per-case `pcrec`/`gcc`
+  call, so this is a deliberate, named exception rather than a
+  corpus sweep).
+
+  **CONFIRMS F1 (fix-now #1, `23eb3d34`) IN BOTH DIRECTIONS.** Built at
+  `23eb3d34`'s parent (F1 unrepaired) and pointed at the `--engine=vm`
+  witness `[a-z]{2,10}`: `1 of 11 forced allocations KILLED THE PROCESS
+  BY SIGNAL ... signal 6` (SIGABRT — `sb_grow`'s unattached-buffer
+  `abort()`, `scr_test`/`scr_desc`'s own reaching sequence). On the
+  current (fixed) tree the same witness: `every one of 11 forced
+  allocation failures was diagnosed ... never abort/signal/success`. See
+  `docs/dev/lanes/waveu_report.md` for the full transcript.
+
+  **AND IT FOUND K60 (docs/dev/known_issues.md, filed not fixed) ON ITS
+  FIRST REAL RUN** — its own two other witnesses (a plain DFA compile,
+  and `\p{L}` under `-e utf8`, which needs `[K53-SELRETRY]`'s drop rung
+  to compile at all) show `pcrec_compile` SUCCEEDING despite a forced
+  allocation failure, at a real, non-trivial rate (21% / 8% of the
+  allocations swept): a stale per-attempt eligibility flag
+  (`cx.size_cap_refused`/`cx.dfa_overflowed`, never reset between
+  retries) and the size-term ladder's own documented "ANY reason means
+  this K is out" catch-all both absorb a genuine OOM as "try a different
+  internal attempt" rather than propagating it — invisible to every
+  existing check because the final artifact is a correct compile with
+  `rc == 0`, and invisible to `tests/resource/`'s `ulimit -v` approach
+  because an address-space limit cannot be steered to a non-final
+  attempt specifically.
+
 Maintenance: update this file when files are added/removed or their roles change.

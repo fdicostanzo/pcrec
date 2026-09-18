@@ -4280,3 +4280,55 @@ on both darwin and the Linux executor arm, `make mech`'s sabotage matrix
 clean including the batch-link-fallback row) is the manager's STEP 2d
 acceptance battery, not yet run as of this section's writing — see
 `docs/dev/lanes/tt4m3_report.md` for exactly which commands are OWED.
+
+## The unit tier and the allocation-failure injector ([REVW.U], 2026-09-17)
+
+**The unit tier has a name now.** `docs/dev/reviews/lens_reports/lens5_unit_seams.md`
+R0 found ten C programs, scattered across six directories, that
+`#include "core/internal.h"`, link `libpcrec.a` and assert a property of an
+internal helper directly — below any answer — with no shared build and four
+divergent flag policies (one of them, `tests/codegen/cpset_model_check.c`,
+had never been built under a sanitizer despite its whole stated argument
+being "reaches paths the corpus cannot"). `tests/lib/unit_cc.sh`'s
+`unit_build` function is now the ONE way such a check is compiled
+(`-Ilib -Isrc`, `$SANFLAGS` threaded, `$LIBPCREC` linked, `-Werror`
+unconditionally — a test-compile policy distinct from R5-Q1's `make`-default
+rule, argued in that file's own header), adopted IN PLACE at the seven
+sites that link only `libpcrec.a`; the two `fold_agreement_check.c` sites
+and `startbnd_backend_check.c`, which compile alongside a GENERATED
+artifact through `$GENCFLAGS`/`gen_cc`, stay on that existing, already-
+uniform regime deliberately (`unit_cc.sh`'s own header explains why).
+
+**`tests/core/` is the new home for a check whose subject belongs to no
+single feature directory** (R0.3) — NOT a generic `tests/unit/`; every
+pre-existing unit check stays where it is. `make test-core` (part of
+`make test`) carries the tier's first new instance: `sat_arith_check.c`,
+the saturating-arithmetic agreement between `mrl_sat_add`/`mrl_sat_mul`
+(`src/opt/mrl.c`), `vm_fadd`/`vm_fmul` (`src/gen/emit_vm.c`) and
+`cg_sat_add`/`cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
+stated twice in prose and enforced nowhere. The six functions are no
+longer `static` (declared in `core/internal.h` beside `pcrec_minw`) so the
+check can call the shipped functions directly; no behaviour change, no
+`abi` event (this arithmetic is never emitted into generated text).
+Sabotage row S254, mech arm `core` (registered before the row, R31 C11).
+
+**`make alloc` (opt-in, NOT part of `make test`) is the ALLOCATION-FAILURE
+INJECTOR** (lens 5's R1, reclassified from lens 8's assumed DESIGN-EVENT
+tier to LOCAL — synthesis §4 manager row M2). The `make ubsan`/`make asan`
+shape one axis over: `ALLOC_DIR := build-alloc`, `-include
+tests/core/alloc_inject.h` ahead of every source file redirects
+`malloc`/`calloc`/`realloc`/`strdup` to functions `tests/core/
+alloc_check.c` defines, which can force the Nth allocation in a real
+`pcrec_compile()` call to return NULL. One `fork()` per trial (SIGABRT is
+one of the outcomes under audit and cannot run in-process without ending
+the sweep), K measured per witness by a profiling pass, over three fixed
+witnesses — nothing under `src/`/`cli`/`lib` is edited, `build/` is never
+touched. See `tests/core/CLAUDE.md` and `docs/dev/lanes/waveu_report.md`
+for the F1 red/green transcript (`[a-z]{2,10}` under `--engine=vm`: SIGABRT
+at `23eb3d34`'s parent, cleanly diagnosed on the fixed tree) and K60
+(`docs/dev/known_issues.md`, filed not fixed 2026-09-17), the injector's
+own first real finding — a stale per-attempt retry-eligibility flag and
+the size-term ladder's documented "any reason, this K is out" catch-all
+both silently absorb a genuine allocation failure into a successful
+compile from a later internal attempt, which no answer-level check or
+`ulimit -v` approach can see.

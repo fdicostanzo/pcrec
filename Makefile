@@ -1,5 +1,5 @@
 # pcrec — GNU make build (see docs/dev/decisions.md D2).
-# Targets: all (default), test, strict, ubsan, asan, lint, mech, bench, fuzz, clean.
+# Targets: all (default), test, strict, ubsan, asan, lint, alloc, mech, bench, fuzz, clean.
 
 # `CC ?= gcc` DOES NOT WORK: GNU make predefines CC itself (as `cc`), so `?=`
 # only assigns when a variable is UNSET and CC never is -- this fallback has
@@ -1392,6 +1392,30 @@ lint:
 	fi
 	@echo "lint: done"
 
+# [REVW.U L5-R1] THE ALLOCATION-FAILURE INJECTOR, opt-in and NOT part of
+# `make test`. The `make ubsan`/`make asan` shape one axis over — a SEPARATE
+# BUILD_DIR (never touching build/) built with ONE extra flag, `-include`ing
+# tests/core/alloc_inject.h ahead of every source file so every raw
+# malloc/calloc/realloc/strdup call becomes a call the check driver
+# (tests/core/alloc_check.c) can steer to fail on a CHOSEN Nth call.
+# Nothing under src/, cli/ or lib/ is edited by this target.
+#
+# See docs/dev/reviews/lens_reports/lens5_unit_seams.md R1 (reclassified
+# from lens 8's assumed DESIGN-EVENT to LOCAL on this exact spelling) and
+# tests/core/alloc_inject.h's own header for the full mechanism.
+ALLOC_DIR := build-alloc
+alloc:
+	@echo "== alloc: building the allocation-failure-injected axis at $(ALLOC_DIR)/ =="
+	@# LIBRARY ONLY, not `all`: build-alloc/pcrec (the CLI) would need the
+	@# same $(ALLOC_DIR)/pcrec_inject_* symbols the library does, and
+	@# nothing defines them except tests/core/alloc_check.c — which is
+	@# the CHECK, never linked into a CLI binary. The library is the one
+	@# artifact this axis exists to produce.
+	$(MAKE) BUILD_DIR=$(ALLOC_DIR) CFLAGS="-O1 -g -include $(CURDIR)/tests/core/alloc_inject.h" $(ALLOC_DIR)/libpcrec.a
+	@echo "== alloc: running the injector check =="
+	LIBPCREC=$(CURDIR)/$(ALLOC_DIR)/libpcrec.a bash tests/core/run_alloc_tests.sh
+	@echo "alloc: every forced allocation failure was diagnosed, not aborted"
+
 # [CHK-2] THE ANSWER-IDENTITY SWEEP + FORM CENSUS: every optimization-axis
 # deny/force flag (docs/spec/tuning.md §2, bits 4-31 — DERIVED from
 # lib/pcrec.h with no upper bound, never a hard-coded range: a `4-15` here
@@ -1462,5 +1486,5 @@ clean:
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-core \
-        smoke hooks strict testscripts ubsan asan san lint mech bench \
+        smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean
