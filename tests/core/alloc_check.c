@@ -176,6 +176,28 @@ typedef struct {
     int encoding;      /* PCREC_ENC_* */
     int enable_unicode_props;
     int force_engine;  /* 0 = auto (pcrec_default_options' default); else PCREC_ENGINE_* */
+    /* [D105] THE PINS, and there are two of them because "no absorption" on
+     * its own is a claim a check can satisfy by not reaching the compile at
+     * all (K35 — count the population, fail on an empty one).
+     *
+     * `expect_total` is the profiling pass's own allocation count: the
+     * POPULATION this witness sweeps. It moves whenever the compile's
+     * allocation shape moves, which is a real event a reader must be told
+     * about — D105 moved W1's from 72 to 57 and W3's from 328 to 303 by
+     * deleting `emit_state_legend`'s five raw allocations per machine, and
+     * that delta IS the evidence the legend site is gone. A silently
+     * shrinking population is how this check would stop testing anything.
+     *
+     * `expect_absorbed_*` is the number of absorptions a FILED, OPEN defect
+     * accounts for, per mode, with `absorbed_why` naming it. A mismatch in
+     * EITHER direction is a failure: more than the pin is a regression, and
+     * fewer means the defect moved or was fixed and the pin is stale — the
+     * ratchet that makes a fix re-pin its own witness rather than quietly
+     * turning a red line green. */
+    long long   expect_total;
+    long long   expect_absorbed_single;
+    long long   expect_absorbed_sustained;
+    const char *absorbed_why;   /* NULL iff both expectations are zero */
 } Witness;
 
 /* [K60MEAS] what a child hands back: the profiling total (mode 0 only) and
@@ -338,6 +360,25 @@ static void report(const Witness *w, const Tally *t, int sust)
 {
     const char *tag = sust ? " [sustained]" : "";
     long long bad_n = t->n_succeeded + t->n_silent + t->n_signalled + t->n_anomaly;
+    /* [D105] THE POPULATION PIN, checked before any verdict: a witness that
+     * stopped reaching the compile, or whose allocation shape moved under
+     * someone's feet, reports "every forced failure was diagnosed" over a
+     * population that is no longer the one this check was pinned against. */
+    if (t->total != w->expect_total)
+        bad("%s%s: the swept POPULATION moved -- %lld forced allocations, pinned at %lld. "
+            "Either the compile's allocation shape changed (re-pin, and say what moved) "
+            "or this witness no longer reaches what it was written for",
+            w->name, tag, t->total, w->expect_total);
+    /* [D105] THE ABSORPTION PIN, in both directions. `n_succeeded` is
+     * reported below on its own terms too; this is the comparison against
+     * what a FILED defect accounts for. */
+    long long want = sust ? w->expect_absorbed_sustained : w->expect_absorbed_single;
+    if (t->n_succeeded < want)
+        bad("%s%s: %lld of %lld forced allocations were absorbed, and the pin says %lld -- "
+            "the filed defect moved or was FIXED and this pin is stale. Re-pin it in the "
+            "same change (%s)",
+            w->name, tag, t->n_succeeded, t->total, want,
+            w->absorbed_why ? w->absorbed_why : "no filed defect is recorded for this witness");
     if (bad_n == 0) {
         ok("%s%s: every one of %lld forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success",
            w->name, tag, t->total);
@@ -348,8 +389,13 @@ static void report(const Witness *w, const Tally *t, int sust)
             w->name, tag, t->n_signalled, t->total, t->first_signal_n, t->first_signal_code);
     }
     if (t->n_succeeded) {
-        bad("%s%s: %lld of %lld forced allocations were SUCCEEDED THROUGH anyway -- first at N=%lld (pcrec_compile returned 0 despite the Nth allocation call returning NULL)",
-            w->name, tag, t->n_succeeded, t->total, t->first_succeeded_n);
+        /* The wording of the first sentence is UNCHANGED (it is what the K60
+         * measurement quotes); what follows it says whether this count is the
+         * standing filed defect or something new. */
+        bad("%s%s: %lld of %lld forced allocations were SUCCEEDED THROUGH anyway -- first at N=%lld (pcrec_compile returned 0 despite the Nth allocation call returning NULL)%s%s",
+            w->name, tag, t->n_succeeded, t->total, t->first_succeeded_n,
+            t->n_succeeded == want && w->absorbed_why ? " -- the pinned count of " : "",
+            t->n_succeeded == want && w->absorbed_why ? w->absorbed_why : "");
     }
     if (t->n_silent) {
         bad("%s%s: %lld of %lld forced allocations were diagnosed with an EMPTY message -- first at N=%lld (rc == -1, err.msg[0] == 0)",
@@ -374,15 +420,26 @@ int main(int argc, char **argv)
     }
 
     static const Witness witnesses[] = {
-        { "W1 (DFA)",              "[a-z]+",     PCREC_ENC_BYTE, 0, 0 },
+        /* [D105] W1 and W3 are the LEGEND-CLASS witnesses: every one of
+         * their absorptions (15 and 25, docs/dev/k60_measurement.md §2.2)
+         * was `emit_state_legend`'s own silent degradation, and the
+         * restructuring deleted the path. Both pin ZERO, so a legend-class
+         * absorption — or any other absorption reaching these two — is RED.
+         * The totals fell by exactly the deleted allocations: 5 per emitted
+         * legend, W1 emitting three machines' worth (72 - 15 = 57) and W3
+         * five across its two attempts (328 - 25 = 303). */
+        { "W1 (DFA)",              "[a-z]+",     PCREC_ENC_BYTE, 0, 0,
+          57, 0, 0, NULL },
         /* W2 forces --engine=vm: [a-z]{2,10} is capture-free and AUTO
          * selection routes it to the DFA by default (measured -- see
          * docs/dev/lanes/waveu_report.md), which never reaches
          * vm_cursor_rep/scr_test at all. Forcing the engine is what
          * makes this witness actually exercise F1's own reaching
          * sequence rather than a different one. */
-        { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM },
-        { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0 },
+        { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM,
+          11, 0, 0, NULL },
+        { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0,
+          303, 0, 0, NULL },
         /* [K60MEAS] W4 — THE SIZE-TERM LADDER, added because K60 names the
          * ladder's blanket "this K is out" catch as a mechanism and NONE of
          * W1-W3 enters the ladder at all (W1/W3 are DFA-engine artifacts,
@@ -394,9 +451,19 @@ int main(int argc, char **argv)
          * probe (docs/dev/k60_measurement.md §3) rather than constructed:
          * this is a real corpus pattern, and it runs SEVEN internal attempts
          * (the default, all five ladder rungs, and the final re-emission). */
+        /* [D105] W4 is the LADDER class and is NOT this witness set's
+         * green cell today: K60's remaining 108 absorptions are the
+         * `[ART-SIZE]` ladder's blanket catch discarding a genuine
+         * `ctx_nomem`-routed OOM as "this K is out", which Frank ruled
+         * fixed by carrying the OOM in the `longjmp` VALUE — a separate
+         * change in `src/core/compile.c`, not here. Pinned at its measured
+         * 108 so a DRIFT is distinguishable from the standing defect; it
+         * stays a FAIL either way, and the fix re-pins it to zero. */
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
-          PCREC_ENC_BYTE, 0, 0 },
+          PCREC_ENC_BYTE, 0, 0,
+          158, 108, 0,
+          "K60's ladder class (docs/dev/known_issues.md K60; ruled FIXED via the longjmp value, landed separately)" },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
