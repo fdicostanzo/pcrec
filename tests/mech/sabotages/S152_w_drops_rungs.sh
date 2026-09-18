@@ -50,18 +50,25 @@ SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="W drops the three RUNG families (SPAN_LOW, REVDET, COUNTER), so a callee containing a quantifier called at two depths shares its rung state across activations -- counterk_design's own reason for making the counter TRAILED, with a second index"
 SAB_DOC_FIGURE="ARGUED, not measured (design 5.3b). counterk_design.md's OWN reason for making the counter a TRAILED slot rather than a local -- \"a body-internal frame from iteration 1 resumes reading a stale local\" -- is this argument with a second index. The detector is a callee containing an {n,m} loop called at two depths; WHICH RUNG that body gets is a compile-time choice this row cannot fix, so the cell is written against the LANDED rung selection and quantified.rxt is the population. || MEASURED UNDETECTED: corpus 0fail/346pass, recdiff 0fail/7pass, after the wave added TWO cells that allocate the family -- ^(?:(?<g>a{1,3}b(?&g)?)){0}(?&g)\\$ (legend: RX_SLOT_SPAN_LOW0, no guard) and the EMPTY_GUARD cell above, both re-entered at two depths. ARGUED and still argued; counterk_design.md's own reason for making the counter TRAILED rather than a local is this argument with a second index, and it remains reasoning rather than a cell. Same disposition as S151."
+#
+# RE-AIMED 2026-09-18 (lane w2a, [REVW.2] wave 2 step P3). This text used to
+# sit inside `pcrec_emit_vm`; EP2's P3 lifted the whole `W` save-set build into
+# `vm_build_region_saves`, so it is dedented by four and the interleaved
+# counting pass's snapshots arrive as PARAMETERS (`snap_before`/`snap_after`
+# -> `before`/`after`) instead of as locals. The plant and its intent are
+# UNCHANGED; the row was re-driven solo after the re-aim rather than assumed.
 SAB_COUNT=1
-SAB_BEFORE='            vm_w_range(base[i], nstate,
-                       vm_slot_low(&v, snap_before[i].low),
-                       vm_slot_low(&v, snap_after[i].low));'
-SAB_AFTER='            /* SABOTAGE S152: the SPAN_LOW family leaves W (and so do
-             * REVDET and COUNTER, at the second site) */'
+SAB_BEFORE='        vm_w_range(base[i], nstate,
+                   vm_slot_low(v, before[i].low),
+                   vm_slot_low(v, after[i].low));'
+SAB_AFTER='        /* SABOTAGE S152: the SPAN_LOW family leaves W (and so do
+         * REVDET and COUNTER, at the second site) */'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='            vm_w_range(base[i], nstate,
-                       vm_slot_rev(&v, snap_before[i].rev, 0),
-                       vm_slot_rev(&v, snap_after[i].rev, 0));
-            vm_w_range(base[i], nstate,
-                       vm_slot_ctr(&v, snap_before[i].ctr),
-                       vm_slot_ctr(&v, snap_after[i].ctr));'
-SAB_AFTER2='            /* SABOTAGE S152 (second site): REVDET and COUNTER too */'
+SAB_BEFORE2='        vm_w_range(base[i], nstate,
+                   vm_slot_rev(v, before[i].rev, 0),
+                   vm_slot_rev(v, after[i].rev, 0));
+        vm_w_range(base[i], nstate,
+                   vm_slot_ctr(v, before[i].ctr),
+                   vm_slot_ctr(v, after[i].ctr));'
+SAB_AFTER2='        /* SABOTAGE S152 (second site): REVDET and COUNTER too */'

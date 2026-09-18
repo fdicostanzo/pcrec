@@ -50,8 +50,15 @@ SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion/slotfamilies.rxt"
 SAB_DESC="W drops the SLOT_CUT_MARK<n> family, so a recursive activation overwrites the outer's mark and the outer's RX_CUT -- an ASSIGNMENT -- becomes a no-op: the atomic group stops being atomic, and the false-match set is exactly the non-atomic control's language"
 SAB_DOC_FIGURE="MEASURED (design 5.3b axis C): W as first written gives 4 agree / 6 DISAGREE -- ^((?>a(?1)?))a\$ FALSE-MATCHES \"aa\"..\"aaaaaaaa\", which 10.46 matches at no length. W plus the mark slot is 10/0. || MEASURED UNDETECTED at [DD-14] wave B+C's close: corpus 0fail/47pass, recdiff 0fail/7pass, WITH THE SABOTAGE VERIFIED APPLIED (the artifact for ^((?>a(?1)?))a\$ shows RX_SLOT_CUT_MARK1 gone from the call site's saves) and the answers unchanged -- nomatch at every length 2..8, which is correct. THE FINDING IS ABOUT THE LINKAGE, and it is a divergence from 5.3b's own measurement rather than from the compiler: that axis was measured on a PROTOTYPE with ONE emitted copy of the atomic group entered from both the lexical path and the call, while under CALL_LINKAGE the lexical occurrence and the region are SEPARATE code with SEPARATE mark slots (CUT_MARK0 and CUT_MARK1 in that artifact). The clobber therefore needs two ACTIVATIONS OF THE REGION and an outer cut whose truncation MATTERS -- and the outer cut then reads a LARGER depth, which discards FEWER frames rather than resurrecting a match on these subjects. THE SHIPPED BEHAVIOUR IS UNCHANGED AND CORRECT (the family IS in W); what is owed is a witness that makes the under-cut observable, and until one exists this row certifies less than its text claims."
+#
+# RE-AIMED 2026-09-18 (lane w2a, [REVW.2] wave 2 step P3). This text used to
+# sit inside `pcrec_emit_vm`; EP2's P3 lifted the whole `W` save-set build into
+# `vm_build_region_saves`, so it is dedented by four and the interleaved
+# counting pass's snapshots arrive as PARAMETERS (`snap_before`/`snap_after`
+# -> `before`/`after`) instead of as locals. The plant and its intent are
+# UNCHANGED; the row was re-driven solo after the re-aim rather than assumed.
 SAB_COUNT=1
-SAB_BEFORE='            vm_w_range(base[i], nstate,
-                       vm_slot_mark(&v, snap_before[i].mark),
-                       vm_slot_mark(&v, snap_after[i].mark));'
-SAB_AFTER='            /* SABOTAGE S150: the CUT_MARK family leaves W */'
+SAB_BEFORE='        vm_w_range(base[i], nstate,
+                   vm_slot_mark(v, before[i].mark),
+                   vm_slot_mark(v, after[i].mark));'
+SAB_AFTER='        /* SABOTAGE S150: the CUT_MARK family leaves W */'

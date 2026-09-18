@@ -959,6 +959,38 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   does not arise: the VM has no per-byte dispatch at all, so its one indirect
   jump is on the cold path by construction.
 
+  **[REVW.2 wave 2, lane w2a, 2026-09-18] NINE FUNCTIONS THIS FILE DID NOT
+  HAVE, all byte-neutral.** `emitvm_second_pass.md` §5 steps 1-9. Four are
+  SHARED SPELLINGS of text that was written more than once, five are PASSES
+  lifted out of `pcrec_emit_vm` (2,387 lines → 2,071):
+
+  - `vm_slot_ref` — the slot as an emitted LVALUE, `slot_values[…]`;
+    `vm_slot_expr`'s sibling one bracket out, built ON it rather than
+    re-deriving `<PREFIX>_` + `vm_slot_name` a fifth time. Retired the four
+    hand-rolled copies in `vm_call`/`vm_splice` and their 8 buffers.
+  - `vm_emit_span_scan` — the bounded span scan, once for both of
+    `vm_cursor_rep`'s arms. The `clamp` parameter is the MRL AMOUNT, not a
+    finished bound: the greedy arm's `lim_` is declared INSIDE the block this
+    helper opens.
+  - `vm_bounds_text` — `{m,}` / `{m,n}`, one spelling for what four rung
+    emitters rendered in three.
+  - `vm_walk_caps` / `vm_walk_calls` — the two callee-body spine walkers that
+    were four. **They are TWO on purpose**: `A_CALL` is a STOP-LEAF for the
+    capture pair and an ACT-LEAF for the publishing pair, and the constness
+    differs with it. The traversal merged; the verdicts stayed callbacks.
+  - `vm_resolve_nonnull`, `vm_plan_regions`, `vm_build_region_saves`,
+    `vm_memo_region_costs`, `vm_plan_capacities` — the five non-emitting
+    passes, in that RUN ORDER, each header naming what it produces, what it
+    reads that is not a parameter, and the ordering invariant a caller must
+    not break. They stay HERE and not in `src/opt/` for the reason
+    `src/core/internal.h`'s `Ast.u.call.nonnullable` comment and
+    `src/opt/CLAUDE.md` already rule: the recurrence `vm_nullable` is
+    `static` to this file, and moving a pass out would mean exporting `Vm`.
+    `vm_build_region_saves` takes the per-region counter SNAPSHOTS as
+    parameters — they are produced by the counting pass INTERLEAVED between
+    `vm_plan_regions` and it, and are the only place a region's own per-copy
+    slot indices exist.
+
   **[M6.6.2 wave B+C] `vm_look` — THE LOOKAROUND, and it is `vm_atomic`'s
   shape with two lines added.** Wave A2 landed five inert `A_LOOK` arms, two
   of them deliberately incomplete, behind a LOUD `ctx_fail` in `vm_emit`;

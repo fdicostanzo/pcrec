@@ -769,6 +769,20 @@ static const char *vm_rolef(Vm *v, const char *fmt, ...)
     return q;
 }
 
+/* [EP2-E3] THE QUANTIFIER'S BOUND, `{m,}` or `{m,n}`, rendered once.
+ * Four rung emitters named this text and three of them spelled it into a
+ * private `char bounds[32]`, two with the unbounded arm first and one with
+ * the bounded arm first. Arena-owned, so no caller sizes a buffer.
+ *
+ * ROLE/LISTING TEXT ONLY: it reaches the .c artifact through `vm_lbl`'s
+ * `// %s` line comment and the `irsb` listing through `vm_render_listing`,
+ * which is why a change here has to be compared on BOTH byte streams. */
+static const char *vm_bounds_text(Vm *v, const Ast *a)
+{
+    if (a->u.rep.rmax < 0) return vm_rolef(v, "{%d,}", a->u.rep.rmin);
+    return vm_rolef(v, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+}
+
 static int vm_label(Vm *v) { return v->nlabel++; }
 
 static void vm_charge(Vm *v)
@@ -948,6 +962,25 @@ static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
         snprintf(buf, bufsz, "%s_%s", v->up, nm);
     else
         snprintf(buf, bufsz, "%d", slot);
+}
+
+/* [EP2-E1] The slot as an emitted LVALUE — `vm_slot_expr`'s sibling, one
+ * bracket out: `slot_values[<the expression above>]`. Every site that parks,
+ * delivers or restores a slot's VALUE wants this, and before this helper four
+ * of them re-derived `<PREFIX>_` + `vm_slot_name` by hand into a pair of
+ * caller-sized buffers — exactly the three-spellings-of-one-convention defect
+ * `vm_slot_expr`'s own header names.
+ *
+ * Returns ARENA-OWNED text (`vm_rolef`'s mechanism), so no caller sizes a
+ * buffer and the string outlives the call for as long as the compile does.
+ * Reads `v->up` and the slot layout; writes nothing but the arena. */
+static const char *vm_slot_ref(Vm *v, int slot)
+{
+    /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, never a hand-picked literal —
+     * `vm_slot_expr`'s content reaches prefix + "_" + a 47-byte slot name. */
+    char ex[PCREC_MAX_EMIT_NAME_LEN];
+    vm_slot_expr(v, slot, ex, sizeof ex);
+    return vm_rolef(v, "slot_values[%s]", ex);
 }
 
 static int vm_slot_ctr(Vm *v, int i)
@@ -4027,6 +4060,38 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     for (int j = 0; j < nbr; j++) vm_emit(v, bentry[j], br[j], next);
 }
 
+/* [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
+ * arms (the possessive one and the greedy one, 140 lines apart, which wrote
+ * the same eight lines with no agreement check between them).
+ *
+ * Produces the `{ … }` block that walks `<prefix>_span_cursor` forward in
+ * `stride` steps for as long as `test` holds. `clamp` is the MRL amount when
+ * the bound is the FOLDED window — the block then declares `lim_` itself and
+ * bounds on it — or NULL for the unclamped `subject_length` form. The
+ * declaration cannot be left to the caller: this helper opens the brace, and
+ * `lim_` lives inside it.
+ *
+ * Reads `a->u.rep.rmax` (the `it_` counter is emitted only for a bounded
+ * quantifier) and `v->p`/`v->up`; writes only `v->b`.
+ */
+static void vm_emit_span_scan(Vm *v, const Ast *a, int stride,
+                              const char *test, const char *clamp)
+{
+    StrBuf *b = v->b;
+    sb_puts(b, "    {\n");
+    if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
+    if (clamp)
+        sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
+                  v->up, clamp, stride);
+    sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
+    sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
+              clamp ? "lim_" : "subject_length");
+    if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
+    sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
+    if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
+    sb_puts(b, " }\n    }\n");
+}
+
 /* §2.5's cursor rung, with D44.1's capture extension.
  *
  * GREEDY: consume greedily to the furthest position, then push exactly ONE
@@ -4121,9 +4186,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     }
     const char *test = t->p ? t->p : "";
 
-    char bounds[32];
-    if (a->u.rep.rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->u.rep.rmin);
-    else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+    const char *bounds = vm_bounds_text(v, a);
     /* The PREFERENCE disappears when the quantifier is possessified, and that
      * is the analysis's conclusion rather than a shortcut. On the exact-count
      * arm there is one exit, so top and bottom of §2.3's chain are the same
@@ -4167,14 +4230,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * rmin, publish the groups, take the continuation. Nothing here can
          * be resumed, which is the whole point — the emitted C contains no
          * label the loop could come back to. */
-        sb_puts(b, "    {\n");
-        if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
-        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-        sb_printf(b, "        while (%s_span_cursor + %d <= subject_length", v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
-        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
-        sb_puts(b, " }\n    }\n");
+        vm_emit_span_scan(v, a, stride, test, NULL);
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
          * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
          * rmin test. The scan has completed, `pos` is still the loop's entry
@@ -4308,18 +4364,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
-        sb_puts(b, "    {\n");
-        if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
-        if (fold)
-            sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
-                      v->up, vm_mrl_amt(v, mrl), stride);
-        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-        sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
-                  fold ? "lim_" : "subject_length");
-        if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
-        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
-        sb_puts(b, " }\n    }\n");
+        vm_emit_span_scan(v, a, stride, test,
+                          fold ? vm_mrl_amt(v, mrl) : NULL);
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,
                   "MRL: the clamp IS the scan's own bound, so the doomed suffix "
@@ -4896,9 +4942,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
     snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
 
-    char bounds[32];
-    if (a->u.rep.rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->u.rep.rmin);
-    else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+    const char *bounds = vm_bounds_text(v, a);
     const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
                                    " -- ONE body copy, no replication",
                                 bounds, greedy ? "greedy" : "lazy",
@@ -5539,14 +5583,17 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     int cur;
 
     const char *role;
+    /* `unbounded` IS `vm_bounds_text`'s own predicate (`rmax < 0`), so the
+     * bound text is that helper's and only the two tails differ here. */
     if (unbounded)
-        role = vm_rolef(v, "counter rung, {%d,}, K=%d, %s "
+        role = vm_rolef(v, "counter rung, %s, K=%d, %s "
                            "(mandatory counted, tail on the frames star)",
-                        a->u.rep.rmin, K, a->u.rep.greedy ? "greedy" : "lazy");
+                        vm_bounds_text(v, a), K,
+                        a->u.rep.greedy ? "greedy" : "lazy");
     else
-        role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
+        role = vm_rolef(v, "counter rung, %s, K=%d, %s "
                            "(mandatory %s, optional %s)",
-                        a->u.rep.rmin, a->u.rep.rmax, K,
+                        vm_bounds_text(v, a), K,
                         a->u.rep.greedy ? "greedy" : "lazy",
                         m >= K ? "counted" : "replicated",
                         nopt == 0 ? "none"
@@ -5803,10 +5850,8 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
     const long long bw = pcrec_minw(a->l);
 
     {
-        char fbounds[32];
         bool bounded = a->u.rep.rmax >= 0;
-        if (bounded) snprintf(fbounds, sizeof fbounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
-        else         snprintf(fbounds, sizeof fbounds, "{%d,}", a->u.rep.rmin);
+        const char *fbounds = vm_bounds_text(v, a);
         const char *frole = vm_rolef(v, "frames rung, %s %s, %s%s",
                                      bounded ? "bounded" : "unbounded", fbounds,
                                      a->u.rep.greedy ? "greedy" : "lazy",
@@ -6653,17 +6698,27 @@ static VmSnap vm_snap(const Vm *v)
     return s;
 }
 
-/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
- * exists. `vm_w_caps` below answers the same question in SLOT indices, which
- * need every family total the counting pass produces; a SPLICE has to know the
- * SIZE of its save block before that pass runs, and the size is a function of
- * the GROUP SET alone (two slots per group, plus one where the group is
- * marked). Same walk, same stopping rule, one level earlier.
+/* [EP2-E0] THE CALLEE-BODY CAPTURE WALK, written ONCE.
  *
- * STOPS AT `A_CALL` for design §4.4's reason; what a nested call writes
- * arrives through the transitive union over the graph, which terminates by
- * construction where following `.body` here would not. */
-static void vm_grp_set(Vm *v, const Ast *a, bool *g)
+ * `vm_grp_set` and `vm_w_caps` were the same 28-line spine walker with one
+ * arm's worth of difference, and the ONE rule that must not be got wrong —
+ * **STOP AT `A_CALL`** — was spelled twice. `src/opt/callgraph.c`'s header
+ * records that following `.body` from a bare walker "hangs the COMPILER" on
+ * `(a(?1))`; what a nested call writes arrives instead through the
+ * transitive union over the GRAPH, which terminates by construction. That
+ * rule now has one home.
+ *
+ * THE TRAVERSAL MERGES, THE VERDICTS DO NOT (lens 1's X1 framing, and
+ * `src/opt/atomic.c`'s warning against over-cutting). The two callers answer
+ * in different index spaces — GROUP numbers before the slot layout exists,
+ * SLOT indices after — which is exactly why they are two callbacks and not
+ * one: a SPLICE has to know the SIZE of its save block before the counting
+ * pass runs, and that size is a function of the GROUP SET alone.
+ *
+ * Spines are walked ITERATIVELY (D10/DD-10/K20) and recursion is only into
+ * items hanging off them. */
+static void vm_walk_caps(Vm *v, const Ast *a,
+                         void (*on_cap)(Vm *, int g, void *), void *u)
 {
     for (;;) {
         switch (a->k) {
@@ -6671,19 +6726,17 @@ static void vm_grp_set(Vm *v, const Ast *a, bool *g)
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
             return;
-        case A_CAP: {
-            int n = a->u.cap.no;
-            if (n > 0 && n <= v->ngroups) g[n] = true;
+        case A_CAP:
+            on_cap(v, a->u.cap.no, u);
             a = a->l;
             continue;
-        }
         case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
             const Ast *t = a;
-            for (; t->k == k; t = t->l) vm_grp_set(v, t->r, g);
+            for (; t->k == k; t = t->l) vm_walk_caps(v, t->r, on_cap, u);
             a = t;
             continue;
         }
@@ -6692,38 +6745,69 @@ static void vm_grp_set(Vm *v, const Ast *a, bool *g)
     }
 }
 
-/* The region's CAPTURE half: every group whose `A_CAP` lies inside it. Walked
- * ITERATIVELY on `A_CAT`/`A_ALT` spines (D10/DD-10/K20) and STOPPING AT AN
- * `A_CALL` — following `.body` would be design §4.4's non-terminating walk,
- * and it is unnecessary: what a NESTED call writes arrives through the
- * transitive union below, over the graph, which terminates by construction. */
-static void vm_w_caps(Vm *v, const Ast *a, bool *w, int nstate)
+/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
+ * exists. `vm_w_cap_slots` below answers the same question in SLOT indices,
+ * which need every family total the counting pass produces; a SPLICE has to
+ * know the SIZE of its save block before that pass runs, and the size is a
+ * function of the GROUP SET alone (two slots per group, plus one where the
+ * group is marked). Same walk, same stopping rule, one level earlier. */
+static void vm_grp_set_cap(Vm *v, int n, void *u)
+{
+    bool *g = u;
+    if (n > 0 && n <= v->ngroups) g[n] = true;
+}
+
+/* The region's CAPTURE half, in SLOT indices: every group whose `A_CAP` lies
+ * inside the region contributes its pair, and a MARKED group its pending slot
+ * too. `nstate` travels in the closure because the walker's callback takes one
+ * user pointer, and both it and the set are needed on every visit. */
+typedef struct { bool *w; int nstate; } VmWCaps;
+
+static void vm_w_cap_slots(Vm *v, int g, void *u)
+{
+    VmWCaps *c = u;
+    if (g > 0 && g <= v->ngroups) {
+        if (2 * g + 1 < c->nstate) { c->w[2 * g] = true; c->w[2 * g + 1] = true; }
+        if (vm_marked(v, g)) {
+            int ps = vm_slot_pend(v, g);
+            if (ps >= 0 && ps < c->nstate) c->w[ps] = true;
+        }
+    }
+}
+
+/* [EP2-E0] THE `A_CALL`-PUBLISHING WALK, written ONCE — and a SEPARATE walker
+ * from `vm_walk_caps` on purpose, because the `A_CALL` edge policy is the
+ * opposite one and the constness differs with it.
+ *
+ * `vm_walk_caps` treats `A_CALL` as a STOP-LEAF (the callee's contents arrive
+ * through the graph). This walker treats it as an ACT-LEAF: the node itself is
+ * the destination, the callback writes it, and the walk still does not follow
+ * `.body` — the AST's one back edge, and `src/opt/callgraph.c`'s header
+ * records that following it hangs the compiler on `(a(?1))`. Both walkers get
+ * the rule right and they get it right DIFFERENTLY; merging them would make
+ * one of the two answers silent.
+ *
+ * Takes `Ast *`, not `const Ast *`: these passes MUTATE the node. Spines are
+ * walked ITERATIVELY (D10/DD-10/K20). */
+static void vm_walk_calls(Vm *v, Ast *a,
+                          void (*on_call)(Vm *, Ast *call, void *), void *u)
 {
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF: case A_CALL:
+        case A_BREF:
             return;
-        case A_CAP: {
-            int g = a->u.cap.no;
-            if (g > 0 && g <= v->ngroups) {
-                if (2 * g + 1 < nstate) { w[2 * g] = true; w[2 * g + 1] = true; }
-                if (vm_marked(v, g)) {
-                    int ps = vm_slot_pend(v, g);
-                    if (ps >= 0 && ps < nstate) w[ps] = true;
-                }
-            }
-            a = a->l;
-            continue;
-        }
-        case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_CALL:
+            on_call(v, a, u);
+            return;
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
-            const Ast *t = a;
-            for (; t->k == k; t = t->l) vm_w_caps(v, t->r, w, nstate);
+            Ast *t = a;
+            for (; t->k == k; t = t->l) vm_walk_calls(v, t->r, on_call, u);
             a = t;
             continue;
         }
@@ -6736,73 +6820,506 @@ static void vm_w_caps(Vm *v, const Ast *a, bool *w, int nstate)
  * shape as `src/opt/callgraph.c`'s `minw` publisher and for the same reason:
  * the walkers that READ the answer are bare `const Ast *` descents with no
  * context, so the node is the only place both sides can meet. */
-static void vm_publish_nonnull(Vm *v, Ast *a, const bool *nn)
+static void vm_publish_nonnull(Vm *v, Ast *a, void *u)
 {
-    for (;;) {
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-            return;
-        case A_CALL: {
-            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
-            a->u.call.nonnullable = i >= 0 ? nn[i] : false;
-            return;
-        }
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            Ast *t = a;
-            for (; t->k == k; t = t->l) vm_publish_nonnull(v, t->r, nn);
-            a = t;
-            continue;
-        }
-        }
-        return;
-    }
+    const bool *nn = u;
+    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+    a->u.call.nonnullable = i >= 0 ? nn[i] : false;
 }
 
 /* Publish `W` onto every `A_CALL` node: `u.call.save`/`nsave`, read by
  * `vm_call`'s save emission, by `vm_region`'s restore emission and by
  * `vm_cost`'s `2 * |W|` trail charge. Three readers, one write. */
-static void vm_publish_saves(Vm *v, Ast *a)
+static void vm_publish_saves(Vm *v, Ast *a, void *u)
 {
-    for (;;) {
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-            return;
-        case A_CALL: {
-            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
-            if (i < 0)
-                ctx_fail(v->cx, 0, "internal error: subroutine call to group "
-                                   "%d is not in the call graph",
-                         a->u.call.target);
-            a->u.call.save  = v->rgn_w[i];
-            a->u.call.nsave = v->rgn_nw[i];
-            return;
-        }
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            Ast *t = a;
-            for (; t->k == k; t = t->l) vm_publish_saves(v, t->r);
-            a = t;
-            continue;
-        }
-        }
-        return;
+    (void)u;
+    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+    if (i < 0)
+        ctx_fail(v->cx, 0, "internal error: subroutine call to group "
+                           "%d is not in the call graph",
+                 a->u.call.target);
+    a->u.call.save  = v->rgn_w[i];
+    a->u.call.nsave = v->rgn_nw[i];
+}
+
+/* [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
+ * `pcrec_emit_vm` verbatim.
+ *
+ * PRODUCES: `a->u.call.nonnullable` on every `A_CALL` node under `root` —
+ * this pass MUTATES THE AST, and `vm_publish_nonnull` is the only writer.
+ * READS: `v->nregion` and `v->cg` (which must already be set), and the
+ * callgraph's per-target bodies.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs BEFORE every other walk.
+ * `vm_nullable`'s `A_CALL` arm reads the field this writes, and `vm_cost`,
+ * `vm_count_slots`, `vm_lifts` and the emitter all consult `vm_nullable`.
+ *
+ * Bottom `false`, iterated up (§2.6) — the opposite direction from `minw`'s,
+ * because nullability's least fixpoint over a cycle is "not nullable" and a
+ * round that finds a nullable path raises it. `nt` rounds suffice (each
+ * settles at least one more target) and the EXTRA round is ASSERTED to change
+ * nothing rather than assumed to: the `ctx_fail` below IS that assertion, and
+ * an extraction that returned early on the settle round instead would delete
+ * it silently.
+ *
+ * The home question is ruled, not open: `src/core/internal.h`'s
+ * `Ast.u.call.nonnullable` comment and `src/opt/callgraph.c`'s header put
+ * this fixpoint in the emitter because its recurrence `vm_nullable` is
+ * `static` here (EP2 §3.1 A1). This is a file-static helper, not a move. */
+static void vm_resolve_nonnull(Vm *v, Ast *root)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+    bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
+    for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
+    for (int round = 0; round <= nt; round++) {
+        bool changed = false;
+        vm_walk_calls(v, root, vm_publish_nonnull, nn);
+        for (int i = 0; i < nt; i++)
+            if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v->cg, i))) {
+                nn[i] = true;
+                changed = true;
+            }
+        if (!changed) break;
+        if (round == nt)
+            ctx_fail(cx, 0, "internal error: the subroutine nullability "
+                            "fixpoint did not settle in %d rounds", nt);
     }
+    vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
 static void vm_w_range(bool *w, int nstate, int lo, int hi)
 {
     for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
+}
+
+/* [EP2-P3] THE `W` SAVE-SET BUILD, lifted out of `pcrec_emit_vm`.
+ *
+ * PRODUCES: `v->rgn_w[i]` / `v->rgn_nw[i]` per target, and — through
+ * `vm_publish_saves` — `u.call.save`/`nsave` on every `A_CALL` node.
+ * READS: `v->cg`, `v->rgn_emit`, `v->rgn_grp`, `v->spl_nw` (all from
+ * `vm_plan_regions`), the layout width `nstate`, and the per-region counter
+ * SNAPSHOTS.
+ *
+ * THE SNAPSHOTS ARE PARAMETERS AND HAVE TO BE (EP2 §3.2's correction to lens
+ * 11's proposed signature): `before[i]`/`after[i]` are the counter ranges THIS
+ * region's own `vm_count_slots` pass consumed, produced by the counting pass
+ * INTERLEAVED between `vm_plan_regions` and this one. They are the only place
+ * a region's own per-copy slot indices exist, so a `(Vm *, Ast *, int nstate)`
+ * signature cannot express this pass — it would fail at compile time, not at
+ * design time.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: `vm_plan_regions` and the region
+ * counting pass both run first, and `vm_memo_region_costs` runs after —
+ * `vm_cost`'s call arm charges `2 * |W|` of trail and cannot do so before `W`
+ * exists.
+ *
+ * The three families of member are collected in three different ways and each
+ * way is forced by the layout: the CAPTURE slots by a walk (they are indexed
+ * by GROUP NUMBER and are shared with the lexical occurrence), the other seven
+ * families by the COUNTER RANGES above (they are per EMITTED COPY), and the
+ * callees' sets by the graph's TRANSITIVE relation.
+ *
+ * THE UNION IS TAKEN FROM THE UNMODIFIED SETS. `reaches` is already
+ * transitive, so `W(i) = base(i) | union of base(j) over reaches(i, j)` needs
+ * one pass — but only if the right-hand side reads the ORIGINAL sets. OR-ing
+ * in place would make the result depend on iteration order, which is the shape
+ * of bug that shows up on one pattern in a corpus. */
+static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
+                                  const VmSnap *before, const VmSnap *after)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    for (int i = 0; i < nt; i++) {
+        base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
+        memset(base[i], 0, (size_t)nstate * sizeof **base);
+        VmWCaps wc = { base[i], nstate };
+        vm_walk_caps(v, pcrec_callgraph_body(v->cg, i),
+                     vm_w_cap_slots, &wc);
+        /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
+         * STOPS HERE. The seven per-copy families below are added from the
+         * REGION pass's counter ranges, and a spliced target had no region
+         * pass — its ranges are empty by construction. That is not merely
+         * an accounting consequence: `vm_splice`'s header derives that a
+         * splice's per-copy slots CANNOT need restoring, because two
+         * activations of one emitted splice site cannot nest, and §5.3b's
+         * two measured counterexamples (the lost match, the six false
+         * matches) are both about nested activations of ONE SHARED COPY. */
+        if (!v->rgn_emit[i]) continue;
+        vm_w_range(base[i], nstate,
+                   vm_slot_guard(v, before[i].guard),
+                   vm_slot_guard(v, after[i].guard));
+        vm_w_range(base[i], nstate,
+                   vm_slot_low(v, before[i].low),
+                   vm_slot_low(v, after[i].low));
+        vm_w_range(base[i], nstate,
+                   vm_slot_mark(v, before[i].mark),
+                   vm_slot_mark(v, after[i].mark));
+        vm_w_range(base[i], nstate,
+                   vm_slot_rev(v, before[i].rev, 0),
+                   vm_slot_rev(v, after[i].rev, 0));
+        vm_w_range(base[i], nstate,
+                   vm_slot_ctr(v, before[i].ctr),
+                   vm_slot_ctr(v, after[i].ctr));
+        vm_w_range(base[i], nstate,
+                   vm_slot_lookmark(v, before[i].lookmark),
+                   vm_slot_lookmark(v, after[i].lookmark));
+        vm_w_range(base[i], nstate,
+                   vm_slot_lookpos(v, before[i].lookpos),
+                   vm_slot_lookpos(v, after[i].lookpos));
+    }
+    for (int i = 0; i < nt; i++) {
+        bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+        if (!v->rgn_emit[i]) {
+            /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
+             * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
+             * SETS, and the two are NOT the same thing the moment a
+             * spliceable target REACHES A LINKED ONE.
+             *
+             * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
+             * capture half for a spliced `i` (the `continue` above), but
+             * `base[j]` for a reached LINKED `j` still carries that
+             * region's seven per-copy family RANGES — so the union handed
+             * `vm_splice` more slots than `spl_nw` reserved and the block
+             * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
+             * non-recursive helper calling a recursive rule, which is this
+             * module's own target shape — refused with "the splice save
+             * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
+             * compiled it. FOUR such patterns were found and NONE of the
+             * wave's bars could see them: over 3,025 corpus patterns, 113
+             * artifacts have a SPLICED call and 37 have a LINKED one and
+             * **ZERO have both**, so `A == B`, the sabotage matrix and the
+             * specimen were structurally blind to the interaction.
+             *
+             * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
+             * NUMBER IS SMALLER. A spliced site must restore what its
+             * inlined body writes that is SHARED with the caller and that
+             * NOTHING ELSE restores. A reached LINKED target's per-copy
+             * slots are not that: the call to it is an `RX_CALL` into its
+             * shared region, and **that region's own `RX_RETURN` restores
+             * every slot in ITS `W`** before control comes back — so by the
+             * time the spliced body ends they are already back, and
+             * restoring them again would write a value that is already
+             * there. What is genuinely shared is the CAPTURE PAIRS and the
+             * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
+             * NUMBER and are therefore the same cells the caller's own
+             * lexical occurrence writes. That is the capture half, and it
+             * is exactly what `spl_nw` counts.
+             *
+             * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
+             * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
+             * header makes the same point about slot indices): `rgn_grp[i]`
+             * — the transitive group set — is computed ONCE, before the
+             * layout exists. `spl_nw[i]` is its COUNT, which is all the
+             * pre-pass can use because slot INDICES do not exist yet;
+             * `rgn_w[i]` here is its INDICES. The assertion below is what
+             * makes "one mechanism" checkable rather than claimed. */
+            memset(w, 0, (size_t)nstate * sizeof *w);
+        /* `wg`, not `g`: this loop lived in `pcrec_emit_vm`, where
+         * `GenNames g` was in scope and `-Wshadow` under `make strict`
+         * caught the collision. The name is kept on the move (EP2-P3) so
+         * the text is byte-identical to what came out of there. */
+            for (int wg = 1; wg <= v->ngroups; wg++) {
+                if (!v->rgn_grp[i][wg]) continue;
+                if (2 * wg + 1 < nstate) {
+                    w[2 * wg] = true; w[2 * wg + 1] = true;
+                }
+                if (vm_marked(v, wg)) {
+                    int ps = vm_slot_pend(v, wg);
+                    if (ps >= 0 && ps < nstate) w[ps] = true;
+                }
+            }
+        } else {
+        memcpy(w, base[i], (size_t)nstate * sizeof *w);
+        for (int j = 0; j < nt; j++) {
+            if (j == i || !pcrec_callgraph_reaches(v->cg, i, j)) continue;
+            for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
+        }
+        }
+        /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
+         * Nothing above can put them there — the capture walk starts at
+         * group 1 and no family's base reaches below `2*(ngroups+1)` — so
+         * this is an ASSERTION written as a filter, and the filter is what
+         * makes it one line rather than a paragraph nobody checks. */
+        int n = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) n++;
+        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int q = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
+        v->rgn_w[i]  = lst;
+        v->rgn_nw[i] = n;
+        /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
+         * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
+         * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
+         * `spl_nw[i]` did it in the pre-pass, this does it again over the
+         * layout. So it catches a set that MOVED between the two readings
+         * — a group added to the transitive closure, a `pend_of` entry that
+         * appeared — and it CANNOT catch a set that is WRONG, because a
+         * wrong set is wrong identically on both sides.
+         *
+         * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
+         * this assertion belongs to is that there is ONE set instead of
+         * two, and what makes the set itself right is argued at
+         * `vm_splice`'s header (a splice restores only what is SHARED with
+         * the caller; a reached LINKED target's per-copy slots are restored
+         * by that region's own `RX_RETURN`) and MEASURED by
+         * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
+         * independent oracle, which is where evidence about correctness
+         * comes from. This line's job is narrower and worth having anyway:
+         * before it, a disagreement announced itself as a save-block
+         * overflow at emission, three passes later, with nothing pointing
+         * at the cause. */
+        if (!v->rgn_emit[i] && v->spl_nw && n != v->spl_nw[i])
+            ctx_fail(cx, 0, "internal error: the spliced callee for group "
+                            "%d reserved %d save slots and needs %d — the "
+                            "pre-pass and the W build disagree about its "
+                            "transitive group set",
+                     pcrec_callgraph_target(v->cg, i), v->spl_nw[i], n);
+    }
+    vm_walk_calls(v, root, vm_publish_saves, NULL);
+}
+
+/* [EP2-P4] THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
+ * has to walk a callee — which for a recursive one is design §4.4's
+ * non-terminating descent.
+ *
+ * PRODUCES: `v->rgn_cost[i]` for every target.
+ * READS: `v->cg`, `v->nregion`, and — through `vm_cost` — everything the
+ * layout and `vm_resolve_nonnull` have already settled.
+ * THE INVARIANT A CALLER MUST NOT BREAK: `vm_plan_regions` runs first (this
+ * reads nothing of `rgn_grp` directly, but `vm_cost`'s call arm charges
+ * `2 * |W|` of trail, so `vm_build_region_saves` must have published `W`).
+ *
+ * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what makes the
+ * rest a finite DAG evaluation: a recursion's depth is data-dependent by
+ * nature, so P12's honest-ceiling machinery is reused rather than a number
+ * invented. Everything else is evaluated once its whole reachable set is
+ * settled, and `nt` rounds suffice because each round settles at least one
+ * more target. */
+static void vm_memo_region_costs(Vm *v)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+
+    for (int i = 0; i < nt; i++)
+        if (pcrec_callgraph_reaches(v->cg, i, i)) {
+            Cost u = { 0, 0, 0, 0, true, true };
+            v->rgn_cost[i] = u;
+        }
+    bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
+    for (int i = 0; i < nt; i++)
+        done[i] = pcrec_callgraph_reaches(v->cg, i, i);
+    for (int round = 0; round <= nt; round++) {
+        bool changed = false, all = true;
+        for (int i = 0; i < nt; i++) {
+            if (done[i]) continue;
+            bool ready = true;
+            for (int j = 0; j < nt; j++)
+                if (j != i && pcrec_callgraph_reaches(v->cg, i, j)
+                           && !done[j]) ready = false;
+            if (!ready) { all = false; continue; }
+            v->rgn_cost[i] = vm_cost(v, pcrec_callgraph_body(v->cg, i), false);
+            done[i] = true;
+            changed = true;
+        }
+        if (all) break;
+        if (!changed)
+            ctx_fail(cx, 0, "internal error: the subroutine cost "
+                            "memo did not settle");
+    }
+}
+
+static long long vm_ceiling(long long cap, long long per)
+{
+    if (per <= 0) return 0;
+    return cap / per;
+}
+
+/* What the capacity policy decides, in one value — §2.5's two capacities, the
+ * honest ceiling that goes in the stamp, and D49's two budgets.
+ *
+ * `Cost` and the `fits` predicate are NOT here: they are intermediates the
+ * policy consumes on the way to these six and have no reader outside it.
+ * Returned rather than written through out-parameters, and NOT stored on
+ * `Vm`: only `has_budget` is needed DURING the walk (which is why
+ * `vm_plan_capacities` sets that one field on `v` itself), and the rest
+ * belong to the emitting tail, so a `Vm` field would widen the struct for
+ * no reader. */
+typedef struct {
+    long long bt_frames, trail_frames, ceiling;
+    long long budget, work_budget;
+    bool      has_budget;
+} VmCaps;
+
+/* [EP2 sequence step 9 / lens 11's third proposal] THE CAPACITY AND BUDGET
+ * POLICY, lifted out of `pcrec_emit_vm`.
+ *
+ * PRODUCES: the `VmCaps` above, and the one field the WALK needs — it sets
+ * `v->has_budget` itself, because the WORK charge sites are emitted DURING
+ * `vm_emit` and cannot read a local of the caller.
+ * READS: `cx->opt`'s three knobs (`frame_capacity`, `step_budget`,
+ * `work_budget`) and `vm_cost`'s answer for the whole pattern.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs AFTER `vm_memo_region_costs`
+ * — `vm_cost` on the root descends into `A_CALL` and reads `rgn_cost`.
+ *
+ * EP2 §3.2 calls this a POLICY BLOCK rather than a fixpoint, and that is the
+ * right description: everything here is a decision about what the artifact
+ * will ENFORCE, taken once, from numbers the passes above settled. */
+static VmCaps vm_plan_capacities(Vm *v, const Ast *root)
+{
+    Ctx *cx = v->cx;
+    VmCaps c;
+    const Cost cost = vm_cost(v, root, false);
+    long long bt_frames, trail_frames, ceiling = 0;
+    bool fits;
+    if (cx->opt->frame_capacity > 0) {
+        bt_frames = cx->opt->frame_capacity;
+        trail_frames = cx->opt->frame_capacity;
+    } else if (cost.unbounded) {
+        bt_frames = VM_DEFAULT_RESUME_FRAMES;
+        trail_frames = VM_DEFAULT_TRAIL_FRAMES;
+    } else {
+        bt_frames = cost.frames + 1;
+        trail_frames = cost.trail + 1;
+        if (bt_frames > VM_MAX_AUTO_RESUME_FRAMES) bt_frames = VM_MAX_AUTO_RESUME_FRAMES;
+        if (trail_frames > VM_MAX_AUTO_TRAIL_FRAMES)
+            trail_frames = VM_MAX_AUTO_TRAIL_FRAMES;
+    }
+    if (bt_frames < 1) bt_frames = 1;
+    if (trail_frames < 1) trail_frames = 1;
+
+    /* THE STAMP IS ABOUT WHAT THE ARTIFACT ENFORCES, NOT WHAT IT WANTED.
+     * A ceiling is owed whenever the depth grows with the subject AND the
+     * exact requirement does not fit the arrays actually emitted — which
+     * covers the unbounded class (where no exact requirement exists) and the
+     * large-bounded one (where it exists and is too big) with one rule. A
+     * pattern whose requirement DOES fit has no limit to declare, and stamps
+     * 0 truthfully. Getting this wrong in the other direction is what a
+     * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
+     * frames, gets the VM_MAX_AUTO_RESUME_FRAMES clamp, and would otherwise have stamped "not applicable". */
+    fits = !cost.unbounded && cost.frames + 1 <= bt_frames
+                           && cost.trail + 1 <= trail_frames;
+    if (cost.growable && !fits) {
+        long long a = vm_ceiling(bt_frames, cost.pf);
+        long long b = vm_ceiling(trail_frames, cost.pt);
+        ceiling = (a && b) ? (a < b ? a : b) : (a ? a : b);
+    }
+
+    long long budget = cx->opt->step_budget;
+    if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
+    const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
+
+    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
+     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
+     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
+     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
+     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
+     * still increments `run->resume_depth` at run time (see its own
+     * comment), so a call-only program can push despite `npush == 0` and
+     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
+     * optional copy, no lookaround, no call — the frameless witness is
+     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
+     * never become nonzero: the fail label's pop-and-resume block below is
+     * unreachable in that program, has no address-of-label expression
+     * anywhere in the function, and is what clang refuses ("indirect goto in
+     * function with no address-of-label expressions") where gcc accepts it.
+     * `has_push` is the gate that omits it there instead of emitting dead
+     * dispatch code.
+     *
+     * [CC-CLANG fix, 2026-09-01] `has_push` is NO LONGER computed here from
+     * `v.npush`: the pre-pass's push count is an ESTIMATE whose original
+     * consumer is the resume-point cap (where an error is an accounting bug),
+     * and the counter rung's unbounded arm measured it NEGATIVE, which made
+     * the dispatch-omission gate a miscompile. The gate is now derived from
+     * the EMITTED PROGRAM TEXT at `pcrec_emit_vm`'s fail-label
+     * emission site — one
+     * derivation (the bytes) with the emitter itself as the only writer. */
+
+    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
+     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
+     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
+     * written. `--work-budget=N` is the independent VALUE knob, so the two are
+     * separately tunable while they exist; splitting the gate later is purely
+     * additive. */
+    long long work_budget = cx->opt->work_budget;
+    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
+        work_budget = VM_DEFAULT_WORK_BUDGET;
+    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
+
+    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
+     * are emitted DURING vm_emit (at each cut, at each frameless scan
+     * completion), unlike the fail label's step charge, which is written after
+     * the walk and can simply read the local. */
+    v->has_budget = has_budget;
+
+    c.bt_frames = bt_frames;
+    c.trail_frames = trail_frames;
+    c.ceiling = ceiling;
+    c.budget = budget;
+    c.work_budget = work_budget;
+    c.has_budget = has_budget;
+    return c;
+}
+
+/* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
+ * targets still need a shared region, and what each one's transitive GROUP
+ * set is.
+ *
+ * PRODUCES: `v->rgn_emit`, `v->has_linked_calls`, `v->rgn_grp`, `v->spl_nw`.
+ * READS: `v->cg`, `v->nregion`, `v->ngroups`, and `v->pend_of` through
+ * `vm_marked`.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs BEFORE a slot is counted.
+ * `vm_count_slots` needs `spl_nw` (a spliced site's save-block size) and the
+ * region pre-pass needs `rgn_emit`, so both decisions are made here rather
+ * than where they are consumed. `vm_build_region_saves` and
+ * `vm_memo_region_costs` read its outputs and therefore follow it.
+ *
+ * A target every one of whose sites splices needs NO region: no entry label,
+ * no exit label, no `RX_RETURN`, no second `goto *` and — the part that
+ * matters for the size claim — none of its slot instances. §6.3 makes the
+ * linkage a per-TARGET decision, so this is one flag per target and not a
+ * survey of sites.
+ *
+ * THE UNION IS TAKEN FROM THE UNMODIFIED SETS, for `W`'s own reason in
+ * `vm_build_region_saves`: `reaches` is already transitive, so one pass
+ * suffices — but only if the right-hand side reads the ORIGINAL sets. OR-ing
+ * in place would make the answer depend on iteration order. */
+static void vm_plan_regions(Vm *v)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+
+    v->rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_emit);
+    v->has_linked_calls = false;
+    for (int i = 0; i < nt; i++) {
+        v->rgn_emit[i] = !pcrec_callgraph_spliced(v->cg, i);
+        if (v->rgn_emit[i]) v->has_linked_calls = true;
+    }
+
+    const int ng = v->ngroups + 1;
+    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    for (int i = 0; i < nt; i++) {
+        base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
+        memset(base[i], 0, (size_t)ng * sizeof **base);
+        vm_walk_caps(v, pcrec_callgraph_body(v->cg, i), vm_grp_set_cap,
+                     base[i]);
+    }
+    bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
+    int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
+    for (int i = 0; i < nt; i++) {
+        grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
+        memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
+        for (int j = 0; j < nt; j++) {
+            if (j == i || !pcrec_callgraph_reaches(v->cg, i, j)) continue;
+            for (int q = 0; q < ng; q++) if (base[j][q]) grp[i][q] = true;
+        }
+        int n = 0;
+        for (int q = 1; q < ng; q++)
+            if (grp[i][q]) n += 2 + (vm_marked(v, q) ? 1 : 0);
+        snw[i] = n;
+    }
+    v->rgn_grp = grp;
+    v->spl_nw  = snw;
 }
 
 /* [DD-14 wave B+C] THE CALL SITE (design §5.1, §5.3).
@@ -6863,18 +7380,7 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
                    a->u.call.target));
     v->ncall++;
     for (int j = 0; j < a->u.call.nsave; j++) {
-        /* Sized from what it holds — `up` is at most 80 bytes and
-         * `vm_slot_name` writes at most 48 — for the reason `vm_slot_expr`
-         * states one function over: a silently TRUNCATED slot name is an
-         * artifact that names the wrong cell, and this file has already been
-         * bitten once by a too-small snprintf buffer. */
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
-        vm_set(v, a->u.call.save[j], val,
+        vm_set(v, a->u.call.save[j], vm_slot_ref(v, a->u.call.save[j]),
                "park this activation's value on the trail (a trailed SELF-write)");
     }
     vm_goto(v, v->rgn_lbl[idx]);
@@ -6992,13 +7498,7 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
                      ? "splice the WHOLE PATTERN inline (anchors included)"
                      : "splice a capture group's pattern inline");
     for (int j = 0; j < a->u.call.nsave; j++) {
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
-        vm_set(v, vm_slot_splice(v, base + j), val,
+        vm_set(v, vm_slot_splice(v, base + j), vm_slot_ref(v, a->u.call.save[j]),
                "park this site's caller value (a trailed write into this "
                "splice's own save slot)");
     }
@@ -7059,27 +7559,14 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
         const int from = a->u.call.deliver_from[j];
         const int to   = a->u.call.deliver_to[j];
         for (int half = 0; half < 2; half++) {
-            char val[160];
-            char nm[48];
-            const int fs = 2 * from + half;
-            if (vm_slot_name(v, fs, nm, sizeof nm))
-                snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-            else
-                snprintf(val, sizeof val, "slot_values[%d]", fs);
-            vm_set(v, 2 * to + half, val,
+            vm_set(v, 2 * to + half, vm_slot_ref(v, 2 * from + half),
                    "DELIVER: keep the callee's exported span in this site's "
                    "own slot (trailed, and BEFORE the restore below)");
         }
     }
 
     for (int j = 0; j < a->u.call.nsave; j++) {
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, vm_slot_splice(v, base + j), nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]",
-                     vm_slot_splice(v, base + j));
+        const char *val = vm_slot_ref(v, vm_slot_splice(v, base + j));
         /* ITSELF TRAILED, which is why backtracking INTO a completed splice
          * re-establishes the callee's own values — §3.2 MEASURED the call
          * BACKTRACKABLE on 10.46 and §3.1's per-level cells show that is the
@@ -8347,12 +8834,6 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 
 /* ---- the artifact -------------------------------------------------------*/
 
-static long long vm_ceiling(long long cap, long long per)
-{
-    if (per <= 0) return 0;
-    return cap / per;
-}
-
 /* [DD-14.FB] (D71 item 2, spec §10.4) THE RESUME FRAME AND TRAIL ENTRY, AS
  * ONE MEMBER LIST WITH TWO CONSUMERS.
  *
@@ -8863,34 +9344,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `A_CALL` arm reads `u.call.nonnullable`. The polarity makes running late
      * a PERFORMANCE fault rather than a correctness one (an unset field reads
      * "nullable", which emits a guard that is never wrong), but running it
-     * here makes the answer the real one.
-     *
-     * BOTTOM `false`, ITERATED UP (§2.6), which is the OPPOSITE direction from
-     * `minw`'s and for the opposite reason: nullability's least fixpoint over
-     * a cycle is "not nullable", and a round that finds a nullable path raises
-     * it. `n` rounds suffice — each settles at least one more target — and the
-     * extra round is asserted to change nothing rather than assumed to. */
+     * here makes the answer the real one. `vm_resolve_nonnull`'s own header
+     * carries the fixpoint's direction, its round bound and why the extra
+     * round is asserted rather than assumed. */
     v.cg = cx->callgraph;
     v.has_calls = v.cg != NULL;
     v.nregion = pcrec_callgraph_ntargets(v.cg);
     if (v.has_calls) {
         const int nt = v.nregion;
-        bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
-        for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
-        for (int round = 0; round <= nt; round++) {
-            bool changed = false;
-            vm_publish_nonnull(&v, root, nn);
-            for (int i = 0; i < nt; i++)
-                if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v.cg, i))) {
-                    nn[i] = true;
-                    changed = true;
-                }
-            if (!changed) break;
-            if (round == nt)
-                ctx_fail(cx, 0, "internal error: the subroutine nullability "
-                                "fixpoint did not settle in %d rounds", nt);
-        }
-        vm_publish_nonnull(&v, root, nn);
+        vm_resolve_nonnull(&v, root);
 
         v.rgn_lbl  = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_lbl);
         v.rgn_exit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_exit);
@@ -8899,53 +9361,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         v.rgn_cost = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
         for (int i = 0; i < nt; i++) { v.rgn_w[i] = NULL; v.rgn_nw[i] = 0; }
 
-        /* [DD-14 wave G] WHICH TARGETS STILL NEED A SHARED REGION, and how big
-         * a SPLICED site's save block is. Both are decided here, before a slot
-         * is counted, because `vm_count_slots` needs the second and the region
-         * pre-pass needs the first.
-         *
-         * A target every one of whose sites splices needs NO region: no entry
-         * label, no exit label, no `RX_RETURN`, no second `goto *` and — the
-         * part that matters for the size claim — none of its slot instances.
-         * §6.3 makes the linkage a per-TARGET decision, so this is one flag
-         * per target and not a survey of sites. */
-        v.rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_emit);
-        v.has_linked_calls = false;
-        for (int i = 0; i < nt; i++) {
-            v.rgn_emit[i] = !pcrec_callgraph_spliced(v.cg, i);
-            if (v.rgn_emit[i]) v.has_linked_calls = true;
-        }
-
-        /* THE TRANSITIVE GROUP SET PER TARGET, and the union is taken from the
-         * UNMODIFIED sets for `W`'s own reason one function down: `reaches` is
-         * already transitive, so one pass suffices — but only if the
-         * right-hand side reads the ORIGINAL sets. OR-ing in place would make
-         * the answer depend on iteration order. */
-        {
-            const int ng = v.ngroups + 1;
-            bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
-            for (int i = 0; i < nt; i++) {
-                base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
-                memset(base[i], 0, (size_t)ng * sizeof **base);
-                vm_grp_set(&v, pcrec_callgraph_body(v.cg, i), base[i]);
-            }
-            bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
-            int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
-            for (int i = 0; i < nt; i++) {
-                grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
-                memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
-                for (int j = 0; j < nt; j++) {
-                    if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
-                    for (int q = 0; q < ng; q++) if (base[j][q]) grp[i][q] = true;
-                }
-                int n = 0;
-                for (int q = 1; q < ng; q++)
-                    if (grp[i][q]) n += 2 + (vm_marked(&v, q) ? 1 : 0);
-                snw[i] = n;
-            }
-            v.rgn_grp = grp;
-            v.spl_nw  = snw;
-        }
+        vm_plan_regions(&v);
     }
 
     /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
@@ -9082,275 +9498,24 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sets. OR-ing in place would make the result depend on iteration order,
      * which is the shape of bug that shows up on one pattern in a corpus. */
     if (v.has_calls) {
-        const int nt = v.nregion;
-        bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
-        for (int i = 0; i < nt; i++) {
-            base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
-            memset(base[i], 0, (size_t)nstate * sizeof **base);
-            vm_w_caps(&v, pcrec_callgraph_body(v.cg, i), base[i], nstate);
-            /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
-             * STOPS HERE. The seven per-copy families below are added from the
-             * REGION pass's counter ranges, and a spliced target had no region
-             * pass — its ranges are empty by construction. That is not merely
-             * an accounting consequence: `vm_splice`'s header derives that a
-             * splice's per-copy slots CANNOT need restoring, because two
-             * activations of one emitted splice site cannot nest, and §5.3b's
-             * two measured counterexamples (the lost match, the six false
-             * matches) are both about nested activations of ONE SHARED COPY. */
-            if (!v.rgn_emit[i]) continue;
-            vm_w_range(base[i], nstate,
-                       vm_slot_guard(&v, snap_before[i].guard),
-                       vm_slot_guard(&v, snap_after[i].guard));
-            vm_w_range(base[i], nstate,
-                       vm_slot_low(&v, snap_before[i].low),
-                       vm_slot_low(&v, snap_after[i].low));
-            vm_w_range(base[i], nstate,
-                       vm_slot_mark(&v, snap_before[i].mark),
-                       vm_slot_mark(&v, snap_after[i].mark));
-            vm_w_range(base[i], nstate,
-                       vm_slot_rev(&v, snap_before[i].rev, 0),
-                       vm_slot_rev(&v, snap_after[i].rev, 0));
-            vm_w_range(base[i], nstate,
-                       vm_slot_ctr(&v, snap_before[i].ctr),
-                       vm_slot_ctr(&v, snap_after[i].ctr));
-            vm_w_range(base[i], nstate,
-                       vm_slot_lookmark(&v, snap_before[i].lookmark),
-                       vm_slot_lookmark(&v, snap_after[i].lookmark));
-            vm_w_range(base[i], nstate,
-                       vm_slot_lookpos(&v, snap_before[i].lookpos),
-                       vm_slot_lookpos(&v, snap_after[i].lookpos));
-        }
-        for (int i = 0; i < nt; i++) {
-            bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
-            if (!v.rgn_emit[i]) {
-                /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
-                 * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
-                 * SETS, and the two are NOT the same thing the moment a
-                 * spliceable target REACHES A LINKED ONE.
-                 *
-                 * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
-                 * capture half for a spliced `i` (the `continue` above), but
-                 * `base[j]` for a reached LINKED `j` still carries that
-                 * region's seven per-copy family RANGES — so the union handed
-                 * `vm_splice` more slots than `spl_nw` reserved and the block
-                 * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
-                 * non-recursive helper calling a recursive rule, which is this
-                 * module's own target shape — refused with "the splice save
-                 * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
-                 * compiled it. FOUR such patterns were found and NONE of the
-                 * wave's bars could see them: over 3,025 corpus patterns, 113
-                 * artifacts have a SPLICED call and 37 have a LINKED one and
-                 * **ZERO have both**, so `A == B`, the sabotage matrix and the
-                 * specimen were structurally blind to the interaction.
-                 *
-                 * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
-                 * NUMBER IS SMALLER. A spliced site must restore what its
-                 * inlined body writes that is SHARED with the caller and that
-                 * NOTHING ELSE restores. A reached LINKED target's per-copy
-                 * slots are not that: the call to it is an `RX_CALL` into its
-                 * shared region, and **that region's own `RX_RETURN` restores
-                 * every slot in ITS `W`** before control comes back — so by the
-                 * time the spliced body ends they are already back, and
-                 * restoring them again would write a value that is already
-                 * there. What is genuinely shared is the CAPTURE PAIRS and the
-                 * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
-                 * NUMBER and are therefore the same cells the caller's own
-                 * lexical occurrence writes. That is the capture half, and it
-                 * is exactly what `spl_nw` counts.
-                 *
-                 * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
-                 * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
-                 * header makes the same point about slot indices): `rgn_grp[i]`
-                 * — the transitive group set — is computed ONCE, before the
-                 * layout exists. `spl_nw[i]` is its COUNT, which is all the
-                 * pre-pass can use because slot INDICES do not exist yet;
-                 * `rgn_w[i]` here is its INDICES. The assertion below is what
-                 * makes "one mechanism" checkable rather than claimed. */
-                memset(w, 0, (size_t)nstate * sizeof *w);
-                /* `wg`, not `g`: `GenNames g` is in scope here and
-                 * `-Wshadow` is `make strict`'s, which caught it. */
-                for (int wg = 1; wg <= v.ngroups; wg++) {
-                    if (!v.rgn_grp[i][wg]) continue;
-                    if (2 * wg + 1 < nstate) {
-                        w[2 * wg] = true; w[2 * wg + 1] = true;
-                    }
-                    if (vm_marked(&v, wg)) {
-                        int ps = vm_slot_pend(&v, wg);
-                        if (ps >= 0 && ps < nstate) w[ps] = true;
-                    }
-                }
-            } else {
-            memcpy(w, base[i], (size_t)nstate * sizeof *w);
-            for (int j = 0; j < nt; j++) {
-                if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
-                for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
-            }
-            }
-            /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
-             * Nothing above can put them there — the capture walk starts at
-             * group 1 and no family's base reaches below `2*(ngroups+1)` — so
-             * this is an ASSERTION written as a filter, and the filter is what
-             * makes it one line rather than a paragraph nobody checks. */
-            int n = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) n++;
-            int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
-            int q = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
-            v.rgn_w[i]  = lst;
-            v.rgn_nw[i] = n;
-            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
-             * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
-             * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
-             * `spl_nw[i]` did it in the pre-pass, this does it again over the
-             * layout. So it catches a set that MOVED between the two readings
-             * — a group added to the transitive closure, a `pend_of` entry that
-             * appeared — and it CANNOT catch a set that is WRONG, because a
-             * wrong set is wrong identically on both sides.
-             *
-             * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
-             * this assertion belongs to is that there is ONE set instead of
-             * two, and what makes the set itself right is argued at
-             * `vm_splice`'s header (a splice restores only what is SHARED with
-             * the caller; a reached LINKED target's per-copy slots are restored
-             * by that region's own `RX_RETURN`) and MEASURED by
-             * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
-             * independent oracle, which is where evidence about correctness
-             * comes from. This line's job is narrower and worth having anyway:
-             * before it, a disagreement announced itself as a save-block
-             * overflow at emission, three passes later, with nothing pointing
-             * at the cause. */
-            if (!v.rgn_emit[i] && v.spl_nw && n != v.spl_nw[i])
-                ctx_fail(cx, 0, "internal error: the spliced callee for group "
-                                "%d reserved %d save slots and needs %d — the "
-                                "pre-pass and the W build disagree about its "
-                                "transitive group set",
-                         pcrec_callgraph_target(v.cg, i), v.spl_nw[i], n);
-        }
-        vm_publish_saves(&v, root);
-
-        /* THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
-         * has to walk a callee — which for a recursive one is design §4.4's
-         * non-terminating descent.
-         *
-         * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what
-         * makes the rest a finite DAG evaluation: a recursion's depth is
-         * data-dependent by nature, so P12's honest-ceiling machinery is
-         * reused rather than a number invented. Everything else is evaluated
-         * once its whole reachable set is settled, and `nt` rounds suffice
-         * because each round settles at least one more target. */
-        for (int i = 0; i < nt; i++)
-            if (pcrec_callgraph_reaches(v.cg, i, i)) {
-                Cost u = { 0, 0, 0, 0, true, true };
-                v.rgn_cost[i] = u;
-            }
-        {
-            bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
-            for (int i = 0; i < nt; i++)
-                done[i] = pcrec_callgraph_reaches(v.cg, i, i);
-            for (int round = 0; round <= nt; round++) {
-                bool changed = false, all = true;
-                for (int i = 0; i < nt; i++) {
-                    if (done[i]) continue;
-                    bool ready = true;
-                    for (int j = 0; j < nt; j++)
-                        if (j != i && pcrec_callgraph_reaches(v.cg, i, j)
-                                   && !done[j]) ready = false;
-                    if (!ready) { all = false; continue; }
-                    v.rgn_cost[i] =
-                        vm_cost(&v, pcrec_callgraph_body(v.cg, i), false);
-                    done[i] = true;
-                    changed = true;
-                }
-                if (all) break;
-                if (!changed)
-                    ctx_fail(cx, 0, "internal error: the subroutine cost "
-                                    "memo did not settle");
-            }
-        }
+        vm_build_region_saves(&v, root, nstate,
+                              snap_before, snap_after);
+        vm_memo_region_costs(&v);
     }
 
-    /* §2.5's two capacities. */
-    Cost cost = vm_cost(&v, root, false);
-    long long bt_frames, trail_frames, ceiling = 0;
-    bool fits;
-    if (cx->opt->frame_capacity > 0) {
-        bt_frames = cx->opt->frame_capacity;
-        trail_frames = cx->opt->frame_capacity;
-    } else if (cost.unbounded) {
-        bt_frames = VM_DEFAULT_RESUME_FRAMES;
-        trail_frames = VM_DEFAULT_TRAIL_FRAMES;
-    } else {
-        bt_frames = cost.frames + 1;
-        trail_frames = cost.trail + 1;
-        if (bt_frames > VM_MAX_AUTO_RESUME_FRAMES) bt_frames = VM_MAX_AUTO_RESUME_FRAMES;
-        if (trail_frames > VM_MAX_AUTO_TRAIL_FRAMES)
-            trail_frames = VM_MAX_AUTO_TRAIL_FRAMES;
-    }
-    if (bt_frames < 1) bt_frames = 1;
-    if (trail_frames < 1) trail_frames = 1;
-
-    /* THE STAMP IS ABOUT WHAT THE ARTIFACT ENFORCES, NOT WHAT IT WANTED.
-     * A ceiling is owed whenever the depth grows with the subject AND the
-     * exact requirement does not fit the arrays actually emitted — which
-     * covers the unbounded class (where no exact requirement exists) and the
-     * large-bounded one (where it exists and is too big) with one rule. A
-     * pattern whose requirement DOES fit has no limit to declare, and stamps
-     * 0 truthfully. Getting this wrong in the other direction is what a
-     * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
-     * frames, gets the VM_MAX_AUTO_RESUME_FRAMES clamp, and would otherwise have stamped "not applicable". */
-    fits = !cost.unbounded && cost.frames + 1 <= bt_frames
-                           && cost.trail + 1 <= trail_frames;
-    if (cost.growable && !fits) {
-        long long a = vm_ceiling(bt_frames, cost.pf);
-        long long b = vm_ceiling(trail_frames, cost.pt);
-        ceiling = (a && b) ? (a < b ? a : b) : (a ? a : b);
-    }
-
-    long long budget = cx->opt->step_budget;
-    if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
-    const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
-
-    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
-     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
-     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
-     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
-     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
-     * still increments `run->resume_depth` at run time (see its own
-     * comment), so a call-only program can push despite `npush == 0` and
-     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
-     * optional copy, no lookaround, no call — the frameless witness is
-     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
-     * never become nonzero: the fail label's pop-and-resume block below is
-     * unreachable in that program, has no address-of-label expression
-     * anywhere in the function, and is what clang refuses ("indirect goto in
-     * function with no address-of-label expressions") where gcc accepts it.
-     * `has_push` is the gate that omits it there instead of emitting dead
-     * dispatch code.
-     *
-     * [CC-CLANG fix, 2026-09-01] `has_push` is NO LONGER computed here from
-     * `v.npush`: the pre-pass's push count is an ESTIMATE whose original
-     * consumer is the resume-point cap (where an error is an accounting bug),
-     * and the counter rung's unbounded arm measured it NEGATIVE, which made
-     * the dispatch-omission gate a miscompile. The gate is now derived from
-     * the EMITTED PROGRAM TEXT at the fail-label emission site below — one
-     * derivation (the bytes) with the emitter itself as the only writer. */
-
-    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
-     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
-     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
-     * written. `--work-budget=N` is the independent VALUE knob, so the two are
-     * separately tunable while they exist; splitting the gate later is purely
-     * additive. */
-    long long work_budget = cx->opt->work_budget;
-    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
-        work_budget = VM_DEFAULT_WORK_BUDGET;
-    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
-
-    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
-     * are emitted DURING vm_emit (at each cut, at each frameless scan
-     * completion), unlike the fail label's step charge, which is written after
-     * the walk and can simply read the local. */
-    v.has_budget = has_budget;
+    /* §2.5's two capacities, D49's two budgets and the honest ceiling — one
+     * policy block, `vm_plan_capacities`. Unpacked into the names the
+     * emission below already uses: those readers are ~60 sites across the
+     * rest of this function, and renaming them to `caps.x` would buy a reader
+     * nothing (coding_guide §1.7 and §4's editing principle) while rewriting
+     * text that sabotage rows sit on. */
+    const VmCaps caps = vm_plan_capacities(&v, root);
+    const long long bt_frames = caps.bt_frames;
+    const long long trail_frames = caps.trail_frames;
+    const long long ceiling = caps.ceiling;
+    const long long budget = caps.budget;
+    const long long work_budget = caps.work_budget;
+    const bool has_budget = caps.has_budget;
     /* Always present (docs/spec/match_api.md §3.1 promises it unconditionally,
      * and tests/codegen's K27 fixture calls it directly); the A_BREF arm ORs
      * in whichever compare entries it actually emits. */

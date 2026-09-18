@@ -42,15 +42,22 @@ SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/kreset.rxt"
 SAB_DESC="W is built from slot 0 upward instead of slot 2, so a return RESTORES RX_SLOT_WHOLE_START -- which is where pcrec spells \\K -- and undoes a \\K the callee crossed"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR6): ^(a\\Kb)(?1)\$ on \"abab\" answers (0,4) where 10.46 answers (3,4). kreset.rxt is the file and it declares features assertions,recursion, which is why the target is scoped to it."
+#
+# RE-AIMED 2026-09-18 (lane w2a, [REVW.2] wave 2 step P3). This text used to
+# sit inside `pcrec_emit_vm`; EP2's P3 lifted the whole `W` save-set build into
+# `vm_build_region_saves`, so it is dedented by four and the interleaved
+# counting pass's snapshots arrive as PARAMETERS (`snap_before`/`snap_after`
+# -> `before`/`after`) instead of as locals. The plant and its intent are
+# UNCHANGED; the row was re-driven solo after the re-aim rather than assumed.
 SAB_COUNT=1
-SAB_BEFORE='            int n = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) n++;
-            int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
-            int q = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;'
-SAB_AFTER='            w[0] = true;   /* SABOTAGE S148: slot 0 joins W */
-            int n = 0;
-            for (int k = 0; k < nstate; k++) if (w[k]) n++;
-            int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
-            int q = 0;
-            for (int k = 0; k < nstate; k++) if (w[k]) lst[q++] = k;'
+SAB_BEFORE='        int n = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) n++;
+        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int q = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;'
+SAB_AFTER='        w[0] = true;   /* SABOTAGE S148: slot 0 joins W */
+        int n = 0;
+        for (int k = 0; k < nstate; k++) if (w[k]) n++;
+        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int q = 0;
+        for (int k = 0; k < nstate; k++) if (w[k]) lst[q++] = k;'
