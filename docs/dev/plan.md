@@ -1126,10 +1126,7 @@ FLOORS re-grepped on the wave's own tree; re-INDENTATION breaks anchors, not
 relocation — price "does the moved text keep its column". Checkpoint battery
 between waves (D102); box slots handshake with the bench.
 
-- [REVW.FIX] STATE:started — the FIX-NOW pile, synthesis §1 items 1-10 in
-  its landing order (L8-F1 first; L1-X2 the pilot, last). D105/Q2 already
-  landed at the ruling. Lane fixnow.
-- [REVW.U] STATE:not-started — wave U (nets first): L5-R0 name-the-unit-tier,
+- [REVW.U] STATE:started — wave U (nets first): L5-R0 name-the-unit-tier,
   L5-R2 sat-arith agreement check, the allocation-failure injector (M2,
   LOCAL, L5's `-include`+BUILD_DIR shape, acceptance = red on F1 unrepaired
   — build against a pre-fix tree or revert-in-worktree), L8-F6(a)/(b)/(c).
