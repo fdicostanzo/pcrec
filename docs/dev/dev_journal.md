@@ -23835,3 +23835,40 @@ and the journal bullet (append-only: the correction rides it). D105
 RE-OPENED for Frank rather than built to a ruling made without this
 measurement. **General form worth keeping: a decision log states a RULING;
 only the tree states whether it SHIPPED, and nothing ties the two.**
+
+**SESSION CLOSE (2026-09-18, Frank's reset order) — THREE RULINGS + A NEW ROW.**
+Frank ruled all three open questions at the bell:
+1. **K60's LADDER class: TAKE THE FIX** — the `longjmp`-value candidate
+   (108/108 measured, no stored state), built with k60_measurement.md
+   §4.4's standards-clean spelling since `v = setjmp(env)` is outside
+   C11 7.13.1.1p2. Disposition (1) STRUCK as refuted.
+2. **D105 / the LEGEND class: BUILD AS ORIGINALLY RULED**, via its own
+   algorithm rider's restructuring. **FRANK'S RECALL CORRECTED THE
+   MANAGER HERE** — I had drifted to recommending a cheaper
+   "announce the dropped legend" option, priced against the CURRENT
+   function; he remembered the rider (incremental construction rather
+   than large preallocation) and asked whether it went anywhere. It had:
+   the review is recorded inside D105 itself, and it dissolves the
+   problem — `path`'s UNBOUNDED allocation is deleted outright (sized by
+   deepest BYTE distance, read only at [0..39]), the BFS arrays move to
+   the arena so refusal rides the existing general mechanism, brief mode
+   halves the scratch on big machines. After that restructuring there is
+   no silent-degradation path left to announce. THE LESSON: a
+   recommendation must be priced against the version of the code the
+   RULING describes, not the version currently in the tree.
+3. **WAVE 2: GO next session.**
+4. **[EMIT-VERB] OPENED** (Frank: emitted user comments want an
+   emit/no-emit option, a general code-verbosity axis) — SCHEDULED, rides
+   wave 2 as a second kit customer beside DD-8. Assessed rather than
+   guessed: no chokepoint exists today (~1,247 comment sites;
+   `emit_comment_safe_byte` is a byte-ESCAPING helper, not a gate), so
+   building it now is ~1,247 hand-edits and building it after the kit is
+   ONE gate in the render path — which is exactly where D108 puts it.
+   Two measured facts written into the row: the size cap is explicitly
+   COMMENT-EXCLUDED (limits.def:160), so no verbosity setting can move
+   the refusal set — the K59 hazard is structurally absent; and the win
+   is SOURCE size/readability, not object size or speed ([ART-SIZE]:
+   r=0.43 vs r=0.99), so it must not be sold as a performance axis.
+
+wake.md rewritten with the work queue; heartbeat cron deleted; tree clean,
+main pushed; no lanes, no worktrees, box free.
