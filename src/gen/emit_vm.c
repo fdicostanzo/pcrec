@@ -4046,6 +4046,38 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     for (int j = 0; j < nbr; j++) vm_emit(v, bentry[j], br[j], next);
 }
 
+/* [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
+ * arms (the possessive one and the greedy one, 140 lines apart, which wrote
+ * the same eight lines with no agreement check between them).
+ *
+ * Produces the `{ … }` block that walks `<prefix>_span_cursor` forward in
+ * `stride` steps for as long as `test` holds. `clamp` is the MRL amount when
+ * the bound is the FOLDED window — the block then declares `lim_` itself and
+ * bounds on it — or NULL for the unclamped `subject_length` form. The
+ * declaration cannot be left to the caller: this helper opens the brace, and
+ * `lim_` lives inside it.
+ *
+ * Reads `a->u.rep.rmax` (the `it_` counter is emitted only for a bounded
+ * quantifier) and `v->p`/`v->up`; writes only `v->b`.
+ */
+static void vm_emit_span_scan(Vm *v, const Ast *a, int stride,
+                              const char *test, const char *clamp)
+{
+    StrBuf *b = v->b;
+    sb_puts(b, "    {\n");
+    if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
+    if (clamp)
+        sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
+                  v->up, clamp, stride);
+    sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
+    sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
+              clamp ? "lim_" : "subject_length");
+    if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
+    sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
+    if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
+    sb_puts(b, " }\n    }\n");
+}
+
 /* §2.5's cursor rung, with D44.1's capture extension.
  *
  * GREEDY: consume greedily to the furthest position, then push exactly ONE
@@ -4186,14 +4218,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * rmin, publish the groups, take the continuation. Nothing here can
          * be resumed, which is the whole point — the emitted C contains no
          * label the loop could come back to. */
-        sb_puts(b, "    {\n");
-        if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
-        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-        sb_printf(b, "        while (%s_span_cursor + %d <= subject_length", v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
-        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
-        sb_puts(b, " }\n    }\n");
+        vm_emit_span_scan(v, a, stride, test, NULL);
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
          * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
          * rmin test. The scan has completed, `pos` is still the loop's entry
@@ -4327,18 +4352,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
-        sb_puts(b, "    {\n");
-        if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
-        if (fold)
-            sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
-                      v->up, vm_mrl_amt(v, mrl), stride);
-        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
-        sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
-                  fold ? "lim_" : "subject_length");
-        if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
-        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-        if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
-        sb_puts(b, " }\n    }\n");
+        vm_emit_span_scan(v, a, stride, test,
+                          fold ? vm_mrl_amt(v, mrl) : NULL);
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,
                   "MRL: the clamp IS the scan's own bound, so the doomed suffix "
