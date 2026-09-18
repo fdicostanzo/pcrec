@@ -769,6 +769,20 @@ static const char *vm_rolef(Vm *v, const char *fmt, ...)
     return q;
 }
 
+/* [EP2-E3] THE QUANTIFIER'S BOUND, `{m,}` or `{m,n}`, rendered once.
+ * Four rung emitters named this text and three of them spelled it into a
+ * private `char bounds[32]`, two with the unbounded arm first and one with
+ * the bounded arm first. Arena-owned, so no caller sizes a buffer.
+ *
+ * ROLE/LISTING TEXT ONLY: it reaches the .c artifact through `vm_lbl`'s
+ * `// %s` line comment and the `irsb` listing through `vm_render_listing`,
+ * which is why a change here has to be compared on BOTH byte streams. */
+static const char *vm_bounds_text(Vm *v, const Ast *a)
+{
+    if (a->u.rep.rmax < 0) return vm_rolef(v, "{%d,}", a->u.rep.rmin);
+    return vm_rolef(v, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+}
+
 static int vm_label(Vm *v) { return v->nlabel++; }
 
 static void vm_charge(Vm *v)
@@ -4172,9 +4186,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     }
     const char *test = t->p ? t->p : "";
 
-    char bounds[32];
-    if (a->u.rep.rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->u.rep.rmin);
-    else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+    const char *bounds = vm_bounds_text(v, a);
     /* The PREFERENCE disappears when the quantifier is possessified, and that
      * is the analysis's conclusion rather than a shortcut. On the exact-count
      * arm there is one exit, so top and bottom of §2.3's chain are the same
@@ -4930,9 +4942,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
     snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
 
-    char bounds[32];
-    if (a->u.rep.rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->u.rep.rmin);
-    else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
+    const char *bounds = vm_bounds_text(v, a);
     const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
                                    " -- ONE body copy, no replication",
                                 bounds, greedy ? "greedy" : "lazy",
@@ -5573,14 +5583,17 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     int cur;
 
     const char *role;
+    /* `unbounded` IS `vm_bounds_text`'s own predicate (`rmax < 0`), so the
+     * bound text is that helper's and only the two tails differ here. */
     if (unbounded)
-        role = vm_rolef(v, "counter rung, {%d,}, K=%d, %s "
+        role = vm_rolef(v, "counter rung, %s, K=%d, %s "
                            "(mandatory counted, tail on the frames star)",
-                        a->u.rep.rmin, K, a->u.rep.greedy ? "greedy" : "lazy");
+                        vm_bounds_text(v, a), K,
+                        a->u.rep.greedy ? "greedy" : "lazy");
     else
-        role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
+        role = vm_rolef(v, "counter rung, %s, K=%d, %s "
                            "(mandatory %s, optional %s)",
-                        a->u.rep.rmin, a->u.rep.rmax, K,
+                        vm_bounds_text(v, a), K,
                         a->u.rep.greedy ? "greedy" : "lazy",
                         m >= K ? "counted" : "replicated",
                         nopt == 0 ? "none"
@@ -5837,10 +5850,8 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
     const long long bw = pcrec_minw(a->l);
 
     {
-        char fbounds[32];
         bool bounded = a->u.rep.rmax >= 0;
-        if (bounded) snprintf(fbounds, sizeof fbounds, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
-        else         snprintf(fbounds, sizeof fbounds, "{%d,}", a->u.rep.rmin);
+        const char *fbounds = vm_bounds_text(v, a);
         const char *frole = vm_rolef(v, "frames rung, %s %s, %s%s",
                                      bounded ? "bounded" : "unbounded", fbounds,
                                      a->u.rep.greedy ? "greedy" : "lazy",
