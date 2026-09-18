@@ -5,7 +5,14 @@ Built as RE-RULED by Frank 2026-09-18: option (a), via the decision's own
 algorithm rider, so the silent degradation is eliminated by construction
 rather than announced.
 
-**Status: DELIVERED, VALIDATION COMPLETE. Nothing is owed.**
+**Status: DELIVERED, MERGED WITH `main`, VALIDATION COMPLETE. Nothing is
+owed.**
+
+**POST-MERGE (`050c2b83`): `main` moved to `2e019d20` while this lane ran —
+lane `k60fix` landed D109, K60's other class — so `main` was merged in here
+and W4 re-pinned from 108 to 0. `make alloc` is now GREEN on all four
+witnesses and K60 is closed in both its classes.** §2.1's table and §4 carry
+the merged numbers; §8 is the merge's own record.
 
 ---
 
@@ -130,9 +137,30 @@ five deleted raw allocations per emitted machine.
 
 W1 and W3 are the pure legend class and every one of their absorptions is
 gone. W4 is the LADDER class — `src/core/compile.c`, lane `k60fix`'s, not
-touched here — and reads 108 exactly as the brief predicted. The two halves
-are disjoint by construction, which `k60_measurement.md` §4.3 measured in
-advance (the `longjmp`-value candidate: 108 of 108 ladder, 0 of 40 legend).
+touched here — and read 108 on this lane's pre-merge branch exactly as the
+brief predicted. The two halves are disjoint by construction, which
+`k60_measurement.md` §4.3 measured in advance (the `longjmp`-value
+candidate: 108 of 108 ladder, 0 of 40 legend).
+
+**AFTER THE MERGE (`050c2b83`), on the delivered branch, every cell is
+zero:**
+
+| witness | absorbed, single | absorbed, sustained | swept total | pinned |
+|---|---:|---:|---:|---:|
+| W1 `[a-z]+` | **0** | **0** | 57 | 57 / 0 / 0 |
+| W2 `[a-z]{2,10}` vm | 0 | 0 | 11 | 11 / 0 / 0 |
+| W3 `\p{L}` utf8 | **0** | **0** | 303 | 303 / 0 / 0 |
+| W4 ladder | **0** | **0** | 158 | 158 / 0 / 0 |
+
+`make alloc` exits 0: `checks passed: 8, checks failed: 0`. Two things are
+worth reading off that table rather than just the zeros. **Every pinned
+POPULATION held across the merge** — 57 / 11 / 303 / 158, unchanged — which
+is the evidence that D109 added no allocation site, measured rather than
+assumed. And **W4's pin going stale-low the moment `k60fix` landed is the
+ratchet doing its job**: the pin at 108 failed against a tree where the
+defect was fixed, which is exactly the signal that a re-pin was owed. All
+four rows now pin zero and `absorbed_why` is NULL on all four, so any
+absorption anywhere in this file is a regression.
 
 ### 2.2 The control, run rather than argued
 
@@ -254,9 +282,10 @@ re-derive them:
 |---|---|
 | `make -j4 CC=gcc-16` | clean, at every commit |
 | `make strict CC=gcc-16` | **clean** — whole tree with `-Werror -Wshadow` |
-| `make alloc CC=gcc-16` | W1 **0**, W2 0, W3 **0** absorbed in both modes; W4 108 (the ladder class, open, k60fix's) |
+| `make alloc CC=gcc-16`, pre-merge | W1 **0**, W2 0, W3 **0** absorbed in both modes; W4 108 (the ladder class, then open) |
+| `make alloc CC=gcc-16`, POST-MERGE | **rc 0 — 8 checks passed, 0 failed.** All four witnesses, both modes, zero absorbed; every pinned population held |
 | `make alloc` control at `6c9dac09` | 8 failures vs the fixed tree's 1 — §2.2 |
-| `make test-codegen CC=gcc-16` | **8 of 9 scripts**, one red: `run_inline_capability.sh` |
+| `make test-codegen CC=gcc-16` | **8 of 9 scripts** (222 PASS), one red: `run_inline_capability.sh` — same before and after the merge |
 | `bash tests/rxtsource/run_rxtsource_tests.sh` | **212 passed / 1 recorded / 0 failed** (211 files / 3,938 blocks / 28,949 expectation lines) |
 | full-corpus emit-diff, arm A | 1,500 identical / **0 differing** |
 | full-corpus emit-diff, arm B | §3.2 |
@@ -273,7 +302,38 @@ matches `k60meas`'s own 212/1/0 at the same pin.
 
 Not run, deliberately, per the brief: full `make test` (the emit-diff sweep
 is this lane's heavy item and the box takes one at a time), `make mech`,
-`make san`, and anything on `ubuntubudu`.
+`make san`, and anything on `ubuntubudu`. The manager runs `make test`
+locally and `make san` on `ubuntubudu` after the merge.
+
+### 4.1 Re-run after the merge
+
+Every light target above was re-run on the merged branch `050c2b83`, not
+inherited from the pre-merge run: `make -j4` and `make strict` clean,
+`make alloc` **green (8/0, rc 0)**, `make test-codegen` 8 of 9 with the same
+single pre-existing red, `rxtsource` **212 / 1 recorded / 0** over the same
+211 files / 3,938 blocks / 28,949 expectation lines. The emit-diff was
+re-run too, and against the NEW `main` rather than the old branch point —
+§3.4 — so the identity claim is about this lane's delta on the tree as it
+stands, not on a base that no longer exists.
+
+### 3.4 Both arms, re-run against `main` at `2e019d20`
+
+Arms A and B above compare against the branch point `6c9dac09`, which is
+this lane's delta in isolation. After merging `main` (lane `k60fix`'s D109),
+both arms were re-run with `main` at `2e019d20` as the baseline, so what is
+being measured is this lane's delta **on the tree as it stands**:
+
+| arm | lines | compared | **differing** | newly fixed / broken | both refuse |
+|---|---:|---:|---:|---:|---:|
+| A, default axes | 3,938 | 1,500 | **0** | 0 / 0 | 2,438 |
+| B, `--features all` | 3,938 | 3,517 | **0** | 0 / 0 | 421 |
+
+Identical to the pre-merge arms in every cell, including arm B's reach
+census (3,024 artifacts carrying a legend; 3,014 full, 23 brief, 14
+truncated). That the two baselines give the same answer is itself worth one
+line: `k60fix`'s D109 changes only what happens at the arrival of a
+`ctx_nomem`-routed `longjmp`, which no successful compile reaches, so it
+moves no emitted byte either and the two lanes' deltas do not interact.
 
 ---
 
@@ -284,8 +344,10 @@ is this lane's heavy item and the box takes one at a time), `make mech`,
 reader of D105's rider will go looking for a Job field and not find one. The
 Job owns six `StrBuf`s and no arena.
 
-**5.2 No sabotage row S260, and the reason is a gap worth someone's
-attention.** A plant reverting this function to raw `malloc` with the silent
+**5.2 No sabotage row S260 — the trade-off in one line: putting the
+population pins into `make test` would tax every future refactor that
+legitimately moves an allocation count, and leaving them out leaves this
+plant undetectable.** Frank's call; not built here. The long form: A plant reverting this function to raw `malloc` with the silent
 return would ship **UNDETECTED**, because no arm `make mech` runs can see it.
 The nearest arm is `resource`, which runs `run_resource_tests.sh`, whose
 section 2b runs `alloc_check` **argument-free and greps only for
@@ -295,24 +357,26 @@ absorption produces no signal, so the plant passes.
 
 Making it detectable means section 2b asserting the population pin, which
 puts allocation COUNTS into `make test` and taxes every future refactor that
-legitimately moves one. My read is that this waits for a trigger rather than
-being built now (D77): **once K60's ladder class lands and `make alloc` is
-green end to end, section 2b can assert the per-witness pins and S260 becomes
-a real row with a real detector.** Recorded here rather than done, because
-choosing to tax `make test` is not a lane's call.
+legitimately moves one. When this was written the trigger was "once K60's
+ladder class lands and `make alloc` is green end to end" — **that trigger has
+now been MET** (`050c2b83`: both classes fixed, all four witnesses green,
+every witness pinning zero), so section 2b asserting the pins is now
+technically available and the decision is purely the `make test` tax. Still
+not built here: choosing to tax `make test` is Frank's call, not a lane's,
+and it should be made on the tax rather than on this one plant.
 
 Note also that `make alloc` is not a battery stage (`scripts/battery.sh` has
 no `alloc` stage), so these pins have no automatic home at all today — which
 is the same gap from the other side.
 
-**5.3 The merge collision with `k60fix` is by design and needs a decision.**
-Both lanes edit `tests/core/alloc_check.c`'s W4 expectation. This lane adds
-the pin mechanism (three fields plus `absorbed_why`) and pins W4 at its
-measured 108 while leaving it a FAIL; `k60fix` takes W4 to 0 and must re-pin.
-If `k60fix` invented its own expectation shape, the two mechanisms should be
-reconciled to one at merge — taking this lane's struct and `k60fix`'s number
-is the cheapest resolution, and the pin going stale-low is precisely the
-signal that the re-pin is owed.
+**5.3 The merge collision with `k60fix` resolved itself, and the way it did
+is the pin's own argument.** Both lanes edited `tests/core/alloc_check.c`'s
+W4 expectation. `k60fix` landed first and added no competing expectation
+shape, so the merge kept this lane's struct and re-pinned W4's number from
+108 to 0 — and the mechanical signal that the re-pin was owed was the pin
+itself failing stale-low against a tree where the defect was gone. A check
+that goes red when a defect is FIXED sounds perverse until it is the thing
+that stops a landing from silently turning a red line green.
 
 **5.4 `tests/resource/run_resource_tests.sh` section 2b's success message
 says "three witnesses" and there are four** (W4 was added by `k60meas`).
@@ -352,3 +416,41 @@ Arm B's driver adds `--features all` and the reach census around that same
 driver's extraction; it lived in the session scratchpad and is not committed,
 its numbers standing on this report as `dfam12`'s and `k60meas`'s do on
 theirs.
+
+---
+
+## 8. The merge with `main` (`050c2b83`)
+
+`main` moved to `2e019d20` while this lane ran: lane `k60fix` landed D109,
+K60's LADDER class. Merged in here at the manager's instruction.
+
+**One true conflict, `docs/spec/match_api.md` §8.1** — both lanes wrote the
+same paragraph about the same promise, each from its own half. Resolved into
+one statement that the promise had TWO exceptions and now has none, keeping
+both lanes' history text and adding the sentence neither could write alone:
+*because the legend path never reached the recovery point, D109's fix could
+not reach it either*, which is why one entry needed two fixes. Everything
+else auto-merged, and was then read rather than trusted.
+
+**The re-pin.** W4's expectation goes 108/0 → 0/0. The pin failing stale-low
+the moment `k60fix` landed IS the mechanism working: a check that goes red
+when a defect is fixed sounds perverse until it is the thing that stops a
+landing from silently turning a red line green. All four witnesses now pin
+zero and `absorbed_why` is NULL on all four.
+
+**Stale wording, corrected in tense and status only.** Each of these was
+written by the other lane before this fix existed; the history text is kept
+in every case:
+
+| site | was | is |
+|---|---|---|
+| `src/core/compile.c:855` | "0/40 legend absorptions reached — a different, UNFIXED mechanism" | a mechanism this arrival cannot see (it never called `ctx_nomem`, so it never arrived), closed separately and by deletion in D105; K60 closed between the two |
+| `known_issues.md` K60 status | "PARTIALLY FIXED … the LEGEND class is still filed, assigned to lane d105" | "FIXED — BOTH CLASSES", both commits, both dispositions, the green four-witness table |
+| `known_issues.md`, k60fix's note | "W1 and W3 are UNCHANGED, on purpose … that class is D105's, building in parallel" | "were UNCHANGED BY THIS FIX", with the landing named and the original preserved as that lane measured it |
+| `known_issues.md`, the k60meas amendment | "that 27% IS D105'S OWN UNBUILT RULING" | left standing — a dated historical statement — with a parenthetical that it was built later the same day |
+| `alloc_check.c`'s `[K60FIX]` header | "W1 and W3 … are EXPECTED to keep failing until that mechanism's own fix lands" | a `[D105]` paragraph: every witness is expected to PASS, and any FAIL is now a real regression whichever witness it names |
+| `tests/core/CLAUDE.md`'s `[K60FIX]` note | "W1/W3 ARE THE EXPECTED RESIDUAL … EXPECTED to stay red" | the same correction, plus the point that the pins are what make "`make alloc` is green" checkable rather than remembered |
+
+**`src/core/internal.h` needed no change** — checked rather than assumed.
+Its `failed_nomem` comment cites K60's measured 108-of-148 mechanism as
+history and makes no claim about the legend's status.
