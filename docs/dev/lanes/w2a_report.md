@@ -142,18 +142,34 @@ unchanged.
 
 **RE-DRIVEN SOLO, not assumed.**
 
-- **S149 — DETECTED.** `corpus:5fail/42pass, recdiff:4fail/9pass`, measured
-  at tree `a7081656` (the E0 commit itself, since the runner archives HEAD).
-  Log: `…/scratchpad/w2a/mech_S149.log`.
-- The six P3 rows are re-driven by
-  `…/scratchpad/w2a/mech6.sh`, one invocation each (the driver's selector
-  takes one id), verdicts collected in `…/scratchpad/w2a/mech6.verdicts`,
-  per-row logs `…/scratchpad/w2a/mech_S1{48,50,51,52,53}.log`. **See §6 for
-  the status of that run at handback.**
-  **Read their verdicts against `SAB_EXPECT`, not against "DETECTED":**
-  S150, S151, S152 and S153 carry `SAB_EXPECT=UNDETECTED` (they are
-  argued-not-measured rows on the ratchet), so the pass criterion is the
-  driver's own `unexpected: 0` / `anomalies: 0`. Only S148 expects DETECTED.
+All seven were re-driven solo (`run_sabotage_matrix.sh <id>`, one invocation
+per row — the driver's selector takes one id), **every one at the final tree
+SHA `8c142b9a`**, with `unexpected: 0` and `anomalies: 0` on every run:
+
+| row | `SAB_EXPECT` | verdict | cells |
+|---|---|---|---|
+| S148-w-includes-slot0 | (DETECTED) | **DETECTED** | `corpus:18fail/2pass, recdiff:169fail/7pass` |
+| S149-w-drops-pending | (DETECTED) | **DETECTED** | `corpus:5fail/42pass, recdiff:4fail/9pass` |
+| S150-w-drops-cutmark | UNDETECTED | **UNDETECTED (EXPECTED)** | `corpus:0fail/47pass, recdiff:0fail/10pass` |
+| S151-w-drops-emptyguard | UNDETECTED | **UNDETECTED (EXPECTED)** | `corpus:0fail/1690pass, recdiff:0fail/10pass` |
+| S152-w-drops-rungs | UNDETECTED | **UNDETECTED (EXPECTED)** | `corpus:0fail/1690pass, recdiff:0fail/10pass` |
+| S153-w-drops-look | UNDETECTED | **UNDETECTED (EXPECTED)** | `corpus:0fail/50pass, recdiff:0fail/10pass` |
+
+**Read these against `SAB_EXPECT`, not against "DETECTED".** Four of the six
+P3 rows are argued-not-measured rows sitting on the ratchet with
+`SAB_EXPECT=UNDETECTED`, so the criterion is the driver's own `unexpected:
+0` — an UNDETECTED there is the row behaving as recorded, and a sudden
+DETECTED would be the surprise. S149 was driven at `a7081656` (its own
+commit, since the runner archives HEAD) and again in this final set.
+
+One honest caveat about the cells: the PASS counts have grown since these
+rows' `SAB_DOC_FIGURE` text was written (S152 records `corpus 0fail/346pass`
+against the 1,690 measured now), because the corpus has grown. The VERDICTS
+match the recorded ones exactly; the pass denominators do not, and should
+not be read as reproducing the historical figure.
+
+Logs: `…/scratchpad/w2a/mech_S1{48,49,50,51,52,53}.log`, collected verdicts
+in `…/scratchpad/w2a/mech6.verdicts`.
 
 ---
 
@@ -239,7 +255,7 @@ non-emitting passes stay in `emit_vm.c` rather than moving to `src/opt/`.
 
 ## 6. Validation, and what is owed
 
-COMPLETE at handback:
+COMPLETE at handback — all of it:
 
 - Per step (all nine): corpus argv sweep 3,938 × 3 streams BYTE-IDENTICAL;
   composition sweep 304 files / 74 artifacts BYTE-IDENTICAL; anchor
@@ -249,19 +265,15 @@ COMPLETE at handback:
 - `[MECH-REACH]` probe for the DELIVER block: measured, both directions.
 - Sabotage **S149: DETECTED** after its re-aim, re-driven solo.
 
-OWED at handback (named, with paths):
+- All seven re-aimed sabotage rows re-driven solo at the final SHA
+  `8c142b9a`: `unexpected: 0`, `anomalies: 0`, `unreached: 0` on every run.
+  §3's table has the per-row verdicts and cells.
+- `bash tests/rxtsource/run_rxtsource_tests.sh`: **212 passed / 0 failed**,
+  including `INV-COMPAT holds over 211 files / 3,938 blocks / 28,949
+  expectation lines`.
+- `bash tests/vm/run_vm_tests.sh`: **48 passed / 0 failed**.
 
-- The six P3 rows re-driven solo — `…/scratchpad/w2a/mech6.verdicts`,
-  final line `ALL SIX ROWS DONE <date>`; per-row logs
-  `…/scratchpad/w2a/mech_S1{48,50,51,52,53}.log`, each ending in
-  `== mech run COMPLETE: 1 rows (unexpected: U, undetected: …) … ==`.
-  **The verdict to read is `unexpected: 0`** — four of the six carry
-  `SAB_EXPECT=UNDETECTED`.
-- `bash tests/rxtsource/run_rxtsource_tests.sh` and the VM corpus driver:
-  held back so as not to run two heavy suites at once against the mech run;
-  neither touches any file this lane changed except through `emit_vm.c`,
-  which the three byte streams already pin.
-- The full battery is the manager's at merge, as always.
+NOTHING IS OWED. The full battery is the manager's at merge, as always.
 
 **Rollback.** Nine independent commits, each mergeable on its own in EP2's
 order. Reverting step 8 (P3) requires reverting its six anchor re-aims with
