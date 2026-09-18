@@ -48,7 +48,12 @@
 # Env:   PCREC (default <root>/build/pcrec)
 #        K7_MEM   peak-tree-RSS ceiling per compile (default 512m)
 #        K7_SECS  wall budget per compile (default 120)
-#        K7_CPU   CPU budget per compile (default 45)
+#        K7_CPU   CPU budget per compile, Section 1's own bound (default 45)
+#        SIZECAP_CPU  CPU budget for Section 1b's size_moved loop, wider
+#                  than K7_CPU on purpose ([SIZECAP-CPU], default 90) — that
+#                  loop asserts the SIZE cap, not a CPU ceiling, and its own
+#                  refusal path costs roughly 2x an ordinary compile (see the
+#                  loop's header comment)
 #        LOAD_GUARD_RATIO  [TT-10] 1-min-load/nproc threshold above which a
 #                  123/124 kill is reported INCONCLUSIVE instead of FAIL
 #                  (default 2.0; tests/lib/load_guard.sh has the measurement)
@@ -407,6 +412,38 @@ size_moved=(
 # alive under the deny flag (refusals re-MEASURED 2026-08-31 with the new
 # byte figures), so the cap's behavior on the classic shapes stays pinned.
 #
+# [SIZECAP-CPU] 2026-09-18 (lane btriage2, triage of battery_20260918_051433's
+# `test`-stage red on ubuntubudu). ROW 1's REFUSAL PATH NEEDS ITS OWN,
+# LARGER CPU BUDGET THAN K7_CPU, AND HERE IS THE MEASUREMENT THAT SAYS SO.
+# K7_CPU's own comment above calibrates 45s as "~3x" a MEASURED 15.4s
+# (`a{0,25000}`, Mac). Row 1's refusal path measures 25.17s user CPU on the
+# SAME dev box (`/usr/bin/time -l build/pcrec -p rx -o /tmp/o.c
+# '(?:[a-z][0-9]){1,13000}'`) -- nearly DOUBLE the case that set K7_CPU's
+# headroom, because a refusal here does K59RUNG's own documented work: the
+# artifact hits the cap once premultiplied, retries once with
+# `-fno-premul-table` under [K59-PREMUL]'s drop ladder, and hits the cap
+# again -- two minimizations, not one (confirmed: the SAME pattern under
+# `--max-emit-bytes=9000000`, which never trips the cap and so never
+# retries, measures only 12.58s). 45s therefore leaves this row under 1.8x
+# margin on the box that set the budget, not K7_CPU's own ~3x convention.
+#
+# ubuntubudu (the Linux reference box, an AMD Ryzen 5 1600) is a materially
+# slower single core than this dev box's Apple M1 Max, which is what turned
+# a comfortable Mac margin into a real CPU-budget miss there: the battery's
+# `test.log` shows exit 123 ("CPU limit exceeded (limit 45s of CPU time)")
+# on exactly this row, at a near-idle box (trailer's own load line: "load
+# average: 0.52, 0.15, 0.05" at the battery's start) -- not contention, a
+# genuine budget-margin gap. Row 2 is unaffected (measured 11.27s here,
+# comfortably inside K7_CPU on either box) and keeps the shared default.
+#
+# The fix is scoped to this loop rather than raising K7_CPU itself: Section
+# 1's CPU bound is the FEATURE under test there (K7's own resource ceiling),
+# so loosening it for everyone would weaken what that section asserts. This
+# loop asserts the SIZE cap, not a CPU ceiling, so its watchdog budget only
+# needs enough margin to let a legitimately expensive (not runaway) compile
+# finish on the slowest box this suite runs on.
+SIZECAP_CPU="${SIZECAP_CPU:-90}"
+
 # [OPT-4.2] (2026-08-31, lane o42) ROW 3 GAINED `-fprefilter`, AND WITHOUT IT
 # THE ROW GOES VACUOUS RATHER THAN WRONG. `(a|b){0,30000}`'s own EXACT
 # language is nullable, so [OPT-4.2]'s decline (src/opt/select_engine.c's
@@ -432,7 +469,7 @@ for entry in "${size_moved[@]}"; do
     was="${rest##*:}"; pat="${rest%:*}"
     out="$WORKDIR/o.c"; rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
         ok "'$pat' refused by the total emitted-size cap (was $was bytes before [ART-SIZE]): $(printf '%s' "$log" | head -1 | cut -c1-90)"
@@ -445,7 +482,7 @@ for entry in "${size_moved[@]}"; do
     # the override re-accepts it
     rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 0 ]; then
         ok "'$pat' is re-accepted with --max-emit-bytes raised (the override works end to end)"
