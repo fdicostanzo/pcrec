@@ -2741,6 +2741,40 @@ green `make asan` was resting on nothing; reasoned claims (e.g.
 [M4.7b]'s job_cleanup-frees-wholesale argument) stand on their own
 reasoning only.
 
+**ADDENDUM 2026-09-18 (manager, at the santriage3 landing — THIS ENTRY'S
+HEADLINE IS NOW FALSE ON THE LINUX BOX, AND ITS DIAGNOSIS IS REFUTED).**
+LeakSanitizer is LIVE on ubuntubudu. Measured, not inferred: battery
+`battery_20260918_051433`'s san stage (pin 272bf970) carries a real,
+non-vacuous report — `san.log:2261`, `==270989==ERROR: LeakSanitizer:
+detected memory leaks` — against `tests/codegen/cpset_model_check.c`,
+whose arena was genuinely never freed. It was the stage's ONLY failure
+(37/38 scripts passed) and it is a TRUE POSITIVE: the leak was real, had
+been there since the file was written, and became visible only because
+wave U's `unit_build` ([REVW.U L5-R0.1]) threads `$SANFLAGS` through that
+compile for the first time. So the leak tier has now caught its first
+defect, which is precisely what the canary obligation below existed to
+guarantee it could.
+
+**AND THE ENTRY'S OWN CAUSAL HYPOTHESIS IS REFUTED BY THE SAME
+MEASUREMENT**: `/proc/sys/kernel/yama/ptrace_scope` on ubuntubudu is
+STILL `1` — checked at the same moment the report fired — so the
+stop-the-world-tracer explanation above cannot be what was suppressing
+LSan in 2026-08. What the 2026-08-18 no-op actually was is UNEXPLAINED
+and is now unreproducible on that box; the honest reading is that the
+original control measured something narrower than "LSan does not work
+here" (the two candidates nobody has separated: the control program's
+own shape, and the invocation path it was run through). NOT investigated
+further — Frank deliberately declined a follow-up on this territory
+(recorded at K54 below), and the tier working is the outcome that
+obligation wanted.
+
+**What this does NOT change**: darwin. K54's exit-hang stands and
+`SAN_DETECT_LEAKS=0` on Darwin stands with it, so the leak tier remains
+a LINUX-ONLY capability and a local `make san` still proves nothing
+about leaks. The canary obligation below is NARROWED, not discharged:
+a true positive proves the tier fires on one shape, where the canary
+proves it fires on a shape chosen to be caught — keep it.
+
 **Fix direction, and the obligation either way:** the battery gains a
 POSITIVE LEAK CANARY — a deliberately-leaking control that must be
 REPORTED for the leak tier to count as running, so a no-op LSan turns
