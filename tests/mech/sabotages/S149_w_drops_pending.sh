@@ -46,9 +46,19 @@ SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/slotfamilies.rxt"
 SAB_DESC="W drops the SLOT_GROUP<n>_PENDING family, so a recursive activation overwrites the outer activation's publish-at-close start and the outer level publishes the wrong span -- a LOST MATCH, measured 11/2"
 SAB_DOC_FIGURE="MEASURED (design 5.3b axis P): W as first written gives 11 agree / 2 DISAGREE -- ^(a(?1)?b)\\1\$ on \"aabbaabb\" and \"aaabbbaaabbb\" answer NOMATCH where 10.46 answers (0,8) g1=(0,4) and (0,12) g1=(0,6). W plus the pending slot is 13/0."
+#
+# RE-AIMED 2026-09-18 (lane w2a, [REVW.2] wave 2 step E0). The text this row
+# plants in used to sit in `vm_w_caps`'s own `A_CAP` arm at switch depth. E0
+# merged that walker's TRAVERSAL with `vm_grp_set`'s into `vm_walk_caps` and
+# left the two VERDICTS as callbacks; the pending-family lines are now
+# `vm_w_cap_slots`'s body, dedented by eight and reading the set and `nstate`
+# through the callback's closure (`c->w`, `c->nstate`). The plant and its
+# intent are UNCHANGED -- one family's slot range leaves `W`, the other six
+# stay -- and the row was re-driven solo after the re-aim rather than assumed
+# (see the lane report).
 SAB_COUNT=1
-SAB_BEFORE='                if (vm_marked(v, g)) {
-                    int ps = vm_slot_pend(v, g);
-                    if (ps >= 0 && ps < nstate) w[ps] = true;
-                }'
-SAB_AFTER='                /* SABOTAGE S149: the PENDING family leaves W */'
+SAB_BEFORE='        if (vm_marked(v, g)) {
+            int ps = vm_slot_pend(v, g);
+            if (ps >= 0 && ps < c->nstate) c->w[ps] = true;
+        }'
+SAB_AFTER='        /* SABOTAGE S149: the PENDING family leaves W */'

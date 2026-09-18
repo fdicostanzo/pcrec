@@ -6698,17 +6698,27 @@ static VmSnap vm_snap(const Vm *v)
     return s;
 }
 
-/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
- * exists. `vm_w_caps` below answers the same question in SLOT indices, which
- * need every family total the counting pass produces; a SPLICE has to know the
- * SIZE of its save block before that pass runs, and the size is a function of
- * the GROUP SET alone (two slots per group, plus one where the group is
- * marked). Same walk, same stopping rule, one level earlier.
+/* [EP2-E0] THE CALLEE-BODY CAPTURE WALK, written ONCE.
  *
- * STOPS AT `A_CALL` for design §4.4's reason; what a nested call writes
- * arrives through the transitive union over the graph, which terminates by
- * construction where following `.body` here would not. */
-static void vm_grp_set(Vm *v, const Ast *a, bool *g)
+ * `vm_grp_set` and `vm_w_caps` were the same 28-line spine walker with one
+ * arm's worth of difference, and the ONE rule that must not be got wrong —
+ * **STOP AT `A_CALL`** — was spelled twice. `src/opt/callgraph.c`'s header
+ * records that following `.body` from a bare walker "hangs the COMPILER" on
+ * `(a(?1))`; what a nested call writes arrives instead through the
+ * transitive union over the GRAPH, which terminates by construction. That
+ * rule now has one home.
+ *
+ * THE TRAVERSAL MERGES, THE VERDICTS DO NOT (lens 1's X1 framing, and
+ * `src/opt/atomic.c`'s warning against over-cutting). The two callers answer
+ * in different index spaces — GROUP numbers before the slot layout exists,
+ * SLOT indices after — which is exactly why they are two callbacks and not
+ * one: a SPLICE has to know the SIZE of its save block before the counting
+ * pass runs, and that size is a function of the GROUP SET alone.
+ *
+ * Spines are walked ITERATIVELY (D10/DD-10/K20) and recursion is only into
+ * items hanging off them. */
+static void vm_walk_caps(Vm *v, const Ast *a,
+                         void (*on_cap)(Vm *, int g, void *), void *u)
 {
     for (;;) {
         switch (a->k) {
@@ -6716,19 +6726,17 @@ static void vm_grp_set(Vm *v, const Ast *a, bool *g)
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
             return;
-        case A_CAP: {
-            int n = a->u.cap.no;
-            if (n > 0 && n <= v->ngroups) g[n] = true;
+        case A_CAP:
+            on_cap(v, a->u.cap.no, u);
             a = a->l;
             continue;
-        }
         case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
             const Ast *t = a;
-            for (; t->k == k; t = t->l) vm_grp_set(v, t->r, g);
+            for (; t->k == k; t = t->l) vm_walk_caps(v, t->r, on_cap, u);
             a = t;
             continue;
         }
@@ -6737,38 +6745,69 @@ static void vm_grp_set(Vm *v, const Ast *a, bool *g)
     }
 }
 
-/* The region's CAPTURE half: every group whose `A_CAP` lies inside it. Walked
- * ITERATIVELY on `A_CAT`/`A_ALT` spines (D10/DD-10/K20) and STOPPING AT AN
- * `A_CALL` — following `.body` would be design §4.4's non-terminating walk,
- * and it is unnecessary: what a NESTED call writes arrives through the
- * transitive union below, over the graph, which terminates by construction. */
-static void vm_w_caps(Vm *v, const Ast *a, bool *w, int nstate)
+/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
+ * exists. `vm_w_cap_slots` below answers the same question in SLOT indices,
+ * which need every family total the counting pass produces; a SPLICE has to
+ * know the SIZE of its save block before that pass runs, and the size is a
+ * function of the GROUP SET alone (two slots per group, plus one where the
+ * group is marked). Same walk, same stopping rule, one level earlier. */
+static void vm_grp_set_cap(Vm *v, int n, void *u)
+{
+    bool *g = u;
+    if (n > 0 && n <= v->ngroups) g[n] = true;
+}
+
+/* The region's CAPTURE half, in SLOT indices: every group whose `A_CAP` lies
+ * inside the region contributes its pair, and a MARKED group its pending slot
+ * too. `nstate` travels in the closure because the walker's callback takes one
+ * user pointer, and both it and the set are needed on every visit. */
+typedef struct { bool *w; int nstate; } VmWCaps;
+
+static void vm_w_cap_slots(Vm *v, int g, void *u)
+{
+    VmWCaps *c = u;
+    if (g > 0 && g <= v->ngroups) {
+        if (2 * g + 1 < c->nstate) { c->w[2 * g] = true; c->w[2 * g + 1] = true; }
+        if (vm_marked(v, g)) {
+            int ps = vm_slot_pend(v, g);
+            if (ps >= 0 && ps < c->nstate) c->w[ps] = true;
+        }
+    }
+}
+
+/* [EP2-E0] THE `A_CALL`-PUBLISHING WALK, written ONCE — and a SEPARATE walker
+ * from `vm_walk_caps` on purpose, because the `A_CALL` edge policy is the
+ * opposite one and the constness differs with it.
+ *
+ * `vm_walk_caps` treats `A_CALL` as a STOP-LEAF (the callee's contents arrive
+ * through the graph). This walker treats it as an ACT-LEAF: the node itself is
+ * the destination, the callback writes it, and the walk still does not follow
+ * `.body` — the AST's one back edge, and `src/opt/callgraph.c`'s header
+ * records that following it hangs the compiler on `(a(?1))`. Both walkers get
+ * the rule right and they get it right DIFFERENTLY; merging them would make
+ * one of the two answers silent.
+ *
+ * Takes `Ast *`, not `const Ast *`: these passes MUTATE the node. Spines are
+ * walked ITERATIVELY (D10/DD-10/K20). */
+static void vm_walk_calls(Vm *v, Ast *a,
+                          void (*on_call)(Vm *, Ast *call, void *), void *u)
 {
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF: case A_CALL:
+        case A_BREF:
             return;
-        case A_CAP: {
-            int g = a->u.cap.no;
-            if (g > 0 && g <= v->ngroups) {
-                if (2 * g + 1 < nstate) { w[2 * g] = true; w[2 * g + 1] = true; }
-                if (vm_marked(v, g)) {
-                    int ps = vm_slot_pend(v, g);
-                    if (ps >= 0 && ps < nstate) w[ps] = true;
-                }
-            }
-            a = a->l;
-            continue;
-        }
-        case A_REP: case A_ATOMIC: case A_LOOK:
+        case A_CALL:
+            on_call(v, a, u);
+            return;
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;
         case A_CAT: case A_ALT: {
             const AKind k = a->k;
-            const Ast *t = a;
-            for (; t->k == k; t = t->l) vm_w_caps(v, t->r, w, nstate);
+            Ast *t = a;
+            for (; t->k == k; t = t->l) vm_walk_calls(v, t->r, on_call, u);
             a = t;
             continue;
         }
@@ -6781,68 +6820,26 @@ static void vm_w_caps(Vm *v, const Ast *a, bool *w, int nstate)
  * shape as `src/opt/callgraph.c`'s `minw` publisher and for the same reason:
  * the walkers that READ the answer are bare `const Ast *` descents with no
  * context, so the node is the only place both sides can meet. */
-static void vm_publish_nonnull(Vm *v, Ast *a, const bool *nn)
+static void vm_publish_nonnull(Vm *v, Ast *a, void *u)
 {
-    for (;;) {
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-            return;
-        case A_CALL: {
-            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
-            a->u.call.nonnullable = i >= 0 ? nn[i] : false;
-            return;
-        }
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            Ast *t = a;
-            for (; t->k == k; t = t->l) vm_publish_nonnull(v, t->r, nn);
-            a = t;
-            continue;
-        }
-        }
-        return;
-    }
+    const bool *nn = u;
+    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+    a->u.call.nonnullable = i >= 0 ? nn[i] : false;
 }
 
 /* Publish `W` onto every `A_CALL` node: `u.call.save`/`nsave`, read by
  * `vm_call`'s save emission, by `vm_region`'s restore emission and by
  * `vm_cost`'s `2 * |W|` trail charge. Three readers, one write. */
-static void vm_publish_saves(Vm *v, Ast *a)
+static void vm_publish_saves(Vm *v, Ast *a, void *u)
 {
-    for (;;) {
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-            return;
-        case A_CALL: {
-            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
-            if (i < 0)
-                ctx_fail(v->cx, 0, "internal error: subroutine call to group "
-                                   "%d is not in the call graph",
-                         a->u.call.target);
-            a->u.call.save  = v->rgn_w[i];
-            a->u.call.nsave = v->rgn_nw[i];
-            return;
-        }
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            Ast *t = a;
-            for (; t->k == k; t = t->l) vm_publish_saves(v, t->r);
-            a = t;
-            continue;
-        }
-        }
-        return;
-    }
+    (void)u;
+    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+    if (i < 0)
+        ctx_fail(v->cx, 0, "internal error: subroutine call to group "
+                           "%d is not in the call graph",
+                 a->u.call.target);
+    a->u.call.save  = v->rgn_w[i];
+    a->u.call.nsave = v->rgn_nw[i];
 }
 
 /* [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
@@ -6876,7 +6873,7 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
     for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
     for (int round = 0; round <= nt; round++) {
         bool changed = false;
-        vm_publish_nonnull(v, root, nn);
+        vm_walk_calls(v, root, vm_publish_nonnull, nn);
         for (int i = 0; i < nt; i++)
             if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v->cg, i))) {
                 nn[i] = true;
@@ -6887,7 +6884,7 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
             ctx_fail(cx, 0, "internal error: the subroutine nullability "
                             "fixpoint did not settle in %d rounds", nt);
     }
-    vm_publish_nonnull(v, root, nn);
+    vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
 /* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
@@ -6930,7 +6927,8 @@ static void vm_plan_regions(Vm *v)
     for (int i = 0; i < nt; i++) {
         base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
         memset(base[i], 0, (size_t)ng * sizeof **base);
-        vm_grp_set(v, pcrec_callgraph_body(v->cg, i), base[i]);
+        vm_walk_caps(v, pcrec_callgraph_body(v->cg, i), vm_grp_set_cap,
+                     base[i]);
     }
     bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
     int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
@@ -9142,7 +9140,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         for (int i = 0; i < nt; i++) {
             base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
             memset(base[i], 0, (size_t)nstate * sizeof **base);
-            vm_w_caps(&v, pcrec_callgraph_body(v.cg, i), base[i], nstate);
+            VmWCaps wc = { base[i], nstate };
+            vm_walk_caps(&v, pcrec_callgraph_body(v.cg, i),
+                         vm_w_cap_slots, &wc);
             /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
              * STOPS HERE. The seven per-copy families below are added from the
              * REGION pass's counter ranges, and a spliced target had no region
@@ -9281,7 +9281,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                                 "transitive group set",
                          pcrec_callgraph_target(v.cg, i), v.spl_nw[i], n);
         }
-        vm_publish_saves(&v, root);
+        vm_walk_calls(&v, root, vm_publish_saves, NULL);
 
         /* THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
          * has to walk a callee — which for a recursive one is design §4.4's
