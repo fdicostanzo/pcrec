@@ -50,10 +50,13 @@
 #        K7_SECS  wall budget per compile (default 120)
 #        K7_CPU   CPU budget per compile, Section 1's own bound (default 45)
 #        SIZECAP_CPU  CPU budget for Section 1b's size_moved loop, wider
-#                  than K7_CPU on purpose ([SIZECAP-CPU], default 90) — that
+#                  than K7_CPU on purpose ([SIZECAP-CPU], default 180) — that
 #                  loop asserts the SIZE cap, not a CPU ceiling, and its own
 #                  refusal path costs roughly 2x an ordinary compile (see the
 #                  loop's header comment)
+#        SIZECAP_SECS  wall budget for the same loop (default 300), raised
+#                  with it: a CPU budget above K7_SECS is inert on a
+#                  single-threaded compile, since the WALL bound fires first
 #        LOAD_GUARD_RATIO  [TT-10] 1-min-load/nproc threshold above which a
 #                  123/124 kill is reported INCONCLUSIVE instead of FAIL
 #                  (default 2.0; tests/lib/load_guard.sh has the measurement)
@@ -427,6 +430,21 @@ size_moved=(
 # retries, measures only 12.58s). 45s therefore leaves this row under 1.8x
 # margin on the box that set the budget, not K7_CPU's own ~3x convention.
 #
+# MANAGER AMENDMENT 2026-09-18 (at the btriage2 landing): the lane's first
+# number was 90s, calibrated as ~3.6x the MAC measurement — which is the wrong
+# box to calibrate against, since the Mac is not where this failed. The lane's
+# own Ryzen estimate (25.17s x ~2.3-2.6 = ~58-65s) leaves 90s at only
+# ~1.4-1.55x on the box that actually reds, below even the 1.8x margin the
+# lane called insufficient. Raised to 180s (~3x the LINUX estimate, K7_CPU's
+# own convention applied to the binding box). SIZECAP_SECS (wall) is raised
+# with it because a CPU budget above K7_SECS=120 is INERT on a single-threaded
+# compile — the wall bound would have fired first and 90s-CPU-with-120s-wall
+# was really a 120s wall bound wearing a CPU label. The watchdog here exists
+# to stop a RUNAWAY (which blows past any of these numbers) and not to enforce
+# a performance budget, so the asymmetry favours headroom: being too low costs
+# a false red and a ~6.5h battery cycle, being too high costs a runaway three
+# minutes instead of ninety seconds to be caught.
+#
 # ubuntubudu (the Linux reference box, an AMD Ryzen 5 1600) is a materially
 # slower single core than this dev box's Apple M1 Max, which is what turned
 # a comfortable Mac margin into a real CPU-budget miss there: the battery's
@@ -442,7 +460,8 @@ size_moved=(
 # loop asserts the SIZE cap, not a CPU ceiling, so its watchdog budget only
 # needs enough margin to let a legitimately expensive (not runaway) compile
 # finish on the slowest box this suite runs on.
-SIZECAP_CPU="${SIZECAP_CPU:-90}"
+SIZECAP_CPU="${SIZECAP_CPU:-180}"
+SIZECAP_SECS="${SIZECAP_SECS:-300}"
 
 # [OPT-4.2] (2026-08-31, lane o42) ROW 3 GAINED `-fprefilter`, AND WITHOUT IT
 # THE ROW GOES VACUOUS RATHER THAN WRONG. `(a|b){0,30000}`'s own EXACT
@@ -469,7 +488,7 @@ for entry in "${size_moved[@]}"; do
     was="${rest##*:}"; pat="${rest%:*}"
     out="$WORKDIR/o.c"; rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$K7_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
         ok "'$pat' refused by the total emitted-size cap (was $was bytes before [ART-SIZE]): $(printf '%s' "$log" | head -1 | cut -c1-90)"
@@ -482,7 +501,7 @@ for entry in "${size_moved[@]}"; do
     # the override re-accepts it
     rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$K7_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 0 ]; then
         ok "'$pat' is re-accepted with --max-emit-bytes raised (the override works end to end)"
