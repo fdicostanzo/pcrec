@@ -37,6 +37,7 @@ export LC_ALL=C          # R24 M-F1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (cwmax_check.c)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
@@ -517,11 +518,11 @@ fi
 # ---------------------------------------------------------------------------
 LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 MAXWBIN="$WORKDIR/cwmax_check"
+# [REVW.U L5-R0.1] unit_build (tests/lib/unit_cc.sh) — the ONE build for an
+# internal-property check.
 if [ ! -f "$LIB" ]; then
     bad "cwmax: $LIB not built — run 'make' first"
-elif ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" ${SANFLAGS:-} \
-        -o "$MAXWBIN" "$SCRIPT_DIR/cwmax_check.c" "$LIB" 2>"$WORKDIR/cwmax.build"; then
+elif ! unit_build "$MAXWBIN" "$SCRIPT_DIR/cwmax_check.c" 2>"$WORKDIR/cwmax.build"; then
     bad "cwmax: FAILED TO BUILD cwmax_check.c"
     sed -n '1,20p' "$WORKDIR/cwmax.build" >&2
 else

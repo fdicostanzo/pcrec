@@ -27,6 +27,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (definitions_check.c)
 SANFLAGS="${SANFLAGS:-}"   # SAN-1: the sanitizer axis passes the flags the library was built with; a driver linked against the ASan library without them fails at link time (union battery 3, 2026-08-30)
 KEEP="${KEEP:-0}"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
@@ -83,10 +84,9 @@ else
 fi
 
 # ---- structural check (§3 item 2) ------------------------------------------
+# [REVW.U L5-R0.1] unit_build (tests/lib/unit_cc.sh).
 BIN="$WORKDIR/definitions_check"
-if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
-        -o "$BIN" "$SCRIPT_DIR/definitions_check.c" "$LIB"; then
+if ! unit_build "$BIN" "$SCRIPT_DIR/definitions_check.c"; then
     echo "definitions: FAILED TO BUILD definitions_check.c" >&2
     exit 1
 fi

@@ -447,9 +447,9 @@ static void check_predicate_bites(void)
 static const RegDef synthetic_w_def[] = {
     /* fictional: stands in for a future real DEF_UCP entry, never claims
      * to BE one -- see the function comment above. */
-    {DEFK_STR, DEF_MULTILINE, "[\\p{L}0-9_]", NULL, NULL},
-    {DEFK_STR, DEF_ALWAYS,    "[A-Za-z0-9_]", NULL, NULL}, /* == real \w */
-    {DEFK_END, DEF_ALWAYS,    NULL,           NULL, NULL},
+    {DEFK_STR, DEF_MULTILINE, "[\\p{L}0-9_]", NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS,    "[A-Za-z0-9_]", NULL, NULL, NULL}, /* == real \w */
+    {DEFK_END, DEF_ALWAYS,    NULL,           NULL, NULL, NULL},
 };
 static const RegDef synthetic_b_def[] = {
     /* == the real \b row's own definition text, chosen because it embeds
@@ -457,8 +457,8 @@ static const RegDef synthetic_b_def[] = {
      * this guard exists to exercise. DEF_ALWAYS-only: \b's own tag never
      * varies; only the (independently resolved) \w reference inside its
      * TEXT would, once DD-11.5 wires real substitution. */
-    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL},
-    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL},
+    {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?!\\w)|(?<!\\w)(?=\\w))", NULL, NULL, NULL},
+    {DEFK_END, DEF_ALWAYS, NULL, NULL, NULL, NULL},
 };
 
 /* A minimal RegRow: pcrec_def_resolve reads only `.definitions` (and

@@ -79,3 +79,7 @@ tests/anchored/run_anchored_diff.sh
 tests/utf8/run_startbnd_diff.sh
 tests/lib/run_gen_timeout_tests.sh
 tests/known_fail/run_known_fail.sh
+# [REVW.U L5-R0.2/R2] the unit tier's own home (tests/core/): built through
+# unit_cc.sh's unit_build, which threads $SANFLAGS unconditionally, so this
+# entry is what actually instruments it under the sanitizer axes.
+tests/core/run_core_tests.sh

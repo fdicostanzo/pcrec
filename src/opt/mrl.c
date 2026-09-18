@@ -90,13 +90,16 @@
  * prevent exactly that. */
 #define MRL_MINW_MAX PCREC_MINW_MAX
 
-static long long mrl_sat_add(long long a, long long b)
+/* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
+ * symbol directly (declared in core/internal.h). No behaviour change —
+ * this is pcrec's own compile-time arithmetic, never emitted text. */
+long long mrl_sat_add(long long a, long long b)
 {
     long long r = a + b;
     return r > MRL_MINW_MAX ? MRL_MINW_MAX : r;
 }
 
-static long long mrl_sat_mul(long long a, long long b)
+long long mrl_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a > MRL_MINW_MAX / b) return MRL_MINW_MAX;

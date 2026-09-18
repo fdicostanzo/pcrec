@@ -43,6 +43,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export WATCHDOG_SECTION="registry"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (definitions_oracle_gen.c)
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
@@ -59,10 +60,10 @@ trap cleanup EXIT
 
 # ---- build the generator and the comparator; the comparator doubles as
 #      the oracle probe for the A==C leg -------------------------------
-if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -I "$ROOT_DIR/lib" -I "$ROOT_DIR/src" $SANFLAGS \
-        -o "$WORKDIR/gen" "$SCRIPT_DIR/definitions_oracle_gen.c" \
-        "$ROOT_DIR/build/libpcrec.a"; then
+# [REVW.U L5-R0.1] unit_build (tests/lib/unit_cc.sh) — also fixes a real gap
+# this site had: it hardcoded build/libpcrec.a with no $LIBPCREC (SAN-1)
+# override, so a sanitizer-built library was never reachable here before.
+if ! unit_build "$WORKDIR/gen" "$SCRIPT_DIR/definitions_oracle_gen.c"; then
     echo "FAIL: definitions-oracle: definitions_oracle_gen.c does not build" >&2
     exit 1
 fi

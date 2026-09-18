@@ -5434,6 +5434,37 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
  * and why its switch has no live default arm. */
 long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
 
+/* [REVW.U L5-R2] THE SIX SATURATING-ARITHMETIC HELPERS, DECLARED SO
+ * tests/core/sat_arith_check.c CAN REACH THEM.
+ *
+ * src/opt/CLAUDE.md's mrl.c entry states the requirement in prose: the
+ * minimum-width arithmetic saturates at PCREC_MINW_MAX, shared with the
+ * emitter's follow-min accumulator, so a long enough concatenation of
+ * saturated subtrees cannot overflow past the ceiling that exists to
+ * prevent exactly that. Nothing checked the AGREEMENT until this row — two
+ * sources stated the requirement, and it held only because two authors
+ * happened to type the same five lines.
+ *
+ * Each was `static` (file-private) until this row, which a linker cannot
+ * reach from a separate translation unit — the ONLY change here is
+ * dropping `static` so tests/core/sat_arith_check.c can call the shipped
+ * functions directly rather than transcribing their bodies (a
+ * transcription checks nothing but itself). NOT emitted into any
+ * generated artifact — these are pcrec's OWN compile-time arithmetic, so
+ * this is not an `abi` event and moves no byte any identity gate reads.
+ *
+ * X3 (lens 1, wave 2) unifies all three pairs into pcrec_sat_add/
+ * pcrec_sat_mul taking the ceiling as a parameter; these six declarations
+ * retire with that unification, not before — the check is written against
+ * TODAY's three separate implementations first, per R2's own ordering
+ * argument. */
+long long mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
+long long mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
+long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
+long long vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
+long long cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
+long long cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
+
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
  * because the emitter's own accumulator has to hold the same ceiling the
  * analysis does — two different ceilings would let a long concatenation of

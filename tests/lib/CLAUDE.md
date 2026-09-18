@@ -47,6 +47,24 @@ section targets depend on.
   script whose own `CC="${CC:-gcc}"` default this lane found (see the
   report for the full list and the two files using `$ROOT` instead of
   `$ROOT_DIR`).
+- **unit_cc.sh** — [REVW.U L5-R0] `unit_build <outbin> <src.c> [extra
+  args...]`, the ONE build for the unit tier's internal-property checks
+  (`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R0: ten C programs
+  scattered across six directories with four divergent flag policies
+  before this file, one of them, `tests/codegen/cpset_model_check.c`,
+  never built under a sanitizer despite its whole argument being "reaches
+  paths the corpus cannot"). Sources `cc_resolve.sh`; resolves
+  `-Ilib -Isrc`, threads `$SANFLAGS` (SAN-1), links `$LIBPCREC` (default
+  `<root>/build/libpcrec.a`), `-Werror` UNCONDITIONALLY — a test-compile
+  policy argued against R5-Q1 rather than in ignorance of it (K28's own
+  precedent: `-Werror` on a compile path found a maybe-uninitialized read
+  no answer check could see). Adopted in place at the seven pre-existing
+  checks that link only `libpcrec.a`; the two `fold_agreement_check.c`
+  sites and `startbnd_backend_check.c`, which compile alongside a
+  GENERATED artifact through `$GENCFLAGS`/`gen_cc`, stay on that existing
+  regime deliberately — see this file's own header for the argument.
+  Cost budget stated as a SHAPE in the header (one gcc invocation, one
+  process spawn, per SUBJECT — R0.4), not a stopwatch.
 - **timeout_bin.sh** — [TT-6] resolves `TIMEOUT_BIN` ONCE per process: the
   coreutils `timeout` binary every suite should invoke instead of a bare
   `timeout`. THE FINDING (docs/dev/tt4_measurement.md, "The `timeout`

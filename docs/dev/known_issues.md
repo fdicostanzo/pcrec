@@ -11,6 +11,116 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K60 — [REVW.U], found 2026-09-17 by the allocation-failure injector's own first real run (lane waveu): an allocation failure ANYWHERE BUT THE LAST INTERNAL ATTEMPT of a compile is frequently SWALLOWED — `pcrec_compile` returns 0, no diagnostic, an artifact from a later fallback attempt nobody asked for
+
+**Status: deferred, filed rather than fixed** — a design question about
+the retry ladder's own state discipline
+(`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R1's own residual:
+build the injector, do not fix everything it finds), not a one-line
+patch a check-writing lane should narrow blind (K49fix's own precedent
+for filing rather than narrowing a defect found while building
+something else).
+
+**FOUND BY**: `tests/core/alloc_check.c` (`make alloc`), sweeping every
+allocation over three witnesses. `W2` (`[a-z]{2,10}`, `--engine=vm`) is
+the CLEAN, CONFIRMED reproduction of a DIFFERENT, already-fixed defect
+(F1 — see below); `W1` (`[a-z]+`, DFA, `--engine=auto`) and `W3`
+(`\p{L}` under `-e utf8 --features unicode-props`, which needs
+`[K53-SELRETRY]`'s drop rung to compile at all) both show THIS one: on
+the CURRENT (F1-fixed) tree, 15 of 72 (W1) and 25 of 328 (W3) forced
+allocation failures make `pcrec_compile` return 0 — a SUCCESSFUL
+compile — despite the Nth allocation call genuinely having returned
+NULL.
+
+**ONE CONFIRMED MECHANISM (by reading `src/core/compile.c`), likely one
+of several sharing the same shape.** `cx.size_cap_refused` is set
+`true` at exactly one site (`:1687`, the post-emission size check) and
+is **never reset to `false`** anywhere in the retry loop — not by
+`job_cleanup`, not at the top of any rung's `continue`. `cx.dfa_overflowed`
+has the same shape. Both are read by LATER rungs' eligibility tests
+(`size_eligible`, `drop_eligible`, the K59-PREMUL rung) as "did THIS
+attempt just get refused by the cap" — they actually mean "has ANY
+attempt in this compile's whole retry history ever been refused." So an
+attempt that legitimately overflows sets the flag, triggers a real
+retry rung, and if THAT retry attempt then hits a genuine, unrelated
+`ctx_nomem` (allocation failure), the STALE flag makes a FURTHER rung
+look eligible for a reason that has nothing to do with why this attempt
+actually failed — and if that further rung succeeds (which it usually
+does, since the injector's own fail-at-N counter never repeats a hit),
+the OOM is silently absorbed.
+
+**A SIBLING MECHANISM, DOCUMENTED IN THE CODE'S OWN COMMENT, explains
+W1 (a tiny DFA pattern that never approaches any size cap and cannot be
+explained by the mechanism above).** `[ART-SIZE]`'s size-term LADDER —
+which tries several `--unroll=K` candidates as part of ORDINARY VM
+compilation, not as error recovery — states its own catch-all rule at
+the top of `compile_driver`'s `setjmp` handler: *"A LADDER attempt's
+failure — for ANY reason: the node cap, the replication product, a
+repeat-copies refusal, the scratch abort, ANYTHING — means 'this K is
+out', never the compile's answer."* That rule is written correctly for
+the ladder's own job (a K that cannot fit does not doom the compile) and,
+by construction, applies identically to a K whose OWN allocation happened
+to fail — the two are indistinguishable at the one shared `setjmp`. W1's
+`[a-z]+` is capture-free and tiny, so this is the more likely explanation
+there than the size-cap flags above; neither W1's own ladder engagement
+nor whether a THIRD, distinct mechanism is also contributing has been
+traced past this level.
+
+**WHY NO EXISTING CHECK COULD SEE IT.** The final artifact is a real,
+correct compile of a real pattern — no wrong answer, no crash, `rc ==
+0`. The only externally observable costs are an extra internal attempt
+(cheap) and a masked diagnostic. The one population that can reach it
+at all is "a pattern whose compile takes more than one internal
+attempt" crossed with "an allocation happens to fail on a NON-FINAL
+attempt" — exactly what `tests/resource/`'s `ulimit -v` approach
+cannot steer to (an address-space limit fails whichever allocation
+crosses the line first, almost always on the LARGEST, usually final,
+attempt) and exactly what a chosen-Nth-call injector can.
+
+**F1 IS A SEPARATE, NARROWER DEFECT AND IS CONFIRMED FIXED, CLEANLY, BY
+THE SAME INJECTOR — this is the useful negative result inside this
+entry.** `W2` (`[a-z]{2,10}`, `--engine=vm`) is a single-attempt compile
+(no retry, no ladder — too small to reach either) that writes to
+`vm_cursor_rep`'s `scr_test`/`scr_desc` `StrBuf`s, F1's own reaching
+sequence. Run against a `git archive` of `23eb3d34`'s PARENT (F1
+unrepaired): **`FAIL: W2 (VM cursor rung): 1 of 11 forced allocations
+KILLED THE PROCESS BY SIGNAL (K7's abort() class) -- first at N=3,
+signal 6`** (SIGABRT — `sb_grow`'s unattached-buffer `abort()`
+verbatim). Run against the current, F1-fixed tree: **`PASS: W2 (VM
+cursor rung): every one of 11 forced allocation failures was diagnosed
+(rc == -1, non-empty message), never abort/signal/success`.** K60's own
+mechanism is entirely absent from W2 (11 total allocations, no retry
+ladder ever engages for a pattern this small), which is what makes it
+the clean witness for F1 specifically and not for K60.
+
+**Three dispositions, left to Frank** (K59's own precedent for a filed
+retry-ladder finding): (1) reset `cx.size_cap_refused`/`cx.dfa_overflowed`
+(and any sibling per-attempt flag the ladder shares) to their entry
+state at the top of every retry iteration, so each attempt's
+eligibility tests see only what THAT attempt did — the narrow fix, but
+touches the one recovery point every rung shares, worth a measured pass
+over every rung's reachability before landing; (2) have `ctx_nomem` set
+a flag checked BEFORE any rung's own eligibility test and BEFORE the
+ladder's blanket "this K is out" catch, so a genuine allocation failure
+always propagates regardless of what a prior attempt left set (cheaper,
+additive); (3) rule the masking ACCEPTABLE as documented behaviour (a
+caller who sees `rc == 0` got a correct artifact, and "try harder before
+giving up" is the ladder's whole point) — the position this entry does
+NOT take, since K7's own rule ("pcrec is a library, and aborting kills
+the caller's process") is about SILENT failure paths, and a masked
+diagnostic on a genuinely-failing allocator is silent in exactly K7's
+sense, one layer up from `abort()`.
+
+Population: not measured beyond the three witnesses above — filed as
+found, per the injector's own residual (a full-corpus sweep of "does
+this pattern need more than one internal attempt" crossed with "at
+which allocation index" is D77-gated on a measured need, not built
+speculatively here). The exact mechanism for W1 and the question of
+whether a THIRD distinct absorption path exists are both open.
+
+---
+
+
 ## K59 — [OPT-DIAL], FIXED 2026-09-17 (lane k59rung, disposition 2, ratified): `--tune=min-size` MOVES THE REFUSAL SET — it compiles a pattern the other four positions refuse
 
 **FIXED. Disposition 2 landed**: `[K53-SELRETRY]`'s optional-contributor
