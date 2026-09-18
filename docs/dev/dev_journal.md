@@ -23912,3 +23912,28 @@ plant) goes to Frank. K60 is CLOSED in both classes. Frank's ruling on
 validation for this pair: `make test` locally + `make san` on ubuntubudu (the
 leak tier is Linux-only) + mech on the new rows; the full battery waits for
 wave 2's end. Both agents closed; watcher killed.
+
+**LINUX ARM GREEN (I-74, pcrecdev2 as executor)**: at f6474777 `make alloc`
+8/0 with every witness cell 0, `make san` 38/38 scripts, zero LSan/ASan/UBSan
+lines — 71 min wall on ubuntubudu. The leak tier D105's arena move needed.
+
+**LOCAL `make test` RED → lane mtriage (sonnet)**: (1) the wave-U raw-allocation
+FILE-SET census went red because D105 deleted emit_dfa.c's five raw mallocs
+(10 files → 9) — the check did its job; d105 missed the re-pin (delivery-bar
+miss); re-pinned on lane/mtriage (4576e105), resource suite 27/0. (2) the
+standing darwin nm red. (3) MY TIMEOUT: I bounded the run at 90 min without a
+darwin figure; the only recorded baseline is 85.4 min on a 38-section suite,
+now 40 sections — 30 of 40 sections completed at the kill. Lesson: size a
+bound from the recorded baseline plus growth, or measure first. The lane's
+own full `make test` re-run is in flight under a 4h watchdog (its last act);
+the agent stays alive until it ends because TaskStop kills detached runs.
+Watcher false alarm en route: a fresh worktree's base-commit age read as
+"quiet 90 min" — fixed to count from first sighting.
+
+**WAVE 2 LAUNCHED** (Frank's "go next session"): fact sheet extracted by a
+read-only sonnet agent (EP2's 16 steps live at emitvm_second_pass.md:635-652;
+the floor 58/66 in three categories; D106 add.3, D108's two rules; w1kit §8/§9
+inheritances; the 27/41 listing-reach gap). Two slices: w2a (opus, steps 1-9,
+one byte-neutral commit per step) and w2census (sonnet, the emit_dfa.c
+category-(c) census + the reach measurement). Box note in both briefs: the
+mtriage make test owns the heavy slot until ~17:15 EDT.
