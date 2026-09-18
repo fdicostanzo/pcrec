@@ -63,15 +63,25 @@ unsigned pcrec_flavour_by_name(const char *name)
  * layer's, so the separator policy is not re-decided per mask table. The
  * array is sized from the LARGEST mask table in this file — a compile-time
  * fact, asserted below, never a guessed margin. */
-#define MASK_MAX 8
-_Static_assert(NELEMS(flavour_names) <= MASK_MAX, "MASK_MAX below flavour_names");
-_Static_assert(NELEMS(engine_names)  <= MASK_MAX, "MASK_MAX below engine_names");
-_Static_assert(NELEMS(flag_names)    <= MASK_MAX, "MASK_MAX below flag_names");
 static void put_mask(StrBuf *sb, unsigned mask, const MaskName *t, size_t n)
 {
-    const char *sel[MASK_MAX];
+    /* Sized by the SUM of this file's three mask tables, which is trivially an
+     * upper bound on any ONE of them and is a compile-time expression rather
+     * than a literal — a table that grows needs no number updated anywhere,
+     * and there is no magic constant here for D90's detector to have an
+     * opinion about. (It had one: this array was first sized by a bare numeric
+     * define, and `tests/registry/limits_check.sh` flagged it on its first run
+     * — correctly, since that is exactly what the check is for, and a
+     * scratch-array bound is not a `limits.def` row either, D90/L3-F6.
+     * Deriving the bound removes the question rather than allowlisting it.
+     * NOTE FOR ANY FUTURE EDIT OF THIS COMMENT: that check reads the file's
+     * raw lines and does not skip comment text, so naming a rejected constant
+     * here in its declaration's own spelling makes the check fire on the
+     * prose. See docs/dev/lanes/w1kit_report.md §8 item 7.) */
+    const char *sel[NELEMS(flavour_names) + NELEMS(engine_names)
+                    + NELEMS(flag_names)];
     size_t k = 0;
-    for (size_t i = 0; i < n && k < MASK_MAX; i++)
+    for (size_t i = 0; i < n && k < sizeof sel / sizeof *sel; i++)
         if (mask & t[i].bit) sel[k++] = t[i].name;
     sb_join(sb, "|", sel, k);
 }

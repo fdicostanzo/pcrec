@@ -694,6 +694,48 @@ never edited afterwards.
   one `RECORD:` line is this box's pre-existing darwin C3
   non-native-pin behavior, unrelated to either fix.
 
+- `w1kit_report.md` — [REVW.1] WAVE 1 STAGES 1-2, the EMISSION KIT
+  (2026-09-18, lane w1kit, opus): the text layer
+  (`sb_text`/`sb_textn`/`sb_field`/`sb_join`/`sb_row` in `src/core/sb.c`),
+  its adoption across the five TSV producers, `cli_err`, and L10-2's
+  bounded-join fix. Read §0 first: **the charter's central stage-1 proposal
+  is refuted by the tree.** `lens10_emission_kit_charter.md` §2.2(4) promotes
+  `rxt_source.c`'s `put_escaped` as the one field escape and names the
+  registry dumps as its customers; that vocabulary DOUBLES a backslash, and
+  **150 data rows** across `--list-syntax`/`--list-families`/
+  `--list-definitions`/`--list-axes`/`--list-limits` carry a raw one (the
+  `syntax` column is literally `\d`, and `tests/reject/` builds probe
+  patterns from it). The charter half-saw this — it keeps `put_text`
+  separate on exactly this ground and names the `\xNN` tail as the shared
+  part — and drew the line one file too far left. The kit ships TWO
+  vocabularies over ONE implementation instead.
+  Also worth reading for four things. **The charter's own stage-1
+  precondition is answered ZERO** (no `--list-*` row carries a non-TAB
+  control byte or a wrong field count), so the escaping is insurance and
+  byte-neutral *in the correct vocabulary* and a 150-row regression in the
+  proposed one. **L10-2's severity is LATENT, not live** (the module list is
+  179 bytes of 512, the encoding menu 10 of 128), and `pcrec_enc_names`'
+  defect is worse in kind than recorded: the separator is written under a
+  DIFFERENT bound from the name, so a tight cap emits `"byte, "` — a
+  DANGLING SEPARATOR, a menu reading as though a name went missing rather
+  than as a truncated list. **`sb_join` is DECLINED at both bounded joins
+  with a measured reason** — it needs a `StrBuf`, and `pcrec_enc_names` sits
+  on `pcrec_compile`'s own refusal path where a failed realloc would
+  `abort()` the CALLER (coding guide §1.1); one stated policy at both beats
+  one of them reaching the primitive. And **`cli_err` ships with no `where`
+  parameter**: the charter's item 7 gives it one (with a `format(printf,
+  3, 4)` attribute that does not match its own signature) and not one of
+  `cli/main.c`'s 79 stderr sites has that shape. D26 is proven two ways by
+  instruments that deliberately do not share a rule — a 79-message set
+  normalized by deleting `"pcrec: "` and `"\n"` ANYWHERE (not by stripping
+  a prefix and a trailing newline the way the conversion does, which would
+  have read green on exactly the four ternary-tailed sites the conversion's
+  own first rule got wrong) and a 1.68 MB live argv sweep. Anchors: S200
+  re-aimed FILE-ONLY (the escape moved verbatim, same column — method rule
+  (ii) working), S241 re-derived against the cell array; both DETECTED at
+  `rxtsource:2fail/210pass` and `1fail/211pass`. PARKED on `lane/w1kit`;
+  `make test` launched as the lane's last act, log path in the report.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
