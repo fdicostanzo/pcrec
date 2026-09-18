@@ -1372,3 +1372,34 @@ never edited afterwards.
   `run_core_tests.sh`. PARKED on `lane/waveu`, not merged — `make
   test` launched backgrounded as the lane's last act per BOILERPLATE,
   OWED at hand-off (log path in the report).
+
+- `santriage3_report.md` — TRIAGE of `battery_20260918_051433`'s `san`-
+  stage red on ubuntubudu (2026-09-18, lane santriage3, sonnet; read-only
+  log triage, fix built and validated LOCALLY on this Mac per K54 — no
+  ubuntubudu run). **Verdict: the `272bf970` pin holds, does not slip.**
+  `run_san_group: 37/38 scripts passed` — the sole failure is
+  `tests/codegen/run_cpset_structure.sh` CHECK 4 (the interval-algebra
+  model check), and it is class (ii): `main()` in
+  `tests/codegen/cpset_model_check.c` never called `arena_free(&cx.arena)`
+  despite every real `src/` path doing so at every exit — a pre-existing
+  gap in a `tests/` unit-check program, unmasked for the first time now
+  that wave U's `unit_build` threads `$SANFLAGS` into this file's compile
+  ([REVW.U L5-R0.1]) AND LeakSanitizer is genuinely LIVE on ubuntubudu
+  today (confirmed by this very report — K26's 2026-08-18 no-op finding
+  no longer holds there). The shell's own FAIL label is misleading: the
+  algebra never disagreed (`bad == 0`, "PASS" printed) — LSan's atexit
+  leak report overrides the exit code the shell reads. Fixed with one
+  line (`arena_free(&cx.arena);` before `return bad;`); local validation
+  (plain build PASS/rc=0; the exact `SAN_CFLAGS` build with
+  `detect_leaks=0`, this box's own K54-driven Darwin posture, PASS/rc=0;
+  the WHOLE `run_cpset_structure.sh` script post-fix, 28/28 checks) —
+  `detect_leaks=1` itself was never run locally, per K54's documented
+  hang, so the literal "LSan no longer reports" is confirmed by code
+  review (the only allocation site is the arena `arena_free` now walks
+  and frees) rather than by a local repro; owed to the next ubuntubudu
+  run. Also corrects the brief's own premise: `run_alloc_tests.sh` is
+  NOT in `san_scripts.txt` at all (its own separate opt-in `make alloc`
+  target) — wave U/L5-R0.2 added three manifest entries, not four, and
+  `run_mrl_tests.sh`/`run_core_tests.sh` are both independently clean in
+  this log. No manifest change made or needed. Branch `lane/santriage3`
+  (`ddcc8c20`), PARKED, not merged.
