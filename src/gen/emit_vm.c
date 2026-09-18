@@ -6887,6 +6887,56 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
     vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
+/* [EP2-P4] THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
+ * has to walk a callee — which for a recursive one is design §4.4's
+ * non-terminating descent.
+ *
+ * PRODUCES: `v->rgn_cost[i]` for every target.
+ * READS: `v->cg`, `v->nregion`, and — through `vm_cost` — everything the
+ * layout and `vm_resolve_nonnull` have already settled.
+ * THE INVARIANT A CALLER MUST NOT BREAK: `W` is published first, because
+ * `vm_cost`'s `A_CALL` arm charges `2 * |W|` of trail and cannot do so
+ * before `W` exists.
+ *
+ * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what makes the
+ * rest a finite DAG evaluation: a recursion's depth is data-dependent by
+ * nature, so P12's honest-ceiling machinery is reused rather than a number
+ * invented. Everything else is evaluated once its whole reachable set is
+ * settled, and `nt` rounds suffice because each round settles at least one
+ * more target. */
+static void vm_memo_region_costs(Vm *v)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+
+    for (int i = 0; i < nt; i++)
+        if (pcrec_callgraph_reaches(v->cg, i, i)) {
+            Cost u = { 0, 0, 0, 0, true, true };
+            v->rgn_cost[i] = u;
+        }
+    bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
+    for (int i = 0; i < nt; i++)
+        done[i] = pcrec_callgraph_reaches(v->cg, i, i);
+    for (int round = 0; round <= nt; round++) {
+        bool changed = false, all = true;
+        for (int i = 0; i < nt; i++) {
+            if (done[i]) continue;
+            bool ready = true;
+            for (int j = 0; j < nt; j++)
+                if (j != i && pcrec_callgraph_reaches(v->cg, i, j)
+                           && !done[j]) ready = false;
+            if (!ready) { all = false; continue; }
+            v->rgn_cost[i] = vm_cost(v, pcrec_callgraph_body(v->cg, i), false);
+            done[i] = true;
+            changed = true;
+        }
+        if (all) break;
+        if (!changed)
+            ctx_fail(cx, 0, "internal error: the subroutine cost "
+                            "memo did not settle");
+    }
+}
+
 /* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
  * targets still need a shared region, and what each one's transitive GROUP
  * set is.
@@ -9283,45 +9333,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         }
         vm_walk_calls(&v, root, vm_publish_saves, NULL);
 
-        /* THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
-         * has to walk a callee — which for a recursive one is design §4.4's
-         * non-terminating descent.
-         *
-         * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what
-         * makes the rest a finite DAG evaluation: a recursion's depth is
-         * data-dependent by nature, so P12's honest-ceiling machinery is
-         * reused rather than a number invented. Everything else is evaluated
-         * once its whole reachable set is settled, and `nt` rounds suffice
-         * because each round settles at least one more target. */
-        for (int i = 0; i < nt; i++)
-            if (pcrec_callgraph_reaches(v.cg, i, i)) {
-                Cost u = { 0, 0, 0, 0, true, true };
-                v.rgn_cost[i] = u;
-            }
-        {
-            bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
-            for (int i = 0; i < nt; i++)
-                done[i] = pcrec_callgraph_reaches(v.cg, i, i);
-            for (int round = 0; round <= nt; round++) {
-                bool changed = false, all = true;
-                for (int i = 0; i < nt; i++) {
-                    if (done[i]) continue;
-                    bool ready = true;
-                    for (int j = 0; j < nt; j++)
-                        if (j != i && pcrec_callgraph_reaches(v.cg, i, j)
-                                   && !done[j]) ready = false;
-                    if (!ready) { all = false; continue; }
-                    v.rgn_cost[i] =
-                        vm_cost(&v, pcrec_callgraph_body(v.cg, i), false);
-                    done[i] = true;
-                    changed = true;
-                }
-                if (all) break;
-                if (!changed)
-                    ctx_fail(cx, 0, "internal error: the subroutine cost "
-                                    "memo did not settle");
-            }
-        }
+        vm_memo_region_costs(&v);
     }
 
     /* §2.5's two capacities. */
