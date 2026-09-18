@@ -130,17 +130,19 @@ char *pcrec_rxt_schema_tsv(void)
 
     for (size_t i = 0; i < n; i++) {
         const RxtSchemaRow *r = &rows[i];
-        sb_printf(&sb, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
-                  pcrec_rxt_scope_name(r->scope),
-                  r->kind,
-                  pcrec_rxt_value_name(r->value),
-                  r->opens_group ? "true" : "false",
-                  pcrec_rxt_children_name(r->children),
-                  pcrec_rxt_cardinality_name(r->cardinality),
-                  r->constraints,
-                  pcrec_rxt_row_source_name(r->source),
-                  pcrec_rxt_validated_by_name(r->validated_by),
-                  r->wave);
+        char wave[16];
+        snprintf(wave, sizeof wave, "%d", r->wave);
+        const char *cells[] = { pcrec_rxt_scope_name(r->scope),
+                                r->kind,
+                                pcrec_rxt_value_name(r->value),
+                                r->opens_group ? "true" : "false",
+                                pcrec_rxt_children_name(r->children),
+                                pcrec_rxt_cardinality_name(r->cardinality),
+                                r->constraints,
+                                pcrec_rxt_row_source_name(r->source),
+                                pcrec_rxt_validated_by_name(r->validated_by),
+                                wave };
+        sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
     sb_puts(&sb,
@@ -154,9 +156,11 @@ char *pcrec_rxt_schema_tsv(void)
         "# cell.\n"
         "#section surface\n"
         "#surface\tscope\tkind\treason\n");
-    for (size_t i = 0; i < sizeof g_surface / sizeof *g_surface; i++)
-        sb_printf(&sb, "%s\t%s\t%s\t%s\n", g_surface[i].surface,
-                  g_surface[i].scope, g_surface[i].kind, g_surface[i].reason);
+    for (size_t i = 0; i < sizeof g_surface / sizeof *g_surface; i++) {
+        const char *cells[] = { g_surface[i].surface, g_surface[i].scope,
+                                g_surface[i].kind, g_surface[i].reason };
+        sb_row(&sb, cells, sizeof cells / sizeof *cells);
+    }
 
     /* THE COMPILE-TIME ROW TOTAL, printed LAST and as a comment so it is
      * not a row of any section (w23_impl DECIDED (12), r59-A-M7).

@@ -36,20 +36,23 @@ SAB_COUNT=1
 # certifying nothing and must say so rather than scoring.
 SAB_REACH='"$PCREC" --list-schema | awk -F"\t" "\$1 == \"block\" && \$2 == \"name\" { print \$6 }"'
 SAB_REACH_EXPECT='at-most-one'
-SAB_BEFORE='        sb_printf(&sb, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
-                  pcrec_rxt_scope_name(r->scope),
-                  r->kind,
-                  pcrec_rxt_value_name(r->value),
-                  r->opens_group ? "true" : "false",
-                  pcrec_rxt_children_name(r->children),
-                  pcrec_rxt_cardinality_name(r->cardinality),'
-SAB_AFTER='        /* SABOTAGE S241: one row is hand-written, and it disagrees. */
-        sb_printf(&sb, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\n",
-                  pcrec_rxt_scope_name(r->scope),
-                  r->kind,
-                  pcrec_rxt_value_name(r->value),
-                  r->opens_group ? "true" : "false",
-                  pcrec_rxt_children_name(r->children),
-                  (r->scope == RXT_SCOPE_BLOCK && !strcmp(r->kind, "name"))
-                      ? "repeat"
-                      : pcrec_rxt_cardinality_name(r->cardinality),'
+# [REVW.1 wave 1, 2026-09-18] RE-AIMED. The dump's row emission moved from
+# one `sb_printf` with a ten-conversion format to the text layer's `sb_row`
+# over a named cell array (src/core/sb.c), so the anchor's quoted text no
+# longer exists. RE-DERIVED from the live source, NOT weakened: the plant is
+# the same one column on the same one row, spelled against the cell array
+# instead of the vararg list, and it carries the rest of the array through
+# verbatim exactly as the old form carried the rest of the format.
+# INTENT RE-VERIFIED by applying it (the house rule, and the reason S10's
+# re-anchor is the worked example): under the plant `--list-schema` reports
+# `block name` as `cardinality: repeat` while the parser still refuses a
+# second `name` line, which is the disagreement this row is named for. The
+# reach probe is UNCHANGED and still reads the shipped `at-most-one`.
+SAB_BEFORE='                                pcrec_rxt_children_name(r->children),
+                                pcrec_rxt_cardinality_name(r->cardinality),'
+SAB_AFTER='                                pcrec_rxt_children_name(r->children),
+                                /* SABOTAGE S241: one row is hand-written,
+                                 * and it disagrees. */
+                                (r->scope == RXT_SCOPE_BLOCK && !strcmp(r->kind, "name"))
+                                    ? "repeat"
+                                    : pcrec_rxt_cardinality_name(r->cardinality),'

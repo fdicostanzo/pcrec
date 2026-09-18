@@ -250,6 +250,11 @@ static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_
 
 /* ---- one TSV row -------------------------------------------------------- */
 
+/* ONE ROW, through the text layer's `sb_row` (src/core/sb.c): twelve cells a
+ * reader can count against this dump's header, each escaped so a control byte
+ * in an `applies` sentence cannot split the record. `order` is the only cell
+ * that is not already text; `char[16]` holds every `int` and is not the
+ * `PCREC_MAX_EMIT_NAME_LEN` class of buffer (no prefix reaches it). */
 static void axis_row(StrBuf *sb, const char *axis, int order,
                      const char *candidate, const char *kind,
                      const char *stamp_macro, const char *stamp_value,
@@ -257,10 +262,12 @@ static void axis_row(StrBuf *sb, const char *axis, int order,
                      const char *force_macro, const char *force_bit,
                      const char *cli_flag, const char *applies)
 {
-    sb_printf(sb, "%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-              axis, order, candidate, kind,
-              stamp_macro, stamp_value, deny_macro, deny_bit,
-              force_macro, force_bit, cli_flag, applies);
+    char ord[16];
+    snprintf(ord, sizeof ord, "%d", order);
+    const char *cells[] = { axis, ord, candidate, kind,
+                            stamp_macro, stamp_value, deny_macro, deny_bit,
+                            force_macro, force_bit, cli_flag, applies };
+    sb_row(sb, cells, sizeof cells / sizeof *cells);
 }
 
 /* ---- "list"/"both" axes: walked off the LIVE candidate arrays ---------- */

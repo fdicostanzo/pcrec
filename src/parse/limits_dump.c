@@ -43,13 +43,22 @@ static const char *override_name(const char *tok)
     return tok; /* unreached on a well-formed table; visible rather than lost */
 }
 
+/* ONE ROW, through the text layer's `sb_row` (src/core/sb.c): seven cells a
+ * reader can count against the header seven lines below, each escaped so a
+ * control byte in a `desc` cannot split the record. `value` is the only cell
+ * that is not already text — `char[24]` holds every `long long` with room to
+ * spare and is not the `PCREC_MAX_EMIT_NAME_LEN` class of buffer (no prefix
+ * reaches it; the bound is the TYPE's). */
 static void limit_row(StrBuf *sb, const char *name, long long value,
                       const char *unit, const char *kind,
                       const char *override, const char *anchor,
                       const char *desc)
 {
-    sb_printf(sb, "%s\t%lld\t%s\t%s\t%s\t%s\t%s\n",
-              name, value, unit, kind, override_name(override), anchor, desc);
+    char val[24];
+    snprintf(val, sizeof val, "%lld", value);
+    const char *cells[] = { name, val, unit, kind,
+                            override_name(override), anchor, desc };
+    sb_row(sb, cells, sizeof cells / sizeof *cells);
 }
 
 char *pcrec_limits_tsv(void)
