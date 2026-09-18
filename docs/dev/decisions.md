@@ -7121,6 +7121,40 @@ methodology is the manual re-check).
 
 ## D105 — emit_state_legend OOM: refuse via ctx_nomem, implemented by RESTRUCTURING the allocation rather than rerouting the failure (Frank, 2026-09-17, sixty-seventh session)
 
+**STATUS 2026-09-18: RULED, NOT BUILT — and the project record said
+otherwise for a day.** This decision was never implemented. Verified at
+`272bf970` and on all five parked lane branches: `emit_state_legend` still
+takes four raw `malloc`s (`src/gen/emit_dfa.c:3615-3618`) plus `path =
+malloc(...)` (`:3660`), each returning silently on NULL; no fixed 40-int
+local exists anywhere in the tree; the only commit touching that file since
+the ruling is `66363dcd` (the L4-C1 function-header pass). The
+sixty-seventh session's journal entry records this ruling as "IMPLEMENTED BY
+RESTRUCTURING" — **that was the MANAGER misreading this decision's own
+TITLE, which names the chosen APPROACH ("implemented by RESTRUCTURING the
+allocation rather than rerouting the failure"), as a completed action.** No
+lane was ever chartered to build it.
+
+**How it surfaced, which is the part worth keeping**: lane `k60meas`
+(2026-09-18, measuring K60) attributed 40 of 148 swallowed allocation
+failures to exactly this function — **by measurement, with no knowledge that
+D105 existed**. A ruling recorded as done and silently not built was found by
+an instrument measuring something else. THE GENERAL FORM: a decision log
+entry states a RULING; only the tree states whether it SHIPPED, and this
+project has no check tying the two together (the nearest neighbour is
+`w23implfix_report.md`'s "spec row S3 has never landed and its WAVE LABEL is
+what made it look landed" — a label says when a row was scheduled, never
+whether it shipped; this is that shape one document over).
+
+**Re-opened for Frank** rather than quietly built to the original ruling: the
+measurement that did not exist in September 17 now prices it. This site is
+27% of K60's absorptions, the ONLY one of K60's mechanisms a user can meet
+without an injector, and it sits in a function whose own comment argues a
+legend is never worth failing a compile over — so "refuse via ctx_nomem" is
+worth re-confirming against evidence the original ruling did not have, not
+assumed still-correct because it was once ruled. See
+`docs/dev/k60_measurement.md` §6 and the K60 amendment in `known_issues.md`.
+
+
 **Decision.** The 2026-09-17 code review (lens 8, F3) found
 `emit_state_legend` (src/gen/emit_dfa.c:3600) is the compile path's ONE
 allocation site that neither refuses nor aborts on failure — it silently
