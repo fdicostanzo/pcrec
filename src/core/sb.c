@@ -79,3 +79,69 @@ void sb_free(StrBuf *sb)
     sb->p = NULL;
     sb->len = sb->cap = 0;
 }
+
+/* ---- THE TEXT LAYER ([REVW.1] wave 1) -----------------------------------
+ *
+ * The contract, the two vocabularies and why they must not be swapped are
+ * stated once, at the declarations in core/internal.h. What follows is the
+ * implementation and nothing else.
+ *
+ * D108: DATA IN, TEXT OUT. Nothing below reads a `Ctx`, a walk or a machine,
+ * so the future IR-consuming back-end calls the same functions unchanged. */
+
+/* The tail both vocabularies share, and the reason this file has them at all:
+ * before wave 1 it was written twice (syntax_dump.c's `put_text` and
+ * rxt_source.c's `put_escaped`), with only one of the two dumps calling its
+ * own copy. A byte no line-oriented frame can carry goes out by NUMBER;
+ * printable bytes and UTF-8 continuation bytes are themselves, because the
+ * escape protects the FRAMING and never transcodes the content. */
+static void sb_frame_byte(StrBuf *sb, unsigned char c)
+{
+    if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
+    else                       sb_putc(sb, (char)c);
+}
+
+void sb_textn(StrBuf *sb, const char *s, size_t n)
+{
+    if (!s) return;
+    for (size_t i = 0; i < n; i++) sb_frame_byte(sb, (unsigned char)s[i]);
+}
+
+void sb_text(StrBuf *sb, const char *s)
+{
+    if (!s) return;
+    sb_textn(sb, s, strlen(s));
+}
+
+void sb_field(StrBuf *sb, const char *s)
+{
+    if (!s) return;
+    for (const unsigned char *q = (const unsigned char *)s; *q; q++) {
+        switch (*q) {
+        case '\\': sb_puts(sb, "\\\\"); break;
+        case '\t': sb_puts(sb, "\\t");  break;
+        case '\n': sb_puts(sb, "\\n");  break;
+        case '\r': sb_puts(sb, "\\r");  break;
+        default:
+            sb_frame_byte(sb, *q);
+            break;
+        }
+    }
+}
+
+void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        if (i) sb_puts(sb, sep);
+        if (names[i]) sb_puts(sb, names[i]);
+    }
+}
+
+void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
+{
+    for (size_t i = 0; i < ncell; i++) {
+        if (i) sb_putc(sb, '\t');
+        sb_text(sb, cells[i]);
+    }
+    sb_putc(sb, '\n');
+}

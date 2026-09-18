@@ -66,6 +66,49 @@ void  sb_printf(StrBuf *sb, const char *fmt, ...)
 char *sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
 void  sb_free(StrBuf *sb);
 
+/* ---- THE TEXT LAYER ([REVW.1] wave 1; D108) -----------------------------
+ *
+ * DATA IN, TEXT OUT. Every function below takes VALUES and appends TEXT; none
+ * of them reads the live walk, the `Ctx` or a machine. That is D108's
+ * non-foreclosure rule, and it is what lets a future back-end fed from a
+ * deserialized IR call this same layer unchanged.
+ *
+ * TWO ESCAPE VOCABULARIES, ONE IMPLEMENTATION, AND THEY ARE NOT
+ * INTERCHANGEABLE. Both protect a line-oriented frame and both share the
+ * `\xNN` tail that was written twice before this pair existed
+ * (`syntax_dump.c`'s `put_text` and `rxt_source.c`'s `put_escaped`):
+ *
+ *   sb_text  — protects the FRAME ONLY. A byte below 0x20, and 0x7f, goes out
+ *              as `\xNN`; every printable byte, BACKSLASH INCLUDED, passes
+ *              through. This is `--explain`'s vocabulary and every registry
+ *              TSV dump's, whose `syntax` column is literally `\d` and whose
+ *              contract (docs/spec/table_contract.md rule 5) says only that a
+ *              field never contains a TAB.
+ *   sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
+ *              sb_text's tail. Round-trippable, because it doubles the
+ *              backslash; `tests/harness/driver.c`'s decode() is the reader.
+ *
+ * DO NOT swap one for the other. Measured 2026-09-18: 150 data rows across
+ * `--list-syntax`/`--list-axes`/`--list-limits`/`--list-definitions`/
+ * `--list-families` carry a raw backslash, so sb_field at a registry dump is
+ * a contract break and not insurance. */
+void sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
+void sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
+void sb_field(StrBuf *sb, const char *s);
+
+/* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
+ * which is the whole reason it exists; see enabled.c/enc.c for the bounded
+ * joins that could do all three. A NULL name contributes nothing but still
+ * takes its separator, so the join's shape reports the array's. */
+void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
+
+/* One TSV record: `ncell` fields through sb_text, TAB-joined, newline-
+ * terminated. The COUNT is the point — a row emitted with a different number
+ * of fields than its header declares is the defect the table contract's own
+ * integrity rule (consumer rule 3) exists to catch, and a cell array a reader
+ * can count is what makes it checkable at the call site. */
+void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
+
 /* ---- AST ---- */
 
 /* [M6.4.2 / SR-8] Forward declaration: `Ast.reg` (below) points at the
