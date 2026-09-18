@@ -66,8 +66,18 @@ SAB_COUNT=1
 # `?`-arm is dropped and the scalar `:`-arm is kept, unconditional, which is
 # still the LOST MATCH for a leading \B at search_from > 0 this row exists
 # for.
+# RE-ANCHORED 2026-09-18 ([REVW.2] wave 2 stage 3): the `char ab[...]` local
+# the 2026-09-03 note above added is GONE -- `fold_arg` returns arena-owned
+# text now, so it needs no caller buffer and the anchor loses one line while
+# the `sb_printf` and its argument list are otherwise byte-identical. Worth
+# noting because this row's own history is the argument for the stage: FOUR
+# of its five re-anchorings were caused by a caller-sized buffer moving, and
+# one of them ([CC-DIFF] STEP 1(b)) was caused by that buffer being ADDED.
+# The EDIT is unchanged in kind and the plant's own two lines keep their
+# columns: the context-indexed `?`-arm is dropped and the scalar `:`-arm is
+# kept, unconditional -- still the LOST MATCH for a leading \B at
+# search_from > 0 this row exists for.
 SAB_BEFORE='    const char *m = f->dir->c.name;
-    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
@@ -77,13 +87,12 @@ SAB_BEFORE='    const char *m = f->dir->c.name;
               f->src,
               f->dir->bind, f->p, m,
               f->dir->bind, f->p, m,
-              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);'
 SAB_AFTER='    /* SABOTAGE S74: the context read is dropped and the boundary takes
      * the blind scalar accept. */
     const char *m = f->dir->c.name;
-    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
               f->dir->bind, f->p, m,
-              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);'

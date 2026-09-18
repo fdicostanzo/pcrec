@@ -633,16 +633,32 @@ static void emit_info_decl(StrBuf *sb, const char *infoname)
     sb_printf(sb, "extern const struct rx_info %s;\n", infoname);
 }
 
+/* [REVW.2] wave 2 stage 3: this file's adapter over `sb_fragf`, the emission
+ * kit's fragment primitive (core/internal.h) -- arena-owned formatted text,
+ * sized exactly to the result, truncation impossible by construction. It adds
+ * exactly one thing over calling `sb_fragf` directly: it takes the arena from
+ * the `Ctx` every emitter here already holds. `emit_vm.c`'s `vm_rolef` is the
+ * same adapter one file over, taking the arena from `Vm`.
+ *
+ * REACHING IT FROM A DfaForm: `f->cx`, whose own comment used to read "for
+ * `ctx_fail` alone" and no longer can. */
+static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    const char *q = sb_fragfv(&cx->arena, fmt, ap);
+    va_end(ap);
+    return q;
+}
+
 /* Every identifier this file derives from --prefix beyond `<prefix>_search`
  * itself (match, match_caps, info) is built the same way: prefix + suffix,
  * arena-owned so it outlives the emission calls that read it. */
 static const char *derived_name(Ctx *cx, const char *suffix)
 {
-    const char *p = cx->opt->prefix;
-    size_t sz = strlen(p) + strlen(suffix) + 1;
-    char *fn = arena_alloc(&cx->arena, sz);
-    snprintf(fn, sz, "%s%s", p, suffix);
-    return fn;
+    return dfa_fragf(cx, "%s%s", cx->opt->prefix, suffix);
 }
 
 static const char *engine_entry_name(Ctx *cx) { return derived_name(cx, "_search"); }
@@ -3520,20 +3536,18 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
     return nout;
 }
 
-static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
+static void emit_stay_table(Ctx *cx, StrBuf *c, const char *p, const char *tag,
                             int idx, const Dfa *d)
 {
     uint8_t stay[256];
     for (int b = 0; b < 256; b++)
         stay[b] = (uint8_t)(d->st[idx].tr[d->clsmap[b]] == idx);
-    /* [K38's rule, [ENG-FORM]] The one fixed buffer this function owns is
-     * sized by the SHARED emitted-name constant, not by a hand guess: `tag`
-     * reaches here from a caller's own `PCREC_MAX_EMIT_NAME_LEN` buffer now,
-     * and 32 was a number that happened to fit the two literals it used to
-     * be handed. */
-    char name[PCREC_MAX_EMIT_NAME_LEN + 16];   /* + the state number */
-    snprintf(name, sizeof(name), "%s%d", tag, idx);
-    emit_u8_table(c, p, name, stay, 256);
+    /* [K38's rule, [ENG-FORM]] This function used to own ONE fixed buffer,
+     * first a hand-picked 32 that "happened to fit the two literals it used
+     * to be handed", then the shared emitted-name constant plus a margin.
+     * [REVW.2] wave 2 stage 3: it owns none -- the table name is an arena
+     * fragment, and `cx` is threaded in for the arena alone. */
+    emit_u8_table(c, p, dfa_fragf(cx, "%s%d", tag, idx), stay, 256);
 }
 
 /* ---------------------------------------------------------------------
@@ -3927,11 +3941,14 @@ struct DfaDir {
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
-    /* [OPT-K] the Ctx, for `ctx_fail` alone. Two arms of the offset-k skip's
-     * emitter are UNREACHABLE by construction (an empty verify chain; a
-     * non-singleton scan offset), and this file's standing preference is a
-     * loud internal error over a silent fallback that would emit a correct
-     * matcher with the optimization quietly switched off. */
+    /* [OPT-K] the Ctx, originally for `ctx_fail` alone. Two arms of the
+     * offset-k skip's emitter are UNREACHABLE by construction (an empty
+     * verify chain; a non-singleton scan offset), and this file's standing
+     * preference is a loud internal error over a silent fallback that would
+     * emit a correct matcher with the optimization quietly switched off.
+     * [REVW.2] wave 2 stage 3 gave it a SECOND consumer: it is the arena the
+     * name builders below reach `dfa_fragf` through, which is what let their
+     * caller-sized `char buf[...]` parameters go. */
     Ctx           *cx;
     const Dfa     *d;
     const char    *p;              /* the artifact prefix */
@@ -4031,12 +4048,14 @@ static int  cell_indexed(int st, const Dfa *d) { (void)d; return st; }
  * and dropping THAT parameter would drop the increment with it. A folded
  * accessor is a function that ignores what it is given, never a call site
  * that stops giving it. */
-static const char *fold_arg(char *buf, size_t n, const DfaForm *f,
-                            const DfaFold *fold, const char *tag)
+static const char *fold_arg(const DfaForm *f, const DfaFold *fold,
+                            const char *tag)
 {
-    if (fold->folded) { buf[0] = '\0'; return buf; }
-    snprintf(buf, n, "%s_%s_%s, ", f->p, f->dir->c.name, tag);
-    return buf;
+    /* The EMPTY string is load-bearing, not an absence: a folded accessor
+     * takes no table argument, and the call site splices this in ahead of the
+     * arguments that remain. So the folded arm is `""`, never NULL. */
+    if (fold->folded) return "";
+    return dfa_fragf(f->cx, "%s_%s_%s, ", f->p, f->dir->c.name, tag);
 }
 
 /* The `_step` accessor, in the one spelling both representations share: the
@@ -4416,20 +4435,18 @@ static bool acc_viewed_applies(const DfaSel *s)
 
 static void acc_emit_probe(StrBuf *c, const DfaForm *f)
 {
-    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s_%s_accepts(%s%s)) %s = %s;\n",
               f->dir->bind, f->p, f->dir->c.name,
-              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);
 }
 
 static void acc_emit_tail_scalar(StrBuf *c, const DfaForm *f)
 {
-    char tb[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s) break;\n", f->dir->bind, f->dir->at_bound);
     sb_printf(c, "%s%s = %s_%s_step(%s%s, %s_%s_byte_class[%s]);\n",
               f->dir->bind, f->dir->statev, f->p, f->dir->c.name,
-              fold_arg(tb, sizeof tb, f, &f->tr_fold, "next_state"),
+              fold_arg(f, &f->tr_fold, "next_state"),
               f->src, f->p, f->dir->c.name,
               f->dir->consume);
 }
@@ -4461,7 +4478,6 @@ static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
      * boundary and the token is live, so both are unreachable by
      * construction. */
     const char *ind = f->dir->bind, *m = f->dir->c.name, *p = f->p;
-    char tb[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
     f->dir->emit_bound_accept(c, f);
     sb_printf(c, "%s    break;\n%s}\n", ind, ind);
@@ -4473,7 +4489,7 @@ static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
               ind, p, m, p, m, f->src, m, f->dir->recv, f->dir->posv);
     sb_printf(c, "%s    %s = %s_%s_step(%s%s, %s_class);\n",
               ind, f->dir->statev, p, m,
-              fold_arg(tb, sizeof tb, f, &f->tr_fold, "next_state"), f->src, m);
+              fold_arg(f, &f->tr_fold, "next_state"), f->src, m);
     sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
     sb_printf(c, "%s}\n", ind);
 }
@@ -4647,9 +4663,9 @@ static bool pf_ofs_applies(const DfaSel *s)
  * `fs` can begin one from there. `\b\.[0-9]{4}Z` lost three matches to
  * exactly that. src/opt/prefix_k.c's `pcrec_prefix_ksets` header is the full
  * account; here the consequence is one table name. */
-static void ofsk_tbl_name(char *buf, size_t n, const DfaForm *f, const PrefixK *k)
+static const char *ofsk_tbl_name(const DfaForm *f, const PrefixK *k)
 {
-    snprintf(buf, n, "%s_ofs_k%d", f->p, k->k);
+    return dfa_fragf(f->cx, "%s_ofs_k%d", f->p, k->k);
 }
 
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
@@ -4698,8 +4714,7 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
             if (k->k == 0) sb_printf(c, "subject[cand] == %d", k->byte);
             else           sb_printf(c, "subject[cand + %d] == %d", k->k, k->byte);
         } else {
-            char tbl[PCREC_MAX_EMIT_NAME_LEN];
-            ofsk_tbl_name(tbl, sizeof tbl, f, k);
+            const char *tbl = ofsk_tbl_name(f, k);
             if (k->k == 0) sb_printf(c, "%s[subject[cand]]", tbl);
             else           sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
         }
@@ -4718,10 +4733,9 @@ static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
 {
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
-        char tbl[PCREC_MAX_EMIT_NAME_LEN];
         if (i == f->ofsk->scan || k->count <= 1) continue;
-        ofsk_tbl_name(tbl, sizeof tbl, f, k);
-        sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "", tbl);
+        sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "",
+                  ofsk_tbl_name(f, k));
     }
 }
 
@@ -4995,10 +5009,9 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
      * MATCH-HERE scan, so a hardcoded name here referred to the wrong
      * machine's accept table from inside `<prefix>_match`. Byte-for-byte
      * unchanged on the forward machine, whose `c.name` IS "forward". */
-    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
               f->dir->bind, f->p, f->dir->c.name,
-              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);
 }
 
@@ -5021,7 +5034,6 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * Nothing but the reverse machine reaches this emitter today, so the text
      * is unchanged. */
     const char *m = f->dir->c.name;
-    char ab[PCREC_MAX_EMIT_NAME_LEN];
     sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
@@ -5031,7 +5043,7 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
               f->src,
               f->dir->bind, f->p, m,
               f->dir->bind, f->p, m,
-              fold_arg(ab, sizeof ab, f, &f->acc_fold, "is_accepting"),
+              fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);
 }
 
@@ -5593,9 +5605,8 @@ static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
     uint8_t set[256];
     int cls = f->d->st[head].scan_cls;
     for (int b = 0; b < 256; b++) set[b] = (uint8_t)(f->d->clsmap[b] == cls);
-    char name[PCREC_MAX_EMIT_NAME_LEN + 16];
-    snprintf(name, sizeof name, "%s_scan%d", f->dir->c.name, head);
-    emit_u8_table(c, f->p, name, set, 256);
+    emit_u8_table(c, f->p, dfa_fragf(f->cx, "%s_scan%d", f->dir->c.name, head),
+                  set, 256);
 }
 
 static const DfaScan dfa_scans[] = {
@@ -5917,7 +5928,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     if (f->pf->emit_tables) f->pf->emit_tables(c, f);
     snprintf(tag, sizeof tag, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
-        emit_stay_table(c, p, tag, f->skip[k], f->d);
+        emit_stay_table(f->cx, c, p, tag, f->skip[k], f->d);
     /* [OPT-5] and whatever table each edge's own BODY OBJECT owns — the
      * object is asked here and at the emitted test, so a table can never be
      * emitted for a body that compares against immediates, nor omitted for
@@ -5979,8 +5990,8 @@ static bool dfa_seed_can_be_scan_head(const Dfa *d)
  * forward and reverse loops are emitted into ONE function and would collide
  * on a shared name, and `dir->c.name` is the same string the tables and the
  * accessors are already named after. */
-static void scan_label(char *buf, size_t n, const DfaForm *f, const char *tag)
-{ snprintf(buf, n, "%s_%s_scan_%s", f->p, f->dir->c.name, tag); }
+static const char *scan_label(const DfaForm *f, const char *tag)
+{ return dfa_fragf(f->cx, "%s_%s_scan_%s", f->p, f->dir->c.name, tag); }
 
 /* Emits `f`'s whole per-byte state-machine loop: the ordinary table-step
  * body, plus one dispatch to each [OPT-5] scan edge's own bounded-count
@@ -5992,12 +6003,11 @@ static void scan_label(char *buf, size_t n, const DfaForm *f, const char *tag)
 static void emit_scan_loop(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->ind;
-    char lv[PCREC_MAX_EMIT_NAME_LEN + 24], le[PCREC_MAX_EMIT_NAME_LEN + 24];
     bool edges = f->nscan > 0;
     bool s0head = edges && dfa_start_is_scan_head(f->d);
     bool seedhead = edges && dfa_seed_can_be_scan_head(f->d);
-    scan_label(lv, sizeof lv, f, "views");
-    scan_label(le, sizeof le, f, "edge");
+    const char *lv = scan_label(f, "views");
+    const char *le = scan_label(f, "edge");
 
     f->seed->emit_init(c, f);
     /* THE ONE ENTRY, and it costs at most one compare PER SEARCH rather than
@@ -7125,8 +7135,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * prefix maximum and was never observed to truncate, but the DFA
      * emitter's one prefix-carrying fixed buffer should not be sized by a
      * separate hand guess either. */
-    char residual[PCREC_MAX_EMIT_NAME_LEN];
-    snprintf(residual, sizeof residual, "%s_next_pos", cx->opt->prefix);
+    const char *residual = dfa_fragf(cx, "%s_next_pos", cx->opt->prefix);
     sb_printf(c, " * %s does the work. %s and %s are\n"
                  " * anchored entry points, %s is caller-facing encoding\n"
                  " * residue, and %s describes what this artifact is. Each is\n"
