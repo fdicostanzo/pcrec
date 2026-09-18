@@ -1126,7 +1126,7 @@ FLOORS re-grepped on the wave's own tree; re-INDENTATION breaks anchors, not
 relocation — price "does the moved text keep its column". Checkpoint battery
 between waves (D102); box slots handshake with the bench.
 
-- [REVW.2] STATE:started — wave 2 (emit_vm.c interior): EP2's 16-step
+- [REVW.2] STATE:not-started — wave 2 (emit_vm.c interior): EP2's 16-step
   sequence authoritative (E1 `vm_slot_ref` first), fragment retirement under
   the REPAIRED floor (58/66, three sizing categories; emit_dfa.c
   third-category census first). X8 rides stage 3 (M1). DD-8's --emit-ir
