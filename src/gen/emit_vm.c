@@ -5411,9 +5411,8 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         }
         vm_lbl(v, cur, "counter trip complete: charge K and go round");
         {
-            char val[64];
-            snprintf(val, sizeof val, "slot_values[%d] + %d", ctr, K);
-            vm_set(v, ctr, val, "counter rung: += K, once per TRIP");
+            vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + %d", ctr, K),
+                   "counter rung: += K, once per TRIP");
         }
         vm_goto(v, trip);
     }
@@ -5526,9 +5525,8 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_lbl(v, step, "counter iteration committed: cut, count, go round");
     vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
     {
-        char val[64];
-        snprintf(val, sizeof val, "slot_values[%d] + 1", ctr);
-        vm_set(v, ctr, val, "counter rung: += 1 (possessive: no trip, no K)");
+        vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + 1", ctr),
+               "counter rung: += 1 (possessive: no trip, no K)");
     }
     vm_goto(v, trip);
 
@@ -6454,12 +6452,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
         }
 
         {
-            char cnt[32];
-            snprintf(cnt, sizeof cnt, "%d", k);
-            vm_work(v, cnt, "work charge: the back-step, charged as the "
-                            "compile-time width rather than the runtime cost "
-                            "so the accounting does not depend on the "
-                            "encoding backend");
+            vm_work(v, vm_rolef(v, "%d", k),
+                    "work charge: the back-step, charged as the "
+                    "compile-time width rather than the runtime cost "
+                    "so the accounting does not depend on the "
+                    "encoding backend");
         }
 
         /* THE SEAM CALL. Never `scan_position - k` here: that is byte
@@ -7610,11 +7607,9 @@ static void vm_region(Vm *v, int i)
            vm_rolef(v, "the callee region for %s returns",
                     g == 0 ? "the whole pattern" : "a capture group"));
     for (int j = 0; j < v->rgn_nw[i]; j++) {
-        char val[192];
-        snprintf(val, sizeof val,
-                 "run->trail[run->resume_stack[run->call_top].trail_mark + %d]"
-                 ".saved_value", j);
-        vm_set(v, v->rgn_w[i][j], val,
+        vm_set(v, v->rgn_w[i][j],
+               vm_rolef(v, "run->trail[run->resume_stack[run->call_top]"
+                           ".trail_mark + %d].saved_value", j),
                "restore the caller's value, itself TRAILED so a retreat into "
                "this callee re-establishes the callee's own");
     }
@@ -8008,7 +8003,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * is its only possible detector: inlining changes NO ANSWER under the
          * byte backend. */
         StrBuf *bb = v->b;
-        char fn[96];
+        const char *fn;
         /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
          * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
          * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
@@ -8039,8 +8034,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
                      "not declared engine-callable, so it cannot be routed "
                      "through the seam from an engine body");
         v->enc_mask |= seam_entry;
-        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
-                 a->u.bref.caseless ? "_caseless" : "");
+        fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                      a->u.bref.caseless ? "_caseless" : "");
         vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
                                   a->u.bref.nrefs == 1 ? "one group" : "a name-run",
                                   a->u.bref.caseless ? ", caseless" : ""));
@@ -8206,17 +8201,18 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
         if (shown++ == 0) sb_puts(o, count == 1 ? "" : "[");
         else sb_puts(o, "");
         int hi = c - 1;
-        char a[8], b[8];
+        /* [REVW.2] the pair was `char a[8], b[8]` written through a
+         * `char *dst = k ? b : a` alias; arena-owned fragments cannot be
+         * aliased that way, so the loop fills the array it is building. */
+        const char *ab[2];
         for (int k = 0; k < 2; k++) {
             int ch = k ? hi : lo;
-            char *dst = k ? b : a;
-            if (ch >= 32 && ch < 127 && ch != '\\' && ch != ']' && ch != '\'')
-                snprintf(dst, 8, "%c", ch);
-            else
-                snprintf(dst, 8, "\\x%02x", ch);
+            ab[k] = (ch >= 32 && ch < 127 && ch != '\\' && ch != ']' && ch != '\'')
+                  ? vm_rolef(v, "%c", ch)
+                  : vm_rolef(v, "\\x%02x", ch);
         }
-        if (lo == hi) sb_printf(o, count == 1 ? "'%s'" : "%s", a);
-        else          sb_printf(o, "%s-%s", a, b);
+        if (lo == hi) sb_printf(o, count == 1 ? "'%s'" : "%s", ab[0]);
+        else          sb_printf(o, "%s-%s", ab[0], ab[1]);
     }
     if (nr > 8) {
         sb_printf(o, "...%d ranges, %d bytes]", nr, count);
@@ -8334,16 +8330,19 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * PREFILTER specifically, which the overflow decided regardless of which
      * reason won the ENGINE). Left empty (and unread) unless
      * `cx->dfa_disabled` fires. */
-    /* +160: the static text around `cx->dfa_overflow_why` is 142 bytes
-     * ("NO (" + ") -- the auto-selected ... (SEL-1)"), measured; +160 is
-     * this file's own K38-precedent margin over that worst case rather
-     * than a tight fit that reopens the next time either string grows. */
-    char sel1_prefilter_reason[PCREC_DFA_OVERFLOW_WHY_LEN + 160];
-    if (cx->dfa_disabled)
-        snprintf(sel1_prefilter_reason, sizeof sel1_prefilter_reason,
-                 "NO (%s) -- the auto-selected prefilter's own DFA build hit"
-                 " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
-                 " instead of refusing (SEL-1)", cx->dfa_overflow_why);
+    /* [REVW.2] EP2 called this "the file's best-documented buffer and the one
+     * most likely to survive a sloppy migration": it carried a MEASURED
+     * 142-byte worst case and a deliberate +160 K38-precedent margin over it,
+     * which is a correct answer FOR ONE SITE and is exactly the question
+     * `sb_fragf` dissolves. NULL when `cx->dfa_disabled` is false, which is
+     * safe because the ONE read below sits behind that same test -- and is
+     * an improvement on the old shape, where the unread buffer was
+     * uninitialized rather than merely unread. */
+    const char *sel1_prefilter_reason =
+        !cx->dfa_disabled ? NULL
+        : vm_rolef(v, "NO (%s) -- the auto-selected prefilter's own DFA build hit"
+                      " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
+                      " instead of refusing (SEL-1)", cx->dfa_overflow_why);
 
     sb_puts(o, "; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
     sb_puts(o, ";\n");
@@ -8541,9 +8540,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         for (int i = 0; i < v->nev; i++)
             if (v->ev[i].k == VE_SET && (v->ev[i].a == 2 * k || v->ev[i].a == 2 * k + 1))
                 w++;
-        char what[32];
-        if (k == 0) snprintf(what, sizeof what, "$0 whole match");
-        else        snprintf(what, sizeof what, "group %d", k);
+        const char *what = k == 0 ? "$0 whole match" : vm_rolef(v, "group %d", k);
         sb_printf(o, "  %2d,%-9d %-22s %s\n", 2 * k, 2 * k + 1, what,
                   /* [M6.2 wave E] slot 0 STOPS being entry-only the moment a
                    * `\K` exists: that is the whole of the construct's
@@ -8694,8 +8691,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                       e->role ? e->role : "?", e->a);
             break;
         case VE_PUSH: {
-            char tgt[24];
-            snprintf(tgt, sizeof tgt, "resume L%d", e->a);
+            const char *tgt = vm_rolef(v, "resume L%d", e->a);
             sb_printf(o, "         PUSH    %-28s ; %s\n", tgt,
                       e->role ? e->role : "choice point");
             break;
@@ -8705,8 +8701,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
              * `slot_values[2] <- scan_position` is 30 and snprintf silently
              * TRUNCATED it to `slot_values[2] <- scan_`. A rename that moves
              * emitted names has to check the listing's column widths too. */
-            char slot[48];
-            snprintf(slot, sizeof slot, "slot_values[%d] <- scan_position", e->a);
+            const char *slot = vm_rolef(v, "slot_values[%d] <- scan_position", e->a);
             sb_printf(o, "         set     %-28s ; %s\n", slot,
                       e->role ? e->role : "");
             break;
@@ -8738,8 +8733,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
          * VE_RUNG/VE_STRAT/VE_PRUNE they belong in the straight-line trace:
          * a call and a return are things that EXECUTE. */
         case VE_CALL: {
-            char tgt[40];
-            snprintf(tgt, sizeof tgt, "callee L%d, return L%d", e->a, e->b);
+            const char *tgt = vm_rolef(v, "callee L%d, return L%d", e->a, e->b);
             sb_printf(o, "         CALL    %-28s ; %s\n", tgt,
                       e->role ? e->role : "subroutine call");
             break;
@@ -8753,8 +8747,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         case VE_CUT: {
             /* [ENG-BREP] this one DOES write C, so unlike the two above it
              * belongs in the trace. */
-            char slot[32];
-            snprintf(slot, sizeof slot, "frames <- slot_values[%d]", e->a);
+            const char *slot = vm_rolef(v, "frames <- slot_values[%d]", e->a);
             sb_printf(o, "         CUT     %-28s ; %s\n", slot,
                       e->role ? e->role : "commit: discard the loop's frames");
             break;

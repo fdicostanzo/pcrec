@@ -33,13 +33,18 @@ SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="vm_region stops emitting the restore loop at a callee region's exit, so a return leaves the callee's own capture writes standing instead of putting the caller's values back -- design 5.3's H-RESTORE, deleted"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR1): every cell whose callee WRITES a capture goes red -- captures.rxt's after-return and depth-3 cells first. A callee with no capture inside it leaves W empty and would go GREEN on this compiler, which is why the detector's population is the corpus rather than one cell."
+#
+# RE-AIMED 2026-09-18 (lane w2b, [REVW.2] wave 2 stage 3). The restore loop's body built its value text in a
+# `char val[192]` and passed it to `vm_set`; stage 3 passes an arena fragment
+# built inline instead, so the loop is three lines shorter. This row deletes
+# the WHOLE loop, so what it anchors on is the loop, not the buffer.
+# The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
+# re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
 SAB_BEFORE='    for (int j = 0; j < v->rgn_nw[i]; j++) {
-        char val[192];
-        snprintf(val, sizeof val,
-                 "run->trail[run->resume_stack[run->call_top].trail_mark + %d]"
-                 ".saved_value", j);
-        vm_set(v, v->rgn_w[i][j], val,
+        vm_set(v, v->rgn_w[i][j],
+               vm_rolef(v, "run->trail[run->resume_stack[run->call_top]"
+                           ".trail_mark + %d].saved_value", j),
                "restore the caller'"'"'s value, itself TRAILED so a retreat into "
                "this callee re-establishes the callee'"'"'s own");
     }'

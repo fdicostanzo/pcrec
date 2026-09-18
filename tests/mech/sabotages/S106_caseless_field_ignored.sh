@@ -21,8 +21,15 @@ SAB_SUITES="codegen brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/caseless.rxt"
 SAB_DESC="The A_BREF emission ignores Ast.caseless and always calls the case-SENSITIVE seam entry, so ^(a)(?i:\\1)\$ stops matching \"aA\". D62 control 3's accepted residual: no compiler diagnostic reports an analysis that pattern-matches the kind and forgets the field"
 SAB_DOC_FIGURE="PREDICTED: the corpus RED on caseless.rxt; codegen RED (the residbrefci fixture declares bref_match_caseless and the artifact would carry bref_match). Canonical figure owed from run_sabotage_matrix.sh S106."
+#
+# RE-AIMED 2026-09-18 (lane w2b, [REVW.2] wave 2 stage 3). The seam-entry name was formatted into a `char fn[96]`
+# by `snprintf`; stage 3 made it an arena fragment, so the two anchored lines
+# are now `fn = vm_rolef(v, ...)` at the same column with the same wrapped
+# second line carrying the caseless ternary this row replaces with 0.
+# The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
+# re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
-SAB_BEFORE='        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
-                 a->u.bref.caseless ? "_caseless" : "");'
-SAB_AFTER='        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
-                 0 ? "_caseless" : "");   /* SABOTAGE S106 */'
+SAB_BEFORE='        fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                      a->u.bref.caseless ? "_caseless" : "");'
+SAB_AFTER='        fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                      0 ? "_caseless" : "");   /* SABOTAGE S106 */'
