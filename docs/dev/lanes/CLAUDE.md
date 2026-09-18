@@ -1299,3 +1299,32 @@ never edited afterwards.
   `/*` (gcc `-Wcomment` under the harness's own `-Werror` `GENCFLAGS`),
   the second reachable with no `*/` anywhere in the file, so the guide
   states both.
+
+- `fixnow_report.md` — [REVW.FIX] the code review's FIX-NOW pile landed
+  (2026-09-17, lane fixnow, sonnet), ten commits in the synthesis's own
+  order per `docs/dev/reviews/2026-09-17-code-review.md` §1: the
+  `Job.scr_test`/`scr_desc` Ctx back-pointer (L8-F1, a live caller-abort
+  on OOM); `san_scripts.txt` gains the cpset/mrl unit checks (L5-R0.2);
+  the `lib/pcrec.h` header sweep (L9-P2/P7/P8 — the stale "utf8 not yet
+  implemented" claim, `<PREFIX>_NCAPS` genericized, a false "order of
+  magnitude" deleted); the `cli_parse`/`apply_target` libdirs leak plus
+  `write_file`/stdout `ferror()` coverage (L8-F2/F5, discharging
+  L10-L10-8); the FNV-1a helper pair (L3-F3, 9 sites deduped,
+  byte-preserving); the "missing closing ) for group" `#define`
+  (L3-F5, 8 sites + the registry_check.c ninth home, plus a stale
+  check fix found while validating); headers for the 43 headerless
+  ≥50-line functions plus the misplaced `emit_attempt` banner
+  (L4-C1/C2 — read the report for the population re-derivation: the
+  census tool's own `start_line` drifts on 7 of 76 rows, corrected by
+  grep rather than trusted); `match_api.md` §8.0's worked example gains
+  `-Wl,-dead_strip` (L6 §5.1); `select_engine.c:496`'s superseded claim
+  corrected in place (L4-A2); and the pilot, `cg_walk`/`pr_walk` merged
+  into `pcrec_ast_visit` (L1-X2, with both sabotage rows re-aimed and
+  re-verified DETECTED at their exact pre-merge figures). Comment-only
+  or byte-preserving throughout; `make strict` clean after every item.
+  PARKED on `lane/fixnow`, not merged — `make test` was launched
+  backgrounded as the lane's last act per BOILERPLATE and is OWED at
+  hand-off (`build/fixnow_test.log` in the worktree); a bonus
+  `tests/recursion/run_recursion_diff.sh` run (beyond the brief's
+  stated bar, the most direct exercise of item 10's `callgraph.c` call
+  sites) is also OWED, log path in the report.
