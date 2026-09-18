@@ -23897,3 +23897,18 @@ d105's sweep) — the before/after/control triple stands in. D109 recorded.
 Merged as a --no-ff merge commit; agent closed; watcher re-armed on d105 only.
 Landing item parked for the d105 merge: the compile.c comment, K60 status and
 the match_api.md hunk all say the legend class is "unfixed, lane d105's".
+
+**d105 DELIVERED AND MERGED** (opus, ~2h, fast-forward f5427d53 after the lane
+merged main itself on instruction and re-pinned W4). D105 built exactly as
+re-ruled; byte identity proven on two full-corpus arms with a legend-REACH
+census the lane added unasked (identity over legend-less artifacts proves
+nothing). `make alloc` fully green with per-witness POPULATION pins (K35 —
+57/11/303/158 held across the merge, measured evidence D109 added no site).
+Two findings en route: run_alloc_tests.sh piped stdout only, so every red run
+reported "0 witness(es) misbehaved" (fixed); scripts/battery.sh has NO alloc
+stage, so these pins have no automatic home (open). S260 deliberately not
+built — the trade-off (population pins inside `make test` vs an undetectable
+plant) goes to Frank. K60 is CLOSED in both classes. Frank's ruling on
+validation for this pair: `make test` locally + `make san` on ubuntubudu (the
+leak tier is Linux-only) + mech on the new rows; the full battery waits for
+wave 2's end. Both agents closed; watcher killed.
