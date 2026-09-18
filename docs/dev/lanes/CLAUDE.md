@@ -1328,3 +1328,47 @@ never edited afterwards.
   `tests/recursion/run_recursion_diff.sh` run (beyond the brief's
   stated bar, the most direct exercise of item 10's `callgraph.c` call
   sites) is also OWED, log path in the report.
+
+- `waveu_report.md` — [REVW.U] WAVE U, the code review's NETS wave
+  (2026-09-17, lane waveu, sonnet). Four deliverables, one commit each.
+  L5-R0: `tests/lib/unit_cc.sh`'s `unit_build`, the one way an
+  internal-property check is compiled, adopted in place at the seven
+  pre-existing checks that link only `libpcrec.a` (a real
+  `-Wmissing-field-initializers` gap found and fixed at
+  `definitions_check.c` along the way). L5-R2: `tests/core/
+  sat_arith_check.c`, the saturating-arithmetic agreement between
+  `mrl_sat_add`/`vm_fadd`/`cg_sat_add` and their `_mul` siblings — the
+  six functions dropped `static` (declared in `core/internal.h`, no
+  `abi` event, never emitted text) — sabotage S254, the mech arm `core`.
+  L5-R1: the ALLOCATION-FAILURE INJECTOR (`tests/core/alloc_inject.h` +
+  `alloc_check.c`, opt-in `make alloc`, zero `src/`/`cli`/`lib` edits).
+  **Confirms L8-F1 (fix-now #1, `23eb3d34`) in both directions**: built
+  at that commit's parent, the `--engine=vm` witness `[a-z]{2,10}`
+  reproduces SIGABRT live (`sb_grow`'s unattached-buffer `abort()`);
+  on the current tree, cleanly diagnosed. **And found K60
+  (`docs/dev/known_issues.md`, filed not fixed) on its first real
+  run**: two other witnesses show `pcrec_compile` succeeding despite a
+  forced allocation failure at a real rate (21%/8%) — a stale
+  per-attempt retry-eligibility flag (`cx.size_cap_refused`/
+  `dfa_overflowed`, never reset across `compile_driver`'s retry
+  attempts) and the size-term ladder's own documented "any reason, this
+  K is out" catch-all both silently absorb a genuine OOM into a
+  successful compile from a later internal attempt — invisible to every
+  answer-level check and to `ulimit -v`, which cannot steer to a
+  non-final attempt. Three dispositions filed, none taken (K59's own
+  precedent). L8-F6: a grep-derived allocation-site FILE-SET census
+  (Section 0, `tests/resource/run_resource_tests.sh`) replacing a stale
+  six-file hand list (found: two files had gained raw allocations
+  unnoticed); a darwin-viable positive control (Section 2b, the
+  injector, unconditional on both platforms — Section 2's `ulimit -v`
+  approach has been the discipline's only control since [M4.7b] and has
+  been skipped on this dev box since the 2026-09-04 Mac move, exactly
+  the window F1 shipped in); three sabotage rows (S255/S256/S257, the
+  discipline's first — zero before this wave), mech arm `resource`.
+  Also fixes a real pipeline-exit-status bug (`"$BIN" | tee` reads
+  `tee`'s exit code, never `$BIN`'s) found live when `make alloc`
+  reported success despite visible `FAIL:` lines — `${PIPESTATUS[0]}`,
+  the `run_registry_tests.sh` precedent, in both new scripts and in
+  `run_core_tests.sh`. PARKED on `lane/waveu`, not merged — `make
+  test` launched backgrounded as the lane's last act per BOILERPLATE,
+  OWED at hand-off (log path in the report).
