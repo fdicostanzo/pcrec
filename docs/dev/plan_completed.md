@@ -3920,3 +3920,13 @@ Note at archive time (2026-08-25): [M6.6.2]'s STATE reads `completed-pending-clo
   darwin inline_capability nm-probe, reproduced on main); recursion
   differential 10/0 incl. §5's 28,458 splice-vs-linkage cells. Report:
   docs/dev/lanes/fixnow_report.md.
+
+- [REVW.U] STATE:completed — wave U (nets): L5-R0 unit tier (unit_cc.sh, 7
+  sites, tests/core/), L5-R2 sat-arith agreement check (S254 core:1fail/
+  6pass), the allocation-failure injector (make alloc; red-on-unrepaired-F1
+  transcript both directions; FOUND K60 — retry ladder absorbs a genuine
+  OOM on a non-final attempt, filed, three dispositions to Frank),
+  L8-F6(a)/(b)/(c) (40-site census, darwin positive control, S255/S256/
+  S257 all resource:1fail/26pass DETECTED). Lane waveu (sonnet), manager
+  takeover at the landing (lane died post-S257-launch); merged 2026-09-18,
+  make test 40/40 green (known darwin inline_capability red only).

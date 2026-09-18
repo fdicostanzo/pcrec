@@ -1126,10 +1126,6 @@ FLOORS re-grepped on the wave's own tree; re-INDENTATION breaks anchors, not
 relocation — price "does the moved text keep its column". Checkpoint battery
 between waves (D102); box slots handshake with the bench.
 
-- [REVW.U] STATE:started — wave U (nets first): L5-R0 name-the-unit-tier,
-  L5-R2 sat-arith agreement check, the allocation-failure injector (M2,
-  LOCAL, L5's `-include`+BUILD_DIR shape, acceptance = red on F1 unrepaired
-  — build against a pre-fix tree or revert-in-worktree), L8-F6(a)/(b)/(c).
 - [REVW.1] STATE:not-started — wave 1 (emission kit, outer): L10 stage 0
   (long-prefix full-corpus sweep + irsb byte-neutrality arm + listing-reach
   census) then stages 1-2. Template layer CLOSED. **D108 binds**: data-in/
