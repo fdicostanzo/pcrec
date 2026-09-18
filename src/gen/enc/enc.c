@@ -42,14 +42,26 @@ const PcrecEnc *pcrec_enc_by_name(const char *name)
 void pcrec_enc_names(char *buf, size_t cap)
 {
     /* Rendered from the table above rather than written out, so a new row
-     * cannot leave a diagnostic listing a stale menu. */
+     * cannot leave a diagnostic listing a stale menu.
+     *
+     * [REVW.1] wave 1, L10-2: ONE OVER-LONG POLICY, AN ORDERED PREFIX, THE
+     * SAME ONE `render_modules` (src/parse/enabled.c) STATES — read that
+     * function's comment for the measurement and for why neither of the two
+     * bounded joins in this tree reaches the kit's `sb_join`. This loop had
+     * TWO ways to lie rather than one: a name that did not fit was skipped
+     * while LATER ones were still appended, and the separator was written
+     * under a DIFFERENT bound from the name, so a cap between the two glued
+     * `byte` and `utf8` into one word. Both are unreachable today (the menu
+     * is 10 bytes and both callers pass 128), and both are gone. */
     size_t k = 0;
     if (!cap) return;
     for (size_t i = 0; i < sizeof enc_table / sizeof *enc_table; i++) {
         const char *n = enc_table[i]->name;
-        size_t ln = strlen(n);
-        if (k && k + 2 < cap) { buf[k++] = ','; buf[k++] = ' '; }
-        if (k + ln + 1 < cap) { memcpy(buf + k, n, ln); k += ln; }
+        size_t ln = strlen(n) + (k ? 2 : 0);
+        if (k + ln + 1 > cap) break;        /* an ordered PREFIX, never a gap */
+        if (k) { buf[k++] = ','; buf[k++] = ' '; }
+        memcpy(buf + k, n, strlen(n));
+        k += strlen(n);
     }
     buf[k] = 0;
 }

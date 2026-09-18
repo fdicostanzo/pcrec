@@ -159,8 +159,24 @@ static bool module_listed(const char *list, const char *name)
 /* D37's reproducible payload: the module list rendered FROM THE MASK, not
  * carried along from whichever path (named set / "all" / explicit list)
  * produced it — so it can never say something the mask disagrees with.
- * Truncates rather than overflows if the registry ever outgrows the
- * buffer (nothing in the tree is close to that today). */
+ *
+ * [REVW.1] wave 1, L10-2: THE OVER-LONG POLICY IS AN ORDERED PREFIX, AND IT
+ * USED TO BE SOMETHING NOBODY WOULD HAVE CHOSEN. A name that did not fit was
+ * `continue`d past and SHORTER LATER NAMES WERE STILL APPENDED, so an
+ * over-long list came back as an out-of-order, gap-toothed selection reading
+ * exactly like a complete one — a stamp claiming a feature set the build does
+ * not have. Returning is the whole fix: what does not fit is the TAIL, and a
+ * truncated prefix is visibly truncated.
+ *
+ * THE DEFECT IS LATENT, NOT LIVE, AND THAT IS WHY THIS IS ONE KEYWORD AND NOT
+ * A MECHANISM. Measured 2026-09-18: `--features all` renders 179 bytes into a
+ * 512-byte buffer (35%), so the branch has never been taken. The kit's
+ * `sb_join` (src/core/sb.c) cannot truncate at all and is the better answer —
+ * but it needs a `StrBuf`, i.e. a heap allocation, and this function's sibling
+ * `pcrec_enc_names` (src/gen/enc/enc.c) sits on `pcrec_compile`'s own refusal
+ * path, where a failed realloc has no error channel and would `abort()` the
+ * CALLER. One stated policy at both bounded sites beats one of them reaching
+ * the primitive and the other not. */
 static void render_modules(unsigned mask, char *out, size_t outsz)
 {
     out[0] = 0;
@@ -176,7 +192,7 @@ static void render_modules(unsigned mask, char *out, size_t outsz)
             if (module_listed(out, m)) continue;
             size_t mlen = strlen(m);
             size_t need = mlen + (used ? 1 : 0);
-            if (used + need >= outsz) continue;
+            if (used + need >= outsz) return;   /* an ordered PREFIX, never a gap */
             if (used) out[used++] = ',';
             memcpy(out + used, m, mlen);
             used += mlen;
