@@ -32,7 +32,7 @@
  * after `fork()`, so the counter always starts at the SAME point a
  * direct `pcrec_compile()` call would.
  *
- * WITNESSES, AND WHY THREE RATHER THAN AN EXHAUSTIVE SWEEP OF EVERY
+ * WITNESSES, AND WHY FOUR RATHER THAN AN EXHAUSTIVE SWEEP OF EVERY
  * COMPILE PATH IN THE TREE. `K` (allocations per compile) is unbounded
  * in principle; the tier budget (R0.4: one gcc invocation and one
  * process spawn per SUBJECT, no per-case `pcrec`/`gcc` call) forbids
@@ -46,6 +46,9 @@
  *       (lens 8: "reached by any VM-engine pattern with a deterministic
  *       repeat over a class sequence")                 ("[a-z]{2,10}")
  *   W3  module `unicode-props` under `-e utf8`          ("\\p{L}")
+ *   W4  the [ART-SIZE] SIZE-TERM LADDER — seven internal attempts, the
+ *       one mechanism K60 names that W1-W3 structurally cannot reach
+ *       ([K60MEAS]; see the witness table at the bottom of this file)
  *
  * — not a `--source` target (composing a real `.rxt` definitions file
  * inside a pure C driver adds machinery this check does not need to
@@ -380,11 +383,25 @@ int main(int argc, char **argv)
          * sequence rather than a different one. */
         { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM },
         { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0 },
+        /* [K60MEAS] W4 — THE SIZE-TERM LADDER, added because K60 names the
+         * ladder's blanket "this K is out" catch as a mechanism and NONE of
+         * W1-W3 enters the ladder at all (W1/W3 are DFA-engine artifacts,
+         * which the ladder's own `fit.chosen == ENGM_VM` conjunct excludes;
+         * W2 is too small to reach the `emit_code` threshold). A mechanism
+         * with no witness is a mechanism nobody is measuring.
+         *
+         * Found by sweeping the shipped corpus with the attempt-counting
+         * probe (docs/dev/k60_measurement.md §3) rather than constructed:
+         * this is a real corpus pattern, and it runs SEVEN internal attempts
+         * (the default, all five ladder rungs, and the final re-emission). */
+        { "W4 (size-term ladder)",
+          "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
+          PCREC_ENC_BYTE, 0, 0 },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
-    Tally single[3], sust[3];
-    int have_single[3] = { 0, 0, 0 }, have_sust[3] = { 0, 0, 0 };
+    Tally single[8], sust[8];
+    int have_single[8] = { 0 }, have_sust[8] = { 0 };
 
     for (size_t i = 0; i < nw; i++) {
         if (do_single) {
