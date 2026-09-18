@@ -1,0 +1,16 @@
+[MACPORT] CC=gcc-16 (default 'gcc' is not GNU gcc on this box; tests/lib/cc_resolve.sh)
+longprefix-sweep: PCREC=/Users/fdicostanzo/pcrec/worktrees/w1stage0/build/pcrec CC=gcc-16 OUT=build/longprefix_sweep.tsv
+# .rxt files found: 211
+# total pattern/pattern-esc lines: 3938
+
+=== RESULTS ===
+total pattern lines:  3938
+rx_ok:                1500
+p60_ok:               1499
+p60_gcc_ok:           1499
+pcrec-refused-at-60-only (rx_ok & !p60_ok): 1
+GCC ANOMALIES (pcrec accepted the 60-byte artifact, gcc did not): 0
+
+rows written: 3938 -> build/longprefix_sweep.tsv
+PASS: longprefix-sweep row count (3938) matches the corpus census pin (3938)
+INFO: gcc-failure-at-60 rows: 0
