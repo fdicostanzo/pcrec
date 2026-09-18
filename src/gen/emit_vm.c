@@ -6845,6 +6845,51 @@ static void vm_publish_saves(Vm *v, Ast *a)
     }
 }
 
+/* [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
+ * `pcrec_emit_vm` verbatim.
+ *
+ * PRODUCES: `a->u.call.nonnullable` on every `A_CALL` node under `root` —
+ * this pass MUTATES THE AST, and `vm_publish_nonnull` is the only writer.
+ * READS: `v->nregion` and `v->cg` (which must already be set), and the
+ * callgraph's per-target bodies.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs BEFORE every other walk.
+ * `vm_nullable`'s `A_CALL` arm reads the field this writes, and `vm_cost`,
+ * `vm_count_slots`, `vm_lifts` and the emitter all consult `vm_nullable`.
+ *
+ * Bottom `false`, iterated up (§2.6) — the opposite direction from `minw`'s,
+ * because nullability's least fixpoint over a cycle is "not nullable" and a
+ * round that finds a nullable path raises it. `nt` rounds suffice (each
+ * settles at least one more target) and the EXTRA round is ASSERTED to change
+ * nothing rather than assumed to: the `ctx_fail` below IS that assertion, and
+ * an extraction that returned early on the settle round instead would delete
+ * it silently.
+ *
+ * The home question is ruled, not open: `src/core/internal.h`'s
+ * `Ast.u.call.nonnullable` comment and `src/opt/callgraph.c`'s header put
+ * this fixpoint in the emitter because its recurrence `vm_nullable` is
+ * `static` here (EP2 §3.1 A1). This is a file-static helper, not a move. */
+static void vm_resolve_nonnull(Vm *v, Ast *root)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+    bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
+    for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
+    for (int round = 0; round <= nt; round++) {
+        bool changed = false;
+        vm_publish_nonnull(v, root, nn);
+        for (int i = 0; i < nt; i++)
+            if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v->cg, i))) {
+                nn[i] = true;
+                changed = true;
+            }
+        if (!changed) break;
+        if (round == nt)
+            ctx_fail(cx, 0, "internal error: the subroutine nullability "
+                            "fixpoint did not settle in %d rounds", nt);
+    }
+    vm_publish_nonnull(v, root, nn);
+}
+
 static void vm_w_range(bool *w, int nstate, int lo, int hi)
 {
     for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
@@ -8878,34 +8923,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `A_CALL` arm reads `u.call.nonnullable`. The polarity makes running late
      * a PERFORMANCE fault rather than a correctness one (an unset field reads
      * "nullable", which emits a guard that is never wrong), but running it
-     * here makes the answer the real one.
-     *
-     * BOTTOM `false`, ITERATED UP (§2.6), which is the OPPOSITE direction from
-     * `minw`'s and for the opposite reason: nullability's least fixpoint over
-     * a cycle is "not nullable", and a round that finds a nullable path raises
-     * it. `n` rounds suffice — each settles at least one more target — and the
-     * extra round is asserted to change nothing rather than assumed to. */
+     * here makes the answer the real one. `vm_resolve_nonnull`'s own header
+     * carries the fixpoint's direction, its round bound and why the extra
+     * round is asserted rather than assumed. */
     v.cg = cx->callgraph;
     v.has_calls = v.cg != NULL;
     v.nregion = pcrec_callgraph_ntargets(v.cg);
     if (v.has_calls) {
         const int nt = v.nregion;
-        bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
-        for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
-        for (int round = 0; round <= nt; round++) {
-            bool changed = false;
-            vm_publish_nonnull(&v, root, nn);
-            for (int i = 0; i < nt; i++)
-                if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v.cg, i))) {
-                    nn[i] = true;
-                    changed = true;
-                }
-            if (!changed) break;
-            if (round == nt)
-                ctx_fail(cx, 0, "internal error: the subroutine nullability "
-                                "fixpoint did not settle in %d rounds", nt);
-        }
-        vm_publish_nonnull(&v, root, nn);
+        vm_resolve_nonnull(&v, root);
 
         v.rgn_lbl  = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_lbl);
         v.rgn_exit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_exit);
