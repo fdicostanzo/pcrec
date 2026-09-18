@@ -3297,6 +3297,24 @@ cannot behave like a program:
   neither is an allocation failure: a "cannot happen" DFA structural
   invariant, and the syntax-dump path's detached string buffers, which
   run outside a compile and have no `pcrec_error` to report through.
+  **2026-09-18 (K60, D109): this promise had a real exception before
+  today, now closed for one of its two mechanisms.** A pattern needing
+  more than one internal attempt (the `[ART-SIZE]` size-term ladder,
+  a `--engine=auto` DFA-overflow retry, or a size-cap retry rung) could
+  have an allocation failure on a NON-FINAL attempt absorbed by a
+  later attempt's own recovery logic, so `pcrec_compile()` returned `0`
+  — success — from a fallback attempt nobody asked for, with no
+  diagnostic anywhere. That population is small (2 of 3,159 corpus
+  patterns at default axes, `docs/dev/k60_measurement.md` §3) and is
+  now `-1`-with-diagnostic for the ladder-catch mechanism (measured:
+  `make alloc`'s W4 witness, 108 of 158 forced failures absorbed before
+  this fix, 0 after). A second, narrower mechanism — a raw, unrouted
+  `malloc` inside `emit_state_legend`'s optional DFA-legend rendering
+  (`src/gen/emit_dfa.c`), which degrades the artifact's own comments on
+  failure rather than the compile's answer — never calls `ctx_nomem` in
+  the first place, so it is unaffected by this fix and remains a
+  separate, open gap in this same promise (`docs/dev/known_issues.md`
+  K60, assigned to lane d105).
 - **A pattern can be REFUSED for compile-side RESOURCE reasons, and
   that is a distinct failure class from a syntax error.** It arrives
   through the same `-1` and the same `pcrec_error`, so a caller
