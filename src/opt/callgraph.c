@@ -428,14 +428,17 @@ static void cg_publish_link(void *ud, const Ast *a)
  * above PCREC_MAX_SPLICE_NODES so it is never mistaken for a passing size. */
 #define CG_EXP_INF ((long long)1 << 40)
 
-static long long cg_sat_add(long long a, long long b)
+/* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
+ * symbol directly (declared in core/internal.h). No behaviour change —
+ * this is pcrec's own compile-time arithmetic, never emitted text. */
+long long cg_sat_add(long long a, long long b)
 {
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
     long long r = a + b;
     return r >= CG_EXP_INF ? CG_EXP_INF : r;
 }
 
-static long long cg_sat_mul(long long a, long long b)
+long long cg_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;

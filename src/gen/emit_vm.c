@@ -3141,14 +3141,18 @@ static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
  * ceiling or a long enough concatenation of saturated subtrees could still
  * overflow. Under-estimating is the safe direction and saturation is an
  * under-estimate, so pinning here costs nothing but the line. */
-static long long vm_fadd(long long a, long long b)
+/* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
+ * symbol directly (declared in core/internal.h). No behaviour change —
+ * this is pcrec's own compile-time arithmetic, never emitted text. */
+long long vm_fadd(long long a, long long b)
 {
     long long r = a + b;
     return r > PCREC_MINW_MAX ? PCREC_MINW_MAX : r;
 }
 
-/* Its multiplying sibling, for the per-replica constant `k * minw(body)`. */
-static long long vm_fmul(long long a, long long b)
+/* Its multiplying sibling, for the per-replica constant `k * minw(body)`.
+ * [REVW.U L5-R2] not `static`, same reason as vm_fadd above. */
+long long vm_fmul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a > PCREC_MINW_MAX / b) return PCREC_MINW_MAX;

@@ -2198,6 +2198,37 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
                 score_arm "$work/limits.log" "$f" "limits:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            core)
+                # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit
+                # tier for a helper that belongs to no single feature. Its
+                # first (and today only) check is the saturating-arithmetic
+                # agreement (mrl_sat_add/vm_fadd/cg_sat_add and their _mul
+                # siblings) — ITS OWN ARM rather than `mrl`/`vm`/anything
+                # emitter-side, because what it guards spans three files in
+                # three directories and belongs to none of their existing
+                # arms. Needs no `pcrec` CLI at all — it links the sabotaged
+                # tree's own `libpcrec.a` directly and calls the shipped
+                # functions in-process, so `LIBPCREC` (not `PCREC`) is what
+                # points it at the tree under test.
+                #
+                # A ROW ON THIS ARM SCORES `corpus:0fail`/every other arm
+                # green BY DESIGN on at least one of its four sabotage
+                # stories (lens 5's own list): an under-estimating boundary
+                # slip in `mrl_sat_mul` is the SAFE direction (saturation
+                # under-estimates on purpose), so it changes no answer
+                # anywhere in the tree — this arm is the only net that can
+                # see it at all.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE, which is "not measured"
+                # rather than "not detected".
+                LIBPCREC="$tree/build/libpcrec.a" bash "$tree/tests/core/run_core_tests.sh" \
+                    > "$work/core.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/core.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/core.log" | grep -oE '[0-9]+')"
+                score_arm "$work/core.log" "$f" "core:${f:-ERR}fail/${p:-?}pass"
+                ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")
                 ;;

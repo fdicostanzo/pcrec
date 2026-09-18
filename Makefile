@@ -215,7 +215,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops
+      test-uprops test-core
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -999,6 +999,14 @@ test-startbnd: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-startbnd.ran"; fi
 	bash tests/utf8/run_startbnd_diff.sh
 
+# [REVW.U L5-R0] tests/core/ — the unit tier's home for a check on a helper
+# that belongs to no single feature (today: the saturating-arithmetic
+# agreement, mrl.c/emit_vm.c/callgraph.c). One gcc invocation and one process
+# spawn per subject (R0.4); fast enough to ride every `make test` run.
+test-core: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-core.ran"; fi
+	bash tests/core/run_core_tests.sh
+
 # [M5.0 stage 3] module `unicode-props`: the generated table's staleness check,
 # the shipped name set, the whole-code-point-space membership differential
 # against libpcre2, and the oracle-free semantic invariants. See
@@ -1453,6 +1461,6 @@ clean:
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd \
+        test-encoding-checks test-startbnd test-core \
         smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
