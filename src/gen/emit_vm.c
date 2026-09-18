@@ -6887,6 +6887,198 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
     vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
+static void vm_w_range(bool *w, int nstate, int lo, int hi)
+{
+    for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
+}
+
+/* [EP2-P3] THE `W` SAVE-SET BUILD, lifted out of `pcrec_emit_vm`.
+ *
+ * PRODUCES: `v->rgn_w[i]` / `v->rgn_nw[i]` per target, and — through
+ * `vm_publish_saves` — `u.call.save`/`nsave` on every `A_CALL` node.
+ * READS: `v->cg`, `v->rgn_emit`, `v->rgn_grp`, `v->spl_nw` (all from
+ * `vm_plan_regions`), the layout width `nstate`, and the per-region counter
+ * SNAPSHOTS.
+ *
+ * THE SNAPSHOTS ARE PARAMETERS AND HAVE TO BE (EP2 §3.2's correction to lens
+ * 11's proposed signature): `before[i]`/`after[i]` are the counter ranges THIS
+ * region's own `vm_count_slots` pass consumed, produced by the counting pass
+ * INTERLEAVED between `vm_plan_regions` and this one. They are the only place
+ * a region's own per-copy slot indices exist, so a `(Vm *, Ast *, int nstate)`
+ * signature cannot express this pass — it would fail at compile time, not at
+ * design time.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: `vm_plan_regions` and the region
+ * counting pass both run first, and `vm_memo_region_costs` runs after —
+ * `vm_cost`'s call arm charges `2 * |W|` of trail and cannot do so before `W`
+ * exists.
+ *
+ * The three families of member are collected in three different ways and each
+ * way is forced by the layout: the CAPTURE slots by a walk (they are indexed
+ * by GROUP NUMBER and are shared with the lexical occurrence), the other seven
+ * families by the COUNTER RANGES above (they are per EMITTED COPY), and the
+ * callees' sets by the graph's TRANSITIVE relation.
+ *
+ * THE UNION IS TAKEN FROM THE UNMODIFIED SETS. `reaches` is already
+ * transitive, so `W(i) = base(i) | union of base(j) over reaches(i, j)` needs
+ * one pass — but only if the right-hand side reads the ORIGINAL sets. OR-ing
+ * in place would make the result depend on iteration order, which is the shape
+ * of bug that shows up on one pattern in a corpus. */
+static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
+                                  const VmSnap *before, const VmSnap *after)
+{
+    Ctx *cx = v->cx;
+    const int nt = v->nregion;
+    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    for (int i = 0; i < nt; i++) {
+        base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
+        memset(base[i], 0, (size_t)nstate * sizeof **base);
+        VmWCaps wc = { base[i], nstate };
+        vm_walk_caps(v, pcrec_callgraph_body(v->cg, i),
+                     vm_w_cap_slots, &wc);
+        /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
+         * STOPS HERE. The seven per-copy families below are added from the
+         * REGION pass's counter ranges, and a spliced target had no region
+         * pass — its ranges are empty by construction. That is not merely
+         * an accounting consequence: `vm_splice`'s header derives that a
+         * splice's per-copy slots CANNOT need restoring, because two
+         * activations of one emitted splice site cannot nest, and §5.3b's
+         * two measured counterexamples (the lost match, the six false
+         * matches) are both about nested activations of ONE SHARED COPY. */
+        if (!v->rgn_emit[i]) continue;
+        vm_w_range(base[i], nstate,
+                   vm_slot_guard(v, before[i].guard),
+                   vm_slot_guard(v, after[i].guard));
+        vm_w_range(base[i], nstate,
+                   vm_slot_low(v, before[i].low),
+                   vm_slot_low(v, after[i].low));
+        vm_w_range(base[i], nstate,
+                   vm_slot_mark(v, before[i].mark),
+                   vm_slot_mark(v, after[i].mark));
+        vm_w_range(base[i], nstate,
+                   vm_slot_rev(v, before[i].rev, 0),
+                   vm_slot_rev(v, after[i].rev, 0));
+        vm_w_range(base[i], nstate,
+                   vm_slot_ctr(v, before[i].ctr),
+                   vm_slot_ctr(v, after[i].ctr));
+        vm_w_range(base[i], nstate,
+                   vm_slot_lookmark(v, before[i].lookmark),
+                   vm_slot_lookmark(v, after[i].lookmark));
+        vm_w_range(base[i], nstate,
+                   vm_slot_lookpos(v, before[i].lookpos),
+                   vm_slot_lookpos(v, after[i].lookpos));
+    }
+    for (int i = 0; i < nt; i++) {
+        bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+        if (!v->rgn_emit[i]) {
+            /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
+             * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
+             * SETS, and the two are NOT the same thing the moment a
+             * spliceable target REACHES A LINKED ONE.
+             *
+             * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
+             * capture half for a spliced `i` (the `continue` above), but
+             * `base[j]` for a reached LINKED `j` still carries that
+             * region's seven per-copy family RANGES — so the union handed
+             * `vm_splice` more slots than `spl_nw` reserved and the block
+             * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
+             * non-recursive helper calling a recursive rule, which is this
+             * module's own target shape — refused with "the splice save
+             * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
+             * compiled it. FOUR such patterns were found and NONE of the
+             * wave's bars could see them: over 3,025 corpus patterns, 113
+             * artifacts have a SPLICED call and 37 have a LINKED one and
+             * **ZERO have both**, so `A == B`, the sabotage matrix and the
+             * specimen were structurally blind to the interaction.
+             *
+             * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
+             * NUMBER IS SMALLER. A spliced site must restore what its
+             * inlined body writes that is SHARED with the caller and that
+             * NOTHING ELSE restores. A reached LINKED target's per-copy
+             * slots are not that: the call to it is an `RX_CALL` into its
+             * shared region, and **that region's own `RX_RETURN` restores
+             * every slot in ITS `W`** before control comes back — so by the
+             * time the spliced body ends they are already back, and
+             * restoring them again would write a value that is already
+             * there. What is genuinely shared is the CAPTURE PAIRS and the
+             * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
+             * NUMBER and are therefore the same cells the caller's own
+             * lexical occurrence writes. That is the capture half, and it
+             * is exactly what `spl_nw` counts.
+             *
+             * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
+             * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
+             * header makes the same point about slot indices): `rgn_grp[i]`
+             * — the transitive group set — is computed ONCE, before the
+             * layout exists. `spl_nw[i]` is its COUNT, which is all the
+             * pre-pass can use because slot INDICES do not exist yet;
+             * `rgn_w[i]` here is its INDICES. The assertion below is what
+             * makes "one mechanism" checkable rather than claimed. */
+            memset(w, 0, (size_t)nstate * sizeof *w);
+        /* `wg`, not `g`: this loop lived in `pcrec_emit_vm`, where
+         * `GenNames g` was in scope and `-Wshadow` under `make strict`
+         * caught the collision. The name is kept on the move (EP2-P3) so
+         * the text is byte-identical to what came out of there. */
+            for (int wg = 1; wg <= v->ngroups; wg++) {
+                if (!v->rgn_grp[i][wg]) continue;
+                if (2 * wg + 1 < nstate) {
+                    w[2 * wg] = true; w[2 * wg + 1] = true;
+                }
+                if (vm_marked(v, wg)) {
+                    int ps = vm_slot_pend(v, wg);
+                    if (ps >= 0 && ps < nstate) w[ps] = true;
+                }
+            }
+        } else {
+        memcpy(w, base[i], (size_t)nstate * sizeof *w);
+        for (int j = 0; j < nt; j++) {
+            if (j == i || !pcrec_callgraph_reaches(v->cg, i, j)) continue;
+            for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
+        }
+        }
+        /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
+         * Nothing above can put them there — the capture walk starts at
+         * group 1 and no family's base reaches below `2*(ngroups+1)` — so
+         * this is an ASSERTION written as a filter, and the filter is what
+         * makes it one line rather than a paragraph nobody checks. */
+        int n = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) n++;
+        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int q = 0;
+        for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
+        v->rgn_w[i]  = lst;
+        v->rgn_nw[i] = n;
+        /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
+         * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
+         * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
+         * `spl_nw[i]` did it in the pre-pass, this does it again over the
+         * layout. So it catches a set that MOVED between the two readings
+         * — a group added to the transitive closure, a `pend_of` entry that
+         * appeared — and it CANNOT catch a set that is WRONG, because a
+         * wrong set is wrong identically on both sides.
+         *
+         * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
+         * this assertion belongs to is that there is ONE set instead of
+         * two, and what makes the set itself right is argued at
+         * `vm_splice`'s header (a splice restores only what is SHARED with
+         * the caller; a reached LINKED target's per-copy slots are restored
+         * by that region's own `RX_RETURN`) and MEASURED by
+         * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
+         * independent oracle, which is where evidence about correctness
+         * comes from. This line's job is narrower and worth having anyway:
+         * before it, a disagreement announced itself as a save-block
+         * overflow at emission, three passes later, with nothing pointing
+         * at the cause. */
+        if (!v->rgn_emit[i] && v->spl_nw && n != v->spl_nw[i])
+            ctx_fail(cx, 0, "internal error: the spliced callee for group "
+                            "%d reserved %d save slots and needs %d — the "
+                            "pre-pass and the W build disagree about its "
+                            "transitive group set",
+                     pcrec_callgraph_target(v->cg, i), v->spl_nw[i], n);
+    }
+    vm_walk_calls(v, root, vm_publish_saves, NULL);
+}
+
 /* [EP2-P4] THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
  * has to walk a callee — which for a recursive one is design §4.4's
  * non-terminating descent.
@@ -6894,9 +7086,9 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
  * PRODUCES: `v->rgn_cost[i]` for every target.
  * READS: `v->cg`, `v->nregion`, and — through `vm_cost` — everything the
  * layout and `vm_resolve_nonnull` have already settled.
- * THE INVARIANT A CALLER MUST NOT BREAK: `W` is published first, because
- * `vm_cost`'s `A_CALL` arm charges `2 * |W|` of trail and cannot do so
- * before `W` exists.
+ * THE INVARIANT A CALLER MUST NOT BREAK: `vm_plan_regions` runs first (this
+ * reads nothing of `rgn_grp` directly, but `vm_cost`'s call arm charges
+ * `2 * |W|` of trail, so `vm_build_region_saves` must have published `W`).
  *
  * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what makes the
  * rest a finite DAG evaluation: a recursion's depth is data-dependent by
@@ -6996,11 +7188,6 @@ static void vm_plan_regions(Vm *v)
     }
     v->rgn_grp = grp;
     v->spl_nw  = snw;
-}
-
-static void vm_w_range(bool *w, int nstate, int lo, int hi)
-{
-    for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
 }
 
 /* [DD-14 wave B+C] THE CALL SITE (design §5.1, §5.3).
@@ -9185,154 +9372,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sets. OR-ing in place would make the result depend on iteration order,
      * which is the shape of bug that shows up on one pattern in a corpus. */
     if (v.has_calls) {
-        const int nt = v.nregion;
-        bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
-        for (int i = 0; i < nt; i++) {
-            base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
-            memset(base[i], 0, (size_t)nstate * sizeof **base);
-            VmWCaps wc = { base[i], nstate };
-            vm_walk_caps(&v, pcrec_callgraph_body(v.cg, i),
-                         vm_w_cap_slots, &wc);
-            /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
-             * STOPS HERE. The seven per-copy families below are added from the
-             * REGION pass's counter ranges, and a spliced target had no region
-             * pass — its ranges are empty by construction. That is not merely
-             * an accounting consequence: `vm_splice`'s header derives that a
-             * splice's per-copy slots CANNOT need restoring, because two
-             * activations of one emitted splice site cannot nest, and §5.3b's
-             * two measured counterexamples (the lost match, the six false
-             * matches) are both about nested activations of ONE SHARED COPY. */
-            if (!v.rgn_emit[i]) continue;
-            vm_w_range(base[i], nstate,
-                       vm_slot_guard(&v, snap_before[i].guard),
-                       vm_slot_guard(&v, snap_after[i].guard));
-            vm_w_range(base[i], nstate,
-                       vm_slot_low(&v, snap_before[i].low),
-                       vm_slot_low(&v, snap_after[i].low));
-            vm_w_range(base[i], nstate,
-                       vm_slot_mark(&v, snap_before[i].mark),
-                       vm_slot_mark(&v, snap_after[i].mark));
-            vm_w_range(base[i], nstate,
-                       vm_slot_rev(&v, snap_before[i].rev, 0),
-                       vm_slot_rev(&v, snap_after[i].rev, 0));
-            vm_w_range(base[i], nstate,
-                       vm_slot_ctr(&v, snap_before[i].ctr),
-                       vm_slot_ctr(&v, snap_after[i].ctr));
-            vm_w_range(base[i], nstate,
-                       vm_slot_lookmark(&v, snap_before[i].lookmark),
-                       vm_slot_lookmark(&v, snap_after[i].lookmark));
-            vm_w_range(base[i], nstate,
-                       vm_slot_lookpos(&v, snap_before[i].lookpos),
-                       vm_slot_lookpos(&v, snap_after[i].lookpos));
-        }
-        for (int i = 0; i < nt; i++) {
-            bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
-            if (!v.rgn_emit[i]) {
-                /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
-                 * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
-                 * SETS, and the two are NOT the same thing the moment a
-                 * spliceable target REACHES A LINKED ONE.
-                 *
-                 * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
-                 * capture half for a spliced `i` (the `continue` above), but
-                 * `base[j]` for a reached LINKED `j` still carries that
-                 * region's seven per-copy family RANGES — so the union handed
-                 * `vm_splice` more slots than `spl_nw` reserved and the block
-                 * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
-                 * non-recursive helper calling a recursive rule, which is this
-                 * module's own target shape — refused with "the splice save
-                 * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
-                 * compiled it. FOUR such patterns were found and NONE of the
-                 * wave's bars could see them: over 3,025 corpus patterns, 113
-                 * artifacts have a SPLICED call and 37 have a LINKED one and
-                 * **ZERO have both**, so `A == B`, the sabotage matrix and the
-                 * specimen were structurally blind to the interaction.
-                 *
-                 * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
-                 * NUMBER IS SMALLER. A spliced site must restore what its
-                 * inlined body writes that is SHARED with the caller and that
-                 * NOTHING ELSE restores. A reached LINKED target's per-copy
-                 * slots are not that: the call to it is an `RX_CALL` into its
-                 * shared region, and **that region's own `RX_RETURN` restores
-                 * every slot in ITS `W`** before control comes back — so by the
-                 * time the spliced body ends they are already back, and
-                 * restoring them again would write a value that is already
-                 * there. What is genuinely shared is the CAPTURE PAIRS and the
-                 * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
-                 * NUMBER and are therefore the same cells the caller's own
-                 * lexical occurrence writes. That is the capture half, and it
-                 * is exactly what `spl_nw` counts.
-                 *
-                 * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
-                 * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
-                 * header makes the same point about slot indices): `rgn_grp[i]`
-                 * — the transitive group set — is computed ONCE, before the
-                 * layout exists. `spl_nw[i]` is its COUNT, which is all the
-                 * pre-pass can use because slot INDICES do not exist yet;
-                 * `rgn_w[i]` here is its INDICES. The assertion below is what
-                 * makes "one mechanism" checkable rather than claimed. */
-                memset(w, 0, (size_t)nstate * sizeof *w);
-                /* `wg`, not `g`: `GenNames g` is in scope here and
-                 * `-Wshadow` is `make strict`'s, which caught it. */
-                for (int wg = 1; wg <= v.ngroups; wg++) {
-                    if (!v.rgn_grp[i][wg]) continue;
-                    if (2 * wg + 1 < nstate) {
-                        w[2 * wg] = true; w[2 * wg + 1] = true;
-                    }
-                    if (vm_marked(&v, wg)) {
-                        int ps = vm_slot_pend(&v, wg);
-                        if (ps >= 0 && ps < nstate) w[ps] = true;
-                    }
-                }
-            } else {
-            memcpy(w, base[i], (size_t)nstate * sizeof *w);
-            for (int j = 0; j < nt; j++) {
-                if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
-                for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
-            }
-            }
-            /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
-             * Nothing above can put them there — the capture walk starts at
-             * group 1 and no family's base reaches below `2*(ngroups+1)` — so
-             * this is an ASSERTION written as a filter, and the filter is what
-             * makes it one line rather than a paragraph nobody checks. */
-            int n = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) n++;
-            int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
-            int q = 0;
-            for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
-            v.rgn_w[i]  = lst;
-            v.rgn_nw[i] = n;
-            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
-             * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
-             * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
-             * `spl_nw[i]` did it in the pre-pass, this does it again over the
-             * layout. So it catches a set that MOVED between the two readings
-             * — a group added to the transitive closure, a `pend_of` entry that
-             * appeared — and it CANNOT catch a set that is WRONG, because a
-             * wrong set is wrong identically on both sides.
-             *
-             * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
-             * this assertion belongs to is that there is ONE set instead of
-             * two, and what makes the set itself right is argued at
-             * `vm_splice`'s header (a splice restores only what is SHARED with
-             * the caller; a reached LINKED target's per-copy slots are restored
-             * by that region's own `RX_RETURN`) and MEASURED by
-             * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
-             * independent oracle, which is where evidence about correctness
-             * comes from. This line's job is narrower and worth having anyway:
-             * before it, a disagreement announced itself as a save-block
-             * overflow at emission, three passes later, with nothing pointing
-             * at the cause. */
-            if (!v.rgn_emit[i] && v.spl_nw && n != v.spl_nw[i])
-                ctx_fail(cx, 0, "internal error: the spliced callee for group "
-                                "%d reserved %d save slots and needs %d — the "
-                                "pre-pass and the W build disagree about its "
-                                "transitive group set",
-                         pcrec_callgraph_target(v.cg, i), v.spl_nw[i], n);
-        }
-        vm_walk_calls(&v, root, vm_publish_saves, NULL);
-
+        vm_build_region_saves(&v, root, nstate,
+                              snap_before, snap_after);
         vm_memo_region_costs(&v);
     }
 
