@@ -23741,3 +23741,27 @@ red-on-unrepaired-F1 acceptance), L8-F6(a)/(b)/(c).
 cf0962e3 landed their side; K59 rescue fired on their wb-512 control,
 consistent with our btriage class). OUR checkpoint battery slot: tomorrow
 DAYTIME on ubuntubudu, handshake before launch — will cover fixnow+waveU.
+
+## 2026-09-18 (cont.) — wave U merged; checkpoint battery next
+
+**Lane waveu delivered all four nets** (unit tier / sat-arith check /
+allocation injector / L8-F6 census+control+rows) but died between
+launching S257's mech run and reading it — the manager took over the
+landing per the ladder: re-ran S257 (resource:1fail/26pass DETECTED,
+anomalies 0, matching the report's pre-written figure), re-ran strict,
+committed the untracked report + two CLAUDE.md edits (f6d2fdce), ran the
+owed full make test (40/40 sections — test-core is section 40 — zero
+failed checks, sole FAIL the known darwin inline_capability nm-probe).
+Merged to main + [REVW.U] archived (56e1a05c, pushed).
+
+**K60 (new, filed by the injector's first real run)**: compile_driver's
+retry ladder absorbs a genuine allocation failure on a non-final attempt
+into a later attempt's success (size_cap_refused/dfa_overflowed never
+reset). THREE DISPOSITIONS TO FRANK in known_issues.md. Also fixed en
+route: a real pipeline-exit-status bug (`"$BIN" | tee` masking rc) in
+three driver scripts; a -Wmissing-field-initializers gap in
+definitions_check.c.
+
+**Next: the D102 checkpoint battery on ubuntubudu** (bench's window
+closed clean; box ours from mid-morning, handshake at launch), pinned at
+main 56e1a05c — no merges/pushes to main until its trailer. Then wave 1.
