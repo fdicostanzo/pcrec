@@ -8,7 +8,8 @@ could see.
 
 ## Files
 
-- **run_resource_tests.sh** — the [M4.7b] K7 pin, now FIVE sections:
+- **run_resource_tests.sh** — the [M4.7b] K7 pin, now SIX sections (this
+  list itself was stale — missing 1b — until [SIZECAP-CPU] below):
 
   0. **[REVW.U L8-F6(a)] The allocation-site census.** Every raw
      `malloc`/`calloc`/`realloc`/`strdup` call in `src/`+`cli/`, swept by
@@ -28,6 +29,19 @@ could see.
      WHICH shapes compile and which refuse is deliberately NOT asserted: that
      boundary is `PCREC_MAX_SUBSET_ELEMS`'s to move, and pinning it here would
      make this file a control calibrated against the thing it controls.
+
+  1b. **[ART-SIZE]/D84 — the `size_moved` loop.** Shapes whose ACCEPTANCE
+      moved when the emitted-size caps landed, pinned with the size each
+      used to produce and re-driven through the total-cap refusal plus the
+      `--max-emit-bytes` override's round trip. This loop's own refusal
+      path can cost roughly 2x an ordinary compile — a cap hit retries once
+      under [K59-PREMUL]'s drop ladder before refusing again — so it runs
+      under `SIZECAP_CPU`, a WIDER CPU budget than section 1's `K7_CPU`
+      ([SIZECAP-CPU], 2026-09-18, lane btriage2: `battery_20260918_051433`
+      killed this loop's row 1 at `K7_CPU`'s 45s on ubuntubudu, a materially
+      slower single core than the Mac dev box that calibrated it — not box
+      contention, the battery's own load line was near-idle). See the
+      loop's own header comment in the script for the measurement.
 
   2. **A failed allocation is diagnosed, not aborted.** Four compiles under a
      40 MB (25 MB for the last) `ulimit -v`, which makes malloc genuinely
@@ -122,10 +136,13 @@ in the Makefile carries the same note.
 
 ## Env
 
-`PCREC` (default `build/pcrec`), `K7_MEM` (default `512m`), `K7_SECS`
-(default `60`), `K7_CPU` (default `20`). Same revisit-when as D45's budgets: a
-LEGITIMATE case measured needing more raises the default with the measurement
-recorded, never silently.
+`PCREC` (default `build/pcrec`), `K7_MEM`, `K7_SECS`, `K7_CPU` (section 1's
+own bound; see the script's own header for its current defaults, which have
+moved since this paragraph was written and are not re-copied here per this
+file's own K35 lesson). `SIZECAP_CPU` (default `90`, [SIZECAP-CPU]
+2026-09-18) is section 1b's OWN, wider CPU budget — see that section's entry
+above. Same revisit-when as D45's budgets: a LEGITIMATE case measured needing
+more raises the default with the measurement recorded, never silently.
 
 Maintenance: update this file when files are added/removed or their roles change.
 
