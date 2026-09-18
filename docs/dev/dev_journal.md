@@ -23971,3 +23971,20 @@ composition route — a marker there changed 2 of 304 sources and 0 of 3,938
 argv rows. Six EP2 corrections in the report §4. Merge-gate `make test`
 launched detached on main with a 3h bound (lesson applied). Slice C (stage 3)
 lane w2b launched next.
+
+**w2b DELIVERED AND MERGED (c87c7919)** — opus, ~2h: stage 3 complete. sb_fragf
+landed; 75 of 81 fixed buffers retired across both emitters, six named
+exclusions (the encoding-seam family, with a D80 follow-up if the guard-text
+trio ever goes); listing fixture widened to 42/44 reach, and the widening
+found two real defects in the resume-point check within minutes; 6 anchors
+re-aimed (charter said 4 — the misses quote a buffer's consumer), all six
+DETECTED solo. Slice A's merge gate: make test 40/40, size log 0 movers over
+3,480 rows (committed 380fbe33). LANDING ITEM: W4's alloc population moved
+158 → 162 across the two refactors while nothing observable moved — the
+first measured brittleness of the population pins, which is exactly what
+Frank asked about; re-pinned by equality pending his ruling on floors.
+Recommended shape given to Frank: absorbed pins stay exact, population pins
+become floors (K35 wants an EMPTY population caught, not a shifted one),
+mech's resource arm asserts absorbed=0 so S260 is detectable, the check's
+home is the battery rather than make test. Merge-gate make test for w2b
+launched detached (3h bound).
