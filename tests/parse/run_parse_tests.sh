@@ -27,6 +27,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (branch_count_check.c)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 KEEP="${KEEP:-0}"
@@ -52,9 +53,10 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # ---- 1. branch count -------------------------------------------------------
 
 BIN="$WORKDIR/branch_count_check"
-if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
-        -o "$BIN" "$SCRIPT_DIR/branch_count_check.c" "$LIB" -ldl; then
+# [REVW.U L5-R0.1] unit_build (tests/lib/unit_cc.sh) — the ONE build for an
+# internal-property check; -ldl is branch_count_check.c's own extra link dep
+# (its libpcre2 arbitration leg dlopen's the reference library).
+if ! unit_build "$BIN" "$SCRIPT_DIR/branch_count_check.c" -ldl; then
     echo "parse: FAILED TO BUILD branch_count_check.c" >&2
     exit 1
 fi

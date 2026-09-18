@@ -19,6 +19,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
+. "$ROOT_DIR/tests/lib/unit_cc.sh"      # [REVW.U L5-R0] unit_build (registry_check.c, pcre2_check.c)
 KEEP="${KEEP:-0}"
 SANFLAGS="${SANFLAGS:-}"
 
@@ -36,9 +37,8 @@ cleanup() {
 trap cleanup EXIT
 
 BIN="$WORKDIR/registry_check"
-if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
-        -o "$BIN" "$SCRIPT_DIR/registry_check.c" "$LIB"; then
+# [REVW.U L5-R0.1] unit_build (tests/lib/unit_cc.sh).
+if ! unit_build "$BIN" "$SCRIPT_DIR/registry_check.c"; then
     echo "registry: FAILED TO BUILD registry_check.c" >&2
     exit 1
 fi
@@ -184,9 +184,7 @@ if [ "$PCRE2_AVAILABLE" != "1" ]; then
         echo "SKIP: packages 'libpcre2-8-0 libpcre2-dev', Homebrew 'pcre2')"
         echo "SKIP: to enable them."
     } | tee "$PC3OUT"
-elif ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $PCRE2_CFLAGS $SANFLAGS \
-        -o "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" "$LIB" $PCRE2_LIBS; then
+elif ! unit_build "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" $PCRE2_CFLAGS $PCRE2_LIBS; then
     echo "registry: FAILED TO BUILD pcre2_check.c (PC-3)" >&2
     exit 1
 else

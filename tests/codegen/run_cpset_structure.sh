@@ -32,6 +32,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"     # [MACPORT] a real GNU gcc, for 2d
+. "$ROOT_DIR/tests/lib/unit_cc.sh"        # [REVW.U L5-R0] unit_build (CHECK 4)
 KEEP="${KEEP:-0}"
 REFCOMMIT="${CPSET_STRUCTURE_REF:-cb546b3a}"
 
@@ -550,10 +551,12 @@ fi
 # introduced it rather than from the wave that first breaks it.
 echo
 echo "== CHECK 4: the interval algebra, model-checked against a bitset oracle =="
-if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -I "$ROOT_DIR/lib" -I "$ROOT_DIR/src" \
-        -o "$WORKDIR/cpsetmodel" "$SCRIPT_DIR/cpset_model_check.c" \
-        "$ROOT_DIR/build/libpcrec.a" 2>"$WORKDIR/cpsetmodel.log"; then
+# [REVW.U L5-R0.1] built through unit_build (tests/lib/unit_cc.sh), the ONE
+# way an internal-property check is compiled: threads $SANFLAGS (this file's
+# build site named no $SANFLAGS at all before this — the tree's best unit
+# check had never been built under a sanitizer) and links $LIBPCREC.
+if ! unit_build "$WORKDIR/cpsetmodel" "$SCRIPT_DIR/cpset_model_check.c" \
+        2>"$WORKDIR/cpsetmodel.log"; then
     bad "[4] cpset_model_check.c does not build:"
     head -10 "$WORKDIR/cpsetmodel.log" >&2
 elif ! MODEL_OUT="$("$WORKDIR/cpsetmodel" 2>&1)"; then
