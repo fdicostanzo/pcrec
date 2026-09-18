@@ -111,8 +111,11 @@ the legend) are **presented as Frank's**, not taken.
 | `make -j4 CC=gcc-16` | clean, at every commit |
 | `make strict CC=gcc-16` | **clean** (`strict: whole tree compiles clean with -Werror -Wshadow`), including `-Wclobbered` on the probe's new `volatile` |
 | `make alloc CC=gcc-16` (probe off) | four witnesses read 15/5, 0/0, 25/0, 108/0 — **identical to the pre-probe build**, which is the probe's behaviour-identity proof |
-| `bash tests/rxtsource/run_rxtsource_tests.sh` | see below |
-| probe-off corpus byte identity vs `272bf970` | see below |
+| `bash tests/rxtsource/run_rxtsource_tests.sh` | **212 passed / 1 recorded / 0 failed** (`INV-COMPAT holds over 211 files / 3938 blocks / 28949 expectation lines`). The one `RECORD:` line is this box's pre-existing darwin C3 non-native-pin behaviour — `btriage_20260917_report.md` |
+| probe-OFF corpus byte identity vs `272bf970` | **1,158 identical / 0 differing / 2,001 both-refuse / 0 rc-mismatch** over all 3,159 distinct corpus `pattern` lines |
+| probe-ON (`PCREC_K60_PROBE=1 PCREC_K60_FIX=1`) byte identity | **1,158 / 0 / 2,001 / 0** — identical to probe-off |
+
+**VALIDATION IS COMPLETE. Nothing is owed.**
 
 Full `make test` was **not** run (the brief forbade it without asking, and
 the lane's `tests/core/` changes do not reach `make test` beyond

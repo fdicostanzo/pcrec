@@ -341,10 +341,11 @@ cross-attempt flag lacked, and precisely the property §2.4 shows
   **1,158 identical, 0 differing, 2,001 both-refuse (module-gated,
   unrelated), 0 rc-mismatch.**
 - **Emitted bytes, probe ON** (`PCREC_K60_PROBE=1 PCREC_K60_FIX=1`): the
-  same sweep. See §7 for its result; the gates change only what is written
-  to stderr and what happens at a `PCREC_JMP_NOMEM` arrival, and no such
-  arrival is reachable without the injector, so the expected result is the
-  same 1,158/0.
+  same sweep, same result — **1,158 identical, 0 differing, 2,001
+  both-refuse, 0 rc-mismatch.** Expected, and worth having stated rather
+  than assumed: the gates change only what is written to stderr and what
+  happens at a `PCREC_JMP_NOMEM` arrival, and no such arrival is reachable
+  without the injector.
 
   Both sides write **the same basename in different directories**. The
   first run of this sweep did not, and read `identical=0 differing=1158` —
@@ -452,17 +453,17 @@ could actually meet, and it is the one §6.2 is about.
 
 ---
 
-## 7. OWED
+## 7. WHAT IS OWED, AND WHAT WAS DELIBERATELY NOT MEASURED
 
-- **§4.5's probe-ON byte-identity arm** was launched as this lane's last
-  act per `BOILERPLATE.md`'s DO-THEN-FINISH; the lane's report
-  (`lanes/k60meas_report.md` §5) carries its result or names it owed with
-  the log path. The probe-OFF arm — the one that matters, since it is the
-  claim the `[K60-PROBE]` commit makes about itself — is **complete**:
-  1,158/0/2,001/0.
-- **Not measured, deliberately**: §2.4's `build_anchored_dfa` window has no
+**Nothing is owed.** Every number in this memo was run and is stated above,
+including both byte-identity arms and the `tests/rxtsource` smoke
+(212 passed / 1 recorded / 0 failed; the one `RECORD:` line is this box's
+pre-existing darwin C3 non-native-pin behaviour, `btriage_20260917_report.md`).
+
+What was deliberately **not** measured:
+- §2.4's `build_anchored_dfa` window has no
   witness (the optional machine's state-cap overflow has a corpus population
   of zero — `engabs_reach_probe.md`), so its absorption is argued from the
   code and not from a run.
-- **Not swept**: population axes beyond default and `-e utf8` (`--tune`,
+- Population axes beyond default and `-e utf8` (`--tune`,
   `--unroll=K`, forced engines). §3.4 says so rather than implying coverage.
