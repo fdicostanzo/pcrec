@@ -4332,3 +4332,58 @@ the size-term ladder's documented "any reason, this K is out" catch-all
 both silently absorb a genuine allocation failure into a successful
 compile from a later internal attempt, which no answer-level check or
 `ulimit -v` approach can see.
+
+## The long-prefix sweep and the irsb byte-neutrality arm ([REVW.1] wave 1 stage 0, 2026-09-18)
+
+Two new instruments from wave 1's PRECONDITION stage
+(`docs/dev/reviews/lens_reports/lens10_emission_kit_charter.md` STAGE 0 +
+EP2's additions in `emitvm_second_pass.md`); full findings in
+`docs/dev/w1stage0.md`, reproduction pieces in `docs/dev/w1stage0_evidence/`.
+
+**`tests/codegen/run_longprefix_sweep.sh`** — an OPT-IN tool
+(`run_object_neutrality.sh`'s own "not in `make test`, needs a heavier
+compile pass" shape), not a `make test` section. Compiles every corpus
+`pattern`/`pattern-esc` line at `-p rx` and at a legal 60-byte prefix
+(`PCREC_MAX_PREFIX_LEN`), gcc-compiling the 60-byte artifact under the
+harness's own GENCFLAGS wherever pcrec accepts it — the control the tree's
+only prior long-prefix witness (`tests/cli/run_cli_tests.sh` case3,
+compiling the pattern `a`) could not supply, since it reaches essentially
+none of `emit_vm.c`'s literal-sized scratch buffers. Row-count tripwire
+against `run_rxtsource_tests.sh`'s own `CENSUS_BLOCKS` pin (grepped live).
+MEASURED at this stage's branch point over the full 3,938-pattern corpus:
+1,499 of 1,500 `-p rx`-compiling patterns also compile at 60 bytes (the one
+exception is `k18_cost_gates.rxt`'s deliberately pathological witness
+hitting `PCREC_MAX_EMIT_BYTES` — a size-cap refusal, not a truncation
+miscompile), and **zero** gcc-`-Werror` failures on any 60-byte artifact
+pcrec itself accepted — no live K38 recurrence found. The run's own
+committed baseline (`docs/dev/w1stage0_evidence/longprefix_baseline.tsv`) is
+what a future wave diffs its own re-run against.
+
+**`tests/codegen/run_ir_listing.sh` gains a BYTE-NEUTRALITY block**, riding
+that script's existing per-pattern loop and its existing 11-pattern
+`PATTERNS` population. `vm_render_listing` writes a stream (`irsb`, the
+`--emit-ir` listing) none of the four standing `.c`-artifact identity gates
+ever compare, and `run_ir_listing.sh`'s own pre-existing checks assert only
+DERIVED facts about it (label sets, push targets, slot writes) — not its raw
+bytes. The new block diffs each pattern's captured listing byte-for-byte
+against a committed per-pattern baseline
+(`tests/codegen/manifests/ir_listing_baseline/`, captured via the new opt-in
+`CAPTURE_IR_BASELINE=1` mode; a missing baseline is a hard FAIL, never a
+silent skip). Pins the OUTPUT bytes, not the render mechanism (D108), so it
+stays valid across a future walk→event→render seam. Sabotage row **S258**
+(reword one word of `vm_alt`'s role text — moves `irsb`, moves no `.c` byte
+any standing gate would catch) is DETECTED. See `docs/dev/w1stage0.md` §2
+for the full validation transcript, including the mech-matrix's
+`git archive HEAD` two-step this forced (the row necessarily reads
+UNDETECTED against any commit before the arm's own).
+
+**`docs/dev/w1stage0_evidence/listing_reach_census.py`** (not a `make test`
+check — a one-off measurement companion to the two instruments above)
+answers a question neither existing check asks: does `run_ir_listing.sh`'s
+population actually REACH the rung emitters whose `vm_rolef` role text is
+the listing's own content? MEASURED: the 11-pattern `PATTERNS` array reaches
+27 of 41 `vm_rolef` call sites (66%) — the new BYTE-NEUTRALITY arm's own
+inherited reach — missing lookbehind and subroutine-call emission entirely;
+the full corpus at default engine selection reaches 31 of 41 (76%), still
+missing the same two families. Recorded as a finding for a future stage-3
+lane's population choice, not acted on here (stage 0 is measurement only).

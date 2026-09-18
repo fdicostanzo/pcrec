@@ -615,3 +615,24 @@ change.
   design-event candidates instead (a partial-admission prefilter; a VM
   step budget, the same lever O-31 finding 3 already asks for) — neither
   built or measured further here (D77).
+- `w1stage0.md` — [REVW.1] wave 1 stage 0 (2026-09-18, lane w1stage0): the
+  emission-kit wave's PRECONDITION stage, three deliverables, nothing under
+  `src/`/`cli`/`lib/` touched. (1) The long-prefix full-corpus sweep
+  (`tests/codegen/run_longprefix_sweep.sh`), repairing the [MECH-REACH] gap
+  the charter names (the only prior long-prefix control compiles the
+  pattern `a`): 1,499 of 1,500 `-p rx`-compiling corpus patterns also
+  compile at the legal 60-byte prefix boundary, zero gcc `-Werror`
+  anomalies — no live K38 recurrence found; committed baseline
+  `docs/dev/w1stage0_evidence/longprefix_baseline.tsv`. (2) The `irsb`
+  byte-neutrality arm (EP2's addition): a new block in
+  `tests/codegen/run_ir_listing.sh` pinning the `--emit-ir` listing's raw
+  bytes per pattern against a committed baseline, the stream none of the
+  four standing `.c`-identity gates compare — pins the OUTPUT, not the
+  render mechanism (D108); sabotage S258 detected. (3) The listing-reach
+  census (EP2's addition): measures whether `run_ir_listing.sh`'s
+  population reaches the rung emitters whose role text IS the listing —
+  27 of 41 `vm_rolef` call sites (66%) for the 11-pattern fixture set, 31
+  of 41 (76%) for the whole corpus at default engine selection, both
+  missing lookbehind and subroutine-call emission entirely — recorded as a
+  finding for a future stage-3 lane's population choice, not acted on
+  here.

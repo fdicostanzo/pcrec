@@ -306,6 +306,44 @@ decides whether to perform it — and then run the row through
   Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
   see the note below.
 
+  **[REVW.1] wave 1 stage 0 (2026-09-18) ADDS A BYTE-NEUTRALITY BLOCK**,
+  riding this same loop and this same `PATTERNS` population. Every other
+  section here pins a DERIVED fact; `vm_render_listing` writes a stream
+  (`irsb`) none of the four standing `.c`-artifact identity gates ever
+  compare (`emitvm_second_pass.md` §1/§5, EP2), so the new block diffs each
+  pattern's listing byte-for-byte against a committed baseline
+  (`tests/codegen/manifests/ir_listing_baseline/`, one file per pattern,
+  captured via the new opt-in `CAPTURE_IR_BASELINE=1` mode — never run
+  casually, and a missing baseline is a hard FAIL rather than a silent
+  skip). Pins the OUTPUT bytes, not the render mechanism (D108), so it
+  survives a future walk->event->render refactor of the kit that only
+  changes HOW the listing is produced. Sabotage **S258** (a one-word reword
+  of `vm_alt`'s role text — moves `irsb`, moves no `.c` byte any other gate
+  would catch) is DETECTED. See `docs/dev/w1stage0.md` §2 and
+  `docs/dev/w1stage0_evidence/CLAUDE.md`.
+
+- **run_longprefix_sweep.sh** — [REVW.1] wave 1 stage 0's long-prefix
+  full-corpus sweep (2026-09-18), an OPT-IN tool (`run_object_neutrality.sh`'s
+  "not in `make test`, needs a heavier compile pass" shape), NOT a
+  `make test` section. Repairs the [MECH-REACH] gap `lens10_emission_kit_
+  charter.md` §4.2 names: the tree's only prior long-prefix control
+  (`tests/cli/run_cli_tests.sh` case3) compiles the pattern `a`, reaching
+  essentially none of `emit_vm.c`'s literal-sized scratch buffers. Compiles
+  every corpus `pattern`/`pattern-esc` line
+  (`docs/dev/w1stage0_evidence/longprefix_sweep.py`) at `-p rx` and at a
+  legal 60-byte prefix (`PCREC_MAX_PREFIX_LEN`), gcc-compiling the 60-byte
+  artifact under the harness's own GENCFLAGS wherever pcrec accepts it — a
+  gcc `-Werror` failure on code pcrec itself accepted is the K38 signal
+  this control exists to catch. Row-count tripwire against
+  `run_rxtsource_tests.sh`'s own `CENSUS_BLOCKS` pin, grepped live rather
+  than hand-copied. MEASURED at this wave's branch point: 1,499 of 1,500
+  `-p rx`-compiling patterns also compile at 60 bytes (the one exception is
+  a `PCREC_MAX_EMIT_BYTES` size-cap refusal on a deliberately pathological
+  witness, not a truncation miscompile), zero gcc anomalies — no live K38
+  recurrence found. Its committed baseline
+  (`docs/dev/w1stage0_evidence/longprefix_baseline.tsv`) is what a future
+  wave diffs its own re-run against. See `docs/dev/w1stage0.md` §1.
+
 - **run_lookaround_identity.sh** / **lookaround_classify.py** — [M6.6.2]
   module `lookaround`'s BYTE-IDENTITY GATE and the grammar-aware classifier
   that splits its population. Two modes since wave B+C (bucket by default,
