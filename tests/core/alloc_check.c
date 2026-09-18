@@ -50,6 +50,17 @@
  *       one mechanism K60 names that W1-W3 structurally cannot reach
  *       ([K60MEAS]; see the witness table at the bottom of this file)
  *
+ * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
+ * mechanism (the [ART-SIZE] ladder catch absorbing a genuine ctx_nomem) is
+ * FIXED at the recovery point — W4 is expected to PASS (0 absorptions,
+ * single-shot and sustained both) on any tree carrying the fix, and a W4
+ * FAIL here is a real regression. W1 and W3's absorptions are a SEPARATE
+ * mechanism (emit_state_legend's silent degradation, src/gen/emit_dfa.c —
+ * see tests/core/CLAUDE.md's own [K60FIX] note) that this fix cannot reach
+ * by construction and are EXPECTED to keep failing until that mechanism's
+ * own fix lands (K60, lane d105) — do not read a W1/W3 FAIL here as a
+ * regression in this fix.
+ *
  * — not a `--source` target (composing a real `.rxt` definitions file
  * inside a pure C driver adds machinery this check does not need to
  * demonstrate the property again through a fourth, structurally

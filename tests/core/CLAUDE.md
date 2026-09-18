@@ -144,6 +144,22 @@ under D45's gen-timeout budgets), and no check in this tier may read the
     **108 of 158 (68.4%)** — the worst rate in the file — all of them
     genuine `ctx_nomem`-routed allocations.
 
+  **[K60FIX] (2026-09-18, lane k60fix) — W4's 108/158 IS NOW 0/158, AND
+  W1/W3 ARE THE EXPECTED RESIDUAL.** K60's ladder-class mechanism (the
+  `[ART-SIZE]` catch, W4's own witness) is fixed at the recovery point
+  (`src/core/compile.c`'s `setjmp` handler tests a new `Ctx.failed_nomem`
+  field FIRST — see `docs/dev/decisions.md` D109). Re-running `make alloc
+  --both` on the fixed tree: `PASS: W4 ... every one of 158 forced
+  allocation failures was diagnosed` (was `FAIL: 108 of 158 ...
+  SUCCEEDED THROUGH anyway`), W2 unchanged (0/11 PASS), and **W1 (15/72
+  single-shot, 5/72 sustained) and W3 (25/328 single-shot) are UNCHANGED
+  and EXPECTED to stay red** — both are `emit_state_legend`'s silent
+  degradation (mechanism (A)), which never calls `ctx_nomem` and cannot
+  be reached from this fix by construction; that residual is lane d105's
+  (`docs/dev/known_issues.md` K60). A W1/W3 FAIL from `make alloc` on
+  this tree is therefore NOT a regression from this fix — read the
+  witness name before treating any red here as new.
+
   **The four injector symbols are `pcrec_inject_*_at` now, and the rename
   is the point.** This header is `-include`d and the Makefile's object rule
   names its prerequisites by hand (no `-MMD` in this tree), so editing
