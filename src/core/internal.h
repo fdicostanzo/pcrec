@@ -109,6 +109,39 @@ void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
  * can count is what makes it checkable at the call site. */
 void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
 
+/* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3; lens 10 item 1; D108) -------
+ *
+ * Formatted text in ARENA-OWNED storage sized EXACTLY to the result, so
+ * TRUNCATION IS IMPOSSIBLE BY CONSTRUCTION rather than by a per-site size
+ * argument that somebody has to get right. This is the retirement primitive
+ * for the emitters' `char NAME[N]; snprintf(NAME, sizeof NAME, ...)` idiom —
+ * the class K38 is the recorded miscompile of, where a long `-p` prefix ran a
+ * derived identifier off the end of a hand-sized buffer and the emitted C was
+ * a sentence that stopped mid-word.
+ *
+ * WHAT THE CALLER GETS. A pointer into the compile's arena: never freed by
+ * the caller, dies with the arena, and valid for the whole compile — which
+ * is what makes it safe to hand straight to `sb_printf`'s `%s` at a site far
+ * below the one that built it, the thing a stack buffer could not do.
+ *
+ * ON ALLOCATION FAILURE it routes through `ctx_nomem` via the arena's own
+ * `.cx`, exactly as `arena_alloc` does (coding_guide.md §1.1: a library must
+ * not `abort()` its caller). A DETACHED arena — one whose `.cx` is NULL —
+ * aborts there, which is `arena_alloc`'s own pre-existing behaviour and not a
+ * property this adds.
+ *
+ * D108, and it is why the parameter is an `Arena *` and not a `Vm *`, a
+ * `Ctx *` or a `Job *`: DATA IN, TEXT OUT. It reads no walk and no machine,
+ * so a back-end fed from a deserialized IR calls it unchanged.
+ *
+ * NOT FOR EVERY FRAGMENT. A buffer whose EMPTY value is load-bearing (the
+ * emitters' `char tr[N] = ""` conditionally-filled trace inserts, whose
+ * emptiness is a byte-identity contract) becomes `const char *tr = "";` plus
+ * a conditional assignment — the same shape, but the `""` default is the
+ * point and calling this would not express it. */
+const char *sb_fragf(Arena *a, const char *fmt, ...)
+      __attribute__((format(printf, 2, 3)));
+
 /* ---- AST ---- */
 
 /* [M6.4.2 / SR-8] Forward declaration: `Ast.reg` (below) points at the

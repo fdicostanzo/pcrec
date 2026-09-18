@@ -145,3 +145,33 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
     }
     sb_putc(sb, '\n');
 }
+
+/* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3) -----------------------------
+ *
+ * The contract is stated once, at the declaration in core/internal.h. This is
+ * `sb_printf`'s body with the destination changed: measure, allocate exactly,
+ * format. The two `vsnprintf` calls read the SAME argument list through a
+ * `va_copy`, because a `va_list` is consumed by the first traversal.
+ *
+ * `n + 1` is the allocation, not `n`: `vsnprintf` writes its NUL within the
+ * size it is given, so a buffer of exactly `n` would hold `n - 1` bytes of
+ * text and truncate — which is precisely the failure this primitive exists to
+ * make impossible, and the one an off-by-one here would reintroduce silently.
+ *
+ * `n < 0` aborts, matching `sb_printf`: a negative `vsnprintf` return is an
+ * encoding error in a format string this tree wrote itself, not a condition a
+ * pattern can provoke, so there is no diagnosis to route. */
+const char *sb_fragf(Arena *a, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    va_list ap2;
+    va_copy(ap2, ap);
+    int n = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+    if (n < 0) abort();
+    char *out = arena_alloc(a, (size_t)n + 1);
+    vsnprintf(out, (size_t)n + 1, fmt, ap2);
+    va_end(ap2);
+    return out;
+}

@@ -88,11 +88,34 @@ wrapper and there will not be one (L10 §2.3): it buys nothing `sb_printf` does 
 Any buffer holding an emitted identifier or sub-expression built from the `-p`
 prefix is sized `PCREC_MAX_EMIT_NAME_LEN` (`limits.def:134` =
 `PCREC_MAX_PREFIX_LEN + 96`). K38 is the recorded miscompile of exactly its
-absence. Today 48 literal-sized declarations remain in the two emitters against
-29 correctly derived ones; the tightest measured margin in the tree is 9 bytes
-(L10-L10-1). Do not add a 49th. **[wave 1]** `sb_fragf(Arena*, fmt, …)` —
-arena-owned, truncation impossible by construction — retires the class; until it
-lands, derive the size or do not use a fixed buffer.
+absence. **`sb_fragf` (landed 2026-09-18, wave 2 stage 3) is now the answer,
+and a new fixed scratch buffer in either emitter is a finding against you.**
+
+```c
+const char *sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h */
+```
+
+Arena-owned text sized exactly to the result: truncation is impossible by
+construction rather than by a per-site size argument. The result lives for the
+whole compile, which is what makes it safe to hand to an `sb_printf` `%s` far
+below the site that built it — the thing a stack buffer could not do.
+Allocation failure routes through `ctx_nomem` via the arena's own `.cx`
+(§1.1). It takes an `Arena *` and nothing else on purpose: D108's data-in /
+text-out rule, so a back-end fed from a deserialized IR calls it unchanged.
+
+**Three things it is NOT for.** A buffer whose EMPTY value is load-bearing
+(the conditionally-filled `char tr[N] = ""` trace inserts, whose emptiness is
+a byte-identity contract) becomes `const char *tr = "";` plus a conditional
+assignment — same shape, but the `""` default is the point. A buffer read back
+and mutated in place after it is written is not a fragment. And a `char[]`
+that is a genuine FIELD rather than scratch (`Vm.up`) is out of this wave by
+name.
+
+**Its no-truncation promise is enforced by the `vsnprintf` SIZE argument, not
+by the allocation.** Measured: an allocation one byte short is invisible to
+`tests/core/sb_fragf_check.c` AND to AddressSanitizer, because `arena_alloc`
+rounds to 16 and zeroes, and ASan sees only the arena's own block `malloc`,
+never the intra-block slice. Know which half is checked.
 
 **2.3 Use the file's own declared helper instead of re-deriving it.**
 `vm_slot_expr` (`src/gen/emit_vm.c:940`) exists precisely so that "every site that

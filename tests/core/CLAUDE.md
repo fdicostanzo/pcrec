@@ -76,6 +76,34 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   unification changed nothing, and the six declarations in `internal.h`
   retire with it, not before.
 
+- **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `sb_fragf`'s own
+  property, below any emitted artifact. The primitive promises that
+  truncation is impossible BY CONSTRUCTION, and stage 3 routes ~90 retired
+  hand-sized emitter scratch buffers through it, so this one function is
+  where the K38 class becomes either impossible or universal. **No
+  answer-level check in this tree can see which**: lens 10 measured that
+  nothing truncates today at a 60-byte prefix, and every corpus test runs
+  at `rx`, two bytes — so a wrong size argument here would drop the last
+  byte of every long fragment and the whole suite would stay green. Six
+  sub-checks: agreement with an independent `snprintf` over a 4,001-row
+  length sweep crossing every retired fixed size; the result's length is
+  EXACT; an empty format returns a real empty string and never NULL; a
+  239-byte identifier derived from a `PCREC_MAX_PREFIX_LEN` prefix is
+  complete (the K38 witness, past `vm_rolef`'s 160); an earlier fragment
+  survives 400 later ones across an arena block boundary with no aliasing
+  (the property that distinguishes a fragment from the stack buffer it
+  replaces); and the mixed-conversion case including `%%`.
+
+  **ITS OWN BLIND SPOT, MEASURED RATHER THAN ARGUED, and it is the reason
+  to read the file's header before trusting the row.** Two plants were
+  tried. A wrong `vsnprintf` SIZE argument turns 5 of the 6 sub-checks red.
+  An ALLOCATION one byte short does not move it at all — and does not move
+  AddressSanitizer either, because `arena_alloc` rounds to 16 and zeroes,
+  and ASan sees only the arena's own 64 KiB block `malloc`, never the
+  intra-block slice. So "sized exactly to the result" is enforced at the
+  format call and is unobservable at the allocation, by every instrument
+  this tree has.
+
 - **alloc_inject.h** / **alloc_check.c** / **run_alloc_tests.sh** —
   [REVW.U L5-R1] THE ALLOCATION-FAILURE INJECTOR (`make alloc`, opt-in,
   NOT part of `make test`). `alloc_inject.h` is `-include`d ahead of
