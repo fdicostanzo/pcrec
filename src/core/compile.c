@@ -33,9 +33,15 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 /* [M4.7b/K7] See internal.h for why there is exactly one of these. The
  * `errno == ENOMEM` distinction is deliberately NOT drawn: malloc failing for
  * any reason is the same event to a caller, and reading errno after a
- * longjmp-shaped path is a portability question with no payoff. */
+ * longjmp-shaped path is a portability question with no payoff.
+ *
+ * [K60] `cx->failed_nomem` is set BEFORE the `ctx_fail` call below, so it is
+ * true by the time this arrival's `longjmp` lands — see the field's own
+ * comment (internal.h) for why this is per-arrival with no stored state, and
+ * `compile_driver`'s `setjmp` handler for where it is read. */
 void ctx_nomem(Ctx *cx)
 {
+    cx->failed_nomem = true;
     ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
                     "not allocate; shrink the pattern or raise the limit)");
 }
@@ -836,6 +842,29 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
 
         if (setjmp(cx.jb)) {
+            /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
+             * ahead of every rung's own eligibility test below AND ahead of
+             * the `[ART-SIZE]` ladder's blanket "this K is out" catch (the
+             * very next check) — a `ctx_nomem` arrival is EXEMPT from that
+             * catch, because "this K did not fit" and "the allocator is out
+             * of memory" are different events the ladder's own recovery
+             * point cannot otherwise tell apart, and absorbing the second as
+             * the first is a masked diagnostic on a library (K7's rule, one
+             * layer up from `abort()`) — see `docs/dev/known_issues.md` K60
+             * and `docs/dev/k60_measurement.md` §4 for the measurement
+             * (108/108 ladder absorptions eliminated, 0/40 legend
+             * absorptions reached — a structurally different mechanism this
+             * arrival cannot see, since it never called `ctx_nomem` and so
+             * never arrived here at all. That one was closed separately and
+             * by DELETION, in `emit_state_legend`, src/gen/emit_dfa.c: D105,
+             * landed the same day. Between the two, K60 is closed).
+             * No stored state:
+             * `cx.failed_nomem` is per-arrival by construction (its own
+             * comment, internal.h). */
+            if (cx.failed_nomem) {
+                job_cleanup(&cx);
+                return -1;
+            }
             /* [SEL-1] Retry ONLY under `--engine=auto`, ONLY when
              * `-fprefilter` was not requested (both force forms stay
              * do-or-die with today's diagnostic — `--engine=dfa`'s own
@@ -847,7 +876,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             /* [ART-SIZE] A LADDER attempt's failure — for ANY reason: the
              * node cap, the replication product, a repeat-copies refusal, the
              * scratch abort, anything — means "this K is out", never the
-             * compile's answer. That is the whole of R1's blocker: the first
+             * compile's answer, EXCEPT a genuine allocation failure, which
+             * the check above has already propagated before this branch is
+             * ever reached (K60). That is the whole of R1's blocker: the first
              * design said a failing trial could be "discarded", which is false
              * when `ctx_fail` is a `longjmp` to the one recovery point. It is
              * discarded HERE, at that recovery point, which is the only place

@@ -7429,3 +7429,55 @@ renderer are the right shape regardless) and it means the eventual IR
 back-end reuses the text layer and the render path rather than rebuilding
 them. D77 still gates actually building the IR back-end; this only
 ensures the kit does not have to be redone when it is.
+
+## D109 — K60's LADDER class: carry the OOM in a per-attempt `Ctx` field, tested first at the recovery point; disposition (1)'s cross-attempt flag is struck (Frank, 2026-09-18, lane k60fix, landing k60_measurement.md §4.4)
+
+`docs/dev/known_issues.md` K60: a genuine `ctx_nomem` allocation failure
+arriving on a non-final `compile_driver` attempt could be silently
+absorbed — 108 of 148 measured absorptions (lane k60meas) — by the
+`[ART-SIZE]` size-term ladder's own blanket "this K is out" catch at the
+one recovery point (`compile_driver`'s single `setjmp`), and
+structurally by any later rung's eligibility test, since none of them
+could tell "this K did not fit" apart from "the allocator is out of
+memory".
+
+**Landed, per Frank's 2026-09-18 ruling on K60's own entry**: `ctx_nomem`
+sets a new `Ctx` field, `cx.failed_nomem` (`src/core/internal.h`),
+before its `longjmp`; the `setjmp` handler tests it FIRST, ahead of the
+ladder's catch and every other rung's eligibility test, and propagates
+immediately (`job_cleanup`; `return -1`) — no stored state. `Ctx` is a
+loop-local `memset` to 0 at the top of every `compile_driver` attempt
+(`compile.c:704-706`), so the field is per-arrival BY CONSTRUCTION: it
+starts false on every attempt, nothing resets it and nothing can go
+stale, which is exactly the property K60's own disposition (1) — a
+CROSS-attempt flag reset at the top of the loop — lacked, and which
+`k60_measurement.md` §2.4 measured was never actually the tree's defect
+(`size_cap_refused`/`dfa_overflowed` already have this shape; zero of
+148 absorptions were attributable to a stale flag). **Disposition (1) is
+STRUCK as refuted, not merely deferred.**
+
+**The spelling is `if (setjmp(cx.jb))` unchanged**, never
+`v = setjmp(cx.jb)`: C11 7.13.1.1p2 permits only the bare call as a
+controlling expression, a comparison against a constant, or `!` — a
+value ASSIGNED from `setjmp` and read after is outside that list. The
+measurement lane's own probe used the assigning form (acceptable for a
+probe dropped at merge); this is the standards-clean spelling with the
+identical per-arrival property, named in advance by
+`k60_measurement.md` §4.4.
+
+**Scope, and why disposition (3) is not taken either.** The fix
+addresses ONLY `ctx_nomem`-routed absorption (mechanism (B), the ladder
+catch — measured 108/108 eliminated). K60's OTHER mechanism (A),
+`emit_state_legend`'s silent degradation on a raw, unrouted `malloc`
+failure (`src/gen/emit_dfa.c`), never reaches this recovery point at
+all and is untouched by construction (0/40 eliminated) — it is D105's
+own territory (this decision does not restate D105; see that entry).
+"Rule the masking acceptable" (disposition (3)) is therefore not a
+choice this decision makes for mechanism (A): it remains open, assigned
+to lane d105.
+
+**Revisit when**: a sixth `setjmp` site is added to this tree (five
+exist today; four of them take one unconditional action on any nonzero
+return and read no per-attempt `Ctx` field, so this decision does not
+touch them) — check whether it needs the same `failed_nomem` test, by
+the same reasoning as here rather than by copying the code.

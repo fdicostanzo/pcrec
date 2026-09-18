@@ -13,12 +13,26 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K60 — [REVW.U], found 2026-09-17 by the allocation-failure injector's own first real run (lane waveu): an allocation failure ANYWHERE BUT THE LAST INTERNAL ATTEMPT of a compile is frequently SWALLOWED — `pcrec_compile` returns 0, no diagnostic, an artifact from a later fallback attempt nobody asked for
 
-**Status: deferred, filed rather than fixed** — a design question about
-the retry ladder's own state discipline
-(`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R1's own residual:
-build the injector, do not fix everything it finds), not a one-line
-patch a check-writing lane should narrow blind (K49fix's own precedent
-for filing rather than narrowing a defect found while building
+**Status: FIXED 2026-09-18 — BOTH CLASSES, by two separate changes on the
+same day.** The LADDER class (mechanism (B), 108/148, disposition (2)) is
+fixed by lane `k60fix` (`e6e4aa72`, D109): a genuine `ctx_nomem` arrival is
+exempt from the ladder's blanket catch, carried per-arrival in `Ctx`.
+The LEGEND class (mechanism (A), 40/148) is fixed by lane `d105`
+(`6e14d210`, D105): `emit_state_legend`'s raw allocations are deleted
+outright rather than rerouted, so there is no silent-degradation path left
+to diagnose. **The two fixes are disjoint and neither could have reached
+the other's class** — the legend never called `ctx_nomem` and so never
+arrived at the recovery point D109 repairs, which `k60_measurement.md` §4.3
+measured in advance (108/108 and 0/40). `make alloc` is green on all four
+witnesses: W1 15 → 0, W3 25 → 0, W4 108 → 0, in the single-shot sweep and
+the sustained one. See the LANE K60FIX note at the end of this entry, D109
+and D105 in `decisions.md`, and `docs/dev/lanes/d105_report.md` §2. The rest of this entry, unless marked otherwise, is the
+ORIGINAL FILED TEXT plus the 2026-09-18 measurement's own corrections
+(k60meas) — a design question about the retry ladder's own state
+discipline (`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R1's own
+residual: build the injector, do not fix everything it finds), not a
+one-line patch a check-writing lane should narrow blind (K49fix's own
+precedent for filing rather than narrowing a defect found while building
 something else).
 
 **FOUND BY**: `tests/core/alloc_check.c` (`make alloc`), sweeping every
@@ -116,12 +130,14 @@ the clean witness for F1 specifically and not for K60.
   unchanged corpus-wide; not an `abi` event. The check now PINS both
   numbers per witness, so a legend-class absorption is red and a future fix
   must re-pin rather than silently turn a red line green.
-  **K60's LADDER class (108/148) is NOT closed by this**, by construction:
-  `emit_state_legend` never called `ctx_nomem` and never reached the
-  recovery point, and the ladder fix never reaches the legend — the two
-  halves are disjoint, which `k60_measurement.md` §4.3 measured in advance
-  (108/108 and 0/40). W4 still reads 108 until the `longjmp`-value change
-  lands in `src/core/compile.c`.
+  **K60's LADDER class (108/148) is not closed by this one and never could
+  have been**, by construction: `emit_state_legend` never called
+  `ctx_nomem` and never reached the recovery point, and the ladder fix
+  never reaches the legend — the two halves are disjoint, which
+  `k60_measurement.md` §4.3 measured in advance (108/108 and 0/40). It is
+  closed by its OWN change, lane `k60fix`'s `e6e4aa72` (D109), landed the
+  same day; with both merged, W4 reads 0 and the entry's four witnesses are
+  green.
 
 **MANAGER AMENDMENT 2026-09-18 (lane k60meas's measurement, Frank-chartered
 after he rejected the manager's flag-shaped first proposal). THIS ENTRY'S
@@ -147,7 +163,9 @@ DIAGNOSIS IS WRONG IN THREE PLACES; READ THE MEMO
    `ctx_nomem`, never longjmps, and never reaches the recovery point, which
    is why no property of the recovery point can fix it. **That 27% IS D105'S
    OWN UNBUILT RULING** (see the D105 status note in `decisions.md`), not a
-   new finding.
+   new finding. (It was built later the same day — `6e14d210` — which is
+   what this amendment's own discovery set in motion; the sentence stands
+   as the measurement found it.)
 3. **The defect is far narrower than the filed rates suggest.** Under
    SUSTAINED failure (fail allocation N and every one after it — the
    experiment that separates graceful degradation from luck) absorption
@@ -188,6 +206,47 @@ this pattern need more than one internal attempt" crossed with "at
 which allocation index" is D77-gated on a measured need, not built
 speculatively here). The exact mechanism for W1 and the question of
 whether a THIRD distinct absorption path exists are both open.
+
+**LANE K60FIX 2026-09-18 — THE LADDER CLASS (MECHANISM (B)) IS BUILT.**
+Disposition (2) landed exactly as k60_measurement.md §4.4 spelled it:
+`ctx_nomem` sets a new per-attempt `Ctx` field, `failed_nomem`
+(`src/core/internal.h`), before its `longjmp`; `compile_driver`'s
+`setjmp` handler (`src/core/compile.c:838`) tests it FIRST, ahead of
+every rung's own eligibility test and ahead of the `[ART-SIZE]` ladder's
+blanket "this K is out" catch, and propagates immediately with
+`job_cleanup`+`return -1` — no stored state, per-arrival by construction
+(`Ctx` is `memset` at the top of every attempt, `compile.c:704-706`),
+which is the property the rejected cross-attempt-flag proposal
+(disposition (1)) lacked. Keeps the bare `if (setjmp(cx.jb))` (C11
+7.13.1.1p2). **Disposition (1) is STRUCK**, per Frank's ruling above and
+§2.4's refutation — it was never a defect this tree had.
+
+Measured with `make alloc --both` (`tests/core/alloc_check.c`), same
+build shape and witnesses as the measurement memo: W4 (size-term
+ladder) **108 → 0** absorptions eliminated (single-shot and sustained
+both read `PASS: every one of 158 forced allocation failures was
+diagnosed`, was `FAIL: 108 of 158 ... SUCCEEDED THROUGH anyway`); W2
+unchanged (0/11, PASS before and after); **W1 (15/72) and W3 (25/328)
+were UNCHANGED BY THIS FIX, on purpose** — both are entirely mechanism
+(A), the `emit_state_legend` silent-degradation path
+(`src/gen/emit_dfa.c:3615-3618,3660`), which never calls `ctx_nomem` and
+never reaches this recovery point, so no property of it could fix them.
+That class was D105's, and it landed the same day (lane `d105`,
+`6e14d210`, W1 15 → 0 and W3 25 → 0); the sentence above is preserved as
+this lane measured it, not as the tree reads now. Control: reverting this
+lane's `src/core/compile.c`/`internal.h` commit and rebuilding
+`build-alloc/` reproduces W4's original `108 of 158` FAIL exactly (the
+`make alloc` shape's own before/after is the sabotage-equivalent this
+fix was validated against — see `docs/dev/lanes/k60fix_report.md` for
+the transcripts). The other four `setjmp` sites (`pcrec_count_groups`
+here at `:1890`; `src/parse/syntax_dump.c` at `:778`, `:1056`, `:1565`)
+were each read and confirmed to take ONE unconditional action on any
+nonzero `setjmp` return, testing no per-attempt `Ctx` field — none of
+them absorbs anything today and none needed the same test.
+
+Byte-identical in the no-OOM case (`make test-codegen` clean; the fix
+touches only the arrival of a `ctx_nomem`-routed `longjmp`, which no
+successful compile reaches).
 
 ---
 

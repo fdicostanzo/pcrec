@@ -144,6 +144,27 @@ under D45's gen-timeout budgets), and no check in this tier may read the
     **108 of 158 (68.4%)** — the worst rate in the file — all of them
     genuine `ctx_nomem`-routed allocations.
 
+  **[K60FIX] (2026-09-18, lane k60fix) — W4's 108/158 IS NOW 0/158.**
+  K60's ladder-class mechanism (the
+  `[ART-SIZE]` catch, W4's own witness) is fixed at the recovery point
+  (`src/core/compile.c`'s `setjmp` handler tests a new `Ctx.failed_nomem`
+  field FIRST — see `docs/dev/decisions.md` D109). Re-running `make alloc
+  --both` on the fixed tree: `PASS: W4 ... every one of 158 forced
+  allocation failures was diagnosed` (was `FAIL: 108 of 158 ...
+  SUCCEEDED THROUGH anyway`), W2 unchanged (0/11 PASS), and **W1 (15/72
+  single-shot, 5/72 sustained) and W3 (25/328 single-shot) were UNCHANGED
+  BY THIS FIX** — both are `emit_state_legend`'s silent degradation
+  (mechanism (A)), which never calls `ctx_nomem` and could not be reached
+  from this fix by construction; that class was lane d105's.
+
+  **[D105] closed it the same day** (`6e14d210`): the legend's raw
+  allocations are DELETED rather than rerouted, so W1 reads 15 → 0 and W3
+  25 → 0 in both modes. **`make alloc` is now green on all four
+  witnesses and K60 is closed in both its classes**, so — unlike the two
+  days this note's previous wording covered — any FAIL from `make alloc`
+  is a real regression, whichever witness it names. The pins below are
+  what make that statement checkable rather than remembered.
+
   **The four injector symbols are `pcrec_inject_*_at` now, and the rename
   is the point.** This header is `-include`d and the Makefile's object rule
   names its prerequisites by hand (no `-MMD` in this tree), so editing

@@ -50,6 +50,21 @@
  *       one mechanism K60 names that W1-W3 structurally cannot reach
  *       ([K60MEAS]; see the witness table at the bottom of this file)
  *
+ * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
+ * mechanism (the [ART-SIZE] ladder catch absorbing a genuine ctx_nomem) is
+ * FIXED at the recovery point — W4 is expected to PASS (0 absorptions,
+ * single-shot and sustained both) on any tree carrying the fix, and a W4
+ * FAIL here is a real regression. W1 and W3's absorptions were a SEPARATE
+ * mechanism (emit_state_legend's silent degradation, src/gen/emit_dfa.c —
+ * see tests/core/CLAUDE.md's own [K60FIX] note) that this fix could not
+ * reach by construction.
+ *
+ * [D105] (2026-09-18, lane d105, same day): that separate mechanism is
+ * fixed too — the legend's raw allocations are DELETED, not rerouted — so
+ * W1 and W3 read 0 absorptions as well and **every witness in this file is
+ * expected to PASS**. K60 is closed in both its classes; any FAIL here is
+ * now a real regression, whichever witness it names.
+ *
  * — not a `--source` target (composing a real `.rxt` definitions file
  * inside a pure C driver adds machinery this check does not need to
  * demonstrate the property again through a fourth, structurally
@@ -451,19 +466,19 @@ int main(int argc, char **argv)
          * probe (docs/dev/k60_measurement.md §3) rather than constructed:
          * this is a real corpus pattern, and it runs SEVEN internal attempts
          * (the default, all five ladder rungs, and the final re-emission). */
-        /* [D105] W4 is the LADDER class and is NOT this witness set's
-         * green cell today: K60's remaining 108 absorptions are the
-         * `[ART-SIZE]` ladder's blanket catch discarding a genuine
-         * `ctx_nomem`-routed OOM as "this K is out", which Frank ruled
-         * fixed by carrying the OOM in the `longjmp` VALUE — a separate
-         * change in `src/core/compile.c`, not here. Pinned at its measured
-         * 108 so a DRIFT is distinguishable from the standing defect; it
-         * stays a FAIL either way, and the fix re-pins it to zero. */
+        /* [D105/K60FIX] W4 is the LADDER class and it is GREEN now: its
+         * 108 absorptions were the `[ART-SIZE]` ladder's blanket catch
+         * discarding a genuine `ctx_nomem`-routed OOM as "this K is out",
+         * fixed at the recovery point by lane k60fix (D109). This row
+         * pinned 108 while that fix was in flight; the pin going stale-low
+         * the moment it landed is the ratchet working as designed, and
+         * zero is what it re-pins to. Every witness in this table now pins
+         * zero, so `absorbed_why` is NULL on all four and any absorption
+         * anywhere is a regression. */
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
-          158, 108, 0,
-          "K60's ladder class (docs/dev/known_issues.md K60; ruled FIXED via the longjmp value, landed separately)" },
+          158, 0, 0, NULL },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
