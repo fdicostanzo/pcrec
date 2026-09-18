@@ -1441,3 +1441,39 @@ never edited afterwards.
   memo. PARKED on `lane/w1stage0`, not merged — full `make test` launched
   backgrounded as the lane's last act per BOILERPLATE, OWED at hand-off
   (log path in the report).
+- `btriage2_20260918_report.md` — triage of `battery_20260918_051433`'s
+  `test`-stage red (2026-09-18, lane btriage2, sonnet; the manager's
+  battery on ubuntubudu pinned at 272bf970, the fix-now pile + wave U).
+  Date-qualified for the same reason `btriage_20260917_report.md` is — an
+  earlier, unrelated `btriage2` lane (2026-09-10) is on record under the
+  plain name. **Verdict: the 272bf970 pin holds** — the entire red is ONE
+  failure, a stale test-side witness with insufficient CPU-budget margin,
+  not a defect in the fix-now pile or wave U. `tests/resource/
+  run_resource_tests.sh`'s Section 1b `size_moved` loop shares Section
+  1's `K7_CPU` (45s) budget; its row 1 witness
+  (`(?:[a-z][0-9]){1,13000}`) measures 25.17s user CPU on the dev box —
+  under 1.8x margin, well short of K7_CPU's own ~3x calibration
+  convention — because its refusal path pays for TWO minimizations
+  ([K59-PREMUL]'s drop ladder retries once before the final refusal;
+  measured against the SAME pattern under `--max-emit-bytes=9000000`,
+  which never retries, at 12.58s). ubuntubudu is a materially slower
+  single core (AMD Ryzen 5 1600) than the Mac dev box that calibrated
+  K7_CPU (Apple M1 Max), which is what turned an already-thin Mac margin
+  into a real Linux CPU-budget miss — the battery's own trailer shows a
+  near-idle box (load average 0.52 on 12 threads) at the time, ruling out
+  contention. Also traced and ruled out: the three fix-now-pile commits
+  since `cf0962e3` touching adjacent files (`66363dcd` header comments
+  only, `5886e315` a byte-preserving FNV-1a helper refactor at `-O2`,
+  `23eb3d34` an unrelated `Ctx` back-pointer attach) — none plausibly
+  changes DFA-minimization cost, and row 2 of the same loop (measured
+  11.27s here) shows no comparable slowdown. Fix: a new `SIZECAP_CPU`
+  (default 90s) watchdog CPU budget scoped to Section 1b's two
+  `watchdog` calls only — Section 1's own `K7_CPU` is untouched since
+  that section's resource-ceiling IS the feature under test there.
+  Re-validated locally: `bash tests/resource/run_resource_tests.sh`
+  27/0/0 (1 platform-expected skip), `make strict CC=gcc-16` clean.
+  `tests/resource/CLAUDE.md` updated (documents Section 1b, which the
+  file's own section list had been missing since wave U added Section 0
+  — a separate pre-existing staleness fixed in passing). PARKED on
+  `lane/btriage2`, not merged — the manager's battery was still running
+  its axes/san/lint/mech stages at hand-off.
