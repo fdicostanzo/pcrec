@@ -4928,15 +4928,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * prove an array element is written before it is read, so the array form
      * failed -Wmaybe-uninitialized on four corpus patterns. A scalar carries
      * its own `= 0` at its declaration and the question does not arise. */
-    /* K38: rv/cur widened from 80/96 to the shared emitted-name size -- both
-     * carried a real margin at today's realistic loop-index widths, but they
-     * feed byte[80] below (fixed separately) and belong to the same family
-     * of prefix-plus-suffix buffers this fix stops hand-sizing one at a
-     * time. flr carries no prefix and is unaffected. */
-    char rv[PCREC_MAX_EMIT_NAME_LEN], cur[PCREC_MAX_EMIT_NAME_LEN], flr[32];
-    snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
-    snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
-    snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
+    /* K38: rv/cur were hand-sized 80/96, widened once to the shared
+     * emitted-name size, and are now arena-owned -- the family of
+     * prefix-plus-suffix buffers this file stopped hand-sizing one at a time
+     * has stopped being buffers at all. `flr` carries no prefix and never had
+     * the hazard; it goes with them because the three are one statement and
+     * one idea, not because it was at risk. */
+    const char *rv  = vm_rolef(v, "%s_rv%d", v->p, loop);
+    const char *cur = vm_rolef(v, "%s_rv%d_cursor", v->p, loop);
+    const char *flr = vm_rolef(v, "(size_t)slot_values[%d]", se);
 
     const char *bounds = vm_bounds_text(v, a);
     const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
@@ -5058,14 +5058,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * every frame the body pushed — and it is charged like one, even though it
      * never goes near the RX_CUT macro. */
     {
-        /* K38: widened (was 192) alongside `rv`'s own widening -- gcc's
-         * -Wformat-truncation now sizes `rv`'s worst case off ITS buffer
-         * capacity (PCREC_MAX_EMIT_NAME_LEN), so this destination has to
-         * cover that worst case plus its own literal text even though rv's
-         * REAL content never approaches it. */
-        char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
-        vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
+        /* K38: this was 192, then PCREC_MAX_EMIT_NAME_LEN + 64 -- widened
+         * not because its real content grew but because gcc's
+         * -Wformat-truncation sized `rv`'s worst case off ITS buffer
+         * CAPACITY, so a destination had to cover a worst case nothing ever
+         * produced. That whole second-order sizing problem is gone with the
+         * buffers: an arena fragment has no capacity to propagate. */
+        vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv),
+                "work charge: frames discarded by the revdet scan cut");
     }
     sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
@@ -5107,11 +5107,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * their first 18 suffix bytes), which is why the artifact's group-
          * span write and group-seen flag collapsed onto one wrong
          * identifier. ns ("%s_rv%d_groups_seen") truncated the same way. */
-        char ga[PCREC_MAX_EMIT_NAME_LEN], gs[PCREC_MAX_EMIT_NAME_LEN],
-             ns[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(ga, sizeof ga, "%s_revdet_group_span", v->p);
-        snprintf(gs, sizeof gs, "%s_revdet_group_seen", v->p);
-        snprintf(ns, sizeof ns, "%s_rv%d_groups_seen", v->p, loop);
+        const char *ga = vm_rolef(v, "%s_revdet_group_span", v->p);
+        const char *gs = vm_rolef(v, "%s_revdet_group_seen", v->p);
+        const char *ns = vm_rolef(v, "%s_rv%d_groups_seen", v->p, loop);
         R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
         R.grp = grp; R.ngrp = ng; R.faill = wendl;
 
@@ -5151,13 +5149,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * instead of accumulating them (the cursor rung's own ordering rule). */
     if (move) {
         if (greedy) {
-            /* K38: widened (was 112) alongside `rv`'s own widening -- see
-             * the cnt[192] site above for why. */
-            char pv[PCREC_MAX_EMIT_NAME_LEN + 32];
-            snprintf(pv, sizeof pv, "(size_t)%s_prev_position", rv);
+            /* K38: was 112, then PCREC_MAX_EMIT_NAME_LEN + 32 -- see the
+             * scan-cut site above for the capacity-propagation reason, now
+             * retired with the buffer. */
             sb_printf(b, "    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n",
                       sl, rv);
-            vm_push_at(v, commitl, pv,
+            vm_push_at(v, commitl, vm_rolef(v, "(size_t)%s_prev_position", rv),
                        "retreat: resume this very label with scan_position at the "
                        "PREVIOUS boundary, and re-derive from there");
             sb_puts(b, "    }\n");
@@ -5174,14 +5171,11 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * truncated string is textually IDENTICAL to ga's own truncation,
          * which is why gcc's dedup ("each undeclared identifier is reported
          * only once") hid it as a distinct error during the repro. */
-        char val[PCREC_MAX_EMIT_NAME_LEN];
         sb_printf(b, "    if (%s_revdet_group_seen[%d]) {\n", v->p, j);
-        snprintf(val, sizeof val, "%s_revdet_group_span[%d][0]", v->p, j);
-        vm_set(v, 2 * grp[j], val,
+        vm_set(v, 2 * grp[j], vm_rolef(v, "%s_revdet_group_span[%d][0]", v->p, j),
                vm_rolef(v, "group %d open, recovered by the backward walk",
                         grp[j]));
-        snprintf(val, sizeof val, "%s_revdet_group_span[%d][1]", v->p, j);
-        vm_set(v, 2 * grp[j] + 1, val,
+        vm_set(v, 2 * grp[j] + 1, vm_rolef(v, "%s_revdet_group_span[%d][1]", v->p, j),
                vm_rolef(v, "group %d close, recovered by the backward walk",
                         grp[j]));
         sb_puts(b, "    }\n");
@@ -5209,12 +5203,10 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
         {
-            /* K38: widened (was 192), same reason as the scan-cut site
-             * above. */
-            char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
-            snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
-            vm_work(v, cnt, "work charge: frames discarded by the revdet "
-                            "extra-iteration cut");
+            /* K38: was 192, same reason as the scan-cut site above. */
+            vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv),
+                    "work charge: frames discarded by the revdet "
+                    "extra-iteration cut");
         }
         sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
         vm_goto(v, commitl);
