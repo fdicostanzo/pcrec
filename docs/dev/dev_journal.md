@@ -23648,7 +23648,15 @@ unrelated to k59rung). Parked lane/btriage.
 **SIX RULINGS (Frank), D104-D108 + DD-8 opened, all on main (unpushed):**
 - D104: linker namespace — the 12 unprefixed exports rename to pcrec_*
   name-by-name (nfa_* first); build-time localization refused (D2).
-- D105: emit_state_legend OOM — refuse via ctx_nomem, IMPLEMENTED BY
+- D105: emit_state_legend OOM — refuse via ctx_nomem. **[CORRECTION
+  2026-09-18: THIS BULLET IS WRONG. D105 was RULED and NEVER BUILT — see
+  the D105 status note in decisions.md. The manager read the decision's own
+  TITLE ("implemented by RESTRUCTURING...", which names the chosen APPROACH)
+  as a statement that the work was done, and no lane was ever chartered.
+  Found a day later by lane k60meas, which attributed 40 of 148 swallowed
+  allocation failures to that exact function while measuring K60, with no
+  knowledge D105 existed. The journal is append-only, so the original
+  wording stands below and this correction rides it.]** As ruled: IMPLEMENTED BY
   RESTRUCTURING (path -> fixed 40-int local, unbounded alloc deleted; BFS
   scratch -> arena, bespoke failure path deleted; brief mode halves scratch).
   Reviewed the algorithm live per Frank's rider.
