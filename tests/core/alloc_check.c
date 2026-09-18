@@ -474,11 +474,23 @@ int main(int argc, char **argv)
          * the moment it landed is the ratchet working as designed, and
          * zero is what it re-pins to. Every witness in this table now pins
          * zero, so `absorbed_why` is NULL on all four and any absorption
-         * anywhere is a regression. */
+         * anywhere is a regression.
+         *
+         * [REVW.2] 2026-09-18 (manager, at the w2b merge): POPULATION
+         * RE-PINNED 158 -> 162. Wave 2 slices A+C (EP2 steps 1-9 and the
+         * stage-3 fragment retirement, both byte-neutral on every artifact
+         * stream and size-neutral on the [ART-SIZE] log) moved this
+         * witness's swept population by four allocations while moving
+         * nothing observable — the first measured instance of the
+         * population pin's brittleness (Frank's question, same evening:
+         * "how brittle is adding pins to the test suite"). W1/W2/W3 held.
+         * Whether these pins become FLOORS (K35 wants an empty population
+         * caught, not a shifted one) is an open ruling; until then an
+         * equality re-pin rides the merge that moved it. */
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
-          158, 0, 0, NULL },
+          162, 0, 0, NULL },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
