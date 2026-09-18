@@ -1538,6 +1538,32 @@ never edited afterwards.
   probe), the fourth recorded instance — the durable fix is a shared
   fixture and this lane did not build one.
 
+- `mtriage_report.md` — TRIAGE of the manager's killed `make test` at main
+  `f6474777` (2026-09-18, lane mtriage, sonnet; log-reading + one targeted
+  fix, no other `make`/`mech`/`san` runs before the closing full `make
+  test`). Two FAILs and a `rc=124` timeout dispositioned. **The `[census]`
+  FAIL was real and the check did its job**: `[D105]`'s own commit
+  (`6e14d210`) deleted all five raw `malloc`s from `src/gen/emit_dfa.c`
+  (`emit_state_legend`'s restructuring onto the arena), so the
+  raw-allocation file-set census in `tests/resource/
+  run_resource_tests.sh` correctly went red — a delivery-bar miss (d105
+  moved the population its own change measures and did not re-pin it),
+  re-pinned here to 9 files. `nm could not read arm_a.o` is the
+  already-documented standing darwin red (`docs/dev/wake.md`), reproduced
+  independently by both merged lanes at their own branch points — no fix.
+  **The timeout is itself a finding, not an anomaly**: 30 of 40
+  `TEST_SECTIONS` completed (28 green, the 2 above), one was mid-run at
+  the kill, 9 never started; `docs/dev/tt4m_time.md`'s only recorded
+  darwin serial baseline (5124.29s/~85.4 min, measured 2026-09-12/13) was
+  taken against a 38-section suite, and `TEST_SECTIONS` has grown to 40
+  since — so the manager's 5400s/90-min bound left ~zero margin over an
+  already-stale baseline, with no concurrent-load confound (d105's own
+  heavy corpus run had finished and been reported ~16 minutes before the
+  manager's run launched). `bash tests/resource/run_resource_tests.sh`
+  GREEN (27/0/0, 1 expected darwin skip) after the re-pin; `make strict`
+  clean. PARKED on `lane/mtriage`; full `make test` launched backgrounded
+  as the lane's last act per BOILERPLATE, OWED at hand-off (log path in
+  the report).
 - `d105_report.md` — [D105] (2026-09-18, lane d105, opus): `emit_state_legend`'s
   silent-degradation path DELETED, built as Frank re-ruled it — `path` becomes
   a fixed `LEGEND_MAX_EXAMPLE`-int local and its unbounded allocation goes, the

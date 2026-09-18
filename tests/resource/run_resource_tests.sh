@@ -158,7 +158,6 @@ census_allocsites() {
 src/core/arena.c
 src/core/compile.c
 src/core/sb.c
-src/gen/emit_dfa.c
 src/ir/dfa.c
 src/ir/nfa.c
 src/opt/minimize.c
