@@ -1507,3 +1507,32 @@ never edited afterwards.
   `run_mrl_tests.sh`/`run_core_tests.sh` are both independently clean in
   this log. No manifest change made or needed. Branch `lane/santriage3`
   (`ddcc8c20`), PARKED, not merged.
+- `k60meas_report.md` — K60 THE MEASUREMENT (2026-09-18, lane k60meas,
+  opus; measurement only, K60 NOT fixed). The memo is
+  `docs/dev/k60_measurement.md`; this report carries the commit list (with
+  the `[K60-PROBE]` `src/core/compile.c` commit marked DROP AT MERGE, the
+  `dfam12_probe_m2.patch` precedent) and four findings the brief did not
+  anticipate. **The sharpest is that a defect entry's own diagnosis and its
+  own repro came from different places and only the repro was checked**:
+  K60 names a never-reset `cx.size_cap_refused` as its ONE CONFIRMED
+  mechanism, and the `Ctx` is a loop-local `memset` at the top of every
+  attempt — three lines of `compile.c` refute it, and zero of 148 measured
+  absorptions involve a stale flag. **Second: a mechanism named in a defect
+  entry and reached by NONE of that entry's witnesses is a mechanism nobody
+  has measured** — the `[ART-SIZE]` ladder catch is excluded from W1/W3 by
+  `fit.chosen == ENGM_VM` and from W2 by the `emit_code` threshold, and
+  adding one witness (W4, a real corpus pattern) moved its measured rate to
+  68.4%, the worst in the file, while the entry filed it as the SECONDARY
+  explanation of a witness that cannot reach it. **Third, an instrument
+  finding**: extending the injector's ABI produced 60 "killed by signal 11"
+  trials that were entirely a stale `build-alloc/` tree — `alloc_inject.h`
+  is `-include`d and cannot be a Makefile prerequisite, and the four
+  injector functions cross a link boundary with no shared prototype, so a
+  stale one-argument call against a four-argument definition is a wild
+  pointer and a SIGSEGV *inside the injector*, indistinguishable from the
+  abort/signal outcome the check detects; fixed by renaming the symbols
+  with the signature change, so a stale object fails to LINK. **Fourth**:
+  the lane walked into this house's recorded `-o`-basename trap on its own
+  byte-identity sweep (`identical=0 differing=1158` on a comment-only
+  probe), the fourth recorded instance — the durable fix is a shared
+  fixture and this lane did not build one.
