@@ -23713,3 +23713,31 @@ already-triaged stale test-side pins; the pin never slipped.
 **Next:** Frank's guided tour of `docs/dev/reviews/2026-09-17-code-review.md`,
 then the refactor waves (U first) — neither starts unprompted. FIX-NOW pile
 can batch after the tour.
+
+## 2026-09-18 — [REVW.FIX] merged (the fix-now pile); wave U launched
+
+Frank's order (2026-09-18): fix-now, then the refactor waves in sequence;
+the guided tour AFTER all refactoring. Plan gained the [REVW] section.
+
+**Lane fixnow (sonnet) delivered all ten synthesis-§1 items**, one commit
+each, in order — L8-F1 (the live OOM caller-abort, Ctx back-pointer rule
+stated as a rule), L5-R0.2, the lib/pcrec.h sweep, L8-F2/F5+L10-8, L3-F3
+FNV pair, L3-F5 message #define (byte-identical, a stale tests/parse check
+fixed en route), L4-C1/C2 headers ×43 (census start_line drift on 7/76
+rows re-derived by grep), L6 dead_strip hunk, L4-A2, and the L1-X2 pilot
+(cg_walk/pr_walk → pcrec_ast_visit, 16 call sites, S-U10/S171 re-aimed and
+re-verified DETECTED at exact pre-merge figures). Validation: strict clean
+per item; full make test 39/39 green (sole FAIL = pre-existing darwin
+inline_capability nm-probe, reproduced on main); recursion differential
+re-run to completion 10/0 (28,458 §5 cells) after the lane's bonus run
+died with its process group at TaskStop — MANAGER LESSON: stopping a lane
+kills its detached background runs; re-run or setsid before closure.
+**Merged fast-forward 312c76ae, pushed.** [REVW.FIX] archived completed;
+[REVW.U] started, lane waveu (sonnet) launched: unit tier (L5-R0),
+sat-arith agreement check (L5-R2), allocation-failure injector (M2,
+red-on-unrepaired-F1 acceptance), L8-F6(a)/(b)/(c).
+
+**Bench coordination**: their window tonight-through-morning (re-pin to
+cf0962e3 landed their side; K59 rescue fired on their wb-512 control,
+consistent with our btriage class). OUR checkpoint battery slot: tomorrow
+DAYTIME on ubuntubudu, handshake before launch — will cover fixnow+waveU.
