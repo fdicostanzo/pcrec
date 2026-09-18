@@ -23961,3 +23961,13 @@ committed log (db142b16, 09-11): abi 24→25 (portfix) and 25→26 (the RX_TUNE
 stamp), not today's merges (identity gates at abi 26 green; D105's emit-diff
 zero). Worktree removed (--force: its only dirt was this same log), agent
 closed.
+
+**w2a DELIVERED AND MERGED (0dd6d29c)** — opus, ~2.5h: EP2 steps 1-9, one
+commit each, byte-neutral on three streams per step against a git-archive
+binary of the branch point; 7 anchors re-aimed and re-driven solo (EP2's
+table gave vm_plan_capacities two anchors it does not carry — the emission
+block's). Best finding: vm_splice's DELIVER block is witnessed ONLY by the
+composition route — a marker there changed 2 of 304 sources and 0 of 3,938
+argv rows. Six EP2 corrections in the report §4. Merge-gate `make test`
+launched detached on main with a 3h bound (lesson applied). Slice C (stage 3)
+lane w2b launched next.
