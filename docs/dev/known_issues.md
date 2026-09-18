@@ -13,12 +13,17 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K60 — [REVW.U], found 2026-09-17 by the allocation-failure injector's own first real run (lane waveu): an allocation failure ANYWHERE BUT THE LAST INTERNAL ATTEMPT of a compile is frequently SWALLOWED — `pcrec_compile` returns 0, no diagnostic, an artifact from a later fallback attempt nobody asked for
 
-**Status: deferred, filed rather than fixed** — a design question about
-the retry ladder's own state discipline
-(`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R1's own residual:
-build the injector, do not fix everything it finds), not a one-line
-patch a check-writing lane should narrow blind (K49fix's own precedent
-for filing rather than narrowing a defect found while building
+**Status: PARTIALLY FIXED 2026-09-18 (lane k60fix)** — the LADDER class
+(mechanism (B), 108/148, disposition (2)) is fixed; the LEGEND class
+(mechanism (A), 40/148) is still filed, assigned to lane d105 running in
+parallel (see the LANE K60FIX note at the end of this entry and D105 in
+`decisions.md`). The rest of this entry, unless marked otherwise, is the
+ORIGINAL FILED TEXT plus the 2026-09-18 measurement's own corrections
+(k60meas) — a design question about the retry ladder's own state
+discipline (`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R1's own
+residual: build the injector, do not fix everything it finds), not a
+one-line patch a check-writing lane should narrow blind (K49fix's own
+precedent for filing rather than narrowing a defect found while building
 something else).
 
 **FOUND BY**: `tests/core/alloc_check.c` (`make alloc`), sweeping every
@@ -173,6 +178,45 @@ this pattern need more than one internal attempt" crossed with "at
 which allocation index" is D77-gated on a measured need, not built
 speculatively here). The exact mechanism for W1 and the question of
 whether a THIRD distinct absorption path exists are both open.
+
+**LANE K60FIX 2026-09-18 — THE LADDER CLASS (MECHANISM (B)) IS BUILT.**
+Disposition (2) landed exactly as k60_measurement.md §4.4 spelled it:
+`ctx_nomem` sets a new per-attempt `Ctx` field, `failed_nomem`
+(`src/core/internal.h`), before its `longjmp`; `compile_driver`'s
+`setjmp` handler (`src/core/compile.c:838`) tests it FIRST, ahead of
+every rung's own eligibility test and ahead of the `[ART-SIZE]` ladder's
+blanket "this K is out" catch, and propagates immediately with
+`job_cleanup`+`return -1` — no stored state, per-arrival by construction
+(`Ctx` is `memset` at the top of every attempt, `compile.c:704-706`),
+which is the property the rejected cross-attempt-flag proposal
+(disposition (1)) lacked. Keeps the bare `if (setjmp(cx.jb))` (C11
+7.13.1.1p2). **Disposition (1) is STRUCK**, per Frank's ruling above and
+§2.4's refutation — it was never a defect this tree had.
+
+Measured with `make alloc --both` (`tests/core/alloc_check.c`), same
+build shape and witnesses as the measurement memo: W4 (size-term
+ladder) **108 → 0** absorptions eliminated (single-shot and sustained
+both read `PASS: every one of 158 forced allocation failures was
+diagnosed`, was `FAIL: 108 of 158 ... SUCCEEDED THROUGH anyway`); W2
+unchanged (0/11, PASS before and after); **W1 (15/72) and W3 (25/328)
+are UNCHANGED, on purpose** — both are entirely mechanism (A), the
+`emit_state_legend` silent-degradation path (`src/gen/emit_dfa.c:3615-
+3618,3660`), which never calls `ctx_nomem` and never reaches this
+recovery point, so no property of it can fix them; that class is
+D105's, building in parallel on `lane/d105`. Control: reverting this
+lane's `src/core/compile.c`/`internal.h` commit and rebuilding
+`build-alloc/` reproduces W4's original `108 of 158` FAIL exactly (the
+`make alloc` shape's own before/after is the sabotage-equivalent this
+fix was validated against — see `docs/dev/lanes/k60fix_report.md` for
+the transcripts). The other four `setjmp` sites (`pcrec_count_groups`
+here at `:1890`; `src/parse/syntax_dump.c` at `:778`, `:1056`, `:1565`)
+were each read and confirmed to take ONE unconditional action on any
+nonzero `setjmp` return, testing no per-attempt `Ctx` field — none of
+them absorbs anything today and none needed the same test.
+
+Byte-identical in the no-OOM case (`make test-codegen` clean; the fix
+touches only the arrival of a `ctx_nomem`-routed `longjmp`, which no
+successful compile reaches).
 
 ---
 
