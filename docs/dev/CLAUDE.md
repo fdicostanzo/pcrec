@@ -676,3 +676,24 @@ change.
   **§6 is the recommendation**: take disposition (2) for the ladder, strike
   disposition (1) as refuted, and treat the legend as a SEPARATE defect
   none of K60's three dispositions fits — Frank's call, three options given.
+- `w2census.md` — [REVW.2]'s precondition census (2026-09-18, lane
+  w2census): `tools/review/fragment_census.py` (new) over `src/gen/
+  emit_vm.c` and `src/gen/emit_dfa.c`, the EP2-chartered three-category
+  `char <ident>[<expr>]` scratch-buffer census. Reproduces EP2's
+  `emit_vm.c` statement count exactly (58) but finds ONE MORE declarator
+  (67 vs EP2's reported 66) — traced to `flr[32]` (`emit_vm.c:4894`,
+  `vm_revdet_rep`), a real bare-literal declarator EP2's own per-statement
+  tally dropped because it shares a declaration statement with two
+  `PCREC_MAX_EMIT_NAME_LEN` buffers. Reports `emit_dfa.c`'s category (c) —
+  the population EP2 never measured — in full (6 declarators/5 statements,
+  including a cross-file finding: `PCREC_STARTPOS_GUARD_TEXT_MAX` sizes
+  THREE bare-macro-no-margin sites total across both files, not just
+  `emit_vm.c`'s `mguard`). Combined floor for the repaired stage-3
+  acceptance criterion (ANY size expression, excluding only `Vm.up` by
+  name): 80 statements / 91 declarators. See `docs/dev/lanes/
+  w2census_report.md` for this lane's second deliverable (the listing-
+  reach widening measurement: a 5-pattern added set, all drawn from the
+  existing corpus, reaching 39 of 41 `vm_rolef` sites — up from 27 —
+  contingent on `run_ir_listing.sh` gaining a per-pattern `--features`
+  flag it does not have today; 2 sites are structurally unreachable by
+  any pattern, having no literal prefix at all).

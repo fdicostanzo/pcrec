@@ -128,6 +128,32 @@ are out of scope for this round; see the charter's own "Scope tiers".
   `emit_vm.c` (142 vs 140), which looked like a script bug until the
   manual comparison used the identical flag.
 
+- `fragment_census.py` — lane `w2census` (2026-09-18), chartered by
+  `docs/dev/reviews/lens_reports/emitvm_second_pass.md` (EP2) §4's three
+  sizing categories of fixed `char <ident>[...]` scratch buffers, per the
+  `[REVW.2]` row's stated precondition ("emit_dfa.c third-category census
+  FIRST"). Unlike the five scripts above, it does NOT walk the whole
+  PRIMARY tier — it takes explicit file paths on the command line, since
+  the census is chartered against two named files
+  (`src/gen/emit_vm.c`/`src/gen/emit_dfa.c`), not a tree-wide sweep. Finds
+  every `char <ident>[<expr>]` declaration statement/declarator (a
+  statement can declare several; a statement can mix categories across its
+  own declarators, reported explicitly rather than forced into one bucket)
+  and classifies each declarator: (a) bare integer literal, (b) bare
+  `PCREC_MAX_EMIT_NAME_LEN` (the K38 family), (c) anything else — a
+  catch-all, not a fixed shape list, matching the repaired stage-3
+  acceptance criterion's own "ANY size expression" wording. Reuses
+  `reviewlib.mask_text()` (so text printed AS emitted-code inside an
+  `sb_printf`/`snprintf` format string is never mistaken for a real
+  declaration) and `reviewlib.iter_top_level_headers()` (function
+  attribution, including correctly reading a struct-field declaration as
+  having no enclosing function). See `docs/dev/w2census.md` for the full
+  writeup: it reproduces EP2's `emit_vm.c` statement count exactly (58) but
+  finds ONE MORE declarator (67 vs EP2's 66) — traced to a specific site
+  EP2's own per-statement tally dropped — and reports `emit_dfa.c`'s
+  category (c) in full (a population EP2 never measured). `python3
+  tools/review/fragment_census.py FILE [FILE...] [--out PATH]`.
+
 ## Headline numbers (commit `1edd6c5e`/`998af066`, 2026-09-17)
 
 See `docs/dev/lanes/revtools_report.md` for the full table; the raw
