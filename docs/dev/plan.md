@@ -1131,6 +1131,38 @@ between waves (D102); box slots handshake with the bench.
   the REPAIRED floor (58/66, three sizing categories; emit_dfa.c
   third-category census first). X8 rides stage 3 (M1). DD-8's --emit-ir
   adoption rides this wave. Q3 folded (D106 add.3): slot[48] truncation free.
+- [EMIT-VERB] STATE:not-started (OPENED 2026-09-18, Frank: "these user
+  comments should have an emit/no-emit option (some general option around
+  code verbosity)") — A VERBOSITY AXIS OVER THE EMITTED ARTIFACT'S HUMAN
+  COMMENTARY. **RIDES WAVE 2 AS AN EMISSION-KIT CUSTOMER, exactly like
+  DD-8**, and the sequencing is the whole point of the row: there is NO
+  chokepoint today (~1,247 comment-emission sites across emit_dfa.c and
+  emit_vm.c; `emit_comment_safe_byte` is a byte-ESCAPING helper, not a
+  gate), so building it now is ~1,247 hand-edits, and building it after the
+  kit is ONE gate in the render path. D108 puts it in exactly the right
+  place: verbosity is a RENDER-time property of a data-in/text-out layer —
+  the walk emits comment EVENTS, the renderer decides whether their text
+  reaches the artifact.
+  TWO MEASURED FACTS THAT SHAPE IT, both already in the tree:
+  (1) **the size cap CANNOT move** — `PCREC_MAX_EMIT_BYTES` is explicitly
+  "the whole comment-EXCLUDED artifact" (limits.def:160; compile.c:179
+  "TOTAL is the artifact minus its comments"), so no verbosity setting can
+  rescue or refuse a pattern. The K59 refusal-set hazard is structurally
+  absent here — state that in the design rather than re-deriving it.
+  (2) **the win is SOURCE size and readability, not object size or speed** —
+  [ART-SIZE] measured comments correlating with `.o` at r=0.43 against
+  program+tables at r=0.99. A no-comments mode is for embedders shipping
+  generated source, not a performance axis; do not let it be sold as one.
+  OPEN AT OPENING: the axis's SHAPE (a boolean `-fno-comments`, or LEVELS —
+  the tree already has a precedent in the legend's own brief mode at
+  `n > LEGEND_MAX_STATES`, and in `--tune`'s ordinal); whether it is an
+  `axes.def` row (wave 4's X9 design event is the venue, and this row is a
+  second customer for it); what the identity gates and the `abi` ritual do
+  with a mode whose whole purpose is to change emitted bytes (the DEFAULT
+  stays byte-identical, so it is a new AXIS rather than an abi event — the
+  `test-axes` answer-identity sweep is its natural home). D80: it is a
+  caller-observable surface and needs its `docs/spec/` hunk in the same
+  change.
 - [REVW.3] STATE:not-started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
   (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
   cut (2 files, 0 anchors), L4-dump relocation rider, internal.h

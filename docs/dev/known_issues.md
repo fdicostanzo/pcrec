@@ -93,6 +93,21 @@ mechanism is entirely absent from W2 (11 total allocations, no retry
 ladder ever engages for a pattern this small), which is what makes it
 the clean witness for F1 specifically and not for K60.
 
+**FRANK'S RULINGS 2026-09-18, both classes now decided:**
+- **LADDER class (108/148): TAKE THE FIX.** Carry the OOM in the `longjmp`
+  VALUE — no stored state, per-arrival by construction — per
+  `k60_measurement.md` §4.4's standards-clean spelling (`v = setjmp(env)`
+  is outside C11 7.13.1.1p2, so the memo's spelling is the one to build).
+  Measured 108/108. Disposition (1) is STRUCK as refuted.
+- **LEGEND class (40/148): D105 BUILDS AS ORIGINALLY RULED**, via its own
+  algorithm rider's restructuring (`path` becomes a fixed 40-int local and
+  its unbounded allocation is DELETED; the four BFS arrays move to the
+  Job's arena with the Ctx attached so refusal rides the existing general
+  mechanism; brief mode halves the scratch on large machines). See the
+  D105 re-ruling in `decisions.md`. This eliminates the silent-degradation
+  path rather than announcing it, so K60's disposition (3) does not apply
+  to this class either.
+
 **MANAGER AMENDMENT 2026-09-18 (lane k60meas's measurement, Frank-chartered
 after he rejected the manager's flag-shaped first proposal). THIS ENTRY'S
 DIAGNOSIS IS WRONG IN THREE PLACES; READ THE MEMO

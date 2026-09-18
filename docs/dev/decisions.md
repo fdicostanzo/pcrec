@@ -7121,6 +7121,26 @@ methodology is the manual re-check).
 
 ## D105 — emit_state_legend OOM: refuse via ctx_nomem, implemented by RESTRUCTURING the allocation rather than rerouting the failure (Frank, 2026-09-17, sixty-seventh session)
 
+**RE-RULED 2026-09-18 (Frank, after reading the k60meas measurement and
+the rider's own review): BUILD IT AS RULED — option (a), via the rider's
+RESTRUCTURING.** The manager had drifted to recommending a cheaper
+"announce the dropped legend" option; that recommendation was priced
+against the CURRENT function (five mallocs, one unbounded) and is wrong
+against the RESTRUCTURED one. Frank's recall of the rider is what corrected
+it. After the restructuring recorded below there is no silent-degradation
+path left to announce: `path` cannot fail because it is no longer
+allocated, and every remaining allocation refuses through the arena's
+EXISTING general mechanism. The allocator-dependent-bytes defect is
+ELIMINATED BY CONSTRUCTION rather than documented — the house rule
+(`pcrec-general-mechanisms-not-special-cases`) working as intended: the
+general mechanism replaces the special case instead of the special case
+getting a better diagnostic. Build bar unchanged from the original entry:
+full-corpus emit-diff proving byte identity (NOT an abi event — the
+emitted legend text does not change), plus the ordinary battery. The
+k60meas byte-identity harness already exists to do it. Scheduled as its
+own slice; it also retires 40 of K60's 148 absorptions, the only ones
+reachable without an injector.
+
 **STATUS 2026-09-18: RULED, NOT BUILT — and the project record said
 otherwise for a day.** This decision was never implemented. Verified at
 `272bf970` and on all five parked lane branches: `emit_state_legend` still
