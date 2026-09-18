@@ -107,6 +107,21 @@ the clean witness for F1 specifically and not for K60.
   D105 re-ruling in `decisions.md`. This eliminates the silent-degradation
   path rather than announcing it, so K60's disposition (3) does not apply
   to this class either.
+  **LEGEND CLASS FIXED `6e14d210` (lane d105, 2026-09-18), exactly as
+  ruled.** All 40 absorptions are gone: `tests/core/alloc_check.c` reads W1
+  15 -> 0 and W3 25 -> 0, in the single-shot sweep and the sustained one,
+  and those two witnesses' total swept POPULATION falls 72 -> 57 and 328 ->
+  303 — the five deleted raw allocations per emitted machine, which is the
+  direct evidence the site is gone rather than merely quiet. Emitted bytes
+  unchanged corpus-wide; not an `abi` event. The check now PINS both
+  numbers per witness, so a legend-class absorption is red and a future fix
+  must re-pin rather than silently turn a red line green.
+  **K60's LADDER class (108/148) is NOT closed by this**, by construction:
+  `emit_state_legend` never called `ctx_nomem` and never reached the
+  recovery point, and the ladder fix never reaches the legend — the two
+  halves are disjoint, which `k60_measurement.md` §4.3 measured in advance
+  (108/108 and 0/40). W4 still reads 108 until the `longjmp`-value change
+  lands in `src/core/compile.c`.
 
 **MANAGER AMENDMENT 2026-09-18 (lane k60meas's measurement, Frank-chartered
 after he rejected the manager's flag-shaped first proposal). THIS ENTRY'S

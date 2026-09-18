@@ -7141,8 +7141,21 @@ k60meas byte-identity harness already exists to do it. Scheduled as its
 own slice; it also retires 40 of K60's 148 absorptions, the only ones
 reachable without an injector.
 
-**STATUS 2026-09-18: RULED, NOT BUILT — and the project record said
-otherwise for a day.** This decision was never implemented. Verified at
+**STATUS 2026-09-18: BUILT `6e14d210` (lane d105), 2026-09-18.** All three
+of the rider's numbered points landed as ruled: `path` is a fixed
+`LEGEND_MAX_EXAMPLE`-int local and its unbounded allocation is gone, the four
+BFS arrays are `arena_alloc(&cx->arena, …)` with the bespoke failure arm and
+every `free` deleted, and brief mode allocates neither `from` nor `via`. The
+function takes a `Ctx *`; both callers already had one. Byte identity over
+the whole corpus was the bar and it holds — see `docs/dev/lanes/d105_report.md`
+for the sweep's numbers and for the two arms of `make alloc` (W1 15 -> 0, W3
+25 -> 0) with their failing-direction control. NOT an `abi` event, as ruled.
+The paragraph below is the pre-build status note, preserved because its
+GENERAL FORM is the part worth keeping.
+
+**STATUS 2026-09-18 (superseded by the line above): RULED, NOT BUILT — and
+the project record said otherwise for a day.** This decision was never
+implemented at the time it was written. Verified at
 `272bf970` and on all five parked lane branches: `emit_state_legend` still
 takes four raw `malloc`s (`src/gen/emit_dfa.c:3615-3618`) plus `path =
 malloc(...)` (`:3660`), each returning silently on NULL; no fixed 40-int

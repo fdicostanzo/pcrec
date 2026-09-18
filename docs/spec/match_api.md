@@ -3297,6 +3297,18 @@ cannot behave like a program:
   neither is an allocation failure: a "cannot happen" DFA structural
   invariant, and the syntax-dump path's detached string buffers, which
   run outside a compile and have no `pcrec_error` to report through.
+  **This promise has no exceptions as of D105 (2026-09-18), and it had
+  one before:** the emitted state legend's scratch buffers were raw
+  allocations that, on failure, dropped the legend and let the compile
+  SUCCEED — so a caller under memory pressure could receive `0` and an
+  artifact whose comment bytes differed from the same pattern's compiled
+  anywhere else, with nothing in the artifact saying so. That path was
+  deleted rather than diagnosed: the unbounded buffer became a fixed
+  local and the rest moved to the compile's arena, so a failure there is
+  now an ordinary refusal. **A compile that would previously have
+  emitted a legend-less artifact under OOM now returns `-1` with a
+  diagnostic.** The emitted bytes of a compile that does not run out of
+  memory are unchanged, which is why D105 is not an `abi` event.
 - **A pattern can be REFUSED for compile-side RESOURCE reasons, and
   that is a distinct failure class from a syntax error.** It arrives
   through the same `-1` and the same `pcrec_error`, so a caller

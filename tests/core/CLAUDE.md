@@ -156,7 +156,32 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   entirely a stale tree. Changing the injector's ABI now changes its symbol
   NAMES, so a stale object fails to link instead.
 
-  **`run_alloc_tests.sh` defaults to `ALLOC_ARGS=--both`**, so `make alloc`
+  **[D105] (2026-09-18, lane d105) — THE WITNESSES ARE PINNED NOW, on TWO
+  numbers each, and the legend class is FIXED.** `emit_state_legend`'s five
+  raw allocations per emitted machine are gone (`src/gen/emit_dfa.c`; the
+  compile refuses through the arena's `ctx_nomem` instead of dropping a
+  legend silently), so W1 reads 15 absorbed -> **0** and W3 25 -> **0** in
+  both modes. Each `Witness` row now carries:
+  - `expect_total`, the profiling pass's own allocation count — the
+    POPULATION swept. It exists because "no absorption" is a claim this
+    check can satisfy by NOT REACHING THE COMPILE (K35), and it is not
+    belt-and-braces: W3's SUSTAINED sweep absorbs zero even against the
+    UNREPAIRED library, so the absorption pin alone reads PASS there and
+    only the population pin catches it. D105's own evidence is this number
+    — W1 72 -> 57, W3 328 -> 303, exactly the deleted allocations.
+  - `expect_absorbed_single` / `expect_absorbed_sustained`, what a FILED,
+    OPEN defect accounts for, with `absorbed_why` naming it. A mismatch in
+    EITHER direction fails: above is a regression, below means the defect
+    moved or was fixed and the pin is stale — so a fix re-pins its own
+    witness instead of quietly turning a red line green. W4 pins K60's
+    ladder class at its measured 108 and stays RED until the
+    `longjmp`-value change lands in `src/core/compile.c`.
+
+  **`run_alloc_tests.sh` pipes `2>&1` into its log**, because `alloc_check`
+  writes PASS to stdout and FAIL to stderr: without it the script's own
+  failure message counted `^FAIL` out of a file that could not contain any
+  and reported "0 witness(es) misbehaved" on every red run (found while
+  validating D105). It defaults to `ALLOC_ARGS=--both`, so `make alloc`
   runs both sweeps. `tests/resource/run_resource_tests.sh` section 2b —
   the `make test` caller — runs this binary **argument-free** and is
   deliberately left on the single-shot sweep alone: its claim is K7's

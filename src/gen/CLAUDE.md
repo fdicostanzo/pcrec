@@ -2866,3 +2866,42 @@ or not the composer runs), no injected rows, `.ref` still `NULL`. That is
 what makes the identity gate's comparison (A) a real control on this change
 rather than a tautology, and it is the property to re-measure first if the
 gate goes red.
+
+## [D105] `emit_state_legend` allocates from the ARENA, and there is no
+## silent-degradation path in this directory any more (2026-09-18, lane d105)
+
+`emit_state_legend` (`emit_dfa.c`) used to be the compile path's ONE
+allocation site that neither refused nor aborted on failure: five raw
+`malloc`s, a free-and-return arm, and an artifact that then carried no
+comment saying a legend had been dropped. The 2026-09-17 code review found
+it (lens 8, F3), Frank ruled it in D105, and lane `k60meas` later attributed
+40 of K60's 148 swallowed allocation failures to exactly these five lines —
+by measurement, with no knowledge that the ruling existed.
+
+What a reader of this file needs to carry:
+
+- **`path` is a FIXED LOCAL of `LEGEND_MAX_EXAMPLE` ints.** It was sized by
+  the deepest BYTE distance, which is unbounded (a scan edge costs its whole
+  span, so `[a-z]{0,16384}` has a state 16,384 bytes deep) while the renderer
+  has always shown at most `LEGEND_MAX_EXAMPLE` bytes. The backtrack fills
+  DOWNWARD from `len-1` and stores nothing at or above the bound, which is
+  why the shown bytes are identical: the low indices it keeps do not depend
+  on the high ones it drops.
+- **The BFS arrays are `arena_alloc(&cx->arena, …)`.** The function takes a
+  `Ctx *` for that and nothing else; both callers already had one (`f->cx`
+  in `emit_machine_tables`, `cx` in `emit_attempt`). A failure refuses
+  through the general mechanism — arena → `ctx_nomem` → the one `longjmp` —
+  so there is no bespoke failure arm and no `free()` here at all (the arena
+  dies with the attempt).
+- **Brief mode allocates `dist` and `queue` only.** A summary reads neither
+  `from` nor `via`, and the BFS's writes to them are skipped with them; the
+  walk's reachability and distances do not depend on either, so the emitted
+  summary is unchanged.
+
+**NOT an abi event and the identity gates are the proof, not the excuse**:
+every emitted byte is unchanged, verified by a full-corpus emit-diff against
+the branch point (`docs/dev/lanes/d105_report.md`). If you change this
+function, the cheap witnesses that exercise each arm are `x[0-9]{500}y` (a
+502-byte example truncated to 40), `(?i)a{2,40}Z` (41 bytes, the first byte
+past the bound), `((a)|b){0,4000}c` (brief mode, 4002 accepting states) and
+`[a-z]{0,16384}` (a deep scan edge).
