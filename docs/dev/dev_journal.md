@@ -23773,3 +23773,65 @@ definitions_check.c.
 **Next: the D102 checkpoint battery on ubuntubudu** (bench's window
 closed clean; box ours from mid-morning, handshake at launch), pinned at
 main 56e1a05c — no merges/pushes to main until its trailer. Then wave 1.
+
+## 2026-09-18 (cont.) — the checkpoint battery GREEN; wave 1 merged; K60 measured and its filing refuted; D105 found unbuilt
+
+**BATTERY `battery_20260918_051433` @ 272bf970 (ubuntubudu, 05:14–11:51)**:
+strict/axes/lint rc=0; **mech 265 rows, unexpected 0, anomalies 0**,
+undetected 10 (documented), unreached 1 (S121, expected). Two reds, both
+triaged before the manager read either log (delegaudit rule 2), both
+non-blocking, **pin HELD**:
+- `test` rc=2 → ONE failure: `tests/resource` Section 1b's size-cap witness
+  needs a double minimization on its refusal path (cap → K59 premul drop →
+  cap), 25.17s CPU against a 45s budget calibrated for ~15s work; the
+  slower Ryzen turned a thin Mac margin into a real timeout. MANAGER
+  AMENDED the lane's fix: it sized the budget at 90s = ~3.6x the MAC
+  measurement, but the Mac is not the box that failed — on the lane's own
+  Ryzen estimate (~58-65s) that is ~1.4x, and a 90s CPU budget under a
+  120s WALL budget is inert on a single-threaded compile. Now
+  SIZECAP_CPU=180 + SIZECAP_SECS=300, rationale in the script.
+- `san` rc=2 → ONE failure, and **the day's best result**: a REAL,
+  long-standing arena leak in `cpset_model_check.c`, visible only because
+  wave U's `unit_build` threads $SANFLAGS through that compile for the
+  first time — precisely what fix-now L5-R0.2 existed to enable. One-line
+  fix. **AND IT RETIRES K26**: LeakSanitizer is LIVE on ubuntubudu
+  (san.log:2261, a true positive), while `ptrace_scope` is STILL 1 — the
+  value K26 named as the likely cause — so the entry's own DIAGNOSIS is
+  refuted and the 2026-08 no-op's real cause is unexplained and now
+  unreproducible. Canary obligation NARROWED, not discharged; darwin/K54
+  unchanged, so the tier stays Linux-only.
+
+**MERGED (823c5ed8, pushed, box ff-pulled)**: w1kit (carrying w1stage0),
+btriage2, santriage3, and k60meas minus its probe commit (saved as
+`docs/dev/lanes/k60meas_probe.patch`, dfam12 precedent). Four merge
+conflicts, all the lanes/CLAUDE.md union shape. **Manager caught FOUR
+stray generated artifacts** (zzz, zzz.h, out.c, out.h — pcrec output for
+pattern `a`) committed by accident in w1kit's 3cc0d46d, plus a K37
+allowlist gap in stage 0's sweep. [REVW.1] archived; [REVW.2] started.
+
+**K60 MEASURED (lane k60meas, opus, Frank-chartered after he rejected the
+manager's flag-shaped proposal — his objection was right and produced a
+better design).** The filed diagnosis is WRONG in three places:
+`Ctx cx` is memset inside the attempt loop (compile.c:704-706), so the
+"stale eligibility flag" mechanism DOES NOT EXIST and disposition (1)
+fixes nothing (0 of 148 absorptions). Real attribution: 108 (73%) the
+[ART-SIZE] ladder's blanket catch, 40 (27%) `emit_state_legend`'s raw
+mallocs returning silently on NULL. Under SUSTAINED failure absorption
+collapses (0.0% on two witnesses; W1's survivors are its last five
+allocations) — 564 of 569 forced failures still refuse correctly.
+Population: 2 of 3,159 corpus patterns. Candidate (carry the OOM in the
+`longjmp` VALUE, no stored state — the tree has exactly one longjmp and
+all five setjmp sites read it as a boolean): 108/108 of the ladder class,
+0/40 of the legend class, honestly reported.
+
+**AND THE 40 ARE D105'S OWN UNBUILT RULING.** D105 was ruled 2026-09-17
+and NEVER IMPLEMENTED — verified at main and on all five parked branches.
+**The sixty-seventh session's journal recorded it as "IMPLEMENTED BY
+RESTRUCTURING": that was the MANAGER reading the decision's own TITLE (the
+chosen APPROACH) as a completed action.** No lane was ever chartered. Found
+by an instrument measuring something else, with no knowledge D105 existed.
+Corrections written to known_issues.md (K60), decisions.md (D105 status)
+and the journal bullet (append-only: the correction rides it). D105
+RE-OPENED for Frank rather than built to a ruling made without this
+measurement. **General form worth keeping: a decision log states a RULING;
+only the tree states whether it SHIPPED, and nothing ties the two.**
