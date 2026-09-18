@@ -1234,6 +1234,7 @@ never edited afterwards.
   that directory's own CLAUDE.md for what happens to it once the manager
   drops the probe commit at merge.
 
+- `k60meas_probe.patch` — the [K60-PROBE] measurement instrumentation from lane k60meas (the `longjmp`-value candidate fix plus its attempt/absorption counters, gated on `PCREC_K60_PROBE`/`PCREC_K60_FIX`, byte-identical and behaviour-identical when off), DROPPED at merge per the dfam12_probe_m2.patch precedent; durable copy kept so the measurement is reproducible without re-deriving it. One file (`src/core/compile.c`), nothing depends on it. Re-apply with `git am` to rebuild the harness. See `docs/dev/k60_measurement.md` §4.
 - `dfam12_probe_m2.patch` — the [PROBE-M2] measurement instrumentation (gated on PCREC_PROBE_M2, no-op by default), DROPPED at merge per the OPT5M2-PROBE precedent; durable copy kept because studies/lim2_m2/ links its extern counters (that directory's CLAUDE.md explains). Re-apply it to rebuild the M2 harness.
 
 - `mojfix_report.md` — O-31 finding F4 triage (2026-09-17, lane mojfix,

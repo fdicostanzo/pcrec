@@ -1,0 +1,170 @@
+From a52bd9bf3645909bfb4b716761b185e29f22c3d0 Mon Sep 17 00:00:00 2001
+From: Frank DiCostanzo <frank@dicostanzo.com>
+Date: Fri, 18 Sep 2026 11:13:07 -0400
+Subject: [PATCH] [K60-PROBE] measurement instrumentation -- DROP THIS COMMIT
+ AT MERGE
+
+The OPT5M2-PROBE / dfam12_probe_m2.patch precedent. Nothing here is a fix
+for K60; it is the instrument the candidate disposition was measured with.
+
+Three pieces, all inert unless an env var is set:
+ - ctx_nomem longjmps with its own value (2) instead of ctx_fail's 1,
+   which is the candidate itself: the tree's single recovery point can
+   then tell an allocation failure from a refusal with NO STORED STATE.
+   ctx_fail's err-filling is factored into ctx_fill so ctx_nomem can reuse
+   the text without inheriting the value.
+ - PCREC_K60_PROBE=1 traces every attempt and every longjmp arrival
+   (attempt counting for the corpus population sweep, memo section 3).
+ - PCREC_K60_FIX=1 propagates a value-2 arrival immediately, ahead of
+   every rung's eligibility test and the ladder's blanket catch.
+
+Measured with both off: byte-identical and behaviour-identical (the alloc
+witnesses read 15/5, 0/0, 25/0, 108/0 exactly as without the probe).
+make strict clean, including -Wclobbered on the new volatile.
+---
+ src/core/compile.c | 103 ++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 87 insertions(+), 16 deletions(-)
+
+diff --git a/src/core/compile.c b/src/core/compile.c
+index 0c2b76a3..3493b123 100644
+--- a/src/core/compile.c
++++ b/src/core/compile.c
+@@ -13,21 +13,49 @@
+ #include "core/internal.h"
+ #include "gen/enc/enc.h"
+ 
++/* [K60-PROBE] MEASUREMENT ONLY — lane k60meas, docs/dev/k60_measurement.md
++ * §4. DROP THIS COMMIT AT MERGE (the `dfam12_probe_m2.patch`/`OPT5M2-PROBE`
++ * precedent). Nothing here is a fix for K60.
++ *
++ * The candidate under measurement: there is exactly ONE `longjmp` in the
++ * whole tree and all five `setjmp` sites test its value as a boolean, so
++ * the VALUE is an unused signalling channel. Giving `ctx_nomem` its own
++ * value lets `compile_driver`'s recovery point tell an allocation failure
++ * from a refusal with NO STORED STATE — per-arrival by construction.
++ *
++ * The other four `setjmp` sites (`pcrec_count_groups` here, three in
++ * src/parse/syntax_dump.c) test truthiness and are unaffected by a
++ * non-zero value that is not 1; verified by reading AND by running their
++ * surfaces (memo §4.3). */
++enum { PCREC_JMP_FAIL = 1, PCREC_JMP_NOMEM = 2 };
++
++static void ctx_fill(Ctx *cx, size_t pos, const char *fmt, va_list ap)
++{
++    if (!cx->err) return;
++    vsnprintf(cx->err->msg, sizeof(cx->err->msg), fmt, ap);
++    cx->err->pos = pos;
++    /* [M4.4] (subst note §9 Q8, D42.4): pcrec_compile()'s only input is
++     * the pattern text today — the substitution-template compiler
++     * ([M4-SUBST]) is the first future producer of
++     * PCREC_ERR_INPUT_TEMPLATE. */
++    cx->err->input = PCREC_ERR_INPUT_PATTERN;
++}
++
+ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+ {
+-    if (cx->err) {
+-        va_list ap;
+-        va_start(ap, fmt);
+-        vsnprintf(cx->err->msg, sizeof(cx->err->msg), fmt, ap);
+-        va_end(ap);
+-        cx->err->pos = pos;
+-        /* [M4.4] (subst note §9 Q8, D42.4): pcrec_compile()'s only input is
+-         * the pattern text today — the substitution-template compiler
+-         * ([M4-SUBST]) is the first future producer of
+-         * PCREC_ERR_INPUT_TEMPLATE. */
+-        cx->err->input = PCREC_ERR_INPUT_PATTERN;
+-    }
+-    longjmp(cx->jb, 1);
++    va_list ap;
++    va_start(ap, fmt);
++    ctx_fill(cx, pos, fmt, ap);
++    va_end(ap);
++    longjmp(cx->jb, PCREC_JMP_FAIL);
++}
++
++/* [K60-PROBE] the probe's two env gates. Read per call: this is a probe,
++ * and a cached read would be one more piece of state to reason about. */
++static int k60_on(const char *name)
++{
++    const char *v = getenv(name);
++    return v && v[0] && v[0] != '0';
+ }
+ 
+ /* [M4.7b/K7] See internal.h for why there is exactly one of these. The
+@@ -36,8 +64,18 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+  * longjmp-shaped path is a portability question with no payoff. */
+ void ctx_nomem(Ctx *cx)
+ {
+-    ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
+-                    "not allocate; shrink the pattern or raise the limit)");
++    /* [K60-PROBE] the one line the candidate fix is: its own `longjmp`
++     * VALUE, so the recovery point can tell this arrival from a refusal.
++     * `ctx_fail`'s text is reproduced through `ctx_fill` rather than by
++     * calling `ctx_fail` (which would longjmp with the wrong value). */
++    if (cx->err) {
++        snprintf(cx->err->msg, sizeof(cx->err->msg),
++                 "out of memory compiling this pattern (the compiler could "
++                 "not allocate; shrink the pattern or raise the limit)");
++        cx->err->pos = 0;
++        cx->err->input = PCREC_ERR_INPUT_PATTERN;
++    }
++    longjmp(cx->jb, PCREC_JMP_NOMEM);
+ }
+ 
+ void pcrec_default_options(pcrec_options *opt)
+@@ -701,9 +739,27 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
+     memset(st_nodes, 0, sizeof st_nodes);
+     memset(st_whylen, 0, sizeof st_whylen);
+ 
++    /* [K60-PROBE] the arriving `longjmp` value. `volatile` for the reason
++     * every other automatic object crossing this boundary is. NOTE for a
++     * landed fix: `v = setjmp(env)` is outside C11 7.13.1.1p2's list of
++     * permitted setjmp contexts (which allows only the bare call, a
++     * comparison against a constant, or `!`), so a real fix needs a
++     * spelling that stays inside it — the memo's §4.4 records the two that
++     * do. A probe can afford what a shipped recovery point cannot. */
++    volatile int jmpval = 0;
++    volatile int k60_attempts = 0;
++    const int k60_trace = k60_on("PCREC_K60_PROBE");
++    const int k60_fix   = k60_on("PCREC_K60_FIX");
++
+     for (volatile int attempt = 0; attempt < COMPILE_MAX_ATTEMPTS; attempt++) {
+         Ctx cx;
+         memset(&cx, 0, sizeof(cx));
++        k60_attempts++;
++        if (k60_trace)
++            fprintf(stderr, "[K60] attempt %d: st_phase=%d st_idx=%d "
++                            "dfa_disabled=%d collapse=%d drop_rung=%d\n",
++                    (int)k60_attempts, (int)st_phase, (int)st_idx,
++                    (int)dfa_disabled, (int)collapse_reason, (int)size_drop_rung);
+         cx.pat = pattern;
+         cx.patlen = pattern ? strlen(pattern) : 0;
+         cx.err = err;
+@@ -835,7 +891,22 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
+             defo.unroll_k = st_final_k;
+         }
+ 
+-        if (setjmp(cx.jb)) {
++        if ((jmpval = setjmp(cx.jb)) != 0) {
++            /* [K60-PROBE] THE CANDIDATE FIX, behind its own gate. A genuine
++             * allocation failure propagates immediately, ahead of every
++             * rung's eligibility test AND ahead of the ladder's blanket
++             * "this K is out" catch — no stored state, nothing to reset,
++             * nothing to go stale. Measured, not argued: memo §4. */
++            if (k60_trace)
++                fprintf(stderr, "[K60] arrive attempt=%d jmpval=%d st_phase=%d "
++                                "size_cap_refused=%d dfa_overflowed=%d\n",
++                        (int)k60_attempts, jmpval, (int)st_phase,
++                        (int)cx.size_cap_refused, (int)cx.dfa_overflowed);
++            if (k60_fix && jmpval == PCREC_JMP_NOMEM) {
++                if (k60_trace) fprintf(stderr, "[K60] propagate (nomem)\n");
++                job_cleanup(&cx);
++                return -1;
++            }
+             /* [SEL-1] Retry ONLY under `--engine=auto`, ONLY when
+              * `-fprefilter` was not requested (both force forms stay
+              * do-or-die with today's diagnostic — `--engine=dfa`'s own
+-- 
+2.50.1 (Apple Git-155)
+
