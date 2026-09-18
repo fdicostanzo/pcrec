@@ -9623,8 +9623,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * K38 sweep replaced everywhere, including here, with the shared
      * PCREC_MAX_EMIT_NAME_LEN -- a second hand-picked constant for the same
      * problem is exactly the mistake this fix exists to stop repeating. */
-    char frames_sentinel[PCREC_MAX_EMIT_NAME_LEN];
-    snprintf(frames_sentinel, sizeof frames_sentinel, "%s_R_FRAMES", v.up);
+    const char *frames_sentinel = vm_rolef(&v, "%s_R_FRAMES", v.up);
 
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
@@ -10601,14 +10600,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* The ceiling parameter's spelling, written once: the declaration, the
      * definition and the three call sites all read these two strings rather
      * than re-deriving the name, so a rename cannot leave one of them behind. */
-    char mrl_param[96];
-    snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_window_end", v.p);
+    const char *mrl_param = vm_rolef(&v, ", const size_t %s_window_end", v.p);
     /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
      * appended AFTER the ceiling's so the two are order-independent at every
      * site: each is emitted or omitted on its own flag, and a program with
      * both gets `(ctx, w, ceil, startpos)`. */
-    char gst_param[96];
-    snprintf(gst_param, sizeof gst_param, ", const size_t %s_search_from", v.p);
+    const char *gst_param = vm_rolef(&v, ", const size_t %s_search_from", v.p);
 
     if (v.nclamp > 0) {
         sb_printf(c,
@@ -10818,11 +10815,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `call_top` joins the FIRST group, not the second, because an attempt at
      * the next start position must not inherit the previous attempt's
      * activation. */
-    char reset_call_top[160];
-    reset_call_top[0] = 0;
-    if (v.has_linked_calls)
-        snprintf(reset_call_top, sizeof reset_call_top,
-                 "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
+    /* THE EMPTY DEFAULT IS A BYTE-IDENTITY CONTRACT, not an absence: an
+     * artifact with no linked calls emits this insert as nothing at all, and
+     * `""` is what makes that byte-identical. So this is a `const char *`
+     * initialised to `""` and conditionally reassigned, never `sb_fragf`
+     * called unconditionally -- the shape lens10's charter marks JUDGED. */
+    const char *reset_call_top =
+        !v.has_linked_calls ? ""
+        : vm_rolef(&v, "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
 
     sb_printf(c,
         "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
@@ -10994,8 +10994,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * longer, and snprintf TRUNCATES rather than failing. gcc's
      * -Wformat-truncation caught two of the three; the third is widened with
      * them because a silently cut trace line is a debugging tool that lies. */
-    char accept_tr[288], fail_tr[288], exhaust_tr[192];
-    accept_tr[0] = fail_tr[0] = exhaust_tr[0] = 0;
+    /* Three more of the JUDGED shape above: an UNTRACED artifact's bytes are
+     * identical because each insert is simply empty, which is what
+     * run_vm_identity.sh's gate cares about and what a debug flag has no
+     * business changing. The old comment below says so in those words. */
+    const char *accept_tr = "", *fail_tr = "", *exhaust_tr = "";
     if (v.tracing) {
         /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
          * on such an artifact they are different and one of them alone is
@@ -11006,23 +11009,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * nothing connecting them. Emitted only where a `\K` exists, so a
          * `\K`-free traced artifact keeps its line byte for byte. */
         if (v.nkreset > 0)
-            snprintf(accept_tr, sizeof accept_tr,
+            accept_tr = vm_rolef(&v,
                      "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
                      " reported [%%td,%%zu)\\n\", ctx->pos, scan_position,"
                      " slot_values[0] != PCREC_UNSET ? slot_values[0] : (ptrdiff_t)ctx->pos,"
                      " scan_position);\n", v.p);
         else
-            snprintf(accept_tr, sizeof accept_tr,
+            accept_tr = vm_rolef(&v,
                      "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
                      " ctx->pos, scan_position);\n", v.p);
-        snprintf(fail_tr, sizeof fail_tr,
+        fail_tr = vm_rolef(&v,
                  "    fprintf(stderr, \"[%s] backtrack: %%zu frame(subject), trail %%zu\\n\","
                  " run->resume_depth, run->trail_depth);\n", v.p);
         /* A separate guarded statement rather than a brace around the
          * existing one: that keeps the UNTRACED artifact's bytes identical
          * (the insert is simply empty), which is what run_vm_identity.sh's
          * gate cares about and what a debug flag has no business changing. */
-        snprintf(exhaust_tr, sizeof exhaust_tr,
+        exhaust_tr = vm_rolef(&v,
                  "    if (run->resume_depth == 0)\n"
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
@@ -11094,10 +11097,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * this file's own header counts (the fail label) down to none. */
         sb_puts(c, "}\n\n");
     } else {
-        char pop_tr[352];
-        pop_tr[0] = 0;
+        const char *pop_tr = "";
         if (v.tracing)
-            snprintf(pop_tr, sizeof pop_tr,
+            pop_tr = vm_rolef(&v,
                      "        fprintf(stderr, \"[%s] pop   #%%zu resume L%%d at"
                      " scan_position %%zu (rewind trail %%zu -> %%zu)\\n\",\n"
                      "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
@@ -11350,15 +11352,16 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  "internal error: this encoding's unanchored retry advance is "
                  "missing or does not fit the emitter's buffer");
 
-    /* The recompute, spelled once and used only where a bound reads it. */
-    char retry_win[512];
-    retry_win[0] = 0;
+    /* The recompute, spelled once and used only where a bound reads it.
+     * `""` again: an artifact with no clamp or no prefilter emits nothing
+     * here and must stay byte-identical. */
+    const char *retry_win = "";
     if (v.nclamp > 0 && prefn)
         /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a
          * cut-bearing artifact — it re-seeds `attempt_position` from the
          * prefilter, which is H2 and is sound, and D51 ruling 2 is why it
          * exists at all. Only the CEILING it also computed is dropped. */
-        snprintf(retry_win, sizeof retry_win,
+        retry_win = vm_rolef(&v,
                  "        {\n"
                  "            ptrdiff_t window[1][2];\n"
                  "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
