@@ -3930,3 +3930,26 @@ Note at archive time (2026-08-25): [M6.6.2]'s STATE reads `completed-pending-clo
   S257 all resource:1fail/26pass DETECTED). Lane waveu (sonnet), manager
   takeover at the landing (lane died post-S257-launch); merged 2026-09-18,
   make test 40/40 green (known darwin inline_capability red only).
+
+- [REVW.1] STATE:completed 2026-09-18 — wave 1 (emission kit, outer). STAGE 0
+  (lane w1stage0): the long-prefix full-corpus sweep repairing the
+  [MECH-REACH] finding (1,499/1,500 clean at the 60-byte legal prefix, no live
+  K38 recurrence), the --emit-ir byte-neutrality arm (S258 DETECTED both
+  directions), the listing-reach census (27/41 role sites on the fixture set,
+  31/41 corpus-wide; lookbehind + subroutine-call emission UNREACHED — the gap
+  a stage-3 lane must widen). STAGES 1-2 (lane w1kit, opus): sb_text/sb_textn/
+  sb_field/sb_join/sb_row in src/core/sb.c, adopted at ~36 sites; cli_err at
+  71 of 79 stderr sites. **THE CHARTER'S CENTRAL STAGE-1 PROPOSAL WAS REFUTED
+  BY THE TREE** — promoting put_escaped as the one field escape doubles a
+  backslash and would break 150 data rows across five registry dumps (the
+  `syntax` column literally IS `\d`, and tests/reject builds probe patterns
+  from it); resolved as TWO VOCABULARIES over ONE implementation. Byte-neutral
+  (3.6 MB dump corpus 0 differing, 79-message CLI set identical over a 1.68 MB
+  sweep with two deliberately non-shared normalization rules, 1,500-cell
+  emit-diff 0 movers) — not an abi event. S200/S241 re-aimed + re-verified
+  DETECTED. Manager landing fixes: the K37 allowlist entry for the sweep's
+  python continuation line, and FOUR stray generated artifacts (zzz, zzz.h,
+  out.c, out.h) removed — scratch committed by accident in 3cc0d46d.
+  Checkpoint battery battery_20260918_051433 @ 272bf970: mech 265 rows
+  (unexpected 0, anomalies 0), strict/axes/lint rc=0; test + san reds both
+  triaged (lanes btriage2, santriage3) and non-blocking — THE PIN HELD.
