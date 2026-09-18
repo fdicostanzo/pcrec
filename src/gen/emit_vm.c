@@ -3112,9 +3112,8 @@ static void vm_cut(Vm *v, int slot, const char *role)
     /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
      * so after it runs the count this charge needs no longer exists. */
     {
-        char cnt[192];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
-        vm_work(v, cnt, "work charge: frames discarded by this cut");
+        vm_work(v, vm_rolef(v, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot),
+                "work charge: frames discarded by this cut");
     }
     sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
     vm_ev(v, VE_CUT, slot, 0, role);
@@ -3886,9 +3885,7 @@ static void vm_isl_cands(VmIsl *t, int x, VmIslAcc *out)
 static void vm_isl_die(Vm *v, VmIsl *t, int x)
 {
     if (t->nd[x].depth > 0) {
-        char cnt[32];
-        snprintf(cnt, sizeof cnt, "%d", t->nd[x].depth);
-        vm_work(v, cnt,
+        vm_work(v, vm_rolef(v, "%d", t->nd[x].depth),
                 "work charge: alternation-island trie bytes examined on this "
                 "path, which the fail label never sees");
     }
@@ -4167,9 +4164,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     int retry = poss ? -1 : vm_label(v), again = poss ? -1 : vm_label(v);
     long long lo_off = (long long)a->u.rep.rmin * stride;
     /* The loop's entry position, spelled for whichever of the two it is. */
-    char entrypos[32];
-    if (poss) snprintf(entrypos, sizeof entrypos, "(ptrdiff_t)scan_position");
-    else      snprintf(entrypos, sizeof entrypos, "slot_values[%d]", low);
+    const char *entrypos = poss ? "(ptrdiff_t)scan_position"
+                                : vm_rolef(v, "slot_values[%d]", low);
 
     /* class ids first, so the pool is stable before any test is written */
     int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
@@ -4185,9 +4181,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     for (int i = 0; i < stride; i++) {
         /* K38: was char byte[64] -- "subject[" + prefix + "_span_cursor + "
          * + digits + "]" exceeds 64 at the 60-char prefix maximum, and
-         * truncated mid-suffix ("..._sp"), losing the closing ']'. */
-        char byte[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(byte, sizeof byte, "subject[%s_span_cursor + %d]", v->p, i);
+         * truncated mid-suffix ("..._sp"), losing the closing ']'. Now
+         * arena-owned, so there is no size here to widen a second time. */
+        const char *byte = vm_rolef(v, "subject[%s_span_cursor + %d]", v->p, i);
         sb_puts(t, " && (");
         vm_cls_test(v, t, ci[i], byte);
         sb_puts(t, ")");
@@ -4256,10 +4252,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * iterations is what ships. Recorded as a residual rather than decided
          * here. */
         {
-            char cnt[192];
-            snprintf(cnt, sizeof cnt,
-                     "((ptrdiff_t)(%s_span_cursor - %s)) / %d", v->p, entrypos, stride);
-            vm_work(v, cnt, "work charge: frameless scan iterations");
+            vm_work(v, vm_rolef(v, "((ptrdiff_t)(%s_span_cursor - %s)) / %d",
+                                v->p, entrypos, stride),
+                    "work charge: frameless scan iterations");
         }
         sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < %s + %lld) goto %s_fail;\n",
                   v->p, entrypos, lo_off, v->p);
@@ -4282,9 +4277,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         {
             /* K38: was char cx[64] -- prefix + "_span_cursor" reaches 72
              * bytes at the 60-char prefix maximum, truncating to "..._sp". */
-            char cx[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
-            vm_mrl_test(v, cx, mrl, -1,
+            vm_mrl_test(v, vm_rolef(v, "%s_span_cursor", v->p), mrl, -1,
                         "MRL: too few bytes remain after the loop's one exit "
                         "position for any accepting continuation");
         }
@@ -4292,18 +4285,18 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
             sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n",
                       v->p, entrypos, stride);
             for (int i = 0; i < ncaps; i++) {
-                /* K38: widened alongside the family above (was 96); this
-                 * one had margin at 60 chars but shares the source and the
-                 * fix removes the per-site guess. */
-                char val[PCREC_MAX_EMIT_NAME_LEN];
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                         stride - caps[i].off);
-                vm_set(v, 2 * caps[i].group, val,
+                /* K38: the per-site size guess is gone entirely -- this was
+                 * widened to PCREC_MAX_EMIT_NAME_LEN alongside the family
+                 * above (from 96) and is now arena-owned, so the ONE buffer
+                 * that was written twice is two independent fragments. */
+                vm_set(v, 2 * caps[i].group,
+                       vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                                stride - caps[i].off),
                        vm_rolef(v, "group %d open, derived from the cursor",
                                 caps[i].group));
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                         stride - caps[i].off - caps[i].len);
-                vm_set(v, 2 * caps[i].group + 1, val,
+                vm_set(v, 2 * caps[i].group + 1,
+                       vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                                stride - caps[i].off - caps[i].len),
                        vm_rolef(v, "group %d close, derived from the cursor",
                                 caps[i].group));
             }
@@ -4419,9 +4412,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * too and the whole remaining ascent is cut by this one comparison. */
         {
             /* K38: same family as the possessive arm's cx above -- was 64. */
-            char cx[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
-            vm_mrl_test(v, cx, mrl, -1,
+            vm_mrl_test(v, vm_rolef(v, "%s_span_cursor", v->p), mrl, -1,
                         "MRL: the ascent has passed the last position an "
                         "accepting continuation could attempt_position from");
         }
@@ -4429,9 +4420,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
 
     {
         /* K38: was char cur[64] -- identical overflow to cx above. */
-        char cur[PCREC_MAX_EMIT_NAME_LEN];
-        snprintf(cur, sizeof cur, "%s_span_cursor", v->p);
-        vm_push_at(v, again, cur, a->u.rep.greedy
+        vm_push_at(v, again, vm_rolef(v, "%s_span_cursor", v->p), a->u.rep.greedy
                    ? "shorter run is the resume (retreat one stride)"
                    : "longer run is the resume (extend one stride)");
     }
@@ -4444,17 +4433,17 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n",
                   v->p, low, stride);
         for (int i = 0; i < ncaps; i++) {
-            /* K38: widened alongside the family above (was 96). */
-            char val[PCREC_MAX_EMIT_NAME_LEN];
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                     stride - caps[i].off);
-            vm_set(v, 2 * caps[i].group, val,
+            /* K38: widened alongside the family above (was 96); arena-owned
+             * now, so the twice-written buffer is two fragments. */
+            vm_set(v, 2 * caps[i].group,
+                   vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                            stride - caps[i].off),
                    vm_rolef(v, "group %d open, derived from the cursor "
                                "(D44.1: not written per iteration)",
                             caps[i].group));
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
-                     stride - caps[i].off - caps[i].len);
-            vm_set(v, 2 * caps[i].group + 1, val,
+            vm_set(v, 2 * caps[i].group + 1,
+                   vm_rolef(v, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
+                            stride - caps[i].off - caps[i].len),
                    vm_rolef(v, "group %d close, derived from the cursor",
                             caps[i].group));
         }
@@ -4754,9 +4743,8 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
     /* K38: was char byte[80] -- "subject[" + R->cur (a prefix + "_rv%d_cursor"
      * name, up to ~81 bytes at the 60-char prefix maximum) + " - 1]" exceeds
      * 80, truncating the closing bracket ("expected ']'" on the artifact). */
-    char byte[PCREC_MAX_EMIT_NAME_LEN];
     vm_charge(v);
-    snprintf(byte, sizeof byte, "subject[%s - 1]", R->cur);
+    const char *byte = vm_rolef(v, "subject[%s - 1]", R->cur);
 
     switch (a->k) {
     case A_CLASS: {
