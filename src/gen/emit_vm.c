@@ -7129,6 +7129,138 @@ static void vm_memo_region_costs(Vm *v)
     }
 }
 
+static long long vm_ceiling(long long cap, long long per)
+{
+    if (per <= 0) return 0;
+    return cap / per;
+}
+
+/* What the capacity policy decides, in one value — §2.5's two capacities, the
+ * honest ceiling that goes in the stamp, and D49's two budgets.
+ *
+ * `Cost` and the `fits` predicate are NOT here: they are intermediates the
+ * policy consumes on the way to these six and have no reader outside it.
+ * Returned rather than written through out-parameters, and NOT stored on
+ * `Vm`: only `has_budget` is needed DURING the walk (which is why
+ * `vm_plan_capacities` sets that one field on `v` itself), and the rest
+ * belong to the emitting tail, so a `Vm` field would widen the struct for
+ * no reader. */
+typedef struct {
+    long long bt_frames, trail_frames, ceiling;
+    long long budget, work_budget;
+    bool      has_budget;
+} VmCaps;
+
+/* [EP2 sequence step 9 / lens 11's third proposal] THE CAPACITY AND BUDGET
+ * POLICY, lifted out of `pcrec_emit_vm`.
+ *
+ * PRODUCES: the `VmCaps` above, and the one field the WALK needs — it sets
+ * `v->has_budget` itself, because the WORK charge sites are emitted DURING
+ * `vm_emit` and cannot read a local of the caller.
+ * READS: `cx->opt`'s three knobs (`frame_capacity`, `step_budget`,
+ * `work_budget`) and `vm_cost`'s answer for the whole pattern.
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs AFTER `vm_memo_region_costs`
+ * — `vm_cost` on the root descends into `A_CALL` and reads `rgn_cost`.
+ *
+ * EP2 §3.2 calls this a POLICY BLOCK rather than a fixpoint, and that is the
+ * right description: everything here is a decision about what the artifact
+ * will ENFORCE, taken once, from numbers the passes above settled. */
+static VmCaps vm_plan_capacities(Vm *v, const Ast *root)
+{
+    Ctx *cx = v->cx;
+    VmCaps c;
+    const Cost cost = vm_cost(v, root, false);
+    long long bt_frames, trail_frames, ceiling = 0;
+    bool fits;
+    if (cx->opt->frame_capacity > 0) {
+        bt_frames = cx->opt->frame_capacity;
+        trail_frames = cx->opt->frame_capacity;
+    } else if (cost.unbounded) {
+        bt_frames = VM_DEFAULT_RESUME_FRAMES;
+        trail_frames = VM_DEFAULT_TRAIL_FRAMES;
+    } else {
+        bt_frames = cost.frames + 1;
+        trail_frames = cost.trail + 1;
+        if (bt_frames > VM_MAX_AUTO_RESUME_FRAMES) bt_frames = VM_MAX_AUTO_RESUME_FRAMES;
+        if (trail_frames > VM_MAX_AUTO_TRAIL_FRAMES)
+            trail_frames = VM_MAX_AUTO_TRAIL_FRAMES;
+    }
+    if (bt_frames < 1) bt_frames = 1;
+    if (trail_frames < 1) trail_frames = 1;
+
+    /* THE STAMP IS ABOUT WHAT THE ARTIFACT ENFORCES, NOT WHAT IT WANTED.
+     * A ceiling is owed whenever the depth grows with the subject AND the
+     * exact requirement does not fit the arrays actually emitted — which
+     * covers the unbounded class (where no exact requirement exists) and the
+     * large-bounded one (where it exists and is too big) with one rule. A
+     * pattern whose requirement DOES fit has no limit to declare, and stamps
+     * 0 truthfully. Getting this wrong in the other direction is what a
+     * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
+     * frames, gets the VM_MAX_AUTO_RESUME_FRAMES clamp, and would otherwise have stamped "not applicable". */
+    fits = !cost.unbounded && cost.frames + 1 <= bt_frames
+                           && cost.trail + 1 <= trail_frames;
+    if (cost.growable && !fits) {
+        long long a = vm_ceiling(bt_frames, cost.pf);
+        long long b = vm_ceiling(trail_frames, cost.pt);
+        ceiling = (a && b) ? (a < b ? a : b) : (a ? a : b);
+    }
+
+    long long budget = cx->opt->step_budget;
+    if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
+    const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
+
+    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
+     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
+     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
+     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
+     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
+     * still increments `run->resume_depth` at run time (see its own
+     * comment), so a call-only program can push despite `npush == 0` and
+     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
+     * optional copy, no lookaround, no call — the frameless witness is
+     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
+     * never become nonzero: the fail label's pop-and-resume block below is
+     * unreachable in that program, has no address-of-label expression
+     * anywhere in the function, and is what clang refuses ("indirect goto in
+     * function with no address-of-label expressions") where gcc accepts it.
+     * `has_push` is the gate that omits it there instead of emitting dead
+     * dispatch code.
+     *
+     * [CC-CLANG fix, 2026-09-01] `has_push` is NO LONGER computed here from
+     * `v.npush`: the pre-pass's push count is an ESTIMATE whose original
+     * consumer is the resume-point cap (where an error is an accounting bug),
+     * and the counter rung's unbounded arm measured it NEGATIVE, which made
+     * the dispatch-omission gate a miscompile. The gate is now derived from
+     * the EMITTED PROGRAM TEXT at `pcrec_emit_vm`'s fail-label
+     * emission site — one
+     * derivation (the bytes) with the emitter itself as the only writer. */
+
+    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
+     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
+     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
+     * written. `--work-budget=N` is the independent VALUE knob, so the two are
+     * separately tunable while they exist; splitting the gate later is purely
+     * additive. */
+    long long work_budget = cx->opt->work_budget;
+    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
+        work_budget = VM_DEFAULT_WORK_BUDGET;
+    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
+
+    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
+     * are emitted DURING vm_emit (at each cut, at each frameless scan
+     * completion), unlike the fail label's step charge, which is written after
+     * the walk and can simply read the local. */
+    v->has_budget = has_budget;
+
+    c.bt_frames = bt_frames;
+    c.trail_frames = trail_frames;
+    c.ceiling = ceiling;
+    c.budget = budget;
+    c.work_budget = work_budget;
+    c.has_budget = has_budget;
+    return c;
+}
+
 /* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
  * targets still need a shared region, and what each one's transitive GROUP
  * set is.
@@ -8702,12 +8834,6 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 
 /* ---- the artifact -------------------------------------------------------*/
 
-static long long vm_ceiling(long long cap, long long per)
-{
-    if (per <= 0) return 0;
-    return cap / per;
-}
-
 /* [DD-14.FB] (D71 item 2, spec §10.4) THE RESUME FRAME AND TRAIL ENTRY, AS
  * ONE MEMBER LIST WITH TWO CONSUMERS.
  *
@@ -9377,88 +9503,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         vm_memo_region_costs(&v);
     }
 
-    /* §2.5's two capacities. */
-    Cost cost = vm_cost(&v, root, false);
-    long long bt_frames, trail_frames, ceiling = 0;
-    bool fits;
-    if (cx->opt->frame_capacity > 0) {
-        bt_frames = cx->opt->frame_capacity;
-        trail_frames = cx->opt->frame_capacity;
-    } else if (cost.unbounded) {
-        bt_frames = VM_DEFAULT_RESUME_FRAMES;
-        trail_frames = VM_DEFAULT_TRAIL_FRAMES;
-    } else {
-        bt_frames = cost.frames + 1;
-        trail_frames = cost.trail + 1;
-        if (bt_frames > VM_MAX_AUTO_RESUME_FRAMES) bt_frames = VM_MAX_AUTO_RESUME_FRAMES;
-        if (trail_frames > VM_MAX_AUTO_TRAIL_FRAMES)
-            trail_frames = VM_MAX_AUTO_TRAIL_FRAMES;
-    }
-    if (bt_frames < 1) bt_frames = 1;
-    if (trail_frames < 1) trail_frames = 1;
-
-    /* THE STAMP IS ABOUT WHAT THE ARTIFACT ENFORCES, NOT WHAT IT WANTED.
-     * A ceiling is owed whenever the depth grows with the subject AND the
-     * exact requirement does not fit the arrays actually emitted — which
-     * covers the unbounded class (where no exact requirement exists) and the
-     * large-bounded one (where it exists and is too big) with one rule. A
-     * pattern whose requirement DOES fit has no limit to declare, and stamps
-     * 0 truthfully. Getting this wrong in the other direction is what a
-     * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
-     * frames, gets the VM_MAX_AUTO_RESUME_FRAMES clamp, and would otherwise have stamped "not applicable". */
-    fits = !cost.unbounded && cost.frames + 1 <= bt_frames
-                           && cost.trail + 1 <= trail_frames;
-    if (cost.growable && !fits) {
-        long long a = vm_ceiling(bt_frames, cost.pf);
-        long long b = vm_ceiling(trail_frames, cost.pt);
-        ceiling = (a && b) ? (a < b ? a : b) : (a ? a : b);
-    }
-
-    long long budget = cx->opt->step_budget;
-    if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
-    const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
-
-    /* [CC-CLANG] IS THERE ANY RESUME FRAME TO POP, ANYWHERE IN THIS PROGRAM.
-     * `v.npush` (set by the `vm_count_slots` pre-pass above) counts every
-     * `RX_PUSH` site — but deliberately NOT a linked call SITE's own frame
-     * (vm_count_slots's `A_CALL` arm: "the call site itself allocates
-     * nothing", by design, because a call frame is not a SLOT). `RX_CALL`
-     * still increments `run->resume_depth` at run time (see its own
-     * comment), so a call-only program can push despite `npush == 0` and
-     * both terms are needed. A COUNTER-RUNG-ONLY program (no alternation, no
-     * optional copy, no lookaround, no call — the frameless witness is
-     * `[a-z]{0,4096}` --engine=vm) has neither, and `resume_depth` can then
-     * never become nonzero: the fail label's pop-and-resume block below is
-     * unreachable in that program, has no address-of-label expression
-     * anywhere in the function, and is what clang refuses ("indirect goto in
-     * function with no address-of-label expressions") where gcc accepts it.
-     * `has_push` is the gate that omits it there instead of emitting dead
-     * dispatch code.
-     *
-     * [CC-CLANG fix, 2026-09-01] `has_push` is NO LONGER computed here from
-     * `v.npush`: the pre-pass's push count is an ESTIMATE whose original
-     * consumer is the resume-point cap (where an error is an accounting bug),
-     * and the counter rung's unbounded arm measured it NEGATIVE, which made
-     * the dispatch-omission gate a miscompile. The gate is now derived from
-     * the EMITTED PROGRAM TEXT at the fail-label emission site below — one
-     * derivation (the bytes) with the emitter itself as the only writer. */
-
-    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
-     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
-     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
-     * written. `--work-budget=N` is the independent VALUE knob, so the two are
-     * separately tunable while they exist; splitting the gate later is purely
-     * additive. */
-    long long work_budget = cx->opt->work_budget;
-    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
-        work_budget = VM_DEFAULT_WORK_BUDGET;
-    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
-
-    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
-     * are emitted DURING vm_emit (at each cut, at each frameless scan
-     * completion), unlike the fail label's step charge, which is written after
-     * the walk and can simply read the local. */
-    v.has_budget = has_budget;
+    /* §2.5's two capacities, D49's two budgets and the honest ceiling — one
+     * policy block, `vm_plan_capacities`. Unpacked into the names the
+     * emission below already uses: those readers are ~60 sites across the
+     * rest of this function, and renaming them to `caps.x` would buy a reader
+     * nothing (coding_guide §1.7 and §4's editing principle) while rewriting
+     * text that sabotage rows sit on. */
+    const VmCaps caps = vm_plan_capacities(&v, root);
+    const long long bt_frames = caps.bt_frames;
+    const long long trail_frames = caps.trail_frames;
+    const long long ceiling = caps.ceiling;
+    const long long budget = caps.budget;
+    const long long work_budget = caps.work_budget;
+    const bool has_budget = caps.has_budget;
     /* Always present (docs/spec/match_api.md §3.1 promises it unconditionally,
      * and tests/codegen's K27 fixture calls it directly); the A_BREF arm ORs
      * in whichever compare entries it actually emits. */
