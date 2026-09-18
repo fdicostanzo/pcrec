@@ -1,0 +1,75 @@
+# vm_rolef call sites found in /Users/fdicostanzo/pcrec/worktrees/w1stage0/src/gen/emit_vm.c: 41
+# run_ir_listing.sh PATTERNS extracted: 11
+# corpus pattern/pattern-esc lines: 3938
+=== PRIMARY: run_ir_listing.sh's own PATTERNS population (--engine=vm forced, matching that script's own invocation) ===
+patterns supplied: 11, compiled to a VM --emit-ir listing: 11
+vm_rolef call sites: 41, reached (literal prefix seen in listing text): 27
+
+function                          reached  total
+L8 vm_alt                               3      3
+   vm_call                              0      1
+L8 vm_counter_phase                     0      2
+L8 vm_counter_rep                       0      2
+L8 vm_cursor_rep                        5      5
+   vm_emit                              6      7
+   vm_isl_emit                          5      5
+   vm_look_behind                       0      4
+   vm_opt_chain                         0      1
+   vm_poss_chain                        0      1
+   vm_region                            0      1
+L8 vm_rep                               1      1
+L8 vm_rev_emit                          3      3
+L8 vm_revdet_rep                        3      3
+   vm_splice                            0      1
+L8 vm_star                              1      1
+
+UNREACHED sites (14):
+  emit_vm.c:4449   vm_opt_chain         prefix='optional copy ('
+  emit_vm.c:4547   vm_poss_chain        prefix='possessified optional copy ('
+  emit_vm.c:5317   vm_counter_phase     prefix=''
+  emit_vm.c:5351   vm_counter_phase     prefix=''
+  emit_vm.c:5543   vm_counter_rep       prefix='counter rung, {'
+  emit_vm.c:5547   vm_counter_rep       prefix='counter rung, {'
+  emit_vm.c:6369   vm_look_behind       prefix='lookbehind branch'
+  emit_vm.c:6399   vm_look_behind       prefix='lookbehind: fewer than'
+  emit_vm.c:6409   vm_look_behind       prefix='lookbehind: fewer than'
+  emit_vm.c:6441   vm_look_behind       prefix="lookbehind: the ENCODING SEAM's back-step,"
+  emit_vm.c:6862   vm_call              prefix='call group'
+  emit_vm.c:7006   vm_splice            prefix='splice group'
+  emit_vm.c:7138   vm_region            prefix='the callee region for'
+  emit_vm.c:7571   vm_emit              prefix='backreference to'
+
+=== SECONDARY (informational): the full corpus at DEFAULT engine selection (a pattern that selects the DFA contributes nothing) ===
+patterns supplied: 3938, compiled to a VM --emit-ir listing: 368
+vm_rolef call sites: 41, reached (literal prefix seen in listing text): 31
+
+function                          reached  total
+L8 vm_alt                               3      3
+   vm_call                              0      1
+L8 vm_counter_phase                     0      2
+L8 vm_counter_rep                       2      2
+L8 vm_cursor_rep                        5      5
+   vm_emit                              6      7
+   vm_isl_emit                          5      5
+   vm_look_behind                       0      4
+   vm_opt_chain                         1      1
+   vm_poss_chain                        1      1
+   vm_region                            0      1
+L8 vm_rep                               1      1
+L8 vm_rev_emit                          3      3
+L8 vm_revdet_rep                        3      3
+   vm_splice                            0      1
+L8 vm_star                              1      1
+
+UNREACHED sites (10):
+  emit_vm.c:5317   vm_counter_phase     prefix=''
+  emit_vm.c:5351   vm_counter_phase     prefix=''
+  emit_vm.c:6369   vm_look_behind       prefix='lookbehind branch'
+  emit_vm.c:6399   vm_look_behind       prefix='lookbehind: fewer than'
+  emit_vm.c:6409   vm_look_behind       prefix='lookbehind: fewer than'
+  emit_vm.c:6441   vm_look_behind       prefix="lookbehind: the ENCODING SEAM's back-step,"
+  emit_vm.c:6862   vm_call              prefix='call group'
+  emit_vm.c:7006   vm_splice            prefix='splice group'
+  emit_vm.c:7138   vm_region            prefix='the callee region for'
+  emit_vm.c:7571   vm_emit              prefix='backreference to'
+
