@@ -16,8 +16,24 @@
 # contract's HEADER TRUTHFULNESS rule — and not the diff, because a diff
 # reports three changed lines out of 3,265 and a reader skims it. The
 # check's failure message names the three blocks by file.
+#
+# [REVW.1 wave 1, 2026-09-18] RE-AIMED, FILE ONLY. The escape itself moved
+# from `rxt_source.c`'s `put_escaped` to `src/core/sb.c`'s `sb_field`, so the
+# `.rxt` subject vocabulary and `--explain`'s frame-only one share their
+# `\xNN` tail rather than spelling it twice. The move is VERBATIM — same
+# bytes, same column — so `SAB_BEFORE` is UNCHANGED and only `SAB_FILE`
+# moves; `replace.py` matches whole-file and line-agnostic, so a relocation
+# that keeps its column costs a re-aim of one field.
+# INTENT RE-VERIFIED (the house rule for any re-anchor, and it needed asking
+# because the function now has FOUR callers' worth of columns rather than
+# rxt_source.c's three): `sb_field` is called at exactly the 11 `--list-source`
+# sites `put_escaped` was, and NOWHERE else in the tree — the registry dumps
+# use `sb_text`, the OTHER vocabulary, which does not carry this case at all.
+# So the plant still un-escapes exactly the columns this row names and
+# nothing more, and its detector (tests/rxtsource's field-count survey) is
+# unmoved. Verified by grep at the re-aim and by the solo run below.
 SAB_ID="S200-rxt-pattern-unescaped"
-SAB_FILE="src/parse/rxt_source.c"
+SAB_FILE="src/core/sb.c"
 SAB_SUITES="rxtsource"
 SAB_DESC="--list-source emits a raw tab in the pattern column, so the three corpus blocks whose pattern contains a literal tab produce rows with 20 fields where the header declares 19, and every column after the pattern column shifts on exactly those rows"
 # [DD-13b.W23.4] STALE-COUNT RE-STATEMENT, w23_impl.md §6.4 item 6/r59-A-M2:

@@ -3762,27 +3762,15 @@ int pcrec_rxt_source_resolve(RxtSource *src,
  * text, and in all three the tab is the thing under test. Emitted raw the
  * field splits and every later column shifts on exactly those rows — a
  * three-row-in-3,265 corruption, which is the size of finding a summary
- * swallows. */
-static void put_escaped(StrBuf *sb, const char *s)
-{
-    if (!s) return;
-    for (const unsigned char *q = (const unsigned char *)s; *q; q++) {
-        switch (*q) {
-        case '\\': sb_puts(sb, "\\\\"); break;
-        case '\t': sb_puts(sb, "\\t");  break;
-        case '\n': sb_puts(sb, "\\n");  break;
-        case '\r': sb_puts(sb, "\\r");  break;
-        default:
-            /* every other byte that cannot survive a TSV line, by number.
-             * Printable bytes and UTF-8 continuation bytes pass through:
-             * the escape exists to protect the FRAMING, not to transcode
-             * the content. */
-            if (*q < 0x20 || *q == 0x7f) sb_printf(sb, "\\x%02x", *q);
-            else sb_putc(sb, (char)*q);
-            break;
-        }
-    }
-}
+ * swallows.
+ *
+ * [REVW.1] wave 1: THE ESCAPE ITSELF IS `sb_field` (src/core/sb.c) NOW.
+ * It moved verbatim, one directory up, so the `.rxt` format's subject
+ * vocabulary and `--explain`'s frame-only one share their `\xNN` tail
+ * instead of spelling it twice. This file's call sites say `sb_field`
+ * directly rather than through a forwarder: a one-line forwarder would be
+ * a second name for one function, and the reader wants to see WHICH
+ * vocabulary a column is escaped in. */
 
 static const char *kind_name(RxtDeclKind k)
 {
@@ -3901,9 +3889,9 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
          * is one scalar. A block's own `description` rides column 4 too,
          * on the block's row, because a second description column would
          * be a second home for one fact. */
-        put_escaped(&sb, is_pat ? r->description : r->value);   /*  4 value */
+        sb_field(&sb, is_pat ? r->description : r->value);   /*  4 value */
         sb_putc(&sb, '\t');
-        if (is_pat) put_escaped(&sb, r->value);                 /*  5 pattern */
+        if (is_pat) sb_field(&sb, r->value);                 /*  5 pattern */
         sb_putc(&sb, '\t');
         if (r->flags) sb_puts(&sb, r->flags);                   /*  6 flags */
         sb_putc(&sb, '\t');
@@ -3923,7 +3911,7 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         sb_putc(&sb, '\t');
         if (r->from_list) sb_puts(&sb, r->from_list);           /* 14 from */
         sb_putc(&sb, '\t');
-        if (is_cfg) put_escaped(&sb, r->pcrec_raw);             /* 15 pcrec */
+        if (is_cfg) sb_field(&sb, r->pcrec_raw);             /* 15 pcrec */
         sb_putc(&sb, '\t');
         if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
         sb_putc(&sb, '\t');
@@ -3964,13 +3952,13 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             sb_putc(&sb, '\t');
             if (r->license) sb_puts(&sb, r->license);
             sb_putc(&sb, '\t');
-            if (r->license_note) put_escaped(&sb, r->license_note);
+            if (r->license_note) sb_field(&sb, r->license_note);
             sb_putc(&sb, '\t');
             if (r->fidelity) sb_puts(&sb, r->fidelity);
             sb_putc(&sb, '\t');
-            if (r->adaptation) put_escaped(&sb, r->adaptation);
+            if (r->adaptation) sb_field(&sb, r->adaptation);
             sb_putc(&sb, '\t');
-            if (r->attribution) put_escaped(&sb, r->attribution);
+            if (r->attribution) sb_field(&sb, r->attribution);
             sb_putc(&sb, '\t');
             if (r->bytes) sb_puts(&sb, r->bytes);
             sb_putc(&sb, '\t');
@@ -3992,13 +3980,13 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             sb_putc(&sb, '\t');
             if (r->kind) sb_puts(&sb, r->kind);
             sb_putc(&sb, '\t');
-            if (r->text) put_escaped(&sb, r->text);
+            if (r->text) sb_field(&sb, r->text);
             sb_putc(&sb, '\t');
             if (r->groups) sb_puts(&sb, r->groups);
             sb_putc(&sb, '\t');
-            if (r->note) put_escaped(&sb, r->note);
+            if (r->note) sb_field(&sb, r->note);
             sb_putc(&sb, '\t');
-            if (r->unsupported) put_escaped(&sb, r->unsupported);
+            if (r->unsupported) sb_field(&sb, r->unsupported);
             sb_putc(&sb, '\n');
         }
     }
@@ -4021,7 +4009,7 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             sb_putc(&sb, '\t');
             if (r->subject_form) sb_puts(&sb, r->subject_form);
             sb_putc(&sb, '\t');
-            if (r->subject) put_escaped(&sb, r->subject);
+            if (r->subject) sb_field(&sb, r->subject);
             sb_putc(&sb, '\t');
             if (r->subject_id) sb_puts(&sb, r->subject_id);
             sb_putc(&sb, '\t');
@@ -4057,7 +4045,7 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             sb_printf(&sb, "\t%zu\t", r->depth);
             sb_puts(&sb, r->key);
             sb_putc(&sb, '\t');
-            put_escaped(&sb, r->value);
+            sb_field(&sb, r->value);
             sb_putc(&sb, '\t');
             if (r->parent_line) sb_printf(&sb, "%zu", r->parent_line);
             sb_putc(&sb, '\n');
