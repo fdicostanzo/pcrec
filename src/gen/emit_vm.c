@@ -750,22 +750,38 @@ static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
     v->nev++;
 }
 
-/* Arena-owned formatted text for a role string. */
+/* Arena-owned formatted text for a role string — the compile's arena taken
+ * from `v`, which is the only thing this adapter adds over `sb_fragfv`.
+ *
+ * [REVW.2] WAVE 2 STAGE 3: this used to format into a `char buf[160]` and
+ * TRUNCATE (`if (sz > sizeof buf) sz = sizeof buf;`), which
+ * `lens10_emission_kit_charter.md` names as the one fragment builder in the
+ * file that was already the primitive and already truncating anyway. It is
+ * now `sb_fragfv`, so truncation is impossible by construction.
+ *
+ * THAT REMOVAL COULD HAVE MOVED A BYTE AND IS MEASURED NOT TO. Before the
+ * edit, a probe printed `n` at every call over the whole corpus compiled at
+ * BOTH prefixes (`-p rx` and a legal 60-byte one), `--features all`, default
+ * engine and forced VM: 7,876 compiles per prefix, **0 truncating calls, the
+ * longest role 135 bytes against the 160 bound at both** — so the old buffer
+ * had 25 bytes of margin and no artifact in this tree was ever short. A role
+ * long enough to truncate would now come out LONGER than before, which is a
+ * byte move and a deliberate one; there is no such role today.
+ *
+ * ALSO GONE: the `n < 0` NULL return. `sb_fragfv` aborts there, matching
+ * `sb_printf`'s own policy — a negative `vsnprintf` return is an encoding
+ * fault in a format string this file wrote itself, not something a pattern
+ * can provoke, and the one caller that tests a role for emptiness
+ * (`:2981`'s `if (role && *role)`) is testing for a deliberately empty role,
+ * never for this. */
 static const char *vm_rolef(Vm *v, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 static const char *vm_rolef(Vm *v, const char *fmt, ...)
 {
-    char buf[160];
     va_list ap;
     va_start(ap, fmt);
-    int n = vsnprintf(buf, sizeof buf, fmt, ap);
+    const char *q = sb_fragfv(&v->cx->arena, fmt, ap);
     va_end(ap);
-    if (n < 0) return NULL;
-    size_t sz = (size_t)n + 1;
-    if (sz > sizeof buf) sz = sizeof buf;
-    char *q = arena_alloc(&v->cx->arena, sz);
-    memcpy(q, buf, sz - 1);
-    q[sz - 1] = 0;
     return q;
 }
 
@@ -866,7 +882,13 @@ static int vm_slot_rev(Vm *v, int loop, int which)
  * Writes the SUFFIX only; the caller prefixes. Returns false for a slot the
  * layout does not account for, which is a bug rather than a naming gap, so the
  * caller falls back to the bare number rather than inventing a name. */
-static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
+/* [REVW.2] wave 2 stage 3: returns ARENA-OWNED text, or NULL when the layout
+ * does not account for the slot (what the old `bool` return said). The name
+ * used to be written into a caller-sized `char buf[48]`, replicated at all
+ * three call sites; `vm_slot_expr`'s own header already called that "three
+ * spellings of one convention" one level up, and the buffer was the same
+ * defect one level down. */
+static const char *vm_slot_name(Vm *v, int slot)
 {
     int ngroup_slots = 2 * (v->ngroups + 1);
     int base_guard   = ngroup_slots;
@@ -875,35 +897,29 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
     int base_rev     = base_mark  + v->nmark_total;
     int base_ctr     = base_rev   + 3 * v->nrev_total;
 
-    if (slot < 0) return false;
+    if (slot < 0) return NULL;
     if (slot < ngroup_slots) {
         int g = slot / 2;
         const char *half = (slot % 2) ? "END" : "START";
-        if (g == 0) snprintf(buf, bufsz, "SLOT_WHOLE_%s", half);
-        else        snprintf(buf, bufsz, "SLOT_GROUP%d_%s", g, half);
-        return true;
+        if (g == 0) return vm_rolef(v, "SLOT_WHOLE_%s", half);
+        else        return vm_rolef(v, "SLOT_GROUP%d_%s", g, half);
     }
     if (slot < base_low) {
-        snprintf(buf, bufsz, "SLOT_EMPTY_GUARD%d", slot - base_guard);
-        return true;
+        return vm_rolef(v, "SLOT_EMPTY_GUARD%d", slot - base_guard);
     }
     if (slot < base_mark) {
-        snprintf(buf, bufsz, "SLOT_SPAN_LOW%d", slot - base_low);
-        return true;
+        return vm_rolef(v, "SLOT_SPAN_LOW%d", slot - base_low);
     }
     if (slot < base_rev) {
-        snprintf(buf, bufsz, "SLOT_CUT_MARK%d", slot - base_mark);
-        return true;
+        return vm_rolef(v, "SLOT_CUT_MARK%d", slot - base_mark);
     }
     if (slot < base_ctr) {
         static const char *which[3] = { "ENTRY", "LOW", "HI" };
         int off = slot - base_rev;
-        snprintf(buf, bufsz, "SLOT_REVDET%d_%s", off / 3, which[off % 3]);
-        return true;
+        return vm_rolef(v, "SLOT_REVDET%d_%s", off / 3, which[off % 3]);
     }
     if (slot < base_ctr + v->nctr_total) {
-        snprintf(buf, bufsz, "SLOT_COUNTER%d", slot - base_ctr);
-        return true;
+        return vm_rolef(v, "SLOT_COUNTER%d", slot - base_ctr);
     }
     /* [M6.5.2] the pending block, named by its GROUP rather than by its index
      * — `SLOT_GROUP3_PENDING` beside `SLOT_GROUP3_START`/`_END` is what makes
@@ -917,10 +933,9 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
         int off = slot - base_pend;
         for (int g = 1; g <= v->ngroups; g++)
             if (v->pend_of && v->pend_of[g] == off) {
-                snprintf(buf, bufsz, "SLOT_GROUP%d_PENDING", g);
-                return true;
+                return vm_rolef(v, "SLOT_GROUP%d_PENDING", g);
             }
-        return false;
+        return NULL;
     }
     /* [M6.6.2] the lookaround's two families, at the TOP of the layout. The
      * bound above is what keeps the pending search from claiming them: before
@@ -928,22 +943,19 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
      * unbounded search would have named a LOOK slot "not accounted for" and
      * silently fallen back to the bare number. */
     if (slot < base_lookpos) {
-        snprintf(buf, bufsz, "SLOT_LOOK_MARK%d", slot - base_lookmark);
-        return true;
+        return vm_rolef(v, "SLOT_LOOK_MARK%d", slot - base_lookmark);
     }
     if (slot < base_lookpos + v->nlookpos_total) {
-        snprintf(buf, bufsz, "SLOT_LOOK_POS%d", slot - base_lookpos);
-        return true;
+        return vm_rolef(v, "SLOT_LOOK_POS%d", slot - base_lookpos);
     }
     /* [DD-14 wave G] the splice family, above the lookaround block for the
      * same reason that one is above the pending block: every base below it is
      * unmoved, so a splice-free artifact's numbering is byte-identical. */
     int base_splice = base_lookpos + v->nlookpos_total;
     if (slot < base_splice + v->nsplice_total) {
-        snprintf(buf, bufsz, "SLOT_SPLICE_SAVE%d", slot - base_splice);
-        return true;
+        return vm_rolef(v, "SLOT_SPLICE_SAVE%d", slot - base_splice);
     }
-    return false;
+    return NULL;
 }
 
 /* [M6-READ] The slot as it is WRITTEN IN THE ARTIFACT: the legend macro when
@@ -951,17 +963,17 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
  * helper, so every site that names a slot inside an emitted expression spells
  * it the same way `vm_set` does — the alternative is each site re-deriving
  * `<PREFIX>_` + `vm_slot_name`, which is three spellings of one convention. */
-static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
+static const char *vm_slot_expr(Vm *v, int slot)
 {
-    /* Sized from what it holds — `up` is at most 80 bytes and `vm_slot_name`
-     * writes at most 48 — because a silently TRUNCATED slot name is an
-     * artifact that names the wrong cell, and this file has already been bitten
-     * once by a too-small snprintf buffer (see the listing's VE_SET arm). */
-    char nm[48];
-    if (vm_slot_name(v, slot, nm, sizeof nm))
-        snprintf(buf, bufsz, "%s_%s", v->up, nm);
-    else
-        snprintf(buf, bufsz, "%d", slot);
+    /* [REVW.2] wave 2 stage 3: arena-owned, and the two hand-sized buffers
+     * this used to need — its own `char nm[48]` and the caller's `buf` — are
+     * both gone. The old comment argued the 48 from what it holds, which was
+     * a correct answer to the wrong question: a silently TRUNCATED slot name
+     * is an artifact that names the WRONG CELL, so the right answer is a
+     * fragment that cannot truncate rather than a size that happens to fit. */
+    const char *nm = vm_slot_name(v, slot);
+    if (nm) return vm_rolef(v, "%s_%s", v->up, nm);
+    return vm_rolef(v, "%d", slot);
 }
 
 /* [EP2-E1] The slot as an emitted LVALUE — `vm_slot_expr`'s sibling, one
@@ -976,11 +988,7 @@ static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
  * Reads `v->up` and the slot layout; writes nothing but the arena. */
 static const char *vm_slot_ref(Vm *v, int slot)
 {
-    /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, never a hand-picked literal —
-     * `vm_slot_expr`'s content reaches prefix + "_" + a 47-byte slot name. */
-    char ex[PCREC_MAX_EMIT_NAME_LEN];
-    vm_slot_expr(v, slot, ex, sizeof ex);
-    return vm_rolef(v, "slot_values[%s]", ex);
+    return vm_rolef(v, "slot_values[%s]", vm_slot_expr(v, slot));
 }
 
 static int vm_slot_ctr(Vm *v, int i)
@@ -3022,8 +3030,8 @@ static void vm_push(Vm *v, int lblid, const char *role)
 static void vm_set(Vm *v, int slot, const char *val, const char *role)
 {
     {
-        char nm[48];
-        if (vm_slot_name(v, slot, nm, sizeof nm))
+        const char *nm = vm_slot_name(v, slot);
+        if (nm)
             sb_printf(v->b, "    %s_SET(%s_%s, %s);\n", v->up, v->up, nm, val);
         else
             sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
@@ -6505,12 +6513,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                  "the assertion started -- the only runtime evidence that the "
                  "width analysis and this emission agree");
         {
-            /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, not a hand-picked 64
-             * -- vm_slot_expr's own content can reach prefix + "_" + a
-             * 47-byte slot name (108 bytes at the 60-char prefix maximum),
-             * which 64 silently truncated. */
-            char sl[PCREC_MAX_EMIT_NAME_LEN];
-            vm_slot_expr(v, pslot, sl, sizeof sl);
+            /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
+             * there is no size here to get wrong. It used to be a hand-picked
+             * 64, which silently truncated -- its content reaches prefix +
+             * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
+            const char *sl = vm_slot_expr(v, pslot);
             if (neg) {
                 /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
                  * see this function's header comment, note 3, "WHICH
@@ -6628,9 +6635,7 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
             vm_cut(v, mslot, "cut: the assertion is committed; every choice "
                              "point the body created is discarded, dead or not");
         {
-            /* K38: see the lookbehind end-check's identical buffer above. */
-            char sl[PCREC_MAX_EMIT_NAME_LEN];
-            vm_slot_expr(v, pslot, sl, sizeof sl);
+            const char *sl = vm_slot_expr(v, pslot);
             sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);
             vm_ev(v, VE_NOTE, 0, 0,
                   "lookaround: the position is DISCARDED -- the cursor goes "
@@ -7946,10 +7951,11 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
         if (!v->nocap) {
             if (marked) {
-                char sl[144], val[176];
-                vm_slot_expr(v, vm_slot_pend(v, a->u.cap.no), sl, sizeof sl);
-                snprintf(val, sizeof val, "slot_values[%s]", sl);
-                vm_set(v, 2 * a->u.cap.no, val,
+                /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
+                 * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
+                 * E1) builds, and E1's own four sites were all in
+                 * `vm_call`/`vm_splice`, so this one was never reached. */
+                vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
                        vm_rolef(v, "group %d PUBLISHED: the pair goes out "
                                    "together, so a reference never sees a "
                                    "half-open span", a->u.cap.no));
@@ -8061,9 +8067,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
                     "ref_end = PCREC_UNSET, took;\n");
         for (int i = 0; i < a->u.bref.nrefs; i++) {
-            char ns[144], ne[144];
-            vm_slot_expr(v, 2 * a->u.bref.refs[i], ns, sizeof ns);
-            vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1, ne, sizeof ne);
+            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
+            const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
             sb_printf(bb,
                 "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
                 "            ref_start = slot_values[%s];\n"
@@ -10279,8 +10284,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
         for (int sl = 0; sl < nstate; sl++) {
-            char nm[48];
-            if (!vm_slot_name(&v, sl, nm, sizeof nm)) continue;
+            const char *nm = vm_slot_name(&v, sl);
+            if (!nm) continue;
             sb_printf(c, "#define %s_%-24s %d\n", v.up, nm, sl);
         }
         sb_putc(c, '\n');

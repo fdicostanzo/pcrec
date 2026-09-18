@@ -3,6 +3,7 @@
 #define PCREC_INTERNAL_H
 
 #include <setjmp.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -141,6 +142,14 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  * point and calling this would not express it. */
 const char *sb_fragf(Arena *a, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
+
+/* The same, for a caller that already holds a `va_list` — i.e. any varargs
+ * ADAPTER that supplies the arena from something of its own (`emit_vm.c`'s
+ * `vm_rolef` takes it from `Vm.cx`). Without this, such an adapter has no way
+ * to reach the primitive and is forced back onto the fixed buffer this pair
+ * exists to retire. `sb_fragf` is a two-line wrapper over it, so there is one
+ * implementation and not two. The caller still owns `ap` and must `va_end` it. */
+const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
 /* ---- AST ---- */
 

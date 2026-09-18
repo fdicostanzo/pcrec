@@ -161,17 +161,26 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
  * `n < 0` aborts, matching `sb_printf`: a negative `vsnprintf` return is an
  * encoding error in a format string this tree wrote itself, not a condition a
  * pattern can provoke, so there is no diagnosis to route. */
+const char *sb_fragfv(Arena *a, const char *fmt, va_list ap)
+{
+    va_list ap2;
+    va_copy(ap2, ap);
+    int n = vsnprintf(NULL, 0, fmt, ap2);
+    va_end(ap2);
+    if (n < 0) abort();
+    char *out = arena_alloc(a, (size_t)n + 1);
+    va_list ap3;
+    va_copy(ap3, ap);
+    vsnprintf(out, (size_t)n + 1, fmt, ap3);
+    va_end(ap3);
+    return out;
+}
+
 const char *sb_fragf(Arena *a, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    va_list ap2;
-    va_copy(ap2, ap);
-    int n = vsnprintf(NULL, 0, fmt, ap);
+    const char *out = sb_fragfv(a, fmt, ap);
     va_end(ap);
-    if (n < 0) abort();
-    char *out = arena_alloc(a, (size_t)n + 1);
-    vsnprintf(out, (size_t)n + 1, fmt, ap2);
-    va_end(ap2);
     return out;
 }
