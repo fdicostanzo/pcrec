@@ -2550,6 +2550,25 @@ struct Ctx {
      * nothing. */
     PendingRef          *pending_refs;
     unsigned             n_pending_refs;
+    /* [K60] docs/dev/known_issues.md, disposition (2) — set by `ctx_nomem`
+     * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can
+     * tell a genuine allocation failure from every other `ctx_fail` arrival
+     * at the same `setjmp` and propagate it immediately, ahead of every
+     * rung's own eligibility test and ahead of the `[ART-SIZE]` ladder's
+     * blanket "this K is out" catch (which would otherwise absorb it as an
+     * ordinary K-does-not-fit failure — K60's measured 108-of-148 mechanism,
+     * docs/dev/k60_measurement.md §2/§4).
+     *
+     * PER-ARRIVAL BY CONSTRUCTION, NOT CROSS-ATTEMPT STATE: `Ctx cx` is a
+     * loop-local, `memset` to 0 at the top of every attempt
+     * (`compile_driver`'s `for` loop, below), so this field starts false on
+     * every attempt with nothing to reset and nothing to go stale — exactly
+     * the property the rejected cross-attempt-flag proposal (K60
+     * disposition (1), refuted by k60_measurement.md §2.4 and struck by
+     * Frank's ruling 2026-09-18) lacked. `size_cap_refused`/`dfa_overflowed`
+     * above already have this shape; this field is the same idiom applied
+     * to `ctx_nomem`'s own arrival. */
+    bool                 failed_nomem;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
