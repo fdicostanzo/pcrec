@@ -27,9 +27,13 @@
 #      Theta(N) long. Charged in src/ir/dfa.c's intern(), so the refusal
 #      happens DURING construction rather than after it.
 #   2. Every allocation on the compile path reports through ctx_nomem()
-#      instead of abort() (src/core/{arena,sb,compile}.c, src/ir/{nfa,dfa}.c,
-#      src/opt/minimize.c), so a malloc that fails under a caller's limit is a
-#      diagnosed refusal and not a dead caller process.
+#      instead of abort(), so a malloc that fails under a caller's limit is a
+#      diagnosed refusal and not a dead caller process. [REVW.U L8-F6(a)]
+#      THE FILE LIST USED TO BE HAND-WRITTEN HERE AND WENT STALE (the
+#      code review's own finding, six files named where the tree carries
+#      raw allocations in ten) — Section 0 below is the DERIVED replacement,
+#      a census over the tree itself rather than a sentence someone typed
+#      once.
 #
 # THE TWO SECTIONS BELOW TEST THOSE TWO THINGS SEPARATELY, and they have to be
 # separate: with the budget in place, section 1's shapes are refused by the
@@ -107,6 +111,78 @@ skip() { echo "SKIP: $*"; skip=$((skip + 1)); }
 # into pass (that would misreport an unreliable reading as validated) or
 # into fail (that would misreport box contention as a regression).
 inc()  { echo "INCONCLUSIVE: $*"; inconc=$((inconc + 1)); }
+
+# ---------------------------------------------------------------------------
+# Section 0 — [REVW.U L8-F6(a)] THE ALLOCATION-SITE CENSUS: the population
+# this whole file's claim is ABOUT, derived by grep rather than asserted by
+# a hand-written list.
+#
+# Lens 8's own finding (`docs/dev/reviews/lens_reports/lens8_error_cleanup.md`
+# F6): the header above used to name six files
+# (`src/core/{arena,sb,compile}.c, src/ir/{nfa,dfa}.c, src/opt/minimize.c`)
+# as the whole population of raw allocation call sites on the compile path —
+# a claim that went stale silently: `src/opt/scanedge.c` and
+# `src/gen/emit_dfa.c` both gained raw allocations since, and nothing here
+# noticed. "The file list is stale" is `learnings.md` §3's own recurring
+# class, third instance in that section's own words (`dialimpl`'s §5.3a
+# manifest, `w23implfix`'s five-token withdrawal check).
+#
+# THE CENSUS IS A FILE-SET MANIFEST, NOT A BARE COUNT (K35: an exact count
+# disarms itself through its own failure message — "expected 38, got 40"
+# says nothing about WHICH file moved). Every raw `malloc`/`calloc`/
+# `realloc`/`strdup` call in `src/` + `cli/` is swept by file, comment lines
+# excluded (a `//`- or `*`-prefixed line naming one of the four words is not
+# a call site), and the resulting FILE SET is compared against a pinned
+# manifest naming exactly which files the discipline's claim covers today.
+# A file gaining or losing its first/last raw allocation site is the event
+# this section exists to make loud.
+census_allocsites() {
+    local files
+    files="$(grep -rlE '\b(malloc|calloc|realloc|strdup)[[:space:]]*\(' \
+                 "$ROOT_DIR/src" "$ROOT_DIR/cli" --include='*.c' \
+             | LC_ALL=C sort \
+             | sed "s|^$ROOT_DIR/||")"
+
+    # THE PINNED MANIFEST. Re-derive by running this section's own grep
+    # (above) when a file's raw-allocation population changes — never edit
+    # this list to make a red run pass without re-reading why it moved.
+    local expected='cli/main.c
+src/core/arena.c
+src/core/compile.c
+src/core/sb.c
+src/gen/emit_dfa.c
+src/ir/dfa.c
+src/ir/nfa.c
+src/opt/minimize.c
+src/opt/scanedge.c
+src/parse/rxt_source.c'
+
+    if [ "$files" = "$expected" ]; then
+        local n
+        n="$(printf '%s\n' "$files" | wc -l | tr -d ' ')"
+        ok "[census] raw allocation sites live in exactly the $n pinned files: $(printf '%s' "$files" | tr '\n' ' ')"
+    else
+        bad "[census] the raw-allocation FILE SET moved — the discipline's own population changed and nothing named it. Expected:
+$expected
+Got:
+$files"
+    fi
+
+    # THE SITE COUNT PER FILE IS PRINTED, NEVER PINNED (K35's floor rule:
+    # a per-line count is the shape a refactor legitimately moves — an
+    # `if (!p) { ... }` restructured into a helper changes the line count
+    # with zero change to the population's SHAPE, which is what the file
+    # set above actually guards).
+    local f n
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        n="$(grep -cE '\b(malloc|calloc|realloc|strdup)[[:space:]]*\(' "$ROOT_DIR/$f")"
+        echo "  $f: $n site(s)"
+    done <<< "$files"
+}
+echo "== [REVW.U L8-F6(a)] Section 0 — the allocation-site census =="
+census_allocsites
+echo
 
 echo "== [K7] COMPILE-SIDE RESOURCE BOUNDS =="
 echo "   ceiling: peak tree RSS $K7_MEM, wall ${K7_SECS}s, CPU ${K7_CPU}s per compile"
@@ -764,6 +840,72 @@ else
     enomem_case  60000 '((a)|bc){0,4000}d'       # needs 112 MB (VM route + prefilter)
     enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
     enomem_case  60000 'a{8000}'                 # needs 140 MB
+fi
+
+echo
+
+# ---------------------------------------------------------------------------
+# Section 2b — [REVW.U L8-F6(b)] A DARWIN-VIABLE POSITIVE CONTROL for K7's
+# own promise ("pcrec is a library, and aborting kills the caller's process"
+# — src/core/CLAUDE.md): runs UNCONDITIONALLY on both platforms, never
+# `uname`-gated, because it needs no `ulimit -v` at all.
+#
+# Section 2 above is the ONLY positive control this discipline had, and it
+# has been SKIPPED on this dev box since the 2026-09-04 Mac move (F6's own
+# finding) — combined with K54 (`san` silently broken on darwin until
+# 2026-09-14), the whole memory-error tier was Linux-only, and F1
+# (Job.scr_test/scr_desc's own missing back-pointer, fix-now #1 of the
+# 2026-09-17 code review) shipped and lived unnoticed in exactly that
+# window. This section is the lever that closes it: `tests/core/
+# alloc_check.c`'s allocation-failure INJECTOR (`docs/dev/reviews/
+# lens_reports/lens5_unit_seams.md` R1) steers a chosen Nth
+# malloc/calloc/realloc/strdup call to return NULL — no address-space
+# limit, no platform dependency, works identically on darwin and Linux.
+#
+# SCOPED TO K7's OWN PROMISE, NOT THE WIDER ONE. `alloc_check.c`'s three
+# witnesses also carry K60 (docs/dev/known_issues.md, filed 2026-09-17,
+# NOT fixed): a compile can SUCCEED despite a forced allocation failure,
+# via an unrelated retry-ladder absorption mechanism. That is a real,
+# separate, already-filed finding and `make test` must not go red for a
+# known, disposed defect that is not this section's job — `make alloc`
+# (opt-in) is where it is tracked. Section 2b therefore checks ONLY for
+# the ABORT/SIGNAL outcome specifically (K7's own worst case, "the
+# process is killed"), reading the injector's own labelled output rather
+# than its overall pass/fail line.
+build_alloc_scratch() {
+    local scratch="$1"
+    if [ ! -f "$scratch/libpcrec.a" ]; then
+        # $CC (this script's own [OPT-4.1] REFCAP build's resolution, above)
+        # — the same "cc" this file already trusts to build pcrec's own
+        # sources correctly, not a second resolution.
+        if ! "$MAKE_BIN" -C "$ROOT_DIR" CC="$CC" BUILD_DIR="$scratch" \
+                CFLAGS="-O1 -g -include $ROOT_DIR/tests/core/alloc_inject.h" \
+                "$scratch/libpcrec.a" >"$scratch/build.log" 2>&1; then
+            return 1
+        fi
+    fi
+    return 0
+}
+MAKE_BIN="${MAKE:-make}"
+ALLOC_SCRATCH="$WORKDIR/build-alloc"
+mkdir -p "$ALLOC_SCRATCH"
+if ! build_alloc_scratch "$ALLOC_SCRATCH"; then
+    bad "[F6(b)] could not build the allocation-injected scratch library: see $ALLOC_SCRATCH/build.log"
+else
+    ALLOCBIN="$WORKDIR/f6b_alloc_check"
+    LIBPCREC="$ALLOC_SCRATCH/libpcrec.a"
+    . "$ROOT_DIR/tests/lib/unit_cc.sh"   # sets unit_build; LIBPCREC above must be set first (unit_cc.sh's own default only fires when unset)
+    if ! unit_build "$ALLOCBIN" "$ROOT_DIR/tests/core/alloc_check.c" 2>"$WORKDIR/f6b.build.log"; then
+        bad "[F6(b)] FAILED TO BUILD tests/core/alloc_check.c against the injected scratch library: see $WORKDIR/f6b.build.log"
+    else
+        ALLOCOUT="$WORKDIR/f6b_alloc_check.out"
+        "$ALLOCBIN" >"$ALLOCOUT" 2>&1
+        if grep -q 'KILLED THE PROCESS BY SIGNAL' "$ALLOCOUT"; then
+            bad "[F6(b)] the allocation-failure injector found an ABORT/SIGNAL (K7's worst case, live) — see $ALLOCOUT: $(grep 'KILLED THE PROCESS BY SIGNAL' "$ALLOCOUT")"
+        else
+            ok "[F6(b)] the allocation-failure injector's three witnesses: no forced allocation failure kills the process (K7's own promise holds) — darwin-viable, no ulimit needed. (K60's separate 'succeeded despite forced failure' finding is tracked in docs/dev/known_issues.md and make alloc, not this section.)"
+        fi
+    fi
 fi
 
 echo

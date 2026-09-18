@@ -8,7 +8,17 @@ could see.
 
 ## Files
 
-- **run_resource_tests.sh** — the [M4.7b] K7 pin, in three sections:
+- **run_resource_tests.sh** — the [M4.7b] K7 pin, now FIVE sections:
+
+  0. **[REVW.U L8-F6(a)] The allocation-site census.** Every raw
+     `malloc`/`calloc`/`realloc`/`strdup` call in `src/`+`cli/`, swept by
+     grep and compared as a FILE SET against a pinned manifest — replacing
+     the header's own hand-written six-file claim, which the code review
+     found stale (`src/opt/scanedge.c` and `src/gen/emit_dfa.c` both
+     gained raw allocations since it was written, unnoticed). Per-file
+     site counts are PRINTED, never pinned (K35: a count is a shape a
+     legitimate refactor moves; the FILE SET is the population this
+     discipline's own claim is about).
 
   1. **Bounded outcome.** Eleven large-bounded-repeat shapes (K7's own repro
      list plus multi-byte, class and choice-point bodies) each compile or draw
@@ -28,6 +38,33 @@ could see.
      the budget long before any malloc fails, so section 1 cannot reach the
      allocator paths at all. Revert `ctx_nomem` to `abort()` and section 2
      fails while section 1 stays green.
+
+  2b. **[REVW.U L8-F6(b)] A darwin-viable positive control, unconditional.**
+      Section 2's `ulimit -v` approach has been the DISCIPLINE'S ONLY
+      positive control since [M4.7b], and it has been SKIPPED on this dev
+      box since the 2026-09-04 Mac move — F1 (Job.scr_test/scr_desc's
+      missing `.cx` back-pointer, fix-now #1 of the 2026-09-17 code
+      review) shipped and lived unnoticed in exactly that window. Section
+      2b runs on BOTH platforms: `tests/core/alloc_check.c`'s allocation-
+      failure INJECTOR (`tests/core/CLAUDE.md`) steers a chosen Nth
+      allocation to fail — no `ulimit`, no platform dependency — and this
+      section asserts K7's own promise specifically (no forced allocation
+      failure kills the process). It builds its OWN scratch injected
+      library under `$WORKDIR/build-alloc/` (never `build/`, never the
+      top-level `build-alloc/` — `make alloc`'s own tree) using this
+      script's already-resolved `$CC`.
+
+      **Deliberately scoped narrower than `make alloc`'s own verdict.**
+      The injector's three witnesses also surface K60
+      (docs/dev/known_issues.md, filed 2026-09-17, not fixed): a compile
+      can SUCCEED despite a forced allocation failure, via an unrelated
+      retry-ladder absorption mechanism. That is real and already
+      tracked in the opt-in `make alloc` target; `make test` must not go
+      red for a known, disposed defect that is not this section's job.
+      Section 2b greps the injector's own labelled output for
+      `KILLED THE PROCESS BY SIGNAL` specifically (K7's abort()-class
+      outcome) and ignores the "succeeded anyway"/"empty message"
+      categories.
 
   3. **The refusal's identity.** `a{0,65535}` must refuse inside the existing
      "too complex for the DFA engine" family AND name the subset construction,
@@ -160,3 +197,28 @@ THIRD cell rather than folded into the pair above, because it is testing a
 DIFFERENT population from either rung cell: no cap is ever hit here, so the
 one thing distinguishing this row from an ordinary `"selected"` compile is
 the decline itself.
+
+## [REVW.U L8-F6(c)] the discipline's first sabotage rows (2026-09-17)
+
+The `ctx_nomem`/`abort()` discipline had ZERO sabotage rows before this —
+`arena.c`, `sb.c`, and `compile.c`'s own attachment block were all
+untouched by `tests/mech/sabotages/` (the code review's F6 finding).
+Three rows now, all in mech arm `resource` (this file), each verified
+DETECTED in both directions via `bash tests/mech/run_sabotage_matrix.sh
+<id>` against the committed tree:
+
+- **S255** — `src/core/arena.c`: `arena_alloc`'s `ctx_nomem` route
+  neutered (`if (0)` instead of `if (a->cx)`), so every arena allocation
+  failure aborts, on every compile.
+- **S256** — `src/core/sb.c`: `sb_grow`'s `ctx_nomem` route neutered the
+  same way, so every StrBuf realloc failure aborts — every attached
+  buffer, not only the two F1 missed.
+- **S257** — `src/core/compile.c`: `compile_driver`'s attachment block
+  drops `csb`/`hsb`'s `.cx` back-pointer entirely — F1's own shape
+  (fix-now #1, `23eb3d34`), reproduced on the PRIMARY code-string buffer
+  rather than `scr_test`/`scr_desc`.
+
+Each is caught by Section 2 (Linux, `ulimit -v`) AND Section 2b (both
+platforms, the allocation-failure injector) — the two are independent
+instruments over the same population, and a row detected by only one
+would be worth a note about which.
