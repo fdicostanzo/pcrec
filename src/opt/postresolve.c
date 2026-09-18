@@ -69,57 +69,22 @@
 
 /* ---- the final-tree walk ------------------------------------------------
  *
- * ITERATIVE ON `A_CAT`/`A_ALT` SPINES (D10/DD-10/K20, and src/ir/nfa.c's R-2
- * hardening): a flat concatenation is as long as the PATTERN, not as deep as
- * its nesting, and this project has segfaulted its own compiler on a
- * 20,000-character literal once already.
+ * Runs through `pcrec_ast_visit` (core/internal.h) — the generic pre-order
+ * walk this file's own `pr_walk` and callgraph.c's `cg_walk` used to
+ * duplicate byte for byte, merged at [L1-X2] (2026-09-17 code review): both
+ * followed identical edges. `revdet.c`/`possessify.c`/`select_engine.c`/
+ * `altcls.c` each still carry their OWN descent, because what varies
+ * between THEM is precisely which edges they follow and what they thread
+ * (rebuild, thread FOLLOW, reverse) — that is the house style this pair was
+ * not an instance of.
  *
- * IT DOES NOT FOLLOW `u.call.body`, and here that is load-bearing twice over.
- * Following it is design §4.4's non-terminating compile (`(a(?1))` hangs the
- * COMPILER); and it is also redundant, because a lookbehind written inside a
- * called group is visited at its own LEXICAL position by this same walk, and
- * its width table is a property of the node rather than of the path that
- * reached it. Descending the edge would visit some nodes twice and never
- * terminate on the recursive ones.
- *
- * IT IS A SECOND WALKER AND THAT IS THE HOUSE STYLE, not drift: `revdet.c`,
- * `possessify.c`, `select_engine.c`, `altcls.c` and `callgraph.c` each carry
- * their own descent, because what varies between them is precisely which
- * edges they follow and what they thread. What must NOT be duplicated is a
- * RULE, and no rule lives here. */
-typedef void (*PrVisit)(void *ud, const Ast *a);
-
-static void pr_walk(const Ast *a, PrVisit f, void *ud)
-{
-    for (;;) {
-        f(ud, a);
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-        /* THE BACK EDGE STOPS HERE — see this walk's header. */
-        case A_CALL:
-            return;
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            const Ast *t = a;
-            for (; t->k == k; t = t->l) pr_walk(t->r, f, ud);
-            a = t;
-            continue;
-        }
-        }
-        /* No `default:` — mrl.c:18-24's rule. A node kind added after this
-         * file is written must be a COMPILE ERROR here, because "can this
-         * construct CONTAIN a recorded post-resolution check" is a question
-         * only the author of the new kind can answer, and inheriting "no" is
-         * the silent wrong answer: it would skip a recorded check and let a
-         * pending lookbehind reach the emitter. */
-        return;
-    }
-}
+ * IT DOES NOT FOLLOW `u.call.body`, and here that is load-bearing twice
+ * over. Following it is design §4.4's non-terminating compile (`(a(?1))`
+ * hangs the COMPILER); and it is also redundant, because a lookbehind
+ * written inside a called group is visited at its own LEXICAL position by
+ * this same walk, and its width table is a property of the node rather
+ * than of the path that reached it. Descending the edge would visit some
+ * nodes twice and never terminate on the recursive ones. */
 
 /* ---- customer 1: module `lookaround`'s §2.5 width rule ------------------- */
 
@@ -160,13 +125,13 @@ void pcrec_postresolve(Ctx *cx, Ast *root)
      * before that return, so a pattern compiled before this pass existed is
      * compiled byte-identically after it. */
     PrPend p = { 0, NULL };
-    pr_walk(root, pr_count, &p);
+    pcrec_ast_visit(root, pr_count, &p);
     if (p.n == 0) return;
 
     const int want = p.n;
     p.at = arena_alloc(&cx->arena, (size_t)want * sizeof *p.at);
     p.n = 0;
-    pr_walk(root, pr_collect, &p);
+    pcrec_ast_visit(root, pr_collect, &p);
     if (p.n != want)
         /* UNREACHABLE: the two walks visit the same tree with the same
          * predicate. Loud rather than silent because the only way here is a

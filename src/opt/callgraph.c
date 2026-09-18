@@ -108,43 +108,15 @@ struct CallGraph {
 
 /* ---- the whole-tree collection walks ------------------------------------
  *
- * ALL OF THEM ARE ITERATIVE ON `A_CAT`/`A_ALT` SPINES (D10/DD-10/K20, and
- * src/ir/nfa.c's R-2 hardening for the third time): a flat concatenation is as
- * long as the PATTERN, not as deep as its nesting, and this project has
- * segfaulted its own compiler on a 20,000-character literal once already.
- * NONE of them follows `u.call.body` — design §4.4's rule, and here it is not
- * merely redundant but load-bearing, because these walks run BEFORE the bind
- * and `.body` is NULL. */
-
-typedef void (*CgVisit)(void *ud, const Ast *a);
-
-static void cg_walk(const Ast *a, CgVisit f, void *ud)
-{
-    for (;;) {
-        f(ud, a);
-        switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
-        case A_BREF:
-        /* THE BACK EDGE STOPS HERE. An `A_CALL` has no `l` and no `r`; its
-         * callee is `u.call.body`, and following it is design §4.4's
-         * non-terminating compile. */
-        case A_CALL:
-            return;
-        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
-            a = a->l;
-            continue;
-        case A_CAT: case A_ALT: {
-            const AKind k = a->k;
-            const Ast *t = a;
-            for (; t->k == k; t = t->l) cg_walk(t->r, f, ud);
-            a = t;
-            continue;
-        }
-        }
-        return;
-    }
-}
+ * All of them run through `pcrec_ast_visit` (core/internal.h) — the generic
+ * pre-order walk this file's `cg_walk` and postresolve.c's `pr_walk` used to
+ * duplicate byte for byte, merged at [L1-X2] (2026-09-17 code review): both
+ * follow identical edges, where `revdet.c`/`possessify.c`/`select_engine.c`/
+ * `altcls.c` each keep their OWN descent because theirs genuinely differ
+ * (rebuild, thread FOLLOW, reverse). It is ITERATIVE on `A_CAT`/`A_ALT`
+ * spines (D10/DD-10/K20) and does NOT follow `u.call.body` — design §4.4's
+ * rule, and here it is not merely redundant but load-bearing, because these
+ * walks run BEFORE the bind and `.body` is NULL. */
 
 /* Pass 1: how many `A_CALL` nodes, and which targets. */
 typedef struct { int ncap; bool *named; int ncall; } CgScan;
@@ -206,8 +178,9 @@ static void cg_edges(void *ud, const Ast *a)
 }
 
 /* [DD-14 wave G] AST NODES IN A REGION, for §6.3's size budget. Counts what
- * `cg_walk` visits, which is exactly the subtree the emitter will walk for
- * this region and STOPS AT `A_CALL` — a nested call's own expansion is added
+ * `pcrec_ast_visit` visits, which is exactly the subtree the emitter will
+ * walk for this region and STOPS AT `A_CALL` — a nested call's own expansion
+ * is added
  * by `cg_eligibility`'s recurrence, not by this walk, because following
  * `.body` here is design §4.4's non-terminating descent. */
 static void cg_count(void *ud, const Ast *a)
@@ -499,7 +472,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     bool *done = arena_alloc(&cx->arena, nn * sizeof *done);
     for (int i = 0; i < n; i++) {
         nodes[i] = 0;
-        cg_walk(cg->body[i], cg_count, &nodes[i]);
+        pcrec_ast_visit(cg->body[i], cg_count, &nodes[i]);
         done[i] = pcrec_callgraph_reaches(cg, i, i);   /* cyclic: exp stays INF */
     }
 
@@ -544,7 +517,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     for (int i = 0; i < n; i++) lex[i] = 0;
     { CgEdges e = { cg, arena_alloc(&cx->arena, nn), lex };
       memset(e.row, 0, nn);
-      cg_walk(root, cg_edges, &e); }
+      pcrec_ast_visit(root, cg_edges, &e); }
 
     for (;;) {
         long long total = 0;
@@ -565,7 +538,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         cg->splice[worst] = false;
     }
 
-    cg_walk(root, cg_publish_link, cg);
+    pcrec_ast_visit(root, cg_publish_link, cg);
 }
 
 /* [DD-13b.W1.3] see the call site in `pcrec_callgraph_build` for why this is
@@ -672,7 +645,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     bool *named = arena_alloc(&cx->arena, (size_t)(ncap + 1) * sizeof *named);
     memset(named, 0, (size_t)(ncap + 1) * sizeof *named);
     CgScan sc = { ncap, named, 0 };
-    cg_walk(root, cg_scan, &sc);
+    pcrec_ast_visit(root, cg_scan, &sc);
     if (sc.ncall == 0) return;
 
     struct CallGraph *cg = arena_alloc(&cx->arena, sizeof *cg);
@@ -690,9 +663,9 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                                     (size_t)(ncap + 1) * sizeof *groot);
     memset(groot, 0, (size_t)(ncap + 1) * sizeof *groot);
     groot[0] = root;
-    { CgRoots r = { ncap, groot }; cg_walk(root, cg_roots, &r); }
+    { CgRoots r = { ncap, groot }; pcrec_ast_visit(root, cg_roots, &r); }
 
-    { CgBind b = { cx, groot, ncap }; cg_walk(root, cg_bind, &b); }
+    { CgBind b = { cx, groot, ncap }; pcrec_ast_visit(root, cg_bind, &b); }
     for (int i = 0; i < cg->ntarget; i++) cg->body[i] = groot[cg->target[i]];
 
     /* THE EDGES, then their TRANSITIVE CLOSURE by Warshall. The graph has one
@@ -718,7 +691,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     for (int i = 0; i < n; i++) {
         CgEdges e = { cg, cg->reach + (size_t)i * nn,
                           cg->site  + (size_t)i * nn };
-        cg_walk(cg->body[i], cg_edges, &e);
+        pcrec_ast_visit(cg->body[i], cg_edges, &e);
     }
     for (int k = 0; k < n; k++)
         for (int i = 0; i < n; i++)
@@ -770,7 +743,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * site and a shared region for its linkage sites) is now reachable;
      * `rgn_emit[i]` must stay TRUE for those linkage sites, and `vm_call`'s
      * "no emitted region" refusal is the loud detector if it ever does not. */
-    { CgDeliver d = { cx, cg }; cg_walk(root, cg_force_deliver_splice, &d); }
+    { CgDeliver d = { cx, cg }; pcrec_ast_visit(root, cg_force_deliver_splice, &d); }
 
     /* ---- THE `minw` FIXPOINT (design §4.4b) -----------------------------
      *
@@ -810,7 +783,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
         CgMinw m = { cg, val };
         for (int round = 0; round <= n; round++) {
             bool changed = false;
-            cg_walk(root, cg_minw_publish, &m);
+            pcrec_ast_visit(root, cg_minw_publish, &m);
             for (int i = 0; i < n; i++) {
                 long long nv = pcrec_minw(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }
@@ -820,7 +793,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                 ctx_fail(cx, 0, "internal error: the subroutine minimum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
-        cg_walk(root, cg_minw_publish, &m);
+        pcrec_ast_visit(root, cg_minw_publish, &m);
     }
 
     /* ---- THE `cwmin` FIXPOINT ([M5.0] stage 2) — see cg_cwmin_publish --- */
@@ -830,7 +803,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
         CgCwmin m = { cg, val };
         for (int round = 0; round <= n; round++) {
             bool changed = false;
-            cg_walk(root, cg_cwmin_publish, &m);
+            pcrec_ast_visit(root, cg_cwmin_publish, &m);
             for (int i = 0; i < n; i++) {
                 long long nv = pcrec_cwmin(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }
@@ -841,7 +814,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                                 "character-width fixpoint did not settle in "
                                 "%d rounds", n);
         }
-        cg_walk(root, cg_cwmin_publish, &m);
+        pcrec_ast_visit(root, cg_cwmin_publish, &m);
     }
 
     /* ---- THE `cwmax` FIXPOINT ([DD-14.LB]) — see cg_cwmax_publish above - */
@@ -851,7 +824,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
         CgCwmax m = { cg, val };
         for (int round = 0; round <= n; round++) {
             bool changed = false;
-            cg_walk(root, cg_cwmax_publish, &m);
+            pcrec_ast_visit(root, cg_cwmax_publish, &m);
             for (int i = 0; i < n; i++) {
                 long long nv = pcrec_cwmax(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }
@@ -861,7 +834,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                 ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
-        cg_walk(root, cg_cwmax_publish, &m);
+        pcrec_ast_visit(root, cg_cwmax_publish, &m);
     }
 }
 

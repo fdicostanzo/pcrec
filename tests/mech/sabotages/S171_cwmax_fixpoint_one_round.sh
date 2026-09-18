@@ -33,13 +33,13 @@ SAB_HARNESS_TARGET="tests/recursion/inlookaround.rxt"
 SAB_DESC="the call graph's cwmax iteration stops after one round, so a callee that calls another callee keeps its initial PCREC_W_UNBOUNDED and a lookbehind over a two-hop acyclic chain is refused"
 SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): exactly ONE block fails in tests/recursion/inlookaround.rxt -- the two-hop acyclic chain, as a pattern-compile failure. The one-hop cells settle in round 0 and are unmoved, which is precisely why a single-pass cwmax would have looked correct without this cell. MEASURED at [DD-14.LB], FINAL corpus: harness corpus:2fail/48pass, DETECTED -- the two-hop chain block's two cases and NOTHING ELSE out of 50, which is the row's whole claim: every one-hop cell settles in round 0 and a single-pass cwmax looks correct on all of them."
 SAB_COUNT=1
-SAB_BEFORE='            cg_walk(root, cg_cwmax_publish, &m);
+SAB_BEFORE='            pcrec_ast_visit(root, cg_cwmax_publish, &m);
             for (int i = 0; i < n; i++) {
                 long long nv = pcrec_cwmax(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }
             }
             if (!changed) break;'
-SAB_AFTER='            cg_walk(root, cg_cwmax_publish, &m);
+SAB_AFTER='            pcrec_ast_visit(root, cg_cwmax_publish, &m);
             for (int i = 0; i < n; i++) {
                 long long nv = pcrec_cwmax(cg->body[i]);
                 if (nv < val[i]) { val[i] = nv; changed = true; }

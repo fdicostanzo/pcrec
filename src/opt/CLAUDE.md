@@ -243,9 +243,14 @@ construction (src/ir) and emission (src/gen).
   name — so losing this pass is an internal error on the first call-bearing
   lookbehind rather than a back-step of width zero. Encoding "pending" in a new
   boolean instead would have made the same loss a WRONG SPAN, and on a negative
-  lookbehind a FALSE MATCH. Its walk is its own (the house style — `revdet.c`,
-  `possessify.c`, `select_engine.c`, `altcls.c` and `callgraph.c` each carry
-  one, because what varies is which edges they follow) and it does not follow
+  lookbehind a FALSE MATCH. Its walk runs through `pcrec_ast_visit`
+  (core/internal.h, [L1-X2], 2026-09-17 code review), the generic pre-order
+  walk this file's own descent and `callgraph.c`'s used to duplicate byte
+  for byte — the house style ("what varies is which edges they follow")
+  holds for `revdet.c`/`possessify.c`/`select_engine.c`/`altcls.c`, which
+  each still carry their OWN descent because theirs genuinely rebuild,
+  thread FOLLOW, or reverse, and did not hold for this pair, whose edges
+  were identical. It does not follow
   `u.call.body`, which is both design §4.4's non-terminating compile and
   redundant, since a lookbehind inside a called group is visited at its own
   lexical position anyway. Sabotage: S169 (never called; DETECTED,

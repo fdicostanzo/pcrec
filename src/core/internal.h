@@ -3701,6 +3701,60 @@ static inline unsigned pcrec_ast_engines(const Ast *a)
     return a->reg ? a->reg->engines : (ENGM_DFA | ENGM_VM);
 }
 
+/* [L1-X2, 2026-09-17 code review] THE GENERIC PRE-ORDER WHOLE-TREE VISIT —
+ * the ONE shape shared by every walk that visits every node with no rewrite
+ * and no thread. `src/opt/callgraph.c`'s `cg_walk` and
+ * `src/opt/postresolve.c`'s `pr_walk` were this same function twice: same
+ * kinds stop, same kinds descend through `->l`, same spine loop, same
+ * pre-order `f(ud, a)` call. `src/opt/CLAUDE.md` used to justify the
+ * duplication as house style ("what varies is which edges they follow") —
+ * true of `revdet.c`/`possessify.c`/`select_engine.c`/`altcls.c`, which
+ * rebuild, thread FOLLOW, or reverse, and false of this pair, which follow
+ * identical edges. Those four keep their own descent; this is the other
+ * one, merged.
+ *
+ * ITERATIVE on `A_CAT`/`A_ALT` SPINES (D10/DD-10/K20): a flat concatenation
+ * is as long as the PATTERN, not as deep as its nesting, and this project
+ * has segfaulted its own compiler on a 20,000-character literal for want of
+ * exactly this discipline. Recursion is bounded by NESTING depth only.
+ *
+ * DOES NOT FOLLOW `u.call.body`, the AST's one back edge — design §4.4's
+ * rule: following it is a non-terminating compile on `(a(?1))`, and it is
+ * also redundant, since a callee is visited at its own LEXICAL position by
+ * this same walk regardless. Both callers of this function run BEFORE the
+ * call graph binds `.body`, when it is still NULL, so the decline is
+ * load-bearing rather than merely correct. */
+typedef void (*AstVisit)(void *ud, const Ast *a);
+
+static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
+{
+    for (;;) {
+        f(ud, a);
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+        /* THE BACK EDGE STOPS HERE — see this function's header. */
+        case A_CALL:
+            return;
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            const Ast *t = a;
+            for (; t->k == k; t = t->l) pcrec_ast_visit(t->r, f, ud);
+            a = t;
+            continue;
+        }
+        }
+        /* No `default:` — mrl.c:18-24's rule: a node kind added after this
+         * function was written must be a compile error here, not a silent
+         * skip. */
+        return;
+    }
+}
+
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
 /* [DD-11.1] the CROSS-KIND syntax lookup a `DEFK_ROW` chain resolves through

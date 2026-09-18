@@ -108,10 +108,15 @@ descends a spine ITERATIVELY and recurses only into items hanging off it (a
 20,000-character pattern segfaulted pcrec once for want of this — K20, D10/DD-10).
 A whole-tree walk must NOT follow `Ast.u.call.body`, the AST's first back edge,
 and each `A_CALL` arm says why declining it is exact. `src/opt/atomic.c:22-36` is
-the canonical statement — cite it, copy it. **[wave 2 / fix-now #10]** `pcrec_ast_visit`
-(the merged `cg_walk`/`pr_walk` traversal, L1-X2 then L1-X1) will become the one
-home; 75 hand-written walk sites exist today, so until it lands you are copying,
-and the copy carries the two rules above verbatim.
+the canonical statement — cite it, copy it. `pcrec_ast_visit` (`core/internal.h`,
+landed FIX-NOW #10/L1-X2, 2026-09-17) is the ONE home for the generic
+pre-order whole-tree visit with no rewrite and no thread — use it rather
+than writing a new copy. **[wave 2 / L1-X1]** the other 75 hand-written walk
+sites (each with its OWN edge policy — a rewrite, a threaded accumulator, a
+reversal) stay separate walks by design; only a walk that is genuinely this
+same generic shape merges into `pcrec_ast_visit`, and until L1-X1's staged
+sweep reaches a given site you are still copying the two rules above
+verbatim there.
 
 **2.5 Ownership.** The compile's `Ctx` owns the arena; the arena owns everything
 allocated from it; the caller owns nothing you did not hand back through the
