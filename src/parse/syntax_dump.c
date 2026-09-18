@@ -58,15 +58,22 @@ unsigned pcrec_flavour_by_name(const char *name)
     return 0;
 }
 
+/* The set bits' names, `|`-joined. SELECT then JOIN: the selection is this
+ * dump's (which bits are set, in table order) and the join is the text
+ * layer's, so the separator policy is not re-decided per mask table. The
+ * array is sized from the LARGEST mask table in this file — a compile-time
+ * fact, asserted below, never a guessed margin. */
+#define MASK_MAX 8
+_Static_assert(NELEMS(flavour_names) <= MASK_MAX, "MASK_MAX below flavour_names");
+_Static_assert(NELEMS(engine_names)  <= MASK_MAX, "MASK_MAX below engine_names");
+_Static_assert(NELEMS(flag_names)    <= MASK_MAX, "MASK_MAX below flag_names");
 static void put_mask(StrBuf *sb, unsigned mask, const MaskName *t, size_t n)
 {
-    bool first = true;
-    for (size_t i = 0; i < n; i++) {
-        if (!(mask & t[i].bit)) continue;
-        if (!first) sb_putc(sb, '|');
-        sb_puts(sb, t[i].name);
-        first = false;
-    }
+    const char *sel[MASK_MAX];
+    size_t k = 0;
+    for (size_t i = 0; i < n && k < MASK_MAX; i++)
+        if (mask & t[i].bit) sel[k++] = t[i].name;
+    sb_join(sb, "|", sel, k);
 }
 
 static const char *kind_name(RegKind k)
@@ -138,7 +145,7 @@ static void put_selector(StrBuf *sb, int sel)
     else                                sb_printf(sb, "\\x%02x", sel & 0xff);
 }
 
-static void put_str(StrBuf *sb, const char *s) { if (s) sb_puts(sb, s); }
+
 
 /* The expected diagnostic TEXT for a row, or nothing when the construct
  * compiles. This is the column SR-4 needs and the reason the dump is worth
@@ -151,7 +158,7 @@ static void put_str(StrBuf *sb, const char *s) { if (s) sb_puts(sb, s); }
  * fixed text verbatim. */
 static void put_expect(StrBuf *sb, const RegRow *r)
 {
-    if (r->diag == RD_FIXED)      put_str(sb, r->msg);
+    if (r->diag == RD_FIXED)      sb_text(sb, r->msg);
     /* K14: a ROADMAP_NEVER row must not promise its module. The substring is
      * the template-free core both doorway templates share. */
     else if (r->status == RS_MODULE && r->roadmap == ROADMAP_NEVER)
@@ -207,8 +214,8 @@ char *pcrec_syntax_tsv(unsigned flavours)
 
             sb_puts(&sb, kind_name(r->kind));           sb_putc(&sb, '\t');
             put_selector(&sb, r->sel);                  sb_putc(&sb, '\t');
-            put_str(&sb, r->syntax);                    sb_putc(&sb, '\t');
-            put_str(&sb, r->module);                    sb_putc(&sb, '\t');
+            sb_text(&sb, r->syntax);                    sb_putc(&sb, '\t');
+            sb_text(&sb, r->module);                    sb_putc(&sb, '\t');
             sb_printf(&sb, "0x%04x", r->feature);       sb_putc(&sb, '\t');
             put_mask(&sb, r->flavours, flavour_names, NELEMS(flavour_names));
             sb_putc(&sb, '\t');
@@ -219,7 +226,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
             put_mask(&sb, r->flags, flag_names, NELEMS(flag_names));
             sb_putc(&sb, '\t');
             put_expect(&sb, r);                         sb_putc(&sb, '\t');
-            put_str(&sb, r->note);                      sb_putc(&sb, '\t');
+            sb_text(&sb, r->note);                      sb_putc(&sb, '\t');
             /* 13th column, appended 2026-08-11 (MOD-0.1/K14) so existing
              * field indices survive: the ROADMAP disposition (design
              * Â§17.2). `-` = the question does not arise (base rows). */
@@ -239,7 +246,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * tests/spec_mod0/check04. EMPTY — not "-" — on the 56 group/verb
              * rows: the construct cannot reach a class position, so there is
              * no fact to print (the header's "Empty field = none" rule). */
-            put_str(&sb, r->class_expect);
+            sb_text(&sb, r->class_expect);
             sb_putc(&sb, '\t');
             /* 16th column (D65, 2026-08-21): the built-status derivation —
              * see pcrec_construct_built_status's own comment. PCREC_BUILT_
@@ -260,7 +267,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * for the reason the 13th, 15th and 16th columns were: consumers
              * key on field index, and [SR-11]'s table contract resolves by
              * NAME precisely so an appended column costs them nothing. */
-            put_str(&sb, r->family);
+            sb_text(&sb, r->family);
             sb_putc(&sb, '\n');
         }
     }
@@ -270,7 +277,8 @@ char *pcrec_syntax_tsv(unsigned flavours)
 /* `--list-definitions` — [DD-11.2], the FIFTH registry surface (D85,
  * docs/design/definitions_table.md §5). Walks the SAME `RegRow`s
  * `pcrec_syntax_tsv` above prints, through the SAME `kind_name`/
- * `put_selector`/`put_str` helpers, so `kind`/`selector`/`syntax` are
+ * `put_selector` helper and the same `sb_text` field escape, so
+ * `kind`/`selector`/`syntax` are
  * guaranteed to join the two dumps rather than merely happening to agree —
  * "the same three columns... so a reader can join the two dumps" is the
  * note's own requirement, discharged by construction rather than by two
@@ -349,7 +357,7 @@ char *pcrec_definitions_tsv(unsigned flavours)
                 order++;
                 sb_puts(&sb, kind_name(r->kind));      sb_putc(&sb, '\t');
                 put_selector(&sb, r->sel);              sb_putc(&sb, '\t');
-                put_str(&sb, r->syntax);                sb_putc(&sb, '\t');
+                sb_text(&sb, r->syntax);                sb_putc(&sb, '\t');
                 sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
                 sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
                 /* [DD-11.1]/[DD-11.4b]/[r43-second-round] five DefKinds
@@ -364,15 +372,15 @@ char *pcrec_definitions_tsv(unsigned flavours)
                  * never the target's resolved text printed here a second
                  * time). */
                 if (d->kind == DEF_IDENTITY)
-                    put_str(&sb, r->syntax);
+                    sb_text(&sb, r->syntax);
                 else if (d->kind == DEFK_ROW) {
                     sb_puts(&sb, "= ");
-                    put_str(&sb, d->str);
+                    sb_text(&sb, d->str);
                 } else if (d->operand) {
                     sb_printf(&sb, "[[:%s:]] \xe2\x89\xa1 %s",
                               d->operand, d->str);
                 } else
-                    put_str(&sb, d->str);
+                    sb_text(&sb, d->str);
                 sb_putc(&sb, '\t');
                 /* `applies` comes FROM THE KIND, never inferred (the
                  * manager's identity ruling) — DEF_IDENTITY is the only
@@ -527,7 +535,7 @@ char *pcrec_syntax_families(void)
                     const char *k3 = r2[j].family ? r2[j].family : r2[j].syntax;
                     if (!k3 || strcmp(k3, key) != 0) continue;
                     if (nmem) sb_putc(&mem, ' ');
-                    put_str(&mem, r2[j].syntax);
+                    sb_text(&mem, r2[j].syntax);
                     nmem++;
                     PcrecBuiltStatus bs = pcrec_construct_built_status(&r2[j]);
                     if (bs == PCREC_BUILT_YES) nbuilt++;
@@ -535,8 +543,8 @@ char *pcrec_syntax_families(void)
                 }
             }
 
-            put_str(&sb, key);                          sb_putc(&sb, '\t');
-            put_str(&sb, r->module);                    sb_putc(&sb, '\t');
+            sb_text(&sb, key);                          sb_putc(&sb, '\t');
+            sb_text(&sb, r->module);                    sb_putc(&sb, '\t');
             put_mask(&sb, r->engines, engine_names, NELEMS(engine_names));
             sb_putc(&sb, '\t');
             sb_puts(&sb, status_name(r->status));       sb_putc(&sb, '\t');
@@ -1171,7 +1179,8 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * lines to count rows, and a header key must not add one.
  *
  * CONTROL BYTES IN A VALUE ARE ESCAPED (R20/MOD07-8). Every value that can
- * carry bytes from the QUERY goes through `put_text`, which renders anything
+ * carry bytes from the QUERY goes through `sb_text`/`sb_textn` (core/sb.c,
+ * the text layer's FRAME escape), which renders anything
  * below 0x20 and 0x7f as `\xHH`. Without it the grammar had no escaping at
  * all, and a query containing a newline injected a synthetic header line that
  * `explain_field` — the test helper that parses this very format — then read
@@ -1189,17 +1198,6 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * FORBID these bytes rather than escape them (this file's own header says
  * why). Bytes >= 0x80 pass through untouched: they are not control bytes, and
  * R20/MOD07-B records that they are unreachable through argv anyway. */
-
-/* Render `n` bytes with control bytes made visible. See the format grammar
- * above for why `\` is deliberately not escaped. */
-static void put_text(StrBuf *sb, const char *s, size_t n)
-{
-    for (size_t i = 0; i < n; i++) {
-        unsigned char c = (unsigned char)s[i];
-        if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
-        else                       sb_putc(sb, (char)c);
-    }
-}
 
 /* Which module does a rendered answer PROMISE, if any? Derived in the CONSUMER
  * by looking for the `module 'NAME'` shape every doorway renders its promise
@@ -1264,7 +1262,7 @@ static void put_answer(StrBuf *sb, const Live *L)
      * text ("unknown escape \%c"), so this value carries QUERY bytes just as
      * the `query` echo does. Escaping only the echo would have left the same
      * injection reachable one line down. */
-    case EXT_REFUSAL:  put_text(sb, L->r.msg, strlen(L->r.msg)); break;
+    case EXT_REFUSAL:  sb_text(sb, L->r.msg); break;
     case EXT_NOT_MINE: sb_puts(sb, "declines — no construct at this doorway"); break;
     case EXT_SCALAR:   sb_printf(sb, "produces one code point (0x%02X)",
                                  (unsigned)L->r.scalar); break;
@@ -1471,7 +1469,7 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
 
     /* the NAME is query text; escaped for the same reason (R20/MOD07-8) */
     sb_puts(sb, "\nverb name ");
-    put_text(sb, query + nstart, namelen);
+    sb_textn(sb, query + nstart, namelen);
     sb_putc(sb, '\n');
     sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
@@ -1735,7 +1733,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
 
     /* the two ECHOES of query text, escaped (R20/MOD07-8) */
     sb_puts(&sb, "query          ");
-    put_text(&sb, query, qlen);
+    sb_textn(&sb, query, qlen);
     sb_putc(&sb, '\n');
     if (q.routed) {
         sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
@@ -1746,7 +1744,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
         else {
             char selb = (char)q.d.sel;
             sb_puts(&sb, "  selector '");
-            put_text(&sb, &selb, 1);
+            sb_textn(&sb, &selb, 1);
             sb_putc(&sb, '\'');
         }
         sb_putc(&sb, '\n');
