@@ -950,6 +950,25 @@ static void vm_slot_expr(Vm *v, int slot, char *buf, size_t bufsz)
         snprintf(buf, bufsz, "%d", slot);
 }
 
+/* [EP2-E1] The slot as an emitted LVALUE — `vm_slot_expr`'s sibling, one
+ * bracket out: `slot_values[<the expression above>]`. Every site that parks,
+ * delivers or restores a slot's VALUE wants this, and before this helper four
+ * of them re-derived `<PREFIX>_` + `vm_slot_name` by hand into a pair of
+ * caller-sized buffers — exactly the three-spellings-of-one-convention defect
+ * `vm_slot_expr`'s own header names.
+ *
+ * Returns ARENA-OWNED text (`vm_rolef`'s mechanism), so no caller sizes a
+ * buffer and the string outlives the call for as long as the compile does.
+ * Reads `v->up` and the slot layout; writes nothing but the arena. */
+static const char *vm_slot_ref(Vm *v, int slot)
+{
+    /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, never a hand-picked literal —
+     * `vm_slot_expr`'s content reaches prefix + "_" + a 47-byte slot name. */
+    char ex[PCREC_MAX_EMIT_NAME_LEN];
+    vm_slot_expr(v, slot, ex, sizeof ex);
+    return vm_rolef(v, "slot_values[%s]", ex);
+}
+
 static int vm_slot_ctr(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -6863,18 +6882,7 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
                    a->u.call.target));
     v->ncall++;
     for (int j = 0; j < a->u.call.nsave; j++) {
-        /* Sized from what it holds — `up` is at most 80 bytes and
-         * `vm_slot_name` writes at most 48 — for the reason `vm_slot_expr`
-         * states one function over: a silently TRUNCATED slot name is an
-         * artifact that names the wrong cell, and this file has already been
-         * bitten once by a too-small snprintf buffer. */
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
-        vm_set(v, a->u.call.save[j], val,
+        vm_set(v, a->u.call.save[j], vm_slot_ref(v, a->u.call.save[j]),
                "park this activation's value on the trail (a trailed SELF-write)");
     }
     vm_goto(v, v->rgn_lbl[idx]);
@@ -6992,13 +7000,7 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
                      ? "splice the WHOLE PATTERN inline (anchors included)"
                      : "splice a capture group's pattern inline");
     for (int j = 0; j < a->u.call.nsave; j++) {
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
-        vm_set(v, vm_slot_splice(v, base + j), val,
+        vm_set(v, vm_slot_splice(v, base + j), vm_slot_ref(v, a->u.call.save[j]),
                "park this site's caller value (a trailed write into this "
                "splice's own save slot)");
     }
@@ -7059,27 +7061,14 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
         const int from = a->u.call.deliver_from[j];
         const int to   = a->u.call.deliver_to[j];
         for (int half = 0; half < 2; half++) {
-            char val[160];
-            char nm[48];
-            const int fs = 2 * from + half;
-            if (vm_slot_name(v, fs, nm, sizeof nm))
-                snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-            else
-                snprintf(val, sizeof val, "slot_values[%d]", fs);
-            vm_set(v, 2 * to + half, val,
+            vm_set(v, 2 * to + half, vm_slot_ref(v, 2 * from + half),
                    "DELIVER: keep the callee's exported span in this site's "
                    "own slot (trailed, and BEFORE the restore below)");
         }
     }
 
     for (int j = 0; j < a->u.call.nsave; j++) {
-        char val[160];
-        char nm[48];
-        if (vm_slot_name(v, vm_slot_splice(v, base + j), nm, sizeof nm))
-            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
-        else
-            snprintf(val, sizeof val, "slot_values[%d]",
-                     vm_slot_splice(v, base + j));
+        const char *val = vm_slot_ref(v, vm_slot_splice(v, base + j));
         /* ITSELF TRAILED, which is why backtracking INTO a completed splice
          * re-establishes the callee's own values — §3.2 MEASURED the call
          * BACKTRACKABLE on 10.46 and §3.1's per-level cells show that is the
