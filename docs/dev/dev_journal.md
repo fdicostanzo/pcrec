@@ -23937,3 +23937,13 @@ inheritances; the 27/41 listing-reach gap). Two slices: w2a (opus, steps 1-9,
 one byte-neutral commit per step) and w2census (sonnet, the emit_dfa.c
 category-(c) census + the reach measurement). Box note in both briefs: the
 mtriage make test owns the heavy slot until ~17:15 EDT.
+
+**w2census DELIVERED AND MERGED** (sonnet, ~40 min). Combined stage-3 floor
+80/91 over both emitters; the instrument found EP2 undercounted emit_vm.c by
+one declarator (`flr[32]`, a bare literal hiding in a shared declaration) —
+the script disagreed with the report and the tree proved the script right.
+Reach measurement: 39/41 with five EXISTING corpus patterns, and the real
+finding is about the instrument — run_ir_listing.sh passes no --features, so
+the lookaround/recursion/atomic families were unreachable by any pattern
+text. Ruled: the stage-3 lane widens the harness first. Worktree removed,
+agent closed.
