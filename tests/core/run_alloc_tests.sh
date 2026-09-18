@@ -20,7 +20,17 @@
 #
 # Usage: LIBPCREC=<path to an injected libpcrec.a> bash tests/core/run_alloc_tests.sh
 # Env: LIBPCREC (default <root>/build-alloc/libpcrec.a — `make alloc`'s
-#      own output), CC, KEEP=1
+#      own output), CC, KEEP=1, ALLOC_ARGS
+#
+# [K60MEAS] ALLOC_ARGS defaults to `--both`, so `make alloc` runs the
+# SINGLE-SHOT sweep (what K60 was found with) and the SUSTAINED sweep
+# (fail the Nth allocation and every one after it) and prints the
+# comparison table. `tests/resource/run_resource_tests.sh`'s section 2b,
+# which rides `make test`, builds and runs the same binary with NO
+# arguments and is deliberately left on the single-shot sweep alone —
+# its claim is K7's abort/signal outcome, which needs one sweep, and
+# doubling a `make test` section for a claim it does not make would be
+# paying for someone else's measurement.
 
 set -u
 
@@ -57,7 +67,10 @@ if ! unit_build "$BIN" "$SCRIPT_DIR/alloc_check.c"; then
 fi
 
 OUT="$WORKDIR/alloc_check.out"
-"$BIN" | tee "$OUT"
+ALLOC_ARGS="${ALLOC_ARGS:---both}"
+# Unquoted on purpose: ALLOC_ARGS is a word list of flags, not one argument.
+# shellcheck disable=SC2086
+"$BIN" $ALLOC_ARGS | tee "$OUT"
 bin_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN's
 if [ "$bin_rc" -eq 0 ]; then
     ok "alloc_check: $(grep -c '^PASS' "$OUT") witness(es) — every forced allocation failure was diagnosed"

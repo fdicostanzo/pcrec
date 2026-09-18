@@ -37,14 +37,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-void *pcrec_inject_malloc(size_t sz);
-void *pcrec_inject_calloc(size_t n, size_t sz);
-void *pcrec_inject_realloc(void *p, size_t sz);
-char *pcrec_inject_strdup(const char *s);
+/* [K60MEAS] THE CALL SITE TRAVELS WITH THE CALL. `__FILE__`/`__LINE__`
+ * expand at the SUBSTITUTED call site — inside `src/`, in the injected
+ * tree — so the driver learns which allocation it just failed without a
+ * backtrace, a symbolizer, or one line of code under `src/`. This is the
+ * whole of MECHANISM ATTRIBUTION (docs/dev/k60_measurement.md §2): a
+ * forced failure that the compile ABSORBS is only diagnosable if you know
+ * where it happened, and `backtrace()` on darwin cannot name a `static`
+ * function in a statically-linked archive. Text substitution can.
+ *
+ * The two extra arguments are unconditional rather than a second macro
+ * set: there is one injector, and a build in which half the call sites
+ * report their origin would be an instrument whose coverage is a property
+ * of which header a translation unit happened to see.
+ *
+ * AND THE FOUR SYMBOLS GREW AN `_at` SUFFIX WITH THAT SIGNATURE CHANGE,
+ * WHICH IS THE POINT RATHER THAN A RENAME. This header is `-include`d,
+ * so the Makefile's object rule cannot list it as a prerequisite (there
+ * is no `-MMD` dependency generation in this tree; `$(BUILD_DIR)/obj/%.o`
+ * names its headers by hand) — an edit here leaves `build-alloc/`'s
+ * objects STALE. The four functions are resolved at LINK time from a
+ * separate TU with no shared prototype, so a stale object calling the
+ * one-argument spelling against a four-argument definition is not a build
+ * error: it is a wild `file` pointer and a SIGSEGV inside the injector,
+ * which reads exactly like the abort/signal outcome the check exists to
+ * detect. MEASURED, on this instrument, on its first extension (lane
+ * k60meas: 60 of 72 trials "killed by signal 11", entirely an artifact of
+ * a tree that had not rebuilt). Changing the injector's ABI now changes
+ * its symbol NAMES, so a stale object fails to LINK instead. */
+void *pcrec_inject_malloc_at(size_t sz, const char *file, int line);
+void *pcrec_inject_calloc_at(size_t n, size_t sz, const char *file, int line);
+void *pcrec_inject_realloc_at(void *p, size_t sz, const char *file, int line);
+char *pcrec_inject_strdup_at(const char *s, const char *file, int line);
 
-#define malloc(sz)      pcrec_inject_malloc(sz)
-#define calloc(n, sz)   pcrec_inject_calloc((n), (sz))
-#define realloc(p, sz)  pcrec_inject_realloc((p), (sz))
-#define strdup(s)       pcrec_inject_strdup(s)
+#define malloc(sz)      pcrec_inject_malloc_at((sz), __FILE__, __LINE__)
+#define calloc(n, sz)   pcrec_inject_calloc_at((n), (sz), __FILE__, __LINE__)
+#define realloc(p, sz)  pcrec_inject_realloc_at((p), (sz), __FILE__, __LINE__)
+#define strdup(s)       pcrec_inject_strdup_at((s), __FILE__, __LINE__)
 
 #endif /* PCREC_ALLOC_INJECT_H */
