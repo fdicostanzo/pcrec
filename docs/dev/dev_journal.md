@@ -24023,3 +24023,18 @@ Four merge-gate `make test` runs on darwin today, each ~104 min, each green.
 Lanes used: k60fix, d105, mtriage, w2facts (read-only), w2a, w2census, w2b,
 w2x, allocpins — nine, none alive at close. Next session starts on wave 2
 steps 12-15 without waiting for a prompt beyond "proceed". wake.md rewritten.
+
+## 2026-09-18 (late night) — seventieth session: wave 2 slice E launched (EP2 steps 12-15)
+
+Woke on Frank's standing order ("on wake proceed with dev items"). Main clean
+at ac21aaaf, no lanes, worktrees or runs in flight. Heartbeat cron created
+(13,43). **Lane w2y LAUNCHED** (opus, worktree worktrees/w2y, branch lane/w2y
+from ac21aaaf): EP2 sequence steps 13, 12, 14, 15 (cheapest first; 15 writes
+`irsb`, the .c gates' blind spot) — one commit per step, byte-neutral on the
+four streams of w2x §5 (corpus argv × .c / .c --engine=vm / --emit-ir
+--engine=vm; the composition sweep over 304 sources) against a git-archive
+branch-point binary, instrument validated before trusted, anchors found by
+grep and re-driven solo after committing. Brief in the session scratchpad;
+zero-model stall watcher running (quiet >25 min from first sighting, report
+commit, or worktree gone; 4h cap). Merge gate when it lands: `make test` on
+darwin, bounded 3h.
