@@ -8,6 +8,11 @@ build-san/
 # [REVW.U L5-R1]: build-alloc/ is the allocation-failure-injected tree
 # (make alloc), same shape one axis over.
 build-alloc/
+# [BSWEEP]: scratch/output tree for scripts/emit_sweep.py -- archived
+# reference/tree source extractions, per-run composition-artifact trees,
+# and the report TSVs. Same shape as build-ubsan/ etc; never touched by
+# `make`/`make test`.
+build-emitsweep/
 *.o
 *.a
 # Core dumps only — anchored, because an unanchored `core` also matches the

@@ -302,4 +302,35 @@ pcrec (the Makefile owns that).
   they build fine under plain ISO C regardless of which compiler `$(CC)`
   is). See `docs/dev/lanes/santriage_report.md`.
 
+- **emit_sweep.py** — [BSWEEP]'s COMMITTED emitter byte-neutrality sweep
+  (2026-09-19): the instrument five wave-2 lanes (w2a/w2b/w2x/w2y/w2census)
+  each rebuilt from prose in their own scratchpads for the same proof — an
+  emitter refactor moves no emitted byte — landing on THREE DIFFERENT
+  composition-arm populations (30/72, 29/84, 32/96) for what every one of
+  them called a mandatory arm, because reaching `vm_splice`'s DELIVER block
+  and the corpus's module-gated majority both depend on `--features all`, a
+  flag none of the ad-hoc rebuilds had written down anywhere durable (w2y's
+  own finding, `docs/dev/lanes/w2y_report.md` §3.1/§3.2). Compares a
+  REFERENCE `pcrec` (`git archive REF`, or a second historical revision via
+  `--tree-rev`, or a pre-built `--ref-bin`) against a WORKING `pcrec` (the
+  caller's own `build/pcrec` by default) across four streams — corpus argv
+  at the default engine, at `--engine=vm`, at `--emit-ir --engine=vm`
+  (always forced VM: w2x_report.md §5's own reach trap), and composition
+  (`--source` over every `.rxt`/`.rxtin` under `tests/`) — all under
+  `--features all` unconditionally. Self-checks itself first (two
+  independent builds of the SAME reference revision, byte-identical at full
+  reach, before trusting anything) unless `--no-self-check`. Reach and
+  composition-population expectations are FLOORS pinned in the script's own
+  `PINS` dict (D110's shape, a much smaller margin than that ruling's "half
+  the measured value" — see the dict's own comment for why), plus an
+  independent DELIVER-block witness (both known DELIVER fixtures produce,
+  and at least one composition artifact carries the block's own emitted
+  cross-group SET-pair code shape — corroborating, since the mechanism's
+  role text never reaches `.c` output at all, only the `--emit-ir` listing
+  a composed target can't produce). Scratch output (archived sources,
+  per-run composition trees, reports) lives under `build-emitsweep/`
+  (gitignored), never `build/`. See `docs/testing.md`'s "Emitter
+  byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
+  the validation transcript and the five-lane reconciliation.
+
 Maintenance: update this file when scripts are added/removed or change role.

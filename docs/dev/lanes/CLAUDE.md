@@ -1756,3 +1756,24 @@ never edited afterwards.
   `tests/lib/table.sh` given the mechanism's row-reading half, 16 baselines
   deliberately recaptured, `run_ir_listing.sh` 128 -> 144 checks, six
   sabotage rows re-driven SOLO and all DETECTED. NOT an abi event.
+- `bsweep_report.md` — [BSWEEP] (2026-09-19, lane bsweep, sonnet): the
+  COMMITTED emitter byte-neutrality sweep, `scripts/emit_sweep.py`, built
+  once so w2a/w2b/w2x/w2y/w2census stop each re-deriving it from prose.
+  Self-check (two independent builds of the same reference revision) +
+  the real ref-vs-tree comparison, both against `ac21aaaf` vs. main
+  `7f0f1e55` (wave 2 slice E) — 0 movers/asymmetric on all four streams,
+  an independent re-verification of `w2y_report.md` §3's own claim — plus
+  three isolated, reverted scratch sabotages (the `.c`-stream header
+  comment; `vm_render_listing`'s own header, `--emit-ir`-only; `vm_splice`'s
+  DELIVER loop, composition-arm-only, four surgically exact movers with
+  `plaincall.c`'s `deliver_n == 0` as the built-in negative control).
+  **Read §1.3 for the reconciliation the manager asked for mid-flight**:
+  this tool's own FIRST cut measured 30 producing / 72 artifacts, matching
+  w2x's recorded figure and disagreeing with w2y's recorded 32/96 — traced
+  to two real bugs in `sweep_composition` itself (an `rc == 0` gate that
+  skipped a fixture's genuine partial success; a composition-arm timeout
+  under the argv streams' own concurrency), both fixed (`--comp-timeout`/
+  `--comp-jobs`), giving a corrected 32/96 that now matches w2b's AND
+  w2y's own `--features all` figure exactly — three of five lanes' numbers
+  reconciled to one, w2x's left as a plausible-but-unconfirmed instance of
+  the same class of bug (its own scratch driver is gone).

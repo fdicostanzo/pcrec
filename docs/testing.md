@@ -4402,3 +4402,119 @@ inherited reach — missing lookbehind and subroutine-call emission entirely;
 the full corpus at default engine selection reaches 31 of 41 (76%), still
 missing the same two families. Recorded as a finding for a future stage-3
 lane's population choice, not acted on here (stage 0 is measurement only).
+
+## Emitter byte-neutrality sweep (`scripts/emit_sweep.py`, [BSWEEP], 2026-09-19)
+
+**Why this exists.** Five wave-2 lanes (w2a, w2b, w2x, w2y, w2census) each
+REBUILT the emitter byte-neutrality instrument from prose in their own
+scratchpads for the same task — proving an emitter refactor moves no emitted
+byte — and three of them landed on THREE DIFFERENT composition-arm
+populations (30/72, 29/84, 32/96) for what every one of them treated as a
+mandatory arm. w2y traced the cause (`docs/dev/lanes/w2y_report.md` §3.1/
+§3.2): the composition arm reaches `vm_splice`'s DELIVER block ONLY under
+`--features all` (both DELIVER-reaching fixtures need module `recursion`,
+and a bare `--source FILE` passes no features of its own), and the three
+argv streams likewise need `--features all` or reach collapses from
+~3,517-3,518 to 1,500 of 3,938 corpus pattern lines — the module-gated
+majority of the corpus (every backreference and every lookbehind in the
+tree), invisible in a pass count because both sides refuse identically.
+*A mandatory arm whose reach depends on a flag nobody wrote down can be
+silently empty.* `scripts/emit_sweep.py` is that instrument, built once,
+committed, with its populations pinned so a lane compares against a floor
+instead of re-deriving one from memory or prose.
+
+**What it does.** Compares a REFERENCE `pcrec` (built via `git archive REF`,
+a revision that never moves under you) against a WORKING `pcrec` (the
+caller's own build, or a second revision) across FOUR streams, all under
+`--features all`:
+
+1. corpus argv, `.c` at the default engine (`-p rx --features all`)
+2. corpus argv, `.c` at `--engine=vm`
+3. corpus argv, `--emit-ir` at `--engine=vm` — ALWAYS forced VM, independent
+   of stream 1's engine choice, because `--emit-ir` at the default engine
+   refuses on every DFA-winning pattern (w2x_report.md §5: "a 53% reach
+   loss that reads as a perfectly healthy green")
+4. composition: `--source FILE` over every `.rxt`/`.rxtin` under
+   `<tree>/tests/` (304 files at this writing) — the ONLY route that
+   reaches `vm_splice`'s DELIVER block, since `deliver_n` is written
+   exclusively by `src/parse/rxt_compose.c` and no argv pattern can express
+   an `export`.
+
+The corpus POPULATION is read once, from the WORKING side's own
+`--list-source` (the same escape-decode methodology
+`docs/dev/w1stage0_evidence/longprefix_sweep.py` and
+`docs/dev/dialtrain_byteid_evidence/byteid_sweep.py` already use), and
+pattern TEXT is passed to both binaries via argv directly, never through a
+shell string. Reports population/reach/movers/asymmetric rows per stream,
+with the first diff hunk of each mover, and exits non-zero on any
+mover/asymmetry or floor violation.
+
+**Self-check.** Builds TWO independent binaries from the SAME reference
+revision (two separate `git archive` extractions, so a build-nondeterminism
+confound is caught as a bonus) and runs the whole sweep between them —
+must come back all-identical at full reach — before a real comparison is
+trusted (w2x_report.md §5: "the instrument was validated before it was
+trusted"). Runs automatically first unless `--no-self-check`.
+
+**Pins are FLOORS, not equality** (D110's shape, `tests/core/alloc_check.c`'s
+own precedent), with a MUCH SMALLER margin than D110's "half the measured
+value": D110's allocation counts are expected to move under an ordinary
+byte-neutral refactor (its own cited instance: 158 → 162), while THIS
+population — how many corpus patterns compile, how many composition files
+produce — is expected to be roughly monotone non-decreasing under ordinary
+work (the corpus only grows). A half floor would still catch the two known
+failure modes above (they lose 45-62% of reach) but would blunt the tool
+against a much smaller, real collapse. So the floors sit at the measured
+value minus roughly 10% for the reach/population axes, and — deliberately —
+AT the measured value with zero slack for the composition-arm's own
+`producing`-file count, since that is the exact axis the `--features`
+regression moves by only 2-3 files. See `scripts/emit_sweep.py`'s `PINS`
+dict for the current numbers and the full reasoning; a lane whose change
+legitimately moves reach re-pins it there, in the same change (a
+population going DOWN needs a stated reason, same as any other check this
+house has learned to make a floor rather than a silent assumption —
+`docs/dev/learnings.md` §3).
+
+**The DELIVER witness.** Beyond the reach floor, the tool independently
+asserts that BOTH `tests/rxtsource/fixtures/compose_delivers.rxtin` and
+`deliver_forms.rxtin` are in the composition-producing set, AND that at
+least one produced `.c` artifact anywhere in the sweep carries the DELIVER
+block's own emitted CODE SHAPE — two adjacent
+`<PREFIX>_SET(<PREFIX>_SLOT_GROUP<A>_START/_END, slot_values[<PREFIX>_SLOT_GROUP<B>_...])`
+statements with `A != B` (a cross-group span copy; ordinary backtrack-restore
+code only ever copies a group's own prior value back into itself, same
+group number both sides, since a composed call's caller and callee never
+share a group number). This is corroborating, not load-bearing on its own:
+`vm_splice`'s "DELIVER: keep the callee's exported span…" role text never
+reaches `.c` output at all (it is written only into the `vm_ev()` event
+stream that backs `--emit-ir`'s listing, and `--emit-ir` cannot be combined
+with `--source`), so no textual comment marker is available; the actual
+protection for this arm is the whole-artifact byte-identity comparison
+every composition file already gets, which necessarily covers these bytes
+whenever they exist. The witness exists so a future collapse of composition
+reach (the w2y finding, one flag over) is caught by something OTHER than a
+population count that could itself have silently emptied.
+
+**Usage**, from any lane's own worktree:
+
+    # a lane comparing its own edits against its own branch point:
+    python3 scripts/emit_sweep.py --ref <branch-point-sha>
+
+    # two arbitrary historical revisions, no live build/ directory touched
+    # by either side (both built from `git archive` into scratch):
+    python3 scripts/emit_sweep.py --ref REV1 --tree-rev REV2
+
+    # a render-path-only change (DD-8, [EMIT-VERB]) whose --emit-ir listing
+    # is EXPECTED to move:
+    python3 scripts/emit_sweep.py --ref <branch-point-sha> --only-emit-ir-reach
+
+Full option reference is the script's own module docstring
+(`python3 scripts/emit_sweep.py --help`). Scratch trees (archived sources,
+per-run composition-artifact directories, the report) live under
+`build-emitsweep/` (gitignored, same shape as `build-ubsan/`), never under
+`build/`.
+
+See `docs/dev/lanes/bsweep_report.md` for this tool's own validation
+(self-check, an independent re-verification of w2y's own claim, and the
+three scratch-sabotage detection transcripts) and the reconciliation of the
+five prior lanes' composition-arm figures.
