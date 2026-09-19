@@ -1909,3 +1909,44 @@ never edited afterwards.
   not-yours rubric (the standing darwin `nm arm_a.o` red alone explains an
   rc=2) and §3 the re-run, launched as the lane's last act with its log path
   and `sections ran:` completion line. PARKED on `lane/evtriage`, not merged.
+
+- `evtriage2_report.md` — TRIAGE ROUND 2 on [EMIT-VERB] (2026-09-19, lane
+  evtriage2, opus): the `make test` reds the emitverb lane's own
+  comment-reader census missed, because that census was done by running
+  SUITES and `make test` runs more than the suites a lane thinks to run.
+  Eight FAIL lines / five families over a complete run (`sections ran: 40/40`,
+  rc 2); one is the standing darwin `nm` probe and the other four are fixed
+  here. Read §1-§4 for the four dispositions, which between them are D112's
+  whole question worked out on real cases.
+  **§3 is the failure MODE worth carrying**: `run_backref_diff.sh` §10
+  counted the role-text phrase `empty-iteration guard`, read zero on every
+  fixture, and failed four times NAMING SABOTAGE ROW S107 — *a comment reader
+  does not fail vaguely; it fails as the exact defect it was written for.*
+  Converted to the guard's SLOT DECLARATION, which is written under the same
+  `if (guard)` that writes the phrase, so it is the same fact and not a
+  proxy; the 4/3/7 population reproduced unchanged, and S107 re-driven solo
+  is DETECTED at `brefdiff 4fail/11pass`, the same four failures the phrase
+  produced.
+  **§1 is the only genuine class-2 case and the reason is structural**: an
+  island's sole per-site marker is `vm_rolef` role text, its code is an
+  ordinary first-byte `switch` with no island-specific token, and
+  `RX_VM_ALT_ISLANDS` is already the block's second term — so a `-fcomments`
+  artifact is generated with EXACTLY ONE CUSTOMER rather than switching the
+  shared one. Its control is a POPULATION FLOOR, because the term is a
+  biconditional and 15 of 16 fixtures exercise only its empty direction.
+  **§2**: the `[M4.5c]` traced-artifact check had bound a stamp to a comment
+  with one `&&` and failed naming the half that was fine (`RX_TRACE 1` was
+  present throughout) — SPLIT, with a third arm asserting the default build
+  carries no prose, without which a compiler ignoring the axis reads green on
+  both. **So no gap D112 created was found and the abi 27 bump takes no rider
+  from this lane** — a result, not an absence, since the brief allowed for one.
+  **§4** is not a comment reader at all: a raw `wc -c` pin, comment-INCLUSIVE,
+  where the cap it is about is comment-EXCLUDED — battriage's SECOND READER
+  CLASS, third instance, and the same run proves the cap comment-invariant
+  for free (its two refusal rows still print 1,034,778 / 1,335,605; a
+  comment-counting cap would have ACCEPTED both). The re-pin had to be
+  measured with the cell's OWN `-o` basename — a differently-named scratch
+  file reads 762,107 against the check's 762,105, the `-o`-basename trap's
+  fourth recorded instance. **§8** flags one pre-existing drift left alone:
+  S107's `SAB_DOC_FIGURE` is +1 on both sides since §9b landed three weeks
+  after it was measured.
