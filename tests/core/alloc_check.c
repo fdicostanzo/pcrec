@@ -65,6 +65,19 @@
  * expected to PASS**. K60 is closed in both its classes; any FAIL here is
  * now a real regression, whichever witness it names.
  *
+ * [D110] (2026-09-18, lane allocpins, Frank's ruling) THE POPULATION
+ * EXPECTATION IS A FLOOR NOW, NOT AN EQUALITY PIN. [REVW.2]'s wave 2
+ * slices A+C moved W4's population 158 -> 162 by two byte-neutral,
+ * size-neutral refactors — the measured evidence that an equality pin
+ * re-pins on ordinary allocation-shape churn no caller can observe, not
+ * only on the K35 hazard (a population falling toward empty) it exists to
+ * catch. Each witness's `min_total` is now HALF its measured population at
+ * ruling time, so a legitimate refactor's incidental movement has wide
+ * margin and a real collapse still trips it. `expect_absorbed_*` is
+ * UNCHANGED — still exact, in both directions, since both K60 classes are
+ * closed and any absorption anywhere is a regression. See the `Witness`
+ * struct's own comment and `docs/dev/decisions.md` D110.
+ *
  * — not a `--source` target (composing a real `.rxt` definitions file
  * inside a pure C driver adds machinery this check does not need to
  * demonstrate the property again through a fourth, structurally
@@ -191,25 +204,39 @@ typedef struct {
     int encoding;      /* PCREC_ENC_* */
     int enable_unicode_props;
     int force_engine;  /* 0 = auto (pcrec_default_options' default); else PCREC_ENGINE_* */
-    /* [D105] THE PINS, and there are two of them because "no absorption" on
-     * its own is a claim a check can satisfy by not reaching the compile at
-     * all (K35 — count the population, fail on an empty one).
+    /* [D105] TWO KINDS OF EXPECTATION, for two different reasons —
+     * "no absorption" on its own is a claim a check can satisfy by not
+     * reaching the compile at all (K35 — count the population, fail on an
+     * empty one).
      *
-     * `expect_total` is the profiling pass's own allocation count: the
-     * POPULATION this witness sweeps. It moves whenever the compile's
-     * allocation shape moves, which is a real event a reader must be told
-     * about — D105 moved W1's from 72 to 57 and W3's from 328 to 303 by
-     * deleting `emit_state_legend`'s five raw allocations per machine, and
-     * that delta IS the evidence the legend site is gone. A silently
-     * shrinking population is how this check would stop testing anything.
+     * [D110] (2026-09-18, lane allocpins, Frank's ruling) `min_total` IS A
+     * FLOOR, not an equality pin. D105's own two-day life measured the
+     * hazard the OTHER way first: [REVW.2]'s wave 2 slices A+C moved W4's
+     * population 158 -> 162 by two BYTE-NEUTRAL, SIZE-NEUTRAL refactors
+     * (sb_fragf's fragment retirement changing the arena-call SHAPE, not
+     * the compile's observable behaviour) — an equality pin re-pins on
+     * every such refactor whether or not anything a caller can see moved,
+     * which is a tax on the whole tree's future allocation-shape churn, not
+     * evidence of anything. K35's actual hazard is a population that FALLS
+     * — to zero (the witness stopped reaching the compile) or partway (some
+     * of what it swept quietly stopped being swept) — never one that RISES
+     * or holds; a check that also fires on a rise is asserting a property
+     * ("this witness's shape never changes") nobody needs and every
+     * legitimate refactor violates. So the floor is set at HALF the
+     * measured population at the time of this ruling — low enough that an
+     * ordinary refactor's incidental movement (four allocations out of 162,
+     * measured) does not approach it, high enough that an empty or
+     * near-empty population (the actual hazard) still trips it. See D110
+     * for the ruling and the measured brittleness it answers.
      *
-     * `expect_absorbed_*` is the number of absorptions a FILED, OPEN defect
-     * accounts for, per mode, with `absorbed_why` naming it. A mismatch in
-     * EITHER direction is a failure: more than the pin is a regression, and
-     * fewer means the defect moved or was fixed and the pin is stale — the
-     * ratchet that makes a fix re-pin its own witness rather than quietly
-     * turning a red line green. */
-    long long   expect_total;
+     * `expect_absorbed_*` STAYS EXACT, in both directions, because both
+     * classes of K60 are now CLOSED (D105 + D109): any absorption at all is
+     * a regression, and a witness that stops absorbing what it used to
+     * (there is nothing left to stop absorbing — every row already pins
+     * zero) would mean the check itself lost reach, not that a defect
+     * moved. `absorbed_why` is NULL on every row today; the field and the
+     * ratchet stay in case a NEW defect is filed and pinned the same way. */
+    long long   min_total;
     long long   expect_absorbed_single;
     long long   expect_absorbed_sustained;
     const char *absorbed_why;   /* NULL iff both expectations are zero */
@@ -375,15 +402,20 @@ static void report(const Witness *w, const Tally *t, int sust)
 {
     const char *tag = sust ? " [sustained]" : "";
     long long bad_n = t->n_succeeded + t->n_silent + t->n_signalled + t->n_anomaly;
-    /* [D105] THE POPULATION PIN, checked before any verdict: a witness that
-     * stopped reaching the compile, or whose allocation shape moved under
-     * someone's feet, reports "every forced failure was diagnosed" over a
-     * population that is no longer the one this check was pinned against. */
-    if (t->total != w->expect_total)
-        bad("%s%s: the swept POPULATION moved -- %lld forced allocations, pinned at %lld. "
-            "Either the compile's allocation shape changed (re-pin, and say what moved) "
-            "or this witness no longer reaches what it was written for",
-            w->name, tag, t->total, w->expect_total);
+    /* [D110] THE POPULATION FLOOR, checked before any verdict: a witness
+     * that stopped reaching the compile, or whose allocation shape
+     * collapsed, reports "every forced failure was diagnosed" over a
+     * population that is no longer the one this check was written to sweep
+     * (K35). It is a FLOOR, not an equality pin — set at half the measured
+     * population, below which is exactly the hazard (an empty or shrunken
+     * sweep) and above which is ordinary refactor churn this check has no
+     * opinion about. See the [D110] comment on `min_total`'s own field. */
+    if (t->total < w->min_total)
+        bad("%s%s: the swept POPULATION fell BELOW its floor -- %lld forced allocations, floor %lld. "
+            "Either this witness stopped reaching what it was written to sweep (K35 -- lower the "
+            "floor only if that is wrong) or a real collapse in the compile's allocation shape needs "
+            "investigating before any floor is touched",
+            w->name, tag, t->total, w->min_total);
     /* [D105] THE ABSORPTION PIN, in both directions. `n_succeeded` is
      * reported below on its own terms too; this is the comparison against
      * what a FILED defect accounts for. */
@@ -438,23 +470,30 @@ int main(int argc, char **argv)
         /* [D105] W1 and W3 are the LEGEND-CLASS witnesses: every one of
          * their absorptions (15 and 25, docs/dev/k60_measurement.md §2.2)
          * was `emit_state_legend`'s own silent degradation, and the
-         * restructuring deleted the path. Both pin ZERO, so a legend-class
-         * absorption — or any other absorption reaching these two — is RED.
-         * The totals fell by exactly the deleted allocations: 5 per emitted
-         * legend, W1 emitting three machines' worth (72 - 15 = 57) and W3
-         * five across its two attempts (328 - 25 = 303). */
+         * restructuring deleted the path. Both pin ZERO absorbed, so a
+         * legend-class absorption — or any other absorption reaching these
+         * two — is RED. The totals fell by exactly the deleted allocations:
+         * 5 per emitted legend, W1 emitting three machines' worth
+         * (72 - 15 = 57) and W3 five across its two attempts
+         * (328 - 25 = 303).
+         *
+         * [D110] `min_total` IS A FLOOR: 28 (half of 57, measured
+         * 2026-09-18). See the struct comment for the ruling. */
         { "W1 (DFA)",              "[a-z]+",     PCREC_ENC_BYTE, 0, 0,
-          57, 0, 0, NULL },
+          28, 0, 0, NULL },
         /* W2 forces --engine=vm: [a-z]{2,10} is capture-free and AUTO
          * selection routes it to the DFA by default (measured -- see
          * docs/dev/lanes/waveu_report.md), which never reaches
          * vm_cursor_rep/scr_test at all. Forcing the engine is what
          * makes this witness actually exercise F1's own reaching
-         * sequence rather than a different one. */
+         * sequence rather than a different one.
+         *
+         * [D110] `min_total` floor: 5 (half of 11). */
         { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM,
-          11, 0, 0, NULL },
+          5, 0, 0, NULL },
+        /* [D110] `min_total` floor: 151 (half of 303). */
         { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0,
-          303, 0, 0, NULL },
+          151, 0, 0, NULL },
         /* [K60MEAS] W4 — THE SIZE-TERM LADDER, added because K60 names the
          * ladder's blanket "this K is out" catch as a mechanism and NONE of
          * W1-W3 enters the ladder at all (W1/W3 are DFA-engine artifacts,
@@ -473,24 +512,25 @@ int main(int argc, char **argv)
          * pinned 108 while that fix was in flight; the pin going stale-low
          * the moment it landed is the ratchet working as designed, and
          * zero is what it re-pins to. Every witness in this table now pins
-         * zero, so `absorbed_why` is NULL on all four and any absorption
-         * anywhere is a regression.
+         * zero absorbed, so `absorbed_why` is NULL on all four and any
+         * absorption anywhere is a regression.
          *
-         * [REVW.2] 2026-09-18 (manager, at the w2b merge): POPULATION
-         * RE-PINNED 158 -> 162. Wave 2 slices A+C (EP2 steps 1-9 and the
-         * stage-3 fragment retirement, both byte-neutral on every artifact
-         * stream and size-neutral on the [ART-SIZE] log) moved this
-         * witness's swept population by four allocations while moving
-         * nothing observable — the first measured instance of the
-         * population pin's brittleness (Frank's question, same evening:
-         * "how brittle is adding pins to the test suite"). W1/W2/W3 held.
-         * Whether these pins become FLOORS (K35 wants an empty population
-         * caught, not a shifted one) is an open ruling; until then an
-         * equality re-pin rides the merge that moved it. */
+         * [REVW.2] 2026-09-18 (manager, at the w2b merge): POPULATION MOVED
+         * 158 -> 162 by two byte-neutral, size-neutral refactors (wave 2
+         * slices A+C) that moved nothing observable — the measurement that
+         * produced [D110]'s ruling, below.
+         *
+         * [D110] (2026-09-18, lane allocpins, Frank's ruling) `min_total`
+         * BECOMES A FLOOR, 81 (half of the then-current 162): the 158 -> 162
+         * shift above is exactly the ordinary refactor churn a floor is
+         * built to absorb without re-pinning, and the actual hazard (K35)
+         * is a population falling toward zero, which 81 still catches with
+         * wide margin. `expect_absorbed_*` stays exact at 0 -- see the
+         * struct comment. */
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
-          162, 0, 0, NULL },
+          81, 0, 0, NULL },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 

@@ -210,21 +210,46 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   raw allocations per emitted machine are gone (`src/gen/emit_dfa.c`; the
   compile refuses through the arena's `ctx_nomem` instead of dropping a
   legend silently), so W1 reads 15 absorbed -> **0** and W3 25 -> **0** in
-  both modes. Each `Witness` row now carries:
-  - `expect_total`, the profiling pass's own allocation count — the
-    POPULATION swept. It exists because "no absorption" is a claim this
-    check can satisfy by NOT REACHING THE COMPILE (K35), and it is not
+  both modes. Each `Witness` row carries two kinds of expectation:
+  - a POPULATION expectation — the profiling pass's own allocation count
+    swept. It exists because "no absorption" is a claim this check can
+    satisfy by NOT REACHING THE COMPILE (K35), and it is not
     belt-and-braces: W3's SUSTAINED sweep absorbs zero even against the
-    UNREPAIRED library, so the absorption pin alone reads PASS there and
-    only the population pin catches it. D105's own evidence is this number
-    — W1 72 -> 57, W3 328 -> 303, exactly the deleted allocations.
+    UNREPAIRED library, so the absorption expectation alone reads PASS
+    there and only the population one catches it. D105's own evidence is
+    this number moving — W1 72 -> 57, W3 328 -> 303, exactly the deleted
+    allocations.
   - `expect_absorbed_single` / `expect_absorbed_sustained`, what a FILED,
     OPEN defect accounts for, with `absorbed_why` naming it. A mismatch in
     EITHER direction fails: above is a regression, below means the defect
-    moved or was fixed and the pin is stale — so a fix re-pins its own
-    witness instead of quietly turning a red line green. W4 pins K60's
-    ladder class at its measured 108 and stays RED until the
-    `longjmp`-value change lands in `src/core/compile.c`.
+    moved or was fixed and the expectation is stale — so a fix re-pins its
+    own witness instead of quietly turning a red line green. Both K60
+    classes are now closed (D105 + D109 below), so every row pins these at
+    exact zero and `absorbed_why` is NULL on all four — any absorption
+    anywhere is a regression.
+
+  **[D110] (2026-09-18, lane allocpins) — THE POPULATION EXPECTATION IS A
+  FLOOR (`Witness.min_total`), NOT AN EQUALITY PIN.** The trigger was
+  measured, not guessed: `[REVW.2]`'s wave 2 slices A+C moved W4's
+  population 158 -> 162 by two BYTE-NEUTRAL, SIZE-NEUTRAL refactors
+  (`sb_fragf`'s fragment retirement changing the arena-call SHAPE, nothing
+  a caller can observe) — an equality pin re-pins on that kind of ordinary
+  churn exactly as readily as on K35's actual hazard (a population that
+  FALLS, toward an empty or partial sweep), which is a tax on every future
+  allocation-shape-moving refactor for no corresponding signal. Each
+  witness's `min_total` is now HALF its population as measured at the
+  ruling (W1 57 -> 28, W2 11 -> 5, W3 303 -> 151, W4 162 -> 81): far enough
+  below the live population that an ordinary refactor's incidental
+  movement (four allocations out of 162, the measured instance) has wide
+  margin, and still high enough that a real collapse trips it. Absorption
+  expectations are UNCHANGED — still exact, both directions, in both modes.
+  Verified in the failing direction: a scratch edit setting W2's floor to
+  1000 (population 11) reads `FAIL: W2 (VM cursor rung): the swept
+  POPULATION fell BELOW its floor -- 11 forced allocations, floor 1000`
+  (and the `[sustained]` twin), `checks failed: 2`. See
+  `docs/dev/decisions.md` D110 and `tests/resource/run_resource_tests.sh`
+  section 2b, which now asserts this file's own verdict rather than only
+  its abort/signal outcome (below).
 
   **`run_alloc_tests.sh` pipes `2>&1` into its log**, because `alloc_check`
   writes PASS to stdout and FAIL to stderr: without it the script's own
@@ -232,8 +257,15 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   and reported "0 witness(es) misbehaved" on every red run (found while
   validating D105). It defaults to `ALLOC_ARGS=--both`, so `make alloc`
   runs both sweeps. `tests/resource/run_resource_tests.sh` section 2b —
-  the `make test` caller — runs this binary **argument-free** and is
-  deliberately left on the single-shot sweep alone: its claim is K7's
-  abort/signal outcome, which needs one sweep.
+  the `make test` caller — runs this binary **argument-free**, on the
+  single-shot sweep alone (its own claim needs no more), but per D110 now
+  reads this binary's OWN verdict (rc and the absence of `SUCCEEDED
+  THROUGH` lines) in addition to the signal grep — see that section's own
+  header comment for the reasoning: both K60 classes are closed, so an
+  absorption reappearing (from a regression OR from the population
+  collapsing below its floor) is exactly what `make test` should now
+  refuse to pass silently. `make alloc` (opt-in) rides `scripts/
+  battery.sh`'s `alloc` stage (D110) — `make test` itself is NOT the home
+  for the per-witness pins, only for section 2b's coarser verdict check.
 
 Maintenance: update this file when files are added/removed or their roles change.
