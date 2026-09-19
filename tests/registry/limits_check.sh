@@ -317,7 +317,11 @@ done <<< "$anchored"
 #     `_DEFAULT`/`_NONE` budget pairs, which are 0/-1 request codes meaning
 #     "use the compiled-in default" / "no budget"; the real defaults are
 #     VM_DEFAULT_STEP_BUDGET / VM_DEFAULT_WORK_BUDGET, both IN the table
-#   SCHEMA VERSIONS: PCREC_RXT_WAVE_BUILT (internal.h)
+#   SCHEMA VERSIONS: PCREC_RXT_WAVE_BUILT (internal.h),
+#     PCREC_ARTIFACT_ABI (emit_dfa.c, [EMIT-VERB] rider, D112 item 2 — the
+#     emitted artifact's abi digit, one value shared by the two sites that
+#     spell it: the essential generated-by header line and rx_info.abi's
+#     own initializer)
 #   THE FOURTH KIND — CARDINALITIES AND ORDINALS whose enum the (ii) rule
 #     re-armed: VM_NRUNG (how many rungs exist, i.e. an array's length),
 #     SDR_NONE/SDR_NO_ANCHORED/SDR_NO_PREMUL/SDR_MAX (the drop ladder's rung
@@ -461,6 +465,7 @@ PCREC_STEP_BUDGET_NONE
 PCREC_WORK_BUDGET_DEFAULT
 PCREC_WORK_BUDGET_NONE
 PCREC_RXT_WAVE_BUILT
+PCREC_ARTIFACT_ABI
 VM_NRUNG
 SDR_NONE
 SDR_NO_ANCHORED
