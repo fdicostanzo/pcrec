@@ -76,6 +76,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/c_artifact_cmp.sh"   # cmp_c_artifacts (adm71 item 5)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -171,7 +172,14 @@ witness "deny flag"          'foo[0-9]+bar'   search-filter n -fno-anchored-dfa
 # which the form is dead makes them EQUAL and this goes red.
 emit "$WORKDIR/on.c"  'foo[0-9]+bar'
 emit "$WORKDIR/off.c" 'foo[0-9]+bar' -fno-anchored-dfa
-if cmp -s "$WORKDIR/on.c" "$WORKDIR/off.c"; then
+# cmp_c_artifacts (tests/lib/c_artifact_cmp.sh), not a raw cmp: "on.c" and
+# "off.c" are different -o BASENAMES, so a raw cmp differs on the
+# #include "<basename>.h" line alone -- the trap this file's own header
+# already documents finding once (adm71 item 5, 2026-09-19: this negative
+# control was a SECOND, unfixed instance of it, structurally unable to
+# ever report "identical" regardless of whether -fno-anchored-dfa still
+# does anything).
+if cmp_c_artifacts "$WORKDIR/on.c" "$WORKDIR/off.c"; then
     bad "§1 the default and -fno-anchored-dfa artifacts for 'foo[0-9]+bar' are IDENTICAL — the axis has nothing to deny, so every row in this file is comparing a build against itself (docs/dev/learnings.md §3)"
 else
     ok "§1 the axis has a live difference to deny (default vs -fno-anchored-dfa artifacts differ)"

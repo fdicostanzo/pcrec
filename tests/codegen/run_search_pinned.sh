@@ -94,6 +94,7 @@ CC="${CC:-cc}"
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:-}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"   # [K37] pcrec_run / gen_cc / gen_run
+. "$ROOT_DIR/tests/lib/c_artifact_cmp.sh"   # cmp_c_artifacts (adm71 item 5)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -207,7 +208,10 @@ emit "$WORKDIR/att.c" '^a*' \
 # which the form is dead makes them EQUAL and this goes red.
 emit "$WORKDIR/on.c"  'a*'
 emit "$WORKDIR/off.c" 'a*' -fno-start-pinned
-if cmp -s "$WORKDIR/on.c" "$WORKDIR/off.c"; then
+# cmp_c_artifacts (tests/lib/c_artifact_cmp.sh), not a raw cmp -- see
+# run_anchored_match.sh's identical fix (adm71 item 5, 2026-09-19) for why
+# a raw cmp on two different -o basenames cannot report "identical" here.
+if cmp_c_artifacts "$WORKDIR/on.c" "$WORKDIR/off.c"; then
     bad "§1 the default and -fno-start-pinned artifacts for 'a*' are IDENTICAL — the axis has nothing to deny, so every row in this file is comparing a build against itself (docs/dev/learnings.md §3)"
 else
     ok "§1 the axis has a live difference to deny (default vs -fno-start-pinned artifacts differ)"

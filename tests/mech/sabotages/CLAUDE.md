@@ -91,7 +91,7 @@ alone.
 
 ## Checking a definition without running it
 
-    VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh          # all 180
+    VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh          # all 268
     VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh S34      # one
 
 Sources every selected file, runs the driver's field validations, prints one
