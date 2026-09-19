@@ -1881,3 +1881,31 @@ never edited afterwards.
   `axes_registry_check.sh` derives the header's bit table with a
   `PCREC_(NO|FORCE)_` grep, so the deny/force naming convention is encoded
   in a CHECK and `PCREC_EMIT_COMMENTS` was invisible to it.
+
+- `evtriage_report.md` — TRIAGE of [EMIT-VERB]'s two closing-chain reds
+  (2026-09-19, lane evtriage, opus). **RED 1 (`run_specimen_identity.sh`,
+  10 fails) is PRE-EXISTING and FIXED**: the branch point `4af16eb7`, run with
+  its OWN script and OWN binary, returns the identical verdict — same five
+  PASSes, same ten FAILs, same diff bodies, same `[strip] 22 of 1372` count —
+  so the `-fcomments` conversion, the comment gate and the abi 26 -> 27 bump
+  are all exonerated by one table. Two independent stalenesses, both live only
+  because `make test-specimen` is an ON-DEMAND gate no `TEST_SECTIONS` member
+  runs. (A) `.nentries` was missing from both exclusion lists: it reads the
+  SAME `cx->n_named_groups` that `.nnames` reads and landed at abi 15, after
+  both lists were written — *an exclusion list that names a family member by
+  member goes stale the day the family gains one*. (B) the `[nocaps]` fill
+  needle `^        for (int rx_g = 1;` matched a SECOND emission site — wave
+  G's gated dead-group fill AND `emit_anchored_match_caps_def`'s
+  unconditional loop in `<prefix>_match_caps` — so four FAILs were false
+  positives while the property asserted had held continuously; re-aimed at the
+  block header `strip_named` already anchors on, and given the POSITIVE
+  CONTROL an absence assertion needs (1 block in each capture-declaring
+  spelling's default artifact, 0 in `orig`'s), since an absence reads green
+  when its needle dies. 13/0 after, was 5/10. **RED 2 (`make test` rc=2) is
+  UNDETERMINED at hand-off**: the chain kept only `tail -60`, the trailer dir
+  is markers-only and is `rm -rf`'d, and the surviving 24,948-line
+  `watchdog.log` is entirely clean (zero non-`ok` verdicts) — so every failure
+  was an assertion and none can be named from artifacts. §2 carries the
+  not-yours rubric (the standing darwin `nm arm_a.o` red alone explains an
+  rc=2) and §3 the re-run, launched as the lane's last act with its log path
+  and `sections ran:` completion line. PARKED on `lane/evtriage`, not merged.
