@@ -495,3 +495,38 @@ all of them still resolve; two did not and are re-aimed, both re-driven SOLO
   statement inside that block. The three ATTACHMENT LINES alone are unique,
   so the brace was carrying the anchor's EXTENT and not its meaning.
 
+---
+
+## 7. Commits on `lane/emitverb`
+
+Branch point `4af16eb7` (`lane/w4`'s tip). WIP commits 1-7 build event 1
+incrementally; the two EVENT commits are the boundaries D112 item 4 asks for.
+
+| commit | what |
+|---|---|
+| `d3fd444b` … `3b867c6c` | WIP 1-7: the axis, the kit gate, the 67 classified regions, the encoding-seam split, the region-balance check |
+| **`6bf16eff`** | **EVENT 1** — the axis, byte-neutral, default still ON |
+| **`385f3cab`** | **EVENT 1 fix** — `sb_len_uncut`, after the `.o` proof found §3a |
+| `5806c5e6` … `d702de76` | **EVENT 2** — the flip, `abi` 26 -> 27, the new check, the conversions, the D80 spec delta, the CLAUDE.md updates |
+
+Event 2 is several commits rather than one because the flip and its
+consequences are separable and each wants its own triage boundary: the flip
+plus the abi (`5806c5e6`), the check conversions plus the spec (`96ec5610`),
+the new check plus the registry pin (`ca17edf8`), the `run_axes.sh` narrowing
+(`102fac3b`), and the prose.
+
+## 8. Validation run on this branch
+
+| | |
+|---|---|
+| `make strict CC=gcc-16` | clean |
+| `tests/codegen/run_codegen_tests.sh` | 109 / 0 |
+| `tests/codegen/run_comments_axis.sh` (new) | 65 / 0 |
+| `tests/codegen/run_comment_escape.sh` | 9 / 0 |
+| `tests/codegen/run_cpset_structure.sh` | 28 / 0 |
+| `tests/cli/run_cli_tests.sh` | 0 cases failed |
+| `tests/registry/run_registry_tests.sh` | 631 PASS, 0 failed (after the 102 -> 108 pin) |
+| `tests/rxtsource/run_rxtsource_tests.sh` | 212 / 0 (1 recorded) |
+| the eleven identity gates | 8 green; 3 **RETIRED** (`atomic`, `backref`, `lookaround` — pre-existing, A/B'd RED at the branch point too); `recursion` red by construction, §5 item 1 |
+| `scripts/m6read_check_sab_anchors.py` | 269 rows / 285 sites, 0 stale |
+| S07, S257 solo | re-aimed, DETECTED |
