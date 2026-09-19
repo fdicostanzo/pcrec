@@ -27,7 +27,7 @@
 SAB_ID="S224-vm-frameless-stamp-inverted"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vmframeless"
-SAB_DESC="The RX_VM_FRAMELESS stamp's value is written has_push ? 1 : 0 instead of has_push ? 0 : 1 -- the two arms swapped at the sb_printf call, so a PUSHING program (needs the fail label's dispatch) stamps FRAMELESS 1 and a FRAMELESS program stamps FRAMELESS 0. No answer moves: the fail label's own dispatch omission is written from has_push directly at a separate emission site, unaffected by this stamp"
+SAB_DESC="The RX_VM_FRAMELESS stamp's value is written has_push ? 1 : 0 instead of has_push ? 0 : 1 -- the two arms swapped at the sb_stampf call, so a PUSHING program (needs the fail label's dispatch) stamps FRAMELESS 1 and a FRAMELESS program stamps FRAMELESS 0. No answer moves: the fail label's own dispatch omission is written from has_push directly at a separate emission site, unaffected by this stamp"
 SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): DETECTED, unexpected: 0 -- reach:ok(1/1), vmframeless:7fail/4pass. Seven of the eleven checks in run_vm_frameless.sh go red (the value-mismatch assertions in §1's named witnesses and §3's corpus sweep), confirming no answer moves anywhere else in the tree."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree a
 # capture-bearing straight-line pattern compiles to a VM program and stamps
@@ -36,9 +36,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "(a)b" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 1" "$REACH_TMP/o.c" && echo REACH-FRAMELESS-STAMP-CORRECT'
 SAB_REACH_EXPECT="REACH-FRAMELESS-STAMP-CORRECT"
 SAB_COUNT=1
-SAB_BEFORE='    sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);'
+SAB_BEFORE='    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
 SAB_AFTER='    /* SABOTAGE S224: the stamp two arms are swapped -- a pushing
      * program now reads FRAMELESS 1 and a frameless one reads FRAMELESS 0.
      * No answer moves; the fail label dispatch omission below is written
      * from has_push directly, at its own separate site. */
-    sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 1 : 0);'
+    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 1 : 0);'

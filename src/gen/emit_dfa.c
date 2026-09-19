@@ -294,8 +294,8 @@ const char *pcrec_engine_sel_name(Ctx *cx)
 void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine,
                              const char *sel)
 {
-    sb_printf(c, "#define %s_ENGINE \"%s\"\n", upper, engine);
-    sb_printf(c, "#define %s_ENGINE_SEL \"%s\"\n", upper, sel);
+    sb_stamp_str(c, upper, "ENGINE",     engine);
+    sb_stamp_str(c, upper, "ENGINE_SEL", sel);
 }
 
 /* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
@@ -325,8 +325,8 @@ void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine,
  * at all stamps honestly. */
 static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int factored)
 {
-    sb_printf(sb, "#define %s_ALTCLS_MERGES %d\n", upper, merges);
-    sb_printf(sb, "#define %s_ALTCLS_FACTORED %d\n", upper, factored);
+    sb_stampf(sb, upper, "ALTCLS_MERGES",   "%d", merges);
+    sb_stampf(sb, upper, "ALTCLS_FACTORED", "%d", factored);
 }
 
 /* ---- the multi-engine naming surface (OS-0b; D18 measured, D20 owns it) ----
@@ -665,20 +665,6 @@ static const char *engine_entry_name(Ctx *cx) { return derived_name(cx, "_search
 static const char *match_entry_name(Ctx *cx)  { return derived_name(cx, "_match"); }
 static const char *match_caps_entry_name(Ctx *cx) { return derived_name(cx, "_match_caps"); }
 static const char *info_entry_name(Ctx *cx)   { return derived_name(cx, "_info"); }
-
-/* The OS-0 uppercased-prefix spelling (`<PREFIX>_NCAPS` etc., match_api_m4.md
- * §0/§2.1) — every prefix byte is a valid C identifier byte already
- * (validated by compile.c's valid_prefix), so a plain per-byte toupper is
- * exact; no replacement pass is needed the way emit_header's include-guard
- * computation needs one (that one also has to survive an ARBITRARY guard
- * namespace collision, this one does not). */
-static void prefix_upper(const char *p, char *buf, size_t bufsz)
-{
-    size_t i = 0;
-    for (; p[i] && i + 1 < bufsz; i++)
-        buf[i] = (char)toupper((unsigned char)p[i]);
-    buf[i] = 0;
-}
 
 /* [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
  * types plus rx_renderfn (D44/A-14) — shared, BYTE-FOR-BYTE, by every
@@ -1084,7 +1070,7 @@ static void emit_rx_abi_types(StrBuf *sb)
  * whose VALUE genuinely varies per artifact. */
 static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 {
-    sb_printf(sb, "#define %s_NCAPS %d\n", upper, ncaps);
+    sb_stampf(sb, upper, "NCAPS", "%d", ncaps);
 }
 
 /* [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
@@ -1137,11 +1123,12 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
         " *       region out of an arena.\n"
         " */\n",
         upper, upper, upper);
-    sb_printf(sb, "#define %s_RESUME_FRAMES %lld\n", upper, bs->resume_frames);
-    sb_printf(sb, "#define %s_TRAIL_FRAMES %lld\n", upper, bs->trail_frames);
-    sb_printf(sb, "#define %s_RESUME_FRAME_SIZE %d\n", upper, bs->resume_frame_size);
-    sb_printf(sb, "#define %s_TRAIL_FRAME_SIZE %d\n", upper, bs->trail_frame_size);
-    sb_printf(sb, "#define %s_BUFFER_ALIGN %d\n\n", upper, bs->align);
+    sb_stampf(sb, upper, "RESUME_FRAMES",     "%lld", bs->resume_frames);
+    sb_stampf(sb, upper, "TRAIL_FRAMES",      "%lld", bs->trail_frames);
+    sb_stampf(sb, upper, "RESUME_FRAME_SIZE", "%d",   bs->resume_frame_size);
+    sb_stampf(sb, upper, "TRAIL_FRAME_SIZE",  "%d",   bs->trail_frame_size);
+    sb_stampf(sb, upper, "BUFFER_ALIGN",      "%d",   bs->align);
+    sb_putc(sb, '\n');
     sb_printf(sb,
         "/* Where one match attempt's working storage lives. Pass NULL to any\n"
         " * <prefix>_*_in entry and it is EXACTLY a call to the un-suffixed\n"
@@ -6951,7 +6938,15 @@ void pcrec_gen_names(Ctx *cx, GenNames *g)
     g->matchfn      = match_entry_name(cx);
     g->matchcapsfn  = match_caps_entry_name(cx);
     g->infoname     = info_entry_name(cx);
-    prefix_upper(cx->opt->prefix, g->upper, sizeof g->upper);
+    /* The OS-0 uppercased-prefix spelling (`<PREFIX>_NCAPS` etc.,
+     * match_api_m4.md §0/§2.1) — every prefix byte is a valid C identifier
+     * byte already (validated by compile.c's valid_prefix), so a plain
+     * per-byte toupper is exact; no replacement pass is needed the way
+     * emit_header's include-guard computation needs one (that one also has
+     * to survive an ARBITRARY guard namespace collision, this one does not).
+     * [REVW.2] wave 2: `sb_upper` is where that per-byte pass lives now, so
+     * the VM side shares the derivation instead of copying its result. */
+    g->upper = sb_upper(&cx->arena, cx->opt->prefix);
 }
 
 void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }
@@ -7215,10 +7210,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * and its body drifting apart (this file's `unanch_start` rule). */
     {
         char probe[PCREC_STARTPOS_GUARD_TEXT_MAX];
-        sb_printf(c, "#define %s_STARTPOS_GUARD \"%s\"\n", g->upper,
-                  *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
-                                             "p", "s", "n")
-                      ? "guarded" : "permissive");
+        sb_stamp_str(c, g->upper, "STARTPOS_GUARD",
+                     *pcrec_startpos_guard_text(cx, probe, sizeof probe, "",
+                                                "p", "s", "n")
+                         ? "guarded" : "permissive");
     }
     /* [OPT-DIAL] `<PREFIX>_TUNE` — THE DIAL POSITION THE ARTIFACT WAS BUILT
      * AT. A §6.3 family-(a) SELECTION FACT: unconditional, on every artifact
@@ -7246,8 +7241,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * two readers DIFFERENT deltas for one change. With this one line the
      * delta is 23-28 bytes (by token) for both, which is what makes the
      * manifest re-record a POSITIVE assertion rather than a re-baseline. */
-    sb_printf(c, "#define %s_TUNE \"%s\"\n", g->upper,
-              pcrec_tune_token(cx->opt->tune));
+    sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {
@@ -7503,13 +7497,20 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
 
 void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
-    sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper, dfa_scan_name(cx));
-    sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
-              dfa_prefilter_name(cx));
+    sb_stamp_str(c, upper, "DFA_SCAN",      dfa_scan_name(cx));
+    sb_stamp_str(c, upper, "DFA_PREFILTER", dfa_prefilter_name(cx));
+    /* THE ONE STAMP IN EITHER EMITTER THAT STAYS HAND-WRITTEN, and the
+     * reason is structural rather than a preference: its VALUE IS STREAMED.
+     * `dfa_prefilter_offsets` writes the offset list straight into `c`
+     * between the opening and closing quote, so there is no value for a
+     * caller to hand to `sb_stamp_str` — routing it through the primitive
+     * would mean building the list into a scratch `StrBuf` first, which is
+     * more machinery than the line it replaces. Recorded here so a later
+     * pass does not read it as a site somebody missed. */
     sb_printf(c, "#define %s_DFA_PREFILTER_OFFSETS \"", upper);
     dfa_prefilter_offsets(cx, c);
     sb_puts(c, "\"\n");
-    sb_printf(c, "#define %s_DFA_TABLE \"%s\"\n", upper, dfa_table_name(cx));
+    sb_stamp_str(c, upper, "DFA_TABLE", dfa_table_name(cx));
     /* [CC-DIFF] Beside `_DFA_TABLE` because it is about the same tables:
      * that one names their ENCODING, this one says how many of them the
      * uniform fold removed. A `"premultiplied"` artifact reading 2 here
@@ -7517,15 +7518,13 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * is still the selection that was MADE (and still fixes the folded
      * constant: 65535 pre-multiplied, -1 indexed), which is why that stamp
      * keeps its value rather than falling to `"none"`. */
-    sb_printf(c, "#define %s_DFA_UNIFORM_FOLDS %d\n", upper,
-              dfa_uniform_folds(cx));
+    sb_stampf(c, upper, "DFA_UNIFORM_FOLDS", "%d", dfa_uniform_folds(cx));
     /* [OPT-5] AND THE SCAN EDGE, which belongs in THIS function and not in
      * `emit_dfa_stamps` beside `_DFA_MATCH`: it is a fact about the DFA SCAN,
      * so a VM HYBRID that inlines this emitter's scan has one too and reports
      * it, exactly as it reports `_DFA_TABLE` and `_DFA_PREFILTER`. [DD-13c]'s
      * (a)/(b) split is the rule; the hybrid is where its point shows. */
-    sb_printf(c, "#define %s_DFA_SCAN_EDGE \"%s\"\n", upper,
-              dfa_scan_edge_name(cx));
+    sb_stamp_str(c, upper, "DFA_SCAN_EDGE", dfa_scan_edge_name(cx));
     /* [OPT-5 STEP 2] AXIS J, and it belongs in THIS function for the scan
      * edge's reason one line up rather than beside `_DFA_MATCH`: it is a fact
      * about the DFA SCAN's own entry, so a VM HYBRID that inlines this
@@ -7533,8 +7532,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * a hybrid's `_match` is the VM's; `_DFA_START` is not, because a
      * hybrid's inlined prefilter IS this body. [DD-13c]'s (a)/(b) split is
      * the rule and this is where its point shows. */
-    sb_printf(c, "#define %s_DFA_START \"%s\"\n", upper,
-              dfa_search_start_name(cx));
+    sb_stamp_str(c, upper, "DFA_START", dfa_search_start_name(cx));
 }
 
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
@@ -7552,7 +7550,7 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * it does not share (spec S6.3's (a)/(b) split rules the names
      * engine-specific). So it is stamped on exactly the artifacts this emitter
      * writes `_match` for, and `rx_info.match_form` mirrors NULL elsewhere. */
-    sb_printf(c, "#define %s_DFA_MATCH \"%s\"\n", upper, dfa_match_name(cx));
+    sb_stamp_str(c, upper, "DFA_MATCH", dfa_match_name(cx));
     /* [ART-SIZE] THE TOTAL-BYTES CAP'S EFFECTIVE VALUE, on a DFA artifact too.
      * The cap applies to whatever was emitted rather than to one engine, so by
      * D81 the artifact must say which limit it was built under — a reader
@@ -7567,7 +7565,7 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * SAID this stamp was on both engines while the emitter put it on one, and
      * what surfaced it was 1,185 corpus artifacts moving exactly 0 bytes in a
      * change that was supposed to move every artifact. */
-    sb_printf(c, "#define %s_MAX_EMIT_BYTES %llu\n", upper,
+    sb_stampf(c, upper, "MAX_EMIT_BYTES", "%llu",
               cx->opt->max_emit_bytes
                   ? (unsigned long long)cx->opt->max_emit_bytes
                   : (unsigned long long)PCREC_MAX_EMIT_BYTES);

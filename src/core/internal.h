@@ -151,6 +151,65 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
  * implementation and not two. The caller still owns `ap` and must `va_end` it. */
 const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
+/* The same storage, for the one DERIVED SPELLING this tree needs more than
+ * once: `s` uppercased. It is the artifact's `-p` prefix in the macro
+ * namespace — `<PREFIX>_NCAPS` and every stamp below — and it used to be
+ * computed by `emit_dfa.c`'s `prefix_upper` into a `char upper[80]` on
+ * `GenNames` which `emit_vm.c` then `memcpy`d into a second `char up[80]` on
+ * `Vm`: one derivation, two hand-sized buffers, one of them a copy of the
+ * other. Now it is one derivation into arena storage that both fields point
+ * at, which is learnings.md §3's one-derivation rule applied to a name.
+ *
+ * NOT `sb_name(a, prefix, suffix)`. Lens 10 item 2 proposes this alongside a
+ * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `sb_fragf(a,
+ * "%s_%s", p, s)` already is it, at every site, with no name to learn. Only
+ * the CASE TRANSFORM is a derivation somebody could get differently. */
+const char *sb_upper(Arena *a, const char *s);
+
+/* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
+ *
+ * ONE artifact stamp line: `#define <UPPER>_<NAME> <value>`, newline-
+ * terminated. `<UPPER>` is the artifact's uppercased `-p` prefix, which the
+ * caller holds already (`GenNames.upper`, `Vm.up`) and which is therefore a
+ * PARAMETER rather than re-derived here — the same reason
+ * `pcrec_emit_dfa_stamps` states for its own `upper` parameter.
+ *
+ * WHAT THIS BUYS, and it is not the line count. D94 rules the abi re-pin
+ * site list is "every reader of the number, FOUND BY GREP". The stamp NAMES
+ * are half of what such a sweep has to find, and before this pair they were
+ * 73 bespoke format strings across two files, each spelling the `#define `,
+ * the `%s_`, the separator and the newline again. They are now literal
+ * arguments in a fixed position of two functions, which a grep can enumerate.
+ *
+ * THE VALUE IS A FORMAT, NOT A TYPE, and that is deliberate. A stamp's value
+ * is EMITTED C, so its spelling is part of the contract: `0x%xu` and
+ * `%lluULL` and `%lldLL` and `((ptrdiff_t)PCREC_ERR_STEPS)` are not four
+ * renderings of a number, they are four C tokens with four meanings to the
+ * compiler that reads the artifact. A typed `sb_stamp_int(…, long long)`
+ * would have to drop the suffix and the radix, which is why lens 1's
+ * proposed int/bool pair is NOT built: it covers 9 of this file's 37 value
+ * stamps and silently changes the emitted text of the rest.
+ *
+ * `namew` LEFT-PADS THE NAME FIELD to that many columns (0 = no padding),
+ * because two stamp families in `emit_vm.c` align their value column and the
+ * alignment is emitted bytes like any other (coding_guide.md §3.1).
+ *
+ * D108: DATA IN, TEXT OUT. A `StrBuf *` and three values; no `Ctx`, no walk,
+ * no machine — so a back-end fed from a deserialized IR stamps identically. */
+void sb_stampf (StrBuf *c, const char *upper, const char *name,
+                const char *valfmt, ...)
+      __attribute__((format(printf, 4, 5)));
+void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+                const char *valfmt, ...)
+      __attribute__((format(printf, 5, 6)));
+/* The string-valued stamp, which OWNS THE QUOTING: `#define <UPPER>_<NAME>
+ * "<value>"`. Its own vocabulary question — whether a stamp value may contain
+ * a byte that needs escaping — has one answer today (every value is a
+ * compiler-chosen word from a fixed set) and one home if it ever gains
+ * another, which is the point of it not being 11 separate `\"%s\"` formats. */
+void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+                  const char *value);
+
 /* ---- AST ---- */
 
 /* [M6.4.2 / SR-8] Forward declaration: `Ast.reg` (below) points at the
@@ -5643,7 +5702,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root);              /* src/gen/emit_vm.c */
  * unchanged" table). */
 typedef struct {
     const char *searchfn, *matchfn, *matchcapsfn, *infoname;
-    char        upper[80];
+    const char *upper;      /* the prefix uppercased — sb_upper, arena-owned */
 } GenNames;
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 void pcrec_emit_abi_types(StrBuf *sb);

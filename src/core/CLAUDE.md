@@ -385,6 +385,39 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   the arena's own 64 KiB block `malloc`, never the intra-block slice bounds.
   So "sized exactly to the result" is enforced at the format call and is
   unobservable at the allocation.
+
+  **[REVW.2] wave 2, EP2 step 10 / lens 1 X8 (2026-09-18) ADDS `sb_upper` AND
+  THE STAMP TRIO.** `const char *sb_upper(Arena *, const char *)` is the
+  uppercased-prefix derivation — the `<PREFIX>_` macro namespace — which used
+  to be `emit_dfa.c`'s `prefix_upper` writing a `char upper[80]` on `GenNames`
+  that `emit_vm.c` then `memcpy`d into a second `char up[80]` on `Vm`. One
+  derivation, one arena string, two fields pointing at it; both fixed buffers
+  are gone and the emitters' fragment census reads 6, all of them the named
+  encoding-seam family.
+
+  `sb_stampf` / `sb_stampwf` / `sb_stamp_str` write ONE artifact stamp line,
+  `#define <UPPER>_<NAME> <value>`, and they replace 73 bespoke format strings
+  across the two emitters (52 + 21). **What that buys is D94's own ritual**:
+  the abi re-pin site list is "every reader of the number, found by grep", and
+  the stamp NAME SET is now a literal argument in a fixed position of three
+  functions rather than 73 format strings a grep has to parse.
+
+  **THE VALUE IS A FORMAT, NOT A TYPE**, and lens 1's proposed
+  `emit_stamp_int`/`_bool` pair is deliberately NOT built for that reason: a
+  stamp's value is emitted C, so `0x%xu`, `%lluULL`, `%lldLL` and
+  `((ptrdiff_t)PCREC_ERR_STEPS)` are four C tokens with four meanings to the
+  artifact's own compiler, not four renderings of a number. A typed integer
+  helper covers 9 of `emit_vm.c`'s 37 value stamps and silently moves the
+  emitted bytes of the rest. `namew` (left-padding for a stamp family that
+  aligns its value column) exists because that alignment is emitted bytes like
+  any other.
+
+  **THE CONVERSE OF `sb_fragf`'s BLIND SPOT.** Every byte these write lands in
+  the emitted `.c`, so the four identity gates DO see a defect here, on
+  thousands of artifacts at once. `tests/core/sb_stamp_check.c` is therefore
+  not insurance against invisibility; it says WHICH property broke, and it
+  covers the width x name-length space the shipped sites (two widths, one
+  two-byte prefix) never reach.
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
   syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),

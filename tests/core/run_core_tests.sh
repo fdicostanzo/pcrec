@@ -81,6 +81,29 @@ else
     bad "sb_fragf_check: $(grep -c '^FAIL' "$OUT2") sub-check(s) failed — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `sb_stampf`/`sb_stampwf`/
+# `sb_stamp_str`, the artifact-stamp primitives. UNLIKE `sb_fragf` above,
+# every byte these write lands in the emitted `.c`, so the four byte-identity
+# gates DO see a defect in them; what this check adds is WHICH PROPERTY broke
+# and the width x name-length space the shipped call sites (two widths, one
+# two-byte prefix) never reach. See the check's own header for the argument
+# and the four-plant failing-direction transcript.
+# ---------------------------------------------------------------------------
+BIN3="$WORKDIR/sb_stamp_check"
+if ! unit_build "$BIN3" "$SCRIPT_DIR/sb_stamp_check.c"; then
+    echo "core: FAILED TO BUILD sb_stamp_check.c" >&2
+    exit 1
+fi
+OUT3="$WORKDIR/sb_stamp_check.out"
+"$BIN3" | tee "$OUT3"
+bin3_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN3's
+if [ "$bin3_rc" -eq 0 ]; then
+    ok "sb_stamp_check: $(grep -c '^PASS' "$OUT3") sub-checks green"
+else
+    bad "sb_stamp_check: $(grep -c '^FAIL' "$OUT3") sub-check(s) failed — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

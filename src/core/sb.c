@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,19 +47,37 @@ void sb_puts(StrBuf *sb, const char *s)
     sb->p[sb->len] = 0;
 }
 
+/* `sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
+ * holds one can append formatted text — `sb_fragfv`'s own reason, one
+ * destination over. Measure, grow, format: the two `vsnprintf` calls read the
+ * SAME arguments through their own `va_copy`, because a `va_list` is consumed
+ * by the traversal that measures it. File-static on purpose: no caller outside
+ * this file needs it, and the text layer's public surface is the smaller for
+ * it. */
+static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
+      __attribute__((format(printf, 2, 0)));
+
+static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
+{
+    va_list ap2;
+    va_copy(ap2, ap);
+    int n = vsnprintf(NULL, 0, fmt, ap2);
+    va_end(ap2);
+    if (n < 0) abort();
+    sb_grow(sb, (size_t)n);
+    va_list ap3;
+    va_copy(ap3, ap);
+    vsnprintf(sb->p + sb->len, (size_t)n + 1, fmt, ap3);
+    va_end(ap3);
+    sb->len += (size_t)n;
+}
+
 void sb_printf(StrBuf *sb, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    va_list ap2;
-    va_copy(ap2, ap);
-    int n = vsnprintf(NULL, 0, fmt, ap);
+    sb_vprintf(sb, fmt, ap);
     va_end(ap);
-    if (n < 0) abort();
-    sb_grow(sb, (size_t)n);
-    vsnprintf(sb->p + sb->len, (size_t)n + 1, fmt, ap2);
-    va_end(ap2);
-    sb->len += (size_t)n;
 }
 
 char *sb_take(StrBuf *sb)
@@ -182,5 +201,71 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
     va_start(ap, fmt);
     const char *out = sb_fragfv(a, fmt, ap);
     va_end(ap);
+    return out;
+}
+
+/* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8) ---------------
+ *
+ * The contract is stated once, at the declarations in core/internal.h. This
+ * is the one implementation the three entry points share.
+ *
+ * `%-*s` AT WIDTH 0 IS THE UNPADDED CASE: a printf field width of zero states
+ * no minimum, so `sb_stampf` is `sb_stampwf` with the padding asked for and
+ * not supplied, rather than a second spelling of the line. The separator
+ * space is emitted HERE and not inside the width, which is what makes a
+ * padded name and an over-long one produce the same one-space minimum the
+ * hand-written formats produced. */
+static void sb_stampv(StrBuf *c, const char *upper, const char *name,
+                      int namew, const char *valfmt, va_list ap)
+      __attribute__((format(printf, 5, 0)));
+
+static void sb_stampv(StrBuf *c, const char *upper, const char *name,
+                      int namew, const char *valfmt, va_list ap)
+{
+    sb_printf(c, "#define %s_%-*s ", upper, namew, name);
+    sb_vprintf(c, valfmt, ap);
+    sb_putc(c, '\n');
+}
+
+void sb_stampf(StrBuf *c, const char *upper, const char *name,
+               const char *valfmt, ...)
+{
+    va_list ap;
+    va_start(ap, valfmt);
+    sb_stampv(c, upper, name, 0, valfmt, ap);
+    va_end(ap);
+}
+
+void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+                const char *valfmt, ...)
+{
+    va_list ap;
+    va_start(ap, valfmt);
+    sb_stampv(c, upper, name, namew, valfmt, ap);
+    va_end(ap);
+}
+
+void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+                  const char *value)
+{
+    sb_stampf(c, upper, name, "\"%s\"", value);
+}
+
+/* ---- THE UPPERCASED NAME ([REVW.2] wave 2; lens 10 item 2; D108) --------
+ *
+ * The contract is stated once, at the declaration in core/internal.h.
+ *
+ * `toupper` AND NOT AN ASCII TABLE, deliberately: this is `prefix_upper`'s
+ * own body moved, byte for byte, and swapping in a locale-independent
+ * uppercase would be a behaviour change smuggled inside a refactor. If this
+ * tree ever wants ASCII-only folding here, that is its own change with its
+ * own byte-identity argument. */
+const char *sb_upper(Arena *a, const char *s)
+{
+    size_t n = strlen(s);
+    char *out = arena_alloc(a, n + 1);
+    for (size_t i = 0; i < n; i++)
+        out[i] = (char)toupper((unsigned char)s[i]);
+    out[n] = 0;
     return out;
 }
