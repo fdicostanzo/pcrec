@@ -1,127 +1,150 @@
-; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
-;
-; Produced BY the emitter's own walk, not by a second walk over the
-; AST: every line below was written by the same call that wrote the
-; corresponding C. S10's one constraint -- "the dump must be derived
-; from the same structure the emitter walks, never a parallel
-; description" -- is therefore structural here, not a discipline.
-;
-; pattern      ((a)|b)+c
-; engine       vm (forced by: capture group at pattern offset 0)
-; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
-; rungs        revdet -- see the RUNGS section below for which quantifier took which
-; strategies   possessive -- see the STRATEGIES section below for which quantifier took which
-; possessify   1 of 1 source quantifier possessified (eng_brep_design.md S2)
-; caps         RX_NCAPS 3 (2 capturing groups in the pattern text)
-; step budget  500000000 backtrack resumptions
-; capacities   3 resume frames, 8 trail entries (exact: no subject ceiling)
-; program      26 labels, 73 events
-; resume pts   2
-; max replicas 0 (limit 64, checked before emission)
+# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+#
+# Produced BY the emitter's own walk, not by a second walk over the
+# AST: every row below was written by the same call that wrote the
+# corresponding C. S10's one constraint -- "the dump must be derived
+# from the same structure the emitter walks, never a parallel
+# description" -- is therefore structural here, not a discipline.
+#
+# TAB-separated, one #section per table, each with its own #header of
+# column names: docs/spec/ir_listing.md is this listing's contract and
+# docs/spec/table_contract.md is the TSV contract it conforms to.
+# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG
+# listing: complete for control structure, lossy on operands (D106).
 
-SLOTS (the slot_values array, engine_m4.md S2.4)
-  slot         holds                  note
-   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
-   2,3         group 1                written on traverse, trailed
-   4,5         group 2                written on traverse, trailed
-  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
-  (no span-loop low-water slots: no cursor rung in this program)
-  6            revdet loop entry      the capture walk's floor (S2.5)
-  7            revdet low-water       boundary after rmin iterations: the retreat's floor
-  8            revdet ceiling         maximal boundary reached: the lazy extension's cap
+#section summary
+#fact	value	note
+pattern	((a)|b)+c	
+engine	vm	forced by: capture group at pattern offset 0
+prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
+rungs	revdet	comma-joined; the rungs section below says which quantifier took which
+strategies	possessive	comma-joined; the strategies section below says which quantifier took which
+possessify	1/1	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
+caps	3	RX_NCAPS; 2 capturing groups in the pattern text
+step-budget	500000000	backtrack resumptions
+resume-frames	3	
+trail-entries	8	
+subject-ceiling		exact: no subject ceiling
+labels	26	
+events	73	
+resume-points	2	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+max-replicas	0	limit 64, checked before emission
+prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
+prune-bound-sites	1	
+prune-retreats	0	
+islands	0	
+callout-sites	0	
 
-RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
-  at L0      revdet             reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
+#section slots
+#family	slot	holds	note
+group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
+group	2,3	group 1	written on traverse, trailed
+group	4,5	group 2	written on traverse, trailed
+guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
+low			no span-loop low-water slots: no cursor rung in this program
+mark			
+revdet	6	revdet loop entry	the capture walk's floor (S2.5)
+revdet	7	revdet low-water	boundary after rmin iterations: the retreat's floor
+revdet	8	revdet ceiling	maximal boundary reached: the lazy extension's cap
+lookmark			
+lookpos			
 
-STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
-  at L0      possessive     reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
+#section rungs
+#label	kind	detail
+L0	revdet	reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
 
-PRUNING (k23_design.md; D51's per-quantifier stamp)
-  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
-  bound sites emitted: 1
-  runtime-term length retreats: 0
-  at L0      clamped      reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
+#section strategies
+#label	kind	detail
+L0	possessive	reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
 
-PROGRAM
-  L0      ; reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
-         set     slot_values[6] <- scan_position ; revdet: the loop's entry position (the capture walk's floor)
-         -> L3
-  L3      ; revdet scan: try one more iteration
-         ; MRL: no room for another iteration and the follow -- stop the scan on the boundary it is standing on
-         PUSH    resume L6                    ; this iteration cannot run -- leave the loop with the ones that did
-         -> L4
-  L4      ; group 1 opens
-         -> L13
-  L13     ; alternation entry (2 branches)
-         PUSH    resume L17                   ; branch 1 of 2 preferred; resume tries branch 2
-         -> L15
-  L17     ; alternation resume: try branch 2 of 2
-         -> L16
-  L15     ; group 2 opens
-         -> L18
-  L18
-         consume 'a'                          -> L19
-         -> fail (backtrack)
-  L19     ; group 2 closes
-         -> L14
-  L16
-         consume 'b'                          -> L14
-         -> fail (backtrack)
-  L14     ; group 1 closes
-         -> L5
-  L5      ; revdet scan: one iteration committed
-         ; work charge: frames discarded by the revdet scan cut
-         ; cut to the iteration's entry depth: a unique-iteration body has no second parse of what just matched
-         set     slot_values[7] <- scan_position ; revdet: low-water = the boundary after rmin iterations
-         -> L3
-  L6      ; revdet scan: the body could not run at this boundary
-         -> L7
-  L7      ; revdet: the forward scan is complete
-         set     slot_values[8] <- scan_position ; revdet: the maximal boundary reached (the lazy extension's ceiling)
-         -> L8
-  L8      ; revdet: commit at this boundary
-         -> L9
-  L9      ; revdet walk: one step back over the committed span
-         -> L10
-  L10     ; group 1: its END, met first going backward
-         -> L20
-  L20     ; backward alternation (2 branches): the byte selects, no frame
-         -> L12
-  L22     ; group 2: its END, met first going backward
-         -> L24
-  L24
-         consume 'a'                          -> L25
-         -> L12
-  L25     ; group 2: its START -- the last iteration that entered it wins
-         -> L21
-  L23
-         consume 'b'                          -> L21
-         -> L12
-  L21     ; group 1: its START -- the last iteration that entered it wins
-         -> L11
-  L11     ; revdet walk: landed on the previous boundary
-         -> L9
-  L12     ; revdet walk: done (all groups witnessed, or the loop's entry reached)
-         set     slot_values[2] <- scan_position ; group 1 open, recovered by the backward walk
-         set     slot_values[3] <- scan_position ; group 1 close, recovered by the backward walk
-         set     slot_values[4] <- scan_position ; group 2 open, recovered by the backward walk
-         set     slot_values[5] <- scan_position ; group 2 close, recovered by the backward walk
-         ; a group the walk never witnessed keeps its previous value -- which is §3.4's ZERO-ITERATION clause at the boundary where the loop never ran
-         -> L2
-  L2
-         consume 'c'                          -> L1
-         -> fail (backtrack)
-  L1      ; the pattern is complete
-         -> accept
-  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
-  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+#section pruning
+#label	kind	detail
+L0	clamped	reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
 
-CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
-  at L3      resume L6      this iteration cannot run -- leave the loop with the ones that did
-  at L13     resume L17     branch 1 of 2 preferred; resume tries branch 2
+#section program
+#label	op	args	target	note
+L0	label			reverse-deterministic rung {1,}, greedy, POSSESSIFIED -- ONE body copy, no replication
+	set	slot_values[6] <- scan_position		revdet: the loop's entry position (the capture walk's floor)
+	goto		L3	
+L3	label			revdet scan: try one more iteration
+	note			MRL: no room for another iteration and the follow -- stop the scan on the boundary it is standing on
+	push		L6	this iteration cannot run -- leave the loop with the ones that did
+	goto		L4	
+L4	label			group 1 opens
+	goto		L13	
+L13	label			alternation entry (2 branches)
+	push		L17	branch 1 of 2 preferred; resume tries branch 2
+	goto		L15	
+L17	label			alternation resume: try branch 2 of 2
+	goto		L16	
+L15	label			group 2 opens
+	goto		L18	
+L18	label			
+	consume	'a'	L19	
+	fail			backtrack
+L19	label			group 2 closes
+	goto		L14	
+L16	label			
+	consume	'b'	L14	
+	fail			backtrack
+L14	label			group 1 closes
+	goto		L5	
+L5	label			revdet scan: one iteration committed
+	note			work charge: frames discarded by the revdet scan cut
+	note			cut to the iteration's entry depth: a unique-iteration body has no second parse of what just matched
+	set	slot_values[7] <- scan_position		revdet: low-water = the boundary after rmin iterations
+	goto		L3	
+L6	label			revdet scan: the body could not run at this boundary
+	goto		L7	
+L7	label			revdet: the forward scan is complete
+	set	slot_values[8] <- scan_position		revdet: the maximal boundary reached (the lazy extension's ceiling)
+	goto		L8	
+L8	label			revdet: commit at this boundary
+	goto		L9	
+L9	label			revdet walk: one step back over the committed span
+	goto		L10	
+L10	label			group 1: its END, met first going backward
+	goto		L20	
+L20	label			backward alternation (2 branches): the byte selects, no frame
+	goto		L12	
+L22	label			group 2: its END, met first going backward
+	goto		L24	
+L24	label			
+	consume	'a'	L25	
+	goto		L12	
+L25	label			group 2: its START -- the last iteration that entered it wins
+	goto		L21	
+L23	label			
+	consume	'b'	L21	
+	goto		L12	
+L21	label			group 1: its START -- the last iteration that entered it wins
+	goto		L11	
+L11	label			revdet walk: landed on the previous boundary
+	goto		L9	
+L12	label			revdet walk: done (all groups witnessed, or the loop's entry reached)
+	set	slot_values[2] <- scan_position		group 1 open, recovered by the backward walk
+	set	slot_values[3] <- scan_position		group 1 close, recovered by the backward walk
+	set	slot_values[4] <- scan_position		group 2 open, recovered by the backward walk
+	set	slot_values[5] <- scan_position		group 2 close, recovered by the backward walk
+	note			a group the walk never witnessed keeps its previous value -- which is §3.4's ZERO-ITERATION clause at the boundary where the loop never ran
+	goto		L2	
+L2	label			
+	consume	'c'	L1	
+	fail			backtrack
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
 
-DFA ISLANDS (0)
-  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+#section choicepoints
+#label	resume	note
+L3	L6	this iteration cannot run -- leave the loop with the ones that did
+L13	L17	branch 1 of 2 preferred; resume tries branch 2
 
-CALLOUT SITES (0)
-  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)
+#section islands
+#label	width	note
+		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
+
+#section callouts
+#label	note
+	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1

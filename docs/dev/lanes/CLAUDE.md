@@ -1721,3 +1721,38 @@ never edited afterwards.
   named that cannot be folded**: the revdet slot family's three rows come from
   one loop index, so any per-family walk reorders the section.
   PARKED on `lane/w2y`, not merged.
+
+- **dd8_report.md** — [DD-8] `--emit-ir` ADOPTS `docs/spec/table_contract.md`
+  (lane dd8, branch `lane/dd8` from `7ee40500`, 2026-09-19; D106 + its three
+  addenda, D108). The listing renders as machine-first TSV — NINE named
+  `#section` blocks, the PROGRAM body among them
+  (`label|op|args|target|note`) — through the wave-1 emission kit's `sb_row`,
+  off the same `VEvent` walk as before. **§0 is the scope question answering
+  itself**: D106 left open whether the body needed a sibling line-oriented
+  contract, and the build says no — five columns carry all twelve instruction
+  kinds and nothing had to be bent. **§2.1 is the rule that shaped every
+  empty population**: the table contract makes the last `#` line before a
+  section's data that section's HEADER, so a trailing remark inside an EMPTY
+  section would silently become its column list — which is why an absent
+  population is a ROW with empty cells, and why the reach census can count an
+  empty arm as a projection instead of a re-walk. **§2.2/§2.3 are two named
+  failures fixed by declaring a column**: `slots` gains a FAMILY column (w2y
+  §3.3's census was defeated by families recognised from prose), and
+  `prefilter` becomes nine value TOKENS matched by equality (the old `yes`
+  needle was a substring of several OFF-route sentences). **§3.1 is the
+  instrument finding a later lane should read before writing a byte sweep**:
+  the first driver read 100% MOVERS and the compiler was innocent — the
+  emitted `.c` carries `#include "<basename>.h"` derived from `-o`, so two
+  different output NAMES are two different artifacts, and every prior lane
+  validated against the opposite failure (a false GREEN from too little
+  reach). **§3.2 adds the positive control** the `irsb` stream has needed
+  since w2y: an arm that MUST move (2,804 of 2,804), so the `.c` arms' zeros
+  are evidence rather than blindness. **§4.3 is a finding for [OPT-4.1]**:
+  the `no-nullable-collapsed` route is a live arm of a shipped diagnostic
+  that NO input can print, because [OPT-4.2]'s decline fires first and
+  count-collapse can never make a language nullable — pre-existing, argued
+  structurally, and not this lane's to fix. Eleven consumer scripts converted
+  to declaration-based parsing (§5, with the hot-loop hoist shape in §5.1),
+  `tests/lib/table.sh` given the mechanism's row-reading half, 16 baselines
+  deliberately recaptured, `run_ir_listing.sh` 128 -> 144 checks, six
+  sabotage rows re-driven SOLO and all DETECTED. NOT an abi event.

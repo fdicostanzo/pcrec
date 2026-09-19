@@ -207,7 +207,24 @@ spec and a design doc disagree, the spec is what the tool promises.
   (never hardcoded count/position, trailing-safe, count only as
   header-equality). Chartered by Frank 2026-08-21 from the D65
   format-consumer breakage; [SR-11] tracks consumer conversion + the
-  two checks. `--emit-ir`/`--trace` are explicitly out of scope.
+  two checks. **[DD-8], 2026-09-19: `--emit-ir` ADOPTED IT** and is the
+  Sections mechanism's third producer, the first with no anonymous table
+  and the first whose sections carry different column counts; `--trace`
+  remains out of scope.
+
+- `ir_listing.md` — **[DD-8], 2026-09-19.** `--emit-ir`'s output format:
+  its nine `#section` blocks (`summary`, `slots`, `rungs`, `strategies`,
+  `pruning`, `program`, `choicepoints`, `islands`, `callouts`) and their
+  columns, the `prefilter` value vocabulary and the `program` `op`
+  vocabulary, the multi-valued-cell and escaping rules, and the three
+  things the listing is NOT — not an IR anything consumes, not lossless
+  (lossy on operands, by ruling), not a DFA listing. Sits UNDER
+  `table_contract.md` (it conforms to it and adds only what is specific
+  to this listing) and beside `cli.md` §2 (the flag's reference entry).
+  The producer-side rule that an empty population is a ROW rather than a
+  comment lives here, because it follows from the table contract's own
+  header rule rather than from taste. Read it before changing anything
+  `vm_render_listing` prints.
 
 - `limits.md` — **[SPEC-1.1], 2026-08-25.** The resource-bound contract:
   the give-up code space (pointing at `match_api.md` §4 rather than
@@ -249,9 +266,7 @@ spec and a design doc disagree, the spec is what the tool promises.
   caller-side, the offset-pinning convention from D26's tension addendum),
   and an honest "what the CLI does not do" section (no runtime, no
   multi-pattern units `[V-E]`, no `--lib` `[LIB]`, `--emit-ir` ships while
-  `--emit-dot` does not — `[DD-8]` confirmed still STATE:not-started,
-  which means `table_contract.md`'s own "TO BE CONSIDERED" note about
-  `--emit-ir` is current, not stale). Every flag verified against
+  `--emit-dot` does not). Every flag verified against
   `cli/main.c` AND a live `build/pcrec` run at this worktree's branch
   point (`0e2b23d`); where `--help`'s wording and the code agreed, cited
   directly rather than restated from memory.

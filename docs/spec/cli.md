@@ -793,6 +793,32 @@ the construct.
 `--list-source --resolved` — the file with its `config` composition and
 `with`/`from` cascades APPLIED — is named here and is not built.
 
+### `--emit-ir` — the VM program listing ([DD-8])
+
+A QUERY, like the eight dumps above and unlike a compile: it takes a
+PATTERN, takes no `-o`, and emits no C. It prints the VM program listing —
+labels, every instruction with its branch target, choice points with their
+preference order, capture-slot assignments, island boundaries, callout sites
+and the artifact-wide summary facts — and exits.
+
+It is **VM-only**. On a pattern that compiles to the DFA engine it REFUSES
+and names `--engine=vm` as the way to get a VM program; a DFA listing is
+future work ([DD-8], D106 addendum items 3 and 4), as is `--emit-dot`.
+
+**Since 2026-09-19 ([DD-8]) the output is `docs/spec/table_contract.md` TSV**
+— every table a named `#section` with its own column header, the program body
+included. `docs/spec/ir_listing.md` is that format's contract: its nine
+sections, their columns, the `prefilter` value vocabulary, the `op`
+vocabulary, and what is and is not promised. Two things a consumer must take
+from it: resolve a column BY NAME (column WIDTH is not a contract), and treat
+the listing as a DEBUG surface — complete for control structure, LOSSY on
+operands, and not an IR anything consumes.
+
+It **derives from the emitter's own walk** rather than describing it
+(`docs/design/engine_m4.md` §10): every row is rendered from the event stream
+the emitting call itself appended, so the listing cannot drift from the code
+it describes.
+
 ### `--explain SYNTAX` / `--flavour NAME`
 
 `--explain` is the one surface that is a CROSS-SOURCE query rather than a
@@ -931,20 +957,23 @@ Stated plainly rather than left for a stranger to discover by trial:
   **STATE:not-started**, and its own plan row records that its place
   relative to the project's roadmap has not even been ruled yet ("planned
   but I don't know that I'd put them on the spine," Frank, 2026-08-24).
-- **`--emit-ir` ships; `--emit-dot` does not.** `--emit-ir` (§1's `-h`
-  text and `cli/main.c:440-466`) prints the VM program listing and is a
-  real, working query, verified live. A DOT-format graph dump was
-  promised alongside it in `APPROACH.md` §6 but was never built; the
-  combined row is `[DD-8]`, `docs/dev/plan.md:1069`, still
-  **STATE:not-started** at this commit — `docs/spec/table_contract.md`'s
-  own "TO BE CONSIDERED" note about `--emit-ir`'s tabular sections
-  (whether they should adopt the table contract) is therefore current,
-  not stale: it is explicitly waiting on `[DD-8]` reopening, and `[DD-8]`
-  has not. `--trace` (an instrumented, non-default matcher variant) DOES
-  ship and is unrelated to either row — see §1.
+- **`--emit-ir` ships; `--emit-dot` does not.** `--emit-ir` prints the VM
+  program listing and is a real, working query — §2 above is its entry and
+  `docs/spec/ir_listing.md` its format contract. A DOT-format graph dump was
+  promised alongside it in `APPROACH.md` §6 but was never built; the combined
+  row is `[DD-8]`, which is **STATE:started** and whose table-contract
+  adoption LANDED 2026-09-19, while `--emit-dot`, the DFA/prefilter listing
+  section and the enriched trace remain not-started within it. `--trace` (an
+  instrumented, non-default matcher variant) DOES ship and is unrelated to
+  either — see §1.
 
 ## Revision history
 
+- 2026-09-19 ([DD-8]): §2 gains a `--emit-ir` entry (the flag had none, being
+  neither a dump nor a compile), pointing at the new
+  `docs/spec/ir_listing.md` for its format; §4's bullet is corrected — the
+  row is STATE:started, the table-contract adoption landed, and the
+  "TO BE CONSIDERED" note it cited no longer exists. No flag's SHAPE changed.
 - 2026-09-03 ([DD-13b.W1.3]): §1's `--lib-path` entry gains the composition
   paragraph — a `lib` file is READ now, its definitions are in scope, the
   closure's order and dedup are stated, and a duplicate definition name

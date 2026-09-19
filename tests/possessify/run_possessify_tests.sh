@@ -44,6 +44,10 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 # below is bounded too (gen_run, same file) -- a handful of runs, not an
 # inner loop, so it goes through the watchdog.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 export WATCHDOG_SECTION="possessify"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/possessify.XXXXXX")"
@@ -110,14 +114,18 @@ if gen mixed '(x)\d{4}(a|ab){0,3}c'; then
     else
         bad "a deliberately mixed artifact stamped RX_VM_STRATS 0x$strats, not 0x3 -- a scalar would read as one or the other"
     fi
-    nposs="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
-             | sed -n '/^STRATEGIES/,/^$/p' | grep -c ' possessive ')"
-    nback="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
-             | sed -n '/^STRATEGIES/,/^$/p' | grep -c ' backtracking ')"
+    # [DD-8] one compile, one section read by NAME, kinds matched WHOLE. The
+    # old form ran pcrec twice, cut the section out with a line-range `sed`
+    # bounded by a blank line, and counted a space-delimited substring.
+    poss_ir="$WORKDIR/strats.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' > "$poss_ir" 2>/dev/null
+    skinds="$(table_field "$poss_ir" strategies kind)" || skinds=""
+    nposs="$(printf '%s\n' "$skinds" | grep -cx possessive | tr -d ' ')"
+    nback="$(printf '%s\n' "$skinds" | grep -cx backtracking | tr -d ' ')"
     if [ "$nposs" -ge 1 ] && [ "$nback" -ge 1 ]; then
-        ok "--emit-ir's STRATEGIES section names WHICH quantifier took which ($nposs possessive, $nback backtracking)"
+        ok "--emit-ir's strategies section names WHICH quantifier took which ($nposs possessive, $nback backtracking)"
     else
-        bad "--emit-ir's STRATEGIES section did not report both kinds ($nposs possessive, $nback backtracking)"
+        bad "--emit-ir's strategies section did not report both kinds ($nposs possessive, $nback backtracking)"
     fi
 else
     bad "the mixed-strategy pattern did not compile"

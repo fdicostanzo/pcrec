@@ -45,6 +45,10 @@ MODE="${1:-quick}"
 # under the shared budget -- a timeout is a FAILURE naming the case, never a
 # hang. One implementation for the whole tree.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 
 # Execution is bounded too (gen_run, same file): every generated-matcher run
 # below goes through watchdog with the axis-derived run budget + memory
@@ -826,20 +830,30 @@ if build mix3 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e'; then
     else
         bad "[M4.5e] D46: the four-rung pattern stamped RX_VM_RUNGS=$(rungs_field mix3), expected 0xf (all four rungs)"
     fi
-    if ir="$(pcrec_run "$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' 2>/dev/null)"; then
-        ncursor="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +cursor ')"
-        nbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-bounded ')"
-        nunbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-unbounded ')"
-        nrevdet="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +revdet ')"
+    # [DD-8] the listing is docs/spec/table_contract.md TSV: the per-rung row
+    # count is the `rungs` SECTION's `kind` column counted by value, and the
+    # summary line is the `summary` section's `rungs` VALUE — a comma-joined
+    # list compared by EQUALITY rather than a padded prose line matched with a
+    # trailing space (the old pattern `'^; rungs        cursor, ...'` pinned
+    # the column padding D106 addendum 3 has since ruled is not a contract).
+    ir="$WORKDIR/d46_mix.ir"
+    if pcrec_run "$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' > "$ir" 2>/dev/null; then
+        kinds="$(table_field "$ir" rungs kind)" || kinds=""
+        rungcount() { printf '%s\n' "$kinds" | grep -cx "$1" | tr -d ' '; }
+        ncursor="$(rungcount cursor)"
+        nbounded="$(rungcount frames-bounded)"
+        nunbounded="$(rungcount frames-unbounded)"
+        nrevdet="$(rungcount revdet)"
         if [ "$ncursor" = "1" ] && [ "$nbounded" = "1" ] && [ "$nunbounded" = "1" ] && [ "$nrevdet" = "1" ]; then
-            ok "[M4.5e] D46: --emit-ir's RUNGS section carries exactly one row per rung for the four-quantifier mix — the per-quantifier detail the 0xf mask above summarizes"
+            ok "[M4.5e] D46: --emit-ir's rungs section carries exactly one row per rung for the four-quantifier mix — the per-quantifier detail the 0xf mask above summarizes"
         else
-            bad "[M4.5e] D46: RUNGS section row counts were cursor=$ncursor frames-bounded=$nbounded frames-unbounded=$nunbounded revdet=$nrevdet, expected 1/1/1/1"
+            bad "[M4.5e] D46: rungs section row counts were cursor=$ncursor frames-bounded=$nbounded frames-unbounded=$nunbounded revdet=$nrevdet, expected 1/1/1/1"
         fi
-        if printf '%s' "$ir" | grep -q '^; rungs        cursor, frames-bounded, frames-unbounded, revdet '; then
-            ok "[M4.5e] D46: --emit-ir's header summary line lists all four rung names for the mixed pattern"
+        summ="$(table_lookup "$ir" summary fact rungs value)" || summ="<unreadable>"
+        if [ "$summ" = "cursor,frames-bounded,frames-unbounded,revdet" ]; then
+            ok "[M4.5e] D46: --emit-ir's summary 'rungs' value lists all four rung names for the mixed pattern"
         else
-            bad "[M4.5e] D46: header summary line did not list all four rungs: $(printf '%s' "$ir" | grep '^; rungs')"
+            bad "[M4.5e] D46: summary 'rungs' value read '$summ', expected 'cursor,frames-bounded,frames-unbounded,revdet'"
         fi
     else
         bad "[M4.5e] D46: --emit-ir failed on the four-rung pattern"

@@ -1,120 +1,143 @@
-; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
-;
-; Produced BY the emitter's own walk, not by a second walk over the
-; AST: every line below was written by the same call that wrote the
-; corresponding C. S10's one constraint -- "the dump must be derived
-; from the same structure the emitter walks, never a parallel
-; description" -- is therefore structural here, not a discipline.
-;
-; pattern      (?:a|ab){2,3}+
-; engine       vm (forced by: possessive quantifier at pattern offset 13)
-; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
-; rungs        frames-bounded -- see the RUNGS section below for which quantifier took which
-; strategies   possessive -- see the STRATEGIES section below for which quantifier took which
-; possessify   0 of 1 source quantifier possessified (eng_brep_design.md S2)
-; caps         RX_NCAPS 1 (0 capturing groups in the pattern text)
-; step budget  500000000 backtrack resumptions
-; capacities   3 resume frames, 2 trail entries (exact: no subject ceiling)
-; program      22 labels, 68 events
-; resume pts   4
-; max replicas 3 (limit 64, checked before emission)
+# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+#
+# Produced BY the emitter's own walk, not by a second walk over the
+# AST: every row below was written by the same call that wrote the
+# corresponding C. S10's one constraint -- "the dump must be derived
+# from the same structure the emitter walks, never a parallel
+# description" -- is therefore structural here, not a discipline.
+#
+# TAB-separated, one #section per table, each with its own #header of
+# column names: docs/spec/ir_listing.md is this listing's contract and
+# docs/spec/table_contract.md is the TSV contract it conforms to.
+# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG
+# listing: complete for control structure, lossy on operands (D106).
 
-SLOTS (the slot_values array, engine_m4.md S2.4)
-  slot         holds                  note
-   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
-  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
-  (no span-loop low-water slots: no cursor rung in this program)
-  2            cut mark               resume-stack depth at entry -- a possessified loop's (eng_brep_design.md S2) or an atomic group's ([M6.4.2])
+#section summary
+#fact	value	note
+pattern	(?:a|ab){2,3}+	
+engine	vm	forced by: possessive quantifier at pattern offset 13
+prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
+rungs	frames-bounded	comma-joined; the rungs section below says which quantifier took which
+strategies	possessive	comma-joined; the strategies section below says which quantifier took which
+possessify	0/1	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
+caps	1	RX_NCAPS; 0 capturing groups in the pattern text
+step-budget	500000000	backtrack resumptions
+resume-frames	3	
+trail-entries	2	
+subject-ceiling		exact: no subject ceiling
+labels	22	
+events	68	
+resume-points	4	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+max-replicas	3	limit 64, checked before emission
+prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
+prune-bound-sites	3	
+prune-retreats	0	
+islands	0	
+callout-sites	0	
 
-RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
-  at L0      frames-bounded     frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
+#section slots
+#family	slot	holds	note
+group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
+guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
+low			no span-loop low-water slots: no cursor rung in this program
+mark	2	cut mark	resume-stack depth at entry -- a possessified loop's (eng_brep_design.md S2) or an atomic group's ([M6.4.2])
+revdet			
+lookmark			
+lookpos			
 
-STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
-  at L0      possessive     frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
+#section rungs
+#label	kind	detail
+L0	frames-bounded	frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
 
-PRUNING (k23_design.md; D51's per-quantifier stamp)
-  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
-  bound sites emitted: 3
-  runtime-term length retreats: 0
-  at L0      clamped      frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
+#section strategies
+#label	kind	detail
+L0	possessive	frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
 
-PROGRAM
-  L0      ; possessified repeat: record the resume-stack depth to cut back to
-         set     slot_values[2] <- scan_position ; possessive cut mark (resume-stack depth at loop entry)
-         -> L2
-  L2      ; MRL: mandatory copies left plus the follow do not fit
-         ; MRL: mandatory copies left plus the follow do not fit
-         -> L4
-  L4      ; alternation entry (2 branches)
-         PUSH    resume L7                    ; branch 1 of 2 preferred; resume tries branch 2
-         -> L5
-  L7      ; alternation resume: try branch 2 of 2
-         -> L6
-  L5
-         consume 'a'                          -> L3
-         -> fail (backtrack)
-  L6
-         consume 'a'                          -> L8
-         -> fail (backtrack)
-  L8
-         consume 'b'                          -> L3
-         -> fail (backtrack)
-  L3      ; MRL: mandatory copies left plus the follow do not fit
-         ; MRL: mandatory copies left plus the follow do not fit
-         -> L10
-  L10     ; alternation entry (2 branches)
-         PUSH    resume L13                   ; branch 1 of 2 preferred; resume tries branch 2
-         -> L11
-  L13     ; alternation resume: try branch 2 of 2
-         -> L12
-  L11
-         consume 'a'                          -> L9
-         -> fail (backtrack)
-  L12
-         consume 'a'                          -> L14
-         -> fail (backtrack)
-  L14
-         consume 'b'                          -> L9
-         -> fail (backtrack)
-  L9      ; possessified optional copy (1 remaining)
-         ; work charge: frames discarded by this cut
-         CUT     frames <- slot_values[2]     ; cut: the previous copy is committed, its choice points are dead
-         ; MRL: no room for another copy and the follow
-         PUSH    resume L15                   ; the loop's ONLY frame: this copy failing leaves the loop
-         -> L16
-  L16     ; alternation entry (2 branches)
-         PUSH    resume L20                   ; branch 1 of 2 preferred; resume tries branch 2
-         -> L18
-  L20     ; alternation resume: try branch 2 of 2
-         -> L19
-  L18
-         consume 'a'                          -> L17
-         -> fail (backtrack)
-  L19
-         consume 'a'                          -> L21
-         -> fail (backtrack)
-  L21
-         consume 'b'                          -> L17
-         -> fail (backtrack)
-  L17     ; possessified repeat: every copy taken
-         ; work charge: frames discarded by this cut
-         CUT     frames <- slot_values[2]     ; cut: the loop is complete and owns no live choice point
-         -> L1
-  L15     ; possessified repeat: a copy could not run -- exit with the iterations that did
-         -> L1
-  L1      ; the pattern is complete
-         -> accept
-  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
-  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+#section pruning
+#label	kind	detail
+L0	clamped	frames rung, bounded {2,3}, greedy, ATOMIC (a written cut: one frame for the whole loop, no giveback)
 
-CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
-  at L4      resume L7      branch 1 of 2 preferred; resume tries branch 2
-  at L10     resume L13     branch 1 of 2 preferred; resume tries branch 2
-  at L9      resume L15     the loop's ONLY frame: this copy failing leaves the loop
-  at L16     resume L20     branch 1 of 2 preferred; resume tries branch 2
+#section program
+#label	op	args	target	note
+L0	label			possessified repeat: record the resume-stack depth to cut back to
+	set	slot_values[2] <- scan_position		possessive cut mark (resume-stack depth at loop entry)
+	goto		L2	
+L2	label			MRL: mandatory copies left plus the follow do not fit
+	note			MRL: mandatory copies left plus the follow do not fit
+	goto		L4	
+L4	label			alternation entry (2 branches)
+	push		L7	branch 1 of 2 preferred; resume tries branch 2
+	goto		L5	
+L7	label			alternation resume: try branch 2 of 2
+	goto		L6	
+L5	label			
+	consume	'a'	L3	
+	fail			backtrack
+L6	label			
+	consume	'a'	L8	
+	fail			backtrack
+L8	label			
+	consume	'b'	L3	
+	fail			backtrack
+L3	label			MRL: mandatory copies left plus the follow do not fit
+	note			MRL: mandatory copies left plus the follow do not fit
+	goto		L10	
+L10	label			alternation entry (2 branches)
+	push		L13	branch 1 of 2 preferred; resume tries branch 2
+	goto		L11	
+L13	label			alternation resume: try branch 2 of 2
+	goto		L12	
+L11	label			
+	consume	'a'	L9	
+	fail			backtrack
+L12	label			
+	consume	'a'	L14	
+	fail			backtrack
+L14	label			
+	consume	'b'	L9	
+	fail			backtrack
+L9	label			possessified optional copy (1 remaining)
+	note			work charge: frames discarded by this cut
+	cut	frames <- slot_values[2]		cut: the previous copy is committed, its choice points are dead
+	note			MRL: no room for another copy and the follow
+	push		L15	the loop's ONLY frame: this copy failing leaves the loop
+	goto		L16	
+L16	label			alternation entry (2 branches)
+	push		L20	branch 1 of 2 preferred; resume tries branch 2
+	goto		L18	
+L20	label			alternation resume: try branch 2 of 2
+	goto		L19	
+L18	label			
+	consume	'a'	L17	
+	fail			backtrack
+L19	label			
+	consume	'a'	L21	
+	fail			backtrack
+L21	label			
+	consume	'b'	L17	
+	fail			backtrack
+L17	label			possessified repeat: every copy taken
+	note			work charge: frames discarded by this cut
+	cut	frames <- slot_values[2]		cut: the loop is complete and owns no live choice point
+	goto		L1	
+L15	label			possessified repeat: a copy could not run -- exit with the iterations that did
+	goto		L1	
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
 
-DFA ISLANDS (0)
-  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+#section choicepoints
+#label	resume	note
+L4	L7	branch 1 of 2 preferred; resume tries branch 2
+L10	L13	branch 1 of 2 preferred; resume tries branch 2
+L9	L15	the loop's ONLY frame: this copy failing leaves the loop
+L16	L20	branch 1 of 2 preferred; resume tries branch 2
 
-CALLOUT SITES (0)
-  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)
+#section islands
+#label	width	note
+		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
+
+#section callouts
+#label	note
+	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1

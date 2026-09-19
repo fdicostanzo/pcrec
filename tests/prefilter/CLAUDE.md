@@ -54,9 +54,12 @@ whole of what the row owes.
   the derived default) leaves the artifact BYTE-IDENTICAL to the same build
   without it (the same rule `emit_dfa.c`'s strategy-denial mask states for
   every D47.3 sibling); that `rx_info.flags` never carries either new bit
-  numerically; that `--emit-ir`'s `; prefilter` listing line names the
-  reason that actually fired (explicit deny vs. the `--engine=vm` side
-  effect vs. forced back on); and a functional sanity check that a
+  numerically; that `--emit-ir`'s `prefilter` summary
+  row names the reason that actually fired (explicit deny vs. the
+  `--engine=vm` side effect vs. forced back on) — since [DD-8] that is an
+  EQUALITY against the nine-token `value` vocabulary
+  (`docs/spec/ir_listing.md`), with a second helper for the one claim a
+  token cannot carry, the [SEL-1] cap text in the `note`; and a functional sanity check that a
   forced-on and a forced-off build still answer identically on a live
   subject — the axis changes MECHANISM, never the answer.
 

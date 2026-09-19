@@ -1,82 +1,106 @@
-; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
-;
-; Produced BY the emitter's own walk, not by a second walk over the
-; AST: every line below was written by the same call that wrote the
-; corresponding C. S10's one constraint -- "the dump must be derived
-; from the same structure the emitter walks, never a parallel
-; description" -- is therefore structural here, not a discipline.
-;
-; pattern      (\d+)-(\d+)
-; engine       vm (forced by: capture group at pattern offset 0)
-; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
-; rungs        cursor -- see the RUNGS section below for which quantifier took which
-; strategies   possessive -- see the STRATEGIES section below for which quantifier took which
-; possessify   2 of 2 source quantifiers possessified (eng_brep_design.md S2)
-; caps         RX_NCAPS 3 (2 capturing groups in the pattern text)
-; step budget  500000000 backtrack resumptions
-; capacities   1 resume frames, 5 trail entries (exact: no subject ceiling)
-; program      8 labels, 32 events
-; resume pts   0
-; max replicas 0 (limit 64, checked before emission)
+# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+#
+# Produced BY the emitter's own walk, not by a second walk over the
+# AST: every row below was written by the same call that wrote the
+# corresponding C. S10's one constraint -- "the dump must be derived
+# from the same structure the emitter walks, never a parallel
+# description" -- is therefore structural here, not a discipline.
+#
+# TAB-separated, one #section per table, each with its own #header of
+# column names: docs/spec/ir_listing.md is this listing's contract and
+# docs/spec/table_contract.md is the TSV contract it conforms to.
+# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG
+# listing: complete for control structure, lossy on operands (D106).
 
-SLOTS (the slot_values array, engine_m4.md S2.4)
-  slot         holds                  note
-   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
-   2,3         group 1                written on traverse, trailed
-   4,5         group 2                written on traverse, trailed
-  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
-  (no span-loop low-water slots: no cursor rung in this program)
+#section summary
+#fact	value	note
+pattern	(\d+)-(\d+)	
+engine	vm	forced by: capture group at pattern offset 0
+prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
+rungs	cursor	comma-joined; the rungs section below says which quantifier took which
+strategies	possessive	comma-joined; the strategies section below says which quantifier took which
+possessify	2/2	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
+caps	3	RX_NCAPS; 2 capturing groups in the pattern text
+step-budget	500000000	backtrack resumptions
+resume-frames	1	
+trail-entries	5	
+subject-ceiling		exact: no subject ceiling
+labels	8	
+events	32	
+resume-points	0	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+max-replicas	0	limit 64, checked before emission
+prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
+prune-bound-sites	1	
+prune-retreats	0	
+islands	0	
+callout-sites	0	
 
-RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
-  at L3      cursor             span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
-  at L6      cursor             span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+#section slots
+#family	slot	holds	note
+group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
+group	2,3	group 1	written on traverse, trailed
+group	4,5	group 2	written on traverse, trailed
+guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
+low			no span-loop low-water slots: no cursor rung in this program
+mark			
+revdet			
+lookmark			
+lookpos			
 
-STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
-  at L3      possessive     span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
-  at L6      possessive     span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+#section rungs
+#label	kind	detail
+L3	cursor	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+L6	cursor	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
 
-PRUNING (k23_design.md; D51's per-quantifier stamp)
-  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
-  bound sites emitted: 1
-  runtime-term length retreats: 0
-  at L3      clamped      span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
-  at L6      unclamped    span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+#section strategies
+#label	kind	detail
+L3	possessive	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+L6	possessive	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
 
-PROGRAM
-  L0      ; group 1 opens
-         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
-         -> L3
-  L3      ; span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
-         ; work charge: frameless scan iterations
-         ; fewer than rmin iterations: the loop cannot be satisfied
-         ; MRL: too few bytes remain after the loop's one exit position for any accepting continuation
-         -> L4
-  L4      ; group 1 closes
-         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
-         -> L2
-  L2
-         consume '-'                          -> L5
-         -> fail (backtrack)
-  L5      ; group 2 opens
-         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
-         -> L6
-  L6      ; span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
-         ; work charge: frameless scan iterations
-         ; fewer than rmin iterations: the loop cannot be satisfied
-         -> L7
-  L7      ; group 2 closes
-         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
-         -> L1
-  L1      ; the pattern is complete
-         -> accept
-  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
-  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+#section pruning
+#label	kind	detail
+L3	clamped	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+L6	unclamped	span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
 
-CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
-  (none: this program never backtracks -- it is a straight line, and the resume stack is never pushed)
+#section program
+#label	op	args	target	note
+L0	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L3	
+L3	label			span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+	note			work charge: frameless scan iterations
+	note			fewer than rmin iterations: the loop cannot be satisfied
+	note			MRL: too few bytes remain after the loop's one exit position for any accepting continuation
+	goto		L4	
+L4	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L2	
+L2	label			
+	consume	'-'	L5	
+	fail			backtrack
+L5	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L6	
+L6	label			span-loop cursor {1,}, stride 1, greedy, POSSESSIFIED (no frame, no giveback)
+	note			work charge: frameless scan iterations
+	note			fewer than rmin iterations: the loop cannot be satisfied
+	goto		L7	
+L7	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L1	
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
 
-DFA ISLANDS (0)
-  (none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20)
+#section choicepoints
+#label	resume	note
+		none: this program never backtracks -- it is a straight line, and the resume stack is never pushed. PREFERENCE ORDER: the frame pushed at a site resumes the LESS preferred alternative
 
-CALLOUT SITES (0)
-  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)
+#section islands
+#label	width	note
+		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
+
+#section callouts
+#label	note
+	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1

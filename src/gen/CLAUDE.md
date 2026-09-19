@@ -426,7 +426,7 @@ directory is in `emit_vm.c`, and it is four things:
 
 **THIS IS THE ONLY SITE THAT READS `v.nkreset` INTO A DEFAULT ARTIFACT, WHICH
 IS WHY THE WAVE SHIPS NO BYTE-IDENTITY GATE.** Two non-default surfaces read it
-as well and neither weakens that: `--emit-ir`'s SLOTS row stops claiming slot 0
+as well and neither weakens that: `--emit-ir`'s `slots` row stops claiming slot 0
 is entry-only when a `\K` exists (a listing saying otherwise would describe a
 different program from the one beside it, §10's drift), and `--trace`'s ACCEPT
 line reports the CONSUMED span and the REPORTED one, because on a `\K` artifact
@@ -1064,6 +1064,23 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     built `slot_values[` + `vm_slot_expr` + `]` by hand, which is exactly
     what `vm_slot_ref` builds. w2a's E1 retired four such sites and all four
     were in `vm_call`/`vm_splice`, so this one was never reached.
+- **[DD-8] `--emit-ir` IS TABLE-CONTRACT TSV** (2026-09-19, D106 + its three
+  addenda, D108). `vm_render_listing` renders nine named `#section` blocks,
+  each with its own `#` column header and the PROGRAM body among them
+  (`label|op|args|target|note`), through the wave-1 kit's `sb_row`.
+  `docs/spec/ir_listing.md` is the format's contract — read it before
+  changing anything this function prints. Four things about the code:
+  `vm_sec`/`vm_row3`/`vm_listing_slot_row`/`vm_prow` are the section and row
+  helpers; `vm_mask_names` is one general mechanism replacing
+  `vm_rungs_describe`/`vm_strats_describe`; every cell is either a literal or
+  an ARENA fragment (`vm_rolef`), never a shared scratch a sibling cell of the
+  same row could clobber; and an empty population is a ROW with empty cells,
+  never a `#` remark — the table contract makes the last `#` line before a
+  section's data that section's HEADER, so a trailing comment in an empty
+  section would silently become its column list. The `.c` artifact did not
+  move: 2,803 / 2,804 corpus rows at both argv shapes and the 32-file
+  composition arm, all byte-identical against a pinned branch-point binary.
+
   - **BYTE-NEUTRAL, MEASURED ON THREE STREAMS PER BATCH** against a pinned
     `git archive` binary of the branch point: the 3,938-row corpus argv sweep
     at three argv shapes (`.c` default, `.c --engine=vm`, `--emit-ir`), the
@@ -1315,10 +1332,11 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     `PCREC_RX_ABI_H` block at [ABI-NS] (D60, 2026-08-18): `PCREC_VM_RUNG_
     CURSOR`/`_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`/`_REVDET`/`_COUNTER`,
     emitted once, unconditionally, on every artifact — see
-    `emit_rx_abi_types` above** — and as a NEW `RUNGS` listing section in
-    `--emit-ir` (one row per quantifier, `at L<label> <kind> <role>`) plus
-    a header `; rungs ...` summary line — all three read off the same
-    `v->rungs`/`VE_RUNG` data the real walk built, never re-derived.
+    `emit_rx_abi_types` above** — and as a `rungs` listing section in
+    `--emit-ir` (one row per quantifier: `label|kind|detail`, since [DD-8])
+    plus a `summary` `rungs` row whose value is the comma-joined kind list
+    — all three read off the same `v->rungs`/`VE_RUNG` data the real walk
+    built, never re-derived.
     `rx_info` gains no member for this: the struct's layout is the frozen
     M4 ABI (match_api_m4.md §5, D44.5's "layout below is FINAL"), so a
     field would be an abi-version-bump event this close did not take on —
