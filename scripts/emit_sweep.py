@@ -177,20 +177,35 @@ PINS = {
     "reach_vm_floor": 3480,               # measured 3,518 (stream 2)
     "reach_ir_floor": 3480,               # measured 3,518 (stream 3)
     # composition files that produce >=1 artifact on both sides. Measured
-    # 30 here -- matching w2x_report.md's own "30 producing 72 artifacts"
-    # exactly, NOT w2y's recorded "32 producing 96 artifacts" (also claimed
-    # at --features all) or w2a's "74 artifacts" -- an unreconciled
-    # discrepancy among lanes that each rebuilt this arm from prose (see
-    # docs/dev/lanes/bsweep_report.md's reconciliation section; this tool's
-    # own job is to end that drift going forward, not adjudicate it
-    # retroactively). Floor sits AT the measured value with ZERO slack:
-    # w2y measured the known --features regression costing exactly 3 of
-    # these files (32 -> 29), so this one axis needs maximum sensitivity,
-    # not a margin -- any drop at all is worth flagging.
-    "composition_producing_floor": 30,    # measured 30
-    "composition_artifacts_floor": 65,    # measured 72; ~7-artifact margin
-                                           # (one file's worth, at this
-                                           # corpus's measured 2.4
+    # 32 producing / 96 artifacts, matching w2y_report.md's own recorded
+    # figure EXACTLY (also claimed at --features all) -- resolved after an
+    # r1 fix found this tool's OWN first cut undercounting by exactly these
+    # two files, for two independent, now-identified reasons (see
+    # docs/dev/lanes/bsweep_report.md S1.4 for the full diagnosis and the
+    # reconciliation against all five prior lanes' figures):
+    #   (1) `sweep_composition` originally gated the whole per-file byte
+    #       comparison on `rc == 0`, so `compose_encoding_clash.rxtin` --
+    #       a fixture that DELIBERATELY declares one target that compiles
+    #       (`ok`) and one that a later definition's encoding conflict
+    #       correctly refuses (`clash`) -- was skipped entirely, even
+    #       though `ok.c`/`ok.h` were genuinely on disk (`--source` writes
+    #       each target in file order and stops on the first failure).
+    #       Fixed: compare whenever both sides agree on rc AND on the
+    #       artifact name set, never gated on rc==0 alone.
+    #   (2) `bench_altwide_0_2.rxtin` (11 targets / 22 artifacts, the
+    #       single largest composition file) TIMED OUT under this arm's
+    #       own full argv-stream concurrency (12 jobs at a 30s budget) --
+    #       a contention artifact of the SWEEP's own parallelism, not a
+    #       corpus fact. Fixed: `--comp-timeout`/`--comp-jobs`, more
+    #       generous and less concurrent than the argv streams by default.
+    # Floor sits AT the measured value with ZERO slack: w2y measured the
+    # known --features regression costing exactly 3 of these files
+    # (32 -> 29), so this one axis needs maximum sensitivity, not a
+    # margin -- any drop at all is worth flagging.
+    "composition_producing_floor": 32,    # measured 32
+    "composition_artifacts_floor": 88,    # measured 96; an 8-artifact
+                                           # margin (one file's worth, at
+                                           # this corpus's measured 3.0
                                            # artifacts/producing-file
                                            # average) below the measured
                                            # value -- "artifact" counts
@@ -482,6 +497,22 @@ def sweep_composition(files, bin_a, bin_b, out_root, timeout, jobs):
         rc_b, art_b, e_b = run_composition(bin_b, f, os.path.join(out_root, "b"), tag, timeout)
         return f, rc_a, art_a, e_a, rc_b, art_b, e_b
 
+    # [BSWEEP r1 fix, 2026-09-19] Compare artifacts whenever BOTH sides agree
+    # on the artifact NAME SET, regardless of the overall process's rc --
+    # NOT gated on `rc == 0`. First cut of this function gated the whole
+    # comparison on `ok_a` (rc_a == 0) and skipped straight to `both_refuse`
+    # otherwise. That is wrong for a fixture like
+    # `tests/rxtsource/fixtures/compose_encoding_clash.rxtin`, which
+    # DELIBERATELY declares one target that compiles (`ok`) and one that a
+    # later definition's encoding conflict correctly refuses (`clash`):
+    # `--source` writes each target's artifact in file order and stops
+    # (rc=1) on the failing one, so `ok.c`/`ok.h` are genuinely on disk
+    # despite the nonzero rc -- and a byte-neutrality sweep has every reason
+    # to want those two files compared, since they are exactly the kind of
+    # artifact this arm exists to protect. Both sides still have to AGREE
+    # on rc (an rc mismatch is a real asymmetry, caught below) and on the
+    # artifact NAME SET (a name-set mismatch is a real structural
+    # asymmetry, also caught below) before any byte comparison happens.
     rows = list(enumerate(files))
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as ex:
         for f, rc_a, art_a, e_a, rc_b, art_b, e_b in ex.map(one, rows):
@@ -491,19 +522,18 @@ def sweep_composition(files, bin_a, bin_b, out_root, timeout, jobs):
             if ok_a != ok_b:
                 res.asymmetric.append((f, ok_a, ok_b, e_a, e_b))
                 continue
-            if not ok_a:
-                res.both_refuse += 1
-                continue
             names_a = set(art_a.keys())
             names_b = set(art_b.keys())
             if names_a != names_b:
                 res.asymmetric.append(
                     (f, f"artifacts={sorted(names_a)}", f"artifacts={sorted(names_b)}", "", ""))
                 continue
-            if names_a:
-                producing += 1
-                if base in fixture_produced:
-                    fixture_produced[base] = True
+            if not names_a:
+                res.both_refuse += 1
+                continue
+            producing += 1
+            if base in fixture_produced:
+                fixture_produced[base] = True
             for nm in sorted(names_a):
                 artifact_count += 1
                 content_a = art_a[nm]
@@ -560,6 +590,17 @@ def main():
     ap.add_argument("--tree", default=DEFAULT_TREE)
     ap.add_argument("--out")
     ap.add_argument("--jobs", type=int, default=min(8, os.cpu_count() or 4))
+    ap.add_argument("--comp-timeout", type=int, default=0,
+                     help="per-invocation timeout for the composition arm "
+                          "specifically (default: max(3x --timeout, 90) -- "
+                          "a composition file can declare many targets in "
+                          "one --source call and needs more budget than a "
+                          "single-pattern argv compile)")
+    ap.add_argument("--comp-jobs", type=int, default=0,
+                     help="concurrency for the composition arm specifically "
+                          "(default: min(--jobs, 6) -- less contention per "
+                          "item than the argv streams, since each item is "
+                          "itself heavier)")
     ap.add_argument("--no-self-check", action="store_true")
     ap.add_argument("--no-real-run", action="store_true")
     ap.add_argument("--only-emit-ir-reach", action="store_true")
@@ -581,7 +622,12 @@ def main():
     out_dir = os.path.abspath(args.out) if args.out else os.path.join(tree, "build-emitsweep")
     os.makedirs(out_dir, exist_ok=True)
     cc = resolve_cc(tree)
-    log(f"[emit_sweep] tree={tree} out={out_dir} cc={cc} jobs={args.jobs}")
+    if not args.comp_timeout:
+        args.comp_timeout = max(3 * args.timeout, 90)
+    if not args.comp_jobs:
+        args.comp_jobs = min(args.jobs, 6)
+    log(f"[emit_sweep] tree={tree} out={out_dir} cc={cc} jobs={args.jobs} "
+        f"comp_timeout={args.comp_timeout} comp_jobs={args.comp_jobs}")
 
     overall_ok = True
     t0 = time.time()
@@ -638,8 +684,25 @@ def main():
         if os.path.exists(comp_out):
             shutil.rmtree(comp_out)
         nonlocal_flag[0] = False
+        # [BSWEEP r1 fix, 2026-09-19] A composition FILE can declare many
+        # targets in one `--source` invocation (measured:
+        # bench_altwide_0_2.rxtin alone is 11 targets / 22 artifacts) --
+        # proportionally more compiling per item than one argv pattern, and
+        # under this stream's own full concurrency (--jobs parallel
+        # composition items, each spawning a multi-target pcrec) that
+        # legitimately needs more wall-clock budget than the single-pattern
+        # streams do. MEASURED: at the argv streams' own --timeout (30s)
+        # and --jobs (12), that one file alone timed out under the
+        # resulting contention every time, silently reading as "2 fewer
+        # producing files, 24 fewer artifacts" -- not a corpus fact, a
+        # self-inflicted contention artifact of this tool's own
+        # concurrency (see docs/dev/lanes/bsweep_report.md S1.4 for the
+        # full diagnosis). `--comp-timeout` (default max(3x --timeout, 90))
+        # and `--comp-jobs` (default min(--jobs, 6), less concurrent
+        # pressure per item) fix it -- confirmed by measurement, not by
+        # raising the numbers until it stopped happening once.
         s4, producing, artifacts, fixtures_hit = sweep_composition(
-            comp_files, bin_a, bin_b, comp_out, args.timeout, args.jobs)
+            comp_files, bin_a, bin_b, comp_out, args.comp_timeout, args.comp_jobs)
         return s1, s2, s3, s4, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     # -- self-check: two independent builds of the SAME ref revision --
