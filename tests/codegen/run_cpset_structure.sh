@@ -151,7 +151,7 @@ fi
 # (`return cls_enc(cx)->max_cp;`), which is the same claim with no local
 # named `e` to grep for — a legitimate refactor a variable-name needle
 # cannot survive.
-if grep -q '\->max_cp' "$SRC/parse/parse.c" && grep -q 'unsigned    max_cp;' "$SRC/gen/enc/enc.h"; then
+if grep -q '\->max_cp' "$SRC/parse/parse.c" && grep -q 'unsigned    max_cp;' "$SRC/enc/enc.h"; then
     ok "[1c] the universe is read from PcrecEnc.max_cp, the backend's own scalar"
 else
     bad "[1c] the complement universe does not come from PcrecEnc.max_cp"
@@ -269,8 +269,22 @@ else
     red_or_note "1c four constructors publish an interval set" $?
     [ "$( { grep -c 'pcrec_cpset_complement(&\?[a-z]*, cls_universe(cx))' "$R/parse/parse.c" 2>/dev/null || echo 0; } | head -1)" -ge 2 ]
     red_or_note "1c both negation sites complement within the encoding's universe" $?
-    grep -q 'unsigned    max_cp;' "$R/gen/enc/enc.h" 2>/dev/null
-    red_or_note "1c PcrecEnc carries max_cp" $?
+    # [REVW.3] wave 3 moved the encoding backends from `src/gen/enc/` to
+    # `src/enc/`, so this header is at ONE path in the live tree and at the
+    # OTHER in the pre-stage reference tree. A red produced by a MISSING FILE
+    # is not the red this demonstration claims — it must show the NEEDLE
+    # absent from a file that EXISTS. So the reference side FINDS the header
+    # by name rather than spelling a path that is only true on one side of a
+    # relocation (the "FOUND, not globbed at a fixed depth" rule the identity
+    # scripts already keep for their own source lists, at the one site in
+    # this file that reads a historical tree).
+    ref_enc_h="$(find "$R" -name 'enc.h' -print 2>/dev/null | LC_ALL=C sort | head -1)"
+    if [ -z "$ref_enc_h" ]; then
+        bad "[1R] the pre-stage tree $REFCOMMIT carries no enc.h anywhere under src/ — the max_cp needle's red could not be attributed to the FIELD's absence, which is the only thing this row claims"
+    else
+        grep -q 'unsigned    max_cp;' "$ref_enc_h" 2>/dev/null
+        red_or_note "1c PcrecEnc carries max_cp" $?
+    fi
     [ -f "$R/opt/lower_enc.c" ]
     red_or_note "1d the lowering exists" $?
     grep -q 'root = pcrec_lower_enc(&cx, root);' "$R/core/compile.c" 2>/dev/null
@@ -393,7 +407,7 @@ echo "== CHECK 2d: the render helper's assertion, RUN rather than grepped =="
 SCRATCH="$WORKDIR/scratch"
 mkdir -p "$SCRATCH"
 cp -R "$ROOT_DIR/src" "$ROOT_DIR/lib" "$ROOT_DIR/cli" "$SCRATCH/" 2>/dev/null || true
-if [ ! -f "$SCRATCH/src/gen/enc/enc_byte.c" ]; then
+if [ ! -f "$SCRATCH/src/enc/enc_byte.c" ]; then
     bad "[2d] could not stage a scratch tree for the assertion witness"
 else
     # THE ONE EDIT: the byte backend claims Unicode's universe. Nothing else
@@ -409,8 +423,8 @@ else
     # multi-field needle cannot survive. Matching only the field this
     # witness actually widens is what stays robust to the next one.
     sed -i.bak 's/"byte", 0xFFu,/"byte", 0x10FFFFu,/' \
-        "$SCRATCH/src/gen/enc/enc_byte.c"
-    if ! grep -q '"byte", 0x10FFFFu,' "$SCRATCH/src/gen/enc/enc_byte.c"; then
+        "$SCRATCH/src/enc/enc_byte.c"
+    if ! grep -q '"byte", 0x10FFFFu,' "$SCRATCH/src/enc/enc_byte.c"; then
         bad "[2d] could not widen the scratch byte backend's max_cp — this witness has stopped being able to build itself"
     else
         # The LOWERING would refuse first, and correctly: its universe is the

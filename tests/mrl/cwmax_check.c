@@ -118,7 +118,7 @@
 #include <setjmp.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"   /* pcrec_enc_by_name — the encoding namespace's one table */
+#include "enc/enc.h"   /* pcrec_enc_by_name — the encoding namespace's one table */
 
 /* ---- the sabotage channel (see the header) --------------------------------- */
 
@@ -472,7 +472,7 @@ static void do_file(const char *path, const char *default_features)
         if (strncmp(line, "encoding ", 9) == 0) {
             /* Resolved through the SEAM's own registry rather than by
              * comparing the string here, so this file cannot drift from
-             * `src/gen/enc/enc.c`'s spelling of an encoding's name — the
+             * `src/enc/enc.c`'s spelling of an encoding's name — the
              * single-namespace rule ([SR-10]) that table owns. An unknown
              * name is a corpus bug and is reported, not defaulted. */
             const PcrecEnc *e = pcrec_enc_by_name(line + 9);

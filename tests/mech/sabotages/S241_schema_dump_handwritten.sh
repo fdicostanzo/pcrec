@@ -26,7 +26,7 @@
 # source twice (docs/dev/learnings.md §3), and it is the one comparison a
 # check over this dump must never make.
 SAB_ID="S241-schema-dump-handwritten"
-SAB_FILE="src/parse/schema_dump.c"
+SAB_FILE="src/dump/schema_dump.c"
 SAB_SUITES="rxtsource"
 SAB_DESC="--list-schema hand-writes one row instead of walking the enforced table, and the hand-written row's cardinality disagrees with what the parser enforces, so a consumer fetching the schema is told something pcrec does not do"
 SAB_DOC_FIGURE="docs/spec/rxt_format.md's schema section; docs/design/dd13_format/format_design.md 2.25.1 (one table, one reader, one dump)"

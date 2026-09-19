@@ -14,12 +14,12 @@
 #include "pcrec.h"
 /* The syntax-query modes read the construct registry, which is internal: the
  * CLI and the test suite are its only consumers, so it is not part of the
- * public surface (see src/parse/syntax_dump.c). main.c touches no registry
+ * public surface (see src/dump/syntax_dump.c). main.c touches no registry
  * type — it calls two functions that hand back finished text. */
 #include "core/internal.h"
 /* [M5-SEAM] the ENCODING REGISTRY: the one table the `byte`/`utf8` names are
  * defined by, so this file maps no encoding name of its own (see D58/SR-10). */
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* ---- THE CLI DIAGNOSTIC CHANNEL ([REVW.1] wave 1) -----------------------
  *
@@ -301,7 +301,7 @@ static void usage(FILE *f)
 
 /* [M5-SEAM] (D58) The encoding is a PER-COMPILE scalar, so this sets a field
  * of THIS invocation's options and nothing else — there is no global to set.
- * The name is looked up in the ENCODING REGISTRY (src/gen/enc/) rather than
+ * The name is looked up in the ENCODING REGISTRY (src/enc/) rather than
  * mapped by hand here: [SR-10]'s motivating instance was precisely this site
  * hand-mapping "utf8" while src/core/compile.c separately hand-wrote the
  * diagnostic for it. Whether the named encoding is IMPLEMENTED is not asked

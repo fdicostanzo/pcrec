@@ -960,7 +960,7 @@ static void check_arbitration_liveness(void)
  * (atomic_groups_measurements/probes/probe_rk_alarm.sh), because every RegKind
  * switch in the tree carries a `default:`. The real exposure is therefore not
  * the switches at all: it is the hardcoded kind ARRAYS — `all_kinds[]` in
- * src/parse/syntax_dump.c, `kinds[]` in src/parse/enabled.c, `kinds[]` below in
+ * src/dump/syntax_dump.c, `kinds[]` in src/parse/enabled.c, `kinds[]` below in
  * this file — which no compiler and, before this check, nothing else could see.
  *
  * A CHECK THAT ITERATED `RK_COUNT` OVER `pcrec_registry` WOULD NOT SEE IT
@@ -2322,7 +2322,7 @@ static void check_engine_capability(void)
              * SO THE WITNESS REQUIREMENT IS GATED ON D65's `built` COLUMN,
              * which is the tree's one authoritative answer to "does this
              * construct compile" and is DERIVED per row at call time rather
-             * than declared (src/parse/syntax_dump.c). It is not a weakening:
+             * than declared (src/dump/syntax_dump.c). It is not a weakening:
              * the row is still walked and still counted, the gate is the same
              * derivation `--list-syntax` prints, and the day wave D deletes
              * the port's decline these three rows start demanding witnesses
@@ -2766,7 +2766,7 @@ static void check_class_syntax_reach(void)
  *
  * docs/design/registry_built_status_memo.md, ratified wholesale (D65,
  * 2026-08-21), recommendation 3: a registry_check DEFECT ASSERTION, not a
- * rendered value. `pcrec_construct_built_status` (src/parse/syntax_dump.c)
+ * rendered value. `pcrec_construct_built_status` (src/dump/syntax_dump.c)
  * classifies every RS_MODULE row's own well-formed `syntax` as built or
  * unbuilt by driving it through a gate-forced-open doorway call; a row that
  * lands in NEITHER bucket (`PCREC_BUILT_DEFECT`) means that call did not
@@ -2787,7 +2787,7 @@ static void check_built_status_defects(void)
      * classify it at all: `doorway_route` recognises four prefixes and a row
      * whose syntax is `a*+` routes nowhere, so before that arm these four rows
      * derived to PCREC_BUILT_DEFECT — the failure this check reports. See
-     * `built_status_probe`'s non-doorway arm in src/parse/syntax_dump.c. */
+     * `built_status_probe`'s non-doorway arm in src/dump/syntax_dump.c. */
     static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
                                      RK_QUANTSUFFIX, RK_BARE };
     unsigned mask_before = pcrec_enabled_mask();
@@ -2991,7 +2991,7 @@ static void check_built_status_defects(void)
      * atoms, and stamping is a PRODUCER's act, which a mode transition is
      * not), so there is no `BUILT_DEFECT` outcome for it to reach; "parsed,
      * did not raise" is simply `built`. See `built_status_probe`'s own new
-     * arm (src/parse/syntax_dump.c) for the full argument, including the
+     * arm (src/dump/syntax_dump.c) for the full argument, including the
      * MEASURED FALSIFIABLE claim `RK_QUANTSUFFIX`'s comment makes for
      * itself: with the module disabled both rows derive `unbuilt`; with
      * it enabled but esc_atom's/p_class's quote-mode dispatch reverted,

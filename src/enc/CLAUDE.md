@@ -1,10 +1,26 @@
-# src/gen/enc — the ENCODING BACKENDS
+# src/enc — the ENCODING BACKENDS
 
 The DD-12 residual seam, built at [M5-SEAM] (D58, 2026-08-18) as a prelude
 to M6 so M6's encoding-sensitive residue is born on the seam rather than
 retrofitted onto it. Everything an artifact carries that depends on which
 ENCODING it was compiled for lives in this directory, in exactly one file
 per encoding.
+
+**IT IS A LAYER BETWEEN `core` AND `parse`, and it used to be `src/gen/enc/`.**
+[REVW.3] wave 3 moved it (lens 6's L1, `docs/dev/reviews/lens_reports/
+lens6_dependency_rxt_cut.md` §2.1). The seam was CHARTERED emission-only,
+which is what put it under `gen` — and four later seam events gave `PcrecEnc`
+DATA fields that layers outside `gen` read: `max_cp` (parse), `fold` (parse),
+`advance` (gen), `start_cls`/`start_guard` (ir). Each was a small, correct,
+reviewed addition and nobody summed the drift, so by 2026-09-17 every one of
+the include back-edges in the tree — `core/compile.c`, `ir/dfa.c`, `ir/nfa.c`,
+`opt/lower_enc.c`, `parse/parse.c`, `parse/rxt_compose.c` — was a lower layer
+reaching UP into this directory, and every one of them read only the data
+half. At `src/enc/` those six are forward edges and the seam's SEMANTICS are
+untouched: D58 and DD-12 (7) say exactly what they said, and the recipe below
+is one directory shallower and otherwise word for word the same. The layer
+order the tree now states is `lib -> core -> enc -> parse -> ir -> opt ->
+gen -> driver/dump -> cli` (`src/CLAUDE.md`, `tools/review/include_graph.py`).
 
 ## The rule this directory exists to make structural
 
@@ -58,9 +74,9 @@ not built for.
 **[M5.0] STAGE 2: `enc_utf8.c` LANDED — THE SEAM'S SECOND BACKEND, AND THE
 THIRD-ENCODING RECIPE'S FIRST EXECUTION.** One new file in this directory, one
 `extern` in `enc.h`, one row swap in `enc.c` (the pending `entries == NULL`
-row became `&pcrec_enc_backend_utf8`); NOTHING in `src/core`, `src/gen` outside
-this directory, `cli/` or `lib/` was touched to make `-e utf8` compile — which
-is the recipe below working as ruled. The entries table's INTERFACE is
+row became `&pcrec_enc_backend_utf8`); NOTHING in `src/core`, anything above
+this directory in the layer order, `cli/` or `lib/` was touched to make
+`-e utf8` compile — which is the recipe below working as ruled. The entries table's INTERFACE is
 unchanged (D58's revisit clause honoured by having nothing to record there):
 the four residual entries carry UTF-8 bodies under their existing signatures,
 no `PcrecEncEntry` field was added, `pcrec_enc_ready` is untouched, both emit
@@ -350,8 +366,10 @@ and `start_guard` expression — all five in this directory. A backend that
 restricts no position writes NULL for the last two and is complete.
 
 Both of those files are in THIS directory; the Makefile
-already globs `src/gen/enc/*.c`. **Nothing in `src/core`, `src/gen`, `cli/`
-or `lib/` is touched.** If a backend ever requires touching a shared file
+already globs `src/enc/*.c`. **Nothing in `src/core`, `src/parse`, `src/ir`,
+`src/opt`, `src/gen`, `cli/` or `lib/` is touched** — the four middle layers
+are named one by one because, as `src/gen/enc/`, this sentence could say
+`src/gen` and mean "everything above me", and at `src/enc/` it cannot. If a backend ever requires touching a shared file
 outside this directory, that is the derailment DD-12 names — stop and take
 it to a design decision rather than patching the shared file.
 

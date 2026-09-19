@@ -2147,7 +2147,7 @@ tables carry the full argument and the measurements.
 construct** — `built`/`unbuilt`, or `—` where it does not arise
 (`RS_BASE`/`RS_REJECTED` rows). It is DERIVED, not hand-maintained: measured
 live, per row, by driving the row's own `syntax` through a gate-forced-open
-doorway call (`pcrec_construct_built_status`, src/parse/syntax_dump.c) — the
+doorway call (`pcrec_construct_built_status`, src/dump/syntax_dump.c) — the
 same "cannot drift from the compiler because it is printed by it" property
 SR-4 already gives the rest of this table. A construct read `REJECTED |
 built` is base-grammar-absent but its module compiles it today (`\d`); one

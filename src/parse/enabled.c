@@ -173,7 +173,7 @@ static bool module_listed(const char *list, const char *name)
  * 512-byte buffer (35%), so the branch has never been taken. The kit's
  * `sb_join` (src/core/sb.c) cannot truncate at all and is the better answer —
  * but it needs a `StrBuf`, i.e. a heap allocation, and this function's sibling
- * `pcrec_enc_names` (src/gen/enc/enc.c) sits on `pcrec_compile`'s own refusal
+ * `pcrec_enc_names` (src/enc/enc.c) sits on `pcrec_compile`'s own refusal
  * path, where a failed realloc has no error channel and would `abort()` the
  * CALLER. One stated policy at both bounded sites beats one of them reaching
  * the primitive and the other not. */

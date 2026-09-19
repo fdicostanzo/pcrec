@@ -5,7 +5,7 @@
 # assertion per row, a PASS/FAIL summary, never a bare count).
 #
 # WHY THIS IS THE INDEPENDENT SIDE (docs/dev/learnings.md §3: "a control
-# must not share a source with what it controls"). `--list-axes` (src/parse/
+# must not share a source with what it controls"). `--list-axes` (src/dump/
 # axes_dump.c) reads live off src/gen/emit_dfa.c's own candidate arrays for
 # name/deny and off lib/pcrec.h's enum symbols for the predicate axes' bit
 # VALUES — so the dump and lib/pcrec.h/emit_dfa.c share a source and cannot
@@ -51,14 +51,14 @@
 # took different forms") and were never a candidate this dump's per-MACHINE
 # `table` axis could select on its own — true when this exception was first
 # written and unchanged by this pass. What changed is that "never a
-# candidate" does not mean "never a ROW": `src/parse/axes_dump.c` now hand-
+# candidate" does not mean "never a ROW": `src/dump/axes_dump.c` now hand-
 # states both as `kind=predicate` rows attached to axis `table` (order 3/4,
 # `emit_table_composite_rows`), the same shape a predicate row already has
 # everywhere else in this dump, so the check below has no exception left to
 # carry for this macro either.
 #
 # DIRECTION 3B — THE EMITTER-SOURCE LEG (team-lead review, 2026-08-30,
-# [REG-SV]). Direction 3 above is dump-vs-DOCS: both `src/parse/axes_dump.c`
+# [REG-SV]). Direction 3 above is dump-vs-DOCS: both `src/dump/axes_dump.c`
 # and `docs/spec/match_api.md` are HAND-WRITTEN, so a value added to the
 # code that actually WRITES a stamp — `src/core/compile.c`'s
 # `cx.size_term_why` chain, `src/gen/emit_dfa.c`'s `dfa_table_name` — and
@@ -161,7 +161,7 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # lib/pcrec.h's OWN registry, derived the same proven way run_axes.sh
 # derives it (tests/axes/run_axes.sh's own header comment) — never
 # hand-copied. This is a SECOND, independent read of lib/pcrec.h: the dump
-# itself was built from the SAME header's enum symbols (src/parse/
+# itself was built from the SAME header's enum symbols (src/dump/
 # axes_dump.c's V() macro), but that is dump-vs-header agreement BY
 # CONSTRUCTION for the predicate axes' bit numbers; what this script adds is
 # dump-vs-header agreement checked FROM OUTSIDE the compiled binary, over a
@@ -323,7 +323,7 @@ done < <(awk -F'\t' $MAP '!/^#/ {
 if grep -qF 'no description authored for this candidate yet' "$TSV"; then
     while IFS=$'\t' read -r axis _ candidate _; do
         [ -n "$axis" ] || continue
-        bad "[$axis/$candidate] has NO authored description in src/parse/axes_dump.c's AXIS_DESC table (a candidate landed with no edit there)"
+        bad "[$axis/$candidate] has NO authored description in src/dump/axes_dump.c's AXIS_DESC table (a candidate landed with no edit there)"
     done < <(awk -F'\t' $MAP '!/^#/ && $applies ~ /no description authored/ {print $axis"\t"$order"\t"$candidate"\t"$kind}' "$TSV")
 else
     ok "every list/both-axis candidate has an authored one-line description"
@@ -378,7 +378,7 @@ for b in $hdr_bits_sorted; do
     fi
 done
 if [ -n "$missing_from_dump2" ]; then
-    bad "lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s)$missing_from_dump2 (of bits $hdr_bits_lo-$hdr_bits_hi found in the header) that --list-axes names on no row (an axis landed in the header with no dump coverage — e.g. a new axis's list not yet reached by src/parse/axes_dump.c's predicate table)"
+    bad "lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s)$missing_from_dump2 (of bits $hdr_bits_lo-$hdr_bits_hi found in the header) that --list-axes names on no row (an axis landed in the header with no dump coverage — e.g. a new axis's list not yet reached by src/dump/axes_dump.c's predicate table)"
 else
     ok "every PCREC_NO_*/PCREC_FORCE_* bit lib/pcrec.h defines at or above bit 4 ($( printf '%s' "$hdr_bits_sorted" | tr '\n' ' ' )) appears in --list-axes' output"
 fi
@@ -456,7 +456,7 @@ extract_prose_values() {
 # inside ONE C function, bounded by that function's own column-0 opening
 # and closing braces (this project's own emitter style, src/gen/CLAUDE.md).
 # [REG-SV] THE EMITTER-SOURCE LEG (team-lead review, 2026-08-30): the two
-# legs above compare the DUMP (src/parse/axes_dump.c's hand-stated rows)
+# legs above compare the DUMP (src/dump/axes_dump.c's hand-stated rows)
 # against DOCS (match_api.md prose) — both HAND-WRITTEN, so a value added to
 # the code that actually WRITES a stamp and forgotten in both the dump and
 # the docs would pass every existing check. This is the third leg: the CODE
@@ -552,7 +552,7 @@ check_value_set "RX_DFA_TABLE" \
 # cited exclusion from the spec->dump sweep only (this script's own header,
 # pre-[REG-SV] revision) — real spec values the dump could never produce as
 # a row, because the per-machine `table` axis has only two candidates. The
-# dump now carries them as two hand-stated composite rows (src/parse/
+# dump now carries them as two hand-stated composite rows (src/dump/
 # axes_dump.c's `emit_table_composite_rows`, axis `table` order 3/4), so the
 # exception is DISCHARGED rather than merely documented: both directions of
 # this check now cover the macro's whole four-value set with no exclusion.

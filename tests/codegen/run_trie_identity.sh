@@ -78,12 +78,16 @@ gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 # so #ifdef rot is loud rather than silent.
 #
 # [M5-SEAM] The source list is FOUND, not globbed. It was `src/*/*.c`, which
-# is a hand-maintained assumption about the tree's DEPTH: `src/gen/enc/`
-# (the encoding backends) is two levels down and silently fell out of the
-# reference build the day it landed. The failure was loud here (an undefined
-# reference), but the same shape one directory over would be a reference
-# compiler quietly built from a different source set than the subject — which
-# is the differential going vacuous, this repo's recorded check-design defect.
+# is a hand-maintained assumption about the tree's DEPTH: the encoding
+# backends were two levels down at `src/gen/enc/` and silently fell out of
+# the reference build the day they landed. The failure was loud here (an
+# undefined reference), but the same shape one directory over would be a
+# reference compiler quietly built from a different source set than the
+# subject — which is the differential going vacuous, this repo's recorded
+# check-design defect. [REVW.3] wave 3 has since moved those backends UP, to
+# `src/enc/`, which is the argument restated rather than retired: the glob
+# encoded an assumption about the tree's shape, and the tree's shape has now
+# changed twice.
 REF="$WORKDIR/pcrec_notrie"
 REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then

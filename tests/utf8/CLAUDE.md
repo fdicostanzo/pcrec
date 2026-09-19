@@ -185,7 +185,7 @@ known_fail file is deleted and this file is 20 blocks / 80 cases again — the
 count its own generator header always claimed. The bug was the emitted VM's
 unanchored retry advancing one BYTE past a failed startpos instead of to the
 next character boundary; the advance now comes from the encoding backend
-(`src/gen/enc/enc.h`'s `advance` field).
+(`src/enc/enc.h`'s `advance` field).
 
 **WHY THIS BLOCK AND NOT ITS THREE NEIGHBOURS, which is the part to
 remember when adding to this axis.** Rows 1, 2 and 4 all answer on their

@@ -70,10 +70,12 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # ---- the reference compiler ---------------------------------------------
-# The source list is FOUND, not globbed at a fixed depth — src/gen/enc/ is two
-# levels down and a hand-maintained `src/*/*.c` silently dropped it once
-# already. A reference compiler quietly built from a different source set than
-# the subject is the differential going vacuous.
+# The source list is FOUND, not globbed at a fixed depth — a hand-maintained
+# `src/*/*.c` silently dropped the encoding backends once already, when they
+# were two levels down at src/gen/enc/ (they are src/enc/ since [REVW.3]
+# wave 3; the tree has now changed shape twice under such a glob). A
+# reference compiler quietly built from a different source set than the
+# subject is the differential going vacuous.
 REF="$WORKDIR/pcrec_nowordctx"
 REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then

@@ -4,8 +4,22 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **compile_defs.c** — [REVW.3] `pcrec_compile_defs`, the `--source`
+  composition entry, and NOTHING ELSE (lens 6's R1). It exists so that it,
+  and not `compile.c`, is the object that names `pcrec_rxt_compose`: the
+  pipeline driver every consumer links no longer has a hard dependency on
+  the `.rxt` source/schema/composer tier, which only the CLI's `--source`
+  mode uses. The mechanism is `Ctx.compose`, set here and left NULL by
+  `pcrec_compile`. Proven by `nm`: `compile.o` names no `rxt_*` symbol,
+  this object names exactly one. The byte saving is small and the file's
+  own header says so honestly — `-Wl,-dead_strip` alone already recovers
+  43,968 of 44,448 bytes and this cut adds ~480; it is done for the
+  structure.
 - **compile.c** — pcrec_compile() pipeline driver (parse → SELECT ENGINE →
-  NFA → DFA → emit);
+  NFA → DFA → emit), through the `static compile_driver` all three entries
+  share; `pcrec_compile_driver` is its one EXPORTED FACE, a pure forward
+  that exists only so `compile_defs.c` can reach it without putting a bare
+  unprefixed `compile_driver` in the library's symbol table ([REVW.3]);
   ctx_fail error handler; pcrec_default_options defaults; and
   pcrec_count_groups(), the parse-only entry behind the CLI's
   `--count-groups` (MOD-0.1/§18.1 — reports Ctx.ncap's end-of-parse value
@@ -28,7 +42,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
   **[M5-SEAM] (2026-08-18, D58)** the ENCODING GATE is now a REGISTRY
   lookup rather than a pair of `PCREC_ENC_*` comparisons with the names
-  written out in literals: `pcrec_enc_by_id` (src/gen/enc/) resolves the
+  written out in literals: `pcrec_enc_by_id` (src/enc/) resolves the
   requested value, a value that is not a namespace member at all is refused
   with the table's rendered menu, and a member with no backend yet is
   refused BY ITS OWN `name`. That is [SR-10]'s single-namespace rule on the
@@ -240,7 +254,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   matcher has no flag, no branch and no `tolower()` (D23). A caseless
   BACKREFERENCE cannot fold at parse time — its operand is subject text nobody
   has seen — so the fold appears a second time inside the encoding residual
-  `$_bref_match_caseless` (src/gen/enc/enc_byte.c), which is TEXT compiled by
+  `$_bref_match_caseless` (src/enc/enc_byte.c), which is TEXT compiled by
   someone else's toolchain and cannot call a `static` function here. Two
   spellings of one fact with nothing between them is the shape this project
   keeps cataloguing; this table is what
@@ -257,7 +271,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   DISAGREE rather than nest — libpcre2's 8-bit non-UTF build folds 0xE9 to
   nothing while its UTF build folds it to 0xC9 — so no clamp derives one from
   the other and the ENCODING names which one it uses (`PcrecEnc.fold`,
-  src/gen/enc/enc.h). `cls_casefold` (src/parse/parse.c) takes the fold as a
+  src/enc/enc.h). `cls_casefold` (src/parse/parse.c) takes the fold as a
   PARAMETER and has no encoding test in it, which is `src/opt/lower_enc.c`'s
   `LowerOps` shape one seam over.
 
@@ -358,7 +372,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
-  NULL is a legitimate state here. `src/parse/syntax_dump.c` builds
+  NULL is a legitimate state here. `src/dump/syntax_dump.c` builds
   `--features`/syntax-query text in bare `StrBuf sb = {0}` locals belonging to
   no compile, with no `pcrec_error` to report through, so those keep the
   abort. `sb_grow` also reallocs into a temporary now — assigning a failed
@@ -468,6 +482,31 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   module attribution), the doorway vocabulary (ExtWhat/ExtWant/ExtResult,
   moved above RegRow at MOD-0.3b when ports embedded it) with the ExtPort
   producing-port types, and module-level declarations.
+
+  **[REVW.3] wave 3: THE DECLARATION TAIL IS GROUPED BY DEFINING LAYER**
+  (lens 6's L5). From the banner comment that opens it to the end of the
+  file, every declaration is filed under the layer that DEFINES it, in the
+  tree's own order — core(base), enc, parse, ir, opt, gen, driver, dump —
+  each under its own header. It is a REORDERING and nothing else: the
+  comment-stripped declaration multiset is IDENTICAL to the pre-wave file's
+  (740 units, 0 missing, 0 extra, checked mechanically), every comment
+  travelled with the declaration it documents, and exactly one comment was
+  dropped, the bare `/* ---- stage entry points ---- */` label the new
+  headers replace. Nothing moved to another file. A new declaration goes in
+  its own layer's group, not at the end.
+
+  **THE SPLIT IS DEFERRED, DELIBERATELY.** Only 14.2% of the 225 distinct
+  function declarations here are defined in `src/core/` at all (parse 54.2%,
+  opt 16.9%, gen 12.4%, ir 2.2%), and 52 of the tree's ~55 `.c` files include
+  this header — which is exactly why a cross-layer CALL generates no
+  cross-layer INCLUDE and `include_backedges.tsv` reads 0 against a measured
+  30 call-level back-edges. The real repair is per-layer headers
+  (`parse.h`, `opt.h`, `gen.h`, `ir.h`); it costs an `#include` edit in all
+  52 consumers, and lens 6 §3 declines to propose it for this round with a
+  second reason worth keeping: a large share of these lines is the tree's
+  densest *why* documentation, so a split that separated a comment from the
+  type or declaration it documents would destroy more than it bought.
+  Grouping first makes that round a CUT rather than a SURVEY.
 
   **[M6.6.2 wave 0, D70] `struct Ast` IS A TAGGED UNION.** The per-kind fields
   live in `union { ... } u`, keyed by the existing `AKind k`:
@@ -1078,7 +1117,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   **[D65] `PcrecBuiltStatus` and `PCREC_UNBUILT_MARKER`.** A THIRD axis on
   `RegRow` beside `RegStatus`/`Roadmap` — has the owning module's producer
   landed for THIS construct — deliberately NOT a fourth `RegRow` field:
-  `pcrec_construct_built_status()` (src/parse/syntax_dump.c) DERIVES it
+  `pcrec_construct_built_status()` (src/dump/syntax_dump.c) DERIVES it
   per row by driving the row's own `syntax` through a gate-forced-open
   doorway call, the reason ext.c's UNBUILT macro comment already gives for
   not adding "a second built column somebody would have to keep in sync
@@ -1191,14 +1230,20 @@ a prefilter would REFUSE a pattern that compiles today, which is exactly what
 ## [DD-13b.W1.3] the composer's three fields on `Ctx`, and one internal entry
 
 - **`Ctx.ncap_primary`** — the PRIMARY pattern's own capture count, seeded
-  by `compile_driver` from `ncap` immediately before `pcrec_rxt_compose`, on
+  by `compile_driver` from `ncap` immediately before the composer, on
   EVERY compile. `rx_info.ngroups` emits it; `RX_NCAPS` still emits
   `ncap + 1`. On a non-composed compile the two are equal by construction,
   which is what lets `src/gen/emit_dfa.c` read it unconditionally instead of
   asking whether composition happened.
 - **`Ctx.defs`** — the `.rxt` definition closure, or NULL. Non-NULL only on
-  the `--source` path (`pcrec_compile_defs`), so `pcrec_rxt_compose` is one
+  the `--source` path (`pcrec_compile_defs`), so the composer is one
   pointer test on every other compile.
+- **`Ctx.compose`** — [REVW.3] the COMPOSER HOOK, or NULL, set beside
+  `defs` from the same entry. `compile.c` reaches the composer through it
+  rather than by name, which is what makes `compile.o` name no `rxt_*`
+  symbol; `compile_defs.c` is the one object that sets it. A hook and not
+  a weak symbol — a weak definition is a linker trick standing in for a
+  structural fact, and ld64 and GNU ld do not spell it the same way.
 - **`Ctx.defer_file_refs`** — DERIVED from `defs` at compile entry and never
   set independently, so "the parser defers" and "a composer will resolve"
   cannot get out of step. Read at exactly one place,

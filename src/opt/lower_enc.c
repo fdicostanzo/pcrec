@@ -12,7 +12,7 @@
  * ============================================================================
  *
  * An encoding is a SEALED INSTANCE here exactly as it is a sealed backend at
- * the emitter's seam (src/gen/enc/, DD-12 (7)): one `LowerOps` row per
+ * the emitter's seam (src/enc/, DD-12 (7)): one `LowerOps` row per
  * encoding, selected ONCE per compile by id, and no `if (enc == UTF8)`
  * anywhere else in the tree. A row carries the three things an encoding knows
  * about its own spelling of a character:
@@ -131,7 +131,7 @@
  * own LEXICAL position by this same walk. */
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 typedef struct LowerCtx LowerCtx;
 

@@ -61,10 +61,10 @@
 #include "core/internal.h"
 /* [M6.5.2] the encoding seam's ENTRY IDS. This emitter names two of them (the
  * backreference compare and its caseless twin) as it emits their calls; the
- * TEXT of every entry stays in src/gen/enc/, which is DD-12 (7)'s whole
+ * TEXT of every entry stays in src/enc/, which is DD-12 (7)'s whole
  * point — nothing here knows what an encoding does, only which entries this
  * artifact needs. */
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* ---- capacities ------------------------------------------------------------
  *

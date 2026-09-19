@@ -157,11 +157,14 @@ CFLAGS_COMMON="-std=gnu11 -Wall -Wextra"
 
 # [M5-SEAM] FOUND, not enumerated by directory. This was a hand-listed set of
 # five top-level directories, one glob deep, which is an assumption about the
-# tree's SHAPE rather than about its contents: `src/gen/enc/` (the encoding
-# backends) is two levels down and fell straight out of the TSan library the
-# day it landed. Here the failure was loud (an undefined reference), but the
+# tree's SHAPE rather than about its contents: the encoding backends were two
+# levels down at `src/gen/enc/` and fell straight out of the TSan library the
+# day they landed. Here the failure was loud (an undefined reference), but the
 # same shape is how a concurrency check quietly ends up testing a library
-# assembled from a different source set than the one that ships.
+# assembled from a different source set than the one that ships. [REVW.3]
+# wave 3 moved those backends to `src/enc/` and added `src/dump/` beside them,
+# which is why the `find` stays: a directory list is a claim about the tree's
+# shape, and this tree has changed shape twice under one.
 LIBSRCS=()
 while IFS= read -r f; do
     LIBSRCS+=("$f")

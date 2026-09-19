@@ -13,7 +13,7 @@
 # LOST MATCH. Identical under `byte` (there `pos - k` IS the walk), which is
 # why no byte-axis instrument can see this row and the utf8 corpus owns it.
 SAB_ID="S-U5-back-step-byte-arithmetic"
-SAB_FILE="src/gen/enc/enc_utf8.c"
+SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 backend's back_step body becomes the byte backend's pos - k, so a lookbehind under --encoding=utf8 lands mid-character and loses every match behind a multi-byte character"

@@ -60,11 +60,11 @@ file by this pass.
 
 | column | value set | stable? |
 |---|---|---|
-| `kind` | `esc` \| `group` \| `verb` \| `class-bracket` \| `quant-suffix` \| `bare` — the six `RegKind` doorways (`src/parse/syntax_dump.c` `kind_name`); `quant-suffix` and `bare` have no lexical doorway at all — a possessive suffix is recognised inside `p_rep` after the quantifier already parsed, and `^`/`$`/the plain capturing group `(...)` are parsed directly in `p_atom`/`p_group_body` (manager ruling, 2026-08-29: `RK_BARE`, `RK_QUANTSUFFIX`'s own no-doorway precedent a second time) | yes |
+| `kind` | `esc` \| `group` \| `verb` \| `class-bracket` \| `quant-suffix` \| `bare` — the six `RegKind` doorways (`src/dump/syntax_dump.c` `kind_name`); `quant-suffix` and `bare` have no lexical doorway at all — a possessive suffix is recognised inside `p_rep` after the quantifier already parsed, and `^`/`$`/the plain capturing group `(...)` are parsed directly in `p_atom`/`p_group_body` (manager ruling, 2026-08-29: `RK_BARE`, `RK_QUANTSUFFIX`'s own no-doorway precedent a second time) | yes |
 | `selector` | the byte/character after the doorway that selects this row, or `*` for "matches any remaining byte at this doorway" (`REG_SEL_ANY`); 58 distinct values observed (`cut -f2 \| sort -u \| wc -l`) | yes, but not enumerable as a short closed list — read per-row |
 | `syntax` | a pattern that PROBES this construct — `tests/reject/` and `--explain` compile it | free text (but every row's value is itself a valid pcrec probe pattern, guaranteed by `registry_check`'s well-formedness pass) |
 | `module` | one of 17 module names (`assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `unicode-props`, `verbs`), or empty for `status=base`/`rejected` rows with no owning module | yes |
-| `feature` | a hex bitmask (`0x0000`..`0x10000`, 18 distinct values seen) | **not independently named.** `src/parse/syntax_dump.c`'s own header comment states why: `registry.c`'s `M_<module>` macros already pair each bit with a module name, and a second bit->name table here would be a second home for that mapping. Read `module` beside it for the name; `tests/registry/` separately proves the two are a bijection |
+| `feature` | a hex bitmask (`0x0000`..`0x10000`, 18 distinct values seen) | **not independently named.** `src/dump/syntax_dump.c`'s own header comment states why: `registry.c`'s `M_<module>` macros already pair each bit with a module name, and a second bit->name table here would be a second home for that mapping. Read `module` beside it for the name; `tests/registry/` separately proves the two are a bijection |
 | `flavours` | `pcre2` (the only value today — one flavour exists, `--flavour` (`cli.md` §2) filters it; a second flavour is future work, SR-7) | yes |
 | `engines` | empty \| `vm` \| `dfa\|vm` — which engine(s) can execute a produced node for this row; empty for rows with no producer yet or no engine question (`status != module`) | yes |
 | `status` | `base` \| `module` \| `rejected` — `RegStatus`: is this base-tier grammar, gated behind a module, or a construct pcrec refuses outright | yes |
@@ -87,7 +87,7 @@ flip `unbuilt -> built`, the first `RF_LEXICAL` rows ever to (their
 producer is a lexer-mode transition with no `aport`/`cport` to read, so
 `pcrec_construct_built_status` gained a dedicated arm for the flag rather
 than the usual doorway-return classification — see
-`src/parse/syntax_dump.c`'s own comment on that arm).
+`src/dump/syntax_dump.c`'s own comment on that arm).
 
 ## 3. `built` vs. `status`/`roadmap` — two different questions
 
@@ -97,7 +97,7 @@ implement it. `built` (D65) is **orthogonal** and answers a question
 `status`/`roadmap` cannot: has *this specific construct's* producer
 actually landed, right now, in this build — derived live by driving
 the row's own `syntax` through a gate-forced-open doorway call
-(`pcrec_construct_built_status`, `src/parse/syntax_dump.c:707`), never
+(`pcrec_construct_built_status`, `src/dump/syntax_dump.c:707`), never
 a hand-declared field (a second, hand-kept column was explicitly
 declined — `ext.c`'s own `UNBUILT` comment gives the reason: it would
 have to be kept in sync with the ports by hand, the exact two-homes
@@ -231,7 +231,7 @@ candidate of an axis always applies).
 this dump shares its source with the emitter it describes — for the six
 `kind=list`/`both` axes, `candidate`/`deny_macro`/`deny_bit` are read
 live off the SAME arrays `src/gen/emit_dfa.c`'s own `dfa_select` walks
-(`src/parse/axes_dump.c`'s accessor calls), so a new candidate landing
+(`src/dump/axes_dump.c`'s accessor calls), so a new candidate landing
 in one of those arrays appears here with no edit to the dump. The
 `applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
 §3's own "applies when" column, transcribed by a human, for the
@@ -395,7 +395,7 @@ as the remaining census items land, see below), 7 columns:
 
 | column | value set | stable? |
 |---|---|---|
-| `kind`/`selector`/`syntax` | the SAME three columns §2 prints for the owning row — reused through the SAME rendering helpers (`src/parse/syntax_dump.c`'s `kind_name`/`put_selector` and the text layer's `sb_text` field escape, `src/core/sb.c`), not a second independent rendering, which is what makes joining the two dumps on these columns safe rather than merely convenient | yes |
+| `kind`/`selector`/`syntax` | the SAME three columns §2 prints for the owning row — reused through the SAME rendering helpers (`src/dump/syntax_dump.c`'s `kind_name`/`put_selector` and the text layer's `sb_text` field escape, `src/core/sb.c`), not a second independent rendering, which is what makes joining the two dumps on these columns safe rather than merely convenient | yes |
 | `order` | a positive integer, 1-based, dense per row (a row with N `definitions` entries uses 1..N) | yes |
 | `predicate` | the option-scope TAG's own name (`DEF_ALWAYS`, `DEF_MULTILINE`, `DEF_NOCAP`, `DEF_UCP`, `DEF_ENCODING_UTF8`, `DEF_NEWLINE_CONV`, `DEF_LIB_NAME_BOUND` — the closed enum `DefTag`, `src/core/internal.h`), never hand-authored prose — the predicate column and a stored callable were two derivations of one fact (r43's ruling), and the tag name is the one that survives | yes, closed vocabulary |
 | `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention); a human-readable TEMPLATE for a `DEFK_TEXTFN` or `DEFK_BUILDER` entry (e.g. `\cX = byte (X uppercased, then xor 0x40)`, `X<quant>+ ≡ (?>X<quant>)` — never spliced, never a live evaluation); the row's OWN `syntax` restated for a `DEF_IDENTITY` entry (nothing substitutes); `= <target syntax>` for a `DEFK_ROW` entry — a REFERENCE to another row, never that row's own resolved text printed a second time (`$`'s non-multiline entry prints `= \Z`, not `(?=\n?\z)`, which is `\Z`'s own line to print — one fact, one row, D24's argument applied to this table); or, for a `DEFK_STR` entry carrying `RegDef.operand` (an entry keyed by an OPERAND/name rather than by option-scope tag — today's only user is the 14-name POSIX class family), `[[:<operand>:]] ≡ <definition text>` — the row's own `syntax` field is a single FIXED example that does not vary per entry, so this substitutes the entry's real name in place of it (r43-third-round follow-up, 2026-08-29) | free text for `DEFK_STR`/`DEFK_TEXTFN`/`DEFK_BUILDER` (an operand-keyed `DEFK_STR` entry's free text is wrapped `[[:name:]] ≡ ...`); `DEF_IDENTITY` echoes `syntax`; `DEFK_ROW` echoes `= ` plus the target's `syntax` |

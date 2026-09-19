@@ -8,7 +8,7 @@
  * continuation rule and its own idea of what may be indented under it. The
  * ruling is that those rules are DECLARED and VALIDATED instead. So: ONE
  * table (this file), ONE reader/enforcer (`rxt_schema.c` + the parser's walk
- * over it), ONE dump (`pcrec --list-schema`, src/parse/schema_dump.c) — the
+ * over it), ONE dump (`pcrec --list-schema`, src/dump/schema_dump.c) — the
  * `src/core/limits.def` / `--list-limits` shape (D90/[LIM-1]), copied rather
  * than reinvented, INCLUDING its Makefile-prerequisite lesson: a `.def` that
  * is not a prerequisite of the object rule lets an edit rebuild nothing

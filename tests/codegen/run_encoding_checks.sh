@@ -424,7 +424,7 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # own, which would give the vacuity guard below a row the `byte` backend
 # can never satisfy. The table is matched by its own line because its
 # initializer's brace is deliberately on the following line (see
-# `src/gen/enc/enc_utf8.c`), which is what lets one brace-matching walk
+# `src/enc/enc_utf8.c`), which is what lets one brace-matching walk
 # serve a function body and an array initializer alike.
 SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless|bref_ci_fold|bref_ci_decode|bref_ci_fold_pairs)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
@@ -1122,7 +1122,7 @@ fi
 # WHY IT EXISTS. K49 was an unanchored search retrying at the next BYTE rather
 # than the next character boundary, so `(?<!.)` over `CE B1 CE B2` reported a
 # match at offset 3 — inside a character. The fix routes the advance through
-# the encoding backend (src/gen/enc/, enc.h's `advance` field), which means the
+# the encoding backend (src/enc/, enc.h's `advance` field), which means the
 # boundary rule is now spelled TWICE per backend: once as the caller-facing
 # `next_pos` entry, and once as inline text spliced into the engine body,
 # because DD-12 (7) and sabotage row S68 forbid an engine calling the entry.

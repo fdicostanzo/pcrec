@@ -8,7 +8,7 @@
 # spellings of one fact is the shape this project keeps cataloguing, and the
 # first design's answer ("reuse the same table as `\b`") was not available:
 # `cls_casefold` is a bitmap WIDENER, not a byte-to-byte map, and nothing in
-# `src/gen/enc/` can call a `static` function in `src/parse/`.
+# `src/enc/` can call a `static` function in `src/parse/`.
 #
 # SO THE FOLD BECAME AN OBJECT (`pcrec_ascii_fold`, src/core/fold.c) that
 # `cls_casefold` DERIVES from, and the agreement is asserted by a MECHANISM
@@ -20,7 +20,7 @@
 # the check must still see. A caseless corpus that happened to use no `z` would
 # not.
 SAB_ID="S116-fold-table-off-by-one"
-SAB_FILE="src/gen/enc/enc_byte.c"
+SAB_FILE="src/enc/enc_byte.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/caseless.rxt"
 SAB_DESC="The caseless residual entry's fold covers A-Y instead of A-Z, so a caseless backreference stops folding 'Z'/'z' while pcrec's class fold still does. Two spellings of one fact drifting by ONE BYTE is what the 65,536-pair agreement check exists to see; a corpus that used no 'z' would not"

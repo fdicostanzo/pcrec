@@ -66,7 +66,7 @@ An unknown value is refused with the registry's rendered menu
 (`--encoding=ascii` is unknown — D58 renamed it `byte`, one spelling, one
 namespace member); a real name with no backend would refuse by its own name,
 which is what `utf8` did through stage 1 and no longer does. Both are resolved
-through the encoding registry (`src/gen/enc/enc.h`) rather than hand-mapped in
+through the encoding registry (`src/enc/enc.h`) rather than hand-mapped in
 the CLI — see `cli/CLAUDE.md`'s `[M5-SEAM]` note for why that used to be two
 hand-written tables that could drift.
 

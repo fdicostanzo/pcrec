@@ -715,7 +715,7 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
 | `lib/pcrec.h` | `test-cli` (the library-API smoke test), `test-thread` (both TS-2 and TS-3 call the public API directly) | |
-| `src/gen/enc/*` (the encoding backends), `pcrec_options.encoding`, the emitted residual entries | `test-encseam`, `test-codegen`, `test-cli` | encseam RUNS docs/spec/match_api.md §3.1's find-all loop through `<prefix>_next_pos` against a python3 `re` oracle, on both engines — it is the only suite that runs a find-all loop at all; codegen carries the DD-12 (7) structural check that no engine body calls a residual entry, which no behaviour test can see (under the byte backend the residual is the identity, so a hot path routed through it matches identically); cli pins the `-e`/`--encoding=` surface and the utf8 refusal |
+| `src/enc/*` (the encoding backends), `pcrec_options.encoding`, the emitted residual entries | `test-encseam`, `test-codegen`, `test-cli` | encseam RUNS docs/spec/match_api.md §3.1's find-all loop through `<prefix>_next_pos` against a python3 `re` oracle, on both engines — it is the only suite that runs a find-all loop at all; codegen carries the DD-12 (7) structural check that no engine body calls a residual entry, which no behaviour test can see (under the byte backend the residual is the identity, so a hot path routed through it matches identically); cli pins the `-e`/`--encoding=` surface and the utf8 refusal |
 | `tests/mech/*` (sabotage definitions) | `make mech` (not a `make test` section — its own top-level target, run manually per its own CLAUDE.md when a sabotage table's figures are in doubt; the full matrix measures ~50 min at `PROCS=4`, 2026-08-21 — see "Sanitizer + lint battery" below for the stale "~6 minutes" figure's correction and the [TT-3] `CCACHE=1` toggle's own measured warm-row number) | |
 
 ### `make smoke`
@@ -2036,7 +2036,7 @@ number.
 ### Sanitizer findings inventory
 
 **F1 — `-Wclobbered` on `pcrec_syntax_explain`'s `rows_shown`/`dissents`,
-`src/parse/syntax_dump.c:881`, surfaced only under `make asan`** (not
+`src/dump/syntax_dump.c:881`, surfaced only under `make asan`** (not
 `make ubsan`, not the default `-O2` build, not `make strict`). **TRIAGED
 BENIGN and HARDENED (manager, 2026-08-13, same session)** — the manager
 independently read the handler and confirmed the analysis below: neither
@@ -2049,7 +2049,9 @@ prose ("deliberately not read on the longjmp path") is now a defined-read
 guarantee rather than a heuristic gcc happens to get right, closing off
 the R20-shaped latent-bug risk a *wrong* instance of this warning would
 represent. Rebuilt `build-asan/` after the fix: warning gone, `make`/
-`make strict` still clean. **Full compiler output, verbatim (pre-fix):**
+`make strict` still clean. **Full compiler output, verbatim (pre-fix)** — quoted unedited, so it
+names the file at its 2026-08-13 path `src/parse/syntax_dump.c`; the file
+is `src/dump/syntax_dump.c` since [REVW.3] wave 3 moved the dump tier:
 
 ```
 /home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c: In function ‘pcrec_syntax_explain’:
@@ -2062,10 +2064,10 @@ represent. Rebuilt `build-asan/` after the fix: warning gone, `make`/
 ```
 
 Both variables named, both from the single declaration line
-`int rows_shown = 0, dissents = 0;` at `src/parse/syntax_dump.c:881`, inside
+`int rows_shown = 0, dissents = 0;` at `src/dump/syntax_dump.c:881`, inside
 `pcrec_syntax_explain` (the `--explain` query function, R20/MOD-0.7
 territory). Repro: `gcc -O1 -g -fsanitize=address,leak -Wall -Wextra
--std=gnu11 -c src/parse/syntax_dump.c` (or `make asan`, which hits it while
+-std=gnu11 -c src/dump/syntax_dump.c` (or `make asan`, which hits it while
 rebuilding `tests/codegen/run_trie_identity.sh`'s `-DPCREC_NO_TRIE`
 reference compiler from source — the same warning is present in the real
 `build-asan/` library build too, confirmed in that build's own log; it
@@ -3047,9 +3049,10 @@ under UBSan with the guard, and `null pointer passed as argument 1` with the
 guard stripped back out.
 
 **One infrastructure note that cost two suite failures.** Adding
-`src/gen/enc/` put compiler sources TWO directory levels down for the first
-time, and two suites assembled their own build of the compiler from a
-one-level glob (`src/*/*.c` in `tests/codegen/run_trie_identity.sh`, a
+`src/gen/enc/` (the encoding backends' home until [REVW.3] wave 3 moved
+them up to `src/enc/`) put compiler sources TWO directory levels down for
+the first time, and two suites assembled their own build of the compiler
+from a one-level glob (`src/*/*.c` in `tests/codegen/run_trie_identity.sh`, a
 hand-listed `for d in core parse ir opt gen` in
 `tests/thread/run_thread_tests.sh`). Both now `find` the sources instead.
 The failures were loud here (undefined references), but the shape is the

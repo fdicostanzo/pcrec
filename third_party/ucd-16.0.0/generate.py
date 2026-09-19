@@ -19,7 +19,7 @@ WHAT IT WRITES  three GENERATED files, never hand-edited
   `src/core/fold_tables.inc`         [M5.0 stage 4] the simple case-fold
                                      ORBIT relation `src/core/fold.c` walks
                                      to close a caseless class.
-  `src/gen/enc/utf8_fold_pairs.inc`  [M5.0 stage 4] the same fold as a sorted
+  `src/enc/utf8_fold_pairs.inc`      [M5.0 stage 4] the same fold as a sorted
                                      `{from, to}` map, spelled as C SOURCE
                                      TEXT for the UTF-8 backend's caseless
                                      backreference residual to embed in an
@@ -145,7 +145,7 @@ SCRIPTEXT_SOURCE = os.path.join(HERE, "ScriptExtensions.txt")
 ALIAS_SOURCE = os.path.join(HERE, "PropertyValueAliases.txt")
 OUT = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
 FOLD_OUT = os.path.join(REPO, "src", "core", "fold_tables.inc")
-FOLD_TEXT_OUT = os.path.join(REPO, "src", "gen", "enc", "utf8_fold_pairs.inc")
+FOLD_TEXT_OUT = os.path.join(REPO, "src", "enc", "utf8_fold_pairs.inc")
 
 UNICODE_VERSION = "16.0.0"
 MAXCP = 0x10FFFF
@@ -840,7 +840,7 @@ FOLD_TEXT_BANNER = """\
  * `make gen-tables`; `make test` re-checks staleness (`--check`).
  *
  * THIS FILE IS NOT COMPILED — IT IS EMITTED.  Every line below is a C string
- * literal, and `src/gen/enc/enc_utf8.c` `#include`s the file in the MIDDLE of
+ * literal, and `src/enc/enc_utf8.c` `#include`s the file in the MIDDLE of
  * the string-literal initialiser for the caseless backreference residual, so
  * these lines become part of the TEXT an artifact carries.  Design §4.6(b):
  * a caseless backreference folds subject bytes read at match time, so unlike

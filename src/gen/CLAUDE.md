@@ -135,7 +135,7 @@ for BOTH the composed and the direct spelling.**
 onto the six layer-1 lists above**, right after `dfa_dir_reverse`'s own
 definition (`pcrec_dfa_axis_table_cands` / `_prefilter_cands` / `_view_cands`
 / `_seed_cands` / `_accept_cands` / `_direction_cands`, declared in
-`core/internal.h`), so `pcrec --list-axes` (`src/parse/axes_dump.c`) can
+`core/internal.h`), so `pcrec --list-axes` (`src/dump/axes_dump.c`) can
 walk the SAME arrays `dfa_select` walks for candidate name + deny bit,
 rather than a hand-copied restatement (docs/dev/learnings.md §3). They read
 `.name`/`.deny` off each list's common `DfaCand` header and never call

@@ -1195,10 +1195,29 @@ between waves (D102); box slots handshake with the bench.
   `test-axes` answer-identity sweep is its natural home). D80: it is a
   caller-observable surface and needs its `docs/spec/` hunk in the same
   change.
-- [REVW.3] STATE:not-started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
+- [REVW.3] STATE:started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
   (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
   cut (2 files, 0 anchors), L4-dump relocation rider, internal.h
   declaration-grouping (split deferred). M4: no compile.c move.
+  **DELIVERED on lane/w3 (2026-09-19, lane w3), five item commits +
+  report `docs/dev/lanes/w3_report.md`, awaiting the manager's merge
+  gate**: dump tier -> `src/dump/`, `src/gen/enc/` -> `src/enc/` (with
+  `third_party/ucd-16.0.0/generate.py`'s three path sites and a
+  `make gen-tables` proof), the layer order
+  `lib -> core(base) -> enc -> parse -> ir -> opt -> gen -> driver ->
+  dump -> cli` in `include_graph.py` (via a per-file tier override table)
+  and in `src/CLAUDE.md` / `APPROACH.md` §8 / `coding_guide.md` §1.9, the
+  rxt cut (`Ctx.compose` + `src/core/compile_defs.c`, `nm`-proven in both
+  directions), and `internal.h`'s declaration tail grouped by defining
+  layer. Every item byte-neutral on all four `scripts/emit_sweep.py`
+  streams at full reach; NOT an abi event; no `docs/spec/` hunk owed.
+  **Two findings for the record**: the call-level back-edge census is
+  30, not lens 6's predicted 19 — the `driver` reclassification turns 20
+  edges forward and creates 22 new ones, all `ctx_fail`/`ctx_nomem`, so
+  `compile.c` is itself two layers; and item 1's dump move has TWO
+  sabotage anchors (S18, S241) where lens 6 priced it at zero and left
+  its own coupling grep unrun. **Wave 4's brief must cite
+  `src/dump/axes_dump.c`, not `src/parse/axes_dump.c`.**
 - [REVW.4] STATE:not-started — wave 4 (CLI+config): the cli_parse table
   (L11+L2+L1-X10 one item, M3), mode mutual-exclusion written once, D107
   filter inversion, F2 bar->limits.def; X9/axes.def PROPOSED to Frank, not

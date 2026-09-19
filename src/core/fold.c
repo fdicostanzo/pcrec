@@ -7,13 +7,13 @@
  * compiles away). A CASELESS BACKREFERENCE cannot fold at parse time — its
  * operand is subject text nobody has seen yet — so the fold has to exist a
  * second time, in the ENCODING RESIDUAL entry `$_bref_match_caseless`
- * (src/gen/enc/enc_byte.c), which is TEXT compiled by someone else's toolchain.
+ * (src/enc/enc_byte.c), which is TEXT compiled by someone else's toolchain.
  *
  * TWO SPELLINGS OF ONE FACT WITH NOTHING BETWEEN THEM is the shape this
  * project keeps cataloguing, and R32 E8 named it here: the first draft said
  * the module would "reuse the same table as `\b`", which is not available —
  * `cls_casefold` is a bitmap WIDENER, not a byte-to-byte map, and nothing in
- * src/gen/enc/ can call a `static` function in src/parse anyway.
+ * src/enc/ can call a `static` function in src/parse anyway.
  *
  * SO THE FOLD BECOMES A TABLE, and the table is what the AGREEMENT CHECK reads.
  * `cls_casefold` derives its widening from it (so the parse-time fold IS this

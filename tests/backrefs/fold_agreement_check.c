@@ -13,7 +13,7 @@
  *
  * The first draft's answer was "reuse the same table as `\b`", which R32 E8
  * refuted: `cls_casefold` is `static`, takes a 32-byte BITMAP and widens it in
- * place — it is not a byte-to-byte map, and nothing in `src/gen/enc/` can call
+ * place — it is not a byte-to-byte map, and nothing in `src/enc/` can call
  * it. So the residual would carry a SECOND SPELLING of A-Z <-> a-z with
  * nothing checking that the two agree, which is this project's named failure
  * shape pointed the other way: not a control sharing a source with its

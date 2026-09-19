@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 {
@@ -574,7 +574,7 @@ static void size_drop_note(const char *what, const char *cost)
  * that really happened" guarantee. */
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
-                          const RxtDefs *defs)
+                          const RxtDefs *defs, PcrecComposeFn compose)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -732,7 +732,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * therefore today's bytes" true by construction rather than by audit. */
         cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
         /* [DD-13b.W1.3] THE DEFINITION SET, and the ONE flag read from it.
-         * NULL on every entry but `pcrec_compile_defs`, so `pcrec_rxt_compose`
+         * NULL on every entry but `pcrec_compile_defs`, so the composer call
          * below is one pointer test and every artifact a non-`--source`
          * compile emits is byte-identical to before the composer existed —
          * which is what makes identity gate (A) a real check of this change.
@@ -740,6 +740,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * "the parser defers" and "a composer will resolve" cannot get out of
          * step. */
         cx.defs = defs;
+        /* [REVW.3] THE COMPOSER HOOK, set beside the definition set it
+         * belongs with. NULL on every entry but `pcrec_compile_defs`, which
+         * is the same condition `defs` already carried — the hook moves WHO
+         * NAMES the composer out of this file, not WHEN it runs. */
+        cx.compose = compose;
         cx.defer_file_refs = (defs != NULL && defs->n > 0);
         cx.first_cap_pos = (size_t)-1;
         /* [M6.4.2 / SR-8, D67] ONE field where `first_kreset_pos` and a
@@ -1158,7 +1163,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * called `unicode-props`.) So the promise names the MILESTONE, and says
          * plainly that no --features name will turn it on — pre-empting the
          * question the old wording invited. */
-        /* [M5-SEAM] BOTH refusals now read the ENCODING REGISTRY (src/gen/enc/)
+        /* [M5-SEAM] BOTH refusals now read the ENCODING REGISTRY (src/enc/)
          * rather than testing PCREC_ENC_* values and naming them in literals:
          * a member with no backend is refused BY ITS OWN NAME, and a value that
          * is not a member at all is refused with the table's rendered menu. That
@@ -1196,12 +1201,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * PROGRAMS FOR ONE GROUP"); and BEFORE `pcrec_altcls` so an injected
          * definition gets the same optimization every other subtree gets.
          *
+         * [REVW.3] IT IS REACHED THROUGH A HOOK, not by name. This file does
+         * not mention `pcrec_rxt_compose` anywhere any more, which is the
+         * whole cut: `compile.o` names no `rxt_*` symbol, so a matcher-only
+         * consumer of `libpcrec.a` does not pull the `.rxt` tier in through
+         * the pipeline driver. The position and the arguments are exactly
+         * what they were.
+         *
          * `ncap_primary` is seeded here and not inside the composer, so it
          * is right on EVERY compile — including the ones the composer
          * returns from immediately — which is what lets `emit_dfa.c` read it
          * unconditionally instead of asking whether composition happened. */
         cx.ncap_primary = cx.ncap;
-        root = pcrec_rxt_compose(&cx, root);
+        if (cx.compose) root = cx.compose(&cx, root);
 
         root = pcrec_altcls(&cx, root);
 
@@ -1838,20 +1850,26 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
-    return compile_driver(pattern, opt, out, err, NULL, NULL);
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL);
 }
 
-/* [DD-13b.W1.3] The `--source` entry: `pcrec_compile` plus a definition set.
- * INTERNAL and NOT a `pcrec_options` field — D20 keeps the public option
- * surface scalar, and a definition closure is a `.rxt` FILE's property that
- * only the `.rxt` reader can build. The two entries share one driver, so
- * there is exactly one compile pipeline and `--source` cannot acquire a
- * second one. */
-int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err)
+/* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
+ * that `pcrec_compile_defs` now lives in its own translation unit
+ * (`src/core/compile_defs.c`) so that THIS file names no `rxt_*` symbol.
+ * `compile_driver` itself stays `static` and keeps its name: making it
+ * non-`static` would put a bare, unprefixed `compile_driver` in
+ * `libpcrec.a`'s symbol table, which is the namespace hazard lens 9's P5
+ * is about, and renaming it would stale ~30 comments across the tree that
+ * cite the driver by name (four of them `--list-axes` description strings a
+ * caller reads). So the export is a `pcrec_`-prefixed face over the static
+ * driver rather than the driver itself — an export boundary, not a second
+ * pipeline: there is still exactly ONE `setjmp`, ONE retry ladder and ONE
+ * compile, and this function's whole body is the forward. */
+int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
+                         pcrec_output *out, pcrec_error *err, char **ir_out,
+                         const RxtDefs *defs, PcrecComposeFn compose)
 {
-    return compile_driver(pattern, opt, out, err, NULL, defs);
+    return compile_driver(pattern, opt, out, err, ir_out, defs, compose);
 }
 
 /* DD-8's listing entry. It runs a REAL compile and throws the C away, because
@@ -1871,7 +1889,8 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     /* A paired header would only put an #include line in output nobody reads. */
     defo.header_name = NULL;
 
-    if (compile_driver(pattern, &defo, &out, err, &text, NULL) != 0) {
+    if (compile_driver(pattern, &defo, &out, err, &text, NULL,
+                             NULL) != 0) {
         free(text);
         return NULL;
     }

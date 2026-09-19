@@ -34,7 +34,7 @@ audit both actually need — from the source outward.
 |---|---|---|
 | `src/parse/uprops_tables.inc` | `third_party/ucd-16.0.0/generate.py` | `src/parse/mod_uprops.c` — module `unicode-props`' `\p{...}` / `\P{...}` name lookup. From `UnicodeData.txt` (the general categories) and, since [M5.0] stage 5, from `Scripts.txt` + `ScriptExtensions.txt` + `PropertyValueAliases.txt` (the 171 script values, their spellings, and the two sets each answers to) |
 | `src/core/fold_tables.inc` | the same generator, from `CaseFolding.txt` | `src/core/fold.c` — the `pcrec_fold_ucd_simple` relation the `utf8` encoding's caseless class constructor closes over ([M5.0] stage 4, DD-1) |
-| `src/gen/enc/utf8_fold_pairs.inc` | the same generator, from `CaseFolding.txt` | `src/gen/enc/enc_utf8.c` — **the one derived artifact that IS emitted**, as C source text inside the caseless-backreference residual (see below) |
+| `src/enc/utf8_fold_pairs.inc` | the same generator, from `CaseFolding.txt` | `src/enc/enc_utf8.c` — **the one derived artifact that IS emitted**, as C source text inside the caseless-backreference residual (see below) |
 
 **THE THIRD ROW BREAKS THIS DIRECTORY'S OTHERWISE-UNIVERSAL RULE and the
 break is deliberate, ruled by the design rather than taken here.**

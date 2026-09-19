@@ -13,7 +13,7 @@
 # rx_search call can reach it, which is why the row's detector must be a
 # find-all cell.
 SAB_ID="S-U6-next-pos-byte-advance"
-SAB_FILE="src/gen/enc/enc_utf8.c"
+SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 backend's next_pos body becomes pos + 1, so the find-all loop advances into the middle of a multi-byte character after an empty match and reports non-boundary positions"

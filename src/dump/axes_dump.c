@@ -1,4 +1,4 @@
-/* src/parse/axes_dump.c — [CHK-2] PIECE 1: `pcrec --list-axes`, the
+/* src/dump/axes_dump.c — [CHK-2] PIECE 1: `pcrec --list-axes`, the
  * optimization-axis registry's FOURTH TSV surface (docs/spec/registry.md).
  *
  * WHAT THIS PROVES AND WHAT IT DOES NOT (docs/dev/plan.md [CHK-2]'s own
@@ -702,7 +702,7 @@ char *pcrec_axes_tsv(void)
         "#   \"predicate\" — no candidate-list-as-data exists yet for this axis\n"
         "#   ([ENG-FORM] relayered emit_dfa.c only); name/deny are hand-stated\n"
         "#   from lib/pcrec.h's own enum symbols and docs/spec/tuning.md's\n"
-        "#   prose. See this file's (src/parse/axes_dump.c) own header comment\n"
+        "#   prose. See this file's (src/dump/axes_dump.c) own header comment\n"
         "#   for the full boundary this dump does and does not prove.\n"
         "#\n"
         "# stamp_macro/stamp_value: the emitted #define this candidate is\n"

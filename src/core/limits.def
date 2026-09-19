@@ -9,7 +9,7 @@
  * one of those 44 is a row below (45 since [OPT-5] added the scan-edge
  * budget, 57 today -- the manifest in tests/registry/limits_check.sh is the
  * count that is CHECKED, not this sentence); `pcrec --list-limits` dumps this table as
- * TSV (src/parse/limits_dump.c) and `docs/spec/limits.md` §3's prose is
+ * TSV (src/dump/limits_dump.c) and `docs/spec/limits.md` §3's prose is
  * checked against the dump rather than hand-copied from it
  * (tests/registry/limits_check.sh).
  *
@@ -68,7 +68,7 @@
  * (the dump, the registry check's derivation) instead defines the full
  * `PCREC_LIMIT(name, value, unit, kind, override, anchor, desc, home)` macro
  * directly, which bypasses the dispatch layer entirely — see
- * src/parse/limits_dump.c for that shape. Every macro this file defines is
+ * src/dump/limits_dump.c for that shape. Every macro this file defines is
  * `#undef`-ed at the bottom, so a second `#include` elsewhere starts clean.
  *
  * EVERY ROW BECOMES A PLAIN `#define NAME (VALUE)` at its home (or, for

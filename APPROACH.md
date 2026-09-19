@@ -173,11 +173,11 @@ Adding UTF-16/32 later = new encoding backend, no core changes.
 **[M5-SEAM] (D58, 2026-08-18) made the second half of that sentence
 structural rather than aspirational.** The encoding is a PER-COMPILE-CALL
 scalar (a `pcrec_options` field, never a global), and a backend is a file
-in `src/gen/enc/` supplying the RESIDUAL text an artifact embeds — with no
+in `src/enc/` supplying the RESIDUAL text an artifact embeds — with no
 encoding conditional anywhere in the compiler, the emitter or the artifact
 (DD-12 (7)). The first residual entry is `<prefix>_next_pos`
 (docs/spec/match_api.md §3.1.1). "No core changes" is now the check
-`tests/codegen/run_codegen_tests.sh` makes and `src/gen/enc/CLAUDE.md`
+`tests/codegen/run_codegen_tests.sh` makes and `src/enc/CLAUDE.md`
 states as a recipe: a new backend is one file here plus its row in the
 registry, and needing to touch a shared file outside that directory is a
 design stop.
@@ -288,29 +288,59 @@ Tests are organized **by component**, and the corpus comes from **PCRE2's testda
 
 ## 8. Repository Layout
 
+`src/`'s subdirectories are a LAYER ORDER, and a file may depend only on
+what is to its left:
+
+```
+lib → core(base) → enc → parse → ir → opt → gen → driver → dump → cli
+```
+
+Two of those names are not directories. **`core/` is two tiers wearing one
+name**: a BASE tier (arena, string buffer, code-point sets, folding, the
+tuning table, and the type definitions in `internal.h`) that everything
+depends on and that depends on nothing, and the pipeline DRIVER,
+`core/compile.c`, which by definition sits above every stage it drives.
+The driver is a tier and not a directory deliberately — [REVW.3] wave 3
+fixed the model and left the file where it is (D77: the measured need is
+served by a tool constant and a paragraph, against twelve sabotage rows
+and everything else that names the path). **`dump/` is a directory** and
+holds the read-only table surfaces, which sit above the whole pipeline
+because they render what it built. `tools/review/include_graph.py` is the
+instrument that tests this order; it measures INCLUDES, and the coupling
+a shared header hides from it is recorded at the tool.
+
 ```
 pcrec/
 ├── APPROACH.md              # this document
 ├── Makefile                 # plain make + gcc; no build-system dependency
 ├── src/
-│   ├── core/                # driver, options, arena, diagnostics, AST defs
+│   ├── core/                # BASE: arena, sb, cpset, fold, tune, type defs
+│   │   └── compile.c        # …and the DRIVER tier, a layer above gen/
+│   ├── enc/                 # encoding backends (enc_byte.c, enc_utf8.c)
 │   ├── parse/               # parse.c (skeleton) + one file per syntax module
 │   ├── ir/                  # IR defs, lowering, nfa/dfa construction
 │   ├── opt/                 # one file per optimization pass
 │   ├── gen/
-│   │   ├── engine_dfa.c     # computed-goto DFA emitter
-│   │   ├── engine_vm.c      # backtracking VM emitter
-│   │   ├── enc_ascii.c      # encoding backends
-│   │   └── enc_utf8.c
-│   └── rt/                  # header-only runtime shims embedded in output
+│   │   ├── emit_dfa.c       # computed-goto DFA emitter
+│   │   └── emit_vm.c        # backtracking VM emitter
+│   └── dump/                # the `--list-*` table surfaces
 ├── lib/                     # public API for libpcrec (pcrec.h)
 ├── cli/                     # main.c for the pcrec tool
-├── tests/
-│   ├── harness/             # pcre2test-subset runner
-│   ├── base/  classes/  assertions/  captures/  lookaround/  backrefs/ ...
+├── tests/                   # one directory per module/feature, plus:
+│   ├── harness/             # the .rxt runner (docs/spec/rxt_format.md)
+│   ├── mech/                # the sabotage matrix
 │   └── bench/               # long-text throughput + compile-speed budgets
-└── third_party/pcre2-testdata/   # imported test corpus (license preserved)
+├── third_party/             # vendored outside data + its generators
+└── oracle_store/            # the committed reference-oracle answer store
 ```
+
+Two notes on the tree above, since it was stale for a long time and a
+reader should know which parts are load-bearing. There is no `src/rt/`:
+the runtime shims an artifact carries are emitted TEXT, and the
+per-encoding half of that text lives in `src/enc/`. The emitters are
+`emit_dfa.c`/`emit_vm.c`, not `engine_*.c`, and the ASCII backend is
+`enc_byte.c`. `third_party/` holds vendored DATA with a `generate.py`
+beside it, not an imported test corpus.
 
 ---
 

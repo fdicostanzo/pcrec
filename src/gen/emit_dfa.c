@@ -38,7 +38,7 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* [O-31 F1] ONE BYTE OF PATTERN-DERIVED TEXT, RENDERED SAFE FOR A C BLOCK
  * COMMENT. The hazard: a comment-closing STAR THEN SLASH embedded in the
@@ -1025,7 +1025,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         "#define PCREC_VM_PRUNE_UNCLAMPED       0x2u\n"
         "\n"
         /* [M5-SEAM] The RESIDUAL entries get a pointer from here and their
-         * full contract at their own declaration (src/gen/enc/). This block
+         * full contract at their own declaration (src/enc/). This block
          * is emitted ONCE PER FILE under a prefix-independent guard, so it
          * must stay independent of BOTH axes it sits across: `<prefix>` is a
          * placeholder here exactly as `<PREFIX>` is above, and the text must
@@ -5383,7 +5383,7 @@ static bool dfa_search_is_pinned(Ctx *cx)
 
 /* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
  *
- * `pcrec --list-axes` (src/parse/axes_dump.c) needs the SAME name+deny data
+ * `pcrec --list-axes` (src/dump/axes_dump.c) needs the SAME name+deny data
  * this file's own `dfa_select` walks, rather than a hand-copied restatement
  * of it (docs/dev/learnings.md §3: "a REFERENCE BUILD assembled by ... a
  * hand-enumerated list drifts silently from the subject's source set"). A
