@@ -800,32 +800,47 @@ sr_depth.rxt` that MATCH at the default `K` return a frames give-up under
    turns a match into a give-up would be an answer change no flag asked for,
    and §8's "refuse and document" does not cover it.
 
-## 8b. Two `limits.def` knees `--tune=N` moves
+## 8b. Three `limits.def` knees `--tune=N` moves
 
 `docs/spec/tuning.md` §2.20 states the general rule: a `selection knee` —
 a `limits.def` row that steers WHICH lowering the emitter takes rather
 than what pcrec accepts or refuses — carries no anchor in this document
 on its own, because this document promises resource BOUNDS and a knee
-promises nothing. **[OPT-DIAL] (2026-09-16) is why two of them earn one
-anyway**: `--tune=N` (`docs/spec/tuning.md` §5) now sets both per
+promises nothing. **[OPT-DIAL] (2026-09-16) is why three of them earn one
+anyway**: `--tune=N` (`docs/spec/tuning.md` §5) now sets each per
 POSITION, so a caller reading this page needs the values a dial position
 actually ships, not only the constant a plain build compiles with.
 
 | constant | override | −2 | −1 | 0 (default) | +1 | +2 |
 |---|---|---:|---:|---:|---:|---:|
 | `PCREC_SIZE_TERM_THRESHOLD` (bytes) | `-D` | **40,000** | **80,000** | 120,000 | — | — |
+| `PCREC_SIZE_TERM_BAR` (percent) | `none` | **95** | **85** | 75 | — | — |
 | `VM_INLINE_CHAIN_MAX_BYTES` (bytes) | `flag` | — | — | 4,096 | **8,192** | **8,192** |
 
-Both are `selection knee` rows of `pcrec --list-limits`
-(`src/core/limits.def:161`, `:352`). `PCREC_SIZE_TERM_THRESHOLD`'s
-override is `-D`, which means **no CLI override exists for it** — unlike
-the raise-only flags in §3.3, this constant moves only at pcrec's OWN
-build time, so `--tune=N` is the only way a caller moves it per compile.
-`VM_INLINE_CHAIN_MAX_BYTES`'s override is `flag`: `--vm-entry-shape=N`
-(`docs/spec/tuning.md` §2.21) overrides the term's decision outright, per
-`docs/spec/tuning.md` §1's narrowed property that explicit spelling beats
-the dial — one of only two rows in the whole policy table where a
-spelling already existed before the dial did.
+All three are `selection knee` rows of `pcrec --list-limits`.
+`PCREC_SIZE_TERM_THRESHOLD`'s override is `-D`, which means **no CLI
+override exists for it** — unlike the raise-only flags in §3.3, this
+constant moves only at pcrec's OWN build time, so `--tune=N` is the only
+way a caller moves it per compile. `PCREC_SIZE_TERM_BAR`'s override is
+`none`: there is no `-D` and no flag, so `--tune=N` is the ONLY lever of
+any kind on it. `VM_INLINE_CHAIN_MAX_BYTES`'s override is `flag`:
+`--vm-entry-shape=N` (`docs/spec/tuning.md` §2.21) overrides the term's
+decision outright, per `docs/spec/tuning.md` §1's narrowed property that
+explicit spelling beats the dial — one of only two rows in the whole
+policy table where a spelling already existed before the dial did.
+
+**`PCREC_SIZE_TERM_BAR` is new to the table as of 2026-09-19** ([REVW.4]
+wave 4, D106 addendum 3): it is the same number the unroll-K ladder has
+always used, moved out of a bare `#define` in `src/core/compile.c` so
+that both parameters of one ladder live in the one ruled home. No value
+moved and nothing a caller can observe about a COMPILE changed; what
+changed is that `pcrec --list-limits` now reports it, as row 58 of 58.
+It is also the table's first row whose `unit` is `percent` — a fraction
+of another row's own quantity rather than a count of anything — and the
+bar reads as a CEILING on the smaller K's artifact: at 75, a smaller K
+ships only if its bytes are at most 75 % of the default K's, i.e. only if
+it saves at least a quarter. A HIGHER bar is therefore a LOOSER
+requirement, which is why the size-leaning dial positions raise it.
 
 These are the two size-side ladder rows and the one speed-side entry-chain
 row `docs/spec/tuning.md` §5.4's policy table carries; that table is the

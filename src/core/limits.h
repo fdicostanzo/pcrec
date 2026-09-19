@@ -548,6 +548,24 @@
  * A number that means three unrelated things in two files is how a reader
  * infers a shared derivation that does not exist.
  *
+ * The K SELECTION's MATERIALITY BAR (PCREC_SIZE_TERM_BAR), the ladder's
+ * SECOND parameter and the one this table did not carry until [REVW.4]
+ * wave 4 (D106 addendum 3's F2, 2026-09-19): once the threshold has let the
+ * ladder run, a smaller K's artifact ships only if it is at most this
+ * PERCENT of the default K's bytes. 75 means "a smaller K must save at
+ * least a quarter" — a bar rather than a ceiling, which is why its unit is
+ * `percent` and why it is the first ratio-shaped row in the table.
+ *
+ * It lived as a bare `#define SIZE_TERM_BAR_DEFAULT 75` beside its one
+ * reader in src/core/compile.c until this wave, on the "beside its one
+ * reader" rationale — the same rationale the threshold, three paragraphs
+ * up, does not get. Two parameters of ONE ladder kept in two homes is the
+ * asymmetry lens 3's F2 found; both live here now. `--tune=N` moves it
+ * (95 at min-size, 85 at size) exactly as it moves the threshold, and
+ * src/core/tune.c still holds no COPY of either default: the dial's em-dash
+ * sentinel (0) means "this axis untouched at this position" and the caller
+ * resolves it against this row.
+ *
  * [ENG-ABS] PCREC_ANCHORED_MAX_STATES: THE ANCHORED MATCH-HERE MACHINE'S
  * OWN STATE CEILING, and it is LOWER than the cap every other table
  * machine is built under (docs/design/anchored_match_unwrapped.md §5.2,

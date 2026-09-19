@@ -7,7 +7,7 @@
  * enumerated in the brief and a REAL population of 44 once every file was
  * grepped (docs/dev/lanes/lim1_report.md carries the survey delta). Every
  * one of those 44 is a row below (45 since [OPT-5] added the scan-edge
- * budget, 57 today -- the manifest in tests/registry/limits_check.sh is the
+ * budget, 58 today -- the manifest in tests/registry/limits_check.sh is the
  * count that is CHECKED, not this sentence); `pcrec --list-limits` dumps this table as
  * TSV (src/dump/limits_dump.c) and `docs/spec/limits.md` §3's prose is
  * checked against the dump rather than hand-copied from it
@@ -26,8 +26,17 @@
  *            emit_vm.c's own comment at that #define)
  *   unit     "bytes" | "states" | "entries" | "elements" | "nodes" |
  *            "copies" | "groups" | "levels" | "positions" | "chars" |
- *            "frames" | "steps" | "work-units" | "count" | "" (dimensionless
- *            / a magnitude ceiling)
+ *            "frames" | "steps" | "work-units" | "count" | "percent" | ""
+ *            (dimensionless / a magnitude ceiling)
+ *
+ *            "percent" was added 2026-09-19 ([REVW.4] wave 4, D106 addendum
+ *            3's F2) for PCREC_SIZE_TERM_BAR, the first RATIO-shaped row:
+ *            every other unit here names a thing being counted, and a
+ *            percentage counts nothing — it is a fraction of another row's
+ *            own quantity. Spelling it "" (dimensionless) was the
+ *            alternative and was declined: the dump's `unit` column is what
+ *            tells a caller how to read the `value`, and 75 means nothing
+ *            without the word.
  *   kind     "compile budget" (bounds the COMPILER's own analysis/emission;
  *            crossing it can REFUSE a pattern) | "runtime capacity" (bounds
  *            the EMITTED MATCHER's own resource use; crossing it is a
@@ -159,6 +168,7 @@ PCREC_LIMIT(PCREC_MAX_VM_EMIT_CODE_BYTES, 500000, "bytes", "size cap", BUILD_D, 
 PCREC_LIMIT(PCREC_DEFAULT_WARN_EMIT_BYTES, 250000, "bytes", "size cap", BUILD_D, "8", "[OPT-4]: the advisory --warn-emit-bytes default (never refuses, 0 disables) ALSO settable per-compile; -D moves the built-in default", LIMITS_H)
 PCREC_LIMIT(PCREC_MAX_EMIT_BYTES, 1000000, "bytes", "size cap", BUILD_D, "8", "[ART-SIZE]/D84: the whole comment-excluded artifact; --max-emit-bytes ALSO raises it per-compile (raise-only); -D moves the built-in default", LIMITS_H)
 PCREC_LIMIT(PCREC_SIZE_TERM_THRESHOLD, 120000, "bytes", "selection knee", BUILD_D, "", "[ART-SIZE]: the emitted-size knee above which the unroll-K size term evaluates the ladder at all", LIMITS_H)
+PCREC_LIMIT(PCREC_SIZE_TERM_BAR, 75, "percent", "selection knee", NONE, "", "[ART-SIZE]: the unroll-K ladder's MATERIALITY BAR -- a smaller K ships only if its artifact is at most this percent of the default K's bytes", LIMITS_H)
 
 /* ---- home: EMIT_VM (6) — src/gen/emit_vm.c's runtime give-up budgets --- *
  * Deliberately NOT in limits.h's own tiers (VM_DEFAULT_WORK_BUDGET's own

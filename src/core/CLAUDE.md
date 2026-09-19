@@ -211,7 +211,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   DEFAULT.** That is what stops this file becoming a second home for
   `PCREC_SIZE_TERM_THRESHOLD` (`limits.def`), `VM_INLINE_CHAIN_MAX_BYTES`
   (`emit_vm.c`'s own `EMIT_VM` home) or the materiality bar
-  (`SIZE_TERM_BAR_DEFAULT`, beside `size_term_choose` in `compile.c`). The
+  (`PCREC_SIZE_TERM_BAR` — a `limits.def` row since [REVW.4] wave 4, beside
+  the threshold; it was a bare `SIZE_TERM_BAR_DEFAULT` in `compile.c`). The
   sentinel means "the dial does not touch this axis here", never "zero".
 
   **POSITION 0 IS A STRUCTURAL NO-OP BY CONSTRUCTION, not by care**: every

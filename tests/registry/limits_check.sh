@@ -112,6 +112,7 @@ PCREC_MAX_VM_EMIT_CODE_BYTES
 PCREC_DEFAULT_WARN_EMIT_BYTES
 PCREC_MAX_EMIT_BYTES
 PCREC_SIZE_TERM_THRESHOLD
+PCREC_SIZE_TERM_BAR
 VM_DEFAULT_STEP_BUDGET
 VM_DEFAULT_WORK_BUDGET
 VM_DEFAULT_RESUME_FRAMES
@@ -143,8 +144,8 @@ RXT_FROM_NEST_MAX
 EOF
 )"
 
-if [ "$n" -eq 57 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
-    ok "[count] --list-limits reports all 57 named rows, exactly the manifest this script carries"
+if [ "$n" -eq 58 ] && [ "$NAMES" = "$EXPECT_NAMES" ]; then
+    ok "[count] --list-limits reports all 58 named rows, exactly the manifest this script carries"
 else
     bad "[count] --list-limits reports $n row(s); manifest mismatch — a row was added, removed or renamed. Diff:"
     diff <(printf '%s\n' "$EXPECT_NAMES") <(printf '%s\n' "$NAMES") >&2 || true

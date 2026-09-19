@@ -455,13 +455,14 @@ static bool size_term_capacity_holds(const long long *fc, const long long *sc, i
            cap_or_inf(sc[i]) >= cap_or_inf(sc[0]);
 }
 
-/* [ART-SIZE] THE MATERIALITY BAR's own home, in PERCENT of the default K's
- * bytes: a smaller K ships only if it saves at least a quarter of them.
- * [OPT-DIAL] made this a dial cell (`--tune=-2` raises it to 95, `-1` to 85),
- * so the constant moved out of the expression below and into a name — but
- * the DEFAULT still lives here, beside its one reader, which is why
- * `src/core/tune.c` carries an em-dash sentinel rather than a copy of it. */
-#define SIZE_TERM_BAR_DEFAULT 75
+/* [ART-SIZE] THE MATERIALITY BAR, in PERCENT of the default K's bytes: a
+ * smaller K ships only if it saves at least a quarter of them. [OPT-DIAL]
+ * made this a dial cell (`--tune=-2` raises it to 95, `-1` to 85), so the
+ * constant moved out of the expression below and into a name; [REVW.4] wave
+ * 4 (D106 addendum 3's F2) then moved the DEFAULT itself out of this file
+ * and into `PCREC_SIZE_TERM_BAR`, a `src/core/limits.def` row beside the
+ * ladder's other parameter `PCREC_SIZE_TERM_THRESHOLD`. `src/core/tune.c`
+ * still carries an em-dash sentinel rather than a copy of either. */
 
 static void size_term_choose(const int *k, const bool *ok, const size_t *nodes,
                              const size_t *code, const size_t *total,
@@ -670,7 +671,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * because the ladder is `compile_driver`'s own machinery and nothing
      * downstream of it reads them. */
     const int bar0 = pcrec_tune_size_term_bar(defo.tune);
-    const int size_term_bar = bar0 ? bar0 : SIZE_TERM_BAR_DEFAULT;
+    const int size_term_bar = bar0 ? bar0 : PCREC_SIZE_TERM_BAR;
     const long long thr0 = pcrec_tune_size_term_threshold(defo.tune);
     const long long size_term_threshold =
         thr0 ? thr0 : (long long)PCREC_SIZE_TERM_THRESHOLD;

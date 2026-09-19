@@ -9,6 +9,13 @@
 # counts (§3.4), so a 3 % size win is not worth taking — and removing it makes
 # the term take every improvement however small.
 #
+# NOT RE-ANCHORED 2026-09-19 ([REVW.4] wave 4, D106 addendum 3's F2): the
+# default moved out of `compile.c` and into `PCREC_SIZE_TERM_BAR`, a
+# `src/core/limits.def` row beside the ladder's other parameter. The plant's
+# anchor is the CONSUMER line inside `size_term_choose`, which reads the
+# `bar` PARAMETER and never the constant, so the anchor text is byte-identical
+# across that move and the row was re-VERIFIED rather than re-aimed.
+#
 # RE-ANCHORED 2026-09-17 ([OPT-DIAL], lane dialimpl): the 75 that used to sit
 # as a literal in the `if` below is now `SIZE_TERM_BAR_DEFAULT` (still 75,
 # still beside `size_term_choose`, `src/core/compile.c`) and the function
@@ -19,7 +26,8 @@
 # saving, regardless of which value `bar` was resolved to. Nothing about
 # WHERE the plant is visible moves either -- the reach probe below compiles
 # at the dial's OWN default position (`balanced`, `bar` resolving to the
-# same `SIZE_TERM_BAR_DEFAULT` 75 the pre-dial build always used), so
+# same 75 the pre-dial build always used -- `PCREC_SIZE_TERM_BAR` since
+# [REVW.4] wave 4), so
 # [OPT-DIAL] changes no cited figure in this row.
 #
 # WHERE THE PLANT IS VISIBLE, AND WHY THAT IS EXACTLY ONE PLACE. The bar can
