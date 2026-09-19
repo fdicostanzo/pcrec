@@ -168,11 +168,23 @@ are out of scope for this round; see the charter's own "Scope tiers".
   category (c) in full (a population EP2 never measured). `python3
   tools/review/fragment_census.py FILE [FILE...] [--out PATH]`.
 
-## Headline numbers (commit `1edd6c5e`/`998af066`, 2026-09-17)
+## Headline numbers (regenerated at commit `39860b66`, 2026-09-19)
 
-See `docs/dev/lanes/revtools_report.md` for the full table; the raw
-counts are always the TSV headers' own `rows N` field, which is the
-number to trust if this file and the data ever drift.
+See `docs/dev/lanes/revtools_report.md` for the full table as lane
+`revtools` first measured it (commit `1edd6c5e`/`998af066`, 2026-09-17);
+the raw counts are always the TSV headers' own `rows N` field, which is
+the number to trust if this file and the data ever drift.
+
+**REGENERATED 2026-09-19 by lane `w4` ([REVW.4] item 0)**, because the
+2026-09-17 artifacts predate [REVW.3] wave 3's file moves and every row
+citing `src/parse/axes_dump.c` or a `cli/main.c` line range carried a
+stale path or span (`docs/dev/lanes/w4_facts.md` §0.4). Current counts:
+896 functions (was 860), 274 clone-candidate member rows (was 258),
+12,691 literals / 5,172 distinct values (was 12,617 / 5,149), 202
+`#include` statements / 96 local edges / 0 back-edges (was 200 / 94 / 0),
+55 churn rows (was 54). A regeneration is a data refresh, not a finding:
+re-run the five scripts whenever a wave moves files, and cite the header's
+own commit when quoting a row.
 
 Maintenance: update this file when a script is added/removed, its output
 files change, or a validated finding changes its interpretation.

@@ -1,4 +1,4 @@
-# include_graph.py -- commit 820609488beb9093f64ef6784f3aca8b9a4ea2f1 -- generated 2026-09-19 -- rows 200
+# include_graph.py -- commit 39860b664fc79c9730cf6886ee26c8cef90e4bad -- generated 2026-09-19 -- rows 202
 from_file	line	spelling	kind	resolved_to	from_layer	to_layer
 cli/main.c	7	stdarg.h	SYSTEM	<system>	cli	external
 cli/main.c	8	stddef.h	SYSTEM	<system>	cli	external
@@ -23,6 +23,8 @@ src/core/compile.c	10	stdlib.h	SYSTEM	<system>	driver	external
 src/core/compile.c	11	string.h	SYSTEM	<system>	driver	external
 src/core/compile.c	13	core/internal.h	LOCAL	src/core/internal.h	driver	core
 src/core/compile.c	14	enc/enc.h	LOCAL	src/enc/enc.h	driver	enc
+src/core/compile_defs.c	36	core/internal.h	LOCAL	src/core/internal.h	core	core
+src/core/compile_defs.c	37	pcrec.h	LOCAL	lib/pcrec.h	core	lib
 src/core/cpset.c	58	string.h	SYSTEM	<system>	core	external
 src/core/cpset.c	60	core/internal.h	LOCAL	src/core/internal.h	core	core
 src/core/fold.c	57	core/internal.h	LOCAL	src/core/internal.h	core	core
@@ -34,7 +36,7 @@ src/core/internal.h	8	stddef.h	SYSTEM	<system>	core	external
 src/core/internal.h	9	stdint.h	SYSTEM	<system>	core	external
 src/core/internal.h	11	pcrec.h	LOCAL	lib/pcrec.h	core	lib
 src/core/internal.h	14	core/limits.h	LOCAL	src/core/limits.h	core	core
-src/core/internal.h	1356	core/limits.def	LOCAL	src/core/limits.def	core	core
+src/core/internal.h	1362	core/limits.def	LOCAL	src/core/limits.def	core	core
 src/core/limits.h	694	core/limits.def	LOCAL	src/core/limits.def	core	core
 src/core/sb.c	1	ctype.h	SYSTEM	<system>	core	external
 src/core/sb.c	2	stdarg.h	SYSTEM	<system>	core	external
