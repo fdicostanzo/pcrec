@@ -9841,8 +9841,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact is byte-identical to what it was — §9.1's claim held by
      * construction rather than by a filtered diff. */
     if (v.has_calls) {
-        sb_printf(c, "#define %s_VM_CALL_SPLICED %lld\n", v.up, v.nsplicesite);
-        sb_printf(c, "#define %s_VM_CALL_LINKED %lld\n", v.up, v.ncall);
+        sb_stampf(c, v.up, "VM_CALL_SPLICED", "%lld", v.nsplicesite);
+        sb_stampf(c, v.up, "VM_CALL_LINKED",  "%lld", v.ncall);
     }
     /* [ART-SIZE] THE SIZE TERM'S SELECTION FACTS (D81, D84;
      * docs/design/artifact_size_term.md §7.1). UNCONDITIONAL on every VM
@@ -9858,14 +9858,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * The two `_MAX_EMIT_*` lines report the EFFECTIVE limits this artifact
      * was built under, so a reader can tell an artifact that fitted from one
      * built with a raised cap without having the command line. */
-    sb_printf(c, "#define %s_UNROLL_K %d\n", v.up, v.unroll_k);
+    sb_stampf(c, v.up, "UNROLL_K", "%d", v.unroll_k);
     sb_stamp_str(c, v.up, "UNROLL_K_WHY",
                  cx->size_term_why ? cx->size_term_why : "default");
-    sb_printf(c, "#define %s_MAX_EMIT_CODE_BYTES %llu\n", v.up,
+    sb_stampf(c, v.up, "MAX_EMIT_CODE_BYTES", "%llu",
               cx->opt->max_emit_code_bytes
                   ? (unsigned long long)cx->opt->max_emit_code_bytes
                   : (unsigned long long)PCREC_MAX_VM_EMIT_CODE_BYTES);
-    sb_printf(c, "#define %s_MAX_EMIT_BYTES %llu\n", v.up,
+    sb_stampf(c, v.up, "MAX_EMIT_BYTES", "%llu",
               cx->opt->max_emit_bytes
                   ? (unsigned long long)cx->opt->max_emit_bytes
                   : (unsigned long long)PCREC_MAX_EMIT_BYTES);
@@ -9876,16 +9876,17 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact only talks about can drift from the artifact's behaviour,
      * and this one cannot. The accompanying comment is the SR-8-shaped
      * sentence a reader greps for ("matches nothing"). */
-    if (root_minw >= PCREC_MINW_MAX)
-        sb_printf(c,
+    if (root_minw >= PCREC_MINW_MAX) {
+        sb_puts(c,
             "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
             " * minimum width is at the analysis ceiling -- design\n"
             " * subroutines_design.md SS4.4b's call-graph fixpoint reached\n"
             " * INFINITY, which SS12 P-12 rules a legal compile meaning the\n"
             " * language is EMPTY. <prefix>_search answers NOMATCH before any\n"
-            " * frame is pushed. */\n"
-            "#define %s_VM_ROOT_MINW %lluULL\n",
-            v.up, (unsigned long long)root_minw);
+            " * frame is pushed. */\n");
+        sb_stampf(c, v.up, "VM_ROOT_MINW", "%lluULL",
+                  (unsigned long long)root_minw);
+    }
     /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
      * `v.emitted_push`, which `vm_push_at` (the ONE primitive that writes a
      * push, in EITHER tracing spelling) sets in the same call that writes the
@@ -9953,7 +9954,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today, so a mirror would be built
      * ahead of a measured need (D77). */
-    sb_printf(c, "#define %s_VM_ALT_ISLANDS %lld\n", v.up, v.nislands);
+    sb_stampf(c, v.up, "VM_ALT_ISLANDS", "%lld", v.nislands);
     /* [FORM-CHAR] STEP 1 — THE FOLD-FORM STAMP, §6.3 family (b), VM route
      * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
      * spelled as readily as any other value (the `_FAST_FRAMES`/[DD-13]
@@ -9970,7 +9971,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      *
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today (D77). */
-    sb_printf(c, "#define %s_VM_CLS_FOLDS %d\n", v.up, vm_cls_fold_count(&v));
+    sb_stampf(c, v.up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(&v));
     /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
      * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
      *
@@ -10147,7 +10148,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
                  shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
                  shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
-    sb_printf(c, "#define %s_VM_PROGRAM_BYTES %lluULL\n", v.up,
+    sb_stampf(c, v.up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)job->vmsb.len);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
@@ -10180,7 +10181,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * "the layout below is FINAL" ruling), and adding a field is an abi-
      * version-bump event this close does not take on its own -- flagged for
      * the manager rather than done here. */
-    sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
+    sb_stampf(c, v.up, "VM_RUNGS", "0x%xu", v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
      * reason: possessification is decided PER A_REP, so an artifact whose
@@ -10201,7 +10202,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * class of pcrec-contract fact as the rung bits above, and moved to the
      * shared block the same way — see that comment. Only the OR'd MASK
      * below stays here. */
-    sb_printf(c, "#define %s_VM_STRATS 0x%xu\n", v.up, v.strats);
+    sb_stampf(c, v.up, "VM_STRATS", "0x%xu", v.strats);
     /* [M4.6d] the PRUNE stamp: the same shape and the same place as the two
      * above, plus one thing neither of them needs — the CEILING FORM, which
      * is a property of the ARTIFACT rather than of a quantifier and is
@@ -10217,7 +10218,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED/_UNCLAMPED moved to the shared
      * block for the same reason as the rung/strategy bits above; only the
      * OR'd MASK below stays here. */
-    sb_printf(c, "#define %s_VM_PRUNES 0x%xu\n", v.up, v.prunes);
+    sb_stampf(c, v.up, "VM_PRUNES", "0x%xu", v.prunes);
     /* The CEILING the artifact actually uses, and "none" when it uses none —
      * which is the same word whether the analysis produced nothing or was
      * DENIED. That identity is deliberate and load-bearing: `-fno-length-prune`
@@ -10239,9 +10240,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
         sb_puts(c, "#include <stdio.h>\n");
-        sb_printf(c, "#define %s_TRACE 1\n", v.up);
+        sb_stampf(c, v.up, "TRACE", "1");
     }
-    sb_printf(c, "#define %s_NSLOTS %d\n", v.up, nstate < 1 ? 1 : nstate);
+    sb_stampf(c, v.up, "NSLOTS", "%d", nstate < 1 ? 1 : nstate);
 
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
@@ -10258,7 +10259,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         for (int sl = 0; sl < nstate; sl++) {
             const char *nm = vm_slot_name(&v, sl);
             if (!nm) continue;
-            sb_printf(c, "#define %s_%-24s %d\n", v.up, nm, sl);
+            sb_stampwf(c, v.up, nm, 24, "%d", sl);
         }
         sb_putc(c, '\n');
     }
@@ -10273,9 +10274,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * caller. Spec §10.4 states the move; §10.8 announces it as one of the
      * two things that change. */
     if (has_budget)
-        sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
+        sb_stampf(c, v.up, "STEP_BUDGET", "%lldLL", budget);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
-        sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
+        sb_stampf(c, v.up, "WORK_BUDGET", "%lldLL", work_budget);
     /* [OPT-1] THE FAST TIER'S TWO CAPACITY STAMPS (docs/spec/match_api.md
      * §10.4, docs/design/two_tier_entry.md §6).
      *
@@ -10294,8 +10295,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * appeared only on tiered artifacts would make the fact readable by a
      * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
      * back and fix in two checks. */
-    sb_printf(c, "#define %s_FAST_FRAMES %lld\n", v.up, fast_frames);
-    sb_printf(c, "#define %s_FAST_TRAIL %lld\n", v.up, fast_trail);
+    sb_stampf(c, v.up, "FAST_FRAMES", "%lld", fast_frames);
+    sb_stampf(c, v.up, "FAST_TRAIL",  "%lld", fast_trail);
     sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
