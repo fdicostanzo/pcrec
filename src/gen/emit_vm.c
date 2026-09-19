@@ -10442,10 +10442,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * whole-artifact fact with no per-`A_REP` axis to mix. No `rx_info`
      * mirror, on `RX_DFA_TABLE`'s precedent — no consumer reads either at RUN
      * time today (D77). */
-    sb_stamp_str(c, v.up, "VM_ENTRY_SHAPE",
-                 shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
-                 shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
-                 shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
+    /* [REVW.4] wave 4: the rung's NAME comes from `src/core/tune.c`'s one
+     * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
+     * four-arm ladder that stood here was the second of three spellings. */
+    sb_stamp_str(c, v.up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(shape));
     sb_stampf(c, v.up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)job->vmsb.len);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above

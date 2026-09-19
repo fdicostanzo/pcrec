@@ -4,6 +4,7 @@
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -528,6 +529,84 @@ static int libdir_push(CliState *st, const char *dir)
     return 0;
 }
 
+/* [REVW.4] wave 4 (L2-L2-7, M3) — THE ENGINE VOCABULARY, in one place.
+ * `--engine=`'s three-arm `strcmp` ladder, `engine_name`'s three-arm reverse
+ * ladder and the `.rxt` `engine` row's own one-value test were three
+ * independent spellings of one three-value set. They are one table; the
+ * format's VM-ONLY restriction is now stated AS a restriction, applied after
+ * the shared parse, rather than implemented as a second, narrower parser. */
+static const struct { const char *name; int value; } ENGINE_NAMES[] = {
+    { "auto", PCREC_ENGINE_AUTO },
+    { "dfa",  PCREC_ENGINE_DFA  },
+    { "vm",   PCREC_ENGINE_VM   },
+};
+#define N_ENGINE_NAMES (sizeof ENGINE_NAMES / sizeof ENGINE_NAMES[0])
+
+static int engine_by_name(const char *v, int *out)
+{
+    for (size_t i = 0; i < N_ENGINE_NAMES; i++)
+        if (!strcmp(v, ENGINE_NAMES[i].name)) { *out = ENGINE_NAMES[i].value; return 0; }
+    return 1;
+}
+
+static const char *engine_name(int e)
+{
+    for (size_t i = 0; i < N_ENGINE_NAMES; i++)
+        if (ENGINE_NAMES[i].value == e) return ENGINE_NAMES[i].name;
+    return "auto";
+}
+
+/* [REVW.4] wave 4 (L2-L2-7) — ONE JOIN POLICY for every valid-value MENU a
+ * diagnostic in this file prints. `pcrec_enc_names` (src/enc/enc.c) and
+ * `pcrec_tune_names` (src/core/tune.c) each render their own registry's menu
+ * because the registry is theirs; this is for the menus whose vocabulary is
+ * the CLI's own. Its bounded-join policy is those two functions' exactly —
+ * an ordered PREFIX rather than a gap, and the separator written under the
+ * SAME bound as the name it follows, so a tight cap can never emit a
+ * dangling ", " ([REVW.1] wave 1's L10-2).
+ *
+ * `last` is the connective before the final name (" or " today), because the
+ * sentences these menus sit in read "must be auto, dfa or vm" and D26 forbids
+ * re-wording a shipped diagnostic to suit a helper. */
+static void cli_menu(const char *const *names, size_t n, const char *last,
+                     char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    buf[0] = 0;
+    for (size_t i = 0; i < n; i++) {
+        const char *sep = (i == 0) ? "" : (i + 1 == n ? last : ", ");
+        size_t ls = strlen(sep), ln = strlen(names[i]);
+        if (k + ls + ln + 1 > cap) break;     /* an ordered PREFIX, never a gap */
+        memcpy(buf + k, sep, ls); k += ls;
+        memcpy(buf + k, names[i], ln); k += ln;
+    }
+    buf[k] = 0;
+}
+
+/* [REVW.4] wave 4 (L1-X10) — ONE bounded-integer VALUE parser for the five
+ * `--flag=N` arms that each spelled `strtol`/`strtoll` plus the same
+ * no-junk-and-in-range test for themselves.
+ *
+ * IT DELIBERATELY DOES NOT REJECT AN EMPTY VALUE OF ITS OWN ACCORD, and that
+ * is measured rather than assumed: `strtol("")` returns 0 leaving `*end` at
+ * the terminator, so today `--unroll=`, `--step-budget=` and
+ * `--backtrack-frames=` are refused by their RANGE (0 is below every one of
+ * their floors) while `--vm-entry-shape=` is ACCEPTED as rung 0, auto. An
+ * emptiness test here would be a fourth behaviour change nobody asked for.
+ *
+ * The DIAGNOSTIC stays at each call site: every one of the five names its own
+ * range and its own advice, and D26 forbids folding five shipped sentences
+ * into one. What is shared is the RULE, which is what was repeated. */
+static int cli_int_value(const char *s, long long lo, long long hi, long long *out)
+{
+    char *end = NULL;
+    long long v = strtoll(s, &end, 10);
+    if (!end || *end || v < lo || v > hi) return 1;
+    *out = v;
+    return 0;
+}
+
 /* [REVW.4] wave 4 (D111, L1-X9) — THE OPTIMIZATION-AXIS GRAMMAR, in one
  * loop over `src/core/axes.def`.
  *
@@ -553,6 +632,17 @@ static int cli_axis_apply(const char *a, uint64_t *flags)
     return 0;
 }
 
+/* The pattern OPERAND: exactly one, anywhere in the argv. Its own function
+ * because `cli_parse` reaches it from TWO places — after `--`, and as the
+ * option chain's own fall-through — and duplicating four lines to save a
+ * helper is how a rule ends up with two spellings. */
+static int cli_operand(CliState *st, const char *a, const char *where)
+{
+    if (!st->pattern) { st->pattern = a; return 0; }
+    cli_err("exactly one pattern expected (%s)", where);
+    return 1;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
@@ -566,43 +656,60 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* [LIM-2] N1: computed once per token so the dispatch below and its
          * body read the SAME match rather than re-scanning the table. */
         const int rom_idx = raise_only_match(a);
-        if (!no_more_opts && !strcmp(a, "--")) no_more_opts = 1;
+        /* [REVW.4] wave 4 (L11-F3) — THE `--` GUARD, WRITTEN ONCE.
+         *
+         * Every arm of the chain below used to re-type the same conjunct for
+         * itself: 59 times before this wave, 37 after item 4 retired the axis
+         * arms. The repetition was a named CORRECTNESS HAZARD, not a tidiness
+         * one — a new arm written without the conjunct silently breaks `--`
+         * for that one flag, and nothing structural reminded an author to add
+         * it. Handling the after-`--` case HERE, once, with a `continue`,
+         * makes the reminder structural instead: reaching the chain at all now
+         * MEANS options are still live, so an arm cannot forget a guard it
+         * does not have.
+         *
+         * The chain's own fall-through still reaches the operand, for an
+         * argument that is neither an option nor after `--`. */
+        if (no_more_opts) {
+            if (cli_operand(st, a, where) != 0) return 1;
+            continue;
+        }
+        if (!strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
          * not print usage and exit 0 in the middle of a compile. The flag
          * lives in the tail of `CliState`, so `cli_extras_clean` refuses it
          * there with no clause of its own. */
-        else if (!no_more_opts && (!strcmp(a, "-h") || !strcmp(a, "--help")))
+        else if ((!strcmp(a, "-h") || !strcmp(a, "--help")))
             st->want_help = 1;
-        else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
-        else if (!no_more_opts && !strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
+        else if (!strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
+        else if (!strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the
          * separate-argument forms above (-o/-p/-e) all take one. */
-        else if (!no_more_opts && !strcmp(a, "--no-captures"))
+        else if (!strcmp(a, "--no-captures"))
             opt.flags |= PCREC_NO_CAPTURES;
-        else if (!no_more_opts && !strcmp(a, "--trace"))
+        else if (!strcmp(a, "--trace"))
             opt.flags |= PCREC_TRACE;
-        else if (!no_more_opts && !strcmp(a, "--emit-ir")) st->emit_ir = 1;
-        else if (!no_more_opts && !strcmp(a, "--pattern-esc"))
+        else if (!strcmp(a, "--emit-ir")) st->emit_ir = 1;
+        else if (!strcmp(a, "--pattern-esc"))
             st->pattern_esc = 1;
-        else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
+        else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
          * `cli_axis_apply` walks `src/core/axes.def`, the one home of each
          * axis's bit, its `-fno-X` / `-fX` spellings and its default
          * polarity. An unknown `-f...` returns 0 here and falls through to
          * the unknown-option diagnostic below exactly as it always did. */
-        else if (!no_more_opts && cli_axis_apply(a, &opt.flags)) { }
+        else if (cli_axis_apply(a, &opt.flags)) { }
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
-        else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {
-            char *end = NULL;
-            long v = strtol(a + 9, &end, 10);
-            if (!end || *end || v < 1 || v > 4096) {
-                cli_err("--unroll wants an integer in 1..4096 "
-                                "(got '%s')", a + 9);
+        else if (!strncmp(a, "--unroll=", 9)) {
+            long long v;
+            if (cli_int_value(a + 9, 1, 4096, &v) != 0) {
+                cli_err("--unroll wants an integer in %d..%d "
+                                "(got '%s')", 1, 4096, a + 9);
                 return 1;
             }
             opt.unroll_k = (int)v;
@@ -614,14 +721,18 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * explicitly is legal and means the same thing. A rung this artifact
          * cannot legally take is a SELECTION OUTCOME, not a refusal — see
          * lib/pcrec.h's `vm_entry_shape` and docs/spec/tuning.md §2.21. */
-        else if (!no_more_opts && !strncmp(a, "--vm-entry-shape=", 17)) {
-            char *end = NULL;
-            long v = strtol(a + 17, &end, 10);
-            if (!end || *end || v < 0 || v > PCREC_VM_ENTRY_INLINE) {
+        else if (!strncmp(a, "--vm-entry-shape=", 17)) {
+            long long v;
+            if (cli_int_value(a + 17, 0, PCREC_VM_ENTRY_INLINE, &v) != 0) {
+                /* [REVW.4] wave 4: the RUNG MENU is rendered from
+                 * `src/core/tune.c`'s own name table, which `src/gen/
+                 * emit_vm.c`'s `<PREFIX>_VM_ENTRY_SHAPE` stamp also reads —
+                 * it was hand-typed here, a THIRD spelling of five words. */
+                char rungs[128];
+                pcrec_vm_entry_shape_names(rungs, sizeof rungs);
                 cli_err("--vm-entry-shape wants an integer in "
-                                "0..%d (0 auto, 1 plain, 2 shared, 3 forward, "
-                                "4 inline; got '%s')",
-                        PCREC_VM_ENTRY_INLINE, a + 17);
+                                "0..%d (%s; got '%s')",
+                        PCREC_VM_ENTRY_INLINE, rungs, a + 17);
                 return 1;
             }
             opt.vm_entry_shape = (int)v;
@@ -642,7 +753,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * caller believe they had asked for something the artifact does not
          * have, and `<PREFIX>_TUNE` exists precisely so an artifact says how
          * it was built. */
-        else if (!no_more_opts && !strncmp(a, "--tune=", 7)) {
+        else if (!strncmp(a, "--tune=", 7)) {
             int v = 0;
             if (pcrec_tune_parse(a + 7, &v) != 0) {
                 /* [REVW.4] wave 4 (L2-L2-7): the menu is RENDERED from
@@ -657,7 +768,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.tune = v;
         }
-        else if (!no_more_opts && !strcmp(a, "--tune")) {
+        else if (!strcmp(a, "--tune")) {
             cli_err("--tune takes its value with '=' "
                     "(--tune=-2, --tune=min-size)");
             return 1;
@@ -666,24 +777,28 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * `=value` MODE form `--engine=` already uses (the separate-argument
          * forms are for files and names). Both spellings reach the same
          * lookup, so they cannot drift. */
-        else if (!no_more_opts && !strncmp(a, "--encoding=", 11)) {
+        else if (!strncmp(a, "--encoding=", 11)) {
             if (set_encoding(&opt, a + 11) != 0) return 1;
         }
-        else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
+        else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
-            if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;
-            else if (!strcmp(v, "dfa"))  opt.engine = PCREC_ENGINE_DFA;
-            else if (!strcmp(v, "vm"))   opt.engine = PCREC_ENGINE_VM;
-            else {
-                cli_err("--engine must be auto, dfa or vm "
-                                "(got '%s')", v);
+            int want;
+            if (engine_by_name(v, &want) != 0) {
+                /* [REVW.4] wave 4: the menu is the TABLE's, rendered with
+                 * this file's one join policy, so a fourth engine name would
+                 * appear here without an edit. */
+                const char *names[N_ENGINE_NAMES];
+                char menu[64];
+                for (size_t k = 0; k < N_ENGINE_NAMES; k++) names[k] = ENGINE_NAMES[k].name;
+                cli_menu(names, N_ENGINE_NAMES, " or ", menu, sizeof menu);
+                cli_err("--engine must be %s (got '%s')", menu, v);
                 return 1;
             }
+            opt.engine = want;
         }
-        else if (!no_more_opts && !strncmp(a, "--step-budget=", 14)) {
-            char *end = NULL;
-            long long v = strtoll(a + 14, &end, 10);
-            if (!end || *end || v < 1) {
+        else if (!strncmp(a, "--step-budget=", 14)) {
+            long long v;
+            if (cli_int_value(a + 14, 1, LLONG_MAX, &v) != 0) {
                 cli_err("--step-budget wants a positive integer "
                                 "(use --fno-step-budget for no counter)");
                 return 1;
@@ -693,10 +808,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* [ENG-BREP counter-K] The value knob for the THIRD bound. There is
          * deliberately no `--fno-work-budget`: v1 rides ONE existence gate, so
          * `--fno-step-budget` above suppresses both counters (D49). */
-        else if (!no_more_opts && !strncmp(a, "--work-budget=", 14)) {
-            char *end = NULL;
-            long long v = strtoll(a + 14, &end, 10);
-            if (!end || *end || v < 1) {
+        else if (!strncmp(a, "--work-budget=", 14)) {
+            long long v;
+            if (cli_int_value(a + 14, 1, LLONG_MAX, &v) != 0) {
                 cli_err("--work-budget wants a positive integer "
                                 "(use --fno-step-budget for no counters)");
                 return 1;
@@ -710,7 +824,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * the override belongs in the pattern-source file's `config` block
          * (D84 addendum 3); this flag is for one-off compiles and the
          * harness. */
-        else if (!no_more_opts && rom_idx >= 0) {
+        else if (rom_idx >= 0) {
             const RaiseOnlyLimit *r = &raise_only_limits[rom_idx];
             uint64_t *slot = (uint64_t *)((char *)&opt + r->offset);
             if (parse_raise_only(a + strlen(r->flag) + 1, r->flag, r->floor,
@@ -723,7 +837,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * whole point for a project that wants earlier notice, and 0 turns it
          * off. Accepting any value is the correct policy here precisely
          * because this option cannot fail a build. */
-        else if (!no_more_opts && !strncmp(a, "--warn-emit-bytes=", 18)) {
+        else if (!strncmp(a, "--warn-emit-bytes=", 18)) {
             char *end = NULL;
             unsigned long long v = strtoull(a + 18, &end, 10);
             if (!end || *end || a[18] == '\0') {
@@ -734,10 +848,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.warn_emit_bytes = (uint64_t)v;
         }
-        else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
-            char *end = NULL;
-            long v = strtol(a + 19, &end, 10);
-            if (!end || *end || v < 1 || v > 1000000) {
+        else if (!strncmp(a, "--backtrack-frames=", 19)) {
+            long long v;
+            if (cli_int_value(a + 19, 1, 1000000, &v) != 0) {
                 cli_err("--backtrack-frames wants a positive "
                                 "integer (the array is a LOCAL of the search "
                                 "entry, so this is stack)");
@@ -745,43 +858,42 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.frame_capacity = (int)v;
         }
-        else if (!no_more_opts && !strcmp(a, "--list-syntax")) st->list_syntax = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-definitions")) st->list_definitions = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-verbs"))  st->list_verbs = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-families")) st->list_families = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-axes"))   st->list_axes = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-limits")) st->list_limits = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-schema")) st->list_schema = 1;
-        else if (!no_more_opts && !strcmp(a, "--count-groups")) st->count_groups = 1;
+        else if (!strcmp(a, "--list-syntax")) st->list_syntax = 1;
+        else if (!strcmp(a, "--list-definitions")) st->list_definitions = 1;
+        else if (!strcmp(a, "--list-verbs"))  st->list_verbs = 1;
+        else if (!strcmp(a, "--list-families")) st->list_families = 1;
+        else if (!strcmp(a, "--list-axes"))   st->list_axes = 1;
+        else if (!strcmp(a, "--list-limits")) st->list_limits = 1;
+        else if (!strcmp(a, "--list-schema")) st->list_schema = 1;
+        else if (!strcmp(a, "--count-groups")) st->count_groups = 1;
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
          * --probe-ask take theirs, rather than as the bare positional
          * argument: that slot is the PATTERN's, and a query that quietly
          * reinterpreted it would make `pcrec --list-source 'a(b|c)'` read
          * a file named after a regex. */
-        else if (!no_more_opts && !strcmp(a, "--list-source")) {
+        else if (!strcmp(a, "--list-source")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->list_source = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
+        else if (!strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->probe_want = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--features")) {
+        else if (!strcmp(a, "--features")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->features = argv[++i];
         }
-        else if (!no_more_opts &&
-                 (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
+        else if (!strcmp(a, "--explain") || !strcmp(a, "--flavour")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -789,8 +901,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             const char *v = argv[++i];
             if (a[2] == 'e') st->explain = v; else st->flavour = v;
         }
-        else if (!no_more_opts &&
-                 (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
+        else if (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -804,14 +915,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * their value as a separate argument, like -o/-p/-e and unlike the
          * `=value` MODE flags: a file, a name and a directory are exactly
          * the three things that spelling is for. */
-        else if (!no_more_opts && !strcmp(a, "--source")) {
+        else if (!strcmp(a, "--source")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->source = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--target")) {
+        else if (!strcmp(a, "--target")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -821,26 +932,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* REPEATABLE, and order is the search order — the one flag in this
          * CLI that accumulates rather than replacing. A single-valued
          * --lib-path would make two libraries an either/or. */
-        else if (!no_more_opts && !strcmp(a, "--lib-path")) {
+        else if (!strcmp(a, "--lib-path")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             if (libdir_push(st, argv[++i]) != 0) return 1;
         }
-        else if (!no_more_opts && a[0] == '-' && a[1]) {
+        else if (a[0] == '-' && a[1]) {
             cli_err("unknown option '%s' in the %s (use -- "
                             "before a pattern that starts with '-')",
                     a, where);
             if (!strcmp(where, "command line")) usage(stderr);
             return 1;
         }
-        else if (!st->pattern) st->pattern = a;
-        else {
-            cli_err("exactly one pattern expected (%s)",
-                    where);
-            return 1;
-        }
+        else if (cli_operand(st, a, where) != 0) return 1;
     }
     st->opt = opt;
     return 0;
@@ -887,12 +993,7 @@ static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
  * `PCREC_ENGINE_AUTO` is the only `enum` member (`lib/pcrec.h`'s [ABI-NS]
  * comment explains why DFA/VM are `#define`s instead), so this is the one
  * place that needs all three spellings back as text. */
-static const char *engine_name(int e)
-{
-    if (e == PCREC_ENGINE_DFA) return "dfa";
-    if (e == PCREC_ENGINE_VM)  return "vm";
-    return "auto";
-}
+
 
 /* The target's composed settings, ON TOP OF the command line's options.
  *
@@ -994,9 +1095,14 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         return 1;
     }
     if (t->engine) {
+        /* [REVW.4] wave 4 (L2-L2-7): parsed through the ONE engine
+         * vocabulary, then narrowed by the FORMAT's own restriction. It used
+         * to be a second, separately-worded engine menu that happened to
+         * know one word; stating the restriction as a restriction is what
+         * keeps `dfa` spelled once in this file. `dfa` and a typo are
+         * refused with the same sentence here, exactly as before. */
         int want;
-        if (!strcmp(t->engine, "vm")) want = PCREC_ENGINE_VM;
-        else {
+        if (engine_by_name(t->engine, &want) != 0 || want != PCREC_ENGINE_VM) {
             cli_err("%s:%zu: `engine %s` is not a value this format "
                     "accepts (only `vm`)",
                     cli->source, t->block_line, t->engine);
@@ -1455,11 +1561,20 @@ int main(int argc, char **argv)
             return 1;
         }
         if (!line) {
-            cli_err("--probe-ask: WANT must be claim, verdict "
-                            "or result, and the construct must reach a "
-                            "doorway (start with '\\', '(?', '(*' or '[' — "
-                            "except '(?:', which the base grammar answers "
-                            "before any doorway is consulted)");
+            /* [REVW.4] wave 4: the WANT vocabulary is `src/dump/
+             * syntax_dump.c`'s own table — the same one `pcrec_probe_ask`
+             * parses against — rendered with its last comma replaced by
+             * "or" so the sentence reads as it always has. */
+            char wants[128];
+            pcrec_probe_want_names(wants, sizeof wants);
+            char *lastc = strrchr(wants, ',');
+            cli_err("--probe-ask: WANT must be %.*s%s%s, and the construct "
+                            "must reach a doorway (start with '\\', '(?', "
+                            "'(*' or '[' — except '(?:', which the base "
+                            "grammar answers before any doorway is "
+                            "consulted)",
+                    lastc ? (int)(lastc - wants) : (int)strlen(wants), wants,
+                    lastc ? " or" : "", lastc ? lastc + 1 : "");
             return 1;
         }
         fputs(line, stdout);
@@ -1621,8 +1736,16 @@ int main(int argc, char **argv)
         }
         unsigned fl = 0;
         if (flavour && !(fl = pcrec_flavour_by_name(flavour))) {
-            cli_err("unknown flavour '%s' (only 'pcre2' exists; "
-                            "more arrive with SR-7)", flavour);
+            /* [REVW.4] wave 4: the name comes from the same table
+             * `pcrec_flavour_by_name` just failed against, so the refusal
+             * cannot name a vocabulary the lookup does not have. The
+             * SENTENCE still says "only", because there is still exactly
+             * one row; SR-7's second flavour is the D80 event that rewords
+             * it, and it will be unable to land without noticing. */
+            char flavs[128];
+            pcrec_flavour_names(flavs, sizeof flavs);
+            cli_err("unknown flavour '%s' (only '%s' exists; "
+                            "more arrive with SR-7)", flavour, flavs);
             return 1;
         }
         if (list_definitions) {

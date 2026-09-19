@@ -35,6 +35,14 @@ typedef struct { unsigned bit; const char *name; } MaskName;
 static const MaskName flavour_names[] = {
     {FLAV_PCRE2, "pcre2"},
 };
+
+/* [REVW.4] wave 4 (L2-L2-7): the `--probe-ask WANT` vocabulary, ONE table.
+ * It was a function-local `static const char *const want_names[]` declared
+ * TWICE in this file — in `pcrec_probe_ask` and again in the live-probe
+ * renderer — with `cli/main.c`'s own refusal sentence hand-typing the same
+ * three words a THIRD time. Index IS the `ExtWant` value. */
+static const char *const want_names[] = { "claim", "verdict", "result" };
+#define N_WANT_NAMES (sizeof want_names / sizeof want_names[0])
 static const MaskName engine_names[] = {
     {ENGM_DFA, "dfa"}, {ENGM_VM, "vm"},
 };
@@ -56,6 +64,38 @@ unsigned pcrec_flavour_by_name(const char *name)
     for (size_t i = 0; i < NELEMS(flavour_names); i++)
         if (!strcmp(flavour_names[i].name, name)) return flavour_names[i].bit;
     return 0;
+}
+
+/* [REVW.4] wave 4 (L2-L2-7): the two MENUS the CLI's own refusals print,
+ * rendered from the tables above rather than hand-typed beside them.
+ * `pcrec_enc_names`' bounded-join policy (src/enc/enc.c): an ordered PREFIX,
+ * never a gap, and the separator written under the SAME bound as the name it
+ * follows. Both menus are under 30 bytes and their callers pass 128. */
+static void names_join(const char *const *names, size_t n, char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    buf[0] = 0;
+    for (size_t i = 0; i < n; i++) {
+        size_t ls = (k ? 2u : 0u), ln = strlen(names[i]);
+        if (k + ls + ln + 1 > cap) break;
+        if (ls) { buf[k++] = ','; buf[k++] = ' '; }
+        memcpy(buf + k, names[i], ln);
+        k += ln;
+    }
+    buf[k] = 0;
+}
+
+void pcrec_flavour_names(char *buf, size_t cap)
+{
+    const char *names[NELEMS(flavour_names)];
+    for (size_t i = 0; i < NELEMS(flavour_names); i++) names[i] = flavour_names[i].name;
+    names_join(names, NELEMS(flavour_names), buf, cap);
+}
+
+void pcrec_probe_want_names(char *buf, size_t cap)
+{
+    names_join(want_names, N_WANT_NAMES, buf, cap);
 }
 
 /* The set bits' names, `|`-joined. SELECT then JOIN: the selection is this
@@ -1031,7 +1071,6 @@ static const char *doorway_word(RegKind k)
 char *pcrec_probe_ask(const char *want_name, const char *construct,
                       pcrec_error *err)
 {
-    static const char *const want_names[] = { "claim", "verdict", "result" };
     if (err) { err->msg[0] = '\0'; err->pos = 0; }
 
     /* THE GUARD (R20/MOD07-1), placed FIRST so that no automatic object in
@@ -1764,7 +1803,6 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
     }
     sb_puts(&sb, "live           "); put_answer(&sb, &q); sb_putc(&sb, '\n');
     if (q.routed) {
-        static const char *const want_names[] = { "claim", "verdict", "result" };
         sb_printf(&sb, "live at        %zu\n", q.r.at);
         sb_printf(&sb, "live elected   %s\n",
                   q.r.row ? q.r.row->syntax : "none");

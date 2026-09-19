@@ -5266,6 +5266,11 @@ int                 pcrec_tune_parse(const char *s, int *out);
  * `pcrec_enc_names`' shape exactly, bound and all. */
 void                pcrec_tune_names(char *buf, size_t cap);
 
+/* [REVW.4] wave 4 (L2-L2-7): the `vm_entry_shape` rung names, the one home
+ * both `src/gen/emit_vm.c`'s stamp ladder and `cli/main.c`'s menu read. */
+const char         *pcrec_vm_entry_shape_name(int shape);
+void                pcrec_vm_entry_shape_names(char *buf, size_t cap);
+
 int                 pcrec_tune_size_term_bar(int tune);
 
 long long           pcrec_tune_size_term_threshold(int tune);
@@ -5949,6 +5954,12 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
                            pcrec_error *err);
 
 unsigned pcrec_flavour_by_name(const char *name);
+
+/* [REVW.4] wave 4 (L2-L2-7): the two valid-value MENUS whose vocabulary is a
+ * `src/dump/syntax_dump.c` table, rendered for a CLI diagnostic rather than
+ * hand-typed beside it. */
+void pcrec_flavour_names(char *buf, size_t cap);
+void pcrec_probe_want_names(char *buf, size_t cap);
 
 /* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
  * doorway call for `construct` at ask level `want_name` ("claim" /
