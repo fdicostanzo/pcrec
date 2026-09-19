@@ -385,6 +385,124 @@ typedef struct {
     size_t      nlibdirs, libcap;
 } CliState;
 
+/* [REVW.4] wave 4 (L11-F4) — THE MODE RELATION, WRITTEN ONCE.
+ *
+ * `main` dispatches on MODES: the seven registry queries, `--explain`,
+ * `--count-groups`, `--emit-ir`, `--probe-ask`, `--list-source`, `--source`
+ * and `--flavour`. Each mode that RETURNS from `main` on its own first
+ * refuses the other modes it does not compose with — and until this wave
+ * that refusal was spelled out SIX TIMES as an `||` chain, with FOUR
+ * DIFFERENT memberships (13 / 12 / 9 / 8 flags), no two of which a reader
+ * could compare without counting. Adding a mode meant remembering six
+ * chains and knowing which of the four each one belongs to; the review's
+ * finding is that the arrangement is correct today only because of BLOCK
+ * ORDER.
+ *
+ * ONE TABLE of modes, ONE activity test, and a NAMED MASK per site. The
+ * memberships below are the NARROWEST-PER-SITE, i.e. exactly what each site
+ * accepts and refuses today (Frank's ruling for this item): this is an
+ * extraction, not a contract change, and `docs/spec/cli.md` is unchanged by
+ * it. Widening every site to the union would be a real behaviour change —
+ * `--probe-ask --flavour=pcre2` is accepted today and the union would refuse
+ * it — and it is PROPOSED in docs/dev/lanes/w4_report.md rather than built.
+ *
+ * THE SUMMED-COUNT RELATION AT THE SEVEN-QUERY SITE IS NOT FOLDED IN, and
+ * that is also ruled. "Is some OTHER mode active" and "is at most one of
+ * these co-equal flags set" are two different relations over one set; one
+ * mechanism per relation kind, so the count relation gets
+ * `cli_modes_count` and keeps its own shape. */
+#define CLI_MODE_TABLE(X)                                                \
+    X(LIST_SYNTAX,      list_syntax,      INT, "--list-syntax")          \
+    X(LIST_DEFINITIONS, list_definitions, INT, "--list-definitions")     \
+    X(LIST_VERBS,       list_verbs,       INT, "--list-verbs")           \
+    X(LIST_FAMILIES,    list_families,    INT, "--list-families")        \
+    X(LIST_AXES,        list_axes,        INT, "--list-axes")            \
+    X(LIST_LIMITS,      list_limits,      INT, "--list-limits")          \
+    X(LIST_SCHEMA,      list_schema,      INT, "--list-schema")          \
+    X(EXPLAIN,          explain,          PTR, "--explain")              \
+    X(COUNT_GROUPS,     count_groups,     INT, "--count-groups")         \
+    X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
+    X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
+    X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
+    X(SOURCE,           source,           PTR, "--source")               \
+    X(FLAVOUR,          flavour,          PTR, "--flavour")
+
+typedef enum {
+#define CLI_MODE_ENUM_ROW(id, field, kind, spelling) CM_##id,
+    CLI_MODE_TABLE(CLI_MODE_ENUM_ROW)
+#undef CLI_MODE_ENUM_ROW
+    CM_N
+} CliModeId;
+
+#define CMB(id) (1u << CM_##id)
+
+/* The two field SHAPES a mode is stored in: a flag, and a value-bearing
+ * option whose presence IS the mode. The table's `kind` column dispatches
+ * here, so `cli_modes_active` has no per-mode line of its own. */
+#define CLI_MODE_LIVE_INT(v) ((v) != 0)
+#define CLI_MODE_LIVE_PTR(v) ((v) != NULL)
+
+static unsigned cli_modes_active(const CliState *st)
+{
+    unsigned m = 0u;
+#define CLI_MODE_TEST_ROW(id, field, kind, spelling) \
+    if (CLI_MODE_LIVE_##kind(st->field)) m |= CMB(id);
+    CLI_MODE_TABLE(CLI_MODE_TEST_ROW)
+#undef CLI_MODE_TEST_ROW
+    return m;
+}
+
+/* The FIRST active mode's own spelling, in table order — which is the order
+ * the hand-written conditional ladder it replaces used. */
+static const char *cli_mode_name(unsigned modes)
+{
+#define CLI_MODE_NAME_ROW(id, field, kind, spelling) \
+    if (modes & CMB(id)) return spelling;
+    CLI_MODE_TABLE(CLI_MODE_NAME_ROW)
+#undef CLI_MODE_NAME_ROW
+    return "";
+}
+
+static int cli_modes_count(unsigned modes)
+{
+    int n = 0;
+    for (; modes; modes >>= 1) n += (int)(modes & 1u);
+    return n;
+}
+
+/* THE FOUR MEMBERSHIPS, each named for the site that owns it. Every one is
+ * built from the one below it, so the nesting a reader had to infer by
+ * comparing six `||` chains is now the definition itself. */
+
+/* The seven registry queries plus `--explain`: they answer from the registry
+ * and compile nothing, so they take no pattern and no -o. */
+#define CLI_MODES_REGISTRY_QUERY                                          \
+    (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(LIST_VERBS) |         \
+     CMB(LIST_FAMILIES) | CMB(LIST_AXES) | CMB(LIST_LIMITS) |             \
+     CMB(LIST_SCHEMA) | CMB(EXPLAIN))
+
+/* `--count-groups` refuses the registry queries and nothing else: it TAKES
+ * a pattern, so it composes with the pattern-bearing modes below it. */
+#define CLI_MODES_VS_COUNT_GROUPS CLI_MODES_REGISTRY_QUERY
+
+/* `--probe-ask` and `--emit-ir` additionally refuse `--count-groups` — the
+ * other pattern-bearing query — but not each other, which is block order
+ * doing the work and is preserved exactly as it stands. */
+#define CLI_MODES_VS_PATTERN_QUERY (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS))
+
+/* `--list-source` READS a `.rxt` file: it refuses every query above plus the
+ * other two pattern-bearing ones and `--source`, which COMPILES one.
+ * `--flavour` is deliberately absent — that site refuses it separately, with
+ * its own applies-to diagnostic, which is a different rule. */
+#define CLI_MODES_VS_LIST_SOURCE                                          \
+    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) | CMB(SOURCE))
+
+/* `--source` COMPILES a `.rxt` file and refuses every query surface there
+ * is, `--flavour` among them — the one membership that includes it. */
+#define CLI_MODES_VS_SOURCE                                               \
+    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) |         \
+     CMB(LIST_SOURCE) | CMB(FLAVOUR))
+
 /* Everything past `opt` is zero — i.e. this invocation asked for compile
  * options and nothing else. The comparison is over the raw bytes of the
  * tail, which is well defined here because every `CliState` in this file is
@@ -1309,6 +1427,11 @@ int main(int argc, char **argv)
     const char *probe_want   = st.probe_want;
     const char *features     = st.features;
     const char *list_source  = st.list_source;
+    /* [REVW.4] wave 4: every mutual-exclusion test below reads THIS, against
+     * a named membership from the table beside `CliState`. Nothing between
+     * `cli_parse` and here writes a mode field, so one computation serves
+     * all six sites. */
+    const unsigned modes     = cli_modes_active(&st);
 
     /* --count-groups is the one query that TAKES a pattern — it runs the real
      * parser (parse only, nothing emitted) and prints the running capture
@@ -1349,10 +1472,7 @@ int main(int argc, char **argv)
      * query already won SILENTLY — `--source f.rxt --count-groups -- a`
      * would have counted the pattern's groups and ignored the file. The
      * test is one place, above all of them, and it names both surfaces. */
-    if (st.source && (list_syntax || list_definitions || list_verbs ||
-                      list_families || list_axes || list_limits || list_schema ||
-                      explain || count_groups || emit_ir || probe_want || list_source ||
-                      flavour)) {
+    if (st.source && (modes & CLI_MODES_VS_SOURCE)) {
         cli_err("--source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
@@ -1377,10 +1497,7 @@ int main(int argc, char **argv)
      * status and in stderr, from a call that FAILED. run.sh depends on
      * being able to tell those two apart. */
     if (list_source) {
-        if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || list_limits || list_schema || explain ||
-            count_groups || emit_ir ||
-            probe_want || st.source) {
+        if (modes & CLI_MODES_VS_LIST_SOURCE) {
             cli_err("--list-source is a separate query; use one "
                             "(--list-source READS a .rxt file, --source "
                             "COMPILES one)");
@@ -1425,7 +1542,7 @@ int main(int argc, char **argv)
      * not run at all exits nonzero, so the check can tell "measured a
      * refusal" from "measured nothing". */
     if (probe_want) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
+        if (modes & CLI_MODES_VS_PATTERN_QUERY) {
             cli_err("--probe-ask is a separate query; use one");
             return 1;
         }
@@ -1471,7 +1588,7 @@ int main(int argc, char **argv)
      * prints, taking no -o and writing no C. A pattern pcrec refuses is
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
+        if (modes & CLI_MODES_VS_PATTERN_QUERY) {
             cli_err("--emit-ir is a separate query; use one");
             return 1;
         }
@@ -1499,7 +1616,7 @@ int main(int argc, char **argv)
     }
 
     if (count_groups) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain) {
+        if (modes & CLI_MODES_VS_COUNT_GROUPS) {
             cli_err("--count-groups is a separate query; use one");
             return 1;
         }
@@ -1530,22 +1647,22 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits || list_schema) {
-        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + list_schema + (explain != NULL) > 1) {
+    if (modes & CLI_MODES_REGISTRY_QUERY) {
+        /* THE SECOND RELATION (see the mode table): at most one of these
+         * eight co-equal flags, which is a different question from "is some
+         * OTHER mode active" and keeps its own shape by ruling. */
+        if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1) {
             cli_err("--list-syntax, --list-definitions, --list-verbs, "
                             "--list-families, --list-axes, --list-limits, --list-schema "
                             "and --explain are separate queries; use one");
             return 1;
         }
         if (pattern || outpath) {
+            /* Exactly one is set here — the count relation above returned
+             * otherwise — so the FIRST active mode in table order IS it, and
+             * the table's order is the hand ladder's order. */
             cli_err("%s takes no pattern and no -o",
-                    list_syntax      ? "--list-syntax" :
-                    list_definitions ? "--list-definitions" :
-                    list_verbs       ? "--list-verbs"  :
-                    list_families    ? "--list-families" :
-                    list_axes        ? "--list-axes" :
-                    list_limits      ? "--list-limits" :
-                    list_schema      ? "--list-schema" : "--explain");
+                    cli_mode_name(modes & CLI_MODES_REGISTRY_QUERY));
             return 1;
         }
         /* --list-verbs has no flavour axis: the verb tables record what libpcre2
