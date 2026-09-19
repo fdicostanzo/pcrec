@@ -24121,3 +24121,78 @@ gates (~104 min each). Main pushed at each merge-gate close.
 the standing darwin nm probe, 94 min; size log 0 movers over 3,480 rows.
 [REVW.3] → completed. Main pushed; crons deleted; no agents alive. Session
 closed ~07:55.
+
+## 2026-09-19 (midday) — seventy-first session: three rulings, wave 4 delivered, [EMIT-VERB] delivered, the full battery on Linux
+
+Woke on "open questions?"; Frank: "start what lanes don't need the
+questions, meanwhile let's go over them one at a time." Heartbeat cron
+(13,43). **The I-75 full battery** (scripts/battery.sh, 7 stages) filed to
+the bench inbox + live nudge; pcrecdev2 launched it 08:45 EDT at 923a5a58
+(box load 0.11). Stages test/strict/axes/san/alloc/lint all rc=0 by 11:47;
+mech running. No merges until its trailer.
+
+**The three rulings, one at a time:** (1) APPROACH.md §8 — keep, with
+docs/, scripts/, tools/, studies/ added to the tree (dffa4093). (2) X9 —
+"Yes. I like single source": D111, `src/core/axes.def`, readers derived,
+the two awk scrapers deleted (e46c10ad). (3) [EMIT-VERB] — BOOLEAN
+(f8efc3ac); then, on "is the default true or false?", Frank: comments OFF
+by default, the switch removes every NON-ESSENTIAL comment ("most all"),
+essential = provenance, the class the seam a future levels change extends
+— D112 (6d6f7861), two events in one lane. Measured before ruling: comments
+are 43-53% of a default artifact.
+
+**Wave 4 (lane w4, opus, ~80 min) DELIVERED and accepted, parked on
+lane/w4**: fact sheet first (w4facts, sonnet, read-only — merged 39860b66;
+its eight questions ruled in the brief), then five items + census regen,
+0 movers on all streams including a NEW fifth `dumps` stream; lib/pcrec.h
+BYTE-IDENTICAL (the generated-block lean priced 650-700 lines and declined
+per its stop condition — the row names the bit as a TOKEN, D111 addendum);
+docs/spec/ now carries zero cli/main.c line citations (all 27 were rotten);
+one re-pin missed and repaired — D94 addendum "after the grep, run the
+suites that count" + a CLAUDE.md row line (69327861). L11-F6's "X9 is the
+whole remedy" for emit_predicate_axes is FALSE (178 code lines before and
+after): a table removes columns, never narrative rows.
+
+**[EMIT-VERB] (lane emitverb, opus, from lane/w4's tip) DELIVERED, both
+events, 21 commits, validation PARTIAL — chain running** (search_pinned,
+specimen_identity, size-log regen, make test; log in the scratchpad,
+completion line "===== EMITVERB FINAL VALIDATION COMPLETE ====="). Event 1
+byte-neutral (bits 26/27, force macro PCREC_FORCE_COMMENTS — the registry
+check's PCREC_(NO|FORCE)_ grep encodes the convention; the gate is at the
+three StrBuf primitives, D108; 65 non-essential / 2 essential regions; the
+encoding seam's verbatim blobs split into doc/code halves in the data).
+**The `.o` proof found a REAL DEFECT**: 5/3,517 objects differed — the VM
+entry-shape AUTO rung read the program length with comments INCLUDED and
+crossed the 4,096-byte knee comment-free. Fixed by a size-neutral gate
+(sb_len_uncut: the length the buffer would have had with comments on);
+whether a size term should price comment bytes at all is OPEN with its
+population (D77 candidate row). Re-run 3,517/3,517 identical; byte share
+44.2%. Event 2 = ONE TOKEN flipped + abi 26 → 27: source bytes −36.3%
+(146.6 MB → 93.4 MB; the gap to 44.2% is the essential set's fixed ~3,272
+B/artifact); new check run_comments_axis.sh 65/0 (asserts the
+comment-excluded size is an IDENTITY — it caught one blank line inside a
+region); the comment-reader census was done by MEASUREMENT (two grep
+passes useless); four structural checks that use an emitted comment as
+their INSTRUMENT (scan-edge census/dispatch, search_pinned,
+specimen_identity) pass -fcomments, licensed by the proven identity; two
+D94-addendum readers found by suites (registry pin 102 → 108, cpset
+manifest); a latent run_axes.sh defect (the "one do-or-die axis" chosen by
+bash hash order among PCREC_FORCE_* names) named with a FATAL. OWED: the
+chain; make mech + test-axes (Linux, the next battery); the (B) filepin of
+run_recursion_identity.sh re-pinned at merge; the bench note (report §6).
+Two rulings asked: the generated-by line does not name the abi (D112 said
+it should) — manager rules ADD IT in this bump (a fresh follow-up agent
+after the chain); the feature-set comment is non-essential so a default .h
+records the feature set in no form — ACCEPTED as stated in tuning.md/
+match_api.md.
+
+**adm71 (sonnet)**: items 1-4 committed by 09:16 — S224/S88 figures
+measured (S88's atomicdiff arm carries NO detection), the sabotage count
+re-pinned, and **`no-nullable-collapsed` IS REACHABLE — refutes dd8 §4.3**
+(witness added); item 5 (tests/lib/c_artifact_cmp.sh, two conversions)
+UNCOMMITTED and the lane silent since — pinged 12:2x. Manager lessons: the
+first watcher's quiet test compared mtimes against the last COMMIT, so
+untracked files kept it silent forever (fixed: wall-clock cutoff); the
+report-committed trigger fires on a lane's FIRST report commit (lanes
+commit reports incrementally) — a `noreport` mode added. Also the bench's
+Rust-toolchain question answered (I-76: pcrec has no stake).
