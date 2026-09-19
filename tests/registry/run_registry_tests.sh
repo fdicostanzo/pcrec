@@ -554,23 +554,37 @@ limitsrc=${PIPESTATUS[0]}
 if [ "$limitsrc" -ne 0 ]; then
     rc=1
 fi
-# 22 checks: 1 (row count) + 20 (anchored-row doc checks, one per anchored
+# 24 checks: 1 (row count) + 20 (anchored-row doc checks, one per anchored
 # row in the table — [LIM-2] N1's PCREC_MAX_AUTO_DFA_ELEMS row joined
 # 2026-09-04 and this pin was missed at that landing; caught and re-pinned
-# 2026-09-05 by the first full battery after) + 1 (the bare-#define code
-# sweep). Moves only when a row's `anchor` field is added/removed or the
-# table gains/loses a row — update this number in the same commit.
+# 2026-09-05 by the first full battery after) + 3 (the numeric-constant code
+# sweep's three arms: the classifier, its population FLOOR, and its
+# allowlist-REACH arm — 1 arm until [REVW.4] wave 4 inverted the filter per
+# D107, and this pin was missed at THAT landing too, caught by the same
+# suite one item later). Moves when a row's `anchor` field is
+# added/removed, when the table gains/loses a row, or when part 3 gains an
+# arm — update this number in the same commit.
+#
+# IT IS THE SECOND READER OF THE ROW COUNT AND IT NEVER SPELLS IT. The
+# manifest inside limits_check.sh says 58; this guard says 24, because it
+# counts PASS LINES — one of which is the row-count check itself and twenty
+# of which are per-anchored-row. So a `grep` for the OLD ROW COUNT (which is
+# how the D94 ritual finds readers) cannot reach this line, and a lane adding
+# a limits.def row with an anchor will miss it exactly the way two lanes now
+# have. The same class battriage_report.md named for EMITTED_BYTES manifests:
+# a reader whose text never cites the number still moves with it.
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 22 ]; then
+if [ "$limitsn" -ne 24 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 22." >&2
-        echo "registry:   if you added/removed a limits.def row or an anchor on purpose," >&2
-        echo "registry:   update this number in the same commit; if not, coverage was removed" >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 24." >&2
+        echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
+        echo "registry:   on purpose, update this number in the same commit; if not," >&2
+        echo "registry:   coverage was removed" >&2
     else
         limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
-        echo "registry: limits_check shows $limitsn passing checks (21 expected; ${limitsnf:-?} failed," >&2
+        echo "registry: limits_check shows $limitsn passing checks (24 expected; ${limitsnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 21 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 24 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
