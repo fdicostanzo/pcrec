@@ -283,6 +283,25 @@ decides whether to perform it — and then run the row through
   claims: the instrumented artifact must agree with the plain one on every
   answer, trace on stderr, and the plain one must trace nothing.
 
+  **[DD-8], 2026-09-19 — EVERY EXTRACTION IS DECLARATION-BASED NOW, and the
+  file gained a CONTRACT arm.** `--emit-ir` renders as
+  `docs/spec/table_contract.md` TSV (`docs/spec/ir_listing.md` is its
+  format), so each comparison above resolves its SECTION and its COLUMN by
+  NAME through `tests/lib/table.sh` instead of by a fixed-position `grep`:
+  labels and slot writes out of the `program` section, resume targets out of
+  `choicepoints`, and the header numbers, resume-point count and
+  island/callout counts out of `summary`'s `fact`/`value` rows. D106 names
+  this file's old extractors as the reason the adoption was chartered —
+  they went stale once already — and a renamed section or column is now a
+  LOUD table.sh failure rather than an empty string that reads like a
+  population with no rows. The NEW arm asserts all NINE declared sections
+  are present and HEADER-TRUTHFUL (every row's field count equals its own
+  section's declared count), with the section list spelled out here rather
+  than discovered from the producer: discovering it would make the check
+  agree with whatever the producer emitted. The 16 `irsb` byte-neutrality
+  baselines were DELIBERATELY recaptured in the same change
+  (`CAPTURE_IR_BASELINE=1`); 128 checks became 144.
+
   It found a real drift on its FIRST run: the accept label was emitted by a
   direct `sb_printf`, so the artifact carried a label the listing did not.
   That is the entire failure mode §10 names, and it existed for the length of
