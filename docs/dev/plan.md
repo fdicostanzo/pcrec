@@ -1195,6 +1195,16 @@ between waves (D102); box slots handshake with the bench.
   `test-axes` answer-identity sweep is its natural home). D80: it is a
   caller-observable surface and needs its `docs/spec/` hunk in the same
   change.
+  RULED 2026-09-19 (Frank, seventy-first session): BOOLEAN — one
+  `-fno-comments` row in the deny family of `axes.def` (D111 makes it a
+  row; run_axes.sh derives the bits from lib/pcrec.h, so the answer-identity
+  sweep covers it with no new check); NOT an abi event (the default stays
+  byte-identical; the identity gates never see the no-comments artifact);
+  "a comment is text the C compiler discards — the stamps are defines and
+  stay"; the two measured facts above are STATED in the design, not
+  re-derived; sold to embedders shipping source, never as a performance
+  axis. SEQUENCED after [REVW.4]'s X9 lands, as its own small lane — the
+  first new row on the table. Levels wait for a measured need (D77).
 - [REVW.3] STATE:completed (GATED 2026-09-19 07:49, seventieth session: merge-gate make test 40/40, sole FAIL the standing darwin nm probe, size log 0 movers over 3,480 rows) — formerly STATE:started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
   (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
   cut (2 files, 0 anchors), L4-dump relocation rider, internal.h
