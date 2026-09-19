@@ -24038,3 +24038,41 @@ grep and re-driven solo after committing. Brief in the session scratchpad;
 zero-model stall watcher running (quiet >25 min from first sighting, report
 commit, or worktree gone; 4h cap). Merge gate when it lands: `make test` on
 darwin, bounded 3h.
+
+## 2026-09-19 (early morning) — slice E gated; dd8 delivered and merged; bsweep in flight
+
+**w2y MERGED (7f0f1e55) AND GATED**: `make test` 40/40, zero failed checks,
+sole FAIL the standing darwin nm probe, 104 min; size log 0 movers over 3,480
+rows (7ee40500). Wave 2 is COMPLETE at EP2 step 15. w2y's findings: EP2's
+anchor table was EXACT for the four relocation steps (§0 states when a
+span-resolution count can be trusted); the composition arm reaches vm_splice's
+DELIVER block ONLY under `--features all` — w2x's recorded 30/72 and w2y's
+32/96 disagree, so a mandatory arm was being rebuilt from prose with three
+different populations. Chartered [BSWEEP] (sonnet lane bsweep): the committed
+`scripts/emit_sweep.py` with pinned reach floors and a self-check.
+
+**dd8 DELIVERED (~55 min, opus) AND MERGED (b99d0eed)**: `--emit-ir` renders as
+nine named `#section` TSV blocks through `sb_row` from the same VEvent walk;
+`docs/spec/ir_listing.md` new; `tests/lib/table.sh` gained the section-row
+reading half; ELEVEN listing consumers converted to declaration-based reads,
+none re-pinned as greps (three conversions exposed weak greps: counterk's
+whole-listing "counter", vm's pinned padding, prefilter's `yes` substring);
+16 baselines re-captured; six rows re-driven solo DETECTED (S41/S42 beyond the
+brief's four, found by the grep). Review: the emit_vm.c hunks touch
+vm_render_listing and its tables only; .c byte-identical on three streams with
+a POSITIVE CONTROL (the listing stream itself 2,804/2,804 movers). The -o
+basename trap struck a FIFTH time (dd8 §3.1: `#include "<basename>.h"` makes
+`a.c` vs `b.c` 100% movers) — sent to bsweep as a script requirement. Two
+findings out of the lane: the `no-nullable-collapsed` prefilter decline is
+unreachable by any input (cross-noted on [OPT-4.1]); S88's atomicdiff arm
+reads 0 where its SAB_DOC_FIGURE predicts red (first measured drive; owner
+re-records). Merge-gate `make test` launched ~02:55 (3h bound).
+
+**Manager slips this session**: a `cd worktrees/dd8 && …` compound command
+moved the tool shell's cwd into the worktree, so the bsweep watcher launched
+from it was itself the "straggler" the pre-removal check found (killed by PID
+via safekill, relaunched from main). The two-lane watcher used `declare -A`,
+which darwin's bash 3 lacks — it still exited on the right event by accident;
+per-lane single watchers from now on. bsweep (sonnet) went idle "waiting for
+the notification" twice despite the brief; nudged once, then left to resume
+on its notifications rather than spend manager turns.
