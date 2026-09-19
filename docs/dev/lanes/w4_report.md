@@ -425,12 +425,18 @@ S192 alone and reports "1 rows". A lane driving several rows must invoke
 it once per row; the matrix's own trailer names the count, which is what
 catches this.
 
-**OWED at hand-off:** the solo mech re-drive of **S208 and S209** — the
-two pre-existing `limits` rows whose arm item 2 rewrote. Neither is
-re-aimed and neither plants against the inverted filter (S208 edits a
-`limits.def` row's VALUE, S209 puts a bare literal back in `emit_vm.c`),
-so both are expected DETECTED and S209 may additionally now trip part 3
-(a bare literal is exactly what the inverted scan sees). Launched as this
-lane's last act, one invocation per row; log path in the hand-off message.
-S192 and S261 are COMPLETE and recorded above. Nothing else is owed. The
-full battery is the manager's at merge.
+| sabotage S208 (pre-existing, arm rewritten by item 2) | DETECTED solo, `limits:1fail/23pass` |
+| sabotage S209 (pre-existing, arm rewritten by item 2) | DETECTED solo, `limits:1fail/23pass, vmid:0fail/10pass, corpus:0fail/51pass` |
+
+All four rows in the blast radius were driven SOLO and all four are
+DETECTED, unexpected 0, anomalies 0. **S208 and S209 both carried
+"Canonical figure owed" since they were written; this lane produced the
+figures and recorded them**, with each row's exact red cell quoted —
+S209's WORDING changed with D107's inversion while its verdict did not,
+and its header now records why it survives the inversion for a reason
+rather than by luck (its plant is a single-member enum whose one explicit
+value is 64 at ordinal position 0, so it is not an ORDINAL enum and the
+new scan sees every member of it).
+
+**NOTHING IS OWED at hand-off.** The full battery is the manager's at
+merge.
