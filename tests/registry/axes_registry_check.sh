@@ -5,7 +5,7 @@
 # assertion per row, a PASS/FAIL summary, never a bare count).
 #
 # WHY THIS IS THE INDEPENDENT SIDE (docs/dev/learnings.md §3: "a control
-# must not share a source with what it controls"). `--list-axes` (src/parse/
+# must not share a source with what it controls"). `--list-axes` (src/dump/
 # axes_dump.c) reads live off src/gen/emit_dfa.c's own candidate arrays for
 # name/deny and off lib/pcrec.h's enum symbols for the predicate axes' bit
 # VALUES — so the dump and lib/pcrec.h/emit_dfa.c share a source and cannot
@@ -161,7 +161,7 @@ ok "non-vacuity: --list-axes produced $nrows data row(s)"
 # lib/pcrec.h's OWN registry, derived the same proven way run_axes.sh
 # derives it (tests/axes/run_axes.sh's own header comment) — never
 # hand-copied. This is a SECOND, independent read of lib/pcrec.h: the dump
-# itself was built from the SAME header's enum symbols (src/parse/
+# itself was built from the SAME header's enum symbols (src/dump/
 # axes_dump.c's V() macro), but that is dump-vs-header agreement BY
 # CONSTRUCTION for the predicate axes' bit numbers; what this script adds is
 # dump-vs-header agreement checked FROM OUTSIDE the compiled binary, over a
@@ -552,7 +552,7 @@ check_value_set "RX_DFA_TABLE" \
 # cited exclusion from the spec->dump sweep only (this script's own header,
 # pre-[REG-SV] revision) — real spec values the dump could never produce as
 # a row, because the per-machine `table` axis has only two candidates. The
-# dump now carries them as two hand-stated composite rows (src/parse/
+# dump now carries them as two hand-stated composite rows (src/dump/
 # axes_dump.c's `emit_table_composite_rows`, axis `table` order 3/4), so the
 # exception is DISCHARGED rather than merely documented: both directions of
 # this check now cover the macro's whole four-value set with no exclusion.

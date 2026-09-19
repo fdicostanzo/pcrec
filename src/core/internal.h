@@ -27,6 +27,12 @@ typedef struct Ctx Ctx;
  * `Ctx.mods` and src/parse/parse_mods.h. */
 typedef struct ParseMods ParseMods;
 
+/* [REVW.3] THE COMPOSER HOOK's type. Declared this early because `Ctx`
+ * carries one and `Ast` is not defined yet; see `Ctx.compose` for what it
+ * is for and `src/core/compile_defs.c` for the only thing that sets it. */
+struct Ast;
+typedef struct Ast *(*PcrecComposeFn)(Ctx *cx, struct Ast *root);
+
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
 typedef struct ABlock {
@@ -2633,6 +2639,21 @@ struct Ctx {
      * `pcrec_compile` leaves it NULL and the composer returns its argument
      * unchanged, so nothing about a today's compile moves. */
     const struct RxtDefs *defs;
+    /* [REVW.3] THE COMPOSER HOOK, or NULL. `compile_driver` calls it at the
+     * one position the composer has always run at, and `pcrec_compile`
+     * leaves it NULL — so `compile.o` names no `rxt_*` symbol and a
+     * matcher-only consumer of `libpcrec.a` does not drag the `.rxt` tier
+     * in through the pipeline driver. `src/core/compile_defs.c` is the only
+     * translation unit that sets it, to `pcrec_rxt_compose`, and `cli/main.c`
+     * is the only thing that pulls that object in.
+     *
+     * IT IS A HOOK AND NOT A WEAK SYMBOL: a weak definition is a linker
+     * trick standing in for a structural fact, and ld64 and GNU ld do not
+     * spell it the same way (lens 6 §1.4). Setting it costs the same test
+     * `cx.defs` already cost — `compile.c:715-724` already recorded that the
+     * composer path is inert whenever `defs` is NULL, which is every entry
+     * but this one — so no artifact moves. */
+    PcrecComposeFn       compose;
     /* [DD-13b.W1.3] DECIDED (6): defer an unresolved BY-NAME `PEND_CALL`
      * instead of refusing it, because it may name a DEFINITION rather than a
      * group. Set from `defs != NULL` at compile entry and read at exactly one
@@ -5150,7 +5171,13 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
  * INTERNAL, and deliberately not a `pcrec_options` field — D20 keeps the
  * public option surface scalar, and a definition set is a FILE's property
  * that only the `.rxt` reader can build. A library caller that wants
- * composition gets it through [LIB], not by growing this struct. */
+ * composition gets it through [LIB], not by growing this struct.
+ *
+ * [REVW.3] IT LIVES IN ITS OWN TRANSLATION UNIT, `src/core/compile_defs.c`,
+ * and that is the whole point of the file: it is the ONE object that names
+ * `pcrec_rxt_compose`, so `compile.o` names no `rxt_*` symbol and the `.rxt`
+ * tier reaches a linked program only through `cli/main.c`'s own call to this
+ * entry. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
                        pcrec_error *err);
@@ -5269,6 +5296,24 @@ Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL
  * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
  * on the same refusal pcrec_compile would give. Internal, like the dumps. */
 int pcrec_count_groups(const char *pattern, pcrec_error *err);
+/* src/core/compile.c — THE PIPELINE DRIVER'S ONE EXPORTED FACE. `compile.c`
+ * holds the tree's only compile `setjmp` and one `static compile_driver`
+ * behind it; `pcrec_compile` and `pcrec_emit_ir` call that directly, and
+ * this is how the ONE entry that lives in another translation unit —
+ * `pcrec_compile_defs`, in `src/core/compile_defs.c`, so that `compile.o`
+ * names no `rxt_*` symbol ([REVW.3], lens 6's R1) — reaches it.
+ *
+ * It is a face and not a second pipeline: its whole body is the forward,
+ * and there is still exactly one `setjmp`, one retry ladder and one
+ * compile. The static function keeps its own name deliberately — see the
+ * definition site for why (a bare `compile_driver` in a library's symbol
+ * table, against ~30 comments across the tree that cite the driver by
+ * name). `ir_out` and `compose` are never both non-NULL today and nothing
+ * enforces that, because nothing needs to. */
+int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
+                         pcrec_output *out, pcrec_error *err, char **ir_out,
+                         const RxtDefs *defs, PcrecComposeFn compose);
+
 /* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
  * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
  * `err` filled on any refusal, including the honest one for a pattern that

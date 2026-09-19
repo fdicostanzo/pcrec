@@ -4,8 +4,22 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **compile_defs.c** — [REVW.3] `pcrec_compile_defs`, the `--source`
+  composition entry, and NOTHING ELSE (lens 6's R1). It exists so that it,
+  and not `compile.c`, is the object that names `pcrec_rxt_compose`: the
+  pipeline driver every consumer links no longer has a hard dependency on
+  the `.rxt` source/schema/composer tier, which only the CLI's `--source`
+  mode uses. The mechanism is `Ctx.compose`, set here and left NULL by
+  `pcrec_compile`. Proven by `nm`: `compile.o` names no `rxt_*` symbol,
+  this object names exactly one. The byte saving is small and the file's
+  own header says so honestly — `-Wl,-dead_strip` alone already recovers
+  43,968 of 44,448 bytes and this cut adds ~480; it is done for the
+  structure.
 - **compile.c** — pcrec_compile() pipeline driver (parse → SELECT ENGINE →
-  NFA → DFA → emit);
+  NFA → DFA → emit), through the `static compile_driver` all three entries
+  share; `pcrec_compile_driver` is its one EXPORTED FACE, a pure forward
+  that exists only so `compile_defs.c` can reach it without putting a bare
+  unprefixed `compile_driver` in the library's symbol table ([REVW.3]);
   ctx_fail error handler; pcrec_default_options defaults; and
   pcrec_count_groups(), the parse-only entry behind the CLI's
   `--count-groups` (MOD-0.1/§18.1 — reports Ctx.ncap's end-of-parse value
@@ -1191,14 +1205,20 @@ a prefilter would REFUSE a pattern that compiles today, which is exactly what
 ## [DD-13b.W1.3] the composer's three fields on `Ctx`, and one internal entry
 
 - **`Ctx.ncap_primary`** — the PRIMARY pattern's own capture count, seeded
-  by `compile_driver` from `ncap` immediately before `pcrec_rxt_compose`, on
+  by `compile_driver` from `ncap` immediately before the composer, on
   EVERY compile. `rx_info.ngroups` emits it; `RX_NCAPS` still emits
   `ncap + 1`. On a non-composed compile the two are equal by construction,
   which is what lets `src/gen/emit_dfa.c` read it unconditionally instead of
   asking whether composition happened.
 - **`Ctx.defs`** — the `.rxt` definition closure, or NULL. Non-NULL only on
-  the `--source` path (`pcrec_compile_defs`), so `pcrec_rxt_compose` is one
+  the `--source` path (`pcrec_compile_defs`), so the composer is one
   pointer test on every other compile.
+- **`Ctx.compose`** — [REVW.3] the COMPOSER HOOK, or NULL, set beside
+  `defs` from the same entry. `compile.c` reaches the composer through it
+  rather than by name, which is what makes `compile.o` name no `rxt_*`
+  symbol; `compile_defs.c` is the one object that sets it. A hook and not
+  a weak symbol — a weak definition is a linker trick standing in for a
+  structural fact, and ld64 and GNU ld do not spell it the same way.
 - **`Ctx.defer_file_refs`** — DERIVED from `defs` at compile entry and never
   set independently, so "the parser defers" and "a composer will resolve"
   cannot get out of step. Read at exactly one place,
