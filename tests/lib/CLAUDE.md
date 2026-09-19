@@ -228,9 +228,19 @@ section targets depend on.
   final form of the old case10 `NF != 16` pin. Sections
   (`#section NAME`) are supported per the contract: reading a
   multi-section file with no `section` argument fails LOUDLY rather than
-  silently parsing whichever header came last (nothing in the tree emits
-  sections yet — `--emit-ir` is the pending [DD-8] candidate — so this path
-  is exercised only by this file's own tests today). Every failure names
+  silently parsing whichever header came last. **[DD-8], 2026-09-19: the
+  file gained its ROW-reading half** — `table_section_rows FILE SECTION`
+  (a section's data rows, never another section's: consumer rule 4),
+  `table_field FILE SECTION COL` (one column of every row, resolved by
+  header NAME) and `table_lookup FILE SECTION KEYCOL KEY VALCOL` (the
+  key/value shape a `fact`/`value` section is read with). They exist
+  because `--emit-ir` is now the contract's first multi-section producer
+  with consumers OUTSIDE this file, and D106's own diagnosis of those
+  consumers — fixed-position greps that went stale once, "declaration-based
+  parsing is the durable fix" — is what they implement. Each fails loudly
+  on an absent section, column or key rather than returning nothing, because
+  an extractor that returns nothing when its section was renamed reads
+  exactly like a population that legitimately has no rows. Every failure names
   what it could not resolve (the column, the file, the section) rather than
   returning an empty string a caller might silently splice into `$0` — a
   caller whose own resolution call can fail (table_awk_map,
@@ -245,7 +255,8 @@ section targets depend on.
   the two implementations cannot silently disagree about what a header
   says. Also runnable as a command for a sabotage control or a non-shell
   caller: `bash tests/lib/table.sh table-col-index FILE COL [SECTION]`
-  (and `table-header-ncols`/`table-awk-map`/`table-check`), same coda shape
+  (and `table-header-ncols`/`table-awk-map`/`table-check`/
+  `table-section-rows`/`table-field`/`table-lookup`), same coda shape
   as `gen_timeout.sh`'s `secs`/`runsecs`/`cpusecs`, `table-`-prefixed
   because this file is SOURCED by scripts whose own `$1` is often a short
   word ("check") a collision with an unprefixed command name would

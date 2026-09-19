@@ -153,6 +153,73 @@ table_awk_map() {
     printf '%s\n' "$out"
 }
 
+# ------------------------------------------------------- reading the rows
+#
+# [DD-8] THE READING HALF OF THE SECTIONS MECHANISM, added when `--emit-ir`
+# became the contract's first MULTI-SECTION producer whose consumers live
+# outside this file. `table_col_index` resolves a column by name; these three
+# resolve the ROWS, so a consumer never writes a positional `cut -fN` or a
+# fixed-position `grep` against a section's remembered shape again — which is
+# the failure D106 records for `run_ir_listing.sh`'s own extractors ("fixed-
+# position greps went stale once; declaration-based parsing is the durable
+# fix").
+#
+# EVERY ONE OF THEM FAILS LOUDLY ON AN ABSENT SECTION, COLUMN OR KEY, and
+# that is not defensiveness: an extractor that returns nothing when its
+# section has been renamed reads exactly like a population that legitimately
+# has no rows, which is the vacuity shape docs/dev/learnings.md §3 names and
+# the one `run_ir_listing.sh`'s SLOTS block already guards by hand.
+
+# table_section_rows FILE SECTION — the DATA rows of SECTION, raw, one per
+# line (comments, the section's own header and blank lines dropped). Rows
+# from other sections are never returned: contract consumer rule 4.
+table_section_rows() {
+    local file="$1" section="$2"
+    if ! grep -q "^#section $section\$" "$file" 2>/dev/null; then
+        echo "table: '$file' has no #section '$section'" >&2
+        return 1
+    fi
+    awk -v want="$section" '
+        /^#section / { cur = substr($0, 10); next }
+        /^#/         { next }
+        /^[ \t]*$/   { next }
+        cur == want  { print }
+    ' "$file"
+}
+
+# table_field FILE SECTION COL — column COL of every data row in SECTION,
+# one value per line, resolved BY HEADER NAME (consumer rule 1).
+table_field() {
+    local file="$1" section="$2" col="$3"
+    local idx rows
+    idx="$(table_col_index "$file" "$col" "$section")" || return 1
+    # NOT a pipeline: a pipeline's exit status is awk's, so an absent section
+    # would read as "no rows" instead of failing — the same status-loss trap
+    # table_header_ncols's own comment records.
+    rows="$(table_section_rows "$file" "$section")" || return 1
+    awk -F'\t' -v i="$idx" '{ print $i }' <<< "$rows"
+}
+
+# table_lookup FILE SECTION KEYCOL KEY VALCOL — the VALCOL of every row in
+# SECTION whose KEYCOL equals KEY. The key/value shape a `fact`/`value`
+# section (`--emit-ir`'s `summary`) is read with. A key that matches NO row
+# is a hard failure naming the key, never an empty line: "the fact is absent"
+# and "the fact is present and empty" are different answers and a caller that
+# cannot tell them apart is reading a renamed row as a legitimate blank.
+table_lookup() {
+    local file="$1" section="$2" keycol="$3" key="$4" valcol="$5"
+    local ki vi rows
+    ki="$(table_col_index "$file" "$keycol" "$section")" || return 1
+    vi="$(table_col_index "$file" "$valcol" "$section")" || return 1
+    rows="$(table_section_rows "$file" "$section")" || return 1
+    awk -F'\t' -v ki="$ki" -v vi="$vi" -v key="$key" '
+        $ki == key { print $vi; found = 1 }
+        END { if (!found) exit 3 }
+    ' <<< "$rows" && return 0
+    echo "table: '$file' section '$section' has no row whose $keycol is '$key'" >&2
+    return 1
+}
+
 # table_check_truthfulness FILE [SECTION] — HEADER TRUTHFULNESS
 # (table_contract.md, "The checks"): every data row's field count equals the
 # header's declared count. This is the correct final form of the old
@@ -202,9 +269,15 @@ table_check_truthfulness() {
 #   bash tests/lib/table.sh table-col-index FILE COL [SECTION]
 #   bash tests/lib/table.sh table-awk-map [-s SECTION] FILE COL [COL...]
 #   bash tests/lib/table.sh table-check FILE [SECTION]
+#   bash tests/lib/table.sh table-section-rows FILE SECTION
+#   bash tests/lib/table.sh table-field FILE SECTION COL
+#   bash tests/lib/table.sh table-lookup FILE SECTION KEYCOL KEY VALCOL
 case "${1:-}" in
     table-header-ncols) shift; table_header_ncols "$@" ;;
     table-col-index)    shift; table_col_index "$@" ;;
     table-awk-map)      shift; table_awk_map "$@" ;;
     table-check)        shift; table_check_truthfulness "$@" ;;
+    table-section-rows) shift; table_section_rows "$@" ;;
+    table-field)        shift; table_field "$@" ;;
+    table-lookup)       shift; table_lookup "$@" ;;
 esac
