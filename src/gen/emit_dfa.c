@@ -161,8 +161,10 @@ static void emit_feature_comment(StrBuf *sb)
 {
     const char *label = pcrec_enabled_set_label();
     const char *mods = pcrec_enabled_set_modules();
+    sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     sb_printf(sb, "/* Feature set: %s (modules: %s) */\n",
               label, *mods ? mods : "none");
+    sb_cmt_close(sb);
 }
 
 /* Macros, ONCE PER FILE like the ABI-types block below — the enabled set is
@@ -543,13 +545,15 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * attribute across compilers) rather than a clang-specific `#ifdef`, and
      * it degrades safely on a pre-`__has_attribute` compiler via the
      * `#ifndef` fallback definition. */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
                "   .part clone of this function -- the split costs a\n"
                "   measured 1.33x on a scan-bound pattern, with identical\n"
                "   instructions, purely from code placement. Do not remove;\n"
                "   see pcrec docs/dev/known_issues.md K24. Guarded by\n"
-               "   __has_attribute: gcc has this attribute, clang does not. */\n"
-               "#ifndef __has_attribute\n"
+               "   __has_attribute: gcc has this attribute, clang does not. */\n");
+    sb_cmt_close(c);
+    sb_puts(c, "#ifndef __has_attribute\n"
                "# define __has_attribute(x) 0\n"
                "#endif\n"
                "#if __has_attribute(noclone)\n"
@@ -597,13 +601,17 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
         pcrec_gen_names(cx, &gn);
         sb_printf(c,
             "    if (capture_spans)\n"
-            "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n"
+            "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n", gn.upper);
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        sb_puts(c,
             "            /* every group this artifact promises is reached only\n"
             "               through a subroutine call or sits under a {0}, so no\n"
-            "               match can set it (PCRE2 reports the same) */\n"
+            "               match can set it (PCRE2 reports the same) */\n");
+        sb_cmt_close(c);
+        sb_puts(c,
             "            capture_spans[rx_g][0] = PCREC_UNSET;\n"
             "            capture_spans[rx_g][1] = PCREC_UNSET;\n"
-            "        }\n", gn.upper);
+            "        }\n");
     }
 }
 
@@ -1230,23 +1238,30 @@ BufSurface pcrec_bufsurface_inert(void)
 static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
                             const char *upper)
 {
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "/* D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
         " * Unreachable on this engine — a DFA artifact has no counter to\n"
         " * exhaust — but written uniformly on purpose: the contract of\n"
         " * rx_matchfn is one contract, and a wrapper that discards codes it\n"
         " * merely happens never to see is the shape that goes wrong when a\n"
-        " * later engine shares this emitter. */\n"
+        " * later engine shares this emitter. */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
-        "{\n"
-        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "{\n", matchfn);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;\n"
         "    return capture_spans[0][1] - capture_spans[0][0];\n"
         "}\n",
-        matchfn, upper, searchfn);
+        upper, searchfn);
 }
 
 /* [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
@@ -1261,8 +1276,12 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
 {
     sb_printf(c,
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
-        "{\n"
-        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "{\n", fn);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
@@ -1275,7 +1294,7 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
         "    }\n"
         "    return capture_spans[0][1] - capture_spans[0][0];\n"
         "}\n",
-        fn, upper, searchfn, upper);
+        upper, searchfn, upper);
 }
 
 /* [DD-14.FB] (D71 item 2, spec §10.4) THE THREE `_in` ENTRIES ON A DFA
@@ -1314,14 +1333,17 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
 static void emit_in_entry_defs(StrBuf *c, const char *searchfn, const char *matchfn,
                                const char *matchcapsfn, const char *prefix)
 {
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "/* [DD-14.FB] The caller-buffer entries. This engine keeps no working\n"
         " * storage between bytes -- it cannot backtrack, so it has no resume\n"
         " * stack and no trail to point anywhere -- so each of these is exactly\n"
         " * its un-suffixed sibling and the descriptor is unused. Emitted\n"
         " * anyway, on every artifact both engines produce, so one caller call\n"
         " * site compiles and behaves the same whichever engine the pattern\n"
-        " * happened to select (spec S10.4). */\n"
+        " * happened to select (spec S10.4). */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
         "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
         "{\n"

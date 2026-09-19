@@ -3010,8 +3010,11 @@ static void vm_lbl(Vm *v, int id, const char *role)
      * with the listing and with tests/codegen/run_ir_listing.sh, so it is a
      * documented cross-artifact identifier rather than an opaque local. It
      * gets a name in a comment, not a new spelling. */
-    if (role && *role)
+    if (role && *role) {
+        sb_cmt_open(v->b, PCREC_CMT_NONESSENTIAL);
         sb_printf(v->b, "// %s\n", role);
+        sb_cmt_close(v->b);
+    }
     sb_printf(v->b, "%s_L%d: __attribute__((unused));\n", v->p, id);
     vm_ev(v, VE_LABEL, id, 0, role);
 }
@@ -7926,9 +7929,12 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
             i ? "else " : "", ns, ns, ne,
             i + 1 == a->u.bref.nrefs ? "\n" : " ");
     }
-    sb_printf(bb,
+    sb_cmt_open(bb, PCREC_CMT_NONESSENTIAL);
+    sb_puts(bb,
         "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
-        "         * it does not match the empty string. */\n"
+        "         * it does not match the empty string. */\n");
+    sb_cmt_close(bb);
+    sb_printf(bb,
         "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
         "        took = %s(subject, subject_length,\n"
         "                  (size_t)ref_start, (size_t)ref_end,\n"
@@ -9303,12 +9309,15 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             ret, name, params, v->p,
             ret, name, params, name, fwdargs, v->p);
     } else if (tiered) {
-        sb_printf(c,
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        sb_puts(c,
             "/* [OPT-1] THE DEEP TIER: the stamped default storage, on a frame\n"
             " * only a FRAMES give-up reaches. `noinline` is load-bearing --\n"
             " * inlined, these arrays would be back on the entry's own frame and\n"
             " * gcc would probe every one of their pages on every call, which is\n"
-            " * the whole of what this shape exists to avoid. */\n"
+            " * the whole of what this shape exists to avoid. */\n");
+        sb_cmt_close(c);
+        sb_printf(c,
             "static __attribute__((noinline)) %s %s_deep(%s)\n"
             "{\n"
             "    %s_run_state run;\n"
@@ -9326,7 +9335,11 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "    %s result;\n"
             "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
             "                            fast.trail,  %s_FAST_TRAIL);\n"
-            "    result = %s_run(%s);\n"
+            "    result = %s_run(%s);\n",
+            ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
+            name, runargs);
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        sb_puts(c,
             "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
             "     * means \"a capacity ran out\" and nothing more, so the deep\n"
             "     * tier re-runs the SAME match from scratch at the stamped\n"
@@ -9334,13 +9347,14 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "     * deterministic VM. Its answer is therefore the answer this\n"
             "     * entry gave before the tier existed -- match, no-match or any\n"
             "     * give-up, FRAMES included. Every other outcome is already\n"
-            "     * that answer and returns here. */\n"
+            "     * that answer and returns here. */\n");
+        sb_cmt_close(c);
+        sb_printf(c,
             "    if (result != %s) return result;\n"
             "    %s_TIER_NOTE();\n"
             "    return %s_deep(%s);\n"
             "}\n\n",
-            ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
-            name, runargs, frames_code, v->up, name, deepargs);
+            frames_code, v->up, name, deepargs);
     } else {
         sb_printf(c,
             "%s %s(%s)\n"
@@ -9942,6 +9956,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * deviation an earlier version of this comment reported ("VM artifacts
      * ONLY") is CLOSED, not deviated; read emit_dfa.c's `emit_dfa_stamps` and
      * match_api.md §6.3's (a)/(b) split before adding a stamp here. */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c, "/* Engine: vm (forced by: %s) */\n",
               job->fit.why ? job->fit.why : "--engine=vm");
     if (has_budget)
@@ -9950,6 +9965,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     else
         sb_printf(c, "/* Step steps_left: none (--fno-step-steps_left); backtrack "
                      "frames: %lld */\n", bt_frames);
+    sb_cmt_close(c);
     pcrec_emit_engine_stamp(c, v.up, "vm", pcrec_engine_sel_name(cx));
     sb_puts(c, "#define ");
     sb_printf(c, "%s_ENGINE_WHY ", v.up);
@@ -10175,6 +10191,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * and this one cannot. The accompanying comment is the SR-8-shaped
      * sentence a reader greps for ("matches nothing"). */
     if (root_minw >= PCREC_MINW_MAX) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c,
             "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
             " * minimum width is at the analysis ceiling -- design\n"
@@ -10182,6 +10199,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * INFINITY, which SS12 P-12 rules a legal compile meaning the\n"
             " * language is EMPTY. <prefix>_search answers NOMATCH before any\n"
             " * frame is pushed. */\n");
+        sb_cmt_close(c);
         sb_stampf(c, v.up, "VM_ROOT_MINW", "%lluULL",
                   (unsigned long long)root_minw);
     }
@@ -10531,12 +10549,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  v.nclamp == 0 ? "none"
                                : v.mrl_win ? "prefilter-window" : "subject-end");
     if (v.tracing) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
             " * prints every resume-frame push and pop, every capture write,\n"
             " * and its accept/fail to STDERR as it runs. It is a DEBUG build\n"
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
+        sb_cmt_close(c);
         sb_puts(c, "#include <stdio.h>\n");
         sb_stampf(c, v.up, "TRACE", "1");
     }
@@ -10549,11 +10569,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * Every name comes from vm_slot_name, i.e. from the layout arithmetic
      * itself, so it cannot disagree with where the emitter actually writes. */
     if (nstate > 0) {
-        sb_puts(c, "\n/* SLOT LEGEND -- names for the numbered cells of the slot\n"
+        sb_putc(c, '\n');
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        sb_puts(c, "/* SLOT LEGEND -- names for the numbered cells of the slot\n"
                    " * array. A capture group occupies a PAIR of slots, its start and\n"
                    " * its end. The whole-match pair is listed for completeness: the\n"
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
+        sb_cmt_close(c);
         for (int sl = 0; sl < nstate; sl++) {
             const char *nm = vm_slot_name(&v, sl);
             if (!nm) continue;
@@ -10612,19 +10635,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `_Static_assert`s below, which are what make a stamped size a compile
      * error when it is wrong rather than an overrun when it is used. */
     {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c,
             "/* One entry of the resume stack: \"if you get stuck, come back to\n"
             " * HERE\". PRIVATE TO THIS FILE — the layout differs between\n"
             " * artifacts (a call-bearing one carries two more members), which is\n"
             " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
-            " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n"
-            "typedef struct { ");
+            " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
+        sb_cmt_close(c);
+        sb_puts(c, "typedef struct { ");
         vm_fields_join(c, frame_fields, nframe_fields);
         sb_printf(c, " } %s_frame;\n", v.p);
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c,
             "/* One entry of the undo log: a slot's index and the value it held\n"
-            " * before the write being logged. Same privacy, same reason. */\n"
-            "typedef struct { ");
+            " * before the write being logged. Same privacy, same reason. */\n");
+        sb_cmt_close(c);
+        sb_puts(c, "typedef struct { ");
         vm_fields_join(c, trail_fields, ntrail_fields);
         sb_printf(c, " } %s_trail_entry;\n\n", v.p);
 
@@ -10650,7 +10677,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             v.p, v.up, v.p, v.up, v.up);
     }
 
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "/* Everything one match attempt can change, in one struct, so that no\n"
         " * state lives in globals and two attempts can never interfere.\n"
         " * Allocated by the caller on the stack; this file never allocates.\n"
@@ -10666,7 +10694,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " *                 the same either way -- which is what lets one\n"
         " *                 matching loop serve both entries.\n"
         " *   *_depth       how many entries of each are currently live\n"
-        " */\n"
+        " */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "typedef struct {\n"
         "    ptrdiff_t slot_values[%s_NSLOTS];\n"
         "    %s_frame       *resume_stack;\n"
@@ -10749,7 +10779,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * declares it and the text below is the one that shipped, byte for byte —
      * which is why the two spellings are separate strings rather than one
      * string with a substituted clause. */
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         tiered
           ? "/* This artifact's own working storage, at the stamped default\n"
             " * capacities. [OPT-1]: declared by the three <prefix>_*_deep\n"
@@ -10757,19 +10788,17 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * <prefix>_fast_buffers and escalates here only on a FRAMES\n"
             " * give-up, so the pages of this struct are probed on the deep\n"
             " * path and not on every call. */\n"
-            "typedef struct {\n"
-            "    %s_frame       frames[%s_RESUME_FRAMES];\n"
-            "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
-            "} %s_run_buffers;\n\n"
           : "/* This artifact's own working storage, at the stamped default\n"
             " * capacities. Declared by each un-suffixed entry as an ordinary\n"
             " * local -- which is why those entries have large stack frames on a\n"
             " * pattern whose depth is unbounded, and why <prefix>_search_in with a\n"
-            " * caller's buffer does not. */\n"
-            "typedef struct {\n"
-            "    %s_frame       frames[%s_RESUME_FRAMES];\n"
-            "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
-            "} %s_run_buffers;\n\n",
+            " * caller's buffer does not. */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
+        "typedef struct {\n"
+        "    %s_frame       frames[%s_RESUME_FRAMES];\n"
+        "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
+        "} %s_run_buffers;\n\n",
         v.p, v.up, v.p, v.up, v.p);
 
     /* [OPT-1] THE FAST TIER'S STORAGE AND ITS OBSERVABLE
