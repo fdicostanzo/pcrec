@@ -196,3 +196,93 @@ candidate, not taken.
 | what | result |
 |---|---|
 | `tests/codegen/run_ir_listing.sh` | **147 passed / 0 failed**, rc 0 (was 144 / 2) |
+| `tests/backrefs/run_backref_diff.sh` | **12 passed / 0 failed**, rc 0 (was 11 / 4) |
+| `tests/resource/run_resource_tests.sh` | **27 passed / 0 failed**, 1 section skipped (the standing darwin `ulimit -v` skip), rc 0 |
+| `make test-codegen` | OWED — §6 |
+| `tests/registry/run_registry_tests.sh` | OWED — §6 |
+| sabotage `S107` solo | OWED — §6 |
+
+**The backrefs count reconciles exactly and that is the check on the
+conversion**, not the green itself: §10 emits one `ok` for the whole
+population and one `bad` PER FAILING FIXTURE, so 11 passed + 4 failed
+collapses to 11 + 1 = 12 passed. No check was added, removed, or made
+vacuous.
+
+### 5.1 One pre-existing drift found while validating, NOT fixed here
+
+`S107`'s `SAB_DOC_FIGURE` records *"Clean tree: numeric.rxt 88/0, brefdiff
+11/0"*, measured 2026-08-22. `run_backref_diff.sh` reads **12/0** on a clean
+tree today, and the extra check is §9b — the `utf8` fold-agreement arm
+[M5.0] stage 4 added on 2026-09-08, three weeks after the figure was taken.
+So the drift predates this branch and has nothing to do with the comments
+axis or with this conversion. Left alone deliberately: a `SAB_DOC_FIGURE` is
+a DATED measurement record, and re-stamping it with today's number inside a
+triage commit would erase the only evidence of when it was last actually
+run. Flagged for the manager as a one-line re-record if wanted.
+
+The 16 `irsb` byte-neutrality baselines were **not** recaptured and must not
+be: nothing here touches `--emit-ir`'s output, and `run_ir_listing.sh`'s own
+byte-neutrality block passing on all 16 is the proof.
+
+---
+
+## 6. WHAT IS OWED, and the exact commands
+
+Three validation items were still running or still queued at the time this
+section was written, and the `make test` whose FAIL list defines this lane's
+scope had not yet printed its trailer.
+
+| owed | log | completion line |
+|---|---|---|
+| sabotage `S107`, solo | `<scratchpad>/ev2/s107.log` | `S107_RC=` |
+| `make test-codegen` | `<scratchpad>/ev2/codegen.log` | `CODEGEN_RC=` |
+| `tests/registry/run_registry_tests.sh` | `<scratchpad>/ev2/registry.log` | `REGISTRY_RC=` |
+| the evidence run's own trailer | `<scratchpad>/ev_make_test.log` | `sections ran:` then `EV_MAKE_TEST_RC=` |
+
+    cd /Users/fdicostanzo/pcrec/worktrees/evtriage2
+    bash tests/mech/run_sabotage_matrix.sh S107
+    make test-codegen CC=gcc-16
+    bash tests/registry/run_registry_tests.sh
+
+**What a fresh reader does with the trailer.** Re-run
+`grep -nE '^FAIL' <log>`. Every FAIL already in §0's table is covered. Any
+NEW one is asked D112's question in this order:
+
+1. Does the fact have a `#define RX_*`, an `rx_info` field, or another
+   code-level artifact? Read it. (§3 is the worked example, and note that the
+   twin is usually written under the SAME `if` as the comment — that is what
+   makes it the same fact rather than a proxy.)
+2. Is the comment itself the thing under test, or the only instrument at that
+   resolution? Pass `-fcomments` for that term ALONE, generating a separate
+   artifact rather than switching the shared one, and say why at the site.
+   (§1.)
+3. Does the check bind a stamp to a comment with one `&&`? SPLIT it — the
+   failure message will have named the half that was fine. (§2.)
+4. Is it a pin whose VALUE moved with no comment, axis or abi digit in its
+   text? Re-measure with the check's OWN `-o` basename and re-record. (§4.)
+
+**No gap D112 created was found, and that is a result rather than an
+absence.** The brief allowed for a fact that used to be readable and is now
+readable in no form, with a one-line `#define` stamp riding the open abi 27
+bump as the remedy. The traced-artifact red LOOKED like exactly that and was
+not: `RX_TRACE 1` was present throughout. So **no stamp was built and the
+abi 27 bump takes no rider from this lane**, which also means no D94 grep
+sweep and no identity re-pin are owed on its account.
+
+---
+
+## 7. Commits
+
+- `45c70e8b` — `run_ir_listing.sh`: the islands term on a `-fcomments`
+  artifact with its population floor, and the traced-artifact split.
+- `bfb90bba` — `run_resource_tests.sh`: the [K59-PREMUL] pin, 769835 ->
+  762105.
+- `b03c94ef` — `run_backref_diff.sh` §10: the guard read off its slot
+  declaration.
+- `eb92ba2f` — the two directories' `CLAUDE.md` entries.
+- this report.
+
+## 8. Rulings received
+
+None. Nothing in this lane's work was blocked, and no question was sent
+beyond the interim status message to the manager.
