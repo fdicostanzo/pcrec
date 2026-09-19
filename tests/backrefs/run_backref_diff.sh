@@ -722,7 +722,25 @@ fi
 # four guard-bearing fixtures below emits the marker 0 times instead of once,
 # so `guard_bearing` collapses from 4 to 0 and this section goes RED naming
 # the first one. Clean tree: 4 and 3, the figures asserted below.
-GUARDMARK="empty-iteration guard"
+#
+# [EMIT-VERB]/D112, 2026-09-19: THE MARKER IS A SLOT DECLARATION, NOT A
+# COMMENT. This section used to count the role-text phrase
+# `empty-iteration guard`, which `vm_star`/`vm_rep` write into the label's
+# `// <role>` line -- so it read ZERO on every fixture the day emitted
+# comments went off by default, and the four FAILs looked exactly like the
+# S107 regression this section exists to catch. The guard has a CODE-LEVEL
+# TWIN written under the SAME `if (guard)` that puts the phrase in the role
+# text (`src/gen/emit_vm.c` `vm_star`: `gslot = guard ? vm_slot_guard(...)
+# : -1`), and that slot is emitted as its own `#define <PREFIX>_SLOT_
+# EMPTY_GUARD<n>` line. Counting the declaration is therefore not a
+# workaround but the STRONGER reading of the same property: a comment about
+# a slot is one remove from the slot, the count is still exactly one per
+# guard, and it is invariant under the comments axis. MEASURED on this tree
+# over all seven fixtures below: 1/1/1/1 for the four guard-bearing rows and
+# 0/0/0 for the three controls, identical to the phrase's own historical
+# figures, so the population assertion is unchanged and did not have to be
+# re-based.
+GUARDMARK='^#define RX_SLOT_EMPTY_GUARD[0-9][0-9]* '
 GD="$WORKDIR/guard"; mkdir -p "$GD"
 guard_bearing=0; guard_free=0; guard_bad=0; guard_cells=0
 while IFS=$'\t' read -r want pat; do
@@ -733,13 +751,13 @@ while IFS=$'\t' read -r want pat; do
         bad "§10: pcrec refused the fixture '$pat': $(head -1 "$GD/g.log")"
         guard_bad=$((guard_bad + 1)); continue
     fi
-    n=$(grep -c "$GUARDMARK" "$GD/g.c" || true)
+    n=$(grep -cE "$GUARDMARK" "$GD/g.c" || true)
     case "$want:$n" in
         bear:1) guard_bearing=$((guard_bearing + 1)) ;;
         free:0) guard_free=$((guard_free + 1)) ;;
-        bear:*) bad "§10: '$pat' is an UNBOUNDED quantifier over a nullable backreference and its artifact carries the empty-iteration guard $n time(s), expected exactly 1 — a zero-width iteration has nothing to stop it (sabotage row S107)"
+        bear:*) bad "§10: '$pat' is an UNBOUNDED quantifier over a nullable backreference and its artifact declares the empty-iteration guard SLOT $n time(s), expected exactly 1 — a zero-width iteration has nothing to stop it (sabotage row S107)"
                 guard_bad=$((guard_bad + 1)) ;;
-        free:*) bad "§10: '$pat' is a BOUNDED repeat and its artifact carries the empty-iteration guard $n time(s), expected 0 — if the guard appears here the predicate has widened past the property this section tests, and the guard-bearing half stops meaning anything"
+        free:*) bad "§10: '$pat' is a BOUNDED repeat and its artifact declares the empty-iteration guard SLOT $n time(s), expected 0 — if the guard appears here the predicate has widened past the property this section tests, and the guard-bearing half stops meaning anything"
                 guard_bad=$((guard_bad + 1)) ;;
     esac
 done <<'EOF'
@@ -753,7 +771,7 @@ free	^(a?)(?:\1){2}x$
 EOF
 if [ "$guard_bad" -eq 0 ] && [ "$guard_bearing" -eq 4 ] && [ "$guard_free" -eq 3 ] \
         && [ "$guard_cells" -eq 7 ]; then
-    ok "§10: the empty-iteration guard is emitted for all 4 unbounded-over-nullable-backreference fixtures and for NONE of the 3 bounded controls, read off the artifact — the pattern-only half of the property whose subject-dependent half S107 slipped through"
+    ok "§10: the empty-iteration guard SLOT is declared for all 4 unbounded-over-nullable-backreference fixtures and for NONE of the 3 bounded controls, read off the artifact's own #define — the pattern-only half of the property whose subject-dependent half S107 slipped through"
 elif [ "$guard_bad" -eq 0 ]; then
     bad "§10 POPULATION: $guard_bearing guard-bearing / $guard_free guard-free over $guard_cells fixtures, expected EXACTLY 4 / 3 / 7. Deleting a fixture must go RED here — the population is the check"
 fi

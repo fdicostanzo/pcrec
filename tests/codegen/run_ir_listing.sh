@@ -109,7 +109,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # no resume frame -- but across a sweep containing an alternation chain and a
 # backtracking rung, ZERO pushes on either side means the extraction stopped
 # matching rather than that the population vanished.
-tot_cpush=0; tot_ipush=0
+tot_cpush=0; tot_ipush=0; tot_isl=0
 
 # The shapes, chosen so every emission path that can produce a listing event is
 # represented: an alternation chain, both cursor rungs, the frames rung with
@@ -216,6 +216,23 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     if ! pcrec_run "$PCREC" -p rx --engine=vm ${featflag[@]+"${featflag[@]}"} \
             --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
         bad "ir-listing: --emit-ir failed for '$pat' (features: '${PATTERN_FEATURES[$i]}'): $(head -1 "$d/ir.err")"
+        continue
+    fi
+    # [EMIT-VERB]/D112, 2026-09-19: A THIRD ARTIFACT, `-fcomments`, AND IT HAS
+    # EXACTLY ONE CUSTOMER -- the islands block's ARTIFACT-TEXT term below.
+    # Every other arm in this loop reads a code-level surface (labels, RX_PUSH
+    # sites, RX_SET slots, `#define` stamps) and reads `$d/gen.c`, the DEFAULT
+    # artifact, unchanged. The island's only per-site marker in the emitted C
+    # is `vm_rolef` role text, so with comments off by default that one term
+    # went structurally blind; it is class (2) of D112's question -- the
+    # comment IS the instrument at that resolution, with no code-level twin --
+    # and the branch's proven `.o` identity (3,517/3,517) is what licenses
+    # reading a `-fcomments` artifact for it. It is generated ALONGSIDE rather
+    # than instead so that no other assertion silently starts reading a
+    # non-default build.
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -fcomments ${featflag[@]+"${featflag[@]}"} \
+            -o "$d/gen_cmt.c" -- "$pat" >/dev/null 2>&1; then
+        bad "ir-listing: pcrec could not compile '$pat' under -fcomments (features: '${PATTERN_FEATURES[$i]}')"
         continue
     fi
 
@@ -440,14 +457,30 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     #
     # CALLOUTS keep the honest-empty shape: module 'callouts' still has no
     # producer, so `cal` and `art_cal` must both be 0.
+    #
+    # [EMIT-VERB]/D112, 2026-09-19: THE ARTIFACT-TEXT TERM READS THE
+    # `-fcomments` BUILD, and only this term does. The island's presence in
+    # the emitted C is spelled ONLY in `vm_rolef` role text ("alternation
+    # island: trie dispatch over N literal alternatives", four more per-site
+    # lines) -- the code it emits is an ordinary first-byte `switch` with no
+    # token an island does not share with every other dispatch, so there is
+    # no code-level twin to convert to and the stamp read one line above is
+    # already the other term. With comments off by default `grep island` read
+    # 0 on every artifact and the biconditional failed on every island-bearing
+    # pattern. The `-fcomments` artifact keeps this a genuinely THIRD surface;
+    # dropping the term instead would have left the block comparing the event
+    # stream against the counter with nothing witnessing the emitted C at all.
+    # CALLOUTS is untouched: its needle is code (`rx_callout_ref …(`, `->fn(`),
+    # so it still reads the default artifact.
     isl="$(table_lookup "$d/ir" summary fact islands value)" || isl=""
     cal="$(table_lookup "$d/ir" summary fact callout-sites value)" || cal=""
     stamp_isl="$(sed -n 's/^#define rx_VM_ALT_ISLANDS \([0-9]*\)$/\1/Ip' "$d/gen.c")"
     art_isl=0
-    grep -q 'island' "$d/gen.c" && art_isl=1
+    grep -q 'island' "$d/gen_cmt.c" && art_isl=1
     art_cal=0
     grep -qE 'rx_callout_ref [a-z_]*\(|->fn\(' "$d/gen.c" && art_cal=1
     isl_says_some=0; [ -n "$isl" ] && [ "$isl" -gt 0 ] && isl_says_some=1
+    [ "$isl_says_some" = "1" ] && tot_isl=$((tot_isl + 1))
     if [ "$cal" != "0" ] || [ "$art_cal" != "0" ]; then
         bad "ir-listing[$pat]: callout accounting disagrees — listing says $cal, artifact says $art_cal (module 'callouts' has no producer, so both must be 0)"
     elif [ -z "$stamp_isl" ]; then
@@ -525,6 +558,22 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
         bad "ir-listing[$pat]: BYTE-NEUTRALITY — the listing MOVED against its stage-0 baseline ($ir_base_file): $(diff "$ir_base_file" "$d/ir" | head -6 | tr '\n' ' ' | cut -c1-300)"
     fi
 done
+
+# ---- ISLANDS: the sweep-wide POPULATION guard ---------------------------
+# [EMIT-VERB]/D112, 2026-09-19, and learnings.md 3's rule for a converted
+# absence assertion. The islands term above is a biconditional, so it is only
+# as good as the population on BOTH sides of it: fifteen of the sixteen
+# fixtures carry no island and exercise the "count 0, text absent" direction,
+# and EXACTLY ONE -- `(a|ab)(c|bcd)` -- exercises the other. If that pattern
+# is edited, or if the island lowering stops firing on it, every per-pattern
+# arm above goes green while the term that actually reads the emitted C stops
+# being reached at all. Pinned as a floor rather than an equality so that
+# ADDING an island-bearing fixture is not a failure; measured 1 on this tree.
+if [ "$tot_isl" -lt 1 ]; then
+    bad "ir-listing: NO fixture in the sweep produced an island — the islands term is reading only its empty direction, so the -fcomments artifact-text comparison is unreached ([MECH-REACH])"
+else
+    ok "ir-listing: $tot_isl of ${#PATTERNS[@]} fixtures produce an island, so the islands biconditional is exercised in BOTH directions"
+fi
 
 # ---- CHOICE POINTS: the sweep-wide non-vacuity guard --------------------
 # See the note at tot_cpush's declaration. Both spellings (`RX_PUSH(&&rx_L<n>`
@@ -760,12 +809,44 @@ done
 
 # A traced artifact must SAY it is traced (the D37 artifact-stamp principle:
 # no artifact is ambiguous about what it was built with).
+#
+# [EMIT-VERB]/D112, 2026-09-19: SPLIT IN TWO, BECAUSE THE TWO HALVES ARE NOW
+# ASKED OF DIFFERENT ARTIFACTS AND ONLY ONE OF THEM IS D37's CLAIM. The check
+# used to require the stamp AND the `TRACED ARTIFACT` prose block of ONE
+# default build, and went red on the flip for the prose alone -- the stamp was
+# there the whole time. The stamp is the code-level fact and is unconditional,
+# so the D37 assertion it carries is asked of the DEFAULT artifact and is
+# STRENGTHENED rather than weakened: `--trace` is unambiguous with no comment
+# emitted at all, which is the thing a caller building at defaults needs to be
+# true. The prose block is a NON-ESSENTIAL comment by D112 item 2 -- exactly
+# the class the flip removes -- so its own arm asks for it where it can exist,
+# under `-fcomments`, and keeps the claim that the artifact ALSO explains
+# itself in prose to a human reading it. Neither half is dropped and neither
+# is asked of a build that cannot answer it.
 if pcrec_run "$PCREC" -p rx --trace -o "$WORKDIR/st.c" -- '(a)b' >/dev/null 2>&1; then
-    if grep -q '^#define RX_TRACE 1$' "$WORKDIR/st.c" \
-       && grep -q 'TRACED ARTIFACT' "$WORKDIR/st.c"; then
-        ok "[M4.5c] a traced artifact stamps RX_TRACE and says so in prose (D37: no artifact is ambiguous about what it was built with)"
+    if grep -q '^#define RX_TRACE 1$' "$WORKDIR/st.c"; then
+        ok "[M4.5c] a traced artifact stamps RX_TRACE at DEFAULT axes, with no emitted comment (D37: no artifact is ambiguous about what it was built with)"
     else
-        bad "[M4.5c] a traced artifact carries no stamp saying so"
+        bad "[M4.5c] a traced artifact carries no RX_TRACE stamp — D37's claim is the STAMP, and it must hold with comments off"
+    fi
+    # the prose half, where prose exists
+    if pcrec_run "$PCREC" -p rx --trace -fcomments -o "$WORKDIR/stc.c" -- '(a)b' >/dev/null 2>&1; then
+        if grep -q 'TRACED ARTIFACT' "$WORKDIR/stc.c"; then
+            ok "[M4.5c] under -fcomments the same artifact also explains itself in prose (the NON-ESSENTIAL half of D37's sentence, D112 item 2)"
+        else
+            bad "[M4.5c] a traced artifact carries no TRACED ARTIFACT prose even under -fcomments — the block is gone, not gated"
+        fi
+        # the control an absence-of-comment claim needs: -fcomments must
+        # genuinely be what put the prose there, so the DEFAULT build must
+        # NOT carry it. Without this arm a compiler that ignored the axis
+        # entirely would read green on both arms above.
+        if grep -q 'TRACED ARTIFACT' "$WORKDIR/st.c"; then
+            bad "[M4.5c] the DEFAULT traced artifact carries the TRACED ARTIFACT prose — the comments axis is not being honoured, and the -fcomments arm above proves nothing"
+        else
+            ok "[M4.5c] the prose is present under -fcomments and ABSENT at defaults — the two arms above are reading the axis, not a constant"
+        fi
+    else
+        bad "[M4.5c] could not compile a traced artifact under -fcomments"
     fi
 else
     bad "[M4.5c] could not compile a traced artifact"

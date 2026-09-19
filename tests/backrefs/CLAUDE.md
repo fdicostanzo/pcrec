@@ -127,6 +127,24 @@ comment and the row's header.
   those subjects is what let sabotage row S107 score UNDETECTED against a
   correct module. Failing direction measured on the S107 build: all 4
   guard-bearing fixtures emit the marker 0 times.
+  **[EMIT-VERB]/D112, 2026-09-19 — THE MARKER IS A SLOT DECLARATION, NOT A
+  COMMENT.** §10 used to count the role-text phrase `empty-iteration guard`,
+  which `vm_star`/`vm_rep` write into the label's `// <role>` line, so the
+  day emitted comments went off by default it read ZERO on every fixture and
+  all four guard-bearing rows failed NAMING S107 — the regression the section
+  exists to catch, produced by a check that had gone blind. *A comment reader
+  does not fail vaguely; it fails as the defect it was written for.* The
+  guard has a code-level twin written under the SAME `if (guard)` that puts
+  the phrase in the role text (`src/gen/emit_vm.c`, `vm_star`: `gslot = guard
+  ? vm_slot_guard(v, v->nguard++) : -1`), emitted as its own
+  `#define <PREFIX>_SLOT_EMPTY_GUARD<n>` line, so counting the DECLARATION is
+  the stronger reading rather than a workaround — a comment about a slot is
+  one remove from the slot. Measured at the conversion, default axes: 1 on
+  each of the four guard-bearing fixtures and 0 on each of the three
+  controls, identical to the phrase's own figures under comments-on, so the
+  4/3/7 population assertion did not have to be re-based and S107's detection
+  path is unchanged (the plant makes `vm_nullable` answer false for `A_BREF`,
+  no slot is assigned, the count reads 0 exactly as the phrase did).
 - **run_dupnames_diff.sh** — §8.3 swept rather than sampled, and checked THREE
   ways: pcrec against libpcre2, an INDEPENDENTLY WRITTEN model of the rule
   against libpcre2, and both populations asserted exact. The `.rxt` cells

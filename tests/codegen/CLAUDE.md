@@ -307,6 +307,34 @@ decides whether to perform it — and then run the row through
   That is the entire failure mode §10 names, and it existed for the length of
   one commit.
 
+  **[EMIT-VERB]/D112, 2026-09-19 — THE FILE COMPILES A THIRD ARTIFACT PER
+  FIXTURE, AND IT HAS EXACTLY ONE CUSTOMER.** Emitted comments went off by
+  default, and two arms here were reading them. (a) The ISLANDS term's third
+  surface, `grep island` over the emitted C, is D112's class (2): the island's
+  only per-site marker is `vm_rolef` ROLE TEXT, the code it emits is an
+  ordinary first-byte `switch` with no token an island does not share with
+  every other dispatch, and `RX_VM_ALT_ISLANDS` — the only island-specific
+  thing in the artifact — is already the block's SECOND term, so there is
+  nothing to convert to. `$d/gen_cmt.c` is generated with `-fcomments` for
+  that term and for nothing else; every other arm still reads the default
+  `$d/gen.c`, so no assertion silently starts reading a non-default build,
+  and CALLOUTS is untouched because its needle is code. It fails SAFE: if
+  `-fcomments` stopped working the island-bearing fixture goes RED, not
+  green. It also gained the control a converted BICONDITIONAL needs, which
+  here is a POPULATION FLOOR — 15 of the 16 fixtures exercise only the empty
+  direction and ONE, `(a|ab)(c|bcd)`, carries the other half, so an arm
+  asserts at least one fixture produces an island (measured 1) and prints the
+  number. Editing that one pattern would otherwise leave every per-pattern
+  arm green while the only term reading the emitted C stopped being reached.
+  (b) The `[M4.5c] TRACED ARTIFACT` check bound a code-level fact to a
+  comment with one `&&` — `#define RX_TRACE 1` AND the `TRACED ARTIFACT`
+  prose — and failed on the prose alone while naming the stamp. SPLIT: the
+  stamp is asked of the DEFAULT artifact (D37's claim, strengthened —
+  `--trace` is unambiguous with no comment emitted at all), the prose under
+  `-fcomments` (D112 item 2's NON-ESSENTIAL class), and a THIRD arm asserts
+  the default build does NOT carry the prose, without which a compiler
+  ignoring the axis entirely would read green on both. 144 checks became 147.
+
   The trace check's plain/traced binary runs (a handful per pattern, not an
   inner loop) go through `gen_run` (`tests/lib/gen_timeout.sh`,
   `WATCHDOG_SECTION=codegen`), the shared run budget plus a 512m RSS

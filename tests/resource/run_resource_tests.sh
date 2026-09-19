@@ -522,11 +522,26 @@ out="$WORKDIR/o.c"; rm -f "$out"
 log="$("$ROOT_DIR/scripts/watchdog" -l "k59premul a{5,25000}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -o "$out" 'a{5,25000}' 2>&1)"
 rc=$?
 if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DFA transition table'; then
+    # [EMIT-VERB]/D112, 2026-09-19: RE-PINNED 769835 -> 762105, and the move is
+    # the FLIP, not the rung. This number is a raw `wc -c` of the emitted `.c`,
+    # so it is COMMENT-INCLUSIVE, while the cap the row is about
+    # (PCREC_MAX_EMIT_BYTES, limits.def) is comment-EXCLUDED -- D112 item 3's
+    # own guarantee that no comment setting can rescue or refuse a pattern is
+    # intact and is what makes this a pin move rather than a finding. Verified
+    # directly at this tree: the same compile with `-fcomments` is 769,838 and
+    # the cap's own code-byte figure in the note is unchanged. This is
+    # battriage_report.md's SECOND READER CLASS -- a pin that cites no abi
+    # digit, no comment and no axis, whose VALUE moves anyway -- so the D76/D94
+    # grep sweep over the old abi number structurally could not reach it;
+    # third recorded instance. Measured with THIS cell's own `-o` basename: the
+    # emitted `#include "<basename>.h"` line makes the byte count
+    # basename-sensitive, and a re-measurement into a differently-named file
+    # reads 762,107 (dd8_report.md 3.1's recorded trap, fourth instance).
     sz=$(wc -c <"$out" | tr -d ' ')
-    if [ "$sz" -eq 769835 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 769835 bytes (was 1104674 before the rung existed) — the cap still works, this witness no longer reaches it"
+    if [ "$sz" -eq 762105 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762105 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 769835 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762105 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"
