@@ -12,6 +12,11 @@ re-ran it and never touched that worktree.
 
 ## 0. THE TABLE — every FAIL in the full log
 
+**The evidence run is COMPLETE**: `sections ran: 40/40`, `EV_MAKE_TEST_RC=2`,
+**8 FAIL lines and no more**. The table below is the whole list, not a
+snapshot — `grep -nE '^FAIL'` over the finished log returns exactly these
+eight and nothing was added after the trailer landed.
+
 | FAIL | class | disposition |
 |---|---|---|
 | `nm could not read arm_a.o (no rx_search symbol)` | **not yours** — standing darwin red, `docs/dev/wake.md` | none |
@@ -23,9 +28,10 @@ re-ran it and never touched that worktree.
 | `§10: '^()\1+$' …` | class 1 (same) | `b03c94ef` |
 | `'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at 762105 bytes, pinned 769835` | **stale pin the flip moved** — not a comment reader, not a regression | `bfb90bba` |
 
-TRAILER-PENDING ROWS ARE LISTED IN §6. The log had not reached its
-`sections ran:` trailer at the time of writing; §6 names what remained and
-what a fresh reader does with it.
+**Five distinct families, four of them this branch's and all four fixed.**
+`rc=2` is fully explained by the standing `nm` probe alone once the other
+seven lines are gone, which is the state `docs/dev/wake.md` already records
+as "TEST_RC=2 on a green run".
 
 Also present in the log and **not yours**, per evtriage's own rubric: the
 `tests/thread` SKIPs, the resource suite's `sections skipped: 1`,
@@ -204,9 +210,10 @@ candidate, not taken.
 | `tests/codegen/run_ir_listing.sh` | **147 passed / 0 failed**, rc 0 (was 144 / 2) |
 | `tests/backrefs/run_backref_diff.sh` | **12 passed / 0 failed**, rc 0 (was 11 / 4) |
 | `tests/resource/run_resource_tests.sh` | **27 passed / 0 failed**, 1 section skipped (the standing darwin `ulimit -v` skip), rc 0 |
-| `make test-codegen` | OWED — §6 |
-| `tests/registry/run_registry_tests.sh` | OWED — §6 |
-| sabotage `S107` solo | OWED — §6 |
+| `make test-codegen` | rc 2, and the **sole FAIL is the standing darwin `nm` probe** — every constituent script green (22/0, 31/0, 7/0, 14/0, 13/0, 9/0, **65/0** for `run_comments_axis.sh`) |
+| `tests/registry/run_registry_tests.sh` | **rc 0, zero FAIL lines**: 225/0, PC-3 209/0, PC-4 273 patterns / 62,872 match cells / **0 disagreements**, 108/0, 24/0, 54/0, definitions-oracle 354 cells / 101,244 + 101,244 comparisons / **0 disagreements** |
+| sabotage `S107`, solo | **DETECTED** — `1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)`, rc 0 |
+| the evidence `make test` | `sections ran: 40/40`, rc 2, **8 FAIL lines**, all in §0 |
 
 **The backrefs count reconciles exactly and that is the check on the
 conversion**, not the green itself: §10 emits one `ok` for the whole
@@ -232,27 +239,22 @@ byte-neutrality block passing on all 16 is the proof.
 
 ---
 
-## 6. WHAT IS OWED, and the exact commands
+## 6. NOTHING IS OWED — and the triage order if the axis produces another red
 
-Three validation items were still running or still queued at the time this
-section was written, and the `make test` whose FAIL list defines this lane's
-scope had not yet printed its trailer.
+Every item this report marked OWED has run and is recorded in §5's table.
+The evidence run's trailer landed at `sections ran: 40/40` with eight FAIL
+lines, exactly the five families §0 covers; **nothing new arrived after the
+snapshot the work was done from.**
 
-| owed | log | completion line |
-|---|---|---|
-| sabotage `S107`, solo | `<scratchpad>/ev2/s107.log` | `S107_RC=` |
-| `make test-codegen` | `<scratchpad>/ev2/codegen.log` | `CODEGEN_RC=` |
-| `tests/registry/run_registry_tests.sh` | `<scratchpad>/ev2/registry.log` | `REGISTRY_RC=` |
-| the evidence run's own trailer | `<scratchpad>/ev_make_test.log` | `sections ran:` then `EV_MAKE_TEST_RC=` |
+**S107 is the one that had to come back green in the FAILING direction, and
+it did.** The plant makes `vm_nullable` answer FALSE for `A_BREF`; the slot
+is then never assigned, the converted count reads 0 exactly as the phrase
+did, and the row scores DETECTED with `brefdiff: 4fail/11pass` — the same
+four §10 failures the phrase produced. The conversion did not soften the
+detector.
 
-    cd /Users/fdicostanzo/pcrec/worktrees/evtriage2
-    bash tests/mech/run_sabotage_matrix.sh S107
-    make test-codegen CC=gcc-16
-    bash tests/registry/run_registry_tests.sh
-
-**What a fresh reader does with the trailer.** Re-run
-`grep -nE '^FAIL' <log>`. Every FAIL already in §0's table is covered. Any
-NEW one is asked D112's question in this order:
+**What a fresh reader does if the comments axis produces another red.** Ask
+D112's question in this order:
 
 1. Does the fact have a `#define RX_*`, an `rx_info` field, or another
    code-level artifact? Read it. (§3 is the worked example, and note that the
@@ -288,7 +290,20 @@ sweep and no identity re-pin are owed on its account.
 - `eb92ba2f` — the two directories' `CLAUDE.md` entries.
 - this report.
 
-## 8. Rulings received
+## 8. One thing the manager may want, and it is one line
+
+`S107`'s `SAB_DOC_FIGURE` records `brefdiff: 4fail/10pass` sabotaged and
+`brefdiff 11/0` clean, measured 2026-08-22. The solo re-drive here reads
+`4fail/11pass` and a clean tree reads `12/0` — **+1 on both sides**, which is
+§9b, the `utf8` fold-agreement arm [M5.0] stage 4 added on 2026-09-08. The
+drift predates this branch and is unrelated to the comments axis or to this
+conversion. Deliberately not re-stamped: a `SAB_DOC_FIGURE` is a DATED
+measurement, and rewriting it inside a triage commit erases the only record
+of when it was last actually run. If it should carry today's figures, the
+replacement is `corpus:9fail/79pass, brefdiff:4fail/11pass` sabotaged and
+`numeric.rxt 88/0, brefdiff 12/0` clean, measured 2026-09-19 at `eb92ba2f`.
+
+## 9. Rulings received
 
 None. Nothing in this lane's work was blocked, and no question was sent
 beyond the interim status message to the manager.
