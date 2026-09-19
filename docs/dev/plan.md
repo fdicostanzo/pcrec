@@ -1220,8 +1220,13 @@ between waves (D102); box slots handshake with the bench.
   `src/dump/axes_dump.c`, not `src/parse/axes_dump.c`.** MERGED 86e7c8da (--no-ff, 2026-09-19 06:1x, seventieth session; lane w3, opus, ~55 min): all five items, byte-identical on all four streams after each via the COMMITTED scripts/emit_sweep.py (its first lane customer), NOT an abi event, no docs/spec hunk owed; call-level back-edge census re-measured 39 → 30 (item 1 alone 39 → 28; the driver tier reclassifies 20 forward and exposes 22 ctx_fail/ctx_nomem edges INTO compile.c — the file is itself two layers; nothing proposed, D77: moving ctx_fail/ctx_nomem/pcrec_default_options to a base-tier file would take it to 8); include_backedges.tsv 6 → 0; lens 6's "0 anchors" for the dump move was 2 (S18, S241) + 62 citations; run_cpset_structure.sh CHECK 1R fixed to find the header by name (a relocation would have changed its red's CAUSE silently); APPROACH.md §8 rewritten (flagged for Frank, w3_report.md §5); coding_guide.md §1.9 added; clean rebuild + strict + alloc green on main; merge-gate make test launched 06:1x (3h bound). Wave 4's brief must cite src/dump/axes_dump.c.
 - [REVW.4] STATE:not-started — wave 4 (CLI+config): the cli_parse table
   (L11+L2+L1-X10 one item, M3), mode mutual-exclusion written once, D107
-  filter inversion, F2 bar->limits.def; X9/axes.def PROPOSED to Frank, not
-  built (its A3 cost deletes two checks — design event).
+  filter inversion, F2 bar->limits.def; X9/axes.def RULED BUILD (D111,
+  Frank 2026-09-19 "Yes. I like single source" — one X-macro source, every
+  reader derived, the two awk scrapers deleted; header enumeration
+  generated at build time, manager's lean pending w4facts). Fact sheet
+  lane w4facts (sonnet, read-only, docs/dev/lanes/w4_facts.md) launched
+  2026-09-19 08:5x, seventy-first session; brief cites
+  src/dump/axes_dump.c.
 - [REVW.5] STATE:not-started — wave 5 (public surface): L9 §8 order; D104
   renames name-by-name (nfa_* first, ctx_fail last); P3/P6 spec hunks may
   ride any earlier wave's D80 batch.

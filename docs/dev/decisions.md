@@ -7547,3 +7547,33 @@ with a non-zero absorption count (the ratchet the exact-absorption
 expectation exists for still applies) — or when a floor's own margin turns
 out too tight against a real refactor, in which case the floor moves with
 the measurement recorded, not silently.
+
+## D111 — The optimization-axis table gets ONE SOURCE, `src/core/axes.def`, with every reader derived from it (Frank, 2026-09-19, seventy-first session: "Yes. I like single source")
+
+The 2026-09-17 code review's L1-X9 (synthesis_collation.md §2.2) found the
+axis table — each axis's name, its `-fno-X` spelling, its option bit in
+`lib/pcrec.h`, its stamp and its dump text — kept in THREE hand-maintained
+sources reconciled by TWO awk scrapers, with three hand-typed consumers
+(`cli_parse`'s 20 `-fno-X` arms, `emit_predicate_axes` in
+`src/dump/axes_dump.c` — 178 lines, no `if`, no loop — and the `--tune`
+menu, a second spelling of the alias table D103 already made `tune.c`'s
+one home). Wave 4 was told to PROPOSE it, not build it, because the fix's
+A3 cost inverts: the two scrapers are DELETED, not re-aimed — a check that
+reconciles three sources has nothing to reconcile once there is one.
+
+RULED: build it. One X-macro table in the shape `limits.def` already
+uses; the CLI arms, the dump function, the menu and the header enumeration
+are DERIVED from it; the two scrapers go. This is the general-mechanism
+rule (memory `pcrec-general-mechanisms-not-special-cases`, D75 addendum)
+applied to configuration: one home, derived readers, no parallel
+spellings. It moves no emitted byte and no answer; it is not an abi event.
+D80 applies to whatever the derivation makes visible (the dump text, help
+text, the spec's citations of `cli/main.c` lines — re-aimed by grep).
+
+Ship shape of the public header, the manager's lean pending the w4facts
+sheet: the enumeration in `lib/pcrec.h` is GENERATED at build time (the
+`make gen-tables` pattern, third_party/'s rule "a data source compiles to
+generated tables") so the only public header stays one self-contained
+file; the header does not `#include` the `.def`. [REVW.4] carries X9 as a
+build item. [EMIT-VERB]'s "axes.def row or not" sub-question is answered
+by this ruling: it is a row.
