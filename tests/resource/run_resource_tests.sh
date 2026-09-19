@@ -917,16 +917,29 @@ echo
 # malloc/calloc/realloc/strdup call to return NULL — no address-space
 # limit, no platform dependency, works identically on darwin and Linux.
 #
-# SCOPED TO K7's OWN PROMISE, NOT THE WIDER ONE. `alloc_check.c`'s three
-# witnesses also carry K60 (docs/dev/known_issues.md, filed 2026-09-17,
-# NOT fixed): a compile can SUCCEED despite a forced allocation failure,
-# via an unrelated retry-ladder absorption mechanism. That is a real,
-# separate, already-filed finding and `make test` must not go red for a
-# known, disposed defect that is not this section's job — `make alloc`
-# (opt-in) is where it is tracked. Section 2b therefore checks ONLY for
-# the ABORT/SIGNAL outcome specifically (K7's own worst case, "the
-# process is killed"), reading the injector's own labelled output rather
-# than its overall pass/fail line.
+# [D110] (2026-09-18, lane allocpins, Frank's ruling) NOW ALSO ASSERTS
+# `alloc_check`'s OWN VERDICT, NOT ONLY K7's ABORT/SIGNAL OUTCOME. This
+# section was originally SCOPED NARROWER, to K7's own promise alone,
+# because `alloc_check.c`'s witnesses also carried K60
+# (docs/dev/known_issues.md, filed 2026-09-17): a compile could SUCCEED
+# despite a forced allocation failure, via an unrelated retry-ladder
+# absorption mechanism, and `make test` was not to go red for a known,
+# disposed defect that was not this section's job. **K60 is now CLOSED IN
+# BOTH ITS CLASSES** (D105 + D109, 2026-09-18) — `alloc_check.c`'s four
+# witnesses all pin zero absorbed, in both directions — so an absorption
+# reappearing here (a genuine regression, OR the population falling below
+# its D110 floor, K35) is exactly the thing `make test` should now catch
+# rather than pass silently. Section 2b therefore asserts TWO things: the
+# signal grep (K7's own worst case, unchanged) AND `alloc_check`'s own
+# rc plus the absence of any `SUCCEEDED THROUGH` line (an absorption, in
+# EITHER of `alloc_check`'s own senses — a real absorbed allocation, or a
+# population-floor FAIL, since both print through this same log). It
+# still runs argument-free (single-shot only — this section's own claim
+# needs no more) and still needs no `ulimit -v`, so nothing about its
+# darwin-viability changes. The PER-WITNESS pins/floors themselves stay
+# in `make alloc` (opt-in, `scripts/battery.sh`'s own `alloc` stage) —
+# this section's job is the coarser make-test-level verdict, not the
+# per-witness detail.
 build_alloc_scratch() {
     local scratch="$1"
     if [ ! -f "$scratch/libpcrec.a" ]; then
@@ -954,11 +967,17 @@ else
         bad "[F6(b)] FAILED TO BUILD tests/core/alloc_check.c against the injected scratch library: see $WORKDIR/f6b.build.log"
     else
         ALLOCOUT="$WORKDIR/f6b_alloc_check.out"
-        "$ALLOCBIN" >"$ALLOCOUT" 2>&1
+        ALLOCRC=0
+        "$ALLOCBIN" >"$ALLOCOUT" 2>&1 || ALLOCRC=$?
         if grep -q 'KILLED THE PROCESS BY SIGNAL' "$ALLOCOUT"; then
             bad "[F6(b)] the allocation-failure injector found an ABORT/SIGNAL (K7's worst case, live) — see $ALLOCOUT: $(grep 'KILLED THE PROCESS BY SIGNAL' "$ALLOCOUT")"
+        elif [ "$ALLOCRC" -ne 0 ] || grep -q 'SUCCEEDED THROUGH' "$ALLOCOUT"; then
+            # [D110] rc != 0 covers a real absorption AND a population that
+            # fell below its floor (K35); the SUCCEEDED-THROUGH grep is
+            # belt-and-braces against the two ever disagreeing.
+            bad "[F6(b)] [D110] the allocation-failure injector's own verdict is non-clean (rc=$ALLOCRC, both K60 classes are closed so this is a regression or a collapsed population) — see $ALLOCOUT: $(grep -E 'SUCCEEDED THROUGH|POPULATION fell|EMPTY message' "$ALLOCOUT" | head -3)"
         else
-            ok "[F6(b)] the allocation-failure injector's three witnesses: no forced allocation failure kills the process (K7's own promise holds) — darwin-viable, no ulimit needed. (K60's separate 'succeeded despite forced failure' finding is tracked in docs/dev/known_issues.md and make alloc, not this section.)"
+            ok "[F6(b)] [D110] the allocation-failure injector's four witnesses: no forced allocation failure kills the process (K7's own promise holds), and none is silently absorbed (K60, both classes closed) — darwin-viable, no ulimit needed."
         fi
     fi
 fi
