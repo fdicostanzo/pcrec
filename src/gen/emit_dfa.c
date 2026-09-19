@@ -2016,7 +2016,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * cite no abi digit but whose byte-count VALUES move anyway,
      * `battriage_report.md`'s 2026-09-15 finding — is re-recorded here too;
      * a grep for the literal `25` structurally cannot find it. */
-    sb_puts(c,   "    .abi = 26,\n");
+    sb_puts(c,   "    .abi = 27,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -7289,8 +7289,15 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " * the states where a match may end. Every table below carries a\n"
                        " * legend naming its states or classes.\n");
     }
-    sb_puts(c, " * ===================================================================== */\n\n");
+    sb_puts(c, " * ===================================================================== */\n");
     sb_cmt_close(c);
+    /* [EMIT-VERB] THE SEPARATOR IS NOT PART OF THE COMMENT. Left inside the
+     * region it would be dropped with the block, and the artifact's
+     * comment-EXCLUDED byte count -- the quantity both emitted-size caps are
+     * defined on -- would differ by one byte between the two settings. It is
+     * one byte and it is the difference between "the caps cannot see this
+     * axis" being a claim and being an identity. */
+    sb_putc(c, '\n');
 }
 
 /* Emits the SHARED artifact prologue both engines call: the optional

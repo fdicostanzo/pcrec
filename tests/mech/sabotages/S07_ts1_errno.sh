@@ -14,7 +14,19 @@ SAB_COUNT=1
 # carries the preceding comment line, which differs between the two scans —
 # the row still plants ONE `(void)errno;`, in the SEARCH body, which is the
 # body TS-1's denylist sweep was validated against.
-SAB_BEFORE='"    // match wins.\n"
-               "    size_t scan_position = search_from;\n"'
-SAB_AFTER='"    // match wins.\n"
-               "    size_t scan_position = search_from; (void)errno;\n"'
+# RE-AIMED 2026-09-19 ([EMIT-VERB]): the two lines are no longer in ONE
+# `sb_puts` -- the comment is now inside a gated comment region (D112) and the
+# code follows it in its own call -- so the 2026-08-29 anchor stopped
+# resolving. THE INTENT IS UNCHANGED AND IS WHAT THE RE-AIM PRESERVES: the row
+# plants ONE `(void)errno;` in the SEARCH body, and the only thing that tells
+# the search body from `<prefix>_match`'s anchored scan (whose declaration
+# line is identical) is still the preceding comment -- which is why the anchor
+# spans the region's own closing call rather than being dedented onto the
+# declaration alone, where it would match TWICE and SAB_COUNT=1 would stop
+# resolving exactly as it did in 2026-08-29.
+SAB_BEFORE='               "    // match wins.\n");
+    sb_cmt_close(c);
+    sb_puts(c, "    size_t scan_position = search_from;\n"'
+SAB_AFTER='               "    // match wins.\n");
+    sb_cmt_close(c);
+    sb_puts(c, "    size_t scan_position = search_from; (void)errno;\n"'

@@ -156,8 +156,9 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `26`
-([OPT-DIAL], THE SPEED-VS-SIZE DIAL — every artifact of both engines gains
+events but never stated the general rule; `rx_info.abi` is `27`
+([EMIT-VERB], THE EMITTED-COMMENT AXIS — see §6's bump list; before it,
+[OPT-DIAL], THE SPEED-VS-SIZE DIAL — every artifact of both engines gains
 exactly one line in the shared prologue, `#define <PREFIX>_TUNE
 "<token>"`, a closed five-token selection stamp (23-28 bytes by token);
 nothing else moves at the default position `balanced`, which is
@@ -1979,8 +1980,22 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `26` on every artifact today ([OPT-DIAL] bumped it
-  from 25: THE SPEED-VS-SIZE DIAL. Every artifact of both engines gains
+- **`rx_info.abi` is `27` on every artifact today ([EMIT-VERB] bumped it
+  from 26: THE EMITTED-COMMENT AXIS. A default artifact no longer carries
+  its NON-ESSENTIAL prose — every comment LINE leaves every artifact of
+  both engines except the generated-by/pattern-echo provenance line and
+  the shared `PCREC_RX_ABI_H` type block's doc-comments, which are the
+  ESSENTIAL class D112 defines; `-fcomments` restores the rest, and both
+  bits are masked out of `rx_info.flags`. Measured 44.2 % of a default
+  artifact's source bytes over the 3,517 compiling corpus patterns (DFA
+  45.6 %, VM 43.1 %). It is the first bump that REMOVES emitted text, and
+  the only one whose whole population is bytes the C compiler discards:
+  the OBJECT FILE is byte-identical under both settings on 3,517 of 3,517
+  corpus artifacts, the comment-EXCLUDED source size is identical, and
+  every emitted `#define` is identical — so no cap, no refusal and no
+  answer moves. See `docs/spec/tuning.md` §2.24.
+  The bump before it was [OPT-DIAL]:
+  THE SPEED-VS-SIZE DIAL. Every artifact of both engines gains
   exactly one line in the shared prologue, `#define <PREFIX>_TUNE
   "<token>"` — a closed five-token selection stamp, 23-28 bytes by token.
   Nothing else moves at the default position `balanced`: STRUCTURAL rather
