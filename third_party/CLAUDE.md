@@ -16,7 +16,7 @@ A caseless BACKREFERENCE folds subject bytes read at match time, so unlike
 every other consumer its fold cannot compile away — `utf8_design.md` §4.6(b)
 sizes the alternatives and rules that the artifact carries the ~1,500-entry
 simple-fold map as TEXT (about 26 KB, and only in an artifact that HAS such a
-backreference). `src/gen/enc/utf8_fold_pairs.inc` is that text. The licence
+backreference). `src/enc/utf8_fold_pairs.inc` is that text. The licence
 obligation is unchanged and discharged the same way: the Unicode License v3
 permits redistribution of the Data Files and of derived works, and
 `LICENSE.txt` ships here unmodified. `ucd-16.0.0/PROVENANCE.md` states it at
@@ -32,7 +32,7 @@ the row.
   unmodified — six of them since [M5.0] stage 5 added `Scripts.txt`,
   `ScriptExtensions.txt` and `PropertyValueAliases.txt`. Derives
   `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc` and
-  `src/gen/enc/utf8_fold_pairs.inc`.
+  `src/enc/utf8_fold_pairs.inc`.
 
   **A SOURCE FILE CAN ARRIVE FOR A REASON THE DESIGN DID NOT NAME**, and stage
   5 is the worked example: `utf8_design.md` §3.3 lists the files it expects

@@ -17,7 +17,7 @@
 # WELL-FORMED subject too through a mid-character startpos (§2.6.1.1), which
 # is why P-9's instrument sweeps both.
 SAB_ID="S-U9-back-step-length-test-deleted"
-SAB_FILE="src/gen/enc/enc_utf8.c"
+SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 back_step's want != end - pos declared-length test is deleted; on an ill-formed continuation run (or a mid-character startpos) the walk and the forward parse disagree, the negative lookbehind's end-check fires RX_R_INTERNAL, and a composed call site traps on a subject the ruling promises will merely not match"

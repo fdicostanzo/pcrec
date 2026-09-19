@@ -5,7 +5,7 @@
  * `make gen-tables`; `make test` re-checks staleness (`--check`).
  *
  * THIS FILE IS NOT COMPILED — IT IS EMITTED.  Every line below is a C string
- * literal, and `src/gen/enc/enc_utf8.c` `#include`s the file in the MIDDLE of
+ * literal, and `src/enc/enc_utf8.c` `#include`s the file in the MIDDLE of
  * the string-literal initialiser for the caseless backreference residual, so
  * these lines become part of the TEXT an artifact carries.  Design §4.6(b):
  * a caseless backreference folds subject bytes read at match time, so unlike

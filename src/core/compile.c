@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 {
@@ -1158,7 +1158,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * called `unicode-props`.) So the promise names the MILESTONE, and says
          * plainly that no --features name will turn it on — pre-empting the
          * question the old wording invited. */
-        /* [M5-SEAM] BOTH refusals now read the ENCODING REGISTRY (src/gen/enc/)
+        /* [M5-SEAM] BOTH refusals now read the ENCODING REGISTRY (src/enc/)
          * rather than testing PCREC_ENC_* values and naming them in literals:
          * a member with no backend is refused BY ITS OWN NAME, and a value that
          * is not a member at all is refused with the table's rendered menu. That

@@ -107,7 +107,7 @@ export CCACHE
 
 LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
            $(wildcard src/ir/*.c) $(wildcard src/opt/*.c) \
-           $(wildcard src/gen/*.c) $(wildcard src/gen/enc/*.c) \
+           $(wildcard src/gen/*.c) $(wildcard src/enc/*.c) \
            $(wildcard src/dump/*.c)
 LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 
@@ -155,7 +155,7 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # that list is for tables a `generate.py` DERIVES from a vendored data
 # source, and this one is hand-authored design.
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
-              src/gen/enc/utf8_fold_pairs.inc
+              src/enc/utf8_fold_pairs.inc
 
 $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/parse/rxt_schema.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)

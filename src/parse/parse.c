@@ -33,7 +33,7 @@
  * one place an encoding fact reaches the parser, and `[DD-12] (1)` still
  * holds: it is a RANGE CHECK on a value, not a conditional on behaviour, and
  * there is no encoding parameter anywhere in the grammar. */
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* ---- cursor helpers ---- */
 

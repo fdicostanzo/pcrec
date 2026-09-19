@@ -173,11 +173,11 @@ Adding UTF-16/32 later = new encoding backend, no core changes.
 **[M5-SEAM] (D58, 2026-08-18) made the second half of that sentence
 structural rather than aspirational.** The encoding is a PER-COMPILE-CALL
 scalar (a `pcrec_options` field, never a global), and a backend is a file
-in `src/gen/enc/` supplying the RESIDUAL text an artifact embeds — with no
+in `src/enc/` supplying the RESIDUAL text an artifact embeds — with no
 encoding conditional anywhere in the compiler, the emitter or the artifact
 (DD-12 (7)). The first residual entry is `<prefix>_next_pos`
 (docs/spec/match_api.md §3.1.1). "No core changes" is now the check
-`tests/codegen/run_codegen_tests.sh` makes and `src/gen/enc/CLAUDE.md`
+`tests/codegen/run_codegen_tests.sh` makes and `src/enc/CLAUDE.md`
 states as a recipe: a new backend is one file here plus its row in the
 registry, and needing to touch a shared file outside that directory is a
 design stop.

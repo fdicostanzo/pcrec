@@ -22,7 +22,7 @@
  * artifact's own --prefix and is the only character substituted. Keep the
  * emitted text ASCII-only — the artifact is source someone else's toolchain
  * compiles. */
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* ---- entry 1: next_pos -------------------------------------------------- */
 

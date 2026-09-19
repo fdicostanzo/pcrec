@@ -22,10 +22,10 @@
 # the second about the emitter, the third about the stamp, and a fix that
 # repaired one would leave the other two red.
 SAB_ID="S233-startpos-guard-leaks-byte"
-SAB_FILE="src/gen/enc/enc_byte.c"
+SAB_FILE="src/enc/enc_byte.c"
 SAB_SUITES="startbnd"
 SAB_DESC="the byte backend declares a character-start guard, so a byte artifact grows a startpos check for an encoding in which every position is a valid start — the leak K50's fix must not have, planted in the almost-always-true shape a real mistake would take"
-SAB_DOC_FIGURE="src/gen/enc/enc.h's start_cls/start_guard field comment; src/gen/enc/enc_byte.c's own NULL-is-the-answer paragraph; docs/spec/tuning.md 2.23's inert-under-byte row"
+SAB_DOC_FIGURE="src/enc/enc.h's start_cls/start_guard field comment; src/enc/enc_byte.c's own NULL-is-the-answer paragraph; docs/spec/tuning.md 2.23's inert-under-byte row"
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx --features assertions -o - -- "\\B" | grep -o "_STARTPOS_GUARD \"permissive\"" | head -1'
 SAB_REACH_EXPECT='_STARTPOS_GUARD "permissive"'

@@ -12,7 +12,7 @@
  * diagnostic and cli/main.c's name mapping) drifting apart. */
 #include <string.h>
 
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* [M5.0 stage 2] The `utf8` row stopped being the PENDING one this table
  * carried from [M5-SEAM] through stage 1 (a name with `entries == NULL`,

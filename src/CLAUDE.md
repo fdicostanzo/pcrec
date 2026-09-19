@@ -5,6 +5,16 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
 ## Files
 
 - **core/** — pipeline driver, arena allocator, string buffer, shared type definitions
+- **enc/** — [M5-SEAM] the ENCODING BACKENDS (D58, DD-12): the
+  per-encoding residual block each artifact embeds, one file per encoding
+  behind one registry. The compiler and the emitter carry NO encoding
+  conditionals; the only switch is which backend's text was embedded.
+  `src/gen/enc/` until [REVW.3] wave 3 moved it to its derived position, a
+  layer between `core` and `parse`: the seam was chartered emission-only
+  and four later seam events gave `PcrecEnc` DATA fields that parse and ir
+  read, so every include back-edge in the tree was a lower layer reaching
+  up into `gen` for something that is not emission. See enc/CLAUDE.md for
+  the third-encoding recipe
 - **parse/** — base-tier PCRE parser with module lookup hooks
 - **ir/** — NFA construction and priority subset construction (DFA)
 - **opt/** — IR/DFA optimization passes (APPROACH §5): minimization; and,
@@ -18,11 +28,6 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
   Moved out of `parse/`, where four files that RENDER the parse, core and
   gen tiers' own tables were filed as parser code. `cli/` is their only
   caller and no `src/` object names their symbols. See dump/CLAUDE.md
-- **gen/enc/** — [M5-SEAM] the ENCODING BACKENDS (D58, DD-12): the
-  per-encoding residual block each artifact embeds, one file per encoding
-  behind one registry. The compiler and the emitter carry NO encoding
-  conditionals; the only switch is which backend's text was embedded. See
-  gen/enc/CLAUDE.md for the third-encoding recipe
 
 ## Conventions
 

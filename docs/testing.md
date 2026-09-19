@@ -715,7 +715,7 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
 | `lib/pcrec.h` | `test-cli` (the library-API smoke test), `test-thread` (both TS-2 and TS-3 call the public API directly) | |
-| `src/gen/enc/*` (the encoding backends), `pcrec_options.encoding`, the emitted residual entries | `test-encseam`, `test-codegen`, `test-cli` | encseam RUNS docs/spec/match_api.md §3.1's find-all loop through `<prefix>_next_pos` against a python3 `re` oracle, on both engines — it is the only suite that runs a find-all loop at all; codegen carries the DD-12 (7) structural check that no engine body calls a residual entry, which no behaviour test can see (under the byte backend the residual is the identity, so a hot path routed through it matches identically); cli pins the `-e`/`--encoding=` surface and the utf8 refusal |
+| `src/enc/*` (the encoding backends), `pcrec_options.encoding`, the emitted residual entries | `test-encseam`, `test-codegen`, `test-cli` | encseam RUNS docs/spec/match_api.md §3.1's find-all loop through `<prefix>_next_pos` against a python3 `re` oracle, on both engines — it is the only suite that runs a find-all loop at all; codegen carries the DD-12 (7) structural check that no engine body calls a residual entry, which no behaviour test can see (under the byte backend the residual is the identity, so a hot path routed through it matches identically); cli pins the `-e`/`--encoding=` surface and the utf8 refusal |
 | `tests/mech/*` (sabotage definitions) | `make mech` (not a `make test` section — its own top-level target, run manually per its own CLAUDE.md when a sabotage table's figures are in doubt; the full matrix measures ~50 min at `PROCS=4`, 2026-08-21 — see "Sanitizer + lint battery" below for the stale "~6 minutes" figure's correction and the [TT-3] `CCACHE=1` toggle's own measured warm-row number) | |
 
 ### `make smoke`
@@ -3049,9 +3049,10 @@ under UBSan with the guard, and `null pointer passed as argument 1` with the
 guard stripped back out.
 
 **One infrastructure note that cost two suite failures.** Adding
-`src/gen/enc/` put compiler sources TWO directory levels down for the first
-time, and two suites assembled their own build of the compiler from a
-one-level glob (`src/*/*.c` in `tests/codegen/run_trie_identity.sh`, a
+`src/gen/enc/` (the encoding backends' home until [REVW.3] wave 3 moved
+them up to `src/enc/`) put compiler sources TWO directory levels down for
+the first time, and two suites assembled their own build of the compiler
+from a one-level glob (`src/*/*.c` in `tests/codegen/run_trie_identity.sh`, a
 hand-listed `for d in core parse ir opt gen` in
 `tests/thread/run_thread_tests.sh`). Both now `find` the sources instead.
 The failures were loud here (undefined references), but the shape is the

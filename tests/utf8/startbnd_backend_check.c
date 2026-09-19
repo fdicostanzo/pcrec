@@ -49,7 +49,7 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 static int fails;
 

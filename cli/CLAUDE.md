@@ -192,7 +192,7 @@ Three things about that helper are the point of the change rather than
 incidental to it:
 
 - **It resolves the name through the encoding REGISTRY**
-  (`src/gen/enc/enc.h`), never by mapping strings here. This file
+  (`src/enc/enc.h`), never by mapping strings here. This file
   hand-mapping `"utf8"` while `src/core/compile.c` separately hand-wrote
   the diagnostic for it is [SR-10]'s recorded motivating instance; both
   sites now read the one table, and the unknown-encoding diagnostic renders

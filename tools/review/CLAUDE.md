@@ -109,7 +109,7 @@ are out of scope for this round; see the charter's own "Scope tiers".
   depending on it is the FORWARD, expected direction. Fixed before this
   file was ever committed; the shipped `include_backedges.tsv` reads 6
   rows, every one the SAME single pattern — `core`/`parse`/`ir`/`opt` all
-  reaching into `src/gen/enc/enc.h` — which is a tight, specific,
+  reaching into `src/enc/enc.h` — which is a tight, specific,
   citable finding for lens 6 to weigh against DD-12/D58's own encoding-
   seam design ruling (per admissibility rule A1) rather than the diffuse
   mess a wrong comparison direction would have manufactured. Does NOT

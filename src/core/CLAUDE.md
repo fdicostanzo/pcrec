@@ -28,7 +28,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
   **[M5-SEAM] (2026-08-18, D58)** the ENCODING GATE is now a REGISTRY
   lookup rather than a pair of `PCREC_ENC_*` comparisons with the names
-  written out in literals: `pcrec_enc_by_id` (src/gen/enc/) resolves the
+  written out in literals: `pcrec_enc_by_id` (src/enc/) resolves the
   requested value, a value that is not a namespace member at all is refused
   with the table's rendered menu, and a member with no backend yet is
   refused BY ITS OWN `name`. That is [SR-10]'s single-namespace rule on the
@@ -240,7 +240,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   matcher has no flag, no branch and no `tolower()` (D23). A caseless
   BACKREFERENCE cannot fold at parse time — its operand is subject text nobody
   has seen — so the fold appears a second time inside the encoding residual
-  `$_bref_match_caseless` (src/gen/enc/enc_byte.c), which is TEXT compiled by
+  `$_bref_match_caseless` (src/enc/enc_byte.c), which is TEXT compiled by
   someone else's toolchain and cannot call a `static` function here. Two
   spellings of one fact with nothing between them is the shape this project
   keeps cataloguing; this table is what
@@ -257,7 +257,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   DISAGREE rather than nest — libpcre2's 8-bit non-UTF build folds 0xE9 to
   nothing while its UTF build folds it to 0xC9 — so no clamp derives one from
   the other and the ENCODING names which one it uses (`PcrecEnc.fold`,
-  src/gen/enc/enc.h). `cls_casefold` (src/parse/parse.c) takes the fold as a
+  src/enc/enc.h). `cls_casefold` (src/parse/parse.c) takes the fold as a
   PARAMETER and has no encoding test in it, which is `src/opt/lower_enc.c`'s
   `LowerOps` shape one seam over.
 

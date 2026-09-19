@@ -10,7 +10,7 @@
 # forbids it in its own text: "a seam entry, never raw `pos - k` byte
 # arithmetic in shared emitter code".
 #
-# A UTF-8 BACKEND WOULD THEN BE UNFIXABLE FROM src/gen/enc/. `k` is a count of
+# A UTF-8 BACKEND WOULD THEN BE UNFIXABLE FROM src/enc/. `k` is a count of
 # CHARACTERS; under UTF-8 the position `k` characters back is a walk over
 # continuation bytes that can also fail on a malformed sequence — which is why
 # the entry takes `s` and `n` at all, and why it returns a SENTINEL. An emitter

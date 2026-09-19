@@ -1,4 +1,16 @@
-/* src/gen/enc — the ENCODING BACKENDS ([M5-SEAM], D58; DD-12 (7)/(8)).
+/* src/enc — the ENCODING BACKENDS ([M5-SEAM], D58; DD-12 (7)/(8)).
+ *
+ * ITS LAYER. A LAYER BETWEEN `core` AND `parse` since [REVW.3] wave 3, when
+ * the directory moved out of `src/gen/`. The filing under `gen` was true of
+ * the seam as CHARTERED (emission-only) and had stopped being true of the
+ * seam as BUILT: four later seam events gave `PcrecEnc` DATA fields that
+ * layers outside `gen` read — `max_cp` from parse, `fold` from parse,
+ * `advance` from gen, `start_cls`/`start_guard` from ir — and every one of
+ * the include back-edges the 2026-09-17 review's dependency lens found was
+ * a lower layer reaching UP into this one directory for a field that is not
+ * emission at all. Nothing about the seam's SEMANTICS moved with it: D58 and
+ * DD-12 (7) are untouched, and the recipe below is one directory shallower
+ * and otherwise the same.
  *
  * DD-12 (7) forbids encoding conditionals anywhere: no "if utf do x else y"
  * in the compiler, in the emitter, or in the emitted artifact. Encodings are
@@ -24,11 +36,14 @@
  * THE THIRD-ENCODING RECIPE (DD-12 (7)'s own derailment test). Adding an
  * encoding backend is: one new `enc_<name>.c` in this directory, plus its
  * `extern` below and its row in `enc.c`'s table. Both of those are files in
- * THIS directory. Nothing in src/core, src/gen, cli/ or lib/ is touched, and
- * if a future backend ever needs one of them touched, that is the design-stop
- * signal DD-12 names rather than a patch to write. */
-#ifndef PCREC_GEN_ENC_H
-#define PCREC_GEN_ENC_H
+ * THIS directory. Nothing in src/core, src/parse, src/ir, src/opt, src/gen,
+ * cli/ or lib/ is touched, and if a future backend ever needs one of them
+ * touched, that is the design-stop signal DD-12 names rather than a patch to
+ * write. (The list grew with the move: as `src/gen/enc/` the sentence could
+ * name `src/gen` and mean "everything above me"; as `src/enc/` there are
+ * four layers above and they are all named.) */
+#ifndef PCREC_ENC_H
+#define PCREC_ENC_H
 
 #include "core/internal.h"   /* StrBuf */
 
@@ -329,4 +344,4 @@ bool pcrec_enc_start_cls_ok(const PcrecEnc *e);
 extern const PcrecEnc pcrec_enc_backend_byte;   /* enc_byte.c */
 extern const PcrecEnc pcrec_enc_backend_utf8;   /* enc_utf8.c, [M5.0] stage 2 */
 
-#endif /* PCREC_GEN_ENC_H */
+#endif /* PCREC_ENC_H */

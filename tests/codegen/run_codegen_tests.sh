@@ -1354,7 +1354,7 @@ if [ "$resid_backdecl" -ne 7 ]; then
     bad "[M5-SEAM/D58]: $resid_backdecl fixtures declare a lookbehind back-step residual entry, expected EXACTLY 7 — the population this check's FOURTH entry is asserted over moved. S133 inlines the back-step as 'scan_position - k' and drops the mask OR, which changes NO ANSWER under the byte backend, so this fixture-declared per-site count is its only possible detector and a shrinking population would take the detector with it"
 fi
 if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
-    bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/gen/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
+    bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
 elif [ "$resid_bad" -eq 0 ]; then
     ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare, $resid_backdecl a lookbehind back-step, each population guarded by its own EXACT literal; comment stripping is token-level and runs before the body tracking)"
 fi

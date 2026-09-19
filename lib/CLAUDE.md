@@ -184,7 +184,7 @@ The enum's comment now also states the PER-COMPILE-CALL rule (D58 ruling 2,
 DD-12 (8)): the encoding is this field and nothing else — no process
 global, no file global — so mixing encodings in one compilation unit or
 binary is supported by construction. The NAMES themselves are defined by
-one table, `src/gen/enc/enc.c`; neither `src/core/compile.c` nor
+one table, `src/enc/enc.c`; neither `src/core/compile.c` nor
 `cli/main.c` maps an encoding name of its own any more, which was
 [SR-10]'s recorded instance.
 

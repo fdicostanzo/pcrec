@@ -30,7 +30,7 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="the emitted bitmap prefilter's skip loop advances via <prefix>_next_pos instead of scan_position++, so the DFA hot path calls into the encoding residual — DD-12 (7)'s forbidden hot-path/encoding coupling, planted in the shape a developer would actually write it. It changes no match answer under the byte backend (next_pos IS scan_position + 1), so only the codegen structural check can see it"
-SAB_DOC_FIGURE="docs/dev/plan.md [DD-12] (7) 'a codegen-structural check that no hot-loop label calls into the encoding header (allowlist of named residual sites)'; src/gen/enc/enc.h's seam contract; tests/codegen/CLAUDE.md"
+SAB_DOC_FIGURE="docs/dev/plan.md [DD-12] (7) 'a codegen-structural check that no hot-loop label calls into the encoding header (allowlist of named residual sites)'; src/enc/enc.h's seam contract; tests/codegen/CLAUDE.md"
 SAB_COUNT=1
 # RE-ANCHORED 2026-08-26 ([ENG-FORM]): the bitmap prefilter's skip loop is a
 # REPRESENTATION OBJECT's emitter now (`pf_emit_bcls`, axis B's `byte-class`

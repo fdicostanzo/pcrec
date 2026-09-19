@@ -44,11 +44,11 @@
 # every `byte` artifact in the tree is byte-identical under the sabotage and
 # every byte-identity gate stays green.
 SAB_ID="S229-utf8-retry-advances-one-byte"
-SAB_FILE="src/gen/enc/enc_utf8.c"
+SAB_FILE="src/enc/enc_utf8.c"
 SAB_SUITES="harness encoding"
 SAB_HARNESS_TARGET="tests/utf8/axis09_nextpos_findall.rxt"
 SAB_DESC="the utf8 backend's unanchored RETRY ADVANCE loses its continuation-byte skip and becomes the byte backend's pos++, so an unanchored search under -e utf8 retries at offsets inside a character. Invisible on every positive pattern (a mid-character start has no path); on a leading negative assertion it REPORTS a match at a mid-character offset. This is K49 as it shipped"
-SAB_DOC_FIGURE="docs/dev/known_issues.md K49 (FIXED marker); src/gen/enc/enc.h's \`advance\` field comment; docs/design/utf8_design.md §5.5's refutation box. [ENCCHK-DD12A] SOLO RUN, encoding arm newly wired, measured against a green pre-sabotage baseline (2026-09-06): see docs/dev/lanes/encchk_report.md for the transcript."
+SAB_DOC_FIGURE="docs/dev/known_issues.md K49 (FIXED marker); src/enc/enc.h's \`advance\` field comment; docs/design/utf8_design.md §5.5's refutation box. [ENCCHK-DD12A] SOLO RUN, encoding arm newly wired, measured against a green pre-sabotage baseline (2026-09-06): see docs/dev/lanes/encchk_report.md for the transcript."
 SAB_COUNT=1
 SAB_BEFORE='"@P++;\n"
 "while (@P < @N\n"

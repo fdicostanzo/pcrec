@@ -11,7 +11,7 @@
 # A UTF-8 backend would then answer differently WITHOUT ANY EMITTER CHANGE
 # BEING POSSIBLE: one captured character can fold to two, so the consumed
 # LENGTH stops equalling `ref_end - ref_start`, and an emitter that computes
-# the length itself cannot be corrected from `src/gen/enc/`.
+# the length itself cannot be corrected from `src/enc/`.
 #
 # WHAT CATCHES IT is the codegen check's fixture-DECLARED per-site count —
 # the artifact must call `rx_bref_match` exactly as many times as the fixture

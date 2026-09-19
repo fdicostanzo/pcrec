@@ -28,7 +28,7 @@
  * B+C recognised the three LOOKAHEAD tails (`=`, `!`, `*` at the `(?`
  * doorway) and DECLINED the three `<` tails with the enabled-but-unbuilt
  * diagnostic — the honest answer while `vm_look` had no back-step. Wave D
- * landed `PCREC_ENCE_BACK_STEP` (src/gen/enc/enc_byte.c) and §3.4's emitted
+ * landed `PCREC_ENCE_BACK_STEP` (src/enc/enc_byte.c) and §3.4's emitted
  * shape, so THE DECLINE AND ITS `built` COLUMN ARE DELETED: all six rows read
  * `built`, and the table below has no `built` field left to disagree about.
  * Nothing else in this file changed for the lookbehind, because

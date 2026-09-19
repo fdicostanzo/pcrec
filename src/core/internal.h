@@ -2146,7 +2146,7 @@ typedef struct {
     int    altcls_merges;    /* stage 1: alternation runs folded into one class */
     int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
     /* [M6.5.2] WHICH ENCODING RESIDUAL ENTRIES THIS ARTIFACT NEEDS — an OR of
-     * PCREC_ENCE_* (src/gen/enc/enc.h). `PCREC_ENCE_NEXT_POS` is always in it
+     * PCREC_ENCE_* (src/enc/enc.h). `PCREC_ENCE_NEXT_POS` is always in it
      * (docs/spec/match_api.md §3.1 promises that entry unconditionally); the
      * two backreference entries are added by the VM emitter as it emits them,
      * so the mask is DISCOVERED BY EMITTING rather than predicted by a second
@@ -5757,7 +5757,7 @@ BufSurface pcrec_bufsurface_inert(void);
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          const BufSurface *bs);
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
-/* [M5-SEAM] the per-encoding residual DEFINITIONS (src/gen/enc/); the
+/* [M5-SEAM] the per-encoding residual DEFINITIONS (src/enc/); the
  * matching declarations ride pcrec_emit_prologue. */
 void pcrec_emit_residual(Ctx *cx);
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,

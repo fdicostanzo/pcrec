@@ -72,7 +72,7 @@
 #include <string.h>
 
 #include "core/internal.h"
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 #include "parse/parse_mods.h"
 
 /* ---- the saved numbering scope (w1_impl §2.2) --------------------------

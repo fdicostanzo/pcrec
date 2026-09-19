@@ -108,7 +108,7 @@
 #include "core/internal.h"
 /* [K50] the encoding's character-start set: the gate's class (nfa.c) and
  * the class axis's fourth value (dfa.c) both come from the backend row. */
-#include "gen/enc/enc.h"
+#include "enc/enc.h"
 
 /* ---- byte equivalence classes ---- */
 
