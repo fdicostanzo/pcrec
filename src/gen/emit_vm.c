@@ -6234,6 +6234,153 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * §2.2 verdict. A lookahead's cut discards frames that are NOT dead, exactly
  * as an atomic group's does — which is the semantics, and is what §2.2's
  * atomicity discriminator measures. */
+/* ONE BRANCH of the lookbehind chain above: step back `widths[i]` characters
+ * through the encoding seam, run the branch FORWARD through `vm_emit`, and
+ * re-check at the END-CHECK that it finished exactly where the assertion
+ * started. `last` (derived from `i` and `m`) is the whole difference between
+ * a branch that pushes a retry frame for its successor and the final one that
+ * leaves by `rx_fail`; the four label arrays and `br` are the caller's, indexed
+ * here and never written.
+ *
+ * [REVW.2 step 14] Extracted verbatim from `vm_look_behind`'s per-branch loop
+ * (lens 11's F14): the loop body WAS the function, 126 of its 196 lines. The
+ * caller's `b` and `neg` moved down with it — neither had a reader outside the
+ * loop. Read `vm_look_behind`'s own header for notes 1 and 3, which this
+ * function's emitted text is governed by. */
+static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
+                                  int pslot, const Ast **br,
+                                  int *bl, int *bodl, int *endl)
+{
+    StrBuf *b = v->b;
+    const bool neg = a->u.look.neg;
+    const int k = a->u.look.widths[i];
+    const bool last = (i + 1 == m);
+
+    /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
+     * failing, so this role is kept short enough to survive a 2-digit
+     * branch index and width — a truncated comment in the emitted C is a
+     * sentence that stops mid-word, which is what the first version of
+     * this line shipped. */
+    vm_lbl(v, bl[i], vm_rolef(v,
+           "lookbehind branch %d of %d, fixed width %d: step back and run "
+           "the branch FORWARD%s", i + 1, m, k,
+           last ? " (the LAST branch: no retry frame)" : ""));
+
+    /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
+     * see this function's header, note 1, and sabotage row S135.
+     *
+     * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
+     * being unsatisfiable rather than an exception carved out for one
+     * body shape: "fewer than 0 characters precede the cursor" is false
+     * for every cursor, and `scan_position` is a `size_t`, so the emitted
+     * test would be `scan_position < 0` — which gcc proves false under
+     * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
+     * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
+     * degenerate bodies, which are legal in both oracles and ship. The
+     * back-step call and its sentinel check are still emitted at width 0,
+     * because D58's rule is about WHERE the arithmetic lives and not
+     * about whether this particular constant makes it a no-op. */
+    if (last) {
+        if (k > 0)
+            sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
+                      k, v->p);
+        /* A NOTE AND NOT AN `assert`, and the reason is the listing's
+          * own convention rather than taste: `VE_ASSERT` renders
+          * "-> L<a>" and `a` is the label taken when the assertion HOLDS
+          * (the `^` and `(?m)^` arms set it to `next`). These three sites
+          * leave by `rx_fail`, which is not a label id, so an ASSERT event
+          * here would print a confident `-> L0` naming a label the code
+          * never jumps to. */
+        vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
+              "lookbehind: fewer than %d characters precede the cursor, "
+              "and this is the last branch -- the assertion fails here", k)
+              : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                "guard is emitted -- the condition it would test is false "
+                "for every cursor");
+    } else {
+        if (k > 0) {
+            sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
+                      k, v->p, bl[i + 1]);
+            vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
+                  "lookbehind: fewer than %d characters precede the "
+                  "cursor, so try the next branch", k));
+        } else {
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                  "guard is emitted -- the condition it would test is "
+                  "false for every cursor");
+        }
+        vm_push(v, bl[i + 1],
+                "lookbehind: the NEXT-BRANCH continuation -- this branch's "
+                "body failing retreats into the branch written after it");
+    }
+
+    {
+        vm_work(v, vm_rolef(v, "%d", k),
+                "work charge: the back-step, charged as the "
+                "compile-time width rather than the runtime cost "
+                "so the accounting does not depend on the "
+                "encoding backend");
+    }
+
+    /* THE SEAM CALL. Never `scan_position - k` here: that is byte
+     * arithmetic which is correct today and silently wrong under a UTF-8
+     * backend, it is what D58 scope item 3 exists to prevent, and the
+     * [M6.6] plan row forbids it in its own text. Sabotage row S133
+     * inlines it and the [M5-SEAM] fixture-declared per-site count is its
+     * only possible detector, because inlining changes NO ANSWER under
+     * this backend. */
+    sb_printf(b, "    scan_position = %s_back_step(subject, "
+                 "subject_length, scan_position, %d);\n", v->p, k);
+    vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
+          "lookbehind: the ENCODING SEAM's back-step, %d character%s",
+          k, k == 1 ? "" : "s"));
+    sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
+              v->p, v->p);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the back-step ran off the start of the subject -- "
+          "dead under the byte backend, where the guard above is exact");
+    vm_goto(v, bodl[i]);
+
+    /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
+    vm_emit(v, bodl[i], br[i], endl[i]);
+
+    vm_lbl(v, endl[i], neg
+           ? "lookbehind END-CHECK (negative): the branch must finish "
+             "exactly where the assertion started. On THIS polarity a "
+             "declined branch would be the assertion SUCCEEDING, i.e. a "
+             "FALSE MATCH, so a disagreement returns HARD"
+           : "lookbehind END-CHECK: the branch must finish exactly where "
+             "the assertion started -- the only runtime evidence that the "
+             "width analysis and this emission agree");
+    {
+        /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
+         * there is no size here to get wrong. It used to be a hand-picked
+         * 64, which silently truncated -- its content reaches prefix +
+         * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
+        const char *sl = vm_slot_expr(v, pslot);
+        if (neg) {
+            /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
+             * see this function's header comment, note 3, "WHICH
+             * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
+             * artifact's own inconsistency check firing. */
+            sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                         "return %s_R_INTERNAL;\n", sl, v->up);
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind end-check FAILED on the negative arm -- a "
+                  "hard return (RX_R_INTERNAL, below the give-up floor) "
+                  "rather than a decline, because a decline here is a "
+                  "false match");
+        } else {
+            sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                         "goto %s_fail;\n", sl, v->p);
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind end-check FAILED -- this branch declines");
+        }
+    }
+    vm_goto(v, okl);
+}
+
 /* [M6.6.2 wave D] THE LOOKBEHIND's BRANCH CHAIN (design §3.4), emitted here
  * rather than inline in `vm_look` because it is the one part of this
  * construct that is a LOOP over a table and everything else is straight-line.
@@ -6348,9 +6495,7 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * disagrees with `nbranch` is `ctx_fail`, not a silently mispaired table. */
 static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 {
-    StrBuf *b = v->b;
     const int m = a->u.look.nbranch;
-    const bool neg = a->u.look.neg;
 
     /* [DD-14.LB] AND THIS IS NOW A LIVE DETECTOR RATHER THAN A GUARD AGAINST
      * THE IMPOSSIBLE. `widths == NULL` on a lookbehind is the PENDING state
@@ -6412,134 +6557,8 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 
     vm_goto(v, bl[0]);
 
-    for (int i = 0; i < m; i++) {
-        const int k = a->u.look.widths[i];
-        const bool last = (i + 1 == m);
-
-        /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
-         * failing, so this role is kept short enough to survive a 2-digit
-         * branch index and width — a truncated comment in the emitted C is a
-         * sentence that stops mid-word, which is what the first version of
-         * this line shipped. */
-        vm_lbl(v, bl[i], vm_rolef(v,
-               "lookbehind branch %d of %d, fixed width %d: step back and run "
-               "the branch FORWARD%s", i + 1, m, k,
-               last ? " (the LAST branch: no retry frame)" : ""));
-
-        /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
-         * see this function's header, note 1, and sabotage row S135.
-         *
-         * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
-         * being unsatisfiable rather than an exception carved out for one
-         * body shape: "fewer than 0 characters precede the cursor" is false
-         * for every cursor, and `scan_position` is a `size_t`, so the emitted
-         * test would be `scan_position < 0` — which gcc proves false under
-         * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
-         * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
-         * degenerate bodies, which are legal in both oracles and ship. The
-         * back-step call and its sentinel check are still emitted at width 0,
-         * because D58's rule is about WHERE the arithmetic lives and not
-         * about whether this particular constant makes it a no-op. */
-        if (last) {
-            if (k > 0)
-                sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
-                          k, v->p);
-            /* A NOTE AND NOT AN `assert`, and the reason is the listing's
-              * own convention rather than taste: `VE_ASSERT` renders
-              * "-> L<a>" and `a` is the label taken when the assertion HOLDS
-              * (the `^` and `(?m)^` arms set it to `next`). These three sites
-              * leave by `rx_fail`, which is not a label id, so an ASSERT event
-              * here would print a confident `-> L0` naming a label the code
-              * never jumps to. */
-            vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
-                  "lookbehind: fewer than %d characters precede the cursor, "
-                  "and this is the last branch -- the assertion fails here", k)
-                  : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
-                    "guard is emitted -- the condition it would test is false "
-                    "for every cursor");
-        } else {
-            if (k > 0) {
-                sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
-                          k, v->p, bl[i + 1]);
-                vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
-                      "lookbehind: fewer than %d characters precede the "
-                      "cursor, so try the next branch", k));
-            } else {
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
-                      "guard is emitted -- the condition it would test is "
-                      "false for every cursor");
-            }
-            vm_push(v, bl[i + 1],
-                    "lookbehind: the NEXT-BRANCH continuation -- this branch's "
-                    "body failing retreats into the branch written after it");
-        }
-
-        {
-            vm_work(v, vm_rolef(v, "%d", k),
-                    "work charge: the back-step, charged as the "
-                    "compile-time width rather than the runtime cost "
-                    "so the accounting does not depend on the "
-                    "encoding backend");
-        }
-
-        /* THE SEAM CALL. Never `scan_position - k` here: that is byte
-         * arithmetic which is correct today and silently wrong under a UTF-8
-         * backend, it is what D58 scope item 3 exists to prevent, and the
-         * [M6.6] plan row forbids it in its own text. Sabotage row S133
-         * inlines it and the [M5-SEAM] fixture-declared per-site count is its
-         * only possible detector, because inlining changes NO ANSWER under
-         * this backend. */
-        sb_printf(b, "    scan_position = %s_back_step(subject, "
-                     "subject_length, scan_position, %d);\n", v->p, k);
-        vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
-              "lookbehind: the ENCODING SEAM's back-step, %d character%s",
-              k, k == 1 ? "" : "s"));
-        sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
-                  v->p, v->p);
-        vm_ev(v, VE_NOTE, 0, 0,
-              "lookbehind: the back-step ran off the start of the subject -- "
-              "dead under the byte backend, where the guard above is exact");
-        vm_goto(v, bodl[i]);
-
-        /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
-        vm_emit(v, bodl[i], br[i], endl[i]);
-
-        vm_lbl(v, endl[i], neg
-               ? "lookbehind END-CHECK (negative): the branch must finish "
-                 "exactly where the assertion started. On THIS polarity a "
-                 "declined branch would be the assertion SUCCEEDING, i.e. a "
-                 "FALSE MATCH, so a disagreement returns HARD"
-               : "lookbehind END-CHECK: the branch must finish exactly where "
-                 "the assertion started -- the only runtime evidence that the "
-                 "width analysis and this emission agree");
-        {
-            /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
-             * there is no size here to get wrong. It used to be a hand-picked
-             * 64, which silently truncated -- its content reaches prefix +
-             * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
-            const char *sl = vm_slot_expr(v, pslot);
-            if (neg) {
-                /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
-                 * see this function's header comment, note 3, "WHICH
-                 * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
-                 * artifact's own inconsistency check firing. */
-                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                             "return %s_R_INTERNAL;\n", sl, v->up);
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind end-check FAILED on the negative arm -- a "
-                      "hard return (RX_R_INTERNAL, below the give-up floor) "
-                      "rather than a decline, because a decline here is a "
-                      "false match");
-            } else {
-                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                             "goto %s_fail;\n", sl, v->p);
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind end-check FAILED -- this branch declines");
-            }
-        }
-        vm_goto(v, okl);
-    }
+    for (int i = 0; i < m; i++)
+        vm_look_behind_branch(v, a, i, m, okl, pslot, br, bl, bodl, endl);
     (void)mslot;
 }
 
