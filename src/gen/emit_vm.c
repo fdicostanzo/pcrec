@@ -10525,29 +10525,39 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * collapses it to -1 per D38.4's frozen return space, and only
      * <prefix>_search — which D38 says nothing about — has room for the
      * honest code), so they get their own PER-PREFIX names. */
-    sb_printf(c, "#define %s_R_STEPS   ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
-    sb_printf(c, "#define %s_R_FRAMES  ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
-    sb_printf(c, "#define %s_R_WORK    ((ptrdiff_t)PCREC_ERR_WORK)\n", v.up);
+    /* `sentw` aligns the family's value column -- emitted bytes like any
+     * other (coding_guide.md S3.1), and the reason `sb_stampwf` carries a
+     * width at all. It is the longest name in the family that still pads
+     * (`_R_RECURSE`); `_R_INTERNAL` below is one byte longer and falls back
+     * to the single separator space, which is what the hand-written formats
+     * spelled and what printf's own field width reproduces. */
+    const int sentw = 9;
+    sb_stampwf(c, v.up, "R_STEPS",  sentw, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
+    sb_stampwf(c, v.up, "R_FRAMES", sentw, "%s", "((ptrdiff_t)PCREC_ERR_FRAMES)");
+    sb_stampwf(c, v.up, "R_WORK",   sentw, "%s", "((ptrdiff_t)PCREC_ERR_WORK)");
     /* [DD-14 wave A] %s_R_RECURSE joins its three siblings, sentinel only:
      * D71 item 1 reserves the CODE now and defers the recursion-depth
      * COUNTER to a future [V-H] diagnostic axis, so no arm in this file
      * returns %s_R_RECURSE yet -- it exists so the search entry's collapse
      * (below) and every consumer of the sentinel family already agree on
      * its name before module 'recursion' supplies a producer. */
-    sb_printf(c, "#define %s_R_RECURSE ((ptrdiff_t)PCREC_ERR_RECURSE)\n", v.up);
+    sb_stampwf(c, v.up, "R_RECURSE", sentw, "%s", "((ptrdiff_t)PCREC_ERR_RECURSE)");
     /* [DD-14 wave A commit 2] %s_R_INTERNAL is NOT a give-up sentinel --
      * it names the below-the-floor abort code (PCREC_ERR_INTERNAL) through
      * the identical private-sentinel/public-code seam, because the seam's
      * reason (§4.4's three layers) is about WHERE a typed negative value
      * has room to travel, not about which side of the floor it lands on.
      * `vm_look_behind`'s negative-arm end-check is its one producer today. */
-    sb_printf(c, "#define %s_R_INTERNAL ((ptrdiff_t)PCREC_ERR_INTERNAL)\n\n", v.up);
+    sb_stampwf(c, v.up, "R_INTERNAL", sentw, "%s", "((ptrdiff_t)PCREC_ERR_INTERNAL)");
+    sb_putc(c, '\n');
     /* [DD-14 wave B+C] "no subroutine call is active". Out of range for the
      * frame array on purpose, so a return with no live activation indexes
      * nothing — the region exit's own guard turns that into
      * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
-    if (v.has_linked_calls)
-        sb_printf(c, "#define %s_CALL_TOP_NONE ((size_t)-1)\n\n", v.up);
+    if (v.has_linked_calls) {
+        sb_stampf(c, v.up, "CALL_TOP_NONE", "%s", "((size_t)-1)");
+        sb_putc(c, '\n');
+    }
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
