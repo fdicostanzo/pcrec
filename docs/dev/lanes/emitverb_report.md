@@ -422,6 +422,22 @@ larger the artifact the closer the saving gets to the full share.
 
 ## 5. What is OWED, and the exact commands
 
+**All four items below run in ONE detached chain launched as this lane's
+LAST act** (BOILERPLATE's DO-THEN-FINISH), writing to
+
+    /tmp/claude-501/-Users-fdicostanzo-pcrec/52676367-1886-4454-aaa6-ddfbafa699f6/scratchpad/final_validation.log
+
+whose completion line is `===== EMITVERB FINAL VALIDATION COMPLETE =====`.
+Each stage prints its own `*_RC=` line, so a reader can attribute a failure
+without re-running anything. The script is
+`…/scratchpad/final.sh`. **`run_search_pinned.sh` and
+`run_specimen_identity.sh` are in that chain because a 900 s bound killed
+them mid-run** — a firing timeout is a finding, and this one is only that
+they are corpus sweeps needing a bigger budget; `run_search_pinned.sh`'s §1
+was green (15 named witnesses, the deny-axis live-difference arm) before the
+kill.
+
+
 1. **The (B) identity pin.** `tests/codegen/run_recursion_identity.sh`'s
    `FILEPIN` is left at `94ef3836` and must name a commit REACHABLE AFTER THE
    MERGE (D76; opt5i's and ccdiff1's precedent). Until the manager re-pins it,
