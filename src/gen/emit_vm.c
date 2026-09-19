@@ -7670,6 +7670,316 @@ static void vm_region(Vm *v, int i)
           "return to the caller through the frame's own label");
 }
 
+/* `\b` / `\B`. Emits the word-boundary assertion for both polarities —
+ * `neg` is the ONLY difference and it is one comparison operator, which is
+ * why the two kinds share an arm rather than two emitters.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_WORDB/A_NWORDB
+ * arm (lens 11's F7): the dispatcher's ten arms were six one-line
+ * delegations and four whole programs, so reading it told you six of the
+ * ten things it does. */
+static void vm_wordb(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
+     *
+     * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
+     * rather than defensive padding. The natural spelling —
+     * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
+     * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
+     * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
+     * must short-circuit before any dereference. That is K27's exact
+     * class: undefined behaviour in EMITTED code, which a user compiling
+     * a generated matcher under their own -fsanitize=undefined sees
+     * pcrec's name on.
+     *
+     * Out-of-subject counts as NON-WORD, which is what makes the guard
+     * and the semantics the same expression: a failed bounds test yields
+     * 0, which is exactly the value the missing byte would contribute.
+     *
+     * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
+     * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
+     * by content, so a pattern using both emits ONE bitmap and the two
+     * constructs cannot disagree about what a word character is. */
+    int wi = vm_cls(v, pcrec_cls_word_esc);
+    bool neg = a->k == A_NWORDB;
+    vm_lbl(v, entry, NULL);
+    vm_ev(v, VE_ASSERT, next, 0,
+          neg ? "\\B not a word boundary" : "\\b word boundary");
+    sb_puts(b, "    if (((scan_position > 0 && (");
+    vm_cls_test(v, b, wi, "subject[scan_position-1]");
+    sb_puts(b, ")) ");
+    sb_puts(b, neg ? "==" : "!=");
+    sb_puts(b, " (scan_position < subject_length && (");
+    vm_cls_test(v, b, wi, "subject[scan_position]");
+    sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
+    vm_fail(v);
+}
+
+/* A CAPTURING GROUP's two slot writes and the body between them.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAP arm (lens 11's
+ * F7), beside `vm_alt` / `vm_rep` / `vm_atomic` / `vm_look` / `vm_call`,
+ * which the file already named. */
+static void vm_cap(Vm *v, int entry, const Ast *a, int next)
+{
+    /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
+     * position, caps[k][1] when it passes the closing one. Undo is EXACT
+     * RESTORE of the previous value, never a clear — the trail, not this
+     * site, is where that lives.
+     *
+     * [M6.5.2] EXCEPT FOR A MARKED GROUP — one a backreference names —
+     * where the pair is PUBLISHED TOGETHER AT THE CLOSE
+     * (backrefs_design.md §3.2, `vm_slot_pend`'s comment for the two
+     * measured refutations of write-on-traverse). The open position goes
+     * to the pending slot; the close writes both published slots from it.
+     *
+     * WRITE-ON-TRAVERSE IS UNOBSERVABLE WITHOUT A BACKREFERENCE, which is
+     * why the correction is scoped rather than universal: at match
+     * completion every group is closed and the published pair equals what
+     * write-on-traverse leaves. The 5,808-cell sweep's backref-free
+     * control arm is 0 divergences in BOTH disciplines, and §11.3's
+     * byte-identity gate then holds by construction — an unmarked group
+     * takes the same two lines it always did. */
+    const bool marked = vm_marked(v, a->u.cap.no);
+    int inner = vm_label(v), close = vm_label(v);
+    vm_lbl(v, entry, vm_rolef(v, "group %d opens", a->u.cap.no));
+    /* [ENG-BREP] SUPPRESSED inside a revdet loop's forward scan (v->nocap):
+     * a per-iteration write is exactly the trail growth that rung exists to
+     * remove, and §3.4's backward walk recovers the value the scan would
+     * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
+     * code and the number the capacities are sized from cannot disagree.
+     *
+     * [M6.5.2] THE SUPPRESSION COVERS THE PENDING SLOT TOO, and it must:
+     * the pending write and the pair it feeds are ONE publication, so
+     * suppressing half of it would leave the backward walk's reconstructed
+     * pair sitting beside a stale pending value from an earlier iteration.
+     * Writing it as one guarded block is what makes "in step with the
+     * pair" structural rather than a rule someone has to remember —
+     * sabotage row S118 drops the pending write alone. (The backward
+     * walk writes the published pair DIRECTLY, both halves adjacent, so it
+     * is already a publication in the sense a reference needs.) */
+    if (!v->nocap) {
+        if (marked)
+            vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",
+                   vm_rolef(v, "group %d open, PENDING until this "
+                               "iteration closes", a->u.cap.no));
+        else
+            vm_set(v, 2 * a->u.cap.no, "(ptrdiff_t)scan_position",
+                   vm_rolef(v, "group %d open, written on traverse",
+                            a->u.cap.no));
+    }
+    vm_goto(v, inner);
+    vm_emit(v, inner, a->l, close);
+    vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
+    if (!v->nocap) {
+        if (marked) {
+            /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
+             * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
+             * E1) builds, and E1's own four sites were all in
+             * `vm_call`/`vm_splice`, so this one was never reached. */
+            vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
+                   vm_rolef(v, "group %d PUBLISHED: the pair goes out "
+                               "together, so a reference never sees a "
+                               "half-open span", a->u.cap.no));
+        }
+        vm_set(v, 2 * a->u.cap.no + 1, "(ptrdiff_t)scan_position",
+               vm_rolef(v, "group %d close, written on traverse",
+                        a->u.cap.no));
+    }
+    vm_goto(v, next);
+}
+
+/* A BACKREFERENCE: the DUPNAMES resolution chain, the unset test, the seam
+ * call and its work charge.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_BREF arm (lens 11's
+ * F7) — at ~80 lines the largest of the four, and the one whose inline
+ * presence hid five of this file's sabotage anchors inside a `switch`. */
+static void vm_bref(Vm *v, int entry, const Ast *a, int next)
+{
+    /* [M6.5.2] THE COMPARE (backrefs_design.md §3.2.3, §8.3).
+     *
+     * A chain of tests and a call. It reads the two PUBLISHED slots —
+     * never a saved copy — and the trail discipline is what makes that
+     * safe: the fail label rewinds to the popped frame's `trail_mark`
+     * BEFORE transferring control, so by the time any label runs
+     * `slot_values` holds exactly what that path published.
+     *
+     * THE UNSET TEST IS TOTAL, and only because of publish-at-close.
+     * `run_state_init` fills every slot with `PCREC_UNSET` once per search
+     * and the trail restores it on every rewind, so a PUBLISHED slot is
+     * UNSET iff no live path has published it. Under write-on-traverse the
+     * same sentence was FALSE for a re-entered group, and that is R32 E1
+     * (see `vm_slot_pend` for the two measured refutations).
+     *
+     * PCRE2 FAILS on an unset reference; it does not match empty.
+     * `^(a)?\1$` on "" is NO MATCH — measured, with python3 `re` agreeing
+     * on all eight such cells. `PCRE2_MATCH_UNSET_BACKREF` would flip two
+     * of them and is explicitly out of scope (§3.3).
+     *
+     * THE CHAIN IS §8.3's DUPNAMES RESOLUTION, emitted uniformly. For a
+     * reference to a duplicated name, `refs` is the whole name-run in
+     * ASCENDING GROUP NUMBER and the rule is "the FIRST member that is
+     * SET" — measured against four candidate rules over eighteen cells,
+     * with the "yy" cell killing "first by number" and the "xyy" cell
+     * killing "last set". PCRE2 does NOT retry later members when the
+     * first set one's COMPARE fails, which is what makes this a
+     * frame-free if/else chain rather than a choice point. For
+     * `nrefs == 1` it degenerates to a single `if`, which is the argument
+     * for carrying the set uniformly: the dupnames path is the ordinary
+     * path with the chain length at one, not a second, rarer,
+     * less-tested path.
+     *
+     * "SET" INCLUDES SET-TO-EMPTY, and testing only the START slot is what
+     * gets that right: `ref_start == ref_end` is a published empty
+     * capture, the entry returns 0, and the reference succeeds having
+     * consumed nothing. An implementation testing `ref_end > ref_start` as
+     * a proxy for "is it set" turns every empty capture into a failure —
+     * sabotage row S105.
+     *
+     * `ref_start <= ref_end` IS STRUCTURAL, not hoped for: a published
+     * pair records the start before the body ran and the end after it, so
+     * the subtraction the entry makes cannot underflow. That is the whole
+     * memory-safety half of publish-at-close, and the entry's contract
+     * states the precondition rather than paying for a runtime check.
+     *
+     * THE SEAM CALL IS NOT AN OPTIMISATION BOUNDARY. The compare must
+     * route through the encoding residual FROM BIRTH (D58 scope item 3):
+     * an inline `(s[i] | 32) == (s[j] | 32)` here is byte arithmetic that
+     * is correct today and silently wrong under a UTF-8 backend, where one
+     * captured character can fold to two and the consumed LENGTH stops
+     * equalling `ref_end - ref_start`. That is why the entry returns a
+     * length rather than a bool, and why there are TWO entries rather than
+     * one with a `caseless` flag — D18/D23's rule is that an option
+     * compiles away, and D23 measured a runtime fold indirection costing
+     * 26% on a pattern with no letters in it. Sabotage row S109 inlines
+     * the compare, and the codegen check's fixture-declared per-site count
+     * is its only possible detector: inlining changes NO ANSWER under the
+     * byte backend. */
+    StrBuf *bb = v->b;
+    const char *fn;
+    /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
+     * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
+     * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
+     * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
+     * not compile. Caught by the corpus within one run; recorded because
+     * `-Wall -Wextra` does not include `-Wshadow`. */
+    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_BREF_CASELESS
+                                            : PCREC_ENCE_BREF;
+    /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
+     * EMITTED, and this is `engine_callable`'s one consumer on the compile
+     * path (enc.h). DD-12 (7) forbids the matching machinery from
+     * depending on the encoding, and `tests/codegen`'s [M5-SEAM] check
+     * enforces it from OUTSIDE, on the artifact. This is the same rule
+     * enforced from INSIDE, at the one site that could break it: an
+     * emitter may route a construct through a residual entry only if the
+     * backend says that entry may be called from an engine body.
+     *
+     * A backend whose compare declared `engine_callable = false` would
+     * otherwise emit an artifact the codegen check then rejects — a
+     * failure two steps and one test run away from its cause. Refusing
+     * here makes it one step and names it. Unreachable for the byte
+     * backend, which declares both compare entries callable; it is the
+     * NEXT backend this line is for. */
+    if (!pcrec_enc_entry_engine_callable(
+            pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
+        ctx_fail(v->cx, 0,
+                 "internal error: this encoding's backreference compare is "
+                 "not declared engine-callable, so it cannot be routed "
+                 "through the seam from an engine body");
+    v->enc_mask |= seam_entry;
+    fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                  a->u.bref.caseless ? "_caseless" : "");
+    vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
+                              a->u.bref.nrefs == 1 ? "one group" : "a name-run",
+                              a->u.bref.caseless ? ", caseless" : ""));
+    sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
+                "ref_end = PCREC_UNSET, took;\n");
+    for (int i = 0; i < a->u.bref.nrefs; i++) {
+        const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
+        const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
+        sb_printf(bb,
+            "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
+            "            ref_start = slot_values[%s];\n"
+            "            ref_end   = slot_values[%s];\n"
+            "        }%s",
+            i ? "else " : "", ns, ns, ne,
+            i + 1 == a->u.bref.nrefs ? "\n" : " ");
+    }
+    sb_printf(bb,
+        "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
+        "         * it does not match the empty string. */\n"
+        "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
+        "        took = %s(subject, subject_length,\n"
+        "                  (size_t)ref_start, (size_t)ref_end,\n"
+        "                  scan_position);\n",
+        v->p, fn);
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    /* §3.8's WORK CHARGE, through the SAME `vm_work` primitive every other
+     * charge site uses — one call, one truth, and a no-op on an artifact
+     * with no budget. `took` on success; on failure the entry's negative
+     * encoding carries the PREFIX it compared, so the bytes the fail label
+     * never sees are charged EITHER WAY. Without it `(a*)\1` over a long
+     * subject does unbounded byte comparison per step and DD-2's
+     * robustness claim is quietly false for this module's whole
+     * population. */
+    vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
+               "backreference compare: the bytes it examined, which the "
+               "fail label never sees");
+    sb_printf(bb,
+        "        if (took < 0) goto %s_fail;\n"
+        "        scan_position += (size_t)took;\n"
+        "        goto %s_L%d;\n"
+        "    }\n",
+        v->p, v->p, next);
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    vm_ev(v, VE_GOTO, next, 0, NULL);
+}
+
+/* A CONCATENATION: the left-leaning spine flattened iteratively, then each
+ * element emitted with its own follow-min.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAT arm (lens 11's
+ * F7). */
+static void vm_cat(Vm *v, int entry, const Ast *a, int next)
+{
+    /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
+     * for the same reason: a flat concatenation of any length must not
+     * overflow the C stack of pcrec's OWN emitter) */
+    int nsp = 0;
+    const Ast *t = a;
+    while (t->k == A_CAT) { nsp++; t = t->l; }
+    const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
+    int i = nsp;
+    t = a;
+    while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+    /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
+     * element at index j is followed by everything after it plus this
+     * concatenation's own follow. Computed as a SUFFIX SUM in one backward
+     * pass — `minw` per element rather than per element-pair — so the
+     * threading costs one walk over the spine and not one per position.
+     *
+     * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
+     * concatenation's own, i.e. what the caller set. The leftmost element
+     * (`t`, which the flattening loop peeled off the bottom of the spine)
+     * takes `sfx[0]`. */
+    long long *sfx = arena_alloc(&v->cx->arena,
+                                 (size_t)(nsp + 1) * sizeof(long long));
+    sfx[nsp] = v->fmin;
+    for (int j = nsp - 1; j >= 0; j--)
+        sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
+    int cur = entry;
+    int nx = vm_label(v);
+    vm_emit_f(v, cur, t, nx, sfx[0]);
+    cur = nx;
+    for (int j = 0; j < nsp; j++) {
+        int after = (j + 1 == nsp) ? next : vm_label(v);
+        vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
+        cur = after;
+    }
+}
+
 /* THE DISPATCHER: emits `a`'s VM code at label `entry`, continuing at
  * `next` on success and falling to the enclosing fail label otherwise —
  * recursively, one exhaustive `AKind` arm per construct, each choosing
@@ -7862,287 +8172,10 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, next);
         return;
     case A_WORDB:
-    case A_NWORDB: {
-        /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
-         *
-         * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
-         * rather than defensive padding. The natural spelling —
-         * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
-         * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
-         * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
-         * must short-circuit before any dereference. That is K27's exact
-         * class: undefined behaviour in EMITTED code, which a user compiling
-         * a generated matcher under their own -fsanitize=undefined sees
-         * pcrec's name on.
-         *
-         * Out-of-subject counts as NON-WORD, which is what makes the guard
-         * and the semantics the same expression: a failed bounds test yields
-         * 0, which is exactly the value the missing byte would contribute.
-         *
-         * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
-         * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
-         * by content, so a pattern using both emits ONE bitmap and the two
-         * constructs cannot disagree about what a word character is. */
-        int wi = vm_cls(v, pcrec_cls_word_esc);
-        bool neg = a->k == A_NWORDB;
-        vm_lbl(v, entry, NULL);
-        vm_ev(v, VE_ASSERT, next, 0,
-              neg ? "\\B not a word boundary" : "\\b word boundary");
-        sb_puts(b, "    if (((scan_position > 0 && (");
-        vm_cls_test(v, b, wi, "subject[scan_position-1]");
-        sb_puts(b, ")) ");
-        sb_puts(b, neg ? "==" : "!=");
-        sb_puts(b, " (scan_position < subject_length && (");
-        vm_cls_test(v, b, wi, "subject[scan_position]");
-        sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
-        vm_fail(v);
-        return;
-    }
-    case A_CAP: {
-        /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
-         * position, caps[k][1] when it passes the closing one. Undo is EXACT
-         * RESTORE of the previous value, never a clear — the trail, not this
-         * site, is where that lives.
-         *
-         * [M6.5.2] EXCEPT FOR A MARKED GROUP — one a backreference names —
-         * where the pair is PUBLISHED TOGETHER AT THE CLOSE
-         * (backrefs_design.md §3.2, `vm_slot_pend`'s comment for the two
-         * measured refutations of write-on-traverse). The open position goes
-         * to the pending slot; the close writes both published slots from it.
-         *
-         * WRITE-ON-TRAVERSE IS UNOBSERVABLE WITHOUT A BACKREFERENCE, which is
-         * why the correction is scoped rather than universal: at match
-         * completion every group is closed and the published pair equals what
-         * write-on-traverse leaves. The 5,808-cell sweep's backref-free
-         * control arm is 0 divergences in BOTH disciplines, and §11.3's
-         * byte-identity gate then holds by construction — an unmarked group
-         * takes the same two lines it always did. */
-        const bool marked = vm_marked(v, a->u.cap.no);
-        int inner = vm_label(v), close = vm_label(v);
-        vm_lbl(v, entry, vm_rolef(v, "group %d opens", a->u.cap.no));
-        /* [ENG-BREP] SUPPRESSED inside a revdet loop's forward scan (v->nocap):
-         * a per-iteration write is exactly the trail growth that rung exists to
-         * remove, and §3.4's backward walk recovers the value the scan would
-         * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
-         * code and the number the capacities are sized from cannot disagree.
-         *
-         * [M6.5.2] THE SUPPRESSION COVERS THE PENDING SLOT TOO, and it must:
-         * the pending write and the pair it feeds are ONE publication, so
-         * suppressing half of it would leave the backward walk's reconstructed
-         * pair sitting beside a stale pending value from an earlier iteration.
-         * Writing it as one guarded block is what makes "in step with the
-         * pair" structural rather than a rule someone has to remember —
-         * sabotage row S118 drops the pending write alone. (The backward
-         * walk writes the published pair DIRECTLY, both halves adjacent, so it
-         * is already a publication in the sense a reference needs.) */
-        if (!v->nocap) {
-            if (marked)
-                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",
-                       vm_rolef(v, "group %d open, PENDING until this "
-                                   "iteration closes", a->u.cap.no));
-            else
-                vm_set(v, 2 * a->u.cap.no, "(ptrdiff_t)scan_position",
-                       vm_rolef(v, "group %d open, written on traverse",
-                                a->u.cap.no));
-        }
-        vm_goto(v, inner);
-        vm_emit(v, inner, a->l, close);
-        vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
-        if (!v->nocap) {
-            if (marked) {
-                /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
-                 * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
-                 * E1) builds, and E1's own four sites were all in
-                 * `vm_call`/`vm_splice`, so this one was never reached. */
-                vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
-                       vm_rolef(v, "group %d PUBLISHED: the pair goes out "
-                                   "together, so a reference never sees a "
-                                   "half-open span", a->u.cap.no));
-            }
-            vm_set(v, 2 * a->u.cap.no + 1, "(ptrdiff_t)scan_position",
-                   vm_rolef(v, "group %d close, written on traverse",
-                            a->u.cap.no));
-        }
-        vm_goto(v, next);
-        return;
-    }
-    case A_BREF: {
-        /* [M6.5.2] THE COMPARE (backrefs_design.md §3.2.3, §8.3).
-         *
-         * A chain of tests and a call. It reads the two PUBLISHED slots —
-         * never a saved copy — and the trail discipline is what makes that
-         * safe: the fail label rewinds to the popped frame's `trail_mark`
-         * BEFORE transferring control, so by the time any label runs
-         * `slot_values` holds exactly what that path published.
-         *
-         * THE UNSET TEST IS TOTAL, and only because of publish-at-close.
-         * `run_state_init` fills every slot with `PCREC_UNSET` once per search
-         * and the trail restores it on every rewind, so a PUBLISHED slot is
-         * UNSET iff no live path has published it. Under write-on-traverse the
-         * same sentence was FALSE for a re-entered group, and that is R32 E1
-         * (see `vm_slot_pend` for the two measured refutations).
-         *
-         * PCRE2 FAILS on an unset reference; it does not match empty.
-         * `^(a)?\1$` on "" is NO MATCH — measured, with python3 `re` agreeing
-         * on all eight such cells. `PCRE2_MATCH_UNSET_BACKREF` would flip two
-         * of them and is explicitly out of scope (§3.3).
-         *
-         * THE CHAIN IS §8.3's DUPNAMES RESOLUTION, emitted uniformly. For a
-         * reference to a duplicated name, `refs` is the whole name-run in
-         * ASCENDING GROUP NUMBER and the rule is "the FIRST member that is
-         * SET" — measured against four candidate rules over eighteen cells,
-         * with the "yy" cell killing "first by number" and the "xyy" cell
-         * killing "last set". PCRE2 does NOT retry later members when the
-         * first set one's COMPARE fails, which is what makes this a
-         * frame-free if/else chain rather than a choice point. For
-         * `nrefs == 1` it degenerates to a single `if`, which is the argument
-         * for carrying the set uniformly: the dupnames path is the ordinary
-         * path with the chain length at one, not a second, rarer,
-         * less-tested path.
-         *
-         * "SET" INCLUDES SET-TO-EMPTY, and testing only the START slot is what
-         * gets that right: `ref_start == ref_end` is a published empty
-         * capture, the entry returns 0, and the reference succeeds having
-         * consumed nothing. An implementation testing `ref_end > ref_start` as
-         * a proxy for "is it set" turns every empty capture into a failure —
-         * sabotage row S105.
-         *
-         * `ref_start <= ref_end` IS STRUCTURAL, not hoped for: a published
-         * pair records the start before the body ran and the end after it, so
-         * the subtraction the entry makes cannot underflow. That is the whole
-         * memory-safety half of publish-at-close, and the entry's contract
-         * states the precondition rather than paying for a runtime check.
-         *
-         * THE SEAM CALL IS NOT AN OPTIMISATION BOUNDARY. The compare must
-         * route through the encoding residual FROM BIRTH (D58 scope item 3):
-         * an inline `(s[i] | 32) == (s[j] | 32)` here is byte arithmetic that
-         * is correct today and silently wrong under a UTF-8 backend, where one
-         * captured character can fold to two and the consumed LENGTH stops
-         * equalling `ref_end - ref_start`. That is why the entry returns a
-         * length rather than a bool, and why there are TWO entries rather than
-         * one with a `caseless` flag — D18/D23's rule is that an option
-         * compiles away, and D23 measured a runtime fold indirection costing
-         * 26% on a pattern with no letters in it. Sabotage row S109 inlines
-         * the compare, and the codegen check's fixture-declared per-site count
-         * is its only possible detector: inlining changes NO ANSWER under the
-         * byte backend. */
-        StrBuf *bb = v->b;
-        const char *fn;
-        /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
-         * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
-         * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
-         * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
-         * not compile. Caught by the corpus within one run; recorded because
-         * `-Wall -Wextra` does not include `-Wshadow`. */
-        const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_BREF_CASELESS
-                                                : PCREC_ENCE_BREF;
-        /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
-         * EMITTED, and this is `engine_callable`'s one consumer on the compile
-         * path (enc.h). DD-12 (7) forbids the matching machinery from
-         * depending on the encoding, and `tests/codegen`'s [M5-SEAM] check
-         * enforces it from OUTSIDE, on the artifact. This is the same rule
-         * enforced from INSIDE, at the one site that could break it: an
-         * emitter may route a construct through a residual entry only if the
-         * backend says that entry may be called from an engine body.
-         *
-         * A backend whose compare declared `engine_callable = false` would
-         * otherwise emit an artifact the codegen check then rejects — a
-         * failure two steps and one test run away from its cause. Refusing
-         * here makes it one step and names it. Unreachable for the byte
-         * backend, which declares both compare entries callable; it is the
-         * NEXT backend this line is for. */
-        if (!pcrec_enc_entry_engine_callable(
-                pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
-            ctx_fail(v->cx, 0,
-                     "internal error: this encoding's backreference compare is "
-                     "not declared engine-callable, so it cannot be routed "
-                     "through the seam from an engine body");
-        v->enc_mask |= seam_entry;
-        fn = vm_rolef(v, "%s_bref_match%s", v->p,
-                      a->u.bref.caseless ? "_caseless" : "");
-        vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
-                                  a->u.bref.nrefs == 1 ? "one group" : "a name-run",
-                                  a->u.bref.caseless ? ", caseless" : ""));
-        sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
-                    "ref_end = PCREC_UNSET, took;\n");
-        for (int i = 0; i < a->u.bref.nrefs; i++) {
-            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
-            const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
-            sb_printf(bb,
-                "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
-                "            ref_start = slot_values[%s];\n"
-                "            ref_end   = slot_values[%s];\n"
-                "        }%s",
-                i ? "else " : "", ns, ns, ne,
-                i + 1 == a->u.bref.nrefs ? "\n" : " ");
-        }
-        sb_printf(bb,
-            "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
-            "         * it does not match the empty string. */\n"
-            "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
-            "        took = %s(subject, subject_length,\n"
-            "                  (size_t)ref_start, (size_t)ref_end,\n"
-            "                  scan_position);\n",
-            v->p, fn);
-        vm_ev(v, VE_FAIL, 0, 0, NULL);
-        /* §3.8's WORK CHARGE, through the SAME `vm_work` primitive every other
-         * charge site uses — one call, one truth, and a no-op on an artifact
-         * with no budget. `took` on success; on failure the entry's negative
-         * encoding carries the PREFIX it compared, so the bytes the fail label
-         * never sees are charged EITHER WAY. Without it `(a*)\1` over a long
-         * subject does unbounded byte comparison per step and DD-2's
-         * robustness claim is quietly false for this module's whole
-         * population. */
-        vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
-                   "backreference compare: the bytes it examined, which the "
-                   "fail label never sees");
-        sb_printf(bb,
-            "        if (took < 0) goto %s_fail;\n"
-            "        scan_position += (size_t)took;\n"
-            "        goto %s_L%d;\n"
-            "    }\n",
-            v->p, v->p, next);
-        vm_ev(v, VE_FAIL, 0, 0, NULL);
-        vm_ev(v, VE_GOTO, next, 0, NULL);
-        return;
-    }
-    case A_CAT: {
-        /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
-         * for the same reason: a flat concatenation of any length must not
-         * overflow the C stack of pcrec's OWN emitter) */
-        int nsp = 0;
-        const Ast *t = a;
-        while (t->k == A_CAT) { nsp++; t = t->l; }
-        const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
-        int i = nsp;
-        t = a;
-        while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
-        /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
-         * element at index j is followed by everything after it plus this
-         * concatenation's own follow. Computed as a SUFFIX SUM in one backward
-         * pass — `minw` per element rather than per element-pair — so the
-         * threading costs one walk over the spine and not one per position.
-         *
-         * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
-         * concatenation's own, i.e. what the caller set. The leftmost element
-         * (`t`, which the flattening loop peeled off the bottom of the spine)
-         * takes `sfx[0]`. */
-        long long *sfx = arena_alloc(&v->cx->arena,
-                                     (size_t)(nsp + 1) * sizeof(long long));
-        sfx[nsp] = v->fmin;
-        for (int j = nsp - 1; j >= 0; j--)
-            sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
-        int cur = entry;
-        int nx = vm_label(v);
-        vm_emit_f(v, cur, t, nx, sfx[0]);
-        cur = nx;
-        for (int j = 0; j < nsp; j++) {
-            int after = (j + 1 == nsp) ? next : vm_label(v);
-            vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
-            cur = after;
-        }
-        return;
-    }
+    case A_NWORDB: vm_wordb(v, entry, a, next); return;
+    case A_CAP:    vm_cap(v, entry, a, next);   return;
+    case A_BREF:   vm_bref(v, entry, a, next);  return;
+    case A_CAT:    vm_cat(v, entry, a, next);   return;
     case A_ALT:
         vm_alt(v, entry, a, next);
         return;
