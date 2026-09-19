@@ -2586,6 +2586,199 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
+static void vm_count_slots(Vm *v, const Ast *a, long long repl,
+                           bool under_atomic);
+
+/* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
+ * counted here — the arm wave A2 landed deliberately incomplete and this
+ * wave completes, in the same edit as `vm_look`.
+ *
+ * The three lines below mirror `vm_look` site for site and read the SAME
+ * two predicates it does, which is the whole reason those predicates
+ * exist: an under-count is `vm_slot_lookmark(v, v->nlookmark++)` past
+ * `RX_NSLOTS`, an out-of-bounds write in EMITTED code (K27's class), and
+ * a missed `npush` lets an artifact past the resume-point cap.
+ *
+ * `false` is passed for `under_atomic`: a lookaround's cut, when it has
+ * one, is the ASSERTION's and not a lift of a quantifier beneath it — the
+ * same reading `vm_atomic`'s unlifted branch takes. Descending is
+ * required either way, because the body's own groups, marks and resume
+ * points are emitted through `vm_emit`.
+ *
+ * [REVW.2 step 13] Extracted verbatim from `vm_count_slots`'s A_LOOK arm,
+ * on `vm_cost`/`vm_cost_rep`'s own precedent: the dispatcher names what it
+ * dispatches and each fat arm is a function. */
+static void vm_count_slots_look(Vm *v, const Ast *a, long long repl)
+{
+    if (vm_look_needs_mark(a)) v->nlookmark++;
+    if (vm_look_needs_pos(a))  v->nlookpos++;
+    /* The negative form's ONE extra frame: the "body failed" continuation
+     * pushed BEFORE the body (§3.3). The positive and non-atomic forms
+     * push nothing of their own. */
+    if (a->u.look.neg) v->npush++;
+    /* [WAVE D] AND A LOOKBEHIND's PER-BRANCH RETRY FRAMES, one per
+     * NON-final branch (§3.4): `vm_look_behind` pushes `&&L_b(i+1)` for
+     * every branch but the last, so the count is `nbranch - 1`. EXACT
+     * here rather than the safe-direction union `vm_cost` takes, because
+     * this walk's under-count is the one that lets an artifact past the
+     * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
+     * what keeps `-1` from being charged to one. */
+    if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
+    vm_count_slots(v, a->l, repl, false);
+}
+
+/* [ENG-BREP] The A_REP arm of `vm_count_slots`: which RUNG this quantifier
+ * will take, and what that rung allocates. Extracted verbatim from the
+ * dispatcher ([REVW.2] step 13) on `vm_cost_rep`'s precedent — and it is the
+ * SAME rung decision read a second time, which is the standing hazard
+ * `vm_count_slots`'s own header states.
+ *
+ * The four rungs are tried in the emitter's order (cursor, revdet, counter,
+ * frames) and each one RETURNS, so the replication arithmetic at the bottom
+ * is reached by the frames rung alone — which is what the rungs above it are
+ * for. `repl` is the nesting product [K22] bounds; the three scratch locals
+ * are `vm_cursor_fits`'s out-parameters and have no other reader. */
+static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
+                               bool under_atomic)
+{
+    const bool cuts = vm_cuts(a, under_atomic);
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, nc = 0;
+    if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
+    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+        /* [ENG-BREP] the possessive span loop allocates NEITHER — no
+         * low-water slot and no resume point. Mirrors vm_cursor_rep's own
+         * branch; the two are the same condition read twice, which is the
+         * standing hazard this function's header comment is about. */
+        if (!cuts) {
+            v->nlow++;
+            v->npush++;              /* vm_cursor_rep: exactly one */
+        }
+        return;
+    }
+    /* [ENG-BREP] the REVERSE-DETERMINISTIC rung. Three slots, one loop, and
+     * NO REPLICATION — which is the whole point, and is also why this arm
+     * returns before the `maxcopies` line below ever sees the quantifier:
+     * `((a)|b){0,4000}c` demands one body copy here where the frames rung
+     * demanded four thousand.
+     *
+     * The push arithmetic, site for site with vm_revdet_rep:
+     *   1  the scan's exit frame (this iteration cannot run -> leave)
+     *   1  the retreat/extension frame, only when the loop can move
+     * and NOTHING for the backward walk, which is emitted as a
+     * DETERMINISTIC matcher with no choice point at all — reverse
+     * one-unambiguity is exactly the licence to dispatch on the next byte
+     * instead of pushing a frame per branch.
+     *
+     * The forward body is walked ONCE, or twice for a lazy loop that can
+     * move, because that shape emits a second forward copy for its
+     * extension step. The REVERSED body allocates no slots and pushes
+     * nothing, so it is not walked here at all. */
+    if (vm_revdet_fits(a, under_atomic)) {
+        int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+        int ng = 0;
+        bool move = vm_rev_canmove(a, cuts);
+        vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+        if (ng > v->nrevcaps) v->nrevcaps = ng;
+        v->nrev++;
+        v->npush += 1 + (move ? 1 : 0);
+        vm_count_slots(v, a->l, repl, false);
+        if (move && !a->u.rep.greedy) vm_count_slots(v, a->l, repl, false);
+        return;
+    }
+    /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
+     * it returns BEFORE the `copies` replication line — which is the whole
+     * point of the rung. The body is emitted K + (m mod K) times, not m
+     * times, so `((a)|ab){4000}` charges 8 copies against
+     * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
+     * thousand and was refused.
+     *
+     * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
+     * level (a mandatory copy that fails fails the quantifier), so the only
+     * frames are the body's own, counted by the walk below. ONE slot, the
+     * trailed counter.
+     *
+     * `repl` is passed through UNCHANGED rather than multiplied by the copy
+     * count: K22's product guard bounds the replication a nesting path
+     * performs, and this rung does not replicate per iteration — it emits a
+     * fixed K + residue whatever `m` is. Multiplying here would re-import
+     * exactly the explosion the rung removes. */
+    if (vm_counter_fits(v, a)) {
+        const int K = v->unroll_k;
+        const int nopt = a->u.rep.rmax - a->u.rep.rmin;
+        int copies = vm_counter_copies(v, a, cuts);
+        v->nctr++;
+        if (cuts) v->nmark++;   /* the cut mark, as the frames rung */
+        /* Emitted PUSH sites: the mandatory phase has none, and the
+         * optional phase has one per emitted optional copy — K inside the
+         * trip plus the residue's, which is what vm_opt_chain emits for
+         * the tail. The POSSESSIVE optional phase emits exactly ONE, at
+         * its single re-entered body. Emitted SITES, not live frames:
+         * vm_cost_rep counts the runtime requirement, which is still one
+         * per ITERATION for the non-possessive shapes and ONE for the
+         * whole loop possessified. */
+        /* [CC-CLANG fix, 2026-09-01] UNBOUNDED (`rmax < 0`) FIRST: there
+         * `nopt` is NEGATIVE (rmax - rmin = -1 - rmin), and feeding it to
+         * either arm below SUBTRACTS from npush — measured cancelling the
+         * replicated body's real pushes to zero on `(?:ab|b){8,}+c`,
+         * which then omitted the fail label's pop-and-resume dispatch
+         * from an artifact with ten live RX_PUSH sites (a miscompile:
+         * nomatch on every subject needing the second alternative). The
+         * unbounded tail is the frames star, one push site, possessive
+         * or not — the frames-rung arm below says the same for its own
+         * rmax < 0 case. */
+        v->npush += a->u.rep.rmax < 0 ? 1
+                  : cuts ? (nopt >= K ? 1 : nopt)
+                         : (nopt >= K ? K + nopt % K : nopt);
+        if (copies > v->maxcopies) v->maxcopies = copies;
+        for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
+        return;
+    }
+    /* frames rung: the star's own push, or one per optional copy. The
+     * possessive shapes push at the SAME sites (vm_poss_star once,
+     * vm_poss_chain once per optional copy) — what changes is how many are
+     * live at a time, not how many are emitted — so this arithmetic is
+     * unchanged. The cut mark is the one new slot. */
+    v->npush += a->u.rep.rmax < 0 ? 1 : (a->u.rep.rmax - a->u.rep.rmin);
+    if (cuts) v->nmark++;
+    /* Frames rung: the body's code is REPLICATED once per mandatory copy
+     * and once per optional copy, and each copy's own loops need their own
+     * slots — so the count must replicate exactly as the emitter does or
+     * two live loops would share one slot. */
+    {
+        int copies = a->u.rep.rmax < 0 ? a->u.rep.rmin + 1 : a->u.rep.rmax;
+        if (copies < 1) copies = 1;
+        /* THE REPLICATION FACTOR, recorded before any of it is emitted.
+         * Only the frames rung reaches here: a body the cursor rung
+         * accepts is single-path and compiles to a span loop whatever the
+         * count, so `a{0,65535}` never contributes. */
+        if (copies > v->maxcopies) v->maxcopies = copies;
+        /* [K22] and the factor's PRODUCT down the nesting path, checked
+         * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
+         * structurally cannot see this: nesting multiplies factors that are
+         * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
+         * placed here rather than after the walk for the only reason it
+         * exists — the walk is the cost. Overflow is not reachable: the
+         * running product is refused the moment it exceeds the limit, so it
+         * never carries more than limit * PCREC_MAX_REPEAT. */
+        {
+            long long total = repl * copies;
+            if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
+                ctx_fail(v->cx, 0,
+                         "pattern too large: nested bounded repeats would "
+                         "replicate a body %lld times in total (limit %d). "
+                         "Repetition counts MULTIPLY through nesting, so "
+                         "depth costs far more than any one count suggests "
+                         "-- lower a count, or reduce the nesting",
+                         total, PCREC_MAX_VM_REPLICATION_PRODUCT);
+            for (int i = 0; i < copies; i++)
+                vm_count_slots(v, a->l, total, false);
+        }
+        if (a->u.rep.rmax < 0 && vm_nullable(a->l)) v->nguard++;
+    }
+}
+
 /* Counts slot_values slots AND emitted resume points, in one walk that mirrors the
  * emitter's own rung decisions and its replication. Both counts have to be
  * exact for the same reason: a slot count that under-counts makes two live
@@ -2615,9 +2808,6 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                            bool under_atomic)
 {
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave E] `\K` allocates NO slot, and that is the mechanism rather
@@ -2640,38 +2830,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
-    /* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
-     * counted here — the arm wave A2 landed deliberately incomplete and this
-     * wave completes, in the same edit as `vm_look`.
-     *
-     * The three lines below mirror `vm_look` site for site and read the SAME
-     * two predicates it does, which is the whole reason those predicates
-     * exist: an under-count is `vm_slot_lookmark(v, v->nlookmark++)` past
-     * `RX_NSLOTS`, an out-of-bounds write in EMITTED code (K27's class), and
-     * a missed `npush` lets an artifact past the resume-point cap.
-     *
-     * `false` is passed for `under_atomic`: a lookaround's cut, when it has
-     * one, is the ASSERTION's and not a lift of a quantifier beneath it — the
-     * same reading `vm_atomic`'s unlifted branch takes. Descending is
-     * required either way, because the body's own groups, marks and resume
-     * points are emitted through `vm_emit`. */
-    case A_LOOK:
-        if (vm_look_needs_mark(a)) v->nlookmark++;
-        if (vm_look_needs_pos(a))  v->nlookpos++;
-        /* The negative form's ONE extra frame: the "body failed" continuation
-         * pushed BEFORE the body (§3.3). The positive and non-atomic forms
-         * push nothing of their own. */
-        if (a->u.look.neg) v->npush++;
-        /* [WAVE D] AND A LOOKBEHIND's PER-BRANCH RETRY FRAMES, one per
-         * NON-final branch (§3.4): `vm_look_behind` pushes `&&L_b(i+1)` for
-         * every branch but the last, so the count is `nbranch - 1`. EXACT
-         * here rather than the safe-direction union `vm_cost` takes, because
-         * this walk's under-count is the one that lets an artifact past the
-         * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
-         * what keeps `-1` from being charged to one. */
-        if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
-        vm_count_slots(v, a->l, repl, false);
-        return;
+    case A_LOOK: vm_count_slots_look(v, a, repl); return;
     /* [DD-14] A LOUD REFUSAL, and design §4.4c is emphatic that this site is
      * the one whose FIRST answer was wrong: "the first version said LEXICAL
      * ONLY and it was WRONG — the consequence is an out-of-bounds slot
@@ -2823,142 +2982,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
         vm_count_slots(v, a, repl, false);
         return;
-    case A_REP: {
-        const bool cuts = vm_cuts(a, under_atomic);
-        if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
-        if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
-            /* [ENG-BREP] the possessive span loop allocates NEITHER — no
-             * low-water slot and no resume point. Mirrors vm_cursor_rep's own
-             * branch; the two are the same condition read twice, which is the
-             * standing hazard this function's header comment is about. */
-            if (!cuts) {
-                v->nlow++;
-                v->npush++;              /* vm_cursor_rep: exactly one */
-            }
-            return;
-        }
-        /* [ENG-BREP] the REVERSE-DETERMINISTIC rung. Three slots, one loop, and
-         * NO REPLICATION — which is the whole point, and is also why this arm
-         * returns before the `maxcopies` line below ever sees the quantifier:
-         * `((a)|b){0,4000}c` demands one body copy here where the frames rung
-         * demanded four thousand.
-         *
-         * The push arithmetic, site for site with vm_revdet_rep:
-         *   1  the scan's exit frame (this iteration cannot run -> leave)
-         *   1  the retreat/extension frame, only when the loop can move
-         * and NOTHING for the backward walk, which is emitted as a
-         * DETERMINISTIC matcher with no choice point at all — reverse
-         * one-unambiguity is exactly the licence to dispatch on the next byte
-         * instead of pushing a frame per branch.
-         *
-         * The forward body is walked ONCE, or twice for a lazy loop that can
-         * move, because that shape emits a second forward copy for its
-         * extension step. The REVERSED body allocates no slots and pushes
-         * nothing, so it is not walked here at all. */
-        if (vm_revdet_fits(a, under_atomic)) {
-            int grp[PCREC_MAX_REVDET_BODY_GROUPS];
-            int ng = 0;
-            bool move = vm_rev_canmove(a, cuts);
-            vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
-            if (ng > v->nrevcaps) v->nrevcaps = ng;
-            v->nrev++;
-            v->npush += 1 + (move ? 1 : 0);
-            vm_count_slots(v, a->l, repl, false);
-            if (move && !a->u.rep.greedy) vm_count_slots(v, a->l, repl, false);
-            return;
-        }
-        /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
-         * it returns BEFORE the `copies` replication line — which is the whole
-         * point of the rung. The body is emitted K + (m mod K) times, not m
-         * times, so `((a)|ab){4000}` charges 8 copies against
-         * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
-         * thousand and was refused.
-         *
-         * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
-         * level (a mandatory copy that fails fails the quantifier), so the only
-         * frames are the body's own, counted by the walk below. ONE slot, the
-         * trailed counter.
-         *
-         * `repl` is passed through UNCHANGED rather than multiplied by the copy
-         * count: K22's product guard bounds the replication a nesting path
-         * performs, and this rung does not replicate per iteration — it emits a
-         * fixed K + residue whatever `m` is. Multiplying here would re-import
-         * exactly the explosion the rung removes. */
-        if (vm_counter_fits(v, a)) {
-            const int K = v->unroll_k;
-            const int nopt = a->u.rep.rmax - a->u.rep.rmin;
-            int copies = vm_counter_copies(v, a, cuts);
-            v->nctr++;
-            if (cuts) v->nmark++;   /* the cut mark, as the frames rung */
-            /* Emitted PUSH sites: the mandatory phase has none, and the
-             * optional phase has one per emitted optional copy — K inside the
-             * trip plus the residue's, which is what vm_opt_chain emits for
-             * the tail. The POSSESSIVE optional phase emits exactly ONE, at
-             * its single re-entered body. Emitted SITES, not live frames:
-             * vm_cost_rep counts the runtime requirement, which is still one
-             * per ITERATION for the non-possessive shapes and ONE for the
-             * whole loop possessified. */
-            /* [CC-CLANG fix, 2026-09-01] UNBOUNDED (`rmax < 0`) FIRST: there
-             * `nopt` is NEGATIVE (rmax - rmin = -1 - rmin), and feeding it to
-             * either arm below SUBTRACTS from npush — measured cancelling the
-             * replicated body's real pushes to zero on `(?:ab|b){8,}+c`,
-             * which then omitted the fail label's pop-and-resume dispatch
-             * from an artifact with ten live RX_PUSH sites (a miscompile:
-             * nomatch on every subject needing the second alternative). The
-             * unbounded tail is the frames star, one push site, possessive
-             * or not — the frames-rung arm below says the same for its own
-             * rmax < 0 case. */
-            v->npush += a->u.rep.rmax < 0 ? 1
-                      : cuts ? (nopt >= K ? 1 : nopt)
-                             : (nopt >= K ? K + nopt % K : nopt);
-            if (copies > v->maxcopies) v->maxcopies = copies;
-            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
-            return;
-        }
-        /* frames rung: the star's own push, or one per optional copy. The
-         * possessive shapes push at the SAME sites (vm_poss_star once,
-         * vm_poss_chain once per optional copy) — what changes is how many are
-         * live at a time, not how many are emitted — so this arithmetic is
-         * unchanged. The cut mark is the one new slot. */
-        v->npush += a->u.rep.rmax < 0 ? 1 : (a->u.rep.rmax - a->u.rep.rmin);
-        if (cuts) v->nmark++;
-        /* Frames rung: the body's code is REPLICATED once per mandatory copy
-         * and once per optional copy, and each copy's own loops need their own
-         * slots — so the count must replicate exactly as the emitter does or
-         * two live loops would share one slot. */
-        {
-            int copies = a->u.rep.rmax < 0 ? a->u.rep.rmin + 1 : a->u.rep.rmax;
-            if (copies < 1) copies = 1;
-            /* THE REPLICATION FACTOR, recorded before any of it is emitted.
-             * Only the frames rung reaches here: a body the cursor rung
-             * accepts is single-path and compiles to a span loop whatever the
-             * count, so `a{0,65535}` never contributes. */
-            if (copies > v->maxcopies) v->maxcopies = copies;
-            /* [K22] and the factor's PRODUCT down the nesting path, checked
-             * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
-             * structurally cannot see this: nesting multiplies factors that are
-             * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
-             * placed here rather than after the walk for the only reason it
-             * exists — the walk is the cost. Overflow is not reachable: the
-             * running product is refused the moment it exceeds the limit, so it
-             * never carries more than limit * PCREC_MAX_REPEAT. */
-            {
-                long long total = repl * copies;
-                if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
-                    ctx_fail(v->cx, 0,
-                             "pattern too large: nested bounded repeats would "
-                             "replicate a body %lld times in total (limit %d). "
-                             "Repetition counts MULTIPLY through nesting, so "
-                             "depth costs far more than any one count suggests "
-                             "-- lower a count, or reduce the nesting",
-                             total, PCREC_MAX_VM_REPLICATION_PRODUCT);
-                for (int i = 0; i < copies; i++)
-                    vm_count_slots(v, a->l, total, false);
-            }
-            if (a->u.rep.rmax < 0 && vm_nullable(a->l)) v->nguard++;
-        }
-        return;
-    }
+    case A_REP: vm_count_slots_rep(v, a, repl, under_atomic); return;
     }
 }
 
@@ -6210,6 +6234,153 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * §2.2 verdict. A lookahead's cut discards frames that are NOT dead, exactly
  * as an atomic group's does — which is the semantics, and is what §2.2's
  * atomicity discriminator measures. */
+/* ONE BRANCH of the lookbehind chain above: step back `widths[i]` characters
+ * through the encoding seam, run the branch FORWARD through `vm_emit`, and
+ * re-check at the END-CHECK that it finished exactly where the assertion
+ * started. `last` (derived from `i` and `m`) is the whole difference between
+ * a branch that pushes a retry frame for its successor and the final one that
+ * leaves by `rx_fail`; the four label arrays and `br` are the caller's, indexed
+ * here and never written.
+ *
+ * [REVW.2 step 14] Extracted verbatim from `vm_look_behind`'s per-branch loop
+ * (lens 11's F14): the loop body WAS the function, 126 of its 196 lines. The
+ * caller's `b` and `neg` moved down with it — neither had a reader outside the
+ * loop. Read `vm_look_behind`'s own header for notes 1 and 3, which this
+ * function's emitted text is governed by. */
+static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
+                                  int pslot, const Ast **br,
+                                  int *bl, int *bodl, int *endl)
+{
+    StrBuf *b = v->b;
+    const bool neg = a->u.look.neg;
+    const int k = a->u.look.widths[i];
+    const bool last = (i + 1 == m);
+
+    /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
+     * failing, so this role is kept short enough to survive a 2-digit
+     * branch index and width — a truncated comment in the emitted C is a
+     * sentence that stops mid-word, which is what the first version of
+     * this line shipped. */
+    vm_lbl(v, bl[i], vm_rolef(v,
+           "lookbehind branch %d of %d, fixed width %d: step back and run "
+           "the branch FORWARD%s", i + 1, m, k,
+           last ? " (the LAST branch: no retry frame)" : ""));
+
+    /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
+     * see this function's header, note 1, and sabotage row S135.
+     *
+     * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
+     * being unsatisfiable rather than an exception carved out for one
+     * body shape: "fewer than 0 characters precede the cursor" is false
+     * for every cursor, and `scan_position` is a `size_t`, so the emitted
+     * test would be `scan_position < 0` — which gcc proves false under
+     * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
+     * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
+     * degenerate bodies, which are legal in both oracles and ship. The
+     * back-step call and its sentinel check are still emitted at width 0,
+     * because D58's rule is about WHERE the arithmetic lives and not
+     * about whether this particular constant makes it a no-op. */
+    if (last) {
+        if (k > 0)
+            sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
+                      k, v->p);
+        /* A NOTE AND NOT AN `assert`, and the reason is the listing's
+          * own convention rather than taste: `VE_ASSERT` renders
+          * "-> L<a>" and `a` is the label taken when the assertion HOLDS
+          * (the `^` and `(?m)^` arms set it to `next`). These three sites
+          * leave by `rx_fail`, which is not a label id, so an ASSERT event
+          * here would print a confident `-> L0` naming a label the code
+          * never jumps to. */
+        vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
+              "lookbehind: fewer than %d characters precede the cursor, "
+              "and this is the last branch -- the assertion fails here", k)
+              : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                "guard is emitted -- the condition it would test is false "
+                "for every cursor");
+    } else {
+        if (k > 0) {
+            sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
+                      k, v->p, bl[i + 1]);
+            vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
+                  "lookbehind: fewer than %d characters precede the "
+                  "cursor, so try the next branch", k));
+        } else {
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                  "guard is emitted -- the condition it would test is "
+                  "false for every cursor");
+        }
+        vm_push(v, bl[i + 1],
+                "lookbehind: the NEXT-BRANCH continuation -- this branch's "
+                "body failing retreats into the branch written after it");
+    }
+
+    {
+        vm_work(v, vm_rolef(v, "%d", k),
+                "work charge: the back-step, charged as the "
+                "compile-time width rather than the runtime cost "
+                "so the accounting does not depend on the "
+                "encoding backend");
+    }
+
+    /* THE SEAM CALL. Never `scan_position - k` here: that is byte
+     * arithmetic which is correct today and silently wrong under a UTF-8
+     * backend, it is what D58 scope item 3 exists to prevent, and the
+     * [M6.6] plan row forbids it in its own text. Sabotage row S133
+     * inlines it and the [M5-SEAM] fixture-declared per-site count is its
+     * only possible detector, because inlining changes NO ANSWER under
+     * this backend. */
+    sb_printf(b, "    scan_position = %s_back_step(subject, "
+                 "subject_length, scan_position, %d);\n", v->p, k);
+    vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
+          "lookbehind: the ENCODING SEAM's back-step, %d character%s",
+          k, k == 1 ? "" : "s"));
+    sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
+              v->p, v->p);
+    vm_ev(v, VE_NOTE, 0, 0,
+          "lookbehind: the back-step ran off the start of the subject -- "
+          "dead under the byte backend, where the guard above is exact");
+    vm_goto(v, bodl[i]);
+
+    /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
+    vm_emit(v, bodl[i], br[i], endl[i]);
+
+    vm_lbl(v, endl[i], neg
+           ? "lookbehind END-CHECK (negative): the branch must finish "
+             "exactly where the assertion started. On THIS polarity a "
+             "declined branch would be the assertion SUCCEEDING, i.e. a "
+             "FALSE MATCH, so a disagreement returns HARD"
+           : "lookbehind END-CHECK: the branch must finish exactly where "
+             "the assertion started -- the only runtime evidence that the "
+             "width analysis and this emission agree");
+    {
+        /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
+         * there is no size here to get wrong. It used to be a hand-picked
+         * 64, which silently truncated -- its content reaches prefix +
+         * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
+        const char *sl = vm_slot_expr(v, pslot);
+        if (neg) {
+            /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
+             * see this function's header comment, note 3, "WHICH
+             * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
+             * artifact's own inconsistency check firing. */
+            sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                         "return %s_R_INTERNAL;\n", sl, v->up);
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind end-check FAILED on the negative arm -- a "
+                  "hard return (RX_R_INTERNAL, below the give-up floor) "
+                  "rather than a decline, because a decline here is a "
+                  "false match");
+        } else {
+            sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                         "goto %s_fail;\n", sl, v->p);
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookbehind end-check FAILED -- this branch declines");
+        }
+    }
+    vm_goto(v, okl);
+}
+
 /* [M6.6.2 wave D] THE LOOKBEHIND's BRANCH CHAIN (design §3.4), emitted here
  * rather than inline in `vm_look` because it is the one part of this
  * construct that is a LOOP over a table and everything else is straight-line.
@@ -6324,9 +6495,7 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * disagrees with `nbranch` is `ctx_fail`, not a silently mispaired table. */
 static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 {
-    StrBuf *b = v->b;
     const int m = a->u.look.nbranch;
-    const bool neg = a->u.look.neg;
 
     /* [DD-14.LB] AND THIS IS NOW A LIVE DETECTOR RATHER THAN A GUARD AGAINST
      * THE IMPOSSIBLE. `widths == NULL` on a lookbehind is the PENDING state
@@ -6388,134 +6557,8 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 
     vm_goto(v, bl[0]);
 
-    for (int i = 0; i < m; i++) {
-        const int k = a->u.look.widths[i];
-        const bool last = (i + 1 == m);
-
-        /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
-         * failing, so this role is kept short enough to survive a 2-digit
-         * branch index and width — a truncated comment in the emitted C is a
-         * sentence that stops mid-word, which is what the first version of
-         * this line shipped. */
-        vm_lbl(v, bl[i], vm_rolef(v,
-               "lookbehind branch %d of %d, fixed width %d: step back and run "
-               "the branch FORWARD%s", i + 1, m, k,
-               last ? " (the LAST branch: no retry frame)" : ""));
-
-        /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
-         * see this function's header, note 1, and sabotage row S135.
-         *
-         * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
-         * being unsatisfiable rather than an exception carved out for one
-         * body shape: "fewer than 0 characters precede the cursor" is false
-         * for every cursor, and `scan_position` is a `size_t`, so the emitted
-         * test would be `scan_position < 0` — which gcc proves false under
-         * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
-         * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
-         * degenerate bodies, which are legal in both oracles and ship. The
-         * back-step call and its sentinel check are still emitted at width 0,
-         * because D58's rule is about WHERE the arithmetic lives and not
-         * about whether this particular constant makes it a no-op. */
-        if (last) {
-            if (k > 0)
-                sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
-                          k, v->p);
-            /* A NOTE AND NOT AN `assert`, and the reason is the listing's
-              * own convention rather than taste: `VE_ASSERT` renders
-              * "-> L<a>" and `a` is the label taken when the assertion HOLDS
-              * (the `^` and `(?m)^` arms set it to `next`). These three sites
-              * leave by `rx_fail`, which is not a label id, so an ASSERT event
-              * here would print a confident `-> L0` naming a label the code
-              * never jumps to. */
-            vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
-                  "lookbehind: fewer than %d characters precede the cursor, "
-                  "and this is the last branch -- the assertion fails here", k)
-                  : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
-                    "guard is emitted -- the condition it would test is false "
-                    "for every cursor");
-        } else {
-            if (k > 0) {
-                sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
-                          k, v->p, bl[i + 1]);
-                vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
-                      "lookbehind: fewer than %d characters precede the "
-                      "cursor, so try the next branch", k));
-            } else {
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
-                      "guard is emitted -- the condition it would test is "
-                      "false for every cursor");
-            }
-            vm_push(v, bl[i + 1],
-                    "lookbehind: the NEXT-BRANCH continuation -- this branch's "
-                    "body failing retreats into the branch written after it");
-        }
-
-        {
-            vm_work(v, vm_rolef(v, "%d", k),
-                    "work charge: the back-step, charged as the "
-                    "compile-time width rather than the runtime cost "
-                    "so the accounting does not depend on the "
-                    "encoding backend");
-        }
-
-        /* THE SEAM CALL. Never `scan_position - k` here: that is byte
-         * arithmetic which is correct today and silently wrong under a UTF-8
-         * backend, it is what D58 scope item 3 exists to prevent, and the
-         * [M6.6] plan row forbids it in its own text. Sabotage row S133
-         * inlines it and the [M5-SEAM] fixture-declared per-site count is its
-         * only possible detector, because inlining changes NO ANSWER under
-         * this backend. */
-        sb_printf(b, "    scan_position = %s_back_step(subject, "
-                     "subject_length, scan_position, %d);\n", v->p, k);
-        vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
-              "lookbehind: the ENCODING SEAM's back-step, %d character%s",
-              k, k == 1 ? "" : "s"));
-        sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
-                  v->p, v->p);
-        vm_ev(v, VE_NOTE, 0, 0,
-              "lookbehind: the back-step ran off the start of the subject -- "
-              "dead under the byte backend, where the guard above is exact");
-        vm_goto(v, bodl[i]);
-
-        /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
-        vm_emit(v, bodl[i], br[i], endl[i]);
-
-        vm_lbl(v, endl[i], neg
-               ? "lookbehind END-CHECK (negative): the branch must finish "
-                 "exactly where the assertion started. On THIS polarity a "
-                 "declined branch would be the assertion SUCCEEDING, i.e. a "
-                 "FALSE MATCH, so a disagreement returns HARD"
-               : "lookbehind END-CHECK: the branch must finish exactly where "
-                 "the assertion started -- the only runtime evidence that the "
-                 "width analysis and this emission agree");
-        {
-            /* K38: `vm_slot_expr` is arena-owned and cannot truncate, so
-             * there is no size here to get wrong. It used to be a hand-picked
-             * 64, which silently truncated -- its content reaches prefix +
-             * "_" + a 47-byte slot name, 108 bytes at the legal maximum. */
-            const char *sl = vm_slot_expr(v, pslot);
-            if (neg) {
-                /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
-                 * see this function's header comment, note 3, "WHICH
-                 * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
-                 * artifact's own inconsistency check firing. */
-                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                             "return %s_R_INTERNAL;\n", sl, v->up);
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind end-check FAILED on the negative arm -- a "
-                      "hard return (RX_R_INTERNAL, below the give-up floor) "
-                      "rather than a decline, because a decline here is a "
-                      "false match");
-            } else {
-                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                             "goto %s_fail;\n", sl, v->p);
-                vm_ev(v, VE_NOTE, 0, 0,
-                      "lookbehind end-check FAILED -- this branch declines");
-            }
-        }
-        vm_goto(v, okl);
-    }
+    for (int i = 0; i < m; i++)
+        vm_look_behind_branch(v, a, i, m, okl, pslot, br, bl, bodl, endl);
     (void)mslot;
 }
 
@@ -7646,6 +7689,316 @@ static void vm_region(Vm *v, int i)
           "return to the caller through the frame's own label");
 }
 
+/* `\b` / `\B`. Emits the word-boundary assertion for both polarities —
+ * `neg` is the ONLY difference and it is one comparison operator, which is
+ * why the two kinds share an arm rather than two emitters.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_WORDB/A_NWORDB
+ * arm (lens 11's F7): the dispatcher's ten arms were six one-line
+ * delegations and four whole programs, so reading it told you six of the
+ * ten things it does. */
+static void vm_wordb(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
+     *
+     * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
+     * rather than defensive padding. The natural spelling —
+     * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
+     * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
+     * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
+     * must short-circuit before any dereference. That is K27's exact
+     * class: undefined behaviour in EMITTED code, which a user compiling
+     * a generated matcher under their own -fsanitize=undefined sees
+     * pcrec's name on.
+     *
+     * Out-of-subject counts as NON-WORD, which is what makes the guard
+     * and the semantics the same expression: a failed bounds test yields
+     * 0, which is exactly the value the missing byte would contribute.
+     *
+     * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
+     * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
+     * by content, so a pattern using both emits ONE bitmap and the two
+     * constructs cannot disagree about what a word character is. */
+    int wi = vm_cls(v, pcrec_cls_word_esc);
+    bool neg = a->k == A_NWORDB;
+    vm_lbl(v, entry, NULL);
+    vm_ev(v, VE_ASSERT, next, 0,
+          neg ? "\\B not a word boundary" : "\\b word boundary");
+    sb_puts(b, "    if (((scan_position > 0 && (");
+    vm_cls_test(v, b, wi, "subject[scan_position-1]");
+    sb_puts(b, ")) ");
+    sb_puts(b, neg ? "==" : "!=");
+    sb_puts(b, " (scan_position < subject_length && (");
+    vm_cls_test(v, b, wi, "subject[scan_position]");
+    sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
+    vm_fail(v);
+}
+
+/* A CAPTURING GROUP's two slot writes and the body between them.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAP arm (lens 11's
+ * F7), beside `vm_alt` / `vm_rep` / `vm_atomic` / `vm_look` / `vm_call`,
+ * which the file already named. */
+static void vm_cap(Vm *v, int entry, const Ast *a, int next)
+{
+    /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
+     * position, caps[k][1] when it passes the closing one. Undo is EXACT
+     * RESTORE of the previous value, never a clear — the trail, not this
+     * site, is where that lives.
+     *
+     * [M6.5.2] EXCEPT FOR A MARKED GROUP — one a backreference names —
+     * where the pair is PUBLISHED TOGETHER AT THE CLOSE
+     * (backrefs_design.md §3.2, `vm_slot_pend`'s comment for the two
+     * measured refutations of write-on-traverse). The open position goes
+     * to the pending slot; the close writes both published slots from it.
+     *
+     * WRITE-ON-TRAVERSE IS UNOBSERVABLE WITHOUT A BACKREFERENCE, which is
+     * why the correction is scoped rather than universal: at match
+     * completion every group is closed and the published pair equals what
+     * write-on-traverse leaves. The 5,808-cell sweep's backref-free
+     * control arm is 0 divergences in BOTH disciplines, and §11.3's
+     * byte-identity gate then holds by construction — an unmarked group
+     * takes the same two lines it always did. */
+    const bool marked = vm_marked(v, a->u.cap.no);
+    int inner = vm_label(v), close = vm_label(v);
+    vm_lbl(v, entry, vm_rolef(v, "group %d opens", a->u.cap.no));
+    /* [ENG-BREP] SUPPRESSED inside a revdet loop's forward scan (v->nocap):
+     * a per-iteration write is exactly the trail growth that rung exists to
+     * remove, and §3.4's backward walk recovers the value the scan would
+     * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
+     * code and the number the capacities are sized from cannot disagree.
+     *
+     * [M6.5.2] THE SUPPRESSION COVERS THE PENDING SLOT TOO, and it must:
+     * the pending write and the pair it feeds are ONE publication, so
+     * suppressing half of it would leave the backward walk's reconstructed
+     * pair sitting beside a stale pending value from an earlier iteration.
+     * Writing it as one guarded block is what makes "in step with the
+     * pair" structural rather than a rule someone has to remember —
+     * sabotage row S118 drops the pending write alone. (The backward
+     * walk writes the published pair DIRECTLY, both halves adjacent, so it
+     * is already a publication in the sense a reference needs.) */
+    if (!v->nocap) {
+        if (marked)
+            vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",
+                   vm_rolef(v, "group %d open, PENDING until this "
+                               "iteration closes", a->u.cap.no));
+        else
+            vm_set(v, 2 * a->u.cap.no, "(ptrdiff_t)scan_position",
+                   vm_rolef(v, "group %d open, written on traverse",
+                            a->u.cap.no));
+    }
+    vm_goto(v, inner);
+    vm_emit(v, inner, a->l, close);
+    vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
+    if (!v->nocap) {
+        if (marked) {
+            /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
+             * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
+             * E1) builds, and E1's own four sites were all in
+             * `vm_call`/`vm_splice`, so this one was never reached. */
+            vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
+                   vm_rolef(v, "group %d PUBLISHED: the pair goes out "
+                               "together, so a reference never sees a "
+                               "half-open span", a->u.cap.no));
+        }
+        vm_set(v, 2 * a->u.cap.no + 1, "(ptrdiff_t)scan_position",
+               vm_rolef(v, "group %d close, written on traverse",
+                        a->u.cap.no));
+    }
+    vm_goto(v, next);
+}
+
+/* A BACKREFERENCE: the DUPNAMES resolution chain, the unset test, the seam
+ * call and its work charge.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_BREF arm (lens 11's
+ * F7) — at ~80 lines the largest of the four, and the one whose inline
+ * presence hid five of this file's sabotage anchors inside a `switch`. */
+static void vm_bref(Vm *v, int entry, const Ast *a, int next)
+{
+    /* [M6.5.2] THE COMPARE (backrefs_design.md §3.2.3, §8.3).
+     *
+     * A chain of tests and a call. It reads the two PUBLISHED slots —
+     * never a saved copy — and the trail discipline is what makes that
+     * safe: the fail label rewinds to the popped frame's `trail_mark`
+     * BEFORE transferring control, so by the time any label runs
+     * `slot_values` holds exactly what that path published.
+     *
+     * THE UNSET TEST IS TOTAL, and only because of publish-at-close.
+     * `run_state_init` fills every slot with `PCREC_UNSET` once per search
+     * and the trail restores it on every rewind, so a PUBLISHED slot is
+     * UNSET iff no live path has published it. Under write-on-traverse the
+     * same sentence was FALSE for a re-entered group, and that is R32 E1
+     * (see `vm_slot_pend` for the two measured refutations).
+     *
+     * PCRE2 FAILS on an unset reference; it does not match empty.
+     * `^(a)?\1$` on "" is NO MATCH — measured, with python3 `re` agreeing
+     * on all eight such cells. `PCRE2_MATCH_UNSET_BACKREF` would flip two
+     * of them and is explicitly out of scope (§3.3).
+     *
+     * THE CHAIN IS §8.3's DUPNAMES RESOLUTION, emitted uniformly. For a
+     * reference to a duplicated name, `refs` is the whole name-run in
+     * ASCENDING GROUP NUMBER and the rule is "the FIRST member that is
+     * SET" — measured against four candidate rules over eighteen cells,
+     * with the "yy" cell killing "first by number" and the "xyy" cell
+     * killing "last set". PCRE2 does NOT retry later members when the
+     * first set one's COMPARE fails, which is what makes this a
+     * frame-free if/else chain rather than a choice point. For
+     * `nrefs == 1` it degenerates to a single `if`, which is the argument
+     * for carrying the set uniformly: the dupnames path is the ordinary
+     * path with the chain length at one, not a second, rarer,
+     * less-tested path.
+     *
+     * "SET" INCLUDES SET-TO-EMPTY, and testing only the START slot is what
+     * gets that right: `ref_start == ref_end` is a published empty
+     * capture, the entry returns 0, and the reference succeeds having
+     * consumed nothing. An implementation testing `ref_end > ref_start` as
+     * a proxy for "is it set" turns every empty capture into a failure —
+     * sabotage row S105.
+     *
+     * `ref_start <= ref_end` IS STRUCTURAL, not hoped for: a published
+     * pair records the start before the body ran and the end after it, so
+     * the subtraction the entry makes cannot underflow. That is the whole
+     * memory-safety half of publish-at-close, and the entry's contract
+     * states the precondition rather than paying for a runtime check.
+     *
+     * THE SEAM CALL IS NOT AN OPTIMISATION BOUNDARY. The compare must
+     * route through the encoding residual FROM BIRTH (D58 scope item 3):
+     * an inline `(s[i] | 32) == (s[j] | 32)` here is byte arithmetic that
+     * is correct today and silently wrong under a UTF-8 backend, where one
+     * captured character can fold to two and the consumed LENGTH stops
+     * equalling `ref_end - ref_start`. That is why the entry returns a
+     * length rather than a bool, and why there are TWO entries rather than
+     * one with a `caseless` flag — D18/D23's rule is that an option
+     * compiles away, and D23 measured a runtime fold indirection costing
+     * 26% on a pattern with no letters in it. Sabotage row S109 inlines
+     * the compare, and the codegen check's fixture-declared per-site count
+     * is its only possible detector: inlining changes NO ANSWER under the
+     * byte backend. */
+    StrBuf *bb = v->b;
+    const char *fn;
+    /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
+     * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
+     * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
+     * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
+     * not compile. Caught by the corpus within one run; recorded because
+     * `-Wall -Wextra` does not include `-Wshadow`. */
+    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_BREF_CASELESS
+                                            : PCREC_ENCE_BREF;
+    /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
+     * EMITTED, and this is `engine_callable`'s one consumer on the compile
+     * path (enc.h). DD-12 (7) forbids the matching machinery from
+     * depending on the encoding, and `tests/codegen`'s [M5-SEAM] check
+     * enforces it from OUTSIDE, on the artifact. This is the same rule
+     * enforced from INSIDE, at the one site that could break it: an
+     * emitter may route a construct through a residual entry only if the
+     * backend says that entry may be called from an engine body.
+     *
+     * A backend whose compare declared `engine_callable = false` would
+     * otherwise emit an artifact the codegen check then rejects — a
+     * failure two steps and one test run away from its cause. Refusing
+     * here makes it one step and names it. Unreachable for the byte
+     * backend, which declares both compare entries callable; it is the
+     * NEXT backend this line is for. */
+    if (!pcrec_enc_entry_engine_callable(
+            pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
+        ctx_fail(v->cx, 0,
+                 "internal error: this encoding's backreference compare is "
+                 "not declared engine-callable, so it cannot be routed "
+                 "through the seam from an engine body");
+    v->enc_mask |= seam_entry;
+    fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                  a->u.bref.caseless ? "_caseless" : "");
+    vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
+                              a->u.bref.nrefs == 1 ? "one group" : "a name-run",
+                              a->u.bref.caseless ? ", caseless" : ""));
+    sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
+                "ref_end = PCREC_UNSET, took;\n");
+    for (int i = 0; i < a->u.bref.nrefs; i++) {
+        const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
+        const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
+        sb_printf(bb,
+            "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
+            "            ref_start = slot_values[%s];\n"
+            "            ref_end   = slot_values[%s];\n"
+            "        }%s",
+            i ? "else " : "", ns, ns, ne,
+            i + 1 == a->u.bref.nrefs ? "\n" : " ");
+    }
+    sb_printf(bb,
+        "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
+        "         * it does not match the empty string. */\n"
+        "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
+        "        took = %s(subject, subject_length,\n"
+        "                  (size_t)ref_start, (size_t)ref_end,\n"
+        "                  scan_position);\n",
+        v->p, fn);
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    /* §3.8's WORK CHARGE, through the SAME `vm_work` primitive every other
+     * charge site uses — one call, one truth, and a no-op on an artifact
+     * with no budget. `took` on success; on failure the entry's negative
+     * encoding carries the PREFIX it compared, so the bytes the fail label
+     * never sees are charged EITHER WAY. Without it `(a*)\1` over a long
+     * subject does unbounded byte comparison per step and DD-2's
+     * robustness claim is quietly false for this module's whole
+     * population. */
+    vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
+               "backreference compare: the bytes it examined, which the "
+               "fail label never sees");
+    sb_printf(bb,
+        "        if (took < 0) goto %s_fail;\n"
+        "        scan_position += (size_t)took;\n"
+        "        goto %s_L%d;\n"
+        "    }\n",
+        v->p, v->p, next);
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    vm_ev(v, VE_GOTO, next, 0, NULL);
+}
+
+/* A CONCATENATION: the left-leaning spine flattened iteratively, then each
+ * element emitted with its own follow-min.
+ *
+ * [REVW.2 step 12] Extracted verbatim from `vm_emit`'s A_CAT arm (lens 11's
+ * F7). */
+static void vm_cat(Vm *v, int entry, const Ast *a, int next)
+{
+    /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
+     * for the same reason: a flat concatenation of any length must not
+     * overflow the C stack of pcrec's OWN emitter) */
+    int nsp = 0;
+    const Ast *t = a;
+    while (t->k == A_CAT) { nsp++; t = t->l; }
+    const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
+    int i = nsp;
+    t = a;
+    while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+    /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
+     * element at index j is followed by everything after it plus this
+     * concatenation's own follow. Computed as a SUFFIX SUM in one backward
+     * pass — `minw` per element rather than per element-pair — so the
+     * threading costs one walk over the spine and not one per position.
+     *
+     * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
+     * concatenation's own, i.e. what the caller set. The leftmost element
+     * (`t`, which the flattening loop peeled off the bottom of the spine)
+     * takes `sfx[0]`. */
+    long long *sfx = arena_alloc(&v->cx->arena,
+                                 (size_t)(nsp + 1) * sizeof(long long));
+    sfx[nsp] = v->fmin;
+    for (int j = nsp - 1; j >= 0; j--)
+        sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
+    int cur = entry;
+    int nx = vm_label(v);
+    vm_emit_f(v, cur, t, nx, sfx[0]);
+    cur = nx;
+    for (int j = 0; j < nsp; j++) {
+        int after = (j + 1 == nsp) ? next : vm_label(v);
+        vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
+        cur = after;
+    }
+}
+
 /* THE DISPATCHER: emits `a`'s VM code at label `entry`, continuing at
  * `next` on success and falling to the enclosing fail label otherwise —
  * recursively, one exhaustive `AKind` arm per construct, each choosing
@@ -7838,287 +8191,10 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, next);
         return;
     case A_WORDB:
-    case A_NWORDB: {
-        /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
-         *
-         * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
-         * rather than defensive padding. The natural spelling —
-         * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
-         * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
-         * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
-         * must short-circuit before any dereference. That is K27's exact
-         * class: undefined behaviour in EMITTED code, which a user compiling
-         * a generated matcher under their own -fsanitize=undefined sees
-         * pcrec's name on.
-         *
-         * Out-of-subject counts as NON-WORD, which is what makes the guard
-         * and the semantics the same expression: a failed bounds test yields
-         * 0, which is exactly the value the missing byte would contribute.
-         *
-         * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
-         * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
-         * by content, so a pattern using both emits ONE bitmap and the two
-         * constructs cannot disagree about what a word character is. */
-        int wi = vm_cls(v, pcrec_cls_word_esc);
-        bool neg = a->k == A_NWORDB;
-        vm_lbl(v, entry, NULL);
-        vm_ev(v, VE_ASSERT, next, 0,
-              neg ? "\\B not a word boundary" : "\\b word boundary");
-        sb_puts(b, "    if (((scan_position > 0 && (");
-        vm_cls_test(v, b, wi, "subject[scan_position-1]");
-        sb_puts(b, ")) ");
-        sb_puts(b, neg ? "==" : "!=");
-        sb_puts(b, " (scan_position < subject_length && (");
-        vm_cls_test(v, b, wi, "subject[scan_position]");
-        sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
-        vm_fail(v);
-        return;
-    }
-    case A_CAP: {
-        /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
-         * position, caps[k][1] when it passes the closing one. Undo is EXACT
-         * RESTORE of the previous value, never a clear — the trail, not this
-         * site, is where that lives.
-         *
-         * [M6.5.2] EXCEPT FOR A MARKED GROUP — one a backreference names —
-         * where the pair is PUBLISHED TOGETHER AT THE CLOSE
-         * (backrefs_design.md §3.2, `vm_slot_pend`'s comment for the two
-         * measured refutations of write-on-traverse). The open position goes
-         * to the pending slot; the close writes both published slots from it.
-         *
-         * WRITE-ON-TRAVERSE IS UNOBSERVABLE WITHOUT A BACKREFERENCE, which is
-         * why the correction is scoped rather than universal: at match
-         * completion every group is closed and the published pair equals what
-         * write-on-traverse leaves. The 5,808-cell sweep's backref-free
-         * control arm is 0 divergences in BOTH disciplines, and §11.3's
-         * byte-identity gate then holds by construction — an unmarked group
-         * takes the same two lines it always did. */
-        const bool marked = vm_marked(v, a->u.cap.no);
-        int inner = vm_label(v), close = vm_label(v);
-        vm_lbl(v, entry, vm_rolef(v, "group %d opens", a->u.cap.no));
-        /* [ENG-BREP] SUPPRESSED inside a revdet loop's forward scan (v->nocap):
-         * a per-iteration write is exactly the trail growth that rung exists to
-         * remove, and §3.4's backward walk recovers the value the scan would
-         * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
-         * code and the number the capacities are sized from cannot disagree.
-         *
-         * [M6.5.2] THE SUPPRESSION COVERS THE PENDING SLOT TOO, and it must:
-         * the pending write and the pair it feeds are ONE publication, so
-         * suppressing half of it would leave the backward walk's reconstructed
-         * pair sitting beside a stale pending value from an earlier iteration.
-         * Writing it as one guarded block is what makes "in step with the
-         * pair" structural rather than a rule someone has to remember —
-         * sabotage row S118 drops the pending write alone. (The backward
-         * walk writes the published pair DIRECTLY, both halves adjacent, so it
-         * is already a publication in the sense a reference needs.) */
-        if (!v->nocap) {
-            if (marked)
-                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",
-                       vm_rolef(v, "group %d open, PENDING until this "
-                                   "iteration closes", a->u.cap.no));
-            else
-                vm_set(v, 2 * a->u.cap.no, "(ptrdiff_t)scan_position",
-                       vm_rolef(v, "group %d open, written on traverse",
-                                a->u.cap.no));
-        }
-        vm_goto(v, inner);
-        vm_emit(v, inner, a->l, close);
-        vm_lbl(v, close, vm_rolef(v, "group %d closes", a->u.cap.no));
-        if (!v->nocap) {
-            if (marked) {
-                /* [REVW.2] a FIFTH hand-rolled slot-ref: `slot_values[` +
-                 * `vm_slot_expr` + `]` is exactly what `vm_slot_ref` (EP2's
-                 * E1) builds, and E1's own four sites were all in
-                 * `vm_call`/`vm_splice`, so this one was never reached. */
-                vm_set(v, 2 * a->u.cap.no, vm_slot_ref(v, vm_slot_pend(v, a->u.cap.no)),
-                       vm_rolef(v, "group %d PUBLISHED: the pair goes out "
-                                   "together, so a reference never sees a "
-                                   "half-open span", a->u.cap.no));
-            }
-            vm_set(v, 2 * a->u.cap.no + 1, "(ptrdiff_t)scan_position",
-                   vm_rolef(v, "group %d close, written on traverse",
-                            a->u.cap.no));
-        }
-        vm_goto(v, next);
-        return;
-    }
-    case A_BREF: {
-        /* [M6.5.2] THE COMPARE (backrefs_design.md §3.2.3, §8.3).
-         *
-         * A chain of tests and a call. It reads the two PUBLISHED slots —
-         * never a saved copy — and the trail discipline is what makes that
-         * safe: the fail label rewinds to the popped frame's `trail_mark`
-         * BEFORE transferring control, so by the time any label runs
-         * `slot_values` holds exactly what that path published.
-         *
-         * THE UNSET TEST IS TOTAL, and only because of publish-at-close.
-         * `run_state_init` fills every slot with `PCREC_UNSET` once per search
-         * and the trail restores it on every rewind, so a PUBLISHED slot is
-         * UNSET iff no live path has published it. Under write-on-traverse the
-         * same sentence was FALSE for a re-entered group, and that is R32 E1
-         * (see `vm_slot_pend` for the two measured refutations).
-         *
-         * PCRE2 FAILS on an unset reference; it does not match empty.
-         * `^(a)?\1$` on "" is NO MATCH — measured, with python3 `re` agreeing
-         * on all eight such cells. `PCRE2_MATCH_UNSET_BACKREF` would flip two
-         * of them and is explicitly out of scope (§3.3).
-         *
-         * THE CHAIN IS §8.3's DUPNAMES RESOLUTION, emitted uniformly. For a
-         * reference to a duplicated name, `refs` is the whole name-run in
-         * ASCENDING GROUP NUMBER and the rule is "the FIRST member that is
-         * SET" — measured against four candidate rules over eighteen cells,
-         * with the "yy" cell killing "first by number" and the "xyy" cell
-         * killing "last set". PCRE2 does NOT retry later members when the
-         * first set one's COMPARE fails, which is what makes this a
-         * frame-free if/else chain rather than a choice point. For
-         * `nrefs == 1` it degenerates to a single `if`, which is the argument
-         * for carrying the set uniformly: the dupnames path is the ordinary
-         * path with the chain length at one, not a second, rarer,
-         * less-tested path.
-         *
-         * "SET" INCLUDES SET-TO-EMPTY, and testing only the START slot is what
-         * gets that right: `ref_start == ref_end` is a published empty
-         * capture, the entry returns 0, and the reference succeeds having
-         * consumed nothing. An implementation testing `ref_end > ref_start` as
-         * a proxy for "is it set" turns every empty capture into a failure —
-         * sabotage row S105.
-         *
-         * `ref_start <= ref_end` IS STRUCTURAL, not hoped for: a published
-         * pair records the start before the body ran and the end after it, so
-         * the subtraction the entry makes cannot underflow. That is the whole
-         * memory-safety half of publish-at-close, and the entry's contract
-         * states the precondition rather than paying for a runtime check.
-         *
-         * THE SEAM CALL IS NOT AN OPTIMISATION BOUNDARY. The compare must
-         * route through the encoding residual FROM BIRTH (D58 scope item 3):
-         * an inline `(s[i] | 32) == (s[j] | 32)` here is byte arithmetic that
-         * is correct today and silently wrong under a UTF-8 backend, where one
-         * captured character can fold to two and the consumed LENGTH stops
-         * equalling `ref_end - ref_start`. That is why the entry returns a
-         * length rather than a bool, and why there are TWO entries rather than
-         * one with a `caseless` flag — D18/D23's rule is that an option
-         * compiles away, and D23 measured a runtime fold indirection costing
-         * 26% on a pattern with no letters in it. Sabotage row S109 inlines
-         * the compare, and the codegen check's fixture-declared per-site count
-         * is its only possible detector: inlining changes NO ANSWER under the
-         * byte backend. */
-        StrBuf *bb = v->b;
-        const char *fn;
-        /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
-         * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
-         * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
-         * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
-         * not compile. Caught by the corpus within one run; recorded because
-         * `-Wall -Wextra` does not include `-Wshadow`. */
-        const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_BREF_CASELESS
-                                                : PCREC_ENCE_BREF;
-        /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
-         * EMITTED, and this is `engine_callable`'s one consumer on the compile
-         * path (enc.h). DD-12 (7) forbids the matching machinery from
-         * depending on the encoding, and `tests/codegen`'s [M5-SEAM] check
-         * enforces it from OUTSIDE, on the artifact. This is the same rule
-         * enforced from INSIDE, at the one site that could break it: an
-         * emitter may route a construct through a residual entry only if the
-         * backend says that entry may be called from an engine body.
-         *
-         * A backend whose compare declared `engine_callable = false` would
-         * otherwise emit an artifact the codegen check then rejects — a
-         * failure two steps and one test run away from its cause. Refusing
-         * here makes it one step and names it. Unreachable for the byte
-         * backend, which declares both compare entries callable; it is the
-         * NEXT backend this line is for. */
-        if (!pcrec_enc_entry_engine_callable(
-                pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
-            ctx_fail(v->cx, 0,
-                     "internal error: this encoding's backreference compare is "
-                     "not declared engine-callable, so it cannot be routed "
-                     "through the seam from an engine body");
-        v->enc_mask |= seam_entry;
-        fn = vm_rolef(v, "%s_bref_match%s", v->p,
-                      a->u.bref.caseless ? "_caseless" : "");
-        vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
-                                  a->u.bref.nrefs == 1 ? "one group" : "a name-run",
-                                  a->u.bref.caseless ? ", caseless" : ""));
-        sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
-                    "ref_end = PCREC_UNSET, took;\n");
-        for (int i = 0; i < a->u.bref.nrefs; i++) {
-            const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
-            const char *ne = vm_slot_expr(v, 2 * a->u.bref.refs[i] + 1);
-            sb_printf(bb,
-                "        %sif (slot_values[%s] != PCREC_UNSET) {\n"
-                "            ref_start = slot_values[%s];\n"
-                "            ref_end   = slot_values[%s];\n"
-                "        }%s",
-                i ? "else " : "", ns, ns, ne,
-                i + 1 == a->u.bref.nrefs ? "\n" : " ");
-        }
-        sb_printf(bb,
-            "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
-            "         * it does not match the empty string. */\n"
-            "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
-            "        took = %s(subject, subject_length,\n"
-            "                  (size_t)ref_start, (size_t)ref_end,\n"
-            "                  scan_position);\n",
-            v->p, fn);
-        vm_ev(v, VE_FAIL, 0, 0, NULL);
-        /* §3.8's WORK CHARGE, through the SAME `vm_work` primitive every other
-         * charge site uses — one call, one truth, and a no-op on an artifact
-         * with no budget. `took` on success; on failure the entry's negative
-         * encoding carries the PREFIX it compared, so the bytes the fail label
-         * never sees are charged EITHER WAY. Without it `(a*)\1` over a long
-         * subject does unbounded byte comparison per step and DD-2's
-         * robustness claim is quietly false for this module's whole
-         * population. */
-        vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
-                   "backreference compare: the bytes it examined, which the "
-                   "fail label never sees");
-        sb_printf(bb,
-            "        if (took < 0) goto %s_fail;\n"
-            "        scan_position += (size_t)took;\n"
-            "        goto %s_L%d;\n"
-            "    }\n",
-            v->p, v->p, next);
-        vm_ev(v, VE_FAIL, 0, 0, NULL);
-        vm_ev(v, VE_GOTO, next, 0, NULL);
-        return;
-    }
-    case A_CAT: {
-        /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
-         * for the same reason: a flat concatenation of any length must not
-         * overflow the C stack of pcrec's OWN emitter) */
-        int nsp = 0;
-        const Ast *t = a;
-        while (t->k == A_CAT) { nsp++; t = t->l; }
-        const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
-        int i = nsp;
-        t = a;
-        while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
-        /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
-         * element at index j is followed by everything after it plus this
-         * concatenation's own follow. Computed as a SUFFIX SUM in one backward
-         * pass — `minw` per element rather than per element-pair — so the
-         * threading costs one walk over the spine and not one per position.
-         *
-         * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
-         * concatenation's own, i.e. what the caller set. The leftmost element
-         * (`t`, which the flattening loop peeled off the bottom of the spine)
-         * takes `sfx[0]`. */
-        long long *sfx = arena_alloc(&v->cx->arena,
-                                     (size_t)(nsp + 1) * sizeof(long long));
-        sfx[nsp] = v->fmin;
-        for (int j = nsp - 1; j >= 0; j--)
-            sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
-        int cur = entry;
-        int nx = vm_label(v);
-        vm_emit_f(v, cur, t, nx, sfx[0]);
-        cur = nx;
-        for (int j = 0; j < nsp; j++) {
-            int after = (j + 1 == nsp) ? next : vm_label(v);
-            vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
-            cur = after;
-        }
-        return;
-    }
+    case A_NWORDB: vm_wordb(v, entry, a, next); return;
+    case A_CAP:    vm_cap(v, entry, a, next);   return;
+    case A_BREF:   vm_bref(v, entry, a, next);  return;
+    case A_CAT:    vm_cat(v, entry, a, next);   return;
     case A_ALT:
         vm_alt(v, entry, a, next);
         return;
@@ -8301,6 +8377,63 @@ static void vm_strats_describe(unsigned mask, StrBuf *o)
         sb_puts(o, vm_strat_kindname[k]);
         first = false;
     }
+}
+
+/* THE LISTING's OWN TWO REPETITIONS, one home each (lens 11's F8).
+ *
+ * `vm_listing_slot_row` is the SLOTS section's row and the one place its
+ * three column widths are written; six families rendered it independently
+ * before this, which is six places for one width to drift.
+ * `vm_listing_slots` is a whole single-index family on top of it, including
+ * the empty-population sentence two of the six carry and the other four do
+ * not (NULL says so). The revdet family is the one that cannot use it: its
+ * three rows come from ONE loop index, so printing them family-by-family
+ * would reorder the section on any artifact with more than one revdet loop. */
+static void vm_listing_slot_row(StrBuf *o, int slot,
+                                const char *holds, const char *note)
+{
+    sb_printf(o, "  %-12d %-22s %s\n", slot, holds, note);
+}
+
+static void vm_listing_slots(StrBuf *o, Vm *v, int n, int (*slot)(Vm *, int),
+                             const char *holds, const char *note,
+                             const char *none_msg)
+{
+    if (n == 0) {
+        if (none_msg) sb_puts(o, none_msg);
+        return;
+    }
+    for (int i = 0; i < n; i++)
+        vm_listing_slot_row(o, slot(v, i), holds, note);
+}
+
+/* The revdet loop's three slots, in the order a reader needs them. */
+static const char *const vm_revdet_slot_desc[3][2] = {
+    { "revdet loop entry", "the capture walk's floor (S2.5)" },
+    { "revdet low-water",  "boundary after rmin iterations: the retreat's floor" },
+    { "revdet ceiling",    "maximal boundary reached: the lazy extension's cap" },
+};
+
+/* One home for "list every event of kind K, or say why there are none" — the
+ * RUNGS, STRATEGIES and PRUNING sections were the same twelve-line program
+ * three times, differing in the event kind, the name table, one column width
+ * and the empty-population sentence. `namew` is a real width at all three
+ * call sites (18 / 14 / 12), never 0, which is what keeps `%-*s` distinguishable
+ * from `%*s` here. */
+static void vm_listing_events(StrBuf *o, const Vm *v, VEKind kind,
+                              const char *const *kindname, int namew,
+                              const char *none_msg)
+{
+    int n = 0;
+    for (int i = 0; i < v->nev; i++) {
+        if (v->ev[i].k != kind) continue;
+        n++;
+        sb_printf(o, "  at L%-6d %-*s %s\n", v->ev[i].a, namew,
+                  kindname[v->ev[i].b],
+                  v->ev[i].role ? v->ev[i].role : "");
+    }
+    if (n == 0)
+        sb_puts(o, none_msg);
 }
 
 /* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
@@ -8554,45 +8687,34 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                               : "written by the ENTRY, not the VM (S3.4)")
                          : (w ? "written on traverse, trailed" : "never written"));
     }
-    if (v->nguard_total == 0)
-        sb_puts(o, "  (no empty-iteration guard slots: no nullable unbounded"
-                   " quantifier on the frames rung)\n");
-    for (int i = 0; i < v->nguard_total; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_guard(v, i),
-                  "empty-iteration guard", "where the current iteration began (S3.3)");
-    if (v->nlow == 0)
-        sb_puts(o, "  (no span-loop low-water slots: no cursor rung in this"
-                   " program)\n");
-    for (int i = 0; i < v->nlow; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_low(v, i),
-                  "span-loop low-water", "the loop's entry position (S2.5)");
-    for (int i = 0; i < v->nmark; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
-                  "cut mark",
-                  "resume-stack depth at entry -- a possessified loop's "
-                  "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])");
-    for (int i = 0; i < v->nrev; i++) {
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 0),
-                  "revdet loop entry", "the capture walk's floor (S2.5)");
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 1),
-                  "revdet low-water", "boundary after rmin iterations: the retreat's floor");
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 2),
-                  "revdet ceiling", "maximal boundary reached: the lazy extension's cap");
-    }
+    vm_listing_slots(o, v, v->nguard_total, vm_slot_guard,
+                     "empty-iteration guard",
+                     "where the current iteration began (S3.3)",
+                     "  (no empty-iteration guard slots: no nullable unbounded"
+                     " quantifier on the frames rung)\n");
+    vm_listing_slots(o, v, v->nlow, vm_slot_low,
+                     "span-loop low-water", "the loop's entry position (S2.5)",
+                     "  (no span-loop low-water slots: no cursor rung in this"
+                     " program)\n");
+    vm_listing_slots(o, v, v->nmark, vm_slot_mark, "cut mark",
+                     "resume-stack depth at entry -- a possessified loop's "
+                     "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])",
+                     NULL);
+    for (int i = 0; i < v->nrev; i++)
+        for (int j = 0; j < 3; j++)
+            vm_listing_slot_row(o, vm_slot_rev(v, i, j),
+                                vm_revdet_slot_desc[j][0],
+                                vm_revdet_slot_desc[j][1]);
     /* [M6.6.2] the lookaround's two families. They are listed SEPARATELY and
      * their counts can differ, which is the point: `nlookmark < nlookpos` says
      * this artifact contains a NON-ATOMIC form, and that is how a reader tells
      * the two atomicities apart in the listing (design §3.6). */
-    for (int i = 0; i < v->nlookmark; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookmark(v, i),
-                  "lookaround cut mark",
-                  "resume-stack depth at the assertion's entry -- the atomic "
-                  "and negative forms commit ([M6.6.2])");
-    for (int i = 0; i < v->nlookpos; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookpos(v, i),
-                  "lookaround cursor",
-                  "the entry position the assertion restores: a lookaround "
-                  "keeps the VERDICT and discards the POSITION");
+    vm_listing_slots(o, v, v->nlookmark, vm_slot_lookmark, "lookaround cut mark",
+                     "resume-stack depth at the assertion's entry -- the atomic "
+                     "and negative forms commit ([M6.6.2])", NULL);
+    vm_listing_slots(o, v, v->nlookpos, vm_slot_lookpos, "lookaround cursor",
+                     "the entry position the assertion restores: a lookaround "
+                     "keeps the VERDICT and discards the POSITION", NULL);
 
     /* ---- RUNGS -----------------------------------------------------------
      * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
@@ -8602,19 +8724,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * below is a VE_RUNG event vm_cursor_rep / vm_rep's frames fallthrough
      * appended at the same call that decided the rung. */
     sb_puts(o, "\nRUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)\n");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_RUNG) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-18s %s\n", v->ev[i].a,
-                      vm_rung_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: no quantifier in this program consulted the"
-                       " rung ladder at all)\n");
-    }
+    vm_listing_events(o, v, VE_RUNG, vm_rung_kindname, 18,
+                      "  (none: no quantifier in this program consulted the"
+                      " rung ladder at all)\n");
 
     /* ---- STRATEGIES ------------------------------------------------------
      * [ENG-BREP] the per-quantifier possessification verdict, as ACTED ON:
@@ -8624,18 +8736,8 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * things that could disagree — there is one call and it did both. */
     sb_puts(o, "\nSTRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier"
                " stamp)\n");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_STRAT) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-14s %s\n", v->ev[i].a,
-                      vm_strat_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: this program has no quantifier to possessify)\n");
-    }
+    vm_listing_events(o, v, VE_STRAT, vm_strat_kindname, 14,
+                      "  (none: this program has no quantifier to possessify)\n");
 
     /* ---- PRUNING ---------------------------------------------------------
      * [M4.6d] the per-quantifier MRL verdict, as ACTED ON. Same construction
@@ -8654,18 +8756,8 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                             " (sound: it under-estimates), so this artifact"
                             " prunes less than the analysis could"
                           : "");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_PRUNE) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-12s %s\n", v->ev[i].a,
-                      vm_prune_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: this program has no quantifier to bound)\n");
-    }
+    vm_listing_events(o, v, VE_PRUNE, vm_prune_kindname, 12,
+                      "  (none: this program has no quantifier to bound)\n");
 
     /* ---- PROGRAM -------------------------------------------------------*/
     sb_puts(o, "\nPROGRAM\n");

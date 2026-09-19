@@ -28,9 +28,9 @@ SAB_ID="S134-backstep-sentinel-unchecked"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/lookaround/lookbehind.rxt"
-SAB_DESC="vm_look_behind calls the back-step but does not compare the result against BACK_STEP_NONE, keeping the scan_position < k guard. Under the byte backend the guard is EXACT so the check is unreachable and NO ANSWER CHANGES; under any other encoding the guard is a fast path and the sentinel is the correctness"
+SAB_DESC="vm_look_behind_branch (vm_look_behind's per-branch loop) calls the back-step but does not compare the result against BACK_STEP_NONE, keeping the scan_position < k guard. Under the byte backend the guard is EXACT so the check is unreachable and NO ANSWER CHANGES; under any other encoding the guard is a fast path and the sentinel is the correctness"
 SAB_DOC_FIGURE="PREDICTED: codegen RED on the sentinel count for all seven residlb* fixtures; tests/lookaround and the lookaround differential GREEN — this row cannot be detected behaviourally under the byte backend and says so. Canonical figure owed from run_sabotage_matrix.sh S134."
 SAB_COUNT=1
-SAB_BEFORE='        sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
-                  v->p, v->p);'
-SAB_AFTER='        /* SABOTAGE S134: the sentinel comparison deleted */'
+SAB_BEFORE='    sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
+              v->p, v->p);'
+SAB_AFTER='    /* SABOTAGE S134: the sentinel comparison deleted */'

@@ -29,7 +29,7 @@ SAB_DOC_FIGURE="PREDICTED: the corpus RED on caseless.rxt; codegen RED (the resi
 # The PLANT and its INTENT are UNCHANGED; the row was re-driven SOLO after the
 # re-aim rather than assumed (see docs/dev/lanes/w2b_report.md).
 SAB_COUNT=1
-SAB_BEFORE='        fn = vm_rolef(v, "%s_bref_match%s", v->p,
-                      a->u.bref.caseless ? "_caseless" : "");'
-SAB_AFTER='        fn = vm_rolef(v, "%s_bref_match%s", v->p,
-                      0 ? "_caseless" : "");   /* SABOTAGE S106 */'
+SAB_BEFORE='    fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                  a->u.bref.caseless ? "_caseless" : "");'
+SAB_AFTER='    fn = vm_rolef(v, "%s_bref_match%s", v->p,
+                  0 ? "_caseless" : "");   /* SABOTAGE S106 */'

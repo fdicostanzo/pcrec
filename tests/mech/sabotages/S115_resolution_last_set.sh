@@ -22,5 +22,5 @@ SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="The emitted chain over a duplicated name's run drops its trailing else keyword, so every set member overwrites the previous one and resolution becomes \"LAST set\" instead of \"first set\". (?J)^(?<a>x)(?<a>y)\\k<a>\$ then matches \"xyy\" and not \"xyx\" -- the exact inversion of the measured answer"
 SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"xyx\"/\"xyy\" cell of dupnames.rxt. Canonical figure owed from run_sabotage_matrix.sh S115."
 SAB_COUNT=1
-SAB_BEFORE='                i ? "else " : "", ns, ns, ne,'
-SAB_AFTER='                "", ns, ns, ne,   /* SABOTAGE S115: no else, last wins */'
+SAB_BEFORE='            i ? "else " : "", ns, ns, ne,'
+SAB_AFTER='            "", ns, ns, ne,   /* SABOTAGE S115: no else, last wins */'

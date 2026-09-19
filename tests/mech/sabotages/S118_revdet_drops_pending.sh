@@ -27,9 +27,9 @@ SAB_HARNESS_TARGET="tests/backrefs/nested.rxt"
 SAB_DESC="A_CAP's PENDING write is emitted unconditionally while the published pair stays under the revdet suppression, so inside a reverse-deterministic loop's forward scan the two halves of one publication come apart. The reference then reads a pair published from a stale pending value"
 SAB_DOC_FIGURE="PREDICTED: brefdiff RED; the corpus RED on nested.rxt's group-in-body block ((?:(a|bb)x)+\\1). Canonical figure owed from run_sabotage_matrix.sh S118."
 SAB_COUNT=1
-SAB_BEFORE='        if (!v->nocap) {
-            if (marked)
-                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'
-SAB_AFTER='        if (1) {   /* SABOTAGE S118: the pending write escapes the suppression */
-            if (marked)
-                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'
+SAB_BEFORE='    if (!v->nocap) {
+        if (marked)
+            vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'
+SAB_AFTER='    if (1) {   /* SABOTAGE S118: the pending write escapes the suppression */
+        if (marked)
+            vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'

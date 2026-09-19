@@ -19,5 +19,5 @@ SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="The emitted chain tests slot_values[START] != slot_values[END] instead of != PCREC_UNSET, so a published EMPTY capture reads as unset and the reference FAILS. ^(x?)y\\1z\$ on \"yz\" answers nomatch where PCRE2 gives (0,2) with group 1 = (0,0); every non-empty cell still passes"
 SAB_DOC_FIGURE="PREDICTED: the corpus RED on numeric.rxt's EMPTY block; brefdiff RED. Canonical figure owed from run_sabotage_matrix.sh S105."
 SAB_COUNT=1
-SAB_BEFORE='                "        %sif (slot_values[%s] != PCREC_UNSET) {\n"'
-SAB_AFTER='                "        %sif (slot_values[%s] != slot_values[%s + 1]) {   /* SABOTAGE S105 */\n"'
+SAB_BEFORE='            "        %sif (slot_values[%s] != PCREC_UNSET) {\n"'
+SAB_AFTER='            "        %sif (slot_values[%s] != slot_values[%s + 1]) {   /* SABOTAGE S105 */\n"'
