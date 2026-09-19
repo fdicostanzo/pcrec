@@ -1686,3 +1686,38 @@ never edited afterwards.
   verified in the failing direction (a scratch floor set above the live
   population, reverted before commit). PARKED on `lane/allocpins`, not
   merged.
+
+- `w2y_report.md` — [REVW.2] WAVE 2 SLICE E, EP2 steps 12-15 (2026-09-18,
+  lane w2y, opus): the LAST four, so wave 2 is complete. F7 at both
+  dispatchers (`vm_count_slots_look`/`vm_count_slots_rep`;
+  `vm_wordb`/`vm_cap`/`vm_bref`/`vm_cat`), F14's `vm_look_behind_branch`,
+  F8's `vm_listing_events` + `vm_listing_slot_row`/`vm_listing_slots` —
+  verbatim relocations throughout, byte-identical on four streams per step
+  against a pinned branch-point binary, NOT an `abi` event.
+  Read §0 first: **EP2's anchor table is EXACT for all four steps (8/2/4/0)**,
+  and the report says when that table can be trusted rather than merely
+  scoring it — *a span-resolution anchor count is exact for a RELOCATION and a
+  floor for a data-flow change*, which is precisely why w2a's (7 vs 9) and
+  w2b's (6 vs 4) differed and these did not.
+  Also worth reading for four things. **§3.2 is the finding the next
+  sweep-builder needs**: the COMPOSITION arm — mandatory since w2a §4 item 6,
+  because nothing else witnesses `vm_splice`'s DELIVER block — does not reach
+  that block at all without `--features all`, since both deliver fixtures need
+  module `recursion` and `--source` passes no features; 29 files / 84 artifacts
+  at default against 32 / 96 with it, and neither figure reconciles with w2x's
+  recorded 30 / 72, so three lanes have now hand-rebuilt one mandatory arm from
+  prose and got three populations. **§3.3 is a vacuity check that a byte-identity
+  green cannot be**: step 15 writes `irsb`, which no `.c` gate reads, so the
+  3,518 listings were re-walked and classified by section — all nine rewritten
+  families render rows on real corpus patterns (revdet thinnest at 58) and all
+  five empty-population sentences render too; the census's own first draft read
+  three families wrong because its markers were substrings of those families'
+  own prose. **§4.1/§4.2 are the two re-aims that were not dedents**: S98's
+  dedented `SAB_BEFORE` would ALSO have matched `vm_cost_rep` (the line that
+  made the anchor unique was the `case` label the extraction deleted), and S133
+  carries two anchors in one file of which only ONE moved — a whole-row
+  mechanical dedent would have broken the correct half and then reported the
+  row red after the re-aim. And **§2/step 15 records the one repetition lens 11
+  named that cannot be folded**: the revdet slot family's three rows come from
+  one loop index, so any per-family walk reorders the section.
+  PARKED on `lane/w2y`, not merged.
