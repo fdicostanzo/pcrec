@@ -23997,3 +23997,18 @@ cannot ride make test anyway) — Frank agreed the plan: population pins →
 floors, absorbed pins exact; resource arm 2b asserts absorbed = 0; S259/S260
 built; battery gains an `alloc` stage; make test untouched. Row [ALLOC-PINS]
 added; lane allocpins (sonnet) launched to build it and record D110.
+
+## 2026-09-18 (night) — wave 2 slices C+D merged and gated; [ALLOC-PINS] built and merged
+
+**w2b's merge gate GREEN** (40/40, size log 0 movers → f6a895c0). **allocpins
+MERGED (935bd2ff)** — one plan.md conflict (both sides added the [ALLOC-PINS]
+row; the lane's completed row taken) — D110 recorded; floors at half the
+populations with a fired control; 2b asserts absorbed = 0; S259/S260 DETECTED
+solo; battery `alloc` stage (~40 s darwin, ~70 s Linux); make test untouched.
+**w2x MERGED (bbded35f)** — X8 complete across both emitters, Vm.up retired,
+the fragment census at exactly the six named exclusions; NOT an abi event.
+EP2 corrections worth carrying: "52 sites" = 52 lines / 44 statements / 37
+value stamps; "4 abutting" = 3 rows on one line; a mech re-aim must be
+COMMITTED before it can be driven. Post-merge on main: build, strict and
+alloc green (populations unmoved). Merge-gate `make test` for the pair
+launched detached (3h bound). Worktrees removed; no lanes alive.
