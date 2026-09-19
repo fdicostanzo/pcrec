@@ -4,6 +4,21 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **axes.def** — [REVW.4] wave 4 (D111, 2026-09-19): THE OPTIMIZATION-AXIS
+  TABLE, one X-macro row per axis carrying its `lib/pcrec.h` deny bit as a
+  TOKEN, its `-fno-X` spelling, its `-fX` force macro and spelling where it
+  has one, and its default polarity. Twenty rows / twenty-two bits today.
+  `limits.def`'s and `src/parse/rxt_schema.def`'s shape; read by `cli/main.c`
+  (`cli_axis_apply`, the whole `-f` grammar) and `src/dump/axes_dump.c`
+  (the `--list-axes` dump's deny/force macro-name, bit-number and `cli_flag`
+  columns). **It holds no copy of a bit VALUE** — a row names the macro and
+  the X-macro stringifies it, so the bit is spelled exactly once in this
+  tree, in the public header where it is a contract. Replaces three
+  hand-maintained spellings reconciled by two `awk` passes over
+  `cli/main.c`'s source text, both now deleted
+  (`tests/registry/axes_registry_check.sh`, `tests/axes/run_axes.sh`).
+  A Makefile prerequisite of every object and of `build/pcrec`, for
+  `limits.def`'s own recorded reason.
 - **compile_defs.c** — [REVW.3] `pcrec_compile_defs`, the `--source`
   composition entry, and NOTHING ELSE (lens 6's R1). It exists so that it,
   and not `compile.c`, is the object that names `pcrec_rxt_compose`: the
@@ -211,7 +226,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   DEFAULT.** That is what stops this file becoming a second home for
   `PCREC_SIZE_TERM_THRESHOLD` (`limits.def`), `VM_INLINE_CHAIN_MAX_BYTES`
   (`emit_vm.c`'s own `EMIT_VM` home) or the materiality bar
-  (`SIZE_TERM_BAR_DEFAULT`, beside `size_term_choose` in `compile.c`). The
+  (`PCREC_SIZE_TERM_BAR` — a `limits.def` row since [REVW.4] wave 4, beside
+  the threshold; it was a bare `SIZE_TERM_BAR_DEFAULT` in `compile.c`). The
   sentinel means "the dial does not touch this axis here", never "zero".
 
   **POSITION 0 IS A STRUCTURAL NO-OP BY CONSTRUCTION, not by care**: every

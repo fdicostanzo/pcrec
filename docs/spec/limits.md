@@ -55,9 +55,9 @@ so the numbers below have somewhere to attach.
   substituted whenever a caller leaves `pcrec_options.step_budget` at
   its sentinel, `PCREC_STEP_BUDGET_DEFAULT` (`lib/pcrec.h:301`) —
   `src/gen/emit_vm.c:7793`. The CLI overrides it per compile with
-  `--step-budget=N` (`cli/main.c:56-58`, parsed at `cli/main.c:272-282`);
+  `--step-budget=N` (`cli_parse`'s `--step-budget=` arm);
   `--fno-step-budget` emits no counter at all, for either budget
-  (`cli/main.c:64-66`, `174`). At the measured ~50M steps/s, 500M steps
+  (`cli_parse`'s `--fno-step-budget` arm). At the measured ~50M steps/s, 500M steps
   bounds an honest refusal at roughly 10 s on a pathological input
   (D51) — this is a robustness bound, not a latency guarantee (D22).
 - **Work budget default: 1,000,000,000** (D49, `docs/dev/decisions.md`).
@@ -67,7 +67,7 @@ so the numbers below have somewhere to attach.
   SEPARATE counter from the step budget — one work unit per forward-only
   operation the fail label does not see (a frame discarded at a cut, a
   frameless scan iteration) — set by `--work-budget=N`
-  (`cli/main.c:59-63`) and reachable only through the same
+  (`cli_parse`'s `--work-budget=` arm) and reachable only through the same
   `--fno-step-budget` gate (D49's ONE existence gate ruling). Both
   defaults land in `rx_info.step_budget`/`work_budget` (§6,
   `docs/spec/match_api.md`) as `-1` when disabled, a real count
@@ -81,8 +81,8 @@ so the numbers below have somewhere to attach.
   `<PREFIX>_RESUME_FRAMES`/`<PREFIX>_TRAIL_FRAMES` in the generated
   header (`docs/spec/match_api.md` §10.4) and mirrored on `rx_info` as
   `resume_frames`/`trail_frames` (same section) for a caller with no C
-  header. `--backtrack-frames=N` (`cli/main.c:67-69`, parsed at
-  `cli/main.c:295-303`) raises the compiled-in capacity per artifact,
+  header. `--backtrack-frames=N` (`cli_parse`'s
+  `--backtrack-frames=` arm) raises the compiled-in capacity per artifact,
   clamped at `VM_MAX_AUTO_RESUME_FRAMES`/`VM_MAX_AUTO_TRAIL_FRAMES`
   (`src/gen/emit_vm.c:100-101`) when left at auto-sizing. Both
   capacities are `0` on a DFA artifact, which has no resume stack to
@@ -800,32 +800,47 @@ sr_depth.rxt` that MATCH at the default `K` return a frames give-up under
    turns a match into a give-up would be an answer change no flag asked for,
    and §8's "refuse and document" does not cover it.
 
-## 8b. Two `limits.def` knees `--tune=N` moves
+## 8b. Three `limits.def` knees `--tune=N` moves
 
 `docs/spec/tuning.md` §2.20 states the general rule: a `selection knee` —
 a `limits.def` row that steers WHICH lowering the emitter takes rather
 than what pcrec accepts or refuses — carries no anchor in this document
 on its own, because this document promises resource BOUNDS and a knee
-promises nothing. **[OPT-DIAL] (2026-09-16) is why two of them earn one
-anyway**: `--tune=N` (`docs/spec/tuning.md` §5) now sets both per
+promises nothing. **[OPT-DIAL] (2026-09-16) is why three of them earn one
+anyway**: `--tune=N` (`docs/spec/tuning.md` §5) now sets each per
 POSITION, so a caller reading this page needs the values a dial position
 actually ships, not only the constant a plain build compiles with.
 
 | constant | override | −2 | −1 | 0 (default) | +1 | +2 |
 |---|---|---:|---:|---:|---:|---:|
 | `PCREC_SIZE_TERM_THRESHOLD` (bytes) | `-D` | **40,000** | **80,000** | 120,000 | — | — |
+| `PCREC_SIZE_TERM_BAR` (percent) | `none` | **95** | **85** | 75 | — | — |
 | `VM_INLINE_CHAIN_MAX_BYTES` (bytes) | `flag` | — | — | 4,096 | **8,192** | **8,192** |
 
-Both are `selection knee` rows of `pcrec --list-limits`
-(`src/core/limits.def:161`, `:352`). `PCREC_SIZE_TERM_THRESHOLD`'s
-override is `-D`, which means **no CLI override exists for it** — unlike
-the raise-only flags in §3.3, this constant moves only at pcrec's OWN
-build time, so `--tune=N` is the only way a caller moves it per compile.
-`VM_INLINE_CHAIN_MAX_BYTES`'s override is `flag`: `--vm-entry-shape=N`
-(`docs/spec/tuning.md` §2.21) overrides the term's decision outright, per
-`docs/spec/tuning.md` §1's narrowed property that explicit spelling beats
-the dial — one of only two rows in the whole policy table where a
-spelling already existed before the dial did.
+All three are `selection knee` rows of `pcrec --list-limits`.
+`PCREC_SIZE_TERM_THRESHOLD`'s override is `-D`, which means **no CLI
+override exists for it** — unlike the raise-only flags in §3.3, this
+constant moves only at pcrec's OWN build time, so `--tune=N` is the only
+way a caller moves it per compile. `PCREC_SIZE_TERM_BAR`'s override is
+`none`: there is no `-D` and no flag, so `--tune=N` is the ONLY lever of
+any kind on it. `VM_INLINE_CHAIN_MAX_BYTES`'s override is `flag`:
+`--vm-entry-shape=N` (`docs/spec/tuning.md` §2.21) overrides the term's
+decision outright, per `docs/spec/tuning.md` §1's narrowed property that
+explicit spelling beats the dial — one of only two rows in the whole
+policy table where a spelling already existed before the dial did.
+
+**`PCREC_SIZE_TERM_BAR` is new to the table as of 2026-09-19** ([REVW.4]
+wave 4, D106 addendum 3): it is the same number the unroll-K ladder has
+always used, moved out of a bare `#define` in `src/core/compile.c` so
+that both parameters of one ladder live in the one ruled home. No value
+moved and nothing a caller can observe about a COMPILE changed; what
+changed is that `pcrec --list-limits` now reports it, as row 58 of 58.
+It is also the table's first row whose `unit` is `percent` — a fraction
+of another row's own quantity rather than a count of anything — and the
+bar reads as a CEILING on the smaller K's artifact: at 75, a smaller K
+ships only if its bytes are at most 75 % of the default K's, i.e. only if
+it saves at least a quarter. A HIGHER bar is therefore a LOOSER
+requirement, which is why the size-leaning dial positions raise it.
 
 These are the two size-side ladder rows and the one speed-side entry-chain
 row `docs/spec/tuning.md` §5.4's policy table carries; that table is the

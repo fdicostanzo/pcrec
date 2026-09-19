@@ -312,14 +312,21 @@ directory asserts that the description and the shipped parser actually agree.
   registry's own check, a DIFFERENT registry from the SR-1 syntax table
   above. Reads `pcrec --list-axes`'s TSV (`src/dump/axes_dump.c`) against
   `docs/spec/tuning.md` (every documented `(bit N)` heading),
-  `cli/main.c` (the flag parser) and `docs/spec/match_api.md` §6.3 (the
-  D46 stamp family's own home) — three files the dump never opens, so
-  this is the INDEPENDENT side of the dump's own claim
+  the SHIPPED PARSER (each advertised `cli_flag` is RUN and must be
+  accepted) and `docs/spec/match_api.md` §6.3 (the D46 stamp family's own
+  home) — none of which the dump reads, so this is the INDEPENDENT side of
+  the dump's own claim. **[REVW.4] wave 4 (D111, 2026-09-19): the
+  `cli/main.c` leg used to be an `awk` pass over that file's SOURCE TEXT
+  reconciling the parser's spellings against the dump's; it is DELETED,
+  because both now derive from one `src/core/axes.def` row and the
+  comparison would be a table against itself. What replaced it is the live
+  acceptance probe above, which measures the one thing the shared row
+  cannot make true: that the grammar arm is still REACHED.**
   (`docs/spec/registry.md` §6/§7 states the boundary this dump does and
   does not prove). Three directions, every discrepancy named
   individually: (1) every dumped deny/force bit checked against
   `lib/pcrec.h`'s own definition and (where it has one) its CLI spelling
-  in `cli/main.c`; (2) both `tuning.md`'s documented bits and
+  driven live against `build/pcrec`; (2) both `tuning.md`'s documented bits and
   `lib/pcrec.h`'s own `1u << N` bits (range 4-31, DERIVED with no upper
   bound since optk's 2e2914e — a hard-coded `4-15` here would have filtered
   bit 16 away before comparing, and bit 17 after it) swept to confirm every
@@ -333,7 +340,9 @@ directory asserts that the description and the shipped parser actually agree.
   since they are emitted-artifact text the public header never declares;
   two named, cited exceptions in the script's own header (`RX_DFA_TABLE`'s
   composed `"mixed"`/`"none"`; the three ladder-fallback rung constants
-  with no individual deny flag). 53 checks total. Run via
+  with no individual deny flag). 53 checks total when this entry was
+  written; 102 today, and the count the script's own coverage guard
+  carries is the one to trust. Run via
   `run_registry_tests.sh` below (its own coverage-count guard: == 53 PASS
   lines, exact). **Two bugs found and fixed while writing it**: bash's
   `IFS=$'\t' read` collapses runs of empty tab-delimited fields — tab is
@@ -353,16 +362,32 @@ directory asserts that the description and the shipped parser actually agree.
 - **limits_check.sh** — [LIM-1] (D90, 2026-08-30): the numeric-limits
   table's own check, the SIXTH registry-family TSV surface's independent
   side. Three parts: the `--list-limits` row count pinned by NAME
-  MANIFEST (44, not a bare number); every ANCHORED row's value, comma-
+  MANIFEST (58 today, not a bare number); every ANCHORED row's value, comma-
   grouped, found within its own cited `docs/spec/limits.md` section
   (forward only — that document's prose is full of MEASURED WITNESS
   numbers unrelated to the table, so a blind reverse sweep would be the
-  K35 "population nobody counts" shape); and a bare policy-shaped
-  `#define`/enum-member found anywhere under `src/`/`cli`/`lib` OUTSIDE
-  `src/core/limits.def`, against a small NAMED, CITED allowlist (every
-  entry excluded from the table BY RULE at its own site — a local
-  algorithmic bound with its proof beside it, a debug-listing width, a
-  loop-iteration cap, an API sentinel). Wired into `run_registry_tests.sh`
+  K35 "population nobody counts" shape); and — **INVERTED 2026-09-19 by
+  D107 ([REVW.4] wave 4), the part that changed kind rather than
+  widening** — EVERY numeric `#define` and every explicitly-valued enum
+  member under `src/`/`cli`/`lib` outside `src/core/limits.def`, with NO
+  name filter at all, each required to be a table row or to sit on one of
+  TWO named, argued allowlists: the LIMIT list (a bound excluded from the
+  table by `limits.h`'s own rule — a local algorithmic bound with its
+  proof beside it, a structural constant, a debug-listing width, an
+  emitter rung knob, `prefix_k.c`'s seven cost-model coefficients) and the
+  NON-LIMIT list (sentinels, API enum values, schema versions, and
+  cardinalities/ordinals). Before D107 this part grepped for a ceiling
+  VOCABULARY in the constant's NAME and had missed a live constant twice,
+  both times repaired by widening the vocabulary. Two things keep the
+  inverted scan honest, because a classifier over an empty population
+  passes perfectly: a POPULATION FLOOR (`SCAN_FLOOR`, 30 against 40 found)
+  and a REACH arm that fails when any allowlist name stops being reached
+  by the scan. The scan masks comments and string-literal interiors first,
+  so the `#define`s the DFA emitter prints into its own artifacts are not
+  read as pcrec's constants, and it excludes ORDINAL enums (explicit
+  initializers exactly 0,1,2,… in member order — numbers that carry no
+  information, since deleting them changes no value) by a structural rule
+  the check states along with its blind spot. Wired into `run_registry_tests.sh`
   below AND as its own `limits` arm in `tests/mech/run_sabotage_matrix.sh`
   (never folded into `registry`, whose own comment says it deliberately
   skips any wrapper with a changed-PASS-COUNT-shaped coverage guard, which
@@ -374,7 +399,13 @@ directory asserts that the description and the shipped parser actually agree.
   `PCREC_MAX_REVDET_BODY_GROUPS` — now a bare alias). Sabotage rows
   S208 (a table value edited with the doc left stale) and S209 (a bare
   literal put back, the `VM_MAX_BODY_CAPS` regression re-introduced),
-  both DETECTED live.
+  both DETECTED live — joined by **S261** ([REVW.4] wave 4), the arm's own
+  row that D107 asked for: the unroll-K materiality bar comes back as a
+  hand-written `#define SIZE_TERM_BAR_LOCAL 75` at the SAME VALUE, so
+  nothing observable moves and only the one-home rule is broken. Its name
+  carries none of the vocabulary the pre-D107 filter keyed on, which is
+  why the row could not be written until the inversion landed: the
+  detector had no failing direction for its own central defect.
 
 ## What it asserts
 

@@ -47,6 +47,7 @@
  * diff. See design §0.1.
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #include "internal.h"
@@ -148,6 +149,68 @@ int pcrec_tune_parse(const char *s, int *out)
         *out = v;
         return 0;
     }
+}
+
+/* [REVW.4] wave 4 (L2-L2-7): THE `vm_entry_shape` RUNG NAMES, one home.
+ * The four rung names were spelled in TWO places — `src/gen/emit_vm.c`'s
+ * `<PREFIX>_VM_ENTRY_SHAPE` stamp ladder and `cli/main.c`'s own
+ * `--vm-entry-shape` menu — with `docs/spec/tuning.md` §2.21 as a third,
+ * prose copy. They live here beside the dial's own ordinal table because
+ * that is what a rung IS (an ordinal in the dial's direction, [CC-DIFF]
+ * STEP 2), and `src/core` is the lowest layer both readers sit above.
+ *
+ * Index IS the ordinal, `PCREC_VM_ENTRY_AUTO` (0) included — the emitter
+ * never asks for AUTO (it resolves the rung first) but the CLI's menu
+ * names it, so a table missing it would be a table with a hole. */
+static const char *const VM_ENTRY_NAMES[] = {
+    "auto", "plain", "shared", "forward", "inline"
+};
+
+const char *pcrec_vm_entry_shape_name(int shape)
+{
+    if (shape < 0 || shape > PCREC_VM_ENTRY_INLINE) return "";
+    return VM_ENTRY_NAMES[shape];
+}
+
+/* The menu a diagnostic prints: "0 auto, 1 plain, ...". `pcrec_tune_names`'
+ * bounded-join policy exactly (an ordered PREFIX, the separator under the
+ * same bound as the text it precedes). 44 bytes; its one caller passes
+ * 128. */
+void pcrec_vm_entry_shape_names(char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    buf[0] = 0;
+    for (int i = 0; i <= PCREC_VM_ENTRY_INLINE; i++) {
+        char item[32];
+        int ln = snprintf(item, sizeof item, "%s%d %s", k ? ", " : "",
+                          i, VM_ENTRY_NAMES[i]);
+        if (ln < 0 || k + (size_t)ln + 1 > cap) break;
+        memcpy(buf + k, item, (size_t)ln);
+        k += (size_t)ln;
+    }
+    buf[k] = 0;
+}
+
+/* [REVW.4] wave 4 (L2-L2-7): the alias menu a diagnostic prints, rendered
+ * from THE TABLE rather than written a second time in `cli/main.c`. The
+ * bounded-join policy is `pcrec_enc_names`' (src/enc/enc.c), for its reasons:
+ * an ordered PREFIX rather than a gap, and the separator written under the
+ * SAME bound as the name it follows, so a tight cap can never emit a
+ * dangling ", ". The menu is 44 bytes and its one caller passes 128. */
+void pcrec_tune_names(char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    for (int i = 0; i < 5; i++) {
+        const char *n = TUNE_TABLE[i].token;
+        size_t ln = strlen(n) + (k ? 2 : 0);
+        if (k + ln + 1 > cap) break;
+        if (k) { buf[k++] = ','; buf[k++] = ' '; }
+        memcpy(buf + k, n, strlen(n));
+        k += strlen(n);
+    }
+    buf[k] = 0;
 }
 
 /* THE THREE VALUE CELLS. Each returns the dial's value or 0, the em-dash

@@ -206,6 +206,7 @@ format changes.
   python EXPRESSION to mark; F2 and F3 verify against python `re` directly).
   Whoever wires `run_tune_dial.sh`'s own acceptance should read the sizes
   from this file's own header comments rather than re-measuring them,
-  and re-measure only if `src/core/tune.c`'s table or `SIZE_TERM_BAR_DEFAULT`
-  moves under it.
+  and re-measure only if `src/core/tune.c`'s table or `PCREC_SIZE_TERM_BAR`
+  (a `src/core/limits.def` row since [REVW.4] wave 4; it was the bare
+  `SIZE_TERM_BAR_DEFAULT` in `compile.c` before that) moves under it.
 

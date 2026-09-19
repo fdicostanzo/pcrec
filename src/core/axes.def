@@ -1,0 +1,154 @@
+/* src/core/axes.def — [REVW.4] wave 4 (D111, L1-X9): THE SINGLE SOURCE OF
+ * THE OPTIMIZATION-AXIS TABLE — each axis's option bit, its CLI spelling(s)
+ * and its default polarity, in one place, with every reader derived from it.
+ *
+ * WHY THIS FILE EXISTS. The 2026-09-17 code review found this table kept in
+ * THREE hand-maintained sources reconciled by TWO awk scrapers:
+ * `cli_parse`'s twenty-two `strcmp` arms (`cli/main.c`), the `DENY_NAMES`
+ * value->symbol table and the `cli_flag_of` (axis, candidate) ladder in
+ * `src/dump/axes_dump.c`, and the fifteen hand-typed `cli_flag` strings in
+ * `emit_predicate_axes` — with `tests/registry/axes_registry_check.sh` and
+ * `tests/axes/run_axes.sh` each running its OWN `awk` pass over
+ * `cli/main.c`'s TEXT to check the first two against each other. Frank ruled
+ * it built (D111, "Yes. I like single source"). The A3 cost INVERTS here:
+ * the two scrapers are DELETED rather than re-aimed, because a check that
+ * reconciles three sources has nothing left to reconcile once there is one.
+ *
+ * WHAT THIS TABLE IS NOT. It is NOT the home of the option BIT VALUES.
+ * Those live where they are a CONTRACT — `lib/pcrec.h`'s own enum, the only
+ * public header — and a row below names the macro as a TOKEN, so the bit is
+ * spelled exactly once in this tree and this file holds no copy of it to
+ * drift from. (`limits.def`'s rows may likewise reference an earlier row's
+ * own name.) That is why the ship-shape question D111 left open — whether
+ * `lib/pcrec.h`'s enumeration should become a generated block — does not
+ * arise: there is no duplication to generate away. See
+ * `docs/dev/lanes/w4_report.md` item 4 for the measured cost of the
+ * generated-block alternative and why this one is smaller in every column.
+ *
+ * THE ROW SHAPE, one line per AXIS:
+ *
+ *   PCREC_AXIS(deny_macro, deny_flag, force_macro, force_flag, default_state)
+ *
+ *   deny_macro    the `lib/pcrec.h` bit that DENIES this axis, as a token,
+ *                 or `0` if the axis has no denial. The X-macro stringifies
+ *                 it where a symbol NAME is wanted (`#deny_macro`), so the
+ *                 printed name and the value used cannot drift apart — the
+ *                 trick `axes_dump.c`'s own `V()` macro already used, now
+ *                 applied once instead of per call site.
+ *   deny_flag     the CLI spelling that sets it ("-fno-X"), or "" when
+ *                 there is no deny macro.
+ *   force_macro   the bit that FORCES this axis on, as a token, or `0`.
+ *                 Two axes have one today (`prefilter`, `prefilter-collapse`
+ *                 — lib/pcrec.h explains why each is a pair rather than a
+ *                 deny-only flag).
+ *   force_flag    its CLI spelling ("-fX"), or "".
+ *   default_state PCREC_AXIS_DEFAULT_ON — the optimization runs unless
+ *                 denied, which is every row today — or
+ *                 PCREC_AXIS_DEFAULT_OFF, an axis a build does NOT take
+ *                 unless asked. The column exists because the shape has to
+ *                 admit an OFF-by-default axis without changing: it is
+ *                 carried for [EMIT-VERB]'s coming `-fcomments` row (default
+ *                 OFF, Frank's ruling 2026-09-19), which is a row and not a
+ *                 special case. NOTHING READS IT YET, and it is here rather
+ *                 than added later on purpose — a column added with its
+ *                 first consumer is a column every existing row has to be
+ *                 revisited for.
+ *
+ * WHAT IS NOT A ROW, and each has a reason rather than an omission:
+ *   - `PCREC_CASELESS`, `PCREC_EMIT_MAIN`, `PCREC_NO_CAPTURES`,
+ *     `PCREC_TRACE` — SEMANTIC flags, not optimization axes. They change
+ *     what the artifact MEANS or REPORTS, not which of two answer-identical
+ *     shapes it takes, and none is spelled `-f`.
+ *   - `--engine=`, `--unroll=K`, `--vm-entry-shape=N`, `--tune=N` — VALUE
+ *     parameters, not `pcrec_options.flags` bits. `--engine=` is
+ *     additionally DO-OR-DIE (it refuses rather than selecting), which is a
+ *     different contract from a denial.
+ *   - `--fno-step-budget` — spelled with two dashes and setting a VALUE
+ *     (`PCREC_STEP_BUDGET_NONE`), not a flag bit.
+ *
+ * READERS TODAY, all derived, none hand-typed:
+ *   cli/main.c          `cli_axis_apply` — the whole `-f`/`-fno-` grammar
+ *   src/dump/axes_dump.c `pcrec_axis_macro_name`/`pcrec_axis_cli_flag` —
+ *                       the `--list-axes` dump's deny/force macro-name,
+ *                       deny/force bit-number and `cli_flag` columns
+ * and, through that dump rather than through this file,
+ *   tests/axes/run_axes.sh          the answer-identity sweep's axis list
+ *   tests/registry/axes_registry_check.sh   the registry check
+ *
+ * The bits are deliberately NOT in bit order below: the rows are grouped by
+ * FAMILY the way `lib/pcrec.h`'s own prose groups them, because that is the
+ * order a reader looking for "the VM's rung ladder" or "the DFA scan's
+ * axes" needs, and bit order is recoverable from the macro. */
+
+#ifndef PCREC_AXIS_DEFAULT_ON
+#define PCREC_AXIS_DEFAULT_ON  1
+#define PCREC_AXIS_DEFAULT_OFF 0
+#define PCREC_AXIS_DEF_UNDEF 1
+#endif
+
+/* ---- the VM's rung ladder ([ENG-BREP], D47.3) -------------------------
+ * Each is DENY-ONLY and composes PER QUANTIFIER: a quantifier walks its own
+ * ladder skipping the denied rungs, so a denial needs no way to ADDRESS one
+ * quantifier inside a pattern. A strategy that cannot be denied cannot be
+ * differentially tested, which is why every one of these exists. */
+PCREC_AXIS(PCREC_NO_POSSESSIFY,   "-fno-possessify",   0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_REVDET,       "-fno-revdet",       0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_COUNTER,      "-fno-counter",      0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_LENGTH_PRUNE, "-fno-length-prune", 0, "", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- axes that can change WHICH ENGINE a pattern gets ------------------
+ * Both leave a construct in the tree that is DFA-excluding, so denying one
+ * can move `RX_ENGINE` to "vm" and `--engine=dfa` plus the denial can
+ * REFUSE. See lib/pcrec.h at each macro. */
+PCREC_AXIS(PCREC_NO_ATOMIC_DISCHARGE, "-fno-atomic-discharge", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_SPLICE_CALLS,     "-fno-splice-calls",     0, "", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- the two FORCE PAIRS, and they are pairs for two different reasons -
+ * `prefilter` is one verdict for the WHOLE artifact rather than a
+ * per-quantifier ladder step, so there is something to force; forcing it on
+ * a pure-DFA-selected pattern is DO-OR-DIE and refuses (asserted in
+ * src/opt/select_engine.c, not in the parser). `prefilter-collapse` decides
+ * WHICH LANGUAGE the prefilter's DFA recognises, and forcing it is NOT
+ * do-or-die — the collapsed language of a pattern with nothing to collapse
+ * IS its exact language, so there is nothing to refuse. */
+PCREC_AXIS(PCREC_NO_PREFILTER, "-fno-prefilter",
+           PCREC_FORCE_PREFILTER, "-fprefilter", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_PREFILTER_COLLAPSE, "-fno-prefilter-collapse",
+           PCREC_FORCE_PREFILTER_COLLAPSE, "-fprefilter-collapse", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- AST-level rewrites ([OPT-ALTCLS], [ENG-ISL], [FORM-CHAR]) ---------
+ * Deny-only for the rung ladder's reason: each qualifying site is its own
+ * selection point, addressed independently. */
+PCREC_AXIS(PCREC_NO_ALTCLS_MERGE,  "-fno-altcls-merge",  0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_ALTCLS_FACTOR, "-fno-altcls-factor", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_ALT_ISLAND,    "-fno-alt-island",    0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_CLS_FOLD,      "-fno-cls-fold",      0, "", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- emitted-shape axes: the VM entry chain and the unroll ladder ------ */
+PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_SIZE_TERM,    "-fno-size-term",    0, "", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5]) ----
+ * These five are the ones `--list-axes` reports on its `list`-kind rows,
+ * where the deny bit comes straight off `src/gen/emit_dfa.c`'s own live
+ * candidate arrays rather than from a hand-written row. */
+PCREC_AXIS(PCREC_NO_PREMUL_TABLE, "-fno-premul-table", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_OFFSET_SKIP,  "-fno-offset-skip",  0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_ANCHORED_DFA, "-fno-anchored-dfa", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_SCAN_EDGE,    "-fno-scan-edge",    0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_START_PINNED, "-fno-start-pinned", 0, "", PCREC_AXIS_DEFAULT_ON)
+
+/* ---- the one axis that is NOT answer-identical ([K50]) -----------------
+ * Both settings describe a real semantics for a mid-character caller
+ * startpos, so which one an artifact carries is a CONTRACT fact rather than
+ * a shape choice — the reason it is the only member not masked out of
+ * `rx_info.flags`. It is a row here all the same: what this table holds is
+ * the SPELLING and the BIT, and those are the same kind of fact either way. */
+PCREC_AXIS(PCREC_NO_STARTPOS_GUARD, "-fno-startpos-guard", 0, "", PCREC_AXIS_DEFAULT_ON)
+
+#undef PCREC_AXIS
+#ifdef PCREC_AXIS_DEF_UNDEF
+#undef PCREC_AXIS_DEFAULT_ON
+#undef PCREC_AXIS_DEFAULT_OFF
+#undef PCREC_AXIS_DEF_UNDEF
+#endif

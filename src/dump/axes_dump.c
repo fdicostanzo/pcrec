@@ -178,52 +178,51 @@ static const char *stamp_macro_of(const char *axis)
  * offset-0 forms (`memchr`, `byte-class`, their `-bounded` twins) still have
  * none, and that is the residue of the same finding rather than an omission
  * here. Denying them would mean choosing what a denied build emits instead,
- * which is a caller-observable change no row has asked for. */
-static const char *cli_flag_of(const char *axis, const char *cand)
+ * which is a caller-observable change no row has asked for.
+ *
+ * [REVW.4] wave 4 (D111): the (axis, candidate) -> flag LADDER this comment
+ * used to sit above is GONE. A candidate's CLI spelling is now derived from
+ * its own deny BIT through `src/core/axes.def`, so the two facts cannot
+ * disagree — and the paragraph above is still exactly true, because a
+ * candidate with no deny bit derives no flag. */
+
+/* ---- THE AXIS TABLE's two lookups (src/core/axes.def, D111) ------------
+ *
+ * `PcrecAxisCand.deny` comes straight off the live `DfaCand.deny` field the
+ * EMITTER itself consults, and `emit_predicate_axes` below passes the
+ * `lib/pcrec.h` macro directly; both are VALUES. These two functions are the
+ * only place a value becomes TEXT, and both read the one table — so a bit,
+ * its printed symbol name and its CLI spelling are one row and cannot drift.
+ * An unrecognised nonzero value prints as a bare hex number rather than
+ * silently vanishing or crashing (the merge-safety property [CHK-2]'s brief
+ * asks for): a bit that has no row is visible in the dump as a number. */
+
+static const char *axis_macro_name(unsigned v)
 {
-    if (!strcmp(axis, "table") && !strcmp(cand, "premultiplied"))
-        return "-fno-premul-table";
-    if (!strcmp(axis, "match") && !strcmp(cand, "unwrapped"))
-        return "-fno-anchored-dfa";
-    if (!strcmp(axis, "prefilter") &&
-        (!strcmp(cand, "offset-set") || !strcmp(cand, "offset-set-bounded")))
-        return "-fno-offset-skip";
-    if (!strcmp(axis, "scan-edge") && !strcmp(cand, "scan-edge"))
-        return "-fno-scan-edge";
-    if (!strcmp(axis, "search-start") && !strcmp(cand, "pinned"))
-        return "-fno-start-pinned";
-    return "";
+    if (!v) return NULL;
+#define PCREC_AXIS(dm, df, fm, ff, defst)                 \
+    if ((dm) && (unsigned)(dm) == v) return #dm;          \
+    if ((fm) && (unsigned)(fm) == v) return #fm;
+#include "core/axes.def"
+    return NULL;
 }
 
-/* ---- deny-bit VALUE -> MACRO NAME, for the "list" axes' own deny field --
- *
- * The `PcrecAxisCand.deny` value comes straight off the live `DfaCand.deny`
- * field the emitter itself consults (never hand-typed), so this table only
- * has to translate a KNOWN value into its symbol's name for display —
- * an unrecognised nonzero value (a bit this table has not caught up with
- * yet, e.g. a newly landed axis) prints as a bare hex number rather than
- * silently vanishing or crashing, which is the merge-safety property the
- * brief asks for. */
-static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
-    { PCREC_NO_POSSESSIFY, "PCREC_NO_POSSESSIFY" },
-    { PCREC_NO_REVDET, "PCREC_NO_REVDET" },
-    { PCREC_NO_COUNTER, "PCREC_NO_COUNTER" },
-    { PCREC_NO_LENGTH_PRUNE, "PCREC_NO_LENGTH_PRUNE" },
-    { PCREC_NO_PREFILTER, "PCREC_NO_PREFILTER" },
-    { PCREC_FORCE_PREFILTER, "PCREC_FORCE_PREFILTER" },
-    { PCREC_NO_ALTCLS_MERGE, "PCREC_NO_ALTCLS_MERGE" },
-    { PCREC_NO_ALTCLS_FACTOR, "PCREC_NO_ALTCLS_FACTOR" },
-    { PCREC_NO_ATOMIC_DISCHARGE, "PCREC_NO_ATOMIC_DISCHARGE" },
-    { PCREC_NO_SPLICE_CALLS, "PCREC_NO_SPLICE_CALLS" },
-    { PCREC_NO_TIERED_ENTRY, "PCREC_NO_TIERED_ENTRY" },
-    { PCREC_NO_PREMUL_TABLE, "PCREC_NO_PREMUL_TABLE" },
-    { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
-    { PCREC_NO_ANCHORED_DFA, "PCREC_NO_ANCHORED_DFA" },
-    { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
-    { PCREC_NO_SCAN_EDGE, "PCREC_NO_SCAN_EDGE" },
-    { PCREC_NO_START_PINNED, "PCREC_NO_START_PINNED" },
-};
-#define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
+/* The CLI spelling a row reports, rendered from the bits it carries: the
+ * deny flag, the force flag, or `"deny / force"` for the two axes that are a
+ * pair. A row with no bits reports nothing from here — its `cli_flag`, if it
+ * has one at all, is a VALUE parameter (`--engine=`) the caller states. */
+static void axis_cli_flag(unsigned deny, unsigned force, char *buf, size_t cap)
+{
+    const char *d = NULL, *f = NULL;
+    buf[0] = 0;
+#define PCREC_AXIS(dm, df, fm, ff, defst)                        \
+    if ((dm) && (unsigned)(dm) == deny)  d = df;                 \
+    if ((fm) && (unsigned)(fm) == force) f = ff;
+#include "core/axes.def"
+    if (d && f) snprintf(buf, cap, "%s / %s", d, f);
+    else if (d) snprintf(buf, cap, "%s", d);
+    else if (f) snprintf(buf, cap, "%s", f);
+}
 
 static unsigned bit_of(unsigned flag)
 {
@@ -236,15 +235,9 @@ static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_
 {
     macro[0] = 0; bit[0] = 0;
     if (!v) return;
-    for (size_t i = 0; i < N_DENY_NAMES; i++) {
-        if (DENY_NAMES[i].v == v) {
-            snprintf(macro, macrocap, "%s", DENY_NAMES[i].n);
-            snprintf(bit, bitcap, "%u", bit_of(v));
-            return;
-        }
-    }
-    /* unrecognised bit — report the hex value rather than dropping the row */
-    snprintf(macro, macrocap, "0x%x", v);
+    const char *n = axis_macro_name(v);
+    if (n) snprintf(macro, macrocap, "%s", n);
+    else   snprintf(macro, macrocap, "0x%x", v);   /* a bit with no row */
     snprintf(bit, bitcap, "%u", bit_of(v));
 }
 
@@ -279,13 +272,14 @@ static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
     size_t n = get(cands, 16);
     const char *stamp_macro = stamp_macro_of(axis);
     for (size_t i = 0; i < n; i++) {
-        char deny_macro[64], deny_bit[8];
+        char deny_macro[64], deny_bit[8], flag[96];
         deny_cols(cands[i].deny, deny_macro, sizeof deny_macro, deny_bit, sizeof deny_bit);
+        axis_cli_flag(cands[i].deny, 0, flag, sizeof flag);
         const char *stamp_value = stamp_macro[0] ? cands[i].name : "";
         axis_row(sb, axis, (int)(i + 1), cands[i].name, kind,
                  stamp_macro, stamp_value,
                  deny_macro, deny_bit, "", "",
-                 cli_flag_of(axis, cands[i].name),
+                 flag,
                  desc_of(axis, cands[i].name));
     }
 }
@@ -349,8 +343,6 @@ static void emit_scan_composite_rows(StrBuf *sb)
  * in lib/pcrec.h breaks this file at compile time rather than silently
  * printing a stale name) and from docs/spec/tuning.md §2's own prose for
  * the candidate names and one-line descriptions. */
-#define V(x) (x), #x
-
 typedef struct {
     const char *axis;
     const char *candidate;
@@ -363,20 +355,32 @@ typedef struct {
     const char *applies;
 } PredAxis;
 
+/* [REVW.4] wave 4 (D111): a row states its deny/force BITS and nothing else.
+ * The symbol NAMES, the bit NUMBERS and the CLI SPELLING are all derived from
+ * `src/core/axes.def` — fifteen hand-typed `cli_flag` strings and seventeen
+ * hand-typed macro names used to live at these call sites, and an axis whose
+ * spelling changed had to be edited in both this file and `cli/main.c` with a
+ * pair of awk scrapers standing over them to notice when it was not.
+ *
+ * `cli_flag_lit` is for a row whose lever is NOT a flags bit at all — the
+ * `engine` axis's `--engine=vm`/`--engine=dfa`, a VALUE parameter and
+ * do-or-die. A row never has both: if it carries bits, the spelling is
+ * derived, and passing a literal too would be a second spelling of one
+ * fact. */
 static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
                           const char *candidate, const char *stamp_value,
-                          unsigned deny_val, const char *deny_macro,
-                          unsigned force_val, const char *force_macro,
-                          const char *cli_flag, const char *applies)
+                          unsigned deny_val, unsigned force_val,
+                          const char *cli_flag_lit, const char *applies)
 {
-    char db[8] = "", fb[8] = "";
+    char db[8] = "", fb[8] = "", flag[96];
     if (deny_val) snprintf(db, sizeof db, "%u", bit_of(deny_val));
     if (force_val) snprintf(fb, sizeof fb, "%u", bit_of(force_val));
+    axis_cli_flag(deny_val, force_val, flag, sizeof flag);
     axis_row(sb, p->axis, order, candidate, "predicate",
              p->stamp_macro, stamp_value,
-             deny_val ? deny_macro : "", db,
-             force_val ? force_macro : "", fb,
-             cli_flag, applies);
+             deny_val ? axis_macro_name(deny_val) : "", db,
+             force_val ? axis_macro_name(force_val) : "", fb,
+             (deny_val || force_val) ? flag : cli_flag_lit, applies);
 }
 
 /* `--list-axes`' eleven hand-stated VM/engine-selection axis rows — the
@@ -394,28 +398,28 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "possessify", NULL, "RX_VM_STRATS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "possessive", "PCREC_VM_STRAT_POSSESSIVE",
-                     V(PCREC_NO_POSSESSIFY), 0, "", "-fno-possessify",
+                     PCREC_NO_POSSESSIFY, 0, "",
                      "per A_REP: possessify.c proves the loop's body can never profitably re-enter");
         emit_pred_row(sb, &p, 2, "backtracking", "PCREC_VM_STRAT_BACKTRACKING",
-                     0, "", 0, "", "", "always (fallback)");
+                     0, 0, "", "always (fallback)");
     }
     /* revdet — §2.2, RX_VM_RUNGS bit PCREC_VM_RUNG_REVDET */
     {
         PredAxis p = { "revdet", NULL, "RX_VM_RUNGS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "revdet", "PCREC_VM_RUNG_REVDET",
-                     V(PCREC_NO_REVDET), 0, "", "-fno-revdet",
+                     PCREC_NO_REVDET, 0, "",
                      "per A_REP: forward unique-iteration lets the body run backward with no choice points");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback) — the ladder's next rung (counter, or literal frames)");
+                     0, 0, "", "always (fallback) — the ladder's next rung (counter, or literal frames)");
     }
     /* counter — §2.3, RX_VM_RUNGS bit PCREC_VM_RUNG_COUNTER */
     {
         PredAxis p = { "counter", NULL, "RX_VM_RUNGS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "counter", "PCREC_VM_RUNG_COUNTER",
-                     V(PCREC_NO_COUNTER), 0, "", "-fno-counter",
+                     PCREC_NO_COUNTER, 0, "",
                      "per A_REP: a bounded repeat, unrolled by --unroll=K (default PCREC_DEFAULT_UNROLL_K), below the replication cap");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback) — literal replication (frames)");
+                     0, 0, "", "always (fallback) — literal replication (frames)");
     }
     /* [ART-SIZE]/[REG-SV] size-term — the UNROLL LADDER's selection, D84.
      * `<PREFIX>_UNROLL_K_WHY` is the stamp, and it carries SEVEN values
@@ -449,35 +453,35 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "size-term", NULL, "RX_UNROLL_K_WHY", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "option", "option",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "an explicit --unroll=K on the command line: the term never runs (compile.c: defo.unroll_k > 0 && st_phase == ST_DEFAULT)");
         emit_pred_row(sb, &p, 2, "denied", "denied",
-                     V(PCREC_NO_SIZE_TERM), 0, "", "-fno-size-term",
+                     PCREC_NO_SIZE_TERM, 0, "",
                      "the axis is denied: K stays at --unroll=K or PCREC_DEFAULT_UNROLL_K");
         emit_pred_row(sb, &p, 3, "default", "default",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "the counter rung is not live, or the emitted CODE size did not exceed PCREC_SIZE_TERM_THRESHOLD, so the ladder never ran");
         emit_pred_row(sb, &p, 4, "cap-rescue", "cap-rescue",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "the ladder ran; the materiality bar declined its argmin K on bytes alone, but an emitted-size cap (--max-emit-bytes/--max-emit-code-bytes) took a smaller K anyway — natural corpus population 0 at the shipped caps (tests/codegen/run_size_term.sh §5/§6), reached only through a lowered-cap reference build");
         emit_pred_row(sb, &p, 5, "size-model", "size-model",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "the ladder ran and its argmin K saved at least 25% of the default K's bytes, so the materiality bar took it");
         emit_pred_row(sb, &p, 6, "capacity-declined", "capacity-declined",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "the ladder ran; the K it wanted would have lowered this artifact's declared capacity (.frame_capacity or .subject_ceiling, §3.3a) below the default K's, so that rung was excluded before the materiality bar was ever asked — natural corpus population 0 at the shipped threshold (tests/codegen/run_size_term.sh §7/§7b), reached only through a lowered-threshold reference build");
         emit_pred_row(sb, &p, 7, "size-model-declined", "size-model-declined",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "always (fallback) — the ladder ran and the materiality bar rejected its argmin K on bytes alone, with no capacity exclusion in play");
     }
     /* length-prune — §2.4, RX_VM_PRUNES's own named pair */
     {
         PredAxis p = { "length-prune", NULL, "RX_VM_PRUNES", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "clamped", "PCREC_VM_PRUNE_CLAMPED",
-                     V(PCREC_NO_LENGTH_PRUNE), 0, "", "-fno-length-prune",
+                     PCREC_NO_LENGTH_PRUNE, 0, "",
                      "per A_REP: a minimum-remaining-length bound is derivable for this quantifier's rung");
         emit_pred_row(sb, &p, 2, "unclamped", "PCREC_VM_PRUNE_UNCLAMPED",
-                     0, "", 0, "", "", "always (fallback) — no bound derivable, or the axis denied");
+                     0, 0, "", "always (fallback) — no bound derivable, or the axis denied");
     }
     /* vm-prefilter — §2.5, the ONE force pair; RX_VM_PREFILTER's own values.
      * NOT the same axis as "prefilter" above (docs/spec/tuning.md §3.1: "the
@@ -486,10 +490,10 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "vm-prefilter", NULL, "RX_VM_PREFILTER", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "hybrid", "hybrid",
-                     V(PCREC_NO_PREFILTER), V(PCREC_FORCE_PREFILTER), "-fno-prefilter / -fprefilter",
+                     PCREC_NO_PREFILTER, PCREC_FORCE_PREFILTER, "",
                      "auto+captures selects it jointly with the engine (select_engine.c); -fprefilter REFUSES on a pure-DFA-selected pattern (do-or-die)");
         emit_pred_row(sb, &p, 2, "none", "none",
-                     0, "", 0, "", "", "always (fallback) — also the --engine=vm side effect (R21 E-6)");
+                     0, 0, "", "always (fallback) — also the --engine=vm side effect (R21 E-6)");
     }
     /* [OPT-4] prefilter-lang — §2.15, K39. A THIRD axis in the prefilter
      * neighbourhood and a third question: "prefilter" is the DFA scan's own
@@ -511,11 +515,11 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "prefilter-lang", NULL, "RX_VM_PREFILTER_LANG", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",
-                     V(PCREC_NO_PREFILTER_COLLAPSE), V(PCREC_FORCE_PREFILTER_COLLAPSE),
-                     "-fno-prefilter-collapse / -fprefilter-collapse",
+                     PCREC_NO_PREFILTER_COLLAPSE, PCREC_FORCE_PREFILTER_COLLAPSE,
+                     "",
                      "these machines serve only as the VM's prefilter (the DFA is not the engine), a counted repeat with rmin > 1 or rmax > 1 exists, AND either -fprefilter-collapse was passed or compile_driver took a retry rung (a DFA state cap overflowed, or an emitted-size cap refused the exact artifact). There is no state-count knee: the default is the exact language (Frank's ruling B). Every X{m,n} then lowers as X{min(m,1),}");
         emit_pred_row(sb, &p, 2, "exact", "exact",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "always (fallback) — the pattern's own language, which is also what the collapse produces for a pattern that has nothing to collapse");
     }
     /* altcls-merge — §2.6, RX_ALTCLS_MERGES is an ACTIVITY COUNT, not a
@@ -523,19 +527,19 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "altcls-merge", NULL, "RX_ALTCLS_MERGES", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "merged", "",
-                     V(PCREC_NO_ALTCLS_MERGE), 0, "", "-fno-altcls-merge",
+                     PCREC_NO_ALTCLS_MERGE, 0, "",
                      "a maximal run of single-character alternation branches qualifies (runs before either engine is built)");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback)");
+                     0, 0, "", "always (fallback)");
     }
     /* altcls-factor — §2.7 */
     {
         PredAxis p = { "altcls-factor", NULL, "RX_ALTCLS_FACTORED", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "factored", "",
-                     V(PCREC_NO_ALTCLS_FACTOR), 0, "", "-fno-altcls-factor",
+                     PCREC_NO_ALTCLS_FACTOR, 0, "",
                      "a maximal run sharing a literal first byte qualifies, on stage 1's own output");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback)");
+                     0, 0, "", "always (fallback)");
     }
     /* [ENG-ISL] alt-island — §2.20. RX_VM_ALT_ISLANDS is an ACTIVITY COUNT,
      * not a named value — stamp_value left empty on both rows for the reason
@@ -543,20 +547,20 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "alt-island", NULL, "RX_VM_ALT_ISLANDS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "island", "",
-                     V(PCREC_NO_ALT_ISLAND), 0, "", "-fno-alt-island",
+                     PCREC_NO_ALT_ISLAND, 0, "",
                      "per flat alternation on the VM route: the whole subtree's language is a finite set of literal byte strings within the emitter's enumeration budget (a caseless alternation is class-leading by D23 and declines)");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback) — vm_alt's serial resume chain, one frame per untried branch");
+                     0, 0, "", "always (fallback) — vm_alt's serial resume chain, one frame per untried branch");
     }
     /* [FORM-CHAR] cls-fold — §2.22. RX_VM_CLS_FOLDS is an ACTIVITY COUNT,
      * stamp_value left empty on both rows for alt-island's reason above. */
     {
         PredAxis p = { "cls-fold", NULL, "RX_VM_CLS_FOLDS", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "fold", "",
-                     V(PCREC_NO_CLS_FOLD), 0, "", "-fno-cls-fold",
+                     PCREC_NO_CLS_FOLD, 0, "",
                      "per VM pool class: the set is exactly an ASCII fold pair (two members differing only in bit 0x20, both letters — what D23's parse-time caseless folding produces), so the test is one or-mask-and-compare and the 32-byte bitmap is not emitted");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
+                     0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
@@ -567,10 +571,10 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "startpos-guard", NULL, "RX_STARTPOS_GUARD", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "guarded", "guarded",
-                     V(PCREC_NO_STARTPOS_GUARD), 0, "", "-fno-startpos-guard",
+                     PCREC_NO_STARTPOS_GUARD, 0, "",
                      "per artifact: this encoding has positions that are not character boundaries (PcrecEnc.start_cls), so the entries refuse a mid-character caller startpos with PCREC_ERR_STARTPOS — libpcre2's own PCRE2_UTF behaviour (BADUTFOFFSET)");
         emit_pred_row(sb, &p, 2, "permissive", "permissive",
-                     0, "", 0, "", "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and neither setting emits a guard");
+                     0, 0, "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and neither setting emits a guard");
     }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
@@ -579,31 +583,31 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "atomic-discharge", NULL, "", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "discharged", "",
-                     V(PCREC_NO_ATOMIC_DISCHARGE), 0, "", "-fno-atomic-discharge",
+                     PCREC_NO_ATOMIC_DISCHARGE, 0, "",
                      "possessify's own verdict proves the A_ATOMIC node's cut is a no-op (docs/design/atomic_groups_design.md §5.3)");
         emit_pred_row(sb, &p, 2, "denied", "",
-                     0, "", 0, "", "", "always (fallback) — ENGINE-SELECTING: the A_ATOMIC node stays, which is DFA-excluding, so RX_ENGINE can move to \"vm\"");
+                     0, 0, "", "always (fallback) — ENGINE-SELECTING: the A_ATOMIC node stays, which is DFA-excluding, so RX_ENGINE can move to \"vm\"");
     }
     /* splice-calls — §2.9, ENGINE-SELECTING; RX_VM_CALL_SPLICED/_LINKED are
      * two separate counts, one per candidate. */
     {
         PredAxis p1 = { "splice-calls", NULL, "RX_VM_CALL_SPLICED", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p1, 1, "spliced", "",
-                     V(PCREC_NO_SPLICE_CALLS), 0, "", "-fno-splice-calls",
+                     PCREC_NO_SPLICE_CALLS, 0, "",
                      "the callee is not in a call-graph cycle and its expansion fits the splice size budget (PCREC_MAX_SPLICE_NODES/_TOTAL)");
         PredAxis p2 = { "splice-calls", NULL, "RX_VM_CALL_LINKED", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p2, 2, "linked", "",
-                     0, "", 0, "", "", "always (fallback) — ENGINE-SELECTING: a linked call is structurally VM-only");
+                     0, 0, "", "always (fallback) — ENGINE-SELECTING: a linked call is structurally VM-only");
     }
     /* tiered-entry — §2.12, RX_FAST_FRAMES/_TRAIL (numeric; FAST==RESUME/
      * TRAIL is how a denied artifact is told apart). */
     {
         PredAxis p = { "tiered-entry", NULL, "RX_FAST_FRAMES", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "tiered", "",
-                     V(PCREC_NO_TIERED_ENTRY), 0, "", "-fno-tiered-entry",
+                     PCREC_NO_TIERED_ENTRY, 0, "",
                      "the stamped default resume/trail storage does not fit one 4KB page (docs/spec/match_api.md §10.9)");
         emit_pred_row(sb, &p, 2, "single-tier", "",
-                     0, "", 0, "", "", "always (fallback) — FAST_FRAMES==RESUME_FRAMES, FAST_TRAIL==TRAIL_FRAMES");
+                     0, 0, "", "always (fallback) — FAST_FRAMES==RESUME_FRAMES, FAST_TRAIL==TRAIL_FRAMES");
     }
     /* engine — §2.11, the coarsest-grained member; RX_ENGINE's own values.
      * `--engine=` is DO-OR-DIE (never a bit in pcrec_options.flags), so
@@ -611,10 +615,10 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "engine", NULL, "RX_ENGINE", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "vm", "vm",
-                     0, "", 0, "", "--engine=vm",
+                     0, 0, "--engine=vm",
                      "auto: any construct select_engine.c decides is VM-only (captures, possessive quantifiers, \\K, backreferences, calls, ...); forced by --engine=vm (also disables the DFA hybrid prefilter, R21 E-6)");
         emit_pred_row(sb, &p, 2, "dfa", "dfa",
-                     0, "", 0, "", "--engine=dfa",
+                     0, 0, "--engine=dfa",
                      "auto: always, when no construct forces the VM; --engine=dfa REFUSES a pattern needing VM-only machinery (do-or-die)");
     }
     /* [OPT-4] engine-route — §2.11's ROUTE, not its outcome, and a SEPARATE
@@ -635,7 +639,7 @@ static void emit_predicate_axes(StrBuf *sb)
     {
         PredAxis p = { "engine-route", NULL, "RX_ENGINE_SEL", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "forced", "forced",
-                     0, "", 0, "", "--engine=vm / --engine=dfa",
+                     0, 0, "--engine=vm / --engine=dfa",
                      "the caller named the engine, so auto selected nothing");
         /* [OPT-4.2] THE EIGHTH ROUTE, placed right after `forced` rather
          * than beside its rung-scoped cousin below: it is the ONE route in
@@ -644,19 +648,19 @@ static void emit_predicate_axes(StrBuf *sb)
          * argument), and grouping it with the "auto, a DFA build
          * overflowed" family would misstate what it is. */
         emit_pred_row(sb, &p, 2, "declined-nullable-default", "declined-nullable-default",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto (or forced --engine=vm plus -fprefilter), NOTHING overflowed, and the ORDINARY hybrid's own EXACT prefilter language is NULLABLE — it matches the empty string, so the forward+reverse DFA pair would admit a zero-length match at every position and could never dismiss one ([OPT-4.2], the general form of declined-nullable below; pcrec-bench O-10 measured 1.2-9.9x on the analogous collapsed shape). No rung is involved and no prefilter survives. -fprefilter overrides this decline; -fno-prefilter reaches the same artifact by a different door");
         emit_pred_row(sb, &p, 3, "collapsed-prefilter", "collapsed-prefilter",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto, a DFA build overflowed a cap, and compile_driver's retry KEPT a prefilter by rebuilding it from the count-collapsed language ([OPT-4]/K39; -fno-prefilter-collapse skips this rung)");
         emit_pred_row(sb, &p, 4, "declined-nullable", "declined-nullable",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto, a DFA build overflowed a cap, compile_driver's retry OFFERED the count-collapsed prefilter and it was DECLINED because the collapsed language is NULLABLE — it matches the empty string, so the filter can never dismiss a position ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x slower than no prefilter). No prefilter survives. -fprefilter is do-or-die and is never silently dropped, but it does not override THIS rung's decline: it makes the [SEL-1] rung ineligible, so the compile refuses instead. On the SIZE rung -fprefilter does override the decline. -fprefilter-collapse overrides neither");
         emit_pred_row(sb, &p, 5, "overflowed-dfa", "overflowed-dfa",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto, the DFA was to be the ENGINE, its build overflowed, and no prefilter survived the fallback ([SEL-1]/K40)");
         emit_pred_row(sb, &p, 6, "overflowed-prefilter", "overflowed-prefilter",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto, the VM was already chosen for another reason, and only its auto-selected PREFILTER's DFA overflowed, so the prefilter was dropped");
         /* [LIM-1] (D90, 2026-08-30) THE SEVENTH ROUTE, folded in from the
          * lane's own brief. Before this row, a successful [OPT-4] SIZE-rung
@@ -675,14 +679,13 @@ static void emit_predicate_axes(StrBuf *sb)
          * own comment states why `ESEL_SIZE_CAP_RETRY` sits outside the
          * DFA-overflow range at the C level). */
         emit_pred_row(sb, &p, 7, "size-cap-retry", "size-cap-retry",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "auto, an emitted-size cap (--max-emit-code-bytes/--max-emit-bytes) REFUSED the exact artifact, and compile_driver's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung's own success)");
         emit_pred_row(sb, &p, 8, "selected", "selected",
-                     0, "", 0, "", "",
+                     0, 0, "",
                      "always (fallback) — auto chose on the AST and nothing overflowed");
     }
 }
-#undef V
 
 /* ---- the whole dump ------------------------------------------------------ */
 

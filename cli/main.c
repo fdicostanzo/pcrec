@@ -4,6 +4,7 @@
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -385,6 +386,124 @@ typedef struct {
     size_t      nlibdirs, libcap;
 } CliState;
 
+/* [REVW.4] wave 4 (L11-F4) — THE MODE RELATION, WRITTEN ONCE.
+ *
+ * `main` dispatches on MODES: the seven registry queries, `--explain`,
+ * `--count-groups`, `--emit-ir`, `--probe-ask`, `--list-source`, `--source`
+ * and `--flavour`. Each mode that RETURNS from `main` on its own first
+ * refuses the other modes it does not compose with — and until this wave
+ * that refusal was spelled out SIX TIMES as an `||` chain, with FOUR
+ * DIFFERENT memberships (13 / 12 / 9 / 8 flags), no two of which a reader
+ * could compare without counting. Adding a mode meant remembering six
+ * chains and knowing which of the four each one belongs to; the review's
+ * finding is that the arrangement is correct today only because of BLOCK
+ * ORDER.
+ *
+ * ONE TABLE of modes, ONE activity test, and a NAMED MASK per site. The
+ * memberships below are the NARROWEST-PER-SITE, i.e. exactly what each site
+ * accepts and refuses today (Frank's ruling for this item): this is an
+ * extraction, not a contract change, and `docs/spec/cli.md` is unchanged by
+ * it. Widening every site to the union would be a real behaviour change —
+ * `--probe-ask --flavour=pcre2` is accepted today and the union would refuse
+ * it — and it is PROPOSED in docs/dev/lanes/w4_report.md rather than built.
+ *
+ * THE SUMMED-COUNT RELATION AT THE SEVEN-QUERY SITE IS NOT FOLDED IN, and
+ * that is also ruled. "Is some OTHER mode active" and "is at most one of
+ * these co-equal flags set" are two different relations over one set; one
+ * mechanism per relation kind, so the count relation gets
+ * `cli_modes_count` and keeps its own shape. */
+#define CLI_MODE_TABLE(X)                                                \
+    X(LIST_SYNTAX,      list_syntax,      INT, "--list-syntax")          \
+    X(LIST_DEFINITIONS, list_definitions, INT, "--list-definitions")     \
+    X(LIST_VERBS,       list_verbs,       INT, "--list-verbs")           \
+    X(LIST_FAMILIES,    list_families,    INT, "--list-families")        \
+    X(LIST_AXES,        list_axes,        INT, "--list-axes")            \
+    X(LIST_LIMITS,      list_limits,      INT, "--list-limits")          \
+    X(LIST_SCHEMA,      list_schema,      INT, "--list-schema")          \
+    X(EXPLAIN,          explain,          PTR, "--explain")              \
+    X(COUNT_GROUPS,     count_groups,     INT, "--count-groups")         \
+    X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
+    X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
+    X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
+    X(SOURCE,           source,           PTR, "--source")               \
+    X(FLAVOUR,          flavour,          PTR, "--flavour")
+
+typedef enum {
+#define CLI_MODE_ENUM_ROW(id, field, kind, spelling) CM_##id,
+    CLI_MODE_TABLE(CLI_MODE_ENUM_ROW)
+#undef CLI_MODE_ENUM_ROW
+    CM_N
+} CliModeId;
+
+#define CMB(id) (1u << CM_##id)
+
+/* The two field SHAPES a mode is stored in: a flag, and a value-bearing
+ * option whose presence IS the mode. The table's `kind` column dispatches
+ * here, so `cli_modes_active` has no per-mode line of its own. */
+#define CLI_MODE_LIVE_INT(v) ((v) != 0)
+#define CLI_MODE_LIVE_PTR(v) ((v) != NULL)
+
+static unsigned cli_modes_active(const CliState *st)
+{
+    unsigned m = 0u;
+#define CLI_MODE_TEST_ROW(id, field, kind, spelling) \
+    if (CLI_MODE_LIVE_##kind(st->field)) m |= CMB(id);
+    CLI_MODE_TABLE(CLI_MODE_TEST_ROW)
+#undef CLI_MODE_TEST_ROW
+    return m;
+}
+
+/* The FIRST active mode's own spelling, in table order — which is the order
+ * the hand-written conditional ladder it replaces used. */
+static const char *cli_mode_name(unsigned modes)
+{
+#define CLI_MODE_NAME_ROW(id, field, kind, spelling) \
+    if (modes & CMB(id)) return spelling;
+    CLI_MODE_TABLE(CLI_MODE_NAME_ROW)
+#undef CLI_MODE_NAME_ROW
+    return "";
+}
+
+static int cli_modes_count(unsigned modes)
+{
+    int n = 0;
+    for (; modes; modes >>= 1) n += (int)(modes & 1u);
+    return n;
+}
+
+/* THE FOUR MEMBERSHIPS, each named for the site that owns it. Every one is
+ * built from the one below it, so the nesting a reader had to infer by
+ * comparing six `||` chains is now the definition itself. */
+
+/* The seven registry queries plus `--explain`: they answer from the registry
+ * and compile nothing, so they take no pattern and no -o. */
+#define CLI_MODES_REGISTRY_QUERY                                          \
+    (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(LIST_VERBS) |         \
+     CMB(LIST_FAMILIES) | CMB(LIST_AXES) | CMB(LIST_LIMITS) |             \
+     CMB(LIST_SCHEMA) | CMB(EXPLAIN))
+
+/* `--count-groups` refuses the registry queries and nothing else: it TAKES
+ * a pattern, so it composes with the pattern-bearing modes below it. */
+#define CLI_MODES_VS_COUNT_GROUPS CLI_MODES_REGISTRY_QUERY
+
+/* `--probe-ask` and `--emit-ir` additionally refuse `--count-groups` — the
+ * other pattern-bearing query — but not each other, which is block order
+ * doing the work and is preserved exactly as it stands. */
+#define CLI_MODES_VS_PATTERN_QUERY (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS))
+
+/* `--list-source` READS a `.rxt` file: it refuses every query above plus the
+ * other two pattern-bearing ones and `--source`, which COMPILES one.
+ * `--flavour` is deliberately absent — that site refuses it separately, with
+ * its own applies-to diagnostic, which is a different rule. */
+#define CLI_MODES_VS_LIST_SOURCE                                          \
+    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) | CMB(SOURCE))
+
+/* `--source` COMPILES a `.rxt` file and refuses every query surface there
+ * is, `--flavour` among them — the one membership that includes it. */
+#define CLI_MODES_VS_SOURCE                                               \
+    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) |         \
+     CMB(LIST_SOURCE) | CMB(FLAVOUR))
+
 /* Everything past `opt` is zero — i.e. this invocation asked for compile
  * options and nothing else. The comparison is over the raw bytes of the
  * tail, which is well defined here because every `CliState` in this file is
@@ -410,6 +529,120 @@ static int libdir_push(CliState *st, const char *dir)
     return 0;
 }
 
+/* [REVW.4] wave 4 (L2-L2-7, M3) — THE ENGINE VOCABULARY, in one place.
+ * `--engine=`'s three-arm `strcmp` ladder, `engine_name`'s three-arm reverse
+ * ladder and the `.rxt` `engine` row's own one-value test were three
+ * independent spellings of one three-value set. They are one table; the
+ * format's VM-ONLY restriction is now stated AS a restriction, applied after
+ * the shared parse, rather than implemented as a second, narrower parser. */
+static const struct { const char *name; int value; } ENGINE_NAMES[] = {
+    { "auto", PCREC_ENGINE_AUTO },
+    { "dfa",  PCREC_ENGINE_DFA  },
+    { "vm",   PCREC_ENGINE_VM   },
+};
+#define N_ENGINE_NAMES (sizeof ENGINE_NAMES / sizeof ENGINE_NAMES[0])
+
+static int engine_by_name(const char *v, int *out)
+{
+    for (size_t i = 0; i < N_ENGINE_NAMES; i++)
+        if (!strcmp(v, ENGINE_NAMES[i].name)) { *out = ENGINE_NAMES[i].value; return 0; }
+    return 1;
+}
+
+static const char *engine_name(int e)
+{
+    for (size_t i = 0; i < N_ENGINE_NAMES; i++)
+        if (ENGINE_NAMES[i].value == e) return ENGINE_NAMES[i].name;
+    return "auto";
+}
+
+/* [REVW.4] wave 4 (L2-L2-7) — ONE JOIN POLICY for every valid-value MENU a
+ * diagnostic in this file prints. `pcrec_enc_names` (src/enc/enc.c) and
+ * `pcrec_tune_names` (src/core/tune.c) each render their own registry's menu
+ * because the registry is theirs; this is for the menus whose vocabulary is
+ * the CLI's own. Its bounded-join policy is those two functions' exactly —
+ * an ordered PREFIX rather than a gap, and the separator written under the
+ * SAME bound as the name it follows, so a tight cap can never emit a
+ * dangling ", " ([REVW.1] wave 1's L10-2).
+ *
+ * `last` is the connective before the final name (" or " today), because the
+ * sentences these menus sit in read "must be auto, dfa or vm" and D26 forbids
+ * re-wording a shipped diagnostic to suit a helper. */
+static void cli_menu(const char *const *names, size_t n, const char *last,
+                     char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    buf[0] = 0;
+    for (size_t i = 0; i < n; i++) {
+        const char *sep = (i == 0) ? "" : (i + 1 == n ? last : ", ");
+        size_t ls = strlen(sep), ln = strlen(names[i]);
+        if (k + ls + ln + 1 > cap) break;     /* an ordered PREFIX, never a gap */
+        memcpy(buf + k, sep, ls); k += ls;
+        memcpy(buf + k, names[i], ln); k += ln;
+    }
+    buf[k] = 0;
+}
+
+/* [REVW.4] wave 4 (L1-X10) — ONE bounded-integer VALUE parser for the five
+ * `--flag=N` arms that each spelled `strtol`/`strtoll` plus the same
+ * no-junk-and-in-range test for themselves.
+ *
+ * IT DELIBERATELY DOES NOT REJECT AN EMPTY VALUE OF ITS OWN ACCORD, and that
+ * is measured rather than assumed: `strtol("")` returns 0 leaving `*end` at
+ * the terminator, so today `--unroll=`, `--step-budget=` and
+ * `--backtrack-frames=` are refused by their RANGE (0 is below every one of
+ * their floors) while `--vm-entry-shape=` is ACCEPTED as rung 0, auto. An
+ * emptiness test here would be a fourth behaviour change nobody asked for.
+ *
+ * The DIAGNOSTIC stays at each call site: every one of the five names its own
+ * range and its own advice, and D26 forbids folding five shipped sentences
+ * into one. What is shared is the RULE, which is what was repeated. */
+static int cli_int_value(const char *s, long long lo, long long hi, long long *out)
+{
+    char *end = NULL;
+    long long v = strtoll(s, &end, 10);
+    if (!end || *end || v < lo || v > hi) return 1;
+    *out = v;
+    return 0;
+}
+
+/* [REVW.4] wave 4 (D111, L1-X9) — THE OPTIMIZATION-AXIS GRAMMAR, in one
+ * loop over `src/core/axes.def`.
+ *
+ * Twenty-two `else if (!no_more_opts && !strcmp(a, "-fno-X")) opt.flags |=
+ * PCREC_NO_X;` arms stood here, each one line of grammar under a paragraph of
+ * prose, and their flag-text-to-bit pairing was one of the THREE hand-
+ * maintained spellings of the axis table that two `awk` scrapers existed to
+ * reconcile. The prose did not move far: every one of those paragraphs said
+ * "this axis is deny-only / a force pair, and here is why — see
+ * lib/pcrec.h", which is a fact about the AXIS and now lives on its row.
+ *
+ * Returns 1 when `a` was an axis spelling and the bit was set, 0 otherwise —
+ * so the caller's chain reads as one arm and an unknown `-f...` still falls
+ * through to the unknown-option diagnostic, unchanged. Order within the
+ * chain is immaterial: every spelling here is an exact `strcmp` against a
+ * distinct literal. */
+static int cli_axis_apply(const char *a, uint64_t *flags)
+{
+#define PCREC_AXIS(dm, df, fm, ff, defst)                                 \
+    if ((dm) && (df)[0] && !strcmp(a, (df))) { *flags |= (dm); return 1; } \
+    if ((fm) && (ff)[0] && !strcmp(a, (ff))) { *flags |= (fm); return 1; }
+#include "core/axes.def"
+    return 0;
+}
+
+/* The pattern OPERAND: exactly one, anywhere in the argv. Its own function
+ * because `cli_parse` reaches it from TWO places — after `--`, and as the
+ * option chain's own fall-through — and duplicating four lines to save a
+ * helper is how a rule ends up with two spellings. */
+static int cli_operand(CliState *st, const char *a, const char *where)
+{
+    if (!st->pattern) { st->pattern = a; return 0; }
+    cli_err("exactly one pattern expected (%s)", where);
+    return 1;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
@@ -423,190 +656,60 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* [LIM-2] N1: computed once per token so the dispatch below and its
          * body read the SAME match rather than re-scanning the table. */
         const int rom_idx = raise_only_match(a);
-        if (!no_more_opts && !strcmp(a, "--")) no_more_opts = 1;
+        /* [REVW.4] wave 4 (L11-F3) — THE `--` GUARD, WRITTEN ONCE.
+         *
+         * Every arm of the chain below used to re-type the same conjunct for
+         * itself: 59 times before this wave, 37 after item 4 retired the axis
+         * arms. The repetition was a named CORRECTNESS HAZARD, not a tidiness
+         * one — a new arm written without the conjunct silently breaks `--`
+         * for that one flag, and nothing structural reminded an author to add
+         * it. Handling the after-`--` case HERE, once, with a `continue`,
+         * makes the reminder structural instead: reaching the chain at all now
+         * MEANS options are still live, so an arm cannot forget a guard it
+         * does not have.
+         *
+         * The chain's own fall-through still reaches the operand, for an
+         * argument that is neither an option nor after `--`. */
+        if (no_more_opts) {
+            if (cli_operand(st, a, where) != 0) return 1;
+            continue;
+        }
+        if (!strcmp(a, "--")) no_more_opts = 1;
         /* `-h` sets a FLAG rather than printing and exiting, because this
          * function has a second caller: a `config` block's `pcrec -h` must
          * not print usage and exit 0 in the middle of a compile. The flag
          * lives in the tail of `CliState`, so `cli_extras_clean` refuses it
          * there with no clause of its own. */
-        else if (!no_more_opts && (!strcmp(a, "-h") || !strcmp(a, "--help")))
+        else if ((!strcmp(a, "-h") || !strcmp(a, "--help")))
             st->want_help = 1;
-        else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
-        else if (!no_more_opts && !strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
+        else if (!strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
+        else if (!strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
          * `--engine=` takes its value with `=` rather than as a separate
          * argument because it is a MODE, not a file or a name — and the
          * separate-argument forms above (-o/-p/-e) all take one. */
-        else if (!no_more_opts && !strcmp(a, "--no-captures"))
+        else if (!strcmp(a, "--no-captures"))
             opt.flags |= PCREC_NO_CAPTURES;
-        else if (!no_more_opts && !strcmp(a, "--trace"))
+        else if (!strcmp(a, "--trace"))
             opt.flags |= PCREC_TRACE;
-        else if (!no_more_opts && !strcmp(a, "--emit-ir")) st->emit_ir = 1;
-        else if (!no_more_opts && !strcmp(a, "--pattern-esc"))
+        else if (!strcmp(a, "--emit-ir")) st->emit_ir = 1;
+        else if (!strcmp(a, "--pattern-esc"))
             st->pattern_esc = 1;
-        else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
+        else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
-        /* [ENG-BREP] the first of D47.3's DENY family. Spelled `-fno-` in the
-         * gcc style the ruling names, and as a bare flag rather than an
-         * `=value` mode because a denial has no value to carry. It denies a
-         * STRATEGY, never an answer: the artifact matches identically either
-         * way, which is exactly what the differential it exists for checks. */
-        else if (!no_more_opts && !strcmp(a, "-fno-possessify"))
-            opt.flags |= PCREC_NO_POSSESSIFY;
-        /* [ENG-BREP] the family's second member. Denying it drops a qualifying
-         * quantifier one rung, to frames — which for a bounded repeat is
-         * literal replication and therefore the semantic ground truth the
-         * differential compares against. */
-        else if (!no_more_opts && !strcmp(a, "-fno-revdet"))
-            opt.flags |= PCREC_NO_REVDET;
-        /* [ENG-BREP] the family's THIRD member, and the one whose denial is
-         * load-bearing beyond testing: dropping the counter rung leaves a
-         * bounded repeat on frames, i.e. literal replication, i.e. what ships
-         * today — the ground truth §8.1's differential compares against. */
-        else if (!no_more_opts && !strcmp(a, "-fno-counter"))
-            opt.flags |= PCREC_NO_COUNTER;
-        /* [M6.4.2] the family's newest member, and the only one that denies an
-         * ENGINE rather than a strategy: leaving the proved-dead `A_ATOMIC` in
-         * the tree makes SR-8's consultation see a DFA-excluding node. It
-         * exists so the free discharge's "changes no answer" claim has a
-         * differential; see lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-atomic-discharge"))
-            opt.flags |= PCREC_NO_ATOMIC_DISCHARGE;
-        /* [DD-14 wave G] the SPLICE-vs-LINKAGE axis (design §6.3, §9.2).
-         * `-fno-atomic-discharge`'s shape, not `-fno-possessify`'s: denying
-         * the splice leaves a LINKED call, which is structurally VM-only, so
-         * this denial can change which ENGINE a pattern gets and
-         * `--engine=dfa -fno-splice-calls` on a spliceable pattern REFUSES.
-         * See lib/pcrec.h's PCREC_NO_SPLICE_CALLS comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-splice-calls"))
-            opt.flags |= PCREC_NO_SPLICE_CALLS;
-        /* [OPT-1] the TWO-TIER ENTRY axis (docs/design/two_tier_entry.md,
-         * docs/spec/tuning.md §2.12). Back to `-fno-possessify`'s shape: it
-         * changes no answer and is masked out of `rx_info.flags`. Denying it
-         * emits the un-suffixed entries as they shipped before [OPT-1], which
-         * is the bisect lever for the optimization and the build an identity
-         * gate compares the old entry against. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-tiered-entry"))
-            opt.flags |= PCREC_NO_TIERED_ENTRY;
-        /* [OPT-3] the DFA TABLE-FORM axis (docs/design/premultiplied_dfa_table.md,
-         * docs/spec/tuning.md §2.13). `-fno-tiered-entry`'s shape again: it
-         * changes no answer and is masked out of `rx_info.flags`. Denying it
-         * emits the DFA scan's tables and loop as they shipped before [OPT-3],
-         * which is the bisect lever for the optimization and the build the
-         * identity comparison uses as its control. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-premul-table"))
-            opt.flags |= PCREC_NO_PREMUL_TABLE;
-        else if (!no_more_opts && !strcmp(a, "-fno-offset-skip"))
-            opt.flags |= PCREC_NO_OFFSET_SKIP;
-        else if (!no_more_opts && !strcmp(a, "-fno-anchored-dfa"))
-            opt.flags |= PCREC_NO_ANCHORED_DFA;
-        /* [OPT-5] Denies the SCAN EDGE, which is the one DFA axis whose
-         * denial changes the MACHINE and not only the emitted loop: the run's
-         * interior states come back and the table walk with them. That is
-         * what makes the denied build the answer-identity sweep's reference
-         * rather than merely a slower variant. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-scan-edge"))
-            opt.flags |= PCREC_NO_SCAN_EDGE;
-        /* [OPT-5 STEP 2] Denies the START-PINNED SEARCH, i.e. restores
-         * `<prefix>_search`'s reverse pass and the whole reverse machine that
-         * runs it. The denied build recovers the match start with an
-         * INDEPENDENTLY BUILT automaton rather than from a compile-time
-         * proof about the forward one, which is what makes it a genuine
-         * control for the answer-identity sweep rather than a build sharing
-         * its derivation with what it controls. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-start-pinned"))
-            opt.flags |= PCREC_NO_START_PINNED;
-        /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
-         * emitted-size cap — those are raise-only via --max-emit-*-bytes
-         * (D84 ruling 1): a safety refusal a flag turns off is not one. */
-        else if (!no_more_opts && !strcmp(a, "-fno-size-term"))
-            opt.flags |= PCREC_NO_SIZE_TERM;
-        /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
-         * (D51 ruling 1), D46's controllability half for it. Denying it is
-         * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever
-         * rung a quantifier already took and changes no rung, slot or capacity
-         * — which is what makes the denied build the differential's ground
-         * truth rather than merely a slower arm. */
-        else if (!no_more_opts && !strcmp(a, "-fno-length-prune"))
-            opt.flags |= PCREC_NO_LENGTH_PRUNE;
-        /* [M4.6f] the D46 close-out for the PREFILTER axis: a FORCE PAIR,
-         * not a deny-only flag, because fit.prefilter is one verdict for
-         * the whole artifact rather than a per-quantifier ladder step (see
-         * lib/pcrec.h's PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER comment).
-         * Do-or-die on the FORCE-ON direction is asserted in
-         * src/opt/select_engine.c, not here — same posture as --engine. */
-        else if (!no_more_opts && !strcmp(a, "-fno-prefilter"))
-            opt.flags |= PCREC_NO_PREFILTER;
-        else if (!no_more_opts && !strcmp(a, "-fprefilter"))
-            opt.flags |= PCREC_FORCE_PREFILTER;
-        /* [OPT-4] THE PREFILTER'S LANGUAGE (K39), a SECOND force pair on the
-         * same axis's neighbourhood and for a different reason from the one
-         * above. `-fprefilter` decides WHETHER the hybrid runs; these decide
-         * what language its DFA recognises when it does.
-         *
-         * A PAIR RATHER THAN DENY-ONLY, and the two halves are not mirror
-         * images: `-fno-prefilter-collapse` restores the exact machine (the
-         * sharper start and the `prefilter-window` ceiling, at a size that
-         * scales with the count), while `-fprefilter-collapse` drops only the
-         * STATE-BUDGET conjunct — so every counted repeat collapses and the
-         * emitted size becomes count-INDEPENDENT rather than count-bounded.
-         * Neither reaches the two correctness conjuncts (the DFA is the
-         * engine; there is nothing to collapse), which is why neither can
-         * change an answer and why the pair is a `make test-axes` sweep
-         * subject rather than a semantic switch.
-         *
-         * NOT DO-OR-DIE, unlike `-fprefilter` above. Forcing the collapse on a
-         * pattern with no counted repeat is a request the compiler HONOURS —
-         * the collapsed language of such a pattern IS its exact language — so
-         * there is nothing to refuse; the artifact stamps `"exact"` because
-         * that is what was built. The conflict pair IS refused, in
-         * src/opt/select_engine.c beside the existing one. */
-        else if (!no_more_opts && !strcmp(a, "-fno-prefilter-collapse"))
-            opt.flags |= PCREC_NO_PREFILTER_COLLAPSE;
-        else if (!no_more_opts && !strcmp(a, "-fprefilter-collapse"))
-            opt.flags |= PCREC_FORCE_PREFILTER_COLLAPSE;
-        /* [OPT-ALTCLS] D46's controllability half for src/opt/altcls.c.
-         * BACK to the DENY-only family's shape (unlike the FORCE pair just
-         * above): each mergeable/factorable alternation run is its own
-         * selection point, addressed independently, the same reason
-         * -fno-possessify/-fno-revdet/-fno-counter/-fno-length-prune are
-         * deny-only — see lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/
-         * PCREC_NO_ALTCLS_FACTOR comment. Two separate flags because the
-         * stages are separately useful to pin: stage 2 runs on stage 1's
-         * output, so denying stage 1 alone still lets stage 2 factor an
-         * unmerged run's literal spelling. */
-        else if (!no_more_opts && !strcmp(a, "-fno-altcls-merge"))
-            opt.flags |= PCREC_NO_ALTCLS_MERGE;
-        else if (!no_more_opts && !strcmp(a, "-fno-altcls-factor"))
-            opt.flags |= PCREC_NO_ALTCLS_FACTOR;
-        /* [ENG-ISL] the VM's alternation island. Deny-only, and for the same
-         * reason as the two flags above: each qualifying flat alternation is
-         * its own selection point, the emitter takes the island wherever the
-         * predicate holds, and a declined one is emitted by `vm_alt`
-         * unchanged. See lib/pcrec.h's PCREC_NO_ALT_ISLAND comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-alt-island"))
-            opt.flags |= PCREC_NO_ALT_ISLAND;
-        /* [FORM-CHAR] STEP 1: the VM's ascii-fold class test. Deny-only, and
-         * for the same reason as the island above: each fold-pair class is
-         * its own selection point, the emitter takes the fold wherever the
-         * set is one, and a declined set keeps its existing shape. See
-         * lib/pcrec.h's PCREC_NO_CLS_FOLD comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-cls-fold"))
-            opt.flags |= PCREC_NO_CLS_FOLD;
-        /* [K50] The caller-startpos boundary guard. The one flag in this
-         * chain that selects between two SEMANTICS rather than two emitted
-         * shapes — see lib/pcrec.h's PCREC_NO_STARTPOS_GUARD comment for why
-         * that makes it the only member NOT masked out of rx_info.flags. */
-        else if (!no_more_opts && !strcmp(a, "-fno-startpos-guard"))
-            opt.flags |= PCREC_NO_STARTPOS_GUARD;
+        /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
+         * `cli_axis_apply` walks `src/core/axes.def`, the one home of each
+         * axis's bit, its `-fno-X` / `-fX` spellings and its default
+         * polarity. An unknown `-f...` returns 0 here and falls through to
+         * the unknown-option diagnostic below exactly as it always did. */
+        else if (cli_axis_apply(a, &opt.flags)) { }
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
-        else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {
-            char *end = NULL;
-            long v = strtol(a + 9, &end, 10);
-            if (!end || *end || v < 1 || v > 4096) {
-                cli_err("--unroll wants an integer in 1..4096 "
-                                "(got '%s')", a + 9);
+        else if (!strncmp(a, "--unroll=", 9)) {
+            long long v;
+            if (cli_int_value(a + 9, 1, 4096, &v) != 0) {
+                cli_err("--unroll wants an integer in %d..%d "
+                                "(got '%s')", 1, 4096, a + 9);
                 return 1;
             }
             opt.unroll_k = (int)v;
@@ -618,14 +721,18 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * explicitly is legal and means the same thing. A rung this artifact
          * cannot legally take is a SELECTION OUTCOME, not a refusal — see
          * lib/pcrec.h's `vm_entry_shape` and docs/spec/tuning.md §2.21. */
-        else if (!no_more_opts && !strncmp(a, "--vm-entry-shape=", 17)) {
-            char *end = NULL;
-            long v = strtol(a + 17, &end, 10);
-            if (!end || *end || v < 0 || v > PCREC_VM_ENTRY_INLINE) {
+        else if (!strncmp(a, "--vm-entry-shape=", 17)) {
+            long long v;
+            if (cli_int_value(a + 17, 0, PCREC_VM_ENTRY_INLINE, &v) != 0) {
+                /* [REVW.4] wave 4: the RUNG MENU is rendered from
+                 * `src/core/tune.c`'s own name table, which `src/gen/
+                 * emit_vm.c`'s `<PREFIX>_VM_ENTRY_SHAPE` stamp also reads —
+                 * it was hand-typed here, a THIRD spelling of five words. */
+                char rungs[128];
+                pcrec_vm_entry_shape_names(rungs, sizeof rungs);
                 cli_err("--vm-entry-shape wants an integer in "
-                                "0..%d (0 auto, 1 plain, 2 shared, 3 forward, "
-                                "4 inline; got '%s')",
-                        PCREC_VM_ENTRY_INLINE, a + 17);
+                                "0..%d (%s; got '%s')",
+                        PCREC_VM_ENTRY_INLINE, rungs, a + 17);
                 return 1;
             }
             opt.vm_entry_shape = (int)v;
@@ -646,16 +753,22 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * caller believe they had asked for something the artifact does not
          * have, and `<PREFIX>_TUNE` exists precisely so an artifact says how
          * it was built. */
-        else if (!no_more_opts && !strncmp(a, "--tune=", 7)) {
+        else if (!strncmp(a, "--tune=", 7)) {
             int v = 0;
             if (pcrec_tune_parse(a + 7, &v) != 0) {
-                cli_err("--tune wants -2..2 or one of min-size, size, "
-                        "balanced, speed, max-speed (got '%s')", a + 7);
+                /* [REVW.4] wave 4 (L2-L2-7): the menu is RENDERED from
+                 * `src/core/tune.c`'s own alias table, which D103 makes the
+                 * dial's one home — it was hand-typed here, a second
+                 * spelling that a sixth position would have left stale. */
+                char menu[128];
+                pcrec_tune_names(menu, sizeof menu);
+                cli_err("--tune wants -2..2 or one of %s (got '%s')",
+                        menu, a + 7);
                 return 1;
             }
             opt.tune = v;
         }
-        else if (!no_more_opts && !strcmp(a, "--tune")) {
+        else if (!strcmp(a, "--tune")) {
             cli_err("--tune takes its value with '=' "
                     "(--tune=-2, --tune=min-size)");
             return 1;
@@ -664,24 +777,28 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * `=value` MODE form `--engine=` already uses (the separate-argument
          * forms are for files and names). Both spellings reach the same
          * lookup, so they cannot drift. */
-        else if (!no_more_opts && !strncmp(a, "--encoding=", 11)) {
+        else if (!strncmp(a, "--encoding=", 11)) {
             if (set_encoding(&opt, a + 11) != 0) return 1;
         }
-        else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
+        else if (!strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
-            if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;
-            else if (!strcmp(v, "dfa"))  opt.engine = PCREC_ENGINE_DFA;
-            else if (!strcmp(v, "vm"))   opt.engine = PCREC_ENGINE_VM;
-            else {
-                cli_err("--engine must be auto, dfa or vm "
-                                "(got '%s')", v);
+            int want;
+            if (engine_by_name(v, &want) != 0) {
+                /* [REVW.4] wave 4: the menu is the TABLE's, rendered with
+                 * this file's one join policy, so a fourth engine name would
+                 * appear here without an edit. */
+                const char *names[N_ENGINE_NAMES];
+                char menu[64];
+                for (size_t k = 0; k < N_ENGINE_NAMES; k++) names[k] = ENGINE_NAMES[k].name;
+                cli_menu(names, N_ENGINE_NAMES, " or ", menu, sizeof menu);
+                cli_err("--engine must be %s (got '%s')", menu, v);
                 return 1;
             }
+            opt.engine = want;
         }
-        else if (!no_more_opts && !strncmp(a, "--step-budget=", 14)) {
-            char *end = NULL;
-            long long v = strtoll(a + 14, &end, 10);
-            if (!end || *end || v < 1) {
+        else if (!strncmp(a, "--step-budget=", 14)) {
+            long long v;
+            if (cli_int_value(a + 14, 1, LLONG_MAX, &v) != 0) {
                 cli_err("--step-budget wants a positive integer "
                                 "(use --fno-step-budget for no counter)");
                 return 1;
@@ -691,10 +808,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* [ENG-BREP counter-K] The value knob for the THIRD bound. There is
          * deliberately no `--fno-work-budget`: v1 rides ONE existence gate, so
          * `--fno-step-budget` above suppresses both counters (D49). */
-        else if (!no_more_opts && !strncmp(a, "--work-budget=", 14)) {
-            char *end = NULL;
-            long long v = strtoll(a + 14, &end, 10);
-            if (!end || *end || v < 1) {
+        else if (!strncmp(a, "--work-budget=", 14)) {
+            long long v;
+            if (cli_int_value(a + 14, 1, LLONG_MAX, &v) != 0) {
                 cli_err("--work-budget wants a positive integer "
                                 "(use --fno-step-budget for no counters)");
                 return 1;
@@ -708,7 +824,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * the override belongs in the pattern-source file's `config` block
          * (D84 addendum 3); this flag is for one-off compiles and the
          * harness. */
-        else if (!no_more_opts && rom_idx >= 0) {
+        else if (rom_idx >= 0) {
             const RaiseOnlyLimit *r = &raise_only_limits[rom_idx];
             uint64_t *slot = (uint64_t *)((char *)&opt + r->offset);
             if (parse_raise_only(a + strlen(r->flag) + 1, r->flag, r->floor,
@@ -721,7 +837,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * whole point for a project that wants earlier notice, and 0 turns it
          * off. Accepting any value is the correct policy here precisely
          * because this option cannot fail a build. */
-        else if (!no_more_opts && !strncmp(a, "--warn-emit-bytes=", 18)) {
+        else if (!strncmp(a, "--warn-emit-bytes=", 18)) {
             char *end = NULL;
             unsigned long long v = strtoull(a + 18, &end, 10);
             if (!end || *end || a[18] == '\0') {
@@ -732,10 +848,9 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.warn_emit_bytes = (uint64_t)v;
         }
-        else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
-            char *end = NULL;
-            long v = strtol(a + 19, &end, 10);
-            if (!end || *end || v < 1 || v > 1000000) {
+        else if (!strncmp(a, "--backtrack-frames=", 19)) {
+            long long v;
+            if (cli_int_value(a + 19, 1, 1000000, &v) != 0) {
                 cli_err("--backtrack-frames wants a positive "
                                 "integer (the array is a LOCAL of the search "
                                 "entry, so this is stack)");
@@ -743,43 +858,42 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             opt.frame_capacity = (int)v;
         }
-        else if (!no_more_opts && !strcmp(a, "--list-syntax")) st->list_syntax = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-definitions")) st->list_definitions = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-verbs"))  st->list_verbs = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-families")) st->list_families = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-axes"))   st->list_axes = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-limits")) st->list_limits = 1;
-        else if (!no_more_opts && !strcmp(a, "--list-schema")) st->list_schema = 1;
-        else if (!no_more_opts && !strcmp(a, "--count-groups")) st->count_groups = 1;
+        else if (!strcmp(a, "--list-syntax")) st->list_syntax = 1;
+        else if (!strcmp(a, "--list-definitions")) st->list_definitions = 1;
+        else if (!strcmp(a, "--list-verbs"))  st->list_verbs = 1;
+        else if (!strcmp(a, "--list-families")) st->list_families = 1;
+        else if (!strcmp(a, "--list-axes"))   st->list_axes = 1;
+        else if (!strcmp(a, "--list-limits")) st->list_limits = 1;
+        else if (!strcmp(a, "--list-schema")) st->list_schema = 1;
+        else if (!strcmp(a, "--count-groups")) st->count_groups = 1;
         /* [DD-13b.W1.1] `--list-source FILE` — the `.rxt` SOURCE dump.
          * Takes its file as the option's VALUE, like --explain and
          * --probe-ask take theirs, rather than as the bare positional
          * argument: that slot is the PATTERN's, and a query that quietly
          * reinterpreted it would make `pcrec --list-source 'a(b|c)'` read
          * a file named after a regex. */
-        else if (!no_more_opts && !strcmp(a, "--list-source")) {
+        else if (!strcmp(a, "--list-source")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->list_source = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
+        else if (!strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->probe_want = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--features")) {
+        else if (!strcmp(a, "--features")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->features = argv[++i];
         }
-        else if (!no_more_opts &&
-                 (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
+        else if (!strcmp(a, "--explain") || !strcmp(a, "--flavour")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -787,8 +901,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             const char *v = argv[++i];
             if (a[2] == 'e') st->explain = v; else st->flavour = v;
         }
-        else if (!no_more_opts &&
-                 (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
+        else if (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -802,14 +915,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * their value as a separate argument, like -o/-p/-e and unlike the
          * `=value` MODE flags: a file, a name and a directory are exactly
          * the three things that spelling is for. */
-        else if (!no_more_opts && !strcmp(a, "--source")) {
+        else if (!strcmp(a, "--source")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->source = argv[++i];
         }
-        else if (!no_more_opts && !strcmp(a, "--target")) {
+        else if (!strcmp(a, "--target")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -819,26 +932,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         /* REPEATABLE, and order is the search order — the one flag in this
          * CLI that accumulates rather than replacing. A single-valued
          * --lib-path would make two libraries an either/or. */
-        else if (!no_more_opts && !strcmp(a, "--lib-path")) {
+        else if (!strcmp(a, "--lib-path")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             if (libdir_push(st, argv[++i]) != 0) return 1;
         }
-        else if (!no_more_opts && a[0] == '-' && a[1]) {
+        else if (a[0] == '-' && a[1]) {
             cli_err("unknown option '%s' in the %s (use -- "
                             "before a pattern that starts with '-')",
                     a, where);
             if (!strcmp(where, "command line")) usage(stderr);
             return 1;
         }
-        else if (!st->pattern) st->pattern = a;
-        else {
-            cli_err("exactly one pattern expected (%s)",
-                    where);
-            return 1;
-        }
+        else if (cli_operand(st, a, where) != 0) return 1;
     }
     st->opt = opt;
     return 0;
@@ -885,12 +993,7 @@ static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
  * `PCREC_ENGINE_AUTO` is the only `enum` member (`lib/pcrec.h`'s [ABI-NS]
  * comment explains why DFA/VM are `#define`s instead), so this is the one
  * place that needs all three spellings back as text. */
-static const char *engine_name(int e)
-{
-    if (e == PCREC_ENGINE_DFA) return "dfa";
-    if (e == PCREC_ENGINE_VM)  return "vm";
-    return "auto";
-}
+
 
 /* The target's composed settings, ON TOP OF the command line's options.
  *
@@ -992,9 +1095,14 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         return 1;
     }
     if (t->engine) {
+        /* [REVW.4] wave 4 (L2-L2-7): parsed through the ONE engine
+         * vocabulary, then narrowed by the FORMAT's own restriction. It used
+         * to be a second, separately-worded engine menu that happened to
+         * know one word; stating the restriction as a restriction is what
+         * keeps `dfa` spelled once in this file. `dfa` and a typo are
+         * refused with the same sentence here, exactly as before. */
         int want;
-        if (!strcmp(t->engine, "vm")) want = PCREC_ENGINE_VM;
-        else {
+        if (engine_by_name(t->engine, &want) != 0 || want != PCREC_ENGINE_VM) {
             cli_err("%s:%zu: `engine %s` is not a value this format "
                     "accepts (only `vm`)",
                     cli->source, t->block_line, t->engine);
@@ -1309,6 +1417,11 @@ int main(int argc, char **argv)
     const char *probe_want   = st.probe_want;
     const char *features     = st.features;
     const char *list_source  = st.list_source;
+    /* [REVW.4] wave 4: every mutual-exclusion test below reads THIS, against
+     * a named membership from the table beside `CliState`. Nothing between
+     * `cli_parse` and here writes a mode field, so one computation serves
+     * all six sites. */
+    const unsigned modes     = cli_modes_active(&st);
 
     /* --count-groups is the one query that TAKES a pattern — it runs the real
      * parser (parse only, nothing emitted) and prints the running capture
@@ -1349,10 +1462,7 @@ int main(int argc, char **argv)
      * query already won SILENTLY — `--source f.rxt --count-groups -- a`
      * would have counted the pattern's groups and ignored the file. The
      * test is one place, above all of them, and it names both surfaces. */
-    if (st.source && (list_syntax || list_definitions || list_verbs ||
-                      list_families || list_axes || list_limits || list_schema ||
-                      explain || count_groups || emit_ir || probe_want || list_source ||
-                      flavour)) {
+    if (st.source && (modes & CLI_MODES_VS_SOURCE)) {
         cli_err("--source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
@@ -1377,10 +1487,7 @@ int main(int argc, char **argv)
      * status and in stderr, from a call that FAILED. run.sh depends on
      * being able to tell those two apart. */
     if (list_source) {
-        if (list_syntax || list_definitions || list_verbs || list_families ||
-            list_axes || list_limits || list_schema || explain ||
-            count_groups || emit_ir ||
-            probe_want || st.source) {
+        if (modes & CLI_MODES_VS_LIST_SOURCE) {
             cli_err("--list-source is a separate query; use one "
                             "(--list-source READS a .rxt file, --source "
                             "COMPILES one)");
@@ -1425,7 +1532,7 @@ int main(int argc, char **argv)
      * not run at all exits nonzero, so the check can tell "measured a
      * refusal" from "measured nothing". */
     if (probe_want) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
+        if (modes & CLI_MODES_VS_PATTERN_QUERY) {
             cli_err("--probe-ask is a separate query; use one");
             return 1;
         }
@@ -1454,11 +1561,20 @@ int main(int argc, char **argv)
             return 1;
         }
         if (!line) {
-            cli_err("--probe-ask: WANT must be claim, verdict "
-                            "or result, and the construct must reach a "
-                            "doorway (start with '\\', '(?', '(*' or '[' — "
-                            "except '(?:', which the base grammar answers "
-                            "before any doorway is consulted)");
+            /* [REVW.4] wave 4: the WANT vocabulary is `src/dump/
+             * syntax_dump.c`'s own table — the same one `pcrec_probe_ask`
+             * parses against — rendered with its last comma replaced by
+             * "or" so the sentence reads as it always has. */
+            char wants[128];
+            pcrec_probe_want_names(wants, sizeof wants);
+            char *lastc = strrchr(wants, ',');
+            cli_err("--probe-ask: WANT must be %.*s%s%s, and the construct "
+                            "must reach a doorway (start with '\\', '(?', "
+                            "'(*' or '[' — except '(?:', which the base "
+                            "grammar answers before any doorway is "
+                            "consulted)",
+                    lastc ? (int)(lastc - wants) : (int)strlen(wants), wants,
+                    lastc ? " or" : "", lastc ? lastc + 1 : "");
             return 1;
         }
         fputs(line, stdout);
@@ -1471,7 +1587,7 @@ int main(int argc, char **argv)
      * prints, taking no -o and writing no C. A pattern pcrec refuses is
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain || count_groups) {
+        if (modes & CLI_MODES_VS_PATTERN_QUERY) {
             cli_err("--emit-ir is a separate query; use one");
             return 1;
         }
@@ -1499,7 +1615,7 @@ int main(int argc, char **argv)
     }
 
     if (count_groups) {
-        if (list_syntax || list_definitions || list_verbs || list_families || list_axes || list_limits || list_schema || explain) {
+        if (modes & CLI_MODES_VS_COUNT_GROUPS) {
             cli_err("--count-groups is a separate query; use one");
             return 1;
         }
@@ -1530,22 +1646,22 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || list_definitions || explain || list_verbs || list_families || list_axes || list_limits || list_schema) {
-        if (list_syntax + list_definitions + list_verbs + list_families + list_axes + list_limits + list_schema + (explain != NULL) > 1) {
+    if (modes & CLI_MODES_REGISTRY_QUERY) {
+        /* THE SECOND RELATION (see the mode table): at most one of these
+         * eight co-equal flags, which is a different question from "is some
+         * OTHER mode active" and keeps its own shape by ruling. */
+        if (cli_modes_count(modes & CLI_MODES_REGISTRY_QUERY) > 1) {
             cli_err("--list-syntax, --list-definitions, --list-verbs, "
                             "--list-families, --list-axes, --list-limits, --list-schema "
                             "and --explain are separate queries; use one");
             return 1;
         }
         if (pattern || outpath) {
+            /* Exactly one is set here — the count relation above returned
+             * otherwise — so the FIRST active mode in table order IS it, and
+             * the table's order is the hand ladder's order. */
             cli_err("%s takes no pattern and no -o",
-                    list_syntax      ? "--list-syntax" :
-                    list_definitions ? "--list-definitions" :
-                    list_verbs       ? "--list-verbs"  :
-                    list_families    ? "--list-families" :
-                    list_axes        ? "--list-axes" :
-                    list_limits      ? "--list-limits" :
-                    list_schema      ? "--list-schema" : "--explain");
+                    cli_mode_name(modes & CLI_MODES_REGISTRY_QUERY));
             return 1;
         }
         /* --list-verbs has no flavour axis: the verb tables record what libpcre2
@@ -1620,8 +1736,16 @@ int main(int argc, char **argv)
         }
         unsigned fl = 0;
         if (flavour && !(fl = pcrec_flavour_by_name(flavour))) {
-            cli_err("unknown flavour '%s' (only 'pcre2' exists; "
-                            "more arrive with SR-7)", flavour);
+            /* [REVW.4] wave 4: the name comes from the same table
+             * `pcrec_flavour_by_name` just failed against, so the refusal
+             * cannot name a vocabulary the lookup does not have. The
+             * SENTENCE still says "only", because there is still exactly
+             * one row; SR-7's second flavour is the D80 event that rewords
+             * it, and it will be unable to land without noticing. */
+            char flavs[128];
+            pcrec_flavour_names(flavs, sizeof flavs);
+            cli_err("unknown flavour '%s' (only '%s' exists; "
+                            "more arrive with SR-7)", flavour, flavs);
             return 1;
         }
         if (list_definitions) {

@@ -241,42 +241,60 @@ if [ "$n_bits" -eq 0 ]; then
     exit 1
 fi
 
-# macro -> CLI flag spelling, from cli/main.c's own `!strcmp(a, "...")` /
-# `opt.flags |= MACRO` pairing. One awk pass over the arg-parsing loop:
-# remembers the most recently seen `strcmp(a, "X")` literal, and pairs it
-# with the next `opt.flags |= MACRO` line, which is exactly how the loop
-# itself associates the two.
+# macro -> CLI flag spelling.
+#
+# [REVW.4] wave 4 (D111), 2026-09-19: THE AWK SCRAPER THAT STOOD HERE IS
+# DELETED, not re-aimed. It rebuilt the pairing out of `cli/main.c`'s TEXT
+# ("remember the most recently seen `strcmp(a, "-...")` literal, pair it with
+# the next `opt.flags |= MACRO` line") and carried a fatal guard for the day
+# "cli/main.c's loop shape changed" — which this wave IS: that loop no longer
+# has twenty-two arms to scrape. `tests/registry/axes_registry_check.sh`
+# carried an independent re-implementation of the identical pass and it is
+# deleted there too.
+#
+# The pairing now comes off `pcrec --list-axes`, whose deny/force macro and
+# `cli_flag` columns are rendered from `src/core/axes.def` — the same row
+# `cli_axis_apply` parses. One derivation, read by the sweep instead of two
+# hand-typed ones reconciled by awk.
+#
+# WHY READING THE DUMP IS NOT THIS CHECK SHARING A SOURCE WITH WHAT IT
+# CHECKS. What this sweep asserts is ANSWER IDENTITY across axes: compile the
+# corpus with a flag and without, and require the same answers. The flag
+# spelling is how it ADDRESSES an axis, never what it measures — so taking
+# the spelling from the same table the parser uses makes the sweep reach the
+# axis it names, which is exactly the property the old guard below was
+# protecting. What the dump cannot tell it is whether the parser ACCEPTS the
+# spelling; that is driven live by axes_registry_check.sh's own
+# `check_cli_flag_accepted`.
 declare -A macro_flag=()
-# POSIX-awk portable (RSTART/RLENGTH, no 3-arg match() — that's a gawk
-# extension and D2's "a stranger's box" discipline avoids relying on one
-# where a two-line rewrite avoids it): remembers the most recently seen
-# `strcmp(a, "-...")` literal and pairs it with the next
-# `opt.flags |= PCREC_(NO|FORCE)_...` line, exactly how the parsing loop
-# itself associates the two.
 while IFS=$'\t' read -r macro flagtext; do
-    [ -n "$macro" ] && macro_flag[$macro]="$flagtext"
-done < <(awk '
-    /strcmp\(a, "-/ {
-        if (match($0, /"-[^"]+"/)) pending = substr($0, RSTART + 1, RLENGTH - 2)
-    }
-    /opt\.flags \|= PCREC_(NO|FORCE)_[A-Z_]+;/ {
-        if (pending != "" && match($0, /PCREC_(NO|FORCE)_[A-Z_]+/)) {
-            print substr($0, RSTART, RLENGTH) "\t" pending
-            pending = ""
-        }
-    }
-' "$ROOT_DIR/cli/main.c")
+    [ -n "$macro" ] && [ -n "$flagtext" ] && macro_flag[$macro]="$flagtext"
+done < <("$TIMEOUT_BIN" 60 "$PCREC" --list-axes \
+          | grep -v '^#' \
+          | awk -F'\t' 'NF > 10 {
+                split($11, f, " / ")
+                if ($7  != "" && f[1] != "" && f[1] !~ /^--/) print $7  "\t" f[1]
+                if ($9  != "" && f[2] != "") print $9 "\t" f[2]
+                else if ($9 != "" && $7 == "" && f[1] != "") print $9 "\t" f[1]
+            }')
+
+if [ "${#macro_flag[@]}" -eq 0 ]; then
+    echo "run_axes.sh: FATAL: derived ZERO macro->flag pairs from --list-axes -- the dump's deny/force/cli_flag columns moved, or the dump failed (docs/dev/learnings.md §3: hard-fail on empty, never silently measure nothing)" >&2
+    exit 1
+fi
 
 # Sanity: every derived bit macro must have a derived CLI spelling, or the
-# awk pairing above missed a site (cli/main.c's loop shape changed) — a
-# silent empty flag would compile the DEFAULT pattern under every "axis",
-# comparing default against default and reporting perfect agreement on
-# every one, the exact "measures nothing" failure mode this family's own
-# suites (run_possdiff.sh et al.) guard against.
+# dump names a bit it gives no way to address -- a silent empty flag would
+# compile the DEFAULT pattern under every "axis", comparing default against
+# default and reporting perfect agreement on every one, the exact "measures
+# nothing" failure mode this family's own suites (run_possdiff.sh et al.)
+# guard against. KEPT, and it is the arm that now watches the SEAM between
+# lib/pcrec.h's bits and axes.def's rows: a macro declared in the header and
+# absent from the table reaches this loop with no spelling.
 for bit in "${!bit_macro[@]}"; do
     macro="${bit_macro[$bit]}"
     if [ -z "${macro_flag[$macro]:-}" ]; then
-        echo "run_axes.sh: FATAL: $macro (bit $bit) has no derived CLI flag spelling in cli/main.c — the awk pairing missed it; a wrong sweep would silently compare default against default" >&2
+        echo "run_axes.sh: FATAL: $macro (bit $bit) is declared in lib/pcrec.h but --list-axes reports no CLI spelling for it — it has no src/core/axes.def row, or no candidate row carries its bit; a wrong sweep would silently compare default against default" >&2
         exit 1
     fi
 done

@@ -35,6 +35,32 @@ contract. Nothing about the flag's SHAPE changed — still a query, still no
 `-o`, still VM-only with the same refusal — and no emitted `.c` byte moved.
 Consumers read it through `tests/lib/table.sh`, never a fixed-position grep.
 
+**[REVW.4] wave 4 (D111, 2026-09-19):** the `-f`/`-fno-` grammar is ONE LOOP.
+`cli_axis_apply` walks `src/core/axes.def`, which carries each axis's deny
+bit, its spellings and its default polarity; the twenty-two `else if
+(!strcmp(a, "-fno-X")) opt.flags |= PCREC_NO_X;` arms that stood in
+`cli_parse` are gone, and with them one of the three hand-maintained
+spellings of that table. Two `awk` scrapers that rebuilt the pairing out of
+THIS FILE'S TEXT are deleted (`tests/registry/axes_registry_check.sh`,
+`tests/axes/run_axes.sh`) — after the extraction the parser and the
+`--list-axes` dump read the same row, so there is nothing to reconcile. An
+unknown `-f...` still falls through to the unknown-option diagnostic
+unchanged, and the seven `--list-*` dumps are byte-identical across the
+change. **The same wave made `--tune=`'s refusal render its alias MENU from
+`src/core/tune.c`** (`pcrec_tune_names`) rather than hand-typing the same
+five words D103 already made that file's own (`pcrec_enc_names`' shape,
+one surface over).
+
+**[REVW.4] wave 4 (L11-F4):** `main`'s MODE MUTUAL-EXCLUSION relation is
+written once. `CLI_MODE_TABLE` (beside `CliState`) names the fourteen modes
+and their field shapes; `cli_modes_active` builds a bitmask; four named
+masks, each defined from the one below it, replace six hand-spelled `||`
+chains over four different memberships. The summed-count exclusivity among
+the seven registry queries and `--explain` stays a SECOND relation
+(`cli_modes_count`) by ruling — one mechanism per relation kind. Acceptance
+is unchanged on every pair and triple of modes (measured; see
+`docs/dev/lanes/w4_report.md`), and no diagnostic's text moved.
+
 `--trace` is a generation axis (`PCREC_TRACE`)
 producing an instrumented artifact that prints every resume-frame push/pop and
 capture write to stderr; never the default, and the artifact stamps that it is
