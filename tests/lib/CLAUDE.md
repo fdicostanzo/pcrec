@@ -47,6 +47,21 @@ section targets depend on.
   script whose own `CC="${CC:-gcc}"` default this lane found (see the
   report for the full list and the two files using `$ROOT` instead of
   `$ROOT_DIR`).
+- **c_artifact_cmp.sh** — `cmp_c_artifacts FILE1 FILE2` (adm71 item 5,
+  2026-09-19): compares two pcrec-emitted `.c` files for identity while
+  ignoring the `#include "<basename>.h"` line, which two artifacts written
+  to different `-o` basenames always differ on regardless of everything
+  else (the fourth recorded instance of the trap, per
+  `docs/dev/lanes/dd8_report.md` §3.1 — `scripts/emit_sweep.py` avoids it
+  with `-o -`, `run_cli_tests.sh`/`run_trie_identity.sh` avoid it the same
+  way, and two ad-hoc header-stripping idioms already existed
+  independently before this shared one, `run_offset_skip.sh`'s
+  `drop_own_header` and `run_island_tests.sh`'s `grep -v '^#include "'`).
+  Wired into `run_anchored_match.sh` and `run_search_pinned.sh`'s own §1
+  negative controls, which compared `on.c`/`off.c` with a raw `cmp -s` and
+  were structurally unable to ever report "identical" — see
+  `docs/dev/lanes/adm71_report.md` item 5 for the full site survey and
+  why those two were the only sites needing the swap.
 - **unit_cc.sh** — [REVW.U L5-R0] `unit_build <outbin> <src.c> [extra
   args...]`, the ONE build for the unit tier's internal-property checks
   (`docs/dev/reviews/lens_reports/lens5_unit_seams.md` R0: ten C programs
