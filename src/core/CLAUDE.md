@@ -483,6 +483,31 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   moved above RegRow at MOD-0.3b when ports embedded it) with the ExtPort
   producing-port types, and module-level declarations.
 
+  **[REVW.3] wave 3: THE DECLARATION TAIL IS GROUPED BY DEFINING LAYER**
+  (lens 6's L5). From the banner comment that opens it to the end of the
+  file, every declaration is filed under the layer that DEFINES it, in the
+  tree's own order — core(base), enc, parse, ir, opt, gen, driver, dump —
+  each under its own header. It is a REORDERING and nothing else: the
+  comment-stripped declaration multiset is IDENTICAL to the pre-wave file's
+  (740 units, 0 missing, 0 extra, checked mechanically), every comment
+  travelled with the declaration it documents, and exactly one comment was
+  dropped, the bare `/* ---- stage entry points ---- */` label the new
+  headers replace. Nothing moved to another file. A new declaration goes in
+  its own layer's group, not at the end.
+
+  **THE SPLIT IS DEFERRED, DELIBERATELY.** Only 14.2% of the 225 distinct
+  function declarations here are defined in `src/core/` at all (parse 54.2%,
+  opt 16.9%, gen 12.4%, ir 2.2%), and 52 of the tree's ~55 `.c` files include
+  this header — which is exactly why a cross-layer CALL generates no
+  cross-layer INCLUDE and `include_backedges.tsv` reads 0 against a measured
+  30 call-level back-edges. The real repair is per-layer headers
+  (`parse.h`, `opt.h`, `gen.h`, `ir.h`); it costs an `#include` edit in all
+  52 consumers, and lens 6 §3 declines to propose it for this round with a
+  second reason worth keeping: a large share of these lines is the tree's
+  densest *why* documentation, so a split that separated a comment from the
+  type or declaration it documents would destroy more than it bought.
+  Grouping first makes that round a CUT rather than a SURVEY.
+
   **[M6.6.2 wave 0, D70] `struct Ast` IS A TAGGED UNION.** The per-kind fields
   live in `union { ... } u`, keyed by the existing `AKind k`:
   `n->u.cls` (a 32-byte bitmap through [M6.6]; `{iv, n}` code-point intervals

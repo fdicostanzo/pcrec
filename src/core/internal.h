@@ -5145,196 +5145,38 @@ int pcrec_rxt_source_resolve(RxtSource *src,
                              pcrec_error *err);
 
 
-/* ---- [DD-13b.W1.3] THE COMPOSER (src/parse/rxt_compose.c) --------------
+/* =========================================================================
+ * THE DECLARATIONS, GROUPED BY DEFINING LAYER ([REVW.3] wave 3, lens 6's L5)
  *
- * Binds every FILE reference the parse deferred, injecting each named
- * definition into the caller's tree as `A_REP{0,0}(A_CAP{base}(body))` —
- * the shape `(?(DEFINE)…)` already desugars to (`mod_recursion.c:418`), so
- * no downstream pass gains a line for it.
+ * From here to the end of the file, every declaration is filed under the
+ * LAYER THAT DEFINES IT, in the tree's own layer order:
  *
- * WHERE IT RUNS IS FORCED FROM BOTH SIDES (w1_impl §2.1): AFTER
- * `pcrec_parse`, because it needs the caller's `ncap`, `named_groups` and
- * resolved references; BEFORE `pcrec_callgraph_build` absolutely, because
- * that pass is the only writer of `u.call.body` and is driven from
- * `u.call.target` over the FINAL tree; and before `pcrec_altcls` so an
- * injected definition gets the same optimization every other subtree gets.
+ *   core(base) -> enc -> parse -> ir -> opt -> gen -> driver -> dump
  *
- * A NO-OP WHEN `cx->defs` IS NULL OR EMPTY, by an early return — every
- * artifact pcrec emits without `--source` is byte-identical to before this
- * file existed, which is what the identity gate's comparison (A) checks.
+ * This is a REORDERING and nothing else. No declaration was added, removed,
+ * reworded or moved to another file, and every comment travelled with the
+ * declaration it documents — which is the whole point: this header's prose
+ * is the tree's densest `why` documentation, not rot, and a split that
+ * separated a comment from its declaration would destroy more than it
+ * bought (lens 6 §3).
  *
- * Returns the (possibly new) root. Refuses through `ctx_fail` exactly as
- * every other parse-tier pass does. */
-Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
-
-/* The `--source` compile entry: `pcrec_compile` plus a definition set.
- * INTERNAL, and deliberately not a `pcrec_options` field — D20 keeps the
- * public option surface scalar, and a definition set is a FILE's property
- * that only the `.rxt` reader can build. A library caller that wants
- * composition gets it through [LIB], not by growing this struct.
+ * WHY GROUP AND NOT SPLIT. `internal.h` is included by 52 of the tree's ~55
+ * `.c` files and only 14.2% of what it declares is defined in `src/core/` at
+ * all, which is what makes a cross-layer CALL generate no cross-layer
+ * INCLUDE and leaves `include_backedges.tsv` reading 0 against a measured 30
+ * call-level back-edges. The real repair is a per-layer header split
+ * (`parse.h`, `opt.h`, `gen.h`, `ir.h`) and it is DEFERRED: it costs an
+ * `#include` edit in all 52 consumers and belongs to its own round with its
+ * own budget. Grouping first makes that round a CUT rather than a SURVEY.
  *
- * [REVW.3] IT LIVES IN ITS OWN TRANSLATION UNIT, `src/core/compile_defs.c`,
- * and that is the whole point of the file: it is the ONE object that names
- * `pcrec_rxt_compose`, so `compile.o` names no `rxt_*` symbol and the `.rxt`
- * tier reaches a linked program only through `cli/main.c`'s own call to this
- * entry. */
-int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
-                       const RxtDefs *defs, pcrec_output *out,
-                       pcrec_error *err);
+ * SO: a new declaration goes in ITS OWN LAYER'S GROUP, not at the end.
+ * ========================================================================= */
 
-/* src/dump/syntax_dump.c — rendering the registry as text (SR-3). Both
- * renderers return a malloc'd string the caller frees; `flavours` of 0 means
- * "no filter". These are INTERNAL on purpose: the CLI and the test suite are
- * the only consumers today, and promoting one function into lib/pcrec.h later
- * is easy in a way that un-promoting it is not. */
-char *pcrec_syntax_tsv(unsigned flavours);
-/* [DD-11.2] `--list-definitions`, the fifth registry surface (D85,
- * docs/design/definitions_table.md §5). Walks the same rows
- * `pcrec_syntax_tsv` does, through the same rendering helpers
- * (src/dump/syntax_dump.c), so the two dumps join on `kind`/`selector`/
- * `syntax` by construction. Takes `--flavour` exactly like `pcrec_syntax_
- * tsv` (r43 K6: an unfiltered dump would print a definition for a
- * construct `--list-syntax --flavour=X` says does not exist). */
-char *pcrec_definitions_tsv(unsigned flavours);
-/* D65: the built-status derivation `pcrec_syntax_tsv`'s new column reads,
- * and the same function tests/registry/registry_check.c's defect assertion
- * calls directly — one derivation, two callers, so neither can drift from
- * the other (the shape SR-4's dump/doc pairing already uses). Mutates the
- * process-global enabled set TEMPORARILY (src/parse/enabled.c) to force
- * `r`'s own module open regardless of what the process's real --features
- * installed, and restores it exactly before returning — see the function's
- * own comment for why that is safe and how the restore is exact. */
-PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r);
-/* `--list-verbs`: the Q1 name tables, which are not RegRows and so cannot
- * appear in the TSV above. Caller frees. */
-char *pcrec_syntax_verbs(void);
-/* [M6.6.2 wave F] `--list-families`: D71 item 3's INDEX LAYER — one line per
- * family (the rows sharing a key; a row's key is its `family` if set and its
- * own `syntax` otherwise), with `built` ANDed over the members. A SECOND dump
- * for `--list-verbs`' reason: `--list-syntax` is per-ROW and its consumers
- * depend on that (the reject table probes every row's own `syntax`), so the
- * grouping gets its own view rather than collapsing theirs. Caller frees. */
-char *pcrec_syntax_families(void);
-
-/* [CHK-2] `--list-axes` — THE OPTIMIZATION-AXIS REGISTRY'S FOURTH SURFACE
- * (docs/spec/registry.md). One row per (axis, candidate); `name` is the
- * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
- * (or 0) that removes it from the emitter's own selection walk. Populated by
- * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
- * `dfa_select` walks — never a hand-copied restatement of their names and
- * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
- * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
- * returns the number written (never more than `cap`). */
-typedef struct { const char *name; unsigned deny; } PcrecAxisCand;
-size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
-size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap);  /* axis B */
-size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis C */
-size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis D */
-size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
-size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
-size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
-/* [OPT-5] The scan edge's two axes, and they ride the SAME generic walk as
- * the six above -- their objects are `DfaCand`-headed, so `--list-axes` and
- * the registry check see a candidate added to either list with no
- * hand-copied restatement. Axis H is the REGION decision (does this state
- * emit an edge at all) and owns `-fno-scan-edge`; axis I is the edge's
- * run-extension BODY, whose future ISA-neutral SIMD form is a new object in
- * that list and nothing else (manager rulings R1/R2). */
-size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap);       /* axis H */
-size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis I */
-/* [OPT-5 STEP 2] axis J -- which form <prefix>_search's post-loop start
- * recovery takes ("pinned" / "reverse-pass"). Axis G's sibling: a question
- * about an ENTRY POINT, so bare DfaCands and no DfaForm. */
-size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
-/* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
- * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
- * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
-char *pcrec_axes_tsv(void);
-
-/* [LIM-1] `src/dump/limits_dump.c` — renders src/core/limits.def, the
- * numeric-limits table (D90), as one TSV, table_contract.md's wire format
- * (the SIXTH surface). Caller frees. */
-char *pcrec_limits_tsv(void);
-
-/* NULL when no construct matches the query. */
-/* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
- * no doorway AND no row looks like it — the CLI turns that into exit 1 with
- * its own message. Otherwise the answer, and `*ndissent` (may be NULL) is how
- * many displayed rows FAILED the election/promise/attribution clauses: a
- * defect surfaced, which the CLI reports as exit 3, distinct from exit 1's
- * "your query could not be answered". See syntax_dump.c's own header for the
- * format and for what these clauses can and cannot dissent on.
+/* ---- core (BASE) -- defined under src/core/, or in this header -------
  *
- * `err` (may be NULL, zeroed on entry) is the R20/MOD07-1 channel and it
- * DISAMBIGUATES THE NULL: empty `err->msg` is "no construct matches" as
- * before; a filled one is a doorway that RAISED — an enabled module port ran
- * a real parse of the query text and that parse failed. Both are exit 1 at
- * the CLI, with different sentences, because "your query could not be
- * answered" is not what happened in the second. */
-char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
-                           pcrec_error *err);
-unsigned pcrec_flavour_by_name(const char *name);
-/* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
- * doorway call for `construct` at ask level `want_name` ("claim" /
- * "verdict" / "result"), placed exactly as parse.c would place it, reporting
- * the REAL Ctx cursor before and after. Returns a malloc'd TSV line the
- * caller frees, or NULL when the want name is unknown or the text reaches no
- * doorway. check06 (the cursor rule) compares over this surface.
- *
- * `err` as for `pcrec_syntax_explain` above: zeroed on entry, and a filled
- * `err->msg` on a NULL return is the R20/MOD07-1 case — an enabled port
- * raised rather than the caller asking a bad question. */
-char *pcrec_probe_ask(const char *want_name, const char *construct,
-                      pcrec_error *err);
-
-/* ---- stage entry points ---- */
-
-int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
-Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
-Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
-/* src/core/compile.c — parse-only: the running capture count's end-of-parse
- * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
- * on the same refusal pcrec_compile would give. Internal, like the dumps. */
-int pcrec_count_groups(const char *pattern, pcrec_error *err);
-/* src/core/compile.c — THE PIPELINE DRIVER'S ONE EXPORTED FACE. `compile.c`
- * holds the tree's only compile `setjmp` and one `static compile_driver`
- * behind it; `pcrec_compile` and `pcrec_emit_ir` call that directly, and
- * this is how the ONE entry that lives in another translation unit —
- * `pcrec_compile_defs`, in `src/core/compile_defs.c`, so that `compile.o`
- * names no `rxt_*` symbol ([REVW.3], lens 6's R1) — reaches it.
- *
- * It is a face and not a second pipeline: its whole body is the forward,
- * and there is still exactly one `setjmp`, one retry ladder and one
- * compile. The static function keeps its own name deliberately — see the
- * definition site for why (a bare `compile_driver` in a library's symbol
- * table, against ~30 comments across the tree that cite the driver by
- * name). `ir_out` and `compose` are never both non-NULL today and nothing
- * enforces that, because nothing needs to. */
-int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
-                         pcrec_output *out, pcrec_error *err, char **ir_out,
-                         const RxtDefs *defs, PcrecComposeFn compose);
-
-/* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
- * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
- * `err` filled on any refusal, including the honest one for a pattern that
- * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
- * and the test suite are its only consumers. */
-char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
-                    pcrec_error *err);
-/* PARSE-1: the MODULE CALLBACK. Parses a nested body and stops AT its
- * terminator without consuming it — the caller consumes its own `)` and owns
- * its own unterminated-construct diagnostic. Do NOT hand a module
- * pcrec_parse_info instead: that one requires end-of-pattern and ctx_fails on
- * `)`. info may be NULL. */
-Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
-/* [OPT-4] `collapse` builds the COUNT-COLLAPSED language — every counted
- * repeat lowered as `X{min(m,1),}` — and is true ONLY where this machine's
- * sole customer is the VM hybrid's prefilter (docs/design/
- * prefilter_count_independence.md §3). It also RESETS `nfa->n`, so the same
- * `Nfa` can be measured exact and then rebuilt collapsed in place. */
-void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
-                     bool reverse, bool collapse);
-void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+ * The bottom tier: everything depends on it and it depends on nothing.
+ * `pcrec_startgate_needed` is defined in THIS header rather than in a
+ * `.c`, which is why it is filed here and not with its two callers. */
 
 /* [K50-NULLGATE] IS A BOUNDARY GATE ON ENGINE-INVENTED START POSITIONS NEEDED
  * FOR THIS PATTERN AT ALL? ONE derivation, read by the three consumers that
@@ -5391,18 +5233,103 @@ static inline bool pcrec_startgate_needed(const Ctx *cx)
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
-/* The same text into a CALLER-OWNED buffer, for a site that splices it into a
- * larger `sb_printf` rather than appending it. Returns `buf`, which is the
- * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
- * point contributes nothing and no call site needs its own conditional. Size
- * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX` — a `limits.def` row (home
- * INTERNAL_H, D90), expanded by this file's own include above, NOT spelled
- * here; overflow is a loud internal error, never a truncated half-guard. */
-const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
-                                      const char *indent, const char *posvar,
-                                      const char *subjvar, const char *lenvar);
+
+/* [OPT-DIAL] THE DIAL'S PINNED POLICY TABLE (src/core/tune.c, which is its
+ * ONE home; the contract is docs/spec/tuning.md §5).
+ *
+ * ONE ROW PER POSITION. Every value cell uses 0 as the EM-DASH SENTINEL —
+ * "the dial does not touch this axis at this position" — and each consuming
+ * SITE resolves the sentinel against its own built-in default, so this type
+ * does not become a second home for `PCREC_SIZE_TERM_THRESHOLD`,
+ * `VM_INLINE_CHAIN_MAX_BYTES` or the materiality bar. */
+typedef struct {
+    int         pos;                  /* −2..+2, PCREC_TUNE_* */
+    const char *token;                /* the closed five-token set; the stamp's value */
+    int         size_term_bar;        /* [ART-SIZE] ladder materiality bar, PERCENT */
+    long long   size_term_threshold;  /* [ART-SIZE] ladder trigger, emitted CODE bytes */
+    long long   vm_inline_chain_max;  /* [CC-DIFF] VM entry-chain size term, bytes */
+    uint64_t    deny_flags;           /* PCREC_NO_* bits the position DENIES */
+} PcrecTuneRow;
+
+bool                pcrec_tune_valid(int tune);
+
+const PcrecTuneRow *pcrec_tune_row(int tune);
+
+const char         *pcrec_tune_token(int tune);
+
+int                 pcrec_tune_parse(const char *s, int *out);
+
+int                 pcrec_tune_size_term_bar(int tune);
+
+long long           pcrec_tune_size_term_threshold(int tune);
+
+long long           pcrec_tune_vm_inline_chain_max(int tune);
+
+uint64_t            pcrec_tune_deny_flags(int tune);
+
+
+/* ---- enc -- defined under src/enc/ -----------------------------------
+ *
+ * The encoding seam publishes through its OWN header, `enc/enc.h`, so
+ * nothing is declared here today. The group is kept rather than omitted
+ * so the order above reads complete and a future `enc` declaration has a
+ * place to go. */
+
+
+/* ---- parse -- defined under src/parse/ ------------------------------*/
+
+/* ---- [DD-13b.W1.3] THE COMPOSER (src/parse/rxt_compose.c) --------------
+ *
+ * Binds every FILE reference the parse deferred, injecting each named
+ * definition into the caller's tree as `A_REP{0,0}(A_CAP{base}(body))` —
+ * the shape `(?(DEFINE)…)` already desugars to (`mod_recursion.c:418`), so
+ * no downstream pass gains a line for it.
+ *
+ * WHERE IT RUNS IS FORCED FROM BOTH SIDES (w1_impl §2.1): AFTER
+ * `pcrec_parse`, because it needs the caller's `ncap`, `named_groups` and
+ * resolved references; BEFORE `pcrec_callgraph_build` absolutely, because
+ * that pass is the only writer of `u.call.body` and is driven from
+ * `u.call.target` over the FINAL tree; and before `pcrec_altcls` so an
+ * injected definition gets the same optimization every other subtree gets.
+ *
+ * A NO-OP WHEN `cx->defs` IS NULL OR EMPTY, by an early return — every
+ * artifact pcrec emits without `--source` is byte-identical to before this
+ * file existed, which is what the identity gate's comparison (A) checks.
+ *
+ * Returns the (possibly new) root. Refuses through `ctx_fail` exactly as
+ * every other parse-tier pass does. */
+Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
+
+int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
+
+Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
+
+Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
+
+/* PARSE-1: the MODULE CALLBACK. Parses a nested body and stops AT its
+ * terminator without consuming it — the caller consumes its own `)` and owns
+ * its own unterminated-construct diagnostic. Do NOT hand a module
+ * pcrec_parse_info instead: that one requires end-of-pattern and ctx_fails on
+ * `)`. info may be NULL. */
+Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
+
+
+/* ---- ir -- defined under src/ir/ ------------------------------------*/
+
+/* [OPT-4] `collapse` builds the COUNT-COLLAPSED language — every counted
+ * repeat lowered as `X{min(m,1),}` — and is true ONLY where this machine's
+ * sole customer is the VM hybrid's prefilter (docs/design/
+ * prefilter_count_independence.md §3). It also RESETS `nfa->n`, so the same
+ * `Nfa` can be measured exact and then rebuilt collapsed in place. */
+void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
+                     bool reverse, bool collapse);
+
+void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+
 bool nfa_has_asserts(const Nfa *nfa);
+
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
+
 /* [ENG-ABS] `root` and `optional` are PARAMETERS rather than a second
  * construction. `root` used to be `nfa->start` implicitly; every call site now
  * states which start state its machine is rooted at, which is the whole of
@@ -5416,7 +5343,12 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
  * the value `DState.tr[]` already carries for "dead", so a partially built
  * optional machine is well-formed rather than corrupt on the way out. */
 enum { PCREC_DFA_DEAD = -1 };
+
+
+/* ---- opt -- defined under src/opt/ ----------------------------------*/
+
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
+
 /* [OPT-5] THE SCAN-EDGE PASS (src/opt/scanedge.c). Runs on EVERY machine,
  * immediately after `pcrec_minimize_dfa` on that machine: it needs the
  * canonical state set, and nothing after it rebuilds a `DState`. It reads
@@ -5429,13 +5361,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
  * through `pcrec_dfa_scan_state_written` below. Every caller states it, and
  * the two that pass a constant say why at the call. */
 void pcrec_scanedge_dfa(Ctx *cx, Dfa *dfa, bool prefilter_reseeds);
-/* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
- * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED? The pass's own
- * question, answered by the emitter's axis-B selection so that the two cannot
- * disagree about which prefilter this machine takes. `src/gen/emit_dfa.c`
- * carries the invariance argument that makes it safe to ask BEFORE the pass
- * runs, and `dfa_form_derive` checks the agreement afterwards. */
-bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c */
+
 /* The emitted class test's two forms, ONE predicate and one emission site
  * (D75 addendum: a one-site boolean stays a boolean). True when the class's
  * byte set is a contiguous range, which the emitter writes as a
@@ -5443,6 +5369,7 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c
  * docs/dev/opt5_step0_profile.md S3.2 measured. `lo`/`hi` are filled only on
  * a true answer. */
 bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
+
 /* [OPT-5 STEP 2] IS THIS STATE'S ACCEPT INDEPENDENT OF POSITION AND OF THE
  * UPCOMING BYTE? — scan-edge preconditions (2) and (3), and the start-pinned
  * search's P2, which are the same question asked by two passes. ONE
@@ -5451,7 +5378,6 @@ bool pcrec_scan_range(const Dfa *d, int cls, int *lo, int *hi);
  * (memory `pcrec-general-mechanisms-not-special-cases`). Stricter than STEP
  * 2's soundness needs on purpose — see the definition's own comment. */
 bool pcrec_state_view_invariant(const DState *st);  /* src/opt/scanedge.c */
-void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 
 /* ---- [OPT-ALTCLS] alternation->class normalization (docs/dev/plan.md) ---- */
 
@@ -5503,6 +5429,7 @@ int  pcrec_possessify(Ctx *cx, Ast *root);           /* src/opt/possessify.c */
  * ("nullable-body", "ambiguous-body", "not-prefix-free", "model-error") or
  * "unique-iteration" on success. */
 void *pcrec_uniq_scratch(Ctx *cx);                   /* src/opt/possessify.c */
+
 bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
 
 /* [M6.4.2] §2.2's verdict as a QUERY rather than as a MARK — the callable
@@ -5667,10 +5594,11 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * TODAY's three separate implementations first, per R2's own ordering
  * argument. */
 long long mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
+
 long long mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
-long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
-long long vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
+
 long long cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
+
 long long cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
 
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
@@ -5702,7 +5630,77 @@ long long cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
  * rather than asserted: tests/mrl/cwmax_check.c sweeps it over every node of
  * every pattern in the whole `.rxt` corpus. */
 long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
+
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
+
+
+/* ---- gen -- defined under src/gen/ ----------------------------------*/
+
+/* [CHK-2] `--list-axes` — THE OPTIMIZATION-AXIS REGISTRY'S FOURTH SURFACE
+ * (docs/spec/registry.md). One row per (axis, candidate); `name` is the
+ * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
+ * (or 0) that removes it from the emitter's own selection walk. Populated by
+ * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
+ * `dfa_select` walks — never a hand-copied restatement of their names and
+ * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
+ * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
+ * returns the number written (never more than `cap`). */
+typedef struct { const char *name; unsigned deny; } PcrecAxisCand;
+
+size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
+
+size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap);  /* axis B */
+
+size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis C */
+
+size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis D */
+
+size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
+
+size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
+
+size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
+
+/* [OPT-5] The scan edge's two axes, and they ride the SAME generic walk as
+ * the six above -- their objects are `DfaCand`-headed, so `--list-axes` and
+ * the registry check see a candidate added to either list with no
+ * hand-copied restatement. Axis H is the REGION decision (does this state
+ * emit an edge at all) and owns `-fno-scan-edge`; axis I is the edge's
+ * run-extension BODY, whose future ISA-neutral SIMD form is a new object in
+ * that list and nothing else (manager rulings R1/R2). */
+size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap);       /* axis H */
+
+size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis I */
+
+/* [OPT-5 STEP 2] axis J -- which form <prefix>_search's post-loop start
+ * recovery takes ("pinned" / "reverse-pass"). Axis G's sibling: a question
+ * about an ENTRY POINT, so bare DfaCands and no DfaForm. */
+size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
+
+/* The same text into a CALLER-OWNED buffer, for a site that splices it into a
+ * larger `sb_printf` rather than appending it. Returns `buf`, which is the
+ * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
+ * point contributes nothing and no call site needs its own conditional. Size
+ * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX` — a `limits.def` row (home
+ * INTERNAL_H, D90), expanded by this file's own include above, NOT spelled
+ * here; overflow is a loud internal error, never a truncated half-guard. */
+const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
+                                      const char *indent, const char *posvar,
+                                      const char *subjvar, const char *lenvar);
+
+/* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
+ * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED? The pass's own
+ * question, answered by the emitter's axis-B selection so that the two cannot
+ * disagree about which prefilter this machine takes. `src/gen/emit_dfa.c`
+ * carries the invariance argument that makes it safe to ask BEFORE the pass
+ * runs, and `dfa_form_derive` checks the agreement afterwards. */
+bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c */
+
+void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
+
+long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
+
+long long vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
 
 /* "This node's maximum width has no static bound" — an unbounded quantifier,
  * a backreference, or any arithmetic that ran off the top.
@@ -5749,15 +5747,20 @@ typedef struct {
     const char *searchfn, *matchfn, *matchcapsfn, *infoname;
     const char *upper;      /* the prefix uppercased — sb_upper, arena-owned */
 } GenNames;
+
 void pcrec_gen_names(Ctx *cx, GenNames *g);
+
 void pcrec_emit_abi_types(StrBuf *sb);
+
 /* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
  * one emitter for both engines so the two can never spell it differently
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
  * (a)/(b) split). `engine` is "vm" or "dfa". */
 void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine,
                              const char *sel);
+
 const char *pcrec_engine_sel_name(Ctx *cx);
+
 /* [DD-13c] `<PREFIX>_DFA_SCAN` + `<PREFIX>_DFA_PREFILTER`, the DFA scan's own
  * two selection facts, emitted from ONE place for the TWO artifact kinds that
  * CONTAIN a DFA scan: a DFA artifact, and a VM HYBRID (`fit.prefilter`), whose
@@ -5768,12 +5771,14 @@ const char *pcrec_engine_sel_name(Ctx *cx);
  * `job->engine`/`job->dfa` were never set (src/core/compile.c builds the pair
  * only when `fit.chosen == ENGM_DFA || fit.prefilter`). */
 void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
+
 /* [DD-13c] Does this artifact CONTAIN a DFA scan? src/core/compile.c's own
  * `fit.chosen == ENGM_DFA || fit.prefilter` condition, spelled once: it is what
  * makes `job->dfa`/`job->engine` exist, so it is the guard every reader of them
  * outside the DFA emitter must ask. True on a DFA artifact and on a VM HYBRID,
  * false on a non-hybrid VM artifact. */
 bool pcrec_artifact_has_dfa_scan(Ctx *cx);
+
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
@@ -5797,43 +5802,160 @@ typedef struct {
     int       trail_frame_size;   /* bytes per trail entry, THIS artifact */
     int       align;              /* bytes; the alignment BOTH regions need */
 } BufSurface;
+
 BufSurface pcrec_bufsurface_inert(void);
 
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          const BufSurface *bs);
+
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
+
 /* [M5-SEAM] the per-encoding residual DEFINITIONS (src/enc/); the
  * matching declarations ride pcrec_emit_prologue. */
 void pcrec_emit_residual(Ctx *cx);
+
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long budget, long long work, long long frames,
                      long long ceiling, const BufSurface *bs);
+
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
 
-/* [OPT-DIAL] THE DIAL'S PINNED POLICY TABLE (src/core/tune.c, which is its
- * ONE home; the contract is docs/spec/tuning.md §5).
- *
- * ONE ROW PER POSITION. Every value cell uses 0 as the EM-DASH SENTINEL —
- * "the dial does not touch this axis at this position" — and each consuming
- * SITE resolves the sentinel against its own built-in default, so this type
- * does not become a second home for `PCREC_SIZE_TERM_THRESHOLD`,
- * `VM_INLINE_CHAIN_MAX_BYTES` or the materiality bar. */
-typedef struct {
-    int         pos;                  /* −2..+2, PCREC_TUNE_* */
-    const char *token;                /* the closed five-token set; the stamp's value */
-    int         size_term_bar;        /* [ART-SIZE] ladder materiality bar, PERCENT */
-    long long   size_term_threshold;  /* [ART-SIZE] ladder trigger, emitted CODE bytes */
-    long long   vm_inline_chain_max;  /* [CC-DIFF] VM entry-chain size term, bytes */
-    uint64_t    deny_flags;           /* PCREC_NO_* bits the position DENIES */
-} PcrecTuneRow;
 
-bool                pcrec_tune_valid(int tune);
-const PcrecTuneRow *pcrec_tune_row(int tune);
-const char         *pcrec_tune_token(int tune);
-int                 pcrec_tune_parse(const char *s, int *out);
-int                 pcrec_tune_size_term_bar(int tune);
-long long           pcrec_tune_size_term_threshold(int tune);
-long long           pcrec_tune_vm_inline_chain_max(int tune);
-uint64_t            pcrec_tune_deny_flags(int tune);
+/* ---- driver -- defined in src/core/compile.c and compile_defs.c ------
+ *
+ * The PIPELINE DRIVER, which sits ABOVE `gen` in the layer order even
+ * though its two files live under `src/core/` -- see `src/CLAUDE.md`. */
+
+/* The `--source` compile entry: `pcrec_compile` plus a definition set.
+ * INTERNAL, and deliberately not a `pcrec_options` field — D20 keeps the
+ * public option surface scalar, and a definition set is a FILE's property
+ * that only the `.rxt` reader can build. A library caller that wants
+ * composition gets it through [LIB], not by growing this struct.
+ *
+ * [REVW.3] IT LIVES IN ITS OWN TRANSLATION UNIT, `src/core/compile_defs.c`,
+ * and that is the whole point of the file: it is the ONE object that names
+ * `pcrec_rxt_compose`, so `compile.o` names no `rxt_*` symbol and the `.rxt`
+ * tier reaches a linked program only through `cli/main.c`'s own call to this
+ * entry. */
+int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
+                       const RxtDefs *defs, pcrec_output *out,
+                       pcrec_error *err);
+
+/* src/core/compile.c — parse-only: the running capture count's end-of-parse
+ * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
+ * on the same refusal pcrec_compile would give. Internal, like the dumps. */
+int pcrec_count_groups(const char *pattern, pcrec_error *err);
+
+/* src/core/compile.c — THE PIPELINE DRIVER'S ONE EXPORTED FACE. `compile.c`
+ * holds the tree's only compile `setjmp` and one `static compile_driver`
+ * behind it; `pcrec_compile` and `pcrec_emit_ir` call that directly, and
+ * this is how the ONE entry that lives in another translation unit —
+ * `pcrec_compile_defs`, in `src/core/compile_defs.c`, so that `compile.o`
+ * names no `rxt_*` symbol ([REVW.3], lens 6's R1) — reaches it.
+ *
+ * It is a face and not a second pipeline: its whole body is the forward,
+ * and there is still exactly one `setjmp`, one retry ladder and one
+ * compile. The static function keeps its own name deliberately — see the
+ * definition site for why (a bare `compile_driver` in a library's symbol
+ * table, against ~30 comments across the tree that cite the driver by
+ * name). `ir_out` and `compose` are never both non-NULL today and nothing
+ * enforces that, because nothing needs to. */
+int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
+                         pcrec_output *out, pcrec_error *err, char **ir_out,
+                         const RxtDefs *defs, PcrecComposeFn compose);
+
+/* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
+ * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
+ * `err` filled on any refusal, including the honest one for a pattern that
+ * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
+ * and the test suite are its only consumers. */
+char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
+                    pcrec_error *err);
+
+
+/* ---- dump -- defined under src/dump/ --------------------------------*/
+
+/* src/dump/syntax_dump.c — rendering the registry as text (SR-3). Both
+ * renderers return a malloc'd string the caller frees; `flavours` of 0 means
+ * "no filter". These are INTERNAL on purpose: the CLI and the test suite are
+ * the only consumers today, and promoting one function into lib/pcrec.h later
+ * is easy in a way that un-promoting it is not. */
+char *pcrec_syntax_tsv(unsigned flavours);
+
+/* [DD-11.2] `--list-definitions`, the fifth registry surface (D85,
+ * docs/design/definitions_table.md §5). Walks the same rows
+ * `pcrec_syntax_tsv` does, through the same rendering helpers
+ * (src/dump/syntax_dump.c), so the two dumps join on `kind`/`selector`/
+ * `syntax` by construction. Takes `--flavour` exactly like `pcrec_syntax_
+ * tsv` (r43 K6: an unfiltered dump would print a definition for a
+ * construct `--list-syntax --flavour=X` says does not exist). */
+char *pcrec_definitions_tsv(unsigned flavours);
+
+/* D65: the built-status derivation `pcrec_syntax_tsv`'s new column reads,
+ * and the same function tests/registry/registry_check.c's defect assertion
+ * calls directly — one derivation, two callers, so neither can drift from
+ * the other (the shape SR-4's dump/doc pairing already uses). Mutates the
+ * process-global enabled set TEMPORARILY (src/parse/enabled.c) to force
+ * `r`'s own module open regardless of what the process's real --features
+ * installed, and restores it exactly before returning — see the function's
+ * own comment for why that is safe and how the restore is exact. */
+PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r);
+
+/* `--list-verbs`: the Q1 name tables, which are not RegRows and so cannot
+ * appear in the TSV above. Caller frees. */
+char *pcrec_syntax_verbs(void);
+
+/* [M6.6.2 wave F] `--list-families`: D71 item 3's INDEX LAYER — one line per
+ * family (the rows sharing a key; a row's key is its `family` if set and its
+ * own `syntax` otherwise), with `built` ANDed over the members. A SECOND dump
+ * for `--list-verbs`' reason: `--list-syntax` is per-ROW and its consumers
+ * depend on that (the reject table probes every row's own `syntax`), so the
+ * grouping gets its own view rather than collapsing theirs. Caller frees. */
+char *pcrec_syntax_families(void);
+
+/* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
+ * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
+ * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
+char *pcrec_axes_tsv(void);
+
+/* [LIM-1] `src/dump/limits_dump.c` — renders src/core/limits.def, the
+ * numeric-limits table (D90), as one TSV, table_contract.md's wire format
+ * (the SIXTH surface). Caller frees. */
+char *pcrec_limits_tsv(void);
+
+/* NULL when no construct matches the query. */
+/* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
+ * no doorway AND no row looks like it — the CLI turns that into exit 1 with
+ * its own message. Otherwise the answer, and `*ndissent` (may be NULL) is how
+ * many displayed rows FAILED the election/promise/attribution clauses: a
+ * defect surfaced, which the CLI reports as exit 3, distinct from exit 1's
+ * "your query could not be answered". See syntax_dump.c's own header for the
+ * format and for what these clauses can and cannot dissent on.
+ *
+ * `err` (may be NULL, zeroed on entry) is the R20/MOD07-1 channel and it
+ * DISAMBIGUATES THE NULL: empty `err->msg` is "no construct matches" as
+ * before; a filled one is a doorway that RAISED — an enabled module port ran
+ * a real parse of the query text and that parse failed. Both are exit 1 at
+ * the CLI, with different sentences, because "your query could not be
+ * answered" is not what happened in the second. */
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
+                           pcrec_error *err);
+
+unsigned pcrec_flavour_by_name(const char *name);
+
+/* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
+ * doorway call for `construct` at ask level `want_name` ("claim" /
+ * "verdict" / "result"), placed exactly as parse.c would place it, reporting
+ * the REAL Ctx cursor before and after. Returns a malloc'd TSV line the
+ * caller frees, or NULL when the want name is unknown or the text reaches no
+ * doorway. check06 (the cursor rule) compares over this surface.
+ *
+ * `err` as for `pcrec_syntax_explain` above: zeroed on entry, and a filled
+ * `err->msg` on a NULL return is the R20/MOD07-1 case — an enabled port
+ * raised rather than the caller asking a bad question. */
+char *pcrec_probe_ask(const char *want_name, const char *construct,
+                      pcrec_error *err);
+
+
 
 #endif /* PCREC_INTERNAL_H */
