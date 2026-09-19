@@ -42,9 +42,10 @@
 #      header and the file-map echo. The two patterns ARE different text; the
 #      bar says so in its own wording ("modulo the pattern-text stamp").
 #   2. THE CAPTURE DECLARATION. `RX_NCAPS`, `rx_info.ngroups`/`.nnames`/
-#      `.groups`, the `rx_group_names[]` table and the permanently-unset fill
-#      loop. MEASURED on libpcre2 10.46: `(?(DEFINE)(?<g>a))(?&g)` has
-#      CAPTURECOUNT 1 and reports g1 UNSET after a match, and
+#      `.nentries`/`.groups`, the `rx_group_names[]` table and the
+#      permanently-unset fill loop. MEASURED on libpcre2 10.46:
+#      `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 and reports g1 UNSET
+#      after a match, and
 #      `(?(DEFINE)(?<g>a))(x)(?&g)` reports g1 UNSET / g2 SET. The factored
 #      pattern NAMES four groups and PCRE2 counts them, so an artifact that
 #      declared none would be diverging from the oracle to win a diff. This is
@@ -160,6 +161,7 @@ strip_named() {
               -e '^#define RX_ALTCLS_FACTORED ' \
               -e '^    \.ngroups = ' \
               -e '^    \.nnames = ' \
+              -e '^    \.nentries = ' \
               -e '^    \.groups = '
 }
 
@@ -222,6 +224,18 @@ done
 # inventory, and libpcre2 reports the four names for this pattern too. MEASURED
 # rather than assumed: `.ngroups = 4` / `.nnames = 4` on the flagged artifact.
 #
+# `.nentries` IS A MEMBER OF THAT INVENTORY AND WAS MISSING FROM BOTH LISTS
+# (lane evtriage, 2026-09-19 — a PRE-EXISTING staleness, reproduced identically
+# at this branch's own branch point 4af16eb7). It is appended by
+# `src/gen/emit_dfa.c`'s `.nentries = %u` and reads `cx->n_named_groups`, the
+# SAME count `.nnames` reads — so `orig` writes 0 and the three factored
+# spellings write 4, for exactly the reason `.nnames` is excluded one line up.
+# The field landed at abi 15 ([DD-13b.W1.2], 2026-09-01), after both lists were
+# written, and this gate is ON DEMAND (`make test-specimen`, not a
+# `TEST_SECTIONS` member), so nothing ran it in between and the red went
+# unobserved. The general form: AN EXCLUSION LIST THAT NAMES A FAMILY MEMBER BY
+# MEMBER GOES STALE THE DAY THE FAMILY GAINS ONE.
+#
 # So this section's exclusion list is the PATTERN TEXT, `RX_ALTCLS_FACTORED` and
 # the GROUP INVENTORY — and it is a DIFFERENT list from §1's, not a superset:
 # `RX_NCAPS` and the unset fill are checked EQUAL here instead of excluded. An
@@ -235,6 +249,7 @@ strip_nocaps() {
               -e '^#define RX_ALTCLS_FACTORED ' \
               -e '^    \.ngroups = ' \
               -e '^    \.nnames = ' \
+              -e '^    \.nentries = ' \
               -e '^    \.groups = '
 }
 
@@ -261,13 +276,56 @@ for sp in $SPELLINGS; do
         bad "[nocaps] '$sp' does not report RX_NCAPS 1 under --no-captures"
         nocaps_decl_ok=0
     fi
-    # THE FILL'S OWN LOOP HEADER, not the substring `rx_g` — that also matches
-    # `rx_group_names`, which legitimately survives the flag.
-    if grep -q '^        for (int rx_g = 1;' "$WORKDIR/nc_$sp/rx.c"; then
+    # THE FILL'S OWN BLOCK HEADER, `    if (capture_spans)`. NOT the loop line
+    # `        for (int rx_g = 1;` this check used until 2026-09-19 (lane
+    # evtriage), and not the substring `rx_g` either — `rx_g` also matches
+    # `rx_group_names`, which legitimately survives the flag, and THE LOOP LINE
+    # MATCHES TWO DIFFERENT EMISSION SITES:
+    #
+    #   (a) `src/gen/emit_dfa.c`'s `emit_search_head` — wave G's dead-group
+    #       fill, the thing this assertion is about, gated on
+    #       `fit.chosen == ENGM_DFA && dfa_artifact_ncaps(cx) > 1` and so
+    #       correctly ABSENT under `--no-captures`; and
+    #   (b) the same file's `emit_anchored_match_caps_def`, which writes an
+    #       identical loop line into `<prefix>_match_caps` UNCONDITIONALLY —
+    #       its own comment says so ("`RX_NCAPS` is 1 on almost every DFA
+    #       artifact and the loop then emits nothing at run time").
+    #
+    # So the old needle reported the fill PRESENT on all four spellings under
+    # the flag while site (a) was correctly absent: a false positive on (b),
+    # PRE-EXISTING and reproduced identically at 4af16eb7. The block header is
+    # unique to (a) — it is the very line `strip_named` above anchors its range
+    # deletion on, so this file already depends on its uniqueness — and
+    # MEASURED: 1 occurrence in each of the three capture-declaring spellings'
+    # default artifacts, 0 in `orig`'s (RX_NCAPS 1), 0 in all four under the
+    # flag.
+    if grep -q '^    if (capture_spans)$' "$WORKDIR/nc_$sp/rx.c"; then
         bad "[nocaps] '$sp' still carries the permanently-unset fill under --no-captures, where no capture slot is promised at all"
         nocaps_decl_ok=0
     fi
 done
+
+# THE NEEDLE'S OWN POSITIVE CONTROL, in the direction that goes silently wrong
+# (learnings.md §3: not "does this check run" but "what would have to be true
+# for it to fail"). The assertion above is an ABSENCE, so a needle that stopped
+# matching its instrument — the emitter re-spelling the block header, say —
+# would read green forever on all four spellings. The DEFAULT artifacts §1
+# already compiled are the control, and they are asymmetric by construction:
+# the three factored spellings declare four named groups (RX_NCAPS 5) and carry
+# EXACTLY ONE fill block each, while `orig` declares none (RX_NCAPS 1) and
+# carries none — so this arm fails if the needle dies AND if the fill ever
+# starts appearing where no group is promised.
+fill_ctl_ok=1
+for sp in $SPELLINGS; do
+    want=1
+    [ "$sp" = orig ] && want=0
+    have="$(grep -c '^    if (capture_spans)$' "$WORKDIR/$sp/rx.c")"
+    if [ "$have" -ne "$want" ]; then
+        bad "[nocaps] the fill needle is not live: '$sp' carries $have permanently-unset fill blocks in its DEFAULT artifact, expected $want — the --no-captures absence above is vacuous until this is $want"
+        fill_ctl_ok=0
+    fi
+done
+[ "$fill_ctl_ok" -eq 1 ] && ok "[nocaps] the fill needle is LIVE on the default axis — exactly one block in each of the three capture-declaring spellings (RX_NCAPS 5) and none in 'orig' (RX_NCAPS 1), so the absence asserted under --no-captures is a measurement and not a needle that stopped matching"
 [ "$nocaps_decl_ok" -eq 1 ] && ok "[nocaps] all four spellings report RX_NCAPS 1 and carry NO permanently-unset fill under --no-captures — the two lines §1 has to excuse are EQUAL on this axis, asserted rather than filtered"
 
 for sp in factored factored_x factored_define; do
