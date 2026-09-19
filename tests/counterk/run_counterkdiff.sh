@@ -289,12 +289,29 @@ if [ "${1:-}" = "--corpus" ]; then
     shift
     derived="$WORKDIR/corpus_positive.txt"
     : > "$derived"
+    # [DD-8] THE LISTING IS TABLE-CONTRACT TSV NOW. The column indices are
+    # resolved BY NAME once, from a probe listing, and the per-pattern read
+    # is then one `awk` — the same process count the old `sed -n` cost, so a
+    # ~4,000-pattern derivation loop pays nothing for the conversion. A
+    # renamed section or column is a LOUD failure here, at the hoist, rather
+    # than an empty string every iteration that reads like "no pattern in
+    # the corpus selects this rung".
+    . "$ROOT_DIR/tests/lib/table.sh"
+    probe="$WORKDIR/probe.ir"
+    if ! pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a)b' > "$probe" 2>/dev/null; then
+        echo "counterkdiff: could not produce a probe --emit-ir listing" >&2; exit 2
+    fi
+    fact_i="$(table_col_index "$probe" fact summary)" || exit 2
+    val_i="$(table_col_index "$probe" value summary)" || exit 2
     grep -rhs '^pattern ' "$ROOT_DIR/tests" --include='*.rxt' | sed 's/^pattern //' \
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
         r="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
-             | sed -n 's/^; rungs *\(.*\) -- see.*/\1/p')"
+             | awk -F'\t' -v ki="$fact_i" -v vi="$val_i" -v want="rungs" '
+                 /^#section summary$/ { s = 1; next }
+                 /^#section /         { s = 0; next }
+                 s && $ki == want     { print $vi }')"
         case "$r" in *counter*) printf '%s\n' "$cp" >> "$derived" ;; esac
     done < "$WORKDIR/all.txt"
     echo "counterkdiff: derived $(wc -l < "$derived") rung-positive corpus patterns"

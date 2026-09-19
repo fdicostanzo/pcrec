@@ -305,9 +305,11 @@ requested, an auto-selected prefilter whose own DFA build OVERFLOWS a cap
 (state count, table entries, K7's element budget — the identical caps
 `--engine=dfa` can hit) is DROPPED rather than refused: `fit.prefilter`
 comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
-as if `-fno-prefilter` had been passed, though `--emit-ir`'s `; prefilter`
-line does not claim that flag's credit (it reads the same `RX_ENGINE_WHY`
-overflow text §2.11 states, not `-fno-prefilter`).
+as if `-fno-prefilter` had been passed, though `--emit-ir`'s `prefilter`
+summary row does not claim that flag's credit: its value is
+`no-dfa-overflow` (not `no-fno-prefilter`) and its note carries the same
+`RX_ENGINE_WHY` overflow text §2.11 states — `docs/spec/ir_listing.md` has
+the nine-token vocabulary.
 
 **[OPT-4] (2026-08-29) THE DROP IS NOW THE SECOND RUNG, NOT THE FIRST.**
 Before the prefilter is dropped, the fallback tries ONE more thing: building

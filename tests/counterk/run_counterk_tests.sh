@@ -37,6 +37,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 export WATCHDOG_SECTION="counterk"
 # [TT-10] see tests/lib/load_guard.sh's own header for the measurement and
 # threshold behind the K32 compile-cost pin below.
@@ -274,11 +278,16 @@ if gen k '((a)|ab){0,12}c'; then
         && bad "§8.3: a scalar _VM_UNROLL_K macro is emitted; K is per quantifier and a scalar lies on a mixed artifact" \
         || ok "§8.3: no scalar _VM_UNROLL_K macro is emitted (K is reported per quantifier, not per artifact)"
 fi
-if pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' 2>/dev/null \
-     | grep -q 'counter'; then
-    ok "§8.3: --emit-ir's RUNGS section names the counter rung for a selecting quantifier"
+# [DD-8] the old form grepped the word "counter" anywhere in the WHOLE
+# listing, which the header summary, a role string and a prose sentence can
+# all satisfy. It is now the `rungs` section's `kind` column, matched whole.
+ck_ir="$WORKDIR/rung_counter.ir"
+if pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' > "$ck_ir" 2>/dev/null \
+   && ck_kinds="$(table_field "$ck_ir" rungs kind)" \
+   && printf '%s\n' "$ck_kinds" | grep -qx counter; then
+    ok "§8.3: --emit-ir's rungs section names the counter rung for a selecting quantifier"
 else
-    bad "§8.3: --emit-ir's RUNGS section does not mention the counter rung"
+    bad "§8.3: --emit-ir's rungs section carries no 'counter' kind row"
 fi
 
 # ---------------------------------------------------------------------------

@@ -23,7 +23,19 @@ takes no `-o` and emits no C. On a pattern that compiles to the DFA engine it
 REFUSES and names the two ways to get a listing, which is an as-built decision:
 engine_m4.md §10 and DD-8's row are both silent, and the alternatives were
 inventing a DFA listing this milestone was not asked for or printing an empty
-one that looks like a bug. `--trace` is a generation axis (`PCREC_TRACE`)
+one that looks like a bug.
+
+**[DD-8] (2026-09-19):** `--emit-ir`'s OUTPUT FORMAT is now
+`docs/spec/table_contract.md` TSV — every table a named `#section` with its
+own column header, the PROGRAM body included, rendered through the [REVW.1]
+wave-1 emission kit's `sb_row` (D106 + addenda, D108). `docs/spec/
+ir_listing.md` is the format's contract: sections, columns, the `prefilter`
+value vocabulary, what is and is not promised. Column WIDTH is not a
+contract. Nothing about the flag's SHAPE changed — still a query, still no
+`-o`, still VM-only with the same refusal — and no emitted `.c` byte moved.
+Consumers read it through `tests/lib/table.sh`, never a fixed-position grep.
+
+`--trace` is a generation axis (`PCREC_TRACE`)
 producing an instrumented artifact that prints every resume-frame push/pop and
 capture write to stderr; never the default, and the artifact stamps that it is
 traced.

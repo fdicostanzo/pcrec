@@ -39,6 +39,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 export WATCHDOG_SECTION="prefilter"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/prefilter.XXXXXX")"
@@ -213,18 +217,29 @@ fi
 #    --engine=vm side effect) must not be reported identically now that both
 #    exist.
 # ---------------------------------------------------------------------------
-check_ir_line() {   # check_ir_line <label> <needle> <pattern> [args...]
-    local label="$1" needle="$2" pat="$3"; shift 3
-    local line
-    line="$(pcrec_run "$PCREC" --emit-ir "$@" -- "$pat" 2>/dev/null | grep '^; prefilter')"
-    case "$line" in
-        *"$needle"*) ok "$label: --emit-ir line names '$needle'" ;;
-        *) bad "$label: --emit-ir gave '$line', expected it to contain '$needle'" ;;
-    esac
+# [DD-8] THE ROUTE IS A VALUE TOKEN NOW, not a needle hunted inside a
+# sentence. `--emit-ir`'s `summary` section carries a `prefilter` row whose
+# `value` is one of nine tokens (docs/spec/ir_listing.md) and whose `note` is
+# the prose. So the assertion below is an EQUALITY against a declared
+# vocabulary, which is strictly stronger than the old substring test: the old
+# form passed when '--engine=vm' appeared anywhere in a long sentence, and
+# `yes` is a substring of several of the off-route sentences.
+check_ir_value() {   # check_ir_value <label> <expected value> <pattern> [args...]
+    local label="$1" want="$2" pat="$3"; shift 3
+    local f="$WORKDIR/irvalue.ir" got
+    if ! pcrec_run "$PCREC" --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+        bad "$label: --emit-ir failed for '$pat'"; return
+    fi
+    got="$(table_lookup "$f" summary fact prefilter value)" || got="<unreadable>"
+    if [ "$got" = "$want" ]; then
+        ok "$label: --emit-ir's prefilter value is '$want'"
+    else
+        bad "$label: --emit-ir's prefilter value is '$got', expected '$want'"
+    fi
 }
-check_ir_line "explicit deny"     '-fno-prefilter' '(a)b' -fno-prefilter
-check_ir_line "engine=vm side effect" '--engine=vm' '(a)b' --engine=vm
-check_ir_line "forced back on"    'yes'             '(a)b' --engine=vm -fprefilter
+check_ir_value "explicit deny"         'no-fno-prefilter' '(a)b' -fno-prefilter
+check_ir_value "engine=vm side effect" 'no-engine-vm'     '(a)b' --engine=vm
+check_ir_value "forced back on"        'yes'              '(a)b' --engine=vm -fprefilter
 
 # ---------------------------------------------------------------------------
 # 8. FUNCTIONAL SANITY: a forced-on and a forced-off build still MATCH. The
@@ -291,17 +306,40 @@ fi
 # REASON, which fell through to "NO (--engine=vm)" and named a flag the caller
 # had not passed. Same defect [M6.5.2] fixed for backreferences, same fix.
 # ---------------------------------------------------------------------------
-check_listing_reason() {   # check_listing_reason <label> <pattern> <needle> [args...]
-    local label="$1" pat="$2" needle="$3"; shift 3
-    local line
-    line="$(pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" 2>/dev/null \
-            | sed -n 's/^; prefilter *//p')"
-    if [ -z "$line" ]; then
-        bad "$label: '$pat' emitted no '; prefilter' listing line at all"
-    elif [ "${line#*"$needle"}" != "$line" ]; then
-        ok "$label: listing reads '$line'"
+# [DD-8] the same conversion for the `--features all` callers, plus the one
+# thing a token cannot carry: `check_listing_note` asserts a NEEDLE in the
+# `note` cell, which is where the [SEL-1] route's cap text
+# (`cx->dfa_overflow_why`, e.g. ">32000 states") lives. Two helpers rather
+# than one with an optional argument, because the two assertions are
+# different in kind — one is an equality against a ruled vocabulary, the
+# other a substring of prose whose WORDING is explicitly not a contract
+# (D26).
+check_listing_reason() {   # check_listing_reason <label> <pattern> <value> [args...]
+    local label="$1" pat="$2" want="$3"; shift 3
+    local f="$WORKDIR/reason.ir" got
+    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+        bad "$label: '$pat' produced no listing at all"; return
+    fi
+    got="$(table_lookup "$f" summary fact prefilter value)" || got="<unreadable>"
+    if [ "$got" = "$want" ]; then
+        ok "$label: prefilter value is '$want'"
     else
-        bad "$label: listing reads '$line'; expected it to name '$needle'"
+        bad "$label: prefilter value is '$got'; expected '$want'"
+    fi
+}
+check_listing_note() {   # check_listing_note <label> <pattern> <needle> [args...]
+    local label="$1" pat="$2" needle="$3"; shift 3
+    local f="$WORKDIR/reason.ir" note
+    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+        bad "$label: '$pat' produced no listing at all"; return
+    fi
+    note="$(table_lookup "$f" summary fact prefilter note)" || note=""
+    if [ -z "$note" ]; then
+        bad "$label: '$pat' has an EMPTY prefilter note; this comparison had nothing to read"
+    elif [ "${note#*"$needle"}" != "$note" ]; then
+        ok "$label: prefilter note names '$needle'"
+    else
+        bad "$label: prefilter note reads '$note'; expected it to name '$needle'"
     fi
 }
 
@@ -316,12 +354,12 @@ check_listing_reason() {   # check_listing_reason <label> <pattern> <needle> [ar
 # is no listing to read. The `{0}`-callee IDIOM is kept and the callee made
 # recursive, which is the minimal edit that restores what the row was about.
 check_listing_reason "LINKED call under auto names the CALL, not a flag" \
-    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)'
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'no-linked-call'
 # And under every flag that could plausibly claim the credit.
 check_listing_reason "LINKED call under --engine=vm still names the CALL" \
-    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)' --engine=vm
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'no-linked-call' --engine=vm
 check_listing_reason "LINKED call under -fno-prefilter still names the CALL" \
-    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)' -fno-prefilter
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'no-linked-call' -fno-prefilter
 # THE CONTROL: the same pattern with the call ERASED by hand is call-free and
 # keeps its prefilter, so a predicate that answered "call" for everything
 # would fail here rather than pass everywhere.
@@ -336,7 +374,7 @@ check_listing_reason "the call-ERASED control still gets its prefilter" \
 # arriving from the other side. MEASURED before the narrowing: this invocation
 # read "NO (subroutine call)".
 check_listing_reason "a SPLICED call does NOT claim the credit under --engine=vm" \
-    '(?:(x)){0}a(?1)b' 'NO (--engine=vm)' --engine=vm
+    '(?:(x)){0}a(?1)b' 'no-engine-vm' --engine=vm
 
 # `-fprefilter` REFUSES on a LINKED-call pattern rather than overriding, and
 # the diagnostic names the construct (D26 tier 2: the module name and what is
@@ -373,11 +411,17 @@ SEL1_OVERFLOW_PAT='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refus
 # one below. Moving the expectation without preserving the claim would have
 # quietly deleted the [SEL-1] regression this section was written for.
 check_listing_reason "the DFA-overflow fallback now KEEPS a prefilter, count-collapsed ([OPT-4] §6)" \
-    "$SEL1_OVERFLOW_PAT" 'yes, COUNT-COLLAPSED' --features all
+    "$SEL1_OVERFLOW_PAT" 'yes-collapsed' --features all
 check_listing_reason "...and under -fno-prefilter-collapse the route still names the CAP, not a flag" \
-    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all -fno-prefilter-collapse
+    "$SEL1_OVERFLOW_PAT" 'no-dfa-overflow' --features all -fno-prefilter-collapse
+# ...and the cap ITSELF is named, which is the half a value token cannot
+# carry and the half [SEL-1]'s regression was about.
+check_listing_note "...and the note names the cap by its own text" \
+    "$SEL1_OVERFLOW_PAT" 'dfa overflowed: >32000 states' --features all -fno-prefilter-collapse
 check_listing_reason "...still names the cap under -fno-prefilter (already the reason, unrelated flag present)" \
-    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all -fno-prefilter
+    "$SEL1_OVERFLOW_PAT" 'no-dfa-overflow' --features all -fno-prefilter
+check_listing_note "...and its note names the cap, not the unrelated flag" \
+    "$SEL1_OVERFLOW_PAT" 'dfa overflowed: >32000 states' --features all -fno-prefilter
 # `-fprefilter` is the FORCE form and stays do-or-die: it REFUSES rather than
 # overriding, with today's DFA-cap diagnostic (unchanged by [SEL-1]) -- NOT
 # `check_refuse` above, whose generic `grep -q 'prefilter'` control would
@@ -470,7 +514,7 @@ check_stamp "[OPT-4.2] -fprefilter overrides the decline on '(a)*'" yes o42_forc
 # 4. --emit-ir's "; prefilter" LINE is worded for the RUNGLESS path -- no
 #    "offered and declined" language, since no ladder attempt ran here.
 check_listing_reason "[OPT-4.2] the rungless decline names the pattern's own language, not a rung" \
-    '(a)*' 'NO (nullable exact language)'
+    '(a)*' 'no-nullable-exact'
 
 echo
 echo "== Summary =="

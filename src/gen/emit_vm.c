@@ -8344,67 +8344,130 @@ typedef struct {
     const char *why;
 } VmStamp;
 
-/* [D46] renders v->rungs (the summary bitmask) as a comma-joined list of
- * kind names, e.g. "cursor, frames-unbounded", or "none" for a pattern with
- * no A_REP at all (a real, distinct answer — a caller asking "did the
- * cursor rung ever run" needs to tell "there was nothing to select between"
- * from "frames won every time", and D46's controllability half will need
- * the same distinction to report a forced selection with nothing to act
- * on). Read straight from the mask vm_rung_mark() built during the real
- * emission walk — never re-derived from the AST, per S10's own rule
- * (engine_m4.md S10): one structure, walked once, is what every view has
- * to agree with. The PER-QUANTIFIER detail this summarizes is the RUNGS
- * listing section below, built from the same VE_RUNG events. */
-static void vm_rungs_describe(unsigned mask, StrBuf *o)
-{
-    if (!mask) { sb_puts(o, "none"); return; }
-    bool first = true;
-    for (int k = 0; k < VM_NRUNG; k++) {
-        if (!(mask & vm_rung_bit[k])) continue;
-        if (!first) sb_puts(o, ", ");
-        sb_puts(o, vm_rung_kindname[k]);
-        first = false;
-    }
-}
-
-static void vm_strats_describe(unsigned mask, StrBuf *o)
-{
-    if (!mask) { sb_puts(o, "none"); return; }
-    bool first = true;
-    for (int k = 0; k < 2; k++) {
-        if (!(mask & vm_strat_bit[k])) continue;
-        if (!first) sb_puts(o, ", ");
-        sb_puts(o, vm_strat_kindname[k]);
-        first = false;
-    }
-}
-
-/* THE LISTING's OWN TWO REPETITIONS, one home each (lens 11's F8).
+/* ==== THE LISTING, AS docs/spec/table_contract.md TSV ([DD-8], D106) ======
  *
- * `vm_listing_slot_row` is the SLOTS section's row and the one place its
- * three column widths are written; six families rendered it independently
- * before this, which is six places for one width to drift.
- * `vm_listing_slots` is a whole single-index family on top of it, including
- * the empty-population sentence two of the six carry and the other four do
- * not (NULL says so). The revdet family is the one that cannot use it: its
- * three rows come from ONE loop index, so printing them family-by-family
- * would reorder the section on any artifact with more than one revdet loop. */
-static void vm_listing_slot_row(StrBuf *o, int slot,
-                                const char *holds, const char *note)
+ * MACHINE-FIRST, RULED (D106 addendum item 1). Every section of `--emit-ir`'s
+ * output is a `#section NAME` block with its own `#`-header naming its
+ * columns, THE PROGRAM BODY INCLUDED (`label|op|args|target|note`) -- so
+ * there is no sibling line-oriented contract to design, no flat-schema
+ * contortion, and one rendering of one source of truth (the `VEvent` walk).
+ * A wrapper pretty-prints for a human if anyone wants that.
+ * `docs/spec/ir_listing.md` is the section-and-column contract;
+ * `docs/spec/table_contract.md` is the TSV contract it conforms to.
+ *
+ * THE ROWS GO THROUGH THE KIT ([REVW.1] wave 1's `sb_row`), and that is what
+ * buys the two properties a hand-rolled producer kept having to re-earn: the
+ * FIELD COUNT is a countable argument at the call site (the contract's own
+ * integrity rule), and the framing escape is a property of the primitive --
+ * `sb_text` sends a TAB or a newline inside any cell out as `\xNN`, so
+ * contract rule 5 ("a field never contains a TAB") holds for a role string
+ * nobody audited. D108: every function below takes VALUES and appends TEXT.
+ *
+ * COLUMN WIDTH IS NOT A CONTRACT (D106 addendum 3, Q3, answering lens 10's
+ * L10-6). The fields are unpadded; the `%-28s`/`%-22s`/`%-12s` alignment the
+ * old listing carried is gone, and nothing may pin it back.
+ *
+ * THE ONE RULE THE SECTION HELPERS EXIST TO KEEP: a `#` line may never
+ * follow a section's data. Contract rule 3 makes the LAST `#` line before a
+ * section's first data row that section's HEADER, so a trailing `#` remark
+ * inside an EMPTY section would silently BECOME its header and every
+ * conforming consumer would read a comment as a column list. That is why an
+ * empty population is a ROW with empty cells carrying its sentence in the
+ * note column, never a remark -- and it is why the reach census can count an
+ * empty family at all (w2y S3.3: a byte-identity green over a family that
+ * never renders is not evidence about that family). */
+
+/* [D46/DD-8] THE MASK SUMMARIES, ONE MECHANISM FOR TWO MASKS. `v->rungs` and
+ * `v->strats` both answer "which KINDS appear ANYWHERE in this program" --
+ * read straight off the bitmask `vm_rung_mark()` built during the real
+ * emission walk, never re-derived from the AST (engine_m4.md S10: one
+ * structure, walked once, is what every view has to agree with). The rung and
+ * the strategy are chosen per `A_REP`, so a pattern with two quantified
+ * bodies can and does MIX kinds, which is exactly the case a scalar summary
+ * would get wrong; "none" is a real, distinct answer (there was nothing to
+ * select between) and not a missing value. The per-quantifier detail is the
+ * `rungs`/`strategies` sections, built from the same events.
+ *
+ * ARENA-OWNED, and that is forced by the format rather than chosen: a TSV
+ * CELL is a `const char *` handed to `sb_row` ALONGSIDE ITS SIBLINGS, so a
+ * cell may not be built in a shared scratch buffer the next cell of the same
+ * row would clobber. `vm_rolef` is this file's arena sprintf and the arena
+ * chains blocks rather than reallocating, so the accumulated `s` stays valid
+ * across the next allocation. Quadratic in the number of SET bits, which is
+ * at most five.
+ *
+ * THE SEPARATOR IS A BARE COMMA, no space (docs/spec/ir_listing.md's
+ * multi-valued-cell rule), so a consumer splits on one byte. Before [DD-8]
+ * this was `vm_rungs_describe` and `vm_strats_describe`, the same twelve-line
+ * program twice, writing ", " into the listing buffer directly. */
+static const char *vm_mask_names(Vm *v, unsigned mask, const unsigned *bits,
+                                 const char *const *names, int n)
 {
-    sb_printf(o, "  %-12d %-22s %s\n", slot, holds, note);
+    if (!mask) return "none";
+    const char *s = NULL;
+    for (int k = 0; k < n; k++) {
+        if (!(mask & bits[k])) continue;
+        s = s ? vm_rolef(v, "%s,%s", s, names[k]) : names[k];
+    }
+    return s;
 }
 
-static void vm_listing_slots(StrBuf *o, Vm *v, int n, int (*slot)(Vm *, int),
+/* One section announcement and its header, which is `#` IMMEDIATELY followed
+ * by the column names (contract rule 3) -- i.e. `sb_row` with a `#` in front,
+ * so the names are TAB-joined and framed by the same primitive that writes
+ * the rows and a column name that could not be a field cannot be declared as
+ * one. The leading blank line is the separator; the contract's own readers
+ * skip blank lines, and `tests/lib/table.sh` is the in-tree proof. */
+static void vm_sec(StrBuf *o, const char *name,
+                   const char *const *cols, size_t ncol)
+{
+    sb_printf(o, "\n#section %s\n#", name);
+    sb_row(o, cols, ncol);
+}
+
+/* The three-cell row, which is six of the nine sections' shape (`summary`'s
+ * fact/value/note, the three per-quantifier event sections' label/kind/detail,
+ * `choicepoints`, `islands`). A NULL cell is an EMPTY FIELD and empty means
+ * "none" (contract rule 5) -- which is how an absent population says so
+ * without a comment line. */
+static void vm_row3(StrBuf *o, const char *a, const char *b, const char *c)
+{
+    const char *cells[3] = { a, b, c };
+    sb_row(o, cells, 3);
+}
+
+/* THE SLOTS SECTION's row, and the `family` column is the point of the
+ * [DD-8] shape rather than decoration. Before it, a reader told the six slot
+ * families apart by recognising their `holds` PROSE -- and w2y S3.3 records a
+ * reach census defeated by exactly that, three families' markers being
+ * substrings of another family's sentence. The family is now a declared
+ * column with a fixed vocabulary, so "which families does this artifact use"
+ * is a projection rather than a guess. */
+static void vm_listing_slot_row(StrBuf *o, const char *family,
+                                const char *slot, const char *holds,
+                                const char *note)
+{
+    const char *cells[4] = { family, slot, holds, note };
+    sb_row(o, cells, 4);
+}
+
+/* A whole single-index slot family. An EMPTY family still emits ONE row --
+ * family named, slot and holds empty, the family's own sentence (or nothing,
+ * where it has none) in the note -- because "this artifact reserves no
+ * low-water slots" is a fact a debug listing owes its reader and because an
+ * absent section arm is a reach hole no byte-identity gate can see. */
+static void vm_listing_slots(StrBuf *o, Vm *v, const char *family, int n,
+                             int (*slot)(Vm *, int),
                              const char *holds, const char *note,
                              const char *none_msg)
 {
     if (n == 0) {
-        if (none_msg) sb_puts(o, none_msg);
+        vm_listing_slot_row(o, family, NULL, NULL, none_msg);
         return;
     }
     for (int i = 0; i < n; i++)
-        vm_listing_slot_row(o, slot(v, i), holds, note);
+        vm_listing_slot_row(o, family, vm_rolef(v, "%d", slot(v, i)),
+                            holds, note);
 }
 
 /* The revdet loop's three slots, in the order a reader needs them. */
@@ -8414,26 +8477,39 @@ static const char *const vm_revdet_slot_desc[3][2] = {
     { "revdet ceiling",    "maximal boundary reached: the lazy extension's cap" },
 };
 
-/* One home for "list every event of kind K, or say why there are none" — the
- * RUNGS, STRATEGIES and PRUNING sections were the same twelve-line program
- * three times, differing in the event kind, the name table, one column width
- * and the empty-population sentence. `namew` is a real width at all three
- * call sites (18 / 14 / 12), never 0, which is what keeps `%-*s` distinguishable
- * from `%*s` here. */
-static void vm_listing_events(StrBuf *o, const Vm *v, VEKind kind,
-                              const char *const *kindname, int namew,
+/* One home for "list every event of kind K, or say there are none" -- the
+ * `rungs`, `strategies` and `pruning` sections are the same program three
+ * times, differing in the event kind, the name table and the
+ * empty-population sentence. The column WIDTH argument this helper carried
+ * before [DD-8] is gone with the padding (D106 addendum 3), which also
+ * retires w2x S8's `%-*s`-at-width-0 blind spot rather than documenting it. */
+static void vm_listing_events(StrBuf *o, Vm *v, VEKind kind,
+                              const char *const *kindname,
                               const char *none_msg)
 {
     int n = 0;
     for (int i = 0; i < v->nev; i++) {
         if (v->ev[i].k != kind) continue;
         n++;
-        sb_printf(o, "  at L%-6d %-*s %s\n", v->ev[i].a, namew,
-                  kindname[v->ev[i].b],
-                  v->ev[i].role ? v->ev[i].role : "");
+        vm_row3(o, vm_rolef(v, "L%d", v->ev[i].a), kindname[v->ev[i].b],
+                v->ev[i].role);
     }
     if (n == 0)
-        sb_puts(o, none_msg);
+        vm_row3(o, NULL, NULL, none_msg);
+}
+
+/* THE PROGRAM SECTION's row: `label|op|args|target|note`, the column set
+ * D106 addendum item 1 names. `op` is the instruction word and is the column
+ * a consumer selects on; `args` is its operand (compound where the operand
+ * is compound, e.g. `slot_values[2] <- scan_position`); `target` is the
+ * label control reaches (the resume label for a `push`, the RETURN label for
+ * a `call`, whose `args` is its callee); `note` is the role text the walk
+ * recorded. */
+static void vm_prow(StrBuf *o, const char *label, const char *op,
+                    const char *args, const char *target, const char *note)
+{
+    const char *cells[5] = { label, op, args, target, note };
+    sb_row(o, cells, 5);
 }
 
 /* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
@@ -8454,7 +8530,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * fallback (src/opt/select_engine.c) -- the prefilter this artifact would
      * otherwise have gotten is DROPPED because its DFA build hit the same cap
      * `--engine=dfa` refuses on, not because of `-fno-prefilter` or the
-     * `--engine=vm` side effect. Computed into a buffer BEFORE the ternary
+     * `--engine=vm` side effect. Computed into a buffer BEFORE the chain
      * below (unlike the static arms) because it has to embed
      * `cx->dfa_overflow_why`'s own text -- the same cap name `RX_ENGINE_WHY`
      * carries when the overflow is ALSO why this pattern chose the VM
@@ -8473,432 +8549,556 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * uninitialized rather than merely unread. */
     const char *sel1_prefilter_reason =
         !cx->dfa_disabled ? NULL
-        : vm_rolef(v, "NO (%s) -- the auto-selected prefilter's own DFA build hit"
+        : vm_rolef(v, "%s -- the auto-selected prefilter's own DFA build hit"
                       " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
                       " instead of refusing (SEL-1)", cx->dfa_overflow_why);
 
-    sb_puts(o, "; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
-    sb_puts(o, ";\n");
-    sb_puts(o, "; Produced BY the emitter's own walk, not by a second walk over the\n");
-    sb_puts(o, "; AST: every line below was written by the same call that wrote the\n");
-    sb_puts(o, "; corresponding C. S10's one constraint -- \"the dump must be derived\n");
-    sb_puts(o, "; from the same structure the emitter walks, never a parallel\n");
-    sb_puts(o, "; description\" -- is therefore structural here, not a discipline.\n");
-    sb_puts(o, ";\n");
-    sb_puts(o, "; pattern      ");
-    for (size_t i = 0; i < cx->patlen; i++) {
-        unsigned char ch = (unsigned char)cx->pat[i];
-        if (ch >= 32 && ch < 127) sb_putc(o, (char)ch);
-        else sb_printf(o, "\\x%02x", ch);
+    /* Counted here rather than beside their own sections, because [DD-8]
+     * moves the two COUNTS into `summary` (they are artifact-wide facts) and
+     * leaves the two sections to carry rows. Empty BY COUNT rather than by a
+     * hardcoded blank, which is what let the ISLANDS section start working
+     * the day a producer existed with no change to this block's shape. */
+    int nisl = 0, ncallout = 0;
+    for (int i = 0; i < v->nev; i++) {
+        if (v->ev[i].k == VE_ISLAND)  nisl++;
+        if (v->ev[i].k == VE_CALLOUT) ncallout++;
     }
-    sb_puts(o, "\n");
-    sb_printf(o, "; engine       vm (forced by: %s)\n", st->why ? st->why : "--engine=vm");
-    /* [M4.6f] the "off" reason now has TWO routes -- an explicit
-     * -fno-prefilter, or the R21 E-6 side effect of --engine=vm with no
-     * -fprefilter to override it back on -- and the listing names the one
-     * that actually fired rather than assuming the older, single-route
-     * text. The "yes" text does not need the same split: a forced-on
-     * prefilter (-fprefilter under --engine=vm) is the SAME machinery as an
-     * auto-derived one, §6.1's exactness claim unchanged either way. */
-    /* [M6.5.2] A THIRD "off" ROUTE, tested FIRST because it is the one no flag
-     * explains: a BACKREFERENCE pattern has no prefilter under ANY invocation.
-     * Erasing a backreference is a real approximation that is not even a
-     * SUPERSET once the referenced group's transitive closure holds an
-     * assertion or an atomic/possessive operator, and where it IS a superset
-     * its leftmost SPAN differs from the true one on a large fraction of
-     * subjects -- so there is no exact window to hand the VM either way
-     * (backrefs_design.md §7). Without this arm the listing said
-     * "NO (--engine=vm)" for a pattern compiled under `auto`, i.e. a
-     * diagnostic naming a flag the caller did not pass. */
-    sb_printf(o, "; prefilter    %s\n", st->prefilter
-              /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped
-               * being true of every hybrid. Above
-               * On a collapse RUNG (Frank's ruling B: a DFA state cap
-               * overflowed, or a size cap refused the exact artifact) — or
-               * under -fprefilter-collapse — the pair is built from the
-               * count-collapsed lowering, so it hands the VM a CANDIDATE
-               * window the VM verifies -- rejection sound, start a lower
-               * bound, END not a bound, which is why the PRUNING line below
-               * reads "subject-end" on exactly these artifacts. */
-              ? (st->prefilter_collapsed
-                 ? "yes, COUNT-COLLAPSED -- the pair is built from the"
-                   " count-collapsed superset (every X{m,n} as X{min(m,1),},"
-                   " K39/[OPT-4]), so its rejection is sound and its span"
-                   " START is a lower bound the VM verifies from; its span END"
-                   " is NOT a bound, hence no prefilter-window ceiling."
-                   " -fno-prefilter-collapse restores the exact machine"
-                 : "yes -- the capture-erased forward+reverse DFA pair hands the VM"
-                   " an exact window (S6.1); the VM never scans")
-              : st->has_bref
-              ? "NO (backreference) -- the erased approximation is neither a"
-                " sound superset nor the true span (S7); no flag changes this"
-              /* [DD-14 wave E] THE FOURTH "off" ROUTE, and it is tested
-               * before the two flag routes for the same reason the
-               * backreference arm is: no flag explains it. A SUBROUTINE
-               * CALL's erasure is not a loose approximation, it is a
-               * different language (design SS8.2), so there is no window to
-               * hand the VM under ANY invocation -- and `-fprefilter`
-               * REFUSES rather than overriding (src/opt/select_engine.c). */
-              : st->has_call
-              ? "NO (LINKED subroutine call) -- erasing a call is a DIFFERENT"
-                " language, not a superset (S8.2), and a call in a cycle has"
-                " no finite inlining either; no flag changes this, and"
-                " -fprefilter refuses. A SPLICED call is not a reason: its"
-                " callee is inlined EXACTLY (S8.3, S6.3)"
-              /* [OPT-4.1] tested AHEAD of the [SEL-1] arm and of the two flag
-               * routes, for the reason all three arms above it are: this is a
-               * FIFTH thing no flag explains, and it is the more specific fact
-               * where both apply. On the [SEL-1] rung `cx->dfa_disabled` is
-               * ALSO true, and the arm below would report the overflow — true,
-               * but it is the reason the rung was OFFERED, not the reason
-               * nothing came back from it. It is also the only arm that can
-               * fire with `dfa_disabled` FALSE (the size rung), where every
-               * arm below would name a flag the caller did not pass. */
-              : st->prefilter_declined_nullable
-              ? "NO (nullable collapsed language) -- a ladder rung offered the"
-                " count-collapsed prefilter ([OPT-4]) and it was DECLINED:"
-                " every X{m,n} lowers as X{min(m,1),}, and this pattern's"
-                " collapsed language matches the empty string, so the filter"
-                " could never dismiss a position and would cost a scan it"
-                " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
-                " -fprefilter is do-or-die and is never silently dropped: on"
-                " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
-                " it suppresses the rung itself and the compile refuses."
-                " -fprefilter-collapse does not override it"
-              /* [OPT-4.2] THE RUNGLESS TWIN, tested immediately after its
-               * rung-scoped sibling for the same "no flag explains it"
-               * reason -- and it must be worded DIFFERENTLY, not merely
-               * generalized, because there is no rung here to say was
-               * "offered": this pattern's own EXACT language is nullable on
-               * the ORDINARY hybrid path, no ladder attempt involved. */
-              : st->prefilter_declined_nullable_default
-              ? "NO (nullable exact language) -- this pattern's own EXACT"
-                " language matches the empty string, so the ordinary hybrid's"
-                " forward+reverse DFA pair would admit a zero-length match at"
-                " every position and could never dismiss one ([OPT-4.2], the"
-                " general form of [OPT-4.1]'s rung-scoped decline; pcrec-bench"
-                " O-10 measured 1.2-9.9x on the analogous collapsed shape)."
-                " -fprefilter overrides this decline; -fno-prefilter already"
-                " reaches the same artifact by a different door"
-              /* [SEL-1] tested here, ahead of the two flag routes, for the
-               * same reason has_bref/has_call are: this is a THIRD thing no
-               * flag explains, and it must not be reported as one. */
-              : cx->dfa_disabled
-              ? sel1_prefilter_reason
-              : (cx->opt->flags & PCREC_NO_PREFILTER)
-              ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
-              : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
+
+    sb_puts(o, "# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
+    sb_puts(o, "#\n");
+    sb_puts(o, "# Produced BY the emitter's own walk, not by a second walk over the\n");
+    sb_puts(o, "# AST: every row below was written by the same call that wrote the\n");
+    sb_puts(o, "# corresponding C. S10's one constraint -- \"the dump must be derived\n");
+    sb_puts(o, "# from the same structure the emitter walks, never a parallel\n");
+    sb_puts(o, "# description\" -- is therefore structural here, not a discipline.\n");
+    sb_puts(o, "#\n");
+    sb_puts(o, "# TAB-separated, one #section per table, each with its own #header of\n");
+    sb_puts(o, "# column names: docs/spec/ir_listing.md is this listing's contract and\n");
+    sb_puts(o, "# docs/spec/table_contract.md is the TSV contract it conforms to.\n");
+    sb_puts(o, "# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG\n");
+    sb_puts(o, "# listing: complete for control structure, lossy on operands (D106).\n");
+
+    /* ---- summary -------------------------------------------------------
+     * The artifact-wide facts, one row each: `value` is the machine-readable
+     * half and `note` the prose. They were a block of one-off `; ` lines,
+     * each a different fact with its own spacing, which is the block every
+     * consumer parsed by remembered shape. */
+    {
+        static const char *const cols[3] = { "fact", "value", "note" };
+        vm_sec(o, "summary", cols, 3);
+    }
+    {
+        /* The pattern's own bytes, framed by `sb_text`'s vocabulary and not
+         * `sb_field`'s (core/internal.h states why they are not
+         * interchangeable): this is a DUMP column like every registry dump's
+         * `syntax`, so a BACKSLASH passes through as itself and only a byte no
+         * line-oriented frame can carry goes out as `\xNN`. Pre-framed into
+         * the Job-owned scratch because `cx->pat` is bytes-plus-length and not
+         * a C string; running `sb_text` over the result a second time (inside
+         * `sb_row`) is a no-op BY CONSTRUCTION, since its output contains no
+         * byte `sb_text` escapes.
+         *
+         * A HIGH BYTE NOW PASSES THROUGH RAW where the old listing spelled it
+         * `\xNN`. Deliberate: the framing escape protects the FRAME and never
+         * transcodes the content, and a raw 0x80..0xff in a TSV field is what
+         * the six registry dumps already carry. */
+        StrBuf *pat = &cx->job->scr_desc;
+        pat->len = 0; if (pat->p) pat->p[0] = 0;
+        sb_textn(pat, cx->pat, cx->patlen);
+        vm_row3(o, "pattern", pat->p ? pat->p : "", NULL);
+    }
+    vm_row3(o, "engine", "vm",
+            vm_rolef(v, "forced by: %s", st->why ? st->why : "--engine=vm"));
+    /* [M4.6f] the "off" reason has SEVEN routes now, and the listing names
+     * the one that actually fired rather than assuming the older,
+     * single-route text. [DD-8] splits each arm into a stable VALUE TOKEN and
+     * its prose: the token is what a consumer compares (an equality against a
+     * fixed vocabulary), the note is what a human reads, and neither is a
+     * needle hunted for inside a sentence -- which is what every one of this
+     * listing's prefilter consumers did before.
+     *
+     * THE ORDER OF THE ARMS IS LOAD-BEARING and is unchanged. The four
+     * construct/analysis routes are tested BEFORE the two flag routes for one
+     * reason stated four times below: no flag explains them, so falling
+     * through to a flag arm would print a diagnostic naming a flag the caller
+     * did not pass. */
+    const char *pf_val, *pf_note;
+    if (st->prefilter) {
+        /* [OPT-4] TWO "yes" ARMS, because "an exact window" stopped being
+         * true of every hybrid. On a collapse RUNG (Frank's ruling B: a DFA
+         * state cap overflowed, or a size cap refused the exact artifact) --
+         * or under -fprefilter-collapse -- the pair is built from the
+         * count-collapsed lowering, so it hands the VM a CANDIDATE window the
+         * VM verifies: rejection sound, start a lower bound, END not a bound,
+         * which is why `prune-ceiling` reads "subject-end" on exactly these
+         * artifacts. */
+        if (st->prefilter_collapsed) {
+            pf_val  = "yes-collapsed";
+            pf_note = "COUNT-COLLAPSED -- the pair is built from the"
+                      " count-collapsed superset (every X{m,n} as X{min(m,1),},"
+                      " K39/[OPT-4]), so its rejection is sound and its span"
+                      " START is a lower bound the VM verifies from; its span END"
+                      " is NOT a bound, hence no prefilter-window ceiling."
+                      " -fno-prefilter-collapse restores the exact machine";
+        } else {
+            pf_val  = "yes";
+            pf_note = "the capture-erased forward+reverse DFA pair hands the VM"
+                      " an exact window (S6.1); the VM never scans";
+        }
+    /* [M6.5.2] A ROUTE NO FLAG EXPLAINS, and the first of them: a
+     * BACKREFERENCE pattern has no prefilter under ANY invocation. Erasing a
+     * backreference is a real approximation that is not even a SUPERSET once
+     * the referenced group's transitive closure holds an assertion or an
+     * atomic/possessive operator, and where it IS a superset its leftmost
+     * SPAN differs from the true one on a large fraction of subjects -- so
+     * there is no exact window to hand the VM either way (backrefs_design.md
+     * S7). Without this arm the listing said "--engine=vm" for a pattern
+     * compiled under `auto`, i.e. a diagnostic naming a flag the caller did
+     * not pass. */
+    } else if (st->has_bref) {
+        pf_val  = "no-backreference";
+        pf_note = "the erased approximation is neither a sound superset nor the"
+                  " true span (S7); no flag changes this";
+    /* [DD-14 wave E] THE SECOND SUCH ROUTE. A SUBROUTINE CALL's erasure is
+     * not a loose approximation, it is a different language (design SS8.2),
+     * so there is no window to hand the VM under ANY invocation -- and
+     * `-fprefilter` REFUSES rather than overriding
+     * (src/opt/select_engine.c). */
+    } else if (st->has_call) {
+        pf_val  = "no-linked-call";
+        pf_note = "LINKED subroutine call -- erasing a call is a DIFFERENT"
+                  " language, not a superset (S8.2), and a call in a cycle has"
+                  " no finite inlining either; no flag changes this, and"
+                  " -fprefilter refuses. A SPLICED call is not a reason: its"
+                  " callee is inlined EXACTLY (S8.3, S6.3)";
+    /* [OPT-4.1] tested AHEAD of the [SEL-1] arm and of the two flag routes,
+     * for the reason all three arms above it share, and it is the more
+     * specific fact where both apply. On the [SEL-1] rung `cx->dfa_disabled`
+     * is ALSO true, and the arm below would report the overflow -- true, but
+     * it is the reason the rung was OFFERED, not the reason nothing came back
+     * from it. It is also the only arm that can fire with `dfa_disabled`
+     * FALSE (the size rung), where every arm below would name a flag the
+     * caller did not pass. */
+    } else if (st->prefilter_declined_nullable) {
+        pf_val  = "no-nullable-collapsed";
+        pf_note = "nullable collapsed language -- a ladder rung offered the"
+                  " count-collapsed prefilter ([OPT-4]) and it was DECLINED:"
+                  " every X{m,n} lowers as X{min(m,1),}, and this pattern's"
+                  " collapsed language matches the empty string, so the filter"
+                  " could never dismiss a position and would cost a scan it"
+                  " cannot win ([OPT-4.1]; pcrec-bench O-10 measured 1.2-9.9x)."
+                  " -fprefilter is do-or-die and is never silently dropped: on"
+                  " the size rung it OVERRIDES this decline, on the [SEL-1] rung"
+                  " it suppresses the rung itself and the compile refuses."
+                  " -fprefilter-collapse does not override it";
+    /* [OPT-4.2] THE RUNGLESS TWIN, tested immediately after its rung-scoped
+     * sibling for the same "no flag explains it" reason -- and it must be
+     * worded DIFFERENTLY, not merely generalized, because there is no rung
+     * here to say was "offered": this pattern's own EXACT language is
+     * nullable on the ORDINARY hybrid path, no ladder attempt involved. */
+    } else if (st->prefilter_declined_nullable_default) {
+        pf_val  = "no-nullable-exact";
+        pf_note = "nullable exact language -- this pattern's own EXACT"
+                  " language matches the empty string, so the ordinary hybrid's"
+                  " forward+reverse DFA pair would admit a zero-length match at"
+                  " every position and could never dismiss one ([OPT-4.2], the"
+                  " general form of [OPT-4.1]'s rung-scoped decline; pcrec-bench"
+                  " O-10 measured 1.2-9.9x on the analogous collapsed shape)."
+                  " -fprefilter overrides this decline; -fno-prefilter already"
+                  " reaches the same artifact by a different door";
+    /* [SEL-1] tested here, ahead of the two flag routes, for the same reason
+     * has_bref/has_call are: this is a route no flag explains and it must not
+     * be reported as one. The note carries `cx->dfa_overflow_why` verbatim,
+     * which is the cap NAME a consumer asserts on. */
+    } else if (cx->dfa_disabled) {
+        pf_val  = "no-dfa-overflow";
+        pf_note = sel1_prefilter_reason;
+    } else if (cx->opt->flags & PCREC_NO_PREFILTER) {
+        pf_val  = "no-fno-prefilter";
+        pf_note = "-fno-prefilter -- forced off; the VM scans from search_from"
+                  " itself";
+    } else {
+        pf_val  = "no-engine-vm";
+        pf_note = "--engine=vm -- the VM scans from search_from itself"
+                  " (R21 E-6)";
+    }
+    vm_row3(o, "prefilter", pf_val, pf_note);
     /* [DD-14.EMPTY] the ROOT MINIMUM WIDTH, listed only when it reached the
      * analysis ceiling -- the debug-listing half of the artifact stamp
      * `<PREFIX>_VM_ROOT_MINW`, off the SAME `root_minw` value the emitted
      * guard is built from. Below the ceiling there is nothing to report that
-     * the PRUNING section does not already say per quantifier. */
+     * the `pruning` section does not already say per quantifier. */
     if (st->root_minw >= PCREC_MINW_MAX)
-        sb_printf(o, "; root minw    unbounded (%lld) -- matches nothing:"
-                     " the search entry answers NOMATCH before any frame is"
-                     " pushed (SS4.4b's fixpoint, SS12 P-12)\n",
-                  st->root_minw);
+        vm_row3(o, "root-minw", vm_rolef(v, "%lld", st->root_minw),
+                "unbounded -- matches nothing: the search entry answers NOMATCH"
+                " before any frame is pushed (SS4.4b's fixpoint, SS12 P-12)");
     /* [D46] the rung stamp's QUICK-GLANCE summary: which rung KINDS appear
-     * ANYWHERE in this program, not which one "the" program uses -- the
-     * rung is selected per A_REP, so a pattern with two quantified bodies
-     * can and does mix rungs (that is exactly the case a scalar summary
-     * would get wrong). Read straight off v->rungs, the same bitmask the
-     * <PREFIX>_VM_RUNGS macro below is built from. The RUNGS section further
-     * down is the per-quantifier detail this line summarizes. */
-    sb_puts(o, "; rungs        ");
-    vm_rungs_describe(v->rungs, o);
-    sb_puts(o, " -- see the RUNGS section below for which quantifier took"
-               " which\n");
+     * ANYWHERE in this program, not which one "the" program uses. Read
+     * straight off v->rungs, the same bitmask the <PREFIX>_VM_RUNGS macro is
+     * built from. */
+    vm_row3(o, "rungs",
+            vm_mask_names(v, v->rungs, vm_rung_bit, vm_rung_kindname, VM_NRUNG),
+            "comma-joined; the rungs section below says which quantifier took"
+            " which");
     /* [ENG-BREP] the ladder's first rung, summarized the same way and for the
-     * same reason. "possessive" appearing here means at least one quantifier
-     * needs no backtracking machinery at all; "backtracking" means at least
-     * one still does. Both appearing is the mixed artifact a scalar would
-     * misreport. */
-    sb_puts(o, "; strategies   ");
-    vm_strats_describe(v->strats, o);
-    sb_puts(o, " -- see the STRATEGIES section below for which quantifier"
-               " took which\n");
+     * same reason. "possessive" here means at least one quantifier needs no
+     * backtracking machinery at all; "backtracking" means at least one still
+     * does. Both appearing is the mixed artifact a scalar would misreport. */
+    vm_row3(o, "strategies",
+            vm_mask_names(v, v->strats, vm_strat_bit, vm_strat_kindname, 2),
+            "comma-joined; the strategies section below says which quantifier"
+            " took which");
     /* [ENG-BREP] the pass's OWN census, from src/opt/possessify.c, and it is
-     * deliberately not derived from the STRATEGIES rows below. Those are per
+     * deliberately not derived from the strategies rows below. Those are per
      * EMITTED quantifier, so a replicated bounded-repeat body contributes one
      * row per copy; these are per SOURCE `A_REP`, which is the only population
      * comparable with eng_brep_design.md §2.6's own census. Counting the rows
      * instead would measure replication as much as it measures the rule. */
     if (cx->opt->flags & PCREC_NO_POSSESSIFY)
-        /* "0 of 0" would read as "this program has no quantifiers", which is
-         * a different fact and usually a false one. A denied pass has not
-         * counted anything, and the line says so. */
-        sb_puts(o, "; possessify   DENIED (-fno-possessify): the pass did not"
-                   " run, so nothing here was analysed\n");
+        /* The value is EMPTY, not "0/0": "0 of 0" would read as "this program
+         * has no quantifiers", which is a different fact and usually a false
+         * one. A denied pass has not counted anything, and an empty field is
+         * the contract's own way of saying there is no value here. */
+        vm_row3(o, "possessify", NULL,
+                "DENIED (-fno-possessify): the pass did not run, so nothing"
+                " here was analysed");
     else
-        sb_printf(o, "; possessify   %d of %d source quantifier%s possessified"
-                     " (eng_brep_design.md S2)\n",
-                  cx->poss_marked, cx->poss_total,
-                  cx->poss_total == 1 ? "" : "s");
+        vm_row3(o, "possessify",
+                vm_rolef(v, "%d/%d", cx->poss_marked, cx->poss_total),
+                "marked/total SOURCE quantifiers possessified"
+                " (eng_brep_design.md S2)");
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
      * from the same v->up/v->p the emitter used. */
-    sb_printf(o, "; caps         %s_NCAPS %d (%d capturing group%s in the"
-                 " pattern text)\n",
-              v->up, st->ncaps, (int)cx->ncap, cx->ncap == 1 ? "" : "s");
+    vm_row3(o, "caps", vm_rolef(v, "%d", st->ncaps),
+            vm_rolef(v, "%s_NCAPS; %d capturing group%s in the pattern text",
+                     v->up, (int)cx->ncap, cx->ncap == 1 ? "" : "s"));
     if (st->has_budget)
-        sb_printf(o, "; step budget  %lld backtrack resumptions\n", st->budget);
+        vm_row3(o, "step-budget", vm_rolef(v, "%lld", st->budget),
+                "backtrack resumptions");
     else
-        sb_puts(o, "; step budget  none (--fno-step-budget)\n");
-    sb_printf(o, "; capacities   %lld resume frames, %lld trail entries",
-              st->bt_frames, st->trail_frames);
+        vm_row3(o, "step-budget", NULL, "none (--fno-step-budget)");
+    /* THREE ROWS where the old listing had one `; capacities` line carrying
+     * two or three numbers: a consumer that wants the trail capacity should
+     * ask for the trail capacity, not sub-parse a sentence. */
+    vm_row3(o, "resume-frames", vm_rolef(v, "%lld", st->bt_frames), NULL);
+    vm_row3(o, "trail-entries", vm_rolef(v, "%lld", st->trail_frames), NULL);
     if (st->ceiling > 0)
-        sb_printf(o, " (subject ceiling %lld bytes)\n", st->ceiling);
+        vm_row3(o, "subject-ceiling", vm_rolef(v, "%lld", st->ceiling),
+                "bytes");
     else
-        sb_puts(o, " (exact: no subject ceiling)\n");
-    sb_printf(o, "; program      %d labels, %d events\n", v->nlabel, v->nev);
+        vm_row3(o, "subject-ceiling", NULL, "exact: no subject ceiling");
+    vm_row3(o, "labels", vm_rolef(v, "%d", v->nlabel), NULL);
+    vm_row3(o, "events", vm_rolef(v, "%d", v->nev), NULL);
     /* The PRE-PASS count, not a recount of the event stream. It is what
      * PCREC_MAX_VM_RESUME_POINTS is checked against before emission, so
-     * printing it here is what lets a check compare the cap's own input
+     * reporting it here is what lets a check compare the cap's own input
      * against the artifact that came out (tests/codegen/run_ir_listing.sh). */
-    sb_printf(o, "; resume pts   %lld\n", v->npush);
-    sb_printf(o, "; max replicas %lld (limit %d, checked before emission)\n",
-              v->maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
+    vm_row3(o, "resume-points", vm_rolef(v, "%lld", v->npush),
+            "the PRE-PASS count the resume-point cap is checked against,"
+            " never a recount of the event stream");
+    vm_row3(o, "max-replicas", vm_rolef(v, "%lld", v->maxcopies),
+            vm_rolef(v, "limit %d, checked before emission",
+                     PCREC_MAX_VM_REPEAT_COPIES));
+    /* [M4.6d] the MRL ceiling's three artifact-wide facts, which used to be a
+     * three-line prose head on the PRUNING section. The VALUE vocabulary is
+     * deliberately the same three words the `<PREFIX>_VM_PRUNE_CEILING` stamp
+     * uses, so the FOURTH reader of `v.mrl_win` (design S9.3 S-LA13) and the
+     * stamp are comparable by EQUALITY rather than by hunting a phrase inside
+     * a sentence -- which is what tests/codegen's rule 1(d) had to do. The two
+     * remain independently computed: R31 E3's defect was the stamp and the
+     * ceiling-builders disagreeing, and this listing is one of the readers
+     * that makes that visible. */
+    vm_row3(o, "prune-ceiling",
+            !v->mrl ? "none" : v->mrl_win ? "prefilter-window" : "subject-end",
+            !v->mrl ? "-fno-length-prune"
+            : v->mrl_win
+              ? "min(subject_length, prefilter window end) -- D51 ruling 2"
+              : "the subject end -- either no prefilter, or the prefilter's"
+                " window END is not a bound on this match's end: the pattern"
+                " carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a"
+                " LOOKAROUND (lookaround_design.md 5.6), or the prefilter was"
+                " built from the COUNT-COLLAPSED superset"
+                " (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the"
+                " prefilter row above says which");
+    vm_row3(o, "prune-bound-sites", vm_rolef(v, "%lld", v->nclamp), NULL);
+    vm_row3(o, "prune-retreats", vm_rolef(v, "%lld", v->ndynskip),
+            v->ndynskip ? "an outer counter-derived term was DROPPED (sound: it"
+                          " under-estimates), so this artifact prunes less than"
+                          " the analysis could"
+                        : NULL);
+    vm_row3(o, "islands", vm_rolef(v, "%d", nisl), NULL);
+    vm_row3(o, "callout-sites", vm_rolef(v, "%d", ncallout), NULL);
 
-    /* ---- SLOTS ---------------------------------------------------------
+    /* ---- slots ---------------------------------------------------------
      * The layout comes from vm_slot_guard/vm_slot_low, the same two functions
      * the emitter indexes with; "written" is derived from the VE_SET events,
      * so a slot the layout reserves and the program never writes shows up as
      * exactly that. */
-    sb_puts(o, "\nSLOTS (the slot_values array, engine_m4.md S2.4)\n");
-    sb_printf(o, "  %-12s %-22s %s\n", "slot", "holds", "note");
+    {
+        static const char *const cols[4] = { "family", "slot", "holds", "note" };
+        vm_sec(o, "slots", cols, 4);
+    }
+    /* The GROUP family is the one whose `slot` cell names a PAIR -- a capture
+     * group owns its start and its end together and the "written" verdict is
+     * a property of the pair, not of either half. `2,3` is the pair cell;
+     * every other family is single-valued. */
     for (int k = 0; k <= v->ngroups; k++) {
         int w = 0;
         for (int i = 0; i < v->nev; i++)
             if (v->ev[i].k == VE_SET && (v->ev[i].a == 2 * k || v->ev[i].a == 2 * k + 1))
                 w++;
         const char *what = k == 0 ? "$0 whole match" : vm_rolef(v, "group %d", k);
-        sb_printf(o, "  %2d,%-9d %-22s %s\n", 2 * k, 2 * k + 1, what,
-                  /* [M6.2 wave E] slot 0 STOPS being entry-only the moment a
-                   * `\K` exists: that is the whole of the construct's
-                   * mechanism, and a listing still claiming "written by the
-                   * ENTRY, not the VM" would describe a different program
-                   * from the one beside it. The listing's own constraint
-                   * (S10: derived from the structure the emitter walks) is
-                   * about drift like this, and it costs one condition. */
-                  k == 0 ? (v->nkreset > 0
-                              ? "start written by the VM (\\K); end by the ENTRY"
-                              : "written by the ENTRY, not the VM (S3.4)")
-                         : (w ? "written on traverse, trailed" : "never written"));
+        vm_listing_slot_row(o, "group", vm_rolef(v, "%d,%d", 2 * k, 2 * k + 1),
+                            what,
+                            /* [M6.2 wave E] slot 0 STOPS being entry-only the
+                             * moment a `\K` exists: that is the whole of the
+                             * construct's mechanism, and a listing still
+                             * claiming "written by the ENTRY, not the VM"
+                             * would describe a different program from the one
+                             * beside it. The listing's own constraint (S10:
+                             * derived from the structure the emitter walks) is
+                             * about drift like this, and it costs one
+                             * condition. */
+                            k == 0 ? (v->nkreset > 0
+                                        ? "start written by the VM (\\K); end by the ENTRY"
+                                        : "written by the ENTRY, not the VM (S3.4)")
+                                   : (w ? "written on traverse, trailed" : "never written"));
     }
-    vm_listing_slots(o, v, v->nguard_total, vm_slot_guard,
+    vm_listing_slots(o, v, "guard", v->nguard_total, vm_slot_guard,
                      "empty-iteration guard",
                      "where the current iteration began (S3.3)",
-                     "  (no empty-iteration guard slots: no nullable unbounded"
-                     " quantifier on the frames rung)\n");
-    vm_listing_slots(o, v, v->nlow, vm_slot_low,
+                     "no empty-iteration guard slots: no nullable unbounded"
+                     " quantifier on the frames rung");
+    vm_listing_slots(o, v, "low", v->nlow, vm_slot_low,
                      "span-loop low-water", "the loop's entry position (S2.5)",
-                     "  (no span-loop low-water slots: no cursor rung in this"
-                     " program)\n");
-    vm_listing_slots(o, v, v->nmark, vm_slot_mark, "cut mark",
+                     "no span-loop low-water slots: no cursor rung in this"
+                     " program");
+    vm_listing_slots(o, v, "mark", v->nmark, vm_slot_mark, "cut mark",
                      "resume-stack depth at entry -- a possessified loop's "
                      "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])",
                      NULL);
-    for (int i = 0; i < v->nrev; i++)
-        for (int j = 0; j < 3; j++)
-            vm_listing_slot_row(o, vm_slot_rev(v, i, j),
-                                vm_revdet_slot_desc[j][0],
-                                vm_revdet_slot_desc[j][1]);
+    /* The one family with MORE THAN ONE ROW PER INDEX, which is why it cannot
+     * use vm_listing_slots: its three rows come from ONE loop index, so the
+     * section reads entry, low-water, ceiling, entry, low-water, ceiling for
+     * two revdet loops, and a per-family walk would reorder it. */
+    if (v->nrev == 0)
+        vm_listing_slot_row(o, "revdet", NULL, NULL, NULL);
+    else
+        for (int i = 0; i < v->nrev; i++)
+            for (int j = 0; j < 3; j++)
+                vm_listing_slot_row(o, "revdet",
+                                    vm_rolef(v, "%d", vm_slot_rev(v, i, j)),
+                                    vm_revdet_slot_desc[j][0],
+                                    vm_revdet_slot_desc[j][1]);
     /* [M6.6.2] the lookaround's two families. They are listed SEPARATELY and
      * their counts can differ, which is the point: `nlookmark < nlookpos` says
      * this artifact contains a NON-ATOMIC form, and that is how a reader tells
      * the two atomicities apart in the listing (design §3.6). */
-    vm_listing_slots(o, v, v->nlookmark, vm_slot_lookmark, "lookaround cut mark",
+    vm_listing_slots(o, v, "lookmark", v->nlookmark, vm_slot_lookmark,
+                     "lookaround cut mark",
                      "resume-stack depth at the assertion's entry -- the atomic "
                      "and negative forms commit ([M6.6.2])", NULL);
-    vm_listing_slots(o, v, v->nlookpos, vm_slot_lookpos, "lookaround cursor",
+    vm_listing_slots(o, v, "lookpos", v->nlookpos, vm_slot_lookpos,
+                     "lookaround cursor",
                      "the entry position the assertion restores: a lookaround "
                      "keeps the VERDICT and discards the POSITION", NULL);
 
-    /* ---- RUNGS -----------------------------------------------------------
-     * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
-     * folds into one bitmask. One row per A_REP, in emission order, each
-     * naming the label the rung was recorded against (vm_rung_mark's own
-     * `entry` argument) and the rung kind — never re-derived: every row
-     * below is a VE_RUNG event vm_cursor_rep / vm_rep's frames fallthrough
-     * appended at the same call that decided the rung. */
-    sb_puts(o, "\nRUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)\n");
-    vm_listing_events(o, v, VE_RUNG, vm_rung_kindname, 18,
-                      "  (none: no quantifier in this program consulted the"
-                      " rung ladder at all)\n");
+    /* ---- rungs -----------------------------------------------------------
+     * [D46] the PER-QUANTIFIER detail the summary's `rungs` row folds into one
+     * bitmask. One row per A_REP, in emission order, each naming the label the
+     * rung was recorded against (vm_rung_mark's own `entry` argument) and the
+     * rung kind — never re-derived: every row below is a VE_RUNG event
+     * vm_cursor_rep / vm_rep's frames fallthrough appended at the same call
+     * that decided the rung. */
+    {
+        static const char *const cols[3] = { "label", "kind", "detail" };
+        vm_sec(o, "rungs", cols, 3);
+        vm_listing_events(o, v, VE_RUNG, vm_rung_kindname,
+                          "none: no quantifier in this program consulted the"
+                          " rung ladder at all");
 
-    /* ---- STRATEGIES ------------------------------------------------------
-     * [ENG-BREP] the per-quantifier possessification verdict, as ACTED ON:
-     * every row is a VE_STRAT event appended by the same vm_rung_mark() call
-     * that decided the emitted shape, so a row saying "possessive" and an
-     * artifact that emitted a resume frame for that quantifier are not two
-     * things that could disagree — there is one call and it did both. */
-    sb_puts(o, "\nSTRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier"
-               " stamp)\n");
-    vm_listing_events(o, v, VE_STRAT, vm_strat_kindname, 14,
-                      "  (none: this program has no quantifier to possessify)\n");
+        /* ---- strategies --------------------------------------------------
+         * [ENG-BREP] the per-quantifier possessification verdict, as ACTED ON:
+         * every row is a VE_STRAT event appended by the same vm_rung_mark()
+         * call that decided the emitted shape, so a row saying "possessive"
+         * and an artifact that emitted a resume frame for that quantifier are
+         * not two things that could disagree — there is one call and it did
+         * both. */
+        vm_sec(o, "strategies", cols, 3);
+        vm_listing_events(o, v, VE_STRAT, vm_strat_kindname,
+                          "none: this program has no quantifier to possessify");
 
-    /* ---- PRUNING ---------------------------------------------------------
-     * [M4.6d] the per-quantifier MRL verdict, as ACTED ON. Same construction
-     * and same guarantee as the two sections above: every row is a VE_PRUNE
-     * event appended by the site that had the quantifier's own minrest in
-     * hand, so "clamped" here and a bound in the emitted C are one fact
-     * recorded once, not two that could disagree. */
-    sb_printf(o, "\nPRUNING (k23_design.md; D51's per-quantifier stamp)"
-                 "\n  ceiling: %s\n  bound sites emitted: %lld\n"
-                 "  runtime-term length retreats: %lld%s\n",
-              !v->mrl ? "none (-fno-length-prune)"
-                      : v->mrl_win ? "min(subject_length, prefilter window end) -- D51 ruling 2"
-                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which",
-              v->nclamp, v->ndynskip,
-              v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
-                            " (sound: it under-estimates), so this artifact"
-                            " prunes less than the analysis could"
-                          : "");
-    vm_listing_events(o, v, VE_PRUNE, vm_prune_kindname, 12,
-                      "  (none: this program has no quantifier to bound)\n");
+        /* ---- pruning -----------------------------------------------------
+         * [M4.6d] the per-quantifier MRL verdict, as ACTED ON. Same
+         * construction and same guarantee as the two sections above: every row
+         * is a VE_PRUNE event appended by the site that had the quantifier's
+         * own minrest in hand, so "clamped" here and a bound in the emitted C
+         * are one fact recorded once, not two that could disagree. The
+         * ceiling, the bound-site count and the retreat count are `summary`
+         * rows: they are artifact-wide, not per quantifier. */
+        vm_sec(o, "pruning", cols, 3);
+        vm_listing_events(o, v, VE_PRUNE, vm_prune_kindname,
+                          "none: this program has no quantifier to bound");
+    }
 
-    /* ---- PROGRAM -------------------------------------------------------*/
-    sb_puts(o, "\nPROGRAM\n");
+    /* ---- program -------------------------------------------------------*/
+    {
+        static const char *const cols[5] =
+            { "label", "op", "args", "target", "note" };
+        vm_sec(o, "program", cols, 5);
+    }
     for (int i = 0; i < v->nev; i++) {
         const VEvent *e = &v->ev[i];
         switch (e->k) {
         case VE_LABEL:
-            if (e->role) sb_printf(o, "  L%-6d ; %s\n", e->a, e->role);
-            else         sb_printf(o, "  L%d\n", e->a);
+            vm_prow(o, vm_rolef(v, "L%d", e->a), "label", NULL, NULL, e->role);
             break;
         case VE_CLASS: {
-            /* Job-owned scratch (see Job.scr_desc): the sb_printf into `o`
+            /* Job-owned scratch (see Job.scr_desc): the `sb_row` into `o`
              * below can longjmp on a ladder trial's abort while this text is
-             * live, and a local's buffer would be orphaned. */
+             * live, and a local's buffer would be orphaned. The `summary`
+             * section's pattern cell uses the same buffer and is long
+             * finished; no two cells of ONE row are ever built in it. */
             StrBuf *d = &v->cx->job->scr_desc;
             d->len = 0; if (d->p) d->p[0] = 0;
             vm_cls_describe(v, d, e->a);
-            sb_printf(o, "         consume %-28s -> L%d\n", d->p ? d->p : "?", e->b);
+            vm_prow(o, NULL, "consume", d->p ? d->p : "?",
+                    vm_rolef(v, "L%d", e->b), NULL);
             break;
         }
         case VE_ASSERT:
-            sb_printf(o, "         assert  %-28s -> L%d\n",
-                      e->role ? e->role : "?", e->a);
+            vm_prow(o, NULL, "assert", e->role ? e->role : "?",
+                    vm_rolef(v, "L%d", e->a), NULL);
             break;
-        case VE_PUSH: {
-            const char *tgt = vm_rolef(v, "resume L%d", e->a);
-            sb_printf(o, "         PUSH    %-28s ; %s\n", tgt,
-                      e->role ? e->role : "choice point");
+        case VE_PUSH:
+            vm_prow(o, NULL, "push", NULL, vm_rolef(v, "L%d", e->a),
+                    e->role ? e->role : "choice point");
             break;
-        }
-        case VE_SET: {
-            /* Widened for [M6-READ]: `stv[2] <- pos` fitted in 24, but
-             * `slot_values[2] <- scan_position` is 30 and snprintf silently
-             * TRUNCATED it to `slot_values[2] <- scan_`. A rename that moves
-             * emitted names has to check the listing's column widths too. */
-            const char *slot = vm_rolef(v, "slot_values[%d] <- scan_position", e->a);
-            sb_printf(o, "         set     %-28s ; %s\n", slot,
-                      e->role ? e->role : "");
+        case VE_SET:
+            vm_prow(o, NULL, "set",
+                    vm_rolef(v, "slot_values[%d] <- scan_position", e->a),
+                    NULL, e->role);
             break;
-        }
         case VE_GOTO:
-            sb_printf(o, "         -> L%d\n", e->a);
+            vm_prow(o, NULL, "goto", NULL, vm_rolef(v, "L%d", e->a), NULL);
             break;
         case VE_FAIL:
-            sb_puts(o, "         -> fail (backtrack)\n");
+            vm_prow(o, NULL, "fail", NULL, NULL, "backtrack");
             break;
         case VE_NOTE:
-            sb_printf(o, "         ; %s\n", e->role ? e->role : "");
+            vm_prow(o, NULL, "note", NULL, NULL, e->role);
             break;
         case VE_ACCEPT:
-            sb_puts(o, "         -> accept\n");
+            vm_prow(o, NULL, "accept", NULL, NULL, NULL);
             break;
         case VE_ISLAND: case VE_CALLOUT:
             break;
         case VE_RUNG:
         case VE_STRAT:
         case VE_PRUNE:
-            /* the RUNGS, STRATEGIES and PRUNING sections above are these
-             * events' own
-             * views; PROGRAM stays a straight-line trace of what actually
-             * executes, and neither a rung nor a strategy selection writes C
-             * of its own to trace. */
+            /* the rungs, strategies and pruning sections above are these
+             * events' own views; program stays a straight-line trace of what
+             * actually executes, and neither a rung nor a strategy selection
+             * writes C of its own to trace. */
             break;
         /* [DD-14 wave B+C] BOTH WRITE C, so like VE_CUT and unlike
          * VE_RUNG/VE_STRAT/VE_PRUNE they belong in the straight-line trace:
-         * a call and a return are things that EXECUTE. */
-        case VE_CALL: {
-            const char *tgt = vm_rolef(v, "callee L%d, return L%d", e->a, e->b);
-            sb_printf(o, "         CALL    %-28s ; %s\n", tgt,
-                      e->role ? e->role : "subroutine call");
+         * a call and a return are things that EXECUTE. `args` is the CALLEE
+         * and `target` the RETURN label. */
+        case VE_CALL:
+            vm_prow(o, NULL, "call", vm_rolef(v, "L%d", e->a),
+                    vm_rolef(v, "L%d", e->b),
+                    e->role ? e->role : "subroutine call");
             break;
-        }
         case VE_RETURN:
-            sb_printf(o, "         RETURN  %-28s ; %s\n", "goto* frame.call_ret",
-                      e->role ? e->role
-                              : "the callee region's own exit (never the "
-                                "lexical occurrence's)");
+            vm_prow(o, NULL, "return", "goto* frame.call_ret", NULL,
+                    e->role ? e->role
+                            : "the callee region's own exit (never the "
+                              "lexical occurrence's)");
             break;
-        case VE_CUT: {
+        case VE_CUT:
             /* [ENG-BREP] this one DOES write C, so unlike the two above it
              * belongs in the trace. */
-            const char *slot = vm_rolef(v, "frames <- slot_values[%d]", e->a);
-            sb_printf(o, "         CUT     %-28s ; %s\n", slot,
-                      e->role ? e->role : "commit: discard the loop's frames");
+            vm_prow(o, NULL, "cut",
+                    vm_rolef(v, "frames <- slot_values[%d]", e->a), NULL,
+                    e->role ? e->role : "commit: discard the loop's frames");
             break;
         }
-        }
     }
-    sb_puts(o, "  accept   ; return scan_position - ctx->pos; the capture slots at this"
-               " instant ARE the answer (S3.1)\n");
-    sb_puts(o, "  fail     ; the ONLY backtracker and the only indirect jump;"
-               " one step charged here (S4.2)\n");
+    /* The two TERMINAL labels, which are labels like any other and are rows
+     * like any other -- they were two trailing prose lines with no column
+     * structure at all. */
+    vm_prow(o, "accept", "label", NULL, NULL,
+            "return scan_position - ctx->pos; the capture slots at this instant"
+            " ARE the answer (S3.1)");
+    vm_prow(o, "fail", "label", NULL, NULL,
+            "the ONLY backtracker and the only indirect jump; one step charged"
+            " here (S4.2)");
 
-    /* ---- CHOICE POINTS -------------------------------------------------*/
+    /* ---- choicepoints --------------------------------------------------*/
     {
-        int n = 0;
-        sb_puts(o, "\nCHOICE POINTS (preference order: the frame pushed at a site"
-                   " resumes the LESS preferred alternative)\n");
-        int cur = -1;
+        static const char *const cols[3] = { "label", "resume", "note" };
+        vm_sec(o, "choicepoints", cols, 3);
+        int n = 0, cur = -1;
         for (int i = 0; i < v->nev; i++) {
             if (v->ev[i].k == VE_LABEL) cur = v->ev[i].a;
             if (v->ev[i].k != VE_PUSH) continue;
             n++;
-            sb_printf(o, "  at L%-6d resume L%-6d %s\n", cur, v->ev[i].a,
-                      v->ev[i].role ? v->ev[i].role : "");
+            vm_row3(o, vm_rolef(v, "L%d", cur), vm_rolef(v, "L%d", v->ev[i].a),
+                    v->ev[i].role);
         }
         if (n == 0)
-            sb_puts(o, "  (none: this program never backtracks -- it is a straight"
-                       " line, and the resume stack is never pushed)\n");
+            vm_row3(o, NULL, NULL,
+                    "none: this program never backtracks -- it is a straight"
+                    " line, and the resume stack is never pushed. PREFERENCE"
+                    " ORDER: the frame pushed at a site resumes the LESS"
+                    " preferred alternative");
     }
 
-    /* ---- ISLANDS / CALLOUTS --------------------------------------------
-     * Empty by COUNT rather than by a hardcoded blank, which is what let the
-     * ISLANDS section start working the day a producer existed with no change
-     * to this block's shape.
-     *
+    /* ---- islands / callouts --------------------------------------------
      * [ENG-ISL] STEP 1, 2026-09-03: THE PRODUCER EXISTS. Every row below is a
      * VE_ISLAND event `vm_isl_emit` appended in the same call that wrote the
      * trie, so this section cannot claim an island the program does not
-     * contain — S10's rule, and the reason a listing is not a second walk. */
+     * contain — S10's rule, and the reason a listing is not a second walk.
+     * The COUNTS are `summary` rows (`islands`, `callout-sites`); these two
+     * sections carry the rows. */
     {
-        int isl = 0, co = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k == VE_ISLAND)  isl++;
-            if (v->ev[i].k == VE_CALLOUT) co++;
-        }
-        sb_printf(o, "\nDFA ISLANDS (%d)\n", isl);
+        static const char *const cols[3] = { "label", "width", "note" };
+        vm_sec(o, "islands", cols, 3);
         for (int i = 0; i < v->nev; i++) {
             if (v->ev[i].k != VE_ISLAND) continue;
-            sb_printf(o, "  at L%-6d width %-6d %s\n", v->ev[i].a, v->ev[i].b,
-                      v->ev[i].role ? v->ev[i].role : "");
+            vm_row3(o, vm_rolef(v, "L%d", v->ev[i].a),
+                    vm_rolef(v, "%d", v->ev[i].b), v->ev[i].role);
         }
-        if (isl == 0)
-            sb_puts(o, "  (none: no flat alternation in this program has a"
-                       " finite literal language, so src/gen/emit_vm.c's"
-                       " alternation island declined every one --"
-                       " docs/spec/tuning.md S2.20)\n");
-        sb_printf(o, "\nCALLOUT SITES (%d)\n", co);
-        if (co == 0)
-            sb_puts(o, "  (none: module 'callouts' has no producer, so no"
-                       " pattern can reach a call site -- engine_m4.md S9.1)\n");
+        if (nisl == 0)
+            vm_row3(o, NULL, NULL,
+                    "none: no flat alternation in this program has a finite"
+                    " literal language, so src/gen/emit_vm.c's alternation"
+                    " island declined every one -- docs/spec/tuning.md S2.20");
+    }
+    {
+        static const char *const cols[2] = { "label", "note" };
+        vm_sec(o, "callouts", cols, 2);
+        /* A ROW PER EVENT the day a producer exists, rather than a count and
+         * a blank: the ISLANDS section spent its first two years as an
+         * honest-empty claim and started working unchanged when `vm_isl_emit`
+         * landed, which is the shape being copied here. */
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_CALLOUT) continue;
+            const char *row[2] = { vm_rolef(v, "L%d", v->ev[i].a),
+                                   v->ev[i].role };
+            sb_row(o, row, 2);
+        }
+        if (ncallout == 0) {
+            const char *cells[2] = {
+                NULL,
+                "none: module 'callouts' has no producer, so no pattern can"
+                " reach a call site -- engine_m4.md S9.1"
+            };
+            sb_row(o, cells, 2);
+        }
     }
 }
 

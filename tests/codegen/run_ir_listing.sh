@@ -73,6 +73,25 @@ KEEP="${KEEP:-0}"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="codegen"
 
+# [DD-8] THE LISTING IS docs/spec/table_contract.md TSV NOW, so every
+# extraction below resolves its SECTION and its COLUMN BY NAME through the
+# contract's one implementation. D106's own diagnosis of this file is why:
+# its extractors were fixed-position greps against a remembered shape and
+# they went stale once already. A renamed section or column is now a LOUD
+# failure from table.sh naming what it could not resolve, never an empty
+# string that reads like a population with no rows.
+. "$ROOT_DIR/tests/lib/table.sh"
+
+# ir_labels FILE -> the PROGRAM section's numeric labels, spelled as the
+# artifact spells them (`rx_L7`), sorted. The two TERMINAL labels (`accept`,
+# `fail`) are labels in the listing and are NOT `rx_L<n>:` in the .c, so the
+# numeric filter is a real part of the comparison and not tidying.
+ir_labels() {
+    local f="$1" pfx="${2:-rx}" v
+    v="$(table_field "$f" program label)" || return 1
+    printf '%s\n' "$v" | grep -E '^L[0-9]+$' | sed "s/^L/${pfx}_L/" | LC_ALL=C sort
+}
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "ir-listing: KEEP=1, temp dir: $WORKDIR" >&2
@@ -202,8 +221,10 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
 
     # ---- PROGRAM: the label set, both directions, no duplicates ----------
     grep -oE '^rx_L[0-9]+:' "$d/gen.c" | tr -d ':' | LC_ALL=C sort > "$d/c.labels"
-    grep -oE '^  rx_L[0-9]+|^  L[0-9]+' "$d/ir" | sed 's/^ *//; s/^L/rx_L/' \
-        | LC_ALL=C sort > "$d/ir.labels"
+    if ! ir_labels "$d/ir" > "$d/ir.labels"; then
+        bad "ir-listing[$pat]: could not read the listing's program/label column (section or column renamed?)"
+        continue
+    fi
     # BSD wc -l right-justifies/pads its count with leading spaces even
     # through a pipe (docs/dev/lanes/macport_report.md S8); stripped so the
     # string comparisons below don't compare "0" against "       0".
@@ -225,8 +246,12 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # ---- CHOICE POINTS: count and resume target --------------------------
     grep -oE 'RX_PUSH\(&&rx_L[0-9]+' "$d/gen.c" | grep -oE 'rx_L[0-9]+' \
         | LC_ALL=C sort > "$d/c.push"
-    grep -oE '^  at L[0-9]+ +resume L[0-9]+' "$d/ir" \
-        | grep -oE 'resume L[0-9]+' | sed 's/resume L/rx_L/' | LC_ALL=C sort > "$d/ir.push"
+    if ! ir_resume="$(table_field "$d/ir" choicepoints resume)"; then
+        bad "ir-listing[$pat]: could not read the listing's choicepoints/resume column"
+        continue
+    fi
+    printf '%s\n' "$ir_resume" | grep -E '^L[0-9]+$' | sed 's/^L/rx_L/' \
+        | LC_ALL=C sort > "$d/ir.push"
     if ! diff -q "$d/c.push" "$d/ir.push" >/dev/null; then
         bad "ir-listing[$pat]: CHOICE POINTS disagree with the emitted RX_PUSH sites: $(diff "$d/c.push" "$d/ir.push" | tr '\n' ' ' | cut -c1-200)"
     else
@@ -288,7 +313,18 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
         esac
     done < "$d/c.slotops"
     LC_ALL=C sort -n -u < "$d/c.slots.raw" > "$d/c.slots"
-    grep -oE 'set +slot_values\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | LC_ALL=C sort -n -u > "$d/ir.slots"
+    # [DD-8] the LISTING side is now declaration-scoped: the `program`
+    # section's rows whose `op` column is exactly `set`, and the slot number
+    # out of THAT row's `args`. The old form matched the two words `set
+    # slot_values[` anywhere in the whole listing.
+    if ! ir_prog="$(table_section_rows "$d/ir" program)" \
+       || ! ir_map="$(table_awk_map -s program "$d/ir" op args)"; then
+        bad "ir-listing[$pat]: could not read the listing's program section (renamed?)"
+        continue
+    fi
+    # shellcheck disable=SC2086
+    printf '%s\n' "$ir_prog" | awk -F'\t' $ir_map '$op == "set" { print $args }' \
+        | sed -n 's/^slot_values\[\([0-9]*\)\].*/\1/p' | LC_ALL=C sort -n -u > "$d/ir.slots"
     if [ -n "$unresolved" ]; then
         bad "ir-listing[$pat]: SLOTS — RX_SET operand(s)$unresolved are neither a number nor a #define in the artifact; the extraction would silently drop them"
     elif [ ! -s "$d/c.slots" ]; then
@@ -309,7 +345,7 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # an empty string and compares it against nothing — the same vacuity this
     # project keeps re-learning, and it bit run_vm_identity.sh first.
     cn="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_NCAPS [0-9]+' | awk '{print $3}')"
-    ir_n="$(grep -oE '^; caps +RX_NCAPS [0-9]+' "$d/ir" | grep -oE '[0-9]+' | head -1)"
+    ir_n="$(table_lookup "$d/ir" summary fact caps value)" || ir_n="<unreadable>"
     # [DD-14.FB] and the SAME correction now applies to the two capacity
     # macros, for the same reason one paragraph up: they moved .c -> .h with
     # the caller-buffer sizing surface (spec §10.4), because a caller has to
@@ -326,9 +362,11 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # was a vacuity is not, and is corrected here.
     cbt="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_RESUME_FRAMES [0-9]+' | awk '{print $3}')"
     ctr="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_TRAIL_FRAMES [0-9]+' | awk '{print $3}')"
-    ir_cap="$(grep -oE '^; capacities +[0-9]+ resume frames, [0-9]+ trail' "$d/ir")"
-    ir_bt="$(printf '%s' "$ir_cap" | grep -oE '[0-9]+ resume' | grep -oE '[0-9]+')"
-    ir_tr="$(printf '%s' "$ir_cap" | grep -oE '[0-9]+ trail' | grep -oE '[0-9]+')"
+    # [DD-8] THREE SUMMARY ROWS, not one sentence sub-parsed twice: the
+    # capacities were `; capacities N resume frames, M trail entries` and each
+    # number had to be picked out of the prose around it.
+    ir_bt="$(table_lookup "$d/ir" summary fact resume-frames value)" || ir_bt="<unreadable>"
+    ir_tr="$(table_lookup "$d/ir" summary fact trail-entries value)" || ir_tr="<unreadable>"
     if [ "$cn" = "$ir_n" ] && [ "$cbt" = "$ir_bt" ] && [ "$ctr" = "$ir_tr" ] \
        && [ -n "$cn" ] && [ -n "$cbt" ]; then
         ok "ir-listing[$pat]: header — RX_NCAPS/$cn, frames/$cbt, trail/$ctr agree with the artifact's own macros"
@@ -370,10 +408,10 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     # assertion is `pre-pass >= emitted` and an over-count is REPORTED in the
     # PASS text rather than swallowed: a reader sees the slack, and an
     # under-count — the hazard — is still a hard FAIL.
-    ir_rp="$(grep -oE '^; resume pts +[0-9]+' "$d/ir" | grep -oE '[0-9]+')"
+    ir_rp="$(table_lookup "$d/ir" summary fact resume-points value)" || ir_rp=""
     c_rp="$(wc -l < "$d/c.push" | tr -d ' ')"
     if [ -z "$ir_rp" ]; then
-        bad "ir-listing[$pat]: the listing carries no '; resume pts' line at all; this comparison had nothing to read (the header's wording changed?)"
+        bad "ir-listing[$pat]: the listing carries no summary 'resume-points' row at all; this comparison had nothing to read (the section or the fact was renamed?)"
     elif [ "$ir_rp" -lt "$c_rp" ]; then
         bad "ir-listing[$pat]: the cap's pre-pass counts $ir_rp resume points but the artifact emits $c_rp RX_PUSH site(s) — an UNDER-count, so PCREC_MAX_VM_RESUME_POINTS is checked against a number smaller than the program it is bounding"
     elif [ "$ir_rp" -gt "$c_rp" ]; then
@@ -402,8 +440,8 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     #
     # CALLOUTS keep the honest-empty shape: module 'callouts' still has no
     # producer, so `cal` and `art_cal` must both be 0.
-    isl="$(grep -oE '^DFA ISLANDS \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
-    cal="$(grep -oE '^CALLOUT SITES \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
+    isl="$(table_lookup "$d/ir" summary fact islands value)" || isl=""
+    cal="$(table_lookup "$d/ir" summary fact callout-sites value)" || cal=""
     stamp_isl="$(sed -n 's/^#define rx_VM_ALT_ISLANDS \([0-9]*\)$/\1/Ip' "$d/gen.c")"
     art_isl=0
     grep -q 'island' "$d/gen.c" && art_isl=1
@@ -427,6 +465,28 @@ for i in $(seq 0 $(( ${#PATTERNS[@]} - 1 )) ); do
     else
         ok "ir-listing[$pat]: the listing's $isl island(s) match the artifact's own RX_VM_ALT_ISLANDS stamp and its emitted text"
     fi
+
+    # ---- [DD-8] THE LISTING CONFORMS TO ITS OWN CONTRACT ------------------
+    #
+    # `--emit-ir` is a docs/spec/table_contract.md producer now, and the
+    # contract's own HEADER TRUTHFULNESS check ("every data row's field count
+    # equals its section's declared count") is what stops a cell from
+    # swallowing a TAB and silently re-shaping a row. Asserted PER SECTION,
+    # over the full declared section set, because a section that vanished
+    # entirely is the failure mode a per-file check cannot see: table.sh
+    # fails loudly on an absent section, so a renamed one is RED here rather
+    # than quietly unchecked. The SET is spelled out rather than discovered
+    # from the file for the same reason — discovering it from the producer
+    # would make this check agree with any producer, which is the
+    # control-shares-a-source-with-what-it-controls shape.
+    ir_contract_ok=1
+    for sec in summary slots rungs strategies pruning program choicepoints islands callouts; do
+        if ! table_check_truthfulness "$d/ir" "$sec" >/dev/null 2>&1; then
+            bad "ir-listing[$pat]: section '$sec' is absent or has a row whose field count disagrees with its own header (docs/spec/table_contract.md, HEADER TRUTHFULNESS)"
+            ir_contract_ok=0
+        fi
+    done
+    [ "$ir_contract_ok" = "1" ] && ok "ir-listing[$pat]: all 9 declared sections present and header-truthful (docs/spec/ir_listing.md)"
 
     # ---- [REVW.1] wave 1 stage 0: THE irsb BYTE-NEUTRALITY ARM ------------
     #
@@ -629,8 +689,8 @@ if pcrec_run "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1 
         bad "[M4.5c] a -p myrx listing does not name MYRX_NCAPS, or the artifact does not define it"
     fi
     # the label set must still line up under a different prefix
-    grep -oE '^myrx_L[0-9]+:' "$WORKDIR/pfx/gen.c" | tr -d ':' | sed 's/^myrx_L//' | LC_ALL=C sort -n > "$WORKDIR/pfx/c.l"
-    grep -oE '^  L[0-9]+' "$WORKDIR/pfx/ir" | sed 's/^ *L//' | LC_ALL=C sort -n > "$WORKDIR/pfx/i.l"
+    grep -oE '^myrx_L[0-9]+:' "$WORKDIR/pfx/gen.c" | tr -d ':' | LC_ALL=C sort > "$WORKDIR/pfx/c.l"
+    ir_labels "$WORKDIR/pfx/ir" myrx > "$WORKDIR/pfx/i.l" || : > "$WORKDIR/pfx/i.l"
     if [ -s "$WORKDIR/pfx/c.l" ] && diff -q "$WORKDIR/pfx/c.l" "$WORKDIR/pfx/i.l" >/dev/null; then
         ok "[M4.5c] ...and its label set matches the artifact's too"
     else

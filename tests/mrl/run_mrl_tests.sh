@@ -41,6 +41,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 export WATCHDOG_SECTION="mrl"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/mrl.XXXXXX")"
@@ -443,11 +447,18 @@ if gen mixed '(a{2,4}){2,6}b(c{2,4}){2,6}'; then
     else
         bad "a pattern with one bounded and one unbounded quantifier stamped RX_VM_PRUNES 0x${m:-?}, expected 0x3"
     fi
-    if pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' 2>/dev/null \
-        | grep -q '^PRUNING'; then
-        ok "--emit-ir carries a PRUNING section (D46's observability half, per quantifier)"
+    # [DD-8] the section is `#section pruning` and the claim it is worth
+    # asserting is that it carries ROWS, not merely that a heading exists: a
+    # present-but-empty section is what the old `grep -q '^PRUNING'` could
+    # not tell from a working one. This pattern has two clamping quantifiers.
+    mrl_ir="$WORKDIR/pruning.ir"
+    if pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' \
+        > "$mrl_ir" 2>/dev/null \
+       && nprune="$(table_field "$mrl_ir" pruning kind)" \
+       && [ "$(printf '%s\n' "$nprune" | grep -cx clamped | tr -d ' ')" -ge 1 ]; then
+        ok "--emit-ir's pruning section carries per-quantifier rows (D46's observability half)"
     else
-        bad "--emit-ir has no PRUNING section"
+        bad "--emit-ir's pruning section is absent or carries no 'clamped' row"
     fi
 fi
 

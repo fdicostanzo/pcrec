@@ -1,102 +1,126 @@
-; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
-;
-; Produced BY the emitter's own walk, not by a second walk over the
-; AST: every line below was written by the same call that wrote the
-; corresponding C. S10's one constraint -- "the dump must be derived
-; from the same structure the emitter walks, never a parallel
-; description" -- is therefore structural here, not a discipline.
-;
-; pattern      (a|ab)(c|bcd)
-; engine       vm (forced by: capture group at pattern offset 0)
-; prefilter    NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)
-; rungs        none -- see the RUNGS section below for which quantifier took which
-; strategies   none -- see the STRATEGIES section below for which quantifier took which
-; possessify   0 of 0 source quantifiers possessified (eng_brep_design.md S2)
-; caps         RX_NCAPS 3 (2 capturing groups in the pattern text)
-; step budget  500000000 backtrack resumptions
-; capacities   2 resume frames, 5 trail entries (exact: no subject ceiling)
-; program      17 labels, 50 events
-; resume pts   1
-; max replicas 0 (limit 64, checked before emission)
+# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)
+#
+# Produced BY the emitter's own walk, not by a second walk over the
+# AST: every row below was written by the same call that wrote the
+# corresponding C. S10's one constraint -- "the dump must be derived
+# from the same structure the emitter walks, never a parallel
+# description" -- is therefore structural here, not a discipline.
+#
+# TAB-separated, one #section per table, each with its own #header of
+# column names: docs/spec/ir_listing.md is this listing's contract and
+# docs/spec/table_contract.md is the TSV contract it conforms to.
+# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG
+# listing: complete for control structure, lossy on operands (D106).
 
-SLOTS (the slot_values array, engine_m4.md S2.4)
-  slot         holds                  note
-   0,1         $0 whole match         written by the ENTRY, not the VM (S3.4)
-   2,3         group 1                written on traverse, trailed
-   4,5         group 2                written on traverse, trailed
-  (no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung)
-  (no span-loop low-water slots: no cursor rung in this program)
+#section summary
+#fact	value	note
+pattern	(a|ab)(c|bcd)	
+engine	vm	forced by: capture group at pattern offset 0
+prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
+rungs	none	comma-joined; the rungs section below says which quantifier took which
+strategies	none	comma-joined; the strategies section below says which quantifier took which
+possessify	0/0	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
+caps	3	RX_NCAPS; 2 capturing groups in the pattern text
+step-budget	500000000	backtrack resumptions
+resume-frames	2	
+trail-entries	5	
+subject-ceiling		exact: no subject ceiling
+labels	17	
+events	50	
+resume-points	1	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
+max-replicas	0	limit 64, checked before emission
+prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
+prune-bound-sites	0	
+prune-retreats	0	
+islands	1	
+callout-sites	0	
 
-RUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)
-  (none: no quantifier in this program consulted the rung ladder at all)
+#section slots
+#family	slot	holds	note
+group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
+group	2,3	group 1	written on traverse, trailed
+group	4,5	group 2	written on traverse, trailed
+guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
+low			no span-loop low-water slots: no cursor rung in this program
+mark			
+revdet			
+lookmark			
+lookpos			
 
-STRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier stamp)
-  (none: this program has no quantifier to possessify)
+#section rungs
+#label	kind	detail
+		none: no quantifier in this program consulted the rung ladder at all
 
-PRUNING (k23_design.md; D51's per-quantifier stamp)
-  ceiling: the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the `; prefilter` line above says which
-  bound sites emitted: 0
-  runtime-term length retreats: 0
-  (none: this program has no quantifier to bound)
+#section strategies
+#label	kind	detail
+		none: this program has no quantifier to possessify
 
-PROGRAM
-  L0      ; group 1 opens
-         set     slot_values[2] <- scan_position ; group 1 open, written on traverse
-         -> L3
-  L3
-         consume 'a'                          -> L5
-         -> fail (backtrack)
-  L5      ; alternation entry (2 branches)
-         PUSH    resume L8                    ; branch 1 of 2 preferred; resume tries branch 2
-         -> L6
-  L8      ; alternation resume: try branch 2 of 2
-         -> L7
-  L6      ; empty
-         -> L4
-  L7
-         consume 'b'                          -> L4
-         -> fail (backtrack)
-  L4      ; group 1 closes
-         set     slot_values[3] <- scan_position ; group 1 close, written on traverse
-         -> L2
-  L2      ; group 2 opens
-         set     slot_values[4] <- scan_position ; group 2 open, written on traverse
-         -> L9
-  L9      ; alternation island: trie dispatch over 2 literal alternatives
-         -> L12
-         -> L11
-         -> fail (backtrack)
-  L11     ; island: 1 alternative end here (depth 1)
-         ; work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-         -> L15
-  L12
-         -> L13
-         ; work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-         -> fail (backtrack)
-  L13
-         -> L14
-         ; work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-         -> fail (backtrack)
-  L14     ; island: 1 alternative end here (depth 3)
-         ; work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-         -> L16
-  L15     ; island: branch 1 of 2 matched here (1 byte); the last candidate on this path
-         -> L10
-  L16     ; island: branch 2 of 2 matched here (3 bytes); the last candidate on this path
-         -> L10
-  L10     ; group 2 closes
-         set     slot_values[5] <- scan_position ; group 2 close, written on traverse
-         -> L1
-  L1      ; the pattern is complete
-         -> accept
-  accept   ; return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
-  fail     ; the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
+#section pruning
+#label	kind	detail
+		none: this program has no quantifier to bound
 
-CHOICE POINTS (preference order: the frame pushed at a site resumes the LESS preferred alternative)
-  at L5      resume L8      branch 1 of 2 preferred; resume tries branch 2
+#section program
+#label	op	args	target	note
+L0	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L3	
+L3	label			
+	consume	'a'	L5	
+	fail			backtrack
+L5	label			alternation entry (2 branches)
+	push		L8	branch 1 of 2 preferred; resume tries branch 2
+	goto		L6	
+L8	label			alternation resume: try branch 2 of 2
+	goto		L7	
+L6	label			empty
+	goto		L4	
+L7	label			
+	consume	'b'	L4	
+	fail			backtrack
+L4	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L2	
+L2	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L9	
+L9	label			alternation island: trie dispatch over 2 literal alternatives
+	goto		L12	
+	goto		L11	
+	fail			backtrack
+L11	label			island: 1 alternative end here (depth 1)
+	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
+	goto		L15	
+L12	label			
+	goto		L13	
+	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
+	fail			backtrack
+L13	label			
+	goto		L14	
+	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
+	fail			backtrack
+L14	label			island: 1 alternative end here (depth 3)
+	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
+	goto		L16	
+L15	label			island: branch 1 of 2 matched here (1 byte); the last candidate on this path
+	goto		L10	
+L16	label			island: branch 2 of 2 matched here (3 bytes); the last candidate on this path
+	goto		L10	
+L10	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L1	
+L1	label			the pattern is complete
+	accept			
+accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
+fail	label			the ONLY backtracker and the only indirect jump; one step charged here (S4.2)
 
-DFA ISLANDS (1)
-  at L9      width 2      alternation island: 2 literal alternatives, 5 trie nodes, depth 3, 2 try sites, 0 resume points; size est 1260 B vs the chain's 686 B
+#section choicepoints
+#label	resume	note
+L5	L8	branch 1 of 2 preferred; resume tries branch 2
 
-CALLOUT SITES (0)
-  (none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1)
+#section islands
+#label	width	note
+L9	2	alternation island: 2 literal alternatives, 5 trie nodes, depth 3, 2 try sites, 0 resume points; size est 1260 B vs the chain's 686 B
+
+#section callouts
+#label	note
+	none: module 'callouts' has no producer, so no pattern can reach a call site -- engine_m4.md S9.1

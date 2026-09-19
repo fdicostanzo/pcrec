@@ -25,23 +25,13 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-limits` | the numeric-limits table (D90/[LIM-1]) | conforming producer today |
 | `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today; gained the Sections mechanism at [DD-13b.W23.4] (`provenance`/`variants`/`cases`/`aux`, emitted unconditionally when non-empty, always after the main table) |
 | `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
+| `--emit-ir` | the VM program listing ([DD-8], `docs/spec/ir_listing.md`) | conforming producer since 2026-09-19; the mechanism's THIRD producer and the first whose every table is a named section |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.
 
 NOT in scope today, with different dispositions:
 
-- `--emit-ir` — TO BE CONSIDERED (Frank, 2026-08-21): the body is a
-  program LISTING (checked by tests/codegen/run_ir_listing.sh), but its
-  tabular SECTIONS (the slot legend, the label table) are candidates for
-  this contract, and the listing as a whole may deserve a sibling
-  line-oriented contract (a header declaring its section structure, so
-  its consumers — run_ir_listing.sh's extractors, which have already
-  gone stale once this session — parse by declaration rather than by
-  remembered shape). Decided when [DD-8] (the row that owns --emit-ir)
-  next opens; DD-8's standing constraint holds regardless: the listing
-  derives from the same walk the emitter does, never a parallel
-  description.
 - `--trace` output — an EVENT STREAM from an instrumented matcher; its
   enrichment is [V-H]'s design territory. If a future trace mode emits a
   table, that table adopts this contract at birth.
@@ -105,9 +95,13 @@ mechanism rather than forcing one flat schema.
    a section whose header it never read are not data, they are someone
    else's data).
 
-`--emit-ir` remains [DD-8]'s adoption decision; this section exists so
-that when it (or an enriched [V-H] trace table) adopts, the mechanism is
-already ruled and no flat-schema contortion is needed.
+`--emit-ir` ADOPTED, 2026-09-19 ([DD-8]); an enriched [V-H] trace table
+would adopt the same way. The mechanism was ruled three steps ahead of its
+hardest customer precisely so that no flat-schema contortion was needed when
+that customer arrived, and none was: D106 addendum item 1's finding is that
+the program BODY fits columns (`label|op|args|target|note`), so the
+"sibling line-oriented contract" this document's earlier note reserved
+judgement on was never needed.
 
 **[DD-13b.W23.1] `--list-schema` IS THE MECHANISM'S FIRST PRODUCER**, and
 it names BOTH its sections (`schema`, `surface`) rather than leaving the
@@ -116,6 +110,19 @@ single-table dump may stay anonymous, but a multi-section one may not
 leave one section unnameable: consumer rule 4 requires a reader to SELECT
 its section by name, and an anonymous first section is the one table no
 conforming consumer can ask for.
+
+**[DD-8] `--emit-ir` IS THE MECHANISM'S THIRD PRODUCER AND THE FIRST WHOSE
+EVERY TABLE IS A NAMED SECTION** (`summary`, `slots`, `rungs`, `strategies`,
+`pruning`, `program`, `choicepoints`, `islands`, `callouts`), with no
+anonymous table at all. It is also the first producer whose sections have
+DIFFERENT column counts from one another (2, 3, 4 and 5), which is the shape
+rule 3's "each section's columns follow the producer contract independently"
+was written for and which `--list-schema`'s two ten- and four-column
+sections only half exercised. Its own section-and-column contract —
+including the vocabulary of its `prefilter` value and its `op` column, and
+the rule that an empty population is a ROW rather than a comment (because
+rule 3 would make a trailing comment inside an empty section that section's
+header) — is `docs/spec/ir_listing.md`.
 
 **[DD-13b.W23.4] `--list-source` IS THE MECHANISM'S SECOND PRODUCER, AND
 THE FIRST WHOSE MAIN TABLE STAYS ANONYMOUS WHILE GAINING NAMED SECTIONS

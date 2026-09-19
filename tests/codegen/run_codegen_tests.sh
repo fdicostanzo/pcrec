@@ -19,6 +19,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # D45: one shared generated-code compile budget (docs/dev/decisions.md).
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
 
@@ -1993,8 +1997,21 @@ agrv()   { grep -cE '^ *run->resume_depth = rx_rv[0-9]+_frame_mark;' "$1"; }  # 
 
 ceil_win_sites() { grep -c 'window_end = (size_t)window\[0\]\[1\]' "$1"; }
 ceil_stamp()     { sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$1"; }
-# The --emit-ir description's prefilter-window form, verbatim from emit_vm.c.
-ceil_ir_win()    { grep -c 'ceiling: min(subject_length, prefilter window end)' "$1"; }
+# [DD-8] THE FOURTH READER, BY EQUALITY. `--emit-ir`'s ceiling is a
+# `summary` row (`prune-ceiling`) whose VALUE uses the same three words the
+# `<PREFIX>_VM_PRUNE_CEILING` stamp does — `none` / `prefilter-window` /
+# `subject-end` — so this reader and the stamp are now comparable directly
+# instead of by counting occurrences of a prose phrase. The two remain
+# INDEPENDENTLY COMPUTED (R31 E3's defect was exactly the stamp and the
+# ceiling-builders disagreeing), which is why comparing them is evidence;
+# what changed is only that the comparison no longer depends on a sentence's
+# wording. The 1/0 return shape is preserved so both call sites below are
+# unchanged.
+ceil_ir_win()    {
+    local v
+    v="$(table_lookup "$1" summary fact prune-ceiling value 2>/dev/null)" || v=""
+    [ "$v" = "prefilter-window" ] && echo 1 || echo 0
+}
 
 # ceil_drop <tag> <features> <fixture> <hazard sentence>
 #   the DROP direction: a clamping artifact whose pattern carries the
@@ -2016,7 +2033,7 @@ ceil_drop() {
     elif [ "$stamp" != "subject-end" ]; then
         bad "[$tag rule 1(b)]: '$pat's RX_VM_PRUNE_CEILING reads \"$stamp\", expected \"subject-end\". The stamp must describe the code beside it; E3's defect was exactly the two disagreeing"
     elif [ "$irwin" -ne 0 ]; then
-        bad "[$tag rule 1(d)]: '$pat's --emit-ir PRUNING description still reads \"min(subject_length, prefilter window end)\" while the emitted code carries no such ceiling. That description is the FOURTH reader of v.mrl_win (S-LA13), and a listing that disagrees with the artifact is how E3's defect was missed the first time"
+        bad "[$tag rule 1(d)]: '$pat's --emit-ir prune-ceiling value still reads \"prefilter-window\" while the emitted code carries no such ceiling. That description is the FOURTH reader of v.mrl_win (S-LA13), and a listing that disagrees with the artifact is how E3's defect was missed the first time"
     else
         ok "[$tag rule 1]: a CLAMPING artifact carrying the construct drops the prefilter's window END as its MRL ceiling — asserted on ALL FOUR readers of v.mrl_win (0 window[0][1] assignments in the two BUILDERS, the stamp reads \"subject-end\", and --emit-ir's description agrees), because a half-done edit satisfies any one alone"
     fi
@@ -2039,7 +2056,7 @@ ceil_keep() {
     if [ "$stamp" = "prefilter-window" ] && [ "$win" -ge 1 ] && [ "$irwin" -ge 1 ]; then
         ok "[$tag rule 1c]: the CONSTRUCT-FREE twin '$pat' KEEPS its prefilter-window ceiling ($win assignment sites, stamp \"prefilter-window\", --emit-ir agrees) — the suppression is scoped to artifacts that carry the construct, not applied to everything"
     else
-        bad "[$tag rule 1c]: the construct-free twin '$pat' stamps \"$stamp\" with $win window[0][1] assignments and $irwin prefilter-window listing lines, expected \"prefilter-window\", >= 1 and >= 1. The suppression must not cost the ceiling on patterns that do not carry the construct"
+        bad "[$tag rule 1c]: the construct-free twin '$pat' stamps \"$stamp\" with $win window[0][1] assignments and a --emit-ir prune-ceiling agreement of $irwin, expected \"prefilter-window\", >= 1 and 1. The suppression must not cost the ceiling on patterns that do not carry the construct"
     fi
 }
 

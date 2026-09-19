@@ -38,6 +38,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+# [DD-8] `--emit-ir` is a docs/spec/table_contract.md producer; this
+# file reads it by SECTION and COLUMN name through the contract's one
+# implementation rather than by a remembered line shape.
+. "$ROOT_DIR/tests/lib/table.sh"
 export WATCHDOG_SECTION="rungselect"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rungselect.XXXXXX")"
@@ -137,14 +141,20 @@ if gen mixed "$mixed"; then
     else
         bad "a deliberately three-rung artifact stamped RX_VM_RUNGS 0x$m, expected 0xb"
     fi
-    ir="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$mixed" 2>/dev/null)"
-    nrev="$(printf '%s' "$ir" | sed -n '/^RUNGS/,/^$/p' | grep -c ' revdet ')"
-    ncur="$(printf '%s' "$ir" | sed -n '/^RUNGS/,/^$/p' | grep -c ' cursor ')"
-    nfr="$(printf '%s' "$ir" | sed -n '/^RUNGS/,/^$/p' | grep -c ' frames-bounded ')"
+    # [DD-8] the `rungs` section's `kind` column, matched WHOLE. The old form
+    # cut the section out with a line-range `sed` bounded by a blank line and
+    # counted a space-delimited substring of the row — which also matched the
+    # word inside a role string.
+    ir="$WORKDIR/mixed.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir -- "$mixed" > "$ir" 2>/dev/null
+    rkinds="$(table_field "$ir" rungs kind)" || rkinds=""
+    nrev="$(printf '%s\n' "$rkinds" | grep -cx revdet | tr -d ' ')"
+    ncur="$(printf '%s\n' "$rkinds" | grep -cx cursor | tr -d ' ')"
+    nfr="$(printf '%s\n' "$rkinds" | grep -cx frames-bounded | tr -d ' ')"
     if [ "$nrev" -ge 1 ] && [ "$ncur" -ge 1 ] && [ "$nfr" -ge 1 ]; then
-        ok "--emit-ir's RUNGS section names WHICH quantifier took which ($ncur cursor, $nrev revdet, $nfr frames)"
+        ok "--emit-ir's rungs section names WHICH quantifier took which ($ncur cursor, $nrev revdet, $nfr frames)"
     else
-        bad "--emit-ir's RUNGS section did not report all three ($ncur cursor, $nrev revdet, $nfr frames)"
+        bad "--emit-ir's rungs section did not report all three ($ncur cursor, $nrev revdet, $nfr frames)"
     fi
 else
     bad "the three-rung pattern did not compile"
@@ -161,8 +171,9 @@ fi
 # ---------------------------------------------------------------------------
 if gen acc '((a)|b){0,4000}c'; then
     lines="$(wc -l < "$WORKDIR/acc.c")"
-    reps="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- '((a)|b){0,4000}c' 2>/dev/null \
-            | sed -n 's/^; max replicas \([0-9]*\) .*/\1/p')"
+    acc_ir="$WORKDIR/acc.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir -- '((a)|b){0,4000}c' > "$acc_ir" 2>/dev/null
+    reps="$(table_lookup "$acc_ir" summary fact max-replicas value)" || reps=""
     if [ "$lines" -lt 2000 ]; then
         ok "acceptance cell: '((a)|b){0,4000}c' compiles in $lines lines (was refused by the replication cap; 113,549 lines with it raised)"
     else
@@ -192,15 +203,23 @@ fi
 # checked, because a rule that always declares a ceiling is as uninformative as
 # one that never does.
 # ---------------------------------------------------------------------------
+# [DD-8] both facts are their own `summary` ROW now — `resume-frames` and
+# `subject-ceiling` — instead of two numbers picked out of one
+# `; capacities ...` sentence by two different regexes. `subject-ceiling` is
+# EMPTY (contract rule 5: empty means none) when the capacities are exact,
+# which is the same answer the old no-match `sed` produced, so both callers'
+# empty-vs-number tests are unchanged.
 cap_of() {    # cap_of <pattern> [args...] -> the stamped resume-frame requirement
     local pat="$1"; shift
-    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
-        | sed -n 's/^; capacities  *\([0-9]*\) resume frames.*/\1/p'
+    local f="$WORKDIR/capof.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null || return 0
+    table_lookup "$f" summary fact resume-frames value 2>/dev/null
 }
 ceil_of() {   # ceil_of <pattern> [args...] -> the stamped subject ceiling
     local pat="$1"; shift
-    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
-        | sed -n 's/^; capacities .*(subject ceiling \([0-9]*\) bytes)$/\1/p'
+    local f="$WORKDIR/ceilof.ir"
+    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null || return 0
+    table_lookup "$f" summary fact subject-ceiling value 2>/dev/null
 }
 # THE PATTERN HAS TO BE ONE THE ANALYSIS DECLINES TO POSSESSIFY, and the first
 # version of this check was not: `((a)|b){0,60}c`'s follow `c` is disjoint from
