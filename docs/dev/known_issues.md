@@ -248,6 +248,12 @@ Byte-identical in the no-OOM case (`make test-codegen` clean; the fix
 touches only the arrival of a `ctx_nomem`-routed `longjmp`, which no
 successful compile reaches).
 
+**[D110] (2026-09-18, lane allocpins):** with both classes closed,
+`tests/core/alloc_check.c`'s population expectations became FLOORS and
+`tests/resource/run_resource_tests.sh` section 2b now asserts `absorbed =
+0` inside `make test` itself, so a plant reopening either class is
+detectable without `make alloc` — see D110 and sabotage rows S259/S260.
+
 ---
 
 
