@@ -90,10 +90,10 @@ SAB_AFTER='    /* SABOTAGE S217 site 1/2: has_push reads the pre-pass ESTIMATE a
     const bool has_push = v.npush > 0 || v.has_linked_calls;'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='            v->npush += a->u.rep.rmax < 0 ? 1
-                      : cuts ? (nopt >= K ? 1 : nopt)
-                             : (nopt >= K ? K + nopt % K : nopt);'
-SAB_AFTER2='            /* SABOTAGE S217 site 2/2: the unbounded arm loses its own case and
-             * falls through to nopt = rmax - rmin, negative when rmax < 0. */
-            v->npush += cuts ? (nopt >= K ? 1 : nopt)
-                             : (nopt >= K ? K + nopt % K : nopt);'
+SAB_BEFORE2='        v->npush += a->u.rep.rmax < 0 ? 1
+                  : cuts ? (nopt >= K ? 1 : nopt)
+                         : (nopt >= K ? K + nopt % K : nopt);'
+SAB_AFTER2='        /* SABOTAGE S217 site 2/2: the unbounded arm loses its own case and
+         * falls through to nopt = rmax - rmin, negative when rmax < 0. */
+        v->npush += cuts ? (nopt >= K ? 1 : nopt)
+                         : (nopt >= K ? K + nopt % K : nopt);'

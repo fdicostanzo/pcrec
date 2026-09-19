@@ -2586,6 +2586,199 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
+static void vm_count_slots(Vm *v, const Ast *a, long long repl,
+                           bool under_atomic);
+
+/* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
+ * counted here — the arm wave A2 landed deliberately incomplete and this
+ * wave completes, in the same edit as `vm_look`.
+ *
+ * The three lines below mirror `vm_look` site for site and read the SAME
+ * two predicates it does, which is the whole reason those predicates
+ * exist: an under-count is `vm_slot_lookmark(v, v->nlookmark++)` past
+ * `RX_NSLOTS`, an out-of-bounds write in EMITTED code (K27's class), and
+ * a missed `npush` lets an artifact past the resume-point cap.
+ *
+ * `false` is passed for `under_atomic`: a lookaround's cut, when it has
+ * one, is the ASSERTION's and not a lift of a quantifier beneath it — the
+ * same reading `vm_atomic`'s unlifted branch takes. Descending is
+ * required either way, because the body's own groups, marks and resume
+ * points are emitted through `vm_emit`.
+ *
+ * [REVW.2 step 13] Extracted verbatim from `vm_count_slots`'s A_LOOK arm,
+ * on `vm_cost`/`vm_cost_rep`'s own precedent: the dispatcher names what it
+ * dispatches and each fat arm is a function. */
+static void vm_count_slots_look(Vm *v, const Ast *a, long long repl)
+{
+    if (vm_look_needs_mark(a)) v->nlookmark++;
+    if (vm_look_needs_pos(a))  v->nlookpos++;
+    /* The negative form's ONE extra frame: the "body failed" continuation
+     * pushed BEFORE the body (§3.3). The positive and non-atomic forms
+     * push nothing of their own. */
+    if (a->u.look.neg) v->npush++;
+    /* [WAVE D] AND A LOOKBEHIND's PER-BRANCH RETRY FRAMES, one per
+     * NON-final branch (§3.4): `vm_look_behind` pushes `&&L_b(i+1)` for
+     * every branch but the last, so the count is `nbranch - 1`. EXACT
+     * here rather than the safe-direction union `vm_cost` takes, because
+     * this walk's under-count is the one that lets an artifact past the
+     * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
+     * what keeps `-1` from being charged to one. */
+    if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
+    vm_count_slots(v, a->l, repl, false);
+}
+
+/* [ENG-BREP] The A_REP arm of `vm_count_slots`: which RUNG this quantifier
+ * will take, and what that rung allocates. Extracted verbatim from the
+ * dispatcher ([REVW.2] step 13) on `vm_cost_rep`'s precedent — and it is the
+ * SAME rung decision read a second time, which is the standing hazard
+ * `vm_count_slots`'s own header states.
+ *
+ * The four rungs are tried in the emitter's order (cursor, revdet, counter,
+ * frames) and each one RETURNS, so the replication arithmetic at the bottom
+ * is reached by the frames rung alone — which is what the rungs above it are
+ * for. `repl` is the nesting product [K22] bounds; the three scratch locals
+ * are `vm_cursor_fits`'s out-parameters and have no other reader. */
+static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
+                               bool under_atomic)
+{
+    const bool cuts = vm_cuts(a, under_atomic);
+    uint8_t seq[VM_MAX_STRIDE][32];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, nc = 0;
+    if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
+    if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
+        /* [ENG-BREP] the possessive span loop allocates NEITHER — no
+         * low-water slot and no resume point. Mirrors vm_cursor_rep's own
+         * branch; the two are the same condition read twice, which is the
+         * standing hazard this function's header comment is about. */
+        if (!cuts) {
+            v->nlow++;
+            v->npush++;              /* vm_cursor_rep: exactly one */
+        }
+        return;
+    }
+    /* [ENG-BREP] the REVERSE-DETERMINISTIC rung. Three slots, one loop, and
+     * NO REPLICATION — which is the whole point, and is also why this arm
+     * returns before the `maxcopies` line below ever sees the quantifier:
+     * `((a)|b){0,4000}c` demands one body copy here where the frames rung
+     * demanded four thousand.
+     *
+     * The push arithmetic, site for site with vm_revdet_rep:
+     *   1  the scan's exit frame (this iteration cannot run -> leave)
+     *   1  the retreat/extension frame, only when the loop can move
+     * and NOTHING for the backward walk, which is emitted as a
+     * DETERMINISTIC matcher with no choice point at all — reverse
+     * one-unambiguity is exactly the licence to dispatch on the next byte
+     * instead of pushing a frame per branch.
+     *
+     * The forward body is walked ONCE, or twice for a lazy loop that can
+     * move, because that shape emits a second forward copy for its
+     * extension step. The REVERSED body allocates no slots and pushes
+     * nothing, so it is not walked here at all. */
+    if (vm_revdet_fits(a, under_atomic)) {
+        int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+        int ng = 0;
+        bool move = vm_rev_canmove(a, cuts);
+        vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+        if (ng > v->nrevcaps) v->nrevcaps = ng;
+        v->nrev++;
+        v->npush += 1 + (move ? 1 : 0);
+        vm_count_slots(v, a->l, repl, false);
+        if (move && !a->u.rep.greedy) vm_count_slots(v, a->l, repl, false);
+        return;
+    }
+    /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
+     * it returns BEFORE the `copies` replication line — which is the whole
+     * point of the rung. The body is emitted K + (m mod K) times, not m
+     * times, so `((a)|ab){4000}` charges 8 copies against
+     * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
+     * thousand and was refused.
+     *
+     * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
+     * level (a mandatory copy that fails fails the quantifier), so the only
+     * frames are the body's own, counted by the walk below. ONE slot, the
+     * trailed counter.
+     *
+     * `repl` is passed through UNCHANGED rather than multiplied by the copy
+     * count: K22's product guard bounds the replication a nesting path
+     * performs, and this rung does not replicate per iteration — it emits a
+     * fixed K + residue whatever `m` is. Multiplying here would re-import
+     * exactly the explosion the rung removes. */
+    if (vm_counter_fits(v, a)) {
+        const int K = v->unroll_k;
+        const int nopt = a->u.rep.rmax - a->u.rep.rmin;
+        int copies = vm_counter_copies(v, a, cuts);
+        v->nctr++;
+        if (cuts) v->nmark++;   /* the cut mark, as the frames rung */
+        /* Emitted PUSH sites: the mandatory phase has none, and the
+         * optional phase has one per emitted optional copy — K inside the
+         * trip plus the residue's, which is what vm_opt_chain emits for
+         * the tail. The POSSESSIVE optional phase emits exactly ONE, at
+         * its single re-entered body. Emitted SITES, not live frames:
+         * vm_cost_rep counts the runtime requirement, which is still one
+         * per ITERATION for the non-possessive shapes and ONE for the
+         * whole loop possessified. */
+        /* [CC-CLANG fix, 2026-09-01] UNBOUNDED (`rmax < 0`) FIRST: there
+         * `nopt` is NEGATIVE (rmax - rmin = -1 - rmin), and feeding it to
+         * either arm below SUBTRACTS from npush — measured cancelling the
+         * replicated body's real pushes to zero on `(?:ab|b){8,}+c`,
+         * which then omitted the fail label's pop-and-resume dispatch
+         * from an artifact with ten live RX_PUSH sites (a miscompile:
+         * nomatch on every subject needing the second alternative). The
+         * unbounded tail is the frames star, one push site, possessive
+         * or not — the frames-rung arm below says the same for its own
+         * rmax < 0 case. */
+        v->npush += a->u.rep.rmax < 0 ? 1
+                  : cuts ? (nopt >= K ? 1 : nopt)
+                         : (nopt >= K ? K + nopt % K : nopt);
+        if (copies > v->maxcopies) v->maxcopies = copies;
+        for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
+        return;
+    }
+    /* frames rung: the star's own push, or one per optional copy. The
+     * possessive shapes push at the SAME sites (vm_poss_star once,
+     * vm_poss_chain once per optional copy) — what changes is how many are
+     * live at a time, not how many are emitted — so this arithmetic is
+     * unchanged. The cut mark is the one new slot. */
+    v->npush += a->u.rep.rmax < 0 ? 1 : (a->u.rep.rmax - a->u.rep.rmin);
+    if (cuts) v->nmark++;
+    /* Frames rung: the body's code is REPLICATED once per mandatory copy
+     * and once per optional copy, and each copy's own loops need their own
+     * slots — so the count must replicate exactly as the emitter does or
+     * two live loops would share one slot. */
+    {
+        int copies = a->u.rep.rmax < 0 ? a->u.rep.rmin + 1 : a->u.rep.rmax;
+        if (copies < 1) copies = 1;
+        /* THE REPLICATION FACTOR, recorded before any of it is emitted.
+         * Only the frames rung reaches here: a body the cursor rung
+         * accepts is single-path and compiles to a span loop whatever the
+         * count, so `a{0,65535}` never contributes. */
+        if (copies > v->maxcopies) v->maxcopies = copies;
+        /* [K22] and the factor's PRODUCT down the nesting path, checked
+         * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
+         * structurally cannot see this: nesting multiplies factors that are
+         * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
+         * placed here rather than after the walk for the only reason it
+         * exists — the walk is the cost. Overflow is not reachable: the
+         * running product is refused the moment it exceeds the limit, so it
+         * never carries more than limit * PCREC_MAX_REPEAT. */
+        {
+            long long total = repl * copies;
+            if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
+                ctx_fail(v->cx, 0,
+                         "pattern too large: nested bounded repeats would "
+                         "replicate a body %lld times in total (limit %d). "
+                         "Repetition counts MULTIPLY through nesting, so "
+                         "depth costs far more than any one count suggests "
+                         "-- lower a count, or reduce the nesting",
+                         total, PCREC_MAX_VM_REPLICATION_PRODUCT);
+            for (int i = 0; i < copies; i++)
+                vm_count_slots(v, a->l, total, false);
+        }
+        if (a->u.rep.rmax < 0 && vm_nullable(a->l)) v->nguard++;
+    }
+}
+
 /* Counts slot_values slots AND emitted resume points, in one walk that mirrors the
  * emitter's own rung decisions and its replication. Both counts have to be
  * exact for the same reason: a slot count that under-counts makes two live
@@ -2615,9 +2808,6 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                            bool under_atomic)
 {
-    uint8_t seq[VM_MAX_STRIDE][32];
-    CapOff caps[VM_MAX_BODY_CAPS];
-    int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave E] `\K` allocates NO slot, and that is the mechanism rather
@@ -2640,38 +2830,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
-    /* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
-     * counted here — the arm wave A2 landed deliberately incomplete and this
-     * wave completes, in the same edit as `vm_look`.
-     *
-     * The three lines below mirror `vm_look` site for site and read the SAME
-     * two predicates it does, which is the whole reason those predicates
-     * exist: an under-count is `vm_slot_lookmark(v, v->nlookmark++)` past
-     * `RX_NSLOTS`, an out-of-bounds write in EMITTED code (K27's class), and
-     * a missed `npush` lets an artifact past the resume-point cap.
-     *
-     * `false` is passed for `under_atomic`: a lookaround's cut, when it has
-     * one, is the ASSERTION's and not a lift of a quantifier beneath it — the
-     * same reading `vm_atomic`'s unlifted branch takes. Descending is
-     * required either way, because the body's own groups, marks and resume
-     * points are emitted through `vm_emit`. */
-    case A_LOOK:
-        if (vm_look_needs_mark(a)) v->nlookmark++;
-        if (vm_look_needs_pos(a))  v->nlookpos++;
-        /* The negative form's ONE extra frame: the "body failed" continuation
-         * pushed BEFORE the body (§3.3). The positive and non-atomic forms
-         * push nothing of their own. */
-        if (a->u.look.neg) v->npush++;
-        /* [WAVE D] AND A LOOKBEHIND's PER-BRANCH RETRY FRAMES, one per
-         * NON-final branch (§3.4): `vm_look_behind` pushes `&&L_b(i+1)` for
-         * every branch but the last, so the count is `nbranch - 1`. EXACT
-         * here rather than the safe-direction union `vm_cost` takes, because
-         * this walk's under-count is the one that lets an artifact past the
-         * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
-         * what keeps `-1` from being charged to one. */
-        if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
-        vm_count_slots(v, a->l, repl, false);
-        return;
+    case A_LOOK: vm_count_slots_look(v, a, repl); return;
     /* [DD-14] A LOUD REFUSAL, and design §4.4c is emphatic that this site is
      * the one whose FIRST answer was wrong: "the first version said LEXICAL
      * ONLY and it was WRONG — the consequence is an out-of-bounds slot
@@ -2823,142 +2982,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
         vm_count_slots(v, a, repl, false);
         return;
-    case A_REP: {
-        const bool cuts = vm_cuts(a, under_atomic);
-        if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return;
-        if (vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)) {
-            /* [ENG-BREP] the possessive span loop allocates NEITHER — no
-             * low-water slot and no resume point. Mirrors vm_cursor_rep's own
-             * branch; the two are the same condition read twice, which is the
-             * standing hazard this function's header comment is about. */
-            if (!cuts) {
-                v->nlow++;
-                v->npush++;              /* vm_cursor_rep: exactly one */
-            }
-            return;
-        }
-        /* [ENG-BREP] the REVERSE-DETERMINISTIC rung. Three slots, one loop, and
-         * NO REPLICATION — which is the whole point, and is also why this arm
-         * returns before the `maxcopies` line below ever sees the quantifier:
-         * `((a)|b){0,4000}c` demands one body copy here where the frames rung
-         * demanded four thousand.
-         *
-         * The push arithmetic, site for site with vm_revdet_rep:
-         *   1  the scan's exit frame (this iteration cannot run -> leave)
-         *   1  the retreat/extension frame, only when the loop can move
-         * and NOTHING for the backward walk, which is emitted as a
-         * DETERMINISTIC matcher with no choice point at all — reverse
-         * one-unambiguity is exactly the licence to dispatch on the next byte
-         * instead of pushing a frame per branch.
-         *
-         * The forward body is walked ONCE, or twice for a lazy loop that can
-         * move, because that shape emits a second forward copy for its
-         * extension step. The REVERSED body allocates no slots and pushes
-         * nothing, so it is not walked here at all. */
-        if (vm_revdet_fits(a, under_atomic)) {
-            int grp[PCREC_MAX_REVDET_BODY_GROUPS];
-            int ng = 0;
-            bool move = vm_rev_canmove(a, cuts);
-            vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
-            if (ng > v->nrevcaps) v->nrevcaps = ng;
-            v->nrev++;
-            v->npush += 1 + (move ? 1 : 0);
-            vm_count_slots(v, a->l, repl, false);
-            if (move && !a->u.rep.greedy) vm_count_slots(v, a->l, repl, false);
-            return;
-        }
-        /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
-         * it returns BEFORE the `copies` replication line — which is the whole
-         * point of the rung. The body is emitted K + (m mod K) times, not m
-         * times, so `((a)|ab){4000}` charges 8 copies against
-         * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
-         * thousand and was refused.
-         *
-         * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
-         * level (a mandatory copy that fails fails the quantifier), so the only
-         * frames are the body's own, counted by the walk below. ONE slot, the
-         * trailed counter.
-         *
-         * `repl` is passed through UNCHANGED rather than multiplied by the copy
-         * count: K22's product guard bounds the replication a nesting path
-         * performs, and this rung does not replicate per iteration — it emits a
-         * fixed K + residue whatever `m` is. Multiplying here would re-import
-         * exactly the explosion the rung removes. */
-        if (vm_counter_fits(v, a)) {
-            const int K = v->unroll_k;
-            const int nopt = a->u.rep.rmax - a->u.rep.rmin;
-            int copies = vm_counter_copies(v, a, cuts);
-            v->nctr++;
-            if (cuts) v->nmark++;   /* the cut mark, as the frames rung */
-            /* Emitted PUSH sites: the mandatory phase has none, and the
-             * optional phase has one per emitted optional copy — K inside the
-             * trip plus the residue's, which is what vm_opt_chain emits for
-             * the tail. The POSSESSIVE optional phase emits exactly ONE, at
-             * its single re-entered body. Emitted SITES, not live frames:
-             * vm_cost_rep counts the runtime requirement, which is still one
-             * per ITERATION for the non-possessive shapes and ONE for the
-             * whole loop possessified. */
-            /* [CC-CLANG fix, 2026-09-01] UNBOUNDED (`rmax < 0`) FIRST: there
-             * `nopt` is NEGATIVE (rmax - rmin = -1 - rmin), and feeding it to
-             * either arm below SUBTRACTS from npush — measured cancelling the
-             * replicated body's real pushes to zero on `(?:ab|b){8,}+c`,
-             * which then omitted the fail label's pop-and-resume dispatch
-             * from an artifact with ten live RX_PUSH sites (a miscompile:
-             * nomatch on every subject needing the second alternative). The
-             * unbounded tail is the frames star, one push site, possessive
-             * or not — the frames-rung arm below says the same for its own
-             * rmax < 0 case. */
-            v->npush += a->u.rep.rmax < 0 ? 1
-                      : cuts ? (nopt >= K ? 1 : nopt)
-                             : (nopt >= K ? K + nopt % K : nopt);
-            if (copies > v->maxcopies) v->maxcopies = copies;
-            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
-            return;
-        }
-        /* frames rung: the star's own push, or one per optional copy. The
-         * possessive shapes push at the SAME sites (vm_poss_star once,
-         * vm_poss_chain once per optional copy) — what changes is how many are
-         * live at a time, not how many are emitted — so this arithmetic is
-         * unchanged. The cut mark is the one new slot. */
-        v->npush += a->u.rep.rmax < 0 ? 1 : (a->u.rep.rmax - a->u.rep.rmin);
-        if (cuts) v->nmark++;
-        /* Frames rung: the body's code is REPLICATED once per mandatory copy
-         * and once per optional copy, and each copy's own loops need their own
-         * slots — so the count must replicate exactly as the emitter does or
-         * two live loops would share one slot. */
-        {
-            int copies = a->u.rep.rmax < 0 ? a->u.rep.rmin + 1 : a->u.rep.rmax;
-            if (copies < 1) copies = 1;
-            /* THE REPLICATION FACTOR, recorded before any of it is emitted.
-             * Only the frames rung reaches here: a body the cursor rung
-             * accepts is single-path and compiles to a span loop whatever the
-             * count, so `a{0,65535}` never contributes. */
-            if (copies > v->maxcopies) v->maxcopies = copies;
-            /* [K22] and the factor's PRODUCT down the nesting path, checked
-             * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
-             * structurally cannot see this: nesting multiplies factors that are
-             * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
-             * placed here rather than after the walk for the only reason it
-             * exists — the walk is the cost. Overflow is not reachable: the
-             * running product is refused the moment it exceeds the limit, so it
-             * never carries more than limit * PCREC_MAX_REPEAT. */
-            {
-                long long total = repl * copies;
-                if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
-                    ctx_fail(v->cx, 0,
-                             "pattern too large: nested bounded repeats would "
-                             "replicate a body %lld times in total (limit %d). "
-                             "Repetition counts MULTIPLY through nesting, so "
-                             "depth costs far more than any one count suggests "
-                             "-- lower a count, or reduce the nesting",
-                             total, PCREC_MAX_VM_REPLICATION_PRODUCT);
-                for (int i = 0; i < copies; i++)
-                    vm_count_slots(v, a->l, total, false);
-            }
-            if (a->u.rep.rmax < 0 && vm_nullable(a->l)) v->nguard++;
-        }
-        return;
-    }
+    case A_REP: vm_count_slots_rep(v, a, repl, under_atomic); return;
     }
 }
 
