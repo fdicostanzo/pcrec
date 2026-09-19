@@ -212,9 +212,16 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # blocks, +6 lines for the new tests/base/comment_escape.rxt (two pattern
 # blocks, three m/n lines each). Not under tests/known_fail/, so RUNSH_*
 # below moves by the SAME +1/+2/+6.
-CENSUS_FILES=211
-CENSUS_BLOCKS=3938
-CENSUS_LINES=28949
+# 2026-09-19 (lane adm71, item 4 -- [OPT-4.1] no-nullable-collapsed
+# reachability witness) -- +1 file, +1 block, +6 lines for the new
+# tests/base/opt41_rung_nullable_decline.rxt (one pattern block, six m
+# lines). Not under tests/known_fail/, so RUNSH_* below moves by the SAME
+# +1/+1/+6, and every one of the six cases is a plain python-expressible
+# regex (`(?:ab){0,16000}`, nothing PCRE2-only), so C3_PASS below moves by
+# the SAME +6 with no skip bucket moving.
+CENSUS_FILES=212
+CENSUS_BLOCKS=3939
+CENSUS_LINES=28955
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -243,9 +250,9 @@ CENSUS_LINES=28949
 # reader who assumes one population finds the 191/190 split inexplicable.
 # 2026-09-17 (lane cmtfix, [O-31 F1]) — +1/+2/+6, the SAME delta as
 # CENSUS_* above (comment_escape.rxt is not under tests/known_fail/).
-RUNSH_FILES=210
-RUNSH_BLOCKS=3935
-RUNSH_LINES=28938
+RUNSH_FILES=211
+RUNSH_BLOCKS=3936
+RUNSH_LINES=28944
 # 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
 # widest divergence this pair has shown. A known_fail file being RETIRED moves
 # the two in different directions on every column: the census loses a file
@@ -1093,7 +1100,7 @@ C3_FILES=179
 # character-class patterns with nothing PCRE2-only about them, so the
 # entire delta is PASS and no C3_SKIP_* reason moves. Reconciliation:
 # 13714+15146+89 = 28949 = CENSUS_LINES (matches the pin above).
-C3_PASS=13714
+C3_PASS=13720
 C3_SKIP=15146
 C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=23

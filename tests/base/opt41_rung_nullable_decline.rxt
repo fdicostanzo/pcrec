@@ -1,0 +1,46 @@
+# [OPT-4.1] "no-nullable-collapsed" REACHABILITY WITNESS (adm71 item 4,
+# 2026-09-19). `docs/dev/lanes/dd8_report.md` section 4.3 filed this
+# `--emit-ir` prefilter value ("a ladder rung offered the count-collapsed
+# prefilter and it was DECLINED", src/gen/emit_vm.c ~line 8683,
+# docs/spec/ir_listing.md:113) as UNREACHED BY ANY INPUT: dd8's own
+# corpus/flag-axis sweep and three hand-built witnesses all missed it,
+# and the report argued structurally that [OPT-4.2]'s rungless twin
+# (`prefilter_declined_nullable_default`) always declines first, on the
+# ORDINARY hybrid attempt, before any rung can be offered.
+#
+# MEASURED FALSE. The argument assumes the FIRST compile attempt is
+# already a VM+prefilter hybrid, which is only true when
+# `select_engine.c`'s fit picks `ENGM_VM` on that attempt. A pattern this
+# pattern's own SHAPE routes to a pure DFA-as-ENGINE attempt instead (no
+# captures, so `would_prefilter` is false on attempt 1 and [OPT-4.2]'s
+# decline cannot fire at all): the DFA build then genuinely runs, and
+# when it overflows `PCREC_MAX_DFA_STATES_TABLE` (32000, src/core/
+# limits.def) under `--engine=auto` with no `-fprefilter`, `compile_driver`
+# offers the [SEL-1] collapse rung (`collapse_reason = CR_SEL1`) — which
+# IS where [OPT-4.1]'s rung-scoped decline lives. This pattern is
+# nullable (`{0,N}` admits zero repeats) and has a collapsible repeat, so
+# the rung is offered and declined: `--emit-ir` on the clean tree prints
+# `prefilter no-nullable-collapsed`, `RX_ENGINE_SEL "declined-nullable"`.
+# N=16000 is the smallest round value found still crossing the 32000-state
+# boundary (a linear sweep from 15000, where the pattern still compiles as
+# a small in-cap DFA); the artifact is small and fast (~22 KB, ~20 ms).
+#
+# Corpus-wide sweep at this same session (--emit-ir on both the default
+# axis and --engine=vm forced, every `pattern`/`pattern-esc` line in the
+# shipped corpus, 3,275 patterns): ZERO hits on either axis. The value is
+# real and reachable, just not by anything the corpus already carried —
+# this file is that witness, oracle-verified against python3 `re`.
+#
+# [OPT-4.1]'s own promise holds: the decline changes no answer. Every
+# expectation below is the unanchored leftmost match a nullable `(?:ab){0,N}`
+# always has — an empty match at 0 when no leading "ab" run exists, and the
+# longest leading run otherwise — cross-verified against pcrec's own
+# --emit-main driver before landing.
+
+pattern (?:ab){0,16000}
+m "" 0 0
+m "x" 0 0
+m "Xab" 0 0
+m "ab" 0 2
+m "ababab" 0 6
+m "abababX" 0 6
