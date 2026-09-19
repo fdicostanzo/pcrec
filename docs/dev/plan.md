@@ -1248,7 +1248,7 @@ between waves (D102); box slots handshake with the bench.
   lane w4facts (sonnet, read-only, docs/dev/lanes/w4_facts.md) launched
   2026-09-19 08:5x, seventy-first session; brief cites
   src/dump/axes_dump.c.
-- [REVW.5] STATE:not-started — wave 5 (public surface): L9 §8 order; D104
+- [REVW.5] STATE:not-started (FACT SHEET MERGED 8d961dc0, 2026-09-19 — docs/dev/lanes/w5_facts.md: P2/P7/P8 already done; P3/P6 one spec sweep; P4 needs its own re-read in-wave; the union mode membership rides the spec sweep with w4_modesweep.py as instrument; the rename population is 29 (D104 addendum: group by blast radius, per-commit witnesses, make test while iterating, one battery at close); [REVW.A1]'s home is RULED match_api.md §6 (gap-free 2 → 27, maintained by every bump) — the other three homes become pointers. Launches from the gated abi-27 main.) — wave 5 (public surface): L9 §8 order; D104
   renames name-by-name (nfa_* first, ctx_fail last); P3/P6 spec hunks may
   ride any earlier wave's D80 batch.
 - [REVW.A1] STATE:not-started — LAST: L4-A1 abi-log reconciliation as its

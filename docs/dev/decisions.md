@@ -7677,3 +7677,25 @@ where pcrec stands; the 97 not-started rows are triaged into the
 three-lane columns (D86) alongside the rows the review proposes, and
 Frank ratifies a ranked future-work list. Positioning unchanged (memory
 `pcrec-post-spine-direction`): the fastest COMPLETE pcre.
+
+### D104 addendum — the rename population is 29, the cadence is per-commit witnesses + `make test` while iterating + ONE battery at the wave's close (Frank, 2026-09-19, seventy-first session)
+
+The w5facts sheet re-measured the non-`pcrec_` exports of libpcrec.a at
+abi 27: 29, not 12 — waves 1/2/U dropped `static` from 17 emission-kit
+primitives (`sb_fragf`, `sb_row`, `sb_join`, `mrl_sat_add`, `vm_fadd`, …)
+and no wave report flagged them as this class. By D104's own criterion
+they are the same hazard (`sb_puts` was the reproduced collision), so the
+ruling covers them; its cadence ("the battery between" renames) would be
+29 batteries and does not scale. Frank: option 1 — "1 looks good" — and,
+on "why not all at once": GROUP BY BLAST RADIUS. Symbols with no sabotage
+anchor and no reader outside src/ land in ONE mechanical commit; every
+symbol with anchors or external readers gets its OWN commit (attribution
+is by inspection or `git bisect` with the red check as the probe — minutes
+per probe; one commit of 29 renames leaves nothing to bisect over).
+`nfa_*` first, `ctx_fail` last, as ruled. WITNESSES: per commit — build,
+strict, `emit_sweep.py` (a rename cannot move an emitted byte; prove it),
+the re-aimed rows driven solo; while iterating — `make test` (24 min on
+Linux) until green; at the wave's close — ONE full battery for the record
+and the matrix as a whole. The battery's other stages add nothing a rename
+can touch (sanitizers do not see names; axes compares answers; alloc
+counts allocations).
