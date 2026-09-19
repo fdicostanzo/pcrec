@@ -373,7 +373,7 @@ typedef struct {
     Ctx      *cx;
     StrBuf   *b;          /* SCRATCH: the VM function's body, see vm_emit_all */
     const char *p;        /* --prefix */
-    char      up[80];     /* uppercased prefix */
+    const char *up;       /* uppercased prefix — GenNames.upper, shared */
     int       nlabel;
     int       ngroups;    /* capturing groups (0 when --no-captures) */
     int       nguard;     /* empty-iteration guard slots assigned so far */
@@ -9302,7 +9302,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
-    memcpy(v.up, g.upper, sizeof v.up);
+    /* [REVW.2] wave 2: ONE derivation, pointed at twice. This was a `memcpy`
+     * of `g.upper`'s 80 bytes into `v`'s own 80-byte copy, the last fixed
+     * scratch buffer in either emitter outside the encoding seam; both are
+     * now `sb_upper`'s arena text, which outlives the emission that reads
+     * it. Every one of `v.up`'s readers is a `%s` or a `const char *`
+     * parameter and none of them changed. */
+    v.up = g.upper;
 
     /* THE REPORTED capture count, which `--no-captures` pins at 1 whatever
      * the slot layout holds (§6.3, and §10's measured row: `--no-captures

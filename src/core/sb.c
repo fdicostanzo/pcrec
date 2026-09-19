@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -248,4 +249,23 @@ void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value)
 {
     sb_stampf(c, upper, name, "\"%s\"", value);
+}
+
+/* ---- THE UPPERCASED NAME ([REVW.2] wave 2; lens 10 item 2; D108) --------
+ *
+ * The contract is stated once, at the declaration in core/internal.h.
+ *
+ * `toupper` AND NOT AN ASCII TABLE, deliberately: this is `prefix_upper`'s
+ * own body moved, byte for byte, and swapping in a locale-independent
+ * uppercase would be a behaviour change smuggled inside a refactor. If this
+ * tree ever wants ASCII-only folding here, that is its own change with its
+ * own byte-identity argument. */
+const char *sb_upper(Arena *a, const char *s)
+{
+    size_t n = strlen(s);
+    char *out = arena_alloc(a, n + 1);
+    for (size_t i = 0; i < n; i++)
+        out[i] = (char)toupper((unsigned char)s[i]);
+    out[n] = 0;
+    return out;
 }

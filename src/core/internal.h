@@ -151,6 +151,21 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
  * implementation and not two. The caller still owns `ap` and must `va_end` it. */
 const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
+/* The same storage, for the one DERIVED SPELLING this tree needs more than
+ * once: `s` uppercased. It is the artifact's `-p` prefix in the macro
+ * namespace — `<PREFIX>_NCAPS` and every stamp below — and it used to be
+ * computed by `emit_dfa.c`'s `prefix_upper` into a `char upper[80]` on
+ * `GenNames` which `emit_vm.c` then `memcpy`d into a second `char up[80]` on
+ * `Vm`: one derivation, two hand-sized buffers, one of them a copy of the
+ * other. Now it is one derivation into arena storage that both fields point
+ * at, which is learnings.md §3's one-derivation rule applied to a name.
+ *
+ * NOT `sb_name(a, prefix, suffix)`. Lens 10 item 2 proposes this alongside a
+ * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `sb_fragf(a,
+ * "%s_%s", p, s)` already is it, at every site, with no name to learn. Only
+ * the CASE TRANSFORM is a derivation somebody could get differently. */
+const char *sb_upper(Arena *a, const char *s);
+
 /* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
  *
  * ONE artifact stamp line: `#define <UPPER>_<NAME> <value>`, newline-
@@ -5687,7 +5702,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root);              /* src/gen/emit_vm.c */
  * unchanged" table). */
 typedef struct {
     const char *searchfn, *matchfn, *matchcapsfn, *infoname;
-    char        upper[80];
+    const char *upper;      /* the prefix uppercased — sb_upper, arena-owned */
 } GenNames;
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 void pcrec_emit_abi_types(StrBuf *sb);

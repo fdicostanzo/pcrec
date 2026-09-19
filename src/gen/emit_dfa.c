@@ -666,20 +666,6 @@ static const char *match_entry_name(Ctx *cx)  { return derived_name(cx, "_match"
 static const char *match_caps_entry_name(Ctx *cx) { return derived_name(cx, "_match_caps"); }
 static const char *info_entry_name(Ctx *cx)   { return derived_name(cx, "_info"); }
 
-/* The OS-0 uppercased-prefix spelling (`<PREFIX>_NCAPS` etc., match_api_m4.md
- * §0/§2.1) — every prefix byte is a valid C identifier byte already
- * (validated by compile.c's valid_prefix), so a plain per-byte toupper is
- * exact; no replacement pass is needed the way emit_header's include-guard
- * computation needs one (that one also has to survive an ARBITRARY guard
- * namespace collision, this one does not). */
-static void prefix_upper(const char *p, char *buf, size_t bufsz)
-{
-    size_t i = 0;
-    for (; p[i] && i + 1 < bufsz; i++)
-        buf[i] = (char)toupper((unsigned char)p[i]);
-    buf[i] = 0;
-}
-
 /* [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
  * types plus rx_renderfn (D44/A-14) — shared, BYTE-FOR-BYTE, by every
  * generated matcher regardless of its own --prefix, which is the entire
@@ -6951,7 +6937,15 @@ void pcrec_gen_names(Ctx *cx, GenNames *g)
     g->matchfn      = match_entry_name(cx);
     g->matchcapsfn  = match_caps_entry_name(cx);
     g->infoname     = info_entry_name(cx);
-    prefix_upper(cx->opt->prefix, g->upper, sizeof g->upper);
+    /* The OS-0 uppercased-prefix spelling (`<PREFIX>_NCAPS` etc.,
+     * match_api_m4.md §0/§2.1) — every prefix byte is a valid C identifier
+     * byte already (validated by compile.c's valid_prefix), so a plain
+     * per-byte toupper is exact; no replacement pass is needed the way
+     * emit_header's include-guard computation needs one (that one also has
+     * to survive an ARBITRARY guard namespace collision, this one does not).
+     * [REVW.2] wave 2: `sb_upper` is where that per-byte pass lives now, so
+     * the VM side shares the derivation instead of copying its result. */
+    g->upper = sb_upper(&cx->arena, cx->opt->prefix);
 }
 
 void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }
