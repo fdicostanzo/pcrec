@@ -9693,8 +9693,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * emission ever started, so a build that reaches this line already
      * reflects whatever `-fprefilter`/`-fno-prefilter` asked for (or the
      * derived default when neither was passed). */
-    sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
-              job->fit.prefilter ? "hybrid" : "none");
+    sb_stamp_str(c, v.up, "VM_PREFILTER",
+                 job->fit.prefilter ? "hybrid" : "none");
     /* [OPT-4] AND WHICH LANGUAGE THAT HYBRID ANSWERS FOR (K39; docs/design/
      * prefilter_count_independence.md). `RX_VM_PREFILTER` says a DFA scan is
      * in this artifact; this says whether that scan recognises the pattern's
@@ -9717,8 +9717,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * knee) must stamp `"exact"`, because the artifact reports what the
      * emitter DID. */
     if (job->fit.prefilter) {
-        sb_printf(c, "#define %s_VM_PREFILTER_LANG \"%s\"\n", v.up,
-                  job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+        sb_stamp_str(c, v.up, "VM_PREFILTER_LANG",
+                     job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
         /* [OPT-4] AND WHY (D81's `_WHY` convention, `_UNROLL_K_WHY`'s shape).
          * The LANG line above says which language was built; without this one
          * an artifact stamping `"exact"` cannot be told apart into the three
@@ -9747,8 +9747,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * `-fprefilter-collapse` is HONOURED but vacuous in: a caller who
              * passed the flag and got the exact language needs to know that
              * there was nothing to collapse, not that a rung declined. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"no counted repeat\"\n", v.up);
+            sb_stamp_str(c, v.up, "VM_PREFILTER_LANG_WHY",
+                         "no counted repeat");
             break;
         case PFLW_NULLABLE:
             /* [OPT-4.1] DISTINCT FROM BOTH VALUES ABOVE for the reason they
@@ -9760,11 +9760,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * The line appears only where a prefilter still exists — on a
              * ladder rung the same decline leaves none, and the artifact says
              * so through `<PREFIX>_ENGINE_SEL "declined-nullable"` instead. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"nullable collapsed language\"\n", v.up);
+            sb_stamp_str(c, v.up, "VM_PREFILTER_LANG_WHY",
+                         "nullable collapsed language");
             break;
         case PFLW_FORCED:
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
+            sb_stamp_str(c, v.up, "VM_PREFILTER_LANG_WHY", "forced");
             break;
         case PFLW_SEL1:
             /* The [SEL-1] rung, not a budget. `RX_ENGINE_WHY` on this artifact
@@ -9772,8 +9772,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * `RX_VM_PREFILTER "none"` beside it; this line explains the
              * prefilter that is there instead. The measured NFA is the EXACT
              * machine's, i.e. the scale of what the collapse avoided. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"dfa overflow retry, exact nfa %u\"\n", v.up,
+            sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
+                      "\"dfa overflow retry, exact nfa %u\"",
                       job->fit.prefilter_nfa_states);
             break;
         case PFLW_SIZECAP:
@@ -9781,13 +9781,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * that was refused and the cap it exceeded — not NFA states —
              * because that is the comparison that caused this retry, and a
              * reader deciding whether to raise a cap instead needs it. */
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
-                         " \"size cap retry, exact %llu > %llu\"\n", v.up,
+            sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
+                      "\"size cap retry, exact %llu > %llu\"",
                       job->fit.prefilter_sizecap_bytes,
                       job->fit.prefilter_sizecap_limit);
             break;
         default:
-            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"exact\"\n", v.up);
+            sb_stamp_str(c, v.up, "VM_PREFILTER_LANG_WHY", "exact");
             break;
         }
     }
@@ -9859,8 +9859,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * was built under, so a reader can tell an artifact that fitted from one
      * built with a raised cap without having the command line. */
     sb_printf(c, "#define %s_UNROLL_K %d\n", v.up, v.unroll_k);
-    sb_printf(c, "#define %s_UNROLL_K_WHY \"%s\"\n", v.up,
-              cx->size_term_why ? cx->size_term_why : "default");
+    sb_stamp_str(c, v.up, "UNROLL_K_WHY",
+                 cx->size_term_why ? cx->size_term_why : "default");
     sb_printf(c, "#define %s_MAX_EMIT_CODE_BYTES %llu\n", v.up,
               cx->opt->max_emit_code_bytes
                   ? (unsigned long long)cx->opt->max_emit_code_bytes
@@ -10143,10 +10143,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * whole-artifact fact with no per-`A_REP` axis to mix. No `rx_info`
      * mirror, on `RX_DFA_TABLE`'s precedent — no consumer reads either at RUN
      * time today (D77). */
-    sb_printf(c, "#define %s_VM_ENTRY_SHAPE \"%s\"\n", v.up,
-              shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
-              shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
-              shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
+    sb_stamp_str(c, v.up, "VM_ENTRY_SHAPE",
+                 shape == PCREC_VM_ENTRY_PLAIN   ? "plain"   :
+                 shape == PCREC_VM_ENTRY_SHARED  ? "shared"  :
+                 shape == PCREC_VM_ENTRY_FORWARD ? "forward" : "inline");
     sb_printf(c, "#define %s_VM_PROGRAM_BYTES %lluULL\n", v.up,
               (unsigned long long)job->vmsb.len);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
@@ -10228,9 +10228,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * one stamp over. Where a bound DOES exist the stamp names its form, which
      * is what ruling 2 (c) asks for; where none exists there is no form to
      * name. */
-    sb_printf(c, "#define %s_VM_PRUNE_CEILING \"%s\"\n", v.up,
-              v.nclamp == 0 ? "none"
-                            : v.mrl_win ? "prefilter-window" : "subject-end");
+    sb_stamp_str(c, v.up, "VM_PRUNE_CEILING",
+                 v.nclamp == 0 ? "none"
+                               : v.mrl_win ? "prefilter-window" : "subject-end");
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
