@@ -2160,7 +2160,35 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * flag. `<PREFIX>_VM_CLS_FOLDS` is
                                            * where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_CLS_FOLD;
+                                          PCREC_NO_CLS_FOLD |
+                                          /* [EMIT-VERB] the emitted-comment
+                                           * axis (D112), and it joins the
+                                           * mask for the mask's own reason
+                                           * in its purest form: the C
+                                           * compiler discards comments, so
+                                           * two artifacts differing only in
+                                           * their prose behave identically
+                                           * and compile to the same object
+                                           * file. Unmasked, `-fno-comments`
+                                           * would move five bytes of
+                                           * `rx_info.flags` and the object
+                                           * files would NOT be identical —
+                                           * the same defect
+                                           * `-fno-prefilter-collapse`
+                                           * measured on bit 19 above, and
+                                           * here it would also destroy this
+                                           * axis's own central claim. There
+                                           * is no `<PREFIX>_COMMENTS` stamp
+                                           * to point at as the D46 record,
+                                           * and deliberately so: the presence
+                                           * of the prose IS the record, and a
+                                           * stamp would be a second fact
+                                           * about the first that a check
+                                           * could read off a file whose
+                                           * comments had been stripped by
+                                           * something other than pcrec. */
+                                          PCREC_NO_COMMENTS |
+                                          PCREC_FORCE_COMMENTS;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

@@ -576,6 +576,23 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "permissive", "permissive",
                      0, 0, "", "always (fallback) — the artifact answers at whatever position the caller named (utf8_design.md §2.6.1.1's ruled semantics), and on a byte artifact this row is the ONLY one reachable: every position is a boundary there and neither setting emits a guard");
     }
+    /* [EMIT-VERB] comments — §2.24, D112. THE ONE AXIS IN THIS DUMP THAT IS
+     * OFF BY DEFAULT, so its ROWS READ IN THE OTHER DIRECTION: order 1 is
+     * what a build gets by default (comment-free) and the FORCE flag is what
+     * reaches order 2, where every other force pair here forces the rung the
+     * compiler would otherwise choose. It has NO STAMP — the prose's presence
+     * is its own record, and a `<PREFIX>_COMMENTS` macro would be a second
+     * fact about the first, readable off a file some other tool had stripped.
+     * That is why `stamp_macro` is empty rather than pointing somewhere. */
+    {
+        PredAxis p = { "comments", NULL, "", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "essential-only", "",
+                     PCREC_NO_COMMENTS, 0, "",
+                     "the DEFAULT (D112): the artifact keeps only its ESSENTIAL comments — the generated-by/pattern-echo provenance lines and the emitted rx_matchfn ABI block docs/spec/match_api.md names as the embedder's contract — and drops the rest; -fno-comments states it explicitly and overrides a config/target row that asked for the full set");
+        emit_pred_row(sb, &p, 2, "full", "",
+                     0, PCREC_FORCE_COMMENTS, "",
+                     "-fcomments: every comment the emitter has to offer (the orientation block, the table legends, the per-label role text). Changes no answer and no object byte — the C compiler discards comments — so it is a SOURCE-readability axis and never a performance one ([ART-SIZE]: comments vs .o size r=0.43)");
+    }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
      * is the observable consequence when it changes which engine a pattern

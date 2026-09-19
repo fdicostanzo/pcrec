@@ -31,8 +31,42 @@ static void sb_grow(StrBuf *sb, size_t need)
     sb->cap = cap;
 }
 
+/* [EMIT-VERB] (D112) THE COMMENT GATE, at the three primitives every other
+ * append in this file is built on (`sb_text`, `sb_field`, `sb_row`,
+ * `sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
+ * gate instead of having to remember it. Inside a muted region an append is
+ * a no-op: `len` does not advance, so the size term's `abort_over` and the
+ * caps see exactly the bytes the artifact will carry.
+ *
+ * NOT A FILTER OVER FINISHED TEXT. The class is decided at the emission site
+ * and the text is never written, so nothing downstream has to recognise a
+ * comment or repair a line — the failure mode a post-hoc strip would have. */
+static inline bool sb_muted(const StrBuf *sb) { return sb->cmt_mute_depth != 0; }
+
+void sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
+
+void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
+{
+    sb->cmt_depth++;
+    if (klass == PCREC_CMT_NONESSENTIAL && sb->cmt_drop && !sb->cmt_mute_depth)
+        sb->cmt_mute_depth = sb->cmt_depth;
+}
+
+void sb_cmt_close(StrBuf *sb)
+{
+    /* An unbalanced close would leave the buffer muted for the rest of the
+     * compile — silent, total, and exactly the shape that is hard to
+     * attribute. It cannot happen from this tree's call sites (every open has
+     * its close in the same function), so the guard is a floor, not a
+     * mechanism: refuse to underflow. */
+    if (sb->cmt_depth == 0) return;
+    if (sb->cmt_mute_depth == sb->cmt_depth) sb->cmt_mute_depth = 0;
+    sb->cmt_depth--;
+}
+
 void sb_putc(StrBuf *sb, char c)
 {
+    if (sb_muted(sb)) return;
     sb_grow(sb, 1);
     sb->p[sb->len++] = c;
     sb->p[sb->len] = 0;
@@ -40,6 +74,7 @@ void sb_putc(StrBuf *sb, char c)
 
 void sb_puts(StrBuf *sb, const char *s)
 {
+    if (sb_muted(sb)) return;
     size_t n = strlen(s);
     sb_grow(sb, n);
     memcpy(sb->p + sb->len, s, n);
@@ -59,6 +94,7 @@ static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
 
 static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
 {
+    if (sb_muted(sb)) return;
     va_list ap2;
     va_copy(ap2, ap);
     int n = vsnprintf(NULL, 0, fmt, ap2);
