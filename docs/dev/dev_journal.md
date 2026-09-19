@@ -24012,3 +24012,14 @@ value stamps; "4 abutting" = 3 rows on one line; a mech re-aim must be
 COMMITTED before it can be driven. Post-merge on main: build, strict and
 alloc green (populations unmoved). Merge-gate `make test` for the pair
 launched detached (3h bound). Worktrees removed; no lanes alive.
+
+**SESSION CLOSE (2026-09-18 ~23:15, Frank: "when you get to the next session end
+point then we'll reset; on wake proceed with dev items").** The pair's merge
+gate: `make test` 40/40, sole FAIL the standing darwin nm probe; size log 0
+movers (dceffe0d). Main clean and pushed. Today's ledger: K60 closed both
+classes (D109, D105); wave 2 steps 0-11 of 16 merged across four slices, all
+byte- and size-neutral, no abi event; [ALLOC-PINS] ruled and built (D110).
+Four merge-gate `make test` runs on darwin today, each ~104 min, each green.
+Lanes used: k60fix, d105, mtriage, w2facts (read-only), w2a, w2census, w2b,
+w2x, allocpins — nine, none alive at close. Next session starts on wave 2
+steps 12-15 without waiting for a prompt beyond "proceed". wake.md rewritten.
