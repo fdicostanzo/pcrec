@@ -2114,13 +2114,23 @@ that is not. Every other axis here picks between emitted SHAPES for one
 language; this one picks between two RENDERINGS of one artifact. The code,
 the tables, the stamps and the answers are identical under both settings.
 
+**Pass `-fcomments` when you want to READ the artifact** — the orientation
+block and the table legends are written for exactly that, and nothing else in
+the file changes when you do.
+
 | | |
 |---|---|
-| **Default** | comments are ON — every comment the emitter has to offer |
+| **Default** | **OFF** — a default artifact carries only its ESSENTIAL comments (D112) |
 | **Stamp** | none, deliberately — see below |
 | **Answer-identical?** | yes, trivially: the C compiler discards comments |
 | **Engine-selecting?** | no |
 | **Inert under** | nothing; every artifact has comments to drop |
+
+**Measured over the 3,517 compiling corpus patterns** (`.c` + `.h` source
+bytes): comments were **44.2 %** of a default artifact before the flip — DFA
+45.6 %, VM 43.1 % — so that is what the default now saves. The object file is
+byte-identical on all 3,517, the comment-excluded source size is identical,
+and every emitted `#define` is identical.
 
 **THE TWO CLASSES** (D112). A comment is ESSENTIAL or NON-ESSENTIAL, and the
 class is decided at the emission site rather than by a filter over finished

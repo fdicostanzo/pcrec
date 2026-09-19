@@ -452,7 +452,8 @@ A dozen-odd flags (`-fno-possessify`, `-fno-revdet`, `-fno-counter`,
 `-fno-altcls-merge`/`-fno-altcls-factor`, `-fno-atomic-discharge`,
 `-fno-splice-calls`, `-fno-tiered-entry`, `-fno-premul-table`,
 `-fno-offset-skip`, `-fno-anchored-dfa`, `-fno-size-term`,
-`-fno-scan-edge`, `-fno-start-pinned`, `-fno-alt-island`)
+`-fno-scan-edge`, `-fno-start-pinned`, `-fno-alt-island`,
+`-fno-cls-fold`, `-fno-startpos-guard`)
 deliberately do **not** appear in `--help` (D47.3:
 these are testing and tuning axes, not user features — `cli/CLAUDE.md`
 states the reasoning per flag). Each denies one optimization strategy
@@ -464,6 +465,24 @@ real generation axis on the give-up-code footing (§4/§8 above), which is
 why it alone is documented in `--help`. Full per-flag semantics, the
 force-vs-deny distinction, and the byte-identity/engine-selecting split:
 `docs/spec/tuning.md` ([SPEC-1.3]).
+
+**`-fcomments` / `-fno-comments` share the family's spelling and are not a
+tuning axis** ([EMIT-VERB], D112; `tuning.md` §2.24). They control the
+emitted artifact's HUMAN COMMENTARY and nothing else. The default is
+`-fno-comments`: an artifact carries only its ESSENTIAL comments — the
+generated-by line naming pcrec and echoing the pattern, and the shared
+`PCREC_RX_ABI_H` type block's doc-comments. `-fcomments` restores the rest
+(the orientation block, the table legends, the per-label role text), which
+is what you want when you are going to READ the artifact. Deny wins over
+force, so `-fcomments -fno-comments` is comment-free.
+
+Nothing else changes with them: the object file is byte-identical, the
+comment-excluded source size is identical, every emitted `#define` is
+identical, and the emitted-size caps — which are defined on comment-excluded
+bytes — cannot see the flag at all, so no pattern is rescued or refused by
+it. They are absent from `--help` for the family's own reason. A `config`
+block or a `--source` target may set either spelling, and an explicit flag on
+the command line wins (§the `--source` precedence rule below).
 
 ### `--source FILE` — compiling from a `.rxt` source ([DD-13b.W1.2])
 

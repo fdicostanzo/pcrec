@@ -534,6 +534,15 @@ pcrec bounds how large an artifact it will emit. Two limits, both in
 **bytes of emitted C source with comments excluded** — the `.o` you
 link is roughly **17 %** of that, so the numbers are quoted both ways:
 
+**That "comments excluded" is why `-fcomments` / `-fno-comments` cannot
+rescue or refuse a pattern** ([EMIT-VERB], D112; `tuning.md` §2.24). The
+sentence predates that axis and needed no change when it landed: the
+quantity both limits are measured on is the same under either setting, so
+the refusal set is identical and there is no size-lever hazard of the kind
+K59 records for `--tune`. Verified rather than argued — the comment-excluded
+size is compared between the two settings on every case of
+`tests/codegen/run_comments_axis.sh`.
+
 | limit | default | ≈ `.o` | what it bounds |
 |---|---|---|---|
 | `PCREC_MAX_VM_EMIT_CODE_BYTES` | 500,000 | ≈ 85 KB | bytes OUTSIDE table initializers — the part gcc must compile as control flow |
