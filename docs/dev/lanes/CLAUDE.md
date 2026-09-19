@@ -1634,3 +1634,23 @@ never edited afterwards.
   And **§1.2 is a defect found while validating**: `run_alloc_tests.sh` counted
   `^FAIL` out of a stdout-only log while `alloc_check` writes FAIL to stderr,
   so every red run reported "0 witness(es) misbehaved".
+
+- `allocpins_report.md` — [ALLOC-PINS] (2026-09-18, lane allocpins, sonnet):
+  D110, the ruling this lane implements — `tests/core/alloc_check.c`'s
+  per-witness population expectations become FLOORS (half the measured
+  population: W1 57→28, W2 11→5, W3 303→151, W4 162→81) rather than
+  equality pins, `expect_absorbed_*` staying exact since both K60 classes
+  are closed; `tests/resource/run_resource_tests.sh` section 2b now asserts
+  `alloc_check`'s own rc + the absence of any `SUCCEEDED THROUGH` line, so a
+  plant reopening either class is detectable inside `make test` itself, not
+  only via the opt-in `make alloc`; `scripts/battery.sh` gains an `alloc`
+  stage (after `san`, before `lint`, `make test` untouched). Two sabotage
+  rows, S259 (D109's `cx.failed_nomem` propagation neutered — the ladder
+  class) and S260 (`emit_state_legend`'s `dist` array reverts to a raw
+  `malloc` with a silent NULL return — the legend class), both solo-run
+  DETECTED — S260's second fail is a bonus: `emit_dfa.c` sits outside
+  Section 0's own pinned allocation-site file set, so the plant trips that
+  census too, on top of section 2b's absorption check. Floor control
+  verified in the failing direction (a scratch floor set above the live
+  population, reverted before commit). PARKED on `lane/allocpins`, not
+  merged.
