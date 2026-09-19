@@ -11231,6 +11231,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         char *pf = arena_alloc(&cx->arena, sz);
         snprintf(pf, sz, "%s_prefilter", v.p);
         prefn = pf;
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c,
             "/* The capture-erased forward+reverse DFA pair, emitted by the\n"
             " * SAME emitter the DFA-only artifact uses (src/gen/emit_dfa.c),\n"
@@ -11245,6 +11246,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * side. Prefilter-before-VM is therefore an ORDERING RULE (4.7),\n"
             " * not a tuning knob: a pattern whose prefilter can answer must\n"
             " * never reach the step budget. */\n");
+        sb_cmt_close(c);
         pcrec_emit_dfa_engine(cx, prefn, "static ");
         sb_puts(c, "\n");
     }
@@ -11397,20 +11399,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * false, below): there is no `goto *` left in that case at all. The
      * comment is selected on the same predicate that omits the dispatch,
      * rather than left to describe a jump the artifact no longer contains. */
-    sb_printf(c,
-        "\n%s_accept: __attribute__((unused));\n"
+    sb_printf(c, "\n%s_accept: __attribute__((unused));\n", v.p);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
         "     * candidates. The VM returns here immediately and the capture\n"
         "     * slots at this instant are the answer — no candidate comparison,\n"
         "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
-        "     * filled by the ENTRY, not here (3.4). */\n"
+        "     * filled by the ENTRY, not here (3.4). */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "%s"
         "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
-        "\n%s_fail: __attribute__((unused));\n"
-        "%s"
-        "%s%s"
-        "%s",
-        v.p, accept_tr, v.p,
+        "\n%s_fail: __attribute__((unused));\n",
+        accept_tr, v.p);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
             "     * A step is one backtrack resumption (4.2), counted at exactly\n"
@@ -11429,7 +11433,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "     * length-independent, and the counter measures precisely the\n"
             "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
             "     * security boundary, and it must not be traded against\n"
-            "     * execution speed. */\n",
+            "     * execution speed. */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
+        "%s%s%s",
         fail_tr, exhaust_tr,
         /* [CC-CLANG] `has_push` false means `run->resume_depth` can never
          * leave 0, so the guard on the return is not merely redundant but

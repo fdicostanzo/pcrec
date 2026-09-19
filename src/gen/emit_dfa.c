@@ -6526,6 +6526,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         return;
     }
 
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
                "     * position at a time, and each state is a LABEL rather than a table\n"
                "     * row, so a step is a computed goto.\n"
@@ -6535,6 +6536,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                "     *\n");
     emit_class_legend(c, d);
     sb_puts(c, "     */\n");
+    sb_cmt_close(c);
     emit_u8_table(c, p, "byte_class", d->clsmap, 256);
 
     /* [M6.2 wave B] this engine's share of §3.6 and §3.8. `acc2` is the
@@ -6607,9 +6609,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * (§3.6.2's composition with the position axis, both indices known). */
     int unl = upc_of_newline(d);
     if (acc2) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_puts(c, "    /* 1 where a match may end, indexed [state * classes + class]:\n"
                    "     * this machine's accept bit depends on the NEXT byte, so it is a\n"
                    "     * table read rather than a per-state constant. */\n");
+        sb_cmt_close(c);
         emit_acc_cls_table(c, p, "is_accepting_by_class", d);
     }
 
@@ -6617,12 +6621,14 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * per state instead of one flat table -- the cells are code ADDRESSES, so
      * a step is an indirect jump rather than a load and a compare. The legend
      * names the states those addresses belong to. */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c, "    /* Jump targets, one row per state, indexed by byte class.\n"
                  "     * A cell is the label to jump to for that class; %s_dead ends\n"
                  "     * the attempt. %d states, %d classes.\n"
                  "     *\n", p, d->n, d->ncls);
     emit_state_legend(cx, c, d, false);
     sb_puts(c, "     */\n");
+    sb_cmt_close(c);
     for (int i = 0; i < d->n; i++) {
         sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
@@ -7644,7 +7650,9 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "/* Engine: dfa */\n");
+    sb_cmt_close(c);
     pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
     pcrec_emit_dfa_scan_stamps(cx, c, upper);
     /* [ENG-ABS] AXIS G IS STAMPED HERE AND NOT IN `pcrec_emit_dfa_scan_stamps`,
