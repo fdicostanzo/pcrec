@@ -4614,6 +4614,7 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
                  "%s// skip over bytes that cannot begin a match rather than\n"
                  "%s// stepping through them. can_begin_match says which can.\n",
               f->dir->bind, f->dir->bind, f->dir->bind);
+    sb_cmt_close(c);
 }
 
 static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
@@ -4737,10 +4738,12 @@ static const char *ofsk_tbl_name(const DfaForm *f, const PrefixK *k)
 
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 {
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
                "     * forward loop uses this to skip over bytes that cannot begin\n"
                "     * one instead of stepping through them; speed only, it never\n"
                "     * changes the answer. */\n");
+    sb_cmt_close(c);
     cand_emit_table(c, f->p, "can_begin_match", &f->cand);
 }
 
@@ -4817,9 +4820,7 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         " * Every match of this pattern carries a byte from a known set at each\n"
         " * of these offsets FROM ITS OWN START, so a position that fails any\n"
         " * one of them cannot begin a match and the transition loop need not\n"
-        " * be entered there (docs/design/offset_k_skip.md):\n");
-    sb_cmt_close(c);
-    sb_printf(c,
+        " * be entered there (docs/design/offset_k_skip.md):\n"
         " *\n");
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
@@ -4830,7 +4831,6 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         if (i == f->ofsk->scan) sb_puts(c, "   <- SCANNED FOR");
         sb_puts(c, "\n");
     }
-    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c,
         " *\n"
         " * The scan is one pass for the offset marked above; the others are\n"
@@ -4841,10 +4841,9 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         " *\n"
         " * SPEED ONLY: it refuses exactly the starts the stepped scan would\n"
         " * refuse, so no answer depends on it. Compile with -fno-offset-skip\n"
-        " * to emit the same matcher without it.\n");
-    sb_cmt_close(c);
-    sb_printf(c,
+        " * to emit the same matcher without it.\n"
         " */\n");
+    sb_cmt_close(c);
 
     sb_printf(c, "static inline size_t %s_ofsskip(const unsigned char *subject, size_t n, size_t pos", p);
     ofsk_emit_params(c, f, true);
@@ -4909,10 +4908,12 @@ static void pf_emit_ofs_reseed(StrBuf *c, const DfaForm *f, const char *ind)
 static void pf_comment_ofs(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// skip straight to the next position that could begin a\n"
                  "%s// match. %s_ofsskip tests %d offsets, not just this one.\n",
               ind, ind, ind, f->p, f->ofsk->nsel);
+    sb_cmt_close(c);
 }
 
 static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
@@ -6414,11 +6415,13 @@ static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
         "    size_t search_from = ctx->pos;\n",
         matchfn);
     emit_machine_tables(c, f);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
                "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
                "    // scan, so the longest match wins; no reverse pass,\n"
-               "    // because the start is the caller's.\n"
-               "    size_t scan_position = search_from;\n"
+               "    // because the start is the caller's.\n");
+    sb_cmt_close(c);
+    sb_puts(c, "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
     emit_scan_loop(c, f);
     sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
@@ -6453,17 +6456,21 @@ static void emit_anchored_match_caps_def(StrBuf *c, const char *fn,
         "    if (capture_spans_out) {\n"
         "        capture_spans_out[0][0] = (ptrdiff_t)ctx->pos;\n"
         "        capture_spans_out[0][1] = (ptrdiff_t)ctx->pos + rx_len;\n"
-        "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n"
+        "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n",
+        fn, matchfn, upper);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "            /* every group this artifact promises is reached only\n"
         "               through a subroutine call or sits under a {0}, so no\n"
-        "               match can set it (PCRE2 reports the same) */\n"
+        "               match can set it (PCRE2 reports the same) */\n");
+    sb_cmt_close(c);
+    sb_puts(c,
         "            capture_spans_out[rx_g][0] = PCREC_UNSET;\n"
         "            capture_spans_out[rx_g][1] = PCREC_UNSET;\n"
         "        }\n"
         "    }\n"
         "    return rx_len;\n"
-        "}\n",
-        fn, matchfn, upper);
+        "}\n");
 }
 
 /* THE ASSEMBLY, and the only place axis G's two forms are told apart.

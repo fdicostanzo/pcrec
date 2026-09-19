@@ -1629,6 +1629,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
 
+        /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
+         * every buffer is finished. An `sb_cmt_open` with no matching close
+         * mutes the rest of ITS buffer, so under `-fno-comments` the artifact
+         * is silently TRUNCATED and under the default it is byte-identical —
+         * the failure is invisible to every identity gate and shows up as a C
+         * syntax error in somebody else's build. The measured instance: a
+         * prefilter helper gained an open and no close, and four artifacts
+         * ended mid-function. Checked unconditionally, because the cost is
+         * four integer tests and the alternative is finding it downstream. */
+        {
+            const StrBuf *const bufs[] = { &cx.job->csb,  &cx.job->hsb,
+                                           &cx.job->vmsb, &cx.job->scr_test };
+            for (size_t bi = 0; bi < sizeof bufs / sizeof bufs[0]; bi++)
+                if (bufs[bi]->cmt_depth != 0)
+                    ctx_fail(&cx, 0, "internal error: the emitter left a "
+                                     "comment region open (an sb_cmt_open "
+                                     "with no sb_cmt_close)");
+        }
+
         /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;
          * docs/design/artifact_size_term.md §3.3, §4.4). The measurement is
          * the same on every attempt; what differs is whether this attempt is

@@ -12020,16 +12020,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    if (ctx->pos > ctx->len) return -1;\n"
         "%s"
         "    %s_run_state_init(run);\n"
-        "    result = %s_match_anchored(ctx, run%s%s);\n"
-        "    /* No translation and no clamp: the impl's return space IS this\n"
-        "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
-        "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
-        "     * below-the-floor PCREC_ERR_INTERNAL -- this entry propagates\n"
-        "     * it exactly like a give-up, for the same top-level-entry\n"
-        "     * reason <prefix>_search does). A defensive floor test here\n"
-        "     * would be dead code pretending to be a safeguard. */\n"
-        "    return result;\n"
-        "}\n\n",
+        "    result = %s_match_anchored(ctx, run%s%s);\n",
         ai, g.matchfn, v.p, mguard, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
@@ -12042,6 +12033,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * halves, scoped, because an unscoped "the entries agree" test would
          * be red on correct behaviour. */
         v.ngst > 0 ? ", ctx->pos" : "");
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
+        "    /* No translation and no clamp: the impl's return space IS this\n"
+        "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
+        "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
+        "     * below-the-floor PCREC_ERR_INTERNAL -- this entry propagates\n"
+        "     * it exactly like a give-up, for the same top-level-entry\n"
+        "     * reason <prefix>_search does). A defensive floor test here\n"
+        "     * would be dead code pretending to be a safeguard. */\n");
+    sb_cmt_close(c);
+    sb_puts(c,
+        "    return result;\n"
+        "}\n\n");
 
     sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c,

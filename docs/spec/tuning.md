@@ -2126,13 +2126,22 @@ the tables, the stamps and the answers are identical under both settings.
 class is decided at the emission site rather than by a filter over finished
 text:
 
-- **ESSENTIAL** — PROVENANCE and the EMBEDDER'S CONTRACT: the generated-by
-  header line naming pcrec and echoing the pattern (on both the `.c` and the
-  `.h`), the feature-set line naming the modules the artifact was built with,
-  and the emitted `rx_matchfn` / `rx_ctx` ABI doc-comments that
-  `docs/spec/match_api.md` names as what an embedder actually reads. These are
-  emitted under EVERY setting. A file in someone else's repository still says
-  what it is, what it matches, and what its one callback type promises.
+- **ESSENTIAL** — PROVENANCE and the EMBEDDER'S CONTRACT, and it is exactly
+  two things: the generated-by header line naming pcrec and echoing the
+  pattern (on both the `.c` and the `.h`), and the whole shared
+  `PCREC_RX_ABI_H` type block — the `rx_ctx` fields, the `rx_matchfn` return
+  space, the error codes and the `rx_info` fields — which
+  `docs/spec/match_api.md` names as the doc-comments an embedder actually
+  reads. These are emitted under EVERY setting. A file in someone else's
+  repository still says what it is, what it matches, and what the types a
+  caller touches promise. The ESSENTIAL set is a FIXED cost per artifact; the
+  non-essential set is the part that grows with the machine.
+
+  The **feature-set line** (`/` `* Feature set: ... *` `/`) is NOT in it: its
+  two values also ship as `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES`,
+  which are `#define`s and always emitted. One consequence is worth stating
+  because it is real — those macros live only in the `.c`, so a default
+  `.h` no longer records the feature set in any form.
 - **NON-ESSENTIAL** — everything else, which is most of it. This is what the
   axis removes, and it is the SEAM a future levels axis would subdivide;
   levels would never touch the essential set. Nobody builds levels until a
