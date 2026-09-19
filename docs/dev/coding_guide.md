@@ -70,9 +70,14 @@ files does not have and is exactly the violence §4's rubric warns about.
 boundary matters in both directions. A `limits.def` row is *a value a pattern can
 be measured against*. A scratch-buffer size is NOT one and does not get a row
 (L3-F6 declines to propose 94 of them; L10 §2.4 confirms). A tuning constant that
-is neither (`C_MEMCHR`, `SIZE_TERM_BAR_DEFAULT`) is today invisible to
-`limits_check.sh`'s name-keyed detector — that is L3-F1, a check defect, not your
-licence to open-code a new one.
+is neither goes on one of `limits_check.sh`'s two ALLOWLISTS, with its reason —
+never nowhere. Since [REVW.4] wave 4 (D107) that check scans EVERY numeric
+`#define` and every explicitly-valued enum member under `src/`/`cli`/`lib`,
+with no name filter at all, so a new bare number fails it whatever you call
+it: make it a row, or disposition it. The two constants L3-F1 named are both
+settled — `SIZE_TERM_BAR_DEFAULT` became the row `PCREC_SIZE_TERM_BAR` and
+`C_MEMCHR` is on the LIMIT allowlist with the other six `prefix_k.c` cost-model
+coefficients.
 
 **1.9 Know which LAYER you are writing in, and depend only leftward.**
 
@@ -325,10 +330,17 @@ five different surfaces, which is the argument that the shape is systemic:
 3. **A witness must REACH its site ([MECH-REACH]).** The cautionary tale: the tree's
    only long-prefix control compiles the pattern `a`, reaching essentially none of
    the 48+ buffers it exists to guard (L10 §2.2). Measure the reach; do not assume it.
-4. **Name-keyed filters are the recurring blind spot.** `limits_check.sh` filters on
+4. **Name-keyed filters are the recurring blind spot.** `limits_check.sh` filtered on
    ceiling vocabulary in the constant's NAME; the repair after its first miss widened
    the vocabulary instead of changing the filter's KIND, and the miss recurred
-   (L3-F1). If your filter is a name list, say what it cannot see.
+   (L3-F1). D107 fixed that one by INVERTING it — it now scans every numeric
+   constant and classifies each — and the general rule stands for the next filter
+   you write: **if your filter is a name list, change its kind or say what it cannot
+   see.** The inverted check says both, in its own comment: it states the two
+   structural things it does not scan (an expression-valued constant; an ORDINAL
+   enum's members) and it carries an arm that fails when an allowlist entry stops
+   being reached, because a filter that quietly stops matching reads exactly like a
+   filter that found nothing wrong.
 5. **A check needs a failing-direction story before it is written.** Run it against
    the unrepaired defect and record the red. L8-F6 is what the absence looks like:
    the ctx_nomem discipline's only positive control is Darwin-skipped, so it has not
