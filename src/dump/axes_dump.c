@@ -585,13 +585,24 @@ static void emit_predicate_axes(StrBuf *sb)
      * fact about the first, readable off a file some other tool had stripped.
      * That is why `stamp_macro` is empty rather than pointing somewhere. */
     {
+        /* WHICH ROW IS THE DEFAULT IS DERIVED, not typed. `axes.def`'s
+         * `default_state` column is the one home of that fact (D111), so the
+         * dump asks it rather than carrying a sentence that would have to be
+         * re-pinned the day the column flips — which is exactly what
+         * [EMIT-VERB] does to this row between its two events. */
+        const bool full_by_default =
+            pcrec_axis_on(0, PCREC_NO_COMMENTS, PCREC_FORCE_COMMENTS);
         PredAxis p = { "comments", NULL, "", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "essential-only", "",
                      PCREC_NO_COMMENTS, 0, "",
-                     "the DEFAULT (D112): the artifact keeps only its ESSENTIAL comments — the generated-by/pattern-echo provenance lines and the emitted rx_matchfn ABI block docs/spec/match_api.md names as the embedder's contract — and drops the rest; -fno-comments states it explicitly and overrides a config/target row that asked for the full set");
+                     full_by_default
+                       ? "-fno-comments: the artifact keeps only its ESSENTIAL comments — the generated-by/pattern-echo provenance line and the emitted rx_ctx/rx_matchfn/rx_info ABI block docs/spec/match_api.md names as the embedder's contract — and drops the rest"
+                       : "THE DEFAULT (D112): the artifact keeps only its ESSENTIAL comments — the generated-by/pattern-echo provenance line and the emitted rx_ctx/rx_matchfn/rx_info ABI block docs/spec/match_api.md names as the embedder's contract — and drops the rest; -fno-comments states it explicitly and overrides a config/target row that asked for the full set");
         emit_pred_row(sb, &p, 2, "full", "",
                      0, PCREC_FORCE_COMMENTS, "",
-                     "-fcomments: every comment the emitter has to offer (the orientation block, the table legends, the per-label role text). Changes no answer and no object byte — the C compiler discards comments — so it is a SOURCE-readability axis and never a performance one ([ART-SIZE]: comments vs .o size r=0.43)");
+                     full_by_default
+                       ? "THE DEFAULT: every comment the emitter has to offer (the orientation block, the table legends, the per-label role text); -fcomments states it explicitly. Changes no answer and no object byte — the C compiler discards comments — so it is a SOURCE-readability axis and never a performance one ([ART-SIZE]: comments vs .o size r=0.43)"
+                       : "-fcomments: every comment the emitter has to offer (the orientation block, the table legends, the per-label role text). Changes no answer and no object byte — the C compiler discards comments — so it is a SOURCE-readability axis and never a performance one ([ART-SIZE]: comments vs .o size r=0.43)");
     }
     /* atomic-discharge — §2.8, ENGINE-SELECTING; no dedicated stamp of its
      * own (its activity is folded into RX_VM_STRATS via vm_cuts(); RX_ENGINE
