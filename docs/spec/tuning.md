@@ -18,6 +18,22 @@ seed, accept, direction) that have no CLI flag at all, one TSV row per
 (axis, candidate). It answers what THIS BUILD thinks its axes are; this
 document remains the promise about what denying/forcing one DOES.
 
+**WHERE AN AXIS'S BIT AND ITS SPELLING COME FROM ([REVW.4] wave 4, D111,
+2026-09-19).** Each bit is declared once in `lib/pcrec.h`, which is the
+contract. Each axis's CLI SPELLINGS — its `-fno-X` denial, its `-fX`
+force where it has one, and its default polarity — are one row of
+`src/core/axes.def`, and every reader is derived from that row: the
+parser's whole `-f` grammar, and the `deny_macro`/`deny_bit`/
+`force_macro`/`force_bit`/`cli_flag` columns of `--list-axes`. Before this
+wave the same table was hand-maintained in three places and reconciled by
+two `awk` passes over `cli/main.c`'s source text; those passes are deleted,
+because a check that reconciles three spellings has nothing to reconcile
+once there is one. **Nothing a caller can observe changed**: every flag
+below has the same spelling, the same bit and the same effect, and all seven
+`--list-*` dumps are byte-identical across the change. What a reader gains
+is that a spelling in this document, a spelling in the dump and a spelling
+the parser accepts are now one fact rather than three.
+
 ## 1. What a tuning flag is
 
 A tuning flag is a **generation-time choice** (D18: options are compiled

@@ -86,7 +86,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/table.sh"
 . "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [K37] resolves TIMEOUT_BIN for this file's own bare compiler call below
-. "$ROOT_DIR/tests/lib/assoc.sh"   # [MACPORT] HDR_BIT/CLI_MACRO below are string-keyed (C macro names, CLI flag text) — bash 3.2 (this box) has no declare -A at all
+. "$ROOT_DIR/tests/lib/assoc.sh"   # [MACPORT] HDR_BIT below is string-keyed (C macro names) — bash 3.2 (this box) has no declare -A at all
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
@@ -178,24 +178,28 @@ if [ "$(assoc_count HDR_BIT)" -eq 0 ]; then
     exit 1
 fi
 
-# cli/main.c's own flag<->macro pairing, the identical awk run_axes.sh uses
-# (tests/axes/run_axes.sh's own header comment: "remembers the most
-# recently seen `strcmp(a, "-...")` literal, and pairs it with the next
-# `opt.flags |= MACRO` line").
-assoc_new CLI_MACRO   # cli flag text -> macro
-while IFS=$'\t' read -r macro flagtext; do
-    [ -n "$macro" ] && assoc_set CLI_MACRO "$flagtext" "$macro"
-done < <(awk '
-    /strcmp\(a, "-/ {
-        if (match($0, /"-[^"]+"/)) pending = substr($0, RSTART + 1, RLENGTH - 2)
-    }
-    /opt\.flags \|= PCREC_(NO|FORCE)_[A-Z_]+;/ {
-        if (pending != "" && match($0, /PCREC_(NO|FORCE)_[A-Z_]+/)) {
-            print substr($0, RSTART, RLENGTH) "\t" pending
-            pending = ""
-        }
-    }
-' "$CLIMAIN")
+# [REVW.4] wave 4 (D111), 2026-09-19: THE AWK SCRAPER THAT STOOD HERE IS
+# DELETED, not re-aimed. It rebuilt `cli/main.c`'s flag-text-to-bit pairing
+# out of that file's TEXT — "remember the most recently seen `strcmp(a,
+# "-...")` literal, pair it with the next `opt.flags |= MACRO` line" — so
+# that `check_cli_flag` could reconcile the parser's spellings against the
+# dump's `cli_flag` column. `tests/axes/run_axes.sh` carried an independent
+# re-implementation of the identical pass, with its own fatal guard for the
+# day "cli/main.c's loop shape changed".
+#
+# Both facts now come off ONE row of `src/core/axes.def`: `cli_axis_apply`
+# (cli/main.c) and `axis_cli_flag` (src/dump/axes_dump.c) read the same
+# table, so there are no longer two independently-typed spellings for a check
+# to reconcile. A3's usual direction inverts — the extraction DELETES two
+# checks rather than needing a new one.
+#
+# WHAT IS KEPT, because the shared table does not make it true: that the
+# shipped BINARY actually ACCEPTS the spelling this dump advertises.
+# `check_cli_flag_accepted` below runs it. A table cannot guarantee that —
+# the grammar arm could stop being reached (a mis-ordered chain, a
+# `no_more_opts` guard, an empty spelling cell) and the dump would go on
+# advertising a flag nobody can pass. That is behaviour, measured through a
+# different mechanism from the text it checks.
 
 # tuning.md §2's own "(bit N)" headings, restricted to the THIRTEEN-AXES
 # section exactly as run_axes.sh restricts it.
@@ -227,17 +231,18 @@ check_macro_bit() {
     ok "[$axis/$cand] '$macro' (bit $dumped_bit) matches lib/pcrec.h"
 }
 
-check_cli_flag() {
-    local flagtext="$1" macro="$2" axis="$3" cand="$4"
-    if ! assoc_has CLI_MACRO "$flagtext"; then
-        bad "[$axis/$cand] cli_flag '$flagtext' is not a spelling cli/main.c's parser accepts (or the awk pairing missed it)"
-        return
+# Does the SHIPPED PARSER accept this spelling? `--count-groups` is the probe
+# because it takes a pattern, writes no file and exits 0 — the option loop
+# runs in full and nothing downstream of it does. An unknown `-f...` falls
+# through to the unknown-option diagnostic and exits 1, which is the failing
+# direction this arm is driven in.
+check_cli_flag_accepted() {
+    local flagtext="$1" axis="$2" cand="$3"
+    if "$TIMEOUT_BIN" 30 "$PCREC" "$flagtext" --count-groups -- 'a(b)' >/dev/null 2>&1; then
+        ok "[$axis/$cand] cli_flag '$flagtext' is accepted by the shipped parser"
+    else
+        bad "[$axis/$cand] cli_flag '$flagtext' is advertised by --list-axes but the shipped parser REFUSES it — src/core/axes.def's row and cli_axis_apply have come apart, or the arm is no longer reached"
     fi
-    if [ "$(assoc_get CLI_MACRO "$flagtext")" != "$macro" ]; then
-        bad "[$axis/$cand] cli_flag '$flagtext' pairs with '$(assoc_get CLI_MACRO "$flagtext")' in cli/main.c, not the dumped '$macro'"
-        return
-    fi
-    ok "[$axis/$cand] cli_flag '$flagtext' pairs with '$macro' in cli/main.c"
 }
 
 check_tuning_bit_documented() {
@@ -269,8 +274,8 @@ while IFS=$'\x1f' read -r axis order candidate kind stamp_macro stamp_value \
         case "$cli_flag" in
             *" / "*)
                 f1="${cli_flag%% / *}"; f2="${cli_flag##* / }"
-                [ -n "$deny_macro" ]  && check_cli_flag "$f1" "$deny_macro" "$axis" "$candidate"
-                [ -n "$force_macro" ] && check_cli_flag "$f2" "$force_macro" "$axis" "$candidate"
+                [ -n "$deny_macro" ]  && check_cli_flag_accepted "$f1" "$axis" "$candidate"
+                [ -n "$force_macro" ] && check_cli_flag_accepted "$f2" "$axis" "$candidate"
                 ;;
             "--engine="*)
                 # the coarse axis: not through pcrec_options.flags at all,
@@ -283,9 +288,8 @@ while IFS=$'\x1f' read -r axis order candidate kind stamp_macro stamp_value \
                 fi
                 ;;
             *)
-                mac="${deny_macro:-$force_macro}"
-                if [ -n "$mac" ]; then
-                    check_cli_flag "$cli_flag" "$mac" "$axis" "$candidate"
+                if [ -n "${deny_macro:-$force_macro}" ]; then
+                    check_cli_flag_accepted "$cli_flag" "$axis" "$candidate"
                 fi
                 ;;
         esac

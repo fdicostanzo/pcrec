@@ -185,7 +185,7 @@ member.
 `--list-families` takes no `--flavour` filter — `cli.md` §2 states why
 (a family is a grouping OF rows; filtering members mid-grouping would
 make one invocation's `built` answer a different question than
-another's, `cli/main.c:517-523`'s own comment).
+another's, `main`'s `--list-families` block states it in its own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
@@ -245,8 +245,14 @@ run_dfa_stamps.sh` (reads emitted artifacts) and `docs/spec/tuning.md`
 §2's own differentials (compile twice, compare answers) are the
 independent side of THAT claim. `tests/registry/`'s axis registry check
 (§7) is the independent side of THIS dump specifically: it reads this
-TSV against `docs/spec/tuning.md` and `cli/main.c`, two files this dump
-never opens.
+TSV against `docs/spec/tuning.md`, a file this dump never opens, and
+against the SHIPPED PARSER's own behaviour — it RUNS `pcrec` with each
+advertised `cli_flag` and requires it to be accepted. It no longer reads
+`cli/main.c`'s source text: since [REVW.4] wave 4 (D111) the parser's
+spellings and this dump's `cli_flag` column are one row of
+`src/core/axes.def`, so comparing the two would be comparing a table with
+itself. What the shared row cannot make true — that the grammar arm is
+still REACHED — is what the live probe measures.
 
 `--list-axes` takes no `--flavour` (§5's own reason: it answers what
 THIS BUILD thinks its machinery is, never a claim about PCRE2 syntax)
@@ -358,9 +364,11 @@ already true of the compiler before this pass, so there is no `abi` bump.
 - **`axes_registry_check.sh`** (`tests/registry/`, [CHK-2] piece 1) is
   §6's own independent-side check: it reads `--list-axes`'s TSV against
   `docs/spec/tuning.md` §2 (every documented `(bit N)` heading has a
-  dumped row at that bit, and vice versa), `cli/main.c` (every
-  dumped `cli_flag` is a spelling the parser actually accepts and pairs
-  with the dumped `deny_macro`/`force_macro`) and `docs/spec/match_api.md`
+  dumped row at that bit, and vice versa), the SHIPPED PARSER (every
+  dumped `cli_flag` is a spelling `build/pcrec` actually accepts — run,
+  not read out of `cli/main.c`'s text, which since [REVW.4] wave 4 derives
+  from the same `src/core/axes.def` row this column does) and
+  `docs/spec/match_api.md`
   §6.3 (every dumped `stamp_value` is a value that macro's own
   value-set table or string-literal pair lists there, and vice versa —
   the STAMP-VALUE half of the charter's own direction (a), added on

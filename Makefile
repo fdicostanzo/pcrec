@@ -154,10 +154,16 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # one binary carrying two values of one fact). It is NOT in GEN_TABLES:
 # that list is for tables a `generate.py` DERIVES from a vendored data
 # source, and this one is hand-authored design.
+# src/core/axes.def joined at [REVW.4] wave 4 (D111), WITH the file, for the
+# same reason rxt_schema.def did — it is a `.def` X-macro table `#include`d by
+# two translation units (cli/main.c and src/dump/axes_dump.c), so without this
+# line editing an axis row would rebuild nothing and `--list-axes` would
+# advertise a spelling the parser no longer accepts. It is NOT in GEN_TABLES,
+# for rxt_schema.def's reason: hand-authored design, not a vendored source.
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/parse/rxt_schema.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
@@ -186,7 +192,7 @@ gen-tables:
 $(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
 	ar rcs $@ $^
 
-$(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
+$(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 

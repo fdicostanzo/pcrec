@@ -528,6 +528,31 @@ static int libdir_push(CliState *st, const char *dir)
     return 0;
 }
 
+/* [REVW.4] wave 4 (D111, L1-X9) — THE OPTIMIZATION-AXIS GRAMMAR, in one
+ * loop over `src/core/axes.def`.
+ *
+ * Twenty-two `else if (!no_more_opts && !strcmp(a, "-fno-X")) opt.flags |=
+ * PCREC_NO_X;` arms stood here, each one line of grammar under a paragraph of
+ * prose, and their flag-text-to-bit pairing was one of the THREE hand-
+ * maintained spellings of the axis table that two `awk` scrapers existed to
+ * reconcile. The prose did not move far: every one of those paragraphs said
+ * "this axis is deny-only / a force pair, and here is why — see
+ * lib/pcrec.h", which is a fact about the AXIS and now lives on its row.
+ *
+ * Returns 1 when `a` was an axis spelling and the bit was set, 0 otherwise —
+ * so the caller's chain reads as one arm and an unknown `-f...` still falls
+ * through to the unknown-option diagnostic, unchanged. Order within the
+ * chain is immaterial: every spelling here is an exact `strcmp` against a
+ * distinct literal. */
+static int cli_axis_apply(const char *a, uint64_t *flags)
+{
+#define PCREC_AXIS(dm, df, fm, ff, defst)                                 \
+    if ((dm) && (df)[0] && !strcmp(a, (df))) { *flags |= (dm); return 1; } \
+    if ((fm) && (ff)[0] && !strcmp(a, (ff))) { *flags |= (fm); return 1; }
+#include "core/axes.def"
+    return 0;
+}
+
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
  * `where` names the surface for diagnostics — "command line", or a config
  * block — and changes nothing else: both callers get the same grammar, the
@@ -564,159 +589,12 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             st->pattern_esc = 1;
         else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
-        /* [ENG-BREP] the first of D47.3's DENY family. Spelled `-fno-` in the
-         * gcc style the ruling names, and as a bare flag rather than an
-         * `=value` mode because a denial has no value to carry. It denies a
-         * STRATEGY, never an answer: the artifact matches identically either
-         * way, which is exactly what the differential it exists for checks. */
-        else if (!no_more_opts && !strcmp(a, "-fno-possessify"))
-            opt.flags |= PCREC_NO_POSSESSIFY;
-        /* [ENG-BREP] the family's second member. Denying it drops a qualifying
-         * quantifier one rung, to frames — which for a bounded repeat is
-         * literal replication and therefore the semantic ground truth the
-         * differential compares against. */
-        else if (!no_more_opts && !strcmp(a, "-fno-revdet"))
-            opt.flags |= PCREC_NO_REVDET;
-        /* [ENG-BREP] the family's THIRD member, and the one whose denial is
-         * load-bearing beyond testing: dropping the counter rung leaves a
-         * bounded repeat on frames, i.e. literal replication, i.e. what ships
-         * today — the ground truth §8.1's differential compares against. */
-        else if (!no_more_opts && !strcmp(a, "-fno-counter"))
-            opt.flags |= PCREC_NO_COUNTER;
-        /* [M6.4.2] the family's newest member, and the only one that denies an
-         * ENGINE rather than a strategy: leaving the proved-dead `A_ATOMIC` in
-         * the tree makes SR-8's consultation see a DFA-excluding node. It
-         * exists so the free discharge's "changes no answer" claim has a
-         * differential; see lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-atomic-discharge"))
-            opt.flags |= PCREC_NO_ATOMIC_DISCHARGE;
-        /* [DD-14 wave G] the SPLICE-vs-LINKAGE axis (design §6.3, §9.2).
-         * `-fno-atomic-discharge`'s shape, not `-fno-possessify`'s: denying
-         * the splice leaves a LINKED call, which is structurally VM-only, so
-         * this denial can change which ENGINE a pattern gets and
-         * `--engine=dfa -fno-splice-calls` on a spliceable pattern REFUSES.
-         * See lib/pcrec.h's PCREC_NO_SPLICE_CALLS comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-splice-calls"))
-            opt.flags |= PCREC_NO_SPLICE_CALLS;
-        /* [OPT-1] the TWO-TIER ENTRY axis (docs/design/two_tier_entry.md,
-         * docs/spec/tuning.md §2.12). Back to `-fno-possessify`'s shape: it
-         * changes no answer and is masked out of `rx_info.flags`. Denying it
-         * emits the un-suffixed entries as they shipped before [OPT-1], which
-         * is the bisect lever for the optimization and the build an identity
-         * gate compares the old entry against. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-tiered-entry"))
-            opt.flags |= PCREC_NO_TIERED_ENTRY;
-        /* [OPT-3] the DFA TABLE-FORM axis (docs/design/premultiplied_dfa_table.md,
-         * docs/spec/tuning.md §2.13). `-fno-tiered-entry`'s shape again: it
-         * changes no answer and is masked out of `rx_info.flags`. Denying it
-         * emits the DFA scan's tables and loop as they shipped before [OPT-3],
-         * which is the bisect lever for the optimization and the build the
-         * identity comparison uses as its control. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-premul-table"))
-            opt.flags |= PCREC_NO_PREMUL_TABLE;
-        else if (!no_more_opts && !strcmp(a, "-fno-offset-skip"))
-            opt.flags |= PCREC_NO_OFFSET_SKIP;
-        else if (!no_more_opts && !strcmp(a, "-fno-anchored-dfa"))
-            opt.flags |= PCREC_NO_ANCHORED_DFA;
-        /* [OPT-5] Denies the SCAN EDGE, which is the one DFA axis whose
-         * denial changes the MACHINE and not only the emitted loop: the run's
-         * interior states come back and the table walk with them. That is
-         * what makes the denied build the answer-identity sweep's reference
-         * rather than merely a slower variant. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-scan-edge"))
-            opt.flags |= PCREC_NO_SCAN_EDGE;
-        /* [OPT-5 STEP 2] Denies the START-PINNED SEARCH, i.e. restores
-         * `<prefix>_search`'s reverse pass and the whole reverse machine that
-         * runs it. The denied build recovers the match start with an
-         * INDEPENDENTLY BUILT automaton rather than from a compile-time
-         * proof about the forward one, which is what makes it a genuine
-         * control for the answer-identity sweep rather than a build sharing
-         * its derivation with what it controls. See lib/pcrec.h. */
-        else if (!no_more_opts && !strcmp(a, "-fno-start-pinned"))
-            opt.flags |= PCREC_NO_START_PINNED;
-        /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
-         * emitted-size cap — those are raise-only via --max-emit-*-bytes
-         * (D84 ruling 1): a safety refusal a flag turns off is not one. */
-        else if (!no_more_opts && !strcmp(a, "-fno-size-term"))
-            opt.flags |= PCREC_NO_SIZE_TERM;
-        /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
-         * (D51 ruling 1), D46's controllability half for it. Denying it is
-         * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever
-         * rung a quantifier already took and changes no rung, slot or capacity
-         * — which is what makes the denied build the differential's ground
-         * truth rather than merely a slower arm. */
-        else if (!no_more_opts && !strcmp(a, "-fno-length-prune"))
-            opt.flags |= PCREC_NO_LENGTH_PRUNE;
-        /* [M4.6f] the D46 close-out for the PREFILTER axis: a FORCE PAIR,
-         * not a deny-only flag, because fit.prefilter is one verdict for
-         * the whole artifact rather than a per-quantifier ladder step (see
-         * lib/pcrec.h's PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER comment).
-         * Do-or-die on the FORCE-ON direction is asserted in
-         * src/opt/select_engine.c, not here — same posture as --engine. */
-        else if (!no_more_opts && !strcmp(a, "-fno-prefilter"))
-            opt.flags |= PCREC_NO_PREFILTER;
-        else if (!no_more_opts && !strcmp(a, "-fprefilter"))
-            opt.flags |= PCREC_FORCE_PREFILTER;
-        /* [OPT-4] THE PREFILTER'S LANGUAGE (K39), a SECOND force pair on the
-         * same axis's neighbourhood and for a different reason from the one
-         * above. `-fprefilter` decides WHETHER the hybrid runs; these decide
-         * what language its DFA recognises when it does.
-         *
-         * A PAIR RATHER THAN DENY-ONLY, and the two halves are not mirror
-         * images: `-fno-prefilter-collapse` restores the exact machine (the
-         * sharper start and the `prefilter-window` ceiling, at a size that
-         * scales with the count), while `-fprefilter-collapse` drops only the
-         * STATE-BUDGET conjunct — so every counted repeat collapses and the
-         * emitted size becomes count-INDEPENDENT rather than count-bounded.
-         * Neither reaches the two correctness conjuncts (the DFA is the
-         * engine; there is nothing to collapse), which is why neither can
-         * change an answer and why the pair is a `make test-axes` sweep
-         * subject rather than a semantic switch.
-         *
-         * NOT DO-OR-DIE, unlike `-fprefilter` above. Forcing the collapse on a
-         * pattern with no counted repeat is a request the compiler HONOURS —
-         * the collapsed language of such a pattern IS its exact language — so
-         * there is nothing to refuse; the artifact stamps `"exact"` because
-         * that is what was built. The conflict pair IS refused, in
-         * src/opt/select_engine.c beside the existing one. */
-        else if (!no_more_opts && !strcmp(a, "-fno-prefilter-collapse"))
-            opt.flags |= PCREC_NO_PREFILTER_COLLAPSE;
-        else if (!no_more_opts && !strcmp(a, "-fprefilter-collapse"))
-            opt.flags |= PCREC_FORCE_PREFILTER_COLLAPSE;
-        /* [OPT-ALTCLS] D46's controllability half for src/opt/altcls.c.
-         * BACK to the DENY-only family's shape (unlike the FORCE pair just
-         * above): each mergeable/factorable alternation run is its own
-         * selection point, addressed independently, the same reason
-         * -fno-possessify/-fno-revdet/-fno-counter/-fno-length-prune are
-         * deny-only — see lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/
-         * PCREC_NO_ALTCLS_FACTOR comment. Two separate flags because the
-         * stages are separately useful to pin: stage 2 runs on stage 1's
-         * output, so denying stage 1 alone still lets stage 2 factor an
-         * unmerged run's literal spelling. */
-        else if (!no_more_opts && !strcmp(a, "-fno-altcls-merge"))
-            opt.flags |= PCREC_NO_ALTCLS_MERGE;
-        else if (!no_more_opts && !strcmp(a, "-fno-altcls-factor"))
-            opt.flags |= PCREC_NO_ALTCLS_FACTOR;
-        /* [ENG-ISL] the VM's alternation island. Deny-only, and for the same
-         * reason as the two flags above: each qualifying flat alternation is
-         * its own selection point, the emitter takes the island wherever the
-         * predicate holds, and a declined one is emitted by `vm_alt`
-         * unchanged. See lib/pcrec.h's PCREC_NO_ALT_ISLAND comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-alt-island"))
-            opt.flags |= PCREC_NO_ALT_ISLAND;
-        /* [FORM-CHAR] STEP 1: the VM's ascii-fold class test. Deny-only, and
-         * for the same reason as the island above: each fold-pair class is
-         * its own selection point, the emitter takes the fold wherever the
-         * set is one, and a declined set keeps its existing shape. See
-         * lib/pcrec.h's PCREC_NO_CLS_FOLD comment. */
-        else if (!no_more_opts && !strcmp(a, "-fno-cls-fold"))
-            opt.flags |= PCREC_NO_CLS_FOLD;
-        /* [K50] The caller-startpos boundary guard. The one flag in this
-         * chain that selects between two SEMANTICS rather than two emitted
-         * shapes — see lib/pcrec.h's PCREC_NO_STARTPOS_GUARD comment for why
-         * that makes it the only member NOT masked out of rx_info.flags. */
-        else if (!no_more_opts && !strcmp(a, "-fno-startpos-guard"))
-            opt.flags |= PCREC_NO_STARTPOS_GUARD;
+        /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
+         * `cli_axis_apply` walks `src/core/axes.def`, the one home of each
+         * axis's bit, its `-fno-X` / `-fX` spellings and its default
+         * polarity. An unknown `-f...` returns 0 here and falls through to
+         * the unknown-option diagnostic below exactly as it always did. */
+        else if (!no_more_opts && cli_axis_apply(a, &opt.flags)) { }
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {
@@ -767,8 +645,14 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!no_more_opts && !strncmp(a, "--tune=", 7)) {
             int v = 0;
             if (pcrec_tune_parse(a + 7, &v) != 0) {
-                cli_err("--tune wants -2..2 or one of min-size, size, "
-                        "balanced, speed, max-speed (got '%s')", a + 7);
+                /* [REVW.4] wave 4 (L2-L2-7): the menu is RENDERED from
+                 * `src/core/tune.c`'s own alias table, which D103 makes the
+                 * dial's one home — it was hand-typed here, a second
+                 * spelling that a sixth position would have left stale. */
+                char menu[128];
+                pcrec_tune_names(menu, sizeof menu);
+                cli_err("--tune wants -2..2 or one of %s (got '%s')",
+                        menu, a + 7);
                 return 1;
             }
             opt.tune = v;

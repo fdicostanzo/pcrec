@@ -24,8 +24,19 @@ EMPTY documented column. Anchor on numbers a human does not maintain.
 ## Files
 
 - **run_axes.sh** — the orchestrator (`make test-axes`). Derives the
-  bit-flag registry from `lib/pcrec.h`/`cli/main.c` (never hand-copied —
-  docs/dev/learnings.md §3), cross-checks it against `docs/spec/tuning.md`
+  bit-flag registry from `lib/pcrec.h` (bit numbers) and from `pcrec
+  --list-axes` (each bit's CLI spelling) — never hand-copied,
+  docs/dev/learnings.md §3. **[REVW.4] wave 4 (D111, 2026-09-19): the
+  spelling half used to be an `awk` pass over `cli/main.c`'s SOURCE TEXT,
+  with a fatal guard for the day "cli/main.c's loop shape changed"; that
+  pass is DELETED**, because the parser's spellings and the dump's
+  `cli_flag` column are now one row of `src/core/axes.def`. Reading the
+  dump is not this check sharing a source with what it checks: the sweep
+  asserts ANSWER IDENTITY across axes, and the spelling is only how it
+  ADDRESSES an axis. Its FATAL-on-empty guard and its
+  every-bit-has-a-spelling guard are both kept, and the latter is now the
+  arm that watches the `lib/pcrec.h` <-> `axes.def` seam. Cross-checks the
+  registry against `docs/spec/tuning.md`
   §2's own `(bit N)` headings, runs a baseline `tests/harness/run.sh` pass
   and one pass per axis (via that script's `RXTFLAGS`/`RXTDUMP` hooks — the
   latter added by this row), diffs every pair with `dump_diff.awk`, and

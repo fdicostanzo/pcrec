@@ -19,8 +19,8 @@ compares against a floor instead of re-deriving one from memory.
 
 WHAT IT COMPARES. A REFERENCE pcrec (built from `git archive REF`, a
 revision that never moves under you) against a WORKING pcrec (the tree's
-own build, or an explicit --bin/second revision), across FOUR streams, all
-under --features all:
+own build, or an explicit --bin/second revision), across FIVE streams, the
+first four under --features all:
 
   1. corpus argv, `.c` at the DEFAULT engine       (-p rx --features all)
   2. corpus argv, `.c` at --engine=vm               (forces the VM route)
@@ -33,6 +33,11 @@ under --features all:
      reaches vm_splice's DELIVER block (gated on a->u.call.deliver_n,
      written exclusively by src/parse/rxt_compose.c; no corpus .rxt file
      declares an `export`, and no argv pattern can express one -- w2a S2).
+  5. registry dumps: the seven `--list-*` surfaces, whole-file byte
+     comparison ([REVW.4] wave 4). Streams 1-4 compare EMITTED ARTIFACTS and
+     no `--list-*` surface appears in any of them, so a change that re-derives
+     what `--list-axes` prints is invisible to all four -- see sweep_dumps'
+     own comment. Always identity-required.
 
 The corpus POPULATION (which patterns exist) is always read from the
 WORKING side's tree (--tree, live by default, or the source extracted for
@@ -168,6 +173,10 @@ DEFAULT_TREE = os.path.dirname(SCRIPT_DIR)
 # (which lose 45-62% of reach), and tight enough to flag a real, smaller
 # collapse the way D110's own floors could not for THIS shape of count.
 PINS = {
+    # [REVW.4] the dumps stream: all seven registry surfaces must ANSWER on
+    # both sides. A surface that starts refusing collapses this to 6 and fails
+    # here rather than silently shrinking the comparison.
+    "dump_surfaces_floor": 7,
     # total .rxt + .rxtin files under tests/ (the composition population).
     "composition_files_floor": 300,       # measured 304
     # corpus pattern/pattern-esc rows found by --list-source over tests/**/*.rxt.
@@ -556,6 +565,40 @@ nonlocal_flag = [False]  # deliver_witness sticky flag, set inside sweep_composi
 
 
 # ---------------------------------------------------------------------------
+# The FIFTH stream: the REGISTRY DUMPS ([REVW.4] wave 4).
+#
+# The four streams above compare EMITTED ARTIFACTS. Nothing in them reads a
+# `--list-*` surface, so a change that re-derives what `--list-axes` or
+# `--list-limits` prints -- exactly what [REVW.4]'s axes.def extraction does --
+# is invisible to all four and reads as a clean green (w4_facts.md open
+# question 6 named the gap). These are seven whole-file byte comparisons and
+# cost under a second; the population is the SURFACE LIST, pinned below, so a
+# dump that stops existing is a FAILED row rather than a smaller population.
+DUMP_SURFACES = ("--list-syntax", "--list-definitions", "--list-verbs",
+                 "--list-families", "--list-axes", "--list-limits",
+                 "--list-schema")
+
+
+def sweep_dumps(bin_a, bin_b, timeout):
+    res = StreamResult("dumps")
+    res.population = len(DUMP_SURFACES)
+    for flag in DUMP_SURFACES:
+        rc_a, out_a, err_a = run([bin_a, flag], timeout)
+        rc_b, out_b, err_b = run([bin_b, flag], timeout)
+        ok_a, ok_b = rc_a == 0, rc_b == 0
+        if ok_a != ok_b:
+            res.asymmetric.append((flag, ok_a, ok_b, _err_tail(err_a), _err_tail(err_b)))
+        elif not ok_a:
+            res.both_refuse += 1
+        elif out_a != out_b:
+            res.both_ok += 1
+            res.movers.append((flag, first_diff_hunk(out_a, out_b)))
+        else:
+            res.both_ok += 1
+    return res
+
+
+# ---------------------------------------------------------------------------
 
 def report_stream(res, floor=None, identity_required=False):
     lines = []
@@ -707,7 +750,9 @@ def main():
         # raising the numbers until it stopped happening once.
         s4, producing, artifacts, fixtures_hit = sweep_composition(
             comp_files, bin_a, bin_b, comp_out, args.comp_timeout, args.comp_jobs)
-        return s1, s2, s3, s4, producing, artifacts, fixtures_hit, nonlocal_flag[0]
+        log(f"[emit_sweep] === {label}: stream 5 (registry dumps) ===")
+        s5 = sweep_dumps(bin_a, bin_b, args.timeout)
+        return s1, s2, s3, s4, s5, producing, artifacts, fixtures_hit, nonlocal_flag[0]
 
     # -- self-check: two independent builds of the SAME ref revision --
     if not args.no_self_check:
@@ -717,7 +762,7 @@ def main():
             selfcheck_bin = ref_bin
         else:
             selfcheck_bin, _ = build_from_rev(tree, args.ref, out_dir, cc, "ref2")
-        s1, s2, s3, s4, producing, artifacts, fixtures_hit, deliver_hit = \
+        s1, s2, s3, s4, s5, producing, artifacts, fixtures_hit, deliver_hit = \
             run_full_sweep(ref_bin, selfcheck_bin, "selfcheck")
         print("\n===== SELF-CHECK (ref vs. independent rebuild of the same rev) =====")
         sc_ok = True
@@ -725,9 +770,10 @@ def main():
             ok, text = report_stream(s, floor=None, identity_required=True)
             print(text)
             sc_ok = sc_ok and ok
-        ok4, text4 = report_stream(s4, floor=None, identity_required=True)
-        print(text4)
-        sc_ok = sc_ok and ok4
+        for s_extra in (s4, s5):
+            ok_x, text_x = report_stream(s_extra, floor=None, identity_required=True)
+            print(text_x)
+            sc_ok = sc_ok and ok_x
         print(f"self-check reach: default={s1.both_ok} vm={s2.both_ok} ir={s3.both_ok} "
               f"composition producing={producing} artifacts={artifacts}")
         if not sc_ok:
@@ -743,7 +789,7 @@ def main():
 
     # -- the real comparison --
     log(f"[emit_sweep] === REAL RUN: {ref_label} vs {tree_label} ===")
-    s1, s2, s3, s4, producing, artifacts, fixtures_hit, deliver_hit = \
+    s1, s2, s3, s4, s5, producing, artifacts, fixtures_hit, deliver_hit = \
         run_full_sweep(ref_bin, tree_bin, "real")
 
     print(f"\n===== REAL RUN: {ref_label}  vs  {tree_label} =====")
@@ -754,9 +800,14 @@ def main():
                              identity_required=identity_required_default)
     ok3, t3 = report_stream(s3, floor=PINS["reach_ir_floor"], identity_required=False)
     ok4, t4 = report_stream(s4, floor=None, identity_required=identity_required_default)
-    print(t1); print(t2); print(t3); print(t4)
+    # The dumps stream is ALWAYS identity-required, --only-emit-ir-reach
+    # included: that flag exists for a change whose `--emit-ir` LISTING is
+    # expected to move, which says nothing about a registry surface.
+    ok5, t5 = report_stream(s5, floor=PINS["dump_surfaces_floor"],
+                             identity_required=True)
+    print(t1); print(t2); print(t3); print(t4); print(t5)
 
-    run_ok = ok1 and ok2 and ok3 and ok4
+    run_ok = ok1 and ok2 and ok3 and ok4 and ok5
 
     # -- population/composition floors --
     if len(patterns) < PINS["argv_population_floor"]:

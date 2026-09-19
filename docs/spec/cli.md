@@ -2,7 +2,7 @@
 
 This is the **spec**, not the design record, per `docs/spec/CLAUDE.md`'s
 charter: every flag below was checked against `cli/main.c` (this worktree's
-build, `cli/main.c:1-632`) AND a live run of `build/pcrec`, and disagreements
+build, `cli/main.c`) AND a live run of `build/pcrec`, and disagreements
 between the two are reported as drift rather than silently resolved in the
 help text's favour. `docs/spec/tuning.md` ([SPEC-1.3]) owns the `-f`/`-fno-`
 optimization-axis family in full; this document states only that the family
@@ -20,14 +20,16 @@ pcrec [options] -o OUT.c [--] 'PATTERN'
 
 A bare invocation needs exactly one pattern and an output path; everything
 else defaults. `--` ends option parsing, which is how a pattern that starts
-with `-` is passed (`cli/main.c:159`, case5 `tests/cli/run_cli_tests.sh`)
-— any other leading-`-` argument is diagnosed as an unknown option
-(`cli/main.c:345-350`) rather than treated as the pattern.
+with `-` is passed (`cli_parse`'s `!strcmp(a, "--")` arm, case5
+`tests/cli/run_cli_tests.sh`) — any other leading-`-` argument is diagnosed
+as an unknown option (`cli_parse`'s `a[0] == '-' && a[1]` arm, the last one
+before the pattern operand) rather than treated as the pattern.
 
 ### `-o FILE` — where the C goes
 
 Writes `FILE` (the `.c`) and a matching header `FILE` with its extension
-swapped to `.h` (`cli/main.c:601-611`: if `FILE` ends `.c` the header is
+swapped to `.h` (`main`'s `strcmp(hpath + len - 2, ".c")` derivation: if
+`FILE` ends `.c` the header is
 `FILE` with `.c` → `.h`; otherwise `.h` is appended whole). The header's
 name, stripped to its basename, becomes `pcrec_options.header_name` (D38's
 naming point — the field itself is `lib/pcrec.h:pcrec_options`, documented
@@ -96,7 +98,7 @@ the default IS the explicit request.
 ### `-i` — case-insensitivity, and WHICH FOLD is the encoding's
 
 Folds case at PARSE time into the automaton (`opt.flags |= PCREC_CASELESS`,
-`cli/main.c:165`); no runtime cost — no flag, no branch and no `tolower()` in
+`cli_parse`'s `-i` arm); no runtime cost — no flag, no branch and no `tolower()` in
 the emitted matcher (D23). Composes with `--` and with a pattern that itself
 looks like a flag (`tests/cli/run_cli_tests.sh` case9).
 
@@ -176,7 +178,7 @@ pcrec --pattern-esc -o out.c '"a\tb\x41"'     # compiles the 4 bytes a<TAB>bA
 ### `--emit-main` — a runnable binary
 
 Appends a standalone `main()` taking the subject as `argv[1]`
-(`opt.flags |= PCREC_EMIT_MAIN`, `cli/main.c:164`). The emitted program's
+(`opt.flags |= PCREC_EMIT_MAIN`, `cli_parse`'s `--emit-main` arm). The emitted program's
 own exit code is a **separate vocabulary from `pcrec`'s own** (§3 below is
 about the CLI's exit codes, not the emitted program's): `0` on match, `1`
 on no-match, `2` on a usage error (wrong argc), and `3` on an honest
@@ -191,14 +193,14 @@ prints and its argv contract are otherwise out of this document's scope —
 ### `--no-captures` — capture-free artifact
 
 Emits `RX_NCAPS 1` and forces the DFA engine (`opt.flags |=
-PCREC_NO_CAPTURES`, `cli/main.c:170-171`) — the pre-M4.5 pure-DFA artifact
+PCREC_NO_CAPTURES`, `cli_parse`'s `--no-captures` arm) — the pre-M4.5 pure-DFA artifact
 shape for a group-bearing pattern. Captures are ON by default; this flag is
 what recovers the old behaviour.
 
 ### `--engine=E` — `dfa` | `vm` | `auto` (default `auto`)
 
 **Do-or-die for `dfa` and `vm`**: a request the pattern cannot honour
-REFUSES, never silently downgrades (`cli/main.c:262-272` parses the value;
+REFUSES, never silently downgrades (`cli_parse`'s `--engine=` arm parses the value;
 the refusal itself is asserted in `src/opt/select_engine.c`, not the CLI).
 Verified live: `--engine=dfa --features recursion -o ... '(a)(?1)'` refuses
 naming that the pattern requires captures and suggesting `--no-captures` or
@@ -231,9 +233,11 @@ prefilter explicitly asked for the machine that cannot be built. See
 
 **[OPT-DIAL] (2026-09-16).** An ordinal in `-2..+2`, `0` the default, or
 one of five mnemonic aliases accepted on equal terms —
-`min-size`/`size`/`balanced`/`speed`/`max-speed` (`cli/main.c:595-625`,
-parsing both spellings through `pcrec_tune_parse`, `src/core/tune.c`, so
-the CLI and the artifact's stamp cannot drift). Sets a GROUP of the
+`min-size`/`size`/`balanced`/`speed`/`max-speed` (`cli_parse`'s `--tune=`
+arm, parsing both spellings through `pcrec_tune_parse`, `src/core/tune.c`,
+so the CLI and the artifact's stamp cannot drift; since [REVW.4] wave 4 the
+refusal's own MENU of aliases is rendered from that same table by
+`pcrec_tune_names` rather than hand-typed beside it). Sets a GROUP of the
 `docs/spec/tuning.md` §2 axes from one pinned policy table instead of a
 caller composing them one flag at a time; the full table, the reason
 codes and the acceptance are `docs/spec/tuning.md` §5.
@@ -284,8 +288,8 @@ its own typed give-up code on exhaustion. `--fno-step-budget` is ONE
 existence gate for BOTH counters; there is deliberately no
 `--fno-work-budget` (D49). Defaults, the exact codes, and the worked
 give-up example are `docs/spec/limits.md` §2/§3.1 — this document states
-only that `--step-budget=N`/`--work-budget=N` (`cli/main.c:56-64`, parsed
-at `cli/main.c:273-295`) override them per compile, positive integers only,
+only that `--step-budget=N`/`--work-budget=N` (`cli_parse`'s own arms for
+each) override them per compile, positive integers only,
 diagnosed otherwise.
 
 ### `--warn-emit-bytes=N` — advisory size warning
@@ -306,8 +310,7 @@ the reasoning.
 
 Raises the emitted resume-stack (and its trail) capacity above the
 compiled-in default, clamped at an internal ceiling when left at
-auto-sizing (`cli/main.c:67-69`, parsed at `cli/main.c:296-306`, `1..
-1,000,000`). The array is a LOCAL of the search entry — i.e. C stack, per
+auto-sizing (`cli_parse`'s `--backtrack-frames=` arm, `1..1,000,000`). The array is a LOCAL of the search entry — i.e. C stack, per
 the flag's own diagnostic text — which is exactly the fact
 `docs/spec/limits.md` §5 (K33) is about; the numbers and the caller-facing
 remedy (the `_in` entries) live there, not here.
@@ -315,8 +318,8 @@ remedy (the `_in` entries) live there, not here.
 ### `--features LIST` — the module gate
 
 Comma-separated module names, a frozen named set (`std1`), `all`, or
-`none` (`cli/main.c:85-94`, installed at `cli/main.c:379-386` before
-anything consults the gate — composes with every mode, not just a
+`none` (`cli_parse`'s `--features` arm takes the value; `main` installs it
+through `pcrec_enabled_set_spec` before anything consults the gate — composes with every mode, not just a
 compile). An explicit `--features` always wins over the bare default;
 a bare invocation resolves through `PCREC_DEFAULT_FEATURES`, which is
 `std1` today (D37, `src/parse/enabled.c:80-85`). `std1` = {`classes`,
@@ -325,7 +328,8 @@ a bare invocation resolves through `PCREC_DEFAULT_FEATURES`, which is
 the permanent escape hatch reproducing the pre-`std1` bare behaviour
 verbatim (case14, `tests/cli/run_cli_tests.sh`). An unknown module name is
 refused BY NAME, listing the real vocabulary
-(`cli/main.c:380-385`; verified live: `--features bogus_mod` answers
+(`main`'s `pcrec_enabled_set_spec` call renders the refusal; verified live:
+`--features bogus_mod` answers
 "unknown module 'bogus_mod' (names are --list-syntax's module column;
 also 'all', 'none', or a named set: std1)"). A construct outside the
 enabled set is refused with `requires module 'X'` — D26's tier-3 discharge
@@ -677,7 +681,8 @@ first. Strictly fewer lines than `--list-syntax` (a family view collapses
 rows; measured floor 60 against the row view's own floor, case10). Takes
 no `--flavour`: a family is a grouping OF rows, so filtering members would
 make the family line's own `built` mean something different per
-invocation (`cli/main.c:517-523`'s own comment states the reasoning).
+invocation (`main`'s `--list-families` block states the reasoning in its own
+comment).
 
 ### `--list-axes`
 
@@ -833,12 +838,14 @@ SR-7).
 
 Runs the real parser, parse only, nothing emitted, and prints the ending
 capturing-group count. A pattern pcrec refuses is refused here with the
-identical diagnostic a compile would give (`cli/main.c:468-494`; verified
+identical diagnostic a compile would give (`main`'s `--count-groups` block;
+verified
 live: `a(b)(c(d))` → `3`).
 
 ### `--probe-ask WANT [--] CONSTRUCT`
 
-Internal/test-only by its own source comment (`cli/main.c:12-15`): "the
+Internal/test-only by its own source comment (`cli/main.c`'s own
+`core/internal.h` include note): "the
 CLI and the test suite are its only consumers... not part of the public
 surface." Drives one construct doorway once at ask level
 `claim`/`verdict`/`result` and reports the parser cursor before and after
@@ -857,7 +864,7 @@ Verified live this pass, each command shown:
 |---|---|---|
 | `0` | success — a compile that wrote its files, or a query that answered | `build/pcrec -p rx --emit-main -o out.c 'a(b\|c)+d'` |
 | `1` | usage error, compile refusal, or a query that could not be answered | `build/pcrec 'a(b'` (unclosed group) → "missing closing ) for group"; `build/pcrec --bogus-flag` → "unknown option"; `build/pcrec -o /nonexistent_dir/out.c 'a'` → the OS's own `fopen` error |
-| `3` | **`--explain` DISSENT ONLY** — the registry's declared attribution disagrees with what the live doorway parser actually answers (`cli/main.c:577-586`, the sole `return 3` in the file) | not currently reproducible against the shipped table — `tests/cli/run_cli_tests.sh` case11 measures and asserts **zero** dissents over the full row/query sweep (81 row blocks, 19 queries, all agree), which is the intended steady state; exit 3 exists for the day that stops being true |
+| `3` | **`--explain` DISSENT ONLY** — the registry's declared attribution disagrees with what the live doorway parser actually answers (`main`'s `--explain` block, the sole `return 3` in the file) | not currently reproducible against the shipped table — `tests/cli/run_cli_tests.sh` case11 measures and asserts **zero** dissents over the full row/query sweep (81 row blocks, 19 queries, all agree), which is the intended steady state; exit 3 exists for the day that stops being true |
 
 **These are `pcrec`'s own exit codes.** They are a completely separate
 vocabulary from an `--emit-main` binary's exit codes (§1 above:

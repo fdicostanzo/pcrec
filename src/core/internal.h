@@ -5259,6 +5259,13 @@ const char         *pcrec_tune_token(int tune);
 
 int                 pcrec_tune_parse(const char *s, int *out);
 
+/* [REVW.4] wave 4 (L2-L2-7): the dial's five mnemonic aliases as one
+ * comma-separated menu, rendered from TUNE_TABLE. D103 makes `tune.c` the
+ * dial's one home, and the CLI's own `--tune` diagnostic used to hand-type
+ * the same five words — a second spelling of a table that already exists.
+ * `pcrec_enc_names`' shape exactly, bound and all. */
+void                pcrec_tune_names(char *buf, size_t cap);
+
 int                 pcrec_tune_size_term_bar(int tune);
 
 long long           pcrec_tune_size_term_threshold(int tune);

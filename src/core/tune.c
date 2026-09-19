@@ -150,6 +150,27 @@ int pcrec_tune_parse(const char *s, int *out)
     }
 }
 
+/* [REVW.4] wave 4 (L2-L2-7): the alias menu a diagnostic prints, rendered
+ * from THE TABLE rather than written a second time in `cli/main.c`. The
+ * bounded-join policy is `pcrec_enc_names`' (src/enc/enc.c), for its reasons:
+ * an ordered PREFIX rather than a gap, and the separator written under the
+ * SAME bound as the name it follows, so a tight cap can never emit a
+ * dangling ", ". The menu is 44 bytes and its one caller passes 128. */
+void pcrec_tune_names(char *buf, size_t cap)
+{
+    size_t k = 0;
+    if (!cap) return;
+    for (int i = 0; i < 5; i++) {
+        const char *n = TUNE_TABLE[i].token;
+        size_t ln = strlen(n) + (k ? 2 : 0);
+        if (k + ln + 1 > cap) break;
+        if (k) { buf[k++] = ','; buf[k++] = ' '; }
+        memcpy(buf + k, n, strlen(n));
+        k += strlen(n);
+    }
+    buf[k] = 0;
+}
+
 /* THE THREE VALUE CELLS. Each returns the dial's value or 0, the em-dash
  * sentinel; the CALLER resolves 0 against its own built-in default. */
 

@@ -312,14 +312,21 @@ directory asserts that the description and the shipped parser actually agree.
   registry's own check, a DIFFERENT registry from the SR-1 syntax table
   above. Reads `pcrec --list-axes`'s TSV (`src/dump/axes_dump.c`) against
   `docs/spec/tuning.md` (every documented `(bit N)` heading),
-  `cli/main.c` (the flag parser) and `docs/spec/match_api.md` §6.3 (the
-  D46 stamp family's own home) — three files the dump never opens, so
-  this is the INDEPENDENT side of the dump's own claim
+  the SHIPPED PARSER (each advertised `cli_flag` is RUN and must be
+  accepted) and `docs/spec/match_api.md` §6.3 (the D46 stamp family's own
+  home) — none of which the dump reads, so this is the INDEPENDENT side of
+  the dump's own claim. **[REVW.4] wave 4 (D111, 2026-09-19): the
+  `cli/main.c` leg used to be an `awk` pass over that file's SOURCE TEXT
+  reconciling the parser's spellings against the dump's; it is DELETED,
+  because both now derive from one `src/core/axes.def` row and the
+  comparison would be a table against itself. What replaced it is the live
+  acceptance probe above, which measures the one thing the shared row
+  cannot make true: that the grammar arm is still REACHED.**
   (`docs/spec/registry.md` §6/§7 states the boundary this dump does and
   does not prove). Three directions, every discrepancy named
   individually: (1) every dumped deny/force bit checked against
   `lib/pcrec.h`'s own definition and (where it has one) its CLI spelling
-  in `cli/main.c`; (2) both `tuning.md`'s documented bits and
+  driven live against `build/pcrec`; (2) both `tuning.md`'s documented bits and
   `lib/pcrec.h`'s own `1u << N` bits (range 4-31, DERIVED with no upper
   bound since optk's 2e2914e — a hard-coded `4-15` here would have filtered
   bit 16 away before comparing, and bit 17 after it) swept to confirm every
@@ -333,7 +340,9 @@ directory asserts that the description and the shipped parser actually agree.
   since they are emitted-artifact text the public header never declares;
   two named, cited exceptions in the script's own header (`RX_DFA_TABLE`'s
   composed `"mixed"`/`"none"`; the three ladder-fallback rung constants
-  with no individual deny flag). 53 checks total. Run via
+  with no individual deny flag). 53 checks total when this entry was
+  written; 102 today, and the count the script's own coverage guard
+  carries is the one to trust. Run via
   `run_registry_tests.sh` below (its own coverage-count guard: == 53 PASS
   lines, exact). **Two bugs found and fixed while writing it**: bash's
   `IFS=$'\t' read` collapses runs of empty tab-delimited fields — tab is

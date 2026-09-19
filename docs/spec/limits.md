@@ -55,9 +55,9 @@ so the numbers below have somewhere to attach.
   substituted whenever a caller leaves `pcrec_options.step_budget` at
   its sentinel, `PCREC_STEP_BUDGET_DEFAULT` (`lib/pcrec.h:301`) —
   `src/gen/emit_vm.c:7793`. The CLI overrides it per compile with
-  `--step-budget=N` (`cli/main.c:56-58`, parsed at `cli/main.c:272-282`);
+  `--step-budget=N` (`cli_parse`'s `--step-budget=` arm);
   `--fno-step-budget` emits no counter at all, for either budget
-  (`cli/main.c:64-66`, `174`). At the measured ~50M steps/s, 500M steps
+  (`cli_parse`'s `--fno-step-budget` arm). At the measured ~50M steps/s, 500M steps
   bounds an honest refusal at roughly 10 s on a pathological input
   (D51) — this is a robustness bound, not a latency guarantee (D22).
 - **Work budget default: 1,000,000,000** (D49, `docs/dev/decisions.md`).
@@ -67,7 +67,7 @@ so the numbers below have somewhere to attach.
   SEPARATE counter from the step budget — one work unit per forward-only
   operation the fail label does not see (a frame discarded at a cut, a
   frameless scan iteration) — set by `--work-budget=N`
-  (`cli/main.c:59-63`) and reachable only through the same
+  (`cli_parse`'s `--work-budget=` arm) and reachable only through the same
   `--fno-step-budget` gate (D49's ONE existence gate ruling). Both
   defaults land in `rx_info.step_budget`/`work_budget` (§6,
   `docs/spec/match_api.md`) as `-1` when disabled, a real count
@@ -81,8 +81,8 @@ so the numbers below have somewhere to attach.
   `<PREFIX>_RESUME_FRAMES`/`<PREFIX>_TRAIL_FRAMES` in the generated
   header (`docs/spec/match_api.md` §10.4) and mirrored on `rx_info` as
   `resume_frames`/`trail_frames` (same section) for a caller with no C
-  header. `--backtrack-frames=N` (`cli/main.c:67-69`, parsed at
-  `cli/main.c:295-303`) raises the compiled-in capacity per artifact,
+  header. `--backtrack-frames=N` (`cli_parse`'s
+  `--backtrack-frames=` arm) raises the compiled-in capacity per artifact,
   clamped at `VM_MAX_AUTO_RESUME_FRAMES`/`VM_MAX_AUTO_TRAIL_FRAMES`
   (`src/gen/emit_vm.c:100-101`) when left at auto-sizing. Both
   capacities are `0` on a DFA artifact, which has no resume stack to
