@@ -145,3 +145,138 @@ code (`size_t nframes;   /* capacity in FRAMES */`) is NOT gated: it is
 part of that line's text, it is never the bulk, and removing it would mean
 rewriting the code line rather than omitting text.
 
+---
+
+## 2. EVENT 1's measurements
+
+### 2.1 Byte neutrality (the acceptance gate)
+
+`scripts/emit_sweep.py --ref 4af16eb7`, run twice: once before the
+size-neutrality fix of §3a and once after. Both read the same on the four
+ARTIFACT streams.
+
+| stream | population | reach | movers | asymmetric |
+|---|---|---|---|---|
+| `c-default` (`.c`, default engine) | 3,938 | 3,517 | **0** | 0 |
+| `c-vm` (`.c`, `--engine=vm`) | 3,938 | 3,518 | **0** | 0 |
+| `emit-ir-vm` (the listing) | 3,938 | 3,518 | **0** | 0 |
+| `composition` (`--source`) | 304 files | 32 producing / 96 artifacts | **0** | 0 |
+| `dumps` | 7 | 7 | 1 | 0 |
+
+The `dumps` mover is `--list-axes` and it is the change: two rows, `comments 1
+essential-only` and `comments 2 full`. A new axis is a new registry row.
+Self-check (two independent builds of `4af16eb7`) passed at full reach first.
+
+### 2.2 (a) THE `.o` PROOF
+
+Over the sweep's own argv population — every `pattern`/`pattern-esc` line in
+the shipped corpus, `--features all` — each artifact compiled twice from ONE
+binary, with comments and with `-fno-comments`, to the SAME basename in two
+directories, then `gcc-16 -O1 -c` and `cmp`:
+
+| | |
+|---|---|
+| corpus pattern lines | 3,938 |
+| compiled by both settings | **3,517** |
+| refused by both (module-gated) | 421 |
+| gcc failures | 0 |
+| **`.o` IDENTICAL** | **3,517 / 3,517** |
+| `.o` differing | **0** |
+
+**The first run of this measurement read 3,512 / 3,517 and the five
+differing pairs are §3a**, the sharpest finding of the lane. They are not
+in this table because they were fixed, not excused.
+
+### 2.3 (c) THE BYTE SHARE
+
+Same population, source bytes (`.c` + `.h`), comment lines as
+`tests/lib/size_count.sh` defines them:
+
+| engine | artifacts | total bytes | comment bytes | share |
+|---|---|---|---|---|
+| dfa | 1,763 | 61,377,929 | 27,990,730 | **45.6 %** |
+| vm  | 1,754 | 85,245,323 | 36,770,262 | **43.1 %** |
+| ALL | 3,517 | 146,623,252 | 64,760,992 | **44.2 %** |
+
+The manager's pre-ruling probe measured 43-53 % on twelve artifacts; the
+corpus-wide figure is at the bottom of that band and the two engines differ
+by only 2.5 points, so the share is a property of the emitter rather than of
+a pattern family.
+
+---
+
+## 3. FINDINGS
+
+### 3a. THE `.o` PROOF FOUND A REAL DEFECT, and it is not a line-number leak
+
+**Five of 3,517 corpus artifacts compiled to DIFFERENT OBJECT FILES** under
+`-fno-comments`. The brief anticipated a `__LINE__`/`#line` leak. It is
+something else:
+
+    #define RX_VM_ENTRY_SHAPE "plain"     ->  "inline"
+    #define RX_VM_PROGRAM_BYTES 4502ULL   ->  4051ULL
+    static void rx_run_state_bind(…)      ->  static inline __attribute__((always_inline)) …
+
+`emit_vm.c`'s entry-shape AUTO rung compares **`job->vmsb.len` — RAW emitted
+source bytes, comments INCLUDED** — against `VM_INLINE_CHAIN_MAX_BYTES`
+(4,096). A comment-free program is smaller, so an artifact whose program sits
+within one comment-share of the knee crosses it and takes a different rung.
+That is emitted CODE moving over a comment switch: the one thing this axis
+promises never to do, and it would have shipped invisible to every byte
+identity gate (they compare DEFAULT builds, and the default was about to
+become the comment-free one).
+
+The five witnesses:
+
+| file:line | pattern |
+|---|---|
+| `tests/backrefs/octal.rxt:81` | `^(a)(b)(c)(d)(e)(f)(g)(h)\8$` |
+| `tests/backrefs/d27/octal.rxt:37` | `\10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)` |
+| `tests/backrefs/d27/octal.rxt:72` | `(a)(b)(c)(d)(e)(f)(g)(h)\8` |
+| `tests/recursion/d27/sr_captures.rxt:169` | `^(a)(?1)(?<=(a))\1$` |
+| `tests/recursion/d27/sr_interactions.rxt:207` | `^(?(DEFINE)(?<g>ab))(?(DEFINE)(?<h>(?&g)))ab(?<=(?&h))$` |
+
+**THE FIX MAKES THE GATE SIZE-NEUTRAL, IT DOES NOT RE-BASE THE TERM.**
+`StrBuf` counts the bytes a muted region discarded (`cmt_dropped`), and every
+LENGTH-BASED DECISION reads `sb_len_uncut(sb)` = `len + cmt_dropped`, the
+length the buffer WOULD have had with comments on. Two readers today: the
+entry-shape comparison and its own `RX_VM_PROGRAM_BYTES` stamp (which
+documents itself as *"the quantity the size term compared"*, so it must
+report the compared quantity), plus the size-term ladder's `abort_over` in
+`sb_grow`. The default path moves not one byte.
+
+**The separate question is left open with its measurement**: *should a size
+term price comment bytes at all?* Re-basing it on comment-excluded bytes
+would change the default for near-knee artifacts and needs its own measured
+need and its own abi event (D77). This lane names the population — five
+corpus artifacts within one comment-share of the 4,096 knee — and stops.
+
+**The transferable form**: *a render-time gate over emitted text is only
+neutral if nothing upstream reads that text's LENGTH as a decision.* The tree
+already had a rule for this and it was written in `limits.def` about the caps
+(they measure comment-EXCLUDED bytes, deliberately); the entry-shape term was
+added later, reads a raw buffer length, and nothing tied the two facts
+together. `sb_len_uncut` is now that tie, with the rule stated at its
+declaration: *any decision or stamp that compares an emitted LENGTH uses
+this, never `len`.*
+
+### 3b. The essential set could not be verified by a byte-identity gate
+
+Nothing in the tree compares a `-fno-comments` artifact against anything, so
+every existing gate is blind to this axis's own output. Two instruments were
+built for it rather than assumed:
+
+- **the region-BALANCE check** (`src/core/compile.c`, after emission): an
+  `sb_cmt_open` with no matching close mutes the rest of ITS buffer, so the
+  artifact is silently TRUNCATED under `-fno-comments` and byte-identical
+  under the default. **Measured, not hypothesised**: `pf_comment_bcls` gained
+  an open and no close during this lane, and four artifacts ended
+  mid-function. The default build was perfect.
+- **`tests/codegen/run_comments_axis.sh`** (§4.2), whose every artifact is
+  COMPILED under `-Wall -Wextra -Werror`, because the other half of the same
+  hazard — a comment whose opener is gated while its body is not — leaves
+  stray `*` lines that gcc reports as a syntax error about a numeric
+  constant, with nothing in the message about comments. That one was measured
+  too: the auto-split of `pf_block_ofs`'s banner (whose MIDDLE is a loop over
+  the selected offsets) left its continuation lines outside the region.
+
