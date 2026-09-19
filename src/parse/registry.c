@@ -1203,7 +1203,7 @@ REJECTED(RK_GROUP, REG_SEL_ANY, "(?q)", "unrecognized character after (? or (?-"
  *
  * BORN `built`, and derived rather than declared: D65 drives each row's own
  * `syntax` through the `(*` doorway at a forced-open gate
- * (src/parse/syntax_dump.c), so these rows read `built` because the doorway
+ * (src/dump/syntax_dump.c), so these rows read `built` because the doorway
  * really does produce for them — the wiring below is the `aport`, and the
  * column follows it exactly as it follows every other row's. */
 #define VERB_LA(name, syn, prim, note) \

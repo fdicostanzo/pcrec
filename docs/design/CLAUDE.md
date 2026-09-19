@@ -1396,7 +1396,7 @@ append-only or historical records.
   as written; none touch `RS_BASE => ROADMAP_NONE` pairing or the
   gate-CLOSED diagnostics.
   **BUILT same session (REGSTATUS lane, same worktree/branch)**:
-  `pcrec_construct_built_status` (src/parse/syntax_dump.c) landed as
+  `pcrec_construct_built_status` (src/dump/syntax_dump.c) landed as
   designed, with one measured correction to the memo's own classification
   sketch — reading `res.what`/`res.answered_at` rather than matching the
   UNBUILT refusal's TEXT, and forcing EVERY module open rather than only a

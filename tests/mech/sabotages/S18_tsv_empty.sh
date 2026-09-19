@@ -16,7 +16,7 @@
 # never reads the rendered dump, so there is no path for it to see this — an
 # arm added there would be a measured zero with no claim behind it.
 SAB_ID="S18-tsv-empty"
-SAB_FILE="src/parse/syntax_dump.c"
+SAB_FILE="src/dump/syntax_dump.c"
 SAB_SUITES="reject registry cli"
 SAB_DESC="pcrec_syntax_tsv(): early 'return strdup(\"\");' before any row is rendered"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0/0, but the vacuity guard fires"

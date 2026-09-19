@@ -1,4 +1,4 @@
-/* src/parse/schema_dump.c — [DD-13b.W23.1] `pcrec --list-schema`, the
+/* src/dump/schema_dump.c — [DD-13b.W23.1] `pcrec --list-schema`, the
  * `.rxt` format schema's TSV surface: the SEVENTH registry dump
  * (docs/spec/table_contract.md, docs/spec/registry.md, docs/spec/cli.md)
  * and the eighth conforming table producer.
@@ -12,7 +12,7 @@
  * independent side, driving each row's own BEHAVIOUR and comparing that
  * against this output. Comparing this output to the table would be the same
  * source twice (docs/dev/learnings.md §3), which is the one thing a check
- * over this dump must not do. `src/parse/limits_dump.c` is the shape.
+ * over this dump must not do. `src/dump/limits_dump.c` is the shape.
  *
  * THE THREE STRUCTURE-LAYER PARAMETERS ARE NOT THREE QUERIES HERE. Each is
  * a COLUMN VALUE a consumer selects on — `opens_group = true`;

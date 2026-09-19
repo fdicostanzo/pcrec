@@ -358,7 +358,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
-  NULL is a legitimate state here. `src/parse/syntax_dump.c` builds
+  NULL is a legitimate state here. `src/dump/syntax_dump.c` builds
   `--features`/syntax-query text in bare `StrBuf sb = {0}` locals belonging to
   no compile, with no `pcrec_error` to report through, so those keep the
   abort. `sb_grow` also reallocs into a temporary now — assigning a failed
@@ -1078,7 +1078,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   **[D65] `PcrecBuiltStatus` and `PCREC_UNBUILT_MARKER`.** A THIRD axis on
   `RegRow` beside `RegStatus`/`Roadmap` — has the owning module's producer
   landed for THIS construct — deliberately NOT a fourth `RegRow` field:
-  `pcrec_construct_built_status()` (src/parse/syntax_dump.c) DERIVES it
+  `pcrec_construct_built_status()` (src/dump/syntax_dump.c) DERIVES it
   per row by driving the row's own `syntax` through a gate-forced-open
   doorway call, the reason ext.c's UNBUILT macro comment already gives for
   not adding "a second built column somebody would have to keep in sync

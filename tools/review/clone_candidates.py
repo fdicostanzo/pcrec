@@ -59,7 +59,7 @@ elsewhere" signal, not a symmetric pairwise score.
 VALIDATION (hand-checked 2026-09-17): every group in the shipped output
 was read by eye against the two members' source. The largest group is
 the six `emit_predicate_axes`-family sibling functions in
-src/parse/axes_dump.c / src/parse/limits_dump.c / src/parse/schema_dump.c
+src/dump/axes_dump.c / src/dump/limits_dump.c / src/dump/schema_dump.c
 (one dump function per registry table -- header comment, a loop over the
 table's rows, per-row field formatting, a closing summary line -- REAL
 structural duplication, the exact "one dump function per table with no

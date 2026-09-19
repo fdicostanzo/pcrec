@@ -107,7 +107,8 @@ export CCACHE
 
 LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
            $(wildcard src/ir/*.c) $(wildcard src/opt/*.c) \
-           $(wildcard src/gen/*.c) $(wildcard src/gen/enc/*.c)
+           $(wildcard src/gen/*.c) $(wildcard src/gen/enc/*.c) \
+           $(wildcard src/dump/*.c)
 LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
 
 all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a

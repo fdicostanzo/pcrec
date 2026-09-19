@@ -1,4 +1,4 @@
-/* src/parse/limits_dump.c — [LIM-1] `pcrec --list-limits`, the numeric-
+/* src/dump/limits_dump.c — [LIM-1] `pcrec --list-limits`, the numeric-
  * limits registry's SIXTH TSV surface (docs/spec/table_contract.md,
  * docs/spec/registry.md; D90).
  *

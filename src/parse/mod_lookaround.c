@@ -23,7 +23,7 @@
  *
  * THE WAVE B+C SPLIT IS GONE, AND WAVE D IS WHAT SPENT IT (design §8.3, R33
  * V-3). D65 derives a row's `built` column from the PORT's `ExtResult` at
- * `WANT_RESULT` (src/parse/syntax_dump.c) and never runs the emitter, so the
+ * `WANT_RESULT` (src/dump/syntax_dump.c) and never runs the emitter, so the
  * column flips for exactly the rows whose tail this function ACCEPTS. Wave
  * B+C recognised the three LOOKAHEAD tails (`=`, `!`, `*` at the `(?`
  * doorway) and DECLINED the three `<` tails with the enabled-but-unbuilt

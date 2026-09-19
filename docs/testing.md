@@ -2036,7 +2036,7 @@ number.
 ### Sanitizer findings inventory
 
 **F1 — `-Wclobbered` on `pcrec_syntax_explain`'s `rows_shown`/`dissents`,
-`src/parse/syntax_dump.c:881`, surfaced only under `make asan`** (not
+`src/dump/syntax_dump.c:881`, surfaced only under `make asan`** (not
 `make ubsan`, not the default `-O2` build, not `make strict`). **TRIAGED
 BENIGN and HARDENED (manager, 2026-08-13, same session)** — the manager
 independently read the handler and confirmed the analysis below: neither
@@ -2049,7 +2049,9 @@ prose ("deliberately not read on the longjmp path") is now a defined-read
 guarantee rather than a heuristic gcc happens to get right, closing off
 the R20-shaped latent-bug risk a *wrong* instance of this warning would
 represent. Rebuilt `build-asan/` after the fix: warning gone, `make`/
-`make strict` still clean. **Full compiler output, verbatim (pre-fix):**
+`make strict` still clean. **Full compiler output, verbatim (pre-fix)** — quoted unedited, so it
+names the file at its 2026-08-13 path `src/parse/syntax_dump.c`; the file
+is `src/dump/syntax_dump.c` since [REVW.3] wave 3 moved the dump tier:
 
 ```
 /home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c: In function ‘pcrec_syntax_explain’:
@@ -2062,10 +2064,10 @@ represent. Rebuilt `build-asan/` after the fix: warning gone, `make`/
 ```
 
 Both variables named, both from the single declaration line
-`int rows_shown = 0, dissents = 0;` at `src/parse/syntax_dump.c:881`, inside
+`int rows_shown = 0, dissents = 0;` at `src/dump/syntax_dump.c:881`, inside
 `pcrec_syntax_explain` (the `--explain` query function, R20/MOD-0.7
 territory). Repro: `gcc -O1 -g -fsanitize=address,leak -Wall -Wextra
--std=gnu11 -c src/parse/syntax_dump.c` (or `make asan`, which hits it while
+-std=gnu11 -c src/dump/syntax_dump.c` (or `make asan`, which hits it while
 rebuilding `tests/codegen/run_trie_identity.sh`'s `-DPCREC_NO_TRIE`
 reference compiler from source — the same warning is present in the real
 `build-asan/` library build too, confirmed in that build's own log; it

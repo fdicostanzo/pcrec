@@ -5383,7 +5383,7 @@ static bool dfa_search_is_pinned(Ctx *cx)
 
 /* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
  *
- * `pcrec --list-axes` (src/parse/axes_dump.c) needs the SAME name+deny data
+ * `pcrec --list-axes` (src/dump/axes_dump.c) needs the SAME name+deny data
  * this file's own `dfa_select` walks, rather than a hand-copied restatement
  * of it (docs/dev/learnings.md §3: "a REFERENCE BUILD assembled by ... a
  * hand-enumerated list drifts silently from the subject's source set"). A

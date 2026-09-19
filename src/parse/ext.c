@@ -170,7 +170,7 @@ static bool bucket_has_tail(RegKind kind, int sel)
  * whether a half-landed module can mislead.
  *
  * D65 (2026-08-21): `PCREC_UNBUILT_MARKER` (internal.h) is the fixed
- * substring `pcrec_construct_built_status` (src/parse/syntax_dump.c) keys
+ * substring `pcrec_construct_built_status` (src/dump/syntax_dump.c) keys
  * on to recognise this shape from OUTSIDE — one define shared with that
  * classifier rather than two copies of the sentence, so a reword here
  * cannot silently stop being classified as `unbuilt`. */

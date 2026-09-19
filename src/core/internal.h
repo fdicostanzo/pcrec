@@ -45,7 +45,7 @@ void  arena_free(Arena *a);
 /* ---- growable string buffer (codegen output) ---- */
 
 /* `cx` is the owning compile, or NULL — and unlike Arena, NULL is a REAL case
- * here: src/parse/syntax_dump.c builds `--features`/syntax-query text in bare
+ * here: src/dump/syntax_dump.c builds `--features`/syntax-query text in bare
  * `StrBuf sb = {0}` locals that belong to no compile and have no pcrec_error to
  * fill, so an allocation failure there has nowhere to be reported and keeps the
  * abort. Attaching a Ctx is what upgrades a buffer from "abort" to "diagnose". */
@@ -2857,7 +2857,7 @@ typedef enum {
  * THIRD axis, orthogonal to RegStatus (is this base grammar?) and Roadmap
  * (will a module ever implement it?) — has the OWNING module's producer
  * actually landed for THIS construct. Deliberately not a fourth RegRow
- * field: `pcrec_construct_built_status()` (src/parse/syntax_dump.c) DERIVES
+ * field: `pcrec_construct_built_status()` (src/dump/syntax_dump.c) DERIVES
  * it, per row, by driving the row's own `syntax` through a gate-forced-open
  * doorway call — the same reason ext.c's UNBUILT macro comment gives for
  * not adding "a second built column somebody would have to keep in sync
@@ -4767,7 +4767,7 @@ const char *pcrec_rxt_constraint_name(RxtConstraintKind k);
 int pcrec_rxt_constraint_next(const char **cur, RxtConstraintKind *k,
                               const char **arg, size_t *arglen);
 
-/* `--list-schema` (src/parse/schema_dump.c): the table above as TSV, under
+/* `--list-schema` (src/dump/schema_dump.c): the table above as TSV, under
  * docs/spec/table_contract.md. Caller frees. */
 char *pcrec_rxt_schema_tsv(void);
 
@@ -5155,7 +5155,7 @@ int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
                        pcrec_error *err);
 
-/* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
+/* src/dump/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means
  * "no filter". These are INTERNAL on purpose: the CLI and the test suite are
  * the only consumers today, and promoting one function into lib/pcrec.h later
@@ -5164,7 +5164,7 @@ char *pcrec_syntax_tsv(unsigned flavours);
 /* [DD-11.2] `--list-definitions`, the fifth registry surface (D85,
  * docs/design/definitions_table.md §5). Walks the same rows
  * `pcrec_syntax_tsv` does, through the same rendering helpers
- * (src/parse/syntax_dump.c), so the two dumps join on `kind`/`selector`/
+ * (src/dump/syntax_dump.c), so the two dumps join on `kind`/`selector`/
  * `syntax` by construction. Takes `--flavour` exactly like `pcrec_syntax_
  * tsv` (r43 K6: an unfiltered dump would print a definition for a
  * construct `--list-syntax --flavour=X` says does not exist). */
@@ -5219,12 +5219,12 @@ size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis 
  * recovery takes ("pinned" / "reverse-pass"). Axis G's sibling: a question
  * about an ENTRY POINT, so bare DfaCands and no DfaForm. */
 size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
-/* `src/parse/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
+/* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
 char *pcrec_axes_tsv(void);
 
-/* [LIM-1] `src/parse/limits_dump.c` — renders src/core/limits.def, the
+/* [LIM-1] `src/dump/limits_dump.c` — renders src/core/limits.def, the
  * numeric-limits table (D90), as one TSV, table_contract.md's wire format
  * (the SIXTH surface). Caller frees. */
 char *pcrec_limits_tsv(void);

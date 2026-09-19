@@ -64,7 +64,7 @@ are out of scope for this round; see the charter's own "Scope tiers".
   `src/opt/atomic.c`) sharing one recursive switch-over-node-kind
   skeleton that differs only in which node kind is the "hit"; and a
   family of enum-to-string `*_name`/`kind_name` functions across
-  `src/parse/rxt_schema.c`, `src/parse/syntax_dump.c`, etc. This tool
+  `src/parse/rxt_schema.c`, `src/dump/syntax_dump.c`, etc. This tool
   finds candidates; per admissibility rule A2 a lens-1 finding built on
   a row here still needs the shared abstraction NAMED before it is
   admissible.

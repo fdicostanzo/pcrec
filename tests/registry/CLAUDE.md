@@ -310,7 +310,7 @@ directory asserts that the description and the shipped parser actually agree.
   reading its zero)
 - **axes_registry_check.sh** — [CHK-2] piece 1(a): the OPTIMIZATION-AXIS
   registry's own check, a DIFFERENT registry from the SR-1 syntax table
-  above. Reads `pcrec --list-axes`'s TSV (`src/parse/axes_dump.c`) against
+  above. Reads `pcrec --list-axes`'s TSV (`src/dump/axes_dump.c`) against
   `docs/spec/tuning.md` (every documented `(bit N)` heading),
   `cli/main.c` (the flag parser) and `docs/spec/match_api.md` §6.3 (the
   D46 stamp family's own home) — three files the dump never opens, so
@@ -609,7 +609,7 @@ directory asserts that the description and the shipped parser actually agree.
     queue item 4; docs/design/registry_built_status_memo.md, ratified
     wholesale 2026-08-21) — `check_built_status_defects` iterates all 118
     rows (100 when this paragraph was written; 104 at [M6.4.2], 106 at
-    [M6.5.2], 118 at [M6.6.2] wave F's twelve alpha-spelling INDEX rows) and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
+    [M6.5.2], 118 at [M6.6.2] wave F's twelve alpha-spelling INDEX rows) and calls `pcrec_construct_built_status` (src/dump/syntax_dump.c),
     the SAME function `pcrec --list-syntax`'s new `built` column calls, on
     every one. It is a defect check, not a status check: `--list-syntax` and
     the generated compliance index render `built`/`unbuilt`/`—`, and this
@@ -680,7 +680,7 @@ directory asserts that the description and the shipped parser actually agree.
     `pcrec_ext_escape`'s RETURNED `ExtResult`, cannot see them move: that
     call still answers the module's old unbuilt refusal because esc_atom
     intercepts a real `\Q` BEFORE the doorway is ever reached, never
-    through it. `built_status_probe` (src/parse/syntax_dump.c) gained an
+    through it. `built_status_probe` (src/dump/syntax_dump.c) gained an
     `RF_LEXICAL` arm alongside `RK_QUANTSUFFIX`'s (a real parse of the
     row's own `syntax`, classified on whether it raised), differing only
     in outcome shape: a lexical construct never STAMPS a node, so there is

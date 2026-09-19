@@ -14,7 +14,7 @@
 #include "pcrec.h"
 /* The syntax-query modes read the construct registry, which is internal: the
  * CLI and the test suite are its only consumers, so it is not part of the
- * public surface (see src/parse/syntax_dump.c). main.c touches no registry
+ * public surface (see src/dump/syntax_dump.c). main.c touches no registry
  * type — it calls two functions that hand back finished text. */
 #include "core/internal.h"
 /* [M5-SEAM] the ENCODING REGISTRY: the one table the `byte`/`utf8` names are

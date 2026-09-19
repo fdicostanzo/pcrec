@@ -12,6 +12,12 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
   optimisation at all: it deletes cuts a proof shows are no-ops, which changes
   which ENGINE a pattern gets and never which strings it matches
 - **gen/** — DFA to gcc-dialect C code emission
+- **dump/** — [REVW.3] wave 3: the REGISTRY DUMP TIER, the CLI's read-only
+  table surfaces (`--list-syntax`/`--list-families`/`--list-definitions`/
+  `--list-axes`/`--list-limits`/`--list-schema` and their query siblings).
+  Moved out of `parse/`, where four files that RENDER the parse, core and
+  gen tiers' own tables were filed as parser code. `cli/` is their only
+  caller and no `src/` object names their symbols. See dump/CLAUDE.md
 - **gen/enc/** — [M5-SEAM] the ENCODING BACKENDS (D58, DD-12): the
   per-encoding residual block each artifact embeds, one file per encoding
   behind one registry. The compiler and the emitter carry NO encoding

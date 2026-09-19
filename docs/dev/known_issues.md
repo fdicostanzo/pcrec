@@ -239,7 +239,7 @@ lane's `src/core/compile.c`/`internal.h` commit and rebuilding
 `make alloc` shape's own before/after is the sabotage-equivalent this
 fix was validated against — see `docs/dev/lanes/k60fix_report.md` for
 the transcripts). The other four `setjmp` sites (`pcrec_count_groups`
-here at `:1890`; `src/parse/syntax_dump.c` at `:778`, `:1056`, `:1565`)
+here at `:1890`; `src/dump/syntax_dump.c` at `:778`, `:1056`, `:1565`)
 were each read and confirmed to take ONE unconditional action on any
 nonzero `setjmp` return, testing no per-attempt `Ctx` field — none of
 them absorbs anything today and none needed the same test.
@@ -1102,7 +1102,7 @@ their process killed with no diagnostic. All seven now report through
 by giving `Arena` and `StrBuf` a back-pointer to the owning `Ctx`. The error
 path already freed everything wholesale (`job_cleanup`), so the blast radius was
 small: the only allocations the Job does not own are `pcrec_minimize_dfa`'s five
-local tables, which now free by hand before failing. `src/parse/syntax_dump.c`'s
+local tables, which now free by hand before failing. `src/dump/syntax_dump.c`'s
 detached `StrBuf`s keep the abort deliberately — they belong to no compile and
 have no `pcrec_error` to report through. `DFA_INVARIANT` keeps its abort too: it
 is a "cannot happen" check, not an allocation failure.

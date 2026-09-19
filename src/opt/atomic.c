@@ -250,7 +250,7 @@ bool pcrec_has_collapsible_rep(const Ast *a)
  * D65 derives a row's BUILT status by driving the row's own `syntax` through
  * the machinery that would compile it and reading the outcome. For the four
  * DOORWAY kinds that machinery is `doorway_route` + `doorway_call`, and the
- * outcome is an `ExtResult` (src/parse/syntax_dump.c). RK_QUANTSUFFIX reaches
+ * outcome is an `ExtResult` (src/dump/syntax_dump.c). RK_QUANTSUFFIX reaches
  * no doorway at all — the possessive suffix is a quantifier suffix recognised
  * inside `p_rep`, deliberately — so its rows need a second arm, and this is the
  * signal that arm reads.
