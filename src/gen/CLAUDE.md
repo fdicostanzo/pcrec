@@ -751,10 +751,45 @@ not forced — `rx_info.engine_why` is `NULL` there for the same reason.
 **ONE EMITTER FOR THE UNCONDITIONAL MACROS** — plural since [OPT-4].
 `pcrec_emit_engine_stamp` (`emit_dfa.c`, declared in `src/core/internal.h`)
 writes `<PREFIX>_ENGINE` **and `<PREFIX>_ENGINE_SEL`** for BOTH engines;
-`emit_vm.c` calls it with `"vm"`. Two `sb_printf`s spelling the same `#define`
+`emit_vm.c` calls it with `"vm"`. Two call sites spelling the same `#define`
 would be two chances for it to drift, and drift is exactly what an
 unconditional stamp exists to prevent — so the second unconditional stamp rode
 this function rather than getting call sites of its own.
+
+## [REVW.2] wave 2 (2026-09-18) — EVERY STAMP LINE IN BOTH EMITTERS IS ONE HELPER CALL
+
+`sb_stampf` / `sb_stampwf` / `sb_stamp_str` (`src/core/sb.c`,
+`core/internal.h`) write `#define <UPPER>_<NAME> <value>`. **73 hand-typed
+format strings — 52 in `emit_vm.c`, 21 in `emit_dfa.c` — are now literal NAME
+arguments in a fixed position**, which is lens 1 X8's real payoff: D94 rules
+the abi re-pin site list is "every reader of the number, FOUND BY GREP", and
+the stamp name set is half of what such a sweep has to enumerate.
+
+**A NEW hand-written `sb_printf(c, "#define %s_...")` in either file is a
+finding.** Three things to know before adding a stamp:
+
+1. **The value is a FORMAT, not a type.** `0x%xu`, `%lluULL`, `%lldLL` and a
+   raw `((ptrdiff_t)PCREC_ERR_STEPS)` are C tokens the artifact's own compiler
+   reads. Lens 1's proposed typed `emit_stamp_int`/`_bool` is deliberately NOT
+   built: it covers 9 of `emit_vm.c`'s 37 value stamps and moves the emitted
+   bytes of the rest.
+2. **A function-like macro is not a stamp.** The 15 `#define %s_` lines left
+   in `emit_vm.c` are seven multi-line macro BODIES with backslash
+   continuations (`_CHARGE_WORK`, the two `_TRAIL`/`_SET`/`_PUSH`/`_CUT`
+   spellings, the two `_CALL` spellings, `_TIER_NOTE`, the `_PRUNE_*` pair).
+   Their emitted text is a program. They stay, and four sabotage rows
+   (S89/S155/S168/S182) sit on them.
+3. **One stamp has a STREAMED value and stays hand-written.**
+   `<PREFIX>_DFA_PREFILTER_OFFSETS`: `dfa_prefilter_offsets` writes the list
+   into the destination between the quotes, so no caller holds a value. It
+   says so at its own site.
+
+**AND THE UPPERCASED PREFIX IS ONE DERIVATION.** `prefix_upper` is gone;
+`sb_upper(&cx->arena, cx->opt->prefix)` is called once, in `pcrec_gen_names`.
+`GenNames.upper` and `Vm.up` are both `const char *` into that one arena
+string — they used to be a `char[80]` and a `memcpy` of it into a second
+`char[80]`. Every reader (a `%s` argument or a `const char *` parameter) is
+unchanged. Do not re-derive an uppercase at a call site.
 
 `_ENGINE_SEL` is the engine decision as a CLOSED TOKEN where `_ENGINE_WHY` is
 prose (`selected` / `forced` / `overflowed-dfa` / `overflowed-prefilter` /

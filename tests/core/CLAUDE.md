@@ -104,6 +104,35 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   format call and is unobservable at the allocation, by every instrument
   this tree has.
 
+- **sb_stamp_check.c** — [REVW.2] wave 2, EP2 step 10 / lens 1 X8:
+  `sb_stampf`/`sb_stampwf`/`sb_stamp_str`, the artifact-stamp primitives,
+  which emit `#define <UPPER>_<NAME> <value>` at all 73 former hand-written
+  stamp sites across the two emitters. **ITS JUSTIFICATION IS THE OPPOSITE
+  OF `sb_fragf_check.c`'s ABOVE, and the file's header says so first**: every
+  byte these write lands in the emitted `.c`, so the four byte-identity gates
+  and the full-corpus emit-diff DO see a defect here, immediately and on
+  thousands of artifacts. A check whose justification is borrowed from its
+  neighbour is a check nobody can size.
+
+  What it adds is two things the gates cannot give. **(a) WHICH property
+  broke** — a gate says "artifact differs at byte 4,117"; these sub-checks say
+  "the separator space is gone" or "the name field is right-justified".
+  **(b) THE PARAMETER SPACE THE SHIPPED SITES DO NOT REACH** — they use
+  exactly two padding widths (9 and 24) and one prefix length (`rx`, two
+  bytes), where this sweeps widths 0..64 against name lengths 1..64 and builds
+  one stamp at `PCREC_MAX_PREFIX_LEN`. Six sub-checks, oracle an independent
+  `snprintf` into an oversized buffer.
+
+  **FOUR PLANTS, AND THEY DO NOT BEHAVE ALIKE** (transcripts in the header
+  and in `docs/dev/lanes/w2x_report.md`). The separator space deleted takes
+  five sub-checks red and leaves 6 correctly GREEN (still one line, the wrong
+  one). The newline dropped takes all six. `sb_stamp_str` losing its quotes
+  takes ONLY sub-check 4, which is that sub-check's whole reason for existing
+  separately. And the sharpest: **`%-*s` written `%*s` leaves sub-check 1
+  GREEN**, because at width 0 the two spellings are identical — which is why
+  the sweep has to carry the width, and why 30 of the 37 `emit_vm.c` call
+  sites could not have caught it.
+
 - **alloc_inject.h** / **alloc_check.c** / **run_alloc_tests.sh** —
   [REVW.U L5-R1] THE ALLOCATION-FAILURE INJECTOR (`make alloc`, opt-in,
   NOT part of `make test`). `alloc_inject.h` is `-include`d ahead of

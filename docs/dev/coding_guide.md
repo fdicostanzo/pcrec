@@ -107,9 +107,19 @@ text-out rule, so a back-end fed from a deserialized IR calls it unchanged.
 (the conditionally-filled `char tr[N] = ""` trace inserts, whose emptiness is
 a byte-identity contract) becomes `const char *tr = "";` plus a conditional
 assignment — same shape, but the `""` default is the point. A buffer read back
-and mutated in place after it is written is not a fragment. And a `char[]`
-that is a genuine FIELD rather than scratch (`Vm.up`) is out of this wave by
-name.
+and mutated in place after it is written is not a fragment. And a buffer whose
+VALUE IS STREAMED into the destination by a callback rather than held by the
+caller is not one either — `emit_dfa.c`'s `<PREFIX>_DFA_PREFILTER_OFFSETS` is
+the tree's one instance and says so at its site.
+
+**What is left, and it is a closed list.** Six fixed scratch declarators
+remain across both emitters and all six are the ENCODING-SEAM GUARD/ADVANCE
+family — the `enc.h` seam entries' `buf`+`cap`+`trunc` output contract, which
+belongs to the encoding module (DD-12), and the destinations of
+`pcrec_startpos_guard_text`. Their text carries the caller's indent and the
+backend's expression and NEVER the `-p` prefix, which is what puts them
+outside the K38 class (`limits.def:360` says exactly that). A seventh, `Vm.up`,
+retired in wave 2 — see §2.6. `tools/review/fragment_census.py` is the count.
 
 **Its no-truncation promise is enforced by the `vsnprintf` SIZE argument, not
 by the allocation.** Measured: an allocation one byte short is invisible to
@@ -149,6 +159,38 @@ are the correct shape, and `rxt_source.c`'s bare-`Arena` pair is the counterexam
 that aborts instead (L8-F4).
 
 ---
+
+**2.6 Emitting an artifact stamp: `sb_stampf` / `sb_stampwf` / `sb_stamp_str`**
+(`core/internal.h`, landed [REVW.2] wave 2, 2026-09-18). One
+`#define <UPPER>_<NAME> <value>` line. All 73 former hand-written stamp sites
+across `emit_vm.c` (52) and `emit_dfa.c` (21) are on them, and a new
+hand-written `sb_printf(c, "#define %s_...")` is a finding against you.
+
+```c
+sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
+sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
+sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
+```
+
+**The value is a format, not a type, and that is the rule not an accident.** A
+stamp's value is emitted C: `0x%xu`, `%lluULL`, `%lldLL` and a raw
+`((ptrdiff_t)…)` are four C tokens with four meanings to the artifact's own
+compiler. Do not "clean up" a site onto a typed integer helper — lens 1
+proposed one and it is deliberately not built, because it covers 9 of
+`emit_vm.c`'s 37 value stamps and silently moves the emitted bytes of the
+rest. `namew` left-pads the NAME field for the two families that align their
+value column; that alignment is emitted bytes and §3.1 governs it.
+
+**They are for a VALUE stamp and not for a function-like macro.** The 15
+`#define %s_` lines still in `emit_vm.c` are seven multi-line macro BODIES
+with backslash continuations (`_CHARGE_WORK`, `_TRAIL`/`_SET`/`_PUSH`/`_CUT`,
+`_CALL`, `_TIER_NOTE`, the `_PRUNE_*` pair) whose emitted text is a program,
+not a value. They stay `sb_printf`, and four sabotage rows sit on them.
+
+**The uppercased prefix is ONE derivation**: `sb_upper(Arena *, const char *)`.
+`GenNames.upper` and `Vm.up` are both `const char *` pointing at its one arena
+result; neither is storage any more. Do not re-derive an uppercase at a call
+site and do not add a third field.
 
 ## 3. Emitted text — the rules with teeth
 
