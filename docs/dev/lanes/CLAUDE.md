@@ -814,6 +814,43 @@ never edited afterwards.
 
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
+- `w3_report.md` — [REVW.3] WAVE 3 (LAYERING) (2026-09-19, lane w3, opus):
+  the dump tier to `src/dump/`, `src/gen/enc/` to `src/enc/`, the layer
+  model in tool and prose, the rxt minimal cut, and `internal.h`'s
+  declaration tail grouped by defining layer. Five item commits, every one
+  byte-neutral on all four `scripts/emit_sweep.py` streams at full reach
+  (3,938 argv rows x 3 shapes + 96 composition artifacts, 0 movers / 0
+  asymmetric everywhere), NOT an `abi` event, no `docs/spec/` hunk owed,
+  nothing owed at hand-off.
+  Read §0 first — three things, of which two are refutations of the
+  charter's own pricing. **The call-level back-edge census is 30, not the
+  19 lens 6 §2.3 predicted**: filing `core/compile.c` in a `driver` tier
+  does reclassify its 20 pipeline calls as forward edges, and it CREATES
+  22 new ones pointing the other way, every one of them `ctx_fail` or
+  `ctx_nomem` — *the file is itself two layers, the exact shape lens 6
+  diagnosed one level up for the directory*. The item-1 dump move
+  accounts for the whole 39 -> 28 drop on its own (the two L4 rows), and
+  §2 separates the three numbers cleanly. **Lens 6 priced that same move
+  at "0 anchors" and said in the same section that it had not run its own
+  coupling grep**; run here it is two sabotage rows and 62 live citations.
+  And **one check needed a fix rather than a substitution**:
+  `run_cpset_structure.sh`'s CHECK 1R greps a HISTORICAL tree, so
+  re-spelling its `enc.h` path would have kept the required red while
+  silently changing its cause from "the field is absent" to "the file is
+  absent" — *a relocation can convert a check's red into a different
+  claim with nothing failing.*
+  Also worth reading: §1's item-4 note on why the rxt cut costs one more
+  edited file than lens 6's "2 files" (renaming `compile_driver` would
+  stale ~30 comments including four `--list-axes` strings a caller reads,
+  and exporting it unprefixed is lens 9's P5 hazard, so the static driver
+  keeps its name behind a `pcrec_`-prefixed face); §1's item-5 note that
+  the guide's own `-Wcomment` rule, read that morning, still cost a build
+  (`src/core/*.c` inside a C comment); §3 on being
+  `scripts/emit_sweep.py`'s first customer (it needed no change; the
+  REACH figure, not the pass count, is what makes a zero-mover result
+  evidence); §5 flagging the `APPROACH.md` §8 rewrite for Frank; and §6,
+  headed by **wave 4's brief must cite `src/dump/axes_dump.c`**.
+
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
   OPTIONAL-CONTRIBUTOR DROP LADDER. On an emitted-size cap refusal with the
   optional anchored machine present, `compile_driver` drops it and re-emits;
