@@ -88,6 +88,23 @@ typedef struct {
     bool     cmt_drop;
     unsigned cmt_depth;
     unsigned cmt_mute_depth;   /* 0 = not muted; else the muting region's depth */
+    /* [EMIT-VERB] THE BYTES A MUTED REGION DISCARDED, and the reason this
+     * field exists is a MEASURED defect rather than symmetry. `emit_vm.c`'s
+     * entry-shape AUTO rung compares `job->vmsb.len` — RAW emitted source
+     * bytes, comments included — against `VM_INLINE_CHAIN_MAX_BYTES`, so a
+     * comment-free program is SMALLER and five of the corpus's 3,517
+     * compiling artifacts crossed the 4,096-byte knee under `-fno-comments`,
+     * taking rung `forward` where the default takes `plain`. That is emitted
+     * CODE moving over a comment switch, which is the one thing this axis
+     * promises never to do.
+     *
+     * So every LENGTH-BASED DECISION reads `sb_len_uncut` instead: the
+     * length the buffer WOULD have had with comments on. The gate is then
+     * size-neutral by construction rather than by a threshold's luck, and
+     * the separate question — whether a size term should price comment bytes
+     * at all — stays open with its own measurement instead of being answered
+     * as a side effect (D77). */
+    size_t   cmt_dropped;
 } StrBuf;
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
@@ -111,6 +128,14 @@ void sb_comments(StrBuf *sb, bool on);
  * helper, present or future. */
 void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
 void sb_cmt_close(StrBuf *sb);
+
+/* The length this buffer would have had with comments ON — `len` plus every
+ * byte a muted region discarded. THE ONE READER RULE: any decision or stamp
+ * that compares an emitted LENGTH against a threshold uses this, never `len`,
+ * so the comment axis cannot move it. `len` stays the truth about what was
+ * written and is what `sb_take`, the caps' own comment-excluded scan and
+ * every consumer of the finished text read. */
+size_t sb_len_uncut(const StrBuf *sb);
 
 /* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
  * deny, then force, then `src/core/axes.def`'s `default_state`. General over

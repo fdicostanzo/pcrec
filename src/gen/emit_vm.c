@@ -10403,7 +10403,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * overrides the decision outright, since it never reaches AUTO. */
         long long term = pcrec_tune_vm_inline_chain_max(cx->opt->tune);
         if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
-        if ((long long)job->vmsb.len <= term)
+        /* [EMIT-VERB] `sb_len_uncut`, never `len`: this comparison is a size
+         * DECISION, and the comment axis must not reach it. */
+        if ((long long)sb_len_uncut(&job->vmsb) <= term)
             shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
         else
             shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
@@ -10465,7 +10467,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * four-arm ladder that stood here was the second of three spellings. */
     sb_stamp_str(c, v.up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(shape));
     sb_stampf(c, v.up, "VM_PROGRAM_BYTES", "%lluULL",
-              (unsigned long long)job->vmsb.len);
+              (unsigned long long)sb_len_uncut(&job->vmsb));
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * because it reports what the VM DID — §6.3's family (b), D81), but
