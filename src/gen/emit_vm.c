@@ -9938,7 +9938,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * TEXT — so a third unread mirror would be built ahead of a measured
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
-    sb_printf(c, "#define %s_VM_FRAMELESS %d\n", v.up, has_push ? 0 : 1);
+    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);
     /* [ENG-ISL] THE ALTERNATION-ISLAND STAMP — §6.3 family (b), VM route only,
      * UNCONDITIONAL on every VM artifact including a hybrid, `0` spelled as
      * readily as any other value. A fact readable by a macro's ABSENCE is the
