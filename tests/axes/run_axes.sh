@@ -321,15 +321,32 @@ fi
 echo "axes: registry derived — $n_bits bit-flag axes (bits ${reg_bits//$'\n'/,}), matching tuning.md §2's own $(echo "$doc_bits" | wc -l) documented bit mentions"
 
 # which bit is the one DO-OR-DIE member (tuning.md §2.5: PCREC_FORCE_PREFILTER
-# refuses on a DFA-selected pattern) — derived by NAME PREFIX, not
-# hand-picked, so a second FORCE_ member added later is picked up the same
-# way without an edit here.
+# refuses on a pure-DFA-selected pattern), so that ITS refusals are a
+# documented population rather than a failure.
+#
+# [EMIT-VERB] 2026-09-19 — NARROWED FROM A NAME-PREFIX SWEEP, and the old
+# comment's claim that "a second FORCE_ member added later is picked up the
+# same way without an edit here" was the defect rather than the feature.
+# DO-OR-DIE IS A PROPERTY OF THE AXIS, NOT OF THE `FORCE_` SPELLING:
+# `-fprefilter` refuses; `-fprefilter-collapse` explicitly does NOT
+# (src/core/axes.def states why — the collapsed language of a pattern with
+# nothing to collapse IS its exact language), and `-fcomments` cannot refuse
+# anything at all. The loop assigned the LAST match in bash's associative
+# iteration order, which is not sorted, so with two FORCE_ macros it was
+# already picking one of two arbitrarily and a third made the coin three-
+# sided. The failure is silent in both directions: bit 9's genuine documented
+# refusals would FAIL the sweep, and whichever bit won the toss would get an
+# exemption it never needs.
+#
+# Named, with its reason, and asserted present so a rename is loud.
 force_bit=""
 for bit in "${!bit_macro[@]}"; do
-    case "${bit_macro[$bit]}" in
-        PCREC_FORCE_*) force_bit="$bit" ;;
-    esac
+    [ "${bit_macro[$bit]}" = "PCREC_FORCE_PREFILTER" ] && force_bit="$bit"
 done
+if [ -z "$force_bit" ]; then
+    echo "run_axes.sh: FATAL: PCREC_FORCE_PREFILTER is not among the derived bits — the ONE do-or-die axis (tuning.md §2.5) has been renamed or removed, and without it that axis's documented refusals would be reported as failures" >&2
+    exit 1
+fi
 
 # ============================================================================
 # THE DOCUMENTED-REFUSAL LOOKUP (manager's classification rule, 2026-08-26,

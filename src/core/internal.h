@@ -64,7 +64,83 @@ void  arena_free(Arena *a);
  * `ctx_fail`s, the driver records that K as out, and the next K starts with a
  * fresh arena. The DEFAULT and FINAL attempts leave it 0 and always run to
  * completion, because their figures are what a refusal quotes. */
-typedef struct { char *p; size_t len, cap; Ctx *cx; size_t abort_over; } StrBuf;
+/* [EMIT-VERB] (D112, D108) THE COMMENT GATE'S THREE FIELDS — the RENDER-time
+ * decision `-fno-comments` is. The walk still emits every comment EVENT it
+ * always did (the emitters are unchanged in what they SAY); this buffer
+ * decides whether the text reaches the artifact, which is D108's data-in /
+ * text-out seam read in the one direction a verbosity axis needs.
+ *
+ * `cmt_drop` is the POLICY, resolved once per compile from
+ * `pcrec_axis_on(flags, PCREC_NO_COMMENTS, PCREC_FORCE_COMMENTS)` and set on
+ * the artifact's buffers only — never on `irsb` (the `--emit-ir` listing is a
+ * debug surface, not emitted C) and never on a dump's bare `StrBuf sb = {0}`,
+ * which is why the field defaults to false and there is no global.
+ *
+ * `cmt_depth`/`cmt_mute_depth` are the region stack, and they are two plain
+ * counters rather than a bit stack because the invariant is exactly
+ * expressible that way: muting starts at the depth of the first NON-ESSENTIAL
+ * region and ends when THAT depth closes, so nesting in either order is
+ * correct with no bound on depth. An ESSENTIAL region nested inside a
+ * NON-ESSENTIAL one stays muted, which is the only possible answer — its
+ * enclosing `/` `*` is not being written either. */
+typedef struct {
+    char *p; size_t len, cap; Ctx *cx; size_t abort_over;
+    bool     cmt_drop;
+    unsigned cmt_depth;
+    unsigned cmt_mute_depth;   /* 0 = not muted; else the muting region's depth */
+    /* [EMIT-VERB] THE BYTES A MUTED REGION DISCARDED, and the reason this
+     * field exists is a MEASURED defect rather than symmetry. `emit_vm.c`'s
+     * entry-shape AUTO rung compares `job->vmsb.len` — RAW emitted source
+     * bytes, comments included — against `VM_INLINE_CHAIN_MAX_BYTES`, so a
+     * comment-free program is SMALLER and five of the corpus's 3,517
+     * compiling artifacts crossed the 4,096-byte knee under `-fno-comments`,
+     * taking rung `forward` where the default takes `plain`. That is emitted
+     * CODE moving over a comment switch, which is the one thing this axis
+     * promises never to do.
+     *
+     * So every LENGTH-BASED DECISION reads `sb_len_uncut` instead: the
+     * length the buffer WOULD have had with comments on. The gate is then
+     * size-neutral by construction rather than by a threshold's luck, and
+     * the separate question — whether a size term should price comment bytes
+     * at all — stays open with its own measurement instead of being answered
+     * as a side effect (D77). */
+    size_t   cmt_dropped;
+} StrBuf;
+
+/* The two comment CLASSES, decided at the emission site (D112 item 2).
+ * ESSENTIAL is provenance and the embedder's contract — what the file IS and
+ * what it MATCHES — and is emitted under every setting. NON-ESSENTIAL is
+ * everything else ("most all"), and is the SEAM a future levels axis would
+ * subdivide; levels would never touch ESSENTIAL, and nobody builds them until
+ * a need is measured (D77). */
+typedef enum { PCREC_CMT_ESSENTIAL = 0, PCREC_CMT_NONESSENTIAL = 1 } PcrecCmtClass;
+
+/* Set the buffer's comment POLICY. Called once per artifact buffer; a buffer
+ * nobody calls it on emits every comment, which is what every non-artifact
+ * StrBuf in this tree wants. */
+void sb_comments(StrBuf *sb, bool on);
+
+/* Open / close a comment REGION. Every byte appended between them is comment
+ * text, and a NON-ESSENTIAL region's bytes are discarded when the policy says
+ * so. Balanced, nestable, and cheap enough to wrap a single trailing comment.
+ * The gate sits in `sb_putc`/`sb_puts`/`sb_vprintf` — the three primitives
+ * every other append in this file is built on — so it cannot be bypassed by a
+ * helper, present or future. */
+void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
+void sb_cmt_close(StrBuf *sb);
+
+/* The length this buffer would have had with comments ON — `len` plus every
+ * byte a muted region discarded. THE ONE READER RULE: any decision or stamp
+ * that compares an emitted LENGTH against a threshold uses this, never `len`,
+ * so the comment axis cannot move it. `len` stays the truth about what was
+ * written and is what `sb_take`, the caps' own comment-excluded scan and
+ * every consumer of the finished text read. */
+size_t sb_len_uncut(const StrBuf *sb);
+
+/* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
+ * deny, then force, then `src/core/axes.def`'s `default_state`. General over
+ * every row; see its definition in src/core/compile.c. */
+bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force);
 
 void  sb_putc(StrBuf *sb, char c);
 void  sb_puts(StrBuf *sb, const char *s);

@@ -1849,3 +1849,35 @@ never edited afterwards.
   `--`-position invocations over 62 grep-harvested flag spellings, and 63
   diagnostic invocations, all 0 differing against the previous item's own
   binary.
+
+- `emitverb_report.md` — [EMIT-VERB] (2026-09-19, lane emitverb, opus): the
+  emitted-comment axis and its DEFAULT FLIP, two events per D112 item 4.
+  Event 1 lands `-fno-comments`/`-fcomments` byte-neutrally (the first reader
+  of `axes.def`'s `default_state`; the gate is `sb_cmt_open`/`sb_cmt_close` in
+  the emission kit, D108); event 2 flips the default and bumps `abi` 26 -> 27.
+  Read §3a first — **the `.o` proof found a real defect and it is not the one
+  the brief predicted**. Five of 3,517 corpus artifacts compiled to DIFFERENT
+  OBJECT FILES because `emit_vm.c`'s entry-shape AUTO rung compares
+  `job->vmsb.len` — RAW emitted bytes, comments INCLUDED — against the
+  4,096-byte knee, so a comment-free program crosses it and takes a different
+  rung. Fixed by making the GATE size-neutral (`sb_len_uncut`), not by
+  re-basing the term; whether a size term should price comment bytes at all is
+  left open with its population (D77). The transferable form: *a render-time
+  gate over emitted text is only neutral if nothing upstream reads that
+  text's LENGTH as a decision.*
+  Also worth reading for four things. **§4.4: the comment-reader census was
+  done by MEASUREMENT because grep could not do it** — two passes were run
+  and both were useless (needles built from shell variables; generic
+  substrings matching emitted prose), so flipping the default and running
+  the suites IS the census, and every red it produced is in the table with
+  its conversion. **Two D94-addendum readers were found by the suites that
+  COUNT rather than by the bump's grep**: the registry's axes-coverage pin
+  (102 -> 108, a count of `^PASS: ` lines) and the cpset `EMITTED_BYTES`
+  manifest. **§4.5 is a latent defect the third force macro made live**:
+  `run_axes.sh` picked "the one DO-OR-DIE axis" by `PCREC_FORCE_*` name
+  prefix keeping the last match, with two candidates already present and
+  bash's hash order deciding — silent in both directions. And **§0's three
+  corrections to the sources**, headed by the force macro's own spelling:
+  `axes_registry_check.sh` derives the header's bit table with a
+  `PCREC_(NO|FORCE)_` grep, so the deny/force naming convention is encoded
+  in a CHECK and `PCREC_EMIT_COMMENTS` was invisible to it.

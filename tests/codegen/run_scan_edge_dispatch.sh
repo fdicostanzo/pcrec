@@ -79,6 +79,17 @@
 # `[OPT-5] SCAN EDGE` markers; if that marker is ever renamed this check goes
 # red rather than vacuous, which is the direction it must fail in.
 
+#
+# [EMIT-VERB] 2026-09-19 — THIS CHECK'S INSTRUMENT IS AN EMITTED COMMENT, so
+# every compile below passes `-fcomments`. That is not a workaround, and the
+# licence for it is a measured identity rather than convenience: the emitted
+# CODE is byte-identical between `-fcomments` and the default on 3,517 of
+# 3,517 corpus artifacts, with the object files identical too
+# (docs/dev/lanes/emitverb_report.md §2.2), so a STRUCTURAL census taken with
+# comments on is a true statement about the default artifact's machine. The
+# alternative — minting a code-level marker for the mechanism — would be new
+# emitted scaffolding, i.e. another abi event, for a need nothing has
+# measured (D77).
 set -u
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -214,9 +225,9 @@ for i in "${!witness_names[@]}"; do
     name="${witness_names[$i]}"; pat="${witness_pats[$i]}"
     d="$WORK/$name"; mkdir -p "$d/on" "$d/off"
 
-    pcrec_run "$PCREC" --features all -p rx -o "$d/on/a.c"  -- "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/on/a.c"  -- "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern"; continue; }
-    pcrec_run "$PCREC" --features all -p rx -o "$d/off/a.c" -fno-scan-edge -- "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/off/a.c" -fno-scan-edge -- "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern under -fno-scan-edge"; continue; }
 
     # THE VACUITY GUARD. The witness must reach the mechanism.

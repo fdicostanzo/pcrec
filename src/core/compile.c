@@ -61,6 +61,30 @@ void pcrec_default_options(pcrec_options *opt)
     opt->warn_emit_bytes = PCREC_DEFAULT_WARN_EMIT_BYTES;
 }
 
+/* [EMIT-VERB] (D111, D112) IS THIS AXIS ON? The first reader of
+ * `src/core/axes.def`'s `default_state` column, and it is general over every
+ * row rather than a clause for the one axis that needed it: deny wins, then
+ * force, then the row's own declared default. For the twenty-two rows that
+ * are DEFAULT_ON with no force bit it reduces to `!(flags & deny)`, which is
+ * what every call site in this tree spells inline today — those are not
+ * rewritten here (they are correct, and rewriting them would move no byte for
+ * no reason), but a row whose default is OFF cannot be read that way at all,
+ * which is why the function exists.
+ *
+ * An axis with neither bit in the table answers ON, the same answer a
+ * hand-written `!(flags & 0)` would give. */
+bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force)
+{
+    if (deny  && (flags & deny))  return false;
+    if (force && (flags & force)) return true;
+#define PCREC_AXIS(dm, df, fm, ff, defst)                                 \
+    if ((deny  && (dm) && (uint64_t)(dm) == deny) ||                      \
+        (force && (fm) && (uint64_t)(fm) == force))                       \
+        return (defst) == PCREC_AXIS_DEFAULT_ON;
+#include "core/axes.def"
+    return true;
+}
+
 /* [ART-SIZE] THE TWO EMITTED-SIZE QUANTITIES, measured on the finished
  * buffer (docs/design/artifact_size_term.md §4).
  *
@@ -788,6 +812,27 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.job->csb.cx = cx.job->hsb.cx = &cx;
             cx.job->vmsb.cx = cx.job->irsb.cx = &cx;
             cx.job->scr_test.cx = cx.job->scr_desc.cx = &cx;
+            /* [EMIT-VERB] (D112) THE RENDER POLICY, resolved once and set on
+             * the ARTIFACT's buffers only. `irsb` is deliberately absent:
+             * `--emit-ir`'s listing is a debug surface with its own format
+             * contract (docs/spec/ir_listing.md), not emitted C, and a
+             * verbosity axis over the artifact must leave it alone — which is
+             * also what makes the listing an independent stream to check the
+             * flip against. `scr_test`/`scr_desc` are spliced into the
+             * program and the listing respectively, so `scr_test` follows the
+             * artifact and `scr_desc` does not.
+             *
+             * `defo` is the options struct the whole attempt runs under
+             * (config/target rows already folded in by the CLI, so a `config`
+             * block that asks for comments is honoured here). */
+            {
+                const bool cmt = pcrec_axis_on(defo.flags, PCREC_NO_COMMENTS,
+                                               PCREC_FORCE_COMMENTS);
+                sb_comments(&cx.job->csb, cmt);
+                sb_comments(&cx.job->hsb, cmt);
+                sb_comments(&cx.job->vmsb, cmt);
+                sb_comments(&cx.job->scr_test, cmt);
+            }
         }
         if (!cx.job || !out || !pattern) {
             job_cleanup(&cx);
@@ -1583,6 +1628,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
+
+        /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
+         * every buffer is finished. An `sb_cmt_open` with no matching close
+         * mutes the rest of ITS buffer, so under `-fno-comments` the artifact
+         * is silently TRUNCATED and under the default it is byte-identical —
+         * the failure is invisible to every identity gate and shows up as a C
+         * syntax error in somebody else's build. The measured instance: a
+         * prefilter helper gained an open and no close, and four artifacts
+         * ended mid-function. Checked unconditionally, because the cost is
+         * four integer tests and the alternative is finding it downstream. */
+        {
+            const StrBuf *const bufs[] = { &cx.job->csb,  &cx.job->hsb,
+                                           &cx.job->vmsb, &cx.job->scr_test };
+            for (size_t bi = 0; bi < sizeof bufs / sizeof bufs[0]; bi++)
+                if (bufs[bi]->cmt_depth != 0)
+                    ctx_fail(&cx, 0, "internal error: the emitter left a "
+                                     "comment region open (an sb_cmt_open "
+                                     "with no sb_cmt_close)");
+        }
 
         /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;
          * docs/design/artifact_size_term.md §3.3, §4.4). The measurement is

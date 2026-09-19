@@ -527,17 +527,26 @@ fi
 # the [startpos-guard/guarded] triple (bit constant, cli pairing,
 # tuning.md documentation). Re-pinned by the manager at the stage-3
 # battery, where the miss surfaced; the K50 merge should have moved it.
+# +6 at [EMIT-VERB] (2026-09-19), 102 -> 108: the `comments` axis's TWO rows
+# (`essential-only` carries the deny bit 26, `full` the force bit 27) each
+# self-register the same triple the K50 entry above describes — the bit
+# constant against lib/pcrec.h, the cli_flag the shipped parser must accept,
+# and the `(bit N)` heading in tuning.md. THIS PIN IS THE D94 ADDENDUM'S OWN
+# SHAPE, found the way that addendum says it is found: it cites no axis, no
+# macro and no abi number, so the bump's grep sweep cannot reach it, and it
+# moved anyway. It surfaced on the registry run, which is the suite that
+# COUNTS things over the area touched.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 102 ]; then
+if [ "$axesn" -ne 108 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 102." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 108." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (102 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (108 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 102 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 108 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

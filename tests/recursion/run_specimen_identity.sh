@@ -72,6 +72,17 @@
 # Usage: bash tests/recursion/run_specimen_identity.sh
 # Env: PCREC, CC, GENCFLAGS, KEEP=1, SKIP_THROUGHPUT=1
 
+#
+# [EMIT-VERB] 2026-09-19 — THIS CHECK'S INSTRUMENT IS AN EMITTED COMMENT, so
+# every compile below passes `-fcomments`. That is not a workaround, and the
+# licence for it is a measured identity rather than convenience: the emitted
+# CODE is byte-identical between `-fcomments` and the default on 3,517 of
+# 3,517 corpus artifacts, with the object files identical too
+# (docs/dev/lanes/emitverb_report.md §2.2), so a STRUCTURAL census taken with
+# comments on is a true statement about the default artifact's machine. The
+# alternative — minting a code-level marker for the mechanism — would be new
+# emitted scaffolding, i.e. another abi event, for a need nothing has
+# measured (D77).
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -159,7 +170,7 @@ for sp in $SPELLINGS; do
     # different includes into an otherwise identical artifact and the bar would
     # fail on the file NAME rather than on the code.
     mkdir -p "$WORKDIR/$sp"
-    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/$sp/rx.c" \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -fcomments -p rx -o "$WORKDIR/$sp/rx.c" \
             -- "$(cat "$SPEC/$sp.rx")" 2>"$WORKDIR/$sp.err"; then
         die "the specimen spelling '$sp' does not compile: $(head -2 "$WORKDIR/$sp.err")"
     fi

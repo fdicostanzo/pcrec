@@ -817,8 +817,35 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # mean the DEFAULT position itself moved, which is the finding, not a
 # re-pin exemption.
 #
+# [EMIT-VERB], 2026-09-19 — abi 26 -> 27. THE EMITTED-COMMENT AXIS (D112).
+# A default artifact no longer carries its NON-ESSENTIAL prose: every comment
+# LINE leaves every artifact of both engines except the generated-by/
+# pattern-echo provenance line and the shared PCREC_RX_ABI_H type block's
+# doc-comments. `-fcomments` restores the rest. Measured 44.2% of a default
+# artifact's source bytes over the 3,517 compiling corpus patterns.
+#
+# **(A) IS TOUCHED BY THIS ONE, and not marginally** — `prog_region()` reads
+# the VM program between `goto <p>_L0;` and the accept label, and every label
+# in that region carries a `// <role>` line the default no longer emits. So
+# comparison (A)'s reference artifacts move for the FIRST TIME on a change
+# that adds no code: the region shrinks by its role comments and by nothing
+# else. That is why this bump re-pins (B) rather than claiming an exemption,
+# and why `make test-codegen` is the suite that had to run before delivery.
+#
+# **WHAT DOES NOT MOVE, and it is the bump's own acceptance criterion**: the
+# OBJECT FILE (byte-identical under both settings on 3,517 of 3,517 corpus
+# artifacts), the comment-EXCLUDED source size, and every emitted `#define`.
+# No cap, no refusal and no answer moves — see docs/spec/tuning.md §2.24.
+#
 # THE PIN IS THIS LANE'S OWN LAST src COMMIT ([ENG-ISL]'s precedent,
 # restated above); the manager re-pins to the MERGE when it lands.
+#
+# [EMIT-VERB]: LEFT AT THE PRE-BUMP VALUE AND **OWED TO THE MANAGER**, on
+# opt5i's and ccdiff1's recorded precedent: D76's pin must name a commit
+# REACHABLE AFTER THE MERGE, which a lane branch's own commit is not. This
+# gate is therefore RED on the lane branch BY CONSTRUCTION, with the exact
+# message "the emitted scaffolding changed: bump `abi` ... and re-pin
+# comparison (B)" -- which is the gate working, not a defect.
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-94ef3836}"
 
 WORKDIR="$(mktemp -d)"

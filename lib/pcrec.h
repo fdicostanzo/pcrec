@@ -613,7 +613,56 @@ enum {
      * flag — and this axis governs only where the CALLER may point the entry.
      * A build that denied both would be the K50 bug, and there is no way to
      * ask for it. */
-    PCREC_NO_STARTPOS_GUARD = 1u << 25
+    PCREC_NO_STARTPOS_GUARD = 1u << 25,
+
+    /* [EMIT-VERB] `-fno-comments` / `-fcomments` — the emitted artifact's
+     * HUMAN COMMENTARY (D112; docs/spec/tuning.md §2.24).
+     *
+     * **THIS IS THE FIRST MEMBER OF THIS ENUM THAT IS A FORCE PAIR BECAUSE
+     * ITS AXIS IS OFF BY DEFAULT**, and that is the only thing unusual about
+     * it. Every other pair here (`PCREC_*_PREFILTER`,
+     * `PCREC_*_PREFILTER_COLLAPSE`) forces ON an axis the compiler would
+     * otherwise decide for itself; this one restores text a default build
+     * does not write. The deny bit exists all the same, and is not
+     * redundant: a `config` block or a `--source` target can turn comments
+     * ON, and a command line has to be able to turn them back off (D93's
+     * file-wins precedence, and the explicit-CLI exception `cli/main.c`
+     * already carries for `--engine=`). Deny WINS over force, so
+     * `-fcomments -fno-comments` is comment-free, the same precedence every
+     * other pair in this enum has.
+     *
+     * WHAT IT GOVERNS. The artifact's `/ * ... * /` prose — the orientation
+     * block, the per-table legends, the per-label role comments, the
+     * paragraph above each entry point. It does NOT govern:
+     *   - STAMPS. `<PREFIX>_ENGINE`, `RX_TUNE` and every other reflection
+     *     macro is a `#define`, not a comment, and is emitted under every
+     *     setting (D112 item 3). What a build DID is always readable.
+     *   - the `rx_info` struct, `.pattern`, `.engine_why` — data, not prose.
+     *   - `--emit-ir`'s listing, which is a debug SURFACE rather than an
+     *     artifact (docs/spec/ir_listing.md); it is not emitted C at all.
+     *
+     * WHAT IT CANNOT DO, and it is a structural property rather than a
+     * promise: it cannot rescue or refuse a pattern. `PCREC_MAX_EMIT_BYTES`
+     * is measured over the comment-EXCLUDED artifact (src/core/limits.def's
+     * own row; src/core/compile.c's "TOTAL is the artifact minus its
+     * comments"), so the refusal set is identical under both settings —
+     * K59's size-lever hazard is absent here by construction, not by
+     * calibration.
+     *
+     * AND IT IS NOT A PERFORMANCE AXIS. The C compiler discards comments, so
+     * the OBJECT file is byte-identical under both settings (measured
+     * corpus-wide, docs/dev/lanes/emitverb_report.md §3a). [ART-SIZE]
+     * measured comment bytes correlating with `.o` size at r=0.43 against
+     * program+tables at r=0.99. The win is SOURCE size and readability, for
+     * an embedder shipping generated C in their own repository; it must
+     * never be sold as anything else (D112 item 3).
+     *
+     * Both bits are masked out of `rx_info.flags` for the mask's own reason
+     * (src/gen/emit_dfa.c): the axis changes no answer, and an artifact must
+     * not move a non-comment byte over a knob that only removes comments —
+     * which is also what makes the object-file identity above checkable. */
+    PCREC_NO_COMMENTS   = 1u << 26,
+    PCREC_FORCE_COMMENTS = 1u << 27
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

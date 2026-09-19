@@ -2845,3 +2845,42 @@ merely by measurement on today's corpus. No `abi` event.
 blocks, oracle-verified against python3 `re`, riding `test-corpus` like
 any other `tests/base/` file — this script owns the MECHANISM and the
 GENCFLAGS bar, that file owns the ANSWER.
+
+## `run_comments_axis.sh` — [EMIT-VERB]'s axis check (2026-09-19)
+
+The emitted-comment axis's own check, and **the only script in this tree that
+compares a `-fno-comments` artifact against anything**. Every byte-identity
+gate compares DEFAULT builds, and since D112 the default IS the comment-free
+one, so the `-fcomments` artifact — the one the orientation block and the
+legends live in — has no other reader.
+
+Nine pattern pairs across both engines and the hybrid, each compiled twice
+and `gcc -Wall -Wextra -Werror -O1`'d twice, asserting the four claims the
+axis makes plus the one hazard that is invisible from inside:
+
+1. **A default artifact carries only its ESSENTIAL comments.** The
+   recogniser keys on the `PCREC_RX_ABI_H` GUARD rather than on a list of
+   that block's sentences, so a doc-comment added inside the block stays
+   essential with no edit here and one added outside it fails. A
+   NON-ESSENTIAL comment in a default artifact means an emission site was
+   added without an `sb_cmt_open` class.
+2. **`-fcomments` restores the rest**, as a strict per-artifact inequality —
+   which is what stops (1) passing vacuously on an emitter that had stopped
+   emitting comments altogether.
+3. **The object files are identical**, with the arm's own positive control
+   beside it: the two SOURCES must differ, so a green cannot come from the
+   flag being ignored.
+4. **No size decision and no stamp moves**: the comment-EXCLUDED size (via
+   `tests/lib/size_count.sh`, the same definition the caps and the size log
+   use) and the sorted `#define` set are compared directly.
+5. **Every artifact is COMPILED.** An unbalanced region mutes the rest of its
+   buffer and a half-gated comment leaves stray `*` lines; both are C syntax
+   errors and neither is visible to any byte comparison of default builds.
+   The complementary instrument is the region-balance check in
+   `src/core/compile.c`, which fires inside the compiler.
+
+Plus the deny-beats-force precedence arm and the registry-advertisement arm.
+The two builds go to the SAME BASENAME in two directories: an artifact
+carries `#include "<basename>.h"` from `-o`, so `x_def.c` vs `x_full.c` would
+make arm 3's control pass for the wrong reason and arm 4 read a phantom
+one-byte move.

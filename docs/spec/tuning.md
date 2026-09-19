@@ -2102,6 +2102,98 @@ mechanism whose entire acceptance criterion is answer identity (§5).
 Where §2.22 is off the dial by a RULING that could in principle be
 revisited, this axis is PERMANENTLY flat — structurally, not by choice.
 
+### 2.24 `-fno-comments` / `-fcomments` — `PCREC_NO_COMMENTS` (bit 26), `PCREC_FORCE_COMMENTS` (bit 27)
+
+**What it controls.** Whether the emitted artifact carries its HUMAN
+COMMENTARY — the orientation block, the per-table legends, the per-label role
+text, the paragraph above each entry point. `--list-axes` reports it as
+`comments`, with rows `essential-only` and `full`.
+
+**It is not an optimization axis**, and it is the only member of this section
+that is not. Every other axis here picks between emitted SHAPES for one
+language; this one picks between two RENDERINGS of one artifact. The code,
+the tables, the stamps and the answers are identical under both settings.
+
+**Pass `-fcomments` when you want to READ the artifact** — the orientation
+block and the table legends are written for exactly that, and nothing else in
+the file changes when you do.
+
+| | |
+|---|---|
+| **Default** | **OFF** — a default artifact carries only its ESSENTIAL comments (D112) |
+| **Stamp** | none, deliberately — see below |
+| **Answer-identical?** | yes, trivially: the C compiler discards comments |
+| **Engine-selecting?** | no |
+| **Inert under** | nothing; every artifact has comments to drop |
+
+**Measured over the 3,517 compiling corpus patterns** (`.c` + `.h` source
+bytes): comments were **44.2 %** of a default artifact before the flip — DFA
+45.6 %, VM 43.1 % — so that is what the default now saves. The object file is
+byte-identical on all 3,517, the comment-excluded source size is identical,
+and every emitted `#define` is identical.
+
+**THE TWO CLASSES** (D112). A comment is ESSENTIAL or NON-ESSENTIAL, and the
+class is decided at the emission site rather than by a filter over finished
+text:
+
+- **ESSENTIAL** — PROVENANCE and the EMBEDDER'S CONTRACT, and it is exactly
+  two things: the generated-by header line naming pcrec and echoing the
+  pattern (on both the `.c` and the `.h`), and the whole shared
+  `PCREC_RX_ABI_H` type block — the `rx_ctx` fields, the `rx_matchfn` return
+  space, the error codes and the `rx_info` fields — which
+  `docs/spec/match_api.md` names as the doc-comments an embedder actually
+  reads. These are emitted under EVERY setting. A file in someone else's
+  repository still says what it is, what it matches, and what the types a
+  caller touches promise. The ESSENTIAL set is a FIXED cost per artifact; the
+  non-essential set is the part that grows with the machine.
+
+  The **feature-set line** (`/` `* Feature set: ... *` `/`) is NOT in it: its
+  two values also ship as `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES`,
+  which are `#define`s and always emitted. One consequence is worth stating
+  because it is real — those macros live only in the `.c`, so a default
+  `.h` no longer records the feature set in any form.
+- **NON-ESSENTIAL** — everything else, which is most of it. This is what the
+  axis removes, and it is the SEAM a future levels axis would subdivide;
+  levels would never touch the essential set. Nobody builds levels until a
+  need is measured (D77).
+
+**IT CANNOT RESCUE OR REFUSE A PATTERN, structurally.**
+`PCREC_MAX_EMIT_BYTES` and `PCREC_MAX_EMIT_CODE_BYTES` are measured over the
+comment-EXCLUDED artifact (`src/core/limits.def`; `src/core/compile.c`'s
+"TOTAL is the artifact minus its comments"), so the refusal set is identical
+under both settings. The size-lever hazard K59 records for `--tune`'s own
+`-fno-premul-table` denial is absent here by construction rather than by
+calibration.
+
+**AND IT IS NOT A PERFORMANCE AXIS.** The object file is byte-identical under
+both settings, because the C compiler discards comments. `[ART-SIZE]`
+measured comment bytes correlating with `.o` size at r=0.43 against
+program+tables at r=0.99. The win is SOURCE size and readability, for an
+embedder shipping generated C in their own repository. Do not let it be sold
+as anything else.
+
+**A FORCE PAIR, and the only one here whose force flag RESTORES rather than
+pins.** `-fcomments` is not redundant with the default: a `config` block or a
+`--source` target can set either spelling, and a command line has to be able
+to override it in both directions (§`cli.md`'s file-wins precedence and its
+explicit-CLI exception). Deny wins over force, so `-fcomments -fno-comments`
+is comment-free — the same precedence every other pair in this section has.
+
+**NO STAMP, deliberately.** The prose's presence is its own record. A
+`<PREFIX>_COMMENTS` macro would be a second fact about the first, and it
+would still read `"full"` on an artifact some other tool had stripped —
+a claim about the file that the file could contradict. Both bits join
+`emit_info_def`'s `strategy_denials` mask for that mask's own reason: the
+axis changes no answer, so two identically-behaving artifacts must not differ
+in their reflection surface over it, and concretely, unmasked it would move
+five bytes of `rx_info.flags` and the object files would NOT be identical.
+
+**Where the gate is.** One render-time decision in the emission kit
+(`src/core/sb.c`'s `sb_cmt_open`/`sb_cmt_close`, D108): the emitters still
+emit every comment event they always did, and the buffer decides whether the
+text is written. It is not a post-hoc strip, so no line is ever repaired and
+no comment can be half-removed.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while

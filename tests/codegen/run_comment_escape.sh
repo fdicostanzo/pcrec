@@ -24,6 +24,16 @@
 # through: printable ASCII passes through unless doing so would complete
 # either ordering of the pair with the byte just rendered, in which case
 # (like every other non-printable byte) it becomes a fixed `\xNN`.
+#
+# [EMIT-VERB] 2026-09-19: EVERY INVOCATION BELOW PASSES `-fcomments`, and this
+# is the one script in the tree where that is the right conversion rather than
+# a workaround (D112 item 4). The hazard under test IS a comment: a pattern
+# whose own bytes complete or open a C comment, rendered into the state
+# legend's `/` `* ... *` `/` block. A default artifact carries no such block,
+# so the hazard is unreachable there -- which is a real narrowing of the
+# BLAST RADIUS and not of the defect, and the escaper (emit_comment_safe_byte)
+# is unchanged and still the fix. Read the flag as "put the emitter back in
+# the configuration where this hazard exists".
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -47,7 +57,7 @@ WITNESS='a\/\*!\*\/b'
 OPENONLY='a\/\*b'
 
 # --- 0. baseline: a hazard-free pattern compiles fine (sanity) -------------
-if pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORK/base.c" -- 'abc' >"$WORK/base.log" 2>&1 \
+if pcrec_run "$PCREC" -p rx -fcomments --engine=dfa -o "$WORK/base.c" -- 'abc' >"$WORK/base.log" 2>&1 \
    && "$CC" $GENCFLAGS_TEST -c -o "$WORK/base.o" "$WORK/base.c" 2>"$WORK/base.cc.err"; then
     ok "baseline: a hazard-free pattern compiles cleanly (sanity)"
 else
@@ -55,7 +65,7 @@ else
 fi
 
 # --- 1. THE F1 WITNESS compiles as a DFA artifact ---------------------------
-if pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORK/waf.c" -- "$WITNESS" >"$WORK/waf.log" 2>&1; then
+if pcrec_run "$PCREC" -p rx -fcomments --engine=dfa -o "$WORK/waf.c" -- "$WITNESS" >"$WORK/waf.log" 2>&1; then
     ok "F1 witness '$WITNESS' compiles (pcrec itself accepts the pattern)"
 else
     bad "F1 witness '$WITNESS' failed at pcrec: $(cat "$WORK/waf.log")"
@@ -99,7 +109,7 @@ else
 fi
 
 # --- 5. AND IT ANSWERS CORRECTLY (oracle: the literal bytes /*!*/ ) --------
-if pcrec_run "$PCREC" -p rx --engine=dfa --emit-main -o "$WORK/wafm.c" -- "$WITNESS" >/dev/null 2>&1 \
+if pcrec_run "$PCREC" -p rx -fcomments --engine=dfa --emit-main -o "$WORK/wafm.c" -- "$WITNESS" >/dev/null 2>&1 \
    && "$CC" -O1 -o "$WORK/wafm" "$WORK/wafm.c" 2>"$WORK/wafm.cc.err"; then
     got1="$("$WORK/wafm" 'a/*!*/b' 2>/dev/null)"
     got2="$("$WORK/wafm" 'nomatch' 2>/dev/null)"
@@ -117,7 +127,7 @@ fi
 # pattern to trip the first hazard -- this is the check that would have
 # stayed green if only the STAR-SLASH half of emit_comment_safe_byte had
 # been built.
-if pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORK/open.c" -- "$OPENONLY" >"$WORK/open.log" 2>&1 \
+if pcrec_run "$PCREC" -p rx -fcomments --engine=dfa -o "$WORK/open.c" -- "$OPENONLY" >"$WORK/open.log" 2>&1 \
    && "$CC" $GENCFLAGS_TEST -c -o "$WORK/open.o" "$WORK/open.c" 2>"$WORK/open.cc.err"; then
     ok "open-comment witness '$OPENONLY' compiles under the harness's own GENCFLAGS (-Wcomment does not fire)"
 else
@@ -131,7 +141,7 @@ fi
 # orientation-block map paragraph -- both refactored onto the same shared
 # primitive.
 CLS='a[*/]b'
-if pcrec_run "$PCREC" -p rx --engine=dfa --emit-main -o "$WORK/cls.c" -- "$CLS" >"$WORK/cls.log" 2>&1 \
+if pcrec_run "$PCREC" -p rx -fcomments --engine=dfa --emit-main -o "$WORK/cls.c" -- "$CLS" >"$WORK/cls.log" 2>&1 \
    && "$CC" $GENCFLAGS_TEST -o "$WORK/clsbin" "$WORK/cls.c" 2>"$WORK/cls.cc.err"; then
     ok "class witness '$CLS' compiles cleanly"
     g1="$("$WORK/clsbin" 'a*b' 2>/dev/null)"

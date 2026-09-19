@@ -26,7 +26,7 @@
 
 /* ---- entry 1: next_pos -------------------------------------------------- */
 
-static const char u8_decls_next_pos[] =
+static const char u8_decls_next_pos_doc[] =
 "/* $_next_pos -- the ENCODING RESIDUAL entry (pcrec DD-12/D58).\n"
 " *\n"
 " * Returns the smallest position STRICTLY GREATER than pos that is a\n"
@@ -45,14 +45,18 @@ static const char u8_decls_next_pos[] =
 " * THIS artifact was compiled for the `utf8` encoding: a boundary is any\n"
 " * position not holding a continuation byte (0x80-0xBF). On ill-formed\n"
 " * input every non-continuation byte still counts as a boundary, which is\n"
-" * the self-synchronizing reading and never loops or reads out of range. */\n"
+" * the self-synchronizing reading and never loops or reads out of range. */\n";
+
+static const char u8_decls_next_pos[] =
 "size_t $_next_pos(const unsigned char *s, size_t n, size_t pos);\n";
 
-static const char u8_defs_next_pos[] =
+static const char u8_defs_next_pos_doc[] =
 "/* utf8 encoding: skip forward over continuation bytes. A well-formed\n"
 " * character's continuations are at most 3, but the loop is bounded by n\n"
 " * rather than by 4 so that ill-formed input degrades to \"next\n"
-" * non-continuation byte\" instead of to a mid-garbage position. */\n"
+" * non-continuation byte\" instead of to a mid-garbage position. */\n";
+
+static const char u8_defs_next_pos[] =
 "size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"
 "{\n"
 "    size_t i = pos + 1;\n"
@@ -82,7 +86,7 @@ static const char u8_defs_next_pos[] =
  * 10.46 — one byte captured, three consumed — which is the cell that
  * vindicated the protocol (design §5.3). */
 
-static const char u8_decls_bref[] =
+static const char u8_decls_bref_doc[] =
 "/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
 " * backreference compare (pcrec DD-12/D58).\n"
 " *\n"
@@ -105,13 +109,17 @@ static const char u8_decls_bref[] =
 " *\n"
 " * THIS artifact was compiled for the `utf8` encoding. UTF-8 is a prefix\n"
 " * code, so equal byte sequences and equal character sequences are one\n"
-" * fact and the exact compare is byte-wise. */\n"
+" * fact and the exact compare is byte-wise. */\n";
+
+static const char u8_decls_bref[] =
 "ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
 "                       size_t ref_start, size_t ref_end, size_t at);\n";
 
-static const char u8_defs_bref[] =
+static const char u8_defs_bref_doc[] =
 "/* utf8 encoding: the exact compare is a byte compare (UTF-8 is a prefix\n"
-" * code -- equal characters and equal bytes are the same fact). */\n"
+" * code -- equal characters and equal bytes are the same fact). */\n";
+
+static const char u8_defs_bref[] =
 "ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
 "                       size_t ref_start, size_t ref_end, size_t at)\n"
 "{\n"
@@ -124,7 +132,7 @@ static const char u8_defs_bref[] =
 "    return (ptrdiff_t)need;\n"
 "}\n";
 
-static const char u8_decls_bref_ci[] =
+static const char u8_decls_bref_ci_doc[] =
 "/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
 " * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
 " *\n"
@@ -135,11 +143,13 @@ static const char u8_decls_bref_ci[] =
 " * THE RETURN IS A LENGTH AND HERE IS WHERE THAT PAYS. A fold partner may\n"
 " * encode to a different number of bytes, so the subject bytes consumed need\n"
 " * not equal ref_end - ref_start: `^(k)\\1$` on \"k\" + U+212A (KELVIN) is a\n"
-" * match of length 4 -- one byte captured, three consumed. */\n"
+" * match of length 4 -- one byte captured, three consumed. */\n";
+
+static const char u8_decls_bref_ci[] =
 "ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
 "                                size_t ref_start, size_t ref_end, size_t at);\n";
 
-static const char u8_defs_bref_ci[] =
+static const char u8_defs_bref_ci_doc[] =
 "/* THE SIMPLE CASE-FOLD MAP, sorted by source code point: {from, to}, where\n"
 " * `to` is that code point's canonical fold representative. Two characters\n"
 " * are caselessly equal exactly when their representatives are equal, so a\n"
@@ -149,7 +159,9 @@ static const char u8_defs_bref_ci[] =
 " * GENERATED from the Unicode Character Database's CaseFolding.txt, `C` and\n"
 " * `S` status lines only (simple folding). Full folding is 1:n and would not\n"
 " * fit a character-to-character compare; pcrec's reference oracle implements\n"
-" * none of it. */\n"
+" * none of it. */\n";
+
+static const char u8_defs_bref_ci[] =
 "static const unsigned $_bref_ci_fold_pairs[][2] =\n"
 /* The brace is on its own line so ONE brace-matching walk serves both a
  * function body and this initializer -- `tests/codegen/run_encoding_
@@ -247,7 +259,7 @@ static const char u8_defs_bref_ci[] =
  * forward automaton has no accepting path over it — the body fails, the
  * end-check is never reached). */
 
-static const char u8_decls_back_step[] =
+static const char u8_decls_back_step_doc[] =
 "/* $_back_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND BACK-STEP\n"
 " * (pcrec DD-12/D58).\n"
 " *\n"
@@ -261,12 +273,16 @@ static const char u8_decls_back_step[] =
 " * over continuation bytes and VALIDATES each stepped-over run against its\n"
 " * lead byte's declared length. A malformed run answers $_BACK_STEP_NONE\n"
 " * (\"no such position\"), never a position inside or beyond it -- pcrec's\n"
-" * ill-formed-input rule is that such a subject matches nothing. */\n"
+" * ill-formed-input rule is that such a subject matches nothing. */\n";
+
+static const char u8_decls_back_step[] =
 "size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k);\n"
 "#define $_BACK_STEP_NONE ((size_t)-1)\n";
 
+static const char u8_defs_back_step_doc[] =
+"/* utf8 encoding: walk back one length-validated character run per step. */\n";
+
 static const char u8_defs_back_step[] =
-"/* utf8 encoding: walk back one length-validated character run per step. */\n"
 "size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n"
 "{\n"
 "    (void)n;                 /* reads only below pos, as the contract says */\n"
@@ -304,11 +320,19 @@ static const char u8_defs_back_step[] =
 "}\n";
 
 static const PcrecEncEntry entries_utf8[] = {
-    { PCREC_ENCE_NEXT_POS,      false, u8_decls_next_pos,  u8_defs_next_pos  },
-    { PCREC_ENCE_BREF,          true,  u8_decls_bref,      u8_defs_bref      },
-    { PCREC_ENCE_BREF_CASELESS, true,  u8_decls_bref_ci,   u8_defs_bref_ci   },
-    { PCREC_ENCE_BACK_STEP,     true,  u8_decls_back_step, u8_defs_back_step },
-    { 0, false, NULL, NULL }
+    { PCREC_ENCE_NEXT_POS,      false,
+      u8_decls_next_pos_doc,  u8_decls_next_pos,
+      u8_defs_next_pos_doc,   u8_defs_next_pos  },
+    { PCREC_ENCE_BREF,          true,
+      u8_decls_bref_doc,      u8_decls_bref,
+      u8_defs_bref_doc,       u8_defs_bref      },
+    { PCREC_ENCE_BREF_CASELESS, true,
+      u8_decls_bref_ci_doc,   u8_decls_bref_ci,
+      u8_defs_bref_ci_doc,    u8_defs_bref_ci   },
+    { PCREC_ENCE_BACK_STEP,     true,
+      u8_decls_back_step_doc, u8_decls_back_step,
+      u8_defs_back_step_doc,  u8_defs_back_step },
+    { 0, false, NULL, NULL, NULL, NULL }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field), and it is this

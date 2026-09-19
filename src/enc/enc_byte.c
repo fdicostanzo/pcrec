@@ -19,7 +19,7 @@
  * The contract comment lives HERE rather than in the emitter, so that adding
  * a residual entry to a future backend cannot land a declaration whose
  * contract nobody wrote. */
-static const char decls_byte[] =
+static const char decls_byte_doc[] =
 "/* $_next_pos -- the ENCODING RESIDUAL entry (pcrec DD-12/D58).\n"
 " *\n"
 " * Returns the smallest position STRICTLY GREATER than pos that is a\n"
@@ -37,16 +37,20 @@ static const char decls_byte[] =
 " *\n"
 " * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
 " * character. An artifact compiled for another encoding exports this same\n"
-" * entry with that encoding's body and no caller loop changes. */\n"
+" * entry with that encoding's body and no caller loop changes. */\n";
+
+static const char decls_byte[] =
 "size_t $_next_pos(const unsigned char *s, size_t n, size_t pos);\n";
 
 /* The definition block: .c only. `(void)s; (void)n;` because generated code
  * is built -Wall -Wextra -Werror and this backend genuinely reads neither —
  * not dereferencing s is a REQUIREMENT here, not an accident of the identity
  * body: the search entry's own contract admits s == NULL when n == 0. */
-static const char defs_byte[] =
+static const char defs_byte_doc[] =
 "/* byte encoding: one byte is one character, so the next boundary after pos\n"
-" * is pos + 1 and the subject is never read. */\n"
+" * is pos + 1 and the subject is never read. */\n";
+
+static const char defs_byte[] =
 "size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"
 "{\n"
 "    (void)s; (void)n;\n"
@@ -103,7 +107,7 @@ static const char defs_byte[] =
  *
  * ENGINE-CALLABLE, unlike `next_pos`, and the seam's check reads that off the
  * row rather than from a list of its own — see `engine_callable` in enc.h. */
-static const char decls_bref[] =
+static const char decls_bref_doc[] =
 "/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
 " * backreference compare (pcrec DD-12/D58).\n"
 " *\n"
@@ -126,13 +130,17 @@ static const char decls_bref[] =
 " *\n"
 " * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
 " * character and the compare is length-preserving. An artifact compiled for\n"
-" * another encoding exports this same entry with that encoding's body. */\n"
+" * another encoding exports this same entry with that encoding's body. */\n";
+
+static const char decls_bref[] =
 "ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
 "                       size_t ref_start, size_t ref_end, size_t at);\n";
 
-static const char defs_bref[] =
+static const char defs_bref_doc[] =
 "/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
-" * a prefix count. */\n"
+" * a prefix count. */\n";
+
+static const char defs_bref[] =
 "ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
 "                       size_t ref_start, size_t ref_end, size_t at)\n"
 "{\n"
@@ -145,21 +153,25 @@ static const char defs_bref[] =
 "    return (ptrdiff_t)need;\n"
 "}\n";
 
-static const char decls_bref_ci[] =
+static const char decls_bref_ci_doc[] =
 "/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
 " * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
 " *\n"
 " * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
 " * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"
 " * the C locale bytes >= 0x80 have no case, so folding them would be a guess\n"
-" * about a locale the caller owns and pcrec does not. */\n"
+" * about a locale the caller owns and pcrec does not. */\n";
+
+static const char decls_bref_ci[] =
 "ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
 "                                size_t ref_start, size_t ref_end, size_t at);\n";
 
-static const char defs_bref_ci[] =
+static const char defs_bref_ci_doc[] =
 "/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
 " * tolower(): that is locale-dependent at YOUR run time, and this matcher's\n"
-" * answers must not change with setlocale(). */\n"
+" * answers must not change with setlocale(). */\n";
+
+static const char defs_bref_ci[] =
 "ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
 "                                size_t ref_start, size_t ref_end, size_t at)\n"
 "{\n"
@@ -211,7 +223,7 @@ static const char defs_bref_ci[] =
  * ENGINE-CALLABLE, like the two compares and unlike `next_pos`: a back-step
  * has no automaton representation whatsoever, so forbidding the call from an
  * engine body would forbid the construct. */
-static const char decls_back_step[] =
+static const char decls_back_step_doc[] =
 "/* $_back_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND BACK-STEP\n"
 " * (pcrec DD-12/D58).\n"
 " *\n"
@@ -224,13 +236,17 @@ static const char decls_back_step[] =
 " * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
 " * character, so the answer is pos - k and the subject is never read. An\n"
 " * artifact compiled for another encoding exports this same entry with that\n"
-" * encoding's body and no engine code changes. */\n"
+" * encoding's body and no engine code changes. */\n";
+
+static const char decls_back_step[] =
 "size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k);\n"
 "#define $_BACK_STEP_NONE ((size_t)-1)\n";
 
-static const char defs_back_step[] =
+static const char defs_back_step_doc[] =
 "/* byte encoding: one byte is one character, so k characters before pos is\n"
-" * pos - k and the subject is never read. */\n"
+" * pos - k and the subject is never read. */\n";
+
+static const char defs_back_step[] =
 "size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n"
 "{\n"
 "    (void)s; (void)n;\n"
@@ -238,11 +254,15 @@ static const char defs_back_step[] =
 "}\n";
 
 static const PcrecEncEntry entries_byte[] = {
-    { PCREC_ENCE_NEXT_POS,      false, decls_byte,    defs_byte    },
-    { PCREC_ENCE_BREF,          true,  decls_bref,    defs_bref    },
-    { PCREC_ENCE_BREF_CASELESS, true,  decls_bref_ci, defs_bref_ci },
-    { PCREC_ENCE_BACK_STEP,     true,  decls_back_step, defs_back_step },
-    { 0, false, NULL, NULL }
+    { PCREC_ENCE_NEXT_POS,      false,
+      decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte      },
+    { PCREC_ENCE_BREF,          true,
+      decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref      },
+    { PCREC_ENCE_BREF_CASELESS, true,
+      decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci   },
+    { PCREC_ENCE_BACK_STEP,     true,
+      decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step },
+    { 0, false, NULL, NULL, NULL, NULL }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field). One byte is

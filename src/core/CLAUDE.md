@@ -7,7 +7,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 - **axes.def** — [REVW.4] wave 4 (D111, 2026-09-19): THE OPTIMIZATION-AXIS
   TABLE, one X-macro row per axis carrying its `lib/pcrec.h` deny bit as a
   TOKEN, its `-fno-X` spelling, its `-fX` force macro and spelling where it
-  has one, and its default polarity. Twenty rows / twenty-two bits today.
+  has one, and its default polarity. Twenty-one rows / twenty-four bits
+  today ([EMIT-VERB] added the `comments` row, 2026-09-19).
   `limits.def`'s and `src/parse/rxt_schema.def`'s shape; read by `cli/main.c`
   (`cli_axis_apply`, the whole `-f` grammar) and `src/dump/axes_dump.c`
   (the `--list-axes` dump's deny/force macro-name, bit-number and `cli_flag`
@@ -19,6 +20,14 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (`tests/registry/axes_registry_check.sh`, `tests/axes/run_axes.sh`).
   A Makefile prerequisite of every object and of `build/pcrec`, for
   `limits.def`'s own recorded reason.
+
+  **The `default_state` column got its first reader at [EMIT-VERB]**
+  (D112, 2026-09-19): `pcrec_axis_on(flags, deny, force)` in `compile.c`
+  resolves deny, then force, then the row's declared default, general over
+  every row. The `comments` row is the only DEFAULT_OFF one, and flipping
+  it from ON to OFF between this lane's two events was ONE TOKEN in this
+  file and nothing else in the compiler — which is what the single source
+  is for.
 - **compile_defs.c** — [REVW.3] `pcrec_compile_defs`, the `--source`
   composition entry, and NOTHING ELSE (lens 6's R1). It exists so that it,
   and not `compile.c`, is the object that names `pcrec_rxt_compose`: the
@@ -362,7 +371,20 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
   everything wholesale, so nothing leaks and nothing half-built is read again
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
-  sb_printf — **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
+  sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
+  `sb_comments` sets a buffer's policy once, `sb_cmt_open`/`sb_cmt_close`
+  bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
+  emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
+  — the three primitives every other append in the file is built on, so a
+  helper added later inherits the gate rather than having to remember it.
+  D108 read in the one direction a verbosity axis needs: the walk still
+  emits every comment event, and the RENDERER decides whether the text is
+  written. `sb_len_uncut(sb)` is its companion and its rule: **any decision
+  or stamp comparing an emitted LENGTH reads that, never `len`**, so the
+  axis cannot move a size decision — the defect it exists to close is in
+  `docs/dev/lanes/emitverb_report.md` §3a.
+
+  **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
   `sb_text`/`sb_textn`/`sb_field` (the two escape vocabularies), `sb_join` and
   `sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
   and no machine, so the future IR-consuming back-end calls them unchanged.

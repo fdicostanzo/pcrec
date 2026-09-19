@@ -15,6 +15,28 @@ data-structure block comments with class and state LEGENDS, section banners,
 `//` line comments, and full names for every locally-scoped identifier. The
 style of record is `docs/design/m6read_samples/` (approved 2026-08-21).
 
+**ALL OF IT IS BEHIND `-fcomments` SINCE [EMIT-VERB]** (D112, 2026-09-19).
+A DEFAULT artifact carries only its ESSENTIAL comments — the generated-by/
+pattern-echo provenance line and the shared `PCREC_RX_ABI_H` block's
+doc-comments — and every other comment above is emitted only when asked for.
+[M6-READ]'s vocabulary is UNCHANGED and is still what `-fcomments` produces;
+what changed is which build is the default. Measured 44.2 % of a default
+artifact's source bytes over the 3,517 compiling corpus patterns.
+
+**WHEN YOU ADD A COMMENT-EMITTING SITE HERE, BRACKET IT.**
+`sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `sb_cmt_close(buf)` around every
+whole-line comment you emit; `PCREC_CMT_ESSENTIAL` exists and has exactly two
+users, both in `emit_dfa.c`, and a third needs D112's own reasoning. A site
+left unbracketed ships in every default artifact — which
+`tests/codegen/run_comments_axis.sh` arm 1 fails on, by name. An
+`sb_cmt_open` with no matching close mutes the REST OF ITS BUFFER: the
+artifact is silently truncated under the default and byte-identical under
+`-fcomments`, which no identity gate can see; `src/core/compile.c` checks the
+balance after emission for exactly that reason. And the separator blank line
+around a block belongs OUTSIDE the region — inside it, the artifact's
+comment-EXCLUDED size differs between the two settings, and that quantity is
+what both emitted-size caps are defined on.
+
 WHAT IS FROZEN. Everything with linkage, plus every name inside the shared
 `PCREC_RX_ABI_H` block — `rx_ctx` and its fields, `rx_matchfn`,
 `rx_group_entry`, `struct rx_info`, `PCREC_*`. That block is spec §2's

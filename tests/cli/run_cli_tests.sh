@@ -912,8 +912,9 @@ case10() {
     else
         fail "case10: --features all changed emitted MATCHER code with no ports built"
     fi
-    if grep -q '^/\* Feature set: none' "$d/fa/feat.c" \
-       && grep -q '^/\* Feature set: all' "$d/fb/feat.c"; then
+    # [EMIT-VERB]: the STAMP, not the comment (D112 item 4).
+    if grep -q '^#define PCREC_FEATURE_SET "none"' "$d/fa/feat.c" \
+       && grep -q '^#define PCREC_FEATURE_SET "all"' "$d/fb/feat.c"; then
         pass "case10: ...and the stamp itself DOES differ, honestly reporting what was requested"
     else
         fail "case10: the stamp did not report the two different requested sets" \
@@ -1753,9 +1754,15 @@ case14() {
     # MODULE LIST, is unchanged.
     local ndiff
     ndiff="$(diff "$d/std1_bare.c" "$d/expl_bare.c" | grep -cE '^[<>]')"
-    if [ "$ndiff" -eq 4 ] \
-       && grep -q '/\* Feature set: std1 (modules: classes,modifiers) \*/' "$d/std1_bare.c" \
-       && grep -q '/\* Feature set: explicit (modules: classes,modifiers) \*/' "$d/expl_bare.c"; then
+    # [EMIT-VERB]: `ndiff` was 4 while the set name was carried TWICE, once in
+    # the comment and once in the macro; a default artifact carries it once,
+    # so the two differing lines are the macro's two halves of one `diff`
+    # hunk. The arms below read the MACRO, which is the fact.
+    if [ "$ndiff" -eq 2 ] \
+       && grep -q '^#define PCREC_FEATURE_SET "std1"' "$d/std1_bare.c" \
+       && grep -q '^#define PCREC_FEATURE_SET "explicit"' "$d/expl_bare.c" \
+       && grep -q '^#define PCREC_FEATURE_MODULES "classes,modifiers"' "$d/std1_bare.c" \
+       && grep -q '^#define PCREC_FEATURE_MODULES "classes,modifiers"' "$d/expl_bare.c"; then
         pass "case14: --features std1 == --features classes,modifiers except the stamp's set name"
     else
         fail "case14: std1 vs explicit spelling diverged beyond the stamp" \
@@ -1805,9 +1812,17 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     # what "default" means the year it was built, because it stamps the
     # EXPANDED answer, not the word "default"). `--features none` is what
     # now stamps 'none': the escape hatch, unaffected by the flip.
+    # [EMIT-VERB] 2026-09-19: every arm below that read the `/` `* Feature
+    # set: … *` `/` COMMENT now reads the MACROS instead (D112 item 4 — read
+    # the stamp where the fact has one). The comment is NON-ESSENTIAL prose a
+    # default artifact no longer carries; the two `#define`s carry the same
+    # two values and are emitted unconditionally. The one arm that CANNOT
+    # convert is the paired-`.h` arm at the end of this case — the macros are
+    # `.c`-only by design, so the comment is the `.h`'s only carrier — and it
+    # is re-aimed at `-fcomments` rather than deleted.
     out="$(pcrec_run "$PCREC" -o - -- 'a')"
     assert_contains "case14: bare invocation stamps 'std1' ([STD1b]: the new default constant)" \
-        "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
+        "$out" '#define PCREC_FEATURE_SET "std1"'
     assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
         "$out" '#define PCREC_FEATURE_SET "std1"'
     assert_contains "case14: ...and the expanded PCREC_FEATURE_MODULES" \
@@ -1815,7 +1830,7 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
 
     out="$(pcrec_run "$PCREC" --features none -o - -- 'a')"
     assert_contains "case14: --features none stamps 'none' (the escape hatch, unaffected by the flip)" \
-        "$out" '/* Feature set: none (modules: none) */'
+        "$out" '#define PCREC_FEATURE_SET "none"'
     assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
         "$out" '#define PCREC_FEATURE_SET "none"'
     assert_contains "case14: ...and an empty PCREC_FEATURE_MODULES" \
@@ -1823,19 +1838,21 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
 
     out="$(pcrec_run "$PCREC" --features std1 -o - -- 'a')"
     assert_contains "case14: --features std1 stamps its own name" \
-        "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
+        "$out" '#define PCREC_FEATURE_SET "std1"'
     assert_contains "case14: ...and the expanded module list in the macro" \
         "$out" '#define PCREC_FEATURE_MODULES "classes,modifiers"'
 
     out="$(pcrec_run "$PCREC" --features all -o - -- 'a')"
     assert_contains "case14: --features all stamps 'all' plus its own full expansion" \
-        "$out" '/* Feature set: all (modules: '
+        "$out" '#define PCREC_FEATURE_SET "all"'
 
     # the paired .c/.h form: the HEADER carries the comment (matching the
     # existing pattern-comment convention) but not the macros, so a .c that
     # #includes its own .h never sees PCREC_FEATURE_SET defined twice.
-    pcrec_run "$PCREC" --features std1 -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
-    assert_contains "case14: the paired .h also carries the stamp comment" \
+    # -fcomments here and nowhere else in this case: the fact under test IS
+    # the comment, because the `.h` has no macro to carry it ([EMIT-VERB]).
+    pcrec_run "$PCREC" --features std1 -fcomments -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
+    assert_contains "case14: under -fcomments the paired .h also carries the stamp comment" \
         "$(cat "$d/pair.h" 2>/dev/null)" \
         '/* Feature set: std1 (modules: classes,modifiers) */'
     if grep -q 'PCREC_FEATURE_SET' "$d/pair.h" 2>/dev/null; then

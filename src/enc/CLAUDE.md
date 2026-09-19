@@ -22,6 +22,22 @@ is one directory shallower and otherwise word for word the same. The layer
 order the tree now states is `lib -> core -> enc -> parse -> ir -> opt ->
 gen -> driver/dump -> cli` (`src/CLAUDE.md`, `tools/review/include_graph.py`).
 
+**EACH TEXT BLOB IS A PAIR SINCE [EMIT-VERB]** (D112, 2026-09-19).
+`PcrecEncEntry` gained `decls_doc` and `defs_doc` beside `decls` and `defs`,
+and each backend's `decls_<entry>` / `defs_<entry>` constant was split into a
+`_doc` half (the entry's leading doc-comment) and the C it documents.
+The reason is structural rather than cosmetic: the `-fno-comments` gate is a
+RENDER-time decision over comment EVENTS (D108), and a residual entry's text
+is emitted VERBATIM by `pcrec_enc_emit_text` — so there is no event to gate
+unless the split is in the DATA. Doing it here rather than by recognising
+`/` `*` in a finished blob keeps the classification at the SITE: a backend
+states which half is prose, and no renderer has to parse C to find out.
+`enc.h`'s own "road not taken" note about growing FIELDS still stands for
+per-CONSTRUCT growth — a fourth entry gets a ROW, not a fifth field. This
+pair is a different axis (prose vs. code, one split per blob) and does not
+grow with the entry count; either `_doc` may be NULL, meaning "this half is
+all code", which `advance` already ships.
+
 ## The rule this directory exists to make structural
 
 DD-12 (7), ruled in as a requirement by Frank: **no encoding conditionals
