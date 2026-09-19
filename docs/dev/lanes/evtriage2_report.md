@@ -160,6 +160,15 @@ intact and is exactly what makes this a pin move rather than a finding:
 
 and the compiler's own note still reports the same 12,636 code bytes.
 
+**AND THE SAME LOG CARRIES AN INDEPENDENT CONFIRMATION** that nobody had to
+construct: the two rows of the refusal loop immediately above this cell print
+the CAP's own byte figure, and in this comments-off run they read 1,034,778
+and 1,335,605 — the numbers they have always read. If the cap counted comment
+bytes, a 36% source reduction would have rescued both patterns and both rows
+would have gone red as ACCEPTED. They passed. So the cap is comment-invariant
+by measurement in the very run that moved the pin, which is what separates
+"the instrument moved" from "the thing being measured moved".
+
 This is `battriage_report.md`'s **SECOND READER CLASS** — a pin citing no abi
 digit, no comment and no axis, whose VALUE moves anyway — so the D76/D94 grep
 sweep over the old abi number structurally could not reach it. Third recorded
