@@ -1116,8 +1116,10 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *prefix,
                                  const BufSurface *bs)
 {
+    sb_putc(sb, '\n');
+    sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     sb_printf(sb,
-        "\n/* [DD-14.FB] The caller-provided working storage (spec \302\24710).\n"
+        "/* [DD-14.FB] The caller-provided working storage (spec \302\24710).\n"
         " *\n"
         " *   %s_RESUME_FRAMES / _TRAIL_FRAMES   the capacities this artifact\n"
         " *       uses when it supplies the storage itself -- a DEFAULT, not a\n"
@@ -1131,12 +1133,14 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
         " *       region out of an arena.\n"
         " */\n",
         upper, upper, upper);
+    sb_cmt_close(sb);
     sb_stampf(sb, upper, "RESUME_FRAMES",     "%lld", bs->resume_frames);
     sb_stampf(sb, upper, "TRAIL_FRAMES",      "%lld", bs->trail_frames);
     sb_stampf(sb, upper, "RESUME_FRAME_SIZE", "%d",   bs->resume_frame_size);
     sb_stampf(sb, upper, "TRAIL_FRAME_SIZE",  "%d",   bs->trail_frame_size);
     sb_stampf(sb, upper, "BUFFER_ALIGN",      "%d",   bs->align);
     sb_putc(sb, '\n');
+    sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     sb_printf(sb,
         "/* Where one match attempt's working storage lives. Pass NULL to any\n"
         " * <prefix>_*_in entry and it is EXACTLY a call to the un-suffixed\n"
@@ -1154,14 +1158,17 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
         " * descriptor is non-NULL, and both are pure scratch: their contents\n"
         " * after any call are unspecified and no call reads what a previous\n"
         " * one left. Two concurrent calls must not share one region -- that is\n"
-        " * a race in the caller's code exactly as a shared caps array is. */\n"
+        " * a race in the caller's code exactly as a shared caps array is. */\n",
+        upper, upper);
+    sb_cmt_close(sb);
+    sb_printf(sb,
         "typedef struct {\n"
         "    void   *frames;    /* storage for resume frames */\n"
         "    size_t  nframes;   /* capacity in FRAMES, not bytes */\n"
         "    void   *trail;     /* storage for trail entries */\n"
         "    size_t  ntrail;    /* capacity in ENTRIES, not bytes */\n"
         "} %s_buffers;\n",
-        upper, upper, prefix);
+        prefix);
 }
 
 /* The three `_in` DECLARATIONS. Kept beside the three un-suffixed ones above
@@ -4178,11 +4185,14 @@ static void token_stop(StrBuf *c, const DfaForm *f)
     const char *heads = f->nscan == 1
         ? "the scan-edge head"
         : dfa_fragf(f->cx, "one of the %d scan-edge heads", f->nscan);
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c,
         "/* [OPT-EDGE] Dead, or %s -- which %s the machine's\n"
-        " * TOP row%s, so ONE unsigned compare answers both. */\n"
+        " * TOP row%s, so ONE unsigned compare answers both. */\n",
+        heads, f->nscan == 1 ? "is" : "are", f->nscan == 1 ? "" : "s");
+    sb_cmt_close(c);
+    sb_printf(c,
         "static inline int %s_%s_is_stop(%s_%s_state s) { return (unsigned)s >= %uu; }\n",
-        heads, f->nscan == 1 ? "is" : "are", f->nscan == 1 ? "" : "s",
         p, m, p, m, floor);
 }
 
@@ -4191,13 +4201,18 @@ static void token_stop(StrBuf *c, const DfaForm *f)
 static void token_accepts(StrBuf *c, const DfaForm *f, const char *cls_index)
 {
     const char *p = f->p, *m = f->dir->c.name;
-    if (f->acc_fold.folded)
+    if (f->acc_fold.folded) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         sb_printf(c,
             "/* [CC-DIFF] EVERY STATE of the %s machine has accept bit %d, so the\n"
-            " * table is not emitted and the probe IS that constant. */\n"
+            " * table is not emitted and the probe IS that constant. */\n",
+            m, f->acc_fold.value);
+        sb_cmt_close(c);
+        sb_printf(c,
             "static inline int %s_%s_accepts(%s_%s_state s)\n"
             "{ (void)s; return %d; }\n",
-            m, f->acc_fold.value, p, m, p, m, f->acc_fold.value);
+            p, m, p, m, f->acc_fold.value);
+    }
     else
         sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
                      "{ return accepting[s]; }\n", p, m, p, m);
@@ -4210,6 +4225,7 @@ static void token_premul(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
     int nc = f->d->ncls;
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c,
         "/* ---- THE %s SCAN'S STATE, AS AN OPAQUE TOKEN --------------------\n"
         " * The scan carries its state in a `%s_%s_state`. Everything that\n"
@@ -4222,6 +4238,7 @@ static void token_premul(StrBuf *c, const DfaForm *f)
         " * number times %d, so a step is one add and one load, and %d is the\n"
         " * reserved value meaning \"dead, stop\".\n"
         " */\n", f->dir->label, p, m, nc, PREMUL_DEAD);
+    sb_cmt_close(c);
     sb_printf(c, "typedef unsigned %s_%s_state;\n", p, m);
     token_step(c, f, "unsigned short", "transitions[s + cl]");
     sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",
@@ -4250,6 +4267,7 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
     int nc = f->d->ncls;
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c,
         "/* ---- THE %s SCAN'S STATE, AS AN OPAQUE TOKEN --------------------\n"
         " * The scan carries its state in a `%s_%s_state`. Everything that\n"
@@ -4262,6 +4280,7 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
         " * scales it by the %d columns, and a negative value means \"dead,\n"
         " * stop\".\n"
         " */\n", f->dir->label, p, m, nc);
+    sb_cmt_close(c);
     sb_printf(c, "typedef int %s_%s_state;\n", p, m);
     /* The indexed form scales the token by the column count, so its two index
      * expressions carry `ncls` and are built here rather than written as
@@ -4579,15 +4598,18 @@ static void pf_open(StrBuf *c, const DfaForm *f)
 
 static void pf_comment_memchr(StrBuf *c, const DfaForm *f)
 {
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// skip straight to the next byte that could begin a match.\n"
                  "%s// Only ", f->dir->bind, f->dir->bind, f->dir->bind);
     legend_byte(c, f->cand.byte);
     sb_printf(c, " (%d) can, so one memchr() replaces the steps.\n", f->cand.byte);
+    sb_cmt_close(c);
 }
 
 static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
 {
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// skip over bytes that cannot begin a match rather than\n"
                  "%s// stepping through them. can_begin_match says which can.\n",
@@ -5731,6 +5753,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
      * bytes of source on `[a-z]*` — an artifact this transform removes no
      * table from. The two facts a reader cannot get anywhere else are kept:
      * what the loop replaces, and why the table cell above says "dead". */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     if (span < 0)
         sb_printf(c, "%s// [OPT-5] SCAN EDGE: every state a run of class %d\n"
                      "%s// would pass IS this state, so count them here rather\n"
@@ -5742,6 +5765,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
                      "%s// counted, so they are ONE loop carrying only the cursor.\n"
                      "%s// The class's cell above reads \"dead\" because of this.\n",
                   ind, ind, nx, st->scan_cls, ind, ind);
+    sb_cmt_close(c);
     /* THE FIRST ITERATION IS PEELED INTO THE GUARD, and it is a MEASURED
      * change rather than a stylistic one. This block sits on the loop's
      * generic path, so it is entered once per iteration whether or not there
@@ -5921,9 +5945,11 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
     /* [M6-READ] The tables are the artifact's data structures, and each gets
      * a block comment: what it is, how it is indexed, what a cell means, and
      * — where the cells are STATES — a legend naming them. */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, f->dir->tbl_hdr);
     emit_class_legend(c, f->d);
     sb_puts(c, "     */\n");
+    sb_cmt_close(c);
     emit_u8_table(c, p, dfa_fragf(f->cx, "%s_byte_class", m), f->d->clsmap, 256);
 
     /* [CC-DIFF] (b) A FOLDED TABLE IS NOT EMITTED AT ALL, and its comment and
@@ -5932,14 +5958,18 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
      * The fold's own one-line note lives on the accessor, which is where a
      * reader of the emitted C meets the constant. */
     if (!f->tr_fold.folded) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         f->repr->emit_tr_comment(c, f);
         emit_state_legend(f->cx, c, f->d, f->dir->reverse);
         sb_puts(c, "     */\n");
+        sb_cmt_close(c);
         emit_tr_table(c, p, dfa_fragf(f->cx, "%s_next_state", m), f->d, f->repr);
     }
 
     if (!f->acc_fold.folded) {
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         f->repr->emit_acc_comment(c, f);
+        sb_cmt_close(c);
         emit_acc_table(c, p, dfa_fragf(f->cx, "%s_is_accepting", m), f->d, f->repr);
     }
 
@@ -6237,11 +6267,13 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_machine_tables(c, &fwd);
     if (!pinned) emit_machine_tables(c, &rev);
 
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
                "    // One byte per iteration. The loop keeps the LAST accepting\n"
                "    // position rather than stopping at the first, so the longest\n"
-               "    // match wins.\n"
-               "    size_t scan_position = search_from;\n"
+               "    // match wins.\n");
+    sb_cmt_close(c);
+    sb_puts(c, "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
     emit_scan_loop(c, &fwd);
     if (pinned) {
@@ -7055,6 +7087,11 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * names the STEP; the prefilter's own emission site describes the form it
      * took, where `use_memchr` is already in hand. */
 
+    /* [EMIT-VERB] (D112) ONE REGION FOR THE WHOLE BLOCK. Every byte this
+     * function writes is comment text, so the class is stated once at the
+     * top rather than at each of its twenty appends — and a paragraph added
+     * later is inside the region by construction. */
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     sb_puts(c, "/* =====================================================================\n"
                " * HOW THIS MATCHER WORKS -- a map of this file\n"
                " *\n"
@@ -7225,6 +7262,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " * legend naming its states or classes.\n");
     }
     sb_puts(c, " * ===================================================================== */\n\n");
+    sb_cmt_close(c);
 }
 
 /* Emits the SHARED artifact prologue both engines call: the optional
@@ -7378,8 +7416,12 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
 {
     sb_puts(&cx->job->csb, "\n");
     sb_printf(&cx->job->csb,
-        "int main(int argc, char **argv)\n{\n"
-        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "int main(int argc, char **argv)\n{\n");
+    sb_cmt_open(&cx->job->csb, PCREC_CMT_NONESSENTIAL);
+    sb_puts(&cx->job->csb,
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
+    sb_cmt_close(&cx->job->csb);
+    sb_printf(&cx->job->csb,
         "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
         "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
         "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, capture_spans);\n"
