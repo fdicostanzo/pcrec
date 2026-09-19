@@ -384,3 +384,53 @@ were equal would make the edit a no-op. The probe compiles `\p{Greek}` under
 `-e byte`, where the ONLY member is U+00B7 MIDDLE DOT and its presence IS the
 Script_Extensions contribution the row defends — so a narrowing that dropped
 the extended set would fail the probe rather than silently score UNDETECTED.
+
+## [D110] rows S259 and S260, and why the `resource` arm can see them now
+
+Two rows for K60's two now-CLOSED classes (D105 + D109), and both exist
+only because D110 (2026-09-18, lane allocpins) made them detectable: before
+that ruling, `tests/resource/run_resource_tests.sh` section 2b — the one
+`make test`-reachable caller of `tests/core/alloc_check.c` — greped only
+for `KILLED THE PROCESS BY SIGNAL`, so a plant reopening either class
+would have produced no signal there at all (the injector's own "succeeded
+through anyway" outcome was deliberately not read, since K60 was still
+open and filed). Section 2b now also asserts `alloc_check`'s own rc and
+the absence of any `SUCCEEDED THROUGH` line, so both rows are DETECTED by
+`resource` alone — neither needed a new arm.
+
+- **S259** neuters D109's `cx.failed_nomem` propagation
+  (`src/core/compile.c`'s `setjmp` handler, `if (0 && cx.failed_nomem)`
+  instead of `if (cx.failed_nomem)`), restoring K60's LADDER class: a
+  genuine `ctx_nomem`-routed allocation failure on a non-final
+  `compile_driver` attempt falls through to the `[ART-SIZE]` ladder's
+  blanket "this K is out" catch and can be silently absorbed into a
+  later attempt's success. `tests/core/alloc_check.c`'s W4 witness (the
+  size-term ladder) is D109's own repro — under the plant it absorbs
+  again, exactly as it did before D109 landed (108/158 in the
+  measurement memo).
+- **S260** replants the D105 defect SHAPE into `emit_state_legend`
+  (`src/gen/emit_dfa.c`): the FIRST of its four BFS scratch arrays,
+  `dist`, reverts from `arena_alloc(&cx->arena, ...)` to a raw `malloc`
+  with a silent `return` on NULL — the minimal one-array plant, since one
+  silently-degrading site is already the whole defect shape D105
+  eliminated. `alloc_check.c`'s W1/W3 witnesses (the legend class) are
+  D105's own repro.
+
+**CANONICAL SOLO RUNS** (2026-09-18, tree `066c73178254008e0eb7c0a150589a9deb7fa7ea`
+for both):
+
+    S259  resource:1fail/26pass                                    DETECTED
+    S260  resource:2fail/25pass                                    DETECTED
+
+S260's SECOND fail is Section 0's allocation-site census (`tests/resource/
+run_resource_tests.sh`, [REVW.U L8-F6(a)]) — `src/gen/emit_dfa.c` is not
+in that section's pinned nine-file set, so the plant trips it too, on top
+of section 2b's absorption check: the same plant is visible to TWO
+independent instruments in the one arm, which is stronger evidence than
+either alone.
+
+Neither row needed `SAB_REACH`/`SAB_REACH_POP`: both sites are read
+directly off `git show HEAD:<path>` and neither construct can retire on
+its own (they are the tree's own general OOM-recovery mechanism and its
+one allocator-refusal helper, not a feature a later module could
+implement out from under the row).

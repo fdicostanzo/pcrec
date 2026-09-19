@@ -68,17 +68,22 @@ could see.
       top-level `build-alloc/` — `make alloc`'s own tree) using this
       script's already-resolved `$CC`.
 
-      **Deliberately scoped narrower than `make alloc`'s own verdict.**
-      The injector's three witnesses also surface K60
-      (docs/dev/known_issues.md, filed 2026-09-17, not fixed): a compile
-      can SUCCEED despite a forced allocation failure, via an unrelated
-      retry-ladder absorption mechanism. That is real and already
-      tracked in the opt-in `make alloc` target; `make test` must not go
-      red for a known, disposed defect that is not this section's job.
-      Section 2b greps the injector's own labelled output for
-      `KILLED THE PROCESS BY SIGNAL` specifically (K7's abort()-class
-      outcome) and ignores the "succeeded anyway"/"empty message"
-      categories.
+      **[D110] (2026-09-18, lane allocpins) NOW ALSO ASSERTS
+      `alloc_check`'s OWN VERDICT.** Originally scoped narrower than
+      `make alloc`'s own verdict: the injector's witnesses also surfaced
+      K60 (docs/dev/known_issues.md, filed 2026-09-17), a compile that
+      could SUCCEED despite a forced allocation failure via an unrelated
+      retry-ladder absorption mechanism, and `make test` was not to go
+      red for that known, disposed defect. **K60 is now CLOSED IN BOTH
+      ITS CLASSES** (D105 + D109) — every `alloc_check.c` witness pins
+      zero absorbed — so Section 2b asserts TWO things: the signal grep
+      (K7's abort()-class outcome, unchanged) AND `alloc_check`'s own rc
+      plus the absence of a `SUCCEEDED THROUGH` line (an absorption
+      regression, or the population falling below its D110 floor, K35).
+      The per-witness pins/floors stay in the opt-in `make alloc` target
+      (`scripts/battery.sh`'s own `alloc` stage); this section's job is
+      the coarser `make test`-level verdict. Still runs argument-free
+      (single-shot only) and needs no `ulimit -v`.
 
   3. **The refusal's identity.** `a{0,65535}` must refuse inside the existing
      "too complex for the DFA engine" family AND name the subset construction,

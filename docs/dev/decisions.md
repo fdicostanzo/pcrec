@@ -7481,3 +7481,69 @@ exist today; four of them take one unconditional action on any nonzero
 return and read no per-attempt `Ctx` field, so this decision does not
 touch them) — check whether it needs the same `failed_nomem` test, by
 the same reasoning as here rather than by copying the code.
+
+## D110 — `tests/core/alloc_check.c`'s population expectations become FLOORS, not equality pins; the resource-arm's own verdict is asserted in `make test`; `make alloc` gains a battery stage (Frank, 2026-09-18, lane allocpins)
+
+`docs/dev/lanes/d105_report.md` §2 measured the hazard a per-witness
+population expectation exists to catch (K35 — an absorption pin alone
+reads PASS if the witness stops reaching the compile at all) and its §5.2
+recorded the trade-off left open: putting the population numbers where
+`make test` can see them taxes every future refactor that legitimately
+moves an allocation count, and leaving them out leaves a silent-absorption
+plant undetectable. Between D105 landing and this ruling, `[REVW.2]`'s wave
+2 slices A+C measured the tax side directly — `tests/core/alloc_check.c`'s
+W4 population moved 158 → 162 under two BYTE-NEUTRAL, SIZE-NEUTRAL
+refactors (`sb_fragf`'s fragment retirement changing the arena-call SHAPE,
+nothing a caller can observe) — which an equality pin cannot distinguish
+from K35's actual hazard, a population FALLING toward empty or partial.
+
+**Ruling, three parts, agreed to the manager's proposed plan:**
+
+1. **The population expectations become FLOORS.** Each `Witness` in
+   `tests/core/alloc_check.c` carries `min_total`, set at ruling time to
+   HALF the then-measured population (W1 57 → 28, W2 11 → 5, W3 303 → 151,
+   W4 162 → 81): failure is `swept total < min_total`, never `!=`. An
+   ordinary refactor's incidental movement (four allocations out of 162,
+   the measured instance) has wide margin below its floor; a real collapse
+   — the witness losing reach, or a chunk of what it swept quietly
+   dropping out — still trips it. The ABSORBED expectations
+   (`expect_absorbed_single`/`_sustained`) stay EXACT, in both directions:
+   both K60 classes are closed (D105 + D109), so every witness pins zero
+   absorbed and any absorption anywhere is a regression, which is a
+   different claim from the population's shape and does not share the
+   floor's brittleness.
+
+2. **The resource arm asserts `absorbed = 0` so a silent-absorption plant
+   is detectable.** `tests/resource/run_resource_tests.sh` section 2b —
+   the one `alloc_check.c` caller inside `make test` — ran argument-free
+   and greped only `KILLED THE PROCESS BY SIGNAL`, deliberately declining
+   the "succeeded through anyway" outcome while K60 was open (a known,
+   filed, disposed defect `make test` was not to fail for). With both
+   classes closed, that decline is no longer earning anything: it now also
+   asserts `alloc_check`'s own rc and the absence of any `SUCCEEDED
+   THROUGH` line, so a plant reopening either class — S259 (D109's
+   `cx.failed_nomem` propagation neutered, the ladder class) or S260 (the
+   D105 legend-class shape replanted into `emit_state_legend`) — is
+   DETECTED via `make test`'s own resource section, not only via the
+   opt-in `make alloc` target a stranger's `make test` never runs.
+
+3. **`make alloc` gains its own battery stage; `make test` is NOT
+   touched.** `scripts/battery.sh` gains an `alloc` stage (after `san`,
+   before `lint`) running `make alloc` unchanged — the per-witness floors
+   and the full single-shot/sustained sweep get a standing home in the
+   merge/close battery, same opt-in shape as `san`/`lint`/`ubsan`/`asan`.
+   `make test` itself carries only section 2b's coarser rc-level check
+   (part 2), per Frank's own scope concern: the per-witness detail stays
+   where a legitimate allocation-shape refactor pays no tax to see it move.
+
+See `docs/dev/known_issues.md` K60 and `docs/dev/decisions.md` D105/D109
+for the two classes this ruling assumes closed; `tests/core/alloc_check.c`'s
+own `Witness` struct comment for the floor rule stated where the numbers
+live; `tests/mech/sabotages/S259_*`/`S260_*` for the two rows this ruling's
+part 2 makes detectable.
+
+**Revisit when**: a future defect is filed against one of these witnesses
+with a non-zero absorption count (the ratchet the exact-absorption
+expectation exists for still applies) — or when a floor's own margin turns
+out too tight against a real refactor, in which case the floor moves with
+the measurement recorded, not silently.
