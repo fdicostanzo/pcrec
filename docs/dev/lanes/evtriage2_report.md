@@ -58,6 +58,12 @@ the loop reads a code-level surface (labels, `RX_PUSH` sites, `RX_SET` slots,
 silently starts reading a non-default build. CALLOUTS is untouched: its
 needle is code (`rx_callout_ref …(`, `->fn(`).
 
+**The license was re-verified locally on this exact witness**, rather than
+inherited from the branch's corpus-wide claim: `(a|ab)(c|bcd)` compiled both
+ways and assembled at `-O1` gives **byte-identical object files**. So the
+`-fcomments` build the term reads is the same program the default build is,
+on the one artifact where that has to be true for the term to mean anything.
+
 **Dropping the term instead was the alternative and it is worse.** The block
 would then compare the event stream against the counter with nothing
 witnessing the emitted C at all — and the block's own header says why that
