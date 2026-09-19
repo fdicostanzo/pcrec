@@ -24076,3 +24076,48 @@ which darwin's bash 3 lacks — it still exited on the right event by accident;
 per-lane single watchers from now on. bsweep (sonnet) went idle "waiting for
 the notification" twice despite the brief; nudged once, then left to resume
 on its notifications rather than spend manager turns.
+
+## 2026-09-19 (morning) — bsweep merged; wave 3 delivered and merged; session close
+
+**dd8's merge gate GREEN** (40/40, sole FAIL the darwin nm probe, size log 0
+movers — 9f2a728e). **bsweep MERGED (02239219)**: `scripts/emit_sweep.py`,
+four streams under `--features all`, reach floors at measured-minus-~10%
+(the lane argued D110's half-floor is too loose for THIS count's failure
+mode — a flag dropping reach by 62% would still pass a half floor), a
+`--self-check`, the composition arm with its own timeout/concurrency. Its own
+first cut measured 30/72 — the w2x figure — and the lane root-caused it to
+two bugs in its own composition arm (an rc==0 gate skipping a fixture's
+partial success; a shared timeout under contention), so w2b/w2y/dd8/bsweep now
+agree on 32/96 and w2x's 30/72 is a probable instance of the same class. One
+lanes-CLAUDE.md conflict (both entries kept); landing item by the manager: a
+comment at the `-o -` site naming the basename trap. Main pushed (ed8f1098).
+
+**WAVE 3 LAUNCHED** on Frank's "proceed autonomously through the steps": a
+read-only sonnet fact sheet first (w3facts — it found the third_party
+generate.py path sites and APPROACH.md hunks no review source priced), the
+manager ruling its eight open questions (dump tier → src/dump/, built as its
+own commit; rxt cut = 2 edited + 1 added; driver classification = a per-file
+tier-override table; the lane re-measures the call-level census). **w3
+DELIVERED (opus, ~55 min) AND MERGED (86e7c8da)**: dump tier moved, enc/ moved
+to src/enc/ (Makefile, generate.py ×3, 6 SAB_FILE rows, structural greps,
+six scripts' comments), the layer model in include_graph.py + prose, the rxt
+cut (compile.o names no rxt symbol; compile_defs.c), internal.h's declaration
+tail grouped by defining layer. Byte-identical on all four streams after every
+item — the committed sweep's first customer, and it behaved. Census 39 → 30:
+the driver tier reclassifies 20 forward and exposes 22 ctx_fail/ctx_nomem
+edges INTO compile.c (the file is itself two layers; D77, nothing proposed).
+Lens 6's "0 anchors" for the dump move was 2 rows + 62 citations — a cost
+stated by a lane that did not measure it is a guess. run_cpset_structure.sh's
+CHECK 1R would have kept its red while changing its cause; fixed to find the
+header by name. APPROACH.md §8 rewritten (flagged for Frank). Clean rebuild +
+strict + alloc green; merge-gate `make test` launched ~06:15 (3h bound).
+
+**Session close at ~08:xx (Frank: look for an end point at 8am)**: see the
+gate line below and wake.md. Lanes used this session: w2y, bsweep, dd8,
+w3facts (read-only), w3 — five, none alive at close. Four merges, three darwin
+gates (~104 min each). Main pushed at each merge-gate close.
+
+**WAVE 3 GATE GREEN 07:49**: `make test` 40/40, zero failed checks, sole FAIL
+the standing darwin nm probe, 94 min; size log 0 movers over 3,480 rows.
+[REVW.3] → completed. Main pushed; crons deleted; no agents alive. Session
+closed ~07:55.

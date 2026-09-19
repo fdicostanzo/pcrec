@@ -1195,7 +1195,7 @@ between waves (D102); box slots handshake with the bench.
   `test-axes` answer-identity sweep is its natural home). D80: it is a
   caller-observable surface and needs its `docs/spec/` hunk in the same
   change.
-- [REVW.3] STATE:started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
+- [REVW.3] STATE:completed (GATED 2026-09-19 07:49, seventieth session: merge-gate make test 40/40, sole FAIL the standing darwin nm probe, size log 0 movers over 3,480 rows) — formerly STATE:started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
   (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
   cut (2 files, 0 anchors), L4-dump relocation rider, internal.h
   declaration-grouping (split deferred). M4: no compile.c move.
@@ -1217,7 +1217,7 @@ between waves (D102); box slots handshake with the bench.
   `compile.c` is itself two layers; and item 1's dump move has TWO
   sabotage anchors (S18, S241) where lens 6 priced it at zero and left
   its own coupling grep unrun. **Wave 4's brief must cite
-  `src/dump/axes_dump.c`, not `src/parse/axes_dump.c`.**
+  `src/dump/axes_dump.c`, not `src/parse/axes_dump.c`.** MERGED 86e7c8da (--no-ff, 2026-09-19 06:1x, seventieth session; lane w3, opus, ~55 min): all five items, byte-identical on all four streams after each via the COMMITTED scripts/emit_sweep.py (its first lane customer), NOT an abi event, no docs/spec hunk owed; call-level back-edge census re-measured 39 → 30 (item 1 alone 39 → 28; the driver tier reclassifies 20 forward and exposes 22 ctx_fail/ctx_nomem edges INTO compile.c — the file is itself two layers; nothing proposed, D77: moving ctx_fail/ctx_nomem/pcrec_default_options to a base-tier file would take it to 8); include_backedges.tsv 6 → 0; lens 6's "0 anchors" for the dump move was 2 (S18, S241) + 62 citations; run_cpset_structure.sh CHECK 1R fixed to find the header by name (a relocation would have changed its red's CAUSE silently); APPROACH.md §8 rewritten (flagged for Frank, w3_report.md §5); coding_guide.md §1.9 added; clean rebuild + strict + alloc green on main; merge-gate make test launched 06:1x (3h bound). Wave 4's brief must cite src/dump/axes_dump.c.
 - [REVW.4] STATE:not-started — wave 4 (CLI+config): the cli_parse table
   (L11+L2+L1-X10 one item, M3), mode mutual-exclusion written once, D107
   filter inversion, F2 bar->limits.def; X9/axes.def PROPOSED to Frank, not
