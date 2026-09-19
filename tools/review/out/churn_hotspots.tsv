@@ -1,22 +1,22 @@
-# churn_hotspots.py -- commit 39860b664fc79c9730cf6886ee26c8cef90e4bad -- generated 2026-09-19 -- rows 55
+# churn_hotspots.py -- commit d0c8b4c220c1f0df42b1857749e9c01747a9eba4 -- generated 2026-09-19 -- rows 55
 file	current_lines	touch_count	lines_added	lines_removed	total_churn	hotspot_score
-src/gen/emit_vm.c	12114	167	16032	3918	19950	2023038
-src/core/internal.h	5961	185	7127	1166	8293	1102785
+src/gen/emit_vm.c	12114	168	16036	3922	19958	2035152
+src/core/internal.h	5979	187	7145	1166	8311	1118073
 src/gen/emit_dfa.c	7638	132	9949	2311	12260	1008216
+cli/main.c	1908	72	2486	578	3064	137376
 src/parse/rxt_source.c	4056	32	4767	711	5478	129792
-src/core/compile.c	1958	65	2620	666	3286	127270
-cli/main.c	1784	69	2100	316	2416	123096
+src/core/compile.c	1959	66	2629	674	3303	129294
 src/parse/registry.c	1811	61	3143	1332	4475	110471
 src/parse/parse.c	1973	50	2481	508	2989	98650
-src/dump/syntax_dump.c	1788	36	2090	302	2392	64368
+src/dump/syntax_dump.c	1826	37	2130	304	2434	67562
 src/ir/dfa.c	1475	35	2276	801	3077	51625
 lib/pcrec.h	1073	47	1174	102	1276	50431
 src/ir/nfa.c	1180	35	1402	222	1624	41300
 src/opt/select_engine.c	1046	28	1210	164	1374	29288
 src/parse/ext.c	709	41	1215	506	1721	29069
-src/core/limits.h	728	30	1430	702	2132	21840
+src/core/limits.h	746	31	1448	702	2150	23126
 src/opt/possessify.c	1143	17	1220	77	1297	19431
-src/dump/axes_dump.c	747	23	826	79	905	17181
+src/dump/axes_dump.c	750	24	939	189	1128	18000
 src/opt/revdet.c	742	17	775	33	808	12614
 src/opt/atomic.c	912	13	932	20	952	11856
 src/parse/mod_backrefs.c	814	14	869	55	924	11396
@@ -43,6 +43,7 @@ src/opt/minimize.c	231	8	277	46	323	1848
 src/enc/enc.c	201	9	230	29	259	1809
 src/parse/definitions.c	318	4	324	6	330	1272
 src/dump/schema_dump.c	187	5	206	19	225	935
+src/core/tune.c	243	3	243	0	243	729
 src/parse/rxt_schema.c	335	2	335	0	335	670
 src/core/fold.c	144	4	148	4	152	576
 src/parse/mod_atomic_groups.c	133	3	143	10	153	399
@@ -51,7 +52,6 @@ src/core/cpset.c	309	1	309	0	309	309
 src/dump/limits_dump.c	98	3	101	3	104	294
 src/opt/postresolve.c	146	2	198	52	250	292
 src/parse/parse_mods.h	89	3	93	4	97	267
-src/core/tune.c	180	1	180	0	180	180
 src/parse/mod_classes.c	87	2	100	13	113	174
 src/core/arena.c	44	2	45	1	46	88
 src/core/compile_defs.c	45	1	45	0	45	45

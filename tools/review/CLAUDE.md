@@ -186,5 +186,15 @@ stale path or span (`docs/dev/lanes/w4_facts.md` §0.4). Current counts:
 re-run the five scripts whenever a wave moves files, and cite the header's
 own commit when quoting a row.
 
+**REGENERATED A SECOND TIME at the lane's tip** (2026-09-19), so no figure
+in `docs/dev/lanes/w4_report.md` rests on a pre-wave-4 row: 911 functions,
+278 clone-candidate member rows, 12,652 literals / 5,136 distinct values,
+207 `#include` statements, 55 churn rows. Two rows worth knowing:
+`cli_parse` went 429 span / 247 CODE lines to 304 / 202 across items 4 and
+5, and `emit_predicate_axes` is 294 / 178 both before and after — the
+column count matters, and quoting the wrong one of the two is how the
+wave-4 fact sheet read a review figure as wrong when it was right
+(`w4_report.md` §0 (3)).
+
 Maintenance: update this file when a script is added/removed, its output
 files change, or a validated finding changes its interpretation.

@@ -1814,3 +1814,38 @@ never edited afterwards.
   w2y's own `--features all` figure exactly — three of five lanes' numbers
   reconciled to one, w2x's left as a plausible-but-unconfirmed instance of
   the same class of bug (its own scratch driver is gone).
+
+- `w4_report.md`, `w4_modesweep.py`, `w4_dashsweep.py`, `w4_diagsweep.sh` —
+  [REVW.4] WAVE 4 (CLI + CONFIG) (2026-09-19, lane w4, opus): the axis
+  table (`src/core/axes.def`, D111), the limits detector's D107 inversion,
+  `SIZE_TERM_BAR_DEFAULT` to a `limits.def` row, the mode relation written
+  once, and the `cli_parse` table. Six item commits plus one repair, every
+  one byte-neutral on all `scripts/emit_sweep.py` streams; the wave adds
+  the FIFTH stream (`dumps`, the seven `--list-*` surfaces) because the
+  four `.c` streams structurally cannot see a registry dump move.
+  Read §0 first — five things, of which two are refutations of ruled or
+  reviewed premises. **D111's ruled ship shape for `lib/pcrec.h` (a
+  generated enumeration block) was PRICED AT 650-700 LINES against its own
+  ~150-line stop threshold and declined**: a row names its bit as a TOKEN
+  rather than a number, so the bit stays spelled once in the public header,
+  the header is byte-identical across the wave, and there is nothing to
+  generate, no marker and no drift check — *a centralization that removes
+  the duplication needs no instrument to watch it.* And **L11-F6's "X9 IS
+  THE WHOLE REMEDY" for `emit_predicate_axes` is measurably false**: the
+  function is 178 code lines before AND after, because what X9 owns is the
+  flag COLUMNS and what makes the function long is ~40 per-candidate rows
+  of narrative — *a centralization removes the columns a table owns, never
+  the rows a narrative owns.*
+  Also worth reading: the `cli/main.c:<line>` citation rot is not the
+  review's 5 of 28 but effectively all 27 (resolved one by one against the
+  branch-point file before anything was touched), and `docs/spec/` now
+  carries ZERO of them; D107's "~14 allowlist lines" is really 40, and its
+  three non-limit kinds needed a fourth; and §0 (5) names a re-pin the D94
+  grep ritual is STRUCTURALLY BLIND to — `run_registry_tests.sh`'s coverage
+  guard moved with item 2 while spelling a number item 2 never touched, the
+  second recorded instance of *a reader whose text never cites the number
+  still moves with it*. The three committed sweep scripts are the
+  acceptance instruments: 1,407 mode pair/triple invocations, 248
+  `--`-position invocations over 62 grep-harvested flag spellings, and 63
+  diagnostic invocations, all 0 differing against the previous item's own
+  binary.

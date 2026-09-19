@@ -1,18 +1,18 @@
-# literal_census.py --freq-out -- commit 39860b664fc79c9730cf6886ee26c8cef90e4bad -- generated 2026-09-19 -- rows 5172
+# literal_census.py --freq-out -- commit d0c8b4c220c1f0df42b1857749e9c01747a9eba4 -- generated 2026-09-19 -- rows 5136
 kind	literal	count	distinct_files	sample_files
-NUM	0	2525	51	cli/main.c,lib/pcrec.h,src/core/arena.c,src/core/compile.c,src/core/cpset.c,...(+46)
-NUM	1	1058	45	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/cpset.c,src/core/fold.c,...(+40)
-NUM	2	408	31	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/cpset.c,src/core/fold.c,...(+26)
-STR	""	259	22	cli/main.c,src/core/internal.h,src/core/sb.c,src/dump/axes_dump.c,src/dump/schema_dump.c,...(+17)
+NUM	0	2571	51	cli/main.c,lib/pcrec.h,src/core/arena.c,src/core/compile.c,src/core/cpset.c,...(+46)
+NUM	1	1072	45	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/cpset.c,src/core/fold.c,...(+40)
+NUM	2	409	31	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/cpset.c,src/core/fold.c,...(+26)
+STR	""	206	23	cli/main.c,src/core/internal.h,src/core/sb.c,src/core/tune.c,src/dump/axes_dump.c,...(+18)
+NUM	32	132	13	src/core/cpset.c,src/core/internal.h,src/core/tune.c,src/enc/enc_utf8.c,src/gen/emit_dfa.c,...(+8)
 STR	'\t'	132	11	cli/main.c,src/core/compile.c,src/core/sb.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c,...(+6)
-NUM	32	131	12	src/core/cpset.c,src/core/internal.h,src/enc/enc_utf8.c,src/gen/emit_dfa.c,src/gen/emit_vm.c,...(+7)
-STR	'%s'	130	14	cli/main.c,src/core/compile.c,src/core/internal.h,src/dump/syntax_dump.c,src/gen/emit_dfa.c,...(+9)
+STR	'%s'	131	14	cli/main.c,src/core/compile.c,src/core/internal.h,src/dump/syntax_dump.c,src/gen/emit_dfa.c,...(+9)
 NUM	256	77	14	cli/main.c,lib/pcrec.h,src/core/cpset.c,src/core/fold.c,src/core/internal.h,...(+9)
 NUM	3	75	14	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/internal.h,src/dump/axes_dump.c,...(+9)
-NUM	1u	69	6	lib/pcrec.h,src/core/internal.h,src/dump/axes_dump.c,src/enc/enc.h,src/opt/lower_enc.c,...(+1)
-STR	' '	59	11	cli/main.c,src/core/compile.c,src/dump/syntax_dump.c,src/enc/enc.c,src/parse/mod_backrefs.c,...(+6)
+NUM	1u	71	7	cli/main.c,lib/pcrec.h,src/core/internal.h,src/dump/axes_dump.c,src/enc/enc.h,...(+2)
+STR	' '	61	12	cli/main.c,src/core/compile.c,src/core/tune.c,src/dump/syntax_dump.c,src/enc/enc.c,...(+7)
 NUM	4	54	14	cli/main.c,lib/pcrec.h,src/core/compile.c,src/core/internal.h,src/dump/axes_dump.c,...(+9)
-STR	"%s"	50	13	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,src/parse/enabled.c,...(+8)
+STR	"%s"	52	13	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,src/parse/enabled.c,...(+8)
 STR	'\n'	50	9	cli/main.c,src/core/compile.c,src/core/sb.c,src/dump/syntax_dump.c,src/enc/enc.c,...(+4)
 STR	"core/internal.h"	48	48	cli/main.c,src/core/arena.c,src/core/compile.c,src/core/compile_defs.c,src/core/cpset.c,...(+43)
 STR	'-'	43	10	cli/main.c,src/core/tune.c,src/dump/syntax_dump.c,src/parse/mod_backrefs.c,src/parse/mod_modifiers.c,...(+5)
@@ -25,22 +25,22 @@ STR	'_'	31	5	src/core/compile.c,src/gen/emit_dfa.c,src/parse/mod_named_groups.c,
 NUM	0xFF	31	3	src/core/cpset.c,src/enc/enc_utf8.c,src/parse/definitions.c
 STR	"    }\n"	30	4	src/enc/enc_byte.c,src/enc/enc_utf8.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
 NUM	8	29	15	cli/main.c,lib/pcrec.h,src/core/cpset.c,src/core/internal.h,src/dump/axes_dump.c,...(+10)
+STR	','	28	9	cli/main.c,src/core/tune.c,src/dump/syntax_dump.c,src/enc/enc.c,src/parse/enabled.c,...(+4)
 STR	'0'	28	8	src/core/tune.c,src/parse/definitions.c,src/parse/mod_backrefs.c,src/parse/mod_recursion.c,src/parse/mod_verbs.c,...(+3)
 STR	"%d"	28	5	src/dump/axes_dump.c,src/dump/schema_dump.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
 NUM	16	26	11	lib/pcrec.h,src/core/internal.h,src/dump/axes_dump.c,src/dump/schema_dump.c,src/gen/emit_dfa.c,...(+6)
 STR	')'	25	11	cli/main.c,src/parse/mod_atomic_groups.c,src/parse/mod_backrefs.c,src/parse/mod_lookaround.c,src/parse/mod_modifiers.c,...(+6)
-STR	','	25	6	src/enc/enc.c,src/parse/enabled.c,src/parse/parse.c,src/parse/rxt_compose.c,src/parse/rxt_source.c,...(+1)
 STR	'"'	25	2	src/gen/emit_dfa.c,src/parse/rxt_source.c
 NUM	6	23	6	lib/pcrec.h,src/core/compile.c,src/core/internal.h,src/dump/axes_dump.c,src/opt/lower_enc.c,...(+1)
-NUM	10	21	9	cli/main.c,lib/pcrec.h,src/core/internal.h,src/gen/emit_vm.c,src/parse/mod_backrefs.c,...(+4)
+NUM	5	21	8	lib/pcrec.h,src/core/internal.h,src/core/sb.c,src/core/tune.c,src/dump/axes_dump.c,...(+3)
 STR	"}\n"	21	3	src/enc/enc_byte.c,src/enc/enc_utf8.c,src/gen/emit_dfa.c
-NUM	5	20	8	lib/pcrec.h,src/core/internal.h,src/core/sb.c,src/core/tune.c,src/dump/axes_dump.c,...(+3)
 STR	"?"	20	6	src/dump/syntax_dump.c,src/gen/emit_vm.c,src/ir/dfa.c,src/parse/definitions.c,src/parse/rxt_schema.c,...(+1)
 STR	'='	19	9	cli/main.c,src/core/compile.c,src/parse/mod_lookaround.c,src/parse/mod_recursion.c,src/parse/mod_uprops.c,...(+4)
 STR	"scan_position"	19	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	'/'	18	4	cli/main.c,src/core/compile.c,src/gen/emit_dfa.c,src/parse/rxt_source.c
 NUM	0x80	18	3	src/core/fold.c,src/opt/lower_enc.c,src/parse/parse.c
 STR	"%lld"	18	3	src/dump/limits_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
+NUM	10	17	9	cli/main.c,lib/pcrec.h,src/core/internal.h,src/gen/emit_vm.c,src/parse/mod_backrefs.c,...(+4)
 NUM	7	16	5	cli/main.c,lib/pcrec.h,src/core/internal.h,src/dump/axes_dump.c,src/parse/rxt_source.c
 STR	"}\n\n"	16	1	src/gen/emit_vm.c
 STR	'\0'	15	9	cli/main.c,src/core/tune.c,src/dump/syntax_dump.c,src/enc/enc.c,src/gen/emit_dfa.c,...(+4)
@@ -62,7 +62,6 @@ STR	'['	11	6	cli/main.c,src/core/compile.c,src/dump/syntax_dump.c,src/parse/pars
 STR	'{'	11	6	src/core/compile.c,src/parse/mod_backrefs.c,src/parse/mod_uprops.c,src/parse/parse.c,src/parse/registry.c,...(+1)
 STR	'P'	11	4	src/enc/enc.c,src/parse/mod_modifiers.c,src/parse/mod_uprops.c,src/parse/registry.c
 NUM	25	11	2	lib/pcrec.h,src/parse/registry.c
-STR	"prefilter"	11	2	src/dump/axes_dump.c,src/gen/emit_vm.c
 STR	"%s}\n"	11	1	src/gen/emit_dfa.c
 STR	"(?1)"	11	1	src/parse/registry.c
 STR	"(a)(?-1)"	11	1	src/parse/registry.c
@@ -76,9 +75,11 @@ STR	"s"	10	3	cli/main.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"denied"	10	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"list"	10	2	src/dump/axes_dump.c,src/parse/rxt_schema.c
 STR	"mixed"	10	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
+STR	"prefilter"	10	2	src/dump/axes_dump.c,src/gen/emit_vm.c
 NUM	7476	10	1	src/opt/prefix_k.c
 STR	"parse/parse_mods.h"	9	9	src/dump/syntax_dump.c,src/parse/mod_atomic_groups.c,src/parse/mod_backrefs.c,src/parse/mod_lookaround.c,src/parse/mod_modifiers.c,...(+4)
-STR	"vm"	9	5	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,src/parse/rxt_source.c
+NUM	64	9	7	cli/main.c,src/core/arena.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,...(+2)
+NUM	128	9	5	cli/main.c,src/core/compile.c,src/ir/dfa.c,src/opt/select_engine.c,src/parse/rxt_source.c
 STR	']'	9	4	src/gen/emit_vm.c,src/parse/ext.c,src/parse/parse.c,src/parse/scans.c
 NUM	0x00	9	2	src/core/fold.c,src/enc/enc_utf8.c
 STR	'E'	9	2	src/parse/parse.c,src/parse/registry.c
@@ -86,21 +87,21 @@ NUM	1000000ull	9	1	src/opt/prefix_k.c
 STR	"err 107"	9	1	src/parse/registry.c
 STR	"core/limits.def"	8	8	src/core/internal.h,src/core/limits.h,src/dump/limits_dump.c,src/gen/emit_vm.c,src/parse/mod_backrefs.c,...(+3)
 STR	"pcrec.h"	8	8	cli/main.c,src/core/compile_defs.c,src/core/internal.h,src/dump/axes_dump.c,src/dump/limits_dump.c,...(+3)
-NUM	64	8	6	src/core/arena.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,src/ir/dfa.c,...(+1)
 STR	'?'	8	5	src/dump/syntax_dump.c,src/gen/emit_dfa.c,src/parse/ext.c,src/parse/parse.c,src/parse/registry.c
 STR	'n'	8	5	src/gen/emit_dfa.c,src/parse/mod_modifiers.c,src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
 STR	"default"	8	4	src/core/compile.c,src/dump/axes_dump.c,src/gen/emit_vm.c,src/parse/rxt_source.c
+STR	", "	8	3	cli/main.c,src/core/tune.c,src/gen/emit_dfa.c
 STR	"note"	8	2	src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	"     *\n"	8	1	src/gen/emit_dfa.c
 STR	"label"	8	1	src/gen/emit_vm.c
 STR	"missing value for %s"	8	1	cli/main.c
 STR	'Z'	7	6	src/enc/enc_byte.c,src/gen/emit_vm.c,src/parse/mod_assertions.c,src/parse/mod_uprops.c,src/parse/parse.c,...(+1)
+STR	"vm"	7	5	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	'z'	7	5	src/parse/mod_assertions.c,src/parse/mod_uprops.c,src/parse/mod_verbs.c,src/parse/parse.c,src/parse/registry.c
 STR	'x'	7	4	src/parse/mod_modifiers.c,src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
 STR	"-"	7	3	cli/main.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c
 STR	'('	7	3	src/dump/syntax_dump.c,src/parse/parse.c,src/parse/registry.c
 STR	'|'	7	3	src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
-STR	"scan-edge"	7	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	'1'	7	2	src/parse/registry.c,src/parse/rxt_source.c
 STR	'Q'	7	2	src/parse/parse.c,src/parse/registry.c
 STR	'\\n'	7	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
@@ -109,17 +110,14 @@ STR	"\n       "	7	1	src/gen/emit_dfa.c
 STR	"\n    };\n"	7	1	src/gen/emit_dfa.c
 STR	"greedy"	7	1	src/gen/emit_vm.c
 STR	"lazy"	7	1	src/gen/emit_vm.c
-STR	"table"	7	1	src/dump/axes_dump.c
 NUM	0x20	6	6	src/core/fold.c,src/core/sb.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c,...(+1)
 STR	"*"	6	6	src/dump/syntax_dump.c,src/gen/emit_dfa.c,src/parse/mod_lookaround.c,src/parse/mod_recursion.c,src/parse/registry.c,...(+1)
-STR	"dfa"	6	4	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c
 STR	'r'	6	4	src/parse/mod_modifiers.c,src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
 NUM	14	6	3	cli/main.c,lib/pcrec.h,src/core/internal.h
 STR	"--engine=vm"	6	3	src/dump/axes_dump.c,src/gen/emit_vm.c,src/opt/select_engine.c
 STR	'#'	6	3	src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
 STR	"    "	6	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	" */\n"	6	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
-STR	", "	6	2	cli/main.c,src/gen/emit_dfa.c
 STR	"accept"	6	2	src/dump/axes_dump.c,src/gen/emit_vm.c
 STR	"subject_length"	6	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"typedef struct {\n"	6	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
@@ -131,10 +129,11 @@ STR	" %d,"	6	1	src/gen/emit_dfa.c
 STR	"VM_PREFILTER_LANG_WHY"	6	1	src/gen/emit_vm.c
 STR	"ext"	6	1	src/parse/rxt_source.c
 STR	"scan-body"	6	1	src/dump/axes_dump.c
-NUM	128	5	5	cli/main.c,src/core/compile.c,src/ir/dfa.c,src/opt/select_engine.c,src/parse/rxt_source.c
+STR	"table"	6	1	src/dump/axes_dump.c
 NUM	40	5	4	src/gen/emit_dfa.c,src/gen/emit_vm.c,src/opt/callgraph.c,src/parse/mod_recursion.c
 STR	"0"	5	4	src/gen/emit_dfa.c,src/gen/emit_vm.c,src/parse/registry.c,src/parse/rxt_source.c
 STR	"\\x%02x"	5	4	src/core/sb.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
+STR	"dfa"	5	4	cli/main.c,src/dump/axes_dump.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c
 STR	'>'	5	4	src/parse/mod_backrefs.c,src/parse/mod_named_groups.c,src/parse/registry.c,src/parse/rxt_source.c
 STR	'\r'	5	4	src/core/sb.c,src/gen/emit_dfa.c,src/parse/parse.c,src/parse/rxt_source.c
 NUM	17	5	3	cli/main.c,lib/pcrec.h,src/core/compile.c
@@ -148,6 +147,7 @@ STR	"    {\n"	5	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"'%s')"	5	2	cli/main.c,src/parse/rxt_source.c
 STR	"provenance"	5	2	src/parse/rxt_schema.c,src/parse/rxt_source.c
 STR	"revdet"	5	2	src/dump/axes_dump.c,src/gen/emit_vm.c
+STR	"scan-edge"	5	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"search_from"	5	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"subject[scan_position]"	5	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"yes"	5	2	src/dump/syntax_dump.c,src/gen/emit_vm.c
@@ -157,9 +157,7 @@ STR	"    } while (0)\n\n"	5	1	src/gen/emit_vm.c
 STR	"MRL: no room for another iteration and the follow"	5	1	src/gen/emit_vm.c
 STR	"always (fallback)"	5	1	src/dump/axes_dump.c
 STR	"malloc"	5	1	cli/main.c
-STR	"match"	5	1	src/dump/axes_dump.c
 STR	"predicate"	5	1	src/dump/axes_dump.c
-STR	"search-start"	5	1	src/dump/axes_dump.c
 STR	"view"	5	1	src/dump/axes_dump.c
 NUM	0x7f	4	4	src/core/fold.c,src/core/sb.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c
 NUM	24	4	4	lib/pcrec.h,src/dump/limits_dump.c,src/gen/emit_vm.c,src/parse/enabled.c
@@ -175,14 +173,12 @@ STR	"engine"	4	3	src/dump/axes_dump.c,src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	"forced"	4	3	src/dump/axes_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	'7'	4	3	src/parse/definitions.c,src/parse/parse.c,src/parse/registry.c
 STR	'f'	4	3	src/parse/parse.c,src/parse/registry.c,src/parse/rxt_source.c
-STR	"(got '%s')"	4	2	cli/main.c,src/parse/rxt_source.c
 STR	"<"	4	2	src/gen/emit_dfa.c,src/parse/registry.c
 STR	"\\%c requires module '%s'"	4	2	src/parse/ext.c,src/parse/mod_uprops.c
 STR	"a relative reference of zero is not allowed"	4	2	src/parse/mod_backrefs.c,src/parse/mod_recursion.c
 STR	"config"	4	2	src/parse/rxt_schema.c,src/parse/rxt_source.c
 STR	"file"	4	2	src/parse/rxt_schema.c,src/parse/rxt_source.c
 STR	"lower"	4	2	src/dump/syntax_dump.c,src/parse/registry.c
-STR	"premultiplied"	4	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"	4	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"	4	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"quantifier does not follow a repeatable item"	4	2	src/parse/mod_verbs.c,src/parse/parse.c
@@ -198,7 +194,6 @@ STR	"            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n
 STR	"        run->resume_depth++;                                             \\\n"	4	1	src/gen/emit_vm.c
 STR	"     */\n"	4	1	src/gen/emit_dfa.c
 STR	"    static const %s %s_%s[%d] = {"	4	1	src/gen/emit_dfa.c
-STR	"%u"	4	1	src/dump/axes_dump.c
 STR	"(ptrdiff_t)(%s_span_cursor - %d)"	4	1	src/gen/emit_vm.c
 STR	"(ptrdiff_t)run->resume_depth"	4	1	src/gen/emit_vm.c
 STR	");\n"	4	1	src/gen/emit_dfa.c
@@ -206,6 +201,7 @@ STR	".h"	4	1	cli/main.c
 STR	"\\%c: malformed property escape — requires module '%s'"	4	1	src/parse/mod_uprops.c
 STR	"direction"	4	1	src/dump/axes_dump.c
 STR	"invalid range in character class"	4	1	src/parse/parse.c
+STR	"match"	4	1	src/dump/axes_dump.c
 STR	"never"	4	1	src/dump/syntax_dump.c
 STR	"no"	4	1	src/dump/syntax_dump.c
 STR	"number too big in {m,n} quantifier"	4	1	src/parse/parse.c
@@ -213,16 +209,17 @@ STR	"oracle"	4	1	src/parse/rxt_source.c
 STR	"planned"	4	1	src/dump/syntax_dump.c
 STR	"reverse-deterministic body reversal, which its shape "	4	1	src/opt/revdet.c
 STR	"scan must decline"	4	1	src/opt/revdet.c
+STR	"search-start"	4	1	src/dump/axes_dump.c
 STR	"—"	4	1	src/dump/syntax_dump.c
 STR	'config %s from'	4	1	src/parse/rxt_source.c
 STR	'lib %s'	4	1	src/parse/rxt_source.c
+NUM	0u	3	3	cli/main.c,src/dump/syntax_dump.c,src/gen/emit_dfa.c
 NUM	1024	3	3	src/core/arena.c,src/core/compile.c,src/gen/emit_vm.c
 NUM	512	3	3	src/dump/syntax_dump.c,src/parse/enabled.c,src/parse/rxt_source.c
-STR	"-fno-length-prune"	3	3	cli/main.c,src/dump/axes_dump.c,src/gen/emit_vm.c
 STR	"\\r"	3	3	src/core/sb.c,src/gen/emit_dfa.c,src/parse/registry.c
 STR	"\\t"	3	3	src/core/sb.c,src/gen/emit_dfa.c,src/parse/registry.c
 STR	"core/limits.h"	3	3	src/core/internal.h,src/opt/possessify.c,src/opt/revdet.c
-STR	"forward"	3	3	src/dump/axes_dump.c,src/gen/emit_dfa.c,src/gen/emit_vm.c
+STR	"forward"	3	3	src/core/tune.c,src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"module '%s' "	3	3	src/core/internal.h,src/parse/ext.c,src/parse/mod_uprops.c
 STR	'$'	3	3	src/enc/enc.c,src/parse/parse.c,src/parse/registry.c
 STR	'%c'	3	3	cli/main.c,src/gen/emit_dfa.c,src/parse/rxt_source.c
@@ -241,13 +238,16 @@ STR	" "	3	2	src/core/internal.h,src/gen/emit_vm.c
 STR	"%llu"	3	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"%s,%s"	3	2	src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	"'"	3	2	src/dump/syntax_dump.c,src/parse/registry.c
+STR	"(got '%s')"	3	2	cli/main.c,src/parse/rxt_source.c
 STR	"all"	3	2	src/dump/syntax_dump.c,src/parse/enabled.c
 STR	"ascii"	3	2	src/core/fold.c,src/parse/registry.c
+STR	"auto"	3	2	cli/main.c,src/core/tune.c
 STR	"backreference"	3	2	src/opt/select_engine.c,src/parse/registry.c
 STR	"block"	3	2	src/dump/schema_dump.c,src/parse/rxt_schema.c
 STR	"cap-rescue"	3	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"capacity-declined"	3	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"collapsed-prefilter"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
+STR	"core/axes.def"	3	2	cli/main.c,src/dump/axes_dump.c
 STR	"counter"	3	2	src/dump/axes_dump.c,src/gen/emit_vm.c
 STR	"declined-nullable"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"declined-nullable-default"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
@@ -262,16 +262,14 @@ STR	"invalid subpattern name"	3	2	src/parse/mod_backrefs.c,src/parse/mod_recursi
 STR	"kind"	3	2	src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	"memchr"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"n"	3	2	src/gen/emit_dfa.c,src/parse/rxt_source.c
-STR	"offset-set"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
-STR	"offset-set-bounded"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"option"	3	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"overflowed-dfa"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"overflowed-prefilter"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"pattern"	3	2	src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	"pcrec"	3	2	src/parse/rxt_schema.c,src/parse/rxt_source.c
 STR	"permissive"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
-STR	"pinned"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"possessify"	3	2	src/dump/axes_dump.c,src/gen/emit_vm.c
+STR	"premultiplied"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"rx"	3	2	src/core/compile.c,src/parse/rxt_source.c
 STR	"selected"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"size-cap-retry"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
@@ -279,7 +277,6 @@ STR	"size-model"	3	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"size-model-declined"	3	2	src/core/compile.c,src/dump/axes_dump.c
 STR	"subroutine call"	3	2	src/gen/emit_vm.c,src/opt/select_engine.c
 STR	"target"	3	2	src/gen/emit_vm.c,src/parse/rxt_source.c
-STR	"unwrapped"	3	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	'&'	3	2	src/parse/mod_recursion.c,src/parse/registry.c
 STR	'@'	3	2	src/enc/enc.c,src/parse/rxt_source.c
 STR	'D'	3	2	src/parse/mod_modifiers.c,src/parse/registry.c
@@ -318,6 +315,7 @@ STR	"%s %s(%s)\n"	3	1	src/gen/emit_vm.c
 STR	"%s (pattern offset %zu)"	3	1	cli/main.c
 STR	"%s// Prefilter: nothing found yet and still at the start, so\n"	3	1	src/gen/emit_dfa.c
 STR	"%s_span_cursor"	3	1	src/gen/emit_vm.c
+STR	"%u"	3	1	src/dump/axes_dump.c
 STR	"%zu\t%zu\t"	3	1	src/parse/rxt_source.c
 STR	"(?!...)"	3	1	src/parse/registry.c
 STR	"(?*a)"	3	1	src/parse/registry.c
@@ -371,6 +369,7 @@ NUM	13	2	2	lib/pcrec.h,src/core/internal.h
 NUM	160	2	2	cli/main.c,src/parse/mod_recursion.c
 NUM	192	2	2	cli/main.c,src/parse/rxt_source.c
 NUM	23	2	2	lib/pcrec.h,src/core/internal.h
+NUM	2u	2	2	src/dump/syntax_dump.c,src/opt/prefix_k.c
 STR	"                                size_t ref_start, size_t ref_end, size_t at);\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"                                size_t ref_start, size_t ref_end, size_t at)\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"                       size_t ref_start, size_t ref_end, size_t at);\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
@@ -423,23 +422,6 @@ STR	"%s names a capture group, which requires module "	2	2	src/parse/mod_backref
 STR	"'named-groups'"	2	2	src/parse/mod_backrefs.c,src/parse/mod_recursion.c
 STR	"(?R)"	2	2	src/parse/mod_recursion.c,src/parse/registry.c
 STR	"--engine=dfa"	2	2	src/dump/axes_dump.c,src/opt/select_engine.c
-STR	"-fno-alt-island"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-altcls-factor"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-altcls-merge"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-anchored-dfa"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-atomic-discharge"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-cls-fold"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-counter"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-offset-skip"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-possessify"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-premul-table"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-revdet"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-scan-edge"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-size-term"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-splice-calls"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-start-pinned"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-startpos-guard"	2	2	cli/main.c,src/dump/axes_dump.c
-STR	"-fno-tiered-entry"	2	2	cli/main.c,src/dump/axes_dump.c
 STR	"/* $_back_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND BACK-STEP\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
@@ -451,7 +433,6 @@ STR	"MAX_EMIT_BYTES"	2	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"\\\\"	2	2	src/core/sb.c,src/gen/emit_dfa.c
 STR	"anchored"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"backtracking"	2	2	src/dump/axes_dump.c,src/gen/emit_vm.c
-STR	"balanced, speed, max-speed (got '%s')"	2	2	cli/main.c,src/parse/rxt_source.c
 STR	"bitmap"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"branch count"	2	2	src/gen/emit_vm.c,src/parse/mod_lookaround.c
 STR	"by-class"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
@@ -466,7 +447,7 @@ STR	"empty"	2	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"end+eol"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"esc"	2	2	src/dump/syntax_dump.c,src/parse/rxt_source.c
 STR	"indexed"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
-STR	"inline"	2	2	src/gen/emit_vm.c,src/parse/rxt_source.c
+STR	"inline"	2	2	src/core/tune.c,src/parse/rxt_source.c
 STR	"int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"	2	2	src/gen/emit_dfa.c,src/gen/emit_vm.c
 STR	"int"	2	2	src/gen/emit_vm.c,src/parse/rxt_schema.c
 STR	"internal error: a spliced subroutine call nested "	2	2	src/gen/emit_vm.c,src/ir/nfa.c
@@ -483,7 +464,10 @@ STR	"nla"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
 STR	"nlb"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
 STR	"non_atomic_positive_lookahead"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
 STR	"non_atomic_positive_lookbehind"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
+STR	"offset-set"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
+STR	"offset-set-bounded"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"parse_mods.h"	2	2	src/parse/definitions.c,src/parse/mod_uprops.c
+STR	"pinned"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"pla"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
 STR	"plb"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
 STR	"positive_lookahead"	2	2	src/parse/mod_verbs.c,src/parse/registry.c
@@ -504,6 +488,7 @@ STR	"size_t $_next_pos(const unsigned char *s, size_t n, size_t pos);\n"	2	2	src
 STR	"size_t $_next_pos(const unsigned char *s, size_t n, size_t pos)\n"	2	2	src/enc/enc_byte.c,src/enc/enc_utf8.c
 STR	"table-walk"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"unclamped"	2	2	src/dump/axes_dump.c,src/gen/emit_vm.c
+STR	"unwrapped"	2	2	src/dump/axes_dump.c,src/gen/emit_dfa.c
 STR	"value"	2	2	src/gen/emit_vm.c,src/parse/rxt_source.c
 STR	'!'	2	2	src/parse/mod_lookaround.c,src/parse/registry.c
 STR	'(*'	2	2	cli/main.c,src/dump/syntax_dump.c
@@ -530,9 +515,11 @@ NUM	2492	2	1	src/opt/prefix_k.c
 NUM	2LL	2	1	src/gen/emit_vm.c
 NUM	3323	2	1	src/opt/prefix_k.c
 NUM	3u	2	1	src/core/compile.c
+NUM	4096	2	1	cli/main.c
 NUM	415	2	1	src/opt/prefix_k.c
 NUM	6646	2	1	src/opt/prefix_k.c
 NUM	8192	2	1	src/core/tune.c
+NUM	96	2	1	src/dump/axes_dump.c
 NUM	9969	2	1	src/opt/prefix_k.c
 STR	"                            storage.trail,  %s_TRAIL_FRAMES);\n"	2	1	src/gen/emit_vm.c
 STR	"                    description. No --flavour axis\n"	2	1	cli/main.c
@@ -624,8 +611,11 @@ STR	"(none)"	2	1	src/dump/syntax_dump.c
 STR	"(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark"	2	1	src/gen/emit_vm.c
 STR	", ctx->len"	2	1	src/gen/emit_vm.c
 STR	", ctx->pos"	2	1	src/gen/emit_vm.c
+STR	"--count-groups"	2	1	cli/main.c
+STR	"--emit-ir"	2	1	cli/main.c
 STR	"--explain"	2	1	cli/main.c
 STR	"--flavour applies to --list-syntax, "	2	1	cli/main.c
+STR	"--flavour"	2	1	cli/main.c
 STR	"--lib-path"	2	1	cli/main.c
 STR	"--list-axes"	2	1	cli/main.c
 STR	"--list-definitions and --explain only"	2	1	cli/main.c
@@ -633,8 +623,11 @@ STR	"--list-definitions"	2	1	cli/main.c
 STR	"--list-families"	2	1	cli/main.c
 STR	"--list-limits"	2	1	cli/main.c
 STR	"--list-schema"	2	1	cli/main.c
+STR	"--list-source"	2	1	cli/main.c
 STR	"--list-syntax"	2	1	cli/main.c
 STR	"--list-verbs"	2	1	cli/main.c
+STR	"--probe-ask"	2	1	cli/main.c
+STR	"--source"	2	1	cli/main.c
 STR	"--target"	2	1	cli/main.c
 STR	".c"	2	1	cli/main.c
 STR	".call_top = run->call_top;                      \\\n"	2	1	src/gen/emit_vm.c
@@ -659,7 +652,6 @@ STR	"alnum"	2	1	src/parse/registry.c
 STR	"alpha"	2	1	src/parse/registry.c
 STR	"ambiguous-body"	2	1	src/opt/possessify.c
 STR	"at U+%04X"	2	1	src/opt/lower_enc.c
-STR	"auto"	2	1	cli/main.c
 STR	"bare"	2	1	src/dump/syntax_dump.c
 STR	"blank"	2	1	src/parse/registry.c
 STR	"branch %d"	2	1	src/gen/emit_vm.c
@@ -667,7 +659,6 @@ STR	"built"	2	1	src/dump/syntax_dump.c
 STR	"char 0x07"	2	1	src/parse/registry.c
 STR	"char 0x41"	2	1	src/parse/registry.c
 STR	"choice point"	2	1	src/gen/emit_vm.c
-STR	"claim"	2	1	src/dump/syntax_dump.c
 STR	"class-bracket"	2	1	src/dump/syntax_dump.c
 STR	"cntrl"	2	1	src/parse/registry.c
 STR	"command line"	2	1	cli/main.c
@@ -738,7 +729,6 @@ STR	"realloc"	2	1	cli/main.c
 STR	"recognises — requires module '%s'"	2	1	src/parse/mod_uprops.c
 STR	"replicated"	2	1	src/gen/emit_vm.c
 STR	"restore the caller's value, itself TRAILED so a retreat into "	2	1	src/gen/emit_vm.c
-STR	"result"	2	1	src/dump/syntax_dump.c
 STR	"rungs"	2	1	src/gen/emit_vm.c
 STR	"scan_position - 1"	2	1	src/gen/emit_dfa.c
 STR	"scan_position < subject_length"	2	1	src/gen/emit_dfa.c
@@ -768,7 +758,6 @@ STR	"unbuilt"	2	1	src/dump/syntax_dump.c
 STR	"unsigned short"	2	1	src/gen/emit_dfa.c
 STR	"use"	2	1	src/parse/rxt_source.c
 STR	"verb"	2	1	src/dump/syntax_dump.c
-STR	"verdict"	2	1	src/dump/syntax_dump.c
 STR	"vocabulary"	2	1	src/parse/rxt_source.c
 STR	"with"	2	1	src/parse/rxt_source.c
 STR	"word"	2	1	src/parse/registry.c
@@ -795,11 +784,9 @@ STR	'T'	2	1	src/parse/mod_modifiers.c
 STR	'features'	2	1	src/parse/rxt_source.c
 STR	'oracle none'	2	1	src/parse/rxt_source.c
 STR	'oracle'	2	1	src/parse/rxt_source.c
-STR	'pcre2'	2	1	cli/main.c
 STR	's '	2	1	src/parse/rxt_source.c
 STR	'target %s ='	2	1	src/parse/rxt_source.c
 STR	'target %s with'	2	1	src/parse/rxt_source.c
-NUM	0u	1	1	src/gen/emit_dfa.c
 NUM	0x0	1	1	src/opt/lower_enc.c
 NUM	0x01	1	1	src/core/fold.c
 NUM	0x02	1	1	src/core/fold.c
@@ -1095,14 +1082,12 @@ NUM	26666	1	1	src/opt/prefix_k.c
 NUM	2667	1	1	src/opt/prefix_k.c
 NUM	2816	1	1	src/opt/prefix_k.c
 NUM	28161	1	1	src/opt/prefix_k.c
-NUM	2u	1	1	src/opt/prefix_k.c
 NUM	3072	1	1	src/gen/emit_vm.c
 NUM	39708	1	1	src/opt/prefix_k.c
 NUM	3971	1	1	src/opt/prefix_k.c
 NUM	40000	1	1	src/core/tune.c
 NUM	4037	1	1	src/opt/prefix_k.c
 NUM	40373	1	1	src/opt/prefix_k.c
-NUM	4096	1	1	cli/main.c
 NUM	4154	1	1	src/opt/prefix_k.c
 NUM	4203	1	1	src/opt/prefix_k.c
 NUM	42034	1	1	src/opt/prefix_k.c
@@ -1127,7 +1112,6 @@ NUM	65535	1	1	src/gen/emit_dfa.c
 NUM	66	1	1	src/opt/prefix_k.c
 NUM	6u	1	1	src/opt/prefix_k.c
 NUM	70	1	1	src/parse/registry.c
-NUM	75	1	1	src/core/compile.c
 NUM	80000	1	1	src/core/tune.c
 NUM	8423	1	1	src/opt/prefix_k.c
 NUM	84235	1	1	src/opt/prefix_k.c
@@ -2404,6 +2388,8 @@ STR	" literal language, so src/gen/emit_vm.c's alternation"	1	1	src/gen/emit_vm.
 STR	" marked NEVER"	1	1	src/dump/syntax_dump.c
 STR	" never a recount of the event stream"	1	1	src/gen/emit_vm.c
 STR	" no finite inlining either; no flag changes this, and"	1	1	src/gen/emit_vm.c
+STR	" or "	1	1	cli/main.c
+STR	" or"	1	1	cli/main.c
 STR	" preferred alternative"	1	1	src/gen/emit_vm.c
 STR	" prefilter row above says which"	1	1	src/gen/emit_vm.c
 STR	" program"	1	1	src/gen/emit_vm.c
@@ -2721,6 +2707,7 @@ STR	"%s * this artifact's encoding. A mid-character position is REFUSED\n"	1	1	s
 STR	"%s + %s"	1	1	src/gen/emit_vm.c
 STR	"%s -- the auto-selected prefilter's own DFA build hit"	1	1	src/gen/emit_vm.c
 STR	"%s -> "	1	1	src/parse/rxt_source.c
+STR	"%s / %s"	1	1	src/dump/axes_dump.c
 STR	"%s <= %d"	1	1	src/gen/emit_dfa.c
 STR	"%s applies to --source only"	1	1	cli/main.c
 STR	"%s at pattern offset %zu"	1	1	src/opt/select_engine.c
@@ -2740,6 +2727,7 @@ STR	"%s requires the VM engine, which --engine=dfa excludes"	1	1	src/opt/select_
 STR	"%s takes no pattern and no -o"	1	1	cli/main.c
 STR	"%s wants a positive integer (got '%s')"	1	1	cli/main.c
 STR	"%s would deliver a group named '%s', which this "	1	1	src/parse/rxt_compose.c
+STR	"%s%d %s"	1	1	src/core/tune.c
 STR	"%s%d"	1	1	src/gen/emit_dfa.c
 STR	"%s%d%s"	1	1	src/gen/emit_dfa.c
 STR	"%s%s (%s == %d%s) {\n"	1	1	src/gen/emit_dfa.c
@@ -2859,6 +2847,7 @@ STR	"'%s' value '%.*s' is not in the closed set for "	1	1	src/parse/rxt_source.c
 STR	"'%s' wants a non-negative integer (got "	1	1	src/parse/rxt_source.c
 STR	"'%s' wants a non-negative integer (got '%s')"	1	1	src/parse/rxt_source.c
 STR	"'%s'"	1	1	src/gen/emit_vm.c
+STR	"'(*' or '[' — except '(?:', which the base "	1	1	cli/main.c
 STR	"'.', '-' or '_'"	1	1	src/parse/rxt_source.c
 STR	"'/<version>' (got '%s')"	1	1	src/parse/rxt_source.c
 STR	"':  buf[at++] = '"	1	1	src/parse/rxt_source.c
@@ -3102,15 +3091,13 @@ STR	"--backtrack-frames="	1	1	cli/main.c
 STR	"--count-groups is a separate query; use one"	1	1	cli/main.c
 STR	"--count-groups needs a pattern"	1	1	cli/main.c
 STR	"--count-groups takes no -o"	1	1	cli/main.c
-STR	"--count-groups"	1	1	cli/main.c
 STR	"--emit-ir is a separate query; use one"	1	1	cli/main.c
 STR	"--emit-ir lists a VM program; this pattern compiles to the "	1	1	src/core/compile.c
 STR	"--emit-ir needs a pattern"	1	1	cli/main.c
 STR	"--emit-ir takes no -o (it prints the "	1	1	cli/main.c
-STR	"--emit-ir"	1	1	cli/main.c
 STR	"--emit-main"	1	1	cli/main.c
 STR	"--encoding="	1	1	cli/main.c
-STR	"--engine must be auto, dfa or vm "	1	1	cli/main.c
+STR	"--engine must be %s (got '%s')"	1	1	cli/main.c
 STR	"--engine="	1	1	cli/main.c
 STR	"--engine=vm -- the VM scans from search_from itself"	1	1	src/gen/emit_vm.c
 STR	"--engine=vm / --engine=dfa"	1	1	src/dump/axes_dump.c
@@ -3118,13 +3105,11 @@ STR	"--explain: %d row%s DISAGREE%s with the live "	1	1	cli/main.c
 STR	"--explain: %s (pattern offset %zu)"	1	1	cli/main.c
 STR	"--features"	1	1	cli/main.c
 STR	"--features: %s"	1	1	cli/main.c
-STR	"--flavour"	1	1	cli/main.c
 STR	"--fno-step-budget"	1	1	cli/main.c
 STR	"--help"	1	1	cli/main.c
 STR	"--list-families, --list-axes, --list-limits, --list-schema "	1	1	cli/main.c
 STR	"--list-source is a separate query; use one "	1	1	cli/main.c
 STR	"--list-source takes no pattern and no -o "	1	1	cli/main.c
-STR	"--list-source"	1	1	cli/main.c
 STR	"--list-syntax prints for the owning row, so the two dumps "	1	1	src/dump/syntax_dump.c
 STR	"--list-syntax's module column; also 'all', 'none', "	1	1	src/parse/enabled.c
 STR	"--list-syntax, --list-definitions, --list-verbs, "	1	1	cli/main.c
@@ -3142,21 +3127,19 @@ STR	"--pattern-esc: %s"	1	1	cli/main.c
 STR	"--probe-ask is a separate query; use one"	1	1	cli/main.c
 STR	"--probe-ask needs a construct"	1	1	cli/main.c
 STR	"--probe-ask takes no -o"	1	1	cli/main.c
-STR	"--probe-ask"	1	1	cli/main.c
 STR	"--probe-ask: %s (pattern offset %zu)"	1	1	cli/main.c
-STR	"--probe-ask: WANT must be claim, verdict "	1	1	cli/main.c
+STR	"--probe-ask: WANT must be %.*s%s%s, and the construct "	1	1	cli/main.c
 STR	"--source COMPILES a .rxt file; it does not "	1	1	cli/main.c
 STR	"--source needs -o: a FILE for one target, "	1	1	cli/main.c
 STR	"--source takes no pattern argument — the "	1	1	cli/main.c
-STR	"--source"	1	1	cli/main.c
 STR	"--step-budget wants a positive integer "	1	1	cli/main.c
 STR	"--step-budget="	1	1	cli/main.c
 STR	"--trace"	1	1	cli/main.c
 STR	"--tune takes its value with '=' "	1	1	cli/main.c
-STR	"--tune wants -2..2 or one of min-size, size, "	1	1	cli/main.c
+STR	"--tune wants -2..2 or one of %s (got '%s')"	1	1	cli/main.c
 STR	"--tune"	1	1	cli/main.c
 STR	"--tune="	1	1	cli/main.c
-STR	"--unroll wants an integer in 1..4096 "	1	1	cli/main.c
+STR	"--unroll wants an integer in %d..%d "	1	1	cli/main.c
 STR	"--unroll="	1	1	cli/main.c
 STR	"--unroll=1, or raise --max-emit-bytes; see "	1	1	src/core/compile.c
 STR	"--vm-entry-shape wants an integer in "	1	1	cli/main.c
@@ -3167,19 +3150,14 @@ STR	"--work-budget wants a positive integer "	1	1	cli/main.c
 STR	"--work-budget="	1	1	cli/main.c
 STR	"-D"	1	1	src/dump/limits_dump.c
 STR	"-e"	1	1	cli/main.c
+STR	"-fno-length-prune"	1	1	src/gen/emit_vm.c
 STR	"-fno-prefilter -- forced off; the VM scans from search_from"	1	1	src/gen/emit_vm.c
-STR	"-fno-prefilter / -fprefilter"	1	1	src/dump/axes_dump.c
-STR	"-fno-prefilter"	1	1	cli/main.c
-STR	"-fno-prefilter-collapse / -fprefilter-collapse"	1	1	src/dump/axes_dump.c
-STR	"-fno-prefilter-collapse"	1	1	cli/main.c
 STR	"-fno-splice-calls denied it"	1	1	src/opt/callgraph.c
 STR	"-fprefilter and -fno-prefilter cannot both be requested"	1	1	src/opt/select_engine.c
 STR	"-fprefilter cannot be honoured for a pattern containing a "	1	1	src/opt/select_engine.c
 STR	"-fprefilter requires the VM engine; this pattern "	1	1	src/opt/select_engine.c
-STR	"-fprefilter"	1	1	cli/main.c
 STR	"-fprefilter)"	1	1	src/opt/select_engine.c
 STR	"-fprefilter-collapse and -fno-prefilter-collapse cannot "	1	1	src/opt/select_engine.c
-STR	"-fprefilter-collapse"	1	1	cli/main.c
 STR	"-h"	1	1	cli/main.c
 STR	"-i"	1	1	cli/main.c
 STR	"-o"	1	1	cli/main.c
@@ -3246,12 +3224,11 @@ STR	"/* utf8 encoding: walk back one length-validated character run per step. */
 STR	"// %s\n"	1	1	src/gen/emit_vm.c
 STR	"0 /* fully ^-anchored */"	1	1	src/gen/emit_dfa.c
 STR	"0's cached body now names an abandoned node"	1	1	src/opt/lower_enc.c
-STR	"0..%d (0 auto, 1 plain, 2 shared, 3 forward, "	1	1	cli/main.c
+STR	"0..%d (%s; got '%s')"	1	1	cli/main.c
 STR	"0x%04x"	1	1	src/dump/syntax_dump.c
 STR	"0x%x"	1	1	src/dump/axes_dump.c
 STR	"2"	1	1	src/parse/registry.c
 STR	"3"	1	1	src/parse/registry.c
-STR	"4 inline; got '%s')"	1	1	cli/main.c
 STR	"4"	1	1	src/parse/registry.c
 STR	"5"	1	1	src/parse/registry.c
 STR	"6"	1	1	src/parse/registry.c
@@ -3373,23 +3350,6 @@ STR	"PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u"	1	1	src/parse
 STR	"PCREC_ENGINE_DFA"	1	1	src/gen/emit_dfa.c
 STR	"PCREC_ENGINE_VM"	1	1	src/gen/emit_dfa.c
 STR	"PCREC_ERR_FRAMES"	1	1	src/gen/emit_vm.c
-STR	"PCREC_FORCE_PREFILTER"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_ALTCLS_FACTOR"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_ALTCLS_MERGE"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_ANCHORED_DFA"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_ATOMIC_DISCHARGE"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_COUNTER"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_LENGTH_PRUNE"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_OFFSET_SKIP"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_POSSESSIFY"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_PREFILTER"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_PREMUL_TABLE"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_REVDET"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_SCAN_EDGE"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_SIZE_TERM"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_SPLICE_CALLS"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_START_PINNED"	1	1	src/dump/axes_dump.c
-STR	"PCREC_NO_TIERED_ENTRY"	1	1	src/dump/axes_dump.c
 STR	"PCREC_VM_PRUNE_CLAMPED"	1	1	src/dump/axes_dump.c
 STR	"PCREC_VM_PRUNE_UNCLAMPED"	1	1	src/dump/axes_dump.c
 STR	"PCREC_VM_RUNG_COUNTER"	1	1	src/dump/axes_dump.c
@@ -3840,13 +3800,13 @@ STR	"backtrack"	1	1	src/gen/emit_vm.c
 STR	"backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) "	1	1	src/parse/registry.c
 STR	"backward alternation (%d branches):"	1	1	src/gen/emit_vm.c
 STR	"balanced"	1	1	src/core/tune.c
+STR	"balanced, speed, max-speed (got '%s')"	1	1	src/parse/rxt_source.c
 STR	"base grammar (no doorway)"	1	1	src/dump/syntax_dump.c
 STR	"base syntax or not a construct pcrec knows"	1	1	cli/main.c
 STR	"base"	1	1	src/dump/syntax_dump.c
 STR	"become '_', so give one an explicit prefix"	1	1	src/parse/rxt_source.c
 STR	"becomes the generated symbols' prefix)"	1	1	src/parse/rxt_source.c
 STR	"before a pattern that starts with '-')"	1	1	cli/main.c
-STR	"before any doorway is consulted)"	1	1	cli/main.c
 STR	"before any doorway is consulted\n"	1	1	src/dump/syntax_dump.c
 STR	"before the registry is consulted)"	1	1	src/dump/syntax_dump.c
 STR	"begin literal quoting, until \\E"	1	1	src/parse/registry.c
@@ -3932,6 +3892,7 @@ STR	"character-boundary gate on a pattern whose first "	1	1	src/ir/nfa.c
 STR	"character-width fixpoint did not settle in "	1	1	src/opt/callgraph.c
 STR	"choice"	1	1	cli/main.c
 STR	"choicepoints"	1	1	src/gen/emit_vm.c
+STR	"claim"	1	1	src/dump/syntax_dump.c
 STR	"class axis represents as one partition"	1	1	src/ir/dfa.c
 STR	"class-delim"	1	1	src/dump/syntax_dump.c
 STR	"closed"	1	1	src/parse/rxt_schema.c
@@ -3963,6 +3924,7 @@ STR	"const unsigned char *subject, size_t subject_length, size_t search_from,\n"
 STR	"const void *call_ret;"	1	1	src/gen/emit_vm.c
 STR	"const void *resume_label;"	1	1	src/gen/emit_vm.c
 STR	"construction exceeds %lld state-set elements; "	1	1	src/ir/dfa.c
+STR	"consulted)"	1	1	cli/main.c
 STR	"consume"	1	1	src/gen/emit_vm.c
 STR	"consumed BACKWARD"	1	1	src/gen/emit_vm.c
 STR	"continuation must not survive to be resumed later"	1	1	src/gen/emit_vm.c
@@ -4044,7 +4006,6 @@ STR	"discharged"	1	1	src/dump/axes_dump.c
 STR	"dissents       %d\n"	1	1	src/dump/syntax_dump.c
 STR	"does not declare"	1	1	src/parse/mod_backrefs.c
 STR	"doorway (see the 'agree' lines) — this is a pcrec "	1	1	cli/main.c
-STR	"doorway (start with '\\', '(?', '(*' or '[' — "	1	1	cli/main.c
 STR	"doorway, so nothing can compile it"	1	1	src/dump/syntax_dump.c
 STR	"dotall: . matches newline"	1	1	src/parse/registry.c
 STR	"dropped %s -- %s. Raise --max-emit-bytes/--max-emit-code-bytes "	1	1	src/core/compile.c
@@ -4094,7 +4055,6 @@ STR	"exactly "	1	1	src/gen/emit_dfa.c
 STR	"exactly one pattern expected (%s)"	1	1	cli/main.c
 STR	"exactly where the assertion started. On THIS polarity a "	1	1	src/gen/emit_vm.c
 STR	"exactly-one-of"	1	1	src/parse/rxt_schema.c
-STR	"except '(?:', which the base grammar answers "	1	1	cli/main.c
 STR	"explicit"	1	1	src/parse/enabled.c
 STR	"ext-tree-contents"	1	1	src/dump/schema_dump.c
 STR	"extend: one more iteration is the lazy resume"	1	1	src/gen/emit_vm.c
@@ -4165,6 +4125,7 @@ STR	"given on line %zu"	1	1	src/parse/rxt_source.c
 STR	"goto"	1	1	src/gen/emit_vm.c
 STR	"goto* frame.call_ret"	1	1	src/gen/emit_vm.c
 STR	"graduation rule, format_design §2.27.3). The `ext` OPENER's own row "	1	1	src/dump/schema_dump.c
+STR	"grammar answers before any doorway is "	1	1	cli/main.c
 STR	"greedy: leaving the loop here is the resume"	1	1	src/gen/emit_vm.c
 STR	"group %d PUBLISHED: the pair goes out "	1	1	src/gen/emit_vm.c
 STR	"group %d close, recovered by the backward walk"	1	1	src/gen/emit_vm.c
@@ -4403,6 +4364,7 @@ STR	"more than %d deep, so the splice eligibility rule "	1	1	src/gen/emit_vm.c
 STR	"moved across the encoding lowering — the "	1	1	src/opt/lower_enc.c
 STR	"multiline: ^ and $ match at internal newlines"	1	1	src/parse/registry.c
 STR	"multiple quantifiers on the same item"	1	1	src/parse/parse.c
+STR	"must reach a doorway (start with '\\', '(?', "	1	1	cli/main.c
 STR	"n/a (no VM prefilter)"	1	1	src/core/compile.c
 STR	"name (a letter or '_' then letters, digits, '_', '-' "	1	1	src/parse/rxt_source.c
 STR	"name (got '%s')"	1	1	src/parse/rxt_source.c
@@ -4509,7 +4471,6 @@ STR	"or <store-name> (got '%s')"	1	1	src/parse/rxt_source.c
 STR	"or a braced name or number"	1	1	src/parse/mod_backrefs.c
 STR	"or a named set: std1)"	1	1	src/parse/enabled.c
 STR	"or a subpattern name, not a mixture"	1	1	src/parse/mod_backrefs.c
-STR	"or result, and the construct must reach a "	1	1	cli/main.c
 STR	"or script run ((*script_run:...))"	1	1	src/parse/registry.c
 STR	"or the start of the file closes every "	1	1	src/parse/rxt_source.c
 STR	"out of memory compiling this pattern (the compiler could "	1	1	src/core/compile.c
@@ -4568,7 +4529,7 @@ STR	"per-key"	1	1	src/parse/rxt_source.c
 STR	"permanently UNSET (under a zero-count repeat, or reached "	1	1	src/core/compile.c
 STR	"perr"	1	1	src/parse/rxt_source.c
 STR	"plain (?&%s) calls it"	1	1	src/parse/mod_backrefs.c
-STR	"plain"	1	1	src/gen/emit_vm.c
+STR	"plain"	1	1	src/core/tune.c
 STR	"point the body created is discarded, dead or not"	1	1	src/gen/emit_vm.c
 STR	"position for any accepting continuation"	1	1	src/gen/emit_vm.c
 STR	"positive lookahead (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"	1	1	src/gen/emit_vm.c
@@ -4686,6 +4647,7 @@ STR	"residue and the follow do not fit"	1	1	src/gen/emit_vm.c
 STR	"restore the cursor, and never reconsider"	1	1	src/gen/emit_vm.c
 STR	"restrict caseless matching to within ASCII or non-ASCII"	1	1	src/parse/registry.c
 STR	"result -- the attempt budget is derived from the size-term "	1	1	src/core/compile.c
+STR	"result"	1	1	src/dump/syntax_dump.c
 STR	"resume"	1	1	src/gen/emit_vm.c
 STR	"resume-frames"	1	1	src/gen/emit_vm.c
 STR	"resume-points"	1	1	src/gen/emit_vm.c
@@ -4755,7 +4717,7 @@ STR	"set 63"	1	1	src/parse/registry.c
 STR	"set 7"	1	1	src/parse/registry.c
 STR	"set"	1	1	src/gen/emit_vm.c
 STR	"shape ignores preference, which that verdict is what "	1	1	src/gen/emit_vm.c
-STR	"shared"	1	1	src/gen/emit_vm.c
+STR	"shared"	1	1	src/core/tune.c
 STR	"shorter run is the resume (retreat one stride)"	1	1	src/gen/emit_vm.c
 STR	"sign or leading space (got '%s')"	1	1	src/parse/rxt_source.c
 STR	"single-tier"	1	1	src/dump/axes_dump.c
@@ -5014,7 +4976,7 @@ STR	"unknown escape \\%c in class"	1	1	src/parse/ext.c
 STR	"unknown escape \\%c"	1	1	src/parse/ext.c
 STR	"unknown flag letter '%c' in `flags %s` on "	1	1	src/parse/rxt_source.c
 STR	"unknown flag letter(s) '%s' (only 'i' is "	1	1	src/parse/rxt_source.c
-STR	"unknown flavour '%s' (only 'pcre2' exists; "	1	1	cli/main.c
+STR	"unknown flavour '%s' (only '%s' exists; "	1	1	cli/main.c
 STR	"unknown module '%.*s' (names are "	1	1	src/parse/enabled.c
 STR	"unknown option '%s' in the %s (use -- "	1	1	cli/main.c
 STR	"unknown"	1	1	src/dump/syntax_dump.c
@@ -5036,6 +4998,7 @@ STR	"variable-length lookbehind is not implemented: "	1	1	src/parse/mod_lookarou
 STR	"variable-length lookbehind is not implemented: every "	1	1	src/parse/mod_lookaround.c
 STR	"variants"	1	1	src/parse/rxt_source.c
 STR	"verbs"	1	1	src/parse/registry.c
+STR	"verdict"	1	1	src/dump/syntax_dump.c
 STR	"verify chain (offset 0 is always a verify member)"	1	1	src/gen/emit_dfa.c
 STR	"views"	1	1	src/gen/emit_dfa.c
 STR	"vm-prefilter"	1	1	src/dump/axes_dump.c
@@ -5131,6 +5094,7 @@ STR	'none'	1	1	cli/main.c
 STR	'oracle %s'	1	1	src/parse/rxt_source.c
 STR	'pattern'	1	1	src/parse/rxt_source.c
 STR	'pattern-esc'	1	1	src/parse/rxt_source.c
+STR	'pcre2'	1	1	cli/main.c
 STR	'pcrec'	1	1	src/parse/rxt_source.c
 STR	's DFA state ceiling, and K7'	1	1	cli/main.c
 STR	's [OPT-4] size rung rebuilt a smaller one with a prefilter from the count-collapsed language that SURVIVED (docs/spec/tuning.md §2.17; distinct from collapsed-prefilter above, which is the [SEL-1] DFA-state-cap rung'	1	1	src/dump/axes_dump.c
