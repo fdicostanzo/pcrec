@@ -8379,6 +8379,63 @@ static void vm_strats_describe(unsigned mask, StrBuf *o)
     }
 }
 
+/* THE LISTING's OWN TWO REPETITIONS, one home each (lens 11's F8).
+ *
+ * `vm_listing_slot_row` is the SLOTS section's row and the one place its
+ * three column widths are written; six families rendered it independently
+ * before this, which is six places for one width to drift.
+ * `vm_listing_slots` is a whole single-index family on top of it, including
+ * the empty-population sentence two of the six carry and the other four do
+ * not (NULL says so). The revdet family is the one that cannot use it: its
+ * three rows come from ONE loop index, so printing them family-by-family
+ * would reorder the section on any artifact with more than one revdet loop. */
+static void vm_listing_slot_row(StrBuf *o, int slot,
+                                const char *holds, const char *note)
+{
+    sb_printf(o, "  %-12d %-22s %s\n", slot, holds, note);
+}
+
+static void vm_listing_slots(StrBuf *o, Vm *v, int n, int (*slot)(Vm *, int),
+                             const char *holds, const char *note,
+                             const char *none_msg)
+{
+    if (n == 0) {
+        if (none_msg) sb_puts(o, none_msg);
+        return;
+    }
+    for (int i = 0; i < n; i++)
+        vm_listing_slot_row(o, slot(v, i), holds, note);
+}
+
+/* The revdet loop's three slots, in the order a reader needs them. */
+static const char *const vm_revdet_slot_desc[3][2] = {
+    { "revdet loop entry", "the capture walk's floor (S2.5)" },
+    { "revdet low-water",  "boundary after rmin iterations: the retreat's floor" },
+    { "revdet ceiling",    "maximal boundary reached: the lazy extension's cap" },
+};
+
+/* One home for "list every event of kind K, or say why there are none" — the
+ * RUNGS, STRATEGIES and PRUNING sections were the same twelve-line program
+ * three times, differing in the event kind, the name table, one column width
+ * and the empty-population sentence. `namew` is a real width at all three
+ * call sites (18 / 14 / 12), never 0, which is what keeps `%-*s` distinguishable
+ * from `%*s` here. */
+static void vm_listing_events(StrBuf *o, const Vm *v, VEKind kind,
+                              const char *const *kindname, int namew,
+                              const char *none_msg)
+{
+    int n = 0;
+    for (int i = 0; i < v->nev; i++) {
+        if (v->ev[i].k != kind) continue;
+        n++;
+        sb_printf(o, "  at L%-6d %-*s %s\n", v->ev[i].a, namew,
+                  kindname[v->ev[i].b],
+                  v->ev[i].role ? v->ev[i].role : "");
+    }
+    if (n == 0)
+        sb_puts(o, none_msg);
+}
+
 /* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
  * from the emitted `.c`, so byte-identity gates over the artifact say
  * nothing about this function and it has its own arm
@@ -8630,45 +8687,34 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                               : "written by the ENTRY, not the VM (S3.4)")
                          : (w ? "written on traverse, trailed" : "never written"));
     }
-    if (v->nguard_total == 0)
-        sb_puts(o, "  (no empty-iteration guard slots: no nullable unbounded"
-                   " quantifier on the frames rung)\n");
-    for (int i = 0; i < v->nguard_total; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_guard(v, i),
-                  "empty-iteration guard", "where the current iteration began (S3.3)");
-    if (v->nlow == 0)
-        sb_puts(o, "  (no span-loop low-water slots: no cursor rung in this"
-                   " program)\n");
-    for (int i = 0; i < v->nlow; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_low(v, i),
-                  "span-loop low-water", "the loop's entry position (S2.5)");
-    for (int i = 0; i < v->nmark; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
-                  "cut mark",
-                  "resume-stack depth at entry -- a possessified loop's "
-                  "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])");
-    for (int i = 0; i < v->nrev; i++) {
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 0),
-                  "revdet loop entry", "the capture walk's floor (S2.5)");
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 1),
-                  "revdet low-water", "boundary after rmin iterations: the retreat's floor");
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 2),
-                  "revdet ceiling", "maximal boundary reached: the lazy extension's cap");
-    }
+    vm_listing_slots(o, v, v->nguard_total, vm_slot_guard,
+                     "empty-iteration guard",
+                     "where the current iteration began (S3.3)",
+                     "  (no empty-iteration guard slots: no nullable unbounded"
+                     " quantifier on the frames rung)\n");
+    vm_listing_slots(o, v, v->nlow, vm_slot_low,
+                     "span-loop low-water", "the loop's entry position (S2.5)",
+                     "  (no span-loop low-water slots: no cursor rung in this"
+                     " program)\n");
+    vm_listing_slots(o, v, v->nmark, vm_slot_mark, "cut mark",
+                     "resume-stack depth at entry -- a possessified loop's "
+                     "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])",
+                     NULL);
+    for (int i = 0; i < v->nrev; i++)
+        for (int j = 0; j < 3; j++)
+            vm_listing_slot_row(o, vm_slot_rev(v, i, j),
+                                vm_revdet_slot_desc[j][0],
+                                vm_revdet_slot_desc[j][1]);
     /* [M6.6.2] the lookaround's two families. They are listed SEPARATELY and
      * their counts can differ, which is the point: `nlookmark < nlookpos` says
      * this artifact contains a NON-ATOMIC form, and that is how a reader tells
      * the two atomicities apart in the listing (design §3.6). */
-    for (int i = 0; i < v->nlookmark; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookmark(v, i),
-                  "lookaround cut mark",
-                  "resume-stack depth at the assertion's entry -- the atomic "
-                  "and negative forms commit ([M6.6.2])");
-    for (int i = 0; i < v->nlookpos; i++)
-        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookpos(v, i),
-                  "lookaround cursor",
-                  "the entry position the assertion restores: a lookaround "
-                  "keeps the VERDICT and discards the POSITION");
+    vm_listing_slots(o, v, v->nlookmark, vm_slot_lookmark, "lookaround cut mark",
+                     "resume-stack depth at the assertion's entry -- the atomic "
+                     "and negative forms commit ([M6.6.2])", NULL);
+    vm_listing_slots(o, v, v->nlookpos, vm_slot_lookpos, "lookaround cursor",
+                     "the entry position the assertion restores: a lookaround "
+                     "keeps the VERDICT and discards the POSITION", NULL);
 
     /* ---- RUNGS -----------------------------------------------------------
      * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
@@ -8678,19 +8724,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * below is a VE_RUNG event vm_cursor_rep / vm_rep's frames fallthrough
      * appended at the same call that decided the rung. */
     sb_puts(o, "\nRUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)\n");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_RUNG) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-18s %s\n", v->ev[i].a,
-                      vm_rung_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: no quantifier in this program consulted the"
-                       " rung ladder at all)\n");
-    }
+    vm_listing_events(o, v, VE_RUNG, vm_rung_kindname, 18,
+                      "  (none: no quantifier in this program consulted the"
+                      " rung ladder at all)\n");
 
     /* ---- STRATEGIES ------------------------------------------------------
      * [ENG-BREP] the per-quantifier possessification verdict, as ACTED ON:
@@ -8700,18 +8736,8 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * things that could disagree — there is one call and it did both. */
     sb_puts(o, "\nSTRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier"
                " stamp)\n");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_STRAT) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-14s %s\n", v->ev[i].a,
-                      vm_strat_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: this program has no quantifier to possessify)\n");
-    }
+    vm_listing_events(o, v, VE_STRAT, vm_strat_kindname, 14,
+                      "  (none: this program has no quantifier to possessify)\n");
 
     /* ---- PRUNING ---------------------------------------------------------
      * [M4.6d] the per-quantifier MRL verdict, as ACTED ON. Same construction
@@ -8730,18 +8756,8 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                             " (sound: it under-estimates), so this artifact"
                             " prunes less than the analysis could"
                           : "");
-    {
-        int n = 0;
-        for (int i = 0; i < v->nev; i++) {
-            if (v->ev[i].k != VE_PRUNE) continue;
-            n++;
-            sb_printf(o, "  at L%-6d %-12s %s\n", v->ev[i].a,
-                      vm_prune_kindname[v->ev[i].b],
-                      v->ev[i].role ? v->ev[i].role : "");
-        }
-        if (n == 0)
-            sb_puts(o, "  (none: this program has no quantifier to bound)\n");
-    }
+    vm_listing_events(o, v, VE_PRUNE, vm_prune_kindname, 12,
+                      "  (none: this program has no quantifier to bound)\n");
 
     /* ---- PROGRAM -------------------------------------------------------*/
     sb_puts(o, "\nPROGRAM\n");
