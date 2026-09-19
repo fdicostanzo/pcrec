@@ -83,7 +83,23 @@
 typedef struct {
     unsigned    id;              /* PCREC_ENCE_* below */
     bool        engine_callable; /* may an engine body call it? */
+    /* [EMIT-VERB] (D112) EACH TEXT BLOB IS A PAIR: the entry's DOC-COMMENT
+     * and the C it documents, as two constants rather than one. The
+     * `-fno-comments` gate is a render-time decision over comment EVENTS
+     * (D108), and a residual entry's text is emitted VERBATIM — so the
+     * emitter has no event to gate unless the split is in the DATA. Doing it
+     * here rather than by recognising `/` `*` in a finished blob is what
+     * keeps the classification at the site: a backend states which half is
+     * prose, and no renderer has to parse C to find out.
+     *
+     * The road-not-taken note above still applies to per-CONSTRUCT growth —
+     * a fourth entry gets a row, not a fifth field. This pair is a different
+     * axis (prose vs. code, one split per blob), so it does not grow with the
+     * entry count. A row may leave either doc NULL, which means "this half is
+     * all code": `advance`, one field down, already ships that way. */
+    const char *decls_doc;       /* the declarations' doc-comment, or NULL */
     const char *decls;           /* residual declarations, `$` = prefix */
+    const char *defs_doc;        /* the definitions' doc-comment, or NULL */
     const char *defs;            /* residual definitions, `$` = prefix */
 } PcrecEncEntry;
 

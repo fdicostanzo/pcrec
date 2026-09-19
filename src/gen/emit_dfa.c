@@ -4165,9 +4165,12 @@ static void token_stop(StrBuf *c, const DfaForm *f)
      * -Werror`; the loop's own shape does not change, because gcc folds the
      * inline call and drops the unreachable arm. */
     if (floor == 0) {
-        sb_printf(c,
+        sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        sb_puts(c,
             "/* [OPT-EDGE] EVERY state of this machine is a scan-edge head, so the\n"
-            " * loop's generic path is unreachable and the test IS that constant. */\n"
+            " * loop's generic path is unreachable and the test IS that constant. */\n");
+        sb_cmt_close(c);
+        sb_printf(c,
             "static inline int %s_%s_is_stop(%s_%s_state s) { (void)s; return 1; }\n",
             p, m, p, m);
         return;
@@ -4786,12 +4789,15 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
     const PrefixK *sc = ofsk_scan(f);
     int maxk = f->ofsk->maxk;
 
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "/* ---- THE OFFSET-k CANDIDATE-START SKIP ---------------------------\n"
         " * Every match of this pattern carries a byte from a known set at each\n"
         " * of these offsets FROM ITS OWN START, so a position that fails any\n"
         " * one of them cannot begin a match and the transition loop need not\n"
-        " * be entered there (docs/design/offset_k_skip.md):\n"
+        " * be entered there (docs/design/offset_k_skip.md):\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         " *\n");
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
@@ -4802,7 +4808,8 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         if (i == f->ofsk->scan) sb_puts(c, "   <- SCANNED FOR");
         sb_puts(c, "\n");
     }
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         " *\n"
         " * The scan is one pass for the offset marked above; the others are\n"
         " * checked on each candidate before the loop is entered, and a failed\n"
@@ -4812,7 +4819,9 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         " *\n"
         " * SPEED ONLY: it refuses exactly the starts the stepped scan would\n"
         " * refuse, so no answer depends on it. Compile with -fno-offset-skip\n"
-        " * to emit the same matcher without it.\n"
+        " * to emit the same matcher without it.\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         " */\n");
 
     sb_printf(c, "static inline size_t %s_ofsskip(const unsigned char *subject, size_t n, size_t pos", p);
@@ -6351,7 +6360,8 @@ static void anch_start(const Dfa *ad, const UnanchStart *us, UnanchStart *o)
 static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
                                     const char *matchfn)
 {
-    sb_printf(c,
+    sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    sb_puts(c,
         "/* [ENG-ABS] The anchored match-here entry, spec S3.2: a match at\n"
         " * exactly ctx->pos, or -1. It runs the artifact's THIRD machine --\n"
         " * the forward tables WITHOUT the start-anywhere self-loop -- from\n"
@@ -6362,7 +6372,9 @@ static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
         " * D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
         " * Unreachable on this engine -- a DFA artifact has no counter to\n"
         " * exhaust -- and this body cannot produce one at all, which is why\n"
-        " * (unlike the search-and-filter form) it has no code to forward. */\n"
+        " * (unlike the search-and-filter form) it has no code to forward. */\n");
+    sb_cmt_close(c);
+    sb_printf(c,
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    const unsigned char *subject = ctx->subject;\n"
@@ -6703,15 +6715,18 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         if (pcrec_startgate_needed(cx) &&
             pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                   sbnd, sizeof sbnd, "start", "subject",
-                                  "subject_length", &trunc))
-            sb_printf(c,
+                                  "subject_length", &trunc)) {
+            sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+            sb_puts(c,
                 "        /* [K50] A match may begin only at a character\n"
                 "         * boundary of this artifact's encoding. The first\n"
                 "         * iteration is the caller's own start position and\n"
                 "         * is never skipped; every later one is a position\n"
-                "         * this loop invented. */\n"
+                "         * this loop invented. */\n");
+            sb_cmt_close(c);
+            sb_printf(c,
                 "        if (start > search_from && !(%s)) continue;\n", sbnd);
-        else if (trunc)
+        } else if (trunc)
             ctx_fail(cx, 0,
                      "internal error: this encoding's character-start guard "
                      "does not fit the emitter's buffer");

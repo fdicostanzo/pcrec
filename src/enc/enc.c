@@ -78,7 +78,15 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 {
     if (!e || !e->entries) return;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
-        if (mask & t->id) pcrec_enc_emit_text(sb, t->decls, prefix);
+        if (mask & t->id) {
+            /* [EMIT-VERB] the entry's doc half, through the render gate. */
+            if (t->decls_doc) {
+                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_enc_emit_text(sb, t->decls_doc, prefix);
+                sb_cmt_close(sb);
+            }
+            pcrec_enc_emit_text(sb, t->decls, prefix);
+        }
 }
 
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
@@ -86,7 +94,14 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
 {
     if (!e || !e->entries) return;
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
-        if (mask & t->id) pcrec_enc_emit_text(sb, t->defs, prefix);
+        if (mask & t->id) {
+            if (t->defs_doc) {
+                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_enc_emit_text(sb, t->defs_doc, prefix);
+                sb_cmt_close(sb);
+            }
+            pcrec_enc_emit_text(sb, t->defs, prefix);
+        }
 }
 
 bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
