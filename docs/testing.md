@@ -2529,6 +2529,21 @@ its 34-script loop through a `SAN_PROCS`-wide job pool (item 3, above), and
 `scripts/CLAUDE.md`'s `battery.sh` entry. The first full end-to-end run is
 owed at the next merge/close battery — not performed by the STEP 1 lane.
 
+**`alloc` joins the chain (D110, 2026-09-18, lane allocpins):** placed
+after `san`, before `lint` — `test → strict → axes → san → alloc → lint →
+mech`. `make alloc` (opt-in, `tests/core/alloc_check.c`'s allocation-
+failure injector) had no standing home before this: the per-witness
+population floors and absorption pins only ran when someone remembered to
+run it by hand. The stage is an ordinary `make alloc` with no `$CC`
+override — unlike `san`/`lint`, the injector needs no sanitizer/analyzer
+support from the toolchain, so it does not share their darwin-clang
+problem. Measured ~70s on ubuntubudu (Frank's brief); ~40s on this Mac dev box
+(Apple M1 Max, `make alloc` untimed cold, no `$CC` override — bare `gcc`
+there is Apple clang, which the injector's build compiles under fine).
+`BATTERY_STAGES`
+selects it like every other stage (`BATTERY_STAGES="test strict alloc"`,
+etc.) since it is just another space-separated word in that list.
+
 ### [TT-7] combined axis (2026-08-23) — ADOPTED: `make san` is the battery's sanitizer stage
 
 `docs/dev/chain_profile.md` candidate (a), 2026-08-23: today's `ubsan` and

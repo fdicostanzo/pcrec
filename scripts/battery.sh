@@ -2,7 +2,17 @@
 # scripts/battery.sh — [TT-12] STEP 1 item 5: battery_v5, the manager's
 # merge/close validation chain as ONE detached, self-logging run.
 #
-# STAGES, IN ORDER: test -> strict -> axes -> san -> lint -> mech.
+# STAGES, IN ORDER: test -> strict -> axes -> san -> alloc -> lint -> mech.
+# `alloc` is new here ([REVW.U L5-R1]/D110, 2026-09-18): `make alloc`, the
+# allocation-failure injector's own opt-in target (tests/core/alloc_check.c,
+# tests/core/CLAUDE.md), given a home in the merge/close battery rather than
+# left to run only when someone remembers — it was ~70s on ubuntubudu at
+# landing (measure darwin's own cost before trusting that number here).
+# Placed after `san` (a separate build axis, same shape) and before `lint`
+# (cheap, unrelated) — it does not belong inside `test` itself (D110: the
+# per-witness floors stay opt-in; `make test`'s own resource section 2b
+# gained a coarser rc-level check on the SAME instrument, not the per-witness
+# detail this stage runs).
 # `axes` is new here ([TT-12] STEP 2, Frank's ruling 2026-09-03: "2 yes" —
 # test-axes joins the union battery once STEP 1's pairwise wall fits the
 # day/night rule). Every other stage's SHAPE is this row's own STEP 1
@@ -117,7 +127,7 @@ run_battery() {
     # investigation rules, a Mac battery runs BATTERY_STAGES="test strict
     # axes lint mech" and san rides the Linux executor channel. The trailer
     # records the chosen set so a reduced run can never masquerade as full.
-    local stages="${BATTERY_STAGES:-test strict axes san lint mech}"
+    local stages="${BATTERY_STAGES:-test strict axes san alloc lint mech}"
     echo "== stages: $stages" >> "$TRAILER"
     for stage in $stages; do
         local slog="$LOGDIR/$stage.log"
@@ -154,6 +164,13 @@ run_battery() {
                 ;;
             san)
                 SAN_PROCS="$SAN_PROCS" make CC="$CC" san > "$slog" 2>&1
+                ;;
+            alloc)
+                # [REVW.U L5-R1]/D110: an ordinary build+test shape (the
+                # `test`/`strict` pattern, no $CC override) — the allocator
+                # injector needs no sanitizer/analyzer support from the
+                # toolchain, unlike `san`/`lint`'s own darwin-clang problem.
+                make alloc > "$slog" 2>&1
                 ;;
             lint)
                 make CC="$CC" lint > "$slog" 2>&1
