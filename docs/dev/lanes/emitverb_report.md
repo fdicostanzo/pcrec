@@ -280,3 +280,110 @@ built for it rather than assumed:
   too: the auto-split of `pf_block_ofs`'s banner (whose MIDDLE is a loop over
   the selected offsets) left its continuation lines outside the region.
 
+---
+
+## 4. EVENT 2 — the FLIP (the abi event)
+
+### 4.1 The flip itself is one token
+
+`src/core/axes.def`'s row goes `PCREC_AXIS_DEFAULT_ON` ->
+`PCREC_AXIS_DEFAULT_OFF`. Nothing else in the compiler changes to flip it —
+which is what D111's single source buys, and is worth recording as the
+first demonstration of it.
+
+### 4.2 `tests/codegen/run_comments_axis.sh` — the axis's own check
+
+New, in `test-codegen`'s parallel group. It is the ONLY script in the tree
+that compares a `-fno-comments` artifact against anything: every existing
+byte-identity gate compares DEFAULT builds, and since the flip the default IS
+the comment-free one, so the `-fcomments` artifact has no other reader.
+Nine pattern pairs across both engines, the hybrid, the offset-skip and
+scan-edge prefilters, the anchored form, a backreference, a lookaround and a
+counted repeat. **65 checks, 0 failed.** Its five claims and the reasoning
+behind each are in `tests/codegen/CLAUDE.md`; the two worth restating here:
+
+- every artifact is COMPILED under `-Wall -Wextra -Werror`, because the
+  half-gated-comment hazard is a C syntax error and is invisible to any
+  comparison of default builds;
+- arm 3 carries its own positive control (the two SOURCES must differ), so a
+  green `.o` comparison cannot come from the flag being ignored.
+
+**It caught one more byte on its first run.** The orientation block's own
+trailing blank line was inside the gated region, so the comment-EXCLUDED size
+differed by 1 between the two settings. Moved out: the separator is not part
+of the comment. That makes *"the emitted-size caps cannot see this axis"* an
+IDENTITY rather than a claim — the comment-excluded size is now byte-equal
+under both settings on every case.
+
+### 4.3 The abi re-pin, by grep and then by the suites that count
+
+| reader | how found | action |
+|---|---|---|
+| `src/gen/emit_dfa.c`'s `.abi = 26,` | grep | -> 27 |
+| `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT=26` | grep | -> 27, plus the 26->27 clause on its own narrative (that message is the bump LOG) |
+| `docs/spec/match_api.md:159` | grep | -> 27, [EMIT-VERB] named |
+| `docs/spec/match_api.md:1982` | grep | -> 27, with the measured figures |
+| `tests/codegen/run_recursion_identity.sh` (B) `FILEPIN` | grep | **OWED to the manager** (below) |
+| `tests/registry/run_registry_tests.sh`'s axes COVERAGE pin `102` | **NOT by grep** | -> 108 |
+
+**The last row is the D94 addendum's own shape, met exactly as that addendum
+predicts.** It cites no axis, no macro and no abi digit — it is a count of
+`^PASS: ` lines in `axes_registry_check.sh`'s output — so the bump's grep
+sweep cannot reach it, and it moved anyway: the `comments` axis's two rows
+self-register six checks (bit constant, CLI spelling and tuning.md heading,
+twice). It surfaced on `make test-registry`, which is the suite that COUNTS
+things over the area touched. Third recorded instance of the class.
+
+**The (B) pin is deliberately left at `94ef3836` and is OWED to the manager**,
+on opt5i's and ccdiff1's recorded precedent: D76's pin must name a commit
+REACHABLE AFTER THE MERGE, which a lane branch's own commit is not. So
+`run_recursion_identity.sh` is RED on this branch BY CONSTRUCTION, with
+exactly the message *"the emitted scaffolding changed: bump `abi` … and
+re-pin comparison (B)"*. The gate's own bump log now carries the 26 -> 27
+entry, including the fact that **comparison (A) is touched by this bump and
+not marginally**: `prog_region()` reads the VM program between `goto <p>_L0;`
+and the accept label, and every label in it carries a `// <role>` line the
+default no longer emits.
+
+### 4.4 The comment-reader census — (b), done by MEASUREMENT
+
+The brief asks for the census by grep. **Two grep passes were run and both
+were useless**, and that is itself the finding: a needle-based census either
+misses the readers (needles are built from shell variables, or are short
+`// ` fragments) or drowns in false positives (generic substrings like
+`"function"` match emitted prose). What produced the real list was flipping
+the default and running the suites. Every red below was traced to its line
+and converted.
+
+| script | what it read | conversion |
+|---|---|---|
+| `tests/codegen/run_codegen_tests.sh` — `residual_names()` | the phrase "ENCODING RESIDUAL entry" in the residual entry's doc-comment | reads the DECLARATION HEADS and subtracts the fixed surface (the five entry points, their three `_in` siblings, `rx_info`). **A strengthening**: the fact under test is which entries the artifact DECLARES, and a comment about a declaration is one remove from it |
+| `tests/codegen/run_codegen_tests.sh` — D37, 4 arms | `/* Feature set: … */` | reads `PCREC_FEATURE_SET` / `PCREC_FEATURE_MODULES` (the stamps). One arm — the paired `.h` — CANNOT convert (the macros are `.c`-only) and is re-aimed at `-fcomments` |
+| `tests/cli/run_cli_tests.sh` — case14, 6 arms | the same comment | the same stamps; the `.h` arm likewise `-fcomments` |
+| `tests/cli/run_cli_tests.sh` — case14's `ndiff` | a DIFF LINE COUNT of 4 | 2 — the set name was carried twice, in the comment and in the macro |
+| `tests/cli/run_cli_tests.sh` — case10 | `^/\* Feature set: none` / `all` | `#define PCREC_FEATURE_SET "none"` / `"all"` |
+| `tests/codegen/run_comment_escape.sh` — all 5 invocations | the state legend's own `/* … */` block | **`-fcomments`**, the one place in the tree where that is right: the hazard under test IS a comment |
+| `tests/codegen/run_cpset_structure.sh` CHECK 3 manifest | nothing — its `EMITTED_BYTES` rows are comment-INCLUSIVE counts | 12 of 12 rows re-recorded deliberately (31-39 % smaller). `battriage_report.md`'s second reader class: a manifest that cites no abi digit whose VALUES move anyway |
+
+**One conversion is worth reading as a rule.** `residual_names` first became
+a suffix match that excluded `_(search|match|match_caps|…)$` — and
+`rx_bref_match` ENDS IN `_match`, so the exclusion silently swallowed a
+residual entry and the check reported the seam's mask SHRINKING: a false red
+that reads exactly like the defect it exists to find. The exclusion is spelled
+by exact name now, with that recorded at the site.
+
+### 4.5 A latent defect the third force macro made live
+
+`tests/axes/run_axes.sh` derived *"which bit is the one DO-OR-DIE member"* by
+scanning for the NAME PREFIX `PCREC_FORCE_*` and keeping the last match, with
+a comment claiming *"a second FORCE_ member added later is picked up the same
+way without an edit here."* **Do-or-die is a property of the AXIS, not of the
+`FORCE_` spelling**: `-fprefilter` refuses on a pure-DFA-selected pattern;
+`-fprefilter-collapse` explicitly does not (`axes.def` says why), and
+`-fcomments` cannot refuse anything. The loop already had TWO candidates and
+picked one by bash's associative-array order; this lane would have made it
+three. It fails silently in BOTH directions — bit 9's genuine documented
+refusals reported as failures, and whichever bit won the toss given an
+exemption it never needs. Named explicitly now, with a FATAL if that name
+stops resolving.
+
