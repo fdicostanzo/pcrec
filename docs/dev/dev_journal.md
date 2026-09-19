@@ -23988,3 +23988,12 @@ become floors (K35 wants an EMPTY population caught, not a shifted one),
 mech's resource arm asserts absorbed=0 so S260 is detectable, the check's
 home is the battery rather than make test. Merge-gate make test for w2b
 launched detached (3h bound).
+
+**FRANK'S RULING ON THE PINS (evening)**: after "how brittle is adding pins to
+the test suite" (answered by measurement: W4 158 → 162 under two byte-neutral
+refactors) and "would the new tests be their own tests or part of make test"
+(`make alloc` is already its own opt-in target; the injector's -include build
+cannot ride make test anyway) — Frank agreed the plan: population pins →
+floors, absorbed pins exact; resource arm 2b asserts absorbed = 0; S259/S260
+built; battery gains an `alloc` stage; make test untouched. Row [ALLOC-PINS]
+added; lane allocpins (sonnet) launched to build it and record D110.
