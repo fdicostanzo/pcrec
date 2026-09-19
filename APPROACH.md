@@ -331,7 +331,11 @@ pcrec/
 │   ├── mech/                # the sabotage matrix
 │   └── bench/               # long-text throughput + compile-speed budgets
 ├── third_party/             # vendored outside data + its generators
-└── oracle_store/            # the committed reference-oracle answer store
+├── oracle_store/            # the committed reference-oracle answer store
+├── docs/                    # spec/ (the contract), guide/, design/, dev/ (plan, journal, decisions)
+├── scripts/                 # process tooling: watchdog, safekill, battery.sh, emit_sweep.py
+├── tools/                   # repo-analysis tooling (tools/review/: the code-review metrics)
+└── studies/                 # adopted exploratory work; own Makefiles, never built by make
 ```
 
 Two notes on the tree above, since it was stale for a long time and a
