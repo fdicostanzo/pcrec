@@ -74,6 +74,36 @@ is neither (`C_MEMCHR`, `SIZE_TERM_BAR_DEFAULT`) is today invisible to
 `limits_check.sh`'s name-keyed detector — that is L3-F1, a check defect, not your
 licence to open-code a new one.
 
+**1.9 Know which LAYER you are writing in, and depend only leftward.**
+
+```
+lib -> core(base) -> enc -> parse -> ir -> opt -> gen -> driver -> dump -> cli
+```
+
+Two of those are tiers rather than directories, and both are wave 3's
+([REVW.3], lens 6's L1/L3/L4). **`src/core/` is two layers wearing one
+name**: the BASE tier (`arena.c`, `sb.c`, `cpset.c`, `fold.c`, `tune.c`,
+`internal.h`'s type definitions) that everything depends on and that
+depends on nothing, and `compile.c`, the pipeline DRIVER, which sits
+ABOVE `gen/` because it calls every stage in order. The driver's file
+deliberately did not move (ruling M4); `tools/review/include_graph.py`
+carries a per-file tier override for it, and that table — not an `if` on
+a path — is where a second exception goes. **`src/dump/`** is the
+`--list-*` table surfaces and is above the whole pipeline: it renders
+what the pipeline built, nothing under `src/` may include from it, and a
+new table surface is a file THERE, never in the tier that owns the data.
+`src/enc/` is the encoding seam, a layer between `core` and `parse`
+(DD-12 (7)'s semantics unchanged by the move — see its own CLAUDE.md).
+
+**The instrument is `tools/review/include_graph.py` and it reads 0
+back-edges, which is a statement about INCLUDES and not about coupling.**
+`core/internal.h` declares nearly everything and 52 of ~55 `.c` files
+include it, so a cross-layer CALL usually generates no cross-layer
+include. Measured 2026-09-19: 30 call-level back-edges (`nm -g`/`nm -u`
+joined over the built objects) against the include graph's 0. So a new
+cross-layer call is invisible to every check in the tree — decide its
+direction yourself, at the point you write it.
+
 ---
 
 ## 2. Taught primitives — reach for these, in their state TODAY

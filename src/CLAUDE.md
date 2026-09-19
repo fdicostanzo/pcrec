@@ -2,6 +2,41 @@
 
 The compilation pipeline: pattern → parser (parse/) → AST → NFA → priority DFA (ir/) → optimization passes (opt/) → C codegen (gen/). Core utilities and shared data structures in core/; pipeline driver is pcrec_compile() in core/compile.c.
 
+## The layer order
+
+```
+lib → core(base) → enc → parse → ir → opt → gen → driver → dump → cli
+```
+
+A file may depend on anything to its LEFT. `tools/review/include_graph.py`
+is the instrument, and this is the order it tests
+(`tools/review/out/include_backedges.tsv`, 0 rows).
+
+**`core/` is two layers wearing one name, and the order above says so.**
+The BASE tier is `arena.c`, `sb.c`, `cpset.c`, `fold.c`, `tune.c` and the
+type definitions in `internal.h`: everything depends on it and it depends
+on nothing. `compile.c` is the DRIVER, and a driver by definition sits
+above every stage it drives — its calls into `gen/` are the pipeline
+working, not a layering breach, and reading them as breaches is what the
+old six-layer model did. [REVW.3] wave 3 fixed the MODEL and deliberately
+did not move the file (ruling M4, D77): `include_graph.py` carries a
+per-file tier override table for it, with its reasoning at the table.
+
+**The driver tier's own residue, measured and named** (an `nm -g`/`nm -u`
+join over the built objects, 2026-09-19): `compile.c` also defines
+`ctx_fail`, `ctx_nomem` and `pcrec_default_options`, which every layer
+calls — 22 call edges that the `driver` classification turns into
+back-edges pointing the other way. They are base-tier primitives living
+in a driver's file. Nothing is proposed for them here; the number is
+recorded so a later wave knows the residue is a FILE that is two layers,
+not a model that is still wrong.
+
+**What the include graph cannot see.** It measures includes, and
+`core/internal.h` declares nearly everything while 52 of ~55 `.c` files
+include it, so a cross-layer CALL usually generates no cross-layer
+INCLUDE. The call-level census is 30 back-edges where the include graph
+reads 0. A clean `include_backedges.tsv` is a statement about includes.
+
 ## Files
 
 - **core/** — pipeline driver, arena allocator, string buffer, shared type definitions

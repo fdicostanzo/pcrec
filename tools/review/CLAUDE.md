@@ -98,21 +98,35 @@ are out of scope for this round; see the charter's own "Scope tiers".
   count matrix over local/resolved edges) + `out/include_backedges.tsv`
   (just the violations, for direct citation) — lens 6's "is there a
   clean core→parse→ir→opt→gen order or cross-reference? VERIFIED
-  deliverable, not prose." Layers: `lib` (bottom, public API) → `core` →
-  `parse` → `ir` → `opt` → `gen` → `cli` (top consumer); a back-edge is a
+  deliverable, not prose." Layers, as [REVW.3] wave 3 left them: `lib`
+  (bottom, public API) → `core`(base) → `enc` → `parse` → `ir` → `opt` →
+  `gen` → `driver` → `dump` → `cli` (top consumer); a back-edge is a
   LOCAL include from a lower-numbered layer into a strictly
-  higher-numbered one. **Caught during validation, not before**: the
+  higher-numbered one. `driver` is a per-FILE tier override
+  (`src/core/compile.c`, which does not move — ruling M4) through the
+  script's own `FILE_LAYER` table, the one place to read what the
+  exceptions are; `driver` is placed BELOW `dump` on a measurement, not a
+  guess (the only symbol reference between the two runs `dump` → `driver`).
+  **The shipped `include_backedges.tsv` now reads 0 rows, and the script's
+  own docstring says at length why that is a statement about INCLUDES and
+  not a clean bill of health** — a cross-layer CALL generates no
+  cross-layer include when `core/internal.h` already declares the callee,
+  which it does for essentially everything, and 30 call-level back-edges
+  stand behind the 0 (lens 6 §2.2's `nm -g`/`nm -u` join, re-measured
+  2026-09-19). **Caught during validation, not before**: the
   first draft had this comparison INVERTED, flagging `parse`/`opt`/`gen`
   including `core/internal.h` as back-edges — which is backwards, since
   `core` is the shared foundation (`Ast` itself is defined in
   `src/core/internal.h`, confirmed by reading it) and everything
   depending on it is the FORWARD, expected direction. Fixed before this
-  file was ever committed; the shipped `include_backedges.tsv` reads 6
+  file was ever committed; the 2026-09-17 `include_backedges.tsv` read 6
   rows, every one the SAME single pattern — `core`/`parse`/`ir`/`opt` all
-  reaching into `src/enc/enc.h` — which is a tight, specific,
-  citable finding for lens 6 to weigh against DD-12/D58's own encoding-
-  seam design ruling (per admissibility rule A1) rather than the diffuse
-  mess a wrong comparison direction would have manufactured. Does NOT
+  reaching into what was then `src/gen/enc/enc.h` — which was a tight,
+  specific, citable finding for lens 6 to weigh against DD-12/D58's own
+  encoding-seam design ruling (per admissibility rule A1) rather than the
+  diffuse mess a wrong comparison direction would have manufactured.
+  [REVW.3] wave 3 acted on it: the directory is `src/enc/` and those six
+  are forward edges. Does NOT
   attempt the charter's "live link experiment" (can a matcher-only
   consumer link `libpcrec.a` without the `rxt_*` objects) — that is an
   actual link/build experiment for lens 6 itself, not a static census.
