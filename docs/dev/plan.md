@@ -1205,6 +1205,13 @@ between waves (D102); box slots handshake with the bench.
   re-derived; sold to embedders shipping source, never as a performance
   axis. SEQUENCED after [REVW.4]'s X9 lands, as its own small lane — the
   first new row on the table. Levels wait for a measured need (D77).
+  DEFAULT RULED OFF (Frank, same session, D112): the switch removes every
+  NON-ESSENTIAL comment ("most all"); ESSENTIAL = provenance (generated-by
+  line with the abi, the pattern echo) stays; the class is the seam a
+  future levels change extends. Two events in one lane: the flag
+  byte-neutral with default on (+ `.o` identity proof on/off over the
+  corpus + the comment-reader census), then the flip as abi 26 → 27 with
+  the full ritual. Measured: comments are 43-53% of a default artifact.
 - [REVW.3] STATE:completed (GATED 2026-09-19 07:49, seventieth session: merge-gate make test 40/40, sole FAIL the standing darwin nm probe, size log 0 movers over 3,480 rows) — formerly STATE:started — wave 3 (layering): L6 L1+L3 LAND TOGETHER
   (enc/ -> src/enc/ + the layer model in tool and prose), the rxt minimal
   cut (2 files, 0 anchors), L4-dump relocation rider, internal.h

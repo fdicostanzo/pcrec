@@ -7577,3 +7577,44 @@ generated tables") so the only public header stays one self-contained
 file; the header does not `#include` the `.def`. [REVW.4] carries X9 as a
 build item. [EMIT-VERB]'s "axes.def row or not" sub-question is answered
 by this ruling: it is a row.
+
+## D112 — Emitted comments are OFF by default; the artifact keeps only its ESSENTIAL comments, and "essential" is a class, not a list (Frank, 2026-09-19, seventy-first session)
+
+[EMIT-VERB] was ruled a boolean this morning (plan row). Asked for the
+default, Frank: "If no one reads comments, realistically comments should
+be off by default", and on the shape: "In a nod to some future levels
+change, I'd say the switch removes all 'non essential' comments, which
+should be most all."
+
+MEASURED before ruling (manager, twelve artifacts, six patterns × both
+engines, comments stripped by regex): comment text is 43-53% of a default
+artifact's bytes; the object file cannot change (the C compiler discards
+them). Roughly 15-20 test scripts grep comment text in emitted artifacts
+(rough grep; the building lane counts them exactly).
+
+RULED:
+1. DEFAULT OFF. The opt-in is `-fcomments` (force spelling; the axes.def
+   row carries the default polarity — D111's table shape admits it).
+2. TWO CLASSES of emitted comment. ESSENTIAL: provenance — the one-line
+   generated-by header naming pcrec and the abi, and the pattern echo, so
+   a file in someone else's repository still says what it is and what it
+   matches. Everything else is NON-ESSENTIAL and is what the switch
+   removes — "most all". The class is decided at the emission site (the
+   kit's render-time gate, D108), and it is the SEAM a future levels axis
+   extends: levels would subdivide NON-ESSENTIAL, never touch ESSENTIAL.
+   Nobody builds levels until a need is measured (D77).
+3. Stamps are not comments (they are `#define`s the gates read); the size
+   cap stays comment-excluded (limits.def:160) — no setting can rescue or
+   refuse a pattern; the win is source size and readability, never sold
+   as a performance axis ([ART-SIZE]: comments vs `.o` r=0.43).
+4. TWO EVENTS, one lane. First the flag lands with the default still ON —
+   byte-neutral on emit_sweep.py's four streams, plus the corpus-wide
+   proof that `.o` files are byte-identical with comments on and off, and
+   the exact list of comment-reading checks. Then the FLIP in its own
+   commit as the abi event: abi 26 → 27, every identity gate re-pinned by
+   grep (D76/D94), the size log re-baselined, docs/spec/ hunks (D80), an
+   inbox note to the bench. Comment-reading checks convert to reading
+   STAMPS where the fact has a stamp, and pass `-fcomments` only where the
+   comment IS the thing under test (run_comment_escape.sh). Implement-
+   then-replace, so a red gate has a triage boundary.
+5. SEQUENCED after [REVW.4]'s X9 lands: the first new row on the table.
