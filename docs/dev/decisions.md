@@ -7652,3 +7652,28 @@ The ritual gains a line: after the grep, run every suite that COUNTS
 things over the area touched (registry, codegen, rxtsource, the size
 log) before claiming the re-pin complete. CLAUDE.md's situation row
 carries the pointer.
+
+## D113 — After abi 27 lands: the interrupted-row audit, then a 0.1 BETA release, then bench-driven planning (Frank, 2026-09-19, seventy-first session)
+
+Frank's planning ruling, in sequence: (1) **[PLAN-AUDIT]** — every
+`STATE:started` row (43 today) is dispositioned with Frank from a
+read-only census (lane planaudit): complete-in-place, finish, fold or
+park; the finish rows run to completion before anything new starts.
+(2) **[REL-1] the 0.1 release, a BETA** — "0.1" is the number (NOT 1.0:
+D81's abi-reset-to-1 does NOT fire; the emitted abi keeps counting);
+the repository is ALREADY public, so the release is the "open for
+business" sign: the REL-META survey's row set, the user guide
+([GUIDE-1], docs/guide/ is empty today), a README rewrite (its status
+section still calls M3/M4/M5 roadmap), the compliance document
+refreshed as the public "what is supported" page, a version constant +
+git tag + GitHub release, a stranger's-build check from a fresh clone on
+both boxes, and the contribution posture the survey names. (3)
+**[BENCH-REVIEW] + [BACKLOG-TRIAGE]** — deferred until reached because
+the bench is actively producing: the inputs are the bench's reports
+(including findings that need attention — a pcrec HANG on an evil
+adversarial pattern is one) and, for pure optimization priority, the
+bench's new SUMMARY MATRIX (every engine × every test case), which shows
+where pcrec stands; the 97 not-started rows are triaged into the
+three-lane columns (D86) alongside the rows the review proposes, and
+Frank ratifies a ranked future-work list. Positioning unchanged (memory
+`pcrec-post-spine-direction`): the fastest COMPLETE pcre.
