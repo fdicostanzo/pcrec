@@ -780,6 +780,38 @@ never edited afterwards.
   addresses as resume points, and an EQUALITY assertion where the cap's
   soundness is only an INEQUALITY.
 
+- `w2x_report.md` — [REVW.2] WAVE 2 SLICE D, EP2 step 10 / lens 1 X8
+  (2026-09-18, lane w2x, opus): THE STAMP PAIR. `sb_stampf`/`sb_stampwf`/
+  `sb_stamp_str` and `sb_upper` in `src/core/sb.c`, with **57 of the 73 stamp
+  sites converted across BOTH emitters, `Vm.up` RETIRED and the fragment
+  census down to 6** — every batch byte-identical on four streams, so not an
+  `abi` event. Read §0 first: **EP2's "52 sites" is 52 LINES over 44
+  STATEMENTS**, of which only 37 are value stamps; the other 15 lines are
+  seven multi-line function-like MACRO bodies whose emitted text is a program
+  and which no stamp helper can take. Three readers confirmed the count and
+  none decomposed it — *a census counting the right thing can still count a
+  different UNIT than the work item citing it* — and the same conflation
+  explains EP2's "4 abutting" anchors, which are really THREE rows stacked on
+  ONE line (the four rows genuinely inside the span sit on the macro
+  statements).
+  Also worth reading for four things. **Lens 1's typed `emit_stamp_int`/
+  `_bool` cannot be built byte-neutrally**: one file's 37 value stamps use
+  seven integer spellings (`%lluULL`, `0x%xu`, `%lldLL`, …) plus six raw C
+  expressions, and those are C TOKENS the artifact's own compiler reads, not
+  renderings of a number — so the value is a FORMAT and the NAME is the
+  literal a grep enumerates. **`Vm.up` was never the stamp helper's to
+  retire** (w2b is right) **but it is `sb_upper`'s**, at three lines and zero
+  reader changes across its 100 readers: lens 10 and w2b both treat retiring
+  it as inseparable from a 110-site data-flow change, and moving its STORAGE
+  is not that change. **§5 records an instrument defect worth inheriting**:
+  `--emit-ir` at the DEFAULT engine refuses on every DFA-winning pattern, so
+  the first build of the byte-identity sweep reached 1,754 of 3,938 rows and
+  read perfectly green — the REACH figure caught it, not the pass count.
+  And **§8's plant 2** — `%-*s` written `%*s` leaves the unpadded sub-check
+  GREEN, because at width 0 the two spellings are identical, so 30 of the 37
+  call sites could not have caught it and neither could a sweep built from
+  the shipped population's two widths.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `utf8k53_report.md` — [K53-SELRETRY] (2026-09-10, lane utf8k53): the
