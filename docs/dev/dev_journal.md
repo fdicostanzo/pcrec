@@ -24196,3 +24196,34 @@ untracked files kept it silent forever (fixed: wall-clock cutoff); the
 report-committed trigger fires on a lane's FIRST report commit (lanes
 commit reports incrementally) — a `noreport` mode added. Also the bench's
 Rust-toolchain question answered (I-76: pcrec has no stake).
+
+## 2026-09-19 (afternoon) — the I-75 battery GREEN; four merges; triage rounds; the planning rulings
+
+**I-75 full battery on ubuntubudu at 923a5a58 (08:45 → 15:34 EDT): GREEN.**
+Every stage rc=0 — test 24 min, strict, axes 84 min, san 71 min, alloc,
+lint, mech 3h47 (268 rows: unexpected 0, anomalies 0, undetected 10
+documented-expected, unreached 1 = S121). The first Linux drive of waves
+2/3, DD-8 and BSWEEP over the relocated tree; nothing moved. The freeze
+lifted at 15:34; merged in order, each `git merge` alone: **adm71
+(a16d0dbb)**, **w4 (f7a683d8)**, **emitverb (6ff185cf)**, **evtriage
+(13382458)**. Pending: evtriage2 (the make test reds — all five families
+fixed on its branch: the islands term reads a -fcomments artifact with a
+floor, the trace check split into its stamp half and its prose half, the
+S107 guard counted from its SLOT DECLARATION, the resource cell's raw
+`wc -c` pin re-pinned 769,835 → 762,105 — battriage's second reader class,
+third instance; no D112 gap existed) and emitverb2 (the abi in the
+generated-by line, quiet since its WIP commit). The evidence make test on
+the emitverb tree (evtriage's re-run, 14:27 → 15:16): 40/40 sections, its
+complete FAIL list = those five families + the standing nm probe.
+
+**Planning (Frank, D113):** version **0.1, a beta**; the repo is already
+public so [REL-1] is the "open for business" sign; the bench analysis
+waits for its phase, with the bench's new SUMMARY MATRIX as the
+optimization-priority input and its reports (a pcrec HANG on an evil
+adversarial pattern among them) as the findings input. [PLAN-AUDIT]
+delivered (lane planaudit, merged): the true started population is 26,
+not the grep's 43 (history prose); of 23 audited, 7 complete-in-place,
+9 parked by ruling, 6 with real remainders (LIM-2 S, OPT-EDGE S, ENG-ISL
+M, DD-13b.W1.3 M behind PFX-1, DD-13 M same chain, CLS-TREE L), 1 unclear
+([BENCH-1], the I-42 census absorbed into the bench's B36). No abandoned
+mid-flight work. Frank's dispositions on the six are pending.
