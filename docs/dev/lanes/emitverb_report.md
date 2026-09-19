@@ -530,3 +530,40 @@ the new check plus the registry pin (`ca17edf8`), the `run_axes.sh` narrowing
 | the eleven identity gates | 8 green; 3 **RETIRED** (`atomic`, `backref`, `lookaround` — pre-existing, A/B'd RED at the branch point too); `recursion` red by construction, §5 item 1 |
 | `scripts/m6read_check_sab_anchors.py` | 269 rows / 285 sites, 0 stale |
 | S07, S257 solo | re-aimed, DETECTED |
+### 4.8 FOUR STRUCTURAL CHECKS USE AN EMITTED COMMENT AS THEIR INSTRUMENT
+
+Found by `make test-codegen`, not by any grep — `run_scan_edge_census.sh`
+went from green at the branch point to six reds on this branch, all of the
+form *"expected 1 scan edge(s) on the forward machine, found 0"*, because it
+counts a machine's edges from the artifact's own `[OPT-5] SCAN EDGE` markers.
+Three siblings do the same thing:
+
+| check | marker |
+|---|---|
+| `tests/codegen/run_scan_edge_census.sh` | `[OPT-5] SCAN EDGE`, attributed by the state variable the block tests |
+| `tests/codegen/run_scan_edge_dispatch.sh` | the same, as a [MECH-REACH] witness guard |
+| `tests/codegen/run_search_pinned.sh` | the same, plus the accessor block's own prose line cross-checking the emitted TYPE |
+| `tests/recursion/run_specimen_identity.sh` | `// Prefilter: nothing found yet` as the baseline's own prefilter probe |
+
+**All four convert to `-fcomments`, and the licence is a measured identity
+rather than convenience.** Each one's own header says the marker is the
+instrument BECAUSE the stamp is not: `run_scan_edge_census.sh` states it
+outright — *"`RX_DFA_SCAN_EDGE` names axis I's BODY form, so a machine going
+from two edges to one reads identical"* — so there is nothing to read the
+stamp for. What makes `-fcomments` correct here is §2.2: the emitted CODE and
+the object file are byte-identical between the two settings on 3,517 of
+3,517 corpus artifacts, so a STRUCTURAL census taken with comments on is a
+true statement about the default artifact's machine. The alternative — minting
+a code-level marker per mechanism — is new emitted scaffolding, i.e. another
+abi event, for a need nothing has measured (D77).
+
+**The general form, and it is the lane's second-sharpest finding:** *a check
+that uses emitted PROSE as a structural instrument is not the same thing as a
+check that tests the prose, and the distinction only becomes visible when the
+prose can be turned off.* D112 item 4 provides for two cases — read the stamp,
+or pass `-fcomments` because the comment IS the thing under test — and this
+is a THIRD: the comment is the instrument, the fact is structural, and there
+is no stamp at the needed resolution. `run_comment_escape.sh` is the item-4
+case; these four are the third one, and the note recorded at each site says
+which it is and why.
+

@@ -85,6 +85,17 @@
 # grows an `(?m)…$` pattern the assertion fails with "expected 16, got 17" and
 # the cheapest correct-looking repair is to edit the 16.
 
+#
+# [EMIT-VERB] 2026-09-19 — THIS CHECK'S INSTRUMENT IS AN EMITTED COMMENT, so
+# every compile below passes `-fcomments`. That is not a workaround, and the
+# licence for it is a measured identity rather than convenience: the emitted
+# CODE is byte-identical between `-fcomments` and the default on 3,517 of
+# 3,517 corpus artifacts, with the object files identical too
+# (docs/dev/lanes/emitverb_report.md §2.2), so a STRUCTURAL census taken with
+# comments on is a true statement about the default artifact's machine. The
+# alternative — minting a code-level marker for the mechanism — would be new
+# emitted scaffolding, i.e. another abi event, for a need nothing has
+# measured (D77).
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -117,7 +128,7 @@ START_VALUES="pinned reverse-pass"
 emit() { # emit <outfile> <pattern> [extra pcrec args...]
     local out="$1" pat="$2"
     shift 2
-    pcrec_run "$PCREC" -p rx --no-captures --features all "$@" \
+    pcrec_run "$PCREC" -p rx --no-captures --features all -fcomments "$@" \
         -o "$out" -- "$pat" >/dev/null 2>&1
 }
 
@@ -382,7 +393,7 @@ one() {
     # file's first two-axis run produced: the §9 deny-flag re-compile was
     # handed field values as arguments and "refused" 2,825 patterns.
     local axflags="$*"
-    if ! pcrec_run "$PCREC" --features all -p rx --no-captures $axflags -o - -- "$pat" > "$art" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures $axflags -o - -- "$pat" > "$art" 2>/dev/null; then
         echo "REFUSED-$ax"; return
     fi
     set -- $(awk -f "$WORKDIR/read.awk" < "$art")
@@ -447,7 +458,7 @@ one() {
 
     # ---- §9: a DECLINED artifact is byte-identical under the deny flag ----
     if [ "$start" = "reverse-pass" ]; then
-        if pcrec_run "$PCREC" --features all -p rx --no-captures $axflags -fno-start-pinned -o - -- "$pat" > "$den" 2>/dev/null; then
+        if pcrec_run "$PCREC" --features all -fcomments -p rx --no-captures $axflags -fno-start-pinned -o - -- "$pat" > "$den" 2>/dev/null; then
             if cmp -s "$art" "$den"; then echo "DENYSAME-$ax"; else
                 echo "DENYDIFF-$ax"; echo "BAD: a DECLINED artifact is NOT byte-identical under -fno-start-pinned ($ax) — the flag has an effect on a pattern the axis cannot act on, so the declined population is not a usable reference: $pat"
             fi
@@ -800,9 +811,9 @@ foo[0-9]+bar'
 run_diff() { # run_diff <pattern> <require-c3: y|n>
     local pat="$1" c3="$2" d="$WORKDIR/dv.$$"
     rm -rf "$d"; mkdir -p "$d"
-    pcrec_run "$PCREC" -p on  --no-captures --features all -o "$d/on.c"  -- "$pat" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p on  --no-captures --features all -fcomments -o "$d/on.c"  -- "$pat" >/dev/null 2>&1 \
         || { bad "§10 '$pat' did not compile"; return 1; }
-    pcrec_run "$PCREC" -p off --no-captures --features all -fno-start-pinned -o "$d/off.c" -- "$pat" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p off --no-captures --features all -fcomments -fno-start-pinned -o "$d/off.c" -- "$pat" >/dev/null 2>&1 \
         || { bad "§10 the -fno-start-pinned build REFUSED a pattern the default build compiled: $pat"; return 1; }
     if [ "$c3" = y ]; then
         grep -q '^#define ON_DFA_START "pinned"' "$d/on.c" \
