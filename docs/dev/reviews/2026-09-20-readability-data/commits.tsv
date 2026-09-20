@@ -1,0 +1,183 @@
+hash	date	campaign	is_mech	n_funcs	funcs
+7db515382b0124d6ffe831e1aa01dbb70f7399da	2026-09-20	HDR-1	False	19	FILESCOPE;vm_bounds_text;vm_counter_copies;vm_goto;vm_isl_emit;vm_isl_subtree_nodes;vm_label;vm_lbl;vm_look_needs_mark;vm_memo_region_costs;vm_push;vm_push_at;vm_resolve_nonnull;vm_revdet_fits;vm_slot_guard;vm_slot_ref;vm_slot_splice;vm_work;vm_work_at
+376e34b4ad78ad9250ebbfb890e34a3bffaa64fe	2026-09-19	REVW.5	True	20	pcrec_emit_vm;vm_bref;vm_build_region_saves;vm_call;vm_charge;vm_count_slots;vm_count_slots_rep;vm_counter_poss_opt;vm_cursor_rep;vm_emit;vm_look_behind;vm_look_behind_branch;vm_memo_region_costs;vm_nullable;vm_poss_chain;vm_poss_star;vm_publish_saves;vm_resolve_nonnull;vm_rev_emit;vm_splice
+b5cb8f85c22108b8c2f78c7bf490f9869a751410	2026-09-19	REVW.5	True	21	pcrec_emit_vm;vm_alt;vm_build_region_saves;vm_cat;vm_cls;vm_cost;vm_cursor_rep;vm_dyn_add;vm_ev;vm_isl_build;vm_isl_emit;vm_isl_insert;vm_isl_node;vm_isl_subtree_nodes;vm_isl_words;vm_look_behind;vm_memo_region_costs;vm_mrl_amt;vm_plan_regions;vm_resolve_nonnull;vm_rev_emit
+d4eccc7b5aea27a2ae92833ac3a65396be920988	2026-09-19	REVW.5	True	29	pcrec_emit_vm;vm_bref;vm_call;vm_cls_describe;vm_cls_test;vm_counter_phase;vm_counter_poss_opt;vm_cursor_rep;vm_cut;vm_emit;vm_emit_default_entry;vm_emit_span_scan;vm_ev;vm_fail;vm_goto;vm_isl_emit;vm_lbl;vm_look;vm_look_behind_branch;vm_mrl_test;vm_push_at;vm_region;vm_rev_emit;vm_revdet_rep;vm_sec;vm_set;vm_star;vm_wordb;vm_work_at
+d18ec20c28c80c4e355ab1ebfaec60e15dc2fbdc	2026-09-19	REVW.5	True	14	pcrec_emit_vm;vm_bref;vm_cls_describe;vm_cls_test;vm_cursor_rep;vm_emit;vm_emit_default_entry;vm_emit_span_scan;vm_fields_join;vm_isl_emit;vm_render_listing;vm_rev_emit;vm_revdet_rep;vm_wordb
+1f9c7acd5e6a7aee5a49a78102e1fea203102d61	2026-09-19	REVW.5	True	4	pcrec_emit_vm;vm_bref;vm_emit_default_entry;vm_lbl
+f2438be584ad962b898c56148e0d9d8d22648d09	2026-09-19	REVW.5	True	13	pcrec_emit_vm;vm_cat;vm_counter_phase;vm_counter_poss_opt;vm_counter_rep;vm_fadd;vm_opt_chain;vm_poss_chain;vm_poss_star;vm_rep;vm_revdet_rep;vm_rung_mark;vm_star
+3b2e23272eaacfbf72295d567cccc3ad65644753	2026-09-19	REVW.5	True	6	FILESCOPE;pcrec_emit_vm;vm_bref;vm_emit_default_entry;vm_lbl;vm_render_listing
+00670fe931c87385b72e63e227e8c381db94d7b1	2026-09-19	REVW.5	True	14	FILESCOPE;pcrec_emit_vm;vm_counter_phase;vm_counter_rep;vm_ev;vm_fadd;vm_listing_slot_row;vm_mask_names;vm_prow;vm_render_listing;vm_rep;vm_rolef;vm_row3;vm_sec
+385f3cab2b796bfcb21245c63fe52175edb88901	2026-09-19	EMIT-VERB	False	1	pcrec_emit_vm
+3b867c6c00605f0a90f84c34680d232f56e7a740	2026-09-19	EMIT-VERB	False	1	pcrec_emit_vm
+236d1fa696bb5c7d60e3b77872bfa2fa70e27f8e	2026-09-19	EMIT-VERB	False	1	pcrec_emit_vm
+473bc681c92622deff6290c3d2b55652215fbc1d	2026-09-19	EMIT-VERB	False	1	pcrec_emit_vm
+404aa6f8ac3e113067e63804bcd2f87c741606c5	2026-09-19	EMIT-VERB	False	4	pcrec_emit_vm;vm_bref;vm_emit_default_entry;vm_lbl
+d0c8b4c220c1f0df42b1857749e9c01747a9eba4	2026-09-19	REVW.4	False	1	pcrec_emit_vm
+820609488beb9093f64ef6784f3aca8b9a4ea2f1	2026-09-19	REVW.3	False	1	FILESCOPE:(empty)
+b85739258b12f8e42c1db20e2268babc7eb2afb0	2026-09-19	DD-8	False	7	FILESCOPE;vm_listing_events;vm_listing_slot_row;vm_listing_slots;vm_render_listing;vm_rungs_describe;vm_strats_describe
+c8771806e05eaecee8a7a332703d4bf9729fd22d	2026-09-18	REVW.2	False	2	vm_render_listing;vm_strats_describe
+310eae96328d55d79de943abbe2269a516fb779c	2026-09-18	REVW.2	False	2	vm_atomic;vm_look_behind
+dbcb8dc18f9913be8e205c0194348ad5e9943503	2026-09-18	REVW.2	False	2	vm_emit;vm_region
+e051baa80542ec5a8147cf69b956ba961f27cbad	2026-09-18	REVW.2	False	2	vm_cost;vm_count_slots
+f49aa988e3a1e2049d42969f18382f6d8c12ca10	2026-09-18	REVW.2	False	2	FILESCOPE;pcrec_emit_vm
+d35df1a5faad3942487190ab63ccaac7d38f983a	2026-09-18	REVW.2	False	1	pcrec_emit_vm
+8d7f9128583200ce160ac2550382de61c54eee5a	2026-09-18	REVW.2	False	1	pcrec_emit_vm
+d506c2815ca3c81c21be09742a18176a1fcb002a	2026-09-18	REVW.2	False	1	pcrec_emit_vm
+f3a4d589f5aa7c3e153121e0216747c7cbb1bd75	2026-09-18	REVW.2	False	1	pcrec_emit_vm
+288068d2d7a097740be0f93f07b20214e44c900f	2026-09-18	REVW.2	False	1	pcrec_emit_vm
+3beb364f5e4aeae5a07f2d229e0a9b611906dfe4	2026-09-18	REVW.2	False	7	vm_cls_describe;vm_counter_phase;vm_counter_poss_opt;vm_emit;vm_look_behind;vm_region;vm_render_listing
+bfcc4ff51795b3b865ebd31a83ab6a8883ac70e7	2026-09-18	REVW.2	False	1	vm_revdet_rep
+c116ecea951965c35938ce65c4cb8d992da041ae	2026-09-18	REVW.2	False	4	vm_cursor_rep;vm_cut;vm_isl_die;vm_rev_emit
+7b528fb322a3e6d822bcc0bad34586269a08ac78	2026-09-18	REVW.2	False	11	pcrec_emit_vm;vm_emit;vm_ev;vm_look;vm_look_behind;vm_rolef;vm_set;vm_slot_expr;vm_slot_name;vm_slot_ref;vm_slot_rev
+60e78828ee4286f255d47d465fa32c34c0b869ae	2026-09-18	REVW.2	False	3	pcrec_emit_vm;vm_memo_region_costs;vm_render_listing
+edb39ab8da22c7eaa693eda2fd8f5be712abefbd	2026-09-18	REVW.2	False	3	pcrec_emit_vm;vm_plan_regions;vm_resolve_nonnull
+a5150ffc68e5b3c55dc5c8f19a0de6a977f389c8	2026-09-18	REVW.2	False	2	pcrec_emit_vm;vm_resolve_nonnull
+a70816567d31ad340161eb606091aeebde6232d7	2026-09-18	REVW.2	False	8	pcrec_emit_vm;vm_grp_set;vm_plan_regions;vm_publish_nonnull;vm_publish_saves;vm_resolve_nonnull;vm_snap;vm_w_caps
+170ff1e39522bdfd7522fb79253c8a5819819011	2026-09-18	REVW.2	False	2	pcrec_emit_vm;vm_resolve_nonnull
+1f79bc3207e03e725482523dfe4b0545366f68c8	2026-09-18	REVW.2	False	2	pcrec_emit_vm;vm_publish_saves
+c6de6802b65943d9274922de52e824acb4f0ba63	2026-09-18	REVW.2	False	5	vm_counter_rep;vm_cursor_rep;vm_rep;vm_revdet_rep;vm_rolef
+570495e7804c8aaa2cfed7048aaa578ee724b845	2026-09-18	REVW.2	False	2	vm_alt;vm_cursor_rep
+1c0d3418361d6ab328c5ec9676561b3eae316281	2026-09-18	REVW.2	False	3	vm_call;vm_slot_expr;vm_splice
+d2955d962fc06cb69c95efd1abe1ba02a709c367	2026-09-17	REVW.U L5-R2	False	2	vm_fadd;vm_rung_mark
+66363dcdf7ae8277edf1bc9d0254f12163cd6766	2026-09-17	REVW.FIX	False	9	vm_cost_rep;vm_emit_default_entry;vm_isl_die;vm_look_behind;vm_region;vm_rev_emit;vm_rev_index;vm_star;vm_strats_describe
+94ef38361bdc16861362ce31fb0cc4166699c39c	2026-09-16	OPT-DIAL	False	1	pcrec_emit_vm
+aff8bbd10523e441b12ad8e3cb5ae96b78ba4dde	2026-09-06	K50	False	1	pcrec_emit_vm
+94dbc16ef024a590107c7e237bc16ccdc041ae94	2026-09-05	k49fix	False	1	pcrec_emit_vm
+d634301edb7fb1bcd549c18ac3f1f263296c761c	2026-09-05	k49fix	False	1	pcrec_emit_vm
+2903cef9ad89bd16f23e456688858cd579963a79	2026-09-05	M5.0 stage 2	False	3	pcrec_emit_vm;vm_atomic;vm_nullable
+cdf8e730e63c21f20a589f83f67e6e49620b0003	2026-09-05	FORM-CHAR	False	3	pcrec_emit_vm;vm_cls;vm_cls_test
+817315474ddd88ae5c0d40c561cab17d1b842a97	2026-09-05	M5.0 stage 1	False	11	vm_cap_offsets;vm_cls_test;vm_cost_rep;vm_count_slots;vm_cursor_fits;vm_cursor_rep;vm_det_seq;vm_emit;vm_isl_single;vm_rep;vm_rev_emit
+3c33f94ffd6595bac4d69e19d329a424e1bf8e85	2026-09-04	ccd2	False	1	pcrec_emit_vm
+f135ab14cc542cd42fa16e6a4b1ed9fd18d4cca8	2026-09-04	ccd2	False	5	FILESCOPE;pcrec_emit_vm;vm_emit_default_entry;vm_fields_join;vm_set
+cf9594469d5fb6b64c62c9820ec74519fa793636	2026-09-04	isl1	False	6	FILESCOPE;pcrec_emit_vm;vm_count_slots;vm_isl_build;vm_isl_subtree_nodes;vm_isl_words
+628331aaee93250a01b5f6ab49e4394692537290	2026-09-04	edge1	False	1	pcrec_emit_vm
+fe8eb905f551db23f0889a0fb5a2b1c96ef4a2d3	2026-09-03	isl1	False	4	FILESCOPE;vm_isl_build;vm_isl_emit;vm_isl_words
+a6b94c096cbb82a0f393af17064c37b71d058561	2026-09-03	isl1	False	1	vm_isl_single
+b2b51e27ed1c671a23e5c9d1f123abab30fbf2cd	2026-09-03	isl1	False	1	vm_rev_caps
+799bd29d214ec1df1e9bb2a63e4d2dbf7b2b95e0	2026-09-03	isl1	False	2	vm_isl_build;vm_rev_caps
+bea919cd80bfdaf64efb49ea2e54b5d1abd37c8a	2026-09-03	isl1	False	2	vm_isl_emit;vm_render_listing
+ce75f99a974a55148a2b3e7b3e3ca65bd9acf64f	2026-09-03	isl1	False	2	vm_cost;vm_rev_caps
+6ea90dcdddd9a468dab2cff9cb7471c79c7f84b6	2026-09-03	w13	False	2	vm_cost;vm_splice
+bd333f5da79b9ab34217a8f3ca800d77d06c7b26	2026-09-03	edge1	False	1	pcrec_emit_vm
+613e1ecf49378ea15705ab67ce1310b8bc16aac5	2026-09-03	isl1	False	8	FILESCOPE;vm_alt;vm_count_slots;vm_isl_build;vm_isl_bytes;vm_isl_emit;vm_isl_insert;vm_isl_single
+ad07317ad7ef9a268e4d0a1f324a12c9d932bef6	2026-09-03	isl1	False	6	FILESCOPE;pcrec_emit_vm;vm_alt;vm_cost;vm_count_slots;vm_mrl_gate
+7e2292447c81004f9e6861a461c4ff7e95a5f08c	2026-09-03	CC-DIFF	False	1	pcrec_emit_vm
+df372fb0910ace75f23d712294e30266c74c8818	2026-09-02		False	1	pcrec_emit_vm
+ae3e6ca72ba69cd53183f5b2f4cb549bfa12e2bf	2026-09-01		False	3	FILESCOPE;pcrec_emit_vm;vm_push_at
+adc0f5a8b7c7ec5469d4342066e5b9ea6fdb0e01	2026-09-01	CC-CLANG	False	2	pcrec_emit_vm;vm_count_slots
+ec6f4810785ec8e68d821953860a3986a599c6fe	2026-09-01		False	1	pcrec_emit_vm
+c13fd7b1de2ce2dca90743bedc1dfd76234c45e9	2026-08-31		False	1	pcrec_emit_vm
+353306acfed424d367e1780f42110083d380e330	2026-08-31		False	1	pcrec_emit_vm
+8e0b6245f24b947e4b475617b8158b7c1db05f5b	2026-08-31	CC-CLANG	False	2	FILESCOPE:(empty);pcrec_emit_vm
+c679819538e7e5908a26fea013257f8b1e6cf61c	2026-08-31	OPT-4.2	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+c657ae982bb3600417017ff8d6c8b2bcbe059cf3	2026-08-31	CC-CLANG	False	1	pcrec_emit_vm
+71b8c59a98e0d145028492ec75942b1977aaa302	2026-08-31	LIM-1	False	1	FILESCOPE:(empty)
+d277d824f21b3e89e4d1082de3e559370aca8bac	2026-08-30	LIM-1	False	2	FILESCOPE;FILESCOPE:(empty)
+51ebe7779cdabf63a790115c12eebe16b503eaef	2026-08-30	OPT-4.1	False	1	vm_render_listing
+77cce7c6a94777b643e272d71c5442039feea5b4	2026-08-30	OPT-4.1	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+c275aef6d9276ea2b7d0d356ec125fd6acd91787	2026-08-29	OPT-4	False	2	pcrec_emit_vm;vm_render_listing
+381841a19b85d648ec947bc094b9219c43370402	2026-08-29	OPT-4	False	1	pcrec_emit_vm
+82229fcba7d581b3871a73c25a08460014ac9df0	2026-08-29	OPT-4	False	1	pcrec_emit_vm
+6f8e9d30f673eaeb23d986f6be099ca6baff5f7d	2026-08-29	OPT-4	False	1	vm_render_listing
+fefcea1446e5edc04f697a3471dc9f751b385efb	2026-08-29	OPT-4	False	1	pcrec_emit_vm
+d4d439e5d0f2bb9050831397aa2328a2c258ce1c	2026-08-29	OPT-4	False	1	pcrec_emit_vm
+b334d72ed484a7431f2e2588ff4594187b3cac5a	2026-08-29	OPT-4	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+36d59631fc712871694575938c00bf1f94a6ba3e	2026-08-29	ART-SIZE	False	2	vm_cursor_rep;vm_render_listing
+b3cf716332346b2f4b0f6fb671a0812dd435abdb	2026-08-29	ART-SIZE.2	False	1	pcrec_emit_vm
+48cbbd4480650da404818ceda210d81198061e1e	2026-08-29	ART-SIZE.2	False	1	pcrec_emit_vm
+6fc9043723e024c5625ac054411abddee36ded07	2026-08-29	ART-SIZE.2	False	1	pcrec_emit_vm
+9477bdb26af6aab92b4abf505b199a55075345ff	2026-08-29	ART-SIZE.2	False	1	pcrec_emit_vm
+a1416860223ebb8e4cdcafada89ed706914491fd	2026-08-28	SEL-1	False	1	vm_render_listing
+06c08c9163eed648e55b0b6949a59b8b55a84708	2026-08-26	K38-FIX	False	6	pcrec_emit_vm;vm_cursor_rep;vm_look;vm_look_behind;vm_rev_emit;vm_revdet_rep
+c94055117d27bd52e9dee65e52d2732df02717ee	2026-08-26	DD-13c	False	1	pcrec_emit_vm
+8b2c025e9dfc206d93ea283248073a982d6a90a2	2026-08-25	DD-13c	False	1	pcrec_emit_vm
+e3937a18e8ed4c8b81d212236f1c62e19df3911a	2026-08-25	DD-13c	False	1	pcrec_emit_vm
+d0a9ab5486a7ee5b76bd30aa365555fcb8b21a2f	2026-08-26	K38-FIX	False	1	pcrec_emit_vm
+469a432268b3af694caafd49d254b8f071e45ceb	2026-08-25	OPT-1	False	1	pcrec_emit_vm
+4d076e371f49e4d26fb2b326ad8e2a0a76dd6184	2026-08-25	OPT-1	False	1	pcrec_emit_vm
+898054b9235a4008fade9785c313ea89b558ee26	2026-08-25		False	1	pcrec_emit_vm
+d05f04f21cf48ac6aa1365d142031da773870cba	2026-08-25	OPT-1	False	3	FILESCOPE;pcrec_emit_vm;vm_fields_join
+5991d4c9cda0684bc91d3fee73e33e4fb0ba5a7d	2026-08-25	DD-13	False	1	pcrec_emit_vm
+b59acb24b684b9c5c49012c88ee2e1589e49eae3	2026-08-25	DD-14.FB	False	3	pcrec_emit_vm;vm_ceiling;vm_region
+fbac26a32ddc3ed5874318cd14fcaef9c519e06d	2026-08-25	DD-14.G	False	1	pcrec_emit_vm
+99eecd5752ce340ab96232111c0d117ab2c04a96	2026-08-25	DD-14.G	False	1	pcrec_emit_vm
+1b97fc5ffd32c560d827c3f1bf672386e377b211	2026-08-25	DD-14.G	False	1	pcrec_emit_vm
+d87afff89a30a1a0fe83f5e3b8ad27a0131d47ee	2026-08-24	DD-14.G	False	2	pcrec_emit_vm;vm_render_listing
+7df1bb5816f678ef109f35ea98c8df9fb7008039	2026-08-24	DD-14.G	False	1	pcrec_emit_vm
+b257ab4ffdb40bae903d1c975f8cd570b91e53c9	2026-08-24	DD-14.G	False	3	FILESCOPE;vm_count_slots;vm_splice
+26f1a91c6cf92d134856fb9f2587c72216f3a4fb	2026-08-24	DD-14.G	False	9	FILESCOPE;pcrec_emit_vm;vm_call;vm_cost;vm_count_slots;vm_emit;vm_slot_lookmark;vm_slot_name;vm_snap
+99e50244cd47cd51e093e34dc0c26190d9b16cc4	2026-08-24	DD-14.EMPTY	False	1	pcrec_emit_vm
+9317f61e68821deff1e5d9ea7e9923ae76008a0a	2026-08-24	DD-14.E	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+f0d6a23c6b77a29e95ad43fa605d28841fe6c46c	2026-08-24	DD-14.LB	False	1	vm_look_behind
+a00f22a7a8c5432dcccb8f5ee26f9a326a6e1ed9	2026-08-24	DD-14 B+C	False	1	pcrec_emit_vm
+872a34f807dcaf3feb819c60570ebb9f06fb396e	2026-08-24	DD-14 B+C	False	10	FILESCOPE;pcrec_emit_vm;vm_ceiling;vm_cost;vm_count_slots;vm_emit;vm_look;vm_nullable;vm_render_listing;vm_rev_caps
+4822297f2a9227c8daabf5edd9e07b58e4196537	2026-08-24	DD-14 wave A2	False	1	vm_nullable
+3ca858838bb815c3cad07b7b3b7a1b77fe329816	2026-08-24	DD-14 wave A	False	3	pcrec_emit_vm;vm_atomic;vm_look_behind
+6cf67c3e86a39a35206cd2ed78b76e52670d2010	2026-08-24	DD-14 wave A2	False	8	vm_cap_offsets;vm_cost;vm_count_slots;vm_det_seq;vm_emit;vm_nullable;vm_rev_caps;vm_rev_emit
+09b276922bb39a583aef7365c04ff48537f6e47f	2026-08-24	DD-14 wave A	False	1	pcrec_emit_vm
+81c0c51098a766e70e553ddf7ae585967036d26d	2026-08-24	M6.6.2 wave D	False	1	vm_look_behind
+23930d1be04ecf25c1c43008b1e49c64333374ab	2026-08-24	M6.6.2	False	1	pcrec_emit_vm
+45eedbcdf863fb27d9edde0ac699a56cc0a82f59	2026-08-24	M6.6.2	False	1	pcrec_emit_vm
+01d19f4aebf48861d411f73df8309e61301a2e32	2026-08-24	M6.6.2 wave D	False	4	vm_atomic;vm_cost;vm_count_slots;vm_look
+3d164a89c723d90a6cd10e309e80868c5275540e	2026-08-24	M6.6.2	False	1	pcrec_emit_vm
+07a7f2770f5cbdb75e7daecbb83c1f7ca7206391	2026-08-24	M6.6.2	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+f23f4f41f195a7f262c103a64720b2c056b8418d	2026-08-23	M6.6.2 wave B+C	False	2	vm_atomic;vm_look
+8aebe54ce2bb812a8bcb1d718194bb28cb0ee7ae	2026-08-23	M6.6.2 wave B+C	False	9	FILESCOPE;pcrec_emit_vm;vm_atomic;vm_cost;vm_count_slots;vm_emit;vm_render_listing;vm_slot_name;vm_slot_pend
+a4e96be7bec8289faaa12bee5daa16bb0ace6366	2026-08-23	M6.6.2 wave A2	False	9	pcrec_emit_vm;vm_cap_offsets;vm_cost;vm_count_slots;vm_det_seq;vm_emit;vm_nullable;vm_rev_caps;vm_rev_emit
+cc7c6d565a3d6fffcaa0c1311bacb4bbc69d7eed	2026-08-23	M6.6.2 wave 0	True	26	FILESCOPE;vm_cap_offsets;vm_cost;vm_cost_rep;vm_count_slots;vm_counter_copies;vm_counter_fits;vm_counter_phase;vm_counter_poss_opt;vm_counter_rep;vm_cursor_fits;vm_cursor_rep;vm_cuts;vm_det_seq;vm_emit;vm_lifts;vm_nullable;vm_poss_chain;vm_rep;vm_rev_canmove;vm_rev_caps;vm_rev_emit;vm_revdet_fits;vm_revdet_rep;vm_rung_mark;vm_star
+d5a8301ad657bf8ca93789f8dfd78d7542e95b0b	2026-08-22	M6.5.2	False	2	pcrec_emit_vm;vm_emit
+4b108285a7d154b090dd396dc1579a59df27b9fa	2026-08-22	M6.5.2	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+fe05eec356e9483c939b4c6027c1bfe3fd0f7aa9	2026-08-22	M6.5.2	False	1	vm_emit
+e28a26689f5fb176e9b0885eef0b816e6692c3a2	2026-08-22	M6.5.2	False	3	vm_emit;vm_nullable;vm_slot_ctr
+a7f4e4ba0c798a66898e2b6a7beeb7921ad52397	2026-08-22	M6.5.2	False	12	FILESCOPE;FILESCOPE:(empty);pcrec_emit_vm;vm_cost;vm_count_slots;vm_emit;vm_nullable;vm_rev_caps;vm_set;vm_slot_ctr;vm_slot_name;vm_work
+036bd55055b39831802f6f617649121b8010e117	2026-08-22	M6.4.4	False	2	vm_atomic;vm_rep
+e5f02c6076cfcf8d5846ad54f417bae30bcd8518	2026-08-22	M6.4.2	False	1	pcrec_emit_vm
+af3f116abe8e8a33790f69f3c24bf9bc21165a42	2026-08-22	M6.4.2	False	7	FILESCOPE;pcrec_emit_vm;vm_cost_rep;vm_count_slots;vm_cuts;vm_render_listing;vm_rep
+035c9352c1c3715a0a07d906b0981921410c4b17	2026-08-22	M6.4.2	False	21	FILESCOPE;pcrec_emit_vm;vm_cost;vm_cost_rep;vm_count_slots;vm_counter_copies;vm_counter_fits;vm_counter_poss_opt;vm_counter_rep;vm_cursor_fits;vm_cursor_rep;vm_emit;vm_nullable;vm_poss_chain;vm_poss_star;vm_rep;vm_rev_canmove;vm_rev_caps;vm_rev_emit;vm_revdet_rep;vm_star
+c433eb811663823415ee0208aa9221399d76e038	2026-08-21	M6-READ tail	False	1	FILESCOPE
+e999cb5e812fd7fb68bf80eaf7560cda7d634b7a	2026-08-21	M6-READ tail	False	13	FILESCOPE;pcrec_emit_vm;vm_cap_offsets;vm_charge;vm_cost;vm_counter_phase;vm_cursor_rep;vm_cut;vm_emit;vm_opt_chain;vm_revdet_rep;vm_set;vm_slot_ctr
+510382b077bc1ad9c2540f3b1db639ed05437924	2026-08-21	M6-READ	False	25	FILESCOPE;FILESCOPE:(empty);pcrec_emit_vm;vm_cls_test;vm_counter_phase;vm_counter_poss_opt;vm_counter_rep;vm_cursor_rep;vm_cut;vm_emit;vm_lbl;vm_mrl_gate;vm_mrl_test;vm_opt_chain;vm_poss_chain;vm_poss_star;vm_push;vm_render_listing;vm_rep;vm_rev_emit;vm_revdet_rep;vm_set;vm_slot_rev;vm_star;vm_work
+978bc8f53cfe331c03da51ec595a439111386643	2026-08-19	M6.2	False	2	FILESCOPE;pcrec_emit_vm
+1a27db1dfb3c58e56ecd253335b92b326f2b0a03	2026-08-19	M6.2	False	3	FILESCOPE;pcrec_emit_vm;vm_render_listing
+7488aa8a9e76b7544e607b356d75c2e55f0d39a4	2026-08-19	M6.2	False	7	FILESCOPE;pcrec_emit_vm;vm_cost;vm_count_slots;vm_emit;vm_nullable;vm_rev_caps
+e38613c021812c0a1aa7f38af07a59a6c74797fb	2026-08-19	M6.2 wave D	False	7	FILESCOPE;pcrec_emit_vm;vm_cost;vm_count_slots;vm_emit;vm_nullable;vm_rev_caps
+a93673778b0569f2820c0781f9b66db53930ebcb	2026-08-19	M6.2 wave C	False	1	vm_emit
+f359a8a77db049e80639f3cf7978e0e312bb3b0b	2026-08-19	M6.2 wave C	False	1	vm_det_seq
+9fc91b7f3b506c665cae1ae11347000b355475f2	2026-08-19	M6.2 wave C	False	1	vm_emit
+e75be1f00d1692ca2ba09f7ededaf0ea1e93bb26	2026-08-19	M6.2 wave B	False	5	vm_cost;vm_count_slots;vm_emit;vm_nullable;vm_rev_caps
+211c5da84181b7919298871cd855700cfa70725a	2026-08-19	M6.2	False	5	vm_cost;vm_count_slots;vm_emit;vm_nullable;vm_rev_caps
+7db6313ebdb73f291d14b65a0d2e3a7e2f2e998f	2026-08-18	ABI-NS	False	2	pcrec_emit_vm;vm_rev_caps
+b9b63301de51afa13db9362a8ca216f8285b0a47	2026-08-18	M5-SEAM	False	1	pcrec_emit_vm
+8b5acb4058b5cb86d003c352a8e5c8c985891945	2026-08-17	OPT-ALTCLS	False	3	pcrec_emit_vm;vm_alt;vm_mrl_gate
+a07a87c6ba9b8ba6b4165e214eaeecc24b979874	2026-08-17	OPT-ALTCLS	False	3	pcrec_emit_vm;vm_alt;vm_mrl_gate
+2fe30954c3abfbd864a0a80f687c8deab866acf6	2026-08-17	M4.6f	False	2	pcrec_emit_vm;vm_render_listing
+0970c027d6addbcc20c11086c7249556f9cb22ae	2026-08-17	M4.6d	False	4	FILESCOPE;vm_cursor_rep;vm_dyn_add;vm_render_listing
+011bc0d7bfdccc35e52f6fb094a6748c5ec00734	2026-08-17	M4.6d	False	3	vm_counter_rep;vm_rep;vm_revdet_rep
+6a2f875efe450a0353dc08a483e30d0987dcff2f	2026-08-17	M4.6d	False	1	pcrec_emit_vm
+30a83ed1f0587e02234401e10b2b3e7e0bad08cc	2026-08-17	M4.6d	False	7	FILESCOPE;vm_counter_phase;vm_cursor_rep;vm_emit_f;vm_fmul;vm_mrl_gate;vm_mrl_test
+810f94211f6cc29cad364a456bd03a96b3863157	2026-08-17	M4.6d	False	15	FILESCOPE;pcrec_emit_vm;vm_counter_phase;vm_counter_poss_opt;vm_counter_rep;vm_cursor_rep;vm_emit;vm_opt_chain;vm_poss_chain;vm_poss_star;vm_render_listing;vm_rep;vm_revdet_rep;vm_rung_mark;vm_star
+5c838fc9e422336a8000653f5221e59f6fddc78f	2026-08-17	M4.6a	False	2	FILESCOPE;pcrec_emit_vm
+902cb916dce8b2c06ff9f9930bcef0ef26dfaa97	2026-08-17	M4.6a	False	2	FILESCOPE;FILESCOPE:(empty)
+411ad1d8ccf1c5ed648650c84bf66057b0555edf	2026-08-17	ENG-BREP counter-K	False	6	vm_cost_rep;vm_counter_copies;vm_counter_fits;vm_counter_rep;vm_poss_chain;vm_rep
+f6e17f0e805326decec94de2e6e61ba8f25839eb	2026-08-17	ENG-BREP counter-K	False	7	vm_cost_rep;vm_count_slots;vm_counter_copies;vm_counter_fits;vm_counter_phase;vm_counter_rep;vm_opt_chain
+4d2a8ec417eaf04cfcfb6ab28126b47cab70edbc	2026-08-17	ENG-BREP counter-K	False	8	vm_cost_rep;vm_count_slots;vm_counter_copies;vm_counter_exact;vm_counter_fits;vm_rep;vm_revdet_rep;vm_slot_ctr
+f88d833425aa74973d47df0f2cdff311253ea73e	2026-08-17	ENG-BREP counter-K	False	7	FILESCOPE;pcrec_emit_vm;vm_cost_rep;vm_count_slots;vm_rep;vm_revdet_rep;vm_slot_rev
+dbc1c1ad7dfffe8aaae14c18709252f5f2aca160	2026-08-17	ENG-BREP counter-K	False	2	FILESCOPE;pcrec_emit_vm
+a9f95f714e69a8d6f9d88b1b5c73916682ee76f0	2026-08-17	ENG-BREP counter-K	False	6	FILESCOPE;pcrec_emit_vm;vm_cursor_rep;vm_cut;vm_revdet_rep;vm_set
+c95face84ce2b6c2859186b64eb64e8eb2eb8a76	2026-08-16	rung-select	False	1	pcrec_emit_vm
+04ab5f1fe564ccc8e23725fa669a0383161bec1e	2026-08-16	rung-select	False	1	vm_cost_rep
+b14f369587f54fa77ecbcfd0207cae2ac3fb740c	2026-08-16	rung-select	False	2	pcrec_emit_vm;vm_revdet_rep
+57e8683a5c042ba15a1d7e2793b69de4e35bcf97	2026-08-16	rung-select	False	13	FILESCOPE;pcrec_emit_vm;vm_cost;vm_cost_rep;vm_count_slots;vm_cursor_fits;vm_cursor_rep;vm_emit;vm_poss_star;vm_render_listing;vm_rep;vm_rungs_describe;vm_slot_mark
+bf3a45d5593da379304594bf9e0706f856b0fe0f	2026-08-16	K22	False	3	pcrec_emit_vm;vm_cost;vm_count_slots
+b0624f97a18e0c134384d85c5a1865729cb734b6	2026-08-16	ENG-BREP	False	1	vm_render_listing
+23684e11cc44344b445ea172cac6e309e48cb25d	2026-08-15	ENG-BREP	False	1	vm_render_listing
+4bbbce7d6f3be8bc4dd084de9d6d35fce8b73a45	2026-08-15	ENG-BREP	False	12	FILESCOPE;pcrec_emit_vm;vm_cost_rep;vm_count_slots;vm_cursor_rep;vm_opt_chain;vm_render_listing;vm_rep;vm_rung_mark;vm_rungs_describe;vm_set;vm_slot_low
+655fdf060796c9a3159ebbeac9440be838fd98a6	2026-08-15	M4.5e	False	7	FILESCOPE;pcrec_emit_vm;vm_cursor_rep;vm_render_listing;vm_rep;vm_rung_name;vm_set
+96ee8f5f3d77f35c01a24522224e4fabef15589a	2026-08-15	M4.5e WIP	False	4	FILESCOPE;pcrec_emit_vm;vm_render_listing;vm_rep
+5a54c0895321a6d7b18b298cd272df4dc4ca1650	2026-08-15	M4.5c fix	False	6	FILESCOPE;pcrec_emit_vm;vm_cost;vm_count_slots;vm_nullable;vm_render_listing
+1c97667edd89d70f5cccf33d69a0c225fd5db579	2026-08-15	M4.5c	False	1	vm_render_listing
+6b8ca230d7eec25ce9c570232d5ddff35f9e9322	2026-08-15	M4.5c	False	12	FILESCOPE;FILESCOPE:(empty);pcrec_emit_vm;vm_alt;vm_cursor_rep;vm_emit;vm_fail;vm_lbl;vm_opt_chain;vm_push;vm_rep;vm_set
+c0f24bcb28bd72b2288de7479a01b222e1a698c5	2026-08-15	M4.5b	False	4	FILESCOPE;pcrec_emit_vm;vm_cost;vm_cost_rep
+0b4b0be0c87056fd81c922f3d62ddc46be180ae6	2026-08-15	M4.5b	False	6	FILESCOPE;vm_cap_offsets;vm_cost_rep;vm_count_slots;vm_cursor_rep;vm_rep
+242dcf37a32ece5758d2b1990a00a7d8e543ea53	2026-08-15	M4.5b	False	1	FILESCOPE:(empty)
