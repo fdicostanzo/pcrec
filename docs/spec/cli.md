@@ -470,8 +470,9 @@ force-vs-deny distinction, and the byte-identity/engine-selecting split:
 tuning axis** ([EMIT-VERB], D112; `tuning.md` §2.24). They control the
 emitted artifact's HUMAN COMMENTARY and nothing else. The default is
 `-fno-comments`: an artifact carries only its ESSENTIAL comments — the
-generated-by line naming pcrec and echoing the pattern, and the shared
-`PCREC_RX_ABI_H` type block's doc-comments. `-fcomments` restores the rest
+generated-by line naming pcrec AND THE ABI and echoing the pattern, and
+the shared `PCREC_RX_ABI_H` type block's doc-comments. `-fcomments` restores
+the rest
 (the orientation block, the table legends, the per-label role text), which
 is what you want when you are going to READ the artifact. Deny wins over
 force, so `-fcomments -fno-comments` is comment-free.
