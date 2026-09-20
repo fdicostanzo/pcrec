@@ -969,6 +969,109 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
 
 /* ---- [...] classes ---- */
 
+/* Reads and decodes ONE class member at the current position, used at both
+ * the low endpoint (the item-loop top) and the high endpoint (the range
+ * arm, p_class_range): a live `\Q` opens transparently here first
+ * (dissolving an immediately-empty `\Q\E` via `cls_skip`, same as the
+ * plain-byte case — [M4-QUOTING]), then the four-way rule applies
+ * identically at both positions — quoted byte / escape via
+ * `esc_class_value` / high byte via `lit_next_cp` / plain byte
+ * ([M5.0 stage 2]). The item-loop top already opens a live `\Q` and checks
+ * for truncation before ever reaching this call, so both checks below are
+ * no-ops there by construction; the range arm has no such earlier check of
+ * its own, which is what makes this call self-sufficient there. Measured:
+ * `[a-\Qz\E]` and `[a-\Q\Ez]` are both the range a-z (a quote answering for
+ * the high endpoint, or dissolving to nothing before it), `[a-\Qzy\E]` does
+ * not drop `y` (a quote closing with bytes still pending is picked up as
+ * ordinary members on a later call), and a `\Q` opened here with nothing
+ * left in the pattern (`[a-\Q` at true end) raises the class's own
+ * "missing terminating ]" rather than reading -1 as a byte value.
+ * `opening` is the class's `[` offset, for that message. `*quoted` reports
+ * whether the read byte was quoted content; `*claim` is set exactly as
+ * `esc_class_value` sets it — the caller supplies its initial NOT_MINE
+ * value, unchanged on every other path. */
+static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quoted)
+{
+    if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+        peekc(cx) == '\\' && peekc2(cx) == 'Q') {
+        cx->pos += 2;
+        cx->in_quote = true;
+        cls_skip(cx);   /* an immediately-empty quote dissolves too */
+    }
+    if (cx->in_quote && peekc(cx) < 0)
+        pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
+    *quoted = cx->in_quote;
+    int c = nextc(cx);
+    /* [M5.0 stage 2] a member byte >= 0x80 (quoted or not — a quote
+     * suppresses metacharacters, not the encoding) is the start of one
+     * literal CHARACTER; back onto it and decode (§2.7). */
+    if (!*quoted && c == '\\')
+        return esc_class_value(cx, claim);
+    if (c >= 0x80) { cx->pos--; return (int)lit_next_cp(cx); }
+    return c;
+}
+
+/* Parses a class range's high endpoint and adds the resulting interval to
+ * `set`, once the caller (p_class) has already detected the range dash —
+ * the lookahead that decides whether to call this stays with the caller,
+ * since it needs cls_peek_past_dash's own \E-transparent peek before
+ * committing to a range at all. `lo`/`loclaim` are the already-decoded LOW
+ * endpoint (the caller's own `cls_read_member` call).
+ *
+ * THE ENDPOINT RULE (K12; design §16 as R14-corrected), five steps in
+ * PCRE2's measured evaluation order — probe evidence in
+ * tests/probes/probe_endpoint_k12.c, every cell pinned in tests/reject/
+ * with failing-then-passing pins:
+ *
+ *   1. the LOW endpoint's own error      ([\A-z] 107, [[.a.]-z] 113)
+ *   2. the HIGH pair-open short-circuit  ([0-[:digit:]] 150 with
+ *      no evaluation — the (bracket, high) deviating cell,
+ *      implemented BY pair_opens, which R14 struck from D33's
+ *      deletion list for exactly this)
+ *   3. the HIGH endpoint's own error     ([\d-\A] 107 — beats
+ *      the low side's SET)
+ *   4. either endpoint certifiably SET-shaped -> invalid range
+ *      ([0-\d], [\d-z], [\d-\w] all 150)
+ *   5. scalar ordering                   ([z-a] 108)
+ *
+ * A claim that is NOT certifiably SET (a body-dependent row — \p{...}
+ * until MOD-0.6's property table) fires as the construct's own refusal
+ * at steps 1/3: the module promise is the honest answer where pcrec
+ * cannot certify PCRE2's 150 ([0-\p{Foo}] is 147, not 150). */
+static void p_class_range(Ctx *cx, size_t opening, int lo, ExtResult *loclaim,
+                           PcrecCpSet *set)
+{
+    size_t dashpos = cx->pos;
+    cx->pos++; /* '-' */
+    cls_skip(cx);   /* xx: ws between '-' and the high endpoint */
+    if (loclaim->what == EXT_REFUSAL && !loclaim->ep_set_certain)
+        pcrec_ext_finish(cx, loclaim);              /* step 1 */
+    /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA):
+     * `[0-[a]`, `[0-[:]` and `[0-[:digit]` all COMPILE in PCRE2 because no
+     * pair closes — the endpoint test is the construct's own recognition
+     * rule, not "the byte is `[`". */
+    if (peekc(cx) == '[' &&
+        pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
+        pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
+    ExtResult hiclaim = { .what = EXT_NOT_MINE };
+    bool hi_quoted;
+    int hi = cls_read_member(cx, opening, &hiclaim, &hi_quoted);
+    if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
+        pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
+    /* step 4 — either side SET-shaped -> invalid range. A claim that
+     * SURVIVED steps 1/3 is exactly that: a refusal here is a
+     * certified-SET one (uncertified refusals fired above), and a
+     * produced EXT_MEMBERS (MOD-0.3c) is a SET by construction — [0-\d]
+     * is 150 with module classes enabled or disabled (§16.3's
+     * composition-keeps-K12-closed bullet, live in both gate states). */
+    if (loclaim->what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
+        pcrec_ctx_fail(cx, dashpos,
+                 "invalid range in character class"); /* step 4 */
+    if (lo > hi)
+        pcrec_ctx_fail(cx, dashpos, "range out of order in character class");
+    pcrec_cpset_add(set, (unsigned)lo, (unsigned)hi);   /* a range is one interval */
+}
+
 /* Parses a `[...]` bracket expression starting just past `[`: the leading
  * `^`/`]` special cases, POSIX/extended-class doorway dispatch per member,
  * escape and range handling, folding each contribution at its own
@@ -999,11 +1102,10 @@ static Ast *p_class(Ctx *cx)
      * from_iv` not at all, each with its reason stated there), so the union
      * below adds a set that is already as folded as it should be.
      *
-     * UNDER `byte` THIS CHANGES NOTHING, and that is checkable rather than
-     * hoped: the fold that used to run over the merged set was the ASCII one,
-     * and every produced set reaching it was either already ASCII-closed by
-     * its own constructor or a property span containing both cases of every
-     * ASCII letter it holds. The byte identity gate is the check. */
+     * UNDER `byte` THIS CHANGES NOTHING: every produced set reaching the
+     * union is already either ASCII-closed by its own constructor or a
+     * property span containing both cases of every ASCII letter it holds.
+     * The byte identity gate is the check. */
     PcrecCpSet prod;
     pcrec_cpset_init(&prod, &cx->arena);
     bool neg = false;
@@ -1097,17 +1199,8 @@ static Ast *p_class(Ctx *cx)
             pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
         }
 
-        int lo;
         ExtResult loclaim = { .what = EXT_NOT_MINE };
-        cx->pos++;
-        /* [M5.0 stage 2] a member byte >= 0x80 (quoted or not — a quote
-         * suppresses metacharacters, not the encoding) is the start of one
-         * literal CHARACTER; back onto it and decode (§2.7). */
-        if (!quoted && c == '\\')
-            lo = esc_class_value(cx, &loclaim);
-        else if (c >= 0x80) { cx->pos--; lo = (int)lit_next_cp(cx); }
-        else
-            lo = c;
+        int lo = cls_read_member(cx, opening, &loclaim, &quoted);
 
         /* xx: deletion precedes RANGE PARSING (measured: [a\t-\tz] is the
          * range a-z), and the dash-vs-literal lookahead must see through it
@@ -1124,105 +1217,7 @@ static Ast *p_class(Ctx *cx)
          * range-forming dash an unquoted one is. */
         if (!cx->in_quote && peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
             cls_peek_past_dash(cx) >= 0) {
-            size_t dashpos = cx->pos;
-            cx->pos++; /* '-' */
-            cls_skip(cx);   /* xx: ws between '-' and the high endpoint */
-            /* THE ENDPOINT RULE (K12; design §16 as R14-corrected), five
-             * steps in PCRE2's measured evaluation order — probe evidence in
-             * tests/probes/probe_endpoint_k12.c, every cell pinned in
-             * tests/reject/ with failing-then-passing pins:
-             *
-             *   1. the LOW endpoint's own error      ([\A-z] 107, [[.a.]-z] 113)
-             *   2. the HIGH pair-open short-circuit  ([0-[:digit:]] 150 with
-             *      no evaluation — the (bracket, high) deviating cell,
-             *      implemented BY pair_opens, which R14 struck from D33's
-             *      deletion list for exactly this)
-             *   3. the HIGH endpoint's own error     ([\d-\A] 107 — beats
-             *      the low side's SET)
-             *   4. either endpoint certifiably SET-shaped -> invalid range
-             *      ([0-\d], [\d-z], [\d-\w] all 150)
-             *   5. scalar ordering                   ([z-a] 108)
-             *
-             * A claim that is NOT certifiably SET (a body-dependent row —
-             * \p{...} until MOD-0.6's property table) fires as the
-             * construct's own refusal at steps 1/3: the module promise is
-             * the honest answer where pcrec cannot certify PCRE2's 150
-             * ([0-\p{Foo}] is 147, not 150). */
-            if (loclaim.what == EXT_REFUSAL && !loclaim.ep_set_certain)
-                pcrec_ext_finish(cx, &loclaim);              /* step 1 */
-            /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA).
-             * PCRE2 makes `[0-[:digit:]]` error 150, "invalid range in character
-             * class"; pcrec read the `[` as an ordinary literal upper bound and
-             * EMITTED A MATCHER — a silent wrong matcher, the one class the
-             * mandate forbids. 546 instances in a 1,530-pattern sweep.
-             *
-             * It survived every suite because it is masked by the alphabet the
-             * tests use: `a` is 0x61 and `[` is 0x5b, so `[a-[:digit:]]` is
-             * rejected as an out-of-order range before this can matter, and
-             * every range in the corpus is `a`-based. It took a test written
-             * from the SPEC rather than from the code to pick `[0-`.
-             *
-             * The endpoint test is the construct's own recognition rule, not
-             * "the byte is `[`" — `[0-[a]`, `[0-[:]` and `[0-[:digit]` all
-             * compile in PCRE2 because no pair closes. */
-            if (peekc(cx) == '[' &&
-                pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
-                pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
-            /* [M4-QUOTING] the high endpoint is the ONE other position
-             * PCRE2 lets a quote answer for (measured: `[a-\Qz\E]` and
-             * `[a-\Q\Ez]` are both the range a-z — the second shows the
-             * empty-quote transparency reaching THROUGH to a real byte
-             * beyond it, cls_skip's own job just above). Mirrors the main
-             * loop's own open check exactly; a quote with MORE than one
-             * byte left after supplying the endpoint stays open, and the
-             * loop's next spin (cls_skip, then the open/quoted checks
-             * above) picks up the rest as ordinary members — measured:
-             * `[a-\Qzy\E]` does not drop `y`. */
-            if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
-                peekc(cx) == '\\' && peekc2(cx) == 'Q') {
-                cx->pos += 2;
-                cx->in_quote = true;
-                cls_skip(cx);   /* an immediately-empty quote dissolves too */
-            }
-            /* [M4-QUOTING] unlike the main loop's own open (which loops
-             * back through this function's `c < 0` check above before
-             * reading anything further), this one has no such loopback —
-             * an unterminated `\Q` opened AS a high endpoint with nothing
-             * left in the pattern (`[a-\Q` at true end) must raise the
-             * SAME class-truncation error the main loop raises, not fall
-             * through to `nextc` returning -1 as if it were a byte value. */
-            if (cx->in_quote && peekc(cx) < 0)
-                pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
-            bool hi_quoted = cx->in_quote;
-            int hc = nextc(cx);
-            ExtResult hiclaim = { .what = EXT_NOT_MINE };
-            int hi;
-            /* [M5.0 stage 2] the high endpoint decodes exactly as the low
-             * member above does: a byte >= 0x80 starts one character. */
-            if (!hi_quoted && hc == '\\')
-                hi = esc_class_value(cx, &hiclaim);
-            else if (hc >= 0x80) { cx->pos--; hi = (int)lit_next_cp(cx); }
-            else
-                hi = hc;
-            if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
-                pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
-            /* step 4 — either side SET-shaped -> invalid range. A claim
-             * that SURVIVED steps 1/3 is exactly that: a refusal here is a
-             * certified-SET one (uncertified refusals fired above), and a
-             * produced EXT_MEMBERS (MOD-0.3c) is a SET by construction —
-             * [0-\d] is 150 with module classes enabled or disabled, which
-             * is §16.3's composition-keeps-K12-closed bullet, now live in
-             * both gate states. */
-            if (loclaim.what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
-                pcrec_ctx_fail(cx, dashpos,
-                         "invalid range in character class"); /* step 4 */
-            if (lo > hi)
-                pcrec_ctx_fail(cx, dashpos, "range out of order in character class");
-            /* A RANGE IS ONE INTERVAL, which is the payload change showing its
-             * hand: `[\x00-\xff]` was 256 bit-sets and is now a single `add`,
-             * and `\p{L}`'s 700-odd ranges will be 700 rather than a walk over
-             * the code-point space. */
-            pcrec_cpset_add(&set, (unsigned)lo, (unsigned)hi);
+            p_class_range(cx, opening, lo, &loclaim, &set);
         } else {
             /* Not a range endpoint: a deferred REFUSAL fires exactly as it
              * always did — `[\d]` keeps its module promise while classes is
@@ -1239,24 +1234,21 @@ static Ast *p_class(Ctx *cx)
     }
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
-     * silently wrong and downstream cannot detect it.
+     * silently wrong and downstream cannot detect it. [M5.0 stage 1]: the
+     * complement is taken within `[0, MAXCP(enc)]` (§2.7.1) — under
+     * `--encoding=byte` that is the same function on the same set as a
+     * bitmap's implicit 0..255. Keeping the complement EAGER and in this
+     * one constructor, rather than carrying a `negated` flag to the
+     * lowering, is what keeps this ordering rule checkable by sabotage row
+     * S08 swapping two adjacent lines (§2.7.2's third argument).
      *
-     * [M5.0 stage 1] THE NEGATION IS THE SAME TWO LINES IN THE SAME ORDER, and
-     * the ONLY thing that moved is what "everything else" means: the
-     * complement is taken within `[0, MAXCP(enc)]` instead of within a
-     * bitmap's implicit 0..255 (§2.7.1). Under `--encoding=byte` the two are
-     * the same function on the same set. Keeping the complement EAGER and in
-     * this one constructor — rather than carrying a `negated` flag to the
-     * lowering — is what keeps this ordering rule checkable by sabotage row
-     * S08 swapping two adjacent lines (§2.7.2's third argument). */
-    /* [M5.0 stage 4] fold THIS FUNCTION'S OWN members, then union the
-     * produced ones, then negate. The ORDER of the last two is unchanged and
-     * is what §4.3 measured (`[^k]` caseless rejects U+212A, so the negation
-     * is over the CLOSED set); what moved is that the union now happens
-     * between them instead of before both. A produced set is already folded
-     * as its own producer decided, so unioning after the fold is what makes
-     * "the caller owns caselessness" true of `\p` inside a class as well as
-     * at an atom — see this function's own `prod` declaration. */
+     * [M5.0 stage 4] fold THIS FUNCTION'S OWN members, union the produced
+     * ones, then negate — the order §4.3 measured (`[^k]` caseless rejects
+     * U+212A, so the negation is over the CLOSED set). A produced set is
+     * already folded as its own producer decided, so unioning after the
+     * fold is what makes "the caller owns caselessness" true of `\p`
+     * inside a class as well as at an atom — see this function's own
+     * `prod` declaration. */
     if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
