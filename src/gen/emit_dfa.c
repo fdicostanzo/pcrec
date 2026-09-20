@@ -1304,7 +1304,7 @@ static void emit_match_caps_in_decl(StrBuf *sb, const char *fn, const char *pref
  * out of an arena rounds its cursor UP to the macro, and rounding up to 0 is
  * a division by zero. 1 is the alignment every pointer already satisfies,
  * which is the truthful statement for an artifact with no regions to align. */
-BufSurface pcrec_bufsurface_inert(void)
+static BufSurface pcrec_bufsurface_inert(void)
 {
     BufSurface bs;
     bs.resume_frames = 0; bs.trail_frames = 0;
@@ -5482,7 +5482,7 @@ static bool dfa_search_is_pinned(Ctx *cx)
  * summary of each `applies` clause, cross-checked against this file's own
  * comments by a human at review time rather than derived, and named as such
  * in the dump's own header comment and in docs/spec/registry.md. */
-size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
+static size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
                             PcrecAxisCand *out, size_t cap)
 {
     const char *base = (const char *)list;

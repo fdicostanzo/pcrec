@@ -113,7 +113,7 @@ bool pcrec_tune_valid(int tune)
 /* Looks up the dial row for `tune`, clamped to `balanced` when out of range --
  * the table pcrec_tune_token and the value-cell accessors below all index
  * through. */
-const PcrecTuneRow *pcrec_tune_row(int tune)
+static const PcrecTuneRow *pcrec_tune_row(int tune)
 {
     if (!pcrec_tune_valid(tune)) return &TUNE_TABLE[PCREC_TUNE_BALANCED + 2];
     return &TUNE_TABLE[tune + 2];

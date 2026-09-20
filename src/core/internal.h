@@ -4573,9 +4573,6 @@ const VerbTable *pcrec_registry_verb_tables(int which);
  * roadmap the doorway now reads. Defined in registry.c beside the rows,
  * because it reads `tail` AS A NAME and only those rows license that reading. */
 const RegRow *pcrec_registry_verb_name_row(const char *name, size_t len);
-/* PCRE2's cap on a verb NAME and the complaint past it — shared by both
- * tables, so it is not a VerbTable field. Returns the message; sets *max. */
-const char *pcrec_registry_verb_name_limit(size_t *max);
 
 /* The POSIX class-bracket NAME table, for RF_CLASS_NAMED rows — a THIRD
  * schema beside RegRow and VerbName, on D25's reasoning: a POSIX name answers
@@ -4868,7 +4865,6 @@ const char *pcrec_rxt_children_name(RxtChildren c);
 const char *pcrec_rxt_cardinality_name(RxtCardinality c);
 const char *pcrec_rxt_row_source_name(RxtRowSource s);
 const char *pcrec_rxt_validated_by_name(RxtValidatedBy v);
-const char *pcrec_rxt_constraint_name(RxtConstraintKind k);
 
 /* Walks a row's `constraints` column. Returns 1 and fills `*k`/`*arg`/
  * `*arglen` per clause, 0 at the end; a clause naming no kind in the switch
@@ -5340,8 +5336,6 @@ typedef struct {
 } PcrecTuneRow;
 
 bool                pcrec_tune_valid(int tune);
-
-const PcrecTuneRow *pcrec_tune_row(int tune);
 
 const char         *pcrec_tune_token(int tune);
 
@@ -5902,8 +5896,6 @@ typedef struct {
     int       trail_frame_size;   /* bytes per trail entry, THIS artifact */
     int       align;              /* bytes; the alignment BOTH regions need */
 } BufSurface;
-
-BufSurface pcrec_bufsurface_inert(void);
 
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                          const BufSurface *bs);

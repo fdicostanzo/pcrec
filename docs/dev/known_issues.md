@@ -11,6 +11,62 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K61 — [TOUR-4], r61 F1, found 2026-09-20 (Fable's personal review of the five most complicated sections): `DFA_INVARIANT` in `src/ir/dfa.c` was `abort()`, contradicting `docs/spec/match_api.md`'s "It never `abort()`s the caller on the compile path" promise
+
+**Status: FIXED 2026-09-20 (lane `tour4`).** `DFA_INVARIANT` was
+`#define DFA_INVARIANT(cond) do { if (!(cond)) abort(); } while (0)`,
+its own comment justifying the choice as "this file's existing idiom
+for a condition that cannot happen (tab_grow, intern)" — STALE since K7
+(2026-08-18, above) moved this file's allocation failures off that
+idiom entirely and onto `pcrec_ctx_nomem`/`pcrec_ctx_fail`, precisely so a
+library caller under memory pressure is never killed. The macro's
+`abort()` was the one place left in this file where a "cannot happen"
+condition still could kill the caller, and it was reachable from
+`pcrec_compile` at THREE sites (not two — the tour item that found this
+named two from memory; a grep found three): `clo_open`'s "loop not
+already open" check (`dfa.c:605` at this fix), `clo_walk`'s "the open
+loop is the walk's context stack top" check (`dfa.c:684`), and
+`closure()`'s "the seen/emit stamp generations stayed in lockstep"
+check (`dfa.c:874`).
+
+**THE FIX**: `DFA_INVARIANT` now takes the owning `Ctx *` and a message
+and refuses through `pcrec_ctx_fail(cx, 0, "internal error: %s", msg)` —
+the SAME exit every other "pattern too complex"/"cannot happen" site in
+this compiler uses, so detection is unchanged (still fuzzable, still
+corpus-catchable) and a caller now gets an ordinary `-1`-with-diagnostic
+return instead of a killed process. `cx` reaches all three sites through
+a new `Ctx *cx` field on `Clo`/`CloScratch`, populated once by
+`pcrec_build_dfa` (which already owns `cx`) — `closure()` reads
+`sc->cx` for its own site and builds `Clo cl` carrying it forward for
+`clo_open`/`clo_walk`'s. Each site names its own invariant's text
+rather than sharing one generic message. The macro's stale comment is
+rewritten to say so.
+
+**`docs/spec/match_api.md`'s promise is UNCHANGED — the fix makes the
+headline sentence true rather than requiring new wording** (D26/D80):
+"It never `abort()`s the caller on the compile path" was already the
+contract; these three sites were the gap between the sentence and the
+tree. **One caveat for a future reader of that section**: the very next
+sentence there still enumerates "Two `abort()`s remain in the code
+deliberately... a 'cannot happen' DFA structural invariant, and the
+syntax-dump path's detached string buffers" — that count is now stale
+(only the syntax-dump one remains, and it is legitimately out of scope:
+it runs outside a compile with no `Ctx`/`pcrec_error` to report through).
+This lane left that sentence untouched per its brief; a follow-up
+edit to correct "two" to "one" there is owed.
+
+**Regression guard**: `tests/mech/sabotages/S262_dfa_invariant_loop_open_
+inverted.sh` inverts `clo_open`'s condition (`lctx_find(...) < 0` to
+`>= 0`), which fires the invariant on the first loop essentially any
+DFA build opens rather than only on a real open-loop-context conflict —
+`tests/harness/run.sh` over the full corpus is the detector (a large,
+ordinary, non-crashing wave of compile failures where the pre-fix
+`abort()` shape would instead have killed the harness process on the
+first reached pattern). See `docs/dev/lanes/tour4_report.md` for the
+mech run's own DETECTED confirmation.
+
+---
+
 ## K60 — [REVW.U], found 2026-09-17 by the allocation-failure injector's own first real run (lane waveu): an allocation failure ANYWHERE BUT THE LAST INTERNAL ATTEMPT of a compile is frequently SWALLOWED — `pcrec_compile` returns 0, no diagnostic, an artifact from a later fallback attempt nobody asked for
 
 **Status: FIXED 2026-09-18 — BOTH CLASSES, by two separate changes on the

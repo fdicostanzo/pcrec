@@ -265,13 +265,26 @@ static void marks_next(Marks *mk)
  *    frame's open-loop entries and silently lost redirects) is not
  *    EXPRESSIBLE here: there is no entry to overwrite. */
 
-/* Invariant checks that stay in the SHIPPED build. `abort()` is this file's
- * existing idiom for a condition that cannot happen (tab_grow, intern), and
- * unlike <assert.h> it cannot be compiled out by a caller's -DNDEBUG -- which
- * matters here, because both invariants below are premises of a TERMINATION
- * argument (note §3) rather than performance hints. Both are O(open-loop
- * depth), which the corpus measures at <= 4. */
-#define DFA_INVARIANT(cond) do { if (!(cond)) abort(); } while (0)
+/* Invariant checks that stay in the SHIPPED build. Each is a premise of a
+ * TERMINATION argument (note §3) rather than a performance hint, and all
+ * three are O(open-loop depth) or better, which the corpus measures at
+ * <= 4 for the two that scale with it.
+ *
+ * K61 (2026-09-20): this used to be `abort()`, "this file's existing idiom
+ * for a condition that cannot happen (tab_grow, intern)" -- STALE since K7
+ * moved this file's allocation failures off that idiom and onto
+ * `pcrec_ctx_nomem`/`pcrec_ctx_fail`, precisely so a library caller is never
+ * killed. A DFA_INVARIANT failure means a future construct broke one of
+ * this file's own load-bearing assumptions (proper loop nesting, or the
+ * seen/emit generation lockstep) -- never a hostile PATTERN -- but "cannot
+ * happen" is not a license to abort() a caller's process either: it takes
+ * the SAME `pcrec_ctx_fail` exit every other "pattern too complex"/"cannot
+ * happen" site in this compiler uses, so detection is unchanged (still
+ * fuzzable, still corpus-catchable) and the caller now survives with an
+ * ordinary -1-with-diagnostic return instead of a core dump
+ * (docs/spec/match_api.md §8.1's caller-survives promise). */
+#define DFA_INVARIANT(cx, cond, msg) \
+    do { if (!(cond)) pcrec_ctx_fail((cx), 0, "internal error: %s", (msg)); } while (0)
 
 typedef struct {
     int parent;   /* enclosing context; -1 marks the reserved empty id 0 */
@@ -487,6 +500,7 @@ static void cont_push(ContStack *k, int s, int ctx, int push)
  * file-scope state in this file. Keep it that way: a cache across compiles is
  * the obvious temptation and it would need TS-3 run before it lands. */
 typedef struct {
+    Ctx      *cx;     /* K61: the owning compile, for DFA_INVARIANT's refusal */
     Marks     seen;   /* ctx-0 memo: the pre-K18 per-state stamp array */
     Marks     emit;   /* global per-state dedup for the emitted thread list */
     PMemo     memo;   /* (state, ctx) memo, ctx != 0 only */
@@ -495,6 +509,7 @@ typedef struct {
 } CloScratch;
 
 typedef struct {
+    Ctx      *cx;     /* K61: the owning compile, for DFA_INVARIANT's refusal */
     Nfa      *nfa;
     LCtxTab  *ctxs;
     PMemo    *memo;
@@ -587,7 +602,9 @@ typedef struct {
  * silent, and §3's proof rests on the one that stayed silent (R23 S9/S10). */
 static int clo_open(Clo *cl, int ctx, int s)
 {
-    DFA_INVARIANT(lctx_find(cl->ctxs, ctx, s) < 0);
+    DFA_INVARIANT(cl->cx, lctx_find(cl->ctxs, ctx, s) < 0,
+                  "DFA closure tried to open an already-open loop "
+                  "(open-loop-context no-repeats premise violated)");
     return lctx_intern(cl->ctxs, ctx, s);
 }
 
@@ -664,7 +681,10 @@ static void clo_walk(Clo *cl, int s)
                      * evidence that could not have failed: it read 0 across
                      * the lane's own corpora and fired on 358 of the panel's
                      * 4,369 patterns (R23 S10). */
-                    DFA_INVARIANT(at == ctx);
+                    DFA_INVARIANT(cl->cx, at == ctx,
+                                  "DFA closure found an open loop that is "
+                                  "not the walk's open-loop-context stack "
+                                  "top (loop nesting is not proper)");
                     ctx = cl->ctxs->v[at].parent;
                     s = st->exit_is_t2 ? st->t2 : st->t1;
                     continue;
@@ -854,11 +874,13 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
      * is checked rather than commented because a future third array added to
      * only one side is exactly how this would break (note §5 item 13). */
     marks_next(&sc->emit);
-    DFA_INVARIANT(sc->seen.gen == sc->emit.gen);
+    DFA_INVARIANT(sc->cx, sc->seen.gen == sc->emit.gen,
+                  "DFA closure's seen/emit stamp generations diverged "
+                  "(the two scratch arrays fell out of lockstep)");
     pmemo_next(&sc->memo);
     sc->ks.n = 0;
 
-    Clo cl = { nfa, &sc->ctxs, &sc->memo, &sc->ks,
+    Clo cl = { sc->cx, nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
                out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
                sd.left_word, sd.right_word, sd.left_nl, sd.right_nl,
@@ -1377,6 +1399,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * and memo tables start empty and allocate on first use. */
     CloScratch sc;
     memset(&sc, 0, sizeof sc);
+    sc.cx = cx;   /* K61: DFA_INVARIANT's refusal needs it */
     sc.seen.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.seen.n = nfa->n;
     sc.emit.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
