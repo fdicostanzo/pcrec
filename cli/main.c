@@ -45,6 +45,10 @@
  * parameter with no caller is machinery ahead of a measured need (D77), so it
  * is not built; the day a site wants one, it is a two-line change here. */
 static int cli_err(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* Prints "pcrec: <formatted message>\n" to stderr and returns 1 -- the ONE
+ * place the "pcrec: " prefix and trailing newline are spelled, replacing 73
+ * hand-written call sites. No `where` parameter: measured, no stderr site
+ * needs one (see the comment above). */
 static int cli_err(const char *fmt, ...)
 {
     va_list ap;
@@ -132,6 +136,7 @@ static int raise_only_match(const char *a)
     return -1;
 }
 
+/* Prints the CLI's usage text to `f` -- one large string literal, no logic. */
 static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT.c [--] 'PATTERN'\n"
@@ -321,12 +326,15 @@ static int set_encoding(pcrec_options *opt, const char *v)
     return 0;
 }
 
+/* The path's final component after the last '/', or the whole path if none. */
 static const char *base_name(const char *path)
 {
     const char *s = strrchr(path, '/');
     return s ? s + 1 : path;
 }
 
+/* Writes `text` to `path`, checking fopen/ferror/fclose and diagnosing each
+ * failure by name; returns -1 on any of them. */
 static int write_file(const char *path, const char *text)
 {
     FILE *f = fopen(path, "w");
@@ -456,6 +464,9 @@ typedef enum {
 #define CLI_MODE_LIVE_INT(v) ((v) != 0)
 #define CLI_MODE_LIVE_PTR(v) ((v) != NULL)
 
+/* The bitmask of every pattern-query mode `st` has live, one bit per
+ * CLI_MODE_TABLE row, dispatched through the row's own INT/PTR liveness test
+ * -- so no mode gets its own hand-written line here. */
 static unsigned cli_modes_active(const CliState *st)
 {
     unsigned m = 0u;
@@ -477,6 +488,7 @@ static const char *cli_mode_name(unsigned modes)
     return "";
 }
 
+/* Popcount of `modes`. */
 static int cli_modes_count(unsigned modes)
 {
     int n = 0;
@@ -541,6 +553,8 @@ static int cli_extras_clean(const CliState *st)
     return 1;
 }
 
+/* Appends `dir` to st->libdirs, growing the realloc'd array (doubling from 4)
+ * as needed; diagnoses and returns 1 on a failed realloc. */
 static int libdir_push(CliState *st, const char *dir)
 {
     if (st->nlibdirs == st->libcap) {
@@ -567,6 +581,9 @@ static const struct { const char *name; int value; } ENGINE_NAMES[] = {
 };
 #define N_ENGINE_NAMES (sizeof ENGINE_NAMES / sizeof ENGINE_NAMES[0])
 
+/* Looks up `v` in ENGINE_NAMES (the one shared engine vocabulary -- see the
+ * comment above), writing its value into `*out`; returns 1 for an unrecognised
+ * name. */
 static int engine_by_name(const char *v, int *out)
 {
     for (size_t i = 0; i < N_ENGINE_NAMES; i++)
@@ -574,6 +591,7 @@ static int engine_by_name(const char *v, int *out)
     return 1;
 }
 
+/* The engine name for value `e`, or "auto" for an unrecognised one. */
 static const char *engine_name(int e)
 {
     for (size_t i = 0; i < N_ENGINE_NAMES; i++)
@@ -1229,6 +1247,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
     return 0;
 }
 
+/* True iff `p` names an existing directory. */
 static int path_is_dir(const char *p)
 {
     struct stat sb;
