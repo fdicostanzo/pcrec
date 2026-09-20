@@ -127,3 +127,39 @@ above, cells kept verbatim.
 Tier: sonnet with an opus review of the member reader's claim handling
 (the deferred-refusal ordering, steps 1-4 of the K12 endpoint rule, must
 survive the extraction exactly).
+
+## [TOUR-4] src/ir/dfa.c — DFA_INVARIANT aborts the caller on the compile path (r61 F1)
+
+`DFA_INVARIANT(cond)` (dfa.c:274) is `abort()` in the shipped build, at two
+sites in the closure walk (clo_open's "loop not already open", clo_walk's
+"the open loop is the stack top"). Its comment's justification ("this file's
+existing idiom — tab_grow, intern") is STALE since K7 moved both to
+`pcrec_ctx_nomem`; docs/spec/match_api.md:3345 promises "It never abort()s
+the caller on the compile path", and these are the only two aborts reachable
+from `pcrec_compile`. **Agreed shape:** `DFA_INVARIANT` → `pcrec_ctx_fail(cx,
+0, "internal error: ...")` carrying each invariant's text (the macro needs
+`cx`; both sites have it through `Clo`/`CloScratch` or a parameter); the
+stale comment rewritten; a K-row (K61) recording the contradiction and its
+close; the spec unchanged because the fix makes it true. Same detection,
+fuzzable, caller survives. Proof: make test + emit_sweep 0 movers (no emitted
+byte depends on it) + a sabotage row that forces the invariant false and
+expects the refusal. Tier: sonnet.
+
+## [TOUR-5] src/opt/select_engine.c — the engine_sel ladder and the dead discharge loop (r61 F2)
+
+pcrec_select_engine: 117 code lines under 424 of comment (the tree's highest
+churn ratio). **Agreed shape:** (a) `esel_of(const EngineFit *, const Ctx *)`
+— the nine-arm `engine_sel` ladder (537-592) as its own function, its header
+stating the NON-OVERLAP argument ONCE as a table (arm → the condition that
+excludes every arm below it), replacing the five stacked comment blocks
+([OPT-4], [OPT-4.1], [OPT-4.2], [LIM-1], [K53-SELRETRY]); add the one
+unasserted premise as a check — size-drop rung and overflow rung mutually
+exclusive (`size_drop_rung != SDR_NONE` implies `!dfa_disabled`), internal
+error if not; (b) `prefilter_decision()` — the block at 206-482; (c) DELETE
+the `discharge` fixpoint scaffolding (98-110): no hook registered, the one
+customer moved to compile.c in wave G, `rewrote = true` never publishes a
+root (D77). Also r61 F6: `vm_counter_fits` reads PCREC_NO_COUNTER inside the
+predicate while the cursor/revdet deny flags are read by callers — make the
+three alike (emit_vm.c, same lane or [TOUR-2]'s). Proof: the registry stamp
+checks, tests/axes (the axis deny/force matrix is this function's contract),
+emit_sweep 0 movers, make test. Tier: opus.

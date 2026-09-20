@@ -24398,3 +24398,51 @@ gate (test+strict); size-log movers by column; push; worktree removal
 after the straggler check; then the ONE light Linux ratio probe via
 pcrecdev2. Box is free (pcrecdev2: nothing scheduled until tonight's
 window discretion).
+
+## 2026-09-20 (EDT), seventy-second session, part 2 — Frank's tour: headers, experiments, two lists, r61
+
+**[HDR-1] + [HDR-2] DONE** (merged fb1db85f, 756e6f64; pushed): 405 purpose
+headers, then 93 rewritten to LEAD with what the function does after the
+naming experiment showed HDR-1's invariant-first headers lowered
+context-free function comprehension (68 → 57%); the rewrite raised it to
+83% on the same instrument. coding_guide §4.2 carries both rules;
+function_census.py has a `header` column.
+
+**The readability experiments** (docs/dev/reviews/2026-09-20-readability-
+experiments.md + data dir): names under bounded evidence (A/B/C ×
+renamed), edit closure from git hunk headers (61% emitter-arm-only, 24%
+all three walks), file grain by read closure (banner split 35% of the
+monolith vs pass 45% vs kind 56%; pcrec_emit_vm in 122/182 commits). Five
+rules to carry forward; the instrument's noise floor diagnosed (a guesser
+DISPOSITION flip — 23/25 templated non-answers — not comprehension) and the
+protocol fixed (one committed guesser prompt, three runs, median).
+
+**Two lists opened.** `2026-09-20-frank-tour.md` (readability tidy-ups,
+byte-neutral): TOUR-1 pcrec_emit_vm at one altitude + essay pruning; TOUR-2
+cost_add/cost_max + vm_cost as a per-kind dispatcher; TOUR-3 p_class's
+member reader + range arm + pruning with every measured cell kept; TOUR-4
+DFA_INVARIANT abort → ctx_fail (K61); TOUR-5 select_engine's esel_of +
+prefilter_decision + delete the discharge loop. `2026-09-20-code-org.md`
+(structure changes; "not worth it" acceptable): ORG-1 rung ladder decided
+thrice; ORG-2 switch arms tree-wide (census: 87 switches, 3 arms ≥20 code
+lines → not worth it as a rule); ORG-3 banner-section file split (after
+TOUR-1 if at all); ORG-4 emit_dfa.c ("the file is fine"); ORG-5
+is_bare_anchor as a kind table (1 of 46 kind switches is pure — wait for a
+second row); ORG-6 a tokenizer layer (not now); ORG-7 nine exports with no
+reader → static (worth it, small); ORG-8 two escape mechanisms — Frank's
+shape: doorway first, esc_char_value as the base port.
+
+**docs/dev/meta/** — the SIDECAR (Frank): what we learn about developing
+WITH models; ai_dev_learnings.md — 10 measured findings, 3 instruments, 7
+future tests, 3 open questions.
+
+**r61 — Fable's personal review of the five most complicated sections**
+(docs/dev/reviews/2026-09-20-r61-fable-personal-review.md): F1 dfa.c aborts
+the caller on the compile path against match_api.md's promise (→ TOUR-4);
+F2 select_engine's ladder defended by prose (→ TOUR-5); F3 callgraph's three
+fixpoints one loop; F4-F6 notes. No wrong answer, no unsound charge found in
+~1,400 code lines of the hardest code; the risk lives in the comment load.
+
+**FRANK'S RULING AT CLOSE: on wake, TACKLE THE TOUR LIST — assess the
+items, do the ones worth it, forgo unimportant ones; then a new effort.**
+Session closed by Frank ~20:5x EDT.
