@@ -2126,3 +2126,20 @@ never edited afterwards.
   Mac/Linux ratio for the minimization path — a number no measurement in
   the tree currently holds, and which every `K7_CPU`-family budget is
   implicitly calibrated against. PARKED on `lane/nltriage`, not merged.
+- `hdrgen_report.md` — [HDR-1] a purpose header for every function in
+  `src/gen/emit_vm.c` and `src/gen/emit_dfa.c` (lane hdrgen, 2026-09-20,
+  from `c007e9d2`; Frank's charter: "from the name, it isn't clear what
+  `vm_ev` is about"). 129 headers on a measured 131-function unheaded
+  population (emit_vm 26, emit_dfa 105), sized per coding_guide §4.2 — one
+  line for an axis predicate or a name builder, the three-part form for the
+  eleven long ones. The brief's 137 was the committed census's figure; the
+  6-function gap is a banner-classification difference between two readings
+  of one rule, resolved by classifying every function in both files rather
+  than sampling. UNCLEAR list EMPTY. The two residual rows (`vm_rolef`,
+  `dfa_fragf`) are a CENSUS ARTIFACT, not a gap: each already has a header,
+  above the printf-attribute forward declaration that sits between it and
+  the definition, so the mechanical rule reads the `__attribute__` line and
+  scores them unheaded. Comments only, so not an abi event — and PROVEN so
+  rather than asserted: `scripts/emit_sweep.py --ref c007e9d2` (see the
+  report's Validation section), `make strict CC=gcc-16` clean, sabotage
+  anchors 285/285 unmoved.

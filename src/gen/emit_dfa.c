@@ -551,6 +551,11 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
     return buf;
 }
 
+/* `pcrec_startpos_guard_text` written straight into the artifact — the
+ * convenience half, for the four sites that want the guard EMITTED rather
+ * than composed into a larger line (this file's search-entry head, and
+ * `emit_vm.c`'s three `_run` statics). Writes nothing at all where the
+ * encoding places no restriction or the flag denies the guard. */
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar)
@@ -561,6 +566,18 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 }
 
 
+/* Writes the search entry's attributes, signature and opening brace, plus
+ * everything that must run before the first table: the `noclone` block (K24,
+ * argued above), the caller-startpos boundary guard, and the permanently
+ * unset fill for the dead groups a wave-G artifact still promises.
+ *
+ * Reads `cx->job->fit.chosen`, which is not a parameter and is load-bearing:
+ * this emitter has TWO customers, the artifact's own exported entry and the
+ * VM hybrid's internal `static` prefilter, and both the guard and the fill
+ * belong to the first alone. Putting the fill on the second moved 558 of the
+ * identity gate's call-free patterns the first time it was tried. `storage`
+ * is "" for the entry and "static " for the prefilter; a caller must not
+ * swap them. */
 static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                              const char *storage)
 {
@@ -642,11 +659,15 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
     }
 }
 
+/* The `<prefix>_match` declaration: the anchored match-here entry, taking a
+ * context and answering a matched length. */
 static void emit_match_decl(StrBuf *sb, const char *fn)
 {
     pcrec_sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx);\n", fn);
 }
 
+/* The `<prefix>_match_caps` declaration — `_match`'s signature plus the
+ * caller's capture array. */
 static void emit_match_caps_decl(StrBuf *sb, const char *fn)
 {
     pcrec_sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]);\n", fn);
@@ -696,9 +717,17 @@ static const char *derived_name(Ctx *cx, const char *suffix)
     return dfa_fragf(cx, "%s%s", cx->opt->prefix, suffix);
 }
 
+/* `<prefix>_search`, the one name the engine body is written under — and the
+ * name a future multi-engine file would vary per engine, which is why it is
+ * read from here and nowhere else (the naming surface above). */
 static const char *engine_entry_name(Ctx *cx) { return derived_name(cx, "_search"); }
+/* `<prefix>_match`: the anchored match-here export, retrofitted onto this
+ * engine by calling through the search entry rather than by building a second
+ * automaton. */
 static const char *match_entry_name(Ctx *cx)  { return derived_name(cx, "_match"); }
+/* `<prefix>_match_caps`: the same anchored entry, reporting captures. */
 static const char *match_caps_entry_name(Ctx *cx) { return derived_name(cx, "_match_caps"); }
+/* `<prefix>_info`: the `.rodata` reflection structure's variable name. */
 static const char *info_entry_name(Ctx *cx)   { return derived_name(cx, "_info"); }
 
 /* [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
@@ -1218,12 +1247,18 @@ static void emit_search_in_decl(StrBuf *sb, const char *fn, const char *prefix)
                   "const %s_buffers *buffers);\n", fn, prefix);
 }
 
+/* `<prefix>_match_in`'s declaration — `_match` argument for argument, plus
+ * the descriptor naming where the working storage lives. Emitted on EVERY
+ * artifact (spec §10.4), so a consumer's code does not stop compiling when
+ * the same pattern selects the other engine. */
 static void emit_match_in_decl(StrBuf *sb, const char *fn, const char *prefix)
 {
     pcrec_sb_printf(sb, "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers);\n",
               fn, prefix);
 }
 
+/* `<prefix>_match_caps_in`'s declaration — `_match_caps` plus that same
+ * descriptor, on the same unconditional footing as its two siblings. */
 static void emit_match_caps_in_decl(StrBuf *sb, const char *fn, const char *prefix)
 {
     pcrec_sb_printf(sb, "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2], "
@@ -2001,6 +2036,10 @@ static void emit_residual_decls(Ctx *cx, StrBuf *sb)
     pcrec_enc_emit_decls(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
+/* The encoding's residual helper DEFINITIONS, for the entries this artifact
+ * actually calls (`job->enc_mask`). Twin of the declarations above: those go
+ * to the `.h`, these to the `.c`, and both emit nothing for an encoding with
+ * no residual surface. */
 static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
@@ -2008,6 +2047,16 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
     pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
+/* Writes the artifact's whole `.h` into `cx->job->hsb`: the provenance and
+ * feature comments, the include guard derived from `--prefix`, the shared ABI
+ * types, the capture and buffer macros, declarations for all six entries and
+ * `<prefix>_info`, and the encoding residuals.
+ *
+ * Reads the prefix, the pattern and the feature set off `cx` rather than
+ * through parameters. The include guard is a per-BYTE transform of the prefix
+ * into `PCREC_GEN_<...>_H`, allocated FROM the prefix's length so it cannot
+ * truncate. The feature MACROS are deliberately left out of the header: a
+ * `.c` that includes its own `.h` must not meet that pair twice. */
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
                          const char *matchcapsfn, const char *infoname,
                          const char *upper, int ncaps, const BufSurface *bs)
@@ -2054,6 +2103,10 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
 
 /* ---- shared table emitters ---- */
 
+/* One `static const unsigned char <p>_<tag>[n]` table, sixteen values to the
+ * line — the shape every byte-valued table in the artifact is written in (the
+ * class map, the stay sets, the candidate sets, the offset-k sets). It is
+ * emitted INSIDE the search function, which is what fixes the indentation. */
 static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
                           const uint8_t *v, int n)
 {
@@ -2265,6 +2318,9 @@ static int tr_cell(const Dfa *d, const DfaRepr *r, int i, int cl)
     return t < 0 ? r->dead_cell : r->cell_of(t, d);
 }
 
+/* One cell of the SCALAR accept table: does state `i` accept in the plain
+ * class context? One of the three cell derivations the uniform fold and the
+ * table emitter share, so that neither reads `d->st[]` a second way. */
 static int acc_cell(const Dfa *d, int i)
 {
     return d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
@@ -2272,6 +2328,10 @@ static int acc_cell(const Dfa *d, int i)
 
 static int upc_emit_of_class(const Dfa *d, int cl);
 
+/* One cell of the WIDE, class-indexed accept table: does state `i` accept
+ * when the next byte falls in class `cl`? The class goes through
+ * `upc_emit_of_class`, so a context the emitter is pinned against collapses
+ * onto UPC_PLAIN and the cell reads as it did before that wave. */
 static int accw_cell(const Dfa *d, int i, int cl)
 {
     return d->st[i].up[upc_emit_of_class(d, cl)].accept ? 1 : 0;
@@ -2284,6 +2344,12 @@ static int accw_cell(const Dfa *d, int i, int cl)
  * array is the pre-existing behaviour on a shape that does not occur. */
 typedef struct { bool folded; int value; } DfaFold;
 
+/* Is the whole transition table one repeated value? Answers `folded` with
+ * that value, so the emitter can spell a constant where gcc would not fold a
+ * variable-index load for itself. Reads cells through `tr_cell` — the same
+ * derivation the table emitter writes from, because the fold and the cells
+ * must agree and one reading is the only way to guarantee it. A machine with
+ * no states or no classes is not folded. */
 static DfaFold fold_tr(const Dfa *d, const DfaRepr *r)
 {
     DfaFold f = { false, 0 };
@@ -2296,6 +2362,9 @@ static DfaFold fold_tr(const Dfa *d, const DfaRepr *r)
     return f;
 }
 
+/* `fold_tr` for the scalar accept table: is every state's accept bit the
+ * same? Same rule, the same single cell derivation (`acc_cell`), and the same
+ * non-fold on an empty machine. */
 static DfaFold fold_acc(const Dfa *d)
 {
     DfaFold f = { false, 0 };
@@ -2307,6 +2376,11 @@ static DfaFold fold_acc(const Dfa *d)
     return f;
 }
 
+/* The machine's transition table as `static const <cell type> <p>_<tag>[]`,
+ * row-major over states then classes, sixteen cells to the line. Every cell
+ * comes from `tr_cell`, so the representation's dead sentinel and its
+ * pre-multiplication are applied in one place. Called only when the table did
+ * NOT fold — a folded table has no array at all. */
 static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
                           const Dfa *d, const DfaRepr *r)
 {
@@ -2322,6 +2396,9 @@ static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
     pcrec_sb_puts(c, "\n    };\n");
 }
 
+/* Does any state of this machine carry an EOL variant — that is, does the
+ * artifact need the `$`/`\Z` view table and the D11 skip bound at all?
+ * `dfa_has_endvar` below asks `\z`'s half of the same question. */
 static bool dfa_has_eolvar(const Dfa *d)
 {
     for (int i = 0; i < d->n; i++)
@@ -2690,6 +2767,12 @@ typedef struct {
     int     offset;     /* candidate position = found offset + offset */
 } CandSet;
 
+/* Fills a `CandSet` from a 256-entry membership array: the count, the single
+ * value where there is one, and the two verdicts every caller then reads —
+ * `usable` (a PROPER subset, so filtering can pay) and `use_memchr` (a
+ * singleton). `offset` records how far a found byte sits from the candidate
+ * position the caller will take. Both extremes are unfilterable, for the two
+ * different reasons the body states. */
 static void cand_derive(CandSet *cs, const uint8_t set[256], int offset)
 {
     memcpy(cs->set, set, 256);
@@ -2739,6 +2822,8 @@ static void cand_from_live_seeds(CandSet *cs, const Dfa *d)
     cand_derive(cs, set, 1);
 }
 
+/* The candidate set as the artifact's 256-byte membership table, so that the
+ * prefilter's table emitters do not each spell the shape and the length. */
 static void cand_emit_table(StrBuf *c, const char *p, const char *tag,
                             const CandSet *cs)
 {
@@ -2824,6 +2909,18 @@ typedef struct {
     PrefixKSets ofsk;
 } UnanchStart;
 
+/* THE UNANCHORED ENGINE'S WHOLE START ANALYSIS, taken once into `*o`: the
+ * position-view flags (`eol`, `endv`, `viewsel`, and the D11 `views` bound),
+ * the empty-engine verdict, the start-candidate set, the prefilter kind, and
+ * the offset-k skip's selection.
+ *
+ * Reads both machines off `cx->job` (`dfa` and `rdfa`) and the compile's own
+ * flags, none of them parameters. It is ONE derivation with several readers —
+ * the emitter, `<PREFIX>_DFA_PREFILTER`'s stamp, `rx_info`'s mirror — and
+ * that is the invariant a caller must not break: nothing may re-derive any of
+ * these facts for itself, because a second copy of this analysis is exactly
+ * how the prefilter and skip loops went missing from the `$` path for a whole
+ * milestone. When `o->empty` is set, nothing else in `*o` is meaningful. */
 static void unanch_start(Ctx *cx, UnanchStart *o)
 {
     const Dfa *fd = &cx->job->dfa, *rd = &cx->job->rdfa;
@@ -3066,6 +3163,12 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
     return so_far;
 }
 
+/* `<PREFIX>_DFA_SCAN_EDGE`'s value: the scan-edge BODY form this artifact's
+ * machines took — one object's name, `"mixed"` where they disagree, `"none"`
+ * where no state carries an edge. Folded over exactly the machines the
+ * artifact CONTAINS: the reverse one drops out of a start-pinned artifact and
+ * the anchored one joins only under the unwrapped match form, because naming
+ * a machine that is not there is the defect this fold exists to avoid. */
 static const char *dfa_scan_edge_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "none";
@@ -3115,6 +3218,11 @@ static int uniform_folds_of(Ctx *cx, const Dfa *d)
     return (fold_tr(d, r).folded ? 1 : 0) + (fold_acc(d).folded ? 1 : 0);
 }
 
+/* `<PREFIX>_DFA_UNIFORM_FOLDS`'s value: how many transition or accept tables
+ * the uniform fold removed from this artifact, summed over the machines it
+ * actually contains (the membership rule `dfa_scan_edge_name` folds over).
+ * Counted through `fold_tr`/`fold_acc`, the same two functions the emitter
+ * folded with, so the stamp cannot disagree with the tables written. */
 static int dfa_uniform_folds(Ctx *cx)
 {
     /* An empty scan has no machine, and ENG_ATTEMPT's states are LABELS with
@@ -3213,6 +3321,10 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
     return nout;
 }
 
+/* The 256-byte STAY set for state `idx`: 1 for every byte that leaves the
+ * machine in that state, which is what licenses the emitted skip loop to
+ * advance without stepping. Named `<p>_<tag><idx>`, so one state's table can
+ * never be read for another's; `cx` is threaded in for the arena alone. */
 static void emit_stay_table(Ctx *cx, StrBuf *c, const char *p, const char *tag,
                             int idx, const Dfa *d)
 {
@@ -3688,12 +3800,20 @@ static const void *dfa_select(const void *list, size_t n, size_t sz,
     ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
                            sizeof((list)[0]), (sel), (flags)))
 
+/* The total fallback every candidate list ends with. `dfa_select` returning
+ * NULL is unreachable BECAUSE of these: a list missing one would crash the
+ * walk rather than emit a machine with a hole in it. */
 static bool cand_always(const DfaSel *s) { (void)s; return true; }
 
 /* ---- AXIS A: the table representations ---------------------------------- */
 
+/* AXIS A's first candidate: does this machine want the pre-multiplied
+ * token? */
 static bool repr_premul_applies(const DfaSel *s) { return dfa_premul(s->cx, s->d); }
+/* Its cell value: the state's row times the column count, so an emitted step
+ * is one add and one load. */
 static int  cell_premul(int st, const Dfa *d) { return st * d->ncls; }
+/* The indexed form's cell value: the row number itself. */
 static int  cell_indexed(int st, const Dfa *d) { (void)d; return st; }
 
 /* LAYER 2 — THE OPAQUE STATE TOKEN. One block per machine per form, emitted
@@ -3848,6 +3968,19 @@ static void token_accepts(StrBuf *c, const DfaForm *f, const char *cls_index)
                  "{ return %s; }\n", p, m, p, m, cls_index);
 }
 
+/* Emits the PRE-MULTIPLIED machine's layer-2 accessor block — the `_state`
+ * typedef, the step, the dead test, the stop test, the accept probe and,
+ * where the artifact has position views, the row un-multiply with its two
+ * view accessors. Written at file scope above the search function, so the VM
+ * hybrid that inlines this scan gets the block by construction.
+ *
+ * Reads only `f`: the direction supplies the emitted names, the machine its
+ * column count, the folds whether an accessor takes a table at all. The
+ * un-multiply is a FUNCTION and not a hoisted local at its call sites —
+ * under this form it is a DIVISION, and every caller spells it behind a
+ * `pos + 1 >= n` guard so it runs at most twice per search. Hoisting it
+ * changes no answer, passes every identity gate, and puts a divide on the
+ * per-byte path. */
 static void token_premul(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
@@ -3890,6 +4023,10 @@ static void token_premul(StrBuf *c, const DfaForm *f)
     pcrec_sb_puts(c, "\n");
 }
 
+/* `token_premul`'s twin for the INDEXED form: the token IS the row, a step
+ * scales it by the column count, and a negative value means dead. Its two
+ * index expressions carry the column count, so they are built here rather
+ * than written as literals in the emitters the two forms share. */
 static void token_indexed(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
@@ -3930,6 +4067,10 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
     pcrec_sb_puts(c, "\n");
 }
 
+/* OPENS the transition table's block comment for the pre-multiplied form —
+ * the indexing rule, the dead sentinel, the table's shape, and the warning
+ * that the state numbers in the legend below are ROW numbers. Left open on
+ * purpose: `emit_machine_tables` appends the state legend and closes it. */
 static void tr_comment_premul(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "    /* %s transitions, PRE-MULTIPLIED: indexed [state + class],\n"
@@ -3942,6 +4083,8 @@ static void tr_comment_premul(StrBuf *c, const DfaForm *f)
               f->dir->statev, f->d->ncls);
 }
 
+/* The same opening for the indexed form: indexed `[state * ncls + class]`,
+ * -1 meaning the walk stops. Also left open for the legend. */
 static void tr_comment_indexed(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "    /* %s transitions, indexed [state * %d + class]; -1 means the\n"
@@ -3950,6 +4093,10 @@ static void tr_comment_indexed(StrBuf *c, const DfaForm *f)
               f->dir->title, f->d->ncls, f->d->n, f->d->ncls);
 }
 
+/* The accept table's block comment under the pre-multiplied form: what a 1
+ * means, and why each row repeats one bit — the scan never un-multiplies, so
+ * only the cells at a multiple of the class count are ever read. Closed here;
+ * this table carries no legend. */
 static void acc_comment_premul(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "    /* 1 where %s, indexed by the PRE-MULTIPLIED\n"
@@ -3959,6 +4106,7 @@ static void acc_comment_premul(StrBuf *c, const DfaForm *f)
               f->dir->acc_meaning, f->dir->c.name);
 }
 
+/* The accept table's one-line comment under the indexed form. */
 static void acc_comment_indexed(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "    /* 1 where %s, indexed by %s state. */\n",
@@ -3978,6 +4126,8 @@ static const DfaRepr dfa_reprs[] = {
       token_indexed, tr_comment_indexed, acc_comment_indexed },
 };
 
+/* AXIS A's selection for one machine, for the callers that need it outside a
+ * built `DfaForm` — the table stamp, and the uniform-fold count. */
 static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
 {
     DfaSel s = { cx, d, NULL, true, -1 };
@@ -3986,6 +4136,9 @@ static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
 
 /* ---- AXIS C: the view selector ------------------------------------------ */
 
+/* The view-state local's declaration, `<M>_state <viewv> = <statev>;`. Every
+ * view form opens with it, because the selectors below only ever OVERWRITE
+ * it: the default is "no view applies here, read the state itself". */
 static void view_decl(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%s%s_%s_state %s = %s;\n", f->dir->bind, f->p, f->dir->c.name,
@@ -3997,6 +4150,11 @@ static void view_decl(StrBuf *c, const DfaForm *f)
 #define VROW(f) (f)->p, (f)->dir->c.name, (f)->dir->statev
 #define VTBL(f) (f)->p, (f)->dir->c.name
 
+/* AXIS C, `eol`: this artifact has a `$`/`\Z` view and no `\z` one, so the
+ * only positions that select anything are the end of the subject and the one
+ * before a final newline. The whole test sits behind
+ * `__builtin_expect(pos + 1 >= n, 0)`, so the per-byte path pays one
+ * predicted-false compare. */
 static void view_emit_eol_only(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind, *pos = f->dir->posv;
@@ -4013,6 +4171,9 @@ static void view_emit_eol_only(StrBuf *c, const DfaForm *f)
               ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
 }
 
+/* AXIS C, `end`: a `\z` view with no `$`/`\Z` anywhere, so only `pos == n`
+ * selects anything and the newline arm the other two forms carry is
+ * absent. */
 static void view_emit_end_only(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind, *pos = f->dir->posv;
@@ -4026,6 +4187,12 @@ static void view_emit_end_only(StrBuf *c, const DfaForm *f)
               ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
 }
 
+/* AXIS C, `end+eol`: both view tables exist, so the one `pos + 1 >= n` guard
+ * opens a nest — at `pos == n` the END view is tried and the EOL view only if
+ * it is not live, and one position back only the EOL view applies and only
+ * before a newline. That ORDER is the contract, not a style: `\z` is the
+ * stricter assertion, and taking the EOL view first at the end of the subject
+ * would select the wrong state. */
 static void view_emit_end_and_eol(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind, *pos = f->dir->posv;
@@ -4060,8 +4227,11 @@ static void view_emit_end_and_eol(StrBuf *c, const DfaForm *f)
  * the state directly and `f->src` is the state variable. */
 static bool view_end_and_eol_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return u->endv && u->eol; }
+/* The `end` form applies where the artifact has a `\z` view and no EOL
+ * one. */
 static bool view_end_only_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return u->endv && !u->eol; }
+/* And the `eol` form where it has an EOL view and no `\z` one. */
 static bool view_eol_only_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return u->eol && !u->endv; }
 
@@ -4074,8 +4244,20 @@ static const DfaView dfa_views[] = {
 
 /* ---- AXIS D: the start seed --------------------------------------------- */
 
+/* AXIS D's first candidate: does this machine need mechanism 4's start
+ * seeding — a start state chosen from the CONTEXT BYTE rather than fixed? */
 static bool seed_applies(const DfaSel *s) { return dfa_needs_seed(s->d); }
 
+/* AXIS D, `seeded`: declares the scan's state local INITIALISED FROM THE
+ * CONTEXT BYTE — the byte just outside the window the walk consumes — so a
+ * leading or trailing `\b` is answered against the real subject rather than
+ * against the assumption that the window is all of it. Once per search, off
+ * the loop entirely, so the emitted hot path is unchanged.
+ *
+ * Emits the direction's RANGE GUARD FIRST where it has one, and the order is
+ * load-bearing rather than tidy: this initializer dereferences the byte to
+ * the left of the start position, which on an out-of-range start is an
+ * out-of-bounds read in EMITTED code. */
 static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
 {
     /* MECHANISM 4's start initialization (§3.8.2/§3.8.3). ONCE PER SEARCH,
@@ -4106,6 +4288,9 @@ static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
               f->dir->seed_byte, f->repr->cell_of(f->d->s0, f->d));
 }
 
+/* AXIS D, `constant`: one start state, so the local is initialised to it and
+ * the range guard can follow rather than precede — nothing here reads the
+ * subject. */
 static void seed_emit_constant(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%s%s_%s_state %s = %d;\n", f->dir->ind, f->p, f->dir->c.name,
@@ -4120,10 +4305,18 @@ static const DfaSeed dfa_seeds[] = {
 
 /* ---- AXIS E: where the accept is recorded ------------------------------- */
 
+/* AXIS E's first candidate: does some state's accept VARY with the next
+ * byte's class, so the wide accept table is the one to read? */
 static bool acc_by_class_applies(const DfaSel *s) { return dfa_has_clsacc(s->d); }
+/* And the second: can a skip pass a position whose accept was never
+ * evaluated (the D11 flag)? Then the probe must run AFTER the view selector
+ * rather than at the top of the loop. */
 static bool acc_viewed_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return u->views; }
 
+/* Records an accept at the current position — `if (<M>_accepts(...)) rec =
+ * pos;`. Axis E places this same line either at the top of the loop or after
+ * the view selector, and WHICH of the two is the whole of the axis. */
 static void acc_emit_probe(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%sif (%s_%s_accepts(%s%s)) %s = %s;\n",
@@ -4132,6 +4325,9 @@ static void acc_emit_probe(StrBuf *c, const DfaForm *f)
               f->src, f->dir->recv, f->dir->posv);
 }
 
+/* The loop tail under a scalar accept: break at the bound, otherwise step the
+ * token on the consumed byte's class. The direction's `consume` spelling
+ * advances the position itself, so this arm needs no separate advance. */
 static void acc_emit_tail_scalar(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_printf(c, "%sif (%s) break;\n", f->dir->bind, f->dir->at_bound);
@@ -4142,6 +4338,13 @@ static void acc_emit_tail_scalar(StrBuf *c, const DfaForm *f)
               f->dir->consume);
 }
 
+/* The loop tail under the class-indexed accept: at the bound the direction's
+ * own scalar arm records and breaks; otherwise the next byte's class is taken
+ * ONCE into a named local, the accept is probed through the wide table with
+ * it, the token is stepped with it, and the position advances. The body
+ * carries the two things a change here must preserve — why the boundary
+ * accept is scalar, and why the boundary arm hangs off the break rather than
+ * sitting below a loop that has two exits. */
 static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
 {
     /* §3.6.2's COMPOSITION RULE. The accept bit is class-indexed at every
@@ -4196,12 +4399,17 @@ static const DfaAcc dfa_accs[] = {
 
 /* ---- AXIS B: the prefilter ---------------------------------------------- */
 
+/* AXIS B: the forward scan wants a `memchr` skip AND the D11 bound applies,
+ * which is a different emitted loop and so a different form. */
 static bool pf_memchr_bounded_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR && u->views; }
+/* The same single-candidate-byte skip with nothing to bound it. */
 static bool pf_memchr_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR; }
+/* A membership-table skip under the D11 bound. */
 static bool pf_bcls_bounded_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS && u->views; }
+/* A membership-table skip with nothing to bound it. */
 static bool pf_bcls_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS; }
 
@@ -4223,6 +4431,9 @@ static void pf_open(StrBuf *c, const DfaForm *f)
               f->dir->recv);
 }
 
+/* The `memchr` skip's emitted explanation, naming the one byte that can begin
+ * a match — so a reader of the artifact meets the reason and not just the
+ * call. */
 static void pf_comment_memchr(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -4234,6 +4445,8 @@ static void pf_comment_memchr(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
+/* The byte-class skip's emitted explanation: which bytes can begin a match is
+ * a table in the artifact the reader can go and look at. */
 static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -4244,6 +4457,12 @@ static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
+/* AXIS B, `memchr`: while nothing has matched and the machine is still parked
+ * in its start state, one `memchr` for the single candidate byte replaces the
+ * stepped scan, and a miss ends the whole search. The `pos >= n` guard is the
+ * K27 fix rather than padding — spec §3.1 makes a (NULL, 0) subject legal,
+ * and this line used to reach `memchr(NULL, c, 0)`, technical UB in EMITTED
+ * code under a user's own sanitizer. */
 static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4267,6 +4486,11 @@ static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
+/* AXIS B, `memchr-bounded`: the same skip stopped at n-1 and with NO early
+ * `return 0` — under a position view the machine may still accept at the last
+ * two positions, so a miss clamps to n-1 and falls into the stepped loop.
+ * That lost early-out is exactly what the stamp's `-bounded` half tells a
+ * consumer, and why this is its own form rather than a flag inside one. */
 static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4285,6 +4509,9 @@ static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
+/* AXIS B, `byte-class`: the candidate set is a proper subset but not a
+ * singleton, so the skip is a `while` over the artifact's `can_begin_match`
+ * table, and running off the end ends the whole search. */
 static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4297,6 +4524,10 @@ static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
+/* AXIS B, `byte-class-bounded`: the same loop stopped at n-1, so a state that
+ * accepts only under a view is never skipped past — and below n-1 the view is
+ * unreachable, which is also why the view state cannot be stale after a skip
+ * (D11). */
 static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4332,18 +4563,28 @@ static const PrefixK *ofsk_at(const DfaForm *f, int i)
 {
     return &f->ofsk->k[f->ofsk->sel[i]];
 }
+/* The selected offset the SKIP itself scans for; every other selected offset
+ * is a verify. */
 static const PrefixK *ofsk_scan(const DfaForm *f)
 {
     return ofsk_at(f, f->ofsk->scan);
 }
 
+/* The clause all the offset-set candidates share: this is the forward scan,
+ * an offset-0 prefilter was already approved, and the k-set pass selected at
+ * least one offset. The selection RIDES the offset-0 verdict and is never
+ * asked independently of it — everything it inherits was proved by
+ * `unanch_start`, and a k-set selected without that would be a second, weaker
+ * version of an argument already made. */
 static bool pf_ofs_applies_common(const DfaSel *s)
 {
     const UnanchStart *u = s->us;
     return s->forward && u->kind != DFA_PF_NONE && u->ofsk.nsel > 0;
 }
+/* The bounded offset-set form: that, plus the D11 bound. */
 static bool pf_ofs_bounded_applies(const DfaSel *s)
 { const UnanchStart *u = s->us; return pf_ofs_applies_common(s) && u->views; }
+/* And the unbounded one. */
 static bool pf_ofs_applies(const DfaSel *s)
 { return pf_ofs_applies_common(s); }
 
@@ -4363,6 +4604,8 @@ static const char *ofsk_tbl_name(const DfaForm *f, const PrefixK *k)
     return dfa_fragf(f->cx, "%s_ofs_k%d", f->p, k->k);
 }
 
+/* The byte-class prefilter's one table, `can_begin_match`, with the emitted
+ * comment that says it is speed only and never changes an answer. */
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -4374,6 +4617,13 @@ static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
     cand_emit_table(c, f->p, "can_begin_match", &f->cand);
 }
 
+/* The offset-k skip's VERIFY tables — one per selected offset that is
+ * genuinely a set rather than a single byte, and never one for the offset the
+ * skip itself scans. The emitted comment is emphatic that this is NOT
+ * `can_begin_match`'s question: these are bytes a match MAY BEGIN WITH k
+ * bytes before its own start, which differs from "moves the machine off its
+ * start state" on every pattern with a leading assertion, and confusing the
+ * two loses matches. */
 static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
 {
     for (int i = 0; i < f->ofsk->nsel; i++) {
@@ -4532,6 +4782,9 @@ static void pf_emit_ofs_reseed(StrBuf *c, const DfaForm *f, const char *ind)
               f->repr->cell_of(f->d->s0, f->d));
 }
 
+/* The offset-set skip's emitted explanation, naming how many offsets the
+ * generated `<p>_ofsskip` actually tests — a reader who sees one call would
+ * otherwise assume one probe. */
 static void pf_comment_ofs(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4543,6 +4796,12 @@ static void pf_comment_ofs(StrBuf *c, const DfaForm *f)
     pcrec_sb_cmt_close(c);
 }
 
+/* AXIS B, `offset-set`: the skip calls the artifact's own `<p>_ofsskip`,
+ * which tests every selected offset at once, and a miss ends the whole
+ * search. The landing position is RESEEDED where the machine seeds, because
+ * this skip jumps over bytes that LEAVE the start state — unlike the memchr
+ * and byte-class forms, whose skipped bytes provably leave the state where it
+ * was. */
 static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4560,6 +4819,9 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
+/* AXIS B, `offset-set-bounded`: the same skip with no early `return 0` — a
+ * failed scan clamps to n-1 and lets the stepped loop take the last two
+ * positions, the bounded forms' shared rule. Both landing paths reseed. */
 static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
 {
     const char *ind = f->dir->bind;
@@ -4598,6 +4860,9 @@ static const DfaPf dfa_pfs[] = {
     { { "none",               0, cand_always               }, NULL, NULL, NULL,                   false },
 };
 
+/* AXIS B's selection for the artifact's FORWARD machine, for the callers that
+ * need it outside a built form: the prefilter stamp, the offset list, and the
+ * reseed query `src/opt/scanedge.c` asks. */
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 {
     DfaSel s = { cx, &cx->job->dfa, us, true, -1 };
@@ -4648,6 +4913,14 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d)
 
 /* ---- AXIS F: the two directions ----------------------------------------- */
 
+/* AXIS F, forward: the in-loop STAY skip for state `K` — while the token is
+ * `K`, run past every byte the stay table says keeps it there. `kw` is `if`
+ * or `else if`, so a machine's skips chain. The table is named from the
+ * MACHINE and never from the literal "forward": three directions reach this
+ * emitter, and a hardcoded name emitted a reference to a table the anchored
+ * machine does not contain. Under a view the run stops at n-1; with the
+ * accept check ahead of the skip, the run's final position is recorded here
+ * because nothing after it would. */
 static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
 {
     const char *ind = f->dir->bind;
@@ -4672,6 +4945,10 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
+/* AXIS F, reverse: the same stay skip walking backwards to `search_from`.
+ * The view guard sits on the ENTRY rather than inside the loop — the rewind
+ * position only ever decreases, so one test keeps the whole skip below the
+ * view region. */
 static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
 {
     const char *ind = f->dir->bind;
@@ -4692,6 +4969,9 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     pcrec_sb_printf(c, "%s}\n", ind);
 }
 
+/* The forward scan's accept probe at `pos == n`, the position with no next
+ * byte, where the accept is necessarily SCALAR: out of the subject is neither
+ * a word character nor a newline, and the base accept already is that bit. */
 static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
 {
     /* `pos == n` is the position with NO next byte, where §3.6.2 makes the
@@ -4708,6 +4988,13 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
               f->src, f->dir->recv, f->dir->posv);
 }
 
+/* The reverse scan's accept probe at `search_from` — the site whose absence
+ * is a LOST MATCH, because the walk breaks before ever reading the byte to
+ * the left of the match start and a leading `\b`/`\B` would then be evaluated
+ * with no left context. Class-indexed where that byte exists, scalar at
+ * `search_from == 0`. That is the mirror image of the forward boundary above:
+ * there the byte does not exist, here it exists and merely sits outside the
+ * window. */
 static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
 {
     /* MECHANISM 4's REVERSE TERMINATION (§3.8.3.1) — the site whose absence
@@ -4852,6 +5139,10 @@ typedef struct DfaMatch {
     DfaCand c;
 } DfaMatch;
 
+/* AXIS G's first candidate: may `<prefix>_match` be the anchored machine's
+ * own body rather than a wrapper around the search entry? Only where that
+ * machine was built and the engine is not the empty one, whose `_search` is a
+ * single `return 0` and whose `_match` is correctly four lines around it. */
 static bool match_unwrapped_applies(const DfaSel *s)
 {
     return s->cx->job->anchored_ok && !dfa_engine_is_empty(s->cx);
@@ -4871,8 +5162,12 @@ static const DfaMatch *dfa_match_of(Ctx *cx)
     return DFA_SELECT(DfaMatch, dfa_matches, &s, cx->opt->flags);
 }
 
+/* AXIS G's chosen object's name — `<PREFIX>_DFA_MATCH`'s value and
+ * `rx_info.match_form`'s. */
 static const char *dfa_match_name(Ctx *cx) { return dfa_match_of(cx)->c.name; }
 
+/* The same selection as a yes/no, for the two sites that need the ANSWER
+ * rather than the name. */
 static bool dfa_match_is_unwrapped(Ctx *cx)
 { return dfa_match_of(cx) == &dfa_matches[0]; }
 
@@ -5084,9 +5379,13 @@ static const DfaSearchStart *dfa_search_start_of(Ctx *cx)
     return DFA_SELECT(DfaSearchStart, dfa_search_starts, &s, cx->opt->flags);
 }
 
+/* AXIS J's chosen object's name — `<PREFIX>_DFA_START`'s value and
+ * `rx_info.search_form`'s. */
 static const char *dfa_search_start_name(Ctx *cx)
 { return dfa_search_start_of(cx)->c.name; }
 
+/* The same selection as a yes/no, for the four sites that need the ANSWER
+ * rather than the name. */
 static bool dfa_search_is_pinned(Ctx *cx)
 { return dfa_search_start_of(cx) == &dfa_search_starts[0]; }
 
@@ -5127,14 +5426,19 @@ size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
     pcrec_dfa_axis_cands((list), sizeof(list) / sizeof((list)[0]), \
                          sizeof((list)[0]), out, cap)
 
+/* The table-representation axis's candidates, as `--list-axes` reads them. */
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_reprs); }
+/* The prefilter axis's candidates. */
 size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_pfs); }
+/* The view-selector axis's candidates. */
 size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_views); }
+/* The start-seed axis's candidates. */
 size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_seeds); }
+/* The accept-placement axis's candidates. */
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_accs); }
 /* [ENG-ABS] axis G rides the SAME generic walk — its objects are `DfaCand`-
@@ -5218,6 +5522,9 @@ struct DfaEdge {
     DfaCand c;
 };
 
+/* The scan-edge axis's first candidate: did `src/opt/scanedge.c` annotate
+ * THIS state with an edge? A read of the pass's own annotation, never a
+ * second choice about which states deserve one. */
 static bool edge_applies(const DfaSel *s)
 {
     return s->st >= 0 && s->st < s->d->n && s->d->st[s->st].scan_span != 0;
@@ -5272,12 +5579,17 @@ struct DfaScan {
     void  (*emit_tables)(StrBuf *c, const DfaForm *f, int head);
 };
 
+/* The scan-BODY axis's first candidate: is this edge's class a contiguous
+ * byte RANGE, so the run test can be a compare rather than a table read? */
 static bool scan_range_applies(const DfaSel *s)
 {
     return s->st >= 0 && s->st < s->d->n &&
            pcrec_scan_range(s->d, s->d->st[s->st].scan_cls, NULL, NULL);
 }
 
+/* The range body's emitted run test, in the tightest of three spellings the
+ * bounds allow: an equality for a single byte, one compare where the range
+ * starts at 0, and the unsigned-subtract trick otherwise. */
 static void scan_test_range(StrBuf *c, const DfaForm *f, int head)
 {
     int lo, hi;
@@ -5288,11 +5600,15 @@ static void scan_test_range(StrBuf *c, const DfaForm *f, int head)
                                   f->dir->peek, lo, hi - lo);
 }
 
+/* The bitmap body's emitted run test: one subscript of this edge's own
+ * membership table. */
 static void scan_test_bitmap(StrBuf *c, const DfaForm *f, int head)
 {
     pcrec_sb_printf(c, "%s_%s_scan%d[%s]", f->p, f->dir->c.name, head, f->dir->peek);
 }
 
+/* That table — 1 for every byte in the edge's class — named per STATE, since
+ * two edges on one machine need not share a class. */
 static void scan_tables_bitmap(StrBuf *c, const DfaForm *f, int head)
 {
     uint8_t set[256];
@@ -5317,14 +5633,23 @@ static const DfaEdge *dfa_edge_of(Ctx *cx, const Dfa *d, int st)
     return DFA_SELECT(DfaEdge, dfa_edges, &s, cx->opt->flags);
 }
 
+/* The scan-BODY selection for one state, and the only reader of `dfa_scans`:
+ * the emitted test, the table it may need and the artifact's stamp all come
+ * through here, so "the stamp is the chosen object's name" holds
+ * structurally. */
 static const DfaScan *dfa_scan_of(Ctx *cx, const Dfa *d, int st)
 {
     DfaSel s = { cx, d, NULL, true, st };
     return DFA_SELECT(DfaScan, dfa_scans, &s, cx->opt->flags);
 }
 
+/* Did this state take an edge at all — the edge axis's first candidate,
+ * asked once here rather than compared against the array at three sites, two
+ * of which sit above it. */
 static bool dfa_edge_taken(const DfaEdge *e) { return e == &dfa_edges[0]; }
 
+/* The chosen scan body's name, for the stamp fold. An accessor rather than a
+ * dereference, because `DfaScan` is incomplete where that fold is written. */
 static const char *dfa_scan_body_name(Ctx *cx, const Dfa *d, int st)
 { return dfa_scan_of(cx, d, st)->c.name; }
 
@@ -5340,12 +5665,18 @@ size_t pcrec_dfa_axis_edge_cands(PcrecAxisCand *out, size_t cap)
     return pcrec_dfa_axis_cands(dfa_edges, sizeof dfa_edges / sizeof dfa_edges[0],
                                 sizeof dfa_edges[0], out, cap);
 }
+/* The scan-BODY axis's candidates. Spelled out rather than routed through
+ * `AXIS_LIST` for the reason above: that macro is gone by the time these two
+ * arrays exist. */
 size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap)
 {
     return pcrec_dfa_axis_cands(dfa_scans, sizeof dfa_scans / sizeof dfa_scans[0],
                                 sizeof dfa_scans[0], out, cap);
 }
 
+/* The emitted run test for the edge at `head`, asked through the body object
+ * so that the test and the table it may need can never come from two
+ * different choices. */
 static void scan_test(StrBuf *c, const DfaForm *f, int head)
 {
     dfa_scan_of(f->cx, f->d, head)->emit_test(c, f, head);
@@ -5460,6 +5791,23 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
 
 /* ---- THE DERIVATION: one machine's whole form, selected once ------------ */
 
+/* ONE MACHINE'S WHOLE FORM, built once into `*f`: the six axis selections,
+ * the D11 flags and the state expression they pick, the candidate set and the
+ * offset-k selection, the stay-skip states, the scan-edge heads, and the two
+ * uniform folds. Every emitter below reads `*f` and nothing else.
+ *
+ * Reads `cx->opt->flags` (the deny bits) and the caller's `UnanchStart`,
+ * which it borrows BY POINTER for the offset-k selection — so that struct
+ * must outlive every use of the form. The folds are taken LAST and only here,
+ * because a transition cell's value depends on the representation chosen
+ * above and the wide accept table exists only under the accept object that
+ * asks for it.
+ *
+ * Three internal-error checks read `src/opt/scanedge.c`'s work back from the
+ * other side — the heads occupy the machine's top rows in order, no state
+ * carries both a stay skip and an edge, and no seed target is a head on a
+ * machine whose prefilter reseeds — and they are worth having precisely
+ * because they cannot share a source with what they check. */
 static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
@@ -5566,6 +5914,19 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
 
 /* ---- THE TABLES, one path called twice ---------------------------------- */
 
+/* Every table one machine needs, in the order the emitted function meets
+ * them: the byte-class map, the transition and accept tables (each omitted
+ * where it FOLDED, its comment and state legend going with it), the wide
+ * accept table, the seed table, the two view tables, the prefilter's own, one
+ * stay table per skip state, and whatever table each scan edge's body object
+ * owns.
+ *
+ * Which of them exist is read off `*f` — the folds, and the axis objects' own
+ * `table`/`wide_table`/`emit_tables` fields — never re-derived here, so a
+ * table can never be emitted for an accessor that folded it away nor omitted
+ * for one that reads it. Called once per machine the artifact contains, and
+ * it writes INSIDE the search function, which is what fixes the indentation
+ * of everything it emits. */
 static void emit_machine_tables(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p, *m = f->dir->c.name;
@@ -5841,6 +6202,22 @@ static void emit_scan_loop(StrBuf *c, const DfaForm *f)
 
 /* ---- ENG_UNANCH: the assembly ------------------------------------------- */
 
+/* THE ENG_UNANCH ARTIFACT'S WHOLE BODY: the start analysis, both machines'
+ * forms, their file-scope accessor blocks, the search entry, the tables, the
+ * forward scan that finds where a match ENDS and the reverse scan that finds
+ * where it STARTS.
+ *
+ * Reads `cx->job`'s `dfa` and `rdfa`. `storage` is "" for the exported entry
+ * and "static " for the VM hybrid's inlined prefilter. Three shapes end
+ * differently: an EMPTY engine gets a `return 0` body and no token block at
+ * all; a START-PINNED artifact has no reverse machine, and its form is not
+ * even DERIVED, so that nothing downstream can read a form for text that is
+ * absent; everything else runs both passes.
+ *
+ * The start facts come from `unanch_start` and are NOT re-derived here — the
+ * stamps read that same call, and a second copy of the analysis is how the
+ * prefilter and skip loops once went missing from the `$` path for a whole
+ * milestone. */
 static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 {
     Job *job = cx->job;
@@ -6686,8 +7063,12 @@ void pcrec_gen_names(Ctx *cx, GenNames *g)
     g->upper = pcrec_sb_upper(&cx->arena, cx->opt->prefix);
 }
 
+/* The shared ABI-type block, exported for `emit_vm.c`: both engines'
+ * artifacts carry the same once-per-file text. */
 void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }
 
+/* The C string-literal escaper, exported for `emit_vm.c`, so both engines
+ * spell a pattern into `rx_info` the same way. */
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
 {
     emit_c_string_literal(sb, s, len);
@@ -7038,6 +7419,11 @@ void pcrec_emit_residual(Ctx *cx)
     pcrec_sb_puts(&cx->job->csb, "\n");
 }
 
+/* Writes ONE DFA engine body under the name and storage class given — the
+ * unanchored two-pass scan or the per-position attempt loop, whichever
+ * `job->engine` selected. The VM hybrid calls this too, with a private name
+ * and `static` storage, which is what makes its prefilter the same text a DFA
+ * artifact's own scan is. */
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
 {
     if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
@@ -7152,6 +7538,12 @@ static const char *dfa_scan_name(Ctx *cx)
     return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";
 }
 
+/* `<PREFIX>_DFA_PREFILTER`'s value: the prefilter FORM this artifact's scan
+ * carries, which on the unanchored engine is the chosen axis-B object's own
+ * name — so the stamp cannot disagree with the loop that was written. The
+ * attempt engine skips whole ATTEMPTS rather than positions inside one, so it
+ * needs no D11 bound and is memchr-or-nothing by charter. The empty engine
+ * needs no clause of its own: both arms already answer "none" for it. */
 static const char *dfa_prefilter_name(Ctx *cx)
 {
     /* [DD-13c] THE EMPTY ENGINE HAS NO PREFILTER TO NAME, and it does not need
@@ -7249,6 +7641,12 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
                   i == us.ofsk.scan ? "*" : "");
 }
 
+/* The stamps that are facts about a DFA SCAN, and therefore shared with the
+ * VM HYBRID whose prefilter IS this emitter's scan: the scan kind, the
+ * prefilter form and its offset list, the table encoding and its uniform-fold
+ * count, the scan-edge body, and the search entry's start form. Every value
+ * comes from the same derivation the emitter wrote from.
+ * `<PREFIX>_DFA_MATCH` is deliberately NOT here — see `emit_dfa_stamps`. */
 void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     pcrec_sb_stamp_str(c, upper, "DFA_SCAN",      dfa_scan_name(cx));
@@ -7289,6 +7687,16 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
     pcrec_sb_stamp_str(c, upper, "DFA_START", dfa_search_start_name(cx));
 }
 
+/* The stamp block a DFA artifact carries: the engine line, every scan stamp
+ * above, the match-entry form, and the emitted-bytes cap. Written immediately
+ * after the shared prologue and before the engine body — the same point the
+ * VM writes its own — so a reader or a grep finds the engine line in one
+ * place whichever engine ran.
+ *
+ * `_DFA_MATCH` sits HERE rather than with the shared scan stamps because it
+ * is a fact about this artifact's `<prefix>_match` ENTRY, and on a hybrid
+ * that entry is the VM's own anchored body, which this axis does not
+ * describe. */
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -7328,6 +7736,17 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
     pcrec_sb_puts(c, "\n");
 }
 
+/* THE DFA ARTIFACT, end to end: the shared prologue and header, the stamp
+ * block, the engine body, the `<prefix>_match` pair (the anchored machine's
+ * own body under axis G's unwrapped form, otherwise wrappers around the
+ * search entry), the three `_in` entries, the encoding residuals, `rx_info`,
+ * and `main()` under `--emit-main`.
+ *
+ * Writes into `cx->job`'s `.c` and `.h` buffers, and sets `job->enc_mask`
+ * BEFORE the prologue reads it: a DFA artifact can carry no backreference, so
+ * its mask is the unconditional entry alone. The buffer surface is INERT on
+ * this engine — no resume stack and no trail, so the four sizing facts are 0
+ * and the three `_in` entries accept a descriptor and ignore it. */
 void pcrec_emit_dfa(Ctx *cx)
 {
     StrBuf *c = &cx->job->csb;
