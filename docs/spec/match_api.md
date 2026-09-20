@@ -3403,23 +3403,56 @@ the supported way to produce one, and the find-all loop of §3.1 already
 uses it. The full semantic contract is `docs/design/utf8_design.md` §2.6
 / §2.6.1.
 
+**QUOTED AS SHIPPED — all nineteen members, in declaration order.** This
+block was nine members long for as long as the struct had nineteen, so a
+caller reading the contract could not see ten of the fields it was being
+asked to zero-initialize ([REVW.5], lens 9's P3). The rule this block now
+follows: if a member is in `lib/pcrec.h`'s `pcrec_options`, it is here, and
+the comment beside it is a one-line gloss — the FULL text for each is the
+header's own comment and, for a tuning axis, `docs/spec/tuning.md` §2.
+
 ```c
 typedef struct {
     const char *prefix;      /* C identifier prefix; default "rx" */
     int         encoding;    /* PCREC_ENC_* ; PER-COMPILE-CALL, see below */
     uint64_t    flags;       /* PCREC_CASELESS | PCREC_EMIT_MAIN |
-                                 PCREC_NO_CAPTURES | ... (see lib/pcrec.h
-                                 for the full, growing bit catalogue) */
+                                 PCREC_NO_CAPTURES | PCREC_TRACE | the
+                                 optimization-axis deny/force bits — the
+                                 catalogue is tuning.md §2, see below */
     const char *header_name; /* NULL = self-contained .c */
     int         engine;      /* PCREC_ENGINE_AUTO / _DFA / _VM */
     int64_t     step_budget; /* PCREC_STEP_BUDGET_DEFAULT / _NONE, or a count */
     int64_t     work_budget; /* PCREC_WORK_BUDGET_DEFAULT / _NONE, or a count */
     int         unroll_k;    /* PCREC_UNROLL_K_DEFAULT (0) = built-in default */
+    int         vm_entry_shape; /* PCREC_VM_ENTRY_AUTO (0) / _PLAIN / _SHARED
+                                    / _FORWARD / _INLINE — an ORDINAL rung,
+                                    not a bit; tuning.md §2.21 */
     int         frame_capacity; /* 0 = let the compiler size it. NOT the
                                     same sentinel as rx_info's field of the
                                     same name, which uses -1 for unbounded */
+    uint64_t    max_emit_code_bytes; /* RAISE-ONLY cap override; 0 = built-in */
+    uint64_t    max_emit_bytes;      /* RAISE-ONLY cap override; 0 = built-in */
+    uint64_t    max_nfa_states;      /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_dfa_states_goto; /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_subset_elems;    /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_auto_dfa_elems;  /* RAISE-ONLY; the AUTO route's DFA
+                                        attempt budget only; 0 = built-in */
+    uint64_t    warn_emit_bytes;     /* ADVISORY stderr warning, never a
+                                        refusal; 0 DISABLES it. Lowerable,
+                                        unlike the caps above */
+    const char *name;        /* what rx_info.name reports; NULL = use prefix */
+    int         tune;        /* PCREC_TUNE_MIN_SIZE .. _MAX_SPEED, -2..+2,
+                                0 = balanced and a structural no-op */
 } pcrec_options;
 ```
+
+**The six `max_*` members are RAISE-ONLY and that is a contract, not an
+implementation note**: a value BELOW the built-in default is refused as a
+malformed option rather than honoured, so no caller can use one to
+MANUFACTURE someone else's refusal. `warn_emit_bytes` is deliberately not
+raise-only — it never refuses anything, so lowering it cannot break a
+build. `docs/spec/limits.md` is their home; the per-field derivations are
+`lib/pcrec.h`'s own comments.
 
 **`encoding` is a PER-COMPILE-CALL scalar** ([M5-SEAM], D58): one encoding
 per `pcrec_compile()` call, carried in this field and nowhere else. There is
@@ -3457,10 +3490,14 @@ deliberately masked, §6.3) in the compiled artifact's `rx_info.flags`.
 
 **A caller that round-trips its own flags through `rx_info.flags` will
 find some bits missing, legitimately.** The masked ones are the
-testing/tuning axes that change no answer (§6.3); which bits those are,
-and why each is masked, is documented per-flag in `lib/pcrec.h`'s own
-comments, which is the place to look — this document does not duplicate
-that catalogue.
+testing/tuning axes that change no answer (§6.3). **`docs/spec/tuning.md`
+§2 is the catalogue** — one section per axis, naming the bit, its CLI
+spelling, what it denies or forces and why it is masked — and
+`tuning.md` §4 maps every bit to the `pcrec_options` field that carries
+it. This document does not duplicate that catalogue and does not send a
+reader to the source for it either: the spec tier is the contract (D80),
+and `lib/pcrec.h`'s comments are the implementation's own record of the
+same facts, not their authority ([REVW.5], lens 9's P6).
 
 `pcrec_error` carries which input a diagnostic's `pos` indexes into:
 
