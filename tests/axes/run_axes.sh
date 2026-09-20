@@ -464,7 +464,36 @@ declare -A REFUSAL_PATTERN=(
     # one that comment anticipated, so the substring is the NFA message's,
     # shared verbatim with -fprefilter's fifth shape above. No floor raised
     # (K35; this file's count is not a corpus-wide measurement).
-    ["--engine=dfa"]="requires the VM engine${REFUSAL_DELIM}requires captures (on by default)${REFUSAL_DELIM}pattern too large (NFA exceeds"
+    # FOURTH shape, [axtriage] (2026-09-19, triaging adm71's own new
+    # corpus file): the zero-population "third documented DFA limit"
+    # named above at 2026-09-03 — src/ir/dfa.c's OWN "pattern too complex
+    # for the DFA engine" state-count/subset-construction ceiling, as
+    # opposed to the NFA-build cap the THIRD shape reaches through a
+    # different door — now has a measured population too, through its OWN
+    # door this time: tests/base/opt41_rung_nullable_decline.rxt's
+    # `(?:ab){0,16000}` (adm71, e021b982) is BUILT to overflow
+    # `PCREC_MAX_DFA_STATES_TABLE` (32000 states, src/core/limits.def) so
+    # `--engine=auto` is offered and declines the [SEL-1] collapse rung;
+    # under `auto` the overflow is a selection outcome (tuning.md
+    # [SEL-1]) and answers correctly via the VM fallback, but forcing
+    # `--engine=dfa` has no fallback and refuses with src/ir/dfa.c:954's
+    # do-or-die diagnostic ("pattern too complex for the DFA engine (>32000
+    # states; try --engine=vm)") — exactly the do-or-die posture tuning.md
+    # §2.11/[SEL-1] documents ("--engine=dfa ... still refuse[s] with
+    # today's diagnostic"). Verified live (`build/pcrec -p rx
+    # --engine=dfa -o - -- '(?:ab){0,16000}'` prints that text) and by
+    # this axis's own run: RED before this substring existed (6 undocumented
+    # refusals, opt41_rung_nullable_decline.rxt:41-46, one per expectation
+    # line on the single `pattern` case), green after. Substring shared
+    # verbatim with -fprefilter's fourth shape above (both name the
+    # generic "pattern too complex for the DFA engine" prefix, which
+    # covers dfa.c's sibling subset-construction message too, by the same
+    # "generic format-string prefix, not a per-site list" reasoning the
+    # VM_ONLY branch above already uses). No floor raised (K35; 6 cases
+    # on one file is not a corpus-wide measurement, and the existing 8000
+    # floor is unaffected — it undercounts the true documented population
+    # already, per the two prior additions' own notes).
+    ["--engine=dfa"]="requires the VM engine${REFUSAL_DELIM}requires captures (on by default)${REFUSAL_DELIM}pattern too large (NFA exceeds${REFUSAL_DELIM}pattern too complex for the DFA engine"
     # K45 (2026-09-03): these two axes had NO entry at all before — every
     # REFUSED case under them was unconditionally promoted to a failure,
     # which is correct in general (tuning.md documents neither as
