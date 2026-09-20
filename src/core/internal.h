@@ -1373,7 +1373,7 @@ typedef enum {
      * special case (assertions_design.md §4.2). */
     N_GSTART,
     /* [K50] "this position is a CHARACTER BOUNDARY of the artifact's
-     * encoding", goto t1. The gate `nfa_wrap_unanchored` puts in front of the
+     * encoding", goto t1. The gate `pcrec_nfa_wrap_unanchored` puts in front of the
      * pattern on the self-loop's own re-entry, so that the positions the
      * ENGINE generates are exactly the encoding's boundaries.
      *
@@ -1407,12 +1407,12 @@ typedef struct {
     int     start;
     /* [OPT-K] THE ANCHORED START — the state a match's OWN first byte is read
      * from, as opposed to `start`, which for an ENG_UNANCH machine is the
-     * lowest-priority self-loop `nfa_wrap_unanchored` puts in front of it.
+     * lowest-priority self-loop `pcrec_nfa_wrap_unanchored` puts in front of it.
      *
      * IT IS A FIELD AND NOT A SHAPE TEST. `docs/design/offset_k_skip.md` §3
      * needs to walk the pattern's own prefix, and the alternative — "the start
      * is a SPLIT whose t2 is an all-bytes N_CLASS looping back to it" — is a
-     * second statement of `nfa_wrap_unanchored`'s construction that a change
+     * second statement of `pcrec_nfa_wrap_unanchored`'s construction that a change
      * to the wrap would silently invalidate. `pcrec_build_nfa` sets it equal
      * to `start`, so an UNWRAPPED machine (ENG_ATTEMPT's, and the reverse
      * machine) answers correctly without anyone having to remember to. */
@@ -2199,7 +2199,7 @@ typedef struct {
     Dfa    rdfa;     /* reverse DFA, non-pruning (ENG_UNANCH only) */
     /* [ENG-ABS] THE MATCH-HERE MACHINE (ENG_UNANCH only): the SAME subset
      * construction over the SAME `nfa`, rooted at `nfa.anch_start` — the
-     * pattern's own first state, which `nfa_wrap_unanchored` deliberately
+     * pattern's own first state, which `pcrec_nfa_wrap_unanchored` deliberately
      * leaves addressable — so it is the forward machine WITHOUT the
      * start-anywhere self-loop. `<prefix>_match` runs it from `ctx->pos` and
      * needs no reverse pass, because the start is the question rather than an
@@ -5256,7 +5256,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
 
 /* [K50-NULLGATE] IS A BOUNDARY GATE ON ENGINE-INVENTED START POSITIONS NEEDED
  * FOR THIS PATTERN AT ALL? ONE derivation, read by the three consumers that
- * would otherwise each decide it (`nfa_wrap_unanchored`'s gate node,
+ * would otherwise each decide it (`pcrec_nfa_wrap_unanchored`'s gate node,
  * `src/ir/dfa.c`'s `startcls`, and `src/gen/emit_dfa.c`'s ENG_ATTEMPT
  * `continue`).
  *
@@ -5274,8 +5274,8 @@ int pcrec_rxt_source_resolve(RxtSource *src,
  * class context — is answerable, by `state_acc_any` over the unanchored DFA's
  * start closure, and it would keep the gate off `\b` (a continuation byte is
  * no word character on either side). It is NOT USABLE AS THE PREDICATE:
- * `nfa_wrap_unanchored` runs only inside `src/core/compile.c`'s
- * `!nfa_has_bot(...)` branch, so an ENG_ATTEMPT pattern has no gate node and
+ * `pcrec_nfa_wrap_unanchored` runs only inside `src/core/compile.c`'s
+ * `!pcrec_nfa_has_bot(...)` branch, so an ENG_ATTEMPT pattern has no gate node and
  * no unanchored start closure at all, while the ENG_ATTEMPT `continue` — the
  * site carrying the measured cost — reads no machine state whatsoever. A
  * machine-level predicate could narrow one engine and would leave the other
@@ -5412,11 +5412,11 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 
-void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 
-bool nfa_has_asserts(const Nfa *nfa);
+bool pcrec_nfa_has_asserts(const Nfa *nfa);
 
-bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
+bool pcrec_nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
 
 /* [ENG-ABS] `root` and `optional` are PARAMETERS rather than a second
  * construction. `root` used to be `nfa->start` implicitly; every call site now

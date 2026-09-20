@@ -1261,7 +1261,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     bool has_word = false, has_nl = false, has_end = false, has_gst = false;
     /* [K50] Does this machine carry a character-boundary gate? Hoisted with
      * its three siblings and for their reason — the alphabet refinement has to
-     * happen before `eqclasses` returns. Only `nfa_wrap_unanchored` builds an
+     * happen before `eqclasses` returns. Only `pcrec_nfa_wrap_unanchored` builds an
      * N_CSTART, so this is false on the anchored MATCH-HERE machine, on the
      * reverse machine and on every ENG_ATTEMPT machine, and false under any
      * encoding whose backend places no restriction. */
@@ -1367,7 +1367,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                { true, has_word, has_nl, has_cstart } };
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
-     * state `nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
+     * state `pcrec_nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
      * anchored MATCH-HERE machine is this same construction rooted at
      * `nfa->anch_start` instead, i.e. the pattern's own first state, which the
      * wrap deliberately leaves addressable (src/ir/nfa.c). Nothing else in

@@ -15,7 +15,7 @@ THE METHOD -- **AND ITS FIRST VERSION WAS REFUTED BY R33 C2-1.**
   The first version claimed: "pcrec's UNANCHORED FORWARD DFA for the pattern
   `L` IS the Sigma*.L recognizer -- unanchoredness is the automaton's own
   self-loop." **That identity is FALSE.** `src/ir/nfa.c:766-781`
-  (`nfa_wrap_unanchored`) adds the self-loop as the LOWEST-PRIORITY start
+  (`pcrec_nfa_wrap_unanchored`) adds the self-loop as the LOWEST-PRIORITY start
   alternative, and D3 ACCEPT-PRUNING then kills the self-loop thread at the
   first accept -- so every accepting state in the emitted forward table is a
   DEAD SINK. A Sigma*.L predicate machine must be TOTAL and must RE-ACCEPT at

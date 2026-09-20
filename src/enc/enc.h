@@ -233,7 +233,7 @@ typedef struct {
      * failed attempt's start. K50 is the other half of the same rule and the
      * other two "try the next start" mechanisms:
      *
-     *   - `src/ir/nfa.c`'s `nfa_wrap_unanchored` self-loop, which is not a
+     *   - `src/ir/nfa.c`'s `pcrec_nfa_wrap_unanchored` self-loop, which is not a
      *     loop the emitter can see at all — it is an AUTOMATON, and the
      *     positions it "generates" are wherever its lowest-priority split
      *     enters the pattern. Gating that split needs the boundary rule as a

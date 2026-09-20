@@ -282,7 +282,7 @@ static const char advance_byte[] =
  * restriction to express: both fields are NULL.
  *
  * That is not a stub. `NULL` is the value both consumers read as "contribute
- * nothing" — `nfa_wrap_unanchored` builds the pre-K50 two-state wrap with no
+ * nothing" — `pcrec_nfa_wrap_unanchored` builds the pre-K50 two-state wrap with no
  * gate node, and the emitters emit no guard text — so every byte artifact
  * that existed before K50 is byte-identical to the one this compiler emits
  * now, and the identity gate proves it rather than the comment claiming it.

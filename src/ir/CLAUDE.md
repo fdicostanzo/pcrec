@@ -26,11 +26,11 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
 (`b->cx->opt->max_nfa_states`, 0 = `PCREC_MAX_NFA_STATES`) — the same
 `cli/main.c` `raise_only_limits[]` table also raises `PCREC_MAX_DFA_STATES_
 GOTO` and `PCREC_MAX_SUBSET_ELEMS`; see `lib/pcrec.h`'s comment on the four
-new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
+new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; pcrec_nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
 - **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start);
   **[ENG-ABS] (2026-08-29) `pcrec_build_dfa` TAKES ITS ROOT AND ITS
   OPTIONALITY AS PARAMETERS, and neither is a special case.** `root` used to be
-  `nfa->start` implicitly — the state `nfa_wrap_unanchored` installs. The
+  `nfa->start` implicitly — the state `pcrec_nfa_wrap_unanchored` installs. The
   anchored MATCH-HERE machine
   (`docs/design/anchored_match_unwrapped.md`) is this SAME construction rooted
   at `nfa->anch_start` instead, i.e. the pattern's own first state, which the
@@ -283,7 +283,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   WRAP GAINS A SECOND SPLIT STATE**, and the two together are what make an
   unanchored search's candidate match STARTS the encoding's character
   boundaries. Four things to know before editing either:
-  (a) **`nfa_wrap_unanchored` builds TWO splits, not one.** `nfa->start` stays
+  (a) **`pcrec_nfa_wrap_unanchored` builds TWO splits, not one.** `nfa->start` stays
   the UNGATED split — the caller's own position enters the pattern whatever it
   is — and the self-loop returns to a second split whose pattern branch sits
   behind a new `N_CSTART` node. That split of responsibility is the whole

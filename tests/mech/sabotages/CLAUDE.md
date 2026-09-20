@@ -218,7 +218,7 @@ boundary axis and the engine gate behind it, all on the new `startbnd` arm
   Caught THREE independent ways on one artifact (the mask, the emitter, the
   stamp), which is deliberate: they fail for three different reasons and a fix
   for one leaves the others red.
-- **S234** — `nfa_wrap_unanchored` skips the character-boundary gate, i.e.
+- **S234** — `pcrec_nfa_wrap_unanchored` skips the character-boundary gate, i.e.
   K50's own defect restored. A REVERSION rather than an invention: it is what
   the file said for all of [M5.0] stage 2, it compiles clean, and it changes
   nothing under `byte`, so every identity gate and the whole non-utf8 corpus

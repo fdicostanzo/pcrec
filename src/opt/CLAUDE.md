@@ -277,7 +277,7 @@ construction (src/ir) and emission (src/gen).
   thread whose bytes the analysis wants to constrain is the one from the
   candidate start ALONE, and the only place it exists on its own is the
   pattern's own NFA, walked from `Nfa.anch_start` — a FIELD published by
-  `pcrec_build_nfa` and deliberately left alone by `nfa_wrap_unanchored`,
+  `pcrec_build_nfa` and deliberately left alone by `pcrec_nfa_wrap_unanchored`,
   rather than a shape test on the wrap's SPLIT. **Offset 0 keeps coming from
   the DFA derivation that already owns it**, so no fact has two sources, and
   §2.1 of the note is why that offset-0 set is CORRECT to be as wide as it is

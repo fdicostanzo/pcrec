@@ -599,7 +599,7 @@ The prototype builds exactly the automaton this design proposes — DFA state =
 (NFA pre-set, previous byte was a word character), closure parameterised by
 `(prev_is_word, next_is_word)` in the same way `src/ir/dfa.c:640-641`
 parameterises by `eol_ok`, with the unanchored self-loop
-(`nfa_wrap_unanchored`, `src/ir/nfa.c:652` — corrected here; `engine_m4.md`
+(`pcrec_nfa_wrap_unanchored`, `src/ir/nfa.c:652` — corrected here; `engine_m4.md`
 §7.3 still cites the pre-move `:590`, see §4.1's cite note) and **Moore
 minimisation**, because
 pcrec minimises and an unminimised count would overstate the cost: the entire
@@ -1164,7 +1164,7 @@ problem D8 recorded for plain `^`:
 `(?m)^` needs **that variant AND a byte-selected view** on top of it. It needs
 strictly more than plain `^`, not less.
 
-**Proposed:** `(?m)^` routes to **ENG_ATTEMPT**. `nfa_has_bot()`
+**Proposed:** `(?m)^` routes to **ENG_ATTEMPT**. `pcrec_nfa_has_bot()`
 (`src/ir/nfa.c:668`) extends to "contains any BOT-family node". Under
 ENG_ATTEMPT the start-state dispatch generalises from
 `src/gen/emit_dfa.c:1113-1120`'s two-way `(start == 0) ? s0 : s1` to a
@@ -1291,7 +1291,7 @@ shipping the routing while describing its cost as "nothing else changes".
 >
 > The sentence "a `(?m)^`-anchored attempt can only begin at offset 0 or
 > immediately after a `'\n'`" is **true of a FULLY-`(?m)^`-anchored pattern
-> and false of the general case**, and `nfa_has_bot` routes ANY pattern
+> and false of the general case**, and `pcrec_nfa_has_bot` routes ANY pattern
 > containing a BOT-family node to this engine — `(?m)^a|b` included, where the
 > `b` branch can begin anywhere. Implementing the sentence literally loses
 > that branch's matches entirely; it is the sabotage row S81 precisely because
@@ -1591,11 +1591,11 @@ value — not a compile-time constant like `\A`'s `pos == 0`, but equally free.
 ### 4.1 §7.3's structural finding does not block this, and the toggle is not needed
 
 `engine_m4.md` §7.3 records, confirmed STRUCTURAL, that
-`nfa_wrap_unanchored` bakes the self-loop into the NFA in place with no way to
+`pcrec_nfa_wrap_unanchored` bakes the self-loop into the NFA in place with no way to
 recover the anchored machine, and concludes that "`\G` wants the unanchored
 engine's SHAPE without the self-loop, which is a toggle on the wrap".
 
-> **Cite note.** §7.3 locates `nfa_wrap_unanchored` at `src/ir/nfa.c:590`, and
+> **Cite note.** §7.3 locates `pcrec_nfa_wrap_unanchored` at `src/ir/nfa.c:590`, and
 > this document repeated that line verbatim in §3.5 and in
 > `probe_wordctx_states.py` without re-deriving it. **It is stale**: the
 > function is at **`:652`** today, and `:590` is now inside the K7
@@ -2793,7 +2793,7 @@ smaller. It must precede `(?m)` because `(?m)$` reuses the same mechanisms.
 
 **Scope.** Accept the `m` letter (`src/parse/mod_modifiers.c:280`);
 `A_BOL_M`/`A_EOL_M` become reachable; `(?m)$` on the Wave B machinery; `(?m)^`
-routed to ENG_ATTEMPT via an extended `nfa_has_bot` and the three-way start
+routed to ENG_ATTEMPT via an extended `pcrec_nfa_has_bot` and the three-way start
 dispatch (§3.7); **the scan-avoidance cure of §3.6.1** — all five mechanisms,
 the widened `start_acc`, and the class-indexed post-skip accept.
 

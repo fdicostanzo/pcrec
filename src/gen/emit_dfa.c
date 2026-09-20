@@ -496,7 +496,7 @@ static int dfa_artifact_ncaps(Ctx *cx)
  * marked "NO". This is that "NO" answered, per Frank's 2026-09-05 ruling.
  *
  * IT IS THE CALLER'S HALF AND NOTHING ELSE. The positions the ENGINE invents
- * are made boundaries unconditionally and with no flag (`nfa_wrap_unanchored`'s
+ * are made boundaries unconditionally and with no flag (`pcrec_nfa_wrap_unanchored`'s
  * gate, `ENG_ATTEMPT`'s `continue`, K49's retry advance). This guard governs
  * only where a caller may point an entry, which is why it — alone in the
  * `-fno-` family — has a flag that changes an answer.
@@ -4925,7 +4925,7 @@ static bool dfa_match_is_unwrapped(Ctx *cx)
  *
  * P0 — THE ROUTING DEPENDENCY, INHERITED AND THEREFORE STATED. The predicate
  * reads `fs = fd->s0`. That is the right state at `search_from == 0` only
- * because `ENG_UNANCH` implies `!nfa_has_bot` (`src/core/compile.c`), i.e. no
+ * because `ENG_UNANCH` implies `!pcrec_nfa_has_bot` (`src/core/compile.c`), i.e. no
  * `N_BOT`/`N_BOT_M`/`N_GSTART`: `s0` is closed with `bot_ok = true,
  * gst_ok = true` and `s1u[UPC_PLAIN]` with `false, false`, so with none of
  * those nodes present the two closures coincide and intern to the same id.
@@ -6321,7 +6321,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * The middle row is `\G`'s whole engine cost: ONE attempt, at exactly the
      * position `\G` names, so a `\G`-anchored pattern is O(n) trivially and
      * needs neither a new engine nor `engine_m4.md` §7.3's toggle on
-     * `nfa_wrap_unanchored`. ENG_ATTEMPT was already emitting the
+     * `pcrec_nfa_wrap_unanchored`. ENG_ATTEMPT was already emitting the
      * un-self-looped shape.
      *
      * On a `\G`-free machine `s1g[] == s1u[]` entry for entry, so the middle
@@ -6365,7 +6365,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * `tests/codegen/run_encoding_checks.sh`'s agreement check.
      *
      * `start > search_from` IS THE WHOLE OF THE CALLER/ENGINE SPLIT, and it is
-     * the same line `nfa_wrap_unanchored` draws with its two split states: the
+     * the same line `pcrec_nfa_wrap_unanchored` draws with its two split states: the
      * first iteration IS the position the caller supplied, which the entry
      * guard (§3.1) owns and the `-fno-startpos-guard` arm may leave
      * mid-character on purpose; every later iteration is a position this loop
@@ -7132,7 +7132,7 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
  * SCALARS, NOT MASKS, and the test is emit_vm.c's: a mask is for an axis
  * decided PER QUANTIFIER, where a scalar would lie on a mixed artifact. Both
  * facts below are decided ONCE per artifact — `job->engine` at src/core/
- * compile.c's `nfa_has_bot` fork, the prefilter at `unanch_start`/
+ * compile.c's `pcrec_nfa_has_bot` fork, the prefilter at `unanch_start`/
  * `attempt_cand` — so there is no mixing axis and nothing for a mask to say.
  *
  * THE VALUES ARE READ OFF THE SAME DERIVATIONS THE LOOP IS EMITTED FROM,

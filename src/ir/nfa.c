@@ -4,7 +4,7 @@
  *
  * The builder can target any Nfa and compile the pattern REVERSED (concat
  * order flipped recursively) — the reverse machine finds match starts in the
- * D7 unanchored engine. nfa_wrap_unanchored() adds the lowest-priority start
+ * D7 unanchored engine. pcrec_nfa_wrap_unanchored() adds the lowest-priority start
  * self-loop that makes the forward machine search from every position while
  * preserving leftmost-first priority.
  *
@@ -201,7 +201,7 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
 
 /* ---- M2.8: priority-preserving prefix trie for flat alternations ----
  *
- * Motivation (R2-A4) is compile TIME more than NFA size. `nfa_wrap_unanchored`
+ * Motivation (R2-A4) is compile TIME more than NFA size. `pcrec_nfa_wrap_unanchored`
  * keeps the whole branch-selection split chain live at every subject position,
  * so a flat alternation makes every epsilon closure walk all `nbr` branches:
  * measured 2022 NFA visits per closure at 2000 branches (1.01*nbr), 2.27
@@ -611,7 +611,7 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_NWORDB: return frag_single(b, N_NWORDB);
     /* [M6.2 wave D] `\G`. Reversal is identity for N_BOT/N_EOL/N_END's
      * reason — it is an absolute-position assertion — and no reverse machine
-     * is ever built for a pattern carrying it anyway: `nfa_has_bot` answers
+     * is ever built for a pattern carrying it anyway: `pcrec_nfa_has_bot` answers
      * true below, so src/core/compile.c routes it to ENG_ATTEMPT, which has
      * no reverse pass. That is a consequence of the routing rather than a
      * requirement of this node, and it is stated here because the reverse
@@ -1102,7 +1102,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
     }
 }
 
-void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
+void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     NB b = { cx, nfa, false, 0, false };
@@ -1163,7 +1163,7 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
  * This is NOT a `^` alias and the routing is the only thing they share:
  * `\Gfoo` at `startpos == 3` matches at 3 where `^foo` cannot, which is why
  * §4.1's `start_max` is a THIRD value rather than the existing `0`. */
-bool nfa_has_bot(const Nfa *nfa)
+bool pcrec_nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
@@ -1171,7 +1171,7 @@ bool nfa_has_bot(const Nfa *nfa)
     return false;
 }
 
-bool nfa_has_asserts(const Nfa *nfa)
+bool pcrec_nfa_has_asserts(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_EOL ||

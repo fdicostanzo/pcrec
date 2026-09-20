@@ -413,7 +413,7 @@ start state.
 
 **P0 — THE ROUTING DEPENDENCY THE PREDICATE INHERITS AND MUST STATE**
 (r49 item 18 / sound A6). The predicate reads `fs = fd->s0`. That is the right
-state at `search_from == 0` only because `ENG_UNANCH` implies `!nfa_has_bot`
+state at `search_from == 0` only because `ENG_UNANCH` implies `!pcrec_nfa_has_bot`
 (`src/core/compile.c:1096`), i.e. no `N_BOT`, `N_BOT_M` or `N_GSTART`
 (`src/ir/nfa.c:990-993`): `s0` is closed with `bot_ok = true, gst_ok = true`
 and `s1u[UPC_PLAIN]` with `false, false` (`src/ir/dfa.c:1249-1258`), so with
@@ -753,7 +753,7 @@ position past a recording site without itself recording:
 say the recorded position is `search_from`. Witness (i) records 3, not 0.
 `caps[0][0] = search_from` is not Claim A's; it is Claim B's.
 
-*Claim B — no later start is ever live.* `nfa_wrap_unanchored`
+*Claim B — no later start is ever live.* `pcrec_nfa_wrap_unanchored`
 (`src/ir/nfa.c:946-955`) sets `st[sp].t1 = nfa->start` (the pattern) and
 `st[sp].t2 = any` (the byte self-loop), so the restart thread is the
 **lowest**-priority branch of the split. `closure()` walks the pre-set in
@@ -1421,7 +1421,7 @@ a non-zero value is a finding that wants reading, not a failure.
    `unanch_start` M2.7 fork is what happens when they are allowed to drift.
    It must run on the VM side too, or it cannot see the NULL case.
 9. **NEW — the ENG_UNANCH routing premise (P0)**. The predicate's `fs = fd->s0`
-   read is sound only because `ENG_UNANCH` implies `!nfa_has_bot` (§1.2 P0).
+   read is sound only because `ENG_UNANCH` implies `!pcrec_nfa_has_bot` (§1.2 P0).
    Assert `fs == s1u[UPC_PLAIN]` on every artifact the predicate accepts, in
    the compiler, so that an engine-selection change that routed a BOT-bearing
    machine here fails loudly instead of eliding wrongly.
@@ -1532,7 +1532,7 @@ accept varies by class context. And M1 found **ZERO P3-stage declines over
 Reachability of P3 at all needs `dfa_needs_seed(fd)` (`:2161-2166`), i.e. some
 `s1u[u] != s1u[UPC_PLAIN]`. On `ENG_UNANCH`:
 
-1. `(?m)^` and `\G` route to `ENG_ATTEMPT` via `nfa_has_bot`
+1. `(?m)^` and `\G` route to `ENG_ATTEMPT` via `pcrec_nfa_has_bot`
    (`src/ir/nfa.c:990-993`), so they are not here at all.
 2. `(?m)$`'s dependence is on the UPCOMING byte (the class-accept axis,
    `sides_of` at `src/ir/dfa.c:1023`), not on the consumed one, so it creates
@@ -1873,7 +1873,7 @@ verify item by item without re-reading the note.
 | r49 § | item | disposition | note sections | what changed |
 |---|---|---|---|---|
 | 7 | [check M2] pin the CLASS as a named manifest, never the count 16 | **WORKED** | §5.2, §3.4(a), §9 F10 | `VIEW_DECLINE_MANIFEST` is defined by its SELECTOR (`state_acc_any(fs)` true and `fs->up[UPC_PLAIN].accept` 0, on an `unanchored` artifact), asserted all-and-only, floored at ≥ 12, with five named irreplaceable shape-anchors. §5.2 explains *why* a count is not a control here: the independence expired when M2 re-measured it for this check using `member_ok`'s own body, so probe and feature would call one function once P2 is shared. |
-| 8 | [check M3 + sound F1] the fseed/P3 row's witness never reaches P3 | **WORKED — as the "cannot construct" branch the brief allows** | §5.6b, §3.4(b), §7 item 10, §9 F9 | §5.6b gives the DERIVATION that the P3-discriminating population looks empty on `ENG_UNANCH` (routing of `(?m)^`/`\G` away via `nfa_has_bot`; `(?m)$`'s next-byte axis creating no `s1u` split; `s1u[PLAIN] == fs`; and the squeeze — a P2-passing `fs` accepts through a boundary-free branch, which sits in every seed closure). Six candidate shapes are named and rejected. **The row ships declared `SAB_EXPECT=UNREACHED` with a reason — the S79/S80 phantom-check shape, named as such** — and the liveness conjunct's real guard is a compiler assertion. §7 item 10 is the P3-EVALUATION count that would settle reachability. |
+| 8 | [check M3 + sound F1] the fseed/P3 row's witness never reaches P3 | **WORKED — as the "cannot construct" branch the brief allows** | §5.6b, §3.4(b), §7 item 10, §9 F9 | §5.6b gives the DERIVATION that the P3-discriminating population looks empty on `ENG_UNANCH` (routing of `(?m)^`/`\G` away via `pcrec_nfa_has_bot`; `(?m)$`'s next-byte axis creating no `s1u` split; `s1u[PLAIN] == fs`; and the squeeze — a P2-passing `fs` accepts through a boundary-free branch, which sits in every seed closure). Six candidate shapes are named and rejected. **The row ships declared `SAB_EXPECT=UNREACHED` with a reason — the S79/S80 phantom-check shape, named as such** — and the liveness conjunct's real guard is a compiler assertion. §7 item 10 is the P3-EVALUATION count that would settle reachability. |
 | 9 | [check M4] SAB_REACH_POP from birth on rows [OPT-VEDGE] can move | **WORKED** | §5.6 | Marked rows: **S218, S220, S221**, each with its floor named (`opt5m2_m2_changed_patterns.txt` ≥ 12; the classctx population below M1's 8; the startpos>0 population once counted). The paragraph cites the S206/[OPT-4.2] lesson and `[MECH-REACH]`'s "a reach probe and a population floor are different claims and expire separately". |
 | 10 | [check M5] the absolute-offset row needs a counted `startpos>0` population | **WORKED as a named obligation** | §5.6d, §7 item 12 | §5.6d states the structural reason it is plausibly thin (plain `m`/`n` cells are startpos-0; only `ms`/`ns` carry nonzero) and gives **two acceptable discharges** — count the `ms`/`ns` cells over the 175 and floor it, or add synthetic `ms` witnesses for named pinned patterns (`a*`, `[a-z]{0,64}`, `[a-z]{0,4096}`, one seeded shape). **The row does not ship without one.** |
 | 11 | [check M9 + sound B6] `cls-atleast-4096` becomes an in-tree named witness; quantify §1.1 | **WORKED** | §0 instrument 1, §1.1, §5.4, §7 item 11 | `cls-atleast-4096` = `[a-z]{4096,}`, VERIFIED here: it stamps `RX_DFA_PREFILTER "byte-class"` and `rx_forward_is_accepting[4] = {0,0,1,1}` — the start state does NOT accept, so P1 fails and the predicate DECLINES. §0 names it an in-tree NAMED WITNESS ("must not move") rather than bench prose. §1.1 is rewritten: the ×37 exhibit is the `\z` whole form, view-declined, **[OPT-VEDGE]'s customer, NOT STEP 2's**; the pinned counted-ladder `search-filter` rungs get C3's fact instead, with a VERIFIED four-row stamp table. |

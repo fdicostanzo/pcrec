@@ -185,7 +185,7 @@ role-complete byte alphabet — with non-vacuity asserted in both directions
 `start_guard` — AND THEY ARE ONE RULE ASKED AS A PREDICATE RATHER THAN AS A
 STEP.** D58's revisit clause again, so: `advance` says how to MOVE a failed
 attempt's start; these say WHERE a match may BEGIN. Two consumers need the
-predicate and neither can use a step. `src/ir/nfa.c`'s `nfa_wrap_unanchored`
+predicate and neither can use a step. `src/ir/nfa.c`'s `pcrec_nfa_wrap_unanchored`
 is not a loop the emitter can see at all — it is an AUTOMATON, and gating its
 split needs the rule as a BYTE SET evaluated inside the subset construction.
 `src/gen/emit_dfa.c`'s `ENG_ATTEMPT` start loop cannot take the `advance` text

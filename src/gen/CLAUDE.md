@@ -881,7 +881,7 @@ only the STRING — the same fact that makes this landing, like [OPT-4.1]'s,
 a value rather than scaffolding.
 
 **THE VALUES COME OFF THE SAME DERIVATION THE LOOP DOES.** `RX_DFA_SCAN` reads
-`job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork,
+`job->engine`, the field `src/core/compile.c` sets at its `pcrec_nfa_has_bot` fork,
 through `dfa_scan_name` — which asks `dfa_engine_is_empty` FIRST ([DD-13c],
 below).
 `RX_DFA_PREFILTER` reads `unanch_start` (ENG_UNANCH) or `attempt_cand`

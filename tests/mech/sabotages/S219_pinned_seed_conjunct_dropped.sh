@@ -57,7 +57,7 @@
 # For P3's DECLINE to be REACHED at all the machine needs `dfa_needs_seed`,
 # i.e. some `s1u[u] != s1u[UPC_PLAIN]`. On ENG_UNANCH:
 #
-#   1. `(?m)^` and `\G` route to ENG_ATTEMPT via `nfa_has_bot`, so they are
+#   1. `(?m)^` and `\G` route to ENG_ATTEMPT via `pcrec_nfa_has_bot`, so they are
 #      not here at all.
 #   2. `(?m)$`'s dependence is on the UPCOMING byte (the class-accept axis),
 #      not the consumed one, so it creates no `s1u` split.

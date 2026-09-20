@@ -1632,7 +1632,7 @@ caps, with wave B's 38,009-against-32,000 as the precedent. MEASURED,
 **THE METHOD — AND ITS FIRST VERSION WAS REFUTED BY R33 C2-1.** That version
 claimed *"pcrec's UNANCHORED FORWARD DFA for the pattern `L` IS the `Σ*·L`
 recognizer — unanchoredness is the automaton's own self-loop"*. **The identity
-is FALSE.** `nfa_wrap_unanchored` (`src/ir/nfa.c:766-781`) adds the self-loop
+is FALSE.** `pcrec_nfa_wrap_unanchored` (`src/ir/nfa.c:766-781`) adds the self-loop
 as the **lowest-priority** start alternative and D3 ACCEPT-PRUNING then kills
 that thread at the first accept — so **every accepting state in the emitted
 forward table is a dead sink**. A `Σ*·L` predicate machine must be TOTAL and

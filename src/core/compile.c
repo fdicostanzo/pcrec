@@ -268,7 +268,7 @@ static void job_cleanup(Ctx *cx)
  * whose only job is to recover a start the caller already gave, and a failing
  * probe can skim the rest of the subject. This machine is the answer: the SAME
  * subset construction over the SAME NFA, rooted at `nfa.anch_start` — the
- * pattern's own first state, which `nfa_wrap_unanchored` deliberately leaves
+ * pattern's own first state, which `pcrec_nfa_wrap_unanchored` deliberately leaves
  * addressable — so it is the forward machine WITHOUT the start-anywhere
  * self-loop, and running it from `ctx->pos` needs no reverse pass at all.
  *
@@ -1518,10 +1518,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
-            if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
+            if (!pcrec_nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
                 /* D7 fast path: O(n) unanchored forward + reverse machines */
                 cx.job->engine = PCREC_ENG_UNANCH;
-                nfa_wrap_unanchored(&cx, &cx.job->nfa);
+                pcrec_nfa_wrap_unanchored(&cx, &cx.job->nfa);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_TABLE,

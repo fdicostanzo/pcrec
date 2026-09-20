@@ -4553,7 +4553,7 @@ it: **both engines were wrong in agreement.** Post-K49 the VM answers
 `(3,3)` and the DFA still answers `(2,2)`, so this is now also a live
 cross-engine divergence.
 
-MECHANISM (traced, not suspected). `src/ir/nfa.c:965` `nfa_wrap_unanchored`
+MECHANISM (traced, not suspected). `src/ir/nfa.c:965` `pcrec_nfa_wrap_unanchored`
 builds the lowest-priority start self-loop as `memset(nfa->st[any].cls,
 0xff, 32)` — a class of EVERY BYTE. Under `utf8` that lets a match start be
 any byte offset. The artifact for `\B` carries no retry loop at all (it is
@@ -4737,7 +4737,7 @@ one of them twice.
 a character may start at, NULL under `byte`), plus its expression twin
 `start_guard`:
 
-1. **`nfa_wrap_unanchored`** builds TWO split states instead of one. `nfa->start`
+1. **`pcrec_nfa_wrap_unanchored`** builds TWO split states instead of one. `nfa->start`
    stays the ungated split — the caller's own position enters the pattern
    whatever it is — and the self-loop returns to a second split whose pattern
    branch is gated by a new `N_CSTART` node. So the positions the ENGINE
