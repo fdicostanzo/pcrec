@@ -959,12 +959,44 @@ stamp_count() {
     grep -cE '^/\* Feature set: |^#define PCREC_FEATURE_SET |^#define PCREC_FEATURE_MODULES ' \
         || true
 }
+# ===========================================================================
+# [D112] `-fcomments` IS PASSED EXPLICITLY, AND THE COMMENTS ARE THE
+# INSTRUMENT RATHER THAN DECORATION (evtriage2's class 2).
+# ===========================================================================
+# [EMIT-VERB] event 2 (abi 26 -> 27) made emitted comments OFF BY DEFAULT.
+# This gate reads them TWICE, and neither reading is cosmetic:
+#
+#   1. THE D37 STAMP FILTER's three lines are `/* Feature set: ... */` and the
+#      two `#define PCREC_FEATURE_*` lines. Under the new default the comment
+#      is not emitted, so `stamp_count` reads 2 and EVERY artifact lands in
+#      `stampbad` -- which `continue`s before either comparison runs, so the
+#      whole sweep goes vacuous while reporting a filter fault. The "exactly
+#      three" assertion is CORRECT and stays; what it needs is the axis that
+#      makes three lines exist.
+#   2. COMPARISON (A) IS DELIBERATELY COMMENT-SENSITIVE INSIDE THE PROGRAM
+#      REGION -- see the (A) block above: "NO filtering beyond the three D37
+#      stamp lines, so comment sensitivity INSIDE the region is kept in full --
+#      the property that caught [M6.6.2] wave E's 37-byte prose change on 54
+#      artifacts". The `vm_rolef` role text IS that property. A default-axis
+#      subject has no role text at all, so its region differs from the
+#      pre-module reference's on EVERY VM artifact, for a reason that is the
+#      axis and not the module. MEASURED (lane evtriage3, 2026-09-19): five
+#      call-free VM patterns read MOVED at the default axis and four of the
+#      five read SAME under `-fcomments` (the fifth, `(?:ab|cd)*x`, moves for
+#      the [ENG-ISL] reason the deny-build excuse below already handles).
+#
+# SO THE SUBJECT-SIDE COMPILERS ASK FOR COMMENTS AND THE PRE-MODULE ONE DOES
+# NOT: `ac4917d` predates the axis and REFUSES `-fcomments` ("unknown
+# option"), and it emits the comments unconditionally, which is exactly the
+# side of the comparison that needs no flag. `$FILEREF` is the abi-27 merge
+# and takes the flag, so comparison (B) keeps its whole-file comment
+# sensitivity too rather than quietly losing it at the default flip.
 # shellcheck disable=SC2086
-gen_a() { pcrec_run "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_c() { "$FILEREF" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
 # [ENG-ISL] THE FOURTH BUILD, and the one that turns the island's excuse from a
 # per-artifact exemption into a CLAIM (panel r53, F3): the SUBJECT compiler with
 # the new axis DENIED. It is the only reference that ISOLATES the island — the
@@ -974,7 +1006,7 @@ gen_c() { "$FILEREF" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # artifact would read green. Denying the axis and getting the PINNED bytes back
 # is what says the movement is the island's and nothing else's.
 # shellcheck disable=SC2086
-gen_noisl() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -o - -- "$1" 2>/dev/null; }
+gen_noisl() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -o - -- "$1" 2>/dev/null; }
 # [FORM-CHAR] THE FIFTH AND SIXTH BUILDS, the fold axis's own copies of the
 # island's shape one paragraph up: the SUBJECT compiler with the ascii-fold
 # class test denied, and with BOTH region-moving deny axes denied for the
@@ -983,9 +1015,9 @@ gen_noisl() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -o - --
 # not fire is asserted a byte-level no-op by the converse arms below, and
 # the restore claim is sharpest when the deny set names what fired).
 # shellcheck disable=SC2086
-gen_nofold() { pcrec_run "$PCREC" --features all -p rx $2 -fno-cls-fold -o - -- "$1" 2>/dev/null; }
+gen_nofold() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-cls-fold -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_denyboth() { pcrec_run "$PCREC" --features all -p rx $2 -fno-alt-island -fno-cls-fold -o - -- "$1" 2>/dev/null; }
+gen_denyboth() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -fno-cls-fold -o - -- "$1" 2>/dev/null; }
 
 # [DD-14.FB] THE PROGRAM REGION: `goto <p>_L0;` through the accept label. An
 # artifact with no VM program (a DFA-selected pattern) yields the EMPTY region,
