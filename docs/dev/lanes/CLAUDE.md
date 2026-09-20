@@ -2005,3 +2005,42 @@ never edited afterwards.
   resource 0 failed, cpset 28/0, specimen 13/0, comments_axis 65/0,
   test-codegen 9/10 with the standing darwin `nm` probe as the sole red,
   S40 re-driven solo DETECTED). PARKED on `lane/evtriage3`, not merged.
+
+- **w5_report.md** — [REVW.5] WAVE 5 (public surface) + [REVW.A1], the LAST
+  items of the 2026-09-17 code review (lane `w5`, opus, 2026-09-19, branch
+  `lane/w5` from `25b1984f`, 13 commits). **Headline: `nm -g
+  build/libpcrec.a` reports 295 exports and ZERO without a `pcrec_` prefix**
+  — 34 were unprefixed at the branch point, which is neither D104's 12 nor
+  the fact sheet's 29 (four more landed with [EMIT-VERB] in between, by the
+  same `static`-dropped-for-cross-TU mechanism, and the population has grown
+  at every measurement anyone has taken of it). Items: the §8.2 struct
+  quotation goes 9 members -> 19 as shipped and `tuning.md` §4's mirror 14
+  bits -> 28 with a statement that it is exhaustive and a named list of the
+  four bits deliberately outside it; the mask catalogue stops delegating to
+  `lib/pcrec.h` (a D80 inversion); `pcrec_limits_tsv` is DECLARED in the
+  public header and its declaration LEAVES `internal.h`, with lens 9's
+  `#define`-generation option declined in writing because it would be a
+  second spelling of every number; two of P4's eleven constants turned out
+  not to exist (`PCREC_PREFILTER_EXACT_NFA_STATES` was deleted at [OPT-4]
+  and the header still described a threshold that is gone;
+  `PCREC_VM_INLINE_CHAIN_MAX_BYTES` had an INVENTED prefix); and the abi
+  change log is cut from four homes to one, `match_api.md` §6, with
+  `emit_dfa.c`'s 449-line narrative becoming 22 lines and a D76 addendum
+  recording why §6 was the only complete one (the bump ritual already writes
+  it). **The union mode membership was MEASURED AND DECLINED**: 4 acceptance
+  flips over 1,407 invocations and three of the four are `--flavour`'s
+  DOCUMENTED primary use (`--list-syntax`/`--list-definitions`/`--explain`);
+  `w4_report`'s motivating example (`--probe-ask --flavour` "is accepted") is
+  false — it is refused today, by the site's own applies-to arm. Three
+  method lessons worth the read: the anchor population is a question about
+  ANCHOR TEXT and `grep -rl` over-counts it by 4x while two hand-written
+  extractors under-counted it (hand it to BASH, or better, use the tree's
+  own `scripts/m6read_check_sab_anchors.py`, which this lane found only after
+  rebuilding it); a sabotage `SAB_DOC_FIGURE` that QUOTES a check's failure
+  message is a reader of that message and cites no symbol grep could find
+  (S254); and `check01_isolation.sh`'s SPEC-M positive control has been DEAD
+  on darwin since the two-machine split (its `EXC_SYMBOL` lacks the
+  underscore darwin's `nm` prepends), A/B-ed against the branch point and
+  reported rather than fixed. Merged/not: delivered on `lane/w5`, the
+  wave-closing sweep and 24 of 33 sabotage re-drives OWED with commands in
+  the report's §7.
