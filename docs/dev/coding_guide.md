@@ -231,8 +231,10 @@ site and do not add a third field.
 
 **3.1 Any change to an emitted byte IS an `abi` event.** Comments, declarations,
 layout, whitespace — all of it (D76/D94). The change carries the bump, the
-identity-gate re-pin and the spec hunk in ONE commit; `abi` is **26** today
-(`src/gen/emit_dfa.c:1965`). Find readers **by grep**, never by memory — a
+identity-gate re-pin and the spec hunk in ONE commit; the current value is
+`PCREC_ARTIFACT_ABI` (`src/core/limits.def`) and the change log is
+`docs/spec/match_api.md` §6, which the ritual maintains and which is the ONLY
+home (D76 addendum, [REVW.A1]). Find readers **by grep**, never by memory — a
 hand-enumerated "four sites" list missed a fifth in `match_api.md` (D94). And grep
 for the digit is not sufficient on its own: a manifest whose rows never cite an
 abi number can still hold byte COUNTS that move (lane `battriage`, 2026-09-17), so
@@ -308,8 +310,10 @@ with a pointer.** A function header, sized to the function, answers (a) what it
 produces, (b) what it reads that is not a parameter, (c) the one invariant a caller
 must not break (L4-C1). Most of that text already exists inside the body and can be
 hoisted rather than composed. Wave narratives, panel citations and change logs
-belong in `docs/` — the `abi` change log lives in three drifting homes today and two
-transitions are recorded nowhere (L4-A1), which is what that costs.
+belong in `docs/` — the `abi` change log lived in four homes, three of them
+drifting, with two transitions recorded in only one of them (L4-A1). [REVW.A1]
+cut it to one: `docs/spec/match_api.md` §6, maintained by the bump ritual
+itself. A 449-line change log in `emit_dfa.c` is what the alternative cost.
 
 ---
 

@@ -1999,6 +1999,15 @@ against them:
   `-fcomments`. Note the last of those: `PCREC_FEATURE_SET` and
   `PCREC_FEATURE_MODULES` (§6.3) still carry the feature set on the `.c`,
   but the paired `.h` records it in NO form in a default build.
+**THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
+addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
+`docs/spec/` hunk, so the ritual maintains this narrative by construction —
+which is why it is gap-free from `2` to `27` while the three narrative copies
+that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
+suite's failure message had each drifted. Those are now a pointer, a pointer,
+and a check's message copied FROM here. **A bump updates this paragraph, in
+the bump's own commit.**
+
 - **`rx_info.abi` is `27` on every artifact today ([EMIT-VERB] bumped it
   from 26: THE EMITTED-COMMENT AXIS. A default artifact no longer carries
   its NON-ESSENTIAL prose — every comment LINE leaves every artifact of

@@ -8,6 +8,23 @@ attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.
 
+## THE `abi` NUMBER — its change log is NOT here
+
+`rx_info.abi` versions the emitted scaffolding as a whole (D76). **The one
+canonical change log is `docs/spec/match_api.md` §6**, ruled [REVW.A1]
+(2026-09-19); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
+to a pointer in the same change, and `tests/codegen/run_codegen_tests.sh`'s
+transition string is a CHECK's failure message maintained FROM §6, not a
+second home.
+
+The `##` sections below carry abi numbers in their own titles, and they STAY:
+each is the design record for ITS milestone, with the reasoning behind that
+change, and the number is there to locate it. **They are not a log and must
+not be read as one** — the last abi number appearing in a section title here
+is whatever milestone last needed a `src/gen` design section, not the current
+`abi`. The current value is `PCREC_ARTIFACT_ABI` (`src/core/limits.def`), and
+what every bump since means is §6.
+
 ## [M6-READ] THE EMITTED VOCABULARY, and the two rules that keep it working
 
 The generated C is a first-class deliverable: it carries an orientation block,
