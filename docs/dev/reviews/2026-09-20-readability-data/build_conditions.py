@@ -7,7 +7,12 @@ usage: build_conditions.py SRC_C NAMES_TSV OUTDIR [VM_STRUCT_END_MARKER]
   OUTDIR     writes cond_A.md (identifier + declaration/signature line) and
              cond_B.md (A + the declaration's comment / the function's header)
 Method recorded in ../2026-09-20-readability-experiments.md §1. A guesser
-(haiku) answers from the condition file ALONE; a grader (sonnet) scores
+(haiku) answers from the condition file ALONE, under THIS prompt, verbatim:
+  "For every entry write your best one-line guess of what the name refers
+   to or what the function does, concrete, never vague; ALWAYS guess —
+   never answer with a template such as 'Local variable X' or 'Field X'
+   or 'unknown'; put honest uncertainty in the confidence column (high /
+   medium / low / no-idea) and still write the guess." Three runs, median; a grader (sonnet) scores
 correct/partial/wrong/vacuous against the truth column of graded_all.tsv."""
 import sys, re, os
 src_path, names_path, out = sys.argv[1], sys.argv[2], sys.argv[3]

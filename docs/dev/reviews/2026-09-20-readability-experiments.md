@@ -115,6 +115,21 @@ Readings:
   points**, past the bar (68%) and past every other condition short of the
   whole file. The 74-name failed list was fixed by name and those are the
   functions that flipped.
+- **DIAGNOSED (same evening): the locals drop is a DISPOSITION flip, not
+  comprehension.** The second guesser answered 23 of 25 locals with the
+  template "Local variable <name>" and 22 fields with "Field <name>" — it
+  declined to guess from a bare declaration — where the first guesser
+  guessed from the name ("Number of branches", "Body minimum width") and
+  was usually right. Same evidence, different willingness to try; the
+  grader correctly scored the templates vacuous. hdr2's own second run
+  with an explicit "no templated non-answers" instruction scored locals
+  64% / fields 87.5% but was discarded for a row-alignment fault. So the
+  FIELD drop (42 → 32) is the same artifact — 22 templated rows — and not
+  a regression either. The instrument's variance is the guesser's
+  disposition, which the prompt wording sets: a committed, fixed guesser
+  prompt is part of the protocol from now on (build_conditions.py's
+  docstring names it), and it must say: always guess, never template,
+  mark honest uncertainty in the confidence column.
 - **The locals row is the noise floor, and it is large.** Locals' condition-B
   material is IDENTICAL between the two runs (a declaration line; hdr2
   touched no local), yet the same guesser model scored 56% then 4%. A single
@@ -143,4 +158,5 @@ Readings:
    the lane's budget; expect two small files per edit, not one.
 5. A model's stated confidence is not a measurement. Bound the evidence and
    grade the answers when you want to know what a name carries — and run the
-   guesser three times: a single run's spread is ~30 points on small n.
+   guesser three times from ONE committed prompt that forbids templated
+   non-answers: disposition, not comprehension, moved a row 56 → 4.
