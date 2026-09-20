@@ -78,3 +78,17 @@ helper, if the two walks prove identical.
 `pt`) are what `subject_ceiling` divides from, so the stamped ceilings in the
 size log must not move either (0 movers by column). Tier: sonnet (mechanical
 once the helper is written), or folded into [TOUR-1]'s opus lane.
+
+**Step 2 (Frank): one pricing function per node kind, `vm_emit`'s own
+precedent.** After the helpers land, `vm_cost`'s switch becomes a dispatcher
+— `case A_REP: return vm_cost_rep(...)` is already the shape — with one
+function per arm that has a body OR a correctness argument: `vm_cost_cat`,
+`vm_cost_alt`, `vm_cost_call` (real bodies); `vm_cost_cap`, `vm_cost_atomic`,
+`vm_cost_kreset`, `vm_cost_look` (2-4 code lines under 30-60 comment lines —
+the comment becomes the function's HEADER, the form coding_guide §4.2 asks
+for, instead of prose floating between case labels). The free-node kinds
+(classes, anchors, word boundaries, `\G`, backreference) stay one shared
+`return c` group — a function returning zero for six kinds is ceremony. The
+payoff beyond length: `vm_cost_<kind>` sits beside `vm_<kind>`, the emitter
+arm it must agree with, so the two-walk contract is checkable pairwise.
+Order: helpers first, then the split, so the arms are born short.
