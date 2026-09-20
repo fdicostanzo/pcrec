@@ -46,6 +46,16 @@
  * text contain one". That distinction is the whole payoff of running the
  * discharge before engine selection: `[^"]*+"` compiles to a pure DFA with the
  * MRL ceiling intact, and `(?>a|ab)c` is VM-forced with the ceiling off. */
+/* True iff the whole tree still carries an A_ATOMIC cut -- read AFTER
+ * pcrec_discharge_atomic has run, so it answers "is there a cut in the
+ * ARTIFACT" (see the banner above). Exhaustive no-default switch over AKind
+ * (mrl.c's rule): descends into A_LOOK/A_CAP/A_REP bodies (a cut inside a
+ * lookaround still counts) and every A_CAT/A_ALT spine iteratively
+ * (D10/DD-10/K20 discipline, never recursing on spine length), and
+ * deliberately DECLINES to follow A_CALL's u.call.body back edge -- the
+ * whole-tree walk already visits a callee at its own lexical position, and
+ * following the back edge would hang the compiler on a self-referencing
+ * pattern (see the A_CALL comment for the sabotage row this guards). */
 bool pcrec_has_atomic(const Ast *a)
 {
     for (;;) {
@@ -129,6 +139,12 @@ bool pcrec_has_atomic(const Ast *a)
  * the part an editor must carry: the flag is not the only thing that has to
  * change, because the lines that BUILD the ceiling are gated separately, and
  * codegen rule 1 asserts on both sources. Sabotage rows S-LA12 and S-LA13. */
+/* pcrec_has_atomic's twin: true iff the whole tree still carries an A_LOOK,
+ * read at the same point in the pipeline for the same reason (a future pass
+ * deleting a vacuous lookaround should give the pattern its MRL ceiling back).
+ * Deliberately FLAT rather than shape-aware (see the banner above for why a
+ * shape condition was considered and rejected) and declines A_CALL's back edge
+ * exactly as pcrec_has_atomic does, for the identical hang hazard. */
 bool pcrec_has_lookaround(const Ast *a)
 {
     for (;;) {
@@ -264,6 +280,10 @@ bool pcrec_has_collapsible_rep(const Ast *a)
  *
  * Generic in the row, not special-cased to `atomic-groups`: the next
  * non-doorway kind gets this arm for free. */
+/* True iff some registry row's producer stamped a node in this tree with `rw`
+ * -- D65's built-status derivation for the rows that reach no doorway.
+ * Exhaustive no-default walk, declining A_CALL's back edge for the standing
+ * hang reason. */
 bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
 {
     for (;;) {
@@ -373,6 +393,9 @@ typedef struct {
     Ctx  *cx;
 } DischargeSet;
 
+/* Appends `grp` (an A_ATOMIC whose cut is a proved no-op) to `d->hit`, growing
+ * the arena-backed array (doubling from 16) -- the survey callback
+ * pcrec_poss_survey calls per hit. */
 static void ds_add(void *user, Ast *grp)
 {
     DischargeSet *d = user;
@@ -386,6 +409,7 @@ static void ds_add(void *user, Ast *grp)
     d->hit[d->n++] = grp;
 }
 
+/* True iff `grp` is in the discharge set `d`. */
 static bool ds_has(const DischargeSet *d, const Ast *grp)
 {
     for (int i = 0; i < d->n; i++) if (d->hit[i] == grp) return true;
@@ -489,6 +513,12 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
     return a;
 }
 
+/* Deletes every A_ATOMIC cut possessify's survey proves is a no-op: fast-paths
+ * out on a cut-free tree (so a pattern with no cut never runs the survey at
+ * all, per the comment above), honours -fno-possessify's own
+ * PCREC_NO_ATOMIC_DISCHARGE deny flag (a separate flag from -fno-possessify
+ * itself, since this changes engine selection), then surveys and rewrites in
+ * place via dis_walk. */
 Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root)
 {
     /* THE FAST PATH IS THE COMMON ONE and it is not an optimisation: a pattern
@@ -740,6 +770,18 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
  * which is a lost capture — the failure the sabotage row over this function
  * plants, and the reason the `A_REP` test below is `rmax == 0` exactly and not
  * "a small maximum". */
+/* True iff some group in the tree is LIVE: reachable EMITTED code writes its
+ * capture slot. Asks one structural fact and no construct's name -- a group
+ * whose only occurrence lies under an A_REP with rmax==0 emits no code at all
+ * (X{0} is "matches empty, no code"), which covers (?(DEFINE)...), (?:...){0}
+ * and a bare (a){0} identically, without a DEFINE-shaped special case.
+ * Declines A_CALL (a subroutine call is capture-transparent, per the comment
+ * above -- a group live only through a call is never visibly live) exactly as
+ * the whole-tree walks above do, for the same back-edge reason.
+ * select_engine.c's forces_captures reads this to decide whether the
+ * capture-recording engine is even needed; named for the SAFE polarity (true =
+ * keep the VM), since over-reporting costs an engine and under-reporting loses
+ * a match. */
 bool pcrec_has_live_capture(const Ast *a)
 {
     for (;;) {
@@ -846,6 +888,11 @@ bool pcrec_has_live_capture(const Ast *a)
  * rather than conservative: a call nested inside a callee is an `A_CALL` NODE
  * in this tree at its own lexical position, so this whole-tree walk reaches it
  * anyway — and following the edge would hang the predicate on `(a(?1))`. */
+/* True iff some A_CALL in the tree is still a JUMP (u.call.link !=
+ * CALL_SPLICE) rather than a spliced-in copy -- see the banner above for why a
+ * splice is exactly as regular as writing the callee out by hand. Only
+ * meaningful AFTER pcrec_callgraph_build has resolved every call's link;
+ * declines A_CALL's back edge for the same hang reason as the walks above. */
 bool pcrec_has_linked_call(const Ast *a)
 {
     for (;;) {
@@ -878,6 +925,8 @@ bool pcrec_has_linked_call(const Ast *a)
     }
 }
 
+/* True iff the tree carries any A_CALL at all, regardless of link kind --
+ * pcrec_has_linked_call's unconditional sibling. */
 bool pcrec_has_call(const Ast *a)
 {
     for (;;) {

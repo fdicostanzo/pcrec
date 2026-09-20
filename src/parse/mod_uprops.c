@@ -235,6 +235,9 @@ size_t pcrec_uprops_row_count(void)
     return pcrec_uprop_names_n;
 }
 
+/* Row `i`'s name (and, via `*ns`, its NS field) from the generated
+ * pcrec_uprop_names table -- a test accessor (see the comment above) with no
+ * ordering contract. */
 const char *pcrec_uprops_row_name(size_t i, unsigned *ns)
 {
     if (i >= pcrec_uprop_names_n) return NULL;
@@ -251,6 +254,9 @@ const char *pcrec_uprops_unicode_version(void)
     return PCREC_UPROPS_UNICODE_VERSION;
 }
 
+/* ASCII-only uppercase fold: lowercase letters map to their uppercase byte,
+ * everything else passes through -- the one-letter script-name axis's own case
+ * fold. */
 static int uprops_fold(int c)
 {
     return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;

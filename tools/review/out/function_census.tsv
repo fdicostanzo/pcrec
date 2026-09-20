@@ -1,913 +1,919 @@
-# function_census.py -- commit d0c8b4c220c1f0df42b1857749e9c01747a9eba4 -- generated 2026-09-19 -- rows 911
-file	start_line	end_line	span_lines	code_lines	max_depth	name
-src/gen/emit_vm.c	9374	12114	2741	613	4	pcrec_emit_vm
-src/parse/rxt_source.c	2104	3078	975	548	5	pcrec_rxt_source_parse
-src/core/compile.c	576	1849	1274	408	5	compile_driver
-cli/main.c	1372	1908	537	334	4	main
-src/gen/emit_vm.c	8523	9103	581	298	4	vm_render_listing
-cli/main.c	650	953	304	202	4	cli_parse
-src/gen/emit_dfa.c	6414	6922	509	201	4	emit_attempt
-src/dump/axes_dump.c	395	688	294	178	3	emit_predicate_axes
-src/gen/emit_vm.c	4930	5242	313	171	3	vm_revdet_rep
-src/parse/rxt_source.c	3835	4056	222	167	3	pcrec_rxt_source_tsv
-src/gen/emit_vm.c	4150	4498	349	147	4	vm_cursor_rep
-src/parse/rxt_compose.c	728	1009	282	146	4	pcrec_rxt_compose
-src/dump/syntax_dump.c	1565	1826	262	145	4	pcrec_syntax_explain
-src/parse/rxt_source.c	3514	3749	236	140	4	pcrec_rxt_source_resolve
-src/parse/mod_backrefs.c	318	467	150	125	4	pcrec_brport_g
-src/parse/mod_modifiers.c	250	496	247	125	4	pcrec_modport_optrun
-src/ir/nfa.c	569	963	395	121	6	compile_ast
-src/opt/select_engine.c	487	1046	560	117	4	pcrec_select_engine
-src/gen/emit_vm.c	1979	2238	260	112	4	vm_cost_rep
-src/gen/emit_vm.c	5303	5482	180	112	5	vm_counter_phase
-src/opt/minimize.c	74	231	158	112	5	pcrec_minimize_dfa
-src/parse/parse.c	951	1236	286	111	4	p_class
-cli/main.c	1219	1361	143	108	5	compile_source
-src/opt/scanedge.c	476	699	224	108	4	pcrec_scanedge_dfa
-src/opt/prefix_k.c	371	568	198	107	3	pcrec_prefix_ksets
-src/gen/emit_dfa.c	1480	2292	813	104	3	emit_info_def
-src/gen/emit_vm.c	8010	8247	238	103	3	vm_emit
-src/opt/callgraph.c	638	842	205	102	5	pcrec_callgraph_build
-src/opt/possessify.c	170	450	281	100	4	first_of
-src/gen/emit_vm.c	2248	2585	338	98	5	vm_cost
-src/ir/dfa.c	608	808	201	96	5	clo_walk
-src/gen/emit_vm.c	4764	4919	156	95	4	vm_rev_emit
-cli/main.c	1029	1205	177	92	3	apply_target
-src/gen/emit_dfa.c	3627	3767	141	91	4	emit_state_legend
-src/dump/syntax_dump.c	1345	1495	151	88	3	put_agreement
-src/parse/mod_uprops.c	342	531	190	88	3	pcrec_modport_uprops
-src/parse/rxt_source.c	1504	1615	112	88	5	parse_case_body
-src/ir/dfa.c	1244	1475	232	86	4	pcrec_build_dfa
-src/ir/nfa.c	394	517	124	86	5	trie_build
-src/ir/dfa.c	916	1080	165	84	3	intern
-src/gen/emit_vm.c	5790	5954	165	82	3	vm_rep
-src/opt/possessify.c	546	703	158	82	5	gk_build
-src/gen/emit_vm.c	3493	3576	84	77	5	vm_isl_words
-src/gen/emit_vm.c	5575	5697	123	77	3	vm_counter_rep
-src/parse/rxt_compose.c	438	587	150	77	2	rc_bind
-src/gen/emit_vm.c	3927	4043	117	76	4	vm_isl_emit
-src/parse/mod_verbs.c	305	523	219	74	3	verb_answer
-src/parse/rxt_source.c	771	890	120	74	4	parse_setting
-src/parse/rxt_source.c	1223	1300	78	73	8	frame_constraints
-src/parse/rxt_source.c	1898	2019	122	72	2	parse_target
-src/gen/emit_vm.c	6952	7105	154	70	5	vm_build_region_saves
-src/parse/ext.c	202	346	145	70	5	esc_answer
-src/parse/mod_backrefs.c	659	814	156	69	6	pcrec_bref_resolve
-src/parse/mod_named_groups.c	141	277	137	68	3	pcrec_ngport_declare
-src/gen/emit_vm.c	6250	6382	133	67	3	vm_look_behind_branch
-src/parse/rxt_source.c	3419	3502	84	67	4	closure_walk
-src/gen/emit_dfa.c	6976	7163	188	65	4	emit_orientation_block
-src/gen/emit_vm.c	6573	6669	97	65	3	vm_look
-src/opt/callgraph.c	456	545	90	64	4	cg_eligibility
-src/parse/rxt_source.c	1761	1826	66	63	5	pcrec_rxt_decode_escaped
-src/opt/possessify.c	874	1094	221	60	4	pss_walk
-src/dump/syntax_dump.c	537	614	78	58	6	pcrec_syntax_families
-src/gen/emit_dfa.c	5653	5748	96	58	2	emit_scan_edge
-src/gen/emit_vm.c	2641	2780	140	58	3	vm_count_slots_rep
-src/opt/revdet.c	282	434	153	58	5	rd_reverse
-src/parse/parse.c	1574	1649	76	58	3	try_quant
-src/gen/emit_vm.c	2808	2987	180	57	5	vm_count_slots
-src/gen/emit_vm.c	891	959	69	55	3	vm_slot_name
-src/gen/emit_vm.c	3685	3882	198	54	3	vm_isl_build
-src/parse/mod_lookaround.c	431	590	160	54	3	pcrec_laport_group
-src/parse/parse.c	660	740	81	54	5	esc_char_value
-src/parse/mod_recursion.c	286	371	86	53	4	rc_name_call
-src/parse/parse.c	1660	1795	136	52	3	p_rep
-src/gen/emit_dfa.c	7173	7271	99	51	2	pcrec_emit_prologue
-src/opt/altcls.c	312	375	64	51	5	altcls_walk_alt
-src/parse/rxt_source.c	1305	1362	58	51	4	line_constraints
-src/gen/emit_dfa.c	5983	6123	141	50	3	emit_scan_loop
-src/dump/syntax_dump.c	232	325	94	49	4	pcrec_syntax_tsv
-src/gen/emit_vm.c	7500	7606	107	49	3	vm_splice
-src/opt/revdet.c	89	225	137	49	4	rd_shape
-src/parse/rxt_source.c	530	611	82	48	3	slurp_lines
-src/parse/rxt_source.c	668	726	59	48	2	read_prose_region
-src/core/compile.c	135	183	49	47	4	emit_size_measure
-src/gen/emit_dfa.c	5752	5854	103	47	2	dfa_form_derive
-src/parse/ext.c	563	698	136	47	3	clsbracket_answer
-src/dump/syntax_dump.c	787	970	184	46	2	built_status_probe
-src/opt/scanedge.c	309	452	144	46	3	collect
-src/dump/syntax_dump.c	1071	1144	74	45	2	pcrec_probe_ask
-src/gen/emit_dfa.c	4733	4805	73	45	3	pf_block_ofs
-src/gen/emit_vm.c	7193	7287	95	45	2	vm_plan_capacities
-src/opt/mrl.c	302	421	120	45	4	pcrec_cwmax
-src/gen/emit_dfa.c	5858	5921	64	44	3	emit_machine_tables
-src/ir/dfa.c	1173	1231	59	44	4	make_state
-src/parse/enabled.c	217	269	53	44	3	pcrec_enabled_set_spec
-src/parse/ext.c	372	525	154	44	3	group_answer
-src/opt/revdet.c	549	626	78	43	6	rd_alt_disjoint
-src/dump/syntax_dump.c	1506	1553	48	42	2	put_verb_block
-src/gen/emit_vm.c	6496	6563	68	42	3	vm_look_behind
-src/parse/rxt_compose.c	271	312	42	42	5	rc_remap_caps
-src/opt/altcls.c	394	510	117	41	3	altcls_walk
-src/opt/mrl.c	440	495	56	41	4	pcrec_cwmin
-src/dump/syntax_dump.c	667	710	44	40	4	doorway_route
-src/opt/mrl.c	118	252	135	40	4	pcrec_minw
-src/parse/mod_backrefs.c	582	647	66	40	4	br_strip_caps
-src/parse/parse.c	1305	1433	129	40	4	p_group_body
-src/parse/rxt_source.c	1829	1891	63	40	2	parse_config
-src/parse/rxt_source.c	2036	2080	45	40	4	config_walk
-src/opt/lower_enc.c	322	385	64	39	4	lower_class_utf8
-src/opt/lower_enc.c	503	566	64	39	5	lower_walk
-src/dump/syntax_dump.c	375	446	72	38	5	pcrec_definitions_tsv
-src/gen/emit_vm.c	7818	7957	140	38	2	vm_bref
-src/opt/altcls.c	260	299	40	38	4	altcls_factor_run
-src/parse/mod_backrefs.c	176	232	57	38	3	pcrec_brport_digit
-src/parse/parse.c	1435	1519	85	38	3	p_atom
-src/gen/emit_dfa.c	6127	6231	105	37	2	emit_unanchored
-src/parse/rxt_source.c	973	1010	38	37	2	check_value_shape
-src/gen/emit_vm.c	4045	4090	46	36	3	vm_alt
-src/opt/altcls.c	210	252	43	36	4	altcls_extend_prefix
-src/opt/atomic.c	743	820	78	36	4	pcrec_has_live_capture
-src/opt/lower_enc.c	249	293	45	36	3	u8_box
-src/opt/prefix_k.c	169	218	50	36	3	wclose
-src/opt/revdet.c	455	547	93	36	5	pcrec_revdet_first
-src/parse/rxt_source.c	1064	1107	44	36	3	closed_apply
-src/parse/rxt_source.c	1120	1175	56	36	4	under_key
-src/dump/schema_dump.c	88	187	100	35	3	pcrec_rxt_schema_tsv
-src/gen/emit_vm.c	7312	7348	37	35	3	vm_plan_regions
-src/opt/atomic.c	203	246	44	35	4	pcrec_has_collapsible_rep
-src/opt/atomic.c	596	667	72	35	4	pcrec_bref_mark
-src/parse/rxt_compose.c	607	679	73	35	1	rc_assign
-src/core/compile.c	467	538	72	34	3	size_term_choose
-src/gen/emit_vm.c	4586	4649	64	34	2	vm_poss_chain
-src/gen/emit_vm.c	5515	5560	46	34	2	vm_counter_poss_opt
-src/opt/lower_enc.c	387	426	40	34	3	pat_char_utf8
-src/opt/select_engine.c	192	302	111	34	4	first_dfa_excluding
-src/gen/emit_vm.c	8260	8298	39	33	3	vm_cls_describe
-src/opt/lower_enc.c	463	496	34	33	5	subtree_is_identity
-src/parse/parse.c	264	298	35	33	4	xskip
-src/parse/rxt_source.c	1451	1483	33	33	2	close_section_frame
-src/gen/emit_dfa.c	7575	7638	64	32	3	pcrec_emit_dfa
-src/gen/emit_vm.c	3643	3674	32	32	3	vm_isl_insert
-src/gen/emit_vm.c	5713	5780	68	32	2	vm_star
-src/opt/atomic.c	49	107	59	32	4	pcrec_has_atomic
-src/parse/mod_backrefs.c	475	507	33	32	2	pcrec_brport_k
-src/parse/rxt_source.c	1184	1217	34	32	3	cond_holds
-src/parse/rxt_source.c	1630	1662	33	32	2	read_wrapped_value
-src/dump/syntax_dump.c	459	503	45	31	3	pcrec_syntax_verbs
-src/gen/emit_dfa.c	2327	2369	43	31	1	emit_header
-src/gen/emit_vm.c	1685	1729	45	31	4	vm_cap_offsets
-src/gen/emit_vm.c	7124	7155	32	31	4	vm_memo_region_costs
-src/opt/atomic.c	132	174	43	31	4	pcrec_has_lookaround
-src/opt/atomic.c	267	312	46	31	4	pcrec_ast_stamped_by
-src/opt/atomic.c	530	579	50	31	4	pcrec_has_bref
-src/parse/mod_recursion.c	180	218	39	31	2	pcrec_rcport_num
-src/parse/mod_recursion.c	498	556	59	31	2	pcrec_rcport_define
-src/gen/emit_vm.c	7743	7810	68	30	3	vm_cap
-src/opt/atomic.c	849	879	31	30	4	pcrec_has_linked_call
-src/opt/atomic.c	881	912	32	30	4	pcrec_has_call
-src/parse/mod_atomic_groups.c	67	124	58	30	2	pcrec_agport_atomic
-src/parse/mod_lookaround.c	285	321	37	30	3	la_widths
-src/parse/rxt_schema.c	245	279	35	30	3	pcrec_rxt_constraint_next
-src/core/compile.c	1912	1951	40	29	2	pcrec_count_groups
-src/gen/emit_vm.c	1197	1346	150	29	4	vm_nullable
-src/gen/emit_vm.c	1621	1678	58	29	4	vm_det_seq
-src/opt/atomic.c	402	490	89	29	5	dis_walk
-src/parse/mod_recursion.c	234	274	41	29	1	pcrec_rcport_rel
-src/gen/emit_dfa.c	3143	3267	125	28	2	unanch_start
-src/gen/emit_vm.c	1820	1882	63	28	4	vm_rev_caps
-src/gen/emit_vm.c	6057	6102	46	28	2	vm_atomic
-src/opt/lower_enc.c	579	608	30	28	5	cap_sig
-src/parse/mod_assertions.c	70	214	145	28	2	pcrec_asrtport_atom
-src/parse/mod_classes.c	40	87	48	28	3	pcrec_clsport_posix
-src/core/cpset.c	127	153	27	27	3	pcrec_cpset_remove
-src/gen/emit_vm.c	6745	6771	27	27	4	vm_walk_caps
-src/ir/nfa.c	1059	1103	45	27	3	cstart_check_omission
-src/opt/revdet.c	663	732	70	27	3	rd_walk
-src/parse/rxt_source.c	1669	1711	43	27	2	oracle_ref_ok
-cli/main.c	963	990	28	26	4	raw_split
-src/core/cpset.c	91	123	33	26	2	pcrec_cpset_add
-src/enc/enc.c	117	150	34	26	4	pcrec_enc_advance
-src/gen/emit_vm.c	4507	4549	43	26	2	vm_opt_chain
-src/gen/emit_vm.c	6817	6842	26	26	4	vm_walk_calls
-src/gen/emit_vm.c	9258	9357	100	26	2	vm_emit_default_entry
-src/parse/mod_lookaround.c	181	247	67	26	4	la_has_kreset
-src/parse/rxt_source.c	1719	1746	28	26	2	tag_list_ok
-src/core/compile.c	203	236	34	25	2	job_cleanup
-src/enc/enc.c	162	188	27	25	4	pcrec_enc_start_guard
-src/gen/emit_dfa.c	3466	3530	65	25	4	pick_skip_states
-src/gen/emit_vm.c	4663	4714	52	25	1	vm_poss_star
-src/ir/dfa.c	328	352	25	25	2	lctx_intern
-src/parse/definitions.c	139	165	27	25	2	pcrec_ast_is_core
-src/core/internal.h	3913	3940	28	24	4	pcrec_ast_visit
-src/gen/emit_dfa.c	4196	4232	37	24	2	token_indexed
-src/gen/emit_vm.c	3585	3619	35	24	4	vm_isl_subtree_nodes
-src/gen/emit_vm.c	7387	7414	28	24	2	vm_call
-src/gen/emit_vm.c	7964	8000	37	24	2	vm_cat
-src/ir/nfa.c	525	557	33	24	2	trie_key
-src/opt/lower_enc.c	610	650	41	24	2	pcrec_lower_enc
-src/opt/possessify.c	707	738	32	24	3	body_admits_unique_iteration
-src/parse/parse.c	327	351	25	24	4	cls_skip
-src/parse/parse.c	916	939	24	24	3	pcrec_clsport_octal
-src/gen/emit_dfa.c	491	523	33	23	2	pcrec_startpos_guard_text
-src/ir/nfa.c	1105	1136	32	23	2	nfa_wrap_unanchored
-src/parse/enabled.c	180	202	23	23	3	render_modules
-src/parse/mod_recursion.c	126	159	34	23	2	rc_node
-src/gen/emit_dfa.c	4156	4194	39	22	2	token_premul
-src/gen/emit_dfa.c	5329	5358	30	22	3	start_pinned_applies
-src/ir/nfa.c	125	151	27	22	2	nst
-src/opt/scanedge.c	270	299	30	22	3	in_degrees
-src/parse/mod_backrefs.c	270	291	22	22	2	br_name_ref
-src/core/arena.c	8	33	26	21	3	arena_alloc
-src/gen/emit_dfa.c	126	146	21	21	3	emit_c_string_literal
-src/gen/emit_dfa.c	3569	3589	21	21	4	emit_class_legend
-src/gen/emit_dfa.c	4695	4719	25	21	3	ofsk_emit_verify
-src/gen/emit_dfa.c	4854	4877	24	21	2	pf_emit_ofs_bounded
-src/gen/emit_vm.c	6893	6913	21	21	3	vm_resolve_nonnull
-src/gen/emit_vm.c	9175	9195	21	21	2	vm_frame_fields
-src/ir/dfa.c	819	847	29	21	2	closure
-src/ir/nfa.c	359	384	26	21	2	disjoint_run_len
-src/opt/possessify.c	832	864	33	21	2	pss_rep
-src/parse/mod_modifiers.c	99	140	42	21	3	pcrec_registry_option_run_ok
-src/parse/parse.c	845	905	61	21	3	esc_class_value
-src/parse/rxt_compose.c	214	238	25	21	2	def_by_name
-src/dump/axes_dump.c	692	750	59	20	2	pcrec_axes_tsv
-src/gen/emit_dfa.c	4330	4351	22	20	1	view_emit_end_and_eol
-src/gen/emit_vm.c	7643	7690	48	20	2	vm_region
-src/parse/mod_lookaround.c	127	165	39	20	2	la_kind
-src/parse/scans.c	60	79	20	20	3	pcrec_class_delim_extent_scan
-cli/main.c	62	82	21	19	2	parse_raise_only
-src/core/compile.c	285	318	34	19	1	build_anchored_dfa
-src/gen/emit_dfa.c	4098	4134	37	19	2	token_stop
-src/gen/emit_vm.c	3621	3639	19	19	2	vm_isl_node
-src/opt/callgraph.c	551	583	33	19	2	cg_force_deliver_splice
-src/opt/revdet.c	638	661	24	19	5	rd_rep
-src/parse/definitions.c	64	103	40	19	3	def_resolve_depth
-src/parse/rxt_compose.c	356	383	28	19	3	rc_rebase_refs
-src/parse/rxt_compose.c	409	427	19	19	3	rc_find_root_call
-src/parse/rxt_source.c	1037	1057	21	19	2	closed_check
-src/parse/rxt_source.c	3161	3179	19	19	3	cfg_merge
-src/parse/rxt_source.c	3231	3249	19	19	3	cfg_effective
-src/parse/scans.c	143	161	19	19	2	pcrec_brace_quant_shape
-src/core/compile.c	101	133	33	18	2	emit_size_table_open
-src/dump/axes_dump.c	268	285	18	18	2	emit_dfa_list_axis
-src/gen/emit_dfa.c	4446	4487	42	18	1	acc_emit_tail_by_class
-src/gen/emit_dfa.c	5296	5324	29	18	2	start_pinned_assert_routing
-src/ir/nfa.c	176	193	18	18	3	frag_star
-src/opt/possessify.c	798	828	31	18	1	pss_verdict
-src/parse/mod_backrefs.c	102	127	26	18	1	br_node
-src/parse/mod_backrefs.c	552	574	23	18	3	br_name_run
-src/parse/registry.c	1768	1801	34	18	3	pcrec_registry_arbitrate
-src/parse/rxt_source.c	308	337	30	18	1	rxt_fail
-src/core/compile.c	1881	1900	20	17	2	pcrec_emit_ir
-src/dump/syntax_dump.c	739	764	26	17	2	doorway_call
-src/dump/syntax_dump.c	1302	1322	21	17	2	put_answer
-src/gen/emit_dfa.c	535	608	74	17	2	emit_search_head
-src/gen/emit_vm.c	4106	4122	17	17	1	vm_emit_span_scan
-src/gen/emit_vm.c	7700	7736	37	17	1	vm_wordb
-src/ir/dfa.c	155	205	51	17	2	eqclasses
-src/opt/minimize.c	39	64	26	17	2	state_sig
-src/parse/definitions.c	30	54	25	17	2	pcrec_def_tag_applies
-src/parse/mod_recursion.c	373	390	18	17	2	pcrec_rcport_name
-src/parse/parse.c	108	188	81	17	2	pcrec_is_bare_anchor
-src/parse/parse.c	366	382	17	17	3	cls_peek_past_dash
-src/parse/parse.c	775	831	57	17	2	esc_atom
-src/parse/parse.c	1856	1872	17	17	2	p_alt_info
-src/parse/rxt_compose.c	697	716	20	17	4	rc_next_wanted
-src/parse/rxt_schema.c	149	165	17	17	2	pcrec_rxt_value_name
-src/parse/rxt_source.c	615	631	17	17	2	row_push
-src/core/tune.c	132	152	21	16	3	pcrec_tune_parse
-src/gen/emit_dfa.c	1108	1157	50	16	1	emit_buffers_surface
-src/gen/emit_dfa.c	2789	2804	16	16	3	emit_acc_table
-src/gen/emit_dfa.c	4837	4852	16	16	2	pf_emit_ofs
-src/gen/emit_vm.c	1526	1541	16	16	2	vm_cls_shape
-src/gen/emit_vm.c	1547	1564	18	16	2	vm_cls_test
-src/opt/possessify.c	1096	1119	24	16	1	pcrec_poss_survey
-src/parse/mod_backrefs.c	514	530	17	16	2	pcrec_brport_pname
-src/parse/mod_lookaround.c	401	418	18	16	2	pcrec_lookaround_fix_widths
-src/parse/rxt_source.c	489	504	16	16	2	config_list_ok
-src/parse/rxt_source.c	3775	3790	16	16	2	kind_name
-cli/main.c	571	585	15	15	2	cli_menu
-src/core/cpset.c	184	198	15	15	3	pcrec_cpset_complement
-src/core/sb.c	9	32	24	15	2	sb_grow
-src/core/sb.c	135	149	15	15	3	sb_field
-src/core/tune.c	179	193	15	15	2	pcrec_vm_entry_shape_names
-src/dump/axes_dump.c	370	384	15	15	1	emit_pred_row
-src/gen/emit_vm.c	737	751	15	15	2	vm_ev
-src/ir/dfa.c	420	434	15	15	2	pmemo_add
-src/opt/lower_enc.c	300	315	16	15	3	u8_ranges
-src/opt/postresolve.c	119	146	28	15	2	pcrec_postresolve
-src/opt/scanedge.c	199	213	15	15	2	pcrec_scan_range
-src/parse/parse.c	624	638	15	15	2	pcrec_ast_class_from_iv
-src/parse/parse.c	1811	1825	15	15	3	cat_ends
-src/parse/rxt_compose.c	328	342	15	15	4	rc_mark_kept
-src/parse/rxt_source.c	3301	3315	15	15	2	lib_chain_text
-src/core/sb.c	60	73	14	14	1	sb_vprintf
-src/core/sb.c	183	196	14	14	1	sb_fragfv
-src/core/tune.c	201	214	14	14	3	pcrec_tune_names
-src/dump/axes_dump.c	251	264	14	14	2	axis_row
-src/dump/syntax_dump.c	74	87	14	14	3	names_join
-src/enc/enc.c	42	67	26	14	3	pcrec_enc_names
-src/gen/emit_dfa.c	2626	2639	14	14	3	emit_tr_table
-src/gen/emit_dfa.c	2922	2935	14	14	3	emit_acc_cls_table
-src/gen/emit_dfa.c	4138	4154	17	14	1	token_accepts
-src/gen/emit_vm.c	1474	1487	14	14	2	vm_cls
-src/gen/emit_vm.c	3282	3295	14	14	2	vm_mrl_amt
-src/gen/emit_vm.c	3890	3903	14	14	4	vm_isl_cands
-src/gen/emit_vm.c	8486	8499	14	14	2	vm_listing_events
-src/ir/dfa.c	402	415	14	14	2	pmemo_grow
-src/ir/nfa.c	298	311	14	14	3	chain_alts
-src/opt/callgraph.c	196	222	27	14	1	cg_bind
-src/opt/lower_enc.c	179	192	14	14	2	u8_enc
-src/opt/possessify.c	1121	1143	23	14	1	pcrec_possessify
-src/opt/scanedge.c	248	261	14	14	3	shaped
-src/parse/mod_uprops.c	204	217	14	14	3	uprops_namespace
-src/parse/parse.c	1827	1840	14	14	2	p_cat
-src/parse/rxt_schema.c	98	111	14	14	2	pcrec_rxt_schema_child_scope
-src/parse/rxt_schema.c	224	237	14	14	2	pcrec_rxt_constraint_name
-src/core/fold.c	125	141	17	13	2	ucd_partners
-src/dump/syntax_dump.c	1260	1272	13	13	1	msg_module
-src/gen/emit_dfa.c	269	284	16	13	2	pcrec_engine_sel_name
-src/gen/emit_dfa.c	3325	3356	32	13	2	dfa_table_name
-src/gen/emit_dfa.c	4059	4076	18	13	2	token_step
-src/gen/emit_dfa.c	4544	4565	22	13	1	pf_emit_memchr
-src/gen/emit_dfa.c	4966	4984	19	13	1	dir_rev_skip
-src/gen/emit_dfa.c	5403	5415	13	13	2	pcrec_dfa_axis_cands
-src/gen/emit_dfa.c	6301	6333	33	13	1	emit_anchored_match_def
-src/gen/emit_vm.c	8459	8471	13	13	2	vm_listing_slots
-src/gen/emit_vm.c	9146	9158	13	13	2	vm_layout
-src/ir/dfa.c	118	130	13	13	2	refine_by
-src/ir/dfa.c	451	463	13	13	2	cont_push
-src/ir/nfa.c	315	327	13	13	4	trie_tail
-src/opt/altcls.c	377	389	13	13	2	altcls_walk_cat
-src/parse/definitions.c	113	125	13	13	2	pcrec_def_tag_name
-src/parse/enabled.c	130	142	13	13	3	find_module_bits
-src/parse/mod_named_groups.c	98	110	13	13	2	pcrec_group_name_scan
-src/parse/mod_uprops.c	174	186	13	13	2	uprops_lookup
-src/parse/rxt_schema.c	135	147	13	13	2	pcrec_rxt_scope_name
-src/parse/rxt_schema.c	167	179	13	13	2	pcrec_rxt_children_name
-src/parse/rxt_schema.c	306	318	13	13	2	pcrec_rxt_scope_context
-src/parse/rxt_schema.c	323	335	13	13	2	pcrec_rxt_scope_noun
-src/parse/rxt_source.c	1370	1382	13	13	2	prov_push
-src/parse/rxt_source.c	1384	1396	13	13	2	variant_push
-src/parse/rxt_source.c	1398	1410	13	13	2	case_push
-src/parse/rxt_source.c	1412	1424	13	13	2	aux_push
-src/parse/rxt_source.c	3181	3193	13	13	1	set_from_row
-src/parse/rxt_source.c	3326	3338	13	13	4	pcrec_rxt_flags_from_letters
-cli/main.c	311	322	12	12	2	set_encoding
-cli/main.c	519	530	12	12	3	libdir_push
-src/core/compile.c	16	31	16	12	2	ctx_fail
-src/dump/syntax_dump.c	129	145	17	12	2	kind_name
-src/dump/syntax_dump.c	149	168	20	12	2	doorway_name
-src/dump/syntax_dump.c	972	1016	45	12	1	pcrec_construct_built_status
-src/dump/syntax_dump.c	1023	1040	18	12	2	doorway_word
-src/dump/syntax_dump.c	1285	1296	12	12	1	live_answer
-src/gen/emit_dfa.c	1445	1456	12	12	1	ng_cmp_name
-src/gen/emit_dfa.c	4301	4315	15	12	1	view_emit_eol_only
-src/gen/emit_dfa.c	4567	4583	17	12	1	pf_emit_memchr_bounded
-src/gen/emit_dfa.c	4942	4964	23	12	1	dir_fwd_skip
-src/gen/emit_dfa.c	5002	5032	31	12	1	dir_rev_bound_accept
-src/gen/emit_dfa.c	6261	6272	12	12	1	anch_start
-src/gen/emit_dfa.c	6380	6393	14	12	1	emit_anchored_entries
-src/gen/emit_dfa.c	7498	7536	39	12	1	pcrec_emit_dfa_scan_stamps
-src/gen/emit_dfa.c	7538	7573	36	12	1	emit_dfa_stamps
-src/gen/emit_vm.c	3054	3067	14	12	2	vm_set
-src/gen/emit_vm.c	3265	3276	12	12	2	vm_dyn_add
-src/gen/emit_vm.c	3318	3329	12	12	1	vm_mrl_test
-src/ir/dfa.c	857	870	14	12	2	dhash
-src/ir/dfa.c	1108	1127	20	12	1	sides_of
-src/opt/altcls.c	111	122	12	12	2	altcls_cat_flatten
-src/opt/altcls.c	128	139	12	12	2	altcls_rebuild_cat
-src/opt/atomic.c	376	387	12	12	2	ds_add
-src/opt/lower_enc.c	230	241	12	12	2	u8_seq
-src/opt/possessify.c	525	536	12	12	3	gk_link
-src/opt/postresolve.c	104	115	12	12	2	pr_collect
-src/opt/select_engine.c	403	414	12	12	1	why_text
-src/parse/definitions.c	270	281	12	12	2	pcrec_def_text_hex
-src/parse/definitions.c	287	298	12	12	2	pcrec_def_text_octal
-src/parse/definitions.c	307	318	12	12	2	pcrec_def_text_unicode
-src/parse/enabled.c	146	157	12	12	2	module_listed
-src/parse/parse.c	557	584	28	12	1	pcrec_ast_class_from_bits
-src/parse/registry.c	1686	1704	19	12	2	pcrec_registry
-src/parse/rxt_source.c	150	161	12	12	2	line_class
-src/parse/rxt_source.c	744	762	19	12	1	prose_value
-src/parse/rxt_source.c	902	917	16	12	1	refuse_wave
-src/parse/rxt_source.c	1433	1444	12	12	2	frame_field
-src/parse/rxt_source.c	3119	3130	12	12	1	list_next
-src/parse/rxt_source.c	3218	3229	12	12	2	seen_add
-src/parse/rxt_source.c	3381	3392	12	12	2	lib_resolve
-src/core/cpset.c	238	250	13	11	2	pcrec_cls_bits
-src/core/fold.c	113	123	11	11	2	ucd_fold_next
-src/core/sb.c	83	93	11	11	2	sb_take
-src/dump/limits_dump.c	52	62	11	11	2	limit_row
-src/gen/emit_dfa.c	80	90	11	11	1	emit_comment_safe_byte
-src/gen/emit_dfa.c	2603	2613	11	11	2	fold_tr
-src/gen/emit_dfa.c	2743	2753	11	11	2	emit_eol_table
-src/gen/emit_dfa.c	2758	2768	11	11	2	emit_end_table
-src/gen/emit_dfa.c	2962	2975	14	11	2	emit_seed_table
-src/gen/emit_dfa.c	3009	3023	15	11	2	cand_derive
-src/gen/emit_dfa.c	3385	3401	17	11	1	dfa_scan_edge_name
-src/gen/emit_dfa.c	3992	4002	11	11	2	dfa_select
-src/gen/emit_dfa.c	4585	4595	11	11	1	pf_emit_bcls
-src/gen/emit_dfa.c	4672	4688	17	11	2	pf_tables_ofs
-src/gen/emit_dfa.c	5957	5967	11	11	2	dfa_seed_can_be_scan_head
-src/gen/emit_vm.c	1747	1757	11	11	1	vm_cursor_fits
-src/gen/emit_vm.c	3037	3047	11	11	1	vm_push_at
-src/gen/emit_vm.c	3241	3251	11	11	1	vm_emit_fd
-src/gen/emit_vm.c	3335	3345	11	11	1	vm_mrl_gate
-src/gen/emit_vm.c	6791	6801	11	11	3	vm_w_cap_slots
-src/gen/emit_vm.c	6858	6868	11	11	1	vm_publish_saves
-src/gen/emit_vm.c	8403	8413	11	11	2	vm_mask_names
-src/ir/nfa.c	103	114	12	11	2	patch_push
-src/ir/nfa.c	153	163	11	11	2	patch_to
-src/opt/altcls.c	143	153	11	11	2	altcls_rebuild_alt
-src/opt/altcls.c	180	195	16	11	1	altcls_branch_peel
-src/opt/lower_enc.c	202	212	11	11	2	u8_push_branch
-src/opt/prefix_k.c	222	232	11	11	2	frontier_union
-src/opt/revdet.c	246	271	26	11	2	rd_node
-src/parse/mod_lookaround.c	356	372	17	11	1	la_width_refusal
-src/parse/registry.c	1261	1271	11	11	2	pcrec_registry_verb_name_row
-src/parse/registry.c	1712	1722	11	11	2	pcrec_registry_row_by_syntax
-src/parse/rxt_compose.c	594	604	11	11	2	rc_export_lists
-src/parse/rxt_schema.c	52	62	11	11	2	pcrec_rxt_schema_row
-src/parse/rxt_source.c	1013	1023	11	11	2	word_in_set
-cli/main.c	48	57	10	10	1	cli_err
-src/core/arena.c	35	44	10	10	2	arena_free
-src/core/cpset.c	72	81	10	10	1	cpset_grow
-src/core/cpset.c	164	173	10	10	3	pcrec_cpset_add_bits
-src/dump/syntax_dump.c	180	189	10	10	2	diag_name
-src/enc/enc.c	192	201	10	10	2	pcrec_enc_start_cls_ok
-src/gen/emit_dfa.c	2373	2382	10	10	2	emit_u8_table
-src/gen/emit_dfa.c	2615	2624	10	10	2	fold_acc
-src/gen/emit_dfa.c	2880	2889	10	10	1	dfa_premul
-src/gen/emit_dfa.c	3370	3383	14	10	2	scan_edge_of
-src/gen/emit_dfa.c	4317	4328	12	10	1	view_emit_end_only
-src/gen/emit_dfa.c	4597	4609	13	10	1	pf_emit_bcls_bounded
-src/gen/emit_dfa.c	4929	4938	10	10	2	pcrec_dfa_scan_state_written
-src/gen/emit_dfa.c	7401	7437	37	10	2	dfa_prefilter_name
-src/gen/emit_dfa.c	7481	7496	16	10	2	dfa_prefilter_offsets
-src/ir/dfa.c	880	891	12	10	2	tab_grow
-src/ir/nfa.c	965	980	16	10	2	pcrec_build_nfa
-src/opt/atomic.c	492	512	21	10	1	pcrec_discharge_atomic
-src/opt/callgraph.c	278	292	15	10	2	cg_cwmax_publish
-src/opt/possessify.c	514	523	10	10	2	gk_newpos
-src/opt/prefix_k.c	316	325	10	10	1	model_cost
-src/parse/ext.c	700	709	10	10	1	pcrec_ext_class_bracket
-src/parse/mod_uprops.c	312	321	10	10	2	uprops_produce
-src/parse/parse.c	506	526	21	10	1	char_node
-src/parse/parse.c	757	770	14	10	1	p_quote_next
-src/parse/parse.c	1958	1973	16	10	2	pcrec_parse_info
-src/parse/rxt_schema.c	181	190	10	10	2	pcrec_rxt_cardinality_name
-src/parse/rxt_schema.c	289	298	10	10	2	pcrec_rxt_schema_opener
-src/parse/rxt_source.c	293	302	10	10	2	rxt_diag_class_name
-src/parse/rxt_source.c	3264	3273	10	10	1	source_dir
-cli/main.c	125	133	9	9	2	raise_only_match
-cli/main.c	330	338	9	9	2	write_file
-src/core/cpset.c	276	284	9	9	2	pcrec_cls_bits_widen
-src/core/sb.c	263	271	9	9	1	sb_upper
-src/dump/axes_dump.c	150	169	20	9	1	stamp_macro_of
-src/dump/axes_dump.c	234	242	9	9	1	deny_cols
-src/dump/axes_dump.c	304	312	9	9	1	emit_table_composite_rows
-src/dump/axes_dump.c	328	336	9	9	1	emit_scan_composite_rows
-src/dump/syntax_dump.c	106	127	22	9	1	put_mask
-src/dump/syntax_dump.c	170	178	9	9	2	status_name
-src/gen/emit_dfa.c	1314	1347	34	9	1	emit_in_entry_defs
-src/gen/emit_dfa.c	2807	2815	9	9	2	state_acc_varies
-src/gen/emit_dfa.c	3434	3445	12	9	1	dfa_uniform_folds
-src/gen/emit_dfa.c	4380	4408	29	9	1	seed_emit_seeded
-src/gen/emit_dfa.c	4436	4444	9	9	1	acc_emit_tail_scalar
-src/gen/emit_dfa.c	4722	4730	9	9	2	ofsk_emit_params
-src/gen/emit_dfa.c	5572	5580	9	9	1	scan_test_range
-src/gen/emit_vm.c	1168	1184	17	9	1	vm_counter_copies
-src/gen/emit_vm.c	3134	3144	11	9	2	vm_cut
-src/gen/emit_vm.c	3155	3163	9	9	1	vm_rung_mark
-src/gen/emit_vm.c	3909	3918	10	9	2	vm_isl_die
-src/gen/emit_vm.c	9201	9209	9	9	1	vm_trail_fields
-src/ir/dfa.c	306	314	9	9	1	lctx_slot
-src/opt/lower_enc.c	217	225	9	9	1	u8_byte_class
-src/opt/possessify.c	153	161	9	9	2	fst_seq
-src/opt/revdet.c	734	742	9	9	1	pcrec_revdet
-src/opt/select_engine.c	99	135	37	9	1	forces_captures
-src/opt/select_engine.c	304	329	26	9	1	forces_registry
-src/opt/select_engine.c	356	364	9	9	1	forces_dfa_overflow
-src/parse/ext.c	103	111	9	9	1	pcrec_ext_finish
-src/parse/mod_backrefs.c	70	78	9	9	2	br_decimal
-src/parse/mod_recursion.c	89	97	9	9	2	rc_decimal
-src/parse/registry.c	1658	1670	13	9	2	pcrec_registry_posix_known
-src/parse/rxt_schema.c	201	209	9	9	2	pcrec_rxt_validated_by_name
-src/parse/rxt_source.c	428	436	9	9	1	defname_ok
-src/parse/rxt_source.c	1489	1497	9	9	2	is_case_kind
-src/parse/rxt_source.c	2026	2034	9	9	1	config_by_name
-src/parse/rxt_source.c	3275	3283	9	9	1	join_path
-cli/main.c	601	608	8	8	1	cli_int_value
-src/core/compile.c	49	62	14	8	1	pcrec_default_options
-src/core/compile.c	194	201	8	8	1	valid_prefix
-src/core/cpset.c	200	207	8	8	2	pcrec_cpset_has
-src/core/cpset.c	302	309	8	8	2	pcrec_cls_has
-src/core/sb.c	41	48	8	8	1	sb_puts
-src/core/sb.c	159	166	8	8	2	sb_row
-src/core/sb.c	198	205	8	8	1	sb_fragf
-src/core/sb.c	230	237	8	8	1	sb_stampf
-src/core/sb.c	239	246	8	8	1	sb_stampwf
-src/dump/axes_dump.c	134	141	8	8	1	desc_of
-src/dump/axes_dump.c	214	225	12	8	1	axis_cli_flag
-src/dump/syntax_dump.c	1324	1331	8	8	1	put_names
-src/gen/emit_dfa.c	92	99	8	8	1	emit_pattern_comment
-src/gen/emit_dfa.c	525	532	8	8	1	pcrec_emit_startpos_guard
-src/gen/emit_dfa.c	647	654	8	8	1	dfa_fragf
-src/gen/emit_dfa.c	1189	1196	8	8	1	pcrec_bufsurface_inert
-src/gen/emit_dfa.c	3069	3095	27	8	1	attempt_cand
-src/gen/emit_dfa.c	3532	3544	13	8	1	emit_stay_table
-src/gen/emit_dfa.c	4819	4826	8	8	1	pf_emit_ofs_reseed
-src/gen/emit_dfa.c	5452	5466	15	8	2	pcrec_dfa_axis_direction_cands
-src/gen/emit_dfa.c	5587	5594	8	8	1	scan_tables_bitmap
-src/gen/emit_dfa.c	6935	6950	16	8	1	pcrec_gen_names
-src/gen/emit_vm.c	779	786	8	8	1	vm_rolef
-src/gen/emit_vm.c	1147	1160	14	8	1	vm_counter_fits
-src/gen/emit_vm.c	1388	1395	8	8	1	vm_lifts
-src/gen/emit_vm.c	2611	2628	18	8	1	vm_count_slots_look
-src/gen/emit_vm.c	3120	3127	8	8	1	vm_work_at
-src/gen/emit_vm.c	6717	6724	8	8	1	vm_snap
-src/gen/emit_vm.c	9212	9219	8	8	2	vm_fields_join
-src/ir/dfa.c	316	323	8	8	1	lctx_rehash
-src/ir/dfa.c	357	364	8	8	2	lctx_find
-src/ir/dfa.c	379	386	8	8	2	pmemo_next
-src/opt/callgraph.c	124	131	8	8	1	cg_scan
-src/opt/lower_enc.c	158	167	10	8	1	lower_class_byte
-src/opt/lower_enc.c	435	443	9	8	1	ops_for
-src/opt/possessify.c	505	512	8	8	1	gk_parts_empty
-src/parse/ext.c	135	142	8	8	1	bucket_has_tail
-src/parse/ext.c	357	364	8	8	1	pcrec_ext_escape
-src/parse/mod_atomic_groups.c	126	133	8	8	1	pcrec_atomic_suffix_row
-src/parse/mod_backrefs.c	129	136	8	8	2	br_result_node
-src/parse/mod_backrefs.c	254	261	8	8	1	br_relative
-src/parse/mod_recursion.c	107	114	8	8	2	rc_result_node
-src/parse/mod_verbs.c	268	275	8	8	1	pcrec_registry_verb_find
-src/parse/parse.c	190	197	8	8	1	pcrec_wrap_bare_anchor
-src/parse/parse.c	393	400	8	8	1	cls_enc
-src/parse/parse.c	1282	1303	22	8	1	p_group
-src/parse/registry.c	1618	1625	8	8	1	pcrec_registry_posix_find
-src/parse/rxt_compose.c	242	249	8	8	1	bound_by_name
-src/parse/rxt_schema.c	192	199	8	8	2	pcrec_rxt_row_source_name
-src/parse/rxt_source.c	378	385	8	8	1	ident_ok
-src/parse/rxt_source.c	446	453	8	8	1	ident_ok_n
-src/parse/rxt_source.c	3080	3092	13	8	1	pcrec_rxt_source_free
-src/parse/scans.c	103	110	8	8	1	pcrec_ext_class_pair_opens
-cli/main.c	511	517	7	7	1	cli_extras_clean
-src/core/compile.c	1953	1959	7	7	1	pcrec_output_free
-src/core/compile_defs.c	39	45	7	7	1	pcrec_compile_defs
-src/core/cpset.c	64	70	7	7	1	pcrec_cpset_init
-src/core/cpset.c	294	300	7	7	1	pcrec_cls_single
-src/core/internal.h	3344	3355	12	7	1	upc_of_class
-src/core/sb.c	75	81	7	7	1	sb_printf
-src/core/sb.c	151	157	7	7	2	sb_join
-src/core/sb.c	222	228	7	7	1	sb_stampv
-src/dump/limits_dump.c	38	44	7	7	1	override_name
-src/dump/limits_dump.c	64	98	35	7	2	pcrec_limits_tsv
-src/dump/syntax_dump.c	209	217	9	7	1	put_expect
-src/enc/enc.c	34	40	7	7	1	pcrec_enc_by_name
-src/enc/enc.c	76	82	7	7	1	pcrec_enc_emit_decls
-src/enc/enc.c	84	90	7	7	1	pcrec_enc_emit_defs
-src/enc/enc.c	92	98	7	7	1	pcrec_enc_entry_engine_callable
-src/enc/enc.c	100	106	7	7	2	pcrec_enc_emit_text
-src/gen/emit_dfa.c	160	166	7	7	1	emit_feature_comment
-src/gen/emit_dfa.c	174	180	7	7	1	emit_feature_macros
-src/gen/emit_dfa.c	1230	1250	21	7	1	emit_match_def
-src/gen/emit_dfa.c	1259	1279	21	7	1	emit_match_caps_def
-src/gen/emit_dfa.c	1465	1471	7	7	1	ng_count_caller_scope
-src/gen/emit_dfa.c	2686	2696	11	7	1	upc_emit_live
-src/gen/emit_dfa.c	2945	2951	7	7	1	upc_of_newline
-src/gen/emit_dfa.c	3028	3034	7	7	1	cand_from_escapes
-src/gen/emit_dfa.c	3050	3056	7	7	1	cand_from_live_seeds
-src/gen/emit_dfa.c	3296	3302	7	7	1	dfa_engine_is_empty
-src/gen/emit_dfa.c	3558	3564	7	7	1	legend_byte
-src/gen/emit_dfa.c	4234	4244	11	7	1	tr_comment_premul
-src/gen/emit_dfa.c	4428	4434	7	7	1	acc_emit_probe
-src/gen/emit_dfa.c	4527	4534	8	7	1	pf_comment_memchr
-src/gen/emit_dfa.c	4828	4835	8	7	1	pf_comment_ofs
-src/gen/emit_dfa.c	4986	5000	15	7	1	dir_fwd_bound_accept
-src/gen/emit_dfa.c	6351	6373	23	7	1	emit_anchored_match_caps_def
-src/gen/emit_dfa.c	7275	7281	7	7	2	pcrec_emit_info
-src/gen/emit_vm.c	1464	1470	7	7	1	vm_revdet_fits
-src/gen/emit_vm.c	1570	1576	7	7	1	vm_cls_fold_count
-src/gen/emit_vm.c	2998	3017	20	7	1	vm_lbl
-src/gen/emit_vm.c	3231	3237	7	7	1	vm_emit_f
-src/gen/emit_vm.c	8446	8452	7	7	2	vm_listing_slot_row
-src/ir/dfa.c	220	226	7	7	2	marks_next
-src/ir/dfa.c	872	878	7	7	1	tab_insert
-src/ir/nfa.c	167	173	7	7	3	frag_single
-src/ir/nfa.c	1166	1172	7	7	1	nfa_has_bot
-src/ir/nfa.c	1174	1180	7	7	1	nfa_has_asserts
-src/opt/callgraph.c	146	157	12	7	1	cg_roots
-src/opt/callgraph.c	172	178	7	7	2	cg_edges
-src/opt/callgraph.c	228	234	7	7	1	cg_minw_publish
-src/opt/callgraph.c	306	312	7	7	1	cg_cwmin_publish
-src/opt/callgraph.c	413	424	12	7	1	cg_publish_link
-src/opt/callgraph.c	441	447	7	7	1	cg_sat_mul
-src/opt/possessify.c	143	149	7	7	1	fst_empty
-src/opt/prefix_k.c	159	165	7	7	1	wpush
-src/opt/scanedge.c	237	243	7	7	1	pcrec_state_view_invariant
-src/opt/scanedge.c	456	465	10	7	1	chain_cmp
-src/opt/select_engine.c	451	457	7	7	1	run_possessify
-src/parse/ext.c	76	82	7	7	1	pcrec_ext_gate
-src/parse/ext.c	527	533	7	7	1	pcrec_ext_group
-src/parse/mod_backrefs.c	141	147	7	7	1	br_strndup
-src/parse/mod_modifiers.c	234	240	7	7	2	modport_refuse
-src/parse/mod_named_groups.c	76	82	7	7	1	ng_arena_strndup
-src/parse/mod_named_groups.c	125	131	7	7	1	ng_is_duplicate
-src/parse/mod_recursion.c	99	105	7	7	1	rc_strndup
-src/parse/mod_verbs.c	531	537	7	7	1	pcrec_ext_verb
-src/parse/parse.c	459	493	35	7	1	cls_casefold
-src/parse/parse.c	535	541	7	7	1	lit_next_cp
-src/parse/parse.c	650	656	7	7	1	pcrec_hexval
-src/parse/parse.c	1945	1951	7	7	2	pcrec_parse_mods_init
-src/parse/registry.c	1732	1743	12	7	1	pcrec_recognise_tail_default
-src/parse/rxt_compose.c	206	212	7	7	1	rc_derived_id
-src/parse/rxt_source.c	77	86	10	7	1	tok_len
-src/parse/rxt_source.c	339	345	7	7	1	arena_strndup
-src/parse/rxt_source.c	367	373	7	7	1	value_trimmed
-src/parse/rxt_source.c	467	473	7	7	1	pcrec_rxt_prefix_from_name
-src/parse/rxt_source.c	919	925	7	7	1	unknown_token
-src/parse/rxt_source.c	3405	3411	7	7	1	lib_ref_text
-src/parse/scans.c	117	123	7	7	1	pcrec_verb_name_extent_scan
-cli/main.c	446	454	9	6	1	cli_modes_active
-cli/main.c	467	472	6	6	1	cli_modes_count
-cli/main.c	545	550	6	6	2	engine_by_name
-cli/main.c	552	557	6	6	1	engine_name
-cli/main.c	639	644	6	6	2	cli_operand
-src/core/compile.c	42	47	6	6	1	ctx_nomem
-src/core/compile.c	554	561	8	6	1	size_drop_note
-src/core/compile.c	1869	1874	6	6	1	pcrec_compile_driver
-src/core/fold.c	104	109	6	6	1	ascii_partners
-src/core/sb.c	34	39	6	6	1	sb_putc
-src/core/sb.c	95	100	6	6	1	sb_free
-src/dump/axes_dump.c	227	232	6	6	2	bit_of
-src/dump/syntax_dump.c	62	67	6	6	1	pcrec_flavour_by_name
-src/dump/syntax_dump.c	89	94	6	6	1	pcrec_flavour_names
-src/dump/syntax_dump.c	191	196	6	6	1	put_selector
-src/enc/enc.c	27	32	6	6	1	pcrec_enc_by_id
-src/enc/enc.c	110	115	6	6	1	adv_put
-src/gen/emit_dfa.c	294	299	6	6	1	pcrec_emit_engine_stamp
-src/gen/emit_dfa.c	2313	2318	6	6	1	emit_residual_decls
-src/gen/emit_dfa.c	2320	2325	6	6	1	emit_residual_defs
-src/gen/emit_dfa.c	2641	2646	6	6	1	dfa_has_eolvar
-src/gen/emit_dfa.c	2710	2718	9	6	1	st_emit_endvar
-src/gen/emit_dfa.c	2726	2731	6	6	1	dfa_has_endvar
-src/gen/emit_dfa.c	2820	2825	6	6	1	state_acc_any
-src/gen/emit_dfa.c	2832	2837	6	6	1	dfa_needs_seed
-src/gen/emit_dfa.c	2847	2852	6	6	1	dfa_needs_gseed
-src/gen/emit_dfa.c	2912	2917	6	6	1	dfa_has_clsacc
-src/gen/emit_dfa.c	4044	4052	9	6	1	fold_arg
-src/gen/emit_dfa.c	4246	4252	7	6	1	tr_comment_indexed
-src/gen/emit_dfa.c	4254	4261	8	6	1	acc_comment_premul
-src/gen/emit_dfa.c	4410	4415	6	6	1	seed_emit_constant
-src/gen/emit_dfa.c	4520	4525	6	6	1	pf_open
-src/gen/emit_dfa.c	4536	4542	7	6	1	pf_comment_bcls
-src/gen/emit_dfa.c	4663	4670	8	6	1	pf_tables_bcls
-src/gen/emit_dfa.c	7312	7352	41	6	1	pcrec_emit_main
-src/gen/emit_vm.c	804	809	6	6	1	vm_charge
-src/gen/emit_vm.c	966	977	12	6	1	vm_slot_expr
-src/gen/emit_vm.c	1028	1033	6	6	1	vm_slot_pend
-src/gen/emit_vm.c	1058	1063	6	6	1	vm_slot_lookmark
-src/gen/emit_vm.c	1065	1070	6	6	1	vm_slot_splice
-src/gen/emit_vm.c	1072	1077	6	6	1	vm_slot_lookpos
-src/gen/emit_vm.c	3219	3224	6	6	1	vm_fmul
-src/gen/emit_vm.c	3303	3308	6	6	1	vm_prune_mark
-src/gen/emit_vm.c	6848	6853	6	6	1	vm_publish_nonnull
-src/gen/emit_vm.c	8421	8426	6	6	1	vm_sec
-src/gen/emit_vm.c	8508	8513	6	6	2	vm_prow
-src/ir/dfa.c	292	297	6	6	1	arena_regrow
-src/ir/dfa.c	388	393	6	6	1	pmemo_slot
-src/ir/dfa.c	894	899	6	6	1	view_same
-src/ir/nfa.c	116	121	6	6	1	patch_join
-src/ir/nfa.c	195	200	6	6	2	frag_cat2
-src/ir/nfa.c	332	337	6	6	1	trie_flat
-src/opt/altcls.c	166	171	6	6	1	altcls_class_from_set
-src/opt/callgraph.c	434	439	6	6	1	cg_sat_add
-src/opt/mrl.c	102	107	6	6	1	mrl_sat_mul
-src/opt/prefix_k.c	134	139	6	6	1	pcrec_byte_freq_total_ppm
-src/opt/prefix_k.c	297	302	6	6	1	set_ppm
-src/opt/select_engine.c	473	478	6	6	1	run_revdet
-src/parse/definitions.c	180	185	6	6	1	pcrec_ast_all_core
-src/parse/definitions.c	198	203	6	6	1	pcrec_def_build_atomic
-src/parse/definitions.c	255	260	6	6	1	pcrec_def_text_cx
-src/parse/enabled.c	204	209	6	6	1	install
-src/parse/ext.c	122	127	6	6	2	tail_at
-src/parse/mod_modifiers.c	170	175	6	6	1	pcrec_registry_option_run_recognise
-src/parse/mod_recursion.c	166	171	6	6	1	rc_close
-src/parse/mod_recursion.c	418	423	6	6	1	pcrec_call_node
-src/parse/mod_recursion.c	429	434	6	6	1	pcrec_call_by_name
-src/parse/mod_uprops.c	238	243	6	6	1	pcrec_uprops_row_name
-src/parse/mod_uprops.c	295	300	6	6	1	pcrec_registry_uprops_recognise
-src/parse/parse.c	45	50	6	6	1	node
-src/parse/parse.c	60	68	9	6	1	pcrec_ast_stamp
-src/parse/parse.c	237	242	6	6	1	q_open_is_empty
-src/parse/registry.c	397	402	6	6	1	recognise_N_name_brace
-src/parse/registry.c	1627	1649	23	6	1	pcrec_registry_posix_whole_class_only
-src/parse/rxt_compose.c	402	407	6	6	1	rc_recorded
-src/parse/rxt_source.c	514	519	6	6	1	rtrim_ws
-src/parse/rxt_source.c	933	938	6	6	1	refuse_cardinality
-src/parse/rxt_source.c	1025	1030	6	6	1	vocab_lookup
-src/parse/rxt_source.c	3146	3151	6	6	1	set_init
-src/parse/rxt_source.c	3394	3399	6	6	1	closure_seen
-cli/main.c	135	301	167	5	1	usage
-cli/main.c	324	328	5	5	1	base_name
-cli/main.c	458	465	8	5	1	cli_mode_name
-cli/main.c	1207	1211	5	5	1	path_is_dir
-src/core/compile.c	188	192	5	5	1	emit_size_code
-src/core/compile.c	452	456	5	5	1	size_term_capacity_holds
-src/core/compile.c	1851	1855	5	5	1	pcrec_compile
-src/core/cpset.c	216	220	5	5	1	pcrec_cpset_publish
-src/core/sb.c	117	121	5	5	1	sb_frame_byte
-src/core/sb.c	123	127	5	5	1	sb_textn
-src/core/sb.c	129	133	5	5	1	sb_text
-src/core/sb.c	248	252	5	5	1	sb_stamp_str
-src/core/tune.c	113	117	5	5	1	pcrec_tune_row
-src/core/tune.c	169	173	5	5	1	pcrec_vm_entry_shape_name
-src/dump/axes_dump.c	200	208	9	5	1	axis_macro_name
-src/gen/emit_dfa.c	326	330	5	5	1	emit_altcls_macros
-src/gen/emit_dfa.c	373	377	5	5	1	emit_search_decl
-src/gen/emit_dfa.c	681	1052	372	5	1	emit_rx_abi_types
-src/gen/emit_dfa.c	1163	1168	6	5	1	emit_search_in_decl
-src/gen/emit_dfa.c	1170	1174	5	5	1	emit_match_in_decl
-src/gen/emit_dfa.c	1176	1180	5	5	1	emit_match_caps_in_decl
-src/gen/emit_dfa.c	2578	2582	5	5	1	tr_cell
-src/gen/emit_dfa.c	2701	2705	5	5	1	upc_emit_of_class
-src/gen/emit_dfa.c	2896	2900	5	5	1	dfa_interior_dead
-src/gen/emit_dfa.c	3058	3062	5	5	1	cand_emit_table
-src/gen/emit_dfa.c	3428	3432	5	5	1	uniform_folds_of
-src/gen/emit_dfa.c	4263	4267	5	5	1	acc_comment_indexed
-src/gen/emit_dfa.c	4282	4286	5	5	2	dfa_repr_of
-src/gen/emit_dfa.c	4290	4294	5	5	1	view_decl
-src/gen/emit_dfa.c	4637	4641	5	5	1	pf_ofs_applies_common
-src/gen/emit_dfa.c	4892	4896	5	5	2	dfa_pf_of
-src/gen/emit_dfa.c	5159	5163	5	5	2	dfa_match_of
-src/gen/emit_dfa.c	5372	5376	5	5	2	dfa_search_start_of
-src/gen/emit_dfa.c	5566	5570	5	5	1	scan_range_applies
-src/gen/emit_dfa.c	5605	5609	5	5	2	dfa_edge_of
-src/gen/emit_dfa.c	5611	5615	5	5	2	dfa_scan_of
-src/gen/emit_dfa.c	5629	5633	5	5	1	pcrec_dfa_axis_edge_cands
-src/gen/emit_dfa.c	5634	5638	5	5	1	pcrec_dfa_axis_scanbody_cands
-src/gen/emit_dfa.c	6399	6403	5	5	1	emit_target
-src/gen/emit_dfa.c	7285	7289	5	5	1	pcrec_emit_residual
-src/gen/emit_dfa.c	7291	7295	5	5	1	pcrec_emit_dfa_engine
-src/gen/emit_dfa.c	7395	7399	5	5	1	dfa_scan_name
-src/gen/emit_vm.c	796	800	5	5	1	vm_bounds_text
-src/gen/emit_vm.c	852	856	5	5	1	vm_slot_rev
-src/gen/emit_vm.c	994	998	5	5	1	vm_slot_ctr
-src/gen/emit_vm.c	1114	1118	5	5	1	vm_marked
-src/gen/emit_vm.c	1188	1192	5	5	1	bare
-src/gen/emit_vm.c	3019	3023	5	5	1	vm_goto
-src/gen/emit_vm.c	3025	3029	5	5	1	vm_fail
-src/gen/emit_vm.c	3211	3215	5	5	1	vm_fadd
-src/gen/emit_vm.c	3429	3441	13	5	1	vm_isl_single
-src/gen/emit_vm.c	4749	4753	5	5	1	vm_rev_index
-src/gen/emit_vm.c	6779	6783	5	5	1	vm_grp_set_cap
-src/gen/emit_vm.c	7157	7161	5	5	1	vm_ceiling
-src/gen/emit_vm.c	8433	8437	5	5	2	vm_row3
-src/ir/dfa.c	570	574	5	5	1	clo_open
-src/ir/nfa.c	94	98	5	5	1	ast_bare
-src/opt/atomic.c	389	393	5	5	1	ds_has
-src/opt/callgraph.c	166	170	5	5	1	cg_index
-src/opt/callgraph.c	186	190	5	5	1	cg_count
-src/opt/lower_enc.c	169	173	5	5	1	pat_char_byte
-src/opt/mrl.c	96	100	5	5	1	mrl_sat_add
-src/opt/possessify.c	119	123	5	5	1	bs_intersects
-src/opt/postresolve.c	93	97	5	5	1	pr_count
-src/opt/prefix_k.c	307	311	5	5	1	verify_cost
-src/parse/definitions.c	212	216	5	5	1	pcrec_def_build_identity
-src/parse/mod_modifiers.c	87	91	5	5	1	opt_letter
-src/parse/mod_verbs.c	245	252	8	5	1	pcrec_registry_verb_name_limit
-src/parse/parse.c	224	228	5	5	1	xskip_byte
-src/parse/registry.c	1612	1616	5	5	1	pcrec_registry_posix_names
-src/parse/registry.c	1750	1754	5	5	1	pcrec_registry_row_answers
-src/parse/rxt_schema.c	41	45	5	5	1	pcrec_rxt_schema_rows
-src/parse/rxt_schema.c	123	127	5	5	1	pcrec_rxt_schema_group_scope
-src/parse/rxt_source.c	88	92	5	5	1	tok_is
-src/parse/rxt_source.c	94	98	5	5	1	skip_ws
-src/parse/rxt_source.c	3253	3257	5	5	1	path_is_file
-src/parse/rxt_source.c	3819	3823	5	5	1	section_open
-cli/main.c	626	633	8	4	1	cli_axis_apply
-src/core/compile.c	445	448	4	4	1	cap_or_inf
-src/core/cpset.c	155	158	4	4	1	pcrec_cpset_add_set
-src/core/internal.h	3883	3886	4	4	1	pcrec_ast_engines
-src/core/internal.h	5224	5227	4	4	1	pcrec_startgate_needed
-src/core/tune.c	108	111	4	4	1	pcrec_tune_valid
-src/core/tune.c	119	122	4	4	1	pcrec_tune_token
-src/core/tune.c	219	222	4	4	1	pcrec_tune_size_term_bar
-src/core/tune.c	224	227	4	4	1	pcrec_tune_size_term_threshold
-src/core/tune.c	229	232	4	4	1	pcrec_tune_vm_inline_chain_max
-src/core/tune.c	240	243	4	4	1	pcrec_tune_deny_flags
-src/dump/syntax_dump.c	96	99	4	4	1	pcrec_probe_want_names
-src/enc/enc.h	293	296	4	4	1	pcrec_enc_ready
-src/gen/emit_dfa.c	259	262	4	4	1	pcrec_artifact_has_dfa_scan
-src/gen/emit_dfa.c	454	457	4	4	1	dfa_artifact_ncaps
-src/gen/emit_dfa.c	610	613	4	4	1	emit_match_decl
-src/gen/emit_dfa.c	615	618	4	4	1	emit_match_caps_decl
-src/gen/emit_dfa.c	631	634	4	4	1	emit_info_decl
-src/gen/emit_dfa.c	659	662	4	4	1	derived_name
-src/gen/emit_dfa.c	1071	1074	4	4	1	emit_ncaps_macros
-src/gen/emit_dfa.c	2584	2587	4	4	1	acc_cell
-src/gen/emit_dfa.c	2591	2594	4	4	1	accw_cell
-src/gen/emit_dfa.c	4628	4631	4	4	1	ofsk_at
-src/gen/emit_dfa.c	4632	4635	4	4	1	ofsk_scan
-src/gen/emit_dfa.c	4658	4661	4	4	1	ofsk_tbl_name
-src/gen/emit_dfa.c	5146	5149	4	4	1	match_unwrapped_applies
-src/gen/emit_dfa.c	5512	5515	4	4	1	edge_applies
-src/gen/emit_dfa.c	5582	5585	4	4	1	scan_test_bitmap
-src/gen/emit_dfa.c	5640	5643	4	4	1	scan_test
-src/gen/emit_dfa.c	5941	5944	4	4	1	dfa_start_is_scan_head
-src/gen/emit_dfa.c	6954	6957	4	4	1	pcrec_emit_c_string_literal
-src/gen/emit_vm.c	833	836	4	4	1	vm_slot_mark
-src/gen/emit_vm.c	989	992	4	4	1	vm_slot_ref
-src/gen/emit_vm.c	1086	1096	11	4	1	vm_look_needs_mark
-src/gen/emit_vm.c	1097	1107	11	4	1	vm_look_needs_pos
-src/gen/emit_vm.c	1434	1437	4	4	1	vm_cuts
-src/gen/emit_vm.c	1808	1811	4	4	1	vm_rev_canmove
-src/gen/emit_vm.c	3049	3052	4	4	1	vm_push
-src/gen/emit_vm.c	3129	3132	4	4	1	vm_work
-src/gen/emit_vm.c	6915	6918	4	4	1	vm_w_range
-src/opt/altcls.c	512	515	4	4	1	pcrec_altcls
-src/opt/callgraph.c	844	847	4	4	1	pcrec_callgraph_ntargets
-src/opt/callgraph.c	849	852	4	4	1	pcrec_callgraph_target
-src/opt/callgraph.c	854	857	4	4	1	pcrec_callgraph_body
-src/opt/callgraph.c	859	862	4	4	1	pcrec_callgraph_index
-src/opt/callgraph.c	864	867	4	4	1	pcrec_callgraph_reaches
-src/opt/callgraph.c	869	872	4	4	1	pcrec_callgraph_spliced
-src/opt/lower_enc.c	452	455	4	4	1	pcrec_pat_char
-src/opt/possessify.c	114	117	4	4	1	bs_or
-src/opt/possessify.c	748	751	4	4	1	pcrec_uniq_scratch
-src/opt/possessify.c	753	756	4	4	1	pcrec_uniq_iteration
-src/opt/prefix_k.c	124	127	4	4	1	pcrec_byte_freq_ppm
-src/parse/definitions.c	105	108	4	4	1	pcrec_def_resolve
-src/parse/enabled.c	55	58	4	4	1	pcrec_feature_enabled
-src/parse/enabled.c	60	63	4	4	1	pcrec_enabled_mask
-src/parse/enabled.c	68	71	4	4	1	pcrec_enabled_set_label
-src/parse/enabled.c	73	76	4	4	1	pcrec_enabled_set_modules
-src/parse/mod_lookaround.c	384	387	4	4	1	pcrec_lookaround_width_pending
-src/parse/mod_modifiers.c	94	97	4	4	1	opt_a_sub
-src/parse/mod_uprops.c	233	236	4	4	1	pcrec_uprops_row_count
-src/parse/mod_uprops.c	249	252	4	4	1	pcrec_uprops_unicode_version
-src/parse/mod_uprops.c	254	257	4	4	1	uprops_fold
-src/parse/mod_verbs.c	254	257	4	4	1	pcrec_registry_verb_tables
-src/parse/mod_verbs.c	263	266	4	4	1	pcrec_registry_verb_table
-src/parse/parse.c	1552	1555	4	4	1	skip_quant_space
-src/parse/parse.c	1874	1877	4	4	1	p_alt
-src/parse/parse.c	1879	1882	4	4	1	pcrec_parse
-src/parse/parse.c	1953	1956	4	4	1	pcrec_parse_body
-src/parse/registry.c	1651	1656	6	4	1	pcrec_registry_posix_unknown_msg
-src/parse/registry.c	1808	1811	4	4	1	pcrec_registry_find
-src/parse/rxt_schema.c	47	50	4	4	1	pcrec_rxt_schema_nrows
-src/parse/rxt_schema.c	71	74	4	4	1	pcrec_rxt_schema_opens_group
-src/parse/rxt_schema.c	82	85	4	4	1	pcrec_rxt_schema_prose_region
-src/parse/rxt_schema.c	93	96	4	4	1	pcrec_rxt_schema_open_subtree
-src/parse/rxt_source.c	104	107	4	4	1	line_value
-src/parse/rxt_source.c	347	350	4	4	1	arena_strdup
-src/gen/emit_dfa.c	4362	4363	2	2	1	view_end_and_eol_applies
-src/gen/emit_dfa.c	4364	4365	2	2	1	view_end_only_applies
-src/gen/emit_dfa.c	4366	4367	2	2	1	view_eol_only_applies
-src/gen/emit_dfa.c	4425	4426	2	2	1	acc_viewed_applies
-src/gen/emit_dfa.c	4500	4501	2	2	1	pf_memchr_bounded_applies
-src/gen/emit_dfa.c	4502	4503	2	2	1	pf_memchr_applies
-src/gen/emit_dfa.c	4504	4505	2	2	1	pf_bcls_bounded_applies
-src/gen/emit_dfa.c	4506	4507	2	2	1	pf_bcls_applies
-src/gen/emit_dfa.c	4642	4643	2	2	1	pf_ofs_bounded_applies
-src/gen/emit_dfa.c	4644	4645	2	2	1	pf_ofs_applies
-src/gen/emit_dfa.c	5167	5168	2	2	1	dfa_match_is_unwrapped
-src/gen/emit_dfa.c	5378	5379	2	2	1	dfa_search_start_name
-src/gen/emit_dfa.c	5381	5382	2	2	1	dfa_search_is_pinned
-src/gen/emit_dfa.c	5421	5422	2	2	1	pcrec_dfa_axis_table_cands
-src/gen/emit_dfa.c	5423	5424	2	2	1	pcrec_dfa_axis_prefilter_cands
-src/gen/emit_dfa.c	5425	5426	2	2	1	pcrec_dfa_axis_view_cands
-src/gen/emit_dfa.c	5427	5428	2	2	1	pcrec_dfa_axis_seed_cands
-src/gen/emit_dfa.c	5429	5430	2	2	1	pcrec_dfa_axis_accept_cands
-src/gen/emit_dfa.c	5435	5436	2	2	1	pcrec_dfa_axis_match_cands
-src/gen/emit_dfa.c	5440	5441	2	2	1	pcrec_dfa_axis_searchstart_cands
-src/gen/emit_dfa.c	5619	5620	2	2	1	dfa_scan_body_name
-src/gen/emit_dfa.c	5973	5974	2	2	1	scan_label
-src/opt/scanedge.c	263	264	2	2	1	acc_of
-src/core/compile.c	187	187	1	1	1	emit_size_total
-src/core/internal.h	1181	1181	1	1	1	cls_set
-src/core/internal.h	1182	1182	1	1	1	cls_has
-src/core/internal.h	1195	1195	1	1	1	fnv1a_32_init
-src/core/internal.h	1196	1196	1	1	1	fnv1a_32_mix
-src/gen/emit_dfa.c	664	664	1	1	1	engine_entry_name
-src/gen/emit_dfa.c	665	665	1	1	1	match_entry_name
-src/gen/emit_dfa.c	666	666	1	1	1	match_caps_entry_name
-src/gen/emit_dfa.c	667	667	1	1	1	info_entry_name
-src/gen/emit_dfa.c	3612	3612	1	1	1	legend_extra_escape
-src/gen/emit_dfa.c	4007	4007	1	1	1	cand_always
-src/gen/emit_dfa.c	4011	4011	1	1	1	repr_premul_applies
-src/gen/emit_dfa.c	4012	4012	1	1	1	cell_premul
-src/gen/emit_dfa.c	4013	4013	1	1	1	cell_indexed
-src/gen/emit_dfa.c	4378	4378	1	1	1	seed_applies
-src/gen/emit_dfa.c	4424	4424	1	1	1	acc_by_class_applies
-src/gen/emit_dfa.c	5165	5165	1	1	1	dfa_match_name
-src/gen/emit_dfa.c	5617	5617	1	1	1	dfa_edge_taken
-src/gen/emit_dfa.c	6952	6952	1	1	1	pcrec_emit_abi_types
-src/gen/emit_vm.c	802	802	1	1	1	vm_label
-src/gen/emit_vm.c	827	827	1	1	1	vm_slot_guard
-src/gen/emit_vm.c	828	828	1	1	1	vm_slot_low
-src/opt/possessify.c	111	111	1	1	1	bs_clear
-src/opt/possessify.c	112	112	1	1	1	bs_all
-src/opt/scanedge.c	245	245	1	1	1	member_ok
-src/parse/mod_backrefs.c	242	242	1	1	1	br_brace_space
-src/parse/parse.c	40	40	1	1	1	at_end
-src/parse/parse.c	41	41	1	1	1	peekc
-src/parse/parse.c	42	42	1	1	1	peekc2
-src/parse/parse.c	43	43	1	1	1	nextc
-src/parse/parse.c	55	55	1	1	1	pcrec_ast_node
-src/parse/parse.c	504	504	1	1	1	cls_universe
-src/parse/parse.c	549	549	1	1	1	pcrec_ast_char
-src/parse/rxt_source.c	3825	3825	1	1	1	pcrec_rxt_source_ncols
+# function_census.py -- commit 7e42b86a77c5afbbf3a54ca0aa6a2c47f7a43df0 -- generated 2026-09-20 -- rows 917
+file	start_line	end_line	span_lines	code_lines	max_depth	name	header
+src/gen/emit_vm.c	9388	12196	2809	707	4	pcrec_emit_vm	header
+src/parse/rxt_source.c	2159	3133	975	548	5	pcrec_rxt_source_parse	header
+src/core/compile.c	624	1937	1314	424	5	compile_driver	header
+cli/main.c	1416	1951	536	333	4	main	header
+src/gen/emit_vm.c	8529	9109	581	298	4	vm_render_listing	header
+src/gen/emit_dfa.c	6142	6659	518	211	4	emit_attempt	header
+cli/main.c	693	996	304	202	4	cli_parse	header
+src/dump/axes_dump.c	410	731	322	193	3	emit_predicate_axes	header
+src/gen/emit_vm.c	4933	5245	313	171	3	vm_revdet_rep	header
+src/parse/rxt_source.c	3916	4137	222	167	3	pcrec_rxt_source_tsv	header
+src/gen/emit_vm.c	4153	4501	349	147	4	vm_cursor_rep	header
+src/parse/rxt_compose.c	766	1047	282	146	4	pcrec_rxt_compose	header
+src/dump/syntax_dump.c	1620	1881	262	145	4	pcrec_syntax_explain	header
+src/parse/rxt_source.c	3594	3829	236	140	4	pcrec_rxt_source_resolve	header
+src/parse/mod_backrefs.c	337	486	150	125	4	pcrec_brport_g	header
+src/parse/mod_modifiers.c	263	509	247	125	4	pcrec_modport_optrun	header
+src/ir/nfa.c	583	977	395	121	6	compile_ast	header
+src/opt/select_engine.c	499	1058	560	117	4	pcrec_select_engine	header
+src/gen/emit_vm.c	1979	2238	260	112	4	vm_cost_rep	header
+src/gen/emit_vm.c	5306	5485	180	112	5	vm_counter_phase	header
+src/opt/minimize.c	74	231	158	112	5	pcrec_minimize_dfa	header
+src/parse/parse.c	980	1265	286	111	4	p_class	header
+cli/main.c	1263	1405	143	108	5	compile_source	header
+src/opt/scanedge.c	482	705	224	108	4	pcrec_scanedge_dfa	header
+src/opt/prefix_k.c	386	583	198	107	3	pcrec_prefix_ksets	header
+src/gen/emit_dfa.c	1545	1976	432	106	3	emit_info_def	header
+src/gen/emit_vm.c	8016	8253	238	103	3	vm_emit	header
+src/opt/callgraph.c	676	880	205	102	5	pcrec_callgraph_build	header
+src/opt/possessify.c	175	455	281	100	4	first_of	header
+src/gen/emit_vm.c	2248	2585	338	98	5	vm_cost	header
+src/ir/dfa.c	626	826	201	96	5	clo_walk	header
+src/gen/emit_vm.c	4767	4922	156	95	4	vm_rev_emit	header
+cli/main.c	1072	1248	177	92	3	apply_target	header
+src/gen/emit_dfa.c	3311	3451	141	91	4	emit_state_legend	header
+src/dump/syntax_dump.c	1400	1550	151	88	3	put_agreement	header
+src/parse/mod_uprops.c	348	537	190	88	3	pcrec_modport_uprops	header
+src/parse/rxt_source.c	1542	1653	112	88	5	parse_case_body	header
+src/ir/dfa.c	1274	1505	232	86	4	pcrec_build_dfa	header
+src/ir/nfa.c	408	531	124	86	5	trie_build	header
+src/ir/dfa.c	946	1110	165	84	3	intern	header
+src/gen/emit_vm.c	5793	5957	165	82	3	vm_rep	header
+src/opt/possessify.c	558	715	158	82	5	gk_build	header
+src/gen/emit_vm.c	3496	3579	84	77	5	vm_isl_words	header
+src/gen/emit_vm.c	5578	5700	123	77	3	vm_counter_rep	header
+src/parse/rxt_compose.c	468	617	150	77	2	rc_bind	header
+src/gen/emit_vm.c	3930	4046	117	76	4	vm_isl_emit	header
+src/parse/mod_verbs.c	317	535	219	74	3	verb_answer	header
+src/parse/rxt_source.c	792	911	120	74	4	parse_setting	header
+src/parse/rxt_source.c	1252	1329	78	73	8	frame_constraints	header
+src/parse/rxt_source.c	1948	2069	122	72	2	parse_target	header
+src/gen/emit_vm.c	6955	7108	154	70	5	vm_build_region_saves	header
+src/parse/ext.c	211	355	145	70	5	esc_answer	header
+src/parse/mod_backrefs.c	683	838	156	69	6	pcrec_bref_resolve	header
+src/gen/emit_dfa.c	6713	6913	201	68	4	emit_orientation_block	header
+src/parse/mod_named_groups.c	141	277	137	68	3	pcrec_ngport_declare	header
+src/gen/emit_vm.c	6253	6385	133	67	3	vm_look_behind_branch	header
+src/parse/rxt_source.c	3499	3582	84	67	4	closure_walk	header
+src/gen/emit_vm.c	6576	6672	97	65	3	vm_look	header
+src/opt/callgraph.c	487	576	90	64	4	cg_eligibility	header
+src/parse/rxt_source.c	1811	1876	66	63	5	pcrec_rxt_decode_escaped	header
+src/gen/emit_dfa.c	5362	5459	98	60	2	emit_scan_edge	header
+src/opt/possessify.c	888	1108	221	60	4	pss_walk	header
+src/dump/syntax_dump.c	562	639	78	58	6	pcrec_syntax_families	header
+src/gen/emit_vm.c	2641	2780	140	58	3	vm_count_slots_rep	header
+src/opt/revdet.c	295	447	153	58	5	rd_reverse	header
+src/parse/parse.c	1623	1698	76	58	3	try_quant	header
+src/gen/emit_vm.c	2808	2987	180	57	5	vm_count_slots	header
+src/gen/emit_vm.c	891	959	69	55	3	vm_slot_name	header
+src/gen/emit_vm.c	3688	3885	198	54	3	vm_isl_build	header
+src/parse/mod_lookaround.c	440	599	160	54	3	pcrec_laport_group	header
+src/parse/parse.c	689	769	81	54	5	esc_char_value	header
+src/parse/mod_recursion.c	293	378	86	53	4	rc_name_call	header
+src/parse/parse.c	1709	1844	136	52	3	p_rep	header
+src/gen/emit_dfa.c	6923	7021	99	51	2	pcrec_emit_prologue	header
+src/opt/altcls.c	312	375	64	51	5	altcls_walk_alt	header
+src/parse/rxt_source.c	1334	1391	58	51	4	line_constraints	header
+src/gen/emit_dfa.c	5569	5638	70	50	3	emit_machine_tables	banner
+src/gen/emit_dfa.c	5700	5840	141	50	3	emit_scan_loop	header
+src/dump/syntax_dump.c	251	344	94	49	4	pcrec_syntax_tsv	header
+src/gen/emit_vm.c	7503	7609	107	49	3	vm_splice	header
+src/opt/revdet.c	97	233	137	49	4	rd_shape	header
+src/parse/rxt_source.c	548	629	82	48	3	slurp_lines	header
+src/parse/rxt_source.c	689	747	59	48	2	read_prose_region	header
+src/core/compile.c	173	221	49	47	4	emit_size_measure	header
+src/gen/emit_dfa.c	4438	4512	75	47	3	pf_block_ofs	header
+src/gen/emit_dfa.c	5463	5565	103	47	2	dfa_form_derive	banner
+src/parse/ext.c	582	717	136	47	3	clsbracket_answer	header
+src/dump/syntax_dump.c	825	1008	184	46	2	built_status_probe	header
+src/opt/scanedge.c	312	455	144	46	3	collect	header
+src/dump/syntax_dump.c	1123	1196	74	45	2	pcrec_probe_ask	header
+src/gen/emit_vm.c	7196	7290	95	45	2	vm_plan_capacities	header
+src/opt/mrl.c	304	423	120	45	4	pcrec_cwmax	header
+src/ir/dfa.c	1203	1261	59	44	4	make_state	header
+src/parse/enabled.c	224	276	53	44	3	pcrec_enabled_set_spec	header
+src/parse/ext.c	389	542	154	44	3	group_answer	header
+src/opt/revdet.c	572	649	78	43	6	rd_alt_disjoint	header
+src/dump/syntax_dump.c	1561	1608	48	42	2	put_verb_block	header
+src/gen/emit_vm.c	6499	6566	68	42	3	vm_look_behind	header
+src/gen/emit_vm.c	7821	7963	143	42	2	vm_bref	header
+src/parse/rxt_compose.c	285	326	42	42	5	rc_remap_caps	header
+src/gen/emit_dfa.c	5844	5950	107	41	2	emit_unanchored	banner
+src/opt/altcls.c	397	513	117	41	3	altcls_walk	header
+src/opt/mrl.c	442	497	56	41	4	pcrec_cwmin	header
+src/dump/syntax_dump.c	697	740	44	40	4	doorway_route	header
+src/opt/mrl.c	120	254	135	40	4	pcrec_minw	header
+src/parse/mod_backrefs.c	606	671	66	40	4	br_strip_caps	header
+src/parse/parse.c	1345	1473	129	40	4	p_group_body	header
+src/parse/rxt_source.c	1879	1941	63	40	2	parse_config	header
+src/parse/rxt_source.c	2091	2135	45	40	4	config_walk	header
+src/opt/lower_enc.c	326	389	64	39	4	lower_class_utf8	header
+src/opt/lower_enc.c	513	576	64	39	5	lower_walk	header
+src/dump/syntax_dump.c	394	465	72	38	5	pcrec_definitions_tsv	header
+src/opt/altcls.c	260	299	40	38	4	altcls_factor_run	header
+src/parse/mod_backrefs.c	186	242	57	38	3	pcrec_brport_digit	header
+src/parse/parse.c	1484	1568	85	38	3	p_atom	header
+src/gen/emit_vm.c	9264	9371	108	37	2	vm_emit_default_entry	header
+src/parse/rxt_source.c	996	1033	38	37	2	check_value_shape	header
+src/gen/emit_vm.c	4048	4093	46	36	3	vm_alt	none
+src/opt/altcls.c	210	252	43	36	4	altcls_extend_prefix	header
+src/opt/atomic.c	785	862	78	36	4	pcrec_has_live_capture	header
+src/opt/lower_enc.c	253	297	45	36	3	u8_box	header
+src/opt/prefix_k.c	172	221	50	36	3	wclose	header
+src/opt/revdet.c	472	564	93	36	5	pcrec_revdet_first	header
+src/parse/rxt_source.c	1088	1131	44	36	3	closed_apply	header
+src/parse/rxt_source.c	1144	1199	56	36	4	under_key	header
+src/dump/schema_dump.c	96	195	100	35	3	pcrec_rxt_schema_tsv	header
+src/gen/emit_vm.c	7315	7351	37	35	3	vm_plan_regions	header
+src/opt/atomic.c	219	262	44	35	4	pcrec_has_collapsible_rep	header
+src/opt/atomic.c	626	697	72	35	4	pcrec_bref_mark	header
+src/parse/rxt_compose.c	639	711	73	35	1	rc_assign	header
+src/core/compile.c	515	586	72	34	3	size_term_choose	header
+src/gen/emit_vm.c	4589	4652	64	34	2	vm_poss_chain	header
+src/gen/emit_vm.c	5518	5563	46	34	2	vm_counter_poss_opt	header
+src/opt/lower_enc.c	395	434	40	34	3	pat_char_utf8	header
+src/opt/select_engine.c	192	302	111	34	4	first_dfa_excluding	header
+src/gen/emit_vm.c	8266	8304	39	33	3	vm_cls_describe	header
+src/opt/lower_enc.c	473	506	34	33	5	subtree_is_identity	header
+src/parse/parse.c	283	317	35	33	4	xskip	header
+src/parse/rxt_source.c	1489	1521	33	33	2	close_section_frame	header
+src/gen/emit_dfa.c	7331	7394	64	32	3	pcrec_emit_dfa	none
+src/gen/emit_vm.c	3646	3677	32	32	3	vm_isl_insert	header
+src/gen/emit_vm.c	5716	5783	68	32	2	vm_star	header
+src/opt/atomic.c	59	117	59	32	4	pcrec_has_atomic	header
+src/parse/mod_backrefs.c	497	529	33	32	2	pcrec_brport_k	header
+src/parse/rxt_source.c	1213	1246	34	32	3	cond_holds	header
+src/parse/rxt_source.c	1673	1705	33	32	2	read_wrapped_value	header
+src/dump/syntax_dump.c	478	522	45	31	3	pcrec_syntax_verbs	header
+src/gen/emit_dfa.c	2011	2053	43	31	1	emit_header	none
+src/gen/emit_vm.c	1685	1729	45	31	4	vm_cap_offsets	none
+src/gen/emit_vm.c	7127	7158	32	31	4	vm_memo_region_costs	header
+src/opt/atomic.c	148	190	43	31	4	pcrec_has_lookaround	header
+src/opt/atomic.c	287	332	46	31	4	pcrec_ast_stamped_by	header
+src/opt/atomic.c	560	609	50	31	4	pcrec_has_bref	header
+src/parse/mod_recursion.c	187	225	39	31	2	pcrec_rcport_num	header
+src/parse/mod_recursion.c	517	575	59	31	2	pcrec_rcport_define	header
+src/gen/emit_vm.c	7746	7813	68	30	3	vm_cap	header
+src/opt/atomic.c	896	926	31	30	4	pcrec_has_linked_call	header
+src/opt/atomic.c	930	961	32	30	4	pcrec_has_call	header
+src/parse/mod_atomic_groups.c	74	131	58	30	2	pcrec_agport_atomic	header
+src/parse/mod_lookaround.c	290	326	37	30	3	la_widths	header
+src/parse/rxt_schema.c	265	299	35	30	3	pcrec_rxt_constraint_next	header
+src/core/compile.c	2003	2042	40	29	2	pcrec_count_groups	header
+src/gen/emit_vm.c	1197	1346	150	29	4	vm_nullable	header
+src/gen/emit_vm.c	1621	1678	58	29	4	vm_det_seq	header
+src/opt/atomic.c	426	514	89	29	5	dis_walk	header
+src/parse/mod_recursion.c	241	281	41	29	1	pcrec_rcport_rel	header
+src/gen/emit_dfa.c	2827	2951	125	28	2	unanch_start	none
+src/gen/emit_vm.c	1820	1882	63	28	4	vm_rev_caps	header
+src/gen/emit_vm.c	6060	6105	46	28	2	vm_atomic	header
+src/opt/lower_enc.c	589	618	30	28	5	cap_sig	header
+src/parse/mod_assertions.c	77	221	145	28	2	pcrec_asrtport_atom	header
+src/parse/mod_classes.c	40	87	48	28	3	pcrec_clsport_posix	header
+src/core/cpset.c	133	159	27	27	3	pcrec_cpset_remove	header
+src/gen/emit_dfa.c	564	643	80	27	2	emit_search_head	none
+src/gen/emit_dfa.c	3782	3824	43	27	2	token_stop	header
+src/gen/emit_vm.c	6748	6774	27	27	4	vm_walk_caps	header
+src/ir/nfa.c	1078	1122	45	27	3	cstart_check_omission	header
+src/opt/revdet.c	699	768	70	27	3	rd_walk	header
+src/parse/rxt_source.c	1712	1754	43	27	2	oracle_ref_ok	header
+cli/main.c	1006	1033	28	26	4	raw_split	header
+src/core/cpset.c	97	129	33	26	2	pcrec_cpset_add	header
+src/enc/enc.c	151	184	34	26	4	pcrec_enc_advance	header
+src/gen/emit_dfa.c	3893	3931	39	26	2	token_indexed	none
+src/gen/emit_vm.c	4510	4552	43	26	2	vm_opt_chain	header
+src/gen/emit_vm.c	6820	6845	26	26	4	vm_walk_calls	header
+src/parse/mod_lookaround.c	186	252	67	26	4	la_has_kreset	header
+src/parse/rxt_source.c	1762	1789	28	26	2	tag_list_ok	header
+src/core/compile.c	251	284	34	25	2	job_cleanup	header
+src/enc/enc.c	196	222	27	25	4	pcrec_enc_start_guard	header
+src/gen/emit_dfa.c	3150	3214	65	25	4	pick_skip_states	header
+src/gen/emit_vm.c	4666	4717	52	25	1	vm_poss_star	header
+src/ir/dfa.c	336	360	25	25	2	lctx_intern	header
+src/parse/definitions.c	147	173	27	25	2	pcrec_ast_is_core	header
+src/core/internal.h	4001	4028	28	24	4	pcrec_ast_visit	header
+src/gen/emit_dfa.c	1152	1208	57	24	1	emit_buffers_surface	header
+src/gen/emit_dfa.c	3851	3891	41	24	2	token_premul	none
+src/gen/emit_vm.c	3588	3622	35	24	4	vm_isl_subtree_nodes	header
+src/gen/emit_vm.c	7390	7417	28	24	2	vm_call	header
+src/gen/emit_vm.c	7970	8006	37	24	2	vm_cat	header
+src/ir/nfa.c	539	571	33	24	2	trie_key	header
+src/opt/lower_enc.c	627	667	41	24	2	pcrec_lower_enc	header
+src/opt/possessify.c	719	750	32	24	3	body_admits_unique_iteration	header
+src/parse/parse.c	346	370	25	24	4	cls_skip	header
+src/parse/parse.c	945	968	24	24	3	pcrec_clsport_octal	header
+src/gen/emit_dfa.c	520	552	33	23	2	pcrec_startpos_guard_text	header
+src/ir/nfa.c	1131	1162	32	23	2	pcrec_nfa_wrap_unanchored	header
+src/parse/enabled.c	184	206	23	23	3	render_modules	header
+src/parse/mod_recursion.c	133	166	34	23	2	rc_node	header
+src/core/sb.c	118	142	25	22	2	sb_vprintf	header
+src/gen/emit_dfa.c	5038	5067	30	22	3	start_pinned_applies	header
+src/ir/nfa.c	133	159	27	22	2	nst	header
+src/opt/scanedge.c	273	302	30	22	3	in_degrees	header
+src/parse/mod_backrefs.c	280	301	22	22	2	br_name_ref	header
+src/core/arena.c	13	38	26	21	3	pcrec_arena_alloc	header
+src/gen/emit_dfa.c	153	173	21	21	3	emit_c_string_literal	header
+src/gen/emit_dfa.c	3253	3273	21	21	4	emit_class_legend	header
+src/gen/emit_dfa.c	4400	4424	25	21	3	ofsk_emit_verify	header
+src/gen/emit_dfa.c	4563	4586	24	21	2	pf_emit_ofs_bounded	none
+src/gen/emit_dfa.c	6020	6057	38	21	1	emit_anchored_match_def	header
+src/gen/emit_vm.c	6896	6916	21	21	3	vm_resolve_nonnull	header
+src/gen/emit_vm.c	9181	9201	21	21	2	vm_frame_fields	header
+src/ir/dfa.c	844	872	29	21	2	closure	header
+src/ir/nfa.c	373	398	26	21	2	disjoint_run_len	header
+src/opt/possessify.c	846	878	33	21	2	pss_rep	header
+src/parse/mod_modifiers.c	105	146	42	21	3	pcrec_registry_option_run_ok	header
+src/parse/parse.c	874	934	61	21	3	esc_class_value	header
+src/parse/rxt_compose.c	222	246	25	21	2	def_by_name	header
+src/dump/axes_dump.c	742	800	59	20	2	pcrec_axes_tsv	header
+src/gen/emit_dfa.c	3828	3849	22	20	2	token_accepts	header
+src/gen/emit_dfa.c	4029	4050	22	20	1	view_emit_end_and_eol	none
+src/gen/emit_vm.c	7646	7693	48	20	2	vm_region	header
+src/parse/mod_lookaround.c	132	170	39	20	2	la_kind	header
+src/parse/scans.c	60	79	20	20	3	pcrec_class_delim_extent_scan	header
+cli/main.c	66	86	21	19	2	parse_raise_only	header
+src/core/compile.c	333	366	34	19	1	build_anchored_dfa	header
+src/gen/emit_vm.c	3624	3642	19	19	2	vm_isl_node	none
+src/opt/callgraph.c	589	621	33	19	2	cg_force_deliver_splice	header
+src/opt/revdet.c	667	690	24	19	5	rd_rep	header
+src/parse/definitions.c	68	107	40	19	3	def_resolve_depth	header
+src/parse/rxt_compose.c	380	407	28	19	3	rc_rebase_refs	header
+src/parse/rxt_compose.c	439	457	19	19	3	rc_find_root_call	header
+src/parse/rxt_source.c	1061	1081	21	19	2	closed_check	header
+src/parse/rxt_source.c	3221	3239	19	19	3	cfg_merge	header
+src/parse/rxt_source.c	3301	3319	19	19	3	cfg_effective	header
+src/parse/scans.c	143	161	19	19	2	pcrec_brace_quant_shape	header
+src/core/compile.c	135	167	33	18	2	emit_size_table_open	header
+src/dump/axes_dump.c	283	300	18	18	2	emit_dfa_list_axis	header
+src/gen/emit_dfa.c	4145	4186	42	18	1	acc_emit_tail_by_class	none
+src/gen/emit_dfa.c	5005	5033	29	18	2	start_pinned_assert_routing	header
+src/ir/nfa.c	188	205	18	18	3	frag_star	header
+src/opt/possessify.c	812	842	31	18	1	pss_verdict	header
+src/parse/mod_backrefs.c	104	129	26	18	1	br_node	header
+src/parse/mod_backrefs.c	576	598	23	18	3	br_name_run	header
+src/parse/registry.c	1789	1822	34	18	3	pcrec_registry_arbitrate	header
+src/parse/rxt_source.c	317	346	30	18	1	rxt_fail	header
+src/core/compile.c	1972	1991	20	17	2	pcrec_emit_ir	header
+src/dump/syntax_dump.c	769	794	26	17	2	doorway_call	header
+src/dump/syntax_dump.c	1354	1374	21	17	2	put_answer	header
+src/gen/emit_dfa.c	1281	1308	28	17	1	emit_match_def	header
+src/gen/emit_vm.c	4109	4125	17	17	1	vm_emit_span_scan	header
+src/gen/emit_vm.c	7703	7739	37	17	1	vm_wordb	header
+src/ir/dfa.c	155	205	51	17	2	eqclasses	header
+src/opt/minimize.c	39	64	26	17	2	state_sig	header
+src/parse/definitions.c	34	58	25	17	2	pcrec_def_tag_applies	header
+src/parse/mod_recursion.c	383	400	18	17	2	pcrec_rcport_name	header
+src/parse/parse.c	121	201	81	17	2	pcrec_is_bare_anchor	header
+src/parse/parse.c	385	401	17	17	3	cls_peek_past_dash	header
+src/parse/parse.c	804	860	57	17	2	esc_atom	header
+src/parse/parse.c	1910	1926	17	17	2	p_alt_info	header
+src/parse/rxt_compose.c	735	754	20	17	4	rc_next_wanted	header
+src/parse/rxt_schema.c	162	178	17	17	2	pcrec_rxt_value_name	header
+src/parse/rxt_source.c	636	652	17	17	2	row_push	header
+src/core/tune.c	137	157	21	16	3	pcrec_tune_parse	header
+src/gen/emit_dfa.c	2473	2488	16	16	3	emit_acc_table	header
+src/gen/emit_dfa.c	4546	4561	16	16	2	pf_emit_ofs	none
+src/gen/emit_vm.c	1526	1541	16	16	2	vm_cls_shape	none
+src/gen/emit_vm.c	1547	1564	18	16	2	vm_cls_test	header
+src/opt/possessify.c	1114	1137	24	16	1	pcrec_poss_survey	header
+src/parse/mod_backrefs.c	538	554	17	16	2	pcrec_brport_pname	header
+src/parse/mod_lookaround.c	410	427	18	16	2	pcrec_lookaround_fix_widths	header
+src/parse/rxt_source.c	500	515	16	16	2	config_list_ok	header
+src/parse/rxt_source.c	3855	3870	16	16	2	kind_name	header
+cli/main.c	614	628	15	15	2	cli_menu	header
+src/core/cpset.c	193	207	15	15	3	pcrec_cpset_complement	header
+src/core/sb.c	13	36	24	15	2	sb_grow	header
+src/core/sb.c	217	231	15	15	3	pcrec_sb_field	header
+src/core/tune.c	186	200	15	15	2	pcrec_vm_entry_shape_names	header
+src/dump/axes_dump.c	385	399	15	15	1	emit_pred_row	header
+src/gen/emit_vm.c	737	751	15	15	2	vm_ev	none
+src/ir/dfa.c	434	448	15	15	2	pmemo_add	header
+src/opt/lower_enc.c	304	319	16	15	3	u8_ranges	header
+src/opt/postresolve.c	128	155	28	15	2	pcrec_postresolve	header
+src/opt/scanedge.c	199	213	15	15	2	pcrec_scan_range	header
+src/parse/parse.c	653	667	15	15	2	pcrec_ast_class_from_iv	header
+src/parse/parse.c	1860	1874	15	15	3	cat_ends	header
+src/parse/rxt_compose.c	346	360	15	15	4	rc_mark_kept	header
+src/parse/rxt_source.c	3374	3388	15	15	2	lib_chain_text	header
+src/core/sb.c	274	287	14	14	1	pcrec_sb_fragfv	header
+src/core/tune.c	208	221	14	14	3	pcrec_tune_names	header
+src/dump/axes_dump.c	261	274	14	14	2	axis_row	header
+src/dump/syntax_dump.c	74	87	14	14	3	names_join	header
+src/enc/enc.c	48	73	26	14	3	pcrec_enc_names	header
+src/enc/enc.c	82	96	15	14	3	pcrec_enc_emit_decls	header
+src/enc/enc.c	101	114	14	14	3	pcrec_enc_emit_defs	header
+src/gen/emit_dfa.c	2310	2323	14	14	3	emit_tr_table	none
+src/gen/emit_dfa.c	2606	2619	14	14	3	emit_acc_cls_table	header
+src/gen/emit_dfa.c	7292	7329	38	14	1	emit_dfa_stamps	none
+src/gen/emit_vm.c	1474	1487	14	14	2	vm_cls	banner
+src/gen/emit_vm.c	3285	3298	14	14	2	vm_mrl_amt	header
+src/gen/emit_vm.c	3893	3906	14	14	4	vm_isl_cands	header
+src/gen/emit_vm.c	8492	8505	14	14	2	vm_listing_events	header
+src/ir/dfa.c	416	429	14	14	2	pmemo_grow	header
+src/ir/nfa.c	312	325	14	14	3	chain_alts	header
+src/opt/callgraph.c	211	237	27	14	1	cg_bind	header
+src/opt/lower_enc.c	180	193	14	14	2	u8_enc	header
+src/opt/possessify.c	1142	1164	23	14	1	pcrec_possessify	header
+src/opt/scanedge.c	249	262	14	14	3	shaped	header
+src/parse/mod_uprops.c	204	217	14	14	3	uprops_namespace	header
+src/parse/parse.c	1881	1894	14	14	2	p_cat	header
+src/parse/rxt_schema.c	107	120	14	14	2	pcrec_rxt_schema_child_scope	header
+src/parse/rxt_schema.c	244	257	14	14	2	pcrec_rxt_constraint_name	header
+src/core/fold.c	130	146	17	13	2	ucd_partners	header
+src/dump/syntax_dump.c	1312	1324	13	13	1	msg_module	header
+src/gen/emit_dfa.c	298	313	16	13	2	pcrec_engine_sel_name	header
+src/gen/emit_dfa.c	1317	1341	25	13	1	emit_match_caps_def	header
+src/gen/emit_dfa.c	1376	1412	37	13	1	emit_in_entry_defs	header
+src/gen/emit_dfa.c	3009	3040	32	13	2	dfa_table_name	header
+src/gen/emit_dfa.c	3743	3760	18	13	2	token_step	header
+src/gen/emit_dfa.c	4247	4268	22	13	1	pf_emit_memchr	none
+src/gen/emit_dfa.c	4675	4693	19	13	1	dir_rev_skip	none
+src/gen/emit_dfa.c	5112	5124	13	13	2	pcrec_dfa_axis_cands	banner
+src/gen/emit_dfa.c	6075	6101	27	13	1	emit_anchored_match_caps_def	header
+src/gen/emit_vm.c	8465	8477	13	13	2	vm_listing_slots	header
+src/gen/emit_vm.c	9152	9164	13	13	2	vm_layout	header
+src/ir/dfa.c	118	130	13	13	2	refine_by	header
+src/ir/dfa.c	469	481	13	13	2	cont_push	header
+src/ir/nfa.c	329	341	13	13	4	trie_tail	header
+src/opt/altcls.c	380	392	13	13	2	altcls_walk_cat	header
+src/parse/definitions.c	121	133	13	13	2	pcrec_def_tag_name	header
+src/parse/enabled.c	134	146	13	13	3	find_module_bits	header
+src/parse/mod_named_groups.c	98	110	13	13	2	pcrec_group_name_scan	header
+src/parse/mod_uprops.c	174	186	13	13	2	uprops_lookup	header
+src/parse/rxt_schema.c	147	159	13	13	2	pcrec_rxt_scope_name	header
+src/parse/rxt_schema.c	181	193	13	13	2	pcrec_rxt_children_name	header
+src/parse/rxt_schema.c	326	338	13	13	2	pcrec_rxt_scope_context	header
+src/parse/rxt_schema.c	343	355	13	13	2	pcrec_rxt_scope_noun	header
+src/parse/rxt_source.c	1402	1414	13	13	2	prov_push	header
+src/parse/rxt_source.c	1418	1430	13	13	2	variant_push	header
+src/parse/rxt_source.c	1434	1446	13	13	2	case_push	header
+src/parse/rxt_source.c	1450	1462	13	13	2	aux_push	header
+src/parse/rxt_source.c	3243	3255	13	13	1	set_from_row	header
+src/parse/rxt_source.c	3403	3415	13	13	4	pcrec_rxt_flags_from_letters	header
+cli/main.c	316	327	12	12	2	set_encoding	header
+cli/main.c	558	569	12	12	3	libdir_push	header
+src/core/compile.c	19	34	16	12	2	pcrec_ctx_fail	header
+src/dump/syntax_dump.c	137	153	17	12	2	kind_name	header
+src/dump/syntax_dump.c	157	176	20	12	2	doorway_name	header
+src/dump/syntax_dump.c	1015	1059	45	12	1	pcrec_construct_built_status	header
+src/dump/syntax_dump.c	1066	1083	18	12	2	doorway_word	header
+src/dump/syntax_dump.c	1337	1348	12	12	1	live_answer	header
+src/gen/emit_dfa.c	1510	1521	12	12	1	ng_cmp_name	header
+src/gen/emit_dfa.c	4000	4014	15	12	1	view_emit_eol_only	none
+src/gen/emit_dfa.c	4270	4286	17	12	1	pf_emit_memchr_bounded	none
+src/gen/emit_dfa.c	4651	4673	23	12	1	dir_fwd_skip	banner
+src/gen/emit_dfa.c	4711	4741	31	12	1	dir_rev_bound_accept	none
+src/gen/emit_dfa.c	5980	5991	12	12	1	anch_start	header
+src/gen/emit_dfa.c	6108	6121	14	12	1	emit_anchored_entries	header
+src/gen/emit_dfa.c	7062	7106	45	12	1	pcrec_emit_main	header
+src/gen/emit_dfa.c	7252	7290	39	12	1	pcrec_emit_dfa_scan_stamps	none
+src/gen/emit_vm.c	3057	3070	14	12	2	vm_set	none
+src/gen/emit_vm.c	3268	3279	12	12	2	vm_dyn_add	none
+src/gen/emit_vm.c	3321	3332	12	12	1	vm_mrl_test	header
+src/ir/dfa.c	882	895	14	12	2	dhash	header
+src/ir/dfa.c	1138	1157	20	12	1	sides_of	header
+src/opt/altcls.c	111	122	12	12	2	altcls_cat_flatten	header
+src/opt/altcls.c	128	139	12	12	2	altcls_rebuild_cat	header
+src/opt/atomic.c	399	410	12	12	2	ds_add	header
+src/opt/lower_enc.c	234	245	12	12	2	u8_seq	header
+src/opt/possessify.c	537	548	12	12	3	gk_link	header
+src/opt/postresolve.c	106	117	12	12	2	pr_collect	header
+src/opt/select_engine.c	415	426	12	12	1	why_text	header
+src/parse/definitions.c	278	289	12	12	2	pcrec_def_text_hex	header
+src/parse/definitions.c	295	306	12	12	2	pcrec_def_text_octal	header
+src/parse/definitions.c	315	326	12	12	2	pcrec_def_text_unicode	header
+src/parse/enabled.c	150	161	12	12	2	module_listed	header
+src/parse/parse.c	586	613	28	12	1	pcrec_ast_class_from_bits	header
+src/parse/registry.c	1702	1720	19	12	2	pcrec_registry	header
+src/parse/rxt_source.c	152	163	12	12	2	line_class	header
+src/parse/rxt_source.c	765	783	19	12	1	prose_value	header
+src/parse/rxt_source.c	923	938	16	12	1	refuse_wave	header
+src/parse/rxt_source.c	1471	1482	12	12	2	frame_field	header
+src/parse/rxt_source.c	3177	3188	12	12	1	list_next	header
+src/parse/rxt_source.c	3284	3295	12	12	2	seen_add	header
+src/parse/rxt_source.c	3458	3469	12	12	2	lib_resolve	header
+src/core/cpset.c	249	261	13	11	2	pcrec_cls_bits	header
+src/core/fold.c	113	123	11	11	2	ucd_fold_next	header
+src/core/sb.c	157	167	11	11	2	pcrec_sb_take	header
+src/dump/limits_dump.c	52	62	11	11	2	limit_row	header
+src/gen/emit_dfa.c	90	100	11	11	1	emit_comment_safe_byte	header
+src/gen/emit_dfa.c	116	126	11	11	1	emit_pattern_comment	header
+src/gen/emit_dfa.c	2287	2297	11	11	2	fold_tr	none
+src/gen/emit_dfa.c	2427	2437	11	11	2	emit_eol_table	header
+src/gen/emit_dfa.c	2442	2452	11	11	2	emit_end_table	header
+src/gen/emit_dfa.c	2646	2659	14	11	2	emit_seed_table	header
+src/gen/emit_dfa.c	2693	2707	15	11	2	cand_derive	none
+src/gen/emit_dfa.c	3069	3085	17	11	1	dfa_scan_edge_name	none
+src/gen/emit_dfa.c	3676	3686	11	11	2	dfa_select	header
+src/gen/emit_dfa.c	4288	4298	11	11	1	pf_emit_bcls	none
+src/gen/emit_dfa.c	4377	4393	17	11	2	pf_tables_ofs	none
+src/gen/emit_dfa.c	5674	5684	11	11	2	dfa_seed_can_be_scan_head	header
+src/gen/emit_vm.c	1747	1757	11	11	1	vm_cursor_fits	header
+src/gen/emit_vm.c	3040	3050	11	11	1	vm_push_at	header
+src/gen/emit_vm.c	3244	3254	11	11	1	vm_emit_fd	header
+src/gen/emit_vm.c	3338	3348	11	11	1	vm_mrl_gate	header
+src/gen/emit_vm.c	6794	6804	11	11	3	vm_w_cap_slots	none
+src/gen/emit_vm.c	6861	6871	11	11	1	vm_publish_saves	header
+src/gen/emit_vm.c	8409	8419	11	11	2	vm_mask_names	header
+src/ir/nfa.c	105	116	12	11	2	patch_push	header
+src/ir/nfa.c	163	173	11	11	2	patch_to	header
+src/opt/altcls.c	143	153	11	11	2	altcls_rebuild_alt	header
+src/opt/altcls.c	180	195	16	11	1	altcls_branch_peel	header
+src/opt/lower_enc.c	206	216	11	11	2	u8_push_branch	header
+src/opt/prefix_k.c	225	235	11	11	2	frontier_union	header
+src/opt/revdet.c	259	284	26	11	2	rd_node	header
+src/parse/mod_lookaround.c	365	381	17	11	1	la_width_refusal	header
+src/parse/registry.c	1261	1271	11	11	2	pcrec_registry_verb_name_row	header
+src/parse/registry.c	1728	1738	11	11	2	pcrec_registry_row_by_syntax	header
+src/parse/rxt_compose.c	626	636	11	11	2	rc_export_lists	header
+src/parse/rxt_schema.c	56	66	11	11	2	pcrec_rxt_schema_row	header
+src/parse/rxt_source.c	1036	1046	11	11	2	word_in_set	header
+cli/main.c	52	61	10	10	1	cli_err	header
+src/core/arena.c	42	51	10	10	2	pcrec_arena_free	header
+src/core/cpset.c	78	87	10	10	1	cpset_grow	header
+src/core/cpset.c	173	182	10	10	3	pcrec_cpset_add_bits	header
+src/dump/syntax_dump.c	190	199	10	10	2	diag_name	header
+src/enc/enc.c	226	235	10	10	2	pcrec_enc_start_cls_ok	header
+src/gen/emit_dfa.c	2057	2066	10	10	2	emit_u8_table	banner
+src/gen/emit_dfa.c	2299	2308	10	10	2	fold_acc	none
+src/gen/emit_dfa.c	2564	2573	10	10	1	dfa_premul	header
+src/gen/emit_dfa.c	3054	3067	14	10	2	scan_edge_of	header
+src/gen/emit_dfa.c	4016	4027	12	10	1	view_emit_end_only	none
+src/gen/emit_dfa.c	4300	4312	13	10	1	pf_emit_bcls_bounded	none
+src/gen/emit_dfa.c	4638	4647	10	10	2	pcrec_dfa_scan_state_written	header
+src/gen/emit_dfa.c	7155	7191	37	10	2	dfa_prefilter_name	none
+src/gen/emit_dfa.c	7235	7250	16	10	2	dfa_prefilter_offsets	header
+src/gen/emit_vm.c	2998	3020	23	10	2	vm_lbl	header
+src/ir/dfa.c	910	921	12	10	2	tab_grow	header
+src/ir/nfa.c	984	999	16	10	2	pcrec_build_nfa	header
+src/opt/atomic.c	522	542	21	10	1	pcrec_discharge_atomic	header
+src/opt/callgraph.c	299	313	15	10	2	cg_cwmax_publish	header
+src/opt/possessify.c	523	532	10	10	2	gk_newpos	header
+src/opt/prefix_k.c	321	330	10	10	1	model_cost	header
+src/parse/ext.c	721	730	10	10	1	pcrec_ext_class_bracket	header
+src/parse/mod_uprops.c	318	327	10	10	2	uprops_produce	header
+src/parse/parse.c	535	555	21	10	1	char_node	header
+src/parse/parse.c	786	799	14	10	1	p_quote_next	header
+src/parse/parse.c	2021	2036	16	10	2	pcrec_parse_info	header
+src/parse/rxt_schema.c	196	205	10	10	2	pcrec_rxt_cardinality_name	header
+src/parse/rxt_schema.c	309	318	10	10	2	pcrec_rxt_schema_opener	header
+src/parse/rxt_source.c	298	307	10	10	2	rxt_diag_class_name	header
+src/parse/rxt_source.c	3335	3344	10	10	1	source_dir	header
+cli/main.c	129	137	9	9	2	raise_only_match	header
+cli/main.c	338	346	9	9	2	write_file	header
+src/core/cpset.c	287	295	9	9	2	pcrec_cls_bits_widen	header
+src/core/sb.c	94	102	9	9	2	pcrec_sb_puts	header
+src/core/sb.c	365	373	9	9	1	pcrec_sb_upper	header
+src/dump/axes_dump.c	153	172	20	9	1	stamp_macro_of	header
+src/dump/axes_dump.c	244	252	9	9	1	deny_cols	header
+src/dump/axes_dump.c	319	327	9	9	1	emit_table_composite_rows	header
+src/dump/axes_dump.c	343	351	9	9	1	emit_scan_composite_rows	header
+src/dump/syntax_dump.c	110	131	22	9	1	put_mask	header
+src/dump/syntax_dump.c	179	187	9	9	2	status_name	header
+src/gen/emit_dfa.c	187	195	9	9	1	emit_feature_comment	header
+src/gen/emit_dfa.c	2491	2499	9	9	2	state_acc_varies	header
+src/gen/emit_dfa.c	3118	3129	12	9	1	dfa_uniform_folds	none
+src/gen/emit_dfa.c	4079	4107	29	9	1	seed_emit_seeded	none
+src/gen/emit_dfa.c	4135	4143	9	9	1	acc_emit_tail_scalar	none
+src/gen/emit_dfa.c	4226	4235	10	9	1	pf_comment_memchr	none
+src/gen/emit_dfa.c	4427	4435	9	9	2	ofsk_emit_params	header
+src/gen/emit_dfa.c	4535	4544	10	9	1	pf_comment_ofs	none
+src/gen/emit_dfa.c	5281	5289	9	9	1	scan_test_range	none
+src/gen/emit_vm.c	1168	1184	17	9	1	vm_counter_copies	header
+src/gen/emit_vm.c	3137	3147	11	9	2	vm_cut	none
+src/gen/emit_vm.c	3158	3166	9	9	1	vm_rung_mark	header
+src/gen/emit_vm.c	3912	3921	10	9	2	vm_isl_die	header
+src/gen/emit_vm.c	9207	9215	9	9	1	vm_trail_fields	header
+src/ir/dfa.c	312	320	9	9	1	lctx_slot	header
+src/opt/lower_enc.c	221	229	9	9	1	u8_byte_class	header
+src/opt/possessify.c	158	166	9	9	2	fst_seq	header
+src/opt/revdet.c	773	781	9	9	1	pcrec_revdet	header
+src/opt/select_engine.c	99	135	37	9	1	forces_captures	header
+src/opt/select_engine.c	310	335	26	9	1	forces_registry	header
+src/opt/select_engine.c	368	376	9	9	1	forces_dfa_overflow	header
+src/parse/ext.c	103	111	9	9	1	pcrec_ext_finish	header
+src/parse/mod_backrefs.c	72	80	9	9	2	br_decimal	header
+src/parse/mod_recursion.c	92	100	9	9	2	rc_decimal	header
+src/parse/registry.c	1670	1682	13	9	2	pcrec_registry_posix_known	header
+src/parse/rxt_schema.c	218	226	9	9	2	pcrec_rxt_validated_by_name	header
+src/parse/rxt_source.c	439	447	9	9	1	defname_ok	header
+src/parse/rxt_source.c	1527	1535	9	9	2	is_case_kind	header
+src/parse/rxt_source.c	2076	2084	9	9	1	config_by_name	header
+src/parse/rxt_source.c	3348	3356	9	9	1	join_path	header
+cli/main.c	644	651	8	8	1	cli_int_value	header
+src/core/compile.c	55	68	14	8	1	pcrec_default_options	header
+src/core/compile.c	236	243	8	8	1	valid_prefix	header
+src/core/cpset.c	211	218	8	8	2	pcrec_cpset_has	header
+src/core/cpset.c	316	323	8	8	2	pcrec_cls_has	header
+src/core/sb.c	247	254	8	8	2	pcrec_sb_row	header
+src/core/sb.c	290	297	8	8	1	pcrec_sb_fragf	header
+src/core/sb.c	327	334	8	8	1	pcrec_sb_stampf	header
+src/core/sb.c	337	344	8	8	1	pcrec_sb_stampwf	header
+src/dump/axes_dump.c	137	144	8	8	1	desc_of	header
+src/dump/axes_dump.c	220	231	12	8	1	axis_cli_flag	header
+src/dump/syntax_dump.c	1379	1386	8	8	1	put_names	header
+src/gen/emit_dfa.c	554	561	8	8	1	pcrec_emit_startpos_guard	none
+src/gen/emit_dfa.c	682	689	8	8	1	dfa_fragf	none
+src/gen/emit_dfa.c	1240	1247	8	8	1	pcrec_bufsurface_inert	header
+src/gen/emit_dfa.c	2753	2779	27	8	1	attempt_cand	header
+src/gen/emit_dfa.c	3216	3228	13	8	1	emit_stay_table	none
+src/gen/emit_dfa.c	4237	4245	9	8	1	pf_comment_bcls	none
+src/gen/emit_dfa.c	4366	4375	10	8	1	pf_tables_bcls	none
+src/gen/emit_dfa.c	4526	4533	8	8	1	pf_emit_ofs_reseed	header
+src/gen/emit_dfa.c	5161	5175	15	8	2	pcrec_dfa_axis_direction_cands	header
+src/gen/emit_dfa.c	5296	5303	8	8	1	scan_tables_bitmap	none
+src/gen/emit_dfa.c	6672	6687	16	8	1	pcrec_gen_names	banner
+src/gen/emit_vm.c	779	786	8	8	1	vm_rolef	none
+src/gen/emit_vm.c	1147	1160	14	8	1	vm_counter_fits	header
+src/gen/emit_vm.c	1388	1395	8	8	1	vm_lifts	banner
+src/gen/emit_vm.c	2611	2628	18	8	1	vm_count_slots_look	header
+src/gen/emit_vm.c	3123	3130	8	8	1	vm_work_at	header
+src/gen/emit_vm.c	6720	6727	8	8	1	vm_snap	none
+src/gen/emit_vm.c	9218	9225	8	8	2	vm_fields_join	header
+src/ir/dfa.c	324	331	8	8	1	lctx_rehash	header
+src/ir/dfa.c	365	372	8	8	2	lctx_find	header
+src/ir/dfa.c	390	397	8	8	2	pmemo_next	header
+src/opt/callgraph.c	126	133	8	8	1	cg_scan	header
+src/opt/lower_enc.c	158	167	10	8	1	lower_class_byte	header
+src/opt/lower_enc.c	445	453	9	8	1	ops_for	header
+src/opt/possessify.c	511	518	8	8	1	gk_parts_empty	header
+src/parse/ext.c	135	142	8	8	1	bucket_has_tail	header
+src/parse/ext.c	366	373	8	8	1	pcrec_ext_escape	header
+src/parse/mod_atomic_groups.c	135	142	8	8	1	pcrec_atomic_suffix_row	header
+src/parse/mod_backrefs.c	133	140	8	8	2	br_result_node	header
+src/parse/mod_backrefs.c	264	271	8	8	1	br_relative	header
+src/parse/mod_recursion.c	114	121	8	8	2	rc_result_node	header
+src/parse/mod_verbs.c	271	278	8	8	1	pcrec_registry_verb_find	header
+src/parse/parse.c	206	213	8	8	1	pcrec_wrap_bare_anchor	header
+src/parse/parse.c	412	419	8	8	1	cls_enc	header
+src/parse/parse.c	1311	1332	22	8	1	p_group	header
+src/parse/registry.c	1621	1628	8	8	1	pcrec_registry_posix_find	header
+src/parse/rxt_compose.c	250	257	8	8	1	bound_by_name	header
+src/parse/rxt_schema.c	208	215	8	8	2	pcrec_rxt_row_source_name	header
+src/parse/rxt_source.c	389	396	8	8	1	ident_ok	header
+src/parse/rxt_source.c	457	464	8	8	1	ident_ok_n	header
+src/parse/rxt_source.c	3138	3150	13	8	1	pcrec_rxt_source_free	header
+src/parse/scans.c	103	110	8	8	1	pcrec_ext_class_pair_opens	header
+cli/main.c	548	554	7	7	1	cli_extras_clean	header
+src/core/compile.c	2046	2052	7	7	1	pcrec_output_free	header
+src/core/compile_defs.c	43	49	7	7	1	pcrec_compile_defs	header
+src/core/cpset.c	66	72	7	7	1	pcrec_cpset_init	header
+src/core/cpset.c	305	311	7	7	1	pcrec_cls_single	header
+src/core/internal.h	3427	3438	12	7	1	upc_of_class	header
+src/core/sb.c	84	90	7	7	2	pcrec_sb_putc	header
+src/core/sb.c	146	152	7	7	1	pcrec_sb_printf	header
+src/core/sb.c	236	242	7	7	2	pcrec_sb_join	header
+src/core/sb.c	318	324	7	7	1	sb_stampv	header
+src/dump/limits_dump.c	38	44	7	7	1	override_name	header
+src/dump/limits_dump.c	68	102	35	7	2	pcrec_limits_tsv	header
+src/dump/syntax_dump.c	221	229	9	7	1	put_expect	header
+src/enc/enc.c	36	42	7	7	1	pcrec_enc_by_name	header
+src/enc/enc.c	118	124	7	7	1	pcrec_enc_entry_engine_callable	header
+src/enc/enc.c	128	134	7	7	2	pcrec_enc_emit_text	header
+src/gen/emit_dfa.c	203	209	7	7	1	emit_feature_macros	header
+src/gen/emit_dfa.c	716	1096	381	7	1	emit_rx_abi_types	header
+src/gen/emit_dfa.c	1530	1536	7	7	1	ng_count_caller_scope	header
+src/gen/emit_dfa.c	2370	2380	11	7	1	upc_emit_live	header
+src/gen/emit_dfa.c	2629	2635	7	7	1	upc_of_newline	header
+src/gen/emit_dfa.c	2712	2718	7	7	1	cand_from_escapes	header
+src/gen/emit_dfa.c	2734	2740	7	7	1	cand_from_live_seeds	header
+src/gen/emit_dfa.c	2980	2986	7	7	1	dfa_engine_is_empty	banner
+src/gen/emit_dfa.c	3242	3248	7	7	1	legend_byte	header
+src/gen/emit_dfa.c	3933	3943	11	7	1	tr_comment_premul	none
+src/gen/emit_dfa.c	4127	4133	7	7	1	acc_emit_probe	none
+src/gen/emit_dfa.c	4695	4709	15	7	1	dir_fwd_bound_accept	none
+src/gen/emit_dfa.c	7025	7031	7	7	2	pcrec_emit_info	header
+src/gen/emit_vm.c	1464	1470	7	7	1	vm_revdet_fits	header
+src/gen/emit_vm.c	1570	1576	7	7	1	vm_cls_fold_count	header
+src/gen/emit_vm.c	3234	3240	7	7	1	vm_emit_f	header
+src/gen/emit_vm.c	8452	8458	7	7	2	vm_listing_slot_row	header
+src/ir/dfa.c	223	229	7	7	2	marks_next	header
+src/ir/dfa.c	899	905	7	7	1	tab_insert	header
+src/ir/nfa.c	179	185	7	7	3	frag_single	header
+src/ir/nfa.c	1192	1198	7	7	1	pcrec_nfa_has_bot	header
+src/ir/nfa.c	1202	1208	7	7	1	pcrec_nfa_has_asserts	header
+src/opt/callgraph.c	152	163	12	7	1	cg_roots	header
+src/opt/callgraph.c	181	187	7	7	2	cg_edges	header
+src/opt/callgraph.c	245	251	7	7	1	cg_minw_publish	header
+src/opt/callgraph.c	330	336	7	7	1	cg_cwmin_publish	header
+src/opt/callgraph.c	441	452	12	7	1	cg_publish_link	header
+src/opt/callgraph.c	472	478	7	7	1	pcrec_cg_sat_mul	header
+src/opt/possessify.c	148	154	7	7	1	fst_empty	header
+src/opt/prefix_k.c	162	168	7	7	1	wpush	header
+src/opt/scanedge.c	237	243	7	7	1	pcrec_state_view_invariant	header
+src/opt/scanedge.c	462	471	10	7	1	chain_cmp	header
+src/opt/select_engine.c	463	469	7	7	1	run_possessify	header
+src/parse/ext.c	76	82	7	7	1	pcrec_ext_gate	header
+src/parse/ext.c	546	552	7	7	1	pcrec_ext_group	header
+src/parse/mod_backrefs.c	145	151	7	7	1	br_strndup	header
+src/parse/mod_modifiers.c	247	253	7	7	2	modport_refuse	header
+src/parse/mod_named_groups.c	76	82	7	7	1	ng_arena_strndup	header
+src/parse/mod_named_groups.c	125	131	7	7	1	ng_is_duplicate	header
+src/parse/mod_recursion.c	104	110	7	7	1	rc_strndup	header
+src/parse/mod_verbs.c	543	549	7	7	1	pcrec_ext_verb	header
+src/parse/parse.c	485	519	35	7	1	cls_casefold	header
+src/parse/parse.c	564	570	7	7	1	lit_next_cp	header
+src/parse/parse.c	679	685	7	7	1	pcrec_hexval	header
+src/parse/parse.c	2001	2007	7	7	2	pcrec_parse_mods_init	header
+src/parse/registry.c	1753	1764	12	7	1	pcrec_recognise_tail_default	header
+src/parse/rxt_compose.c	209	215	7	7	1	rc_derived_id	header
+src/parse/rxt_source.c	77	86	10	7	1	tok_len	header
+src/parse/rxt_source.c	349	355	7	7	1	arena_strndup	header
+src/parse/rxt_source.c	378	384	7	7	1	value_trimmed	header
+src/parse/rxt_source.c	478	484	7	7	1	pcrec_rxt_prefix_from_name	header
+src/parse/rxt_source.c	942	948	7	7	1	unknown_token	header
+src/parse/rxt_source.c	3485	3491	7	7	1	lib_ref_text	header
+src/parse/scans.c	117	123	7	7	1	pcrec_verb_name_extent_scan	header
+cli/main.c	470	478	9	6	1	cli_modes_active	header
+cli/main.c	492	497	6	6	1	cli_modes_count	header
+cli/main.c	587	592	6	6	2	engine_by_name	header
+cli/main.c	595	600	6	6	1	engine_name	header
+cli/main.c	682	687	6	6	2	cli_operand	header
+src/core/compile.c	45	50	6	6	1	pcrec_ctx_nomem	header
+src/core/compile.c	82	92	11	6	1	pcrec_axis_on	header
+src/core/compile.c	602	609	8	6	1	size_drop_note	header
+src/core/compile.c	1960	1965	6	6	1	pcrec_compile_driver	header
+src/core/fold.c	104	109	6	6	1	ascii_partners	header
+src/core/sb.c	61	66	6	6	1	pcrec_sb_cmt_open	header
+src/core/sb.c	71	81	11	6	1	pcrec_sb_cmt_close	header
+src/core/sb.c	170	175	6	6	1	pcrec_sb_free	header
+src/dump/axes_dump.c	234	239	6	6	2	bit_of	header
+src/dump/syntax_dump.c	62	67	6	6	1	pcrec_flavour_by_name	header
+src/dump/syntax_dump.c	91	96	6	6	1	pcrec_flavour_names	header
+src/dump/syntax_dump.c	203	208	6	6	1	put_selector	header
+src/enc/enc.c	28	33	6	6	1	pcrec_enc_by_id	header
+src/enc/enc.c	138	143	6	6	1	adv_put	header
+src/gen/emit_dfa.c	323	328	6	6	1	pcrec_emit_engine_stamp	header
+src/gen/emit_dfa.c	1997	2002	6	6	1	emit_residual_decls	header
+src/gen/emit_dfa.c	2004	2009	6	6	1	emit_residual_defs	none
+src/gen/emit_dfa.c	2325	2330	6	6	1	dfa_has_eolvar	none
+src/gen/emit_dfa.c	2394	2402	9	6	1	st_emit_endvar	header
+src/gen/emit_dfa.c	2410	2415	6	6	1	dfa_has_endvar	header
+src/gen/emit_dfa.c	2504	2509	6	6	1	state_acc_any	header
+src/gen/emit_dfa.c	2516	2521	6	6	1	dfa_needs_seed	header
+src/gen/emit_dfa.c	2531	2536	6	6	1	dfa_needs_gseed	header
+src/gen/emit_dfa.c	2596	2601	6	6	1	dfa_has_clsacc	header
+src/gen/emit_dfa.c	3728	3736	9	6	1	fold_arg	header
+src/gen/emit_dfa.c	3945	3951	7	6	1	tr_comment_indexed	none
+src/gen/emit_dfa.c	3953	3960	8	6	1	acc_comment_premul	none
+src/gen/emit_dfa.c	4109	4114	6	6	1	seed_emit_constant	none
+src/gen/emit_dfa.c	4219	4224	6	6	1	pf_open	header
+src/gen/emit_vm.c	804	809	6	6	1	vm_charge	none
+src/gen/emit_vm.c	966	977	12	6	1	vm_slot_expr	header
+src/gen/emit_vm.c	1028	1033	6	6	1	vm_slot_pend	header
+src/gen/emit_vm.c	1058	1063	6	6	1	vm_slot_lookmark	header
+src/gen/emit_vm.c	1065	1070	6	6	1	vm_slot_splice	header
+src/gen/emit_vm.c	1072	1077	6	6	1	vm_slot_lookpos	none
+src/gen/emit_vm.c	3222	3227	6	6	1	pcrec_vm_fmul	header
+src/gen/emit_vm.c	3306	3311	6	6	1	vm_prune_mark	header
+src/gen/emit_vm.c	6851	6856	6	6	1	vm_publish_nonnull	header
+src/gen/emit_vm.c	8427	8432	6	6	1	vm_sec	header
+src/gen/emit_vm.c	8514	8519	6	6	2	vm_prow	header
+src/ir/dfa.c	295	300	6	6	1	arena_regrow	header
+src/ir/dfa.c	402	407	6	6	1	pmemo_slot	header
+src/ir/dfa.c	924	929	6	6	1	view_same	header
+src/ir/nfa.c	119	124	6	6	1	patch_join	header
+src/ir/nfa.c	209	214	6	6	2	frag_cat2	header
+src/ir/nfa.c	346	351	6	6	1	trie_flat	header
+src/opt/altcls.c	166	171	6	6	1	altcls_class_from_set	header
+src/opt/callgraph.c	462	467	6	6	1	pcrec_cg_sat_add	header
+src/opt/mrl.c	104	109	6	6	1	pcrec_mrl_sat_mul	header
+src/opt/prefix_k.c	135	140	6	6	1	pcrec_byte_freq_total_ppm	header
+src/opt/prefix_k.c	302	307	6	6	1	set_ppm	header
+src/opt/select_engine.c	485	490	6	6	1	run_revdet	header
+src/parse/definitions.c	188	193	6	6	1	pcrec_ast_all_core	header
+src/parse/definitions.c	206	211	6	6	1	pcrec_def_build_atomic	header
+src/parse/definitions.c	263	268	6	6	1	pcrec_def_text_cx	header
+src/parse/enabled.c	211	216	6	6	1	install	header
+src/parse/ext.c	122	127	6	6	2	tail_at	header
+src/parse/mod_modifiers.c	181	186	6	6	1	pcrec_registry_option_run_recognise	header
+src/parse/mod_recursion.c	173	178	6	6	1	rc_close	header
+src/parse/mod_recursion.c	428	433	6	6	1	pcrec_call_node	header
+src/parse/mod_recursion.c	439	444	6	6	1	pcrec_call_by_name	header
+src/parse/mod_uprops.c	241	246	6	6	1	pcrec_uprops_row_name	header
+src/parse/mod_uprops.c	301	306	6	6	1	pcrec_registry_uprops_recognise	header
+src/parse/parse.c	50	55	6	6	1	node	header
+src/parse/parse.c	65	73	9	6	1	pcrec_ast_stamp	header
+src/parse/parse.c	256	261	6	6	1	q_open_is_empty	header
+src/parse/registry.c	397	402	6	6	1	recognise_N_name_brace	header
+src/parse/registry.c	1634	1656	23	6	1	pcrec_registry_posix_whole_class_only	header
+src/parse/rxt_compose.c	429	434	6	6	1	rc_recorded	header
+src/parse/rxt_source.c	525	530	6	6	1	rtrim_ws	header
+src/parse/rxt_source.c	956	961	6	6	1	refuse_cardinality	header
+src/parse/rxt_source.c	1049	1054	6	6	1	vocab_lookup	header
+src/parse/rxt_source.c	3206	3211	6	6	1	set_init	header
+src/parse/rxt_source.c	3474	3479	6	6	1	closure_seen	header
+cli/main.c	140	306	167	5	1	usage	header
+cli/main.c	330	334	5	5	1	base_name	header
+cli/main.c	482	489	8	5	1	cli_mode_name	header
+cli/main.c	1251	1255	5	5	1	path_is_dir	header
+src/core/compile.c	228	232	5	5	1	emit_size_code	header
+src/core/compile.c	500	504	5	5	1	size_term_capacity_holds	header
+src/core/compile.c	1942	1946	5	5	1	pcrec_compile	header
+src/core/cpset.c	227	231	5	5	1	pcrec_cpset_publish	header
+src/core/sb.c	192	196	5	5	1	sb_frame_byte	header
+src/core/sb.c	200	204	5	5	1	pcrec_sb_textn	header
+src/core/sb.c	207	211	5	5	1	pcrec_sb_text	header
+src/core/sb.c	347	351	5	5	1	pcrec_sb_stamp_str	header
+src/core/tune.c	116	120	5	5	1	pcrec_tune_row	header
+src/core/tune.c	176	180	5	5	1	pcrec_vm_entry_shape_name	header
+src/dump/axes_dump.c	206	214	9	5	1	axis_macro_name	header
+src/gen/emit_dfa.c	355	359	5	5	1	emit_altcls_macros	header
+src/gen/emit_dfa.c	402	406	5	5	1	emit_search_decl	header
+src/gen/emit_dfa.c	1214	1219	6	5	1	emit_search_in_decl	header
+src/gen/emit_dfa.c	1221	1225	5	5	1	emit_match_in_decl	none
+src/gen/emit_dfa.c	1227	1231	5	5	1	emit_match_caps_in_decl	none
+src/gen/emit_dfa.c	2262	2266	5	5	1	tr_cell	banner
+src/gen/emit_dfa.c	2385	2389	5	5	1	upc_emit_of_class	header
+src/gen/emit_dfa.c	2580	2584	5	5	1	dfa_interior_dead	header
+src/gen/emit_dfa.c	2742	2746	5	5	1	cand_emit_table	none
+src/gen/emit_dfa.c	3112	3116	5	5	1	uniform_folds_of	header
+src/gen/emit_dfa.c	3962	3966	5	5	1	acc_comment_indexed	none
+src/gen/emit_dfa.c	3981	3985	5	5	2	dfa_repr_of	none
+src/gen/emit_dfa.c	3989	3993	5	5	1	view_decl	banner
+src/gen/emit_dfa.c	4340	4344	5	5	1	pf_ofs_applies_common	none
+src/gen/emit_dfa.c	4601	4605	5	5	2	dfa_pf_of	none
+src/gen/emit_dfa.c	4868	4872	5	5	2	dfa_match_of	header
+src/gen/emit_dfa.c	5081	5085	5	5	2	dfa_search_start_of	header
+src/gen/emit_dfa.c	5275	5279	5	5	1	scan_range_applies	none
+src/gen/emit_dfa.c	5314	5318	5	5	2	dfa_edge_of	header
+src/gen/emit_dfa.c	5320	5324	5	5	2	dfa_scan_of	none
+src/gen/emit_dfa.c	5338	5342	5	5	1	pcrec_dfa_axis_edge_cands	header
+src/gen/emit_dfa.c	5343	5347	5	5	1	pcrec_dfa_axis_scanbody_cands	none
+src/gen/emit_dfa.c	6127	6131	5	5	1	emit_target	header
+src/gen/emit_dfa.c	7035	7039	5	5	1	pcrec_emit_residual	header
+src/gen/emit_dfa.c	7041	7045	5	5	1	pcrec_emit_dfa_engine	none
+src/gen/emit_dfa.c	7149	7153	5	5	1	dfa_scan_name	header
+src/gen/emit_vm.c	796	800	5	5	1	vm_bounds_text	header
+src/gen/emit_vm.c	852	856	5	5	1	vm_slot_rev	header
+src/gen/emit_vm.c	994	998	5	5	1	vm_slot_ctr	none
+src/gen/emit_vm.c	1114	1118	5	5	1	vm_marked	header
+src/gen/emit_vm.c	1188	1192	5	5	1	bare	banner
+src/gen/emit_vm.c	3022	3026	5	5	1	vm_goto	none
+src/gen/emit_vm.c	3028	3032	5	5	1	vm_fail	none
+src/gen/emit_vm.c	3214	3218	5	5	1	pcrec_vm_fadd	header
+src/gen/emit_vm.c	3432	3444	13	5	1	vm_isl_single	header
+src/gen/emit_vm.c	4752	4756	5	5	1	vm_rev_index	none
+src/gen/emit_vm.c	6782	6786	5	5	1	vm_grp_set_cap	header
+src/gen/emit_vm.c	7160	7164	5	5	1	vm_ceiling	none
+src/gen/emit_vm.c	8439	8443	5	5	2	vm_row3	header
+src/ir/dfa.c	588	592	5	5	1	clo_open	header
+src/ir/nfa.c	94	98	5	5	1	ast_bare	header
+src/opt/atomic.c	413	417	5	5	1	ds_has	header
+src/opt/callgraph.c	173	177	5	5	1	cg_index	header
+src/opt/callgraph.c	195	199	5	5	1	cg_count	header
+src/opt/lower_enc.c	170	174	5	5	1	pat_char_byte	header
+src/opt/mrl.c	96	100	5	5	1	pcrec_mrl_sat_add	header
+src/opt/possessify.c	123	127	5	5	1	bs_intersects	header
+src/opt/postresolve.c	95	99	5	5	1	pr_count	header
+src/opt/prefix_k.c	312	316	5	5	1	verify_cost	header
+src/parse/definitions.c	220	224	5	5	1	pcrec_def_build_identity	header
+src/parse/mod_modifiers.c	87	91	5	5	1	opt_letter	header
+src/parse/mod_verbs.c	245	252	8	5	1	pcrec_registry_verb_name_limit	header
+src/parse/parse.c	243	247	5	5	1	xskip_byte	header
+src/parse/registry.c	1614	1618	5	5	1	pcrec_registry_posix_names	header
+src/parse/registry.c	1771	1775	5	5	1	pcrec_registry_row_answers	header
+src/parse/rxt_schema.c	42	46	5	5	1	pcrec_rxt_schema_rows	header
+src/parse/rxt_schema.c	132	136	5	5	1	pcrec_rxt_schema_group_scope	header
+src/parse/rxt_source.c	89	93	5	5	1	tok_is	header
+src/parse/rxt_source.c	96	100	5	5	1	skip_ws	header
+src/parse/rxt_source.c	3324	3328	5	5	1	path_is_file	header
+src/parse/rxt_source.c	3899	3903	5	5	1	section_open	header
+cli/main.c	669	676	8	4	1	cli_axis_apply	header
+src/core/compile.c	493	496	4	4	1	cap_or_inf	header
+src/core/cpset.c	164	167	4	4	1	pcrec_cpset_add_set	header
+src/core/internal.h	3966	3969	4	4	1	pcrec_ast_engines	header
+src/core/internal.h	5312	5315	4	4	1	pcrec_startgate_needed	header
+src/core/tune.c	108	111	4	4	1	pcrec_tune_valid	header
+src/core/tune.c	124	127	4	4	1	pcrec_tune_token	header
+src/core/tune.c	226	229	4	4	1	pcrec_tune_size_term_bar	header
+src/core/tune.c	234	237	4	4	1	pcrec_tune_size_term_threshold	header
+src/core/tune.c	241	244	4	4	1	pcrec_tune_vm_inline_chain_max	header
+src/core/tune.c	252	255	4	4	1	pcrec_tune_deny_flags	header
+src/dump/syntax_dump.c	100	103	4	4	1	pcrec_probe_want_names	header
+src/enc/enc.h	309	312	4	4	1	pcrec_enc_ready	header
+src/gen/emit_dfa.c	288	291	4	4	1	pcrec_artifact_has_dfa_scan	header
+src/gen/emit_dfa.c	483	486	4	4	1	dfa_artifact_ncaps	header
+src/gen/emit_dfa.c	645	648	4	4	1	emit_match_decl	none
+src/gen/emit_dfa.c	650	653	4	4	1	emit_match_caps_decl	none
+src/gen/emit_dfa.c	666	669	4	4	1	emit_info_decl	header
+src/gen/emit_dfa.c	694	697	4	4	1	derived_name	header
+src/gen/emit_dfa.c	1115	1118	4	4	1	emit_ncaps_macros	header
+src/gen/emit_dfa.c	2268	2271	4	4	1	acc_cell	none
+src/gen/emit_dfa.c	2275	2278	4	4	1	accw_cell	none
+src/gen/emit_dfa.c	4331	4334	4	4	1	ofsk_at	header
+src/gen/emit_dfa.c	4335	4338	4	4	1	ofsk_scan	none
+src/gen/emit_dfa.c	4361	4364	4	4	1	ofsk_tbl_name	header
+src/gen/emit_dfa.c	4855	4858	4	4	1	match_unwrapped_applies	none
+src/gen/emit_dfa.c	5221	5224	4	4	1	edge_applies	none
+src/gen/emit_dfa.c	5291	5294	4	4	1	scan_test_bitmap	none
+src/gen/emit_dfa.c	5349	5352	4	4	1	scan_test	none
+src/gen/emit_dfa.c	5658	5661	4	4	1	dfa_start_is_scan_head	header
+src/gen/emit_dfa.c	6691	6694	4	4	1	pcrec_emit_c_string_literal	none
+src/gen/emit_vm.c	833	836	4	4	1	vm_slot_mark	header
+src/gen/emit_vm.c	989	992	4	4	1	vm_slot_ref	header
+src/gen/emit_vm.c	1086	1096	11	4	1	vm_look_needs_mark	header
+src/gen/emit_vm.c	1097	1107	11	4	1	vm_look_needs_pos	none
+src/gen/emit_vm.c	1434	1437	4	4	1	vm_cuts	header
+src/gen/emit_vm.c	1808	1811	4	4	1	vm_rev_canmove	banner
+src/gen/emit_vm.c	3052	3055	4	4	1	vm_push	none
+src/gen/emit_vm.c	3132	3135	4	4	1	vm_work	none
+src/gen/emit_vm.c	6918	6921	4	4	1	vm_w_range	none
+src/opt/altcls.c	516	519	4	4	1	pcrec_altcls	header
+src/opt/callgraph.c	883	886	4	4	1	pcrec_callgraph_ntargets	header
+src/opt/callgraph.c	889	892	4	4	1	pcrec_callgraph_target	header
+src/opt/callgraph.c	895	898	4	4	1	pcrec_callgraph_body	header
+src/opt/callgraph.c	901	904	4	4	1	pcrec_callgraph_index	header
+src/opt/callgraph.c	907	910	4	4	1	pcrec_callgraph_reaches	header
+src/opt/callgraph.c	914	917	4	4	1	pcrec_callgraph_spliced	header
+src/opt/lower_enc.c	462	465	4	4	1	pcrec_pat_char	header
+src/opt/possessify.c	117	120	4	4	1	bs_or	header
+src/opt/possessify.c	760	763	4	4	1	pcrec_uniq_scratch	header
+src/opt/possessify.c	767	770	4	4	1	pcrec_uniq_iteration	header
+src/opt/prefix_k.c	125	128	4	4	1	pcrec_byte_freq_ppm	header
+src/parse/definitions.c	113	116	4	4	1	pcrec_def_resolve	header
+src/parse/enabled.c	55	58	4	4	1	pcrec_feature_enabled	header
+src/parse/enabled.c	62	65	4	4	1	pcrec_enabled_mask	header
+src/parse/enabled.c	70	73	4	4	1	pcrec_enabled_set_label	header
+src/parse/enabled.c	77	80	4	4	1	pcrec_enabled_set_modules	header
+src/parse/mod_lookaround.c	393	396	4	4	1	pcrec_lookaround_width_pending	header
+src/parse/mod_modifiers.c	94	97	4	4	1	opt_a_sub	header
+src/parse/mod_uprops.c	233	236	4	4	1	pcrec_uprops_row_count	header
+src/parse/mod_uprops.c	252	255	4	4	1	pcrec_uprops_unicode_version	header
+src/parse/mod_uprops.c	260	263	4	4	1	uprops_fold	header
+src/parse/mod_verbs.c	255	258	4	4	1	pcrec_registry_verb_tables	header
+src/parse/mod_verbs.c	264	267	4	4	1	pcrec_registry_verb_table	header
+src/parse/parse.c	1601	1604	4	4	1	skip_quant_space	header
+src/parse/parse.c	1929	1932	4	4	1	p_alt	header
+src/parse/parse.c	1935	1938	4	4	1	pcrec_parse	header
+src/parse/parse.c	2011	2014	4	4	1	pcrec_parse_body	header
+src/parse/registry.c	1660	1665	6	4	1	pcrec_registry_posix_unknown_msg	header
+src/parse/registry.c	1829	1832	4	4	1	pcrec_registry_find	header
+src/parse/rxt_schema.c	49	52	4	4	1	pcrec_rxt_schema_nrows	header
+src/parse/rxt_schema.c	77	80	4	4	1	pcrec_rxt_schema_opens_group	header
+src/parse/rxt_schema.c	88	91	4	4	1	pcrec_rxt_schema_prose_region	header
+src/parse/rxt_schema.c	99	102	4	4	1	pcrec_rxt_schema_open_subtree	header
+src/parse/rxt_source.c	106	109	4	4	1	line_value	header
+src/parse/rxt_source.c	358	361	4	4	1	arena_strdup	header
+src/gen/emit_dfa.c	4061	4062	2	2	1	view_end_and_eol_applies	header
+src/gen/emit_dfa.c	4063	4064	2	2	1	view_end_only_applies	none
+src/gen/emit_dfa.c	4065	4066	2	2	1	view_eol_only_applies	none
+src/gen/emit_dfa.c	4124	4125	2	2	1	acc_viewed_applies	none
+src/gen/emit_dfa.c	4199	4200	2	2	1	pf_memchr_bounded_applies	banner
+src/gen/emit_dfa.c	4201	4202	2	2	1	pf_memchr_applies	none
+src/gen/emit_dfa.c	4203	4204	2	2	1	pf_bcls_bounded_applies	none
+src/gen/emit_dfa.c	4205	4206	2	2	1	pf_bcls_applies	none
+src/gen/emit_dfa.c	4345	4346	2	2	1	pf_ofs_bounded_applies	none
+src/gen/emit_dfa.c	4347	4348	2	2	1	pf_ofs_applies	none
+src/gen/emit_dfa.c	4876	4877	2	2	1	dfa_match_is_unwrapped	none
+src/gen/emit_dfa.c	5087	5088	2	2	1	dfa_search_start_name	none
+src/gen/emit_dfa.c	5090	5091	2	2	1	dfa_search_is_pinned	none
+src/gen/emit_dfa.c	5130	5131	2	2	1	pcrec_dfa_axis_table_cands	none
+src/gen/emit_dfa.c	5132	5133	2	2	1	pcrec_dfa_axis_prefilter_cands	none
+src/gen/emit_dfa.c	5134	5135	2	2	1	pcrec_dfa_axis_view_cands	none
+src/gen/emit_dfa.c	5136	5137	2	2	1	pcrec_dfa_axis_seed_cands	none
+src/gen/emit_dfa.c	5138	5139	2	2	1	pcrec_dfa_axis_accept_cands	none
+src/gen/emit_dfa.c	5144	5145	2	2	1	pcrec_dfa_axis_match_cands	header
+src/gen/emit_dfa.c	5149	5150	2	2	1	pcrec_dfa_axis_searchstart_cands	header
+src/gen/emit_dfa.c	5328	5329	2	2	1	dfa_scan_body_name	none
+src/gen/emit_dfa.c	5690	5691	2	2	1	scan_label	header
+src/opt/scanedge.c	266	267	2	2	1	acc_of	header
+src/core/compile.c	225	225	1	1	1	emit_size_total	header
+src/core/internal.h	1258	1258	1	1	1	cls_set	header
+src/core/internal.h	1260	1260	1	1	1	cls_has	header
+src/core/internal.h	1275	1275	1	1	1	fnv1a_32_init	header
+src/core/internal.h	1279	1279	1	1	1	fnv1a_32_mix	header
+src/core/sb.c	48	48	1	1	1	sb_muted	header
+src/core/sb.c	52	52	1	1	1	pcrec_sb_comments	header
+src/core/sb.c	56	56	1	1	1	pcrec_sb_len_uncut	header
+src/gen/emit_dfa.c	699	699	1	1	1	engine_entry_name	none
+src/gen/emit_dfa.c	700	700	1	1	1	match_entry_name	none
+src/gen/emit_dfa.c	701	701	1	1	1	match_caps_entry_name	none
+src/gen/emit_dfa.c	702	702	1	1	1	info_entry_name	none
+src/gen/emit_dfa.c	3296	3296	1	1	1	legend_extra_escape	header
+src/gen/emit_dfa.c	3691	3691	1	1	1	cand_always	none
+src/gen/emit_dfa.c	3695	3695	1	1	1	repr_premul_applies	banner
+src/gen/emit_dfa.c	3696	3696	1	1	1	cell_premul	none
+src/gen/emit_dfa.c	3697	3697	1	1	1	cell_indexed	none
+src/gen/emit_dfa.c	4077	4077	1	1	1	seed_applies	banner
+src/gen/emit_dfa.c	4123	4123	1	1	1	acc_by_class_applies	banner
+src/gen/emit_dfa.c	4874	4874	1	1	1	dfa_match_name	none
+src/gen/emit_dfa.c	5326	5326	1	1	1	dfa_edge_taken	none
+src/gen/emit_dfa.c	6689	6689	1	1	1	pcrec_emit_abi_types	none
+src/gen/emit_vm.c	802	802	1	1	1	vm_label	none
+src/gen/emit_vm.c	827	827	1	1	1	vm_slot_guard	header
+src/gen/emit_vm.c	828	828	1	1	1	vm_slot_low	none
+src/opt/possessify.c	112	112	1	1	1	bs_clear	header
+src/opt/possessify.c	114	114	1	1	1	bs_all	header
+src/opt/scanedge.c	246	246	1	1	1	member_ok	header
+src/parse/mod_backrefs.c	252	252	1	1	1	br_brace_space	header
+src/parse/parse.c	41	41	1	1	1	at_end	header
+src/parse/parse.c	43	43	1	1	1	peekc	header
+src/parse/parse.c	45	45	1	1	1	peekc2	header
+src/parse/parse.c	47	47	1	1	1	nextc	header
+src/parse/parse.c	60	60	1	1	1	pcrec_ast_node	header
+src/parse/parse.c	530	530	1	1	1	cls_universe	header
+src/parse/parse.c	578	578	1	1	1	pcrec_ast_char	header
+src/parse/rxt_source.c	3906	3906	1	1	1	pcrec_rxt_source_ncols	header

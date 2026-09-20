@@ -90,6 +90,8 @@
 
 typedef struct { int n; Ast **at; } PrPend;
 
+/* pcrec_ast_visit callback: counts nodes whose lookaround width is still
+ * deferred (pcrec_lookaround_width_pending). */
 static void pr_count(void *ud, const Ast *a)
 {
     PrPend *p = ud;
@@ -116,6 +118,13 @@ static void pr_collect(void *ud, const Ast *a)
 
 /* ------------------------------------------------------------------------- */
 
+/* Resolves every deferred lookaround width fixup: a free
+ * count-then-early-return for a call-free pattern (nothing is recorded,
+ * nothing is touched), then a second walk collecting the pending nodes in
+ * ascending u.look.at order and calling pcrec_lookaround_fix_widths on each.
+ * Asserts the two walks agree on the count (they visit the same tree with the
+ * same predicate; disagreement would mean a lookbehind reaches the emitter
+ * unresolved). */
 void pcrec_postresolve(Ctx *cx, Ast *root)
 {
     /* ONE COUNTING WALK FIRST, and the early return is what makes this pass

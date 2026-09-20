@@ -110,12 +110,17 @@ bool pcrec_tune_valid(int tune)
     return tune >= PCREC_TUNE_MIN_SIZE && tune <= PCREC_TUNE_MAX_SPEED;
 }
 
+/* Looks up the dial row for `tune`, clamped to `balanced` when out of range --
+ * the table pcrec_tune_token and the value-cell accessors below all index
+ * through. */
 const PcrecTuneRow *pcrec_tune_row(int tune)
 {
     if (!pcrec_tune_valid(tune)) return &TUNE_TABLE[PCREC_TUNE_BALANCED + 2];
     return &TUNE_TABLE[tune + 2];
 }
 
+/* The token spelling (e.g. "balanced") for a dial position, read off
+ * pcrec_tune_row. */
 const char *pcrec_tune_token(int tune)
 {
     return pcrec_tune_row(tune)->token;
@@ -166,6 +171,8 @@ static const char *const VM_ENTRY_NAMES[] = {
     "auto", "plain", "shared", "forward", "inline"
 };
 
+/* The rung name ("auto"/"plain"/"shared"/"forward"/"inline") for a
+ * `PCREC_VM_ENTRY_*` ordinal, or "" outside range. */
 const char *pcrec_vm_entry_shape_name(int shape)
 {
     if (shape < 0 || shape > PCREC_VM_ENTRY_INLINE) return "";
@@ -221,11 +228,16 @@ int pcrec_tune_size_term_bar(int tune)
     return pcrec_tune_row(tune)->size_term_bar;
 }
 
+/* The dial row's size-term-threshold cell for `tune`, or 0 (the em-dash
+ * sentinel the caller resolves against its own built-in default) -- see the
+ * comment above pcrec_tune_size_term_bar. */
 long long pcrec_tune_size_term_threshold(int tune)
 {
     return pcrec_tune_row(tune)->size_term_threshold;
 }
 
+/* The dial row's vm-inline-chain-max cell for `tune`, or 0 (the em-dash
+ * sentinel), per the same comment. */
 long long pcrec_tune_vm_inline_chain_max(int tune)
 {
     return pcrec_tune_row(tune)->vm_inline_chain_max;

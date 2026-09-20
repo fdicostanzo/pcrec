@@ -36,6 +36,10 @@
 #include "core/internal.h"
 #include "pcrec.h"
 
+/* The `.rxt`-composing sibling of pcrec_compile: passes `defs` and
+ * pcrec_rxt_compose through to compile_driver, so a --source build runs the
+ * same one pipeline this file's own header explains keeping out of the plain
+ * driver. */
 int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        const RxtDefs *defs, pcrec_output *out,
                        pcrec_error *err)

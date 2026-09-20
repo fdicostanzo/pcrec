@@ -96,6 +96,12 @@ static bool opt_a_sub(int c)
     return c == 'D' || c == 'P' || c == 'S' || c == 'T' || c == 'W';
 }
 
+/* RECOGNITION, not validity, over an option run starting at the selector byte:
+ * true for anything PCRE2 would call a (malformed-or-not) option setting -- a
+ * truncated run, a run ending in a hyphen/terminator error, `a` plus its one
+ * ASCII-restrict sub-letter -- false only for a byte PCRE2 calls "no construct
+ * here" (error 111). See the comment above for the two-error-tier distinction
+ * this function exists to get right. */
 bool pcrec_registry_option_run_ok(const char *at, size_t avail)
 {
     size_t i = 0;
@@ -167,6 +173,11 @@ bool pcrec_registry_option_run_ok(const char *at, size_t avail)
  * old tail-less default already answered ("no tail: answers always", D32 §2)
  * — zero change to any arbitration or liveness count — and ext.c keeps doing
  * the real check itself, with the real Ctx, exactly as it did under the flag. */
+/* A pure MARKER answering true unconditionally -- the old tail-less default's
+ * own answer -- because the real check (option_run_ok, which needs a real
+ * selector byte one position before `at`) cannot safely run against
+ * registry_check.c's hand-built probe buffers; ext.c does the real check
+ * itself. See the comment above. */
 bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
                                          const char *tail)
 {
@@ -231,6 +242,8 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
  * cursor are restored before returning (check06: the doorway never moves
  * cx->pos; the result carries `end` past the construct's `)`). */
 
+/* Builds an EXT_REFUSAL ExtResult carrying `msg` -- the option-run semantic
+ * port's own refusal helper. */
 static ExtResult modport_refuse(ExtWant want, size_t at, const char *msg)
 {
     ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",

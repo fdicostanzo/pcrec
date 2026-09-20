@@ -13,6 +13,9 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 
+/* Formats the printf-style refusal into `cx->err` (position plus the PATTERN
+ * input tag) when a caller supplied one, then longjmps to `cx->jb` -- the one
+ * exit every refusal in a compile funnels through. */
 void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 {
     if (cx->err) {
@@ -46,6 +49,9 @@ void pcrec_ctx_nomem(Ctx *cx)
                     "not allocate; shrink the pattern or raise the limit)");
 }
 
+/* Zero-fills `*opt` and lays down the shipped defaults (prefix "rx", byte
+ * encoding, no companion header, the size-warning on) so a caller's own field
+ * writes are the only thing that can override them. */
 void pcrec_default_options(pcrec_options *opt)
 {
     memset(opt, 0, sizeof(*opt));
@@ -122,6 +128,10 @@ bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force)
  * construction rather than by a rule someone has to remember. */
 typedef struct { size_t total, prose, tables; } EmitSize;
 
+/* Recognises the emitter's own table-open line (`static const ... [N]... = {`,
+ * anchored on the `static const ` prefix and a `[...]= {` shape rather than a
+ * type spelling) so emit_size_measure can tell a jump/DFA table line from
+ * ordinary emitted code. */
 static bool emit_size_table_open(const char *ln, size_t n)
 {
     /* `static const <type...> <rx_name>[<digits>]... = {` — anchored on the
@@ -156,6 +166,10 @@ static bool emit_size_table_open(const char *ln, size_t n)
     return false;
 }
 
+/* Walks the emitted C source computing the EmitSize breakdown -- TOTAL bytes
+ * including newlines, PROSE bytes for both comment styles, and TABLE bytes
+ * bounded by an open table's own brace count -- that
+ * emit_size_total/emit_size_code below price a compile against the size caps. */
 static EmitSize emit_size_measure(const char *src, size_t len)
 {
     EmitSize z = { 0, 0, 0 };
@@ -209,12 +223,16 @@ static EmitSize emit_size_measure(const char *src, size_t len)
 /* The two numbers the caps read. TOTAL is the artifact minus its comments
  * (the size log's quantity); CODE is that minus its table initializers. */
 static size_t emit_size_total(const EmitSize *z) { return z->total - z->prose; }
+/* CODE = TOTAL minus this artifact's TABLE bytes, floored at zero -- the
+ * size-cap term actually charged, per the comment above emit_size_total. */
 static size_t emit_size_code(const EmitSize *z)
 {
     size_t t = z->total - z->prose;
     return t > z->tables ? t - z->tables : 0;
 }
 
+/* True iff `p` is a legal emitted-symbol prefix: non-empty, within
+ * PCREC_MAX_PREFIX_LEN, alpha-or-underscore first, alnum-or-underscore after. */
 static bool valid_prefix(const char *p)
 {
     if (!p || !*p || strlen(p) > PCREC_MAX_PREFIX_LEN) return false;
@@ -224,6 +242,12 @@ static bool valid_prefix(const char *p)
     return true;
 }
 
+/* Frees every heap array and StrBuf a Job may have allocated
+ * (NFA/DFA/reverse-DFA/optional-anchored-DFA state+table arrays, the
+ * text/header/vm/ir scratch buffers, the two [ART-SIZE] scratch buffers, the
+ * taken-but-unpublished output strings) plus the compile's arena, then clears
+ * `cx->job` -- the one cleanup both the success path and every longjmp'd
+ * refusal calls, so a new allocation belongs here or it leaks on abort. */
 static void job_cleanup(Ctx *cx)
 {
     if (cx->job) {
@@ -1912,6 +1936,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     return -1;
 }
 
+/* The public one-shot compile entry: forwards to compile_driver with no IR
+ * capture, no RxtDefs and no composer -- the plain single-pattern path every
+ * other entry point in this file builds on. */
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
@@ -2014,6 +2041,8 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     return n;
 }
 
+/* Frees a pcrec_output's two owned strings (c_src/h_src) and nulls them;
+ * tolerates a NULL `out`. */
 void pcrec_output_free(pcrec_output *out)
 {
     if (!out) return;

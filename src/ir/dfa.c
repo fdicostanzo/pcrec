@@ -217,6 +217,9 @@ typedef struct {
     int       n;
 } Marks;
 
+/* Advances the closure's generation stamp, resetting the mark array only on
+ * the rare uint32 wrap -- O(1) amortized, per the comment above's O(states
+ * visited) argument. */
 static void marks_next(Marks *mk)
 {
     if (++mk->gen == 0) {   /* wrap: stale stamps could alias, so clear */
@@ -303,6 +306,9 @@ static void *arena_regrow(Arena *ar, void *old, size_t oldsz, size_t newsz)
  * mildly: it is odd and well-distributed) or arbitrary (L3-F3). */
 #define PCREC_HASH64_MUL 1099511628211ull
 
+/* Open-addressed hash slot for (parent,loop) in `t`'s table (FNV-64
+ * multiplicative hash, linear probing) -- the slot to read for lookup or write
+ * for insertion. */
 static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
 {
     uint64_t k = ((uint64_t)(uint32_t)parent << 32) | (uint32_t)loop;
@@ -313,6 +319,8 @@ static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
     return i;
 }
 
+/* Doubles `t`'s table (from 256) and re-inserts every interned context (id 0,
+ * the empty stack, is never a key). */
 static void lctx_rehash(LCtxTab *t)
 {
     t->tabcap = t->tabcap ? t->tabcap * 2 : 256;
@@ -376,6 +384,9 @@ typedef struct {
     uint32_t  g;
 } PMemo;
 
+/* Advances the (state,ctx) memo's generation, resetting `used` and clearing
+ * the stamp array only on the rare uint32 wrap -- lctx's own O(1)-amortized
+ * reset shape, one table over. */
 static void pmemo_next(PMemo *m)
 {
     m->used = 0;
@@ -385,6 +396,9 @@ static void pmemo_next(PMemo *m)
     }
 }
 
+/* Open-addressed hash slot for key `k` in the current generation of `m`
+ * (FNV-64 multiplicative hash, linear probing within this generation's live
+ * entries). */
 static size_t pmemo_slot(const PMemo *m, uint64_t k)
 {
     size_t i = (size_t)((k * PCREC_HASH64_MUL) >> 20) & (m->cap - 1);
@@ -448,6 +462,10 @@ typedef struct {
     size_t n, cap;
 } ContStack;
 
+/* Pushes a deferred branch (resume state, open-loop context, and the loop
+ * entry to open on resume) onto `k`, growing the arena-backed stack (doubling
+ * from 128) as needed -- the explicit stack standing in for the pre-K18
+ * closure's C recursion (see clo_walk). */
 static void cont_push(ContStack *k, int s, int ctx, int push)
 {
     if (k->n == k->cap) {
@@ -816,6 +834,13 @@ typedef struct {
     bool right_cstart;
 } Sides;
 
+/* Computes the epsilon closure of pre[0..npre) under class-view flags
+ * (bot/eol/end/gst_ok, neighbouring-byte `sd`), writing the closed
+ * N_CLASS/N_CSTART states into `out`/`*nout` and whether the closure accepts
+ * into `*accept`; `prune` stops early once an accepting path is found. Resets
+ * the closure's own scratch generations (marks_next x2, kept in lockstep --
+ * see the comment above -- and pmemo_next) and the deferred-branch stack at
+ * the top of every call. */
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
                     bool end_ok, bool gst_ok, Sides sd, bool prune,
                     CloScratch *sc, int *out, int *nout, bool *accept)
@@ -869,6 +894,8 @@ static uint32_t dhash(const DView *up, int eolvar, int endvar)
     return h;
 }
 
+/* Inserts DFA state `idx` into the intern table at its dhash slot (open
+ * addressing, linear probing). */
 static void tab_insert(Dfa *d, int idx)
 {
     uint32_t h = dhash(d->st[idx].up, d->st[idx].eolvar, d->st[idx].endvar);
@@ -877,6 +904,9 @@ static void tab_insert(Dfa *d, int idx)
     d->tab[i] = idx;
 }
 
+/* Doubles the intern table (from 256), reinserting every existing state via
+ * tab_insert; a malloc failure diagnoses through pcrec_ctx_nomem (the old
+ * table is already freed and NULL, so cleanup double-frees nothing). */
 static void tab_grow(Ctx *cx, Dfa *d)
 {
     size_t newcap = d->tabcap ? d->tabcap * 2 : 256;

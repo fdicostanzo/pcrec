@@ -67,6 +67,8 @@
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_BACKREFS
 
+/* Decimal-accumulates p[from,to) with saturation at BR_NUMBER_MAX -- a run of
+ * digits can never wrap into a small value that happens to name a real group. */
 static long br_decimal(const char *p, size_t from, size_t to)
 {
     long v = 0;
@@ -126,6 +128,8 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
     return a;
 }
 
+/* Wraps an already-built node into an EXT_NODE ExtResult ending at `end` --
+ * the small helper every backref producer below returns through. */
 static ExtResult br_result_node(Ast *node, size_t at, size_t end, ExtWant want)
 {
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
@@ -173,6 +177,12 @@ static const char *br_strndup(Ctx *cx, const char *s, size_t len)
  * of one PCRE2 fact, which is the shape §5.2 forbids the module to disturb and
  * sabotage S110 pins: with this module ENABLED every class cell must stay
  * byte-identical to the base tier's answer. */
+/* Module backrefs' producer for a bare-digit escape: applies the four ordered
+ * questions above (leading `0` -> octal; a single 1-9 -> whole-pattern-count
+ * backref; 1-7 with that many groups so far -> backref, else octal; 8/9-led ->
+ * decimal backref) and builds the A_BREF via br_node, or defers to
+ * pcrec_clsport_octal's own octal scan for the octal branch. Reads
+ * cx->pat/cx->patlen directly to scan the digit run. */
 ExtResult pcrec_brport_digit(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)
 {
@@ -315,6 +325,15 @@ static ExtResult br_name_ref(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
  * this file's own `br_node`/`br_name_ref` — a call and a reference share the
  * grammar and nothing else (design §4.1(b)), so the NODE those two build is
  * module `recursion`'s, queued as `PEND_CALL`, not `PEND_BREF`. */
+/* Module backrefs' producer for `\g` in all three shapes --
+ * `\g{n}`/`\g{-n}`/`\gn` (backreference, this file's own br_node) and
+ * `\g<name>`/`\g'name'` (subroutine CALL, handed to mod_recursion.c's
+ * pcrec_call_node/pcrec_call_by_name instead) -- dispatching on `rw` (which
+ * registry row the arbitration actually elected) since the tail-less and
+ * tailed spellings share one doorway. Reads cx->pat/cx->patlen. Caller
+ * invariant: the `<`/`'` arms build module recursion's node, queued PEND_CALL,
+ * never this file's PEND_BREF -- see the banner above for why a call and a
+ * reference share grammar and nothing else. */
 ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
                          size_t at, size_t from)
 {
@@ -472,6 +491,9 @@ ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
  * start with a digit") and `\kn` is error 169 ("a delimiter is required"), so
  * there is no numeric spelling of `\k` to support and the module gate for
  * `named-groups` covers every form. */
+/* Producer for `\k<n>`/`\k'n'`/`\k{n}`, always by name: matches the opening
+ * delimiter to its close, trims brace whitespace only for the `{}` form, and
+ * resolves via br_name_ref. */
 ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
                          size_t at, size_t from)
 {
@@ -511,6 +533,8 @@ ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
  * The python spelling, and the ONE by-name form python `re` also has — which
  * makes it the only `\k`-class row in this module with a base-tier oracle.
  * `from` is the byte after the `=`. */
+/* Producer for `(?P=name)`, the python spelling and this module's one by-name
+ * form with a base-tier python oracle; `from` is the byte after `=`. */
 ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)
 {

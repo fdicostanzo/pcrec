@@ -99,6 +99,8 @@ long long pcrec_mrl_sat_add(long long a, long long b)
     return r > MRL_MINW_MAX ? MRL_MINW_MAX : r;
 }
 
+/* Saturating multiply at MRL_MINW_MAX: 0 for a non-positive operand,
+ * MRL_MINW_MAX on overflow -- pcrec_mrl_sat_add's own multiply sibling. */
 long long pcrec_mrl_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;

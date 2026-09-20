@@ -5,6 +5,11 @@
 
 #define ABLOCK_MIN (64 * 1024)
 
+/* Allocates `sz` bytes (rounded up to 16) from the arena's current block,
+ * opening a new BLOCK via malloc when the current one has no room; the
+ * returned memory is zeroed. On malloc failure this diagnoses through
+ * pcrec_ctx_nomem when the arena has a Ctx, then aborts -- a detached arena
+ * (no Ctx) has no error channel to diagnose through. */
 void *pcrec_arena_alloc(Arena *a, size_t sz)
 {
     sz = (sz + 15) & ~(size_t)15;
@@ -32,6 +37,8 @@ void *pcrec_arena_alloc(Arena *a, size_t sz)
     return p;
 }
 
+/* Frees every block the arena holds and resets it to empty; the arena's one
+ * teardown, called on both the success path and every longjmp'd refusal. */
 void pcrec_arena_free(Arena *a)
 {
     ABlock *b = a->head;

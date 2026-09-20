@@ -6,6 +6,10 @@
 
 #include "core/internal.h"
 
+/* Ensures `sb` has room for `need` more bytes plus the NUL, doubling from 256
+ * and reallocating into a temporary so a failed realloc leaves the old buffer
+ * intact for pcrec_sb_free; also the one place the size-term ladder's
+ * scratch-bound abort fires, since every append funnels through here. */
 static void sb_grow(StrBuf *sb, size_t need)
 {
     /* [ART-SIZE] The size term's early abort. Checked here because this is the
@@ -43,10 +47,17 @@ static void sb_grow(StrBuf *sb, size_t need)
  * comment or repair a line — the failure mode a post-hoc strip would have. */
 static inline bool sb_muted(const StrBuf *sb) { return sb->cmt_mute_depth != 0; }
 
+/* Turns the comment gate on/off for `sb`; `on=false` starts dropping
+ * NONESSENTIAL comment bytes at their emission site. */
 void pcrec_sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
 
+/* `sb`'s length as if no comment had ever been muted -- the size term's own
+ * byte count, per StrBuf's own comment in internal.h. */
 size_t pcrec_sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
 
+/* Enters one nested comment region, latching cmt_mute_depth the first time a
+ * NONESSENTIAL comment opens while the gate is off, so nested comments mute
+ * and later unmute as one span. */
 void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
 {
     sb->cmt_depth++;
@@ -54,6 +65,9 @@ void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
         sb->cmt_mute_depth = sb->cmt_depth;
 }
 
+/* Leaves the innermost comment region, clearing the mute latch exactly when it
+ * closes the span that set it; refuses to underflow on an unbalanced close
+ * rather than leaving the buffer muted for the rest of the compile. */
 void pcrec_sb_cmt_close(StrBuf *sb)
 {
     /* An unbalanced close would leave the buffer muted for the rest of the
@@ -66,6 +80,7 @@ void pcrec_sb_cmt_close(StrBuf *sb)
     sb->cmt_depth--;
 }
 
+/* Appends one byte, or -- muted -- counts it as dropped without writing it. */
 void pcrec_sb_putc(StrBuf *sb, char c)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += 1; return; }
@@ -74,6 +89,8 @@ void pcrec_sb_putc(StrBuf *sb, char c)
     sb->p[sb->len] = 0;
 }
 
+/* Appends a NUL-terminated string, or -- muted -- counts its length as dropped
+ * without writing it. */
 void pcrec_sb_puts(StrBuf *sb, const char *s)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += strlen(s); return; }
@@ -94,6 +111,10 @@ void pcrec_sb_puts(StrBuf *sb, const char *s)
 static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
       __attribute__((format(printf, 2, 0)));
 
+/* pcrec_sb_printf's body: measures the formatted length with one `vsnprintf`,
+ * grows once, formats with a second -- or, muted, measures only and adds the
+ * count to `cmt_dropped` so the size term still sees the true byte cost of a
+ * dropped comment. */
 static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
 {
     if (sb_muted(sb)) {
@@ -120,6 +141,8 @@ static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
     sb->len += (size_t)n;
 }
 
+/* Varargs wrapper over sb_vprintf -- the buffer's one formatted-append entry
+ * point. */
 void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
 {
     va_list ap;
@@ -128,6 +151,9 @@ void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
     va_end(ap);
 }
 
+/* Hands the caller the buffer's string (allocating an empty one if nothing was
+ * ever appended) and detaches it from `sb`, which is left empty and growable
+ * again. */
 char *pcrec_sb_take(StrBuf *sb)
 {
     char *p = sb->p ? sb->p : strdup("");
@@ -140,6 +166,7 @@ char *pcrec_sb_take(StrBuf *sb)
     return p;
 }
 
+/* Frees `sb`'s backing storage and resets it to the empty state. */
 void pcrec_sb_free(StrBuf *sb)
 {
     free(sb->p);
@@ -168,18 +195,25 @@ static void sb_frame_byte(StrBuf *sb, unsigned char c)
     else                       pcrec_sb_putc(sb, (char)c);
 }
 
+/* Appends `n` bytes of `s` through the frame-byte escape (sb_frame_byte,
+ * above) -- the TEXT vocabulary's entry point for a length-carrying source. */
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n)
 {
     if (!s) return;
     for (size_t i = 0; i < n; i++) sb_frame_byte(sb, (unsigned char)s[i]);
 }
 
+/* pcrec_sb_textn over a NUL-terminated string. */
 void pcrec_sb_text(StrBuf *sb, const char *s)
 {
     if (!s) return;
     pcrec_sb_textn(sb, s, strlen(s));
 }
 
+/* Appends `s` under the FIELD vocabulary: backslash, tab, newline and
+ * carriage-return get their own two-character escapes and every other byte
+ * goes through sb_frame_byte -- the escape a TSV producer uses for a value
+ * that must never itself carry a field or line separator. */
 void pcrec_sb_field(StrBuf *sb, const char *s)
 {
     if (!s) return;
@@ -196,6 +230,9 @@ void pcrec_sb_field(StrBuf *sb, const char *s)
     }
 }
 
+/* Appends `names[0..n)` separated by `sep`, skipping a NULL entry -- the
+ * unbounded join; a fixed-capacity destination uses its own bounded join
+ * instead (see the declaration's own comment). */
 void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
 {
     for (size_t i = 0; i < n; i++) {
@@ -204,6 +241,9 @@ void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t
     }
 }
 
+/* Appends `cells[0..ncell)` as one TAB-separated TSV row (through
+ * pcrec_sb_text, so a cell's own tabs/newlines are escaped), terminated by a
+ * newline. */
 void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 {
     for (size_t i = 0; i < ncell; i++) {
@@ -228,6 +268,9 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
  * `n < 0` aborts, matching `pcrec_sb_printf`: a negative `vsnprintf` return is an
  * encoding error in a format string this tree wrote itself, not a condition a
  * pattern can provoke, so there is no diagnosis to route. */
+/* pcrec_sb_fragfv's va_list body: measures the formatted length with one
+ * `vsnprintf`, arena-allocates exactly n+1 bytes, formats with a second -- see
+ * the banner above for why n+1 and why a negative length aborts. */
 const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
 {
     va_list ap2;
@@ -243,6 +286,7 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
     return out;
 }
 
+/* Varargs wrapper over pcrec_sb_fragfv. */
 const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
 {
     va_list ap;
@@ -267,6 +311,10 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
       __attribute__((format(printf, 5, 0)));
 
+/* sb_stampv's body: one `#define NAME_key<pad> ` prefix (the separator space
+ * written outside the width, so a padded and an over-long name both get
+ * exactly one), the value formatted by `valfmt`, then a newline -- the STAMP
+ * layer's one implementation, per the banner above. */
 static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
 {
@@ -275,6 +323,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
     pcrec_sb_putc(c, '\n');
 }
 
+/* Unpadded stamp: sb_stampv with namew=0, the banner's "%-*s at width 0" rule. */
 void pcrec_sb_stampf(StrBuf *c, const char *upper, const char *name,
                const char *valfmt, ...)
 {
@@ -284,6 +333,7 @@ void pcrec_sb_stampf(StrBuf *c, const char *upper, const char *name,
     va_end(ap);
 }
 
+/* Padded stamp: sb_stampv with a caller-given name width. */
 void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
                 const char *valfmt, ...)
 {
@@ -293,6 +343,7 @@ void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
     va_end(ap);
 }
 
+/* String-valued stamp: quotes `value` and delegates to pcrec_sb_stampf. */
 void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value)
 {
@@ -308,6 +359,9 @@ void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
  * uppercase would be a behaviour change smuggled inside a refactor. If this
  * tree ever wants ASCII-only folding here, that is its own change with its
  * own byte-identity argument. */
+/* Arena-allocates an uppercased copy of `s` via `toupper` (locale-dependent,
+ * deliberately -- see the banner above), the one shared body behind every
+ * emitted upper-cased prefix. */
 const char *pcrec_sb_upper(Arena *a, const char *s)
 {
     size_t n = strlen(s);

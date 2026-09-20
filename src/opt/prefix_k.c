@@ -121,6 +121,7 @@ static const unsigned byte_freq_ppm_tbl[256] = {
          2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
 };
 
+/* The static English-text byte-frequency table's ppm value for byte `b`. */
 unsigned pcrec_byte_freq_ppm(int b)
 {
     return byte_freq_ppm_tbl[(unsigned char)b];
@@ -156,6 +157,8 @@ typedef struct {
     bool       accept;    /* N_ACCEPT is in the closure */
 } Walk;
 
+/* Pushes NFA state `s` onto the frontier walk's stack if in range and not
+ * already seen this generation. */
 static void wpush(Walk *w, int s)
 {
     if (s < 0 || s >= w->nfa->n) return;
@@ -294,6 +297,8 @@ static int frontier_union(const Walk *w, uint8_t set[256])
 #define MATERIAL_NUM 2u
 #define MATERIAL_DEN 1u
 
+/* Sums pcrec_byte_freq_ppm over every set byte in `set`, capped at 1,000,000
+ * (the whole alphabet's own total). */
 static unsigned set_ppm(const uint8_t set[256])
 {
     unsigned t = 0;
@@ -368,6 +373,16 @@ static unsigned long long model_cost(unsigned scan_cost, unsigned scan_ppm,
  *
  * `k0` still owns the BASELINE (`base_ppm`), because the baseline is what the
  * artifact costs today and today it filters on `k0`. */
+/* Selects the offset-skip k-sets for this NFA's candidate-start scan: `k0`
+ * (the DFA start state's own escape set) is always the ROLE-A scan baseline,
+ * and this walk additionally computes ROLE-B verify sets from the closure's
+ * own frontier[j] at each candidate offset k* -- never reusing a single
+ * state's set at a position that state does not describe, which is the
+ * miscompile this function exists to not repeat (see the comment above).
+ * Selects a k* > 0 only when the model predicts it at least
+ * MATERIAL_NUM/MATERIAL_DEN times cheaper than the offset-0 baseline, so an
+ * artifact never moves for a gain nobody could measure. Fills `*o` with the
+ * chosen sets and their predicted costs. */
 void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
                         PrefixKSets *o)
 {

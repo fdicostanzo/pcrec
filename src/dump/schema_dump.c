@@ -85,6 +85,14 @@ static const SurfaceRow g_surface[] = {
       "is ordinary — the structure is checked, the content by nobody" },
 };
 
+/* The `--list-schema` TSV, the seventh registry dump: the fixed 10-column
+ * header and one #section schema row per (scope, kind) walked off
+ * src/parse/rxt_schema.def (pcrec_rxt_schema_rows) -- the same table the
+ * parser enforces -- followed by a #section surface listing the four things
+ * this schema deliberately does NOT validate (g_surface) and, as trailing
+ * comments (never a row of either section), the compile-time
+ * schema-rows/wave-built/wave-reserved counts a check can partition against
+ * without hardcoding a copy of internal.h's constants. */
 char *pcrec_rxt_schema_tsv(void)
 {
     StrBuf sb = {0};

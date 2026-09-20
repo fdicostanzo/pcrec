@@ -199,6 +199,15 @@ static bool bucket_has_tail(RegKind kind, int sel)
  * `\g`/`\k` DO arrive here with in_class set — their class position is base
  * semantics (octal / literal fallback, FIX-3/K13) carried as BASE class
  * ports, produced below regardless of the enabled set. */
+/* Doorway 1 (after '\\'): arbitrates the registry row for escape byte `c` and
+ * returns the ExtResult it produces -- a compiled construct, an UNBUILT
+ * diagnosis (module known, port missing) or a REFUSE -- electing the chosen
+ * row into `*elected` for the wrapper below to stamp. Reads the pattern tail
+ * through `tail_at(cx, cx->pos, ...)` and dispatches through
+ * pcrec_registry_arbitrate. Caller invariant: only reached once parse.c's own
+ * decoder has already declined the plain character escapes; `in_class` picks
+ * both the diagnostic wording and which BASE class ports (octal, `\\g`/`\\k`
+ * literal fallback) fire unconditionally of the enabled module set. */
 static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
                             size_t at, const RegRow **elected)
 {
@@ -369,6 +378,14 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
  * over — once as an exact selector match, once as the fallback. It is the same
  * row and the same diagnostic either way, and parse.c printed '?' for the
  * missing byte, which is reproduced below. */
+/* Doorway 2 (after '(?'): arbitrates the registry row for the two-byte
+ * selector `c2` (or -1 at end of pattern, which doubles as REG_SEL_ANY's own
+ * catch-all value) and returns the ExtResult it produces, electing the row
+ * into `*elected`. Reads the pattern tail via `tail_at(cx, cx->pos + 2, ...)`.
+ * Caller invariant: a ROADMAP_NEVER row always refuses as permanently out of
+ * scope even at WANT_RESULT, checked before the ordinary UNBUILT/REFUSE split
+ * -- reordering the two would let a half-landed module's row look like a
+ * promise it never makes. */
 static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
                               const RegRow **elected)
 {
@@ -524,6 +541,8 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     REFUSE(at, "(?%c...) requires module '%s'", shown, r->module);
 }
 
+/* Doorway 2's public face: calls group_answer and stamps the elected row onto
+ * the result. */
 ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
 {
     const RegRow *elected = NULL;
@@ -697,6 +716,8 @@ static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     }
 }
 
+/* The class-bracket doorway's public face: calls clsbracket_answer and stamps
+ * the elected row onto the result. */
 ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
                                   size_t from, bool at_class_open,
                                   bool at_content_start)

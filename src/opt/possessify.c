@@ -108,14 +108,18 @@
  * both. POSITION sets below use the identical representation over position
  * ids, which is what bounds PSS_MAX_POS at 256. */
 
+/* Zeroes a 256-bit byte set. */
 static void bs_clear(uint8_t *s) { memset(s, 0, 32); }
+/* Sets every bit of a 256-bit byte set. */
 static void bs_all(uint8_t *s)   { memset(s, 0xff, 32); }
 
+/* d |= s, bitwise, over a 256-bit byte set. */
 static void bs_or(uint8_t *d, const uint8_t *s)
 {
     for (int i = 0; i < 32; i++) d[i] |= s[i];
 }
 
+/* True iff `a` and `b` share any set bit. */
 static bool bs_intersects(const uint8_t *a, const uint8_t *b)
 {
     for (int i = 0; i < 32; i++) if (a[i] & b[i]) return true;
@@ -140,6 +144,7 @@ typedef struct {
     bool    nullable;
 } First;
 
+/* An empty First value: FIRST = {}, nullable as given. */
 static First fst_empty(bool nullable)
 {
     First r;
@@ -502,6 +507,7 @@ typedef struct {
     bool    nullable;
 } GkParts;
 
+/* An empty GkParts value: first/last = {}, nullable as given. */
 static GkParts gk_parts_empty(bool nullable)
 {
     GkParts p;
@@ -511,6 +517,9 @@ static GkParts gk_parts_empty(bool nullable)
     return p;
 }
 
+/* Interns a new Glushkov position for byte-set `bytes` in `g`, or fails
+ * (`g->ok = false`) past PSS_MAX_POS; initializes its
+ * follow-union/conflict/hasfollow slots empty. */
 static int gk_newpos(Gk *g, const uint8_t *bytes)
 {
     if (g->npos >= PSS_MAX_POS) { g->ok = false; return -1; }
@@ -522,6 +531,9 @@ static int gk_newpos(Gk *g, const uint8_t *bytes)
     return p;
 }
 
+/* Wires FOLLOW for every position pair (p in `lasts`, q in `firsts`): unions
+ * q's byte set into p's follow-union and marks a conflict if it already
+ * intersected. */
 static void gk_link(Gk *g, const uint8_t *lasts, const uint8_t *firsts)
 {
     for (int p = 0; p < g->npos; p++) {
@@ -750,6 +762,8 @@ void *pcrec_uniq_scratch(Ctx *cx)
     return pcrec_arena_alloc(&cx->arena, sizeof(Gk));
 }
 
+/* body_admits_unique_iteration over the scratch Gk `scratch` -- the verdict
+ * pcrec_uniq_scratch's allocation exists to make cheap to ask repeatedly. */
 bool pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why)
 {
     return body_admits_unique_iteration((Gk *)scratch, body, why);
@@ -1093,6 +1107,10 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     }
 }
 
+/* Runs the possessify walk over `root` in SURVEY mode (calling `fn` per
+ * provably-safe possessive candidate without marking anything), saving and
+ * restoring cx's poss_total/poss_marked census counters around it so a survey
+ * never perturbs pcrec_possessify's own reporting. */
 void pcrec_poss_survey(Ctx *cx, Ast *root,
                        void (*fn)(void *user, Ast *rep), void *user)
 {
@@ -1118,6 +1136,9 @@ void pcrec_poss_survey(Ctx *cx, Ast *root,
     cx->poss_marked = saved_marked;
 }
 
+/* Runs the possessify walk over `root`, marking every quantifier it proves
+ * admits unique iteration as possessive; publishes cx->poss_total/poss_marked
+ * from the walk's own counts and returns the number marked. */
 int pcrec_possessify(Ctx *cx, Ast *root)
 {
     Pss P;

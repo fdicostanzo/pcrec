@@ -100,6 +100,8 @@ static const Ast *ast_bare(const Ast *a)
 /* Dangling out-edges are encoded as state*2 + slot (slot 0 = t1, 1 = t2). */
 typedef struct { int *v; int n, cap; } Patch;
 
+/* Appends dangling out-edge `enc` (state*2+slot) to `p`, growing the
+ * arena-backed array (doubling from 8) as needed. */
 static void patch_push(NB *b, Patch *p, int enc)
 {
     if (p->n == p->cap) {
@@ -113,6 +115,7 @@ static void patch_push(NB *b, Patch *p, int enc)
     p->v[p->n++] = enc;
 }
 
+/* Moves every entry of `src` onto `dst` and empties `src`. */
 static void patch_join(NB *b, Patch *dst, Patch *src)
 {
     for (int i = 0; i < src->n; i++) patch_push(b, dst, src->v[i]);
@@ -122,6 +125,11 @@ static void patch_join(NB *b, Patch *dst, Patch *src)
 
 typedef struct { int start; Patch out; } Frag;
 
+/* Allocates a fresh NFA state of kind `k`, refusing past the per-compile
+ * NFA-state cap (raise-only override via --max-nfa-states, or
+ * PCREC_MAX_NFA_STATES) and growing the state array (doubling from 64,
+ * realloc-into-temporary so a failure leaves the live array intact for
+ * job_cleanup) as needed. Both out-edges (t1/t2) start at -1. */
 static int nst(NB *b, NKind k)
 {
     Nfa *nfa = b->nfa;
@@ -150,6 +158,8 @@ static int nst(NB *b, NKind k)
     return nfa->n++;
 }
 
+/* Resolves every dangling out-edge in `p` to `target` (writing t1 or t2 per
+ * the encoded slot bit) and empties `p`. */
 static void patch_to(NB *b, Patch *p, int target)
 {
     Nfa *nfa = b->nfa;
@@ -164,6 +174,8 @@ static void patch_to(NB *b, Patch *p, int target)
 
 static Frag compile_ast(NB *b, const Ast *a);
 
+/* A one-state fragment for kind `k`, with its single out-edge left dangling in
+ * the returned Frag. */
 static Frag frag_single(NB *b, NKind k)
 {
     int s = nst(b, k);
@@ -192,6 +204,8 @@ static Frag frag_star(NB *b, const Ast *sub, bool greedy)
     return f;
 }
 
+/* Concatenates two fragments: resolves `a`'s dangling out-edges to `c`'s
+ * start, keeping `c`'s own out-edges dangling. */
 static Frag frag_cat2(NB *b, Frag a, Frag c)
 {
     patch_to(b, &a.out, c.start);
@@ -962,6 +976,11 @@ static Frag compile_ast(NB *b, const Ast *a)
     pcrec_ctx_fail(b->cx, 0, "internal error: bad AST node");
 }
 
+/* Builds the (forward or, if `reverse`, reverse) NFA for `root` into `*nfa`,
+ * rebuildable in place ([OPT-4]: resets nfa->n but keeps the Job-owned st/cap
+ * array so a second, collapsed build costs no allocation). Sets nfa->start and
+ * nfa->anch_start to the pattern's own compiled start (before any unanchored
+ * wrap). */
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
 {
     /* [OPT-4] REBUILDABLE IN PLACE. `compile.c`'s build gate measures the
@@ -1102,6 +1121,13 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
     }
 }
 
+/* Wraps `nfa` with the lowest-priority start self-loop (a SPLIT preferring the
+ * pattern over an any-byte loop back to itself), so an unanchored search is
+ * one machine rather than a re-attempt per position; adds the encoding's own
+ * start-class gate (N_CSTART) in front of the loop when pcrec_startgate_needed
+ * says the pattern can start mid-character, or checks that omitting it is
+ * sound otherwise. nfa->start moves to the new wrapper; nfa->anch_start
+ * deliberately does not (prefix_k.c needs the pattern's own original start). */
 void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
@@ -1171,6 +1197,8 @@ bool pcrec_nfa_has_bot(const Nfa *nfa)
     return false;
 }
 
+/* True iff `nfa` carries any position assertion (N_BOT/N_EOL/N_BOT_M/N_EOL_M)
+ * -- pcrec_nfa_has_bot's own EOL-inclusive sibling. */
 bool pcrec_nfa_has_asserts(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)

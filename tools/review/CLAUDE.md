@@ -43,7 +43,20 @@ are out of scope for this round; see the charter's own "Scope tiers".
   the tier: file, start/end line, span, CODE lines (blank/comment-only
   lines excluded — the ranking key, per ADDENDUM 2 the whole population
   in priority order, not a filtered list), max brace-nesting depth,
-  name. Written with a hand-rolled brace/state parser rather than ctags
+  name, and (added [HDR-1], 2026-09-20) `header` — whether a purpose
+  header sits directly above the function's signature on the ORIGINAL
+  source text: `header` (a closing block/line comment that is not a
+  section banner), `banner` (a `/* ---- ... ---- */` region banner sits
+  there instead, labelling the region rather than the one function under
+  it), or `none` (an ordinary statement, a previous function's closing
+  brace, or nothing above it at all). See `leading_comment_kind`'s own
+  docstring in the script for the exact rule (skip blank lines upward to
+  the nearest non-blank one; walk a found block comment back to its own
+  opening `/*` to test for the `----` banner prefix). This is the
+  population `docs/dev/coding_guide.md` §4.2's header rule (extended by
+  [HDR-1] to every function, not just the ≥50-line ones) is measured
+  against — a `banner`/`none` row is one still owed a header. Written
+  with a hand-rolled brace/state parser rather than ctags
   (this box's `/usr/bin/ctags` is BSD ctags: no end-line, no depth, no
   JSON — unusable for a census that needs spans); ten functions hand-
   validated across the smallest and largest files in the tier (see the
@@ -51,7 +64,11 @@ are out of scope for this round; see the charter's own "Scope tiers".
   two traps it specifically defends against: a `;`-terminated PROTOTYPE
   immediately before the real definition, and every brace/paren/quote
   the emitters print AS TEXT inside their own generated-code string
-  literals).
+  literals). The `header` classification was itself validated against a
+  pre-existing manager census (docs/dev/hdr1_census_2026-09-20.txt,
+  since consumed and regenerable by grep): identical population totals
+  (504 header / 75 banner / 338 none of 917) and identical per-file
+  counts for every file it listed.
 - `clone_candidates.py` → `out/clone_candidates.tsv` — token-shingle
   winnowing (Schleimer/Wilkerson/Aiken, the MOSS algorithm's core) over
   the SAME function boundaries, at function granularity. Identifiers are

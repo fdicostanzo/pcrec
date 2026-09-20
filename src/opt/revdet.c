@@ -86,6 +86,14 @@ typedef struct {
     bool ok;
 } Shape;
 
+/* Walks `a` (the quantifier's body) deciding whether the BACKWARD EMITTER can
+ * reproduce it, declining -- via S->ok = false -- on an assertion in the body
+ * (possessify.c's forward-only Glushkov argument is not re-derived here), a
+ * nested quantifier that is not an exact positive count (only literal
+ * replication mirrors by re-emitting the reversed sub-body that many times),
+ * or more than PCREC_MAX_REVDET_BODY_GROUPS capturing groups (the
+ * capture-recovery table's own bound). Also counts the body's own capturing
+ * groups into S->ngroups. */
 static void rd_shape(Shape *S, const Ast *a)
 {
     for (;;) {
@@ -243,6 +251,11 @@ static void rd_shape(Shape *S, const Ast *a)
  * an arena array first and folded back into a left-nested chain, with recursion
  * only into the ITEMS, whose depth the parser's 250-group cap bounds.
  */
+/* Arena-copies `src` into a fresh node with l/r cleared -- rd_reverse's own
+ * copy constructor for every kind it handles. Clears the A_REP-only
+ * revbody/possessive fields ONLY when n->k == A_REP (D70's guard): writing
+ * through u.rep unconditionally would corrupt a differently-kinded node's own
+ * union payload, e.g. an A_CLASS's bitmap. */
 static Ast *rd_node(Ctx *cx, const Ast *src)
 {
     Ast *n = pcrec_arena_alloc(&cx->arena, sizeof *n);
@@ -452,6 +465,10 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
  * FIRST is simple on this restricted tree because every body that reaches here
  * is NON-NULLABLE and assertion-free: no nullability propagation, no widening
  * cases, and a concatenation's first set is its leftmost element's. */
+/* FIRST(a): the set of bytes that can begin the (non-nullable, assertion-free)
+ * reversed body `a` -- simple on this restricted tree, since a concatenation's
+ * first set is just its leftmost element's, no nullability propagation needed.
+ * Writes the 256-bit set into `out`. */
 void pcrec_revdet_first(const Ast *a, uint8_t *out)
 {
     for (;;) {
@@ -546,6 +563,12 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
     }
 }
 
+/* True iff `a`'s top-level alternation branches (recursively) never share a
+ * first byte -- re-derives directly on the REVERSED tree the emitter will
+ * walk, rather than inheriting the forward one-unambiguity proof (U1) that
+ * implies it, since an implication is how a dependency quietly survives a
+ * change to the thing it depends on (see the comment above). A failure
+ * declines the rung like every other check here. */
 static bool rd_alt_disjoint(const Ast *a)
 {
     for (;;) {
@@ -635,6 +658,12 @@ typedef struct {
 
 static void rd_walk(Rd *R, Ast *a, bool in_rep);
 
+/* Offers the reverse-detection rung to A_REP node `a` (SINGLE LEVEL ONLY --
+ * in_rep skips a quantifier nested inside another's body, a stated scope
+ * bound): if the shape scan (rd_shape) accepts the body and both the forward
+ * body and its reversal admit unique iteration and stay alt-disjoint, records
+ * the reversed body onto a->u.rep.revbody. Always descends into a->l afterward
+ * via rd_walk. */
 static void rd_rep(Rd *R, Ast *a, bool in_rep)
 {
     /* SINGLE LEVEL ONLY. A rung-selected quantifier nested inside another
@@ -660,6 +689,13 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
     rd_walk(R, a->l, true);
 }
 
+/* Hunts the tree for A_REP nodes to offer the reverse-detection rung to
+ * (rd_rep) -- an ordinary structural descent that is TRANSPARENT through
+ * A_CAP/A_ATOMIC (the rung's verdict about them is rd_shape's, one level down)
+ * and iterative over A_CAT/A_ALT spines, but does NOT descend into A_LOOK (a
+ * deliberate, unmeasured-evidence choice, not a correctness requirement -- see
+ * the comment above) or follow A_CALL's u.call.body back edge (nowhere to
+ * descend to without double-offering or hanging on a recursive callee). */
 static void rd_walk(Rd *R, Ast *a, bool in_rep)
 {
     switch (a->k) {
@@ -731,6 +767,9 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
     }
 }
 
+/* Entry point: walks `root` (rd_walk) offering the rung to every eligible
+ * A_REP, using one Glushkov scratch workspace for the whole pass; returns the
+ * count marked. */
 int pcrec_revdet(Ctx *cx, Ast *root)
 {
     Rd R;

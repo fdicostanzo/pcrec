@@ -27,6 +27,10 @@
 #include "core/internal.h"
 #include "parse_mods.h"
 
+/* Exhaustive no-default switch answering whether `tag` applies under `cx`'s
+ * current mods -- the four NO-PRODUCER tags (UCP, UTF-8 encoding, newline
+ * convention, [LIB] name) always answer false, which is sound while nothing
+ * produces them (see the file header). */
 bool pcrec_def_tag_applies(DefTag tag, const Ctx *cx)
 {
     switch (tag) {
@@ -102,6 +106,10 @@ static const RegDef *def_resolve_depth(const Ctx *cx, const RegRow *rw, int dept
     return NULL;
 }
 
+/* Resolves row `rw`'s live definition under `cx`, chasing DEFK_ROW aliases
+ * through def_resolve_depth (bounded, asserting on a cycle or a malformed
+ * missing-DEF_ALWAYS list rather than returning NULL as if "no definition"
+ * were legitimate). */
 const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
 {
     return def_resolve_depth(cx, rw, 0);

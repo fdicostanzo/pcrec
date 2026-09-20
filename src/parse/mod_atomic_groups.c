@@ -64,6 +64,13 @@
 #include "core/internal.h"
 #include "parse/parse_mods.h"
 
+/* Module atomic-groups' producer for `(?>...)`: parses the body (restoring
+ * ParseMods/pos afterward), wraps a bare-anchor body per the shared rule,
+ * refuses on a missing close paren, and builds the A_ATOMIC node --
+ * propagating `not_repeatable` from the body and stamping `rw` onto it. Reads
+ * `cx->pat`/`cx->patlen` directly to look past the body for the closing `)`.
+ * Caller invariant: only reached at WANT_RESULT -- the gate already demotes a
+ * disabled module's ask before any port runs. */
 ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {
@@ -123,6 +130,8 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
     return res;
 }
 
+/* Looks up the QUANTSUFFIX registry row whose selector byte matches
+ * `quant_byte` (the possessive-suffix byte after a quantifier), or NULL. */
 const RegRow *pcrec_atomic_suffix_row(int quant_byte)
 {
     size_t n;
