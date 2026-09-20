@@ -537,11 +537,30 @@ if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DF
     # emitted `#include "<basename>.h"` line makes the byte count
     # basename-sensitive, and a re-measurement into a differently-named file
     # reads 762,107 (dd8_report.md 3.1's recorded trap, fourth instance).
+    #
+    # RE-PINNED AGAIN 762105 -> 762114, 2026-09-19 (lane evtriage3), and it is
+    # THE SAME READER CLASS ONE MERGE LATER -- FOURTH recorded instance. The
+    # [EMIT-VERB] RIDER (`74c2192c`, emitverb2) put the abi into the ESSENTIAL
+    # generated-by line, which every artifact carries whether or not comments
+    # are on, and its own sweep measured the delta as "movers by exactly 9
+    # bytes each". This cell is one of them and was not re-pinned with the
+    # rest, because its text cites a BYTE COUNT and no abi digit, so the
+    # D76/D94 grep over the abi number cannot reach it.
+    #
+    # The arithmetic reconciles exactly, measured on scratch builds of each
+    # commit with THIS cell's own `-o` basename:
+    #   762104  event 1 (`385f3cab`) under -fno-comments
+    #   +1      event 2's own added blank line  -> 762105, the previous pin
+    #   +9      the rider's ` (abi 27)` insertion -> 762114, today
+    # Confirmed by diffing the two artifacts, not inferred from the size: the
+    # only differing lines are the generated-by header, one blank line, and
+    # `.abi = 26` -> `.abi = 27` (same length). The `-fcomments` figure quoted
+    # above re-measures to 769,844 at this tree.
     sz=$(wc -c <"$out" | tr -d ' ')
-    if [ "$sz" -eq 762105 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762105 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default) — the cap still works, this witness no longer reaches it"
+    if [ "$sz" -eq 762114 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762114 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762105 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762114 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

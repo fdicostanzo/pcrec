@@ -537,7 +537,14 @@ if [ -d "$(dirname "$MANIFEST")" ]; then
             ok "[3] the recorded manifest ($MANIFEST) matches this run exactly"
         else
             bad "[3] the recorded manifest has drifted from this run. Under r49 that is a DIFF TO REVIEW, not a number to bump: read it, decide whether each moved stamp is a ruling or a regression, and re-record deliberately."
-            diff "$MANIFEST" "$CENSUS" | head -20 >&2
+            # THE WINDOW MUST HOLD THE WHOLE MANIFEST, NOT A PREFIX OF IT
+            # (lane evtriage3, 2026-09-19). At `head -20` this message showed
+            # 5 of the 12 EMITTED_BYTES rows the [EMIT-VERB] rider moved, and
+            # both readers of the battery log counted the drift from the
+            # message and got 5 -- a check that says "this is a DIFF TO
+            # REVIEW" has to print the diff it wants reviewed. The manifest is
+            # ~80 rows, so a whole-manifest rewrite is ~160 diff lines.
+            diff "$MANIFEST" "$CENSUS" | head -200 >&2
         fi
     else
         cp "$CENSUS" "$MANIFEST"

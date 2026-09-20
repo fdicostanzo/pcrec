@@ -316,15 +316,28 @@ fi
 
 # [SEL-1] (2026-08-28) the fallback population, PINNED the way the
 # cap-divergence population above is: movement in EITHER direction is a
-# deliberate re-pin event, never silently absorbed. Measured on this tree at
-# landing: exactly ONE corpus pattern (tests/base/k18_cost_gates.rxt's
-# fuzz-found cost-gate witness, `(1{0,30}?[^]abc][^abc]){28,30}0+|a`) reaches
-# its DFA build's state cap under --no-captures and falls back. A count of 0
-# means the witness stopped reaching its site (K40's own [MECH-REACH]-shaped
-# hazard -- re-derive rather than silently deleting this arm); upward means a
-# NEW pattern started overflowing (re-pin deliberately, and say which cap).
-if [ "$dfafallback" -eq 1 ]; then
-    ok "[SEL-1] --no-captures DFA-cap-overflow fallback pinned at 1:$dfafallbackpats"
+# deliberate re-pin event, never silently absorbed. Measured at landing:
+# exactly ONE corpus pattern (tests/base/k18_cost_gates.rxt's fuzz-found
+# cost-gate witness, `(1{0,30}?[^]abc][^abc]){28,30}0+|a`) reached its DFA
+# build's state cap under --no-captures and fell back. A count of 0 means the
+# witness stopped reaching its site (K40's own [MECH-REACH]-shaped hazard --
+# re-derive rather than silently deleting this arm); upward means a NEW
+# pattern started overflowing (re-pin deliberately, and say which cap).
+#
+# RE-PINNED 1 -> 2, 2026-09-19 (lane evtriage3), AND IT IS A CORPUS EVENT
+# RATHER THAN A COMPILER ONE. `[ADM71.4]` (e021b982, the same day) added
+# `tests/base/opt41_rung_nullable_decline.rxt`, whose `(?:ab){0,16000}` is a
+# nullable counted repeat built to reach exactly this cap -- so it joins the
+# population by construction and the lane that added it owed this re-pin.
+# A/B'd against a scratch build of the PRE-[EMIT-VERB] tree (`4af16eb7`) and
+# of the event-1 commit (`385f3cab`): both witnesses stamp
+# `RX_ENGINE "vm"` with `RX_ENGINE_WHY "dfa overflowed: >32000 states at
+# pattern offset 0"` on every one of the three compilers, identically, so
+# neither the comment axis nor the abi 27 bump is implicated. The cap named
+# is PCREC_MAX_DFA_STATES_TABLE (32000, src/core/limits.def), reached by the
+# DFA build under --no-captures in both cases.
+if [ "$dfafallback" -eq 2 ]; then
+    ok "[SEL-1] --no-captures DFA-cap-overflow fallback pinned at 2:$dfafallbackpats"
 elif [ "$dfafallback" -eq 0 ]; then
     bad "[SEL-1] the --no-captures DFA-cap-overflow fallback population went to 0 -- the witness pattern stopped reaching its cap (a limits.h budget moved, or the corpus lost the witness); re-derive, do not delete this arm"
 else
