@@ -289,7 +289,7 @@ per-module-not-blanket rule the `--features` CLI surface already pins.)
 differential, and it turned out to already be satisfied: no new code
 needed.** `tests/fuzz/fuzz.py` passes no `--features` flag at all, so every
 compile it runs (the fixed-seed gate below, and the at-scale campaign) goes
-through the bare-invocation default — `PCREC_DEFAULT_FEATURES` (D37/STD1b,
+through the bare-invocation default — `pcrec_default_features` (D37/STD1b,
 `src/parse/enabled.c`), currently `"std1"` = `{classes, modifiers}`. That IS
 open-gate, not closed-gate: both modules with real producers and PC-3
 differential coverage are already ON for the whole fuzzer, not merely
@@ -2082,8 +2082,8 @@ that `setjmp` already stated the reasoning gcc's `-Wclobbered` heuristic
 apparently can't see through: *"`body`, `sb` and `cx` are declared above
 the `setjmp` and mutated only through their escaped addresses;
 `rows_shown`/`dissents` are mutated after it and are deliberately not read
-here [i.e. on the longjmp path]"* — the `if (setjmp(cx.jb)) { sb_free(&body);
-sb_free(&sb); arena_free(&cx.arena); if (ndissent) *ndissent = 0; return
+here [i.e. on the longjmp path]"* — the `if (setjmp(cx.jb)) { pcrec_sb_free(&body);
+pcrec_sb_free(&sb); pcrec_arena_free(&cx.arena); if (ndissent) *ndissent = 0; return
 NULL; }` branch returns unconditionally without ever reading `rows_shown`
 or `dissents`, so whatever clobbered value either holds on that path is
 never observed — the manager verified the handler touches only `body`,
@@ -3347,7 +3347,7 @@ difference, always a failure); **GAINED** (a key only the axis produced,
 never documented as possible, always a failure).
 
 `run_axes.sh` does the axis-specific half: `REFUSAL_PATTERN` is a per-flag
-substring lookup — verified live against the shipped `ctx_fail` text, never
+substring lookup — verified live against the shipped `pcrec_ctx_fail` text, never
 guessed — that decides whether a REFUSED case names THIS axis's own
 documented limit (`"would replicate its body"` for `-fno-counter`'s
 replication cap; `"-fprefilter requires the VM engine"` for `-fprefilter`'s
@@ -4321,9 +4321,9 @@ uniform regime deliberately (`unit_cc.sh`'s own header explains why).
 single feature directory** (R0.3) — NOT a generic `tests/unit/`; every
 pre-existing unit check stays where it is. `make test-core` (part of
 `make test`) carries the tier's first new instance: `sat_arith_check.c`,
-the saturating-arithmetic agreement between `mrl_sat_add`/`mrl_sat_mul`
-(`src/opt/mrl.c`), `vm_fadd`/`vm_fmul` (`src/gen/emit_vm.c`) and
-`cg_sat_add`/`cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
+the saturating-arithmetic agreement between `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
+(`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+`pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
 stated twice in prose and enforced nowhere. The six functions are no
 longer `static` (declared in `core/internal.h` beside `pcrec_minw`) so the
 check can call the shipped functions directly; no behaviour change, no

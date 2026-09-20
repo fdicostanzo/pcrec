@@ -134,7 +134,7 @@ transitions k steps and union the escapes of the states you land in — is
 anyone will try.
 
 An ENG_UNANCH DFA state is the merge of the threads from **every** subject
-position (`nfa_wrap_unanchored`'s lowest-priority self-loop). Four bytes into
+position (`pcrec_nfa_wrap_unanchored`'s lowest-priority self-loop). Four bytes into
 `\d{4}-`, the state carries threads at 4, 3, 2, 1 and 0 digits. "A byte that
 does not return the machine to the start state" at offset 4 is therefore
 `[0-9-]`, not `-`: the thread at 3 digits is advanced by a digit, so a digit
@@ -268,11 +268,11 @@ selection declines.
 
 ### 3.5 `Nfa.anch_start` — a field, not a shape test
 
-`nfa_wrap_unanchored` moves `Nfa.start` to a `N_SPLIT` whose `t1` is the
+`pcrec_nfa_wrap_unanchored` moves `Nfa.start` to a `N_SPLIT` whose `t1` is the
 pattern and whose `t2` is an all-bytes `N_CLASS` looping back. The walk needs
 `t1`. Sniffing that shape at the walk would be a second statement of the wrap's
 construction that a change to the wrap could silently invalidate, so
-`pcrec_build_nfa` publishes `anch_start = f.start` and `nfa_wrap_unanchored`
+`pcrec_build_nfa` publishes `anch_start = f.start` and `pcrec_nfa_wrap_unanchored`
 deliberately leaves it alone. An unwrapped machine — ENG_ATTEMPT's, and the
 reverse machine — answers correctly with nobody having to remember to.
 
@@ -1091,7 +1091,7 @@ the skip's whole purpose is to land somewhere else.
   pos + k*, …)` with `k* < 0` needs `pos + k* >= 0` before the pointer is
   formed. The loop guard would become `pos + maxk < n && pos >= -mink`. Noted
   for whoever builds it; nothing here emits a negative offset.
-- **N-2 — the empty verify chain is a `ctx_fail`, not a `1`.** Offset 0 is
+- **N-2 — the empty verify chain is a `pcrec_ctx_fail`, not a `1`.** Offset 0 is
   always a member and never the scan, so the chain always has a term; the
   fallback that stood there emitted `if (1)`, which is a correct matcher with
   the mechanism silently switched off. The same treatment was given to the

@@ -19,8 +19,8 @@
  * a failed malloc kills the caller's process — the worst failure on K7's list,
  * and the one a caller who set a memory limit was specifically trying to avoid.
  * With a Ctx in reach, every allocation failure on the compile path becomes an
- * ordinary ctx_fail (longjmp to compile_driver's setjmp, job_cleanup, return
- * -1 with a diagnostic) instead. See ctx_nomem() below. */
+ * ordinary pcrec_ctx_fail (longjmp to compile_driver's setjmp, job_cleanup, return
+ * -1 with a diagnostic) instead. See pcrec_ctx_nomem() below. */
 typedef struct Ctx Ctx;
 
 /* [M6.2 wave A] The scoped inline-option state, INCOMPLETE ON PURPOSE — see
@@ -45,8 +45,8 @@ typedef struct ABlock {
  * report through (there are none today; every Arena is a Ctx's own). */
 typedef struct { ABlock *head; Ctx *cx; } Arena;
 
-void *arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
-void  arena_free(Arena *a);
+void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
+void  pcrec_arena_free(Arena *a);
 
 /* ---- growable string buffer (codegen output) ---- */
 
@@ -61,7 +61,7 @@ void  arena_free(Arena *a);
  * what K produces, and without a bound the worst rung writes tens of MB before
  * anyone learns it is the worst (measured: a 6-deep `{17}` tower emits 35.5 MB
  * at K=6 while K=1 answers in 42,619). When `len` passes it the attempt
- * `ctx_fail`s, the driver records that K as out, and the next K starts with a
+ * `pcrec_ctx_fail`s, the driver records that K as out, and the next K starts with a
  * fresh arena. The DEFAULT and FINAL attempts leave it 0 and always run to
  * completion, because their figures are what a refusal quotes. */
 /* [EMIT-VERB] (D112, D108) THE COMMENT GATE'S THREE FIELDS — the RENDER-time
@@ -98,7 +98,7 @@ typedef struct {
      * CODE moving over a comment switch, which is the one thing this axis
      * promises never to do.
      *
-     * So every LENGTH-BASED DECISION reads `sb_len_uncut` instead: the
+     * So every LENGTH-BASED DECISION reads `pcrec_sb_len_uncut` instead: the
      * length the buffer WOULD have had with comments on. The gate is then
      * size-neutral by construction rather than by a threshold's luck, and
      * the separate question — whether a size term should price comment bytes
@@ -118,36 +118,36 @@ typedef enum { PCREC_CMT_ESSENTIAL = 0, PCREC_CMT_NONESSENTIAL = 1 } PcrecCmtCla
 /* Set the buffer's comment POLICY. Called once per artifact buffer; a buffer
  * nobody calls it on emits every comment, which is what every non-artifact
  * StrBuf in this tree wants. */
-void sb_comments(StrBuf *sb, bool on);
+void pcrec_sb_comments(StrBuf *sb, bool on);
 
 /* Open / close a comment REGION. Every byte appended between them is comment
  * text, and a NON-ESSENTIAL region's bytes are discarded when the policy says
  * so. Balanced, nestable, and cheap enough to wrap a single trailing comment.
- * The gate sits in `sb_putc`/`sb_puts`/`sb_vprintf` — the three primitives
+ * The gate sits in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf` — the three primitives
  * every other append in this file is built on — so it cannot be bypassed by a
  * helper, present or future. */
-void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
-void sb_cmt_close(StrBuf *sb);
+void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
+void pcrec_sb_cmt_close(StrBuf *sb);
 
 /* The length this buffer would have had with comments ON — `len` plus every
  * byte a muted region discarded. THE ONE READER RULE: any decision or stamp
  * that compares an emitted LENGTH against a threshold uses this, never `len`,
  * so the comment axis cannot move it. `len` stays the truth about what was
- * written and is what `sb_take`, the caps' own comment-excluded scan and
+ * written and is what `pcrec_sb_take`, the caps' own comment-excluded scan and
  * every consumer of the finished text read. */
-size_t sb_len_uncut(const StrBuf *sb);
+size_t pcrec_sb_len_uncut(const StrBuf *sb);
 
 /* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
  * deny, then force, then `src/core/axes.def`'s `default_state`. General over
  * every row; see its definition in src/core/compile.c. */
 bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force);
 
-void  sb_putc(StrBuf *sb, char c);
-void  sb_puts(StrBuf *sb, const char *s);
-void  sb_printf(StrBuf *sb, const char *fmt, ...)
+void  pcrec_sb_putc(StrBuf *sb, char c);
+void  pcrec_sb_puts(StrBuf *sb, const char *s);
+void  pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
-char *sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
-void  sb_free(StrBuf *sb);
+char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
+void  pcrec_sb_free(StrBuf *sb);
 
 /* ---- THE TEXT LAYER ([REVW.1] wave 1; D108) -----------------------------
  *
@@ -161,36 +161,36 @@ void  sb_free(StrBuf *sb);
  * `\xNN` tail that was written twice before this pair existed
  * (`syntax_dump.c`'s `put_text` and `rxt_source.c`'s `put_escaped`):
  *
- *   sb_text  — protects the FRAME ONLY. A byte below 0x20, and 0x7f, goes out
+ *   pcrec_sb_text  — protects the FRAME ONLY. A byte below 0x20, and 0x7f, goes out
  *              as `\xNN`; every printable byte, BACKSLASH INCLUDED, passes
  *              through. This is `--explain`'s vocabulary and every registry
  *              TSV dump's, whose `syntax` column is literally `\d` and whose
  *              contract (docs/spec/table_contract.md rule 5) says only that a
  *              field never contains a TAB.
- *   sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
- *              sb_text's tail. Round-trippable, because it doubles the
+ *   pcrec_sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
+ *              pcrec_sb_text's tail. Round-trippable, because it doubles the
  *              backslash; `tests/harness/driver.c`'s decode() is the reader.
  *
  * DO NOT swap one for the other. Measured 2026-09-18: 150 data rows across
  * `--list-syntax`/`--list-axes`/`--list-limits`/`--list-definitions`/
- * `--list-families` carry a raw backslash, so sb_field at a registry dump is
+ * `--list-families` carry a raw backslash, so pcrec_sb_field at a registry dump is
  * a contract break and not insurance. */
-void sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
-void sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
-void sb_field(StrBuf *sb, const char *s);
+void pcrec_sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
+void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
+void pcrec_sb_field(StrBuf *sb, const char *s);
 
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
  * joins that could do all three. A NULL name contributes nothing but still
  * takes its separator, so the join's shape reports the array's. */
-void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
+void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
 
-/* One TSV record: `ncell` fields through sb_text, TAB-joined, newline-
+/* One TSV record: `ncell` fields through pcrec_sb_text, TAB-joined, newline-
  * terminated. The COUNT is the point — a row emitted with a different number
  * of fields than its header declares is the defect the table contract's own
  * integrity rule (consumer rule 3) exists to catch, and a cell array a reader
  * can count is what makes it checkable at the call site. */
-void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
+void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
 
 /* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3; lens 10 item 1; D108) -------
  *
@@ -204,13 +204,13 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  *
  * WHAT THE CALLER GETS. A pointer into the compile's arena: never freed by
  * the caller, dies with the arena, and valid for the whole compile — which
- * is what makes it safe to hand straight to `sb_printf`'s `%s` at a site far
+ * is what makes it safe to hand straight to `pcrec_sb_printf`'s `%s` at a site far
  * below the one that built it, the thing a stack buffer could not do.
  *
- * ON ALLOCATION FAILURE it routes through `ctx_nomem` via the arena's own
- * `.cx`, exactly as `arena_alloc` does (coding_guide.md §1.1: a library must
+ * ON ALLOCATION FAILURE it routes through `pcrec_ctx_nomem` via the arena's own
+ * `.cx`, exactly as `pcrec_arena_alloc` does (coding_guide.md §1.1: a library must
  * not `abort()` its caller). A DETACHED arena — one whose `.cx` is NULL —
- * aborts there, which is `arena_alloc`'s own pre-existing behaviour and not a
+ * aborts there, which is `pcrec_arena_alloc`'s own pre-existing behaviour and not a
  * property this adds.
  *
  * D108, and it is why the parameter is an `Arena *` and not a `Vm *`, a
@@ -222,16 +222,16 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  * emptiness is a byte-identity contract) becomes `const char *tr = "";` plus
  * a conditional assignment — the same shape, but the `""` default is the
  * point and calling this would not express it. */
-const char *sb_fragf(Arena *a, const char *fmt, ...)
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
 
 /* The same, for a caller that already holds a `va_list` — i.e. any varargs
  * ADAPTER that supplies the arena from something of its own (`emit_vm.c`'s
  * `vm_rolef` takes it from `Vm.cx`). Without this, such an adapter has no way
  * to reach the primitive and is forced back onto the fixed buffer this pair
- * exists to retire. `sb_fragf` is a two-line wrapper over it, so there is one
+ * exists to retire. `pcrec_sb_fragf` is a two-line wrapper over it, so there is one
  * implementation and not two. The caller still owns `ap` and must `va_end` it. */
-const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
+const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
 /* The same storage, for the one DERIVED SPELLING this tree needs more than
  * once: `s` uppercased. It is the artifact's `-p` prefix in the macro
@@ -243,10 +243,10 @@ const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * at, which is learnings.md §3's one-derivation rule applied to a name.
  *
  * NOT `sb_name(a, prefix, suffix)`. Lens 10 item 2 proposes this alongside a
- * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `sb_fragf(a,
+ * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `pcrec_sb_fragf(a,
  * "%s_%s", p, s)` already is it, at every site, with no name to learn. Only
  * the CASE TRANSFORM is a derivation somebody could get differently. */
-const char *sb_upper(Arena *a, const char *s);
+const char *pcrec_sb_upper(Arena *a, const char *s);
 
 /* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
  *
@@ -278,10 +278,10 @@ const char *sb_upper(Arena *a, const char *s);
  *
  * D108: DATA IN, TEXT OUT. A `StrBuf *` and three values; no `Ctx`, no walk,
  * no machine — so a back-end fed from a deserialized IR stamps identically. */
-void sb_stampf (StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stampf (StrBuf *c, const char *upper, const char *name,
                 const char *valfmt, ...)
       __attribute__((format(printf, 4, 5)));
-void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
                 const char *valfmt, ...)
       __attribute__((format(printf, 5, 6)));
 /* The string-valued stamp, which OWNS THE QUOTING: `#define <UPPER>_<NAME>
@@ -289,7 +289,7 @@ void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
  * a byte that needs escaping — has one answer today (every value is a
  * compiler-chosen word from a fixed set) and one home if it ever gains
  * another, which is the point of it not being 11 separate `\"%s\"` formats. */
-void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value);
 
 /* ---- AST ---- */
@@ -1306,9 +1306,9 @@ void pcrec_cpset_publish(PcrecCpSet *s, Ast *a);
 
 /* THE RENDER HELPER (§2.1.4) — the SOLE path from a class node to a 32-byte
  * bitmap, for the six consumer sites BELOW the encoding lowering. Refuses, by
- * `ctx_fail`, a node carrying a code point above 0xFF: that is r54 E1's silent
+ * `pcrec_ctx_fail`, a node carrying a code point above 0xFF: that is r54 E1's silent
  * miscompile turned into a diagnosed internal error at the site that would
- * have committed it, and §13 obligation 5 is why it is a `ctx_fail` and not an
+ * have committed it, and §13 obligation 5 is why it is a `pcrec_ctx_fail` and not an
  * `assert`. */
 void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 /* The same render for the three analyses ABOVE the lowering (§2.5.1's DECLINE
@@ -1373,7 +1373,7 @@ typedef enum {
      * special case (assertions_design.md §4.2). */
     N_GSTART,
     /* [K50] "this position is a CHARACTER BOUNDARY of the artifact's
-     * encoding", goto t1. The gate `nfa_wrap_unanchored` puts in front of the
+     * encoding", goto t1. The gate `pcrec_nfa_wrap_unanchored` puts in front of the
      * pattern on the self-loop's own re-entry, so that the positions the
      * ENGINE generates are exactly the encoding's boundaries.
      *
@@ -1407,12 +1407,12 @@ typedef struct {
     int     start;
     /* [OPT-K] THE ANCHORED START — the state a match's OWN first byte is read
      * from, as opposed to `start`, which for an ENG_UNANCH machine is the
-     * lowest-priority self-loop `nfa_wrap_unanchored` puts in front of it.
+     * lowest-priority self-loop `pcrec_nfa_wrap_unanchored` puts in front of it.
      *
      * IT IS A FIELD AND NOT A SHAPE TEST. `docs/design/offset_k_skip.md` §3
      * needs to walk the pattern's own prefix, and the alternative — "the start
      * is a SPLIT whose t2 is an all-bytes N_CLASS looping back to it" — is a
-     * second statement of `nfa_wrap_unanchored`'s construction that a change
+     * second statement of `pcrec_nfa_wrap_unanchored`'s construction that a change
      * to the wrap would silently invalidate. `pcrec_build_nfa` sets it equal
      * to `start`, so an UNWRAPPED machine (ENG_ATTEMPT's, and the reverse
      * machine) answers correctly without anyone having to remember to. */
@@ -1706,7 +1706,7 @@ typedef struct {
      *
      * It is read at exactly one place: `intern`'s two "pattern too complex"
      * sites, where an optional machine RECORDS the overflow and returns
-     * instead of `ctx_fail`ing. That keeps `[SEL-1]`'s own record and both
+     * instead of `pcrec_ctx_fail`ing. That keeps `[SEL-1]`'s own record and both
      * diagnostics character-for-character unchanged, and it is why a pattern
      * that compiles today cannot start failing because an optional machine
      * did not fit. */
@@ -1715,7 +1715,7 @@ typedef struct {
      * machine is then partially built and must not be emitted; the emitter's
      * axis-G candidate reads this (through `Job.anchored_ok`) and selects the
      * search-and-filter fallback. Never set on a mandatory machine — that
-     * path still `ctx_fail`s. */
+     * path still `pcrec_ctx_fail`s. */
     bool     overflowed;
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
@@ -2199,7 +2199,7 @@ typedef struct {
     Dfa    rdfa;     /* reverse DFA, non-pruning (ENG_UNANCH only) */
     /* [ENG-ABS] THE MATCH-HERE MACHINE (ENG_UNANCH only): the SAME subset
      * construction over the SAME `nfa`, rooted at `nfa.anch_start` — the
-     * pattern's own first state, which `nfa_wrap_unanchored` deliberately
+     * pattern's own first state, which `pcrec_nfa_wrap_unanchored` deliberately
      * leaves addressable — so it is the forward machine WITHOUT the
      * start-anywhere self-loop. `<prefix>_match` runs it from `ctx->pos` and
      * needs no reverse pass, because the start is the question rather than an
@@ -2244,7 +2244,7 @@ typedef struct {
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
      * must be produced BEFORE the text that precedes it (the class pool, the
      * cursor local, RX_NSTATE are all discovered by emitting), and any
-     * ctx_fail during that emission longjmps out — a stack-local StrBuf would
+     * pcrec_ctx_fail during that emission longjmps out — a stack-local StrBuf would
      * leak its heap buffer on exactly the path the sanitizer battery checks. */
     StrBuf vmsb;
     /* [M4.5c] the emitted-program LISTING (DD-8, engine_m4.md S10), filled
@@ -2586,7 +2586,7 @@ struct Ctx {
      *
      * THE GENERAL MECHANISM: the DFA build reports "over budget" as a
      * RESULT the selector's existing fixpoint consumes, not as a special
-     * case at the `ctx_fail` site. There is exactly one recovery point in
+     * case at the `pcrec_ctx_fail` site. There is exactly one recovery point in
      * this compiler (`compile_driver`'s single `setjmp`), so the fallback is
      * a ONE-SHOT RETRY of the whole pipeline rather than a second recovery
      * point wrapped around the DFA build — `src/core/compile.c`'s retry
@@ -2595,10 +2595,10 @@ struct Ctx {
      * that reads these fields.
      *
      * `dfa_overflowed` and `dfa_overflow_why` are WRITTEN by the two
-     * "pattern too complex" `ctx_fail` sites in src/ir/dfa.c, immediately
+     * "pattern too complex" `pcrec_ctx_fail` sites in src/ir/dfa.c, immediately
      * before the `longjmp` — plain fields on `Ctx` rather than arena text,
      * because the retry decision runs in `compile_driver` AFTER
-     * `job_cleanup`'s `arena_free` has already run on the failed attempt.
+     * `job_cleanup`'s `pcrec_arena_free` has already run on the failed attempt.
      * `dfa_disabled` is the retry's own INPUT, seeded true only on the
      * second (and last) pass compile_driver runs after an eligible
      * overflow: `forces_dfa_overflow` treats it exactly like a VM_ONLY
@@ -2624,9 +2624,9 @@ struct Ctx {
      * derivation reads it for the reason. */
     unsigned char        collapse_reason;   /* CR_* */
 
-    /* [OPT-4] set at the emitted-size cap's own `ctx_fail` sites, immediately
+    /* [OPT-4] set at the emitted-size cap's own `pcrec_ctx_fail` sites, immediately
      * before the refusal, so `compile_driver` can tell a size refusal from
-     * every other `ctx_fail` that arrives at the same `setjmp`. This is
+     * every other `pcrec_ctx_fail` that arrives at the same `setjmp`. This is
      * `dfa_overflowed`'s shape exactly, and for the same reason: there is ONE
      * recovery point in this compiler, so a rung that wants to act on a
      * particular failure has to label it where it happens. */
@@ -2748,9 +2748,9 @@ struct Ctx {
      * nothing. */
     PendingRef          *pending_refs;
     unsigned             n_pending_refs;
-    /* [K60] docs/dev/known_issues.md, disposition (2) — set by `ctx_nomem`
+    /* [K60] docs/dev/known_issues.md, disposition (2) — set by `pcrec_ctx_nomem`
      * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can
-     * tell a genuine allocation failure from every other `ctx_fail` arrival
+     * tell a genuine allocation failure from every other `pcrec_ctx_fail` arrival
      * at the same `setjmp` and propagate it immediately, ahead of every
      * rung's own eligibility test and ahead of the `[ART-SIZE]` ladder's
      * blanket "this K is out" catch (which would otherwise absorb it as an
@@ -2765,7 +2765,7 @@ struct Ctx {
      * disposition (1), refuted by k60_measurement.md §2.4 and struck by
      * Frank's ruling 2026-09-18) lacked. `size_cap_refused`/`dfa_overflowed`
      * above already have this shape; this field is the same idiom applied
-     * to `ctx_nomem`'s own arrival. */
+     * to `pcrec_ctx_nomem`'s own arrival. */
     bool                 failed_nomem;
     jmp_buf              jb;
     pcrec_error         *err;
@@ -2783,7 +2783,7 @@ void pcrec_parse_mods_init(Ctx *cx);         /* src/parse/parse.c */
  *
  * WHY THIS IS A STRUCT AND NOT AN `int`. The measured requirement is a branch
  * COUNT — conditionals are error 127 above 2 top-level branches and
- * `(?(DEFINE)` is error 154 above 1 — but `ctx_fail(cx, pos, ...)` takes a
+ * `(?(DEFINE)` is error 154 above 1 — but `pcrec_ctx_fail(cx, pos, ...)` takes a
  * POSITION as a required argument, so a module cannot RAISE that error with a
  * count alone. D26 puts pinning pcrec's own offsets against pcrec's own
  * convention in tier 2; only chasing PCRE2's specific number is tier 3. And a
@@ -2801,7 +2801,7 @@ typedef struct {
     size_t last_bar;
 } AltInfo;
 
-void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
      __attribute__((noreturn, format(printf, 3, 4)));
 
 /* [M4.7b/K7] The ONE diagnostic for a failed allocation on the compile path,
@@ -2812,7 +2812,7 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  *
  * `pos` is 0 (whole-pattern) at every site: an allocation failure is a property
  * of the pattern's total cost, not of a byte in it. */
-void ctx_nomem(Ctx *cx) __attribute__((noreturn));
+void pcrec_ctx_nomem(Ctx *cx) __attribute__((noreturn));
 
 /* ---- syntax construct registry (D24 / SR-1) ----
  *
@@ -3164,7 +3164,7 @@ enum {
  * reaches none of them.
  *
  * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5 — the load-bearing
- * change). A doorway's terminal answer used to be a `ctx_fail`, which longjmps
+ * change). A doorway's terminal answer used to be a `pcrec_ctx_fail`, which longjmps
  * past the caller; the three `noreturn` attributes that stood here were
  * today's truth and the design's obstacle, because a caller that never sees
  * the claim can never override it — the endpoint rule (D33 §6, K12) needs to
@@ -3254,7 +3254,7 @@ typedef struct {
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
     char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
                            pcrec_error.msg, so deferring the format cannot
-                           truncate differently than ctx_fail did */
+                           truncate differently than pcrec_ctx_fail did */
 
     /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
      * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
@@ -4145,9 +4145,9 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
  *
  * `_pending` answers "did the hook defer this node": true exactly for an
  * `A_LOOK` that is a lookbehind whose `widths` is still NULL. `_fix_widths`
- * resolves such a node — filling `u.look.widths` — or refuses via `ctx_fail`
+ * resolves such a node — filling `u.look.widths` — or refuses via `pcrec_ctx_fail`
  * at `u.look.at` with the hook's own wording, BYTE FOR BYTE (the doorway
- * epilogue `pcrec_ext_finish` is itself `ctx_fail(cx, at, "%s", msg)`, so the
+ * epilogue `pcrec_ext_finish` is itself `pcrec_ctx_fail(cx, at, "%s", msg)`, so the
  * two paths render identically by construction and not by transcription). It
  * is a no-op on any node `_pending` declines, so a future second caller
  * cannot use it to re-derive an already-resolved table. */
@@ -4387,7 +4387,7 @@ void pcrec_postresolve(Ctx *cx, Ast *root);
 Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
 /* [M5.0 stage 2] Decode ONE pattern character at byte offset `at`, per the
  * compile's encoding; `*len` gets its byte length (>= 1). Under `byte` this
- * is the byte itself; under `utf8` a full decode that `ctx_fail`s on
+ * is the byte itself; under `utf8` a full decode that `pcrec_ctx_fail`s on
  * ill-formed pattern text (truncation, bad lead, overlong, surrogate,
  * above U+10FFFF). Lives in lower_enc.c — the one place that knows how an
  * encoding spells a character — and is the parser's literal reader for any
@@ -4654,7 +4654,7 @@ ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want);
 #define BAD_ROW(at, what) \
     REFUSE((at), "internal error: malformed registry row for " what)
 
-/* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the
+/* The ONE epilogue: renders a refusal via pcrec_ctx_fail (byte-identical to the
  * pre-epilogue diagnostics — same format results, same offsets), returns
  * normally on EXT_NOT_MINE. Every doorway call in parse.c is followed by
  * exactly this call. */
@@ -4720,7 +4720,7 @@ const char *pcrec_enabled_set_modules(void);
  * resolves to a named value from --features' own vocabulary. Stays "none"
  * through [STD1] phase A on purpose — see enabled.c's own comment on this
  * constant before changing it. */
-extern const char *const PCREC_DEFAULT_FEATURES;
+extern const char *const pcrec_default_features;
 
 /* ---- [DD-13b.W23.1] the `.rxt` format's SCHEMA (src/parse/rxt_schema.c)
  *
@@ -5256,7 +5256,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
 
 /* [K50-NULLGATE] IS A BOUNDARY GATE ON ENGINE-INVENTED START POSITIONS NEEDED
  * FOR THIS PATTERN AT ALL? ONE derivation, read by the three consumers that
- * would otherwise each decide it (`nfa_wrap_unanchored`'s gate node,
+ * would otherwise each decide it (`pcrec_nfa_wrap_unanchored`'s gate node,
  * `src/ir/dfa.c`'s `startcls`, and `src/gen/emit_dfa.c`'s ENG_ATTEMPT
  * `continue`).
  *
@@ -5274,8 +5274,8 @@ int pcrec_rxt_source_resolve(RxtSource *src,
  * class context — is answerable, by `state_acc_any` over the unanchored DFA's
  * start closure, and it would keep the gate off `\b` (a continuation byte is
  * no word character on either side). It is NOT USABLE AS THE PREDICATE:
- * `nfa_wrap_unanchored` runs only inside `src/core/compile.c`'s
- * `!nfa_has_bot(...)` branch, so an ENG_ATTEMPT pattern has no gate node and
+ * `pcrec_nfa_wrap_unanchored` runs only inside `src/core/compile.c`'s
+ * `!pcrec_nfa_has_bot(...)` branch, so an ENG_ATTEMPT pattern has no gate node and
  * no unanchored start closure at all, while the ENG_ATTEMPT `continue` — the
  * site carrying the measured cost — reads no machine state whatsoever. A
  * machine-level predicate could narrow one engine and would leave the other
@@ -5384,7 +5384,7 @@ uint64_t            pcrec_tune_deny_flags(int tune);
  * artifact pcrec emits without `--source` is byte-identical to before this
  * file existed, which is what the identity gate's comparison (A) checks.
  *
- * Returns the (possibly new) root. Refuses through `ctx_fail` exactly as
+ * Returns the (possibly new) root. Refuses through `pcrec_ctx_fail` exactly as
  * every other parse-tier pass does. */
 Ast *pcrec_rxt_compose(Ctx *cx, Ast *root);
 
@@ -5412,11 +5412,11 @@ Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 
-void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
+void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 
-bool nfa_has_asserts(const Nfa *nfa);
+bool pcrec_nfa_has_asserts(const Nfa *nfa);
 
-bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
+bool pcrec_nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
 
 /* [ENG-ABS] `root` and `optional` are PARAMETERS rather than a second
  * construction. `root` used to be `nfa->start` implicitly; every call site now
@@ -5681,13 +5681,13 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * retire with that unification, not before — the check is written against
  * TODAY's three separate implementations first, per R2's own ordering
  * argument. */
-long long mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
+long long pcrec_mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
 
-long long mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
+long long pcrec_mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
 
-long long cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
+long long pcrec_cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
 
-long long cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
+long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
 
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
  * because the emitter's own accumulator has to hold the same ceiling the
@@ -5766,7 +5766,7 @@ size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis 
 size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
 
 /* The same text into a CALLER-OWNED buffer, for a site that splices it into a
- * larger `sb_printf` rather than appending it. Returns `buf`, which is the
+ * larger `pcrec_sb_printf` rather than appending it. Returns `buf`, which is the
  * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
  * point contributes nothing and no call site needs its own conditional. Size
  * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX` — a `limits.def` row (home
@@ -5786,23 +5786,23 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c
 
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 
-long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
+long long pcrec_vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
 
-long long vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
+long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
 
 /* "This node's maximum width has no static bound" — an unbounded quantifier,
  * a backreference, or any arithmetic that ran off the top.
  *
  * IT IS DELIBERATELY THE SAME VALUE AS `PCREC_MINW_MAX`, and the reason is
- * that it must COMPOSE with `mrl_sat_add`/`mrl_sat_mul` rather than need a
+ * that it must COMPOSE with `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` rather than need a
  * check at every arm:
  *
- *   - `mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
+ *   - `pcrec_mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
  *     through a concatenation, which is what "unbounded" has to do;
- *   - `mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
+ *   - `pcrec_mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
  *     ZERO-WIDTH body is correctly 0 (`(?:\b)*` consumes nothing however many
  *     times it runs) instead of being needlessly widened;
- *   - `mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
+ *   - `pcrec_mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
  *     unbounded body stays unbounded.
  *
  * The cost of sharing the value is that a SATURATED-but-finite maxw is
@@ -5833,7 +5833,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root);              /* src/gen/emit_vm.c */
  * unchanged" table). */
 typedef struct {
     const char *searchfn, *matchfn, *matchcapsfn, *infoname;
-    const char *upper;      /* the prefix uppercased — sb_upper, arena-owned */
+    const char *upper;      /* the prefix uppercased — pcrec_sb_upper, arena-owned */
 } GenNames;
 
 void pcrec_gen_names(Ctx *cx, GenNames *g);
@@ -6008,8 +6008,14 @@ char *pcrec_axes_tsv(void);
 
 /* [LIM-1] `src/dump/limits_dump.c` — renders src/core/limits.def, the
  * numeric-limits table (D90), as one TSV, table_contract.md's wire format
- * (the SIXTH surface). Caller frees. */
-char *pcrec_limits_tsv(void);
+ * (the SIXTH surface). Caller frees.
+ *
+ * DECLARED IN `lib/pcrec.h`, not here ([REVW.5], lens 9's P4): it is the
+ * library's numeric-limits surface, the one programmatic route a caller has
+ * to a RAISE-ONLY cap's built-in default. This header includes `pcrec.h`,
+ * so every internal caller still sees it; a second declaration here would be
+ * a second spelling of one contract. `docs/spec/limits.md` §3.4a is the
+ * contract. */
 
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches

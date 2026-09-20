@@ -20,8 +20,8 @@ primitive that does not exist yet.
 The review checked these tree-wide and found them holding. Each has exactly one
 known hole, named. Breaking one of these is a regression, not a style choice.
 
-**1.1 Every allocation failure routes through `ctx_nomem`.** pcrec is a library;
-an `abort()` on OOM kills the caller's process (K7's worst item). `arena_alloc`
+**1.1 Every allocation failure routes through `pcrec_ctx_nomem`.** pcrec is a library;
+an `abort()` on OOM kills the caller's process (K7's worst item). `pcrec_arena_alloc`
 already routes through the arena's `.cx`; allocation is architecturally confined
 (`emit_vm.c`, `parse.c`, every `mod_*.c` and most of `opt/` have ZERO raw
 allocations — L8-H8), so a raw `malloc`/`calloc`/`realloc` you add is a finding
@@ -113,28 +113,28 @@ direction yourself, at the point you write it.
 
 ## 2. Taught primitives — reach for these, in their state TODAY
 
-**2.1 `sb.c` is the text mechanism: `sb_putc` / `sb_puts` / `sb_printf` /
-`sb_take` / `sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
+**2.1 `sb.c` is the text mechanism: `pcrec_sb_putc` / `pcrec_sb_puts` / `pcrec_sb_printf` /
+`pcrec_sb_take` / `pcrec_sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
 call sites ARE the norm — lens 2's own seed hypothesis ("the emitters use neither
 sb nor stdio") was REFUTED by measurement. There is deliberately no `emit_line()`
-wrapper and there will not be one (L10 §2.3): it buys nothing `sb_printf` does not.
+wrapper and there will not be one (L10 §2.3): it buys nothing `pcrec_sb_printf` does not.
 
 **2.2 Formatted fragments: size from `PCREC_MAX_EMIT_NAME_LEN`, never by hand.**
 Any buffer holding an emitted identifier or sub-expression built from the `-p`
 prefix is sized `PCREC_MAX_EMIT_NAME_LEN` (`limits.def:134` =
 `PCREC_MAX_PREFIX_LEN + 96`). K38 is the recorded miscompile of exactly its
-absence. **`sb_fragf` (landed 2026-09-18, wave 2 stage 3) is now the answer,
+absence. **`pcrec_sb_fragf` (landed 2026-09-18, wave 2 stage 3) is now the answer,
 and a new fixed scratch buffer in either emitter is a finding against you.**
 
 ```c
-const char *sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h */
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h */
 ```
 
 Arena-owned text sized exactly to the result: truncation is impossible by
 construction rather than by a per-site size argument. The result lives for the
-whole compile, which is what makes it safe to hand to an `sb_printf` `%s` far
+whole compile, which is what makes it safe to hand to an `pcrec_sb_printf` `%s` far
 below the site that built it — the thing a stack buffer could not do.
-Allocation failure routes through `ctx_nomem` via the arena's own `.cx`
+Allocation failure routes through `pcrec_ctx_nomem` via the arena's own `.cx`
 (§1.1). It takes an `Arena *` and nothing else on purpose: D108's data-in /
 text-out rule, so a back-end fed from a deserialized IR calls it unchanged.
 
@@ -158,7 +158,7 @@ retired in wave 2 — see §2.6. `tools/review/fragment_census.py` is the count.
 
 **Its no-truncation promise is enforced by the `vsnprintf` SIZE argument, not
 by the allocation.** Measured: an allocation one byte short is invisible to
-`tests/core/sb_fragf_check.c` AND to AddressSanitizer, because `arena_alloc`
+`tests/core/sb_fragf_check.c` AND to AddressSanitizer, because `pcrec_arena_alloc`
 rounds to 16 and zeroes, and ASan sees only the arena's own block `malloc`,
 never the intra-block slice. Know which half is checked.
 
@@ -195,16 +195,16 @@ that aborts instead (L8-F4).
 
 ---
 
-**2.6 Emitting an artifact stamp: `sb_stampf` / `sb_stampwf` / `sb_stamp_str`**
+**2.6 Emitting an artifact stamp: `pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str`**
 (`core/internal.h`, landed [REVW.2] wave 2, 2026-09-18). One
 `#define <UPPER>_<NAME> <value>` line. All 73 former hand-written stamp sites
 across `emit_vm.c` (52) and `emit_dfa.c` (21) are on them, and a new
-hand-written `sb_printf(c, "#define %s_...")` is a finding against you.
+hand-written `pcrec_sb_printf(c, "#define %s_...")` is a finding against you.
 
 ```c
-sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
-sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
-sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
+pcrec_sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
+pcrec_sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
+pcrec_sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
 ```
 
 **The value is a format, not a type, and that is the rule not an accident.** A
@@ -220,9 +220,9 @@ value column; that alignment is emitted bytes and §3.1 governs it.
 `#define %s_` lines still in `emit_vm.c` are seven multi-line macro BODIES
 with backslash continuations (`_CHARGE_WORK`, `_TRAIL`/`_SET`/`_PUSH`/`_CUT`,
 `_CALL`, `_TIER_NOTE`, the `_PRUNE_*` pair) whose emitted text is a program,
-not a value. They stay `sb_printf`, and four sabotage rows sit on them.
+not a value. They stay `pcrec_sb_printf`, and four sabotage rows sit on them.
 
-**The uppercased prefix is ONE derivation**: `sb_upper(Arena *, const char *)`.
+**The uppercased prefix is ONE derivation**: `pcrec_sb_upper(Arena *, const char *)`.
 `GenNames.upper` and `Vm.up` are both `const char *` pointing at its one arena
 result; neither is storage any more. Do not re-derive an uppercase at a call
 site and do not add a third field.
@@ -231,8 +231,10 @@ site and do not add a third field.
 
 **3.1 Any change to an emitted byte IS an `abi` event.** Comments, declarations,
 layout, whitespace — all of it (D76/D94). The change carries the bump, the
-identity-gate re-pin and the spec hunk in ONE commit; `abi` is **26** today
-(`src/gen/emit_dfa.c:1965`). Find readers **by grep**, never by memory — a
+identity-gate re-pin and the spec hunk in ONE commit; the current value is
+`PCREC_ARTIFACT_ABI` (`src/core/limits.def`) and the change log is
+`docs/spec/match_api.md` §6, which the ritual maintains and which is the ONLY
+home (D76 addendum, [REVW.A1]). Find readers **by grep**, never by memory — a
 hand-enumerated "four sites" list missed a fifth in `match_api.md` (D94). And grep
 for the digit is not sufficient on its own: a manifest whose rows never cite an
 abi number can still hold byte COUNTS that move (lane `battriage`, 2026-09-17), so
@@ -308,8 +310,10 @@ with a pointer.** A function header, sized to the function, answers (a) what it
 produces, (b) what it reads that is not a parameter, (c) the one invariant a caller
 must not break (L4-C1). Most of that text already exists inside the body and can be
 hoisted rather than composed. Wave narratives, panel citations and change logs
-belong in `docs/` — the `abi` change log lives in three drifting homes today and two
-transitions are recorded nowhere (L4-A1), which is what that costs.
+belong in `docs/` — the `abi` change log lived in four homes, three of them
+drifting, with two transitions recorded in only one of them (L4-A1). [REVW.A1]
+cut it to one: `docs/spec/match_api.md` §6, maintained by the bump ritual
+itself. A 449-line change log in `emit_dfa.c` is what the alternative cost.
 
 ---
 
@@ -343,7 +347,7 @@ five different surfaces, which is the argument that the shape is systemic:
    filter that found nothing wrong.
 5. **A check needs a failing-direction story before it is written.** Run it against
    the unrepaired defect and record the red. L8-F6 is what the absence looks like:
-   the ctx_nomem discipline's only positive control is Darwin-skipped, so it has not
+   the pcrec_ctx_nomem discipline's only positive control is Darwin-skipped, so it has not
    run on the dev box since the two-machine split — and the F1 hole shipped in
    exactly that window.
 

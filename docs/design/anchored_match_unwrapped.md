@@ -75,7 +75,7 @@ An `ENG_UNANCH` artifact carries these machines after this row:
 | `<p>_reverse` | REWIND: given that end, where did the leftmost such match BEGIN? | `job->rnfa` (pattern reversed) | no | n/a |
 | `<p>_anchored` | **MATCH-HERE: given the start `ctx->pos`, where does the match starting THERE end?** | `job->nfa` from `nfa->anch_start` | yes | NO |
 
-**The derivation is a PARAMETER, not a copy.** `nfa_wrap_unanchored` already
+**The derivation is a PARAMETER, not a copy.** `pcrec_nfa_wrap_unanchored` already
 leaves the pattern's own start state addressable — `Nfa.anch_start`
 deliberately does not move when the wrap is applied (`src/ir/nfa.c`, a
 property `src/opt/prefix_k.c` already depends on). So the anchored machine is
@@ -103,7 +103,7 @@ each is load-bearing somewhere below:
   flags computed off the same scan. Both machines see the same NFA, so
   `adfa->clsmap` is byte-for-byte `dfa->clsmap` and `adfa->ncls ==
   dfa->ncls`. (The artifact still emits its own copy — see §8's OPEN item.)
-- **`^` and `\G` cannot appear.** `nfa_has_bot` routes every BOT-family and
+- **`^` and `\G` cannot appear.** `pcrec_nfa_has_bot` routes every BOT-family and
   `\G` pattern to `ENG_ATTEMPT`, so on this engine `s1g[] == s1u[]` entry for
   entry and there is no start-position assertion for the anchored machine to
   get wrong.
@@ -125,7 +125,7 @@ This is the section the row lives or dies on. The claim is:
 ### 3.0 Notation
 
 `N` is the priority Thompson NFA. `a = N.anch_start` is the pattern's own
-first state. `nfa_wrap_unanchored` adds `w = SPLIT(a [slot 0, PREFERRED],
+first state. `pcrec_nfa_wrap_unanchored` adds `w = SPLIT(a [slot 0, PREFERRED],
 any-byte → w [slot 1])` and sets `N.start = w`.
 
 A DFA state is a **priority-ordered list** of NFA states (`src/ir/dfa.c`'s
@@ -424,13 +424,13 @@ state cap (`PCREC_MAX_DFA_STATES_TABLE`, narrowed by
 pattern that compiles today MUST NOT start failing because an OPTIONAL
 machine did not fit. So `pcrec_build_dfa` gains an `optional` flag, and
 `intern()`'s two "pattern too complex" sites gain ONE line each, placed
-after the unchanged `[SEL-1]` record and before the unchanged `ctx_fail`:
+after the unchanged `[SEL-1]` record and before the unchanged `pcrec_ctx_fail`:
 
 ```c
     cx->dfa_overflowed = true;                       /* [SEL-1], unchanged */
     snprintf(cx->dfa_overflow_why, ...);             /* [SEL-1], unchanged */
     if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-    ctx_fail(cx, 0, "pattern too complex ...");      /* unchanged */
+    pcrec_ctx_fail(cx, 0, "pattern too complex ...");      /* unchanged */
 ```
 
 `PCREC_DFA_DEAD` is `-1`, the value `tr[]` already carries for "dead", so a
@@ -449,7 +449,7 @@ once instead of walking out its remaining rows.
 3. `Ctx.dfa_overflowed` means "the DFA ENGINE cannot compile this pattern",
    which is FALSE when only the optional machine overflowed — the driver
    therefore SAVES and RESTORES `dfa_overflowed`/`dfa_overflow_why` across
-   the optional build. Without that, a later unrelated `ctx_fail` would see
+   the optional build. Without that, a later unrelated `pcrec_ctx_fail` would see
    a stale `true` and take `[SEL-1]`'s retry path for the wrong reason.
    (`Ctx.subset_elems` is NOT restored: the memory really was spent, and
    K7's bound is a claim about what the construction spends.)

@@ -319,24 +319,24 @@ fi
 # Count CALL SITES, not mentions. The first cut of this check grepped for the
 # bare string and scored 3 on a correct tree, because two of the hits were
 # comments in this very repository explaining that the string is single-homed —
-# a check that counts prose about itself. Anchoring on `ctx_fail(` is what makes
+# a check that counts prose about itself. Anchoring on `pcrec_ctx_fail(` is what makes
 # it read code.
 #
 # [L3-F5, 2026-09-17 code review] "one home" was never true of the MESSAGE --
 # eight parenthesized-construct sites raise it verbatim, all but this one
-# through REFUSE (an ExtResult return, not a raw ctx_fail(...) call), and the
+# through REFUSE (an ExtResult return, not a raw pcrec_ctx_fail(...) call), and the
 # review deduped them onto one #define, PCREC_MISSING_CLOSE_PAREN_MSG
 # (internal.h). What this check actually verifies, and the property that
-# still holds, is narrower and still real: exactly one RAW ctx_fail(...) call
+# still holds, is narrower and still real: exactly one RAW pcrec_ctx_fail(...) call
 # carries it -- the base grammar's own site -- and every other doorway raises
 # its own refusal at its own offset through REFUSE rather than reaching past
-# pcrec_parse_body's contract to call ctx_fail directly. The grep now matches
+# pcrec_parse_body's contract to call pcrec_ctx_fail directly. The grep now matches
 # either spelling so a future literal duplicate is still caught.
-homes=$(grep -rcE 'ctx_fail\([^)]*(PCREC_MISSING_CLOSE_PAREN_MSG|"missing closing \) for group")' "$ROOT_DIR/src" --include='*.c' | awk -F: '{s += $2} END {print s+0}')
+homes=$(grep -rcE 'pcrec_ctx_fail\([^)]*(PCREC_MISSING_CLOSE_PAREN_MSG|"missing closing \) for group")' "$ROOT_DIR/src" --include='*.c' | awk -F: '{s += $2} END {print s+0}')
 if [ "$homes" -eq 1 ]; then
-    ok "group diagnostic: exactly one raw ctx_fail(...) call site in src/"
+    ok "group diagnostic: exactly one raw pcrec_ctx_fail(...) call site in src/"
 else
-    bad "group diagnostic: found $homes raw ctx_fail(...) call sites in src/, expected exactly 1 — a module has probably reached past pcrec_parse_body's contract instead of raising its own refusal"
+    bad "group diagnostic: found $homes raw pcrec_ctx_fail(...) call sites in src/, expected exactly 1 — a module has probably reached past pcrec_parse_body's contract instead of raising its own refusal"
 fi
 
 echo "checks passed: $pass"

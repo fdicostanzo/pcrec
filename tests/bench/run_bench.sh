@@ -428,7 +428,7 @@ echo
 # patterns. Before M2.8 they were quadratic in branch count and then failed
 # outright: 500/1000/2000 random words took 0.72/2.94/11.09 s and 3600 words
 # hard-failed with "NFA exceeds 20000 states". The cause was closure fan-out,
-# not state count -- nfa_wrap_unanchored's self-loop keeps the whole branch
+# not state count -- pcrec_nfa_wrap_unanchored's self-loop keeps the whole branch
 # chain live at every position, so every epsilon closure walked every branch
 # (measured 4045 NFA visits per closure at 2000 branches, 2.36 billion total).
 # The prefix trie in src/ir/nfa.c collapses that to the node fan-out.

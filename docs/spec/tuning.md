@@ -632,7 +632,7 @@ pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
 `RX_ENGINE_WHY`'s text carries the ordinary `"... at pattern offset N"` suffix
 every `why` goes through (`why_text`, `src/opt/select_engine.c`) even though
 this reason is not tied to one AST node — offset 0 by convention, the same
-position the two `ctx_fail` sites in `src/ir/dfa.c` already report at. If the
+position the two `pcrec_ctx_fail` sites in `src/ir/dfa.c` already report at. If the
 pattern's engine choice is ALSO forced by a real construct (a live capture, a
 `VM_ONLY` registry row), that reason wins `RX_ENGINE_WHY` on the ordinary
 first-wins rule (§5.5) — the overflow's own effect (drop the prefilter) still
@@ -2191,7 +2191,7 @@ in their reflection surface over it, and concretely, unmasked it would move
 five bytes of `rx_info.flags` and the object files would NOT be identical.
 
 **Where the gate is.** One render-time decision in the emission kit
-(`src/core/sb.c`'s `sb_cmt_open`/`sb_cmt_close`, D108): the emitters still
+(`src/core/sb.c`'s `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`, D108): the emitters still
 emit every comment event they always did, and the buffer decides whether the
 text is written. It is not a post-hoc strip, so no line is ever repaired and
 no comment can be half-removed.
@@ -2438,6 +2438,16 @@ Which `pcrec_options` fields (`lib/pcrec.h`) correspond to which flags in
 §2. `docs/spec/match_api.md` §8.2 states the struct itself in full; this
 table only maps field to axis.
 
+**THE TABLE IS EXHAUSTIVE OVER `flags`, and it says so because it once was
+not.** Seven axes that had a §2 section of their own — `-fno-size-term`,
+the `-fno-prefilter-collapse` pair, `-fno-scan-edge`, `-fno-start-pinned`,
+`-fno-cls-fold` and `-fno-startpos-guard` — had no row here, and neither
+did `--vm-entry-shape`'s `PCREC_VM_ENTRY_*` constants or `PCREC_TRACE`
+([REVW.5], lens 9's P3 rider). A reader could therefore find an axis in §2,
+fail to find its field here, and conclude the axis was CLI-only. Every bit
+of `flags` now appears below, either as an axis row or in the
+not-a-tuning-axis list that follows.
+
 | `pcrec_options` field | CLI spelling | §2 axis |
 |---|---|---|
 | `flags` bit `PCREC_NO_POSSESSIFY` | `-fno-possessify` | §2.1 |
@@ -2453,14 +2463,37 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
 | `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
 | `flags` bit `PCREC_NO_ANCHORED_DFA` | `-fno-anchored-dfa` | §2.15 |
+| `flags` bit `PCREC_NO_SIZE_TERM` | `-fno-size-term` | §2.16 |
+| `flags` bits `PCREC_NO_PREFILTER_COLLAPSE` / `PCREC_FORCE_PREFILTER_COLLAPSE` | `-fno-prefilter-collapse` / `-fprefilter-collapse` | §2.17 |
+| `flags` bit `PCREC_NO_SCAN_EDGE` | `-fno-scan-edge` | §2.18 |
+| `flags` bit `PCREC_NO_START_PINNED` | `-fno-start-pinned` | §2.19 |
 | `flags` bit `PCREC_NO_ALT_ISLAND` | `-fno-alt-island` | §2.20 |
+| `flags` bit `PCREC_NO_CLS_FOLD` | `-fno-cls-fold` | §2.22 |
+| `flags` bit `PCREC_NO_STARTPOS_GUARD` | `-fno-startpos-guard` | §2.23 |
+| `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
+| `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 | `tune` (`PCREC_TUNE_MIN_SIZE` … `_MAX_SPEED`, `-2..+2`) | `--tune=N` | §5 |
 
 `step_budget`, `work_budget` and `frame_capacity` are resource-bound
 fields, not strategy-selection tuning axes — `docs/spec/limits.md` is
-their home, not this document.
+their home, not this document. The six `max_*` caps and
+`warn_emit_bytes` are the same: resource bounds, `limits.md`'s territory,
+quoted as shipped in `match_api.md` §8.2.
+
+**The four `flags` bits that are NOT tuning axes**, named here so the
+table above can be read as exhaustive rather than as merely long:
+`PCREC_CASELESS`, `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` are semantic
+and output options (`docs/spec/match_api.md` §8.2 and `docs/spec/cli.md`),
+and `PCREC_TRACE` (`--trace`) selects an INSTRUMENTED matcher that writes
+an event stream to stderr — a generation axis that deliberately changes
+what the artifact DOES at run time, which is exactly what a §2 axis may
+not do (`docs/spec/table_contract.md`'s Scope section places the stream
+explicitly OUT of the table contract and names `[V-H]` as its design
+home). None of the four is answer-preserving in §1's sense, so none
+belongs in §2, and `--trace`'s bit has no mirror row for that reason
+rather than by oversight.
 
 **`tune` has NO `PCREC_TUNE_SET` bit, and the absence is a recorded
 decision.** Every other field above has one representation; `tune`'s

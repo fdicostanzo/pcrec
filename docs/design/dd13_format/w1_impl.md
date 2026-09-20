@@ -126,7 +126,7 @@ all CLOSED; B1's DIAGNOSIS closed but its REMEDY refuted):
 | item | landed |
 |---|---|
 | **sem N1** (the remedy) — `W` is a per-REGION property while "delivering" is per CALL SITE, so excluding capture indices from `W` would exclude them for every other site of the same definition | **§2.8 rewritten again.** RULED (manager, architecture): **a delivering call is FORCED to `CALL_SPLICE`**, because `vm_splice` allocates `base = v->nsplice` FRESH PER SITE — so the exclusion is per-site by construction. §2.4's table gains a FOURTH changed row (`cg_eligibility` gains one input). The two refusals turn out to be the forcing's precondition |
-| **sem N2** — the restore is index-coupled | §2.8: the restore runs over the CALLEE REGION's own index space (`vm_region`, `emit_vm.c:6036-6046`); `vm_publish_saves`'s *"three readers, one write"* named; `vm_splice`'s overflow `ctx_fail` (`:5924-5932`) cited as the loud detector; and the trail-coherence argument — `vm_set` is trailed, so a dropped restore keeps the callee's value and is undone on backtrack |
+| **sem N2** — the restore is index-coupled | §2.8: the restore runs over the CALLEE REGION's own index space (`vm_region`, `emit_vm.c:6036-6046`); `vm_publish_saves`'s *"three readers, one write"* named; `vm_splice`'s overflow `pcrec_ctx_fail` (`:5924-5932`) cited as the loud detector; and the trail-coherence argument — `vm_set` is trailed, so a dropped restore keeps the callee's value and is undone on backtrack |
 | **sem N3** — where the delivering bit lives | §2.4: ON the `A_CALL` node (a bare `const Ast *` walker cannot reach a memo), written EXPLICITLY on every call, because the arena zero is the unsound direction — `link`'s own situation and `link`'s own answer (`callgraph.c:246`, `:337`) |
 | **sem N4** — the sub-parse's pending list | §2.5: the list is CAPTURED into the scope record, not overwritten by the restore; the re-basing is TWO passes (a tree walk for `A_CAP`, a pass over the captured list) rather than one |
 | **sem N5** — the region start vs the first delivered group | §4's S9b: the region starts at `ngroups+1` with the wrapper there; the first delivered GROUP is at `ngroups+2`. Revision 2.1 said the second and implied the first |
@@ -228,7 +228,7 @@ is now three-way and says which half each leg covers.
 | F1 | `src/parse/rxt_source.c` (**new**) | C | the HEAD grammar + the body's directive lines; four lexical contexts; block scalars; `config` cascade and composition; `target` resolution; the definition set. Produces one arena-owned `RxtSource` |
 | F2 | `src/core/internal.h` | C | `RxtSource`/`RxtDef`/`RxtTarget`/`RxtConfig`; `NamedGroup` gains `scope`; `Ast.u.cap` gains `at` and the header extent (§2.10); `PendingRef` gains the scope discriminator (§2.5); `Ctx` gains the scope stack and the assignment table |
 | F3 | `cli/main.c` | C | `--source`, `--target`, `--lib-path`, `--emit-composed`, `--list-source`; `-o <dir>` (today `-o` writes one `.c` + one `.h`, `main.c:740-786`) |
-| F4 | `src/core/compile.c` | C | one call in `compile_driver` between `pcrec_parse` (**`compile.c:882`** — r45gram 3; `:874` is an encoding `ctx_fail`) and `pcrec_altcls` (`:890`); `ctx_fail` (`:16-29`) consults the provenance scope |
+| F4 | `src/core/compile.c` | C | one call in `compile_driver` between `pcrec_parse` (**`compile.c:882`** — r45gram 3; `:874` is an encoding `pcrec_ctx_fail`) and `pcrec_altcls` (`:890`); `pcrec_ctx_fail` (`:16-29`) consults the provenance scope |
 | F5 | `src/parse/mod_named_groups.c` | C | B1's `(?<3>…)` / `(?<name=3>…)` |
 | F6 | `src/parse/mod_recursion.c` | C | B2's `(?&^.name)` and B3's `(?&site=name)` / `(?&=name)`, in `rc_name_call` (`:269`) |
 | F7 | `src/parse/registry.c` | C | three `RegRow`s so `--list-syntax` carries them (D24/D65) |
@@ -535,7 +535,7 @@ with r45gram 3's correction:
 ```
 compile.c:840  pcrec_parse_mods_init(&cx)
 compile.c:882  root = pcrec_parse(&cx)        <- (revision 1 said 874;
-        ...    << THE COMPOSER RUNS HERE >>       :874 is an encoding ctx_fail)
+        ...    << THE COMPOSER RUNS HERE >>       :874 is an encoding pcrec_ctx_fail)
 compile.c:890  root = pcrec_altcls(&cx, root)
 compile.c:906  root = pcrec_discharge_atomic(&cx, root)
 compile.c:925  pcrec_callgraph_build(&cx, root)
@@ -586,7 +586,7 @@ THIRD state** (r45sem M1, and revision 1 had this wrong). These are
 diagnostic offsets into `cx->pat`. `forces_captures` walks the COMPOSED
 tree and then reads `cx->first_cap_pos`; if the only capture is inside a
 DEFINITION, a restore leaves `(size_t)-1` and `engine_why` stamps
-`18446744073709551615` — or, under `--engine=dfa`, `ctx_fail` reports
+`18446744073709551615` — or, under `--engine=dfa`, `pcrec_ctx_fail` reports
 it. `forces_registry` has the same hole with offset 0. So the fields
 become "unset / this pattern's offset / **a scope-stack reference**", and
 §2.9's stack is the supply for the third state: the diagnostic names the
@@ -1101,7 +1101,7 @@ diverge.
 The failure is LOUD in the direction that matters and merely wasteful in
 the other, which is worth stating precisely rather than as "caught":
 - reservation SMALLER than use → `v->nsplice` outruns `nsplice_total` →
-  `vm_splice`'s overflow `ctx_fail` (`:5924-5932`), which names K27's
+  `vm_splice`'s overflow `pcrec_ctx_fail` (`:5924-5932`), which names K27's
   class outright (*"the alternative is an out-of-bounds write in EMITTED
   code"*);
 - reservation LARGER than use → slots are over-reserved and never
@@ -1210,7 +1210,7 @@ TABLE**, both of which must exist anyway.
    definition already carries the right offset; the stack supplies the
    file and line to report it against, and (r45sem M1) the third state
    `first_cap_pos`/`first_vmonly_pos` now need.
-2. **`ctx_fail` is the one reporting site** (`compile.c:16-29`), so it is
+2. **`pcrec_ctx_fail` is the one reporting site** (`compile.c:16-29`), so it is
    the one place that consults the stack. `pcrec_error`
    (`lib/pcrec.h:611-615`) gains the file/line the CLI prints beside the
    offset it already prints (`main.c:774`).
@@ -2343,7 +2343,7 @@ filtered to the readers of the CURRENT VALUE, which today is **17**:
 
 | # | site | what it holds | moves at the bump |
 |---|---|---|---|
-| 1 | `src/gen/emit_dfa.c:1652` | `sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
+| 1 | `src/gen/emit_dfa.c:1652` | `pcrec_sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
 | 2 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` | YES |
 | 3 | `tests/codegen/run_codegen_tests.sh:2760` | the BUMP LEDGER inside that check's `bad` message — one clause per event since abi 2 | YES, one clause appended |
 | 4 | `docs/spec/match_api.md:159` | *"`rx_info.abi` is `17`"* in §1's general-rule paragraph | YES |

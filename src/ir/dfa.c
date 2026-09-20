@@ -99,7 +99,7 @@
  *
  * Byte equivalence classes are computed per machine so transition tables are
  * ncls-wide instead of 256-wide. All scratch memory is arena-owned so
- * ctx_fail/longjmp cannot leak (R1 R-3a). */
+ * pcrec_ctx_fail/longjmp cannot leak (R1 R-3a). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -285,13 +285,13 @@ typedef struct {
 } LCtxTab;
 
 /* Geometric regrow out of the ARENA rather than realloc(). Every table in
- * this section is a local of pcrec_build_dfa and intern() can ctx_fail (i.e.
+ * this section is a local of pcrec_build_dfa and intern() can pcrec_ctx_fail (i.e.
  * longjmp) straight past it, so heap ownership here would leak on the error
  * path -- the rule this file's header states as R1 R-3a. Growth is geometric,
  * so the abandoned copies total less than one live table. */
 static void *arena_regrow(Arena *ar, void *old, size_t oldsz, size_t newsz)
 {
-    void *p = arena_alloc(ar, newsz);
+    void *p = pcrec_arena_alloc(ar, newsz);
     if (oldsz) memcpy(p, old, oldsz);
     return p;
 }
@@ -316,7 +316,7 @@ static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
 static void lctx_rehash(LCtxTab *t)
 {
     t->tabcap = t->tabcap ? t->tabcap * 2 : 256;
-    t->tab = arena_alloc(t->ar, t->tabcap * sizeof(int));
+    t->tab = pcrec_arena_alloc(t->ar, t->tabcap * sizeof(int));
     for (size_t i = 0; i < t->tabcap; i++) t->tab[i] = -1;
     for (int i = 1; i < t->n; i++)   /* id 0 is the empty stack: never a key */
         t->tab[lctx_slot(t, t->v[i].parent, t->v[i].loop)] = i;
@@ -329,7 +329,7 @@ static int lctx_intern(LCtxTab *t, int parent, int loop)
 {
     if (t->n == 0) {                 /* reserve id 0 for the empty stack */
         t->cap = 64;
-        t->v = arena_alloc(t->ar, (size_t)t->cap * sizeof(LCtx));
+        t->v = pcrec_arena_alloc(t->ar, (size_t)t->cap * sizeof(LCtx));
         t->v[0].parent = -1;
         t->v[0].loop = -1;
         t->v[0].depth = 0;
@@ -403,8 +403,8 @@ static void pmemo_grow(PMemo *m)
 {
     PMemo nm = *m;
     nm.cap = m->cap ? m->cap * 2 : 256;
-    nm.key = arena_alloc(m->ar, nm.cap * sizeof(uint64_t));
-    nm.gen = arena_alloc(m->ar, nm.cap * sizeof(uint32_t));  /* zeroed != g */
+    nm.key = pcrec_arena_alloc(m->ar, nm.cap * sizeof(uint64_t));
+    nm.gen = pcrec_arena_alloc(m->ar, nm.cap * sizeof(uint32_t));  /* zeroed != g */
     for (size_t i = 0; i < m->cap; i++) {
         if (m->gen[i] != m->g) continue;
         size_t j = pmemo_slot(&nm, m->key[i]);
@@ -884,7 +884,7 @@ static void tab_grow(Ctx *cx, Dfa *d)
     d->tab = malloc(newcap * sizeof(int));
     /* [M4.7b/K7] d->tab is already NULL here, so the Job's own cleanup frees
      * nothing twice; d->tabcap is stale but nothing reads it after a longjmp. */
-    if (!d->tab) { d->tabcap = 0; ctx_nomem(cx); }
+    if (!d->tab) { d->tabcap = 0; pcrec_ctx_nomem(cx); }
     for (size_t i = 0; i < newcap; i++) d->tab[i] = -1;
     d->tabcap = newcap;
     for (int s = 0; s < d->n; s++) tab_insert(d, s);
@@ -934,7 +934,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * with neither force flag, but computing it always costs nothing
          * (one snprintf on an already-refusing path) and keeps this site
          * free of any awareness of WHO is asking, which is what "no
-         * try/catch-shaped clause at the ctx_fail site" means in practice:
+         * try/catch-shaped clause at the pcrec_ctx_fail site" means in practice:
          * the diagnostic below is unchanged, and this is a plain field
          * write, not a branch on the caller's mode. */
         cx->dfa_overflowed = true;
@@ -944,14 +944,14 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * is the one line that makes the anchored MATCH-HERE form's cap
          * overflow a SELECTION OUTCOME instead of a diagnostic
          * (docs/design/anchored_match_unwrapped.md §5.2). It sits AFTER
-         * [SEL-1]'s record and BEFORE the `ctx_fail`, so both are unchanged
+         * [SEL-1]'s record and BEFORE the `pcrec_ctx_fail`, so both are unchanged
          * character for character on every mandatory machine — which is what
          * keeps `--engine=auto`'s retry contract untouched. The driver that
          * asked for an optional machine is the one that knows
          * `Ctx.dfa_overflowed` does not mean what it says here; it saves and
          * restores that record around the build (src/core/compile.c). */
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-        ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
+        pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
                  "try --engine=vm)", d->maxstates);
     }
     /* Which views need storage of their own, and which alias an earlier one.
@@ -1009,7 +1009,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
             snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
                      "dfa overflowed: subset construction exceeds %lld "
                      "elements (N1 auto budget)", max_auto_dfa_elems);
-            ctx_fail(cx, 0, "auto-route DFA attempt exceeds the work budget "
+            pcrec_ctx_fail(cx, 0, "auto-route DFA attempt exceeds the work budget "
                      "(%lld state-set elements; raise with "
                      "--max-auto-dfa-elems, or use --engine=dfa for the "
                      "full %lld-element cap)",
@@ -1030,7 +1030,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * what the construction spends. Building the MANDATORY machines FIRST
          * is what keeps this from refusing a pattern that compiles today. */
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-        ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
+        pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
                  "try --engine=vm, or raise with --max-subset-elems)",
                  max_subset_elems);
@@ -1040,7 +1040,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         /* [M4.7b/K7] realloc into a TEMPORARY: on failure d->st still points at
          * the live array the Job owns and job_cleanup will free it. */
         DState *nst = realloc(d->st, (size_t)ncap * sizeof(DState));
-        if (!nst) ctx_nomem(cx);
+        if (!nst) pcrec_ctx_nomem(cx);
         d->st = nst;
         d->cap = ncap;
     }
@@ -1067,13 +1067,13 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
             s->up[u].list = s->up[owner[u]].list;
         } else {
             s->up[u].list =
-                arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof(int));
+                pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof(int));
             if (n) memcpy(s->up[u].list, up[u].list, (size_t)n * sizeof(int));
         }
     }
     s->eolvar = eolvar;
     s->endvar = endvar;
-    s->tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
+    s->tr = pcrec_arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
     for (int c = 0; c < d->ncls; c++) s->tr[c] = -2; /* unfilled */
     d->tab[i] = d->n;
     return d->n++;
@@ -1237,7 +1237,7 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
  * machine, off for the reverse machine, which must keep every thread to
  * find the earliest start); `reverse` selects which side of a `(?m)$`-style
  * assertion each closure reads. `optional` means an overflow RECORDS on
- * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `ctx_fail`ing — a
+ * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `pcrec_ctx_fail`ing — a
  * selection outcome for a machine nothing needs, never a diagnostic, per
  * `[SEL-1]`. Resets `d`'s per-machine fields unconditionally at entry: one
  * `Dfa` is reused across a compile's several builds. */
@@ -1261,7 +1261,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     bool has_word = false, has_nl = false, has_end = false, has_gst = false;
     /* [K50] Does this machine carry a character-boundary gate? Hoisted with
      * its three siblings and for their reason — the alphabet refinement has to
-     * happen before `eqclasses` returns. Only `nfa_wrap_unanchored` builds an
+     * happen before `eqclasses` returns. Only `pcrec_nfa_wrap_unanchored` builds an
      * N_CSTART, so this is false on the anchored MATCH-HERE machine, on the
      * reverse machine and on every ENG_ATTEMPT machine, and false under any
      * encoding whose backend places no restriction. */
@@ -1326,7 +1326,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     if (has_cstart) {
         const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
         if (!pcrec_enc_start_cls_ok(e))
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: encoding '%s' has a character-start set "
                      "that overlaps the word or newline sets, which the DFA "
                      "class axis represents as one partition",
@@ -1347,9 +1347,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * and memo tables start empty and allocate on first use. */
     CloScratch sc;
     memset(&sc, 0, sizeof sc);
-    sc.seen.mark = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
+    sc.seen.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.seen.n = nfa->n;
-    sc.emit.mark = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
+    sc.emit.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.emit.n = nfa->n;
     sc.memo.ar = sc.ctxs.ar = sc.ks.ar = &cx->arena;
 
@@ -1359,15 +1359,15 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * [M6.2 wave C] NINE: the class axis is three-valued. Allocated for the
      * worst case and INDEXED by (view, class-context); the guards in
      * make_state decide how many are actually written. */
-    int *scratch = arena_alloc(&cx->arena,
+    int *scratch = pcrec_arena_alloc(&cx->arena,
                                (size_t)nfa->n * 3 * UPC_N * sizeof(int));
-    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     Mach m = { prune, reverse, has_end, has_gst,
                { true, has_word, has_nl, has_cstart } };
 
     /* [ENG-ABS] `root` IS A PARAMETER. It was `nfa->start` here, which is the
-     * state `nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
+     * state `pcrec_nfa_wrap_unanchored` installs — the start-anywhere self-loop. The
      * anchored MATCH-HERE machine is this same construction rooted at
      * `nfa->anch_start` instead, i.e. the pattern's own first state, which the
      * wrap deliberately leaves addressable (src/ir/nfa.c). Nothing else in

@@ -26,7 +26,7 @@
 #      not, because `a{0,N}` builds Theta(N) states whose lists are each
 #      Theta(N) long. Charged in src/ir/dfa.c's intern(), so the refusal
 #      happens DURING construction rather than after it.
-#   2. Every allocation on the compile path reports through ctx_nomem()
+#   2. Every allocation on the compile path reports through pcrec_ctx_nomem()
 #      instead of abort(), so a malloc that fails under a caller's limit is a
 #      diagnosed refusal and not a dead caller process. [REVW.U L8-F6(a)]
 #      THE FILE LIST USED TO BE HAND-WRITTEN HERE AND WENT STALE (the
@@ -41,7 +41,7 @@
 # allocator paths at all. Section 2 forces a real allocation failure with an
 # address-space limit far below what a legitimate pattern needs, which is the
 # only way to reach that code — and is a positive control for it, not just a
-# repro: if ctx_nomem were reverted to abort(), section 2 fails and section 1
+# repro: if pcrec_ctx_nomem were reverted to abort(), section 2 fails and section 1
 # does not notice.
 #
 # Usage: bash tests/resource/run_resource_tests.sh

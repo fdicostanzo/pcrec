@@ -81,7 +81,7 @@ BASE key in this order:
 
 **`run_axes.sh` does the axis-specific half of step 2**: `REFUSAL_PATTERN`
 is a per-flag lookup of the SUBSTRING that axis's own documented limit's
-diagnostic contains (verified live against the shipped `ctx_fail` text,
+diagnostic contains (verified live against the shipped `pcrec_ctx_fail` text,
 never guessed) — `"would replicate its body"` for `-fno-counter`'s
 replication cap, `"-fprefilter requires the VM engine"` for `-fprefilter`'s
 force-refusal, `"requires the VM engine"` (the shared phrasing every

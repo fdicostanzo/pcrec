@@ -19,7 +19,7 @@
 # quietly emit a filter for the wrong language — it reaches a named internal
 # error instead. The alternative (silently emitting the erased machine) is what
 # §8.2 says would lose matches, and it is exactly what a version of nfa.c
-# written without that arm's `ctx_fail` would do.
+# written without that arm's `pcrec_ctx_fail` would do.
 SAB_ID="S176-prefilter-for-a-linked-call"
 SAB_FILE="src/opt/select_engine.c"
 SAB_SUITES="harness recursion"

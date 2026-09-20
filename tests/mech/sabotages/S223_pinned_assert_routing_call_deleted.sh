@@ -15,7 +15,7 @@
 #     else         start_pinned_assert_routing(cx, &job->dfa, job->dfa.s0);
 #
 # This plant deletes that call and nothing else. The function definition,
-# its two ctx_fail messages and every other reader of its name are
+# its two pcrec_ctx_fail messages and every other reader of its name are
 # untouched — so a check that greps only for the IDENTIFIER
 # `start_pinned_assert_routing`, or for its message text, still finds all
 # three and reports the guard intact while the guard has stopped running at
@@ -45,7 +45,7 @@
 SAB_ID="S223-pinned-assert-routing-call-deleted"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="searchpinned"
-SAB_DESC="The start-pinned search's P0/P3 routing assertion (start_pinned_assert_routing) has its ONE call site deleted from axis J's dispatch; the function definition and its ctx_fail messages are left untouched as dead code. No answer moves anywhere in the tree -- the assertion never fires on this corpus (S219's own measurement) -- what is lost is the compiler-side guard against a future engine-selection change routing a machine past P0's or P3's premise without the elision noticing"
+SAB_DESC="The start-pinned search's P0/P3 routing assertion (start_pinned_assert_routing) has its ONE call site deleted from axis J's dispatch; the function definition and its pcrec_ctx_fail messages are left untouched as dead code. No answer moves anywhere in the tree -- the assertion never fires on this corpus (S219's own measurement) -- what is lost is the compiler-side guard against a future engine-selection change routing a machine past P0's or P3's premise without the elision noticing"
 SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 1, solo mech run, tree 26644f50edcafbceb056616650f6cca2f80f4d89): DETECTED, unexpected: 0 -- reach:ok(1/1), searchpinned:1fail/16pass. The single failure is §7's wiring grep (\`start_pinned_assert_routing(cx,\` finds no match); the other 16 checks in the file stay green, confirming no answer moves and that §7 was this row's only guard."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree the
 # call-site expression is present in the emitter's own routing dispatch, not

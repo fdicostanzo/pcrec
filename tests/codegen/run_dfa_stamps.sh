@@ -212,7 +212,7 @@ PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set o
 # ---------------------------------------------------------------------------
 # `awk` and not a pile of `grep`s because each artifact is read ONCE and every
 # marker is an anchored, exact-substring test on a line the emitter writes
-# verbatim (the strings below are `sb_puts`/`sb_printf` literals in
+# verbatim (the strings below are `pcrec_sb_puts`/`pcrec_sb_printf` literals in
 # src/gen/emit_dfa.c; each is named in the comment beside it).
 read_artifact() {
     # ONE PASS, ONE PROCESS. The sweep runs this ~2,800 times, so the derived

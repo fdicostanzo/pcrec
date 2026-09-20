@@ -91,7 +91,7 @@ char *pcrec_rxt_schema_tsv(void)
     size_t n = 0;
     const RxtSchemaRow *rows = pcrec_rxt_schema_rows(&n);
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec .rxt FORMAT SCHEMA (docs/spec/rxt_format.md,\n"
         "# docs/spec/table_contract.md; the SEVENTH registry dump,\n"
         "# [DD-13b.W23.1]). One row per (scope, line-kind), walked out of\n"
@@ -142,10 +142,10 @@ char *pcrec_rxt_schema_tsv(void)
                                 pcrec_rxt_row_source_name(r->source),
                                 pcrec_rxt_validated_by_name(r->validated_by),
                                 wave };
-        sb_row(&sb, cells, sizeof cells / sizeof *cells);
+        pcrec_sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "#\n"
         "# THE DECLARED NON-COVERAGE. Each row names something this schema\n"
         "# deliberately does NOT validate, and why. Two of the four are also\n"
@@ -159,7 +159,7 @@ char *pcrec_rxt_schema_tsv(void)
     for (size_t i = 0; i < sizeof g_surface / sizeof *g_surface; i++) {
         const char *cells[] = { g_surface[i].surface, g_surface[i].scope,
                                 g_surface[i].kind, g_surface[i].reason };
-        sb_row(&sb, cells, sizeof cells / sizeof *cells);
+        pcrec_sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
     /* THE COMPILE-TIME ROW TOTAL, printed LAST and as a comment so it is
@@ -175,13 +175,13 @@ char *pcrec_rxt_schema_tsv(void)
      * its population. The alternative, a pinned literal with a re-pin
      * ritual, is a number in a second place and this delivery has enough of
      * those. */
-    sb_printf(&sb, "# schema-rows: %zu\n", pcrec_rxt_schema_nrows());
-    sb_printf(&sb, "# wave-built: %d\n", PCREC_RXT_WAVE_BUILT);
+    pcrec_sb_printf(&sb, "# schema-rows: %zu\n", pcrec_rxt_schema_nrows());
+    pcrec_sb_printf(&sb, "# wave-built: %d\n", PCREC_RXT_WAVE_BUILT);
     /* The RESERVED sentinel is printed for the same reason wave-built is:
      * a check that partitions the rows by wave needs both boundaries from
      * the dump itself, or it hardcodes a copy of internal.h's constant —
      * the control-sharing-a-source shape one number over. */
-    sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
+    pcrec_sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

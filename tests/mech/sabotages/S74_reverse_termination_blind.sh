@@ -45,7 +45,7 @@ SAB_COUNT=1
 # RE-ANCHORED 2026-08-26 ([OPT-3] STEP 2): the boundary's context-indexed
 # accept now takes its INDEX EXPRESSION from `premul_ix` (built into `ixbuf`
 # from a `cls` local) rather than spelling `%s * %d + ...` inline, so the
-# anchor spans the whole `sb_printf` and its argument list — the two must move
+# anchor spans the whole `pcrec_sb_printf` and its argument list — the two must move
 # together or the format and the args disagree. The EDIT is unchanged in kind:
 # the context-indexed read is dropped and the blind scalar one is left, which
 # is the LOST MATCH for a leading \B at search_from > 0 this row exists for.
@@ -69,7 +69,7 @@ SAB_COUNT=1
 # RE-ANCHORED 2026-09-18 ([REVW.2] wave 2 stage 3): the `char ab[...]` local
 # the 2026-09-03 note above added is GONE -- `fold_arg` returns arena-owned
 # text now, so it needs no caller buffer and the anchor loses one line while
-# the `sb_printf` and its argument list are otherwise byte-identical. Worth
+# the `pcrec_sb_printf` and its argument list are otherwise byte-identical. Worth
 # noting because this row's own history is the argument for the stage: FOUR
 # of its five re-anchorings were caused by a caller-sized buffer moving, and
 # one of them ([CC-DIFF] STEP 1(b)) was caused by that buffer being ADDED.
@@ -78,7 +78,7 @@ SAB_COUNT=1
 # kept, unconditional -- still the LOST MATCH for a leading \B at
 # search_from > 0 this row exists for.
 SAB_BEFORE='    const char *m = f->dir->c.name;
-    sb_printf(c, "%s    if (search_from"
+    pcrec_sb_printf(c, "%s    if (search_from"
                  " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
                  "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
                  "%s                 : %s_%s_accepts(%s%s))"
@@ -92,7 +92,7 @@ SAB_BEFORE='    const char *m = f->dir->c.name;
 SAB_AFTER='    /* SABOTAGE S74: the context read is dropped and the boundary takes
      * the blind scalar accept. */
     const char *m = f->dir->c.name;
-    sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
+    pcrec_sb_printf(c, "%s    if (%s_%s_accepts(%s%s)) %s = %s;\n",
               f->dir->bind, f->p, m,
               fold_arg(f, &f->acc_fold, "is_accepting"),
               f->src, f->dir->recv, f->dir->posv);'

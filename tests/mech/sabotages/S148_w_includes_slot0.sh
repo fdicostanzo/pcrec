@@ -52,12 +52,12 @@ SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR6): ^(a\\Kb)(?1)\$ on \"abab\" answers
 SAB_COUNT=1
 SAB_BEFORE='        int n = 0;
         for (int k = 2; k < nstate; k++) if (w[k]) n++;
-        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int *lst = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
         int q = 0;
         for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;'
 SAB_AFTER='        w[0] = true;   /* SABOTAGE S148: slot 0 joins W */
         int n = 0;
         for (int k = 0; k < nstate; k++) if (w[k]) n++;
-        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int *lst = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
         int q = 0;
         for (int k = 0; k < nstate; k++) if (w[k]) lst[q++] = k;'

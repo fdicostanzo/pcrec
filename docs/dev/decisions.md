@@ -5617,6 +5617,36 @@ that changes emitted scaffolding without bumping `abi` fails (B) and is
 told why. Plan row [TT-11] charters the change. `docs/testing.md` and
 `tests/codegen/CLAUDE.md` state the two owners.
 
+### D76 addendum — the bump ritual maintains ONE change log, and it is `docs/spec/match_api.md` §6 ([REVW.A1], 2026-09-19)
+
+D76 rules what a bump IS and what it re-pins; it never named where the
+HISTORY is written, so the history grew four homes and three of them
+drifted. Measured at `abi` 27:
+
+| home | state before this ruling |
+|---|---|
+| `src/gen/emit_dfa.c`'s comment log (449 lines) | **8 transitions missing**, entries out of numerical order |
+| `tests/codegen/run_codegen_tests.sh`'s failure message | missing `20->21` and `21->22` |
+| `src/gen/CLAUDE.md`'s `##` sections | last abi-numbered section is `17->18`; never a log, read as one |
+| `docs/spec/match_api.md` §6 | **complete and gap-free, `2` through `27`** |
+
+The fourth is the one lens 4's A1 finding did not count (a population
+nobody censused — `docs/dev/learnings.md` §3's own shape). It is complete
+BECAUSE every bump's D76/D94 ritual already touches it: the spec hunk is
+part of the ritual, so §6 is maintained by the same act that takes the
+bump, while the three narrative copies were maintained by nothing.
+
+**THE RULING.** `docs/spec/match_api.md` §6 is THE `abi` change log, and a
+bump's ritual maintains it and no other. The `emit_dfa.c` log is cut to a
+pointer; `src/gen/CLAUDE.md` gains a pointer and keeps its per-milestone
+DESIGN sections, which are topic record and explicitly not a log. The
+codegen suite's transition string stays — **a check is not a home**: it is
+a failure message for a reader who meets the red without the spec open,
+it is updated FROM §6, and its two missing transitions were backfilled
+from §6 in the same change, with a comment at its site saying which
+direction the copying goes. Nothing about what a bump IS changes; this
+addendum names the one document the ritual writes to.
+
 ## D77 — no end-anchored generation axis now: the `(?:P)\z` idiom stands; the axis is built later UNDER MEASUREMENT or not at all (Frank, 2026-08-25)
 
 **Context.** pcrec-bench's whole-subject regime (PCRE2
@@ -7677,6 +7707,19 @@ where pcrec stands; the 97 not-started rows are triaged into the
 three-lane columns (D86) alongside the rows the review proposes, and
 Frank ratifies a ranked future-work list. Positioning unchanged (memory
 `pcrec-post-spine-direction`): the fastest COMPLETE pcre.
+
+### D104 STATUS — BUILT, and the population was 34 (lane w5, 2026-09-19)
+
+Landed on `lane/w5` as [REVW.5] item 6, in ten commits grouped by blast
+radius. **`nm -g build/libpcrec.a` now shows 295 exports and ZERO without a
+`pcrec_` prefix.** The population was 34 at the branch point, not the 12 D104
+named or the 29 the addendum below priced: `sb_cmt_open`, `sb_cmt_close`,
+`sb_comments` and `sb_len_uncut` landed with [EMIT-VERB] between the addendum
+and the lane, by the same mechanism — `static` dropped so the emission kit
+could cross a translation-unit boundary. The names in THIS ROW and the
+addendum below are left at their old spellings deliberately: a ruling records
+what was ruled, and rewriting its subject falsifies the record. The live tree
+carries only the new spellings.
 
 ### D104 addendum — the rename population is 29, the cadence is per-commit witnesses + `make test` while iterating + ONE battery at the wave's close (Frank, 2026-09-19, seventy-first session)
 

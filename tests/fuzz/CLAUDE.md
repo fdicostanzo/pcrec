@@ -163,7 +163,7 @@ tree, which is what the manual-only reasoning below does not cover.
   NAMED weight (`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom
   branch in `gen_atom`, not merged into `CLASS_ATOMS` itself) — closing the
   README.md-documented finding that the differential gate was open
-  (`PCREC_DEFAULT_FEATURES="std1"`) but the generator never actually
+  (`pcrec_default_features="std1"`) but the generator never actually
   emitted anything std1's two modules own. `modifiers` generation stays
   out of scope, owed to [M7.0] (docs/dev/plan.md) rather than added here.
 - **README.md** — full usage, exception-list rationale, output-bucket

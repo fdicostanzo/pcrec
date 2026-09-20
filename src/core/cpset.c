@@ -36,15 +36,15 @@
  * re-derives is only as good as the next author's memory.
  *
  * ============================================================================
- * THE BUILDER IS ARENA-BACKED, AND THAT IS ABOUT `ctx_fail`
+ * THE BUILDER IS ARENA-BACKED, AND THAT IS ABOUT `pcrec_ctx_fail`
  * ============================================================================
  *
- * `ctx_fail` longjmps to `compile_driver`'s single `setjmp`, which frees the
+ * `pcrec_ctx_fail` longjmps to `compile_driver`'s single `setjmp`, which frees the
  * arena wholesale. Every class in this compiler is built inside a region of
  * code that can refuse — `p_class` raises "invalid range in character class"
  * from the middle of its own accumulation — so a `malloc`/`realloc` builder
  * would leak on every diagnosed pattern, and the leak would be found by the
- * ASan/LSan axis rather than by review. Growing through `arena_alloc` costs
+ * ASan/LSan axis rather than by review. Growing through `pcrec_arena_alloc` costs
  * the abandoned smaller block (a class reaching 64 intervals wastes 8+16+32
  * ranges' worth, under a kilobyte) and cannot leak by construction.
  *
@@ -74,7 +74,7 @@ static void cpset_grow(PcrecCpSet *s, int want)
     if (want <= s->cap) return;
     int cap = s->cap ? s->cap * 2 : 8;
     while (cap < want) cap *= 2;
-    PcrecCpRange *iv = arena_alloc(s->ar, (size_t)cap * sizeof *iv);
+    PcrecCpRange *iv = pcrec_arena_alloc(s->ar, (size_t)cap * sizeof *iv);
     if (s->n) memcpy(iv, s->iv, (size_t)s->n * sizeof *iv);
     s->iv = iv;
     s->cap = cap;
@@ -229,11 +229,11 @@ void pcrec_cpset_publish(PcrecCpSet *s, Ast *a)
  * interval list as if it were a membership bitmap (r54 E1). This turns that
  * into a diagnosed internal error AT THE SITE THAT WOULD HAVE COMMITTED IT.
  *
- * IT IS A `ctx_fail` AND NOT AN `assert`, deliberately (§13 obligation 5). The
+ * IT IS A `pcrec_ctx_fail` AND NOT AN `assert`, deliberately (§13 obligation 5). The
  * builds this project ships and tests are `-O2 -g` with no `-DNDEBUG` either
  * way, but "the assertion happens to be enabled in the configuration everyone
  * happens to use" is not a property a check can rest on, and an `assert` in a
- * library kills the caller — [M4.7b]/K7's rule, which is why `arena_alloc`'s
+ * library kills the caller — [M4.7b]/K7's rule, which is why `pcrec_arena_alloc`'s
  * out-of-memory path is a diagnosed refusal too. */
 void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32])
 {
@@ -241,7 +241,7 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32])
     for (int i = 0; i < a->u.cls.n; i++) {
         unsigned lo = a->u.cls.iv[i].lo, hi = a->u.cls.iv[i].hi;
         if (hi > 0xFF)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: a class holding code point U+%04X "
                      "reached a byte-tier consumer — the encoding lowering "
                      "did not run on this subtree", hi);

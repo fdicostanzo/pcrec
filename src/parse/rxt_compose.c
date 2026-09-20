@@ -206,7 +206,7 @@ typedef struct {
 static const char *rc_derived_id(Arena *a, const char *name)
 {
     size_t n = strlen(name) + 1;
-    char *d = arena_alloc(a, n);
+    char *d = pcrec_arena_alloc(a, n);
     pcrec_rxt_prefix_from_name(name, d, n);
     return d;
 }
@@ -219,14 +219,14 @@ static const RxtDef *def_by_name(Ctx *cx, const char *ident, size_t at,
         const RxtDef *d = &cx->defs->v[i];
         if (strcmp(rc_derived_id(&cx->arena, d->name), ident) != 0) continue;
         if (strlen(d->name) > PCREC_MAX_GROUP_NAME)
-            ctx_fail(cx, at,
+            pcrec_ctx_fail(cx, at,
                      "%s names definition '%s' (%s:%zu), which is %zu bytes; "
                      "a call's name is capped at %d, so that definition is "
                      "buildable as a target and not callable",
                      what, d->name, d->file, d->line, strlen(d->name),
                      PCREC_MAX_GROUP_NAME);
         if (hit)
-            ctx_fail(cx, at,
+            pcrec_ctx_fail(cx, at,
                      "%s names '%s', which two definitions derive: '%s' "
                      "(%s:%zu) and '%s' (%s:%zu). Rename one — an exact "
                      "spelling does not win the tie",
@@ -373,7 +373,7 @@ static void rc_rebase_refs(Ctx *cx, PendingRef *pend, const int *map, int nmap)
          * handful of bytes on a pattern that has a backreference at all. */
         int n = pr->node->u.bref.nrefs;
         if (n <= 0) continue;
-        int *fresh = arena_alloc(&cx->arena, (size_t)n * sizeof *fresh);
+        int *fresh = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof *fresh);
         for (int i = 0; i < n; i++) {
             int t = pr->node->u.bref.refs[i];
             fresh[i] = (t > 0 && t < nmap && map[t] > 0) ? map[t] : t;
@@ -431,7 +431,7 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
 /* The sub-parse's own refusals must name the DEFINITION's file and line, not
  * an offset into a pattern the author never wrote (w1_impl §2.9: provenance
  * is a property of the SUB-PARSE, not a field on a node — `internal.h`'s
- * PARSE-1 invariant says `Ast` carries no position of any kind). `ctx_fail`
+ * PARSE-1 invariant says `Ast` carries no position of any kind). `pcrec_ctx_fail`
  * takes a pattern offset, so the definition's coordinates go in the TEXT and
  * the offset stays the sub-parse's own, which is the only number that
  * locates a failure inside the definition. */
@@ -479,7 +479,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
              * the second-longest thing here — the same doubled-path cost
              * `lib_chain_text` records — so it goes after the two encodings
              * rather than before them. */
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' declares `encoding %s` but this "
                      "artifact is '%s' (%s:%zu); one artifact, one encoding",
                      def->name, def->encoding, hn, def->file, def->line);
@@ -545,7 +545,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
     {
         const Ast *rec = rc_find_root_call(body, pend);
         if (rec)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' (%s:%zu) uses whole-pattern recursion "
                      "((?R), (?0) or \\g<0>) inside a definition, which this "
                      "build refuses: after composition it could mean the "
@@ -571,7 +571,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
         for (const NamedGroup *g = names; g && !found; g = g->next)
             found = strlen(g->name) == elen && memcmp(g->name, b, elen) == 0;
         if (!found)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' exports '%.*s', which it declares no "
                      "capture group for (%s:%zu)",
                      def->name, (int)elen, b, def->file, def->line);
@@ -618,8 +618,8 @@ static void rc_assign(Composer *co, Bound *bd)
      * caller-visible half r45sem had attached to it. */
     int base = (int)cx->ncap + 1;
     int nmap = bd->k + 1;
-    bool *keep = arena_alloc(&cx->arena, (size_t)nmap * sizeof *keep);
-    int  *map  = arena_alloc(&cx->arena, (size_t)nmap * sizeof *map);
+    bool *keep = pcrec_arena_alloc(&cx->arena, (size_t)nmap * sizeof *keep);
+    int  *map  = pcrec_arena_alloc(&cx->arena, (size_t)nmap * sizeof *map);
 
     /* TIER 2, HIDDEN: a group the definition's own resolved references
      * reach. Unchanged since the first version, and D89 addendum point 1
@@ -743,7 +743,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
     Composer co;
     co.cx      = cx;
     co.nbound  = 0;
-    co.bound   = arena_alloc(&cx->arena, cx->defs->n * sizeof *co.bound);
+    co.bound   = pcrec_arena_alloc(&cx->arena, cx->defs->n * sizeof *co.bound);
     co.site    = NULL;
     co.nsite   = 0;
     co.sitecap = 0;
@@ -794,14 +794,14 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
                 (!worst || pr->at < worst->at))
                 worst = pr;
         if (worst)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s refers to a capture group named '%s', which this "
                      "pattern does not declare", worst->what, worst->name);
     }
     for (size_t i = 0; i < co.nbound; i++)
         for (PendingRef *pr = co.bound[i].pend; pr; pr = pr->next)
             if (pr->deferred && pr->name && !bound_by_name(&co, pr->name))
-                ctx_fail(cx, 0,
+                pcrec_ctx_fail(cx, 0,
                          "definition '%s' (%s:%zu): %s refers to '%s', which "
                          "is neither one of its own groups nor a definition "
                          "this source declares",
@@ -831,7 +831,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
             if (!b) continue;            /* refused above */
             if (co.nsite == co.sitecap) {
                 size_t nc = co.sitecap ? co.sitecap * 2 : 8;
-                Site *nv = arena_alloc(&cx->arena, nc * sizeof *nv);
+                Site *nv = pcrec_arena_alloc(&cx->arena, nc * sizeof *nv);
                 for (size_t j = 0; j < co.nsite; j++) nv[j] = co.site[j];
                 co.site = nv; co.sitecap = nc;
             }
@@ -854,7 +854,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
      * "I misread the library" from "the library forgot its export line". */
     for (size_t i = 0; i < co.nsite; i++)
         if (!co.site[i].to->def->exports)
-            ctx_fail(cx, co.site[i].at,
+            pcrec_ctx_fail(cx, co.site[i].at,
                      "%s delivers from definition '%s', which exports nothing "
                      "(%s:%zu); add an `export` line to it, or call it plainly "
                      "as (?&%s)",
@@ -910,8 +910,8 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
                 rc_export_lists(st->to->def, g->name, strlen(g->name))) nex++;
         if (nex == 0) continue;
 
-        int *from = arena_alloc(&cx->arena, (size_t)nex * sizeof *from);
-        int *to   = arena_alloc(&cx->arena, (size_t)nex * sizeof *to);
+        int *from = pcrec_arena_alloc(&cx->arena, (size_t)nex * sizeof *from);
+        int *to   = pcrec_arena_alloc(&cx->arena, (size_t)nex * sizeof *to);
         int  n    = 0;
         /* IN THE ORDER THE `export` LINE WRITES THEM, not the order the
          * definition's `named_groups` list happens to be in. That list is
@@ -934,11 +934,11 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
             if (!g || g->number <= 0) continue;
             char *rowname;
             if (flat) {
-                rowname = arena_alloc(&cx->arena, strlen(g->name) + 1);
+                rowname = pcrec_arena_alloc(&cx->arena, strlen(g->name) + 1);
                 memcpy(rowname, g->name, strlen(g->name) + 1);
             } else {
                 size_t sl = strlen(st->site), gl = strlen(g->name);
-                rowname = arena_alloc(&cx->arena, sl + 1 + gl + 1);
+                rowname = pcrec_arena_alloc(&cx->arena, sl + 1 + gl + 1);
                 memcpy(rowname, st->site, sl);
                 rowname[sl] = '.';
                 memcpy(rowname + sl + 1, g->name, gl + 1);
@@ -952,7 +952,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
              * whichever the sort happened to put first. */
             for (const NamedGroup *o = cx->named_groups; o; o = o->next)
                 if (strcmp(o->name, rowname) == 0)
-                    ctx_fail(cx, st->at,
+                    pcrec_ctx_fail(cx, st->at,
                              "%s would deliver a group named '%s', which this "
                              "pattern already has; give the site another name",
                              st->what, rowname);
@@ -960,7 +960,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
             int slot = (int)cx->ncap + 1;
             cx->ncap = (unsigned)slot;
 
-            NamedGroup *row = arena_alloc(&cx->arena, sizeof *row);
+            NamedGroup *row = pcrec_arena_alloc(&cx->arena, sizeof *row);
             row->name   = rowname;
             row->number = slot;
             /* PROVENANCE ALWAYS, SCOPE SEPARATELY (manager's ruling,

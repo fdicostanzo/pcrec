@@ -44,7 +44,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   share; `pcrec_compile_driver` is its one EXPORTED FACE, a pure forward
   that exists only so `compile_defs.c` can reach it without putting a bare
   unprefixed `compile_driver` in the library's symbol table ([REVW.3]);
-  ctx_fail error handler; pcrec_default_options defaults; and
+  pcrec_ctx_fail error handler; pcrec_default_options defaults; and
   pcrec_count_groups(), the parse-only entry behind the CLI's
   `--count-groups` (MOD-0.1/§18.1 — reports Ctx.ncap's end-of-parse value
   with pcrec_compile's exact refusal behaviour; it lives here because this
@@ -108,13 +108,13 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   once more with one more input bit set (`Ctx.dfa_disabled`) rather than
   wrapping the DFA build in a second, LOCAL recovery point — the shape the
   brief that chartered this row explicitly ruled out ("no try/catch-shaped
-  clause at the ctx_fail site"). The retry is decided in the `setjmp`-catch
+  clause at the pcrec_ctx_fail site"). The retry is decided in the `setjmp`-catch
   branch (`cx.dfa_overflowed && defo.engine == PCREC_ENGINE_AUTO &&
   !(defo.flags & PCREC_FORCE_PREFILTER) && !dfa_disabled`), so `--engine=dfa`
   and `-fprefilter` never retry and keep today's refusal, unchanged.
   `dfa_disabled`/`dfa_overflowed`/`dfa_overflow_why` are plain `Ctx` fields
   (`internal.h`), not arena text, because the retry decision runs AFTER
-  `job_cleanup`'s `arena_free` on the failed attempt — `overflow_why`
+  `job_cleanup`'s `pcrec_arena_free` on the failed attempt — `overflow_why`
   (a local, outside the loop) is what carries the failed attempt's own
   diagnosis forward into the next `Ctx`'s seed. `attempt` and `dfa_disabled`
   are `volatile`: `-Wclobbered` (which `make strict` promotes) flags both
@@ -165,7 +165,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   diagnostic); the engine's overflow RECORD is saved and restored around it
   (`Ctx.dfa_overflowed` means "the DFA engine cannot compile this pattern",
   which is false when only the optional machine overflowed, and leaving it set
-  would make a later unrelated `ctx_fail` take `[SEL-1]`'s retry path for the
+  would make a later unrelated `pcrec_ctx_fail` take `[SEL-1]`'s retry path for the
   wrong reason); and it is skipped for a VM HYBRID, whose `_match` is the VM's
   own anchored body. `docs/design/anchored_match_unwrapped.md` §2/§5.2.
 
@@ -327,18 +327,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   an artifact that compiles, matches something, and is invisible to every
   answer check in this project, because those all compare pcrec against an
   oracle on a pattern both understand. `pcrec_cls_bits` REFUSES a node whose
-  intervals are not byte-confined, by `ctx_fail` and not `assert` (§13
+  intervals are not byte-confined, by `pcrec_ctx_fail` and not `assert` (§13
   obligation 5; and K7's rule that a library must not kill its caller), so a
   lowering that did not run is a diagnosed internal error at the site that
   would have committed the miscompile.
 
-  **THE BUILDER IS ARENA-BACKED BECAUSE OF `ctx_fail`.** Every class in this
+  **THE BUILDER IS ARENA-BACKED BECAUSE OF `pcrec_ctx_fail`.** Every class in this
   compiler is accumulated inside code that can refuse mid-accumulation —
   `p_class` raises "invalid range in character class" from the middle of its
-  own loop — and `ctx_fail` longjmps to `compile_driver`, which frees the arena
+  own loop — and `pcrec_ctx_fail` longjmps to `compile_driver`, which frees the arena
   wholesale. A `malloc`/`realloc` builder would leak on every diagnosed
   pattern, and the leak would be found by the ASan/LSan axis rather than by
-  review. Growing through `arena_alloc` abandons the smaller block (under a
+  review. Growing through `pcrec_arena_alloc` abandons the smaller block (under a
   kilobyte for a class reaching 64 intervals) and cannot leak by construction.
 
   **THE INVARIANT IS SORTED, DISJOINT AND NON-ADJACENT**, and non-adjacency is
@@ -365,40 +365,40 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
-  calls `ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
+  calls `pcrec_ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
   half: pcrec is a LIBRARY, and aborting kills the CALLER's process — the
   outcome a caller who set a memory limit was specifically trying to avoid.
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
   everything wholesale, so nothing leaks and nothing half-built is read again
-- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
-  sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
-  `sb_comments` sets a buffer's policy once, `sb_cmt_open`/`sb_cmt_close`
+- **sb.c** — growable string buffer for C code emission; pcrec_sb_putc, pcrec_sb_puts,
+  pcrec_sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
+  `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
-  emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
+  emission site, and the mute test lives in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf`
   — the three primitives every other append in the file is built on, so a
   helper added later inherits the gate rather than having to remember it.
   D108 read in the one direction a verbosity axis needs: the walk still
   emits every comment event, and the RENDERER decides whether the text is
-  written. `sb_len_uncut(sb)` is its companion and its rule: **any decision
+  written. `pcrec_sb_len_uncut(sb)` is its companion and its rule: **any decision
   or stamp comparing an emitted LENGTH reads that, never `len`**, so the
   axis cannot move a size decision — the defect it exists to close is in
   `docs/dev/lanes/emitverb_report.md` §3a.
 
   **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
-  `sb_text`/`sb_textn`/`sb_field` (the two escape vocabularies), `sb_join` and
-  `sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
+  `pcrec_sb_text`/`pcrec_sb_textn`/`pcrec_sb_field` (the two escape vocabularies), `pcrec_sb_join` and
+  `pcrec_sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
   and no machine, so the future IR-consuming back-end calls them unchanged.
 
   **TWO VOCABULARIES, ONE `\xNN` TAIL, AND THEY ARE NOT INTERCHANGEABLE.**
-  `sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
+  `pcrec_sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
   every printable byte, BACKSLASH INCLUDED, passes through. That is
   `--explain`'s vocabulary and every registry TSV dump's, whose contract
   (`docs/spec/table_contract.md` rule 5) says only that a field never contains
-  a TAB. `sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
+  a TAB. `pcrec_sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
   plus that tail — which `tests/harness/driver.c`'s `decode()` reads back.
   MEASURED at the landing: **150 data rows** across `--list-syntax`/
   `--list-axes`/`--list-limits`/`--list-definitions`/`--list-families` carry a
-  raw backslash, so `sb_field` at a registry dump would DOUBLE it — a contract
+  raw backslash, so `pcrec_sb_field` at a registry dump would DOUBLE it — a contract
   break, not insurance. The wave-1 charter proposed exactly that one
   vocabulary everywhere and is wrong about this tree; the declarations in
   `internal.h` carry the measurement.
@@ -406,7 +406,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   Before the layer existed the `\xNN` tail was written TWICE
   (`syntax_dump.c`'s `put_text`, `rxt_source.c`'s `put_escaped`) and only
   `--explain` called its own copy, so three dump files escaped nothing.
-  `sb_row` is `sb_join` with `"\t"`, `sb_text` per cell and a newline — the
+  `pcrec_sb_row` is `pcrec_sb_join` with `"\t"`, `pcrec_sb_text` per cell and a newline — the
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
@@ -417,29 +417,29 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   realloc straight into `sb->p` would lose the only pointer to the live buffer
   the error path is about to free
 
-  **[REVW.2] wave 2 stage 3 (2026-09-18) ADDS `sb_fragf`, THE FRAGMENT** —
+  **[REVW.2] wave 2 stage 3 (2026-09-18) ADDS `pcrec_sb_fragf`, THE FRAGMENT** —
   lens 10's item 1 and the retirement primitive for the emitters' `char
   NAME[N]; snprintf(NAME, sizeof NAME, …)` idiom, the class K38 is the
-  recorded miscompile of. `const char *sb_fragf(Arena *, fmt, …)`: text in
+  recorded miscompile of. `const char *pcrec_sb_fragf(Arena *, fmt, …)`: text in
   arena-owned storage sized exactly to the result, so truncation is impossible
   BY CONSTRUCTION rather than by a per-site size argument somebody has to get
   right. It is the file's first primitive that takes an `Arena *` rather than
   a `StrBuf *`, and deliberately takes nothing else — D108's data-in/text-out
   rule again, so an emitter helper calling it is still callable from a
-  back-end fed by a deserialized IR. Failure routes through `ctx_nomem` via
-  the arena's `.cx`, `arena_alloc`'s own discipline.
+  back-end fed by a deserialized IR. Failure routes through `pcrec_ctx_nomem` via
+  the arena's `.cx`, `pcrec_arena_alloc`'s own discipline.
 
   **KNOW WHICH HALF OF THE PROMISE IS CHECKED.** `tests/core/sb_fragf_check.c`
   detects a wrong `vsnprintf` SIZE argument loudly (5 of its 6 sub-checks go
   red). It does NOT detect an allocation one byte short — and neither does
-  AddressSanitizer, measured both ways rather than argued: `arena_alloc`
+  AddressSanitizer, measured both ways rather than argued: `pcrec_arena_alloc`
   rounds every request to 16 bytes and zeroes the slice, and ASan sees only
   the arena's own 64 KiB block `malloc`, never the intra-block slice bounds.
   So "sized exactly to the result" is enforced at the format call and is
   unobservable at the allocation.
 
-  **[REVW.2] wave 2, EP2 step 10 / lens 1 X8 (2026-09-18) ADDS `sb_upper` AND
-  THE STAMP TRIO.** `const char *sb_upper(Arena *, const char *)` is the
+  **[REVW.2] wave 2, EP2 step 10 / lens 1 X8 (2026-09-18) ADDS `pcrec_sb_upper` AND
+  THE STAMP TRIO.** `const char *pcrec_sb_upper(Arena *, const char *)` is the
   uppercased-prefix derivation — the `<PREFIX>_` macro namespace — which used
   to be `emit_dfa.c`'s `prefix_upper` writing a `char upper[80]` on `GenNames`
   that `emit_vm.c` then `memcpy`d into a second `char up[80]` on `Vm`. One
@@ -447,7 +447,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   are gone and the emitters' fragment census reads 6, all of them the named
   encoding-seam family.
 
-  `sb_stampf` / `sb_stampwf` / `sb_stamp_str` write ONE artifact stamp line,
+  `pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` write ONE artifact stamp line,
   `#define <UPPER>_<NAME> <value>`, and they replace 73 bespoke format strings
   across the two emitters (52 + 21). **What that buys is D94's own ritual**:
   the abi re-pin site list is "every reader of the number, found by grep", and
@@ -464,7 +464,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   aligns its value column) exists because that alignment is emitted bytes like
   any other.
 
-  **THE CONVERSE OF `sb_fragf`'s BLIND SPOT.** Every byte these write lands in
+  **THE CONVERSE OF `pcrec_sb_fragf`'s BLIND SPOT.** Every byte these write lands in
   the emitted `.c`, so the four identity gates DO see a defect here, on
   thousands of artifacts at once. `tests/core/sb_stamp_check.c` is therefore
   not insurance against invisibility; it says WHICH property broke, and it
@@ -496,7 +496,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   convention
   **[SEL-1] adds `PCREC_DFA_OVERFLOW_WHY_LEN`** (96), sizing `Ctx.dfa_
   overflow_why` (internal.h) — a fixed array rather than an arena string,
-  because it has to survive `job_cleanup`'s `arena_free` on the failed
+  because it has to survive `job_cleanup`'s `pcrec_arena_free` on the failed
   attempt compile.c's retry reads it after. K38-precedent margin over the
   76-byte worst-case text src/ir/dfa.c's two overflow sites emit.
   **[LIM-2] N1 adds `PCREC_MAX_AUTO_DFA_ELEMS`** (30,000,000; `limits.def`,
@@ -607,7 +607,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
   | generic helper | what it does with `u.call` | why |
   |---|---|---|
-  | `src/opt/revdet.c` `rd_node` (the reversal copy constructor) | **never reached with one.** Its `*n = *src` shallow-copies the union, so an `A_CALL` copy would keep a valid `u.call` and a `body` pointer into the FORWARD tree — the most plausible-looking wrong node in the file. `rd_reverse`'s own `case A_CALL:` `ctx_fail` stops it before the tail fallthrough, and `rd_shape`'s decline stops `rd_reverse` being called at all. Its `n->k == A_REP` guard already keeps the `revbody`/`possessive` clear off `u.call`. | a shallow copy is right for every kind it DOES copy; a call is not one of them |
+  | `src/opt/revdet.c` `rd_node` (the reversal copy constructor) | **never reached with one.** Its `*n = *src` shallow-copies the union, so an `A_CALL` copy would keep a valid `u.call` and a `body` pointer into the FORWARD tree — the most plausible-looking wrong node in the file. `rd_reverse`'s own `case A_CALL:` `pcrec_ctx_fail` stops it before the tail fallthrough, and `rd_shape`'s decline stops `rd_reverse` being called at all. Its `n->k == A_REP` guard already keeps the `revbody`/`possessive` clear off `u.call`. | a shallow copy is right for every kind it DOES copy; a call is not one of them |
   | `src/opt/altcls.c` `altcls_walk`'s `*r = *a` (A_REP and A_CAP only) | **never runs on an `A_CALL`**: both copies are under an explicit kind arm that owns `u.rep`/`u.cap`, and the new `case A_CALL: return a;` returns the node itself. A copier that FOLLOWED `.body` would duplicate the callee and give one call site a private copy of a subtree the rest of the tree shares. | D70's kind-check rule, already satisfied |
   | `src/parse/mod_assertions.c`'s multiline pin | **cannot reach it** — guarded `k == A_BOL \|\| k == A_EOL`, and that port produces no `A_CALL`. | the guard the D70 migration added |
   | `src/opt/atomic.c` `dis_walk`, `src/parse/mod_backrefs.c` `br_strip_caps` (the two tree REWRITES) | **visit the node as itself and never follow `.body`.** Following it would discharge / strip the callee once per call that names it, rewriting `a->l` on nodes another part of the tree points at, and would not terminate on a recursive callee. | design §4.4 |
@@ -708,7 +708,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   |---|---|---|
   | `emit_vm.c` `vm_lifts` | its argument is an `A_ATOMIC`; `r->k != A_REP` DECLINES the lift for a call body. If the body is `A_REP((?1))` it declines again through `vm_nullable(r->l)`, which answers `true`. | no — but B+C must re-read it once `vm_nullable` becomes the graph fixpoint, because the lift of `(?>(?1)*)` then depends on the CALLEE's nullability |
   | `emit_vm.c` `bare` | `while (k == A_CAP)` — stops AT the call and returns it. A call is not transparent to anything. | no |
-  | `emit_vm.c` `vm_alt` | flattens the `A_ALT` spine and hands each branch to `vm_emit`. A call branch reaches `vm_emit`'s arm — `ctx_fail` today, `vm_call` in B+C. Generic in the branch kind. | no |
+  | `emit_vm.c` `vm_alt` | flattens the `A_ALT` spine and hands each branch to `vm_emit`. A call branch reaches `vm_emit`'s arm — `pcrec_ctx_fail` today, `vm_call` in B+C. Generic in the branch kind. | no |
   | `nfa.c` `trie_key` | requires every spine leaf to be `A_CLASS`; an `A_CALL` leaf makes it return false (INELIGIBLE). Dead for a call-bearing pattern anyway once wave E forces the prefilter off. | no |
   | `nfa.c` `ast_bare` | `while (k == A_CAP)` — stops at the call, `bare`'s answer. | no |
   | `altcls.c` `altcls_walk_alt` | flattens `A_ALT`, calls `altcls_walk` per branch (which now has an explicit `case A_CALL: return a;`), then merges only RUNS of `A_CLASS` branches — a call breaks the run. | no |
@@ -1169,7 +1169,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Conventions
 
-All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
+All dynamic allocations for AST/IR go through pcrec_arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
 
 
 ## [DD-14 wave G] the pass reorder, and three declarations

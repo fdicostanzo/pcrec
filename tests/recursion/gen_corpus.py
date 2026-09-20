@@ -1955,7 +1955,7 @@ INLOOKAROUND = [
                   "pcrec now refuses it from `pcrec_postresolve` AT THE SAME "
                   "OFFSET (26) with \"this one is unbounded\". The `maxw` "
                   "fixpoint reaches UNBOUNDED here as a FIXED POINT: the "
-                  "published value saturates `mrl_sat_add` and never leaves "
+                  "published value saturates `pcrec_mrl_sat_add` and never leaves "
                   "the top (design SS3.4d: infinity for any callee in a "
                   "cycle)."),
         PERR(r"^(?:(?<g>a(?&h)?b)){0}(?:(?<h>(?&g))){0}aabb(?<=(?&g))$",

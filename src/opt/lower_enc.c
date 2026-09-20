@@ -159,7 +159,7 @@ static Ast *lower_class_byte(LowerCtx *lc, Ast *a)
 {
     for (int i = 0; i < a->u.cls.n; i++)
         if (a->u.cls.iv[i].hi > lc->max_cp)
-            ctx_fail(lc->cx, 0,
+            pcrec_ctx_fail(lc->cx, 0,
                      "internal error: a class holding code point U+%04X "
                      "survived to the encoding lowering, whose universe ends "
                      "at U+%04X", a->u.cls.iv[i].hi, lc->max_cp);
@@ -192,7 +192,7 @@ static int u8_enc(unsigned cp, unsigned char *b)
 }
 
 /* A growable list of alternation BRANCHES, arena-backed for cpset.c's own
- * reason: this runs inside a compile that can `ctx_fail` mid-build. */
+ * reason: this runs inside a compile that can `pcrec_ctx_fail` mid-build. */
 typedef struct {
     Ctx  *cx;
     Ast **br;
@@ -203,7 +203,7 @@ static void u8_push_branch(U8Branches *bl, Ast *a)
 {
     if (bl->n == bl->cap) {
         int ncap = bl->cap ? bl->cap * 2 : 16;
-        Ast **grown = arena_alloc(&bl->cx->arena, (size_t)ncap * sizeof *grown);
+        Ast **grown = pcrec_arena_alloc(&bl->cx->arena, (size_t)ncap * sizeof *grown);
         for (int i = 0; i < bl->n; i++) grown[i] = bl->br[i];
         bl->br = grown;
         bl->cap = ncap;
@@ -328,7 +328,7 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
 
     for (int i = 0; i < a->u.cls.n; i++)
         if (a->u.cls.iv[i].hi > lc->max_cp)
-            ctx_fail(lc->cx, 0,
+            pcrec_ctx_fail(lc->cx, 0,
                      "internal error: a class holding code point U+%04X "
                      "survived to the encoding lowering, whose universe ends "
                      "at U+%04X", a->u.cls.iv[i].hi, lc->max_cp);
@@ -396,13 +396,13 @@ static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
     else if ((b0 & 0xF0) == 0xE0) { need = 3; cp = b0 & 0x0Fu; }
     else if ((b0 & 0xF8) == 0xF0) { need = 4; cp = b0 & 0x07u; }
     else
-        ctx_fail(cx, at, "ill-formed UTF-8 in pattern: byte 0x%02X cannot "
+        pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: byte 0x%02X cannot "
                          "start a character", b0);
 
     for (int i = 1; i < need; i++) {
         if (at + (size_t)i >= cx->patlen ||
             (p[at + (size_t)i] & 0xC0) != 0x80)
-            ctx_fail(cx, at, "ill-formed UTF-8 in pattern: truncated %d-byte "
+            pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: truncated %d-byte "
                              "character", need);
         cp = (cp << 6) | (p[at + (size_t)i] & 0x3Fu);
     }
@@ -412,13 +412,13 @@ static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
          * OVERLONG spelling, which 10.46 refuses in patterns too. */
         static const unsigned min_of[5] = { 0, 0, 0x80, 0x800, 0x10000 };
         if (cp < min_of[need])
-            ctx_fail(cx, at, "ill-formed UTF-8 in pattern: overlong encoding");
+            pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: overlong encoding");
     }
     if (cp >= 0xD800 && cp <= 0xDFFF)
-        ctx_fail(cx, at, "ill-formed UTF-8 in pattern: surrogate code point "
+        pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: surrogate code point "
                          "U+%04X", cp);
     if (cp > 0x10FFFF)
-        ctx_fail(cx, at, "ill-formed UTF-8 in pattern: code point above "
+        pcrec_ctx_fail(cx, at, "ill-formed UTF-8 in pattern: code point above "
                          "U+10FFFF");
 
     *len = need;
@@ -436,7 +436,7 @@ static const LowerOps *ops_for(Ctx *cx)
 {
     for (size_t i = 0; i < sizeof lower_ops / sizeof *lower_ops; i++)
         if (lower_ops[i].id == cx->opt->encoding) return &lower_ops[i];
-    ctx_fail(cx, 0, "internal error: no lowering instance for encoding id %d "
+    pcrec_ctx_fail(cx, 0, "internal error: no lowering instance for encoding id %d "
                     "(the compile gate admitted an encoding this pass does "
                     "not know)", cx->opt->encoding);
     return NULL; /* unreachable */
@@ -614,7 +614,7 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root)
     uintptr_t sig0 = 0, sig1 = 0;
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     if (!e)
-        ctx_fail(cx, 0, "internal error: no encoding row for id %d",
+        pcrec_ctx_fail(cx, 0, "internal error: no encoding row for id %d",
                  cx->opt->encoding);
     lc.max_cp = e->max_cp;
 
@@ -624,7 +624,7 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root)
         lower_walk(&lc, &root);
         cap_sig(root, &cap_n1, &sig1);
         if (cap_n0 != cap_n1 || sig0 != sig1)
-            ctx_fail(cx, 0, "internal error: a group root's node address "
+            pcrec_ctx_fail(cx, 0, "internal error: a group root's node address "
                             "moved across the encoding lowering — the "
                             "splice-in-place invariant (R2) is broken "
                             "(%d/%d group roots)", cap_n0, cap_n1);
@@ -642,7 +642,7 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root)
          * NULL, which is why the conjunction and not the replacement is the
          * error.) */
         if (root != was && cx->callgraph)
-            ctx_fail(cx, 0, "internal error: the encoding lowering replaced "
+            pcrec_ctx_fail(cx, 0, "internal error: the encoding lowering replaced "
                             "the AST root of a call-bearing pattern — group "
                             "0's cached body now names an abandoned node");
     }

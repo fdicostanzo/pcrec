@@ -4,11 +4,11 @@
  *
  * The builder can target any Nfa and compile the pattern REVERSED (concat
  * order flipped recursively) — the reverse machine finds match starts in the
- * D7 unanchored engine. nfa_wrap_unanchored() adds the lowest-priority start
+ * D7 unanchored engine. pcrec_nfa_wrap_unanchored() adds the lowest-priority start
  * self-loop that makes the forward machine search from every position while
  * preserving leftmost-first priority.
  *
- * R1 hardening: patch lists are arena-owned so ctx_fail cannot leak (R-3b);
+ * R1 hardening: patch lists are arena-owned so pcrec_ctx_fail cannot leak (R-3b);
  * A_CAT/A_ALT left spines are flattened iteratively so flat concatenations or
  * alternations of any length cannot overflow the C stack (R-2); remaining
  * recursion depth is bounded by the parser's group-nesting cap.
@@ -104,7 +104,7 @@ static void patch_push(NB *b, Patch *p, int enc)
 {
     if (p->n == p->cap) {
         int ncap = p->cap ? p->cap * 2 : 8;
-        int *nv = arena_alloc(&b->cx->arena, (size_t)ncap * sizeof(int));
+        int *nv = pcrec_arena_alloc(&b->cx->arena, (size_t)ncap * sizeof(int));
         if (p->n) memcpy(nv, p->v, (size_t)p->n * sizeof(int)); /* memcpy from
                     NULL is UB even with length 0 (R2 robustness NIT-1) */
         p->v = nv;
@@ -132,14 +132,14 @@ static int nst(NB *b, NKind k)
                                     ? (long long)b->cx->opt->max_nfa_states
                                     : PCREC_MAX_NFA_STATES;
     if (nfa->n >= max_nfa_states)
-        ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %lld states; "
+        pcrec_ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %lld states; "
                  "raise with --max-nfa-states)", max_nfa_states);
     if (nfa->n == nfa->cap) {
         int ncap = nfa->cap ? nfa->cap * 2 : 64;
         /* [M4.7b/K7] realloc into a TEMPORARY, so a failure leaves the live
          * array owned by the Job for job_cleanup rather than losing it. */
         NState *nst = realloc(nfa->st, (size_t)ncap * sizeof(NState));
-        if (!nst) ctx_nomem(b->cx);
+        if (!nst) pcrec_ctx_nomem(b->cx);
         nfa->st = nst;
         nfa->cap = ncap;
     }
@@ -201,7 +201,7 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
 
 /* ---- M2.8: priority-preserving prefix trie for flat alternations ----
  *
- * Motivation (R2-A4) is compile TIME more than NFA size. `nfa_wrap_unanchored`
+ * Motivation (R2-A4) is compile TIME more than NFA size. `pcrec_nfa_wrap_unanchored`
  * keeps the whole branch-selection split chain live at every subject position,
  * so a flat alternation makes every epsilon closure walk all `nbr` branches:
  * measured 2022 NFA visits per closure at 2000 branches (1.01*nbr), 2.27
@@ -331,7 +331,7 @@ static Frag trie_tail(NB *b, const TItem *it, int depth)
  * disjointness guard. */
 static Frag trie_flat(NB *b, const TItem *items, int n, int depth)
 {
-    Frag *fr = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+    Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
     for (int j = 0; j < n; j++) fr[j] = trie_tail(b, &items[j], depth);
     return n == 1 ? fr[0] : chain_alts(b, fr, n);
 }
@@ -424,7 +424,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
         if (has_acc) {
             /* at most one accept and one segment per item, plus a trailing
              * segment */
-            Frag *parts = arena_alloc(&b->cx->arena,
+            Frag *parts = pcrec_arena_alloc(&b->cx->arena,
                                       (size_t)(2 * n + 1) * sizeof(Frag));
             int np = 0, seg = 0;
             for (int k = 0; k < n; k++) {
@@ -451,7 +451,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
          * single branch began `[ab]`. */
         int runlen = disjoint_run_len(items, n, depth);
         if (runlen < n) {
-            Frag *runs = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+            Frag *runs = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
             int nr = 0, off = 0;
             while (off < n) {
                 int len = disjoint_run_len(items + off, n - off, depth);
@@ -466,14 +466,14 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
         /* rule 2: group by the class bitmap at `depth`, stable in index order
          * so groups come out ordered by their lowest index. Every group here
          * is pairwise disjoint from every other by the run cut above. */
-        int *gstart = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
-        int *gcount = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
-        TItem *sorted = arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
-        /* relies on arena_alloc zeroing (src/core/arena.c); read below
+        int *gstart = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        int *gcount = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        TItem *sorted = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
+        /* relies on pcrec_arena_alloc zeroing (src/core/arena.c); read below
          * before any explicit write. If a "skip the memset for large
          * allocations" fast path is ever added there, this grouping
          * silently corrupts and miscompiles — R3 critic latent finding. */
-        bool *used = arena_alloc(&b->cx->arena, (size_t)n);
+        bool *used = pcrec_arena_alloc(&b->cx->arena, (size_t)n);
         int ng = 0, m = 0;
         for (int k = 0; k < n; k++) {
             if (used[k]) continue;
@@ -501,7 +501,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
             continue;
         }
 
-        Frag *fr = arena_alloc(&b->cx->arena, (size_t)ng * sizeof(Frag));
+        Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)ng * sizeof(Frag));
         for (int g = 0; g < ng; g++) {
             const TItem *gi = sorted + gstart[g];
             int s = nst(b, N_CLASS);
@@ -531,7 +531,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
         if (t->k != A_CAT) break;
     }
     /* nsp counts the spine head plus one per A_CAT node */
-    const Ast **leaf = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+    const Ast **leaf = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
     int i = nsp;
     const Ast *t = a;
     while (t->k == A_CAT) { leaf[--i] = ast_bare(t->r); t = ast_bare(t->l); }
@@ -541,7 +541,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     for (int k = 0; k < nsp; k++)
         if (leaf[k]->k != A_CLASS) return false;
 
-    uint8_t *seq = arena_alloc(&b->cx->arena, (size_t)nsp * 32);
+    uint8_t *seq = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * 32);
     for (int k = 0; k < nsp; k++)
         /* [M5.0 stage 1] §2.5.1's AFTER row 7. This builder runs at
          * `compile.c:1018`, BELOW the encoding lowering, so every interval on
@@ -611,7 +611,7 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_NWORDB: return frag_single(b, N_NWORDB);
     /* [M6.2 wave D] `\G`. Reversal is identity for N_BOT/N_EOL/N_END's
      * reason — it is an absolute-position assertion — and no reverse machine
-     * is ever built for a pattern carrying it anyway: `nfa_has_bot` answers
+     * is ever built for a pattern carrying it anyway: `pcrec_nfa_has_bot` answers
      * true below, so src/core/compile.c routes it to ENG_ATTEMPT, which has
      * no reverse pass. That is a consequence of the routing rather than a
      * requirement of this node, and it is stated here because the reverse
@@ -680,7 +680,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         int nsp = 0;
         const Ast *t = a;
         while (t->k == A_CAT) { nsp++; t = ast_bare(t->l); }
-        const Ast **rs = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+        const Ast **rs = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
         int i = nsp;
         t = a;
         while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(t->l); }
@@ -702,7 +702,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         /* flatten, then chain splits so branch order = priority order */
         int nbr = 1;
         for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(t2->l)) nbr++;
-        const Ast **br = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
+        const Ast **br = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t2 = a;
         while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(t2->l); }
@@ -721,12 +721,12 @@ static Frag compile_ast(NB *b, const Ast *a)
          * it (R3 critic correction). Contiguity is safe against empty
          * branches for a structural reason: every eligible branch consumes at
          * least one byte, since all its leaves are A_CLASS. */
-        TItem *keys = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
-        bool *elig = arena_alloc(&b->cx->arena, (size_t)nbr);
+        TItem *keys = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
+        bool *elig = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr);
         for (int j = 0; j < nbr; j++)
             elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);
 
-        Frag *fr = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
+        Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
         int nf = 0;
         for (int j = 0; j < nbr; ) {
             if (!elig[j]) { fr[nf++] = compile_ast(b, br[j]); j++; continue; }
@@ -939,14 +939,14 @@ static Frag compile_ast(NB *b, const Ast *a)
      * `backrefs_design.md` §11.2 found again — an exposure this arm, being
      * exact, does not have at all. That is a real option and it is left OPEN
      * rather than refused; what is refused is shipping it without the
-     * population §8.4 measured empty. Reaching the `ctx_fail` below with an
+     * population §8.4 measured empty. Reaching the `pcrec_ctx_fail` below with an
      * `A_CALL` means the narrowing stopped being true, which is exactly what
      * S-SR17's twin sabotages. */
     case A_CALL:
         if (a->u.call.link == CALL_SPLICE && a->u.call.body) {
             const int nt = pcrec_callgraph_ntargets(b->cx->callgraph);
             if (++b->splice_depth > nt)
-                ctx_fail(b->cx, 0,
+                pcrec_ctx_fail(b->cx, 0,
                          "internal error: a spliced subroutine call nested "
                          "more than %d deep while building the machine, so "
                          "the splice eligibility rule admitted a cycle", nt);
@@ -954,12 +954,12 @@ static Frag compile_ast(NB *b, const Ast *a)
             b->splice_depth--;
             return f;
         }
-        ctx_fail(b->cx, 0,
+        pcrec_ctx_fail(b->cx, 0,
                  "internal error: a LINKED subroutine call reached the machine "
                  "builder; a linked call is VM-only and carries no prefilter");
         break;
     }
-    ctx_fail(b->cx, 0, "internal error: bad AST node");
+    pcrec_ctx_fail(b->cx, 0, "internal error: bad AST node");
 }
 
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
@@ -1049,7 +1049,7 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * other here is two independent derivations meeting, not a restatement:
  * `pcrec_minw` walks `Ast` nodes and this walks `NState`s.
  *
- * `ctx_fail` and not `assert`: K7's rule that a library must not kill its
+ * `pcrec_ctx_fail` and not `assert`: K7's rule that a library must not kill its
  * caller, and the same choice `pcrec_cls_bits` makes for the same reason — a
  * lowering that did not run is a diagnosed internal error at the site that
  * would have committed the miscompile, never a wrong answer in the field.
@@ -1058,8 +1058,8 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * is bounded by the state count and visits each state once. */
 static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
 {
-    unsigned char *seen = arena_alloc(&cx->arena, (size_t)nfa->n);
-    int *stack = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    unsigned char *seen = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
+    int *stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
     int top = 0, c;
 
     memset(seen, 0, (size_t)nfa->n);
@@ -1077,7 +1077,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
              * declined to build was load-bearing. */
             for (c = 0; c < 256; c++)
                 if (cls_has(st->cls, (unsigned)c) && !cls_has(scls, (unsigned)c))
-                    ctx_fail(cx, 0,
+                    pcrec_ctx_fail(cx, 0,
                              "internal error: [K50-NULLGATE] omitted the "
                              "character-boundary gate on a pattern whose first "
                              "byte may be 0x%02x, which this encoding does not "
@@ -1085,7 +1085,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
             continue;   /* consuming state: its successors are not first bytes */
         }
         if (st->k == N_ACCEPT)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: [K50-NULLGATE] omitted the "
                      "character-boundary gate on a pattern that can ACCEPT "
                      "without consuming — the nullability predicate and the "
@@ -1102,7 +1102,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
     }
 }
 
-void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
+void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     NB b = { cx, nfa, false, 0, false };
@@ -1163,7 +1163,7 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
  * This is NOT a `^` alias and the routing is the only thing they share:
  * `\Gfoo` at `startpos == 3` matches at 3 where `^foo` cannot, which is why
  * §4.1's `start_max` is a THIRD value rather than the existing `0`. */
-bool nfa_has_bot(const Nfa *nfa)
+bool pcrec_nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
@@ -1171,7 +1171,7 @@ bool nfa_has_bot(const Nfa *nfa)
     return false;
 }
 
-bool nfa_has_asserts(const Nfa *nfa)
+bool pcrec_nfa_has_asserts(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_EOL ||

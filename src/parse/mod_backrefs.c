@@ -106,7 +106,7 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
     a->u.bref.caseless = cx->mods->caseless;
     pcrec_ast_stamp(cx, a, rw, at);
 
-    PendingRef *pr = arena_alloc(&cx->arena, sizeof *pr);
+    PendingRef *pr = pcrec_arena_alloc(&cx->arena, sizeof *pr);
     pr->node   = a;
     /* [DD-14 wave B+C] WHICH RULE, spelled at every producer rather than left
      * to the arena's zero. `PEND_BREF` IS the zero, so this line is provably
@@ -140,7 +140,7 @@ static ExtResult br_result_node(Ast *node, size_t at, size_t end, ExtWant want)
  * lifetime assumptions any more than `NamedGroup.name` can. */
 static const char *br_strndup(Ctx *cx, const char *s, size_t len)
 {
-    char *q = arena_alloc(&cx->arena, len + 1);
+    char *q = pcrec_arena_alloc(&cx->arena, len + 1);
     memcpy(q, s, len);
     q[len] = '\0';
     return q;
@@ -556,7 +556,7 @@ static void br_name_run(Ctx *cx, const char *name, int **out, int *nout)
         if (strcmp(g->name, name) == 0) count++;
     if (count == 0) { *out = NULL; *nout = 0; return; }
 
-    int *v = arena_alloc(&cx->arena, (size_t)count * sizeof *v);
+    int *v = pcrec_arena_alloc(&cx->arena, (size_t)count * sizeof *v);
     int k = 0;
     for (const NamedGroup *g = cx->named_groups; g; g = g->next)
         if (strcmp(g->name, name) == 0) v[k++] = g->number;
@@ -709,7 +709,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                  * nothing, which is the population-nobody-counts shape this
                  * step refused for `encoding` one file over. */
                 if (pr->node->u.call.delivers)
-                    ctx_fail(cx, pr->at,
+                    pcrec_ctx_fail(cx, pr->at,
                              "%s delivers from '%s', but '%s' is a capture "
                              "group in this pattern, not a definition; a "
                              "plain (?&%s) calls it",
@@ -754,7 +754,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                     pr->node->u.call.target = pr->number;
                     continue;
                 }
-                int *v = arena_alloc(&cx->arena, sizeof *v);
+                int *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
                 v[0] = pr->number;
                 pr->node->u.bref.refs  = v;
                 pr->node->u.bref.nrefs = 1;
@@ -780,14 +780,14 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
          * be shown here. `(a)(?-2)` and `(a)\g{-2}` both take this arm; the
          * value never reaches the general sentence. */
         if (!worst->name && worst->number < 1)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s counts back past the first capture group; this "
                      "pattern has %u", worst->what, cx->ncap);
         if (!worst->name)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s refers to capture group %d, but this pattern has %u",
                      worst->what, worst->number, cx->ncap);
-        ctx_fail(cx, worst->at,
+        pcrec_ctx_fail(cx, worst->at,
                  "%s refers to a capture group named '%s', which this pattern "
                  "does not declare", worst->what, worst->name);
     }
@@ -805,7 +805,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
      * used to skip. */
     if (!cx->want_caps && cx->ncap > 0) {
         int nkeep = (int)cx->ncap + 1;
-        bool *keep = arena_alloc(&cx->arena, (size_t)nkeep * sizeof *keep);
+        bool *keep = pcrec_arena_alloc(&cx->arena, (size_t)nkeep * sizeof *keep);
         memset(keep, 0, (size_t)nkeep * sizeof *keep);
         pcrec_bref_mark(root, keep, nkeep);
         root = br_strip_caps(root, keep, nkeep);

@@ -102,7 +102,7 @@ one.
   two milestones after that port landed — is rewritten as a discharged
   obligation. A raising port used to SIGSEGV both surfaces; it now abandons
   the answer and returns NULL with a `pcrec_error` filled, which the CLI
-  renders in the compile path's own shape. Both surfaces `arena_free` too
+  renders in the compile path's own shape. Both surfaces `pcrec_arena_free` too
   (`--probe-ask` never did). **`--explain`'s value renderings escape control
   bytes** (R20/MOD07-8, `put_text`: bytes below 0x20 and 0x7f as `\xHH`, `\`
   deliberately not doubled) — the format grammar had no escaping, so a query
@@ -178,7 +178,11 @@ one.
   or flag behaves as described — `tests/registry/axes_registry_check.sh`
   and the emitted-artifact checks are that independent side)
 - **limits_dump.c** — [LIM-1] `pcrec --list-limits`, the numeric-limits
-  registry's SIXTH TSV surface (`docs/spec/registry.md`; D90). It
+  registry's SIXTH TSV surface (`docs/spec/registry.md`; D90). **Since
+  [REVW.5] its entry `pcrec_limits_tsv` is declared in `lib/pcrec.h` and is
+  PUBLIC SURFACE** — the library's one programmatic route to a raise-only
+  cap's built-in default (lens 9's P4) — so a change to the columns it emits
+  is a contract change and carries its `docs/spec/limits.md` hunk. It
   `#include`s `src/core/limits.def` DIRECTLY, defining the full
   `PCREC_LIMIT(...)` macro itself rather than going through any site's
   per-HOME dispatch layer, so a row's `value` is spliced into a numeric

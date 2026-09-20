@@ -24,7 +24,7 @@ per-file tier override table for it, with its reasoning at the table.
 
 **The driver tier's own residue, measured and named** (an `nm -g`/`nm -u`
 join over the built objects, 2026-09-19): `compile.c` also defines
-`ctx_fail`, `ctx_nomem` and `pcrec_default_options`, which every layer
+`pcrec_ctx_fail`, `pcrec_ctx_nomem` and `pcrec_default_options`, which every layer
 calls — 22 call edges that the `driver` classification turns into
 back-edges pointing the other way. They are base-tier primitives living
 in a driver's file. Nothing is proposed for them here; the number is

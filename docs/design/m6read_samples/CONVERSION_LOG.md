@@ -199,7 +199,7 @@ The reverse-deterministic rung spells one variable twice:
 
 ```c
 "    size_t %s_rv%d_c = 0; unsigned long %s_rv%d_it = 0;\n"   /* DECLARATION */
-sb_printf(b, "    %s_mk = w->btn;\n", rv);                     /* USE, rv = "pa_rv0" */
+pcrec_sb_printf(b, "    %s_mk = w->btn;\n", rv);                     /* USE, rv = "pa_rv0" */
 ```
 
 The two format strings **share no substring**, so an exact-string rename moved

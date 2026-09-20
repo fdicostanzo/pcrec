@@ -1832,7 +1832,7 @@ reject 'a{65536,1}'     "number too big in {m,n} quantifier (pattern offset 7)"
 # Twenty digits. NOTE what this does and does not buy (R7/T-3): it pins the
 # OFFSET, which the clamp would otherwise get wrong, and it exercises the same
 # too-big path `a{100000}` does. It does NOT test the clamp's actual purpose —
-# `big_m` is sticky and ctx_fail fires before `m` is read, so removing the
+# `big_m` is sticky and pcrec_ctx_fail fires before `m` is read, so removing the
 # clamp changes no observable output at all. The signed-overflow UB it prevents
 # is only visible to a UBSan build, which this repo does not have.
 reject 'a{99999999999999999999}' "number too big in {m,n} quantifier (pattern offset 22)"

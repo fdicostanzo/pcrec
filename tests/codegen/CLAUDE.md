@@ -303,7 +303,7 @@ decides whether to perform it — and then run the row through
   (`CAPTURE_IR_BASELINE=1`); 128 checks became 144.
 
   It found a real drift on its FIRST run: the accept label was emitted by a
-  direct `sb_printf`, so the artifact carried a label the listing did not.
+  direct `pcrec_sb_printf`, so the artifact carried a label the listing did not.
   That is the entire failure mode §10 names, and it existed for the length of
   one commit.
 
@@ -680,7 +680,7 @@ decides whether to perform it — and then run the row through
     carrying: bash does NOT evaluate the right-hand sides of ONE `local`
     statement left to right against each other, so `local f="$1" v="$f"` left
     `v` EMPTY and the fold helper reported every artifact as mismatched. The
-    others were a `ctx_fail` message split across adjacent C string literals
+    others were a `pcrec_ctx_fail` message split across adjacent C string literals
     (so no single line held the sentence a grep was looking for), backticks
     inside a double-quoted failure message running as command substitutions,
     and the C3 counter above.
@@ -2034,7 +2034,7 @@ which a future editor must not "simplify" away:
    floor went red again. If the control stops firing the check FAILS and says
    the population is gone, rather than reporting success.
 
-Validated sabotage: delete the `sb_printf(c, "__attribute__((noclone))\n");`
+Validated sabotage: delete the `pcrec_sb_printf(c, "__attribute__((noclone))\n");`
 line from `emit_search_head` in src/gen/emit_dfa.c, rebuild, re-run — the check
 FAILS with "emitted artifact carries no `__attribute__((noclone))` at all"
 (measured 2026-08-17; codegen checks went 39/39 pass to 1 failure). Note the
@@ -2891,7 +2891,7 @@ axis makes plus the one hazard that is invisible from inside:
    that block's sentences, so a doc-comment added inside the block stays
    essential with no edit here and one added outside it fails. A
    NON-ESSENTIAL comment in a default artifact means an emission site was
-   added without an `sb_cmt_open` class.
+   added without an `pcrec_sb_cmt_open` class.
 2. **`-fcomments` restores the rest**, as a strict per-artifact inequality —
    which is what stops (1) passing vacuously on an emitter that had stopped
    emitting comments altogether.

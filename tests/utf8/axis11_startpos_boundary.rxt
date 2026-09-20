@@ -13,7 +13,7 @@
 # WHAT IT PINS. Under `-e utf8` an unanchored search's candidate match starts
 # are exactly the encoding's character boundaries, so no reported span begins
 # inside a multi-byte character. That was FALSE until 2026-09-06: the DFA's
-# start-anywhere self-loop stepped one BYTE (`nfa_wrap_unanchored`) and
+# start-anywhere self-loop stepped one BYTE (`pcrec_nfa_wrap_unanchored`) and
 # `ENG_ATTEMPT`'s attempt loop stepped one byte (`start++`), so a pattern that
 # can match EMPTY answered at mid-character offsets.
 #

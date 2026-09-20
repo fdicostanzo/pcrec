@@ -806,7 +806,7 @@ empty at 3. Four substitutions, `[]b[a][]b[]`. ✓
   one piece of state, and whichever lands second must not introduce a second
   copy of it. **[DD-4]** owns the semantics; this note owns only the
   observation that the state is common, and flags **[DD-7]**'s related note
-  that `nfa_wrap_unanchored` bakes in the self-loop with no toggle.
+  that `pcrec_nfa_wrap_unanchored` bakes in the self-loop with no toggle.
 - **`^` under global iteration.** `lib/pcrec.h` documents that *"`^` anchors
   to absolute offset 0 regardless of startpos"*. A global substitution over a
   `^`-anchored pattern must therefore not simply re-enter `rx_search` with a

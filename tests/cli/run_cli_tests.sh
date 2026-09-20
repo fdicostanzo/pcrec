@@ -1465,7 +1465,7 @@ case11() {
 #     before `--explain` was rewritten around the same Ctx, and nothing
 #     revisited: `--features modifiers --explain '(?i:['` SIGSEGVed (139),
 #     because mod_modifiers' port recurses into `pcrec_parse_body`, the
-#     unterminated class raises `ctx_fail`, and the longjmp lands in an
+#     unterminated class raises `pcrec_ctx_fail`, and the longjmp lands in an
 #     uninitialized `jmp_buf`.
 #
 #     WHAT IS PINNED IS THE SHAPE, NOT THE WORDING (D26 tier 3): a status

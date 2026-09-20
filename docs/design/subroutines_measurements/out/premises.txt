@@ -147,15 +147,15 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
   ./src/gen/emit_dfa.c:394:        "#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
   ./lib/CLAUDE.md:153:inside [`PCREC_ERR_FLOOR`, −2], D49 — unprefixed since [ABI-NS], D60),
 # --- grep: the R_* internal sentinels the VM emitter defines ---
-  5680:    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
-  5681:    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
-  5682:    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
+  5680:    pcrec_sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
+  5681:    pcrec_sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
+  5682:    pcrec_sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
   5708:            "            if (run->work_left < 0) return %s_R_WORK;               \\\n"
   5765:            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
   5774:            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
   5794:            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
   5805:            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
-  6051:        sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
+  6051:        pcrec_sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
   6248:        "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
   6249:        "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
   6250:        "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
@@ -192,7 +192,7 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
       }
   
       if (!v.tracing) {
-          sb_printf(c,
+          pcrec_sb_printf(c,
               "#define %s_TRAIL(slot_) do {                                  \\\n"
               "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
               "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
@@ -233,7 +233,7 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
           "    if (run->resume_depth == 0) return -1;\n",
           v.p, accept_tr, v.p, fail_tr, exhaust_tr);
       if (has_budget)
-          sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
+          pcrec_sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
       {
           char pop_tr[352];
           pop_tr[0] = 0;
@@ -243,13 +243,13 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
                        " scan_position %%zu (rewind trail %%u -> %%u)\\n\",\n"
                        "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
                        " run->resume_stack[frame_index].trail_mark);\n", v.p);
-          sb_printf(c,
+          pcrec_sb_printf(c,
               "    {\n"
               "        const unsigned frame_index = --run->resume_depth;\n"
               "        scan_position = run->resume_stack[frame_index].resume_position;\n"
               "%s", pop_tr);
       }
-      sb_puts(c,
+      pcrec_sb_puts(c,
           "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
           "            run->trail_depth--;\n"
           "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
@@ -277,7 +277,7 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
           snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
           vm_work(v, cnt, "work charge: frames discarded by this cut");
       }
-      sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+      pcrec_sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
       vm_ev(v, VE_CUT, slot, 0, role);
   }
   
@@ -296,10 +296,10 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
           "             trail[%s_TRAIL_FRAMES];\n"
           "    unsigned resume_depth, trail_depth;\n",
           v.up, v.tracing ? " int id;" : "", v.up, v.up);
-      if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
+      if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
       if (work_budget != PCREC_WORK_BUDGET_NONE)
-          sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
-      sb_printf(c, "} %s_run_state;\n\n", v.p);
+          pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+      pcrec_sb_printf(c, "} %s_run_state;\n\n", v.p);
 
 === AXIS E: the [M6.5] reference-resolution machinery a CALL reuses ===
 # --- the four backref PORTS and the end-of-parse pass ---
@@ -355,8 +355,8 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
 === AXIS F: computed goto -- is a label address already a VALUE? =====
 # --- every emitted && (label address) site in the VM emitter ---
   16: *      fine WITHIN a call — APPROACH §6's A-4/A-5 "&&label does not survive a
-  2029:        sb_printf(v->b, "    %s_PUSH(%d, &&%s_L%d, %s);\n",
-  2032:        sb_printf(v->b, "    %s_PUSH(&&%s_L%d, %s);\n",
+  2029:        pcrec_sb_printf(v->b, "    %s_PUSH(%d, &&%s_L%d, %s);\n",
+  2032:        pcrec_sb_printf(v->b, "    %s_PUSH(&&%s_L%d, %s);\n",
 # --- every INDIRECT jump the emitter can emit ---
   10: * function — the `goto *` at the fail label, which fires once per backtrack
   6072:        "        goto *run->resume_stack[frame_index].resume_label;\n"

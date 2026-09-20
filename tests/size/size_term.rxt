@@ -15,7 +15,7 @@
 # nodes) and REFUSES at K=6 with "VM exceeds 131072 emitted nodes". The size
 # term evaluates a ladder of K values, so if a ladder attempt's refusal were
 # ever allowed to escape — which is exactly what the design's first draft
-# specified, before `ctx_fail` turned out to be a `longjmp` to the compiler's
+# specified, before `pcrec_ctx_fail` turned out to be a `longjmp` to the compiler's
 # single recovery point — this pattern would REFUSE after the change, citing
 # a limit its own artifact never reaches, at a K the caller never asked for.
 # A cell here that simply MATCHES is the regression test for that: it can only

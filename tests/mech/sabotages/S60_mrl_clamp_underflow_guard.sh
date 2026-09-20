@@ -44,7 +44,7 @@ SAB_DESC="the clamp's underflow guard made vacuous, so ceil - minrest - scan_pos
 SAB_DOC_FIGURE="docs/design/k23_impl/k23_design.md §4.1's guard; §14.3's self-rounding note"
 SAB_COUNT=1
 SAB_BEFORE='            "    ((%s_window_end) < (size_t)(mr_) || (%s_window_end) - (size_t)(mr_) < (p_))\n"'
-# The two %s are KEPT (harmlessly, inside a comment) so the sb_printf's
+# The two %s are KEPT (harmlessly, inside a comment) so the pcrec_sb_printf's
 # argument count still matches its format and the sabotaged tree does not
 # build with a -Wformat-extra-args warning that would read as the sabotage
 # being malformed.

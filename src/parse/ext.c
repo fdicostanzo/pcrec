@@ -36,11 +36,11 @@
  * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5). Every dispatch still
  * ends in a refusal — every row is RS_MODULE or RS_REJECTED — but the refusal
  * is now an ExtResult the CALLER receives and hands to pcrec_ext_finish, the
- * one epilogue below, instead of a ctx_fail that longjmps past it. The
+ * one epilogue below, instead of a pcrec_ctx_fail that longjmps past it. The
  * diagnostic is formatted AT CLAIM TIME into the result (representability:
  * a diagnostic must outlive its handler or D33 §6 collapses and pair_opens'
  * deletion — later reversed by R14 anyway — comes back). Byte-identity: the
- * REFUSE macro runs the exact snprintf the old ctx_fail ran, into a buffer of
+ * REFUSE macro runs the exact snprintf the old pcrec_ctx_fail ran, into a buffer of
  * the same size, and the epilogue fires it at the same offset; no rendered
  * diagnostic moved. The `noreturn` era's R5 lesson (warn-not-error, no guard
  * without -Werror) is retired with the attributes themselves: falling off a
@@ -104,10 +104,10 @@ void pcrec_ext_finish(Ctx *cx, const ExtResult *r)
 {
     if (r->what == EXT_NOT_MINE) return;
     if (r->what != EXT_REFUSAL)
-        ctx_fail(cx, r->at,
+        pcrec_ctx_fail(cx, r->at,
                  "internal error: unconsumed producing doorway outcome %d",
                  (int)r->what);
-    ctx_fail(cx, r->at, "%s", r->msg);
+    pcrec_ctx_fail(cx, r->at, "%s", r->msg);
 }
 
 /* SR-9's tail context, computed from the Ctx these functions already hold.

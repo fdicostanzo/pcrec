@@ -27,7 +27,7 @@ Method, in order:
 1. **Mask** the file with `reviewlib.mask_text()` — comments blanked,
    string-literal INTERIORS blanked, preprocessor lines blanked — so a
    `char foo[123]`-shaped byte sequence printed AS EMITTED-CODE TEXT
-   inside an `sb_printf`/`snprintf` format string (both files do this
+   inside an `pcrec_sb_printf`/`snprintf` format string (both files do this
    constantly: `src/gen/emit_dfa.c:5866`'s `"static const unsigned char
    %s_class_bitmap%d[32] = {"` is exactly this shape) is never mistaken
    for a real declaration in the reviewed file's own source. This is the
@@ -40,7 +40,7 @@ Method, in order:
 3. Split the statement's declarator list on top-level commas; a part
    matching `IDENT [ EXPR ] (= INIT)?` is a `char`-array **declarator**.
    A part that doesn't match this shape (a pointer declarator such as
-   `char *q = arena_alloc(...)`) contributes nothing — a statement with
+   `char *q = pcrec_arena_alloc(...)`) contributes nothing — a statement with
    zero array declarators is not counted at all.
 4. Classify **each declarator's own** size expression independently:
    (a) bare integer literal, (b) bare `PCREC_MAX_EMIT_NAME_LEN`
@@ -201,7 +201,7 @@ declarator, and the repaired criterion's whole point is completeness:
 
 **80 declaration statements / 91 declarators** is the population a
 stage-3 acceptance check should require to be byte-neutral (or fully
-migrated behind `sb_fragf`/the emission kit) across both emitters, with
+migrated behind `pcrec_sb_fragf`/the emission kit) across both emitters, with
 `Vm.up` carrying its own standing exception by name rather than by any
 structural rule — per lens 10's scope note, it is not "a scratch buffer
 this census missed the reason for," it is a deliberately out-of-wave-1

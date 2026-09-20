@@ -195,7 +195,7 @@ explicitly, and §11.2 sharpens the question itself before answering it.
 STRUCTURAL, all of it:
 
 - `src/core/compile.c:120-137` — the whole pipeline and the whole of today's
-  engine selection: `if (!nfa_has_bot(&nfa))` picks `PCREC_ENG_UNANCH`, else
+  engine selection: `if (!pcrec_nfa_has_bot(&nfa))` picks `PCREC_ENG_UNANCH`, else
   `PCREC_ENG_ATTEMPT`. One `if`, inline in the driver.
 - `src/gen/emit_dfa.c:275` `emit_unanchored` — table-driven forward scan
   (leftmost-first END, D3 accept-pruning) + reverse non-pruning scan (match
@@ -621,7 +621,7 @@ property of the pattern, not of the subject. Two consequences:
 |---|---|
 | `src/parse/` | entirely — the VM changes nothing about parsing |
 | `src/ir/nfa.c` `pcrec_build_nfa` | the prefilter's forward and reverse NFAs; island fragments |
-| `src/ir/nfa.c` `nfa_wrap_unanchored` | the prefilter's forward machine only (§7.3) |
+| `src/ir/nfa.c` `pcrec_nfa_wrap_unanchored` | the prefilter's forward machine only (§7.3) |
 | `src/ir/dfa.c` | prefilter DFAs and island DFAs, both prune modes |
 | `src/opt/minimize.c` | both |
 | `src/gen/emit_dfa.c` table emitters (`emit_u8_table`, `emit_tr_table`, `emit_acc_table`, `emit_eol_table`, `emit_stay_table`) | island emission |
@@ -1643,14 +1643,14 @@ variant (checked at `pp == 0`), and D8 records the remaining slow shape as
   the loss is measured before the work is scheduled. §12 ASK-8.
 
 **What M4 does contribute to it:** §5's selection pass replaces the inline
-`nfa_has_bot()` test. After M4 the absorption work is a change to ONE analysis
+`pcrec_nfa_has_bot()` test. After M4 the absorption work is a change to ONE analysis
 in one file rather than an `if` in the pipeline driver — which is the whole
 reason to build a socket instead of a second `if`.
 
-### 7.3 DD-4's note: `nfa_wrap_unanchored` bakes in the self-loop with no toggle
+### 7.3 DD-4's note: `pcrec_nfa_wrap_unanchored` bakes in the self-loop with no toggle
 
 Confirmed, STRUCTURAL: `src/core/compile.c:124` calls
-`nfa_wrap_unanchored(&cx, &cx.job->nfa)` which mutates the NFA in place; there
+`pcrec_nfa_wrap_unanchored(&cx, &cx.job->nfa)` which mutates the NFA in place; there
 is no way to recover the anchored machine from the wrapped one
 (`src/ir/nfa.c:652` — cite corrected 2026-08-18 at the R30 merge: the function
 moved when the [M4.7b/K7] fix landed above it, and the stale `:590` was

@@ -341,7 +341,7 @@ static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
  * THE GENERAL MECHANISM, not a special case: the DFA build reports "over
  * budget" as a RESULT this fixpoint consumes, the same way `forces_captures`
  * and `forces_registry` already report theirs — no `try/catch`-shaped clause
- * at the `ctx_fail` site, no second selector. What makes that possible is
+ * at the `pcrec_ctx_fail` site, no second selector. What makes that possible is
  * that this row CANNOT fire on the pass that discovers the overflow:
  * selection runs BEFORE machine construction (`src/core/compile.c`), so the
  * DFA has not been built yet the first time `pcrec_select_engine` runs on a
@@ -407,7 +407,7 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
     if (n < 0) return what;
     size_t sz = (size_t)n + 1;
     if (sz > sizeof buf) sz = sizeof buf;
-    char *p = arena_alloc(&cx->arena, sz);
+    char *p = pcrec_arena_alloc(&cx->arena, sz);
     memcpy(p, buf, sz - 1);
     p[sz - 1] = 0;
     return p;
@@ -556,7 +556,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     }
 
     if (mask == 0)
-        ctx_fail(cx, why_pos, "internal error: no engine can compile this pattern");
+        pcrec_ctx_fail(cx, why_pos, "internal error: no engine can compile this pattern");
 
     fit.engines = mask;
     fit.why = why ? why_text(cx, why, why_pos) : NULL;
@@ -593,11 +593,11 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
              * are gone, and D44.6's rule is that a request the pattern cannot
              * honour is REFUSED rather than answered with advice that fails. */
             if (!node_why && cx->want_caps && cx->ncap > 0)
-                ctx_fail(cx, why_pos,
+                pcrec_ctx_fail(cx, why_pos,
                          "this pattern requires captures (on by default); pass "
                          "--no-captures for a DFA-only artifact, or omit "
                          "--engine=dfa");
-            ctx_fail(cx, node_why ? node_why_pos : why_pos,
+            pcrec_ctx_fail(cx, node_why ? node_why_pos : why_pos,
                      "%s requires the VM engine, which --engine=dfa excludes",
                      node_why ? node_why : why ? why : "this pattern");
         }
@@ -716,7 +716,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * exactly like `backrefs`' above.
          *
          * AND IT IS NOT A LATENT HAZARD TODAY, WHICH IS WHY IT COULD NOT WAIT.
-         * `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `ctx_fail`s
+         * `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `pcrec_ctx_fail`s
          * by name (design §4.4a site 25, DECLINE, "unreachable: VM_ONLY, no
          * prefilter"), and "unreachable" was true only while nothing produced
          * an `A_CALL`. MEASURED on this branch before this line existed: every
@@ -750,7 +750,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * for that call cannot be built at all. */
         const bool has_call = pcrec_has_linked_call(root);
         if (force_on && (has_bref || has_call))
-            ctx_fail(cx, why_pos,
+            pcrec_ctx_fail(cx, why_pos,
                      "-fprefilter cannot be honoured for a pattern containing a "
                      "%s: the prefilter is a capture-erased DFA, and "
                      "erasing a %s changes the language it answers "
@@ -758,7 +758,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                      has_bref ? "backreference" : "subroutine call",
                      has_bref ? "backreference" : "subroutine call");
         if (force_on && force_off)
-            ctx_fail(cx, why_pos,
+            pcrec_ctx_fail(cx, why_pos,
                      "-fprefilter and -fno-prefilter cannot both be requested");
         /* [OPT-4] THE SAME REFUSAL FOR THE LANGUAGE PAIR, and it is here
          * rather than in cli/main.c so the LIBRARY caller who sets both bits
@@ -770,11 +770,11 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * site owes only the diagnostic. */
         if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
             (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
-            ctx_fail(cx, why_pos,
+            pcrec_ctx_fail(cx, why_pos,
                      "-fprefilter-collapse and -fno-prefilter-collapse cannot "
                      "both be requested");
         if (force_on && fit.chosen != ENGM_VM)
-            ctx_fail(cx, why_pos,
+            pcrec_ctx_fail(cx, why_pos,
                      "-fprefilter requires the VM engine; this pattern "
                      "compiles to the DFA engine, which carries no separate "
                      "prefilter to force (pass --engine=vm, or drop "

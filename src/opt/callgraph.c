@@ -207,7 +207,7 @@ static void cg_bind(void *ud, const Ast *a)
          * `A_CAP` a later pass DELETED (design §4.3's marking is what stops
          * `--no-captures` doing exactly that), or a target the resolver never
          * filled in. A NULL `.body` would emit a callee region for nothing. */
-        ctx_fail(b->cx, 0, "internal error: subroutine call to group %d has no "
+        pcrec_ctx_fail(b->cx, 0, "internal error: subroutine call to group %d has no "
                            "body in the final tree", t);
     n->u.call.body = body;
     /* §6.3: WAVE B+C SHIPS THE CALL LINKAGE FOR EVERY SITE. It is one path, it
@@ -250,7 +250,7 @@ static void cg_minw_publish(void *ud, const Ast *a)
  * A TARGET IN A CYCLE IS A FIXED POINT AT UNBOUNDED, WITH NO CYCLE TEST. The
  * `reach` closure two functions up could answer "is target i in a cycle"
  * directly (`reaches(i,i)`), and this fixpoint deliberately does not ask it:
- * `mrl_sat_add` saturates, so a body that calls back into its own SCC reads
+ * `pcrec_mrl_sat_add` saturates, so a body that calls back into its own SCC reads
  * the published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED`,
  * and never leaves the top. The same absorption gives the RIGHT answer for a
  * target that merely REACHES a cycle without being in one (`g = (?&h)x` with
@@ -431,14 +431,14 @@ static void cg_publish_link(void *ud, const Ast *a)
 /* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
  * symbol directly (declared in core/internal.h). No behaviour change —
  * this is pcrec's own compile-time arithmetic, never emitted text. */
-long long cg_sat_add(long long a, long long b)
+long long pcrec_cg_sat_add(long long a, long long b)
 {
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
     long long r = a + b;
     return r >= CG_EXP_INF ? CG_EXP_INF : r;
 }
 
-long long cg_sat_mul(long long a, long long b)
+long long pcrec_cg_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
@@ -458,8 +458,8 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     const int n = cg->ntarget;
     const size_t nn = (size_t)n;
 
-    cg->splice = arena_alloc(&cx->arena, nn * sizeof *cg->splice);
-    cg->exp    = arena_alloc(&cx->arena, nn * sizeof *cg->exp);
+    cg->splice = pcrec_arena_alloc(&cx->arena, nn * sizeof *cg->splice);
+    cg->exp    = pcrec_arena_alloc(&cx->arena, nn * sizeof *cg->exp);
 
     /* THE DENIAL IS TOTAL AND IS TAKEN FIRST (lib/pcrec.h's
      * PCREC_NO_SPLICE_CALLS): §9.2's control needs the LINKAGE-linked artifact
@@ -471,8 +471,8 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     if (cx->opt->flags & PCREC_NO_SPLICE_CALLS) return;
 
     /* Nodes per region, and the cycles settled first. */
-    long long *nodes = arena_alloc(&cx->arena, nn * sizeof *nodes);
-    bool *done = arena_alloc(&cx->arena, nn * sizeof *done);
+    long long *nodes = pcrec_arena_alloc(&cx->arena, nn * sizeof *nodes);
+    bool *done = pcrec_arena_alloc(&cx->arena, nn * sizeof *done);
     for (int i = 0; i < n; i++) {
         nodes[i] = 0;
         pcrec_ast_visit(cg->body[i], cg_count, &nodes[i]);
@@ -500,7 +500,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
             for (int j = 0; j < n; j++) {
                 if (j == i || !cg->site[(size_t)i * nn + (size_t)j]) continue;
                 if (!cg->splice[j]) continue;
-                e = cg_sat_add(e, cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
+                e = pcrec_cg_sat_add(e, pcrec_cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
                                              cg->exp[j] - 1));
             }
             cg->exp[i]    = e;
@@ -510,15 +510,15 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         }
         if (all) break;
         if (!changed)
-            ctx_fail(cx, 0, "internal error: the subroutine splice-expansion "
+            pcrec_ctx_fail(cx, 0, "internal error: the subroutine splice-expansion "
                             "evaluation did not settle");
     }
 
     /* THE TOTAL. Lexical sites over the WHOLE tree — one walk, counted the way
      * the artifact's own stamp counts them. */
-    int *lex = arena_alloc(&cx->arena, nn * sizeof *lex);
+    int *lex = pcrec_arena_alloc(&cx->arena, nn * sizeof *lex);
     for (int i = 0; i < n; i++) lex[i] = 0;
-    { CgEdges e = { cg, arena_alloc(&cx->arena, nn), lex };
+    { CgEdges e = { cg, pcrec_arena_alloc(&cx->arena, nn), lex };
       memset(e.row, 0, nn);
       pcrec_ast_visit(root, cg_edges, &e); }
 
@@ -526,7 +526,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long total = 0;
         for (int i = 0; i < n; i++)
             if (cg->splice[i])
-                total = cg_sat_add(total, cg_sat_mul(lex[i], cg->exp[i] - 1));
+                total = pcrec_cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1));
         if (total <= PCREC_MAX_SPLICE_TOTAL) break;
         /* Drop the largest contributor; ties by descending target number, so
          * the rule is a function of the pattern and nothing else. */
@@ -534,7 +534,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long worstc = -1;
         for (int i = 0; i < n; i++) {
             if (!cg->splice[i]) continue;
-            long long c = cg_sat_mul(lex[i], cg->exp[i] - 1);
+            long long c = pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1);
             if (c >= worstc) { worstc = c; worst = i; }
         }
         if (worst < 0) break;      /* nothing left to drop; unreachable */
@@ -554,7 +554,7 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
     if (a->k != A_CALL || !a->u.call.delivers) return;
     const int i = cg_index(d->cg, a->u.call.target);
     if (i < 0)
-        ctx_fail(d->cx, 0,
+        pcrec_ctx_fail(d->cx, 0,
                  "internal error: a delivering call to group %d is not in the "
                  "call graph", a->u.call.target);
     /* A CALLEE THAT CANNOT BE SPLICED CANNOT BE DELIVERED FROM, and that is a
@@ -565,14 +565,14 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
      * flag are properties of this build. */
     if (a->u.call.link != CALL_SPLICE && !d->cg->splice[i]) {
         if (pcrec_callgraph_reaches(d->cg, i, i))
-            ctx_fail(d->cx, 0,
+            pcrec_ctx_fail(d->cx, 0,
                      "a delivering call names a RECURSIVE definition (group "
                      "%d); delivery needs the callee inlined AT THE SITE so "
                      "the site can keep what it matched, and a recursive "
                      "callee has no finite inlining. Call it plainly, or "
                      "deliver from a non-recursive definition that wraps it",
                      a->u.call.target);
-        ctx_fail(d->cx, 0,
+        pcrec_ctx_fail(d->cx, 0,
                  "a delivering call names a definition (group %d) this build "
                  "did not inline at the site, so there is nothing for the site "
                  "to keep: it exceeded the subroutine inlining budget, or "
@@ -645,24 +645,24 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * call at all" is answered — the early return below is what keeps a
      * call-free pattern's compile byte-identical to what it was before this
      * module, since nothing after it runs. */
-    bool *named = arena_alloc(&cx->arena, (size_t)(ncap + 1) * sizeof *named);
+    bool *named = pcrec_arena_alloc(&cx->arena, (size_t)(ncap + 1) * sizeof *named);
     memset(named, 0, (size_t)(ncap + 1) * sizeof *named);
     CgScan sc = { ncap, named, 0 };
     pcrec_ast_visit(root, cg_scan, &sc);
     if (sc.ncall == 0) return;
 
-    struct CallGraph *cg = arena_alloc(&cx->arena, sizeof *cg);
+    struct CallGraph *cg = pcrec_arena_alloc(&cx->arena, sizeof *cg);
     memset(cg, 0, sizeof *cg);
     for (int g = 0; g <= ncap; g++) if (named[g]) cg->ntarget++;
-    cg->target = arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->target);
-    cg->body   = arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->body);
+    cg->target = pcrec_arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->target);
+    cg->body   = pcrec_arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->body);
     {
         int i = 0;
         for (int g = 0; g <= ncap; g++) if (named[g]) cg->target[i++] = g;
     }
 
     /* THE REGION ROOTS, over the FINAL tree — see this file's header. */
-    const Ast **groot = arena_alloc(&cx->arena,
+    const Ast **groot = pcrec_arena_alloc(&cx->arena,
                                     (size_t)(ncap + 1) * sizeof *groot);
     memset(groot, 0, (size_t)(ncap + 1) * sizeof *groot);
     groot[0] = root;
@@ -683,13 +683,13 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * near the top of the range. Written as an assertion rather than as a cast
      * so the impossible case fails loudly instead of allocating nothing. */
     if (n <= 0)
-        ctx_fail(cx, 0, "internal error: call graph built with no target");
+        pcrec_ctx_fail(cx, 0, "internal error: call graph built with no target");
     const size_t nn = (size_t)n;
-    cg->reach = arena_alloc(&cx->arena, nn * nn);
+    cg->reach = pcrec_arena_alloc(&cx->arena, nn * nn);
     memset(cg->reach, 0, nn * nn);
     /* [DD-14 wave G] The MULTIPLICITY beside the relation, filled by the same
      * walk so the two cannot disagree about which sites exist. */
-    cg->site = arena_alloc(&cx->arena, nn * nn * sizeof *cg->site);
+    cg->site = pcrec_arena_alloc(&cx->arena, nn * nn * sizeof *cg->site);
     memset(cg->site, 0, nn * nn * sizeof *cg->site);
     for (int i = 0; i < n; i++) {
         CgEdges e = { cg, cg->reach + (size_t)i * nn,
@@ -781,7 +781,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * over-run one is impossible, so the assertion costs one round and buys
      * the claim. */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_MINW_MAX;
         CgMinw m = { cg, val };
         for (int round = 0; round <= n; round++) {
@@ -793,7 +793,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine minimum-width "
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine minimum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
         pcrec_ast_visit(root, cg_minw_publish, &m);
@@ -801,7 +801,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
 
     /* ---- THE `cwmin` FIXPOINT ([M5.0] stage 2) — see cg_cwmin_publish --- */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_MINW_MAX;
         CgCwmin m = { cg, val };
         for (int round = 0; round <= n; round++) {
@@ -813,7 +813,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine minimum-"
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine minimum-"
                                 "character-width fixpoint did not settle in "
                                 "%d rounds", n);
         }
@@ -822,7 +822,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
 
     /* ---- THE `cwmax` FIXPOINT ([DD-14.LB]) — see cg_cwmax_publish above - */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_W_UNBOUNDED;
         CgCwmax m = { cg, val };
         for (int round = 0; round <= n; round++) {
@@ -834,7 +834,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
         pcrec_ast_visit(root, cg_cwmax_publish, &m);

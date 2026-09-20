@@ -215,19 +215,19 @@ else
     # THE NEGATIVE HALF, and it is the one that catches a stage-2 author
     # reaching for the obvious shape: a rebuilding lowering is spelled by
     # allocating a NODE inside this pass raw. RE-READ 2026-09-05 (the first
-    # full battery after stage 2 landed): the file's ONE direct arena_alloc
+    # full battery after stage 2 landed): the file's ONE direct pcrec_arena_alloc
     # is u8_push_branch's growable `Ast **` BRANCH ARRAY — scratch pointer
-    # storage, arena-backed for cpset.c's own ctx_fail-unwind reason, never
+    # storage, arena-backed for cpset.c's own pcrec_ctx_fail-unwind reason, never
     # an Ast — and every node this pass creates goes through pcrec_ast_node
     # (u8_byte_class, u8_seq's cats, the alt/seal makes), the
     # parent-preserving path. Constraint 2's slot-walk check above stands
     # beside this one. So the needle is narrowed, deliberately, from
-    # "arena_alloc appears" to "an arena_alloc that is NOT the `Ast **`
+    # "pcrec_arena_alloc appears" to "an pcrec_arena_alloc that is NOT the `Ast **`
     # scratch-array shape appears": a node allocated raw still fails here.
-    if grep 'arena_alloc' "$SRC/opt/lower_enc.c" | grep -vq 'Ast \*\*[A-Za-z_]* = arena_alloc'; then
-        bad "[1d] src/opt/lower_enc.c calls arena_alloc directly for something other than the reviewed Ast** scratch branch array. If that is a rebuilt PARENT it reintroduces the staleness R2 ruled out; if it is a new leaf it should go through pcrec_ast_node. Re-read it against the in-place-splice invariant before widening this needle (last re-read 2026-09-05)"
+    if grep 'pcrec_arena_alloc' "$SRC/opt/lower_enc.c" | grep -vq 'Ast \*\*[A-Za-z_]* = pcrec_arena_alloc'; then
+        bad "[1d] src/opt/lower_enc.c calls pcrec_arena_alloc directly for something other than the reviewed Ast** scratch branch array. If that is a rebuilt PARENT it reintroduces the staleness R2 ruled out; if it is a new leaf it should go through pcrec_ast_node. Re-read it against the in-place-splice invariant before widening this needle (last re-read 2026-09-05)"
     else
-        ok "[1d] src/opt/lower_enc.c's only direct arena_alloc is the Ast** scratch branch array (re-read 2026-09-05) — every node goes through pcrec_ast_node, so nothing in it can rebuild a parent"
+        ok "[1d] src/opt/lower_enc.c's only direct pcrec_arena_alloc is the Ast** scratch branch array (re-read 2026-09-05) — every node goes through pcrec_ast_node, so nothing in it can rebuild a parent"
     fi
 fi
 
@@ -382,13 +382,13 @@ else
 fi
 
 # 2c. THE ASSERTION SHIPS ENABLED (§13 obligation 5: *"an assertion compiled
-# out in the build everyone runs is a comment"*). It must be a `ctx_fail`, not
+# out in the build everyone runs is a comment"*). It must be a `pcrec_ctx_fail`, not
 # an `assert`, and it must be in the render helper rather than in a caller.
 if grep -A6 'void pcrec_cls_bits(Ctx \*cx, const Ast \*a, uint8_t out\[32\])' "$SRC/core/cpset.c" \
-     | grep -q 'ctx_fail'; then
-    ok "[2c] pcrec_cls_bits's out-of-range check is a ctx_fail — it ships enabled in every build"
+     | grep -q 'pcrec_ctx_fail'; then
+    ok "[2c] pcrec_cls_bits's out-of-range check is a pcrec_ctx_fail — it ships enabled in every build"
 else
-    bad "[2c] pcrec_cls_bits does not ctx_fail on an out-of-range code point; an assert() would be compiled out under -DNDEBUG and, in a library, would kill the caller (K7)"
+    bad "[2c] pcrec_cls_bits does not pcrec_ctx_fail on an out-of-range code point; an assert() would be compiled out under -DNDEBUG and, in a library, would kill the caller (K7)"
 fi
 if grep -q 'assert(' "$SRC/core/cpset.c"; then
     bad "[2c] src/core/cpset.c uses assert() — §13 obligation 5 requires the read-site check to ship enabled"

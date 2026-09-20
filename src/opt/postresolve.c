@@ -60,7 +60,7 @@
  * ================================================================
  *
  * A recorded lookbehind that this pass never resolves reaches `vm_look_behind`
- * with `u.look.widths == NULL`, which that function already `ctx_fail`s on by
+ * with `u.look.widths == NULL`, which that function already `pcrec_ctx_fail`s on by
  * name. So deleting this pass is an INTERNAL ERROR on the first call-bearing
  * lookbehind rather than a NULL dereference or, worse, a compile that emits a
  * back-step of width zero. Sabotage row S-LB1 is that experiment. */
@@ -129,7 +129,7 @@ void pcrec_postresolve(Ctx *cx, Ast *root)
     if (p.n == 0) return;
 
     const int want = p.n;
-    p.at = arena_alloc(&cx->arena, (size_t)want * sizeof *p.at);
+    p.at = pcrec_arena_alloc(&cx->arena, (size_t)want * sizeof *p.at);
     p.n = 0;
     pcrec_ast_visit(root, pr_collect, &p);
     if (p.n != want)
@@ -138,7 +138,7 @@ void pcrec_postresolve(Ctx *cx, Ast *root)
          * walk that is not deterministic over one tree, and the consequence of
          * shrugging would be a recorded lookbehind reaching the emitter
          * unresolved. */
-        ctx_fail(cx, 0, "internal error: the post-resolution walk found %d "
+        pcrec_ctx_fail(cx, 0, "internal error: the post-resolution walk found %d "
                         "deferred checks and then collected %d", want, p.n);
 
     for (int i = 0; i < want; i++)

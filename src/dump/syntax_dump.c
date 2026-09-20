@@ -123,7 +123,7 @@ static void put_mask(StrBuf *sb, unsigned mask, const MaskName *t, size_t n)
     size_t k = 0;
     for (size_t i = 0; i < n && k < sizeof sel / sizeof *sel; i++)
         if (mask & t[i].bit) sel[k++] = t[i].name;
-    sb_join(sb, "|", sel, k);
+    pcrec_sb_join(sb, "|", sel, k);
 }
 
 static const char *kind_name(RegKind k)
@@ -190,9 +190,9 @@ static const char *diag_name(RegDiag d)
 
 static void put_selector(StrBuf *sb, int sel)
 {
-    if (sel == REG_SEL_ANY)             sb_puts(sb, "*");
-    else if (sel >= 0x20 && sel < 0x7f) sb_putc(sb, (char)sel);
-    else                                sb_printf(sb, "\\x%02x", sel & 0xff);
+    if (sel == REG_SEL_ANY)             pcrec_sb_puts(sb, "*");
+    else if (sel >= 0x20 && sel < 0x7f) pcrec_sb_putc(sb, (char)sel);
+    else                                pcrec_sb_printf(sb, "\\x%02x", sel & 0xff);
 }
 
 
@@ -208,12 +208,12 @@ static void put_selector(StrBuf *sb, int sel)
  * fixed text verbatim. */
 static void put_expect(StrBuf *sb, const RegRow *r)
 {
-    if (r->diag == RD_FIXED)      sb_text(sb, r->msg);
+    if (r->diag == RD_FIXED)      pcrec_sb_text(sb, r->msg);
     /* K14: a ROADMAP_NEVER row must not promise its module. The substring is
      * the template-free core both doorway templates share. */
     else if (r->status == RS_MODULE && r->roadmap == ROADMAP_NEVER)
-        sb_puts(sb, "is outside pcrec's scope and no module will implement it");
-    else if (r->status == RS_MODULE) sb_printf(sb, "requires module '%s'", r->module);
+        pcrec_sb_puts(sb, "is outside pcrec's scope and no module will implement it");
+    else if (r->status == RS_MODULE) pcrec_sb_printf(sb, "requires module '%s'", r->module);
 }
 
 /* [M6.4.2] THE ARRAY A FIFTH KIND IS INVISIBLE TO. Every `RegKind` switch in
@@ -233,7 +233,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb, "# pcrec syntax construct registry (D24). Empty field = none.\n"
+    pcrec_sb_puts(&sb, "# pcrec syntax construct registry (D24). Empty field = none.\n"
                  "# `syntax` is a valid probe pattern for the construct.\n"
                  "# `expect` is the text the diagnostic must contain, for the "
                  "rows that reject.\n"
@@ -262,42 +262,42 @@ char *pcrec_syntax_tsv(unsigned flavours)
             const RegRow *r = &rows[i];
             if (flavours && !(r->flavours & flavours)) continue;
 
-            sb_puts(&sb, kind_name(r->kind));           sb_putc(&sb, '\t');
-            put_selector(&sb, r->sel);                  sb_putc(&sb, '\t');
-            sb_text(&sb, r->syntax);                    sb_putc(&sb, '\t');
-            sb_text(&sb, r->module);                    sb_putc(&sb, '\t');
-            sb_printf(&sb, "0x%04x", r->feature);       sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, kind_name(r->kind));           pcrec_sb_putc(&sb, '\t');
+            put_selector(&sb, r->sel);                  pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, r->syntax);                    pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, r->module);                    pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_printf(&sb, "0x%04x", r->feature);       pcrec_sb_putc(&sb, '\t');
             put_mask(&sb, r->flavours, flavour_names, NELEMS(flavour_names));
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             put_mask(&sb, r->engines, engine_names, NELEMS(engine_names));
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, status_name(r->status));       sb_putc(&sb, '\t');
-            sb_puts(&sb, diag_name(r->diag));           sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, status_name(r->status));       pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, diag_name(r->diag));           pcrec_sb_putc(&sb, '\t');
             put_mask(&sb, r->flags, flag_names, NELEMS(flag_names));
-            sb_putc(&sb, '\t');
-            put_expect(&sb, r);                         sb_putc(&sb, '\t');
-            sb_text(&sb, r->note);                      sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
+            put_expect(&sb, r);                         pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, r->note);                      pcrec_sb_putc(&sb, '\t');
             /* 13th column, appended 2026-08-11 (MOD-0.1/K14) so existing
              * field indices survive: the ROADMAP disposition (design
              * Â§17.2). `-` = the question does not arise (base rows). */
-            sb_puts(&sb, r->roadmap == ROADMAP_NEVER   ? "never"
+            pcrec_sb_puts(&sb, r->roadmap == ROADMAP_NEVER   ? "never"
                        : r->roadmap == ROADMAP_PLANNED ? "planned" : "-");
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             /* 14th column (MOD-0.1 slice 2, design Â§18.3): the quantifiability
              * fact, populated from libpcre2's own `a<syntax>*` verdicts and
              * re-verified against them by tests/spec_mod0/check10. */
-            sb_puts(&sb, r->quant == QF_YES     ? "yes"
+            pcrec_sb_puts(&sb, r->quant == QF_YES     ? "yes"
                        : r->quant == QF_NO      ? "no"
                        : r->quant == QF_FORM    ? "form"
                        : r->quant == QF_LEXICAL ? "lexical" : "-");
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             /* 15th column (MOD-0.1 slice 3): the class-position expectation,
              * measured from libpcre2 and re-verified against a live oracle by
              * tests/spec_mod0/check04. EMPTY — not "-" — on the 56 group/verb
              * rows: the construct cannot reach a class position, so there is
              * no fact to print (the header's "Empty field = none" rule). */
-            sb_text(&sb, r->class_expect);
-            sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, r->class_expect);
+            pcrec_sb_putc(&sb, '\t');
             /* 16th column (D65, 2026-08-21): the built-status derivation —
              * see pcrec_construct_built_status's own comment. PCREC_BUILT_
              * DEFECT renders visibly rather than being coerced into "unbuilt"
@@ -306,28 +306,28 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * before this ever reaches a committed doc. */
             {
                 PcrecBuiltStatus bs = pcrec_construct_built_status(r);
-                sb_puts(&sb, bs == PCREC_BUILT_YES    ? "built"
+                pcrec_sb_puts(&sb, bs == PCREC_BUILT_YES    ? "built"
                            : bs == PCREC_BUILT_NO     ? "unbuilt"
                            : bs == PCREC_BUILT_DEFECT ? "defect" : "-");
             }
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             /* 17th column ([M6.6.2] wave F, D71 item 3): the family's
              * canonical syntax, EMPTY — not "-" — for a row that is its own
              * family, per this dump's own "Empty field = none" rule. APPENDED
              * for the reason the 13th, 15th and 16th columns were: consumers
              * key on field index, and [SR-11]'s table contract resolves by
              * NAME precisely so an appended column costs them nothing. */
-            sb_text(&sb, r->family);
-            sb_putc(&sb, '\n');
+            pcrec_sb_text(&sb, r->family);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--list-definitions` — [DD-11.2], the FIFTH registry surface (D85,
  * docs/design/definitions_table.md §5). Walks the SAME `RegRow`s
  * `pcrec_syntax_tsv` above prints, through the SAME `kind_name`/
- * `put_selector` helper and the same `sb_text` field escape, so
+ * `put_selector` helper and the same `pcrec_sb_text` field escape, so
  * `kind`/`selector`/`syntax` are
  * guaranteed to join the two dumps rather than merely happening to agree —
  * "the same three columns... so a reader can join the two dumps" is the
@@ -376,7 +376,7 @@ char *pcrec_definitions_tsv(unsigned flavours)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb, "# pcrec definitions table (D85, docs/design/definitions_table.md). "
+    pcrec_sb_puts(&sb, "# pcrec definitions table (D85, docs/design/definitions_table.md). "
                  "Empty field = none.\n"
                  "# `kind`/`selector`/`syntax` are the SAME three columns "
                  "--list-syntax prints for the owning row, so the two dumps "
@@ -405,11 +405,11 @@ char *pcrec_definitions_tsv(unsigned flavours)
             int order = 0;
             for (const RegDef *d = r->definitions; d->kind != DEFK_END; d++) {
                 order++;
-                sb_puts(&sb, kind_name(r->kind));      sb_putc(&sb, '\t');
-                put_selector(&sb, r->sel);              sb_putc(&sb, '\t');
-                sb_text(&sb, r->syntax);                sb_putc(&sb, '\t');
-                sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
-                sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
+                pcrec_sb_puts(&sb, kind_name(r->kind));      pcrec_sb_putc(&sb, '\t');
+                put_selector(&sb, r->sel);              pcrec_sb_putc(&sb, '\t');
+                pcrec_sb_text(&sb, r->syntax);                pcrec_sb_putc(&sb, '\t');
+                pcrec_sb_printf(&sb, "%d", order);            pcrec_sb_putc(&sb, '\t');
+                pcrec_sb_puts(&sb, pcrec_def_tag_name(d->tag)); pcrec_sb_putc(&sb, '\t');
                 /* [DD-11.1]/[DD-11.4b]/[r43-second-round] five DefKinds
                  * reach this dump now: DEFK_STR (the definition itself),
                  * DEFK_TEXTFN and DEFK_BUILDER (`str` is a human-readable
@@ -422,27 +422,27 @@ char *pcrec_definitions_tsv(unsigned flavours)
                  * never the target's resolved text printed here a second
                  * time). */
                 if (d->kind == DEF_IDENTITY)
-                    sb_text(&sb, r->syntax);
+                    pcrec_sb_text(&sb, r->syntax);
                 else if (d->kind == DEFK_ROW) {
-                    sb_puts(&sb, "= ");
-                    sb_text(&sb, d->str);
+                    pcrec_sb_puts(&sb, "= ");
+                    pcrec_sb_text(&sb, d->str);
                 } else if (d->operand) {
-                    sb_printf(&sb, "[[:%s:]] \xe2\x89\xa1 %s",
+                    pcrec_sb_printf(&sb, "[[:%s:]] \xe2\x89\xa1 %s",
                               d->operand, d->str);
                 } else
-                    sb_text(&sb, d->str);
-                sb_putc(&sb, '\t');
+                    pcrec_sb_text(&sb, d->str);
+                pcrec_sb_putc(&sb, '\t');
                 /* `applies` comes FROM THE KIND, never inferred (the
                  * manager's identity ruling) — DEF_IDENTITY is the only
                  * kind that restates the row's own primitive form; a
                  * DEFK_ROW chain is still `active` (it substitutes, just by
                  * reference rather than by inline text). */
-                sb_puts(&sb, d->kind == DEF_IDENTITY ? "identity" : "active");
-                sb_putc(&sb, '\n');
+                pcrec_sb_puts(&sb, d->kind == DEF_IDENTITY ? "identity" : "active");
+                pcrec_sb_putc(&sb, '\n');
             }
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--list-verbs`. Q1 added fifty verb NAMES that no dump could show: they are
@@ -460,7 +460,7 @@ char *pcrec_syntax_verbs(void)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb, "# pcrec verb-name tables for the `(*` doorway (Q1, D25).\n"
+    pcrec_sb_puts(&sb, "# pcrec verb-name tables for the `(*` doorway (Q1, D25).\n"
                  "# PCRE2 keeps TWO tables and selects by the CASE of the first\n"
                  "# name byte; `table` is which, and `unknown` is what pcrec says\n"
                  "# for a name that table does not have.\n"
@@ -473,33 +473,33 @@ char *pcrec_syntax_verbs(void)
         for (size_t i = 0; i < t->n; i++) {
             const VerbName *v = &t->rows[i];
             unsigned f = v->forms;
-            sb_puts(&sb, w == 0 ? "upper" : "lower"); sb_putc(&sb, '\t');
-            sb_puts(&sb, v->name);                    sb_putc(&sb, '\t');
-            if (f & VF_BARE)     sb_puts(&sb, "(*N)");
-            if (f & VF_ARG)      sb_puts(&sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
-            if (f & VF_EMPTYARG) sb_puts(&sb, "|(*N:)");
-            if (f & VF_EQNUM)    sb_puts(&sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
+            pcrec_sb_puts(&sb, w == 0 ? "upper" : "lower"); pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, v->name);                    pcrec_sb_putc(&sb, '\t');
+            if (f & VF_BARE)     pcrec_sb_puts(&sb, "(*N)");
+            if (f & VF_ARG)      pcrec_sb_puts(&sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
+            if (f & VF_EMPTYARG) pcrec_sb_puts(&sb, "|(*N:)");
+            if (f & VF_EQNUM)    pcrec_sb_puts(&sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
                                               ? "|(*N=d)" : "(*N=d)");
-            if (f & VF_GROUPARG) sb_puts(&sb, "|arg-is-subpattern");
-            if (f & VF_ATSTART)  sb_puts(&sb, "|start-of-pattern-only");
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, t->unknown_msg);
-            sb_putc(&sb, '\t');
+            if (f & VF_GROUPARG) pcrec_sb_puts(&sb, "|arg-is-subpattern");
+            if (f & VF_ATSTART)  pcrec_sb_puts(&sb, "|start-of-pattern-only");
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, t->unknown_msg);
+            pcrec_sb_putc(&sb, '\t');
             /* 5th column (MOD-0.1/K14): the per-name ROADMAP disposition,
              * RESOLVED (a name without its own value inherits the RK_VERB
              * row's, which is PLANNED — module 'verbs'). */
-            sb_puts(&sb, v->roadmap == ROADMAP_NEVER ? "never" : "planned");
-            sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, v->roadmap == ROADMAP_NEVER ? "never" : "planned");
+            pcrec_sb_putc(&sb, '\t');
             /* 6th column (MOD-0.1 slice 2): the verb row's QF_FORM resolved
              * per name. `not-askable` = the unquantified form does not
              * compile (start-only options away from position 0), a third
              * outcome that must not be folded into "no". */
-            sb_puts(&sb, v->quant == QV_YES ? "yes"
+            pcrec_sb_puts(&sb, v->quant == QV_YES ? "yes"
                        : v->quant == QV_NO  ? "no" : "not-askable");
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* ---- `--list-families`: THE INDEX LAYER (D71 item 3) ---------------------
@@ -538,7 +538,7 @@ char *pcrec_syntax_families(void)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb, "# pcrec syntax FAMILIES (D71 item 3): one line per family,\n"
+    pcrec_sb_puts(&sb, "# pcrec syntax FAMILIES (D71 item 3): one line per family,\n"
                  "# where a family is the rows sharing a key and a row's key is\n"
                  "# its `family` column if set and its own `syntax` otherwise.\n"
                  "# `built` is ANDed over the members: a family reads built only\n"
@@ -584,8 +584,8 @@ char *pcrec_syntax_families(void)
                 for (size_t j = 0; j < n2; j++) {
                     const char *k3 = r2[j].family ? r2[j].family : r2[j].syntax;
                     if (!k3 || strcmp(k3, key) != 0) continue;
-                    if (nmem) sb_putc(&mem, ' ');
-                    sb_text(&mem, r2[j].syntax);
+                    if (nmem) pcrec_sb_putc(&mem, ' ');
+                    pcrec_sb_text(&mem, r2[j].syntax);
                     nmem++;
                     PcrecBuiltStatus bs = pcrec_construct_built_status(&r2[j]);
                     if (bs == PCREC_BUILT_YES) nbuilt++;
@@ -593,24 +593,24 @@ char *pcrec_syntax_families(void)
                 }
             }
 
-            sb_text(&sb, key);                          sb_putc(&sb, '\t');
-            sb_text(&sb, r->module);                    sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, key);                          pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_text(&sb, r->module);                    pcrec_sb_putc(&sb, '\t');
             put_mask(&sb, r->engines, engine_names, NELEMS(engine_names));
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, status_name(r->status));       sb_putc(&sb, '\t');
-            sb_puts(&sb, nna == nmem      ? "-"
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, status_name(r->status));       pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, nna == nmem      ? "-"
                        : nbuilt == nmem   ? "built" : "unbuilt");
-            sb_putc(&sb, '\t');
-            sb_printf(&sb, "%d", nmem);                 sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_printf(&sb, "%d", nmem);                 pcrec_sb_putc(&sb, '\t');
             {
-                char *m = sb_take(&mem);
-                sb_puts(&sb, m);
+                char *m = pcrec_sb_take(&mem);
+                pcrec_sb_puts(&sb, m);
                 free(m);
             }
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--explain` lives at the END of this file since MOD-0.7: it is the shared
@@ -713,12 +713,12 @@ static bool doorway_route(const char *text, size_t n, Doorway *d)
  *
  * THE OBLIGATION THIS COMMENT USED TO DEFER IS DISCHARGED (R20/MOD07-1,
  * 2026-08-12). It said the zeroed Ctx was safe "while every doorway RETURNS
- * its answer (none may ctx_fail or allocate)" and named "the first enabled,
+ * its answer (none may pcrec_ctx_fail or allocate)" and named "the first enabled,
  * result-producing module port" as the event that must revisit it. That port
  * landed at MOD-0.3c/0.5c — two milestones before MOD-0.7 extracted this
  * function and carried the comment along unexamined — and the precondition
  * had been false ever since: a module port recurses into `pcrec_parse_body`,
- * whose `ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
+ * whose `pcrec_ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
  * that had never been `setjmp`'d. `--features modifiers --explain '(?i:['`
  * SIGSEGVed (139), as did `--features all --probe-ask result -- '(?i:['`.
  *
@@ -775,7 +775,7 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
  * (ext.c's UNBUILT macro comment already gives the reason: a second column
  * would have to be kept in sync with the ports by hand, the D24 two-homes
  * shape this whole registry exists to prevent). The isolated-`Ctx` shape
- * (memset, own `setjmp`, `pcrec_parse_mods_init`, `arena_free` on every
+ * (memset, own `setjmp`, `pcrec_parse_mods_init`, `pcrec_arena_free` on every
  * exit) is `pcrec_probe_ask`'s, ordered the same way for the same reason:
  * the guard is placed before any automatic object this function reads
  * AFTER a possible longjmp is live, so `-Wclobbered` stays silent.
@@ -821,11 +821,11 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
          * producing or refusing — neither half of D65(3)'s vocabulary, so
          * this is a registry defect for tests/registry/registry_check.c to
          * fail on, never a status this dump may assert. */
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         /* [M6.4.2] A NON-DOORWAY ROW RAISES INSTEAD OF RETURNING, and for it a
          * raise is the ORDINARY unbuilt answer rather than a defect: the
          * doorway arm below classifies on a RETURNED `ExtResult`, while the
-         * quant-suffix arm runs a real parse whose refusal is a `ctx_fail`
+         * quant-suffix arm runs a real parse whose refusal is a `pcrec_ctx_fail`
          * that lands exactly here. See that arm for why a raise at a
          * forced-open gate can only be a missing producer, and where the
          * malformed-syntax half of the question is checked instead.
@@ -883,7 +883,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
         Ast *root = pcrec_parse(&cx);
         PcrecBuiltStatus st = pcrec_ast_stamped_by(root, r) ? PCREC_BUILT_YES
                                                             : PCREC_BUILT_DEFECT;
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return st;
     }
 
@@ -924,13 +924,13 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
     if (r->flags & RF_LEXICAL) {
         Ast *root = pcrec_parse(&cx);
         (void)root;
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return PCREC_BUILT_YES;
     }
 
     Doorway d;
     if (!doorway_route(r->syntax, cx.patlen, &d)) {
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return PCREC_BUILT_DEFECT;
     }
     ExtResult res = doorway_call(&cx, &d, WANT_RESULT);
@@ -965,7 +965,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
         result = PCREC_BUILT_NO;
     else
         result = PCREC_BUILT_DEFECT;
-    arena_free(&cx.arena);
+    pcrec_arena_free(&cx.arena);
     return result;
 }
 
@@ -1093,7 +1093,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
     pcrec_default_options(&probe_opt);
     cx.opt = &probe_opt;
     if (setjmp(cx.jb)) {
-        arena_free(&cx.arena);      /* a raising port allocated, then left */
+        pcrec_arena_free(&cx.arena);      /* a raising port allocated, then left */
         return NULL;
     }
     /* [M6.2 wave A] A doorway call can reach module `modifiers`' producing
@@ -1127,20 +1127,20 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
         r.what == EXT_MEMBERS  ? "members"  :
         r.what == EXT_NODE     ? "node"     : "unknown";
     StrBuf sb = {0};
-    sb_printf(&sb, "%s\t%s\t%s\t%zu\t%zu\t%s\t%zu\t%d\t%zu\t",
+    pcrec_sb_printf(&sb, "%s\t%s\t%s\t%zu\t%zu\t%s\t%zu\t%d\t%zu\t",
               doorway, want_names[w], want_names[r.answered_at],
               before, cx.pos, outcome,
               r.at, r.ep_set_certain ? 1 : 0, r.end);
-    if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
-    sb_putc(&sb, '\n');
+    if (r.what == EXT_REFUSAL) pcrec_sb_puts(&sb, r.msg);
+    pcrec_sb_putc(&sb, '\n');
     /* A PRODUCING port allocates its node from this arena and nothing below
      * reads it (`sb` holds only the rendered TSV, and `r.msg` is an inline
      * array). `--explain` has freed its arena since MOD-0.7; this call site
      * was the one that did not, which R20's critic noted while reading the
      * crash — the guard above makes the omission a leak on two paths instead
      * of one, so both are closed here. */
-    arena_free(&cx.arena);
-    return sb_take(&sb);
+    pcrec_arena_free(&cx.arena);
+    return pcrec_sb_take(&sb);
 }
 
 /* ---- `--explain QUERY` (SR-3; REWRITTEN at MOD-0.7) ---------------------
@@ -1228,7 +1228,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * lines to count rows, and a header key must not add one.
  *
  * CONTROL BYTES IN A VALUE ARE ESCAPED (R20/MOD07-8). Every value that can
- * carry bytes from the QUERY goes through `sb_text`/`sb_textn` (core/sb.c,
+ * carry bytes from the QUERY goes through `pcrec_sb_text`/`pcrec_sb_textn` (core/sb.c,
  * the text layer's FRAME escape), which renders anything
  * below 0x20 and 0x7f as `\xHH`. Without it the grammar had no escaping at
  * all, and a query containing a newline injected a synthetic header line that
@@ -1302,7 +1302,7 @@ static Live live_answer(Ctx *cx, const char *text, ExtWant want)
 static void put_answer(StrBuf *sb, const Live *L)
 {
     if (!L->routed) {
-        sb_puts(sb, "—  (no doorway call: the base grammar answers this text "
+        pcrec_sb_puts(sb, "—  (no doorway call: the base grammar answers this text "
                     "before the registry is consulted)");
         return;
     }
@@ -1311,13 +1311,13 @@ static void put_answer(StrBuf *sb, const Live *L)
      * text ("unknown escape \%c"), so this value carries QUERY bytes just as
      * the `query` echo does. Escaping only the echo would have left the same
      * injection reachable one line down. */
-    case EXT_REFUSAL:  sb_text(sb, L->r.msg); break;
-    case EXT_NOT_MINE: sb_puts(sb, "declines — no construct at this doorway"); break;
-    case EXT_SCALAR:   sb_printf(sb, "produces one code point (0x%02X)",
+    case EXT_REFUSAL:  pcrec_sb_text(sb, L->r.msg); break;
+    case EXT_NOT_MINE: pcrec_sb_puts(sb, "declines — no construct at this doorway"); break;
+    case EXT_SCALAR:   pcrec_sb_printf(sb, "produces one code point (0x%02X)",
                                  (unsigned)L->r.scalar); break;
-    case EXT_MEMBERS:  sb_puts(sb, "produces a class member set"); break;
-    case EXT_NODE:     sb_puts(sb, "produces an AST node"); break;
-    default:           sb_puts(sb, "internal error: unknown doorway outcome"); break;
+    case EXT_MEMBERS:  pcrec_sb_puts(sb, "produces a class member set"); break;
+    case EXT_NODE:     pcrec_sb_puts(sb, "produces an AST node"); break;
+    default:           pcrec_sb_puts(sb, "internal error: unknown doorway outcome"); break;
     }
 }
 
@@ -1325,9 +1325,9 @@ static void put_names(StrBuf *sb, const Live *L)
 {
     char mod[64];
     if (L->routed && L->r.what == EXT_REFUSAL && msg_module(L->r.msg, mod, sizeof mod))
-        sb_puts(sb, mod);
+        pcrec_sb_puts(sb, mod);
     else
-        sb_puts(sb, "—");
+        pcrec_sb_puts(sb, "—");
 }
 
 /* THE CLAUSES (design note §5.2, gate-scoped at R20/MOD07-2+3), evaluated on
@@ -1349,7 +1349,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
      * grammar answers it, so there is nothing to compare and saying so is the
      * honest answer rather than a fabricated pass. */
     if (!C->routed) {
-        sb_puts(sb, "ok  (base grammar; no doorway call to compare)");
+        pcrec_sb_puts(sb, "ok  (base grammar; no doorway call to compare)");
         return 0;
     }
     /* 0. GATE. The one clause about the REQUESTED enabled set, and the one
@@ -1365,12 +1365,12 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
                     own->r.what != EXT_REFUSAL;
     if (produced) {
         if (r->status != RS_MODULE) {
-            sb_puts(sb, "DISSENT: gate: a row that is not RS_MODULE produced "
+            pcrec_sb_puts(sb, "DISSENT: gate: a row that is not RS_MODULE produced "
                         "a value");
             return 1;
         }
         if (!pcrec_feature_enabled(r->feature)) {
-            sb_printf(sb, "DISSENT: gate: the row produced a value with its "
+            pcrec_sb_printf(sb, "DISSENT: gate: the row produced a value with its "
                           "module '%s' NOT in the enabled set", r->module);
             return 1;
         }
@@ -1379,7 +1379,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
      * THAT row. A decline is the same failure wearing a different hat: the
      * doorway walked away from a construct the table says is there. */
     if (C->r.what == EXT_NOT_MINE) {
-        sb_puts(sb, "DISSENT: election: the row's own syntax DECLINES at its "
+        pcrec_sb_puts(sb, "DISSENT: election: the row's own syntax DECLINES at its "
                     "own doorway");
         return 1;
     }
@@ -1411,13 +1411,13 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
      * elected and the ordinary clause above passes for them. */
     if (C->r.row != r && (r->flags & RF_INDEX) != 0) {
         if (!C->r.row) {
-            sb_printf(sb, "DISSENT: election: index row '%s' elected NO row "
+            pcrec_sb_printf(sb, "DISSENT: election: index row '%s' elected NO row "
                           "for its own syntax -- the spelling reaches no "
                           "doorway, so nothing can compile it", r->syntax);
             return 1;
         }
         if ((C->r.row->flags & RF_INDEX) != 0) {
-            sb_printf(sb, "DISSENT: election: index row '%s' elected another "
+            pcrec_sb_printf(sb, "DISSENT: election: index row '%s' elected another "
                           "INDEX row '%s' -- an index row must never be "
                           "elected, so one of the two is reachable",
                       r->syntax, C->r.row->syntax);
@@ -1425,7 +1425,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
         }
         if (!r->module || !C->r.row->module ||
             strcmp(r->module, C->r.row->module) != 0) {
-            sb_printf(sb, "DISSENT: election: index row '%s' (module '%s') "
+            pcrec_sb_printf(sb, "DISSENT: election: index row '%s' (module '%s') "
                           "elected '%s' (module '%s') -- an index row is a "
                           "SPELLING of its own module's construct, so a "
                           "cross-module election means its selector is wrong",
@@ -1434,12 +1434,12 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
                       C->r.row->module ? C->r.row->module : "(none)");
             return 1;
         }
-        sb_printf(sb, "ok  (index row; spelling elects '%s', same module)",
+        pcrec_sb_printf(sb, "ok  (index row; spelling elects '%s', same module)",
                   C->r.row->syntax);
         return 0;
     }
     if (C->r.row != r) {
-        sb_printf(sb, "DISSENT: election: '%s' elected %s%s%s for its own syntax",
+        pcrec_sb_printf(sb, "DISSENT: election: '%s' elected %s%s%s for its own syntax",
                   r->syntax,
                   C->r.row ? "'" : "no row",
                   C->r.row ? C->r.row->syntax : "",
@@ -1451,7 +1451,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
      * non-refusal would mean the ask contract itself is broken, which is not
      * a registry defect and must not be reported as one. */
     if (C->r.what != EXT_REFUSAL) {
-        sb_puts(sb, "internal error: a WANT_VERDICT ask produced a value");
+        pcrec_sb_puts(sb, "internal error: a WANT_VERDICT ask produced a value");
         return 1;
     }
     /* 2. PROMISE. A module is owed exactly when the row is a PLANNED module
@@ -1461,7 +1461,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
     bool named = msg_module(C->r.msg, mod, sizeof mod);
     bool owed  = (r->status == RS_MODULE && r->roadmap != ROADMAP_NEVER);
     if (named != owed) {
-        sb_printf(sb, "DISSENT: promise: the row is %s%s and the live answer "
+        pcrec_sb_printf(sb, "DISSENT: promise: the row is %s%s and the live answer "
                       "promises %s",
                   r->status == RS_MODULE ? "a module row" : "not a module row",
                   r->status == RS_MODULE && r->roadmap == ROADMAP_NEVER
@@ -1481,16 +1481,16 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
      * letter decides who owes the feature — and comparing them fired on a
      * tree tests/reject pins as right. */
     if (named && strcmp(mod, r->module) != 0) {
-        sb_printf(sb, "DISSENT: attribution: declared '%s', live names '%s'",
+        pcrec_sb_printf(sb, "DISSENT: attribution: declared '%s', live names '%s'",
                   r->module, mod);
         return 1;
     }
     if (produced) {
-        sb_puts(sb, "ok  (clauses at the closed gate; at this one the row "
+        pcrec_sb_puts(sb, "ok  (clauses at the closed gate; at this one the row "
                     "produces and its module is enabled)");
         return 0;
     }
-    sb_puts(sb, "ok");
+    pcrec_sb_puts(sb, "ok");
     return 0;
 }
 
@@ -1517,37 +1517,37 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
     const RegRow *row = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
 
     /* the NAME is query text; escaped for the same reason (R20/MOD07-8) */
-    sb_puts(sb, "\nverb name ");
-    sb_textn(sb, query + nstart, namelen);
-    sb_putc(sb, '\n');
-    sb_printf(sb, "  table        %s\n",
+    pcrec_sb_puts(sb, "\nverb name ");
+    pcrec_sb_textn(sb, query + nstart, namelen);
+    pcrec_sb_putc(sb, '\n');
+    pcrec_sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
-    sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
+    pcrec_sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
     if (!v) {
-        sb_printf(sb, "  unknown      %s\n", t->unknown_msg);
+        pcrec_sb_printf(sb, "  unknown      %s\n", t->unknown_msg);
         return;
     }
-    sb_puts(sb, "  forms        ");
+    pcrec_sb_puts(sb, "  forms        ");
     {
         unsigned f = v->forms;
-        if (f & VF_BARE)     sb_puts(sb, "(*N)");
-        if (f & VF_ARG)      sb_puts(sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
-        if (f & VF_EMPTYARG) sb_puts(sb, "|(*N:)");
-        if (f & VF_EQNUM)    sb_puts(sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
+        if (f & VF_BARE)     pcrec_sb_puts(sb, "(*N)");
+        if (f & VF_ARG)      pcrec_sb_puts(sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
+        if (f & VF_EMPTYARG) pcrec_sb_puts(sb, "|(*N:)");
+        if (f & VF_EQNUM)    pcrec_sb_puts(sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
                                           ? "|(*N=d)" : "(*N=d)");
-        if (f & VF_GROUPARG) sb_puts(sb, "|arg-is-subpattern");
-        if (f & VF_ATSTART)  sb_puts(sb, "|start-of-pattern-only");
-        sb_putc(sb, '\n');
+        if (f & VF_GROUPARG) pcrec_sb_puts(sb, "|arg-is-subpattern");
+        if (f & VF_ATSTART)  pcrec_sb_puts(sb, "|start-of-pattern-only");
+        pcrec_sb_putc(sb, '\n');
     }
     /* The EFFECTIVE roadmap and where it came from — the cross-source pair
      * this block exists for. */
-    sb_printf(sb, "  roadmap      %s\n",
+    pcrec_sb_printf(sb, "  roadmap      %s\n",
               (v->roadmap ? v->roadmap : (row ? row->roadmap : ROADMAP_NONE))
                   == ROADMAP_NEVER ? "never" : "planned");
-    sb_printf(sb, "  roadmap src  %s\n",
+    pcrec_sb_printf(sb, "  roadmap src  %s\n",
               v->roadmap ? "the verb NAME's own entry"
                          : "inherited from the (* row");
-    sb_printf(sb, "  quant        %s\n",
+    pcrec_sb_printf(sb, "  quant        %s\n",
               v->quant == QV_YES ? "yes" : v->quant == QV_NO ? "no"
                                                              : "not-askable");
 }
@@ -1574,7 +1574,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      * asserted "no jmp target — every doorway RETURNS its answer, the D33 §5
      * contract"; §5's contract is about the doorway's own terminal answer and
      * says nothing about a PORT, which recurses into `pcrec_parse_body` and
-     * can `ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
+     * can `pcrec_ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
      * the full history. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);
@@ -1602,9 +1602,9 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      * F1, manager triage 2026-08-13) is the setjmp/longjmp clobber contract
      * for exactly this invariant, not a threading concern. */
     if (setjmp(cx.jb)) {
-        sb_free(&body);
-        sb_free(&sb);
-        arena_free(&cx.arena);
+        pcrec_sb_free(&body);
+        pcrec_sb_free(&sb);
+        pcrec_arena_free(&cx.arena);
         if (ndissent) *ndissent = 0;
         return NULL;
     }
@@ -1694,14 +1694,14 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
             Live own   = live_answer(&cx, r->syntax, WANT_RESULT);
             Live canon = live_answer(&cx, r->syntax, WANT_VERDICT);
 
-            if (rows_shown++) sb_putc(&body, '\n');
-            sb_printf(&body, "%s\n", r->syntax);
-            sb_printf(&body, "  select       %s\n",
+            if (rows_shown++) pcrec_sb_putc(&body, '\n');
+            pcrec_sb_printf(&body, "%s\n", r->syntax);
+            pcrec_sb_printf(&body, "  select       %s\n",
                       candidate ? "candidate" : fallback ? "fallback" : "listed");
-            sb_printf(&body, "  doorway      %s\n", doorway_name(r->kind));
+            pcrec_sb_printf(&body, "  doorway      %s\n", doorway_name(r->kind));
             switch (r->status) {
             case RS_BASE:
-                sb_puts(&body, "  status       implemented by the base grammar\n");
+                pcrec_sb_puts(&body, "  status       implemented by the base grammar\n");
                 break;
             case RS_MODULE:
                 /* K14, ON THE QUERY SURFACE (design note §1 — the defect this
@@ -1724,103 +1724,103 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
                  * which is §0's lesson recurring inside the milestone that
                  * found it. */
                 if (r->roadmap == ROADMAP_NEVER)
-                    sb_puts(&body, "  status       known, outside pcrec's scope "
+                    pcrec_sb_puts(&body, "  status       known, outside pcrec's scope "
                                    "— no module will implement it\n");
                 else
-                    sb_printf(&body, "  status       known, unimplemented — "
+                    pcrec_sb_printf(&body, "  status       known, unimplemented — "
                                      "requires module '%s'\n", r->module);
                 break;
             case RS_REJECTED:
-                sb_puts(&body, "  status       rejected, as PCRE2 rejects it too\n");
+                pcrec_sb_puts(&body, "  status       rejected, as PCRE2 rejects it too\n");
                 break;
             }
-            sb_printf(&body, "  module       %s\n", r->module ? r->module : "—");
-            sb_printf(&body, "  roadmap      %s\n",
+            pcrec_sb_printf(&body, "  module       %s\n", r->module ? r->module : "—");
+            pcrec_sb_printf(&body, "  roadmap      %s\n",
                       r->roadmap == ROADMAP_NEVER   ? "never"
                     : r->roadmap == ROADMAP_PLANNED ? "planned" : "—");
             if (r->diag == RD_FIXED && r->msg)
-                sb_printf(&body, "  error        %s\n", r->msg);
-            sb_puts(&body, "  flavours     ");
+                pcrec_sb_printf(&body, "  error        %s\n", r->msg);
+            pcrec_sb_puts(&body, "  flavours     ");
             put_mask(&body, r->flavours, flavour_names, NELEMS(flavour_names));
-            sb_puts(&body, "\n  engines      ");
+            pcrec_sb_puts(&body, "\n  engines      ");
             if (r->engines)
                 put_mask(&body, r->engines, engine_names, NELEMS(engine_names));
             else
-                sb_puts(&body, "none");
-            sb_puts(&body, "  (design intent, unconsumed until SR-8)\n");
+                pcrec_sb_puts(&body, "none");
+            pcrec_sb_puts(&body, "  (design intent, unconsumed until SR-8)\n");
             /* DECLARED, never observed: `--explain` probes ATOM position only
              * (the router's first opener for `[\d]` is the `[`, so an
              * in-class escape query lands on the class-bracket doorway and
              * honestly declines). class_expect is libpcre2-measured and
              * check04 re-verifies it; in-class routing is a MOD-0.8 item. */
-            sb_printf(&body, "  class        %s\n",
+            pcrec_sb_printf(&body, "  class        %s\n",
                       r->class_expect ? r->class_expect
                                       : "— (cannot reach a class position)");
-            if (r->note) sb_printf(&body, "  note         %s\n", r->note);
-            sb_puts(&body, "  own          "); put_answer(&body, &own);
-            sb_putc(&body, '\n');
+            if (r->note) pcrec_sb_printf(&body, "  note         %s\n", r->note);
+            pcrec_sb_puts(&body, "  own          "); put_answer(&body, &own);
+            pcrec_sb_putc(&body, '\n');
             if (own.routed)
-                sb_printf(&body, "  own at       %zu\n", own.r.at);
-            sb_printf(&body, "  own elected  %s\n",
+                pcrec_sb_printf(&body, "  own at       %zu\n", own.r.at);
+            pcrec_sb_printf(&body, "  own elected  %s\n",
                       !own.routed        ? "—"
                     : own.r.row == r     ? "self"
                     : own.r.row          ? own.r.row->syntax : "none");
-            sb_puts(&body, "  own names    "); put_names(&body, &own);
-            sb_putc(&body, '\n');
-            sb_puts(&body, "  agree        ");
+            pcrec_sb_puts(&body, "  own names    "); put_names(&body, &own);
+            pcrec_sb_putc(&body, '\n');
+            pcrec_sb_puts(&body, "  agree        ");
             dissents += put_agreement(&body, r, &canon, &own);
-            sb_putc(&body, '\n');
+            pcrec_sb_putc(&body, '\n');
         }
     }
 
     if (!rows_shown && !q.routed) {
-        sb_free(&body);
-        arena_free(&cx.arena);
+        pcrec_sb_free(&body);
+        pcrec_arena_free(&cx.arena);
         if (ndissent) *ndissent = 0;
         return NULL;      /* not doorway territory and no row looks like it */
     }
 
     /* the two ECHOES of query text, escaped (R20/MOD07-8) */
-    sb_puts(&sb, "query          ");
-    sb_textn(&sb, query, qlen);
-    sb_putc(&sb, '\n');
+    pcrec_sb_puts(&sb, "query          ");
+    pcrec_sb_textn(&sb, query, qlen);
+    pcrec_sb_putc(&sb, '\n');
     if (q.routed) {
-        sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
+        pcrec_sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
         if (q.d.kind == RK_VERB)
-            sb_puts(&sb, "  (the NAME decides; see the verb block)");
+            pcrec_sb_puts(&sb, "  (the NAME decides; see the verb block)");
         else if (q.d.sel < 0)
-            sb_puts(&sb, "  selector none (the text ends at the doorway)");
+            pcrec_sb_puts(&sb, "  selector none (the text ends at the doorway)");
         else {
             char selb = (char)q.d.sel;
-            sb_puts(&sb, "  selector '");
-            sb_textn(&sb, &selb, 1);
-            sb_putc(&sb, '\'');
+            pcrec_sb_puts(&sb, "  selector '");
+            pcrec_sb_textn(&sb, &selb, 1);
+            pcrec_sb_putc(&sb, '\'');
         }
-        sb_putc(&sb, '\n');
+        pcrec_sb_putc(&sb, '\n');
     } else {
-        sb_puts(&sb, "route          none — the base grammar answers this text "
+        pcrec_sb_puts(&sb, "route          none — the base grammar answers this text "
                      "before any doorway is consulted\n");
     }
-    sb_puts(&sb, "live           "); put_answer(&sb, &q); sb_putc(&sb, '\n');
+    pcrec_sb_puts(&sb, "live           "); put_answer(&sb, &q); pcrec_sb_putc(&sb, '\n');
     if (q.routed) {
-        sb_printf(&sb, "live at        %zu\n", q.r.at);
-        sb_printf(&sb, "live elected   %s\n",
+        pcrec_sb_printf(&sb, "live at        %zu\n", q.r.at);
+        pcrec_sb_printf(&sb, "live elected   %s\n",
                   q.r.row ? q.r.row->syntax : "none");
-        sb_printf(&sb, "live answered  %s\n", want_names[q.r.answered_at]);
-        sb_puts(&sb, "live names     "); put_names(&sb, &q); sb_putc(&sb, '\n');
+        pcrec_sb_printf(&sb, "live answered  %s\n", want_names[q.r.answered_at]);
+        pcrec_sb_puts(&sb, "live names     "); put_names(&sb, &q); pcrec_sb_putc(&sb, '\n');
     }
-    sb_printf(&sb, "rows           %d\n", rows_shown);
-    sb_printf(&sb, "dissents       %d\n", dissents);
+    pcrec_sb_printf(&sb, "rows           %d\n", rows_shown);
+    pcrec_sb_printf(&sb, "dissents       %d\n", dissents);
     if (q.routed && q.d.kind == RK_VERB)
         put_verb_block(&sb, query, &q.d);
     if (rows_shown) {
-        char *b = sb_take(&body);
-        sb_putc(&sb, '\n');
-        sb_puts(&sb, b);
+        char *b = pcrec_sb_take(&body);
+        pcrec_sb_putc(&sb, '\n');
+        pcrec_sb_puts(&sb, b);
         free(b);
     }
-    sb_free(&body);
-    arena_free(&cx.arena);
+    pcrec_sb_free(&body);
+    pcrec_arena_free(&cx.arena);
     if (ndissent) *ndissent = dissents;
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

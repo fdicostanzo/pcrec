@@ -1999,6 +1999,15 @@ against them:
   `-fcomments`. Note the last of those: `PCREC_FEATURE_SET` and
   `PCREC_FEATURE_MODULES` (§6.3) still carry the feature set on the `.c`,
   but the paired `.h` records it in NO form in a default build.
+**THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
+addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
+`docs/spec/` hunk, so the ritual maintains this narrative by construction —
+which is why it is gap-free from `2` to `27` while the three narrative copies
+that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
+suite's failure message had each drifted. Those are now a pointer, a pointer,
+and a check's message copied FROM here. **A bump updates this paragraph, in
+the bump's own commit.**
+
 - **`rx_info.abi` is `27` on every artifact today ([EMIT-VERB] bumped it
   from 26: THE EMITTED-COMMENT AXIS. A default artifact no longer carries
   its NON-ESSENTIAL prose — every comment LINE leaves every artifact of
@@ -2879,7 +2888,7 @@ dropping it, and `RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`
 is what says so (`tuning.md` §2.5, §2.17). `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
 offset 0"`. The offset is not tied to any one AST node (this reason is a
 property of the whole compile, not of a construct at a position) and reads
-0 by convention, the same position the underlying `ctx_fail` reports at. If
+0 by convention, the same position the underlying `pcrec_ctx_fail` reports at. If
 the pattern's engine choice is ALSO forced by a real construct (a capture
 request, a `VM_ONLY` registry row), that reason wins the stamp on the
 ordinary first-wins rule above — the overflow's own effect on the PREFILTER
@@ -3334,7 +3343,7 @@ pcrec is a library, and two of its promises exist because a library
 cannot behave like a program:
 
 - **It never `abort()`s the caller on the compile path.** Every
-  allocation site routes failure through the internal `ctx_nomem()` and
+  allocation site routes failure through the internal `pcrec_ctx_nomem()` and
   comes back as a normal `-1`-with-diagnostic return, so a caller that
   sets a memory limit precisely in order to survive a hostile pattern
   does survive it. Two `abort()`s remain in the code deliberately and
@@ -3359,7 +3368,7 @@ cannot behave like a program:
 
   *The state legend (K60, D105).* A second, narrower mechanism: the
   emitted DFA state legend's scratch buffers were raw, unrouted
-  allocations that never called `ctx_nomem` at all, so on failure they
+  allocations that never called `pcrec_ctx_nomem` at all, so on failure they
   dropped the legend and let the compile SUCCEED. A caller under memory
   pressure could receive `0` and an artifact whose comment bytes
   differed from the same pattern's compiled anywhere else, with nothing
@@ -3403,23 +3412,56 @@ the supported way to produce one, and the find-all loop of §3.1 already
 uses it. The full semantic contract is `docs/design/utf8_design.md` §2.6
 / §2.6.1.
 
+**QUOTED AS SHIPPED — all nineteen members, in declaration order.** This
+block was nine members long for as long as the struct had nineteen, so a
+caller reading the contract could not see ten of the fields it was being
+asked to zero-initialize ([REVW.5], lens 9's P3). The rule this block now
+follows: if a member is in `lib/pcrec.h`'s `pcrec_options`, it is here, and
+the comment beside it is a one-line gloss — the FULL text for each is the
+header's own comment and, for a tuning axis, `docs/spec/tuning.md` §2.
+
 ```c
 typedef struct {
     const char *prefix;      /* C identifier prefix; default "rx" */
     int         encoding;    /* PCREC_ENC_* ; PER-COMPILE-CALL, see below */
     uint64_t    flags;       /* PCREC_CASELESS | PCREC_EMIT_MAIN |
-                                 PCREC_NO_CAPTURES | ... (see lib/pcrec.h
-                                 for the full, growing bit catalogue) */
+                                 PCREC_NO_CAPTURES | PCREC_TRACE | the
+                                 optimization-axis deny/force bits — the
+                                 catalogue is tuning.md §2, see below */
     const char *header_name; /* NULL = self-contained .c */
     int         engine;      /* PCREC_ENGINE_AUTO / _DFA / _VM */
     int64_t     step_budget; /* PCREC_STEP_BUDGET_DEFAULT / _NONE, or a count */
     int64_t     work_budget; /* PCREC_WORK_BUDGET_DEFAULT / _NONE, or a count */
     int         unroll_k;    /* PCREC_UNROLL_K_DEFAULT (0) = built-in default */
+    int         vm_entry_shape; /* PCREC_VM_ENTRY_AUTO (0) / _PLAIN / _SHARED
+                                    / _FORWARD / _INLINE — an ORDINAL rung,
+                                    not a bit; tuning.md §2.21 */
     int         frame_capacity; /* 0 = let the compiler size it. NOT the
                                     same sentinel as rx_info's field of the
                                     same name, which uses -1 for unbounded */
+    uint64_t    max_emit_code_bytes; /* RAISE-ONLY cap override; 0 = built-in */
+    uint64_t    max_emit_bytes;      /* RAISE-ONLY cap override; 0 = built-in */
+    uint64_t    max_nfa_states;      /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_dfa_states_goto; /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_subset_elems;    /* RAISE-ONLY compile budget; 0 = built-in */
+    uint64_t    max_auto_dfa_elems;  /* RAISE-ONLY; the AUTO route's DFA
+                                        attempt budget only; 0 = built-in */
+    uint64_t    warn_emit_bytes;     /* ADVISORY stderr warning, never a
+                                        refusal; 0 DISABLES it. Lowerable,
+                                        unlike the caps above */
+    const char *name;        /* what rx_info.name reports; NULL = use prefix */
+    int         tune;        /* PCREC_TUNE_MIN_SIZE .. _MAX_SPEED, -2..+2,
+                                0 = balanced and a structural no-op */
 } pcrec_options;
 ```
+
+**The six `max_*` members are RAISE-ONLY and that is a contract, not an
+implementation note**: a value BELOW the built-in default is refused as a
+malformed option rather than honoured, so no caller can use one to
+MANUFACTURE someone else's refusal. `warn_emit_bytes` is deliberately not
+raise-only — it never refuses anything, so lowering it cannot break a
+build. `docs/spec/limits.md` is their home; the per-field derivations are
+`lib/pcrec.h`'s own comments.
 
 **`encoding` is a PER-COMPILE-CALL scalar** ([M5-SEAM], D58): one encoding
 per `pcrec_compile()` call, carried in this field and nowhere else. There is
@@ -3457,10 +3499,14 @@ deliberately masked, §6.3) in the compiled artifact's `rx_info.flags`.
 
 **A caller that round-trips its own flags through `rx_info.flags` will
 find some bits missing, legitimately.** The masked ones are the
-testing/tuning axes that change no answer (§6.3); which bits those are,
-and why each is masked, is documented per-flag in `lib/pcrec.h`'s own
-comments, which is the place to look — this document does not duplicate
-that catalogue.
+testing/tuning axes that change no answer (§6.3). **`docs/spec/tuning.md`
+§2 is the catalogue** — one section per axis, naming the bit, its CLI
+spelling, what it denies or forces and why it is masked — and
+`tuning.md` §4 maps every bit to the `pcrec_options` field that carries
+it. This document does not duplicate that catalogue and does not send a
+reader to the source for it either: the spec tier is the contract (D80),
+and `lib/pcrec.h`'s comments are the implementation's own record of the
+same facts, not their authority ([REVW.5], lens 9's P6).
 
 `pcrec_error` carries which input a diagnostic's `pos` indexes into:
 
@@ -3488,7 +3534,14 @@ non-NULL) — verified directly: an unterminated group `"a(b"` returns
 struct field name, never a bare CLI flag spelling — with the one stated
 exception §1 records: the per-artifact `PCREC_FEATURE_SET` /
 `PCREC_FEATURE_MODULES` stamps, which carry the `PCREC_*` spelling
-without living in `lib/pcrec.h`. `PCRE2_*` spellings
+without living in `lib/pcrec.h`. **That list is exhaustive again as of
+[REVW.5]**, and it was short by one for as long as it has existed: the
+exported data symbol `PCREC_DEFAULT_FEATURES` (`src/parse/enabled.c`,
+D37's bare-default mapping point) carried the `PCREC_*` spelling, lived
+outside `lib/pcrec.h`, and was named by nothing here (lens 9's P5). It is
+`pcrec_default_features` now — a lower-case data symbol, which is what the
+rule already says an internal export should be (D104) — so the exception
+list needs no second entry rather than gaining one. `PCRE2_*` spellings
 are reserved for a future PCRE2-compatibility layer and are never native.
 
 ---

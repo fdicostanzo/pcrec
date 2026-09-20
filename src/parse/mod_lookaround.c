@@ -293,10 +293,10 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
          * ERROR, so it aborts the compile by name rather than being folded
          * into §2.5's capability refusal — a caller told "your lookbehind is
          * variable-length" about a compiler bug has been told something
-         * false. `ctx_fail` is the same channel `vm_look`'s own impossible
+         * false. `pcrec_ctx_fail` is the same channel `vm_look`'s own impossible
          * arms use. */
         if (i <= 1)
-            ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
+            pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
                             "spine is longer than its reported branch count");
         i--;
         long long lo = pcrec_cwmin(a->r), hi = pcrec_cwmax(a->r);
@@ -307,7 +307,7 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
         out[i] = (int)hi;
     }
     if (i != 1)
-        ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
+        pcrec_ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
                         "is shorter than its reported branch count");
     {
         long long lo = pcrec_cwmin(a), hi = pcrec_cwmax(a);
@@ -328,11 +328,11 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
  * who writes a call into a lookbehind body must not get a differently-worded
  * refusal from the one who did not. The two paths RAISE it differently and
  * cannot share that — the hook is inside a doorway and owes an `ExtResult`,
- * the pass is not and calls `ctx_fail` — so what is shared is the text.
+ * the pass is not and calls `pcrec_ctx_fail` — so what is shared is the text.
  *
  * IT IS BYTE-IDENTICAL BY CONSTRUCTION AND NOT BY TRANSCRIPTION: the doorway
- * epilogue is `ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
- * `REFUSE(at, "%s", buf)` here and `ctx_fail(cx, at, "%s", buf)` there render
+ * epilogue is `pcrec_ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
+ * `REFUSE(at, "%s", buf)` here and `pcrec_ctx_fail(cx, at, "%s", buf)` there render
  * the same string at the same offset through the same formatter. `buf` is 256
  * bytes for `ExtResult.msg`'s reason, which is the buffer the hook's text used
  * to be formatted straight into. It cannot truncate: the longest arm is 148
@@ -404,15 +404,15 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
 
     const int nbr = a->u.look.nbranch;
     if (nbr < 1)
-        ctx_fail(cx, 0, "internal error: a deferred lookbehind carries no "
+        pcrec_ctx_fail(cx, 0, "internal error: a deferred lookbehind carries no "
                         "branch count");
 
     long long lo = 0, hi = 0;
-    int *w = arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
+    int *w = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
     if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
         char buf[LA_MSG_MAX];
         la_width_refusal(buf, sizeof buf, lo, hi);
-        ctx_fail(cx, a->u.look.at, "%s", buf);
+        pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }
     a->u.look.widths = w;
 }
@@ -553,7 +553,7 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         a->u.look.nbranch = info.nbr;
     } else {
         long long lo = 0, hi = 0;
-        int *w = arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
+        int *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
         if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
             char buf[LA_MSG_MAX];
             la_width_refusal(buf, sizeof buf, lo, hi);

@@ -87,7 +87,7 @@ src = src.replace(
 
 src = src.replace("""    PMemo memo; pmemo_init(&memo, (size_t)nfa->n);""",
 """    Marks marks0 = {
-        arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t)), 0, nfa->n
+        pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t)), 0, nfa->n
     };
     PMemo memo; pmemo_init(&memo, (size_t)nfa->n);""")
 

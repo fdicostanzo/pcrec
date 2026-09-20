@@ -75,7 +75,7 @@
  * long after parsing finished). */
 static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
 {
-    char *p = arena_alloc(&cx->arena, len + 1);
+    char *p = pcrec_arena_alloc(&cx->arena, len + 1);
     memcpy(p, s, len);
     p[len] = '\0';
     return p;
@@ -225,7 +225,7 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
      * LEXICAL fact about the pattern text (the same tier `ngroups`
      * already is), not a build-output fact. */
     {
-        NamedGroup *g = arena_alloc(&cx->arena, sizeof *g);
+        NamedGroup *g = pcrec_arena_alloc(&cx->arena, sizeof *g);
         g->name = ng_arena_strndup(cx, p + name_start, name_len);
         g->number = (int)cx->ncap;
         g->next = cx->named_groups;

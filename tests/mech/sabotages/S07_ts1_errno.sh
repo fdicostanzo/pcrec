@@ -15,7 +15,7 @@ SAB_COUNT=1
 # the row still plants ONE `(void)errno;`, in the SEARCH body, which is the
 # body TS-1's denylist sweep was validated against.
 # RE-AIMED 2026-09-19 ([EMIT-VERB]): the two lines are no longer in ONE
-# `sb_puts` -- the comment is now inside a gated comment region (D112) and the
+# `pcrec_sb_puts` -- the comment is now inside a gated comment region (D112) and the
 # code follows it in its own call -- so the 2026-08-29 anchor stopped
 # resolving. THE INTENT IS UNCHANGED AND IS WHAT THE RE-AIM PRESERVES: the row
 # plants ONE `(void)errno;` in the SEARCH body, and the only thing that tells
@@ -25,8 +25,8 @@ SAB_COUNT=1
 # declaration alone, where it would match TWICE and SAB_COUNT=1 would stop
 # resolving exactly as it did in 2026-08-29.
 SAB_BEFORE='               "    // match wins.\n");
-    sb_cmt_close(c);
-    sb_puts(c, "    size_t scan_position = search_from;\n"'
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"'
 SAB_AFTER='               "    // match wins.\n");
-    sb_cmt_close(c);
-    sb_puts(c, "    size_t scan_position = search_from; (void)errno;\n"'
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_puts(c, "    size_t scan_position = search_from; (void)errno;\n"'

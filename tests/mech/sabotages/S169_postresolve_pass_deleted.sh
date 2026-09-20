@@ -10,7 +10,7 @@
 #
 # WHAT THE ARTIFACT DOES, PREDICTED, and it is deliberately NOT a miscompile:
 # a recorded lookbehind reaches `vm_look_behind` with `u.look.widths == NULL`,
-# which that function already `ctx_fail`s on by name ("the parse hook did not
+# which that function already `pcrec_ctx_fail`s on by name ("the parse hook did not
 # run, or its deferred width re-check did not"). So the compile ABORTS with an
 # internal error rather than emitting a back-step of width zero. THAT GUARD IS
 # HALF OF WHAT THIS ROW MEASURES: the pending state was given the encoding it

@@ -1,7 +1,7 @@
 # S234 — [K50] THE IR BOUNDARY GATE IS NOT BUILT, i.e. K50's own defect
 # restored.
 #
-# `nfa_wrap_unanchored` builds a SECOND split state whose pattern branch sits
+# `pcrec_nfa_wrap_unanchored` builds a SECOND split state whose pattern branch sits
 # behind an `N_CSTART` gate, so the positions the self-loop generates are the
 # encoding's character boundaries. Skip the whole block and the wrap is its
 # pre-K50 self, stepping one BYTE — which is exactly the bug: under `-e utf8`
@@ -34,7 +34,7 @@ SAB_ID="S234-startpos-gate-deleted"
 SAB_FILE="src/ir/nfa.c"
 SAB_SUITES="startbnd harness"
 SAB_HARNESS_TARGET="tests/utf8/axis11_startpos_boundary.rxt"
-SAB_DESC="nfa_wrap_unanchored skips the character-boundary gate, so the unanchored DFA's start-anywhere self-loop offers the pattern at every BYTE offset again — K50's own defect, which changes nothing under the byte encoding and which both engines used to agree on"
+SAB_DESC="pcrec_nfa_wrap_unanchored skips the character-boundary gate, so the unanchored DFA's start-anywhere self-loop offers the pattern at every BYTE offset again — K50's own defect, which changes nothing under the byte encoding and which both engines used to agree on"
 SAB_DOC_FIGURE="docs/dev/known_issues.md K50 (site 1); docs/design/utf8_design.md 5.5's refutation box; docs/design/utf8_measurements/out/startbnd.txt 1"
 SAB_COUNT=1
 SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - -- "\\B" | grep -o "forward_next_state" | head -1'

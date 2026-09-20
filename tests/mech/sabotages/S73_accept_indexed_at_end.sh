@@ -49,14 +49,14 @@ SAB_COUNT=1
 # The emitted read spells its class INLINE (`<M>_byte_class[<peek>]`) because
 # the guarded `<M>_class` local is declared below the guard this planting jumps
 # over -- which is the defect stated as code.
-SAB_BEFORE='    sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
+SAB_BEFORE='    pcrec_sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
     f->dir->emit_bound_accept(c, f);'
 SAB_AFTER='    /* SABOTAGE S73: the class-indexed accept is emitted ABOVE the
      * boundary guard, so the emitted matcher reads the byte at the
      * boundary -- out of bounds in generated code (S3.6.2, K27). */
-    sb_printf(c, "%sif (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,"
+    pcrec_sb_printf(c, "%sif (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,"
                  " %s_%s_byte_class[%s])) %s = %s;\n",
               ind, p, m, p, m, f->src, p, m, f->dir->peek,
               f->dir->recv, f->dir->posv);
-    sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
+    pcrec_sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
     f->dir->emit_bound_accept(c, f);'

@@ -5,7 +5,7 @@
 
 #define ABLOCK_MIN (64 * 1024)
 
-void *arena_alloc(Arena *a, size_t sz)
+void *pcrec_arena_alloc(Arena *a, size_t sz)
 {
     sz = (sz + 15) & ~(size_t)15;
     ABlock *b = a->head;
@@ -18,7 +18,7 @@ void *arena_alloc(Arena *a, size_t sz)
          * along with the Job's heap arrays. Nothing allocated so far leaks and
          * nothing half-built is ever read again. */
         if (!b) {
-            if (a->cx) ctx_nomem(a->cx);
+            if (a->cx) pcrec_ctx_nomem(a->cx);
             abort();
         }
         b->next = a->head;
@@ -32,7 +32,7 @@ void *arena_alloc(Arena *a, size_t sz)
     return p;
 }
 
-void arena_free(Arena *a)
+void pcrec_arena_free(Arena *a)
 {
     ABlock *b = a->head;
     while (b) {

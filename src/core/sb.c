@@ -14,17 +14,17 @@ static void sb_grow(StrBuf *sb, size_t need)
      * cap decision — the cap is always decided by the exact post-emission
      * scan in compile.c, on an attempt that ran to completion. */
     if (sb->abort_over && sb->len + sb->cmt_dropped + need > sb->abort_over && sb->cx)
-        ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
+        pcrec_ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
     if (sb->len + need + 1 <= sb->cap) return;
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;
     /* [M4.7b/K7] realloc into a TEMPORARY: on failure the old buffer is still
-     * live and still owned by `sb`, so the error path's sb_free reclaims it.
+     * live and still owned by `sb`, so the error path's pcrec_sb_free reclaims it.
      * Assigning the NULL straight into sb->p would leak it and lose the only
      * pointer to it. */
     char *np = realloc(sb->p, cap);
     if (!np) {
-        if (sb->cx) ctx_nomem(sb->cx);
+        if (sb->cx) pcrec_ctx_nomem(sb->cx);
         abort();   /* a detached buffer (syntax_dump.c) has no error channel */
     }
     sb->p = np;
@@ -32,8 +32,8 @@ static void sb_grow(StrBuf *sb, size_t need)
 }
 
 /* [EMIT-VERB] (D112) THE COMMENT GATE, at the three primitives every other
- * append in this file is built on (`sb_text`, `sb_field`, `sb_row`,
- * `sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
+ * append in this file is built on (`pcrec_sb_text`, `pcrec_sb_field`, `pcrec_sb_row`,
+ * `pcrec_sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
  * gate instead of having to remember it. Inside a muted region an append is
  * a no-op: `len` does not advance, so the size term's `abort_over` and the
  * caps see exactly the bytes the artifact will carry.
@@ -43,18 +43,18 @@ static void sb_grow(StrBuf *sb, size_t need)
  * comment or repair a line — the failure mode a post-hoc strip would have. */
 static inline bool sb_muted(const StrBuf *sb) { return sb->cmt_mute_depth != 0; }
 
-void sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
+void pcrec_sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
 
-size_t sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
+size_t pcrec_sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
 
-void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
+void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
 {
     sb->cmt_depth++;
     if (klass == PCREC_CMT_NONESSENTIAL && sb->cmt_drop && !sb->cmt_mute_depth)
         sb->cmt_mute_depth = sb->cmt_depth;
 }
 
-void sb_cmt_close(StrBuf *sb)
+void pcrec_sb_cmt_close(StrBuf *sb)
 {
     /* An unbalanced close would leave the buffer muted for the rest of the
      * compile — silent, total, and exactly the shape that is hard to
@@ -66,7 +66,7 @@ void sb_cmt_close(StrBuf *sb)
     sb->cmt_depth--;
 }
 
-void sb_putc(StrBuf *sb, char c)
+void pcrec_sb_putc(StrBuf *sb, char c)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += 1; return; }
     sb_grow(sb, 1);
@@ -74,7 +74,7 @@ void sb_putc(StrBuf *sb, char c)
     sb->p[sb->len] = 0;
 }
 
-void sb_puts(StrBuf *sb, const char *s)
+void pcrec_sb_puts(StrBuf *sb, const char *s)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += strlen(s); return; }
     size_t n = strlen(s);
@@ -84,8 +84,8 @@ void sb_puts(StrBuf *sb, const char *s)
     sb->p[sb->len] = 0;
 }
 
-/* `sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
- * holds one can append formatted text — `sb_fragfv`'s own reason, one
+/* `pcrec_sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
+ * holds one can append formatted text — `pcrec_sb_fragfv`'s own reason, one
  * destination over. Measure, grow, format: the two `vsnprintf` calls read the
  * SAME arguments through their own `va_copy`, because a `va_list` is consumed
  * by the traversal that measures it. File-static on purpose: no caller outside
@@ -120,7 +120,7 @@ static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
     sb->len += (size_t)n;
 }
 
-void sb_printf(StrBuf *sb, const char *fmt, ...)
+void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -128,11 +128,11 @@ void sb_printf(StrBuf *sb, const char *fmt, ...)
     va_end(ap);
 }
 
-char *sb_take(StrBuf *sb)
+char *pcrec_sb_take(StrBuf *sb)
 {
     char *p = sb->p ? sb->p : strdup("");
     if (!p) {
-        if (sb->cx) ctx_nomem(sb->cx);
+        if (sb->cx) pcrec_ctx_nomem(sb->cx);
         abort();
     }
     sb->p = NULL;
@@ -140,7 +140,7 @@ char *sb_take(StrBuf *sb)
     return p;
 }
 
-void sb_free(StrBuf *sb)
+void pcrec_sb_free(StrBuf *sb)
 {
     free(sb->p);
     sb->p = NULL;
@@ -164,31 +164,31 @@ void sb_free(StrBuf *sb)
  * escape protects the FRAMING and never transcodes the content. */
 static void sb_frame_byte(StrBuf *sb, unsigned char c)
 {
-    if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
-    else                       sb_putc(sb, (char)c);
+    if (c < 0x20 || c == 0x7f) pcrec_sb_printf(sb, "\\x%02x", c);
+    else                       pcrec_sb_putc(sb, (char)c);
 }
 
-void sb_textn(StrBuf *sb, const char *s, size_t n)
+void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n)
 {
     if (!s) return;
     for (size_t i = 0; i < n; i++) sb_frame_byte(sb, (unsigned char)s[i]);
 }
 
-void sb_text(StrBuf *sb, const char *s)
+void pcrec_sb_text(StrBuf *sb, const char *s)
 {
     if (!s) return;
-    sb_textn(sb, s, strlen(s));
+    pcrec_sb_textn(sb, s, strlen(s));
 }
 
-void sb_field(StrBuf *sb, const char *s)
+void pcrec_sb_field(StrBuf *sb, const char *s)
 {
     if (!s) return;
     for (const unsigned char *q = (const unsigned char *)s; *q; q++) {
         switch (*q) {
-        case '\\': sb_puts(sb, "\\\\"); break;
-        case '\t': sb_puts(sb, "\\t");  break;
-        case '\n': sb_puts(sb, "\\n");  break;
-        case '\r': sb_puts(sb, "\\r");  break;
+        case '\\': pcrec_sb_puts(sb, "\\\\"); break;
+        case '\t': pcrec_sb_puts(sb, "\\t");  break;
+        case '\n': pcrec_sb_puts(sb, "\\n");  break;
+        case '\r': pcrec_sb_puts(sb, "\\r");  break;
         default:
             sb_frame_byte(sb, *q);
             break;
@@ -196,27 +196,27 @@ void sb_field(StrBuf *sb, const char *s)
     }
 }
 
-void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
+void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
 {
     for (size_t i = 0; i < n; i++) {
-        if (i) sb_puts(sb, sep);
-        if (names[i]) sb_puts(sb, names[i]);
+        if (i) pcrec_sb_puts(sb, sep);
+        if (names[i]) pcrec_sb_puts(sb, names[i]);
     }
 }
 
-void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
+void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 {
     for (size_t i = 0; i < ncell; i++) {
-        if (i) sb_putc(sb, '\t');
-        sb_text(sb, cells[i]);
+        if (i) pcrec_sb_putc(sb, '\t');
+        pcrec_sb_text(sb, cells[i]);
     }
-    sb_putc(sb, '\n');
+    pcrec_sb_putc(sb, '\n');
 }
 
 /* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3) -----------------------------
  *
  * The contract is stated once, at the declaration in core/internal.h. This is
- * `sb_printf`'s body with the destination changed: measure, allocate exactly,
+ * `pcrec_sb_printf`'s body with the destination changed: measure, allocate exactly,
  * format. The two `vsnprintf` calls read the SAME argument list through a
  * `va_copy`, because a `va_list` is consumed by the first traversal.
  *
@@ -225,17 +225,17 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
  * text and truncate — which is precisely the failure this primitive exists to
  * make impossible, and the one an off-by-one here would reintroduce silently.
  *
- * `n < 0` aborts, matching `sb_printf`: a negative `vsnprintf` return is an
+ * `n < 0` aborts, matching `pcrec_sb_printf`: a negative `vsnprintf` return is an
  * encoding error in a format string this tree wrote itself, not a condition a
  * pattern can provoke, so there is no diagnosis to route. */
-const char *sb_fragfv(Arena *a, const char *fmt, va_list ap)
+const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
 {
     va_list ap2;
     va_copy(ap2, ap);
     int n = vsnprintf(NULL, 0, fmt, ap2);
     va_end(ap2);
     if (n < 0) abort();
-    char *out = arena_alloc(a, (size_t)n + 1);
+    char *out = pcrec_arena_alloc(a, (size_t)n + 1);
     va_list ap3;
     va_copy(ap3, ap);
     vsnprintf(out, (size_t)n + 1, fmt, ap3);
@@ -243,11 +243,11 @@ const char *sb_fragfv(Arena *a, const char *fmt, va_list ap)
     return out;
 }
 
-const char *sb_fragf(Arena *a, const char *fmt, ...)
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    const char *out = sb_fragfv(a, fmt, ap);
+    const char *out = pcrec_sb_fragfv(a, fmt, ap);
     va_end(ap);
     return out;
 }
@@ -258,7 +258,7 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
  * is the one implementation the three entry points share.
  *
  * `%-*s` AT WIDTH 0 IS THE UNPADDED CASE: a printf field width of zero states
- * no minimum, so `sb_stampf` is `sb_stampwf` with the padding asked for and
+ * no minimum, so `pcrec_sb_stampf` is `pcrec_sb_stampwf` with the padding asked for and
  * not supplied, rather than a second spelling of the line. The separator
  * space is emitted HERE and not inside the width, which is what makes a
  * padded name and an over-long one produce the same one-space minimum the
@@ -270,12 +270,12 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
 static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
 {
-    sb_printf(c, "#define %s_%-*s ", upper, namew, name);
+    pcrec_sb_printf(c, "#define %s_%-*s ", upper, namew, name);
     sb_vprintf(c, valfmt, ap);
-    sb_putc(c, '\n');
+    pcrec_sb_putc(c, '\n');
 }
 
-void sb_stampf(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stampf(StrBuf *c, const char *upper, const char *name,
                const char *valfmt, ...)
 {
     va_list ap;
@@ -284,7 +284,7 @@ void sb_stampf(StrBuf *c, const char *upper, const char *name,
     va_end(ap);
 }
 
-void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
                 const char *valfmt, ...)
 {
     va_list ap;
@@ -293,10 +293,10 @@ void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
     va_end(ap);
 }
 
-void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value)
 {
-    sb_stampf(c, upper, name, "\"%s\"", value);
+    pcrec_sb_stampf(c, upper, name, "\"%s\"", value);
 }
 
 /* ---- THE UPPERCASED NAME ([REVW.2] wave 2; lens 10 item 2; D108) --------
@@ -308,10 +308,10 @@ void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
  * uppercase would be a behaviour change smuggled inside a refactor. If this
  * tree ever wants ASCII-only folding here, that is its own change with its
  * own byte-identity argument. */
-const char *sb_upper(Arena *a, const char *s)
+const char *pcrec_sb_upper(Arena *a, const char *s)
 {
     size_t n = strlen(s);
-    char *out = arena_alloc(a, n + 1);
+    char *out = pcrec_arena_alloc(a, n + 1);
     for (size_t i = 0; i < n; i++)
         out[i] = (char)toupper((unsigned char)s[i]);
     out[n] = 0;

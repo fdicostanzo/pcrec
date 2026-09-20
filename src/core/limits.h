@@ -72,10 +72,10 @@
  * DFA-cap-overflow reason `pcrec_select_engine`'s `forces_dfa_overflow`
  * row reports as `RX_ENGINE_WHY` on an `--engine=auto` compile that
  * retried after its DFA build overflowed. A plain array on `Ctx`, not an
- * arena string: it must survive `job_cleanup`'s `arena_free`, since
+ * arena string: it must survive `job_cleanup`'s `pcrec_arena_free`, since
  * `compile.c`'s retry decision reads it AFTER the failed attempt's arena
  * is gone. Sized for the longer of the two "pattern too complex"
- * ctx_fail sites' own texts (src/ir/dfa.c) — "dfa overflowed: subset
+ * pcrec_ctx_fail sites' own texts (src/ir/dfa.c) — "dfa overflowed: subset
  * construction exceeds 48000000 state-set elements (K7)" is 76 bytes —
  * plus headroom, the same margin-over-worst-case shape K38 above uses.
  *
@@ -618,7 +618,7 @@
  * mechanism rather than a second cap beside it.
  *
  * CROSSING IT REFUSES NOTHING. `Dfa.optional` makes the two `intern()` cap
- * sites RECORD and return instead of `ctx_fail`ing, so the compile
+ * sites RECORD and return instead of `pcrec_ctx_fail`ing, so the compile
  * continues, the artifact keeps the search-and-filter form of its
  * anchored entry and STAMPS that (`<PREFIX>_DFA_MATCH "search-filter"`).
  * The set of patterns pcrec accepts is unchanged in either direction —

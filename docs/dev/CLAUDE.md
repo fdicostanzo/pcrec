@@ -68,7 +68,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   PCREC_MAX_SUBSET_ELEMS, which NARROWS exact repeats above `a{9795}`.
   The caller-abort, the worst item on its list because pcrec is a
   library, is closed by routing every malloc-failure site through
-  ctx_nomem(). Pinned by tests/resource/). K24
+  pcrec_ctx_nomem(). Pinned by tests/resource/). K24
   (CLOSED 2026-08-17, k24fix lane — the only throughput-only entry this
   file has carried: gcc -O2's partial-inlining pass was splitting
   `<prefix>_search` into a trampoline plus a `.part.0` clone in every
@@ -160,7 +160,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   Frank's added deliverable at the Q1 ruling, `reviews/2026-09-17-code-review.md`
   §3): the rules a session WRITING C under `src/`/`cli/`/`lib/` follows,
   distilled from the twelve-lens code review. Six sections — the house
-  disciplines the review verified tree-wide (ctx_nomem routing and the
+  disciplines the review verified tree-wide (pcrec_ctx_nomem routing and the
   Job-buffer attachment rule stated as a RULE not a count; the no-`default:`
   exhaustive switch as the `-Wswitch` alarm; `volatile` across `setjmp`; zero
   function-local statics; the emitters' single-letter locals as house
@@ -652,7 +652,7 @@ change.
   real and is the ONLY one either of its own witnesses has:
   `emit_state_legend` (`src/gen/emit_dfa.c:3615-3618,3660`) allocates five
   buffers with raw `malloc` and returns silently on NULL — a deliberate,
-  documented cosmetic degradation that never calls `ctx_nomem` and never
+  documented cosmetic degradation that never calls `pcrec_ctx_nomem` and never
   reaches the recovery point.
   **Four deliverables, each with its method.** (1) The instrument gained a
   SUSTAINED mode (fail N and everything after): W3 collapses 25 absorbed →
@@ -661,10 +661,10 @@ change.
   *real* failing allocator still yields a correct refusal in 564 of 569
   forced failures. (2) All 148 absorptions attributed by call site: 40
   (27%) `emit_state_legend`, 108 (73%) the `[ART-SIZE]` ladder's blanket
-  catch swallowing `ctx_nomem`-routed failures, 0 stale-flag. (3) **The
+  catch swallowing `pcrec_ctx_nomem`-routed failures, 0 stale-flag. (3) **The
   population is 2 of 3,159 corpus patterns (0.06%) at default axes and 17
   (0.54%) under `-e utf8`** — a handful, not thousands — broken down by
-  rung. (4) The candidate (give `ctx_nomem` its own `longjmp` value, since
+  rung. (4) The candidate (give `pcrec_ctx_nomem` its own `longjmp` value, since
   the tree has one `longjmp` and all five `setjmp` sites test it as a
   boolean) **eliminates 108 of 108 ladder absorptions and 0 of 40 legend
   absorptions**: sound and complete for the mechanism it addresses,

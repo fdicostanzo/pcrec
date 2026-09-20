@@ -32,4 +32,4 @@ SAB_BEFORE='        vm_ev(v, VE_NOTE, 0, 0,
 SAB_AFTER='        vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
         if (optional && vm_nullable(a->l))   /* SABOTAGE S56 */
-            sb_printf(b, "    if (stv[%d] > 0) goto %s_L%d;\n", ctr, v->p, next);'
+            pcrec_sb_printf(b, "    if (stv[%d] > 0) goto %s_L%d;\n", ctr, v->p, next);'

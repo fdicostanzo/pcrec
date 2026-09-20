@@ -30,6 +30,6 @@ SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look's positive arm stops restoring scan_position from SLOT_LOOK_POS, so the assertion CONSUMES its body's bytes — a zero-width construct that is not zero-width"
 SAB_DOC_FIGURE="PREDICTED: most of tests/lookaround/ goes red; (?=ab)abc no longer matches \"abc\". Canonical figure owed from run_sabotage_matrix.sh S123."
 SAB_COUNT=1
-SAB_BEFORE='            sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);'
+SAB_BEFORE='            pcrec_sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);'
 SAB_AFTER='            /* SABOTAGE S123: the cursor is NOT restored */
             (void)b; (void)sl;'

@@ -44,7 +44,7 @@ static int  nextc(Ctx *cx)       { return at_end(cx) ? -1 : (unsigned char)cx->p
 
 static Ast *node(Ctx *cx, AKind k)
 {
-    Ast *a = arena_alloc(&cx->arena, sizeof(Ast));
+    Ast *a = pcrec_arena_alloc(&cx->arena, sizeof(Ast));
     a->k = k;
     return a;
 }
@@ -394,7 +394,7 @@ static const PcrecEnc *cls_enc(Ctx *cx)
 {
     const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     if (!e)
-        ctx_fail(cx, 0, "internal error: no encoding row for id %d",
+        pcrec_ctx_fail(cx, 0, "internal error: no encoding row for id %d",
                  cx->opt->encoding);
     return e;
 }
@@ -660,7 +660,7 @@ int pcrec_hexval(int c)
 static int esc_char_value(Ctx *cx, size_t epos)
 {
     int c = nextc(cx);
-    if (c < 0) ctx_fail(cx, epos, "pattern ends with a trailing backslash");
+    if (c < 0) pcrec_ctx_fail(cx, epos, "pattern ends with a trailing backslash");
     switch (c) {
     case 'n': return '\n';
     case 't': return '\t';
@@ -698,21 +698,21 @@ static int esc_char_value(Ctx *cx, size_t epos)
                 /* Not '}' and not a hex digit (the loop above consumed those)
                  * — 10.46's err-167 shape, which also covers the unclosed
                  * form ending the pattern. */
-                ctx_fail(cx, cx->pos,
+                pcrec_ctx_fail(cx, cx->pos,
                          "non-hex character in \\x{...} (closing brace "
                          "missing?)");
             }
             if (ndig == 0)                                 /* the empty \x{} */
-                ctx_fail(cx, epos, "digits missing after \\x");
+                pcrec_ctx_fail(cx, epos, "digits missing after \\x");
             cx->pos++;                                     /* the '}' */
             if (v > (long long)cls_universe(cx))
-                ctx_fail(cx, epos,
+                pcrec_ctx_fail(cx, epos,
                          "character code point value in \\x{...} is too "
                          "large (max U+%04X under encoding '%s')",
                          cls_universe(cx),
                          pcrec_enc_by_id(cx->opt->encoding)->name);
             if (v >= 0xD800 && v <= 0xDFFF)
-                ctx_fail(cx, epos,
+                pcrec_ctx_fail(cx, epos,
                          "disallowed Unicode surrogate code point in "
                          "\\x{...}");
             return (int)v;
@@ -723,7 +723,7 @@ static int esc_char_value(Ctx *cx, size_t epos)
             ndig++;
         }
         if (ndig == 0) /* PCRE2 error 178 (R1 review S-M2) */
-            ctx_fail(cx, epos, "digits missing after \\x");
+            pcrec_ctx_fail(cx, epos, "digits missing after \\x");
         return v;
     }
     default:
@@ -758,7 +758,7 @@ static Ast *p_quote_next(Ctx *cx)
 {
     int c = peekc(cx);
     if (c < 0 || (c == '\\' && peekc2(cx) == 'E'))
-        ctx_fail(cx, cx->pos,
+        pcrec_ctx_fail(cx, cx->pos,
                  "internal error: quote mode reached a boundary its "
                  "caller (cat_ends/xskip) should already have resolved");
     /* [M5.0 stage 2] a quoted byte >= 0x80 is still one CHARACTER of the
@@ -827,7 +827,7 @@ static Ast *esc_atom(Ctx *cx)
      * today — even "no row" is a refusal — so reaching here means the
      * ExtResult vocabulary grew without this call site learning the new
      * value. Fail loudly instead of flowing an unhandled value onward. */
-    ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
+    pcrec_ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
 }
 
 /* Escape inside a class -> byte value. The plain character escapes decode
@@ -900,7 +900,7 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
          * rule's steps (K12 — §16's five steps need the claim visible at
          * the range site, which is what the returned-claims epilogue
          * exists for). */
-        ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
+        pcrec_ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
     return 0;
 }
 
@@ -946,7 +946,7 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * constructor rather than the accumulated whole (§4's caseless rule — see
  * the comment below on why). The `A_CLASS` node is allocated up front but
  * published (its interval set attached) only at the bottom, because any of
- * several paths through this loop `ctx_fail`s mid-accumulation and every
+ * several paths through this loop `pcrec_ctx_fail`s mid-accumulation and every
  * one abandons the node. Caller has already consumed the `[`. */
 static Ast *p_class(Ctx *cx)
 {
@@ -954,7 +954,7 @@ static Ast *p_class(Ctx *cx)
     Ast *a = node(cx, A_CLASS);
     /* [M5.0 stage 1] THE ACCUMULATOR IS A BUILDER AND THE NODE IS PUBLISHED
      * ONCE, at the bottom. The node is still allocated here because the loop
-     * below `ctx_fail`s out of the middle of its own accumulation on half a
+     * below `pcrec_ctx_fail`s out of the middle of its own accumulation on half a
      * dozen paths and every one of them abandons this node — publishing early
      * would leave a node carrying a set that is not the class. */
     PcrecCpSet set;
@@ -1016,7 +1016,7 @@ static Ast *p_class(Ctx *cx)
         }
 
         int c = peekc(cx);
-        if (c < 0) ctx_fail(cx, opening, "missing terminating ] for character class");
+        if (c < 0) pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
         /* [M4-QUOTING] a quoted byte is never the closer, never a POSIX
          * bracket doorway trigger, and never re-decoded through
          * esc_class_value even when its OWN value is '\\' or ']' or '['
@@ -1049,7 +1049,7 @@ static Ast *p_class(Ctx *cx)
             if (r.what == EXT_REFUSAL && r.ep_set_certain &&
                 r.end + 1 < cx->patlen && cx->pat[r.end] == '-' &&
                 cx->pat[r.end + 1] != ']')
-                ctx_fail(cx, r.end, "invalid range in character class");
+                pcrec_ctx_fail(cx, r.end, "invalid range in character class");
             /* THE PRODUCED MEMBERS (MOD-0.3c): the caller consumes and the
              * caller moves the cursor — the doorway never writes cx->pos
              * (check06's rule). The low-side endpoint check above has a
@@ -1062,7 +1062,7 @@ static Ast *p_class(Ctx *cx)
                 cls_skip(cx);   /* xx: [[:alpha:]\t-\tz] still hits the 150 */
                 if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
                     cls_peek_past_dash(cx) >= 0)
-                    ctx_fail(cx, r.end, "invalid range in character class");
+                    pcrec_ctx_fail(cx, r.end, "invalid range in character class");
                 continue;
             }
             pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
@@ -1138,7 +1138,7 @@ static Ast *p_class(Ctx *cx)
              * compile in PCRE2 because no pair closes. */
             if (peekc(cx) == '[' &&
                 pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
-                ctx_fail(cx, dashpos, "invalid range in character class");
+                pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
             /* [M4-QUOTING] the high endpoint is the ONE other position
              * PCRE2 lets a quote answer for (measured: `[a-\Qz\E]` and
              * `[a-\Q\Ez]` are both the range a-z — the second shows the
@@ -1163,7 +1163,7 @@ static Ast *p_class(Ctx *cx)
              * SAME class-truncation error the main loop raises, not fall
              * through to `nextc` returning -1 as if it were a byte value. */
             if (cx->in_quote && peekc(cx) < 0)
-                ctx_fail(cx, opening, "missing terminating ] for character class");
+                pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
             bool hi_quoted = cx->in_quote;
             int hc = nextc(cx);
             ExtResult hiclaim = { .what = EXT_NOT_MINE };
@@ -1185,10 +1185,10 @@ static Ast *p_class(Ctx *cx)
              * is §16.3's composition-keeps-K12-closed bullet, now live in
              * both gate states. */
             if (loclaim.what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
-                ctx_fail(cx, dashpos,
+                pcrec_ctx_fail(cx, dashpos,
                          "invalid range in character class"); /* step 4 */
             if (lo > hi)
-                ctx_fail(cx, dashpos, "range out of order in character class");
+                pcrec_ctx_fail(cx, dashpos, "range out of order in character class");
             /* A RANGE IS ONE INTERVAL, which is the payload change showing its
              * hand: `[\x00-\xff]` was 256 bit-sets and is now a single `add`,
              * and `\p{L}`'s 700-odd ranges will be 700 rather than a walk over
@@ -1246,13 +1246,13 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax);
  *
  * WHY IT IS A SEPARATE FUNCTION, and it is not tidiness. A group's ENTRY and
  * EXIT bookkeeping must each sit on exactly ONE path, because a module handler
- * that RETURNS (rather than ending in ctx_fail, which is all any doorway does
+ * that RETURNS (rather than ending in pcrec_ctx_fail, which is all any doorway does
  * today) would otherwise skip whatever the exit path does. `cx->depth--` used
  * to sit after the doorway call, so it was already on a path a module could
  * never reach; the caller below now owns both ends and this function owns
  * none, so a `return` added anywhere in here stays balanced by construction.
  *
- * ctx_fail's longjmp still bypasses the exit, and that is correct: it abandons
+ * pcrec_ctx_fail's longjmp still bypasses the exit, and that is correct: it abandons
  * the parse. Verified structurally rather than assumed — `src/core/compile.c`
  * holds the ONLY setjmp in the tree, its failure branch runs job_cleanup and
  * returns, and `Ctx` is a stack-local zeroed per pcrec_compile call, so no
@@ -1264,7 +1264,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax);
  * node was SILENTLY DISCARDED — reproduced as an exit-0 miscompile,
  * `(?%x)b)` compiling to bare `b`'s bytes with a stub row. The doorway call
  * sites in p_group_body now capture the ExtResult, pass it to the one
- * epilogue, and END IN A WALL (an internal-error ctx_fail): a claim the
+ * epilogue, and END IN A WALL (an internal-error pcrec_ctx_fail): a claim the
  * site does not handle is a loud deterministic refusal, never a
  * fallthrough. The first module port that returns a real value replaces
  * the wall with the splice — visibly, at the exact line — instead of
@@ -1284,7 +1284,7 @@ static Ast *p_group(Ctx *cx, size_t apos)
     if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
                               also bounds parser and AST recursion depth
                               (R1 review R-1). See core/limits.h */
-        ctx_fail(cx, apos, "parentheses are too deeply nested");
+        pcrec_ctx_fail(cx, apos, "parentheses are too deeply nested");
 
     /* The scoped-state save/restore moved from HERE to p_group_body's
      * body-parsing tail at MOD-0.5c, and the move is the semantics: a
@@ -1328,7 +1328,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
          * four answers, all refusals), so the PARSE-1 fallthrough-discard
          * shape is a compile-time impossibility here: an unhandled outcome
          * hits this line instead of flowing into p_alt. */
-        ctx_fail(cx, apos, "internal error: verb doorway returned an unhandled outcome");
+        pcrec_ctx_fail(cx, apos, "internal error: verb doorway returned an unhandled outcome");
     }
     /* Doorway 2, with the base grammar answering first: `(?:` is the one
      * construct here the base tier implements, so it never reaches the
@@ -1350,7 +1350,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
              * PARSE-1 reproduced the exit-0 miscompile at ((?%x)b) compiled
              * to bare (b)'s bytes with a stub node): a claimed node can no
              * longer fall through into the body parse. */
-            ctx_fail(cx, apos, "internal error: (? doorway returned an unhandled outcome");
+            pcrec_ctx_fail(cx, apos, "internal error: (? doorway returned an unhandled outcome");
         }
     }
     /* plain '(' : capturing group — parsed as a group; capture spans are
@@ -1405,11 +1405,11 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * through the doorway splice above and never reaches this line) escapes
      * to the enclosing scope. `(?i:...)` does the same save/apply/restore
      * inside its port. Restore on the failure path is longjmp's problem:
-     * ctx_fail abandons the whole parse, no one reads cx->mods after it. */
+     * pcrec_ctx_fail abandons the whole parse, no one reads cx->mods after it. */
     ParseMods saved_mods = *cx->mods;
     Ast *body = p_alt(cx);
     if (nextc(cx) != ')')
-        ctx_fail(cx, apos, PCREC_MISSING_CLOSE_PAREN_MSG);
+        pcrec_ctx_fail(cx, apos, PCREC_MISSING_CLOSE_PAREN_MSG);
     *cx->mods = saved_mods;
     body = pcrec_wrap_bare_anchor(cx, body);
     /* The capture wrap goes OUTSIDE the bare-anchor wrap above, so `(^)`'s
@@ -1482,7 +1482,7 @@ static Ast *p_atom(Ctx *cx)
                 return a; }
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
-        ctx_fail(cx, apos, "quantifier does not follow a repeatable item");
+        pcrec_ctx_fail(cx, apos, "quantifier does not follow a repeatable item");
     case '{': {
         /* K6. `*`, `+` and `?` above have always been rejected here; `{` was
          * not, because try_quant is only ever called from p_rep — AFTER an atom
@@ -1504,7 +1504,7 @@ static Ast *p_atom(Ctx *cx)
         int rmin, rmax;
         cx->pos = apos;
         if (try_quant(cx, &rmin, &rmax))
-            ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
+            pcrec_ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         cx->pos = apos + 1;
         return char_node(cx, (unsigned)c);
     }
@@ -1607,7 +1607,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     if (peekc(cx) == '}') {
         if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
-        if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
+        if (big_m) pcrec_ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
         *rmin = (int)m; *rmax = (int)m;
         return true;
     }
@@ -1618,7 +1618,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     if (peekc(cx) == '}') {
         if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
-        if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
+        if (big_m) pcrec_ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
         *rmin = (int)m; *rmax = -1;
         return true;
     }
@@ -1635,15 +1635,15 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     skip_quant_space(cx);       /* gap 4: n _ `}` */
     if (ndig == 0 || peekc(cx) != '}') { cx->pos = save; return false; }
     cx->pos++;
-    if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
-    if (big_n) ctx_fail(cx, end_n, "number too big in {m,n} quantifier");
+    if (big_m) pcrec_ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
+    if (big_n) pcrec_ctx_fail(cx, end_n, "number too big in {m,n} quantifier");
     /* R7/T-4: this used to report `save`, the `{`, where PCRE2 reports the
      * closing `}` — the one brace diagnostic of the three whose offset did NOT
      * agree, and it quietly falsified the comment above. Aligned deliberately:
      * `a{3,1}` is offset 5 and `{3,1}` is offset 4, both matching libpcre2
      * 10.46. It is a behaviour change to a pre-existing message, so it is
      * pinned by name in tests/reject/ rather than left to be rediscovered. */
-    if (m > n) ctx_fail(cx, cx->pos - 1, "numbers out of order in {m,n} quantifier");
+    if (m > n) pcrec_ctx_fail(cx, cx->pos - 1, "numbers out of order in {m,n} quantifier");
     *rmin = (int)m; *rmax = (int)n;
     return true;
 }
@@ -1718,7 +1718,7 @@ static Ast *p_rep(Ctx *cx)
         cx->pos++;
 have:
         if (quantified)
-            ctx_fail(cx, cx->pos - 1, "multiple quantifiers on the same item");
+            pcrec_ctx_fail(cx, cx->pos - 1, "multiple quantifiers on the same item");
         /* PCRE2 error 109 (S-M1 for the anchors; R20/SPEC-1 for
          * `not_repeatable`, which a bare option run sets — see the flag's
          * definition in internal.h for why the node KIND cannot carry it).
@@ -1728,7 +1728,7 @@ have:
          * closing `}` for a brace form (the `goto have` skipped it and
          * try_quant left the cursor past the brace). */
         if (pcrec_is_bare_anchor(a) || a->not_repeatable)
-            ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
+            pcrec_ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         quantified = true;
 
         Ast *r = node(cx, A_REP);
@@ -1769,11 +1769,11 @@ have:
              * is preserved exactly. */
             const RegRow *rw = pcrec_atomic_suffix_row(c);
             if (!rw)
-                ctx_fail(cx, cx->pos,
+                pcrec_ctx_fail(cx, cx->pos,
                          "internal error: no registry row for the possessive "
                          "quantifier suffix");
             if (!pcrec_feature_enabled(rw->feature))
-                ctx_fail(cx, cx->pos,
+                pcrec_ctx_fail(cx, cx->pos,
                          "possessive quantifier requires module '%s'",
                          rw->module);
             size_t plus = cx->pos;
@@ -1944,7 +1944,7 @@ Ast *pcrec_parse(Ctx *cx)
  * state nothing has read yet, which is what those query surfaces want. */
 void pcrec_parse_mods_init(Ctx *cx)
 {
-    ParseMods *m = arena_alloc(&cx->arena, sizeof *m);
+    ParseMods *m = pcrec_arena_alloc(&cx->arena, sizeof *m);
     *m = (ParseMods){ .caseless = cx->opt &&
                                   (cx->opt->flags & PCREC_CASELESS) != 0 };
     cx->mods = m;
@@ -1960,8 +1960,8 @@ Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
     Ast *a = p_alt_info(cx, info);
     if (!at_end(cx)) {
         if (peekc(cx) == ')')
-            ctx_fail(cx, cx->pos, "unmatched closing parenthesis");
-        ctx_fail(cx, cx->pos, "unexpected character in pattern");
+            pcrec_ctx_fail(cx, cx->pos, "unmatched closing parenthesis");
+        pcrec_ctx_fail(cx, cx->pos, "unexpected character in pattern");
     }
     /* [M6.5.2] §5.3's DEFERRED RESOLUTION, at the one place that has the
      * whole-pattern count and every name declaration in hand. It is a no-op —

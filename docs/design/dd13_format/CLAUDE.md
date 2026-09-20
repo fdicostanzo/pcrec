@@ -549,7 +549,7 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   struct's sake, turn out to be the forcing's precondition. Also: the
   restore's index space is the CALLEE REGION's own (`vm_region`,
   `:6036-6046`) with `vm_publish_saves`' *"three readers, one write"* and
-  `vm_splice`'s overflow `ctx_fail` (`:5924-5932`, K27's class) as the
+  `vm_splice`'s overflow `pcrec_ctx_fail` (`:5924-5932`, K27's class) as the
   loud detector, and the omission is TRAIL-COHERENT — `vm_set` is
   trailed, so a dropped restore keeps the callee's value and a backtrack
   undoes it, meaning delivery needs one FEWER restore rather than a second

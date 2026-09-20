@@ -26,5 +26,5 @@ SAB_SUITES="mrldiff harness"
 SAB_DESC="pcrec_minw uses a bounded repeat's MAXIMUM count instead of its minimum, making minrest an upper bound: the clamp then cuts positions a real match needed and the matcher answers nomatch"
 SAB_DOC_FIGURE="docs/design/k23_impl/k23_design.md §4.2 failure mode 1"
 SAB_COUNT=1
-SAB_BEFORE='            return mrl_sat_add(acc, mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));'
-SAB_AFTER='            return mrl_sat_add(acc, mrl_sat_mul(a->u.rep.rmax >= 0 ? a->u.rep.rmax : a->u.rep.rmin, pcrec_minw(a->l)));  /* SABOTAGE S59 */'
+SAB_BEFORE='            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));'
+SAB_AFTER='            return pcrec_mrl_sat_add(acc, pcrec_mrl_sat_mul(a->u.rep.rmax >= 0 ? a->u.rep.rmax : a->u.rep.rmin, pcrec_minw(a->l)));  /* SABOTAGE S59 */'

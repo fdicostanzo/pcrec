@@ -1,5 +1,5 @@
 /* pcrec_compile(): the pipeline driver — parse -> NFA -> DFA -> emit.
- * Error handling is longjmp-based (ctx_fail); all allocations are owned by
+ * Error handling is longjmp-based (pcrec_ctx_fail); all allocations are owned by
  * the Job/arena so the error path can clean up wholesale. */
 
 #include <ctype.h>
@@ -13,7 +13,7 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 
-void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
+void pcrec_ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 {
     if (cx->err) {
         va_list ap;
@@ -35,14 +35,14 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  * any reason is the same event to a caller, and reading errno after a
  * longjmp-shaped path is a portability question with no payoff.
  *
- * [K60] `cx->failed_nomem` is set BEFORE the `ctx_fail` call below, so it is
+ * [K60] `cx->failed_nomem` is set BEFORE the `pcrec_ctx_fail` call below, so it is
  * true by the time this arrival's `longjmp` lands — see the field's own
  * comment (internal.h) for why this is per-arrival with no stored state, and
  * `compile_driver`'s `setjmp` handler for where it is read. */
-void ctx_nomem(Ctx *cx)
+void pcrec_ctx_nomem(Ctx *cx)
 {
     cx->failed_nomem = true;
-    ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
+    pcrec_ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
                     "not allocate; shrink the pattern or raise the limit)");
 }
 
@@ -239,12 +239,12 @@ static void job_cleanup(Ctx *cx)
          * it stopped. */
         free(cx->job->adfa.st);
         free(cx->job->adfa.tab);
-        sb_free(&cx->job->csb);
-        sb_free(&cx->job->hsb);
-        sb_free(&cx->job->vmsb);
-        sb_free(&cx->job->irsb);
-        sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
-        sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
+        pcrec_sb_free(&cx->job->csb);
+        pcrec_sb_free(&cx->job->hsb);
+        pcrec_sb_free(&cx->job->vmsb);
+        pcrec_sb_free(&cx->job->irsb);
+        pcrec_sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
+        pcrec_sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
         /* [M4.7b/K7] Strings already TAKEN from the buffers above but not yet
          * published to the caller. They exist for a window of three statements
          * at the end of compile_driver, and now that an allocation failure in
@@ -256,7 +256,7 @@ static void job_cleanup(Ctx *cx)
         free(cx->job);
         cx->job = NULL;
     }
-    arena_free(&cx->arena);
+    pcrec_arena_free(&cx->arena);
 }
 
 /* [ENG-ABS] THE OPTIONAL MATCH-HERE MACHINE (docs/design/anchored_match_
@@ -268,7 +268,7 @@ static void job_cleanup(Ctx *cx)
  * whose only job is to recover a start the caller already gave, and a failing
  * probe can skim the rest of the subject. This machine is the answer: the SAME
  * subset construction over the SAME NFA, rooted at `nfa.anch_start` — the
- * pattern's own first state, which `nfa_wrap_unanchored` deliberately leaves
+ * pattern's own first state, which `pcrec_nfa_wrap_unanchored` deliberately leaves
  * addressable — so it is the forward machine WITHOUT the start-anywhere
  * self-loop, and running it from `ctx->pos` needs no reverse pass at all.
  *
@@ -278,13 +278,13 @@ static void job_cleanup(Ctx *cx)
  *    optional machine built FIRST could push a MANDATORY one over it and
  *    refuse a pattern that compiles today. Built last, it cannot.
  * 2. IT IS OPTIONAL, so `intern`'s two cap sites record and return instead of
- *    `ctx_fail`ing (src/ir/dfa.c). An overflow here is a SELECTION OUTCOME —
+ *    `pcrec_ctx_fail`ing (src/ir/dfa.c). An overflow here is a SELECTION OUTCOME —
  *    `<prefix>_match` keeps the search-and-filter form, stamped — never a
  *    diagnostic.
  * 3. THE OVERFLOW RECORD IS SAVED AND RESTORED. `Ctx.dfa_overflowed` means
  *    "the DFA ENGINE cannot compile this pattern", which is FALSE when only
  *    this machine overflowed; leaving it set would make a later, unrelated
- *    `ctx_fail` take [SEL-1]'s retry path for the wrong reason. `subset_elems`
+ *    `pcrec_ctx_fail` take [SEL-1]'s retry path for the wrong reason. `subset_elems`
  *    is deliberately NOT restored — the memory really was spent.
  * 4. THE FLAG IS READ HERE AS WELL AS AT THE EMITTER'S CANDIDATE, and the two
  *    are not two decisions. The emitter's `deny` field on the `unwrapped`
@@ -363,7 +363,7 @@ static void build_anchored_dfa(Ctx *cx)
  * — so feeding the DFA build's own result back into selection means running
  * the WHOLE pipeline again with one more input bit (`Ctx.dfa_disabled`) set,
  * not wrapping the DFA build in a second recovery point local to this
- * function (no try/catch-shaped clause at the `ctx_fail` site, no second
+ * function (no try/catch-shaped clause at the `pcrec_ctx_fail` site, no second
  * selector — src/opt/select_engine.c's existing fixpoint consumes the
  * result as an ordinary rung, exactly as it already consumes `forces_
  * captures`/`forces_registry`). `COMPILE_MAX_ATTEMPTS` bounds the loop from
@@ -587,7 +587,7 @@ static void size_drop_note(const char *what, const char *cost)
 /* THE PIPELINE, and the tree's only `setjmp`: parse -> altcls -> discharge
  * atomic -> compose (`--source` only) -> call graph -> select engine ->
  * postresolve -> NFA -> DFA(s) -> emit, wrapped in a BOUNDED ONE-SHOT
- * RETRY loop (`COMPILE_MAX_ATTEMPTS = 2`). A failed attempt's `ctx_fail`
+ * RETRY loop (`COMPILE_MAX_ATTEMPTS = 2`). A failed attempt's `pcrec_ctx_fail`
  * lands in the catch branch here; if it was an `auto`-route DFA overflow
  * ([SEL-1]) or an emitted-size-cap refusal with `Job.anchored_ok`/premul
  * available ([K53-SELRETRY]), the WHOLE pipeline reruns once more with one
@@ -634,7 +634,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis
      * forward, because `job_cleanup` (called before the retry's `Ctx` is
-     * built) already ran `arena_free` on the attempt that discovered it —
+     * built) already ran `pcrec_arena_free` on the attempt that discovered it —
      * the retry's `Ctx.dfa_overflow_why` has to be SEEDED from a copy that
      * survived, not read off the dead one. `volatile` on both scalars that
      * cross a `setjmp`/`longjmp` boundary here (`attempt` too, in the loop
@@ -679,7 +679,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
      * way `overflow_why` is and for exactly the same reason: `job_cleanup`
-     * has already run `arena_free` on the attempt that produced these numbers,
+     * has already run `pcrec_arena_free` on the attempt that produced these numbers,
      * so a later attempt cannot read them off the dead one. Scalars that cross
      * the `setjmp`/`longjmp` boundary are `volatile` (`-Wclobbered`, which
      * `make strict` promotes, flags them otherwise); the arrays are not, since
@@ -828,10 +828,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             {
                 const bool cmt = pcrec_axis_on(defo.flags, PCREC_NO_COMMENTS,
                                                PCREC_FORCE_COMMENTS);
-                sb_comments(&cx.job->csb, cmt);
-                sb_comments(&cx.job->hsb, cmt);
-                sb_comments(&cx.job->vmsb, cmt);
-                sb_comments(&cx.job->scr_test, cmt);
+                pcrec_sb_comments(&cx.job->csb, cmt);
+                pcrec_sb_comments(&cx.job->hsb, cmt);
+                pcrec_sb_comments(&cx.job->vmsb, cmt);
+                pcrec_sb_comments(&cx.job->scr_test, cmt);
             }
         }
         if (!cx.job || !out || !pattern) {
@@ -873,7 +873,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                     ? UINT64_MAX : 3u * st_cap;
             /* BOTH buffers, not just the C one (r42 critic-sem S3). The VM
              * emitter builds its whole program into `job->vmsb` and splices
-             * it into `csb` with a single `sb_puts`, so arming `csb` alone
+             * it into `csb` with a single `pcrec_sb_puts`, so arming `csb` alone
              * let a trial construct the entire worst-rung body unbounded and
              * caught it only on the final copy — the abort fired, but after
              * the memory had already been spent, which is the opposite of
@@ -896,7 +896,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
              * ahead of every rung's own eligibility test below AND ahead of
              * the `[ART-SIZE]` ladder's blanket "this K is out" catch (the
-             * very next check) — a `ctx_nomem` arrival is EXEMPT from that
+             * very next check) — a `pcrec_ctx_nomem` arrival is EXEMPT from that
              * catch, because "this K did not fit" and "the allocator is out
              * of memory" are different events the ladder's own recovery
              * point cannot otherwise tell apart, and absorbing the second as
@@ -905,7 +905,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * and `docs/dev/k60_measurement.md` §4 for the measurement
              * (108/108 ladder absorptions eliminated, 0/40 legend
              * absorptions reached — a structurally different mechanism this
-             * arrival cannot see, since it never called `ctx_nomem` and so
+             * arrival cannot see, since it never called `pcrec_ctx_nomem` and so
              * never arrived here at all. That one was closed separately and
              * by DELETION, in `emit_state_legend`, src/gen/emit_dfa.c: D105,
              * landed the same day. Between the two, K60 is closed).
@@ -931,7 +931,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * the check above has already propagated before this branch is
              * ever reached (K60). That is the whole of R1's blocker: the first
              * design said a failing trial could be "discarded", which is false
-             * when `ctx_fail` is a `longjmp` to the one recovery point. It is
+             * when `pcrec_ctx_fail` is a `longjmp` to the one recovery point. It is
              * discarded HERE, at that recovery point, which is the only place
              * that can discard it. Measured witness, and now a test cell:
              * `(?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}` compiles at
@@ -1190,7 +1190,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         pcrec_parse_mods_init(&cx);
 
         if (!valid_prefix(defo.prefix))
-            ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+            pcrec_ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
                      PCREC_MAX_PREFIX_LEN);
         /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
          * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone
@@ -1221,10 +1221,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             if (!enc) {
                 char names[128];
                 pcrec_enc_names(names, sizeof names);
-                ctx_fail(&cx, 0, "unknown encoding (want %s)", names);
+                pcrec_ctx_fail(&cx, 0, "unknown encoding (want %s)", names);
             }
             if (!pcrec_enc_ready(enc))
-                ctx_fail(&cx, 0, "encoding '%s' arrives with milestone M5 "
+                pcrec_ctx_fail(&cx, 0, "encoding '%s' arrives with milestone M5 "
                                  "(an engine axis, not a module: no --features "
                                  "name enables it)", enc->name);
         }
@@ -1518,10 +1518,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;
-            if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
+            if (!pcrec_nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
                 /* D7 fast path: O(n) unanchored forward + reverse machines */
                 cx.job->engine = PCREC_ENG_UNANCH;
-                nfa_wrap_unanchored(&cx, &cx.job->nfa);
+                pcrec_nfa_wrap_unanchored(&cx, &cx.job->nfa);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_TABLE,
@@ -1602,7 +1602,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * on a population that is now the whole specimen family. It names the real
          * cause and an action that works instead. */
         if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
-            ctx_fail(&cx, 0,
+            pcrec_ctx_fail(&cx, 0,
                      /* INSIDE pcrec_error.msg's 256 bytes, this file's own
                       * standing rule: a diagnostic that names the fix and is then
                       * TRUNCATED has not named it — the first draft of this
@@ -1630,7 +1630,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         else                               pcrec_emit_dfa(&cx);
 
         /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
-         * every buffer is finished. An `sb_cmt_open` with no matching close
+         * every buffer is finished. An `pcrec_sb_cmt_open` with no matching close
          * mutes the rest of ITS buffer, so under `-fno-comments` the artifact
          * is silently TRUNCATED and under the default it is byte-identical —
          * the failure is invisible to every identity gate and shows up as a C
@@ -1643,9 +1643,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                            &cx.job->vmsb, &cx.job->scr_test };
             for (size_t bi = 0; bi < sizeof bufs / sizeof bufs[0]; bi++)
                 if (bufs[bi]->cmt_depth != 0)
-                    ctx_fail(&cx, 0, "internal error: the emitter left a "
-                                     "comment region open (an sb_cmt_open "
-                                     "with no sb_cmt_close)");
+                    pcrec_ctx_fail(&cx, 0, "internal error: the emitter left a "
+                                     "comment region open (an pcrec_sb_cmt_open "
+                                     "with no pcrec_sb_cmt_close)");
         }
 
         /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;
@@ -1768,7 +1768,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (st_nodes[i] != (size_t)cx.job->vm_emitted_nodes ||
                     st_code[i] - st_whylen[i] != emit_code - wl ||
                     st_total[i] - st_whylen[i] != emit_tot - wl)
-                    ctx_fail(&cx, 0,
+                    pcrec_ctx_fail(&cx, 0,
                              "internal error: re-emitting at --unroll=%d gave "
                              "%zu nodes %zu/%zu bytes, the ladder measured "
                              "%zu nodes %zu/%zu -- state leaked across attempts",
@@ -1785,7 +1785,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * its best shot. Nothing is written past a cap (D84 addendum) and the
          * figures quoted are the ones the caller's own artifact has. */
         /* [OPT-4] LABEL THE FAILURE WHERE IT HAPPENS, so `compile_driver`'s
-         * size rung can tell a cap refusal from every other `ctx_fail` that
+         * size rung can tell a cap refusal from every other `pcrec_ctx_fail` that
          * arrives at the same `setjmp`. `dfa_overflowed`'s shape exactly; this
          * compiler has ONE recovery point, so a rung that wants to act on a
          * particular failure has to say so here. Set unconditionally before
@@ -1799,7 +1799,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.size_cap_limit = emit_code > cap_code ? cap_code : cap_tot;
         }
         if (emit_code > cap_code)
-            ctx_fail(&cx, 0,
+            pcrec_ctx_fail(&cx, 0,
                      /* NO `.o` figure: the ~17 % source-to-object ratio is
                       * measured against TOTAL source, and quoting it against
                       * CODE bytes would be a size derived for one role reused
@@ -1813,7 +1813,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "raise --max-emit-code-bytes",
                      emit_code, cap_code);
         if (emit_tot > cap_tot)
-            ctx_fail(&cx, 0,
+            pcrec_ctx_fail(&cx, 0,
                      "pattern too large: %zu bytes of emitted C source "
                      "(limit %llu, ~%zu KB .o). Lower a repeat count, try "
                      "--unroll=1, or raise --max-emit-bytes; see "
@@ -1885,9 +1885,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                             "slower per-byte scan dispatch, measured ~1.27x "
                             "on scan-bound subjects "
                             "(docs/dev/opt3_dfa_scan_measurement.md)");
-        cx.job->out_c  = sb_take(&cx.job->csb);
-        cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
-        cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
+        cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
+        cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
+        cx.job->out_ir = ir_out ? pcrec_sb_take(&cx.job->irsb) : NULL;
         out->c_src = cx.job->out_c;   cx.job->out_c  = NULL;
         out->h_src = cx.job->out_h;   cx.job->out_h  = NULL;
         if (ir_out) { *ir_out = cx.job->out_ir; cx.job->out_ir = NULL; }

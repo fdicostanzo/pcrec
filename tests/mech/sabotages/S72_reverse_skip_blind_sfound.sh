@@ -41,11 +41,11 @@ SAB_COUNT=1
 # CHARACTER-IDENTICAL to the forward object's, so the anchor carries the
 # preceding `while (rewind_position > ...)` line: without it SAB_BEFORE would
 # match twice and the row's SAB_COUNT=1 would fail rather than plant.
-SAB_BEFORE='    sb_printf(c, "%s    while (rewind_position > search_from &&"
+SAB_BEFORE='    pcrec_sb_printf(c, "%s    while (rewind_position > search_from &&"
                  " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
               ind, f->p, f->dir->c.name, K);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)'
-SAB_AFTER='    sb_printf(c, "%s    while (rewind_position > search_from &&"
+SAB_AFTER='    pcrec_sb_printf(c, "%s    while (rewind_position > search_from &&"
                  " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
               ind, f->p, f->dir->c.name, K);
     if (f->d->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */'

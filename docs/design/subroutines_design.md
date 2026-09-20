@@ -1211,7 +1211,7 @@ place the compiler will not ask.
 | 4 | `:1273` `vm_rev_caps` | **DECLINE** | the backward walk; (7) is why |
 | 5 | `:1618` `vm_cost` | **GRAPH** | the callee's cost, `Cost.unbounded` on a cycle; plus the site's own `2·\|W\|` trail (§5.7) |
 | 6 | `:1804` `vm_count_slots` | **GRAPH** (§4.4c) | **the first version said LEXICAL ONLY and it was WRONG — the consequence is an out-of-bounds slot write.** The call SITE allocates no slot family of its own, but the **emitted callee REGION** does, and it is not the lexical occurrence. §4.4c |
-| 7 | `:3018` `vm_rev_emit` | **DECLINE** | its `default:` is a hard `ctx_fail`, *"bad AST node in the backward walk"* — loud and correct, and (11)–(15) must stop the tree reaching it |
+| 7 | `:3018` `vm_rev_emit` | **DECLINE** | its `default:` is a hard `pcrec_ctx_fail`, *"bad AST node in the backward walk"* — loud and correct, and (11)–(15) must stop the tree reaching it |
 | 8 | `:4294` `vm_emit` | **PRODUCER** | §5 |
 | 9 | `atomic.c:40` `pcrec_has_atomic` | **DECLINE** | whole-tree predicate — the callee's `A_ATOMIC` is found at its lexical position |
 | 10 | `:92` `pcrec_ast_stamped_by` | **DECLINE** | whole-tree; the `A_CALL` node's own `Ast.reg` is what it contributes |
@@ -2628,7 +2628,7 @@ and wave F fixes them.
 `built`). D65 derives `built` from the PORT's `ExtResult` at `WANT_RESULT`
 and **never runs the emitter** (`syntax_dump.c:544-575`) — which is the trap
 `lookaround_design.md` §11 C2-2 found: a wave that wires the port flips every
-row to `built` while the emitter still `ctx_fail`s, shipping a compliance index
+row to `built` while the emitter still `pcrec_ctx_fail`s, shipping a compliance index
 that lies. **So the parse hook and the lowering land in ONE wave** (§11 wave
 B+C), and the split within it is the port's own tail check: at B+C
 `pcrec_rcport_*` recognises the numeric and name tails and **declines the `\g`

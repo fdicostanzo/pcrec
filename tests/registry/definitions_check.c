@@ -103,7 +103,7 @@ static Ast *parse_one(const char *pat, Ctx *cx, pcrec_options *defo)
 
 static void release(Ctx *cx)
 {
-    arena_free(&cx->arena);
+    pcrec_arena_free(&cx->arena);
     free(cx->job);
 }
 
@@ -519,7 +519,7 @@ static void check_recursion_guard(void)
     else
         ok("definitions: [DD-11.4] recursion guard: synthetic \\w, flag "
            "OFF, matches the real row's own text");
-    arena_free(&cx.arena); free(cx.job);
+    pcrec_arena_free(&cx.arena); free(cx.job);
 
     /* (2) flag ON: the OTHER entry fires. */
     mods_ctx(&cx, &defo, true);
@@ -533,20 +533,20 @@ static void check_recursion_guard(void)
         ok("definitions: [DD-11.4] recursion guard: synthetic \\w, flag "
            "ON, picks the alternate entry through the SAME resolver "
            "entry point");
-    arena_free(&cx.arena); free(cx.job);
+    pcrec_arena_free(&cx.arena); free(cx.job);
 
     /* (3) interleaved calls, opposite states, no cross-contamination. */
     mods_ctx(&cx, &defo, true);
     const RegDef *dw1 = pcrec_def_resolve(&cx, &w_row);
-    arena_free(&cx.arena); free(cx.job);
+    pcrec_arena_free(&cx.arena); free(cx.job);
 
     mods_ctx(&cx, &defo, false);
     const RegDef *db = pcrec_def_resolve(&cx, &b_row);
-    arena_free(&cx.arena); free(cx.job);
+    pcrec_arena_free(&cx.arena); free(cx.job);
 
     mods_ctx(&cx, &defo, false);
     const RegDef *dw2 = pcrec_def_resolve(&cx, &w_row);
-    arena_free(&cx.arena); free(cx.job);
+    pcrec_arena_free(&cx.arena); free(cx.job);
 
     bool ok3 = dw1 && dw1->kind == DEFK_STR &&
                strcmp(dw1->str, "[\\p{L}0-9_]") == 0 &&

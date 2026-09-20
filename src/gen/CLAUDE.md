@@ -8,6 +8,23 @@ attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.
 
+## THE `abi` NUMBER — its change log is NOT here
+
+`rx_info.abi` versions the emitted scaffolding as a whole (D76). **The one
+canonical change log is `docs/spec/match_api.md` §6**, ruled [REVW.A1]
+(2026-09-19); `src/gen/emit_dfa.c`'s 449-line narrative of every bump was cut
+to a pointer in the same change, and `tests/codegen/run_codegen_tests.sh`'s
+transition string is a CHECK's failure message maintained FROM §6, not a
+second home.
+
+The `##` sections below carry abi numbers in their own titles, and they STAY:
+each is the design record for ITS milestone, with the reasoning behind that
+change, and the number is there to locate it. **They are not a log and must
+not be read as one** — the last abi number appearing in a section title here
+is whatever milestone last needed a `src/gen` design section, not the current
+`abi`. The current value is `PCREC_ARTIFACT_ABI` (`src/core/limits.def`), and
+what every bump since means is §6.
+
 ## [M6-READ] THE EMITTED VOCABULARY, and the two rules that keep it working
 
 The generated C is a first-class deliverable: it carries an orientation block,
@@ -24,12 +41,12 @@ what changed is which build is the default. Measured 44.2 % of a default
 artifact's source bytes over the 3,517 compiling corpus patterns.
 
 **WHEN YOU ADD A COMMENT-EMITTING SITE HERE, BRACKET IT.**
-`sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `sb_cmt_close(buf)` around every
+`pcrec_sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `pcrec_sb_cmt_close(buf)` around every
 whole-line comment you emit; `PCREC_CMT_ESSENTIAL` exists and has exactly two
 users, both in `emit_dfa.c`, and a third needs D112's own reasoning. A site
 left unbracketed ships in every default artifact — which
 `tests/codegen/run_comments_axis.sh` arm 1 fails on, by name. An
-`sb_cmt_open` with no matching close mutes the REST OF ITS BUFFER: the
+`pcrec_sb_cmt_open` with no matching close mutes the REST OF ITS BUFFER: the
 artifact is silently truncated under the default and byte-identical under
 `-fcomments`, which no identity gate can see; `src/core/compile.c` checks the
 balance after emission for exactly that reason. And the separator blank line
@@ -780,14 +797,14 @@ this function rather than getting call sites of its own.
 
 ## [REVW.2] wave 2 (2026-09-18) — EVERY STAMP LINE IN BOTH EMITTERS IS ONE HELPER CALL
 
-`sb_stampf` / `sb_stampwf` / `sb_stamp_str` (`src/core/sb.c`,
+`pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` (`src/core/sb.c`,
 `core/internal.h`) write `#define <UPPER>_<NAME> <value>`. **73 hand-typed
 format strings — 52 in `emit_vm.c`, 21 in `emit_dfa.c` — are now literal NAME
 arguments in a fixed position**, which is lens 1 X8's real payoff: D94 rules
 the abi re-pin site list is "every reader of the number, FOUND BY GREP", and
 the stamp name set is half of what such a sweep has to enumerate.
 
-**A NEW hand-written `sb_printf(c, "#define %s_...")` in either file is a
+**A NEW hand-written `pcrec_sb_printf(c, "#define %s_...")` in either file is a
 finding.** Three things to know before adding a stamp:
 
 1. **The value is a FORMAT, not a type.** `0x%xu`, `%lluULL`, `%lldLL` and a
@@ -807,7 +824,7 @@ finding.** Three things to know before adding a stamp:
    says so at its own site.
 
 **AND THE UPPERCASED PREFIX IS ONE DERIVATION.** `prefix_upper` is gone;
-`sb_upper(&cx->arena, cx->opt->prefix)` is called once, in `pcrec_gen_names`.
+`pcrec_sb_upper(&cx->arena, cx->opt->prefix)` is called once, in `pcrec_gen_names`.
 `GenNames.upper` and `Vm.up` are both `const char *` into that one arena
 string — they used to be a `char[80]` and a `memcpy` of it into a second
 `char[80]`. Every reader (a `%s` argument or a `const char *` parameter) is
@@ -864,7 +881,7 @@ only the STRING — the same fact that makes this landing, like [OPT-4.1]'s,
 a value rather than scaffolding.
 
 **THE VALUES COME OFF THE SAME DERIVATION THE LOOP DOES.** `RX_DFA_SCAN` reads
-`job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork,
+`job->engine`, the field `src/core/compile.c` sets at its `pcrec_nfa_has_bot` fork,
 through `dfa_scan_name` — which asks `dfa_engine_is_empty` FIRST ([DD-13c],
 below).
 `RX_DFA_PREFILTER` reads `unanch_start` (ENG_UNANCH) or `attempt_cand`
@@ -1049,8 +1066,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     slot indices exist.
 
   **[REVW.2 wave 2 STAGE 3, lane w2b, 2026-09-18] THE FIXED SCRATCH BUFFERS
-  ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `sb_fragf` /
-  `sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
+  ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `pcrec_sb_fragf` /
+  `pcrec_sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
   primitive itself): arena-owned formatted text sized exactly to the result,
   so truncation is impossible BY CONSTRUCTION rather than by a per-site size
   argument. Each emitter reaches it through a three-line adapter that supplies
@@ -1089,7 +1106,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 - **[DD-8] `--emit-ir` IS TABLE-CONTRACT TSV** (2026-09-19, D106 + its three
   addenda, D108). `vm_render_listing` renders nine named `#section` blocks,
   each with its own `#` column header and the PROGRAM body among them
-  (`label|op|args|target|note`), through the wave-1 kit's `sb_row`.
+  (`label|op|args|target|note`), through the wave-1 kit's `pcrec_sb_row`.
   `docs/spec/ir_listing.md` is the format's contract — read it before
   changing anything this function prints. Four things about the code:
   `vm_sec`/`vm_row3`/`vm_listing_slot_row`/`vm_prow` are the section and row
@@ -1114,9 +1131,9 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
   **[M6.6.2 wave B+C] `vm_look` — THE LOOKAROUND, and it is `vm_atomic`'s
   shape with two lines added.** Wave A2 landed five inert `A_LOOK` arms, two
-  of them deliberately incomplete, behind a LOUD `ctx_fail` in `vm_emit`;
+  of them deliberately incomplete, behind a LOUD `pcrec_ctx_fail` in `vm_emit`;
   this wave replaced that arm with `vm_look` and completed the other two in
-  the same edit, which is what the `ctx_fail` existed to force.
+  the same edit, which is what the `pcrec_ctx_fail` existed to force.
 
   - **THE POSITIVE ATOMIC ARM IS `vm_atomic` PLUS A SAVED CURSOR.** Record
     the resume depth AND `scan_position` before any push; emit the body; on
@@ -1133,7 +1150,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     assertion be resumed later AS IF IT HAD HELD.
   **[DD-14 wave A2] FIVE INERT `A_CALL` ARMS, THREE OF THEM LOUD FAILURES.**
   Nothing produces an `A_CALL` in that wave, so `vm_emit`, `vm_cost` and
-  `vm_count_slots` all `ctx_fail` by name rather than guessing — and the three
+  `vm_count_slots` all `pcrec_ctx_fail` by name rather than guessing — and the three
   are deliberately coupled: `vm_count_slots` must account for EVERY EMITTED
   REGION (each lexical occurrence PLUS one per emitted callee region,
   `subroutines_design.md` §4.4c, whose first version said LEXICAL ONLY and was
@@ -1317,7 +1334,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     they wrote; every listing SECTION is then a view over that one stream, so
     the sections cannot disagree with each other either. If you add a way to
     emit a label, a push or a slot write, add it THROUGH those primitives —
-    the accept label was emitted by a direct `sb_printf` in the first draft and
+    the accept label was emitted by a direct `pcrec_sb_printf` in the first draft and
     `tests/codegen/run_ir_listing.sh` caught it on its first run (sabotage
     S41 restores it). The `role` strings are decoration: they say WHY a choice
     point exists, never that one does, and the check pins the derivable half.
@@ -1629,8 +1646,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
     **IT IS A WIDTH COMPARISON AND NOT AN UNCONDITIONAL `return 0`**, and
     the difference is a correctness one. The ceiling is reached by TWO
-    routes — the call fixpoint's genuine infinity, and `mrl_sat_add`/
-    `mrl_sat_mul` SATURATION on a pattern whose true minimum is merely
+    routes — the call fixpoint's genuine infinity, and `pcrec_mrl_sat_add`/
+    `pcrec_mrl_sat_mul` SATURATION on a pattern whose true minimum is merely
     enormous — and the value cannot distinguish them. The comparison is
     exactly right on both and needs no distinction; an unconditional return
     would be a miscompile on the second for a subject of 2^40 bytes, which
@@ -2499,7 +2516,7 @@ worth knowing before editing it:
   `N_BOT`/`N_GSTART`. `dfa_needs_seed` compares only `s1u[u]` ACROSS `u` and
   would not notice an `s0 != s1u[PLAIN]` split, so an engine-selection change
   that routed a BOT-bearing machine here would break the elision SILENTLY.
-  `start_pinned_assert_routing` is a loud `ctx_fail` instead.
+  `start_pinned_assert_routing` is a loud `pcrec_ctx_fail` instead.
 
 **THE KEPT `last_accept_position == (size_t)-1` GATE IS LOAD-BEARING**, and
 the emitted comment says so and says why. This file's own note about a
@@ -2695,7 +2712,7 @@ runs (so the deny mask and every `applies` clause are asked once), and
 carries the argument that `unanch_start` is INVARIANT under the pass, which is
 what makes asking early legitimate; `dfa_form_derive` gained a THIRD read-back
 check that re-derives (8) from the machine it is about to write, so a drift
-between the two times is a loud `ctx_fail` naming the state.
+between the two times is a loud `pcrec_ctx_fail` naming the state.
 
 ## [CC-DIFF] STEP 1 — THE TWO EMITTED-CODE SPELLINGS (2026-09-03), abi 16 -> 17
 
@@ -3041,10 +3058,10 @@ What a reader of this file needs to carry:
   DOWNWARD from `len-1` and stores nothing at or above the bound, which is
   why the shown bytes are identical: the low indices it keeps do not depend
   on the high ones it drops.
-- **The BFS arrays are `arena_alloc(&cx->arena, …)`.** The function takes a
+- **The BFS arrays are `pcrec_arena_alloc(&cx->arena, …)`.** The function takes a
   `Ctx *` for that and nothing else; both callers already had one (`f->cx`
   in `emit_machine_tables`, `cx` in `emit_attempt`). A failure refuses
-  through the general mechanism — arena → `ctx_nomem` → the one `longjmp` —
+  through the general mechanism — arena → `pcrec_ctx_nomem` → the one `longjmp` —
   so there is no bespoke failure arm and no `free()` here at all (the arena
   dies with the attempt).
 - **Brief mode allocates `dist` and `queue` only.** A summary reads neither

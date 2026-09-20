@@ -238,7 +238,7 @@ CLASS_ATOMS = [
 # [M4.7e]: classes-MODULE atoms (std1's OTHER member is `modifiers`, which
 # stays out of scope here — see README.md's "Two-tier posture" /
 # docs/dev/plan.md [M7.0]). tests/fuzz/README.md's 2026-08-17 finding was
-# that the differential gate was open (PCREC_DEFAULT_FEATURES="std1") but
+# that the differential gate was open (pcrec_default_features="std1") but
 # VACUOUS: CLASS_ATOMS above draws only base-tier bracket forms already
 # accepted with no module enabled at all, so a std1-gated construct never
 # actually walked through the open gate. This list is the fix -- the

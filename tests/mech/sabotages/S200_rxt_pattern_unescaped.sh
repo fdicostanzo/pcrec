@@ -18,7 +18,7 @@
 # check's failure message names the three blocks by file.
 #
 # [REVW.1 wave 1, 2026-09-18] RE-AIMED, FILE ONLY. The escape itself moved
-# from `rxt_source.c`'s `put_escaped` to `src/core/sb.c`'s `sb_field`, so the
+# from `rxt_source.c`'s `put_escaped` to `src/core/sb.c`'s `pcrec_sb_field`, so the
 # `.rxt` subject vocabulary and `--explain`'s frame-only one share their
 # `\xNN` tail rather than spelling it twice. The move is VERBATIM — same
 # bytes, same column — so `SAB_BEFORE` is UNCHANGED and only `SAB_FILE`
@@ -26,9 +26,9 @@
 # that keeps its column costs a re-aim of one field.
 # INTENT RE-VERIFIED (the house rule for any re-anchor, and it needed asking
 # because the function now has FOUR callers' worth of columns rather than
-# rxt_source.c's three): `sb_field` is called at exactly the 11 `--list-source`
+# rxt_source.c's three): `pcrec_sb_field` is called at exactly the 11 `--list-source`
 # sites `put_escaped` was, and NOWHERE else in the tree — the registry dumps
-# use `sb_text`, the OTHER vocabulary, which does not carry this case at all.
+# use `pcrec_sb_text`, the OTHER vocabulary, which does not carry this case at all.
 # So the plant still un-escapes exactly the columns this row names and
 # nothing more, and its detector (tests/rxtsource's field-count survey) is
 # unmoved. Verified by grep at the re-aim and by the solo run below.
@@ -62,5 +62,5 @@ SAB_REACH='grep -cE "^pattern .*$(printf "\t")" "$TREE/tests/base/bounded_repeat
 SAB_REACH_EXPECT="2"
 SAB_REACH_POP="tests/modifiers/xxmode.rxt|^pattern .*	|1"
 SAB_COUNT=1
-SAB_BEFORE="        case '\\t': sb_puts(sb, \"\\\\t\");  break;"
-SAB_AFTER="        case '\\t': sb_putc(sb, '\\t');  break;   /* SABOTAGE S200 */"
+SAB_BEFORE="        case '\\t': pcrec_sb_puts(sb, \"\\\\t\");  break;"
+SAB_AFTER="        case '\\t': pcrec_sb_putc(sb, '\\t');  break;   /* SABOTAGE S200 */"

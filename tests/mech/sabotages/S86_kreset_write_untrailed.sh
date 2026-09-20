@@ -63,4 +63,4 @@ SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:6fail/590pass,kresetdiff:3fail/6pass
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)scan_position",
                "\\K resets the reported start of the match to here");'
-SAB_AFTER='        sb_printf(b, "    slot_values[0] = (ptrdiff_t)scan_position;\n");   /* SABOTAGE S86 */'
+SAB_AFTER='        pcrec_sb_printf(b, "    slot_values[0] = (ptrdiff_t)scan_position;\n");   /* SABOTAGE S86 */'

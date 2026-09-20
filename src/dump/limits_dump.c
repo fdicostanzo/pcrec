@@ -43,7 +43,7 @@ static const char *override_name(const char *tok)
     return tok; /* unreached on a well-formed table; visible rather than lost */
 }
 
-/* ONE ROW, through the text layer's `sb_row` (src/core/sb.c): seven cells a
+/* ONE ROW, through the text layer's `pcrec_sb_row` (src/core/sb.c): seven cells a
  * reader can count against the header seven lines below, each escaped so a
  * control byte in a `desc` cannot split the record. `value` is the only cell
  * that is not already text — `char[24]` holds every `long long` with room to
@@ -58,14 +58,14 @@ static void limit_row(StrBuf *sb, const char *name, long long value,
     snprintf(val, sizeof val, "%lld", value);
     const char *cells[] = { name, val, unit, kind,
                             override_name(override), anchor, desc };
-    sb_row(sb, cells, sizeof cells / sizeof *cells);
+    pcrec_sb_row(sb, cells, sizeof cells / sizeof *cells);
 }
 
 char *pcrec_limits_tsv(void)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec numeric-limits registry (docs/spec/table_contract.md, the\n"
         "# SIXTH TSV surface; D90/[LIM-1]). One row per numeric limit in\n"
         "# src/core/limits.def, in the table's own order.\n"
@@ -94,5 +94,5 @@ char *pcrec_limits_tsv(void)
 #include "core/limits.def"
 #undef PCREC_LIMIT
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

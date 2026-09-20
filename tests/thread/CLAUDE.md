@@ -139,7 +139,7 @@ MISMATCH even without any TSan involvement.
 
 Six accepting patterns of varied shape, plus `\d` (→ module `classes`) and
 `(?=a)` (→ module `lookaround`), so the concurrency claim also covers
-`pcrec_compile()`'s `ctx_fail()`/`longjmp` error path, not just its success
+`pcrec_compile()`'s `pcrec_ctx_fail()`/`longjmp` error path, not just its success
 path. Both `Ctx` and its `jmp_buf` are stack-local per call (src/core/
 compile.c), so this should be equally race-free — this is what makes that a
 checked fact instead of an assumption resting only on the six accepting

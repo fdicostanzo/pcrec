@@ -122,7 +122,7 @@ pattern ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
 features recursion,lookaround,atomic-groups,named-groups
 perr
 
-# a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), and pcrec now refuses it from `pcrec_postresolve` AT THE SAME OFFSET (26) with "this one is unbounded". The `maxw` fixpoint reaches UNBOUNDED here as a FIXED POINT: the published value saturates `mrl_sat_add` and never leaves the top (design SS3.4d: infinity for any callee in a cycle).
+# a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), and pcrec now refuses it from `pcrec_postresolve` AT THE SAME OFFSET (26) with "this one is unbounded". The `maxw` fixpoint reaches UNBOUNDED here as a FIXED POINT: the published value saturates `pcrec_mrl_sat_add` and never leaves the top (design SS3.4d: infinity for any callee in a cycle).
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 26: length of lookbehind assertion is not limited
 pattern ^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$
 features recursion,lookaround,atomic-groups,named-groups

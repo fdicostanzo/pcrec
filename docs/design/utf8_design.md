@@ -2681,12 +2681,12 @@ says so — *"§2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS"*:
 2. **`pcrec_postresolve`** (`compile.c:999`), which re-asks it for a
    lookbehind body containing a subroutine call, because `maxw`'s `A_CALL` arm
    cannot answer until `pcrec_callgraph_build` (`:961`) binds the callee, and
-   which calls `ctx_fail`.
+   which calls `pcrec_ctx_fail`.
 
 The two *"must produce the SAME BYTES"*, and the file's own comment explains
 that this is byte-identical **by construction and not by transcription** —
-the doorway epilogue is `ctx_fail(cx, r->at, "%s", r->msg)`, so `REFUSE(at,
-"%s", buf)` and `ctx_fail(cx, at, "%s", buf)` render the same string through
+the doorway epilogue is `pcrec_ctx_fail(cx, r->at, "%s", r->msg)`, so `REFUSE(at,
+"%s", buf)` and `pcrec_ctx_fail(cx, at, "%s", buf)` render the same string through
 the same formatter, and the three-arm ORDER (unbounded first) is part of the
 rule rather than of either caller.
 

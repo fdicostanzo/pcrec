@@ -47,7 +47,7 @@ void pcrec_enc_names(char *buf, size_t cap)
      * [REVW.1] wave 1, L10-2: ONE OVER-LONG POLICY, AN ORDERED PREFIX, THE
      * SAME ONE `render_modules` (src/parse/enabled.c) STATES — read that
      * function's comment for the measurement and for why neither of the two
-     * bounded joins in this tree reaches the kit's `sb_join`. This loop had
+     * bounded joins in this tree reaches the kit's `pcrec_sb_join`. This loop had
      * TWO ways to lie rather than one: a name that did not fit was skipped
      * while LATER ones were still appended, and the separator was written
      * under a DIFFERENT bound from the name, so a cap between the two glued
@@ -81,9 +81,9 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         if (mask & t->id) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
             if (t->decls_doc) {
-                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix);
-                sb_cmt_close(sb);
+                pcrec_sb_cmt_close(sb);
             }
             pcrec_enc_emit_text(sb, t->decls, prefix);
         }
@@ -96,9 +96,9 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (mask & t->id) {
             if (t->defs_doc) {
-                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->defs_doc, prefix);
-                sb_cmt_close(sb);
+                pcrec_sb_cmt_close(sb);
             }
             pcrec_enc_emit_text(sb, t->defs, prefix);
         }
@@ -115,8 +115,8 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)
 {
     for (const char *q = text; *q; q++) {
-        if (*q == '$') sb_puts(sb, prefix);
-        else           sb_putc(sb, *q);
+        if (*q == '$') pcrec_sb_puts(sb, prefix);
+        else           pcrec_sb_putc(sb, *q);
     }
 }
 

@@ -132,7 +132,7 @@ static int pcrec_branch_count(const char *pat)
         pcrec_parse_info(&cx, &info);
         result = info.nbr;
     }
-    arena_free(&cx.arena);
+    pcrec_arena_free(&cx.arena);
     free(cx.job);
     return result;
 }

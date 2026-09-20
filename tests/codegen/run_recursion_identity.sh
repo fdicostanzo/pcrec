@@ -756,7 +756,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # ACCEPTANCE CONDITION, not a formality.** K50's whole risk is that a fix for
 # a `utf8` defect moves the encoding that has no defect. Nothing here is
 # `byte`-conditional: the `byte` backend supplies no character-start set, so
-# `nfa_wrap_unanchored` builds its pre-K50 two states, the class axis never
+# `pcrec_nfa_wrap_unanchored` builds its pre-K50 two states, the class axis never
 # produces `UPC_NOSTART`, `eqclasses` performs no fourth refinement,
 # `ENG_ATTEMPT`'s loop gains no boundary `continue`, and the entries emit no
 # guard. A red (A) on this corpus — which is entirely `byte`-compiled — means

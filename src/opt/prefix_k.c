@@ -17,7 +17,7 @@
  *
  * The thread whose bytes we want to constrain is the one from the CANDIDATE
  * START ALONE, and the only place it exists on its own is the pattern's own
- * NFA, walked from `Nfa.anch_start` — the state `nfa_wrap_unanchored` puts
+ * NFA, walked from `Nfa.anch_start` — the state `pcrec_nfa_wrap_unanchored` puts
  * the self-loop in FRONT of, and which it deliberately leaves pointing at the
  * pattern (src/ir/nfa.c). So: offsets >= 1 come from this walk, offset 0
  * keeps coming from the DFA derivation that already owns it, and no fact has
@@ -206,7 +206,7 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
          * passed assertion widens the frontier, and a wider frontier skips
          * less. It is also UNREACHABLE from this walk's root — the walk starts
          * at `Nfa.anch_start`, the pattern's own first state, and
-         * `nfa_wrap_unanchored` builds the gate on the SELF-LOOP's split,
+         * `pcrec_nfa_wrap_unanchored` builds the gate on the SELF-LOOP's split,
          * which `anch_start` deliberately does not name. The arm is here
          * because the absent `default:` above requires every kind to be
          * classified, and an unreachable kind still has a right answer. */
@@ -385,10 +385,10 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     Walk w;
     w.nfa = nfa;
     w.gen = 0;
-    w.seen  = arena_alloc(&cx->arena, (size_t)nfa->n);
-    w.stack = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    w.cur   = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    int *next = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w.seen  = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
+    w.stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w.cur   = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int seed = nfa->anch_start;
     wclose(&w, &seed, 1);

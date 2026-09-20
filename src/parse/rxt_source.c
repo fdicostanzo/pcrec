@@ -38,7 +38,7 @@
  * target BUILD or W1.3's composer needs a definition-shaped record with
  * fields a row has no place for, it gets one, and D77 says that is when.
  *
- * NO Ctx, SO NO ctx_fail. This parser runs BEFORE any compile (the CLI
+ * NO Ctx, SO NO pcrec_ctx_fail. This parser runs BEFORE any compile (the CLI
  * calls it with no pattern in hand), so there is no `Ctx` to longjmp out
  * of and no arena owner to clean up. Errors are returned, not thrown,
  * and every one of them names the FILE, the LINE and the CONSTRUCT
@@ -338,7 +338,7 @@ static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
 
 static char *arena_strndup(Arena *a, const char *s, size_t n)
 {
-    char *d = arena_alloc(a, n + 1);
+    char *d = pcrec_arena_alloc(a, n + 1);
     memcpy(d, s, n);
     d[n] = 0;
     return d;
@@ -556,7 +556,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     long sz = ftell(f);
     if (sz < 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot size .rxt source file"); }
     rewind(f);
-    char *buf = arena_alloc(p->arena, (size_t)sz + 2);
+    char *buf = pcrec_arena_alloc(p->arena, (size_t)sz + 2);
     size_t got = fread(buf, 1, (size_t)sz, f);
     if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
@@ -589,7 +589,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     size_t nl = 0;
     for (size_t i = 0; i < got; i++) if (buf[i] == '\n') nl++;
     if (got && buf[got - 1] != '\n') nl++;
-    char **v = arena_alloc(p->arena, (nl + 1) * sizeof *v);
+    char **v = pcrec_arena_alloc(p->arena, (nl + 1) * sizeof *v);
 
     size_t k = 0;
     char *s = buf;
@@ -616,7 +616,7 @@ static RxtRow *row_push(RxtP *p, RxtSource *src, RxtDeclKind kind, size_t line)
 {
     if (src->nrows == src->rowcap) {
         size_t cap = src->rowcap ? src->rowcap * 2 : 16;
-        RxtRow *nv = arena_alloc(p->arena, cap * sizeof *nv);
+        RxtRow *nv = pcrec_arena_alloc(p->arena, cap * sizeof *nv);
         if (src->nrows) memcpy(nv, src->rows, src->nrows * sizeof *nv);
         src->rows = nv;
         src->rowcap = cap;
@@ -708,7 +708,7 @@ static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
         size_t len = strlen(L->v[k]);
         total += (len > indent ? len - indent : 0) + 1;
     }
-    char *buf = arena_alloc(p->arena, total + 1);
+    char *buf = pcrec_arena_alloc(p->arena, total + 1);
     size_t at = 0;
     for (size_t k = start; k < end; k++) {
         const char *ln = L->v[k];
@@ -1167,7 +1167,7 @@ static const char *under_key(Arena *a, const char *v)
     }
 
     size_t n = convlen + kindlen + splen + subjlen + 8;
-    char *out = arena_alloc(a, n);
+    char *out = pcrec_arena_alloc(a, n);
     snprintf(out, n, "%.*s\x01%.*s\x01%.*s\x01%.*s",
              (int)convlen, conv, (int)kindlen, kind,
              (int)splen, sp, (int)subjlen, subj);
@@ -1335,7 +1335,7 @@ static int line_constraints(RxtP *p, RxtFrame *f, const RxtSchemaRow *row,
          * carrying `unique-by` in one scope cannot collide with each
          * other's keys — a uniqueness rule is per row, not per scope. */
         size_t need = strlen(row->kind) + 1 + strlen(key) + 1;
-        char *full = arena_alloc(p->arena, need);
+        char *full = pcrec_arena_alloc(p->arena, need);
         snprintf(full, need, "%s\x01%s", row->kind, key);
 
         for (size_t i = 0; i < f->nukey; i++)
@@ -1346,8 +1346,8 @@ static int line_constraints(RxtP *p, RxtFrame *f, const RxtSchemaRow *row,
                                 (int)arglen, arg, f->uline[i]);
         if (f->nukey == f->ukeycap) {
             size_t nc = f->ukeycap ? f->ukeycap * 2 : 8;
-            const char **nk = arena_alloc(p->arena, nc * sizeof *nk);
-            size_t *nl = arena_alloc(p->arena, nc * sizeof *nl);
+            const char **nk = pcrec_arena_alloc(p->arena, nc * sizeof *nk);
+            size_t *nl = pcrec_arena_alloc(p->arena, nc * sizeof *nl);
             if (f->nukey) {
                 memcpy(nk, f->ukey, f->nukey * sizeof *nk);
                 memcpy(nl, f->uline, f->nukey * sizeof *nl);
@@ -1371,7 +1371,7 @@ static RxtProv *prov_push(Arena *a, RxtSource *src)
 {
     if (src->nprovs == src->provcap) {
         size_t cap = src->provcap ? src->provcap * 2 : 8;
-        RxtProv *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtProv *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nprovs) memcpy(nv, src->provs, src->nprovs * sizeof *nv);
         src->provs = nv;
         src->provcap = cap;
@@ -1385,7 +1385,7 @@ static RxtVariant *variant_push(Arena *a, RxtSource *src)
 {
     if (src->nvariants == src->variantcap) {
         size_t cap = src->variantcap ? src->variantcap * 2 : 8;
-        RxtVariant *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtVariant *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nvariants) memcpy(nv, src->variants, src->nvariants * sizeof *nv);
         src->variants = nv;
         src->variantcap = cap;
@@ -1399,7 +1399,7 @@ static RxtCase *case_push(Arena *a, RxtSource *src)
 {
     if (src->ncases == src->casecap) {
         size_t cap = src->casecap ? src->casecap * 2 : 32;
-        RxtCase *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtCase *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->ncases) memcpy(nv, src->cases, src->ncases * sizeof *nv);
         src->cases = nv;
         src->casecap = cap;
@@ -1413,7 +1413,7 @@ static RxtAux *aux_push(Arena *a, RxtSource *src)
 {
     if (src->nauxes == src->auxcap) {
         size_t cap = src->auxcap ? src->auxcap * 2 : 16;
-        RxtAux *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtAux *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nauxes) memcpy(nv, src->auxes, src->nauxes * sizeof *nv);
         src->auxes = nv;
         src->auxcap = cap;
@@ -1643,7 +1643,7 @@ static int read_wrapped_value(RxtP *p, RxtLines *L, size_t *i,
 
     size_t total = strlen(first) + 1;
     for (size_t k = *i + 1; k < end; k++) total += strlen(L->v[k]) + 1;
-    char *buf = arena_alloc(p->arena, total + 1);
+    char *buf = pcrec_arena_alloc(p->arena, total + 1);
     size_t at = strlen(first);
     memcpy(buf, first, at);
     for (size_t k = *i + 1; k < end; k++) {
@@ -1769,7 +1769,7 @@ int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
     }
     const char *s = v + 1;
     size_t len = n - 2;
-    char *buf = arena_alloc(a, len + 1);
+    char *buf = pcrec_arena_alloc(a, len + 1);
     size_t at = 0;
     for (size_t i = 0; i < len; i++) {
         if (s[i] != '\\') {
@@ -2098,7 +2098,7 @@ static char *join_path(Arena *a, const char *dir, const char *rest);
  * resolution, no composition): that is `pcrec_rxt_source_resolve`'s job,
  * kept separate so `--list-source`'s dump stays a pure function of this
  * one file's bytes. Runs before any `Ctx` exists, so every error is
- * RETURNED rather than raised through `ctx_fail` — see the file header for
+ * RETURNED rather than raised through `pcrec_ctx_fail` — see the file header for
  * why. The structure layer (S0-S3, the attachment stack `st` below) is the
  * dispatch; `rxt_schema.def`'s rows say what is legal where. */
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
@@ -2133,7 +2133,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     do {                                                                   \
         if (ndepth == depthcap) {                                          \
             size_t nc = depthcap ? depthcap * 2 : 8;                       \
-            RxtFrame *nv = arena_alloc(&src->arena, nc * sizeof *nv);      \
+            RxtFrame *nv = pcrec_arena_alloc(&src->arena, nc * sizeof *nv);      \
             if (ndepth) memcpy(nv, st, ndepth * sizeof *nv);               \
             st = nv; depthcap = nc;                                        \
         }                                                                  \
@@ -2145,8 +2145,8 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                                    : RXT_SCOPE_NSCOPES;                    \
         st[ndepth].tree   = (TREE);                                        \
         st[ndepth].row    = (ROW);                                         \
-        st[ndepth].seen   = arena_alloc(&src->arena, nrows * sizeof(size_t)); \
-        st[ndepth].val    = arena_alloc(&src->arena, nrows * sizeof(char *)); \
+        st[ndepth].seen   = pcrec_arena_alloc(&src->arena, nrows * sizeof(size_t)); \
+        st[ndepth].val    = pcrec_arena_alloc(&src->arena, nrows * sizeof(char *)); \
         ndepth++;                                                          \
     } while (0)
 
@@ -2620,7 +2620,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              "'%s')", v);
                     goto fail;
                 }
-                RxtVocab *vo = arena_alloc(&src->arena, sizeof *vo);
+                RxtVocab *vo = pcrec_arena_alloc(&src->arena, sizeof *vo);
                 vo->key = arena_strndup(&src->arena, v, klen);
                 vo->members = arena_strdup(&src->arena, skip_ws(v + klen));
                 vo->line = line;
@@ -2716,7 +2716,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * does a second `pcrec` line mean" instead of two. */
                 if (cr->pcrec_raw) {
                     size_t n = strlen(cr->pcrec_raw) + 1 + strlen(raw) + 1;
-                    char *j = arena_alloc(&src->arena, n);
+                    char *j = pcrec_arena_alloc(&src->arena, n);
                     snprintf(j, n, "%s %s", cr->pcrec_raw, raw);
                     cr->pcrec_raw = j;
                 } else {
@@ -2858,7 +2858,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * space-join already serves several `pcrec` lines. */
             if (block->tags) {
                 size_t n = strlen(block->tags) + 1 + strlen(v) + 1;
-                char *j = arena_alloc(&src->arena, n);
+                char *j = pcrec_arena_alloc(&src->arena, n);
                 snprintf(j, n, "%s,%s", block->tags, v);
                 block->tags = j;
             } else {
@@ -3087,7 +3087,7 @@ void pcrec_rxt_source_free(RxtSource *src)
      * set bounds at the number of distinct files. */
     for (size_t i = 0; i < src->nkids; i++) pcrec_rxt_source_free(src->kids[i]);
     free(src->kids);
-    arena_free(&src->arena);
+    pcrec_arena_free(&src->arena);
     free(src);
 }
 
@@ -3171,7 +3171,7 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
         if (!dst->pcrec_raw) dst->pcrec_raw = add->pcrec_raw;
         else {
             size_t n = strlen(dst->pcrec_raw) + 1 + strlen(add->pcrec_raw) + 1;
-            char *j = arena_alloc(a, n);
+            char *j = pcrec_arena_alloc(a, n);
             snprintf(j, n, "%s %s", dst->pcrec_raw, add->pcrec_raw);
             dst->pcrec_raw = j;
         }
@@ -3220,7 +3220,7 @@ static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
     for (size_t i = 0; i < s->n; i++) if (s->v[i] == r) return 0;
     if (s->n == s->cap) {
         size_t cap = s->cap ? s->cap * 2 : 8;
-        RxtRow **v = arena_alloc(a, cap * sizeof *v);
+        RxtRow **v = pcrec_arena_alloc(a, cap * sizeof *v);
         for (size_t i = 0; i < s->n; i++) v[i] = s->v[i];
         s->v = v; s->cap = cap;
     }
@@ -3266,7 +3266,7 @@ static const char *source_dir(RxtSource *src)
     const char *slash = strrchr(src->path, '/');
     if (!slash) return "";
     size_t n = (size_t)(slash - src->path) + 1;   /* keep the '/' */
-    char *d = arena_alloc(&src->arena, n + 1);
+    char *d = pcrec_arena_alloc(&src->arena, n + 1);
     memcpy(d, src->path, n);
     d[n] = 0;
     return d;
@@ -3277,7 +3277,7 @@ static char *join_path(Arena *a, const char *dir, const char *rest)
     size_t nd = strlen(dir);
     int need_slash = nd && dir[nd - 1] != '/';
     size_t n = nd + (size_t)need_slash + strlen(rest) + 1;
-    char *p = arena_alloc(a, n);
+    char *p = pcrec_arena_alloc(a, n);
     snprintf(p, n, "%s%s%s", dir, need_slash ? "/" : "", rest);
     return p;
 }
@@ -3303,12 +3303,12 @@ static const char *lib_chain_text(Arena *a, const char *own,
 {
     (void)own;
     StrBuf sb = { 0 };
-    sb_puts(&sb, "the source's own directory");
-    for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
-    if (!ndirs) sb_puts(&sb, " (no --lib-path)");
-    char *heap = sb_take(&sb);
+    pcrec_sb_puts(&sb, "the source's own directory");
+    for (size_t i = 0; i < ndirs; i++) pcrec_sb_printf(&sb, ", '%s'", dirs[i]);
+    if (!ndirs) pcrec_sb_puts(&sb, " (no --lib-path)");
+    char *heap = pcrec_sb_take(&sb);
     size_t n = strlen(heap) + 1;
-    char *out = arena_alloc(a, n);
+    char *out = pcrec_arena_alloc(a, n);
     memcpy(out, heap, n);
     free(heap);
     return out;
@@ -3421,7 +3421,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
     if (closure_seen(cl, respath)) return 0;
     if (cl->nseen == cl->seencap) {
         size_t nc = cl->seencap ? cl->seencap * 2 : 8;
-        const char **nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+        const char **nv = pcrec_arena_alloc(&cl->root->arena, nc * sizeof *nv);
         for (size_t i = 0; i < cl->nseen; i++) nv[i] = cl->seen[i];
         cl->seen = nv; cl->seencap = nc;
     }
@@ -3458,7 +3458,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
                             "definition '%s'", badc, r->flags, r->name);
         if (cl->ndefs == cl->defcap) {
             size_t nc = cl->defcap ? cl->defcap * 2 : 8;
-            RxtDef *nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+            RxtDef *nv = pcrec_arena_alloc(&cl->root->arena, nc * sizeof *nv);
             for (size_t k = 0; k < cl->ndefs; k++) nv[k] = cl->defs[k];
             cl->defs = nv; cl->defcap = nc;
         }
@@ -3551,7 +3551,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
          * reference itself is what is between them. */
         if (rl >= 2 && ref[0] == '"' && ref[rl - 1] == '"') {
-            char *unq = arena_alloc(&src->arena, rl - 1);
+            char *unq = pcrec_arena_alloc(&src->arena, rl - 1);
             memcpy(unq, ref + 1, rl - 2);
             unq[rl - 2] = 0;
             ref = unq;
@@ -3578,7 +3578,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
      * NEVER NULL. A file with no named block anywhere in its closure gets an
      * EMPTY set rather than a NULL one, so the composer has one thing to
      * test and every `--source` build takes the same path. */
-    RxtDefs *defs = arena_alloc(&src->arena, sizeof *defs);
+    RxtDefs *defs = pcrec_arena_alloc(&src->arena, sizeof *defs);
     {
         RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib };
         if (closure_walk(&cl, src, src->path) != 0) return -1;
@@ -3610,7 +3610,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * confused — a file that CANNOT be built refuses, a file that
          * declares nothing to build is silent. */
         if (npattern == 1 && !lone->name) {
-            RxtTarget *t = arena_alloc(&src->arena, sizeof *t);
+            RxtTarget *t = pcrec_arena_alloc(&src->arena, sizeof *t);
             memset(t, 0, sizeof *t);
             t->prefix = "rx";
             t->name = "rx";
@@ -3633,7 +3633,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         return 0;
     }
 
-    RxtTarget *ts = arena_alloc(&src->arena, ntarget * sizeof *ts);
+    RxtTarget *ts = pcrec_arena_alloc(&src->arena, ntarget * sizeof *ts);
     size_t n = 0;
 
     for (size_t i = 0; i < src->nrows; i++) {
@@ -3729,7 +3729,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
              * only` on the block. Duplicating that vocabulary here to
              * pre-empt the message would be a second home for it. */
             size_t sz = strlen(s.features) + 1 + strlen(blk->features) + 1;
-            char *j = arena_alloc(&src->arena, sz);
+            char *j = pcrec_arena_alloc(&src->arena, sz);
             snprintf(j, sz, "%s,%s", s.features, blk->features);
             t->features = j;
         }
@@ -3764,10 +3764,10 @@ int pcrec_rxt_source_resolve(RxtSource *src,
  * three-row-in-3,265 corruption, which is the size of finding a summary
  * swallows.
  *
- * [REVW.1] wave 1: THE ESCAPE ITSELF IS `sb_field` (src/core/sb.c) NOW.
+ * [REVW.1] wave 1: THE ESCAPE ITSELF IS `pcrec_sb_field` (src/core/sb.c) NOW.
  * It moved verbatim, one directory up, so the `.rxt` format's subject
  * vocabulary and `--explain`'s frame-only one share their `\xNN` tail
- * instead of spelling it twice. This file's call sites say `sb_field`
+ * instead of spelling it twice. This file's call sites say `pcrec_sb_field`
  * directly rather than through a forwarder: a one-line forwarder would be
  * a second name for one function, and the reader wants to see WHICH
  * vocabulary a column is escaped in. */
@@ -3791,7 +3791,7 @@ static const char *kind_name(RxtDeclKind k)
 
 /* THE 15 COLUMNS of w1_impl §1.8, in order, append-only under
  * docs/spec/table_contract.md. Kept as a table rather than as fifteen
- * sb_puts calls in the header string so the HEADER and the ROW WRITER
+ * pcrec_sb_puts calls in the header string so the HEADER and the ROW WRITER
  * cannot disagree about how many there are — the contract's HEADER
  * TRUTHFULNESS check compares them, and a check whose two sides come
  * from one list is the only version of it that means anything. */
@@ -3818,8 +3818,8 @@ static const char *const rxt_columns[] = {
  * section writes it identically rather than five variations on one loop. */
 static void section_open(StrBuf *sb, const char *name, const char *header)
 {
-    sb_printf(sb, "#section %s\n", name);
-    sb_puts(sb, header);
+    pcrec_sb_printf(sb, "#section %s\n", name);
+    pcrec_sb_puts(sb, header);
 }
 
 size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
@@ -3836,7 +3836,7 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
 {
     StrBuf sb = { 0 };
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec --list-source: the .rxt SOURCE file AS WRITTEN (DD-13b W1).\n"
         "# One row per head declaration and per pattern block, in FILE ORDER.\n"
         "# `kind` is the DECLARATION NAME. There is no head/body column: the\n"
@@ -3867,62 +3867,62 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         "# format_design.md §2.27). No section row's field 1 (always the\n"
         "# integer `line`) can equal a main-table `kind` token.\n");
 
-    sb_putc(&sb, '#');
+    pcrec_sb_putc(&sb, '#');
     for (size_t c = 0; c < RXT_NCOLS; c++) {
-        if (c) sb_putc(&sb, '\t');
-        sb_puts(&sb, rxt_columns[c]);
+        if (c) pcrec_sb_putc(&sb, '\t');
+        pcrec_sb_puts(&sb, rxt_columns[c]);
     }
-    sb_putc(&sb, '\n');
+    pcrec_sb_putc(&sb, '\n');
 
     for (size_t i = 0; i < src->nrows; i++) {
         const RxtRow *r = &src->rows[i];
         int is_pat = r->kind == RXT_DECL_PATTERN;
         int is_cfg = r->kind == RXT_DECL_CONFIG;
 
-        sb_puts(&sb, kind_name(r->kind));                       /*  1 kind */
-        sb_printf(&sb, "\t%zu", r->line);                       /*  2 line */
-        sb_putc(&sb, '\t');
-        if (r->name) sb_puts(&sb, r->name);                     /*  3 name */
-        sb_putc(&sb, '\t');
+        pcrec_sb_puts(&sb, kind_name(r->kind));                       /*  1 kind */
+        pcrec_sb_printf(&sb, "\t%zu", r->line);                       /*  2 line */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->name) pcrec_sb_puts(&sb, r->name);                     /*  3 name */
+        pcrec_sb_putc(&sb, '\t');
         /* `value` carries the lib's path-ref, the target's definition
          * name, and a description's text — the three kinds whose payload
          * is one scalar. A block's own `description` rides column 4 too,
          * on the block's row, because a second description column would
          * be a second home for one fact. */
-        sb_field(&sb, is_pat ? r->description : r->value);   /*  4 value */
-        sb_putc(&sb, '\t');
-        if (is_pat) sb_field(&sb, r->value);                 /*  5 pattern */
-        sb_putc(&sb, '\t');
-        if (r->flags) sb_puts(&sb, r->flags);                   /*  6 flags */
-        sb_putc(&sb, '\t');
-        if (r->features) sb_puts(&sb, r->features);             /*  7 features */
-        sb_putc(&sb, '\t');
-        if (r->features_only) sb_putc(&sb, '1');                /*  8 features_only */
-        sb_putc(&sb, '\t');
-        if (r->encoding) sb_puts(&sb, r->encoding);             /*  9 encoding */
-        sb_putc(&sb, '\t');
-        if (r->engine) sb_puts(&sb, r->engine);                 /* 10 engine */
-        sb_putc(&sb, '\t');
-        if (r->budget_steps >= 0) sb_printf(&sb, "%ld", r->budget_steps);
-        sb_putc(&sb, '\t');                                     /* 11 */
-        if (r->budget_frames >= 0) sb_printf(&sb, "%ld", r->budget_frames);
-        sb_putc(&sb, '\t');                                     /* 12 */
-        if (r->with_list) sb_puts(&sb, r->with_list);           /* 13 with */
-        sb_putc(&sb, '\t');
-        if (r->from_list) sb_puts(&sb, r->from_list);           /* 14 from */
-        sb_putc(&sb, '\t');
-        if (is_cfg) sb_field(&sb, r->pcrec_raw);             /* 15 pcrec */
-        sb_putc(&sb, '\t');
-        if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
-        sb_putc(&sb, '\t');
-        if (r->tags) sb_puts(&sb, r->tags);                     /* 17 tags */
-        sb_putc(&sb, '\t');
-        if (r->oracle) sb_puts(&sb, r->oracle);                 /* 18 oracle */
-        sb_putc(&sb, '\t');
-        if (r->esc) sb_puts(&sb, r->esc);                       /* 19 esc */
-        sb_putc(&sb, '\t');
-        if (r->tune) sb_puts(&sb, r->tune);                     /* 20 tune */
-        sb_putc(&sb, '\n');
+        pcrec_sb_field(&sb, is_pat ? r->description : r->value);   /*  4 value */
+        pcrec_sb_putc(&sb, '\t');
+        if (is_pat) pcrec_sb_field(&sb, r->value);                 /*  5 pattern */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->flags) pcrec_sb_puts(&sb, r->flags);                   /*  6 flags */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->features) pcrec_sb_puts(&sb, r->features);             /*  7 features */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->features_only) pcrec_sb_putc(&sb, '1');                /*  8 features_only */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->encoding) pcrec_sb_puts(&sb, r->encoding);             /*  9 encoding */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->engine) pcrec_sb_puts(&sb, r->engine);                 /* 10 engine */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->budget_steps >= 0) pcrec_sb_printf(&sb, "%ld", r->budget_steps);
+        pcrec_sb_putc(&sb, '\t');                                     /* 11 */
+        if (r->budget_frames >= 0) pcrec_sb_printf(&sb, "%ld", r->budget_frames);
+        pcrec_sb_putc(&sb, '\t');                                     /* 12 */
+        if (r->with_list) pcrec_sb_puts(&sb, r->with_list);           /* 13 with */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->from_list) pcrec_sb_puts(&sb, r->from_list);           /* 14 from */
+        pcrec_sb_putc(&sb, '\t');
+        if (is_cfg) pcrec_sb_field(&sb, r->pcrec_raw);             /* 15 pcrec */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->exports) pcrec_sb_puts(&sb, r->exports);               /* 16 export */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->tags) pcrec_sb_puts(&sb, r->tags);                     /* 17 tags */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->oracle) pcrec_sb_puts(&sb, r->oracle);                 /* 18 oracle */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->esc) pcrec_sb_puts(&sb, r->esc);                       /* 19 esc */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->tune) pcrec_sb_puts(&sb, r->tune);                     /* 20 tune */
+        pcrec_sb_putc(&sb, '\n');
     }
 
     /* [DD-13b.W23.4] THE FOUR `#section` BLOCKS, unconditionally when
@@ -3939,31 +3939,31 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             "\tbytes\tsha256\n");
         for (size_t i = 0; i < src->nprovs; i++) {
             const RxtProv *r = &src->provs[i];
-            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->source) sb_puts(&sb, r->source);
-            sb_putc(&sb, '\t');
-            if (r->url) sb_puts(&sb, r->url);
-            sb_putc(&sb, '\t');
-            if (r->ref) sb_puts(&sb, r->ref);
-            sb_putc(&sb, '\t');
-            if (r->retrieved) sb_puts(&sb, r->retrieved);
-            sb_putc(&sb, '\t');
-            if (r->license) sb_puts(&sb, r->license);
-            sb_putc(&sb, '\t');
-            if (r->license_note) sb_field(&sb, r->license_note);
-            sb_putc(&sb, '\t');
-            if (r->fidelity) sb_puts(&sb, r->fidelity);
-            sb_putc(&sb, '\t');
-            if (r->adaptation) sb_field(&sb, r->adaptation);
-            sb_putc(&sb, '\t');
-            if (r->attribution) sb_field(&sb, r->attribution);
-            sb_putc(&sb, '\t');
-            if (r->bytes) sb_puts(&sb, r->bytes);
-            sb_putc(&sb, '\t');
-            if (r->sha256) sb_puts(&sb, r->sha256);
-            sb_putc(&sb, '\n');
+            pcrec_sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->source) pcrec_sb_puts(&sb, r->source);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->url) pcrec_sb_puts(&sb, r->url);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->ref) pcrec_sb_puts(&sb, r->ref);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->retrieved) pcrec_sb_puts(&sb, r->retrieved);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->license) pcrec_sb_puts(&sb, r->license);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->license_note) pcrec_sb_field(&sb, r->license_note);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->fidelity) pcrec_sb_puts(&sb, r->fidelity);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->adaptation) pcrec_sb_field(&sb, r->adaptation);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->attribution) pcrec_sb_field(&sb, r->attribution);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->bytes) pcrec_sb_puts(&sb, r->bytes);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->sha256) pcrec_sb_puts(&sb, r->sha256);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -3973,21 +3973,21 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             "\tnote\tunsupported\n");
         for (size_t i = 0; i < src->nvariants; i++) {
             const RxtVariant *r = &src->variants[i];
-            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->testee) sb_puts(&sb, r->testee);
-            sb_putc(&sb, '\t');
-            if (r->kind) sb_puts(&sb, r->kind);
-            sb_putc(&sb, '\t');
-            if (r->text) sb_field(&sb, r->text);
-            sb_putc(&sb, '\t');
-            if (r->groups) sb_puts(&sb, r->groups);
-            sb_putc(&sb, '\t');
-            if (r->note) sb_field(&sb, r->note);
-            sb_putc(&sb, '\t');
-            if (r->unsupported) sb_field(&sb, r->unsupported);
-            sb_putc(&sb, '\n');
+            pcrec_sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->testee) pcrec_sb_puts(&sb, r->testee);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->kind) pcrec_sb_puts(&sb, r->kind);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->text) pcrec_sb_field(&sb, r->text);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->groups) pcrec_sb_puts(&sb, r->groups);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->note) pcrec_sb_field(&sb, r->note);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->unsupported) pcrec_sb_field(&sb, r->unsupported);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -3998,35 +3998,35 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             "\tcount\tgiveup\tslot\troute\n");
         for (size_t i = 0; i < src->ncases; i++) {
             const RxtCase *r = &src->cases[i];
-            sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, r->kind);
-            sb_putc(&sb, '\t');
-            if (r->under) sb_puts(&sb, r->under);
-            sb_putc(&sb, '\t');
-            if (r->startpos) sb_puts(&sb, r->startpos);
-            sb_putc(&sb, '\t');
-            if (r->subject_form) sb_puts(&sb, r->subject_form);
-            sb_putc(&sb, '\t');
-            if (r->subject) sb_field(&sb, r->subject);
-            sb_putc(&sb, '\t');
-            if (r->subject_id) sb_puts(&sb, r->subject_id);
-            sb_putc(&sb, '\t');
-            if (r->sha256) sb_puts(&sb, r->sha256);
-            sb_putc(&sb, '\t');
-            if (r->start) sb_puts(&sb, r->start);
-            sb_putc(&sb, '\t');
-            if (r->end) sb_puts(&sb, r->end);
-            sb_putc(&sb, '\t');
-            if (r->count) sb_puts(&sb, r->count);
-            sb_putc(&sb, '\t');
-            if (r->giveup) sb_puts(&sb, r->giveup);
-            sb_putc(&sb, '\t');
-            if (r->slot) sb_puts(&sb, r->slot);
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, r->route);
-            sb_putc(&sb, '\n');
+            pcrec_sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, r->kind);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->under) pcrec_sb_puts(&sb, r->under);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->startpos) pcrec_sb_puts(&sb, r->startpos);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->subject_form) pcrec_sb_puts(&sb, r->subject_form);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->subject) pcrec_sb_field(&sb, r->subject);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->subject_id) pcrec_sb_puts(&sb, r->subject_id);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->sha256) pcrec_sb_puts(&sb, r->sha256);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->start) pcrec_sb_puts(&sb, r->start);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->end) pcrec_sb_puts(&sb, r->end);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->count) pcrec_sb_puts(&sb, r->count);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->giveup) pcrec_sb_puts(&sb, r->giveup);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->slot) pcrec_sb_puts(&sb, r->slot);
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, r->route);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -4036,21 +4036,21 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             "\tparent_line\n");
         for (size_t i = 0; i < src->nauxes; i++) {
             const RxtAux *r = &src->auxes[i];
-            sb_printf(&sb, "%zu\t", r->line);
-            if (r->block_line) sb_printf(&sb, "%zu", r->block_line);
-            sb_putc(&sb, '\t');
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->consumer) sb_puts(&sb, r->consumer);
-            sb_printf(&sb, "\t%zu\t", r->depth);
-            sb_puts(&sb, r->key);
-            sb_putc(&sb, '\t');
-            sb_field(&sb, r->value);
-            sb_putc(&sb, '\t');
-            if (r->parent_line) sb_printf(&sb, "%zu", r->parent_line);
-            sb_putc(&sb, '\n');
+            pcrec_sb_printf(&sb, "%zu\t", r->line);
+            if (r->block_line) pcrec_sb_printf(&sb, "%zu", r->block_line);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->consumer) pcrec_sb_puts(&sb, r->consumer);
+            pcrec_sb_printf(&sb, "\t%zu\t", r->depth);
+            pcrec_sb_puts(&sb, r->key);
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_field(&sb, r->value);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->parent_line) pcrec_sb_printf(&sb, "%zu", r->parent_line);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

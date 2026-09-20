@@ -56,7 +56,7 @@ as "at the limit."
 Every non-`perr` block uses `features named-groups` so that, once the
 module lands and is enabled, the block exercises the module's real
 semantics rather than accidentally passing because named-groups was
-folded into the default feature set (`PCREC_DEFAULT_FEATURES`, today
+folded into the default feature set (`pcrec_default_features`, today
 `std1 = {classes, modifiers}` per docs/spec/match_api.md's discussion
 of the fuzzer's default invocation -- there is no reason to assume
 `named-groups` joins that default, and the corpus does not assume it).

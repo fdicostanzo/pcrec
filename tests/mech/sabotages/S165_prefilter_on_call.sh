@@ -10,7 +10,7 @@
 #
 # WHY IT IS IN THIS WAVE AND NOT WAVE E, which the row records because the
 # design's own schedule says otherwise. `src/ir/nfa.c`'s `compile_ast` has an
-# `A_CALL` arm that `ctx_fail`s by name -- design SS4.4a site (25), DECLINE,
+# `A_CALL` arm that `pcrec_ctx_fail`s by name -- design SS4.4a site (25), DECLINE,
 # annotated "unreachable: VM_ONLY, no prefilter" -- and "unreachable" was true
 # only while nothing PRODUCED an `A_CALL`. MEASURED on this branch before the
 # predicate existed: `(a)(?1)`, `(?R)` and `(?<n>a)(?&n)` each answered

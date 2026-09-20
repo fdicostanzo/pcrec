@@ -40,14 +40,14 @@ under D45's gen-timeout budgets), and no check in this tier may read the
 ## Files
 
 - **sat_arith_check.c** / **run_core_tests.sh** — [REVW.U L5-R2] THE
-  SATURATING-ARITHMETIC AGREEMENT: `mrl_sat_add`/`mrl_sat_mul`
-  (`src/opt/mrl.c`), `vm_fadd`/`vm_fmul` (`src/gen/emit_vm.c`) and
-  `cg_sat_add`/`cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
+  SATURATING-ARITHMETIC AGREEMENT: `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
+  (`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+  `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
   states the requirement twice in prose (`src/opt/CLAUDE.md`'s `mrl.c`
-  entry, `emit_vm.c`'s own comment above `vm_fadd`) and, until this check,
+  entry, `emit_vm.c`'s own comment above `pcrec_vm_fadd`) and, until this check,
   enforced it nowhere. Checked for CROSS-FAMILY EQUALITY over the
   non-negative domain every real caller uses (which also answers lens 1's
-  own open question — `cg_sat_add`'s extra `CG_EXP_INF` guard is redundant
+  own open question — `pcrec_cg_sat_add`'s extra `CG_EXP_INF` guard is redundant
   on that domain, proved by evaluation rather than by reading) and for
   three algebraic laws the callers rely on and the implementations do not
   themselves state: MONOTONE, CAPPED, ABSORBING. See the check's own
@@ -56,7 +56,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   functions, and this file is wired into `san_scripts.txt`, so a real hit
   there would ABORT the sanitizer battery rather than FAIL cleanly) and
   the four-sabotage failing-direction story, of which one — a one-character
-  boundary weakening in `mrl_sat_mul` — is invisible to every answer-level
+  boundary weakening in `pcrec_mrl_sat_mul` — is invisible to every answer-level
   check in the tree by construction (it under-estimates, which is
   `pcrec_minw`'s safe direction). Sabotage row S254.
 
@@ -76,7 +76,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   unification changed nothing, and the six declarations in `internal.h`
   retire with it, not before.
 
-- **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `sb_fragf`'s own
+- **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `pcrec_sb_fragf`'s own
   property, below any emitted artifact. The primitive promises that
   truncation is impossible BY CONSTRUCTION, and stage 3 routes ~90 retired
   hand-sized emitter scratch buffers through it, so this one function is
@@ -98,14 +98,14 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   to read the file's header before trusting the row.** Two plants were
   tried. A wrong `vsnprintf` SIZE argument turns 5 of the 6 sub-checks red.
   An ALLOCATION one byte short does not move it at all — and does not move
-  AddressSanitizer either, because `arena_alloc` rounds to 16 and zeroes,
+  AddressSanitizer either, because `pcrec_arena_alloc` rounds to 16 and zeroes,
   and ASan sees only the arena's own 64 KiB block `malloc`, never the
   intra-block slice. So "sized exactly to the result" is enforced at the
   format call and is unobservable at the allocation, by every instrument
   this tree has.
 
 - **sb_stamp_check.c** — [REVW.2] wave 2, EP2 step 10 / lens 1 X8:
-  `sb_stampf`/`sb_stampwf`/`sb_stamp_str`, the artifact-stamp primitives,
+  `pcrec_sb_stampf`/`pcrec_sb_stampwf`/`pcrec_sb_stamp_str`, the artifact-stamp primitives,
   which emit `#define <UPPER>_<NAME> <value>` at all 73 former hand-written
   stamp sites across the two emitters. **ITS JUSTIFICATION IS THE OPPOSITE
   OF `sb_fragf_check.c`'s ABOVE, and the file's header says so first**: every
@@ -126,7 +126,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   **FOUR PLANTS, AND THEY DO NOT BEHAVE ALIKE** (transcripts in the header
   and in `docs/dev/lanes/w2x_report.md`). The separator space deleted takes
   five sub-checks red and leaves 6 correctly GREEN (still one line, the wrong
-  one). The newline dropped takes all six. `sb_stamp_str` losing its quotes
+  one). The newline dropped takes all six. `pcrec_sb_stamp_str` losing its quotes
   takes ONLY sub-check 4, which is that sub-check's whole reason for existing
   separately. And the sharpest: **`%-*s` written `%*s` leaves sub-check 1
   GREEN**, because at width 0 the two spellings are identical — which is why
@@ -199,7 +199,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
     `fit.chosen == ENGM_VM` conjunct excludes the two DFA witnesses; W2 is
     far below the `emit_code` threshold). On its first run it measured
     **108 of 158 (68.4%)** — the worst rate in the file — all of them
-    genuine `ctx_nomem`-routed allocations.
+    genuine `pcrec_ctx_nomem`-routed allocations.
 
   **[K60FIX] (2026-09-18, lane k60fix) — W4's 108/158 IS NOW 0/158.**
   K60's ladder-class mechanism (the
@@ -211,7 +211,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   SUCCEEDED THROUGH anyway`), W2 unchanged (0/11 PASS), and **W1 (15/72
   single-shot, 5/72 sustained) and W3 (25/328 single-shot) were UNCHANGED
   BY THIS FIX** — both are `emit_state_legend`'s silent degradation
-  (mechanism (A)), which never calls `ctx_nomem` and could not be reached
+  (mechanism (A)), which never calls `pcrec_ctx_nomem` and could not be reached
   from this fix by construction; that class was lane d105's.
 
   **[D105] closed it the same day** (`6e14d210`): the legend's raw
@@ -237,7 +237,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   **[D105] (2026-09-18, lane d105) — THE WITNESSES ARE PINNED NOW, on TWO
   numbers each, and the legend class is FIXED.** `emit_state_legend`'s five
   raw allocations per emitted machine are gone (`src/gen/emit_dfa.c`; the
-  compile refuses through the arena's `ctx_nomem` instead of dropping a
+  compile refuses through the arena's `pcrec_ctx_nomem` instead of dropping a
   legend silently), so W1 reads 15 absorbed -> **0** and W3 25 -> **0** in
   both modes. Each `Witness` row carries two kinds of expectation:
   - a POPULATION expectation — the profiling pass's own allocation count
@@ -261,7 +261,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   FLOOR (`Witness.min_total`), NOT AN EQUALITY PIN.** The trigger was
   measured, not guessed: `[REVW.2]`'s wave 2 slices A+C moved W4's
   population 158 -> 162 by two BYTE-NEUTRAL, SIZE-NEUTRAL refactors
-  (`sb_fragf`'s fragment retirement changing the arena-call SHAPE, nothing
+  (`pcrec_sb_fragf`'s fragment retirement changing the arena-call SHAPE, nothing
   a caller can observe) — an equality pin re-pins on that kind of ordinary
   churn exactly as readily as on K35's actual hazard (a population that
   FALLS, toward an empty or partial sweep), which is a tax on every future

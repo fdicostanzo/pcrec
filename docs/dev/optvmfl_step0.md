@@ -410,7 +410,7 @@ whole (b) family VM-only.
   omitted.
 - **Read off `has_push` at its own definition site** (`emit_vm.c`, right
   where `const bool has_push = v.emitted_push || v.has_linked_calls;` is
-  computed, immediately before the fail-label `sb_printf` that already
+  computed, immediately before the fail-label `pcrec_sb_printf` that already
   branches on it) — the SAME predicate the dispatch omission itself uses,
   never a second derivation. `RX_VM_FRAMELESS` is the literal boolean
   `!has_push`, not a re-reading of the emitted comment text or a strstr

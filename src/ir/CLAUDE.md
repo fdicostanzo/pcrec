@@ -26,11 +26,11 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
 (`b->cx->opt->max_nfa_states`, 0 = `PCREC_MAX_NFA_STATES`) — the same
 `cli/main.c` `raise_only_limits[]` table also raises `PCREC_MAX_DFA_STATES_
 GOTO` and `PCREC_MAX_SUBSET_ELEMS`; see `lib/pcrec.h`'s comment on the four
-new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
+new `pcrec_options` fields. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; pcrec_nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
 - **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start);
   **[ENG-ABS] (2026-08-29) `pcrec_build_dfa` TAKES ITS ROOT AND ITS
   OPTIONALITY AS PARAMETERS, and neither is a special case.** `root` used to be
-  `nfa->start` implicitly — the state `nfa_wrap_unanchored` installs. The
+  `nfa->start` implicitly — the state `pcrec_nfa_wrap_unanchored` installs. The
   anchored MATCH-HERE machine
   (`docs/design/anchored_match_unwrapped.md`) is this SAME construction rooted
   at `nfa->anch_start` instead, i.e. the pattern's own first state, which the
@@ -38,7 +38,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   nothing in this file knows the difference. `optional` is read at exactly one
   place — `intern`'s two "pattern too complex" sites, where an optional machine
   RECORDS the overflow on `Dfa.overflowed` and returns `PCREC_DFA_DEAD` instead
-  of `ctx_fail`ing, leaving `[SEL-1]`'s record and both diagnostics
+  of `pcrec_ctx_fail`ing, leaving `[SEL-1]`'s record and both diagnostics
   character-for-character unchanged. That one line is what makes an optional
   machine's cap overflow a SELECTION OUTCOME rather than a refusal, and it is
   why a pattern that compiles today cannot start failing because a machine
@@ -47,16 +47,16 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   interned** — the state caps bound how many states exist, this bounds what
   they COST, and on the exact-repeat family those are different numbers by a
   factor of n. `tab_grow` and the two reallocs here now fail through
-  `ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
-  too complex" `ctx_fail` SITES** (the state-count check in `intern()`, the
+  `pcrec_ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
+  too complex" `pcrec_ctx_fail` SITES** (the state-count check in `intern()`, the
   `PCREC_MAX_SUBSET_ELEMS` check beside it) **ALSO RECORD THE OVERFLOW ON
   `Ctx`** (`dfa_overflowed`/`dfa_overflow_why`, plain fields, set
-  unconditionally right before the unchanged `ctx_fail` call) — the general
+  unconditionally right before the unchanged `pcrec_ctx_fail` call) — the general
   mechanism `auto`'s DFA-cap-overflow contract needs (plan row [SEL-1],
   `src/opt/select_engine.c`'s `forces_dfa_overflow`, `src/core/compile.c`'s
   retry): the build reports "over budget" as a RESULT a later pass consumes,
   never a special case at this site itself — the diagnostic text and the
-  `ctx_fail` call are byte-for-byte what they were before this row.
+  `pcrec_ctx_fail` call are byte-for-byte what they were before this row.
   **[LIM-2] N1 (2026-09-04) A THIRD SITE, checking a SMALLER threshold
   FIRST.** Right before the `PCREC_MAX_SUBSET_ELEMS` check, `intern()` now
   asks whether `!d->optional && cx->opt->engine == PCREC_ENGINE_AUTO &&
@@ -263,7 +263,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   one-character fold ships in the meantime.
 
   **[DD-14] `A_CALL` IS A FOURTH ANSWER, AND IT IS `A_BREF`'s WITH A REASON
-  THAT WILL EXPIRE.** `compile_ast` falls to the loud `ctx_fail` for a
+  THAT WILL EXPIRE.** `compile_ast` falls to the loud `pcrec_ctx_fail` for a
   subroutine call, exactly as it does for a backreference — but NOT because a
   call is as hopeless. A call to a NON-RECURSIVE callee has an exact finite
   lowering (splice the callee's machine in); a call in a CYCLE does not, since
@@ -283,7 +283,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   WRAP GAINS A SECOND SPLIT STATE**, and the two together are what make an
   unanchored search's candidate match STARTS the encoding's character
   boundaries. Four things to know before editing either:
-  (a) **`nfa_wrap_unanchored` builds TWO splits, not one.** `nfa->start` stays
+  (a) **`pcrec_nfa_wrap_unanchored` builds TWO splits, not one.** `nfa->start` stays
   the UNGATED split — the caller's own position enters the pattern whatever it
   is — and the self-loop returns to a second split whose pattern branch sits
   behind a new `N_CSTART` node. That split of responsibility is the whole

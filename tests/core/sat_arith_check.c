@@ -8,11 +8,11 @@
  * concatenation of saturated subtrees cannot overflow past the ceiling
  * that exists to prevent it. A wrapped product is not merely wrong, it is
  * wrong in the UNSOUND direction whenever it lands on a small positive
- * value." `src/gen/emit_vm.c`'s own comment above `vm_fadd` restates it
+ * value." `src/gen/emit_vm.c`'s own comment above `pcrec_vm_fadd` restates it
  * from the other side. Two sources, one requirement — and until this row
  * it held because two authors happened to type the same five lines.
  * `src/opt/mrl.c:91`'s `#define MRL_MINW_MAX PCREC_MINW_MAX` and
- * `PCREC_MINW_MAX == (1LL << 40)` make `mrl_sat_add` and `vm_fadd` the
+ * `PCREC_MINW_MAX == (1LL << 40)` make `pcrec_mrl_sat_add` and `pcrec_vm_fadd` the
  * SAME FUNCTION after macro expansion, so the agreement is checkable by
  * VALUE over a shared input set with no modelling at all.
  *
@@ -35,15 +35,15 @@
  * in, same values out) — that is what proves the unification changed
  * nothing, rather than merely asserting it.
  *
- * THE DOMAIN, AND WHY IT IS NOT "ALL OF int64 x int64". `cg_sat_add`
+ * THE DOMAIN, AND WHY IT IS NOT "ALL OF int64 x int64". `pcrec_cg_sat_add`
  * carries an extra leading guard the mrl/vm pair lacks:
  * `if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;` — CG_EXP_INF
  * equals PCREC_MINW_MAX by construction (both `1LL << 40`). Read as a
  * property of ALL integers this guard is NOT redundant (feed it
  * `a = 3*CAP, b = -2.5*CAP` and cg returns CAP while the plain add-then-
  * clamp form returns CAP/2) — but every real call site
- * (`src/opt/callgraph.c`'s `cg_sat_add(e, cg_sat_mul(...))` and
- * `cg_sat_add(total, cg_sat_mul(lex[i], cg->exp[i] - 1))`) only ever
+ * (`src/opt/callgraph.c`'s `pcrec_cg_sat_add(e, pcrec_cg_sat_mul(...))` and
+ * `pcrec_cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1))`) only ever
  * passes NON-NEGATIVE operands (node counts and saturated sub-results),
  * matching mrl's and vm's own usage identically. So the cross-family
  * agreement check below is run over NON-NEGATIVE operands, which is the
@@ -56,8 +56,8 @@
  * is that evaluation, over every non-negative pair in the input set, and
  * a divergence anywhere in it fails loudly and prints the pair.
  *
- * WHY NO INPUT PAIR IS `LLONG_MAX` PAIRED WITH ITSELF. mrl_sat_add /
- * vm_fadd / cg_sat_add all compute `a + b` UNCONDITIONALLY before
+ * WHY NO INPUT PAIR IS `LLONG_MAX` PAIRED WITH ITSELF. pcrec_mrl_sat_add /
+ * pcrec_vm_fadd / pcrec_cg_sat_add all compute `a + b` UNCONDITIONALLY before
  * comparing the sum to the ceiling — genuinely correct, since the
  * ceiling is far below LLONG_MAX and every real caller's operands are
  * bounded well under it, but `LLONG_MAX + LLONG_MAX` is signed-integer
@@ -84,11 +84,11 @@
  * targets one of the four things that can differ):
  *   (a) MRL_MINW_MAX changed to a different ceiling — CHECK 1 (cross-
  *       family equality) reds on every pair at or past the moved cap.
- *   (b) mrl_sat_add's clamp deleted — CHECK 3 (Capped) reds on `(cap, 1)`.
- *   (c) mrl_sat_mul's `a > cap / b` weakened to `a >= cap / b` — CHECK 1
+ *   (b) pcrec_mrl_sat_add's clamp deleted — CHECK 3 (Capped) reds on `(cap, 1)`.
+ *   (c) pcrec_mrl_sat_mul's `a > cap / b` weakened to `a >= cap / b` — CHECK 1
  *       reds on exactly one boundary pair and no other. THIS IS THE ONE
  *       THAT MATTERS: it under-estimates by one, under-estimating is the
- *       SAFE direction (`vm_fadd`'s own comment: "under-estimating is the
+ *       SAFE direction (`pcrec_vm_fadd`'s own comment: "under-estimating is the
  *       safe direction and saturation is an under-estimate"), so no
  *       pattern in the whole corpus gives a WRONG ANSWER — it only stops
  *       pruning somewhere, which is invisible to `make test`'s answer-
@@ -167,9 +167,9 @@ int main(void)
         for (size_t i = 0; i < NN_N; i++)
             for (size_t j = 0; j < NN_N; j++) {
                 long long a = NN[i], b = NN[j];
-                long long m = mrl_sat_add(a, b);
-                long long v = vm_fadd(a, b);
-                long long c = cg_sat_add(a, b);
+                long long m = pcrec_mrl_sat_add(a, b);
+                long long v = pcrec_vm_fadd(a, b);
+                long long c = pcrec_cg_sat_add(a, b);
                 pairs++;
                 if (m != v || v != c) {
                     if (mism == 0) {
@@ -182,21 +182,21 @@ int main(void)
         /* Also the isolated far-above-cap witness the header explains. */
         {
             long long a = LLONG_MAX, b = 0;
-            long long m = mrl_sat_add(a, b);
-            long long v = vm_fadd(a, b);
-            long long c = cg_sat_add(a, b);
+            long long m = pcrec_mrl_sat_add(a, b);
+            long long v = pcrec_vm_fadd(a, b);
+            long long c = pcrec_cg_sat_add(a, b);
             pairs++;
             if (m != v || v != c) {
                 if (mism == 0) { first_a = a; first_b = b; first_m = m; first_v = v; first_c = c; }
                 mism++;
             }
-            if (m != CAP) bad("add: mrl_sat_add(LLONG_MAX, 0) = %lld, want CAP (%lld)", m, CAP);
+            if (m != CAP) bad("add: pcrec_mrl_sat_add(LLONG_MAX, 0) = %lld, want CAP (%lld)", m, CAP);
         }
         if (mism != 0)
-            bad("add: mrl_sat_add/vm_fadd/cg_sat_add DISAGREE at (%lld, %lld): %lld / %lld / %lld — cg_sat_add's leading CG_EXP_INF guard is NOT redundant here",
+            bad("add: pcrec_mrl_sat_add/pcrec_vm_fadd/pcrec_cg_sat_add DISAGREE at (%lld, %lld): %lld / %lld / %lld — pcrec_cg_sat_add's leading CG_EXP_INF guard is NOT redundant here",
                 first_a, first_b, first_m, first_v, first_c);
         else
-            ok("add: mrl_sat_add == vm_fadd == cg_sat_add on all %lld non-negative pairs — cg_sat_add's leading guard is REDUNDANT on the domain it is actually called with (lens 1's X3 question, answered by evaluation)",
+            ok("add: pcrec_mrl_sat_add == pcrec_vm_fadd == pcrec_cg_sat_add on all %lld non-negative pairs — pcrec_cg_sat_add's leading guard is REDUNDANT on the domain it is actually called with (lens 1's X3 question, answered by evaluation)",
                pairs);
     }
 
@@ -213,9 +213,9 @@ int main(void)
             for (size_t j = 0; j < NN_N; j++) {
                 long long a = NN[i], b = NN[j];
                 if (a == 0 || b == 0) continue;   /* CHECK 6 owns the guard */
-                long long m = mrl_sat_mul(a, b);
-                long long v = vm_fmul(a, b);
-                long long c = cg_sat_mul(a, b);
+                long long m = pcrec_mrl_sat_mul(a, b);
+                long long v = pcrec_vm_fmul(a, b);
+                long long c = pcrec_cg_sat_mul(a, b);
                 pairs++;
                 if (m != v || v != c) {
                     if (mism == 0) {
@@ -226,10 +226,10 @@ int main(void)
                 }
             }
         if (mism != 0)
-            bad("mul: mrl_sat_mul/vm_fmul/cg_sat_mul DISAGREE at (%lld, %lld): %lld / %lld / %lld",
+            bad("mul: pcrec_mrl_sat_mul/pcrec_vm_fmul/pcrec_cg_sat_mul DISAGREE at (%lld, %lld): %lld / %lld / %lld",
                 first_a, first_b, first_m, first_v, first_c);
         else
-            ok("mul: mrl_sat_mul == vm_fmul == cg_sat_mul on all %lld positive pairs",
+            ok("mul: pcrec_mrl_sat_mul == pcrec_vm_fmul == pcrec_cg_sat_mul on all %lld positive pairs",
                pairs);
     }
 
@@ -245,12 +245,12 @@ int main(void)
         for (size_t i = 0; i < NN_N; i++)
             for (size_t j = 0; j < NN_N; j++) {
                 long long a = NN[i], b = NN[j];
-                long long ra_m = mrl_sat_add(a, b), ra_v = vm_fadd(a, b), ra_c = cg_sat_add(a, b);
+                long long ra_m = pcrec_mrl_sat_add(a, b), ra_v = pcrec_vm_fadd(a, b), ra_c = pcrec_cg_sat_add(a, b);
                 if (ra_m > CAP || ra_m < 0) viol_add++;
                 if (ra_v > CAP || ra_v < 0) viol_add++;
                 if (ra_c > CAP || ra_c < 0) viol_add++;
                 if (a > 0 && b > 0) {
-                    long long rm_m = mrl_sat_mul(a, b), rm_v = vm_fmul(a, b), rm_c = cg_sat_mul(a, b);
+                    long long rm_m = pcrec_mrl_sat_mul(a, b), rm_v = pcrec_vm_fmul(a, b), rm_c = pcrec_cg_sat_mul(a, b);
                     if (rm_m > CAP || rm_m < 0) viol_mul++;
                     if (rm_v > CAP || rm_v < 0) viol_mul++;
                     if (rm_c > CAP || rm_c < 0) viol_mul++;
@@ -275,9 +275,9 @@ int main(void)
             long long b = NN[bi];
             for (size_t i = 0; i + 1 < LADDER_N; i++) {
                 long long a = LADDER[i], ap = LADDER[i + 1];
-                if (mrl_sat_add(a, b) > mrl_sat_add(ap, b)) viol++;
-                if (vm_fadd(a, b) > vm_fadd(ap, b)) viol++;
-                if (cg_sat_add(a, b) > cg_sat_add(ap, b)) viol++;
+                if (pcrec_mrl_sat_add(a, b) > pcrec_mrl_sat_add(ap, b)) viol++;
+                if (pcrec_vm_fadd(a, b) > pcrec_vm_fadd(ap, b)) viol++;
+                if (pcrec_cg_sat_add(a, b) > pcrec_cg_sat_add(ap, b)) viol++;
             }
         }
         if (viol) bad("monotone: sat_add decreased as its first operand grew, %lld time(s)", viol);
@@ -292,16 +292,16 @@ int main(void)
         long long viol = 0;
         for (size_t i = 0; i < NN_N; i++) {
             long long b = NN[i];
-            if (mrl_sat_add(CAP, b) != CAP) viol++;
-            if (vm_fadd(CAP, b) != CAP) viol++;
-            if (cg_sat_add(CAP, b) != CAP) viol++;
+            if (pcrec_mrl_sat_add(CAP, b) != CAP) viol++;
+            if (pcrec_vm_fadd(CAP, b) != CAP) viol++;
+            if (pcrec_cg_sat_add(CAP, b) != CAP) viol++;
         }
         for (size_t i = 0; i < NN_N; i++) {
             long long k = NN[i];
             if (k < 1) continue;
-            if (mrl_sat_mul(CAP, k) != CAP) viol++;
-            if (vm_fmul(CAP, k) != CAP) viol++;
-            if (cg_sat_mul(CAP, k) != CAP) viol++;
+            if (pcrec_mrl_sat_mul(CAP, k) != CAP) viol++;
+            if (pcrec_vm_fmul(CAP, k) != CAP) viol++;
+            if (pcrec_cg_sat_mul(CAP, k) != CAP) viol++;
         }
         if (viol) bad("absorbing: sat_*(CAP, x) != CAP, %lld time(s)", viol);
         else ok("absorbing: sat_add(CAP, b) == CAP and sat_mul(CAP, k) == CAP over the non-negative grid, all three families");
@@ -318,13 +318,13 @@ int main(void)
             for (size_t j = 0; j < NN_N; j++) {
                 long long a = NEG[i], b = NN[j];
                 checked += 2;
-                if (mrl_sat_mul(a, b) != 0) viol++;
-                if (vm_fmul(a, b) != 0) viol++;
-                if (cg_sat_mul(a, b) != 0) viol++;
+                if (pcrec_mrl_sat_mul(a, b) != 0) viol++;
+                if (pcrec_vm_fmul(a, b) != 0) viol++;
+                if (pcrec_cg_sat_mul(a, b) != 0) viol++;
                 checked++;
-                if (mrl_sat_mul(b, a) != 0) viol++;
-                if (vm_fmul(b, a) != 0) viol++;
-                if (cg_sat_mul(b, a) != 0) viol++;
+                if (pcrec_mrl_sat_mul(b, a) != 0) viol++;
+                if (pcrec_vm_fmul(b, a) != 0) viol++;
+                if (pcrec_cg_sat_mul(b, a) != 0) viol++;
                 checked++;
             }
         if (viol) bad("mul domain guard: a <= 0 || b <= 0 did not answer 0, %lld time(s) of %lld checked", viol, checked);
