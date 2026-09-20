@@ -24446,3 +24446,26 @@ fixpoints one loop; F4-F6 notes. No wrong answer, no unsound charge found in
 **FRANK'S RULING AT CLOSE: on wake, TACKLE THE TOUR LIST — assess the
 items, do the ones worth it, forgo unimportant ones; then a new effort.**
 Session closed by Frank ~20:5x EDT.
+
+## 2026-09-20 (EDT), seventy-third session — [TOUR-EXEC] started: assessment, plan rows, wave 1 launched
+
+Wake: main 82dd396a clean, no worktrees, no agents. Heartbeat cron created
+(13,43). Frank's ruling (`/pcrec-manager proceed to tour items`).
+
+**Assessment written** (the "Manager's assessment" section appended to
+docs/dev/reviews/2026-09-20-frank-tour.md, commit 6bc0a5bf): all five TOUR
+items + ORG-7 are DO; r61 F3 (callgraph fixpoints) and F4/F5 (comment
+notes) FORGONE with a named trigger. Plan rows [TOUR-1..5] + [ORG-7] added
+under [TOUR-EXEC] (STATE:started); TOUR-1 and TOUR-3 are wave 2
+(STATE:not-started). Branch point for every lane: 82dd396a.
+
+**Wave 1 launched ~17:3x**: `tour4` (sonnet: DFA_INVARIANT → ctx_fail at
+THREE sites — grep found 590/667/857, the tour text said two — K61, S200
+sabotage row, plus ORG-7's nine exports → static), `tour5` (opus:
+esel_of + non-overlap table + premise check, prefilter_decision, delete
+the discharge fixpoint), `tour2` (sonnet: cost_add/cost_max, the per-kind
+vm_cost dispatcher, r61 F6's deny-flag alignment; the only emit_vm.c
+writer). Each: emit_sweep --ref 82dd396a 0 movers, anchors 285/285, make
+strict; no full make test in-lane (the manager's at merge). Watcher script
+in the background; merges serialized with make test between; no battery
+in flight.
