@@ -846,7 +846,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # gate is therefore RED on the lane branch BY CONSTRUCTION, with the exact
 # message "the emitted scaffolding changed: bump `abi` ... and re-pin
 # comparison (B)" -- which is the gate working, not a defect.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-94ef3836}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-74c2192c}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
