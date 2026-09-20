@@ -500,6 +500,100 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
     (void)pcrec_revdet(cx, root);
 }
 
+/* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed
+ * `ESEL_*` values records how this artifact's engine came to be chosen.
+ *
+ * Derived here and nowhere else, because this is the one point where the fit
+ * is final AND `compile_driver`'s attempt record is in hand — `dfa_disabled`,
+ * `collapse_reason`, `size_drop_rung` and `dfa_was_engine`, all read off `cx`
+ * and none of them parameters. `fit->why`'s prose and this token are two
+ * readers of ONE decision (D81); neither is parsed from the other. What each
+ * value MEANS, which RANGES of them a consumer may test, and the history of
+ * the set live on the `ESEL_*` enum in core/internal.h and not here.
+ *
+ * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER, so its correctness is a
+ * claim about the arms not fighting each other — and this table is the ONE
+ * place that claim is made. It replaces the five stacked comment blocks
+ * ([OPT-4], [OPT-4.1], [OPT-4.2], [LIM-1], [K53-SELRETRY]) that each amended
+ * the previous one; their history is in the plan/decision rows their tags
+ * name and in internal.h's value comments. `excludes` means the arms below
+ * are DISJOINT by construction and the order is free; `outranks` means they
+ * can co-occur and first-wins is the intended answer.
+ *
+ *  | # | arm (ESEL_)               | fires on                                                       | against the arms below |
+ *  |---|---------------------------|----------------------------------------------------------------|---|
+ *  | 1 | FORCED                    | `opt->engine != AUTO`                                          | OUTRANKS — note (A) |
+ *  | 2 | DECLINED_NULLABLE_DEFAULT | `fit->prefilter_declined_nullable_default`                     | excludes: the field needs `collapse_reason == CR_NONE && !dfa_disabled` and a VM-chosen artifact — note (B) |
+ *  | 3 | DECLINED_NULLABLE         | `collapse_reason != CR_NONE && fit->prefilter_declined_nullable` | excludes: a rung ran AND refused its rescue, so the prefilter neither survived (7) nor is this an un-rung compile (2) |
+ *  | 4 | SIZE_CAP_RETRY (a)        | `collapse_reason == CR_SIZECAP && fit->prefilter`              | excludes: `CR_SIZECAP` is not `CR_NONE`/`CR_SEL1`, and `dfa_disabled` is never set on this rung — note (C) |
+ *  | 5 | SIZE_CAP_RETRY (b)        | `size_drop_rung != SDR_NONE`                                   | excludes 6-9 ONLY under the premise the check below asserts — note (D) |
+ *  | 6 | SELECTED                  | `!dfa_disabled`                                                | excludes: every arm below requires `dfa_disabled` |
+ *  | 7 | COLLAPSED_PREFILTER       | `collapse_reason == CR_SEL1 && fit->prefilter`                 | excludes: below it no prefilter survived |
+ *  | 8 | OVERFLOWED_DFA            | `dfa_was_engine`                                               | last test; its negation is arm 9 |
+ *  | 9 | OVERFLOWED_PREFILTER      | otherwise                                                      | — |
+ *
+ * (A) ARM 1 OUTRANKS, IT DOES NOT EXCLUDE, and the difference is real: a
+ *     named engine means `auto` selected nothing, so no selection OUTCOME is
+ *     the honest token — but `compile_driver`'s two drop-ladder rungs carry
+ *     no `engine == AUTO` conjunct, so `size_drop_rung` CAN be set under
+ *     `--engine=dfa` and arm 5 would otherwise fire. First-wins is the
+ *     intended answer there; the rung is still legible from the artifact's
+ *     own axis stamps (internal.h's `ESEL_SIZE_CAP_RETRY` table).
+ * (B) `prefilter_declined_nullable_default` is the one case where
+ *     `!dfa_disabled` holds and arm 6's ordinary "selected" would be the
+ *     WRONG stamp — which is why it is tested up here rather than after it.
+ *     internal.h's placement note explains why the VALUE also sits outside
+ *     both fallback ranges.
+ * (C) The `fit->prefilter` conjunct on arm 4 is not belt-and-braces: a
+ *     size-cap-refused VM compile can still end with no prefilter (a
+ *     backreference or a linked call drops it), and stamping "a prefilter
+ *     survived" would name a decision the artifact did not take. That case
+ *     falls to arm 6 deliberately — nothing about its route through a cap is
+ *     observable in any other stamp, so it is left alone pending a named
+ *     consumer (D77).
+ * (D) Arm 5 carries NO `fit->prefilter` conjunct, and that asymmetry with
+ *     arm 4 is forced: the drop ladder's rungs are DFA-engine (rung 1 needs
+ *     `Job.anchored_ok`, rung 2 tests `fit.chosen == ENGM_DFA`), a DFA
+ *     artifact has no prefilter to survive, and requiring one would make the
+ *     arm unreachable on exactly the population it exists for. The same
+ *     DFA-engine fact is what keeps arm 5 disjoint from arms 6-9 — see the
+ *     check below, which is the first time this file asserts it. */
+static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
+{
+    /* [TOUR-5] THE ONE PREMISE THIS LADDER RESTED ON WITHOUT ASSERTING
+     * (r61 F2, docs/dev/reviews/2026-09-20-r61-fable-personal-review.md).
+     * Arm 5 is ordered above arms 6-9 on "a drop-ladder rung and a DFA
+     * overflow cannot both have happened to one compile" — plausible, since
+     * the rungs are DFA-engine and an overflow makes the engine the VM, and
+     * argued nowhere. If both ever held, arm 5 would stamp SIZE_CAP_RETRY
+     * and the overflow would be invisible in every stamp the artifact
+     * carries: a silent loss from a closed value set, K35's own shape.
+     *
+     * A REFUSAL, NOT AN `abort()`: pcrec is a library and docs/spec/
+     * match_api.md promises the compile path never aborts the caller, so
+     * this reports itself the way every other impossible state in this file
+     * does — through `pcrec_ctx_fail`, which unwinds to `compile_driver`'s
+     * one `setjmp` and returns a diagnostic. */
+    if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
+        pcrec_ctx_fail(cx, fit->why_pos,
+                 "internal error: an emitted-size drop-ladder rung and a DFA "
+                 "overflow fired on the same compile");
+
+    return
+          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : fit->prefilter_declined_nullable_default    ? ESEL_DECLINED_NULLABLE_DEFAULT
+        : (cx->collapse_reason != CR_NONE && fit->prefilter_declined_nullable)
+                                                      ? ESEL_DECLINED_NULLABLE
+        : ((cx->collapse_reason == CR_SIZECAP && fit->prefilter) ||
+           cx->size_drop_rung != SDR_NONE)
+                                                      ? ESEL_SIZE_CAP_RETRY
+        : !cx->dfa_disabled                           ? ESEL_SELECTED
+        : (cx->collapse_reason == CR_SEL1 && fit->prefilter)
+                                                      ? ESEL_COLLAPSED_PREFILTER
+        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
+                                                      : ESEL_OVERFLOWED_PREFILTER;
+}
+
 /* Decides which of ENGM_DFA/ENGM_VM this pattern may build, whether the VM's
  * hybrid prefilter runs ahead of it, and which `<PREFIX>_ENGINE_SEL` token
  * records how that came out — then runs the bounded-repeat ladder's two
@@ -937,115 +1031,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                        : would_prefilter;
     }
 
-    /* [OPT-4] `<PREFIX>_ENGINE_SEL`, derived HERE and nowhere else — the one
-     * site where the fit is final and the driver's attempt record is in hand
-     * (`internal.h`'s `ESEL_*`). `fit.why`'s prose and this token are two
-     * readers of one decision (D81); neither is parsed from the other.
-     *
-     * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER. `forced` first
-     * because a named engine means auto never selected anything; then "no
-     * overflow happened", which is the common case; then the three fallback
-     * outcomes, distinguished by what SURVIVED rather than by what failed.
-     *
-     * `ESEL_COLLAPSED_PREFILTER` carries `fit.prefilter` as a conjunct and
-     * that is not belt-and-braces: a pattern can reach the collapse rung and
-     * still end with no prefilter (a backreference or a linked call drops it
-     * through the clause above), and stamping "a prefilter survived" on an
-     * artifact that has none would be the stamp naming a decision the artifact
-     * did not take — the defect §2 of run_prefilter_collapse.sh exists to
-     * catch on the language stamp, through the same door. */
-    /* [OPT-4.1] `ESEL_DECLINED_NULLABLE` SITS BETWEEN THE TWO, and it is the
-     * same shape as the arm above it: `ESEL_COLLAPSED_PREFILTER` says the rung
-     * ran and a prefilter survived, this says the rung ran and was DECLINED.
-     * Without it the declined artifact is byte-indistinguishable in its stamps
-     * from one whose COLLAPSED machine also overflowed — the two outcomes cost
-     * a consumer quite different things (one is a rescue that was not
-     * available, the other a rescue that was refused as useless), and the
-     * bench buckets on this macro precisely because it cannot bucket on prose.
-     *
-     * [LIM-1] (D90, 2026-08-30) THE CONJUNCT WIDENED FROM `CR_SEL1` TO
-     * `collapse_reason != CR_NONE`, FOLDING IN THE SIZE RUNG'S OWN DECLINE.
-     * It used to be CR_SEL1-only, on the ARGUMENT that "the SIZE rung reaches
-     * ESEL_SELECTED above and keeps it, declined or not" — true of the SIZE
-     * rung's SUCCESS (which now has its own value, ESEL_SIZE_CAP_RETRY,
-     * below) but never true of its DECLINE: a SIZE-rung nullable decline
-     * used to fall through to `!cx->dfa_disabled ? ESEL_SELECTED` (dfa_
-     * disabled is never set on this rung) and stamp `"selected"` —
-     * indistinguishable from an ordinary compile, the exact "closed value
-     * set silently losing a member" shape K35 exists to name. Both rungs'
-     * declines are now ONE arm; the CR_SEL1-scoped `ESEL_COLLAPSED_
-     * PREFILTER` arm above is UNCHANGED (a SIZE-rung success is a different
-     * value, tested next), so `>= ESEL_OVERFLOWED_DFA && <= ESEL_
-     * DECLINED_NULLABLE` still means exactly "a DFA STATE cap overflowed"
-     * (internal.h's own updated invariant comment). */
-    /* [OPT-4.2] `ESEL_DECLINED_NULLABLE_DEFAULT` TESTED IMMEDIATELY AFTER
-     * `ESEL_FORCED`, AHEAD OF EVERY FALLBACK ARM BELOW — not because it
-     * outranks them in some priority sense, but because it CANNOT OVERLAP
-     * WITH THEM: `fit.prefilter_declined_nullable_default` requires
-     * `collapse_reason == CR_NONE && !cx->dfa_disabled`, which is precisely
-     * the condition every arm below it is testing the NEGATION or a further
-     * refinement of (a SIZE/SEL1 rung ran, or `dfa_disabled` is set). Testing
-     * it here rather than after `ESEL_SELECTED` is the same non-overlap
-     * argument stated positively: this is the one case where `!cx->dfa_
-     * disabled` holds AND the ordinary `"selected"` fallthrough would be the
-     * wrong stamp — internal.h's own placement note explains why the VALUE
-     * sits outside both the bounded and the unbounded fallback ranges. */
-    fit.engine_sel =
-          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
-        : fit.prefilter_declined_nullable_default      ? ESEL_DECLINED_NULLABLE_DEFAULT
-        : (cx->collapse_reason != CR_NONE && fit.prefilter_declined_nullable)
-                                                      ? ESEL_DECLINED_NULLABLE
-        : /* [LIM-1] THE SIZE RUNG'S OWN SUCCESS — `dfa_disabled` is never set
-           * on this rung (it is not a DFA-overflow fallback at all: the DFA
-           * build succeeded, the WHOLE ARTIFACT was refused by an emitted-
-           * size cap), so without this arm it would fall through to
-           * `ESEL_SELECTED` next and read `"selected"` — the exact gap
-           * docs/spec/limits.md §3.3's own [OPT-4] section named without a
-           * fix ("the SIZE rung's own decline is not this value... the
-           * route stays selected", which this arm's own header addendum
-           * corrects: that sentence was true of the decline only, and was
-           * being silently read as true of the rung's SUCCESS too).
-           * `fit.prefilter` is a conjunct for `ESEL_COLLAPSED_PREFILTER`'s
-           * own reason: a size-cap-refused compile can still end with no
-           * prefilter (a backreference/linked call), and that case is
-           * already `ESEL_SELECTED` — nothing about ITS route through a
-           * cap is observable in any other stamp, so leaving it alone is
-           * the conservative choice pending a named consumer (D77). */
-          /* [K53-SELRETRY] (2026-09-10) THE DROP LADDER'S RUNG JOINS THIS ARM
-           * RATHER THAN MINTING A VALUE, and internal.h's own comment on the
-           * value is what settles it: `ESEL_SIZE_CAP_RETRY` means "an
-           * emitted-SIZE cap forced a retry and the retry succeeded", which
-           * is exactly what happened. Its stated reachability ("ONLY from
-           * `collapse_reason == CR_SIZECAP`") described the one rung that
-           * existed when it was written; it was never part of the meaning,
-           * and it is corrected there.
-           *
-           * WHICH CONTRIBUTOR THE RETRY DROPPED IS ANSWERED BY THE
-           * ARTIFACT'S OWN AXIS STAMPS, not by a second value here: the
-           * prefilter rung is legible as `_DFA_PREFILTER` with `_LANG_WHY`
-           * "count-collapsed", the drop rung as `_DFA_MATCH "search-filter"`
-           * on a DFA-engine artifact. The two rungs are mutually exclusive
-           * by engine (the first requires a VM hybrid, the second implies
-           * `ENGM_DFA` through `Job.anchored_ok`), so the pair is exact and
-           * a consumer needs no third fact. A second value would be a second
-           * home for "a size cap forced a retry", which is the drift this
-           * macro's entire comment history is about.
-           *
-           * NO `fit.prefilter` CONJUNCT ON THIS HALF. That conjunct is there
-           * because a size-refused VM compile can end with no prefilter at
-           * all and stamping "a prefilter survived" would name a decision the
-           * artifact did not take. A DFA-engine artifact has no prefilter to
-           * survive — `fit.prefilter` is false on every member of this rung's
-           * population — so requiring one would make the arm unreachable on
-           * exactly the patterns it exists for. */
-          ((cx->collapse_reason == CR_SIZECAP && fit.prefilter) ||
-           cx->size_drop_rung != SDR_NONE)
-                                                      ? ESEL_SIZE_CAP_RETRY
-        : !cx->dfa_disabled                           ? ESEL_SELECTED
-        : (cx->collapse_reason == CR_SEL1 && fit.prefilter)
-                                                      ? ESEL_COLLAPSED_PREFILTER
-        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
-                                                      : ESEL_OVERFLOWED_PREFILTER;
+    fit.engine_sel = esel_of(cx, &fit);
 
     cx->job->fit = fit;
 

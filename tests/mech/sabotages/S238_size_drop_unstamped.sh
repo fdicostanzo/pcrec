@@ -32,9 +32,15 @@ SAB_COUNT=1
 # the rung, both rows are certifying nothing.
 SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
-SAB_BEFORE='          ((cx->collapse_reason == CR_SIZECAP && fit.prefilter) ||
+# [TOUR-5] (2026-09-20) RE-AIMED, SAME INTENT, SAME ONE LINE REMOVED. The
+# ladder moved out of `pcrec_select_engine` into `esel_of` (r61 F2), so `fit.`
+# became `fit->` and the arm gained its own `: ` continuation column. The plant
+# still deletes exactly the `size_drop_rung` disjunct and nothing else, so a
+# drop-rung-rescued artifact falls through to `!cx->dfa_disabled ?
+# ESEL_SELECTED` — the same "selected" silence the header describes.
+SAB_BEFORE='        : ((cx->collapse_reason == CR_SIZECAP && fit->prefilter) ||
            cx->size_drop_rung != SDR_NONE)
                                                       ? ESEL_SIZE_CAP_RETRY'
-SAB_AFTER='          /* SABOTAGE S238: the drop rung does not reach the stamp. */
-          (cx->collapse_reason == CR_SIZECAP && fit.prefilter)
+SAB_AFTER='        : /* SABOTAGE S238: the drop rung does not reach the stamp. */
+          (cx->collapse_reason == CR_SIZECAP && fit->prefilter)
                                                       ? ESEL_SIZE_CAP_RETRY'
