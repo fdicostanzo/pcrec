@@ -9689,9 +9689,16 @@ typedef struct {
                                             * default pair when !tiered */
     bool        tiered;    /* [OPT-1] the fast tier differs from the default,
                              * so the artifact emits the two-tier shape */
+    /* THREE SPELLINGS BUILT ONCE, because several phases write each of them
+     * and a rename must not be able to leave one behind. */
     const char *frames_sentinel;  /* `<PREFIX>_R_FRAMES` — the private FRAMES
-                                    * give-up the two ANCHORED entries see,
-                                    * built once rather than at each site */
+                                    * give-up the two ANCHORED entries see */
+    const char *mrl_param;        /* `, const size_t <p>_window_end` — the MRL
+                                    * ceiling's parameter, at the declaration,
+                                    * the definition and three call sites */
+    const char *gst_param;        /* `, const size_t <p>_search_from` — `\G`'s,
+                                    * appended AFTER the ceiling's so the two
+                                    * are order-independent at every site */
 } VmPlan;
 
 /* WHICH RUNG OF THE ENTRY CHAIN THIS ARTIFACT TAKES, and the two attribute
@@ -10241,6 +10248,15 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
      * PCREC_MAX_EMIT_NAME_LEN -- a second hand-picked constant for the same
      * problem is exactly the mistake this fix exists to stop repeating. */
     const char *frames_sentinel = vm_rolef(v, "%s_R_FRAMES", v->up);
+    /* The ceiling parameter's spelling, written once: the declaration, the
+     * definition and the three call sites all read these two strings rather
+     * than re-deriving the name, so a rename cannot leave one of them behind. */
+    const char *mrl_param = vm_rolef(v, ", const size_t %s_window_end", v->p);
+    /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
+     * appended AFTER the ceiling's so the two are order-independent at every
+     * site: each is emitted or omitted on its own flag, and a program with
+     * both gets `(ctx, w, ceil, startpos)`. */
+    const char *gst_param = vm_rolef(v, ", const size_t %s_search_from", v->p);
 
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
@@ -10259,6 +10275,8 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
     pl->fast_trail      = fast_trail;
     pl->tiered          = tiered;
     pl->frames_sentinel = frames_sentinel;
+    pl->mrl_param       = mrl_param;
+    pl->gst_param       = gst_param;
 }
 
 /* Chooses which of the four entry-chain rungs this artifact takes and fills
@@ -10978,44 +10996,33 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
     pcrec_sb_puts(c, "\n");
 }
 
-/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
- * `root` into `job->csb` (and, under `--emit-ir`, the listing into
- * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
- * `<prefix>_match*` entries, the resume/trail frame types and their sizing
- * macros, the program body (`vm_emit`'s recursive walk plus its own
- * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
- * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
- * run first and consumed by the emission that follows — the root's
- * minimum width (this comment's own subject, immediately below: read HERE
- * because only this emitter writes a search entry to guard), the cost/slot
- * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
- * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
- * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
- * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
- * it discovers the call regions it must save/restore across. */
-void pcrec_emit_vm(Ctx *cx, Ast *root)
+/* Writes the artifact's STORAGE LAYER: the resume-frame and trail-entry
+ * element types, `<prefix>_run_state` and the two buffer structs, the
+ * internal give-up sentinels, the counter/work charge macros, the two MRL
+ * ceiling forms, the ceiling and `\G` parameter spellings, and the
+ * `RX_PUSH`/`RX_TRAIL`/`RX_CUT`/`RX_CALL` macros the program body is written
+ * in terms of.
+ *
+ * Everything here is a TYPE, a SENTINEL or a MACRO — declarations the
+ * matcher body below expands, never a statement of the matcher itself. That
+ * is the section's boundary: the moment a line emits code that runs, it
+ * belongs to `vm_emit_search_body`.
+ *
+ * READS `pl` for the field tables `vm_layout` already sized (so the struct
+ * and the `<PREFIX>_RESUME_FRAME_SIZE` macro cannot disagree — they are one
+ * value read twice) and for `tiered`, which decides whether the fast-tier
+ * storage struct exists at all.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_stamps`, because
+ * every capacity these types are dimensioned by is a macro written there. */
+static void vm_emit_storage(Vm *v, const VmPlan *pl)
 {
+    Ctx *cx = v->cx;
     Job *job = cx->job;
     StrBuf *c = &job->csb;
-    Vm vm;
-    Vm *v = &vm;
-    GenNames g;
-    VmPlan pl;
-    VmEntry en;
 
-    vm_init(v, cx, root, &g);
-    vm_plan(v, root, &pl);
-    vm_plan_entry(v, &pl, &en);
-
-    const long long bt_frames    = pl.caps.bt_frames;
-    const long long trail_frames = pl.caps.trail_frames;
-    const long long ceiling      = pl.caps.ceiling;
-    const long long budget       = pl.caps.budget;
-    const long long work_budget  = pl.caps.work_budget;
-    const bool      has_budget   = pl.caps.has_budget;
-
-    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
-    vm_emit_stamps(v, &pl, &en);
+    const long long work_budget = pl->caps.work_budget;
+    const bool      has_budget  = pl->caps.has_budget;
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
      * All locals — no globals (TS-1: usable FROM threads, all-const tables,
@@ -11041,7 +11048,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, "typedef struct { ");
-        vm_fields_join(c, pl.frame_fields, pl.nframe_fields);
+        vm_fields_join(c, pl->frame_fields, pl->nframe_fields);
         pcrec_sb_printf(c, " } %s_frame;\n", v->p);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
@@ -11049,7 +11056,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * before the write being logged. Same privacy, same reason. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, "typedef struct { ");
-        vm_fields_join(c, pl.trail_fields, pl.ntrail_fields);
+        vm_fields_join(c, pl->trail_fields, pl->ntrail_fields);
         pcrec_sb_printf(c, " } %s_trail_entry;\n\n", v->p);
 
         /* THE STAMPED SIZES ARE CHECKED AGAINST THE REAL ONES, HERE, in the
@@ -11178,7 +11185,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * string with a substituted clause. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
-        pl.tiered
+        pl->tiered
           ? "/* This artifact's own working storage, at the stamped default\n"
             " * capacities. [OPT-1]: declared by the three <prefix>_*_deep\n"
             " * statics below, NOT by the entries -- an entry runs on the small\n"
@@ -11215,7 +11222,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * tests/codegen/run_tiered_entry.sh IS the default artifact's text — which
      * is the property a `--trace`-style separate generation axis would have
      * given up. */
-    if (pl.tiered) {
+    if (pl->tiered) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* The fast tier's storage: the same two arrays at the\n"
@@ -11338,16 +11345,6 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * which R26 E1 measured as 5 of 8 subjects answered `nomatch` where both
      * pcrec-unpruned and python match. At `w_ == 1` the division is the
      * identity and gcc removes it. */
-    /* The ceiling parameter's spelling, written once: the declaration, the
-     * definition and the three call sites all read these two strings rather
-     * than re-deriving the name, so a rename cannot leave one of them behind. */
-    const char *mrl_param = vm_rolef(v, ", const size_t %s_window_end", v->p);
-    /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
-     * appended AFTER the ceiling's so the two are order-independent at every
-     * site: each is emitted or omitted on its own flag, and a program with
-     * both gets `(ctx, w, ceil, startpos)`. */
-    const char *gst_param = vm_rolef(v, ", const size_t %s_search_from", v->p);
-
     if (v->nclamp > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
@@ -11501,6 +11498,48 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                 "    } while (0)\n\n",
                 v->up, v->up, v->p, v->p);
     }
+}
+
+/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
+ * `root` into `job->csb` (and, under `--emit-ir`, the listing into
+ * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
+ * `<prefix>_match*` entries, the resume/trail frame types and their sizing
+ * macros, the program body (`vm_emit`'s recursive walk plus its own
+ * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
+ * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
+ * run first and consumed by the emission that follows — the root's
+ * minimum width (this comment's own subject, immediately below: read HERE
+ * because only this emitter writes a search entry to guard), the cost/slot
+ * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
+ * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
+ * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
+ * it discovers the call regions it must save/restore across. */
+void pcrec_emit_vm(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    Vm vm;
+    Vm *v = &vm;
+    GenNames g;
+    VmPlan pl;
+    VmEntry en;
+
+    vm_init(v, cx, root, &g);
+    vm_plan(v, root, &pl);
+    vm_plan_entry(v, &pl, &en);
+
+    const long long bt_frames    = pl.caps.bt_frames;
+    const long long trail_frames = pl.caps.trail_frames;
+    const long long ceiling      = pl.caps.ceiling;
+    const long long budget       = pl.caps.budget;
+    const long long work_budget  = pl.caps.work_budget;
+    const bool      has_budget   = pl.caps.has_budget;
+
+    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
+    vm_emit_stamps(v, &pl, &en);
+    vm_emit_storage(v, &pl);
+
 
     /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position. On a failed attempt the trail
@@ -11671,8 +11710,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * size term prices, and the SHARED rung keeps exactly one copy of it
          * while every thin helper above still inlines. */
         en.ai_body, v->p, v->p,
-        v->nclamp > 0 ? mrl_param : "",
-        v->ngst > 0 ? gst_param : "");
+        v->nclamp > 0 ? pl.mrl_param : "",
+        v->ngst > 0 ? pl.gst_param : "");
     if (v->rungs & vm_rung_bit[VM_RUNG_CURSOR])
         pcrec_sb_printf(c, "    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
