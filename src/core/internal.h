@@ -123,7 +123,7 @@ void pcrec_sb_comments(StrBuf *sb, bool on);
 /* Open / close a comment REGION. Every byte appended between them is comment
  * text, and a NON-ESSENTIAL region's bytes are discarded when the policy says
  * so. Balanced, nestable, and cheap enough to wrap a single trailing comment.
- * The gate sits in `sb_putc`/`sb_puts`/`sb_vprintf` — the three primitives
+ * The gate sits in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf` — the three primitives
  * every other append in this file is built on — so it cannot be bypassed by a
  * helper, present or future. */
 void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
@@ -142,8 +142,8 @@ size_t pcrec_sb_len_uncut(const StrBuf *sb);
  * every row; see its definition in src/core/compile.c. */
 bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force);
 
-void  sb_putc(StrBuf *sb, char c);
-void  sb_puts(StrBuf *sb, const char *s);
+void  pcrec_sb_putc(StrBuf *sb, char c);
+void  pcrec_sb_puts(StrBuf *sb, const char *s);
 void  sb_printf(StrBuf *sb, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
 char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */

@@ -368,7 +368,7 @@ attempt.
 critic-sem S3). `sb_grow` really is the only place a length grows, but a
 `StrBuf` has to be ARMED to be checked, and the VM emitter builds its whole
 program into `job->vmsb` before splicing it into `job->csb` with a single
-`sb_puts`. With only `csb` armed, a trial constructed the entire worst-rung
+`pcrec_sb_puts`. With only `csb` armed, a trial constructed the entire worst-rung
 body unbounded and the abort fired on the copy — after the memory had already
 been spent, which is the opposite of what this section claims for it. The
 correct reading of the old sentence is that ONE CHECK SITE covers every append;

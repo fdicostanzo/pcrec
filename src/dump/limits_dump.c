@@ -65,7 +65,7 @@ char *pcrec_limits_tsv(void)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec numeric-limits registry (docs/spec/table_contract.md, the\n"
         "# SIXTH TSV surface; D90/[LIM-1]). One row per numeric limit in\n"
         "# src/core/limits.def, in the table's own order.\n"

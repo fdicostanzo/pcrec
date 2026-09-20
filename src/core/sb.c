@@ -66,7 +66,7 @@ void pcrec_sb_cmt_close(StrBuf *sb)
     sb->cmt_depth--;
 }
 
-void sb_putc(StrBuf *sb, char c)
+void pcrec_sb_putc(StrBuf *sb, char c)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += 1; return; }
     sb_grow(sb, 1);
@@ -74,7 +74,7 @@ void sb_putc(StrBuf *sb, char c)
     sb->p[sb->len] = 0;
 }
 
-void sb_puts(StrBuf *sb, const char *s)
+void pcrec_sb_puts(StrBuf *sb, const char *s)
 {
     if (sb_muted(sb)) { sb->cmt_dropped += strlen(s); return; }
     size_t n = strlen(s);
@@ -165,7 +165,7 @@ void pcrec_sb_free(StrBuf *sb)
 static void sb_frame_byte(StrBuf *sb, unsigned char c)
 {
     if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
-    else                       sb_putc(sb, (char)c);
+    else                       pcrec_sb_putc(sb, (char)c);
 }
 
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n)
@@ -185,10 +185,10 @@ void pcrec_sb_field(StrBuf *sb, const char *s)
     if (!s) return;
     for (const unsigned char *q = (const unsigned char *)s; *q; q++) {
         switch (*q) {
-        case '\\': sb_puts(sb, "\\\\"); break;
-        case '\t': sb_puts(sb, "\\t");  break;
-        case '\n': sb_puts(sb, "\\n");  break;
-        case '\r': sb_puts(sb, "\\r");  break;
+        case '\\': pcrec_sb_puts(sb, "\\\\"); break;
+        case '\t': pcrec_sb_puts(sb, "\\t");  break;
+        case '\n': pcrec_sb_puts(sb, "\\n");  break;
+        case '\r': pcrec_sb_puts(sb, "\\r");  break;
         default:
             sb_frame_byte(sb, *q);
             break;
@@ -199,18 +199,18 @@ void pcrec_sb_field(StrBuf *sb, const char *s)
 void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
 {
     for (size_t i = 0; i < n; i++) {
-        if (i) sb_puts(sb, sep);
-        if (names[i]) sb_puts(sb, names[i]);
+        if (i) pcrec_sb_puts(sb, sep);
+        if (names[i]) pcrec_sb_puts(sb, names[i]);
     }
 }
 
 void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 {
     for (size_t i = 0; i < ncell; i++) {
-        if (i) sb_putc(sb, '\t');
+        if (i) pcrec_sb_putc(sb, '\t');
         pcrec_sb_text(sb, cells[i]);
     }
-    sb_putc(sb, '\n');
+    pcrec_sb_putc(sb, '\n');
 }
 
 /* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3) -----------------------------
@@ -272,7 +272,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
 {
     sb_printf(c, "#define %s_%-*s ", upper, namew, name);
     sb_vprintf(c, valfmt, ap);
-    sb_putc(c, '\n');
+    pcrec_sb_putc(c, '\n');
 }
 
 void pcrec_sb_stampf(StrBuf *c, const char *upper, const char *name,

@@ -249,7 +249,7 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
               "        scan_position = run->resume_stack[frame_index].resume_position;\n"
               "%s", pop_tr);
       }
-      sb_puts(c,
+      pcrec_sb_puts(c,
           "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
           "            run->trail_depth--;\n"
           "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
@@ -296,9 +296,9 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
           "             trail[%s_TRAIL_FRAMES];\n"
           "    unsigned resume_depth, trail_depth;\n",
           v.up, v.tracing ? " int id;" : "", v.up, v.up);
-      if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
+      if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
       if (work_budget != PCREC_WORK_BUDGET_NONE)
-          sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+          pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
       sb_printf(c, "} %s_run_state;\n\n", v.p);
 
 === AXIS E: the [M6.5] reference-resolution machinery a CALL reuses ===

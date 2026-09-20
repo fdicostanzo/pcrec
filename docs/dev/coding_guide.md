@@ -113,7 +113,7 @@ direction yourself, at the point you write it.
 
 ## 2. Taught primitives — reach for these, in their state TODAY
 
-**2.1 `sb.c` is the text mechanism: `sb_putc` / `sb_puts` / `sb_printf` /
+**2.1 `sb.c` is the text mechanism: `pcrec_sb_putc` / `pcrec_sb_puts` / `sb_printf` /
 `pcrec_sb_take` / `pcrec_sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
 call sites ARE the norm — lens 2's own seed hypothesis ("the emitters use neither
 sb nor stdio") was REFUTED by measurement. There is deliberately no `emit_line()`

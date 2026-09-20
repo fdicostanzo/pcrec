@@ -873,7 +873,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                     ? UINT64_MAX : 3u * st_cap;
             /* BOTH buffers, not just the C one (r42 critic-sem S3). The VM
              * emitter builds its whole program into `job->vmsb` and splices
-             * it into `csb` with a single `sb_puts`, so arming `csb` alone
+             * it into `csb` with a single `pcrec_sb_puts`, so arming `csb` alone
              * let a trial construct the entire worst-rung body unbounded and
              * caught it only on the final copy — the abort fired, but after
              * the memory had already been spent, which is the opposite of

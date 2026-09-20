@@ -62,5 +62,5 @@ SAB_REACH='grep -cE "^pattern .*$(printf "\t")" "$TREE/tests/base/bounded_repeat
 SAB_REACH_EXPECT="2"
 SAB_REACH_POP="tests/modifiers/xxmode.rxt|^pattern .*	|1"
 SAB_COUNT=1
-SAB_BEFORE="        case '\\t': sb_puts(sb, \"\\\\t\");  break;"
-SAB_AFTER="        case '\\t': sb_putc(sb, '\\t');  break;   /* SABOTAGE S200 */"
+SAB_BEFORE="        case '\\t': pcrec_sb_puts(sb, \"\\\\t\");  break;"
+SAB_AFTER="        case '\\t': pcrec_sb_putc(sb, '\\t');  break;   /* SABOTAGE S200 */"

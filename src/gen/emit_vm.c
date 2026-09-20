@@ -1548,7 +1548,7 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
 {
     int lo, hi;
     switch (vm_cls_shape(v, v->cls[ci], &lo, &hi)) {
-    case VM_CLS_SHAPE_ALL:    sb_puts(b, "1"); return;
+    case VM_CLS_SHAPE_ALL:    pcrec_sb_puts(b, "1"); return;
     case VM_CLS_SHAPE_SINGLE: sb_printf(b, "%s == %d", byte, lo); return;
     case VM_CLS_SHAPE_RANGE:
         sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
@@ -4005,7 +4005,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                           (int)t->nd[c].byte, v->p, t->nd[c].lbl);
                 vm_ev(v, VE_GOTO, t->nd[c].lbl, 0, "island: first-byte switch arm");
             }
-            sb_puts(b, "    }\n");
+            pcrec_sb_puts(b, "    }\n");
         }
         vm_isl_die(v, t, x);
 
@@ -4110,8 +4110,8 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, int stride,
                               const char *test, const char *clamp)
 {
     StrBuf *b = v->b;
-    sb_puts(b, "    {\n");
-    if (a->u.rep.rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
+    pcrec_sb_puts(b, "    {\n");
+    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, "        unsigned long it_ = 0;\n");
     if (clamp)
         sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
                   v->up, clamp, stride);
@@ -4120,8 +4120,8 @@ static void vm_emit_span_scan(Vm *v, const Ast *a, int stride,
               clamp ? "lim_" : "subject_length");
     if (a->u.rep.rmax >= 0) sb_printf(b, " && it_ < %dUL", a->u.rep.rmax);
     sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
-    if (a->u.rep.rmax >= 0) sb_puts(b, " it_++;");
-    sb_puts(b, " }\n    }\n");
+    if (a->u.rep.rmax >= 0) pcrec_sb_puts(b, " it_++;");
+    pcrec_sb_puts(b, " }\n    }\n");
 }
 
 /* §2.5's cursor rung, with D44.1's capture extension.
@@ -4211,9 +4211,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * truncated mid-suffix ("..._sp"), losing the closing ']'. Now
          * arena-owned, so there is no size here to widen a second time. */
         const char *byte = vm_rolef(v, "subject[%s_span_cursor + %d]", v->p, i);
-        sb_puts(t, " && (");
+        pcrec_sb_puts(t, " && (");
         vm_cls_test(v, t, ci[i], byte);
-        sb_puts(t, ")");
+        pcrec_sb_puts(t, ")");
     }
     const char *test = t->p ? t->p : "";
 
@@ -4327,7 +4327,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                        vm_rolef(v, "group %d close, derived from the cursor",
                                 caps[i].group));
             }
-            sb_puts(b, "    }\n");
+            pcrec_sb_puts(b, "    }\n");
         }
         sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
         vm_goto(v, next);
@@ -4415,12 +4415,12 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * give [0,1)/g1=[0,0). */
         sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
         if (a->u.rep.rmin > 0) {
-            sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
+            pcrec_sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
             sb_printf(b, "        while (it_ < %dUL) {\n", a->u.rep.rmin);
             sb_printf(b, "            if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n",
                       v->p, stride, test, v->p);
             sb_printf(b, "            %s_span_cursor += %d; it_++;\n", v->p, stride);
-            sb_puts(b, "        }\n    }\n");
+            pcrec_sb_puts(b, "        }\n    }\n");
         }
         vm_goto(v, retry);
 
@@ -4474,7 +4474,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                    vm_rolef(v, "group %d close, derived from the cursor",
                             caps[i].group));
         }
-        sb_puts(b, "    }\n");
+        pcrec_sb_puts(b, "    }\n");
     }
     sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
     vm_goto(v, next);
@@ -4875,7 +4875,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
             uint8_t f[32];
             pcrec_revdet_first(br[j], f);
             int ci = vm_cls(v, f);
-            sb_puts(b, "    if (");
+            pcrec_sb_puts(b, "    if (");
             vm_cls_test(v, b, ci, byte);
             sb_printf(b, ") goto %s_L%d;\n", v->p, bentry[j]);
         }
@@ -5102,7 +5102,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "    if (%s_iteration == %dUL) {\n", rv, a->u.rep.rmin);
         vm_set(v, sl, "(ptrdiff_t)scan_position",
                "revdet: low-water = the boundary after rmin iterations");
-        sb_puts(b, "    }\n");
+        pcrec_sb_puts(b, "    }\n");
     }
     vm_goto(v, scanl);
 
@@ -5184,12 +5184,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
             vm_push_at(v, commitl, vm_rolef(v, "(size_t)%s_prev_position", rv),
                        "retreat: resume this very label with scan_position at the "
                        "PREVIOUS boundary, and re-derive from there");
-            sb_puts(b, "    }\n");
+            pcrec_sb_puts(b, "    }\n");
         } else {
             sb_printf(b, "    if ((ptrdiff_t)scan_position < slot_values[%d]) {\n", sh);
             vm_push_at(v, extl, "scan_position",
                        "extend: one more iteration is the lazy resume");
-            sb_puts(b, "    }\n");
+            pcrec_sb_puts(b, "    }\n");
         }
     }
     for (int j = 0; j < ng; j++) {
@@ -5205,7 +5205,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         vm_set(v, 2 * grp[j] + 1, vm_rolef(v, "%s_revdet_group_span[%d][1]", v->p, j),
                vm_rolef(v, "group %d close, recovered by the backward walk",
                         grp[j]));
-        sb_puts(b, "    }\n");
+        pcrec_sb_puts(b, "    }\n");
     }
     vm_ev(v, VE_NOTE, 0, 0, "a group the walk never witnessed keeps its previous"
                             " value -- which is §3.4's ZERO-ITERATION clause at"
@@ -7728,11 +7728,11 @@ static void vm_wordb(Vm *v, int entry, const Ast *a, int next)
     vm_lbl(v, entry, NULL);
     vm_ev(v, VE_ASSERT, next, 0,
           neg ? "\\B not a word boundary" : "\\b word boundary");
-    sb_puts(b, "    if (((scan_position > 0 && (");
+    pcrec_sb_puts(b, "    if (((scan_position > 0 && (");
     vm_cls_test(v, b, wi, "subject[scan_position-1]");
-    sb_puts(b, ")) ");
-    sb_puts(b, neg ? "==" : "!=");
-    sb_puts(b, " (scan_position < subject_length && (");
+    pcrec_sb_puts(b, ")) ");
+    pcrec_sb_puts(b, neg ? "==" : "!=");
+    pcrec_sb_puts(b, " (scan_position < subject_length && (");
     vm_cls_test(v, b, wi, "subject[scan_position]");
     sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
     vm_fail(v);
@@ -7916,7 +7916,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
     vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
                               a->u.bref.nrefs == 1 ? "one group" : "a name-run",
                               a->u.bref.caseless ? ", caseless" : ""));
-    sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
+    pcrec_sb_puts(bb, "    {\n        ptrdiff_t ref_start = PCREC_UNSET, "
                 "ref_end = PCREC_UNSET, took;\n");
     for (int i = 0; i < a->u.bref.nrefs; i++) {
         const char *ns = vm_slot_expr(v, 2 * a->u.bref.refs[i]);
@@ -7930,7 +7930,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
             i + 1 == a->u.bref.nrefs ? "\n" : " ");
     }
     pcrec_sb_cmt_open(bb, PCREC_CMT_NONESSENTIAL);
-    sb_puts(bb,
+    pcrec_sb_puts(bb,
         "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
         "         * it does not match the empty string. */\n");
     pcrec_sb_cmt_close(bb);
@@ -8029,7 +8029,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         int ci = vm_cls(v, bits);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, NULL);
-        sb_puts(b, "    if (scan_position < subject_length && (");
+        pcrec_sb_puts(b, "    if (scan_position < subject_length && (");
         vm_cls_test(v, b, ci, "subject[scan_position]");
         sb_printf(b, ")) { scan_position++; goto %s_L%d; }\n", v->p, next);
         vm_fail(v);
@@ -8063,7 +8063,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
             vm_lbl(v, entry, NULL);
             vm_ev(v, VE_ASSERT, next, 0,
                   "(?m)^ attempt_position of subject or after a non-final newline");
-            sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
+            pcrec_sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
             vm_cls_test(v, b, ni, "subject[scan_position-1]");
             sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
             vm_fail(v);
@@ -8086,7 +8086,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
             vm_lbl(v, entry, NULL);
             vm_ev(v, VE_ASSERT, next, 0,
                   "(?m)$ end of subject or before a newline");
-            sb_puts(b, "    if (scan_position == subject_length || (");
+            pcrec_sb_puts(b, "    if (scan_position == subject_length || (");
             vm_cls_test(v, b, ni, "subject[scan_position]");
             sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
             vm_fail(v);
@@ -8268,8 +8268,8 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
     const uint8_t *bits = v->cls[ci];
     int count = 0;
     for (int c = 0; c < 256; c++) if (cls_has(bits, (unsigned)c)) count++;
-    if (count == 256) { sb_puts(o, "any byte"); return; }
-    if (count == 0)   { sb_puts(o, "(empty class)"); return; }
+    if (count == 256) { pcrec_sb_puts(o, "any byte"); return; }
+    if (count == 0)   { pcrec_sb_puts(o, "(empty class)"); return; }
 
     /* Spell at most eight ranges; past that the count is more informative
      * than a wall of hex. */
@@ -8280,8 +8280,8 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
         while (c < 256 && cls_has(bits, (unsigned)c)) c++;
         nr++;
         if (nr > 8) continue;
-        if (shown++ == 0) sb_puts(o, count == 1 ? "" : "[");
-        else sb_puts(o, "");
+        if (shown++ == 0) pcrec_sb_puts(o, count == 1 ? "" : "[");
+        else pcrec_sb_puts(o, "");
         int hi = c - 1;
         /* [REVW.2] the pair was `char a[8], b[8]` written through a
          * `char *dst = k ? b : a` alias; arena-owned fragments cannot be
@@ -8299,7 +8299,7 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
     if (nr > 8) {
         sb_printf(o, "...%d ranges, %d bytes]", nr, count);
     } else if (count != 1) {
-        sb_puts(o, "]");
+        pcrec_sb_puts(o, "]");
     }
 }
 
@@ -8570,19 +8570,19 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         if (v->ev[i].k == VE_CALLOUT) ncallout++;
     }
 
-    sb_puts(o, "# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
-    sb_puts(o, "#\n");
-    sb_puts(o, "# Produced BY the emitter's own walk, not by a second walk over the\n");
-    sb_puts(o, "# AST: every row below was written by the same call that wrote the\n");
-    sb_puts(o, "# corresponding C. S10's one constraint -- \"the dump must be derived\n");
-    sb_puts(o, "# from the same structure the emitter walks, never a parallel\n");
-    sb_puts(o, "# description\" -- is therefore structural here, not a discipline.\n");
-    sb_puts(o, "#\n");
-    sb_puts(o, "# TAB-separated, one #section per table, each with its own #header of\n");
-    sb_puts(o, "# column names: docs/spec/ir_listing.md is this listing's contract and\n");
-    sb_puts(o, "# docs/spec/table_contract.md is the TSV contract it conforms to.\n");
-    sb_puts(o, "# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG\n");
-    sb_puts(o, "# listing: complete for control structure, lossy on operands (D106).\n");
+    pcrec_sb_puts(o, "# pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
+    pcrec_sb_puts(o, "#\n");
+    pcrec_sb_puts(o, "# Produced BY the emitter's own walk, not by a second walk over the\n");
+    pcrec_sb_puts(o, "# AST: every row below was written by the same call that wrote the\n");
+    pcrec_sb_puts(o, "# corresponding C. S10's one constraint -- \"the dump must be derived\n");
+    pcrec_sb_puts(o, "# from the same structure the emitter walks, never a parallel\n");
+    pcrec_sb_puts(o, "# description\" -- is therefore structural here, not a discipline.\n");
+    pcrec_sb_puts(o, "#\n");
+    pcrec_sb_puts(o, "# TAB-separated, one #section per table, each with its own #header of\n");
+    pcrec_sb_puts(o, "# column names: docs/spec/ir_listing.md is this listing's contract and\n");
+    pcrec_sb_puts(o, "# docs/spec/table_contract.md is the TSV contract it conforms to.\n");
+    pcrec_sb_puts(o, "# Resolve a column BY NAME; column WIDTH is not a contract. A DEBUG\n");
+    pcrec_sb_puts(o, "# listing: complete for control structure, lossy on operands (D106).\n");
 
     /* ---- summary -------------------------------------------------------
      * The artifact-wide facts, one row each: `value` is the machine-readable
@@ -9219,8 +9219,8 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
 {
     int i;
     for (i = 0; i < n; i++) {
-        if (i) sb_puts(sb, " ");
-        sb_puts(sb, f[i].decl);
+        if (i) pcrec_sb_puts(sb, " ");
+        pcrec_sb_puts(sb, f[i].decl);
     }
 }
 
@@ -9310,7 +9310,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             ret, name, params, name, fwdargs, v->p);
     } else if (tiered) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* [OPT-1] THE DEEP TIER: the stamped default storage, on a frame\n"
             " * only a FRAMES give-up reaches. `noinline` is load-bearing --\n"
             " * inlined, these arrays would be back on the entry's own frame and\n"
@@ -9339,7 +9339,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
             name, runargs);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
             "     * means \"a capacity ran out\" and nothing more, so the deep\n"
             "     * tier re-runs the SAME match from scratch at the stamped\n"
@@ -9967,11 +9967,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                      "frames: %lld */\n", bt_frames);
     pcrec_sb_cmt_close(c);
     pcrec_emit_engine_stamp(c, v.up, "vm", pcrec_engine_sel_name(cx));
-    sb_puts(c, "#define ");
+    pcrec_sb_puts(c, "#define ");
     sb_printf(c, "%s_ENGINE_WHY ", v.up);
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
                                 strlen(job->fit.why ? job->fit.why : "--engine=vm"));
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
     /* [M4.6f] THE PREFILTER STAMP: D46's observability half for
      * select_engine.c's fit.prefilter, in the SAME PLACEMENT as
      * RX_ENGINE/RX_ENGINE_WHY immediately above and for the same reason -- a
@@ -10192,7 +10192,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sentence a reader greps for ("matches nothing"). */
     if (root_minw >= PCREC_MINW_MAX) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
             " * minimum width is at the analysis ceiling -- design\n"
             " * subroutines_design.md SS4.4b's call-graph fixpoint reached\n"
@@ -10552,14 +10552,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                                : v.mrl_win ? "prefilter-window" : "subject-end");
     if (v.tracing) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
             " * prints every resume-frame push and pop, every capture write,\n"
             " * and its accept/fail to STDERR as it runs. It is a DEBUG build\n"
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
         pcrec_sb_cmt_close(c);
-        sb_puts(c, "#include <stdio.h>\n");
+        pcrec_sb_puts(c, "#include <stdio.h>\n");
         pcrec_sb_stampf(c, v.up, "TRACE", "1");
     }
     pcrec_sb_stampf(c, v.up, "NSLOTS", "%d", nstate < 1 ? 1 : nstate);
@@ -10571,9 +10571,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * Every name comes from vm_slot_name, i.e. from the layout arithmetic
      * itself, so it cannot disagree with where the emitter actually writes. */
     if (nstate > 0) {
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c, "/* SLOT LEGEND -- names for the numbered cells of the slot\n"
+        pcrec_sb_puts(c, "/* SLOT LEGEND -- names for the numbered cells of the slot\n"
                    " * array. A capture group occupies a PAIR of slots, its start and\n"
                    " * its end. The whole-match pair is listed for completeness: the\n"
                    " * VM does not write it unless the pattern has a \\K, because the\n"
@@ -10584,7 +10584,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             if (!nm) continue;
             pcrec_sb_stampwf(c, v.up, nm, 24, "%d", sl);
         }
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
     }
     /* [DD-14.FB] `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` USED TO BE EMITTED
      * HERE, in the `.c`. They now ride the caller-buffer surface
@@ -10620,7 +10620,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * back and fix in two checks. */
     pcrec_sb_stampf(c, v.up, "FAST_FRAMES", "%lld", fast_frames);
     pcrec_sb_stampf(c, v.up, "FAST_TRAIL",  "%lld", fast_trail);
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
      * All locals — no globals (TS-1: usable FROM threads, all-const tables,
@@ -10638,22 +10638,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * error when it is wrong rather than an overrun when it is used. */
     {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* One entry of the resume stack: \"if you get stuck, come back to\n"
             " * HERE\". PRIVATE TO THIS FILE — the layout differs between\n"
             " * artifacts (a call-bearing one carries two more members), which is\n"
             " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
         pcrec_sb_cmt_close(c);
-        sb_puts(c, "typedef struct { ");
+        pcrec_sb_puts(c, "typedef struct { ");
         vm_fields_join(c, frame_fields, nframe_fields);
         sb_printf(c, " } %s_frame;\n", v.p);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* One entry of the undo log: a slot's index and the value it held\n"
             " * before the write being logged. Same privacy, same reason. */\n");
         pcrec_sb_cmt_close(c);
-        sb_puts(c, "typedef struct { ");
+        pcrec_sb_puts(c, "typedef struct { ");
         vm_fields_join(c, trail_fields, ntrail_fields);
         sb_printf(c, " } %s_trail_entry;\n\n", v.p);
 
@@ -10680,7 +10680,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     }
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Everything one match attempt can change, in one struct, so that no\n"
         " * state lives in globals and two attempts can never interfere.\n"
         " * Allocated by the caller on the stack; this file never allocates.\n"
@@ -10759,9 +10759,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * resume stack's capacity is now a caller-chosen `size_t`. */
         v.has_linked_calls ? "\n    size_t call_top;   /* the CURRENT activation's"
                       " frame index, or CALL_TOP_NONE */" : "");
-    if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
+    if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
-        sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+        pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
     sb_printf(c, "} %s_run_state;\n\n", v.p);
 
     /* [DD-14.FB] (§11 item 2) THE STAMPED DEFAULT STORAGE, now a type of its
@@ -10782,7 +10782,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * which is why the two spellings are separate strings rather than one
      * string with a substituted clause. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         tiered
           ? "/* This artifact's own working storage, at the stamped default\n"
             " * capacities. [OPT-1]: declared by the three <prefix>_*_deep\n"
@@ -10822,7 +10822,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * given up. */
     if (tiered) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* The fast tier's storage: the same two arrays at the\n"
             " * page-budgeted capacities. Sized so that this struct plus the\n"
             " * run state stays inside one 4 KB guard page, which is what keeps\n"
@@ -10881,14 +10881,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * has room to travel, not about which side of the floor it lands on.
      * `vm_look_behind`'s negative-arm end-check is its one producer today. */
     pcrec_sb_stampwf(c, v.up, "R_INTERNAL", sentw, "%s", "((ptrdiff_t)PCREC_ERR_INTERNAL)");
-    sb_putc(c, '\n');
+    pcrec_sb_putc(c, '\n');
     /* [DD-14 wave B+C] "no subroutine call is active". Out of range for the
      * frame array on purpose, so a return with no live activation indexes
      * nothing — the region exit's own guard turns that into
      * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
     if (v.has_linked_calls) {
         pcrec_sb_stampf(c, v.up, "CALL_TOP_NONE", "%s", "((size_t)-1)");
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
     }
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
@@ -10908,7 +10908,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * bound rather than merely mis-size it. */
     if (work_budget != PCREC_WORK_BUDGET_NONE) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* Charge forward work the backtracker never sees. A scan that\n"
             " * races over a megabyte costs no STEPS -- it never backtracks --\n"
             " * so without this meter a slow attempt would look costless. */\n");
@@ -10955,7 +10955,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
 
     if (v.nclamp > 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* MINIMUM-REMAINING-LENGTH pruning. At each point the compiler\n"
             " * knows the fewest bytes any successful continuation must still\n"
             " * consume. If fewer than that remain before the window ends, this\n"
@@ -11070,7 +11070,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (v.has_linked_calls) {
         if (!v.tracing) {
             pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-            sb_puts(c,
+            pcrec_sb_puts(c,
                 "/* A subroutine call: a resume frame that also carries the\n"
                 " * label to come back to. It is NOT popped by the return --\n"
                 " * the callee's choice points stay live across it, so a later\n"
@@ -11121,7 +11121,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sabotage row S-FB2 (frames capacity passed as the trail capacity)
      * needs in order to be a one-site typo somebody's eye slides over. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Point a run state at its working storage. Called BEFORE\n"
         " * <prefix>_run_state_init, which must not disturb these four\n"
         " * fields -- see its comment. */\n");
@@ -11139,7 +11139,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         ai, v.p, v.p, v.p, v.p);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Start a fresh attempt: every group unset, nothing to undo, both\n"
         " * budgets full. THE FOUR STORAGE FIELDS ARE NOT TOUCHED HERE and\n"
         " * must never be: <prefix>_run_state_bind has already pointed them at\n"
@@ -11165,7 +11165,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (has_budget) sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v.up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_printf(c, "    run->work_left = %s_WORK_BUDGET;\n", v.up);
-    sb_puts(c, "}\n\n");
+    pcrec_sb_puts(c, "}\n\n");
 
     /* [DD-14 wave B+C] §5.6 site 5b — the per-START-POSITION reset. It rewinds
      * the trail and zeroes `resume_depth` WITHOUT resetting the budgets,
@@ -11183,7 +11183,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         : vm_rolef(&v, "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
         " * budgets, so retrying at the next starting position cannot buy\n"
         " * itself a fresh allowance. The four storage fields are untouched\n"
@@ -11218,12 +11218,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             any = true;
             sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v.p, i);
             for (int j = 0; j < 32; j++) {
-                if (j % 8 == 0) sb_puts(c, "\n   ");
+                if (j % 8 == 0) pcrec_sb_puts(c, "\n   ");
                 sb_printf(c, " %3d,", v.cls[i][j]);
             }
-            sb_puts(c, "\n};\n");
+            pcrec_sb_puts(c, "\n};\n");
         }
-        if (any) sb_puts(c, "\n");
+        if (any) pcrec_sb_puts(c, "\n");
     }
 
     /* ---- the prefilter (§6.1, §4.7) ------------------------------------ */
@@ -11234,7 +11234,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         snprintf(pf, sz, "%s_prefilter", v.p);
         prefn = pf;
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* The capture-erased forward+reverse DFA pair, emitted by the\n"
             " * SAME emitter the DFA-only artifact uses (src/gen/emit_dfa.c),\n"
             " * under a private name. It is not an over-approximation: D31\n"
@@ -11250,7 +11250,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * never reach the step budget. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_emit_dfa_engine(cx, prefn, "static ");
-        sb_puts(c, "\n");
+        pcrec_sb_puts(c, "\n");
     }
 
     /* ---- rx_match_anchored: the program ------------------------------------ */
@@ -11319,7 +11319,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "    ptrdiff_t %s_revdet_group_span[%d][2] = {{0}};\n", v.p, v.nrevcaps);
         sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v.p, v.nrevcaps);
     }
-    sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
+    pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
     /* Four of the five per-loop locals are used only by shapes that do not
      * always occur — the walk cursor and `prev` exist only when a walk is
      * emitted, the seen-counter only when the body has groups, and (found by
@@ -11346,7 +11346,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
                      " scan_position, subject_length);\n", v.p);
     sb_printf(c, "    goto %s_L0;\n\n", v.p);
-    sb_puts(c, v.b->p ? v.b->p : "");
+    pcrec_sb_puts(c, v.b->p ? v.b->p : "");
     /* The three trace lines. Built here rather than inline so the untraced
      * artifact's text is the SAME format string with three empty inserts —
      * one emitted shape, not two, for the same reason the traced macros above
@@ -11403,7 +11403,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * rather than left to describe a jump the artifact no longer contains. */
     sb_printf(c, "\n%s_accept: __attribute__((unused));\n", v.p);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
         "     * candidates. The VM returns here immediately and the capture\n"
         "     * slots at this instant are the answer — no candidate comparison,\n"
@@ -11416,7 +11416,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "\n%s_fail: __attribute__((unused));\n",
         accept_tr, v.p);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
             "     * A step is one backtrack resumption (4.2), counted at exactly\n"
@@ -11463,7 +11463,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * pop-and-resume block that would otherwise follow is unreachable —
          * omitted rather than emitted dead, and taking the one indirect jump
          * this file's own header counts (the fail label) down to none. */
-        sb_puts(c, "}\n\n");
+        pcrec_sb_puts(c, "}\n\n");
     } else {
         const char *pop_tr = "";
         if (v.tracing)
@@ -11511,7 +11511,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
             "            run->trail_depth--;\n"
             "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
@@ -11566,7 +11566,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * a listing writes no artifact, and a traced artifact is a different
      * artifact by construction (the axis says so in its own text). */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Copy the run's slot values out into the caller's caps array. The\n"
         " * whole-match pair is not written by the VM at all -- the entry knows\n"
         " * where the attempt began and how long it ran. Group g lives in the\n"
@@ -11611,7 +11611,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * measures. C cannot declare a local conditionally, so a single function
      * that decided at run time would carry the arrays either way. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* The search loop. Called by both entries below with a run state\n"
         " * already pointed at its working storage. */\n");
     pcrec_sb_cmt_close(c);
@@ -11823,8 +11823,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
               : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
-        sb_puts(c, "    attempt_position = search_from;\n");
-        if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");
+        pcrec_sb_puts(c, "    attempt_position = search_from;\n");
+        if (v.nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
 
     sb_printf(c,
@@ -11907,7 +11907,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * the entry that is forwarding. */
     if (fwd_entries) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* [CC-DIFF] the frameless forward's descriptor: this artifact\n"
             " * writes no resume frame and no trail entry, so the three\n"
             " * un-suffixed entries below bind nothing and forward. */\n");
@@ -11927,7 +11927,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "subject, subject_length, search_from, capture_spans");
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* Same search, with the working storage the CALLER supplies. A NULL\n"
         " * descriptor is exactly the call above; a non-NULL one must name two\n"
         " * regions, both of them scratch, sized in FRAMES and ENTRIES rather\n"
@@ -11994,7 +11994,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                               "ctx->pos", "ctx->subject", "ctx->len");
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* F1's unconditional export, typed rx_matchfn.\n"
         " *\n"
         " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
@@ -12036,7 +12036,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * be red on correct behaviour. */
         v.ngst > 0 ? ", ctx->pos" : "");
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "    /* No translation and no clamp: the impl's return space IS this\n"
         "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
         "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
@@ -12045,12 +12045,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "     * reason <prefix>_search does). A defensive floor test here\n"
         "     * would be dead code pretending to be a safeguard. */\n");
     pcrec_sb_cmt_close(c);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "    return result;\n"
         "}\n\n");
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* The capture-delivering sibling. Same D49 return space as\n"
         " * <prefix>_match above -- it always had room for the codes (it is not\n"
         " * an rx_matchfn), and now the two agree instead of differing over a\n"

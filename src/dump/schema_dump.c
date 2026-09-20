@@ -91,7 +91,7 @@ char *pcrec_rxt_schema_tsv(void)
     size_t n = 0;
     const RxtSchemaRow *rows = pcrec_rxt_schema_rows(&n);
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec .rxt FORMAT SCHEMA (docs/spec/rxt_format.md,\n"
         "# docs/spec/table_contract.md; the SEVENTH registry dump,\n"
         "# [DD-13b.W23.1]). One row per (scope, line-kind), walked out of\n"
@@ -145,7 +145,7 @@ char *pcrec_rxt_schema_tsv(void)
         pcrec_sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "#\n"
         "# THE DECLARED NON-COVERAGE. Each row names something this schema\n"
         "# deliberately does NOT validate, and why. Two of the four are also\n"

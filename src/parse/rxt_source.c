@@ -3303,9 +3303,9 @@ static const char *lib_chain_text(Arena *a, const char *own,
 {
     (void)own;
     StrBuf sb = { 0 };
-    sb_puts(&sb, "the source's own directory");
+    pcrec_sb_puts(&sb, "the source's own directory");
     for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
-    if (!ndirs) sb_puts(&sb, " (no --lib-path)");
+    if (!ndirs) pcrec_sb_puts(&sb, " (no --lib-path)");
     char *heap = pcrec_sb_take(&sb);
     size_t n = strlen(heap) + 1;
     char *out = arena_alloc(a, n);
@@ -3791,7 +3791,7 @@ static const char *kind_name(RxtDeclKind k)
 
 /* THE 15 COLUMNS of w1_impl §1.8, in order, append-only under
  * docs/spec/table_contract.md. Kept as a table rather than as fifteen
- * sb_puts calls in the header string so the HEADER and the ROW WRITER
+ * pcrec_sb_puts calls in the header string so the HEADER and the ROW WRITER
  * cannot disagree about how many there are — the contract's HEADER
  * TRUTHFULNESS check compares them, and a check whose two sides come
  * from one list is the only version of it that means anything. */
@@ -3819,7 +3819,7 @@ static const char *const rxt_columns[] = {
 static void section_open(StrBuf *sb, const char *name, const char *header)
 {
     sb_printf(sb, "#section %s\n", name);
-    sb_puts(sb, header);
+    pcrec_sb_puts(sb, header);
 }
 
 size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
@@ -3836,7 +3836,7 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
 {
     StrBuf sb = { 0 };
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec --list-source: the .rxt SOURCE file AS WRITTEN (DD-13b W1).\n"
         "# One row per head declaration and per pattern block, in FILE ORDER.\n"
         "# `kind` is the DECLARATION NAME. There is no head/body column: the\n"
@@ -3867,62 +3867,62 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         "# format_design.md §2.27). No section row's field 1 (always the\n"
         "# integer `line`) can equal a main-table `kind` token.\n");
 
-    sb_putc(&sb, '#');
+    pcrec_sb_putc(&sb, '#');
     for (size_t c = 0; c < RXT_NCOLS; c++) {
-        if (c) sb_putc(&sb, '\t');
-        sb_puts(&sb, rxt_columns[c]);
+        if (c) pcrec_sb_putc(&sb, '\t');
+        pcrec_sb_puts(&sb, rxt_columns[c]);
     }
-    sb_putc(&sb, '\n');
+    pcrec_sb_putc(&sb, '\n');
 
     for (size_t i = 0; i < src->nrows; i++) {
         const RxtRow *r = &src->rows[i];
         int is_pat = r->kind == RXT_DECL_PATTERN;
         int is_cfg = r->kind == RXT_DECL_CONFIG;
 
-        sb_puts(&sb, kind_name(r->kind));                       /*  1 kind */
+        pcrec_sb_puts(&sb, kind_name(r->kind));                       /*  1 kind */
         sb_printf(&sb, "\t%zu", r->line);                       /*  2 line */
-        sb_putc(&sb, '\t');
-        if (r->name) sb_puts(&sb, r->name);                     /*  3 name */
-        sb_putc(&sb, '\t');
+        pcrec_sb_putc(&sb, '\t');
+        if (r->name) pcrec_sb_puts(&sb, r->name);                     /*  3 name */
+        pcrec_sb_putc(&sb, '\t');
         /* `value` carries the lib's path-ref, the target's definition
          * name, and a description's text — the three kinds whose payload
          * is one scalar. A block's own `description` rides column 4 too,
          * on the block's row, because a second description column would
          * be a second home for one fact. */
         pcrec_sb_field(&sb, is_pat ? r->description : r->value);   /*  4 value */
-        sb_putc(&sb, '\t');
+        pcrec_sb_putc(&sb, '\t');
         if (is_pat) pcrec_sb_field(&sb, r->value);                 /*  5 pattern */
-        sb_putc(&sb, '\t');
-        if (r->flags) sb_puts(&sb, r->flags);                   /*  6 flags */
-        sb_putc(&sb, '\t');
-        if (r->features) sb_puts(&sb, r->features);             /*  7 features */
-        sb_putc(&sb, '\t');
-        if (r->features_only) sb_putc(&sb, '1');                /*  8 features_only */
-        sb_putc(&sb, '\t');
-        if (r->encoding) sb_puts(&sb, r->encoding);             /*  9 encoding */
-        sb_putc(&sb, '\t');
-        if (r->engine) sb_puts(&sb, r->engine);                 /* 10 engine */
-        sb_putc(&sb, '\t');
+        pcrec_sb_putc(&sb, '\t');
+        if (r->flags) pcrec_sb_puts(&sb, r->flags);                   /*  6 flags */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->features) pcrec_sb_puts(&sb, r->features);             /*  7 features */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->features_only) pcrec_sb_putc(&sb, '1');                /*  8 features_only */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->encoding) pcrec_sb_puts(&sb, r->encoding);             /*  9 encoding */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->engine) pcrec_sb_puts(&sb, r->engine);                 /* 10 engine */
+        pcrec_sb_putc(&sb, '\t');
         if (r->budget_steps >= 0) sb_printf(&sb, "%ld", r->budget_steps);
-        sb_putc(&sb, '\t');                                     /* 11 */
+        pcrec_sb_putc(&sb, '\t');                                     /* 11 */
         if (r->budget_frames >= 0) sb_printf(&sb, "%ld", r->budget_frames);
-        sb_putc(&sb, '\t');                                     /* 12 */
-        if (r->with_list) sb_puts(&sb, r->with_list);           /* 13 with */
-        sb_putc(&sb, '\t');
-        if (r->from_list) sb_puts(&sb, r->from_list);           /* 14 from */
-        sb_putc(&sb, '\t');
+        pcrec_sb_putc(&sb, '\t');                                     /* 12 */
+        if (r->with_list) pcrec_sb_puts(&sb, r->with_list);           /* 13 with */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->from_list) pcrec_sb_puts(&sb, r->from_list);           /* 14 from */
+        pcrec_sb_putc(&sb, '\t');
         if (is_cfg) pcrec_sb_field(&sb, r->pcrec_raw);             /* 15 pcrec */
-        sb_putc(&sb, '\t');
-        if (r->exports) sb_puts(&sb, r->exports);               /* 16 export */
-        sb_putc(&sb, '\t');
-        if (r->tags) sb_puts(&sb, r->tags);                     /* 17 tags */
-        sb_putc(&sb, '\t');
-        if (r->oracle) sb_puts(&sb, r->oracle);                 /* 18 oracle */
-        sb_putc(&sb, '\t');
-        if (r->esc) sb_puts(&sb, r->esc);                       /* 19 esc */
-        sb_putc(&sb, '\t');
-        if (r->tune) sb_puts(&sb, r->tune);                     /* 20 tune */
-        sb_putc(&sb, '\n');
+        pcrec_sb_putc(&sb, '\t');
+        if (r->exports) pcrec_sb_puts(&sb, r->exports);               /* 16 export */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->tags) pcrec_sb_puts(&sb, r->tags);                     /* 17 tags */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->oracle) pcrec_sb_puts(&sb, r->oracle);                 /* 18 oracle */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->esc) pcrec_sb_puts(&sb, r->esc);                       /* 19 esc */
+        pcrec_sb_putc(&sb, '\t');
+        if (r->tune) pcrec_sb_puts(&sb, r->tune);                     /* 20 tune */
+        pcrec_sb_putc(&sb, '\n');
     }
 
     /* [DD-13b.W23.4] THE FOUR `#section` BLOCKS, unconditionally when
@@ -3940,30 +3940,30 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         for (size_t i = 0; i < src->nprovs; i++) {
             const RxtProv *r = &src->provs[i];
             sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->source) sb_puts(&sb, r->source);
-            sb_putc(&sb, '\t');
-            if (r->url) sb_puts(&sb, r->url);
-            sb_putc(&sb, '\t');
-            if (r->ref) sb_puts(&sb, r->ref);
-            sb_putc(&sb, '\t');
-            if (r->retrieved) sb_puts(&sb, r->retrieved);
-            sb_putc(&sb, '\t');
-            if (r->license) sb_puts(&sb, r->license);
-            sb_putc(&sb, '\t');
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->source) pcrec_sb_puts(&sb, r->source);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->url) pcrec_sb_puts(&sb, r->url);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->ref) pcrec_sb_puts(&sb, r->ref);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->retrieved) pcrec_sb_puts(&sb, r->retrieved);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->license) pcrec_sb_puts(&sb, r->license);
+            pcrec_sb_putc(&sb, '\t');
             if (r->license_note) pcrec_sb_field(&sb, r->license_note);
-            sb_putc(&sb, '\t');
-            if (r->fidelity) sb_puts(&sb, r->fidelity);
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
+            if (r->fidelity) pcrec_sb_puts(&sb, r->fidelity);
+            pcrec_sb_putc(&sb, '\t');
             if (r->adaptation) pcrec_sb_field(&sb, r->adaptation);
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             if (r->attribution) pcrec_sb_field(&sb, r->attribution);
-            sb_putc(&sb, '\t');
-            if (r->bytes) sb_puts(&sb, r->bytes);
-            sb_putc(&sb, '\t');
-            if (r->sha256) sb_puts(&sb, r->sha256);
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\t');
+            if (r->bytes) pcrec_sb_puts(&sb, r->bytes);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->sha256) pcrec_sb_puts(&sb, r->sha256);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -3974,20 +3974,20 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         for (size_t i = 0; i < src->nvariants; i++) {
             const RxtVariant *r = &src->variants[i];
             sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->testee) sb_puts(&sb, r->testee);
-            sb_putc(&sb, '\t');
-            if (r->kind) sb_puts(&sb, r->kind);
-            sb_putc(&sb, '\t');
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->testee) pcrec_sb_puts(&sb, r->testee);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->kind) pcrec_sb_puts(&sb, r->kind);
+            pcrec_sb_putc(&sb, '\t');
             if (r->text) pcrec_sb_field(&sb, r->text);
-            sb_putc(&sb, '\t');
-            if (r->groups) sb_puts(&sb, r->groups);
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
+            if (r->groups) pcrec_sb_puts(&sb, r->groups);
+            pcrec_sb_putc(&sb, '\t');
             if (r->note) pcrec_sb_field(&sb, r->note);
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             if (r->unsupported) pcrec_sb_field(&sb, r->unsupported);
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -3999,34 +3999,34 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         for (size_t i = 0; i < src->ncases; i++) {
             const RxtCase *r = &src->cases[i];
             sb_printf(&sb, "%zu\t%zu\t", r->line, r->block_line);
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, r->kind);
-            sb_putc(&sb, '\t');
-            if (r->under) sb_puts(&sb, r->under);
-            sb_putc(&sb, '\t');
-            if (r->startpos) sb_puts(&sb, r->startpos);
-            sb_putc(&sb, '\t');
-            if (r->subject_form) sb_puts(&sb, r->subject_form);
-            sb_putc(&sb, '\t');
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, r->kind);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->under) pcrec_sb_puts(&sb, r->under);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->startpos) pcrec_sb_puts(&sb, r->startpos);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->subject_form) pcrec_sb_puts(&sb, r->subject_form);
+            pcrec_sb_putc(&sb, '\t');
             if (r->subject) pcrec_sb_field(&sb, r->subject);
-            sb_putc(&sb, '\t');
-            if (r->subject_id) sb_puts(&sb, r->subject_id);
-            sb_putc(&sb, '\t');
-            if (r->sha256) sb_puts(&sb, r->sha256);
-            sb_putc(&sb, '\t');
-            if (r->start) sb_puts(&sb, r->start);
-            sb_putc(&sb, '\t');
-            if (r->end) sb_puts(&sb, r->end);
-            sb_putc(&sb, '\t');
-            if (r->count) sb_puts(&sb, r->count);
-            sb_putc(&sb, '\t');
-            if (r->giveup) sb_puts(&sb, r->giveup);
-            sb_putc(&sb, '\t');
-            if (r->slot) sb_puts(&sb, r->slot);
-            sb_putc(&sb, '\t');
-            sb_puts(&sb, r->route);
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\t');
+            if (r->subject_id) pcrec_sb_puts(&sb, r->subject_id);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->sha256) pcrec_sb_puts(&sb, r->sha256);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->start) pcrec_sb_puts(&sb, r->start);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->end) pcrec_sb_puts(&sb, r->end);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->count) pcrec_sb_puts(&sb, r->count);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->giveup) pcrec_sb_puts(&sb, r->giveup);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->slot) pcrec_sb_puts(&sb, r->slot);
+            pcrec_sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, r->route);
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 
@@ -4038,17 +4038,17 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
             const RxtAux *r = &src->auxes[i];
             sb_printf(&sb, "%zu\t", r->line);
             if (r->block_line) sb_printf(&sb, "%zu", r->block_line);
-            sb_putc(&sb, '\t');
-            if (r->block_name) sb_puts(&sb, r->block_name);
-            sb_putc(&sb, '\t');
-            if (r->consumer) sb_puts(&sb, r->consumer);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->block_name) pcrec_sb_puts(&sb, r->block_name);
+            pcrec_sb_putc(&sb, '\t');
+            if (r->consumer) pcrec_sb_puts(&sb, r->consumer);
             sb_printf(&sb, "\t%zu\t", r->depth);
-            sb_puts(&sb, r->key);
-            sb_putc(&sb, '\t');
+            pcrec_sb_puts(&sb, r->key);
+            pcrec_sb_putc(&sb, '\t');
             pcrec_sb_field(&sb, r->value);
-            sb_putc(&sb, '\t');
+            pcrec_sb_putc(&sb, '\t');
             if (r->parent_line) sb_printf(&sb, "%zu", r->parent_line);
-            sb_putc(&sb, '\n');
+            pcrec_sb_putc(&sb, '\n');
         }
     }
 

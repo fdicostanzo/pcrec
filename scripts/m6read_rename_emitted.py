@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """[M6-READ] rename emitted identifiers, INSIDE C string literals only.
 
-The emitter writes the artifact's identifiers as text inside sb_printf/sb_puts
+The emitter writes the artifact's identifiers as text inside sb_printf/pcrec_sb_puts
 format strings. Renaming them with a plain search-and-replace over the source
 would also hit the emitter's OWN locals, which happen to share several
 spellings (`fs`, `first`, `n`, `s`). This scans the C source for string

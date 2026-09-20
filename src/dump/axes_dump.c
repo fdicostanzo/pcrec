@@ -721,7 +721,7 @@ char *pcrec_axes_tsv(void)
 {
     StrBuf sb = {0};
 
-    sb_puts(&sb,
+    pcrec_sb_puts(&sb,
         "# pcrec optimization-axis registry (docs/spec/registry.md, the FOURTH\n"
         "# TSV surface; [CHK-2] piece 1). One row per (axis, candidate), in\n"
         "# PREFERENCE order within the axis (order 1 is tried first).\n"

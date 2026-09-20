@@ -115,8 +115,8 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)
 {
     for (const char *q = text; *q; q++) {
-        if (*q == '$') sb_puts(sb, prefix);
-        else           sb_putc(sb, *q);
+        if (*q == '$') pcrec_sb_puts(sb, prefix);
+        else           pcrec_sb_putc(sb, *q);
     }
 }
 

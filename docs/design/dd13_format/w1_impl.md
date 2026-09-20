@@ -2343,7 +2343,7 @@ filtered to the readers of the CURRENT VALUE, which today is **17**:
 
 | # | site | what it holds | moves at the bump |
 |---|---|---|---|
-| 1 | `src/gen/emit_dfa.c:1652` | `sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
+| 1 | `src/gen/emit_dfa.c:1652` | `pcrec_sb_puts(c, "    .abi = 17,\n");` — the stamp itself | YES |
 | 2 | `tests/codegen/run_codegen_tests.sh:2758` | `ABI_EXPECT=17` | YES |
 | 3 | `tests/codegen/run_codegen_tests.sh:2760` | the BUMP LEDGER inside that check's `bad` message — one clause per event since abi 2 | YES, one clause appended |
 | 4 | `docs/spec/match_api.md:159` | *"`rx_info.abi` is `17`"* in §1's general-rule paragraph | YES |

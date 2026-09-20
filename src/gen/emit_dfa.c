@@ -94,7 +94,7 @@ static void emit_comment_safe_byte(StrBuf *sb, int *prevp, unsigned char ch,
                 !(*prevp == '*' && ch == '/') &&
                 !(*prevp == '/' && ch == '*') &&
                 !(extra_escape && extra_escape(ch));
-    if (safe) sb_putc(sb, (char)ch);
+    if (safe) pcrec_sb_putc(sb, (char)ch);
     else      sb_printf(sb, "\\x%02x", ch);
     *prevp = ch;
 }
@@ -121,7 +121,7 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
     int prev = 0;
     for (const char *q = pat; *q; q++)
         emit_comment_safe_byte(sb, &prev, (unsigned char)*q, NULL);
-    sb_puts(sb, " */\n");
+    pcrec_sb_puts(sb, " */\n");
     pcrec_sb_cmt_close(sb);
 }
 
@@ -152,24 +152,24 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
  * correct than detecting the nine specific trigraph-forming sequences. */
 static void emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
 {
-    sb_putc(sb, '"');
+    pcrec_sb_putc(sb, '"');
     for (size_t i = 0; i < len; i++) {
         unsigned char ch = (unsigned char)s[i];
         switch (ch) {
-            case '"':  sb_puts(sb, "\\\""); break;
-            case '\\': sb_puts(sb, "\\\\"); break;
-            case '?':  sb_puts(sb, "\\?");  break;
-            case '\n': sb_puts(sb, "\\n");  break;
-            case '\t': sb_puts(sb, "\\t");  break;
-            case '\r': sb_puts(sb, "\\r");  break;
+            case '"':  pcrec_sb_puts(sb, "\\\""); break;
+            case '\\': pcrec_sb_puts(sb, "\\\\"); break;
+            case '?':  pcrec_sb_puts(sb, "\\?");  break;
+            case '\n': pcrec_sb_puts(sb, "\\n");  break;
+            case '\t': pcrec_sb_puts(sb, "\\t");  break;
+            case '\r': pcrec_sb_puts(sb, "\\r");  break;
             default:
                 if (ch >= 32 && ch < 127)
-                    sb_putc(sb, (char)ch);
+                    pcrec_sb_putc(sb, (char)ch);
                 else
                     sb_printf(sb, "\\%03o", ch);
         }
     }
-    sb_putc(sb, '"');
+    pcrec_sb_putc(sb, '"');
 }
 
 /* D37 (docs/dev/decisions.md): emitted C is SELF-DESCRIBING about which
@@ -556,7 +556,7 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *lenvar)
 {
     char t[PCREC_STARTPOS_GUARD_TEXT_MAX];
-    sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
+    pcrec_sb_puts(c, pcrec_startpos_guard_text(cx, t, sizeof t, indent,
                                          posvar, subjvar, lenvar));
 }
 
@@ -573,14 +573,14 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * it degrades safely on a pre-`__has_attribute` compiler via the
      * `#ifndef` fallback definition. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
+    pcrec_sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
                "   .part clone of this function -- the split costs a\n"
                "   measured 1.33x on a scan-bound pattern, with identical\n"
                "   instructions, purely from code placement. Do not remove;\n"
                "   see pcrec docs/dev/known_issues.md K24. Guarded by\n"
                "   __has_attribute: gcc has this attribute, clang does not. */\n");
     pcrec_sb_cmt_close(c);
-    sb_puts(c, "#ifndef __has_attribute\n"
+    pcrec_sb_puts(c, "#ifndef __has_attribute\n"
                "# define __has_attribute(x) 0\n"
                "#endif\n"
                "#if __has_attribute(noclone)\n"
@@ -630,12 +630,12 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
             "    if (capture_spans)\n"
             "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n", gn.upper);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "            /* every group this artifact promises is reached only\n"
             "               through a subroutine call or sits under a {0}, so no\n"
             "               match can set it (PCRE2 reports the same) */\n");
         pcrec_sb_cmt_close(c);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "            capture_spans[rx_g][0] = PCREC_UNSET;\n"
             "            capture_spans[rx_g][1] = PCREC_UNSET;\n"
             "        }\n");
@@ -723,7 +723,7 @@ static void emit_rx_abi_types(StrBuf *sb)
      * unit: it is emitted once per file, its size does not grow with the
      * pattern, and a reader who has half of it has a header they cannot use. */
     pcrec_sb_cmt_open(sb, PCREC_CMT_ESSENTIAL);
-    sb_puts(sb,
+    pcrec_sb_puts(sb,
         "#ifndef PCREC_RX_ABI_H\n"
         "#define PCREC_RX_ABI_H\n"
         "\n"
@@ -1152,7 +1152,7 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *prefix,
                                  const BufSurface *bs)
 {
-    sb_putc(sb, '\n');
+    pcrec_sb_putc(sb, '\n');
     pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     sb_printf(sb,
         "/* [DD-14.FB] The caller-provided working storage (spec \302\24710).\n"
@@ -1175,7 +1175,7 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
     pcrec_sb_stampf(sb, upper, "RESUME_FRAME_SIZE", "%d",   bs->resume_frame_size);
     pcrec_sb_stampf(sb, upper, "TRAIL_FRAME_SIZE",  "%d",   bs->trail_frame_size);
     pcrec_sb_stampf(sb, upper, "BUFFER_ALIGN",      "%d",   bs->align);
-    sb_putc(sb, '\n');
+    pcrec_sb_putc(sb, '\n');
     pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     sb_printf(sb,
         "/* Where one match attempt's working storage lives. Pass NULL to any\n"
@@ -1282,7 +1282,7 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
                             const char *upper)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
         " * Unreachable on this engine — a DFA artifact has no counter to\n"
         " * exhaust — but written uniformly on purpose: the contract of\n"
@@ -1294,7 +1294,7 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n", matchfn);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
     pcrec_sb_cmt_close(c);
     sb_printf(c,
@@ -1321,7 +1321,7 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
         "{\n", fn);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
     pcrec_sb_cmt_close(c);
     sb_printf(c,
@@ -1377,7 +1377,7 @@ static void emit_in_entry_defs(StrBuf *c, const char *searchfn, const char *matc
                                const char *matchcapsfn, const char *prefix)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* [DD-14.FB] The caller-buffer entries. This engine keeps no working\n"
         " * storage between bytes -- it cannot backtrack, so it has no resume\n"
         " * stack and no trail to point anywhere -- so each of these is exactly\n"
@@ -1599,10 +1599,10 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                 emit_c_string_literal(c, sorted[i]->scope,
                                       strlen(sorted[i]->scope));
             else
-                sb_puts(c, "NULL");
-            sb_puts(c, " },\n");
+                pcrec_sb_puts(c, "NULL");
+            pcrec_sb_puts(c, " },\n");
         }
-        sb_puts(c, "};\n");
+        pcrec_sb_puts(c, "};\n");
     }
 
     sb_printf(c, "const struct rx_info %s = {\n", infoname);
@@ -1872,20 +1872,20 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_printf(c, "    .trail_frames = %lld,\n", st->bufs->trail_frames);
     sb_printf(c, "    .resume_frame_size = %d,\n", st->bufs->resume_frame_size);
     sb_printf(c, "    .trail_frame_size = %d,\n", st->bufs->trail_frame_size);
-    sb_puts(c,   "    .pattern = ");
+    pcrec_sb_puts(c,   "    .pattern = ");
     emit_c_string_literal(c, cx->pat, cx->patlen);
-    sb_puts(c,   ",\n");
+    pcrec_sb_puts(c,   ",\n");
     sb_printf(c, "    .pattern_len = %zu,\n", cx->patlen);
     if (groups_name)
         sb_printf(c, "    .groups = %s,\n", groups_name);
     else
-        sb_puts(c, "    .groups = NULL,\n");
+        pcrec_sb_puts(c, "    .groups = NULL,\n");
     if (st->engine_why) {
-        sb_puts(c, "    .engine_why = ");
+        pcrec_sb_puts(c, "    .engine_why = ");
         emit_c_string_literal(c, st->engine_why, strlen(st->engine_why));
-        sb_puts(c, ",\n");
+        pcrec_sb_puts(c, ",\n");
     } else {
-        sb_puts(c, "    .engine_why = NULL,\n");
+        pcrec_sb_puts(c, "    .engine_why = NULL,\n");
     }
     /* [DD-13c] THE RUNTIME MIRRORS, FROM THE SAME TWO FUNCTIONS THE MACROS ARE
      * WRITTEN FROM. `dfa_scan_name`/`dfa_prefilter_name` are called here and in
@@ -1910,8 +1910,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
          * `RX_VM_PREFILTER`'s missing runtime mirror: "hybrid" never appears
          * HERE because a hybrid reports its inlined scan's actual mechanism
          * instead, and `scan != NULL` is how a consumer reads "hybrid". */
-        sb_puts(c, "    .scan = NULL,\n");
-        sb_puts(c, "    .prefilter = \"none\",\n");
+        pcrec_sb_puts(c, "    .scan = NULL,\n");
+        pcrec_sb_puts(c, "    .prefilter = \"none\",\n");
     }
     /* [ENG-ABS] AXIS G's mirror, from the SAME `dfa_match_name` the macro is
      * written from — one value written twice, never two computations of one
@@ -1927,7 +1927,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     if (cx->job->fit.chosen == ENGM_DFA)
         sb_printf(c, "    .match_form = \"%s\",\n", dfa_match_name(cx));
     else
-        sb_puts(c, "    .match_form = NULL,\n");
+        pcrec_sb_puts(c, "    .match_form = NULL,\n");
     /* [DD-13b.W1.2] THE NAME, AND THE FALLBACK IS THE RULE. Frank's
      * format_design §6.3 ruling is "no artifact ever carries a NULL name",
      * and this line is the whole of it: `opt->name` when a build supplied
@@ -1941,9 +1941,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * prefixed artifacts in one TU must not both claim to be "rx". */
     {
         const char *nm = cx->opt->name ? cx->opt->name : cx->opt->prefix;
-        sb_puts(c, "    .name = ");
+        pcrec_sb_puts(c, "    .name = ");
         emit_c_string_literal(c, nm, strlen(nm));
-        sb_puts(c, ",\n");
+        pcrec_sb_puts(c, ",\n");
     }
     /* [DD-13b.W1.3] THE DAY HAS COME. This comment used to say that
      * `nentries` read the same count `nnames` did "because today the array
@@ -1971,8 +1971,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     if (pcrec_artifact_has_dfa_scan(cx))
         sb_printf(c, "    .search_form = \"%s\",\n", dfa_search_start_name(cx));
     else
-        sb_puts(c, "    .search_form = NULL,\n");
-    sb_puts(c,   "};\n");
+        pcrec_sb_puts(c, "    .search_form = NULL,\n");
+    pcrec_sb_puts(c,   "};\n");
 }
 
 /* [M5-SEAM] (D58, DD-12 (7)) THE RESIDUAL EMBED. The artifact's ONE encoding
@@ -2029,12 +2029,12 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_pattern_comment(h, cx->pat);
     emit_feature_comment(h);
     sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", guard, guard);
-    sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
+    pcrec_sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
     emit_rx_abi_types(h);
-    sb_putc(h, '\n');
+    pcrec_sb_putc(h, '\n');
     emit_ncaps_macros(h, upper, ncaps);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
-    sb_putc(h, '\n');
+    pcrec_sb_putc(h, '\n');
     emit_search_decl(h, fn);
     emit_match_decl(h, matchfn);
     emit_match_caps_decl(h, matchcapsfn);
@@ -2047,7 +2047,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_search_in_decl(h, fn, cx->opt->prefix);
     emit_match_in_decl(h, matchfn, cx->opt->prefix);
     emit_match_caps_in_decl(h, matchcapsfn, cx->opt->prefix);
-    sb_putc(h, '\n');
+    pcrec_sb_putc(h, '\n');
     emit_residual_decls(cx, h);
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
@@ -2059,10 +2059,10 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
 {
     sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, n);
     for (int i = 0; i < n; i++) {
-        if (i % 16 == 0) sb_puts(c, "\n       ");
+        if (i % 16 == 0) pcrec_sb_puts(c, "\n       ");
         sb_printf(c, " %3d,", v[i]);
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 /* ---- [OPT-3] THE PRE-MULTIPLIED TABLE FORM ------------------------------
@@ -2315,11 +2315,11 @@ static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
     int k = 0;
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
-            if (k % 16 == 0) sb_puts(c, "\n       ");
+            if (k % 16 == 0) pcrec_sb_puts(c, "\n       ");
             sb_printf(c, " %d,", tr_cell(d, r, i, cl));
         }
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 static bool dfa_has_eolvar(const Dfa *d)
@@ -2429,11 +2429,11 @@ static void emit_eol_table(StrBuf *c, const char *p, const char *tag,
 {
     sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
-        if (i % 16 == 0) sb_puts(c, "\n       ");
+        if (i % 16 == 0) pcrec_sb_puts(c, "\n       ");
         int v = d->st[i].eolvar;
         sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 /* The END-view table. Same shape as the EOL one, DIFFERENT MEANING for -1:
@@ -2444,11 +2444,11 @@ static void emit_end_table(StrBuf *c, const char *p, const char *tag,
 {
     sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
-        if (i % 16 == 0) sb_puts(c, "\n       ");
+        if (i % 16 == 0) pcrec_sb_puts(c, "\n       ");
         int v = st_emit_endvar(&d->st[i]);
         sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 
@@ -2480,11 +2480,11 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
     for (int i = 0; i < d->n; i++) {
         int bit = acc_cell(d, i);
         for (int rr = 0; rr < rep_n; rr++, k++) {
-            if (k % 16 == 0) sb_puts(c, "\n       ");
+            if (k % 16 == 0) pcrec_sb_puts(c, "\n       ");
             sb_printf(c, " %d,", bit);
         }
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 /* [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
@@ -2611,11 +2611,11 @@ static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
     int k = 0;
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
-            if (k % 16 == 0) sb_puts(c, "\n       ");
+            if (k % 16 == 0) pcrec_sb_puts(c, "\n       ");
             sb_printf(c, " %d,", accw_cell(d, i, cl));
         }
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 /* The class-axis context of a position whose next byte is a NEWLINE — the one
@@ -2648,14 +2648,14 @@ static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
 {
     sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
-        if (cl % 16 == 0) sb_puts(c, "\n       ");
+        if (cl % 16 == 0) pcrec_sb_puts(c, "\n       ");
         int v = fam[upc_emit_of_class(d, cl)];
         /* [OPT-3] the pre-multiplied candidate's `applies` guarantees `v >= 0`
          * under that form; the branch is not a fallback, it is the assertion
          * written where a reader of the emitted table will look for it. */
         sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
-    sb_puts(c, "\n    };\n");
+    pcrec_sb_puts(c, "\n    };\n");
 }
 
 /* ---- [D63] the CANDIDATE-START derivation: one site, two callers ---------
@@ -3241,8 +3241,8 @@ static void emit_stay_table(Ctx *cx, StrBuf *c, const char *p, const char *tag,
  * number. Legend text only; never emitted as code. */
 static void legend_byte(StrBuf *c, int b)
 {
-    if (b == '\'')      sb_puts(c, "'\\''");
-    else if (b == '\\') sb_puts(c, "'\\\\'");
+    if (b == '\'')      pcrec_sb_puts(c, "'\\''");
+    else if (b == '\\') pcrec_sb_puts(c, "'\\\\'");
     else if (b >= 0x20 && b < 0x7f) sb_printf(c, "'%c'", b);
     else                sb_printf(c, "%d", b);
 }
@@ -3254,7 +3254,7 @@ static void emit_class_legend(StrBuf *c, const Dfa *d)
 {
     sb_printf(c, "     * Class legend (%d classes; every byte not listed is class 0):\n",
               d->ncls);
-    sb_puts(c, "     *   0  every other byte\n");
+    pcrec_sb_puts(c, "     *   0  every other byte\n");
     for (int cl = 1; cl < d->ncls; cl++) {
         sb_printf(c, "     *   %d  ", cl);
         int shown = 0, b = 0;
@@ -3262,13 +3262,13 @@ static void emit_class_legend(StrBuf *c, const Dfa *d)
             if (d->clsmap[b] != cl) { b++; continue; }
             int a = b;
             while (b + 1 < 256 && d->clsmap[b + 1] == cl) b++;
-            if (shown) sb_puts(c, ", ");
+            if (shown) pcrec_sb_puts(c, ", ");
             legend_byte(c, a);
-            if (b != a) { sb_puts(c, "-"); legend_byte(c, b); }
+            if (b != a) { pcrec_sb_puts(c, "-"); legend_byte(c, b); }
             shown++; b++;
         }
-        if (b < 256) sb_puts(c, ", ...");
-        sb_puts(c, "\n");
+        if (b < 256) pcrec_sb_puts(c, ", ...");
+        pcrec_sb_puts(c, "\n");
     }
 }
 
@@ -3387,14 +3387,14 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
             sb_printf(c, ", and the\n"
                          "     * shortest input reaching an accepting state is %d byte(s) long",
                       dist[shortest]);
-        sb_puts(c, ".\n");
+        pcrec_sb_puts(c, ".\n");
         return;
     }
     if (reverse)
-        sb_puts(c, "     * State legend -- the bytes this walk consumes, IN WALK\n"
+        pcrec_sb_puts(c, "     * State legend -- the bytes this walk consumes, IN WALK\n"
                    "     * ORDER, i.e. the match read backwards:\n");
     else
-        sb_puts(c, "     * State legend -- the shortest input that reaches each state:\n");
+        pcrec_sb_puts(c, "     * State legend -- the shortest input that reaches each state:\n");
     for (int i = 0; i < d->n; i++) {
         bool acc = d->st[i].up[UPC_PLAIN].accept != 0;
         /* NOT "unreachable": this walk follows the plain transitions only, and
@@ -3408,7 +3408,7 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
             continue;
         }
         sb_printf(c, "     *  %3d  ", i);
-        if (dist[i] == 0) sb_puts(c, "(start) nothing consumed yet");
+        if (dist[i] == 0) pcrec_sb_puts(c, "(start) nothing consumed yet");
         else {
             int len = dist[i], k = len, s = i;
             /* One HOP is no longer one BYTE: a scan edge's hop costs its
@@ -3420,7 +3420,7 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
                     if (--k < LEGEND_MAX_EXAMPLE) path[k] = via[s];
                 s = p;
             }
-            sb_puts(c, "\"");
+            pcrec_sb_puts(c, "\"");
             int shown = len < LEGEND_MAX_EXAMPLE ? len : LEGEND_MAX_EXAMPLE;
             /* [O-31 F1] `prev` seeds on the opening quote just written, which
              * is neither '*' nor able to complete one -- the first shown
@@ -3432,10 +3432,10 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
                 emit_comment_safe_byte(c, &prev, (unsigned char)b,
                                         legend_extra_escape);
             }
-            sb_puts(c, "\"");
+            pcrec_sb_puts(c, "\"");
             if (shown < len) sb_printf(c, "... (%d bytes)", len);
         }
-        if (acc) sb_puts(c, "   ACCEPTING");
+        if (acc) pcrec_sb_puts(c, "   ACCEPTING");
         /* [OPT-5] and, where this state carries one, the SCAN EDGE -- because
          * the transition row printed above says "dead" for that class and a
          * reader who took the table at its word would conclude the machine
@@ -3446,7 +3446,7 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
         else if (d->st[i].scan_span > 0)
             sb_printf(c, "\n     *       scan edge: %d of class %d -> state %d",
                       d->st[i].scan_span, d->st[i].scan_cls, d->st[i].scan_next);
-        sb_puts(c, "\n");
+        pcrec_sb_puts(c, "\n");
     }
 }
 
@@ -3800,7 +3800,7 @@ static void token_stop(StrBuf *c, const DfaForm *f)
      * inline call and drops the unreachable arm. */
     if (floor == 0) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "/* [OPT-EDGE] EVERY state of this machine is a scan-edge head, so the\n"
             " * loop's generic path is unreachable and the test IS that constant. */\n");
         pcrec_sb_cmt_close(c);
@@ -3887,7 +3887,7 @@ static void token_premul(StrBuf *c, const DfaForm *f)
         sb_printf(c, "static inline %s_%s_state %s_%s_view_take(const unsigned short *view, unsigned row)\n"
                      "{ return view[row]; }\n", p, m, p, m);
     }
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
 }
 
 static void token_indexed(StrBuf *c, const DfaForm *f)
@@ -3927,7 +3927,7 @@ static void token_indexed(StrBuf *c, const DfaForm *f)
         sb_printf(c, "static inline %s_%s_state %s_%s_view_take(const short *view, unsigned row)\n"
                      "{ return view[row]; }\n", p, m, p, m);
     }
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
 }
 
 static void tr_comment_premul(StrBuf *c, const DfaForm *f)
@@ -4098,7 +4098,7 @@ static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
      * out-of-bounds read in EMITTED code — K27's class. With the guard
      * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`, hence
      * `s != NULL` under match_api.md §3.1's legal empty subject. */
-    if (f->dir->range_guard) sb_puts(c, f->dir->range_guard);
+    if (f->dir->range_guard) pcrec_sb_puts(c, f->dir->range_guard);
     sb_printf(c, "%s%s_%s_state %s = %s ? %s_%s_seed_state[%s_%s_byte_class[%s]]"
                  " : %d;\n",
               f->dir->ind, f->p, f->dir->c.name, f->dir->statev,
@@ -4110,7 +4110,7 @@ static void seed_emit_constant(StrBuf *c, const DfaForm *f)
 {
     sb_printf(c, "%s%s_%s_state %s = %d;\n", f->dir->ind, f->p, f->dir->c.name,
               f->dir->statev, f->repr->cell_of(f->d->s0, f->d));
-    if (f->dir->range_guard) sb_puts(c, f->dir->range_guard);
+    if (f->dir->range_guard) pcrec_sb_puts(c, f->dir->range_guard);
 }
 
 static const DfaSeed dfa_seeds[] = {
@@ -4366,7 +4366,7 @@ static const char *ofsk_tbl_name(const DfaForm *f, const PrefixK *k)
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
+    pcrec_sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
                "     * forward loop uses this to skip over bytes that cannot begin\n"
                "     * one instead of stepping through them; speed only, it never\n"
                "     * changes the answer. */\n");
@@ -4403,7 +4403,7 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
         if (i == f->ofsk->scan) continue;
-        sb_puts(c, first ? "" : " &&\n            ");
+        pcrec_sb_puts(c, first ? "" : " &&\n            ");
         first = false;
         if (k->count == 1) {
             if (k->k == 0) sb_printf(c, "subject[cand] == %d", k->byte);
@@ -4442,7 +4442,7 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
     int maxk = f->ofsk->maxk;
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* ---- THE OFFSET-k CANDIDATE-START SKIP ---------------------------\n"
         " * Every match of this pattern carries a byte from a known set at each\n"
         " * of these offsets FROM ITS OWN START, so a position that fails any\n"
@@ -4452,13 +4452,13 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
         sb_printf(c, " *   offset %-2d  ", k->k);
-        if (k->count == 1) { sb_puts(c, "exactly "); legend_byte(c, k->byte);
+        if (k->count == 1) { pcrec_sb_puts(c, "exactly "); legend_byte(c, k->byte);
                              sb_printf(c, " (%d)", k->byte); }
         else               sb_printf(c, "one of %d bytes", k->count);
-        if (i == f->ofsk->scan) sb_puts(c, "   <- SCANNED FOR");
-        sb_puts(c, "\n");
+        if (i == f->ofsk->scan) pcrec_sb_puts(c, "   <- SCANNED FOR");
+        pcrec_sb_puts(c, "\n");
     }
-    sb_puts(c,
+    pcrec_sb_puts(c,
         " *\n"
         " * The scan is one pass for the offset marked above; the others are\n"
         " * checked on each candidate before the loop is entered, and a failed\n"
@@ -4474,9 +4474,9 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
 
     sb_printf(c, "static inline size_t %s_ofsskip(const unsigned char *subject, size_t n, size_t pos", p);
     ofsk_emit_params(c, f, true);
-    sb_puts(c, ")\n{\n");
+    pcrec_sb_puts(c, ")\n{\n");
     sb_printf(c, "    while (pos + %d < n) {\n", maxk);
-    sb_puts(c,   "        size_t cand;\n");
+    pcrec_sb_puts(c,   "        size_t cand;\n");
     if (sc->count == 1) {
         /* THE memchr FORM. `pos + maxk < n` above implies `pos + k* < n`, so
          * the pointer is inside the subject and the length is non-zero --
@@ -4487,9 +4487,9 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         else
             sb_printf(c, "        const void *q = memchr(subject + pos + %d, %d, n - pos - %d);\n",
                       sc->k, sc->byte, sc->k);
-        sb_puts(c,   "        if (!q) return n;\n");
+        pcrec_sb_puts(c,   "        if (!q) return n;\n");
         if (sc->k == 0)
-            sb_puts(c, "        cand = (size_t)((const unsigned char *)q - subject);\n");
+            pcrec_sb_puts(c, "        cand = (size_t)((const unsigned char *)q - subject);\n");
         else
             sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", sc->k);
         sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
@@ -4503,10 +4503,10 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         ctx_fail(f->cx, 0, "internal error: an offset-k skip whose scan "
                                "offset is not a single byte value");
     }
-    sb_puts(c,   "        if (");
+    pcrec_sb_puts(c,   "        if (");
     ofsk_emit_verify(c, f);
-    sb_puts(c,   ") return cand;\n");
-    sb_puts(c,   "        pos = cand + 1;\n"
+    pcrec_sb_puts(c,   ") return cand;\n");
+    pcrec_sb_puts(c,   "        pos = cand + 1;\n"
                  "    }\n"
                  "    return n;\n}\n\n");
 }
@@ -4551,7 +4551,7 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
               ind, f->p);
     ofsk_emit_params(c, f, false);
-    sb_puts(c, ");\n");
+    pcrec_sb_puts(c, ");\n");
     sb_printf(c, "%s    if (cand >= subject_length) return 0;\n", ind);
     sb_printf(c, "%s    scan_position = cand;\n", ind);
     {
@@ -4571,7 +4571,7 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
               ind, f->p);
     ofsk_emit_params(c, f, false);
-    sb_puts(c, ");\n");
+    pcrec_sb_puts(c, ");\n");
     sb_printf(c, "%s    if (cand < subject_length) {\n", ind);
     sb_printf(c, "%s        scan_position = cand;\n", ind);
     {
@@ -5410,7 +5410,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
     sb_printf(c, "%sif (%s == %d && %s && ", ind, f->dir->statev,
               f->repr->cell_of(head, f->d), f->dir->scan_more);
     scan_test(c, f, head);
-    sb_puts(c, ") {\n");
+    pcrec_sb_puts(c, ") {\n");
 
     if (span < 0) {
         /* UNBOUNDED (`*` / `+`): no counter, and the state does not move —
@@ -5453,7 +5453,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
                   ind, f->dir->recv, f->dir->posv);
         sb_printf(c, "%s    }\n", ind);
     } else {
-        sb_puts(c, "\n");
+        pcrec_sb_puts(c, "\n");
     }
     sb_printf(c, "%s}\n", ind);
 }
@@ -5574,9 +5574,9 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
      * a block comment: what it is, how it is indexed, what a cell means, and
      * — where the cells are STATES — a legend naming them. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, f->dir->tbl_hdr);
+    pcrec_sb_puts(c, f->dir->tbl_hdr);
     emit_class_legend(c, f->d);
-    sb_puts(c, "     */\n");
+    pcrec_sb_puts(c, "     */\n");
     pcrec_sb_cmt_close(c);
     emit_u8_table(c, p, dfa_fragf(f->cx, "%s_byte_class", m), f->d->clsmap, 256);
 
@@ -5589,7 +5589,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         f->repr->emit_tr_comment(c, f);
         emit_state_legend(f->cx, c, f->d, f->dir->reverse);
-        sb_puts(c, "     */\n");
+        pcrec_sb_puts(c, "     */\n");
         pcrec_sb_cmt_close(c);
         emit_tr_table(c, p, dfa_fragf(f->cx, "%s_next_state", m), f->d, f->repr);
     }
@@ -5857,7 +5857,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * block is emitted so an artifact that matches nothing grows nothing. */
     if (us.empty) {
         emit_search_head(cx, c, fn, storage);
-        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
+        pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -5896,12 +5896,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (!pinned) emit_machine_tables(c, &rev);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
+    pcrec_sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
                "    // One byte per iteration. The loop keeps the LAST accepting\n"
                "    // position rather than stopping at the first, so the longest\n"
                "    // match wins.\n");
     pcrec_sb_cmt_close(c);
-    sb_puts(c, "    size_t scan_position = search_from;\n"
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
     emit_scan_loop(c, &fwd);
     if (pinned) {
@@ -5912,7 +5912,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * "presenting a redundant condition and a load-bearing one as the
          * same claim is how someone eventually simplifies away the wrong
          * half" (this file, about a DIFFERENT gate). */
-        sb_puts(c,
+        pcrec_sb_puts(c,
             "    // LOAD-BEARING, not belt-and-braces: a search at\n"
             "    // search_from > 0 on a seeded machine can begin in a state\n"
             "    // with no live closure. It records no accept, and \"no match\n"
@@ -5936,13 +5936,13 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             "}\n");
         return;
     }
-    sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
                "    {\n"
                "        size_t match_end_position = last_accept_position;\n"
                "        size_t match_start_position = (size_t)-1;\n"
                "        size_t rewind_position = match_end_position;\n");
     emit_scan_loop(c, &rev);
-    sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
+    pcrec_sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
                "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
                "        return 1;\n"
                "    }\n"
@@ -6021,7 +6021,7 @@ static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
                                     const char *matchfn)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "/* [ENG-ABS] The anchored match-here entry, spec S3.2: a match at\n"
         " * exactly ctx->pos, or -1. It runs the artifact's THIRD machine --\n"
         " * the forward tables WITHOUT the start-anywhere self-loop -- from\n"
@@ -6043,15 +6043,15 @@ static void emit_anchored_match_def(StrBuf *c, const DfaForm *f,
         matchfn);
     emit_machine_tables(c, f);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
+    pcrec_sb_puts(c, "    // ---- ANCHORED SCAN: where does the match that begins\n"
                "    // at ctx->pos end? Same LAST-accept rule as the forward\n"
                "    // scan, so the longest match wins; no reverse pass,\n"
                "    // because the start is the caller's.\n");
     pcrec_sb_cmt_close(c);
-    sb_puts(c, "    size_t scan_position = search_from;\n"
+    pcrec_sb_puts(c, "    size_t scan_position = search_from;\n"
                "    size_t last_accept_position = (size_t)-1;\n");
     emit_scan_loop(c, f);
-    sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
+    pcrec_sb_puts(c, "    if (last_accept_position == (size_t)-1) return -1;\n"
                "    return (ptrdiff_t)(last_accept_position - search_from);\n"
                "}\n");
 }
@@ -6086,12 +6086,12 @@ static void emit_anchored_match_caps_def(StrBuf *c, const char *fn,
         "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n",
         fn, matchfn, upper);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "            /* every group this artifact promises is reached only\n"
         "               through a subroutine call or sits under a {0}, so no\n"
         "               match can set it (PCRE2 reports the same) */\n");
     pcrec_sb_cmt_close(c);
-    sb_puts(c,
+    pcrec_sb_puts(c,
         "            capture_spans_out[rx_g][0] = PCREC_UNSET;\n"
         "            capture_spans_out[rx_g][1] = PCREC_UNSET;\n"
         "        }\n"
@@ -6116,7 +6116,7 @@ static void emit_anchored_entries(Ctx *cx, StrBuf *c, const GenNames *g)
 
     anch.repr->emit_token(c, &anch);
     emit_anchored_match_def(c, &anch, g->matchfn);
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
     emit_anchored_match_caps_def(c, g->matchcapsfn, g->matchfn, g->upper);
 }
 
@@ -6155,13 +6155,13 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * (this file's header, M2.12). Byte-for-byte the same output. */
     if (dfa_engine_is_empty(cx)) {
         /* no live start state: the pattern matches nothing */
-        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
+        pcrec_sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
+    pcrec_sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
                "     * position at a time, and each state is a LABEL rather than a table\n"
                "     * row, so a step is a computed goto.\n"
                "     *\n"
@@ -6169,7 +6169,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                "     * the few classes this pattern can tell apart.\n"
                "     *\n");
     emit_class_legend(c, d);
-    sb_puts(c, "     */\n");
+    pcrec_sb_puts(c, "     */\n");
     pcrec_sb_cmt_close(c);
     emit_u8_table(c, p, "byte_class", d->clsmap, 256);
 
@@ -6244,7 +6244,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     int unl = upc_of_newline(d);
     if (acc2) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        sb_puts(c, "    /* 1 where a match may end, indexed [state * classes + class]:\n"
+        pcrec_sb_puts(c, "    /* 1 where a match may end, indexed [state * classes + class]:\n"
                    "     * this machine's accept bit depends on the NEXT byte, so it is a\n"
                    "     * table read rather than a per-state constant. */\n");
         pcrec_sb_cmt_close(c);
@@ -6261,25 +6261,25 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  "     * the attempt. %d states, %d classes.\n"
                  "     *\n", p, d->n, d->ncls);
     emit_state_legend(cx, c, d, false);
-    sb_puts(c, "     */\n");
+    pcrec_sb_puts(c, "     */\n");
     pcrec_sb_cmt_close(c);
     for (int i = 0; i < d->n; i++) {
         sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
-            if (cl) sb_puts(c, ", ");
+            if (cl) pcrec_sb_puts(c, ", ");
             emit_target(c, p, d->st[i].tr[cl]);
         }
-        sb_puts(c, " };\n");
+        pcrec_sb_puts(c, " };\n");
     }
     if (seed) {
         sb_printf(c, "    static const void *const %s_seed_state[%d] = { ",
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
-            if (cl) sb_puts(c, ", ");
+            if (cl) pcrec_sb_puts(c, ", ");
             emit_target(c, p, d->s1u[upc_emit_of_class(d, cl)]);
         }
-        sb_puts(c, " };\n");
+        pcrec_sb_puts(c, " };\n");
     }
     /* [M6.2 wave D] `\G`'s own seed table, and it is gated on the `\G` FAMILY
      * varying rather than on `seed`. The two questions are genuinely
@@ -6291,10 +6291,10 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         sb_printf(c, "    static const void *const %s_gstart_seed_state[%d] = { ",
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
-            if (cl) sb_puts(c, ", ");
+            if (cl) pcrec_sb_puts(c, ", ");
             emit_target(c, p, d->s1g[upc_emit_of_class(d, cl)]);
         }
-        sb_puts(c, " };\n");
+        pcrec_sb_puts(c, " };\n");
     }
 
     /* [D63] THE CANDIDATE-START PREFILTER, this engine's first instance.
@@ -6338,7 +6338,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"
                        : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
-    sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
+    pcrec_sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
 
     /* [K50] SITE 2 OF THE THREE "TRY THE NEXT START" MECHANISMS. K49 fixed the
      * VM's retry, K50's IR gate fixed the DFA self-loop, and this loop is the
@@ -6389,7 +6389,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                                   sbnd, sizeof sbnd, "start", "subject",
                                   "subject_length", &trunc)) {
             pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-            sb_puts(c,
+            pcrec_sb_puts(c,
                 "        /* [K50] A match may begin only at a character\n"
                 "         * boundary of this artifact's encoding. The first\n"
                 "         * iteration is the caller's own start position and\n"
@@ -6460,7 +6460,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   gseed ? "search_from" : "0",
                   cand.offset, cand.byte, cand.byte, cand.offset);
     }
-    sb_puts(c, "        size_t scan_position = start;\n"
+    pcrec_sb_puts(c, "        size_t scan_position = start;\n"
                "        size_t last_accept_position = (size_t)-1;\n");
 
     /* [M6.2 wave D] THE START DISPATCH IS THREE-WAY WHEN `\G` IS PRESENT
@@ -6479,29 +6479,29 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * and all — the same one-branch-that-reproduces-the-old-string discipline
      * `emit_view_select` is written with, for the same reason. */
     if (gseed) {
-        sb_puts(c, "        goto *((start == 0) ? ");
+        pcrec_sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
-        sb_puts(c, "\n               : (start == search_from) ? ");
+        pcrec_sb_puts(c, "\n               : (start == search_from) ? ");
         if (gtbl) sb_printf(c, "%s_gstart_seed_state[%s_byte_class[subject[start - 1]]]", p, p);
         else      emit_target(c, p, d->s1g[UPC_PLAIN]);
-        sb_puts(c, "\n               : ");
+        pcrec_sb_puts(c, "\n               : ");
         if (seed) sb_printf(c, "%s_seed_state[%s_byte_class[subject[start - 1]]]", p, p);
         else      emit_target(c, p, d->s1u[UPC_PLAIN]);
-        sb_puts(c, ");\n");
+        pcrec_sb_puts(c, ");\n");
     } else if (seed) {
-        sb_puts(c, "        goto *((start == 0) ? ");
+        pcrec_sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
         sb_printf(c, " : %s_seed_state[%s_byte_class[subject[start - 1]]]);\n", p, p);
     } else if (d->s0 == d->s1u[UPC_PLAIN]) {
-        sb_puts(c, "        goto ");
+        pcrec_sb_puts(c, "        goto ");
         if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
         else           sb_printf(c, "*&&%s_s%d;\n", p, d->s0);
     } else {
-        sb_puts(c, "        goto *((start == 0) ? ");
+        pcrec_sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
-        sb_puts(c, " : ");
+        pcrec_sb_puts(c, " : ");
         emit_target(c, p, d->s1u[UPC_PLAIN]);
-        sb_puts(c, ");\n");
+        pcrec_sb_puts(c, ");\n");
     }
 
     for (int i = 0; i < d->n; i++) {
@@ -6525,9 +6525,9 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * `s[pos]` below unreachable at `pos == n`. */
             int endview = st_emit_endvar(st) >= 0 ? st_emit_endvar(st)
                         : st->eolvar >= 0 ? st->eolvar : i;
-            sb_puts(c, "        if (scan_position == subject_length) {\n");
+            pcrec_sb_puts(c, "        if (scan_position == subject_length) {\n");
             if (d->st[endview].up[UPC_PLAIN].accept)
-                sb_puts(c, "            last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
             sb_printf(c, "            goto %s_done;\n        }\n", p);
             if (st->eolvar >= 0) {
                 /* [M6.2 wave C] THE EOL POSITION'S ACCEPT IS CLASS-INDEXED
@@ -6548,11 +6548,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  * newline refinement, which is what keeps the pre-wave text
                  * byte-identical. */
                 const DState *v = &d->st[st->eolvar];
-                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
-                if (v->up[unl].accept) sb_puts(c, "            last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
+                if (v->up[unl].accept) pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
-                sb_puts(c, "        }\n");
+                pcrec_sb_puts(c, "        }\n");
             }
             sb_printf(c, "        {\n"
                          "            unsigned forward_class = %s_byte_class[subject[scan_position]];\n"
@@ -6575,22 +6575,22 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * pre-wave text, unchanged, for every state of every pattern that
              * has no `\z`. */
             const DState *endv = &d->st[st_emit_endvar(st)];
-            sb_puts(c, "        if (scan_position == subject_length) {\n");
+            pcrec_sb_puts(c, "        if (scan_position == subject_length) {\n");
             if (endv->up[UPC_PLAIN].accept)
-                sb_puts(c, "            last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
             sb_printf(c, "            goto %s_done;\n", p);
-            sb_puts(c, "        }\n");
+            pcrec_sb_puts(c, "        }\n");
             if (st->eolvar >= 0) {
                 const DState *v = &d->st[st->eolvar];
-                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
+                pcrec_sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
                 if (v->up[unl].accept)
-                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                    pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
-                sb_puts(c, "        }\n");
+                pcrec_sb_puts(c, "        }\n");
             }
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "        last_accept_position = scan_position;\n");
             /* both arms above returned or consumed, so pos < n here */
             sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         } else if (st->eolvar >= 0) {
@@ -6615,33 +6615,33 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             bool a_end = v->up[UPC_PLAIN].accept;
             bool a_nl  = v->up[unl].accept;
             if (a_end == a_nl) {
-                sb_puts(c, "        if (scan_position == subject_length || (scan_position + 1 == subject_length && "
+                pcrec_sb_puts(c, "        if (scan_position == subject_length || (scan_position + 1 == subject_length && "
                            "subject[scan_position] == '\\n')) {\n");
                 if (a_end)
-                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                    pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            if (scan_position >= subject_length) goto %s_done;\n", p);
                 sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
-                sb_puts(c, "        }\n");
+                pcrec_sb_puts(c, "        }\n");
             } else {
-                sb_puts(c, "        if (scan_position == subject_length) {\n");
+                pcrec_sb_puts(c, "        if (scan_position == subject_length) {\n");
                 if (a_end)
-                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                    pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            goto %s_done;\n        }\n", p);
-                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
+                pcrec_sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
                 if (a_nl)
-                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                    pcrec_sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
-                sb_puts(c, "        }\n");
+                pcrec_sb_puts(c, "        }\n");
             }
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "        last_accept_position = scan_position;\n");
             /* not an EOL position implies pos < n: consume directly */
             sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         } else {
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last_accept_position = scan_position;\n");
+                pcrec_sb_puts(c, "        last_accept_position = scan_position;\n");
             sb_printf(c, "        if (scan_position >= subject_length) goto %s_done;\n", p);
             sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         }
@@ -6649,7 +6649,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 
     sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
     sb_printf(c, "%s_done:\n", p);
-    sb_puts(c, "        if (__builtin_expect(last_accept_position != (size_t)-1, 0)) {\n"
+    pcrec_sb_puts(c, "        if (__builtin_expect(last_accept_position != (size_t)-1, 0)) {\n"
                "            if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)start; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"
                "            return 1;\n"
                "        }\n"
@@ -6732,7 +6732,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * top rather than at each of its twenty appends — and a paragraph added
      * later is inside the region by construction. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "/* =====================================================================\n"
+    pcrec_sb_puts(c, "/* =====================================================================\n"
                " * HOW THIS MATCHER WORKS -- a map of this file\n"
                " *\n"
                " * This is a complete, self-contained matcher for ONE pattern:\n"
@@ -6761,7 +6761,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
         int prev = 0;
         for (const char *q = cx->pat; *q; q++) {
             unsigned char ch = (unsigned char)*q;
-            if (ch == '\n') { sb_puts(c, "\\n"); prev = 'n'; continue; }
+            if (ch == '\n') { pcrec_sb_puts(c, "\\n"); prev = 'n'; continue; }
             /* A prior version of this loop matched the closing half of
              * the STAR-SLASH pair by looking one byte AHEAD (q[0]/q[1])
              * and, on a match, wrote a broken-up replacement for the
@@ -6778,24 +6778,24 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
             if ((prev == '*' && ch == '/') || (prev == '/' && ch == '*'))
                 sb_printf(c, "\\x%02x", ch);
             else
-                sb_putc(c, (char)ch);
+                pcrec_sb_putc(c, (char)ch);
             prev = ch;
         }
     }
-    sb_puts(c, "\n *\n"
+    pcrec_sb_puts(c, "\n *\n"
                " * There is no pattern parser here and nothing to configure. The\n"
                " * pattern was compiled away ahead of time; what is left is the\n"
                " * machinery below and the entry points that drive it.\n"
                " *\n");
 
     if (!vm) {
-        sb_puts(c, " * ONE SEARCH, END TO END:\n *\n"
+        pcrec_sb_puts(c, " * ONE SEARCH, END TO END:\n *\n"
                    " *   1. FORWARD SCAN. Walk the subject left to right, one byte per\n"
                    " *      step, moving between numbered states by table lookup. Every\n"
                    " *      time the scan lands in an ACCEPTING state, remember the\n"
                    " *      position: a match could end here. This finds where the match\n"
                    " *      ENDS.\n");
-        sb_puts(c, " *\n"
+        pcrec_sb_puts(c, " *\n"
                    " *   2. PREFILTER SKIP -- a shortcut that may appear inside step 1.\n"
                    " *      While the scan is still in the start state with nothing\n"
                    " *      found, bytes that cannot begin a match are skipped rather\n"
@@ -6809,7 +6809,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
          * there is worse than no map. Read off the SAME `dfa_search_is_pinned`
          * the body was emitted through. */
         if (pinned)
-            sb_puts(c, " *\n"
+            pcrec_sb_puts(c, " *\n"
                        " *   3. NO REVERSE SCAN, AND NO REVERSE TABLES IN THIS FILE. For\n"
                        " *      this pattern the forward machine accepts before it reads\n"
                        " *      a byte, so a match exists wherever the search starts and\n"
@@ -6820,7 +6820,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " *      tables here, built from the same pattern read right to\n"
                        " *      left; this one does not need them.\n *\n");
         else
-            sb_puts(c, " *\n"
+            pcrec_sb_puts(c, " *\n"
                        " *   3. REVERSE SCAN. Walk backwards from the end found in step 1,\n"
                        " *      through a SECOND set of tables built from the same pattern\n"
                        " *      read right to left. The furthest-back accepting position is\n"
@@ -6828,14 +6828,14 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " *      forward tables record only where a match can END, never where\n"
                        " *      the one that ended there began.\n *\n");
     } else {
-        sb_puts(c, " * This pattern reports where its capture groups matched, so the\n"
+        pcrec_sb_puts(c, " * This pattern reports where its capture groups matched, so the\n"
                    " * matcher is built in two halves that run one after the other:\n *\n");
         if (prefilter && pinned)
             /* [OPT-5 STEP 2] A HYBRID'S INLINED PREFILTER IS THIS EMITTER'S
              * OWN SEARCH BODY, so the elision reaches it and this paragraph
              * must say so — "a pair of scanners" would name a machine the
              * artifact does not carry. */
-            sb_puts(c, " *   HALF 1 -- the prefilter. ONE table-driven forward scanner\n"
+            pcrec_sb_puts(c, " *   HALF 1 -- the prefilter. ONE table-driven forward scanner\n"
                        " *     that answers \"is there a match at all, and between which\n"
                        " *     two offsets?\" while ignoring the groups. Its start is the\n"
                        " *     position the search began at -- the machine accepts before\n"
@@ -6843,12 +6843,12 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                        " *     artifact carries no reverse tables. It never backtracks.\n"
                        " *     What it cannot do is say where the groups fell.\n *\n");
         else if (prefilter)
-            sb_puts(c, " *   HALF 1 -- the prefilter. A pair of table-driven scanners,\n"
+            pcrec_sb_puts(c, " *   HALF 1 -- the prefilter. A pair of table-driven scanners,\n"
                        " *     forward then reverse, that answer \"is there a match at all,\n"
                        " *     and between which two offsets?\" while ignoring the groups.\n"
                        " *     It never backtracks. What it cannot do is say where the\n"
                        " *     groups fell.\n *\n");
-        sb_puts(c, " *   HALF 2 -- the compiled program. One label per position in the\n"
+        pcrec_sb_puts(c, " *   HALF 2 -- the compiled program. One label per position in the\n"
                    " *     pattern, walked by goto, recording each group's start and end\n"
                    " *     as it passes them. Where the pattern offers a choice it pushes\n"
                    " *     a RESUME FRAME and takes the preferred branch; when a label\n"
@@ -6877,31 +6877,31 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
          * the stamp read, never a fourth opinion. The `"indexed"`/`"none"` arm
          * is the pre-[OPT-3] text character for character. */
         const char *form = dfa_table_name(cx);
-        sb_puts(c, " *\n"
+        pcrec_sb_puts(c, " *\n"
                    " * READING THE TABLES. Each scanner uses three arrays with the same\n"
                    " * shape: a byte-class table folding all 256 byte values down to the\n"
                    " * few classes this pattern can tell apart; a transition table, one\n");
         if (!strcmp(form, "premultiplied"))
-            sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
+            pcrec_sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
                        " * to move to ALREADY MULTIPLIED by the column count (so a step is\n"
                        " * one add and one load) or 65535 for \"dead, stop\"; and an\n"
                        " * accepting table marking the states where a match may end,\n"
                        " * indexed by that same multiplied value. Every table below\n"
                        " * carries a legend naming its states or classes.\n");
         else if (!strcmp(form, "mixed"))
-            sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
+            pcrec_sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
                        " * to move to or a reserved value for \"dead, stop\"; and an\n"
                        " * accepting table marking the states where a match may end. The\n"
                        " * two scanners here use DIFFERENT cell encodings -- each table's\n"
                        " * own comment below says which, and names its dead cell. Every\n"
                        " * table below carries a legend naming its states or classes.\n");
         else
-            sb_puts(c, " * row per state and one column per class, whose cell is the state to\n"
+            pcrec_sb_puts(c, " * row per state and one column per class, whose cell is the state to\n"
                        " * move to or -1 for \"dead, stop\"; and an accepting table marking\n"
                        " * the states where a match may end. Every table below carries a\n"
                        " * legend naming its states or classes.\n");
     }
-    sb_puts(c, " * ===================================================================== */\n");
+    pcrec_sb_puts(c, " * ===================================================================== */\n");
     pcrec_sb_cmt_close(c);
     /* [EMIT-VERB] THE SEPARATOR IS NOT PART OF THE COMMENT. Left inside the
      * region it would be dropped with the block, and the artifact's
@@ -6909,7 +6909,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
      * defined on -- would differ by one byte between the two settings. It is
      * one byte and it is the difference between "the caps cannot see this
      * axis" being a claim and being an identity. */
-    sb_putc(c, '\n');
+    pcrec_sb_putc(c, '\n');
 }
 
 /* Emits the SHARED artifact prologue both engines call: the optional
@@ -6995,13 +6995,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {
-        sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
+        pcrec_sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
         /* file-scope, shared by every engine here; per-engine below */
         emit_rx_abi_types(c);
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
         emit_search_decl(c, g->searchfn);
         emit_match_decl(c, g->matchfn);
         emit_match_caps_decl(c, g->matchcapsfn);
@@ -7009,14 +7009,14 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_search_in_decl(c, g->searchfn, cx->opt->prefix);
         emit_match_in_decl(c, g->matchfn, cx->opt->prefix);
         emit_match_caps_in_decl(c, g->matchcapsfn, cx->opt->prefix);
-        sb_putc(c, '\n');
+        pcrec_sb_putc(c, '\n');
         emit_residual_decls(cx, c);
     }
     if (need_string_h)
-        sb_puts(c, "#include <string.h>\n");
+        pcrec_sb_puts(c, "#include <string.h>\n");
     if (cx->opt->flags & PCREC_EMIT_MAIN)
-        sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
-    sb_puts(c, "\n");
+        pcrec_sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
+    pcrec_sb_puts(c, "\n");
     emit_orientation_block(cx, c, g);
 }
 
@@ -7035,7 +7035,7 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
 void pcrec_emit_residual(Ctx *cx)
 {
     emit_residual_defs(cx, &cx->job->csb);
-    sb_puts(&cx->job->csb, "\n");
+    pcrec_sb_puts(&cx->job->csb, "\n");
 }
 
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
@@ -7061,11 +7061,11 @@ void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
  * main()'s own usage error, which already claims 2. */
 void pcrec_emit_main(Ctx *cx, const GenNames *g)
 {
-    sb_puts(&cx->job->csb, "\n");
+    pcrec_sb_puts(&cx->job->csb, "\n");
     sb_printf(&cx->job->csb,
         "int main(int argc, char **argv)\n{\n");
     pcrec_sb_cmt_open(&cx->job->csb, PCREC_CMT_NONESSENTIAL);
-    sb_puts(&cx->job->csb,
+    pcrec_sb_puts(&cx->job->csb,
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n");
     pcrec_sb_cmt_close(&cx->job->csb);
     sb_printf(&cx->job->csb,
@@ -7240,10 +7240,10 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
      * already answers "none" for exactly those artifacts. A clause here would
      * be a fourth statement of that fact. ENG_ATTEMPT needs its own arm
      * because `unanch_start` is not the derivation it uses. */
-    if (cx->job->engine == PCREC_ENG_ATTEMPT) { sb_puts(out, "none"); return; }
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }
     UnanchStart us;
     unanch_start(cx, &us);
-    if (dfa_pf_of(cx, &us)->emit_block == NULL) { sb_puts(out, "none"); return; }
+    if (dfa_pf_of(cx, &us)->emit_block == NULL) { pcrec_sb_puts(out, "none"); return; }
     for (int i = 0; i < us.ofsk.nsel; i++)
         sb_printf(out, "%s%d%s", i ? "," : "", us.ofsk.k[us.ofsk.sel[i]].k,
                   i == us.ofsk.scan ? "*" : "");
@@ -7263,7 +7263,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
      * pass does not read it as a site somebody missed. */
     sb_printf(c, "#define %s_DFA_PREFILTER_OFFSETS \"", upper);
     dfa_prefilter_offsets(cx, c);
-    sb_puts(c, "\"\n");
+    pcrec_sb_puts(c, "\"\n");
     pcrec_sb_stamp_str(c, upper, "DFA_TABLE", dfa_table_name(cx));
     /* [CC-DIFF] Beside `_DFA_TABLE` because it is about the same tables:
      * that one names their ENCODING, this one says how many of them the
@@ -7292,7 +7292,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    sb_puts(c, "/* Engine: dfa */\n");
+    pcrec_sb_puts(c, "/* Engine: dfa */\n");
     pcrec_sb_cmt_close(c);
     pcrec_emit_engine_stamp(c, upper, "dfa", pcrec_engine_sel_name(cx));
     pcrec_emit_dfa_scan_stamps(cx, c, upper);
@@ -7325,7 +7325,7 @@ static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
               cx->opt->max_emit_bytes
                   ? (unsigned long long)cx->opt->max_emit_bytes
                   : (unsigned long long)PCREC_MAX_EMIT_BYTES);
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
 }
 
 void pcrec_emit_dfa(Ctx *cx)
@@ -7362,7 +7362,7 @@ void pcrec_emit_dfa(Ctx *cx)
     emit_dfa_stamps(cx, c, g.upper);
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
     /* [ENG-ABS] AXIS G, and this is its ONE dispatch. `dfa_match_of` is the
      * same call `<PREFIX>_DFA_MATCH` and `rx_info.match_form` are written
      * from, so the stamp names the body that was actually emitted rather than
@@ -7371,12 +7371,12 @@ void pcrec_emit_dfa(Ctx *cx)
         emit_anchored_entries(cx, c, &g);
     } else {
         emit_match_def(c, g.matchfn, g.searchfn, g.upper);
-        sb_puts(c, "\n");
+        pcrec_sb_puts(c, "\n");
         emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
     }
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
     emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
-    sb_puts(c, "\n");
+    pcrec_sb_puts(c, "\n");
     pcrec_emit_residual(cx);
     {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan

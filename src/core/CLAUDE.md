@@ -370,11 +370,11 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   outcome a caller who set a memory limit was specifically trying to avoid.
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
   everything wholesale, so nothing leaks and nothing half-built is read again
-- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
+- **sb.c** — growable string buffer for C code emission; pcrec_sb_putc, pcrec_sb_puts,
   sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
   `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
-  emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
+  emission site, and the mute test lives in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf`
   — the three primitives every other append in the file is built on, so a
   helper added later inherits the gate rather than having to remember it.
   D108 read in the one direction a verbosity axis needs: the walk still
