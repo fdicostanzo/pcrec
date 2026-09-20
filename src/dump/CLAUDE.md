@@ -178,7 +178,11 @@ one.
   or flag behaves as described — `tests/registry/axes_registry_check.sh`
   and the emitted-artifact checks are that independent side)
 - **limits_dump.c** — [LIM-1] `pcrec --list-limits`, the numeric-limits
-  registry's SIXTH TSV surface (`docs/spec/registry.md`; D90). It
+  registry's SIXTH TSV surface (`docs/spec/registry.md`; D90). **Since
+  [REVW.5] its entry `pcrec_limits_tsv` is declared in `lib/pcrec.h` and is
+  PUBLIC SURFACE** — the library's one programmatic route to a raise-only
+  cap's built-in default (lens 9's P4) — so a change to the columns it emits
+  is a contract change and carries its `docs/spec/limits.md` hunk. It
   `#include`s `src/core/limits.def` DIRECTLY, defining the full
   `PCREC_LIMIT(...)` macro itself rather than going through any site's
   per-HOME dispatch layer, so a row's `value` is spliced into a numeric
