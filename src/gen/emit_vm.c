@@ -1190,10 +1190,24 @@ static bool vm_marked(const Vm *v, int group)
  * copies — which for the optional phase IS `vm_opt_chain`, so the emission is
  * byte-identical to the frames rung by construction. At count == K the loop
  * RUNS one trip: the same NUMBER of copies as replication, not the same CODE.
- * So byte-identity holds at K > count and nowhere else. */
+ * So byte-identity holds at K > count and nowhere else.
+ *
+ * [r61 F6] A PURE SHAPE PREDICATE, like `vm_cursor_fits`/`vm_revdet_fits` --
+ * `PCREC_NO_COUNTER` is read at each of the three call sites, not in here.
+ * It used to be read in here too, and that made this the one rung predicate
+ * out of the three that reads the option flags at all: `vm_cursor_fits` has
+ * no deny axis, and `vm_revdet_fits` reads nothing because its own
+ * `-fno-revdet` gates the ANALYSIS PASS that writes `u.rep.revbody`
+ * (src/opt/select_engine.c's `run_revdet`), so a denied build never
+ * produces a revbody for this predicate to see. The counter rung has no
+ * separate analysis pass to gate — its shape and its flag are both decided
+ * fresh at emission time — so the flag has to be read at each of the three
+ * callers directly (vm_cost_rep, vm_count_slots_rep, vm_rep) for the same
+ * reason a fact three sites each re-derive is a fact one of them will
+ * eventually derive differently: a deny flag read in one predicate and
+ * skipped at another is exactly how the ladder's three copies drift. */
 static bool vm_counter_fits(const Vm *v, const Ast *a)
 {
-    if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return false;
     /* UNBOUNDED: only the MANDATORY prefix is the counter's (§11 residual 1).
      * The tail stays on the frames star, which already emits one body copy and
@@ -2047,6 +2061,57 @@ struct Cost {
 
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 
+/* Adds `r` into `*acc`, field by field -- the SUM a concatenation's cost
+ * takes, since every element's frames/trail/steps are simultaneously live
+ * or sequentially charged. `unbounded`/`growable` OR, since either
+ * contributor being unbounded makes the sum unbounded too. See `vm_cost_alt`
+ * below for the sibling combiner, `cost_max`, and why the two read as SUM
+ * versus ONE-PLUS-MAX rather than sharing one shape. */
+static void cost_add(Cost *acc, Cost r)
+{
+    acc->frames += r.frames;
+    acc->trail  += r.trail;
+    acc->pf     += r.pf;
+    acc->pt     += r.pt;
+    acc->unbounded = acc->unbounded || r.unbounded;
+    acc->growable  = acc->growable  || r.growable;
+}
+
+/* Takes the field-wise max of `*acc` and `r` -- the MAX an alternation's
+ * cost takes, since at most one branch's frames/trail/steps are live at a
+ * time. `unbounded`/`growable` OR, for the same reason `cost_add` ORs them.
+ * The chain's own `1 +` on `frames` per level tried is deliberately NOT
+ * folded in here: `vm_cost_alt` adds it at its own call site, so a reader
+ * sees the alternation's max-plus-one shape at the point that owns it
+ * rather than buried inside a generic combiner. */
+static void cost_max(Cost *acc, Cost r)
+{
+    acc->frames = acc->frames > r.frames ? acc->frames : r.frames;
+    acc->trail  = acc->trail  > r.trail  ? acc->trail  : r.trail;
+    acc->pf     = acc->pf     > r.pf     ? acc->pf     : r.pf;
+    acc->pt     = acc->pt     > r.pt     ? acc->pt     : r.pt;
+    acc->unbounded = acc->unbounded || r.unbounded;
+    acc->growable  = acc->growable  || r.growable;
+}
+
+/* Flattens a left-nested `A_ALT` chain into a branch array, ascending
+ * original order -- the one walk `vm_cost_alt` and `vm_alt`'s own emission
+ * share, called from both rather than kept as two copies that could drift.
+ * `*out` is set to an arena array of the returned count, `(*out)[0]` being
+ * the chain's leftmost (first-written) branch. */
+static int vm_alt_flatten(Ctx *cx, const Ast *a, const Ast ***out)
+{
+    int nbr = 1;
+    for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
+    int i = nbr;
+    const Ast *t = a;
+    while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+    br[0] = t;
+    *out = br;
+    return nbr;
+}
+
 /* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
  *
  * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
@@ -2095,6 +2160,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * hard way: the artifact would size for 8 iterations and take 4000. */
     if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
         && !vm_revdet_fits(a, under_atomic)
+        && !(v->cx->opt->flags & PCREC_NO_COUNTER)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l, false);
         const long long K = v->unroll_k;
@@ -2312,6 +2378,300 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
     return c;
 }
 
+/* Charges one trail entry for `\K`'s slot-0 write -- the one assertion-family
+ * node whose cost here is not free.
+ *
+ * [M6.2 wave E] Every other assertion arm emits a test and nothing else;
+ * `\K` emits `<PREFIX>_SET(0, pos)`, which is a TRAIL ENTRY — one slot save,
+ * so the write can be undone exactly when a backtrack passes back over it.
+ * Returning the zero Cost here would size `trail_frames` one entry short per
+ * `\K` on the deepest path, and the artifact would answer PCREC_ERR_FRAMES on
+ * a pattern it can match. Inside a quantifier the multiplication is A_REP's,
+ * exactly as it is for A_CAP's two entries.
+ *
+ * It allocates no SLOT and vm_count_slots says so: slot 0 is group 0's
+ * start, which `slot_values` has always reserved and nothing has ever
+ * written.
+ *
+ * `v->nocap` is not consulted, unlike A_CAP below, and the reason is
+ * structural rather than an omission: `nocap` is set only inside a
+ * reverse-deterministic body's forward scan, and src/opt/revdet.c declines
+ * every body containing a `\K`. There is no state of the emitter in which
+ * this write is suppressed. */
+static Cost vm_cost_kreset(void)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    c.trail = 1;
+    return c;
+}
+
+/* Computes an `A_CAP` capture group's cost as its body's cost plus the
+ * capture's own trailed writes -- see the trail charge below, beside the
+ * arithmetic it explains. */
+static Cost vm_cost_cap(Vm *v, const Ast *a)
+{
+    Cost c = vm_cost(v, a->l, false);
+    /* [ENG-BREP] no trail entry while capture writes are suppressed —
+     * vm_emit's own A_CAP arm reads the same flag, so the cost and the
+     * emitted code cannot disagree about whether the write happens.
+     *
+     * [M6.5.2] THREE for a MARKED group, two for every other: publish-at-
+     * close writes the pending slot at the open and BOTH published slots
+     * at the close. `vm_emit`'s A_CAP arm reads the same `vm_marked`
+     * predicate, so the number the trail array is sized from and the
+     * number of writes the artifact makes are one decision, not two. */
+    if (!v->nocap) c.trail += vm_marked(v, a->u.cap.no) ? 3 : 2;
+    return c;
+}
+
+/* Computes an `A_CAT` concatenation's cost as the SUM of its elements' costs
+ * -- every element's frames/trail/steps are simultaneously live or
+ * sequentially charged, so the total is additive rather than a max.
+ *
+ * Spine walked ITERATIVELY (R1 R-2 / D10) — see vm_nullable's comment for
+ * the segfault that says why. The accumulation order reproduces the
+ * recursive definition exactly: A_CAT sums both sides, so summing along the
+ * spine is the same number. `cost_add` is the sum. */
+static Cost vm_cost_cat(Vm *v, const Ast *a)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    const Ast *t = a;
+    while (t->k == A_CAT) {
+        cost_add(&c, vm_cost(v, t->r, false));
+        t = t->l;
+    }
+    cost_add(&c, vm_cost(v, t, false));
+    return c;
+}
+
+/* Computes an `A_ALT` alternation's cost as the WORST live branch plus one
+ * resume frame per chain level -- at most one branch's frames/trail/steps
+ * are live at a time (see `vm_alt`), and a failed branch's own frames are
+ * popped before the next branch runs, so this is max-plus-one, not a sum.
+ *
+ * [ENG-ISL] an alternation whose language is a finite set of literal byte
+ * strings takes the ISLAND shape instead, whose frame requirement is a
+ * property of the TRIE (`vm_isl_build`, the same analysis `vm_alt` and
+ * `vm_count_slots` read — the third reader of one analysis), not of the
+ * branch count. IT IS NOT A TIDINESS FIX: `1 + max` is SAFE in the sense
+ * that over-charging frames only over-sizes the array, but `pf`/`pt` and
+ * `frames` are also what `subject_ceiling` is DIVIDED from, so an
+ * over-charge makes an artifact DECLARE a smaller subject than it can
+ * actually match. MEASURED as a failing check before it was a comment:
+ * `tests/possessify/run_possessify_tests.sh`'s boundary row drives
+ * `(x)(?:a|bc)+d`, whose `-fno-possessify` build stamps a ceiling of 1024
+ * and must start failing within 64 bytes above it. `isl.pushes` is the
+ * count of chain entries beyond the first, summed over end nodes, positive
+ * exactly where some alternative is a prefix of another; the branches
+ * contribute nothing, since they are literal chains by construction.
+ *
+ * The chain fold below is INNERMOST-FIRST because that is the shape the
+ * recursion had: a flat alternation is a LEFT-NESTED chain, so `1 + max`
+ * applied at each node accumulates outward. Folding in any other order
+ * would silently change the number this function reports, which is what
+ * sizes the frame array. `cost_max` is the field-wise max; the `1 +` on
+ * `frames` stays visible at this call site rather than folded into the
+ * combiner, so this arm reads as ONE-PLUS-MAX against `vm_cost_cat`'s plain
+ * SUM. `vm_alt_flatten` is the same branch-array walk `vm_alt`'s own
+ * emission does — see its header. */
+static Cost vm_cost_alt(Vm *v, const Ast *a)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    {
+        VmIsl isl;
+        if (vm_isl_build(v, &isl, a)) {
+            c.frames = isl.pushes > 0 ? 1 : 0;
+            c.trail = 0;
+            c.pf = c.pt = 0;
+            return c;
+        }
+    }
+    const Ast **br;
+    int nbr = vm_alt_flatten(v->cx, a, &br);
+
+    c = vm_cost(v, br[0], false);
+    for (int j = 1; j < nbr; j++) {
+        cost_max(&c, vm_cost(v, br[j], false));
+        c.frames += 1;
+    }
+    return c;
+}
+
+/* Computes an atomic group's cost as its body's cost plus one trailed write
+ * for the cut mark -- or, when possessify's LIFT applies, the body's cost
+ * alone, charged as an ordinary quantifier by `vm_cost_rep` instead.
+ *
+ * [M6.4.2] R31 C10, and "no new give-up code; the caps are unchanged" was
+ * WRONG. The atomic group's mark is written with `vm_set`, which is the
+ * TRAILED writer — that is what makes NESTING and RE-ENTRY work (an outer
+ * backtrack restores the mark and the entry label re-sets it) — so an
+ * A_ATOMIC inside a quantifier costs ONE TRAIL ENTRY PER ENTRY TO THE GROUP.
+ * Inside a repeat the multiplication is A_REP's, exactly as it is for
+ * A_CAP's two entries.
+ *
+ * AN UNCHARGED TRAILED WRITE IS THE DEFECT `tests/mech/sabotages/
+ * S87_kreset_trail_uncharged.sh` already guards one construct over: the
+ * artifact sizes `trail_frames` one entry short per group on the deepest
+ * path and answers PCREC_ERR_FRAMES on a subject it can match. Sabotage row
+ * S95 is this module's own, and it needs its OWN row because the answers do
+ * not change — only the stamped `subject_ceiling` moves.
+ *
+ * A LIFTED group charges NOTHING here: its cut mark is the RUNG's, already
+ * counted by `vm_cost_rep`'s possessive arms, and charging again would
+ * double-count. FRAMES are the body's either way — the group pushes none of
+ * its own, and the body's are live until the cut.
+ *
+ * One STRUCTURAL consequence worth knowing, reported rather than fixed:
+ * because the cut discards frames and NOT trail entries, a capture-bearing
+ * atomic body under a quantifier (`(?>(a))*`) makes the TRAIL the binding
+ * cap where FRAMES normally binds first. That is a shift in which cap
+ * fires, not a new failure mode, and rx_info's stamped `subject_ceiling`
+ * reports it honestly either way. */
+static Cost vm_cost_atomic(Vm *v, const Ast *a)
+{
+    if (vm_lifts(a)) return vm_cost(v, a->l, true);
+    Cost c = vm_cost(v, a->l, false);
+    c.trail += 1;
+    return c;
+}
+
+/* Computes a lookaround's cost as its body's cost plus one resume frame and
+ * two trail entries -- design §3.2/§3.3's shape, charged as the UNION of
+ * what any polarity or atomicity needs rather than read off which one this
+ * node is.
+ *
+ * [M6.6.2] the three numbers are three separate claims:
+ *
+ *   frames += 1   the NEGATIVE form pushes a resume frame BEFORE the body
+ *                 (§3.3, and sabotage row S-LA4 moves the push after it),
+ *                 so a lookaround's own frame is not zero the way an atomic
+ *                 group's is. Charged for BOTH polarities rather than read
+ *                 off `.neg`: see below.
+ *   trail  += 2   one for the cut's mark, exactly as A_ATOMIC charges
+ *                 (`RX_CUT` on the atomic spellings), and one for the cursor
+ *                 SAVE — `slot_values[POS] = scan_position`, the write §3.2
+ *                 restores from and sabotage row S-LA2 drops. A trailed
+ *                 write that is not charged sizes `trail_frames` short on
+ *                 the deepest path and answers PCREC_ERR_FRAMES on a
+ *                 subject the artifact can match; S87 is the standing guard
+ *                 for that failure on another construct.
+ *
+ * IT DOES NOT READ `.neg` OR `.atomic`, ON PURPOSE, and that is the decision
+ * rather than an oversight. This analysis is documented as "conservative in
+ * the safe direction throughout: over-estimating cost lowers the stamped
+ * ceiling, which under-promises rather than over-promises". Charging the
+ * union of what any spelling needs is therefore free in the safe direction,
+ * and it keeps design §3.1(a)'s one-reader property intact — the three
+ * flags stay read at `vm_look` alone, so there is no second reader to drift
+ * and no D62 control 3 obligation lands on this file.
+ *
+ * RE-CHECKED AT WAVE B+C AGAINST `vm_look` AS LANDED, and both constants
+ * stand as the safe-direction UNION they were written to be:
+ *
+ *   frames +1  EXACT for the negative form (its one `L_neg_ok` push) and an
+ *              OVER-charge of one for the positive and non-atomic forms,
+ *              which push nothing of their own.
+ *   trail  +2  EXACT for the positive ATOMIC form (both slot writes are
+ *              `vm_set`, i.e. trailed) and an over-charge of one for the
+ *              negative form (mark only) and for the non-atomic one (cursor
+ *              only). `RX_CUT` adds no trail entry.
+ *
+ * An over-charge costs a lower stamped `subject_ceiling` and nothing else;
+ * an under-charge is the K27-class failure named above.
+ *
+ * [WAVE D] `+ nbranch` IS THE LOOKBEHIND's OWN FRAMES, and it is read off
+ * the WIDTH TABLE's companion count rather than off `.look.behind` — so
+ * this analysis still reads NONE of design §3.1(a)'s three flags and
+ * `vm_look` remains their single reader. `nbranch` is 0 for a LOOKAHEAD (the
+ * parse hook writes the two width fields together and NULL/0 is the
+ * lookahead's ANSWER, not a placeholder), so a lookahead's charge is
+ * unchanged to the line. For a lookbehind the exact figure is `m - 1` — one
+ * retry frame per NON-final branch, all of which the cut discards on
+ * success (§3.7) — so `+ m` deliberately over-charges by one, in the
+ * direction this whole analysis is documented to err in. */
+static Cost vm_cost_look(Vm *v, const Ast *a)
+{
+    Cost c = vm_cost(v, a->l, false);
+    c.frames += 1 + a->u.look.nbranch;
+    c.trail  += 2;
+    return c;
+}
+
+/* Computes an `A_CALL` subroutine call's cost as the callee region's own
+ * cost plus this call's save/restore trail and, for a linked call, its own
+ * resume frame.
+ *
+ * [DD-14 wave B+C] THREE CHARGES, and design §5.7's own headline is that
+ * only the second is new machinery: "nothing new is needed to COUNT a
+ * call's work", because the callee is emitted by `vm_emit` and every push,
+ * pop and cut inside it goes through the same primitives the fail label's
+ * single decrement already sees.
+ *
+ *   1. THE CALLEE REGION'S OWN COST, read from the per-region memo
+ *      `pcrec_emit_vm` computed before this walk. It cannot be computed
+ *      here: `vm_cost(v, a->u.call.body, false)` recurses for ever on a
+ *      recursive callee, which is design §4.4's hang in the one function
+ *      that has a `Ctx` to fail through and therefore the one place where
+ *      failing loudly would have been available and still wrong.
+ *   2. THE SAVE/RESTORE — `2 * |W|` trail entries per call site, a
+ *      compile-time constant (§5.3 property 4). An artifact that
+ *      under-sizes `trail_frames` returns PCREC_ERR_FRAMES on a pattern it
+ *      can MATCH, which is S87/S95's exact failure mode, and S-SR7 is the
+ *      two-site row that pins it against the emission.
+ *   3. THE CALL FRAME ITSELF, one resume frame per activation. It is not
+ *      popped by the return (§5.1 — the callee's choice points must survive
+ *      it, §3.2 MEASURED), so it is LIVE for the whole activation and
+ *      belongs in the simultaneous count. [DD-14 wave G] A SPLICE COSTS NO
+ *      FRAME, which is the point: §5.1's frame is the CALL RECORD — the
+ *      return label and the activation chain — and a spliced site has
+ *      neither, so this charge is skipped for `CALL_SPLICE`. The trail
+ *      charge stays either way: the park and the restore are `2 * |W|`
+ *      trailed writes on either linkage.
+ *
+ * A CYCLIC TARGET IS `unbounded` AND `growable`, which is P12's
+ * honest-ceiling machinery reused rather than rebuilt: the depth of a
+ * recursion is data-dependent by nature, so the artifact stamps a
+ * `subject_ceiling` and says what it enforces instead of pretending the
+ * limit is not there. `RX_CHARGE_WORK` is NOT used (§5.7): a call discards
+ * nothing, and the work counter's customers are cuts and back-steps.
+ *
+ * [DD-13b.W1.3] THE DELIVERY'S OWN TRAIL, CHARGED PER SITE. A delivering
+ * site emits two trailed writes per exported group (the span's two halves)
+ * at its return, before the restore — so the charge is `2 * deliver_n`, and
+ * it is per SITE for the same reason the destination slots are: two
+ * delivering calls of one definition are two scopes with two slot sets.
+ * `deliver_n` is 0 on every plain call, so this line adds nothing to any
+ * pattern that does not deliver, which is what keeps every existing
+ * artifact's trail arithmetic where it was.
+ *
+ * THE UN-RUN CASE IS THE SOUND ONE. Before `pcrec_emit_vm` fills the memo
+ * there is no `cg` at all, and this arm would then charge only the frame
+ * and the (zero) saves — but the arm is unreachable in that state, because
+ * a tree with an `A_CALL` has a graph by construction (compile.c runs the
+ * pass before emission). The guard is written anyway, in the OVER-charging
+ * direction, because a cost analysis that reads an absent table should
+ * refuse to under-promise rather than trust its caller. Before [DD-14] wave
+ * B+C landed this arm was a loud `pcrec_ctx_fail` refusal instead of a
+ * number; see `docs/design/subroutines_design.md` §4.4a/§5.7 for that
+ * history. */
+static Cost vm_cost_call(Vm *v, const Ast *a)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
+    if (idx < 0 || !v->rgn_cost) {
+        c.frames += 1;
+        c.unbounded = c.growable = true;
+        return c;
+    }
+    c = v->rgn_cost[idx];
+    if (a->u.call.link != CALL_SPLICE) c.frames += 1;
+    c.trail  += 2LL * a->u.call.nsave;
+    c.trail  += 2LL * a->u.call.deliver_n;
+    if (pcrec_callgraph_reaches(v->cg, idx, idx))
+        c.unbounded = c.growable = true;
+    return c;
+}
+
 /* The resume-frame/trail/slot COST of emitting `a` — the analysis
  * `vm_count_slots`/`vm_render_listing`'s sizing arms and the caller-frame
  * buffer surface all read, emitting no text itself. `under_atomic` narrows
@@ -2319,343 +2679,52 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
  * cost must match what the corresponding emitting function (`vm_emit` and
  * its rung helpers) actually writes — a leaf that emits a trail entry
  * (`\K`) and is priced as free here undersizes `<PREFIX>_TRAIL_FRAMES` and
- * the artifact answers a give-up on a pattern it can match. */
+ * the artifact answers a give-up on a pattern it can match.
+ *
+ * A DISPATCHER, one static function per arm with a body or a correctness
+ * argument of its own ([TOUR-2] step 2) — `vm_cost_<kind>` is placed beside
+ * this function rather than beside its `vm_<kind>` emitter counterpart,
+ * following `vm_cost_rep`'s own precedent above: the emitters live in their
+ * own feature-wave banner sections thousands of lines downstream (`vm_cap`,
+ * `vm_atomic`, `vm_look`, `vm_call`/`vm_splice`), so true adjacency is not
+ * available without scattering this pre-pass across the file. The free-node
+ * kinds (classes, anchors, word boundaries, `\G`, backreference) stay ONE
+ * shared zero-cost group rather than one function apiece — a function
+ * returning zero for six kinds is ceremony. */
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 {
-    Cost c = { 0, 0, 0, 0, false, false };
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave B] one emitted test, no frame, no slot, no trail entry --
      * the same cost every other assertion arm has. [M6.2 wave D] `\G` is
-     * one more comparison against a parameter, so the same nothing. */
-    case A_WORDB: case A_NWORDB: case A_GSTART:
-        return c;
-    /* [M6.2 wave E] `\K` IS THE ONE ASSERTION-FAMILY NODE THAT IS NOT FREE
-     * HERE, and getting this arm wrong is not a missed optimisation.
+     * one more comparison against a parameter, so the same nothing.
      *
-     * Every kind on the line above emits a test and nothing else. `\K` emits
-     * `<PREFIX>_SET(0, pos)`, which is a TRAIL ENTRY — one slot save, so the
-     * write can be undone exactly when a backtrack passes back over it. If
-     * this arm returned the zero Cost, `trail_frames` would be sized one
-     * entry short per `\K` on the deepest path and the artifact would answer
-     * PCREC_ERR_FRAMES on a pattern it can match. Inside a quantifier the
-     * multiplication is A_REP's, exactly as it is for A_CAP's two entries.
-     *
-     * It allocates no SLOT and vm_count_slots says so: slot 0 is group 0's
-     * start, which `slot_values` has always reserved and nothing has ever written.
-     *
-     * `v->nocap` is not consulted, unlike A_CAP below, and the reason is
-     * structural rather than an omission: `nocap` is set only inside a
-     * reverse-deterministic body's forward scan, and src/opt/revdet.c
-     * declines every body containing a `\K`. There is no state of the
-     * emitter in which this write is suppressed. */
-    case A_KRESET:
-        c.trail = 1;
-        return c;
-    /* [M6.5.2] THE ZERO ARM, and it is worth saying why the construct that
-     * LOOKS expensive is the one that costs nothing here.
-     *
-     * A backreference writes no slot, pushes no frame and creates no choice
-     * point: for a given state there is exactly one length it can consume, so
-     * `vm_alt` is not involved and neither capacity moves. What this module
-     * costs in capacity is entirely `A_CAP`'s — one extra trailed write per
-     * MARKED group per traverse, the arm below — which is the opposite of
-     * where a first reading puts it.
-     *
-     * The compare's byte-by-byte work is charged against the WORK budget at
-     * the emission site instead (§3.8), because that is per-SUBJECT work the
-     * fail label never sees, which is exactly what that budget meters and not
-     * what this analysis sizes. */
-    case A_BREF:
-        return c;
-    case A_CAP:
-        c = vm_cost(v, a->l, false);
-        /* [ENG-BREP] no trail entry while capture writes are suppressed —
-         * vm_emit's own A_CAP arm reads the same flag, so the cost and the
-         * emitted code cannot disagree about whether the write happens.
-         *
-         * [M6.5.2] THREE for a MARKED group, two for every other: publish-at-
-         * close writes the pending slot at the open and BOTH published slots
-         * at the close. `vm_emit`'s A_CAP arm reads the same `vm_marked`
-         * predicate, so the number the trail array is sized from and the
-         * number of writes the artifact makes are one decision, not two. */
-        if (!v->nocap) c.trail += vm_marked(v, a->u.cap.no) ? 3 : 2;
-        return c;
-    case A_CAT: {
-        /* Spine walked ITERATIVELY (R1 R-2 / D10) — see vm_nullable's comment
-         * for the segfault that says why. The accumulation order reproduces
-         * the recursive definition exactly: A_CAT sums both sides, so summing
-         * along the spine is the same number. */
-        const Ast *t = a;
-        while (t->k == A_CAT) {
-            Cost r = vm_cost(v, t->r, false);
-            c.frames += r.frames;
-            c.trail  += r.trail;
-            c.pf     += r.pf;
-            c.pt     += r.pt;
-            c.unbounded = c.unbounded || r.unbounded;
-            c.growable  = c.growable  || r.growable;
-            t = t->l;
-        }
-        {
-            Cost h = vm_cost(v, t, false);
-            c.frames += h.frames;
-            c.trail  += h.trail;
-            c.pf     += h.pf;
-            c.pt     += h.pt;
-            c.unbounded = c.unbounded || h.unbounded;
-            c.growable  = c.growable  || h.growable;
-        }
+     * [M6.5.2] backreference is the other zero arm here, and it is worth
+     * saying why the construct that LOOKS expensive is the one that costs
+     * nothing: it writes no slot, pushes no frame and creates no choice
+     * point, since for a given state there is exactly one length it can
+     * consume, so `vm_alt` is not involved and neither capacity moves. What
+     * this module costs in capacity is entirely `A_CAP`'s — one extra
+     * trailed write per MARKED group per traverse, `vm_cost_cap` above —
+     * which is the opposite of where a first reading puts it. The compare's
+     * byte-by-byte work is charged against the WORK budget at the emission
+     * site instead (§3.8), because that is per-SUBJECT work the fail label
+     * never sees, which is exactly what that budget meters and not what
+     * this analysis sizes. */
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_BREF: {
+        Cost c = { 0, 0, 0, 0, false, false };
         return c;
     }
-    case A_ALT: {
-        /* [ENG-ISL] THE ISLAND'S FRAME REQUIREMENT IS A PROPERTY OF THE TRIE,
-         * and this arm asks the SAME `vm_isl_build` `vm_alt` and
-         * `vm_count_slots` do — the third reader of one analysis.
-         *
-         * IT IS NOT A TIDINESS FIX. `1 + max` is SAFE here in the sense that
-         * over-charging frames only over-sizes the array, but `pf`/`pt` and
-         * `frames` are also what `subject_ceiling` is DIVIDED from, so an
-         * over-charge makes an artifact DECLARE a smaller subject than it can
-         * actually match. MEASURED as a failing check before it was a comment:
-         * `tests/possessify/run_possessify_tests.sh`'s boundary row drives
-         * `(x)(?:a|bc)+d`, whose `-fno-possessify` build stamps a ceiling of
-         * 1024 and must start failing within 64 bytes above it. Under the
-         * island that alternation pushes NOTHING, so the build answered
-         * straight past 1088 and the row read "parted at never" — the stamp
-         * had become an under-promise wide enough to stop measuring anything.
-         *
-         * An island's frame requirement is ZERO where no alternative is a
-         * prefix of another (the candidate chain has one entry, so nothing is
-         * pushed) and ONE where some is (the chain keeps exactly one live, the
-         * serial chain's own shape). `isl.pushes` is the count of chain
-         * entries beyond the first, summed over end nodes, which is positive
-         * on exactly the second case. The branches contribute nothing: they
-         * are literal chains by construction. */
-        {
-            VmIsl isl;
-            if (vm_isl_build(v, &isl, a)) {
-                c.frames = isl.pushes > 0 ? 1 : 0;
-                c.trail = 0;
-                c.pf = c.pt = 0;
-                return c;
-            }
-        }
-        /* The chain shape keeps exactly ONE alternation frame live at a time
-         * (see vm_alt), and a failed branch's own frames are popped before the
-         * next branch runs — so this is max-plus-one, not a sum.
-         *
-         * Iterative, and the fold is INNERMOST-FIRST because that is the shape
-         * the recursion had: a flat alternation is a LEFT-NESTED chain, so
-         * `1 + max` applied at each node accumulates outward. Folding in any
-         * other order would silently change the number this function reports,
-         * which is what sizes the frame array. */
-        int nbr = 1;
-        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-        const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
-        int i = nbr;
-        const Ast *t = a;
-        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
-        br[0] = t;
-
-        c = vm_cost(v, br[0], false);
-        for (int j = 1; j < nbr; j++) {
-            Cost r = vm_cost(v, br[j], false);
-            c.frames = 1 + (c.frames > r.frames ? c.frames : r.frames);
-            c.trail  = c.trail > r.trail ? c.trail : r.trail;
-            c.pf     = c.pf > r.pf ? c.pf : r.pf;
-            c.pt     = c.pt > r.pt ? c.pt : r.pt;
-            c.unbounded = c.unbounded || r.unbounded;
-            c.growable  = c.growable  || r.growable;
-        }
-        return c;
+    case A_KRESET: return vm_cost_kreset();
+    case A_CAP:    return vm_cost_cap(v, a);
+    case A_CAT:    return vm_cost_cat(v, a);
+    case A_ALT:    return vm_cost_alt(v, a);
+    case A_REP:    return vm_cost_rep(v, a, under_atomic);
+    case A_ATOMIC: return vm_cost_atomic(v, a);
+    case A_LOOK:   return vm_cost_look(v, a);
+    case A_CALL:   return vm_cost_call(v, a);
     }
-    case A_REP:
-        return vm_cost_rep(v, a, under_atomic);
-    /* [M6.4.2] R31 C10, and "no new give-up code; the caps are unchanged" was
-     * WRONG. The atomic group's mark is written with `vm_set`, which is the
-     * TRAILED writer — that is what makes NESTING and RE-ENTRY work (an outer
-     * backtrack restores the mark and the entry label re-sets it) — so an
-     * A_ATOMIC inside a quantifier costs ONE TRAIL ENTRY PER ENTRY TO THE
-     * GROUP. Inside a repeat the multiplication is A_REP's, exactly as it is
-     * for A_CAP's two entries.
-     *
-     * AN UNCHARGED TRAILED WRITE IS THE DEFECT `tests/mech/sabotages/
-     * S87_kreset_trail_uncharged.sh` already guards one construct over: the
-     * artifact sizes `trail_frames` one entry short per group on the deepest
-     * path and answers PCREC_ERR_FRAMES on a subject it can match. Sabotage
-     * row S95 is this module's own, and it needs its OWN row because the
-     * answers do not change — only the stamped `subject_ceiling` moves.
-     *
-     * A LIFTED group charges NOTHING here: its cut mark is the RUNG's, already
-     * counted by `vm_cost_rep`'s possessive arms, and charging again would
-     * double-count. FRAMES are the body's either way — the group pushes none
-     * of its own, and the body's are live until the cut.
-     *
-     * One STRUCTURAL consequence worth knowing, reported rather than fixed:
-     * because the cut discards frames and NOT trail entries, a capture-bearing
-     * atomic body under a quantifier (`(?>(a))*`) makes the TRAIL the binding
-     * cap where FRAMES normally binds first. That is a shift in which cap
-     * fires, not a new failure mode, and rx_info's stamped `subject_ceiling`
-     * reports it honestly either way. */
-    case A_ATOMIC:
-        if (vm_lifts(a)) return vm_cost(v, a->l, true);
-        c = vm_cost(v, a->l, false);
-        c.trail += 1;
-        return c;
-    /* [M6.6.2] THE BODY'S COST PLUS ONE FRAME AND TWO TRAIL ENTRIES, and the
-     * three numbers are three separate claims about design §3.2/§3.3's shape:
-     *
-     *   frames += 1   the NEGATIVE form pushes a resume frame BEFORE the body
-     *                 (§3.3, and sabotage row S-LA4 moves the push after it),
-     *                 so a lookaround's own frame is not zero the way an
-     *                 atomic group's is. Charged for BOTH polarities rather
-     *                 than read off `.neg`: see below.
-     *   trail  += 2   one for the cut's mark, exactly as A_ATOMIC charges
-     *                 (`RX_CUT` on the atomic spellings), and one for the
-     *                 cursor SAVE — `slot_values[POS] = scan_position`, the
-     *                 write §3.2 restores from and sabotage row S-LA2 drops.
-     *                 A trailed write that is not charged sizes `trail_frames`
-     *                 short on the deepest path and answers PCREC_ERR_FRAMES
-     *                 on a subject the artifact can match; S87 is the standing
-     *                 guard for that failure on another construct.
-     *
-     * IT DOES NOT READ `.neg` OR `.atomic`, ON PURPOSE, and that is the
-     * decision rather than an oversight. This analysis is documented as
-     * "conservative in the safe direction throughout: over-estimating cost
-     * lowers the stamped ceiling, which under-promises rather than
-     * over-promises". Charging the union of what any spelling needs is
-     * therefore free in the safe direction, and it keeps design §3.1(a)'s
-     * one-reader property intact — the three flags stay read at `vm_look`
-     * alone, so there is no second reader to drift and no D62 control 3
-     * obligation lands on this file.
-     *
-     * RE-CHECKED AT WAVE B+C AGAINST `vm_look` AS LANDED, and both constants
-     * stand as the safe-direction UNION they were written to be:
-     *
-     *   frames +1  EXACT for the negative form (its one `L_neg_ok` push) and
-     *              an OVER-charge of one for the positive and non-atomic
-     *              forms, which push nothing of their own.
-     *   trail  +2  EXACT for the positive ATOMIC form (both slot writes are
-     *              `vm_set`, i.e. trailed) and an over-charge of one for the
-     *              negative form (mark only) and for the non-atomic one
-     *              (cursor only). `RX_CUT` adds no trail entry.
-     *
-     * An over-charge costs a lower stamped `subject_ceiling` and nothing else;
-     * an under-charge is the K27-class failure named above.
-     *
-     * [WAVE D] `+ nbranch` IS THE LOOKBEHIND's OWN FRAMES, and it is read off
-     * the WIDTH TABLE's companion count rather than off `.look.behind` — so
-     * this analysis still reads NONE of design §3.1(a)'s three flags and
-     * `vm_look` remains their single reader. `nbranch` is 0 for a LOOKAHEAD
-     * (the parse hook writes the two width fields together and NULL/0 is the
-     * lookahead's ANSWER, not a placeholder), so a lookahead's charge is
-     * unchanged to the line. For a lookbehind the exact figure is `m - 1` —
-     * one retry frame per NON-final branch, all of which the cut discards on
-     * success (§3.7) — so `+ m` deliberately over-charges by one, in the
-     * direction this whole analysis is documented to err in. */
-    case A_LOOK:
-        c = vm_cost(v, a->l, false);
-        c.frames += 1 + a->u.look.nbranch;
-        c.trail  += 2;
-        return c;
-    /* [DD-14] A LOUD REFUSAL, not a number — this is a GRAPH site (design
-     * §4.4a site 5) and the graph is wave B+C's.
-     *
-     * THE TRUE COST is the callee's, `Cost.unbounded` on a cycle, PLUS this
-     * site's own `2 * |W|` of trail: one save and one restore per slot in the
-     * callee region's write set (§5.7). Both halves need
-     * `src/opt/callgraph.c` — the first is a memoised walk over the SCC
-     * condensation, the second reads `u.call.nsave`, which that same pass
-     * fills. Neither is derivable here: following `u.call.body` from this
-     * function would recurse for ever on a recursive callee, and `nsave` is 0
-     * on every node until the pass runs.
-     *
-     * WHY LOUD RATHER THAN A SAFE BOTTOM. This function HAS a `Ctx`
-     * (`v->cx`), which `vm_nullable` and `pcrec_minw` do not, so it can say
-     * what is wrong instead of guessing in the safe direction. And there is
-     * no cheap safe bottom to guess: the safe direction here is
-     * OVER-charging, whose top is `unbounded`, and stamping every
-     * call-bearing artifact `unbounded` would silently disable the honest
-     * `subject_ceiling` D44.1 exists to publish. An under-charge is worse
-     * still — `trail_frames` sized short on the deepest path, answering
-     * PCREC_ERR_FRAMES on a subject the pattern matches, which is exactly
-     * `S87_kreset_trail_uncharged.sh`'s class.
-     *
-     * UNREACHABLE IN THIS WAVE: nothing produces an `A_CALL`, and `vm_emit`'s
-     * arm is the same hard failure — this arm and that one are what make
-     * taking only part of wave B+C impossible. */
-    /* [DD-14 wave B+C] THREE CHARGES, and §5.7's own headline is that only
-     * the second is new machinery: "nothing new is needed to COUNT a call's
-     * work", because the callee is emitted by `vm_emit` and every push, pop
-     * and cut inside it goes through the same primitives the fail label's
-     * single decrement already sees.
-     *
-     *   1. THE CALLEE REGION'S OWN COST, read from the per-region memo
-     *      `pcrec_emit_vm` computed before this walk. It cannot be computed
-     *      here: `vm_cost(v, a->u.call.body, false)` recurses for ever on a
-     *      recursive callee, which is design §4.4's hang in the one function
-     *      that has a `Ctx` to fail through and therefore the one place where
-     *      failing loudly would have been available and still wrong.
-     *   2. THE SAVE/RESTORE — `2 * |W|` trail entries per call site, a
-     *      compile-time constant (§5.3 property 4). An artifact that
-     *      under-sizes `trail_frames` returns PCREC_ERR_FRAMES on a pattern it
-     *      can MATCH, which is S87/S95's exact failure mode, and S-SR7 is the
-     *      two-site row that pins it against the emission.
-     *   3. THE CALL FRAME ITSELF, one resume frame per activation. It is not
-     *      popped by the return (§5.1 — the callee's choice points must
-     *      survive it, §3.2 MEASURED), so it is LIVE for the whole activation
-     *      and belongs in the simultaneous count.
-     *
-     * A CYCLIC TARGET IS `unbounded` AND `growable`, which is P12's
-     * honest-ceiling machinery reused rather than rebuilt: the depth of a
-     * recursion is data-dependent by nature, so the artifact stamps a
-     * `subject_ceiling` and says what it enforces instead of pretending the
-     * limit is not there. `RX_CHARGE_WORK` is NOT used (§5.7): a call
-     * discards nothing, and the work counter's customers are cuts and
-     * back-steps.
-     *
-     * THE UN-RUN CASE IS THE SOUND ONE. Before `pcrec_emit_vm` fills the memo
-     * there is no `cg` at all, and this arm then charges only the frame and
-     * the (zero) saves — but the arm is unreachable in that state, because a
-     * tree with an `A_CALL` has a graph by construction (compile.c runs the
-     * pass before emission). The guard is written anyway, in the OVER-charging
-     * direction, because a cost analysis that reads an absent table should
-     * refuse to under-promise rather than trust its caller. */
-    case A_CALL: {
-        int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
-        if (idx < 0 || !v->rgn_cost) {
-            c.frames += 1;
-            c.unbounded = c.growable = true;
-            return c;
-        }
-        c = v->rgn_cost[idx];
-        /* [DD-14 wave G] A SPLICE COSTS NO FRAME, which is the point. §5.1's
-         * frame is the CALL RECORD — the return label and the activation
-         * chain — and a spliced site has neither: control leaves through a
-         * label the emitter knows at compile time. The specimen's five
-         * PCREC_ERR_FRAMES give-ups (2000-deep `a.a.a`, 5 KB quoted strings,
-         * a 500-label domain) were every `(?&x)` iteration costing a frame
-         * that SURVIVED its return; this line is where that stops being true.
-         * The trail charge stays: the park and the restore are `2 * |W|`
-         * trailed writes on either linkage. */
-        if (a->u.call.link != CALL_SPLICE) c.frames += 1;
-        c.trail  += 2LL * a->u.call.nsave;
-        /* [DD-13b.W1.3] AND THE DELIVERY'S OWN TRAIL, CHARGED PER SITE.
-         * A delivering site emits two trailed writes per exported group (the
-         * span's two halves) at its return, before the restore — so the
-         * charge is `2 * deliver_n`, and it is per SITE for the same reason
-         * the destination slots are: two delivering calls of one definition
-         * are two scopes with two slot sets. `deliver_n` is 0 on every plain
-         * call, so this line adds nothing to any pattern that does not
-         * deliver, which is what keeps every existing artifact's trail
-         * arithmetic where it was. */
-        c.trail  += 2LL * a->u.call.deliver_n;
-        if (pcrec_callgraph_reaches(v->cg, idx, idx))
-            c.unbounded = c.growable = true;
-        return c;
-    }
-    }
+    Cost c = { 0, 0, 0, 0, false, false };
     return c;
 }
 
@@ -2783,7 +2852,7 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
      * performs, and this rung does not replicate per iteration — it emits a
      * fixed K + residue whatever `m` is. Multiplying here would re-import
      * exactly the explosion the rung removes. */
-    if (vm_counter_fits(v, a)) {
+    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         const int K = v->unroll_k;
         const int nopt = a->u.rep.rmax - a->u.rep.rmin;
         int copies = vm_counter_copies(v, a, cuts);
@@ -4186,13 +4255,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
-    int nbr = 1;
-    for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
-    int i = nbr;
-    const Ast *t = a;
-    while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
-    br[0] = t;
+    const Ast **br;
+    int nbr = vm_alt_flatten(cx, a, &br);
 
     /* [ENG-ISL] the island first, and it is a SELECTION rather than a special
      * case: `vm_isl_build` either returns the trie for a flat alternation of
@@ -5997,7 +6061,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * one that catches the bodies all three above decline. Selected by the one
      * shared predicate the two pre-passes also call, never by a second reading
      * of the same conditions. */
-    if (vm_counter_fits(v, a)) {
+    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         vm_counter_rep(v, entry, a, next, under_atomic);
         return;
     }
