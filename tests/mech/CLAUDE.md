@@ -531,7 +531,7 @@ anywhere in the tree can see either.
 
 S41 is the third sabotage in this directory whose edit is a real past bug
 rather than an invented one: the accept label really was emitted by a direct
-`sb_printf`, and `run_ir_listing.sh` caught it on its first run.
+`pcrec_sb_printf`, and `run_ir_listing.sh` caught it on its first run.
 
 ## [M4.5c fix]'s two rows (2026-08-15, D45)
 

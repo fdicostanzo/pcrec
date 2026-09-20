@@ -29,5 +29,5 @@ SAB_DESC="the emitted offset-k skip resumes its scan at cand + 1 + k* instead of
 SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-28, lane optk): DETECTED against a clean 19pass/0fail + 80pass/0fail baseline -- offsetskip:4fail/19pass, corpus:1fail/79pass. The corpus arm is ONE case and had to be BUILT: this plant first measured 0 corpus failures, because a pattern can only turn the off-by-one into a lost match if it ALLOWS its own scan byte before the offset it is scanned at, which none of the four witnesses does. tests/offsetskip gained [-a]{3}-b for exactly this row."
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_puts(c,   "        pos = cand + 1;\n"'
-SAB_AFTER='    sb_printf(c, "        pos = cand + 1 + %d;\n", ofsk_scan(f)->k);   /* SABOTAGE S185 */
+SAB_AFTER='    pcrec_sb_printf(c, "        pos = cand + 1 + %d;\n", ofsk_scan(f)->k);   /* SABOTAGE S185 */
     pcrec_sb_puts(c,   ""'

@@ -113,11 +113,11 @@ direction yourself, at the point you write it.
 
 ## 2. Taught primitives — reach for these, in their state TODAY
 
-**2.1 `sb.c` is the text mechanism: `pcrec_sb_putc` / `pcrec_sb_puts` / `sb_printf` /
+**2.1 `sb.c` is the text mechanism: `pcrec_sb_putc` / `pcrec_sb_puts` / `pcrec_sb_printf` /
 `pcrec_sb_take` / `pcrec_sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
 call sites ARE the norm — lens 2's own seed hypothesis ("the emitters use neither
 sb nor stdio") was REFUTED by measurement. There is deliberately no `emit_line()`
-wrapper and there will not be one (L10 §2.3): it buys nothing `sb_printf` does not.
+wrapper and there will not be one (L10 §2.3): it buys nothing `pcrec_sb_printf` does not.
 
 **2.2 Formatted fragments: size from `PCREC_MAX_EMIT_NAME_LEN`, never by hand.**
 Any buffer holding an emitted identifier or sub-expression built from the `-p`
@@ -132,7 +132,7 @@ const char *pcrec_sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h
 
 Arena-owned text sized exactly to the result: truncation is impossible by
 construction rather than by a per-site size argument. The result lives for the
-whole compile, which is what makes it safe to hand to an `sb_printf` `%s` far
+whole compile, which is what makes it safe to hand to an `pcrec_sb_printf` `%s` far
 below the site that built it — the thing a stack buffer could not do.
 Allocation failure routes through `ctx_nomem` via the arena's own `.cx`
 (§1.1). It takes an `Arena *` and nothing else on purpose: D108's data-in /
@@ -199,7 +199,7 @@ that aborts instead (L8-F4).
 (`core/internal.h`, landed [REVW.2] wave 2, 2026-09-18). One
 `#define <UPPER>_<NAME> <value>` line. All 73 former hand-written stamp sites
 across `emit_vm.c` (52) and `emit_dfa.c` (21) are on them, and a new
-hand-written `sb_printf(c, "#define %s_...")` is a finding against you.
+hand-written `pcrec_sb_printf(c, "#define %s_...")` is a finding against you.
 
 ```c
 pcrec_sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
@@ -220,7 +220,7 @@ value column; that alignment is emitted bytes and §3.1 governs it.
 `#define %s_` lines still in `emit_vm.c` are seven multi-line macro BODIES
 with backslash continuations (`_CHARGE_WORK`, `_TRAIL`/`_SET`/`_PUSH`/`_CUT`,
 `_CALL`, `_TIER_NOTE`, the `_PRUNE_*` pair) whose emitted text is a program,
-not a value. They stay `sb_printf`, and four sabotage rows sit on them.
+not a value. They stay `pcrec_sb_printf`, and four sabotage rows sit on them.
 
 **The uppercased prefix is ONE derivation**: `pcrec_sb_upper(Arena *, const char *)`.
 `GenNames.upper` and `Vm.up` are both `const char *` pointing at its one arena

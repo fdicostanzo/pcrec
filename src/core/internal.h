@@ -144,7 +144,7 @@ bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force);
 
 void  pcrec_sb_putc(StrBuf *sb, char c);
 void  pcrec_sb_puts(StrBuf *sb, const char *s);
-void  sb_printf(StrBuf *sb, const char *fmt, ...)
+void  pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
 char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
 void  pcrec_sb_free(StrBuf *sb);
@@ -204,7 +204,7 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  *
  * WHAT THE CALLER GETS. A pointer into the compile's arena: never freed by
  * the caller, dies with the arena, and valid for the whole compile — which
- * is what makes it safe to hand straight to `sb_printf`'s `%s` at a site far
+ * is what makes it safe to hand straight to `pcrec_sb_printf`'s `%s` at a site far
  * below the one that built it, the thing a stack buffer could not do.
  *
  * ON ALLOCATION FAILURE it routes through `ctx_nomem` via the arena's own
@@ -5766,7 +5766,7 @@ size_t pcrec_dfa_axis_scanbody_cands(PcrecAxisCand *out, size_t cap);   /* axis 
 size_t pcrec_dfa_axis_searchstart_cands(PcrecAxisCand *out, size_t cap); /* axis J */
 
 /* The same text into a CALLER-OWNED buffer, for a site that splices it into a
- * larger `sb_printf` rather than appending it. Returns `buf`, which is the
+ * larger `pcrec_sb_printf` rather than appending it. Returns `buf`, which is the
  * EMPTY STRING wherever the guard is not emitted — so a `%s` at the splice
  * point contributes nothing and no call site needs its own conditional. Size
  * the buffer `PCREC_STARTPOS_GUARD_TEXT_MAX` — a `limits.def` row (home

@@ -371,7 +371,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
   everything wholesale, so nothing leaks and nothing half-built is read again
 - **sb.c** — growable string buffer for C code emission; pcrec_sb_putc, pcrec_sb_puts,
-  sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
+  pcrec_sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
   `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
   emission site, and the mute test lives in `pcrec_sb_putc`/`pcrec_sb_puts`/`sb_vprintf`

@@ -36,5 +36,5 @@ SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §2.2"
 SAB_COUNT=1
 SAB_BEFORE='            vm_set(v, ctr, vm_rolef(v, "slot_values[%d] + %d", ctr, K),
                    "counter rung: += K, once per TRIP");'
-SAB_AFTER='            sb_printf(v->b, "    stv[%d] = %s;\n", ctr,
+SAB_AFTER='            pcrec_sb_printf(v->b, "    stv[%d] = %s;\n", ctr,
                       vm_rolef(v, "slot_values[%d] + %d", ctr, K));  /* SABOTAGE S53 */'

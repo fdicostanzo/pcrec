@@ -36,7 +36,7 @@ brace/paren shape, so they need no special case at all; and every
 generated-code STRING LITERAL the emitters build (src/gen/emit_vm.c and
 emit_dfa.c print C source as strings, heavily using braces/parens/quotes
 INSIDE those strings) is lexically masked before any brace is counted, so
-a `sb_printf(c, "... { ... }\n", ...)` call two levels deep in the real
+a `pcrec_sb_printf(c, "... { ... }\n", ...)` call two levels deep in the real
 tree does not perturb the real depth count.
 
 VALIDATION (hand-checked 2026-09-17, ten functions across the smallest

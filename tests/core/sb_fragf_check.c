@@ -165,7 +165,7 @@ int main(void)
     /* ---- 5. INDEPENDENT STORAGE. Two fragments built one after the other do
      * not alias, and the FIRST is still intact after the second is built.
      * This is the property that distinguishes an arena fragment from the
-     * stack buffer it replaces: the emitters hand a fragment to an `sb_printf`
+     * stack buffer it replaces: the emitters hand a fragment to an `pcrec_sb_printf`
      * far below the site that built it, and a reused buffer would have been
      * overwritten by then. A 64 KiB run crosses the arena's own block
      * boundary (ABLOCK_MIN), so the check also covers the case where the

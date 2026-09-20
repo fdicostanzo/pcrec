@@ -46,15 +46,15 @@ SAB_DESC="vm_look_behind_branch's start-of-subject guard is clamped to the SEARC
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/startpos.rxt RED on its ms/ns cells (a positive lookbehind stops matching, and a NEGATIVE one starts matching where it must not — a FALSE MATCH); every startpos-0 cell in lookbehind.rxt, lookbehind_widths.rxt and nonatomic_behind.rxt GREEN. Canonical figure owed from run_sabotage_matrix.sh S135."
 SAB_COUNT=1
 SAB_BEFORE='        if (k > 0)
-            sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
+            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
                       k, v->p);'
 SAB_AFTER='        v->ngst++;   /* SABOTAGE S135: force the search_from parameter */
         if (k > 0)
-            sb_printf(b, "    if (scan_position - %s_search_from < %d)"
+            pcrec_sb_printf(b, "    if (scan_position - %s_search_from < %d)"
                          " goto %s_fail;\n", v->p, k, v->p);'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='            sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
+SAB_BEFORE2='            pcrec_sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
                       k, v->p, bl[i + 1]);'
-SAB_AFTER2='            sb_printf(b, "    if (scan_position - %s_search_from < %d)"
+SAB_AFTER2='            pcrec_sb_printf(b, "    if (scan_position - %s_search_from < %d)"
                          " goto %s_L%d;\n", v->p, k, v->p, bl[i + 1]);'

@@ -45,7 +45,7 @@ SAB_SUITES="codegen recursion"
 SAB_DESC="the callee region's return is emitted through a SHARED MACRO instead of inline, so the artifact carries ONE indirect jump for every callee region however many there are -- no answer changes and the codegen count is the only detector"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR13): NO ANSWER CHANGES -- the frame still carries the return label and every return still reaches it. The codegen count is the only detector, and it is S109's shape. [DD-14-RECURSION rule 1] fires on the THREE-DISTINCT-CALLEE row: (a)(b)(c)(?1)(?2)(?3) emits 4 'goto *' shipped and 2 under this sabotage. The one-callee rows stay GREEN, which is exactly why the rule asserts a RELATION and not a constant -- a hard-coded 'two' would have passed this sabotage on three of its four fixtures."
 SAB_COUNT=1
-SAB_BEFORE='    sb_printf(v->b,
+SAB_BEFORE='    pcrec_sb_printf(v->b,
         "    {\n"
         "        const size_t %s_call_frame = run->call_top;\n"
         "        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n"
@@ -54,13 +54,13 @@ SAB_BEFORE='    sb_printf(v->b,
         "    }\n",
         v->p, v->p, v->up, v->p, v->p);'
 SAB_AFTER='    /* SABOTAGE S168: one shared macro instead of one inline return */
-    sb_printf(v->b, "    %s_RETURN;\n", v->up);'
+    pcrec_sb_printf(v->b, "    %s_RETURN;\n", v->up);'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position.'
 SAB_AFTER2='    if (v.has_calls)
-        sb_printf(c,
+        pcrec_sb_printf(c,
             "#define %s_RETURN do {                                       \\\n"
             "        const unsigned %s_call_frame = run->call_top;        \\\n"
             "        if (%s_call_frame >= %s_RESUME_FRAMES) return %s_R_INTERNAL; \\\n"

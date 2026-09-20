@@ -18,7 +18,7 @@
 #
 # RE-ANCHORED 2026-08-26 (lane srAnchor): [OPT-1]'"'"'s two-tier default entry
 # (`vm_emit_default_entry`) rewrote the un-suffixed entries this same
-# `sb_printf` call shares a format string with, which shrank the arg list
+# `pcrec_sb_printf` call shares a format string with, which shrank the arg list
 # threaded to the bind/return/close tail this row edits (the `_in` entry
 # itself is unchanged in MEANING -- [OPT-1] never touches it). The BEFORE/AFTER
 # text below is re-derived from `git show HEAD:src/gen/emit_vm.c` at the

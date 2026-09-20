@@ -1341,8 +1341,8 @@ match end depends on `s[end]`, a byte the reverse walk never consumes.
 Neither engine has a mechanism. Both start states are compile-time constants:
 
 ```c
-    sb_printf(c, "    int st = %d;\n", fs);        /* emit_dfa.c:946  forward */
-    sb_printf(c, "        int rst = %d;\n", rs);   /* emit_dfa.c:1029 reverse */
+    pcrec_sb_printf(c, "    int st = %d;\n", fs);        /* emit_dfa.c:946  forward */
+    pcrec_sb_printf(c, "        int rst = %d;\n", rs);   /* emit_dfa.c:1029 reverse */
 ```
 
 A constant start state encodes exactly one assumption — "the context here is

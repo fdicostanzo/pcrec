@@ -84,7 +84,7 @@ void pcrec_sb_puts(StrBuf *sb, const char *s)
     sb->p[sb->len] = 0;
 }
 
-/* `sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
+/* `pcrec_sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
  * holds one can append formatted text — `pcrec_sb_fragfv`'s own reason, one
  * destination over. Measure, grow, format: the two `vsnprintf` calls read the
  * SAME arguments through their own `va_copy`, because a `va_list` is consumed
@@ -120,7 +120,7 @@ static void sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
     sb->len += (size_t)n;
 }
 
-void sb_printf(StrBuf *sb, const char *fmt, ...)
+void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -164,7 +164,7 @@ void pcrec_sb_free(StrBuf *sb)
  * escape protects the FRAMING and never transcodes the content. */
 static void sb_frame_byte(StrBuf *sb, unsigned char c)
 {
-    if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
+    if (c < 0x20 || c == 0x7f) pcrec_sb_printf(sb, "\\x%02x", c);
     else                       pcrec_sb_putc(sb, (char)c);
 }
 
@@ -216,7 +216,7 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 /* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3) -----------------------------
  *
  * The contract is stated once, at the declaration in core/internal.h. This is
- * `sb_printf`'s body with the destination changed: measure, allocate exactly,
+ * `pcrec_sb_printf`'s body with the destination changed: measure, allocate exactly,
  * format. The two `vsnprintf` calls read the SAME argument list through a
  * `va_copy`, because a `va_list` is consumed by the first traversal.
  *
@@ -225,7 +225,7 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
  * text and truncate — which is precisely the failure this primitive exists to
  * make impossible, and the one an off-by-one here would reintroduce silently.
  *
- * `n < 0` aborts, matching `sb_printf`: a negative `vsnprintf` return is an
+ * `n < 0` aborts, matching `pcrec_sb_printf`: a negative `vsnprintf` return is an
  * encoding error in a format string this tree wrote itself, not a condition a
  * pattern can provoke, so there is no diagnosis to route. */
 const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
@@ -270,7 +270,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
 static void sb_stampv(StrBuf *c, const char *upper, const char *name,
                       int namew, const char *valfmt, va_list ap)
 {
-    sb_printf(c, "#define %s_%-*s ", upper, namew, name);
+    pcrec_sb_printf(c, "#define %s_%-*s ", upper, namew, name);
     sb_vprintf(c, valfmt, ap);
     pcrec_sb_putc(c, '\n');
 }

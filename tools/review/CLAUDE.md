@@ -158,7 +158,7 @@ are out of scope for this round; see the charter's own "Scope tiers".
   catch-all, not a fixed shape list, matching the repaired stage-3
   acceptance criterion's own "ANY size expression" wording. Reuses
   `reviewlib.mask_text()` (so text printed AS emitted-code inside an
-  `sb_printf`/`snprintf` format string is never mistaken for a real
+  `pcrec_sb_printf`/`snprintf` format string is never mistaken for a real
   declaration) and `reviewlib.iter_top_level_headers()` (function
   attribution, including correctly reading a struct-field declaration as
   having no enclosing function). See `docs/dev/w2census.md` for the full

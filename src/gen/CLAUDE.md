@@ -804,7 +804,7 @@ arguments in a fixed position**, which is lens 1 X8's real payoff: D94 rules
 the abi re-pin site list is "every reader of the number, FOUND BY GREP", and
 the stamp name set is half of what such a sweep has to enumerate.
 
-**A NEW hand-written `sb_printf(c, "#define %s_...")` in either file is a
+**A NEW hand-written `pcrec_sb_printf(c, "#define %s_...")` in either file is a
 finding.** Three things to know before adding a stamp:
 
 1. **The value is a FORMAT, not a type.** `0x%xu`, `%lluULL`, `%lldLL` and a
@@ -1334,7 +1334,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     they wrote; every listing SECTION is then a view over that one stream, so
     the sections cannot disagree with each other either. If you add a way to
     emit a label, a push or a slot write, add it THROUGH those primitives —
-    the accept label was emitted by a direct `sb_printf` in the first draft and
+    the accept label was emitted by a direct `pcrec_sb_printf` in the first draft and
     `tests/codegen/run_ir_listing.sh` caught it on its first run (sabotage
     S41 restores it). The `role` strings are decoration: they say WHY a choice
     point exists, never that one does, and the check pins the derivable half.

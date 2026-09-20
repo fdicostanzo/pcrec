@@ -115,7 +115,7 @@ kind=group sel=* syntax=(?*a)        engines=vm   status=module roadmap=planned 
             snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
             vm_work(v, cnt, "work charge: frames discarded by this cut");
         }
-        sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+        pcrec_sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
         vm_ev(v, VE_CUT, slot, 0, role);
     }
 # vm_cut's line number:

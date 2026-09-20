@@ -27,7 +27,7 @@ Method, in order:
 1. **Mask** the file with `reviewlib.mask_text()` — comments blanked,
    string-literal INTERIORS blanked, preprocessor lines blanked — so a
    `char foo[123]`-shaped byte sequence printed AS EMITTED-CODE TEXT
-   inside an `sb_printf`/`snprintf` format string (both files do this
+   inside an `pcrec_sb_printf`/`snprintf` format string (both files do this
    constantly: `src/gen/emit_dfa.c:5866`'s `"static const unsigned char
    %s_class_bitmap%d[32] = {"` is exactly this shape) is never mistaken
    for a real declaration in the reviewed file's own source. This is the

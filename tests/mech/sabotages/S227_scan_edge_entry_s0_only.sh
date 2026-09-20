@@ -61,10 +61,10 @@ SAB_DOC_FIGURE="MEASURED 2026-09-04 (lane edge2, scratch build of this exact pla
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "foo\\B" && grep -q "rx_reverse_seed_state" "$REACH_TMP/o.c" && grep -q "if (rx_reverse_is_stop(reverse_state) && !rx_reverse_is_dead(reverse_state)) goto rx_reverse_scan_edge;" "$REACH_TMP/o.c" && echo REACH-SEEDED-HEAD-ENTRY-PRESENT'
 SAB_REACH_EXPECT="REACH-SEEDED-HEAD-ENTRY-PRESENT"
 SAB_COUNT=1
-SAB_BEFORE='            sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"
+SAB_BEFORE='            pcrec_sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"
                          " goto %s;   // seeded straight onto a scan-edge head\n",
                       ind, f->p, f->dir->c.name, f->dir->statev,
                       f->p, f->dir->c.name, f->dir->statev, le);'
-SAB_AFTER='            sb_printf(c, "%sif (%s == %d) goto %s;   /* SABOTAGE S227 */\n",
+SAB_AFTER='            pcrec_sb_printf(c, "%sif (%s == %d) goto %s;   /* SABOTAGE S227 */\n",
                       ind, f->dir->statev,
                       f->repr->cell_of(f->d->s0, f->d), le);'

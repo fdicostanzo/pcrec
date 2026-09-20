@@ -39,11 +39,11 @@ SAB_COUNT=1
 # this row used to anchor on. The unbounded form is anchored here because it
 # is the one `tests/base/caseless.rxt`'s artifacts take; the bounded form's
 # own skip line is a distinct string and would need its own row.
-SAB_BEFORE='    sb_printf(c, "%s    while (scan_position < subject_length &&"
+SAB_BEFORE='    pcrec_sb_printf(c, "%s    while (scan_position < subject_length &&"
                  " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
               ind, f->p);'
 SAB_AFTER='    /* SABOTAGE S68: the hot loop advances through the encoding
      * residual instead of one byte. */
-    sb_printf(c, "%s    while (scan_position < subject_length &&"
+    pcrec_sb_printf(c, "%s    while (scan_position < subject_length &&"
                  " !%s_can_begin_match[subject[scan_position]]) scan_position = %s_next_pos(subject, subject_length, scan_position);\n",
               ind, f->p, f->p);'

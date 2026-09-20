@@ -8,5 +8,5 @@ SAB_SUITES="codegen"
 SAB_DESC="emit_u8_table: 'static const unsigned char' -> 'static unsigned char'"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 8 TS-1 checks fail, 0 corpus cases"
 SAB_COUNT=1
-SAB_BEFORE="    sb_printf(c, \"    static const unsigned char %s_%s[%d] = {\", p, tag, n);"
-SAB_AFTER="    sb_printf(c, \"    static unsigned char %s_%s[%d] = {\", p, tag, n);"
+SAB_BEFORE="    pcrec_sb_printf(c, \"    static const unsigned char %s_%s[%d] = {\", p, tag, n);"
+SAB_AFTER="    pcrec_sb_printf(c, \"    static unsigned char %s_%s[%d] = {\", p, tag, n);"

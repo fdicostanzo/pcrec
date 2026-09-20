@@ -185,7 +185,7 @@ fi
 # artifact compiled with the axis DENIED: if the stamp says `"exact"`, the
 # compiler is claiming the collapse did not act, and an artifact where it did
 # not act is byte-for-byte the artifact you get when it cannot. The two facts
-# are written by different code (`emit_vm.c`'s `sb_printf` against
+# are written by different code (`emit_vm.c`'s `pcrec_sb_printf` against
 # `compile.c`'s build gate), so a stamp that drifts is RED here.
 #
 # Each row is a pattern chosen to land on a named side of the knee.

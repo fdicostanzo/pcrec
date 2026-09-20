@@ -175,13 +175,13 @@ char *pcrec_rxt_schema_tsv(void)
      * its population. The alternative, a pinned literal with a re-pin
      * ritual, is a number in a second place and this delivery has enough of
      * those. */
-    sb_printf(&sb, "# schema-rows: %zu\n", pcrec_rxt_schema_nrows());
-    sb_printf(&sb, "# wave-built: %d\n", PCREC_RXT_WAVE_BUILT);
+    pcrec_sb_printf(&sb, "# schema-rows: %zu\n", pcrec_rxt_schema_nrows());
+    pcrec_sb_printf(&sb, "# wave-built: %d\n", PCREC_RXT_WAVE_BUILT);
     /* The RESERVED sentinel is printed for the same reason wave-built is:
      * a check that partitions the rows by wave needs both boundaries from
      * the dump itself, or it hardcodes a copy of internal.h's constant —
      * the control-sharing-a-source shape one number over. */
-    sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
+    pcrec_sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
 
     return pcrec_sb_take(&sb);
 }

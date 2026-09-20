@@ -332,7 +332,7 @@ void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);
  * `@P`/`@S`/`@N` replaced by the three variable names and every line prefixed
  * by `indent`. A caller-owned buffer for `pcrec_enc_names`' reason (TS-3:
  * `pcrec_compile()` is called concurrently, so no static scratch) and because
- * the one call site splices the result into an `sb_printf` beside its
+ * the one call site splices the result into an `pcrec_sb_printf` beside its
  * siblings. Truncation is not silently tolerated: the function returns false
  * when the text did not fit, and the caller raises an internal error rather
  * than emitting a half-written advance. */

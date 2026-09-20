@@ -4359,7 +4359,7 @@ character-boundary-only walk would have skipped straight to offset 4.
 **STATUS: FIXED 2026-09-05, lane `k49fix`.** The suspected mechanism was
 right about the SITE and wrong about nothing that mattered: the emitted
 `<prefix>_search_run`'s retry loop advanced with a literal
-`attempt_position++` (`src/gen/emit_vm.c`, the `sb_printf` that writes the
+`attempt_position++` (`src/gen/emit_vm.c`, the `pcrec_sb_printf` that writes the
 search loop). The advance now comes from the ENCODING BACKEND — a new
 `advance` field on `PcrecEnc` (`src/gen/enc/enc.h`), `pos++` under `byte`
 and "`pos++` then skip continuation bytes" under `utf8` — so the rule is

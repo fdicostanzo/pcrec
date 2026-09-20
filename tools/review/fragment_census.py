@@ -29,7 +29,7 @@ against EP2's reported emit_vm.c total):
 1. Lexically mask the file with reviewlib.mask_text() (comments blanked,
    string-literal interiors blanked, preprocessor lines blanked) so a
    `char foo[123]`-shaped byte sequence PRINTED AS EMITTED-CODE TEXT
-   inside an sb_printf/snprintf format string -- both emit_vm.c and
+   inside an pcrec_sb_printf/snprintf format string -- both emit_vm.c and
    emit_dfa.c do this constantly -- is never mistaken for a real C
    declaration in the reviewed file's own source.
 2. Scan the masked text for the token `char` (word-bounded) and, from

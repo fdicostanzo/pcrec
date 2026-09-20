@@ -27,4 +27,4 @@ SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §8.4 (S57 and the 
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, low, "(ptrdiff_t)scan_position",
                "span-loop low-water mark (loop entry scan_position)");'
-SAB_AFTER='        sb_printf(v->b, "    stv[%d] = (ptrdiff_t)scan_position;\n", low);  /* SABOTAGE S57 */'
+SAB_AFTER='        pcrec_sb_printf(v->b, "    stv[%d] = (ptrdiff_t)scan_position;\n", low);  /* SABOTAGE S57 */'
