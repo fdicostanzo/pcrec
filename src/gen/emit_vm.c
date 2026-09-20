@@ -376,6 +376,11 @@ typedef struct {
     const char *up;       /* uppercased prefix — GenNames.upper, shared */
     int       nlabel;
     int       ngroups;    /* capturing groups (0 when --no-captures) */
+    bool      has_push;   /* [CC-CLANG fix] this artifact pushes a resume
+                            * frame somewhere — `emitted_push || has_linked_calls`,
+                            * derived once in `vm_plan_entry` and read by the
+                            * FRAMELESS stamp, the entry-rung ladder and the
+                            * fail label's pop-and-resume dispatch */
     int       ncaps;      /* the REPORTED capture count, which `--no-captures`
                             * pins at 1 whatever the slot layout holds (§6.3,
                             * and §10's measured row: `--no-captures '(a)\1'`
@@ -9651,6 +9656,60 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
     }
 }
 
+/* WHAT THE PLAN PHASE HANDS THE EMISSION PHASES: every number the artifact's
+ * text is sized, bound and stamped from, decided once, before a byte of that
+ * text is written. `vm_plan` produces it; the five `vm_emit_*` phases only
+ * read it.
+ *
+ * It is a TRANSPORT, not a namespace. Each phase unpacks the two or three
+ * members it uses into the local names its own body already spells: §2.5's
+ * `bt_frames`, `ceiling` and their four siblings are read at ~60 sites across
+ * the emission, and `pl->caps.x` at every one of them would buy a reader
+ * nothing (coding_guide §1.7 and §4's editing principle) while rewriting text
+ * sabotage rows sit on.
+ *
+ * WHY NOT `Vm`, which is the other place a fact could live. `Vm` carries what
+ * the WALK reads and writes — the slot counters, the region tables, and what
+ * the emitted program turned out to CONTAIN. This carries what the walk is
+ * already finished with, and putting it in `Vm` would make a phase-ordered
+ * fact look like walk state. `VmCaps` immediately above is the precedent: a
+ * policy block's verdict, returned rather than parked. */
+typedef struct {
+    VmCaps      caps;      /* §2.5's two capacities, D49's two budgets and the
+                             * honest ceiling — `vm_plan_capacities`' verdict,
+                             * carried whole so the policy has one home */
+    int         nstate;    /* the slot array's width: `<PREFIX>_NSLOTS` */
+    BufSurface  bufs;      /* [DD-14.FB] the caller-buffer sizing surface. The
+                             * prologue writes the macros from it and `rx_info`
+                             * reflects it, so they are one value read twice */
+    VmField     frame_fields[8], trail_fields[4];
+    int         nframe_fields, ntrail_fields;
+    long long   fast_frames, fast_trail;  /* [OPT-1] the fast tier's capacity
+                                            * pair; equal to the stamped
+                                            * default pair when !tiered */
+    bool        tiered;    /* [OPT-1] the fast tier differs from the default,
+                             * so the artifact emits the two-tier shape */
+    const char *frames_sentinel;  /* `<PREFIX>_R_FRAMES` — the private FRAMES
+                                    * give-up the two ANCHORED entries see,
+                                    * built once rather than at each site */
+} VmPlan;
+
+/* WHICH RUNG OF THE ENTRY CHAIN THIS ARTIFACT TAKES, and the two attribute
+ * strings that spell it. `vm_plan_entry` decides it; `vm_emit_stamps` reports
+ * it and `vm_emit_search_body`/`vm_emit_entries` write it.
+ *
+ * Separate from `VmPlan` because it is decided from a DIFFERENT input — the
+ * emitted program's own byte count and what it turned out to touch, not the
+ * pattern's cost — and because a reader asking "what shape are the entries"
+ * should not have to read the capacity policy to find out. */
+typedef struct {
+    int         shape;       /* PCREC_VM_ENTRY_{PLAIN,SHARED,FORWARD,INLINE},
+                               * never AUTO: the ladder below resolves it */
+    const char *ai;          /* the thin helpers' attribute text, or "" */
+    const char *ai_body;     /* the matcher body's attribute text, or "" */
+    bool        fwd_entries; /* the un-suffixed entries FORWARD to `_in` */
+} VmEntry;
+
 /* Fills `v` with every fact the emission phases read that does not depend on
  * emitting: the context, scratch-buffer and prefix handles, the slot-layout
  * group count with its backreference pending map, the artifact-wide axes
@@ -9880,30 +9939,29 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
     }
 }
 
-/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
- * `root` into `job->csb` (and, under `--emit-ir`, the listing into
- * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
- * `<prefix>_match*` entries, the resume/trail frame types and their sizing
- * macros, the program body (`vm_emit`'s recursive walk plus its own
- * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
- * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
- * run first and consumed by the emission that follows — the root's
- * minimum width (this comment's own subject, immediately below: read HERE
- * because only this emitter writes a search entry to guard), the cost/slot
- * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
- * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
- * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
- * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
- * it discovers the call regions it must save/restore across. */
-void pcrec_emit_vm(Ctx *cx, Ast *root)
+/* Counts the artifact's slots, emits its program into the scratch buffer, and
+ * decides every capacity, budget and storage size the emission that follows is
+ * written from — filling `pl`, and the running-total halves of `v` the
+ * emission reads.
+ *
+ * It is one phase because it is one dependency chain: the slot pre-pass has to
+ * finish before `<PREFIX>_NSLOTS` can be known, `NSLOTS` before the run-state
+ * type, the region `W` sets before `vm_cost` can charge a call, the cost before
+ * the capacities, the capacities before the frame sizes, and the frame sizes
+ * before the fast tier. The PROGRAM is emitted in the middle of that chain,
+ * into `job->vmsb` rather than into the artifact, because three of the facts
+ * the text above it must carry — the class pool, the cursor local's presence
+ * and the emitted-node count — are discovered by emitting and would otherwise
+ * need a second, drift-prone analysis to predict.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: `vm_init` first, and nothing may emit
+ * into `job->csb` before this returns. It also REFUSES — `PCREC_MAX_VM_NODES`
+ * and the emitted-bytes cap are checked here, after the pre-pass and before
+ * the artifact's first byte, so a refusal costs no output. */
+static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
 {
+    Ctx *cx = v->cx;
     Job *job = cx->job;
-    StrBuf *c = &job->csb;
-    Vm vm;
-    Vm *v = &vm;
-    GenNames g;
-
-    vm_init(v, cx, root, &g);
 
     /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
@@ -10050,13 +10108,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * rest of this function, and renaming them to `caps.x` would buy a reader
      * nothing (coding_guide §1.7 and §4's editing principle) while rewriting
      * text that sabotage rows sit on. */
-    const VmCaps caps = vm_plan_capacities(v, root);
-    const long long bt_frames = caps.bt_frames;
-    const long long trail_frames = caps.trail_frames;
-    const long long ceiling = caps.ceiling;
-    const long long budget = caps.budget;
-    const long long work_budget = caps.work_budget;
-    const bool has_budget = caps.has_budget;
+    pl->caps = vm_plan_capacities(v, root);
+    const long long bt_frames = pl->caps.bt_frames;
+    const long long trail_frames = pl->caps.trail_frames;
     /* Always present (docs/spec/match_api.md §3.1 promises it unconditionally,
      * and tests/codegen's K27 fixture calls it directly); the A_BREF arm ORs
      * in whichever compare entries it actually emits. */
@@ -10191,7 +10245,238 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
     job->enc_mask = v->enc_mask;
-    pcrec_emit_prologue(cx, &g, v->ncaps, &bufs);
+
+    /* PUBLISHED. The locals above keep the spellings the emission already
+     * uses; `pl` is how they cross the phase boundary, so every phase below
+     * reads one value rather than deriving a second one. */
+    pl->nstate          = nstate;
+    pl->bufs            = bufs;
+    pl->nframe_fields   = nframe_fields;
+    pl->ntrail_fields   = ntrail_fields;
+    memcpy(pl->frame_fields, frame_fields, sizeof pl->frame_fields);
+    memcpy(pl->trail_fields, trail_fields, sizeof pl->trail_fields);
+    pl->fast_frames     = fast_frames;
+    pl->fast_trail      = fast_trail;
+    pl->tiered          = tiered;
+    pl->frames_sentinel = frames_sentinel;
+}
+
+/* Chooses which of the four entry-chain rungs this artifact takes and fills
+ * `en` with the rung and the two attribute strings that spell it; also sets
+ * `v->has_push`, the one bool three later readers share.
+ *
+ * READS what the emitted program turned out to be — `v->emitted_push`,
+ * `v->emitted_set`, `v->has_linked_calls` and `job->vmsb`'s own byte count —
+ * plus `pl->tiered` and `cx->opt->vm_entry_shape`. Emits nothing.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs after `vm_plan` (the program
+ * must already be in the scratch buffer) and before the first stamp, because
+ * `<PREFIX>_VM_FRAMELESS` and `<PREFIX>_VM_ENTRY_SHAPE` report what it
+ * decided and the fail label and the entries spell it. */
+static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
+{
+    Ctx *cx = v->cx;
+    Job *job = cx->job;
+
+    /* [CC-CLANG fix, 2026-09-01] DOES THIS ARTIFACT EVER PUSH A RESUME FRAME
+     * — the ONE bool three later readers share: the `<PREFIX>_VM_FRAMELESS`
+     * stamp, the entry-rung ladder below, and the fail label's pop-and-resume
+     * dispatch far downstream.
+     *
+     * It is read off `v->emitted_push`, which `vm_push_at` (the ONE primitive
+     * that writes a push, in EITHER tracing spelling) sets in the same call
+     * that writes the bytes, so the gate cannot drift from the program text.
+     * The first form of this fix was a strstr over the emitted buffer for
+     * `<UP>_PUSH(&&`, and the battery refuted it the same day: the TRACED
+     * spelling is `<UP>_PUSH(id, &&…)`, so every traced backtracking artifact
+     * lost its dispatch and nomatched — a needle is a second spelling of the
+     * emission, and the flag-in-the-primitive is the one-derivation form.
+     * `v->has_linked_calls` is the second term because `RX_CALL` increments
+     * `run->resume_depth` at run time and its own emission is gated on that
+     * same flag. `v->npush` is deliberately NOT consulted: it is the
+     * resume-point cap's ESTIMATE, and the counter rung's unbounded arm once
+     * drove it negative, which omitted the dispatch from a program with ten
+     * live pushes (S217 is the row).
+     *
+     * BOTH TERMS ARE FINAL HERE, which is what licenses one derivation for
+     * three readers ([OPT-VMFL] STEP 0 §4.2): the program was emitted into
+     * the scratch buffer by `vm_plan`, which is the only place `vm_push_at`
+     * runs, and `has_linked_calls` is set from `rgn_emit[]` before that. */
+    v->has_push = v->emitted_push || v->has_linked_calls;
+
+    /* [CC-DIFF] STEP 2 — THE ENTRY SHAPE AS AN ORDINAL RUNG, AND EVERY TERM
+     * OF IT READ OFF SOMETHING ALREADY DERIVED.
+     *
+     * WHAT THE LADDER IS FOR ([CC-DIFF] STEP 0, docs/dev/ccdiff_step0.md
+     * §3-6). gcc 15 at -O2 stops inlining at the first call boundary below
+     * `<prefix>_search`: the entry materialises a 152-byte frame for
+     * `<prefix>_run_state` plus `<prefix>_run_buffers`, stores the four
+     * binding fields, pays a `-fstack-protector-strong` canary (the arrays in
+     * the frame are what trip it; Ubuntu's gcc has the flag on by default)
+     * and CALLs `<prefix>_search_run` out of line — once per search attempt,
+     * for storage a FRAMELESS artifact provably never touches. clang inlines
+     * the same chain on its own and then proves the whole run state dead and
+     * deletes it, which is the single transformation behind the bench
+     * ledger's forced-VM signal (a median of 0.599 over 43 throughput cells).
+     * So an attribute here constrains only the compiler that was not already
+     * doing this; it pins neither toolchain to a shape.
+     *
+     * STEP 1(a) SHIPPED THE TOP RUNG AS A BOOLEAN AND THAT CONFLATED TWO
+     * EFFECTS. Its attribute deletes the entry's frame, canary and
+     * out-of-line call — a measured 0.611 on `dig-upto-16` — and, because SIX
+     * entries each honour it, replicates the matcher body six times. isl1's
+     * ladder priced that replication (§12.2): x2.58 .text at w-8 rising to
+     * x6.51 at w-256, for a run-time benefit that stays flat at 16-23%. The
+     * rungs separate them:
+     *
+     *   PLAIN   (1)  no attribute — the pre-[CC-DIFF] shape. ONE body, six
+     *                entries, each paying its frame, canary and call.
+     *   SHARED  (2)  matcher `noinline` (ONE body, called), helpers inlined,
+     *                un-suffixed entries FORWARDED — no frame, no canary.
+     *   FORWARD (3)  the same forwards, matcher inlined: THREE bodies.
+     *   INLINE  (4)  STEP 1(a) as shipped: SIX bodies.
+     *
+     * LEGALITY, and a rung not taken is a SELECTION OUTCOME, never a refusal.
+     * Rungs 2-4 need `has_push` false: gcc REFUSES `always_inline` on a
+     * function containing a computed goto — a hard error, not a warning — and
+     * this file's own invariant (see the header comment) is that the `goto *`
+     * count is `(has_push ? 1 : 0) + shared-callee-bodies`, both terms of
+     * `has_push`, so `has_push` false means there is no computed goto
+     * anywhere in the artifact and the attribute is legal on every helper
+     * including the matcher. The MEASUREMENT agrees independently: on the
+     * three FRAMED cells STEP 0 timed, the attribute bought 0.990, 0.954 and
+     * — on `stack-frame` — **1.032**, a mild regression in 11 of 15 rounds,
+     * because there the storage is genuinely live, so inlining deletes
+     * nothing and only inflates the entry (`rx_search` 40 -> 97
+     * instructions). A FRAMED artifact therefore takes no attribute at all
+     * and is byte-identical to what it was before this change, the `_VM_ABI`
+     * bump aside. Rungs 2 and 3 need MORE: they forward through a NULL
+     * descriptor, so the artifact must never WRITE the working storage, which
+     * is `has_push` AND `emitted_set` (the trail is storage too — see that
+     * field).
+     *
+     * WHY `tiered` DECLINES THE FORWARD. A tiered artifact's un-suffixed
+     * entry is not a binder but a fast-tier run plus a FRAMES escalation
+     * ([OPT-1]); forwarding would delete a mechanism rather than re-spell it.
+     * A storage-untouched artifact can never reach a FRAMES give-up in the
+     * first place — `RX_PUSH` and `RX_TRAIL` are its only two sites — so the
+     * two conditions are expected never to co-occur, and this term is the
+     * belt to that argument's braces rather than a case.
+     *
+     * ONE DERIVATION, on [OPT-VMFL] §4.2's discipline: every term here reads
+     * the SAME `v->has_push` the frameless stamp and the fail label's
+     * dispatch omission read, and the size comparison reads `job->vmsb`'s own
+     * length — the buffer the program was just emitted into — rather than a
+     * second walk of the AST. It is deliberately NOT recomputed from
+     * `v->npush` (an estimate that has gone negative), from a strstr for
+     * `goto *` in the emitted buffer (refuted the same day it was written —
+     * the traced push is a second spelling), or from the stamp's own text. */
+    const bool touches_storage = v->has_push || v->emitted_set;
+    /* Which rungs this artifact can legally take, decided before any of them
+     * is wanted, so the request and the legality never argue. */
+    const bool may_attr = !v->has_push;                   /* rungs 2, 3, 4 */
+    const bool may_fwd  = !touches_storage && !pl->tiered;  /* rungs 2, 3   */
+    int shape = cx->opt->vm_entry_shape;
+    if (shape == PCREC_VM_ENTRY_AUTO) {
+        /* AUTO PICKS BETWEEN FORWARD AND SHARED, AND NEVER INLINE, WHICH IS A
+         * CHANGE FROM WHAT STEP 1(a) SHIPPED AND IS MEASURED RATHER THAN
+         * PREFERRED. Rung FORWARD has INLINE's object-code properties exactly
+         * — no entry frame, no canary anywhere in the artifact, no
+         * out-of-line chain symbol — at 0.50x-0.61x of its `.text` and gcc
+         * time at every width from 646 to 305,686 program bytes, 20 artifacts,
+         * no exception (docs/dev/lanes/ccd2_report.md §3). INLINE's six copies
+         * come from six entries each honouring the attribute; the mechanism
+         * needs three, because there are three distinct call shapes. INLINE
+         * remains reachable, as the ladder's max-speed rung, by asking.
+         *
+         * WHERE THE FORWARD RUNGS ARE ILLEGAL there is no ladder to walk and
+         * the artifact takes what it took before this change: INLINE below
+         * the term (STEP 1(a)'s shape) and PLAIN above it (the pre-[CC-DIFF]
+         * shape). Neither step is novel code. */
+        /* [OPT-DIAL] THE DIAL MOVES THE TERM, NEVER THE RUNG. `--tune=+1`
+         * raises it to 8,192 — the measured band just above today's 4,096,
+         * where a forwarded entry costs 0.061-0.067 bytes per ns/call saved,
+         * five times better than the next cell up. The em-dash sentinel (0)
+         * falls back to this file's own built-in, which stays this limit's
+         * one home. The dial names the TERM and never a rung because rung
+         * `shared` has no measured run time and the allowlist forbids
+         * naming it (design §3.4); an explicit `--vm-entry-shape=N` still
+         * overrides the decision outright, since it never reaches AUTO. */
+        long long term = pcrec_tune_vm_inline_chain_max(cx->opt->tune);
+        if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
+        /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: this comparison is a size
+         * DECISION, and the comment axis must not reach it. */
+        if ((long long)pcrec_sb_len_uncut(&job->vmsb) <= term)
+            shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
+        else
+            shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
+    }
+    if (!may_attr) shape = PCREC_VM_ENTRY_PLAIN;
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_SHARED)
+        /* A forward rung was asked for and cannot be spelled. The fallback is
+         * by INTENT, not by ordinal distance: SHARED and PLAIN are the two
+         * ONE-BODY rungs and FORWARD and INLINE the two body-per-entry ones,
+         * so a caller who asked for one body gets the other one-body rung and
+         * a caller who asked for copies gets the other copying rung. Falling
+         * SHARED up to INLINE would answer "min size" with six copies. */
+        shape = PCREC_VM_ENTRY_PLAIN;
+    else if (!may_fwd && shape == PCREC_VM_ENTRY_FORWARD)
+        shape = PCREC_VM_ENTRY_INLINE;
+    /* The thin helpers (bind / init / reset / report_captures / the three
+     * `_run`s): inlined on every rung but PLAIN. They are a handful of
+     * statements each, so their copies are not what the size term prices. */
+    en->ai = shape == PCREC_VM_ENTRY_PLAIN
+               ? "" : "inline __attribute__((always_inline)) ";
+    /* The MATCHER BODY, which is the whole of what the size term prices.
+     * `noinline` on the SHARED rung is load-bearing, not a hint: without it
+     * gcc is free to inline a small body into the three `_in` entries and the
+     * rung would silently become FORWARD. */
+    en->ai_body = shape >= PCREC_VM_ENTRY_FORWARD
+                    ? "inline __attribute__((always_inline)) "
+                    : (shape == PCREC_VM_ENTRY_SHARED
+                         ? "__attribute__((noinline)) " : "");
+    en->fwd_entries = (shape == PCREC_VM_ENTRY_SHARED
+                        || shape == PCREC_VM_ENTRY_FORWARD);
+    en->shape = shape;
+}
+
+/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
+ * `root` into `job->csb` (and, under `--emit-ir`, the listing into
+ * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
+ * `<prefix>_match*` entries, the resume/trail frame types and their sizing
+ * macros, the program body (`vm_emit`'s recursive walk plus its own
+ * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
+ * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
+ * run first and consumed by the emission that follows — the root's
+ * minimum width (this comment's own subject, immediately below: read HERE
+ * because only this emitter writes a search entry to guard), the cost/slot
+ * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
+ * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
+ * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
+ * it discovers the call regions it must save/restore across. */
+void pcrec_emit_vm(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    Vm vm;
+    Vm *v = &vm;
+    GenNames g;
+    VmPlan pl;
+    VmEntry en;
+
+    vm_init(v, cx, root, &g);
+    vm_plan(v, root, &pl);
+    vm_plan_entry(v, &pl, &en);
+
+    const long long bt_frames    = pl.caps.bt_frames;
+    const long long trail_frames = pl.caps.trail_frames;
+    const long long ceiling      = pl.caps.ceiling;
+    const long long budget       = pl.caps.budget;
+    const long long work_budget  = pl.caps.work_budget;
+    const bool      has_budget   = pl.caps.has_budget;
+
+    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
 
     /* §5.5's stamp. RETAINED alongside rx_info (D43.1 makes rx_info the
      * CANONICAL machine-readable record) because the two serve different
@@ -10454,33 +10739,6 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         pcrec_sb_stampf(c, v->up, "VM_ROOT_MINW", "%lluULL",
                   (unsigned long long)v->root_minw);
     }
-    /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
-     * `v->emitted_push`, which `vm_push_at` (the ONE primitive that writes a
-     * push, in EITHER tracing spelling) sets in the same call that writes the
-     * bytes, so this gate cannot drift from the program text. The first form
-     * of this fix was a strstr over the emitted buffer for `<UP>_PUSH(&&`,
-     * and the battery refuted it the same day: the TRACED spelling is
-     * `<UP>_PUSH(id, &&…)`, so every traced backtracking artifact lost its
-     * dispatch and nomatched — a needle is a second spelling of the emission,
-     * and the flag-in-the-primitive is the one-derivation form.
-     * `v->has_linked_calls` stays as the second term: `RX_CALL` increments
-     * `run->resume_depth` at run time, and its own emission is gated on the
-     * same flag. (`v->npush` is deliberately NOT consulted — it is the
-     * resume-point cap's ESTIMATE, and the counter rung's unbounded arm once
-     * drove it negative, which omitted this dispatch from a program with ten
-     * live pushes.)
-     *
-     * [OPT-VMFL] STEP 0 §4.2, 2026-09-02: THE DERIVATION MOVED UP HERE, and
-     * that move is the stamp's whole safety argument. `<PREFIX>_VM_FRAMELESS`
-     * below and the fail label's dispatch omission far below now read ONE
-     * BOOL rather than two spellings of one fact — the discipline this file
-     * states at `vm_push_at` and `unanch_start` states one file over, and
-     * the reason `[CC-CLANG]`'s own first attempt (a strstr for the needle)
-     * was refuted. Both `v->emitted_push` and `v->has_linked_calls` are FINAL
-     * at this point: the program was emitted into the scratch buffer above,
-     * which is the only place `vm_push_at` runs, and `has_linked_calls` is
-     * set from `rgn_emit[]` before that. */
-    const bool has_push = v->emitted_push || v->has_linked_calls;
     /* [OPT-VMFL] THE FRAMELESS STAMP — §6.3 family (b), VM route only, and
      * UNCONDITIONAL on every VM artifact including a hybrid: `0` on a
      * pushing program and `1` on a frameless one, both spelled. A fact
@@ -10505,7 +10763,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * TEXT — so a third unread mirror would be built ahead of a measured
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
-    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);
+    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);
     /* [ENG-ISL] THE ALTERNATION-ISLAND STAMP — §6.3 family (b), VM route only,
      * UNCONDITIONAL on every VM artifact including a hybrid, `0` spelled as
      * readily as any other value. A fact readable by a macro's ABSENCE is the
@@ -10539,154 +10797,6 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today (D77). */
     pcrec_sb_stampf(c, v->up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(v));
-    /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
-     * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
-     *
-     * WHAT IT FIXES ([CC-DIFF] STEP 0, docs/dev/ccdiff_step0.md §3-6). gcc 15
-     * at -O2 stops inlining at the first call boundary below `<prefix>_search`:
-     * the entry materialises a 152-byte frame for `<prefix>_run_state` plus
-     * `<prefix>_run_buffers`, stores the four binding fields, pays a
-     * `-fstack-protector-strong` canary (the arrays in the frame are what
-     * trip it; Ubuntu's gcc has the flag on by default) and CALLs
-     * `<prefix>_search_run` out of line — once per search attempt, for
-     * storage a FRAMELESS artifact provably never touches. clang inlines the
-     * same chain on its own and then proves the whole run state dead and
-     * deletes it, which is the single transformation behind the bench
-     * ledger's forced-VM signal (a median of 0.599 over 43 throughput cells).
-     * So the attribute constrains only the compiler that was not already
-     * doing this; it does not pin either toolchain to a shape.
-     *
-     * WHY THE FRAMELESS GATE, AND WHY IT IS NOT A SPECIAL CASE. Two
-     * independent facts land on the same predicate. gcc REFUSES
-     * `always_inline` on a function containing a computed goto — a hard
-     * error, not a warning — and this file's own invariant (see the header
-     * comment) is that the `goto *` count is `(has_push ? 1 : 0) +
-     * shared-callee-bodies`, both terms of `has_push`, so `has_push` false
-     * means there is no computed goto anywhere in the artifact and the
-     * attribute is legal on every helper including the matcher. And the
-     * MEASUREMENT agrees independently: on the three FRAMED cells STEP 0
-     * timed, the spelling bought 0.990, 0.954 and — on `stack-frame` —
-     * **1.032**, a mild regression in 11 of 15 rounds, because there the
-     * storage is genuinely live, so inlining deletes nothing and only
-     * inflates the entry (`rx_search` 40 -> 97 instructions). A framed
-     * artifact therefore takes NO attribute and is byte-identical to what it
-     * was before this change, the `_VM_ABI` bump aside.
-     *
-     * ONE DERIVATION, on the [OPT-VMFL] §4.2 discipline the stamp above
-     * states: this reads the SAME `has_push` bool the stamp and the fail
-     * label's dispatch omission read. It is deliberately NOT recomputed from
-     * `v->npush` (an estimate that has gone negative), from a strstr for
-     * `goto *` in the emitted buffer (refuted the same day it was written —
-     * the traced push is a second spelling), or from the stamp's own text. */
-    /* [CC-DIFF] STEP 2 — THE ENTRY SHAPE, AS AN ORDINAL RUNG, AND EVERY TERM
-     * OF IT IS READ OFF SOMETHING ALREADY DERIVED.
-     *
-     * STEP 1(a) is the top rung of a four-rung ladder, not a boolean. Its
-     * attribute deletes the entry's frame, canary and out-of-line call — a
-     * measured 0.611 on `dig-upto-16` — and, because SIX entries each honour
-     * it, replicates the matcher body six times. isl1's ladder priced that
-     * replication (§12.2): x2.58 .text at w-8 rising to x6.51 at w-256, for a
-     * run-time benefit that stays flat at 16-23%. The rungs separate the two
-     * effects, which STEP 1 could not:
-     *
-     *   PLAIN   (1)  no attribute — the pre-[CC-DIFF] shape. ONE body, six
-     *                entries, each paying its frame, canary and call.
-     *   SHARED  (2)  matcher `noinline` (ONE body, called), helpers inlined,
-     *                un-suffixed entries FORWARDED — no frame, no canary.
-     *   FORWARD (3)  the same forwards, matcher inlined: THREE bodies.
-     *   INLINE  (4)  STEP 1(a) as shipped: SIX bodies.
-     *
-     * LEGALITY, and a rung not taken is a SELECTION OUTCOME, never a refusal.
-     * Rungs 2-4 need `has_push` false: gcc REFUSES `always_inline` on a
-     * function containing a computed goto (a hard error), and this file's own
-     * invariant is that the `goto *` count is `(has_push ? 1 : 0) +
-     * shared-callee-bodies`, both terms of `has_push`. The measurement agrees
-     * independently — on the three FRAMED cells STEP 0 timed, the attribute
-     * bought 0.990, 0.954 and 1.032, because there the storage is live so
-     * inlining deletes nothing and only inflates the entry. Rungs 2 and 3
-     * need MORE: they forward through a NULL descriptor, so the artifact must
-     * never WRITE the working storage, which is `has_push` AND `emitted_set`
-     * (the trail is storage too — see that field). A framed artifact is
-     * byte-identical to what it was before this change.
-     *
-     * WHY `tiered` DECLINES THE FORWARD. A tiered artifact's un-suffixed
-     * entry is not a binder but a fast-tier run plus a FRAMES escalation
-     * ([OPT-1]); forwarding would delete a mechanism rather than re-spell it.
-     * A storage-untouched artifact can never reach a FRAMES give-up in the
-     * first place — `RX_PUSH` and `RX_TRAIL` are its only two sites — so the
-     * two conditions are expected never to co-occur, and this term is the
-     * belt to that argument's braces rather than a case.
-     *
-     * ONE DERIVATION, on [OPT-VMFL] §4.2's discipline: `has_push` is the same
-     * bool the stamp and the fail label's dispatch omission read, and the
-     * size comparison reads `job->vmsb.len` — the buffer the program was just
-     * emitted into — rather than a second walk of the AST. */
-    const bool touches_storage = has_push || v->emitted_set;
-    /* Which rungs this artifact can legally take, decided before any of them
-     * is wanted, so the request and the legality never argue. */
-    const bool may_attr = !has_push;                   /* rungs 2, 3, 4 */
-    const bool may_fwd  = !touches_storage && !tiered; /* rungs 2, 3    */
-    int shape = cx->opt->vm_entry_shape;
-    if (shape == PCREC_VM_ENTRY_AUTO) {
-        /* AUTO PICKS BETWEEN FORWARD AND SHARED, AND NEVER INLINE, WHICH IS A
-         * CHANGE FROM WHAT STEP 1(a) SHIPPED AND IS MEASURED RATHER THAN
-         * PREFERRED. Rung FORWARD has INLINE's object-code properties exactly
-         * — no entry frame, no canary anywhere in the artifact, no
-         * out-of-line chain symbol — at 0.50x-0.61x of its `.text` and gcc
-         * time at every width from 646 to 305,686 program bytes, 20 artifacts,
-         * no exception (docs/dev/lanes/ccd2_report.md §3). INLINE's six copies
-         * come from six entries each honouring the attribute; the mechanism
-         * needs three, because there are three distinct call shapes. INLINE
-         * remains reachable, as the ladder's max-speed rung, by asking.
-         *
-         * WHERE THE FORWARD RUNGS ARE ILLEGAL there is no ladder to walk and
-         * the artifact takes what it took before this change: INLINE below
-         * the term (STEP 1(a)'s shape) and PLAIN above it (the pre-[CC-DIFF]
-         * shape). Neither step is novel code. */
-        /* [OPT-DIAL] THE DIAL MOVES THE TERM, NEVER THE RUNG. `--tune=+1`
-         * raises it to 8,192 — the measured band just above today's 4,096,
-         * where a forwarded entry costs 0.061-0.067 bytes per ns/call saved,
-         * five times better than the next cell up. The em-dash sentinel (0)
-         * falls back to this file's own built-in, which stays this limit's
-         * one home. The dial names the TERM and never a rung because rung
-         * `shared` has no measured run time and the allowlist forbids
-         * naming it (design §3.4); an explicit `--vm-entry-shape=N` still
-         * overrides the decision outright, since it never reaches AUTO. */
-        long long term = pcrec_tune_vm_inline_chain_max(cx->opt->tune);
-        if (!term) term = VM_INLINE_CHAIN_MAX_BYTES;
-        /* [EMIT-VERB] `pcrec_sb_len_uncut`, never `len`: this comparison is a size
-         * DECISION, and the comment axis must not reach it. */
-        if ((long long)pcrec_sb_len_uncut(&job->vmsb) <= term)
-            shape = may_fwd ? PCREC_VM_ENTRY_FORWARD : PCREC_VM_ENTRY_INLINE;
-        else
-            shape = may_fwd ? PCREC_VM_ENTRY_SHARED : PCREC_VM_ENTRY_PLAIN;
-    }
-    if (!may_attr) shape = PCREC_VM_ENTRY_PLAIN;
-    else if (!may_fwd && shape == PCREC_VM_ENTRY_SHARED)
-        /* A forward rung was asked for and cannot be spelled. The fallback is
-         * by INTENT, not by ordinal distance: SHARED and PLAIN are the two
-         * ONE-BODY rungs and FORWARD and INLINE the two body-per-entry ones,
-         * so a caller who asked for one body gets the other one-body rung and
-         * a caller who asked for copies gets the other copying rung. Falling
-         * SHARED up to INLINE would answer "min size" with six copies. */
-        shape = PCREC_VM_ENTRY_PLAIN;
-    else if (!may_fwd && shape == PCREC_VM_ENTRY_FORWARD)
-        shape = PCREC_VM_ENTRY_INLINE;
-    /* The thin helpers (bind / init / reset / report_captures / the three
-     * `_run`s): inlined on every rung but PLAIN. They are a handful of
-     * statements each, so their copies are not what the size term prices. */
-    const char *ai = shape == PCREC_VM_ENTRY_PLAIN
-                       ? "" : "inline __attribute__((always_inline)) ";
-    /* The MATCHER BODY, which is the whole of what the size term prices.
-     * `noinline` on the SHARED rung is load-bearing, not a hint: without it
-     * gcc is free to inline a small body into the three `_in` entries and the
-     * rung would silently become FORWARD. */
-    const char *ai_body = shape >= PCREC_VM_ENTRY_FORWARD
-                            ? "inline __attribute__((always_inline)) "
-                            : (shape == PCREC_VM_ENTRY_SHARED
-                                 ? "__attribute__((noinline)) " : "");
-    const bool fwd_entries = (shape == PCREC_VM_ENTRY_SHARED
-                              || shape == PCREC_VM_ENTRY_FORWARD);
     /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
      * are TWO because a selection and the number it was made on are two
      * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
@@ -10716,7 +10826,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [REVW.4] wave 4: the rung's NAME comes from `src/core/tune.c`'s one
      * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
      * four-arm ladder that stood here was the second of three spellings. */
-    pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(shape));
+    pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en.shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
@@ -10813,7 +10923,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         pcrec_sb_puts(c, "#include <stdio.h>\n");
         pcrec_sb_stampf(c, v->up, "TRACE", "1");
     }
-    pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", nstate < 1 ? 1 : nstate);
+    pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl.nstate < 1 ? 1 : pl.nstate);
 
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
@@ -10821,7 +10931,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact -- `RX_SET(2, ...)` becomes `RX_SET(RX_SLOT_GROUP1_START, ...)`.
      * Every name comes from vm_slot_name, i.e. from the layout arithmetic
      * itself, so it cannot disagree with where the emitter actually writes. */
-    if (nstate > 0) {
+    if (pl.nstate > 0) {
         pcrec_sb_putc(c, '\n');
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c, "/* SLOT LEGEND -- names for the numbered cells of the slot\n"
@@ -10830,7 +10940,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
         pcrec_sb_cmt_close(c);
-        for (int sl = 0; sl < nstate; sl++) {
+        for (int sl = 0; sl < pl.nstate; sl++) {
             const char *nm = vm_slot_name(v, sl);
             if (!nm) continue;
             pcrec_sb_stampwf(c, v->up, nm, 24, "%d", sl);
@@ -10869,8 +10979,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * appeared only on tiered artifacts would make the fact readable by a
      * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
      * back and fix in two checks. */
-    pcrec_sb_stampf(c, v->up, "FAST_FRAMES", "%lld", fast_frames);
-    pcrec_sb_stampf(c, v->up, "FAST_TRAIL",  "%lld", fast_trail);
+    pcrec_sb_stampf(c, v->up, "FAST_FRAMES", "%lld", pl.fast_frames);
+    pcrec_sb_stampf(c, v->up, "FAST_TRAIL",  "%lld", pl.fast_trail);
     pcrec_sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
@@ -10897,7 +11007,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, "typedef struct { ");
-        vm_fields_join(c, frame_fields, nframe_fields);
+        vm_fields_join(c, pl.frame_fields, pl.nframe_fields);
         pcrec_sb_printf(c, " } %s_frame;\n", v->p);
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
@@ -10905,7 +11015,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * before the write being logged. Same privacy, same reason. */\n");
         pcrec_sb_cmt_close(c);
         pcrec_sb_puts(c, "typedef struct { ");
-        vm_fields_join(c, trail_fields, ntrail_fields);
+        vm_fields_join(c, pl.trail_fields, pl.ntrail_fields);
         pcrec_sb_printf(c, " } %s_trail_entry;\n\n", v->p);
 
         /* THE STAMPED SIZES ARE CHECKED AGAINST THE REAL ONES, HERE, in the
@@ -11034,7 +11144,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * string with a substituted clause. */
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
-        tiered
+        pl.tiered
           ? "/* This artifact's own working storage, at the stamped default\n"
             " * capacities. [OPT-1]: declared by the three <prefix>_*_deep\n"
             " * statics below, NOT by the entries -- an entry runs on the small\n"
@@ -11071,7 +11181,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * tests/codegen/run_tiered_entry.sh IS the default artifact's text — which
      * is the property a `--trace`-style separate generation axis would have
      * given up. */
-    if (tiered) {
+    if (pl.tiered) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* The fast tier's storage: the same two arrays at the\n"
@@ -11387,7 +11497,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    run->trail        = (%s_trail_entry *)trail;\n"
         "    run->trail_cap    = ntrail;\n"
         "}\n\n",
-        ai, v->p, v->p, v->p, v->p);
+        en.ai, v->p, v->p, v->p, v->p);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -11405,7 +11515,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    int i;\n"
         "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
         "    run->resume_depth = 0; run->trail_depth = 0;\n",
-        ai, v->p, v->p, v->up);
+        en.ai, v->p, v->p, v->up);
     /* [DD-14 wave B+C] §5.6 site 5a — NOT an `ERR_FLOOR` site but a MISSING
      * INITIALISER, and R34's LENS2-7 found it by noticing the design's own
      * prototype set the sentinel BY HAND in `main()`, which is exactly the
@@ -11449,7 +11559,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    run->resume_depth = 0;\n"
         "%s"
         "}\n\n",
-        ai, v->p, v->p, reset_call_top);
+        en.ai, v->p, v->p, reset_call_top);
 
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
@@ -11526,7 +11636,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         /* [CC-DIFF] STEP 2: `ai_body`, not `ai` — THIS is the function the
          * size term prices, and the SHARED rung keeps exactly one copy of it
          * while every thin helper above still inlines. */
-        ai_body, v->p, v->p,
+        en.ai_body, v->p, v->p,
         v->nclamp > 0 ? mrl_param : "",
         v->ngst > 0 ? gst_param : "");
     if (v->rungs & vm_rung_bit[VM_RUNG_CURSOR])
@@ -11545,7 +11655,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * program and sized by the widest body, because a walk's results are
      * published into slot_values before control leaves the loop that ran it — nothing
      * here outlives its own commit. */
-    for (int i = 0; i < nrev_total; i++)
+    for (int i = 0; i < v->nrev_total; i++)
         pcrec_sb_printf(c,
             /* [M6-READ] These suffixes MUST match the ones the use sites
              * NAMES (M6-READ): `cursor` is the walk cursor; `groups_seen`
@@ -11566,7 +11676,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "    size_t %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n"
             "    int %s_rv%d_groups_seen = 0;\n",
             v->p, i, v->p, i, v->p, i, v->p, i, v->p, i);
-    if (nrev_total && v->nrevcaps) {
+    if (v->nrev_total && v->nrevcaps) {
         pcrec_sb_printf(c, "    ptrdiff_t %s_revdet_group_span[%d][2] = {{0}};\n", v->p, v->nrevcaps);
         pcrec_sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v->p, v->nrevcaps);
     }
@@ -11589,7 +11699,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `--no-captures` on a possessified rung loop is the combination that
      * has none of the first three, and it failed -Wunused-variable before
      * this line existed. */
-    for (int i = 0; i < nrev_total; i++)
+    for (int i = 0; i < v->nrev_total; i++)
         pcrec_sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position;"
                      " (void)%s_rv%d_groups_seen; (void)%s_rv%d_iteration;\n",
                   v->p, i, v->p, i, v->p, i, v->p, i);
@@ -11668,7 +11778,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         accept_tr, v->p);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
-        has_push
+        v->has_push
           ? "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
             "     * A step is one backtrack resumption (4.2), counted at exactly\n"
             "     * this place — so forward progress is FREE (a linear match over\n"
@@ -11699,15 +11809,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * `-Wreturn-type` under this project's own default `-Werror`
          * GENCFLAGS. The honest text is the unconditional return the proof
          * already licenses, not a conditional one dressed as always-true. */
-        has_push ? "    if (run->resume_depth == 0) return -1;\n"
+        v->has_push ? "    if (run->resume_depth == 0) return -1;\n"
                  : "    return -1;\n");
     /* [CC-CLANG] The budget decrement below is reachable only past the
      * return just emitted, so on a frameless artifact (has_push false) it
      * would be unreachable dead code -- omitted for the same reason the
      * pop-and-resume block is, not merely to silence a warning. */
-    if (has_budget && has_push)
+    if (has_budget && v->has_push)
         pcrec_sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v->up);
-    if (!has_push) {
+    if (!v->has_push) {
         /* [CC-CLANG] `has_push` is false: no `RX_PUSH` and no linked
          * subroutine call exists anywhere in this program, so the
          * unconditional return just emitted always fires and the
@@ -11835,7 +11945,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "        capture_spans[group][1] = run->slot_values[2 * group + 1];\n"
         "    }\n"
         "}\n\n",
-        ai, v->p, v->p,
+        en.ai, v->p, v->p,
         v->nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"
             "     * crossed a \\K (slot 0, trailed), NOT where matching began.\n"
@@ -11875,7 +11985,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    size_t attempt_position;\n"
         "%s"
         "    if (search_from > subject_length) return 0;\n",
-        ai, g.searchfn, v->p,
+        en.ai, g.searchfn, v->p,
         v->nclamp > 0 ? "    size_t window_end;\n" : "");
 
     /* [K50] The caller-startpos boundary guard, site 1 of 3 on this engine.
@@ -12156,7 +12266,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * pass. It is EMPTY and not NULL because a NULL descriptor means "use the
      * un-suffixed sibling's own storage", which would call straight back into
      * the entry that is forwarding. */
-    if (fwd_entries) {
+    if (en.fwd_entries) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* [CC-DIFF] the frameless forward's descriptor: this artifact\n"
@@ -12168,7 +12278,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             v->p, v->p);
     }
 
-    vm_emit_default_entry(c, v, tiered, fwd_entries, "int", g.searchfn,
+    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "int", g.searchfn,
         "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
         "       ptrdiff_t (*capture_spans)[2]",
         "   /* this artifact's stamped default */",
@@ -12274,7 +12384,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "%s"
         "    %s_run_state_init(run);\n"
         "    result = %s_match_anchored(ctx, run%s%s);\n",
-        ai, g.matchfn, v->p, mguard, v->p, v->p,
+        en.ai, g.matchfn, v->p, mguard, v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -12322,7 +12432,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        ai, g.matchcapsfn, v->p, mguard, v->p, v->p,
+        en.ai, g.matchcapsfn, v->p, mguard, v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
 
@@ -12339,8 +12449,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
      * directly on `<prefix>_match_anchored` and still see the private
      * sentinel (§4.4's three layers). */
-    vm_emit_default_entry(c, v, tiered, fwd_entries, "ptrdiff_t", g.matchfn,
-        "const rx_ctx *ctx", "", "ctx, &run", "ctx", frames_sentinel, "ctx");
+    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "ptrdiff_t", g.matchfn,
+        "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl.frames_sentinel, "ctx");
 
     pcrec_sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
@@ -12353,10 +12463,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "}\n\n",
         g.matchfn, v->p, v->p, g.matchfn, v->p, g.matchfn);
 
-    vm_emit_default_entry(c, v, tiered, fwd_entries, "ptrdiff_t", g.matchcapsfn,
+    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "ptrdiff_t", g.matchcapsfn,
         "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
         "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
-        frames_sentinel, "ctx, capture_spans_out");
+        pl.frames_sentinel, "ctx, capture_spans_out");
 
     pcrec_sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
@@ -12374,7 +12484,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
 
     pcrec_emit_info(cx, &g, 2, job->fit.why,
                     has_budget ? budget : -1, work_budget, bt_frames, ceiling,
-                    &bufs);
+                    &pl.bufs);
 
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_emit_main(cx, &g);
@@ -12389,10 +12499,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.bt_frames = bt_frames;
         st.trail_frames = trail_frames;
         st.ceiling = ceiling;
-        st.nstate = nstate;
-        st.nguard = nguard_total;
-        st.nlow = nlow_total;
-        st.nmark = nmark_total;
+        st.nstate = pl.nstate;
+        st.nguard = v->nguard_total;
+        st.nlow = v->nlow_total;
+        st.nmark = v->nmark_total;
         st.ncaps = v->ncaps;
         st.has_budget = has_budget;
         st.prefilter = prefn != NULL;

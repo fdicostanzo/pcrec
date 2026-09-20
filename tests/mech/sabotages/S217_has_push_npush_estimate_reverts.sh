@@ -84,10 +84,10 @@ SAB_SUITES="atomicdiff"
 SAB_DESC="Both halves of the shipped has_push miscompile restored together: (1) the fail label's has_push gate reads the pre-pass ESTIMATE v.npush again instead of v.emitted_push (the emitted-text flag vm_push_at sets); (2) the counter rung's UNBOUNDED (rmax < 0) arm loses its own special case, so npush falls through nopt = rmax - rmin, which is NEGATIVE there and subtracts from the running count. Neither edit alone reproduces the defect -- only together do they reproduce the tree that shipped between c657ae9 and adc0f5a, where (?:ab|b){8,}+c's ten live RX_PUSH sites drive npush non-positive and the fail label's pop-and-resume dispatch is omitted: nomatch on every subject needing the second alternative, against both oracles"
 SAB_DOC_FIGURE="docs/dev/dev_journal.md 2026-09-01 parts 2 and 3 (the miscompile's own record, and the two fix commits adc0f5a/ae3e6ca); src/gen/emit_vm.c's own header comments at the emitted_push field (~line 461), the counter-rung's [CC-CLANG fix, 2026-09-01] comment (~line 2615) and the fail label's [CC-CLANG fix, 2026-09-01] comment (~line 9467-9481). HAND-TRACED by lane s217 (2026-09-01) against the box hold in force at write time; the mech matrix's own DETECTED figure, predicted atomicdiff:Nfail (some N>0 on the cut:(?:ab|b){8,}+c cell across the DEFAULT/VM/NOPOSS arms) / corpus:0fail, is owed at the manager's battery run once the hold lifts"
 SAB_COUNT=1
-SAB_BEFORE='    const bool has_push = v->emitted_push || v->has_linked_calls;'
+SAB_BEFORE='    v->has_push = v->emitted_push || v->has_linked_calls;'
 SAB_AFTER='    /* SABOTAGE S217 site 1/2: has_push reads the pre-pass ESTIMATE again,
      * not the emitted-text flag. */
-    const bool has_push = v->npush > 0 || v->has_linked_calls;'
+    v->has_push = v->npush > 0 || v->has_linked_calls;'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='        v->npush += a->u.rep.rmax < 0 ? 1
