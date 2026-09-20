@@ -50,7 +50,9 @@
  * site list already enumerates. */
 #define PCREC_ARTIFACT_ABI 27
 
-/* [O-31 F1] ONE BYTE OF PATTERN-DERIVED TEXT, RENDERED SAFE FOR A C BLOCK
+/* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
+ *
+ * [O-31 F1] ONE BYTE OF PATTERN-DERIVED TEXT, RENDERED SAFE FOR A C BLOCK
  * COMMENT. The hazard: a comment-closing STAR THEN SLASH embedded in the
  * pattern's own bytes ends the comment right there -- the mechanism behind
  * pcrec-bench finding F1 (wild-waf-crs-942500-comment-obfuscation, a WAF
@@ -99,7 +101,9 @@ static void emit_comment_safe_byte(StrBuf *sb, int *prevp, unsigned char ch,
     *prevp = ch;
 }
 
-/* [EMIT-VERB] (D112) ESSENTIAL: this is the PROVENANCE line, and it is the
+/* Writes the PROVENANCE line: a C comment naming pcrec, the compiler's abi, and the pattern this artifact matches.
+ *
+ * [EMIT-VERB] (D112) ESSENTIAL: this is the PROVENANCE line, and it is the
  * reason the essential class exists — a file sitting in someone else's
  * repository still says what produced it and what it matches. Emitted on the
  * `.c` and the `.h` under every setting.
@@ -125,7 +129,9 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
     pcrec_sb_cmt_close(sb);
 }
 
-/* [M4.4] (match_api_m4.md §5, A-11): rx_info.pattern is emitted as a real C
+/* Escapes and writes `s` as a real C string literal.
+ *
+ * [M4.4] (match_api_m4.md §5, A-11): rx_info.pattern is emitted as a real C
  * STRING LITERAL, not a comment — a wholly different escaping obligation
  * from emit_pattern_comment above, which is NOT this escaper: it avoids the
  * comment-close sequence and hex-escapes non-printables so the text is safe
@@ -327,7 +333,9 @@ void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine,
     pcrec_sb_stamp_str(c, upper, "ENGINE_SEL", sel);
 }
 
-/* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
+/* Stamps the ALTCLS pass's two activity counters -- how many alternation runs it merged and how many it factored.
+ *
+ * [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
  * PLACEMENT as the feature stamp immediately above and for the SAME reason
  * (STD1's own precedent): the pass runs before either engine is built, so
  * unlike possessify/revdet/prefilter's VM-only stamps this one belongs in
@@ -395,7 +403,9 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  * without any emitter knowing that options have a product. Today there is one
  * engine per file and the name is "<prefix>_search". */
 
-/* [M4.4] (D44.2, match_api_m4.md §1.0/§11 item 1): RETIRES emit_span_typedef
+/* Writes the `<prefix>_search` entry's declaration.
+ *
+ * [M4.4] (D44.2, match_api_m4.md §1.0/§11 item 1): RETIRES emit_span_typedef
  * and its `<prefix>_span` out-struct — the search entry's fourth parameter
  * is now `ptrdiff_t (*caps)[2]` directly, already its FINAL shape (no
  * further signature change is owed when RX_NCAPS grows past 1 at [M4.5]). */
@@ -465,7 +475,9 @@ static void emit_search_decl(StrBuf *sb, const char *fn)
  * also rides the STATIC prefilter, deliberately — measured neutral on the
  * VM+prefilter case (j), and the prefilter is the same split-eligible
  * shape. */
-/* [DD-14 wave G] HOW MANY CAPTURE PAIRS THIS ARTIFACT PROMISES, in ONE place
+/* Returns how many capture pairs this artifact promises -- `ngroups + 1`, or 1 when the caller asked for no captures.
+ *
+ * [DD-14 wave G] HOW MANY CAPTURE PAIRS THIS ARTIFACT PROMISES, in ONE place
  * both emitters read (`src/gen/emit_vm.c` had the only copy and now calls
  * this). `ncaps` is `ngroups + 1` — group 0 is the whole match — or 1 when the
  * caller asked for no captures.
@@ -673,7 +685,9 @@ static void emit_match_caps_decl(StrBuf *sb, const char *fn)
     pcrec_sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]);\n", fn);
 }
 
-/* [DEVIATION, REPORTED] spelled `struct rx_info`, not the bare `rx_info`
+/* Writes the `<prefix>_info` entry's declaration, spelled as `struct rx_info` rather than the bare type name.
+ *
+ * [DEVIATION, REPORTED] spelled `struct rx_info`, not the bare `rx_info`
  * match_api_m4.md §5's literal C snippet shows — see emit_rx_abi_types'
  * comment on the type declaration itself. `<prefix>_info` under the
  * DEFAULT prefix "rx" is the literal identifier "rx_info": a bare typedef
@@ -717,20 +731,30 @@ static const char *derived_name(Ctx *cx, const char *suffix)
     return dfa_fragf(cx, "%s%s", cx->opt->prefix, suffix);
 }
 
-/* `<prefix>_search`, the one name the engine body is written under — and the
+/* Returns the search engine's entry name, `<prefix>_search`.
+ *
+ * `<prefix>_search`, the one name the engine body is written under — and the
  * name a future multi-engine file would vary per engine, which is why it is
  * read from here and nowhere else (the naming surface above). */
 static const char *engine_entry_name(Ctx *cx) { return derived_name(cx, "_search"); }
-/* `<prefix>_match`: the anchored match-here export, retrofitted onto this
+/* Returns the anchored match-here entry's name, `<prefix>_match`.
+ *
+ * `<prefix>_match`: the anchored match-here export, retrofitted onto this
  * engine by calling through the search entry rather than by building a second
  * automaton. */
 static const char *match_entry_name(Ctx *cx)  { return derived_name(cx, "_match"); }
-/* `<prefix>_match_caps`: the same anchored entry, reporting captures. */
+/* Returns the capture-reporting anchored entry's name, `<prefix>_match_caps`.
+ *
+ * `<prefix>_match_caps`: the same anchored entry, reporting captures. */
 static const char *match_caps_entry_name(Ctx *cx) { return derived_name(cx, "_match_caps"); }
-/* `<prefix>_info`: the `.rodata` reflection structure's variable name. */
+/* Returns the `.rodata` reflection structure's variable name, `<prefix>_info`.
+ *
+ * `<prefix>_info`: the `.rodata` reflection structure's variable name. */
 static const char *info_entry_name(Ctx *cx)   { return derived_name(cx, "_info"); }
 
-/* [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
+/* Writes the shared, prefix-independent block of fixed-literal ABI types every generated matcher carries byte for byte.
+ *
+ * [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
  * types plus rx_renderfn (D44/A-14) — shared, BYTE-FOR-BYTE, by every
  * generated matcher regardless of its own --prefix, which is the entire
  * point of the callout ABI's composability (a compiled matcher links
@@ -1124,7 +1148,9 @@ static void emit_rx_abi_types(StrBuf *sb)
     pcrec_sb_cmt_close(sb);
 }
 
-/* [M4.4] (match_api_m4.md §2.1/§9 item 9): the caps-array surface's named
+/* Stamps this artifact's per-prefix `RX_NCAPS` constant.
+ *
+ * [M4.4] (match_api_m4.md §2.1/§9 item 9): the caps-array surface's named
  * constant — PER-PREFIX, since two artifacts compiled with different
  * --prefix legitimately have different RX_NCAPS values once [M4.5] lands.
  * `RX_NCAPS` is 1 on every artifact this DFA-only emitter produces (D42.2):
@@ -1146,7 +1172,9 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
     pcrec_sb_stampf(sb, upper, "NCAPS", "%d", ncaps);
 }
 
-/* [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
+/* Writes the caller-buffer sizing surface: the five per-prefix capacity/alignment macros and the `<prefix>_buffers` descriptor type.
+ *
+ * [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
  * per-prefix macros and the `<prefix>_buffers` descriptor, emitted wherever a
  * consumer's declarations live (the .h when split, the .c when
  * self-contained) and on EVERY artifact, both engines.
@@ -1247,7 +1275,9 @@ static void emit_search_in_decl(StrBuf *sb, const char *fn, const char *prefix)
                   "const %s_buffers *buffers);\n", fn, prefix);
 }
 
-/* `<prefix>_match_in`'s declaration — `_match` argument for argument, plus
+/* Writes `<prefix>_match_in`'s declaration.
+ *
+ * `<prefix>_match_in`'s declaration — `_match` argument for argument, plus
  * the descriptor naming where the working storage lives. Emitted on EVERY
  * artifact (spec §10.4), so a consumer's code does not stop compiling when
  * the same pattern selects the other engine. */
@@ -1257,7 +1287,9 @@ static void emit_match_in_decl(StrBuf *sb, const char *fn, const char *prefix)
               fn, prefix);
 }
 
-/* `<prefix>_match_caps_in`'s declaration — `_match_caps` plus that same
+/* Writes `<prefix>_match_caps_in`'s declaration.
+ *
+ * `<prefix>_match_caps_in`'s declaration — `_match_caps` plus that same
  * descriptor, on the same unconditional footing as its two siblings. */
 static void emit_match_caps_in_decl(StrBuf *sb, const char *fn, const char *prefix)
 {
@@ -1281,7 +1313,9 @@ BufSurface pcrec_bufsurface_inert(void)
     return bs;
 }
 
-/* [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
+/* Writes the `<prefix>_match` entry: an anchored match-here test built by reusing `<prefix>_search`'s own leftmost-first priority.
+ *
+ * [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
  * on every generated matcher (F1/F2) and RETROFITTED onto the existing DFA
  * search — nothing at [M4.4] requires a second, genuinely-anchored
  * automaton. `<prefix>_search`'s own leftmost-first priority already makes
@@ -1342,7 +1376,9 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         upper, searchfn);
 }
 
-/* [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
+/* Writes the `<prefix>_match_caps` entry: `<prefix>_match`'s capture-delivering sibling.
+ *
+ * [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
  * sibling of <prefix>_match — same anchoring test, plus a capture_spans_out
  * parameter that gets every RX_NCAPS pair on success and is left UNTOUCHED
  * on failure (A-8's "untouched wins" rule, shared with <prefix>_search). At
@@ -1375,7 +1411,9 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
         upper, searchfn, upper);
 }
 
-/* [DD-14.FB] (D71 item 2, spec §10.4) THE THREE `_in` ENTRIES ON A DFA
+/* Writes the three `_in` entries a DFA artifact carries so a caller can call it uniformly regardless of which engine was selected -- present, and INERT.
+ *
+ * [DD-14.FB] (D71 item 2, spec §10.4) THE THREE `_in` ENTRIES ON A DFA
  * ARTIFACT: present, and INERT.
  *
  * WHY A DFA ARTIFACT HAS THEM AT ALL. §6.3's rule is that per-artifact
@@ -1514,7 +1552,9 @@ typedef struct {
  * assertion (it returns 0 only for rows equal in BOTH fields). Neither depends
  * on `qsort`'s stability or on the list's direction, which is what a
  * behavioural row here would have depended on. Sabotage row S120. */
-/* [DD-13b.W1.3] THE LEADING KEY IS THE SCOPE, AND IT IS AN ABI CONTRACT
+/* The `qsort` comparator that orders `rx_group_entry` rows: caller scope before library scope, then by name and number.
+ *
+ * [DD-13b.W1.3] THE LEADING KEY IS THE SCOPE, AND IT IS AN ABI CONTRACT
  * RATHER THAN A TIEBREAK.
  *
  * THE KEY IS THE SCOPE AND NOT `ref`, and the difference is a FLAT import
@@ -2024,7 +2064,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
  * emission — but the lookup is still checked rather than assumed, because a
  * NULL text pointer reaching this far would otherwise emit a truncated
  * artifact instead of failing. */
-/* [M6.5.2] BOTH TAKE THE ARTIFACT'S MASK, which is D58's revisit clause being
+/* Writes the encoding seam's residual entry declarations that this artifact actually calls.
+ *
+ * [M6.5.2] BOTH TAKE THE ARTIFACT'S MASK, which is D58's revisit clause being
  * honoured — see enc.h for why a per-entry mask and not two more string
  * fields. `Job.enc_mask` is set by whichever emitter is running BEFORE the
  * prologue, so an entry reaches the artifact iff something in it is emitted
@@ -2362,7 +2404,9 @@ static DfaFold fold_tr(const Dfa *d, const DfaRepr *r)
     return f;
 }
 
-/* `fold_tr` for the scalar accept table: is every state's accept bit the
+/* Decides whether the scalar accept table folds to a constant -- `fold_tr`'s sibling for the accept table.
+ *
+ * `fold_tr` for the scalar accept table: is every state's accept bit the
  * same? Same rule, the same single cell derivation (`acc_cell`), and the same
  * non-fold on an empty machine. */
 static DfaFold fold_acc(const Dfa *d)
@@ -2456,7 +2500,9 @@ static bool upc_emit_live(int u)
     return true;
 }
 
-/* `upc_of_class` as the EMITTER reads it: a masked class collapses onto
+/* Reads `upc_of_class` the way the EMITTER must, collapsing a masked class onto UPC_PLAIN.
+ *
+ * `upc_of_class` as the EMITTER reads it: a masked class collapses onto
  * UPC_PLAIN, so every derived table (§3.6's accept, §3.8's seed) emits
  * the pre-wave column. */
 static int upc_emit_of_class(const Dfa *d, int cl)
@@ -2478,7 +2524,9 @@ static int st_emit_endvar(const DState *st)
 #endif
 }
 
-/* [M6.2 wave A] Does any state have an END view (`\z`) distinct from its EOL
+/* Does any state carry an END view (`\z`) distinct from its EOL view?
+ *
+ * [M6.2 wave A] Does any state have an END view (`\z`) distinct from its EOL
  * view? FALSE for every `\z`-free pattern BY CONSTRUCTION (src/ir/dfa.c's
  * make_state canonicalizes `endvar` against the EOL view, so a pattern with
  * no N_END state interns none), which is what makes every `if (endv)` below
@@ -2491,7 +2539,9 @@ static bool dfa_has_endvar(const Dfa *d)
     return false;
 }
 
-/* [OPT-3] The view tables are the ONE place a pre-multiplied value is
+/* Emits one direction's `\z`/EOL position-view table.
+ *
+ * [OPT-3] The view tables are the ONE place a pre-multiplied value is
  * converted back, and it is deliberate (design note §6): their CELLS are
  * pre-multiplied, their INDEX stays the state index, and the emitted read
  * divides. The division is the second operand of a `&&` whose first operand is
@@ -2534,7 +2584,9 @@ static void emit_end_table(StrBuf *c, const char *p, const char *tag,
  * word character nor a newline). Every state of a machine with no class axis
  * carries that same bit in all three views, so this is also the pre-wave
  * table, byte for byte. */
-/* [OPT-3] Under the pre-multiplied form this table is INDEXED BY THE
+/* Emits one direction's accept table.
+ *
+ * [OPT-3] Under the pre-multiplied form this table is INDEXED BY THE
  * PRE-MULTIPLIED VALUE, so that nothing on the loop's carried chain has to
  * un-multiply. That is `n * ncls` bytes where `n` would do — the transform's
  * one real cost, and the cost STEP 1's measured 1.276x already includes. The
@@ -2564,7 +2616,9 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
     pcrec_sb_puts(c, "\n    };\n");
 }
 
-/* [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
+/* Does this state's accept bit depend on the next byte?
+ *
+ * [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
 static bool state_acc_varies(const DState *st)
 {
     for (int u = UPC_PLAIN + 1; u < UPC_N; u++) {
@@ -2597,7 +2651,9 @@ static bool dfa_needs_seed(const Dfa *d)
     return false;
 }
 
-/* [M6.2 wave D] Does this machine distinguish "the attempt begins AT
+/* Does this machine distinguish an attempt beginning AT `startpos` from one beginning after it?
+ *
+ * [M6.2 wave D] Does this machine distinguish "the attempt begins AT
  * `startpos`" from "it begins after it" (assertions_design.md §4.2)? False
  * for every machine with no N_GSTART by construction — `pcrec_build_dfa`
  * assigns `s1g[u] = s1u[u]` there without closing anything — so a `\G`-free
@@ -2632,7 +2688,9 @@ static bool dfa_needs_gseed(const Dfa *d)
  * question is left exactly as it was — it is not [OPT-3]'s to answer. The loop
  * mirrors `emit_seed_table`'s own, so the two cannot disagree about which
  * cells are emitted. */
-/* [ENG-FORM] `PCREC_NO_PREMUL_TABLE` IS NOT TESTED HERE ANY MORE. The deny
+/* Does this machine's transition table take the pre-multiplied form?
+ *
+ * [ENG-FORM] `PCREC_NO_PREMUL_TABLE` IS NOT TESTED HERE ANY MORE. The deny
  * flag is the `deny` field of the pre-multiplied candidate (D82: "the deny
  * flag = a filter on the candidate list"), so `-fno-premul-table` REMOVES the
  * form from selection rather than making this predicate lie about the
@@ -3082,7 +3140,9 @@ static bool dfa_engine_is_empty(Ctx *cx)
     return us.empty;
 }
 
-/* [OPT-3] WHICH TABLE FORM this artifact's DFA scan carries
+/* Names which table representation this artifact's DFA scan carries.
+ *
+ * [OPT-3] WHICH TABLE FORM this artifact's DFA scan carries
  * (docs/design/premultiplied_dfa_table.md §8, docs/spec/match_api.md §6.3).
  *
  * ONE DERIVATION, THREE READERS — `dfa_premul`, called here, by
@@ -3136,7 +3196,9 @@ static const char *dfa_table_name(Ctx *cx)
     return f;
 }
 
-/* [OPT-5] `<PREFIX>_DFA_SCAN_EDGE` — WHICH CLASS TEST THE ARTIFACT'S SCAN
+/* Names which class test this artifact's scan edges use, or "none" where it has none.
+ *
+ * [OPT-5] `<PREFIX>_DFA_SCAN_EDGE` — WHICH CLASS TEST THE ARTIFACT'S SCAN
  * EDGES USE, or `"none"` where it has none. Composed over every machine the
  * artifact carries, `dfa_table_name`'s own shape and for its own reason: it
  * is an artifact-level fact (spec §6.3), so leaving the anchored machine out
@@ -3163,7 +3225,9 @@ static const char *scan_edge_of(Ctx *cx, const Dfa *d, const char *so_far)
     return so_far;
 }
 
-/* `<PREFIX>_DFA_SCAN_EDGE`'s value: the scan-edge BODY form this artifact's
+/* Names `<PREFIX>_DFA_SCAN_EDGE`'s value: the scan-edge BODY form this artifact's machines took.
+ *
+ * `<PREFIX>_DFA_SCAN_EDGE`'s value: the scan-edge BODY form this artifact's
  * machines took — one object's name, `"mixed"` where they disagree, `"none"`
  * where no state carries an edge. Folded over exactly the machines the
  * artifact CONTAINS: the reverse one drops out of a start-pinned artifact and
@@ -3187,7 +3251,9 @@ static const char *dfa_scan_edge_name(Ctx *cx)
     return v;
 }
 
-/* [CC-DIFF] `<PREFIX>_DFA_UNIFORM_FOLDS` — HOW MANY OF THIS ARTIFACT'S DFA
+/* Counts how many of this artifact's DFA tables the uniform fold removed.
+ *
+ * [CC-DIFF] `<PREFIX>_DFA_UNIFORM_FOLDS` — HOW MANY OF THIS ARTIFACT'S DFA
  * TABLES THE UNIFORM FOLD REMOVED. A COUNT, and deliberately not a mask: the
  * three masks in §6.3 are masks because a rung or a strategy is chosen PER
  * QUANTIFIER and a scalar would LIE on a mixed artifact, where this is a
@@ -3218,7 +3284,9 @@ static int uniform_folds_of(Ctx *cx, const Dfa *d)
     return (fold_tr(d, r).folded ? 1 : 0) + (fold_acc(d).folded ? 1 : 0);
 }
 
-/* `<PREFIX>_DFA_UNIFORM_FOLDS`'s value: how many transition or accept tables
+/* Counts `<PREFIX>_DFA_UNIFORM_FOLDS`'s value: how many transition or accept tables the uniform fold removed from this artifact.
+ *
+ * `<PREFIX>_DFA_UNIFORM_FOLDS`'s value: how many transition or accept tables
  * the uniform fold removed from this artifact, summed over the machines it
  * actually contains (the membership rule `dfa_scan_edge_name` folds over).
  * Counted through `fold_tr`/`fold_acc`, the same two functions the emitter
@@ -3832,7 +3900,9 @@ static int  cell_indexed(int st, const Dfa *d) { (void)d; return st; }
  * ONLY THE ACCESSORS THIS MACHINE USES ARE EMITTED — `accepts_class` under
  * axis E's `by_class`, `row`/`view_live`/`view_take` under a view — so no
  * artifact carries a dead one. */
-/* [CC-DIFF] (b) THE TABLE ARGUMENT A FOLDED ACCESSOR NO LONGER TAKES: the
+/* Spells one folded accessor's table argument -- empty when the fold removed it, the table name otherwise.
+ *
+ * [CC-DIFF] (b) THE TABLE ARGUMENT A FOLDED ACCESSOR NO LONGER TAKES: the
  * empty string when the fold removed the parameter, `"<p>_<m>_<tag>, "` when
  * it did not. Every call site of a foldable accessor spells its table
  * argument THROUGH THIS, so the accessor's parameter list and its call sites
@@ -3879,7 +3949,9 @@ static void token_step(StrBuf *c, const DfaForm *f, const char *cell_type,
                  "{ return %s; }\n", p, m, p, m, cell_type, p, m, index_expr);
 }
 
-/* [OPT-EDGE] STEP 1 — THE STOP PREDICATE, the loop's ONE per-iteration state
+/* Emits the loop's combined dead-or-scan-edge-head stop predicate.
+ *
+ * [OPT-EDGE] STEP 1 — THE STOP PREDICATE, the loop's ONE per-iteration state
  * test, and the third accessor that is emitted only where it is used.
  *
  * The generic path used to pay one compare PER SCAN EDGE (`if (state == HEAD
@@ -4023,7 +4095,9 @@ static void token_premul(StrBuf *c, const DfaForm *f)
     pcrec_sb_puts(c, "\n");
 }
 
-/* `token_premul`'s twin for the INDEXED form: the token IS the row, a step
+/* Emits the INDEXED form's token accessors -- `token_premul`'s twin.
+ *
+ * `token_premul`'s twin for the INDEXED form: the token IS the row, a step
  * scales it by the column count, and a negative value means dead. Its two
  * index expressions carry the column count, so they are built here rather
  * than written as literals in the emitters the two forms share. */
@@ -6000,7 +6074,9 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
 
 /* ---- THE SCAN LOOP, emitted ONCE and called twice ----------------------- */
 
-/* [OPT-EDGE] STEP 1 — IS THE MACHINE'S START STATE ITSELF A SCAN-EDGE HEAD?
+/* Is the machine's start state itself a scan-edge head?
+ *
+ * [OPT-EDGE] STEP 1 — IS THE MACHINE'S START STATE ITSELF A SCAN-EDGE HEAD?
  *
  * ONE reader since STEP 1.1, and losing the second one is the point rather
  * than a tidy-up. The candidate-start prefilter fires at `s0` and NOWHERE ELSE
@@ -6021,7 +6097,9 @@ static bool dfa_start_is_scan_head(const Dfa *d)
     return d->s0 >= 0 && d->s0 < d->n && d->st[d->s0].scan_span != 0;
 }
 
-/* [OPT-EDGE] STEP 1.1 — CAN THE STATE VARIABLE BE HOLDING A SCAN-EDGE HEAD
+/* Can the state variable be holding a scan-edge head when the loop is entered?
+ *
+ * [OPT-EDGE] STEP 1.1 — CAN THE STATE VARIABLE BE HOLDING A SCAN-EDGE HEAD
  * WHEN THE LOOP IS ENTERED?
  *
  * `emit_init` is the only writer of the state variable outside the loop, and
@@ -7078,7 +7156,9 @@ void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
  * exact order pcrec_emit_dfa emitted it before this refactor — including the
  * `#include <string.h>` the unanchored engine's memchr prefilter needs, which
  * the VM's hybrid needs for the same reason and its VM-only mode does not. */
-/* [M6-READ] THE ORIENTATION BLOCK -- a map of THIS artifact.
+/* Writes the orientation block: a map of what this artifact contains and how one match attempt flows through it.
+ *
+ * [M6-READ] THE ORIENTATION BLOCK -- a map of THIS artifact.
  *
  * The plan row's SCOPE RULED block sets what this is and is not: the artifact
  * explains ITSELF. Frank's frame is that a reader coming from a higher-level
@@ -7527,7 +7607,9 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
  * each says so in its own header. That is what makes the stamp checkable
  * rather than decorative — it cannot disagree with the loop unless the
  * derivation itself is wrong, in which case the loop is wrong too. */
-/* [DD-13c] WHICH SCAN SHAPE THE EMITTED BODY IS, in the three words §6.3
+/* Names which scan shape the emitted body is.
+ *
+ * [DD-13c] WHICH SCAN SHAPE THE EMITTED BODY IS, in the three words §6.3
  * documents. `"empty"` is FIRST and not a fallback: a body that is one
  * `return 0` has neither of the other two loops in it, whichever emitter wrote
  * it, so answering "which emitter ran" before "is there a loop at all" is the
@@ -7538,7 +7620,9 @@ static const char *dfa_scan_name(Ctx *cx)
     return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";
 }
 
-/* `<PREFIX>_DFA_PREFILTER`'s value: the prefilter FORM this artifact's scan
+/* Names `<PREFIX>_DFA_PREFILTER`'s value: the prefilter FORM this artifact's scan carries.
+ *
+ * `<PREFIX>_DFA_PREFILTER`'s value: the prefilter FORM this artifact's scan
  * carries, which on the unanchored engine is the chosen axis-B object's own
  * name — so the stamp cannot disagree with the loop that was written. The
  * attempt engine skips whole ATTEMPTS rather than positions inside one, so it
@@ -7613,7 +7697,9 @@ static const char *dfa_prefilter_name(Ctx *cx)
  * `upper` IS A PARAMETER rather than re-derived here because the two callers
  * already hold it (`GenNames.upper` on the DFA side, `v.up` on the VM side)
  * and they are the same string — the artifact's prefix, upper-cased, once. */
-/* [OPT-K] THE OFFSET-k SET, AS A STAMP — and it is a SECOND stamp rather than
+/* Writes the offset-k set this machine's forward scan skips by, as a stamp.
+ *
+ * [OPT-K] THE OFFSET-k SET, AS A STAMP — and it is a SECOND stamp rather than
  * a widening of `<PREFIX>_DFA_PREFILTER` for one reason. [ENG-FORM]'s rule is
  * that `DFA_PREFILTER`'s value IS the chosen object's `name`, a static string
  * that cannot disagree with the loop because it is the loop's own selection;

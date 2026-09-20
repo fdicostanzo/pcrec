@@ -412,7 +412,8 @@ typedef struct {
      * in `--emit-ir` (§3.6). It is at most two per lookaround and sometimes
      * one — never a flat two. */
     int       nlookmark;        /* SLOT_LOOK_MARK<n> assigned so far */
-    int       nlookmark_total;
+    int       nlookmark_total;  /* SLOT_LOOK_MARK<n> slots overall, this
+                                  * artifact's seventh slot family */
     int       nlookpos;         /* SLOT_LOOK_POS<n> assigned so far */
     int       nlookpos_total;
     /* [M6.5.2] PUBLISH-AT-CLOSE's bookkeeping, and it is a PRE-COMPUTED MAP
@@ -679,8 +680,10 @@ typedef struct {
      * `rgn_w`/`rgn_nw` are `W` (§5.3a), computed HERE and not in
      * `src/opt/callgraph.c` because they are SLOT INDICES and slot indices are
      * this file's own layout — see that file's header for the full argument. */
-    const struct CallGraph *cg;
-    bool      has_calls;
+    const struct CallGraph *cg;   /* the pattern's subroutine call graph, or
+                                    * NULL for a call-free pattern */
+    bool      has_calls;  /* true iff the pattern contains any A_CALL (a
+                            * subroutine reference) */
     int       nregion;    /* emitted callee regions == pcrec_callgraph_ntargets */
     long long ncall;      /* emitted RX_CALL SITES, counted as they are written
                            * — `nclamp`'s discipline applied to a call: a check
@@ -718,8 +721,9 @@ typedef struct {
      * counting pass produces, but the SIZE needs only the group set. */
     const int *spl_nw;
     bool     **rgn_grp;   /* rgn_grp[i][g]: region i can write group g */
-    int       nsplice;
-    int       nsplice_total;
+    int       nsplice;       /* SLOT_SPLICE_SAVE<n> slots assigned so far */
+    int       nsplice_total; /* SLOT_SPLICE_SAVE<n> slots overall, this
+                               * artifact's eighth slot family */
     long long nsplicesite;   /* emitted SPLICE sites, counted as written */
     int      *rgn_lbl;    /* region i's ENTRY label id */
     int      *rgn_exit;   /* region i's EXIT label id (where RX_RETURN sits) */
@@ -730,8 +734,10 @@ typedef struct {
     uint8_t (*cls)[32];
     int       ncls, clscap;
     /* [M4.5c] the listing's event stream — see VEvent above */
-    VEvent   *ev;
-    int       nev, evcap;
+    VEvent   *ev;      /* the listing's event log, arena-backed and grown by
+                         * doubling */
+    int       nev, evcap;  /* events logged so far, and the log's current
+                             * capacity */
 } Vm;
 
 /* Appends one event to the VM's listing stream — a label, goto, fail, push,
@@ -791,7 +797,7 @@ static const char *vm_rolef(Vm *v, const char *fmt, ...)
     return q;
 }
 
-/* [EP2-E3] THE QUANTIFIER'S BOUND, `{m,}` or `{m,n}`, rendered once.
+/* Renders the quantifier's bound, `{m,}` or `{m,n}`, once [EP2-E3].
  * Four rung emitters named this text and three of them spelled it into a
  * private `char bounds[32]`, two with the unbounded arm first and one with
  * the bounded arm first. Arena-owned, so no caller sizes a buffer.
@@ -841,16 +847,16 @@ static int vm_slot_guard(Vm *v, int i) { return 2 * (v->ngroups + 1) + i; }
 /* The cursor low-water slot for span loop `i` — the layout's third block
  * above, `SLOT_SPAN_LOW<i>` in the artifact. */
 static int vm_slot_low(Vm *v, int i)   { return 2 * (v->ngroups + 1) + v->nguard_total + i; }
-/* [ENG-BREP] the fourth slot class: a possessified frames-rung loop's CUT
- * MARK, the resume-stack depth to truncate back to. It sits above the low-water
- * marks, so like them its base is computed from the TOTALS the pre-pass found
- * and never from a running counter. */
+/* Returns the slot index for slot class four: a possessified frames-rung
+ * loop's CUT MARK, the resume-stack depth to truncate back to [ENG-BREP].
+ * It sits above the low-water marks, so like them its base is computed
+ * from the TOTALS the pre-pass found and never from a running counter. */
 static int vm_slot_mark(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total + i;
 }
-/* [ENG-BREP] the fifth slot class: THREE per reverse-deterministic loop, and
- * three whatever the preference or the verdict.
+/* Returns the slot index for one of slot class five's three per-loop slots:
+ * always three, whatever the preference or the verdict [ENG-BREP].
  *
  *   +0  `entry` — the loop's start position. The capture walk's FLOOR.
  *   +1  `low`   — the boundary after `rmin` iterations. The retreat's FLOOR.
@@ -897,12 +903,13 @@ static int vm_slot_rev(Vm *v, int loop, int which)
  * Writes the SUFFIX only; the caller prefixes. Returns false for a slot the
  * layout does not account for, which is a bug rather than a naming gap, so the
  * caller falls back to the bare number rather than inventing a name. */
-/* [REVW.2] wave 2 stage 3: returns ARENA-OWNED text, or NULL when the layout
- * does not account for the slot (what the old `bool` return said). The name
- * used to be written into a caller-sized `char buf[48]`, replicated at all
- * three call sites; `vm_slot_expr`'s own header already called that "three
- * spellings of one convention" one level up, and the buffer was the same
- * defect one level down. */
+/* Names the emitted slot legend macro for `slot`, or returns NULL when the
+ * layout does not account for it (what the old `bool` return said)
+ * [REVW.2 wave 2 stage 3]. ARENA-OWNED text: the name used to be written
+ * into a caller-sized `char buf[48]`, replicated at all three call sites;
+ * `vm_slot_expr`'s own header already called that "three spellings of one
+ * convention" one level up, and the buffer was the same defect one level
+ * down. */
 static const char *vm_slot_name(Vm *v, int slot)
 {
     int ngroup_slots = 2 * (v->ngroups + 1);
@@ -973,11 +980,12 @@ static const char *vm_slot_name(Vm *v, int slot)
     return NULL;
 }
 
-/* [M6-READ] The slot as it is WRITTEN IN THE ARTIFACT: the legend macro when
- * the layout accounts for the slot, the bare number when it does not. One
- * helper, so every site that names a slot inside an emitted expression spells
- * it the same way `vm_set` does — the alternative is each site re-deriving
- * `<PREFIX>_` + `vm_slot_name`, which is three spellings of one convention. */
+/* Spells `slot` as it is WRITTEN IN THE ARTIFACT: the legend macro when the
+ * layout accounts for the slot, the bare number when it does not [M6-READ].
+ * One helper, so every site that names a slot inside an emitted expression
+ * spells it the same way `vm_set` does — the alternative is each site
+ * re-deriving `<PREFIX>_` + `vm_slot_name`, which is three spellings of one
+ * convention. */
 static const char *vm_slot_expr(Vm *v, int slot)
 {
     /* [REVW.2] wave 2 stage 3: arena-owned, and the two hand-sized buffers
@@ -991,8 +999,9 @@ static const char *vm_slot_expr(Vm *v, int slot)
     return vm_rolef(v, "%d", slot);
 }
 
-/* [EP2-E1] The slot as an emitted LVALUE — `vm_slot_expr`'s sibling, one
- * bracket out: `slot_values[<the expression above>]`. Every site that parks,
+/* Spells `slot` as an emitted LVALUE, `slot_values[<the expression
+ * above>]` [EP2-E1] — `vm_slot_expr`'s sibling, one bracket out. Every
+ * site that parks,
  * delivers or restores a slot's VALUE wants this, and before this helper four
  * of them re-derived `<PREFIX>_` + `vm_slot_name` by hand into a pair of
  * caller-sized buffers — exactly the three-spellings-of-one-convention defect
@@ -1017,7 +1026,9 @@ static int vm_slot_ctr(Vm *v, int i)
          + v->nmark_total + 3 * v->nrev_total + i;
 }
 
-/* [M6.5.2] THE SIXTH SLOT CLASS: one PENDING slot per MARKED group — a group
+/* Returns the slot index of the PENDING-capture slot for capturing group `group`, one per MARKED group.
+ *
+ * [M6.5.2] THE SIXTH SLOT CLASS: one PENDING slot per MARKED group — a group
  * some backreference in this pattern names (backrefs_design.md §3.2.4).
  *
  * WHAT IT IS FOR. `A_CAP` used to WRITE ON TRAVERSE: the start slot at the
@@ -1052,7 +1063,9 @@ static int vm_slot_pend(Vm *v, int group)
          + v->pend_of[group];
 }
 
-/* [M6.6.2] THE SEVENTH AND EIGHTH SLOT CLASSES: a lookaround's CUT MARK (the
+/* Returns the slot index of lookaround slot `i`'s CUT-MARK, the seventh slot family.
+ *
+ * [M6.6.2] THE SEVENTH AND EIGHTH SLOT CLASSES: a lookaround's CUT MARK (the
  * resume-stack depth at the assertion's entry, what `RX_CUT` truncates back
  * to) and its SAVED CURSOR (the position `L_ok` puts `scan_position` back to).
  *
@@ -1081,7 +1094,9 @@ static int vm_slot_lookmark(Vm *v, int i)
          + v->nmark_total + 3 * v->nrev_total + v->nctr_total
          + v->npend_total + i;
 }
-/* [DD-14 wave G] the EIGHTH family, above everything — see the `Vm` field. */
+/* Returns the slot index of splice slot `i`, the eighth and topmost slot family.
+ *
+ * [DD-14 wave G] the EIGHTH family, above everything — see the `Vm` field. */
 static int vm_slot_splice(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -1100,7 +1115,9 @@ static int vm_slot_lookpos(Vm *v, int i)
          + v->npend_total + v->nlookmark_total + i;
 }
 
-/* [M6.6.2] WHICH SLOTS THIS LOOKAROUND TAKES — the table above as two
+/* Does lookaround `a` need a CUT-MARK slot -- one of the two questions `vm_count_slots` and `vm_look` must answer identically.
+ *
+ * [M6.6.2] WHICH SLOTS THIS LOOKAROUND TAKES — the table above as two
  * predicates, and they are predicates for the reason `vm_marked` and
  * `vm_is_counter` are: `vm_count_slots` and `vm_look` MUST agree exactly, and
  * a rule each of them re-derives is a rule one of them will eventually derive
@@ -1145,7 +1162,9 @@ static bool vm_marked(const Vm *v, int group)
         && v->pend_of[group] >= 0;
 }
 
-/* [ENG-BREP counter-K] Does this quantifier take the COUNTER rung, and is the
+/* Does this quantifier take the COUNTER rung, and if so which shape.
+ *
+ * [ENG-BREP counter-K] Does this quantifier take the COUNTER rung, and is the
  * shape the one implemented so far?
  *
  * ONE predicate, called from all three sites that must agree — vm_cost_rep,
@@ -1607,7 +1626,9 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
     pcrec_sb_printf(b, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1", v->p, ci, byte, byte);
 }
 
-/* [FORM-CHAR] the `<PREFIX>_VM_CLS_FOLDS` stamp's one derivation: how many
+/* Counts how many interned classes take the FOLD comparison shape.
+ *
+ * [FORM-CHAR] the `<PREFIX>_VM_CLS_FOLDS` stamp's one derivation: how many
  * pool classes take the FOLD shape. Distinct pool entries are distinct sets,
  * so distinct fold classes have distinct compare constants — which is what
  * lets a structural check count the stamp against the artifact's own text. */
@@ -1655,7 +1676,9 @@ static int vm_cls_fold_count(const Vm *v)
  * a strict improvement over falling back to frames, none is needed for
  * correctness, and the last two need a per-quantifier reversed automaton this
  * milestone has no other customer for. */
-/* [M5.0 stage 1] `out` IS STORAGE NOW, NOT A LIST OF BORROWED POINTERS
+/* Decomposes `a` into a run of up to `cap` deterministic class bitmaps written into `out`, returning how many it found, or 0 if `a` is not such a run.
+ *
+ * [M5.0 stage 1] `out` IS STORAGE NOW, NOT A LIST OF BORROWED POINTERS
  * (§2.5.1's AFTER row 9, the first of the four sites r54 E1 is about). It used
  * to hand back `&a->u.cls.bits[0]` — a pointer INTO the node, valid because a
  * class payload WAS 32 bytes of bitmap. There is no bitmap in a node to point
@@ -1860,8 +1883,8 @@ static bool vm_rev_canmove(const Ast *a, bool cuts)
     return !cuts && (a->u.rep.rmax < 0 || a->u.rep.rmax > a->u.rep.rmin);
 }
 
-/* `vm_rev_caps`: the body's capturing group NUMBERS, in AST order, which is the
- * dense index the emitted recovery locals are addressed by. One number per
+/* Returns the body's capturing group NUMBERS, in AST order -- the dense
+ * index the emitted recovery locals are addressed by. One number per
  * A_CAP node and not per emitted instance — a fixed-count repeat around a group
  * emits it several times and they all share one number and one pair of slots
  * (revdet.c's shape scan counts the same way, which is what keeps its
@@ -2024,7 +2047,9 @@ struct Cost {
 
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 
-/* [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
+/* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
+ *
+ * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
  * TRUE only for the A_REP that is the direct child of a LIFTING A_ATOMIC. */
 static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
@@ -2639,7 +2664,9 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                            bool under_atomic);
 
-/* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
+/* Counts the slot and resume-point demand of one lookaround (`A_LOOK`) node -- the slot-counting dispatcher's `A_LOOK` arm.
+ *
+ * [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
  * counted here — the arm wave A2 landed deliberately incomplete and this
  * wave completes, in the same edit as `vm_look`.
  *
@@ -2677,7 +2704,9 @@ static void vm_count_slots_look(Vm *v, const Ast *a, long long repl)
     vm_count_slots(v, a->l, repl, false);
 }
 
-/* [ENG-BREP] The A_REP arm of `vm_count_slots`: which RUNG this quantifier
+/* Counts the slot demand of one `A_REP` quantifier node -- which rung it will take and what that rung allocates -- the slot-counting dispatcher's `A_REP` arm.
+ *
+ * [ENG-BREP] The A_REP arm of `vm_count_slots`: which RUNG this quantifier
  * will take, and what that rung allocates. Extracted verbatim from the
  * dispatcher ([REVW.2] step 13) on `vm_cost_rep`'s precedent — and it is the
  * SAME rung decision read a second time, which is the standing hazard
@@ -2852,7 +2881,9 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
  * A_REP and turns the hang into the refusal the node cap was always going to
  * produce; see limits.h for why the two share a value and why that makes the
  * check unable to refuse anything that compiles today. */
-/* [M6.4.2] `under_atomic` threaded exactly as in vm_cost — see vm_cuts(). A
+/* Counts, over the whole AST, how many of each slot family the emitted program will need.
+ *
+ * [M6.4.2] `under_atomic` threaded exactly as in vm_cost — see vm_cuts(). A
  * lift this pre-pass cannot see runs `vm_slot_mark(v, v->nmark++)` past
  * `RX_NSLOTS`: an out-of-bounds write in EMITTED code, K27's class. */
 static void vm_count_slots(Vm *v, const Ast *a, long long repl,
@@ -3087,12 +3118,15 @@ static void vm_fail(Vm *v)
     vm_ev(v, VE_FAIL, 0, 0, NULL);
 }
 
-/* `posexpr` is what the frame records as its resume position — `pos` for every
- * ordinary choice point, and the span-loop cursor for S2.5's rung, which is
- * the one site that resumes somewhere other than the current position. Under
- * --trace the macro takes the label id too, so the instrumented artifact can
- * name the frame it is pushing; that extra argument is the ONLY difference
- * --trace makes to this line, and it makes none at all without it. */
+/* Pushes a resume frame at label `lblid`, recording `posexpr` as the
+ * position it resumes at.
+ *
+ * `posexpr` is `pos` for every ordinary choice point, and the span-loop
+ * cursor for S2.5's rung, which is the one site that resumes somewhere
+ * other than the current position. Under --trace the macro takes the label
+ * id too, so the instrumented artifact can name the frame it is pushing;
+ * that extra argument is the ONLY difference --trace makes to this line,
+ * and it makes none at all without it. */
 static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
 {
     if (v->tracing)
@@ -3105,8 +3139,9 @@ static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
     vm_ev(v, VE_PUSH, lblid, 0, role);
 }
 
-/* `vm_push_at` for the ordinary choice point: the frame resumes at the
- * CURRENT position. Every caller but the span-loop rung wants this one. */
+/* Pushes an ordinary choice-point resume frame at label `lblid`, resuming
+ * at the CURRENT position -- `vm_push_at`'s common case. Every caller but
+ * the span-loop rung wants this one. */
 static void vm_push(Vm *v, int lblid, const char *role)
 {
     vm_push_at(v, lblid, "scan_position", role);
@@ -3177,7 +3212,9 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * `run->resume_depth` is `unsigned` and `slot_values[]` is `ptrdiff_t`, so the count must be
  * taken as `(ptrdiff_t)run->resume_depth - slot_values[slot]` and never the other way, or a
  * momentarily-negative intermediate wraps to an enormous positive charge. */
-/* [M6.5.2] `indent` exists because one charge site is inside an emitted BLOCK
+/* Writes one `<PREFIX>_CHARGE_WORK` work-budget charge at the given indent level.
+ *
+ * [M6.5.2] `indent` exists because one charge site is inside an emitted BLOCK
  * rather than at statement level (the A_BREF compare declares locals, so it
  * needs braces). Threading the indentation is what keeps this ONE call — the
  * alternative is a second `pcrec_sb_printf` at that site, and then `nwork` and the
@@ -3192,8 +3229,9 @@ static void vm_work_at(Vm *v, const char *indent, const char *countexpr,
     vm_ev(v, VE_NOTE, 0, 0, role);
 }
 
-/* `vm_work_at` at statement level, which is every work-charge site but the
- * one inside an emitted block. */
+/* Charges one WORK unit at statement level -- `vm_work_at` under the
+ * standard 4-space indent, which is every work-charge site but the one
+ * inside an emitted block. */
 static void vm_work(Vm *v, const char *countexpr, const char *role)
 {
     vm_work_at(v, "    ", countexpr, role);
@@ -3217,7 +3255,9 @@ static void vm_cut(Vm *v, int slot, const char *role)
     vm_ev(v, VE_CUT, slot, 0, role);
 }
 
-/* [D46] the SIXTH primitive: writes no C (the rung was already selected by
+/* Records which RUNG and STRATEGY one quantifier took, in the artifact-wide summary bitmasks and the per-quantifier listing event.
+ *
+ * [D46] the SIXTH primitive: writes no C (the rung was already selected by
  * the C written around this call), but records the SAME "one call, one
  * truth" way every other primitive does — sets the artifact-wide summary
  * bit AND appends the per-quantifier VE_RUNG event in one place, so the
@@ -3373,7 +3413,9 @@ static const char *vm_mrl_amt(Vm *v, long long k)
     return p;
 }
 
-/* [M4.6d] the EIGHTH primitive, and vm_rung_mark's sibling: writes no C (the
+/* Records that one quantifier received an MRL prune bound, in the artifact-wide summary bitmask and the per-quantifier listing event.
+ *
+ * [M4.6d] the EIGHTH primitive, and vm_rung_mark's sibling: writes no C (the
  * bound was already written by the site that called this), records the
  * artifact-wide summary bit AND the per-quantifier VE_PRUNE event in one
  * place. Called once per A_REP by every rung, with the quantifier's OWN
@@ -3566,7 +3608,11 @@ static int vm_isl_single(const Ast *a)
 typedef struct { const uint8_t *b; int len; } VmIslW;
 typedef struct { VmIslW *w; int n; } VmIslWL;
 
-/* `budget` is the REMAINING literal-byte allowance, shared across the whole
+/* Enumerates AST subtree `a`'s language into `out` as a list of literal
+ * byte strings, returning false when it is not such a finite set or the
+ * enumeration's byte allowance runs out.
+ *
+ * `budget` is the REMAINING literal-byte allowance, shared across the whole
  * enumeration and decremented as words are materialised, so a cross product
  * cannot spend it twice. */
 static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
@@ -3654,7 +3700,9 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     }
 }
 
-/* [ENG-ISL] THE CHAIN'S OWN SIZE, in the only unit both arms can be compared
+/* Counts the AST nodes in one island-trie candidate subtree, the unit an island's size is compared to a chain's emitted bytes in.
+ *
+ * [ENG-ISL] THE CHAIN'S OWN SIZE, in the only unit both arms can be compared
  * in: AST nodes of the subtree `vm_alt` would otherwise emit. `vm_emit` writes
  * roughly one test, one label and one goto per node, so the chain's emitted
  * bytes are linear in this count — measured at ~98 B/node on the shape below.
@@ -4182,7 +4230,9 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     for (int j = 0; j < nbr; j++) vm_emit(v, bentry[j], br[j], next);
 }
 
-/* [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
+/* Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as `test` holds.
+ *
+ * [EP2-E2] THE BOUNDED SPAN SCAN, emitted once for both of `vm_cursor_rep`'s
  * arms (the possessive one and the greedy one, 140 lines apart, which wrote
  * the same eight lines with no agreement check between them).
  *
@@ -4641,7 +4691,9 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
     vm_opt_chain(v, inner, body, count - 1, next, greedy, bw);
 }
 
-/* [ENG-BREP] The possessified frames rung, bounded: `X{m,n}` after its `m`
+/* Emits the possessified frames rung for a BOUNDED optional tail (`X{m,n}`'s copies after its mandatory prefix), one loop frame live at a time.
+ *
+ * [ENG-BREP] The possessified frames rung, bounded: `X{m,n}` after its `m`
  * mandatory copies, with `count` optional copies left to run.
  *
  * The shape, and why it is not simply vm_opt_chain minus the pushes. In this
@@ -4741,7 +4793,9 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
     }
 }
 
-/* [ENG-BREP] The possessified frames rung, UNBOUNDED (`X{m,}`). Same one-frame
+/* Emits the possessified frames rung for an UNBOUNDED tail (`X{m,}`), the bounded chain's sibling with a real loop instead of copies.
+ *
+ * [ENG-BREP] The possessified frames rung, UNBOUNDED (`X{m,}`). Same one-frame
  * discipline as the bounded chain, with the copies replaced by a real loop.
  *
  * NO EMPTY-ITERATION GUARD IS NEEDED, and that is structural rather than an
@@ -5578,7 +5632,9 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
     }
 }
 
-/* [ENG-BREP counter-K] §3.4's POSSESSIVE optional phase: ONE frame for the
+/* Emits the counter rung's POSSESSIVE optional phase: one frame for the whole loop rather than one per iteration.
+ *
+ * [ENG-BREP counter-K] §3.4's POSSESSIVE optional phase: ONE frame for the
  * whole loop instead of one per iteration, via RX_CUT against a mark recorded
  * at loop entry — `vm_poss_chain`'s discipline applied per ITERATION rather
  * than per COPY.
@@ -5656,7 +5712,9 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_goto(v, next);
 }
 
-/* [ENG-BREP counter-K] §3's COUNTER RUNG: the two phases composed.
+/* Emits the counter rung for `X{m,n}`: the mandatory and optional phases composed.
+ *
+ * [ENG-BREP counter-K] §3's COUNTER RUNG: the two phases composed.
  *
  * `X{m,n}` is a MANDATORY phase of m iterations (no choice point) followed by
  * an OPTIONAL phase of n-m (one choice point each). Each phase independently
@@ -5793,7 +5851,9 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     else           vm_opt_chain(v, cur, a->l, nopt, next, a->u.rep.greedy, bw);
 }
 
-/* [ENG-BREP counter-K] THE UNBOUNDED STAR, extracted from vm_rep so the
+/* Emits the unbounded star (`X{m,}` past its mandatory prefix) on the frames rung.
+ *
+ * [ENG-BREP counter-K] THE UNBOUNDED STAR, extracted from vm_rep so the
  * COUNTER rung can hand its tail to it.
  *
  * `X{m,}` is a mandatory phase of m iterations followed by an unbounded tail,
@@ -6103,7 +6163,9 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
  * The mark slot joins the existing `SLOT_CUT_MARK<n>` family, so it is
  * greppable and the slot legend names it, and it is spelled in ONE place —
  * src/gen/CLAUDE.md's two rules. */
-/* [M6.4.4] THE FOLLOW DOES NOT CROSS A CUT — the tier-1 miscompile the
+/* Emits an atomic group `(?>X)`, scoping the follow to zero across the body so an uncut match cannot be swayed by what comes after.
+ *
+ * [M6.4.4] THE FOLLOW DOES NOT CROSS A CUT — the tier-1 miscompile the
  * blinded D27 corpus found on `(?:aa|a)++ab`, and the reason this scoping is a
  * SEMANTIC boundary rather than a missed optimisation.
  *
@@ -6478,7 +6540,9 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
     vm_goto(v, okl);
 }
 
-/* [M6.6.2 wave D] THE LOOKBEHIND's BRANCH CHAIN (design §3.4), emitted here
+/* Emits a lookbehind's branch chain: each fixed-width branch tried in written order, in a forward scan starting `k_i` bytes back.
+ *
+ * [M6.6.2 wave D] THE LOOKBEHIND's BRANCH CHAIN (design §3.4), emitted here
  * rather than inline in `vm_look` because it is the one part of this
  * construct that is a LOOP over a table and everything else is straight-line.
  *
@@ -6825,7 +6889,9 @@ static VmSnap vm_snap(const Vm *v)
     return s;
 }
 
-/* [EP2-E0] THE CALLEE-BODY CAPTURE WALK, written ONCE.
+/* Walks `a`'s AST, calling `on_cap` once per capturing group reachable without crossing a subroutine-call boundary.
+ *
+ * [EP2-E0] THE CALLEE-BODY CAPTURE WALK, written ONCE.
  *
  * `vm_grp_set` and `vm_w_caps` were the same 28-line spine walker with one
  * arm's worth of difference, and the ONE rule that must not be got wrong —
@@ -6872,7 +6938,9 @@ static void vm_walk_caps(Vm *v, const Ast *a,
     }
 }
 
-/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
+/* The `vm_walk_caps` callback that marks one visited group number as a member of a region's group set.
+ *
+ * [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
  * exists. `vm_w_cap_slots` below answers the same question in SLOT indices,
  * which need every family total the counting pass produces; a SPLICE has to
  * know the SIZE of its save block before that pass runs, and the size is a
@@ -6909,7 +6977,9 @@ static void vm_w_cap_slots(Vm *v, int g, void *u)
     }
 }
 
-/* [EP2-E0] THE `A_CALL`-PUBLISHING WALK, written ONCE — and a SEPARATE walker
+/* Walks `a`'s AST, calling `on_call` once per `A_CALL` node reachable without descending into a nested call's own body.
+ *
+ * [EP2-E0] THE `A_CALL`-PUBLISHING WALK, written ONCE — and a SEPARATE walker
  * from `vm_walk_caps` on purpose, because the `A_CALL` edge policy is the
  * opposite one and the constness differs with it.
  *
@@ -6976,7 +7046,9 @@ static void vm_publish_saves(Vm *v, Ast *a, void *u)
     a->u.call.nsave = v->rgn_nw[i];
 }
 
-/* [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
+/* Computes, over the whole callgraph, which subroutine targets are nullable (`a->u.call.nonnullable`), by fixpoint iteration.
+ *
+ * [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
  * `pcrec_emit_vm` verbatim.
  *
  * PRODUCES: `a->u.call.nonnullable` on every `A_CALL` node under `root` —
@@ -7030,7 +7102,9 @@ static void vm_w_range(bool *w, int nstate, int lo, int hi)
     for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
 }
 
-/* [EP2-P3] THE `W` SAVE-SET BUILD, lifted out of `pcrec_emit_vm`.
+/* Builds each subroutine target's save set `W` -- every slot family a shared callee region can write and must therefore restore on return.
+ *
+ * [EP2-P3] THE `W` SAVE-SET BUILD, lifted out of `pcrec_emit_vm`.
  *
  * PRODUCES: `v->rgn_w[i]` / `v->rgn_nw[i]` per target, and — through
  * `vm_publish_saves` — `u.call.save`/`nsave` on every `A_CALL` node.
@@ -7217,7 +7291,9 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
     vm_walk_calls(v, root, vm_publish_saves, NULL);
 }
 
-/* [EP2-P4] THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
+/* Memoises each subroutine target's own match Cost, so a caller never has to walk a callee to cost a call.
+ *
+ * [EP2-P4] THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
  * has to walk a callee — which for a recursive one is design §4.4's
  * non-terminating descent.
  *
@@ -7293,7 +7369,9 @@ typedef struct {
     bool      has_budget;
 } VmCaps;
 
-/* [EP2 sequence step 9 / lens 11's third proposal] THE CAPACITY AND BUDGET
+/* Decides the artifact's frame/trail/step/work capacity policy from the whole pattern's measured Cost.
+ *
+ * [EP2 sequence step 9 / lens 11's third proposal] THE CAPACITY AND BUDGET
  * POLICY, lifted out of `pcrec_emit_vm`.
  *
  * PRODUCES: the `VmCaps` above, and the one field the WALK needs — it sets
@@ -7403,7 +7481,9 @@ static VmCaps vm_plan_capacities(Vm *v, const Ast *root)
     return c;
 }
 
-/* [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
+/* Decides, for every subroutine target, whether it still needs a shared emitted region and what its transitive group set is.
+ *
+ * [EP2-P2] THE REGION PLAN, lifted out of `pcrec_emit_vm` verbatim: which
  * targets still need a shared region, and what each one's transitive GROUP
  * set is.
  *
@@ -7464,7 +7544,9 @@ static void vm_plan_regions(Vm *v)
     v->spl_nw  = snw;
 }
 
-/* [DD-14 wave B+C] THE CALL SITE (design §5.1, §5.3).
+/* Emits a subroutine CALL site: a resume frame carrying the return label, plus trailed self-writes parking the caller's save-set values.
+ *
+ * [DD-14 wave B+C] THE CALL SITE (design §5.1, §5.3).
  *
  *     L_site:  RX_CALL(&&L_ret, scan_position)   ; a resume frame carrying a
  *                                                 ; RETURN LABEL
@@ -7530,7 +7612,9 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
     vm_goto(v, next);
 }
 
-/* [DD-14 wave G] THE SPLICE (design §6.3, §8.3, S-SR18).
+/* Emits a subroutine call whose callee is small and acyclic INLINE, with its own private save slots and its own exit.
+ *
+ * [DD-14 wave G] THE SPLICE (design §6.3, §8.3, S-SR18).
  *
  * A call site whose callee `src/opt/callgraph.c` proved ACYCLIC and small
  * enough emits the callee's body INLINE, WITH ITS OWN EXIT:
@@ -7722,7 +7806,9 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
     vm_goto(v, next);
 }
 
-/* [DD-14 wave B+C] ONE SHARED CALLEE REGION PER DISTINCT CALLED GROUP, EMITTED
+/* Emits one shared callee region -- the body shared by every non-spliced call to one subroutine target -- after the main body, with its own exit.
+ *
+ * [DD-14 wave B+C] ONE SHARED CALLEE REGION PER DISTINCT CALLED GROUP, EMITTED
  * AFTER THE MAIN BODY, WITH ITS OWN EXIT (design §3.5, §5.4, §6.3).
  *
  * THE EXIT IS THE WHOLE OF §6.3's SPLIT, and §3.5 is why it is a RULE rather
@@ -8497,7 +8583,9 @@ typedef struct {
  * empty family at all (w2y S3.3: a byte-identity green over a family that
  * never renders is not evidence about that family). */
 
-/* [D46/DD-8] THE MASK SUMMARIES, ONE MECHANISM FOR TWO MASKS. `v->rungs` and
+/* Renders one summary bitmask (rungs or strategies) as a comma-joined TSV cell listing every kind that appears anywhere in the program.
+ *
+ * [D46/DD-8] THE MASK SUMMARIES, ONE MECHANISM FOR TWO MASKS. `v->rungs` and
  * `v->strats` both answer "which KINDS appear ANYWHERE in this program" --
  * read straight off the bitmask `vm_rung_mark()` built during the real
  * emission walk, never re-derived from the AST (engine_m4.md S10: one
@@ -8556,8 +8644,9 @@ static void vm_row3(StrBuf *o, const char *a, const char *b, const char *c)
     pcrec_sb_row(o, cells, 3);
 }
 
-/* THE SLOTS SECTION's row, and the `family` column is the point of the
- * [DD-8] shape rather than decoration. Before it, a reader told the six slot
+/* Writes one row of the `--emit-ir` SLOTS section. The `family` column is
+ * the point of the [DD-8] shape rather than decoration. Before it, a reader
+ * told the six slot
  * families apart by recognising their `holds` PROSE -- and w2y S3.3 records a
  * reach census defeated by exactly that, three families' markers being
  * substrings of another family's sentence. The family is now a declared
@@ -8571,8 +8660,9 @@ static void vm_listing_slot_row(StrBuf *o, const char *family,
     pcrec_sb_row(o, cells, 4);
 }
 
-/* A whole single-index slot family. An EMPTY family still emits ONE row --
- * family named, slot and holds empty, the family's own sentence (or nothing,
+/* Emits every row of one single-index slot family in the SLOTS section. An
+ * EMPTY family still emits ONE row -- family named, slot and holds empty,
+ * the family's own sentence (or nothing,
  * where it has none) in the note -- because "this artifact reserves no
  * low-water slots" is a fact a debug listing owes its reader and because an
  * absent section arm is a reach hole no byte-identity gate can see. */
@@ -8597,10 +8687,11 @@ static const char *const vm_revdet_slot_desc[3][2] = {
     { "revdet ceiling",    "maximal boundary reached: the lazy extension's cap" },
 };
 
-/* One home for "list every event of kind K, or say there are none" -- the
- * `rungs`, `strategies` and `pruning` sections are the same program three
- * times, differing in the event kind, the name table and the
- * empty-population sentence. The column WIDTH argument this helper carried
+/* Lists every event of kind `kind`, or states that there are none -- the
+ * shared body behind the `rungs`, `strategies` and `pruning` sections,
+ * which are the same program three times, differing in the event kind, the
+ * name table and the empty-population sentence. The column WIDTH argument
+ * this helper carried
  * before [DD-8] is gone with the padding (D106 addendum 3), which also
  * retires w2x S8's `%-*s`-at-width-0 blind spot rather than documenting it. */
 static void vm_listing_events(StrBuf *o, Vm *v, VEKind kind,
@@ -9338,7 +9429,9 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
     }
 }
 
-/* [OPT-1] THE THREE UN-SUFFIXED ENTRIES, from ONE emitter
+/* Emits one of the three un-suffixed public entries (`<prefix>_search`/`_match`/`_match_caps`) from one shared template.
+ *
+ * [OPT-1] THE THREE UN-SUFFIXED ENTRIES, from ONE emitter
  * (docs/design/two_tier_entry.md §2).
  *
  * WHY THIS IS A FUNCTION AND NOT THREE MORE FORMAT STRINGS. `<prefix>_search`,

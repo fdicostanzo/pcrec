@@ -2165,3 +2165,29 @@ never edited afterwards.
   own trailer for completion first (log path and exact completion line
   in the report). PARKED on `lane/hdrrest`, not merged. Companion
   lane `hdrgen` owns the two excluded emitter files.
+
+- `hdr2_report.md` — [HDR-2] the first-sentence header pass (2026-09-20,
+  lane hdr2, sonnet): the readability experiment's fix for [HDR-1]'s own
+  regression (`docs/dev/reviews/2026-09-20-readability-experiments.md`
+  §1 — a header lowered function comprehension 68% -> 57% because it led
+  with a tag/invariant instead of what the function does). Lands
+  `coding_guide.md` §4.2's FIRST-SENTENCE rule, then re-reads every
+  function header in `src/gen/emit_vm.c` (43 tag-first + 6
+  cross-reference-first) and `src/gen/emit_dfa.c` (32 tag-first + 12
+  backtick-first) against it, covering grade_summary2.md §(d)'s whole
+  "wrong under B, correct under C" named population that lives in these
+  two files (the `vm_isl_*` island-trie family among them) plus its
+  field half (`Vm.cg`/`has_calls`/`nsplice*`/`nlookmark_total`/
+  `ev`/`evcap`, none of which had a trailing comment before this).
+  **Acceptance: functions reach 82.9% under the re-run experiment
+  (bar >= 68%, MET with margin); fields read 31.9% (bar >= 42%, missed)**
+  — traced to fields the grader itself named (`Vm.cx`, `Vm.enc_mask`,
+  `Vm.rgn_emit`) having NO trailing comment at all and sitting on
+  NEITHER of §(d)'s two named lists, so outside this row's chartered
+  scope; a second guesser run scored fields far higher but its own
+  grader flagged a row-alignment break past row 35 (the population's
+  duplicate names, e.g. two `Vm.b` rows, make a kind/name realignment
+  unreliable) and is discarded rather than reported as a pass.
+  Comments only; `make -j4`/`make strict` clean, `scripts/emit_sweep.py
+  --ref bc6750bc` 0 movers on all five streams, sabotage anchors
+  285/285.

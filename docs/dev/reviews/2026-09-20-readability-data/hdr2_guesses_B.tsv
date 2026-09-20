@@ -1,0 +1,227 @@
+kind	name	guess	confidence
+field	Vm.k	Unknown or not located in file	no-idea
+field	Vm.b	SCRATCH: the VM function's body, see vm_emit_all	high
+field	Vm.role	Unknown or not located in file	no-idea
+field	Vm.cx	Field cx	low
+field	Vm.b	SCRATCH: the VM function's body, see vm_emit_all	high
+field	Vm.p	--prefix	high
+field	Vm.up	uppercased prefix — GenNames.upper, shared	high
+field	Vm.nlabel	Counts of label used so far	medium
+field	Vm.ngroups	capturing groups (0 when --no-captures)	high
+field	Vm.nguard	empty-iteration guard slots assigned so far	high
+field	Vm.nguard_total	Counts of guard total used so far	medium
+field	Vm.nlow	cursor low-water slots assigned so far	high
+field	Vm.nlow_total	Counts of low total used so far	medium
+field	Vm.nmark	possessive cut-mark slots so far	high
+field	Vm.nmark_total	Counts of mark total used so far	medium
+field	Vm.nrev	revdet LOOPS so far (3 slots each)	high
+field	Vm.nrev_total	Counts of rev total used so far	medium
+field	Vm.nctr	Counts of ctr used so far	medium
+field	Vm.nctr_total	Counts of ctr total used so far	medium
+field	Vm.nlookmark	SLOT_LOOK_MARK<n> assigned so far	high
+field	Vm.nlookmark_total	Counts of lookmark total used so far	medium
+field	Vm.nlookpos	SLOT_LOOK_POS<n> assigned so far	high
+field	Vm.nlookpos_total	Counts of lookpos total used so far	medium
+field	Vm.pend_of	Field pend_of	low
+field	Vm.npend_total	Counts of pend total used so far	medium
+field	Vm.enc_mask	Field enc_mask	low
+field	Vm.unroll_k	Field unroll_k	low
+field	Vm.nrevcaps	Counts of revcaps used so far	medium
+field	Vm.nocap	Counts of ocap used so far	medium
+field	Vm.npush	Counts of push used so far	medium
+field	Vm.emitted_push	Field emitted_push	low
+field	Vm.emitted_set	Field emitted_set	low
+field	Vm.maxcopies	Field maxcopies	low
+field	Vm.nodes	emitted-node budget, against PCREC_MAX_VM_NODES	high
+field	Vm.nislands	Counts of islands used so far	medium
+field	Vm.isl_chain_sum	Field isl_chain_sum	low
+field	Vm.isl_over_cap	Capacity limit for isl over	medium
+field	Vm.rungs	Field rungs	low
+field	Vm.strats	Field strats	low
+field	Vm.prunes	Field prunes	low
+field	Vm.fmin	Field fmin	low
+field	Vm.fdyn	Field fdyn	low
+field	Vm.mrl	Field mrl	low
+field	Vm.mrl_win	Field mrl_win	low
+field	Vm.ndynskip	Counts of dynskip used so far	medium
+field	Vm.nclamp	Counts of clamp used so far	medium
+field	Vm.ngst	Counts of gst used so far	medium
+field	Vm.nkreset	Counts of kreset used so far	medium
+field	Vm.tracing	--trace: emit an instrumented artifact	high
+field	Vm.has_budget	Boolean flag: has budget	medium
+field	Vm.nwork	Counts of work used so far	medium
+field	Vm.cg	Field cg	low
+field	Vm.has_calls	Boolean flag: has calls	medium
+field	Vm.nregion	emitted callee regions == pcrec_callgraph_ntargets	high
+field	Vm.ncall	Counts of call used so far	medium
+field	Vm.rgn_emit	Field rgn_emit	low
+field	Vm.has_linked_calls	Boolean flag: has linked calls	medium
+field	Vm.splice_depth	Field splice_depth	low
+field	Vm.spl_nw	Field spl_nw	low
+field	Vm.rgn_grp	rgn_grp: region i can write group g	high
+field	Vm.nsplice	SLOT_SPLICE_SAVE<n> slots assigned so far	high
+field	Vm.nsplice_total	Counts of splice total used so far	medium
+field	Vm.nsplicesite	emitted SPLICE sites, counted as written	high
+field	Vm.rgn_lbl	region i's ENTRY label id	high
+field	Vm.rgn_exit	region i's EXIT label id (where RX_RETURN sits)	high
+field	Vm.rgn_w	W(i), ascending slot indices	high
+field	Vm.rgn_nw	|W(i)|	high
+field	Vm.rgn_cost	region i's own cost, memoised (§5.7)	high
+field	Vm.(*cls)	Unknown or not located in file	no-idea
+field	Vm.clscap	Field clscap	low
+field	Vm.ev	Field ev	low
+field	Vm.evcap	Field evcap	low
+func	vm_ev	Appends one event to the VM's listing stream — a label, goto, fail, push,	high
+func	vm_rolef	Arena-owned formatted text for a role string — the compile's arena taken	high
+func	vm_rolef	Arena-owned formatted text for a role string — the compile's arena taken	high
+func	vm_bounds_text	Renders the quantifier's bound, `{m,}` or `{m,n}`, once .	high
+func	vm_label	Charges one emitted node against `PCREC_MAX_VM_NODES`, failing the compile * with a "pattern too large" diagnostic when the program outgrows it. The *	high
+func	vm_charge	Charges one emitted node against `PCREC_MAX_VM_NODES`, failing the compile	high
+func	vm_slot_guard	Returns the slot index for slot class four: a possessified frames-rung	high
+func	vm_slot_low	The cursor low-water slot for span loop `i` — the layout's third block	high
+func	vm_slot_mark	Returns the slot index for slot class four: a possessified frames-rung	high
+func	vm_slot_rev	Returns the slot index for one of slot class five's three per-loop slots:	high
+func	vm_slot_name	Names the emitted slot legend macro for `slot`, or returns NULL when the	high
+func	vm_slot_expr	Spells `slot` as it is WRITTEN IN THE ARTIFACT: the legend macro when the	high
+func	vm_slot_ref	Spells `slot` as an emitted LVALUE, `slot_values[<the expression	high
+func	vm_slot_ctr	The counter rung's slot for loop `i` — `SLOT_COUNTER<i>`, one TRAILED	high
+func	vm_slot_pend	Returns the slot index of the PENDING-capture slot for capturing group `group`, one per MARKED group.	high
+func	vm_slot_lookmark	Returns the slot index of lookaround slot `i`'s CUT-MARK, the seventh slot family.	high
+func	vm_slot_splice	Returns the slot index of splice slot `i`, the eighth and topmost slot family.	high
+func	vm_slot_lookpos	A lookaround's cursor-snapshot slot `i` — the layout's TOP family but for	high
+func	vm_look_needs_mark	Does lookaround `a` need a CUT-MARK slot -- one of the two questions `vm_count_slots` and `vm_look` must answer identically.	high
+func	vm_look_needs_pos	Does this lookaround need a position SNAPSHOT — that is, is there nothing	high
+func	vm_marked	Is group `g` MARKED — does some backreference in this pattern name it? ONE	high
+func	vm_counter_fits	Does this quantifier take the COUNTER rung, and if so which shape.	high
+func	vm_counter_copies	How many times the counter rung EMITS the body for an exact count: K copies	high
+func	bare	The node under any capturing wrappers. `A_CAP` adds capture bookkeeping and	high
+func	vm_nullable	§3.3: a quantifier whose body can match the empty string must not loop	high
+func	vm_lifts	---- THE ATOMIC LIFT: two predicates, five callers ---------------	high
+func	vm_cuts	DOES THIS `A_REP` EMIT A CUT? The ONE predicate the emitter and all four	high
+func	vm_revdet_fits	DOES THIS `A_REP` TAKE THE REVERSE-DETERMINISTIC RUNG? `a->u.rep.revbody` is	high
+func	vm_cls	Interns a 256-bit class bitmap in the pool and returns its index, returning	high
+func	vm_cls_shape	Classifies one class bitmap into the shapes above, and hands back its	high
+func	vm_cls_test	The membership test for class `ci` on byte expression `byte`. Shapes and	high
+func	vm_cls_fold_count	Counts how many interned classes take the FOLD comparison shape.	high
+func	vm_det_seq	Decomposes `a` into a run of up to `cap` deterministic class bitmaps written into `out`, returning how many it found, or 0 if `a` is not such a run.	high
+func	vm_cap_offsets	Walks a `vm_det_seq`-approved fixed-width body, appending one `CapOff` row	high
+func	vm_cursor_fits	THE RUNG DECISION, in ONE place (§2.5's ladder, D44.1's extension).	high
+func	vm_rev_canmove	---- §2.5's REVERSE-DETERMINISTIC rung: the two facts every site needs ----	high
+func	vm_rev_caps	Returns the body's capturing group NUMBERS, in AST order -- the dense	high
+func	vm_isl_build	Build the island for an alternation, or return false and leave `t` unusable.	high
+func	vm_cost	The resume-frame/trail/slot COST of emitting `a` — the analysis	high
+func	vm_cost_rep	Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.	high
+func	vm_cost	The resume-frame/trail/slot COST of emitting `a` — the analysis	high
+func	vm_count_slots	Counts the slot and resume-point demand of one lookaround (`A_LOOK`) node -- the slot-counting dispatcher's `A_LOOK` arm. *	high
+func	vm_count_slots_look	Counts the slot and resume-point demand of one lookaround (`A_LOOK`) node -- the slot-counting dispatcher's `A_LOOK` arm.	high
+func	vm_count_slots_rep	Counts the slot demand of one `A_REP` quantifier node -- which rung it will take and what that rung allocates -- the slot-counting dispatcher's `A_REP	high
+func	vm_count_slots	Counts the slot and resume-point demand of one lookaround (`A_LOOK`) node -- the slot-counting dispatcher's `A_LOOK` arm. *	high
+func	vm_emit	THE DISPATCHER: emits `a`'s VM code at label `entry`, continuing at	high
+func	vm_lbl	THE FIVE PRIMITIVES. Every one of them writes C *and* records the listing	high
+func	vm_goto	Writes the artifact's unconditional jump to label `id` and records the	high
+func	vm_fail	Writes the jump to the program's ONE fail label — the single backtracking	high
+func	vm_push_at	Pushes a resume frame at label `lblid`, recording `posexpr` as the	high
+func	vm_push	Pushes an ordinary choice-point resume frame at label `lblid`, resuming	high
+func	vm_set	Writes one TRAILED slot assignment — the `<PREFIX>_SET` line, naming the	high
+func	vm_work_at	Writes one `<PREFIX>_CHARGE_WORK` work-budget charge at the given indent level.	high
+func	vm_work	Charges one WORK unit at statement level -- `vm_work_at` under the	high
+func	vm_cut	Writes the possessive loop's CUT — the `<PREFIX>_CUT` line that truncates	high
+func	vm_rung_mark	Records which RUNG and STRATEGY one quantifier took, in the artifact-wide summary bitmasks and the per-quantifier listing event.	high
+func	vm_emit_f	Emit `a` with an explicit follow-min, restoring the caller's on the way	high
+func	vm_emit_fd	The same, additionally setting the RUNTIME half. Only the counter rung's	high
+func	vm_dyn_add	Joins two runtime follow-min terms into the emitted expression `a + b`,	high
+func	vm_mrl_amt	The minrest OPERAND as the emitted C spells it: a bare constant when the	high
+func	vm_prune_mark	Records that one quantifier received an MRL prune bound, in the artifact-wide summary bitmask and the per-quantifier listing event.	high
+func	vm_mrl_test	The TEST form. `posexpr` is the position under test — `pos` at an ordinary	high
+func	vm_mrl_gate	The TEST form used as a GATE on a whole subtree: emits the test at `entry`	high
+func	vm_isl_single	The byte an A_CLASS admits when it admits EXACTLY ONE, else -1. This is the	high
+func	vm_isl_words	Enumerates AST subtree `a`'s language into `out` as a list of literal	high
+func	vm_isl_subtree_nodes	Counts the AST nodes in one island-trie candidate subtree, the unit an island's size is compared to a chain's emitted bytes in.	high
+func	vm_isl_node	Appends one node to the island trie and returns its INDEX: `parent`, the	high
+func	vm_isl_insert	Insert one branch. `idx` ascends across calls, so appending to a node's	high
+func	vm_isl_build	Build the island for an alternation, or return false and leave `t` unusable.	high
+func	vm_isl_cands	The candidate list at node `x`: every accept on the root..x path, ASCENDING	high
+func	vm_isl_die	Where a node's walk goes when no child matches the subject byte (or the	high
+func	vm_isl_emit	Emits the alternation-island trie `t` (already BUILT by `vm_isl_build`,	high
+func	vm_alt	Emits an alternation at label `entry` whose every branch continues to	high
+func	vm_emit_span_scan	Emits the bounded span-scan block that advances the cursor forward in fixed strides for as long as `test` holds.	high
+func	vm_cursor_rep	§2.5's cursor rung, with D44.1's capture extension.	high
+func	vm_opt_chain	Nested optional chain for a bounded repeat: `X{0,3}` is `(X(X(X)?)?)?`,	high
+func	vm_poss_chain	Emits the possessified frames rung for a BOUNDED optional tail (`X{m,n}`'s copies after its mandatory prefix), one loop frame live at a time.	high
+func	vm_poss_star	Emits the possessified frames rung for an UNBOUNDED tail (`X{m,}`), the bounded chain's sibling with a real loop instead of copies.	high
+func	vm_rev_index	The DENSE index of capture group `capno` within the reversed body, or -1	high
+func	vm_rev_emit	Emits `a`'s BACKWARD walk for the reverse-deterministic rung: one state	high
+func	vm_revdet_rep	Emits the reverse-deterministic rung's forward scan for bounded repeat	high
+func	vm_opt_chain	Nested optional chain for a bounded repeat: `X{0,3}` is `(X(X(X)?)?)?`,	high
+func	vm_poss_chain	Emits the possessified frames rung for a BOUNDED optional tail (`X{m,n}`'s copies after its mandatory prefix), one loop frame live at a time.	high
+func	vm_star	Emits the unbounded star (`X{m,}` past its mandatory prefix) on the frames rung.	high
+func	vm_counter_phase	ONE PHASE of the counter rung: `count` iterations, K at a time, with the	high
+func	vm_counter_poss_opt	Emits the counter rung's POSSESSIVE optional phase: one frame for the whole loop rather than one per iteration.	high
+func	vm_counter_rep	Emits the counter rung for `X{m,n}`: the mandatory and optional phases composed.	high
+func	vm_star	Emits the unbounded star (`X{m,}` past its mandatory prefix) on the frames rung.	high
+func	vm_rep	Emits a bounded/unbounded repeat's FRAME-based rung: one resume frame	high
+func	vm_atomic	Emits an atomic group `(?>X)`, scoping the follow to zero across the body so an uncut match cannot be swayed by what comes after.	high
+func	vm_look_behind_branch	ONE BRANCH of the lookbehind chain above: step back `widths` characters	high
+func	vm_look_behind	Emits a lookbehind's branch chain: each fixed-width branch tried in written order, in a forward scan starting `k_i` bytes back.	high
+func	vm_look	Emits one lookaround assertion — all four polarity/direction	high
+func	vm_snap	The per-family slot counters as they stand RIGHT NOW — `nguard`, `nlow`,	high
+func	vm_walk_caps	Walks `a`'s AST, calling `on_cap` once per capturing group reachable without crossing a subroutine-call boundary.	high
+func	vm_grp_set_cap	The `vm_walk_caps` callback that marks one visited group number as a member of a region's group set.	high
+func	vm_w_cap_slots	The `vm_walk_caps` callback that turns one visited group number into	high
+func	vm_walk_calls	Walks `a`'s AST, calling `on_call` once per `A_CALL` node reachable without descending into a nested call's own body.	high
+func	vm_publish_nonnull	Publish one round of the nullability fixpoint onto the `A_CALL` nodes. Same	high
+func	vm_publish_saves	Publish `W` onto every `A_CALL` node: `u.call.save`/`nsave`, read by	high
+func	vm_resolve_nonnull	Computes, over the whole callgraph, which subroutine targets are nullable (`a->u.call.nonnullable`), by fixpoint iteration.	high
+func	vm_w_range	Marks slots `[lo, hi)` as members of the save set `w`, clipping to the	high
+func	vm_build_region_saves	Builds each subroutine target's save set `W` -- every slot family a shared callee region can write and must therefore restore on return.	high
+func	vm_memo_region_costs	Memoises each subroutine target's own match Cost, so a caller never has to walk a callee to cost a call.	high
+func	vm_ceiling	How many subject bytes a capacity affords when each byte costs `per`	high
+func	vm_plan_capacities	Decides the artifact's frame/trail/step/work capacity policy from the whole pattern's measured Cost.	high
+func	vm_plan_regions	Decides, for every subroutine target, whether it still needs a shared emitted region and what its transitive group set is.	high
+func	vm_call	Emits a subroutine CALL site: a resume frame carrying the return label, plus trailed self-writes parking the caller's save-set values.	high
+func	vm_splice	Emits a subroutine call whose callee is small and acyclic INLINE, with its own private save slots and its own exit.	high
+func	vm_region	Emits one shared callee region -- the body shared by every non-spliced call to one subroutine target -- after the main body, with its own exit.	high
+func	vm_wordb	`\b` / `\B`. Emits the word-boundary assertion for both polarities —	high
+func	vm_cap	A CAPTURING GROUP's two slot writes and the body between them.	high
+func	vm_bref	A BACKREFERENCE: the DUPNAMES resolution chain, the unset test, the seam	high
+func	vm_cat	A CONCATENATION: the left-leaning spine flattened iteratively, then each	high
+func	vm_emit	THE DISPATCHER: emits `a`'s VM code at label `entry`, continuing at	high
+func	vm_cls_describe	A byte class as a human reads it: 'a', , , or a count when it	high
+func	vm_mask_names	Renders one summary bitmask (rungs or strategies) as a comma-joined TSV cell listing every kind that appears anywhere in the program.	high
+func	vm_sec	One section announcement and its header, which is `#` IMMEDIATELY followed	high
+func	vm_row3	The three-cell row, which is six of the nine sections' shape (`summary`'s	high
+func	vm_listing_slot_row	Writes one row of the `--emit-ir` SLOTS section. The `family` column is	high
+func	vm_listing_slots	Emits every row of one single-index slot family in the SLOTS section. An	high
+func	vm_listing_events	Lists every event of kind `kind`, or states that there are none -- the	high
+func	vm_prow	THE PROGRAM SECTION's row: `label|op|args|target|note`, the column set	high
+func	vm_render_listing	Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream	high
+func	vm_layout	C's struct layout rule, applied to the list: align each member up to its own	high
+func	vm_frame_fields	THE FRAME'S MEMBERS, IN EMISSION ORDER, and the order is load-bearing twice	high
+func	vm_trail_fields	The trail entry. `slot_index` stays `unsigned` deliberately: it indexes the	high
+func	vm_fields_join	Join a member list into one line of struct body text.	high
+func	vm_emit_default_entry	Emits one of the three un-suffixed public entries (`<prefix>_search`/`_match`/`_match_caps`) from one shared template.	high
+local	o	Local variable o	low
+local	l	Unknown or not located in file	no-idea
+local	nd	Local variable nd	low
+local	rmin	Local variable rmin	low
+local	rmax	Local variable rmax	low
+local	bw	Result of computing pcrec_minw(a->l)	medium
+local	nbr	Local variable nbr	low
+local	nt	Local variable nt	low
+local	st	Local variable st	low
+local	cur	Loop counter or index variable	medium
+local	grp	Local variable grp	low
+local	cuts	Local variable cuts	low
+local	fmin	Local variable fmin	low
+local	fit	Local variable fit	low
+local	run	Local variable run	low
+local	rep	Local variable rep	low
+local	up	Local variable up	low
+local	cap	Local variable cap	low
+local	cut	Local variable cut	low
+local	role	Local variable role	low
+local	slot	Local variable slot	low
+local	body	Local variable body	low
+local	base	Local variable base	low
+local	m	Local variable m	low
+local	u	Local variable u	low

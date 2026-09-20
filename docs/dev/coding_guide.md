@@ -321,6 +321,20 @@ the name (`sb_grow` says what growth policy it applies and what it preserves,
 never "grows the buffer"); the three-part (a)/(b)/(c) form is for the ≥50-line
 population this section already describes. `tools/review/function_census.py`'s
 `header` column (see its own module docstring) makes the population countable.
+**[HDR-2] (Frank, 2026-09-20) adds the FIRST-SENTENCE rule, measured
+necessary by the readability experiments
+(`docs/dev/reviews/2026-09-20-readability-experiments.md` §1):** a header's
+first sentence says what the function does in plain words a reader with no
+file context can use — the produced thing or the effect, in domain terms —
+and the invariant, the why-not-the-alternative, the bracketed wave/review
+tags and the cross-references all come AFTER it, never before. An [HDR-1]
+header that opened with a tag, a citation or an invariant instead measurably
+made functions HARDER to guess from (a bounded-evidence experiment: 68%
+correct from the bare signature alone, 57% with such a header attached) even
+though the same headers TRIPLED field comprehension (15% -> 42%) — because a
+field's meaning lives in its comment while a function's often already lives
+in its name, and a header that leads with something else buries that name's
+own payoff under a generic label. Do not restate the name either way.
 
 ---
 
