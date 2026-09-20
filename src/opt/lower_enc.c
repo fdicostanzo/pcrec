@@ -166,6 +166,7 @@ static Ast *lower_class_byte(LowerCtx *lc, Ast *a)
     return NULL;
 }
 
+/* The byte instance's literal reader: one byte at `at`, length 1 always. */
 static unsigned pat_char_byte(Ctx *cx, size_t at, int *len)
 {
     *len = 1;
@@ -199,6 +200,9 @@ typedef struct {
     int   n, cap;
 } U8Branches;
 
+/* Appends `a` to the arena-backed branch list `bl`, growing (doubling from 16)
+ * as needed -- arena-backed rather than malloc'd because this runs inside a
+ * compile that can pcrec_ctx_fail mid-build. */
 static void u8_push_branch(U8Branches *bl, Ast *a)
 {
     if (bl->n == bl->cap) {
@@ -384,6 +388,10 @@ static Ast *lower_class_utf8(LowerCtx *lc, Ast *a)
     }
 }
 
+/* The UTF-8 instance's literal reader: decodes one code point at `at` (length
+ * 1..4), refusing an ill-formed sequence by name -- a lead byte that cannot
+ * start a character, a truncated multi-byte sequence, an overlong encoding, a
+ * surrogate code point, or a value above U+10FFFF. */
 static unsigned pat_char_utf8(Ctx *cx, size_t at, int *len)
 {
     const unsigned char *p = (const unsigned char *)cx->pat;
@@ -432,6 +440,8 @@ static const LowerOps lower_ops[] = {
     { PCREC_ENC_UTF8, 0x7Fu, lower_class_utf8, pat_char_utf8 },
 };
 
+/* The LowerOps instance for cx->opt->encoding, or an internal-error refusal if
+ * the compile gate admitted an encoding this pass does not know. */
 static const LowerOps *ops_for(Ctx *cx)
 {
     for (size_t i = 0; i < sizeof lower_ops / sizeof *lower_ops; i++)
@@ -607,6 +617,13 @@ static void cap_sig(const Ast *a, int *n, uintptr_t *sig)
     }
 }
 
+/* Lowers every A_CLASS in `root` to this encoding's own representation (byte
+ * confinement or UTF-8 byte-sequence alternation, via ops_for's instance),
+ * then asserts the splice-in-place invariant held (R2: the same group roots,
+ * by address AND a structural signature, before and after) -- the one
+ * exception being a bare-A_CLASS-root pattern, whose replacement is asserted
+ * safe only because it can carry no A_CALL that cached the old root as group
+ * 0's body. */
 Ast *pcrec_lower_enc(Ctx *cx, Ast *root)
 {
     LowerCtx lc = { cx, ops_for(cx), 0 };

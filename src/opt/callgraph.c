@@ -121,6 +121,8 @@ struct CallGraph {
 /* Pass 1: how many `A_CALL` nodes, and which targets. */
 typedef struct { int ncap; bool *named; int ncall; } CgScan;
 
+/* pcrec_ast_visit callback, pass 1: counts A_CALL nodes and marks each named
+ * target in `named`. */
 static void cg_scan(void *ud, const Ast *a)
 {
     CgScan *s = ud;
@@ -143,6 +145,10 @@ static void cg_scan(void *ud, const Ast *a)
  * `m`/`n` expectation catches and only a `g` line does. */
 typedef struct { int ncap; const Ast **root; } CgRoots;
 
+/* pcrec_ast_visit callback, pass 2: records the FIRST A_CAP (or the AST root
+ * for group 0) whose group number is `g` as that group's region root -- the
+ * A_CAP node itself is the region, not its child, per the comment above's
+ * measured C3 cell. */
 static void cg_roots(void *ud, const Ast *a)
 {
     CgRoots *r = ud;
@@ -163,12 +169,15 @@ typedef struct {
     int           *cnt;
 } CgEdges;
 
+/* Linear index of target `t` in `cg->target[]`, or -1. */
 static int cg_index(const struct CallGraph *cg, int t)
 {
     for (int i = 0; i < cg->ntarget; i++) if (cg->target[i] == t) return i;
     return -1;
 }
 
+/* pcrec_ast_visit callback, pass 3: for the region being walked, marks and
+ * counts every A_CALL whose target is one of `cg`'s targets. */
 static void cg_edges(void *ud, const Ast *a)
 {
     CgEdges *e = ud;
@@ -193,6 +202,12 @@ static void cg_count(void *ud, const Ast *a)
 
 typedef struct { Ctx *cx; const Ast **root; int ncap; } CgBind;
 
+/* pcrec_ast_visit callback: resolves each A_CALL's `.body` to its target's
+ * region root (asserting rather than silently emitting nothing, since a NULL
+ * body here is always a miscompile upstream) and sets `.link` to CALL_LINKAGE
+ * for every site -- wave G's splice pass replaces the eligible ones later; the
+ * arena's own zero value is CALL_SPLICE, the unsound default for a recursive
+ * call, so every site must be set explicitly here. */
 static void cg_bind(void *ud, const Ast *a)
 {
     CgBind *b = ud;
@@ -225,6 +240,8 @@ static void cg_bind(void *ud, const Ast *a)
 
 typedef struct { const struct CallGraph *cg; const long long *val; } CgMinw;
 
+/* pcrec_ast_visit callback: publishes the minw fixpoint's resolved value for a
+ * call's target onto that A_CALL node (0 for a target outside `cg`). */
 static void cg_minw_publish(void *ud, const Ast *a)
 {
     CgMinw *m = ud;
@@ -275,6 +292,10 @@ static void cg_minw_publish(void *ud, const Ast *a)
 
 typedef struct { const struct CallGraph *cg; const long long *val; } CgCwmax;
 
+/* pcrec_ast_visit callback: publishes the cwmax fixpoint's resolved value (and
+ * cwmax_known) for a call's target onto that A_CALL node -- an unrecognised
+ * target answers PCREC_W_UNBOUNDED/false, the safe over-estimate rather than a
+ * miscompile. */
 static void cg_cwmax_publish(void *ud, const Ast *a)
 {
     CgCwmax *m = ud;
@@ -303,6 +324,9 @@ static void cg_cwmax_publish(void *ud, const Ast *a)
 
 typedef struct { const struct CallGraph *cg; const long long *val; } CgCwmin;
 
+/* pcrec_ast_visit callback: publishes the cwmin fixpoint's resolved value for
+ * a call's target onto that A_CALL node (0 for a target outside `cg`, a sound
+ * pre-fixpoint read since cwmin's safe direction is under-estimation). */
 static void cg_cwmin_publish(void *ud, const Ast *a)
 {
     CgCwmin *m = ud;
@@ -410,6 +434,10 @@ static void cg_cwmin_publish(void *ud, const Ast *a)
  * against a rule with one answer per callee. Per-site remains available and
  * costs nothing structural: `link` is already a per-NODE field. */
 
+/* pcrec_ast_visit callback: upgrades a call's `.link` from CALL_LINKAGE to
+ * CALL_SPLICE when its target was decided spliceable -- never the reverse, and
+ * a target the graph does not carry keeps its linked default (an unknown
+ * callee has no body to inline). */
 static void cg_publish_link(void *ud, const Ast *a)
 {
     const struct CallGraph *cg = ud;
@@ -438,6 +466,9 @@ long long pcrec_cg_sat_add(long long a, long long b)
     return r >= CG_EXP_INF ? CG_EXP_INF : r;
 }
 
+/* Saturating multiply at CG_EXP_INF: 0 for a non-positive operand, CG_EXP_INF
+ * on overflow or either operand already at the ceiling -- pcrec_cg_sat_add's
+ * own multiply sibling. */
 long long pcrec_cg_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
@@ -548,6 +579,13 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
  * a separate walk and not a branch inside `cg_publish_link`. */
 typedef struct { Ctx *cx; const struct CallGraph *cg; } CgDeliver;
 
+/* pcrec_ast_visit callback: forces CALL_SPLICE onto every delivering A_CALL (a
+ * call whose target the composer's export list actually delivers from),
+ * refusing rather than silently downgrading when the callee cannot be spliced
+ * -- naming which of the two causes applies (a recursive definition has no
+ * finite inlining; a non-recursive one just missed this build's budget or was
+ * denied by -fno-splice-calls). See the call site in pcrec_callgraph_build for
+ * why this runs as its own separate walk. */
 static void cg_force_deliver_splice(void *ud, const Ast *a)
 {
     const CgDeliver *d = ud;
@@ -841,31 +879,38 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     }
 }
 
+/* Target count, or 0 for a NULL graph (a call-free pattern). */
 int pcrec_callgraph_ntargets(const struct CallGraph *cg)
 {
     return cg ? cg->ntarget : 0;
 }
 
+/* Target i's group number. */
 int pcrec_callgraph_target(const struct CallGraph *cg, int i)
 {
     return cg->target[i];
 }
 
+/* Target i's resolved region root. */
 const Ast *pcrec_callgraph_body(const struct CallGraph *cg, int i)
 {
     return cg->body[i];
 }
 
+/* cg_index, exposed: target `target`'s index in `cg`, or -1. */
 int pcrec_callgraph_index(const struct CallGraph *cg, int target)
 {
     return cg_index(cg, target);
 }
 
+/* True iff target i's reachability closure includes target j. */
 bool pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j)
 {
     return cg->reach[(size_t)i * (size_t)cg->ntarget + (size_t)j] != 0;
 }
 
+/* True iff target i was decided spliceable (tolerates a NULL graph or splice
+ * array). */
 bool pcrec_callgraph_spliced(const struct CallGraph *cg, int i)
 {
     return cg && cg->splice && cg->splice[i];

@@ -301,6 +301,12 @@ static const RegRow *first_dfa_excluding(const Ast *a)
     }
 }
 
+/* Engine mask contributed by the first VM-only registry row reached in the
+ * tree (first_dfa_excluding): ENGM_DFA|ENGM_VM (no constraint) if none, else
+ * ENGM_VM with `*why`/`*why_pos` set to the row's own `syntax` text (or
+ * "possessive quantifier" for an RK_QUANTSUFFIX row, whose `syntax` is an
+ * EXAMPLE atom rather than the construct itself) -- the generic mechanism that
+ * reproduces [M6.2] wave E's hand-written \K diagnostic byte for byte. */
 static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
                                 const char **why)
 {
@@ -353,6 +359,12 @@ static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
  * exactly one `setjmp` in it (`compile_driver`'s), so feeding the result
  * back means running the pass again with one more input bit, not adding a
  * second recovery point around the DFA build. */
+/* Engine mask contributed by a PRIOR compile attempt's DFA overflow:
+ * ENGM_DFA|ENGM_VM (no constraint) on the first pass, since selection runs
+ * before the DFA is built; ENGM_VM with cx->dfa_overflow_why once
+ * compile_driver's one-shot retry has set cx->dfa_disabled -- the general
+ * "feed the result back through the one setjmp" mechanism, not a special case
+ * (see the comment above). */
 static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
                                     const char **why)
 {

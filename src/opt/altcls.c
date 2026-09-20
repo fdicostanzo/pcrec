@@ -374,6 +374,9 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
     return altcls_rebuild_alt(cx, br, n);
 }
 
+/* Flattens an A_CAT spine (altcls_cat_flatten) and applies altcls_walk to each
+ * member, rebuilding the spine (altcls_rebuild_cat) only if some member
+ * actually rewrote. */
 static Ast *altcls_walk_cat(Ctx *cx, Ast *a)
 {
     Ast **arr;
@@ -509,6 +512,7 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     return a;   /* unreachable under -Wswitch (make strict); mrl.c's rule */
 }
 
+/* Entry point: altcls_walk over the whole tree. */
 Ast *pcrec_altcls(Ctx *cx, Ast *root)
 {
     return altcls_walk(cx, root);

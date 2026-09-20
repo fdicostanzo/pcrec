@@ -242,6 +242,7 @@ bool pcrec_state_view_invariant(const DState *st)
     return true;
 }
 
+/* Membership eligibility for a scan chain: pcrec_state_view_invariant(st). */
 static bool member_ok(const DState *st) { return pcrec_state_view_invariant(st); }
 
 /* Precondition (1) for ONE class: is `s` scan-shaped for (cls, *exit)? */
@@ -260,6 +261,8 @@ static bool shaped(const Dfa *d, int s, int cls, int *exit)
     return true;
 }
 
+/* True iff state `s` is accepting under the plain (no-view) class; false for s
+ * < 0. */
 static int acc_of(const Dfa *d, int s)
 { return s < 0 ? 0 : d->st[s].up[UPC_PLAIN].accept != 0; }
 
@@ -453,6 +456,9 @@ static int collect(const Dfa *d, int cls, const int *indeg, const bool *ok,
 
 /* ---- selection: longest first, no overlaps ------------------------------ */
 
+/* qsort comparator ranking chains: unbounded (span < 0) beats any bounded
+ * chain, then more members wins, then the lower head state number for a
+ * deterministic tie-break. */
 static int chain_cmp(const void *a, const void *b)
 {
     const Chain *x = a, *y = b;
