@@ -105,7 +105,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   this tree has.
 
 - **sb_stamp_check.c** — [REVW.2] wave 2, EP2 step 10 / lens 1 X8:
-  `sb_stampf`/`pcrec_sb_stampwf`/`pcrec_sb_stamp_str`, the artifact-stamp primitives,
+  `pcrec_sb_stampf`/`pcrec_sb_stampwf`/`pcrec_sb_stamp_str`, the artifact-stamp primitives,
   which emit `#define <UPPER>_<NAME> <value>` at all 73 former hand-written
   stamp sites across the two emitters. **ITS JUSTIFICATION IS THE OPPOSITE
   OF `sb_fragf_check.c`'s ABOVE, and the file's header says so first**: every

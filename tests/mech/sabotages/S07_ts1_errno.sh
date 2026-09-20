@@ -25,8 +25,8 @@ SAB_COUNT=1
 # declaration alone, where it would match TWICE and SAB_COUNT=1 would stop
 # resolving exactly as it did in 2026-08-29.
 SAB_BEFORE='               "    // match wins.\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_puts(c, "    size_t scan_position = search_from;\n"'
 SAB_AFTER='               "    // match wins.\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_puts(c, "    size_t scan_position = search_from; (void)errno;\n"'

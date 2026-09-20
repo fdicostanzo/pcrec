@@ -54,7 +54,7 @@ void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
         sb->cmt_mute_depth = sb->cmt_depth;
 }
 
-void sb_cmt_close(StrBuf *sb)
+void pcrec_sb_cmt_close(StrBuf *sb)
 {
     /* An unbalanced close would leave the buffer muted for the rest of the
      * compile — silent, total, and exactly the shape that is hard to
@@ -258,7 +258,7 @@ const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
  * is the one implementation the three entry points share.
  *
  * `%-*s` AT WIDTH 0 IS THE UNPADDED CASE: a printf field width of zero states
- * no minimum, so `sb_stampf` is `pcrec_sb_stampwf` with the padding asked for and
+ * no minimum, so `pcrec_sb_stampf` is `pcrec_sb_stampwf` with the padding asked for and
  * not supplied, rather than a second spelling of the line. The separator
  * space is emitted HERE and not inside the width, which is what makes a
  * padded name and an over-long one produce the same one-space minimum the
@@ -275,7 +275,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
     sb_putc(c, '\n');
 }
 
-void sb_stampf(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stampf(StrBuf *c, const char *upper, const char *name,
                const char *valfmt, ...)
 {
     va_list ap;
@@ -296,7 +296,7 @@ void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
 void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value)
 {
-    sb_stampf(c, upper, name, "\"%s\"", value);
+    pcrec_sb_stampf(c, upper, name, "\"%s\"", value);
 }
 
 /* ---- THE UPPERCASED NAME ([REVW.2] wave 2; lens 10 item 2; D108) --------

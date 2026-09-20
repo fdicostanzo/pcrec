@@ -27,7 +27,7 @@
 SAB_ID="S224-vm-frameless-stamp-inverted"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vmframeless"
-SAB_DESC="The RX_VM_FRAMELESS stamp's value is written has_push ? 1 : 0 instead of has_push ? 0 : 1 -- the two arms swapped at the sb_stampf call, so a PUSHING program (needs the fail label's dispatch) stamps FRAMELESS 1 and a FRAMELESS program stamps FRAMELESS 0. No answer moves: the fail label's own dispatch omission is written from has_push directly at a separate emission site, unaffected by this stamp"
+SAB_DESC="The RX_VM_FRAMELESS stamp's value is written has_push ? 1 : 0 instead of has_push ? 0 : 1 -- the two arms swapped at the pcrec_sb_stampf call, so a PUSHING program (needs the fail label's dispatch) stamps FRAMELESS 1 and a FRAMELESS program stamps FRAMELESS 0. No answer moves: the fail label's own dispatch omission is written from has_push directly at a separate emission site, unaffected by this stamp"
 SAB_DOC_FIGURE="MEASURED 2026-09-19 (adm71 item 2, solo mech run, tree d5ea41a7903417dd6c321e3443340423efdbe42f): DETECTED, unexpected: 0 -- reach:ok(1/1), vmframeless:7fail/4pass. UNCHANGED from the 2026-09-03 figure -- the split is arithmetic, not incidental, and holds regardless of the suite's own top-level check count moving over time (six outcome points on a CLEAN run today: the §1 six-witness summary, the §1 negative control, §2's pure-DFA IFF half, the §3 corpus-sweep aggregate, and the two per-axis §3 population floors). The inversion is a BIJECTION on {0,1}, so it wrongly flips ALL SIX §1 named witnesses individually (each prints its own FAIL line from inside witness(), bypassing what would have been ONE aggregate ok() at line 148) plus the §3 corpus-sweep aggregate -- 7 bad() calls where a clean run would print 2 ok()s. The remaining 4 passes are unaffected by construction: §1's negative control and the two §3 per-axis floors read the (still-inverted, still bijective) population sizes, which do not collapse; §2's pure-DFA IFF is untouched because the sabotaged stamp write lives inside emit_vm.c's VM-only path and is never reached for a --no-captures pure-DFA artifact. Confirms detection still holds through §1's per-witness value-mismatch assertions and §3's corpus sweep, no answer moves anywhere else in the tree."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree a
 # capture-bearing straight-line pattern compiles to a VM program and stamps
@@ -36,9 +36,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-19 (adm71 item 2, solo mech run, tree d5ea41a79
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "(a)b" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 1" "$REACH_TMP/o.c" && echo REACH-FRAMELESS-STAMP-CORRECT'
 SAB_REACH_EXPECT="REACH-FRAMELESS-STAMP-CORRECT"
 SAB_COUNT=1
-SAB_BEFORE='    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
+SAB_BEFORE='    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
 SAB_AFTER='    /* SABOTAGE S224: the stamp two arms are swapped -- a pushing
      * program now reads FRAMELESS 1 and a frameless one reads FRAMELESS 0.
      * No answer moves; the fail label dispatch omission below is written
      * from has_push directly, at its own separate site. */
-    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 1 : 0);'
+    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 1 : 0);'

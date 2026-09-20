@@ -195,7 +195,7 @@ that aborts instead (L8-F4).
 
 ---
 
-**2.6 Emitting an artifact stamp: `sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str`**
+**2.6 Emitting an artifact stamp: `pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str`**
 (`core/internal.h`, landed [REVW.2] wave 2, 2026-09-18). One
 `#define <UPPER>_<NAME> <value>` line. All 73 former hand-written stamp sites
 across `emit_vm.c` (52) and `emit_dfa.c` (21) are on them, and a new
@@ -203,7 +203,7 @@ hand-written `sb_printf(c, "#define %s_...")` is a finding against you.
 
 ```c
 pcrec_sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
-sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
+pcrec_sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
 pcrec_sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
 ```
 

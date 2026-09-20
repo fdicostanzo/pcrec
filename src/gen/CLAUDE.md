@@ -41,7 +41,7 @@ what changed is which build is the default. Measured 44.2 % of a default
 artifact's source bytes over the 3,517 compiling corpus patterns.
 
 **WHEN YOU ADD A COMMENT-EMITTING SITE HERE, BRACKET IT.**
-`pcrec_sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `sb_cmt_close(buf)` around every
+`pcrec_sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `pcrec_sb_cmt_close(buf)` around every
 whole-line comment you emit; `PCREC_CMT_ESSENTIAL` exists and has exactly two
 users, both in `emit_dfa.c`, and a third needs D112's own reasoning. A site
 left unbracketed ships in every default artifact — which
@@ -797,7 +797,7 @@ this function rather than getting call sites of its own.
 
 ## [REVW.2] wave 2 (2026-09-18) — EVERY STAMP LINE IN BOTH EMITTERS IS ONE HELPER CALL
 
-`sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` (`src/core/sb.c`,
+`pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` (`src/core/sb.c`,
 `core/internal.h`) write `#define <UPPER>_<NAME> <value>`. **73 hand-typed
 format strings — 52 in `emit_vm.c`, 21 in `emit_dfa.c` — are now literal NAME
 arguments in a fixed position**, which is lens 1 X8's real payoff: D94 rules

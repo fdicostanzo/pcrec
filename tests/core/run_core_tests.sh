@@ -82,7 +82,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `sb_stampf`/`pcrec_sb_stampwf`/
+# [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `pcrec_sb_stampf`/`pcrec_sb_stampwf`/
 # `pcrec_sb_stamp_str`, the artifact-stamp primitives. UNLIKE `pcrec_sb_fragf` above,
 # every byte these write lands in the emitted `.c`, so the four byte-identity
 # gates DO see a defect in them; what this check adds is WHICH PROPERTY broke

@@ -3013,7 +3013,7 @@ static void vm_lbl(Vm *v, int id, const char *role)
     if (role && *role) {
         pcrec_sb_cmt_open(v->b, PCREC_CMT_NONESSENTIAL);
         sb_printf(v->b, "// %s\n", role);
-        sb_cmt_close(v->b);
+        pcrec_sb_cmt_close(v->b);
     }
     sb_printf(v->b, "%s_L%d: __attribute__((unused));\n", v->p, id);
     vm_ev(v, VE_LABEL, id, 0, role);
@@ -7933,7 +7933,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
     sb_puts(bb,
         "        /* No PUBLISHED capture on this path. PCRE2 FAILS here;\n"
         "         * it does not match the empty string. */\n");
-    sb_cmt_close(bb);
+    pcrec_sb_cmt_close(bb);
     sb_printf(bb,
         "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
         "        took = %s(subject, subject_length,\n"
@@ -9316,7 +9316,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             " * inlined, these arrays would be back on the entry's own frame and\n"
             " * gcc would probe every one of their pages on every call, which is\n"
             " * the whole of what this shape exists to avoid. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "static __attribute__((noinline)) %s %s_deep(%s)\n"
             "{\n"
@@ -9348,7 +9348,7 @@ static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered, bool fwd,
             "     * entry gave before the tier existed -- match, no-match or any\n"
             "     * give-up, FRAMES included. Every other outcome is already\n"
             "     * that answer and returns here. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "    if (result != %s) return result;\n"
             "    %s_TIER_NOTE();\n"
@@ -9965,7 +9965,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     else
         sb_printf(c, "/* Step steps_left: none (--fno-step-steps_left); backtrack "
                      "frames: %lld */\n", bt_frames);
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     pcrec_emit_engine_stamp(c, v.up, "vm", pcrec_engine_sel_name(cx));
     sb_puts(c, "#define ");
     sb_printf(c, "%s_ENGINE_WHY ", v.up);
@@ -10086,7 +10086,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * `RX_VM_PREFILTER "none"` beside it; this line explains the
              * prefilter that is there instead. The measured NFA is the EXACT
              * machine's, i.e. the scale of what the collapse avoided. */
-            sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
+            pcrec_sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
                       "\"dfa overflow retry, exact nfa %u\"",
                       job->fit.prefilter_nfa_states);
             break;
@@ -10095,7 +10095,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * that was refused and the cap it exceeded — not NFA states —
              * because that is the comparison that caused this retry, and a
              * reader deciding whether to raise a cap instead needs it. */
-            sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
+            pcrec_sb_stampf(c, v.up, "VM_PREFILTER_LANG_WHY",
                       "\"size cap retry, exact %llu > %llu\"",
                       job->fit.prefilter_sizecap_bytes,
                       job->fit.prefilter_sizecap_limit);
@@ -10155,8 +10155,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact is byte-identical to what it was — §9.1's claim held by
      * construction rather than by a filtered diff. */
     if (v.has_calls) {
-        sb_stampf(c, v.up, "VM_CALL_SPLICED", "%lld", v.nsplicesite);
-        sb_stampf(c, v.up, "VM_CALL_LINKED",  "%lld", v.ncall);
+        pcrec_sb_stampf(c, v.up, "VM_CALL_SPLICED", "%lld", v.nsplicesite);
+        pcrec_sb_stampf(c, v.up, "VM_CALL_LINKED",  "%lld", v.ncall);
     }
     /* [ART-SIZE] THE SIZE TERM'S SELECTION FACTS (D81, D84;
      * docs/design/artifact_size_term.md §7.1). UNCONDITIONAL on every VM
@@ -10172,14 +10172,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * The two `_MAX_EMIT_*` lines report the EFFECTIVE limits this artifact
      * was built under, so a reader can tell an artifact that fitted from one
      * built with a raised cap without having the command line. */
-    sb_stampf(c, v.up, "UNROLL_K", "%d", v.unroll_k);
+    pcrec_sb_stampf(c, v.up, "UNROLL_K", "%d", v.unroll_k);
     pcrec_sb_stamp_str(c, v.up, "UNROLL_K_WHY",
                  cx->size_term_why ? cx->size_term_why : "default");
-    sb_stampf(c, v.up, "MAX_EMIT_CODE_BYTES", "%llu",
+    pcrec_sb_stampf(c, v.up, "MAX_EMIT_CODE_BYTES", "%llu",
               cx->opt->max_emit_code_bytes
                   ? (unsigned long long)cx->opt->max_emit_code_bytes
                   : (unsigned long long)PCREC_MAX_VM_EMIT_CODE_BYTES);
-    sb_stampf(c, v.up, "MAX_EMIT_BYTES", "%llu",
+    pcrec_sb_stampf(c, v.up, "MAX_EMIT_BYTES", "%llu",
               cx->opt->max_emit_bytes
                   ? (unsigned long long)cx->opt->max_emit_bytes
                   : (unsigned long long)PCREC_MAX_EMIT_BYTES);
@@ -10199,8 +10199,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * INFINITY, which SS12 P-12 rules a legal compile meaning the\n"
             " * language is EMPTY. <prefix>_search answers NOMATCH before any\n"
             " * frame is pushed. */\n");
-        sb_cmt_close(c);
-        sb_stampf(c, v.up, "VM_ROOT_MINW", "%lluULL",
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_stampf(c, v.up, "VM_ROOT_MINW", "%lluULL",
                   (unsigned long long)root_minw);
     }
     /* [CC-CLANG fix, 2026-09-01] IS THERE ANY RESUME FRAME TO POP — read off
@@ -10254,7 +10254,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * TEXT — so a third unread mirror would be built ahead of a measured
      * need (D77). The trigger that would make one owed is the same one
      * `RX_DFA_TABLE`'s spec entry names. */
-    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);
+    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);
     /* [ENG-ISL] THE ALTERNATION-ISLAND STAMP — §6.3 family (b), VM route only,
      * UNCONDITIONAL on every VM artifact including a hybrid, `0` spelled as
      * readily as any other value. A fact readable by a macro's ABSENCE is the
@@ -10270,7 +10270,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today, so a mirror would be built
      * ahead of a measured need (D77). */
-    sb_stampf(c, v.up, "VM_ALT_ISLANDS", "%lld", v.nislands);
+    pcrec_sb_stampf(c, v.up, "VM_ALT_ISLANDS", "%lld", v.nislands);
     /* [FORM-CHAR] STEP 1 — THE FOLD-FORM STAMP, §6.3 family (b), VM route
      * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
      * spelled as readily as any other value (the `_FAST_FRAMES`/[DD-13]
@@ -10287,7 +10287,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      *
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today (D77). */
-    sb_stampf(c, v.up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(&v));
+    pcrec_sb_stampf(c, v.up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(&v));
     /* [CC-DIFF] STEP 1 (a) — THE INLINE ATTRIBUTE ON THE ENTRY CHAIN'S
      * HELPERS, AND IT RIDES `has_push` RATHER THAN RE-DERIVING ANYTHING.
      *
@@ -10466,7 +10466,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
      * four-arm ladder that stood here was the second of three spellings. */
     pcrec_sb_stamp_str(c, v.up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(shape));
-    sb_stampf(c, v.up, "VM_PROGRAM_BYTES", "%lluULL",
+    pcrec_sb_stampf(c, v.up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
@@ -10499,7 +10499,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * "the layout below is FINAL" ruling), and adding a field is an abi-
      * version-bump event this close does not take on its own -- flagged for
      * the manager rather than done here. */
-    sb_stampf(c, v.up, "VM_RUNGS", "0x%xu", v.rungs);
+    pcrec_sb_stampf(c, v.up, "VM_RUNGS", "0x%xu", v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
      * reason: possessification is decided PER A_REP, so an artifact whose
@@ -10520,7 +10520,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * class of pcrec-contract fact as the rung bits above, and moved to the
      * shared block the same way — see that comment. Only the OR'd MASK
      * below stays here. */
-    sb_stampf(c, v.up, "VM_STRATS", "0x%xu", v.strats);
+    pcrec_sb_stampf(c, v.up, "VM_STRATS", "0x%xu", v.strats);
     /* [M4.6d] the PRUNE stamp: the same shape and the same place as the two
      * above, plus one thing neither of them needs — the CEILING FORM, which
      * is a property of the ARTIFACT rather than of a quantifier and is
@@ -10536,7 +10536,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED/_UNCLAMPED moved to the shared
      * block for the same reason as the rung/strategy bits above; only the
      * OR'd MASK below stays here. */
-    sb_stampf(c, v.up, "VM_PRUNES", "0x%xu", v.prunes);
+    pcrec_sb_stampf(c, v.up, "VM_PRUNES", "0x%xu", v.prunes);
     /* The CEILING the artifact actually uses, and "none" when it uses none —
      * which is the same word whether the analysis produced nothing or was
      * DENIED. That identity is deliberate and load-bearing: `-fno-length-prune`
@@ -10558,11 +10558,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * and its accept/fail to STDERR as it runs. It is a DEBUG build\n"
             " * and nothing else: it writes to stderr, it is not fast, and it\n"
             " * is never what a plain invocation produces. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_puts(c, "#include <stdio.h>\n");
-        sb_stampf(c, v.up, "TRACE", "1");
+        pcrec_sb_stampf(c, v.up, "TRACE", "1");
     }
-    sb_stampf(c, v.up, "NSLOTS", "%d", nstate < 1 ? 1 : nstate);
+    pcrec_sb_stampf(c, v.up, "NSLOTS", "%d", nstate < 1 ? 1 : nstate);
 
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
@@ -10578,7 +10578,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                    " * its end. The whole-match pair is listed for completeness: the\n"
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         for (int sl = 0; sl < nstate; sl++) {
             const char *nm = vm_slot_name(&v, sl);
             if (!nm) continue;
@@ -10597,9 +10597,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * caller. Spec §10.4 states the move; §10.8 announces it as one of the
      * two things that change. */
     if (has_budget)
-        sb_stampf(c, v.up, "STEP_BUDGET", "%lldLL", budget);
+        pcrec_sb_stampf(c, v.up, "STEP_BUDGET", "%lldLL", budget);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
-        sb_stampf(c, v.up, "WORK_BUDGET", "%lldLL", work_budget);
+        pcrec_sb_stampf(c, v.up, "WORK_BUDGET", "%lldLL", work_budget);
     /* [OPT-1] THE FAST TIER'S TWO CAPACITY STAMPS (docs/spec/match_api.md
      * §10.4, docs/design/two_tier_entry.md §6).
      *
@@ -10618,8 +10618,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * appeared only on tiered artifacts would make the fact readable by a
      * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
      * back and fix in two checks. */
-    sb_stampf(c, v.up, "FAST_FRAMES", "%lld", fast_frames);
-    sb_stampf(c, v.up, "FAST_TRAIL",  "%lld", fast_trail);
+    pcrec_sb_stampf(c, v.up, "FAST_FRAMES", "%lld", fast_frames);
+    pcrec_sb_stampf(c, v.up, "FAST_TRAIL",  "%lld", fast_trail);
     sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
@@ -10644,7 +10644,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * artifacts (a call-bearing one carries two more members), which is\n"
             " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
             " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_puts(c, "typedef struct { ");
         vm_fields_join(c, frame_fields, nframe_fields);
         sb_printf(c, " } %s_frame;\n", v.p);
@@ -10652,7 +10652,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_puts(c,
             "/* One entry of the undo log: a slot's index and the value it held\n"
             " * before the write being logged. Same privacy, same reason. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_puts(c, "typedef struct { ");
         vm_fields_join(c, trail_fields, ntrail_fields);
         sb_printf(c, " } %s_trail_entry;\n\n", v.p);
@@ -10697,7 +10697,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " *                 matching loop serve both entries.\n"
         " *   *_depth       how many entries of each are currently live\n"
         " */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "typedef struct {\n"
         "    ptrdiff_t slot_values[%s_NSLOTS];\n"
@@ -10795,7 +10795,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * local -- which is why those entries have large stack frames on a\n"
             " * pattern whose depth is unbounded, and why <prefix>_search_in with a\n"
             " * caller's buffer does not. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "typedef struct {\n"
         "    %s_frame       frames[%s_RESUME_FRAMES];\n"
@@ -10827,7 +10827,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * page-budgeted capacities. Sized so that this struct plus the\n"
             " * run state stays inside one 4 KB guard page, which is what keeps\n"
             " * gcc's stack-clash probe off the entry's hot path. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "typedef struct {\n"
             "    %s_frame       frames[%s_FAST_FRAMES];\n"
@@ -10887,7 +10887,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * nothing — the region exit's own guard turns that into
      * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
     if (v.has_linked_calls) {
-        sb_stampf(c, v.up, "CALL_TOP_NONE", "%s", "((size_t)-1)");
+        pcrec_sb_stampf(c, v.up, "CALL_TOP_NONE", "%s", "((size_t)-1)");
         sb_putc(c, '\n');
     }
 
@@ -10912,7 +10912,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "/* Charge forward work the backtracker never sees. A scan that\n"
             " * races over a megabyte costs no STEPS -- it never backtracks --\n"
             " * so without this meter a slow attempt would look costless. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "#define %s_CHARGE_WORK(n_) do {                                    \\\n"
             "        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \\\n"
@@ -10964,7 +10964,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * to SHORTEN a scan rather than abandon it, rounded down to a\n"
             " * whole number of iterations so the cursor stays on a position\n"
             " * the loop could actually have stopped at. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "#define %s_PRUNE_TOO_SHORT(p_, mr_) \\\n"
             "    ((%s_window_end) < (size_t)(mr_) || (%s_window_end) - (size_t)(mr_) < (p_))\n"
@@ -11075,7 +11075,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                 " * label to come back to. It is NOT popped by the return --\n"
                 " * the callee's choice points stay live across it, so a later\n"
                 " * failure can retreat back INTO the call. */\n");
-            sb_cmt_close(c);
+            pcrec_sb_cmt_close(c);
             sb_printf(c,
                 "#define %s_CALL(ret_, p_) do {                               \\\n"
                 "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
@@ -11125,7 +11125,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "/* Point a run state at its working storage. Called BEFORE\n"
         " * <prefix>_run_state_init, which must not disturb these four\n"
         " * fields -- see its comment. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %svoid %s_run_state_bind(%s_run_state *run,\n"
         "                        void *frames, size_t nframes,\n"
@@ -11147,7 +11147,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * function runs after it. Re-zeroing them would leave every buffered\n"
         " * call matching against a NULL stack or a capacity of 0\n"
         " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %svoid %s_run_state_init(%s_run_state *run)\n"
         "{\n"
@@ -11190,7 +11190,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * here too, for the same reason and one step further along: a\n"
         " * bump-along to the next start position keeps the caller's buffers\n"
         " * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %svoid %s_reset_for_next_attempt(%s_run_state *run)\n"
         "{\n"
@@ -11248,7 +11248,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             " * side. Prefilter-before-VM is therefore an ORDERING RULE (4.7),\n"
             " * not a tuning knob: a pattern whose prefilter can answer must\n"
             " * never reach the step budget. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         pcrec_emit_dfa_engine(cx, prefn, "static ");
         sb_puts(c, "\n");
     }
@@ -11409,7 +11409,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "     * slots at this instant are the answer — no candidate comparison,\n"
         "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
         "     * filled by the ENTRY, not here (3.4). */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "%s"
         "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
@@ -11436,7 +11436,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "     * thing it is meant to bound. D22: DD-2 is ROBUSTNESS, not a\n"
             "     * security boundary, and it must not be traded against\n"
             "     * execution speed. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "%s%s%s",
         fail_tr, exhaust_tr,
@@ -11571,7 +11571,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * whole-match pair is not written by the VM at all -- the entry knows\n"
         " * where the attempt began and how long it ran. Group g lives in the\n"
         " * slot PAIR (2g, 2g+1), which is why this indexes arithmetically. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %svoid %s_report_captures(const %s_run_state *run, ptrdiff_t (*capture_spans)[2],\n"
         "                        size_t match_start, ptrdiff_t match_length)\n"
@@ -11614,7 +11614,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     sb_puts(c,
         "/* The search loop. Called by both entries below with a run state\n"
         " * already pointed at its working storage. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
         "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run)\n"
@@ -11911,7 +11911,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "/* [CC-DIFF] the frameless forward's descriptor: this artifact\n"
             " * writes no resume frame and no trail entry, so the three\n"
             " * un-suffixed entries below bind nothing and forward. */\n");
-        sb_cmt_close(c);
+        pcrec_sb_cmt_close(c);
         sb_printf(c,
             "static const %s_buffers %s_no_buffers = { (void *)0, 0, (void *)0, 0 };\n\n",
             v.p, v.p);
@@ -11933,7 +11933,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * regions, both of them scratch, sized in FRAMES and ENTRIES rather\n"
         " * than bytes. A give-up still reports PCREC_ERR_FRAMES and does not\n"
         " * say whose buffer ran out; retrying with a larger one is defined. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
         "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
@@ -12014,7 +12014,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * inner give-up read as a plain path failure, so an outer match could\n"
         " * report an ANSWER where a bound had actually blown. A caller that\n"
         " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %sptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
         "{\n"
@@ -12044,7 +12044,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "     * it exactly like a give-up, for the same top-level-entry\n"
         "     * reason <prefix>_search does). A defensive floor test here\n"
         "     * would be dead code pretending to be a safeguard. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_puts(c,
         "    return result;\n"
         "}\n\n");
@@ -12057,7 +12057,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
         " * every negative return, give-up included: a caller that gave up has\n"
         " * no captures, and A-8's untouched-wins rule does not bend for it. */\n");
-    sb_cmt_close(c);
+    pcrec_sb_cmt_close(c);
     sb_printf(c,
         "static %sptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
         "                        %s_run_state *run)\n"

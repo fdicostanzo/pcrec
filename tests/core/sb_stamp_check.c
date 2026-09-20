@@ -93,7 +93,7 @@ int main(void)
             if (!nm) { bad("1: out of memory building the sweep input"); break; }
             for (int i = 0; i < len; i++) nm[i] = (char)('A' + (i % 26));
             nm[len] = 0;
-            sb_stampf(&SB, "RX", nm, "%d", len);
+            pcrec_sb_stampf(&SB, "RX", nm, "%d", len);
             take(got, sizeof got);
             int rn = snprintf(ref, sizeof ref, "#define RX_%s %d\n", nm, len);
             rows++;
@@ -153,10 +153,10 @@ int main(void)
         int n = (int)(sizeof row / sizeof row[0]), bad_rows = 0;
         char got[256];
         for (int i = 0; i < n; i++) {
-            if (i == 0)      sb_stampf(&SB, "RX", row[i].name, row[i].fmt, 31u);
-            else if (i == 1) sb_stampf(&SB, "RX", row[i].name, row[i].fmt, (unsigned long long)31);
-            else if (i == 2) sb_stampf(&SB, "RX", row[i].name, row[i].fmt, (long long)31);
-            else             sb_stampf(&SB, "RX", row[i].name, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
+            if (i == 0)      pcrec_sb_stampf(&SB, "RX", row[i].name, row[i].fmt, 31u);
+            else if (i == 1) pcrec_sb_stampf(&SB, "RX", row[i].name, row[i].fmt, (unsigned long long)31);
+            else if (i == 2) pcrec_sb_stampf(&SB, "RX", row[i].name, row[i].fmt, (long long)31);
+            else             pcrec_sb_stampf(&SB, "RX", row[i].name, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
             take(got, sizeof got);
             if (strcmp(got, row[i].want) != 0) {
                 char m[320];

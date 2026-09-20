@@ -1645,7 +1645,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 if (bufs[bi]->cmt_depth != 0)
                     ctx_fail(&cx, 0, "internal error: the emitter left a "
                                      "comment region open (an pcrec_sb_cmt_open "
-                                     "with no sb_cmt_close)");
+                                     "with no pcrec_sb_cmt_close)");
         }
 
         /* [ART-SIZE] MEASURE, then let the phase machine decide (D84;

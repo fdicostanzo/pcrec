@@ -127,7 +127,7 @@ void pcrec_sb_comments(StrBuf *sb, bool on);
  * every other append in this file is built on — so it cannot be bypassed by a
  * helper, present or future. */
 void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
-void sb_cmt_close(StrBuf *sb);
+void pcrec_sb_cmt_close(StrBuf *sb);
 
 /* The length this buffer would have had with comments ON — `len` plus every
  * byte a muted region discarded. THE ONE READER RULE: any decision or stamp
@@ -278,7 +278,7 @@ const char *pcrec_sb_upper(Arena *a, const char *s);
  *
  * D108: DATA IN, TEXT OUT. A `StrBuf *` and three values; no `Ctx`, no walk,
  * no machine — so a back-end fed from a deserialized IR stamps identically. */
-void sb_stampf (StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stampf (StrBuf *c, const char *upper, const char *name,
                 const char *valfmt, ...)
       __attribute__((format(printf, 4, 5)));
 void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,

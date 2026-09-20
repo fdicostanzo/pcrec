@@ -5,7 +5,7 @@
 # on every VM artifact, hybrids included: the file own comment states this
 # explicitly ("A fact readable by a macro ABSENCE is the discriminator
 # [DD-13] had to go back and remove from two checks, [OPT-1] own
-# _FAST_FRAMES precedent"). This plant wraps the `sb_stampf` call in
+# _FAST_FRAMES precedent"). This plant wraps the `pcrec_sb_stampf` call in
 # `if (!has_push) { ... }`, so a PUSHING program emits NO
 # RX_VM_FRAMELESS macro at all -- the fact becomes readable only by the
 # macro ABSENCE, exactly the shape the file own comment names as the wrong
@@ -42,11 +42,11 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "^(a(?1)?b)$" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && echo REACH-PUSHING-STAMP-PRESENT'
 SAB_REACH_EXPECT="REACH-PUSHING-STAMP-PRESENT"
 SAB_COUNT=1
-SAB_BEFORE='    sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
+SAB_BEFORE='    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
 SAB_AFTER='    /* SABOTAGE S226: the stamp is emitted CONDITIONALLY -- only for a
      * frameless program -- instead of unconditionally on every VM artifact
      * as spec section6.3 requires. A pushing artifact then defines NO
      * RX_VM_FRAMELESS at all. */
     if (!has_push) {
-        sb_stampf(c, v.up, "VM_FRAMELESS", "%d", 1);
+        pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", 1);
     }'

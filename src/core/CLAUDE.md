@@ -372,7 +372,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   everything wholesale, so nothing leaks and nothing half-built is read again
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
   sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
-  `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`sb_cmt_close`
+  `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`pcrec_sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
   emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
   — the three primitives every other append in the file is built on, so a
@@ -447,7 +447,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   are gone and the emitters' fragment census reads 6, all of them the named
   encoding-seam family.
 
-  `sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` write ONE artifact stamp line,
+  `pcrec_sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` write ONE artifact stamp line,
   `#define <UPPER>_<NAME> <value>`, and they replace 73 bespoke format strings
   across the two emitters (52 + 21). **What that buys is D94's own ritual**:
   the abi re-pin site list is "every reader of the number, found by grep", and
