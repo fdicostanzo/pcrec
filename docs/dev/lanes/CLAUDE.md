@@ -2068,3 +2068,4 @@ never edited afterwards.
   `worktrees/w5`'s own `make test` held the box for this lane's whole
   working period (box-concurrency rule 9). PARKED on `lane/axtriage`,
   not merged.
+- `w5r_report.md` — [REVW.5.1] the wave-5 rider (lane w5r, sonnet, 2026-09-20; item 3 landed by the manager): `--flavour` gets its OWN applies-to relation and the 13 real modes one union mask, acceptance proven unchanged (w4_modesweep.py 1,407/1,407 identical; cli 284/0; 5-stream sweep 0 movers); `tests/spec_mod0/check01_isolation.sh`'s positive control revived on darwin (nm's `_` prefix stripped where nm output is read; population 36/9/4/1 unchanged; its sabotage DETECTED solo); S107's SAB_DOC_FIGURE re-recorded as MEASURED 2026-09-20 (brefdiff 4fail/11pass; the +1 is §9b).
