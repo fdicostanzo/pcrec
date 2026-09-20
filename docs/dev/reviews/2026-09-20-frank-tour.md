@@ -95,3 +95,35 @@ for, instead of prose floating between case labels). The free-node kinds
 payoff beyond length: `vm_cost_<kind>` sits beside `vm_<kind>`, the emitter
 arm it must agree with, so the two-walk contract is checkable pairwise.
 Order: helpers first, then the split, so the arms are born short.
+
+## [TOUR-3] src/parse/parse.c — p_class "was written by blood"
+
+**Observation (Frank):** a lot of history comments. Measured at 1994eab9:
+p_class 980-1265, 286 lines, 111 code / 167 comment, 24 comment blocks —
+five tagged [M4-QUOTING], six [M5.0 stage n], plus K12 (the endpoint rule),
+R9 (range endpoints), MOD-0.3c (produced members).
+
+**What to keep, what to prune:** most blocks END in a measured PCRE2 cell
+(`[a\t-\tz]` is a-z; `[\Q^\E]` does not negate; `[[:alpha:]-z]` is 150;
+`[\Qa-b\E]` is {a,-,b}) — under D26 those cells ARE the contract and the
+oracle tests behind them are what makes the function changeable; they stay.
+The wave narrative around them ("THE FIX-3 BLOCK THAT STOOD HERE IS GONE",
+"this comment used to say", who found what when) goes to the decision or
+plan row with a pointer (coding_guide §4.2).
+
+**The structural cause of the length:** the four-way MEMBER DECODE (quoted
+byte / escape via esc_class_value / high byte via lit_next_cp / plain byte)
+is written twice — once at the item-loop top for the low endpoint
+(~1057-1110), once inside the range arm for the high endpoint (1124-1140),
+and the inline quote-open MIRROR exists only because the second copy is not
+at an item boundary. Agreed shape: (1) one `cls_read_member(cx, &claim,
+&quoted)` used at both sites — removes the mirror, the duplicate decode and
+the two comments explaining why they differ; (2) the range arm (dash
+lookahead → interval add, 1113-1148) as `p_class_range`; (3) the pruning
+above, cells kept verbatim.
+
+**Proof:** tests/classes + the reject table + the registry checks (semantics),
+`scripts/emit_sweep.py` 0 movers (an unchanged AST emits identical C).
+Tier: sonnet with an opus review of the member reader's claim handling
+(the deferred-refusal ordering, steps 1-4 of the K12 endpoint rule, must
+survive the extraction exactly).
