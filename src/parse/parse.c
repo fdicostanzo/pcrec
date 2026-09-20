@@ -1102,11 +1102,10 @@ static Ast *p_class(Ctx *cx)
      * from_iv` not at all, each with its reason stated there), so the union
      * below adds a set that is already as folded as it should be.
      *
-     * UNDER `byte` THIS CHANGES NOTHING, and that is checkable rather than
-     * hoped: the fold that used to run over the merged set was the ASCII one,
-     * and every produced set reaching it was either already ASCII-closed by
-     * its own constructor or a property span containing both cases of every
-     * ASCII letter it holds. The byte identity gate is the check. */
+     * UNDER `byte` THIS CHANGES NOTHING: every produced set reaching the
+     * union is already either ASCII-closed by its own constructor or a
+     * property span containing both cases of every ASCII letter it holds.
+     * The byte identity gate is the check. */
     PcrecCpSet prod;
     pcrec_cpset_init(&prod, &cx->arena);
     bool neg = false;
@@ -1235,24 +1234,21 @@ static Ast *p_class(Ctx *cx)
     }
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
-     * silently wrong and downstream cannot detect it.
+     * silently wrong and downstream cannot detect it. [M5.0 stage 1]: the
+     * complement is taken within `[0, MAXCP(enc)]` (§2.7.1) — under
+     * `--encoding=byte` that is the same function on the same set as a
+     * bitmap's implicit 0..255. Keeping the complement EAGER and in this
+     * one constructor, rather than carrying a `negated` flag to the
+     * lowering, is what keeps this ordering rule checkable by sabotage row
+     * S08 swapping two adjacent lines (§2.7.2's third argument).
      *
-     * [M5.0 stage 1] THE NEGATION IS THE SAME TWO LINES IN THE SAME ORDER, and
-     * the ONLY thing that moved is what "everything else" means: the
-     * complement is taken within `[0, MAXCP(enc)]` instead of within a
-     * bitmap's implicit 0..255 (§2.7.1). Under `--encoding=byte` the two are
-     * the same function on the same set. Keeping the complement EAGER and in
-     * this one constructor — rather than carrying a `negated` flag to the
-     * lowering — is what keeps this ordering rule checkable by sabotage row
-     * S08 swapping two adjacent lines (§2.7.2's third argument). */
-    /* [M5.0 stage 4] fold THIS FUNCTION'S OWN members, then union the
-     * produced ones, then negate. The ORDER of the last two is unchanged and
-     * is what §4.3 measured (`[^k]` caseless rejects U+212A, so the negation
-     * is over the CLOSED set); what moved is that the union now happens
-     * between them instead of before both. A produced set is already folded
-     * as its own producer decided, so unioning after the fold is what makes
-     * "the caller owns caselessness" true of `\p` inside a class as well as
-     * at an atom — see this function's own `prod` declaration. */
+     * [M5.0 stage 4] fold THIS FUNCTION'S OWN members, union the produced
+     * ones, then negate — the order §4.3 measured (`[^k]` caseless rejects
+     * U+212A, so the negation is over the CLOSED set). A produced set is
+     * already folded as its own producer decided, so unioning after the
+     * fold is what makes "the caller owns caselessness" true of `\p`
+     * inside a class as well as at an atom — see this function's own
+     * `prod` declaration. */
     if (cx->mods->caseless) cls_casefold(cx, &set, cls_enc(cx)->fold);
     pcrec_cpset_add_set(&set, prod.iv, prod.n);
     if (neg) pcrec_cpset_complement(&set, cls_universe(cx));
