@@ -697,3 +697,7 @@ change.
   contingent on `run_ir_listing.sh` gaining a per-pattern `--features`
   flag it does not have today; 2 sites are structurally unreachable by
   any pattern, having no literal prefix at all).
+- `meta/` — the SIDECAR: learnings about developing WITH models that
+  transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
+  that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is
+  the living record; see `meta/CLAUDE.md`.
