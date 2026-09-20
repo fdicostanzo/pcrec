@@ -1254,7 +1254,9 @@ struct Ast {
     } u;
 };
 
+/* Sets bit `c` in the 256-bit membership map `b`. */
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
+/* True iff bit `c` is set in the 256-bit membership map `b`. */
 static inline bool cls_has(const uint8_t *b, unsigned c){ return (b[c >> 3] >> (c & 7)) & 1u; }
 
 /* ---- FNV-1a 32-bit fold (L3-F3, 2026-09-17 code review) ----------------
@@ -1268,7 +1270,12 @@ static inline bool cls_has(const uint8_t *b, unsigned c){ return (b[c >> 3] >> (
  * needing a salted term (dfa.c's per-class-view salt) still open-codes the
  * xor/multiply around `fnv1a_32_mix` — the salt is not part of FNV-1a and
  * must not be folded into this pair. */
+/* Returns the FNV-1a 32-bit offset basis (2166136261), the fold's initial
+ * accumulator value -- see the banner above. */
 static inline uint32_t fnv1a_32_init(void) { return 2166136261u; }
+/* One FNV-1a 32-bit step: xor `v` into `h`, then multiply by the FNV prime
+ * (16777619); no salting -- a caller needing a salted term does that
+ * arithmetic itself, per the banner above. */
 static inline uint32_t fnv1a_32_mix(uint32_t h, uint32_t v) { h ^= v; return h * 16777619u; }
 
 /* ---- [M5.0 stage 1] THE CODE-POINT INTERVAL SET (src/core/cpset.c) --------
@@ -3986,6 +3993,11 @@ static inline unsigned pcrec_ast_engines(const Ast *a)
  * load-bearing rather than merely correct. */
 typedef void (*AstVisit)(void *ud, const Ast *a);
 
+/* Iterative pre-order visit over the AST, bounded by NESTING depth rather than
+ * pattern length (the CAT/ALT-spine loop above): calls `f` at every node,
+ * follows `.l` for single-child kinds, walks both spine branches for CAT/ALT,
+ * and deliberately never follows `.call.body` -- see the design note above for
+ * why. */
 static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
 {
     for (;;) {

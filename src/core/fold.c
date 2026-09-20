@@ -122,6 +122,11 @@ static unsigned ucd_fold_next(unsigned cp)
     return cp;
 }
 
+/* The Unicode fold relation's partner function: for each fold-link table entry
+ * present in `in`, walks its orbit (bounded by PCREC_FOLD_MAX_ORBIT, matching
+ * the table generator's own promise) adding every OTHER member of the cycle to
+ * `out` -- see the comment above for why this walks the relation's domain
+ * rather than the set's members. */
 static void ucd_partners(const PcrecCpSet *in, PcrecCpSet *out)
 {
     size_t n = sizeof pcrec_ucd_fold_links / sizeof *pcrec_ucd_fold_links;

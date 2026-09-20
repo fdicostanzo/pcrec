@@ -61,6 +61,8 @@
 
 /* ---- the builder --------------------------------------------------------- */
 
+/* Zero-initialises an empty interval set bound to arena `ar`; every later grow
+ * allocates through this arena, never malloc/free. */
 void pcrec_cpset_init(PcrecCpSet *s, Arena *ar)
 {
     s->ar = ar;
@@ -69,6 +71,10 @@ void pcrec_cpset_init(PcrecCpSet *s, Arena *ar)
     s->cap = 0;
 }
 
+/* Doubles the set's arena-backed interval array (from 8) until it holds at
+ * least `want` entries, copying the live prefix forward -- the abandoned
+ * smaller block is never freed, by the arena's own no-leak-by-construction
+ * design. */
 static void cpset_grow(PcrecCpSet *s, int want)
 {
     if (want <= s->cap) return;
@@ -152,6 +158,9 @@ void pcrec_cpset_remove(PcrecCpSet *s, unsigned lo, unsigned hi)
     }
 }
 
+/* Unions every interval of `iv` into `s`, one pcrec_cpset_add call per member
+ * -- the batch form used when transplanting an already-normalised interval
+ * list rather than accumulating parsed ranges one at a time. */
 void pcrec_cpset_add_set(PcrecCpSet *s, const PcrecCpRange *iv, int n)
 {
     for (int i = 0; i < n; i++) pcrec_cpset_add(s, iv[i].lo, iv[i].hi);
@@ -197,6 +206,8 @@ void pcrec_cpset_complement(PcrecCpSet *s, unsigned max_cp)
     *s = out;
 }
 
+/* Linear membership test over the sorted interval list: true iff `c` falls in
+ * some [lo,hi] run. */
 bool pcrec_cpset_has(const PcrecCpSet *s, unsigned c)
 {
     for (int i = 0; i < s->n; i++) {
@@ -299,6 +310,9 @@ int pcrec_cls_single(const Ast *a)
     return (int)a->u.cls.iv[0].lo;
 }
 
+/* Membership test directly on a class node's own interval array (post-lowering
+ * `Ast.u.cls`) -- the same linear scan as pcrec_cpset_has, over a list already
+ * published into a node rather than wrapped in a PcrecCpSet. */
 bool pcrec_cls_has(const Ast *a, unsigned c)
 {
     for (int i = 0; i < a->u.cls.n; i++) {
