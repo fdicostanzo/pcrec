@@ -15,7 +15,7 @@ construction (src/ir) and emission (src/gen).
 
   TWO STAGES, both AST-to-AST REWRITES (unlike possessify.c/revdet.c's
   in-place annotation, this pass changes tree SHAPE and returns a possibly-
-  new root, the same shape select_engine.c's `discharge` hook uses). Stage 1
+  new root, which its caller must PUBLISH). Stage 1
   merges a maximal ADJACENT run of A_ALT branches that are each a bare
   A_CLASS (parse.c already normalizes every literal to a singleton class)
   into ONE class holding the union — `b|c` -> `[bc]`. Stage 2 runs on stage
@@ -321,10 +321,20 @@ construction (src/ir) and emission (src/gen).
   customers are. The backrefs-finite expansion and the atomic/possessive cut
   are not analyses that RETURN a verdict, they are REWRITES that DISCHARGE
   one — `(abc)\1` is VM-forced until the expansion turns it into `abcabc`, at
-  which point it is DFA-compilable. So the socket carries an optional
-  `discharge` hook and the pass is a FIXPOINT with a bound, shipped with zero
+  which point it is DFA-compilable. So the socket carried an optional
+  `discharge` hook and the pass was a FIXPOINT with a bound, shipped with zero
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
+
+  **[TOUR-5] (2026-09-20) THE REWRITE HALF IS DELETED** (r61 F2). Nothing ever
+  registered a hook — the two named customers each declined for a reason
+  recorded at its own site (atomic.c below; possessify.c below) — and the
+  fixpoint's rewrite arm could not have served one, since it set a local
+  `rewrote` flag without publishing a new root. D77: the analysis TABLE stays
+  and runs ONCE; engine_m4.md §5.2 keeps the design record and docs/dev/
+  plan.md's [ENG-CUT] row owns building the plumbing when a rewrite first
+  needs it. The paragraph above is the socket's history, not the tree's
+  current shape.
 
   **[M6.5.2] AND IT IS WHERE THE PREFILTER IS REFUSED.** A backref-bearing
   pattern gets `fit.prefilter = false`, and `-fprefilter` on one is a REFUSAL
@@ -393,12 +403,14 @@ construction (src/ir) and emission (src/gen).
   `RX_ENGINE_WHY`'s first-row rule is untouched — the second why exists only
   for the override.
 
-  **The FREE DISCHARGE runs from the top of `pcrec_select_engine`**, before the
-  analysis loop and unconditionally, which is what makes a per-ROW column
-  produce a per-PATTERN answer: `--engine=dfa '[^"]*+"'` succeeds because the
-  node is GONE by the time `forces_registry` looks, while `--engine=dfa
-  '(?>a|ab)c'` refuses by name. See atomic.c's own entry for why it is not
-  registered in the `discharge` socket.
+  **The FREE DISCHARGE runs from `src/core/compile.c`'s pipeline**, before
+  engine selection and unconditionally ([DD-14] wave G hoisted it out of the
+  top of `pcrec_select_engine`; see the pass-order entry at the end of this
+  file). That ordering is what makes a per-ROW column produce a per-PATTERN
+  answer: `--engine=dfa '[^"]*+"'` succeeds because the node is GONE by the
+  time `forces_registry` looks, while `--engine=dfa '(?>a|ab)c'` refuses by
+  name. See atomic.c's own entry for why it was never registered in the
+  `discharge` socket [TOUR-5] has since deleted.
 
   `forces_captures` triggers on the requested OUTPUT rather than the presence
   of a `(`: `a(b|c)+d` under `--no-captures` is capture-free WORK and stays on
@@ -438,13 +450,14 @@ construction (src/ir) and emission (src/gen).
   §2.8's literal reading rather than a silent choice. §2.8 proposes
   possessification as an `EngineAnalysis` row whose `discharge` hook does the
   rewrite; the SHAPE claim is right and possessify.c keeps it, but the
-  registration is not available. `discharge`'s contract is "rewrite so the
-  ENGINE FORCING no longer applies", which possessification cannot do and must
-  not claim to — a capture-bearing pattern still needs the VM afterwards — and
-  the fixpoint only reaches `discharge` when the pattern is VM-FORCED, so
-  registering there would possessify a capture-bearing pattern and SKIP a
-  capture-free one built with `--engine=vm`: the same artifact kind, the same
-  emitter, optimised differently for a reason invisible from outside. The
+  registration was never available and [TOUR-5] has since deleted the hook.
+  `discharge`'s contract was "rewrite so the ENGINE FORCING no longer
+  applies", which possessification cannot do and must not claim to — a
+  capture-bearing pattern still needs the VM afterwards — and a hook ran only
+  when the pattern was VM-FORCED, so registering there would possessify a
+  capture-bearing pattern and SKIP a capture-free one built with
+  `--engine=vm`: the same artifact kind, the same emitter, optimised
+  differently for a reason invisible from outside. The
   driver is therefore the CHOSEN engine, which is the honest condition — see
   `run_possessify` and its comment.
 
@@ -609,17 +622,18 @@ construction (src/ir) and emission (src/gen).
     verdict computed for a different follow — `a*a` on "aaa" is (0,3) where
     `(?>a*+)a` is NOMATCH.
 
-  **WHY IT IS NOT REGISTERED IN `EngineAnalysis.discharge`**, which is the
-  socket engine_m4.md §5.2 designed with this module named as its customer.
-  Three reasons, the third measured: the socket only runs when the pattern is
-  already VM-FORCED, so a capture-free `a*+` would be discharged differently
-  under `--engine=vm` than by default; `discharge`'s contract is "rewrite so
-  the ENGINE FORCING no longer applies", which a PARTIALLY dischargeable
-  pattern cannot honour; and the fixpoint in select_engine.c NEVER CALLS a
-  registered hook — it sets `rewrote = true` for any non-NULL one and loops, so
-  registering today would run the analysis 8 times and rewrite nothing. It is
-  therefore an ordinary AST pass driven from the top of `pcrec_select_engine`,
-  the same call `run_possessify` already makes for the same reason.
+  **WHY IT WAS NEVER REGISTERED IN `EngineAnalysis.discharge`**, the socket
+  engine_m4.md §5.2 designed with this module named as its customer — and the
+  third reason is why [TOUR-5] (2026-09-20) deleted the socket outright.
+  A hook ran only when the pattern was already VM-FORCED, so a capture-free
+  `a*+` would be discharged differently under `--engine=vm` than by default;
+  `discharge`'s contract was "rewrite so the ENGINE FORCING no longer
+  applies", which a PARTIALLY dischargeable pattern cannot honour; and the
+  fixpoint in select_engine.c NEVER CALLED a registered hook — it set
+  `rewrote = true` for any non-NULL one without publishing a new root, so
+  registering would have run the analysis 8 times and rewritten nothing. It
+  is therefore an ordinary AST pass, driven from `src/core/compile.c`'s
+  pipeline since [DD-14] wave G.
 
   **NOT gated by `-fno-possessify`.** The discharge is semantics-preserving by
   its own verdict, and gating it would make an OPTIMISATION flag change which
@@ -1185,9 +1199,11 @@ emitter instead; move one here if it grows its own IR transformation.
 
 altcls.c is the one AST-LEVEL exception to the "mutates in place" half: it
 runs before NFA/DFA construction exists to mutate, so it takes (Ctx *, Ast *)
-and RETURNS the (possibly new) root instead — select_engine.c's `discharge`
-hook shape, for the same reason (the rewrite can change tree SHAPE, which an
-in-place field mutation cannot express). Still behavior-preserving, still
+and RETURNS the (possibly new) root instead — the same shape
+`pcrec_discharge_atomic` takes, for the same reason (the rewrite can change
+tree SHAPE, which an in-place field mutation cannot express), and with the
+same obligation on its caller to PUBLISH what it returns. Still
+behavior-preserving, still
 corpus-covered, still deny-only + D46-stamped like every pass in this
 directory.
 

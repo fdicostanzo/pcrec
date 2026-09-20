@@ -3,17 +3,25 @@
  * Before [M4.5b] this was one `if` inline in compile.c's driver, and it chose
  * between the two DFA SHAPES (ENG_UNANCH vs ENG_ATTEMPT) rather than between
  * ENGINES. §5.1 moves the engine question into a pass with a registered-
- * analysis SOCKET, for a reason worth restating because it is the design's
- * least obvious call: the socket's future customers (backrefs-finite
- * expansion, the atomic/possessive cut) are not analyses that RETURN a
- * verdict, they are REWRITES that DISCHARGE one — `(abc)\1` is VM-forced
- * until the finite-language expansion turns it into `abcabc`, at which point
- * it is DFA-compilable. So the pass is a FIXPOINT: analyse, offer each
- * registered `discharge` a chance, re-analyse, stop when nothing changes or
- * the bound is hit. It ships here with ZERO registered discharge hooks (§5.2:
- * "ship it in M4.6 with zero registered discharge hooks; the bound exists
- * from day one so a later rewrite pair cannot loop"), which is deliberate —
- * the bound is cheaper to write now than to retrofit around a rewrite.
+ * analysis table, which is `analyses[]` below: each row answers "which
+ * engines can still compile this pattern", the pass ANDs their masks, and
+ * the first row to exclude the DFA supplies the diagnostic.
+ *
+ * **[TOUR-5] (2026-09-20) THE REWRITE HALF OF THAT SOCKET IS DELETED** (r61
+ * F2; docs/dev/reviews/2026-09-20-frank-tour.md). §5.2 also designed a
+ * `discharge` hook — a semantics-preserving REWRITE that makes a forcing no
+ * longer apply, `(abc)\1` expanded to `abcabc` being the motivating case —
+ * and wrapped the analysis loop in a bounded FIXPOINT to drive it. In three
+ * years nothing registered one, and each of the two candidate customers
+ * declined for a reason recorded at its own site: the free atomic discharge
+ * (docs/design/atomic_groups_design.md §5.4, now src/core/compile.c's line
+ * since [DD-14] wave G) and possessification (`run_possessify` below). The
+ * fixpoint's rewrite arm could not have served one anyway — it set a local
+ * `rewrote` flag without publishing a new root, so the first registered hook
+ * would have spun the bound against a verdict it could not move. D77 (no
+ * mechanism ahead of a measured need): the table stays and the analysis runs
+ * ONCE. engine_m4.md §5.2 keeps the design record, and docs/dev/plan.md's
+ * [ENG-CUT] row owns building the plumbing when a rewrite first needs it.
  *
  * WHAT FORCES THE VM TODAY (§5.3's table, restricted to constructs that have
  * a producer): TWO rows — "capturing group with captures REQUESTED", and
@@ -53,18 +61,16 @@
 
 #include "core/internal.h"
 
-/* §5.2's socket. One registered analysis today. `discharge` is the rewrite
- * half — NULL here, and the fixpoint below is written to run correctly with
- * every hook NULL, which is the state it ships in. */
+/* One row of §5.2's analysis table: a named rule that answers which engines
+ * can still compile a given pattern, plus the flag the `--engine=dfa`
+ * refusal needs to word itself. [TOUR-5] removed the `discharge` rewrite
+ * hook (see the file header). */
 typedef struct {
     const char *name;
     /* Does this construct force an engine, and where? Returns an ENGM_* mask
      * of the engines that can still compile the pattern. */
     unsigned  (*forces)(Ctx *cx, const Ast *a, size_t *why_pos,
                         const char **why);
-    /* Optional: rewrite the AST so the forcing no longer applies. Returns
-     * NULL to decline. Must be semantics-preserving. */
-    Ast      *(*discharge)(Ctx *cx, Ast *a);
     /* [M6.4.2 / D67 contract note 1] IS THIS ROW NODE-DERIVED?
      *
      * Two kinds of forcing remain after SR-8 and the `--engine=dfa` override
@@ -82,10 +88,12 @@ typedef struct {
     bool        node_derived;
 } EngineAnalysis;
 
-/* The fixpoint's bound. §5.2 asks for it "from day one so a later rewrite
- * pair cannot loop" — with no discharge hooks registered the loop provably
- * runs once, so this is structure for a customer that does not exist yet,
- * which is the whole point of building the socket now. */
+/* The round bound for an iterated rewrite driven from this file. §5.2 asked
+ * for one "from day one so a later rewrite pair cannot loop"; since [TOUR-5]
+ * deleted the analysis fixpoint its ONE reader is `run_possessify` below,
+ * whose own monotonicity already terminates it — this is the belt that does
+ * not depend on an argument in a comment. src/core/compile.c's retry-ladder
+ * comment cites it by name for the same reasoning. */
 enum { SELECT_MAX_ROUNDS = 8 };
 
 /* ---- the one registered analysis: captures ---- */
@@ -383,11 +391,11 @@ static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
  * "do not write `\K`" is not). A capture-free `\K` pattern gets the `\K`
  * explanation, which is then the only one available and the right one. */
 static const EngineAnalysis analyses[] = {
-    { "captures", forces_captures, NULL, false },
+    { "captures", forces_captures, false },
     /* [M6.4.2] ONE row where `\K`'s was, and every future VM_ONLY module's
      * forcing falls out of its registry rows with no per-module analysis —
      * backrefs' twelve ([M6.5]) are the next customer and need no line here. */
-    { "registry", forces_registry, NULL, true  },
+    { "registry", forces_registry, true  },
     /* [SEL-1] LAST, deliberately: it is the least fundamental of the three
      * reasons a pattern can be VM-only, and first-wins order already does the
      * right thing when it co-occurs with one of the rows above. A pattern
@@ -405,7 +413,7 @@ static const EngineAnalysis analyses[] = {
      * text in place instead of splicing this row's build-outcome sentence
      * into the "%s requires the VM engine" template, which reads oddly for
      * a fact that is not a constructs's name. */
-    { "dfa_overflow", forces_dfa_overflow, NULL, false },
+    { "dfa_overflow", forces_dfa_overflow, false },
 };
 
 /* ---- the pass ---- */
@@ -425,41 +433,44 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
     return p;
 }
 
-/* [ENG-BREP] The possessification REWRITE, driven to its fixpoint.
+/* Marks every quantifier the possessification analysis proves can never
+ * retreat, iterating until a pass marks none. Runs only on a VM-chosen
+ * artifact and only when `-fno-possessify` was not passed ([ENG-BREP], the
+ * bounded-repeat ladder's first rung).
  *
- * WHY IT IS CALLED HERE AND NOT REGISTERED IN `discharge` ABOVE — a deliberate
- * deviation from eng_brep_design.md §2.8's literal reading, reported rather
- * than silently taken. §2.8 says possessification "is exactly that shape" (a
- * rewrite, not an analysis returning a verdict) and proposes it as an
- * `EngineAnalysis` row whose `discharge` rewrites the A_REP's strategy in
- * place. The SHAPE claim is right and this file keeps it. The REGISTRATION is
- * not available, for two reasons that only appear once the socket exists:
+ * THE DRIVER IS THE CHOSEN ENGINE, which is the honest condition rather than
+ * the one eng_brep_design.md §2.8 names — a deliberate deviation, reported
+ * rather than silently taken. §2.8 says possessification "is exactly that
+ * shape" (a rewrite, not an analysis returning a verdict) and proposes it as
+ * an `EngineAnalysis` row whose `discharge` hook rewrites the A_REP's
+ * strategy in place. The SHAPE claim is right and this file keeps it; the
+ * REGISTRATION was never available, and [TOUR-5] has since deleted the hook.
+ * Both reasons are kept because they are facts about THIS pass rather than
+ * about the socket:
  *
- *   1. `discharge`'s contract is "rewrite the AST so the ENGINE FORCING no
+ *   1. `discharge`'s contract was "rewrite the AST so the ENGINE FORCING no
  *      longer applies". Possessification cannot do that and must not claim to
  *      — a capture-bearing pattern still needs the VM after every one of its
- *      quantifiers is possessified. A hook that rewrites and never changes the
- *      mask would spin the fixpoint against a verdict it cannot move.
- *   2. The fixpoint only reaches `discharge` when the pattern is VM-FORCED, so
- *      registering there would possessify a capture-bearing pattern and SKIP a
- *      capture-free one compiled with `--engine=vm` — the same artifact kind,
- *      built by the same emitter, optimised differently for a reason nobody
- *      could see from the outside. That would also make the differential this
- *      row is validated by lie about its own coverage.
+ *      quantifiers is possessified.
+ *   2. A hook ran only when the pattern was VM-FORCED, so registering there
+ *      would possessify a capture-bearing pattern and SKIP a capture-free one
+ *      compiled with `--engine=vm` — the same artifact kind, built by the same
+ *      emitter, optimised differently for a reason nobody could see from the
+ *      outside. That would also make the differential this row is validated
+ *      by lie about its own coverage.
  *
- * So the driver is the CHOSEN engine, which is the honest condition: the mark
- * is read by src/gen/emit_vm.c and by nothing else, so a DFA artifact cannot
- * observe it and pays nothing for it. Capture-free patterns stay byte-identical
- * by construction rather than by audit, which is §5.4's gate held the way §7
- * predicts (613 of 756 corpus patterns never reach this line).
+ * The mark is read by src/gen/emit_vm.c and by nothing else, so a DFA
+ * artifact cannot observe it and pays nothing for it; capture-free patterns
+ * stay byte-identical by construction rather than by audit, which is §5.4's
+ * gate held the way §7 predicts (613 of 756 corpus patterns never reach this
+ * line).
  *
- * The loop is the fixpoint §2.8 asks for, and possessification's own
- * monotonicity is what bounds it: `pcrec_possessify` returns how many
- * quantifiers it NEWLY marked, a marked quantifier is never unmarked, and a
- * second pass over a fully-marked tree returns 0. It therefore runs twice on
- * any pattern with a positive verdict and once otherwise. SELECT_MAX_ROUNDS
- * bounds it anyway, because a bound that depends on an argument in a comment
- * is not a bound. */
+ * THE ITERATION TERMINATES ON POSSESSIFICATION'S OWN MONOTONICITY:
+ * `pcrec_possessify` returns how many quantifiers it NEWLY marked, a marked
+ * quantifier is never unmarked, and a second pass over a fully-marked tree
+ * returns 0 — so it runs twice on any pattern with a positive verdict and
+ * once otherwise. SELECT_MAX_ROUNDS bounds it anyway, because a bound that
+ * depends on an argument in a comment is not a bound. */
 static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
 {
     if (fit->chosen != ENGM_VM) return;
@@ -489,13 +500,19 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
     (void)pcrec_revdet(cx, root);
 }
 
-/* Decides which of ENGM_DFA/ENGM_VM this pattern may build, and whether the
- * VM's hybrid prefilter runs ahead of it — a bounded fixpoint (§5.1/§5.2)
- * over the request-derived forcing rules (captures, `--engine=` overrides)
- * and the registry's per-construct SR-8 rows, driving `possessify`/`atomic`'s
- * discharge hooks to their own fixpoints along the way. Writes `cx->job->fit`;
- * the file header has the full rule catalogue and why each fires where it
- * does — read it before adding a new forcing condition here. */
+/* Decides which of ENGM_DFA/ENGM_VM this pattern may build, whether the VM's
+ * hybrid prefilter runs ahead of it, and which `<PREFIX>_ENGINE_SEL` token
+ * records how that came out — then runs the bounded-repeat ladder's two
+ * analyses, which need the engine already chosen. Writes `cx->job->fit`.
+ *
+ * The verdict is an AND over `analyses[]`' masks (the request-derived
+ * captures rule, the registry's per-construct SR-8 rows, a prior attempt's
+ * DFA overflow) narrowed by the `--engine=` override, which is DO-OR-DIE:
+ * a request the pattern cannot honour is refused, never downgraded. Reads
+ * `cx->opt` and the retry state `compile_driver` seeds (`dfa_disabled`,
+ * `collapse_reason`, `size_drop_rung`); the file header has the full rule
+ * catalogue and why each fires where it does — read it before adding a new
+ * forcing condition here. */
 void pcrec_select_engine(Ctx *cx, Ast *root)
 {
     EngineFit fit;
@@ -513,10 +530,9 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     size_t node_why_pos = 0;
 
     /* [M6.4.2] UNTIL [DD-14] WAVE G, THE FREE DISCHARGE ran ONCE HERE, before
-     * the analysis loop — NOT as a registered `discharge` hook.
-     * src/opt/atomic.c's own header has the three reasons, one of them
-     * measured: the fixpoint below never CALLS a registered hook, so
-     * registering would run the analysis 8 times and rewrite nothing.
+     * the analysis loop — NOT as a registered `discharge` hook
+     * (src/opt/atomic.c's own header has the three reasons; [TOUR-5] has
+     * since deleted that hook altogether).
      * Running it first is what makes the consultation's per-ROW column
      * produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'` succeeds
      * because the node is GONE by the time `forces_registry` looks.
@@ -532,39 +548,22 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * publishes the rewritten root, which this pass could not do: the
      * assignment below was to a LOCAL, so a discharge at the very ROOT was
      * dropped on the floor here and is now kept. Nothing else moves — the
-     * discharge still runs before the first analysis round, which is the only
+     * discharge still runs before the analysis below, which is the only
      * property the paragraph above claims. */
 
-    for (int round = 0; round < SELECT_MAX_ROUNDS; round++) {
-        mask = ENGM_DFA | ENGM_VM;
-        why = NULL;
-        why_pos = 0;
-        node_why = NULL;
-        node_why_pos = 0;
-        for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
-            size_t p = 0;
-            const char *w = NULL;
-            unsigned m = analyses[i].forces(cx, root, &p, &w);
-            if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
-            if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
-                node_why = w; node_why_pos = p;
-            }
-            mask &= m;
+    /* [TOUR-5] ONE PASS, not a fixpoint: with the `discharge` rewrite hook
+     * deleted nothing can change the tree between rounds, so the loop that
+     * used to wrap this provably ran exactly once. The file header has the
+     * deletion's argument. */
+    for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
+        size_t p = 0;
+        const char *w = NULL;
+        unsigned m = analyses[i].forces(cx, root, &p, &w);
+        if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
+        if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
+            node_why = w; node_why_pos = p;
         }
-        if (mask & ENGM_DFA) break;   /* nothing forces the VM: done */
-        /* Offer every registered rewrite a chance to discharge the forcing.
-         * None is registered today, so this loop finds nothing to do and the
-         * fixpoint terminates on the first round. */
-        bool rewrote = false;
-        for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
-            if (!analyses[i].discharge) continue;
-            /* A discharge hook that rewrites must publish the new root; the
-             * first customer to need it is the first to design that plumbing
-             * (it cannot be written blind — see the size-estimate obligation
-             * §5.2 hands the rewrite author). */
-            rewrote = true;
-        }
-        if (!rewrote) break;
+        mask &= m;
     }
 
     if (mask == 0)
