@@ -24342,3 +24342,59 @@ D94 addendum, D76 addendum (via w5). Two abi events? ONE: 26 → 27.
 Next session: read the I-78 trailer, merge w5r + nltriage, gate, push,
 then Frank's GUIDED TOUR, then the six partial rows smallest to largest,
 then [REL-1]. wake.md rewritten.
+
+## 2026-09-20 (EDT), seventy-second session — I-78 GREEN; the bench problem-case review; merge chain HELD for Frank
+
+**I-78 Linux battery at 05499cba (abi 27, the refactor's closing pin) is
+DONE and GREEN**: pcrecdev2's done-signal 12:2x — 05:30:21 → 12:23:30
+(6h53m); strict/axes/san/alloc/lint/mech all rc=0; mech `269 rows
+(unexpected: 0, undetected: 10, unreached: 1, anomalies: 0)`, the 10
+undetected set-identical by name to I-77's, unreached = S121; the 24
+solo re-drives w5 owed are covered by this matrix. `BATTERY DONE rc=1`
+is carried ENTIRELY by the test stage's one known cell — [OPT-4.1]'s
+`(a|b){0,30000}` under -fprefilter hitting the 45 s CPU watchdog on the
+slower box, diagnosed MARGINAL by nltriage (546c6e1b, parked). Axes green
+= the I-77 DFA state-cap refusal-table fix confirmed in production.
+Watched by a zero-model ssh watcher script (5-min poll, exits on the
+trailer) + the 30-min heartbeat cron — no manager turn spent polling.
+
+**Frank's question, answered from git: the refactor's LOC delta**
+(93b066ae → 05499cba). Refactor-only code (.c/.h under src/cli/lib):
++6,221 / −4,978, net **+1,243**; whole span +2,111 (60,326 → 62,437).
+Per wave net: FIX +412, U +41, W1 +178, W2 +480, W3 +246, W4 +429,
+W5+A1 −379 (the 449-line abi log). Function census 861 → 918 functions,
+>200-line count unchanged at 32 (the rubric's pass-and-stay-long list),
+pcrec_emit_vm span 3,037 → 2,809, emit_info_def 813 → 432, vm_emit
+retired from the top list. Tests +4,675, docs/dev +11,481 (lane reports).
+
+**Bench problem-case review (Frank: "the one I remember was a hang on
+an adversarial rx")** — sonnet census lane `benchcases` (read-only,
+scratchpad snapshot of the bench repo) + manager verification: 9 cases
+ever attributed to pcrec — 6 FIXED (F1 comment escape; SEL-1's DFA-cap
+fallback; three --list-source silent-loss defects), 2 NO-CHANGE-RULED
+(F2 captures decline; F3 the "hang" = bench KB-20 batching), 1 OPEN.
+Re-verified F3 on abi 27 on the bench's exact subjects: captures build
+gives up typed `steps` in 2.9 s, no-captures DFA answers nomatch. The
+census's "silent wrong answer on pcrec-auto-nocaps" is a BENCH SCORING
+ARTIFACT, traced to source: the two subjects have no expectation row
+(oracle gave up → dropped), harness.py returns
+`did-not-match-as-expected` for a no-expectation cell and reduce.py
+counts that outcome in n_wrong — so a correct definite answer scores
+"wrong" and a give-up scores "gave-up". The syntax set's two wrong cells
+(`\K` start, `(?R)` into the lexical `\z` wrapper) are bench KB-14/15.
+**The one genuine open item: the NFA cap (131,072) fires during
+construction, BEFORE the selector can route to the VM** —
+`[a-z]{0,65535}` refuses under auto and --no-captures while --engine=vm
+compiles it (bench O-9/O-11 ask (ii), 08-30, never dispositioned). Fix
+shape = the general mechanism [SEL-1] already built (compile_driver's
+bounded retry, NFA-cap failure as a second retry input). Recommended to
+Frank: an inbox item to the bench on the scoring rule; a small row for
+the NFA-cap retry behind the guided tour. Neither done — Frank: "we'll
+move forward later".
+
+**HELD for Frank's go (wake.md's post-trailer chain)**: merge lane/w5r
+(8c0abe28) then lane/nltriage (546c6e1b), each `git merge` alone; darwin
+gate (test+strict); size-log movers by column; push; worktree removal
+after the straggler check; then the ONE light Linux ratio probe via
+pcrecdev2. Box is free (pcrecdev2: nothing scheduled until tonight's
+window discretion).
