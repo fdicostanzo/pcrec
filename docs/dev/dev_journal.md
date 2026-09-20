@@ -24227,3 +24227,60 @@ not the grep's 43 (history prose); of 23 audited, 7 complete-in-place,
 M, DD-13b.W1.3 M behind PFX-1, DD-13 M same chain, CLS-TREE L), 1 unclear
 ([BENCH-1], the I-42 census absorbed into the bench's B36). No abandoned
 mid-flight work. Frank's dispositions on the six are pending.
+
+## 2026-09-19 (evening) — abi 27 landed and gated; the rider's two dead lanes; the recursion gate's hidden reds
+
+**All eight branches merged behind the green I-75 battery** — adm71
+a16d0dbb, w4 f7a683d8, emitverb 6ff185cf, evtriage 13382458, evtriage2
+f4a64947, the rider 74c2192c, evtriage3 489a8503 — plus the (B) file pin
+re-pinned to 74c2192c (f3eb6f82). **Darwin gate on f3eb6f82: 40/40
+sections in 48 min** (the comment-free artifacts halved the compiles;
+104 min this morning), FAILs = the standing nm probe + three readers
+evtriage3 had already fixed on its branch; size log 0 size_bytes movers
+over 3,480 rows, +1 row. [REVW.4] and [EMIT-VERB] → completed.
+
+**The rider's landing killed two sonnet lanes** (emitverb2 3.5 h at one
+WIP commit; emitverb3 2.5 h at one commit), both "waiting for the
+notification" of a short suite. The manager finished it as ONE detached
+chain script (rider_chain.sh → rider_chain.log) plus the report §7 —
+LESSON: a landing whose content is only suite runs is a CHAIN SCRIPT,
+not a lane. The chain itself had two manager bugs: an RC line piped into
+the step's own grep filter (lost), and a `--self-check` flag that does
+not exist (the sweep self-checks by default). And it MISSED two readers
+of the rider's 9 bytes (the resource pin, the cpset manifest) because it
+ran test-codegen and not the resource suite — the D94 addendum's class,
+fourth and fifth instances; evtriage3 caught them from the gate log.
+
+**evtriage3 (opus)**: run_recursion_identity.sh 7/11 → 16/0. The D37
+stamp filter's third line was the feature-set COMMENT, so under the new
+default the "exactly three" self-check `continue`d on all 2,535 artifacts
+— and everything below it read zero, so the script asserted in its own
+voice that SIZE_TERM_REGION_MOVERS "no longer move their program region"
+(false; the four-tree A/B shows the two patterns move identically at
+4af16eb7 / 385f3cab / main default / main -fcomments). LESSONS: (1) a
+filter self-check that skips the body is a FAIL-CLOSED GATE on the whole
+body — a filter fault must say what it invalidated; (2) a "known red"
+script hides every other red in it — evtriage2's rubric labelled the
+script "red by construction until the (B) re-pin" and the label masked
+the filter; (3) a check that says "this is a DIFF TO REVIEW" must print
+the diff it wants reviewed (`head -20` showed 5 of 12 drifted rows). The
+subject side of the whole-file arm now runs under -fcomments because the
+gate's best property — role-text prose sensitivity, which caught wave E's
+37-byte change — needs comments present; gen_b (ac4917d) predates the
+axis and keeps emitting them unconditionally. D112's "should a size term
+price comment bytes" stays OPEN with its population.
+
+**Manager slips**: a `cd worktrees/emitverb2 && …` compound moved the
+tool shell's cwd (the wake brief's lesson 1, repeated); a plan edit
+failed its guard and the commit message claimed it anyway (fixed
+84a9141e). Watchers: the first quiet test compared mtimes to the last
+COMMIT (untracked files defeat it — fixed to wall-clock); the
+report-committed trigger fires on a lane's first report commit (a
+`noreport` mode); build/ churn defeats the quiet test during suites.
+
+**Now**: the certification chain on main (recursion/vm identity,
+resource, cpset, specimen, test-codegen) → push → the bench's abi 27
+note + the I-77 battery request (the box is free tonight) → wave 5
+launched from that main (fact sheet merged 8d961dc0; D104 addendum:
+29 renames grouped by blast radius, make test while iterating, one
+battery at close; A1's home = match_api.md §6).
