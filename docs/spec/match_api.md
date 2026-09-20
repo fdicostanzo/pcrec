@@ -3346,10 +3346,12 @@ cannot behave like a program:
   allocation site routes failure through the internal `pcrec_ctx_nomem()` and
   comes back as a normal `-1`-with-diagnostic return, so a caller that
   sets a memory limit precisely in order to survive a hostile pattern
-  does survive it. Two `abort()`s remain in the code deliberately and
-  neither is an allocation failure: a "cannot happen" DFA structural
-  invariant, and the syntax-dump path's detached string buffers, which
-  run outside a compile and have no `pcrec_error` to report through.
+  does survive it. One `abort()` remains in the code deliberately, and
+  it is not on the compile path: the syntax-dump path's detached string
+  buffers, which run outside a compile and have no `pcrec_error` to report
+  through. The DFA structural invariants that used to be the OTHER
+  exception now refuse through `pcrec_ctx_fail` like every other
+  "cannot happen" site in the compiler (K61, `docs/dev/known_issues.md`).
   **2026-09-18: this promise had TWO real exceptions before today, and
   both are now closed — it has none.** They were independent mechanisms
   with nothing in common but their symptom, which is why each needed its

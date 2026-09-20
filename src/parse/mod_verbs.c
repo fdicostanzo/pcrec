@@ -242,7 +242,7 @@ static const VerbTable verb_tables[2] = {
  * Measured (R8/C2-4) on libpcre2 10.46: a 128-byte name is the ordinary "not
  * recognized" for its table, a 129-byte one is error 148, in every form. The
  * cap is on the name only — a 200-byte ARGUMENT compiles. */
-const char *pcrec_registry_verb_name_limit(size_t *max)
+static const char *pcrec_registry_verb_name_limit(size_t *max)
 {
     /* 128 is the ONLY length boundary, and it is table-independent: swept over
      * every length 1..319 in both tables (R8/C2-9), there are exactly two

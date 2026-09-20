@@ -241,7 +241,7 @@ const char *pcrec_rxt_validated_by_name(RxtValidatedBy v)
 /* The constraint kind's name column ("required"/.../"functional-binding") --
  * the one place a new kind must be named, per the banner above's no-default
  * rule. */
-const char *pcrec_rxt_constraint_name(RxtConstraintKind k)
+static const char *pcrec_rxt_constraint_name(RxtConstraintKind k)
 {
     switch (k) {
         case RXT_C_REQUIRED:           return "required";
