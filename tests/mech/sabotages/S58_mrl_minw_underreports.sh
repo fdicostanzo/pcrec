@@ -30,7 +30,7 @@ SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh §1: the exemplar inside eight steps"
 # [M6.6.2 wave A] THE ANCHOR WAS RE-HOMED, and the drift is worth recording
 # because it is the R33 V-7 shape arriving on an existing row. `src/opt/mrl.c`
 # gained the character pair (now `pcrec_cwmin`/`pcrec_cwmax`, [M5.0] stage 2), whose `A_CLASS` arms are `pcrec_minw`'s LINE FOR LINE —
-# `return mrl_sat_add(acc, 1);` — so the old one-line anchor started matching
+# `return pcrec_mrl_sat_add(acc, 1);` — so the old one-line anchor started matching
 # TWICE and `replace.py` refuses on the count (scripts/m6read_check_sab_anchors.py
 # reported it as ANCHOR COUNT 2, SAB_COUNT 1). The anchor now carries
 # `pcrec_minw`'s own SIGNATURE, which is the only text in the file that can
@@ -49,7 +49,7 @@ SAB_BEFORE='long long pcrec_minw(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return mrl_sat_add(acc, 1);'
+            return pcrec_mrl_sat_add(acc, 1);'
 SAB_AFTER='long long pcrec_minw(const Ast *a)
 {
     long long acc = 0;
@@ -57,4 +57,4 @@ SAB_AFTER='long long pcrec_minw(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            return mrl_sat_add(acc, 0);  /* SABOTAGE S58 */'
+            return pcrec_mrl_sat_add(acc, 0);  /* SABOTAGE S58 */'

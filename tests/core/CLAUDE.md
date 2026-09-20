@@ -40,14 +40,14 @@ under D45's gen-timeout budgets), and no check in this tier may read the
 ## Files
 
 - **sat_arith_check.c** / **run_core_tests.sh** — [REVW.U L5-R2] THE
-  SATURATING-ARITHMETIC AGREEMENT: `mrl_sat_add`/`mrl_sat_mul`
-  (`src/opt/mrl.c`), `vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
-  `cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
+  SATURATING-ARITHMETIC AGREEMENT: `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
+  (`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+  `pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
   states the requirement twice in prose (`src/opt/CLAUDE.md`'s `mrl.c`
-  entry, `emit_vm.c`'s own comment above `vm_fadd`) and, until this check,
+  entry, `emit_vm.c`'s own comment above `pcrec_vm_fadd`) and, until this check,
   enforced it nowhere. Checked for CROSS-FAMILY EQUALITY over the
   non-negative domain every real caller uses (which also answers lens 1's
-  own open question — `cg_sat_add`'s extra `CG_EXP_INF` guard is redundant
+  own open question — `pcrec_cg_sat_add`'s extra `CG_EXP_INF` guard is redundant
   on that domain, proved by evaluation rather than by reading) and for
   three algebraic laws the callers rely on and the implementations do not
   themselves state: MONOTONE, CAPPED, ABSORBING. See the check's own
@@ -56,7 +56,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   functions, and this file is wired into `san_scripts.txt`, so a real hit
   there would ABORT the sanitizer battery rather than FAIL cleanly) and
   the four-sabotage failing-direction story, of which one — a one-character
-  boundary weakening in `mrl_sat_mul` — is invisible to every answer-level
+  boundary weakening in `pcrec_mrl_sat_mul` — is invisible to every answer-level
   check in the tree by construction (it under-estimates, which is
   `pcrec_minw`'s safe direction). Sabotage row S254.
 

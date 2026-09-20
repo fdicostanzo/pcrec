@@ -128,7 +128,7 @@ construction (src/ir) and emission (src/gen).
   direction and under-estimating is its miscompile. **It uses NO CYCLE TEST**,
   and the `reach` closure sitting right there is why that is worth stating:
   `reaches(i, i)` would answer "is target i in a cycle" directly, and it is the
-  WRONG question. `mrl_sat_add` saturates, so a target in a cycle reads its own
+  WRONG question. `pcrec_mrl_sat_add` saturates, so a target in a cycle reads its own
   published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED` and
   never leaves the top — and the same absorption gives the right answer for a
   target that merely REACHES a cycle without being in one (`g = (?&h)x` with
@@ -874,7 +874,7 @@ construction (src/ir) and emission (src/gen).
   carries its own header saying which way it rounds. `PCREC_W_UNBOUNDED`
   (core/internal.h) is where rounding up runs out, and it is deliberately the
   SAME VALUE as `PCREC_MINW_MAX` so that unbounded ABSORBS through
-  `mrl_sat_add` and, at `mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
+  `pcrec_mrl_sat_add` and, at `pcrec_mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
   for an unbounded repeat of a zero-width body.
 
   **[DD-14 wave B+C] `pcrec_minw`'s `A_CALL` ARM READS A VALUE OFF THE NODE**

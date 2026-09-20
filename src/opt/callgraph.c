@@ -250,7 +250,7 @@ static void cg_minw_publish(void *ud, const Ast *a)
  * A TARGET IN A CYCLE IS A FIXED POINT AT UNBOUNDED, WITH NO CYCLE TEST. The
  * `reach` closure two functions up could answer "is target i in a cycle"
  * directly (`reaches(i,i)`), and this fixpoint deliberately does not ask it:
- * `mrl_sat_add` saturates, so a body that calls back into its own SCC reads
+ * `pcrec_mrl_sat_add` saturates, so a body that calls back into its own SCC reads
  * the published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED`,
  * and never leaves the top. The same absorption gives the RIGHT answer for a
  * target that merely REACHES a cycle without being in one (`g = (?&h)x` with
@@ -431,7 +431,7 @@ static void cg_publish_link(void *ud, const Ast *a)
 /* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
  * symbol directly (declared in core/internal.h). No behaviour change —
  * this is pcrec's own compile-time arithmetic, never emitted text. */
-long long cg_sat_add(long long a, long long b)
+long long pcrec_cg_sat_add(long long a, long long b)
 {
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
     long long r = a + b;
@@ -500,7 +500,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
             for (int j = 0; j < n; j++) {
                 if (j == i || !cg->site[(size_t)i * nn + (size_t)j]) continue;
                 if (!cg->splice[j]) continue;
-                e = cg_sat_add(e, pcrec_cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
+                e = pcrec_cg_sat_add(e, pcrec_cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
                                              cg->exp[j] - 1));
             }
             cg->exp[i]    = e;
@@ -526,7 +526,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long total = 0;
         for (int i = 0; i < n; i++)
             if (cg->splice[i])
-                total = cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1));
+                total = pcrec_cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1));
         if (total <= PCREC_MAX_SPLICE_TOTAL) break;
         /* Drop the largest contributor; ties by descending target number, so
          * the rule is a function of the pattern and nothing else. */

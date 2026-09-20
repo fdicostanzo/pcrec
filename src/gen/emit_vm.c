@@ -3211,14 +3211,14 @@ static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
 /* [REVW.U L5-R2] not `static`: tests/core/sat_arith_check.c links this
  * symbol directly (declared in core/internal.h). No behaviour change —
  * this is pcrec's own compile-time arithmetic, never emitted text. */
-long long vm_fadd(long long a, long long b)
+long long pcrec_vm_fadd(long long a, long long b)
 {
     long long r = a + b;
     return r > PCREC_MINW_MAX ? PCREC_MINW_MAX : r;
 }
 
 /* Its multiplying sibling, for the per-replica constant `k * minw(body)`.
- * [REVW.U L5-R2] not `static`, same reason as vm_fadd above. */
+ * [REVW.U L5-R2] not `static`, same reason as pcrec_vm_fadd above. */
 long long pcrec_vm_fmul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
@@ -4531,7 +4531,7 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
      * for both preferences — `next` is the greedy fallback and the lazy
      * fallthrough alike, which is §2.8's preference-blindness showing up as
      * one line of code instead of two. */
-    vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), next,
+    vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, v->fmin), next,
                 "MRL: no room for another iteration and the follow -- take "
                 "the skip, push nothing");
     if (greedy) {
@@ -4621,7 +4621,7 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
         /* [M4.6d] cut before push, on the possessive arm too. The one frame
          * this copy would push exists to notice that the body cannot run;
          * where MRL already knows it cannot, the frame is pure cost. */
-        vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), next,
+        vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, v->fmin), next,
                     "MRL: no room for another copy and the follow");
         vm_push_at(v, exitl, "scan_position",
                    "the loop's ONLY frame: this copy failing leaves the loop");
@@ -4698,7 +4698,7 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
     /* [M4.6d] cut before push. Reached once per iteration, so this also
      * bounds the loop: the first position at which another iteration plus the
      * follow cannot fit ends the loop without a frame. */
-    vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), exitl,
+    vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, v->fmin), exitl,
                 "MRL: no room for another iteration and the follow");
     vm_push_at(v, exitl, "scan_position",
                "the loop's ONLY frame: the iteration failing leaves the loop");
@@ -5029,7 +5029,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     const long long F  = v->fmin;
     const long long bw = pcrec_minw(a->l);
     vm_prune_mark(v, entry,
-                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
+                  v->mrl && (pcrec_vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
     vm_set(v, se, "(ptrdiff_t)scan_position",
            "revdet: the loop's entry position (the capture walk's floor)");
     if (a->u.rep.rmin == 0)
@@ -5058,7 +5058,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * arriving there directly leaves exactly the state that frame's pop would
      * have restored: `pos` is this boundary either way, `it` is untouched, and
      * `run->resume_depth` is already at the depth the pop would have left it. */
-    vm_mrl_test(v, "scan_position", vm_fadd(bw, F), shortl,
+    vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), shortl,
                 "MRL: no room for another iteration and the follow -- stop the "
                 "scan on the boundary it is standing on");
     sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
@@ -5221,7 +5221,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
          * and unlike the scan's stop this one FAILS, because there is no
          * shorter alternative left to fall back to: the shorter ones were
          * already tried, which is what "lazy" means. */
-        vm_mrl_test(v, "scan_position", vm_fadd(bw, F), -1,
+        vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), -1,
                     "MRL: the lazy ascent has nowhere left to go");
         sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
         vm_goto(v, extbl);
@@ -5323,7 +5323,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
      * measuring the exemplar rather than by reading the code. */
     const long long F   = v->fmin;
     const long long res = optional ? 0 : pcrec_vm_fmul(count % K, bw);
-    const long long TF  = vm_fadd(F, res);
+    const long long TF  = pcrec_vm_fadd(F, res);
     const int trip = vm_label(v);
     const int tail = vm_label(v);
     const int skip = optional ? vm_label(v) : -1;
@@ -5379,7 +5379,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             {
                 const char *sd = v->fdyn;
                 v->fdyn = dyn ? dyn : v->fdyn;
-                vm_mrl_test(v, "scan_position", dyn ? F : vm_fadd(pcrec_vm_fmul(K, bw), TF), -1,
+                vm_mrl_test(v, "scan_position", dyn ? F : pcrec_vm_fadd(pcrec_vm_fmul(K, bw), TF), -1,
                             dyn ? "MRL: the mandatory iterations still owed "
                                   "(counter-derived) plus the follow do not fit"
                                 : "MRL: this trip's K mandatory iterations, the "
@@ -5395,7 +5395,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
              * to run after this one; within an OPTIONAL trip none is, so the
              * body inherits the loop's own follow. */
             const long long cf = optional ? F
-                                          : vm_fadd(pcrec_vm_fmul(K - 1 - i, bw), TF);
+                                          : pcrec_vm_fadd(pcrec_vm_fmul(K - 1 - i, bw), TF);
             if (!optional) {
                 /* Copy `i` is followed by `count - slot_values[ctr] - (i+1)` further
                  * MANDATORY iterations -- across the rest of this trip, every
@@ -5417,7 +5417,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                  * resume, so the frame carries the skip label. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (greedy): body preferred");
-                vm_mrl_test(v, "scan_position", vm_fadd(bw, F), skip,
+                vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), skip,
                             "MRL: no room for another iteration and the follow");
                 vm_push(v, skip, "greedy: leaving the loop here is the resume");
                 vm_goto(v, bodyl);
@@ -5428,7 +5428,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                  * arm. Greedy vs lazy is which side is the fallthrough. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (lazy): leaving preferred");
-                vm_mrl_test(v, "scan_position", vm_fadd(bw, F), skip,
+                vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), skip,
                             "MRL: no room for another iteration and the follow");
                 vm_push(v, bodyl, "lazy: taking another iteration is the resume");
                 vm_goto(v, skip);
@@ -5472,11 +5472,11 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             int nx = vm_label(v);
             /* Mandatory replicated copies: the frames rung's own arithmetic,
              * at a smaller count. */
-            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(residue - i, bw), F),
+            int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(residue - i, bw), F),
                                  -1, "MRL: mandatory residue copies plus the "
                                      "follow do not fit");
             vm_emit_f(v, at, a->l, nx,
-                      vm_fadd(pcrec_vm_fmul(residue - i - 1, bw), F));
+                      pcrec_vm_fadd(pcrec_vm_fmul(residue - i - 1, bw), F));
             cur = nx;
         }
         vm_lbl(v, cur, "counter residue complete");
@@ -5543,7 +5543,7 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
     /* [M4.6d] cut before push, once per iteration. `stop` cuts and takes the
      * continuation, which is exactly what the popped frame would have done. */
-    vm_mrl_test(v, "scan_position", vm_fadd(bw, F), stop,
+    vm_mrl_test(v, "scan_position", pcrec_vm_fadd(bw, F), stop,
                 "MRL: no room for another iteration and the follow");
     vm_push(v, stop, "possessive: this iteration cannot run, so leave the loop");
     vm_goto(v, body0);
@@ -5614,7 +5614,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_COUNTER, cuts, role);
     vm_prune_mark(v, entry,
-                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
+                  v->mrl && (pcrec_vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
     if (cuts)
         vm_set(v, mark, "(ptrdiff_t)run->resume_depth",
                "possessive cut mark (resume-stack depth at loop entry)");
@@ -5628,10 +5628,10 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     } else {
         for (int i = 0; i < m; i++) {
             int nx = vm_label(v);
-            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(m - i, bw), F), -1,
+            int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(m - i, bw), F), -1,
                                  "MRL: mandatory copies left plus the follow "
                                  "do not fit");
-            vm_emit_f(v, at, a->l, nx, vm_fadd(pcrec_vm_fmul(m - i - 1, bw), F));
+            vm_emit_f(v, at, a->l, nx, pcrec_vm_fadd(pcrec_vm_fmul(m - i - 1, bw), F));
             cur = nx;
         }
     }
@@ -5728,7 +5728,7 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
      * has `bw == 0` and the test collapses to the loop's own follow-min,
      * which is still worth having: `(a*)*b` on a subject with no `b` left is
      * cut here rather than at the guard. */
-    vm_mrl_test(v, "scan_position", vm_fadd(pcrec_minw(a->l), v->fmin), exit,
+    vm_mrl_test(v, "scan_position", pcrec_vm_fadd(pcrec_minw(a->l), v->fmin), exit,
                 "MRL: no room for another iteration and the follow");
     if (guard)
         vm_set(v, gslot, "(ptrdiff_t)scan_position",
@@ -5881,7 +5881,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
          * rung tests, and therefore exactly the predicate for "did this
          * quantifier get a bound at all". */
         vm_prune_mark(v, entry,
-                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), frole);
+                  v->mrl && (pcrec_vm_fadd(bw, F) > 0 || v->fdyn != NULL), frole);
     }
 
     /* ---- the frames rung ------------------------------------------------
@@ -5914,11 +5914,11 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         cur = body0;
         for (int i = 0; i < a->u.rep.rmin; i++) {
             int nx = vm_label(v);
-            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
+            int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
                                  -1, "MRL: mandatory copies left plus the "
                                      "follow do not fit");
             vm_emit_f(v, at, a->l,  nx,
-                      vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
+                      pcrec_vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
             cur = nx;
         }
         if (a->u.rep.rmax >= 0) vm_poss_chain(v, cur, a->l, a->u.rep.rmax - a->u.rep.rmin, next,
@@ -5940,11 +5940,11 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * rung takes an EXIT instead, because every other copy is optional. */
     for (int i = 0; i < a->u.rep.rmin; i++) {
         int nx = vm_label(v);
-        int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
+        int at = vm_mrl_gate(v, cur, pcrec_vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
                              -1, "MRL: mandatory copies left plus the follow "
                                  "do not fit");
         vm_emit_f(v, at, a->l, nx,
-                  vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
+                  pcrec_vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
         cur = nx;
     }
 
@@ -7993,7 +7993,7 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
                                  (size_t)(nsp + 1) * sizeof(long long));
     sfx[nsp] = v->fmin;
     for (int j = nsp - 1; j >= 0; j--)
-        sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
+        sfx[j] = pcrec_vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
     int cur = entry;
     int nx = vm_label(v);
     vm_emit_f(v, cur, t, nx, sfx[0]);
@@ -11662,7 +11662,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * has to be consumed. That is why it is written as a WIDTH COMPARISON
      * rather than an unconditional `return 0`, and the distinction is not
      * cosmetic. `PCREC_MINW_MAX` is reached by TWO routes -- the call
-     * fixpoint's genuine infinity, and `mrl_sat_add`/`mrl_sat_mul`
+     * fixpoint's genuine infinity, and `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
      * SATURATION on a pattern whose true minimum is merely enormous -- and
      * this function cannot tell them apart from the value alone. An
      * unconditional `return 0` would be a MISCOMPILE on the second route for

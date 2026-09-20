@@ -26,6 +26,6 @@ SAB_DESC="pcrec_cwmax's A_CLASS arm answers the encoding's maximum code-unit len
 SAB_DOC_FIGURE="PREDICTED: every lookbehind block in tests/lookaround/ that has a class (or literal, which parses to a class) in a branch goes red as a pattern-compile failure; lookahead blocks are unmoved (no width rule). MEASURED at stage 2: lookbehind.rxt and lookbehind_widths.rxt red wholesale, refused.rxt's perr blocks still red-for-the-right-reason where the refusal text changed."
 SAB_COUNT=1
 SAB_BEFORE='            /* One CHARACTER, exactly and by definition — see the header. */
-            return mrl_sat_add(acc, 1);'
+            return pcrec_mrl_sat_add(acc, 1);'
 SAB_AFTER='            /* SABOTAGE S-U4: the cross-note cure — max code-unit length. */
-            return mrl_sat_add(acc, 4);'
+            return pcrec_mrl_sat_add(acc, 4);'

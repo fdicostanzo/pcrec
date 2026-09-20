@@ -5681,11 +5681,11 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * retire with that unification, not before — the check is written against
  * TODAY's three separate implementations first, per R2's own ordering
  * argument. */
-long long mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
+long long pcrec_mrl_sat_add(long long a, long long b);     /* src/opt/mrl.c */
 
-long long mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
+long long pcrec_mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
 
-long long cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
+long long pcrec_cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
 
 long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
 
@@ -5786,7 +5786,7 @@ bool pcrec_dfa_scan_state_written(Ctx *cx, const Dfa *d);  /* src/gen/emit_dfa.c
 
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 
-long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
+long long pcrec_vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
 
 long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
 
@@ -5794,15 +5794,15 @@ long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c 
  * a backreference, or any arithmetic that ran off the top.
  *
  * IT IS DELIBERATELY THE SAME VALUE AS `PCREC_MINW_MAX`, and the reason is
- * that it must COMPOSE with `mrl_sat_add`/`mrl_sat_mul` rather than need a
+ * that it must COMPOSE with `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul` rather than need a
  * check at every arm:
  *
- *   - `mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
+ *   - `pcrec_mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
  *     through a concatenation, which is what "unbounded" has to do;
- *   - `mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
+ *   - `pcrec_mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
  *     ZERO-WIDTH body is correctly 0 (`(?:\b)*` consumes nothing however many
  *     times it runs) instead of being needlessly widened;
- *   - `mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
+ *   - `pcrec_mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
  *     unbounded body stays unbounded.
  *
  * The cost of sharing the value is that a SATURATED-but-finite maxw is

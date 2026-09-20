@@ -4321,9 +4321,9 @@ uniform regime deliberately (`unit_cc.sh`'s own header explains why).
 single feature directory** (R0.3) — NOT a generic `tests/unit/`; every
 pre-existing unit check stays where it is. `make test-core` (part of
 `make test`) carries the tier's first new instance: `sat_arith_check.c`,
-the saturating-arithmetic agreement between `mrl_sat_add`/`mrl_sat_mul`
-(`src/opt/mrl.c`), `vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
-`cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
+the saturating-arithmetic agreement between `pcrec_mrl_sat_add`/`pcrec_mrl_sat_mul`
+(`src/opt/mrl.c`), `pcrec_vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+`pcrec_cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
 stated twice in prose and enforced nowhere. The six functions are no
 longer `static` (declared in `core/internal.h` beside `pcrec_minw`) so the
 check can call the shipped functions directly; no behaviour change, no

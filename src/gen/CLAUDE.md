@@ -1646,8 +1646,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
     **IT IS A WIDTH COMPARISON AND NOT AN UNCONDITIONAL `return 0`**, and
     the difference is a correctness one. The ceiling is reached by TWO
-    routes — the call fixpoint's genuine infinity, and `mrl_sat_add`/
-    `mrl_sat_mul` SATURATION on a pattern whose true minimum is merely
+    routes — the call fixpoint's genuine infinity, and `pcrec_mrl_sat_add`/
+    `pcrec_mrl_sat_mul` SATURATION on a pattern whose true minimum is merely
     enormous — and the value cannot distinguish them. The comparison is
     exactly right on both and needs no distinction; an unconditional return
     would be a miscompile on the second for a subject of 2^40 bytes, which
