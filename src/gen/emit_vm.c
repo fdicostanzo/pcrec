@@ -376,6 +376,9 @@ typedef struct {
     const char *up;       /* uppercased prefix — GenNames.upper, shared */
     int       nlabel;
     int       ngroups;    /* capturing groups (0 when --no-captures) */
+    bool      emitted_prefilter; /* a `<prefix>_prefilter` DFA pair was written
+                                  * — what the listing reports; NOT the same
+                                  * question as `job->fit.prefilter` */
     bool      has_push;   /* [CC-CLANG fix] this artifact pushes a resume
                             * frame somewhere — `emitted_push || has_linked_calls`,
                             * derived once in `vm_plan_entry` and read by the
@@ -11500,46 +11503,36 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
     }
 }
 
-/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
- * `root` into `job->csb` (and, under `--emit-ir`, the listing into
- * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
- * `<prefix>_match*` entries, the resume/trail frame types and their sizing
- * macros, the program body (`vm_emit`'s recursive walk plus its own
- * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
- * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
- * run first and consumed by the emission that follows — the root's
- * minimum width (this comment's own subject, immediately below: read HERE
- * because only this emitter writes a search entry to guard), the cost/slot
- * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
- * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
- * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
- * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
- * it discovers the call regions it must save/restore across. */
-void pcrec_emit_vm(Ctx *cx, Ast *root)
+/* Writes the MATCHER ITSELF: the per-search and per-attempt resets, the
+ * storage wiring, the class bitmaps, the prefilter, `<prefix>_match_anchored`
+ * with the program body spliced in from the scratch buffer, the fail label
+ * and its pop-and-resume dispatch, the capture copy-out, and
+ * `<prefix>_search` with its start-position guard, root-width check, MRL
+ * ceiling and retry advance.
+ *
+ * This is where the section boundary above it pays: everything here emits
+ * code that RUNS, expressed in the macros and types `vm_emit_storage` just
+ * declared, so a reader following one runtime path never leaves this
+ * function.
+ *
+ * PUBLISHES one fact: `v->emitted_prefilter`, which the listing reports.
+ * READS the entry rung for the two attribute strings (`en->ai` on the thin
+ * helpers, `en->ai_body` on the matcher — THIS is the function the size term
+ * prices) and `v->has_push` for whether the fail label needs a dispatch at
+ * all.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_storage`, and before
+ * `vm_emit_entries`, whose six entries all delegate into what is written
+ * here. */
+static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
+                                const VmEntry *en)
 {
+    Ctx *cx = v->cx;
     Job *job = cx->job;
     StrBuf *c = &job->csb;
-    Vm vm;
-    Vm *v = &vm;
-    GenNames g;
-    VmPlan pl;
-    VmEntry en;
 
-    vm_init(v, cx, root, &g);
-    vm_plan(v, root, &pl);
-    vm_plan_entry(v, &pl, &en);
-
-    const long long bt_frames    = pl.caps.bt_frames;
-    const long long trail_frames = pl.caps.trail_frames;
-    const long long ceiling      = pl.caps.ceiling;
-    const long long budget       = pl.caps.budget;
-    const long long work_budget  = pl.caps.work_budget;
-    const bool      has_budget   = pl.caps.has_budget;
-
-    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
-    vm_emit_stamps(v, &pl, &en);
-    vm_emit_storage(v, &pl);
-
+    const long long work_budget = pl->caps.work_budget;
+    const bool      has_budget  = pl->caps.has_budget;
 
     /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position. On a failed attempt the trail
@@ -11570,7 +11563,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    run->trail        = (%s_trail_entry *)trail;\n"
         "    run->trail_cap    = ntrail;\n"
         "}\n\n",
-        en.ai, v->p, v->p, v->p, v->p);
+        en->ai, v->p, v->p, v->p, v->p);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -11588,7 +11581,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    int i;\n"
         "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
         "    run->resume_depth = 0; run->trail_depth = 0;\n",
-        en.ai, v->p, v->p, v->up);
+        en->ai, v->p, v->p, v->up);
     /* [DD-14 wave B+C] §5.6 site 5a — NOT an `ERR_FLOOR` site but a MISSING
      * INITIALISER, and R34's LENS2-7 found it by noticing the design's own
      * prototype set the sentinel BY HAND in `main()`, which is exactly the
@@ -11632,7 +11625,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    run->resume_depth = 0;\n"
         "%s"
         "}\n\n",
-        en.ai, v->p, v->p, reset_call_top);
+        en->ai, v->p, v->p, reset_call_top);
 
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
@@ -11686,6 +11679,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         pcrec_emit_dfa_engine(cx, prefn, "static ");
         pcrec_sb_puts(c, "\n");
     }
+    /* The one fact about the prefilter that outlives this section: the
+     * LISTING reports whether one was emitted, and `job->fit.prefilter` is a
+     * different question (which language it answers for — see the listing's
+     * own `prefilter_collapsed` line). Published rather than re-derived, so
+     * the two cannot drift. */
+    v->emitted_prefilter = (prefn != NULL);
 
     /* ---- rx_match_anchored: the program ------------------------------------ */
     /* [M4.6d] THE MRL CEILING IS A PARAMETER, not a member of `<prefix>_work`
@@ -11709,9 +11708,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         /* [CC-DIFF] STEP 2: `ai_body`, not `ai` — THIS is the function the
          * size term prices, and the SHARED rung keeps exactly one copy of it
          * while every thin helper above still inlines. */
-        en.ai_body, v->p, v->p,
-        v->nclamp > 0 ? pl.mrl_param : "",
-        v->ngst > 0 ? pl.gst_param : "");
+        en->ai_body, v->p, v->p,
+        v->nclamp > 0 ? pl->mrl_param : "",
+        v->ngst > 0 ? pl->gst_param : "");
     if (v->rungs & vm_rung_bit[VM_RUNG_CURSOR])
         pcrec_sb_printf(c, "    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
@@ -12018,7 +12017,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "        capture_spans[group][1] = run->slot_values[2 * group + 1];\n"
         "    }\n"
         "}\n\n",
-        en.ai, v->p, v->p,
+        en->ai, v->p, v->p,
         v->nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"
             "     * crossed a \\K (slot 0, trailed), NOT where matching began.\n"
@@ -12058,7 +12057,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    size_t attempt_position;\n"
         "%s"
         "    if (search_from > subject_length) return 0;\n",
-        en.ai, g.searchfn, v->p,
+        en->ai, g->searchfn, v->p,
         v->nclamp > 0 ? "    size_t window_end;\n" : "");
 
     /* [K50] The caller-startpos boundary guard, site 1 of 3 on this engine.
@@ -12306,6 +12305,50 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
         v->up, v->up, v->up, v->up, v->up, v->p, retry_adv, retry_win, v->p);
+}
+
+/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
+ * `root` into `job->csb` (and, under `--emit-ir`, the listing into
+ * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
+ * `<prefix>_match*` entries, the resume/trail frame types and their sizing
+ * macros, the program body (`vm_emit`'s recursive walk plus its own
+ * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
+ * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
+ * run first and consumed by the emission that follows — the root's
+ * minimum width (this comment's own subject, immediately below: read HERE
+ * because only this emitter writes a search entry to guard), the cost/slot
+ * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
+ * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
+ * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
+ * it discovers the call regions it must save/restore across. */
+void pcrec_emit_vm(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    Vm vm;
+    Vm *v = &vm;
+    GenNames g;
+    VmPlan pl;
+    VmEntry en;
+
+    vm_init(v, cx, root, &g);
+    vm_plan(v, root, &pl);
+    vm_plan_entry(v, &pl, &en);
+
+    const long long bt_frames    = pl.caps.bt_frames;
+    const long long trail_frames = pl.caps.trail_frames;
+    const long long ceiling      = pl.caps.ceiling;
+    const long long budget       = pl.caps.budget;
+    const long long work_budget  = pl.caps.work_budget;
+    const bool      has_budget   = pl.caps.has_budget;
+
+    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
+    vm_emit_stamps(v, &pl, &en);
+    vm_emit_storage(v, &pl);
+    vm_emit_search_body(v, &g, &pl, &en);
+
+
 
     /* [DD-14.FB] THE TWO SEARCH ENTRIES (spec §10.2/§10.3).
      *
@@ -12578,7 +12621,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.nmark = v->nmark_total;
         st.ncaps = v->ncaps;
         st.has_budget = has_budget;
-        st.prefilter = prefn != NULL;
+        st.prefilter = v->emitted_prefilter;
         /* [OPT-4] off `fit`, the one derivation (D81) -- `prefn` says a
          * prefilter was emitted, this says which language it recognises. */
         st.prefilter_collapsed = job->fit.prefilter_collapsed;
