@@ -2005,3 +2005,28 @@ never edited afterwards.
   resource 0 failed, cpset 28/0, specimen 13/0, comments_axis 65/0,
   test-codegen 9/10 with the standing darwin `nm` probe as the sole red,
   S40 re-driven solo DETECTED). PARKED on `lane/evtriage3`, not merged.
+
+- `axtriage_report.md` — TWO unrelated lanes share this name and this
+  file, kept as two sections (the 2026-09-09 one was never given a
+  bullet here either; both are recorded now). Section 1 (2026-09-09):
+  the stage-5 battery `axes` red was `--engine=vm`'s first-ever
+  documented refusal (K55, `\P{Unknown}` under `-e utf8` past
+  `PCREC_MAX_VM_EMIT_CODE_BYTES`) — one `REFUSAL_PATTERN` entry, not an
+  engine regression. Section 2 (2026-09-19/20, RELAUNCHED on the same
+  worktree/branch name from a much later main, 25b1984f): a different
+  red on a different corpus file — `--engine=dfa` forced on adm71's new
+  `(?:ab){0,16000}` (`tests/base/opt41_rung_nullable_decline.rxt`,
+  built to overflow `PCREC_MAX_DFA_STATES_TABLE` so `auto` declines the
+  [SEL-1] collapse rung) reaches `src/ir/dfa.c:954`'s own do-or-die
+  state-cap diagnostic, which tuning.md §2.11/[SEL-1] already documents
+  verbatim (no spec gap) but which `run_axes.sh`'s own 2026-09-03 (K45)
+  comment had explicitly anticipated and left OUT for having zero
+  measured population at the time — now populated, one substring added.
+  Single-file positive/negative control confirms the fix
+  (`refused_undoc`: 6 -> 0); swept every OTHER axis on the same file too
+  (item (d)), finding no other genuine defect, only the same
+  floor-vs-scope artifact on two axes with their own K35 floors.
+  Full-corpus floor confirmation and `make test-codegen` are OWED —
+  `worktrees/w5`'s own `make test` held the box for this lane's whole
+  working period (box-concurrency rule 9). PARKED on `lane/axtriage`,
+  not merged.
