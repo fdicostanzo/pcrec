@@ -10440,43 +10440,37 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
     en->shape = shape;
 }
 
-/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
- * `root` into `job->csb` (and, under `--emit-ir`, the listing into
- * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
- * `<prefix>_match*` entries, the resume/trail frame types and their sizing
- * macros, the program body (`vm_emit`'s recursive walk plus its own
- * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
- * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
- * run first and consumed by the emission that follows — the root's
- * minimum width (this comment's own subject, immediately below: read HERE
- * because only this emitter writes a search entry to guard), the cost/slot
- * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
- * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
- * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
- * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
- * it discovers the call regions it must save/restore across. */
-void pcrec_emit_vm(Ctx *cx, Ast *root)
+/* Writes the artifact's STAMPS: the `#define <PREFIX>_…` block a consumer, a
+ * tests/codegen structural check or a build-time `#ifdef` reads the
+ * compiler's own decisions off. Engine and why; the prefilter and which
+ * language it answers for; the call linkage; the size term's selection
+ * facts; the root minimum width; the frameless, island and fold-form facts;
+ * the entry-shape rung with the program byte count it was chosen on; the
+ * rung/strategy/prune masks; the ceiling; the slot legend; and the two
+ * capacity pairs the caller and the fast tier are sized from.
+ *
+ * IT DECIDES NOTHING. Every number here was settled by `vm_plan` or
+ * `vm_plan_entry` and is read off `pl`, `en` or `v` — which is the property
+ * that keeps a stamp from disagreeing with the code it describes (D46's
+ * observability half, and the "ONE DERIVATION" rule the individual stamp
+ * comments below keep restating). A stamp that recomputed its own value
+ * would be a second source, and this file has had to go back and fix that
+ * twice.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: it runs after `pcrec_emit_prologue`
+ * — which writes the declarations — and before any storage type, macro or
+ * entry, because those are declared FROM the sizing macros written here. */
+static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
 {
+    Ctx *cx = v->cx;
     Job *job = cx->job;
     StrBuf *c = &job->csb;
-    Vm vm;
-    Vm *v = &vm;
-    GenNames g;
-    VmPlan pl;
-    VmEntry en;
 
-    vm_init(v, cx, root, &g);
-    vm_plan(v, root, &pl);
-    vm_plan_entry(v, &pl, &en);
+    const long long bt_frames   = pl->caps.bt_frames;
+    const long long budget      = pl->caps.budget;
+    const long long work_budget = pl->caps.work_budget;
+    const bool      has_budget  = pl->caps.has_budget;
 
-    const long long bt_frames    = pl.caps.bt_frames;
-    const long long trail_frames = pl.caps.trail_frames;
-    const long long ceiling      = pl.caps.ceiling;
-    const long long budget       = pl.caps.budget;
-    const long long work_budget  = pl.caps.work_budget;
-    const bool      has_budget   = pl.caps.has_budget;
-
-    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
 
     /* §5.5's stamp. RETAINED alongside rx_info (D43.1 makes rx_info the
      * CANONICAL machine-readable record) because the two serve different
@@ -10826,7 +10820,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [REVW.4] wave 4: the rung's NAME comes from `src/core/tune.c`'s one
      * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
      * four-arm ladder that stood here was the second of three spellings. */
-    pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en.shape));
+    pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
@@ -10923,7 +10917,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         pcrec_sb_puts(c, "#include <stdio.h>\n");
         pcrec_sb_stampf(c, v->up, "TRACE", "1");
     }
-    pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl.nstate < 1 ? 1 : pl.nstate);
+    pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl->nstate < 1 ? 1 : pl->nstate);
 
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
@@ -10931,7 +10925,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * artifact -- `RX_SET(2, ...)` becomes `RX_SET(RX_SLOT_GROUP1_START, ...)`.
      * Every name comes from vm_slot_name, i.e. from the layout arithmetic
      * itself, so it cannot disagree with where the emitter actually writes. */
-    if (pl.nstate > 0) {
+    if (pl->nstate > 0) {
         pcrec_sb_putc(c, '\n');
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c, "/* SLOT LEGEND -- names for the numbered cells of the slot\n"
@@ -10940,7 +10934,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                    " * VM does not write it unless the pattern has a \\K, because the\n"
                    " * entry already knows where the attempt began. */\n");
         pcrec_sb_cmt_close(c);
-        for (int sl = 0; sl < pl.nstate; sl++) {
+        for (int sl = 0; sl < pl->nstate; sl++) {
             const char *nm = vm_slot_name(v, sl);
             if (!nm) continue;
             pcrec_sb_stampwf(c, v->up, nm, 24, "%d", sl);
@@ -10979,9 +10973,49 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * appeared only on tiered artifacts would make the fact readable by a
      * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
      * back and fix in two checks. */
-    pcrec_sb_stampf(c, v->up, "FAST_FRAMES", "%lld", pl.fast_frames);
-    pcrec_sb_stampf(c, v->up, "FAST_TRAIL",  "%lld", pl.fast_trail);
+    pcrec_sb_stampf(c, v->up, "FAST_FRAMES", "%lld", pl->fast_frames);
+    pcrec_sb_stampf(c, v->up, "FAST_TRAIL",  "%lld", pl->fast_trail);
     pcrec_sb_puts(c, "\n");
+}
+
+/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
+ * `root` into `job->csb` (and, under `--emit-ir`, the listing into
+ * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
+ * `<prefix>_match*` entries, the resume/trail frame types and their sizing
+ * macros, the program body (`vm_emit`'s recursive walk plus its own
+ * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
+ * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
+ * run first and consumed by the emission that follows — the root's
+ * minimum width (this comment's own subject, immediately below: read HERE
+ * because only this emitter writes a search entry to guard), the cost/slot
+ * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
+ * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
+ * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
+ * it discovers the call regions it must save/restore across. */
+void pcrec_emit_vm(Ctx *cx, Ast *root)
+{
+    Job *job = cx->job;
+    StrBuf *c = &job->csb;
+    Vm vm;
+    Vm *v = &vm;
+    GenNames g;
+    VmPlan pl;
+    VmEntry en;
+
+    vm_init(v, cx, root, &g);
+    vm_plan(v, root, &pl);
+    vm_plan_entry(v, &pl, &en);
+
+    const long long bt_frames    = pl.caps.bt_frames;
+    const long long trail_frames = pl.caps.trail_frames;
+    const long long ceiling      = pl.caps.ceiling;
+    const long long budget       = pl.caps.budget;
+    const long long work_budget  = pl.caps.work_budget;
+    const bool      has_budget   = pl.caps.has_budget;
+
+    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
+    vm_emit_stamps(v, &pl, &en);
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
      * All locals — no globals (TS-1: usable FROM threads, all-const tables,
