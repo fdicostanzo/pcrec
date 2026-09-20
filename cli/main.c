@@ -389,23 +389,37 @@ typedef struct {
 /* [REVW.4] wave 4 (L11-F4) — THE MODE RELATION, WRITTEN ONCE.
  *
  * `main` dispatches on MODES: the seven registry queries, `--explain`,
- * `--count-groups`, `--emit-ir`, `--probe-ask`, `--list-source`, `--source`
- * and `--flavour`. Each mode that RETURNS from `main` on its own first
- * refuses the other modes it does not compose with — and until this wave
- * that refusal was spelled out SIX TIMES as an `||` chain, with FOUR
- * DIFFERENT memberships (13 / 12 / 9 / 8 flags), no two of which a reader
- * could compare without counting. Adding a mode meant remembering six
- * chains and knowing which of the four each one belongs to; the review's
- * finding is that the arrangement is correct today only because of BLOCK
- * ORDER.
+ * `--count-groups`, `--emit-ir`, `--probe-ask`, `--list-source` and
+ * `--source`. Each mode that RETURNS from `main` on its own first refuses
+ * the other modes it does not compose with — and until this wave that
+ * refusal was spelled out SIX TIMES as an `||` chain, with FOUR DIFFERENT
+ * memberships (13 / 12 / 9 / 8 flags), no two of which a reader could
+ * compare without counting. Adding a mode meant remembering six chains and
+ * knowing which of the four each one belongs to; the review's finding is
+ * that the arrangement is correct today only because of BLOCK ORDER.
  *
  * ONE TABLE of modes, ONE activity test, and a NAMED MASK per site. The
  * memberships below are the NARROWEST-PER-SITE, i.e. exactly what each site
  * accepts and refuses today (Frank's ruling for this item): this is an
  * extraction, not a contract change, and `docs/spec/cli.md` is unchanged by
- * it. Widening every site to the union would be a real behaviour change —
- * `--probe-ask --flavour=pcre2` is accepted today and the union would refuse
- * it — and it is PROPOSED in docs/dev/lanes/w4_report.md rather than built.
+ * it.
+ *
+ * [REVW.5.1] `--flavour` is NOT a mode row here — see
+ * `CLI_MODES_FLAVOUR_APPLIES` below. w4_report.md's own motivating example
+ * for widening every site to the union ("`--probe-ask --flavour=pcre2` is
+ * accepted today") is FALSE (w5_report.md §2, measured): that combination
+ * is refused today, by the probe-ask site's own applies-to check — every
+ * mode+flavour pair outside the three flavour composes with already
+ * refuses, so only WHICH check refuses differed, and `--flavour` carried
+ * that difference alone. Carving it into its own relation is what lets
+ * this table drop a fourteenth row without a behaviour change; the
+ * remaining thirteen modes' four narrowed masks below are otherwise
+ * UNCHANGED from wave 4 — `--probe-ask`/`--emit-ir` are the one pair among
+ * them that is deliberately NOT mutually exclusive (comment at
+ * `CLI_MODES_VS_PATTERN_QUERY`), so widening those masks to a literal
+ * thirteen-mode union would flip that pair from accepted to refused
+ * (measured live: `--probe-ask claim --emit-ir -- '\d'` answers the probe
+ * and exits 0) — not built here.
  *
  * THE SUMMED-COUNT RELATION AT THE SEVEN-QUERY SITE IS NOT FOLDED IN, and
  * that is also ruled. "Is some OTHER mode active" and "is at most one of
@@ -425,8 +439,7 @@ typedef struct {
     X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
     X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
     X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
-    X(SOURCE,           source,           PTR, "--source")               \
-    X(FLAVOUR,          flavour,          PTR, "--flavour")
+    X(SOURCE,           source,           PTR, "--source")
 
 typedef enum {
 #define CLI_MODE_ENUM_ROW(id, field, kind, spelling) CM_##id,
@@ -492,17 +505,29 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_VS_PATTERN_QUERY (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS))
 
 /* `--list-source` READS a `.rxt` file: it refuses every query above plus the
- * other two pattern-bearing ones and `--source`, which COMPILES one.
- * `--flavour` is deliberately absent — that site refuses it separately, with
- * its own applies-to diagnostic, which is a different rule. */
+ * other two pattern-bearing ones and `--source`. `--flavour` is deliberately
+ * absent — that site refuses it separately, through the applies-to relation
+ * below, which is a different rule. */
 #define CLI_MODES_VS_LIST_SOURCE                                          \
     (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) | CMB(SOURCE))
 
 /* `--source` COMPILES a `.rxt` file and refuses every query surface there
- * is, `--flavour` among them — the one membership that includes it. */
+ * is. `--flavour` refuses against it too (checked at that site directly,
+ * since [REVW.5.1] it is not a table mode any `CMB()` can name), and this
+ * is the one site where that refusal is worded like a MODE conflict
+ * ("does not compose with a query surface") rather than through the
+ * applies-to relation's own sentence — preserved exactly, D26. */
 #define CLI_MODES_VS_SOURCE                                               \
     (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) |         \
-     CMB(LIST_SOURCE) | CMB(FLAVOUR))
+     CMB(LIST_SOURCE))
+
+/* [REVW.5.1] `--flavour`'s OWN applies-to relation (item 1, w5r): the three
+ * modes it composes with. Every other mode refuses it — each site keeps
+ * the diagnostic wording it already had (D26: no wording change), so this
+ * macro states the RULE those sites already independently enforced rather
+ * than replacing their text. */
+#define CLI_MODES_FLAVOUR_APPLIES \
+    (CMB(LIST_SYNTAX) | CMB(LIST_DEFINITIONS) | CMB(EXPLAIN))
 
 /* Everything past `opt` is zero — i.e. this invocation asked for compile
  * options and nothing else. The comparison is over the raw bytes of the
@@ -1462,7 +1487,7 @@ int main(int argc, char **argv)
      * query already won SILENTLY — `--source f.rxt --count-groups -- a`
      * would have counted the pattern's groups and ignored the file. The
      * test is one place, above all of them, and it names both surfaces. */
-    if (st.source && (modes & CLI_MODES_VS_SOURCE)) {
+    if (st.source && ((modes & CLI_MODES_VS_SOURCE) || flavour)) {
         cli_err("--source COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
@@ -1498,7 +1523,7 @@ int main(int argc, char **argv)
                             "(it reads the file named by its own value)");
             return 1;
         }
-        if (flavour) {
+        if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
             cli_err("--flavour applies to --list-syntax, "
                             "--list-definitions and --explain only");
             return 1;
@@ -1540,7 +1565,7 @@ int main(int argc, char **argv)
             cli_err("--probe-ask takes no -o");
             return 1;
         }
-        if (flavour) {
+        if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
             cli_err("--flavour applies to --list-syntax and "
                             "--explain only");
             return 1;
@@ -1623,7 +1648,7 @@ int main(int argc, char **argv)
             cli_err("--count-groups takes no -o");
             return 1;
         }
-        if (flavour) {
+        if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
             cli_err("--flavour applies to --list-syntax and "
                             "--explain only");
             return 1;
@@ -1692,8 +1717,7 @@ int main(int argc, char **argv)
          * reports what THIS BUILD's own limits.def says, never a claim
          * about a flavour's syntax — a numeric limit has no flavour axis
          * at all. */
-        if ((list_verbs || list_families || list_axes || list_limits ||
-             list_schema) && flavour) {
+        if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
             cli_err("--flavour applies to --list-syntax, "
                             "--list-definitions and --explain only");
             return 1;
@@ -1796,7 +1820,7 @@ int main(int argc, char **argv)
         }
         return 0;
     }
-    if (flavour) {
+    if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
         cli_err("--flavour applies to --list-syntax and "
                         "--explain only");
         return 1;
