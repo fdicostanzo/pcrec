@@ -9,8 +9,9 @@ usage: build_conditions.py SRC_C NAMES_TSV OUTDIR [VM_STRUCT_END_MARKER]
 Method recorded in ../2026-09-20-readability-experiments.md §1. A guesser
 (haiku) answers from the condition file ALONE; a grader (sonnet) scores
 correct/partial/wrong/vacuous against the truth column of graded_all.tsv."""
-import sys, re
+import sys, re, os
 src_path, names_path, out = sys.argv[1], sys.argv[2], sys.argv[3]
+os.makedirs(out, exist_ok=True)
 marker = sys.argv[4] if len(sys.argv) > 4 else '} Vm;'
 src = open(src_path, encoding='utf-8').read().split('\n')
 names = [l.rstrip('\n').split('\t')[:2] for l in open(names_path) if l.strip()]
