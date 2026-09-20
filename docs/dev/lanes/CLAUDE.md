@@ -2068,3 +2068,60 @@ never edited afterwards.
   `worktrees/w5`'s own `make test` held the box for this lane's whole
   working period (box-concurrency rule 9). PARKED on `lane/axtriage`,
   not merged.
+
+- `nltriage_report.md` — TRIAGE of the Linux battery's `[OPT-4.1]
+  -fprefilter` red at main `05499cba` (2026-09-20, lane nltriage, opus;
+  triage + targeted fix, no ssh to ubuntubudu — a battery held it).
+  **Verdict: MARGINAL CPU BUDGET, not introduced by any commit in the
+  suspect range.** The same compile measures 11.288 / 11.305 / 11.292
+  median user-CPU seconds at `25b1984f` / `55321f28` / `05499cba` (five
+  runs each, spread under 0.4% across all fifteen, byte-identical
+  18,160-byte artifacts), so lane/w5's 34 renames moved nothing — and
+  `src/ir/dfa.c`/`src/opt/minimize.c` differ over the range by identifier
+  text alone. Two corroborations the brief did not ask for: the battery's
+  OWN reported `peak rss 26796 kB` against this box's 29,056 kB says the
+  killed process had reached ~92% of the work's memory high-water mark and
+  was therefore doing the same work, and the check's `-O1` reference build
+  is exonerated as a cost (an `-O2` build runs the case in 11.36s — it is
+  memory-bound minimization, K25). `K7_CPU`=45s is 3.99x this box's number
+  against the ">2x inflation under a real -j12 mix" its own calibration
+  comment prices in, on a box `xarch_step0.md` measures 1.93x slower:
+  `btriage2_20260918_report.md`'s finding recurring at a second cell in the
+  same file.
+  **Fixed on two axes rather than by widening the budget.** (1) The witness
+  is scaled to the cap instead of the budget to the witness —
+  `(a|b){0,12000}` at a reference cap of 100,000 rather than
+  `(a|b){0,30000}` at 500,000 — which is **strictly better on every margin
+  the cell depends on**: the exact artifact clears the cap by 3.74x rather
+  than 1.83x (*the* margin, whose erosion made this cell vacuous four
+  separate times, now the widest it has ever been), the declined-nullable
+  default (12,114 B) and the collapsed rescue (18,151 B) sit 5-8x under the
+  cap so the cell still tests an OVERRIDE and not a compiler that always
+  takes the rung, and CPU goes 11.29s -> 1.83s for a 24.6x budget margin.
+  The rescue artifact is the SAME artifact, diffed rather than inferred
+  from its size — the only moving lines are the pattern text, the `-o`
+  basename, the cap value and the count digits. No `SAB_REACH_POP` floor
+  reaches this cell (the three naming this script all land on
+  `size_rung_cell`/Section 1b, which use `$PCREC` and the real cap).
+  (2) The `rc` arm becomes a `case`: the old `if [ $? -eq 0 ] ... else`
+  folded a real refusal, a watchdog CPU kill, a wall timeout and an RSS
+  kill into ONE message asserting that limits.md §3.3 had gone false —
+  *a check's FAILURE MESSAGE is a second, undeclared claim about the space
+  of causes*, in its sharpest recorded form, since the message named a spec
+  section by number. 122/123/124 are now distinguished and the two
+  CPU-inflation can produce route through `load_guard_tripped` (Section 1's
+  [TT-10] shape); only `rc 1` keeps the §3.3 sentence.
+  **The tier question answers itself from the spec**: §3.3's own next
+  paragraph reads "What pcrec does NOT promise is a bound on wall-clock
+  compile TIME ... D45 is a TEST HARNESS policy, not a caller-facing
+  contract ... a guard on the SUITE", so a `scripts/watchdog` CPU kill sits
+  on the other side of the line §3.3 exists to draw — the check was reading
+  a correct spec at the wrong altitude and no spec hunk is owed.
+  Validation COMPLETE on this box: resource **27/0/0** (1 expected darwin
+  skip), `make strict CC=gcc-16` clean, and both failing directions forced
+  (`K7_CPU=1` reports the budget rather than §3.3; a raised reference cap
+  still reddens the stamp arm, so the cheap witness is not vacuous). §7
+  names the one optional quiet-box Linux measurement that would pin the
+  Mac/Linux ratio for the minimization path — a number no measurement in
+  the tree currently holds, and which every `K7_CPU`-family budget is
+  implicitly calibrated against. PARKED on `lane/nltriage`, not merged.
