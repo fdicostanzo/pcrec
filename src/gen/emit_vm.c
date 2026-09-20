@@ -734,6 +734,12 @@ typedef struct {
     int       nev, evcap;
 } Vm;
 
+/* Appends one event to the VM's listing stream — a label, goto, fail, push,
+ * set, cut or note, with its two integer operands and the same `role` text
+ * the emitted `// ...` line comment carries. One call per emitted primitive
+ * writes both artifacts, which is what keeps the C and `--emit-ir` from
+ * drifting. The array is arena-backed and grown by DOUBLING, so no event is
+ * dropped and no caller sizes the log. */
 static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
 {
     if (v->nev == v->evcap) {
@@ -799,8 +805,15 @@ static const char *vm_bounds_text(Vm *v, const Ast *a)
     return vm_rolef(v, "{%d,%d}", a->u.rep.rmin, a->u.rep.rmax);
 }
 
+/* Hands out the next emitted label id. Label numbers are shared vocabulary
+ * with the `--emit-ir` listing and tests/codegen/run_ir_listing.sh, so they
+ * are allocated in one place and never reused within a program. */
 static int vm_label(Vm *v) { return v->nlabel++; }
 
+/* Charges one emitted node against `PCREC_MAX_VM_NODES`, failing the compile
+ * with a "pattern too large" diagnostic when the program outgrows it. The
+ * bound is on the program actually WRITTEN, counted as the emitter walks,
+ * never estimated from the AST beforehand. */
 static void vm_charge(Vm *v)
 {
     if (++v->nodes > PCREC_MAX_VM_NODES)
@@ -825,6 +838,8 @@ static void vm_charge(Vm *v)
  *                       costs O(1) trail per entry, which is the whole point.
  */
 static int vm_slot_guard(Vm *v, int i) { return 2 * (v->ngroups + 1) + i; }
+/* The cursor low-water slot for span loop `i` — the layout's third block
+ * above, `SLOT_SPAN_LOW<i>` in the artifact. */
 static int vm_slot_low(Vm *v, int i)   { return 2 * (v->ngroups + 1) + v->nguard_total + i; }
 /* [ENG-BREP] the fourth slot class: a possessified frames-rung loop's CUT
  * MARK, the resume-stack depth to truncate back to. It sits above the low-water
@@ -991,6 +1006,11 @@ static const char *vm_slot_ref(Vm *v, int slot)
     return vm_rolef(v, "slot_values[%s]", vm_slot_expr(v, slot));
 }
 
+/* The counter rung's slot for loop `i` — `SLOT_COUNTER<i>`, one TRAILED
+ * iteration counter per counter loop, sitting above the three-slot
+ * reverse-deterministic block. Like every base here it is the sum of the
+ * family TOTALS the counting pass found, never of a running counter, so the
+ * counting pass and the emitter compute the same index. */
 static int vm_slot_ctr(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -1069,6 +1089,10 @@ static int vm_slot_splice(Vm *v, int i)
          + v->npend_total + v->nlookmark_total + v->nlookpos_total + i;
 }
 
+/* A lookaround's cursor-snapshot slot `i` — the layout's TOP family but for
+ * the splice block, holding the position the assertion was entered at so
+ * `vm_look` can restore it. `vm_look_needs_pos` decides which lookarounds
+ * take one. */
 static int vm_slot_lookpos(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -1094,6 +1118,10 @@ static bool vm_look_needs_mark(const Ast *a)
      * 195), so `neg` implies a cut with no third case to consider. */
     return a->u.look.atomic || a->u.look.neg;
 }
+/* Does this lookaround need a position SNAPSHOT — that is, is there nothing
+ * else that already restores the cursor when its body finishes? The second of
+ * the pair the header above describes, and the body names the one form that
+ * gets its restore for free and the one that needs the slot anyway. */
 static bool vm_look_needs_pos(const Ast *a)
 {
     /* The cursor has to be RESTORED from a slot unless something else already
@@ -1185,6 +1213,11 @@ static int vm_counter_copies(const Vm *v, const Ast *a, bool cuts)
 
 /* ---- AST predicates ------------------------------------------------------*/
 
+/* The node under any capturing wrappers. `A_CAP` adds capture bookkeeping and
+ * no matching, so `(((x)))` and `x` are the same subject to a SHAPE question
+ * — which is why `vm_det_seq` strips them before it classifies, and a body
+ * written with groups in it is still recognised as the deterministic sequence
+ * it is. */
 static const Ast *bare(const Ast *a)
 {
     while (a->k == A_CAP) a = a->l;
@@ -1471,6 +1504,11 @@ static bool vm_revdet_fits(const Ast *a, bool under_atomic)
 
 /* ---- the class pool -----------------------------------------------------*/
 
+/* Interns a 256-bit class bitmap in the pool and returns its index, returning
+ * the EXISTING index for a bitmap already there — so a pattern that tests the
+ * same class at twenty sites emits one table, not twenty. The index is the
+ * only name the emitted test and the emitted table array share. Pool is
+ * arena-backed and doubled. */
 static int vm_cls(Vm *v, const uint8_t *bits)
 {
     for (int i = 0; i < v->ncls; i++)
@@ -1523,6 +1561,12 @@ typedef enum {
     VM_CLS_SHAPE_BITMAP   /* anything else: the 32-byte bitmap read */
 } VmClsShape;
 
+/* Classifies one class bitmap into the shapes above, and hands back its
+ * lowest and highest members through `lo_out`/`hi_out` — the numbers the
+ * SINGLE, RANGE and FOLD tests spell straight into the emitted expression
+ * (both -1 for an empty set, which classifies as BITMAP). Reads
+ * `PCREC_NO_CLS_FOLD` off the job's options, which is the whole reason it
+ * takes `v` rather than the bitmap alone. */
 static VmClsShape vm_cls_shape(const Vm *v, const uint8_t *bits,
                                int *lo_out, int *hi_out)
 {
@@ -1682,6 +1726,12 @@ static int vm_det_seq(Ctx *cx, const Ast *a, uint8_t (*out)[32], int cap)
  * iteration start. Returns the count, or -1 if more than `cap` were found. */
 typedef struct { int group, off, len; } CapOff;
 
+/* Walks a `vm_det_seq`-approved fixed-width body, appending one `CapOff` row
+ * per capturing group found, and RETURNS the body's end offset measured from
+ * `base` — so one walk yields both the group table and the iteration width.
+ * Returns -1 for any node it cannot place and for an overflow of `cap`, and a
+ * -1 anywhere aborts the whole walk: a caller must treat a negative return as
+ * "no table", never as a partial one. */
 static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
 {
     switch (a->k) {
@@ -3019,12 +3069,18 @@ static void vm_lbl(Vm *v, int id, const char *role)
     vm_ev(v, VE_LABEL, id, 0, role);
 }
 
+/* Writes the artifact's unconditional jump to label `id` and records the
+ * matching listing event, so the emitted C and `--emit-ir` cannot disagree
+ * about where control goes. */
 static void vm_goto(Vm *v, int id)
 {
     pcrec_sb_printf(v->b, "    goto %s_L%d;\n", v->p, id);
     vm_ev(v, VE_GOTO, id, 0, NULL);
 }
 
+/* Writes the jump to the program's ONE fail label — the single backtracking
+ * site, and the only indirect jump in the emitted function — and records the
+ * event. Every failure edge in the matcher is written through here. */
 static void vm_fail(Vm *v)
 {
     pcrec_sb_printf(v->b, "    goto %s_fail;\n", v->p);
@@ -3049,11 +3105,18 @@ static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
     vm_ev(v, VE_PUSH, lblid, 0, role);
 }
 
+/* `vm_push_at` for the ordinary choice point: the frame resumes at the
+ * CURRENT position. Every caller but the span-loop rung wants this one. */
 static void vm_push(Vm *v, int lblid, const char *role)
 {
     vm_push_at(v, lblid, "scan_position", role);
 }
 
+/* Writes one TRAILED slot assignment — the `<PREFIX>_SET` line, naming the
+ * slot through its legend macro where the layout accounts for it and by bare
+ * number where it does not — records that the artifact touches the trail, and
+ * appends the listing event. One call, all three, for the reason the
+ * primitives around it share. */
 static void vm_set(Vm *v, int slot, const char *val, const char *role)
 {
     {
@@ -3129,11 +3192,19 @@ static void vm_work_at(Vm *v, const char *indent, const char *countexpr,
     vm_ev(v, VE_NOTE, 0, 0, role);
 }
 
+/* `vm_work_at` at statement level, which is every work-charge site but the
+ * one inside an emitted block. */
 static void vm_work(Vm *v, const char *countexpr, const char *role)
 {
     vm_work_at(v, "    ", countexpr, role);
 }
 
+/* Writes the possessive loop's CUT — the `<PREFIX>_CUT` line that truncates
+ * the resume stack back to the depth parked in `slot` — after charging the
+ * discarded frames as work. The order is load-bearing and not stylistic: the
+ * CUT overwrites `run->resume_depth`, so after it runs the count the charge
+ * needs no longer exists. Why those frames are provably dead is argued
+ * above. */
 static void vm_cut(Vm *v, int slot, const char *role)
 {
     /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
@@ -3265,6 +3336,11 @@ static void vm_emit_fd(Vm *v, int entry, const Ast *a, int next,
  * down because the arithmetic must be right where nobody is watching. */
 enum { VM_MRL_DYN_MAX = 240 };
 
+/* Joins two runtime follow-min terms into the emitted expression `a + b`,
+ * passing the other straight through when either is absent. Past
+ * `VM_MRL_DYN_MAX` bytes it DROPS `a`, the outer term, and counts the retreat
+ * in `v->ndynskip` — the under-estimate the comment above argues is the safe
+ * direction. Arena-owned text, so no caller sizes a buffer. */
 static const char *vm_dyn_add(Vm *v, const char *a, const char *b)
 {
     size_t n;
@@ -3621,6 +3697,11 @@ static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
     return n;
 }
 
+/* Appends one node to the island trie and returns its INDEX: `parent`, the
+ * edge `byte` that reaches it and its `depth` in bytes recorded, every list
+ * field empty. The node array is arena-backed and doubled, so a `VmIslNode *`
+ * does not survive the next call — callers index `t->nd[i]` rather than hold
+ * a pointer across an insert. */
 static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byte)
 {
     if (t->nnd == t->ndcap) {
@@ -4045,6 +4126,15 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
     }
 }
 
+/* Emits an alternation at label `entry` whose every branch continues to
+ * `next`. The flat branch list is offered to the island trie first, and that
+ * is a SELECTION rather than a special case: a declined alternation falls
+ * through unchanged, which is what makes `-fno-alt-island` byte-identical
+ * wherever the predicate says no. Otherwise it writes the CHAIN — branch
+ * j+1's resume frame pushed just before branch j runs, so one frame is live
+ * per alternation at any instant rather than one per untried branch. The
+ * branch spine is walked iteratively (D10), and `v->nislands` is bumped in
+ * the call that emits so the stamp cannot drift from the program text. */
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
@@ -4749,6 +4839,10 @@ typedef struct {
     int         faill;  /* where any failure in a step lands */
 } Rev;
 
+/* The DENSE index of capture group `capno` within the reversed body, or -1
+ * when the group is not one of the body's — the position its span and
+ * seen-flag locals occupy in `R->ga`/`R->gs`. Linear over `R->ngrp`, which is
+ * one body's group count and not the pattern's. */
 static int vm_rev_index(const Rev *R, int capno)
 {
     for (int i = 0; i < R->ngrp; i++) if (R->grp[i] == capno) return i;
@@ -6717,6 +6811,11 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
  * does. */
 typedef struct { int guard, low, mark, rev, ctr, lookmark, lookpos; } VmSnap;
 
+/* The per-family slot counters as they stand RIGHT NOW — `nguard`, `nlow`,
+ * `nmark`, `nrev`, `nctr`, `nlookmark`, `nlookpos`. Taken either side of a
+ * region's emission so the save-set build can turn "what this region
+ * allocated" into slot RANGES. It reads the RUNNING counters, not the family
+ * totals, which is why it is only ever useful in pairs. */
 static VmSnap vm_snap(const Vm *v)
 {
     VmSnap s;
@@ -6791,6 +6890,13 @@ static void vm_grp_set_cap(Vm *v, int n, void *u)
  * user pointer, and both it and the set are needed on every visit. */
 typedef struct { bool *w; int nstate; } VmWCaps;
 
+/* The `vm_walk_caps` callback that turns one visited group number into
+ * save-set members: the group's capture pair, and its PENDING slot as well
+ * when the group is marked. `u` is the `VmWCaps` closure above, carrying both
+ * the set and the layout width because a walker callback gets one user
+ * pointer. Every write is bounds-checked against `c->nstate`, so a group or
+ * pending slot outside the layout is skipped rather than written past the
+ * set. */
 static void vm_w_cap_slots(Vm *v, int g, void *u)
 {
     VmWCaps *c = u;
@@ -6915,6 +7021,10 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
     vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
+/* Marks slots `[lo, hi)` as members of the save set `w`, clipping to the
+ * layout width `nstate`. Family bases are computed from totals, so an empty
+ * or partly out-of-range span is legitimate and is skipped rather than
+ * written. */
 static void vm_w_range(bool *w, int nstate, int lo, int hi)
 {
     for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
@@ -7157,6 +7267,10 @@ static void vm_memo_region_costs(Vm *v)
     }
 }
 
+/* How many subject bytes a capacity affords when each byte costs `per`
+ * frames. Zero `per` answers 0, which the caller reads as "this arm imposes
+ * no ceiling" and not as "no bytes" — the two arms are folded with exactly
+ * that reading. */
 static long long vm_ceiling(long long cap, long long per)
 {
     if (per <= 0) return 0;
