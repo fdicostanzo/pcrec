@@ -43,6 +43,6 @@ SAB_DESC="the search entry stops emitting the ROOT minimum-width check, so an em
 SAB_DOC_FIGURE="PREDICTED: leftrec.rxt's DIRECT cell (^((?1)a)\$ on \"a\") and its INDIRECT cell (the p/q two-node cycle on \"ab\") revert from a ruled NOMATCH to PCREC_ERR_FRAMES -- their wave-B+C expectation, which wave E replaced. The NULLABLE-PREFIX cell (^(a?(?1)b)\$ on \"ab\") stays GREEN under the same sabotage, because its \`a?\` emits an MRL clamp and it never depended on this site. TWO RED, ONE GREEN is the signature; three red means the MRL machinery was cut instead. MEASURED on the landed build: all three roots report pcrec_minw = 1099511627776 (PCREC_MINW_MAX) once pcrec_callgraph_build has run, and exactly four of the corpus's 2,568 distinct patterns reach that ceiling -- all four call-bearing."
 SAB_COUNT=1
 SAB_BEFORE='     * them is call-bearing, so no call-free artifact gains a byte. */
-    if (root_minw >= PCREC_MINW_MAX)'
+    if (v->root_minw >= PCREC_MINW_MAX)'
 SAB_AFTER='     * them is call-bearing, so no call-free artifact gains a byte. */
     if (0) /* SABOTAGE S169: the root minw check is never emitted */'

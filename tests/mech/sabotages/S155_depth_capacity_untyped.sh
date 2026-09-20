@@ -162,7 +162,7 @@ SAB_BEFORE='                "        if (run->resume_depth >= run->resume_cap) r
                 "        run->call_top = run->resume_depth;                               \\\n"
                 "        run->resume_depth++;                                             \\\n"
                 "    } while (0)\n\n",
-                v.up, v.up, v.p);'
+                v->up, v->up, v->p);'
 SAB_AFTER='                /* SABOTAGE S155: the capacity test is gone */
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
                 "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
@@ -172,4 +172,4 @@ SAB_AFTER='                /* SABOTAGE S155: the capacity test is gone */
                 "        run->call_top = run->resume_depth;                               \\\n"
                 "        run->resume_depth++;                                             \\\n"
                 "    } while (0)\n\n",
-                v.up, v.p);'
+                v->up, v->p);'

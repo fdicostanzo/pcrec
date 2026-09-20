@@ -51,7 +51,7 @@ SAB_AFTER='            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return 
             "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='            v.up, v.up, v.up, v.up, v.up, v.up,
-            v.has_linked_calls ? "        run->resume_stack[run->resume_depth]"'
-SAB_AFTER2='            v.up, v.up, v.up, v.up, v.up, v.up, v.up,   /* SABOTAGE S182 */
-            v.has_linked_calls ? "        run->resume_stack[run->resume_depth]"'
+SAB_BEFORE2='            v->up, v->up, v->up, v->up, v->up, v->up,
+            v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"'
+SAB_AFTER2='            v->up, v->up, v->up, v->up, v->up, v->up, v->up,   /* SABOTAGE S182 */
+            v->has_linked_calls ? "        run->resume_stack[run->resume_depth]"'

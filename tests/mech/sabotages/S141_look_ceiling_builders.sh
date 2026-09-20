@@ -38,11 +38,11 @@ SAB_SUITES="codegen irlisting"
 SAB_DESC="Both lines that BUILD the MRL ceiling -- the search entry and the retry recompute -- are gated on job->fit.prefilter instead of on v.mrl_win, while the stamp and the --emit-ir description keep reading the flag. Every artifact whose ceiling was suppressed (atomic or lookaround) now stamps \"subject-end\" and clamps to the prefilter window anyway: R31 E3's defect, restored at both builders at once"
 SAB_DOC_FIGURE="MEASURED (single-row run at 8720029+waveE, tree b08a601): DETECTED -- codegen 2fail/77pass, irlisting 0fail/80pass. The two codegen failures are [M6.4-ATOMIC rule 1(a)] and [M6.6-LOOKAROUND rule 1(a)], one per module, each reporting the 2 surviving window[0][1] assignments; 1(b), 1(d) and both 1c twins stay GREEN, and irlisting is GREEN because the FOURTH reader is untouched. The disjointness is the row's point."
 SAB_COUNT=1
-SAB_BEFORE='            v.nclamp == 0 ? ""
+SAB_BEFORE='            v->nclamp == 0 ? ""
               /* H3 site 1 of 3 (the search ENTRY). */
-              : v.mrl_win
+              : v->mrl_win
 '
-SAB_AFTER='            v.nclamp == 0 ? ""
+SAB_AFTER='            v->nclamp == 0 ? ""
               /* SABOTAGE S141 site 1/2: the ENTRY builder re-derives from the
                * raw prefilter flag instead of reading the predicate */
               : job->fit.prefilter
@@ -50,7 +50,7 @@ SAB_AFTER='            v.nclamp == 0 ? ""
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
 SAB_BEFORE2='                 prefn,
-                 v.mrl_win
+                 v->mrl_win
                    ? "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"'
 SAB_AFTER2='                 prefn,
                  /* SABOTAGE S141 site 2/2: the RETRY builder, likewise */

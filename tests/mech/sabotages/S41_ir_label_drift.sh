@@ -19,5 +19,5 @@ SAB_SUITES="irlisting"
 SAB_DESC="the accept label is emitted by a direct pcrec_sb_printf, bypassing vm_lbl, so it never reaches the listing's event stream"
 SAB_DOC_FIGURE="tests/codegen/run_ir_listing.sh: the PROGRAM label-set check fails for every pattern"
 SAB_COUNT=1
-SAB_BEFORE="        vm_lbl(&v, acc, \"the pattern is complete\");"
-SAB_AFTER="        pcrec_sb_printf(v.b, \"%s_L%d: __attribute__((unused));\\\\n\", v.p, acc);  /* SABOTAGE S41 */"
+SAB_BEFORE="        vm_lbl(v, acc, \"the pattern is complete\");"
+SAB_AFTER="        pcrec_sb_printf(v->b, \"%s_L%d: __attribute__((unused));\\\\n\", v->p, acc);  /* SABOTAGE S41 */"

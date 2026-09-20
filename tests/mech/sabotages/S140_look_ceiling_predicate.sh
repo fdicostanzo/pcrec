@@ -47,9 +47,9 @@ SAB_COUNT=1
 # it still deletes the LOOKAROUND conjunct and only that one, so the collapsed
 # conjunct is carried through to SAB_AFTER rather than quietly dropped —
 # deleting two conjuncts would be a different, easier-to-detect row.
-SAB_BEFORE='    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+SAB_BEFORE='    v->mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
                                    && !pcrec_has_lookaround(root)
                                    && !job->fit.prefilter_collapsed;'
 SAB_AFTER='    /* SABOTAGE S140: the lookaround conjunct deleted (design §5.6(2)) */
-    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+    v->mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
                                    && !job->fit.prefilter_collapsed;'
