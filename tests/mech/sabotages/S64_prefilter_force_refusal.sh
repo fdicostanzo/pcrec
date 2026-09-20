@@ -33,14 +33,22 @@ SAB_SUITES="prefilter"
 SAB_DESC="the -fprefilter do-or-die refusal (fit.chosen != ENGM_VM) is removed, so --engine=dfa -fprefilter and --no-captures -fprefilter compile SUCCESSFULLY instead of refusing -- fit.prefilter=true is set but has no consumer on the DFA emission path, so the artifact is silently identical to an unforced DFA build"
 SAB_DOC_FIGURE="docs/dev/decisions.md D46 (do-or-die); src/opt/CLAUDE.md's [M4.6f] entry"
 SAB_COUNT=1
-SAB_BEFORE='        if (force_on && fit.chosen != ENGM_VM)
-            pcrec_ctx_fail(cx, why_pos,
-                     "-fprefilter requires the VM engine; this pattern "
-                     "compiles to the DFA engine, which carries no separate "
-                     "prefilter to force (pass --engine=vm, or drop "
-                     "-fprefilter)");
+# [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
+# decision moved out of `pcrec_select_engine`'s braced block into its own
+# `prefilter_decision` function (r61 F2) as a VERBATIM relocation: every line
+# lost exactly four columns of indent and `fit.` became `fit->`. The plant
+# still deletes exactly the `-fprefilter` do-or-die refusal, leaving the
+# other three refusals in the same function live. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
+# landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
+# -Werror.
+SAB_BEFORE='    if (force_on && fit->chosen != ENGM_VM)
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter requires the VM engine; this pattern "
+                 "compiles to the DFA engine, which carries no separate "
+                 "prefilter to force (pass --engine=vm, or drop "
+                 "-fprefilter)");
 '
-SAB_AFTER='        /* SABOTAGE S64: do-or-die refusal removed -- force_on now sets
-         * fit.prefilter=true unconditionally, even when fit.chosen is
-         * ENGM_DFA, where nothing ever reads it. */
+SAB_AFTER='    /* SABOTAGE S64: do-or-die refusal removed -- force_on now sets
+     * fit->prefilter=true unconditionally, even when fit->chosen is
+     * ENGM_DFA, where nothing ever reads it. */
 '

@@ -65,5 +65,13 @@ SAB_REACH_POP="tests/codegen/run_prefilter_collapse.sh|^declined_default_witness
 tests/codegen/run_prefilter_collapse.sh|\[sel1n\]|10
 tests/resource/run_resource_tests.sh|^size_rung_cell |2"
 SAB_COUNT=1
-SAB_BEFORE='        fit.lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='        fit.lang_nullable = false;   /* SABOTAGE S206 */'
+# [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
+# decision moved out of `pcrec_select_engine`'s braced block into its own
+# `prefilter_decision` function (r61 F2) as a VERBATIM relocation: every line
+# lost exactly four columns of indent and `fit.` became `fit->`. The plant
+# still pins `lang_nullable` false at its one derivation, so both
+# nullability declines go dead and neither twin can fire. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
+# landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
+# -Werror.
+SAB_BEFORE='    fit->lang_nullable = pcrec_minw(root) == 0;'
+SAB_AFTER='    fit->lang_nullable = false;   /* SABOTAGE S206 */'
