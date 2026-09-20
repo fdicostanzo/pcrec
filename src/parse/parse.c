@@ -989,7 +989,12 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * `opening` is the class's `[` offset, for that message. `*quoted` reports
  * whether the read byte was quoted content; `*claim` is set exactly as
  * `esc_class_value` sets it — the caller supplies its initial NOT_MINE
- * value, unchanged on every other path. */
+ * value, unchanged on every other path. At the low site `*quoted`
+ * OVERWRITES the loop top's own capture with the read-time value; the two
+ * are equal today because nothing between the loop top and this call
+ * writes `cx->pos` or `cx->in_quote` (the class-bracket doorway never moves
+ * the cursor), and the day that stops being true this header's three
+ * no-op claims fail together — check them, not one of them. */
 static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quoted)
 {
     if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&

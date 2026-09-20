@@ -44,11 +44,11 @@ point)
    `hiclaim`, with its own comment stating it decodes "exactly as the low
    member above does".
 
-Both endpoints then feed `loclaim`/`hiclaim` into the SAME four K12 steps
+Both endpoints then feed `loclaim`/`hiclaim` into the SAME five K12 steps
 (1: low's own refusal: `if (loclaim.what==REFUSAL && !ep_set_certain)
 pcrec_ext_finish`; 3: high's own refusal, identical shape; 4:
 `loclaim.what!=NOT_MINE || hiclaim.what!=NOT_MINE` → invalid range) —
-those four checks are untouched by this lane; only how `lo`/`loclaim` and
+all five checks (including step 2, the pair_opens short-circuit, and step 5, the scalar ordering) are untouched by this lane; only how `lo`/`loclaim` and
 `hi`/`hiclaim` get PRODUCED changed.
 
 ### After — `cls_read_member(cx, opening, claim, quoted)`
@@ -73,7 +73,7 @@ static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quot
 }
 ```
 
-It performs its own quote-open+dissolve and its own (now UNCONDITIONAL)
+It performs its own quote-open+dissolve and its own (conditional on `cx->in_quote`, but now run at BOTH sites)
 truncation check, then the four-way decode, unconditionally — at both call
 sites. The low-endpoint call site (`lo = cls_read_member(cx, opening,
 &loclaim, &quoted)`, reusing the loop's own `quoted` local) reaches these
@@ -134,7 +134,7 @@ narrative rather than a stated current invariant:
   the ASCII one…"` → trimmed to the current-state fact (`UNDER byte THIS
   CHANGES NOTHING: every produced set reaching the union is already
   either ASCII-closed…`). First paragraph (the measured `\p{Lu}k`/
-  `\p{Lu}x}` cells) untouched.
+  `\p{Lu}x` cells) untouched.
 - The `[M5.0 stage 1]` negation comment: `"the ONLY thing that moved is
   what 'everything else' means… instead of within a bitmap's implicit
   0..255"` → trimmed to state the current rule (`the complement is taken
@@ -252,3 +252,18 @@ checks including PC-3 (620/0 across five sections), and the sabotage
 anchor re-verification (285/285, zero re-aims). `test-codegen` is 9/10
 with the standing pre-existing darwin red, matching the brief's stated
 known state exactly.
+
+## Manager/review addendum (2026-09-20, lane tour3rev, opus, read-only)
+
+VERDICT: ordering PRESERVED. Path enumeration BEFORE vs AFTER at both
+sites diffs empty; 93 curated patterns x 4 feature configurations (372
+cells) and a generated sweep of 6,790 patterns x 6 configurations (40,740
+cells, 984 distinct answers) are byte-identical between the pre-tour3 and
+post-tour3 binaries. Three report inaccuracies corrected above (five K12
+steps, not four; the helper's truncation check is conditional on
+`cx->in_quote`, what is unconditional is that it runs at both sites; a
+typo). One latent point now stated in `cls_read_member`'s header: at the
+low site the loop's `quoted` local is overwritten by the read-time value,
+dead after the call on every path today. One OUT-OF-SCOPE pre-existing
+divergence found and CONFIRMED by the manager against local libpcre2
+10.48: `[0-\E]` under `--features quoting` — see known_issues.md K62.

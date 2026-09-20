@@ -11,6 +11,31 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K62 — [TOUR-3] review (lane tour3rev, 2026-09-20), pre-existing, module `quoting`: `[0-\E]` is REFUSED where PCRE2 compiles the two-member class {'0','-'}
+
+Status: `deferred`. Repro (CONFIRMED by the manager against local libpcre2
+10.48 with pcre2test — `/[0-\E]/` matches "0" and "-"; the repo's own 10.46
+record agrees: extension_design.md §16.1's order/dissolution line, the
+probe_qe.c F-x4 pin, check08_endpoints.c's step-1 comment):
+
+    build/pcrec --features quoting -p rx -- '[0-\E]'
+    pcrec: missing terminating ] for character class (pattern offset 0)
+    build/pcrec --features quoting -p rx -- '[a-\E]'
+    pcrec: range out of order in character class (pattern offset 2)
+
+MECHANISM (the reviewer's diagnosis, src/parse/parse.c): `cls_skip` is
+transparent to a bare `\E` and to `\Q\E`, but `cls_peek_past_dash` (the
+dash-vs-literal lookahead) is transparent only to the four-byte `\Q\E` —
+so the lookahead sees the backslash, commits to a RANGE, `cls_skip` then
+dissolves the `\E`, and the class's own `]` is consumed as the high
+endpoint. `[0-\E9]` and `[0-\Ea]` are correct; only the bare-`\E`-then-`]`
+case is wrong. Tier: a clean REFUSAL of a legal pattern (no miscompile);
+nothing in tests/ pins pcrec's current answer. FIX SHAPE: make the two
+lookaheads agree on what a bare `\E` is (one dissolution rule, not two —
+memory `general mechanisms, not special cases`); pin `[0-\E]` = {0,-},
+`[a-\E]` = {a,-}, `[0-\E9]` = 0-9 oracle-verified in tests/quoting (or
+tests/classes). Small; a sonnet admin lane.
+
 ## K61 — [TOUR-4], r61 F1, found 2026-09-20 (Fable's personal review of the five most complicated sections): `DFA_INVARIANT` in `src/ir/dfa.c` was `abort()`, contradicting `docs/spec/match_api.md`'s "It never `abort()`s the caller on the compile path" promise
 
 **Status: FIXED 2026-09-20 (lane `tour4`).** `DFA_INVARIANT` was
