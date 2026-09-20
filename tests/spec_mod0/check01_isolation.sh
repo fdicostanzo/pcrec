@@ -41,6 +41,21 @@
 # discovery reads identically to a real pass otherwise (the same vacuity this
 # check already guards structurally, made numeric).
 #
+# [REVW.5.1] item 2 (w5r, 2026-09-20): this check was a POSITIVE CONTROL
+# that had been DEAD on darwin since the two-machine split (w5_report.md
+# §7) — darwin's `nm` prefixes every symbol with `_`, so `$s` (read from
+# `nm`'s own output) never equalled the bare `EXC_SYMBOL="pcrec_feature_
+# enabled"` literal below, and the SPEC-M exception could never fire:
+# "fired 0 time(s), expected exactly 1", on every run, on this box, with
+# nothing actually wrong. A/B-ed against `fcf35d89` (this lane's own branch
+# point): identical failure there too, so it is not new. Fixed at the read
+# site (STRIP_NM_PREFIX above, applied to every `nm` extraction in this
+# file) rather than at the one comparison that happened to be broken — the
+# L8-F6 shape (docs/dev/coding_guide.md): a platform prefix belongs to the
+# READER of `nm`'s output, not to any one downstream use of it. A no-op on
+# Linux, where `nm` does not prefix symbols; reasoned from GNU `nm`'s
+# documented output rather than verified live (this lane has no Linux box).
+#
 # SABOTAGE: add one reference to the enabled-set symbol from any recogniser TU
 # and rebuild — that object gains the symbol in its undefined list and this
 # check names the object and the symbol. That is the whole test, and it is
@@ -97,15 +112,23 @@ echo "  archive: $ARCHIVE"
 echo "  looking for an enabled-set symbol matching: $ENABLED_RE"
 echo "  looking for recogniser/extent TUs matching:  $RECOG_RE"
 
+# [REVW.5.1] item 2, the L8-F6 shape: darwin's `nm` prepends every symbol
+# with `_` (Linux's does not) — stripped ONCE here, where `nm` output is
+# read, so every later comparison in this file (including the SPEC-M named
+# exception below, which literal-compares against a bare `EXC_SYMBOL`) sees
+# the platform-independent name. A no-op on Linux (nothing to strip).
+STRIP_NM_PREFIX='s/^_//'
+
 # --- discover the enabled-set symbol ------------------------------------
 ENABLED_SYMS=$(nm --defined-only "$ARCHIVE" 2>/dev/null \
-               | awk '{print $NF}' | grep -E "$ENABLED_RE" | LC_ALL=C sort -u)
+               | awk '{print $NF}' | sed "$STRIP_NM_PREFIX" \
+               | grep -E "$ENABLED_RE" | LC_ALL=C sort -u)
 
 # --- discover the recogniser TUs ----------------------------------------
 RECOG_OBJS=""
 for o in $(find "$OBJDIR" -name '*.o' 2>/dev/null | LC_ALL=C sort); do
     if nm --defined-only "$o" 2>/dev/null | awk '{print $NF}' \
-         | grep -qE "$RECOG_RE"; then
+         | sed "$STRIP_NM_PREFIX" | grep -qE "$RECOG_RE"; then
         RECOG_OBJS="$RECOG_OBJS $o"
     fi
 done
@@ -218,7 +241,7 @@ FAILS=0
 CHECKED=0
 ALLOWED=0
 for o in $RECOG_OBJS; do
-    UNDEF=$(nm --undefined-only "$o" 2>/dev/null | awk '{print $NF}')
+    UNDEF=$(nm --undefined-only "$o" 2>/dev/null | awk '{print $NF}' | sed "$STRIP_NM_PREFIX")
     obase=$(basename "$o")
     for s in $ENABLED_SYMS; do
         CHECKED=$((CHECKED + 1))
