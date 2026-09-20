@@ -1011,6 +1011,67 @@ static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quot
     return c;
 }
 
+/* Parses a class range's high endpoint and adds the resulting interval to
+ * `set`, once the caller (p_class) has already detected the range dash —
+ * the lookahead that decides whether to call this stays with the caller,
+ * since it needs cls_peek_past_dash's own \E-transparent peek before
+ * committing to a range at all. `lo`/`loclaim` are the already-decoded LOW
+ * endpoint (the caller's own `cls_read_member` call).
+ *
+ * THE ENDPOINT RULE (K12; design §16 as R14-corrected), five steps in
+ * PCRE2's measured evaluation order — probe evidence in
+ * tests/probes/probe_endpoint_k12.c, every cell pinned in tests/reject/
+ * with failing-then-passing pins:
+ *
+ *   1. the LOW endpoint's own error      ([\A-z] 107, [[.a.]-z] 113)
+ *   2. the HIGH pair-open short-circuit  ([0-[:digit:]] 150 with
+ *      no evaluation — the (bracket, high) deviating cell,
+ *      implemented BY pair_opens, which R14 struck from D33's
+ *      deletion list for exactly this)
+ *   3. the HIGH endpoint's own error     ([\d-\A] 107 — beats
+ *      the low side's SET)
+ *   4. either endpoint certifiably SET-shaped -> invalid range
+ *      ([0-\d], [\d-z], [\d-\w] all 150)
+ *   5. scalar ordering                   ([z-a] 108)
+ *
+ * A claim that is NOT certifiably SET (a body-dependent row — \p{...}
+ * until MOD-0.6's property table) fires as the construct's own refusal
+ * at steps 1/3: the module promise is the honest answer where pcrec
+ * cannot certify PCRE2's 150 ([0-\p{Foo}] is 147, not 150). */
+static void p_class_range(Ctx *cx, size_t opening, int lo, ExtResult *loclaim,
+                           PcrecCpSet *set)
+{
+    size_t dashpos = cx->pos;
+    cx->pos++; /* '-' */
+    cls_skip(cx);   /* xx: ws between '-' and the high endpoint */
+    if (loclaim->what == EXT_REFUSAL && !loclaim->ep_set_certain)
+        pcrec_ext_finish(cx, loclaim);              /* step 1 */
+    /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA):
+     * `[0-[a]`, `[0-[:]` and `[0-[:digit]` all COMPILE in PCRE2 because no
+     * pair closes — the endpoint test is the construct's own recognition
+     * rule, not "the byte is `[`". */
+    if (peekc(cx) == '[' &&
+        pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
+        pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
+    ExtResult hiclaim = { .what = EXT_NOT_MINE };
+    bool hi_quoted;
+    int hi = cls_read_member(cx, opening, &hiclaim, &hi_quoted);
+    if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
+        pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
+    /* step 4 — either side SET-shaped -> invalid range. A claim that
+     * SURVIVED steps 1/3 is exactly that: a refusal here is a
+     * certified-SET one (uncertified refusals fired above), and a
+     * produced EXT_MEMBERS (MOD-0.3c) is a SET by construction — [0-\d]
+     * is 150 with module classes enabled or disabled (§16.3's
+     * composition-keeps-K12-closed bullet, live in both gate states). */
+    if (loclaim->what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
+        pcrec_ctx_fail(cx, dashpos,
+                 "invalid range in character class"); /* step 4 */
+    if (lo > hi)
+        pcrec_ctx_fail(cx, dashpos, "range out of order in character class");
+    pcrec_cpset_add(set, (unsigned)lo, (unsigned)hi);   /* a range is one interval */
+}
+
 /* Parses a `[...]` bracket expression starting just past `[`: the leading
  * `^`/`]` special cases, POSIX/extended-class doorway dispatch per member,
  * escape and range handling, folding each contribution at its own
@@ -1157,72 +1218,7 @@ static Ast *p_class(Ctx *cx)
          * range-forming dash an unquoted one is. */
         if (!cx->in_quote && peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
             cls_peek_past_dash(cx) >= 0) {
-            size_t dashpos = cx->pos;
-            cx->pos++; /* '-' */
-            cls_skip(cx);   /* xx: ws between '-' and the high endpoint */
-            /* THE ENDPOINT RULE (K12; design §16 as R14-corrected), five
-             * steps in PCRE2's measured evaluation order — probe evidence in
-             * tests/probes/probe_endpoint_k12.c, every cell pinned in
-             * tests/reject/ with failing-then-passing pins:
-             *
-             *   1. the LOW endpoint's own error      ([\A-z] 107, [[.a.]-z] 113)
-             *   2. the HIGH pair-open short-circuit  ([0-[:digit:]] 150 with
-             *      no evaluation — the (bracket, high) deviating cell,
-             *      implemented BY pair_opens, which R14 struck from D33's
-             *      deletion list for exactly this)
-             *   3. the HIGH endpoint's own error     ([\d-\A] 107 — beats
-             *      the low side's SET)
-             *   4. either endpoint certifiably SET-shaped -> invalid range
-             *      ([0-\d], [\d-z], [\d-\w] all 150)
-             *   5. scalar ordering                   ([z-a] 108)
-             *
-             * A claim that is NOT certifiably SET (a body-dependent row —
-             * \p{...} until MOD-0.6's property table) fires as the
-             * construct's own refusal at steps 1/3: the module promise is
-             * the honest answer where pcrec cannot certify PCRE2's 150
-             * ([0-\p{Foo}] is 147, not 150). */
-            if (loclaim.what == EXT_REFUSAL && !loclaim.ep_set_certain)
-                pcrec_ext_finish(cx, &loclaim);              /* step 1 */
-            /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA).
-             * PCRE2 makes `[0-[:digit:]]` error 150, "invalid range in character
-             * class"; pcrec read the `[` as an ordinary literal upper bound and
-             * EMITTED A MATCHER — a silent wrong matcher, the one class the
-             * mandate forbids. 546 instances in a 1,530-pattern sweep.
-             *
-             * It survived every suite because it is masked by the alphabet the
-             * tests use: `a` is 0x61 and `[` is 0x5b, so `[a-[:digit:]]` is
-             * rejected as an out-of-order range before this can matter, and
-             * every range in the corpus is `a`-based. It took a test written
-             * from the SPEC rather than from the code to pick `[0-`.
-             *
-             * The endpoint test is the construct's own recognition rule, not
-             * "the byte is `[`" — `[0-[a]`, `[0-[:]` and `[0-[:digit]` all
-             * compile in PCRE2 because no pair closes. */
-            if (peekc(cx) == '[' &&
-                pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
-                pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
-            ExtResult hiclaim = { .what = EXT_NOT_MINE };
-            bool hi_quoted;
-            int hi = cls_read_member(cx, opening, &hiclaim, &hi_quoted);
-            if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
-                pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
-            /* step 4 — either side SET-shaped -> invalid range. A claim
-             * that SURVIVED steps 1/3 is exactly that: a refusal here is a
-             * certified-SET one (uncertified refusals fired above), and a
-             * produced EXT_MEMBERS (MOD-0.3c) is a SET by construction —
-             * [0-\d] is 150 with module classes enabled or disabled, which
-             * is §16.3's composition-keeps-K12-closed bullet, now live in
-             * both gate states. */
-            if (loclaim.what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
-                pcrec_ctx_fail(cx, dashpos,
-                         "invalid range in character class"); /* step 4 */
-            if (lo > hi)
-                pcrec_ctx_fail(cx, dashpos, "range out of order in character class");
-            /* A RANGE IS ONE INTERVAL, which is the payload change showing its
-             * hand: `[\x00-\xff]` was 256 bit-sets and is now a single `add`,
-             * and `\p{L}`'s 700-odd ranges will be 700 rather than a walk over
-             * the code-point space. */
-            pcrec_cpset_add(&set, (unsigned)lo, (unsigned)hi);
+            p_class_range(cx, opening, lo, &loclaim, &set);
         } else {
             /* Not a range endpoint: a deferred REFUSAL fires exactly as it
              * always did — `[\d]` keeps its module promise while classes is
