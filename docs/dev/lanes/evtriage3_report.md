@@ -230,29 +230,156 @@ still a deliberate re-pin event.
 
 ---
 
-## §4 — The other reds in the gate's `test.log`
+## §4 — RED 4: `run_resource_tests.sh`'s `[K59-PREMUL]` byte pin, and
+## RED 5: `run_cpset_structure.sh` CHECK 3's manifest — **the SAME reader
+## class, one merge later**. Both RE-PINNED.
 
-Scanned the whole surviving log for `FAIL`/`ERROR`/`ANOMALY`/`checks failed:
-[1-9]`/`exited [1-9]`.
+The concurrent gate surfaced two more reds after the ones above, and they
+are one story: **the [EMIT-VERB] RIDER (`74c2192c`, emitverb2) put the abi
+into the ESSENTIAL generated-by line** — the line every artifact carries
+whether or not comments are on — and its own sweep measured the delta as
+"movers by exactly 9 bytes each". Two readers of that byte count were not
+re-pinned with the rest, because **their text cites a byte count and no abi
+digit**, which is exactly what the D76/D94 grep over the abi number cannot
+reach. `battriage_report.md`'s SECOND READER CLASS; this is its fourth and
+fifth recorded instances.
 
-| line | red | disposition |
+### RED 4 — `tests/resource/run_resource_tests.sh`, the `a{5,25000}` rescue
+
+```
+FAIL: 'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at 762114 bytes,
+      pinned 762105
+```
+
+The arithmetic reconciles exactly, measured on scratch builds of each commit
+**with this cell's own `-o` basename** (the trap `evtriage2` recorded and
+`dd8_report.md` §3.1 named):
+
+| tree | bytes |
+|---|---|
+| `385f3cab` (event 1) under `-fno-comments` | 762,104 |
+| + event 2's own added blank line | 762,105 — the previous pin |
+| + the rider's ` (abi 27)` insertion | **762,114** — today |
+
+Confirmed by **diffing the two artifacts**, not inferred from the size: the
+only differing lines are the generated-by header (+9), one blank line (+1),
+and `.abi = 26` -> `.abi = 27` (same length). `74c2192c` and main `f3eb6f82`
+read 762,114 identically. Re-pinned, with the arithmetic in the cell's own
+header (commit `a6264d6f`). The `-fcomments` figure quoted in that note
+re-measures to 769,844 and was updated with it.
+
+The row's own reasoning survives untouched: the pin is a raw `wc -c` and is
+comment-INCLUSIVE, while `PCREC_MAX_EMIT_BYTES` is comment-EXCLUDED, so D112
+item 3's guarantee that no comment setting can rescue or refuse a pattern is
+still what makes this a pin move rather than a finding.
+
+### RED 5 — `tests/codegen/run_cpset_structure.sh` CHECK 3
+
+```
+FAIL: [3] the recorded manifest has drifted from this run.
+```
+
+**The message showed 5 drifted rows. There are 12, and all 12 moved by
+exactly +9.** The other seven were cut off by the message's own
+`diff ... | head -20`: twelve changed rows are 48 diff lines. Both readers
+of the battery log — the manager's brief and this lane's first pass —
+counted the population from the message and got 5.
+
+That is a finding in its own right, and it is this house's recurring shape
+seen from a new side:
+
+> **A check that says "this is a DIFF TO REVIEW" must print the diff it
+> wants reviewed.** An evidence window sized for a typical failure silently
+> becomes a claim about the SIZE of the drift, and it is read as one.
+
+Measured directly against the manifest, all twelve sampled patterns:
+
+| pattern | recorded | actual | delta |
+|---|---|---|---|
+| `a` | 21,283 | 21,292 | +9 |
+| `abc` | 21,932 | 21,941 | +9 |
+| `a(b\|c)+d` | 29,774 | 29,783 | +9 |
+| `(a)(b)(c)` | 29,411 | 29,420 | +9 |
+| `[a-z]+@[a-z]+` | 25,108 | 25,117 | +9 |
+| `^foo$` | 16,421 | 16,430 | +9 |
+| `\bword\b` | 25,637 | 25,646 | +9 |
+| `(?i)HeLLo` | 27,986 | 27,995 | +9 |
+| `cat\|dog\|cow\|calf\|camel` | 26,089 | 26,098 | +9 |
+| `(\w+)\s+\1` | 24,914 | 24,923 | +9 |
+| `(?<=foo)bar` | 29,759 | 29,768 | +9 |
+| `(a(?1)?b)` | 27,967 | 27,976 | +9 |
+
+Re-recorded the way r49 requires — by deleting the file and letting the
+check write it, then REVIEWING the diff rather than bumping numbers: **24
+changed lines, every one an `EMITTED_BYTES` row, zero other stamps moved**
+(no `RX_ENGINE`, no `RX_ENGINE_SEL`, no rung, no prefilter). The window was
+widened to `head -200` in the same commit (`541856ef`), sized to hold a
+whole-manifest rewrite.
+
+---
+
+## §5 — Sabotage anchors
+
+No sabotage row anchors on any line this lane touched — checked by grep over
+`tests/mech/sabotages/` for the generator definitions, `dfafallback`, the
+762105 pin, the manifest and the diff line. Two rows name files this lane
+edited (`S174` anchors in `src/opt/atomic.c`, `S40` in
+`src/opt/select_engine.c`), so neither needed a re-aim.
+
+**`S40` was re-driven SOLO anyway**, because its suite is `vmidentity` — the
+script whose `[SEL-1]` pin §3 moved:
+
+```
+== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0,
+   anomalies: 0, oracle-skipped: 0) at 440e2c35 ==
+```
+
+DETECTED.
+
+---
+
+## §6 — Validation (COMPLETE)
+
+| what | before | after |
 |---|---|---|
-| 2298 | `FAIL: nm could not read arm_a.o (no rx_search symbol)` (`run_inline_capability.sh`) | STANDING darwin red, `docs/dev/wake.md`; not ours |
-| 2430 | `[SEL-1]` population moved to 2 | §3, fixed |
-| 1265 | `*** SKIP: libpcre2-8-0 not present` (PC-3) | the documented loud SKIP (root CLAUDE.md); not a red |
+| `tests/codegen/run_recursion_identity.sh` | 7 passed / **11 failed** | **16 passed / 0 failed** |
+| `tests/codegen/run_vm_identity.sh` | 9 / **1** | **10 / 0** |
+| `tests/resource/run_resource_tests.sh` | (1 failed in the gate) | **0 failed, 0 inconclusive, 1 platform skip** |
+| `tests/codegen/run_cpset_structure.sh` | 27 / **1** | **28 / 0** |
+| `tests/recursion/run_specimen_identity.sh` | — | **13 / 0** |
+| `tests/codegen/run_comments_axis.sh` | — | **65 / 0** |
+| `make test-codegen` | — | **9/10 scripts**, sole red the standing darwin `nm arm_a.o` probe, reproduced solo |
+| `make mech S40` (solo) | — | **DETECTED**, 0 undetected / 0 anomalies |
 
-No other section had failed at the point the log was read; the gate was
-still running.
+`run_recursion_identity.sh`'s own per-axis tallies after the fix:
+
+| axis | (B) same / differing / stamp-filter-bad | (A) same / differing / elided / size-term-moved |
+|---|---|---|
+| default | 2535 / 0 / 0 | 2309 / 0 / 4 / 1 |
+| `--engine=vm` | 2536 / 0 / 0 | 2289 / 0 / 0 / 2 |
+| `-fno-prefilter` | 2535 / 0 / 0 | 2310 / 0 / 4 / 1 |
+| `--no-captures` | 2535 / 0 / 0 | 2333 / 0 / 0 / 0 |
+| linkage | 2535 / 0 / 0 (flags-filter-bad 0) | — |
+
+`[ART-SIZE] the size term's named region movers fired (4 across the axes)` —
+**the number §2's A/B predicted before the run**, and the `--no-captures`
+arm's own "must be 0 here" assertion holds in the same table.
 
 ---
 
-## §5 — Validation
+## §7 — Commits
 
-(filled at hand-off — see the handback message for the live numbers)
+- `36f2a0f9` — D112 class 2: `-fcomments` on the subject-side generators of
+  `run_recursion_identity.sh`.
+- `b9b91bcd` — `run_vm_identity.sh`: `[SEL-1]` fallback population re-pinned
+  1 -> 2 (a corpus event, `[ADM71.4]`'s).
+- `440e2c35` — this report (draft).
+- `a6264d6f` — `run_resource_tests.sh`: the `[K59-PREMUL]` rescue byte pin
+  re-pinned 762105 -> 762114.
+- `541856ef` — cpset CHECK 3 manifest re-recorded (+9 x 12) and its diff
+  window widened.
 
----
+## §8 — Nothing owed
 
-## §6 — Commits
-
-- `36f2a0f9` — D112 class 2: `-fcomments` on the subject-side generators.
-- `b9b91bcd` — `[SEL-1]` fallback population re-pinned 1 -> 2.
+Every number above is measured on this branch. Not merged; not run: the full
+`make test`, which is the manager's at merge.
