@@ -360,17 +360,17 @@ src = src.replace(
     closure(nfa, pre, npre, bot_ok, true, prune, mk, memo, ctxs, openst, scratch2, &nout2, &accept2);""")
 
 src = src.replace(
-    """    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    """    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int root = nfa->start;""",
-    """    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    """    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     if (k18_stats_on < 0) k18_stats_on = getenv("PCREC_K18_STATS") ? 1 : 0;
     if (k18_stats_on) memset(&k18_stats, 0, sizeof k18_stats);
     PMemo memo; pmemo_init(&memo, (size_t)nfa->n);
     LCtxTab ctxs = { NULL, 0, 0, NULL, 0 };
     lctx_intern(&ctxs, -1, -1);   /* id 0 = empty stack */
-    OpenEnt *openst = arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));
+    OpenEnt *openst = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));
 
     int root = nfa->start;""")
 

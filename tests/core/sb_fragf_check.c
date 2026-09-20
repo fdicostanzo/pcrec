@@ -15,7 +15,7 @@
  * at the shipped `-p rx` prefix. `lens10`'s own §4.1 measurement is that no
  * fragment provably truncates today at a 60-byte prefix, with the tightest
  * margin in the tree at 9 bytes; every corpus test runs at `rx`, two bytes.
- * So an off-by-one here — `arena_alloc(a, n)` instead of `n + 1`, the one
+ * So an off-by-one here — `pcrec_arena_alloc(a, n)` instead of `n + 1`, the one
  * mistake this shape invites — would pass the whole suite while silently
  * dropping the LAST BYTE of every fragment long enough to matter. That is
  * what this file is for, and it is why the length sweep below runs out to
@@ -38,11 +38,11 @@
  *   sweep rows disagree; 512 of 513 results short by one). This is the plant
  *   this check is a detector for.
  *
- *   PLANT A — `arena_alloc(a, n)` instead of `n + 1`, i.e. the ALLOCATION
+ *   PLANT A — `pcrec_arena_alloc(a, n)` instead of `n + 1`, i.e. the ALLOCATION
  *   one byte short. THIS CHECK STAYS GREEN, and so does AddressSanitizer.
- *   MEASURED, not reasoned: `arena_alloc` rounds every request up to 16 bytes
+ *   MEASURED, not reasoned: `pcrec_arena_alloc` rounds every request up to 16 bytes
  *   and zeroes the slice, so the terminator lands in already-zero storage the
- *   next `arena_alloc` will zero again; and ASan sees only the arena's own
+ *   next `pcrec_arena_alloc` will zero again; and ASan sees only the arena's own
  *   64 KiB block `malloc`, never the intra-block slice bounds, so a one-byte
  *   overrun inside a block is invisible to it BY CONSTRUCTION. A standalone
  *   `-fsanitize=address` probe over lengths 0..599 reported "content correct

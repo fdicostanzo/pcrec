@@ -338,7 +338,7 @@ static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
 
 static char *arena_strndup(Arena *a, const char *s, size_t n)
 {
-    char *d = arena_alloc(a, n + 1);
+    char *d = pcrec_arena_alloc(a, n + 1);
     memcpy(d, s, n);
     d[n] = 0;
     return d;
@@ -556,7 +556,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     long sz = ftell(f);
     if (sz < 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot size .rxt source file"); }
     rewind(f);
-    char *buf = arena_alloc(p->arena, (size_t)sz + 2);
+    char *buf = pcrec_arena_alloc(p->arena, (size_t)sz + 2);
     size_t got = fread(buf, 1, (size_t)sz, f);
     if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
@@ -589,7 +589,7 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     size_t nl = 0;
     for (size_t i = 0; i < got; i++) if (buf[i] == '\n') nl++;
     if (got && buf[got - 1] != '\n') nl++;
-    char **v = arena_alloc(p->arena, (nl + 1) * sizeof *v);
+    char **v = pcrec_arena_alloc(p->arena, (nl + 1) * sizeof *v);
 
     size_t k = 0;
     char *s = buf;
@@ -616,7 +616,7 @@ static RxtRow *row_push(RxtP *p, RxtSource *src, RxtDeclKind kind, size_t line)
 {
     if (src->nrows == src->rowcap) {
         size_t cap = src->rowcap ? src->rowcap * 2 : 16;
-        RxtRow *nv = arena_alloc(p->arena, cap * sizeof *nv);
+        RxtRow *nv = pcrec_arena_alloc(p->arena, cap * sizeof *nv);
         if (src->nrows) memcpy(nv, src->rows, src->nrows * sizeof *nv);
         src->rows = nv;
         src->rowcap = cap;
@@ -708,7 +708,7 @@ static int read_prose_region(RxtP *p, RxtLines *L, size_t *i,
         size_t len = strlen(L->v[k]);
         total += (len > indent ? len - indent : 0) + 1;
     }
-    char *buf = arena_alloc(p->arena, total + 1);
+    char *buf = pcrec_arena_alloc(p->arena, total + 1);
     size_t at = 0;
     for (size_t k = start; k < end; k++) {
         const char *ln = L->v[k];
@@ -1167,7 +1167,7 @@ static const char *under_key(Arena *a, const char *v)
     }
 
     size_t n = convlen + kindlen + splen + subjlen + 8;
-    char *out = arena_alloc(a, n);
+    char *out = pcrec_arena_alloc(a, n);
     snprintf(out, n, "%.*s\x01%.*s\x01%.*s\x01%.*s",
              (int)convlen, conv, (int)kindlen, kind,
              (int)splen, sp, (int)subjlen, subj);
@@ -1335,7 +1335,7 @@ static int line_constraints(RxtP *p, RxtFrame *f, const RxtSchemaRow *row,
          * carrying `unique-by` in one scope cannot collide with each
          * other's keys — a uniqueness rule is per row, not per scope. */
         size_t need = strlen(row->kind) + 1 + strlen(key) + 1;
-        char *full = arena_alloc(p->arena, need);
+        char *full = pcrec_arena_alloc(p->arena, need);
         snprintf(full, need, "%s\x01%s", row->kind, key);
 
         for (size_t i = 0; i < f->nukey; i++)
@@ -1346,8 +1346,8 @@ static int line_constraints(RxtP *p, RxtFrame *f, const RxtSchemaRow *row,
                                 (int)arglen, arg, f->uline[i]);
         if (f->nukey == f->ukeycap) {
             size_t nc = f->ukeycap ? f->ukeycap * 2 : 8;
-            const char **nk = arena_alloc(p->arena, nc * sizeof *nk);
-            size_t *nl = arena_alloc(p->arena, nc * sizeof *nl);
+            const char **nk = pcrec_arena_alloc(p->arena, nc * sizeof *nk);
+            size_t *nl = pcrec_arena_alloc(p->arena, nc * sizeof *nl);
             if (f->nukey) {
                 memcpy(nk, f->ukey, f->nukey * sizeof *nk);
                 memcpy(nl, f->uline, f->nukey * sizeof *nl);
@@ -1371,7 +1371,7 @@ static RxtProv *prov_push(Arena *a, RxtSource *src)
 {
     if (src->nprovs == src->provcap) {
         size_t cap = src->provcap ? src->provcap * 2 : 8;
-        RxtProv *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtProv *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nprovs) memcpy(nv, src->provs, src->nprovs * sizeof *nv);
         src->provs = nv;
         src->provcap = cap;
@@ -1385,7 +1385,7 @@ static RxtVariant *variant_push(Arena *a, RxtSource *src)
 {
     if (src->nvariants == src->variantcap) {
         size_t cap = src->variantcap ? src->variantcap * 2 : 8;
-        RxtVariant *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtVariant *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nvariants) memcpy(nv, src->variants, src->nvariants * sizeof *nv);
         src->variants = nv;
         src->variantcap = cap;
@@ -1399,7 +1399,7 @@ static RxtCase *case_push(Arena *a, RxtSource *src)
 {
     if (src->ncases == src->casecap) {
         size_t cap = src->casecap ? src->casecap * 2 : 32;
-        RxtCase *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtCase *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->ncases) memcpy(nv, src->cases, src->ncases * sizeof *nv);
         src->cases = nv;
         src->casecap = cap;
@@ -1413,7 +1413,7 @@ static RxtAux *aux_push(Arena *a, RxtSource *src)
 {
     if (src->nauxes == src->auxcap) {
         size_t cap = src->auxcap ? src->auxcap * 2 : 16;
-        RxtAux *nv = arena_alloc(a, cap * sizeof *nv);
+        RxtAux *nv = pcrec_arena_alloc(a, cap * sizeof *nv);
         if (src->nauxes) memcpy(nv, src->auxes, src->nauxes * sizeof *nv);
         src->auxes = nv;
         src->auxcap = cap;
@@ -1643,7 +1643,7 @@ static int read_wrapped_value(RxtP *p, RxtLines *L, size_t *i,
 
     size_t total = strlen(first) + 1;
     for (size_t k = *i + 1; k < end; k++) total += strlen(L->v[k]) + 1;
-    char *buf = arena_alloc(p->arena, total + 1);
+    char *buf = pcrec_arena_alloc(p->arena, total + 1);
     size_t at = strlen(first);
     memcpy(buf, first, at);
     for (size_t k = *i + 1; k < end; k++) {
@@ -1769,7 +1769,7 @@ int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
     }
     const char *s = v + 1;
     size_t len = n - 2;
-    char *buf = arena_alloc(a, len + 1);
+    char *buf = pcrec_arena_alloc(a, len + 1);
     size_t at = 0;
     for (size_t i = 0; i < len; i++) {
         if (s[i] != '\\') {
@@ -2133,7 +2133,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     do {                                                                   \
         if (ndepth == depthcap) {                                          \
             size_t nc = depthcap ? depthcap * 2 : 8;                       \
-            RxtFrame *nv = arena_alloc(&src->arena, nc * sizeof *nv);      \
+            RxtFrame *nv = pcrec_arena_alloc(&src->arena, nc * sizeof *nv);      \
             if (ndepth) memcpy(nv, st, ndepth * sizeof *nv);               \
             st = nv; depthcap = nc;                                        \
         }                                                                  \
@@ -2145,8 +2145,8 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                                    : RXT_SCOPE_NSCOPES;                    \
         st[ndepth].tree   = (TREE);                                        \
         st[ndepth].row    = (ROW);                                         \
-        st[ndepth].seen   = arena_alloc(&src->arena, nrows * sizeof(size_t)); \
-        st[ndepth].val    = arena_alloc(&src->arena, nrows * sizeof(char *)); \
+        st[ndepth].seen   = pcrec_arena_alloc(&src->arena, nrows * sizeof(size_t)); \
+        st[ndepth].val    = pcrec_arena_alloc(&src->arena, nrows * sizeof(char *)); \
         ndepth++;                                                          \
     } while (0)
 
@@ -2620,7 +2620,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              "'%s')", v);
                     goto fail;
                 }
-                RxtVocab *vo = arena_alloc(&src->arena, sizeof *vo);
+                RxtVocab *vo = pcrec_arena_alloc(&src->arena, sizeof *vo);
                 vo->key = arena_strndup(&src->arena, v, klen);
                 vo->members = arena_strdup(&src->arena, skip_ws(v + klen));
                 vo->line = line;
@@ -2716,7 +2716,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * does a second `pcrec` line mean" instead of two. */
                 if (cr->pcrec_raw) {
                     size_t n = strlen(cr->pcrec_raw) + 1 + strlen(raw) + 1;
-                    char *j = arena_alloc(&src->arena, n);
+                    char *j = pcrec_arena_alloc(&src->arena, n);
                     snprintf(j, n, "%s %s", cr->pcrec_raw, raw);
                     cr->pcrec_raw = j;
                 } else {
@@ -2858,7 +2858,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
              * space-join already serves several `pcrec` lines. */
             if (block->tags) {
                 size_t n = strlen(block->tags) + 1 + strlen(v) + 1;
-                char *j = arena_alloc(&src->arena, n);
+                char *j = pcrec_arena_alloc(&src->arena, n);
                 snprintf(j, n, "%s,%s", block->tags, v);
                 block->tags = j;
             } else {
@@ -3171,7 +3171,7 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
         if (!dst->pcrec_raw) dst->pcrec_raw = add->pcrec_raw;
         else {
             size_t n = strlen(dst->pcrec_raw) + 1 + strlen(add->pcrec_raw) + 1;
-            char *j = arena_alloc(a, n);
+            char *j = pcrec_arena_alloc(a, n);
             snprintf(j, n, "%s %s", dst->pcrec_raw, add->pcrec_raw);
             dst->pcrec_raw = j;
         }
@@ -3220,7 +3220,7 @@ static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
     for (size_t i = 0; i < s->n; i++) if (s->v[i] == r) return 0;
     if (s->n == s->cap) {
         size_t cap = s->cap ? s->cap * 2 : 8;
-        RxtRow **v = arena_alloc(a, cap * sizeof *v);
+        RxtRow **v = pcrec_arena_alloc(a, cap * sizeof *v);
         for (size_t i = 0; i < s->n; i++) v[i] = s->v[i];
         s->v = v; s->cap = cap;
     }
@@ -3266,7 +3266,7 @@ static const char *source_dir(RxtSource *src)
     const char *slash = strrchr(src->path, '/');
     if (!slash) return "";
     size_t n = (size_t)(slash - src->path) + 1;   /* keep the '/' */
-    char *d = arena_alloc(&src->arena, n + 1);
+    char *d = pcrec_arena_alloc(&src->arena, n + 1);
     memcpy(d, src->path, n);
     d[n] = 0;
     return d;
@@ -3277,7 +3277,7 @@ static char *join_path(Arena *a, const char *dir, const char *rest)
     size_t nd = strlen(dir);
     int need_slash = nd && dir[nd - 1] != '/';
     size_t n = nd + (size_t)need_slash + strlen(rest) + 1;
-    char *p = arena_alloc(a, n);
+    char *p = pcrec_arena_alloc(a, n);
     snprintf(p, n, "%s%s%s", dir, need_slash ? "/" : "", rest);
     return p;
 }
@@ -3308,7 +3308,7 @@ static const char *lib_chain_text(Arena *a, const char *own,
     if (!ndirs) pcrec_sb_puts(&sb, " (no --lib-path)");
     char *heap = pcrec_sb_take(&sb);
     size_t n = strlen(heap) + 1;
-    char *out = arena_alloc(a, n);
+    char *out = pcrec_arena_alloc(a, n);
     memcpy(out, heap, n);
     free(heap);
     return out;
@@ -3421,7 +3421,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
     if (closure_seen(cl, respath)) return 0;
     if (cl->nseen == cl->seencap) {
         size_t nc = cl->seencap ? cl->seencap * 2 : 8;
-        const char **nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+        const char **nv = pcrec_arena_alloc(&cl->root->arena, nc * sizeof *nv);
         for (size_t i = 0; i < cl->nseen; i++) nv[i] = cl->seen[i];
         cl->seen = nv; cl->seencap = nc;
     }
@@ -3458,7 +3458,7 @@ static int closure_walk(RxtClosure *cl, RxtSource *s, const char *respath)
                             "definition '%s'", badc, r->flags, r->name);
         if (cl->ndefs == cl->defcap) {
             size_t nc = cl->defcap ? cl->defcap * 2 : 8;
-            RxtDef *nv = arena_alloc(&cl->root->arena, nc * sizeof *nv);
+            RxtDef *nv = pcrec_arena_alloc(&cl->root->arena, nc * sizeof *nv);
             for (size_t k = 0; k < cl->ndefs; k++) nv[k] = cl->defs[k];
             cl->defs = nv; cl->defcap = nc;
         }
@@ -3551,7 +3551,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         /* a quoted path-ref keeps its quotes in `value` (AS WRITTEN); the
          * reference itself is what is between them. */
         if (rl >= 2 && ref[0] == '"' && ref[rl - 1] == '"') {
-            char *unq = arena_alloc(&src->arena, rl - 1);
+            char *unq = pcrec_arena_alloc(&src->arena, rl - 1);
             memcpy(unq, ref + 1, rl - 2);
             unq[rl - 2] = 0;
             ref = unq;
@@ -3578,7 +3578,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
      * NEVER NULL. A file with no named block anywhere in its closure gets an
      * EMPTY set rather than a NULL one, so the composer has one thing to
      * test and every `--source` build takes the same path. */
-    RxtDefs *defs = arena_alloc(&src->arena, sizeof *defs);
+    RxtDefs *defs = pcrec_arena_alloc(&src->arena, sizeof *defs);
     {
         RxtClosure cl = { .p = &p, .root = src, .dirs = libdirs, .ndirs = nlib };
         if (closure_walk(&cl, src, src->path) != 0) return -1;
@@ -3610,7 +3610,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
          * confused — a file that CANNOT be built refuses, a file that
          * declares nothing to build is silent. */
         if (npattern == 1 && !lone->name) {
-            RxtTarget *t = arena_alloc(&src->arena, sizeof *t);
+            RxtTarget *t = pcrec_arena_alloc(&src->arena, sizeof *t);
             memset(t, 0, sizeof *t);
             t->prefix = "rx";
             t->name = "rx";
@@ -3633,7 +3633,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         return 0;
     }
 
-    RxtTarget *ts = arena_alloc(&src->arena, ntarget * sizeof *ts);
+    RxtTarget *ts = pcrec_arena_alloc(&src->arena, ntarget * sizeof *ts);
     size_t n = 0;
 
     for (size_t i = 0; i < src->nrows; i++) {
@@ -3729,7 +3729,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
              * only` on the block. Duplicating that vocabulary here to
              * pre-empt the message would be a second home for it. */
             size_t sz = strlen(s.features) + 1 + strlen(blk->features) + 1;
-            char *j = arena_alloc(&src->arena, sz);
+            char *j = pcrec_arena_alloc(&src->arena, sz);
             snprintf(j, sz, "%s,%s", s.features, blk->features);
             t->features = j;
         }

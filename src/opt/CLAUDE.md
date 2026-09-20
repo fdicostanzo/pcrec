@@ -1167,7 +1167,7 @@ construction (src/ir) and emission (src/gen).
   structure before this runs. Shrinks emitted tables (code size + cache).
   **[M4.7b/K7]:** its five local tables are the ONLY allocations on the compile
   path the Job does not own, so this is the one file where failing cleanly
-  means freeing by hand before `ctx_nomem`; the header note claiming "no
+  means freeing by hand before `pcrec_ctx_nomem`; the header note claiming "no
   ctx_fail paths" is updated accordingly. **K25 is filed against this pass**,
   not against K7's accounting: Moore refinement needs O(n) rounds on an
   n-state chain, so `a{0,25000}` spends a measured 15.3 s here against 0.03 s

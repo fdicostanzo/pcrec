@@ -58,7 +58,7 @@ route through the same header -- a control sharing a source with what it
 controls, at the instrument level. Re-measured on the post-wave-3 tree:
 30 call-level back-edges (28 before the `driver` override is applied, so
 the enc+dump moves alone took 39 -> 28), of which 22 are `ctx_fail` /
-`ctx_nomem` -- the diagnostic primitives that live in `compile.c` and that
+`pcrec_ctx_nomem` -- the diagnostic primitives that live in `compile.c` and that
 every layer calls, which the `driver` override turns into back-edges in
 the other direction. A zero in `include_backedges.tsv` is a statement
 about includes and nothing else.

@@ -73,10 +73,10 @@ src = src.replace("""    marks_next(mk);
     if (k18_stats_on) k18_stats.closures++;
     Clo cl = { nfa, mk->mark, mk->gen,""")
 
-src = src.replace("""    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+src = src.replace("""    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int root = nfa->start;""",
-"""    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+"""    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     if (k18_stats_on < 0) k18_stats_on = getenv("PCREC_K18_STATS") ? 1 : 0;
     if (k18_stats_on) memset(&k18_stats, 0, sizeof k18_stats);

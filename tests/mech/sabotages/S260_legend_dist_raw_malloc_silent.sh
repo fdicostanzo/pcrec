@@ -4,7 +4,7 @@
 # (tests/core/alloc_check.c, tests/resource/run_resource_tests.sh Section 2b).
 #
 # D105 restructured `emit_state_legend` so its four BFS scratch arrays route
-# through `arena_alloc(&cx->arena, ...)`, which reaches `ctx_nomem` and
+# through `pcrec_arena_alloc(&cx->arena, ...)`, which reaches `pcrec_ctx_nomem` and
 # refuses the compile through the tree's one general recovery mechanism on
 # an allocation failure. This sabotage reverts the FIRST of those four
 # (`dist`) to a raw `malloc` with a silent `return` on NULL — the minimal
@@ -17,11 +17,11 @@
 SAB_ID="S260-legend-dist-raw-malloc-silent"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="resource"
-SAB_DESC="emit_state_legend's dist array reverts to a raw malloc with a silent return on NULL (never reaching ctx_nomem), replanting D105's own legend-class silent-degradation absorption"
+SAB_DESC="emit_state_legend's dist array reverts to a raw malloc with a silent return on NULL (never reaching pcrec_ctx_nomem), replanting D105's own legend-class silent-degradation absorption"
 SAB_DOC_FIGURE="tests/core/alloc_check.c's W1/W3 witnesses (the legend class) are D105's own repro: make alloc reads absorbed 0 -> nonzero under this plant on a forced failure of dist's allocation. tests/resource/run_resource_tests.sh Section 2b (D110) is the make-test-reachable detector: it now asserts alloc_check's own rc and the absence of any SUCCEEDED THROUGH line, not only the signal grep. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S260."
 SAB_COUNT=1
-SAB_BEFORE='    int *dist  = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
-    int *queue = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));'
+SAB_BEFORE='    int *dist  = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+    int *queue = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));'
 SAB_AFTER='    int *dist  = malloc((size_t)d->n * sizeof(int));   /* SABOTAGE S260: raw malloc, silent NULL return */
     if (!dist) return;
-    int *queue = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));'
+    int *queue = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));'

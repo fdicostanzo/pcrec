@@ -458,8 +458,8 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     const int n = cg->ntarget;
     const size_t nn = (size_t)n;
 
-    cg->splice = arena_alloc(&cx->arena, nn * sizeof *cg->splice);
-    cg->exp    = arena_alloc(&cx->arena, nn * sizeof *cg->exp);
+    cg->splice = pcrec_arena_alloc(&cx->arena, nn * sizeof *cg->splice);
+    cg->exp    = pcrec_arena_alloc(&cx->arena, nn * sizeof *cg->exp);
 
     /* THE DENIAL IS TOTAL AND IS TAKEN FIRST (lib/pcrec.h's
      * PCREC_NO_SPLICE_CALLS): §9.2's control needs the LINKAGE-linked artifact
@@ -471,8 +471,8 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
     if (cx->opt->flags & PCREC_NO_SPLICE_CALLS) return;
 
     /* Nodes per region, and the cycles settled first. */
-    long long *nodes = arena_alloc(&cx->arena, nn * sizeof *nodes);
-    bool *done = arena_alloc(&cx->arena, nn * sizeof *done);
+    long long *nodes = pcrec_arena_alloc(&cx->arena, nn * sizeof *nodes);
+    bool *done = pcrec_arena_alloc(&cx->arena, nn * sizeof *done);
     for (int i = 0; i < n; i++) {
         nodes[i] = 0;
         pcrec_ast_visit(cg->body[i], cg_count, &nodes[i]);
@@ -516,9 +516,9 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
 
     /* THE TOTAL. Lexical sites over the WHOLE tree — one walk, counted the way
      * the artifact's own stamp counts them. */
-    int *lex = arena_alloc(&cx->arena, nn * sizeof *lex);
+    int *lex = pcrec_arena_alloc(&cx->arena, nn * sizeof *lex);
     for (int i = 0; i < n; i++) lex[i] = 0;
-    { CgEdges e = { cg, arena_alloc(&cx->arena, nn), lex };
+    { CgEdges e = { cg, pcrec_arena_alloc(&cx->arena, nn), lex };
       memset(e.row, 0, nn);
       pcrec_ast_visit(root, cg_edges, &e); }
 
@@ -645,24 +645,24 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * call at all" is answered — the early return below is what keeps a
      * call-free pattern's compile byte-identical to what it was before this
      * module, since nothing after it runs. */
-    bool *named = arena_alloc(&cx->arena, (size_t)(ncap + 1) * sizeof *named);
+    bool *named = pcrec_arena_alloc(&cx->arena, (size_t)(ncap + 1) * sizeof *named);
     memset(named, 0, (size_t)(ncap + 1) * sizeof *named);
     CgScan sc = { ncap, named, 0 };
     pcrec_ast_visit(root, cg_scan, &sc);
     if (sc.ncall == 0) return;
 
-    struct CallGraph *cg = arena_alloc(&cx->arena, sizeof *cg);
+    struct CallGraph *cg = pcrec_arena_alloc(&cx->arena, sizeof *cg);
     memset(cg, 0, sizeof *cg);
     for (int g = 0; g <= ncap; g++) if (named[g]) cg->ntarget++;
-    cg->target = arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->target);
-    cg->body   = arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->body);
+    cg->target = pcrec_arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->target);
+    cg->body   = pcrec_arena_alloc(&cx->arena, (size_t)cg->ntarget * sizeof *cg->body);
     {
         int i = 0;
         for (int g = 0; g <= ncap; g++) if (named[g]) cg->target[i++] = g;
     }
 
     /* THE REGION ROOTS, over the FINAL tree — see this file's header. */
-    const Ast **groot = arena_alloc(&cx->arena,
+    const Ast **groot = pcrec_arena_alloc(&cx->arena,
                                     (size_t)(ncap + 1) * sizeof *groot);
     memset(groot, 0, (size_t)(ncap + 1) * sizeof *groot);
     groot[0] = root;
@@ -685,11 +685,11 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     if (n <= 0)
         ctx_fail(cx, 0, "internal error: call graph built with no target");
     const size_t nn = (size_t)n;
-    cg->reach = arena_alloc(&cx->arena, nn * nn);
+    cg->reach = pcrec_arena_alloc(&cx->arena, nn * nn);
     memset(cg->reach, 0, nn * nn);
     /* [DD-14 wave G] The MULTIPLICITY beside the relation, filled by the same
      * walk so the two cannot disagree about which sites exist. */
-    cg->site = arena_alloc(&cx->arena, nn * nn * sizeof *cg->site);
+    cg->site = pcrec_arena_alloc(&cx->arena, nn * nn * sizeof *cg->site);
     memset(cg->site, 0, nn * nn * sizeof *cg->site);
     for (int i = 0; i < n; i++) {
         CgEdges e = { cg, cg->reach + (size_t)i * nn,
@@ -781,7 +781,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * over-run one is impossible, so the assertion costs one round and buys
      * the claim. */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_MINW_MAX;
         CgMinw m = { cg, val };
         for (int round = 0; round <= n; round++) {
@@ -801,7 +801,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
 
     /* ---- THE `cwmin` FIXPOINT ([M5.0] stage 2) — see cg_cwmin_publish --- */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_MINW_MAX;
         CgCwmin m = { cg, val };
         for (int round = 0; round <= n; round++) {
@@ -822,7 +822,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
 
     /* ---- THE `cwmax` FIXPOINT ([DD-14.LB]) — see cg_cwmax_publish above - */
     {
-        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        long long *val = pcrec_arena_alloc(&cx->arena, nn * sizeof *val);
         for (int i = 0; i < n; i++) val[i] = PCREC_W_UNBOUNDED;
         CgCwmax m = { cg, val };
         for (int round = 0; round <= n; round++) {

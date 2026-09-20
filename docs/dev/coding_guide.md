@@ -20,8 +20,8 @@ primitive that does not exist yet.
 The review checked these tree-wide and found them holding. Each has exactly one
 known hole, named. Breaking one of these is a regression, not a style choice.
 
-**1.1 Every allocation failure routes through `ctx_nomem`.** pcrec is a library;
-an `abort()` on OOM kills the caller's process (K7's worst item). `arena_alloc`
+**1.1 Every allocation failure routes through `pcrec_ctx_nomem`.** pcrec is a library;
+an `abort()` on OOM kills the caller's process (K7's worst item). `pcrec_arena_alloc`
 already routes through the arena's `.cx`; allocation is architecturally confined
 (`emit_vm.c`, `parse.c`, every `mod_*.c` and most of `opt/` have ZERO raw
 allocations — L8-H8), so a raw `malloc`/`calloc`/`realloc` you add is a finding
@@ -134,7 +134,7 @@ Arena-owned text sized exactly to the result: truncation is impossible by
 construction rather than by a per-site size argument. The result lives for the
 whole compile, which is what makes it safe to hand to an `pcrec_sb_printf` `%s` far
 below the site that built it — the thing a stack buffer could not do.
-Allocation failure routes through `ctx_nomem` via the arena's own `.cx`
+Allocation failure routes through `pcrec_ctx_nomem` via the arena's own `.cx`
 (§1.1). It takes an `Arena *` and nothing else on purpose: D108's data-in /
 text-out rule, so a back-end fed from a deserialized IR calls it unchanged.
 
@@ -158,7 +158,7 @@ retired in wave 2 — see §2.6. `tools/review/fragment_census.py` is the count.
 
 **Its no-truncation promise is enforced by the `vsnprintf` SIZE argument, not
 by the allocation.** Measured: an allocation one byte short is invisible to
-`tests/core/sb_fragf_check.c` AND to AddressSanitizer, because `arena_alloc`
+`tests/core/sb_fragf_check.c` AND to AddressSanitizer, because `pcrec_arena_alloc`
 rounds to 16 and zeroes, and ASan sees only the arena's own block `malloc`,
 never the intra-block slice. Know which half is checked.
 
@@ -347,7 +347,7 @@ five different surfaces, which is the argument that the shape is systemic:
    filter that found nothing wrong.
 5. **A check needs a failing-direction story before it is written.** Run it against
    the unrepaired defect and record the red. L8-F6 is what the absence looks like:
-   the ctx_nomem discipline's only positive control is Darwin-skipped, so it has not
+   the pcrec_ctx_nomem discipline's only positive control is Darwin-skipped, so it has not
    run on the dev box since the two-machine split — and the F1 hole shipped in
    exactly that window.
 

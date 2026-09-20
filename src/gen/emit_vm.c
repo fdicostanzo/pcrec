@@ -738,7 +738,7 @@ static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
 {
     if (v->nev == v->evcap) {
         int ncap = v->evcap ? v->evcap * 2 : 256;
-        VEvent *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof(VEvent));
+        VEvent *nv = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof(VEvent));
         if (v->nev) memcpy(nv, v->ev, (size_t)v->nev * sizeof(VEvent));
         v->ev = nv;
         v->evcap = ncap;
@@ -1477,7 +1477,7 @@ static int vm_cls(Vm *v, const uint8_t *bits)
         if (memcmp(v->cls[i], bits, 32) == 0) return i;
     if (v->ncls == v->clscap) {
         int ncap = v->clscap ? v->clscap * 2 : 16;
-        uint8_t (*nv)[32] = arena_alloc(&v->cx->arena, (size_t)ncap * 32);
+        uint8_t (*nv)[32] = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * 32);
         if (v->ncls) memcpy(nv, v->cls, (size_t)v->ncls * 32);
         v->cls = nv;
         v->clscap = ncap;
@@ -2377,7 +2377,7 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
          * which is what sizes the frame array. */
         int nbr = 1;
         for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
+        const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t = a;
         while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
@@ -3273,7 +3273,7 @@ static const char *vm_dyn_add(Vm *v, const char *a, const char *b)
     if (!b) return a;
     n = strlen(a) + strlen(b) + 4;
     if (n > VM_MRL_DYN_MAX) { v->ndynskip++; return b; }
-    p = arena_alloc(&v->cx->arena, n);
+    p = pcrec_arena_alloc(&v->cx->arena, n);
     snprintf(p, n, "%s + %s", a, b);
     return p;
 }
@@ -3287,12 +3287,12 @@ static const char *vm_mrl_amt(Vm *v, long long k)
     size_t n;
     char *p;
     if (!v->fdyn) {
-        p = arena_alloc(&v->cx->arena, 32);
+        p = pcrec_arena_alloc(&v->cx->arena, 32);
         snprintf(p, 32, "%lld", k);
         return p;
     }
     n = strlen(v->fdyn) + 40;
-    p = arena_alloc(&v->cx->arena, n);
+    p = pcrec_arena_alloc(&v->cx->arena, n);
     snprintf(p, n, "%lld + (%s)", k, v->fdyn);
     return p;
 }
@@ -3501,17 +3501,17 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
 
     switch (a->k) {
     case A_EMPTY:
-        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w = pcrec_arena_alloc(&v->cx->arena, sizeof *out->w);
         out->w[0].b = empty; out->w[0].len = 0;
         out->n = 1;
         return true;
     case A_CLASS: {
         int b = vm_isl_single(a);
         if (b < 0) return false;
-        uint8_t *p = arena_alloc(&v->cx->arena, 1);
+        uint8_t *p = pcrec_arena_alloc(&v->cx->arena, 1);
         p[0] = (uint8_t)b;
         if (--*budget < 0) return false;
-        out->w = arena_alloc(&v->cx->arena, sizeof *out->w);
+        out->w = pcrec_arena_alloc(&v->cx->arena, sizeof *out->w);
         out->w[0].b = p; out->w[0].len = 1;
         out->n = 1;
         return true;
@@ -3523,20 +3523,20 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
          * first. */
         int nbr = 1;
         for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
+        const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *br);
         int i = nbr;
         const Ast *t = a;
         while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
         br[0] = t;
 
-        VmIslWL *sub = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
+        VmIslWL *sub = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof *sub);
         long long total = 0;
         for (int j = 0; j < nbr; j++) {
             if (!vm_isl_words(v, br[j], &sub[j], depth + 1, budget)) return false;
             total += sub[j].n;
             if (total > VM_ISL_MAX_WORDS) return false;
         }
-        out->w = arena_alloc(&v->cx->arena, (size_t)total * sizeof *out->w);
+        out->w = pcrec_arena_alloc(&v->cx->arena, (size_t)total * sizeof *out->w);
         out->n = 0;
         for (int j = 0; j < nbr; j++)
             for (int k = 0; k < sub[j].n; k++) out->w[out->n++] = sub[j].w[k];
@@ -3545,7 +3545,7 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
     case A_CAT: {
         int nsp = 1;
         for (const Ast *t = a; t->k == A_CAT; t = t->l) nsp++;
-        const Ast **el = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
+        const Ast **el = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof *el);
         int i = nsp;
         const Ast *t = a;
         while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
@@ -3557,14 +3557,14 @@ static bool vm_isl_words(Vm *v, const Ast *a, VmIslWL *out, int depth,
             if (!vm_isl_words(v, el[j], &rhs, depth + 1, budget)) return false;
             long long n = (long long)out->n * rhs.n;
             if (n > VM_ISL_MAX_WORDS) return false;
-            VmIslW *w = arena_alloc(&v->cx->arena, (size_t)n * sizeof *w);
+            VmIslW *w = pcrec_arena_alloc(&v->cx->arena, (size_t)n * sizeof *w);
             int m = 0;
             for (int x = 0; x < out->n; x++)
                 for (int y = 0; y < rhs.n; y++) {
                     int len = out->w[x].len + rhs.w[y].len;
                     *budget -= len;
                     if (*budget < 0) return false;
-                    uint8_t *p = arena_alloc(&v->cx->arena, (size_t)len + 1);
+                    uint8_t *p = pcrec_arena_alloc(&v->cx->arena, (size_t)len + 1);
                     memcpy(p, out->w[x].b, (size_t)out->w[x].len);
                     memcpy(p + out->w[x].len, rhs.w[y].b, (size_t)rhs.w[y].len);
                     w[m].b = p; w[m].len = len; m++;
@@ -3600,14 +3600,14 @@ static long long vm_isl_subtree_nodes(Vm *v, const Ast *a)
      * bound is the pattern's own size and there is nothing left to truncate. */
     long long n = 0;
     int cap = 64, sp = 0;
-    const Ast **stk = arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
+    const Ast **stk = pcrec_arena_alloc(&v->cx->arena, (size_t)cap * sizeof *stk);
     stk[sp++] = a;
     while (sp) {
         const Ast *t = stk[--sp];
         while (t->k == A_CAT || t->k == A_ALT) {
             n++;
             if (sp == cap) {
-                const Ast **nv = arena_alloc(&v->cx->arena,
+                const Ast **nv = pcrec_arena_alloc(&v->cx->arena,
                                              (size_t)cap * 2 * sizeof *nv);
                 memcpy(nv, stk, (size_t)cap * sizeof *nv);
                 stk = nv;
@@ -3625,7 +3625,7 @@ static int vm_isl_node(Vm *v, VmIsl *t, int parent, int depth, unsigned char byt
 {
     if (t->nnd == t->ndcap) {
         int ncap = t->ndcap ? t->ndcap * 2 : 16;
-        VmIslNode *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        VmIslNode *nv = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
         if (t->nnd) memcpy(nv, t->nd, (size_t)t->nnd * sizeof *nv);
         t->nd = nv;
         t->ndcap = ncap;
@@ -3661,7 +3661,7 @@ static void vm_isl_insert(Vm *v, VmIsl *t, const uint8_t *w, int len, int idx)
     }
     if (t->nacc == t->acccap) {
         int ncap = t->acccap ? t->acccap * 2 : 16;
-        VmIslAcc *nv = arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
+        VmIslAcc *nv = pcrec_arena_alloc(&v->cx->arena, (size_t)ncap * sizeof *nv);
         if (t->nacc) memcpy(nv, t->acc, (size_t)t->nacc * sizeof *nv);
         t->acc = nv;
         t->acccap = ncap;
@@ -3705,7 +3705,7 @@ static bool vm_isl_build(Vm *v, VmIsl *t, const Ast *a)
     /* npath / chain, by an ITERATIVE pre-order walk — the trie is as deep as
      * the longest branch, which a pattern controls, so a recursion here would
      * be a stack the pattern sizes. */
-    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int *stk = pcrec_arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
     int sp = 0;
     t->nd[0].npath = t->nd[0].nacc;
     t->nd[0].chain = t->nd[0].nacc ? 0 : -1;
@@ -3939,7 +3939,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
     for (int x = 0; x < t->nnd; x++)
         if (t->nd[x].nacc) t->nd[x].chainlbl = vm_label(v);
 
-    int *stk = arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
+    int *stk = pcrec_arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *stk);
     int sp = 0;
     stk[sp++] = 0;
     while (sp) {
@@ -4020,9 +4020,9 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
     for (int x = 0; x < t->nnd; x++) {
         if (!t->nd[x].nacc) continue;
         int k = t->nd[x].npath;
-        VmIslAcc *cand = arena_alloc(&v->cx->arena, (size_t)k * sizeof *cand);
+        VmIslAcc *cand = pcrec_arena_alloc(&v->cx->arena, (size_t)k * sizeof *cand);
         vm_isl_cands(t, x, cand);
-        int *lbl = arena_alloc(&v->cx->arena, (size_t)k * sizeof *lbl);
+        int *lbl = pcrec_arena_alloc(&v->cx->arena, (size_t)k * sizeof *lbl);
         lbl[0] = t->nd[x].chainlbl;
         for (int j = 1; j < k; j++) lbl[j] = vm_label(v);
         for (int j = 0; j < k; j++) {
@@ -4050,7 +4050,7 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     Ctx *cx = v->cx;
     int nbr = 1;
     for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-    const Ast **br = arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
+    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
     int i = nbr;
     const Ast *t = a;
     while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
@@ -4072,8 +4072,8 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
         }
     }
 
-    int *bentry = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
-    int *resume = arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
+    int *bentry = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
+    int *resume = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(int));
     for (int j = 0; j < nbr; j++) bentry[j] = vm_label(v);
     resume[0] = entry;
     for (int j = 1; j < nbr; j++) resume[j] = vm_label(v);
@@ -4195,7 +4195,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                                 : vm_rolef(v, "slot_values[%d]", low);
 
     /* class ids first, so the pool is stable before any test is written */
-    int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
+    int *ci = pcrec_arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
     for (int i = 0; i < stride; i++) ci[i] = vm_cls(v, seq[i]);
 
     /* The body's own inline test, written once and reused by both rungs. */
@@ -4836,7 +4836,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         int nsp = 0;
         const Ast *t = a;
         while (t->k == A_CAT) { nsp++; t = t->l; }
-        const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
+        const Ast **rs = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
         int i = nsp;
         t = a;
         while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
@@ -4859,12 +4859,12 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
          * after being chosen has no alternative to try. */
         int nbr = 1;
         for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
+        const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t = a;
         while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
         br[0] = t;
-        int *bentry = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(int));
+        int *bentry = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(int));
         for (int j = 0; j < nbr; j++) bentry[j] = vm_label(v);
 
         vm_lbl(v, entry, vm_rolef(v, "backward alternation (%d branches):"
@@ -6532,10 +6532,10 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                  "the seam from an engine body");
     v->enc_mask |= PCREC_ENCE_BACK_STEP;
 
-    const Ast **br = arena_alloc(&v->cx->arena, (size_t)m * sizeof *br);
-    int *bl   = arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
-    int *bodl = arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
-    int *endl = arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
+    const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *br);
+    int *bl   = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
+    int *bodl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
+    int *endl = pcrec_arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
     {
         int i = m;
         const Ast *t = a->l;
@@ -6897,7 +6897,7 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
 {
     Ctx *cx = v->cx;
     const int nt = v->nregion;
-    bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
+    bool *nn = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
     for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
     for (int round = 0; round <= nt; round++) {
         bool changed = false;
@@ -6957,9 +6957,9 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
 {
     Ctx *cx = v->cx;
     const int nt = v->nregion;
-    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    bool **base = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
     for (int i = 0; i < nt; i++) {
-        base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
+        base[i] = pcrec_arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
         memset(base[i], 0, (size_t)nstate * sizeof **base);
         VmWCaps wc = { base[i], nstate };
         vm_walk_caps(v, pcrec_callgraph_body(v->cg, i),
@@ -6997,7 +6997,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
                    vm_slot_lookpos(v, after[i].lookpos));
     }
     for (int i = 0; i < nt; i++) {
-        bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+        bool *w = pcrec_arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
         if (!v->rgn_emit[i]) {
             /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
              * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
@@ -7071,7 +7071,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
          * makes it one line rather than a paragraph nobody checks. */
         int n = 0;
         for (int k = 2; k < nstate; k++) if (w[k]) n++;
-        int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+        int *lst = pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
         int q = 0;
         for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
         v->rgn_w[i]  = lst;
@@ -7134,7 +7134,7 @@ static void vm_memo_region_costs(Vm *v)
             Cost u = { 0, 0, 0, 0, true, true };
             v->rgn_cost[i] = u;
         }
-    bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
+    bool *done = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
     for (int i = 0; i < nt; i++)
         done[i] = pcrec_callgraph_reaches(v->cg, i, i);
     for (int round = 0; round <= nt; round++) {
@@ -7317,7 +7317,7 @@ static void vm_plan_regions(Vm *v)
     Ctx *cx = v->cx;
     const int nt = v->nregion;
 
-    v->rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_emit);
+    v->rgn_emit = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_emit);
     v->has_linked_calls = false;
     for (int i = 0; i < nt; i++) {
         v->rgn_emit[i] = !pcrec_callgraph_spliced(v->cg, i);
@@ -7325,17 +7325,17 @@ static void vm_plan_regions(Vm *v)
     }
 
     const int ng = v->ngroups + 1;
-    bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+    bool **base = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
     for (int i = 0; i < nt; i++) {
-        base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
+        base[i] = pcrec_arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
         memset(base[i], 0, (size_t)ng * sizeof **base);
         vm_walk_caps(v, pcrec_callgraph_body(v->cg, i), vm_grp_set_cap,
                      base[i]);
     }
-    bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
-    int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
+    bool **grp = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
+    int *snw = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
     for (int i = 0; i < nt; i++) {
-        grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
+        grp[i] = pcrec_arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
         memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
         for (int j = 0; j < nt; j++) {
             if (j == i || !pcrec_callgraph_reaches(v->cg, i, j)) continue;
@@ -7975,7 +7975,7 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
     int nsp = 0;
     const Ast *t = a;
     while (t->k == A_CAT) { nsp++; t = t->l; }
-    const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
+    const Ast **rs = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
     int i = nsp;
     t = a;
     while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
@@ -7989,7 +7989,7 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
      * concatenation's own, i.e. what the caller set. The leftmost element
      * (`t`, which the flattening loop peeled off the bottom of the spine)
      * takes `sfx[0]`. */
-    long long *sfx = arena_alloc(&v->cx->arena,
+    long long *sfx = pcrec_arena_alloc(&v->cx->arena,
                                  (size_t)(nsp + 1) * sizeof(long long));
     sfx[nsp] = v->fmin;
     for (int j = nsp - 1; j >= 0; j--)
@@ -9472,10 +9472,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * listing and `report_captures` to agree about. */
     {
         int nmarkarr = (int)cx->ncap + 1;
-        bool *mk = arena_alloc(&cx->arena, (size_t)nmarkarr * sizeof *mk);
+        bool *mk = pcrec_arena_alloc(&cx->arena, (size_t)nmarkarr * sizeof *mk);
         memset(mk, 0, (size_t)nmarkarr * sizeof *mk);
         pcrec_bref_mark(root, mk, nmarkarr);
-        int *pend = arena_alloc(&cx->arena, (size_t)nmarkarr * sizeof *pend);
+        int *pend = pcrec_arena_alloc(&cx->arena, (size_t)nmarkarr * sizeof *pend);
         int npend = 0, highest = 0;
         for (int grp = 0; grp < nmarkarr; grp++) {
             pend[grp] = -1;
@@ -9644,11 +9644,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         const int nt = v.nregion;
         vm_resolve_nonnull(&v, root);
 
-        v.rgn_lbl  = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_lbl);
-        v.rgn_exit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_exit);
-        v.rgn_w    = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_w);
-        v.rgn_nw   = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_nw);
-        v.rgn_cost = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
+        v.rgn_lbl  = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_lbl);
+        v.rgn_exit = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_exit);
+        v.rgn_w    = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_w);
+        v.rgn_nw   = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_nw);
+        v.rgn_cost = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
         for (int i = 0; i < nt; i++) { v.rgn_w[i] = NULL; v.rgn_nw[i] = 0; }
 
         vm_plan_regions(&v);
@@ -9686,9 +9686,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * the only place the region's own indices exist. */
     VmSnap *snap_before = NULL, *snap_after = NULL;
     if (v.has_calls) {
-        snap_before = arena_alloc(&cx->arena,
+        snap_before = pcrec_arena_alloc(&cx->arena,
                                   (size_t)v.nregion * sizeof *snap_before);
-        snap_after  = arena_alloc(&cx->arena,
+        snap_after  = pcrec_arena_alloc(&cx->arena,
                                   (size_t)v.nregion * sizeof *snap_after);
         for (int i = 0; i < v.nregion; i++) {
             /* [DD-14 wave G] A SPLICED TARGET HAS NO REGION, so it counts
@@ -11230,7 +11230,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     const char *prefn = NULL;
     if (job->fit.prefilter) {
         size_t sz = strlen(v.p) + sizeof("_prefilter");
-        char *pf = arena_alloc(&cx->arena, sz);
+        char *pf = pcrec_arena_alloc(&cx->arena, sz);
         snprintf(pf, sz, "%s_prefilter", v.p);
         prefn = pf;
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);

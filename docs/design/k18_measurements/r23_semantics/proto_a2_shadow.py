@@ -129,9 +129,9 @@ src = src.replace("""                clo_visit(cl, st->t1);              /* t1 =
                 cl->depth++;""")
 
 # ---- allocate sh[] and thread it -------------------------------------------
-src = src.replace("""    OpenEnt *openst = arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));""",
-"""    OpenEnt *openst = arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));
-    OpenEnt *shadowst = arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));""")
+src = src.replace("""    OpenEnt *openst = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));""",
+"""    OpenEnt *openst = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));
+    OpenEnt *shadowst = pcrec_arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));""")
 
 old = """                    LCtxTab *ctxs, OpenEnt *openst,
                     int *out, int *nout, bool *accept)"""

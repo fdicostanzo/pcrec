@@ -112,7 +112,7 @@ static size_t altcls_cat_flatten(Ctx *cx, Ast *a, Ast ***out)
 {
     size_t n = 1;
     for (Ast *t = a; t->k == A_CAT; t = t->l) n++;
-    Ast **arr = arena_alloc(&cx->arena, n * sizeof(Ast *));
+    Ast **arr = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
     Ast *t = a;
     size_t i = n - 1;
     while (t->k == A_CAT) { arr[i--] = t->r; t = t->l; }
@@ -217,7 +217,7 @@ static Ast *altcls_extend_prefix(Ctx *cx, Ast **cur, size_t n)
         Ast *rest0;
         if (!altcls_branch_peel(cx, cur[0], &byte0, &rest0)) break;
 
-        Ast **next = arena_alloc(&cx->arena, n * sizeof(Ast *));
+        Ast **next = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
         next[0] = rest0;
         bool all_agree = true;
         for (size_t i = 1; i < n; i++) {
@@ -233,7 +233,7 @@ static Ast *altcls_extend_prefix(Ctx *cx, Ast **cur, size_t n)
 
         if (plen == pcap) {
             size_t ncap = pcap ? pcap * 2 : 4;
-            Ast **grown = arena_alloc(&cx->arena, ncap * sizeof(Ast *));
+            Ast **grown = pcrec_arena_alloc(&cx->arena, ncap * sizeof(Ast *));
             if (prefix) memcpy(grown, prefix, plen * sizeof(Ast *));
             prefix = grown;
             pcap = ncap;
@@ -264,14 +264,14 @@ static Ast *altcls_factor_run(Ctx *cx, Ast **branches, size_t n, int depth)
     if (depth >= PCREC_MAX_ALTCLS_FACTOR_DEPTH)
         return altcls_rebuild_alt(cx, branches, n);
 
-    int *byte0 = arena_alloc(&cx->arena, n * sizeof(int));
-    bool *peeled = arena_alloc(&cx->arena, n * sizeof(bool));
+    int *byte0 = pcrec_arena_alloc(&cx->arena, n * sizeof(int));
+    bool *peeled = pcrec_arena_alloc(&cx->arena, n * sizeof(bool));
     for (size_t i = 0; i < n; i++) {
         Ast *rest_unused;
         peeled[i] = altcls_branch_peel(cx, branches[i], &byte0[i], &rest_unused);
     }
 
-    Ast **out = arena_alloc(&cx->arena, n * sizeof(Ast *));
+    Ast **out = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
     size_t m = 0, k = 0;
     while (k < n) {
         if (peeled[k]) {
@@ -279,7 +279,7 @@ static Ast *altcls_factor_run(Ctx *cx, Ast **branches, size_t n, int depth)
             while (j < n && peeled[j] && byte0[j] == byte0[k]) j++;
             if (j - k >= 2) {
                 size_t grp = j - k;
-                Ast **cur = arena_alloc(&cx->arena, grp * sizeof(Ast *));
+                Ast **cur = pcrec_arena_alloc(&cx->arena, grp * sizeof(Ast *));
                 memcpy(cur, branches + k, grp * sizeof(Ast *));
                 Ast *prefix = altcls_extend_prefix(cx, cur, grp);
                 Ast *tail = altcls_factor_run(cx, cur, grp, depth + 1);
@@ -318,7 +318,7 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
      * capturing group does not wall off. */
     size_t n = 1;
     for (Ast *t = a; t->k == A_ALT; t = t->l) n++;
-    Ast **br = arena_alloc(&cx->arena, n * sizeof(Ast *));
+    Ast **br = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
     {
         Ast *t = a;
         size_t i = n - 1;
@@ -334,7 +334,7 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
     }
 
     if (!(cx->opt->flags & PCREC_NO_ALTCLS_MERGE)) {
-        Ast **out = arena_alloc(&cx->arena, n * sizeof(Ast *));
+        Ast **out = pcrec_arena_alloc(&cx->arena, n * sizeof(Ast *));
         size_t m = 0, k = 0;
         while (k < n) {
             if (br[k]->k == A_CLASS) {

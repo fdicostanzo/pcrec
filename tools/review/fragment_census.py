@@ -132,7 +132,7 @@ def scan_file(path: Path):
     char-array DECLARATOR found in `path`, and stmt_count is the number
     of char DECLARATION STATEMENTS that contributed at least one such
     declarator (a statement contributing zero array declarators --
-    e.g. `char *p = arena_alloc(...);` -- is not counted)."""
+    e.g. `char *p = pcrec_arena_alloc(...);` -- is not counted)."""
     text = path.read_text()
     masked = R.mask_text(text)
     line_of = R.make_line_of(masked)

@@ -104,7 +104,7 @@ static void patch_push(NB *b, Patch *p, int enc)
 {
     if (p->n == p->cap) {
         int ncap = p->cap ? p->cap * 2 : 8;
-        int *nv = arena_alloc(&b->cx->arena, (size_t)ncap * sizeof(int));
+        int *nv = pcrec_arena_alloc(&b->cx->arena, (size_t)ncap * sizeof(int));
         if (p->n) memcpy(nv, p->v, (size_t)p->n * sizeof(int)); /* memcpy from
                     NULL is UB even with length 0 (R2 robustness NIT-1) */
         p->v = nv;
@@ -139,7 +139,7 @@ static int nst(NB *b, NKind k)
         /* [M4.7b/K7] realloc into a TEMPORARY, so a failure leaves the live
          * array owned by the Job for job_cleanup rather than losing it. */
         NState *nst = realloc(nfa->st, (size_t)ncap * sizeof(NState));
-        if (!nst) ctx_nomem(b->cx);
+        if (!nst) pcrec_ctx_nomem(b->cx);
         nfa->st = nst;
         nfa->cap = ncap;
     }
@@ -331,7 +331,7 @@ static Frag trie_tail(NB *b, const TItem *it, int depth)
  * disjointness guard. */
 static Frag trie_flat(NB *b, const TItem *items, int n, int depth)
 {
-    Frag *fr = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+    Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
     for (int j = 0; j < n; j++) fr[j] = trie_tail(b, &items[j], depth);
     return n == 1 ? fr[0] : chain_alts(b, fr, n);
 }
@@ -424,7 +424,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
         if (has_acc) {
             /* at most one accept and one segment per item, plus a trailing
              * segment */
-            Frag *parts = arena_alloc(&b->cx->arena,
+            Frag *parts = pcrec_arena_alloc(&b->cx->arena,
                                       (size_t)(2 * n + 1) * sizeof(Frag));
             int np = 0, seg = 0;
             for (int k = 0; k < n; k++) {
@@ -451,7 +451,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
          * single branch began `[ab]`. */
         int runlen = disjoint_run_len(items, n, depth);
         if (runlen < n) {
-            Frag *runs = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+            Frag *runs = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
             int nr = 0, off = 0;
             while (off < n) {
                 int len = disjoint_run_len(items + off, n - off, depth);
@@ -466,14 +466,14 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
         /* rule 2: group by the class bitmap at `depth`, stable in index order
          * so groups come out ordered by their lowest index. Every group here
          * is pairwise disjoint from every other by the run cut above. */
-        int *gstart = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
-        int *gcount = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
-        TItem *sorted = arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
-        /* relies on arena_alloc zeroing (src/core/arena.c); read below
+        int *gstart = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        int *gcount = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        TItem *sorted = pcrec_arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
+        /* relies on pcrec_arena_alloc zeroing (src/core/arena.c); read below
          * before any explicit write. If a "skip the memset for large
          * allocations" fast path is ever added there, this grouping
          * silently corrupts and miscompiles — R3 critic latent finding. */
-        bool *used = arena_alloc(&b->cx->arena, (size_t)n);
+        bool *used = pcrec_arena_alloc(&b->cx->arena, (size_t)n);
         int ng = 0, m = 0;
         for (int k = 0; k < n; k++) {
             if (used[k]) continue;
@@ -501,7 +501,7 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
             continue;
         }
 
-        Frag *fr = arena_alloc(&b->cx->arena, (size_t)ng * sizeof(Frag));
+        Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)ng * sizeof(Frag));
         for (int g = 0; g < ng; g++) {
             const TItem *gi = sorted + gstart[g];
             int s = nst(b, N_CLASS);
@@ -531,7 +531,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
         if (t->k != A_CAT) break;
     }
     /* nsp counts the spine head plus one per A_CAT node */
-    const Ast **leaf = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+    const Ast **leaf = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
     int i = nsp;
     const Ast *t = a;
     while (t->k == A_CAT) { leaf[--i] = ast_bare(t->r); t = ast_bare(t->l); }
@@ -541,7 +541,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     for (int k = 0; k < nsp; k++)
         if (leaf[k]->k != A_CLASS) return false;
 
-    uint8_t *seq = arena_alloc(&b->cx->arena, (size_t)nsp * 32);
+    uint8_t *seq = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * 32);
     for (int k = 0; k < nsp; k++)
         /* [M5.0 stage 1] §2.5.1's AFTER row 7. This builder runs at
          * `compile.c:1018`, BELOW the encoding lowering, so every interval on
@@ -680,7 +680,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         int nsp = 0;
         const Ast *t = a;
         while (t->k == A_CAT) { nsp++; t = ast_bare(t->l); }
-        const Ast **rs = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+        const Ast **rs = pcrec_arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
         int i = nsp;
         t = a;
         while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(t->l); }
@@ -702,7 +702,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         /* flatten, then chain splits so branch order = priority order */
         int nbr = 1;
         for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(t2->l)) nbr++;
-        const Ast **br = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
+        const Ast **br = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t2 = a;
         while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(t2->l); }
@@ -721,12 +721,12 @@ static Frag compile_ast(NB *b, const Ast *a)
          * it (R3 critic correction). Contiguity is safe against empty
          * branches for a structural reason: every eligible branch consumes at
          * least one byte, since all its leaves are A_CLASS. */
-        TItem *keys = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
-        bool *elig = arena_alloc(&b->cx->arena, (size_t)nbr);
+        TItem *keys = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
+        bool *elig = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr);
         for (int j = 0; j < nbr; j++)
             elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);
 
-        Frag *fr = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
+        Frag *fr = pcrec_arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
         int nf = 0;
         for (int j = 0; j < nbr; ) {
             if (!elig[j]) { fr[nf++] = compile_ast(b, br[j]); j++; continue; }
@@ -1058,8 +1058,8 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * is bounded by the state count and visits each state once. */
 static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
 {
-    unsigned char *seen = arena_alloc(&cx->arena, (size_t)nfa->n);
-    int *stack = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    unsigned char *seen = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
+    int *stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
     int top = 0, c;
 
     memset(seen, 0, (size_t)nfa->n);

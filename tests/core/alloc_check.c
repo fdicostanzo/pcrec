@@ -51,7 +51,7 @@
  *       ([K60MEAS]; see the witness table at the bottom of this file)
  *
  * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
- * mechanism (the [ART-SIZE] ladder catch absorbing a genuine ctx_nomem) is
+ * mechanism (the [ART-SIZE] ladder catch absorbing a genuine pcrec_ctx_nomem) is
  * FIXED at the recovery point — W4 is expected to PASS (0 absorptions,
  * single-shot and sustained both) on any tree carrying the fix, and a W4
  * FAIL here is a real regression. W1 and W3's absorptions were a SEPARATE
@@ -507,7 +507,7 @@ int main(int argc, char **argv)
          * (the default, all five ladder rungs, and the final re-emission). */
         /* [D105/K60FIX] W4 is the LADDER class and it is GREEN now: its
          * 108 absorptions were the `[ART-SIZE]` ladder's blanket catch
-         * discarding a genuine `ctx_nomem`-routed OOM as "this K is out",
+         * discarding a genuine `pcrec_ctx_nomem`-routed OOM as "this K is out",
          * fixed at the recovery point by lane k60fix (D109). This row
          * pinned 108 while that fix was in flight; the pin going stale-low
          * the moment it landed is the ratchet working as designed, and

@@ -47,7 +47,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   interned** — the state caps bound how many states exist, this bounds what
   they COST, and on the exact-repeat family those are different numbers by a
   factor of n. `tab_grow` and the two reallocs here now fail through
-  `ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
+  `pcrec_ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
   too complex" `ctx_fail` SITES** (the state-count check in `intern()`, the
   `PCREC_MAX_SUBSET_ELEMS` check beside it) **ALSO RECORD THE OVERFLOW ON
   `Ctx`** (`dfa_overflowed`/`dfa_overflow_why`, plain fields, set

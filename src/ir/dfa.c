@@ -291,7 +291,7 @@ typedef struct {
  * so the abandoned copies total less than one live table. */
 static void *arena_regrow(Arena *ar, void *old, size_t oldsz, size_t newsz)
 {
-    void *p = arena_alloc(ar, newsz);
+    void *p = pcrec_arena_alloc(ar, newsz);
     if (oldsz) memcpy(p, old, oldsz);
     return p;
 }
@@ -316,7 +316,7 @@ static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
 static void lctx_rehash(LCtxTab *t)
 {
     t->tabcap = t->tabcap ? t->tabcap * 2 : 256;
-    t->tab = arena_alloc(t->ar, t->tabcap * sizeof(int));
+    t->tab = pcrec_arena_alloc(t->ar, t->tabcap * sizeof(int));
     for (size_t i = 0; i < t->tabcap; i++) t->tab[i] = -1;
     for (int i = 1; i < t->n; i++)   /* id 0 is the empty stack: never a key */
         t->tab[lctx_slot(t, t->v[i].parent, t->v[i].loop)] = i;
@@ -329,7 +329,7 @@ static int lctx_intern(LCtxTab *t, int parent, int loop)
 {
     if (t->n == 0) {                 /* reserve id 0 for the empty stack */
         t->cap = 64;
-        t->v = arena_alloc(t->ar, (size_t)t->cap * sizeof(LCtx));
+        t->v = pcrec_arena_alloc(t->ar, (size_t)t->cap * sizeof(LCtx));
         t->v[0].parent = -1;
         t->v[0].loop = -1;
         t->v[0].depth = 0;
@@ -403,8 +403,8 @@ static void pmemo_grow(PMemo *m)
 {
     PMemo nm = *m;
     nm.cap = m->cap ? m->cap * 2 : 256;
-    nm.key = arena_alloc(m->ar, nm.cap * sizeof(uint64_t));
-    nm.gen = arena_alloc(m->ar, nm.cap * sizeof(uint32_t));  /* zeroed != g */
+    nm.key = pcrec_arena_alloc(m->ar, nm.cap * sizeof(uint64_t));
+    nm.gen = pcrec_arena_alloc(m->ar, nm.cap * sizeof(uint32_t));  /* zeroed != g */
     for (size_t i = 0; i < m->cap; i++) {
         if (m->gen[i] != m->g) continue;
         size_t j = pmemo_slot(&nm, m->key[i]);
@@ -884,7 +884,7 @@ static void tab_grow(Ctx *cx, Dfa *d)
     d->tab = malloc(newcap * sizeof(int));
     /* [M4.7b/K7] d->tab is already NULL here, so the Job's own cleanup frees
      * nothing twice; d->tabcap is stale but nothing reads it after a longjmp. */
-    if (!d->tab) { d->tabcap = 0; ctx_nomem(cx); }
+    if (!d->tab) { d->tabcap = 0; pcrec_ctx_nomem(cx); }
     for (size_t i = 0; i < newcap; i++) d->tab[i] = -1;
     d->tabcap = newcap;
     for (int s = 0; s < d->n; s++) tab_insert(d, s);
@@ -1040,7 +1040,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         /* [M4.7b/K7] realloc into a TEMPORARY: on failure d->st still points at
          * the live array the Job owns and job_cleanup will free it. */
         DState *nst = realloc(d->st, (size_t)ncap * sizeof(DState));
-        if (!nst) ctx_nomem(cx);
+        if (!nst) pcrec_ctx_nomem(cx);
         d->st = nst;
         d->cap = ncap;
     }
@@ -1067,13 +1067,13 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
             s->up[u].list = s->up[owner[u]].list;
         } else {
             s->up[u].list =
-                arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof(int));
+                pcrec_arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof(int));
             if (n) memcpy(s->up[u].list, up[u].list, (size_t)n * sizeof(int));
         }
     }
     s->eolvar = eolvar;
     s->endvar = endvar;
-    s->tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
+    s->tr = pcrec_arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
     for (int c = 0; c < d->ncls; c++) s->tr[c] = -2; /* unfilled */
     d->tab[i] = d->n;
     return d->n++;
@@ -1347,9 +1347,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * and memo tables start empty and allocate on first use. */
     CloScratch sc;
     memset(&sc, 0, sizeof sc);
-    sc.seen.mark = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
+    sc.seen.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.seen.n = nfa->n;
-    sc.emit.mark = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
+    sc.emit.mark = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t));
     sc.emit.n = nfa->n;
     sc.memo.ar = sc.ctxs.ar = sc.ks.ar = &cx->arena;
 
@@ -1359,9 +1359,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * [M6.2 wave C] NINE: the class axis is three-valued. Allocated for the
      * worst case and INDEXED by (view, class-context); the guards in
      * make_state decide how many are actually written. */
-    int *scratch = arena_alloc(&cx->arena,
+    int *scratch = pcrec_arena_alloc(&cx->arena,
                                (size_t)nfa->n * 3 * UPC_N * sizeof(int));
-    int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int *pre = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     Mach m = { prune, reverse, has_end, has_gst,
                { true, has_word, has_nl, has_cstart } };

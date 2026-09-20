@@ -385,10 +385,10 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     Walk w;
     w.nfa = nfa;
     w.gen = 0;
-    w.seen  = arena_alloc(&cx->arena, (size_t)nfa->n);
-    w.stack = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    w.cur   = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    int *next = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w.seen  = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
+    w.stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    w.cur   = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int seed = nfa->anch_start;
     wclose(&w, &seed, 1);

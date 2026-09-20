@@ -1554,7 +1554,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     const char *groups_name = NULL;
     if (cx->n_named_groups > 0) {
         NamedGroup **sorted =
-            arena_alloc(&cx->arena, cx->n_named_groups * sizeof *sorted);
+            pcrec_arena_alloc(&cx->arena, cx->n_named_groups * sizeof *sorted);
         unsigned idx = 0;
         for (NamedGroup *g = cx->named_groups; g; g = g->next)
             sorted[idx++] = g;
@@ -2020,7 +2020,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
      * gone rather than merely generous. This is a per-byte TRANSFORM and not
      * a format, so it does not go through `dfa_fragf`; what it needed was an
      * allocation whose size the input decides. */
-    char *guard = arena_alloc(&cx->arena, strlen(p) + 1);
+    char *guard = pcrec_arena_alloc(&cx->arena, strlen(p) + 1);
     size_t gi = 0;
     for (const char *q = p; *q; q++)
         guard[gi++] = (char)(isalnum((unsigned char)*q) ? toupper((unsigned char)*q) : '_');
@@ -3305,7 +3305,7 @@ static bool legend_extra_escape(unsigned char ch) { return ch == '"' || ch == '\
  * mechanism every other allocation in this tree uses — D105, which deleted
  * the silent-degradation path this function used to carry rather than giving
  * it a better diagnostic. There is nothing left to announce: `path` is a
- * fixed local, and the BFS arrays route through `arena_alloc` -> `ctx_nomem`.
+ * fixed local, and the BFS arrays route through `pcrec_arena_alloc` -> `pcrec_ctx_nomem`.
  * The arena dies with the attempt, so there is nothing to free here either
  * (coding guide §1.6). */
 static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
@@ -3316,8 +3316,8 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
      * and the BFS's own writes to `from`/`via` are skipped with it — the
      * walk's reachability and distances do not depend on either. */
     const bool brief = d->n > LEGEND_MAX_STATES;
-    int *dist  = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
-    int *queue = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+    int *dist  = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+    int *queue = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
     int *from = NULL, *via = NULL;
     /* [OPT-5] `path` IS NOT SIZED BY THE STATE COUNT, and that was already a
      * bounds fix rather than a tidy-up: it holds the example input for the
@@ -3334,8 +3334,8 @@ static void emit_state_legend(Ctx *cx, StrBuf *c, const Dfa *d, bool reverse)
     int path[LEGEND_MAX_EXAMPLE];
     for (int i = 0; i < d->n; i++) dist[i] = -1;
     if (!brief) {
-        from = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
-        via  = arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+        from = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
+        via  = pcrec_arena_alloc(&cx->arena, (size_t)d->n * sizeof(int));
         for (int i = 0; i < d->n; i++) { from[i] = -1; via[i] = -1; }
     }
     int head = 0, tail = 0;

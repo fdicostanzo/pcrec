@@ -313,7 +313,7 @@ Measured (`probe_uprops.c`, sections (d)):
 
 **The algorithm pcrec's syntax port must implement**, stated as pseudocode
 against a fixed 48-byte buffer (never an arena — D29/the plan's own
-citation, `arena_alloc` aborts under a memory limit, which is K7):
+citation, `pcrec_arena_alloc` aborts under a memory limit, which is K7):
 
     negate = false
     if next byte is '^': negate = true; consume it (does NOT enter the count)

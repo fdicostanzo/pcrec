@@ -15,13 +15,13 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 **Status: FIXED 2026-09-18 — BOTH CLASSES, by two separate changes on the
 same day.** The LADDER class (mechanism (B), 108/148, disposition (2)) is
-fixed by lane `k60fix` (`e6e4aa72`, D109): a genuine `ctx_nomem` arrival is
+fixed by lane `k60fix` (`e6e4aa72`, D109): a genuine `pcrec_ctx_nomem` arrival is
 exempt from the ladder's blanket catch, carried per-arrival in `Ctx`.
 The LEGEND class (mechanism (A), 40/148) is fixed by lane `d105`
 (`6e14d210`, D105): `emit_state_legend`'s raw allocations are deleted
 outright rather than rerouted, so there is no silent-degradation path left
 to diagnose. **The two fixes are disjoint and neither could have reached
-the other's class** — the legend never called `ctx_nomem` and so never
+the other's class** — the legend never called `pcrec_ctx_nomem` and so never
 arrived at the recovery point D109 repairs, which `k60_measurement.md` §4.3
 measured in advance (108/108 and 0/40). `make alloc` is green on all four
 witnesses: W1 15 → 0, W3 25 → 0, W4 108 → 0, in the single-shot sweep and
@@ -57,7 +57,7 @@ attempt just get refused by the cap" — they actually mean "has ANY
 attempt in this compile's whole retry history ever been refused." So an
 attempt that legitimately overflows sets the flag, triggers a real
 retry rung, and if THAT retry attempt then hits a genuine, unrelated
-`ctx_nomem` (allocation failure), the STALE flag makes a FURTHER rung
+`pcrec_ctx_nomem` (allocation failure), the STALE flag makes a FURTHER rung
 look eligible for a reason that has nothing to do with why this attempt
 actually failed — and if that further rung succeeds (which it usually
 does, since the injector's own fail-at-N counter never repeats a hit),
@@ -132,7 +132,7 @@ the clean witness for F1 specifically and not for K60.
   must re-pin rather than silently turn a red line green.
   **K60's LADDER class (108/148) is not closed by this one and never could
   have been**, by construction: `emit_state_legend` never called
-  `ctx_nomem` and never reached the recovery point, and the ladder fix
+  `pcrec_ctx_nomem` and never reached the recovery point, and the ladder fix
   never reaches the legend — the two halves are disjoint, which
   `k60_measurement.md` §4.3 measured in advance (108/108 and 0/40). It is
   closed by its OWN change, lane `k60fix`'s `e6e4aa72` (D109), landed the
@@ -153,14 +153,14 @@ DIAGNOSIS IS WRONG IN THREE PLACES; READ THE MEMO
    for exactly the reason this entry imagined was unhandled. **Disposition
    (1) below is a fix for a defect that is not there.** Zero of 148 measured
    absorptions are attributable to a stale eligibility flag. One narrow
-   intra-attempt window survives (a `ctx_nomem` escaping `build_anchored_dfa`
+   intra-attempt window survives (a `pcrec_ctx_nomem` escaping `build_anchored_dfa`
    between the flag write and the restore) — named, no witness, not measured.
 2. **The real attribution, 148 absorptions each cited by `file:line`:**
    **108 (73%)** the `[ART-SIZE]` ladder's blanket catch discarding genuine
-   `ctx_nomem`-routed OOMs as "this K is out"; **40 (27%)**
+   `pcrec_ctx_nomem`-routed OOMs as "this K is out"; **40 (27%)**
    `emit_state_legend`'s raw mallocs returning silently on NULL
    (`src/gen/emit_dfa.c:3615-3618`, `:3660`) — a path that never calls
-   `ctx_nomem`, never longjmps, and never reaches the recovery point, which
+   `pcrec_ctx_nomem`, never longjmps, and never reaches the recovery point, which
    is why no property of the recovery point can fix it. **That 27% IS D105'S
    OWN UNBUILT RULING** (see the D105 status note in `decisions.md`), not a
    new finding. (It was built later the same day — `6e14d210` — which is
@@ -178,7 +178,7 @@ DIAGNOSIS IS WRONG IN THREE PLACES; READ THE MEMO
 4. **Candidate fix, measured not argued** (prototyped behind `PCREC_K60_FIX`,
    NOT landed): carrying the OOM in the `longjmp` VALUE rather than in
    stored state eliminates **108 of 108** ladder absorptions and **0 of 40**
-   legend ones — sound and complete for the `ctx_nomem`-routed class,
+   legend ones — sound and complete for the `pcrec_ctx_nomem`-routed class,
    structurally unable to reach the legend class. `v = setjmp(env)` is
    outside C11 7.13.1.1p2, so a landed version uses the memo §4.4 spelling.
 
@@ -188,7 +188,7 @@ retry-ladder finding): (1) reset `cx.size_cap_refused`/`cx.dfa_overflowed`
 state at the top of every retry iteration, so each attempt's
 eligibility tests see only what THAT attempt did — the narrow fix, but
 touches the one recovery point every rung shares, worth a measured pass
-over every rung's reachability before landing; (2) have `ctx_nomem` set
+over every rung's reachability before landing; (2) have `pcrec_ctx_nomem` set
 a flag checked BEFORE any rung's own eligibility test and BEFORE the
 ladder's blanket "this K is out" catch, so a genuine allocation failure
 always propagates regardless of what a prior attempt left set (cheaper,
@@ -209,7 +209,7 @@ whether a THIRD distinct absorption path exists are both open.
 
 **LANE K60FIX 2026-09-18 — THE LADDER CLASS (MECHANISM (B)) IS BUILT.**
 Disposition (2) landed exactly as k60_measurement.md §4.4 spelled it:
-`ctx_nomem` sets a new per-attempt `Ctx` field, `failed_nomem`
+`pcrec_ctx_nomem` sets a new per-attempt `Ctx` field, `failed_nomem`
 (`src/core/internal.h`), before its `longjmp`; `compile_driver`'s
 `setjmp` handler (`src/core/compile.c:838`) tests it FIRST, ahead of
 every rung's own eligibility test and ahead of the `[ART-SIZE]` ladder's
@@ -229,7 +229,7 @@ diagnosed`, was `FAIL: 108 of 158 ... SUCCEEDED THROUGH anyway`); W2
 unchanged (0/11, PASS before and after); **W1 (15/72) and W3 (25/328)
 were UNCHANGED BY THIS FIX, on purpose** — both are entirely mechanism
 (A), the `emit_state_legend` silent-degradation path
-(`src/gen/emit_dfa.c:3615-3618,3660`), which never calls `ctx_nomem` and
+(`src/gen/emit_dfa.c:3615-3618,3660`), which never calls `pcrec_ctx_nomem` and
 never reaches this recovery point, so no property of it could fix them.
 That class was D105's, and it landed the same day (lane `d105`,
 `6e14d210`, W1 15 → 0 and W3 25 → 0); the sentence above is preserved as
@@ -245,7 +245,7 @@ nonzero `setjmp` return, testing no per-attempt `Ctx` field — none of
 them absorbs anything today and none needed the same test.
 
 Byte-identical in the no-OOM case (`make test-codegen` clean; the fix
-touches only the arrival of a `ctx_nomem`-routed `longjmp`, which no
+touches only the arrival of a `pcrec_ctx_nomem`-routed `longjmp`, which no
 successful compile reaches).
 
 **[D110] (2026-09-18, lane allocpins):** with both classes closed,
@@ -1098,7 +1098,7 @@ pattern and its blast radius is a separate decision.
 **3. The caller-abort, which was the worst item on this list.** Seven
 malloc-failure sites called `abort()`, so a caller who set a memory limit had
 their process killed with no diagnostic. All seven now report through
-`ctx_nomem()` (src/core/compile.c) — "out of memory compiling this pattern" —
+`pcrec_ctx_nomem()` (src/core/compile.c) — "out of memory compiling this pattern" —
 by giving `Arena` and `StrBuf` a back-pointer to the owning `Ctx`. The error
 path already freed everything wholesale (`job_cleanup`), so the blast radius was
 small: the only allocations the Job does not own are `pcrec_minimize_dfa`'s five
@@ -1112,7 +1112,7 @@ test-resource`), 19 checks in three sections — bounded outcome under a
 peak-tree-RSS ceiling and CPU/wall budgets via `scripts/watchdog`; a positive
 control for the allocator paths under a binding `ulimit -v`; and one check per
 BOUND that each shape reaches the cap describing it. Sabotage-validated three
-ways, each catching only its own section: reverting `ctx_nomem` to `abort()`
+ways, each catching only its own section: reverting `pcrec_ctx_nomem` to `abort()`
 fails 4 checks, reverting the nfa.c line fails 10, neutralizing
 `PCREC_MAX_SUBSET_ELEMS` fails 4. Byte-identity verified across all 572
 compiling corpus patterns plus 20 bounded-repeat shapes: 572/572 identical

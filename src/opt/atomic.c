@@ -378,7 +378,7 @@ static void ds_add(void *user, Ast *grp)
     DischargeSet *d = user;
     if (d->n == d->cap) {
         int ncap = d->cap ? d->cap * 2 : 16;
-        Ast **nv = arena_alloc(&d->cx->arena, (size_t)ncap * sizeof *nv);
+        Ast **nv = pcrec_arena_alloc(&d->cx->arena, (size_t)ncap * sizeof *nv);
         if (d->n) memcpy(nv, d->hit, (size_t)d->n * sizeof *nv);
         d->hit = nv;
         d->cap = ncap;

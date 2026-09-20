@@ -397,7 +397,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
 
     int sig_count = 0;
     char name[PCREC_UPROP_NAME_MAX];   /* fixed buffer, never an arena (D29:
-                                          arena_alloc aborts under a memory
+                                          pcrec_arena_alloc aborts under a memory
                                           limit, K7) */
     int sep_at = -1;                   /* the FIRST `=` or `:`, in significant
                                           characters — [M5.0] stage 5's prefix

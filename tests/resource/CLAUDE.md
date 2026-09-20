@@ -46,11 +46,11 @@ could see.
   2. **A failed allocation is diagnosed, not aborted.** Four compiles under a
      40 MB (25 MB for the last) `ulimit -v`, which makes malloc genuinely
      return NULL partway through. Each must exit 1 with a diagnostic, never
-     134. This is a positive control for `ctx_nomem()` and the seven
+     134. This is a positive control for `pcrec_ctx_nomem()` and the seven
      allocation sites that route to it, and it is a SEPARATE section for a
      reason: with the section-1 budget in place, those shapes are refused by
      the budget long before any malloc fails, so section 1 cannot reach the
-     allocator paths at all. Revert `ctx_nomem` to `abort()` and section 2
+     allocator paths at all. Revert `pcrec_ctx_nomem` to `abort()` and section 2
      fails while section 1 stays green.
 
   2b. **[REVW.U L8-F6(b)] A darwin-viable positive control, unconditional.**
@@ -222,17 +222,17 @@ the decline itself.
 
 ## [REVW.U L8-F6(c)] the discipline's first sabotage rows (2026-09-17)
 
-The `ctx_nomem`/`abort()` discipline had ZERO sabotage rows before this —
+The `pcrec_ctx_nomem`/`abort()` discipline had ZERO sabotage rows before this —
 `arena.c`, `sb.c`, and `compile.c`'s own attachment block were all
 untouched by `tests/mech/sabotages/` (the code review's F6 finding).
 Three rows now, all in mech arm `resource` (this file), each verified
 DETECTED in both directions via `bash tests/mech/run_sabotage_matrix.sh
 <id>` against the committed tree:
 
-- **S255** — `src/core/arena.c`: `arena_alloc`'s `ctx_nomem` route
+- **S255** — `src/core/arena.c`: `pcrec_arena_alloc`'s `pcrec_ctx_nomem` route
   neutered (`if (0)` instead of `if (a->cx)`), so every arena allocation
   failure aborts, on every compile.
-- **S256** — `src/core/sb.c`: `sb_grow`'s `ctx_nomem` route neutered the
+- **S256** — `src/core/sb.c`: `sb_grow`'s `pcrec_ctx_nomem` route neutered the
   same way, so every StrBuf realloc failure aborts — every attached
   buffer, not only the two F1 missed.
 - **S257** — `src/core/compile.c`: `compile_driver`'s attachment block

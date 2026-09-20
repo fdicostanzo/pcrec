@@ -245,7 +245,7 @@ static void rd_shape(Shape *S, const Ast *a)
  */
 static Ast *rd_node(Ctx *cx, const Ast *src)
 {
-    Ast *n = arena_alloc(&cx->arena, sizeof *n);
+    Ast *n = pcrec_arena_alloc(&cx->arena, sizeof *n);
     *n = *src;
     n->l = n->r = NULL;
     /* The copy is walk material, never a rung host: nothing analyses it and
@@ -400,7 +400,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
         const AKind kind = a->k;
         int n = 1;
         for (const Ast *t = a; t->k == kind; t = t->l) n++;
-        const Ast **item = arena_alloc(&cx->arena, (size_t)n * sizeof *item);
+        const Ast **item = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof *item);
         /* Walking a left-nested spine from the top visits the elements in
          * REVERSE text order, so `item[]` comes out reversed for free — which
          * is exactly what A_CAT wants and exactly what A_ALT must undo. */

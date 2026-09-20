@@ -407,7 +407,7 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
     if (n < 0) return what;
     size_t sz = (size_t)n + 1;
     if (sz > sizeof buf) sz = sizeof buf;
-    char *p = arena_alloc(&cx->arena, sz);
+    char *p = pcrec_arena_alloc(&cx->arena, sz);
     memcpy(p, buf, sz - 1);
     p[sz - 1] = 0;
     return p;

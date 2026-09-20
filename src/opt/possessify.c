@@ -747,7 +747,7 @@ static bool body_admits_unique_iteration(Gk *g, const Ast *body,
  * cost. */
 void *pcrec_uniq_scratch(Ctx *cx)
 {
-    return arena_alloc(&cx->arena, sizeof(Gk));
+    return pcrec_arena_alloc(&cx->arena, sizeof(Gk));
 }
 
 bool pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why)
@@ -1101,7 +1101,7 @@ void pcrec_poss_survey(Ctx *cx, Ast *root,
     P.cx = cx;
     P.fn = fn;
     P.user = user;
-    P.g = arena_alloc(&cx->arena, sizeof(Gk));
+    P.g = pcrec_arena_alloc(&cx->arena, sizeof(Gk));
 
     /* The census counters this walk maintains are `pcrec_possessify`'s, and a
      * SURVEY must not move them: `--emit-ir`'s header reports them and the
@@ -1128,7 +1128,7 @@ int pcrec_possessify(Ctx *cx, Ast *root)
     /* One Gk for the whole pass, reset per quantifier: it is 16 KB of position
      * state and the corpus analyses up to a few thousand quantifiers per
      * compile, so allocating one per verdict would be the pass's whole cost. */
-    P.g = arena_alloc(&cx->arena, sizeof(Gk));
+    P.g = pcrec_arena_alloc(&cx->arena, sizeof(Gk));
 
     /* At the top level nothing follows the pattern and the match may end —
      * pcrec's entry points are a SEARCH, so the pattern's end is a legitimate

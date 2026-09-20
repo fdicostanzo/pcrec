@@ -338,7 +338,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   own loop — and `ctx_fail` longjmps to `compile_driver`, which frees the arena
   wholesale. A `malloc`/`realloc` builder would leak on every diagnosed
   pattern, and the leak would be found by the ASan/LSan axis rather than by
-  review. Growing through `arena_alloc` abandons the smaller block (under a
+  review. Growing through `pcrec_arena_alloc` abandons the smaller block (under a
   kilobyte for a class reaching 64 intervals) and cannot leak by construction.
 
   **THE INVARIANT IS SORTED, DISJOINT AND NON-ADJACENT**, and non-adjacency is
@@ -365,7 +365,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
-  calls `ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
+  calls `pcrec_ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
   half: pcrec is a LIBRARY, and aborting kills the CALLER's process — the
   outcome a caller who set a memory limit was specifically trying to avoid.
   The longjmp lands in compile_driver, whose `job_cleanup` already freed
@@ -426,13 +426,13 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   right. It is the file's first primitive that takes an `Arena *` rather than
   a `StrBuf *`, and deliberately takes nothing else — D108's data-in/text-out
   rule again, so an emitter helper calling it is still callable from a
-  back-end fed by a deserialized IR. Failure routes through `ctx_nomem` via
-  the arena's `.cx`, `arena_alloc`'s own discipline.
+  back-end fed by a deserialized IR. Failure routes through `pcrec_ctx_nomem` via
+  the arena's `.cx`, `pcrec_arena_alloc`'s own discipline.
 
   **KNOW WHICH HALF OF THE PROMISE IS CHECKED.** `tests/core/sb_fragf_check.c`
   detects a wrong `vsnprintf` SIZE argument loudly (5 of its 6 sub-checks go
   red). It does NOT detect an allocation one byte short — and neither does
-  AddressSanitizer, measured both ways rather than argued: `arena_alloc`
+  AddressSanitizer, measured both ways rather than argued: `pcrec_arena_alloc`
   rounds every request to 16 bytes and zeroes the slice, and ASan sees only
   the arena's own 64 KiB block `malloc`, never the intra-block slice bounds.
   So "sized exactly to the result" is enforced at the format call and is
@@ -1169,7 +1169,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Conventions
 
-All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
+All dynamic allocations for AST/IR go through pcrec_arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
 
 
 ## [DD-14 wave G] the pass reorder, and three declarations

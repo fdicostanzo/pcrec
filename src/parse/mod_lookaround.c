@@ -408,7 +408,7 @@ void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
                         "branch count");
 
     long long lo = 0, hi = 0;
-    int *w = arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
+    int *w = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
     if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
         char buf[LA_MSG_MAX];
         la_width_refusal(buf, sizeof buf, lo, hi);
@@ -553,7 +553,7 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
         a->u.look.nbranch = info.nbr;
     } else {
         long long lo = 0, hi = 0;
-        int *w = arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
+        int *w = pcrec_arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
         if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
             char buf[LA_MSG_MAX];
             la_width_refusal(buf, sizeof buf, lo, hi);

@@ -44,7 +44,7 @@ static int  nextc(Ctx *cx)       { return at_end(cx) ? -1 : (unsigned char)cx->p
 
 static Ast *node(Ctx *cx, AKind k)
 {
-    Ast *a = arena_alloc(&cx->arena, sizeof(Ast));
+    Ast *a = pcrec_arena_alloc(&cx->arena, sizeof(Ast));
     a->k = k;
     return a;
 }
@@ -1944,7 +1944,7 @@ Ast *pcrec_parse(Ctx *cx)
  * state nothing has read yet, which is what those query surfaces want. */
 void pcrec_parse_mods_init(Ctx *cx)
 {
-    ParseMods *m = arena_alloc(&cx->arena, sizeof *m);
+    ParseMods *m = pcrec_arena_alloc(&cx->arena, sizeof *m);
     *m = (ParseMods){ .caseless = cx->opt &&
                                   (cx->opt->flags & PCREC_CASELESS) != 0 };
     cx->mods = m;

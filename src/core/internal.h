@@ -20,7 +20,7 @@
  * and the one a caller who set a memory limit was specifically trying to avoid.
  * With a Ctx in reach, every allocation failure on the compile path becomes an
  * ordinary ctx_fail (longjmp to compile_driver's setjmp, job_cleanup, return
- * -1 with a diagnostic) instead. See ctx_nomem() below. */
+ * -1 with a diagnostic) instead. See pcrec_ctx_nomem() below. */
 typedef struct Ctx Ctx;
 
 /* [M6.2 wave A] The scoped inline-option state, INCOMPLETE ON PURPOSE — see
@@ -45,7 +45,7 @@ typedef struct ABlock {
  * report through (there are none today; every Arena is a Ctx's own). */
 typedef struct { ABlock *head; Ctx *cx; } Arena;
 
-void *arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
+void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
 
 /* ---- growable string buffer (codegen output) ---- */
@@ -207,10 +207,10 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  * is what makes it safe to hand straight to `pcrec_sb_printf`'s `%s` at a site far
  * below the one that built it, the thing a stack buffer could not do.
  *
- * ON ALLOCATION FAILURE it routes through `ctx_nomem` via the arena's own
- * `.cx`, exactly as `arena_alloc` does (coding_guide.md §1.1: a library must
+ * ON ALLOCATION FAILURE it routes through `pcrec_ctx_nomem` via the arena's own
+ * `.cx`, exactly as `pcrec_arena_alloc` does (coding_guide.md §1.1: a library must
  * not `abort()` its caller). A DETACHED arena — one whose `.cx` is NULL —
- * aborts there, which is `arena_alloc`'s own pre-existing behaviour and not a
+ * aborts there, which is `pcrec_arena_alloc`'s own pre-existing behaviour and not a
  * property this adds.
  *
  * D108, and it is why the parameter is an `Arena *` and not a `Vm *`, a
@@ -2748,7 +2748,7 @@ struct Ctx {
      * nothing. */
     PendingRef          *pending_refs;
     unsigned             n_pending_refs;
-    /* [K60] docs/dev/known_issues.md, disposition (2) — set by `ctx_nomem`
+    /* [K60] docs/dev/known_issues.md, disposition (2) — set by `pcrec_ctx_nomem`
      * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can
      * tell a genuine allocation failure from every other `ctx_fail` arrival
      * at the same `setjmp` and propagate it immediately, ahead of every
@@ -2765,7 +2765,7 @@ struct Ctx {
      * disposition (1), refuted by k60_measurement.md §2.4 and struck by
      * Frank's ruling 2026-09-18) lacked. `size_cap_refused`/`dfa_overflowed`
      * above already have this shape; this field is the same idiom applied
-     * to `ctx_nomem`'s own arrival. */
+     * to `pcrec_ctx_nomem`'s own arrival. */
     bool                 failed_nomem;
     jmp_buf              jb;
     pcrec_error         *err;
@@ -2812,7 +2812,7 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  *
  * `pos` is 0 (whole-pattern) at every site: an allocation failure is a property
  * of the pattern's total cost, not of a byte in it. */
-void ctx_nomem(Ctx *cx) __attribute__((noreturn));
+void pcrec_ctx_nomem(Ctx *cx) __attribute__((noreturn));
 
 /* ---- syntax construct registry (D24 / SR-1) ----
  *

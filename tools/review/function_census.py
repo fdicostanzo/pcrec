@@ -42,7 +42,7 @@ tree does not perturb the real depth count.
 VALIDATION (hand-checked 2026-09-17, ten functions across the smallest
 and one of the largest files in the tier, by reading `sed -n` output at
 the reported boundaries and counting braces by eye):
-  - src/core/arena.c: arena_alloc (8-33, depth 3: body/outer-if/inner-if)
+  - src/core/arena.c: pcrec_arena_alloc (8-33, depth 3: body/outer-if/inner-if)
     and pcrec_arena_free (35-44, depth 2: body/while) -- the file's only two
     functions, both boundaries exact against `cat -n`.
   - src/gen/emit_vm.c (11,575 lines, the file the charter cites for

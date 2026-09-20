@@ -526,7 +526,7 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
     if (!indeg || !ok || !hp || !vtg || !stg || !drop || !exitv || !remap || !found) {
         free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
         free(exitv); free(remap); free(found);
-        ctx_nomem(cx);
+        pcrec_ctx_nomem(cx);
     }
     in_degrees(d, indeg, vtg, stg);
 
@@ -664,7 +664,7 @@ void pcrec_scanedge_dfa(Ctx *cx, Dfa *d, bool prefilter_reseeds)
         if (!ns) {
             free(indeg); free(ok); free(hp); free(vtg); free(stg); free(drop);
             free(exitv); free(remap); free(found);
-            ctx_nomem(cx);
+            pcrec_ctx_nomem(cx);
         }
         for (int i = 0; i < n; i++) {
             if (remap[i] < 0) continue;

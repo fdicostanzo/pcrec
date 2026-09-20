@@ -98,7 +98,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   to read the file's header before trusting the row.** Two plants were
   tried. A wrong `vsnprintf` SIZE argument turns 5 of the 6 sub-checks red.
   An ALLOCATION one byte short does not move it at all — and does not move
-  AddressSanitizer either, because `arena_alloc` rounds to 16 and zeroes,
+  AddressSanitizer either, because `pcrec_arena_alloc` rounds to 16 and zeroes,
   and ASan sees only the arena's own 64 KiB block `malloc`, never the
   intra-block slice. So "sized exactly to the result" is enforced at the
   format call and is unobservable at the allocation, by every instrument
@@ -199,7 +199,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
     `fit.chosen == ENGM_VM` conjunct excludes the two DFA witnesses; W2 is
     far below the `emit_code` threshold). On its first run it measured
     **108 of 158 (68.4%)** — the worst rate in the file — all of them
-    genuine `ctx_nomem`-routed allocations.
+    genuine `pcrec_ctx_nomem`-routed allocations.
 
   **[K60FIX] (2026-09-18, lane k60fix) — W4's 108/158 IS NOW 0/158.**
   K60's ladder-class mechanism (the
@@ -211,7 +211,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   SUCCEEDED THROUGH anyway`), W2 unchanged (0/11 PASS), and **W1 (15/72
   single-shot, 5/72 sustained) and W3 (25/328 single-shot) were UNCHANGED
   BY THIS FIX** — both are `emit_state_legend`'s silent degradation
-  (mechanism (A)), which never calls `ctx_nomem` and could not be reached
+  (mechanism (A)), which never calls `pcrec_ctx_nomem` and could not be reached
   from this fix by construction; that class was lane d105's.
 
   **[D105] closed it the same day** (`6e14d210`): the legend's raw
@@ -237,7 +237,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   **[D105] (2026-09-18, lane d105) — THE WITNESSES ARE PINNED NOW, on TWO
   numbers each, and the legend class is FIXED.** `emit_state_legend`'s five
   raw allocations per emitted machine are gone (`src/gen/emit_dfa.c`; the
-  compile refuses through the arena's `ctx_nomem` instead of dropping a
+  compile refuses through the arena's `pcrec_ctx_nomem` instead of dropping a
   legend silently), so W1 reads 15 absorbed -> **0** and W3 25 -> **0** in
   both modes. Each `Witness` row carries two kinds of expectation:
   - a POPULATION expectation — the profiling pass's own allocation count

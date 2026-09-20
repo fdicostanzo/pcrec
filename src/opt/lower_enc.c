@@ -203,7 +203,7 @@ static void u8_push_branch(U8Branches *bl, Ast *a)
 {
     if (bl->n == bl->cap) {
         int ncap = bl->cap ? bl->cap * 2 : 16;
-        Ast **grown = arena_alloc(&bl->cx->arena, (size_t)ncap * sizeof *grown);
+        Ast **grown = pcrec_arena_alloc(&bl->cx->arena, (size_t)ncap * sizeof *grown);
         for (int i = 0; i < bl->n; i++) grown[i] = bl->br[i];
         bl->br = grown;
         bl->cap = ncap;

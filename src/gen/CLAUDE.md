@@ -3058,10 +3058,10 @@ What a reader of this file needs to carry:
   DOWNWARD from `len-1` and stores nothing at or above the bound, which is
   why the shown bytes are identical: the low indices it keeps do not depend
   on the high ones it drops.
-- **The BFS arrays are `arena_alloc(&cx->arena, …)`.** The function takes a
+- **The BFS arrays are `pcrec_arena_alloc(&cx->arena, …)`.** The function takes a
   `Ctx *` for that and nothing else; both callers already had one (`f->cx`
   in `emit_machine_tables`, `cx` in `emit_attempt`). A failure refuses
-  through the general mechanism — arena → `ctx_nomem` → the one `longjmp` —
+  through the general mechanism — arena → `pcrec_ctx_nomem` → the one `longjmp` —
   so there is no bespoke failure arm and no `free()` here at all (the arena
   dies with the attempt).
 - **Brief mode allocates `dist` and `queue` only.** A summary reads neither

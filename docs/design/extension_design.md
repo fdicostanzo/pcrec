@@ -597,7 +597,7 @@ named no mechanism (`src/` contains zero `assert()` calls). Here there is one
 function and no hand-off: it answers its own question and returns.
 
 It is also NOT the TRIAL MODE refuted in D32 §8 by building it. Trial mode was
-*implicit* — a `Ctx` copy plus a flag tripping `arena_alloc`/`ctx_fail` — so
+*implicit* — a `Ctx` copy plus a flag tripping `pcrec_arena_alloc`/`ctx_fail` — so
 any construct with a body tripped it, aborting every CORRECT implementation,
 and it leaked ~76-80 bytes per byte scanned (76.4 MB at N = 1,000,000). Here
 the instruction is *explicit* and the handler is written to honour it.

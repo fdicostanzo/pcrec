@@ -401,7 +401,7 @@ the absence of any `SUCCEEDED THROUGH` line, so both rows are DETECTED by
 - **S259** neuters D109's `cx.failed_nomem` propagation
   (`src/core/compile.c`'s `setjmp` handler, `if (0 && cx.failed_nomem)`
   instead of `if (cx.failed_nomem)`), restoring K60's LADDER class: a
-  genuine `ctx_nomem`-routed allocation failure on a non-final
+  genuine `pcrec_ctx_nomem`-routed allocation failure on a non-final
   `compile_driver` attempt falls through to the `[ART-SIZE]` ladder's
   blanket "this K is out" catch and can be silently absorbed into a
   later attempt's success. `tests/core/alloc_check.c`'s W4 witness (the
@@ -410,7 +410,7 @@ the absence of any `SUCCEEDED THROUGH` line, so both rows are DETECTED by
   measurement memo).
 - **S260** replants the D105 defect SHAPE into `emit_state_legend`
   (`src/gen/emit_dfa.c`): the FIRST of its four BFS scratch arrays,
-  `dist`, reverts from `arena_alloc(&cx->arena, ...)` to a raw `malloc`
+  `dist`, reverts from `pcrec_arena_alloc(&cx->arena, ...)` to a raw `malloc`
   with a silent `return` on NULL — the minimal one-array plant, since one
   silently-degrading site is already the whole defect shape D105
   eliminated. `alloc_check.c`'s W1/W3 witnesses (the legend class) are

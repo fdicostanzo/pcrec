@@ -40,7 +40,7 @@ Method, in order:
 3. Split the statement's declarator list on top-level commas; a part
    matching `IDENT [ EXPR ] (= INIT)?` is a `char`-array **declarator**.
    A part that doesn't match this shape (a pointer declarator such as
-   `char *q = arena_alloc(...)`) contributes nothing — a statement with
+   `char *q = pcrec_arena_alloc(...)`) contributes nothing — a statement with
    zero array declarators is not counted at all.
 4. Classify **each declarator's own** size expression independently:
    (a) bare integer literal, (b) bare `PCREC_MAX_EMIT_NAME_LEN`

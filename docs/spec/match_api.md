@@ -3343,7 +3343,7 @@ pcrec is a library, and two of its promises exist because a library
 cannot behave like a program:
 
 - **It never `abort()`s the caller on the compile path.** Every
-  allocation site routes failure through the internal `ctx_nomem()` and
+  allocation site routes failure through the internal `pcrec_ctx_nomem()` and
   comes back as a normal `-1`-with-diagnostic return, so a caller that
   sets a memory limit precisely in order to survive a hostile pattern
   does survive it. Two `abort()`s remain in the code deliberately and
@@ -3368,7 +3368,7 @@ cannot behave like a program:
 
   *The state legend (K60, D105).* A second, narrower mechanism: the
   emitted DFA state legend's scratch buffers were raw, unrouted
-  allocations that never called `ctx_nomem` at all, so on failure they
+  allocations that never called `pcrec_ctx_nomem` at all, so on failure they
   dropped the legend and let the compile SUCCEED. A caller under memory
   pressure could receive `0` and an artifact whose comment bytes
   differed from the same pattern's compiled anywhere else, with nothing

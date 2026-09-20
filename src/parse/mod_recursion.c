@@ -98,7 +98,7 @@ static long rc_decimal(const char *p, size_t from, size_t to)
 
 static const char *rc_strndup(Ctx *cx, const char *s, size_t len)
 {
-    char *q = arena_alloc(&cx->arena, len + 1);
+    char *q = pcrec_arena_alloc(&cx->arena, len + 1);
     memcpy(q, s, len);
     q[len] = '\0';
     return q;
@@ -145,7 +145,7 @@ static Ast *rc_node(Ctx *cx, const RegRow *rw, size_t at, bool root,
         a->u.call.target = 0;
         return a;
     }
-    PendingRef *pr = arena_alloc(&cx->arena, sizeof *pr);
+    PendingRef *pr = pcrec_arena_alloc(&cx->arena, sizeof *pr);
     pr->node   = a;
     pr->kind   = PEND_CALL;
     pr->number = number;

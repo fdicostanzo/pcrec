@@ -129,7 +129,7 @@ void pcrec_postresolve(Ctx *cx, Ast *root)
     if (p.n == 0) return;
 
     const int want = p.n;
-    p.at = arena_alloc(&cx->arena, (size_t)want * sizeof *p.at);
+    p.at = pcrec_arena_alloc(&cx->arena, (size_t)want * sizeof *p.at);
     p.n = 0;
     pcrec_ast_visit(root, pr_collect, &p);
     if (p.n != want)

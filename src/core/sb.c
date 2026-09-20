@@ -24,7 +24,7 @@ static void sb_grow(StrBuf *sb, size_t need)
      * pointer to it. */
     char *np = realloc(sb->p, cap);
     if (!np) {
-        if (sb->cx) ctx_nomem(sb->cx);
+        if (sb->cx) pcrec_ctx_nomem(sb->cx);
         abort();   /* a detached buffer (syntax_dump.c) has no error channel */
     }
     sb->p = np;
@@ -132,7 +132,7 @@ char *pcrec_sb_take(StrBuf *sb)
 {
     char *p = sb->p ? sb->p : strdup("");
     if (!p) {
-        if (sb->cx) ctx_nomem(sb->cx);
+        if (sb->cx) pcrec_ctx_nomem(sb->cx);
         abort();
     }
     sb->p = NULL;
@@ -235,7 +235,7 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
     int n = vsnprintf(NULL, 0, fmt, ap2);
     va_end(ap2);
     if (n < 0) abort();
-    char *out = arena_alloc(a, (size_t)n + 1);
+    char *out = pcrec_arena_alloc(a, (size_t)n + 1);
     va_list ap3;
     va_copy(ap3, ap);
     vsnprintf(out, (size_t)n + 1, fmt, ap3);
@@ -311,7 +311,7 @@ void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
 const char *pcrec_sb_upper(Arena *a, const char *s)
 {
     size_t n = strlen(s);
-    char *out = arena_alloc(a, n + 1);
+    char *out = pcrec_arena_alloc(a, n + 1);
     for (size_t i = 0; i < n; i++)
         out[i] = (char)toupper((unsigned char)s[i]);
     out[n] = 0;

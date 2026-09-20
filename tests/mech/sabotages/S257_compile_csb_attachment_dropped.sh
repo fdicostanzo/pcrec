@@ -9,7 +9,7 @@
 # (the buffer EVERY DFA/VM emitter writes the generated `.c` body into)
 # and `hsb` (the paired `.h`) are never attached — any `sb_grow` failure
 # on either takes `sb.c`'s unattached-buffer `abort()` branch instead of
-# `ctx_nomem`'s diagnosed refusal, on every ordinary compile rather than
+# `pcrec_ctx_nomem`'s diagnosed refusal, on every ordinary compile rather than
 # only the two Job buffers F1's own incident involved.
 SAB_ID="S257-compile-csb-attachment-dropped"
 SAB_FILE="src/core/compile.c"

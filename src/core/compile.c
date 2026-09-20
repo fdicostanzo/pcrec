@@ -39,7 +39,7 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  * true by the time this arrival's `longjmp` lands — see the field's own
  * comment (internal.h) for why this is per-arrival with no stored state, and
  * `compile_driver`'s `setjmp` handler for where it is read. */
-void ctx_nomem(Ctx *cx)
+void pcrec_ctx_nomem(Ctx *cx)
 {
     cx->failed_nomem = true;
     ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
@@ -896,7 +896,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
              * ahead of every rung's own eligibility test below AND ahead of
              * the `[ART-SIZE]` ladder's blanket "this K is out" catch (the
-             * very next check) — a `ctx_nomem` arrival is EXEMPT from that
+             * very next check) — a `pcrec_ctx_nomem` arrival is EXEMPT from that
              * catch, because "this K did not fit" and "the allocator is out
              * of memory" are different events the ladder's own recovery
              * point cannot otherwise tell apart, and absorbing the second as
@@ -905,7 +905,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * and `docs/dev/k60_measurement.md` §4 for the measurement
              * (108/108 ladder absorptions eliminated, 0/40 legend
              * absorptions reached — a structurally different mechanism this
-             * arrival cannot see, since it never called `ctx_nomem` and so
+             * arrival cannot see, since it never called `pcrec_ctx_nomem` and so
              * never arrived here at all. That one was closed separately and
              * by DELETION, in `emit_state_legend`, src/gen/emit_dfa.c: D105,
              * landed the same day. Between the two, K60 is closed).

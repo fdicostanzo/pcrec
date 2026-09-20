@@ -1215,7 +1215,7 @@ The K17 methodology, with the additions this lane's own findings demand.
     **STRUCTURAL, in the prototype:** both are per-compile automatic locals
     of `pcrec_build_dfa` (`prototypes/proto_a.py:370-371` — `PMemo memo;
     LCtxTab ctxs = {...}`) and the open-loop stack comes from the compile's
-    own arena (`:373`, `arena_alloc(&cx->arena, ...)`); the only file-scope
+    own arena (`:373`, `pcrec_arena_alloc(&cx->arena, ...)`); the only file-scope
     state in the prototype is the measurement counters at `:68-69`, which do
     not ship. So there is nothing shared to race, BY CONSTRUCTION. The
     obligation on the rewrite is to keep it that way and to say so at the
