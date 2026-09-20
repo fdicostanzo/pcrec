@@ -1950,3 +1950,58 @@ never edited afterwards.
   fourth recorded instance. **§8** flags one pre-existing drift left alone:
   S107's `SAB_DOC_FIGURE` is +1 on both sides since §9b landed three weeks
   after it was measured.
+
+- `evtriage3_report.md` — TRIAGE ROUND 3 on [EMIT-VERB] (2026-09-19, lane
+  evtriage3, opus): `tests/codegen/run_recursion_identity.sh` at the new (B)
+  pin, 7 passed / **11 failed** -> **16 / 0**, plus three more reds the
+  concurrent gate surfaced. Read §0 first: the brief's lesson was "a
+  known-red script masks every other FAIL in it", and the mechanism turned
+  out to be worse than inattention — **the sweep loop `continue`s on a
+  filter fault, so every count below it reads ZERO and every downstream
+  assertion fails as a STALENESS claim about a population that was never
+  measured.** That is how the script came to report, in its own voice, that
+  `SIZE_TERM_REGION_MOVERS` "no longer move their program region" — false,
+  and a cascade of red 1. *A filter self-check that `continue`s is a
+  fail-closed gate on the whole body, and if its message does not say what
+  it INVALIDATED, the counts below it get read as evidence.*
+  **Red 1 is D112 class 2 and the fix is `-fcomments`, not a re-derived
+  count**: one of the D37 filter's three lines is the `/* Feature set: */`
+  COMMENT, and the gate reads comments a SECOND time — comparison (A)
+  compares the program region unfiltered, and `vm_rolef` role text is the
+  property that caught [M6.6.2] wave E's prose change. Narrowing the filter
+  to two would have left a comment-free subject region compared against the
+  pre-module pin's comment-bearing one, retiring the gate's most valuable
+  property while reading green on the filter. Measured: 5 call-free VM
+  patterns MOVED at the default axis, 4 of 5 SAME under `-fcomments` (the
+  fifth is the [ENG-ISL] excuse the script already handles). Every
+  SUBJECT-side generator takes the flag; `gen_b` does not — `ac4917d`
+  predates the axis and REFUSES it, measured, and emits comments
+  unconditionally. `gen_c` takes it too, so comparison (B) does not quietly
+  lose whole-file comment sensitivity at the flip. The "exactly three"
+  self-check is unchanged.
+  **Red 2 needed no re-derivation and the four-tree A/B is what says so**:
+  the two named size-term patterns move their region identically at
+  `4af16eb7` (pre-EMIT-VERB), `385f3cab` (event 1), main default and main
+  `-fcomments` — four fires on every tree, and the post-fix run reads
+  `fired (4 across the axes)`, the number the A/B predicted before it ran.
+  D112's open "should a size term price comment bytes" question is NOT
+  landed by this evidence and stays open with its population.
+  **The other three reds are two stories.** `[SEL-1]`'s `--no-captures`
+  fallback population 1 -> 2 is a CORPUS event: `[ADM71.4]` (`e021b982`,
+  same day) added a nullable counted repeat built to reach the DFA state
+  cap, and all three compilers stamp it identically — re-pinned. The last
+  two are **the [EMIT-VERB] rider's own +9 bytes** (`74c2192c` put the abi
+  into the ESSENTIAL generated-by line), reaching two readers whose text
+  cites a byte count and no abi digit — `battriage_report.md`'s SECOND
+  READER CLASS, fourth and fifth instances. The `a{5,25000}` rescue pin
+  reconciles exactly (762,104 event 1 + 1 event 2's blank line = 762,105 the
+  old pin + 9 = 762,114), confirmed by DIFFING the artifacts rather than
+  inferring from the size. And the cpset CHECK 3 manifest drifted on **all
+  12** `EMITTED_BYTES` rows, not the 5 its own message showed: `diff | head
+  -20` cut it off, and both readers of the battery log counted the
+  population from the message — *a check that says "this is a DIFF TO
+  REVIEW" must print the diff it wants reviewed*; window widened in the same
+  commit. Validation COMPLETE (recursion-identity 16/0, vm_identity 10/0,
+  resource 0 failed, cpset 28/0, specimen 13/0, comments_axis 65/0,
+  test-codegen 9/10 with the standing darwin `nm` probe as the sole red,
+  S40 re-driven solo DETECTED). PARKED on `lane/evtriage3`, not merged.
