@@ -5,7 +5,10 @@ refactor closed. Frank reads source files and asks questions; items land here
 only when both agree. His lens: **readability, clarity, maintainability** —
 not functionality or methodology. Each item names the file, the observation,
 the agreed shape, and the proof that it changed nothing. Items are chartered
-as lanes from here (plan rows cite `[TOUR-n]`).
+as lanes from here (plan rows cite `[TOUR-n]`). CODE-ORGANIZATION candidates —
+structure replacing a convention or a parallel mechanism, where "not worth
+it" is an acceptable answer — go to the separate list
+`2026-09-20-code-org.md` (`[ORG-n]`).
 
 ## [TOUR-1] src/gen/emit_vm.c — pcrec_emit_vm reads at three altitudes at once
 
