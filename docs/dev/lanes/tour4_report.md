@@ -60,24 +60,27 @@ Filed at the top of the file (newest-first, matching K60's placement),
 status FIXED, citing the three sites, the fix shape, and sabotage S262
 as the regression guard. See the entry itself for full text.
 
-### Spec (docs/spec/match_api.md) — confirmed unchanged, one finding flagged
+### Spec (docs/spec/match_api.md) — headline sentence unchanged, follow-on sentence corrected per manager ruling
 
 Per the brief: "The spec is UNCHANGED (the fix makes it true) — confirm
 by reading the sentence, and do not reword it." Read `:3345`'s headline
 sentence ("It never `abort()`s the caller on the compile path.") — true
-after the fix, left untouched, no edit made to this file.
+after the fix, left BYTE-IDENTICAL.
 
-**Flagging for the manager, not touched**: the very next sentence in that
-same bullet ("Two `abort()`s remain in the code deliberately... a
-'cannot happen' DFA structural invariant, and the syntax-dump path's
-detached string buffers") is now factually stale — after this fix only
-ONE `abort()` remains (syntax-dump's detached buffers; legitimately out
-of scope, no `Ctx`/`pcrec_error` to report through outside a compile).
-D80 would ordinarily call for updating that count in the same change,
-but the brief explicitly said "do not reword it," so this lane left the
-sentence as-is and reports the discrepancy here for a ruling — a
-one-word fix ("Two" -> "One", and dropping the DFA-invariant clause) if
-the manager wants it done now, or a follow-up row otherwise.
+**Flagged mid-lane, then ruled on by the manager**: the very next
+sentence in that same bullet ("Two `abort()`s remain in the code
+deliberately... a 'cannot happen' DFA structural invariant, and the
+syntax-dump path's detached string buffers") was factually stale after
+this fix — only ONE `abort()` remains (syntax-dump's detached buffers).
+Manager's ruling (relayed mid-validation): update it (D80 — the spec
+travels with the change; "do not reword" was never meant to protect a
+sentence the fix makes false), keep the headline sentence
+byte-identical, touch nothing else in the file. Done: the sentence now
+reads "One `abort()` remains in the code deliberately, and it is not on
+the compile path: the syntax-dump path's detached string buffers... The
+DFA structural invariants that used to be the OTHER exception now
+refuse through `pcrec_ctx_fail` like every other 'cannot happen' site in
+the compiler (K61, `docs/dev/known_issues.md`)."
 
 ### Sabotage S262
 
@@ -191,6 +194,8 @@ arrived" instance, not a functional bug.
   new `cx` fields, `pcrec_build_dfa`'s `sc.cx = cx;`.
 - `src/ir/CLAUDE.md` — one stale-comment correction.
 - `docs/dev/known_issues.md` — K61.
+- `docs/spec/match_api.md` — the "Two `abort()`s remain..." sentence
+  corrected to "One", per manager ruling; headline sentence untouched.
 - `tests/mech/sabotages/S262_dfa_invariant_loop_open_inverted.sh` — new.
 - `src/core/tune.c`, `src/gen/emit_dfa.c`, `src/parse/mod_verbs.c`,
   `src/parse/rxt_schema.c` — five `static` conversions.
