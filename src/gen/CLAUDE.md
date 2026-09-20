@@ -41,12 +41,12 @@ what changed is which build is the default. Measured 44.2 % of a default
 artifact's source bytes over the 3,517 compiling corpus patterns.
 
 **WHEN YOU ADD A COMMENT-EMITTING SITE HERE, BRACKET IT.**
-`sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `sb_cmt_close(buf)` around every
+`pcrec_sb_cmt_open(buf, PCREC_CMT_NONESSENTIAL)` … `sb_cmt_close(buf)` around every
 whole-line comment you emit; `PCREC_CMT_ESSENTIAL` exists and has exactly two
 users, both in `emit_dfa.c`, and a third needs D112's own reasoning. A site
 left unbracketed ships in every default artifact — which
 `tests/codegen/run_comments_axis.sh` arm 1 fails on, by name. An
-`sb_cmt_open` with no matching close mutes the REST OF ITS BUFFER: the
+`pcrec_sb_cmt_open` with no matching close mutes the REST OF ITS BUFFER: the
 artifact is silently truncated under the default and byte-identical under
 `-fcomments`, which no identity gate can see; `src/core/compile.c` checks the
 balance after emission for exactly that reason. And the separator blank line
@@ -797,7 +797,7 @@ this function rather than getting call sites of its own.
 
 ## [REVW.2] wave 2 (2026-09-18) — EVERY STAMP LINE IN BOTH EMITTERS IS ONE HELPER CALL
 
-`sb_stampf` / `sb_stampwf` / `sb_stamp_str` (`src/core/sb.c`,
+`sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` (`src/core/sb.c`,
 `core/internal.h`) write `#define <UPPER>_<NAME> <value>`. **73 hand-typed
 format strings — 52 in `emit_vm.c`, 21 in `emit_dfa.c` — are now literal NAME
 arguments in a fixed position**, which is lens 1 X8's real payoff: D94 rules
@@ -1066,7 +1066,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     slot indices exist.
 
   **[REVW.2 wave 2 STAGE 3, lane w2b, 2026-09-18] THE FIXED SCRATCH BUFFERS
-  ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `sb_fragf` /
+  ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `pcrec_sb_fragf` /
   `pcrec_sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
   primitive itself): arena-owned formatted text sized exactly to the result,
   so truncation is impossible BY CONSTRUCTION rather than by a per-site size

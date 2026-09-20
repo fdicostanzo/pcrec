@@ -2,7 +2,7 @@
  * THE STAMP PRIMITIVE'S OWN PROPERTY.
  *
  * WHAT THIS CHECK IS AND IS NOT FOR, stated first because it differs from
- * `sb_fragf_check.c`'s argument and the difference matters. `sb_fragf`'s
+ * `sb_fragf_check.c`'s argument and the difference matters. `pcrec_sb_fragf`'s
  * promise is invisible to every answer-level check in this tree — the corpus
  * runs at the two-byte prefix `rx`, where nothing truncates. THE STAMP
  * PRIMITIVE IS NOT IN THAT POSITION. Every byte it writes lands in the
@@ -45,7 +45,7 @@
  *             which is precisely why the sweep has to carry the width, and
  *             why 30 of the 37 shipped call sites could not have caught it.
  *   PLANT 3 — the trailing newline dropped. Sub-checks 1-6 ALL RED.
- *   PLANT 4 — `sb_stamp_str` emitting `%s` instead of `\"%s\"`. Sub-check 4
+ *   PLANT 4 — `pcrec_sb_stamp_str` emitting `%s` instead of `\"%s\"`. Sub-check 4
  *             RED and NOTHING ELSE, which is the sub-check's whole reason for
  *             existing separately: the quoting is the one part of the stamp
  *             line that belongs to one of the three entry points and not to
@@ -123,7 +123,7 @@ int main(void)
             for (int len = 1; len <= 64; len++) {
                 for (int i = 0; i < len; i++) nm[i] = (char)('a' + (i % 26));
                 nm[len] = 0;
-                sb_stampwf(&SB, "RX", nm, w, "%s", "V");
+                pcrec_sb_stampwf(&SB, "RX", nm, w, "%s", "V");
                 take(got, sizeof got);
                 snprintf(ref, sizeof ref, "#define RX_%-*s %s\n", w, nm, "V");
                 rows++;
@@ -172,21 +172,21 @@ int main(void)
      * belongs to one entry point rather than to the shared body. */
     {
         char got[256];
-        sb_stamp_str(&SB, "RX", "VM_PREFILTER", "hybrid");
+        pcrec_sb_stamp_str(&SB, "RX", "VM_PREFILTER", "hybrid");
         take(got, sizeof got);
         if (strcmp(got, "#define RX_VM_PREFILTER \"hybrid\"\n") != 0) {
             char m[320];
-            snprintf(m, sizeof m, "4: sb_stamp_str produced <%s>, wanted the QUOTED form", got);
+            snprintf(m, sizeof m, "4: pcrec_sb_stamp_str produced <%s>, wanted the QUOTED form", got);
             bad(m);
         } else {
             /* An empty value must still produce a well-formed `""`, because a
              * stamp with a bare nothing after it is a different macro. */
-            sb_stamp_str(&SB, "RX", "EMPTY", "");
+            pcrec_sb_stamp_str(&SB, "RX", "EMPTY", "");
             take(got, sizeof got);
             if (strcmp(got, "#define RX_EMPTY \"\"\n") != 0)
-                bad("4: sb_stamp_str on an EMPTY value did not produce a quoted empty string");
+                bad("4: pcrec_sb_stamp_str on an EMPTY value did not produce a quoted empty string");
             else
-                ok("4: sb_stamp_str quotes its value, including the empty one");
+                ok("4: pcrec_sb_stamp_str quotes its value, including the empty one");
         }
     }
 
@@ -206,7 +206,7 @@ int main(void)
          * this is that arm at both of its maxima, not a value padded to clear
          * the bar below. */
         const char *maxval = "size cap retry, exact 18446744073709551615 > 18446744073709551615";
-        sb_stampwf(&SB, pfx, "VM_PREFILTER_LANG_WHY", 24, "\"%s\"", maxval);
+        pcrec_sb_stampwf(&SB, pfx, "VM_PREFILTER_LANG_WHY", 24, "\"%s\"", maxval);
         take(got, sizeof got);
         snprintf(ref, sizeof ref, "#define %s_%-*s \"%s\"\n", pfx, 24,
                  "VM_PREFILTER_LANG_WHY", maxval);
@@ -223,7 +223,7 @@ int main(void)
         char got[512];
         int nl = 0, bad_rows = 0;
         for (int w = 0; w <= 32; w += 8) {
-            sb_stampwf(&SB, "RX", "NAME", w, "%d", w);
+            pcrec_sb_stampwf(&SB, "RX", "NAME", w, "%d", w);
             take(got, sizeof got);
             size_t L = strlen(got);
             nl = 0;

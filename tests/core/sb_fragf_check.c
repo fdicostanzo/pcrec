@@ -1,7 +1,7 @@
 /* tests/core/sb_fragf_check.c — [REVW.2] wave 2 stage 3: THE FRAGMENT
  * PRIMITIVE'S OWN PROPERTY, checked below any emitted artifact.
  *
- * WHAT `sb_fragf` PROMISES, and why the promise needs a check of its own.
+ * WHAT `pcrec_sb_fragf` PROMISES, and why the promise needs a check of its own.
  * `lens10_emission_kit_charter.md` item 1 defines it as formatted text in
  * arena-owned storage "sized EXACTLY to the result", so that "truncation is
  * impossible BY CONSTRUCTION rather than by a per-site size argument." Stage
@@ -23,7 +23,7 @@
  *
  * THE ORACLE IS `snprintf` INTO AN OVERSIZED BUFFER — a different mechanism
  * (caller-sized stack storage) reaching the same answer, not a transcription
- * of `sb_fragf`'s body. `branch_count_check.c`'s rule: different algorithm,
+ * of `pcrec_sb_fragf`'s body. `branch_count_check.c`'s rule: different algorithm,
  * different code, different failure modes. The one thing both share is the
  * platform's `vsnprintf`, which is the subject's own dependency and not
  * something this check could avoid without writing a formatter.
@@ -48,7 +48,7 @@
  *   `-fsanitize=address` probe over lengths 0..599 reported "content correct
  *   at every length" against both the repaired and the plant-A build.
  *
- * So: `sb_fragf`'s no-truncation promise is enforced by the SIZE ARGUMENT,
+ * So: `pcrec_sb_fragf`'s no-truncation promise is enforced by the SIZE ARGUMENT,
  * and the exactness of the allocation itself is not observable from outside
  * this tree's instruments at all. Stated here rather than left implied,
  * because the natural reading of "sized exactly to the result" is that both
@@ -88,7 +88,7 @@ int main(void)
             for (int i = 0; i < len; i++) fill[i] = (char)('a' + (i % 26));
             fill[len] = 0;
             int rn = snprintf(ref, sizeof ref, "rx_%s_end", fill);
-            const char *got = sb_fragf(&AR, "rx_%s_end", fill);
+            const char *got = pcrec_sb_fragf(&AR, "rx_%s_end", fill);
             rows++;
             if (rn < 0 || (size_t)rn >= sizeof ref) {
                 /* the oracle's own buffer must never be the binding
@@ -118,7 +118,7 @@ int main(void)
             if (!fill) { bad("2: out of memory"); break; }
             memset(fill, 'x', (size_t)len);
             fill[len] = 0;
-            const char *got = sb_fragf(&AR, "%s", fill);
+            const char *got = pcrec_sb_fragf(&AR, "%s", fill);
             rows++;
             if (strlen(got) != (size_t)len) short_rows++;
             free(fill);
@@ -131,7 +131,7 @@ int main(void)
     /* ---- 3. THE EMPTY RESULT is a valid, NUL-terminated string and not a
      * NULL — because a call site hands this straight to `%s`. */
     {
-        const char *e = sb_fragf(&AR, "%s", "");
+        const char *e = pcrec_sb_fragf(&AR, "%s", "");
         if (!e)            bad("3: an empty format returned NULL; a call site would pass it to %s");
         else if (*e != 0)  bad("3: an empty format did not return an empty string");
         else               ok("3: an empty result is a real, NUL-terminated empty string, never NULL");
@@ -148,7 +148,7 @@ int main(void)
         memset(pfx, 'p', sizeof pfx - 1);
         pfx[sizeof pfx - 1] = 0;
 #define K38_FMT "%s_slot_values[%d] = (ptrdiff_t) (%s_scan_position - %s_saved_%d)"
-        const char *n = sb_fragf(&AR, K38_FMT, pfx, 12, pfx, pfx, 34);
+        const char *n = pcrec_sb_fragf(&AR, K38_FMT, pfx, 12, pfx, pfx, 34);
         char ref[1024];
         snprintf(ref, sizeof ref, K38_FMT, pfx, 12, pfx, pfx, 34);
 #undef K38_FMT
@@ -171,13 +171,13 @@ int main(void)
      * boundary (ABLOCK_MIN), so the check also covers the case where the
      * second allocation moves to a fresh block. */
     {
-        const char *first = sb_fragf(&AR, "FIRST-%d", 1);
+        const char *first = pcrec_sb_fragf(&AR, "FIRST-%d", 1);
         char big[400];
         memset(big, 'z', sizeof big - 1);
         big[sizeof big - 1] = 0;
         int overlaps = 0;
         for (int i = 0; i < 400; i++) {
-            const char *later = sb_fragf(&AR, "%s-%d", big, i);
+            const char *later = pcrec_sb_fragf(&AR, "%s-%d", big, i);
             if (later == first) overlaps++;
         }
         if (overlaps)                       bad("5: a later fragment was handed the SAME storage as an earlier one");
@@ -189,7 +189,7 @@ int main(void)
      * makes the measured length differ from the format's own length) and a
      * `%lld`, the emitters' width for every counter and budget. */
     {
-        const char *g = sb_fragf(&AR, "%s_%d%% of %lld [%c]", "rx", 50, (long long)1 << 40, 'q');
+        const char *g = pcrec_sb_fragf(&AR, "%s_%d%% of %lld [%c]", "rx", 50, (long long)1 << 40, 'q');
         char ref[256];
         snprintf(ref, sizeof ref, "%s_%d%% of %lld [%c]", "rx", 50, (long long)1 << 40, 'q');
         if (strcmp(g, ref) != 0) bad("6: a mixed-conversion format disagrees with snprintf");

@@ -20,7 +20,7 @@ is a new instrument or a new committed baseline; nothing under
 (`tests/cli/run_cli_tests.sh` case3) compiles the pattern `a` at a 60-byte
 prefix — a trivial DFA artifact reaching essentially none of `emit_vm.c`'s
 40+ literal-sized scratch buffers. Stage 3 (a future wave, not built here)
-retires those buffers behind `sb_fragf` and needs a control that actually
+retires those buffers behind `pcrec_sb_fragf` and needs a control that actually
 reaches the population it moves, at the legal prefix boundary
 (`PCREC_MAX_PREFIX_LEN` = 60, `src/core/limits.def:133`).
 

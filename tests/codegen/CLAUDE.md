@@ -2891,7 +2891,7 @@ axis makes plus the one hazard that is invisible from inside:
    that block's sentences, so a doc-comment added inside the block stays
    essential with no edit here and one added outside it fails. A
    NON-ESSENTIAL comment in a default artifact means an emission site was
-   added without an `sb_cmt_open` class.
+   added without an `pcrec_sb_cmt_open` class.
 2. **`-fcomments` restores the rest**, as a strict per-artifact inequality —
    which is what stops (1) passing vacuously on an emitter that had stopped
    emitting comments altogether.

@@ -372,33 +372,33 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   everything wholesale, so nothing leaks and nothing half-built is read again
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
   sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
-  `pcrec_sb_comments` sets a buffer's policy once, `sb_cmt_open`/`sb_cmt_close`
+  `pcrec_sb_comments` sets a buffer's policy once, `pcrec_sb_cmt_open`/`sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
   emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
   — the three primitives every other append in the file is built on, so a
   helper added later inherits the gate rather than having to remember it.
   D108 read in the one direction a verbosity axis needs: the walk still
   emits every comment event, and the RENDERER decides whether the text is
-  written. `sb_len_uncut(sb)` is its companion and its rule: **any decision
+  written. `pcrec_sb_len_uncut(sb)` is its companion and its rule: **any decision
   or stamp comparing an emitted LENGTH reads that, never `len`**, so the
   axis cannot move a size decision — the defect it exists to close is in
   `docs/dev/lanes/emitverb_report.md` §3a.
 
   **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
-  `sb_text`/`pcrec_sb_textn`/`sb_field` (the two escape vocabularies), `pcrec_sb_join` and
+  `pcrec_sb_text`/`pcrec_sb_textn`/`pcrec_sb_field` (the two escape vocabularies), `pcrec_sb_join` and
   `pcrec_sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
   and no machine, so the future IR-consuming back-end calls them unchanged.
 
   **TWO VOCABULARIES, ONE `\xNN` TAIL, AND THEY ARE NOT INTERCHANGEABLE.**
-  `sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
+  `pcrec_sb_text` protects the FRAME only — a byte below 0x20, and 0x7f, by number;
   every printable byte, BACKSLASH INCLUDED, passes through. That is
   `--explain`'s vocabulary and every registry TSV dump's, whose contract
   (`docs/spec/table_contract.md` rule 5) says only that a field never contains
-  a TAB. `sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
+  a TAB. `pcrec_sb_field` is the `.rxt` format's own SUBJECT escape — `\\ \t \n \r`
   plus that tail — which `tests/harness/driver.c`'s `decode()` reads back.
   MEASURED at the landing: **150 data rows** across `--list-syntax`/
   `--list-axes`/`--list-limits`/`--list-definitions`/`--list-families` carry a
-  raw backslash, so `sb_field` at a registry dump would DOUBLE it — a contract
+  raw backslash, so `pcrec_sb_field` at a registry dump would DOUBLE it — a contract
   break, not insurance. The wave-1 charter proposed exactly that one
   vocabulary everywhere and is wrong about this tree; the declarations in
   `internal.h` carry the measurement.
@@ -406,7 +406,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   Before the layer existed the `\xNN` tail was written TWICE
   (`syntax_dump.c`'s `put_text`, `rxt_source.c`'s `put_escaped`) and only
   `--explain` called its own copy, so three dump files escaped nothing.
-  `pcrec_sb_row` is `pcrec_sb_join` with `"\t"`, `sb_text` per cell and a newline — the
+  `pcrec_sb_row` is `pcrec_sb_join` with `"\t"`, `pcrec_sb_text` per cell and a newline — the
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
@@ -417,10 +417,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   realloc straight into `sb->p` would lose the only pointer to the live buffer
   the error path is about to free
 
-  **[REVW.2] wave 2 stage 3 (2026-09-18) ADDS `sb_fragf`, THE FRAGMENT** —
+  **[REVW.2] wave 2 stage 3 (2026-09-18) ADDS `pcrec_sb_fragf`, THE FRAGMENT** —
   lens 10's item 1 and the retirement primitive for the emitters' `char
   NAME[N]; snprintf(NAME, sizeof NAME, …)` idiom, the class K38 is the
-  recorded miscompile of. `const char *sb_fragf(Arena *, fmt, …)`: text in
+  recorded miscompile of. `const char *pcrec_sb_fragf(Arena *, fmt, …)`: text in
   arena-owned storage sized exactly to the result, so truncation is impossible
   BY CONSTRUCTION rather than by a per-site size argument somebody has to get
   right. It is the file's first primitive that takes an `Arena *` rather than
@@ -447,7 +447,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   are gone and the emitters' fragment census reads 6, all of them the named
   encoding-seam family.
 
-  `sb_stampf` / `sb_stampwf` / `sb_stamp_str` write ONE artifact stamp line,
+  `sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str` write ONE artifact stamp line,
   `#define <UPPER>_<NAME> <value>`, and they replace 73 bespoke format strings
   across the two emitters (52 + 21). **What that buys is D94's own ritual**:
   the abi re-pin site list is "every reader of the number, found by grep", and
@@ -464,7 +464,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   aligns its value column) exists because that alignment is emitted bytes like
   any other.
 
-  **THE CONVERSE OF `sb_fragf`'s BLIND SPOT.** Every byte these write lands in
+  **THE CONVERSE OF `pcrec_sb_fragf`'s BLIND SPOT.** Every byte these write lands in
   the emitted `.c`, so the four identity gates DO see a defect here, on
   thousands of artifacts at once. `tests/core/sb_stamp_check.c` is therefore
   not insurance against invisibility; it says WHICH property broke, and it

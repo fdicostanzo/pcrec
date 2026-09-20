@@ -98,7 +98,7 @@ typedef struct {
      * CODE moving over a comment switch, which is the one thing this axis
      * promises never to do.
      *
-     * So every LENGTH-BASED DECISION reads `sb_len_uncut` instead: the
+     * So every LENGTH-BASED DECISION reads `pcrec_sb_len_uncut` instead: the
      * length the buffer WOULD have had with comments on. The gate is then
      * size-neutral by construction rather than by a threshold's luck, and
      * the separate question — whether a size term should price comment bytes
@@ -126,7 +126,7 @@ void pcrec_sb_comments(StrBuf *sb, bool on);
  * The gate sits in `sb_putc`/`sb_puts`/`sb_vprintf` — the three primitives
  * every other append in this file is built on — so it cannot be bypassed by a
  * helper, present or future. */
-void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
+void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass);
 void sb_cmt_close(StrBuf *sb);
 
 /* The length this buffer would have had with comments ON — `len` plus every
@@ -135,7 +135,7 @@ void sb_cmt_close(StrBuf *sb);
  * so the comment axis cannot move it. `len` stays the truth about what was
  * written and is what `pcrec_sb_take`, the caps' own comment-excluded scan and
  * every consumer of the finished text read. */
-size_t sb_len_uncut(const StrBuf *sb);
+size_t pcrec_sb_len_uncut(const StrBuf *sb);
 
 /* [EMIT-VERB] (D111) the optimization-axis table's own resolution rule —
  * deny, then force, then `src/core/axes.def`'s `default_state`. General over
@@ -161,23 +161,23 @@ void  pcrec_sb_free(StrBuf *sb);
  * `\xNN` tail that was written twice before this pair existed
  * (`syntax_dump.c`'s `put_text` and `rxt_source.c`'s `put_escaped`):
  *
- *   sb_text  — protects the FRAME ONLY. A byte below 0x20, and 0x7f, goes out
+ *   pcrec_sb_text  — protects the FRAME ONLY. A byte below 0x20, and 0x7f, goes out
  *              as `\xNN`; every printable byte, BACKSLASH INCLUDED, passes
  *              through. This is `--explain`'s vocabulary and every registry
  *              TSV dump's, whose `syntax` column is literally `\d` and whose
  *              contract (docs/spec/table_contract.md rule 5) says only that a
  *              field never contains a TAB.
- *   sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
- *              sb_text's tail. Round-trippable, because it doubles the
+ *   pcrec_sb_field — the `.rxt` format's own SUBJECT escape: `\\ \t \n \r` and then
+ *              pcrec_sb_text's tail. Round-trippable, because it doubles the
  *              backslash; `tests/harness/driver.c`'s decode() is the reader.
  *
  * DO NOT swap one for the other. Measured 2026-09-18: 150 data rows across
  * `--list-syntax`/`--list-axes`/`--list-limits`/`--list-definitions`/
- * `--list-families` carry a raw backslash, so sb_field at a registry dump is
+ * `--list-families` carry a raw backslash, so pcrec_sb_field at a registry dump is
  * a contract break and not insurance. */
-void sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
+void pcrec_sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
-void sb_field(StrBuf *sb, const char *s);
+void pcrec_sb_field(StrBuf *sb, const char *s);
 
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
@@ -185,7 +185,7 @@ void sb_field(StrBuf *sb, const char *s);
  * takes its separator, so the join's shape reports the array's. */
 void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
 
-/* One TSV record: `ncell` fields through sb_text, TAB-joined, newline-
+/* One TSV record: `ncell` fields through pcrec_sb_text, TAB-joined, newline-
  * terminated. The COUNT is the point — a row emitted with a different number
  * of fields than its header declares is the defect the table contract's own
  * integrity rule (consumer rule 3) exists to catch, and a cell array a reader
@@ -222,14 +222,14 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
  * emptiness is a byte-identity contract) becomes `const char *tr = "";` plus
  * a conditional assignment — the same shape, but the `""` default is the
  * point and calling this would not express it. */
-const char *sb_fragf(Arena *a, const char *fmt, ...)
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
 
 /* The same, for a caller that already holds a `va_list` — i.e. any varargs
  * ADAPTER that supplies the arena from something of its own (`emit_vm.c`'s
  * `vm_rolef` takes it from `Vm.cx`). Without this, such an adapter has no way
  * to reach the primitive and is forced back onto the fixed buffer this pair
- * exists to retire. `sb_fragf` is a two-line wrapper over it, so there is one
+ * exists to retire. `pcrec_sb_fragf` is a two-line wrapper over it, so there is one
  * implementation and not two. The caller still owns `ap` and must `va_end` it. */
 const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
@@ -243,7 +243,7 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * at, which is learnings.md §3's one-derivation rule applied to a name.
  *
  * NOT `sb_name(a, prefix, suffix)`. Lens 10 item 2 proposes this alongside a
- * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `sb_fragf(a,
+ * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `pcrec_sb_fragf(a,
  * "%s_%s", p, s)` already is it, at every site, with no name to learn. Only
  * the CASE TRANSFORM is a derivation somebody could get differently. */
 const char *pcrec_sb_upper(Arena *a, const char *s);
@@ -281,7 +281,7 @@ const char *pcrec_sb_upper(Arena *a, const char *s);
 void sb_stampf (StrBuf *c, const char *upper, const char *name,
                 const char *valfmt, ...)
       __attribute__((format(printf, 4, 5)));
-void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
                 const char *valfmt, ...)
       __attribute__((format(printf, 5, 6)));
 /* The string-valued stamp, which OWNS THE QUOTING: `#define <UPPER>_<NAME>
@@ -289,7 +289,7 @@ void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
  * a byte that needs escaping — has one answer today (every value is a
  * compiler-chosen word from a fixed set) and one home if it ever gains
  * another, which is the point of it not being 11 separate `\"%s\"` formats. */
-void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value);
 
 /* ---- AST ---- */

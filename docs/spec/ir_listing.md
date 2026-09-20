@@ -50,10 +50,10 @@ rendering unchanged (D108 rule 2).
 4. **The section NAME set is the API**: append-only. A name, once shipped,
    keeps its meaning; new sections may be added. Same rule for each
    section's columns, independently (table contract, Sections rule 3).
-5. **Cell escaping is `sb_text`'s vocabulary**, the one every registry TSV
+5. **Cell escaping is `pcrec_sb_text`'s vocabulary**, the one every registry TSV
    dump uses: a byte below 0x20, and 0x7f, goes out as `\xNN`; every other
    byte — backslash and high bytes included — passes through as itself. It
-   protects the FRAME and never transcodes content. It is NOT `sb_field`'s
+   protects the FRAME and never transcodes content. It is NOT `pcrec_sb_field`'s
    round-trippable `.rxt` escape, and the two are not interchangeable.
 6. **A multi-valued cell is comma-joined with no spaces** (`cursor,revdet`).
    Two cells use it today: `summary`'s `rungs` and `strategies` values.

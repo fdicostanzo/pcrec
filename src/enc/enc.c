@@ -81,7 +81,7 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         if (mask & t->id) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
             if (t->decls_doc) {
-                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->decls_doc, prefix);
                 sb_cmt_close(sb);
             }
@@ -96,7 +96,7 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (mask & t->id) {
             if (t->defs_doc) {
-                sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
+                pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
                 pcrec_enc_emit_text(sb, t->defs_doc, prefix);
                 sb_cmt_close(sb);
             }

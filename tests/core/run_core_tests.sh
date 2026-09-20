@@ -4,7 +4,7 @@
 # feature (mrl.c/emit_vm.c/callgraph.c's shared saturating-arithmetic
 # family is the first; sb.c/arena.c/the growable-array and text-kit
 # primitives wave 1 builds are the population this directory is FOR — see
-# tests/core/CLAUDE.md). `sb_fragf` (wave 2 stage 3) is the second row.
+# tests/core/CLAUDE.md). `pcrec_sb_fragf` (wave 2 stage 3) is the second row.
 #
 # The ten pre-existing unit-shaped checks scattered across six directories
 # (tests/codegen/cpset_model_check.c, tests/parse/branch_count_check.c,
@@ -60,7 +60,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [REVW.2] wave 2 stage 3 — `sb_fragf`, the fragment primitive. Its promise is
+# [REVW.2] wave 2 stage 3 — `pcrec_sb_fragf`, the fragment primitive. Its promise is
 # that truncation is impossible BY CONSTRUCTION, and no answer-level check in
 # this tree can see the difference between that holding and an off-by-one in
 # its allocation: every corpus test runs at the two-byte prefix `rx`, where
@@ -82,8 +82,8 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `sb_stampf`/`sb_stampwf`/
-# `sb_stamp_str`, the artifact-stamp primitives. UNLIKE `sb_fragf` above,
+# [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `sb_stampf`/`pcrec_sb_stampwf`/
+# `pcrec_sb_stamp_str`, the artifact-stamp primitives. UNLIKE `pcrec_sb_fragf` above,
 # every byte these write lands in the emitted `.c`, so the four byte-identity
 # gates DO see a defect in them; what this check adds is WHICH PROPERTY broke
 # and the width x name-length space the shipped call sites (two widths, one

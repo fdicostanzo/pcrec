@@ -201,7 +201,7 @@ declarator, and the repaired criterion's whole point is completeness:
 
 **80 declaration statements / 91 declarators** is the population a
 stage-3 acceptance check should require to be byte-neutral (or fully
-migrated behind `sb_fragf`/the emission kit) across both emitters, with
+migrated behind `pcrec_sb_fragf`/the emission kit) across both emitters, with
 `Vm.up` carrying its own standing exception by name rather than by any
 structural rule — per lens 10's scope note, it is not "a scratch buffer
 this census missed the reason for," it is a deliberately out-of-wave-1

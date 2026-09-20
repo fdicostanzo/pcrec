@@ -2191,7 +2191,7 @@ in their reflection surface over it, and concretely, unmasked it would move
 five bytes of `rx_info.flags` and the object files would NOT be identical.
 
 **Where the gate is.** One render-time decision in the emission kit
-(`src/core/sb.c`'s `sb_cmt_open`/`sb_cmt_close`, D108): the emitters still
+(`src/core/sb.c`'s `pcrec_sb_cmt_open`/`sb_cmt_close`, D108): the emitters still
 emit every comment event they always did, and the buffer decides whether the
 text is written. It is not a post-hoc strip, so no line is ever repaired and
 no comment can be half-removed.

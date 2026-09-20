@@ -32,7 +32,7 @@ static void sb_grow(StrBuf *sb, size_t need)
 }
 
 /* [EMIT-VERB] (D112) THE COMMENT GATE, at the three primitives every other
- * append in this file is built on (`sb_text`, `sb_field`, `pcrec_sb_row`,
+ * append in this file is built on (`pcrec_sb_text`, `pcrec_sb_field`, `pcrec_sb_row`,
  * `pcrec_sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
  * gate instead of having to remember it. Inside a muted region an append is
  * a no-op: `len` does not advance, so the size term's `abort_over` and the
@@ -45,9 +45,9 @@ static inline bool sb_muted(const StrBuf *sb) { return sb->cmt_mute_depth != 0; 
 
 void pcrec_sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
 
-size_t sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
+size_t pcrec_sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
 
-void sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
+void pcrec_sb_cmt_open(StrBuf *sb, PcrecCmtClass klass)
 {
     sb->cmt_depth++;
     if (klass == PCREC_CMT_NONESSENTIAL && sb->cmt_drop && !sb->cmt_mute_depth)
@@ -174,13 +174,13 @@ void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n)
     for (size_t i = 0; i < n; i++) sb_frame_byte(sb, (unsigned char)s[i]);
 }
 
-void sb_text(StrBuf *sb, const char *s)
+void pcrec_sb_text(StrBuf *sb, const char *s)
 {
     if (!s) return;
     pcrec_sb_textn(sb, s, strlen(s));
 }
 
-void sb_field(StrBuf *sb, const char *s)
+void pcrec_sb_field(StrBuf *sb, const char *s)
 {
     if (!s) return;
     for (const unsigned char *q = (const unsigned char *)s; *q; q++) {
@@ -208,7 +208,7 @@ void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 {
     for (size_t i = 0; i < ncell; i++) {
         if (i) sb_putc(sb, '\t');
-        sb_text(sb, cells[i]);
+        pcrec_sb_text(sb, cells[i]);
     }
     sb_putc(sb, '\n');
 }
@@ -243,7 +243,7 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
     return out;
 }
 
-const char *sb_fragf(Arena *a, const char *fmt, ...)
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -258,7 +258,7 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
  * is the one implementation the three entry points share.
  *
  * `%-*s` AT WIDTH 0 IS THE UNPADDED CASE: a printf field width of zero states
- * no minimum, so `sb_stampf` is `sb_stampwf` with the padding asked for and
+ * no minimum, so `sb_stampf` is `pcrec_sb_stampwf` with the padding asked for and
  * not supplied, rather than a second spelling of the line. The separator
  * space is emitted HERE and not inside the width, which is what makes a
  * padded name and an over-long one produce the same one-space minimum the
@@ -284,7 +284,7 @@ void sb_stampf(StrBuf *c, const char *upper, const char *name,
     va_end(ap);
 }
 
-void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
+void pcrec_sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
                 const char *valfmt, ...)
 {
     va_list ap;
@@ -293,7 +293,7 @@ void sb_stampwf(StrBuf *c, const char *upper, const char *name, int namew,
     va_end(ap);
 }
 
-void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
+void pcrec_sb_stamp_str(StrBuf *c, const char *upper, const char *name,
                   const char *value)
 {
     sb_stampf(c, upper, name, "\"%s\"", value);

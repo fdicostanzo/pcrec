@@ -6,7 +6,7 @@ WHY THIS EXISTS. lens10_emission_kit_charter.md S4.2 (F3b): the tree's only
 long-prefix control (tests/cli/run_cli_tests.sh case3) compiles the pattern
 `a` at a 60-byte prefix -- a trivial DFA artifact reaching essentially none
 of emit_vm.c's 40+ literal-sized scratch buffers. Stage 3 (a future wave)
-retires those buffers behind sb_fragf and claims byte-neutrality at the
+retires those buffers behind pcrec_sb_fragf and claims byte-neutrality at the
 60-byte prefix; that claim needs a control that actually REACHES the
 buffers, which this sweep supplies as a committed baseline.
 

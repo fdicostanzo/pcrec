@@ -1630,7 +1630,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         else                               pcrec_emit_dfa(&cx);
 
         /* [EMIT-VERB] (D112) THE REGION BALANCE, checked at the one moment
-         * every buffer is finished. An `sb_cmt_open` with no matching close
+         * every buffer is finished. An `pcrec_sb_cmt_open` with no matching close
          * mutes the rest of ITS buffer, so under `-fno-comments` the artifact
          * is silently TRUNCATED and under the default it is byte-identical —
          * the failure is invisible to every identity gate and shows up as a C
@@ -1644,7 +1644,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             for (size_t bi = 0; bi < sizeof bufs / sizeof bufs[0]; bi++)
                 if (bufs[bi]->cmt_depth != 0)
                     ctx_fail(&cx, 0, "internal error: the emitter left a "
-                                     "comment region open (an sb_cmt_open "
+                                     "comment region open (an pcrec_sb_cmt_open "
                                      "with no sb_cmt_close)");
         }
 

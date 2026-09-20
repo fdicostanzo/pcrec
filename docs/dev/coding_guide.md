@@ -123,11 +123,11 @@ wrapper and there will not be one (L10 §2.3): it buys nothing `sb_printf` does 
 Any buffer holding an emitted identifier or sub-expression built from the `-p`
 prefix is sized `PCREC_MAX_EMIT_NAME_LEN` (`limits.def:134` =
 `PCREC_MAX_PREFIX_LEN + 96`). K38 is the recorded miscompile of exactly its
-absence. **`sb_fragf` (landed 2026-09-18, wave 2 stage 3) is now the answer,
+absence. **`pcrec_sb_fragf` (landed 2026-09-18, wave 2 stage 3) is now the answer,
 and a new fixed scratch buffer in either emitter is a finding against you.**
 
 ```c
-const char *sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h */
+const char *pcrec_sb_fragf(Arena *a, const char *fmt, …);   /* core/internal.h */
 ```
 
 Arena-owned text sized exactly to the result: truncation is impossible by
@@ -195,16 +195,16 @@ that aborts instead (L8-F4).
 
 ---
 
-**2.6 Emitting an artifact stamp: `sb_stampf` / `sb_stampwf` / `sb_stamp_str`**
+**2.6 Emitting an artifact stamp: `sb_stampf` / `pcrec_sb_stampwf` / `pcrec_sb_stamp_str`**
 (`core/internal.h`, landed [REVW.2] wave 2, 2026-09-18). One
 `#define <UPPER>_<NAME> <value>` line. All 73 former hand-written stamp sites
 across `emit_vm.c` (52) and `emit_dfa.c` (21) are on them, and a new
 hand-written `sb_printf(c, "#define %s_...")` is a finding against you.
 
 ```c
-sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
+pcrec_sb_stamp_str(c, up, "VM_PREFILTER", "hybrid");   /* owns the quoting */
 sb_stampf   (c, up, "VM_RUNGS", "0x%xu", rungs); /* the value is a FORMAT */
-sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
+pcrec_sb_stampwf  (c, up, "R_STEPS", 9, "%s", "((ptrdiff_t)PCREC_ERR_STEPS)");
 ```
 
 **The value is a format, not a type, and that is the rule not an accident.** A

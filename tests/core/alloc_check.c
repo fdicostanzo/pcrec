@@ -213,7 +213,7 @@ typedef struct {
      * FLOOR, not an equality pin. D105's own two-day life measured the
      * hazard the OTHER way first: [REVW.2]'s wave 2 slices A+C moved W4's
      * population 158 -> 162 by two BYTE-NEUTRAL, SIZE-NEUTRAL refactors
-     * (sb_fragf's fragment retirement changing the arena-call SHAPE, not
+     * (pcrec_sb_fragf's fragment retirement changing the arena-call SHAPE, not
      * the compile's observable behaviour) — an equality pin re-pins on
      * every such refactor whether or not anything a caller can see moved,
      * which is a tax on the whole tree's future allocation-shape churn, not

@@ -7,7 +7,7 @@
 # the pattern `a` at a 60-byte prefix — a trivial DFA artifact reaching
 # essentially none of emit_vm.c's 40+ literal-sized scratch buffers. Wave 1
 # stage 3 (not built here — see the charter and emitvm_second_pass.md §5)
-# retires those buffers behind sb_fragf and claims byte-neutrality at the
+# retires those buffers behind pcrec_sb_fragf and claims byte-neutrality at the
 # legal 60-byte prefix boundary; that claim needs a control that actually
 # REACHES the buffers population, which this sweep supplies. This is the
 # [MECH-REACH] repair named in docs/dev/coding_guide.md §5 item 3 and

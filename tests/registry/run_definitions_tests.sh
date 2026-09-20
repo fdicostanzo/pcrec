@@ -116,7 +116,7 @@ else
     fi
     # No field may contain a TAB or a newline (table_contract.md rule 5;
     # `--list-syntax`'s own tests/registry/ pin, applied here) — checked
-    # directly since `sb_text` (src/core/sb.c, the FRAME escape this dump's
+    # directly since `pcrec_sb_text` (src/core/sb.c, the FRAME escape this dump's
     # fields go through) escapes a TAB and a newline by NUMBER rather than
     # forbidding either, and a
     # `note`/`definition` field containing either would silently corrupt

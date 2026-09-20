@@ -20,7 +20,7 @@
 #   (4) No SIZE decision moves. The comment-excluded size and every emitted
 #       `#define` stamp read the same under both settings -- measured after
 #       the entry-shape term was found reading a comment-INCLUSIVE byte count
-#       (the lane report's SS3a; `sb_len_uncut` is the fix).
+#       (the lane report's SS3a; `pcrec_sb_len_uncut` is the fix).
 #
 # AND (5), the half-comment hazard, which is what an UNBALANCED region looks
 # like from outside: a region opened and not closed mutes the rest of its
@@ -122,7 +122,7 @@ for case in "${CASES[@]}"; do
         ok "[$label] the default artifact carries only its ESSENTIAL comments"
     else
         total_unexpected=$((total_unexpected+1))
-        bad "[$label] the default artifact carries a NON-ESSENTIAL comment -- an emission site was added without an sb_cmt_open class (D112 item 2). First: $(printf '%s' "$stray" | head -2 | tr '\n' ' ')"
+        bad "[$label] the default artifact carries a NON-ESSENTIAL comment -- an emission site was added without an pcrec_sb_cmt_open class (D112 item 2). First: $(printf '%s' "$stray" | head -2 | tr '\n' ' ')"
     fi
 
     # (2) -fcomments restores strictly more, per artifact
@@ -147,7 +147,7 @@ for case in "${CASES[@]}"; do
         if cmp -s "$WORK/${label}_def.o" "$WORK/${label}_full.o"; then
             ok "[$label] the OBJECT FILES are byte-identical -- the axis costs no object byte"
         else
-            bad "[$label] the object files DIFFER: something other than comment text moved. Check every size decision for a raw StrBuf length (sb_len_uncut is the rule)"
+            bad "[$label] the object files DIFFER: something other than comment text moved. Check every size decision for a raw StrBuf length (pcrec_sb_len_uncut is the rule)"
         fi
     else
         bad "[$label] an artifact failed to compile: $(cat "$WORK/${label}_def.cc" "$WORK/${label}_full.cc" 2>/dev/null | grep -m2 error)"

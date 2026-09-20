@@ -76,7 +76,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   unification changed nothing, and the six declarations in `internal.h`
   retire with it, not before.
 
-- **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `sb_fragf`'s own
+- **sb_fragf_check.c** — [REVW.2] wave 2 stage 3: `pcrec_sb_fragf`'s own
   property, below any emitted artifact. The primitive promises that
   truncation is impossible BY CONSTRUCTION, and stage 3 routes ~90 retired
   hand-sized emitter scratch buffers through it, so this one function is
@@ -105,7 +105,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   this tree has.
 
 - **sb_stamp_check.c** — [REVW.2] wave 2, EP2 step 10 / lens 1 X8:
-  `sb_stampf`/`sb_stampwf`/`sb_stamp_str`, the artifact-stamp primitives,
+  `sb_stampf`/`pcrec_sb_stampwf`/`pcrec_sb_stamp_str`, the artifact-stamp primitives,
   which emit `#define <UPPER>_<NAME> <value>` at all 73 former hand-written
   stamp sites across the two emitters. **ITS JUSTIFICATION IS THE OPPOSITE
   OF `sb_fragf_check.c`'s ABOVE, and the file's header says so first**: every
@@ -126,7 +126,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   **FOUR PLANTS, AND THEY DO NOT BEHAVE ALIKE** (transcripts in the header
   and in `docs/dev/lanes/w2x_report.md`). The separator space deleted takes
   five sub-checks red and leaves 6 correctly GREEN (still one line, the wrong
-  one). The newline dropped takes all six. `sb_stamp_str` losing its quotes
+  one). The newline dropped takes all six. `pcrec_sb_stamp_str` losing its quotes
   takes ONLY sub-check 4, which is that sub-check's whole reason for existing
   separately. And the sharpest: **`%-*s` written `%*s` leaves sub-check 1
   GREEN**, because at width 0 the two spellings are identical — which is why
@@ -261,7 +261,7 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   FLOOR (`Witness.min_total`), NOT AN EQUALITY PIN.** The trigger was
   measured, not guessed: `[REVW.2]`'s wave 2 slices A+C moved W4's
   population 158 -> 162 by two BYTE-NEUTRAL, SIZE-NEUTRAL refactors
-  (`sb_fragf`'s fragment retirement changing the arena-call SHAPE, nothing
+  (`pcrec_sb_fragf`'s fragment retirement changing the arena-call SHAPE, nothing
   a caller can observe) — an equality pin re-pins on that kind of ordinary
   churn exactly as readily as on K35's actual hazard (a population that
   FALLS, toward an empty or partial sweep), which is a tax on every future
