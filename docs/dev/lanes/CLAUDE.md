@@ -2126,3 +2126,25 @@ never edited afterwards.
   Mac/Linux ratio for the minimization path — a number no measurement in
   the tree currently holds, and which every `K7_CPU`-family budget is
   implicitly calibrated against. PARKED on `lane/nltriage`, not merged.
+
+- `hdrrest_report.md` — [HDR-1] purpose headers for `src/`/`cli/`/`lib/`
+  EXCLUDING `src/gen/emit_vm.c`/`src/gen/emit_dfa.c` (2026-09-20, lane
+  hdrrest, sonnet): 276 functions across 43 files that carried no header
+  (a section banner or nothing directly above the signature) at the
+  branch point now carry one, sized to the function per
+  `docs/dev/coding_guide.md` §4.2 as [HDR-1] extends it. Also lands
+  `function_census.py`'s new `header` column (validated against the
+  manager's own pre-population census: identical 504/75/338-of-917
+  totals and per-file counts everywhere it listed one), the guide's
+  one-sentence extension, and the regenerated
+  `tools/review/out/function_census.tsv`. Zero `HDR-1 UNCLEAR` markers;
+  `scripts/m6read_check_sab_anchors.py` reports 285/285 resolving
+  unchanged (insertions are new lines strictly above a signature, and
+  the mechanism resolves by text match, not line number). `make -j4
+  CC=gcc-16 && make strict CC=gcc-16` CLEAN; `scripts/emit_sweep.py
+  --ref c007e9d2` / `make test-codegen` / `make test-registry` OWED — a
+  darwin battery held the box for this lane's whole working period, so
+  they run backgrounded as the lane's last act, polling the battery's
+  own trailer for completion first (log path and exact completion line
+  in the report). PARKED on `lane/hdrrest`, not merged. Companion
+  lane `hdrgen` owns the two excluded emitter files.
