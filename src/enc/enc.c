@@ -24,6 +24,7 @@ static const PcrecEnc *const enc_table[] = {
     &pcrec_enc_backend_utf8
 };
 
+/* The encoding row whose id matches `id`, or NULL. */
 const PcrecEnc *pcrec_enc_by_id(int id)
 {
     for (size_t i = 0; i < sizeof enc_table / sizeof *enc_table; i++)
@@ -31,6 +32,7 @@ const PcrecEnc *pcrec_enc_by_id(int id)
     return NULL;
 }
 
+/* The encoding row named `name` (exact match), or NULL. */
 const PcrecEnc *pcrec_enc_by_name(const char *name)
 {
     if (!name) return NULL;
@@ -39,6 +41,10 @@ const PcrecEnc *pcrec_enc_by_name(const char *name)
     return NULL;
 }
 
+/* Renders the comma-separated encoding-name menu into buf/cap (an ordered
+ * PREFIX, never a gap or a dangling separator -- see the comment above for the
+ * two ways this loop used to lie and are now gone), rendered from enc_table so
+ * a new row can never leave a diagnostic listing a stale menu. */
 void pcrec_enc_names(char *buf, size_t cap)
 {
     /* Rendered from the table above rather than written out, so a new row
@@ -89,6 +95,9 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         }
 }
 
+/* Emits every entry's `defs` text (and, gated through the comment layer, its
+ * defs_doc) whose id is set in `mask` -- pcrec_enc_emit_decls' own sibling
+ * loop over the DEFINITIONS half. A backend with no table emits nothing. */
 void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix)
 {
@@ -104,6 +113,8 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
         }
 }
 
+/* True iff entry `id` in `e`'s table is marked engine_callable; false for an
+ * unknown id or a backend with no table. */
 bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
 {
     if (!e || !e->entries) return false;
@@ -112,6 +123,8 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
     return false;
 }
 
+/* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE
+ * templating rule every backend's decls/defs/advance text shares. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)
 {
     for (const char *q = text; *q; q++) {
@@ -129,6 +142,12 @@ static void adv_put(char *buf, size_t cap, size_t *len, const char *s)
     *len += k;
 }
 
+/* Renders the encoding's own `advance` template into buf/cap, substituting the
+ * three @P/@S/@N tokens for posvar/subjvar/lenvar and `indent` at the start of
+ * every line, tracking overflow (adv_put) rather than truncating; a bare `@`
+ * not followed by one of those three is a defect in the backend's own text,
+ * answered as an internal-error false rather than passed through. Returns
+ * false on cap==0, no `advance` template, an unknown token, or overflow. */
 bool pcrec_enc_advance(const PcrecEnc *e, char *buf, size_t cap,
                        const char *indent, const char *posvar,
                        const char *subjvar, const char *lenvar)
