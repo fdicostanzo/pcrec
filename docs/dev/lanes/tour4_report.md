@@ -96,10 +96,21 @@ on a genuine open-loop-context conflict. `SAB_SUITES="harness"` — the
 arm that runs `tests/harness/run.sh` over the full `.rxt` corpus and
 scores as `corpus:Nfail/Mpass`.
 
-**Detection: OWED at report-write time, validation in progress** — see
-"Validation" below for the run and its exact completion line once it
-lands. [placeholder — updated by whichever agent completes this report,
-see the handback message for the live status]
+**DETECTED.** `bash tests/mech/run_sabotage_matrix.sh S262`:
+
+```
+S262-dfa-invariant-loop-open-inverted  src/ir/dfa.c  ...  harness  corpus:6190fail/22754pass  DETECTED
+
+== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0) at 0b685df2b9b97d3b7b5da12e75a51e0c5f2378c8 ==
+```
+
+6,190 of the corpus's cases fail under the plant (a large, ordinary
+population — as predicted, since the sabotage fires on any pattern
+opening a loop), 22,754 still pass, and the run completed to its
+trailer with the standard verdict counts (0 unexpected/undetected/
+unreached/anomalies) — no crash, no early termination, no SIGABRT: the
+thing K61 exists to guarantee. Log:
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/8f62ea75-43d2-4b00-8caf-d9b51bf26c8b/scratchpad/tour4_mech_s262.log`.
 
 ## TASK B — [ORG-7] (design record: `docs/dev/reviews/2026-09-20-code-org.md`
 section [ORG-7])
@@ -163,8 +174,27 @@ arrived" instance, not a functional bug.
 | `make strict CC=gcc-16` | clean ("whole tree compiles clean with -Werror -Wshadow") |
 | `make test-codegen CC=gcc-16` | **65 checks passed, 0 failed; SABANCHOR sub-check: "all 270 sabotage rows' anchors resolve"; `run_group` 9/10 scripts passed** — the one non-passing script, `tests/codegen/run_inline_capability.sh` ("FAIL: nm could not read arm_a.o (no rx_search symbol) — no verdict is evidence here"), is a [CC-DIFF] VM-entry-chain-inlining capability probe wholly unrelated to this lane's changes (DFA closure invariants, five `static` conversions); **confirmed PRE-EXISTING by an A/B scratch build of the 82dd396a branch point**, which fails identically before any of this lane's edits exist. `make: *** [test-codegen] Error 1` is that one script's exit code, not a new failure. |
 | `python3 scripts/m6read_check_sab_anchors.py` | **270 rows / 286 anchor sites, all anchors resolve** (was 269/285 before S262; the brief's assumed 285/285 gate value was the pre-lane baseline, now naturally 286/286 since this lane added one row) |
-| `python3 scripts/emit_sweep.py --ref 82dd396a` | OWED — see handback for log path |
-| `bash tests/mech/run_sabotage_matrix.sh S262` | OWED — see handback for log path and the DETECTED line |
+| `python3 scripts/emit_sweep.py --ref 82dd396a` | **0 movers, 0 asymmetric on all five streams, self-check passed** — see table below |
+| `bash tests/mech/run_sabotage_matrix.sh S262` | **DETECTED** — `corpus:6190fail/22754pass`; `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)` |
+
+**emit_sweep detail** (`--ref 82dd396a`, self-check first — an independent
+second rebuild of the SAME ref, to prove the comparator itself is sound
+before trusting its verdict on the real diff):
+
+| stream | population | both_ok (reach) | both_refuse | movers | asymmetric |
+|---|---|---|---|---|---|
+| c-default | 3939 | 3518 | 421 | 0 | 0 |
+| c-vm | 3939 | 3519 | 420 | 0 | 0 |
+| emit-ir-vm | 3939 | 3519 | 420 | 0 | 0 |
+| composition | 305 | 33 | 272 | 0 | 0 |
+| dumps | 7 | 7 | 0 | 0 | 0 |
+
+Self-check and real run (branch point `82dd396a` vs. this lane's built
+`build/pcrec`) are row-for-row identical — 0 emitted bytes moved on any
+stream, confirming the DFA_INVARIANT/`cx` threading and the five
+`static` conversions change no emitted artifact, as the brief's proof
+obligation required. `DELIVER witness: OK`. Elapsed 287.0s. Log:
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/8f62ea75-43d2-4b00-8caf-d9b51bf26c8b/scratchpad/tour4_emit_sweep.log`.
 
 ## Re-pinned counts
 
@@ -204,8 +234,8 @@ arrived" instance, not a functional bug.
 
 ## What is owed
 
-`make test-codegen`, `scripts/emit_sweep.py --ref 82dd396a`, and the
-`S262` solo mech run — all launched, none run in the foreground per
-BOILERPLATE's DO-THEN-FINISH rule. Exact log paths and completion lines
-are in the handback SendMessage, not repeated here to avoid a second
-place these can drift from what actually happened.
+Nothing from this lane's own validation list. All six steps (`make -j4`,
+`make strict`, `make test-codegen`, the anchor gate, `emit_sweep.py
+--ref 82dd396a`, the `S262` solo mech run) are complete, clean or
+DETECTED as designed, with numbers recorded above. `make test` itself
+(the full battery) is explicitly the manager's at merge, per BOILERPLATE.
