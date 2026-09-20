@@ -86,7 +86,27 @@ all anchors resolve
 strict: whole tree compiles clean with -Werror -Wshadow
 ```
 
-`python3 scripts/emit_sweep.py --ref c007e9d2` — see the trailer below.
+`python3 scripts/emit_sweep.py --ref c007e9d2` — **OWED**, running in the
+background behind the box's one-heavy-suite rule.
+
+The main tree's darwin battery gate (`build/battery_gate_11ff5f51/`) was
+still in its `test` stage at 12:58, so the sweep could not start. A waiter
+was launched instead (PID 7367 at launch): it polls that gate's
+`trailer.log` for `== BATTERY DONE` at one-minute intervals, then runs the
+sweep in this worktree.
+
+- log: `worktrees/hdrgen/build/hdrgen_sweep.log`
+- completion line to grep for: `== HDRGEN SWEEP DONE rc=`
+- `rc=0` is the accept (five streams byte-identical, 0 movers); any other rc
+  is a finding and the sweep's own output above that line names the stream.
+- the waiter gives up after 4h with `rc=timeout` and the sweep NOT run; if
+  that fires, or if the process did not survive the session, the sweep is
+  one command from this worktree:
+  `python3 scripts/emit_sweep.py --ref c007e9d2`
+
+Nothing about the delivery depends on the sweep's mechanics — it is the
+measurement that turns "comments cannot move a byte" from an assumption into
+a fact, which is why it is run rather than argued.
 
 ## Commits
 
