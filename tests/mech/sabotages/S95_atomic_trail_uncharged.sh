@@ -26,8 +26,15 @@ SAB_HARNESS_TARGET="tests/atomic_groups/atomic_quant.rxt"
 SAB_DESC="vm_cost's A_ATOMIC arm returns the body's Cost without adding the trailed cut mark, so trail_frames is short by one entry per emitted atomic group on the deepest path. Nothing is emitted differently and no answer changes -- the artifact returns PCREC_ERR_FRAMES on a pattern it can match, S87's failure mode one construct over"
 SAB_DOC_FIGURE="PREDICTED: the capacity/subject_ceiling assertions RED on a deep-nested atomic; codegen GREEN, because nothing about the emitted code moves. That 0-fail codegen column is the row's point. Canonical figure owed from run_sabotage_matrix.sh S95."
 SAB_COUNT=1
-SAB_BEFORE='        c = vm_cost(v, a->l, false);
-        c.trail += 1;
-        return c;'
-SAB_AFTER='        c = vm_cost(v, a->l, false);
-        return c;   /* SABOTAGE S95: the trailed mark is not charged */'
+# [TOUR-2] step 2 (2026-09-20) extracted the A_ATOMIC arm into its own
+# static vm_cost_atomic(Vm *v, const Ast *a) -- re-aimed onto the new
+# function body verbatim (the indentation dropped one level, from inside a
+# switch case to a function's top level); the intent (return the body's
+# Cost without the trailed cut-mark entry) is unchanged.
+SAB_BEFORE='    Cost c = vm_cost(v, a->l, false);
+    c.trail += 1;
+    return c;
+}'
+SAB_AFTER='    Cost c = vm_cost(v, a->l, false);
+    return c;   /* SABOTAGE S95: the trailed mark is not charged */
+}'

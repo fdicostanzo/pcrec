@@ -38,5 +38,10 @@ SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="vm_cost charges |W| trail entries per call instead of 2*|W|, so the artifact declares a trail capacity it does not have and answers PCREC_ERR_FRAMES on a pattern it can MATCH -- S87/S95's exact failure mode"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR7): NO ANSWER CHANGES until the trail is exhausted, then PCREC_ERR_FRAMES on a matching subject. The detector is therefore a DEEP-CALL cell rather than a corpus answer, which is what run_recursion_diff.sh's 2 bisection provides: it finds the artifact's own ceiling and asserts that ONE STEP BEYOND IT the answer is a typed give-up rather than a wrong nomatch. The corpus arm is assigned too because a halved charge shrinks the ceiling far enough that leftrec.rxt's 200-deep cell can cross it."
 SAB_COUNT=1
-SAB_BEFORE='        c.trail  += 2LL * a->u.call.nsave;'
-SAB_AFTER='        c.trail  += 1LL * a->u.call.nsave;   /* SABOTAGE S154 */'
+# [TOUR-2] step 2 (2026-09-20) extracted the A_CALL arm into its own
+# static vm_cost_call(Vm *v, const Ast *a) -- re-aimed onto the new
+# function body verbatim (the indentation dropped one level, from inside a
+# switch case to a function's top level); the intent (charge |W| instead
+# of 2*|W| trail entries per call) is unchanged.
+SAB_BEFORE='    c.trail  += 2LL * a->u.call.nsave;'
+SAB_AFTER='    c.trail  += 1LL * a->u.call.nsave;   /* SABOTAGE S154 */'

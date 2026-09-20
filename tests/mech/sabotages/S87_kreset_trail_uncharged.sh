@@ -54,8 +54,19 @@ SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="vm_cost's A_KRESET arm returns the zero Cost instead of charging one trail entry, so an artifact's trail_frames is short by one per emitted \\K on the deepest path. Nothing is emitted differently and no answer changes -- the artifact returns PCREC_ERR_FRAMES on a pattern it can match: '(?:a\\K){0,10}ab' declares 3 trail entries where it needs 13 and answers 'frames' from eleven a's onward"
 SAB_DOC_FIGURE="codegen:0fail/56pass,corpus:33fail/563pass,kresetdiff:3fail/6pass -- DETECTED (canonical matrix run, 2026-08-19). The 0fail codegen column is the row's point: all four [M6.2-KRESET] checks stay green"
 SAB_COUNT=1
-SAB_BEFORE='    case A_KRESET:
-        c.trail = 1;
-        return c;'
-SAB_AFTER='    case A_KRESET:
-        return c;   /* SABOTAGE S87 */'
+# [TOUR-2] step 2 (2026-09-20) extracted the A_KRESET arm into its own
+# static vm_cost_kreset(void), one of the arms whose comment became the
+# function's HEADER (coding_guide.md's [HDR-1]/[HDR-2]) -- re-aimed onto
+# the new function body verbatim; the intent (return the zero Cost instead
+# of charging the trail entry) is unchanged.
+SAB_BEFORE='static Cost vm_cost_kreset(void)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    c.trail = 1;
+    return c;
+}'
+SAB_AFTER='static Cost vm_cost_kreset(void)
+{
+    Cost c = { 0, 0, 0, 0, false, false };
+    return c;   /* SABOTAGE S87 */
+}'
