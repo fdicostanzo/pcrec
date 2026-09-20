@@ -24326,3 +24326,19 @@ Bench: [B58] re-pin to 25b1984f running on their side (25b1984f stays
 their target — the axes fix is test-side). Next: the I-78 request (the
 wave's battery, which also drives w5's 24 owed solo rows), rider w5r (in
 flight, sonnet), wake.md.
+
+**SESSION CLOSE (2026-09-20 ~08:5x, Frank: "lets reset session").** Main
+2d5aaa07 (+ this close commit), pushed. THE REFACTOR IS COMPLETE. In
+flight across the reset: the I-78 battery at 05499cba on ubuntubudu (mech
+stage since 08:36, ~12:30 trailer; its test-stage red is nltriage's
+marginal-budget cell, fixed and parked); two branches parked for merge
+after that trailer — lane/w5r (8c0abe28; item 3 landed by the manager
+after the lane went silent — chain-not-lane, third instance) and
+lane/nltriage (546c6e1b). Lanes used this session: w4facts, w4, adm71,
+emitverb, emitverb2, emitverb3, evtriage, evtriage2, evtriage3,
+planaudit, w5facts, w5, axtriage, w5r, nltriage — fifteen; none alive at
+close. Rulings recorded: D111, D112, D113, D104 addendum, D111 addendum,
+D94 addendum, D76 addendum (via w5). Two abi events? ONE: 26 → 27.
+Next session: read the I-78 trailer, merge w5r + nltriage, gate, push,
+then Frank's GUIDED TOUR, then the six partial rows smallest to largest,
+then [REL-1]. wake.md rewritten.
