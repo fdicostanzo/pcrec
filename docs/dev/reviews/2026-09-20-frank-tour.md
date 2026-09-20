@@ -163,3 +163,61 @@ predicate while the cursor/revdet deny flags are read by callers — make the
 three alike (emit_vm.c, same lane or [TOUR-2]'s). Proof: the registry stamp
 checks, tests/axes (the axis deny/force matrix is this function's contract),
 emit_sweep 0 movers, make test. Tier: opus.
+
+## Manager's assessment — 2026-09-20, seventy-third session ([TOUR-EXEC])
+
+Frank's ruling: assess, do the worth-it items, forgo the unimportant ones.
+One paragraph per item; every DO becomes its own plan row citing this file.
+
+**[TOUR-4] — DO (sonnet, wave 1).** A spec promise is currently false
+(match_api.md "never abort()s the caller on the compile path") and the
+comment defending the abort cites an idiom the tree abandoned at K7. Three
+sites, not two (dfa.c:590, 667, 857 at 82dd396a). Cheapest item on the list
+with the highest contract value. Ships with the K61 row and a sabotage row.
+
+**[TOUR-5] — DO (opus, wave 1).** The ladder is correct today and defended
+by five stacked comment blocks; the next change to select_engine is the
+exposure. esel_of with the non-overlap table as its header, the one
+unasserted premise made a check, prefilter_decision extracted, the dead
+discharge fixpoint deleted (D77: no hook, no customer). r61 F6 (the deny
+flag read inside vm_counter_fits) lives in emit_vm.c and goes to the
+TOUR-2 lane instead, so emit_vm.c has ONE writer at a time.
+
+**[TOUR-2] — DO (sonnet, wave 1), both steps.** cost_add / cost_max make
+the CAT and ALT arms read as SUM versus ONE-PLUS-MAX; then the per-kind
+dispatcher so vm_cost_<kind> sits beside vm_<kind>. The shared alt-flatten
+helper only if the two walks prove identical — the lane reports the
+comparison either way. F6 rides here. Byte-neutral by construction; the
+size log's stamped ceilings are the second proof column.
+
+**[ORG-7] — DO (folded into the TOUR-4 sonnet lane).** Nine exports with
+no reader → static, the internal.h declarations deleted. Locations at
+82dd396a: tune.c (1), emit_dfa.c (3), nfa.c (1), mod_verbs.c (1),
+rxt_schema.c (2), rxt_source.c (1). None of those files is touched by the
+other wave-1 lanes. Gate: make strict + the export census check.
+
+**[TOUR-1] — DO (opus, wave 2, after TOUR-2 merges).** The largest and the
+one the file-grain experiment says pays most: the read cost of emit_vm.c
+is the one giant function, not the file. vm_init / the plan tail / one
+function per artifact section / essay pruning to invariant + pointer.
+Sequenced behind TOUR-2 because both edit emit_vm.c. The seam-crossing
+locals are the lane's design question (Vm as PLANNED FACTS, VmCaps-style
+per-phase structs — never a bag of locals).
+
+**[TOUR-3] — DO (sonnet with opus review, wave 2).** One member reader at
+both endpoints removes the quote-open mirror and the duplicate decode;
+the range arm extracted; every measured PCRE2 cell kept verbatim (D26:
+those cells are the contract). The opus review is scoped to the claim
+ordering of the K12 endpoint rule surviving the extraction. parse.c has
+no other writer, so it could run in wave 1, but the lane cap is three.
+
+**FORGONE: r61 F3 (callgraph's three fixpoints in one loop) and F4/F5
+(comment notes).** Not on the tour list; F3 is correct code whose only
+cost is a comment; trigger to revisit = the next change to
+src/ir/callgraph.c's fixpoint. F4/F5 ride whichever lane next touches
+their files, unchartered.
+
+Order: wave 1 = TOUR-4+ORG-7 (sonnet), TOUR-5 (opus), TOUR-2 (sonnet).
+Wave 2 = TOUR-1 (opus), TOUR-3 (sonnet + opus review). Merges serialized
+through the manager with `make test` between; no battery is in flight.
+Branch point for every lane: 82dd396a.
