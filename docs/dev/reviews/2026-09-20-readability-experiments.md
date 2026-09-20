@@ -98,6 +98,38 @@ Readings:
   Recorded as [ORG-3] in `2026-09-20-code-org.md`, OPEN, sequenced after
   [TOUR-1] if at all.
 
+## Addendum — [HDR-2]'s acceptance re-run, and the noise floor
+
+After hdr2 rewrote 93 headers to lead with what the function does, condition
+B was re-run on emit_vm.c (same builder, a fresh haiku guesser, the same
+grader and truth column; `2026-09-20-readability-data/hdr2_grade.md`):
+
+| kind | B before (HDR-1 headers) | B after (HDR-2 headers) | A, name only |
+|---|---|---|---|
+| functions | 57% | **83%** | 68% |
+| fields | 42% | 32% | 15% |
+| locals | 56% | 4% | 60% |
+
+Readings:
+- **The function result is the one the pass targeted and it moved 26
+  points**, past the bar (68%) and past every other condition short of the
+  whole file. The 74-name failed list was fixed by name and those are the
+  functions that flipped.
+- **The locals row is the noise floor, and it is large.** Locals' condition-B
+  material is IDENTICAL between the two runs (a declaration line; hdr2
+  touched no local), yet the same guesser model scored 56% then 4%. A single
+  haiku run is not a measurement to one significant figure; differences
+  under ~30 points on a small population are inside run-to-run variance.
+  The function jump is 3x that spread on n=129; the field drop (42 → 32,
+  n=72, with three untouched no-comment fields named by the grader as the
+  drag) is inside it.
+- **Rule for the instrument going forward**: three guesser runs per
+  condition, report the median, or do not report a difference under 30
+  points. The experiment file's §1 tables are single runs and should be read
+  with that caveat; the qualitative findings (functions from the name,
+  fields from the code, headers' first sentence) are all larger than the
+  spread.
+
 ## Rules to carry forward (Frank's question)
 
 1. Name length proportional to the distance between definition and use:
@@ -110,4 +142,5 @@ Readings:
 4. Split files at the author's banners once a file's read closure dominates
    the lane's budget; expect two small files per edit, not one.
 5. A model's stated confidence is not a measurement. Bound the evidence and
-   grade the answers when you want to know what a name carries.
+   grade the answers when you want to know what a name carries — and run the
+   guesser three times: a single run's spread is ~30 points on small n.
