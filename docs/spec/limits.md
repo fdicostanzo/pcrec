@@ -300,6 +300,40 @@ Beyond the four numbers above, a caller sizing a caller-provided buffer
 this engine takes no buffers, check before you divide" rule. This
 document does not repeat it.
 
+### 3.4a Reading a built-in default from a program: `pcrec_limits_tsv`
+
+**A caller can read every number in this document at run time, and since
+[REVW.5] the public header declares the way** (lens 9's P4):
+
+```c
+char *pcrec_limits_tsv(void);   /* lib/pcrec.h; caller frees with free() */
+```
+
+It renders `src/core/limits.def` — the ruled single home for a numeric
+limit (D90) — as one TSV in `docs/spec/table_contract.md`'s wire format.
+The header row is
+`#name<TAB>value<TAB>unit<TAB>kind<TAB>override<TAB>anchor<TAB>desc`, and
+`override` is the column a caller acts on: `flag` means a CLI flag or a
+`pcrec_options` field moves this number per compile, `-D` means only
+pcrec's own build does, `none` means nothing does. NULL on allocation
+failure. It is the same table `pcrec --list-limits` prints, from the same
+call.
+
+**Why this matters and is not merely convenient.** The six `max_*` members
+of `pcrec_options` are RAISE-ONLY: a value below the built-in default is
+refused as a malformed option (§3.3, §8). So a caller raising a cap must
+know the default, and until this declaration its only programmatic route
+was to submit a deliberately-too-low value and parse English out of
+`pcrec_error.msg`. The data was compiled in, exported from
+`libpcrec.a` and reachable from the CLI the whole time; only the
+declaration was missing.
+
+**No number is duplicated into `lib/pcrec.h` as a macro, deliberately.**
+Emitting the values as `#define`s would be a second spelling of every
+limit, free to drift from `limits.def`; this function reads the one table
+instead, so a limit that changes cannot disagree with itself. That is the
+same reason `limits.def` exists.
+
 ### 3.5 The `.rxt` SOURCE parser's own caps ([DD-13b.W1.1], r46sem finding 8)
 
 `pcrec --list-source`'s head parser (`src/parse/rxt_source.c`) is a

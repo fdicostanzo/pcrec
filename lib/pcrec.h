@@ -410,11 +410,19 @@ enum {
      * The VM hybrid's prefilter is a FILTER: what it owes the VM is a sound
      * REJECTION and a lower bound on the match start, never an exact language
      * — `src/ir/nfa.c` already answers for a strict superset whenever the
-     * pattern carries an atomic group or a lookaround. Above
-     * `PCREC_PREFILTER_EXACT_NFA_STATES` a counted repeat `X{m,n}` is
-     * therefore lowered, FOR THE PREFILTER ONLY, as `X{min(m,1),}` — a
-     * superset whose proof never mentions `n`, so the prefilter's DFA (and
-     * the artifact) stops scaling with the count.
+     * pattern carries an atomic group or a lookaround. WHERE THE COLLAPSE
+     * ACTS, a counted repeat `X{m,n}` is lowered, FOR THE PREFILTER ONLY, as
+     * `X{min(m,1),}` — a superset whose proof never mentions `n`, so the
+     * prefilter's DFA (and the artifact) stops scaling with the count.
+     *
+     * There is no state-count threshold and no constant to name: this comment
+     * cited `PCREC_PREFILTER_EXACT_NFA_STATES` until [REVW.5], and that
+     * constant was DELETED at [OPT-4] (Frank's ruling B, 2026-08-29) with
+     * deliberately nothing in its place (`src/core/limits.h` says so at its
+     * former site). The collapse now acts only where the exact artifact
+     * CANNOT SHIP — the `[SEL-1]` state-cap rung and the emitted-size-cap
+     * rung of `compile_driver`'s ladder — never because a state count crossed
+     * a knee. `docs/spec/tuning.md` §2.17 is the contract.
      *
      * `PCREC_NO_PREFILTER_COLLAPSE` recovers the exact prefilter, and with it
      * the sharper match start and the `"prefilter-window"` pruning ceiling
@@ -833,8 +841,13 @@ typedef struct {
      *   4 INLINE    what [CC-DIFF] STEP 1(a) shipped: SIX copies.
      *
      * 0 = AUTOMATIC, and automatic is what every caller that predates this
-     * field gets: the emitter picks the rung from the artifact itself, by
-     * the size term `PCREC_VM_INLINE_CHAIN_MAX_BYTES` (src/core/limits.def).
+     * field gets: the emitter picks the rung from the artifact itself, by the
+     * size term `VM_INLINE_CHAIN_MAX_BYTES` — spelled without a `PCREC_`
+     * prefix, because it is `emit_vm.c`'s own home row in
+     * `src/core/limits.def` and not a caller-visible name ([REVW.5]: this
+     * comment invented the prefix, so a caller who grepped for it found
+     * nothing). Its VALUE is readable through `pcrec_limits_tsv` below, like
+     * every other row; there is no lever for it other than this field.
      *
      * WHERE A RUNG IS NOT LEGAL IT IS NOT TAKEN, and that is a SELECTION
      * OUTCOME, never a refusal — the same rule `-fno-altcls-factor` and the
@@ -1118,5 +1131,33 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * engine before any streaming code is written. */
 
 void pcrec_output_free(pcrec_output *out);
+
+/* [REVW.5] (lens 9's P4) THE NUMERIC-LIMITS SURFACE — the one programmatic
+ * route to a built-in default this header cites.
+ *
+ * WHY IT IS HERE. The six `max_*` members of `pcrec_options` are RAISE-ONLY:
+ * a value below the built-in default is refused. A caller that wants to raise
+ * a cap therefore has to know what the default IS, and before this
+ * declaration its only route was to trigger the refusal deliberately and
+ * parse English out of `pcrec_error.msg` — the whole table was compiled in,
+ * exported from the archive, reachable from the CLI as `--list-limits`, and
+ * undeclared here.
+ *
+ * WHAT IT RETURNS. One `malloc`'d NUL-terminated string in the TSV wire
+ * format `docs/spec/table_contract.md` specifies: `#`-comment lines, the last
+ * of which is the header `#name<TAB>value<TAB>unit<TAB>kind<TAB>override<TAB>anchor<TAB>desc`,
+ * then one row per limit. `override` is the column that answers "can I move
+ * this": `flag` (a CLI flag or a `pcrec_options` field moves it per compile),
+ * `-D` (only pcrec's own build does), `none` (fixed). NULL on allocation
+ * failure. **The caller frees it with `free`** — not with
+ * `pcrec_output_free`, which is `pcrec_output`'s own destructor and not a
+ * general one.
+ *
+ * WHY A TABLE AND NOT `#define`s. `src/core/limits.def` is the ruled single
+ * home for a numeric limit (D90). Emitting the values here as macros too
+ * would be a SECOND spelling of every number, free to drift from the first;
+ * this function reads the one table at run time, so a limit that changes
+ * cannot disagree with itself. The contract is `docs/spec/limits.md`. */
+char *pcrec_limits_tsv(void);
 
 #endif /* PCREC_H */

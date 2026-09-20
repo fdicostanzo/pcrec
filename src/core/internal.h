@@ -6008,8 +6008,14 @@ char *pcrec_axes_tsv(void);
 
 /* [LIM-1] `src/dump/limits_dump.c` — renders src/core/limits.def, the
  * numeric-limits table (D90), as one TSV, table_contract.md's wire format
- * (the SIXTH surface). Caller frees. */
-char *pcrec_limits_tsv(void);
+ * (the SIXTH surface). Caller frees.
+ *
+ * DECLARED IN `lib/pcrec.h`, not here ([REVW.5], lens 9's P4): it is the
+ * library's numeric-limits surface, the one programmatic route a caller has
+ * to a RAISE-ONLY cap's built-in default. This header includes `pcrec.h`,
+ * so every internal caller still sees it; a second declaration here would be
+ * a second spelling of one contract. `docs/spec/limits.md` §3.4a is the
+ * contract. */
 
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
