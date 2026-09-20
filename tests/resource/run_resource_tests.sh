@@ -801,46 +801,108 @@ rm -f "$WORKDIR/o.c"
 # for exactly this situation ("cap-rescue has a natural population of
 # ZERO ... the check builds a REFERENCE COMPILER with the limits lowered
 # at pcrec's own compile time") rather than inventing a new one: a LOCAL
-# reference `pcrec` built with `PCREC_MAX_EMIT_BYTES` lowered to 500000 at
-# COMPILE TIME (raise-only via the CLI flag per limits.def; `-D` is the
-# only way to lower it), which sits comfortably below the exact artifact's
-# 913,278 B and comfortably above the declined-nullable default's 20,693 B
-# and the collapsed rescue's own tiny size — so the ladder actually RUNS
-# and is actually OVERRULED, `run_size_term.sh`'s own phrase for the shape
-# this cell needs. MEASURED under the reference build: default axis (no
-# -fprefilter) still stamps RX_ENGINE_SEL "declined-nullable-default" /
-# RX_VM_PREFILTER "none" at 20,693 B (the decline is unaffected by the
-# lowered cap, so this is still testing an OVERRIDE and not a compiler
-# that simply always takes the size rung); under -fprefilter it stamps
-# "size cap retry, exact 913278 > 500000" at 32,145 B. The pattern itself
-# is UNCHANGED (still '(a|b){0,30000}', still nullable, still the same
-# text [OPT-4.2]'s cell above uses), so nothing here depends on the state
-# cap headroom the count-scaling attempt above ran out of.
+# reference `pcrec` built with `PCREC_MAX_EMIT_BYTES` lowered at COMPILE
+# TIME (raise-only via the CLI flag per limits.def; `-D` is the only way
+# to lower it), so the ladder actually RUNS and is actually OVERRULED,
+# `run_size_term.sh`'s own phrase for the shape this cell needs.
+#
+# [NLTRIAGE] 2026-09-20 — THE WITNESS IS CHEAP NOW, AND THAT IS THE FIX
+# FOR A BUDGET MISS THAT WAS NEVER ABOUT THE COMPILER. The Linux battery
+# at 05499cba killed this cell on `K7_CPU` (45s of CPU) and the check
+# reported it as limits.md §3.3 going false. It was not: the same compile
+# measured 11.29s of CPU on the Mac dev box across three trees spanning
+# the whole suspect merge (25b1984f / 55321f28 / 05499cba — 11.28-11.32s,
+# spread under 0.4%, byte-identical 18,160-byte artifacts), so nothing in
+# that merge moved this cost and the margin was simply 3.99x on the box
+# that set the budget and thinner than that on ubuntubudu — inside the
+# ">2x CPU inflation under a real -j12 mix" K7_CPU's own calibration
+# comment above already prices in. btriage2 hit the same wall one section
+# up and paid for it with a wider budget (`SIZECAP_CPU`).
+#
+# THIS CELL DOES NOT NEED TO PAY. The reference cap is an artificial
+# number this check chooses for itself, so the witness can be scaled DOWN
+# to meet it instead of the budget scaled up to meet the witness. The cost
+# is `{0,N}`'s DFA minimization (K25), not anything this cell asserts.
+# MEASURED at the reference build, all figures from this box:
+#
+#   N       cap      exact prefilter     margin    rescue artifact   CPU
+#   30000   500000   913,599 B           1.83x     18,160 B          11.29s
+#   12000   100000   373,590 B           3.74x     18,151 B           1.83s
+#
+# so the pair (N=12000, cap=100000) is STRICTLY BETTER on every margin
+# this cell depends on: the exact artifact clears the cap by 3.74x rather
+# than 1.83x (the margin whose erosion made this cell vacuous FOUR times
+# above), the declined-nullable default is 12,114 B and the collapsed
+# rescue 18,151 B, both 5-8x UNDER the cap (so the decline is still
+# unaffected by the lowering and this is still testing an OVERRIDE, not a
+# compiler that always takes the size rung), and the CPU margin against
+# K7_CPU goes from 3.99x to 24.6x — wide enough that no box's contention
+# reaches it. VERIFIED at N=12000/cap=100000: default axis (no
+# -fprefilter) stamps RX_ENGINE_SEL "declined-nullable-default" /
+# RX_VM_PREFILTER "none" at 12,114 B; under -fprefilter it stamps
+# "size cap retry, exact 373590 > 100000" at 18,151 B. The rescue artifact
+# is the SAME artifact the 30000 witness produced — diffed, and the only
+# lines that move are the pattern text, the `-o` basename, the cap value
+# and the count digits.
+#
+# The pattern is still `(a|b){0,N}`, still nullable, still the shape
+# [OPT-4.2]'s cell above uses; only N differs, and that cell keeps its own
+# 30000 at the REAL cap. Nothing here depends on the state-cap headroom
+# the count-scaling attempt above ran out of — N=12000 is further from it.
+#
+# AND THE rc ARM IS NOW A `case`, WHICH IS THE SECOND HALF OF THE SAME
+# FINDING. The old `if [ $? -eq 0 ] ... else` folded every non-zero
+# outcome into one message claiming limits.md §3.3 had gone false, so a
+# watchdog CPU kill — this check's OWN budget expiring — was reported as a
+# compiler regression. Section 1's `compile_case` has distinguished 122 /
+# 123 / 124 since [TT-10] and reclassifies the two that CPU-time inflation
+# can produce through `load_guard_tripped`; this cell now does the same.
+# Only rc 1, a real refusal, still carries the §3.3 sentence.
+FPPAT='(a|b){0,12000}'
 REFCAP="$WORKDIR/pcrec_lowcap"
+REFCAP_CAP=100000
 REFCAP_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 # shellcheck disable=SC2086
 if [ -z "$REFCAP_SRCS" ]; then
     bad "[OPT-4.1] found no compiler sources under $ROOT_DIR/src for the lowered-cap reference build"
 elif ! $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
-        -DPCREC_MAX_EMIT_BYTES=500000 \
+        -DPCREC_MAX_EMIT_BYTES=$REFCAP_CAP \
         -o "$REFCAP" "$ROOT_DIR/cli/main.c" $REFCAP_SRCS 2>"$WORKDIR/refcap.err"; then
-    bad "[OPT-4.1] could not build the lowered-cap (PCREC_MAX_EMIT_BYTES=500000) reference compiler: $(head -3 "$WORKDIR/refcap.err")"
+    bad "[OPT-4.1] could not build the lowered-cap (PCREC_MAX_EMIT_BYTES=$REFCAP_CAP) reference compiler: $(head -3 "$WORKDIR/refcap.err")"
 else
-fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$REFCAP" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
-if [ $? -eq 0 ]; then
-    fpsz=$(wc -c < "$WORKDIR/o.c")
-    fppf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
-    fpwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
-    if [ "$fppf" = hybrid ] && [ "${fpwhy#size cap retry}" != "$fpwhy" ]; then
-        ok "[OPT-4.1] '(a|b){0,30000}' under -fprefilter KEEPS the collapsed prefilter ($fpsz bytes, '$fpwhy') — the do-or-die request overrides the nullability decline, and the pattern still compiles"
-    elif [ "$fppf" = none ]; then
-        bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter stamps RX_VM_PREFILTER \"none\" — an explicit do-or-die request was silently answered with its opposite"
-    else
-        bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter stamps PREFILTER '$fppf' / LANG_WHY '$fpwhy', expected the size rung's collapsed prefilter"
-    fi
-else
-    bad "[OPT-4.1] '(a|b){0,30000}' under -fprefilter no longer COMPILES — this is limits.md §3.3's 'no pattern that compiles today stops compiling' going false: declining the collapse keeps the exact prefilter the cap refused, and the size rung has no third attempt: $(printf '%s' "$fplog" | head -1)"
-fi
+fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$REFCAP" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" "$FPPAT" 2>&1)"
+fprc=$?
+case $fprc in
+    0)
+        fpsz=$(wc -c < "$WORKDIR/o.c")
+        fppf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
+        fpwhy=$(grep -oE '^#define RX_VM_PREFILTER_LANG_WHY .*' "$WORKDIR/o.c" | sed 's/.*WHY //;s/"//g')
+        if [ "$fppf" = hybrid ] && [ "${fpwhy#size cap retry}" != "$fpwhy" ]; then
+            ok "[OPT-4.1] '$FPPAT' under -fprefilter KEEPS the collapsed prefilter ($fpsz bytes, '$fpwhy') — the do-or-die request overrides the nullability decline, and the pattern still compiles"
+        elif [ "$fppf" = none ]; then
+            bad "[OPT-4.1] '$FPPAT' under -fprefilter stamps RX_VM_PREFILTER \"none\" — an explicit do-or-die request was silently answered with its opposite"
+        else
+            bad "[OPT-4.1] '$FPPAT' under -fprefilter stamps PREFILTER '$fppf' / LANG_WHY '$fpwhy', expected the size rung's collapsed prefilter"
+        fi ;;
+    1)
+        bad "[OPT-4.1] '$FPPAT' under -fprefilter no longer COMPILES — this is limits.md §3.3's 'no pattern that compiles today stops compiling' going false: declining the collapse keeps the exact prefilter the cap refused, and the size rung has no third attempt: $(printf '%s' "$fplog" | head -1)" ;;
+    122)
+        bad "[OPT-4.1] '$FPPAT' under -fprefilter EXCEEDED $K7_MEM of tree RSS — a resource failure in the reference build, not a §3.3 event: $(printf '%s' "$fplog" | head -1)" ;;
+    123)
+        if load_guard_tripped; then
+            inc "[OPT-4.1] '$FPPAT' under -fprefilter EXCEEDED ${K7_CPU}s of CPU, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+        else
+            bad "[OPT-4.1] '$FPPAT' under -fprefilter EXCEEDED ${K7_CPU}s of CPU on a quiet box — THIS CELL'S OWN BUDGET, not a compile failure and not a §3.3 event. The witness is calibrated at ~1.8s of CPU on the dev box (see the measurement above); a 24x overrun is a real compile-cost regression or a budget that no longer fits this box: $(printf '%s' "$fplog" | head -1)"
+        fi ;;
+    124)
+        if load_guard_tripped; then
+            inc "[OPT-4.1] '$FPPAT' under -fprefilter EXCEEDED ${K7_SECS}s of wall time, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+        else
+            bad "[OPT-4.1] '$FPPAT' under -fprefilter EXCEEDED ${K7_SECS}s of wall time (stuck, not working): $(printf '%s' "$fplog" | head -1)"
+        fi ;;
+    *)
+        bad "[OPT-4.1] '$FPPAT' under -fprefilter exited $fprc, which is neither a compile nor a refusal: $(printf '%s' "$fplog" | head -1)" ;;
+esac
 fi
 
 echo
