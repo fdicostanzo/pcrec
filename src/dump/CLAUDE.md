@@ -102,7 +102,7 @@ one.
   two milestones after that port landed — is rewritten as a discharged
   obligation. A raising port used to SIGSEGV both surfaces; it now abandons
   the answer and returns NULL with a `pcrec_error` filled, which the CLI
-  renders in the compile path's own shape. Both surfaces `arena_free` too
+  renders in the compile path's own shape. Both surfaces `pcrec_arena_free` too
   (`--probe-ask` never did). **`--explain`'s value renderings escape control
   bytes** (R20/MOD07-8, `put_text`: bytes below 0x20 and 0x7f as `\xHH`, `\`
   deliberately not doubled) — the format grammar had no escaping, so a query

@@ -114,7 +114,7 @@ direction yourself, at the point you write it.
 ## 2. Taught primitives — reach for these, in their state TODAY
 
 **2.1 `sb.c` is the text mechanism: `sb_putc` / `sb_puts` / `sb_printf` /
-`sb_take` / `sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
+`pcrec_sb_take` / `pcrec_sb_free`** (`src/core/internal.h:62-67`). The emitters' 771 `sb_*`
 call sites ARE the norm — lens 2's own seed hypothesis ("the emitters use neither
 sb nor stdio") was REFUTED by measurement. There is deliberately no `emit_line()`
 wrapper and there will not be one (L10 §2.3): it buys nothing `sb_printf` does not.
@@ -222,7 +222,7 @@ with backslash continuations (`_CHARGE_WORK`, `_TRAIL`/`_SET`/`_PUSH`/`_CUT`,
 `_CALL`, `_TIER_NOTE`, the `_PRUNE_*` pair) whose emitted text is a program,
 not a value. They stay `sb_printf`, and four sabotage rows sit on them.
 
-**The uppercased prefix is ONE derivation**: `sb_upper(Arena *, const char *)`.
+**The uppercased prefix is ONE derivation**: `pcrec_sb_upper(Arena *, const char *)`.
 `GenNames.upper` and `Vm.up` are both `const char *` pointing at its one arena
 result; neither is storage any more. Do not re-derive an uppercase at a call
 site and do not add a third field.

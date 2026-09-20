@@ -114,7 +114,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   and `-fprefilter` never retry and keep today's refusal, unchanged.
   `dfa_disabled`/`dfa_overflowed`/`dfa_overflow_why` are plain `Ctx` fields
   (`internal.h`), not arena text, because the retry decision runs AFTER
-  `job_cleanup`'s `arena_free` on the failed attempt — `overflow_why`
+  `job_cleanup`'s `pcrec_arena_free` on the failed attempt — `overflow_why`
   (a local, outside the loop) is what carries the failed attempt's own
   diagnosis forward into the next `Ctx`'s seed. `attempt` and `dfa_disabled`
   are `volatile`: `-Wclobbered` (which `make strict` promotes) flags both
@@ -372,7 +372,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   everything wholesale, so nothing leaks and nothing half-built is read again
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts,
   sb_printf — **and, since [EMIT-VERB] (D112, 2026-09-19), THE COMMENT GATE**:
-  `sb_comments` sets a buffer's policy once, `sb_cmt_open`/`sb_cmt_close`
+  `pcrec_sb_comments` sets a buffer's policy once, `sb_cmt_open`/`sb_cmt_close`
   bracket a comment REGION classified ESSENTIAL or NON-ESSENTIAL at the
   emission site, and the mute test lives in `sb_putc`/`sb_puts`/`sb_vprintf`
   — the three primitives every other append in the file is built on, so a
@@ -385,8 +385,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `docs/dev/lanes/emitverb_report.md` §3a.
 
   **and, since [REVW.1] wave 1 (2026-09-18), THE TEXT LAYER**:
-  `sb_text`/`sb_textn`/`sb_field` (the two escape vocabularies), `sb_join` and
-  `sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
+  `sb_text`/`pcrec_sb_textn`/`sb_field` (the two escape vocabularies), `pcrec_sb_join` and
+  `pcrec_sb_row`. D108: they take DATA and produce TEXT, reading no `Ctx`, no walk
   and no machine, so the future IR-consuming back-end calls them unchanged.
 
   **TWO VOCABULARIES, ONE `\xNN` TAIL, AND THEY ARE NOT INTERCHANGEABLE.**
@@ -406,7 +406,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   Before the layer existed the `\xNN` tail was written TWICE
   (`syntax_dump.c`'s `put_text`, `rxt_source.c`'s `put_escaped`) and only
   `--explain` called its own copy, so three dump files escaped nothing.
-  `sb_row` is `sb_join` with `"\t"`, `sb_text` per cell and a newline — the
+  `pcrec_sb_row` is `pcrec_sb_join` with `"\t"`, `sb_text` per cell and a newline — the
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
@@ -438,8 +438,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   So "sized exactly to the result" is enforced at the format call and is
   unobservable at the allocation.
 
-  **[REVW.2] wave 2, EP2 step 10 / lens 1 X8 (2026-09-18) ADDS `sb_upper` AND
-  THE STAMP TRIO.** `const char *sb_upper(Arena *, const char *)` is the
+  **[REVW.2] wave 2, EP2 step 10 / lens 1 X8 (2026-09-18) ADDS `pcrec_sb_upper` AND
+  THE STAMP TRIO.** `const char *pcrec_sb_upper(Arena *, const char *)` is the
   uppercased-prefix derivation — the `<PREFIX>_` macro namespace — which used
   to be `emit_dfa.c`'s `prefix_upper` writing a `char upper[80]` on `GenNames`
   that `emit_vm.c` then `memcpy`d into a second `char up[80]` on `Vm`. One
@@ -496,7 +496,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   convention
   **[SEL-1] adds `PCREC_DFA_OVERFLOW_WHY_LEN`** (96), sizing `Ctx.dfa_
   overflow_why` (internal.h) — a fixed array rather than an arena string,
-  because it has to survive `job_cleanup`'s `arena_free` on the failed
+  because it has to survive `job_cleanup`'s `pcrec_arena_free` on the failed
   attempt compile.c's retry reads it after. K38-precedent margin over the
   76-byte worst-case text src/ir/dfa.c's two overflow sites emit.
   **[LIM-2] N1 adds `PCREC_MAX_AUTO_DFA_ELEMS`** (30,000,000; `limits.def`,

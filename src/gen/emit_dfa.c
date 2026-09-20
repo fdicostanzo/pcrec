@@ -683,7 +683,7 @@ static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    const char *q = sb_fragfv(&cx->arena, fmt, ap);
+    const char *q = pcrec_sb_fragfv(&cx->arena, fmt, ap);
     va_end(ap);
     return q;
 }
@@ -6681,9 +6681,9 @@ void pcrec_gen_names(Ctx *cx, GenNames *g)
      * per-byte toupper is exact; no replacement pass is needed the way
      * emit_header's include-guard computation needs one (that one also has
      * to survive an ARBITRARY guard namespace collision, this one does not).
-     * [REVW.2] wave 2: `sb_upper` is where that per-byte pass lives now, so
+     * [REVW.2] wave 2: `pcrec_sb_upper` is where that per-byte pass lives now, so
      * the VM side shares the derivation instead of copying its result. */
-    g->upper = sb_upper(&cx->arena, cx->opt->prefix);
+    g->upper = pcrec_sb_upper(&cx->arena, cx->opt->prefix);
 }
 
 void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }

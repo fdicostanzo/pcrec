@@ -293,7 +293,7 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
   appended AND a separator written under a different bound from the name, so
   a tight cap produced `"byte, "` with a dangling separator. Both unreachable
   today at 10 bytes into every caller's 128; read that function's comment for
-  why neither bounded join reaches the kit's `sb_join`), and the
+  why neither bounded join reaches the kit's `pcrec_sb_join`), and the
   `$`-to-prefix substitution every backend's text goes through. The table
   carries a row for `utf8` with NO backend on purpose: a name pcrec knows
   but cannot compile must be refused BY ITS OWN NAME (`src/core/compile.c`

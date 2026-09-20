@@ -235,7 +235,7 @@ int main(void)
         else          ok("6: every stamp line carries exactly one newline, at its end, and no TAB");
     }
 
-    sb_free(&SB);
+    pcrec_sb_free(&SB);
     printf(fails ? "\nsb_stamp_check: %d sub-check(s) FAILED\n" : "\nsb_stamp_check: all sub-checks passed (%d failures)\n", fails);
     return fails ? 1 : 0;
 }

@@ -171,7 +171,7 @@ static bool module_listed(const char *list, const char *name)
  * THE DEFECT IS LATENT, NOT LIVE, AND THAT IS WHY THIS IS ONE KEYWORD AND NOT
  * A MECHANISM. Measured 2026-09-18: `--features all` renders 179 bytes into a
  * 512-byte buffer (35%), so the branch has never been taken. The kit's
- * `sb_join` (src/core/sb.c) cannot truncate at all and is the better answer —
+ * `pcrec_sb_join` (src/core/sb.c) cannot truncate at all and is the better answer —
  * but it needs a `StrBuf`, i.e. a heap allocation, and this function's sibling
  * `pcrec_enc_names` (src/enc/enc.c) sits on `pcrec_compile`'s own refusal
  * path, where a failed realloc has no error channel and would `abort()` the

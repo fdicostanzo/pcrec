@@ -1862,7 +1862,7 @@ int main(int argc, char **argv)
         if (pcrec_rxt_decode_escaped(pattern, &esc, &dec, emsg,
                                      sizeof emsg) != 0) {
             cli_err("--pattern-esc: %s", emsg);
-            arena_free(&esc);
+            pcrec_arena_free(&esc);
             return 1;
         }
         pattern = dec;
@@ -1873,7 +1873,7 @@ int main(int argc, char **argv)
     if (!to_stdout) {
         size_t len = strlen(outpath);
         hpath = malloc(len + 3);
-        if (!hpath) { perror("malloc"); arena_free(&esc); return 1; }
+        if (!hpath) { perror("malloc"); pcrec_arena_free(&esc); return 1; }
         strcpy(hpath, outpath);
         if (len > 2 && !strcmp(hpath + len - 2, ".c")) strcpy(hpath + len - 2, ".h");
         else strcat(hpath, ".h");
@@ -1885,7 +1885,7 @@ int main(int argc, char **argv)
     if (pcrec_compile(pattern, &opt, &out, &err) != 0) {
         cli_err("%s (pattern offset %zu)", err.msg, err.pos);
         free(hpath);
-        arena_free(&esc);
+        pcrec_arena_free(&esc);
         return 1;
     }
 
@@ -1903,6 +1903,6 @@ int main(int argc, char **argv)
     }
     pcrec_output_free(&out);
     free(hpath);
-    arena_free(&esc);
+    pcrec_arena_free(&esc);
     return rc;
 }

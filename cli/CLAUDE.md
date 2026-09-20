@@ -28,7 +28,7 @@ one that looks like a bug.
 **[DD-8] (2026-09-19):** `--emit-ir`'s OUTPUT FORMAT is now
 `docs/spec/table_contract.md` TSV — every table a named `#section` with its
 own column header, the PROGRAM body included, rendered through the [REVW.1]
-wave-1 emission kit's `sb_row` (D106 + addenda, D108). `docs/spec/
+wave-1 emission kit's `pcrec_sb_row` (D106 + addenda, D108). `docs/spec/
 ir_listing.md` is the format's contract: sections, columns, the `prefilter`
 value vocabulary, what is and is not promised. Column WIDTH is not a
 contract. Nothing about the flag's SHAPE changed — still a query, still no

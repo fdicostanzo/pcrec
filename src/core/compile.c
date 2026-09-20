@@ -239,12 +239,12 @@ static void job_cleanup(Ctx *cx)
          * it stopped. */
         free(cx->job->adfa.st);
         free(cx->job->adfa.tab);
-        sb_free(&cx->job->csb);
-        sb_free(&cx->job->hsb);
-        sb_free(&cx->job->vmsb);
-        sb_free(&cx->job->irsb);
-        sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
-        sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
+        pcrec_sb_free(&cx->job->csb);
+        pcrec_sb_free(&cx->job->hsb);
+        pcrec_sb_free(&cx->job->vmsb);
+        pcrec_sb_free(&cx->job->irsb);
+        pcrec_sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
+        pcrec_sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
         /* [M4.7b/K7] Strings already TAKEN from the buffers above but not yet
          * published to the caller. They exist for a window of three statements
          * at the end of compile_driver, and now that an allocation failure in
@@ -256,7 +256,7 @@ static void job_cleanup(Ctx *cx)
         free(cx->job);
         cx->job = NULL;
     }
-    arena_free(&cx->arena);
+    pcrec_arena_free(&cx->arena);
 }
 
 /* [ENG-ABS] THE OPTIONAL MATCH-HERE MACHINE (docs/design/anchored_match_
@@ -634,7 +634,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis
      * forward, because `job_cleanup` (called before the retry's `Ctx` is
-     * built) already ran `arena_free` on the attempt that discovered it —
+     * built) already ran `pcrec_arena_free` on the attempt that discovered it —
      * the retry's `Ctx.dfa_overflow_why` has to be SEEDED from a copy that
      * survived, not read off the dead one. `volatile` on both scalars that
      * cross a `setjmp`/`longjmp` boundary here (`attempt` too, in the loop
@@ -679,7 +679,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
     /* [ART-SIZE] The size term's own cross-attempt state, carried exactly the
      * way `overflow_why` is and for exactly the same reason: `job_cleanup`
-     * has already run `arena_free` on the attempt that produced these numbers,
+     * has already run `pcrec_arena_free` on the attempt that produced these numbers,
      * so a later attempt cannot read them off the dead one. Scalars that cross
      * the `setjmp`/`longjmp` boundary are `volatile` (`-Wclobbered`, which
      * `make strict` promotes, flags them otherwise); the arrays are not, since
@@ -828,10 +828,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             {
                 const bool cmt = pcrec_axis_on(defo.flags, PCREC_NO_COMMENTS,
                                                PCREC_FORCE_COMMENTS);
-                sb_comments(&cx.job->csb, cmt);
-                sb_comments(&cx.job->hsb, cmt);
-                sb_comments(&cx.job->vmsb, cmt);
-                sb_comments(&cx.job->scr_test, cmt);
+                pcrec_sb_comments(&cx.job->csb, cmt);
+                pcrec_sb_comments(&cx.job->hsb, cmt);
+                pcrec_sb_comments(&cx.job->vmsb, cmt);
+                pcrec_sb_comments(&cx.job->scr_test, cmt);
             }
         }
         if (!cx.job || !out || !pattern) {
@@ -1885,9 +1885,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                             "slower per-byte scan dispatch, measured ~1.27x "
                             "on scan-bound subjects "
                             "(docs/dev/opt3_dfa_scan_measurement.md)");
-        cx.job->out_c  = sb_take(&cx.job->csb);
-        cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
-        cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
+        cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
+        cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
+        cx.job->out_ir = ir_out ? pcrec_sb_take(&cx.job->irsb) : NULL;
         out->c_src = cx.job->out_c;   cx.job->out_c  = NULL;
         out->h_src = cx.job->out_h;   cx.job->out_h  = NULL;
         if (ir_out) { *ir_out = cx.job->out_ir; cx.job->out_ir = NULL; }

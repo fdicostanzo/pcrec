@@ -41,8 +41,8 @@ under D45's gen-timeout budgets), and no check in this tier may read the
 
 - **sat_arith_check.c** / **run_core_tests.sh** — [REVW.U L5-R2] THE
   SATURATING-ARITHMETIC AGREEMENT: `mrl_sat_add`/`mrl_sat_mul`
-  (`src/opt/mrl.c`), `vm_fadd`/`vm_fmul` (`src/gen/emit_vm.c`) and
-  `cg_sat_add`/`cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
+  (`src/opt/mrl.c`), `vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+  `cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) must agree — the tree
   states the requirement twice in prose (`src/opt/CLAUDE.md`'s `mrl.c`
   entry, `emit_vm.c`'s own comment above `vm_fadd`) and, until this check,
   enforced it nowhere. Checked for CROSS-FAMILY EQUALITY over the

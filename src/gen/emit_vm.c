@@ -751,13 +751,13 @@ static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
 }
 
 /* Arena-owned formatted text for a role string — the compile's arena taken
- * from `v`, which is the only thing this adapter adds over `sb_fragfv`.
+ * from `v`, which is the only thing this adapter adds over `pcrec_sb_fragfv`.
  *
  * [REVW.2] WAVE 2 STAGE 3: this used to format into a `char buf[160]` and
  * TRUNCATE (`if (sz > sizeof buf) sz = sizeof buf;`), which
  * `lens10_emission_kit_charter.md` names as the one fragment builder in the
  * file that was already the primitive and already truncating anyway. It is
- * now `sb_fragfv`, so truncation is impossible by construction.
+ * now `pcrec_sb_fragfv`, so truncation is impossible by construction.
  *
  * THAT REMOVAL COULD HAVE MOVED A BYTE AND IS MEASURED NOT TO. Before the
  * edit, a probe printed `n` at every call over the whole corpus compiled at
@@ -768,7 +768,7 @@ static void vm_ev(Vm *v, VEKind k, int a, int b, const char *role)
  * long enough to truncate would now come out LONGER than before, which is a
  * byte move and a deliberate one; there is no such role today.
  *
- * ALSO GONE: the `n < 0` NULL return. `sb_fragfv` aborts there, matching
+ * ALSO GONE: the `n < 0` NULL return. `pcrec_sb_fragfv` aborts there, matching
  * `sb_printf`'s own policy — a negative `vsnprintf` return is an encoding
  * fault in a format string this file wrote itself, not something a pattern
  * can provoke, and the one caller that tests a role for emptiness
@@ -780,7 +780,7 @@ static const char *vm_rolef(Vm *v, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    const char *q = sb_fragfv(&v->cx->arena, fmt, ap);
+    const char *q = pcrec_sb_fragfv(&v->cx->arena, fmt, ap);
     va_end(ap);
     return q;
 }
@@ -3219,7 +3219,7 @@ long long vm_fadd(long long a, long long b)
 
 /* Its multiplying sibling, for the per-replica constant `k * minw(body)`.
  * [REVW.U L5-R2] not `static`, same reason as vm_fadd above. */
-long long vm_fmul(long long a, long long b)
+long long pcrec_vm_fmul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a > PCREC_MINW_MAX / b) return PCREC_MINW_MAX;
@@ -5322,7 +5322,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
      * slack at the first copy for the ambiguity to survive. Found by
      * measuring the exemplar rather than by reading the code. */
     const long long F   = v->fmin;
-    const long long res = optional ? 0 : vm_fmul(count % K, bw);
+    const long long res = optional ? 0 : pcrec_vm_fmul(count % K, bw);
     const long long TF  = vm_fadd(F, res);
     const int trip = vm_label(v);
     const int tail = vm_label(v);
@@ -5379,7 +5379,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             {
                 const char *sd = v->fdyn;
                 v->fdyn = dyn ? dyn : v->fdyn;
-                vm_mrl_test(v, "scan_position", dyn ? F : vm_fadd(vm_fmul(K, bw), TF), -1,
+                vm_mrl_test(v, "scan_position", dyn ? F : vm_fadd(pcrec_vm_fmul(K, bw), TF), -1,
                             dyn ? "MRL: the mandatory iterations still owed "
                                   "(counter-derived) plus the follow do not fit"
                                 : "MRL: this trip's K mandatory iterations, the "
@@ -5395,7 +5395,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
              * to run after this one; within an OPTIONAL trip none is, so the
              * body inherits the loop's own follow. */
             const long long cf = optional ? F
-                                          : vm_fadd(vm_fmul(K - 1 - i, bw), TF);
+                                          : vm_fadd(pcrec_vm_fmul(K - 1 - i, bw), TF);
             if (!optional) {
                 /* Copy `i` is followed by `count - slot_values[ctr] - (i+1)` further
                  * MANDATORY iterations -- across the rest of this trip, every
@@ -5472,11 +5472,11 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             int nx = vm_label(v);
             /* Mandatory replicated copies: the frames rung's own arithmetic,
              * at a smaller count. */
-            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(residue - i, bw), F),
+            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(residue - i, bw), F),
                                  -1, "MRL: mandatory residue copies plus the "
                                      "follow do not fit");
             vm_emit_f(v, at, a->l, nx,
-                      vm_fadd(vm_fmul(residue - i - 1, bw), F));
+                      vm_fadd(pcrec_vm_fmul(residue - i - 1, bw), F));
             cur = nx;
         }
         vm_lbl(v, cur, "counter residue complete");
@@ -5628,10 +5628,10 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
     } else {
         for (int i = 0; i < m; i++) {
             int nx = vm_label(v);
-            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(m - i, bw), F), -1,
+            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(m - i, bw), F), -1,
                                  "MRL: mandatory copies left plus the follow "
                                  "do not fit");
-            vm_emit_f(v, at, a->l, nx, vm_fadd(vm_fmul(m - i - 1, bw), F));
+            vm_emit_f(v, at, a->l, nx, vm_fadd(pcrec_vm_fmul(m - i - 1, bw), F));
             cur = nx;
         }
     }
@@ -5914,11 +5914,11 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
         cur = body0;
         for (int i = 0; i < a->u.rep.rmin; i++) {
             int nx = vm_label(v);
-            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(a->u.rep.rmin - i, bw), F),
+            int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
                                  -1, "MRL: mandatory copies left plus the "
                                      "follow do not fit");
             vm_emit_f(v, at, a->l,  nx,
-                      vm_fadd(vm_fmul(a->u.rep.rmin - i - 1, bw), F));
+                      vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
             cur = nx;
         }
         if (a->u.rep.rmax >= 0) vm_poss_chain(v, cur, a->l, a->u.rep.rmax - a->u.rep.rmin, next,
@@ -5940,11 +5940,11 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * rung takes an EXIT instead, because every other copy is optional. */
     for (int i = 0; i < a->u.rep.rmin; i++) {
         int nx = vm_label(v);
-        int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(a->u.rep.rmin - i, bw), F),
+        int at = vm_mrl_gate(v, cur, vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i, bw), F),
                              -1, "MRL: mandatory copies left plus the follow "
                                  "do not fit");
         vm_emit_f(v, at, a->l, nx,
-                  vm_fadd(vm_fmul(a->u.rep.rmin - i - 1, bw), F));
+                  vm_fadd(pcrec_vm_fmul(a->u.rep.rmin - i - 1, bw), F));
         cur = nx;
     }
 
@@ -8361,7 +8361,7 @@ typedef struct {
  * `docs/spec/ir_listing.md` is the section-and-column contract;
  * `docs/spec/table_contract.md` is the TSV contract it conforms to.
  *
- * THE ROWS GO THROUGH THE KIT ([REVW.1] wave 1's `sb_row`), and that is what
+ * THE ROWS GO THROUGH THE KIT ([REVW.1] wave 1's `pcrec_sb_row`), and that is what
  * buys the two properties a hand-rolled producer kept having to re-earn: the
  * FIELD COUNT is a countable argument at the call site (the contract's own
  * integrity rule), and the framing escape is a property of the primitive --
@@ -8395,7 +8395,7 @@ typedef struct {
  * `rungs`/`strategies` sections, built from the same events.
  *
  * ARENA-OWNED, and that is forced by the format rather than chosen: a TSV
- * CELL is a `const char *` handed to `sb_row` ALONGSIDE ITS SIBLINGS, so a
+ * CELL is a `const char *` handed to `pcrec_sb_row` ALONGSIDE ITS SIBLINGS, so a
  * cell may not be built in a shared scratch buffer the next cell of the same
  * row would clobber. `vm_rolef` is this file's arena sprintf and the arena
  * chains blocks rather than reallocating, so the accumulated `s` stays valid
@@ -8419,7 +8419,7 @@ static const char *vm_mask_names(Vm *v, unsigned mask, const unsigned *bits,
 }
 
 /* One section announcement and its header, which is `#` IMMEDIATELY followed
- * by the column names (contract rule 3) -- i.e. `sb_row` with a `#` in front,
+ * by the column names (contract rule 3) -- i.e. `pcrec_sb_row` with a `#` in front,
  * so the names are TAB-joined and framed by the same primitive that writes
  * the rows and a column name that could not be a field cannot be declared as
  * one. The leading blank line is the separator; the contract's own readers
@@ -8428,7 +8428,7 @@ static void vm_sec(StrBuf *o, const char *name,
                    const char *const *cols, size_t ncol)
 {
     sb_printf(o, "\n#section %s\n#", name);
-    sb_row(o, cols, ncol);
+    pcrec_sb_row(o, cols, ncol);
 }
 
 /* The three-cell row, which is six of the nine sections' shape (`summary`'s
@@ -8439,7 +8439,7 @@ static void vm_sec(StrBuf *o, const char *name,
 static void vm_row3(StrBuf *o, const char *a, const char *b, const char *c)
 {
     const char *cells[3] = { a, b, c };
-    sb_row(o, cells, 3);
+    pcrec_sb_row(o, cells, 3);
 }
 
 /* THE SLOTS SECTION's row, and the `family` column is the point of the
@@ -8454,7 +8454,7 @@ static void vm_listing_slot_row(StrBuf *o, const char *family,
                                 const char *note)
 {
     const char *cells[4] = { family, slot, holds, note };
-    sb_row(o, cells, 4);
+    pcrec_sb_row(o, cells, 4);
 }
 
 /* A whole single-index slot family. An EMPTY family still emits ONE row --
@@ -8515,7 +8515,7 @@ static void vm_prow(StrBuf *o, const char *label, const char *op,
                     const char *args, const char *target, const char *note)
 {
     const char *cells[5] = { label, op, args, target, note };
-    sb_row(o, cells, 5);
+    pcrec_sb_row(o, cells, 5);
 }
 
 /* Renders `--emit-ir`'s VM program listing into `o` — a DIFFERENT stream
@@ -8601,7 +8601,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
          * line-oriented frame can carry goes out as `\xNN`. Pre-framed into
          * the Job-owned scratch because `cx->pat` is bytes-plus-length and not
          * a C string; running `sb_text` over the result a second time (inside
-         * `sb_row`) is a no-op BY CONSTRUCTION, since its output contains no
+         * `pcrec_sb_row`) is a no-op BY CONSTRUCTION, since its output contains no
          * byte `sb_text` escapes.
          *
          * A HIGH BYTE NOW PASSES THROUGH RAW where the old listing spelled it
@@ -8610,7 +8610,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
          * the six registry dumps already carry. */
         StrBuf *pat = &cx->job->scr_desc;
         pat->len = 0; if (pat->p) pat->p[0] = 0;
-        sb_textn(pat, cx->pat, cx->patlen);
+        pcrec_sb_textn(pat, cx->pat, cx->patlen);
         vm_row3(o, "pattern", pat->p ? pat->p : "", NULL);
     }
     vm_row3(o, "engine", "vm",
@@ -8962,7 +8962,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             vm_prow(o, vm_rolef(v, "L%d", e->a), "label", NULL, NULL, e->role);
             break;
         case VE_CLASS: {
-            /* Job-owned scratch (see Job.scr_desc): the `sb_row` into `o`
+            /* Job-owned scratch (see Job.scr_desc): the `pcrec_sb_row` into `o`
              * below can longjmp on a ladder trial's abort while this text is
              * live, and a local's buffer would be orphaned. The `summary`
              * section's pattern cell uses the same buffer and is long
@@ -9095,7 +9095,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             if (v->ev[i].k != VE_CALLOUT) continue;
             const char *row[2] = { vm_rolef(v, "L%d", v->ev[i].a),
                                    v->ev[i].role };
-            sb_row(o, row, 2);
+            pcrec_sb_row(o, row, 2);
         }
         if (ncallout == 0) {
             const char *cells[2] = {
@@ -9103,7 +9103,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                 "none: module 'callouts' has no producer, so no pattern can"
                 " reach a call site -- engine_m4.md S9.1"
             };
-            sb_row(o, cells, 2);
+            pcrec_sb_row(o, cells, 2);
         }
     }
 }
@@ -9611,7 +9611,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [REVW.2] wave 2: ONE derivation, pointed at twice. This was a `memcpy`
      * of `g.upper`'s 80 bytes into `v`'s own 80-byte copy, the last fixed
      * scratch buffer in either emitter outside the encoding seam; both are
-     * now `sb_upper`'s arena text, which outlives the emission that reads
+     * now `pcrec_sb_upper`'s arena text, which outlives the emission that reads
      * it. Every one of `v.up`'s readers is a `%s` or a `const char *`
      * parameter and none of them changed. */
     v.up = g.upper;

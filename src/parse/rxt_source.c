@@ -3087,7 +3087,7 @@ void pcrec_rxt_source_free(RxtSource *src)
      * set bounds at the number of distinct files. */
     for (size_t i = 0; i < src->nkids; i++) pcrec_rxt_source_free(src->kids[i]);
     free(src->kids);
-    arena_free(&src->arena);
+    pcrec_arena_free(&src->arena);
     free(src);
 }
 
@@ -3306,7 +3306,7 @@ static const char *lib_chain_text(Arena *a, const char *own,
     sb_puts(&sb, "the source's own directory");
     for (size_t i = 0; i < ndirs; i++) sb_printf(&sb, ", '%s'", dirs[i]);
     if (!ndirs) sb_puts(&sb, " (no --lib-path)");
-    char *heap = sb_take(&sb);
+    char *heap = pcrec_sb_take(&sb);
     size_t n = strlen(heap) + 1;
     char *out = arena_alloc(a, n);
     memcpy(out, heap, n);
@@ -4052,5 +4052,5 @@ char *pcrec_rxt_source_tsv(const RxtSource *src)
         }
     }
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

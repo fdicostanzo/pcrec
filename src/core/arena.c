@@ -32,7 +32,7 @@ void *arena_alloc(Arena *a, size_t sz)
     return p;
 }
 
-void arena_free(Arena *a)
+void pcrec_arena_free(Arena *a)
 {
     ABlock *b = a->head;
     while (b) {

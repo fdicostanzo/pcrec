@@ -41,7 +41,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   is EMITTED (`PCREC_FEATURE_MODULES`). LATENT rather than live (measured:
   179 bytes of a 512-byte buffer at `--features all`); the function's own
   comment carries the measurement and the reason it is one keyword rather
-  than the kit's `sb_join`
+  than the kit's `pcrec_sb_join`
 - **parse.c** — **[M4.5b]: the capturing-`(` hook now also builds the AST's
   capture node.** `p_group_body`'s existing hook is the one place that knows
   "is this `(` a capturing group", so `Ctx.ncap++`, the group NUMBER and the

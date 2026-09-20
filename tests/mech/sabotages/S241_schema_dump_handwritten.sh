@@ -37,7 +37,7 @@ SAB_COUNT=1
 SAB_REACH='"$PCREC" --list-schema | awk -F"\t" "\$1 == \"block\" && \$2 == \"name\" { print \$6 }"'
 SAB_REACH_EXPECT='at-most-one'
 # [REVW.1 wave 1, 2026-09-18] RE-AIMED. The dump's row emission moved from
-# one `sb_printf` with a ten-conversion format to the text layer's `sb_row`
+# one `sb_printf` with a ten-conversion format to the text layer's `pcrec_sb_row`
 # over a named cell array (src/core/sb.c), so the anchor's quoted text no
 # longer exists. RE-DERIVED from the live source, NOT weakened: the plant is
 # the same one column on the same one row, spelled against the cell array

@@ -824,7 +824,7 @@ finding.** Three things to know before adding a stamp:
    says so at its own site.
 
 **AND THE UPPERCASED PREFIX IS ONE DERIVATION.** `prefix_upper` is gone;
-`sb_upper(&cx->arena, cx->opt->prefix)` is called once, in `pcrec_gen_names`.
+`pcrec_sb_upper(&cx->arena, cx->opt->prefix)` is called once, in `pcrec_gen_names`.
 `GenNames.upper` and `Vm.up` are both `const char *` into that one arena
 string — they used to be a `char[80]` and a `memcpy` of it into a second
 `char[80]`. Every reader (a `%s` argument or a `const char *` parameter) is
@@ -1067,7 +1067,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
   **[REVW.2 wave 2 STAGE 3, lane w2b, 2026-09-18] THE FIXED SCRATCH BUFFERS
   ARE GONE FROM BOTH EMITTERS.** lens 10's item 1 landed as `sb_fragf` /
-  `sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
+  `pcrec_sb_fragfv` (`src/core/sb.c`, and see `src/core/CLAUDE.md` for the
   primitive itself): arena-owned formatted text sized exactly to the result,
   so truncation is impossible BY CONSTRUCTION rather than by a per-site size
   argument. Each emitter reaches it through a three-line adapter that supplies
@@ -1106,7 +1106,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 - **[DD-8] `--emit-ir` IS TABLE-CONTRACT TSV** (2026-09-19, D106 + its three
   addenda, D108). `vm_render_listing` renders nine named `#section` blocks,
   each with its own `#` column header and the PROGRAM body among them
-  (`label|op|args|target|note`), through the wave-1 kit's `sb_row`.
+  (`label|op|args|target|note`), through the wave-1 kit's `pcrec_sb_row`.
   `docs/spec/ir_listing.md` is the format's contract — read it before
   changing anything this function prints. Four things about the code:
   `vm_sec`/`vm_row3`/`vm_listing_slot_row`/`vm_prow` are the section and row

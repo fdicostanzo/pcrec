@@ -243,7 +243,7 @@ static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_
 
 /* ---- one TSV row -------------------------------------------------------- */
 
-/* ONE ROW, through the text layer's `sb_row` (src/core/sb.c): twelve cells a
+/* ONE ROW, through the text layer's `pcrec_sb_row` (src/core/sb.c): twelve cells a
  * reader can count against this dump's header, each escaped so a control byte
  * in an `applies` sentence cannot split the record. `order` is the only cell
  * that is not already text; `char[16]` holds every `int` and is not the
@@ -260,7 +260,7 @@ static void axis_row(StrBuf *sb, const char *axis, int order,
     const char *cells[] = { axis, ord, candidate, kind,
                             stamp_macro, stamp_value, deny_macro, deny_bit,
                             force_macro, force_bit, cli_flag, applies };
-    sb_row(sb, cells, sizeof cells / sizeof *cells);
+    pcrec_sb_row(sb, cells, sizeof cells / sizeof *cells);
 }
 
 /* ---- "list"/"both" axes: walked off the LIVE candidate arrays ---------- */
@@ -774,5 +774,5 @@ char *pcrec_axes_tsv(void)
 
     emit_predicate_axes(&sb);
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

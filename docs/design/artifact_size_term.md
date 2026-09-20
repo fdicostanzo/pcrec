@@ -52,7 +52,7 @@ tension that kicks in at some size."*
    existing retry loop** — the shape [SEL-1] built a day earlier and the one
    `internal.h:1469` prescribes — which is why R1 needs no trial flag (a
    trial's `ctx_fail` is discarded at the one recovery point, the only place
-   that can), R2's arena question dissolves (`job_cleanup` `arena_free`s per
+   that can), R2's arena question dissolves (`job_cleanup` `pcrec_arena_free`s per
    attempt) and R3's hazard cannot arise (each attempt re-parses). What remains
    is the EARLY ABORT (§2.2c — the ladder's worst rung on a nested tower is
    MULTIPLES of the answer's size: 3.1 MB to select a 98,916-byte artifact on
@@ -256,7 +256,7 @@ reason: `compile.c`'s `for (volatile int attempt = 0; attempt < COMPILE_MAX_
 ATTEMPTS; attempt++)` calls `setjmp` INSIDE the loop, re-entered fresh each
 iteration, carrying state across attempts in `volatile` locals and a survived
 copy (`overflow_why`, copied out precisely because `job_cleanup` has already
-`arena_free`d the dead attempt).
+`pcrec_arena_free`d the dead attempt).
 
 **So the ladder is ATTEMPTS in that loop**, and three things follow:
 
@@ -269,7 +269,7 @@ copy (`overflow_why`, copied out precisely because `job_cleanup` has already
   *"report as a RESULT the existing fixpoint consumes … a ONE-SHOT RETRY of the
   whole pipeline rather than a second recovery point"*.
 - **R2's arena question dissolves** (§2.2c): `job_cleanup` ends in
-  `arena_free` and runs on every retry path, so trials share nothing.
+  `pcrec_arena_free` and runs on every retry path, so trials share nothing.
 - **R3's hazard cannot arise** (§2.2d): each attempt re-parses, so the AST an
   emitter run annotates is a fresh one.
 

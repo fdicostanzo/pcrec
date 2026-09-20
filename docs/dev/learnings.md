@@ -158,7 +158,7 @@ distilled forms:
   abort" fix by peak RSS (92 → 45 MB) and closed it; the union battery's
   `make san` then found the same fix leaking 2 × 256 B — the abort's
   `longjmp` now left the VM emission from inside, past two function-local
-  `StrBuf`s' `sb_free`. Peak RSS measured what the fix was FOR; LeakSanitizer
+  `StrBuf`s' `pcrec_sb_free`. Peak RSS measured what the fix was FOR; LeakSanitizer
   measured what it COST, and only the sanitizer axis sees the second. A
   panel closes a finding on the property it checked; the battery runs after
   every merge because the axes it carries are not the ones a critic can

@@ -241,7 +241,7 @@ int main(void)
             if (want != c) ascii_tied++;
         }
     }
-    arena_free(&ar);
+    pcrec_arena_free(&ar);
 
     /* The MEASURED shape, asserted so a check agreeing over an EMPTY relation
      * cannot read as a pass — the byte check's own rule, one encoding over. */

@@ -2082,8 +2082,8 @@ that `setjmp` already stated the reasoning gcc's `-Wclobbered` heuristic
 apparently can't see through: *"`body`, `sb` and `cx` are declared above
 the `setjmp` and mutated only through their escaped addresses;
 `rows_shown`/`dissents` are mutated after it and are deliberately not read
-here [i.e. on the longjmp path]"* — the `if (setjmp(cx.jb)) { sb_free(&body);
-sb_free(&sb); arena_free(&cx.arena); if (ndissent) *ndissent = 0; return
+here [i.e. on the longjmp path]"* — the `if (setjmp(cx.jb)) { pcrec_sb_free(&body);
+pcrec_sb_free(&sb); pcrec_arena_free(&cx.arena); if (ndissent) *ndissent = 0; return
 NULL; }` branch returns unconditionally without ever reading `rows_shown`
 or `dissents`, so whatever clobbered value either holds on that path is
 never observed — the manager verified the handler touches only `body`,
@@ -4322,8 +4322,8 @@ single feature directory** (R0.3) — NOT a generic `tests/unit/`; every
 pre-existing unit check stays where it is. `make test-core` (part of
 `make test`) carries the tier's first new instance: `sat_arith_check.c`,
 the saturating-arithmetic agreement between `mrl_sat_add`/`mrl_sat_mul`
-(`src/opt/mrl.c`), `vm_fadd`/`vm_fmul` (`src/gen/emit_vm.c`) and
-`cg_sat_add`/`cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
+(`src/opt/mrl.c`), `vm_fadd`/`pcrec_vm_fmul` (`src/gen/emit_vm.c`) and
+`cg_sat_add`/`pcrec_cg_sat_mul` (`src/opt/callgraph.c`) — a requirement the tree
 stated twice in prose and enforced nowhere. The six functions are no
 longer `static` (declared in `core/internal.h` beside `pcrec_minw`) so the
 check can call the shipped functions directly; no behaviour change, no

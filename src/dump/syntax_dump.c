@@ -123,7 +123,7 @@ static void put_mask(StrBuf *sb, unsigned mask, const MaskName *t, size_t n)
     size_t k = 0;
     for (size_t i = 0; i < n && k < sizeof sel / sizeof *sel; i++)
         if (mask & t[i].bit) sel[k++] = t[i].name;
-    sb_join(sb, "|", sel, k);
+    pcrec_sb_join(sb, "|", sel, k);
 }
 
 static const char *kind_name(RegKind k)
@@ -321,7 +321,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
             sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--list-definitions` — [DD-11.2], the FIFTH registry surface (D85,
@@ -442,7 +442,7 @@ char *pcrec_definitions_tsv(unsigned flavours)
             }
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--list-verbs`. Q1 added fifty verb NAMES that no dump could show: they are
@@ -499,7 +499,7 @@ char *pcrec_syntax_verbs(void)
             sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* ---- `--list-families`: THE INDEX LAYER (D71 item 3) ---------------------
@@ -603,14 +603,14 @@ char *pcrec_syntax_families(void)
             sb_putc(&sb, '\t');
             sb_printf(&sb, "%d", nmem);                 sb_putc(&sb, '\t');
             {
-                char *m = sb_take(&mem);
+                char *m = pcrec_sb_take(&mem);
                 sb_puts(&sb, m);
                 free(m);
             }
             sb_putc(&sb, '\n');
         }
     }
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }
 
 /* `--explain` lives at the END of this file since MOD-0.7: it is the shared
@@ -775,7 +775,7 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
  * (ext.c's UNBUILT macro comment already gives the reason: a second column
  * would have to be kept in sync with the ports by hand, the D24 two-homes
  * shape this whole registry exists to prevent). The isolated-`Ctx` shape
- * (memset, own `setjmp`, `pcrec_parse_mods_init`, `arena_free` on every
+ * (memset, own `setjmp`, `pcrec_parse_mods_init`, `pcrec_arena_free` on every
  * exit) is `pcrec_probe_ask`'s, ordered the same way for the same reason:
  * the guard is placed before any automatic object this function reads
  * AFTER a possible longjmp is live, so `-Wclobbered` stays silent.
@@ -821,7 +821,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
          * producing or refusing — neither half of D65(3)'s vocabulary, so
          * this is a registry defect for tests/registry/registry_check.c to
          * fail on, never a status this dump may assert. */
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         /* [M6.4.2] A NON-DOORWAY ROW RAISES INSTEAD OF RETURNING, and for it a
          * raise is the ORDINARY unbuilt answer rather than a defect: the
          * doorway arm below classifies on a RETURNED `ExtResult`, while the
@@ -883,7 +883,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
         Ast *root = pcrec_parse(&cx);
         PcrecBuiltStatus st = pcrec_ast_stamped_by(root, r) ? PCREC_BUILT_YES
                                                             : PCREC_BUILT_DEFECT;
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return st;
     }
 
@@ -924,13 +924,13 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
     if (r->flags & RF_LEXICAL) {
         Ast *root = pcrec_parse(&cx);
         (void)root;
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return PCREC_BUILT_YES;
     }
 
     Doorway d;
     if (!doorway_route(r->syntax, cx.patlen, &d)) {
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         return PCREC_BUILT_DEFECT;
     }
     ExtResult res = doorway_call(&cx, &d, WANT_RESULT);
@@ -965,7 +965,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
         result = PCREC_BUILT_NO;
     else
         result = PCREC_BUILT_DEFECT;
-    arena_free(&cx.arena);
+    pcrec_arena_free(&cx.arena);
     return result;
 }
 
@@ -1093,7 +1093,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
     pcrec_default_options(&probe_opt);
     cx.opt = &probe_opt;
     if (setjmp(cx.jb)) {
-        arena_free(&cx.arena);      /* a raising port allocated, then left */
+        pcrec_arena_free(&cx.arena);      /* a raising port allocated, then left */
         return NULL;
     }
     /* [M6.2 wave A] A doorway call can reach module `modifiers`' producing
@@ -1139,8 +1139,8 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
      * was the one that did not, which R20's critic noted while reading the
      * crash — the guard above makes the omission a leak on two paths instead
      * of one, so both are closed here. */
-    arena_free(&cx.arena);
-    return sb_take(&sb);
+    pcrec_arena_free(&cx.arena);
+    return pcrec_sb_take(&sb);
 }
 
 /* ---- `--explain QUERY` (SR-3; REWRITTEN at MOD-0.7) ---------------------
@@ -1228,7 +1228,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * lines to count rows, and a header key must not add one.
  *
  * CONTROL BYTES IN A VALUE ARE ESCAPED (R20/MOD07-8). Every value that can
- * carry bytes from the QUERY goes through `sb_text`/`sb_textn` (core/sb.c,
+ * carry bytes from the QUERY goes through `sb_text`/`pcrec_sb_textn` (core/sb.c,
  * the text layer's FRAME escape), which renders anything
  * below 0x20 and 0x7f as `\xHH`. Without it the grammar had no escaping at
  * all, and a query containing a newline injected a synthetic header line that
@@ -1518,7 +1518,7 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
 
     /* the NAME is query text; escaped for the same reason (R20/MOD07-8) */
     sb_puts(sb, "\nverb name ");
-    sb_textn(sb, query + nstart, namelen);
+    pcrec_sb_textn(sb, query + nstart, namelen);
     sb_putc(sb, '\n');
     sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
@@ -1602,9 +1602,9 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      * F1, manager triage 2026-08-13) is the setjmp/longjmp clobber contract
      * for exactly this invariant, not a threading concern. */
     if (setjmp(cx.jb)) {
-        sb_free(&body);
-        sb_free(&sb);
-        arena_free(&cx.arena);
+        pcrec_sb_free(&body);
+        pcrec_sb_free(&sb);
+        pcrec_arena_free(&cx.arena);
         if (ndissent) *ndissent = 0;
         return NULL;
     }
@@ -1774,15 +1774,15 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
     }
 
     if (!rows_shown && !q.routed) {
-        sb_free(&body);
-        arena_free(&cx.arena);
+        pcrec_sb_free(&body);
+        pcrec_arena_free(&cx.arena);
         if (ndissent) *ndissent = 0;
         return NULL;      /* not doorway territory and no row looks like it */
     }
 
     /* the two ECHOES of query text, escaped (R20/MOD07-8) */
     sb_puts(&sb, "query          ");
-    sb_textn(&sb, query, qlen);
+    pcrec_sb_textn(&sb, query, qlen);
     sb_putc(&sb, '\n');
     if (q.routed) {
         sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
@@ -1793,7 +1793,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
         else {
             char selb = (char)q.d.sel;
             sb_puts(&sb, "  selector '");
-            sb_textn(&sb, &selb, 1);
+            pcrec_sb_textn(&sb, &selb, 1);
             sb_putc(&sb, '\'');
         }
         sb_putc(&sb, '\n');
@@ -1814,13 +1814,13 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
     if (q.routed && q.d.kind == RK_VERB)
         put_verb_block(&sb, query, &q.d);
     if (rows_shown) {
-        char *b = sb_take(&body);
+        char *b = pcrec_sb_take(&body);
         sb_putc(&sb, '\n');
         sb_puts(&sb, b);
         free(b);
     }
-    sb_free(&body);
-    arena_free(&cx.arena);
+    pcrec_sb_free(&body);
+    pcrec_arena_free(&cx.arena);
     if (ndissent) *ndissent = dissents;
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

@@ -72,7 +72,7 @@
  * DFA-cap-overflow reason `pcrec_select_engine`'s `forces_dfa_overflow`
  * row reports as `RX_ENGINE_WHY` on an `--engine=auto` compile that
  * retried after its DFA build overflowed. A plain array on `Ctx`, not an
- * arena string: it must survive `job_cleanup`'s `arena_free`, since
+ * arena string: it must survive `job_cleanup`'s `pcrec_arena_free`, since
  * `compile.c`'s retry decision reads it AFTER the failed attempt's arena
  * is gone. Sized for the longer of the two "pattern too complex"
  * ctx_fail sites' own texts (src/ir/dfa.c) — "dfa overflowed: subset

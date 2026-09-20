@@ -142,7 +142,7 @@ char *pcrec_rxt_schema_tsv(void)
                                 pcrec_rxt_row_source_name(r->source),
                                 pcrec_rxt_validated_by_name(r->validated_by),
                                 wave };
-        sb_row(&sb, cells, sizeof cells / sizeof *cells);
+        pcrec_sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
     sb_puts(&sb,
@@ -159,7 +159,7 @@ char *pcrec_rxt_schema_tsv(void)
     for (size_t i = 0; i < sizeof g_surface / sizeof *g_surface; i++) {
         const char *cells[] = { g_surface[i].surface, g_surface[i].scope,
                                 g_surface[i].kind, g_surface[i].reason };
-        sb_row(&sb, cells, sizeof cells / sizeof *cells);
+        pcrec_sb_row(&sb, cells, sizeof cells / sizeof *cells);
     }
 
     /* THE COMPILE-TIME ROW TOTAL, printed LAST and as a comment so it is
@@ -183,5 +183,5 @@ char *pcrec_rxt_schema_tsv(void)
      * the control-sharing-a-source shape one number over. */
     sb_printf(&sb, "# wave-reserved: %d\n", PCREC_RXT_WAVE_RESERVED);
 
-    return sb_take(&sb);
+    return pcrec_sb_take(&sb);
 }

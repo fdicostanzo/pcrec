@@ -149,6 +149,6 @@ int main(void)
     }
 
     printf(bad ? "cpset model check: FAILED\n" : "cpset model check: PASS (%d trials x %d ops + 7 edge cases)\n", TRIALS, OPS);
-    arena_free(&cx.arena);
+    pcrec_arena_free(&cx.arena);
     return bad;
 }

@@ -47,7 +47,7 @@ void pcrec_enc_names(char *buf, size_t cap)
      * [REVW.1] wave 1, L10-2: ONE OVER-LONG POLICY, AN ORDERED PREFIX, THE
      * SAME ONE `render_modules` (src/parse/enabled.c) STATES — read that
      * function's comment for the measurement and for why neither of the two
-     * bounded joins in this tree reaches the kit's `sb_join`. This loop had
+     * bounded joins in this tree reaches the kit's `pcrec_sb_join`. This loop had
      * TWO ways to lie rather than one: a name that did not fit was skipped
      * while LATER ones were still appended, and the separator was written
      * under a DIFFERENT bound from the name, so a cap between the two glued

@@ -438,7 +438,7 @@ long long cg_sat_add(long long a, long long b)
     return r >= CG_EXP_INF ? CG_EXP_INF : r;
 }
 
-long long cg_sat_mul(long long a, long long b)
+long long pcrec_cg_sat_mul(long long a, long long b)
 {
     if (a <= 0 || b <= 0) return 0;
     if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
@@ -500,7 +500,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
             for (int j = 0; j < n; j++) {
                 if (j == i || !cg->site[(size_t)i * nn + (size_t)j]) continue;
                 if (!cg->splice[j]) continue;
-                e = cg_sat_add(e, cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
+                e = cg_sat_add(e, pcrec_cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
                                              cg->exp[j] - 1));
             }
             cg->exp[i]    = e;
@@ -526,7 +526,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long total = 0;
         for (int i = 0; i < n; i++)
             if (cg->splice[i])
-                total = cg_sat_add(total, cg_sat_mul(lex[i], cg->exp[i] - 1));
+                total = cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1));
         if (total <= PCREC_MAX_SPLICE_TOTAL) break;
         /* Drop the largest contributor; ties by descending target number, so
          * the rule is a function of the pattern and nothing else. */
@@ -534,7 +534,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         long long worstc = -1;
         for (int i = 0; i < n; i++) {
             if (!cg->splice[i]) continue;
-            long long c = cg_sat_mul(lex[i], cg->exp[i] - 1);
+            long long c = pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1);
             if (c >= worstc) { worstc = c; worst = i; }
         }
         if (worst < 0) break;      /* nothing left to drop; unreachable */

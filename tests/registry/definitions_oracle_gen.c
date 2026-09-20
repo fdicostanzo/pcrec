@@ -333,7 +333,7 @@ static void textfn_cells(const RegRow *r, const RegDef *d,
         Ast *out = d->textfn(op, strlen(op), &cx);
         int byte = textfn_byte(out);
 
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         free(cx.job);
 
         if (byte < 0) {
@@ -414,7 +414,7 @@ static void one_state(const RegRow *r, bool multiline, bool nocap)
     if (setjmp(cx.jb) != 0) {
         fprintf(stderr, "FAIL: %s: seed pattern '%s' failed to parse "
                 "(harness defect, not a real finding)\n", r->syntax, seed);
-        arena_free(&cx.arena);
+        pcrec_arena_free(&cx.arena);
         free(cx.job);
         return;
     }
@@ -457,7 +457,7 @@ static void one_state(const RegRow *r, bool multiline, bool nocap)
         emit(a, b, "-", desc);
     }
 
-    arena_free(&cx.arena);
+    pcrec_arena_free(&cx.arena);
     free(cx.job);
 }
 

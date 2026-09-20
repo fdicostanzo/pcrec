@@ -19,7 +19,7 @@ static void sb_grow(StrBuf *sb, size_t need)
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;
     /* [M4.7b/K7] realloc into a TEMPORARY: on failure the old buffer is still
-     * live and still owned by `sb`, so the error path's sb_free reclaims it.
+     * live and still owned by `sb`, so the error path's pcrec_sb_free reclaims it.
      * Assigning the NULL straight into sb->p would leak it and lose the only
      * pointer to it. */
     char *np = realloc(sb->p, cap);
@@ -32,8 +32,8 @@ static void sb_grow(StrBuf *sb, size_t need)
 }
 
 /* [EMIT-VERB] (D112) THE COMMENT GATE, at the three primitives every other
- * append in this file is built on (`sb_text`, `sb_field`, `sb_row`,
- * `sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
+ * append in this file is built on (`sb_text`, `sb_field`, `pcrec_sb_row`,
+ * `pcrec_sb_join`, the three `sb_stamp*`) — so a helper added later inherits the
  * gate instead of having to remember it. Inside a muted region an append is
  * a no-op: `len` does not advance, so the size term's `abort_over` and the
  * caps see exactly the bytes the artifact will carry.
@@ -43,7 +43,7 @@ static void sb_grow(StrBuf *sb, size_t need)
  * comment or repair a line — the failure mode a post-hoc strip would have. */
 static inline bool sb_muted(const StrBuf *sb) { return sb->cmt_mute_depth != 0; }
 
-void sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
+void pcrec_sb_comments(StrBuf *sb, bool on) { sb->cmt_drop = !on; }
 
 size_t sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; }
 
@@ -85,7 +85,7 @@ void sb_puts(StrBuf *sb, const char *s)
 }
 
 /* `sb_printf`'s body, reached through a `va_list` so an ADAPTER that already
- * holds one can append formatted text — `sb_fragfv`'s own reason, one
+ * holds one can append formatted text — `pcrec_sb_fragfv`'s own reason, one
  * destination over. Measure, grow, format: the two `vsnprintf` calls read the
  * SAME arguments through their own `va_copy`, because a `va_list` is consumed
  * by the traversal that measures it. File-static on purpose: no caller outside
@@ -128,7 +128,7 @@ void sb_printf(StrBuf *sb, const char *fmt, ...)
     va_end(ap);
 }
 
-char *sb_take(StrBuf *sb)
+char *pcrec_sb_take(StrBuf *sb)
 {
     char *p = sb->p ? sb->p : strdup("");
     if (!p) {
@@ -140,7 +140,7 @@ char *sb_take(StrBuf *sb)
     return p;
 }
 
-void sb_free(StrBuf *sb)
+void pcrec_sb_free(StrBuf *sb)
 {
     free(sb->p);
     sb->p = NULL;
@@ -168,7 +168,7 @@ static void sb_frame_byte(StrBuf *sb, unsigned char c)
     else                       sb_putc(sb, (char)c);
 }
 
-void sb_textn(StrBuf *sb, const char *s, size_t n)
+void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n)
 {
     if (!s) return;
     for (size_t i = 0; i < n; i++) sb_frame_byte(sb, (unsigned char)s[i]);
@@ -177,7 +177,7 @@ void sb_textn(StrBuf *sb, const char *s, size_t n)
 void sb_text(StrBuf *sb, const char *s)
 {
     if (!s) return;
-    sb_textn(sb, s, strlen(s));
+    pcrec_sb_textn(sb, s, strlen(s));
 }
 
 void sb_field(StrBuf *sb, const char *s)
@@ -196,7 +196,7 @@ void sb_field(StrBuf *sb, const char *s)
     }
 }
 
-void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
+void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
 {
     for (size_t i = 0; i < n; i++) {
         if (i) sb_puts(sb, sep);
@@ -204,7 +204,7 @@ void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n)
     }
 }
 
-void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
+void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
 {
     for (size_t i = 0; i < ncell; i++) {
         if (i) sb_putc(sb, '\t');
@@ -228,7 +228,7 @@ void sb_row(StrBuf *sb, const char *const *cells, size_t ncell)
  * `n < 0` aborts, matching `sb_printf`: a negative `vsnprintf` return is an
  * encoding error in a format string this tree wrote itself, not a condition a
  * pattern can provoke, so there is no diagnosis to route. */
-const char *sb_fragfv(Arena *a, const char *fmt, va_list ap)
+const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap)
 {
     va_list ap2;
     va_copy(ap2, ap);
@@ -247,7 +247,7 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    const char *out = sb_fragfv(a, fmt, ap);
+    const char *out = pcrec_sb_fragfv(a, fmt, ap);
     va_end(ap);
     return out;
 }
@@ -308,7 +308,7 @@ void sb_stamp_str(StrBuf *c, const char *upper, const char *name,
  * uppercase would be a behaviour change smuggled inside a refactor. If this
  * tree ever wants ASCII-only folding here, that is its own change with its
  * own byte-identity argument. */
-const char *sb_upper(Arena *a, const char *s)
+const char *pcrec_sb_upper(Arena *a, const char *s)
 {
     size_t n = strlen(s);
     char *out = arena_alloc(a, n + 1);

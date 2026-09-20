@@ -42,8 +42,8 @@
  * property of ALL integers this guard is NOT redundant (feed it
  * `a = 3*CAP, b = -2.5*CAP` and cg returns CAP while the plain add-then-
  * clamp form returns CAP/2) — but every real call site
- * (`src/opt/callgraph.c`'s `cg_sat_add(e, cg_sat_mul(...))` and
- * `cg_sat_add(total, cg_sat_mul(lex[i], cg->exp[i] - 1))`) only ever
+ * (`src/opt/callgraph.c`'s `cg_sat_add(e, pcrec_cg_sat_mul(...))` and
+ * `cg_sat_add(total, pcrec_cg_sat_mul(lex[i], cg->exp[i] - 1))`) only ever
  * passes NON-NEGATIVE operands (node counts and saturated sub-results),
  * matching mrl's and vm's own usage identically. So the cross-family
  * agreement check below is run over NON-NEGATIVE operands, which is the
@@ -214,8 +214,8 @@ int main(void)
                 long long a = NN[i], b = NN[j];
                 if (a == 0 || b == 0) continue;   /* CHECK 6 owns the guard */
                 long long m = mrl_sat_mul(a, b);
-                long long v = vm_fmul(a, b);
-                long long c = cg_sat_mul(a, b);
+                long long v = pcrec_vm_fmul(a, b);
+                long long c = pcrec_cg_sat_mul(a, b);
                 pairs++;
                 if (m != v || v != c) {
                     if (mism == 0) {
@@ -226,10 +226,10 @@ int main(void)
                 }
             }
         if (mism != 0)
-            bad("mul: mrl_sat_mul/vm_fmul/cg_sat_mul DISAGREE at (%lld, %lld): %lld / %lld / %lld",
+            bad("mul: mrl_sat_mul/pcrec_vm_fmul/pcrec_cg_sat_mul DISAGREE at (%lld, %lld): %lld / %lld / %lld",
                 first_a, first_b, first_m, first_v, first_c);
         else
-            ok("mul: mrl_sat_mul == vm_fmul == cg_sat_mul on all %lld positive pairs",
+            ok("mul: mrl_sat_mul == pcrec_vm_fmul == pcrec_cg_sat_mul on all %lld positive pairs",
                pairs);
     }
 
@@ -250,7 +250,7 @@ int main(void)
                 if (ra_v > CAP || ra_v < 0) viol_add++;
                 if (ra_c > CAP || ra_c < 0) viol_add++;
                 if (a > 0 && b > 0) {
-                    long long rm_m = mrl_sat_mul(a, b), rm_v = vm_fmul(a, b), rm_c = cg_sat_mul(a, b);
+                    long long rm_m = mrl_sat_mul(a, b), rm_v = pcrec_vm_fmul(a, b), rm_c = pcrec_cg_sat_mul(a, b);
                     if (rm_m > CAP || rm_m < 0) viol_mul++;
                     if (rm_v > CAP || rm_v < 0) viol_mul++;
                     if (rm_c > CAP || rm_c < 0) viol_mul++;
@@ -300,8 +300,8 @@ int main(void)
             long long k = NN[i];
             if (k < 1) continue;
             if (mrl_sat_mul(CAP, k) != CAP) viol++;
-            if (vm_fmul(CAP, k) != CAP) viol++;
-            if (cg_sat_mul(CAP, k) != CAP) viol++;
+            if (pcrec_vm_fmul(CAP, k) != CAP) viol++;
+            if (pcrec_cg_sat_mul(CAP, k) != CAP) viol++;
         }
         if (viol) bad("absorbing: sat_*(CAP, x) != CAP, %lld time(s)", viol);
         else ok("absorbing: sat_add(CAP, b) == CAP and sat_mul(CAP, k) == CAP over the non-negative grid, all three families");
@@ -319,12 +319,12 @@ int main(void)
                 long long a = NEG[i], b = NN[j];
                 checked += 2;
                 if (mrl_sat_mul(a, b) != 0) viol++;
-                if (vm_fmul(a, b) != 0) viol++;
-                if (cg_sat_mul(a, b) != 0) viol++;
+                if (pcrec_vm_fmul(a, b) != 0) viol++;
+                if (pcrec_cg_sat_mul(a, b) != 0) viol++;
                 checked++;
                 if (mrl_sat_mul(b, a) != 0) viol++;
-                if (vm_fmul(b, a) != 0) viol++;
-                if (cg_sat_mul(b, a) != 0) viol++;
+                if (pcrec_vm_fmul(b, a) != 0) viol++;
+                if (pcrec_cg_sat_mul(b, a) != 0) viol++;
                 checked++;
             }
         if (viol) bad("mul domain guard: a <= 0 || b <= 0 did not answer 0, %lld time(s) of %lld checked", viol, checked);

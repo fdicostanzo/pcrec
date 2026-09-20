@@ -220,6 +220,6 @@ this format exists for.
 
 - **2026-09-19, [DD-8]**: first version. The listing adopted
   `table_contract.md` as machine-first TSV (D106 + its three addenda, D108),
-  rendered through the [REVW.1] wave-1 emission kit's `sb_row`. Before this
+  rendered through the [REVW.1] wave-1 emission kit's `pcrec_sb_row`. Before this
   it was a `;`-commented, column-aligned human listing whose consumers
   parsed it by remembered shape.

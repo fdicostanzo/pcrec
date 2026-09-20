@@ -46,7 +46,7 @@ typedef struct ABlock {
 typedef struct { ABlock *head; Ctx *cx; } Arena;
 
 void *arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
-void  arena_free(Arena *a);
+void  pcrec_arena_free(Arena *a);
 
 /* ---- growable string buffer (codegen output) ---- */
 
@@ -118,7 +118,7 @@ typedef enum { PCREC_CMT_ESSENTIAL = 0, PCREC_CMT_NONESSENTIAL = 1 } PcrecCmtCla
 /* Set the buffer's comment POLICY. Called once per artifact buffer; a buffer
  * nobody calls it on emits every comment, which is what every non-artifact
  * StrBuf in this tree wants. */
-void sb_comments(StrBuf *sb, bool on);
+void pcrec_sb_comments(StrBuf *sb, bool on);
 
 /* Open / close a comment REGION. Every byte appended between them is comment
  * text, and a NON-ESSENTIAL region's bytes are discarded when the policy says
@@ -133,7 +133,7 @@ void sb_cmt_close(StrBuf *sb);
  * byte a muted region discarded. THE ONE READER RULE: any decision or stamp
  * that compares an emitted LENGTH against a threshold uses this, never `len`,
  * so the comment axis cannot move it. `len` stays the truth about what was
- * written and is what `sb_take`, the caps' own comment-excluded scan and
+ * written and is what `pcrec_sb_take`, the caps' own comment-excluded scan and
  * every consumer of the finished text read. */
 size_t sb_len_uncut(const StrBuf *sb);
 
@@ -146,8 +146,8 @@ void  sb_putc(StrBuf *sb, char c);
 void  sb_puts(StrBuf *sb, const char *s);
 void  sb_printf(StrBuf *sb, const char *fmt, ...)
       __attribute__((format(printf, 2, 3)));
-char *sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
-void  sb_free(StrBuf *sb);
+char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
+void  pcrec_sb_free(StrBuf *sb);
 
 /* ---- THE TEXT LAYER ([REVW.1] wave 1; D108) -----------------------------
  *
@@ -176,21 +176,21 @@ void  sb_free(StrBuf *sb);
  * `--list-families` carry a raw backslash, so sb_field at a registry dump is
  * a contract break and not insurance. */
 void sb_text (StrBuf *sb, const char *s);              /* NUL-terminated */
-void sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
+void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
 void sb_field(StrBuf *sb, const char *s);
 
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
  * joins that could do all three. A NULL name contributes nothing but still
  * takes its separator, so the join's shape reports the array's. */
-void sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
+void pcrec_sb_join(StrBuf *sb, const char *sep, const char *const *names, size_t n);
 
 /* One TSV record: `ncell` fields through sb_text, TAB-joined, newline-
  * terminated. The COUNT is the point — a row emitted with a different number
  * of fields than its header declares is the defect the table contract's own
  * integrity rule (consumer rule 3) exists to catch, and a cell array a reader
  * can count is what makes it checkable at the call site. */
-void sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
+void pcrec_sb_row(StrBuf *sb, const char *const *cells, size_t ncell);
 
 /* ---- THE FRAGMENT ([REVW.2] wave 2 stage 3; lens 10 item 1; D108) -------
  *
@@ -231,7 +231,7 @@ const char *sb_fragf(Arena *a, const char *fmt, ...)
  * to reach the primitive and is forced back onto the fixed buffer this pair
  * exists to retire. `sb_fragf` is a two-line wrapper over it, so there is one
  * implementation and not two. The caller still owns `ap` and must `va_end` it. */
-const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
+const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
 
 /* The same storage, for the one DERIVED SPELLING this tree needs more than
  * once: `s` uppercased. It is the artifact's `-p` prefix in the macro
@@ -246,7 +246,7 @@ const char *sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * `<prefix>_<suffix>` joiner, and the joiner is NOT built: `sb_fragf(a,
  * "%s_%s", p, s)` already is it, at every site, with no name to learn. Only
  * the CASE TRANSFORM is a derivation somebody could get differently. */
-const char *sb_upper(Arena *a, const char *s);
+const char *pcrec_sb_upper(Arena *a, const char *s);
 
 /* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
  *
@@ -2598,7 +2598,7 @@ struct Ctx {
      * "pattern too complex" `ctx_fail` sites in src/ir/dfa.c, immediately
      * before the `longjmp` — plain fields on `Ctx` rather than arena text,
      * because the retry decision runs in `compile_driver` AFTER
-     * `job_cleanup`'s `arena_free` has already run on the failed attempt.
+     * `job_cleanup`'s `pcrec_arena_free` has already run on the failed attempt.
      * `dfa_disabled` is the retry's own INPUT, seeded true only on the
      * second (and last) pass compile_driver runs after an eligible
      * overflow: `forces_dfa_overflow` treats it exactly like a VM_ONLY
@@ -5687,7 +5687,7 @@ long long mrl_sat_mul(long long a, long long b);     /* src/opt/mrl.c */
 
 long long cg_sat_add(long long a, long long b);      /* src/opt/callgraph.c */
 
-long long cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
+long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.c */
 
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
  * because the emitter's own accumulator has to hold the same ceiling the
@@ -5788,7 +5788,7 @@ void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job
 
 long long vm_fadd(long long a, long long b);         /* src/gen/emit_vm.c */
 
-long long vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
+long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c */
 
 /* "This node's maximum width has no static bound" — an unbounded quantifier,
  * a backreference, or any arithmetic that ran off the top.
@@ -5833,7 +5833,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root);              /* src/gen/emit_vm.c */
  * unchanged" table). */
 typedef struct {
     const char *searchfn, *matchfn, *matchcapsfn, *infoname;
-    const char *upper;      /* the prefix uppercased — sb_upper, arena-owned */
+    const char *upper;      /* the prefix uppercased — pcrec_sb_upper, arena-owned */
 } GenNames;
 
 void pcrec_gen_names(Ctx *cx, GenNames *g);

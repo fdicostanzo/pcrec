@@ -233,7 +233,7 @@ static Ast *parse_one(const char *pat, bool caseless, int encoding,
 
 static void release(Ctx *cx)
 {
-    arena_free(&cx->arena);
+    pcrec_arena_free(&cx->arena);
     free(cx->job);
 }
 

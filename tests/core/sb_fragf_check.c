@@ -196,7 +196,7 @@ int main(void)
         else                     ok("6: %s/%d/%%/%lld/%c in one format agree with snprintf");
     }
 
-    arena_free(&AR);
+    pcrec_arena_free(&AR);
     printf(fails ? "\nsb_fragf_check: %d sub-check(s) FAILED\n" : "\nsb_fragf_check: all sub-checks passed (%d failures)\n", fails);
     return fails ? 1 : 0;
 }
