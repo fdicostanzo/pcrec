@@ -109,7 +109,7 @@ static const NamedFeatureSet g_named_sets[] = {
  * THIS default pinned regardless of future boundaries passes --features
  * std1. The next advance (std2, when a module graduates) changes this
  * constant and nothing else. */
-const char *const PCREC_DEFAULT_FEATURES = "std1";
+const char *const pcrec_default_features = "std1";
 
 /* [M6.4.2] RK_QUANTSUFFIX joins the list, and it MATTERS here rather than
  * being cosmetic: this array is what `find_module_bits` and `render_modules`

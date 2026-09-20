@@ -289,7 +289,7 @@ per-module-not-blanket rule the `--features` CLI surface already pins.)
 differential, and it turned out to already be satisfied: no new code
 needed.** `tests/fuzz/fuzz.py` passes no `--features` flag at all, so every
 compile it runs (the fixed-seed gate below, and the at-scale campaign) goes
-through the bare-invocation default — `PCREC_DEFAULT_FEATURES` (D37/STD1b,
+through the bare-invocation default — `pcrec_default_features` (D37/STD1b,
 `src/parse/enabled.c`), currently `"std1"` = `{classes, modifiers}`. That IS
 open-gate, not closed-gate: both modules with real producers and PC-3
 differential coverage are already ON for the whole fuzzer, not merely

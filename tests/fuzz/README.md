@@ -121,7 +121,7 @@ found: the differential-gate principle's OPEN half was satisfied (see
 docs/testing.md), but its FOCUSED half was VACUOUS for this generator —
 measured, not assumed.** fuzz.py passes no `--features` flag, so every
 compile in this file (gate slice and at-scale campaign alike) resolves
-through `PCREC_DEFAULT_FEATURES` = `"std1"` = `{classes, modifiers}`
+through `pcrec_default_features` = `"std1"` = `{classes, modifiers}`
 (D37/STD1b) — the gate is genuinely open. But at the time of the original
 75,000-pattern campaign, `CLASS_ATOMS` was drawn only from base-tier
 bracket-class forms already accepted with NO module enabled

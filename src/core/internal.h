@@ -4720,7 +4720,7 @@ const char *pcrec_enabled_set_modules(void);
  * resolves to a named value from --features' own vocabulary. Stays "none"
  * through [STD1] phase A on purpose — see enabled.c's own comment on this
  * constant before changing it. */
-extern const char *const PCREC_DEFAULT_FEATURES;
+extern const char *const pcrec_default_features;
 
 /* ---- [DD-13b.W23.1] the `.rxt` format's SCHEMA (src/parse/rxt_schema.c)
  *

@@ -517,7 +517,7 @@ int main(int argc, char **argv)
 
     /* the fallback for a block with no `features` line: exactly what the CLI
      * installs when no --features flag is given (D37's mapping point). */
-    const char *deflt = PCREC_DEFAULT_FEATURES;
+    const char *deflt = pcrec_default_features;
 
     for (int i = 1; i < argc; i++) do_file(argv[i], deflt);
 

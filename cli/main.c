@@ -1186,7 +1186,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char ferr[256];
         const char *fspec = t->features ? t->features
                           : (cli->features ? cli->features
-                                           : PCREC_DEFAULT_FEATURES);
+                                           : pcrec_default_features);
         if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
             cli_err("%s:%zu: features: %s%s",
                     cli->source, t->block_line, ferr,
@@ -1439,7 +1439,7 @@ int main(int argc, char **argv)
      * (check07 holds that verdict-equivalence half for the rest).
      *
      * D37 (docs/dev/decisions.md): an explicit --features ALWAYS wins; a
-     * bare invocation resolves through PCREC_DEFAULT_FEATURES instead of
+     * bare invocation resolves through pcrec_default_features instead of
      * skipping this call — that constant is the one bare-default mapping
      * point — "std1" since [STD1b], advancing only at announced version
      * boundaries (--features none is the verbatim old bare behaviour;
@@ -1449,7 +1449,7 @@ int main(int argc, char **argv)
      * report for a bare invocation. */
     {
         char ferr[256];
-        const char *fspec = features ? features : PCREC_DEFAULT_FEATURES;
+        const char *fspec = features ? features : pcrec_default_features;
         if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
             cli_err("--features: %s", ferr);
             return 1;

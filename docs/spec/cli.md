@@ -321,7 +321,7 @@ Comma-separated module names, a frozen named set (`std1`), `all`, or
 `none` (`cli_parse`'s `--features` arm takes the value; `main` installs it
 through `pcrec_enabled_set_spec` before anything consults the gate — composes with every mode, not just a
 compile). An explicit `--features` always wins over the bare default;
-a bare invocation resolves through `PCREC_DEFAULT_FEATURES`, which is
+a bare invocation resolves through `pcrec_default_features`, which is
 `std1` today (D37, `src/parse/enabled.c:80-85`). `std1` = {`classes`,
 `modifiers`} — the frozen set's contents never change after it ships;
 `--features std1` compiles identically forever, and `--features none` is

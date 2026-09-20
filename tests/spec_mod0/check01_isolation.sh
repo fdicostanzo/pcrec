@@ -33,9 +33,9 @@
 # APERTURE, STD1c re-arm (docs/dev/std1_check_rearm.md, 2026-08-13). D37's
 # frozen named sets (`std1`) and the bare-default mapping point added new
 # process-wide enabled-set machinery: `nm` over the merged build showed
-# PCREC_DEFAULT_FEATURES was NOT caught by the pre-STD1c ENABLED_RE (it has
+# pcrec_default_features was NOT caught by the pre-STD1c ENABLED_RE (it has
 # no "enabled" substring — the naming convention it follows is
-# "PCREC_DEFAULT_FEATURES", not "*_enabled_*"). Widened below. Both discovery
+# "pcrec_default_features", not "*_enabled_*"). Widened below. Both discovery
 # populations (the symbol count, the TU count) are now floored in floors.txt
 # — a ratchet against the aperture silently narrowing again, since an empty
 # discovery reads identically to a real pass otherwise (the same vacuity this
@@ -45,7 +45,7 @@
 # and rebuild — that object gains the symbol in its undefined list and this
 # check names the object and the symbol. That is the whole test, and it is
 # exactly the sabotage the invariant names. (Validated 2026-08-13 against
-# PCREC_DEFAULT_FEATURES specifically, in a scratch reference planted in
+# pcrec_default_features specifically, in a scratch reference planted in
 # scans.c — see the STD1c re-arm report for the exact command and failing
 # output.) A SECOND sabotage, added at STD1c: narrow ENABLED_RE to match none
 # of the real symbols — the vacuity guard below must still fire
@@ -81,7 +81,7 @@ fi
 # Naming conventions, in one place. Widened deliberately: a false positive here
 # costs a look, a false negative costs the whole check.
 #
-# ENABLED_RE gained `PCREC_DEFAULT_FEATURES` at STD1c (2026-08-13): D37's
+# ENABLED_RE gained `pcrec_default_features` at STD1c (2026-08-13): D37's
 # bare-default mapping point does not carry an "enabled"/"gate" substring, so
 # the pre-STD1c pattern below did not catch it even though it is exactly the
 # kind of process-wide enabled-set state this check exists to isolate
@@ -90,7 +90,7 @@ fi
 # `pcrec_default_options` (core/compile.c, an unrelated options struct) and
 # `pcrec_recognise_tail_default` (registry.c, a recogniser — matching it
 # here would be exactly backwards).
-ENABLED_RE='enabled_set|enabled_features|feature_enabled|pcrec_enabled|g_enabled|PCREC_DEFAULT_FEATURES'
+ENABLED_RE='enabled_set|enabled_features|feature_enabled|pcrec_enabled|g_enabled|pcrec_default_features'
 RECOG_RE='recognis|recogniz|extent_scan|scan_extent|_extent$'
 
 echo "  archive: $ARCHIVE"

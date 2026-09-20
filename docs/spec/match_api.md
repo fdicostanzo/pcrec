@@ -3534,7 +3534,14 @@ non-NULL) — verified directly: an unterminated group `"a(b"` returns
 struct field name, never a bare CLI flag spelling — with the one stated
 exception §1 records: the per-artifact `PCREC_FEATURE_SET` /
 `PCREC_FEATURE_MODULES` stamps, which carry the `PCREC_*` spelling
-without living in `lib/pcrec.h`. `PCRE2_*` spellings
+without living in `lib/pcrec.h`. **That list is exhaustive again as of
+[REVW.5]**, and it was short by one for as long as it has existed: the
+exported data symbol `PCREC_DEFAULT_FEATURES` (`src/parse/enabled.c`,
+D37's bare-default mapping point) carried the `PCREC_*` spelling, lived
+outside `lib/pcrec.h`, and was named by nothing here (lens 9's P5). It is
+`pcrec_default_features` now — a lower-case data symbol, which is what the
+rule already says an internal export should be (D104) — so the exception
+list needs no second entry rather than gaining one. `PCRE2_*` spellings
 are reserved for a future PCRE2-compatibility layer and are never native.
 
 ---

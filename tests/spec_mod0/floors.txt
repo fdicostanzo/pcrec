@@ -18,10 +18,10 @@
 # --- invariant 1: enabled-set isolation ---------------------------------
 # Measured 2026-08-13 (STD1c re-arm): `nm --defined-only` over
 # build/libpcrec.a discovers 9 enabled-set symbols (g_enabled_features,
-# g_enabled_label, g_enabled_modules, PCREC_DEFAULT_FEATURES,
+# g_enabled_label, g_enabled_modules, pcrec_default_features,
 # pcrec_enabled_mask, pcrec_enabled_set_label, pcrec_enabled_set_modules,
 # pcrec_enabled_set_spec, pcrec_feature_enabled — the last of these 9 is the
-# widened ENABLED_RE's catch: PCREC_DEFAULT_FEATURES, D37's bare-default
+# widened ENABLED_RE's catch: pcrec_default_features, D37's bare-default
 # mapping point, was invisible to the pre-STD1c aperture) and 4 recogniser/
 # extent-scan TUs (mod_modifiers.o, mod_uprops.o, registry.o, scans.o).
 isolation.enabled_symbols            9

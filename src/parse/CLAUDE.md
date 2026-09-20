@@ -24,7 +24,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   — `std1` = {classes, modifiers}, FROZEN forever once shipped, expanded
   through the same `find_module_bits` registry lookup an explicit list
   already used (factored out so there is exactly one name->bits lookup).
-  `PCREC_DEFAULT_FEATURES` is D37's bare-default MAPPING POINT — the one
+  `pcrec_default_features` is D37's bare-default MAPPING POINT — the one
   place "no --features flag" resolves to a named vocabulary value; it stays
   `"none"` through phase A on purpose (see its own comment before touching
   it — the flip to `"std1"` is a deliberately separate later commit that
