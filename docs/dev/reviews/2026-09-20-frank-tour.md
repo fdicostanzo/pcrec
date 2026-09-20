@@ -52,3 +52,29 @@ is what actually shortens the file.
 **Proof:** `scripts/emit_sweep.py --ref <branch point>` byte-identical on all
 five streams (as every wave 2 step); anchors 285/285 re-aimed per row; not an
 abi event. Tier: opus (engine code).
+
+## [TOUR-2] src/gen/emit_vm.c — vm_cost's accumulation is written out by field, twice
+
+**Observation (Frank, walking vm_cost):** the concatenation arm's cost
+additions "could be fn(c, r|h)".
+
+**As it stands (11ff5f51, vm_cost at 2298-2635):** `A_CAT` writes the same
+six-line field-by-field accumulate block twice (the spine loop over `t->r`,
+then the head `t`); `A_ALT` writes the same six lines with max in place of
+plus, `1 +` on frames. `struct Cost` (2006) has no combining helper.
+
+**Agreed shape:** `static void cost_add(Cost *acc, Cost r)` (frames/trail/
+pf/pt summed, unbounded/growable OR-ed) — the `A_CAT` arm becomes one call
+per spine element and one for the head; its sibling `cost_max(Cost *acc,
+Cost r)` (field-wise max, OR-ed flags) with the `1 +` on frames left visible
+at the `A_ALT` call site, so the two arms read as SUM versus ONE-PLUS-MAX,
+which is the semantic difference the field arithmetic buries. Adjacent, same
+lane: the `A_ALT` arm's inline flatten of the left-nested chain into a branch
+array duplicates the walk `vm_alt` does at emission — one shared flatten
+helper, if the two walks prove identical.
+
+**Proof:** byte-neutral by construction; `scripts/emit_sweep.py --ref
+<branch point>` 0 movers on five streams; the per-iteration fields (`pf`/
+`pt`) are what `subject_ceiling` divides from, so the stamped ceilings in the
+size log must not move either (0 movers by column). Tier: sonnet (mechanical
+once the helper is written), or folded into [TOUR-1]'s opus lane.
