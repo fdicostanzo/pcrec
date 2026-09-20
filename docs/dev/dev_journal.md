@@ -24284,3 +24284,45 @@ note + the I-77 battery request (the box is free tonight) → wave 5
 launched from that main (fact sheet merged 8d961dc0; D104 addendum:
 29 renames grouped by blast radius, make test while iterating, one
 battery at close; A1's home = match_api.md §6).
+
+## 2026-09-20 (early morning) — wave 5 gated; THE REFACTOR IS COMPLETE
+
+**I-77 battery at 25b1984f (21:39 → 04:27): green on every stage but
+`axes`** (rc=2: adm71's nullable-decline witness refused under forced
+--engine=dfa and the sweep's REFUSAL_PATTERN for that axis lacked the DFA
+state-cap diagnostic — tuning.md §2.11 already documented it; lane
+axtriage added the one line, positive control 6 → 0 undocumented / 0 → 6
+documented). mech 269 rows: unexpected 0, anomalies 0, undetected 10 (the
+same set by name), unreached 1 (S121). LESSON: `make test-axes` is not in
+the darwin gate; a lane that ADDS a corpus file sweeps it over the forced
+axes itself (BOILERPLATE.md owes the line).
+
+**Wave 5 (lane w5, opus, 15 commits) MERGED 55321f28 + axtriage e2368779
+at 04:4x; darwin gate (test+strict) GREEN 05:14 — 40/40 sections in 30
+min** (104 → 48 → 30 over the day), sole FAIL the nm probe; size log 0
+size_bytes movers (re-counted by column after the manager's first parser
+read the header wrong — its two earlier "0 movers" were vacuous; both
+regenerations re-verified: 0 and 0). Headline: **libpcrec.a exports ZERO
+symbols without a pcrec_ prefix** (34 renamed — D104's 12 → the sheet's
+29 → 34 as the comment gate's primitives joined; ten commits by blast
+radius; six full-corpus sweeps 0 movers on all five streams; anchors
+285/285 after each commit via the repo's own m6read_check_sab_anchors.py
+— the lane's two home-grown extractors under-counted before it found the
+shipped one). Also: the spec sweep (pcrec_options 9 → 19; tuning.md §4
+mirror 14 → 28, exhaustive by its own statement); the union mode
+membership MEASURED AND DECLINED (3 of 4 acceptance flips are --flavour's
+documented use; the motivating asymmetry was false) → rider w5r builds
+--flavour's own applies-to relation; the limits surface (one declaration,
+not eight #defines — D90; two of eleven cited constants were not real);
+pcrec_default_features; [REVW.A1] landed (match_api.md §6 the one abi
+log, D76 addendum). w5's own make test was killed by its own 40-min
+timeout (inconclusive; the gate on main superseded it). FLAGGED FOR
+FRANK: lens 9 §5.1's K9/NUL-termination sentence. **[REVW.5] and
+[REVW.A1] → completed: the 2026-09-17 code-review refactor is DONE**
+(fix-now, waves 1/U/2/3/4/5, A1, plus [EMIT-VERB] as the kit's customer).
+Frank's guided tour is next.
+
+Bench: [B58] re-pin to 25b1984f running on their side (25b1984f stays
+their target — the axes fix is test-side). Next: the I-78 request (the
+wave's battery, which also drives w5's 24 owed solo rows), rider w5r (in
+flight, sonnet), wake.md.
