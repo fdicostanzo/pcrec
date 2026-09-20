@@ -869,7 +869,12 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
  *     `!dfa_disabled` holds and arm 6's ordinary "selected" would be the
  *     WRONG stamp — which is why it is tested up here rather than after it.
  *     internal.h's placement note explains why the VALUE also sits outside
- *     both fallback ranges.
+ *     both fallback ranges. THE THIRD CONJUNCT IS LOAD-BEARING AND WAS
+ *     MISSING FROM THE PROSE THIS TABLE REPLACES: [OPT-4.2]'s block argued
+ *     non-overlap from `collapse_reason` and `dfa_disabled` alone, which
+ *     predates arm 5 and says nothing about `size_drop_rung`. What keeps
+ *     arms 2 and 5 apart is that the drop ladder's rungs are DFA-engine
+ *     (note D) while this field requires a VM-chosen artifact.
  * (C) The `fit->prefilter` conjunct on arm 4 is not belt-and-braces: a
  *     size-cap-refused VM compile can still end with no prefilter (a
  *     backreference or a linked call drops it), and stamping "a prefilter
