@@ -12307,48 +12307,31 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         v->up, v->up, v->up, v->up, v->up, v->p, retry_adv, retry_win, v->p);
 }
 
-/* THE VM EMITTER'S TOP LEVEL: writes the complete VM-engine artifact for
- * `root` into `job->csb` (and, under `--emit-ir`, the listing into
- * `job->irsb` via `vm_render_listing`) — the caps-array `<prefix>_search`/
- * `<prefix>_match*` entries, the resume/trail frame types and their sizing
- * macros, the program body (`vm_emit`'s recursive walk plus its own
- * spliced-call regions), and the artifact's stamps (`RX_ENGINE`,
- * `RX_VM_RUNGS`, etc.). About a third of its body is NON-EMITTING analysis
- * run first and consumed by the emission that follows — the root's
- * minimum width (this comment's own subject, immediately below: read HERE
- * because only this emitter writes a search entry to guard), the cost/slot
- * census (`vm_cost`, `vm_count_slots`), and the frame-buffer sizing surface
- * — never in `src/opt/`, because `Vm` is 364 lines of file-private state
- * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`). Takes
- * `Ast *root`, not `const Ast *`, because it fills `u.call.save`/`nsave` as
- * it discovers the call regions it must save/restore across. */
-void pcrec_emit_vm(Ctx *cx, Ast *root)
+/* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /
+ * `<prefix>_match` / `<prefix>_match_caps` and the `_in` sibling of each,
+ * the caller-buffer variant that binds the caller's own storage.
+ *
+ * Each pair is one shape with two bindings, and the DELEGATION RUNS `_in` ->
+ * UN-SUFFIXED and never the reverse (spec §5.2); `vm_emit_default_entry`
+ * writes the un-suffixed half so the tiered escalation is spelled once for
+ * all three.
+ *
+ * READS the entry rung: `en->fwd_entries` says whether the un-suffixed
+ * entries forward through a NULL descriptor instead of binding a local,
+ * `en->ai` carries the attribute, and `pl->tiered` says whether the
+ * un-suffixed entry is a fast-tier run plus a FRAMES escalation rather than
+ * a plain binder. `pl->frames_sentinel` is the private give-up code those
+ * two anchored entries compare against.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_search_body`, whose
+ * `<prefix>_match_anchored` and `<prefix>_search` every one of these six
+ * delegates into. */
+static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
+                            const VmEntry *en)
 {
+    Ctx *cx = v->cx;
     Job *job = cx->job;
     StrBuf *c = &job->csb;
-    Vm vm;
-    Vm *v = &vm;
-    GenNames g;
-    VmPlan pl;
-    VmEntry en;
-
-    vm_init(v, cx, root, &g);
-    vm_plan(v, root, &pl);
-    vm_plan_entry(v, &pl, &en);
-
-    const long long bt_frames    = pl.caps.bt_frames;
-    const long long trail_frames = pl.caps.trail_frames;
-    const long long ceiling      = pl.caps.ceiling;
-    const long long budget       = pl.caps.budget;
-    const long long work_budget  = pl.caps.work_budget;
-    const bool      has_budget   = pl.caps.has_budget;
-
-    pcrec_emit_prologue(cx, &g, v->ncaps, &pl.bufs);
-    vm_emit_stamps(v, &pl, &en);
-    vm_emit_storage(v, &pl);
-    vm_emit_search_body(v, &g, &pl, &en);
-
-
 
     /* [DD-14.FB] THE TWO SEARCH ENTRIES (spec §10.2/§10.3).
      *
@@ -12382,7 +12365,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * pass. It is EMPTY and not NULL because a NULL descriptor means "use the
      * un-suffixed sibling's own storage", which would call straight back into
      * the entry that is forwarding. */
-    if (en.fwd_entries) {
+    if (en->fwd_entries) {
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
         pcrec_sb_puts(c,
             "/* [CC-DIFF] the frameless forward's descriptor: this artifact\n"
@@ -12394,7 +12377,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             v->p, v->p);
     }
 
-    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "int", g.searchfn,
+    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "int", g->searchfn,
         "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
         "       ptrdiff_t (*capture_spans)[2]",
         "   /* this artifact's stamped default */",
@@ -12421,7 +12404,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v->p, v->p, g.searchfn, v->p, g.searchfn);
+        g->searchfn, v->p, v->p, g->searchfn, v->p, g->searchfn);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -12500,7 +12483,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "%s"
         "    %s_run_state_init(run);\n"
         "    result = %s_match_anchored(ctx, run%s%s);\n",
-        en.ai, g.matchfn, v->p, mguard, v->p, v->p,
+        en->ai, g->matchfn, v->p, mguard, v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -12548,7 +12531,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        en.ai, g.matchcapsfn, v->p, mguard, v->p, v->p,
+        en->ai, g->matchcapsfn, v->p, mguard, v->p, v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
 
@@ -12565,8 +12548,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
      * directly on `<prefix>_match_anchored` and still see the private
      * sentinel (§4.4's three layers). */
-    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "ptrdiff_t", g.matchfn,
-        "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl.frames_sentinel, "ctx");
+    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "ptrdiff_t", g->matchfn,
+        "const rx_ctx *ctx", "", "ctx, &run", "ctx", pl->frames_sentinel, "ctx");
 
     pcrec_sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
@@ -12577,12 +12560,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(ctx, &run);\n"
         "}\n\n",
-        g.matchfn, v->p, v->p, g.matchfn, v->p, g.matchfn);
+        g->matchfn, v->p, v->p, g->matchfn, v->p, g->matchfn);
 
-    vm_emit_default_entry(c, v, pl.tiered, en.fwd_entries, "ptrdiff_t", g.matchcapsfn,
+    vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "ptrdiff_t", g->matchcapsfn,
         "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
         "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
-        pl.frames_sentinel, "ctx, capture_spans_out");
+        pl->frames_sentinel, "ctx, capture_spans_out");
 
     pcrec_sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
@@ -12594,16 +12577,43 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(ctx, capture_spans_out, &run);\n"
         "}\n\n",
-        g.matchcapsfn, v->p, v->p, g.matchcapsfn, v->p, g.matchcapsfn);
+        g->matchcapsfn, v->p, v->p, g->matchcapsfn, v->p, g->matchcapsfn);
+}
+
+/* Closes the artifact: the residual encoding helpers, `rx_info`, an optional
+ * `main()` under `--emit-main`, the `--emit-ir` listing, and the two numbers
+ * the size-term ladder in src/core/compile.c selects this attempt on.
+ *
+ * Everything it writes REPORTS what the phases above decided — `rx_info` and
+ * the listing are handed the same `pl->caps`/`pl->bufs`/`v` the emission was
+ * written from, never a second computation of them, which is what makes the
+ * macros, the reflection struct and the listing unable to disagree.
+ *
+ * THE INVARIANT A CALLER MUST NOT BREAK: it is LAST. The listing is rendered
+ * here because the event stream is only complete once every phase above has
+ * run, and `job->vm_emitted_nodes`/`vm_frame_capacity`/`vm_subject_ceiling`
+ * are the ladder's inputs, so a phase that ran after this one could move a
+ * number the ladder had already compared. */
+static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl, Ast *root)
+{
+    Ctx *cx = v->cx;
+    Job *job = cx->job;
+
+    const long long bt_frames   = pl->caps.bt_frames;
+    const long long trail_frames = pl->caps.trail_frames;
+    const long long ceiling     = pl->caps.ceiling;
+    const long long budget      = pl->caps.budget;
+    const long long work_budget = pl->caps.work_budget;
+    const bool      has_budget  = pl->caps.has_budget;
 
     pcrec_emit_residual(cx);
 
-    pcrec_emit_info(cx, &g, 2, job->fit.why,
+    pcrec_emit_info(cx, g, 2, job->fit.why,
                     has_budget ? budget : -1, work_budget, bt_frames, ceiling,
-                    &pl.bufs);
+                    &pl->bufs);
 
     if (cx->opt->flags & PCREC_EMIT_MAIN)
-        pcrec_emit_main(cx, &g);
+        pcrec_emit_main(cx, g);
 
     /* [M4.5c] The listing, rendered LAST — the event stream is complete by
      * now, and so are the stamp numbers it reports, which are the same
@@ -12615,7 +12625,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.bt_frames = bt_frames;
         st.trail_frames = trail_frames;
         st.ceiling = ceiling;
-        st.nstate = pl.nstate;
+        st.nstate = pl->nstate;
         st.nguard = v->nguard_total;
         st.nlow = v->nlow_total;
         st.nmark = v->nmark_total;
@@ -12670,4 +12680,49 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * declared. See Job's own comment for what the ladder does with them. */
     job->vm_frame_capacity  = (long long)bt_frames;
     job->vm_subject_ceiling = (long long)ceiling;
+}
+
+/* Writes the complete VM-engine artifact for `root` into `job->csb` — and,
+ * under `--emit-ir`, the listing into `job->irsb` — as nine phases in the
+ * artifact's own order.
+ *
+ * THE PHASES, and the line between them: the first three DECIDE and emit
+ * nothing (`vm_init` reads the facts that do not depend on emitting,
+ * `vm_plan` counts the slots, emits the program into a SCRATCH buffer and
+ * settles every capacity, `vm_plan_entry` picks the entry-chain rung), and
+ * the last six WRITE and decide nothing. That split is what lets a stamp be
+ * unable to disagree with the code it describes: every number the artifact
+ * carries was settled before its first byte was written, and each of the six
+ * writers reads it off `Vm`, `VmPlan` or `VmEntry` rather than re-deriving
+ * it. Two of the three deciders also REFUSE — `PCREC_MAX_VM_NODES` and the
+ * emitted-bytes cap are checked inside `vm_plan`, which is why a refusal
+ * costs no output.
+ *
+ * WHY THE ANALYSIS IS HERE AND NOT IN `src/opt/`: `Vm` is file-private state
+ * `internal.h` rules against exporting (see `src/gen/CLAUDE.md`), and the
+ * three facts `vm_plan` discovers by emitting — the class pool, the cursor
+ * local's presence and the emitted-node count — all have to appear in text
+ * that PRECEDES the program, so a second analysis predicting them would be a
+ * drift-prone second source.
+ *
+ * Takes `Ast *root`, not `const Ast *`, because `vm_plan` fills
+ * `u.call.save`/`nsave` as it discovers the call regions it must save and
+ * restore across. */
+void pcrec_emit_vm(Ctx *cx, Ast *root)
+{
+    Vm v;
+    GenNames g;
+    VmPlan pl;
+    VmEntry en;
+
+    vm_init(&v, cx, root, &g);
+    vm_plan(&v, root, &pl);
+    vm_plan_entry(&v, &pl, &en);
+
+    pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs);
+    vm_emit_stamps(&v, &pl, &en);
+    vm_emit_storage(&v, &pl);
+    vm_emit_search_body(&v, &g, &pl, &en);
+    vm_emit_entries(&v, &g, &pl, &en);
+    vm_emit_epilogue(&v, &g, &pl, root);
 }
