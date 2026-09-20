@@ -61,6 +61,10 @@ static void limit_row(StrBuf *sb, const char *name, long long value,
     pcrec_sb_row(sb, cells, sizeof cells / sizeof *cells);
 }
 
+/* The `--list-limits` TSV: the fixed 7-column header
+ * (docs/spec/table_contract.md), then one row per numeric limit in
+ * src/core/limits.def, in the table's own order -- generated straight off the
+ * .def's own PCREC_LIMIT macro so a limit and its dump row cannot drift. */
 char *pcrec_limits_tsv(void)
 {
     StrBuf sb = {0};

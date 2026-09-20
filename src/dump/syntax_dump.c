@@ -86,6 +86,8 @@ static void names_join(const char *const *names, size_t n, char *buf, size_t cap
     buf[k] = 0;
 }
 
+/* Renders the comma-separated CLI --flavour menu into buf/cap via names_join,
+ * sourced from the flavour_names table. */
 void pcrec_flavour_names(char *buf, size_t cap)
 {
     const char *names[NELEMS(flavour_names)];
@@ -93,6 +95,8 @@ void pcrec_flavour_names(char *buf, size_t cap)
     names_join(names, NELEMS(flavour_names), buf, cap);
 }
 
+/* Renders the comma-separated --probe-ask WANT-kind menu into buf/cap via
+ * names_join. */
 void pcrec_probe_want_names(char *buf, size_t cap)
 {
     names_join(want_names, N_WANT_NAMES, buf, cap);
@@ -126,6 +130,10 @@ static void put_mask(StrBuf *sb, unsigned mask, const MaskName *t, size_t n)
     pcrec_sb_join(sb, "|", sel, k);
 }
 
+/* The RegKind's column-value name
+ * ("esc"/"group"/"verb"/"class-bracket"/"quant-suffix"/"bare") for
+ * --list-syntax's `kind` column -- a frozen value consumers key on, "?" for
+ * anything else. */
 static const char *kind_name(RegKind k)
 {
     switch (k) {
@@ -167,6 +175,7 @@ static const char *doorway_name(RegKind k)
     }
 }
 
+/* The RegStatus's name ("base"/"module"/"rejected"). */
 static const char *status_name(RegStatus s)
 {
     switch (s) {
@@ -177,6 +186,7 @@ static const char *status_name(RegStatus s)
     }
 }
 
+/* The RegDiag's name ("none"/"module"/"module-octal"/"fixed"). */
 static const char *diag_name(RegDiag d)
 {
     switch (d) {
@@ -188,6 +198,8 @@ static const char *diag_name(RegDiag d)
     }
 }
 
+/* Renders a selector byte: "*" for REG_SEL_ANY, the printable ASCII character
+ * itself, or a \xHH escape otherwise. */
 static void put_selector(StrBuf *sb, int sel)
 {
     if (sel == REG_SEL_ANY)             pcrec_sb_puts(sb, "*");
@@ -229,6 +241,13 @@ static void put_expect(StrBuf *sb, const RegRow *r)
 static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
                                      RK_QUANTSUFFIX, RK_BARE };
 
+/* The `--list-syntax` TSV: one row per registry construct across all six
+ * RegKinds (all_kinds -- see the comment above for why the array itself, not a
+ * switch, is what a fifth/sixth kind cannot silently miss), filtered to
+ * `flavours` when non-zero. Writes the fixed 17-column header (D24's
+ * kind/selector/.../family) then one line per row, deriving `expect`
+ * (put_expect), `built` (pcrec_construct_built_status) and every mask column
+ * (put_mask) live from the row rather than from a second hand-kept table. */
 char *pcrec_syntax_tsv(unsigned flavours)
 {
     StrBuf sb = {0};
@@ -534,6 +553,12 @@ char *pcrec_syntax_verbs(void)
  * asserts the members agree on all three, so which one is read cannot matter
  * — and if that assertion ever fails, it fails there, loudly, rather than
  * being papered over by a rule here about who wins. */
+/* The `--list-families` index: one line per GROUPING key (a row's `family` if
+ * set, else its own `syntax`), `built` ANDed across every member (false the
+ * moment one alias's construct doesn't compile, per the comment above),
+ * module/engines/status read from the family's first member in table order
+ * (registry_check.c asserts the members agree). Does not derive or elect a
+ * canonical spelling -- the key already IS it. */
 char *pcrec_syntax_families(void)
 {
     StrBuf sb = {0};
@@ -664,6 +689,11 @@ typedef struct {
     bool    at_content_start; /* class-bracket 4b                            */
 } Doorway;
 
+/* Scans `text` for the FIRST doorway a real parse would reach (after '\',
+ * after '(?' unless '(?:'..., after '(*', or a class-bracket in either of its
+ * two openings), filling `*d` with that doorway's kind, selector byte, blamed
+ * offset and cursor position -- the same offsets parse.c's own call sites use,
+ * per the struct's own comment. False if none is found. */
 static bool doorway_route(const char *text, size_t n, Doorway *d)
 {
     for (size_t i = 0; i < n; i++) {
@@ -784,6 +814,14 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
  * installed; `pcrec_construct_built_status` (the exported entry, below) is
  * the one that FORCES the gate. Split so the gate-mutation is in exactly
  * one place. */
+/* Drives row `r`'s own `syntax` through the doorway machinery (doorway_route +
+ * doorway_call, an isolated one-shot Ctx: memset, own setjmp, arena freed on
+ * every exit) at WHATEVER GATE the caller has already installed, and
+ * classifies the result: EXT_NODE/EXT_MEMBERS/EXT_SCALAR -> BUILT_YES, an
+ * EXT_REFUSAL answered at WANT_RESULT (D33's "gate open, port missing" signal)
+ * -> BUILT_NO, anything else -> BUILT_DEFECT. Does not itself touch the
+ * enabled-module gate -- pcrec_construct_built_status forces it, so the gate
+ * mutation lives in exactly one place. */
 static PcrecBuiltStatus built_status_probe(const RegRow *r)
 {
     Ctx cx;
@@ -969,6 +1007,11 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
     return result;
 }
 
+/* The exported D65 entry: forces the ENTIRE module set open (not just
+ * r->module -- a real (?m) cross-module dependency measured wrong under the
+ * narrower force, see the comment above), runs built_status_probe, then
+ * restores the caller's exact enabled set. NA for a non-RS_MODULE row or one
+ * with no module/syntax. */
 PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r)
 {
     if (r->status != RS_MODULE || !r->module || !r->syntax) return PCREC_BUILT_NA;
@@ -1068,6 +1111,15 @@ static const char *doorway_word(RegKind k)
  * RAISED: the construct reached an enabled port, the port ran a real parse,
  * and that parse failed. Telling an operator to fix their command line for
  * the second would be a lie, so the two exits print different things. */
+/* The --probe-ask channel: one doorway call for `construct` at ask level
+ * `want_name`, reporting the REAL cursor before/after (the same Ctx field the
+ * doorway itself uses -- no derived "expected" position, so a check reading
+ * this cannot share a source with what it checks) and a one-line TSV (doorway,
+ * want, answered_at, pos_before, pos_after, outcome, at, ep_set_certain, end,
+ * msg). Returns NULL for a caller misuse (err->msg left empty: an unknown want
+ * level, or text reaching no doorway) versus a real parse failure (err->msg
+ * set by the doorway's own raise) -- the two exits print different things
+ * because only one is the operator's to fix. */
 char *pcrec_probe_ask(const char *want_name, const char *construct,
                       pcrec_error *err)
 {
@@ -1321,6 +1373,9 @@ static void put_answer(StrBuf *sb, const Live *L)
     }
 }
 
+/* Renders the refusing row's module name (extracted from its message text via
+ * msg_module), or an em-dash when the call was not routed or did not refuse
+ * with a module-naming message. */
 static void put_names(StrBuf *sb, const Live *L)
 {
     char mod[64];

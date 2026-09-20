@@ -131,6 +131,9 @@ static const AxisDesc AXIS_DESC[] = {
 };
 #define N_AXIS_DESC (sizeof AXIS_DESC / sizeof AXIS_DESC[0])
 
+/* Looks up the authored `applies` description for (axis, candidate) in
+ * AXIS_DESC, or a placeholder pointing at the emitter's own `applies` function
+ * when nobody has authored one yet. */
 static const char *desc_of(const char *axis, const char *cand)
 {
     for (size_t i = 0; i < N_AXIS_DESC; i++)
@@ -197,6 +200,9 @@ static const char *stamp_macro_of(const char *axis)
  * silently vanishing or crashing (the merge-safety property [CHK-2]'s brief
  * asks for): a bit that has no row is visible in the dump as a number. */
 
+/* The `#define` name (deny or force macro) whose value equals `v`, iterated
+ * off core/axes.def -- the same table axis_cli_flag reads, so a bit's macro
+ * name and its CLI spelling cannot drift. NULL for a bit with no row. */
 static const char *axis_macro_name(unsigned v)
 {
     if (!v) return NULL;
@@ -224,6 +230,7 @@ static void axis_cli_flag(unsigned deny, unsigned force, char *buf, size_t cap)
     else if (f) snprintf(buf, cap, "%s", f);
 }
 
+/* The bit INDEX of the single set bit in `flag` (0 for flag<=1). */
 static unsigned bit_of(unsigned flag)
 {
     unsigned b = 0;
@@ -231,6 +238,9 @@ static unsigned bit_of(unsigned flag)
     return b;
 }
 
+/* Renders a deny/force value's macro-name column (axis_macro_name, or a bare
+ * hex number when no row claims the bit -- a merge-safety fallback) and its
+ * bit-index column (bit_of) into `macro`/`bit`. */
 static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_t bitcap)
 {
     macro[0] = 0; bit[0] = 0;
@@ -265,6 +275,11 @@ static void axis_row(StrBuf *sb, const char *axis, int order,
 
 /* ---- "list"/"both" axes: walked off the LIVE candidate arrays ---------- */
 
+/* Emits one TSV row per candidate of a LIST-kind axis, walked off the live
+ * candidate array `get` fills (up to 16): renders the deny/CLI-flag columns
+ * from each candidate's own `.deny` bit, the stamp value (this candidate's
+ * name, when the axis has a stamp macro) and the authored `applies` text
+ * (desc_of). */
 static void emit_dfa_list_axis(StrBuf *sb, const char *axis, const char *kind,
                                size_t (*get)(PcrecAxisCand *, size_t))
 {
@@ -717,6 +732,13 @@ static void emit_predicate_axes(StrBuf *sb)
 
 /* ---- the whole dump ------------------------------------------------------ */
 
+/* The `--list-axes` TSV, the fourth registry surface (docs/spec/registry.md,
+ * [CHK-2] piece 1): the fixed 12-column header, then one row per (axis,
+ * candidate) in preference order -- LIST-kind axes walked live off their
+ * candidate arrays (emit_dfa_list_axis), axis F's both-kind direction
+ * candidates, the table/scan-edge composite rows, and the hand-stated
+ * predicate axes (emit_predicate_axes) for which no candidate-list-as-data
+ * exists yet. */
 char *pcrec_axes_tsv(void)
 {
     StrBuf sb = {0};
