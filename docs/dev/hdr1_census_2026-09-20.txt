@@ -1,0 +1,47 @@
+band    total  header  banner-only  none
+>=50      146     113           19    14
+20-49     151      91           13    47
+<20       620     300           43   277
+all       917     504           75   338
+
+not-headed (banner-only + none) by file:
+ 109  src/gen/emit_dfa.c   e.g. emit_machine_tables@5569, dfa_form_derive@5463, emit_unanchored@5844
+  28  src/parse/rxt_source.c   e.g. pcrec_rxt_decode_escaped@1761, slurp_lines@530, config_walk@2036
+  28  src/gen/emit_vm.c   e.g. vm_alt@4048, vm_cap_offsets@1685, vm_isl_node@3624
+  23  src/core/sb.c   e.g. sb_vprintf@97, sb_grow@9, pcrec_sb_field@183
+  17  src/parse/parse.c   e.g. p_group_body@1305, p_atom@1435, pcrec_is_bare_anchor@108
+  17  src/opt/callgraph.c   e.g. cg_force_deliver_splice@551, cg_bind@196, cg_cwmax_publish@278
+  13  src/dump/syntax_dump.c   e.g. pcrec_syntax_families@537, pcrec_syntax_tsv@232, built_status_probe@787
+  12  src/parse/rxt_schema.c   e.g. pcrec_rxt_value_name@149, pcrec_rxt_schema_child_scope@98, pcrec_rxt_constraint_name@224
+  11  src/opt/possessify.c   e.g. pcrec_poss_survey@1096, pcrec_possessify@1121, gk_link@525
+  10  cli/main.c   e.g. libdir_push@544, cli_err@48, write_file@330
+   9  src/core/compile.c   e.g. emit_size_measure@159, job_cleanup@227, emit_size_table_open@125
+   9  src/parse/rxt_compose.c   e.g. rc_remap_caps@271, def_by_name@214, rc_rebase_refs@356
+   9  src/opt/atomic.c   e.g. pcrec_has_live_capture@743, pcrec_has_atomic@49, pcrec_has_lookaround@132
+   9  src/ir/nfa.c   e.g. pcrec_nfa_wrap_unanchored@1105, nst@125, patch_push@103
+   9  src/ir/dfa.c   e.g. closure@819, cont_push@451, tab_grow@880
+   7  src/opt/revdet.c   e.g. rd_shape@89, rd_alt_disjoint@549, pcrec_revdet_first@455
+   7  src/enc/enc.c   e.g. pcrec_enc_advance@132, pcrec_enc_names@42, pcrec_enc_emit_defs@92
+   7  src/parse/registry.c   e.g. pcrec_registry@1686, pcrec_registry_posix_known@1658, pcrec_registry_posix_find@1618
+   6  src/parse/mod_backrefs.c   e.g. pcrec_brport_g@318, pcrec_brport_digit@176, pcrec_brport_k@475
+   6  src/dump/axes_dump.c   e.g. pcrec_axes_tsv@720, emit_dfa_list_axis@268, deny_cols@234
+   5  src/opt/lower_enc.c   e.g. pat_char_utf8@387, pcrec_lower_enc@610, u8_push_branch@202
+   5  src/parse/mod_recursion.c   e.g. pcrec_rcport_define@498, pcrec_rcport_name@373, rc_decimal@89
+   5  src/core/internal.h   e.g. pcrec_ast_visit@3989, cls_set@1257, cls_has@1258
+   5  src/core/cpset.c   e.g. cpset_grow@72, pcrec_cpset_has@200, pcrec_cls_has@302
+   5  src/core/tune.c   e.g. pcrec_tune_row@113, pcrec_vm_entry_shape_name@169, pcrec_tune_token@119
+   4  src/opt/prefix_k.c   e.g. pcrec_prefix_ksets@371, wpush@159, set_ppm@297
+   4  src/parse/ext.c   e.g. esc_answer@202, group_answer@372, pcrec_ext_class_bracket@700
+   3  src/parse/mod_verbs.c   e.g. verb_answer@305, pcrec_registry_verb_find@268, pcrec_registry_verb_tables@254
+   3  src/parse/mod_modifiers.c   e.g. pcrec_registry_option_run_ok@99, modport_refuse@234, pcrec_registry_option_run_recognise@170
+   3  src/opt/scanedge.c   e.g. chain_cmp@456, acc_of@263, member_ok@245
+   3  src/parse/enabled.c   e.g. install@204, pcrec_enabled_mask@60, pcrec_enabled_set_modules@73
+   2  src/parse/mod_atomic_groups.c   e.g. pcrec_agport_atomic@67, pcrec_atomic_suffix_row@126
+   2  src/core/arena.c   e.g. pcrec_arena_alloc@8, pcrec_arena_free@35
+   2  src/parse/mod_lookaround.c   e.g. la_kind@127, la_width_refusal@356
+   2  src/parse/definitions.c   e.g. pcrec_def_tag_applies@30, pcrec_def_resolve@105
+   2  src/opt/postresolve.c   e.g. pcrec_postresolve@119, pr_count@93
+   2  src/opt/altcls.c   e.g. altcls_walk_cat@377, pcrec_altcls@512
+   2  src/opt/select_engine.c   e.g. forces_registry@304, forces_dfa_overflow@356
+   2  src/parse/mod_uprops.c   e.g. pcrec_uprops_row_name@238, uprops_fold@254
+   1  src/dump/schema_dump.c   e.g. pcrec_rxt_schema_tsv@88
