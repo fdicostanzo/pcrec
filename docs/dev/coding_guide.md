@@ -314,6 +314,13 @@ belong in `docs/` — the `abi` change log lived in four homes, three of them
 drifting, with two transitions recorded in only one of them (L4-A1). [REVW.A1]
 cut it to one: `docs/spec/match_api.md` §6, maintained by the bump ritual
 itself. A 449-line change log in `emit_dfa.c` is what the alternative cost.
+**[HDR-1] (Frank, 2026-09-20) extends this rule from "≥50-line functions" to
+EVERY function**: a small helper still gets a header, just sized down — ONE
+line saying what it produces or does in domain terms, never a restatement of
+the name (`sb_grow` says what growth policy it applies and what it preserves,
+never "grows the buffer"); the three-part (a)/(b)/(c) form is for the ≥50-line
+population this section already describes. `tools/review/function_census.py`'s
+`header` column (see its own module docstring) makes the population countable.
 
 ---
 

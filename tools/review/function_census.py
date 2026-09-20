@@ -12,7 +12,23 @@ Deterministic: same commit in, byte-identical TSV out (files walked in
 sorted order, ties broken by file then start_line).
 
 Output: tools/review/out/function_census.tsv, columns
-    file  start_line  end_line  span_lines  code_lines  max_depth  name
+    file  start_line  end_line  span_lines  code_lines  max_depth  name  header
+
+`header` (added [HDR-1], 2026-09-20, Frank's charter: every function should
+carry a purpose header) classifies what sits directly above the function's
+signature, on the ORIGINAL (unmasked) source text: walk upward from the line
+above `start_line`, skipping blank lines, to the nearest non-blank line.
+  - `header` -- that line closes a block comment (`*/`) whose OPENING line
+    (found by walking further up to the matching `/*`, block comments do not
+    nest) does not start a SECTION BANNER (`/* ----`, four or more hyphens
+    right after the delimiter -- a banner labels a REGION, per the house
+    style in e.g. src/core/sb.c, not the one function under it).
+  - `banner` -- that line closes a comment whose opening line IS a banner.
+  - `none` -- the nearest non-blank line is not a comment close at all (an
+    ordinary statement, a previous function's closing brace, or nothing
+    above the function in the file).
+A `//` line comment immediately above, with no blank line before it, also
+counts as `header` (a handful of files use it); it is never a banner shape.
 
 `code_lines` (non-blank, non-comment-only lines in [start_line, end_line])
 is what the row is RANKED BY, descending -- per the ratification
@@ -87,6 +103,37 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import reviewlib as rl  # noqa: E402
 
 
+def leading_comment_kind(lines: list[str], start_line: int) -> str:
+    """Classify what sits directly above a function's signature (1-indexed
+    `start_line` into `lines`, the file's ORIGINAL, unmasked text split on
+    "\\n"). Returns "header", "banner" or "none" -- see the module docstring
+    for the exact rule."""
+    i = start_line - 1  # 1-indexed line above the signature
+    while i >= 1 and not lines[i - 1].strip():
+        i -= 1
+    if i < 1:
+        return "none"
+    nearest = lines[i - 1].rstrip()
+    stripped = nearest.strip()
+    if stripped.startswith("//"):
+        return "header"
+    if not nearest.endswith("*/"):
+        return "none"
+    # Walk up to this comment's OPENING line (block comments do not nest,
+    # so the first line at or above `i` that itself contains "/*" opens it).
+    j = i
+    while j >= 1 and "/*" not in lines[j - 1]:
+        j -= 1
+    if j < 1:
+        return "none"  # defensive; should not happen on valid C
+    opener = lines[j - 1]
+    open_at = opener.index("/*")
+    after = opener[open_at + 2 :].lstrip()
+    if after.startswith("----"):
+        return "banner"
+    return "header"
+
+
 def census() -> list[tuple]:
     rows = []
     for path in rl.iter_source_files():
@@ -105,7 +152,10 @@ def census() -> list[tuple]:
             for ln in range(start, end + 1):
                 if ln - 1 < len(masked_lines) and masked_lines[ln - 1].strip():
                     code_lines += 1
-            rows.append((relpath, start, end, end - start + 1, code_lines, depth, name))
+            hdr = leading_comment_kind(lines, start)
+            rows.append(
+                (relpath, start, end, end - start + 1, code_lines, depth, name, hdr)
+            )
     # Rank by code_lines descending (ADDENDUM 2: priority order over the
     # WHOLE population). Ties broken by file/start_line for determinism.
     rows.sort(key=lambda r: (-r[4], r[0], r[1]))
@@ -120,12 +170,14 @@ def write_tsv(rows: list[tuple], out_path: Path) -> None:
         f.write(
             "\t".join(
                 ["file", "start_line", "end_line", "span_lines", "code_lines",
-                 "max_depth", "name"]
+                 "max_depth", "name", "header"]
             )
             + "\n"
         )
-        for relpath, start, end, span, code_lines, depth, name in rows:
-            f.write(f"{relpath}\t{start}\t{end}\t{span}\t{code_lines}\t{depth}\t{name}\n")
+        for relpath, start, end, span, code_lines, depth, name, hdr in rows:
+            f.write(
+                f"{relpath}\t{start}\t{end}\t{span}\t{code_lines}\t{depth}\t{name}\t{hdr}\n"
+            )
 
 
 def main() -> int:
