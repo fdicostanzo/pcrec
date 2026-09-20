@@ -969,6 +969,48 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
 
 /* ---- [...] classes ---- */
 
+/* Reads and decodes ONE class member at the current position, used at both
+ * the low endpoint (the item-loop top) and the high endpoint (the range
+ * arm, p_class_range): a live `\Q` opens transparently here first
+ * (dissolving an immediately-empty `\Q\E` via `cls_skip`, same as the
+ * plain-byte case — [M4-QUOTING]), then the four-way rule applies
+ * identically at both positions — quoted byte / escape via
+ * `esc_class_value` / high byte via `lit_next_cp` / plain byte
+ * ([M5.0 stage 2]). The item-loop top already opens a live `\Q` and checks
+ * for truncation before ever reaching this call, so both checks below are
+ * no-ops there by construction; the range arm has no such earlier check of
+ * its own, which is what makes this call self-sufficient there. Measured:
+ * `[a-\Qz\E]` and `[a-\Q\Ez]` are both the range a-z (a quote answering for
+ * the high endpoint, or dissolving to nothing before it), `[a-\Qzy\E]` does
+ * not drop `y` (a quote closing with bytes still pending is picked up as
+ * ordinary members on a later call), and a `\Q` opened here with nothing
+ * left in the pattern (`[a-\Q` at true end) raises the class's own
+ * "missing terminating ]" rather than reading -1 as a byte value.
+ * `opening` is the class's `[` offset, for that message. `*quoted` reports
+ * whether the read byte was quoted content; `*claim` is set exactly as
+ * `esc_class_value` sets it — the caller supplies its initial NOT_MINE
+ * value, unchanged on every other path. */
+static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quoted)
+{
+    if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+        peekc(cx) == '\\' && peekc2(cx) == 'Q') {
+        cx->pos += 2;
+        cx->in_quote = true;
+        cls_skip(cx);   /* an immediately-empty quote dissolves too */
+    }
+    if (cx->in_quote && peekc(cx) < 0)
+        pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
+    *quoted = cx->in_quote;
+    int c = nextc(cx);
+    /* [M5.0 stage 2] a member byte >= 0x80 (quoted or not — a quote
+     * suppresses metacharacters, not the encoding) is the start of one
+     * literal CHARACTER; back onto it and decode (§2.7). */
+    if (!*quoted && c == '\\')
+        return esc_class_value(cx, claim);
+    if (c >= 0x80) { cx->pos--; return (int)lit_next_cp(cx); }
+    return c;
+}
+
 /* Parses a `[...]` bracket expression starting just past `[`: the leading
  * `^`/`]` special cases, POSIX/extended-class doorway dispatch per member,
  * escape and range handling, folding each contribution at its own
@@ -1097,17 +1139,8 @@ static Ast *p_class(Ctx *cx)
             pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
         }
 
-        int lo;
         ExtResult loclaim = { .what = EXT_NOT_MINE };
-        cx->pos++;
-        /* [M5.0 stage 2] a member byte >= 0x80 (quoted or not — a quote
-         * suppresses metacharacters, not the encoding) is the start of one
-         * literal CHARACTER; back onto it and decode (§2.7). */
-        if (!quoted && c == '\\')
-            lo = esc_class_value(cx, &loclaim);
-        else if (c >= 0x80) { cx->pos--; lo = (int)lit_next_cp(cx); }
-        else
-            lo = c;
+        int lo = cls_read_member(cx, opening, &loclaim, &quoted);
 
         /* xx: deletion precedes RANGE PARSING (measured: [a\t-\tz] is the
          * range a-z), and the dash-vs-literal lookahead must see through it
@@ -1168,42 +1201,9 @@ static Ast *p_class(Ctx *cx)
             if (peekc(cx) == '[' &&
                 pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
                 pcrec_ctx_fail(cx, dashpos, "invalid range in character class");
-            /* [M4-QUOTING] the high endpoint is the ONE other position
-             * PCRE2 lets a quote answer for (measured: `[a-\Qz\E]` and
-             * `[a-\Q\Ez]` are both the range a-z — the second shows the
-             * empty-quote transparency reaching THROUGH to a real byte
-             * beyond it, cls_skip's own job just above). Mirrors the main
-             * loop's own open check exactly; a quote with MORE than one
-             * byte left after supplying the endpoint stays open, and the
-             * loop's next spin (cls_skip, then the open/quoted checks
-             * above) picks up the rest as ordinary members — measured:
-             * `[a-\Qzy\E]` does not drop `y`. */
-            if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
-                peekc(cx) == '\\' && peekc2(cx) == 'Q') {
-                cx->pos += 2;
-                cx->in_quote = true;
-                cls_skip(cx);   /* an immediately-empty quote dissolves too */
-            }
-            /* [M4-QUOTING] unlike the main loop's own open (which loops
-             * back through this function's `c < 0` check above before
-             * reading anything further), this one has no such loopback —
-             * an unterminated `\Q` opened AS a high endpoint with nothing
-             * left in the pattern (`[a-\Q` at true end) must raise the
-             * SAME class-truncation error the main loop raises, not fall
-             * through to `nextc` returning -1 as if it were a byte value. */
-            if (cx->in_quote && peekc(cx) < 0)
-                pcrec_ctx_fail(cx, opening, "missing terminating ] for character class");
-            bool hi_quoted = cx->in_quote;
-            int hc = nextc(cx);
             ExtResult hiclaim = { .what = EXT_NOT_MINE };
-            int hi;
-            /* [M5.0 stage 2] the high endpoint decodes exactly as the low
-             * member above does: a byte >= 0x80 starts one character. */
-            if (!hi_quoted && hc == '\\')
-                hi = esc_class_value(cx, &hiclaim);
-            else if (hc >= 0x80) { cx->pos--; hi = (int)lit_next_cp(cx); }
-            else
-                hi = hc;
+            bool hi_quoted;
+            int hi = cls_read_member(cx, opening, &hiclaim, &hi_quoted);
             if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
                 pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
             /* step 4 — either side SET-shaped -> invalid range. A claim
