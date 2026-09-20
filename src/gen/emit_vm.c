@@ -1190,10 +1190,24 @@ static bool vm_marked(const Vm *v, int group)
  * copies — which for the optional phase IS `vm_opt_chain`, so the emission is
  * byte-identical to the frames rung by construction. At count == K the loop
  * RUNS one trip: the same NUMBER of copies as replication, not the same CODE.
- * So byte-identity holds at K > count and nowhere else. */
+ * So byte-identity holds at K > count and nowhere else.
+ *
+ * [r61 F6] A PURE SHAPE PREDICATE, like `vm_cursor_fits`/`vm_revdet_fits` --
+ * `PCREC_NO_COUNTER` is read at each of the three call sites, not in here.
+ * It used to be read in here too, and that made this the one rung predicate
+ * out of the three that reads the option flags at all: `vm_cursor_fits` has
+ * no deny axis, and `vm_revdet_fits` reads nothing because its own
+ * `-fno-revdet` gates the ANALYSIS PASS that writes `u.rep.revbody`
+ * (src/opt/select_engine.c's `run_revdet`), so a denied build never
+ * produces a revbody for this predicate to see. The counter rung has no
+ * separate analysis pass to gate — its shape and its flag are both decided
+ * fresh at emission time — so the flag has to be read at each of the three
+ * callers directly (vm_cost_rep, vm_count_slots_rep, vm_rep) for the same
+ * reason a fact three sites each re-derive is a fact one of them will
+ * eventually derive differently: a deny flag read in one predicate and
+ * skipped at another is exactly how the ladder's three copies drift. */
 static bool vm_counter_fits(const Vm *v, const Ast *a)
 {
-    if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
     if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return false;
     /* UNBOUNDED: only the MANDATORY prefix is the counter's (§11 residual 1).
      * The tail stays on the frames star, which already emits one body copy and
@@ -2146,6 +2160,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * hard way: the artifact would size for 8 iterations and take 4000. */
     if (!vm_cursor_fits(v->cx, a, seq, &stride, caps, &nc)
         && !vm_revdet_fits(a, under_atomic)
+        && !(v->cx->opt->flags & PCREC_NO_COUNTER)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l, false);
         const long long K = v->unroll_k;
@@ -2837,7 +2852,7 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
      * performs, and this rung does not replicate per iteration — it emits a
      * fixed K + residue whatever `m` is. Multiplying here would re-import
      * exactly the explosion the rung removes. */
-    if (vm_counter_fits(v, a)) {
+    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         const int K = v->unroll_k;
         const int nopt = a->u.rep.rmax - a->u.rep.rmin;
         int copies = vm_counter_copies(v, a, cuts);
@@ -6046,7 +6061,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * one that catches the bodies all three above decline. Selected by the one
      * shared predicate the two pre-passes also call, never by a second reading
      * of the same conditions. */
-    if (vm_counter_fits(v, a)) {
+    if (!(v->cx->opt->flags & PCREC_NO_COUNTER) && vm_counter_fits(v, a)) {
         vm_counter_rep(v, entry, a, next, under_atomic);
         return;
     }
