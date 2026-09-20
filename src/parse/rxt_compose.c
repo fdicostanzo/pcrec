@@ -203,6 +203,9 @@ typedef struct {
  * measured population of 0 in both repos), and nothing is refused at
  * DECLARATION time: two colliding definitions coexist happily while
  * nothing calls the shared identifier. */
+/* The CALL identifier derived from a definition's own `name` (hyphens
+ * included), via pcrec_rxt_prefix_from_name -- the shared key both
+ * def_by_name's lookup and the visited set below match against. */
 static const char *rc_derived_id(Arena *a, const char *name)
 {
     size_t n = strlen(name) + 1;
@@ -211,6 +214,11 @@ static const char *rc_derived_id(Arena *a, const char *name)
     return d;
 }
 
+/* Finds the ONE definition whose derived id equals `ident`, diagnosing through
+ * pcrec_ctx_fail rather than returning ambiguously: a definition whose real
+ * name is too long to ever be callable, or two definitions colliding on the
+ * same derived id (exact spelling does not win the tie -- see the comment
+ * above). Returns NULL when nothing matches. */
 static const RxtDef *def_by_name(Ctx *cx, const char *ident, size_t at,
                                  const char *what)
 {
@@ -268,6 +276,12 @@ static Bound *bound_by_name(Composer *co, const char *ident)
  * a recursive callee. Call TARGETS are re-based by the second pass, off the
  * pending records, which is the only place that can tell a locally-resolved
  * call from a deferred one. */
+/* Rewrites capture numbers in-place over an ITERATIVE CAT/ALT-spine walk (this
+ * project's standing discipline against pattern-length recursion): A_CAP's own
+ * number is looked up in `map`, erased (spliced out, replaced by its own body)
+ * when `map[no]==0`; an A_CALL is visited as itself and never follows
+ * `u.call.body` -- see the comment above for why call targets are re-based by
+ * a separate pass instead. */
 static Ast *rc_remap_caps(Ast *a, const int *map, int nmap)
 {
     for (;;) {
@@ -325,6 +339,10 @@ static Ast *rc_remap_caps(Ast *a, const int *map, int nmap)
  * in particular NOT from a tree walk, because a tree walk cannot distinguish
  * a call the sub-parse resolved locally from one it deferred, and a deferred
  * call's `target` is 0. */
+/* Marks `keep[t]` for every LOCAL group target `t` a non-deferred pending
+ * reference (call or backref) actually reaches -- derived from the PendingRef
+ * list, never a tree walk, since only the pending list distinguishes a
+ * locally-resolved reference from a deferred one. */
 static void rc_mark_kept(const PendingRef *pend, bool *keep, int nmap)
 {
     for (const PendingRef *pr = pend; pr; pr = pr->next) {
@@ -353,6 +371,12 @@ static void rc_mark_kept(const PendingRef *pend, bool *keep, int nmap)
  * marks exactly these), so `map[t] == 0` here would be an internal
  * inconsistency rather than an input a pattern can produce; the guard is
  * written as `> 0` so a future tier cannot turn it into a silent zero. */
+/* Re-bases the resolved targets of exactly the non-deferred pending
+ * references, through `map`: a call's target in place, a backref's `refs`
+ * array into a freshly-allocated one (never an in-place write through the
+ * node's own `const int *`). A referenced group is never erased by
+ * rc_mark_kept's own marking, so `map[t]==0` here signals an internal
+ * inconsistency, not a legal input. */
 static void rc_rebase_refs(Ctx *cx, PendingRef *pend, const int *map, int nmap)
 {
     for (PendingRef *pr = pend; pr; pr = pr->next) {
@@ -399,6 +423,9 @@ static void rc_rebase_refs(Ctx *cx, PendingRef *pend, const int *map, int nmap)
  * line and its call count is a handful; the alternative — a mark bit on the
  * node — would be a field on `Ast` for one question asked once, which
  * PARSE-1 forbids for far better reasons than cost. */
+/* True iff `a` (an A_CALL node) appears in the pending list `pend` -- the only
+ * way to tell an already-recorded call from a whole-pattern recursion node
+ * that queued no record, per the comment above. */
 static bool rc_recorded(const Ast *a, const PendingRef *pend)
 {
     for (const PendingRef *pr = pend; pr; pr = pr->next)
@@ -406,6 +433,9 @@ static bool rc_recorded(const Ast *a, const PendingRef *pend)
     return false;
 }
 
+/* Finds the first (?R)/(?0)/\g<0> node -- an A_CALL with no pending record --
+ * reached by a depth-first walk of `a`, or NULL if every call is accounted
+ * for. */
 static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
 {
     if (!a) return NULL;
@@ -591,6 +621,8 @@ static void rc_bind(Composer *co, const RxtDef *def)
  * Runs once the fixpoint has bound everything and every delivering site is
  * known, because addendum 4(1)'s erasure rule needs both.
  */
+/* True iff `def`'s (comma/space-separated) `exports` list names `want` --
+ * membership over a raw text list, no allocation. */
 static bool rc_export_lists(const RxtDef *def, const char *want, size_t wlen)
 {
     for (const char *e = def->exports; e && *e; ) {
@@ -694,6 +726,12 @@ static void rc_assign(Composer *co, Bound *bd)
  * CYCLES ARE LEGAL AND TERMINATE HERE: `bound_by_name` is the visited set,
  * so a definition that reaches itself or reaches back into a caller is bound
  * ONCE and the second reference simply binds to the existing wrapper. */
+/* The fixpoint's own step: among `list`'s still-unbound deferred references,
+ * picks the LEFTMOST (source-order) name whose definition exists and is not
+ * already bound, so binding order -- and therefore capture numbering -- is
+ * deterministic and depth-independent. Records the leftmost unresolvable name
+ * into `*unknown`/`*at` without raising it (a later re-resolution pass owns
+ * that diagnostic). */
 static const RxtDef *rc_next_wanted(Composer *co, PendingRef *list,
                                     const char **unknown, size_t *at)
 {

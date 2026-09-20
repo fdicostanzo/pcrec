@@ -85,12 +85,14 @@ static size_t tok_len(const char *s)
     return i;
 }
 
+/* True iff the token at the front of `s` (per tok_len) spells `want` exactly. */
 static int tok_is(const char *s, const char *want)
 {
     size_t n = tok_len(s);
     return strlen(want) == n && !strncmp(s, want, n);
 }
 
+/* Advances past spaces/tabs. */
 static const char *skip_ws(const char *s)
 {
     while (*s == ' ' || *s == '\t') s++;
@@ -290,6 +292,9 @@ typedef enum {
     RXTD_VALUE_SHAPE
 } RxtDiagClass;
 
+/* The diagnostic CLASS tag rxt_fail prints (see the enum comment above for the
+ * four layers) -- the stable, machine-parseable prefix docs/spec/cli.md
+ * documents. */
 static const char *rxt_diag_class_name(RxtDiagClass c)
 {
     switch (c) {
@@ -305,6 +310,10 @@ static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
                     const char *fmt, ...)
     __attribute__((format(printf, 4, 5)));
 
+/* Formats a `[<class>] <path>:<line>: <fmt>` diagnostic straight into
+ * `p->err->msg` (composed in place, never spliced from a scratch buffer -- see
+ * the comment above for why), marks the parse failed, and returns -1 for a
+ * caller to propagate. */
 static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
                     const char *fmt, ...)
 {
@@ -336,6 +345,7 @@ static int rxt_fail(RxtP *p, RxtDiagClass cls, size_t line,
     return -1;
 }
 
+/* Arena-owned NUL-terminated copy of s[0,n). */
 static char *arena_strndup(Arena *a, const char *s, size_t n)
 {
     char *d = pcrec_arena_alloc(a, n + 1);
@@ -344,6 +354,7 @@ static char *arena_strndup(Arena *a, const char *s, size_t n)
     return d;
 }
 
+/* arena_strndup over a NUL-terminated string. */
 static char *arena_strdup(Arena *a, const char *s)
 {
     return arena_strndup(a, s, strlen(s));
@@ -527,6 +538,13 @@ static const char *rtrim_ws(Arena *a, const char *s)
  * must not make every value end in an invisible byte. */
 typedef struct { char **v; size_t n; } RxtLines;
 
+/* Reads the whole `.rxt` file into an arena buffer and splits it into a
+ * NUL-terminated line array (\r\n trimmed to \n), so every production can look
+ * ahead a line for indentation continuation. Refuses BY NAME rather than
+ * silently: not a regular file (a directory reads as empty on Linux
+ * otherwise), an embedded NUL anywhere in the file (scanned before the split,
+ * since a per-line strlen would already have lost the true length), and any
+ * stat/open/seek/read failure. Reads/writes through `p->arena`. */
 static int slurp_lines(RxtP *p, RxtLines *out)
 {
     /* [DD-13b.W1.1 r46sem finding 23] A DIRECTORY MUST BE REFUSED BY
@@ -612,6 +630,9 @@ static int slurp_lines(RxtP *p, RxtLines *out)
 
 /* ------------------------------------------------------- the productions */
 
+/* Appends a zero-initialized row of `kind` at `line` to `src->rows`, growing
+ * the arena-backed array (doubling from 16) as needed;
+ * budget_steps/budget_frames start at -1 (unset), everything else at zero. */
 static RxtRow *row_push(RxtP *p, RxtSource *src, RxtDeclKind kind, size_t line)
 {
     if (src->nrows == src->rowcap) {
@@ -916,6 +937,8 @@ static int refuse_wave(RxtP *p, size_t line, const RxtSchemaRow *row,
                     PCREC_RXT_WAVE_BUILT);
 }
 
+/* Formats "'<token>' is not a %s directive" for a kind with no schema row in
+ * `scope` -- RXTD_UNKNOWN_TOKEN. */
 static int unknown_token(RxtP *p, size_t line, const char *l,
                          RxtSchemaScope scope)
 {
@@ -1022,6 +1045,7 @@ static int word_in_set(const char *set, const char *needle, size_t nlen)
     return 0;
 }
 
+/* Linear lookup of the vocab entry keyed `key` in `p->vocab`'s list, or NULL. */
 static const RxtVocab *vocab_lookup(const RxtP *p, const char *key, size_t klen)
 {
     for (const RxtVocab *v = p->vocab; v; v = v->next)
@@ -1181,6 +1205,11 @@ static const char *under_key(Arena *a, const char *v)
  * exactly why they are two kinds and not one kind with a negated operator
  * (§2.25.3). `parent` is the one reserved field name; every other field
  * names a SIBLING ROW in this scope. */
+/* Evaluates one `<field> <op> [value]` condition (shared by
+ * required-if/forbidden-if, see the banner above) against frame `f`: `field`
+ * is either the reserved word `parent` or a sibling row's kind in this scope;
+ * `op` is `present`/`==`/`!=`. An absent field satisfies no comparison but
+ * `present` itself. */
 static int cond_holds(const RxtFrame *f, const RxtSchemaRow *rowbase,
                       size_t nrows, const char *arg, size_t arglen)
 {
@@ -1367,6 +1396,9 @@ static int line_constraints(RxtP *p, RxtFrame *f, const RxtSchemaRow *row,
  * doubling capacity), so there is one pattern for "a section array that
  * grows" rather than four independently-invented ones. */
 
+/* Appends a zero-initialized RxtProv to `src->provs`, growing the arena-backed
+ * array (doubling from 8) as needed -- row_push's own shape, for the #section
+ * provenance record. */
 static RxtProv *prov_push(Arena *a, RxtSource *src)
 {
     if (src->nprovs == src->provcap) {
@@ -1381,6 +1413,8 @@ static RxtProv *prov_push(Arena *a, RxtSource *src)
     return r;
 }
 
+/* Appends a zero-initialized RxtVariant to `src->variants`, growing (doubling
+ * from 8) as needed -- the #section variant record. */
 static RxtVariant *variant_push(Arena *a, RxtSource *src)
 {
     if (src->nvariants == src->variantcap) {
@@ -1395,6 +1429,8 @@ static RxtVariant *variant_push(Arena *a, RxtSource *src)
     return r;
 }
 
+/* Appends a zero-initialized RxtCase to `src->cases`, growing (doubling from
+ * 32) as needed -- the #section cases record. */
 static RxtCase *case_push(Arena *a, RxtSource *src)
 {
     if (src->ncases == src->casecap) {
@@ -1409,6 +1445,8 @@ static RxtCase *case_push(Arena *a, RxtSource *src)
     return r;
 }
 
+/* Appends a zero-initialized RxtAux to `src->auxes`, growing (doubling from
+ * 16) as needed -- the #section aux record. */
 static RxtAux *aux_push(Arena *a, RxtSource *src)
 {
     if (src->nauxes == src->auxcap) {
@@ -1627,6 +1665,11 @@ static void parse_case_body(const char *rest, const char *kind, RxtCase *c,
  * The EXTENT is `read_prose_region`'s, deliberately shared rather than
  * re-derived: two spellings of "where does a continuation end" is exactly
  * the drift S3 was declared to remove. */
+/* Joins `first` (the opener line's own tail) with every following indented
+ * continuation line, space-separated and trimmed, up to read_prose_region's
+ * own extent rule (blank/comment/dedent) -- the wrapped-value form for a row
+ * whose declared `value` is not itself prose (see the banner above). Advances
+ * `*i` to the last consumed line; the caller's loop does the increment. */
 static int read_wrapped_value(RxtP *p, RxtLines *L, size_t *i,
                               size_t opener_indent, const char *first,
                               const char **out)
@@ -1758,6 +1801,13 @@ static int tag_list_ok(RxtP *p, size_t line, const char *v)
  * report success — the same silent-wrong-artifact trap the whole-file NUL
  * refusal closes for a `pattern` line. Expressing a NUL pattern is a KNOWN
  * LIMIT with a named owner and a stated lifting trigger, not a silence. */
+/* Decodes a `pattern-esc` double-quoted operand into an arena-owned byte
+ * string, through the format's ONE escape vocabulary (\" \\ \n \t \r \f \v
+ * \xHH -- see the banner above for why the CLI, --source and --list-source all
+ * route through this one function). Writes an error into `err`/`errsz` and
+ * returns -1 for a bad quote, an unescaped quote, a trailing backslash, a
+ * malformed \x, or \x00 (refused by name, K9 -- a NUL-bearing pattern would
+ * otherwise compile as its own prefix). */
 int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
                              char *err, size_t errsz)
 {
@@ -2033,6 +2083,11 @@ static RxtRow *config_by_name(RxtSource *src, const char *name, size_t len)
     return NULL;
 }
 
+/* Walks a `config ... from` chain's REACHABILITY (the composition itself is
+ * never materialised, per the comment above): refuses a cycle (naming every
+ * member from the closing point) or a nesting depth past RXT_FROM_NEST_MAX,
+ * and refuses a `from` name that names no config declared in this file.
+ * `stack[0..depth)` is the path taken so far. */
 static int config_walk(RxtP *p, RxtSource *src, RxtRow *r,
                        RxtRow **stack, size_t depth)
 {
@@ -3077,6 +3132,9 @@ fail:
     return NULL;
 }
 
+/* Frees `src`, recursively freeing its `lib`-closure kids first (each parsed
+ * into its own arena, so a child's arena must go before this one), then this
+ * source's own arena and the container itself. Tolerates NULL. */
 void pcrec_rxt_source_free(RxtSource *src)
 {
     if (!src) return;
@@ -3143,6 +3201,8 @@ typedef struct {
     const char *pcrec_raw;
 } RxtSet;
 
+/* Zero-fills `s` and sets budget_steps/budget_frames to -1 (unset) -- RxtSet's
+ * own empty value. */
 static void set_init(RxtSet *s)
 {
     memset(s, 0, sizeof *s);
@@ -3178,6 +3238,8 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
     }
 }
 
+/* Populates `s` from row `r`'s own config fields
+ * (flags/features/encoding/engine/tune/budgets/pcrec_raw), via set_init first. */
 static void set_from_row(RxtSet *s, const RxtRow *r)
 {
     set_init(s);
@@ -3215,6 +3277,10 @@ static void set_from_row(RxtSet *s, const RxtRow *r)
  * diamond, never a cycle. */
 typedef struct { RxtRow **v; size_t n, cap; } RxtSeen;
 
+/* Adds `r` to the visited set `s` if not already present (linear scan,
+ * arena-backed doubling growth from 8); returns 1 if newly added, 0 if `r` was
+ * already seen -- terminates a DIAMOND's repeat materialisation, never a cycle
+ * (config_walk already ruled those out at parse time, per the comment above). */
 static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
 {
     for (size_t i = 0; i < s->n; i++) if (s->v[i] == r) return 0;
@@ -3228,6 +3294,10 @@ static int seen_add(Arena *a, RxtSeen *s, RxtRow *r)
     return 1;
 }
 
+/* The effective RxtSet for config row `r`: materialises each `from` dependency
+ * at most once (via `seen`, so a diamond does not double-count an ACCUMULATING
+ * field like pcrec_raw), merges them in list order, then merges `r`'s own
+ * fields last so its own settings win under later-wins. */
 static void cfg_effective(RxtSource *src, RxtRow *r, RxtSeen *seen, RxtSet *out)
 {
     set_init(out);
@@ -3250,6 +3320,7 @@ static void cfg_effective(RxtSource *src, RxtRow *r, RxtSeen *seen, RxtSet *out)
 
 /* ---- `lib` path resolution ---- */
 
+/* True iff `p` names an existing regular file. */
 static int path_is_file(const char *p)
 {
     struct stat st;
@@ -3272,6 +3343,8 @@ static const char *source_dir(RxtSource *src)
     return d;
 }
 
+/* Joins `dir` and `rest` with a single '/' (added only if `dir` doesn't
+ * already end in one). */
 static char *join_path(Arena *a, const char *dir, const char *rest)
 {
     size_t nd = strlen(dir);
@@ -3323,6 +3396,10 @@ static const char *lib_chain_text(Arena *a, const char *own,
  * homes is the D24 shape one tier down: a letter added to the CLI's loop and
  * not to the composer's would make a library mean one thing when built as a
  * target and another when bound into a caller. */
+/* The one letter -> bit mapping for `flags` text (currently just 'i' ->
+ * PCREC_CASELESS), shared by a config line, a pattern block and a definition
+ * -- see the banner above for why. Writes the bad letter into `*bad` and
+ * returns -1 on the first one it doesn't recognise. */
 int pcrec_rxt_flags_from_letters(const char *letters, unsigned long long *out,
                                  char *bad)
 {
@@ -3391,6 +3468,9 @@ static const char *lib_resolve(RxtClosure *cl, const char *own,
     return NULL;
 }
 
+/* True iff `path` is already in the lib-closure's visited set `cl->seen`
+ * (keyed on the RESOLVED path, so a diamond reads a shared library once -- see
+ * the comment above). */
 static int closure_seen(RxtClosure *cl, const char *path)
 {
     for (size_t i = 0; i < cl->nseen; i++)
@@ -3822,6 +3902,7 @@ static void section_open(StrBuf *sb, const char *name, const char *header)
     pcrec_sb_puts(sb, header);
 }
 
+/* The dump's column count, RXT_NCOLS. */
 size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
 
 /* Renders `--list-source`'s TSV: one row per head declaration and per

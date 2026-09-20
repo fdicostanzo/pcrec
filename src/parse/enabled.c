@@ -57,6 +57,8 @@ bool pcrec_feature_enabled(unsigned featmask)
     return featmask != 0 && (g_enabled_features & featmask) == featmask;
 }
 
+/* The full FEAT_* mask currently installed by install() -- read-only after
+ * spec-parse time. */
 unsigned pcrec_enabled_mask(void)
 {
     return g_enabled_features;
@@ -70,6 +72,8 @@ const char *pcrec_enabled_set_label(void)
     return g_enabled_label;
 }
 
+/* The installed set's expanded, comma-separated module-name list, rendered
+ * once by install() so it can never drift from the mask. */
 const char *pcrec_enabled_set_modules(void)
 {
     return g_enabled_modules;
@@ -201,6 +205,9 @@ static void render_modules(unsigned mask, char *out, size_t outsz)
     }
 }
 
+/* Records `mask`/`label` as the process-wide enabled set and renders its
+ * expanded module-name list; the ONE writer, called once at spec-parse time
+ * before any compile starts. */
 static void install(unsigned mask, const char *label)
 {
     g_enabled_features = mask;

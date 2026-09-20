@@ -251,6 +251,7 @@ const char *pcrec_registry_verb_name_limit(size_t *max)
     return "subpattern name is too long (maximum 128 code units)";
 }
 
+/* The verb table for index 0 or 1 (lower/upper first-letter tables), or NULL. */
 const VerbTable *pcrec_registry_verb_tables(int which)
 {
     return (which == 0 || which == 1) ? &verb_tables[which] : NULL;
@@ -265,6 +266,8 @@ const VerbTable *pcrec_registry_verb_table(int first)
     return (first >= 'a' && first <= 'z') ? &verb_tables[1] : &verb_tables[0];
 }
 
+/* Linear name lookup in `t`, matched by exact length then bytes -- the
+ * verb-name table's own membership test. */
 const VerbName *pcrec_registry_verb_find(const VerbTable *t,
                                          const char *name, size_t len)
 {
@@ -302,6 +305,15 @@ const VerbName *pcrec_registry_verb_find(const VerbTable *t,
  * MOD-0.4: moved here verbatim from src/parse/ext.c — see this file's own
  * header for the wiring decision (a direct call, no port) and for where
  * each of the milestone's four measured facts now lives. */
+/* Doorway 3 (after '(*'): the whole verb-name grammar in one function --
+ * validates the name against the elected table, re-gating once more on the
+ * NAME's OWN row when it answers for a different module (doorway-then-name
+ * double gate, see the comment above for why re-gating from the ORIGINAL ask
+ * matters), and returns whichever ExtResult the form warrants: a quantifier
+ * error, "no such name", a name's own message, or "requires module 'verbs'".
+ * Does not parse the verb's argument -- an accepted form ends the compile here
+ * regardless. Reads cx->pat/cx->patlen directly and elects the doorway's own
+ * row into `*elected`. */
 static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
                              const RegRow **elected)
 {

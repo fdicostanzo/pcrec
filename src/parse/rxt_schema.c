@@ -38,17 +38,21 @@ static const RxtSchemaRow g_rows[] = {
 #include "parse/rxt_schema.def"
 };
 
+/* The schema table and its row count. */
 const RxtSchemaRow *pcrec_rxt_schema_rows(size_t *n)
 {
     if (n) *n = sizeof g_rows / sizeof *g_rows;
     return g_rows;
 }
 
+/* Row count alone, for a caller that does not need the table itself. */
 size_t pcrec_rxt_schema_nrows(void)
 {
     return sizeof g_rows / sizeof *g_rows;
 }
 
+/* Linear lookup of the row for `kind` (matched by exact length+bytes) within
+ * `scope`, or NULL. */
 const RxtSchemaRow *pcrec_rxt_schema_row(RxtSchemaScope scope, const char *kind,
                                          size_t klen)
 {
@@ -68,6 +72,8 @@ const RxtSchemaRow *pcrec_rxt_schema_row(RxtSchemaScope scope, const char *kind,
  * COLUMN VALUE, so a generic reader fetches them out of one TSV and no
  * predicate escapes into a consumer. */
 
+/* Parameter 1: true iff `r` opens a group -- a plain column read, per the
+ * banner above. */
 int pcrec_rxt_schema_opens_group(const RxtSchemaRow *r)
 {
     return r && r->opens_group;
@@ -95,6 +101,9 @@ int pcrec_rxt_schema_open_subtree(const RxtSchemaRow *r)
     return r && r->children == RXT_CH_TREE;
 }
 
+/* The RxtSchemaScope a row's children parse under, derived from `r->children`
+ * (RXT_SCOPE_NSCOPES for a row with no child scope of its own --
+ * NONE/PROSE/TREE). */
 RxtSchemaScope pcrec_rxt_schema_child_scope(const RxtSchemaRow *r)
 {
     if (!r) return RXT_SCOPE_NSCOPES;
@@ -132,6 +141,9 @@ RxtSchemaScope pcrec_rxt_schema_group_scope(RxtSchemaScope opener_scope)
  * refusal ("'%s' is not a %s directive") and `--list-schema`'s own `scope`
  * column cannot drift into two vocabularies for one thing. */
 
+/* The scope's name column ("file"/"block"/...), shared by every diagnostic and
+ * by --list-schema's own `scope` column so the two cannot drift -- see the
+ * banner above. */
 const char *pcrec_rxt_scope_name(RxtSchemaScope s)
 {
     switch (s) {
@@ -146,6 +158,7 @@ const char *pcrec_rxt_scope_name(RxtSchemaScope s)
     return "?";
 }
 
+/* The value-shape's name column ("none"/"token"/.../"raw"). */
 const char *pcrec_rxt_value_name(RxtValueShape v)
 {
     switch (v) {
@@ -164,6 +177,7 @@ const char *pcrec_rxt_value_name(RxtValueShape v)
     return "?";
 }
 
+/* The children-kind's name column ("none"/"prose"/.../"variant"). */
 const char *pcrec_rxt_children_name(RxtChildren c)
 {
     switch (c) {
@@ -178,6 +192,7 @@ const char *pcrec_rxt_children_name(RxtChildren c)
     return "?";
 }
 
+/* The cardinality's name column ("one"/"at-most-one"/"repeat"/"accumulate"). */
 const char *pcrec_rxt_cardinality_name(RxtCardinality c)
 {
     switch (c) {
@@ -189,6 +204,7 @@ const char *pcrec_rxt_cardinality_name(RxtCardinality c)
     return "?";
 }
 
+/* The row-source's name column ("format"/"file"). */
 const char *pcrec_rxt_row_source_name(RxtRowSource s)
 {
     switch (s) {
@@ -198,6 +214,7 @@ const char *pcrec_rxt_row_source_name(RxtRowSource s)
     return "?";
 }
 
+/* The validated-by kind's name column ("pcrec"/"all-readers"/"none"). */
 const char *pcrec_rxt_validated_by_name(RxtValidatedBy v)
 {
     switch (v) {
@@ -221,6 +238,9 @@ const char *pcrec_rxt_validated_by_name(RxtValidatedBy v)
  * SEVEN KINDS. `cross-scope` is not one of them (D99 withdrew its only
  * customer, `provides`); adding it back is this switch plus one enumerator
  * plus a `.def` column value, which is why waiting costs nothing. */
+/* The constraint kind's name column ("required"/.../"functional-binding") --
+ * the one place a new kind must be named, per the banner above's no-default
+ * rule. */
 const char *pcrec_rxt_constraint_name(RxtConstraintKind k)
 {
     switch (k) {

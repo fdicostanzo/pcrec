@@ -86,6 +86,9 @@
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_RECURSION
 
+/* Decimal-accumulates p[from,to) with saturation at RC_NUMBER_MAX --
+ * mod_backrefs.c's br_decimal, spelled again here for an independent
+ * accumulator (see the comment above). */
 static long rc_decimal(const char *p, size_t from, size_t to)
 {
     long v = 0;
@@ -96,6 +99,8 @@ static long rc_decimal(const char *p, size_t from, size_t to)
     return v;
 }
 
+/* Arena-owned NUL-terminated copy of s[0,len) -- names outlive the pattern
+ * buffer's own lifetime assumptions, same as backref names. */
 static const char *rc_strndup(Ctx *cx, const char *s, size_t len)
 {
     char *q = pcrec_arena_alloc(&cx->arena, len + 1);
@@ -104,6 +109,8 @@ static const char *rc_strndup(Ctx *cx, const char *s, size_t len)
     return q;
 }
 
+/* Wraps an already-built node into an EXT_NODE ExtResult ending at `end` --
+ * mod_backrefs.c's br_result_node, this module's own copy. */
 static ExtResult rc_result_node(Ast *node, size_t at, size_t end, ExtWant want)
 {
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
@@ -370,6 +377,9 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
     return rc_result_node(node, at, end, want);
 }
 
+/* Producer for `(?&name)`/`(?P>name)`: scans to the closing `)`, validates the
+ * name via pcrec_group_name_scan, and hands off to rc_name_call for the actual
+ * CALL node. */
 ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
                             size_t at, size_t from)
 {
@@ -495,6 +505,15 @@ ExtResult pcrec_call_by_name(Ctx *cx, const RegRow *rw, ExtWant want,
  * compile. What forces the VM in every REAL use of a DEFINE is the CALL that
  * reads it, which carries its own row and its own stamp.
  */
+/* Producer for `(?(DEFINE)...)`: parses the body (restoring ParseMods/pos
+ * afterward, exactly as the atomic-group and lookaround ports do), refuses a
+ * body with more than one top-level branch (PCRE2's own rule) or a missing
+ * close paren, and builds it as an A_REP `{0}` node -- so a DEFINE compiles
+ * and captures normally but never matches, and is regular whenever the pattern
+ * around it is (see the comment above for why this is the module's one
+ * ANY_ENGINE row). Reads cx->pat/cx->patlen directly. Caller invariant: `from`
+ * already IS the body position; the row's `DEFINE)` tail is only checked
+ * defensively against a mis-wired row. */
 ExtResult pcrec_rcport_define(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {

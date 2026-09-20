@@ -37,11 +37,16 @@
 
 /* ---- cursor helpers ---- */
 
+/* True at end of pattern. */
 static bool at_end(Ctx *cx)      { return cx->pos >= cx->patlen; }
+/* The byte at the cursor, or -1 at end. */
 static int  peekc(Ctx *cx)       { return at_end(cx) ? -1 : (unsigned char)cx->pat[cx->pos]; }
+/* The byte one past the cursor, or -1 at/past end. */
 static int  peekc2(Ctx *cx)      { return cx->pos + 1 >= cx->patlen ? -1 : (unsigned char)cx->pat[cx->pos + 1]; }
+/* The byte at the cursor, advancing past it (or -1 at end, unadvanced). */
 static int  nextc(Ctx *cx)       { return at_end(cx) ? -1 : (unsigned char)cx->pat[cx->pos++]; }
 
+/* Arena-allocates a bare Ast node of kind `k` with no fields set beyond `.k`. */
 static Ast *node(Ctx *cx, AKind k)
 {
     Ast *a = pcrec_arena_alloc(&cx->arena, sizeof(Ast));
@@ -105,6 +110,14 @@ void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
  * per-NODE flag a bare option run sets (R20/SPEC-1) rather than a property of
  * a KIND, and it must NOT be wrapped — `(?:(?i))*` is error 109 in libpcre2,
  * where `(^)*` is not. `try_quant` tests the two separately for that reason. */
+/* Exhaustive no-default switch (mrl.c's rule) over whether AST kind `a->k` is
+ * a BARE zero-width anchor standing alone as a group's whole body: true for
+ * A_BOL/A_EOL/A_END/A_WORDB/A_NWORDB/A_GSTART/A_KRESET, false for every kind
+ * that consumes text (A_BREF, A_CALL) or is a bracketing construct with its
+ * own body (A_ATOMIC, A_LOOK, A_CAP) -- each `false` case's comment carries
+ * the measured PCRE2 cells that make it the answer rather than the reflex.
+ * Deliberately excludes `not_repeatable` (a per-node flag, not a kind property
+ * -- see the comment above). */
 bool pcrec_is_bare_anchor(const Ast *a)
 {
     switch (a->k) {
@@ -187,6 +200,9 @@ bool pcrec_is_bare_anchor(const Ast *a)
     return false;
 }
 
+/* Wraps `body` in an A_CAT with a trailing A_EMPTY when it is a bare anchor
+ * (pcrec_is_bare_anchor), so a quantifier lands on a CAT rather than directly
+ * on the anchor -- unchanged otherwise. */
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
 {
     if (!pcrec_is_bare_anchor(body)) return body;
@@ -221,6 +237,9 @@ Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
  *
  * xlevel == 0 makes every call a no-op, which is what keeps the base
  * grammar byte-identical with the module disabled. */
+/* True for the seven bytes (?x)'s pattern-whitespace skip set includes --
+ * deliberately NOT \s's set (0x85 NEL included), per the banner above's
+ * measured table. */
 static bool xskip_byte(int c)
 {
     return c == 0x09 || c == 0x0a || c == 0x0b || c == 0x0c ||
@@ -456,6 +475,13 @@ static const PcrecEnc *cls_enc(Ctx *cx)
  * AST depth is unbounded in pattern length (a long concatenation is a left-deep
  * A_CAT chain), so it would add exactly the recursion DD-10/TS-4 is trying to
  * remove. A new class-producing construct must call this itself. */
+/* Folds `s` under fold relation `f` in place: collects every partner into a
+ * SEPARATE set first (never adding while iterating -- see the comment above
+ * for why a multi-member fold class would otherwise re-seed itself), then
+ * unions the collected partners in. Every A_CLASS-producing site (char_node,
+ * p_class, and `.`'s already-closed set) must call this itself; a post-parse
+ * AST walk is deliberately not used (unbounded recursion in pattern length,
+ * DD-10/TS-4). */
 static void cls_casefold(Ctx *cx, PcrecCpSet *s, const PcrecFold *f)
 {
     /* [M6.5.2] DERIVED FROM `pcrec_ascii_fold` (src/core/fold.c) rather than
@@ -503,6 +529,9 @@ static void cls_casefold(Ctx *cx, PcrecCpSet *s, const PcrecFold *f)
  * for why a missing row is a loud internal error rather than a default. */
 static unsigned cls_universe(Ctx *cx) { return cls_enc(cx)->max_cp; }
 
+/* Builds an A_CLASS node for the single code point `c` (already range-checked
+ * against the encoding's universe), folding in its case partners under the
+ * scoped `-i` state via cls_casefold. */
 static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
@@ -1302,6 +1331,17 @@ static Ast *p_group(Ctx *cx, size_t apos)
     return body;
 }
 
+/* The '(' dispatcher, doorway 3's own caller: decides which of `(*...)`
+ * (verbs/pattern-start options/script runs, caught as a family before
+ * quantifier parsing ever sees a bare `*`), `(?...)` (registry doorway 2), or
+ * an ordinary/named/non-capturing group this open paren starts, parses the
+ * body accordingly, and -- for a body-carrying group -- saves/restores the
+ * scoped inline-option state around it (moved here from p_group at MOD-0.5c,
+ * since a body-CARRYING group is the scope boundary, not a bare `(?i)`). For a
+ * capturing group, propagates `not_repeatable` from the body onto the A_CAP
+ * wrapper so `((?i))*` answers the same under captures on or off. Reads/writes
+ * cx->pos/cx->depth/cx->mods throughout. Caller invariant: called only from
+ * p_group, which has already bumped cx->depth against PCREC_MAX_GROUP_DEPTH. */
 static Ast *p_group_body(Ctx *cx, size_t apos)
 {
     /* Doorway 3. `(*...)` is caught as a family — backtracking verbs,
@@ -1432,6 +1472,15 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     return body;
 }
 
+/* The atom dispatcher: parses one repeatable item at the cursor -- a group via
+ * p_group, a class via p_class, `.` (the encoding's whole universe minus `\n`
+ * unless dotall), `^`/`$` (multiline resolved here, at the assertion, nowhere
+ * else), an escape via esc_atom, a bare `*`/`+`/`?` refused as "quantifier
+ * does not follow a repeatable item", a `{...}` disambiguated by trying it as
+ * a quantifier first (try_quant) and only falling back to a literal `{` when
+ * it isn't one, or an ordinary/multi-byte literal via char_node. While
+ * cx->in_quote is set, bypasses all of this and returns the next quoted byte
+ * instead. */
 static Ast *p_atom(Ctx *cx)
 {
     /* [M4-QUOTING] the SAME dispatch point every ordinary atom reaches,
@@ -1824,6 +1873,11 @@ static bool cat_ends(Ctx *cx)
     return c < 0 || c == '|' || c == ')';
 }
 
+/* Parses a top-level concatenation branch: skips leading whitespace/comments,
+ * then chains p_rep results left-to-right into an A_CAT spine until cat_ends
+ * (a top-level `|`, `)`, or end -- quote-aware, since a real quoted byte never
+ * ends a cat regardless of its own value). An empty branch (`()`,`(?:|a)`)
+ * returns A_EMPTY. */
 static Ast *p_cat(Ctx *cx)
 {
     xskip(cx);   /* leading ws/comments in this branch ((?x) ^ a, ( a )) */
@@ -1871,11 +1925,13 @@ static Ast *p_alt_info(Ctx *cx, AltInfo *info)
     return a;
 }
 
+/* p_alt_info with no caller interest in the branch count. */
 static Ast *p_alt(Ctx *cx)
 {
     return p_alt_info(cx, NULL);
 }
 
+/* pcrec_parse_info with no caller interest in the top-level alternation info. */
 Ast *pcrec_parse(Ctx *cx)
 {
     return pcrec_parse_info(cx, NULL);
@@ -1950,11 +2006,18 @@ void pcrec_parse_mods_init(Ctx *cx)
     cx->mods = m;
 }
 
+/* The group-body entry point: p_alt_info directly, with no trailing-garbage
+ * check (the caller owns finding and consuming the closing delimiter). */
 Ast *pcrec_parse_body(Ctx *cx, AltInfo *info)
 {
     return p_alt_info(cx, info);
 }
 
+/* The one parse entry point: p_alt_info to end of pattern, refusing trailing
+ * garbage (an unmatched `)` or any other leftover byte), then resolves every
+ * deferred backreference (module backrefs' own §5.3 rule) now that the
+ * whole-pattern group count and every name declaration are known. Every caller
+ * of pcrec_parse inherits this ONE definition of "group k exists". */
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
 {
     Ast *a = p_alt_info(cx, info);

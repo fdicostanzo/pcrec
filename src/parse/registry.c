@@ -1609,12 +1609,15 @@ static const PosixName posix_names[] = {
  * probes-and-code-together rule the block itself explains. This file no
  * longer claims that grammar — see mod_modifiers.c and GROUP_OPT below. */
 
+/* The POSIX class name table and its count -- the raw array iterating callers
+ * (dump, sweeps) read directly. */
 const PosixName *pcrec_registry_posix_names(size_t *n)
 {
     *n = sizeof posix_names / sizeof posix_names[0];
     return posix_names;
 }
 
+/* Linear POSIX-name lookup by exact length+bytes, or NULL. */
 const PosixName *pcrec_registry_posix_find(const char *name, size_t len)
 {
     for (size_t i = 0; i < sizeof posix_names / sizeof posix_names[0]; i++)
@@ -1624,6 +1627,10 @@ const PosixName *pcrec_registry_posix_find(const char *name, size_t len)
     return NULL;
 }
 
+/* True for the two names (`<`,`>`) that are legal ONLY as a class's entire
+ * content and cannot be negated -- see the comment above for the measured
+ * PCRE2 shapes this predicate exists to get right. A leading `^` is not-known
+ * here (already negated elsewhere). */
 bool pcrec_registry_posix_whole_class_only(const char *name, size_t len)
 {
     /* `<` and `>` are not classes, and libpcre2 does not let them sit among
@@ -1648,6 +1655,8 @@ bool pcrec_registry_posix_whole_class_only(const char *name, size_t len)
     return pn && pn->whole_class_only;
 }
 
+/* PCRE2's own wording for an unrecognised POSIX class name -- deliberately
+ * names no module (registry_check.c asserts the absence). */
 const char *pcrec_registry_posix_unknown_msg(void)
 {
     /* PCRE2's own wording. It names no module ON PURPOSE — that is the whole
@@ -1655,6 +1664,9 @@ const char *pcrec_registry_posix_unknown_msg(void)
     return "unknown POSIX class name";
 }
 
+/* True iff `name` (optionally `^`-negated) is a known POSIX class name and, if
+ * negated, not one of the whole-class-only assertions (which cannot be
+ * negated). */
 bool pcrec_registry_posix_known(const char *name, size_t len)
 {
     /* `^` negates a CLASS, and `<`/`>` are not classes — they are zero-width
@@ -1683,6 +1695,10 @@ bool pcrec_registry_posix_known(const char *name, size_t len)
  * forcing function: doorway hits go from once-per-compile to once-per-construct
  * then, which is the first time the cost is measurable against M2.9's budgets. */
 
+/* The row table and count for registry kind `k` -- the sole array behind
+ * pcrec_registry_find's search and pcrec_registry_row_by_syntax's iteration; a
+ * kind with no arm here returns an empty table rather than failing to compile,
+ * per the comment above. */
 const RegRow *pcrec_registry(RegKind k, size_t *n)
 {
     switch (k) {
@@ -1729,6 +1745,11 @@ const RegRow *pcrec_registry_row_by_syntax(const char *syntax)
  * answering rows. `tail` survives only as the parameter of the default
  * recogniser below. */
 
+/* The default tail recogniser: true unconditionally with no tail (a bucket's
+ * own fallback, outranked by any tailed row); otherwise true iff `at` has at
+ * least `tail`'s bytes and they match. `at == NULL` is the tail-less question
+ * a caller with no text (a dump, a byte-only probe) may legitimately ask, not
+ * a null-read bug. */
 bool pcrec_recognise_tail_default(const char *at, size_t avail, const char *tail)
 {
     size_t tl;

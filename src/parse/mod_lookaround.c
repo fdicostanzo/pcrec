@@ -124,6 +124,11 @@ static const LaRow la_rows[] = {
     { '<',  "*",  true,  false, false },
 };
 
+/* Resolves `rw` to its LaRow (behind/neg/atomic flags): follows one
+ * alias-to-primary hop when `rw->family` is set (an alpha `(*name` spelling),
+ * otherwise matches `rw->sel`/`rw->tail` against the fixed `la_rows` table.
+ * Returns NULL for an inconsistent registry row (registry_check.c's own job to
+ * prevent). */
 static const LaRow *la_kind(const RegRow *rw)
 {
     /* [M6.6.2 wave F] AN ALIAS ROW RESOLVES TO ITS PRIMARY FIRST, and this is
@@ -353,6 +358,10 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
     enum { name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_MOD_LOOKAROUND
+/* Formats the lookbehind width-refusal message for [lo,hi]: unbounded first
+ * (since PCREC_W_UNBOUNDED sits above INT_MAX and the other test order would
+ * misreport it), then a too-long fixed width, then the ordinary
+ * variable-length message with its measured range. */
 static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
 {
     if (hi >= PCREC_W_UNBOUNDED)

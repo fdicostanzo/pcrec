@@ -67,6 +67,13 @@
 
 #include "core/internal.h"
 
+/* Module assertions' single producer for the position/boundary escapes routed
+ * to it (`\A`/`\Z`/`\z` position aliases; `\b`/`\B` word-boundary; `\G` -- see
+ * the per-case comments for why each is a DIFFERENT kind of question). Sets
+ * `res.end` just past the escape's bytes; the CALLER advances from there per
+ * check06's rule, this port never does. `\A`/`\Z` pin `Ast.u.anch.multiline`
+ * false regardless of scoped state -- see the file header for the alias's
+ * options=0 exactness. */
 ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {
