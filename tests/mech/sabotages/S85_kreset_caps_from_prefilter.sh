@@ -58,7 +58,7 @@ SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted <prefix>_caps_out always takes caps[0][0] from its \`start\` argument -- which under the hybrid IS the prefilter's (i.e. the reverse pass's) span start -- instead of from the trailed \\K slot. Every \\K artifact then reports where matching BEGAN: 'a\\Kb' on \"ab\" answers (0,2) where PCRE2 answers (1,2)"
 SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:210fail/386pass,kresetdiff:6fail/3pass -- DETECTED (canonical matrix run, 2026-08-19)"
 SAB_COUNT=1
-SAB_BEFORE='        v.nkreset > 0
+SAB_BEFORE='        v->nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"'
 SAB_AFTER='        0   /* SABOTAGE S85 */
           ? "    /* \\K: the reported start is where the winning path last\n"'

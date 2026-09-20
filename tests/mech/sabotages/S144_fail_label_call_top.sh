@@ -53,7 +53,7 @@ SAB_COUNT=1
 # in it at all. The row is unaffected in substance — its detector
 # `^(a(?1)?b)$` is RECURSIVE, so its call is linked and this line is emitted
 # for it exactly as before.
-SAB_BEFORE='            v.has_linked_calls
+SAB_BEFORE='            v->has_linked_calls
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");'

@@ -39,9 +39,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "^(a(?1)?b)$" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && echo REACH-LINKED-CALL-PUSHES'
 SAB_REACH_EXPECT="REACH-LINKED-CALL-PUSHES"
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
-SAB_AFTER='    /* SABOTAGE S225: the stamp is recomputed from v.npush instead of
-     * has_push -- the derivation the emitter own [CC-CLANG fix] comment
+SAB_BEFORE='    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);'
+SAB_AFTER='    /* SABOTAGE S225: the stamp is recomputed from v->npush instead of
+     * v->has_push -- the derivation the emitter own [CC-CLANG fix] comment
      * rejects by name, because npush is a resume-point-cap ESTIMATE (can go
      * negative) that also excludes a linked call site own frame by design. */
-    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", v.npush > 0 ? 0 : 1);'
+    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->npush > 0 ? 0 : 1);'

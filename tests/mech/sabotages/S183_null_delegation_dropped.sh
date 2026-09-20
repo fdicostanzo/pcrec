@@ -38,9 +38,9 @@ SAB_BEFORE='        "    if (!buffers) return %s(subject, subject_length, search
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v.p, v.p, g.searchfn, v.p, g.searchfn);'
+        g->searchfn, v->p, v->p, g->searchfn, v->p, g->searchfn);'
 SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v.p, v.p, v.p, g.searchfn);   /* SABOTAGE S183 */'
+        g->searchfn, v->p, v->p, v->p, g->searchfn);   /* SABOTAGE S183 */'

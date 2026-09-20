@@ -36,9 +36,9 @@ SAB_DOC_FIGURE="MEASURED 2026-09-19 (adm71 item 2, solo mech run, tree d5ea41a79
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "(a)b" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 1" "$REACH_TMP/o.c" && echo REACH-FRAMELESS-STAMP-CORRECT'
 SAB_REACH_EXPECT="REACH-FRAMELESS-STAMP-CORRECT"
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
+SAB_BEFORE='    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);'
 SAB_AFTER='    /* SABOTAGE S224: the stamp two arms are swapped -- a pushing
      * program now reads FRAMELESS 1 and a frameless one reads FRAMELESS 0.
      * No answer moves; the fail label dispatch omission below is written
      * from has_push directly, at its own separate site. */
-    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 1 : 0);'
+    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 1 : 0);'

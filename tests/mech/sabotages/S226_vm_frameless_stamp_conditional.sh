@@ -42,11 +42,11 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "^(a(?1)?b)$" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && echo REACH-PUSHING-STAMP-PRESENT'
 SAB_REACH_EXPECT="REACH-PUSHING-STAMP-PRESENT"
 SAB_COUNT=1
-SAB_BEFORE='    pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", has_push ? 0 : 1);'
+SAB_BEFORE='    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);'
 SAB_AFTER='    /* SABOTAGE S226: the stamp is emitted CONDITIONALLY -- only for a
      * frameless program -- instead of unconditionally on every VM artifact
      * as spec section6.3 requires. A pushing artifact then defines NO
      * RX_VM_FRAMELESS at all. */
-    if (!has_push) {
-        pcrec_sb_stampf(c, v.up, "VM_FRAMELESS", "%d", 1);
+    if (!v->has_push) {
+        pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", 1);
     }'

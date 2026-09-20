@@ -83,6 +83,6 @@ SAB_COUNT=1
 # The last line is the pair that names the failure: the row is green on the
 # population it used to have and red on the one it should have had all along.
 # The SPLICE side of the same claim is S177, which is detected separately.
-SAB_BEFORE='            if (v.rgn_emit[i])
-                vm_count_slots(&v, pcrec_callgraph_body(v.cg, i), 1, false);'
+SAB_BEFORE='            if (v->rgn_emit[i])
+                vm_count_slots(v, pcrec_callgraph_body(v->cg, i), 1, false);'
 SAB_AFTER='            /* SABOTAGE S164: the region'"'"'s own slots are never counted */'
