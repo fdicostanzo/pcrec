@@ -2047,6 +2047,57 @@ struct Cost {
 
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 
+/* Adds `r` into `*acc`, field by field -- the SUM a concatenation's cost
+ * takes, since every element's frames/trail/steps are simultaneously live
+ * or sequentially charged. `unbounded`/`growable` OR, since either
+ * contributor being unbounded makes the sum unbounded too. See `vm_cost_alt`
+ * below for the sibling combiner, `cost_max`, and why the two read as SUM
+ * versus ONE-PLUS-MAX rather than sharing one shape. */
+static void cost_add(Cost *acc, Cost r)
+{
+    acc->frames += r.frames;
+    acc->trail  += r.trail;
+    acc->pf     += r.pf;
+    acc->pt     += r.pt;
+    acc->unbounded = acc->unbounded || r.unbounded;
+    acc->growable  = acc->growable  || r.growable;
+}
+
+/* Takes the field-wise max of `*acc` and `r` -- the MAX an alternation's
+ * cost takes, since at most one branch's frames/trail/steps are live at a
+ * time. `unbounded`/`growable` OR, for the same reason `cost_add` ORs them.
+ * The chain's own `1 +` on `frames` per level tried is deliberately NOT
+ * folded in here: `vm_cost_alt` adds it at its own call site, so a reader
+ * sees the alternation's max-plus-one shape at the point that owns it
+ * rather than buried inside a generic combiner. */
+static void cost_max(Cost *acc, Cost r)
+{
+    acc->frames = acc->frames > r.frames ? acc->frames : r.frames;
+    acc->trail  = acc->trail  > r.trail  ? acc->trail  : r.trail;
+    acc->pf     = acc->pf     > r.pf     ? acc->pf     : r.pf;
+    acc->pt     = acc->pt     > r.pt     ? acc->pt     : r.pt;
+    acc->unbounded = acc->unbounded || r.unbounded;
+    acc->growable  = acc->growable  || r.growable;
+}
+
+/* Flattens a left-nested `A_ALT` chain into a branch array, ascending
+ * original order -- the one walk `vm_cost_alt` and `vm_alt`'s own emission
+ * share, called from both rather than kept as two copies that could drift.
+ * `*out` is set to an arena array of the returned count, `(*out)[0]` being
+ * the chain's leftmost (first-written) branch. */
+static int vm_alt_flatten(Ctx *cx, const Ast *a, const Ast ***out)
+{
+    int nbr = 1;
+    for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
+    int i = nbr;
+    const Ast *t = a;
+    while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+    br[0] = t;
+    *out = br;
+    return nbr;
+}
+
 /* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
  *
  * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
@@ -2385,27 +2436,13 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         /* Spine walked ITERATIVELY (R1 R-2 / D10) — see vm_nullable's comment
          * for the segfault that says why. The accumulation order reproduces
          * the recursive definition exactly: A_CAT sums both sides, so summing
-         * along the spine is the same number. */
+         * along the spine is the same number. `cost_add` is the sum. */
         const Ast *t = a;
         while (t->k == A_CAT) {
-            Cost r = vm_cost(v, t->r, false);
-            c.frames += r.frames;
-            c.trail  += r.trail;
-            c.pf     += r.pf;
-            c.pt     += r.pt;
-            c.unbounded = c.unbounded || r.unbounded;
-            c.growable  = c.growable  || r.growable;
+            cost_add(&c, vm_cost(v, t->r, false));
             t = t->l;
         }
-        {
-            Cost h = vm_cost(v, t, false);
-            c.frames += h.frames;
-            c.trail  += h.trail;
-            c.pf     += h.pf;
-            c.pt     += h.pt;
-            c.unbounded = c.unbounded || h.unbounded;
-            c.growable  = c.growable  || h.growable;
-        }
+        cost_add(&c, vm_cost(v, t, false));
         return c;
     }
     case A_ALT: {
@@ -2449,24 +2486,18 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
          * the recursion had: a flat alternation is a LEFT-NESTED chain, so
          * `1 + max` applied at each node accumulates outward. Folding in any
          * other order would silently change the number this function reports,
-         * which is what sizes the frame array. */
-        int nbr = 1;
-        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-        const Ast **br = pcrec_arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
-        int i = nbr;
-        const Ast *t = a;
-        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
-        br[0] = t;
+         * which is what sizes the frame array. `cost_max` is the field-wise
+         * max; the `1 +` on `frames` stays visible here rather than folded
+         * into the combiner, so this arm reads as ONE-PLUS-MAX against
+         * A_CAT's plain SUM above. `vm_alt_flatten` is the same branch-array
+         * walk `vm_alt`'s own emission does — see its header. */
+        const Ast **br;
+        int nbr = vm_alt_flatten(v->cx, a, &br);
 
         c = vm_cost(v, br[0], false);
         for (int j = 1; j < nbr; j++) {
-            Cost r = vm_cost(v, br[j], false);
-            c.frames = 1 + (c.frames > r.frames ? c.frames : r.frames);
-            c.trail  = c.trail > r.trail ? c.trail : r.trail;
-            c.pf     = c.pf > r.pf ? c.pf : r.pf;
-            c.pt     = c.pt > r.pt ? c.pt : r.pt;
-            c.unbounded = c.unbounded || r.unbounded;
-            c.growable  = c.growable  || r.growable;
+            cost_max(&c, vm_cost(v, br[j], false));
+            c.frames += 1;
         }
         return c;
     }
@@ -4186,13 +4217,8 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
-    int nbr = 1;
-    for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
-    const Ast **br = pcrec_arena_alloc(&cx->arena, (size_t)nbr * sizeof(Ast *));
-    int i = nbr;
-    const Ast *t = a;
-    while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
-    br[0] = t;
+    const Ast **br;
+    int nbr = vm_alt_flatten(cx, a, &br);
 
     /* [ENG-ISL] the island first, and it is a SELECTION rather than a special
      * case: `vm_isl_build` either returns the trie for a flat alternation of
