@@ -17,7 +17,7 @@
  *
  * Six of the eight jobs are patterns that compile; two are patterns the
  * reject table already knows must be refused ('\d' -> module 'classes',
- * '(?=a)' -> module 'lookaround'), to exercise the ctx_fail/longjmp error
+ * '(?=a)' -> module 'lookaround'), to exercise the pcrec_ctx_fail/longjmp error
  * path under concurrency too -- the jmp_buf and Ctx are both stack-local
  * per call, so this should be equally race-free, and now it is checked
  * rather than assumed. Each thread's SINGLE-THREADED baseline (the exact

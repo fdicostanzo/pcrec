@@ -24,7 +24,7 @@
  * reverse); shrinks emitted tables / label counts, which is both a code-size
  * and a cache win (compare case f motivated this).
  *
- * Pure computation: plain malloc/free, and the ONLY two ctx_fail paths are the
+ * Pure computation: plain malloc/free, and the ONLY two pcrec_ctx_fail paths are the
  * allocation-failure ones added by [M4.7b/K7], which free every live local
  * before they longjmp. Nothing else here leaves the function early, so no other
  * site has to think about ownership. */
@@ -90,7 +90,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
     /* [M4.7b/K7] These five are the only allocations on the compile path the
      * Job does NOT own, so this is the only site where failing cleanly means
      * freeing by hand before the longjmp — everywhere else job_cleanup does it.
-     * (Which is also why the file header's "no ctx_fail paths" note no longer
+     * (Which is also why the file header's "no pcrec_ctx_fail paths" note no longer
      * holds: there are exactly two, both here, both after their own cleanup.) */
     if (!part || !newpart || !sig || !htab || !keys) {
         free(part); free(newpart); free(sig); free(htab); free(keys);

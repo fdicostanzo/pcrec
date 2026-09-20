@@ -424,13 +424,13 @@ state cap (`PCREC_MAX_DFA_STATES_TABLE`, narrowed by
 pattern that compiles today MUST NOT start failing because an OPTIONAL
 machine did not fit. So `pcrec_build_dfa` gains an `optional` flag, and
 `intern()`'s two "pattern too complex" sites gain ONE line each, placed
-after the unchanged `[SEL-1]` record and before the unchanged `ctx_fail`:
+after the unchanged `[SEL-1]` record and before the unchanged `pcrec_ctx_fail`:
 
 ```c
     cx->dfa_overflowed = true;                       /* [SEL-1], unchanged */
     snprintf(cx->dfa_overflow_why, ...);             /* [SEL-1], unchanged */
     if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-    ctx_fail(cx, 0, "pattern too complex ...");      /* unchanged */
+    pcrec_ctx_fail(cx, 0, "pattern too complex ...");      /* unchanged */
 ```
 
 `PCREC_DFA_DEAD` is `-1`, the value `tr[]` already carries for "dead", so a
@@ -449,7 +449,7 @@ once instead of walking out its remaining rows.
 3. `Ctx.dfa_overflowed` means "the DFA ENGINE cannot compile this pattern",
    which is FALSE when only the optional machine overflowed — the driver
    therefore SAVES and RESTORES `dfa_overflowed`/`dfa_overflow_why` across
-   the optional build. Without that, a later unrelated `ctx_fail` would see
+   the optional build. Without that, a later unrelated `pcrec_ctx_fail` would see
    a stale `true` and take `[SEL-1]`'s retry path for the wrong reason.
    (`Ctx.subset_elems` is NOT restored: the memory really was spent, and
    K7's bound is a claim about what the construction spends.)

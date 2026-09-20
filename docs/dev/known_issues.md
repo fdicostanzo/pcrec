@@ -1382,7 +1382,7 @@ reproduced defect that the design work deliberately scoped OUT, and prose in a
 design document is not where a live defect belongs.
 
 **Latent today, and that is the only reason it is not a bug report.** Every path
-in `pcrec_ext_escape` ends in `ctx_fail`, and the function is declared
+in `pcrec_ext_escape` ends in `pcrec_ctx_fail`, and the function is declared
 `noreturn`, so no input can reach it. It becomes reachable the moment the first
 semantic port lands — `unicode-props` (`\p{...}`), `classes` (`\v`) and any
 assertion module all eventually need that doorway to return.
@@ -3894,7 +3894,7 @@ choice under `auto`, derives whether to attach a capture-erased DFA
 prefilter) from the AST ALONE, before any automaton exists — it has no way
 to know a cap will overflow. `src/core/compile.c` then built the DFA pair
 unconditionally whenever `fit.chosen == ENGM_DFA || fit.prefilter`, and
-`src/ir/dfa.c`'s two "pattern too complex" `ctx_fail` sites `longjmp`
+`src/ir/dfa.c`'s two "pattern too complex" `pcrec_ctx_fail` sites `longjmp`
 straight to the ONE recovery point in the compiler (`compile_driver`'s
 `setjmp`), aborting the whole compile — including a case where the DFA
 being built was never the chosen ENGINE at all, only an auto-selected
@@ -3910,7 +3910,7 @@ succeeded and did not.
 
 **Fix.** `Ctx` gains `dfa_disabled`/`dfa_overflowed`/`dfa_overflow_why`
 (`src/core/internal.h`; the last two set by the two `dfa.c` sites,
-unconditionally and cheaply, immediately before their existing `ctx_fail`
+unconditionally and cheaply, immediately before their existing `pcrec_ctx_fail`
 — the diagnostic text for `--engine=dfa`/`-fprefilter` is UNCHANGED).
 `compile_driver` (`src/core/compile.c`) becomes a bounded ONE-SHOT RETRY
 loop (`COMPILE_MAX_ATTEMPTS = 2`) around the existing single `setjmp`: on
@@ -3921,7 +3921,7 @@ an eligible overflow (`cx.dfa_overflowed`, `--engine=auto`, no
 (excludes `ENGM_DFA` and supplies `RX_ENGINE_WHY`'s text when
 `dfa_disabled`), and the SAME flag folds into the prefilter derivation
 (`has_bref || has_call || cx->dfa_disabled` all silently drop it) — one
-mechanism, not a try/catch at the `ctx_fail` site and not a second
+mechanism, not a try/catch at the `pcrec_ctx_fail` site and not a second
 selector. `src/gen/emit_vm.c`'s `--emit-ir` listing gets its own arm for
 the same reason the backreference/call routes needed one ([M6.5.2]/[DD-14
 wave E]'s precedent): without it, a dropped auto-selected-prefilter's `;
@@ -4818,7 +4818,7 @@ answer-identity-preserving optimization.
 
 **THE OMISSION IS CHECKED AT ITS OWN SITE.** `cstart_check_omission`
 (src/ir/nfa.c) walks the epsilon+assertion closure of the pattern's own start
-wherever the gate is declined and refuses, by `ctx_fail`, if any class reachable
+wherever the gate is declined and refuses, by `pcrec_ctx_fail`, if any class reachable
 without consuming admits a non-start byte or if an accept is reachable without
 consuming at all. That second arm is the AST-level predicate checked against the
 MACHINE — two independent derivations meeting — and it is what sabotage **S236**

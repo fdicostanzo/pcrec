@@ -217,7 +217,7 @@ else
     # allocating a NODE inside this pass raw. RE-READ 2026-09-05 (the first
     # full battery after stage 2 landed): the file's ONE direct pcrec_arena_alloc
     # is u8_push_branch's growable `Ast **` BRANCH ARRAY — scratch pointer
-    # storage, arena-backed for cpset.c's own ctx_fail-unwind reason, never
+    # storage, arena-backed for cpset.c's own pcrec_ctx_fail-unwind reason, never
     # an Ast — and every node this pass creates goes through pcrec_ast_node
     # (u8_byte_class, u8_seq's cats, the alt/seal makes), the
     # parent-preserving path. Constraint 2's slot-walk check above stands
@@ -382,13 +382,13 @@ else
 fi
 
 # 2c. THE ASSERTION SHIPS ENABLED (§13 obligation 5: *"an assertion compiled
-# out in the build everyone runs is a comment"*). It must be a `ctx_fail`, not
+# out in the build everyone runs is a comment"*). It must be a `pcrec_ctx_fail`, not
 # an `assert`, and it must be in the render helper rather than in a caller.
 if grep -A6 'void pcrec_cls_bits(Ctx \*cx, const Ast \*a, uint8_t out\[32\])' "$SRC/core/cpset.c" \
-     | grep -q 'ctx_fail'; then
-    ok "[2c] pcrec_cls_bits's out-of-range check is a ctx_fail — it ships enabled in every build"
+     | grep -q 'pcrec_ctx_fail'; then
+    ok "[2c] pcrec_cls_bits's out-of-range check is a pcrec_ctx_fail — it ships enabled in every build"
 else
-    bad "[2c] pcrec_cls_bits does not ctx_fail on an out-of-range code point; an assert() would be compiled out under -DNDEBUG and, in a library, would kill the caller (K7)"
+    bad "[2c] pcrec_cls_bits does not pcrec_ctx_fail on an out-of-range code point; an assert() would be compiled out under -DNDEBUG and, in a library, would kill the caller (K7)"
 fi
 if grep -q 'assert(' "$SRC/core/cpset.c"; then
     bad "[2c] src/core/cpset.c uses assert() — §13 obligation 5 requires the read-site check to ship enabled"

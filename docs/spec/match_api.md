@@ -2888,7 +2888,7 @@ dropping it, and `RX_VM_PREFILTER_LANG_WHY "dfa overflow retry, exact nfa N"`
 is what says so (`tuning.md` §2.5, §2.17). `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
 offset 0"`. The offset is not tied to any one AST node (this reason is a
 property of the whole compile, not of a construct at a position) and reads
-0 by convention, the same position the underlying `ctx_fail` reports at. If
+0 by convention, the same position the underlying `pcrec_ctx_fail` reports at. If
 the pattern's engine choice is ALSO forced by a real construct (a capture
 request, a `VM_ONLY` registry row), that reason wins the stamp on the
 ordinary first-wins rule above — the overflow's own effect on the PREFILTER

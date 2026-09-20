@@ -3347,7 +3347,7 @@ difference, always a failure); **GAINED** (a key only the axis produced,
 never documented as possible, always a failure).
 
 `run_axes.sh` does the axis-specific half: `REFUSAL_PATTERN` is a per-flag
-substring lookup — verified live against the shipped `ctx_fail` text, never
+substring lookup — verified live against the shipped `pcrec_ctx_fail` text, never
 guessed — that decides whether a REFUSED case names THIS axis's own
 documented limit (`"would replicate its body"` for `-fno-counter`'s
 replication cap; `"-fprefilter requires the VM engine"` for `-fprefilter`'s

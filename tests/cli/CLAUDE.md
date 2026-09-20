@@ -124,7 +124,7 @@ Part of `make test` since M2.
 - **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query
   surfaces. The tier-1 the R20 panel found: `--explain` and `--probe-ask`
   each hand a doorway a `Ctx` they `memset` and never `setjmp`, which was
-  safe only while no port could `ctx_fail`. The first result-producing port
+  safe only while no port could `pcrec_ctx_fail`. The first result-producing port
   ended that at MOD-0.3c/0.5c, two milestones before MOD-0.7 extracted
   `doorway_call` and carried its own "the first producing port must revisit
   here" comment along unexamined — so `--features modifiers --explain

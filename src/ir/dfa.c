@@ -99,7 +99,7 @@
  *
  * Byte equivalence classes are computed per machine so transition tables are
  * ncls-wide instead of 256-wide. All scratch memory is arena-owned so
- * ctx_fail/longjmp cannot leak (R1 R-3a). */
+ * pcrec_ctx_fail/longjmp cannot leak (R1 R-3a). */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -285,7 +285,7 @@ typedef struct {
 } LCtxTab;
 
 /* Geometric regrow out of the ARENA rather than realloc(). Every table in
- * this section is a local of pcrec_build_dfa and intern() can ctx_fail (i.e.
+ * this section is a local of pcrec_build_dfa and intern() can pcrec_ctx_fail (i.e.
  * longjmp) straight past it, so heap ownership here would leak on the error
  * path -- the rule this file's header states as R1 R-3a. Growth is geometric,
  * so the abandoned copies total less than one live table. */
@@ -934,7 +934,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * with neither force flag, but computing it always costs nothing
          * (one snprintf on an already-refusing path) and keeps this site
          * free of any awareness of WHO is asking, which is what "no
-         * try/catch-shaped clause at the ctx_fail site" means in practice:
+         * try/catch-shaped clause at the pcrec_ctx_fail site" means in practice:
          * the diagnostic below is unchanged, and this is a plain field
          * write, not a branch on the caller's mode. */
         cx->dfa_overflowed = true;
@@ -944,14 +944,14 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * is the one line that makes the anchored MATCH-HERE form's cap
          * overflow a SELECTION OUTCOME instead of a diagnostic
          * (docs/design/anchored_match_unwrapped.md §5.2). It sits AFTER
-         * [SEL-1]'s record and BEFORE the `ctx_fail`, so both are unchanged
+         * [SEL-1]'s record and BEFORE the `pcrec_ctx_fail`, so both are unchanged
          * character for character on every mandatory machine — which is what
          * keeps `--engine=auto`'s retry contract untouched. The driver that
          * asked for an optional machine is the one that knows
          * `Ctx.dfa_overflowed` does not mean what it says here; it saves and
          * restores that record around the build (src/core/compile.c). */
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-        ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
+        pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
                  "try --engine=vm)", d->maxstates);
     }
     /* Which views need storage of their own, and which alias an earlier one.
@@ -1009,7 +1009,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
             snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
                      "dfa overflowed: subset construction exceeds %lld "
                      "elements (N1 auto budget)", max_auto_dfa_elems);
-            ctx_fail(cx, 0, "auto-route DFA attempt exceeds the work budget "
+            pcrec_ctx_fail(cx, 0, "auto-route DFA attempt exceeds the work budget "
                      "(%lld state-set elements; raise with "
                      "--max-auto-dfa-elems, or use --engine=dfa for the "
                      "full %lld-element cap)",
@@ -1030,7 +1030,7 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
          * what the construction spends. Building the MANDATORY machines FIRST
          * is what keeps this from refusing a pattern that compiles today. */
         if (d->optional) { d->overflowed = true; return PCREC_DFA_DEAD; }
-        ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
+        pcrec_ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
                  "try --engine=vm, or raise with --max-subset-elems)",
                  max_subset_elems);
@@ -1237,7 +1237,7 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
  * machine, off for the reverse machine, which must keep every thread to
  * find the earliest start); `reverse` selects which side of a `(?m)$`-style
  * assertion each closure reads. `optional` means an overflow RECORDS on
- * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `ctx_fail`ing — a
+ * `d->overflowed` and returns `PCREC_DFA_DEAD` instead of `pcrec_ctx_fail`ing — a
  * selection outcome for a machine nothing needs, never a diagnostic, per
  * `[SEL-1]`. Resets `d`'s per-machine fields unconditionally at entry: one
  * `Dfa` is reused across a compile's several builds. */
@@ -1326,7 +1326,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     if (has_cstart) {
         const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
         if (!pcrec_enc_start_cls_ok(e))
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: encoding '%s' has a character-start set "
                      "that overlaps the word or newline sets, which the DFA "
                      "class axis represents as one partition",

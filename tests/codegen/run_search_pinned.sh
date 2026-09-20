@@ -623,7 +623,7 @@ fi
 # instead of eliding wrongly. Two halves: the assertion EXISTS in the source,
 # and no corpus artifact trips it (which the sweep above already demonstrates,
 # since a trip is a compile failure and every pinned artifact compiled).
-# The two greps are separate lines of the source: `ctx_fail`'s message is
+# The two greps are separate lines of the source: `pcrec_ctx_fail`'s message is
 # split across adjacent C string literals, so no single line holds the whole
 # sentence — matching one is how this check stays true to the text.
 #
@@ -647,7 +647,7 @@ if grep -q 'start_pinned_assert_routing' "$ROOT_DIR/src/gen/emit_dfa.c" \
    && grep -q "P0 routing " "$ROOT_DIR/src/gen/emit_dfa.c" \
    && grep -q 'liveness conjunct should' "$ROOT_DIR/src/gen/emit_dfa.c" \
    && grep -q 'start_pinned_assert_routing(cx,' "$ROOT_DIR/src/gen/emit_dfa.c"; then
-    ok "§7 the P0 routing assertion is present in the compiler AND WIRED (the call-site grep \`start_pinned_assert_routing(cx,\` finds axis J's own dispatch, not only the definition), and no artifact among the $n_pinned pinned ones tripped it (a trip is a ctx_fail, i.e. a compile failure)"
+    ok "§7 the P0 routing assertion is present in the compiler AND WIRED (the call-site grep \`start_pinned_assert_routing(cx,\` finds axis J's own dispatch, not only the definition), and no artifact among the $n_pinned pinned ones tripped it (a trip is a pcrec_ctx_fail, i.e. a compile failure)"
 else
     bad '§7 the P0 routing assertion is GONE from src/gen/emit_dfa.c, OR its CALL SITE is (the wiring half of this check, S223) — the elision\047s "fs == s1u[UPC_PLAIN]" premise is now unchecked in both the predicate and the compiler, and an engine-selection change would break it silently'
 fi

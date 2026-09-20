@@ -36,10 +36,10 @@
  * re-derives is only as good as the next author's memory.
  *
  * ============================================================================
- * THE BUILDER IS ARENA-BACKED, AND THAT IS ABOUT `ctx_fail`
+ * THE BUILDER IS ARENA-BACKED, AND THAT IS ABOUT `pcrec_ctx_fail`
  * ============================================================================
  *
- * `ctx_fail` longjmps to `compile_driver`'s single `setjmp`, which frees the
+ * `pcrec_ctx_fail` longjmps to `compile_driver`'s single `setjmp`, which frees the
  * arena wholesale. Every class in this compiler is built inside a region of
  * code that can refuse — `p_class` raises "invalid range in character class"
  * from the middle of its own accumulation — so a `malloc`/`realloc` builder
@@ -229,7 +229,7 @@ void pcrec_cpset_publish(PcrecCpSet *s, Ast *a)
  * interval list as if it were a membership bitmap (r54 E1). This turns that
  * into a diagnosed internal error AT THE SITE THAT WOULD HAVE COMMITTED IT.
  *
- * IT IS A `ctx_fail` AND NOT AN `assert`, deliberately (§13 obligation 5). The
+ * IT IS A `pcrec_ctx_fail` AND NOT AN `assert`, deliberately (§13 obligation 5). The
  * builds this project ships and tests are `-O2 -g` with no `-DNDEBUG` either
  * way, but "the assertion happens to be enabled in the configuration everyone
  * happens to use" is not a property a check can rest on, and an `assert` in a
@@ -241,7 +241,7 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32])
     for (int i = 0; i < a->u.cls.n; i++) {
         unsigned lo = a->u.cls.iv[i].lo, hi = a->u.cls.iv[i].hi;
         if (hi > 0xFF)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: a class holding code point U+%04X "
                      "reached a byte-tier consumer — the encoding lowering "
                      "did not run on this subtree", hi);

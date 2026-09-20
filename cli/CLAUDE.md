@@ -186,7 +186,7 @@ buffer to route through a single call — a change of SHAPE, not of channel.
 **A DOORWAY THAT RAISES (R20/MOD07-1)** is a third reason `--explain` and
 `--probe-ask` return NULL, and each now prints a different sentence for it.
 Both surfaces used to hand the doorways a `Ctx` with no `setjmp`, which was
-safe only while no port could `ctx_fail`; once module ports began recursing
+safe only while no port could `pcrec_ctx_fail`; once module ports began recursing
 into `pcrec_parse_body` the surfaces SIGSEGVed (139) on any query whose body
 fails at an open gate — `--features modifiers --explain '(?i:['`. They now
 `setjmp`, abandon the answer, and fill a `pcrec_error`. An EMPTY `err->msg`

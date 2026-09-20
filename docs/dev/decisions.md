@@ -7708,6 +7708,19 @@ three-lane columns (D86) alongside the rows the review proposes, and
 Frank ratifies a ranked future-work list. Positioning unchanged (memory
 `pcrec-post-spine-direction`): the fastest COMPLETE pcre.
 
+### D104 STATUS — BUILT, and the population was 34 (lane w5, 2026-09-19)
+
+Landed on `lane/w5` as [REVW.5] item 6, in ten commits grouped by blast
+radius. **`nm -g build/libpcrec.a` now shows 295 exports and ZERO without a
+`pcrec_` prefix.** The population was 34 at the branch point, not the 12 D104
+named or the 29 the addendum below priced: `sb_cmt_open`, `sb_cmt_close`,
+`sb_comments` and `sb_len_uncut` landed with [EMIT-VERB] between the addendum
+and the lane, by the same mechanism — `static` dropped so the emission kit
+could cross a translation-unit boundary. The names in THIS ROW and the
+addendum below are left at their old spellings deliberately: a ruling records
+what was ruled, and rewriting its subject falsifies the record. The live tree
+carries only the new spellings.
+
 ### D104 addendum — the rename population is 29, the cadence is per-commit witnesses + `make test` while iterating + ONE battery at the wave's close (Frank, 2026-09-19, seventy-first session)
 
 The w5facts sheet re-measured the non-`pcrec_` exports of libpcrec.a at

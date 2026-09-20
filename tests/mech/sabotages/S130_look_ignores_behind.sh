@@ -6,7 +6,7 @@
 # back-step and end-check, and neither existed — `pcrec_laport_group` declined
 # the three `(?<` tails at `WANT_RESULT`, so no `A_LOOK` with `behind == true`
 # could be built at all, and `vm_look`'s only read of the flag was a LOUD
-# `ctx_fail` whose deletion was unobservable because nothing could reach it. A
+# `pcrec_ctx_fail` whose deletion was unobservable because nothing could reach it. A
 # sabotage of an unreachable guard is not a detector, and wave B+C's report
 # said so rather than letting a matrix reader take it for a finding.
 #
@@ -14,7 +14,7 @@
 # header said it must: `SAB_BEFORE` is now the emission that BRANCHES on
 # `.behind`, and the sabotage emits the LOOKAHEAD shape for both directions —
 # body forward from the cursor, no back-step, no end-check. That is precisely
-# the silent miscompile the retired `ctx_fail` existed to make impossible while
+# the silent miscompile the retired `pcrec_ctx_fail` existed to make impossible while
 # the wave was half-landed.
 #
 # THE ARTIFACT STILL COMPILES AND STILL ANSWERS, which is what makes this a

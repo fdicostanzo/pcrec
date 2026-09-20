@@ -1840,7 +1840,7 @@ flush_block() {
             # for it — no record of WHY the case is missing, only that it
             # is (an axis-vs-default diff reads this as an undifferentiated
             # "LOST"). Dump the pcrec diagnostic itself, flattened to one
-            # line (a TSV row, and a multi-line ctx_fail message would
+            # line (a TSV row, and a multi-line pcrec_ctx_fail message would
             # otherwise corrupt the format), with a sentinel `trc` field
             # (REFUSED, never a real exit code) so a consumer can tell "the
             # pattern was refused, here is why" apart from "the case ran

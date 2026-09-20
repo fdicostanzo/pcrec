@@ -529,7 +529,7 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
     if (!pcrec_enc_start_guard(pcrec_enc_by_id(cx->opt->encoding),
                                g, sizeof g, posvar, subjvar, lenvar, &trunc)) {
         if (trunc)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: this encoding's character-start guard "
                      "does not fit the emitter's buffer");
         return buf;   /* this encoding places no restriction: emit nothing */
@@ -545,7 +545,7 @@ const char *pcrec_startpos_guard_text(Ctx *cx, char *buf, size_t cap,
         "%sif (!(%s)) return PCREC_ERR_STARTPOS;\n",
         indent, indent, indent, indent, indent, indent, indent, indent, g)
             >= cap)
-        ctx_fail(cx, 0,
+        pcrec_ctx_fail(cx, 0,
                  "internal error: the character-start guard's emitted text "
                  "does not fit the emitter's buffer");
     return buf;
@@ -676,7 +676,7 @@ static void emit_info_decl(StrBuf *sb, const char *infoname)
  * same adapter one file over, taking the arena from `Vm`.
  *
  * REACHING IT FROM A DfaForm: `f->cx`, whose own comment used to read "for
- * `ctx_fail` alone" and no longer can. */
+ * `pcrec_ctx_fail` alone" and no longer can. */
 static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
@@ -3618,7 +3618,7 @@ struct DfaDir {
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
-    /* [OPT-K] the Ctx, originally for `ctx_fail` alone. Two arms of the
+    /* [OPT-K] the Ctx, originally for `pcrec_ctx_fail` alone. Two arms of the
      * offset-k skip's emitter are UNREACHABLE by construction (an empty
      * verify chain; a non-singleton scan offset), and this file's standing
      * preference is a loud internal error over a silent fallback that would
@@ -4414,12 +4414,12 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
             else           pcrec_sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
         }
     }
-    /* UNREACHABLE, and a `ctx_fail` rather than a `1` fallback (critic nit
+    /* UNREACHABLE, and a `pcrec_ctx_fail` rather than a `1` fallback (critic nit
      * N-2): offset 0 is always a member and never the scan, so the chain has
      * at least one term. A silent `1` would emit a skip that accepts every
      * candidate — correct, and with the whole mechanism switched off. */
     if (first)
-        ctx_fail(f->cx, 0, "internal error: an offset-k skip with an empty "
+        pcrec_ctx_fail(f->cx, 0, "internal error: an offset-k skip with an empty "
                                "verify chain (offset 0 is always a verify member)");
 }
 
@@ -4500,7 +4500,7 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
          * bitmap-scan arm that stood here was written for a k = 0 scan and
          * read `can_begin_match`, which is the set MISCOMPILE-1 is about; it
          * is deleted rather than left as dead emitted text. */
-        ctx_fail(f->cx, 0, "internal error: an offset-k skip whose scan "
+        pcrec_ctx_fail(f->cx, 0, "internal error: an offset-k skip whose scan "
                                "offset is not a single byte value");
     }
     pcrec_sb_puts(c,   "        if (");
@@ -4630,7 +4630,7 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * THAT INVARIANCE IS CHECKED AT THE EMITTER RATHER THAN TRUSTED —
  * `dfa_form_derive` re-derives the precondition from the machine it is about
  * to write, which is the one reading that cannot share a source with the
- * pass's own decision. A drift is a loud `ctx_fail` there.
+ * pass's own decision. A drift is a loud `pcrec_ctx_fail` there.
  *
  * `forward` is not a parameter: axis B's candidates all carry an `s->forward`
  * clause, so the reverse and anchored machines select `none` through the
@@ -4992,7 +4992,7 @@ typedef struct DfaSearchStart {
 
 /* P0's assertion, and it is the real guard for two of the clauses above
  * rather than a decoration. It fires as a loud internal error, which is this
- * file's standing preference over a silent fallback (`ctx_fail` is what the
+ * file's standing preference over a silent fallback (`pcrec_ctx_fail` is what the
  * offset-k skip's two unreachable arms use, for the same reason).
  *
  * The seed-liveness half has NO SABOTAGE WITNESS and cannot currently have
@@ -5005,7 +5005,7 @@ typedef struct DfaSearchStart {
 static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
 {
     if (fd->s1u[UPC_PLAIN] != fs)
-        ctx_fail(cx, 0, "internal error: the start-pinned search's P0 routing "
+        pcrec_ctx_fail(cx, 0, "internal error: the start-pinned search's P0 routing "
                         "premise is broken -- ENG_UNANCH's s0 (%d) and "
                         "s1u[UPC_PLAIN] (%d) are different states, so the "
                         "elision's proof is about a state the search at "
@@ -5013,7 +5013,7 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
                         "opt5_step2_twopass.md P0)", fs, fd->s1u[UPC_PLAIN]);
     for (int u = 0; u < UPC_N; u++)
         if (fd->s1g[u] != fd->s1u[u])
-            ctx_fail(cx, 0, "internal error: the start-pinned search reached a "
+            pcrec_ctx_fail(cx, 0, "internal error: the start-pinned search reached a "
                             "machine with a \\G start family (s1g[%d] = %d, "
                             "s1u[%d] = %d); ENG_UNANCH implies no N_GSTART, so "
                             "this artifact's routing has moved under the "
@@ -5023,7 +5023,7 @@ static void start_pinned_assert_routing(Ctx *cx, const Dfa *fd, int fs)
         for (int u = 0; u < UPC_N; u++) {
             if (!upc_emit_live(u)) continue;
             if (fd->s1u[u] < 0)
-                ctx_fail(cx, 0, "internal error: the start-pinned search "
+                pcrec_ctx_fail(cx, 0, "internal error: the start-pinned search "
                                 "accepted a machine with a DEAD seed state "
                                 "(s1u[%d] < 0); P3's liveness conjunct should "
                                 "have declined it, and eliding here would "
@@ -5354,7 +5354,7 @@ static void scan_test(StrBuf *c, const DfaForm *f, int head)
 /* Emits the [OPT-5] scan edge for chain head `head`: a bounded-count loop
  * over one class instead of `m` per-byte table steps, replacing every
  * state `scanedge.c` deleted from this chain. `head` must already be a
- * chain head at PERIOD 1 (`ctx_fail`s loudly otherwise — a caller that
+ * chain head at PERIOD 1 (`pcrec_ctx_fail`s loudly otherwise — a caller that
  * hands this a mid-chain state or a period-k chain is a defect in the
  * scan-edge analysis, not something to emit around). `nx`/`acc`/`facc`
  * decide the loop's exit shape: what state it lands in and whether that
@@ -5369,7 +5369,7 @@ static void emit_scan_edge(StrBuf *c, const DfaForm *f, int head)
      * error is this file's standing preference over emitting a correct
      * matcher with the wrong loop in it. */
     if (st->scan_period != 1)
-        ctx_fail(f->cx, 0, "internal error: scan edge with period %d "
+        pcrec_ctx_fail(f->cx, 0, "internal error: scan edge with period %d "
                  "(only period 1 is built)", st->scan_period);
     const char *ind = f->dir->bind;
     int span = st->scan_span, nx = st->scan_next;
@@ -5518,13 +5518,13 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
      *      back from the other side. */
     for (int k = 0; k < f->nscan; k++)
         if (f->scan[k] != d->n - f->nscan + k)
-            ctx_fail(cx, 0, "internal error: scan-edge head %d sits at row %d, "
+            pcrec_ctx_fail(cx, 0, "internal error: scan-edge head %d sits at row %d, "
                      "not at %d -- the sentinel range must be the top %d rows",
                      k, f->scan[k], d->n - f->nscan + k, f->nscan);
     for (int k = 0; k < f->nskip; k++)
         for (int j = 0; j < f->nscan; j++)
             if (f->skip[k] == f->scan[j])
-                ctx_fail(cx, 0, "internal error: state %d carries both a stay "
+                pcrec_ctx_fail(cx, 0, "internal error: state %d carries both a stay "
                          "skip and a scan edge", f->skip[k]);
     /*  (c) [OPT-EDGE] STEP 1.1 — PRECONDITION (8), RE-DERIVED FROM THE MACHINE
      *      THIS FORM IS ABOUT TO BE WRITTEN FROM. The pass narrowed (8) to
@@ -5550,7 +5550,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                 int t = fam ? d->s1g[u] : d->s1u[u];
                 if (t < 0 || t >= d->n || t == d->s0) continue;
                 if (d->st[t].scan_span != 0)
-                    ctx_fail(cx, 0, "internal error: state %d carries a scan "
+                    pcrec_ctx_fail(cx, 0, "internal error: state %d carries a scan "
                              "edge and is named by seed family %s[%d], on a "
                              "machine whose '%s' prefilter reseeds",
                              t, fam ? "s1g" : "s1u", u, f->pf->c.name);
@@ -6399,7 +6399,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             pcrec_sb_printf(c,
                 "        if (start > search_from && !(%s)) continue;\n", sbnd);
         } else if (trunc)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: this encoding's character-start guard "
                      "does not fit the emitter's buffer");
     }

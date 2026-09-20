@@ -804,7 +804,7 @@ static int vm_label(Vm *v) { return v->nlabel++; }
 static void vm_charge(Vm *v)
 {
     if (++v->nodes > PCREC_MAX_VM_NODES)
-        ctx_fail(v->cx, 0, "pattern too large (VM exceeds %d emitted nodes)",
+        pcrec_ctx_fail(v->cx, 0, "pattern too large (VM exceeds %d emitted nodes)",
                  PCREC_MAX_VM_NODES);
 }
 
@@ -1277,7 +1277,7 @@ static bool vm_nullable(const Ast *a)
          * the same direction for the same reason.
          *
          * IT IS UNREACHABLE IN THIS WAVE — nothing produces an `A_CALL` — and
-         * `vm_emit`'s own arm is a hard `ctx_fail`, which is what makes
+         * `vm_emit`'s own arm is a hard `pcrec_ctx_fail`, which is what makes
          * landing it incomplete safe rather than merely quiet. Wave B+C
          * replaces it in the same edit that builds the graph.
          *
@@ -2765,7 +2765,7 @@ static void vm_count_slots_rep(Vm *v, const Ast *a, long long repl,
         {
             long long total = repl * copies;
             if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
-                ctx_fail(v->cx, 0,
+                pcrec_ctx_fail(v->cx, 0,
                          "pattern too large: nested bounded repeats would "
                          "replicate a body %lld times in total (limit %d). "
                          "Repetition counts MULTIPLY through nesting, so "
@@ -2920,12 +2920,12 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         const int idx = v->cg
             ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
         if (idx < 0 || !a->u.call.body)
-            ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
+            pcrec_ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
                                "spliced but has no bound body",
                      a->u.call.target);
         v->nsplice += v->spl_nw ? v->spl_nw[idx] : 0;
         if (++v->splice_depth > v->nregion)
-            ctx_fail(v->cx, 0, "internal error: a spliced subroutine call "
+            pcrec_ctx_fail(v->cx, 0, "internal error: a spliced subroutine call "
                                "nested more than %d deep, so the splice "
                                "eligibility rule admitted a cycle",
                      v->nregion);
@@ -4176,7 +4176,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * claim about FRAMES only; the scan below is unconditionally MAXIMAL, and
      * `(?>a*?)b` on "aaab" is (3,4) in both oracles and (0,4) here. */
     if (poss && !a->u.rep.greedy && !a->u.rep.possessive)
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: the cursor rung's possessive scan was given "
                  "a LAZY body with no §2.2 verdict behind it. The scan is "
                  "unconditionally maximal, which that verdict is what "
@@ -4606,7 +4606,7 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
      * this is the checked restatement — a precondition a new caller can
      * silently violate is the shape R31's E1 and N1 are both made of. */
     if (!pref_ok)
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified bounded rung was given a "
                  "LAZY body with no §2.2 verdict behind it. Its shape ignores "
                  "preference, which that verdict is what licenses");
@@ -4680,13 +4680,13 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
      * LAZY: see vm_poss_chain's own check for why the licence is "greedy OR
      * §2.2-proved" rather than "greedy". */
     if (vm_nullable(body))
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
                  "NULLABLE body. It emits no empty-iteration guard, and that "
                  "is licensed by §2.2 refusing such bodies -- not by anything "
                  "this rung does");
     if (!pref_ok)
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: the possessified unbounded rung was given a "
                  "LAZY body with no §2.2 verdict behind it; its shape ignores "
                  "preference, which that verdict is what licenses");
@@ -4913,12 +4913,12 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
          * rather than a miscompile is the FIVE DECLINES in src/opt/revdet.c
          * (sites 14-18) — `rd_shape` refuses the body, so no reversed program
          * containing a call is ever built, and `rd_reverse` raises its own
-         * named `A_CALL` error if one somehow is. The hard `ctx_fail` below is
+         * named `A_CALL` error if one somehow is. The hard `pcrec_ctx_fail` below is
          * the third layer, and a silent accept here would emit a backward walk
          * that simply skipped the call. */
         break;
     }
-    ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
+    pcrec_ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
 }
 
 /* Emits the reverse-deterministic rung's forward scan for bounded repeat
@@ -5529,7 +5529,7 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
      * above: this function never reads `a->u.rep.greedy`, and that is licensed by
      * §2.2's collapse rather than by anything here. */
     if (!a->u.rep.greedy && !a->u.rep.possessive)
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: the counter rung's possessive optional phase "
                  "was given a LAZY body with no §2.2 verdict behind it; its "
                  "shape ignores preference, which that verdict is what "
@@ -6495,7 +6495,7 @@ static void vm_look_behind_branch(Vm *v, const Ast *a, int i, int m, int okl,
  * flat alternation is LEFT-NESTED, so the spine yields branches backwards) —
  * the same loop shape `mod_lookaround.c`'s `la_widths` uses, so index `i`
  * pairs branch `i` with `widths[i]` by construction — and a spine that
- * disagrees with `nbranch` is `ctx_fail`, not a silently mispaired table. */
+ * disagrees with `nbranch` is `pcrec_ctx_fail`, not a silently mispaired table. */
 static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
 {
     const int m = a->u.look.nbranch;
@@ -6510,11 +6510,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
      * a lookbehind it never checked, which is a miscompile and not a
      * diagnostic. Sabotage row S-LB1 deletes the pass and lands here. */
     if (m < 1 || a->u.look.widths == NULL)
-        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
+        pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
                            "no width table — the parse hook did not run, or "
                            "its deferred width re-check did not");
     if (pslot < 0)
-        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
+        pcrec_ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
                            "no position slot — the end-check has nothing to "
                            "compare against");
 
@@ -6526,7 +6526,7 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
      * for. */
     if (!pcrec_enc_entry_engine_callable(
             pcrec_enc_by_id(v->cx->opt->encoding), PCREC_ENCE_BACK_STEP))
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: this encoding's back-step is not declared "
                  "engine-callable, so a lookbehind cannot be routed through "
                  "the seam from an engine body");
@@ -6541,13 +6541,13 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
         const Ast *t = a->l;
         for (; t->k == A_ALT; t = t->l) {
             if (i <= 1)
-                ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
+                pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
                                    "alternation spine is longer than its "
                                    "stored branch count");
             br[--i] = t->r;
         }
         if (i != 1)
-            ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
+            pcrec_ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
                                "alternation spine is shorter than its stored "
                                "branch count");
         br[0] = t;
@@ -6863,7 +6863,7 @@ static void vm_publish_saves(Vm *v, Ast *a, void *u)
     (void)u;
     int i = pcrec_callgraph_index(v->cg, a->u.call.target);
     if (i < 0)
-        ctx_fail(v->cx, 0, "internal error: subroutine call to group "
+        pcrec_ctx_fail(v->cx, 0, "internal error: subroutine call to group "
                            "%d is not in the call graph",
                  a->u.call.target);
     a->u.call.save  = v->rgn_w[i];
@@ -6885,7 +6885,7 @@ static void vm_publish_saves(Vm *v, Ast *a, void *u)
  * because nullability's least fixpoint over a cycle is "not nullable" and a
  * round that finds a nullable path raises it. `nt` rounds suffice (each
  * settles at least one more target) and the EXTRA round is ASSERTED to change
- * nothing rather than assumed to: the `ctx_fail` below IS that assertion, and
+ * nothing rather than assumed to: the `pcrec_ctx_fail` below IS that assertion, and
  * an extraction that returned early on the settle round instead would delete
  * it silently.
  *
@@ -6909,7 +6909,7 @@ static void vm_resolve_nonnull(Vm *v, Ast *root)
             }
         if (!changed) break;
         if (round == nt)
-            ctx_fail(cx, 0, "internal error: the subroutine nullability "
+            pcrec_ctx_fail(cx, 0, "internal error: the subroutine nullability "
                             "fixpoint did not settle in %d rounds", nt);
     }
     vm_walk_calls(v, root, vm_publish_nonnull, nn);
@@ -7098,7 +7098,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
          * overflow at emission, three passes later, with nothing pointing
          * at the cause. */
         if (!v->rgn_emit[i] && v->spl_nw && n != v->spl_nw[i])
-            ctx_fail(cx, 0, "internal error: the spliced callee for group "
+            pcrec_ctx_fail(cx, 0, "internal error: the spliced callee for group "
                             "%d reserved %d save slots and needs %d — the "
                             "pre-pass and the W build disagree about its "
                             "transitive group set",
@@ -7152,7 +7152,7 @@ static void vm_memo_region_costs(Vm *v)
         }
         if (all) break;
         if (!changed)
-            ctx_fail(cx, 0, "internal error: the subroutine cost "
+            pcrec_ctx_fail(cx, 0, "internal error: the subroutine cost "
                             "memo did not settle");
     }
 }
@@ -7392,7 +7392,7 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
     vm_charge(v);
     const int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
     if (idx < 0 || !v->rgn_lbl)
-        ctx_fail(v->cx, 0, "internal error: subroutine call to group %d has no "
+        pcrec_ctx_fail(v->cx, 0, "internal error: subroutine call to group %d has no "
                            "emitted region", a->u.call.target);
 
     const int ret = vm_label(v);
@@ -7505,7 +7505,7 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
     vm_charge(v);
     const int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
     if (idx < 0 || !a->u.call.body)
-        ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
+        pcrec_ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
                            "spliced but has no bound body", a->u.call.target);
 
     const int base = v->nsplice;
@@ -7516,7 +7516,7 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
          * is, and the next `vm_slot_splice` would name a slot past
          * `RX_NSLOTS`. LOUD, because the alternative is an out-of-bounds write
          * in EMITTED code. */
-        ctx_fail(v->cx, 0, "internal error: the splice save block overflowed "
+        pcrec_ctx_fail(v->cx, 0, "internal error: the splice save block overflowed "
                            "(%d of %d slots)", v->nsplice, v->nsplice_total);
 
     const int body_lbl = vm_label(v);
@@ -7544,7 +7544,7 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
      * same minimum-remaining-length pruning the hand-written body would get,
      * which is the whole claim the splice makes. */
     if (++v->splice_depth > v->nregion)
-        ctx_fail(v->cx, 0, "internal error: a spliced subroutine call nested "
+        pcrec_ctx_fail(v->cx, 0, "internal error: a spliced subroutine call nested "
                            "more than %d deep, so the splice eligibility rule "
                            "admitted a cycle", v->nregion);
     vm_emit(v, body_lbl, a->u.call.body, done_lbl);
@@ -7906,7 +7906,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
      * NEXT backend this line is for. */
     if (!pcrec_enc_entry_engine_callable(
             pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
-        ctx_fail(v->cx, 0,
+        pcrec_ctx_fail(v->cx, 0,
                  "internal error: this encoding's backreference compare is "
                  "not declared engine-callable, so it cannot be routed "
                  "through the seam from an engine body");
@@ -8216,7 +8216,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     /* [M6.6.2 wave B+C] THE LOOKAROUND — `vm_look` above, which is `vm_atomic`
      * plus a saved cursor for the positive form, one pushed frame for the
      * negative one, and the atomic shape minus the cut for `(?*`. Wave A2's
-     * loud `ctx_fail` stood here; the three edits it made inseparable all
+     * loud `pcrec_ctx_fail` stood here; the three edits it made inseparable all
      * landed together — this arm, `vm_count_slots`' own (which now allocates
      * both slot families and the negative form's frame), and the re-check of
      * `vm_cost`'s two constants recorded at that arm. */
@@ -8249,7 +8249,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         else                               vm_call(v, entry, a, next);
         return;
     }
-    ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
+    pcrec_ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
 }
 
 /* ---- [M4.5c] rendering the listing ---------------------------------------
@@ -9726,7 +9726,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * behind the number and for why the cap is on REPLICATION rather than on
      * total emitted size. */
     if (v.maxcopies > PCREC_MAX_VM_REPEAT_COPIES)
-        ctx_fail(cx, cx->first_cap_pos == (size_t)-1 ? 0 : cx->first_cap_pos,
+        pcrec_ctx_fail(cx, cx->first_cap_pos == (size_t)-1 ? 0 : cx->first_cap_pos,
                  /* Inside pcrec_error.msg's 256 bytes on purpose: a diagnostic
                   * that names the fix and is then truncated has not named it. */
                  "pattern too large: a bounded repeat would replicate its body "
@@ -11722,7 +11722,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (!pcrec_enc_advance(pcrec_enc_by_id(v.cx->opt->encoding),
                            retry_adv, sizeof retry_adv, "        ",
                            "attempt_position", "subject", "subject_length"))
-        ctx_fail(v.cx, 0,
+        pcrec_ctx_fail(v.cx, 0,
                  "internal error: this encoding's unanchored retry advance is "
                  "missing or does not fit the emitter's buffer");
 

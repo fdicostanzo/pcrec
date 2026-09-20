@@ -149,7 +149,7 @@ construction (src/ir) and emission (src/gen).
   byte-range classes, surrogate range absent), `identity_max` (the bound below
   which the rewrite is the identity — 0xFF byte, 0x7F utf8), and `pat_char`
   (the parser's literal reader, exported as `pcrec_pat_char` — a byte under
-  `byte`, a full UTF-8 decode that `ctx_fail`s on ill-formed pattern text under
+  `byte`, a full UTF-8 decode that `pcrec_ctx_fail`s on ill-formed pattern text under
   `utf8`, §2.7). Under `byte` the utf8 row is never selected and every artifact
   is byte-identical, which is why the identity gate stays 100%.
 
@@ -190,7 +190,7 @@ construction (src/ir) and emission (src/gen).
   never reallocates a node that is or contains a group root), so `:1000`
   stands and the staleness is inexpressible. Stage 2 built it that way and
   added the owed group-root-ADDRESS check: `cap_sig` snapshots the count and a
-  mixed hash of every `A_CAP` address before and after the pass and `ctx_fail`s
+  mixed hash of every `A_CAP` address before and after the pass and `pcrec_ctx_fail`s
   if either moved — the invariant as a diagnosed fact rather than a shape a
   reviewer reads.
 
@@ -239,7 +239,7 @@ construction (src/ir) and emission (src/gen).
   offender.
 
   **A SKIPPED PASS IS LOUD BY CONSTRUCTION.** The pending state is encoded as
-  `u.look.widths == NULL`, which `vm_look_behind` already `ctx_fail`s on by
+  `u.look.widths == NULL`, which `vm_look_behind` already `pcrec_ctx_fail`s on by
   name — so losing this pass is an internal error on the first call-bearing
   lookbehind rather than a back-step of width zero. Encoding "pending" in a new
   boolean instead would have made the same loss a WRONG SPAN, and on a negative
@@ -349,7 +349,7 @@ construction (src/ir) and emission (src/gen).
   one-line superset proof) and exactly like `backrefs`' above.
 
   **IT COULD NOT WAIT FOR WAVE E, and that is measured rather than argued.**
-  `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `ctx_fail`s by name,
+  `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `pcrec_ctx_fail`s by name,
   annotated "unreachable: VM_ONLY, no prefilter" — and "unreachable" was true
   only while nothing PRODUCED an `A_CALL`. MEASURED on the wave's own branch
   before the predicate existed: `(a)(?1)`, `(?R)` and `(?<n>a)(?&n)` each
@@ -488,7 +488,7 @@ construction (src/ir) and emission (src/gen).
   SELECTION OUTCOME under `auto`, not a refusal, and the general mechanism
   is that the build reports "over budget" as a RESULT this file's existing
   fixpoint consumes, exactly like `forces_captures`/`forces_registry` — no
-  try/catch at the `ctx_fail` site, no second selector. It CANNOT fire on
+  try/catch at the `pcrec_ctx_fail` site, no second selector. It CANNOT fire on
   the pass that discovers the overflow (selection runs before the DFA is
   built), so it only ever returns non-trivially on `src/core/compile.c`'s
   ONE-SHOT RETRY of the whole pipeline (`Ctx.dfa_disabled`, set only there)
@@ -1168,7 +1168,7 @@ construction (src/ir) and emission (src/gen).
   **[M4.7b/K7]:** its five local tables are the ONLY allocations on the compile
   path the Job does not own, so this is the one file where failing cleanly
   means freeing by hand before `pcrec_ctx_nomem`; the header note claiming "no
-  ctx_fail paths" is updated accordingly. **K25 is filed against this pass**,
+  pcrec_ctx_fail paths" is updated accordingly. **K25 is filed against this pass**,
   not against K7's accounting: Moore refinement needs O(n) rounds on an
   n-state chain, so `a{0,25000}` spends a measured 15.3 s here against 0.03 s
   for parse, NFA build and both subset constructions combined. Bounded memory,

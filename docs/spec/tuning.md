@@ -632,7 +632,7 @@ pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
 `RX_ENGINE_WHY`'s text carries the ordinary `"... at pattern offset N"` suffix
 every `why` goes through (`why_text`, `src/opt/select_engine.c`) even though
 this reason is not tied to one AST node — offset 0 by convention, the same
-position the two `ctx_fail` sites in `src/ir/dfa.c` already report at. If the
+position the two `pcrec_ctx_fail` sites in `src/ir/dfa.c` already report at. If the
 pattern's engine choice is ALSO forced by a real construct (a live capture, a
 `VM_ONLY` registry row), that reason wins `RX_ENGINE_WHY` on the ordinary
 first-wins rule (§5.5) — the overflow's own effect (drop the prefilter) still

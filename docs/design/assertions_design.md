@@ -2324,7 +2324,7 @@ other people's checks.
 > |---|---|---|
 > | `vm_det_seq` (emit_vm.c) | `default: return 0` — DECLINES | a `$` is zero-width under either spelling, so "scan ahead by stride" is wrong for both |
 > | `vm_cap_offsets` (emit_vm.c) | `default: return -1` | UNREACHABLE: it runs only on bodies `vm_det_seq` approved, which excludes both |
-> | `vm_rev_emit` (emit_vm.c) | `default:` -> `ctx_fail` | UNREACHABLE: `revdet.c`'s `rd_shape` declines every `A_BOL`/`A_EOL` before this walk starts |
+> | `vm_rev_emit` (emit_vm.c) | `default:` -> `pcrec_ctx_fail` | UNREACHABLE: `revdet.c`'s `rd_shape` declines every `A_BOL`/`A_EOL` before this walk starts |
 > | `pcrec_revdet_first` (revdet.c) | `default:` WIDENS to all bytes | widening is opaque to what an assertion means; it makes the disjointness test fail, which is the sound direction |
 >
 > **The generalization, which is the part worth carrying to the fifth

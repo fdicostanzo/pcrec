@@ -1131,9 +1131,9 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
   **[M6.6.2 wave B+C] `vm_look` — THE LOOKAROUND, and it is `vm_atomic`'s
   shape with two lines added.** Wave A2 landed five inert `A_LOOK` arms, two
-  of them deliberately incomplete, behind a LOUD `ctx_fail` in `vm_emit`;
+  of them deliberately incomplete, behind a LOUD `pcrec_ctx_fail` in `vm_emit`;
   this wave replaced that arm with `vm_look` and completed the other two in
-  the same edit, which is what the `ctx_fail` existed to force.
+  the same edit, which is what the `pcrec_ctx_fail` existed to force.
 
   - **THE POSITIVE ATOMIC ARM IS `vm_atomic` PLUS A SAVED CURSOR.** Record
     the resume depth AND `scan_position` before any push; emit the body; on
@@ -1150,7 +1150,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     assertion be resumed later AS IF IT HAD HELD.
   **[DD-14 wave A2] FIVE INERT `A_CALL` ARMS, THREE OF THEM LOUD FAILURES.**
   Nothing produces an `A_CALL` in that wave, so `vm_emit`, `vm_cost` and
-  `vm_count_slots` all `ctx_fail` by name rather than guessing — and the three
+  `vm_count_slots` all `pcrec_ctx_fail` by name rather than guessing — and the three
   are deliberately coupled: `vm_count_slots` must account for EVERY EMITTED
   REGION (each lexical occurrence PLUS one per emitted callee region,
   `subroutines_design.md` §4.4c, whose first version said LEXICAL ONLY and was
@@ -2516,7 +2516,7 @@ worth knowing before editing it:
   `N_BOT`/`N_GSTART`. `dfa_needs_seed` compares only `s1u[u]` ACROSS `u` and
   would not notice an `s0 != s1u[PLAIN]` split, so an engine-selection change
   that routed a BOT-bearing machine here would break the elision SILENTLY.
-  `start_pinned_assert_routing` is a loud `ctx_fail` instead.
+  `start_pinned_assert_routing` is a loud `pcrec_ctx_fail` instead.
 
 **THE KEPT `last_accept_position == (size_t)-1` GATE IS LOAD-BEARING**, and
 the emitted comment says so and says why. This file's own note about a
@@ -2712,7 +2712,7 @@ runs (so the deny mask and every `applies` clause are asked once), and
 carries the argument that `unanch_start` is INVARIANT under the pass, which is
 what makes asking early legitimate; `dfa_form_derive` gained a THIRD read-back
 check that re-derives (8) from the machine it is about to write, so a drift
-between the two times is a loud `ctx_fail` naming the state.
+between the two times is a loud `pcrec_ctx_fail` naming the state.
 
 ## [CC-DIFF] STEP 1 — THE TWO EMITTED-CODE SPELLINGS (2026-09-03), abi 16 -> 17
 

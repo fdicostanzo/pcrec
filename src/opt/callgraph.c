@@ -207,7 +207,7 @@ static void cg_bind(void *ud, const Ast *a)
          * `A_CAP` a later pass DELETED (design §4.3's marking is what stops
          * `--no-captures` doing exactly that), or a target the resolver never
          * filled in. A NULL `.body` would emit a callee region for nothing. */
-        ctx_fail(b->cx, 0, "internal error: subroutine call to group %d has no "
+        pcrec_ctx_fail(b->cx, 0, "internal error: subroutine call to group %d has no "
                            "body in the final tree", t);
     n->u.call.body = body;
     /* §6.3: WAVE B+C SHIPS THE CALL LINKAGE FOR EVERY SITE. It is one path, it
@@ -510,7 +510,7 @@ static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
         }
         if (all) break;
         if (!changed)
-            ctx_fail(cx, 0, "internal error: the subroutine splice-expansion "
+            pcrec_ctx_fail(cx, 0, "internal error: the subroutine splice-expansion "
                             "evaluation did not settle");
     }
 
@@ -554,7 +554,7 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
     if (a->k != A_CALL || !a->u.call.delivers) return;
     const int i = cg_index(d->cg, a->u.call.target);
     if (i < 0)
-        ctx_fail(d->cx, 0,
+        pcrec_ctx_fail(d->cx, 0,
                  "internal error: a delivering call to group %d is not in the "
                  "call graph", a->u.call.target);
     /* A CALLEE THAT CANNOT BE SPLICED CANNOT BE DELIVERED FROM, and that is a
@@ -565,14 +565,14 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
      * flag are properties of this build. */
     if (a->u.call.link != CALL_SPLICE && !d->cg->splice[i]) {
         if (pcrec_callgraph_reaches(d->cg, i, i))
-            ctx_fail(d->cx, 0,
+            pcrec_ctx_fail(d->cx, 0,
                      "a delivering call names a RECURSIVE definition (group "
                      "%d); delivery needs the callee inlined AT THE SITE so "
                      "the site can keep what it matched, and a recursive "
                      "callee has no finite inlining. Call it plainly, or "
                      "deliver from a non-recursive definition that wraps it",
                      a->u.call.target);
-        ctx_fail(d->cx, 0,
+        pcrec_ctx_fail(d->cx, 0,
                  "a delivering call names a definition (group %d) this build "
                  "did not inline at the site, so there is nothing for the site "
                  "to keep: it exceeded the subroutine inlining budget, or "
@@ -683,7 +683,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
      * near the top of the range. Written as an assertion rather than as a cast
      * so the impossible case fails loudly instead of allocating nothing. */
     if (n <= 0)
-        ctx_fail(cx, 0, "internal error: call graph built with no target");
+        pcrec_ctx_fail(cx, 0, "internal error: call graph built with no target");
     const size_t nn = (size_t)n;
     cg->reach = pcrec_arena_alloc(&cx->arena, nn * nn);
     memset(cg->reach, 0, nn * nn);
@@ -793,7 +793,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine minimum-width "
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine minimum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
         pcrec_ast_visit(root, cg_minw_publish, &m);
@@ -813,7 +813,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine minimum-"
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine minimum-"
                                 "character-width fixpoint did not settle in "
                                 "%d rounds", n);
         }
@@ -834,7 +834,7 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
             }
             if (!changed) break;
             if (round == n)
-                ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
+                pcrec_ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
                                 "fixpoint did not settle in %d rounds", n);
         }
         pcrec_ast_visit(root, cg_cwmax_publish, &m);

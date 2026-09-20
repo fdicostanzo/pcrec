@@ -35,6 +35,6 @@ SAB_COUNT=1
 SAB_BEFORE='    if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
         char buf[LA_MSG_MAX];
         la_width_refusal(buf, sizeof buf, lo, hi);
-        ctx_fail(cx, a->u.look.at, "%s", buf);
+        pcrec_ctx_fail(cx, a->u.look.at, "%s", buf);
     }'
 SAB_AFTER='    (void)la_widths(cx, a->l, nbr, w, &lo, &hi);   /* SABOTAGE S170 */'

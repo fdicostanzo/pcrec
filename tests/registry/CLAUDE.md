@@ -1153,7 +1153,7 @@ much less than it claimed.
 | **shape 9 loses its nested opener** (`[[%ca[%cb%c]%c]]` → `[[%ca%cb%c]%c]]`) (R9/C1-F1) | **2** |
 | `posix_whole_class_only` always returns false (R9/C3-4) | 8 |
 | libpcre2 contributes ZERO POSIX class names (R9/C1-2) | 10 |
-| `if (c2 == '!') ctx_fail(...)`, a construct with no registry row (R9/C1-3) | 6 |
+| `if (c2 == '!') pcrec_ctx_fail(...)`, a construct with no registry row (R9/C1-3) | 6 |
 | delete `check_class_brackets()` from `main()` (R9/C1-7) | count guard + 3 manifest lines |
 | rule 2 off at doorway 4a for `.`/`=` only (R9/C2-3) | 12 |
 | revert the `open_msg` branch — the 4a over-promise (R9/C1-8) | 3 |
@@ -1239,7 +1239,7 @@ neighbours". R5 measured it and the statement was wrong in both directions.
 
 **The `(*` sweep is STRONGER than was documented.** The template is `(*%c)`, so
 it does vary the first name byte, and a branch keyed on it IS caught — a critic
-added `if (pat[at+2] == 'N') ctx_fail(... 'misc')` and `registry` failed. The
+added `if (pat[at+2] == 'N') pcrec_ctx_fail(... 'misc')` and `registry` failed. The
 old sentence "a name-conditional branch added to parse.c would not be caught"
 is too strong.
 

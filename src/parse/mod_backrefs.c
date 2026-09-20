@@ -709,7 +709,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                  * nothing, which is the population-nobody-counts shape this
                  * step refused for `encoding` one file over. */
                 if (pr->node->u.call.delivers)
-                    ctx_fail(cx, pr->at,
+                    pcrec_ctx_fail(cx, pr->at,
                              "%s delivers from '%s', but '%s' is a capture "
                              "group in this pattern, not a definition; a "
                              "plain (?&%s) calls it",
@@ -780,14 +780,14 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
          * be shown here. `(a)(?-2)` and `(a)\g{-2}` both take this arm; the
          * value never reaches the general sentence. */
         if (!worst->name && worst->number < 1)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s counts back past the first capture group; this "
                      "pattern has %u", worst->what, cx->ncap);
         if (!worst->name)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s refers to capture group %d, but this pattern has %u",
                      worst->what, worst->number, cx->ncap);
-        ctx_fail(cx, worst->at,
+        pcrec_ctx_fail(cx, worst->at,
                  "%s refers to a capture group named '%s', which this pattern "
                  "does not declare", worst->what, worst->name);
     }

@@ -597,7 +597,7 @@ named no mechanism (`src/` contains zero `assert()` calls). Here there is one
 function and no hand-off: it answers its own question and returns.
 
 It is also NOT the TRIAL MODE refuted in D32 §8 by building it. Trial mode was
-*implicit* — a `Ctx` copy plus a flag tripping `pcrec_arena_alloc`/`ctx_fail` — so
+*implicit* — a `Ctx` copy plus a flag tripping `pcrec_arena_alloc`/`pcrec_ctx_fail` — so
 any construct with a body tripped it, aborting every CORRECT implementation,
 and it leaked ~76-80 bytes per byte scanned (76.4 MB at N = 1,000,000). Here
 the instruction is *explicit* and the handler is written to honour it.
@@ -716,8 +716,8 @@ So `EXT_TERMINATED`'s message comes from the row's existing `RD_MODULE` /
 
 ### 5.6 A PRODUCING claim is RETURNED
 
-`EXT_TERMINATED` may still leave by `ctx_fail`'s longjmp — no change to the 23
-`ctx_fail` sites in `ext.c`. But a claim that **produces** must return its
+`EXT_TERMINATED` may still leave by `pcrec_ctx_fail`'s longjmp — no change to the 23
+`pcrec_ctx_fail` sites in `ext.c`. But a claim that **produces** must return its
 result to the caller.
 
 This is not stylistic. Today every doorway is `noreturn` except
@@ -1893,10 +1893,10 @@ own change with its own pins, never inside the refactor.
 > divergence cannot ride the refactor by being added to prose.
 >
 > **§5.6 is added to the superseded list** (C2/F3): its "EXT_TERMINATED may
-> still leave by ctx_fail" carve-out pointed the wrong way once §16.3 needs
+> still leave by pcrec_ctx_fail" carve-out pointed the wrong way once §16.3 needs
 > the NON-producing verdict returned. The rule is now: every terminal answer
-> is RETURNED under WANT_VERDICT; `ctx_fail` survives only under WANT_RESULT.
-> D33 §5's blast radius carries forward: 23 `ctx_fail` sites in `ext.c` must
+> is RETURNED under WANT_VERDICT; `pcrec_ctx_fail` survives only under WANT_RESULT.
+> D33 §5's blast radius carries forward: 23 `pcrec_ctx_fail` sites in `ext.c` must
 > yield a representable diagnostic.
 
 ### 17.2 Status and disposition (the D34 ruling on OQ 1 + 13)

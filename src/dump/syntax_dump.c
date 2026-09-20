@@ -713,12 +713,12 @@ static bool doorway_route(const char *text, size_t n, Doorway *d)
  *
  * THE OBLIGATION THIS COMMENT USED TO DEFER IS DISCHARGED (R20/MOD07-1,
  * 2026-08-12). It said the zeroed Ctx was safe "while every doorway RETURNS
- * its answer (none may ctx_fail or allocate)" and named "the first enabled,
+ * its answer (none may pcrec_ctx_fail or allocate)" and named "the first enabled,
  * result-producing module port" as the event that must revisit it. That port
  * landed at MOD-0.3c/0.5c — two milestones before MOD-0.7 extracted this
  * function and carried the comment along unexamined — and the precondition
  * had been false ever since: a module port recurses into `pcrec_parse_body`,
- * whose `ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
+ * whose `pcrec_ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
  * that had never been `setjmp`'d. `--features modifiers --explain '(?i:['`
  * SIGSEGVed (139), as did `--features all --probe-ask result -- '(?i:['`.
  *
@@ -825,7 +825,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
         /* [M6.4.2] A NON-DOORWAY ROW RAISES INSTEAD OF RETURNING, and for it a
          * raise is the ORDINARY unbuilt answer rather than a defect: the
          * doorway arm below classifies on a RETURNED `ExtResult`, while the
-         * quant-suffix arm runs a real parse whose refusal is a `ctx_fail`
+         * quant-suffix arm runs a real parse whose refusal is a `pcrec_ctx_fail`
          * that lands exactly here. See that arm for why a raise at a
          * forced-open gate can only be a missing producer, and where the
          * malformed-syntax half of the question is checked instead.
@@ -1574,7 +1574,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      * asserted "no jmp target — every doorway RETURNS its answer, the D33 §5
      * contract"; §5's contract is about the doorway's own terminal answer and
      * says nothing about a PORT, which recurses into `pcrec_parse_body` and
-     * can `ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
+     * can `pcrec_ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
      * the full history. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);

@@ -38,7 +38,7 @@
  * target BUILD or W1.3's composer needs a definition-shaped record with
  * fields a row has no place for, it gets one, and D77 says that is when.
  *
- * NO Ctx, SO NO ctx_fail. This parser runs BEFORE any compile (the CLI
+ * NO Ctx, SO NO pcrec_ctx_fail. This parser runs BEFORE any compile (the CLI
  * calls it with no pattern in hand), so there is no `Ctx` to longjmp out
  * of and no arena owner to clean up. Errors are returned, not thrown,
  * and every one of them names the FILE, the LINE and the CONSTRUCT
@@ -2098,7 +2098,7 @@ static char *join_path(Arena *a, const char *dir, const char *rest);
  * resolution, no composition): that is `pcrec_rxt_source_resolve`'s job,
  * kept separate so `--list-source`'s dump stays a pure function of this
  * one file's bytes. Runs before any `Ctx` exists, so every error is
- * RETURNED rather than raised through `ctx_fail` — see the file header for
+ * RETURNED rather than raised through `pcrec_ctx_fail` — see the file header for
  * why. The structure layer (S0-S3, the attachment stack `st` below) is the
  * dispatch; `rxt_schema.def`'s rows say what is legal where. */
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)

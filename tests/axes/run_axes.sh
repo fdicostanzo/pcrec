@@ -355,7 +355,7 @@ fi
 # REFUSED-DOCUMENTED — a population, floored (K35), never a failure — ONLY
 # when its diagnostic TEXT contains the axis's own documented limit
 # substring, verified live against the shipped diagnostics below (never
-# hand-guessed): src/gen/emit_vm.c's replication-cap ctx_fail
+# hand-guessed): src/gen/emit_vm.c's replication-cap pcrec_ctx_fail
 # ("would replicate its body") for -fno-counter, and
 # src/opt/select_engine.c's force-prefilter refusal
 # ("-fprefilter requires the VM engine") for -fprefilter. This is

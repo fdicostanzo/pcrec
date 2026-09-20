@@ -1179,7 +1179,7 @@ no row for the generic analysis to name.
 ### 5.2 `--engine=dfa` refuses, and needs no new code
 
 The second branch of the override (`src/opt/select_engine.c:326-336`, the second
-`ctx_fail` at `:334-335`) already does it — **with one ordering fix that comes
+`pcrec_ctx_fail` at `:334-335`) already does it — **with one ordering fix that comes
 from M-1 contract note 1 and is this module's to make**: the branch currently
 takes the CAPTURES arm whenever `cx->want_caps && cx->ncap > 0`, which on a
 capture-bearing atomic pattern would advise `--no-captures`, a flag that cannot
@@ -1511,7 +1511,7 @@ table below — so this section is a pinning obligation, not an implementation
 one.
 
 pcrec DOES carry libpcre2's exact sentence at
-`src/parse/parse.c:974` — `ctx_fail(cx, cx->pos - 1, "quantifier does not
+`src/parse/parse.c:974` — `pcrec_ctx_fail(cx, cx->pos - 1, "quantifier does not
 follow a repeatable item")`, with a comment recording that the blame position
 was measured against PCRE2's cell for cell — but that is NOT the message this
 shape produces; the `multiple quantifiers on the same item` guard fires first
@@ -1532,7 +1532,7 @@ module gets it for free rather than having to build it:
 | `a*++`  | `possessive quantifier requires module 'atomic-groups' (offset 2)` | `quantifier does not follow a repeatable item` | ✓ today; **after the module lands the first `+` is consumed as the possessive marker and the second re-enters the quantifier loop, so this becomes `multiple quantifiers on the same item`** — still a refusal, still tier-2 correct |
 | `a**`   | `multiple quantifiers on the same item (offset 2)` | (the same family) | the CONTROL: this is the existing path `a*?+` already falls into |
 
-The mechanism is `src/parse/parse.c:963-964`'s `if (quantified) ctx_fail(…)`
+The mechanism is `src/parse/parse.c:963-964`'s `if (quantified) pcrec_ctx_fail(…)`
 guard, reached because the lazy `?` ends the round and the `+` starts a new
 one. **[M6.4.2] owes only the `tests/reject/` pins**, one per row above,
 including the `a*++` row whose message CHANGES when the module lands — which is

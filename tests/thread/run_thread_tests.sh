@@ -80,7 +80,7 @@
 #
 # WHY EIGHT JOBS (TS-3): six accepting patterns (varied shapes, again) plus
 # two REJECTING patterns ('\d', '(?=a)'), so the concurrency claim also
-# covers pcrec_compile()'s ctx_fail()/longjmp error path, not just its
+# covers pcrec_compile()'s pcrec_ctx_fail()/longjmp error path, not just its
 # success path -- both use a stack-local Ctx and jmp_buf, so this should be
 # equally race-free, and this is what makes that a checked fact rather than
 # an assumption.

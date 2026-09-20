@@ -680,7 +680,7 @@ decides whether to perform it — and then run the row through
     carrying: bash does NOT evaluate the right-hand sides of ONE `local`
     statement left to right against each other, so `local f="$1" v="$f"` left
     `v` EMPTY and the fold helper reported every artifact as mismatched. The
-    others were a `ctx_fail` message split across adjacent C string literals
+    others were a `pcrec_ctx_fail` message split across adjacent C string literals
     (so no single line held the sentence a grep was looking for), backticks
     inside a double-quoted failure message running as command substitutions,
     and the C3 counter above.

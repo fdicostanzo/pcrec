@@ -8,7 +8,7 @@
  * self-loop that makes the forward machine search from every position while
  * preserving leftmost-first priority.
  *
- * R1 hardening: patch lists are arena-owned so ctx_fail cannot leak (R-3b);
+ * R1 hardening: patch lists are arena-owned so pcrec_ctx_fail cannot leak (R-3b);
  * A_CAT/A_ALT left spines are flattened iteratively so flat concatenations or
  * alternations of any length cannot overflow the C stack (R-2); remaining
  * recursion depth is bounded by the parser's group-nesting cap.
@@ -132,7 +132,7 @@ static int nst(NB *b, NKind k)
                                     ? (long long)b->cx->opt->max_nfa_states
                                     : PCREC_MAX_NFA_STATES;
     if (nfa->n >= max_nfa_states)
-        ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %lld states; "
+        pcrec_ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %lld states; "
                  "raise with --max-nfa-states)", max_nfa_states);
     if (nfa->n == nfa->cap) {
         int ncap = nfa->cap ? nfa->cap * 2 : 64;
@@ -939,14 +939,14 @@ static Frag compile_ast(NB *b, const Ast *a)
      * `backrefs_design.md` §11.2 found again — an exposure this arm, being
      * exact, does not have at all. That is a real option and it is left OPEN
      * rather than refused; what is refused is shipping it without the
-     * population §8.4 measured empty. Reaching the `ctx_fail` below with an
+     * population §8.4 measured empty. Reaching the `pcrec_ctx_fail` below with an
      * `A_CALL` means the narrowing stopped being true, which is exactly what
      * S-SR17's twin sabotages. */
     case A_CALL:
         if (a->u.call.link == CALL_SPLICE && a->u.call.body) {
             const int nt = pcrec_callgraph_ntargets(b->cx->callgraph);
             if (++b->splice_depth > nt)
-                ctx_fail(b->cx, 0,
+                pcrec_ctx_fail(b->cx, 0,
                          "internal error: a spliced subroutine call nested "
                          "more than %d deep while building the machine, so "
                          "the splice eligibility rule admitted a cycle", nt);
@@ -954,12 +954,12 @@ static Frag compile_ast(NB *b, const Ast *a)
             b->splice_depth--;
             return f;
         }
-        ctx_fail(b->cx, 0,
+        pcrec_ctx_fail(b->cx, 0,
                  "internal error: a LINKED subroutine call reached the machine "
                  "builder; a linked call is VM-only and carries no prefilter");
         break;
     }
-    ctx_fail(b->cx, 0, "internal error: bad AST node");
+    pcrec_ctx_fail(b->cx, 0, "internal error: bad AST node");
 }
 
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
@@ -1049,7 +1049,7 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
  * other here is two independent derivations meeting, not a restatement:
  * `pcrec_minw` walks `Ast` nodes and this walks `NState`s.
  *
- * `ctx_fail` and not `assert`: K7's rule that a library must not kill its
+ * `pcrec_ctx_fail` and not `assert`: K7's rule that a library must not kill its
  * caller, and the same choice `pcrec_cls_bits` makes for the same reason — a
  * lowering that did not run is a diagnosed internal error at the site that
  * would have committed the miscompile, never a wrong answer in the field.
@@ -1077,7 +1077,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
              * declined to build was load-bearing. */
             for (c = 0; c < 256; c++)
                 if (cls_has(st->cls, (unsigned)c) && !cls_has(scls, (unsigned)c))
-                    ctx_fail(cx, 0,
+                    pcrec_ctx_fail(cx, 0,
                              "internal error: [K50-NULLGATE] omitted the "
                              "character-boundary gate on a pattern whose first "
                              "byte may be 0x%02x, which this encoding does not "
@@ -1085,7 +1085,7 @@ static void cstart_check_omission(Ctx *cx, Nfa *nfa, const unsigned char *scls)
             continue;   /* consuming state: its successors are not first bytes */
         }
         if (st->k == N_ACCEPT)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "internal error: [K50-NULLGATE] omitted the "
                      "character-boundary gate on a pattern that can ACCEPT "
                      "without consuming — the nullability predicate and the "

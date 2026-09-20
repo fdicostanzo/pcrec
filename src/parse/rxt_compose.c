@@ -219,14 +219,14 @@ static const RxtDef *def_by_name(Ctx *cx, const char *ident, size_t at,
         const RxtDef *d = &cx->defs->v[i];
         if (strcmp(rc_derived_id(&cx->arena, d->name), ident) != 0) continue;
         if (strlen(d->name) > PCREC_MAX_GROUP_NAME)
-            ctx_fail(cx, at,
+            pcrec_ctx_fail(cx, at,
                      "%s names definition '%s' (%s:%zu), which is %zu bytes; "
                      "a call's name is capped at %d, so that definition is "
                      "buildable as a target and not callable",
                      what, d->name, d->file, d->line, strlen(d->name),
                      PCREC_MAX_GROUP_NAME);
         if (hit)
-            ctx_fail(cx, at,
+            pcrec_ctx_fail(cx, at,
                      "%s names '%s', which two definitions derive: '%s' "
                      "(%s:%zu) and '%s' (%s:%zu). Rename one — an exact "
                      "spelling does not win the tie",
@@ -431,7 +431,7 @@ static const Ast *rc_find_root_call(const Ast *a, const PendingRef *pend)
 /* The sub-parse's own refusals must name the DEFINITION's file and line, not
  * an offset into a pattern the author never wrote (w1_impl §2.9: provenance
  * is a property of the SUB-PARSE, not a field on a node — `internal.h`'s
- * PARSE-1 invariant says `Ast` carries no position of any kind). `ctx_fail`
+ * PARSE-1 invariant says `Ast` carries no position of any kind). `pcrec_ctx_fail`
  * takes a pattern offset, so the definition's coordinates go in the TEXT and
  * the offset stays the sub-parse's own, which is the only number that
  * locates a failure inside the definition. */
@@ -479,7 +479,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
              * the second-longest thing here — the same doubled-path cost
              * `lib_chain_text` records — so it goes after the two encodings
              * rather than before them. */
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' declares `encoding %s` but this "
                      "artifact is '%s' (%s:%zu); one artifact, one encoding",
                      def->name, def->encoding, hn, def->file, def->line);
@@ -545,7 +545,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
     {
         const Ast *rec = rc_find_root_call(body, pend);
         if (rec)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' (%s:%zu) uses whole-pattern recursion "
                      "((?R), (?0) or \\g<0>) inside a definition, which this "
                      "build refuses: after composition it could mean the "
@@ -571,7 +571,7 @@ static void rc_bind(Composer *co, const RxtDef *def)
         for (const NamedGroup *g = names; g && !found; g = g->next)
             found = strlen(g->name) == elen && memcmp(g->name, b, elen) == 0;
         if (!found)
-            ctx_fail(cx, 0,
+            pcrec_ctx_fail(cx, 0,
                      "definition '%s' exports '%.*s', which it declares no "
                      "capture group for (%s:%zu)",
                      def->name, (int)elen, b, def->file, def->line);
@@ -794,14 +794,14 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
                 (!worst || pr->at < worst->at))
                 worst = pr;
         if (worst)
-            ctx_fail(cx, worst->at,
+            pcrec_ctx_fail(cx, worst->at,
                      "%s refers to a capture group named '%s', which this "
                      "pattern does not declare", worst->what, worst->name);
     }
     for (size_t i = 0; i < co.nbound; i++)
         for (PendingRef *pr = co.bound[i].pend; pr; pr = pr->next)
             if (pr->deferred && pr->name && !bound_by_name(&co, pr->name))
-                ctx_fail(cx, 0,
+                pcrec_ctx_fail(cx, 0,
                          "definition '%s' (%s:%zu): %s refers to '%s', which "
                          "is neither one of its own groups nor a definition "
                          "this source declares",
@@ -854,7 +854,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
      * "I misread the library" from "the library forgot its export line". */
     for (size_t i = 0; i < co.nsite; i++)
         if (!co.site[i].to->def->exports)
-            ctx_fail(cx, co.site[i].at,
+            pcrec_ctx_fail(cx, co.site[i].at,
                      "%s delivers from definition '%s', which exports nothing "
                      "(%s:%zu); add an `export` line to it, or call it plainly "
                      "as (?&%s)",
@@ -952,7 +952,7 @@ Ast *pcrec_rxt_compose(Ctx *cx, Ast *root)
              * whichever the sort happened to put first. */
             for (const NamedGroup *o = cx->named_groups; o; o = o->next)
                 if (strcmp(o->name, rowname) == 0)
-                    ctx_fail(cx, st->at,
+                    pcrec_ctx_fail(cx, st->at,
                              "%s would deliver a group named '%s', which this "
                              "pattern already has; give the site another name",
                              st->what, rowname);

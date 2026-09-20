@@ -1091,7 +1091,7 @@ the skip's whole purpose is to land somewhere else.
   pos + k*, …)` with `k* < 0` needs `pos + k* >= 0` before the pointer is
   formed. The loop guard would become `pos + maxk < n && pos >= -mink`. Noted
   for whoever builds it; nothing here emits a negative offset.
-- **N-2 — the empty verify chain is a `ctx_fail`, not a `1`.** Offset 0 is
+- **N-2 — the empty verify chain is a `pcrec_ctx_fail`, not a `1`.** Offset 0 is
   always a member and never the scan, so the chain always has a term; the
   fallback that stood there emitted `if (1)`, which is a correct matcher with
   the mechanism silently switched off. The same treatment was given to the

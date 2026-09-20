@@ -14,7 +14,7 @@ static void sb_grow(StrBuf *sb, size_t need)
      * cap decision — the cap is always decided by the exact post-emission
      * scan in compile.c, on an attempt that ran to completion. */
     if (sb->abort_over && sb->len + sb->cmt_dropped + need > sb->abort_over && sb->cx)
-        ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
+        pcrec_ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
     if (sb->len + need + 1 <= sb->cap) return;
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;

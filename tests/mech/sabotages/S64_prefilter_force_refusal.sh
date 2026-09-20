@@ -34,7 +34,7 @@ SAB_DESC="the -fprefilter do-or-die refusal (fit.chosen != ENGM_VM) is removed, 
 SAB_DOC_FIGURE="docs/dev/decisions.md D46 (do-or-die); src/opt/CLAUDE.md's [M4.6f] entry"
 SAB_COUNT=1
 SAB_BEFORE='        if (force_on && fit.chosen != ENGM_VM)
-            ctx_fail(cx, why_pos,
+            pcrec_ctx_fail(cx, why_pos,
                      "-fprefilter requires the VM engine; this pattern "
                      "compiles to the DFA engine, which carries no separate "
                      "prefilter to force (pass --engine=vm, or drop "

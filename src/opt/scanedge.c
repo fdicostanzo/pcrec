@@ -164,7 +164,7 @@
  * extension stacks ON TOP of this and is [OPT-SIMD]'s row, not a substitute.
  *
  * Pure computation: plain malloc/free like minimize.c beside it, and the only
- * `ctx_fail` paths are the allocation-failure ones, which free every live
+ * `pcrec_ctx_fail` paths are the allocation-failure ones, which free every live
  * local before they longjmp. */
 
 #include <stdlib.h>

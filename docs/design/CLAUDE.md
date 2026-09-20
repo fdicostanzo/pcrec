@@ -1472,7 +1472,7 @@ append-only or historical records.
   own regexes were the population nobody counted (`../dev/learnings.md` §3);
   (2) **the pre-emission node count the design assumed DOES NOT EXIST**
   (`vm_count_slots` counts slot categories and returns void; `Vm.nodes` and
-  `nlabel` are emission-time; the pre-pass mutates state and can `ctx_fail`),
+  `nlabel` are emission-time; the pre-pass mutates state and can `pcrec_ctx_fail`),
   so the rule now DRY-EMITS the ladder from `compile.c:426` rather than
   building a counting pre-pass that would be a third party to an agreement the
   emitter's own header warns about; and (3) **"every K is answer-identical" is
@@ -1490,7 +1490,7 @@ append-only or historical records.
   post-emission checks, both overridable upward (`--max-emit-code-bytes=` /
   `--max-emit-bytes=`) and stamped, neither deniable;
   **and the re-check then found the BLOCKER that makes the mechanism real**:
-  `ctx_fail` is a `longjmp` to the compile's single recovery point, so a
+  `pcrec_ctx_fail` is a `longjmp` to the compile's single recovery point, so a
   ladder trial cannot be "discarded" — measured, `(?:…(a|b){41}…){41}` six deep
   compiles at K=8 and REFUSES at K=6, so the ladder as first written would have
   broken a pattern that compiles today. The note now specifies a `trial` flag

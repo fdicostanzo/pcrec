@@ -38,7 +38,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   nothing in this file knows the difference. `optional` is read at exactly one
   place — `intern`'s two "pattern too complex" sites, where an optional machine
   RECORDS the overflow on `Dfa.overflowed` and returns `PCREC_DFA_DEAD` instead
-  of `ctx_fail`ing, leaving `[SEL-1]`'s record and both diagnostics
+  of `pcrec_ctx_fail`ing, leaving `[SEL-1]`'s record and both diagnostics
   character-for-character unchanged. That one line is what makes an optional
   machine's cap overflow a SELECTION OUTCOME rather than a refusal, and it is
   why a pattern that compiles today cannot start failing because a machine
@@ -48,15 +48,15 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   they COST, and on the exact-repeat family those are different numbers by a
   factor of n. `tab_grow` and the two reallocs here now fail through
   `pcrec_ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
-  too complex" `ctx_fail` SITES** (the state-count check in `intern()`, the
+  too complex" `pcrec_ctx_fail` SITES** (the state-count check in `intern()`, the
   `PCREC_MAX_SUBSET_ELEMS` check beside it) **ALSO RECORD THE OVERFLOW ON
   `Ctx`** (`dfa_overflowed`/`dfa_overflow_why`, plain fields, set
-  unconditionally right before the unchanged `ctx_fail` call) — the general
+  unconditionally right before the unchanged `pcrec_ctx_fail` call) — the general
   mechanism `auto`'s DFA-cap-overflow contract needs (plan row [SEL-1],
   `src/opt/select_engine.c`'s `forces_dfa_overflow`, `src/core/compile.c`'s
   retry): the build reports "over budget" as a RESULT a later pass consumes,
   never a special case at this site itself — the diagnostic text and the
-  `ctx_fail` call are byte-for-byte what they were before this row.
+  `pcrec_ctx_fail` call are byte-for-byte what they were before this row.
   **[LIM-2] N1 (2026-09-04) A THIRD SITE, checking a SMALLER threshold
   FIRST.** Right before the `PCREC_MAX_SUBSET_ELEMS` check, `intern()` now
   asks whether `!d->optional && cx->opt->engine == PCREC_ENGINE_AUTO &&
@@ -263,7 +263,7 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   one-character fold ships in the meantime.
 
   **[DD-14] `A_CALL` IS A FOURTH ANSWER, AND IT IS `A_BREF`'s WITH A REASON
-  THAT WILL EXPIRE.** `compile_ast` falls to the loud `ctx_fail` for a
+  THAT WILL EXPIRE.** `compile_ast` falls to the loud `pcrec_ctx_fail` for a
   subroutine call, exactly as it does for a backreference — but NOT because a
   call is as hopeless. A call to a NON-RECURSIVE callee has an exact finite
   lowering (splice the callee's machine in); a call in a CYCLE does not, since

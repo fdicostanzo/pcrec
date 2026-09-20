@@ -1472,7 +1472,7 @@ static void check_class_brackets(void)
  * `RD_FIXED` row falls through both `if` chains with no assertion evaluated
  * while the line still prints "all 255 bytes agree".
  *
- * A critic added `if (c2 == '!') ctx_fail(...)` to the doorway — a construct
+ * A critic added `if (c2 == '!') pcrec_ctx_fail(...)` to the doorway — a construct
  * with no registry row, and a genuine tier-2 over-rejection, since libpcre2
  * compiles both `[!alpha!]` and `[[!alpha!]]` — and every suite in the
  * repository stayed green.

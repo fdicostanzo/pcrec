@@ -914,8 +914,8 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
   Three details are worth knowing before touching it. The refusal SENTENCE has
   ONE home (`la_width_refusal`) because it is raised two different ways — the
-  hook owes an `ExtResult` and the pass calls `ctx_fail` — and ext.c's epilogue
-  is itself `ctx_fail(cx, at, "%s", msg)`, so the two render identically by
+  hook owes an `ExtResult` and the pass calls `pcrec_ctx_fail` — and ext.c's epilogue
+  is itself `pcrec_ctx_fail(cx, at, "%s", msg)`, so the two render identically by
   construction rather than by transcription. The deferral test is
   `pcrec_has_call(body)` and NOT "is any width unbounded", because those are
   different questions and only this one is stable: a body variable-width for an
@@ -1213,7 +1213,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   target BUILD and W1.3's composer are what earn a definition-shaped
   record with fields a row has no place for; D77 says that is when.
 
-  **NO `Ctx`, SO NO `ctx_fail`.** This parser runs before any compile —
+  **NO `Ctx`, SO NO `pcrec_ctx_fail`.** This parser runs before any compile —
   the CLI calls it with no pattern in hand — so there is no `Ctx` to
   longjmp out of and no arena owner to clean up. Errors are RETURNED, and
   every one of them names the FILE, the LINE and the CONSTRUCT: a
@@ -1605,14 +1605,14 @@ growing" rule is intact.
 everything between `(` and `)` and owns neither end. `cx->depth--` used to sit
 AFTER the doorway call, so it was already on a path a module could never reach;
 now a `return` added anywhere inside the body function stays balanced by
-construction. `ctx_fail`'s longjmp still bypasses the exit, and that is correct
+construction. `pcrec_ctx_fail`'s longjmp still bypasses the exit, and that is correct
 and structural rather than lucky: `src/core/compile.c` holds the ONLY `setjmp`
 in the tree, its failure branch runs `job_cleanup` and returns, and `Ctx` is a
 stack-local zeroed per `pcrec_compile` call — no caller can observe a
 half-unwound depth, and no API reuses a `Ctx`.
 
 **`p_alt` reports what it always computed.** `p_alt_info` fills an `AltInfo`
-`{nbr, last_bar}`. It is a struct and not an `int` because `ctx_fail` takes a
+`{nbr, last_bar}`. It is a struct and not an `int` because `pcrec_ctx_fail` takes a
 POSITION as a required argument, so a module cannot RAISE "more than two
 branches" from a count alone; D26 puts pcrec's own offsets against pcrec's own
 convention in tier 2, and `Ast` has no position field, so a design that leaves

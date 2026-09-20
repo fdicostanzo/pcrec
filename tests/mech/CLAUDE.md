@@ -1321,7 +1321,7 @@ ruling, before this row's own handback rather than after a panel had to
 say so).
 
 - **S64** removes the FORCE-ON do-or-die refusal itself
-  (`if (force_on && fit.chosen != ENGM_VM) ctx_fail(...)`), so
+  (`if (force_on && fit.chosen != ENGM_VM) pcrec_ctx_fail(...)`), so
   `--engine=dfa -fprefilter` and `--no-captures -fprefilter` compile
   SUCCESSFULLY instead of refusing. What actually happens on the sabotaged
   tree is worth recording rather than assuming: `fit.prefilter` is set
@@ -1982,7 +1982,7 @@ and each stays in the matrix so a later wave's cell can flip it. In one line eac
   DELETED MATCH rather than a hang, and that shape a corpus can hold. See the
   wave E section below.
 - **S160** (revdet stops declining a call) — `rd_shape` is one of FIVE
-  independent declines (`rd_reverse`'s own `ctx_fail`, `rd_alt_disjoint`,
+  independent declines (`rd_reverse`'s own `pcrec_ctx_fail`, `rd_alt_disjoint`,
   `vm_revdet_fits`), and no corpus quantifier body carrying a call is otherwise
   revdet-eligible: the rung wants a unique-iteration body, which a call's
   all-bytes FIRST set denies.

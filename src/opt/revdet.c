@@ -307,7 +307,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * outcome this arm exists to replace with a loud one (src/ir/nfa.c's
      * A_CAP arm is the same call). */
     case A_KRESET:
-        ctx_fail(cx, 0, "internal error: \\K reached the reverse-deterministic "
+        pcrec_ctx_fail(cx, 0, "internal error: \\K reached the reverse-deterministic "
                         "body reversal, which its shape scan must decline");
 
     /* [M6.5.2] `\K`'s treatment for `\K`'s reason, one construct further out.
@@ -333,22 +333,22 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * `u.look` and therefore looked entirely plausible. That is the silent
      * outcome this arm replaces with a loud one.
      *
-     * IT GETS ITS OWN `ctx_fail` RATHER THAN JOINING `A_BREF`'s, and the
+     * IT GETS ITS OWN `pcrec_ctx_fail` RATHER THAN JOINING `A_BREF`'s, and the
      * reason is the one this file already applies to `\K` and `A_BREF`
      * separately: an internal error that names the WRONG CONSTRUCT sends the
      * next reader hunting in the wrong file. A shared arm here would have
      * reported "a backreference reached ..." for a lookaround. */
     case A_LOOK:
-        ctx_fail(cx, 0, "internal error: a lookaround reached the "
+        pcrec_ctx_fail(cx, 0, "internal error: a lookaround reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
     case A_BREF:
-        ctx_fail(cx, 0, "internal error: a backreference reached the "
+        pcrec_ctx_fail(cx, 0, "internal error: a backreference reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
-    /* [DD-14] THE SAME LOUD REFUSAL, and it gets its OWN `ctx_fail` for the
+    /* [DD-14] THE SAME LOUD REFUSAL, and it gets its OWN `pcrec_ctx_fail` for the
      * reason this file already applies to `\K`, `A_BREF` and `A_LOOK`
      * separately: an internal error that names the WRONG CONSTRUCT sends the
      * next reader hunting in the wrong file.
@@ -365,7 +365,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * Unreachable: `rd_shape` declines every body carrying a call (above),
      * and this runs only on a body `rd_shape` approved. */
     case A_CALL:
-        ctx_fail(cx, 0, "internal error: a subroutine call reached the "
+        pcrec_ctx_fail(cx, 0, "internal error: a subroutine call reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
@@ -387,7 +387,7 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * Reaching it means that decline was removed, which is a change that MUST
      * be noticed loudly rather than compiled into a matcher. */
     case A_ATOMIC:
-        ctx_fail(cx, 0, "internal error: an atomic group reached the "
+        pcrec_ctx_fail(cx, 0, "internal error: an atomic group reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 

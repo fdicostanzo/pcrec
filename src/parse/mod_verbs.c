@@ -32,7 +32,7 @@
  * computation — is unchanged and still describes this file. ====
  *
  * MOD-0.4 WAS PURE MIGRATION, not the first slice of a producing module: no
- * verb starts producing here, the parse.c doorway-3 wall (ctx_fail after
+ * verb starts producing here, the parse.c doorway-3 wall (pcrec_ctx_fail after
  * pcrec_ext_finish) stays, and gate ON and gate OFF behaviour both stay
  * byte-identical to the pre-move build. What moves is EXISTING, MEASURED
  * code — `pcrec_ext_verb` itself (was src/parse/ext.c), the two VerbName

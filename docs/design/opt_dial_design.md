@@ -887,7 +887,7 @@ Two consequences the implementation lane must not meet as a surprise:
    message names the wrong cause.*
 2. **M5 — the trial/abort machinery meets a new population.**
    `artifact_size_term.md` §2.2b's finding R1 is that a ladder attempt's
-   refusal needs no `trial` flag, because `ctx_fail` unwinds to the one
+   refusal needs no `trial` flag, because `pcrec_ctx_fail` unwinds to the one
    recovery point, `pcrec_arena_free` runs on every retry path, and trials share
    nothing. **That argument is structural and does not depend on the
    population's size**, which is the honest reason to expect it to hold

@@ -436,7 +436,7 @@ static void check_wellformed(void)
             switch ((RegKind)k) {
             /* RD_FIXED joined both of these at Q2/SR-9, and it is not a
              * loosening: ext.c has always rendered RD_FIXED at every doorway
-             * (`if (r->diag == RD_FIXED) ctx_fail(cx, at, "%s", r->msg)`), and
+             * (`if (r->diag == RD_FIXED) pcrec_ctx_fail(cx, at, "%s", r->msg)`), and
              * the invariant is "this shape HAS a renderer here". The escape
              * doorway needs it for `\N{name}` and the (? doorway for `(?PX)`
              * and the catch-all — three rows saying what PCRE2 says, where a
