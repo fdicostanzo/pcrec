@@ -340,13 +340,31 @@ static void xskip(Ctx *cx)
  * number of bytes at `pos` this dissolves to nothing (2 for a bare `\E`,
  * 4 for `\Q\E`, 0 for neither) — a length, not a mutation, so the mutating
  * caller advances `cx->pos` itself and the lookahead advances its own
- * local index. */
-static size_t cls_dissolve_len(const Ctx *cx, size_t pos)
+ * local index.
+ *
+ * `in_quote` DISTINGUISHES THE TWO SPELLINGS AND MUST NOT BE DROPPED. A
+ * bare `\E` closes/dissolves regardless of whether a quote is open. A
+ * `\Q\E` does NOT — while a quote is ALREADY open (real content pending),
+ * its own `\` and `Q` are two ordinary quoted BYTES, not a nested open,
+ * and only the trailing `\E` closes; `cls_skip`'s caller always passes its
+ * live `cx->in_quote`. `cls_peek_past_dash` passes `false` unconditionally
+ * because its walk never enters a real (non-empty) quote in the first
+ * place — every dissolve it takes is itself immediately-empty, so there is
+ * no live quote state to carry between steps. Getting this backwards was
+ * measured live: `[\Qa\Q\E]` (quote opened once, `a`, then a nested `\Q`
+ * that is really the literal bytes `\` and `Q` followed by the real
+ * closing `\E`) lost its `\` and `Q` members entirely under a version of
+ * this helper that ignored `in_quote` and dissolved all four bytes as an
+ * empty nested quote — caught by tests/quoting/d27/charclass.rxt:52-53,
+ * which is why that file's own two cells are the regression witness for
+ * this rule and not merely incidental corpus coverage. */
+static size_t cls_dissolve_len(const Ctx *cx, size_t pos, bool in_quote)
 {
     if (!pcrec_feature_enabled(FEAT_QUOTING)) return 0;
     if (pos + 1 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'E')
         return 2;
-    if (pos + 3 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'Q' &&
+    if (!in_quote &&
+        pos + 3 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'Q' &&
         cx->pat[pos + 2] == '\\' && cx->pat[pos + 3] == 'E')
         return 4;
     return 0;
@@ -374,7 +392,7 @@ static size_t cls_dissolve_len(const Ctx *cx, size_t pos)
 static void cls_skip(Ctx *cx)
 {
     for (;;) {
-        size_t dl = cls_dissolve_len(cx, cx->pos);
+        size_t dl = cls_dissolve_len(cx, cx->pos, cx->in_quote);
         if (dl) {
             cx->pos += dl;
             cx->in_quote = false;
@@ -407,7 +425,12 @@ static void cls_skip(Ctx *cx)
  * two-member class). Measured now: `[0-\E]` is {0,-}, `[a-\E]` is {a,-}.
  * A NON-empty `\Q` is not dissolved here — real content is a value,
  * not something to skip past — so this only removes exactly what cls_skip
- * itself would remove without touching cx->pos. */
+ * itself would remove without touching cx->pos. ALWAYS PASSES `in_quote =
+ * false` to `cls_dissolve_len`: every call site gates on `!cx->in_quote`
+ * before invoking this lookahead (a dash inside an open quote is already
+ * literal text, never a range operator), and the walk itself never enters
+ * a REAL quote — every dissolve it takes is itself immediately empty, so
+ * there is no live quote state for a later step to inherit. */
 static int cls_peek_past_dash(Ctx *cx)
 {
     size_t i = cx->pos + 1;
@@ -415,7 +438,7 @@ static int cls_peek_past_dash(Ctx *cx)
         if (cx->mods->xlevel >= 2)
             while (i < cx->patlen &&
                    (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
-        size_t dl = cls_dissolve_len(cx, i);
+        size_t dl = cls_dissolve_len(cx, i, false);
         if (dl) { i += dl; continue; }
         break;
     }
