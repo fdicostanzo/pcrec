@@ -7771,3 +7771,15 @@ dead exports, agree on sequencing, proceed":
 
 The wave's four small owed items (census regeneration, S154's witness,
 K62, the deletion above) are one admin lane, [ADMIN-0921].
+
+**Addendum (Frank, 2026-09-21, seventy-fifth session — the sequencing
+LIFTED for the small rows).** I-82 (the [OPT-EDGE] re-run) sits in the
+bench's queue behind a viewer wave, so "OPT-EDGE then REL-1" no longer
+means same-day. Frank agreed with the manager's recommendation: REL-1.1
+(README), REL-1.2 (compliance page) and REL-1.4 (version plumbing) —
+all S, none touching the scanner, the limits table or anything the
+ladder compiles — START NOW; REL-1.4's own start still waits on the
+"what the constant versions" ruling. REL-1.3/1.5/1.6/1.7/1.8 stay held
+for the milestone proper. The only coupling with the floor decision is
+two abi bumps in sequence (the header stamp; a floor move if measured),
+which is two rituals, not a conflict.
