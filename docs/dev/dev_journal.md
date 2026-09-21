@@ -24537,3 +24537,31 @@ heartbeat cron deleted. Lanes used: tour4, tour5, tour2, tour1, tour3,
 tour3rev — six; none alive. wake.md rewritten. Next session: Frank's two
 rulings (the four dead exports; the next effort), then the small admin
 items (census regen, S154 witness, K62).
+
+## 2026-09-21 (EDT), seventy-fourth session — Frank's rulings (D114); [OPT-EDGE] resumed, [REL-1] pre-flight, [ADMIN-0921] chartered
+
+Wake: main 4d8b8509 = origin/main clean, no worktrees, no agents, nothing
+in flight; heartbeat cron created (13,43). Bench outbox: nothing since
+O-40 (answered as I-80 last session).
+
+**Frank's question: "what's next on the larger agenda."** Answer: D113's
+sequence — finish rows → [REL-1] the 0.1 beta → [BENCH-REVIEW] +
+[BACKLOG-TRIAGE]; then the ladder's M3/M7 and the optimization loop with
+SIMD last. **Frank's ruling: "delete the dead exports, agree on sequencing,
+proceed"** → D114 (30099e67): the four dead `pcrec_` exports are deleted;
+[LIM-2] CLOSED IN PLACE (N1 closed the practical problem 2026-09-04; the
+audit's owed N2 is vacuous by the study's own M1 bar — closed fraction
+ceiling 14.3% vs the 50%-before-half bar that makes N2 live — the
+manager's D77 reading, reported to Frank in the launch message); [OPT-EDGE]
+resumes as the "another effort"; [ENG-ISL], [DD-13b.W1.3]/[DD-13],
+[CLS-TREE] PARKED into [BACKLOG-TRIAGE]; [REL-1] next. [ADMIN-0921] rows the
+wave's four owed items (dead-export deletion, census regen, S154 witness,
+K62).
+
+**Launched ~10:xx**: `edge3` (sonnet, worktrees/edge3 — the m=2 floor cell
+re-measured with neighbours, the a+b·k ladder fit by branch-vs-main
+isolation, PCREC_MIN_SCAN_CHAIN moves only inside a measured gap; it owns
+the quiet box until it reports) and `rel1pre` (sonnet, read-only, no make —
+docs/dev/lanes/rel1pre_facts.md, the [REL-1] pre-flight fact sheet).
+`adm0921` launches after edge3's measurement ends. Watcher script in the
+background (quiet >25 min or worktree gone → one notification).
