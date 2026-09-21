@@ -169,11 +169,31 @@ Full log: `/tmp/k62pin_rxtsource.log` (session scratch, not committed).
 
 ### `make test-codegen` and the rxtsource section's home under it
 
-`make test-codegen` was launched (`/tmp/k62pin_codegen.log`) — result and
-completion line appended below once it finished (see "Validation numbers"
-below; this section is the RXTSOURCE-specific run, which is the direct
-hit for this lane's change and is what the census pins above are verified
-against).
+```
+$ make CC=gcc-16 test-codegen
+```
+
+```
+== Summary ==
+checks passed: 65
+checks failed: 0
+run_group: 9/10 scripts passed
+make: *** [test-codegen] Error 1
+RC=2
+```
+
+The one non-passing script is `run_inline_capability.sh`'s standing
+pre-existing darwin `nm`/`arm_a.o` probe (`FAIL: nm could not read
+arm_a.o (no rx_search symbol) — no verdict is evidence here`) — the SAME
+red BOILERPLATE names as "no verdict is evidence here" and every recent
+lane on this box reports as pre-existing (adm0921's own `test-codegen`
+run at this branch's own parent commit reads the identical "sole red
+`run_inline_capability.sh`'s standing pre-existing darwin nm/arm_a.o
+probe"). Not this lane's; not caused by the rxtsource re-pin (a pure
+comment/numeric-constant change to one test script, nothing under `src/`
+or the codegen scripts touched). The other nine scripts, 65 checks,
+all PASS. Full log: `/tmp/k62pin_codegen.log` (session scratch, not
+committed).
 
 ### `scripts/m6read_check_sab_anchors.py` sanity check
 
@@ -193,7 +213,9 @@ CENSUS_*/RUNSH_*/C3_* blocks, none of them an anchor target).
   212/0/1-recorded, see above.
 - `scripts/m6read_check_sab_anchors.py`: **COMPLETE**, 286/286 anchor
   sites resolve.
-- `make test-codegen`: **[fill at hand-off — see log path above]**
+- `make test-codegen`: **COMPLETE**, 65/65 checks / 9 of 10 scripts
+  passed, sole red the standing pre-existing darwin `nm`/`arm_a.o` probe
+  (not this lane's, unrelated to the census re-pin).
 
 ## Plan note
 
