@@ -3902,9 +3902,6 @@ static void section_open(StrBuf *sb, const char *name, const char *header)
     pcrec_sb_puts(sb, header);
 }
 
-/* The dump's column count, RXT_NCOLS. */
-size_t pcrec_rxt_source_ncols(void) { return RXT_NCOLS; }
-
 /* Renders `--list-source`'s TSV: one row per head declaration and per
  * pattern block, in file order, plus the `#section` blocks
  * (`provenance`/`variants`/`cases`/`aux`) `src`'s own row scan already

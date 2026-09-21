@@ -70,14 +70,10 @@ const RxtSchemaRow *pcrec_rxt_schema_row(RxtSchemaScope scope, const char *kind,
  * Each is ONE column read. That is the property, not an implementation
  * detail: `--list-schema` answers all three as ROW SETS SELECTED BY A
  * COLUMN VALUE, so a generic reader fetches them out of one TSV and no
- * predicate escapes into a consumer. */
-
-/* Parameter 1: true iff `r` opens a group -- a plain column read, per the
- * banner above. */
-int pcrec_rxt_schema_opens_group(const RxtSchemaRow *r)
-{
-    return r && r->opens_group;
-}
+ * predicate escapes into a consumer. Parameter 1 (`opens_group`, a plain
+ * column read) has no accessor here -- both readers (this file's own
+ * block-scan loop, below, and `schema_dump.c`'s dump row) read
+ * `r->opens_group` directly. */
 
 /* PARAMETER 2 IS THE PAIR, and reading `value` alone is the bug S-R5's
  * plant (b) exists to catch: flipping a row's `children` from `prose` to

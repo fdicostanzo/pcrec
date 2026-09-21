@@ -7141,10 +7141,6 @@ void pcrec_gen_names(Ctx *cx, GenNames *g)
     g->upper = pcrec_sb_upper(&cx->arena, cx->opt->prefix);
 }
 
-/* The shared ABI-type block, exported for `emit_vm.c`: both engines'
- * artifacts carry the same once-per-file text. */
-void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }
-
 /* The C string-literal escaper, exported for `emit_vm.c`, so both engines
  * spell a pattern into `rx_info` the same way. */
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
