@@ -7907,3 +7907,52 @@ measurement paragraph and limits.def:371's measurement text gain the
 2026-09-21 re-confirmation (the .def string is `--list-limits` output —
 its readers are re-pinned by grep in the same change). [REL-1] proceeds
 without it.
+
+## D118 — The CLI takes the gcc SHAPE: positional operands are INPUT FILES, the literal pattern moves behind `--pattern`, `-I` is `--lib-path`'s short form, and a Makefile example (rxt → .c → gcc → one .a) is the row's test case; pcrec does NOT invoke gcc itself (Frank, 2026-09-21, seventy-fifth session)
+
+**Context.** The interface discussion (D116; docs/dev/lanes/iface_digest.md).
+Frank: the CLI compiles from a positional pattern, which "was fine for
+early dev but makes usage in make files, et al trickier. shouldn't the
+cli ui look more like gcc?" Fact on the table: compiling from a file has
+existed since [DD-13b.W1.2] (2026-08-31) as `--source FILE` + `--target`
++ `--lib-path`, with `-o DIR` for several targets — flag-selected, the
+file the second-class citizen. The CLI's uses in order of weight once
+the beta ships: (1) the BUILD STEP in a Makefile, (2) introspection
+(`--list-*`, `--explain`), (3) trying a pattern. The current shape
+serves (3); the gcc shape serves (1).
+
+**Decision.**
+1. Positional operands are INPUT FILES (`.rxt` sources — the format
+   stays the one docs/spec/rxt_format.md defines; no new extension).
+   `pcrec -o foo.c foo.rxt`; several files, or a multi-target file, with
+   `-o DIR` (each target's prefix names its pair; a prefix collision
+   across inputs is an error). An operand that is not an existing file
+   is an ERROR — never a fallback to "treat it as a pattern".
+   `--source FILE` is RETIRED: the operand IS the mechanism (memory
+   `pcrec-general-mechanisms-not-special-cases` — no parallel spelling
+   kept alive); its callers (the rxtsource suite and friends) migrate in
+   the same change.
+2. The literal pattern is `--pattern 'X'` (`-e` is encoding, `-p` is
+   prefix; the long form only). The harness passes patterns positionally
+   in ~23k calls, nearly all through ONE wrapper (`pcrec_run`,
+   tests/lib/gen_timeout.sh) that already isolates the last argument —
+   the wrapper inserts the flag; direct call sites are a bounded grep,
+   COUNTED before the flip (lane clicensus) and migrated under review.
+3. `-I DIR` is the short spelling of `--lib-path DIR` (one mechanism, two
+   spellings, as gcc's own long options are); order is the search order.
+4. NOT NOW: a `-M`-style dependency file for `lib` references. No
+   Makefile with library references exists to need it (D77: named, not
+   built). NOT AT ALL, Frank's lean: pcrec does not run gcc itself —
+   the Makefile does, which is the point of the shape.
+5. THE TEST CASE is a Makefile example, Frank's shape: `.rxt` sources →
+   `pcrec -o gen/ src/*.rxt` → `$(CC) -c gen/*.c` → `ar rcs` ONE `.a`;
+   a suite section runs it from a scratch copy and checks the archive
+   holds every target's entry symbols (nm) and that a tiny consumer
+   links and matches. It lives under a new top-level `examples/`
+   (its own CLAUDE.md; a "Where things are" row; the README's how-to
+   points at it).
+
+**Sequencing.** A new [REL-1] row, [REL-1.10], AHEAD of the guide
+([REL-1.3]): the guide documents the shape the beta ships with. The
+spec hunk is docs/spec/cli.md's usage line and `--source` section
+(D80); the README example changes with it.
