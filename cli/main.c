@@ -1,7 +1,11 @@
 /* pcrec command-line interface.
  *
- *   pcrec [-p PREFIX] [-e byte|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'
- *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
+ *   pcrec [options] -o OUT FILE.rxt...             compile from .rxt file(s)
+ *   pcrec [options] -o OUT.c --pattern 'PATTERN'    compile a literal pattern
+ *   pcrec [options] -o - --pattern 'PATTERN'        self-contained C on stdout
+ *
+ * [REL-1.10]/D118: the gcc SHAPE — a positional operand is an input FILE,
+ * never a pattern; --pattern is the only way to give a literal one.
  */
 
 #include <limits.h>
@@ -139,10 +143,19 @@ static int raise_only_match(const char *a)
 /* Prints the CLI's usage text to `f` -- one large string literal, no logic. */
 static void usage(FILE *f)
 {
-    fputs("usage: pcrec [options] -o OUT.c [--] 'PATTERN'\n"
+    fputs("usage: pcrec [options] -o OUT FILE.rxt...\n"
+          "       pcrec [options] -o OUT.c --pattern 'PATTERN'\n"
+          "  FILE.rxt ...   one or more existing .rxt SOURCE files (see\n"
+          "                 below); each is compiled exactly as the other\n"
+          "                 form compiles a literal --pattern. A prefix\n"
+          "                 collision across files is refused, naming both\n"
+          "  --pattern 'X'  compile the literal pattern X instead of a file.\n"
+          "                 Exactly one; does not combine with a FILE operand\n"
           "  -o FILE        output C file; a matching header FILE with .h is\n"
           "                 also written. '-o -' prints self-contained C to\n"
-          "                 stdout with no header file\n"
+          "                 stdout with no header file. '-o DIR' writes\n"
+          "                 <dir>/<prefix>.c and .h per target, for several\n"
+          "                 targets pooled across one or more .rxt files\n"
           "  -p PREFIX      symbol prefix for generated identifiers (default rx)\n"
           "  -e ENCODING, --encoding=ENCODING\n"
           "                 subject encoding for THIS pattern: byte (default)\n"
@@ -152,7 +165,7 @@ static void usage(FILE *f)
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
-          "  --pattern-esc  the PATTERN operand is the .rxt format's quoted-\n"
+          "  --pattern-esc  the --pattern VALUE is the .rxt format's quoted-\n"
           "                 escape form (\\\" \\\\ \\n \\t \\r \\f \\v \\xHH), decoded by\n"
           "                 pcrec's own decoder. Lets a multi-line or high-byte\n"
           "                 pattern be written on one line; \\x00 is refused (K9)\n"
@@ -232,18 +245,17 @@ static void usage(FILE *f)
           "  --version      print the pcrec version and exit\n"
           "\n"
           "compiling from a .rxt SOURCE file (docs/spec/rxt_format.md):\n"
-          "  --source FILE  compile the `target` lines of a .rxt source. Each\n"
-          "                 target is its own artifact under its own prefix,\n"
-          "                 built from the pattern block its definition names,\n"
-          "                 under the configs its `with` list composes. Takes\n"
-          "                 no pattern argument: the file holds the patterns.\n"
-          "                 -o names a FILE for one target, an existing\n"
-          "                 DIRECTORY for several (<dir>/<prefix>.c and .h per\n"
-          "                 target), or '-' for one target on stdout. A file\n"
-          "                 that declares no target is a library and builds\n"
-          "                 nothing, at exit 0\n"
+          "  FILE.rxt       (see above) compiles the `target` lines of a\n"
+          "                 .rxt source. Each target is its own artifact\n"
+          "                 under its own prefix, built from the pattern\n"
+          "                 block its definition names, under the configs\n"
+          "                 its `with` list composes. Several files may be\n"
+          "                 given; their targets are pooled before -o's\n"
+          "                 rule (above) is applied. A file that declares no\n"
+          "                 target is a library and builds nothing, at exit 0\n"
           "  --target NAME  build only the target with this prefix\n"
-          "  --lib-path DIR  a directory to resolve `lib \"path\"` references\n"
+          "  --lib-path DIR, -I DIR\n"
+          "                 a directory to resolve `lib \"path\"` references\n"
           "                 against. Repeatable; order is the search order,\n"
           "                 after the source file's own directory\n"
           "\n"
@@ -275,7 +287,7 @@ static void usage(FILE *f)
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
           "                    exists today; a second one arrives with SR-7)\n"
-          "  --count-groups [--] PATTERN\n"
+          "  --count-groups --pattern PATTERN\n"
           "                    parse only; print the number of capturing\n"
           "                    groups. A pattern pcrec refuses is refused\n"
           "                    here too, with the same diagnostic\n"
@@ -296,7 +308,7 @@ static void usage(FILE *f)
           "                    the first `pattern` row, so a head row is\n"
           "                    exactly one preceding it. Never resolved --\n"
           "                    `config` composition is validated, not applied\n"
-          "  --probe-ask WANT [--] CONSTRUCT\n"
+          "  --probe-ask WANT CONSTRUCT\n"
           "                    drive the construct's doorway ONCE at ask\n"
           "                    level WANT (claim|verdict|result) and report\n"
           "                    the parser cursor. TSV: doorway, want,\n"
@@ -368,6 +380,8 @@ typedef struct {
     pcrec_options opt;
 
     const char *outpath;
+    /* [REL-1.10] the literal PATTERN, set ONLY by `--pattern` (D118): the
+     * positional slot is FILE OPERANDS now (below), never a pattern. */
     const char *pattern;
     int         list_syntax;
     int         list_definitions;
@@ -378,7 +392,7 @@ typedef struct {
     int         list_schema;
     int         count_groups;
     int         emit_ir;
-    /* [DD-13b.W23.3] the pattern OPERAND is the `.rxt` format's
+    /* [DD-13b.W23.3] the `--pattern` VALUE is the `.rxt` format's
      * quoted-escape form, decoded by pcrec's one decoder (§2.19). */
     int         pattern_esc;
     int         saw_prefix;
@@ -392,20 +406,29 @@ typedef struct {
     const char *explain;
     const char *flavour;
     const char *probe_want;
+    /* [REL-1.10] `--probe-ask WANT CONSTRUCT`'s CONSTRUCT is the flag's OWN
+     * second argument now (D118 addendum item i) -- a syntax fragment, not
+     * a pattern, and never through the operand slot below. */
+    const char *probe_construct;
     const char *features;
     const char *list_source;
-    /* [DD-13b.W1.2] the `.rxt` SOURCE surface */
-    const char *source;
     const char *target;
     const char **libdirs;
     size_t      nlibdirs, libcap;
+    /* [REL-1.10] POSITIONAL OPERANDS ARE INPUT FILES NOW (D118): each an
+     * existing `.rxt` source, compiled exactly as the retired `--source
+     * FILE` did. Zero or more -- `compile_sources` is the sole reader. */
+    const char **files;
+    size_t      nfiles, filecap;
 } CliState;
 
 /* [REVW.4] wave 4 (L11-F4) — THE MODE RELATION, WRITTEN ONCE.
  *
  * `main` dispatches on MODES: the seven registry queries, `--explain`,
  * `--count-groups`, `--emit-ir`, `--probe-ask`, `--list-source` and
- * `--source`. Each mode that RETURNS from `main` on its own first refuses
+ * compiling from a FILE OPERAND (D118 -- the retired `--source`'s own
+ * mechanism, `nfiles != 0`). Each mode that RETURNS from `main` on its own
+ * first refuses
  * the other modes it does not compose with — and until this wave that
  * refusal was spelled out SIX TIMES as an `||` chain, with FOUR DIFFERENT
  * memberships (13 / 12 / 9 / 8 flags), no two of which a reader could
@@ -454,7 +477,7 @@ typedef struct {
     X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
     X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
     X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
-    X(SOURCE,           source,           PTR, "--source")
+    X(FILES,            nfiles,           INT, "a file operand")
 
 typedef enum {
 #define CLI_MODE_ENUM_ROW(id, field, kind, spelling) CM_##id,
@@ -524,19 +547,21 @@ static int cli_modes_count(unsigned modes)
 #define CLI_MODES_VS_PATTERN_QUERY (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS))
 
 /* `--list-source` READS a `.rxt` file: it refuses every query above plus the
- * other two pattern-bearing ones and `--source`. `--flavour` is deliberately
- * absent — that site refuses it separately, through the applies-to relation
- * below, which is a different rule. */
+ * other two pattern-bearing ones and compiling from a FILE OPERAND.
+ * `--flavour` is deliberately absent — that site refuses it separately,
+ * through the applies-to relation below, which is a different rule. */
 #define CLI_MODES_VS_LIST_SOURCE                                          \
-    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) | CMB(SOURCE))
+    (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) | CMB(FILES))
 
-/* `--source` COMPILES a `.rxt` file and refuses every query surface there
- * is. `--flavour` refuses against it too (checked at that site directly,
- * since [REVW.5.1] it is not a table mode any `CMB()` can name), and this
- * is the one site where that refusal is worded like a MODE conflict
- * ("does not compose with a query surface") rather than through the
- * applies-to relation's own sentence — preserved exactly, D26. */
-#define CLI_MODES_VS_SOURCE                                               \
+/* [REL-1.10] A FILE OPERAND COMPILES a `.rxt` file (D118 — the retired
+ * `--source FILE`'s own mechanism, now the positional operand) and refuses
+ * every query surface there is. `--flavour` refuses against it too (checked
+ * at that site directly, since [REVW.5.1] it is not a table mode any
+ * `CMB()` can name), and this is the one site where that refusal is worded
+ * like a MODE conflict ("does not compose with a query surface") rather
+ * than through the applies-to relation's own sentence — preserved exactly,
+ * D26. */
+#define CLI_MODES_VS_FILES                                                \
     (CLI_MODES_VS_PATTERN_QUERY | CMB(EMIT_IR) | CMB(PROBE_ASK) |         \
      CMB(LIST_SOURCE))
 
@@ -682,15 +707,26 @@ static int cli_axis_apply(const char *a, uint64_t *flags)
     return 0;
 }
 
-/* The pattern OPERAND: exactly one, anywhere in the argv. Its own function
- * because `cli_parse` reaches it from TWO places — after `--`, and as the
- * option chain's own fall-through — and duplicating four lines to save a
- * helper is how a rule ends up with two spellings. */
-static int cli_operand(CliState *st, const char *a, const char *where)
+/* A FILE OPERAND (D118): pushed onto `st->files`, growing it exactly as
+ * `libdir_push` above grows `st->libdirs`. Its own function because
+ * `cli_parse` reaches it from TWO places — after `--`, and as the option
+ * chain's own fall-through — and duplicating the growth logic to save a
+ * helper is how a rule ends up with two spellings. Collection only: N
+ * operands are accepted here, and whether each one is an existing file (a
+ * plain compile) or refused outright (a query mode takes none) is a
+ * question for the caller once the invocation's MODE is known — see
+ * main's dispatch. */
+static int cli_operand(CliState *st, const char *a)
 {
-    if (!st->pattern) { st->pattern = a; return 0; }
-    cli_err("exactly one pattern expected (%s)", where);
-    return 1;
+    if (st->nfiles == st->filecap) {
+        size_t cap = st->filecap ? st->filecap * 2 : 4;
+        const char **v = realloc(st->files, cap * sizeof *v);
+        if (!v) { perror("realloc"); return 1; }
+        st->files = v;
+        st->filecap = cap;
+    }
+    st->files[st->nfiles++] = a;
+    return 0;
 }
 
 /* THE ONE OPTION PARSER (w1_impl §1.5). `argv`/`argc` exclude argv[0].
@@ -721,7 +757,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * The chain's own fall-through still reaches the operand, for an
          * argument that is neither an option nor after `--`. */
         if (no_more_opts) {
-            if (cli_operand(st, a, where) != 0) return 1;
+            if (cli_operand(st, a) != 0) return 1;
             continue;
         }
         if (!strcmp(a, "--")) no_more_opts = 1;
@@ -749,6 +785,21 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--emit-ir")) st->emit_ir = 1;
         else if (!strcmp(a, "--pattern-esc"))
             st->pattern_esc = 1;
+        /* [REL-1.10] `--pattern 'X'` (D118 item 2): THE LITERAL PATTERN,
+         * long form only (`-e` is encoding, `-p` is prefix). A positional
+         * operand is a FILE now, never a pattern, so this is the one way
+         * to give pcrec a pattern text directly. */
+        else if (!strcmp(a, "--pattern")) {
+            if (i + 1 >= argc) {
+                cli_err("missing value for %s", a);
+                return 1;
+            }
+            if (st->pattern) {
+                cli_err("exactly one --pattern expected");
+                return 1;
+            }
+            st->pattern = argv[++i];
+        }
         else if (!strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         /* [REVW.4] wave 4 (D111): THE TWENTY-TWO AXIS SPELLINGS, one arm.
@@ -933,12 +984,18 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             }
             st->list_source = argv[++i];
         }
+        /* [REL-1.10] `--probe-ask WANT CONSTRUCT` (D118 addendum item i):
+         * CONSTRUCT is the flag's OWN second argument now, consumed here
+         * exactly like `--explain`'s SYNTAX just below rather than through
+         * the operand slot — it is a syntax fragment, not a pattern and
+         * not a file. */
         else if (!strcmp(a, "--probe-ask")) {
-            if (i + 1 >= argc) {
+            if (i + 2 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
             }
             st->probe_want = argv[++i];
+            st->probe_construct = argv[++i];
         }
         else if (!strcmp(a, "--features")) {
             if (i + 1 >= argc) {
@@ -965,17 +1022,13 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             else if (a[1] == 'p') { opt.prefix = v; st->saw_prefix = 1; }
             else if (set_encoding(&opt, v) != 0) return 1;
         }
-        /* [DD-13b.W1.2] THE `.rxt` SOURCE SURFACE (S11). All three take
-         * their value as a separate argument, like -o/-p/-e and unlike the
-         * `=value` MODE flags: a file, a name and a directory are exactly
-         * the three things that spelling is for. */
-        else if (!strcmp(a, "--source")) {
-            if (i + 1 >= argc) {
-                cli_err("missing value for %s", a);
-                return 1;
-            }
-            st->source = argv[++i];
-        }
+        /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path`: the `.rxt`
+         * SOURCE SURFACE's remaining two flags (S11) — `--source` itself is
+         * RETIRED (D118): the positional FILE OPERAND is the mechanism now,
+         * collected by `cli_operand` above. Both take their value as a
+         * separate argument, like -o/-p/-e and unlike the `=value` MODE
+         * flags: a name and a directory are exactly what that spelling is
+         * for. */
         else if (!strcmp(a, "--target")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
@@ -985,8 +1038,10 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         }
         /* REPEATABLE, and order is the search order — the one flag in this
          * CLI that accumulates rather than replacing. A single-valued
-         * --lib-path would make two libraries an either/or. */
-        else if (!strcmp(a, "--lib-path")) {
+         * --lib-path would make two libraries an either/or. [REL-1.10] `-I
+         * DIR` is the short spelling (D118 item 3): one mechanism, two
+         * spellings, gcc's own long options are the precedent. */
+        else if (!strcmp(a, "--lib-path") || !strcmp(a, "-I")) {
             if (i + 1 >= argc) {
                 cli_err("missing value for %s", a);
                 return 1;
@@ -1000,7 +1055,7 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
             if (!strcmp(where, "command line")) usage(stderr);
             return 1;
         }
-        else if (cli_operand(st, a, where) != 0) return 1;
+        else if (cli_operand(st, a) != 0) return 1;
     }
     st->opt = opt;
     return 0;
@@ -1081,7 +1136,7 @@ static int raw_split(const char *raw, char ***vout, int *nout, char **bufout)
  * (the file's `engine` row applies) regardless of which one actually
  * happened. */
 static int apply_target(const CliState *cli, const RxtTarget *t,
-                        pcrec_options *out)
+                        const char *src_path, pcrec_options *out)
 {
     CliState ts;
     memset(&ts, 0, sizeof ts);
@@ -1115,14 +1170,14 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
          * SHORTENED (msgtrim, 2026-09-10): this refusal joins `.rxt` source
          * resolution's 256-byte-buffer messages on `tests/rxtsource/
          * run_rxtsource_tests.sh`'s truncation CLASS check even though it
-         * has no fixed-size buffer of its own — `cli->source` grows with
+         * has no fixed-size buffer of its own — `src_path` grows with
          * `TMPDIR` exactly as `rxt_fail`'s path prefix does, so the same
          * "shorten the prose, keep the path and the raw line" rule applies. */
         if (!cli_extras_clean(&ts)) {
             free(ts.libdirs);   /* a config that reached for --lib-path */
             cli_err("%s:%zu: `pcrec` line: compile options only, "
                     "not output/pattern/prefix/query/source: '%s'",
-                    cli->source, t->line, t->pcrec_raw);
+                    src_path, t->line, t->pcrec_raw);
             return 1;
         }
     }
@@ -1137,7 +1192,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         char bad = 0;
         if (pcrec_rxt_flags_from_letters(t->flags, &f, &bad) != 0) {
             cli_err("%s:%zu: unknown flag letter '%c' in "
-                    "`flags %s`", cli->source, t->block_line, bad,
+                    "`flags %s`", src_path, t->block_line, bad,
                     t->flags);
             return 1;
         }
@@ -1145,7 +1200,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
     }
     if (t->encoding && set_encoding(&ts.opt, t->encoding) != 0) {
         cli_err("%s:%zu: in `encoding %s`",
-                cli->source, t->block_line, t->encoding);
+                src_path, t->block_line, t->encoding);
         return 1;
     }
     if (t->engine) {
@@ -1159,7 +1214,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
         if (engine_by_name(t->engine, &want) != 0 || want != PCREC_ENGINE_VM) {
             cli_err("%s:%zu: `engine %s` is not a value this format "
                     "accepts (only `vm`)",
-                    cli->source, t->block_line, t->engine);
+                    src_path, t->block_line, t->engine);
             return 1;
         }
         /* An explicit CLI `--engine=` (this invocation's own argv, or a
@@ -1171,7 +1226,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
             cli_err("%s:%zu: target '%s': CLI --engine=%s and this "
                     "file's `engine %s` disagree; using the CLI's explicit "
                     "choice",
-                    cli->source, t->block_line, t->prefix,
+                    src_path, t->block_line, t->prefix,
                     engine_name(ts.opt.engine), t->engine);
         } else {
             ts.opt.engine = want;
@@ -1217,14 +1272,14 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
              * RxtTarget of its own. */
             cli_err("%s:%zu: internal error: `tune %s` reached the "
                     "CLI unvalidated",
-                    cli->source, t->block_line, t->tune);
+                    src_path, t->block_line, t->tune);
             return 1;
         }
         if (ts.opt.tune != PCREC_TUNE_BALANCED && ts.opt.tune != want)
             cli_err("%s:%zu: target '%s': CLI --tune=%s and this "
                     "file's `tune %s` disagree; using the file's value "
                     "(--tune is not the --engine exception)",
-                    cli->source, t->block_line, t->prefix,
+                    src_path, t->block_line, t->prefix,
                     pcrec_tune_token(ts.opt.tune), t->tune);
         ts.opt.tune = want;
     }
@@ -1243,7 +1298,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                                            : pcrec_default_features);
         if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
             cli_err("%s:%zu: features: %s%s",
-                    cli->source, t->block_line, ferr,
+                    src_path, t->block_line, ferr,
                     (t->features && !t->features_only)
                         ? ".\n       This list is the UNION of the target's "
                           "configs and the block's own `features` line. "
@@ -1265,105 +1320,180 @@ static int path_is_dir(const char *p)
     return stat(p, &sb) == 0 && S_ISDIR(sb.st_mode);
 }
 
-/* `--source FILE`: parse the head, resolve the targets, compile each one.
+/* True iff `p` names an existing path of any kind (file, directory, …).
+ * [REL-1.10] D118 item 1: a FILE OPERAND that fails this is refused BY
+ * NAME, naming `--pattern` — never guessed at as a literal pattern. */
+static int path_exists(const char *p)
+{
+    struct stat sb;
+    return stat(p, &sb) == 0;
+}
+
+/* [REL-1.10] One resolved target paired with the FILE it came from.
+ * Positional operands are now 1..N `.rxt` files (D118), so every target
+ * downstream of resolution has to carry its own source path rather than
+ * assuming the whole compile came from one file, the way `apply_target`'s
+ * diagnostics and the file:line prefix `compile_sources` prints both do. */
+typedef struct { RxtTarget *t; const char *owner; } OwnedTarget;
+
+/* Appends one (target, owner) pair to `*v`, growing it (doubling from 4,
+ * `libdir_push`'s own shape); diagnoses and returns 1 on a failed realloc. */
+static int owned_push(OwnedTarget **v, size_t *n, size_t *cap,
+                      RxtTarget *t, const char *owner)
+{
+    if (*n == *cap) {
+        size_t c = *cap ? *cap * 2 : 4;
+        OwnedTarget *nv = realloc(*v, c * sizeof *nv);
+        if (!nv) { perror("realloc"); return 1; }
+        *v = nv;
+        *cap = c;
+    }
+    (*v)[*n].t = t;
+    (*v)[*n].owner = owner;
+    (*n)++;
+    return 0;
+}
+
+/* [REL-1.10] POSITIONAL FILE OPERANDS (D118): compile 1..N `.rxt` sources,
+ * each exactly as the retired `--source FILE` compiled one. Every file is
+ * parsed and resolved on its own, but the output-naming rule, a `--target`
+ * search and a prefix collision are properties of the WHOLE invocation, so
+ * every file's targets land in one flat list before any of them are
+ * applied.
  *
  * D88 HOLDS BY CONSTRUCTION HERE and is worth naming at the site: each
  * target is a SEPARATE `pcrec_compile()` call writing its own translation
  * unit, so there is no code path that could produce a multi-artifact TU
  * even if someone wanted one. */
-static int compile_source(const CliState *cli)
+static int compile_sources(const CliState *cli)
 {
-    pcrec_error err = { 0 };
-    RxtSource *src = pcrec_rxt_source_parse(cli->source, &err);
-    if (!src) { cli_err("%s", err.msg); return 1; }
+    RxtSource **srcs = calloc(cli->nfiles, sizeof *srcs);
+    if (!srcs) { perror("calloc"); return 1; }
 
-    RxtTarget *ts = NULL;
-    size_t nt = 0;
-    if (pcrec_rxt_source_resolve(src, cli->libdirs, cli->nlibdirs,
-                                 &ts, &nt, &err) != 0) {
-        cli_err("%s", err.msg);
-        pcrec_rxt_source_free(src);
-        return 1;
+    OwnedTarget *all = NULL;
+    size_t nall = 0, allcap = 0;
+    int rc = 0;
+
+    for (size_t fi = 0; fi < cli->nfiles && rc == 0; fi++) {
+        /* [REL-1.10] D118 item 1: never a fallback to "treat it as a
+         * pattern" — an operand that is not an existing file is refused BY
+         * NAME, naming `--pattern`, before pcrec reads a byte of it. */
+        if (!path_exists(cli->files[fi])) {
+            cli_err("%s: not an existing file; a literal pattern "
+                    "is given with --pattern", cli->files[fi]);
+            rc = 1;
+            break;
+        }
+        pcrec_error err = { 0 };
+        srcs[fi] = pcrec_rxt_source_parse(cli->files[fi], &err);
+        if (!srcs[fi]) { cli_err("%s", err.msg); rc = 1; break; }
+
+        RxtTarget *ts = NULL;
+        size_t nt = 0;
+        if (pcrec_rxt_source_resolve(srcs[fi], cli->libdirs, cli->nlibdirs,
+                                     &ts, &nt, &err) != 0) {
+            cli_err("%s", err.msg);
+            rc = 1;
+            break;
+        }
+        for (size_t i = 0; i < nt; i++)
+            if (owned_push(&all, &nall, &allcap, &ts[i], cli->files[fi]) != 0) {
+                rc = 1;
+                break;
+            }
     }
 
-    /* `--target NAME` selects by PREFIX, which is the name a `target` line
-     * declares and the name the artifact's symbols carry. */
-    if (cli->target) {
-        size_t k = nt;
-        for (size_t i = 0; i < nt; i++)
-            if (!strcmp(ts[i].prefix, cli->target)) { k = i; break; }
-        if (k == nt) {
-            fprintf(stderr, "pcrec: %s: no target named '%s'", cli->source,
-                    cli->target);
-            if (!nt) fprintf(stderr, " (this file declares no target at all)");
+    /* `--target NAME` selects by PREFIX, searched across every input file —
+     * a target's prefix is what a caller names, not which file it lives
+     * in. */
+    if (rc == 0 && cli->target) {
+        size_t w = 0;
+        for (size_t i = 0; i < nall; i++)
+            if (!strcmp(all[i].t->prefix, cli->target)) all[w++] = all[i];
+        if (w == 0) {
+            fprintf(stderr, "pcrec: no target named '%s' among %zu input "
+                    "file%s", cli->target, cli->nfiles,
+                    cli->nfiles == 1 ? "" : "s");
+            if (!nall) fputs(" (none of them declares a target at all)", stderr);
             else {
-                fprintf(stderr, " (it declares: ");
-                for (size_t i = 0; i < nt; i++)
-                    fprintf(stderr, "%s%s", i ? ", " : "", ts[i].prefix);
+                fputs(" (declared: ", stderr);
+                for (size_t i = 0; i < nall; i++)
+                    fprintf(stderr, "%s%s (%s)", i ? ", " : "",
+                            all[i].t->prefix, all[i].owner);
                 fputc(')', stderr);
             }
             fputc('\n', stderr);
-            pcrec_rxt_source_free(src);
-            return 1;
+            rc = 1;
         }
-        ts = &ts[k];
-        nt = 1;
+        nall = w;
     }
 
-    /* A LIBRARY SHIPS NOTHING BY ITSELF (format_design §6.1). Zero targets
-     * is not an error — it is what a file of definitions means — but it is
-     * surprising enough at a build step that it says so, on stderr, at exit
-     * 0, where a script that meant it is unaffected. */
-    if (nt == 0) {
-        cli_err("%s declares no target and is not a single unnamed "
-                "pattern block, so it builds nothing (it is a library of "
-                "definitions). Add a `target <prefix> = <definition>` line "
-                "to build from it", cli->source);
-        pcrec_rxt_source_free(src);
-        return 0;
-    }
+    /* A prefix collision ACROSS FILES (D118 item 1: "a prefix collision
+     * across inputs is an error naming both files"). Each file's own
+     * `pcrec_rxt_source_resolve` already refuses a duplicate prefix within
+     * itself, so any collision left standing here spans two distinct
+     * files. */
+    for (size_t i = 0; rc == 0 && i < nall; i++)
+        for (size_t j = i + 1; j < nall; j++)
+            if (strcmp(all[i].owner, all[j].owner) &&
+                !strcmp(all[i].t->prefix, all[j].t->prefix)) {
+                cli_err("target prefix '%s' is declared in both %s and %s",
+                        all[i].t->prefix, all[i].owner, all[j].owner);
+                rc = 1;
+                break;
+            }
 
-    /* THE OUTPUT NAMING RULE (w1_impl §1.5). Three forms, and which one
-     * applies is decided by the SHAPE of `-o`'s value, not by a flag:
+    /* A LIBRARY SHIPS NOTHING BY ITSELF (format_design §6.1). Every input
+     * file resolving to zero targets between them is not an error — it is
+     * what a set of pure-library files means — but it is surprising enough
+     * at a build step that it says so, on stderr, at exit 0, where a
+     * script that meant it is unaffected. */
+    if (rc == 0 && nall == 0)
+        fprintf(stderr, "pcrec: no target declared across %zu input file%s "
+                "(each is a library of definitions; add a `target <prefix> "
+                "= <definition>` line to build from one)\n",
+                cli->nfiles, cli->nfiles == 1 ? "" : "s");
+
+    /* THE OUTPUT NAMING RULE (w1_impl §1.5, D118 item 1). Three forms, and
+     * which one applies is decided by the SHAPE of `-o`'s value, not by a
+     * flag:
      *   `-o -`          self-contained C on stdout; exactly one target
      *   `-o <dir>`      <dir>/<prefix>.c + .h, one pair per target
      *   `-o out.c`      one pair; exactly one target
      * A directory is an existing directory. Anything else is a file name,
      * which is what makes `-o out.c` on a fresh checkout behave the same
      * whether or not `out.c` exists yet. */
-    int to_stdout = !strcmp(cli->outpath, "-");
-    int to_dir = !to_stdout && path_is_dir(cli->outpath);
+    int to_stdout = rc == 0 && !strcmp(cli->outpath, "-");
+    int to_dir    = rc == 0 && !to_stdout && path_is_dir(cli->outpath);
 
-    if (nt > 1 && !to_dir) {
-        fprintf(stderr,
-                "pcrec: %s has %zu targets (", cli->source, nt);
-        for (size_t i = 0; i < nt; i++)
-            fprintf(stderr, "%s%s", i ? ", " : "", ts[i].prefix);
+    if (rc == 0 && nall > 1 && !to_dir) {
+        fprintf(stderr, "pcrec: %zu targets across %zu input file%s (",
+                nall, cli->nfiles, cli->nfiles == 1 ? "" : "s");
+        for (size_t i = 0; i < nall; i++)
+            fprintf(stderr, "%s%s", i ? ", " : "", all[i].t->prefix);
         fprintf(stderr,
                 ") and `-o %s` names %s. Either build one target "
                 "(`--target <prefix>`) or name an existing DIRECTORY with "
                 "`-o`, which writes <dir>/<prefix>.c and .h per target\n",
                 cli->outpath, to_stdout ? "stdout" : "a single file");
-        pcrec_rxt_source_free(src);
-        return 1;
+        rc = 1;
     }
 
-    int rc = 0;
-    for (size_t i = 0; i < nt && rc == 0; i++) {
-        const RxtTarget *t = &ts[i];
+    for (size_t i = 0; rc == 0 && i < nall; i++) {
+        const OwnedTarget *ot = &all[i];
         pcrec_options topt;
-        if (apply_target(cli, t, &topt) != 0) { rc = 1; break; }
+        if (apply_target(cli, ot->t, ot->owner, &topt) != 0) { rc = 1; break; }
 
         char *cpath = NULL, *hpath = NULL;
         if (!to_stdout) {
             size_t n;
             if (to_dir) {
-                n = strlen(cli->outpath) + 1 + strlen(t->prefix) + 3;
+                n = strlen(cli->outpath) + 1 + strlen(ot->t->prefix) + 3;
                 cpath = malloc(n);
                 hpath = malloc(n);
                 if (!cpath || !hpath) { perror("malloc"); free(cpath); free(hpath); rc = 1; break; }
-                snprintf(cpath, n, "%s/%s.c", cli->outpath, t->prefix);
-                snprintf(hpath, n, "%s/%s.h", cli->outpath, t->prefix);
+                snprintf(cpath, n, "%s/%s.c", cli->outpath, ot->t->prefix);
+                snprintf(hpath, n, "%s/%s.h", cli->outpath, ot->t->prefix);
             } else {
                 size_t len = strlen(cli->outpath);
                 cpath = malloc(len + 1);
@@ -1384,14 +1514,14 @@ static int compile_source(const CliState *cli)
          * file's definition closure. `t->defs` is never NULL (an empty set
          * for a file with no named block), so there is one call here and no
          * branch on whether this source composes. */
-        if (pcrec_compile_defs(t->pattern, &topt, t->defs, &out, &cerr) != 0) {
+        if (pcrec_compile_defs(ot->t->pattern, &topt, ot->t->defs, &out, &cerr) != 0) {
             /* THE FILE AND THE LINE COME FIRST, THEN pcrec's OWN OFFSET.
              * A `.rxt` author's coordinates are file:line; the pattern
              * offset is still printed, because it is the only thing that
              * locates a failure INSIDE a pattern. */
             cli_err("%s:%zu: target '%s': %s (pattern offset "
                             "%zu)",
-                    cli->source, t->block_line, t->prefix, cerr.msg, cerr.pos);
+                    ot->owner, ot->t->block_line, ot->t->prefix, cerr.msg, cerr.pos);
             free(cpath); free(hpath);
             rc = 1;
             break;
@@ -1411,19 +1541,24 @@ static int compile_source(const CliState *cli)
         free(hpath);
     }
 
-    pcrec_rxt_source_free(src);
+    free(all);
+    for (size_t fi = 0; fi < cli->nfiles; fi++)
+        if (srcs[fi]) pcrec_rxt_source_free(srcs[fi]);
+    free(srcs);
     return rc;
 }
 
 /* Parses the command line via `cli_parse`, then dispatches: a syntax/
  * registry query (`--list-*`, `--explain`, `--probe-ask`, `--count-groups`
  * — no pattern, no `-o`, each returning before anything else runs), a
- * `.rxt` `--source` compile (`compile_source`, one or more targets), or an
- * ordinary single-pattern compile to `-o`. `--target`/`--lib-path` are
- * refused above every query since they apply to `--source` alone (the one
- * refusal that also has to free `st.libdirs`, this CLI's only allocation
- * outside that path). Returns 0 on success, 1 on any refusal or compile
- * failure. */
+ * `.rxt` compile from one or more FILE OPERANDS (`compile_sources`, D118 —
+ * one or more targets, pooled across every file given), or an ordinary
+ * single-pattern compile to `-o` from `--pattern`. `--target`/`--lib-path`
+ * are refused above every query since they apply to a file operand alone
+ * (the one refusal that also has to free `st.libdirs`, this CLI's only
+ * other allocation besides `st.files`, itself freed alongside it at every
+ * exit that can see it non-empty). Returns 0 on success, 1 on any refusal
+ * or compile failure. */
 int main(int argc, char **argv)
 {
     CliState st;
@@ -1431,6 +1566,7 @@ int main(int argc, char **argv)
     pcrec_default_options(&st.opt);
     if (cli_parse(argc - 1, argv + 1, &st, "command line") != 0) {
         free(st.libdirs);
+        free(st.files);
         return 1;
     }
     /* [REL-1.4] same shape as the `want_help` check just below: prints and
@@ -1438,20 +1574,31 @@ int main(int argc, char **argv)
     if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
 
-    /* [DD-13b.W1.2] `--target`/`--lib-path` APPLY TO `--source` ALONE, and
-     * this is refused HERE — above every query — for two reasons that
-     * happen to coincide. A query returns from `main` on its own, so a
-     * conflict tested lower down is one the query already won silently;
-     * and `--lib-path` is the only option in this CLI that ALLOCATES, so
-     * refusing it here is what makes "st.libdirs is non-NULL" true on
-     * exactly two paths — this one and the `--source` compile — both of
-     * which free it. Every other exit from `main` provably has nothing to
-     * free, which is why none of them carries a `free` that a reader would
-     * have to keep in step. */
-    if (!st.source && (st.target || st.libdirs)) {
-        cli_err("%s applies to --source only",
+    /* [DD-13b.W1.2][REL-1.10] `--target`/`--lib-path` APPLY TO A FILE
+     * OPERAND ALONE, and this is refused HERE — above every query — for two
+     * reasons that happen to coincide. A query returns from `main` on its
+     * own, so a conflict tested lower down is one the query already won
+     * silently; and `--lib-path` is the only FLAG in this CLI that
+     * ALLOCATES, so refusing it here is what makes "st.libdirs is non-NULL"
+     * true on exactly two paths — this one and the file-operand compile —
+     * both of which free it. `st.nfiles` being nonzero here is what a file
+     * operand means, so this same test covers it: `!st.nfiles` already
+     * implies `st.files` is untouched (NULL), nothing to free. */
+    if (!st.nfiles && (st.target || st.libdirs)) {
+        cli_err("%s applies to a file operand only",
                 st.target ? "--target" : "--lib-path");
         free(st.libdirs);
+        return 1;
+    }
+
+    /* [REL-1.10] D118 item 2: `--pattern` and a FILE OPERAND never combine
+     * — each names a different, exclusive way to give pcrec a pattern. */
+    if (st.pattern && st.nfiles) {
+        cli_err("--pattern does not combine with a file operand "
+                "(got %zu file%s and --pattern)",
+                st.nfiles, st.nfiles == 1 ? "" : "s");
+        free(st.libdirs);
+        free(st.files);
         return 1;
     }
 
@@ -1473,6 +1620,7 @@ int main(int argc, char **argv)
     const char *explain      = st.explain;
     const char *flavour      = st.flavour;
     const char *probe_want   = st.probe_want;
+    const char *probe_construct = st.probe_construct;
     const char *features     = st.features;
     const char *list_source  = st.list_source;
     /* [REVW.4] wave 4: every mutual-exclusion test below reads THIS, against
@@ -1514,17 +1662,20 @@ int main(int argc, char **argv)
         }
     }
 
-    /* [DD-13b.W1.2] `--source` VERSUS EVERY QUERY, CHECKED HERE AND NOT AT
-     * THE COMPILE PATH. Each query mode below returns from `main` on its
-     * own, so a conflict tested down beside the compile is a conflict the
-     * query already won SILENTLY — `--source f.rxt --count-groups -- a`
-     * would have counted the pattern's groups and ignored the file. The
-     * test is one place, above all of them, and it names both surfaces. */
-    if (st.source && ((modes & CLI_MODES_VS_SOURCE) || flavour)) {
-        cli_err("--source COMPILES a .rxt file; it does not "
+    /* [DD-13b.W1.2][REL-1.10] A FILE OPERAND VERSUS EVERY QUERY, CHECKED
+     * HERE AND NOT AT THE COMPILE PATH. Each query mode below returns from
+     * `main` on its own, so a conflict tested down beside the compile is a
+     * conflict the query already won SILENTLY — `f.rxt --count-groups
+     * --pattern a` would have counted the pattern's groups and ignored the
+     * file. The test is one place, above all of them, and it names both
+     * surfaces — and, per D118 addendum item (i), this is also where "a
+     * positional operand in a query mode is an error" is enforced. */
+    if (st.nfiles && ((modes & CLI_MODES_VS_FILES) || flavour)) {
+        cli_err("a file operand COMPILES a .rxt file; it does not "
                         "compose with a query surface (--list-source READS "
                         "one)");
         free(st.libdirs);
+        free(st.files);
         return 1;
     }
 
@@ -1547,8 +1698,8 @@ int main(int argc, char **argv)
     if (list_source) {
         if (modes & CLI_MODES_VS_LIST_SOURCE) {
             cli_err("--list-source is a separate query; use one "
-                            "(--list-source READS a .rxt file, --source "
-                            "COMPILES one)");
+                            "(--list-source READS a .rxt file; a file "
+                            "operand COMPILES one)");
             return 1;
         }
         if (pattern || outpath) {
@@ -1603,16 +1754,15 @@ int main(int argc, char **argv)
                             "--explain only");
             return 1;
         }
-        if (!pattern) {
-            cli_err("--probe-ask needs a construct");
-            return 1;
-        }
+        /* [REL-1.10] CONSTRUCT is `--probe-ask`'s own second argument now
+         * (D118 addendum item i), always set together with WANT at parse
+         * time — no separate "needs a construct" check is reachable. */
         /* Two NULLs with different causes (R20/MOD07-1): a port that RAISED
          * fills perr, and gets the compile path's own error shape rather
          * than the usage sentence below — the operator's command line is
          * fine, their pattern is not. */
         pcrec_error perr;
-        char *line = pcrec_probe_ask(probe_want, pattern, &perr);
+        char *line = pcrec_probe_ask(probe_want, probe_construct, &perr);
         if (!line && perr.msg[0]) {
             cli_err("--probe-ask: %s (pattern offset %zu)",
                     perr.msg, perr.pos);
@@ -1859,45 +2009,45 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    /* [DD-13b.W1.2] `--source FILE` — COMPILE FROM A `.rxt` SOURCE.
+    /* [DD-13b.W1.2][REL-1.10] ONE OR MORE FILE OPERANDS — COMPILE FROM
+     * `.rxt` SOURCE(S) (D118, the retired `--source FILE`'s own mechanism).
      *
      * It is a COMPILE MODE, not a query: it takes `-o` and honours every
-     * compile flag, and the one thing it refuses beside a query is a
-     * positional PATTERN, because a source file IS the pattern (or several)
-     * and accepting both would leave "which one did I build" answerable two
-     * ways. `--target` and `--lib-path` are meaningful only with it. */
-    if (st.source) {
-        /* the query conflict was refused above, before any query could
-         * return; what is left is this mode's own two requirements. */
-        if (pattern) {
-            cli_err("--source takes no pattern argument — the "
-                            "file's `pattern` blocks are the patterns (got "
-                            "'%s')", pattern);
-            free(st.libdirs);
-            return 1;
-        }
+     * compile flag. The one thing it refuses beside a query is `--pattern`
+     * (checked above, before any query could return), because a source
+     * file IS the pattern (or several) and accepting both would leave
+     * "which one did I build" answerable two ways. `--target` and
+     * `--lib-path` are meaningful only with it. */
+    if (st.nfiles) {
+        /* the query conflict, and the --pattern-combining conflict, were
+         * both refused above before any query could return or any file was
+         * read; what is left is this mode's own one requirement. */
         if (!outpath) {
-            cli_err("--source needs -o: a FILE for one target, "
-                            "an existing DIRECTORY for several (which writes "
-                            "<dir>/<prefix>.c and .h per target), or '-' for "
-                            "one target on stdout");
+            cli_err("compiling from a file needs -o: a FILE for "
+                            "one target total, an existing DIRECTORY for "
+                            "several (which writes <dir>/<prefix>.c and .h "
+                            "per target), or '-' for one target on stdout");
             free(st.libdirs);
+            free(st.files);
             return 1;
         }
         {
-            int rc = compile_source(&st);
+            int rc = compile_sources(&st);
             free(st.libdirs);
+            free(st.files);
             return rc;
         }
     }
     if (!pattern || !outpath) {
-        cli_err("pattern and -o are required");
+        cli_err("--pattern and -o are required (a positional "
+                        "operand is a FILE now, never a pattern — see "
+                        "--pattern)");
         usage(stderr);
         return 1;
     }
 
-    /* [DD-13b.W23.3] `--pattern-esc`: THE OPERAND IS THE `.rxt` FORMAT'S
-     * QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
+    /* [DD-13b.W23.3] `--pattern-esc`: THE --pattern VALUE IS THE `.rxt`
+     * FORMAT'S QUOTED-ESCAPE FORM, decoded by the format's OWN decoder.
      *
      * WHO DECODES: PCREC, ONCE (format_design §2.19). A `pattern-esc` block
      * exists so a multi-line or high-byte pattern is expressible without
