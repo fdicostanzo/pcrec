@@ -1,4 +1,4 @@
-# include_graph.py -- commit d0c8b4c220c1f0df42b1857749e9c01747a9eba4 -- generated 2026-09-19 -- rows 207
+# include_graph.py -- commit ed15116d53f31c499b50d6ba69018362b6f1c8a7 -- generated 2026-09-21 -- rows 208
 from_file	line	spelling	kind	resolved_to	from_layer	to_layer
 cli/main.c	7	limits.h	SYSTEM	<system>	cli	external
 cli/main.c	8	stdarg.h	SYSTEM	<system>	cli	external
@@ -10,7 +10,7 @@ cli/main.c	13	sys/stat.h	SYSTEM	<system>	cli	external
 cli/main.c	15	pcrec.h	LOCAL	lib/pcrec.h	cli	lib
 cli/main.c	20	core/internal.h	LOCAL	src/core/internal.h	cli	core
 cli/main.c	23	enc/enc.h	LOCAL	src/enc/enc.h	cli	enc
-cli/main.c	631	core/axes.def	LOCAL	src/core/axes.def	cli	core
+cli/main.c	674	core/axes.def	LOCAL	src/core/axes.def	cli	core
 lib/pcrec.h	7	stddef.h	SYSTEM	<system>	lib	external
 lib/pcrec.h	8	stdint.h	SYSTEM	<system>	lib	external
 src/core/arena.c	1	stdlib.h	SYSTEM	<system>	core	external
@@ -25,6 +25,7 @@ src/core/compile.c	10	stdlib.h	SYSTEM	<system>	driver	external
 src/core/compile.c	11	string.h	SYSTEM	<system>	driver	external
 src/core/compile.c	13	core/internal.h	LOCAL	src/core/internal.h	driver	core
 src/core/compile.c	14	enc/enc.h	LOCAL	src/enc/enc.h	driver	enc
+src/core/compile.c	90	core/axes.def	LOCAL	src/core/axes.def	driver	core
 src/core/compile_defs.c	36	core/internal.h	LOCAL	src/core/internal.h	core	core
 src/core/compile_defs.c	37	pcrec.h	LOCAL	lib/pcrec.h	core	lib
 src/core/cpset.c	58	string.h	SYSTEM	<system>	core	external
@@ -38,7 +39,7 @@ src/core/internal.h	8	stddef.h	SYSTEM	<system>	core	external
 src/core/internal.h	9	stdint.h	SYSTEM	<system>	core	external
 src/core/internal.h	11	pcrec.h	LOCAL	lib/pcrec.h	core	lib
 src/core/internal.h	14	core/limits.h	LOCAL	src/core/limits.h	core	core
-src/core/internal.h	1362	core/limits.def	LOCAL	src/core/limits.def	core	core
+src/core/internal.h	1445	core/limits.def	LOCAL	src/core/limits.def	core	core
 src/core/limits.h	712	core/limits.def	LOCAL	src/core/limits.def	core	core
 src/core/sb.c	1	ctype.h	SYSTEM	<system>	core	external
 src/core/sb.c	2	stdarg.h	SYSTEM	<system>	core	external
@@ -53,13 +54,13 @@ src/dump/axes_dump.c	73	stdio.h	SYSTEM	<system>	dump	external
 src/dump/axes_dump.c	74	string.h	SYSTEM	<system>	dump	external
 src/dump/axes_dump.c	76	core/internal.h	LOCAL	src/core/internal.h	dump	core
 src/dump/axes_dump.c	77	pcrec.h	LOCAL	lib/pcrec.h	dump	lib
-src/dump/axes_dump.c	206	core/axes.def	LOCAL	src/core/axes.def	dump	core
-src/dump/axes_dump.c	221	core/axes.def	LOCAL	src/core/axes.def	dump	core
+src/dump/axes_dump.c	212	core/axes.def	LOCAL	src/core/axes.def	dump	core
+src/dump/axes_dump.c	227	core/axes.def	LOCAL	src/core/axes.def	dump	core
 src/dump/limits_dump.c	25	stdio.h	SYSTEM	<system>	dump	external
 src/dump/limits_dump.c	26	string.h	SYSTEM	<system>	dump	external
 src/dump/limits_dump.c	28	core/internal.h	LOCAL	src/core/internal.h	dump	core
 src/dump/limits_dump.c	29	pcrec.h	LOCAL	lib/pcrec.h	dump	lib
-src/dump/limits_dump.c	94	core/limits.def	LOCAL	src/core/limits.def	dump	core
+src/dump/limits_dump.c	98	core/limits.def	LOCAL	src/core/limits.def	dump	core
 src/dump/schema_dump.c	41	stdio.h	SYSTEM	<system>	dump	external
 src/dump/schema_dump.c	42	string.h	SYSTEM	<system>	dump	external
 src/dump/schema_dump.c	44	core/internal.h	LOCAL	src/core/internal.h	dump	core
@@ -74,7 +75,7 @@ src/enc/enc.c	15	enc/enc.h	LOCAL	src/enc/enc.h	enc	enc
 src/enc/enc.h	48	core/internal.h	LOCAL	src/core/internal.h	enc	core
 src/enc/enc_byte.c	13	enc/enc.h	LOCAL	src/enc/enc.h	enc	enc
 src/enc/enc_utf8.c	25	enc/enc.h	LOCAL	src/enc/enc.h	enc	enc
-src/enc/enc_utf8.c	159	utf8_fold_pairs.inc	LOCAL	src/enc/utf8_fold_pairs.inc	enc	enc
+src/enc/enc_utf8.c	171	utf8_fold_pairs.inc	LOCAL	src/enc/utf8_fold_pairs.inc	enc	enc
 src/gen/emit_dfa.c	35	ctype.h	SYSTEM	<system>	gen	external
 src/gen/emit_dfa.c	36	stdio.h	SYSTEM	<system>	gen	external
 src/gen/emit_dfa.c	37	stdlib.h	SYSTEM	<system>	gen	external
@@ -121,9 +122,9 @@ src/opt/revdet.c	59	core/limits.h	LOCAL	src/core/limits.h	opt	core
 src/opt/scanedge.c	170	stdlib.h	SYSTEM	<system>	opt	external
 src/opt/scanedge.c	171	string.h	SYSTEM	<system>	opt	external
 src/opt/scanedge.c	173	core/internal.h	LOCAL	src/core/internal.h	opt	core
-src/opt/select_engine.c	51	stdio.h	SYSTEM	<system>	opt	external
-src/opt/select_engine.c	52	string.h	SYSTEM	<system>	opt	external
-src/opt/select_engine.c	54	core/internal.h	LOCAL	src/core/internal.h	opt	core
+src/opt/select_engine.c	59	stdio.h	SYSTEM	<system>	opt	external
+src/opt/select_engine.c	60	string.h	SYSTEM	<system>	opt	external
+src/opt/select_engine.c	62	core/internal.h	LOCAL	src/core/internal.h	opt	core
 src/parse/definitions.c	23	assert.h	SYSTEM	<system>	parse	external
 src/parse/definitions.c	24	ctype.h	SYSTEM	<system>	parse	external
 src/parse/definitions.c	25	string.h	SYSTEM	<system>	parse	external
@@ -156,7 +157,7 @@ src/parse/mod_lookaround.c	86	stdio.h	SYSTEM	<system>	parse	external
 src/parse/mod_lookaround.c	87	string.h	SYSTEM	<system>	parse	external
 src/parse/mod_lookaround.c	89	core/internal.h	LOCAL	src/core/internal.h	parse	core
 src/parse/mod_lookaround.c	90	parse/parse_mods.h	LOCAL	src/parse/parse_mods.h	parse	parse
-src/parse/mod_lookaround.c	354	core/limits.def	LOCAL	src/core/limits.def	parse	core
+src/parse/mod_lookaround.c	359	core/limits.def	LOCAL	src/core/limits.def	parse	core
 src/parse/mod_modifiers.c	37	stdio.h	SYSTEM	<system>	parse	external
 src/parse/mod_modifiers.c	39	core/internal.h	LOCAL	src/core/internal.h	parse	core
 src/parse/mod_modifiers.c	40	parse/parse_mods.h	LOCAL	src/parse/parse_mods.h	parse	parse
