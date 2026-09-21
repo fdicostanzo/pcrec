@@ -219,9 +219,23 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # +1/+1/+6, and every one of the six cases is a plain python-expressible
 # regex (`(?:ab){0,16000}`, nothing PCRE2-only), so C3_PASS below moves by
 # the SAME +6 with no skip bucket moving.
-CENSUS_FILES=212
-CENSUS_BLOCKS=3939
-CENSUS_LINES=28955
+# 2026-09-21 (lane adm0921, [K62] regression pins) — +1 file, +5 blocks,
+# +16 lines for the new tests/quoting/k62_class_range_e.rxt (4 `pattern`
+# blocks + 1 negative-control `pattern` block with a `perr`, 15 m/n case
+# lines + 1 perr line, 0 g/gp lines). Not under tests/known_fail/, so
+# RUNSH_* below moves by the SAME +1/+5/+16. Isolated verify_rxt.py run on
+# the file alone (`python3 tests/harness/verify_rxt.py --file-timeout 10
+# tests/quoting/k62_class_range_e.rxt`) reports PASS=1 (the one `perr`
+# line — verified the same way any `perr` is, D26 provenance-only) and
+# SKIP=15, all fifteen under `no-python-expression` (the class-range `\E`/
+# `\Q\E` dissolution these blocks pin has no python `re` translation) —
+# so C3_PASS below moves by +1 and C3_SKIP_NOPYTHON by +15, with every
+# other C3_SKIP_* reason and C3_INFO/C3_STOREUNCOVERED/C3_TIMEOUT
+# untouched (this file times out nothing and is not composed/pcre2-only/
+# giveup/perr-accept/own-oracle/under-convention).
+CENSUS_FILES=213
+CENSUS_BLOCKS=3944
+CENSUS_LINES=28971
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -250,9 +264,12 @@ CENSUS_LINES=28955
 # reader who assumes one population finds the 191/190 split inexplicable.
 # 2026-09-17 (lane cmtfix, [O-31 F1]) — +1/+2/+6, the SAME delta as
 # CENSUS_* above (comment_escape.rxt is not under tests/known_fail/).
-RUNSH_FILES=211
-RUNSH_BLOCKS=3936
-RUNSH_LINES=28944
+# 2026-09-21 (lane adm0921, [K62]) — +1/+5/+16, the SAME delta as
+# CENSUS_* above (tests/quoting/k62_class_range_e.rxt is not under
+# tests/known_fail/).
+RUNSH_FILES=212
+RUNSH_BLOCKS=3941
+RUNSH_LINES=28960
 # 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
 # widest divergence this pair has shown. A known_fail file being RETIRED moves
 # the two in different directions on every column: the census loses a file
@@ -1100,12 +1117,28 @@ C3_FILES=179
 # character-class patterns with nothing PCRE2-only about them, so the
 # entire delta is PASS and no C3_SKIP_* reason moves. Reconciliation:
 # 13714+15146+89 = 28949 = CENSUS_LINES (matches the pin above).
-C3_PASS=13720
-C3_SKIP=15146
+#
+# [k62pin re-pin, 2026-09-21, lane k62pin] +1 PASS, +15 SKIP (all fifteen
+# under no-python-expression), nothing else moved. [K62]'s own new file
+# (tests/quoting/k62_class_range_e.rxt, adm0921) ISOLATED directly —
+# `python3 tests/harness/verify_rxt.py --file-timeout 10
+# tests/quoting/k62_class_range_e.rxt` reports `PASS=1 ... SKIP=15
+# (... no-python-expression=15 ...)`: the file's one `perr` block is the
+# PASS (verified the same way any `perr` is, D26 provenance-only) and its
+# four accepting blocks' fifteen `m`/`n` lines are every one classified
+# no-python-expression — python's `re` has no translation for the
+# class-range `\E`/`\Q\E` dissolution these blocks pin (unlike
+# `pcre2-only`, this reason is a STRUCTURAL "no python spelling exists"
+# call the classifier makes per pattern shape, not a python-version-
+# sensitive divergence, so it carries across boxes the same way
+# `pcre2-only` does — the prior re-pins' own stated method). Reconciliation:
+# 13721+15161+89 = 28971 = CENSUS_LINES (matches the pin above).
+C3_PASS=13721
+C3_SKIP=15161
 C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
-C3_SKIP_NOPYTHON=1875
+C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14
 C3_SKIP_OWNORACLE=10290
 C3_INFO=0
