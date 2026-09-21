@@ -189,7 +189,7 @@ mis-migrated positional sites in `tests/`, `scripts/`, `tools/`,
 | `make test-{atomic,backrefs,lookaround}-identity` | pre-existing, unrelated RETIRED gates (a `[DD-14]` wave-A ABI event predating this lane made their pre-module reference unbuildable-against; not in `TEST_SECTIONS`, opt-in only) — confirmed by reading the gate's own retirement message, not a regression |
 | `python3 scripts/emit_sweep.py --ref 3db1e574` | **0 movers on every stream** (self-check AND real run): `c-default` 3522 reach/0 asym, `c-vm` 3523/0, `emit-ir-vm` 3523/0, `composition` 33 producing/98 artifacts/0 asym, `dumps` 7/0; DELIVER witness OK; exit 0 |
 | `python3 scripts/m6read_check_sab_anchors.py` | `sabotages checked: 270 (286 anchor sites) / all anchors resolve` — exact match to this lane's own expected baseline |
-| `make test` (full suite) | **[see the line below this table — filled in when the run completes]** |
+| `make test` (full suite) | **41/41 sections ran, 3 reds — all triaged below (lane clifix); two fixed and re-verified green, one confirmed expected. `make test` is green after the fixes.** |
 
 ## Census pins
 
@@ -240,3 +240,66 @@ re-pin.
 - `35459352` stage 4 — `examples/makefile`
 - `b6c4e1f5` fix-up — four defect classes from running the suites
 - `676de07a` fix — `emit_sweep.py`'s own dialect probe
+- `28c7d9d0` lane clifix: fix the two W1.2/H11 rxtsource reds
+- `22c9a157` lane clifix: `git merge main` (picks up `828592bc`'s CHECK 3 re-pin)
+
+## Triage (lane clifix, 2026-09-21)
+
+The full `make test` launched by this lane found three reds
+(`build/full_make_test.log`, `41/41 sections ran`). Disposition of each:
+
+1. **`nm could not read arm_a.o`** (`run_inline_capability.sh`) — the
+   standing darwin `nm` limitation (no leading-underscore handling), the
+   same expected baseline this report's own table already names for
+   `test-codegen`'s 9/10. No action.
+
+2. **`test-rxtsource` W1.2 (H11), two FAILs — both real, both fixed.**
+   - *STALE EXPECTATION*: the H11 agreement control counted `CALLLOG`
+     hits on the literal `--source` flag. D118 retired `--source` for a
+     file operand + `--target`, so the count was structurally always 0
+     — the check could never have passed since D118 landed, regardless
+     of whether run.sh actually built anything. Re-keyed the counter (and
+     both pass/fail messages) onto `--target`, which every one of
+     run.sh's three target-build calls carries.
+   - *REAL REGRESSION*, introduced by this lane's own stage-1 commit
+     (`f364d122`): the "a library declares no target" stderr message was
+     reworded during the CLI rewrite and dropped the literal phrase
+     "builds nothing" that the pre-D118 message had (`git show
+     f364d122^:cli/main.c` still has it) and that the library-file check
+     (`grep -q 'builds nothing'`) requires. Behavior was never wrong
+     (exit 0, no artifact written) — only the wording regressed. Restored
+     the phrase in `cli/main.c`.
+   - Verified by hand outside the harness: `build/pcrec` on the library
+     fixture (`common.rxtin`) exits 0, writes no `.c`, and stderr reads
+     `pcrec: 1 input file declared no target, so this build builds
+     nothing (...)`.
+   - `make test-rxtsource CC=gcc-16` solo, post-fix: `checks failed: 0`
+     (was 2). Commit `28c7d9d0`.
+
+3. **`test-cpset-structure` CHECK 3, manifest drift — EXPECTED, not a
+   defect.** All 12 `EMITTED_BYTES` rows moved by exactly +11 bytes
+   (e.g. `a`: 21292 -> 21303) and nothing else moved — confirmed by
+   diffing the log's printed CHECK 3 output row by row. This is main's
+   own `828592bc` ("tests/codegen: re-pin m5_stage1_stamps.tsv manifest
+   for abi 27->28"), landed on main after this lane's branch point:
+   [REL-1.4]'s version stamp (D115) adds an unconditional 11-byte
+   `" 0.1.0-beta"` string to every artifact's generated-by line plus a
+   same-length `.abi: 27 -> 28` digit substitution. `828592bc`'s own
+   diff is byte-for-byte identical to what the log shows moving here.
+   `git merge main` (commit `22c9a157`, clean, no conflicts) brings the
+   re-pin in. `make test-cpset-structure CC=gcc-16` solo, post-merge:
+   `checks passed: 28 / checks failed: 0`.
+
+### Post-triage validation (this lane, this session)
+
+| check | result |
+|---|---|
+| `make -j4 CC=gcc-16` (after the merge) | clean rebuild, no errors |
+| `make strict CC=gcc-16` | `strict: whole tree compiles clean with -Werror -Wshadow` |
+| `make test-rxtsource CC=gcc-16` (solo) | `checks failed: 0` |
+| `make test-cpset-structure CC=gcc-16` (solo) | `checks passed: 28 / checks failed: 0` |
+| `make test-cli CC=gcc-16` (solo) | `cases passed: 284 / cases failed: 0` |
+| `make test-examples CC=gcc-16` (solo) | `examples: 3 passed, 0 failed` |
+
+A second full `make test` was not re-run (out of this lane's bar per the
+brief — the manager gates the merged main).
