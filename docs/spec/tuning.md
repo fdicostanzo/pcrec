@@ -1408,7 +1408,9 @@ not separated by more than the per-round range at `m` = 3, 4 or 8; the
 IQR 0.87, bimodal rounds — measurement instability, not a measured effect;
 re-measurement owed, docs/dev/lanes/edge2_report.md §9.3), so D77's
 "no gap, no move" leaves it at 2, and the unconditional SIZE win (the chain's
-interior states are deleted) is what admits `m` = 2 at all.
+interior states are deleted) is what admits `m` = 2 at all. Re-confirmed
+2026-09-21 on the fixed harness (I-82, D117): 0 of 16 cells separate — the
+floor stays 2.
 
 **What the artifact does instead.** One `if (state == K) { … }` block per
 edge, counting the class's bytes in a loop whose only carried value is the
