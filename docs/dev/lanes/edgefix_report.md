@@ -252,15 +252,83 @@ summary" section.
 
 The box was under a `make test` gate (`build/gate_4c2b06d2`) for this
 lane's whole working period; per BOILERPLATE, no build or harness compile
-stage ran until it printed `== GATE END`.
+stage ran until it printed `== GATE END`. The gate ended at 11:51 EDT
+(`== test rc=2 2026-09-21T11:51:06` / `== GATE END`, unrelated to this
+lane) and the manager handed the box back.
 
-<!-- VERIFICATION-TRANSCRIPT-PLACEHOLDER: filled after the gate clears -->
+**Build** (`make -j4 CC=gcc-16` in the worktree): clean, `build/pcrec`
+produced. `make strict CC=gcc-16`: `strict: whole tree compiles clean
+with -Werror -Wshadow`, rc=0.
+
+**`make refs`**:
+
+```
+built c_before from 9d8401a
+built c_after from b048fa61
+```
+
+**`make rungs`** (unaffected by fault 2 — its census reads the OLD `after`
+reference compiler's artifact, matching O-42's own "edge-count checks
+pass" observation):
+
+```
+c_before already built
+c_after already built
+rung 1  \d{2}y                     forward edges = 1  OK
+rung 2  \d{2}y\d{2}                forward edges = 2  OK
+rung 3  \d{2}y\d{2}y\d{2}          forward edges = 3  OK
+rung 4  \d{2}y\d{2}y\d{2}y\d{4}    forward edges = 4  OK
+```
+rc=0.
+
+**`make floorcells`** — the direct test of fault 2's fix; every one of
+these eight lines read `forward edges = 0  *** TAKES NO EDGE ***` in
+O-42's run:
+
+```
+m=2  exact    [0-9]{2}x      forward edges = 1  OK
+m=2  nullable [a-z]{0,2}     forward edges = 1  OK
+m=3  exact    [0-9]{3}x      forward edges = 1  OK
+m=3  nullable [a-z]{0,3}     forward edges = 1  OK
+m=4  exact    [0-9]{4}x      forward edges = 1  OK
+m=4  nullable [a-z]{0,4}     forward edges = 1  OK
+m=8  exact    [0-9]{8}x      forward edges = 1  OK
+m=8  nullable [a-z]{0,8}     forward edges = 1  OK
+```
+rc=0 — all eight cells now read a real, non-zero edge count.
 
 The timing stages (`run_ladder.sh`'s/`run_floor.sh`'s round loops) use
-Linux-only `taskset -c`; per the brief, these are NOT ported to darwin.
-Verification here is the COMPILE + COUNT paths only: `make refs`, `make
-rungs`, `make floorcells`, and the `e_${fam}_$m.c` edge-count reads, with
-the actual counts printed.
+Linux-only `taskset -c`, AND their own precondition gate reads
+`/proc/loadavg` directly, which does not exist on darwin — the FULL
+scripts refuse at their very first line on this box (`awk: can't open
+file /proc/loadavg`, `REFUSED: load1 >= 0.5`), confirmed live and left
+unported per the brief. To still demonstrate fault 1's fix directly (the
+Makefile's `rungs` target never exercises `run_ladder.sh`'s OWN internal
+regeneration logic, which is where the bug lived), I extracted the exact
+`$OUT`-handling + `ARM` array logic into an isolated shell snippet and ran
+it both ways:
+
+*With the fix* (absolute-ized `$OUT`, matching the committed
+`run_ladder.sh`):
+```
+cwd is now: .../studies/scan_edge_ladder/out/work
+arm before: pcrec invocation OK -> 27870 bytes
+arm after: pcrec invocation OK -> 29487 bytes
+arm step11: pcrec invocation OK -> 17045 bytes
+```
+
+*Without it* (the pre-fix logic, `$OUT` left relative — the
+FAILING-DIRECTION control):
+```
+cwd is now: .../studies/scan_edge_ladder/out/work2
+arm before: COMPILE FAILED
+arm after: COMPILE FAILED
+arm step11: pcrec invocation OK
+```
+
+This reproduces O-42's exact symptom (before/after fail, step11 succeeds)
+under the unpatched logic and confirms the fix resolves it, in both
+directions, on this box.
 
 ## Rulings received
 
