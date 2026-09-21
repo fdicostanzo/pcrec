@@ -42,6 +42,23 @@ re-measure before load-bearing use.
   one; timing the first version would have compared two identical machines and
   reported 1.000 as a finding. NOT TIMED YET — the box was held for the lane's
   whole write phase.
+  **FIXED 2026-09-21 (lane edgefix, triaging O-42's ubuntubudu run at
+  eaab0d4a)**: two harness defects D112's comments-off default and a stale
+  relative-path assumption had introduced since. (1) `run_ladder.sh`'s
+  `ARM[before]`/`ARM[after]` were built from a RELATIVE `$OUT` before the
+  script's own `cd` into `$OUT/work`, so both reference arms read "COMPILE
+  FAILED" on every rung while `step11` (already hardened absolute) ran fine
+  — fixed by absolute-izing `$OUT` the same way, in both run scripts. (2)
+  the edge-count census reads the `[OPT-5] SCAN EDGE` COMMENT marker, which
+  D112 (2026-09-19, abi 26->27) made non-default — the floor's own census
+  reads an artifact built by the compiler UNDER TEST (no old-reference
+  stand-in), so `floorcells`/`run_floor.sh` now pass `-fcomments` on that
+  one build (proven byte/behaviour-neutral, D108); the ladder's census reads
+  the OLD `after` reference compiler's artifact, which predates D112 and
+  needed no change. A rung/cell that measures nothing now FAILS the run
+  (rc<>0) rather than exiting 0, and `run_floor.sh` gained the median/IQR
+  summary block the 2026-09-04 report cited (previously computed by hand).
+  See `docs/dev/lanes/edgefix_report.md` and the study's own README.
 - `alt_dispatch/` — [ENG-ISL.S0] the alternation-dispatch study (chartered
   by Frank 2026-09-03): five dispatch algorithms for a wide literal
   alternation — today's serial try (`vm_alt`), first-byte grouping, a

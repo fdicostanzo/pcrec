@@ -62,6 +62,57 @@ Method for both: 256 KB near-miss subjects, `taskset`-pinned, arms INTERLEAVED
 inside each round, the ratio taken per round from that round's own pair,
 15 rounds × 10 sweeps, medians reported WITH the per-round range.
 
+## D112: emitted comments are off by default (read this before re-running)
+
+D112 (2026-09-19, abi 26 -> 27) flipped emitted comments OFF BY DEFAULT.
+The `[OPT-5] SCAN EDGE` comment marker BOTH census points in this harness
+read (`rungs`'s and `run_ladder.sh`'s own re-check of `a_after_$k.c`;
+`floorcells`'s and `run_floor.sh`'s own check of `e_${fam}_$m.c`) is exactly
+the comment class the flip removes.
+
+The two census sites are affected DIFFERENTLY, because only one of them
+reads an artifact built by the compiler under test:
+
+* The **ladder's** rung census reads `a_after_$k.c`, built by the OLD
+  `after` reference compiler (`b048fa61`, git-archive'd from before D112
+  existed). That compiler always emits comments unconditionally and has
+  no `-fcomments` flag to pass (passing one would itself be a hard CLI
+  error on that old binary). `step11` (the compiler under test) shares
+  `scanedge.c`'s edge-taking decision with `after` by the ladder's own
+  design precondition, so `after`'s topology stands in for it — no fix
+  needed on this side.
+* The **floor's** census reads `e_${fam}_$m.c`, built by `$PCREC` itself —
+  there is no old-reference stand-in. `floorcells` and `run_floor.sh` now
+  pass `-fcomments` on that one build. This is proven byte/behaviour-
+  neutral for the machine under test (D108; `emitverb_report.md`'s own
+  `.o`-identity proof and its AUTO-rung-selection fix for the one place a
+  raw-byte-including-comments comparison could have picked a different
+  rung) — it changes only what the CENSUS can see, not what is measured.
+
+If a future compiler removes the `[OPT-5] SCAN EDGE` marker itself (rather
+than just gating it behind the comments axis), both census points break
+again and need a structural stamp instead — see the finding recorded in
+`docs/dev/lanes/edgefix_report.md`.
+
+## Failure semantics
+
+A rung or cell that measures nothing FAILS the run (non-zero exit, with the
+reason printed) — it never merely prints a message and exits 0. This
+applies to: a `pcrec`/`gcc` build failure, a wrong forward-edge count, a
+cell/rung with zero valid rounds, and (floor only) the median/IQR summary's
+own "no valid rounds" case. `make ladder`/`make floor`/`make rungs`/
+`make floorcells` all propagate this.
+
+## The floor's median/IQR summary
+
+`run_floor.sh` now prints a `median / IQR summary` block (median and a
+linear-interpolated IQR, per `m` x family, over every ACCEPTED round) at
+the end of its own output. This did not exist before 2026-09-21: the
+2026-09-04 report's medians/IQR were computed by hand, from an interactive,
+never-saved `python3` one-liner run against the raw per-round lines the
+script already printed — which is why re-running the harness never
+reproduced a summary block on its own.
+
 ## Running it
 
 ```
