@@ -6,8 +6,8 @@ does with each line, and what `tests/harness/driver.c` prints and exits with.
 Read this before adding a `.rxt` file or a new component test directory.
 
 **THE FORMAT HAS THREE READERS AND THIS DOCUMENT IS THE CONTRACT ALL
-THREE ANSWER TO**: `pcrec` itself (`--source`/`--list-source`, the only
-reader of a file's HEAD), `tests/harness/run.sh`, and
+THREE ANSWER TO**: `pcrec` itself (a file operand / `--list-source`
+[REL-1.10], the only reader of a file's HEAD), `tests/harness/run.sh`, and
 `tests/harness/verify_rxt.py`. Every claim below is checked by RUNNING
 them rather than by reading a design; where a stated rule and a reader
 disagreed, the reader won — see "Drift found and fixed" at the bottom.
@@ -55,7 +55,7 @@ table — which restates them for a reader, and says what each MEANS:
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
-| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only `--source` could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). Repeatable |
+| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only compiling the file could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). Repeatable |
 | `vocabulary <key> <v1> <v2> …` | **[DD-13b.W23.3]** declares a CLOSED SET named `<key>`, whose members are the remaining words. It is how a FILE declares the members of a schema `closed` constraint whose row names no members (see "The `constraints` column's clause spellings" below); the keys it can close are `tag`'s own keys, `under`'s convention and `variant`'s `kind`. The key is an identifier; a set with no members is refused by name, because a closed set nothing satisfies can only ever refuse. **One line per key**: a second `vocabulary` for a key already declared is refused, naming the earlier line. Its value may use the block-scalar continuation form (`vocabulary <key> \|` with the members on indented lines) |
 | `oracle <engine-ref>[/<version>]` | **[DD-13b.W23.3]** the file-level default oracle (see "Oracle verification"). **At most ONE per file** |
 | `tag <item>{, <item>}` | **[DD-13b.W23.3]** file-level classification. Each item is a bare LABEL or a `key=value`, and neither half may carry whitespace. Repeatable |
@@ -68,7 +68,11 @@ A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
 the same productions a pattern block's own directives use, so the two
 cannot disagree about what `budget frames=` means. `analysis <list>` names
 `freq` data blocks; its value shape is checked and its names are not
-resolved in this build.
+resolved in this build. **[REL-1.10]/D118 addendum (iv)**: the `pcrec`
+line's raw text is re-parsed by the CLI's own option parser
+(`docs/spec/cli.md` §1.1's config-block paragraph), so a literal pattern on
+that line is spelled `--pattern 'X'` there too, exactly as on the command
+line — no corpus fixture carries one today.
 
 **NOT IN THIS BUILD, AND THE LIST IS DERIVED RATHER THAN HAND-KEPT**
 ([DD-13b.W23.1]): every line kind the format has is a row in a declared
@@ -122,10 +126,12 @@ that disqualified an earlier candidate PCRE2 turned out to accept).
 
 ### Building from a source file
 
-`pcrec --source FILE -o OUT` builds this file's `target` declarations;
-`docs/spec/cli.md` §1 is the command-line contract and states the `-o`
-forms, `--target`, `--lib-path` and the precedence rules. What belongs to
-the FORMAT rather than to the CLI is this:
+`pcrec -o OUT FILE` builds this file's `target` declarations — a
+positional FILE OPERAND, the retired `--source FILE` flag's own mechanism
+since [REL-1.10]/D118. `docs/spec/cli.md` §1.1 is the command-line
+contract and states the `-o` forms, `--target`, `--lib-path`/`-I` and the
+precedence rules. What belongs to the FORMAT rather than to the CLI is
+this:
 
 - **A `target`'s definition is a pattern block's `name`**, which lives in
   the FILE namespace — the same namespace a block's `name` is unique in.
@@ -392,10 +398,10 @@ off.
     rather than a refusal anybody wrote**: both spellings are block
     OPENERS, so a second opener starts the NEXT block (S2).
   - **The decoding has ONE home, and the CLI exposes it**:
-    `pcrec --pattern-esc` (`docs/spec/cli.md` §1) takes the pattern
-    OPERAND in this same quoted-escape form and runs it through this same
-    decoder, which is how a harness passes a block's text through
-    undecoded instead of re-implementing the table.
+    `pcrec --pattern-esc` (`docs/spec/cli.md` §1) takes `--pattern`'s
+    VALUE [REL-1.10] in this same quoted-escape form and runs it through
+    this same decoder, which is how a harness passes a block's text
+    through undecoded instead of re-implementing the table.
   - **[DD-13b.W23.5] THE DUMP-VALUE SEAM: `--list-source`'s `pattern`
     column carries the DECODED bytes (below); a harness reading the raw
     file — as `tests/harness/run.sh` and `tests/harness/verify_rxt.py`

@@ -36,10 +36,15 @@ dependency on pcrec in the generated code.
   prefiltering, alternation-to-class normalization, scan-edge dispatch,
   and more — `docs/spec/tuning.md`), a `--tune=` speed-vs-size dial, and a
   `--engine=` override.
-- A `pcrec` CLI: single-pattern compiles, `.rxt`-source multi-target
-  compiles (`--source`), seven registry/listing surfaces (`--list-syntax`
-  and siblings), a VM program listing (`--emit-ir`), and diagnostic query
-  flags (`--explain`, `--probe-ask`, `--count-groups`).
+- A `pcrec` CLI in a gcc-shaped grammar ([REL-1.10]): a positional operand
+  is an input `.rxt` FILE (one or more, pooled), `--pattern 'X'` compiles a
+  literal pattern, `-I`/`--lib-path` resolves library references, seven
+  registry/listing surfaces (`--list-syntax` and siblings), a VM program
+  listing (`--emit-ir`), and diagnostic query flags (`--explain`,
+  `--probe-ask`, `--count-groups`).
+- An `examples/makefile/` worked example ([REL-1.10]) showing the CLI as a
+  Makefile build step: `.rxt` sources compile to a static library a small
+  `main.c` links against.
 - A small public library surface (`lib/pcrec.h`): `pcrec_compile()`,
   `pcrec_output_free()`, `pcrec_default_options()`, `pcrec_limits_tsv()`.
 - `pcrec --version`, printing the tool's own version (this file's own

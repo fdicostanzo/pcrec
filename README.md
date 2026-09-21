@@ -6,7 +6,7 @@ pattern — no runtime interpreter, no dependency on pcrec in the generated code
 
 ```sh
 make
-build/pcrec -p rx --emit-main -o matcher.c 'a(b|c)+d'
+build/pcrec -p rx --emit-main -o matcher.c --pattern 'a(b|c)+d'
 gcc -O2 -o matcher matcher.c
 ./matcher 'xxabcbdyy'        # -> match 2 7
 ```

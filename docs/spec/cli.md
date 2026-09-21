@@ -15,15 +15,32 @@ module's shipped status.
 ## 1. Compiling a pattern
 
 ```
-pcrec [options] -o OUT.c [--] 'PATTERN'
+pcrec [options] -o OUT FILE.rxt...
+pcrec [options] -o OUT.c --pattern 'PATTERN'
 ```
 
-A bare invocation needs exactly one pattern and an output path; everything
-else defaults. `--` ends option parsing, which is how a pattern that starts
-with `-` is passed (`cli_parse`'s `!strcmp(a, "--")` arm, case5
-`tests/cli/run_cli_tests.sh`) — any other leading-`-` argument is diagnosed
-as an unknown option (`cli_parse`'s `a[0] == '-' && a[1]` arm, the last one
-before the pattern operand) rather than treated as the pattern.
+**[REL-1.10] (D115, 2026-09-21) THE gcc SHAPE.** A positional operand is an
+INPUT FILE, never a pattern: each must be an existing `.rxt` source
+(`docs/spec/rxt_format.md`), and every one given is compiled exactly as
+`§1.1` below describes, pooled into one invocation. The literal pattern
+moves behind `--pattern 'X'` (long form only — `-e` is encoding, `-p` is
+prefix). The two do not combine: giving both a file operand and
+`--pattern` is refused, naming both. `--` ends option parsing (`cli_parse`'s
+`!strcmp(a, "--")` arm), which is how a file name that starts with `-` is
+passed — any other leading-`-` argument is diagnosed as an unknown option
+(`cli_parse`'s `a[0] == '-' && a[1]` arm, the last one before the operand)
+rather than treated as an operand.
+
+**An operand that is not an existing file is refused BY NAME, naming
+`--pattern`** — never a silent fallback to "treat it as a pattern"
+(`path_exists`, `cli/main.c`): `pcrec -o out.c nosuchfile.rxt` refuses
+`nosuchfile.rxt: not an existing file; a literal pattern is given with
+--pattern`, not a parse error on `nosuchfile.rxt` as though it were regex
+syntax.
+
+A bare invocation needs `-o` and either `--pattern` or at least one file
+operand; everything else defaults. `--source FILE` is RETIRED (an unknown
+option, no alias): the file operand IS the mechanism now — see §1.1.
 
 ### `--version` — print the pcrec version and exit
 
@@ -40,10 +57,18 @@ own header always agree on which pcrec produced it.
 Parsed identically to `-h`/`--help` (`cli_parse`'s adjacent arm): it sets a
 flag rather than printing and exiting inside `cli_parse` itself, because
 that function has a second caller — a `.rxt` source's `config` block's own
-`pcrec --version` must not print and exit 0 in the middle of a `--source`
+`pcrec --version` must not print and exit 0 in the middle of a file-operand
 compile. `cli_extras_clean`'s existing byte-span refusal (no clause of its
 own needed) already refuses it there, exactly as it refuses a `config`
 block's own `-h`.
+
+### `--pattern 'X'` — the literal pattern ([REL-1.10], D118)
+
+The one way to give `pcrec` a pattern text directly, long form only (`-e`
+is encoding, `-p` is prefix). Exactly one; a second `--pattern` is refused,
+and so is combining it with a file operand (§1 above) — each is a
+different, exclusive way to say what to compile. `--pattern-esc` (below)
+still decodes its value.
 
 ### `-o FILE` — where the C goes
 
@@ -165,21 +190,21 @@ reference oracle's version, exactly as the property tables are. A libpcre2 at
 a different Unicode version will disagree about recently-assigned code points;
 that is a re-measurement event under D26, not a defect.
 
-### `--pattern-esc` — the pattern operand in `.rxt` escaped form
+### `--pattern-esc` — the `--pattern` value in `.rxt` escaped form
 
-**[DD-13b.W23.3]** Takes the PATTERN OPERAND as double-quoted, escaped
+**[DD-13b.W23.3]** Takes the `--pattern` VALUE as double-quoted, escaped
 text and decodes it before compiling. The vocabulary is the `.rxt`
 format's own subject vocabulary and no other — `\"` `\\` `\n` `\t` `\r`
 `\f` `\v` `\xHH` — decoded by the very function that decodes a
-`pattern-esc` block, so this flag, `--source` and `--list-source` cannot
-drift into three tables that only agree today.
+`pattern-esc` block, so this flag, a file operand and `--list-source`
+cannot drift into three tables that only agree today.
 
 ```
-pcrec --pattern-esc -o out.c '"a\tb\x41"'     # compiles the 4 bytes a<TAB>bA
+pcrec --pattern-esc -o out.c --pattern '"a\tb\x41"'   # compiles a<TAB>bA
 ```
 
-- **The operand must be double-quoted**, quotes included, and an operand
-  that is not is refused by name. An unescaped `"` inside the text, a
+- **The value must be double-quoted**, quotes included, and a value that
+  is not is refused by name. An unescaped `"` inside the text, a
   trailing backslash, an unknown escape, and `\x` without exactly two
   hex digits are each refused with what was wrong; every refusal exits
   `1` before anything is compiled or written.
@@ -187,11 +212,10 @@ pcrec --pattern-esc -o out.c '"a\tb\x41"'     # compiles the 4 bytes a<TAB>bA
   length, so a NUL-bearing pattern would compile as its prefix and report
   success. The diagnostic states the lifting trigger
   (`rx_info.pattern_len`) rather than leaving the limit silent.
-- **It composes with everything and changes only how the OPERAND is
-  read.** `--` still ends option parsing, and the artifact's own header
-  comment carries the DECODED pattern. In a mode that takes no pattern
-  operand (`--source`, any listing surface) the flag has nothing to
-  decode and is inert.
+- **It composes with everything and changes only how `--pattern`'s VALUE is
+  read.** The artifact's own header comment carries the DECODED pattern.
+  In a mode that takes no `--pattern` at all (a file operand, any listing
+  surface) the flag has nothing to decode and is inert.
 - `docs/spec/rxt_format.md`'s `pattern-esc` production is the format half
   and owns the escape table itself.
 
@@ -502,19 +526,24 @@ comment-excluded source size is identical, every emitted `#define` is
 identical, and the emitted-size caps — which are defined on comment-excluded
 bytes — cannot see the flag at all, so no pattern is rescued or refused by
 it. They are absent from `--help` for the family's own reason. A `config`
-block or a `--source` target may set either spelling, and an explicit flag on
-the command line wins (§the `--source` precedence rule below).
+block or a file-operand target may set either spelling, and an explicit flag
+on the command line wins (§1.1's precedence rule below).
 
-### `--source FILE` — compiling from a `.rxt` source ([DD-13b.W1.2])
+### §1.1 A FILE operand — compiling from `.rxt` source(s) ([DD-13b.W1.2], [REL-1.10]/D118)
 
-`pcrec --source FILE -o OUT` compiles the `target` declarations of a `.rxt`
-source file (`docs/spec/rxt_format.md`). It is a COMPILE MODE, not a listing
-surface: it honours every compile flag in §1 and it writes artifacts.
+`pcrec -o OUT FILE.rxt...` compiles the `target` declarations of one or
+more `.rxt` source files (`docs/spec/rxt_format.md`) — the retired
+`--source FILE` flag's own mechanism, now the positional operand itself,
+repeatable. It is a COMPILE MODE, not a listing surface: it honours every
+compile flag in §1 and it writes artifacts. Several files pool their
+targets into ONE flat list before `-o`'s rule below is applied to it, and a
+**prefix collision across files is refused, naming both files** — each
+file's own resolution already refuses a duplicate prefix within itself.
 
-**It takes no pattern argument.** The file's `pattern` blocks are the
-patterns; accepting a positional pattern as well would leave "which one did
-I build" answerable two ways. A `--source` invocation carrying a pattern, or
-composed with any query surface of §2, is refused.
+**It does not combine with `--pattern`.** The file's `pattern` blocks are
+the patterns; accepting `--pattern` as well would leave "which one did I
+build" answerable two ways. A file operand combined with `--pattern`, or
+composed with any query surface of §2, is refused (§1 above).
 
 **WHICH ARTIFACTS GET BUILT.** The file's `target <prefix> = <definition>`
 lines, in file order, one artifact each — or, when the file declares no
@@ -531,7 +560,8 @@ the name and the `lib` chain that was searched: today `pcrec` reads no
 library's contents, so a definition that lives in one is out of reach and
 the diagnostic says which situation you are in.
 
-**`-o`'s THREE FORMS, chosen by the SHAPE of its value.**
+**`-o`'s THREE FORMS, chosen by the SHAPE of its value — over the POOLED
+target list, across every file operand given.**
 
 | `-o` value | result | targets |
 |---|---|---|
@@ -541,22 +571,26 @@ the diagnostic says which situation you are in.
 
 A directory is an *existing* directory; anything else is a file name, so
 `-o out.c` behaves the same whether or not `out.c` exists yet. `-o FILE`
-or `-o -` on a file with several targets is REFUSED, naming the targets and
-both ways forward (`--target`, or an existing directory). **Each target is a
-separate compile writing its own translation unit** — there is no code path
-that could produce a multi-artifact TU (D88).
+or `-o -` over a pooled list with several targets is REFUSED, naming the
+targets and both ways forward (`--target`, or an existing directory). **Each
+target is a separate compile writing its own translation unit** — there is
+no code path that could produce a multi-artifact TU (D88).
 
-**`--target NAME`** builds only the target whose PREFIX is `NAME`. An
-unknown name is refused and the message lists the targets the file does
-declare.
+**`--target NAME`** builds only the target whose PREFIX is `NAME`, searched
+across every file operand given — a target's prefix is what a caller
+names, not which file it lives in. An unknown name is refused and the
+message lists the targets the given files do declare (each named beside
+its own file).
 
-**`--lib-path DIR`** adds a directory to the search path a `lib "path"`
-reference resolves against. **Repeatable**, and the order given is the
-search order, after the source file's own directory — the one flag in this
-CLI that accumulates rather than replacing, because a single-valued form
-would make two libraries an either/or. A `lib <store-name>` reference (the
-other spelling the grammar has) is refused as not in this build. Both flags
-apply to `--source` alone.
+**`-I DIR`, `--lib-path DIR`** — two spellings of one mechanism ([REL-1.10]
+item 3, `gcc`'s own long-option precedent) — adds a directory to the
+search path a `lib "path"` reference resolves against. **Repeatable**, and
+the order given is the search order, after each source file's own
+directory — the one flag in this CLI that accumulates rather than
+replacing, because a single-valued form would make two libraries an
+either/or. A `lib <store-name>` reference (the other spelling the grammar
+has) is refused as not in this build. Both spellings apply to a file
+operand alone.
 
 **[DD-13b.W1.3] A `lib` FILE IS NOW READ, AND ITS DEFINITIONS ARE IN
 SCOPE.** Until this step a `lib` reference was resolved only far enough to
@@ -662,17 +696,18 @@ does not promise today.
 
 **A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
 parser**, so a flag cannot mean one thing on the command line and another in
-a config block. It may set COMPILE OPTIONS only: an output path, a pattern,
+a config block. It may set COMPILE OPTIONS only: an output path, `--pattern`,
 a prefix (`-p`, which would silently overrule the target's own), a query
-mode or another `--source` are all refused. The raw text is split on
+mode or a file operand are all refused. The raw text is split on
 whitespace and there is no quoting — no flag in this CLI takes a value
 containing a space.
 
 **Every artifact stamps `rx_info.name`** with the block's `name`, or with
 its own `<prefix>` when the block is unnamed, so one definition built under
 three configs is three artifacts, three prefixes and one name
-(`docs/spec/match_api.md` §6). Diagnostics from a `--source` compile lead
-with `FILE:LINE`, then the target, then `pcrec`'s own pattern offset.
+(`docs/spec/match_api.md` §6). Diagnostics from a file-operand compile lead
+with `FILE:LINE` (the OWNING file, when several were given), then the
+target, then `pcrec`'s own pattern offset.
 
 ## 2. Listing surfaces
 
@@ -824,10 +859,11 @@ non-empty, always after the main table**. **The full column table, the
 the "as written, never resolved" contract are
 `docs/spec/rxt_format.md`'s** — this section does not restate them.
 
-It takes its file as the option's VALUE rather than as the bare
-positional argument, because that slot belongs to the PATTERN: a query
-that quietly reinterpreted it would make `pcrec --list-source 'a(b|c)'`
-try to read a file named after a regex.
+It takes its file as the option's VALUE rather than as a bare positional
+operand, because that slot is a FILE OPERAND's own (§1): a query that
+quietly reinterpreted it would compose `--list-source` with a second,
+silently-ignored file-compile mode, and a positional operand in ANY query
+mode is refused outright ([REL-1.10]/D118).
 
 Exit status distinguishes two outcomes a caller must not confuse: a file
 that PARSES but declares no pattern block prints its head rows and exits
@@ -874,15 +910,16 @@ DEFECT surfaced (exit 3, below), not a bad question. `--flavour` restricts
 either query; only `pcre2` exists today (a second flavour is future work,
 SR-7).
 
-### `--count-groups [--] PATTERN`
+### `--count-groups --pattern PATTERN`
 
 Runs the real parser, parse only, nothing emitted, and prints the ending
-capturing-group count. A pattern pcrec refuses is refused here with the
-identical diagnostic a compile would give (`main`'s `--count-groups` block;
-verified
-live: `a(b)(c(d))` → `3`).
+capturing-group count. [REL-1.10]/D118: the pattern is `--pattern`'s value
+like every other mode, never a positional operand. A pattern pcrec refuses
+is refused here with the identical diagnostic a compile would give
+(`main`'s `--count-groups` block; verified live:
+`--count-groups --pattern 'a(b)(c(d))'` → `3`).
 
-### `--probe-ask WANT [--] CONSTRUCT`
+### `--probe-ask WANT CONSTRUCT`
 
 Internal/test-only by its own source comment (`cli/main.c`'s own
 `core/internal.h` include note): "the
@@ -890,9 +927,12 @@ CLI and the test suite are its only consumers... not part of the public
 surface." Drives one construct doorway once at ask level
 `claim`/`verdict`/`result` and reports the parser cursor before and after
 — survey row A11 flags this explicitly so a future spec author does not
-accidentally document it as public surface. Mentioned here only for
-completeness; `tests/spec_mod0/CLAUDE.md` and `docs/testing.md` are its
-real home.
+accidentally document it as public surface. **[REL-1.10]/D118 addendum item
+(i): CONSTRUCT is the flag's OWN second argument** — a syntax fragment, not
+a pattern and not a file, consumed like `--explain`'s SYNTAX rather than
+through the (now file-only) operand slot; there is no `--` before it any
+more. Mentioned here only for completeness; `tests/spec_mod0/CLAUDE.md` and
+`docs/testing.md` are its real home.
 
 ## 3. Diagnostics
 
@@ -902,8 +942,8 @@ Verified live this pass, each command shown:
 
 | exit | when | verified with |
 |---|---|---|
-| `0` | success — a compile that wrote its files, or a query that answered | `build/pcrec -p rx --emit-main -o out.c 'a(b\|c)+d'` |
-| `1` | usage error, compile refusal, or a query that could not be answered | `build/pcrec 'a(b'` (unclosed group) → "missing closing ) for group"; `build/pcrec --bogus-flag` → "unknown option"; `build/pcrec -o /nonexistent_dir/out.c 'a'` → the OS's own `fopen` error |
+| `0` | success — a compile that wrote its files, or a query that answered | `build/pcrec -p rx --emit-main -o out.c --pattern 'a(b\|c)+d'` |
+| `1` | usage error, compile refusal, or a query that could not be answered | `build/pcrec -o out.c --pattern 'a(b'` (unclosed group) → "missing closing ) for group"; `build/pcrec --bogus-flag` → "unknown option"; `build/pcrec -o /nonexistent_dir/out.c --pattern 'a'` → the OS's own `fopen` error |
 | `3` | **`--explain` DISSENT ONLY** — the registry's declared attribution disagrees with what the live doorway parser actually answers (`main`'s `--explain` block, the sole `return 3` in the file) | not currently reproducible against the shipped table — `tests/cli/run_cli_tests.sh` case11 measures and asserts **zero** dissents over the full row/query sweep (81 row blocks, 19 queries, all agree), which is the intended steady state; exit 3 exists for the day that stops being true |
 
 **These are `pcrec`'s own exit codes.** They are a completely separate
@@ -918,8 +958,8 @@ should not confuse any of the three.
 ### The diagnostic CLASS tag (`.rxt` source diagnostics)
 
 **[DD-13b.W23.1]** Every diagnostic pcrec emits while reading a `.rxt`
-SOURCE file (`--source`, `--list-source`) carries a machine-read CLASS tag
-naming WHICH RULE was violated, ahead of the message:
+SOURCE file (a file operand, `--list-source`) carries a machine-read CLASS
+tag naming WHICH RULE was violated, ahead of the message:
 
 ```
 pcrec: [structure-attachment] path/to/file.rxt:12: indented line continues nothing (...)
@@ -990,11 +1030,12 @@ Stated plainly rather than left for a stranger to discover by trial:
   and compiling C. `--emit-main`'s appended `main()` (§1) is the closest
   thing to a quick try, and it still goes through a real `cc` invocation.
 - **No multi-pattern compilation UNITS**, which since [DD-13b.W1.2] is a
-  narrower statement than it was. `--source` (§1) compiles SEVERAL
-  patterns in one invocation, but each target is its own separate compile
-  writing its own translation unit — one artifact per TU, D88. A single
-  unit holding several named, CROSS-REFERENCING patterns is still `[V-E]`,
-  `docs/dev/plan.md:581`, **STATE:not-started**.
+  narrower statement than it was. A file operand (§1.1) compiles SEVERAL
+  patterns in one invocation — several files, several targets each — but
+  each target is its own separate compile writing its own translation
+  unit — one artifact per TU, D88. A single unit holding several named,
+  CROSS-REFERENCING patterns is still `[V-E]`, `docs/dev/plan.md:581`,
+  **STATE:not-started**.
 - **No `--lib FILE`, and `--lib-path` is not it.** `--lib-path` supplies
   the search path a `lib "path"` reference in a `.rxt` source resolves
   against, and today that resolution goes exactly far enough to say
@@ -1016,6 +1057,18 @@ Stated plainly rather than left for a stranger to discover by trial:
 
 ## Revision history
 
+- 2026-09-21 ([REL-1.10], D118): THE gcc SHAPE. §1's usage line and its
+  operand rule are rewritten: a positional operand is an INPUT FILE now
+  (§1.1, several may be given, pooled), never a pattern; `--pattern 'X'`
+  is the one way to give a literal pattern; `--source FILE` is RETIRED
+  (an unknown option, no alias — the operand is the mechanism); `-I DIR`
+  joins `--lib-path DIR` as its short spelling; `--probe-ask WANT
+  CONSTRUCT` takes CONSTRUCT as its own second argument rather than
+  through the (now file-only) operand slot; a positional operand in any
+  query mode is refused. §4's multi-pattern bullet is reworded for
+  several FILES rather than one `--source`. No compile FLAG's own
+  semantics changed; only how a pattern or a source file reaches the
+  parser did.
 - 2026-09-21 ([REL-1.4], D115): §1 gains a `--version` entry (the flag had
   none). No existing flag's shape changed.
 - 2026-09-19 ([DD-8]): §2 gains a `--emit-ir` entry (the flag had none, being

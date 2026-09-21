@@ -293,6 +293,17 @@ spec and a design doc disagree, the spec is what the tool promises.
   `pcrec 0.1.0-beta` (`PCREC_VERSION`, `lib/pcrec.h`) and exits 0, parsed
   identically to `-h`/`--help`. No existing flag's shape changed.
 
+  **[REL-1.10], 2026-09-21 (D118) — THE gcc SHAPE.** §1's usage line and
+  operand rule are rewritten: a positional operand is an INPUT FILE now
+  (new §1.1, several may be given, pooled into one `-o` decision), never a
+  pattern; `--pattern 'X'` is the one way to give a literal pattern;
+  `--source FILE` is RETIRED (an unknown option, no alias); `-I DIR` joins
+  `--lib-path DIR` as its short spelling; `--probe-ask WANT CONSTRUCT`
+  takes CONSTRUCT as its own second argument rather than through the (now
+  file-only) operand slot; a positional operand in any query mode is
+  refused. §4's multi-pattern bullet is reworded for several FILES rather
+  than one `--source`. No compile FLAG's own semantics changed.
+
 - `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
   contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
   one section per axis (every `-f`/`-fno-` flag, `--unroll=K`,

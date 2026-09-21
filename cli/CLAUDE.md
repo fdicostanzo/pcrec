@@ -181,7 +181,7 @@ buffer to route through a single call — a change of SHAPE, not of channel.
 
 ## Files
 
-- **main.c** — CLI: option parsing ([-p PREFIX] [-e byte|utf8 | --encoding=byte|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing; the SR-3 syntax queries (--list-syntax, --explain, --flavour, --list-verbs, **--list-families** ([M6.6.2] wave F, D71 item 3 — one line per construct FAMILY: the rows sharing a key, with `built` ANDed over the members and every member spelling listed. It takes no `--flavour`, and for a reason of its own rather than by inheritance from --list-verbs: a family is a grouping OF rows, so filtering its members would print families whose membership silently depends on the filter, and the ANDed `built` would then mean something different per invocation); **--list-definitions** ([DD-11.2], D85 — the replacement/definition table, the FIFTH registry surface: one row per (row, definitions-array entry), joining `--list-syntax` on `kind`/`selector`/`syntax`; DOES take `--flavour`, unlike `--list-families`/`--list-axes`, since it walks the same rows `--list-syntax` filters — `docs/spec/registry.md` §9 is the column contract); **--explain was REWRITTEN at MOD-0.7** from a prefix match on the `syntax` column into a live doorway call — it prints the ROW's declared attribution beside the LIVE recogniser's answer and compares them per row, and it has a THIRD exit code: 0 answered-and-agreed, 1 the query could not be answered (unchanged), **3 at least one row DISSENTS** — a defect surfaced, not a bad question, which is why it is not folded into 1); --count-groups (MOD-0.1 §18.1); and --probe-ask WANT [--] CONSTRUCT (MOD-0.1 §18.2 — one doorway call at ask level claim|verdict|result, real cursor reported before/after; check06's cursor-rule channel; a doorway REFUSING is a normal exit-0 outcome, only a channel that could not run exits 1); --features LIST (MOD-0.1 slice 9 — the enabled set: module names from --list-syntax's module column, a frozen named set (`std1`, D37), or all/none, unknown names refused by name; composes with every mode; installs the set via pcrec_enabled_set_spec before anything consults the gate. **[STD1] phase A (D37, 2026-08-13):** a bare invocation (no `--features` at all) now ALSO resolves through `pcrec_enabled_set_spec`, using `pcrec_default_features` (src/parse/enabled.c, `"std1"` since [STD1] phase B; it was `"none"` at phase A and this line said so until [REVW.5]) instead of skipping the call — behaviourally identical to before (mask stays 0) but gives the enabled-set machinery a named answer for a bare invocation too, which is what lets src/gen's artifact stamp report something honest ("Feature set: none") rather than nothing. An explicit `--features` always overrides the default; the default constant is the SOLE point that later flips to `"std1"`)
+- **main.c** — CLI: option parsing ([-p PREFIX] [-e byte|utf8 | --encoding=byte|utf8] [-i] [--emit-main] -o OUT FILE.rxt... | -o OUT.c --pattern 'PATTERN' — [REL-1.10]/D118, the gcc shape; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing; the SR-3 syntax queries (--list-syntax, --explain, --flavour, --list-verbs, **--list-families** ([M6.6.2] wave F, D71 item 3 — one line per construct FAMILY: the rows sharing a key, with `built` ANDed over the members and every member spelling listed. It takes no `--flavour`, and for a reason of its own rather than by inheritance from --list-verbs: a family is a grouping OF rows, so filtering its members would print families whose membership silently depends on the filter, and the ANDed `built` would then mean something different per invocation); **--list-definitions** ([DD-11.2], D85 — the replacement/definition table, the FIFTH registry surface: one row per (row, definitions-array entry), joining `--list-syntax` on `kind`/`selector`/`syntax`; DOES take `--flavour`, unlike `--list-families`/`--list-axes`, since it walks the same rows `--list-syntax` filters — `docs/spec/registry.md` §9 is the column contract); **--explain was REWRITTEN at MOD-0.7** from a prefix match on the `syntax` column into a live doorway call — it prints the ROW's declared attribution beside the LIVE recogniser's answer and compares them per row, and it has a THIRD exit code: 0 answered-and-agreed, 1 the query could not be answered (unchanged), **3 at least one row DISSENTS** — a defect surfaced, not a bad question, which is why it is not folded into 1); --count-groups --pattern PATTERN (MOD-0.1 §18.1); and --probe-ask WANT CONSTRUCT ([REL-1.10]/D118 addendum: CONSTRUCT is the flag's own second argument, MOD-0.1 §18.2 — one doorway call at ask level claim|verdict|result, real cursor reported before/after; check06's cursor-rule channel; a doorway REFUSING is a normal exit-0 outcome, only a channel that could not run exits 1); --features LIST (MOD-0.1 slice 9 — the enabled set: module names from --list-syntax's module column, a frozen named set (`std1`, D37), or all/none, unknown names refused by name; composes with every mode; installs the set via pcrec_enabled_set_spec before anything consults the gate. **[STD1] phase A (D37, 2026-08-13):** a bare invocation (no `--features` at all) now ALSO resolves through `pcrec_enabled_set_spec`, using `pcrec_default_features` (src/parse/enabled.c, `"std1"` since [STD1] phase B; it was `"none"` at phase A and this line said so until [REVW.5]) instead of skipping the call — behaviourally identical to before (mask stays 0) but gives the enabled-set machinery a named answer for a bare invocation too, which is what lets src/gen's artifact stamp report something honest ("Feature set: none") rather than nothing. An explicit `--features` always overrides the default; the default constant is the SOLE point that later flips to `"std1"`)
 
 **A DOORWAY THAT RAISES (R20/MOD07-1)** is a third reason `--explain` and
 `--probe-ask` return NULL, and each now prints a different sentence for it.
@@ -239,6 +239,13 @@ default and the explicit request are the same request.
 
 ## [DD-13b.W1.2] ONE OPTION PARSER, and `--source` / `--target` / `--lib-path`
 
+**[REL-1.10]/D118 (2026-09-21) RETIRED `--source`**: the mechanism this
+section describes is unchanged, but the FLAG is gone — a positional
+FILE OPERAND is the compile-mode trigger now, and `--target`/`--lib-path`
+still apply to it alone. See the `## [REL-1.10]` section near the end of
+this file for the current shape; read this section for why the parser is
+shared with a `config` block's own re-parse, which D118 did not touch.
+
 `main`'s argument loop became **`cli_parse` over a `CliState`**, and the
 reason is not tidiness: a `.rxt` source's `config` block carries a
 `pcrec <raw>` line, and w1_impl §1.5 requires it to be re-parsed by this
@@ -250,8 +257,8 @@ over. The config block is a second CALLER, never a second parser.
 `pcrec_options opt` is `CliState`'s FIRST member and everything else follows
 it; `cli_extras_clean` checks that the bytes PAST `opt` are all zero, i.e.
 that this invocation asked for compile options and nothing else. A config
-block that reached for an output path, a pattern, a query mode, another
-`--source` or `-h` is refused by that one test — and so is a flag added to
+block that reached for an output path, `--pattern`, a query mode, another
+file operand or `-h` is refused by that one test — and so is a flag added to
 this CLI tomorrow, with no edit here. **`saw_prefix` is in the tail rather
 than being inferred from `opt.prefix`** for exactly that reason: `-p` writes
 INSIDE `opt`, where the span cannot see it, and a config silently
@@ -342,13 +349,15 @@ is the same format whichever dialect the pattern is in. Contract:
 
 ## [DD-13b.W23.3] `--pattern-esc`
 
-The PATTERN operand is taken in the `.rxt` format's own quoted-escape
-form and decoded by `pcrec_rxt_decode_escaped` (`src/parse/rxt_source.c`)
-before anything else sees it. **It is in `--help`**, unlike the deny
-family above, and the difference is the point: those are testing and
-tuning axes, this is an INPUT SPELLING a user chooses.
+**[REL-1.10]/D118 updated this section's wording, not its mechanism:**
+the `--pattern` VALUE (a positional operand no longer carries a pattern at
+all) is taken in the `.rxt` format's own quoted-escape form and decoded by
+`pcrec_rxt_decode_escaped` (`src/parse/rxt_source.c`) before anything else
+sees it. **It is in `--help`**, unlike the deny family above, and the
+difference is the point: those are testing and tuning axes, this is an
+INPUT SPELLING a user chooses.
 
-**ONE DECODER, THREE CALLERS** — this flag, `--source` and
+**ONE DECODER, THREE CALLERS** — this flag, a file operand and
 `--list-source` — which is the whole reason the flag exists rather than
 the harness approximating the decode with `printf %b`. A second escape
 vocabulary drifts from the first by construction (D24's shape at the
@@ -407,3 +416,52 @@ must not print and exit 0 mid-compile — and `cli_extras_clean`'s existing
 byte-span check over that tail already refuses it there with no clause of
 its own, exactly as it does for `-h`. `main` checks `want_version` beside
 `want_help`. `docs/spec/cli.md` is the contract.
+
+## [REL-1.10] THE gcc-SHAPED CLI (2026-09-21, D118)
+
+**A positional operand is an INPUT FILE now, never a pattern.** `cli_operand`
+(formerly "the pattern operand: exactly one") is repurposed: it pushes each
+operand onto `CliState.files`/`nfiles`, growing it exactly as `libdir_push`
+grows `libdirs` — N operands accepted, collection only. Whether each one is
+an existing file (a plain compile) or refused outright (any query mode
+takes none, checked once via the renamed `CLI_MODES_VS_FILES` — see the
+`CLI_MODE_TABLE`'s `FILES` row, keyed on `nfiles != 0`, replacing the old
+`SOURCE` row keyed on `st->source`) is decided once the invocation's MODE
+is known, at `main`'s dispatch — never inside `cli_operand` itself. An
+operand that is not an existing file (`path_exists`) is refused BY NAME,
+naming `--pattern`, before pcrec reads a byte of it.
+
+**`--pattern 'X'`** is the literal pattern, long form only, set once
+(`CliState.pattern`); combining it with a file operand is refused
+(`main`, right after the `--target`/`--lib-path`-applies-only check).
+**`--source` is RETIRED** — no arm in `cli_parse` recognises it any more,
+so it falls through to the unknown-option diagnostic like any other typo;
+no alias exists. **`-I DIR`** joins `--lib-path DIR` as a second spelling
+in the same `else if`, both reaching `libdir_push`. **`--probe-ask WANT
+CONSTRUCT`** consumes TWO argv tokens now (`st->probe_want`,
+`st->probe_construct`) at the flag's own site, exactly like `--explain`
+consumes its SYNTAX — CONSTRUCT no longer flows through `cli_operand`/
+`st->pattern` at all, closing the D118-addendum gap the census flagged
+(`--count-groups`/`--probe-ask`'s operand was ambiguous between "a file"
+and "a pattern" under a naive flip; the fix was to give each mode its own
+explicit value rather than widen the shared operand's meaning).
+
+**`compile_source` became `compile_sources`.** Positional files are parsed
+and resolved independently, then every target lands in one flat
+`OwnedTarget{RxtTarget *t; const char *owner;}` list before `-o`'s
+three-form rule, a `--target` search, or a prefix-collision check (D118
+item 1: two files declaring the same prefix is refused, naming both — each
+file's own resolve already refuses a duplicate within itself, so a
+survivor here always spans two files) is applied to the WHOLE invocation.
+`apply_target` gained an explicit `src_path` parameter in place of reading
+a single `cli->source` field, since a target's owning file is no longer
+implied by there being only one.
+
+**Freeing `st.files`/`st.libdirs` is symmetric now.** Both are the CLI's
+only two allocations outside the compile path; every `main` exit that can
+see `nfiles != 0` frees both (the pattern-combines-with-file check, the
+CLI_MODES_VS_FILES query-conflict check, and both returns from the final
+`if (st.nfiles)` dispatch block) — `!st.nfiles` already implies `st.files`
+was never touched. `docs/spec/cli.md` §1/§1.1 is the contract;
+`docs/dev/lanes/clicensus_report.md` is the call-site census the flip was
+scoped against.
