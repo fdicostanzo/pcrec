@@ -24736,3 +24736,28 @@ limits.def:371's clause with its --list-limits readers re-pinned, the
 study README's runs note, five missing docs/dev/lanes/CLAUDE.md lines.
 Main HELD UNPUSHED until edgeclose lands green (the executor released
 the abi-28 push in O-43).
+
+**~15:2x — edgeclose merged (4e8e09e5); [REL-1.10] chartered (D118) and
+in flight; three unscheduled rows.** edgeclose: the m5_stage1_stamps.tsv
+manifest re-recorded for abi 28 (all 12 moved rows EMITTED_BYTES +11 —
+the version text — and nothing else; cpset-structure 28/28 twice), the
+D117 re-confirmation sentences in tuning.md §2.18 + limits.def:371
+(only limits_check.sh's NAME list pins that row — unaffected; emit_sweep
+stream 5 moves by exactly that row, streams 1-4 0 movers), study README
+Runs note, lanes/CLAUDE.md inventory; registry 631/0, codegen 9/10,
+anchors 286/286. Process: the lane idled on every background run
+waiting for a Monitor notification (three nudges; one of mine was
+WRONG — my watcher fired in the gap before its codegen launched, the
+lane was right to wait; corrected). Frank's afternoon rulings: REL-1.5
+no extra docs; REL-1.6 go (first measurement: does the tier fit an
+Actions runner); the CLI takes the gcc SHAPE — D118 (positional =
+files, --pattern, -I, --source retired, no gcc inside pcrec, no
+depfile until a Makefile needs one, a Makefile example rxt→.c→gcc→one
+.a as the test case) + its addendum from lane clicensus's census (123
+files / 510 wrapper + ~270 direct + 98 --source sites; the query modes:
+--count-groups takes --pattern, --probe-ask's CONSTRUCT is flag-owned;
+N operands; the wrapper inserts nothing — explicit reconciled
+migration). Lane clishape (sonnet) implements in five stages, full make
+test in its worktree as its last act. Unscheduled rows chartered by
+Frank: [EMIT-ENTRIES], [LANG-1] (C/Rust/C++), [LANG-2] (JS/TS). Main
+PUSHED at this point (abi 28; the executor released the push in O-43).
