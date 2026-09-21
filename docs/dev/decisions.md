@@ -7742,3 +7742,32 @@ Linux) until green; at the wave's close — ONE full battery for the record
 and the matrix as a whole. The battery's other stages add nothing a rename
 can touch (sanitizers do not see names; axes compares answers; alloc
 counts allocations).
+
+## D114 — The four dead exports are DELETED; D113 step 1 shrinks to [OPT-EDGE] and [REL-1] follows it; the three larger finish rows park into [BACKLOG-TRIAGE] (Frank, 2026-09-21, seventy-fourth session)
+
+Frank's three-word ruling on the manager's wake-up assessment — "delete the
+dead exports, agree on sequencing, proceed":
+
+1. **Dead exports.** [ORG-7] found four `pcrec_` exports with no caller
+   anywhere in the tree, not even in their own translation unit
+   (`pcrec_emit_abi_types`, `pcrec_nfa_has_asserts`,
+   `pcrec_rxt_schema_opens_group`, `pcrec_rxt_source_ncols`; tour4_report.md's
+   table). They are deleted, with their declarations, header comments and
+   every reader a grep finds. A caller that appears later re-exports on its
+   own evidence. Dead exports are the same hazard class D104 priced (a
+   name with no reader is a collision waiting for one).
+2. **Sequencing of D113 step 1 against [REL-1].** The audit's six FINISH
+   rows do not all run before the beta. [LIM-2] closes IN PLACE (N1 closed
+   the practical problem 2026-09-04; the study's own M1 bar makes N2
+   vacuous at a 14.3% ceiling closed fraction — the manager's D77 reading,
+   reported, not a separate ruling). [OPT-EDGE]'s two owed measurements
+   run now as the "another effort". [ENG-ISL], [DD-13b.W1.3]/[DD-13] and
+   [CLS-TREE] PARK into [BACKLOG-TRIAGE], where the bench's summary matrix
+   ranks them against everything else rather than audit order alone
+   deciding that a large class-matching rebuild precedes the beta.
+3. **Then [REL-1].** A read-only pre-flight survey runs alongside the
+   measurement so the milestone expands into substeps from facts, not from
+   the charter's wording.
+
+The wave's four small owed items (census regeneration, S154's witness,
+K62, the deletion above) are one admin lane, [ADMIN-0921].
