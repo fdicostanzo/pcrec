@@ -24530,3 +24530,10 @@ at ≥ 8 h. Bench: O-40 answered as I-80 (the size-cap drop ladder, K53
 rung 1 + K59 rung 2; ci-512 confirmed live as rung 1); three
 non-fast-forward push rejections on the inbox file before it landed
 (516854c) — ritual recorded in memory. Pushed.
+
+**SESSION CLOSE (2026-09-21 ~09:1x EDT, Frank: "End session).** Main
+1199eac1 = origin/main, clean; no worktrees, no live agents, no monitors,
+heartbeat cron deleted. Lanes used: tour4, tour5, tour2, tour1, tour3,
+tour3rev — six; none alive. wake.md rewritten. Next session: Frank's two
+rulings (the four dead exports; the next effort), then the small admin
+items (census regen, S154 witness, K62).
