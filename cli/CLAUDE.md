@@ -395,3 +395,15 @@ Every other axis `target`/`config` can set (`flags`, `encoding`,
 `budget`) is UNCHANGED by this ruling and still follows the plain
 file-wins rule `docs/spec/cli.md` states. `engine` is the one named
 exception, not a precedent for widening.
+
+## [REL-1.4] `--version` (2026-09-21, D115)
+
+`--version` prints `pcrec <PCREC_VERSION>` (`lib/pcrec.h`) to stdout and
+exits 0. Parsed identically to `-h`/`--help`, the arm immediately beside
+it in `cli_parse`: it sets `CliState.want_version` (in the struct's tail,
+same as `want_help`) rather than printing there, because `cli_parse` has
+a second caller — a `.rxt` source's `config` block's own `pcrec --version`
+must not print and exit 0 mid-compile — and `cli_extras_clean`'s existing
+byte-span check over that tail already refuses it there with no clause of
+its own, exactly as it does for `-h`. `main` checks `want_version` beside
+`want_help`. `docs/spec/cli.md` is the contract.

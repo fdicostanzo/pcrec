@@ -25,6 +25,26 @@ with `-` is passed (`cli_parse`'s `!strcmp(a, "--")` arm, case5
 as an unknown option (`cli_parse`'s `a[0] == '-' && a[1]` arm, the last one
 before the pattern operand) rather than treated as the pattern.
 
+### `--version` — print the pcrec version and exit
+
+Prints one line, `pcrec 0.1.0-beta`, to stdout and exits 0 — verified live
+(`build/pcrec --version`). The string is `PCREC_VERSION` (`lib/pcrec.h`,
+D115, [REL-1.4]), a semver product version that names THIS TOOL and is
+**independent of `abi`** (`docs/spec/match_api.md` §6): `abi` versions one
+artifact's emitted scaffolding and bumps far more often than a release
+does, while `PCREC_VERSION` changes only at a release. The same string is
+stamped in every emitted artifact's provenance line, beside the abi digit
+(`docs/spec/match_api.md` §6) — `pcrec --version` and a generated file's
+own header always agree on which pcrec produced it.
+
+Parsed identically to `-h`/`--help` (`cli_parse`'s adjacent arm): it sets a
+flag rather than printing and exiting inside `cli_parse` itself, because
+that function has a second caller — a `.rxt` source's `config` block's own
+`pcrec --version` must not print and exit 0 in the middle of a `--source`
+compile. `cli_extras_clean`'s existing byte-span refusal (no clause of its
+own needed) already refuses it there, exactly as it refuses a `config`
+block's own `-h`.
+
 ### `-o FILE` — where the C goes
 
 Writes `FILE` (the `.c`) and a matching header `FILE` with its extension
@@ -996,6 +1016,8 @@ Stated plainly rather than left for a stranger to discover by trial:
 
 ## Revision history
 
+- 2026-09-21 ([REL-1.4], D115): §1 gains a `--version` entry (the flag had
+  none). No existing flag's shape changed.
 - 2026-09-19 ([DD-8]): §2 gains a `--emit-ir` entry (the flag had none, being
   neither a dump nor a compile), pointing at the new
   `docs/spec/ir_listing.md` for its format; §4's bullet is corrected — the
