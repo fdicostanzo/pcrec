@@ -1,0 +1,212 @@
+==============================================================================
+PART 2 — THE LADDER FIT
+==============================================================================
+
+-- per-rung MEDIANS (over 15 rounds) --
+  before:
+    k=1: median=2.4423  IQR=1.6206  min=1.5955  max=4.0630  n=15
+    k=2: median=3.3550  IQR=1.4284  min=2.7404  max=6.2176  n=15
+    k=3: median=2.9923  IQR=0.0413  min=2.9146  max=4.2057  n=15
+    k=4: median=1.6735  IQR=0.3319  min=1.6565  max=3.6588  n=15
+  after:
+    k=1: median=1.4380  IQR=0.3384  min=1.4276  max=3.1765  n=15
+    k=2: median=2.7826  IQR=0.5723  min=2.7295  max=5.8227  n=15
+    k=3: median=2.7711  IQR=0.0949  min=2.6540  max=3.2883  n=15
+    k=4: median=1.4383  IQR=0.2848  min=1.3791  max=1.8053  n=15
+  step11:
+    k=1: median=1.4438  IQR=0.3077  min=1.4294  max=3.1828  n=15
+    k=2: median=2.7790  IQR=0.0680  min=2.7159  max=3.3292  n=15
+    k=3: median=2.7272  IQR=0.0890  min=2.6527  max=6.6197  n=15
+    k=4: median=1.4546  IQR=0.2871  min=1.3787  max=1.6951  n=15
+  noedge:
+    k=1: median=1.4418  IQR=0.3126  min=1.4335  max=3.1846  n=15
+    k=2: median=4.0460  IQR=0.0525  min=4.0223  max=5.0016  n=15
+    k=3: median=3.8430  IQR=0.0320  min=3.8188  max=4.4369  n=15
+    k=4: median=1.8038  IQR=0.3895  min=1.7904  max=2.1959  n=15
+
+-- fit t(k) = a + b*k over the per-rung MEDIANS (k=1..4) --
+  before  : a=3.2831  b=-0.2669  (ns/byte fixed / per-edge)
+  after   : a=2.1101  b=-0.0011  (ns/byte fixed / per-edge)
+  step11  : a=2.1060  b=-0.0019  (ns/byte fixed / per-edge)
+  noedge  : a=2.5629  b=0.0883  (ns/byte fixed / per-edge)
+
+-- per-ROUND fits (15 independent 4-point fits per arm) --
+  before  : b median=-0.2097  IQR=0.6407  min=-0.8236  max=0.5523  (n=15 rounds)
+  after   : b median=-0.0361  IQR=0.1311  min=-0.8226  max=0.1088  (n=15 rounds)
+  step11  : b median=-0.0071  IQR=0.1075  min=-0.5432  max=0.3656  (n=15 rounds)
+  noedge  : b median=0.0860  IQR=0.1179  min=-0.4392  max=0.2079  (n=15 rounds)
+
+-- per-edge cost: README's named isolation (before - after), never noedge --
+   diff(k) = before_median(k) - after_median(k):
+    k=1: 1.0043 ns/byte
+    k=2: 0.5724 ns/byte
+    k=3: 0.2212 ns/byte
+    k=4: 0.2352 ns/byte
+   fit of diff(k) = a + b*k:  a=1.1729  b=-0.2658
+   sanity: b_before - b_after = -0.2658 (must equal b_diff above, OLS is linear)
+
+==============================================================================
+PART 3 — THE m=2 FLOOR CELL, BY MECHANISM; THE D77 GAP TEST
+==============================================================================
+
+-- D77 gap test: |median-1| vs IQR, and vs whether 1.0 falls inside [min,max] --
+run   m  family    median   IQR     |med-1|  min     max     1-in-range  separated
+run1  2  exact       1.0629  0.6706   0.0629  0.9908  2.6394 yes         no       
+run1  2  nullable    0.8862  0.1468   0.1138  0.8363  1.8079 yes         no       
+run1  3  exact       0.9990  0.0084   0.0010  0.9743  2.4823 yes         no       
+run1  3  nullable    0.9614  0.1917   0.0386  0.4784  2.1138 yes         no       
+run1  4  exact       1.0021  0.0065   0.0021  0.9899  1.0410 yes         no       
+run1  4  nullable    0.9568  0.0799   0.0432  0.8778  1.9913 yes         no       
+run1  8  exact       0.9979  0.0288   0.0021  0.5869  1.2265 yes         no       
+run1  8  nullable    0.9812  0.0348   0.0188  0.4214  2.1526 yes         no       
+run2  2  exact       1.4379  0.8307   0.4379  0.9935  2.4578 yes         no       
+run2  2  nullable    0.8908  0.2238   0.1092  0.8419  1.7574 yes         no       
+run2  3  exact       0.9989  0.0051   0.0011  0.9893  1.8052 yes         no       
+run2  3  nullable    0.9750  0.2438   0.0250  0.8863  1.6694 yes         no       
+run2  4  exact       1.0013  0.0132   0.0013  0.9805  1.2227 yes         no       
+run2  4  nullable    0.9806  0.0887   0.0194  0.8812  1.8362 yes         no       
+run2  8  exact       1.0507  0.1031   0.0507  0.9864  1.2240 yes         no       
+run2  8  nullable    0.9869  0.0237   0.0131  0.9625  1.0299 yes         no       
+
+-- m=2 exact / m=2 nullable: per-round mode classification --
+   threshold: ratio > 1.20 => HIGH mode, else LOW mode (both modes' rough centers: ~1.0 low, ~1.8 high)
+
+  run1 m=2 exact:
+    round edge     noedge   ratio   mode 
+        1   2.3414   2.3072  1.0148 low  
+        2   4.4896   2.3109  1.9428 HIGH 
+        3   2.3028   2.3242  0.9908 low  
+        4   2.8935   1.8896  1.5313 HIGH 
+        5   2.3055   2.3034  1.0009 low  
+        6   2.2959   2.2994  0.9985 low  
+        7   2.3244   1.8972  1.2252 HIGH 
+        8   4.1646   2.2985  1.8119 HIGH 
+        9   4.1763   2.2972  1.8180 HIGH 
+       10   2.3322   2.3192  1.0056 low  
+       11   2.0169   1.8975  1.0629 low  
+       12   2.8013   1.9041  1.4712 HIGH 
+       13   4.1826   4.1779  1.0011 low  
+       14   2.3032   2.3116  0.9964 low  
+       15   5.0001   1.8944  2.6394 HIGH 
+    n_high=7/15  n_low=8/15
+    edge   low-mode median=2.3043  (n=8)
+    edge   high-mode median=4.1646  (n=7)
+    noedge low-mode median=2.3094  (n=8)
+    noedge high-mode median=1.9041  (n=7)
+
+  run1 m=2 nullable:
+    round edge     noedge   ratio   mode 
+        1   3.2058   3.8333  0.8363 low  
+        2   3.2656   3.8496  0.8483 low  
+        3   5.5284   3.0579  1.8079 HIGH 
+        4   2.6428   2.9822  0.8862 low  
+        5   3.2466   3.5857  0.9054 low  
+        6   3.2402   3.6912  0.8778 low  
+        7   3.2624   3.2271  1.0109 low  
+        8   3.2941   3.7681  0.8742 low  
+        9   3.2965   3.7593  0.8769 low  
+       10   3.2917   3.6670  0.8977 low  
+       11   4.9315   3.1289  1.5761 HIGH 
+       12   3.3071   3.8335  0.8627 low  
+       13   3.8517   3.0019  1.2831 HIGH 
+       14   3.0213   2.9636  1.0195 low  
+       15   2.6389   3.1389  0.8407 low  
+    n_high=3/15  n_low=12/15
+    edge   low-mode median=3.2545  (n=12)
+    edge   high-mode median=4.9315  (n=3)
+    noedge low-mode median=3.6791  (n=12)
+    noedge high-mode median=3.0579  (n=3)
+
+  run2 m=2 exact:
+    round edge     noedge   ratio   mode 
+        1   3.4662   1.8906  1.8334 HIGH 
+        2   4.1738   4.2013  0.9935 low  
+        3   4.1829   4.1942  0.9973 low  
+        4   4.1705   2.3064  1.8082 HIGH 
+        5   2.4582   2.3001  1.0687 low  
+        6   4.1728   4.1684  1.0010 low  
+        7   4.3062   2.3037  1.8693 HIGH 
+        8   2.3736   2.3037  1.0304 low  
+        9   4.2049   2.3141  1.8171 HIGH 
+       10   4.2880   1.8929  2.2654 HIGH 
+       11   2.0313   1.8937  1.0727 low  
+       12   2.7218   1.8929  1.4379 HIGH 
+       13   4.3083   2.3171  1.8594 HIGH 
+       14   4.1691   4.1930  0.9943 low  
+       15   4.6859   1.9065  2.4578 HIGH 
+    n_high=8/15  n_low=7/15
+    edge   low-mode median=4.1691  (n=7)
+    edge   high-mode median=4.2465  (n=8)
+    noedge low-mode median=4.1684  (n=7)
+    noedge high-mode median=2.1051  (n=8)
+
+  run2 m=2 nullable:
+    round edge     noedge   ratio   mode 
+        1   3.3017   3.6971  0.8930 low  
+        2   5.1385   3.0673  1.6753 HIGH 
+        3   5.2913   3.0109  1.7574 HIGH 
+        4   3.2154   3.6740  0.8752 low  
+        5   3.2439   3.1670  1.0243 low  
+        6   2.7082   3.0635  0.8840 low  
+        7   3.2514   3.7925  0.8573 low  
+        8   3.2762   3.6779  0.8908 low  
+        9   3.2587   3.8707  0.8419 low  
+       10   2.6775   3.0293  0.8839 low  
+       11   2.6150   2.9796  0.8777 low  
+       12   2.6779   2.9944  0.8943 low  
+       13   3.2567   3.8258  0.8512 low  
+       14   5.2482   3.0103  1.7434 HIGH 
+       15   3.5238   2.9959  1.1762 low  
+    n_high=3/15  n_low=12/15
+    edge   low-mode median=3.2477  (n=12)
+    edge   high-mode median=5.2482  (n=3)
+    noedge low-mode median=3.4205  (n=12)
+    noedge high-mode median=3.0109  (n=3)
+
+-- adjacency: within-round cell order is (m2,exact)(m2,null)(m3,exact)(m3,null)(m4,exact)(m4,null)(m8,exact)(m8,null); a round's own m2-exact cell is measured IMMEDIATELY AFTER the PREVIOUS round's m8-nullable cell --
+
+  run1: round r's m2-exact mode vs round (r-1)'s m8-nullable ratio
+    r   m2exact_ratio  m2exact_mode prevm8null_ratio
+      1         1.0148 low      (round 1, n/a)
+      2         1.9428 HIGH   0.9974          
+      3         0.9908 low    0.9648          
+      4         1.5313 HIGH   0.7159          
+      5         1.0009 low    0.9612          
+      6         0.9985 low    1.2091          
+      7         1.2252 HIGH   1.1755          
+      8         1.8119 HIGH   0.9996          
+      9         1.8180 HIGH   1.0005          
+     10         1.0056 low    0.9790          
+     11         1.0629 low    0.4214          
+     12         1.4712 HIGH   0.9656          
+     13         1.0011 low    0.9797          
+     14         0.9964 low    0.9992          
+     15         2.6394 HIGH   2.1526          
+
+  run2: round r's m2-exact mode vs round (r-1)'s m8-nullable ratio
+    r   m2exact_ratio  m2exact_mode prevm8null_ratio
+      1         1.8334 HIGH     (round 1, n/a)
+      2         0.9935 low    0.9625          
+      3         0.9973 low    1.0053          
+      4         1.8082 HIGH   0.9868          
+      5         1.0687 low    0.9833          
+      6         1.0010 low    0.9842          
+      7         1.8693 HIGH   0.9836          
+      8         1.0304 low    1.0299          
+      9         1.8171 HIGH   1.0201          
+     10         2.2654 HIGH   0.9956          
+     11         1.0727 low    0.9869          
+     12         1.4379 HIGH   1.0098          
+     13         1.8594 HIGH   1.0103          
+     14         0.9943 low    0.9845          
+     15         2.4578 HIGH   0.9625          
+
+-- adjacency: round-index correlation (does mode correlate with round number)? --
+  run1 m=2 exact: HIGH rounds=[2, 4, 7, 8, 9, 12, 15]  low rounds=[1, 3, 5, 6, 10, 11, 13, 14]
+  run1 m=2 nullable: HIGH rounds=[3, 11, 13]  low rounds=[1, 2, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15]
+  run2 m=2 exact: HIGH rounds=[1, 4, 7, 9, 10, 12, 13, 15]  low rounds=[2, 3, 5, 6, 8, 11, 14]
+  run2 m=2 nullable: HIGH rounds=[2, 3, 14]  low rounds=[1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
+
+-- cross-run consistency: is the split the SAME round numbers in run1 vs run2? --
+  m=2 exact: run1 HIGH rounds=[2, 4, 7, 8, 9, 12, 15]  run2 HIGH rounds=[1, 4, 7, 9, 10, 12, 13, 15]  intersection=[4, 7, 9, 12, 15]
+  m=2 nullable: run1 HIGH rounds=[3, 11, 13]  run2 HIGH rounds=[2, 3, 14]  intersection=[3]
