@@ -1,0 +1,6 @@
+# examples/makefile — a single-target .rxt source: one pattern block, one
+# built artifact. See examples/makefile/README.md for the whole recipe.
+target greet = hello
+
+pattern hello, ([A-Za-z]+)!
+name hello

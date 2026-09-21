@@ -222,7 +222,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core
+      test-uprops test-core test-examples
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -362,6 +362,13 @@ test-rxtsource: all
 test-definitions: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-definitions.ran"; fi
 	bash tests/definitions/run_definitions_tests.sh
+
+# [REL-1.10] (D118)'s own test case: examples/makefile/ is a real Makefile
+# build step, copied to a scratch directory and built with a stranger's
+# plain `make` against THIS tree's own build/pcrec — never in place.
+test-examples: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-examples.ran"; fi
+	bash tests/examples/run_examples_tests.sh
 
 # Both scripts here are the "codegen structural checks" docs/testing.md
 # already describes as one thing; `test:` runs them as consecutive lines
@@ -1498,6 +1505,6 @@ clean:
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
-        test-encoding-checks test-startbnd test-core \
+        test-encoding-checks test-startbnd test-core test-examples \
         smoke hooks strict testscripts ubsan asan san lint alloc mech bench \
         fuzz clean

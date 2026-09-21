@@ -104,6 +104,11 @@ tier, and PCRE2 is a moving target with no specification.
   composition, sanitizer findings).
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
+- `examples/` — buildable, TESTED examples of using pcrec (own section
+  under `tests/examples/`, part of `make test`) — unlike `studies/`, never
+  merely illustrative. `examples/makefile/` is [REL-1.10]/D118's own test
+  case: `.rxt` sources compiled by a plain Makefile build step. See
+  examples/CLAUDE.md.
 - `studies/` — adopted exploratory work (reference material, own Makefiles,
   never built or tested by pcrec's make). See studies/CLAUDE.md.
 - `tools/` — repo-owned developer/review tooling (analyzes the tree
