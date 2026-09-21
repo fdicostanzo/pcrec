@@ -24519,3 +24519,14 @@ monitor shell than in Bash (ugrep) — watch logs, not processes.
 detached, logs build/gate_1691c590/. Plan rows flip at the trailer.
 OWED after the gate: the tools/review census regeneration (one admin
 item), tour2's S154 witness, the four dead exports ruling (Frank), K62.
+
+**GATE COMPLETE 2026-09-21 ~08:1x → [TOUR-EXEC] CLOSED.** make test-axes on
+1691c590: all 32 axes answer-identical to default (21,572 s wall on the
+quiet box — ~6 h; tour5's shared-box run was 5.5 h, so the matrix is
+simply that long now, 2 axes at a time × PROCS=5); the chain's own
+`timeout 21600` then killed the trailing form census — re-run alone,
+rc=0, floors OK, synthetic witnesses asserted. Bound the next axes chain
+at ≥ 8 h. Bench: O-40 answered as I-80 (the size-cap drop ladder, K53
+rung 1 + K59 rung 2; ci-512 confirmed live as rung 1); three
+non-fast-forward push rejections on the inbox file before it landed
+(516854c) — ritual recorded in memory. Pushed.
