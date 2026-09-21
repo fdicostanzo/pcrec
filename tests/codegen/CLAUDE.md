@@ -1901,6 +1901,11 @@ alone cannot tell a refactor from a no-op.
   report an empty census at stage 2 while looking like coverage. It is a
   MANIFEST and not a threshold (r49): nothing asserts a stamp's VALUE, and a
   drifted manifest is a diff to REVIEW, not a number to bump.
+  **RE-PINNED 2026-09-21 (lane edgeclose)**: all 12 `EMITTED_BYTES` rows
+  moved by exactly +11 bytes each ([REL-1.4]'s version stamp, D115 —
+  the unconditional " 0.1.0-beta" text plus the same-length
+  `.abi: 27 -> 28` digit substitution), no other stamp moved; reviewed
+  row by row against the gate diff before re-recording.
 - **CONSTRAINT 2 IS DELIBERATELY NOT ASSERTED**, and the absence is a finding.
   This wave MEASURED the design's stated position wrong (see
   `src/opt/CLAUDE.md`'s `lower_enc.c` entry) and escalated rather than

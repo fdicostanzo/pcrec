@@ -7985,3 +7985,66 @@ with a note). (iv) The `.rxt` `config` block's raw-flags line is a second
 parser caller; no corpus file carries a positional pattern there today
 (5 flags-only fixture lines) — the spec sentence says a pattern there is
 `--pattern` too.
+
+## D119 — THE OPTIMIZATION LOOP: bench targets grouped by CAUSE, one mechanism per implementation, a measured-gap landing bar, algorithmic only (no SIMD until the end), constrained to the engine architecture; PCRE2 is the correctness model, the FASTEST engine with an algorithmic advantage is the performance target; cycle 1 starts on the bench's `capability` subbench (Frank, 2026-09-21, seventy-fifth session)
+
+**Frank's charter.** "Early in the project I wanted to get to this
+point — most features implemented, code mature, strong testing suite,
+and a bench. We will have that now. I'd like to try a few cycles of
+grabbing items from the bench and trying to figure out how to make them
+faster ... as a lane beside fixing bugs and admin." The loop: analysis
+finds n targets (by priority, grouped by cause) → diagnose why pcrec is
+slower → a set of analyses each with a plan → batch into implementation
+→ correctness (surgical) → bench individually (the bench's dev
+carve-out) → `make test` on the set for regression → cycle → full suite.
+Frank's constraints, verbatim in spirit: NO SIMD at this juncture,
+algorithmic improvements only, SIMD at the end; CONSTRAINED TO OUR
+ENGINE ARCHITECTURE — "if it turns out it would require something wholly
+different that's a deferral at best"; PCRE2 is the correctness model but
+NOT the ceiling — "weigh against the fastest engine that has algorithmic
+advantage"; start with the `capability` subbench (pcrec-bench
+bench/capability, made for this purpose, examples already there).
+
+**The manager's feedback, adopted (Frank: "I agree").**
+1. THE UNIT IS A MECHANISM, NOT A TARGET. A target is a symptom; the
+   batch is "these mechanisms", never "these patterns" (memory
+   `pcrec-general-mechanisms-not-special-cases`).
+2. PRIORITY RULE (the bench scoring-rule item, ruled here): rank a row
+   by pcrec's ratio to the FASTEST engine on that row whose advantage is
+   algorithmic (a subset engine's win counts — it is a mechanism to
+   mine), weighted by pattern class so one exotic row cannot outrank a
+   family; PCRE2 remains the correctness reference for every row.
+3. A CAUSE TAXONOMY up front, bucketed first by the D81 stamps (a
+   query, not a study): engine selection (VM where the DFA could serve),
+   prefilter miss, scan shape, state blow-up / size cap, VM backtracking
+   cost, per-call overhead under find-all, UTF-8 cost; plus the
+   FUNDAMENTAL bucket — engine-shape causes (e.g. backtracking-heavy
+   rows against a JIT) get a recorded no-go/deferral disposition, which
+   is a result, not a failure.
+4. THE LANDING BAR IS A MEASURED GAP (D77 applied to speedups): a
+   mechanism lands only if its target cells' median improvement exceeds
+   their IQR AND no carve-out cell regresses by more than its IQR; size
+   is the second axis — a speedup that grows artifacts materially takes
+   a `--tune` position, not the default.
+5. EVERY MECHANISM IS AN AXIS: a `-fno-` deny flag on landing, hence the
+   answer-identity sweep denied/forced (`make test-axes`), its own
+   sabotage row with a reach witness, and an independent revert. That is
+   what "surgical correctness" means here.
+6. CYCLE SIZE: ~5 targets per analysis wave, ≤3 mechanisms per
+   implementation batch, so the optimization lane stays ONE lane beside
+   bugs and admin (D86).
+
+**Mechanics already in the tree.** [OPT-5]'s step-0 profile method for
+"why slower" (on Linux via the executor — the ladder taught that the Mac
+lies under load); the window handshake + pinned/scratch tiers for
+individual benching (memory `pcrec-bench-status`); identity gates,
+emit_sweep and test-axes for the set; the battery before any merge;
+the full suite at cycle end; an executive summary after each bench
+ledger (memory `pcrec-exec-summary-after-bench-reports`).
+
+**Sequencing.** After the beta tag ([REL-1.8]): cycle 1's analysis step
+IS [BENCH-REVIEW] + [BACKLOG-TRIAGE] (D113 step 3) on the `capability`
+subbench, where the parked rows ([ENG-ISL], [CLS-TREE], [DD-13]) compete
+with fresh findings for the same lane. Plan rows: [OPTLOOP] (the
+standing loop) with per-cycle children [OPTLOOP.N.analysis] /
+[OPTLOOP.N.impl].

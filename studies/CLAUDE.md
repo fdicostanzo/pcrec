@@ -59,6 +59,10 @@ re-measure before load-bearing use.
   (rc<>0) rather than exiting 0, and `run_floor.sh` gained the median/IQR
   summary block the 2026-09-04 report cited (previously computed by hand).
   See `docs/dev/lanes/edgefix_report.md` and the study's own README.
+  **`runs/<date>-<item>-<pin>/`** archives each executor pass (own
+  `fit.py`/`fit_output.txt` beside the raw ladder/floor logs);
+  `runs/2026-09-21-i82-89d986c3/` is I-82's run behind D117
+  ([OPT-EDGE] CLOSED), analysis `docs/dev/lanes/edgefit_report.md`.
 - `alt_dispatch/` — [ENG-ISL.S0] the alternation-dispatch study (chartered
   by Frank 2026-09-03): five dispatch algorithms for a wide literal
   alternation — today's serial try (`vm_alt`), first-byte grouping, a

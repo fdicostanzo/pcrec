@@ -113,6 +113,15 @@ never-saved `python3` one-liner run against the raw per-round lines the
 script already printed — which is why re-running the harness never
 reproduced a summary block on its own.
 
+## Runs
+
+Archived runs live under `runs/<date>-<item>-<pin>/` — one directory per
+executor pass, its own `fit.py` and `fit_output.txt` beside the raw
+ladder/floor logs. `runs/2026-09-21-i82-89d986c3/` is I-82's run (D117):
+the pcrec pin is `89d986c3`, the fixed harness (lane edgefix) behind it,
+`fit.py`/`fit_output.txt` plus two floor logs and one ladder log. The
+analysis is `docs/dev/lanes/edgefit_report.md`; the ruling is D117.
+
 ## Running it
 
 ```

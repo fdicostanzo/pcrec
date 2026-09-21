@@ -2191,3 +2191,33 @@ never edited afterwards.
   Comments only; `make -j4`/`make strict` clean, `scripts/emit_sweep.py
   --ref bc6750bc` 0 movers on all five streams, sabotage anchors
   285/285.
+
+- `rel1a_report.md` — [REL-1.1]/[REL-1.2] (2026-09-21, lane rel1a, sonnet):
+  the first README.md landing (roadmap corrected — M4/M5 shipped, M3
+  streaming the one open milestone — public surfaces named and pointed
+  at their owning docs/spec/ file) and `docs/pcre2_compliance.md`'s
+  compliance-refresh zero-drift re-run. Docs only.
+- `rel1b_report.md` — [REL-1.4] version plumbing (2026-09-21, lane
+  rel1b): D115's ruling built exactly — `PCREC_VERSION` = `"0.1.0-beta"`,
+  independent of `abi`, `--version`, exported from `lib/pcrec.h`, stamped
+  in the emitted provenance line, abi 27 -> 28, CHANGELOG.md seeded.
+- `rel1c_report.md` — the D116 README REWORK (2026-09-21, lane rel1c):
+  README.md cut from rel1a's 125 lines to 65 per Frank's "brief and
+  friendly, no number that can drift" ruling — the seven-section
+  structure the ruling specifies, with a digit-by-digit audit of every
+  remaining number's drift risk.
+- `iface_digest.md` — the D116 INTERFACE DIGEST (2026-09-21): facts
+  extracted for Frank's pre-guide interface discussion — the CLI, the
+  four-function library surface and the generated artifact's own
+  surface, every claim cited to `file:line` or a live `--help`/
+  `--version` run, no recommendations.
+- `edgefit_report.md` — [OPT-EDGE] I-82 LADDER FIT + m=2 MECHANISM
+  (2026-09-21, lane edgefit, sonnet; data + report only, no `src`/
+  `tests`): the numbers D117 rules on. The ladder fit (`t(k)=a+b·k`
+  over the shared-sentinel dispatch, with the caveat that the four
+  rungs are different patterns/subjects, not one machine scaled, so
+  `b` is this ladder's own average slope) and the m=2 floor cell's
+  bimodal signature attributed by mechanism (which BINARY moves flips
+  between runs; neither round index nor measurement order predicts the
+  mode) rather than dismissed as unexamined noise. Does not rule on the
+  floor itself — that is the manager's, per D117.
