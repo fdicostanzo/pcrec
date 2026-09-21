@@ -1,0 +1,150 @@
+m=2  exact    [0-9]{2}x      forward edges = 1  OK
+m=2  nullable [a-z]{0,2}     forward edges = 1  OK
+m=3  exact    [0-9]{3}x      forward edges = 1  OK
+m=3  nullable [a-z]{0,3}     forward edges = 1  OK
+m=4  exact    [0-9]{4}x      forward edges = 1  OK
+m=4  nullable [a-z]{0,4}     forward edges = 1  OK
+m=8  exact    [0-9]{8}x      forward edges = 1  OK
+m=8  nullable [a-z]{0,8}     forward edges = 1  OK
+OUT=out PCREC=/home/duxevents/pcrec/build/pcrec ./run_floor.sh
+m=2  exact    pattern [0-9]{2}x        forward edges=1
+m=2  nullable pattern [a-z]{0,2}       forward edges=1
+m=3  exact    pattern [0-9]{3}x        forward edges=1
+m=3  nullable pattern [a-z]{0,3}       forward edges=1
+m=4  exact    pattern [0-9]{4}x        forward edges=1
+m=4  nullable pattern [a-z]{0,4}       forward edges=1
+m=8  exact    pattern [0-9]{8}x        forward edges=1
+m=8  nullable pattern [a-z]{0,8}       forward edges=1
+
+round  m  family    edge     noedge   edge/noedge
+    1  2  exact     3.4662   1.8906     1.8334
+    1  2  nullable  3.3017   3.6971     0.8930
+    1  3  exact     1.7353   1.7408     0.9969
+    1  3  nullable  2.8479   3.1401     0.9069
+    1  4  exact     1.3974   1.1429     1.2227
+    1  4  nullable  2.0123   2.0668     0.9736
+    1  8  exact     0.6350   0.6403     0.9917
+    1  8  nullable  1.5884   1.6502     0.9625
+    2  2  exact     4.1738   4.2013     0.9935
+    2  2  nullable  5.1385   3.0673     1.6753
+    2  3  exact     1.4323   1.4384     0.9958
+    2  3  nullable  2.3143   2.4449     0.9466
+    2  4  exact     1.1382   1.1487     0.9909
+    2  4  nullable  2.0510   2.0112     1.0198
+    2  8  exact     0.8184   0.7790     1.0507
+    2  8  nullable  2.0098   1.9993     1.0053
+    3  2  exact     4.1829   4.1942     0.9973
+    3  2  nullable  5.2913   3.0109     1.7574
+    3  3  exact     1.4330   1.4406     0.9947
+    3  3  nullable  2.3856   2.6056     0.9156
+    3  4  exact     1.4001   1.3920     1.0058
+    3  4  nullable  4.3535   4.8752     0.8930
+    3  8  exact     1.4001   1.4193     0.9864
+    3  8  nullable  3.5941   3.6422     0.9868
+    4  2  exact     4.1705   2.3064     1.8082
+    4  2  nullable  3.2154   3.6740     0.8752
+    4  3  exact     1.7506   1.7456     1.0028
+    4  3  nullable  5.1034   3.1317     1.6296
+    4  4  exact     1.3842   1.3897     0.9961
+    4  4  nullable  2.4688   2.8016     0.8812
+    4  8  exact     0.7748   0.6942     1.1160
+    4  8  nullable  3.5695   3.6301     0.9833
+    5  2  exact     2.4582   2.3001     1.0687
+    5  2  nullable  3.2439   3.1670     1.0243
+    5  3  exact     1.4339   1.4355     0.9989
+    5  3  nullable  2.6540   2.4158     1.0986
+    5  4  exact     1.4164   1.3848     1.0228
+    5  4  nullable  2.5012   2.7681     0.9036
+    5  8  exact     0.7868   0.7853     1.0019
+    5  8  nullable  1.9699   2.0015     0.9842
+    6  2  exact     4.1728   4.1684     1.0010
+    6  2  nullable  2.7082   3.0635     0.8840
+    6  3  exact     1.4365   1.4359     1.0004
+    6  3  nullable  2.3237   2.6218     0.8863
+    6  4  exact     1.1470   1.1443     1.0024
+    6  4  nullable  2.4344   2.4582     0.9903
+    6  8  exact     0.7808   0.7706     1.0132
+    6  8  nullable  1.9643   1.9971     0.9836
+    7  2  exact     4.3062   2.3037     1.8693
+    7  2  nullable  3.2514   3.7925     0.8573
+    7  3  exact     3.1476   1.7436     1.8052
+    7  3  nullable  2.8335   3.1908     0.8880
+    7  4  exact     1.3868   1.3978     0.9921
+    7  4  nullable  2.5280   2.7031     0.9352
+    7  8  exact     0.7705   0.6665     1.1561
+    7  8  nullable  1.6882   1.6392     1.0299
+    8  2  exact     2.3736   2.3037     1.0304
+    8  2  nullable  3.2762   3.6779     0.8908
+    8  3  exact     3.1711   3.1705     1.0002
+    8  3  nullable  2.4701   2.4170     1.0220
+    8  4  exact     1.1447   1.1432     1.0013
+    8  4  nullable  2.4671   2.6706     0.9238
+    8  8  exact     0.7718   0.6967     1.1079
+    8  8  nullable  1.6768   1.6438     1.0201
+    9  2  exact     4.2049   2.3141     1.8171
+    9  2  nullable  3.2587   3.8707     0.8419
+    9  3  exact     3.1598   3.1569     1.0009
+    9  3  nullable  4.3062   2.5795     1.6694
+    9  4  exact     1.1392   1.1526     0.9883
+    9  4  nullable  2.7829   2.4432     1.1390
+    9  8  exact     0.7750   0.6332     1.2240
+    9  8  nullable  1.6376   1.6448     0.9956
+   10  2  exact     4.2880   1.8929     2.2654
+   10  2  nullable  2.6775   3.0293     0.8839
+   10  3  exact     1.4324   1.4362     0.9973
+   10  3  nullable  2.3244   2.5140     0.9246
+   10  4  exact     1.1404   1.1389     1.0013
+   10  4  nullable  2.1989   2.0011     1.0988
+   10  8  exact     0.6373   0.6325     1.0076
+   10  8  nullable  1.9732   1.9994     0.9869
+   11  2  exact     2.0313   1.8937     1.0727
+   11  2  nullable  2.6150   2.9796     0.8777
+   11  3  exact     1.4341   1.4330     1.0008
+   11  3  nullable  3.0088   2.4478     1.2292
+   11  4  exact     3.0725   3.0716     1.0003
+   11  4  nullable  4.1554   2.2631     1.8362
+   11  8  exact     0.7466   0.6683     1.1172
+   11  8  nullable  1.6621   1.6459     1.0098
+   12  2  exact     2.7218   1.8929     1.4379
+   12  2  nullable  2.6779   2.9944     0.8943
+   12  3  exact     1.4378   1.4459     0.9944
+   12  3  nullable  2.9778   2.9872     0.9969
+   12  4  exact     1.3834   1.2578     1.0998
+   12  4  nullable  2.0221   2.0621     0.9806
+   12  8  exact     0.8314   0.7795     1.0667
+   12  8  nullable  2.0121   1.9916     1.0103
+   13  2  exact     4.3083   2.3171     1.8594
+   13  2  nullable  3.2567   3.8258     0.8512
+   13  3  exact     1.7417   1.7494     0.9956
+   13  3  nullable  2.9152   3.1415     0.9280
+   13  4  exact     1.3996   1.4275     0.9805
+   13  4  nullable  2.5292   2.6070     0.9702
+   13  8  exact     0.7941   0.7860     1.0102
+   13  8  nullable  2.0315   2.0636     0.9845
+   14  2  exact     4.1691   4.1930     0.9943
+   14  2  nullable  5.2482   3.0103     1.7434
+   14  3  exact     1.4370   1.4316     1.0038
+   14  3  nullable  2.3898   2.4510     0.9750
+   14  4  exact     1.1434   1.1393     1.0037
+   14  4  nullable  2.0231   1.9901     1.0166
+   14  8  exact     0.7862   0.7736     1.0163
+   14  8  nullable  1.9207   1.9955     0.9625
+   15  2  exact     4.6859   1.9065     2.4578
+   15  2  nullable  3.5238   2.9959     1.1762
+   15  3  exact     1.4337   1.4492     0.9893
+   15  3  nullable  3.5322   2.5833     1.3673
+   15  4  exact     1.1378   1.1522     0.9875
+   15  4  nullable  2.4901   2.4584     1.0129
+   15  8  exact     0.7719   0.6976     1.1066
+   15  8  nullable  1.6486   1.6450     1.0022
+
+=== median / IQR summary (edge/noedge ratio, per m x family) ===
+m   family      median      IQR      min      max      n
+2   exact       1.4379   0.8307   0.9935   2.4578     15
+2   nullable    0.8908   0.2238   0.8419   1.7574     15
+3   exact       0.9989   0.0052   0.9893   1.8052     15
+3   nullable    0.9750   0.2438   0.8863   1.6694     15
+4   exact       1.0013   0.0132   0.9805   1.2227     15
+4   nullable    0.9806   0.0887   0.8812   1.8362     15
+8   exact       1.0507   0.1030   0.9864   1.2240     15
+8   nullable    0.9869   0.0236   0.9625   1.0299     15
