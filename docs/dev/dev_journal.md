@@ -24761,3 +24761,28 @@ migration). Lane clishape (sonnet) implements in five stages, full make
 test in its worktree as its last act. Unscheduled rows chartered by
 Frank: [EMIT-ENTRIES], [LANG-1] (C/Rust/C++), [LANG-2] (JS/TS). Main
 PUSHED at this point (abi 28; the executor released the push in O-43).
+
+**Evening — [REL-1.10] the gcc-shaped CLI MERGED (7aaf7152); D119 the
+optimization loop; three unscheduled rows.** Lane clishape (sonnet) in
+five stages: parser (N file operands, `--pattern`, `-I`, `--source`
+retired, `--count-groups --pattern`, `--probe-ask WANT CONSTRUCT`), spec
++ docs, the scripted+reconciled migration (518/534 .sh, 22 .py, 7 .c,
+4 Makefile sites), examples/makefile + tests/examples (section 41), and
+a fix-up pass found by RUNNING the suites: reference compilers built
+from pinned old commits still speak the old grammar (identity gates
+keep `--` for $REF, `--pattern` for $PCREC; emit_sweep probes each
+binary's --help once — general, not per-commit); the wrapper's own
+`basename --`/watchdog `--` had been rewritten (broke everything,
+reverted); bare positionals with no `--` (cli case13, spec_mod0, a
+study); a `bash -c`-nested pattern. Full make test on the branch 41/41:
+the nm probe; rxtsource W1.2's H11 counter keyed on the literal
+`--source` (stale → re-keyed on `--target`) + a REAL wording regression
+(the library-file "builds nothing" phrase dropped at stage 1, restored —
+behaviour never wrong); the manifest drift = the pre-merge abi-28 shape
+(main merged in). Fresh lane clifix did the triage (clishape had idled
+after its run without amending — DO-THEN-FINISH held, the amend did
+not). Frank's evening rulings: D119 (the loop; algorithmic only, no
+SIMD until the end, engine-constrained, fastest-algorithmic-engine
+target, capability subbench first) → [OPTLOOP] + [BENCH-REVIEW]
+re-scoped; [EMIT-ENTRIES]/[LANG-1]/[LANG-2] chartered. GATE on 7aaf7152
+launching now; push after.
