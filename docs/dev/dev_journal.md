@@ -24469,3 +24469,53 @@ writer). Each: emit_sweep --ref 82dd396a 0 movers, anchors 285/285, make
 strict; no full make test in-lane (the manager's at merge). Watcher script
 in the background; merges serialized with make test between; no battery
 in flight.
+
+## 2026-09-21 (EDT), seventy-third session, part 2 — [TOUR-EXEC]: all five tour items + ORG-7 delivered and merged; gate in flight
+
+**Merged, in order, each `git merge` alone + build/strict/anchors green
+between**: tour2 78058db7 (vm_cost: cost_add/cost_max, the per-kind
+dispatcher, one shared vm_alt_flatten — the two walks were byte-identical;
+r61 F6 at the three emit_vm.c callers), tour4 d29290ce (DFA_INVARIANT →
+pcrec_ctx_fail at THREE sites, K61, S262 DETECTED 1/1, match_api.md's
+stale "two abort()s" → one; ORG-7: five exports static, four have NO
+caller at all — dead, ruling owed), tour1 672b4cdd (pcrec_emit_vm 2,808
+lines → 17: vm_init / vm_plan / vm_plan_entry deciders + six writers;
+VmPlan transport + VmEntry; 44 locals placed by measured reads; four
+essays pruned, every measured cell kept; the file got 261 lines LONGER —
+nine headers cost more than the pruning saved; the read closure shrank),
+tour3 cf710c7d (cls_read_member at both endpoints, p_class_range, three
+blocks pruned, four contract cells re-verified by match behaviour) +
+landing 6ee551f2, tour5 3fe96ed1 (esel_of with the non-overlap TABLE —
+which exposed that arm 1 OUTRANKS rather than excludes, and that
+[OPT-4.2]'s prose never covered the size_drop_rung disjunct; the premise
+made a pcrec_ctx_fail check, forced false once on a scratch build;
+prefilter_decision extracted — nothing crossed the seam; the zero-hook
+discharge fixpoint deleted, [ENG-CUT] now owns the plumbing) + wording fix
+1691c590. Every lane: emit_sweep 0 movers / 0 asymmetric on five streams
+against its branch point; tour2 also size-log 0 movers by column; tour5
+also the full axes matrix rc=0 on its branch.
+
+**tour3rev (opus, read-only)**: ordering PRESERVED — path enumeration
+diffs empty at both sites; 372 curated cells + 40,740 generated cells
+byte-identical between the pre- and post-tour3 binaries. Found K62
+out of scope: `[0-\E]` under `--features quoting` REFUSED where PCRE2
+compiles {0,-} (confirmed vs local libpcre2 10.48 with pcre2test; the
+dash lookahead and cls_skip disagree on a bare `\E`). Small sonnet row.
+
+**Bench (D78 channel)**: O-38's vm-in ×1.08 mover → I-79 (reading: not an
+emitted-program change; witness shape) → [B62]: emitted C byte-identical
+modulo the abi stamp, wrapper + toolchain unchanged → O-39 CLOSED: the
+same-session interleave reads the pins 0.02% apart; buffer addr%64 == 16
+on all 24 launches (my placement guess was wrong). Nothing filed.
+
+**Process**: lanes still idle "waiting for a notification" after their
+background runs end (tour4 88 min, tour2, tour3 26 min) — the manager's
+ping is the wake-up every time. BSD `find -newermt @epoch` silently
+matches nothing (watcher v1/v2 false alarms) — use a `touch -t` reference
+file. A Monitor's process-table test behaves differently inside the
+monitor shell than in Bash (ugrep) — watch logs, not processes.
+
+**GATE IN FLIGHT at 1691c590**: `make test` then `make test-axes`,
+detached, logs build/gate_1691c590/. Plan rows flip at the trailer.
+OWED after the gate: the tools/review census regeneration (one admin
+item), tour2's S154 witness, the four dead exports ruling (Frank), K62.
