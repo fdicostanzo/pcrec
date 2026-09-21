@@ -24565,3 +24565,39 @@ the quiet box until it reports) and `rel1pre` (sonnet, read-only, no make —
 docs/dev/lanes/rel1pre_facts.md, the [REL-1] pre-flight fact sheet).
 `adm0921` launches after edge3's measurement ends. Watcher script in the
 background (quiet >25 min or worktree gone → one notification).
+
+**~09:2x — edge3 rerouted.** The lane stopped itself: load1 1.0-1.4 vs the
+ladder runbook's 0.5 refusal — and the harness is Linux-only (taskset,
+/proc idle), the 2026-09-04 numbers were ubuntubudu's. Worktree removed
+untouched; the measurement is EXECUTOR ITEM I-81 (bench inbox 1962de9:
+ladder + two floor runs at main 476892de, slot asked). Process slip: I
+stopped the first watcher with a `pgrep -f` match (house rule: never) —
+no collateral; watchers are stopped by task id from here on.
+
+**~09:3x — rel1pre delivered + merged (9b88418d)**: docs/dev/lanes/
+rel1pre_facts.md, nine sections. Gaps: README Status calls M4/M5 roadmap;
+no version plumbing at all; compliance header stale (touched 09-12 and
+09-19); docs/guide/ absent with its preconditions met; contribution
+posture thin on a confirmed-public repo (root CLAUDE.md's lane process
+visible). [REL-1] EXPANDED into REL-1.1..1.9 (eaab0d4a). Three rulings
+asked of Frank: lift the sequencing while I-81 waits; what the version
+constant versions (proposal: semver string, 0.1.0-beta, `--version` +
+the emitted header); the public CLAUDE.md (proposal: two-line preface).
+
+**~10:1x — [ADMIN-0921] delivered + merged (d697655e, + 4c2b06d2 signature
+nit)**: (1) four dead exports deleted, nm T-count 262→258 (D104's "295"
+was already a different count at the branch point — a counting-method
+difference, not re-pinned); (2) five tools/review censuses regenerated
+(function_census 917→935 rows); (3) S154's live witness `(a)(?1)` on
+"aa" — a NON-recursive call gets a COMPUTED trail (13 clean vs 10
+sabotaged → frames), recorded in the row's SAB_DOC_FIGURE; (4) K62 CLOSED
+— `cls_dissolve_len(cx,pos,in_quote)`, one rule for cls_skip and
+cls_peek_past_dash; a fix-up was needed for `\Q\E` inside an open quote
+(caught by the FULL quoting+classes harness, 184→186/186). Lane numbers:
+emit_sweep 0 movers (the two K62 patterns compile where they refused —
+the intended asymmetry), anchors 286/286, codegen 65/65, registry
+620/620. The lane's own background make test was KILLED by my TaskStop
+(this time it did not survive — lesson 3 of wake.md is not a rule either
+way; check the log). DARWIN GATE launched by the manager at 4c2b06d2:
+build/gate_4c2b06d2/{build,strict,test,trailer}.log, Monitor on the
+trailer.
