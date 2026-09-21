@@ -130,11 +130,11 @@ for k in 1 2 3 4; do
   # the subject: repeat the near-miss field to 256 KB
   awk -v u="${SUBJ[$k]}" 'BEGIN{ n=262144; s=""; while (length(s) < n) s = s u; printf "%s", substr(s,1,n) }' > "subj$k.bin"
   for arm in before after step11; do
-    "${ARM[$arm]}" -p rx --features all -o "a_${arm}_$k.c" -- "${PAT[$k]}" >/dev/null 2>&1 \
+    "${ARM[$arm]}" -p rx --features all -o "a_${arm}_$k.c" --pattern "${PAT[$k]}" >/dev/null 2>&1 \
       || { echo "rung $k arm $arm: COMPILE FAILED"; RC=1; continue; }
     gcc -O2 -w -o "b_${arm}_$k" "a_${arm}_$k.c" "$HERE/bench.c" || { echo "rung $k arm $arm: CC FAILED"; RC=1; continue; }
   done
-  "${ARM[$NOEDGE_ARM]}" -p rx --features all -fno-scan-edge -o "a_noedge_$k.c" -- "${PAT[$k]}" >/dev/null 2>&1 \
+  "${ARM[$NOEDGE_ARM]}" -p rx --features all -fno-scan-edge -o "a_noedge_$k.c" --pattern "${PAT[$k]}" >/dev/null 2>&1 \
     && gcc -O2 -w -o "b_noedge_$k" "a_noedge_$k.c" "$HERE/bench.c"
   # VERIFY the forward edge count from the artifact's own markers. This
   # reads a_after_$k.c -- the OLD "after" reference compiler (b048fa61,

@@ -121,8 +121,8 @@ fi
 # Both builds emit SELF-CONTAINED C to stdout: writing to two different paths
 # would put a different `#include "<name>.h"` line in each and every
 # comparison would "differ" for a reason unrelated to the newline context.
-gen_a() { pcrec_run "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -p rx -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -p rx -o - --pattern "$1" 2>/dev/null; }
 
 # ---- the corpus ----------------------------------------------------------
 # Every `pattern` line from every .rxt under tests/, known_fail included: a

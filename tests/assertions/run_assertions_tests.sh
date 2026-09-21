@@ -82,9 +82,9 @@ refuses() {
     local feats="$1" pat="$2" want="$3" out rc
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if [ "$feats" = bare ]; then
-        out="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+        out="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     else
-        out="$(pcrec_run "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+        out="$(pcrec_run "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     fi
     if [ "$rc" -ne 1 ]; then
         bad "[$feats] '$pat': exit $rc, not a clean exit-1 rejection (got: $out)"
@@ -161,7 +161,7 @@ refuses() {
 for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
          'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    if pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    if pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES — the module's built constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
     else
         bad "[assertions] '$p' should compile with the module enabled: $(cat "$WORKDIR/e.txt")"
@@ -169,7 +169,7 @@ for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
 done
 for p in '(?m)a$' '(?m:a$)' '(?-m)a$' '(?m)^a'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    if pcrec_run "$PCREC" --features assertions,modifiers -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    if pcrec_run "$PCREC" --features assertions,modifiers -p rx -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES — wave C's letter is BUILT, which is what takes over from the two 'inline option m is not implemented yet' rows tests/reject just retired"
     else
         bad "[assertions] '$p' should compile with assertions+modifiers enabled: $(cat "$WORKDIR/e.txt")"
@@ -216,7 +216,7 @@ done
 for p in '(?<n>\b)*' '(?<n>\B)*' '(?<n>\G)*' '(?<n>\K)*' '(?<n>\A)*'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if pcrec_run "$PCREC" --features assertions,named-groups --no-captures -p rx \
-                -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+                -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES under --no-captures — the bare-anchor rule has ONE home, and this is the only path that reaches mod_named_groups.c's former copy of it"
     else
         bad "[assertions] '$p' should compile under --no-captures (libpcre2 gives (0,0)): $(cat "$WORKDIR/e.txt")"
@@ -233,7 +233,7 @@ echo "== [M6.2] §8 the \$-follow exemption, in both directions =="
 # (src/gen/CLAUDE.md, the shared PCREC_RX_ABI_H block since [ABI-NS]). The
 # patterns are capture-bearing so they route to the VM, which is the only
 # engine that stamps this.
-strats() { pcrec_run "$PCREC" --features assertions -p rx -o - -- "$1" 2>/dev/null \
+strats() { pcrec_run "$PCREC" --features assertions -p rx -o - --pattern "$1" 2>/dev/null \
              | sed -n 's/^#define RX_VM_STRATS \(0x[0-9a-f]*\)u$/\1/p' | head -1; }
 
 want_strat() { # want_strat <pattern> <expected> <why>
@@ -313,7 +313,7 @@ echo "== [M6.2 wave B] the composed state budget refuses, never miscompiles =="
 refuses_at_cap() { # refuses_at_cap <pattern> <why>
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     local err
-    if err="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures --engine=dfa -o "$WORKDIR/out.c" -- "$1" 2>&1)"; then
+    if err="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures --engine=dfa -o "$WORKDIR/out.c" --pattern "$1" 2>&1)"; then
         bad "[budget] '$1' COMPILED — expected the states-cap refusal ($2)"
         return
     fi
@@ -344,7 +344,7 @@ auto_fallback_at_cap() { # auto_fallback_at_cap <pattern> <why>
     rm -f "$WORKDIR/auto.c"
     local t0 t1 ms out
     t0=$(date +%s%N)
-    out="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures -o "$WORKDIR/auto.c" -- "$1" 2>&1)"
+    out="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures -o "$WORKDIR/auto.c" --pattern "$1" 2>&1)"
     local rc=$?
     t1=$(date +%s%N)
     ms=$(( (t1 - t0) / 1000000 ))
@@ -385,7 +385,7 @@ auto_fallback_at_cap '^\b((a)|ab){20000}c\b' \
 # COMPILE, with the word context live.
 for p in '\b((a)|ab){40}c\b' '^\b((a)|ab){40}c\b'; do
     rm -f "$WORKDIR/out.c"
-    if pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    if pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" --pattern "$p" 2>"$WORKDIR/e.txt"; then
         ok "[budget] CONTROL '$p' compiles — the two refusals above are about the CAP and not about the shape"
     else
         bad "[budget] CONTROL '$p' should compile: $(cat "$WORKDIR/e.txt")"
@@ -415,7 +415,7 @@ done
 kstamp() { # kstamp <label> <pattern> <want-why-substring>
     local label="$1" pat="$2" want="$3"
     rm -f "$WORKDIR/out.c"
-    if ! pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$pat" 2>"$WORKDIR/e.txt"; then
+    if ! pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>"$WORKDIR/e.txt"; then
         bad "[engine stamp] '$pat' should compile: $(cat "$WORKDIR/e.txt")"
         return
     fi

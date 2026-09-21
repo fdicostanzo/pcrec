@@ -244,8 +244,8 @@ def verify_block(block, pcre2_only, results):
     if block.is_perr:
         feats = block.features or ""
         cmd = [PCREC, "--features", feats, "-p", "rx", "-o", _PERR_OUT,
-               "--", block.pattern] if feats else \
-              [PCREC, "-p", "rx", "-o", _PERR_OUT, "--", block.pattern]
+               "--pattern", block.pattern] if feats else \
+              [PCREC, "-p", "rx", "-o", _PERR_OUT, "--pattern", block.pattern]
         try:
             proc = subprocess.run(cmd, capture_output=True, timeout=10)
         except Exception as e:                                # noqa: BLE001

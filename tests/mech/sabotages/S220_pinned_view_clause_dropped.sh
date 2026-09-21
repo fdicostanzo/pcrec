@@ -99,7 +99,7 @@ SAB_DOC_FIGURE="MEASURED UNDETECTED by the lane 2026-09-02: with this plant appl
 # P2 and by no other clause. Floored at its full measured population (3),
 # not a decorative round number: if this manifest ever needs a fourth
 # member, the floor moves with it in the same change.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" -- "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "x*" && grep -q "RX_DFA_START \"pinned\"" "$REACH_TMP/p.c" && echo REACH-CLASSCTX-DECLINED-BY-P2'
 SAB_REACH_EXPECT="REACH-CLASSCTX-DECLINED-BY-P2"
 SAB_REACH_POP="tests/codegen/manifests/s220_view_decliners.txt|^\\\\B|3"
 SAB_COUNT=1

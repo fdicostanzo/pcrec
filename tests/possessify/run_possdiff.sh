@@ -141,12 +141,12 @@ one_pattern() {
     # possessification never runs), and it turns the DFA prefilter OFF, so the
     # comparison is of the VM's own derivation rather than of a window the DFA
     # handed both sides (R21 E-6).
-    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify -o "$d/pb.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-possessify -o "$d/pb.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_b"; then
         bad "'$pat': the possessified build compiled and the DENIED one did not"
         return 0
@@ -246,7 +246,7 @@ if [ "${1:-}" = "--corpus" ]; then
     # the corpus selects this rung".
     . "$ROOT_DIR/tests/lib/table.sh"
     probe="$WORKDIR/probe.ir"
-    if ! pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a)b' > "$probe" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '(a)b' > "$probe" 2>/dev/null; then
         echo "possdiff: could not produce a probe --emit-ir listing" >&2; exit 2
     fi
     fact_i="$(table_col_index "$probe" fact summary)" || exit 2
@@ -257,7 +257,7 @@ if [ "${1:-}" = "--corpus" ]; then
         [ -n "$cp" ] || continue
         # [DD-8] `possessify`'s value is `marked/total`; the old line was
         # `; possessify   N of M ...`. The marked half is what this arm wants.
-        n="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+        n="$(pcrec_run "$PCREC" --engine=vm --emit-ir --pattern "$cp" 2>/dev/null \
              | awk -F'\t' -v ki="$fact_i" -v vi="$val_i" '
                  /^#section summary$/ { s = 1; next }
                  /^#section /         { s = 0; next }

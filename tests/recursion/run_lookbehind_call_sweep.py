@@ -135,7 +135,7 @@ def population():
 
 def pcrec_compile(pat, out):
     r = subprocess.run([PCREC, "--features", FEAT, "-p", "rx", "--emit-main",
-                        "-o", out, "--", pat], capture_output=True, text=True)
+                        "-o", out, "--pattern", pat], capture_output=True, text=True)
     return r.returncode, (r.stderr.strip() or r.stdout.strip())
 
 

@@ -15,7 +15,7 @@ SAB_DOC_FIGURE="measured MOD-0.4c: UNDETECTED 0/437 against the message-only (*)
 # blamed (`star` -> `at`), so a reach check that asserted only the sentence
 # would stay green on a tree that had lost the offset contract entirely.
 # `(pattern offset 1)` is the whole claim.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "(*)"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "(*)"'
 SAB_REACH_EXPECT="quantifier does not follow a repeatable item (pattern offset 1)"
 SAB_COUNT=1
 SAB_BEFORE="    else REFUSE(star, \"quantifier does not follow a repeatable item\");"

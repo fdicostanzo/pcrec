@@ -22,7 +22,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 back_step's want != end - pos declared-length test is deleted; on an ill-formed continuation run (or a mid-character startpos) the walk and the forward parse disagree, the negative lookbehind's end-check fires RX_R_INTERNAL, and a composed call site traps on a subject the ruling promises will merely not match"
 SAB_DOC_FIGURE="PREDICTED (§8.2): tests/utf8/invalid.rxt's (?<! cells over C2 80 80-shaped subjects red as ERROR returns rather than spans. DEMONSTRATED at stage 2 pre-corpus: (?<!.)x on C2 80 80 78 answers match(3,4) clean; sabotaged, rx_search returns the internal-error code."
-SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - -- "(?<!.)x"'
+SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - --pattern "(?<!.)x"'
 SAB_REACH_EXPECT='Pattern: (?<!.)x'
 # RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
 # GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed

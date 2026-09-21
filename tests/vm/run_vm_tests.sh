@@ -73,7 +73,7 @@ build() {
     local name="$1" pat="$2"
     shift 2
     mkdir -p "$WORKDIR/$name"
-    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$name/err" || return 1
     # shellcheck disable=SC2086
     gen_cc "$name '$pat'" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
@@ -379,7 +379,7 @@ cliff_run() {  # cliff_run <name> [pcrec args...]
     local name="$1"
     shift
     mkdir -p "$WORKDIR/$name"
-    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" --pattern '(a*)b' >/dev/null 2>&1 || return 1
     # shellcheck disable=SC2086
     gen_cc "cliff $name" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
            -o "$WORKDIR/$name/t" "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" \
@@ -474,7 +474,7 @@ fi
 # shape too, and a cap on replication cannot be tested by a build that does not
 # replicate. The ladder is now fully denied here; there is no rung below
 # replication, so this list is complete unless a new one is added above.
-if out="$(pcrec_run "$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+if out="$(pcrec_run "$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" --pattern '((a)|b){0,4000}c' 2>&1)"; then
     bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles under -fno-revdet -fno-counter"
 elif printf '%s' "$out" | grep -q 'replicate its body 4000 times'; then
     ok "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's 3.5 MB case is refused before emission, naming the replication count"
@@ -490,8 +490,8 @@ fi
 # scaffolding's growth, not the rung's claim. The claim is that the rung
 # emits ONE body copy, so `{0,4000}` and `{0,400}` must be the SAME size
 # (a tolerance of 2 lines covers a wider count literal wrapping a comment).
-if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
-   && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" --pattern '((a)|b){0,4000}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame_small.c" --pattern '((a)|b){0,400}c' >/dev/null 2>&1; then
     eg="$(wc -l < "$WORKDIR/endgame.c")"; eg_small="$(wc -l < "$WORKDIR/endgame_small.c")"
     eg_delta=$(( eg > eg_small ? eg - eg_small : eg_small - eg ))
     [ "$eg_delta" -le 2 ] \
@@ -500,7 +500,7 @@ if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,40
 else
     bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
 fi
-if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" --pattern '(ab){0,4000}c' >/dev/null 2>&1; then
     ok "[M4.5c] ...and a single-path body at the same count still compiles (span-loop rung, no replication)"
 else
     bad "[M4.5c] '(ab){0,4000}c' was refused; it replicates nothing and the cap must not see it"
@@ -541,7 +541,7 @@ k22_tower() { # k22_tower <depth>  -> the pattern on stdout
 # as an acceptance change in docs/design/artifact_size_term.md §4.3a.
 if "$TIMEOUT_BIN" 20 "$PCREC" -p rx --engine=vm --max-emit-code-bytes=99999999 \
         --max-emit-bytes=99999999 -o "$WORKDIR/k22ok.c" \
-        -- "$(k22_tower 15)" >/dev/null 2>&1; then
+        --pattern "$(k22_tower 15)" >/dev/null 2>&1; then
     ok "[K22] a depth-15 nested-{0,2} tower still compiles (size caps lifted) -- the product guard refuses only what the node cap was going to refuse anyway"
 else
     bad "[K22] the depth-15 tower was refused even with the emitted-size caps raised; the product guard is wider than PCREC_MAX_VM_NODES, which its soundness argument says it cannot be"
@@ -549,7 +549,7 @@ fi
 rm -f "$WORKDIR/k22.c"
 for k22d in 30 40; do
     out="$("$TIMEOUT_BIN" 5 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22.c" \
-           -- "$(k22_tower "$k22d")" 2>&1)"; rc=$?
+           --pattern "$(k22_tower "$k22d")" 2>&1)"; rc=$?
     if [ "$rc" -eq 0 ]; then
         bad "[K22] a depth-$k22d nested-{0,2} tower COMPILED; it replicates its body 2^$k22d times"
     elif [ "$rc" -ge 124 ]; then
@@ -655,7 +655,7 @@ fi
 sel1_check_refuse() {   # sel1_check_refuse <label> [pcrec args...]
     local label="$1"; shift
     if pcrec_run "$PCREC" -p rx "$@" --features all -o "$WORKDIR/sel1_ref.c" \
-            -- "$SEL1_PAT" >/dev/null 2>"$WORKDIR/sel1_ref.err"; then
+            --pattern "$SEL1_PAT" >/dev/null 2>"$WORKDIR/sel1_ref.err"; then
         bad "[SEL-1] $label: compiled; expected the force form to stay do-or-die"
     elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \
             "$WORKDIR/sel1_ref.err"; then
@@ -837,7 +837,7 @@ if build mix3 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e'; then
     # trailing space (the old pattern `'^; rungs        cursor, ...'` pinned
     # the column padding D106 addendum 3 has since ruled is not a contract).
     ir="$WORKDIR/d46_mix.ir"
-    if pcrec_run "$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' > "$ir" 2>/dev/null; then
+    if pcrec_run "$PCREC" -p rx --emit-ir --pattern 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' > "$ir" 2>/dev/null; then
         kinds="$(table_field "$ir" rungs kind)" || kinds=""
         rungcount() { printf '%s\n' "$kinds" | grep -cx "$1" | tr -d ' '; }
         ncursor="$(rungcount cursor)"

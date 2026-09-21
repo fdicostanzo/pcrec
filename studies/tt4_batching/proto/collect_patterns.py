@@ -121,7 +121,7 @@ def main():
                     argv += ["-i"]
                 if features:
                     argv += ["--features", features]
-                argv += ["-o", os.path.join(args.outdir, f"{prefix}.c"), "--", pat]
+                argv += ["-o", os.path.join(args.outdir, f"{prefix}.c"), "--pattern", pat]
                 r = subprocess.run(argv, capture_output=True, text=True)
                 if r.returncode != 0:
                     continue  # unsupported/rejected pattern -- skip, don't count

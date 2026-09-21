@@ -116,7 +116,7 @@ fi
 # target, so `--source` on it builds nothing AT EXIT 0 — a different
 # observable from a refusal, and the one format_design §6.1 requires.
 lib_out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$FEATURES" \
-             --source "$WORKDIR/defs_common.rxt" -o "$WORKDIR" 2>&1)"
+ "$WORKDIR/defs_common.rxt" -o "$WORKDIR" 2>&1)"
 lib_rc=$?
 if [ "$lib_rc" = "0" ] && [ ! -e "$WORKDIR/w.c" ]; then
     pass "the definitions file builds NOTHING at exit 0 (a library ships nothing by itself)"
@@ -134,12 +134,15 @@ build_one() {
     local err rc
     # `-o` GOES FIRST, BEFORE the caller's arguments, and that placement is
     # the whole of a defect this function shipped with. The flat-control call
-    # ends `-- <pattern>`, so an `-o` appended AFTER it landed past the `--`
-    # and pcrec read the output path as a SECOND pattern: "exactly one pattern
-    # expected". Every flat control failed to build and the comparison had
-    # nothing to compare — which the two non-vacuity guards below caught
-    # (zero delivered spans, zero cells) instead of the section reporting
-    # green on four passes.
+    # used to end `-- <pattern>`, so an `-o` appended AFTER it landed past
+    # the `--` and pcrec read the output path as a SECOND pattern: "exactly
+    # one pattern expected". Every flat control failed to build and the
+    # comparison had nothing to compare — which the two non-vacuity guards
+    # below caught (zero delivered spans, zero cells) instead of the section
+    # reporting green on four passes. [REL-1.10]/D118: the flat-control call
+    # now ends `--pattern <pattern>` instead, a flag-owned value rather than
+    # a positional operand, but `-o` stays first on the same defensive
+    # reasoning.
     err="$("$TIMEOUT_BIN" 120 "$PCREC" -o "$dir/gen.c" "$@" 2>&1 >/dev/null)"; rc=$?
     if [ $rc -ne 0 ] || [ ! -f "$dir/gen.h" ]; then
         echo "pcrec failed (exit $rc): $err"
@@ -179,7 +182,7 @@ for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$W
     fdir="$WORKDIR/f_$px"
 
     if ! msg="$(build_one "$cdir" "$px" --features "$FEATURES" \
-                   --source "$WORKDIR/composed.rxt" --target "$px")"; then
+                   "$WORKDIR/composed.rxt" --target "$px")"; then
         fail "composed target '$px' ($def) did not build: $msg"
         continue
     fi
@@ -192,7 +195,7 @@ for px in $(LC_ALL=C awk '/^target /{ n=$3; gsub(/[-.]/, "_", n); print n }' "$W
   which would otherwise show up as this target simply not being compared"
         continue
     fi
-    if ! msg="$(build_one "$fdir" "$px" --features "$FEATURES" -p "$px" -- "$flat_pat")"; then
+    if ! msg="$(build_one "$fdir" "$px" --features "$FEATURES" -p "$px" --pattern "$flat_pat")"; then
         fail "flat control '$def' did not build: $msg"
         continue
     fi

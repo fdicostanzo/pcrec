@@ -123,7 +123,7 @@ static PcrecRun run_pcrec_count(const char *pcrec_path, const char *body)
         int devnull = open("/dev/null", O_WRONLY);
         if (devnull >= 0) { dup2(devnull, STDERR_FILENO); close(devnull); }
         close(pfd[1]);
-        execl(pcrec_path, pcrec_path, "--count-groups", "--", body, (char *)NULL);
+        execl(pcrec_path, pcrec_path, "--count-groups", "--pattern", body, (char *)NULL);
         _exit(127);   /* exec failed: no such binary, or not executable */
     }
     close(pfd[1]);

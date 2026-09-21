@@ -335,7 +335,7 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
 {
     char *argv[] = {
         (char *)pcrec_path, (char *)"--features", (char *)features,
-        (char *)"-o", (char *)"-", (char *)"--", (char *)syntax, NULL
+        (char *)"-o", (char *)"-", (char *)"--pattern", (char *)syntax, NULL
     };
     if (named_module && named_sz) named_module[0] = '\0';
     PcrecRun r = run_pcrec(pcrec_path, argv, 0);
@@ -457,15 +457,17 @@ static int transition_ok(const char *syntax, const char *rowmod,
     return 1;
 }
 
-/* answered_at (TSV field 3) from `--probe-ask result -- SYNTAX` under a
- * chosen --features LIST. NULL on any run failure. Used only by the
- * instrument-liveness sanity below, never by the verdict-class sweep. */
+/* answered_at (TSV field 3) from `--probe-ask result SYNTAX` under a
+ * chosen --features LIST. [REL-1.10]/D118 addendum item (i): SYNTAX is
+ * `--probe-ask`'s own second argument now, no `--` between it and WANT.
+ * NULL on any run failure. Used only by the instrument-liveness sanity
+ * below, never by the verdict-class sweep. */
 static const char *probe_answered_at(const char *pcrec_path, const char *features,
                                       const char *syntax, char *buf, size_t bufsz)
 {
     char *argv[] = {
         (char *)pcrec_path, (char *)"--features", (char *)features,
-        (char *)"--probe-ask", (char *)"result", (char *)"--",
+        (char *)"--probe-ask", (char *)"result",
         (char *)syntax, NULL
     };
     PcrecRun r = run_pcrec(pcrec_path, argv, 1);
@@ -604,7 +606,7 @@ int main(int argc, char **argv)
             char *bad_argv[] = {
                 (char *)pcrec_path, (char *)"--features",
                 (char *)"__spec_mod0_unknown__", (char *)"-o", (char *)"-",
-                (char *)"--", (char *)"a", NULL
+                (char *)"--pattern", (char *)"a", NULL
             };
             PcrecRun r = run_pcrec(pcrec_path, bad_argv, 0);
             if (!r.ran || r.timed_out || r.exit_code != 1 ||
@@ -634,13 +636,13 @@ int main(int argc, char **argv)
                 const char *at_other = probe_answered_at(pcrec_path, names[1],
                                                           synA, bufB, sizeof bufB);
                 if (!at_own || strcmp(at_own, "result") != 0)
-                    spec_fail("instrument: --features %s --probe-ask result -- "
+                    spec_fail("instrument: --features %s --probe-ask result "
                               "'%s' answered at '%s', expected 'result' — the "
                               "module's own construct should reach the "
                               "furthest ask level when its module is enabled",
                               names[0], synA, at_own ? at_own : "(no answer)");
                 if (!at_other || strcmp(at_other, "verdict") != 0)
-                    spec_fail("instrument: --features %s --probe-ask result -- "
+                    spec_fail("instrument: --features %s --probe-ask result "
                               "'%s' (a construct of module '%s') answered at "
                               "'%s', expected 'verdict' — enabling module '%s' "
                               "must not also enable module '%s'",

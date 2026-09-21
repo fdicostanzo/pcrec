@@ -104,7 +104,7 @@ measured at 999,925 B against a 1,000,000 B cap -- two orders of magnitude
 past anything the threshold alone moves. Verification OWED going forward
 only in the sense every SAB_REACH is: re-run this row (or the mech tripwire)
 whenever §5.4's ladder or cap rows next move by a ruled diff."
-SAB_REACH='"$PCREC" -p rx --features all -o "$REACH_TMP/n8.c" -- "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}" && grep -h _UNROLL_K "$REACH_TMP/n8.c"'
+SAB_REACH='"$PCREC" -p rx --features all -o "$REACH_TMP/n8.c" --pattern "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}" && grep -h _UNROLL_K "$REACH_TMP/n8.c"'
 SAB_REACH_EXPECT="#define RX_UNROLL_K_WHY \"size-model\""
 SAB_REACH_POP="tests/codegen/run_size_term.sh|RESCUE=|1
 tests/codegen/run_size_term.sh|DPCREC_SIZE_TERM_THRESHOLD=20000|1"

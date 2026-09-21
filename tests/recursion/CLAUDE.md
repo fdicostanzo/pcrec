@@ -435,7 +435,7 @@ above.
   2026-08-25.** Design §9.3 predicted this should refuse naming
   `named-groups` once the call itself parses (the declaration `(?<n>a)` is
   what needs that module, reached lexically before the resolver runs). It
-  now does: `build/pcrec --features recursion -- '(?&n)(?<n>a)'` answers
+  now does: `build/pcrec --features recursion --pattern '(?&n)(?<n>a)'` answers
   `pcrec: (?&n) names a capture group, which requires module 'named-groups'
   (pattern offset 0)` — the port's own gate check, which sits BEFORE the
   name grammar for `br_name_ref`'s reason. Before the producer existed the
@@ -528,8 +528,8 @@ retired with it.
 
 This file used to record `gated.rxt`'s P2 cell as **NOT OBSERVABLE IN ITS TRUE
 FORM** and demand that the code lane re-check its MESSAGE rather than its exit
-code. Done, and it answers as design §9.3 predicted: `--features recursion --
-'(?&n)(?<n>a)'` now refuses with *"`(?&n)` names a capture group, which
+code. Done, and it answers as design §9.3 predicted: `--features recursion
+--pattern '(?&n)(?<n>a)'` now refuses with *"`(?&n)` names a capture group, which
 requires module 'named-groups'"*, from the port's own gate check, which sits
 BEFORE the name grammar for `br_name_ref`'s reason (without that module there
 is no such thing as a group NAME). The row is no longer vacuous.

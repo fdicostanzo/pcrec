@@ -32,7 +32,7 @@ SAB_HARNESS_TARGET="tests/utf8/axis11_startpos_boundary.rxt"
 SAB_DESC="ENG_ATTEMPT's emitted start loop loses its character-boundary continue, so an attempt engine under -e utf8 tries starts inside a character again — K50 site 2, which the charter's own site list had no witness for"
 SAB_DOC_FIGURE="docs/dev/known_issues.md K50's SITE LIST item 2 and its FIXED block's site-2 table; docs/design/utf8_design.md 5.5"
 SAB_COUNT=1
-SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions,modifiers -o - -- "(?m)^a|\\B" | grep -o "start_max = subject_length" | head -1'
+SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions,modifiers -o - --pattern "(?m)^a|\\B" | grep -o "start_max = subject_length" | head -1'
 SAB_REACH_EXPECT='start_max = subject_length'
 SAB_BEFORE='                "        if (start > search_from && !(%s)) continue;\n", sbnd);'
 SAB_AFTER='                "        (void)search_from; /* SABOTAGE S235 */%s\n", "");'

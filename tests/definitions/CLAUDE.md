@@ -61,7 +61,7 @@ scratch directory as `.rxt`, which is also what makes `composed.rxtin`'s
 **The open item this leaves**, and it is named rather than buried: these
 files are NOT in the harness-scored corpus. Putting a composed block there
 needs `tests/harness/run.sh` to compile such a block through
-`--source --target` instead of `-p rx` with the bare pattern, plus a loud
+a FILE operand + `--target` ([REL-1.10]/D118) instead of `-p rx` with `--pattern`, plus a loud
 floor for a composed block with no target (its cases would otherwise go
 unscored). That is a real harness change and wants a real run behind it;
 `verify_rxt.py` already carries the matching skip predicate, with a

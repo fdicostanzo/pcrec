@@ -36,7 +36,7 @@ SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 2 hand-written fail, 0 iterated"
 # S15 uses and deliberately so -- both rows rest on `\d` still reaching the
 # escape doorway as an unbuilt registry row, and when that stops being true
 # BOTH go blind together, which is the fact worth being told once.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "\\d"'
 SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
 # ANCHOR MOVED at [DD-11.1] (caught by scripts/m6read_check_sab_anchors.py on

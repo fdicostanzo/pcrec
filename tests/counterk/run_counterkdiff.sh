@@ -217,13 +217,13 @@ one_pattern() {
     # file's own CPU watchdog -- measuring the default, not the rung. The value
     # below is what this suite was calibrated against, BOTH arms get it, and a
     # divergence in the give-up surface is still reported as a divergence.
-    if ! pcrec_run "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
     if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-counter --step-budget=$CKDIFF_STEPS \
-            -o "$d/pb.c" -- "$pat" \
+            -o "$d/pb.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_b"; then
         # NOT a skip. The denied build IS the ground truth, so a pattern whose
         # ground truth cannot be built is a hole in the instrument, and the most
@@ -298,7 +298,7 @@ if [ "${1:-}" = "--corpus" ]; then
     # the corpus selects this rung".
     . "$ROOT_DIR/tests/lib/table.sh"
     probe="$WORKDIR/probe.ir"
-    if ! pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a)b' > "$probe" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '(a)b' > "$probe" 2>/dev/null; then
         echo "counterkdiff: could not produce a probe --emit-ir listing" >&2; exit 2
     fi
     fact_i="$(table_col_index "$probe" fact summary)" || exit 2
@@ -307,7 +307,7 @@ if [ "${1:-}" = "--corpus" ]; then
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
-        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir --pattern "$cp" 2>/dev/null \
              | awk -F'\t' -v ki="$fact_i" -v vi="$val_i" -v want="rungs" '
                  /^#section summary$/ { s = 1; next }
                  /^#section /         { s = 0; next }

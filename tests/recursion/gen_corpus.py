@@ -130,7 +130,7 @@ def pcrec_refuses(pat, features=None):
     cmd = [PCREC, "-p", "rx"]
     if features:
         cmd += ["--features", features]
-    cmd += ["--emit-main", "-o", SCRATCH_OUT, pat]
+    cmd += ["--emit-main", "-o", SCRATCH_OUT, "--pattern", pat]
     r = subprocess.run(cmd, capture_output=True, text=True)
     msg = (r.stderr.strip() or r.stdout.strip())
     return r.returncode != 0, msg

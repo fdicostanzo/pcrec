@@ -241,7 +241,7 @@ for idx in "${!TS2_NAMES[@]}"; do
     dir="$WORKDIR/ts2_$name"
     mkdir -p "$dir"
 
-    perr="$("$TIMEOUT_BIN" "$TIMEOUT" "$PCREC" -p rx -o "$dir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$TIMEOUT" "$PCREC" -p rx -o "$dir/gen.c" --pattern "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         bad "TS-2 '$name': pcrec failed to compile pattern '$pattern': $perr"
         continue

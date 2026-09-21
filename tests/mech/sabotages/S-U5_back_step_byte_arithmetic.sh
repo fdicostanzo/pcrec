@@ -18,7 +18,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 backend's back_step body becomes the byte backend's pos - k, so a lookbehind under --encoding=utf8 lands mid-character and loses every match behind a multi-byte character"
 SAB_DOC_FIGURE="PREDICTED (§8.2): every tests/utf8 lookbehind cell behind a multi-byte character goes red (lost match); ASCII-only lookbehind cells are unmoved. DEMONSTRATED at stage 2 pre-corpus: (?<=\x{3b1})x on CE B1 78 answers match(2,3) clean and nomatch sabotaged."
-SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - -- "(?<=\x{3b1})x"'
+SAB_REACH='"$PCREC" --features lookaround -e utf8 -p rx -o - --pattern "(?<=\x{3b1})x"'
 SAB_REACH_EXPECT='Pattern: (?<=\x{3b1})x'
 # RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
 # GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed

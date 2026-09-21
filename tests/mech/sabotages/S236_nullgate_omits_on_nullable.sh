@@ -43,7 +43,7 @@ SAB_COUNT=1
 # encoding that restricts start positions at all? If `\B` stops compiling under
 # -e utf8, or the utf8 backend stops restricting, this row's site is no longer
 # reachable and it must score UNREACHED rather than go on certifying.
-SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - -- "\\B" | grep -o "STARTPOS_GUARD" | head -1'
+SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - --pattern "\\B" | grep -o "STARTPOS_GUARD" | head -1'
 SAB_REACH_EXPECT='STARTPOS_GUARD'
 SAB_BEFORE='    return cx->job->fit.lang_nullable;'
 SAB_AFTER='    (void)cx; return false;   /* SABOTAGE S236 */'

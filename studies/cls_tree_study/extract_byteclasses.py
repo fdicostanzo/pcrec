@@ -104,7 +104,7 @@ def main():
             cmd.append("-i")
         if feats:
             cmd += ["--features", feats]
-        cmd += ["--", pat]
+        cmd += ["--pattern", pat]
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
             continue

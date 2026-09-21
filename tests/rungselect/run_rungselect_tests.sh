@@ -54,7 +54,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -146,7 +146,7 @@ if gen mixed "$mixed"; then
     # counted a space-delimited substring of the row — which also matched the
     # word inside a role string.
     ir="$WORKDIR/mixed.ir"
-    pcrec_run "$PCREC" --engine=vm --emit-ir -- "$mixed" > "$ir" 2>/dev/null
+    pcrec_run "$PCREC" --engine=vm --emit-ir --pattern "$mixed" > "$ir" 2>/dev/null
     rkinds="$(table_field "$ir" rungs kind)" || rkinds=""
     nrev="$(printf '%s\n' "$rkinds" | grep -cx revdet | tr -d ' ')"
     ncur="$(printf '%s\n' "$rkinds" | grep -cx cursor | tr -d ' ')"
@@ -172,7 +172,7 @@ fi
 if gen acc '((a)|b){0,4000}c'; then
     lines="$(wc -l < "$WORKDIR/acc.c")"
     acc_ir="$WORKDIR/acc.ir"
-    pcrec_run "$PCREC" --engine=vm --emit-ir -- '((a)|b){0,4000}c' > "$acc_ir" 2>/dev/null
+    pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '((a)|b){0,4000}c' > "$acc_ir" 2>/dev/null
     reps="$(table_lookup "$acc_ir" summary fact max-replicas value)" || reps=""
     if [ "$lines" -lt 2000 ]; then
         ok "acceptance cell: '((a)|b){0,4000}c' compiles in $lines lines (was refused by the replication cap; 113,549 lines with it raised)"
@@ -212,13 +212,13 @@ fi
 cap_of() {    # cap_of <pattern> [args...] -> the stamped resume-frame requirement
     local pat="$1"; shift
     local f="$WORKDIR/capof.ir"
-    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null || return 0
+    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" --pattern "$pat" > "$f" 2>/dev/null || return 0
     table_lookup "$f" summary fact resume-frames value 2>/dev/null
 }
 ceil_of() {   # ceil_of <pattern> [args...] -> the stamped subject ceiling
     local pat="$1"; shift
     local f="$WORKDIR/ceilof.ir"
-    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null || return 0
+    pcrec_run "$PCREC" --engine=vm --emit-ir "$@" --pattern "$pat" > "$f" 2>/dev/null || return 0
     table_lookup "$f" summary fact subject-ceiling value 2>/dev/null
 }
 # THE PATTERN HAS TO BE ONE THE ANALYSIS DECLINES TO POSSESSIFY, and the first
@@ -262,11 +262,11 @@ np=0; nrev=0; nident=0; nviol=0; nident_bad=0; nskip=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     np=$((np + 1))
-    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" --pattern "$pat" \
             >/dev/null 2>&1; then
         nskip=$((nskip + 1)); continue
     fi
-    if ! pcrec_run "$PCREC" -p rx --engine=vm -fno-revdet -o "$WORKDIR/off/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -fno-revdet -o "$WORKDIR/off/gen.c" --pattern "$pat" \
             >/dev/null 2>&1; then
         # The rung compiles things replication cannot (that is its point), so
         # this is only a failure when the pattern's count is small enough for
@@ -310,9 +310,9 @@ fi
 ndfa=0; ndfa_bad=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    pcrec_run "$PCREC" -p rx -o "$WORKDIR/on/d.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx -o "$WORKDIR/on/d.c" --pattern "$pat" >/dev/null 2>&1 || continue
     grep -q '^#define RX_ENGINE "vm"$' "$WORKDIR/on/d.c" && continue
-    pcrec_run "$PCREC" -p rx -fno-revdet -o "$WORKDIR/off/d.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx -fno-revdet -o "$WORKDIR/off/d.c" --pattern "$pat" >/dev/null 2>&1 || continue
     if cmp -s "$WORKDIR/on/d.c" "$WORKDIR/off/d.c"; then
         ndfa=$((ndfa + 1))
     else

@@ -125,7 +125,7 @@ same=0; textdiff=0; symdiff=0; renamed=0; skipped=0; refused=0
 
 emit_and_build() {   # $1=pcrec  $2=outdir  $3=pattern ; same BASENAME both sides
     mkdir -p "$2"
-    "$1" -p rx -o "$2/gen.c" -- "$3" >/dev/null 2>&1 || return 1
+    "$1" -p rx -o "$2/gen.c" --pattern "$3" >/dev/null 2>&1 || return 1
     $CC $NEUT_CFLAGS -c "$2/gen.c" -o "$2/gen.o" >/dev/null 2>&1 || return 2
     # An artifact with no constant tables has no .rodata at all; objdump says
     # so on stderr. That is a legitimate shape, not a failure — but it must be

@@ -139,7 +139,7 @@ spread_row() {
     s1_want=$((s1_want + 1))
     mkdir -p "$d"
     # shellcheck disable=SC2086
-    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx $flags -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx $flags -o "$d/gen.c" --pattern "$pat" >/dev/null 2>&1; then
         bad "[DD-14.FB §10.3] could not compile the '$label' fixture '$pat'"
         s1_ok=0; return
     fi
@@ -200,7 +200,7 @@ if ! $CC -O0 $exact_san -o "$exact_d/probe" "$exact_d/probe.c" >/dev/null 2>&1; 
     exact_san=""
     asan_unavailable=1
 fi
-if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion --engine=vm -o "$exact_d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
+if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion --engine=vm -o "$exact_d/gen.c" --pattern '^(a(?1)?b)$' >/dev/null 2>&1; then
     bad "[DD-14.FB §2] could not compile the exact-fit fixture"
 # shellcheck disable=SC2086
 elif ! $CC $GENCFLAGS $exact_san -I"$exact_d" -o "$exact_d/fb" \
@@ -234,7 +234,7 @@ fi
 # =========================================================================
 d="$WORKDIR/mmap"
 mkdir -p "$d"
-if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion --engine=vm -o "$d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
+if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion --engine=vm -o "$d/gen.c" --pattern '^(a(?1)?b)$' >/dev/null 2>&1; then
     bad "[DD-14.FB §3/§10.6] could not compile '^(a(?1)?b)\$' for the reservation example"
 # shellcheck disable=SC2086
 elif ! $CC $GENCFLAGS -I"$d" -o "$d/fb" "$SCRIPT_DIR/fb_mmap_driver.c" "$d/gen.c" >"$d/cc.log" 2>&1; then

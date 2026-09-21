@@ -38,7 +38,7 @@ SAB_DOC_FIGURE="MEASURED solo 2026-09-09 at the stage-5 landing: 1763 passed / 1
 # `\p{sc=Greek}` produces under `byte` -- so the probe compiles the bare form
 # under `byte`, where the ONLY member is U+00B7 and its presence is exactly
 # the Script_Extensions contribution this row defends.
-SAB_REACH='"$PCREC" --features unicode-props -e byte -p rx -o - -- "\p{Greek}"'
+SAB_REACH='"$PCREC" --features unicode-props -e byte -p rx -o - --pattern "\p{Greek}"'
 SAB_REACH_EXPECT='Pattern: \p{Greek} */'
 SAB_REACH_POP='tests/utf8/axis12_scripts.rxt|^pattern \\p\{Greek\}|2'
 SAB_EXPECT=DETECTED

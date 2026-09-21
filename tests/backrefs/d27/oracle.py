@@ -290,7 +290,7 @@ def check_gating_perr(path, block, res):
     cmd = [PCREC_BIN]
     if feat:
         cmd += ["--features", feat]
-    cmd += ["-p", "rx", "--emit-main", "-o", "/dev/null", block.pattern]
+    cmd += ["-p", "rx", "--emit-main", "-o", "/dev/null", "--pattern", block.pattern]
     try:
         proc = subprocess.run(cmd, capture_output=True, timeout=10)
     except subprocess.TimeoutExpired:

@@ -44,7 +44,7 @@ SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the TWO both-refusable rows among tests/
 # excluded as well as walk order. Both offsets (33 and 45) are libpcre2
 # 10.46's own. A single-lookbehind pattern is refused at the same offset
 # either way and sees nothing.
-SAB_REACH='"$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o0.c" -- "^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&g))ab(?<=(?&h))\$"; "$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o1.c" -- "^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))\$"'
+SAB_REACH='"$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o0.c" --pattern "^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&g))ab(?<=(?&h))\$"; "$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o1.c" --pattern "^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))\$"'
 SAB_REACH_EXPECT="(this one is unbounded) (pattern offset 33)
 (this one is unbounded) (pattern offset 45)"
 SAB_COUNT=1

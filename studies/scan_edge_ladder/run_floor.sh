@@ -113,8 +113,8 @@ for m in 2 3 4 8; do
     # comment bytes), so this does not perturb what is measured below, only
     # what the count can see. Found 2026-09-21 (O-42): every cell here read
     # "forward edges = 0" and the run measured anyway with no way to tell.
-    $PCREC -p rx --features all -fcomments    -o "e_${fam}_$m.c" -- "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: compile failed"; RC=1; continue; }
-    $PCREC -p rx --features all -fno-scan-edge -o "n_${fam}_$m.c" -- "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: noedge compile failed"; RC=1; continue; }
+    $PCREC -p rx --features all -fcomments    -o "e_${fam}_$m.c" --pattern "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: compile failed"; RC=1; continue; }
+    $PCREC -p rx --features all -fno-scan-edge -o "n_${fam}_$m.c" --pattern "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: noedge compile failed"; RC=1; continue; }
     gcc -O2 -w -o "e_${fam}_$m" "e_${fam}_$m.c" "$HERE/bench.c" || { echo "m=$m $fam: e_ CC FAILED"; RC=1; continue; }
     gcc -O2 -w -o "n_${fam}_$m" "n_${fam}_$m.c" "$HERE/bench.c" || { echo "m=$m $fam: n_ CC FAILED"; RC=1; continue; }
     ec=$(awk '/\[OPT-5\] SCAN EDGE/{p=1;next} p && /if \(forward_state ==/{n++;p=0} END{print n+0}' "e_${fam}_$m.c")

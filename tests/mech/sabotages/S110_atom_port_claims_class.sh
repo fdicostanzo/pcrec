@@ -26,7 +26,7 @@ SAB_DOC_FIGURE="PREDICTED: the corpus RED on octal_class.rxt; registry RED on ch
 # would leave this row scoring on `reject` and `registry` alone, neither of
 # which can see a class-position semantic change. The count is printed every
 # run, so erosion is visible before it reaches the floor.
-SAB_REACH='"$PCREC" --features backrefs -p rx -o "$REACH_TMP/o0.c" -- "[\\1]" && echo REACH-CLASS-PORT-ACCEPTS'
+SAB_REACH='"$PCREC" --features backrefs -p rx -o "$REACH_TMP/o0.c" --pattern "[\\1]" && echo REACH-CLASS-PORT-ACCEPTS'
 SAB_REACH_EXPECT="REACH-CLASS-PORT-ACCEPTS"
 SAB_REACH_POP="tests/backrefs/octal_class.rxt|^(m|n) |20"
 SAB_COUNT=1

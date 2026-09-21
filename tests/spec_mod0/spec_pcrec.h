@@ -182,7 +182,7 @@ static inline SpecPcrecRun spec_pcrec_compile(const char *path, const char *feat
     argv[k++] = (char *)"--features"; argv[k++] = (char *)features;
     if (extra_flag && *extra_flag) argv[k++] = (char *)extra_flag;
     argv[k++] = (char *)"-o"; argv[k++] = (char *)"-";
-    argv[k++] = (char *)"--"; argv[k++] = (char *)pat;
+    argv[k++] = (char *)"--pattern"; argv[k++] = (char *)pat;
     argv[k] = NULL;
     return spec_pcrec_run(path, argv);
 }

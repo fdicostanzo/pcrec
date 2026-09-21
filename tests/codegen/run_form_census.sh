@@ -144,7 +144,7 @@ stamp() {
 
 while IFS= read -r pat; do
     # ---- DEFAULT (auto) engine ------------------------------------------
-    if pcrec_run "$PCREC" --features all -p rx -o "$art" -- "$pat" >/dev/null 2>&1; then
+    if pcrec_run "$PCREC" --features all -p rx -o "$art" --pattern "$pat" >/dev/null 2>&1; then
         eng="$(stamp "$art" RX_ENGINE)"
         [ -n "$eng" ] && echo "D:RX_ENGINE=$eng"
         scan="$(stamp "$art" RX_DFA_SCAN)"
@@ -203,7 +203,7 @@ while IFS= read -r pat; do
     fi
 
     # ---- FORCED --engine=vm, the WIDER population for VM-only stamps ---
-    if pcrec_run "$PCREC" --features all --engine=vm -p rx -o "$art" -- "$pat" >/dev/null 2>&1; then
+    if pcrec_run "$PCREC" --features all --engine=vm -p rx -o "$art" --pattern "$pat" >/dev/null 2>&1; then
         vmpf="$(stamp "$art" RX_VM_PREFILTER)"
         [ -n "$vmpf" ] && echo "V:RX_VM_PREFILTER=$vmpf"
         cf="$(stamp "$art" RX_VM_CLS_FOLDS)"
@@ -378,7 +378,7 @@ synthetic_table_witness() {   # synthetic_table_witness <pattern> <extra-flags> 
     echo "census: SYNTHETIC WITNESS '$pat' (flags: ${flags:-none}) for RX_DFA_TABLE \"$want\"..."
     local wart="$WORKDIR/witness_$want.c"
     # shellcheck disable=SC2086
-    if ! pcrec_run "$PCREC" -p rx --no-captures $flags -o "$wart" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --no-captures $flags -o "$wart" --pattern "$pat" >/dev/null 2>&1; then
         bad "synthetic witness '$pat' (flags: ${flags:-none}) failed to compile at all — the witness itself is broken, not merely unreachable"
         return
     fi

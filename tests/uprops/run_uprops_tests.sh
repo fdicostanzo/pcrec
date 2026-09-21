@@ -111,7 +111,7 @@ if [ -z "${UPROPS_NAMES:-}" ]; then
 fi
 compiles() {    # compiles <spelling> — with module unicode-props enabled
     "$TIMEOUT_BIN" 30 "$PCREC" --features unicode-props -p rx \
-        -o "$WORKDIR/n.c" -- "\\p{$1}" >/dev/null 2>&1
+        -o "$WORKDIR/n.c" --pattern "\\p{$1}" >/dev/null 2>&1
 }
 cat_n=0
 for n in $CATEGORIES; do
@@ -180,7 +180,7 @@ else
         : > "$WORKDIR/pcrec-$enc.txt"
         for n in $NAMES; do
             if ! "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -e "$enc" $extra \
-                    -p rx -o "$WORKDIR/g.c" -- "\\p{$n}" >/dev/null 2>&1; then
+                    -p rx -o "$WORKDIR/g.c" --pattern "\\p{$n}" >/dev/null 2>&1; then
                 bad "$enc: \\p{$n} does not compile (the differential cannot run on it)"
                 continue
             fi
@@ -226,7 +226,7 @@ sweep_one() {   # sweep_one <enc> <pattern> <outfile>
     local enc="$1" pat="$2" out="$3" extra="" maxcp=0xFF
     [ "$enc" = "utf8" ] && { extra="-fno-premul-table"; maxcp=0x10FFFF; }
     "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -e "$enc" $extra \
-        -p rx -o "$WORKDIR/inv.c" -- "$pat" >/dev/null 2>&1 || return 1
+        -p rx -o "$WORKDIR/inv.c" --pattern "$pat" >/dev/null 2>&1 || return 1
     gen_cc "uprops inv $enc $pat" "$CC" -O1 -std=gnu11 -I "$WORKDIR" \
         -DUPROPS_ARTIFACT='"inv.c"' -DUPROPS_MAXCP=$maxcp \
         -o "$WORKDIR/invsweep" "$SCRIPT_DIR/uprops_sweep.c" >/dev/null 2>&1 || return 1
@@ -239,7 +239,7 @@ sweep_one_i() { # sweep_one_i <enc> <pattern> <outfile>
     local enc="$1" pat="$2" out="$3" extra="" maxcp=0xFF
     [ "$enc" = "utf8" ] && { extra="-fno-premul-table"; maxcp=0x10FFFF; }
     "$TIMEOUT_BIN" 60 "$PCREC" --features unicode-props -i -e "$enc" $extra \
-        -p rx -o "$WORKDIR/inv.c" -- "$pat" >/dev/null 2>&1 || return 1
+        -p rx -o "$WORKDIR/inv.c" --pattern "$pat" >/dev/null 2>&1 || return 1
     gen_cc "uprops inv -i $enc $pat" "$CC" -O1 -std=gnu11 -I "$WORKDIR" \
         -DUPROPS_ARTIFACT='"inv.c"' -DUPROPS_MAXCP=$maxcp \
         -o "$WORKDIR/invsweep" "$SCRIPT_DIR/uprops_sweep.c" >/dev/null 2>&1 || return 1

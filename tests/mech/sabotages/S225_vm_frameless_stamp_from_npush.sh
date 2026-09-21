@@ -36,7 +36,7 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 3, solo mech run, tree 26644f50
 # linked-recursive-call witness compiles to a VM program, reaches BOTH the
 # has_push definition and the npush pre-pass count, and correctly stamps
 # FRAMELESS 0 (it pushes) on the default axis.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "^(a(?1)?b)$" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && echo REACH-LINKED-CALL-PUSHES'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "^(a(?1)?b)$" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && echo REACH-LINKED-CALL-PUSHES'
 SAB_REACH_EXPECT="REACH-LINKED-CALL-PUSHES"
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);'

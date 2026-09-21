@@ -217,7 +217,7 @@ fi
 # bound are now all denied for this shape.
 mkdir -p "$WORKDIR/slow"
 if ! pcrec_run "$PCREC" -p rx -fno-revdet -fno-counter -fno-length-prune \
-        -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+        -o "$WORKDIR/slow/gen.c" --pattern '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
 elif [ "$(wc -l < "$WORKDIR/slow/gen.c")" -lt 1000 ]; then
     # A SIZE FLOOR, so the next time a strategy quietly absorbs this shape the
@@ -284,7 +284,7 @@ fi
 mkdir -p "$WORKDIR/slowrun"
 slow_subj="$(printf 'a%.0s' $(seq 200))"
 if ! pcrec_run "$PCREC" -p rx --engine=vm --step-budget=400000000 \
-        -o "$WORKDIR/slowrun/gen.c" -- '(a*)*b' >/dev/null 2>&1 \
+        -o "$WORKDIR/slowrun/gen.c" --pattern '(a*)*b' >/dev/null 2>&1 \
    || ! gen_cc "the run positive control" "$CC" -O1 -std=gnu11 \
         -I "$WORKDIR/slowrun" -o "$WORKDIR/slowrun/t" \
         "$ROOT_DIR/tests/vm/vm_driver.c" "$WORKDIR/slowrun/gen.c"; then
@@ -356,7 +356,7 @@ fi
 
 # ---- 4. a normal compile is untouched ------------------------------------
 mkdir -p "$WORKDIR/fast"
-if pcrec_run "$PCREC" -p rx -o "$WORKDIR/fast/gen.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/fast/gen.c" --pattern 'a(b|c)+d' >/dev/null 2>&1 \
    && gen_cc "a normal artifact" "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
              -c -o /dev/null "$WORKDIR/fast/gen.c"; then
     ok "gen-timeout: an ordinary generated artifact compiles inside the budget with the wrapper in place"

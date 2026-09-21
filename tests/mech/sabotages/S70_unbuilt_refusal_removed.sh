@@ -106,7 +106,7 @@ SAB_DOC_FIGURE="RE-MEASURED 2026-08-25 after the row scored UNDETECTED. SUPERSED
 # TO TWO SPELLINGS OF ONE MODULE — misc is the last unbuilt RK_ESC module;
 # the reject file's comment carries the same flag and names the moment to
 # re-decide (when a future module retires a misc row).
-SAB_REACH='"$PCREC" --features misc -p rx -o "$REACH_TMP/q.c" -- "\\c"; "$PCREC" --features misc -p rx -o "$REACH_TMP/r.c" -- "\\R"'
+SAB_REACH='"$PCREC" --features misc -p rx -o "$REACH_TMP/q.c" --pattern "\\c"; "$PCREC" --features misc -p rx -o "$REACH_TMP/r.c" --pattern "\\R"'
 SAB_REACH_EXPECT="module 'misc' is enabled but \\c is not implemented yet
 module 'misc' is enabled but \\R is not implemented yet"
 SAB_REACH_POP="tests/reject/run_reject_tests.sh|^reject_gated +misc +'.c'|1

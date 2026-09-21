@@ -225,9 +225,9 @@ for i in "${!witness_names[@]}"; do
     name="${witness_names[$i]}"; pat="${witness_pats[$i]}"
     d="$WORK/$name"; mkdir -p "$d/on" "$d/off"
 
-    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/on/a.c"  -- "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/on/a.c"  --pattern "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern"; continue; }
-    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/off/a.c" -fno-scan-edge -- "$pat" >/dev/null 2>&1 || {
+    pcrec_run "$PCREC" --features all -fcomments -p rx -o "$d/off/a.c" -fno-scan-edge --pattern "$pat" >/dev/null 2>&1 || {
         bad "$name: pcrec refused the pattern under -fno-scan-edge"; continue; }
 
     # THE VACUITY GUARD. The witness must reach the mechanism.

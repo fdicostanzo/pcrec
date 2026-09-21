@@ -168,12 +168,12 @@ one_pattern() {
     # is selected at all) and it turns the DFA prefilter OFF, so the comparison
     # is of the VM's own derivation rather than of a window the DFA handed both
     # sides (R21 E-6).
-    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-revdet -o "$d/pb.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-revdet -o "$d/pb.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_b"; then
         # NOT a skip. The denied build IS the ground truth, so a pattern whose
         # ground truth cannot be built is a hole in the instrument, and the most
@@ -248,7 +248,7 @@ if [ "${1:-}" = "--corpus" ]; then
     # the corpus selects this rung".
     . "$ROOT_DIR/tests/lib/table.sh"
     probe="$WORKDIR/probe.ir"
-    if ! pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a)b' > "$probe" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '(a)b' > "$probe" 2>/dev/null; then
         echo "rungdiff: could not produce a probe --emit-ir listing" >&2; exit 2
     fi
     fact_i="$(table_col_index "$probe" fact summary)" || exit 2
@@ -257,7 +257,7 @@ if [ "${1:-}" = "--corpus" ]; then
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
-        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir --pattern "$cp" 2>/dev/null \
              | awk -F'\t' -v ki="$fact_i" -v vi="$val_i" -v want="rungs" '
                  /^#section summary$/ { s = 1; next }
                  /^#section /         { s = 0; next }

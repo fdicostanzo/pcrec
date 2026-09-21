@@ -146,7 +146,7 @@ nc_case() {
     local d="$WORKDIR/nc$grp$RANDOM"
     mkdir -p "$d"
     if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
-            -fno-splice-calls -o "$d/gen.c" -- "$pat" 2>"$d/err"; then
+            -fno-splice-calls -o "$d/gen.c" --pattern "$pat" 2>"$d/err"; then
         bad "[$label] --no-captures build refused: $(head -1 "$d/err")"
         return
     fi
@@ -189,7 +189,7 @@ nc_case() {
     local d2="$WORKDIR/ncS$grp$RANDOM"
     mkdir -p "$d2"
     if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
-            -o "$d2/gen.c" -- "$pat" 2>"$d2/err"; then
+            -o "$d2/gen.c" --pattern "$pat" 2>"$d2/err"; then
         bad "[$label] the SPLICED --no-captures build refused: $(head -1 "$d2/err")"
         return
     fi
@@ -223,7 +223,7 @@ nc_case "no-captures two-hop"  '^(a(?3))(b)((c))$'    3 "acbc" "match 0 4"
 DEPTH_PAT='^(a(?1)?b)$'
 d="$WORKDIR/depth"
 mkdir -p "$d"
-if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --emit-main -o "$d/gen.c" -- "$DEPTH_PAT" \
+if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --emit-main -o "$d/gen.c" --pattern "$DEPTH_PAT" \
         2>"$d/err"; then
     bad "[depth] $DEPTH_PAT does not compile: $(head -1 "$d/err")"
 else
@@ -293,7 +293,7 @@ fi
 #      the both-directions evidence that cell 2 is the LINKAGE's answer rather
 #      than the construct having quietly stopped being VM-only.
 dfa_out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
-           -o "$WORKDIR/dfa.c" -- '(a(?1)?b)' 2>&1)"
+           -o "$WORKDIR/dfa.c" --pattern '(a(?1)?b)' 2>&1)"
 case "$dfa_out" in
     *"(?1"*|*"recursion"*)
         ok "[engine] --engine=dfa on the RECURSIVE '(a(?1)?b)' refuses naming the construct: $dfa_out" ;;
@@ -301,20 +301,20 @@ case "$dfa_out" in
         bad "[engine] --engine=dfa on '(a(?1)?b)' answered '$dfa_out', which does not name the construct" ;;
 esac
 if "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
-        -o "$WORKDIR/dfa2.c" -- '(a)(?1)' 2>"$WORKDIR/dfa2.err"; then
+        -o "$WORKDIR/dfa2.c" --pattern '(a)(?1)' 2>"$WORKDIR/dfa2.err"; then
     ok "[engine] the SPLICEABLE '(a)(?1)' COMPILES on --engine=dfa: its callee is not in a cycle, so the inlined machine is exact (design §6.3, §8.3)"
 else
     bad "[engine] the spliceable '(a)(?1)' was REFUSED on --engine=dfa: $(head -1 "$WORKDIR/dfa2.err")"
 fi
 dfa_out3="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
-            -fno-splice-calls -o "$WORKDIR/dfa3.c" -- '(a)(?1)' 2>&1)"
+            -fno-splice-calls -o "$WORKDIR/dfa3.c" --pattern '(a)(?1)' 2>&1)"
 case "$dfa_out3" in
     *"(?1"*|*"recursion"*)
         ok "[engine] the CONTROL for it: -fno-splice-calls puts the same pattern back to a refusal that names the construct: $dfa_out3" ;;
     *)
         bad "[engine] -fno-splice-calls '(a)(?1)' on --engine=dfa answered '$dfa_out3', so the cell above is not evidence about the LINKAGE" ;;
 esac
-if "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" -- '(a)(?1)' 2>/dev/null; then
+if "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" --pattern '(a)(?1)' 2>/dev/null; then
     ok "[engine] the CONTROL: the same pattern compiles on the default engine, so the refusals above are about the ENGINE and not about the construct having stopped being accepted"
 else
     bad "[engine] '(a)(?1)' does not compile on the default engine — the refusals above prove nothing"
@@ -356,7 +356,7 @@ run_arm() {
     local d="$WORKDIR/arm$RANDOM$RANDOM"
     mkdir -p "$d"
     # shellcheck disable=SC2086
-    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" --pattern "$pat" \
             2>"$d/err"; then
         echo "COMPILE-FAIL"; sed 's/^/    /' "$d/err" >&2; return 1
     fi

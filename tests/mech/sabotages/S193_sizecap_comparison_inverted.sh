@@ -45,7 +45,7 @@ SAB_DOC_FIGURE="CANONICAL RUN 2026-08-29 (run_sabotage_matrix.sh S193 at 48e9a90
 # and still exceeds the 1 MB total cap naturally (MEASURED: refuses at
 # 1,063,394 B). tests/resource's §1b witnesses moved the same way in the
 # same battery's fix wave.
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/big.c" -- "(?:[a-z][0-9]){0,8000}"' 
+SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/big.c" --pattern "(?:[a-z][0-9]){0,8000}"' 
 SAB_REACH_EXPECT="bytes of emitted C source"
 SAB_REACH_POP="tests/resource/run_resource_tests.sh|size_moved=|1
 tests/resource/run_resource_tests.sh|bytes of emitted C source|1"

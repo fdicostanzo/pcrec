@@ -14,7 +14,7 @@ SAB_DOC_FIGURE="measured MOD-0.4c: 1 reject failure (the a(*CR) manifest pin); t
 # and would tell us nothing. If the verbs module ever BUILDS these names,
 # the refusal disappears and this row needs a new witness rather than a
 # verdict.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "a(*UTF)"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "a(*UTF)"'
 SAB_REACH_EXPECT="(*VERB) not recognized or malformed (pattern offset 1)"
 SAB_COUNT=1
 SAB_BEFORE="    if ((v->forms & VF_ATSTART) && at != 0)

@@ -223,7 +223,7 @@ typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 static VClass compile_verdict(const char *pcrec_path, const char *pat)
 {
     char *argv[] = { (char *)pcrec_path, (char *)"--features", (char *)"modifiers",
-                      (char *)"-o", (char *)"-", (char *)"--", (char *)pat, NULL };
+                      (char *)"-o", (char *)"-", (char *)"--pattern", (char *)pat, NULL };
     PcrecRun r = run_pcrec(pcrec_path, argv);
     if (!r.ran) { spec_fail("compile_verdict: fork/exec failed for '%s'", pat); return VC_ERROR; }
     if (r.timed_out) { spec_fail("compile_verdict: pcrec timed out on '%s'", pat); return VC_ERROR; }

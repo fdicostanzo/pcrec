@@ -95,7 +95,7 @@ build_one() {   # build_one <name> <pattern-text> <workdir> [extra pcrec flags..
     local name="$1" pat="$2" d="$3"; shift 3
     mkdir -p "$d"
     printf '%s' "$pat" > "$d/pattern.txt"
-    pcrec_run "$PCREC" -p rx --features all "$@" -o "$d/gen.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --features all "$@" -o "$d/gen.c" --pattern "$pat" \
         >"$d/pcrec.log" 2>&1
 }
 

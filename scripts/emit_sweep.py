@@ -406,7 +406,7 @@ def compile_stream_c(pcrec_bin, pattern, timeout, engine=None):
     # derived from -o, so writing a.c vs b.c reads 100% movers with an innocent compiler
     # (the -o basename trap, fifth instance: dd8_report.md §3.1). Vary NOTHING the artifact
     # can observe; the composition arm likewise writes fixture-named files into fresh dirs.
-    argv += ["-o", "-", "--", pattern]
+    argv += ["-o", "-", "--pattern", pattern]
     rc, out, err = run(argv, timeout)
     ok = rc == 0
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
@@ -414,17 +414,17 @@ def compile_stream_c(pcrec_bin, pattern, timeout, engine=None):
 
 def compile_stream_ir(pcrec_bin, pattern, timeout):
     argv = [pcrec_bin, "--features", "all", "--engine=vm", "--emit-ir",
-            "--", pattern]
+            "--pattern", pattern]
     rc, out, err = run(argv, timeout)
     ok = rc == 0
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
 
 
 def run_composition(pcrec_bin, rxt_file, out_root, tag, timeout):
-    """--source FILE -o <fresh dir>; returns (rc, {filename: bytes})."""
+    """FILE operand -o <fresh dir> [REL-1.10]; returns (rc, {filename: bytes})."""
     outdir = os.path.join(out_root, tag)
     os.makedirs(outdir, exist_ok=True)
-    argv = [pcrec_bin, "--features", "all", "--source", rxt_file,
+    argv = [pcrec_bin, "--features", "all", rxt_file,
             "-o", outdir]
     rc, out, err = run(argv, timeout)
     artifacts = {}

@@ -651,7 +651,7 @@ def build_driver_template(workdir):
     tmpl_dir = os.path.join(workdir, "_template")
     os.makedirs(tmpl_dir, exist_ok=True)
     gen_c = os.path.join(tmpl_dir, "gen.c")
-    r = subprocess.run([PCREC, "-p", "rx", "-o", gen_c, "--", "a"],
+    r = subprocess.run([PCREC, "-p", "rx", "-o", gen_c, "--pattern", "a"],
                         capture_output=True, text=True, timeout=PCREC_TIMEOUT)
     if r.returncode != 0:
         sys.exit("fuzz.py: failed to build driver template (pcrec):\n" + r.stderr)
@@ -708,7 +708,7 @@ def compile_with_pcrec(pattern, tmp_dir):
     gen_c = os.path.join(tmp_dir, "gen.c")
     try:
         r = subprocess.run([PCREC, "-p", "rx", "--step-budget=%d" % STEP_BUDGET,
-                            "-o", gen_c, "--", pattern],
+                            "-o", gen_c, "--pattern", pattern],
                             capture_output=True, text=True, timeout=PCREC_TIMEOUT)
     except subprocess.TimeoutExpired:
         return False, "PCREC-TIMEOUT: compiling pattern exceeded %ds" % PCREC_TIMEOUT

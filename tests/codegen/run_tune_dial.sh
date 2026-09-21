@@ -183,7 +183,7 @@ emit() {   # emit <flags...> -- <pattern>   ->  writes $OUT, returns pcrec's rc
         if [ "$1" = "--" ]; then shift; p="$1"; break; fi
         args+=("$1"); shift
     done
-    pcrec_run "$PCREC" "${args[@]}" -p rx -o "$OUT" -- "$p" >"$WORKDIR/err.txt" 2>&1
+    pcrec_run "$PCREC" "${args[@]}" -p rx -o "$OUT" --pattern "$p" >"$WORKDIR/err.txt" 2>&1
 }
 
 # ---------------------------------------------------------------------------

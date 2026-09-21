@@ -91,7 +91,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 emit() { # emit <outfile> <pattern> [extra args...]
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --features all "$@" -o "$out" -- "$pat" >/dev/null 2>&1
+    pcrec_run "$PCREC" -p rx --features all "$@" -o "$out" --pattern "$pat" >/dev/null 2>&1
 }
 
 # `goto *` INSIDE THE VM PROGRAM'S OWN FUNCTION — see the header. The region
@@ -207,7 +207,7 @@ art="$WORKDIR/a.$$.c"
 trap 'rm -f "$art"' EXIT
 one() { # one <axis-label> <extra pcrec args...>
     local ax="$1"; shift
-    if ! pcrec_run "$PCREC" --features all -p rx "$@" -o - -- "$pat" > "$art" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx "$@" -o - --pattern "$pat" > "$art" 2>/dev/null; then
         echo "REFUSED-$ax"; return
     fi
     # ONE `awk` per artifact, and its `goto *` count is SCOPED to the VM

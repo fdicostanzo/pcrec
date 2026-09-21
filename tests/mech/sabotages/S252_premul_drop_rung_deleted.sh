@@ -34,7 +34,7 @@ SAB_COUNT=1
 # rung rescues it (balanced -- the artifact that is refused at balanced
 # before either rung, and rescued by BOTH rungs together after)? Read as
 # the RX_ENGINE_SEL stamp the rung is a co-writer of.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
 SAB_BEFORE='            const bool premul_eligible =
                 cx.size_cap_refused &&

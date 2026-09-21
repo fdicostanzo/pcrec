@@ -105,7 +105,7 @@ build() {   # build <name> <extra pcrec flags...>
     local d="$WORKDIR/$name"
     mkdir -p "$d"
     pcrec_run "$PCREC" -p rx --engine=vm $SPECIMEN_FLAGS "$@" \
-        -o "$d/gen.c" -- "$SPECIMEN" >"$d/pcrec.log" 2>&1
+        -o "$d/gen.c" --pattern "$SPECIMEN" >"$d/pcrec.log" 2>&1
 }
 
 if ! build tiered; then
@@ -192,7 +192,7 @@ else
     #   dfa | vm-one-tier | vm-tiered | mismatch-<why> | refused
     classify() {
         local pat="$1" d="$2"
-        if ! pcrec_run "$PCREC" -p rx --features all -o "$d/g.c" -- "$pat" \
+        if ! pcrec_run "$PCREC" -p rx --features all -o "$d/g.c" --pattern "$pat" \
                 >/dev/null 2>&1; then
             echo refused; return
         fi
@@ -583,7 +583,7 @@ echo "-- §6: the multi-group witness, spans over a dense sweep --"
 MG='((a)|(aa))+b'
 MGD="$WORKDIR/multigroup"
 mkdir -p "$MGD"
-if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$MGD/gen.c" -- "$MG" >"$MGD/pcrec.log" 2>&1; then
+if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$MGD/gen.c" --pattern "$MG" >"$MGD/pcrec.log" 2>&1; then
     bad "§6: could not compile the multi-group witness '$MG': $(head -3 "$MGD/pcrec.log")"
 else
     MGFF="$(stamp "$MGD/gen.c" RX_FAST_FRAMES)"

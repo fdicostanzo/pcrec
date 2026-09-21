@@ -22,7 +22,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="p_class negates before folding, so a negated caseless class is closed under case swapping in the wrong direction and [^k] under -i matches K and U+212A"
 SAB_DOC_FIGURE="MEASURED solo 2026-09-08 at the stage-4 landing: 215 passed / 22 FAILED over tests/utf8/fold.rxt + axis06_caseless_fold.rxt (237/0 clean). The design's own discriminating cell is [^k] on U+212A."
-SAB_REACH='"$PCREC" -i -e utf8 -p rx -o - -- "[^k]"'
+SAB_REACH='"$PCREC" -i -e utf8 -p rx -o - --pattern "[^k]"'
 # [mechreach fix, 2026-09-09] THE OLD EXPECTATION WAS NEVER REACHABLE. It
 # read 'Pattern:  */' (an EMPTY pattern between the colon and the comment
 # close), but emit_pattern_comment (src/gen/emit_dfa.c) always writes the

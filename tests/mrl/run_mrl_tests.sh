@@ -57,12 +57,12 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]   -- the DEFAULT routing (ships)
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 gen_vm() {   # gen_vm <out> <pattern> [args...]  -- --engine=vm (no prefilter)
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -452,7 +452,7 @@ if gen mixed '(a{2,4}){2,6}b(c{2,4}){2,6}'; then
     # present-but-empty section is what the old `grep -q '^PRUNING'` could
     # not tell from a working one. This pattern has two clamping quantifiers.
     mrl_ir="$WORKDIR/pruning.ir"
-    if pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' \
+    if pcrec_run "$PCREC" --engine=vm --emit-ir --pattern '(a{2,4}){2,6}b(c{2,4}){2,6}' \
         > "$mrl_ir" 2>/dev/null \
        && nprune="$(table_field "$mrl_ir" pruning kind)" \
        && [ "$(printf '%s\n' "$nprune" | grep -cx clamped | tr -d ' ')" -ge 1 ]; then
@@ -481,10 +481,10 @@ while IFS= read -r cp; do
     # `#include "<name>.h"` line carries it, so comparing `on.c` against
     # `off.c` would report a difference the pass did not make.
     mkdir -p "$WORKDIR/bi/on" "$WORKDIR/bi/off"
-    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/on/g.c" -- "$cp" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/on/g.c" --pattern "$cp" >/dev/null 2>&1; then
         nref=$((nref + 1)); continue
     fi
-    pcrec_run "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" -- "$cp" \
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" --pattern "$cp" \
         >/dev/null 2>&1 || { nref=$((nref + 1)); continue; }
     if has_clamp "$WORKDIR/bi/off/g.c" || grep -q 'RX_PRUNE_' "$WORKDIR/bi/off/g.c"; then
         nviol=$((nviol + 1))

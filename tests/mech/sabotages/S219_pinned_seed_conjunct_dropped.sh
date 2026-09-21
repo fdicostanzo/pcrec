@@ -124,7 +124,7 @@ SAB_DOC_FIGURE="MEASURED 2026-09-03 (r51fix item 6, solo mech run, tree 26644f50
 # derivation above and §7 item 10's instrumented sweep both hold at zero.
 # Renamed from the row's original REACH-P3-SHAPES-STILL-COMPILE tag to say
 # what it actually demonstrates, per r51fix ruling R1.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" -- "\ba|c*" && grep -q "RX_DFA_START" "$REACH_TMP/p.c" && echo REACH-SEED-CONJUNCT-LOOP-EXERCISED'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "\bx*" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && "$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/p.c" --pattern "\ba|c*" && grep -q "RX_DFA_START" "$REACH_TMP/p.c" && echo REACH-SEED-CONJUNCT-LOOP-EXERCISED'
 SAB_REACH_EXPECT="REACH-SEED-CONJUNCT-LOOP-EXERCISED"
 SAB_COUNT=1
 SAB_BEFORE='    /* P3 — every LIVE seed state, and liveness first. */

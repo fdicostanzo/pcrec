@@ -129,8 +129,8 @@ def main():
     for idx, pat in enumerate(all_patterns):
         bout = os.path.join(BDIR, f"p{idx}.c")
         fout = os.path.join(FDIR, f"p{idx}.c")
-        argv_b = [BASELINE_PCREC, "-p", "rx", "-o", bout, "--", pat]
-        argv_f = [FIXED_PCREC, "-p", "rx", "-o", fout, "--", pat]
+        argv_b = [BASELINE_PCREC, "-p", "rx", "-o", bout, "--pattern", pat]
+        argv_f = [FIXED_PCREC, "-p", "rx", "-o", fout, "--pattern", pat]
         # subprocess needs bytes args; Python's subprocess accepts bytes in argv on POSIX
         try:
             rb = subprocess.run(argv_b, capture_output=True, timeout=30)

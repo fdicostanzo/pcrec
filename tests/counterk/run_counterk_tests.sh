@@ -59,12 +59,12 @@ inc() { echo "INCONCLUSIVE: $1"; inconc=$((inconc + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    pcrec_run --hostile "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run --hostile "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 gen_default() {   # like gen but WITHOUT --engine=vm (the shipped routing)
     local out="$1" pat="$2"; shift 2
-    pcrec_run --hostile "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run --hostile "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -156,9 +156,9 @@ mkdir -p "$WORKDIR/ia" "$WORKDIR/ib"
 ident_ok=1; ident_n=0
 for p in '((a)|ab){0,7}c' '((a)|ab){0,3}c' '((a)|ab){7}c' '((a)|ab){2,5}c' \
          '((a)|b){0,6}c' '(a?){0,4}b' '((a)|bc){0,7}d'; do
-    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- "$p" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" --pattern "$p" >/dev/null 2>&1 \
         || { bad "byte-identity: '$p' did not compile"; ident_ok=0; continue; }
-    pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- "$p" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" --pattern "$p" >/dev/null 2>&1 \
         || { bad "byte-identity: '$p' did not compile denied"; ident_ok=0; continue; }
     ident_n=$((ident_n + 1))
     if ! cmp -s "$WORKDIR/ia/g.c" "$WORKDIR/ib/g.c"; then
@@ -171,8 +171,8 @@ done
 
 # ...and the other side of the boundary, which is what makes the row above a
 # boundary rather than a blanket claim.
-if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1 \
-   && pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" --pattern '((a)|ab){0,8}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" --pattern '((a)|ab){0,8}c' >/dev/null 2>&1; then
     cmp -s "$WORKDIR/ia/g.c" "$WORKDIR/ib/g.c" \
         && bad "§8.5 cell 5: at count == K the emissions are IDENTICAL — the loop should run (R25 E3's strictness)" \
         || ok "§8.5 cell 5 boundary: at count == K the emissions DIFFER — byte-identity holds at K > count and nowhere else"
@@ -282,7 +282,7 @@ fi
 # listing, which the header summary, a role string and a prose sentence can
 # all satisfy. It is now the `rungs` section's `kind` column, matched whole.
 ck_ir="$WORKDIR/rung_counter.ir"
-if pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' > "$ck_ir" 2>/dev/null \
+if pcrec_run "$PCREC" -p rx --engine=vm --emit-ir --pattern '((a)|ab){0,12}c' > "$ck_ir" 2>/dev/null \
    && ck_kinds="$(table_field "$ck_ir" rungs kind)" \
    && printf '%s\n' "$ck_kinds" | grep -qx counter; then
     ok "§8.3: --emit-ir's rungs section names the counter rung for a selecting quantifier"
@@ -338,7 +338,7 @@ K32_SECS="${K32_SECS:-60}"
 K32_MEM="${K32_MEM:-256m}"   # measured 112 MB peak
 k32out="$WORKDIR/k32.c"
 rm -f "$k32out"
-k32log="$("$ROOT_DIR/scripts/watchdog" -l "compile K32 cell" -s "$K32_SECS" -c "$K32_CPU" -m "$K32_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$k32out" '((a)|ab){4000}c' 2>&1)"   # [K37]: the bound (watchdog) and the invocation share ONE line so the textual check can see both
+k32log="$("$ROOT_DIR/scripts/watchdog" -l "compile K32 cell" -s "$K32_SECS" -c "$K32_CPU" -m "$K32_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx -o "$k32out" '((a)|ab){4000}c' 2>&1)"   # [K37]: the bound (watchdog) and the invocation share ONE line so the textual check can see both
 k32rc=$?
 case $k32rc in
     0) ok "K32: '((a)|ab){4000}c' compiles within ${K32_CPU}s CPU / $K32_MEM — the quadratic prefilter construction the pattern is filed for has not regressed past this pin" ;;

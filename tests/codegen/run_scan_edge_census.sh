@@ -139,7 +139,7 @@ for row in "${MANIFEST[@]}"; do
         continue
     fi
 
-    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" -- "$pat" >"$TMP/err" 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" --pattern "$pat" >"$TMP/err" 2>&1; then
         bad "'$pat' failed to compile: $(head -1 "$TMP/err")"
         continue
     fi
@@ -169,7 +169,7 @@ done
 #     that is where precondition (8) still applies, and it is the half of the
 #     STEP 1 census that was misread.
 for pat in '\Bfoo\B' '\bfoo\B'; do
-    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" -- "$pat" >/dev/null 2>&1 || { bad "'$pat' failed to compile"; continue; }
+    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/a.c" --pattern "$pat" >/dev/null 2>&1 || { bad "'$pat' failed to compile"; continue; }
     if [ "$(grep -c 'RX_DFA_PREFILTER "offset-set-bounded"' "$TMP/a.c")" -ne 1 ]; then
         bad "'$pat' no longer takes an offset-set prefilter -- the census's own hazard witness moved"
         continue
@@ -221,7 +221,7 @@ p1=0; p2=0; p3=0; npat=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     npat=$((npat+1))
-    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/p.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/p.c" --pattern "$pat" >/dev/null 2>&1 || continue
     grep -q 'RX_DFA_PREFILTER "offset-set' "$TMP/p.c" || continue
     p1=$((p1+1))
     grep -q 'rx_forward_seed_state' "$TMP/p.c" || continue

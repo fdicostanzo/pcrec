@@ -142,7 +142,7 @@ SAB_DOC_FIGURE="[M5.0 stage 3] STILL UNREACHED, for a STRUCTURAL reason (see SAB
 # K53's territory (docs/dev/known_issues.md) and is a SEPARATE obstacle from
 # the one this row is about; raising them here keeps the probe measuring the
 # rung rather than the size.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 --max-emit-bytes=20000000 --max-emit-code-bytes=20000000 -p rx -o - -- "((\p{Ll})|1){3}!" 2>/dev/null'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 --max-emit-bytes=20000000 --max-emit-code-bytes=20000000 -p rx -o - --pattern "((\p{Ll})|1){3}!" 2>/dev/null'
 SAB_REACH_EXPECT="#define RX_VM_RUNGS 0x8u"
 # (2) DOES THIS ROW'S OWN DETECTOR CARRY SUCH A PATTERN? The harness target is
 # what would go red, so a live compiler with no `\p` pattern in this file

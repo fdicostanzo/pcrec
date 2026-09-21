@@ -159,7 +159,7 @@ def main():
         p60_c = os.path.join(tmp_dir, f"p{idx}_60.c")
         p60_bin = os.path.join(tmp_dir, f"p{idx}_60.bin")
 
-        rx_argv = [PCREC, "-p", "rx", "-o", rx_c, "--", pat]
+        rx_argv = [PCREC, "-p", "rx", "-o", rx_c, "--pattern", pat]
         try:
             rr = subprocess.run(rx_argv, capture_output=True, timeout=TIMEOUT_S)
         except subprocess.TimeoutExpired:
@@ -169,7 +169,7 @@ def main():
         if os.path.exists(rx_c):
             os.remove(rx_c)
 
-        p60_argv = [PCREC, "-p", P60, "-o", p60_c, "--", pat]
+        p60_argv = [PCREC, "-p", P60, "-o", p60_c, "--pattern", pat]
         try:
             rp = subprocess.run(p60_argv, capture_output=True, timeout=TIMEOUT_S)
         except subprocess.TimeoutExpired:

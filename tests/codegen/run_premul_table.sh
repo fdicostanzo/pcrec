@@ -372,7 +372,7 @@ while IFS='~' read -r pat want why; do
     [ -n "${pat:-}" ] || continue
     wit_n=$((wit_n + 1))
     f="$WORKDIR/w$wit_n.c"
-    if ! pcrec_run "$PCREC" -p rx --features all --no-captures -o "$f" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --features all --no-captures -o "$f" --pattern "$pat" >/dev/null 2>&1; then
         bad "[witness] '$pat' did not compile — this row has stopped testing what it names"
         continue
     fi
@@ -401,7 +401,7 @@ echo "== [OPT-3] §2 the BOUND, read off the artifact on both sides =="
 bound_bad=0; bound_seen=0
 for k in 11 12 13; do
     f="$WORKDIR/b$k.c"
-    pcrec_run "$PCREC" -p rx --features all --no-captures -o "$f" -- "[01]*1[01]{$k}" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all --no-captures -o "$f" --pattern "[01]*1[01]{$k}" >/dev/null 2>&1 || continue
     eval "$(read_artifact < "$f")"
     [ "$fent" -gt 0 ] || continue
     bound_seen=$((bound_seen + 1))
@@ -447,7 +447,7 @@ else
     : > "$WORKDIR/premul_artifacts"
     while IFS= read -r pat; do
         f="$WORKDIR/c.c"
-        pcrec_run "$PCREC" -p rx --features all -o "$f" -- "$pat" >/dev/null 2>&1 || continue
+        pcrec_run "$PCREC" -p rx --features all -o "$f" --pattern "$pat" >/dev/null 2>&1 || continue
         swept=$((swept + 1))
         eval "$(read_artifact < "$f")"
         [ "$scan" = "1" ] || { [ "$stamp" = "-" ] || {
@@ -644,8 +644,8 @@ idfail=0; idcells=0; idpat=0; idtried=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     d="$WORKDIR/id$idtried"; mkdir -p "$d"; idtried=$((idtried + 1))
-    pcrec_run "$PCREC" -p rx --features all --no-captures --emit-main -o "$d/pm.c" -- "$pat" >/dev/null 2>&1 || continue
-    pcrec_run "$PCREC" -p rx --features all --no-captures --emit-main -fno-premul-table -o "$d/ix.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all --no-captures --emit-main -o "$d/pm.c" --pattern "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all --no-captures --emit-main -fno-premul-table -o "$d/ix.c" --pattern "$pat" >/dev/null 2>&1 || continue
     pmform=$(grep -m1 '^#define RX_DFA_TABLE' "$d/pm.c" | sed 's/.*"\(.*\)".*/\1/')
     ixform=$(grep -m1 '^#define RX_DFA_TABLE' "$d/ix.c" | sed 's/.*"\(.*\)".*/\1/')
     # A pattern whose scan carries no numeric transition table (ENG_ATTEMPT,

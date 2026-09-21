@@ -128,7 +128,7 @@ emit() { # emit <name> <pattern> [extra pcrec args...]
     local name="$1" pat="$2"
     shift 2
     pcrec_run "$PCREC" -p rx --no-captures --features all "$@" \
-        -o "$WORKDIR/$name.c" -- "$pat" >/dev/null 2>&1
+        -o "$WORKDIR/$name.c" --pattern "$pat" >/dev/null 2>&1
 }
 
 stamp() { grep -m1 "^#define RX_DFA_PREFILTER \"" "$1" | awk '{print $3}' | tr -d '"'; }

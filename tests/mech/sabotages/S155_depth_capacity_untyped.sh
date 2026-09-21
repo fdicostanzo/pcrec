@@ -150,7 +150,7 @@ SAB_DOC_FIGURE="RE-MEASURED 2026-08-25, and the figure is a PAIR because one hal
 #     reach check.
 SAB_REQUIRE="asan"
 SAB_REACH_POP="tests/recursion/framebuffer.rxt|^gu frames |4"
-SAB_REACH='"$PCREC" -p rx --features recursion --engine=vm -o "$REACH_TMP/fb.c" -- "^(a(?1)?b)\$" && awk "/^#define RX_CALL\\(/,/[^\\\\\\\\]\$/" "$REACH_TMP/fb.c"'
+SAB_REACH='"$PCREC" -p rx --features recursion --engine=vm -o "$REACH_TMP/fb.c" --pattern "^(a(?1)?b)\$" && awk "/^#define RX_CALL\\(/,/[^\\\\\\\\]\$/" "$REACH_TMP/fb.c"'
 SAB_REACH_EXPECT="if (run->resume_depth >= run->resume_cap) return RX_R_FRAMES;"
 SAB_COUNT=1
 SAB_BEFORE='                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"

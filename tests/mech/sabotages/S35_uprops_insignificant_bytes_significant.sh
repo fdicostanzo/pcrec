@@ -18,7 +18,7 @@ SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing: \\p{L} and \\p{ L } (a spac
 # and therefore gets the one-letter-code sentence; with the skip deleted it
 # is a TWO-character name and takes the generic path. A body with no space,
 # tab, hyphen or underscore in it cannot see this edit at all.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{ A}"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "\\p{ A}"'
 SAB_REACH_EXPECT="\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 6)"
 SAB_COUNT=1
 SAB_BEFORE="        if (c == ' ' || c == '\\t' || c == '-' || c == '_')

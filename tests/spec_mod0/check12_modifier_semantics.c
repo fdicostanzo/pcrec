@@ -220,7 +220,7 @@ static VClass build_pcrec_binary(const char *pat, char *bin_path, size_t bin_sz)
 
     char *cargv[] = { (char *)pcrec_path, (char *)"--features", (char *)"modifiers",
                        (char *)"-o", c_path, (char *)"--emit-main",
-                       (char *)"--", (char *)pat, NULL };
+                       (char *)"--pattern", (char *)pat, NULL };
     Run r = run_argv(pcrec_path, cargv);
     if (!r.ran) { spec_fail("build_pcrec_binary: fork/exec failed for '%s'", pat); return VC_ERROR; }
     if (r.timed_out) { spec_fail("build_pcrec_binary: pcrec timed out on '%s'", pat); return VC_ERROR; }
@@ -370,7 +370,7 @@ static void case_capture(const char *pat, int predict_cc, const char *family)
                   "libpcre2 says %d — a bug in this check, not pcrec", pat, family, predict_cc, cc);
 
     char *argv[] = { (char *)pcrec_path, (char *)"--features", (char *)"modifiers",
-                      (char *)"--count-groups", (char *)"--", (char *)pat, NULL };
+                      (char *)"--count-groups", (char *)"--pattern", (char *)pat, NULL };
     Run r = run_argv(pcrec_path, argv);
     if (!r.ran) { spec_fail("case_capture: fork/exec failed for '%s'", pat); return; }
     if (r.timed_out) { spec_fail("case_capture: pcrec timed out on '%s'", pat); return; }

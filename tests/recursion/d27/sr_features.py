@@ -209,7 +209,7 @@ def compiles(pat, feats, tmp):
     cmd = [PCREC, "-p", "rx", "-o", os.path.join(tmp, "g.c")]
     if feats:
         cmd += ["--features", feats]
-    cmd += ["--", pat]
+    cmd += ["--pattern", pat]
     r = subprocess.run(cmd, capture_output=True, text=True)
     return r.returncode == 0, (r.stderr or "").strip()
 

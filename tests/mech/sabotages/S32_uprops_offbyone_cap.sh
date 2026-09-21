@@ -19,7 +19,7 @@ SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing: the 49-A boundary reject-pi
 # 52. Under the sabotage the boundary moves to 49/50 and the second line is
 # what goes red -- so a reach check asserting only the first would be green
 # on a tree where the row had nothing to detect.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" -- "\\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "\\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" --pattern "\\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"'
 SAB_REACH_EXPECT="\\p requires module 'unicode-props' (pattern offset 52)
 \\p: malformed property escape — requires module 'unicode-props' (pattern offset 52)"
 SAB_COUNT=1

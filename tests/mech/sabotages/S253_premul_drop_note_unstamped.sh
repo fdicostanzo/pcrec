@@ -30,7 +30,7 @@ SAB_DOC_FIGURE="docs/dev/known_issues.md K59 (the closing rung); tests/codegen/r
 SAB_COUNT=1
 # REACH: does the K59 witness still take this rung at all (balanced)? If it
 # does not, the note has nothing to fire on and this row measures nothing.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "[^\p{C}\p{M}\p{P}]" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
 SAB_BEFORE='                size_drop_rung = SDR_NO_PREMUL;
                 defo.flags |= PCREC_NO_PREMUL_TABLE;

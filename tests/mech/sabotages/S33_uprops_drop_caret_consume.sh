@@ -26,7 +26,7 @@ SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing (post-§8 fix): both caret-b
 # way. What moves is the 48/49 boundary WITH a caret -- the caret costs one
 # OFFSET byte (53, not 52) and zero BUDGET. Both sides are asserted for
 # S32's reason.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" -- "\\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "\\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" --pattern "\\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}"'
 SAB_REACH_EXPECT="\\p requires module 'unicode-props' (pattern offset 53)
 \\p: malformed property escape — requires module 'unicode-props' (pattern offset 53)"
 SAB_COUNT=1

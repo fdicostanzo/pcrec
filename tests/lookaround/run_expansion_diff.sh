@@ -190,7 +190,7 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
 
     # ---- arm B: the FOLDED pattern, pcrec ------------------------------
     if ! "$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx \
-            -o "$d/B/gen.c" -- "$pat" 2>"$d/b.err"; then
+            -o "$d/B/gen.c" --pattern "$pat" 2>"$d/b.err"; then
         printf 'E\t%s\t%s\tpcrec REFUSED the folded pattern %s: %s\n' \
             "$bid" "$origin" "$pat" "$(head -1 "$d/b.err")"; exit 0
     fi
@@ -283,7 +283,7 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
             *) [ "$pol" = "$PFILT" ] || continue ;;
         esac
         if ! "$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx \
-                -o "$d/A/gen.c" -- "$gpat" 2>"$d/a.err"; then
+                -o "$d/A/gen.c" --pattern "$gpat" 2>"$d/a.err"; then
             printf 'E\t%s\t%s\tpcrec REFUSED the %s pattern %s: %s\n' \
                 "$bid" "$origin" "$pol" "$gpat" "$(head -1 "$d/a.err")"
             continue
@@ -569,11 +569,11 @@ for w in 'a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))c' \
          'a(?:(?<=\w)(?=\w)|(?<!\w)(?!\w))c' \
          'a(?=\n?\z)' 'a(?:\A|(?<=\n)(?!\z))b' 'a(?:(?=\n)|\z)'; do
     if "$TIMEOUT_BIN" 60 "$PCREC" --features assertions,modifiers,classes -p rx \
-            -o "$MGDIR/g.c" -- "$w" >/dev/null 2>&1; then
+            -o "$MGDIR/g.c" --pattern "$w" >/dev/null 2>&1; then
         bad "§1b $w compiled WITHOUT module lookaround — arm A is not the lookaround path"
         mg_bad=$((mg_bad + 1))
     elif "$TIMEOUT_BIN" 60 "$PCREC" --features assertions,modifiers,classes,lookaround \
-            -p rx -o "$MGDIR/g.c" -- "$w" >/dev/null 2>&1; then
+            -p rx -o "$MGDIR/g.c" --pattern "$w" >/dev/null 2>&1; then
         mg_ok=$((mg_ok + 1))
     else
         bad "§1b $w did not compile even WITH module lookaround"

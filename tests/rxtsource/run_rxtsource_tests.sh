@@ -2265,8 +2265,8 @@ if [ "$w6ok" = "1" ]; then
 $(head -20 "$AIW/noaux.diff")"
     fi
 fi
-if ( cd "$AIW/a" && "$TIMEOUT_BIN" 30 "$PCREC" --source aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
-   ( cd "$AIW/b" && "$TIMEOUT_BIN" 30 "$PCREC" --source aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
+if ( cd "$AIW/a" && "$TIMEOUT_BIN" 30 "$PCREC" aux_identity.rxt -o out.c ) > "$AIW/a_build.err" 2>&1 && \
+   ( cd "$AIW/b" && "$TIMEOUT_BIN" 30 "$PCREC" aux_identity_edited.rxt -o out.c ) > "$AIW/b_build.err" 2>&1 && \
    diff "$AIW/a/out.c" "$AIW/b/out.c" > "$AIW/c.diff" 2>&1 && \
    diff "$AIW/a/out.h" "$AIW/b/out.h" > "$AIW/h.diff" 2>&1; then
     pass "W23-S6 arm 2: the compiled artifact (.c and .h) is byte-identical across the same aux-body edit"
@@ -2508,7 +2508,7 @@ fi
 # `--source` (the composer) and not `--list-source` (which reports the
 # file as written and binds nothing), so this is the one W23.3 fixture
 # whose instrument is the COMPILE path.
-dcc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_collision.rxt" \
+dcc_out="$("$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/derived_call_collision.rxt" \
     -o "$WORKDIR/dcc.c" 2>&1)"
 if [ $? -eq 0 ]; then
     fail "derived-call: a call to an identifier TWO definitions derive was
@@ -2527,7 +2527,7 @@ else
 fi
 # The ACCEPT half: a hyphenated definition IS callable through its
 # derived identifier, which is the whole of what D100 bought.
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/derived_call_bind.rxt" \
+if "$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/derived_call_bind.rxt" \
         -o "$WORKDIR/dcb.c" > /dev/null 2>"$WORKDIR/dcb.err"; then
     pass "derived-call: '(?&cls_upto_64)' BINDS to 'name cls-upto-64' — the repair §4.5 item 4 was unusable without"
 else
@@ -2694,7 +2694,7 @@ TC="$FIXRUN/three_configs.rxt"
 # builds of ONE matcher and a consumer walking three `<prefix>_info`
 # symbols needs to be able to say so.
 mkdir -p "$W12/dir"
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" -o "$W12/dir" 2>"$W12/dir.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$TC" -o "$W12/dir" 2>"$W12/dir.err"; then
     w12_c=$(ls "$W12/dir"/*.c 2>/dev/null | wc -l | tr -d ' ')
     w12_h=$(ls "$W12/dir"/*.h 2>/dev/null | wc -l | tr -d ' ')
     w12_names=$(grep -h -m1 '^    \.name = ' "$W12/dir"/*.c 2>/dev/null | LC_ALL=C sort -u | wc -l | tr -d ' ')
@@ -2759,7 +2759,7 @@ else
 fi
 
 # --- `-o out.c` with N > 1 is REFUSED, naming both ways forward -------
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" -o "$W12/one.c" >"$W12/one.out" 2>&1; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$TC" -o "$W12/one.c" >"$W12/one.out" 2>&1; then
     fail "W1.2: --source -o <file> ACCEPTED a three-target file; it must refuse"
 else
     w12_msg="$(cat "$W12/one.out")"
@@ -2776,7 +2776,7 @@ else
 fi
 
 # --- `--target` selects one, and it is the one asked for --------------
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" --target log_strict -o "$W12/sel.c" 2>"$W12/sel.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$TC" --target log_strict -o "$W12/sel.c" 2>"$W12/sel.err"; then
     if [ -f "$W12/sel.h" ] && grep -q '^int log_strict_search(' "$W12/sel.c" && \
        grep -q '^    \.name = "level_filter",' "$W12/sel.c"; then
         pass "W1.2: --target builds exactly the named target, one .c/.h pair, prefix log_strict, name level_filter"
@@ -2787,7 +2787,7 @@ $(grep -h '^int .*_search(\|^    \.name = ' "$W12/sel.c" 2>/dev/null)"
 else
     fail "W1.2: --source --target failed: $(cat "$W12/sel.err")"
 fi
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$TC" --target nosuch -o "$W12/x.c" >"$W12/nt.out" 2>&1; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$TC" --target nosuch -o "$W12/x.c" >"$W12/nt.out" 2>&1; then
     fail "W1.2: --target nosuch was ACCEPTED"
 else
     if grep -q 'log_base' "$W12/nt.out" && grep -q 'log_strict' "$W12/nt.out"; then
@@ -2832,7 +2832,7 @@ fi
 w12_refuse() {
     local fixture="$1" label="$2"; shift 2
     local f="$FIXRUN/$fixture" out="$W12/$label.out" miss="" need
-    if "$TIMEOUT_BIN" 60 "$PCREC" --source "$f" -o "$W12/$label.c" >"$out" 2>&1; then
+    if "$TIMEOUT_BIN" 60 "$PCREC" "$f" -o "$W12/$label.c" >"$out" 2>&1; then
         fail "W1.2 ($label): --source ACCEPTED $fixture; it must refuse"
         return
     fi
@@ -2872,7 +2872,7 @@ w12_refuse config_pcrec_escape.rxt cfgesc  'compile options only' 'prefix'
 # was contractually required to say.
 w12_trunc_bad=""
 for w12_fx in no_such_definition lib_missing lib_store config_pcrec_escape; do
-    w12_n=$("$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/$w12_fx.rxt" \
+    w12_n=$("$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/$w12_fx.rxt" \
                 -o "$W12/trunc.c" 2>&1 >/dev/null | wc -c)
     [ "$w12_n" -lt 263 ] || \
         w12_trunc_bad="$w12_trunc_bad  $w12_fx: $w12_n bytes (limit 263)"
@@ -2897,7 +2897,7 @@ fi
 # --- --lib-path is the SAME file's cure, which is its only real check --
 mkdir -p "$W12/libs"
 cp "$FIXRUN/common.rxt" "$W12/libs/extra_defs.rxt"
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/lib_missing.rxt" \
+if "$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/lib_missing.rxt" \
         --lib-path "$W12/libs" -o "$W12/viapath.c" 2>"$W12/viapath.err"; then
     pass "W1.2: --lib-path resolves the very reference that fails without it — the flag's one consumer today"
 else
@@ -2913,7 +2913,7 @@ fi
 # "nothing to build" as a failure would make every library file a build
 # error; one that silently wrote something would be worse.
 rm -f "$W12/lib.c" "$W12/lib.h"
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/common.rxt" -o "$W12/lib.c" 2>"$W12/lib.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/common.rxt" -o "$W12/lib.c" 2>"$W12/lib.err"; then
     if [ ! -f "$W12/lib.c" ] && grep -q 'builds nothing' "$W12/lib.err"; then
         pass "W1.2: a definitions-only file builds NOTHING at exit 0, and says so on stderr (distinct from a refusal)"
     else
@@ -2933,7 +2933,7 @@ fi
 # scratch file rather than a corpus one only so the population is visible
 # in this script.
 printf 'pattern a+\nm "aaa" 0 3\n' > "$W12/lone.rxt"
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$W12/lone.rxt" -o "$W12/lone.c" 2>"$W12/lone.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$W12/lone.rxt" -o "$W12/lone.c" 2>"$W12/lone.err"; then
     if grep -q '^int rx_search(' "$W12/lone.c" && \
        grep -q '^    \.name = "rx",' "$W12/lone.c"; then
         pass "W1.2: no target + exactly ONE UNNAMED block builds the implicit \`target rx\` (format_design §6.4), naming itself \"rx\""
@@ -2960,7 +2960,7 @@ EP="$FIXRUN/engine_cli_precedence.rxt"
 # Direction 1: the CLI is silent (no --engine at all) — the file's row
 # applies, exactly as every OTHER axis's file-wins rule already does, and
 # nothing is printed about it.
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$EP" -o "$W12/ep_silent.c" 2>"$W12/ep_silent.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$EP" -o "$W12/ep_silent.c" 2>"$W12/ep_silent.err"; then
     if grep -q '^#define RX_ENGINE "vm"' "$W12/ep_silent.c" && \
        [ ! -s "$W12/ep_silent.err" ]; then
         pass "W1.2 (RULEFIX): CLI silent -> the file's \`engine vm\` row applies, no diagnostic"
@@ -2978,7 +2978,7 @@ fi
 # file's `engine vm` row (not be silently discarded by it), and the
 # conflict must be reported on stderr naming both sources and both
 # values, non-fatally (exit 0, artifact still written).
-if "$TIMEOUT_BIN" 60 "$PCREC" --engine=dfa --source "$EP" -o "$W12/ep_conflict.c" \
+if "$TIMEOUT_BIN" 60 "$PCREC" --engine=dfa "$EP" -o "$W12/ep_conflict.c" \
         2>"$W12/ep_conflict.err"; then
     if grep -q '^#define RX_ENGINE "dfa"' "$W12/ep_conflict.c" && \
        grep -q -- '--engine=dfa' "$W12/ep_conflict.err" && \
@@ -2997,7 +2997,7 @@ fi
 # Direction 2b: an explicit CLI --engine=vm that AGREES with the file's
 # `engine vm` row must build silently — no conflict to report, since the
 # two sides say the same thing.
-if "$TIMEOUT_BIN" 60 "$PCREC" --engine=vm --source "$EP" -o "$W12/ep_agree.c" \
+if "$TIMEOUT_BIN" 60 "$PCREC" --engine=vm "$EP" -o "$W12/ep_agree.c" \
         2>"$W12/ep_agree.err"; then
     if grep -q '^#define RX_ENGINE "vm"' "$W12/ep_agree.c" && \
        [ ! -s "$W12/ep_agree.err" ]; then
@@ -3047,7 +3047,7 @@ mkdir -p "$W13"
 # (docs/spec/match_api.md section 6), and a build that mapped one into the
 # other would lose the bench id this whole ruling exists to preserve.
 mkdir -p "$W13/nd"
-if "$TIMEOUT_BIN" 60 "$PCREC" --source "$FIXRUN/name_dashdot.rxt" -o "$W13/nd" 2>"$W13/nd.err"; then
+if "$TIMEOUT_BIN" 60 "$PCREC" "$FIXRUN/name_dashdot.rxt" -o "$W13/nd" 2>"$W13/nd.err"; then
     nd_files=$(cd "$W13/nd" && ls ./*.c 2>/dev/null | sed 's|^\./||' | sort | tr '\n' ' ')
     if [ "$nd_files" = "cls_upto_64.c ctx_lazy.c " ]; then
         pass "W1.3 names: a dash or dot in a definition name maps to underscore in the derived prefix ($nd_files)"
@@ -3091,7 +3091,7 @@ fi
 # fire in one artifact: kept is NAMED (delivered), (b) is referenced by the
 # definition own \2 (hidden), (c) is unnamed and unread (erased, spending no
 # number at all).
-if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_delivers.rxt" \
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all "$FIXRUN/compose_delivers.rxt" \
         -o "$W13/user.c" 2>"$W13/user.err"; then
     u_rows="$(grep -E '^    \{ "' "$W13/user.c" || true)"
     u_ngroups="$(grep -m1 '^    \.ngroups = ' "$W13/user.c" | tr -dc '0-9')"
@@ -3141,7 +3141,7 @@ fi
 w13_refuse() {
     local fixture="$1" label="$2"; shift 2
     local out rc miss="" need
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/$fixture" \
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all "$FIXRUN/$fixture" \
              -o "$W13/refuse.c" 2>&1)"
     rc=$?
     for need in "$@"; do
@@ -3196,7 +3196,7 @@ w13_rows() {
     local target="$1" want="$2" label="$3"
     local out
     if ! "$TIMEOUT_BIN" 60 "$PCREC" --features all \
-            --source "$FIXRUN/deliver_forms.rxt" --target "$target" \
+ "$FIXRUN/deliver_forms.rxt" --target "$target" \
             -o "$W13/$target.c" 2>"$W13/$target.err"; then
         fail "W1.3 forms ($label): --source --target $target failed:
 $(cat "$W13/$target.err")"
@@ -3263,14 +3263,14 @@ fi
 # compose silently. THE HOME OF THIS ROW is here rather than tests/reject/:
 # that table is per-CONSTRUCT and its point is the MODULE name, and this is
 # a `.rxt` source refusal with no construct and no module.
-if "$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+if "$TIMEOUT_BIN" 60 "$PCREC" --features all "$FIXRUN/compose_encoding_clash.rxt" \
         --target ok -o "$W13/enc_ok.c" 2>"$W13/enc_ok.err"; then
     pass "W1.3 Q-W4: a definition stating the encoding the artifact IS built for composes silently"
 else
     fail "W1.3 Q-W4: a definition whose encoding MATCHES the artifact was refused:
 $(cat "$W13/enc_ok.err")"
 fi
-enc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all --source "$FIXRUN/compose_encoding_clash.rxt" \
+enc_out="$("$TIMEOUT_BIN" 60 "$PCREC" --features all "$FIXRUN/compose_encoding_clash.rxt" \
              --target clash -o "$W13/enc_bad.c" 2>&1)"
 enc_rc=$?
 enc_miss=""
@@ -3319,7 +3319,7 @@ fi
 # The SMALL one, built end to end. A large one would make this section pay
 # the bench own compile cost, which is the bench business and not this
 # suite -- w-8 is 56 bytes and eight branches.
-if "$TIMEOUT_BIN" 120 "$PCREC" --source "$AW" --target w_8 -o "$W13/w8.c" 2>"$W13/w8.err"; then
+if "$TIMEOUT_BIN" 120 "$PCREC" "$AW" --target w_8 -o "$W13/w8.c" 2>"$W13/w8.err"; then
     if grep -q '^    \.name = "w-8",' "$W13/w8.c"; then
         pass "W1.3 dogfood: a bench pattern builds through --source --target, keeping its id w-8 as rx_info.name"
     else

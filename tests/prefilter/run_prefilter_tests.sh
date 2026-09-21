@@ -55,7 +55,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...] -- exit code and stderr preserved
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -119,7 +119,7 @@ check_stamp "auto+captures -fno-prefilter (forced off)" no force_off '(a)b' -fno
 # ---------------------------------------------------------------------------
 check_refuse() {   # check_refuse <label> <pattern> [args...]
     local label="$1" pat="$2"; shift 2
-    if pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/ref.c" -- "$pat" \
+    if pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/ref.c" --pattern "$pat" \
             >/dev/null 2>"$WORKDIR/ref.err"; then
         bad "$label: '$pat' ($*) compiled; expected a clean refusal"
     elif grep -q 'prefilter' "$WORKDIR/ref.err"; then
@@ -138,7 +138,7 @@ check_refuse "force-on and force-off together" '(a)b' -fprefilter -fno-prefilter
 # ---------------------------------------------------------------------------
 for combo in "--engine=vm" "" "--engine=dfa --no-captures"; do
     # shellcheck disable=SC2086
-    if pcrec_run "$PCREC" -p rx $combo -fno-prefilter -o "$WORKDIR/nr.c" -- '(a)b' \
+    if pcrec_run "$PCREC" -p rx $combo -fno-prefilter -o "$WORKDIR/nr.c" --pattern '(a)b' \
             >/dev/null 2>"$WORKDIR/nr.err"; then
         ok "-fno-prefilter never refuses (combo: '${combo:-<auto>}')"
     else
@@ -164,10 +164,10 @@ done
 # output filename, so comparing differently-NAMED outputs would report a
 # difference the flag did not make.
 mkdir -p "$WORKDIR/bi/on_a" "$WORKDIR/bi/on_b" "$WORKDIR/bi/off_a" "$WORKDIR/bi/off_b"
-if pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi/on_a/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && pcrec_run "$PCREC" -p rx -fprefilter -o "$WORKDIR/bi/on_b/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/off_a/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && pcrec_run "$PCREC" -p rx --engine=vm -fno-prefilter -o "$WORKDIR/bi/off_b/g.c" -- '(a)b' >/dev/null 2>&1
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi/on_a/g.c" --pattern '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx -fprefilter -o "$WORKDIR/bi/on_b/g.c" --pattern '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/off_a/g.c" --pattern '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx --engine=vm -fno-prefilter -o "$WORKDIR/bi/off_b/g.c" --pattern '(a)b' >/dev/null 2>&1
 then
     if cmp -s "$WORKDIR/bi/on_a/g.c" "$WORKDIR/bi/on_b/g.c"; then
         ok "redundant -fprefilter (agreeing with the derived default) leaves no trace"
@@ -227,7 +227,7 @@ fi
 check_ir_value() {   # check_ir_value <label> <expected value> <pattern> [args...]
     local label="$1" want="$2" pat="$3"; shift 3
     local f="$WORKDIR/irvalue.ir" got
-    if ! pcrec_run "$PCREC" --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --emit-ir "$@" --pattern "$pat" > "$f" 2>/dev/null; then
         bad "$label: --emit-ir failed for '$pat'"; return
     fi
     got="$(table_lookup "$f" summary fact prefilter value)" || got="<unreadable>"
@@ -317,7 +317,7 @@ fi
 check_listing_reason() {   # check_listing_reason <label> <pattern> <value> [args...]
     local label="$1" pat="$2" want="$3"; shift 3
     local f="$WORKDIR/reason.ir" got
-    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" --pattern "$pat" > "$f" 2>/dev/null; then
         bad "$label: '$pat' produced no listing at all"; return
     fi
     got="$(table_lookup "$f" summary fact prefilter value)" || got="<unreadable>"
@@ -330,7 +330,7 @@ check_listing_reason() {   # check_listing_reason <label> <pattern> <value> [arg
 check_listing_note() {   # check_listing_note <label> <pattern> <needle> [args...]
     local label="$1" pat="$2" needle="$3"; shift 3
     local f="$WORKDIR/reason.ir" note
-    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" > "$f" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" --pattern "$pat" > "$f" 2>/dev/null; then
         bad "$label: '$pat' produced no listing at all"; return
     fi
     note="$(table_lookup "$f" summary fact prefilter note)" || note=""
@@ -445,7 +445,7 @@ check_listing_note "...and its note names the cap, not the unrelated flag" \
 # past that so the DFA-cap refusal is the one reached, and its text does not
 # contain the word "prefilter" at all.
 if pcrec_run "$PCREC" -p rx --features all --engine=vm -fprefilter \
-        -o "$WORKDIR/sel1_refuse.c" -- "$SEL1_OVERFLOW_PAT" \
+        -o "$WORKDIR/sel1_refuse.c" --pattern "$SEL1_OVERFLOW_PAT" \
         >/dev/null 2>"$WORKDIR/sel1_refuse.err"; then
     bad "force-on vs a DFA-cap overflow: compiled; expected the force form to stay do-or-die"
 elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \

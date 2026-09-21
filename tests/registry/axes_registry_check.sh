@@ -238,7 +238,7 @@ check_macro_bit() {
 # direction this arm is driven in.
 check_cli_flag_accepted() {
     local flagtext="$1" axis="$2" cand="$3"
-    if "$TIMEOUT_BIN" 30 "$PCREC" "$flagtext" --count-groups -- 'a(b)' >/dev/null 2>&1; then
+    if "$TIMEOUT_BIN" 30 "$PCREC" "$flagtext" --count-groups --pattern 'a(b)' >/dev/null 2>&1; then
         ok "[$axis/$cand] cli_flag '$flagtext' is accepted by the shipped parser"
     else
         bad "[$axis/$cand] cli_flag '$flagtext' is advertised by --list-axes but the shipped parser REFUSES it — src/core/axes.def's row and cli_axis_apply have come apart, or the arm is no longer reached"

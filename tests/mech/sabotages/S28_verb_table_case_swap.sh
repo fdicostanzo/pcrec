@@ -12,7 +12,7 @@ SAB_DOC_FIGURE="measured MOD-0.4c: 52 reject failures on first measurement, no n
 # single probe cannot see a swap: `(*FOO)` (upper) and `(*foo)` (lower)
 # must produce DIFFERENT sentences, and both are asserted. One of them
 # alone would go on passing after the other's table stopped being reached.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "(*FOO)"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" -- "(*foo)"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "(*FOO)"; "$PCREC" --features none -p rx -o "$REACH_TMP/o1.c" --pattern "(*foo)"'
 SAB_REACH_EXPECT="(*VERB) not recognized or malformed (pattern offset 0)
 (*alpha_assertion) not recognized (pattern offset 0)"
 SAB_COUNT=1

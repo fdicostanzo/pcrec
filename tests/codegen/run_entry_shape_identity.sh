@@ -132,7 +132,7 @@ for w in "${witnesses[@]}"; do
     d="$TMP/$label"; mkdir -p "$d"
     ok=1
     for s in 0 1 2 3 4; do
-        if ! pcrec_run "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=$s -o "$d/a$s.c" -- "$pat" >"$d/emit$s.err" 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=$s -o "$d/a$s.c" --pattern "$pat" >"$d/emit$s.err" 2>&1; then
             bad "$label: emit at --vm-entry-shape=$s failed: $(head -2 "$d/emit$s.err")"
             ok=0; break
         fi

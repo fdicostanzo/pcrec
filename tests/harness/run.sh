@@ -1583,7 +1583,7 @@ stage_block_for_batch() {
     local upx; upx="$(printf '%s' "$px" | LC_ALL=C tr '[:lower:]' '[:upper:]')"
     local mc="$batch_bdir/$px.c"
     local pcrec_err pcrec_rc
-    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p "$px" "${pflags[@]+"${pflags[@]}"}" -o "$mc" -- "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p "$px" "${pflags[@]+"${pflags[@]}"}" -o "$mc" --pattern "$cur_pattern" 2>&1 >/dev/null)"
     pcrec_rc=$?
 
     if [ $pcrec_rc -ne 0 ]; then
@@ -1689,7 +1689,7 @@ flush_block() {
     # features line must be a loud harness failure, never a quiet pass.
     if [ -n "$cur_features" ]; then
         if ! assoc_has features_seen "$cur_features"; then
-            if pcrec_run "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
+            if pcrec_run "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" --pattern 'a' >/dev/null 2>&1; then
                 assoc_set features_seen "$cur_features" ok
             else
                 assoc_set features_seen "$cur_features" bad
@@ -1803,7 +1803,7 @@ flush_block() {
     # which is the one compile a change to the compiler can actually slow down.
     # gen_timeout.sh derives it from the same flags everything else does, and
     # carries the measurement the numbers come from.
-    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" --pattern "$cur_pattern" 2>&1 >/dev/null)"
     local pcrec_rc=$?
 
     if [ "$cur_is_perr" = "1" ]; then
@@ -1991,11 +1991,11 @@ flush_block() {
             tdir="$bdir/tgt_$px"
             mkdir -p "$tdir"
             local tsrc_err tsrc_rc
-            tsrc_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --source "$cur_file" --target "$px" -o "$tdir/gen.c" 2>&1 >/dev/null)"
+            tsrc_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" "$cur_file" --target "$px" -o "$tdir/gen.c" 2>&1 >/dev/null)"
             tsrc_rc=$?
             if [ $tsrc_rc -ne 0 ] || [ ! -f "$tdir/gen.h" ]; then
                 record_fail "$cur_file" "$cur_pattern_line" \
-                    "HARNESS FAILURE: pcrec --source --target $px failed (exit $tsrc_rc): $tsrc_err"
+                    "HARNESS FAILURE: pcrec $cur_file --target $px failed (exit $tsrc_rc): $tsrc_err"
                 continue
             fi
             if ! gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$tdir" \

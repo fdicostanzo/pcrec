@@ -155,7 +155,7 @@ def compile_pattern(pcrec_bin, pattern):
 
     Returns (ok, stdout_bytes, stderr_text, wall_ms).
     """
-    argv = [pcrec_bin, "-p", "rx", "--features", "all", "-o", "-", "--", pattern]
+    argv = [pcrec_bin, "-p", "rx", "--features", "all", "-o", "-", "--pattern", pattern]
     t0 = time.monotonic()
     try:
         proc = subprocess.run(

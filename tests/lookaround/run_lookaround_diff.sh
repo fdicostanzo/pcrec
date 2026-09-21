@@ -140,7 +140,7 @@ run_arm() {
     local d="$WORKDIR/arm$RANDOM$RANDOM"
     mkdir -p "$d"
     # shellcheck disable=SC2086
-    if ! pcrec_run "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" --pattern "$pat" \
             2>"$d/err"; then
         echo "COMPILE-FAIL"; sed 's/^/    /' "$d/err" >&2; return 1
     fi

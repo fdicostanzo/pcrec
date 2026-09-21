@@ -36,7 +36,8 @@ Test runner and driver template. The runner (run.sh) orchestrates compilation an
   body boundary (so the seam ruling is unchanged: pcrec owns the head
   grammar and this script owns only the columns' names), and for every
   target naming a block it builds a SECOND artifact through
-  `pcrec --source --target`, in its own directory under the name `gen.c` —
+  `pcrec FILE --target NAME` ([REL-1.10]/D118: FILE is a bare operand now,
+  not `--source`), in its own directory under the name `gen.c` —
   so `driver.c`'s `#include "gen.h"` resolves per target off `-I` alone and
   needs no header macro of its own. Each case is then run through every
   such binary and required to produce an IDENTICAL line and exit status.

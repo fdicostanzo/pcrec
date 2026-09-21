@@ -151,7 +151,7 @@ while IFS=$'\t' read -r key ng pat; do
     k="${key#k}"
     [ "$k" -ge 2 ] && run_ge2=$((run_ge2 + 1))
     d="$WORKDIR/$key"; mkdir -p "$d"
-    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" --pattern "$pat" \
             >/dev/null 2>"$d/pc.log"; then
         bad "pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi

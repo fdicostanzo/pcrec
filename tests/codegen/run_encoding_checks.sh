@@ -227,11 +227,11 @@ while IFS=$'\t' read -r patb subs; do
     pat="$(printf '%s' "$patb" | base64 -d)"
     d="$WORKDIR/b_$diffn"; mkdir -p "$d"
     # emit both encodings with features all (ASCII patterns may use modules)
-    if ! pcrec_run "$PCREC" --features all -e byte -p b -o "$d/b.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" --features all -e byte -p b -o "$d/b.c" --pattern "$pat" >/dev/null 2>&1; then
         continue   # a pattern byte refuses (perr already filtered; a gated
                    # construct under some feature set) — not this check's subject
     fi
-    if ! pcrec_run "$PCREC" --features all -e utf8 -p u -o "$d/u.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" --features all -e utf8 -p u -o "$d/u.c" --pattern "$pat" >/dev/null 2>&1; then
         # [K51] the manifest's SECOND face: the same rung loss can inflate the
         # utf8 artifact past the code-bytes cap, so byte COMPILES and utf8
         # REFUSES — excused only for a named manifest pattern, counted with
@@ -1100,8 +1100,8 @@ sigpat='(?i)(?<=a)(b)\1x'
 db="$WORKDIR/sigb"; du="$WORKDIR/sigu"; mkdir -p "$db" "$du"
 sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|bref_match|bref_match_caseless)\(' "$1" \
             | sed -E 's/ [bu]_/ PFX_/' | LC_ALL=C sort -u; }
-if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" -- "$sigpat" >/dev/null 2>&1 \
-   && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" -- "$sigpat" >/dev/null 2>&1; then
+if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" --pattern "$sigpat" >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" --pattern "$sigpat" >/dev/null 2>&1; then
     nsig="$(sigs_of "$db/a.c" | grep -c .)"
     if diff -q <(sigs_of "$db/a.c") <(sigs_of "$du/a.c") >/dev/null 2>&1 && [ "$nsig" -ge 3 ]; then
         ok "DD12a(ii) the seam's residual entries appear under identical signatures across both backends ($nsig entries; D58 P-1)"
@@ -1158,7 +1158,7 @@ adv_witness='a*'      # nullable => no prefilter, so no retry-window recompute
 for aenc in byte utf8; do
     d="$WORKDIR/adv_$aenc"; mkdir -p "$d"
     if ! pcrec_run "$PCREC" --engine=vm -e "$aenc" -p a -o "$d/a.c" \
-            -- "$adv_witness" >/dev/null 2>&1; then
+            --pattern "$adv_witness" >/dev/null 2>&1; then
         bad "K49 the advance witness '$adv_witness' did not compile under -e $aenc"
         continue
     fi
@@ -1254,7 +1254,7 @@ done
 # ---------------------------------------------------------------------------
 # S-U8  THE CLAMP-STRIDE PROBE
 # ---------------------------------------------------------------------------
-if pcrec_run "$PCREC" --features all -e utf8 -p rx -o - -- '(a)(?:\x{3b1}){0,3}x' 2>/dev/null \
+if pcrec_run "$PCREC" --features all -e utf8 -p rx -o - --pattern '(a)(?:\x{3b1}){0,3}x' 2>/dev/null \
         | grep -q 'RX_PRUNE_CLAMP_SPAN(scan_position, 1, 2)'; then
     ok "S-U8 the utf8 MRL clamp stride is the encoded length (RX_PRUNE_CLAMP_SPAN ... 1, 2) — the prune counts encoded bytes (§5.6.1)"
 else

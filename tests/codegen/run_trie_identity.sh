@@ -68,8 +68,8 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # rule 2's disjoint-run logic down paths the unfolded corpus never reaches, and
 # the identity requirement is exactly as strong there.
 FLAGS=()
-gen_a() { pcrec_run "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
-gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - --pattern "$1" 2>/dev/null; }
 
 # ---- the reference compiler ---------------------------------------------
 # -DPCREC_NO_TRIE forces `elig[j] = false` in nfa.c's A_ALT path, i.e. the
@@ -175,8 +175,8 @@ fi
 # forward NFA for the 4-branch shape: 213 states factored vs 812 unfactored.
 check_control() { # check_control <label> <pattern>
     local lbl="$1" pat="$2" oa ob sa sb
-    oa="$(pcrec_run "$PCREC" -p rx --no-captures --engine=dfa -o - -- "$pat" 2>&1 >/dev/null | head -1)"
-    ob="$("$REF"   -p rx --no-captures --engine=dfa -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    oa="$(pcrec_run "$PCREC" -p rx --no-captures --engine=dfa -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
+    ob="$("$REF"   -p rx --no-captures --engine=dfa -o - --pattern "$pat" 2>&1 >/dev/null | head -1)"
     case "$oa" in *"DFA engine"*) sa=factored ;; *"NFA exceeds"*) sa=unfactored ;;
                   "") sa=compiled ;; *) sa="other:$oa" ;; esac
     case "$ob" in *"DFA engine"*) sb=factored ;; *"NFA exceeds"*) sb=unfactored ;;

@@ -299,7 +299,7 @@ def esc(s):
 def build(workdir, pat, extra):
     d = tempfile.mkdtemp(dir=workdir)
     cfile = os.path.join(d, "gen.c")
-    r = subprocess.run([PCREC, "-p", "rx"] + extra + ["-o", cfile, "--", pat],
+    r = subprocess.run([PCREC, "-p", "rx"] + extra + ["-o", cfile, "--pattern", pat],
                        capture_output=True, text=True)
     if r.returncode != 0:
         return None, "pcrec failed: " + r.stderr.strip()

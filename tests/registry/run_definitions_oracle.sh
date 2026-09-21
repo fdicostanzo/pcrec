@@ -120,12 +120,12 @@ one_cell() {
     # substitutions, which can themselves use gated constructs like
     # lookaround's (?=...)) need every module open, PC-4's own
     # `--features classes` precedent one gate wider.
-    if ! pcrec_run "$PCREC" --features all -p pa -o "$d/pa.c" -- "$pa" \
+    if ! pcrec_run "$PCREC" --features all -p pa -o "$d/pa.c" --pattern "$pa" \
             > "$d/pa.log" 2>&1; then
         echo "REFUSED-A" > "$WORKDIR/results/$id"
         return 0
     fi
-    if ! pcrec_run "$PCREC" --features all -p pb -o "$d/pb.c" -- "$pb" \
+    if ! pcrec_run "$PCREC" --features all -p pb -o "$d/pb.c" --pattern "$pb" \
             > "$d/pb.log" 2>&1; then
         echo "REFUSED-B" > "$WORKDIR/results/$id"
         return 0

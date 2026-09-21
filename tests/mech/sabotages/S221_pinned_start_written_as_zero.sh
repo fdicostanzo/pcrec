@@ -49,7 +49,7 @@ SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manage
 # wrong: the clean artifact writes `search_from` into caps[0][0], not a
 # literal. THE FLOOR says the corpus's nonzero-startpos population — the only
 # `.rxt` cells that could see this at all — still exists.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "a*" && grep -q "capture_spans\[0\]\[0\] = (ptrdiff_t)search_from;" "$REACH_TMP/o.c" && echo REACH-PINNED-WRITES-SEARCH-FROM'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "a*" && grep -q "capture_spans\[0\]\[0\] = (ptrdiff_t)search_from;" "$REACH_TMP/o.c" && echo REACH-PINNED-WRITES-SEARCH-FROM'
 SAB_REACH_EXPECT="REACH-PINNED-WRITES-SEARCH-FROM"
 SAB_REACH_POP="tests/base/start_pinned_startpos.rxt|^(ms|ns) |50"
 SAB_COUNT=1

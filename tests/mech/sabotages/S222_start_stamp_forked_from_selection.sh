@@ -55,7 +55,7 @@ SAB_DOC_FIGURE="PREDICTED: searchpinned RED in §2's stamp-vs-body third term an
 # from the selection: on the clean tree `(?m)a*$` stamps "reverse-pass" AND
 # carries a rewind_position, i.e. the stamp and the body agree. The floor is
 # the manifest's own population, since that is what makes the fork disagree.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "(?m)a*$" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && grep -q "size_t rewind_position" "$REACH_TMP/o.c" && echo REACH-STAMP-AGREES-WITH-BODY'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "(?m)a*$" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && grep -q "size_t rewind_position" "$REACH_TMP/o.c" && echo REACH-STAMP-AGREES-WITH-BODY'
 SAB_REACH_EXPECT="REACH-STAMP-AGREES-WITH-BODY"
 SAB_REACH_POP="docs/dev/opt5m2_m2_changed_patterns.txt|^\(\?m|12"
 SAB_COUNT=1

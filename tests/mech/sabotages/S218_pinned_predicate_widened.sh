@@ -71,7 +71,7 @@ SAB_DOC_FIGURE="PREDICTED (the canonical DETECTED figure is owed from the manage
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `$`
 # compiles to an artifact the predicate DECLINES, which is the verdict this
 # plant inverts. THE FLOOR says the WITNESS ROWS still exist.
-SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" -- "$" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && echo REACH-DOLLAR-DECLINED'
+SAB_REACH='"$PCREC" --features all -p rx --no-captures -o "$REACH_TMP/o.c" --pattern "$" && grep -q "RX_DFA_START \"reverse-pass\"" "$REACH_TMP/o.c" && echo REACH-DOLLAR-DECLINED'
 SAB_REACH_EXPECT="REACH-DOLLAR-DECLINED"
 SAB_REACH_POP="docs/dev/opt5m2_m2_changed_patterns.txt|^\(\?m|12"
 SAB_COUNT=1

@@ -58,7 +58,7 @@ SAB_DOC_FIGURE="MEASURED 2026-09-04 (lane edge2, scratch build of this exact pla
 # whose loop entry is therefore the general head test. Without such an
 # artifact this plant would edit a line nothing emits, and the row would score
 # "not detected" for the wrong reason.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "foo\\B" && grep -q "rx_reverse_seed_state" "$REACH_TMP/o.c" && grep -q "if (rx_reverse_is_stop(reverse_state) && !rx_reverse_is_dead(reverse_state)) goto rx_reverse_scan_edge;" "$REACH_TMP/o.c" && echo REACH-SEEDED-HEAD-ENTRY-PRESENT'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "foo\\B" && grep -q "rx_reverse_seed_state" "$REACH_TMP/o.c" && grep -q "if (rx_reverse_is_stop(reverse_state) && !rx_reverse_is_dead(reverse_state)) goto rx_reverse_scan_edge;" "$REACH_TMP/o.c" && echo REACH-SEEDED-HEAD-ENTRY-PRESENT'
 SAB_REACH_EXPECT="REACH-SEEDED-HEAD-ENTRY-PRESENT"
 SAB_COUNT=1
 SAB_BEFORE='            pcrec_sb_printf(c, "%sif (%s_%s_is_stop(%s) && !%s_%s_is_dead(%s))"

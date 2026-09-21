@@ -25,29 +25,31 @@ fi
 mkdir -p "$OUT"
 
 echo "== family A: VM literal chain, caseless, 6 sites =="
-"$PCREC" -p rxA -i --engine=vm --emit-main -o "$OUT/A_abcdef.c" 'abcdef'
+# [REL-1.10]/D118: migrated to --pattern (never run by make; see this
+# study's own header comment for why it is migrated anyway).
+"$PCREC" -p rxA -i --engine=vm --emit-main -o "$OUT/A_abcdef.c" --pattern 'abcdef'
 
 echo "== family B: general class [a-zA-Z0-9_], 1 site =="
-"$PCREC" -p rxG --engine=vm --emit-main -o "$OUT/B_general.c" '[a-zA-Z0-9_]'
+"$PCREC" -p rxG --engine=vm --emit-main -o "$OUT/B_general.c" --pattern '[a-zA-Z0-9_]'
 
 echo "== family B: sparse class [aeiou], 1 site =="
-"$PCREC" -p rxS --engine=vm --emit-main -o "$OUT/B_sparse.c" '[aeiou]'
+"$PCREC" -p rxS --engine=vm --emit-main -o "$OUT/B_sparse.c" --pattern '[aeiou]'
 
 echo "== family C: DFA scan edge, small witness (?i)a{2,40}Z =="
-"$PCREC" -p rxSM --engine=dfa --no-captures --emit-main -o "$OUT/C_small.c" '(?i)a{2,40}Z'
+"$PCREC" -p rxSM --engine=dfa --no-captures --emit-main -o "$OUT/C_small.c" --pattern '(?i)a{2,40}Z'
 
 echo "== family C: DFA scan edge, NON-fold-pair witness [ace]{2,40}Z =="
-"$PCREC" -p rxNP --engine=dfa --no-captures --emit-main -o "$OUT/C_nonpair.c" '[ace]{2,40}Z'
+"$PCREC" -p rxNP --engine=dfa --no-captures --emit-main -o "$OUT/C_nonpair.c" --pattern '[ace]{2,40}Z'
 
 if [ -f "$BENCH_CI256" ]; then
     echo "== family C: DFA scan edge, ci-256 (pcrec-bench, read-only) =="
     CI256="$(cat "$BENCH_CI256")"
-    "$PCREC" -p rxCI --emit-main -o "$OUT/C_ci256.c" -- "$CI256"
+    "$PCREC" -p rxCI --emit-main -o "$OUT/C_ci256.c" --pattern "$CI256"
 else
     echo "gen_base.sh: $BENCH_CI256 not found -- skipping the ci-256 base artifact (pcrec-bench sibling repo not present)" >&2
 fi
 
 echo "== family D: N=16 many-class atom-table crossover witness =="
-"$PCREC" -p rxD16 -i --engine=vm --emit-main -o "$OUT/D_n16.c" 'abcdefghijklmnop'
+"$PCREC" -p rxD16 -i --engine=vm --emit-main -o "$OUT/D_n16.c" --pattern 'abcdefghijklmnop'
 
 echo "gen_base.sh: done -- $OUT/*.c"

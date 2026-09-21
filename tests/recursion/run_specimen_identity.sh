@@ -173,7 +173,7 @@ for sp in $SPELLINGS; do
     # fail on the file NAME rather than on the code.
     mkdir -p "$WORKDIR/$sp"
     if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -fcomments -p rx -o "$WORKDIR/$sp/rx.c" \
-            -- "$(cat "$SPEC/$sp.rx")" 2>"$WORKDIR/$sp.err"; then
+            --pattern "$(cat "$SPEC/$sp.rx")" 2>"$WORKDIR/$sp.err"; then
         die "the specimen spelling '$sp' does not compile: $(head -2 "$WORKDIR/$sp.err")"
     fi
     strip_named < "$WORKDIR/$sp/rx.c" > "$WORKDIR/$sp.stripped"
@@ -256,7 +256,7 @@ strip_nocaps() {
 for sp in $SPELLINGS; do
     mkdir -p "$WORKDIR/nc_$sp"
     if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" --no-captures -p rx \
-            -o "$WORKDIR/nc_$sp/rx.c" -- "$(cat "$SPEC/$sp.rx")" \
+            -o "$WORKDIR/nc_$sp/rx.c" --pattern "$(cat "$SPEC/$sp.rx")" \
             2>"$WORKDIR/nc_$sp.err"; then
         die "'$sp' does not compile under --no-captures: $(head -2 "$WORKDIR/nc_$sp.err")"
     fi
@@ -364,7 +364,7 @@ NSUBJ=$(find "$SUBJ" -name '*.bin' -type f | wc -l)
 
 for sp in $SPELLINGS; do
     "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --emit-main -o "$WORKDIR/m_$sp.c" \
-        -- "$(cat "$SPEC/$sp.rx")" >/dev/null 2>&1 \
+        --pattern "$(cat "$SPEC/$sp.rx")" >/dev/null 2>&1 \
         || die "could not build a driver for '$sp'"
     # shellcheck disable=SC2086
     gen_cc "specimen driver '$sp'" $CC $GENCFLAGS -o "$WORKDIR/m_$sp" \

@@ -17,7 +17,7 @@ SAB_DOC_FIGURE="measured by hand at K10's fix (2026-08-12): 7 reject failures ([
 # MODULE rather than being refused as an invalid class member; restoring
 # the flag re-breaks it. A probe at the ATOM position would be green under
 # the sabotage and is not the witness.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "[\\N{U+41}]"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "[\\N{U+41}]"'
 SAB_REACH_EXPECT="\\N in a class requires module 'unicode-props' (pattern offset 1)"
 SAB_COUNT=1
 SAB_BEFORE="{RK_ESC, 'N', \"{U+\", \"\\\\N{U+0041}\", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,

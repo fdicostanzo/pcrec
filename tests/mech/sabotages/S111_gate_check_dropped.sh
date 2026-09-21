@@ -25,7 +25,7 @@ SAB_DOC_FIGURE="PREDICTED: reject RED broadly; the corpus RED on gated.rxt's ref
 # `--features none` must be REFUSED naming `backrefs`; under the sabotage
 # it COMPILES, which is the mandate's own forbidden shape. A construct with
 # no producer would be refused either way and is not a witness.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "(a)\\1"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "(a)\\1"'
 SAB_REACH_EXPECT="\\1 (backreference/octal) requires module 'backrefs' (pattern offset 3)"
 SAB_COUNT=1
 SAB_BEFORE='    want = pcrec_ext_gate(r, want);

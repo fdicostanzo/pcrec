@@ -104,8 +104,8 @@ fi
 # `--features all` because this is a pcrec-vs-pcrec BYTE comparison, not an
 # oracle differential — what `all` buys is that the corpus's module-gated
 # patterns reach the emitter instead of being refused before it.
-gen_a() { pcrec_run "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -p rx -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -p rx -o - --pattern "$1" 2>/dev/null; }
 
 # ---- the corpus ----------------------------------------------------------
 # Every `pattern` line from every .rxt under tests/, known_fail included: a

@@ -395,7 +395,7 @@ cs_t0=$(now_ns)
     fail=0
     for p in "$@"; do
         i=$((i + 1))
-        if ! "$pcrec" -p rx -o "$outdir/p$i.c" -- "$p" >/dev/null 2>>"$log"; then
+        if ! "$pcrec" -p rx -o "$outdir/p$i.c" --pattern "$p" >/dev/null 2>>"$log"; then
             echo "pattern #$i FAILED: $p" >>"$log"
             fail=1
         fi
@@ -487,7 +487,7 @@ if [ $? -ne 0 ]; then
 else
     kw_pat="$(cat "$kw_pat_file")"
     kw_t0=$(now_ns)
-    kw_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen.c" -- "$kw_pat" 2>&1 >/dev/null)"
+    kw_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen.c" --pattern "$kw_pat" 2>&1 >/dev/null)"
     kw_rc=$?
     kw_t1=$(now_ns)
     kw_secs=$(elapsed_secs "$kw_t0" "$kw_t1")
@@ -513,7 +513,7 @@ else
     # same list with 2% of characters turned into 2-element classes
     kw_cls_pat="$(cat "$kw_dir/pattern_cls.txt")"
     kwc_t0=$(now_ns)
-    kwc_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen_cls.c" -- "$kw_cls_pat" 2>&1 >/dev/null)"
+    kwc_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen_cls.c" --pattern "$kw_cls_pat" 2>&1 >/dev/null)"
     kwc_rc=$?
     kwc_t1=$(now_ns)
     kwc_secs=$(elapsed_secs "$kwc_t0" "$kwc_t1")
@@ -567,7 +567,7 @@ for entry in "${GCC_TIME_PATTERNS[@]}"; do
     echo "  pattern '$pat' (~$nstates DFA states)"
 
     pc_t0=$(now_ns)
-    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$pdir/gen.c" -- "$pat" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$pdir/gen.c" --pattern "$pat" 2>&1 >/dev/null)"
     pc_rc=$?
     pc_t1=$(now_ns)
     if [ $pc_rc -ne 0 ]; then
@@ -770,7 +770,7 @@ build_bench_bin() {
     shift 2
     mkdir -p "$patdir"
     local perr
-    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "$@" -o "$patdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "$@" -o "$patdir/gen.c" --pattern "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile THROUGHPUT pattern '$pattern': $perr"
         BB_OK=0

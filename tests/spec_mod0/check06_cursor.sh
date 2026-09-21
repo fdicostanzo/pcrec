@@ -192,14 +192,14 @@ ROUTED_ROWS=0
 while IFS=$'\t' read -r kind selector syn _rest; do
     [ -z "${syn:-}" ] && continue
 
-    OUT_C=$(pcrec_run "$PCREC" --probe-ask claim -- "$syn" 2>&1);   RC_C=$?
+    OUT_C=$(pcrec_run "$PCREC" --probe-ask claim "$syn" 2>&1);   RC_C=$?
     if [ "$RC_C" -ne 0 ]; then
         UNROUTED="$UNROUTED$syn
 "
         continue
     fi
-    OUT_V=$(pcrec_run "$PCREC" --probe-ask verdict -- "$syn" 2>&1); RC_V=$?
-    OUT_R=$(pcrec_run "$PCREC" --probe-ask result -- "$syn" 2>&1);  RC_R=$?
+    OUT_V=$(pcrec_run "$PCREC" --probe-ask verdict "$syn" 2>&1); RC_V=$?
+    OUT_R=$(pcrec_run "$PCREC" --probe-ask result "$syn" 2>&1);  RC_R=$?
     if [ "$RC_V" -ne 0 ] || [ "$RC_R" -ne 0 ]; then
         echo "  DISAGREE '$syn': routed at want=claim (exit 0) but not at"
         echo "           want=verdict (exit $RC_V) and/or want=result (exit $RC_R)"

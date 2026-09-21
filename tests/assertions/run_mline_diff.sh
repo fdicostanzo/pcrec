@@ -160,7 +160,7 @@ PATTERNS=(
 gen() { # gen <outdir> <pattern> [extra pcrec args]
     local d="$1" pat="$2"; shift 2
     mkdir -p "$d"
-    pcrec_run "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p rx "$@" -o "$d/gen.c" --pattern "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -c -o "$d/gen.o" "$d/gen.c" 2>>"$d/err" || return 1
     $CC -O2 -I"$d" -o "$d/t" "$ROOT_DIR/tests/fuzz/fuzz_driver.c" "$d/gen.o" \
         2>>"$d/err" || return 1

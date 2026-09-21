@@ -268,7 +268,7 @@ def emit_ir_text(pattern_bytes_or_str, engine_vm_forced, features=""):
         argv += ["--engine=vm"]
     if features:
         argv += ["--features", features]
-    argv += ["--emit-ir", "--", pattern_bytes_or_str]
+    argv += ["--emit-ir", "--pattern", pattern_bytes_or_str]
     try:
         r = subprocess.run(argv, capture_output=True, timeout=30)
     except subprocess.TimeoutExpired:

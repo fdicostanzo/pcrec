@@ -959,8 +959,8 @@ fi
 # CURRENT `abi` number, so the two compilers' emitted `rx_info.abi` stamps
 # must agree — read off an actual artifact from each, on a call-free
 # pattern, rather than re-derived from source text.
-ABI_SUBJ_ART="$(pcrec_run "$PCREC"   --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
-ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
+ABI_SUBJ_ART="$(pcrec_run "$PCREC"   --features all -p rx -o - --pattern 'a' 2>/dev/null)"   # [K37] bounded
+ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - --pattern 'a' 2>/dev/null)"   # [K37] bounded
 ABI_SUBJ="$(printf '%s\n' "$ABI_SUBJ_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 ABI_PIN="$(printf '%s\n' "$ABI_PIN_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 if [ -z "$ABI_SUBJ" ] || [ -z "$ABI_PIN" ]; then
@@ -1019,11 +1019,11 @@ stamp_count() {
 # and takes the flag, so comparison (B) keeps its whole-file comment
 # sensitivity too rather than quietly losing it at the default flip.
 # shellcheck disable=SC2086
-gen_a() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -o - --pattern "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -p rx $2 -o - --pattern "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
+gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - --pattern "$1" 2>/dev/null; }
 # [ENG-ISL] THE FOURTH BUILD, and the one that turns the island's excuse from a
 # per-artifact exemption into a CLAIM (panel r53, F3): the SUBJECT compiler with
 # the new axis DENIED. It is the only reference that ISOLATES the island — the
@@ -1033,7 +1033,7 @@ gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null
 # artifact would read green. Denying the axis and getting the PINNED bytes back
 # is what says the movement is the island's and nothing else's.
 # shellcheck disable=SC2086
-gen_noisl() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -o - -- "$1" 2>/dev/null; }
+gen_noisl() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -o - --pattern "$1" 2>/dev/null; }
 # [FORM-CHAR] THE FIFTH AND SIXTH BUILDS, the fold axis's own copies of the
 # island's shape one paragraph up: the SUBJECT compiler with the ascii-fold
 # class test denied, and with BOTH region-moving deny axes denied for the
@@ -1042,9 +1042,9 @@ gen_noisl() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-isl
 # not fire is asserted a byte-level no-op by the converse arms below, and
 # the restore claim is sharpest when the deny set names what fired).
 # shellcheck disable=SC2086
-gen_nofold() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-cls-fold -o - -- "$1" 2>/dev/null; }
+gen_nofold() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-cls-fold -o - --pattern "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_denyboth() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -fno-cls-fold -o - -- "$1" 2>/dev/null; }
+gen_denyboth() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -fno-alt-island -fno-cls-fold -o - --pattern "$1" 2>/dev/null; }
 
 # [DD-14.FB] THE PROGRAM REGION: `goto <p>_L0;` through the accept label. An
 # artifact with no VM program (a DFA-selected pattern) yields the EMPTY region,
@@ -1233,7 +1233,7 @@ control() { # control <label> <extra pcrec args>
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
         # shellcheck disable=SC2086
-        if "$REF" --features all -p rx $args -o - -- "$pat" >/dev/null 2>&1; then
+        if "$REF" --features all -p rx $args -o - --pattern "$pat" >/dev/null 2>&1; then
             ctl_bad=$((ctl_bad + 1))
             [ "$ctl_bad" -le 5 ] && echo "  CONTROL[$label]: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
         else
@@ -1788,8 +1788,8 @@ CEOF
         [ -n "$pat" ] || continue
         npat=$((npat + 1))
         local eng_a eng_b
-        eng_a="$(pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
-        eng_b="$("$REF"   --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        eng_a="$(pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        eng_b="$("$REF"   --features all -p rx -o - --pattern "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
         case "$eng_b" in *PCREC_ENGINE_VM*) ;; *)
             bad "[elision] the pre-module reference does NOT choose the VM for '$pat' ($eng_b), so this pattern is not an instance of the change the list names"
             bads=$((bads + 1)); continue ;;
@@ -1800,8 +1800,8 @@ CEOF
         esac
         local ok_build=1
         rm -rf "$d/a" "$d/b"; mkdir -p "$d/a" "$d/b"
-        pcrec_run "$PCREC" --features all -p q -o "$d/a/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
-        "$REF"   --features all -p q -o "$d/b/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
+        pcrec_run "$PCREC" --features all -p q -o "$d/a/q.c" --pattern "$pat" >/dev/null 2>&1 || ok_build=0
+        "$REF"   --features all -p q -o "$d/b/q.c" --pattern "$pat" >/dev/null 2>&1 || ok_build=0
         if [ "$ok_build" -eq 0 ]; then
             bad "[elision] '$pat' did not compile on both builds"
             bads=$((bads + 1)); continue

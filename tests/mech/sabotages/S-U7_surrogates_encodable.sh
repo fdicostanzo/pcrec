@@ -21,7 +21,7 @@ SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/utf8"
 SAB_DESC="the utf8 decomposition's band table loses its surrogate gap, so a lowered '.', '[^a]' or wide range accepts the UTF-8-shaped encodings of U+D800..U+DFFF that valid UTF-8 does not contain"
 SAB_DOC_FIGURE="PREDICTED (§8.3.1): the 9 surrogate-subject blocks of tests/utf8/invalid.rxt red (the artifact ACCEPTS ED A0 80 / ED BF BF where the expectation is reject); every compile-time cell green, which is the row's own point. DEMONSTRATED at stage 2 pre-corpus: -e utf8 '^.$' rejects ED A0 80 clean and matches (0,3) sabotaged."
-SAB_REACH='"$PCREC" -e utf8 -p rx -o - -- "^.$"'
+SAB_REACH='"$PCREC" -e utf8 -p rx -o - --pattern "^.$"'
 SAB_REACH_EXPECT='Pattern: ^.$'
 # RE-POINTED 2026-09-05: the stage-2 lane wrote this population against a
 # GUESSED corpus filename; the promoted D27 corpus (merge 698eea61) landed

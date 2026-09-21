@@ -37,7 +37,7 @@ stamp() { grep -oE "^#define RX_$1 .*" "$2" 2>/dev/null | head -1 | sed "s/^#def
 WITNESS='a{0,2000}'
 
 # --- 0. the shipped default does not move the witness (positive baseline) --
-if pcrec_run "$PCREC" -p rx -o "$WORK/base.c" -- "$WITNESS" 2>"$WORK/base.err"; then
+if pcrec_run "$PCREC" -p rx -o "$WORK/base.c" --pattern "$WITNESS" 2>"$WORK/base.err"; then
     got="$(stamp ENGINE "$WORK/base.c" | tr -d '"')"
     [ "$got" = "dfa" ] && ok "shipped default: '$WITNESS' compiles to the DFA engine (budget does not fire at 30,000,000)" \
                        || bad "shipped default: expected RX_ENGINE \"dfa\", got \"$got\""
@@ -66,7 +66,7 @@ else
 fi
 
 # --- 2. UNDER AUTO, the lowered reference compiler falls back to the VM -----
-if pcrec_run "$REF" -p rx -o "$WORK/auto.c" -- "$WITNESS" 2>"$WORK/auto.err"; then
+if pcrec_run "$REF" -p rx -o "$WORK/auto.c" --pattern "$WITNESS" 2>"$WORK/auto.err"; then
     ok "auto mode compiles '$WITNESS' under the lowered budget (falls back rather than refusing)"
     got="$(stamp ENGINE "$WORK/auto.c" | tr -d '"')"
     [ "$got" = "vm" ] && ok "auto mode: RX_ENGINE is \"vm\" — the DFA attempt was abandoned" \
@@ -81,7 +81,7 @@ else
 fi
 
 # --- 2c. THE FALLBACK ARTIFACT ANSWERS CORRECTLY, not merely "compiles" -----
-if pcrec_run "$REF" -p rx --emit-main -o "$WORK/m.c" -- "$WITNESS" 2>/dev/null \
+if pcrec_run "$REF" -p rx --emit-main -o "$WORK/m.c" --pattern "$WITNESS" 2>/dev/null \
    && "$CC" -O1 -o "$WORK/m" "$WORK/m.c" 2>"$WORK/m.err"; then
     got1="$("$WORK/m" "$(printf 'a%.0s' $(seq 1 50))")"
     got2="$("$WORK/m" "$(printf 'b%.0s' $(seq 1 5))$(printf 'a%.0s' $(seq 1 10))")"
@@ -95,7 +95,7 @@ else
 fi
 
 # --- 3. UNDER --engine=dfa, the SAME reference compiler is UNAFFECTED -------
-if pcrec_run "$REF" -p rx --engine=dfa -o "$WORK/dfa.c" -- "$WITNESS" 2>"$WORK/dfa.err"; then
+if pcrec_run "$REF" -p rx --engine=dfa -o "$WORK/dfa.c" --pattern "$WITNESS" 2>"$WORK/dfa.err"; then
     got="$(stamp ENGINE "$WORK/dfa.c" | tr -d '"')"
     [ "$got" = "dfa" ] && ok "--engine=dfa: '$WITNESS' still compiles to the DFA engine under the SAME lowered reference (the budget is auto-only)" \
                        || bad "--engine=dfa: expected RX_ENGINE \"dfa\", got \"$got\""
@@ -109,7 +109,7 @@ else
 fi
 
 # --- 4. THE RAISE FLAG ROUND TRIP: raising past the spend cancels the fallback
-if pcrec_run "$REF" -p rx --max-auto-dfa-elems=5000 -o "$WORK/raised.c" -- "$WITNESS" 2>"$WORK/raised.err"; then
+if pcrec_run "$REF" -p rx --max-auto-dfa-elems=5000 -o "$WORK/raised.c" --pattern "$WITNESS" 2>"$WORK/raised.err"; then
     got="$(stamp ENGINE "$WORK/raised.c" | tr -d '"')"
     [ "$got" = "dfa" ] && ok "--max-auto-dfa-elems=5000 (above the two mandatory machines' own spend): DFA stays the engine, no fallback" \
                        || bad "raised budget: expected RX_ENGINE \"dfa\", got \"$got\""
@@ -123,7 +123,7 @@ else
 fi
 
 # --- 5. RAISE-ONLY: a value below the REFERENCE BUILD'S OWN -D floor refuses -
-if pcrec_run "$REF" -p rx --max-auto-dfa-elems=500 -o "$WORK/low.c" -- "$WITNESS" 2>"$WORK/low.err"; then
+if pcrec_run "$REF" -p rx --max-auto-dfa-elems=500 -o "$WORK/low.c" --pattern "$WITNESS" 2>"$WORK/low.err"; then
     bad "raise-only: --max-auto-dfa-elems=500 was ACCEPTED below the reference build's own 2,000 floor"
 else
     if grep -q 'RAISE-ONLY' "$WORK/low.err" && grep -q '2000' "$WORK/low.err"; then
@@ -134,7 +134,7 @@ else
 fi
 
 # --- 6. RAISE-ONLY against the SHIPPED default, on the shipped compiler -----
-if pcrec_run "$PCREC" -p rx --max-auto-dfa-elems=100 -o "$WORK/shiplow.c" -- "$WITNESS" 2>"$WORK/shiplow.err"; then
+if pcrec_run "$PCREC" -p rx --max-auto-dfa-elems=100 -o "$WORK/shiplow.c" --pattern "$WITNESS" 2>"$WORK/shiplow.err"; then
     bad "raise-only (shipped): --max-auto-dfa-elems=100 was ACCEPTED below the shipped 30,000,000 default"
 else
     grep -q 'RAISE-ONLY' "$WORK/shiplow.err" \

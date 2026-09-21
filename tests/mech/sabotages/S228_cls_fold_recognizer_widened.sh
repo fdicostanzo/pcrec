@@ -30,7 +30,7 @@ SAB_DOC_FIGURE="MEASURED 2026-09-05 (lane formchar1, solo single-row mech run at
 # CLEAN tree: a nonpair two-member class keeps its bitmap (the conjunct this
 # plant deletes is live), and a fold pair takes the fold compare and stamps
 # it (the arm the plant widens is live).
-SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/np.c" -- "([ac])x" && grep -q "rx_class_bitmap0" "$REACH_TMP/np.c" && "$PCREC" -p rx -o "$REACH_TMP/fp.c" -- "([Aa])x" && grep -q "| 0x20) == 97" "$REACH_TMP/fp.c" && grep -q "^#define RX_VM_CLS_FOLDS 1" "$REACH_TMP/fp.c" && echo REACH-CLS-FOLD-BOTH-ARMS'
+SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/np.c" --pattern "([ac])x" && grep -q "rx_class_bitmap0" "$REACH_TMP/np.c" && "$PCREC" -p rx -o "$REACH_TMP/fp.c" --pattern "([Aa])x" && grep -q "| 0x20) == 97" "$REACH_TMP/fp.c" && grep -q "^#define RX_VM_CLS_FOLDS 1" "$REACH_TMP/fp.c" && echo REACH-CLS-FOLD-BOTH-ARMS'
 SAB_REACH_EXPECT="REACH-CLS-FOLD-BOTH-ARMS"
 SAB_COUNT=1
 SAB_BEFORE='    if (count == 2 && (lo ^ hi) == 0x20 && lo >= '"'"'A'"'"' && lo <= '"'"'Z'"'"'

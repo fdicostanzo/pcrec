@@ -115,7 +115,7 @@ B161
 # gen <out> <pattern> [args...] — compile one arm.
 gen() {
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         > "$WORKDIR/$out.err" 2>&1
 }
 

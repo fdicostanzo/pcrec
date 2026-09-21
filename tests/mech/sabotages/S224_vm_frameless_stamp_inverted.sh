@@ -33,7 +33,7 @@ SAB_DOC_FIGURE="MEASURED 2026-09-19 (adm71 item 2, solo mech run, tree d5ea41a79
 # capture-bearing straight-line pattern compiles to a VM program and stamps
 # RX_VM_FRAMELESS 1 -- the has_push definition and the stamp write both
 # execute on this witness, on the default axis.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" -- "(a)b" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 1" "$REACH_TMP/o.c" && echo REACH-FRAMELESS-STAMP-CORRECT'
+SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "(a)b" && grep -q "^    goto rx_L0;" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_FRAMELESS 1" "$REACH_TMP/o.c" && echo REACH-FRAMELESS-STAMP-CORRECT'
 SAB_REACH_EXPECT="REACH-FRAMELESS-STAMP-CORRECT"
 SAB_COUNT=1
 SAB_BEFORE='    pcrec_sb_stampf(c, v->up, "VM_FRAMELESS", "%d", v->has_push ? 0 : 1);'

@@ -15,7 +15,7 @@ SAB_DOC_FIGURE="measured MOD-0.4d: see landing report for the failing-direction 
 # unknown-name blame from `at` (the doorway default, offset 0) to `nstart`
 # (the name start), and the sentence is identical either way. Asserting
 # `(pattern offset 0)` is asserting the thing that moves.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "(*FOO)"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "(*FOO)"'
 SAB_REACH_EXPECT="(*VERB) not recognized or malformed (pattern offset 0)"
 SAB_COUNT=1
 SAB_BEFORE="    if (!v) REFUSE(at, \"%s\", t->unknown_msg);"

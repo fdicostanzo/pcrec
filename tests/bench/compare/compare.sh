@@ -743,7 +743,7 @@ process_case() {
     # shellcheck disable=SC2206
     local extra_flags=(${CASE_FLAGS[$id]:-})
     local perr
-    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "${extra_flags[@]}" -o "$cdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "${extra_flags[@]}" -o "$cdir/gen.c" --pattern "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile case $id pattern '$pattern': $perr"
         CASE_VALID[$id]="error"; CASE_REASON[$id]="pcrec compile failure: $perr"

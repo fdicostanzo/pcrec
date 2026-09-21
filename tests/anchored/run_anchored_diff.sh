@@ -147,10 +147,10 @@ d="$WORKDIR/w.$$"; mkdir -p "$d"
 trap 'rm -rf "$d"' EXIT
 while IFS= read -r pat; do
     pcrec_run "$PCREC" -p on --no-captures --features all \
-        -o "$d/on.c" -- "$pat" >/dev/null 2>&1 || { echo SKIP_REFUSED; continue; }
+        -o "$d/on.c" --pattern "$pat" >/dev/null 2>&1 || { echo SKIP_REFUSED; continue; }
     grep -q '^#define ON_DFA_MATCH "unwrapped"' "$d/on.c" || { echo SKIP_NOTFORM; continue; }
     pcrec_run "$PCREC" -p off --no-captures --features all -fno-anchored-dfa \
-        -o "$d/off.c" -- "$pat" >/dev/null 2>&1 || { echo BAD_ASYMMETRIC; echo "BAD: the denied build refused a pattern the default build compiled: $pat"; continue; }
+        -o "$d/off.c" --pattern "$pat" >/dev/null 2>&1 || { echo BAD_ASYMMETRIC; echo "BAD: the denied build refused a pattern the default build compiled: $pat"; continue; }
     # `-Werror` on the generated C is the harness's own default and is part of
     # the claim: the anchored body is source SOMEBODY ELSE compiles.
     if ! gen_cc "anchored-diff $pat" $CC $GENCFLAGS -I"$d" \
@@ -249,7 +249,7 @@ capsd="$WORKDIR/caps"; mkdir -p "$capsd"
 c_ok=0; c_skip=0; c_bad=0; c_cells=0; c_ncaps_min=99
 for pat in "${CAPS_WITNESSES[@]}"; do
     # CAPTURES ON — no `--no-captures` — which is the whole point of the arm.
-    if ! pcrec_run "$PCREC" -p on --features all -o "$capsd/on.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p on --features all -o "$capsd/on.c" --pattern "$pat" >/dev/null 2>&1; then
         bad "§2 witness '$pat' did not compile"; c_bad=$((c_bad + 1)); continue
     fi
     if ! grep -q '^#define ON_DFA_MATCH "unwrapped"' "$capsd/on.c"; then
@@ -266,7 +266,7 @@ for pat in "${CAPS_WITNESSES[@]}"; do
     fi
     [ "$nc" -lt "$c_ncaps_min" ] && c_ncaps_min="$nc"
     if ! pcrec_run "$PCREC" -p off --features all -fno-anchored-dfa \
-            -o "$capsd/off.c" -- "$pat" >/dev/null 2>&1; then
+            -o "$capsd/off.c" --pattern "$pat" >/dev/null 2>&1; then
         bad "§2 the denied build refused witness '$pat' the default build compiled"; c_bad=$((c_bad + 1)); continue
     fi
     if ! gen_cc "anchored-diff caps $pat" $CC $GENCFLAGS -I"$capsd" \

@@ -52,7 +52,7 @@ corpus_patterns() {
 NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
 
 # --- 1. the stamps exist and are UNCONDITIONAL on every VM artifact (D81) ----
-pcrec_run "$PCREC" -p rx --features all -o "$WORK/plain.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/plain.c" --pattern 'a(b|c)+d' 2>/dev/null
 for m in UNROLL_K UNROLL_K_WHY MAX_EMIT_CODE_BYTES MAX_EMIT_BYTES; do
     if [ -n "$(stamp "$m" "$WORK/plain.c")" ]; then
         ok "RX_$m is stamped on an ordinary VM artifact (D81: unconditional)"
@@ -65,7 +65,7 @@ done
 why_is() { # pattern, extra-flags, expected
     local out="$WORK/w.c"
     # shellcheck disable=SC2086
-    if ! pcrec_run "$PCREC" -p rx --features all $2 -o "$out" -- "$1" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" -p rx --features all $2 -o "$out" --pattern "$1" 2>/dev/null; then
         bad "_UNROLL_K_WHY '$3': the compile refused, so the path was never reached"; return
     fi
     local got; got="$(stamp UNROLL_K_WHY "$out" | tr -d '"')"
@@ -81,25 +81,25 @@ why_is "$NEST8"    ''                 size-model
 # Read from the artifact rather than trusted: an explicit --unroll=K must
 # appear as that K, and the size term's own choice must appear as its choice.
 for k in 1 2 4 8; do
-    pcrec_run "$PCREC" -p rx --features all --unroll=$k -o "$WORK/k.c" -- 'a(b|c)+d' 2>/dev/null
+    pcrec_run "$PCREC" -p rx --features all --unroll=$k -o "$WORK/k.c" --pattern 'a(b|c)+d' 2>/dev/null
     got="$(stamp UNROLL_K "$WORK/k.c")"
     [ "$got" = "$k" ] && ok "--unroll=$k is stamped as $k" \
                       || bad "--unroll=$k stamped as '$got'"
 done
-pcrec_run "$PCREC" -p rx --features all -o "$WORK/n8.c" -- "$NEST8" 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/n8.c" --pattern "$NEST8" 2>/dev/null
 got="$(stamp UNROLL_K "$WORK/n8.c")"
 [ "$got" = "1" ] && ok "the size term's chosen K (1) is on the artifact" \
                  || bad "the size term chose a K the artifact does not carry: '$got'"
 
 # --- 4. the effective caps follow the flags --------------------------------
-pcrec_run "$PCREC" -p rx --features all -o "$WORK/c1.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/c1.c" --pattern 'a(b|c)+d' 2>/dev/null
 [ "$(stamp MAX_EMIT_BYTES "$WORK/c1.c")" = "1000000" ] \
     && ok "the default total cap is stamped" || bad "default total cap stamp wrong"
-pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=4000000 -o "$WORK/c2.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=4000000 -o "$WORK/c2.c" --pattern 'a(b|c)+d' 2>/dev/null
 [ "$(stamp MAX_EMIT_BYTES "$WORK/c2.c")" = "4000000" ] \
     && ok "a raised total cap is stamped as the EFFECTIVE value" \
     || bad "a raised cap is not reflected in the stamp"
-if pcrec_run "$PCREC" -p rx --max-emit-bytes=400000 -o "$WORK/c3.c" -- 'a' 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx --max-emit-bytes=400000 -o "$WORK/c3.c" --pattern 'a' 2>/dev/null; then
     bad "--max-emit-bytes accepted a value BELOW the default; raise-only is what stops these being used to manufacture a refusal"
 else
     ok "--max-emit-bytes is raise-only (a below-default value is refused)"
@@ -115,7 +115,7 @@ fi
 # there in the same breath, so a future "stamp everything everywhere" change
 # fails here rather than silently making `_UNROLL_K` meaningless on an engine
 # with no counter rung.
-pcrec_run "$PCREC" -p rx --features all -o "$WORK/dfa.c" -- 'abc' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/dfa.c" --pattern 'abc' 2>/dev/null
 if [ "$(stamp ENGINE "$WORK/dfa.c" | tr -d '"')" != "dfa" ]; then
     bad "the DFA-stamp cell's own pattern no longer selects the DFA engine — the cell is vacuous until its pattern is re-chosen"
 else
@@ -172,13 +172,13 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
     ok "reference compiler built with the threshold at 20000 and the code cap at 31000"
     RESCUE='(?:aa|a){8,12}+b'
-    if "$REF" -p rx --features all -o "$WORK/r.c" -- "$RESCUE" 2>/dev/null; then
+    if "$REF" -p rx --features all -o "$WORK/r.c" --pattern "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
         [ "$got" = "cap-rescue" ] \
             && ok "_UNROLL_K_WHY 'cap-rescue' reached (the bar declined this K; the lowered cap took it anyway)" \
             || bad "_UNROLL_K_WHY expected 'cap-rescue' under the lowered cap, got '$got'"
         # ANSWER IDENTITY: the rescued artifact must answer as the default build does
-        pcrec_run "$PCREC" -p rx --features all -o "$WORK/d.c" -- "$RESCUE" 2>/dev/null
+        pcrec_run "$PCREC" -p rx --features all -o "$WORK/d.c" --pattern "$RESCUE" 2>/dev/null
         rk="$(stamp UNROLL_K "$WORK/r.c")"; dk="$(stamp UNROLL_K "$WORK/d.c")"
         if [ "$rk" != "$dk" ]; then
             ok "the rescue chose a different K ($rk) from the default build ($dk) — the arms are not vacuously equal"
@@ -210,7 +210,7 @@ fi
 nat=0
 while IFS= read -r p; do
     [ -n "$p" ] || continue
-    if pcrec_run "$PCREC" -p rx --features all -o "$WORK/nat.c" -- "$p" 2>/dev/null; then
+    if pcrec_run "$PCREC" -p rx --features all -o "$WORK/nat.c" --pattern "$p" 2>/dev/null; then
         [ "$(stamp UNROLL_K_WHY "$WORK/nat.c" | tr -d '"')" = "cap-rescue" ] && nat=$((nat+1))
     fi
 done < <(corpus_patterns)
@@ -248,7 +248,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
     base_sc=""; worst_sc=""; argmin_k=""; argmin_n=""
     for k in 8 6 4 3 2 1; do
         pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=$k \
-            -o "$WORK/cap$k.c" -- "$CAPW" 2>/dev/null || continue
+            -o "$WORK/cap$k.c" --pattern "$CAPW" 2>/dev/null || continue
         sc="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/cap$k.c" | grep -oE '[-0-9]+$')"
         n="$(grep -cE '^rx_L[0-9]+:' "$WORK/cap$k.c")"
         [ "$k" = 8 ] && base_sc="$sc"
@@ -261,7 +261,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
     fi
 
     # (b) with the ladder RUNNING on it, the term must decline and say why
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/cap.c" -- "$CAPW" 2>/dev/null; then
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/cap.c" --pattern "$CAPW" 2>/dev/null; then
         why="$(stamp UNROLL_K_WHY "$WORK/cap.c" | tr -d '"')"
         gotk="$(stamp UNROLL_K "$WORK/cap.c")"
         gotsc="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/cap.c" | grep -oE '[-0-9]+$')"
@@ -277,7 +277,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
 
     # (c) ANTI-VACUITY: the same compiler must still TAKE a K where capacity
     #     is flat, or (b) would pass on a compiler whose ladder never runs.
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/flat.c" -- '((a)|ab){0,12}c' 2>/dev/null; then
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/flat.c" --pattern '((a)|ab){0,12}c' 2>/dev/null; then
         fwhy="$(stamp UNROLL_K_WHY "$WORK/flat.c" | tr -d '"')"
         case "$fwhy" in
             size-model|size-model-declined|cap-rescue)
@@ -299,11 +299,11 @@ fi
 natcap=0
 while IFS= read -r p; do
     [ -n "$p" ] || continue
-    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=8 -o "$WORK/n8.c" -- "$p" 2>/dev/null || continue
+    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=8 -o "$WORK/n8.c" --pattern "$p" 2>/dev/null || continue
     rungs="$(stamp VM_RUNGS "$WORK/n8.c")"
     case "$rungs" in *[!0-9a-fA-Fx]*|"") continue ;; esac
     [ $(( rungs & 0x10 )) -ne 0 ] || continue
-    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=1 -o "$WORK/n1.c" -- "$p" 2>/dev/null || continue
+    pcrec_run "$PCREC" -p rx --features all --engine=vm --unroll=1 -o "$WORK/n1.c" --pattern "$p" 2>/dev/null || continue
     s8="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/n8.c" | grep -oE '[-0-9]+$')"
     s1="$(grep -oE '\.subject_ceiling = [-0-9]+' "$WORK/n1.c" | grep -oE '[-0-9]+$')"
     [ -n "$s8" ] && [ -n "$s1" ] || continue
@@ -324,9 +324,9 @@ fi
 # success into a failure, which is exactly what the raise-only rule exists to
 # prevent. The bound saturates now; this cell is the pin.
 HUGE=6148914691236517206      # ULLONG_MAX/3 + 1, the smallest wrapping value
-pcrec_run "$PCREC" -p rx --features all -o "$WORK/nr.c" -- "$NEST8" 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/nr.c" --pattern "$NEST8" 2>/dev/null
 base_k="$(stamp UNROLL_K "$WORK/nr.c")"
-if pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=$HUGE -o "$WORK/hr.c" -- "$NEST8" 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=$HUGE -o "$WORK/hr.c" --pattern "$NEST8" 2>/dev/null; then
     hk="$(stamp UNROLL_K "$WORK/hr.c")"
     [ -n "$base_k" ] && [ "$hk" = "$base_k" ] \
         && ok "--max-emit-bytes past ULLONG_MAX/3 compiles what the default compiles, at the same K ($hk) — the scratch bound saturates instead of wrapping" \
@@ -411,7 +411,7 @@ if [ -x "$REF2" ]; then
         best=""; dflt=""
         for k in 1 2 3 4 5 6 7 8; do
             "$REF2" -p rx --features all --engine=vm --unroll=$k \
-                --warn-emit-bytes=1 -o "$WORK/pool.c" -- "$ppat" \
+                --warn-emit-bytes=1 -o "$WORK/pool.c" --pattern "$ppat" \
                 2>"$WORK/pool.err" || continue
             # [F9] HARD-FAIL rather than fall back to whole-file bytes. The
             # quantity this block acts on is COMMENT-EXCLUDED code bytes; the
@@ -434,7 +434,7 @@ if [ -x "$REF2" ]; then
 
         # THE COMPILER'S OWN DECISION at the default, and the island stamp,
         # both read off ONE artifact this block did not force a K on.
-        "$REF2" -p rx --features all --engine=vm -o "$WORK/poold.c" -- "$ppat" \
+        "$REF2" -p rx --features all --engine=vm -o "$WORK/poold.c" --pattern "$ppat" \
             2>/dev/null || true
         why="$(sed -n 's/^#define RX_UNROLL_K_WHY "\([a-z-]*\)"$/\1/p' "$WORK/poold.c" | head -1)"
         isl="$(sed -n 's/^#define RX_VM_ALT_ISLANDS \([0-9]*\)$/\1/p' "$WORK/poold.c" | head -1)"

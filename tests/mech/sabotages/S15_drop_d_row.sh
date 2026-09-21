@@ -27,7 +27,7 @@ SAB_DOC_FIGURE="tests/reject/CLAUDE.md (pre-SR-2 shape): 2 reject checks, 0 corp
 # answered by a registry row -- because module `classes` builds it, the way
 # module `assertions` built `\b` out from under S70 -- this row's reject
 # population moves to a different site and the row certifies nothing.
-SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "\\d"'
 SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
 # ANCHOR MOVED at [DD-11.1] (caught by scripts/m6read_check_sab_anchors.py on

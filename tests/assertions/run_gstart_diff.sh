@@ -181,7 +181,7 @@ PATSPEC=(
 gen() { # gen <outdir> <prefix> <pattern> [extra pcrec args]
     local d="$1" pfx="$2" pat="$3"; shift 3
     mkdir -p "$d"
-    pcrec_run "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" --pattern "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -c -o "$d/gen.o" "$d/gen.c" 2>>"$d/err" || return 1
 }
 

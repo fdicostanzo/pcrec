@@ -44,7 +44,7 @@ def compile_one(pattern, engine, idx, tag):
     base = os.path.join(OUTDIR, f"{tag}_{idx}_{engine}")
     cfile = base + ".c"
     hfile = base + ".h"
-    cmd = [PCREC, f"--engine={engine}", "--features", "all", "-o", cfile, "--", pattern]
+    cmd = [PCREC, f"--engine={engine}", "--features", "all", "-o", cfile, "--pattern", pattern]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
     except subprocess.TimeoutExpired:

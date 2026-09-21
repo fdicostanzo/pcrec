@@ -302,7 +302,7 @@ like `+` or `*` at the start of the pattern.)
    isn't a meaningful number), add it to `CASE_METRIC` with value
    `latency` — see case (i).
 3. Confirm the pattern actually compiles on pcrec's current base tier
-   before adding it (`build/pcrec -p rx -o /tmp/x.c -- 'PATTERN'`) — this
+   before adding it (`build/pcrec -p rx -o /tmp/x.c --pattern 'PATTERN'`) — this
    suite is about comparing performance on patterns pcrec supports, not
    about coverage (that's `tests/harness/`'s job; see the `esc_modules`
    table in `src/parse/parse.c` for what's implemented on the base tier).

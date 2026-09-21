@@ -138,7 +138,7 @@ def pcrec_argv(pcrec, prefix, row, out_c):
         argv += ["-i"]
     if row["features"]:
         argv += ["--features", row["features"]]
-    argv += ["-o", out_c, "--", row["pattern"]]
+    argv += ["-o", out_c, "--pattern", row["pattern"]]
     return argv
 
 def run_cases(sp, timeout_bin, run_secs, exe, extra_argv_prefix, cases):

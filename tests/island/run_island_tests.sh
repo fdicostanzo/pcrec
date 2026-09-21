@@ -41,7 +41,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" --pattern "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -61,7 +61,7 @@ n="$(islands "$WORKDIR/vm_none.c")"
 [ "${n:-}" = "0" ] && ok "a VM artifact with no island still SPELLS RX_VM_ALT_ISLANDS 0" \
                    || bad "VM artifact 'a+b': expected RX_VM_ALT_ISLANDS 0 spelled, got '${n:-<absent>}'"
 
-pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORKDIR/dfa.c" -- 'cat|dog' \
+pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORKDIR/dfa.c" --pattern 'cat|dog' \
     >/dev/null 2>"$WORKDIR/dfa.err"
 if grep -q 'RX_VM_ALT_ISLANDS' "$WORKDIR/dfa.c" 2>/dev/null; then
     bad "a DFA artifact carries RX_VM_ALT_ISLANDS — the stamp is VM-route-only (§6.3 (b))"
@@ -308,8 +308,8 @@ refusal_bad=0
 for k in 4 6 8 10 12 14; do
     pat="$(mkpat "$k")"
     on_ok=1; off_ok=1
-    pcrec_run "$PCREC" -p rx -o "$WORKDIR/lad_on.c"  -- "$pat" >/dev/null 2>&1 || on_ok=0
-    pcrec_run "$PCREC" -p rx -fno-alt-island -o "$WORKDIR/lad_off.c" -- "$pat" >/dev/null 2>&1 || off_ok=0
+    pcrec_run "$PCREC" -p rx -o "$WORKDIR/lad_on.c"  --pattern "$pat" >/dev/null 2>&1 || on_ok=0
+    pcrec_run "$PCREC" -p rx -fno-alt-island -o "$WORKDIR/lad_off.c" --pattern "$pat" >/dev/null 2>&1 || off_ok=0
     if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
         bad "REFUSAL IDENTITY: k=$k is REFUSED with the island and ACCEPTED under -fno-alt-island. An optimization axis must never narrow what pcrec accepts — this is the regression the size rule exists to prevent"
         refusal_bad=$((refusal_bad + 1))
@@ -397,7 +397,7 @@ for arm in on off; do
     fl=""; [ "$arm" = off ] && fl="-fno-alt-island"
     d="$WORKDIR/bud_$arm"; mkdir -p "$d"
     # shellcheck disable=SC2086
-    pcrec_run "$PCREC" -p rx --engine=vm $fl -o "$d/gen.c" -- "$BUDGET_PAT" >/dev/null 2>&1         || { bad "the budget witness did not compile ($arm)"; bud_ok=0; break; }
+    pcrec_run "$PCREC" -p rx --engine=vm $fl -o "$d/gen.c" --pattern "$BUDGET_PAT" >/dev/null 2>&1         || { bad "the budget witness did not compile ($arm)"; bud_ok=0; break; }
 
     cp "$WORKDIR/bdrv.c" "$d/bdrv.c"
     if ! "${CC:-gcc}" -O1 -w -std=gnu11 -I"$d" -o "$d/t" "$d/bdrv.c" "$d/gen.c" 2>"$d/cc.err"; then bad "the budget witness driver did not build ($arm): $(head -2 "$d/cc.err" | tr '\n' ' ')"; bud_ok=0; break; fi
@@ -471,8 +471,8 @@ cap_bad=0
 for N in 260 300 340; do
     pat="$(capwit "$N")"
     on_ok=1; off_ok=1
-    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/cap_on.c"  -- "$pat" >/dev/null 2>&1 || on_ok=0
-    pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/cap_off.c" -- "$pat" >/dev/null 2>&1 || off_ok=0
+    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/cap_on.c"  --pattern "$pat" >/dev/null 2>&1 || on_ok=0
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island -o "$WORKDIR/cap_off.c" --pattern "$pat" >/dev/null 2>&1 || off_ok=0
     if [ "$off_ok" = "1" ] && [ "$on_ok" = "0" ]; then
         bad "CAP GUARD: the N=$N rung is REFUSED with the island and ACCEPTED under -fno-alt-island. Its islands cross PCREC_MAX_VM_EMIT_CODE_BYTES where the chain does not — the acceptance regression the guard exists to prevent, and the factor alone does not catch it"
         cap_bad=$((cap_bad + 1))
@@ -492,7 +492,7 @@ done
 # would cross it.
 pat="$(capwit 340)"
 pcrec_run "$PCREC" -p rx --engine=vm -fno-alt-island --warn-emit-bytes=1 \
-    -o "$WORKDIR/cap_edge.c" -- "$pat" >/dev/null 2>"$WORKDIR/cap_edge.err" || true
+    -o "$WORKDIR/cap_edge.c" --pattern "$pat" >/dev/null 2>"$WORKDIR/cap_edge.err" || true
 edge="$(sed -n 's/.*(\([0-9]*\) of code).*/\1/p' "$WORKDIR/cap_edge.err" | head -1)"
 if [ -n "$edge" ] && [ "$edge" -gt 425000 ] && [ "$edge" -lt 500000 ]; then
     ok "the ladder straddles the cap: its top rung's CHAIN emits $edge code bytes against a 500,000 limit, so an island's growth there really would cross it"

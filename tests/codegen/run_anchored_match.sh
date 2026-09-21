@@ -101,7 +101,7 @@ emit() { # emit <outfile> <pattern> [extra pcrec args...]
     local out="$1" pat="$2"
     shift 2
     pcrec_run "$PCREC" -p rx --no-captures --features all "$@" \
-        -o "$out" -- "$pat" >/dev/null 2>&1
+        -o "$out" --pattern "$pat" >/dev/null 2>&1
 }
 
 stamp()  { grep -m1 '^#define RX_DFA_MATCH "' "$1" | cut -d'"' -f2; }
@@ -272,7 +272,7 @@ fi
 # draft of this row did, passing its own guard for the wrong reason.
 f="$WORKDIR/g.c"
 if pcrec_run "$PCREC" -p rx --features all -o - \
-        -- '(?(DEFINE)(?<g>a))(?&g)b' > "$f" 2>/dev/null \
+        --pattern '(?(DEFINE)(?<g>a))(?&g)b' > "$f" 2>/dev/null \
    && [ "$(stamp "$f")" = unwrapped ]; then
     ncaps="$(grep -m1 '^#define RX_NCAPS ' "$f" | awk '{print $3}')"
     if [ "${ncaps:-1}" -gt 1 ]; then
@@ -412,7 +412,7 @@ else
     # simply switch the form off for everything.
     for pat in 'foobarbazqux' 'abcdefghij[0-9]+' 'a[bc]d[ef]g[hi]j[kl]m' 'ab'; do
         pcrec_run "$REF" -p rx --no-captures --features all -o "$WORKDIR/r.c" \
-            -- "$pat" > "$WORKDIR/r.err" 2>&1 || { bad "§4b the capped compiler REFUSED '$pat' — an optional machine over a cap must be a selection outcome, never a diagnostic: $(head -2 "$WORKDIR/r.err")"; continue; }
+            --pattern "$pat" > "$WORKDIR/r.err" 2>&1 || { bad "§4b the capped compiler REFUSED '$pat' — an optional machine over a cap must be a selection outcome, never a diagnostic: $(head -2 "$WORKDIR/r.err")"; continue; }
         [ -s "$WORKDIR/r.err" ] && { bad "§4b the capped compiler printed a diagnostic on '$pat': $(head -2 "$WORKDIR/r.err")"; diags=$((diags + 1)); }
         emit "$WORKDIR/d.c" "$pat" || { bad "§4b the shipped compiler did not compile '$pat'"; continue; }
         rs="$(stamp "$WORKDIR/r.c")"; ds="$(stamp "$WORKDIR/d.c")"
@@ -524,7 +524,7 @@ else
     dropped=0; kept=0; wrongsel=0; wrongbytes=0
     for pat in 'foobarbazqux' 'abcdefghij[0-9]+' 'a[bc]d[ef]g[hi]j[kl]m' 'ab'; do
         pcrec_run "$HI" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
-            -- "$pat" > "$WORKDIR/k.err" 2>&1 \
+            --pattern "$pat" > "$WORKDIR/k.err" 2>&1 \
             || { bad "§6a the capped compiler REFUSED '$pat' — an OPTIONAL machine's bytes must never be what refuses a pattern (K53): $(head -2 "$WORKDIR/k.err")"; continue; }
         ks="$(stamp "$WORKDIR/k.c")"
         sel="$(sed -n 's/^#define RX_ENGINE_SEL "\(.*\)"$/\1/p' "$WORKDIR/k.c" | head -1)"
@@ -533,7 +533,7 @@ else
             has_anchored_tbl "$WORKDIR/k.c" && bad "§6a '$pat' dropped to search-filter but still emitted an anchored table"
             [ "$sel" = size-cap-retry ] || { bad "§6a '$pat' took the drop rung but stamps RX_ENGINE_SEL \"$sel\" — a caller cannot tell this artifact from an unremarkable compile (docs/spec/match_api.md §6.3)"; wrongsel=$((wrongsel + 1)); }
             pcrec_run "$HI" -p rx --no-captures --features all -fno-anchored-dfa \
-                -o "$WORKDIR/k_deny.c" -- "$pat" >/dev/null 2>&1 \
+                -o "$WORKDIR/k_deny.c" --pattern "$pat" >/dev/null 2>&1 \
                 || bad "§6a the denied build of '$pat' did not compile under the same cap — the comparison below has no control"
             norm "$WORKDIR/k.c" > "$WORKDIR/k.norm"
             norm "$WORKDIR/k_deny.c" > "$WORKDIR/kd.norm"
@@ -553,7 +553,7 @@ else
 
     # ---- (b) the rung is BOUNDED, and the refusal quotes the smaller figure -
     pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
-        -- 'foobarbazqux' > "$WORKDIR/k.err" 2>&1
+        --pattern 'foobarbazqux' > "$WORKDIR/k.err" 2>&1
     lo_bytes="$(k53_bytes "$WORKDIR/k.err")"
     if [ -z "$lo_bytes" ]; then
         bad "§6b 'foobarbazqux' did NOT refuse under a ${K53_CAP_LO}-byte cap, which is below its dropped size (19,184 measured 2026-09-10) — the drop rung has become a way past the cap rather than a way to fit under it"
@@ -565,10 +565,10 @@ else
 
     # ---- (c) no contributor, no retry ---------------------------------------
     pcrec_run "$LO" -p rx --no-captures --features all -o "$WORKDIR/k.c" \
-        -- '^foobarbazqux' > "$WORKDIR/k.err" 2>&1
+        --pattern '^foobarbazqux' > "$WORKDIR/k.err" 2>&1
     c_plain="$(k53_bytes "$WORKDIR/k.err")"
     pcrec_run "$LO" -p rx --no-captures --features all -fno-anchored-dfa \
-        -o "$WORKDIR/k.c" -- '^foobarbazqux' > "$WORKDIR/k2.err" 2>&1
+        -o "$WORKDIR/k.c" --pattern '^foobarbazqux' > "$WORKDIR/k2.err" 2>&1
     c_deny="$(k53_bytes "$WORKDIR/k2.err")"
     [ -n "$c_plain" ] && [ "$c_plain" = "$c_deny" ] \
         && ok "§6c a pattern with NO optional contributor ('^foobarbazqux', RX_DFA_SCAN \"attempt\") refuses at $c_plain bytes with the axis live and at $c_deny with it denied — identical, so the rung is gated on a droppable machine being present and not on the refusal alone" \
@@ -615,7 +615,7 @@ command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"
 art="$WORKDIR/w.$$.c"
 trap 'rm -f "$art"' EXIT
 while IFS= read -r pat; do
-    pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" > "$art" 2>/dev/null \
+    pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" > "$art" 2>/dev/null \
         || { echo REFUSED; continue; }
     # THE ARTIFACT KIND FROM MATCHER TEXT, never from RX_ENGINE: `goto rx_L0;`
     # is the VM program's entry (run_dfa_stamps.sh's own discriminator).

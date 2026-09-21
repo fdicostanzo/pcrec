@@ -31,7 +31,7 @@ SAB_COUNT=1
 # under utf8 ever stops taking the rung — because a class-emission change made
 # it fit unaided ([CLS-TREE]), or because the caps moved — this row is
 # certifying nothing and says so rather than scoring.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "\p{L}" | grep -o "size-cap-retry" | head -1'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
 SAB_BEFORE='                cx.size_cap_refused &&
                 size_drop_rung == SDR_NONE &&

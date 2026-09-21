@@ -53,9 +53,9 @@ rungs: refs
 	@mkdir -p $(OUT)/work
 	@set -e; bad=0; k=1; for p in '\d{2}y' '\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}y\d{4}'; do \
 	  for arm in before after; do \
-	    $(OUT)/c_$$arm/build/pcrec -p rx --features all -o $(OUT)/work/a_$${arm}_$$k.c -- "$$p" >/dev/null; \
+	    $(OUT)/c_$$arm/build/pcrec -p rx --features all -o $(OUT)/work/a_$${arm}_$$k.c --pattern "$$p" >/dev/null; \
 	  done; \
-	  $(PCREC) -p rx --features all -o $(OUT)/work/a_step11_$$k.c -- "$$p" >/dev/null; \
+	  $(PCREC) -p rx --features all -o $(OUT)/work/a_step11_$$k.c --pattern "$$p" >/dev/null; \
 	  e=$$(awk '/\[OPT-5\] SCAN EDGE/{q=1;next} q && /if \(forward_state ==/{n++;q=0} END{print n+0}' $(OUT)/work/a_after_$$k.c); \
 	  if [ "$$e" = "$$k" ]; then printf 'rung %s  %-26s forward edges = %s  OK\n' "$$k" "$$p" "$$e"; \
 	  else printf 'rung %s  %-26s forward edges = %s  *** REFUSED (want %s) ***\n' "$$k" "$$p" "$$e" "$$k"; bad=1; fi; \
@@ -88,8 +88,8 @@ floorcells:
 	@set -e; bad=0; for m in 2 3 4 8; do \
 	  for fam in exact nullable; do \
 	    case $$fam in exact) p="[0-9]{$$m}x";; nullable) p="[a-z]{0,$$m}";; esac; \
-	    $(PCREC) -p rx --features all -fcomments    -o $(OUT)/fwork/e_$${fam}_$$m.c -- "$$p" >/dev/null; \
-	    $(PCREC) -p rx --features all -fno-scan-edge -o $(OUT)/fwork/n_$${fam}_$$m.c -- "$$p" >/dev/null; \
+	    $(PCREC) -p rx --features all -fcomments    -o $(OUT)/fwork/e_$${fam}_$$m.c --pattern "$$p" >/dev/null; \
+	    $(PCREC) -p rx --features all -fno-scan-edge -o $(OUT)/fwork/n_$${fam}_$$m.c --pattern "$$p" >/dev/null; \
 	    e=$$(awk '/\[OPT-5\] SCAN EDGE/{q=1;next} q && /if \(forward_state ==/{n++;q=0} END{print n+0}' $(OUT)/fwork/e_$${fam}_$$m.c); \
 	    if [ "$$e" -ge 1 ]; then printf 'm=%-2s %-8s %-14s forward edges = %s  OK\n' "$$m" "$$fam" "$$p" "$$e"; \
 	    else printf 'm=%-2s %-8s %-14s forward edges = 0  *** TAKES NO EDGE, cell measures nothing ***\n' "$$m" "$$fam" "$$p"; bad=1; fi; \

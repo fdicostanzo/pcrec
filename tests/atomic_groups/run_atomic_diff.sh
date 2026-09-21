@@ -279,7 +279,7 @@ PATSPEC=(
 gen() { # gen <outdir> <pattern> [extra pcrec args]
     local d="$1" pat="$2"; shift 2
     mkdir -p "$d"
-    pcrec_run "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p rx "$@" -o "$d/gen.c" --pattern "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_batch.c" "$d/gen.c" \
         2>>"$d/err" || return 1
 }
@@ -536,9 +536,9 @@ while IFS=$'\t' read -r cls pat; do
     # this check read its ABSENCE as "a DFA" and went red on all ten
     # spellings the moment the DFA started stamping.
     if [ "$cls" = "dead" ]; then
-        pcrec_run "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  -- "$pat" 2>/dev/null
+        pcrec_run "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  --pattern "$pat" 2>/dev/null
         pcrec_run "$PCREC" --features all -p rx --no-captures -fno-atomic-discharge \
-                 -o "$d/e_off.c" -- "$pat" 2>/dev/null
+                 -o "$d/e_off.c" --pattern "$pat" 2>/dev/null
         if grep -q '^#define RX_ENGINE "dfa"$' "$d/e_on.c" \
            && grep -q '^#define RX_ENGINE "vm"$' "$d/e_off.c"; then
             nd_engine=$((nd_engine + 1))
@@ -564,14 +564,14 @@ while IFS=$'\t' read -r cls pat; do
         #        dead-cut pattern, which is what makes the split honest rather
         #        than a relaxation.
         pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
-                 -o - -- "$pat" > "$d/b_on.c" 2>/dev/null
+                 -o - --pattern "$pat" > "$d/b_on.c" 2>/dev/null
         pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
-                 -fno-atomic-discharge -o - -- "$pat" > "$d/b_off.c" 2>/dev/null
+                 -fno-atomic-discharge -o - --pattern "$pat" > "$d/b_off.c" 2>/dev/null
         pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
-                 -fno-length-prune -o - -- "$pat" > "$d/p_on.c" 2>/dev/null
+                 -fno-length-prune -o - --pattern "$pat" > "$d/p_on.c" 2>/dev/null
         pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-length-prune -fno-atomic-discharge \
-                 -o - -- "$pat" > "$d/p_off.c" 2>/dev/null
+                 -o - --pattern "$pat" > "$d/p_off.c" 2>/dev/null
         nd_bytes=$((nd_bytes + 1))
         # TWO AXES ARE NORMALISED AND EXACTLY TWO, and both are things that
         # MUST differ — they are the flag doing its job, not the emitter
@@ -672,7 +672,7 @@ while IFS=$'\t' read -r cls pat; do
     [ "$cls" = "cut" ] || continue
     d="$WORKDIR/e$ne_pat"; ne_pat=$((ne_pat + 1))
     mkdir -p "$d"
-    pcrec_run "$PCREC" --features all -p rx -o "$d/gen.c" -- "$pat" 2>/dev/null || continue
+    pcrec_run "$PCREC" --features all -p rx -o "$d/gen.c" --pattern "$pat" 2>/dev/null || continue
     $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_entries.c" "$d/gen.c" \
         2>"$d/err" || { bad "§4: could not build the entries driver for '$pat': $(head -2 "$d/err")"; continue; }
     # THE MATCH-HERE ORACLE column for this pattern, computed in the same

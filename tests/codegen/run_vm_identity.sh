@@ -155,8 +155,8 @@ while IFS= read -r pat; do
     # (re-pin upward, deliberately) or counter-K un-refusing this shape
     # (population drops to 0 — re-pin and consider retiring the arm) both
     # FAIL here instead of drifting.
-    if ! pcrec_run "$PCREC" -p rx -o "$WORKDIR/def/gen.c" -- "$pat" >/dev/null 2>"$WORKDIR/def.err"; then
-        if pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx -o "$WORKDIR/def/gen.c" --pattern "$pat" >/dev/null 2>"$WORKDIR/def.err"; then
+        if pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" --pattern "$pat" >/dev/null 2>&1; then
             if grep -q "would replicate its body" "$WORKDIR/def.err"; then
                 capdiv=$((capdiv + 1))
                 capdivpats="$capdivpats $pat"
@@ -168,13 +168,13 @@ while IFS= read -r pat; do
         skipped=$((skipped + 1))
         continue
     fi
-    if ! pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" --pattern "$pat" >/dev/null 2>&1; then
         divergent="$divergent
   REFUSAL MISMATCH: default accepted, --no-captures refused: $pat"
         continue
     fi
 
-    ngroups="$(pcrec_run "$PCREC" --count-groups -- "$pat" 2>/dev/null || echo 0)"
+    ngroups="$(pcrec_run "$PCREC" --count-groups --pattern "$pat" 2>/dev/null || echo 0)"
 
     # (2) --no-captures is always a DFA artifact
     # RX_NCAPS lands in the .h when a header is paired (the macros are
@@ -361,7 +361,7 @@ fi
 # --engine=dfa on a captures-default group-bearing pattern REFUSES; it does
 # not silently imply --no-captures. The message must name --no-captures, since
 # the caller asked for captures merely by not passing it.
-if out="$(pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORKDIR/x.c" -- 'a(b|c)+d' 2>&1)"; then
+if out="$(pcrec_run "$PCREC" -p rx --engine=dfa -o "$WORKDIR/x.c" --pattern 'a(b|c)+d' 2>&1)"; then
     bad "[M4.5b] §5.6/D44.6: --engine=dfa on 'a(b|c)+d' COMPILED; it must refuse"
 elif printf '%s' "$out" | grep -q -- '--no-captures'; then
     ok "[M4.5b] §5.6/D44.6: --engine=dfa refuses a captures-default group-bearing pattern, naming --no-captures"
@@ -369,7 +369,7 @@ else
     bad "[M4.5b] §5.6/D44.6: --engine=dfa refused but the message does not name --no-captures: $out"
 fi
 
-if pcrec_run "$PCREC" -p rx --engine=dfa --no-captures -o "$WORKDIR/x.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=dfa --no-captures -o "$WORKDIR/x.c" --pattern 'a(b|c)+d' >/dev/null 2>&1; then
     ok "[M4.5b] §5.6: --engine=dfa --no-captures compiles the same pattern (the refusal names a real way out)"
 else
     bad "[M4.5b] §5.6: --engine=dfa --no-captures was refused too — the diagnostic's advice does not work"
@@ -378,7 +378,7 @@ fi
 # --engine=vm turns the prefilter OFF (D44/R21 E-6). Without this the
 # differential in tests/vm is close to a tautology, so the property is
 # checked structurally here rather than assumed by the runner that needs it.
-if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/v.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/v.c" --pattern 'a(b|c)+d' >/dev/null 2>&1; then
     if grep -q '_prefilter' "$WORKDIR/v.c"; then
         bad "[M4.5b] §5.6/E-6: --engine=vm emitted a prefilter — the differential it exists for would be tautological"
     else
@@ -390,7 +390,7 @@ else
 fi
 
 # ...and the hybrid DOES have one, or §4.7's cliff guard is not in place.
-if pcrec_run "$PCREC" -p rx -o "$WORKDIR/h.c" -- '(a*)b' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/h.c" --pattern '(a*)b' >/dev/null 2>&1; then
     if grep -q '_prefilter' "$WORKDIR/h.c"; then
         ok "[M4.5b] §4.7: the default (hybrid) VM artifact carries the DFA prefilter — the guard on the measured cliff is present"
     else

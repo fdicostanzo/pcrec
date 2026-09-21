@@ -108,10 +108,10 @@ total_unexpected=0
 for case in "${CASES[@]}"; do
     label="${case%%#*}"; pat="${case#*#}"
     def_c="$WORK/def/${label}.c"; full_c="$WORK/full/${label}.c"
-    if ! pcrec_run "$PCREC" -p rx --features all -o "$def_c" -- "$pat" >"$WORK/$label.log" 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --features all -o "$def_c" --pattern "$pat" >"$WORK/$label.log" 2>&1; then
         bad "[$label] the DEFAULT build failed: $(head -2 "$WORK/$label.log")"; continue
     fi
-    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -o "$full_c" -- "$pat" >>"$WORK/$label.log" 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --features all -fcomments -o "$full_c" --pattern "$pat" >>"$WORK/$label.log" 2>&1; then
         bad "[$label] the -fcomments build failed: $(head -2 "$WORK/$label.log")"; continue
     fi
     def_h="${def_c%.c}.h"; full_h="${full_c%.c}.h"
@@ -173,7 +173,7 @@ for case in "${CASES[@]}"; do
 done
 
 # ---- 6. deny beats force, the precedence every other pair in the enum has --
-pcrec_run "$PCREC" -p rx -fcomments -fno-comments -o "$WORK/prec.c" -- 'abc' >/dev/null 2>&1
+pcrec_run "$PCREC" -p rx -fcomments -fno-comments -o "$WORK/prec.c" --pattern 'abc' >/dev/null 2>&1
 if [ -s "$WORK/prec.c" ]; then
     if [ -z "$(unexpected_comments "$WORK/prec.c" 2>/dev/null)" ]; then
         ok "[precedence] -fcomments -fno-comments is comment-free (deny wins over force)"

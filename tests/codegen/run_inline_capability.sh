@@ -120,10 +120,10 @@ Bemit="$WORKDIR/arm_b_emitter.c"
 Bsed="$WORKDIR/arm_b_textual.c"
 
 pcrec_run "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=4 \
-    -o "$A" -- "$WITNESS_PAT" >/dev/null 2>&1 \
+    -o "$A" --pattern "$WITNESS_PAT" >/dev/null 2>&1 \
     || { bad "the witness did not compile at rung INLINE"; exit 1; }
 pcrec_run "$PCREC" -p rx --features all --engine=vm --vm-entry-shape=1 \
-    -o "$Bemit" -- "$WITNESS_PAT" >/dev/null 2>&1 \
+    -o "$Bemit" --pattern "$WITNESS_PAT" >/dev/null 2>&1 \
     || { bad "the witness did not compile at rung PLAIN"; exit 1; }
 
 # (1) THE WITNESS MUST STILL BE FRAMELESS, or nothing below measures anything.

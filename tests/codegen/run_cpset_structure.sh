@@ -438,7 +438,7 @@ else
             bad "[2d] could not build the scratch witness compiler:"
             head -10 "$WORKDIR/wide.log" >&2
         else
-            OUT="$("$WORKDIR/pcrec_wide" -p rx -o - -- '[^a]' 2>&1 >/dev/null)"
+            OUT="$("$WORKDIR/pcrec_wide" -p rx -o - --pattern '[^a]' 2>&1 >/dev/null)"
             RC=$?
             if printf '%s' "$OUT" | grep -q 'reached a byte-tier consumer'; then
                 ok "[2d] the render helper's assertion FIRES on a class carrying a code point above 0xFF: \"$(printf '%s' "$OUT" | head -1)\""
@@ -494,7 +494,7 @@ cat|dog|cow|calf|camel
 NART=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    art="$(pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null)"
+    art="$(pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" 2>/dev/null)"
     [ -n "$art" ] || continue
     NART=$((NART + 1))
     for m in RX_ENGINE RX_ENGINE_SEL RX_DFA_TABLE RX_VM_RUNGS RX_VM_STRATS \

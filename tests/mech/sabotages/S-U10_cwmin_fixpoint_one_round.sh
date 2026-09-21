@@ -24,7 +24,7 @@ SAB_ID="S-U10-cwmin-fixpoint-one-round"
 # rule this row truncates. The population floor pins the detector file's own
 # copy of that cell (a corpus that lost it would leave this row scoring green
 # over nothing, [MECH-REACH]'s shape).
-SAB_REACH='"$PCREC" --features all -p rx -o - -- "^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$"'
+SAB_REACH='"$PCREC" --features all -p rx -o - --pattern "^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$"'
 SAB_REACH_EXPECT='Pattern: ^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$'
 SAB_REACH_POP='tests/recursion/inlookaround.rxt|\(\?&h\)e|1'
 SAB_FILE="src/opt/callgraph.c"

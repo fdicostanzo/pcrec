@@ -30,7 +30,7 @@ SAB_COUNT=1
 # REACH: the row's detector rests on the drop rung producing this value at
 # all. Same probe as S237 and for the same reason — if `\p{L}` stops taking
 # the rung, both rows are certifying nothing.
-SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - -- "\p{L}" | grep -o "size-cap-retry" | head -1'
+SAB_REACH='"$PCREC" --features unicode-props -e utf8 -p rx -o - --pattern "\p{L}" | grep -o "size-cap-retry" | head -1'
 SAB_REACH_EXPECT='size-cap-retry'
 # [TOUR-5] (2026-09-20) RE-AIMED, SAME INTENT, SAME ONE LINE REMOVED. The
 # ladder moved out of `pcrec_select_engine` into `esel_of` (r61 F2), so `fit.`

@@ -365,7 +365,7 @@ mirror_check() {
 witness() {
     exp_scan="$1"; exp_pf="$2"; wpat="$3"
     art="$WORKDIR/w.c"
-    if ! pcrec_run "$PCREC" --features all -p rx -o - -- "$wpat" > "$art" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx -o - --pattern "$wpat" > "$art" 2>/dev/null; then
         bad "[witness] '$wpat' does not compile — the row cannot assert anything"; return
     fi
     set -- $(read_artifact < "$art")
@@ -444,7 +444,7 @@ witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}'
 vm_witness() {
     exp_hy="$1"; wpat="$2"
     vmart="$WORKDIR/vm.c"
-    if ! pcrec_run "$PCREC" --features all -p rx -o - -- "$wpat" > "$vmart" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx -o - --pattern "$wpat" > "$vmart" 2>/dev/null; then
         bad "[vm] '$wpat' does not compile — this row has no subject"; return
     fi
     set -- $(read_artifact < "$vmart")
@@ -548,7 +548,7 @@ command -v mirror_check >/dev/null || { echo "BAD: worker did not inherit mirror
 art="$WORKDIR/a.$$.c"
 trap 'rm -f "$art"' EXIT
 while IFS= read -r pat; do
-    if ! pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" > "$art" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" > "$art" 2>/dev/null; then
         echo REFUSED; continue
     fi
     set -- $(read_artifact < "$art")

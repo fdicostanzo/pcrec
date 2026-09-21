@@ -255,7 +255,7 @@ reject() { # reject <pattern> <expected-substring> [display-label]
     esac
     nrej=$((nrej + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     if [ "$rc" -eq 0 ]; then
         bad "reject '$pat': ACCEPTED (exit 0) — an unsupported construct was compiled instead of diagnosed, which is the miscompile the mandate forbids"
         return
@@ -296,9 +296,9 @@ accept() { # accept <pattern> [display-label] [features]
     naccept=$((naccept + 1))
     rm -f "$WORKDIR/ok.c" "$WORKDIR/ok.h"
     if [ -n "$feats" ]; then
-        out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/ok.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     else
-        out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+        out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     fi
     if [ "$rc" -ge 124 ]; then
         bad "accept '$show': exit $rc — timed out or was killed, which is not 'compiles'"
@@ -344,7 +344,7 @@ reject_gated() { # reject_gated <features> <pattern> <expected-substring>
     esac
     ngated=$((ngated + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     if [ "$rc" -eq 0 ]; then
         bad "reject_gated '$pat' (features $feats): ACCEPTED — the gate-open refusal this pin exists for has vanished"
         return
@@ -1921,7 +1921,7 @@ pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is 
     [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     local pat="$1" want="$2" msg="$3" why="$4" rc out
     nwrong=$((nwrong + 1))
-    out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/kw.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$?
     if { [ "$want" = accept ] && [ "$rc" -eq 0 ]; } || \
        { [ "$want" = reject ] && [ "$rc" -eq 1 ]; }; then
         # verdict pinned; also pin the MESSAGE where one was given. A
@@ -2019,9 +2019,9 @@ row_reject() { # like reject(), but counted separately so the floors stay honest
     # unchanged.
     case "$mod" in
         classes|modifiers)
-            out="$("$TIMEOUT_BIN" 60 "$PCREC" --features none -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$? ;;
+            out="$("$TIMEOUT_BIN" 60 "$PCREC" --features none -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$? ;;
         *)
-            out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$? ;;
+            out="$("$TIMEOUT_BIN" 60 "$PCREC" -p rx -o "$WORKDIR/out.c" --pattern "$pat" 2>&1 >/dev/null)"; rc=$? ;;
     esac
     if [ "$rc" -ne 1 ]; then
         bad "row '$pat': exit $rc, not a clean exit-1 rejection"
