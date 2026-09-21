@@ -79,13 +79,21 @@ SAB_COUNT=1
 # by `make test-codegen`'s [SABANCHOR] check going red at lift, not assumed.
 # The sabotage is UNCHANGED in meaning: it still disables exactly one
 # conjunct (`has_bref`) and carries the rest through verbatim.
-SAB_BEFORE='        fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable ||
-                         fit.prefilter_declined_nullable_default)
-                        ? false'
-SAB_AFTER='        fit.prefilter = (false || has_call ||   /* SABOTAGE S102 */
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable ||
-                         fit.prefilter_declined_nullable_default)
-                        ? false'
+# [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
+# decision moved out of `pcrec_select_engine`'s braced block into its own
+# `prefilter_decision` function (r61 F2) as a VERBATIM relocation: every line
+# lost exactly four columns of indent and `fit.` became `fit->`. The plant
+# still deletes exactly the `has_bref` disjunct of `fit->prefilter`'s
+# force-false clause, leaving `has_call` and both nullability declines live. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
+# landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
+# -Werror.
+SAB_BEFORE='    fit->prefilter = (has_bref || has_call ||
+                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                     fit->prefilter_declined_nullable ||
+                     fit->prefilter_declined_nullable_default)
+                    ? false'
+SAB_AFTER='    fit->prefilter = (false || has_call ||   /* SABOTAGE S102 */
+                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                     fit->prefilter_declined_nullable ||
+                     fit->prefilter_declined_nullable_default)
+                    ? false'

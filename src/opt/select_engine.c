@@ -3,17 +3,25 @@
  * Before [M4.5b] this was one `if` inline in compile.c's driver, and it chose
  * between the two DFA SHAPES (ENG_UNANCH vs ENG_ATTEMPT) rather than between
  * ENGINES. §5.1 moves the engine question into a pass with a registered-
- * analysis SOCKET, for a reason worth restating because it is the design's
- * least obvious call: the socket's future customers (backrefs-finite
- * expansion, the atomic/possessive cut) are not analyses that RETURN a
- * verdict, they are REWRITES that DISCHARGE one — `(abc)\1` is VM-forced
- * until the finite-language expansion turns it into `abcabc`, at which point
- * it is DFA-compilable. So the pass is a FIXPOINT: analyse, offer each
- * registered `discharge` a chance, re-analyse, stop when nothing changes or
- * the bound is hit. It ships here with ZERO registered discharge hooks (§5.2:
- * "ship it in M4.6 with zero registered discharge hooks; the bound exists
- * from day one so a later rewrite pair cannot loop"), which is deliberate —
- * the bound is cheaper to write now than to retrofit around a rewrite.
+ * analysis table, which is `analyses[]` below: each row answers "which
+ * engines can still compile this pattern", the pass ANDs their masks, and
+ * the first row to exclude the DFA supplies the diagnostic.
+ *
+ * **[TOUR-5] (2026-09-20) THE REWRITE HALF OF THAT SOCKET IS DELETED** (r61
+ * F2; docs/dev/reviews/2026-09-20-frank-tour.md). §5.2 also designed a
+ * `discharge` hook — a semantics-preserving REWRITE that makes a forcing no
+ * longer apply, `(abc)\1` expanded to `abcabc` being the motivating case —
+ * and wrapped the analysis loop in a bounded FIXPOINT to drive it. In three
+ * years nothing registered one, and each of the two candidate customers
+ * declined for a reason recorded at its own site: the free atomic discharge
+ * (docs/design/atomic_groups_design.md §5.4, now src/core/compile.c's line
+ * since [DD-14] wave G) and possessification (`run_possessify` below). The
+ * fixpoint's rewrite arm could not have served one anyway — it set a local
+ * `rewrote` flag without publishing a new root, so the first registered hook
+ * would have spun the bound against a verdict it could not move. D77 (no
+ * mechanism ahead of a measured need): the table stays and the analysis runs
+ * ONCE. engine_m4.md §5.2 keeps the design record, and docs/dev/plan.md's
+ * [ENG-CUT] row owns building the plumbing when a rewrite first needs it.
  *
  * WHAT FORCES THE VM TODAY (§5.3's table, restricted to constructs that have
  * a producer): TWO rows — "capturing group with captures REQUESTED", and
@@ -53,18 +61,16 @@
 
 #include "core/internal.h"
 
-/* §5.2's socket. One registered analysis today. `discharge` is the rewrite
- * half — NULL here, and the fixpoint below is written to run correctly with
- * every hook NULL, which is the state it ships in. */
+/* One row of §5.2's analysis table: a named rule that answers which engines
+ * can still compile a given pattern, plus the flag the `--engine=dfa`
+ * refusal needs to word itself. [TOUR-5] removed the `discharge` rewrite
+ * hook (see the file header). */
 typedef struct {
     const char *name;
     /* Does this construct force an engine, and where? Returns an ENGM_* mask
      * of the engines that can still compile the pattern. */
     unsigned  (*forces)(Ctx *cx, const Ast *a, size_t *why_pos,
                         const char **why);
-    /* Optional: rewrite the AST so the forcing no longer applies. Returns
-     * NULL to decline. Must be semantics-preserving. */
-    Ast      *(*discharge)(Ctx *cx, Ast *a);
     /* [M6.4.2 / D67 contract note 1] IS THIS ROW NODE-DERIVED?
      *
      * Two kinds of forcing remain after SR-8 and the `--engine=dfa` override
@@ -82,10 +88,12 @@ typedef struct {
     bool        node_derived;
 } EngineAnalysis;
 
-/* The fixpoint's bound. §5.2 asks for it "from day one so a later rewrite
- * pair cannot loop" — with no discharge hooks registered the loop provably
- * runs once, so this is structure for a customer that does not exist yet,
- * which is the whole point of building the socket now. */
+/* The round bound for an iterated rewrite driven from this file. §5.2 asked
+ * for one "from day one so a later rewrite pair cannot loop"; since [TOUR-5]
+ * deleted the analysis fixpoint its ONE reader is `run_possessify` below,
+ * whose own monotonicity already terminates it — this is the belt that does
+ * not depend on an argument in a comment. src/core/compile.c's retry-ladder
+ * comment cites it by name for the same reasoning. */
 enum { SELECT_MAX_ROUNDS = 8 };
 
 /* ---- the one registered analysis: captures ---- */
@@ -383,11 +391,11 @@ static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
  * "do not write `\K`" is not). A capture-free `\K` pattern gets the `\K`
  * explanation, which is then the only one available and the right one. */
 static const EngineAnalysis analyses[] = {
-    { "captures", forces_captures, NULL, false },
+    { "captures", forces_captures, false },
     /* [M6.4.2] ONE row where `\K`'s was, and every future VM_ONLY module's
      * forcing falls out of its registry rows with no per-module analysis —
      * backrefs' twelve ([M6.5]) are the next customer and need no line here. */
-    { "registry", forces_registry, NULL, true  },
+    { "registry", forces_registry, true  },
     /* [SEL-1] LAST, deliberately: it is the least fundamental of the three
      * reasons a pattern can be VM-only, and first-wins order already does the
      * right thing when it co-occurs with one of the rows above. A pattern
@@ -405,7 +413,7 @@ static const EngineAnalysis analyses[] = {
      * text in place instead of splicing this row's build-outcome sentence
      * into the "%s requires the VM engine" template, which reads oddly for
      * a fact that is not a constructs's name. */
-    { "dfa_overflow", forces_dfa_overflow, NULL, false },
+    { "dfa_overflow", forces_dfa_overflow, false },
 };
 
 /* ---- the pass ---- */
@@ -425,41 +433,44 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
     return p;
 }
 
-/* [ENG-BREP] The possessification REWRITE, driven to its fixpoint.
+/* Marks every quantifier the possessification analysis proves can never
+ * retreat, iterating until a pass marks none. Runs only on a VM-chosen
+ * artifact and only when `-fno-possessify` was not passed ([ENG-BREP], the
+ * bounded-repeat ladder's first rung).
  *
- * WHY IT IS CALLED HERE AND NOT REGISTERED IN `discharge` ABOVE — a deliberate
- * deviation from eng_brep_design.md §2.8's literal reading, reported rather
- * than silently taken. §2.8 says possessification "is exactly that shape" (a
- * rewrite, not an analysis returning a verdict) and proposes it as an
- * `EngineAnalysis` row whose `discharge` rewrites the A_REP's strategy in
- * place. The SHAPE claim is right and this file keeps it. The REGISTRATION is
- * not available, for two reasons that only appear once the socket exists:
+ * THE DRIVER IS THE CHOSEN ENGINE, which is the honest condition rather than
+ * the one eng_brep_design.md §2.8 names — a deliberate deviation, reported
+ * rather than silently taken. §2.8 says possessification "is exactly that
+ * shape" (a rewrite, not an analysis returning a verdict) and proposes it as
+ * an `EngineAnalysis` row whose `discharge` hook rewrites the A_REP's
+ * strategy in place. The SHAPE claim is right and this file keeps it; the
+ * REGISTRATION was never available, and [TOUR-5] has since deleted the hook.
+ * Both reasons are kept because they are facts about THIS pass rather than
+ * about the socket:
  *
- *   1. `discharge`'s contract is "rewrite the AST so the ENGINE FORCING no
+ *   1. `discharge`'s contract was "rewrite the AST so the ENGINE FORCING no
  *      longer applies". Possessification cannot do that and must not claim to
  *      — a capture-bearing pattern still needs the VM after every one of its
- *      quantifiers is possessified. A hook that rewrites and never changes the
- *      mask would spin the fixpoint against a verdict it cannot move.
- *   2. The fixpoint only reaches `discharge` when the pattern is VM-FORCED, so
- *      registering there would possessify a capture-bearing pattern and SKIP a
- *      capture-free one compiled with `--engine=vm` — the same artifact kind,
- *      built by the same emitter, optimised differently for a reason nobody
- *      could see from the outside. That would also make the differential this
- *      row is validated by lie about its own coverage.
+ *      quantifiers is possessified.
+ *   2. A hook ran only when the pattern was VM-FORCED, so registering there
+ *      would possessify a capture-bearing pattern and SKIP a capture-free one
+ *      compiled with `--engine=vm` — the same artifact kind, built by the same
+ *      emitter, optimised differently for a reason nobody could see from the
+ *      outside. That would also make the differential this row is validated
+ *      by lie about its own coverage.
  *
- * So the driver is the CHOSEN engine, which is the honest condition: the mark
- * is read by src/gen/emit_vm.c and by nothing else, so a DFA artifact cannot
- * observe it and pays nothing for it. Capture-free patterns stay byte-identical
- * by construction rather than by audit, which is §5.4's gate held the way §7
- * predicts (613 of 756 corpus patterns never reach this line).
+ * The mark is read by src/gen/emit_vm.c and by nothing else, so a DFA
+ * artifact cannot observe it and pays nothing for it; capture-free patterns
+ * stay byte-identical by construction rather than by audit, which is §5.4's
+ * gate held the way §7 predicts (613 of 756 corpus patterns never reach this
+ * line).
  *
- * The loop is the fixpoint §2.8 asks for, and possessification's own
- * monotonicity is what bounds it: `pcrec_possessify` returns how many
- * quantifiers it NEWLY marked, a marked quantifier is never unmarked, and a
- * second pass over a fully-marked tree returns 0. It therefore runs twice on
- * any pattern with a positive verdict and once otherwise. SELECT_MAX_ROUNDS
- * bounds it anyway, because a bound that depends on an argument in a comment
- * is not a bound. */
+ * THE ITERATION TERMINATES ON POSSESSIFICATION'S OWN MONOTONICITY:
+ * `pcrec_possessify` returns how many quantifiers it NEWLY marked, a marked
+ * quantifier is never unmarked, and a second pass over a fully-marked tree
+ * returns 0 — so it runs twice on any pattern with a positive verdict and
+ * once otherwise. SELECT_MAX_ROUNDS bounds it anyway, because a bound that
+ * depends on an argument in a comment is not a bound. */
 static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
 {
     if (fit->chosen != ENGM_VM) return;
@@ -489,13 +500,444 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
     (void)pcrec_revdet(cx, root);
 }
 
-/* Decides which of ENGM_DFA/ENGM_VM this pattern may build, and whether the
- * VM's hybrid prefilter runs ahead of it — a bounded fixpoint (§5.1/§5.2)
- * over the request-derived forcing rules (captures, `--engine=` overrides)
- * and the registry's per-construct SR-8 rows, driving `possessify`/`atomic`'s
- * discharge hooks to their own fixpoints along the way. Writes `cx->job->fit`;
- * the file header has the full rule catalogue and why each fires where it
- * does — read it before adding a new forcing condition here. */
+/* Decides whether this artifact runs the VM's hybrid DFA prefilter ahead of
+ * the match, and records WHY when it does not. Writes five `EngineFit`
+ * fields — `prefilter` itself, the two derivations `lang_nullable` and
+ * `prefilter_has_collapsible_rep` that other sites read off the fit, and the
+ * two `prefilter_declined_nullable*` attributions — and REFUSES outright on a
+ * `-fprefilter` request this pattern cannot honour, which is why it takes
+ * `why_pos`: that offset is only the position its diagnostics report. Reads
+ * `fit->chosen`, `cx->opt`'s flag pair and engine, and the retry state
+ * `compile_driver` seeded (`dfa_disabled`, `collapse_reason`).
+ *
+ * [TOUR-5] EXTRACTED VERBATIM from `pcrec_select_engine`'s body, where it was
+ * already a braced block precisely because none of its six locals is read
+ * outside it. Nothing crossed the seam, which is what made the extraction a
+ * relocation rather than a redesign.
+ *
+ * THE PREFILTER (§6.1, §4.7, and D44/R21 E-6).
+ *
+ * Under `auto` a VM artifact gets the capture-erased forward+reverse DFA
+ * pair as an EXACT anchored-window prefilter, and that is not an
+ * optimization — §4.7 makes it the rule that keeps DD-2 from being a
+ * regression. `(a*)b` over 8 MB of `a` is answered `nomatch` by the
+ * prefilter in one pass at DFA speed; a naive VM would need ~7e13
+ * resumptions and would "fail honestly" where pcrec answers today at
+ * 25 GB/s. A budget-exceeded return on a pattern pcrec answers today is a
+ * regression, not robustness.
+ *
+ * Under `--engine=vm` it is OFF, deliberately (E-6): with the prefilter
+ * running underneath, `span(VM) == span(DFA)` is close to a TAUTOLOGY,
+ * because the hybrid hands the VM the DFA's own answer as its starting
+ * window. Only a prefilter-free run is an independent second derivation,
+ * which is what §3.7's differential needs to be a real gate.
+ *
+ * [M4.6f] D46's controllability half for this axis: `-fprefilter`/
+ * `-fno-prefilter` OVERRIDE the derived value above in EITHER
+ * direction, decoupling "does the hybrid run" from "which engine was
+ * chosen" — up to now the only way to get it OFF under an
+ * otherwise-auto selection was to also force `--engine=vm`, and the
+ * only way to get it ON under `--engine=vm` was not to ask for
+ * `--engine=vm` at all. DO-OR-DIE (the same posture the switch above
+ * applies to `--engine` itself): forcing it ON when no VM artifact
+ * exists to attach a prefilter to (`fit->chosen == ENGM_DFA`) is not a
+ * request this pass can silently ignore or silently honour by
+ * building a VM artifact nobody asked for — it REFUSES. Forcing it
+ * OFF has no such hole: `--engine=vm` already ships a pure,
+ * prefilter-free VM artifact today, so PCREC_NO_PREFILTER is always
+ * buildable whatever engine was chosen. */
+static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
+                               size_t why_pos)
+{
+    bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
+    bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+    /* [OPT-4.1] THE PREFILTER LANGUAGE'S NULLABILITY, derived ONCE here
+     * and read by this pass, by `src/core/compile.c`'s build gate and by
+     * the `--emit-ir` listing off `EngineFit` (D81). It is
+     * `src/opt/mrl.c`'s existing width analysis and not a second walk —
+     * `internal.h`'s field comment carries the argument that `minw == 0`
+     * answers for the PREFILTER's lowering, and that the collapsed
+     * language is nullable exactly when the exact one is. */
+    fit->lang_nullable = pcrec_minw(root) == 0;
+    /* [OPT-4.1] AND WHETHER THERE IS ANYTHING TO COLLAPSE, derived here
+     * for the same reason and read by the same two sites (internal.h). */
+    fit->prefilter_has_collapsible_rep = pcrec_has_collapsible_rep(root);
+    /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
+     * is a REFUSAL of `-fprefilter` rather than a silent override, on
+     * D46's own do-or-die posture — a request the pattern cannot honour is
+     * refused, never quietly answered with something else.
+     *
+     * WHY THERE IS NO PREFILTER TO BUILD. `engine_m4.md` §6.1's hybrid does
+     * not merely need a filter that cannot false-negative: it needs the
+     * forward+reverse pair to hand the VM the EXACT anchored window, and
+     * that section marks the erasure half STRUCTURAL for capture-only
+     * patterns because there is no approximation step at all — `(a|b)` and
+     * `(?:a|b)` build the identical `Ast` (D31), so the prefilter's DFA IS
+     * the pattern's DFA. A backreference has no such identity. APPROACH
+     * §2's "backrefs -> their referenced sub-pattern" is a real
+     * approximation, and it fails BOTH halves of the hybrid's requirement:
+     *
+     *   - IT IS NOT EVEN A SUPERSET once the referenced group's TRANSITIVE
+     *     CLOSURE holds an assertion or an atomic/possessive operator.
+     *     MEASURED: 12 of 18 positive-control cells are false negatives
+     *     across those two reasons — `(\ba)\1` on "aa" is (0,2) and its
+     *     erasure `(\ba)\ba` matches NOTHING — plus 3 of 5 for the
+     *     transitive case, where the referenced group itself passes both
+     *     conditions and the assertion sits in a group reachable only
+     *     through a NESTED reference.
+     *   - ITS SPAN IS WRONG WHERE IT IS A SUPERSET. Over 12,786 distinct
+     *     subject-family pairs the false-negative count is 0 for all six
+     *     assertion-free families and the SPAN differs on up to 389
+     *     subjects in one of them: `(["'])[^"']*\1` on "\"''" is truly
+     *     (1,3) and the erasure says (0,2). A VM anchored to (0,2) does
+     *     not find the (1,3) match.
+     *
+     * SO THE MACHINE IS NEVER BUILT — src/ir/nfa.c has no `A_BREF` arm and
+     * falls into its internal error deliberately, and this line is what
+     * makes that unreachable. The cost is measured and stated rather than
+     * hidden: roughly one to two orders of magnitude on the families where
+     * a prefilter would have helped, and nothing on the families where it
+     * would not. §7.4 charters the two SOUND weaker uses (a nomatch-only
+     * filter gated on the transitive closure, and a literal-prefix skip)
+     * so that "VM-only, no prefilter" reads as THIS module's answer rather
+     * than as a permanent verdict. */
+    const bool has_bref = pcrec_has_bref(root);
+    /* [DD-14] A CALL-BEARING PATTERN GETS NO PREFILTER EITHER, and this
+     * line is WAVE E's by the design's own schedule (§8.2, §11 wave E,
+     * sabotage row S-SR17). It lands HERE, in wave B+C, because without it
+     * this wave ships something worse than a missing optimisation.
+     *
+     * ERASING A CALL IS NOT A SUPERSET — IT IS A DIFFERENT LANGUAGE, and
+     * the counterexample is one line (§8.2): `a(?1)b` with group 1 = `x`
+     * matches "axb"; erase the call and `ab` is left, which does not. So
+     * the prefilter's rejection would be a FALSE NEGATIVE and the hybrid
+     * would answer nomatch on a matching subject. That is unlike
+     * `lookaround`'s erasure (a one-line superset proof, §5.3 there) and
+     * exactly like `backrefs`' above.
+     *
+     * AND IT IS NOT A LATENT HAZARD TODAY, WHICH IS WHY IT COULD NOT WAIT.
+     * `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `pcrec_ctx_fail`s
+     * by name (design §4.4a site 25, DECLINE, "unreachable: VM_ONLY, no
+     * prefilter"), and "unreachable" was true only while nothing produced
+     * an `A_CALL`. MEASURED on this branch before this line existed: every
+     * one of `(a)(?1)`, `(?R)`, `(?<n>a)(?&n)` answered `pcrec: internal
+     * error: bad AST node` — a capture-bearing pattern routes to the VM,
+     * the VM asks for its prefilter, and the prefilter build walks a node
+     * it refuses. So the choice was not "ship the optimisation early", it
+     * was "ship a compiler that cannot compile the module's own corpus".
+     * REPORTED: S-SR17 therefore lands in wave B+C rather than wave E, and
+     * wave E's remaining deliverable is the identity gate and SR-8's
+     * stamps, not this predicate.
+     *
+     * THE COST IS MEASURED AND STATED rather than hidden, exactly as the
+     * backrefs paragraph above states its own: 21x-350x on the sparse-
+     * candidate shape a prefilter exists for, over the NON-RECURSIVE half
+     * of the population (§8.3, on the inlined equivalents, 15 pairs
+     * verified equivalent at 420 cells / 0 disagreements before any
+     * timing). §8.3's sound construction — splice an acyclic callee's NFA
+     * fragment, `Sigma*` for a cyclic one — is wave G's, and it is
+     * designed and scheduled rather than waved at. */
+    /* [DD-14 wave G] `pcrec_has_call`'s NARROWING. §8.2's argument — the
+     * call-erased pattern is a DIFFERENT language, not a bigger one, so
+     * the hybrid's DFA cannot be built from it — is an argument about a
+     * call with no finite inlining. A SPLICED call has one and it is
+     * EXACT (`src/ir/nfa.c`'s arm inlines the callee's fragment, and
+     * capture erasure is the only thing it loses, as for every other
+     * construct), so a pattern all of whose calls splice gets the same
+     * prefilter the hand-inlined pattern gets — which is what §8.3
+     * measured the previous line's absence costing at 21x-350x. A pattern
+     * with even one LINKED call still gets nothing, because the machine
+     * for that call cannot be built at all. */
+    const bool has_call = pcrec_has_linked_call(root);
+    if (force_on && (has_bref || has_call))
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter cannot be honoured for a pattern containing a "
+                 "%s: the prefilter is a capture-erased DFA, and "
+                 "erasing a %s changes the language it answers "
+                 "for (drop -fprefilter)",
+                 has_bref ? "backreference" : "subroutine call",
+                 has_bref ? "backreference" : "subroutine call");
+    if (force_on && force_off)
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter and -fno-prefilter cannot both be requested");
+    /* [OPT-4] THE SAME REFUSAL FOR THE LANGUAGE PAIR, and it is here
+     * rather than in cli/main.c so the LIBRARY caller who sets both bits
+     * gets it too — the flag pair is `pcrec_options.flags`, not a CLI
+     * spelling. Placed beside its twin because it is the identical rule
+     * (a request with two contradictory halves is refused, never silently
+     * resolved to one of them), and the collapse decision itself lives at
+     * `src/core/compile.c`'s build gate, where the two bits are read: this
+     * site owes only the diagnostic. */
+    if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
+        (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter-collapse and -fno-prefilter-collapse cannot "
+                 "both be requested");
+    if (force_on && fit->chosen != ENGM_VM)
+        pcrec_ctx_fail(cx, why_pos,
+                 "-fprefilter requires the VM engine; this pattern "
+                 "compiles to the DFA engine, which carries no separate "
+                 "prefilter to force (pass --engine=vm, or drop "
+                 "-fprefilter)");
+    /* [SEL-1] `cx->dfa_disabled` joins `has_bref`/`has_call` in the
+     * silent-drop clause rather than getting its own branch: on the
+     * retry compile this fires from, the prefilter would be the
+     * IDENTICAL construction that already overflowed once this compile
+     * (same capture-erased forward+reverse NFA, same caps), so building
+     * it again would cost a second refused build — exactly what the
+     * plan row's cost bound (at most one refused build dearer than
+     * `--engine=vm`) forbids. Safe to fold in unconditionally rather
+     * than to gate on `!force_on`: `cx->dfa_disabled` can only be true
+     * on a retry, and `compile_driver` only retries when
+     * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
+     * do-or-die and never reach a retry at all), so `force_on` is
+     * always false whenever `dfa_disabled` is true — this clause and
+     * `force_on`'s branch below are therefore never in tension.
+     *
+     * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS
+     * ONE CONJUNCT. "the IDENTICAL construction that already overflowed"
+     * is exactly right about the EXACT language and exactly wrong about
+     * the count-collapsed one (K39;
+     * docs/design/prefilter_count_independence.md §6): that machine's NFA
+     * is a function of the pattern's STRUCTURE alone, so it is not the
+     * machine that overflowed and rebuilding it is not the wasted second
+     * build this clause exists to prevent. `compile_driver` therefore
+     * tries ONE more rung before this one — `collapse_reason == CR_SEL1`,
+     * set only together with `dfa_disabled` — and on that attempt the
+     * prefilter must SURVIVE selection to be built at all.
+     *
+     * The cost bound moves from one refused DFA build to at most two, and
+     * the second is bounded by the first: the collapsed NFA is strictly
+     * smaller than the exact one this compile already built, and its size
+     * does not depend on any count. `docs/spec/tuning.md` §4 states the
+     * new bound rather than leaving the old sentence to be read as still
+     * exact. */
+    /* [OPT-4.1] THE RESCUE IS GATED ON NON-NULLABILITY, and the gate is
+     * HERE rather than at the build gate that decides the LANGUAGE,
+     * because on a rung the alternative to the collapsed prefilter is not
+     * the exact one — the exact machine is what failed. Declining the
+     * collapse at the build gate would send the compile back through the
+     * construction that already overflowed (a third attempt, and the
+     * expensive one); declining the PREFILTER here costs nothing and lands
+     * exactly on the artifact the ladder produced before [OPT-4] existed.
+     *
+     * MEASURED NEED (pcrec-bench O-10 item 3, pin 96e44c2): the rescue is
+     * a 2.2-4.6x WIN on five of the bench's patterns and a 1.2-9.9x LOSS
+     * on three, and the rung cannot tell them apart. What separates them is
+     * this predicate: `[a-z]{0,32768}` collapses to `[a-z]*`, which admits
+     * a zero-length match at every position, so the filter can never
+     * dismiss one and the artifact pays a scan it cannot win.
+     *
+     * IT APPLIES TO BOTH RUNGS, not only to the measured one. On the SIZE
+     * rung the collapsed prefilter is there to make the artifact SHIP, and
+     * dropping it entirely ships something strictly smaller — so the
+     * uniform rule costs no pattern its compile and the size rung needs no
+     * exception. (`tuning.md` §2.17 states both.)
+     *
+     * `-fprefilter` OUTRANKS IT, which is the one asymmetry and it is
+     * do-or-die's (D46/D47.3): the decline's alternative is NO prefilter,
+     * and that is precisely what an explicit `-fprefilter` forbids — a
+     * request this pass cannot honour must REFUSE, never be silently
+     * answered with the opposite. `-fprefilter-collapse` does NOT outrank
+     * it: that flag chooses a LANGUAGE for a prefilter, not whether one
+     * exists, and a caller who wants existence has `-fprefilter`. */
+    /* [OPT-4.1] `prefilter_has_collapsible_rep` IS LOAD-BEARING HERE AND
+     * WAS MISSING (r47sel finding 1). `compile_driver`'s `retry_collapse`
+     * does NOT test it, so the [SEL-1] rung is offered to a pattern with
+     * no collapsible repeat — and for such a pattern the collapsed
+     * lowering IS the exact one, so there is no distinct rescue and
+     * nothing to refuse. Declining one and stamping `declined-nullable`
+     * would report a REFUSED rescue where none was ever available, which
+     * is the inversion `match_api.md`'s value table warns about and which
+     * the bench buckets on. Without the conjunct the fallback also loses
+     * its own name: the honest stamp there is `overflowed-dfa`.
+     *
+     * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two
+     * sites now read ONE derivation off `EngineFit` rather than each
+     * calling the predicate — which is what makes "they cannot disagree"
+     * structural instead of a thing to remember. `!pfc_deny` and
+     * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
+     * CR_NONE` already implies both: neither rung is offered under
+     * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
+    /* [OPT-4.2] THE NULLABILITY DECLINE, GENERALIZED TO EVERY RUNG —
+     * INCLUDING THE ONE THAT IS NOT A RUNG AT ALL. `lang_nullable_
+     * declinable` is the one predicate common to both scopes: nullable,
+     * no backreference, no linked call, not forced on by `-fprefilter`
+     * (that flag outranks the decline on either scope, for [OPT-4.1]'s
+     * own reason — its alternative is no prefilter at all, and forcing
+     * one on is precisely what `-fprefilter` exists to demand). The two
+     * fields below are its two SCOPES and are never both true for one
+     * compile, since one requires `collapse_reason != CR_NONE` and the
+     * other its negation:
+     *
+     *   `prefilter_declined_nullable`         a RUNG offered the
+     *     collapsed rescue and it was refused (unchanged from [OPT-4.1]
+     *     — ALSO needs `prefilter_has_collapsible_rep`, because without a
+     *     collapsible repeat the collapsed lowering IS the exact one and
+     *     there is no distinct rescue to decline).
+     *   `prefilter_declined_nullable_default`  the ORDINARY, un-rung
+     *     hybrid's own EXACT prefilter is nullable ([OPT-4.2], new — NO
+     *     collapsible-repeat conjunct needed: this path never collapses
+     *     anything, so there is always a concrete prefilter to decline —
+     *     but it DOES need `would_prefilter` below, plus `!cx->dfa_
+     *     disabled`, for the r47sel-1 reason `prefilter_declined_
+     *     nullable` needs `prefilter_has_collapsible_rep`: without them
+     *     a DFA-chosen artifact, a forced `--engine=vm` build with no
+     *     `-fprefilter` (R21 E-6 already turns the prefilter off there
+     *     for its own reason), or a retry whose OWN prefilter machine
+     *     overflowed with no collapse rung offered (`dfa_disabled &&
+     *     collapse_reason == CR_NONE` — `ESEL_OVERFLOWED_DFA`/
+     *     `_PREFILTER`'s own population) would each stamp "a rescue was
+     *     refused" on an artifact that never had a working prefilter to
+     *     refuse in the first place.
+     *
+     * internal.h's own field comments carry the full argument for each;
+     * this is the ONE site that derives both, off the one local. */
+    bool lang_nullable_declinable =
+        fit->lang_nullable && !has_bref && !has_call && !force_on;
+    /* [OPT-4.2] "would this compile build a prefilter at all, absent the
+     * nullability decline" — the SAME condition the final ternary below
+     * falls through to when nothing declines it, read once here so the
+     * decline and its baseline cannot disagree about what they are
+     * declining. NOT `&& !cx->dfa_disabled` — this expression is ALSO
+     * the final fallback value below, and on the CR_SEL1 rung `dfa_
+     * disabled` is true precisely while a collapsed rescue is surviving,
+     * where `fit->prefilter` must still be able to read true. The
+     * DFA-overflowed-with-no-rung-offered case (`dfa_disabled &&
+     * collapse_reason == CR_NONE`) already forces `fit->prefilter` false
+     * through the OR-clause below regardless of this value, so nothing
+     * here needs to special-case it — only the DEFAULT decline's own
+     * attribution does, immediately below. */
+    bool would_prefilter = (fit->chosen == ENGM_VM) &&
+                            (cx->opt->engine != PCREC_ENGINE_VM);
+    fit->prefilter_declined_nullable =
+        cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
+        fit->prefilter_has_collapsible_rep;
+    fit->prefilter_declined_nullable_default =
+        cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
+        lang_nullable_declinable && would_prefilter;
+    fit->prefilter = (has_bref || has_call ||
+                     (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
+                     fit->prefilter_declined_nullable ||
+                     fit->prefilter_declined_nullable_default)
+                    ? false
+                   : force_on ? true
+                   : force_off ? false
+                   : would_prefilter;
+}
+
+/* The `<PREFIX>_ENGINE_SEL` token for a FINISHED fit: which of the closed
+ * `ESEL_*` values records how this artifact's engine came to be chosen.
+ *
+ * Derived here and nowhere else, because this is the one point where the fit
+ * is final AND `compile_driver`'s attempt record is in hand — `dfa_disabled`,
+ * `collapse_reason`, `size_drop_rung` and `dfa_was_engine`, all read off `cx`
+ * and none of them parameters. `fit->why`'s prose and this token are two
+ * readers of ONE decision (D81); neither is parsed from the other. What each
+ * value MEANS, which RANGES of them a consumer may test, and the history of
+ * the set live on the `ESEL_*` enum in core/internal.h and not here.
+ *
+ * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER, so its correctness is a
+ * claim about the arms not fighting each other — and this table is the ONE
+ * place that claim is made. It replaces the five stacked comment blocks
+ * ([OPT-4], [OPT-4.1], [OPT-4.2], [LIM-1], [K53-SELRETRY]) that each amended
+ * the previous one; their history is in the plan/decision rows their tags
+ * name and in internal.h's value comments. `excludes` means the arms below
+ * are DISJOINT by construction and the order is free; `outranks` means they
+ * can co-occur and first-wins is the intended answer.
+ *
+ *  | # | arm (ESEL_)               | fires on                                                       | against the arms below |
+ *  |---|---------------------------|----------------------------------------------------------------|---|
+ *  | 1 | FORCED                    | `opt->engine != AUTO`                                          | OUTRANKS — note (A) |
+ *  | 2 | DECLINED_NULLABLE_DEFAULT | `fit->prefilter_declined_nullable_default`                     | excludes: the field needs `collapse_reason == CR_NONE && !dfa_disabled` and a VM-chosen artifact — note (B) |
+ *  | 3 | DECLINED_NULLABLE         | `collapse_reason != CR_NONE && fit->prefilter_declined_nullable` | excludes: a rung ran AND refused its rescue, so the prefilter neither survived (7) nor is this an un-rung compile (2) |
+ *  | 4 | SIZE_CAP_RETRY (a)        | `collapse_reason == CR_SIZECAP && fit->prefilter`              | excludes: `CR_SIZECAP` is not `CR_NONE`/`CR_SEL1`, and `dfa_disabled` is never set on this rung — note (C) |
+ *  | 5 | SIZE_CAP_RETRY (b)        | `size_drop_rung != SDR_NONE`                                   | excludes 6-9 ONLY under the premise the check below asserts — note (D) |
+ *  | 6 | SELECTED                  | `!dfa_disabled`                                                | excludes: every arm below requires `dfa_disabled` |
+ *  | 7 | COLLAPSED_PREFILTER       | `collapse_reason == CR_SEL1 && fit->prefilter`                 | excludes: below it no prefilter survived |
+ *  | 8 | OVERFLOWED_DFA            | `dfa_was_engine`                                               | last test; its negation is arm 9 |
+ *  | 9 | OVERFLOWED_PREFILTER      | otherwise                                                      | — |
+ *
+ * (A) ARM 1 OUTRANKS, IT DOES NOT EXCLUDE, and the difference is real: a
+ *     named engine means `auto` selected nothing, so no selection OUTCOME is
+ *     the honest token — but `compile_driver`'s two drop-ladder rungs carry
+ *     no `engine == AUTO` conjunct, so `size_drop_rung` CAN be set under
+ *     `--engine=dfa` and arm 5 would otherwise fire. First-wins is the
+ *     intended answer there; the rung is still legible from the artifact's
+ *     own axis stamps (internal.h's `ESEL_SIZE_CAP_RETRY` table).
+ * (B) `prefilter_declined_nullable_default` is the one case where
+ *     `!dfa_disabled` holds and arm 6's ordinary "selected" would be the
+ *     WRONG stamp — which is why it is tested up here rather than after it.
+ *     internal.h's placement note explains why the VALUE also sits outside
+ *     both fallback ranges. THE THIRD CONJUNCT IS LOAD-BEARING AND WAS
+ *     MISSING FROM THE PROSE THIS TABLE REPLACES: [OPT-4.2]'s block argued
+ *     non-overlap from `collapse_reason` and `dfa_disabled` alone, which
+ *     predates arm 5 and says nothing about `size_drop_rung`. What keeps
+ *     arms 2 and 5 apart is that the drop ladder's rungs are DFA-engine
+ *     (note D) while this field requires a VM-chosen artifact.
+ * (C) The `fit->prefilter` conjunct on arm 4 is not belt-and-braces: a
+ *     size-cap-refused VM compile can still end with no prefilter (a
+ *     backreference or a linked call drops it), and stamping "a prefilter
+ *     survived" would name a decision the artifact did not take. That case
+ *     falls to arm 6 deliberately — nothing about its route through a cap is
+ *     observable in any other stamp, so it is left alone pending a named
+ *     consumer (D77).
+ * (D) Arm 5 carries NO `fit->prefilter` conjunct, and that asymmetry with
+ *     arm 4 is forced: the drop ladder's rungs are DFA-engine (rung 1 needs
+ *     `Job.anchored_ok`, rung 2 tests `fit.chosen == ENGM_DFA`), a DFA
+ *     artifact has no prefilter to survive, and requiring one would make the
+ *     arm unreachable on exactly the population it exists for. The same
+ *     DFA-engine fact is what keeps arm 5 disjoint from arms 6-9 — see the
+ *     check below, which is the first time this file asserts it. */
+static unsigned char esel_of(Ctx *cx, const EngineFit *fit)
+{
+    /* [TOUR-5] THE ONE PREMISE THIS LADDER RESTED ON WITHOUT ASSERTING
+     * (r61 F2, docs/dev/reviews/2026-09-20-r61-fable-personal-review.md).
+     * Arm 5 is ordered above arms 6-9 on "a drop-ladder rung and a DFA
+     * overflow cannot both have happened to one compile" — plausible, since
+     * the rungs are DFA-engine and an overflow makes the engine the VM, and
+     * argued nowhere. If both ever held, arm 5 would stamp SIZE_CAP_RETRY
+     * and the overflow would be invisible in every stamp the artifact
+     * carries: a silent loss from a closed value set, K35's own shape.
+     *
+     * A REFUSAL, NOT AN `abort()`: pcrec is a library and docs/spec/
+     * match_api.md promises the compile path never aborts the caller, so
+     * this reports itself the way every other impossible state in this file
+     * does — through `pcrec_ctx_fail`, which unwinds to `compile_driver`'s
+     * one `setjmp` and returns a diagnostic. */
+    if (cx->size_drop_rung != SDR_NONE && cx->dfa_disabled)
+        pcrec_ctx_fail(cx, fit->why_pos,
+                 "internal error: an emitted-size drop-ladder rung and a DFA "
+                 "overflow fired on the same compile");
+
+    return
+          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
+        : fit->prefilter_declined_nullable_default    ? ESEL_DECLINED_NULLABLE_DEFAULT
+        : (cx->collapse_reason != CR_NONE && fit->prefilter_declined_nullable)
+                                                      ? ESEL_DECLINED_NULLABLE
+        : ((cx->collapse_reason == CR_SIZECAP && fit->prefilter) ||
+           cx->size_drop_rung != SDR_NONE)
+                                                      ? ESEL_SIZE_CAP_RETRY
+        : !cx->dfa_disabled                           ? ESEL_SELECTED
+        : (cx->collapse_reason == CR_SEL1 && fit->prefilter)
+                                                      ? ESEL_COLLAPSED_PREFILTER
+        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
+                                                      : ESEL_OVERFLOWED_PREFILTER;
+}
+
+/* Decides which of ENGM_DFA/ENGM_VM this pattern may build, whether the VM's
+ * hybrid prefilter runs ahead of it, and which `<PREFIX>_ENGINE_SEL` token
+ * records how that came out — then runs the bounded-repeat ladder's two
+ * analyses, which need the engine already chosen. Writes `cx->job->fit`.
+ *
+ * The verdict is an AND over `analyses[]`' masks (the request-derived
+ * captures rule, the registry's per-construct SR-8 rows, a prior attempt's
+ * DFA overflow) narrowed by the `--engine=` override, which is DO-OR-DIE:
+ * a request the pattern cannot honour is refused, never downgraded. Reads
+ * `cx->opt` and the retry state `compile_driver` seeds (`dfa_disabled`,
+ * `collapse_reason`, `size_drop_rung`); the file header has the full rule
+ * catalogue and why each fires where it does — read it before adding a new
+ * forcing condition here. */
 void pcrec_select_engine(Ctx *cx, Ast *root)
 {
     EngineFit fit;
@@ -513,10 +955,9 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     size_t node_why_pos = 0;
 
     /* [M6.4.2] UNTIL [DD-14] WAVE G, THE FREE DISCHARGE ran ONCE HERE, before
-     * the analysis loop — NOT as a registered `discharge` hook.
-     * src/opt/atomic.c's own header has the three reasons, one of them
-     * measured: the fixpoint below never CALLS a registered hook, so
-     * registering would run the analysis 8 times and rewrite nothing.
+     * the analysis loop — NOT as a registered `discharge` hook
+     * (src/opt/atomic.c's own header has the three reasons; [TOUR-5] has
+     * since deleted that hook altogether).
      * Running it first is what makes the consultation's per-ROW column
      * produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'` succeeds
      * because the node is GONE by the time `forces_registry` looks.
@@ -532,39 +973,22 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * publishes the rewritten root, which this pass could not do: the
      * assignment below was to a LOCAL, so a discharge at the very ROOT was
      * dropped on the floor here and is now kept. Nothing else moves — the
-     * discharge still runs before the first analysis round, which is the only
+     * discharge still runs before the analysis below, which is the only
      * property the paragraph above claims. */
 
-    for (int round = 0; round < SELECT_MAX_ROUNDS; round++) {
-        mask = ENGM_DFA | ENGM_VM;
-        why = NULL;
-        why_pos = 0;
-        node_why = NULL;
-        node_why_pos = 0;
-        for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
-            size_t p = 0;
-            const char *w = NULL;
-            unsigned m = analyses[i].forces(cx, root, &p, &w);
-            if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
-            if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
-                node_why = w; node_why_pos = p;
-            }
-            mask &= m;
+    /* [TOUR-5] ONE PASS, not a fixpoint: with the `discharge` rewrite hook
+     * deleted nothing can change the tree between rounds, so the loop that
+     * used to wrap this provably ran exactly once. The file header has the
+     * deletion's argument. */
+    for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
+        size_t p = 0;
+        const char *w = NULL;
+        unsigned m = analyses[i].forces(cx, root, &p, &w);
+        if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
+        if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
+            node_why = w; node_why_pos = p;
         }
-        if (mask & ENGM_DFA) break;   /* nothing forces the VM: done */
-        /* Offer every registered rewrite a chance to discharge the forcing.
-         * None is registered today, so this loop finds nothing to do and the
-         * fixpoint terminates on the first round. */
-        bool rewrote = false;
-        for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
-            if (!analyses[i].discharge) continue;
-            /* A discharge hook that rewrites must publish the new root; the
-             * first customer to need it is the first to design that plumbing
-             * (it cannot be written blind — see the size-estimate obligation
-             * §5.2 hands the rewrite author). */
-            rewrote = true;
-        }
-        if (!rewrote) break;
+        mask &= m;
     }
 
     if (mask == 0)
@@ -629,424 +1053,8 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         break;
     }
 
-    /* THE PREFILTER (§6.1, §4.7, and D44/R21 E-6).
-     *
-     * Under `auto` a VM artifact gets the capture-erased forward+reverse DFA
-     * pair as an EXACT anchored-window prefilter, and that is not an
-     * optimization — §4.7 makes it the rule that keeps DD-2 from being a
-     * regression. `(a*)b` over 8 MB of `a` is answered `nomatch` by the
-     * prefilter in one pass at DFA speed; a naive VM would need ~7e13
-     * resumptions and would "fail honestly" where pcrec answers today at
-     * 25 GB/s. A budget-exceeded return on a pattern pcrec answers today is a
-     * regression, not robustness.
-     *
-     * Under `--engine=vm` it is OFF, deliberately (E-6): with the prefilter
-     * running underneath, `span(VM) == span(DFA)` is close to a TAUTOLOGY,
-     * because the hybrid hands the VM the DFA's own answer as its starting
-     * window. Only a prefilter-free run is an independent second derivation,
-     * which is what §3.7's differential needs to be a real gate.
-     *
-     * [M4.6f] D46's controllability half for this axis: `-fprefilter`/
-     * `-fno-prefilter` OVERRIDE the derived value above in EITHER
-     * direction, decoupling "does the hybrid run" from "which engine was
-     * chosen" — up to now the only way to get it OFF under an
-     * otherwise-auto selection was to also force `--engine=vm`, and the
-     * only way to get it ON under `--engine=vm` was not to ask for
-     * `--engine=vm` at all. DO-OR-DIE (the same posture the switch above
-     * applies to `--engine` itself): forcing it ON when no VM artifact
-     * exists to attach a prefilter to (fit.chosen == ENGM_DFA) is not a
-     * request this pass can silently ignore or silently honour by
-     * building a VM artifact nobody asked for — it REFUSES. Forcing it
-     * OFF has no such hole: `--engine=vm` already ships a pure,
-     * prefilter-free VM artifact today, so PCREC_NO_PREFILTER is always
-     * buildable whatever engine was chosen. */
-    {
-        bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
-        bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
-        /* [OPT-4.1] THE PREFILTER LANGUAGE'S NULLABILITY, derived ONCE here
-         * and read by this pass, by `src/core/compile.c`'s build gate and by
-         * the `--emit-ir` listing off `EngineFit` (D81). It is
-         * `src/opt/mrl.c`'s existing width analysis and not a second walk —
-         * `internal.h`'s field comment carries the argument that `minw == 0`
-         * answers for the PREFILTER's lowering, and that the collapsed
-         * language is nullable exactly when the exact one is. */
-        fit.lang_nullable = pcrec_minw(root) == 0;
-        /* [OPT-4.1] AND WHETHER THERE IS ANYTHING TO COLLAPSE, derived here
-         * for the same reason and read by the same two sites (internal.h). */
-        fit.prefilter_has_collapsible_rep = pcrec_has_collapsible_rep(root);
-        /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
-         * is a REFUSAL of `-fprefilter` rather than a silent override, on
-         * D46's own do-or-die posture — a request the pattern cannot honour is
-         * refused, never quietly answered with something else.
-         *
-         * WHY THERE IS NO PREFILTER TO BUILD. `engine_m4.md` §6.1's hybrid does
-         * not merely need a filter that cannot false-negative: it needs the
-         * forward+reverse pair to hand the VM the EXACT anchored window, and
-         * that section marks the erasure half STRUCTURAL for capture-only
-         * patterns because there is no approximation step at all — `(a|b)` and
-         * `(?:a|b)` build the identical `Ast` (D31), so the prefilter's DFA IS
-         * the pattern's DFA. A backreference has no such identity. APPROACH
-         * §2's "backrefs -> their referenced sub-pattern" is a real
-         * approximation, and it fails BOTH halves of the hybrid's requirement:
-         *
-         *   - IT IS NOT EVEN A SUPERSET once the referenced group's TRANSITIVE
-         *     CLOSURE holds an assertion or an atomic/possessive operator.
-         *     MEASURED: 12 of 18 positive-control cells are false negatives
-         *     across those two reasons — `(\ba)\1` on "aa" is (0,2) and its
-         *     erasure `(\ba)\ba` matches NOTHING — plus 3 of 5 for the
-         *     transitive case, where the referenced group itself passes both
-         *     conditions and the assertion sits in a group reachable only
-         *     through a NESTED reference.
-         *   - ITS SPAN IS WRONG WHERE IT IS A SUPERSET. Over 12,786 distinct
-         *     subject-family pairs the false-negative count is 0 for all six
-         *     assertion-free families and the SPAN differs on up to 389
-         *     subjects in one of them: `(["'])[^"']*\1` on "\"''" is truly
-         *     (1,3) and the erasure says (0,2). A VM anchored to (0,2) does
-         *     not find the (1,3) match.
-         *
-         * SO THE MACHINE IS NEVER BUILT — src/ir/nfa.c has no `A_BREF` arm and
-         * falls into its internal error deliberately, and this line is what
-         * makes that unreachable. The cost is measured and stated rather than
-         * hidden: roughly one to two orders of magnitude on the families where
-         * a prefilter would have helped, and nothing on the families where it
-         * would not. §7.4 charters the two SOUND weaker uses (a nomatch-only
-         * filter gated on the transitive closure, and a literal-prefix skip)
-         * so that "VM-only, no prefilter" reads as THIS module's answer rather
-         * than as a permanent verdict. */
-        const bool has_bref = pcrec_has_bref(root);
-        /* [DD-14] A CALL-BEARING PATTERN GETS NO PREFILTER EITHER, and this
-         * line is WAVE E's by the design's own schedule (§8.2, §11 wave E,
-         * sabotage row S-SR17). It lands HERE, in wave B+C, because without it
-         * this wave ships something worse than a missing optimisation.
-         *
-         * ERASING A CALL IS NOT A SUPERSET — IT IS A DIFFERENT LANGUAGE, and
-         * the counterexample is one line (§8.2): `a(?1)b` with group 1 = `x`
-         * matches "axb"; erase the call and `ab` is left, which does not. So
-         * the prefilter's rejection would be a FALSE NEGATIVE and the hybrid
-         * would answer nomatch on a matching subject. That is unlike
-         * `lookaround`'s erasure (a one-line superset proof, §5.3 there) and
-         * exactly like `backrefs`' above.
-         *
-         * AND IT IS NOT A LATENT HAZARD TODAY, WHICH IS WHY IT COULD NOT WAIT.
-         * `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `pcrec_ctx_fail`s
-         * by name (design §4.4a site 25, DECLINE, "unreachable: VM_ONLY, no
-         * prefilter"), and "unreachable" was true only while nothing produced
-         * an `A_CALL`. MEASURED on this branch before this line existed: every
-         * one of `(a)(?1)`, `(?R)`, `(?<n>a)(?&n)` answered `pcrec: internal
-         * error: bad AST node` — a capture-bearing pattern routes to the VM,
-         * the VM asks for its prefilter, and the prefilter build walks a node
-         * it refuses. So the choice was not "ship the optimisation early", it
-         * was "ship a compiler that cannot compile the module's own corpus".
-         * REPORTED: S-SR17 therefore lands in wave B+C rather than wave E, and
-         * wave E's remaining deliverable is the identity gate and SR-8's
-         * stamps, not this predicate.
-         *
-         * THE COST IS MEASURED AND STATED rather than hidden, exactly as the
-         * backrefs paragraph above states its own: 21x-350x on the sparse-
-         * candidate shape a prefilter exists for, over the NON-RECURSIVE half
-         * of the population (§8.3, on the inlined equivalents, 15 pairs
-         * verified equivalent at 420 cells / 0 disagreements before any
-         * timing). §8.3's sound construction — splice an acyclic callee's NFA
-         * fragment, `Sigma*` for a cyclic one — is wave G's, and it is
-         * designed and scheduled rather than waved at. */
-        /* [DD-14 wave G] `pcrec_has_call`'s NARROWING. §8.2's argument — the
-         * call-erased pattern is a DIFFERENT language, not a bigger one, so
-         * the hybrid's DFA cannot be built from it — is an argument about a
-         * call with no finite inlining. A SPLICED call has one and it is
-         * EXACT (`src/ir/nfa.c`'s arm inlines the callee's fragment, and
-         * capture erasure is the only thing it loses, as for every other
-         * construct), so a pattern all of whose calls splice gets the same
-         * prefilter the hand-inlined pattern gets — which is what §8.3
-         * measured the previous line's absence costing at 21x-350x. A pattern
-         * with even one LINKED call still gets nothing, because the machine
-         * for that call cannot be built at all. */
-        const bool has_call = pcrec_has_linked_call(root);
-        if (force_on && (has_bref || has_call))
-            pcrec_ctx_fail(cx, why_pos,
-                     "-fprefilter cannot be honoured for a pattern containing a "
-                     "%s: the prefilter is a capture-erased DFA, and "
-                     "erasing a %s changes the language it answers "
-                     "for (drop -fprefilter)",
-                     has_bref ? "backreference" : "subroutine call",
-                     has_bref ? "backreference" : "subroutine call");
-        if (force_on && force_off)
-            pcrec_ctx_fail(cx, why_pos,
-                     "-fprefilter and -fno-prefilter cannot both be requested");
-        /* [OPT-4] THE SAME REFUSAL FOR THE LANGUAGE PAIR, and it is here
-         * rather than in cli/main.c so the LIBRARY caller who sets both bits
-         * gets it too — the flag pair is `pcrec_options.flags`, not a CLI
-         * spelling. Placed beside its twin because it is the identical rule
-         * (a request with two contradictory halves is refused, never silently
-         * resolved to one of them), and the collapse decision itself lives at
-         * `src/core/compile.c`'s build gate, where the two bits are read: this
-         * site owes only the diagnostic. */
-        if ((cx->opt->flags & PCREC_FORCE_PREFILTER_COLLAPSE) &&
-            (cx->opt->flags & PCREC_NO_PREFILTER_COLLAPSE))
-            pcrec_ctx_fail(cx, why_pos,
-                     "-fprefilter-collapse and -fno-prefilter-collapse cannot "
-                     "both be requested");
-        if (force_on && fit.chosen != ENGM_VM)
-            pcrec_ctx_fail(cx, why_pos,
-                     "-fprefilter requires the VM engine; this pattern "
-                     "compiles to the DFA engine, which carries no separate "
-                     "prefilter to force (pass --engine=vm, or drop "
-                     "-fprefilter)");
-        /* [SEL-1] `cx->dfa_disabled` joins `has_bref`/`has_call` in the
-         * silent-drop clause rather than getting its own branch: on the
-         * retry compile this fires from, the prefilter would be the
-         * IDENTICAL construction that already overflowed once this compile
-         * (same capture-erased forward+reverse NFA, same caps), so building
-         * it again would cost a second refused build — exactly what the
-         * plan row's cost bound (at most one refused build dearer than
-         * `--engine=vm`) forbids. Safe to fold in unconditionally rather
-         * than to gate on `!force_on`: `cx->dfa_disabled` can only be true
-         * on a retry, and `compile_driver` only retries when
-         * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
-         * do-or-die and never reach a retry at all), so `force_on` is
-         * always false whenever `dfa_disabled` is true — this clause and
-         * `force_on`'s branch below are therefore never in tension.
-         *
-         * [OPT-4] THE PREMISE ABOVE STOPPED BEING TRUE, AND THE EXCEPTION IS
-         * ONE CONJUNCT. "the IDENTICAL construction that already overflowed"
-         * is exactly right about the EXACT language and exactly wrong about
-         * the count-collapsed one (K39;
-         * docs/design/prefilter_count_independence.md §6): that machine's NFA
-         * is a function of the pattern's STRUCTURE alone, so it is not the
-         * machine that overflowed and rebuilding it is not the wasted second
-         * build this clause exists to prevent. `compile_driver` therefore
-         * tries ONE more rung before this one — `collapse_reason == CR_SEL1`,
-         * set only together with `dfa_disabled` — and on that attempt the
-         * prefilter must SURVIVE selection to be built at all.
-         *
-         * The cost bound moves from one refused DFA build to at most two, and
-         * the second is bounded by the first: the collapsed NFA is strictly
-         * smaller than the exact one this compile already built, and its size
-         * does not depend on any count. `docs/spec/tuning.md` §4 states the
-         * new bound rather than leaving the old sentence to be read as still
-         * exact. */
-        /* [OPT-4.1] THE RESCUE IS GATED ON NON-NULLABILITY, and the gate is
-         * HERE rather than at the build gate that decides the LANGUAGE,
-         * because on a rung the alternative to the collapsed prefilter is not
-         * the exact one — the exact machine is what failed. Declining the
-         * collapse at the build gate would send the compile back through the
-         * construction that already overflowed (a third attempt, and the
-         * expensive one); declining the PREFILTER here costs nothing and lands
-         * exactly on the artifact the ladder produced before [OPT-4] existed.
-         *
-         * MEASURED NEED (pcrec-bench O-10 item 3, pin 96e44c2): the rescue is
-         * a 2.2-4.6x WIN on five of the bench's patterns and a 1.2-9.9x LOSS
-         * on three, and the rung cannot tell them apart. What separates them is
-         * this predicate: `[a-z]{0,32768}` collapses to `[a-z]*`, which admits
-         * a zero-length match at every position, so the filter can never
-         * dismiss one and the artifact pays a scan it cannot win.
-         *
-         * IT APPLIES TO BOTH RUNGS, not only to the measured one. On the SIZE
-         * rung the collapsed prefilter is there to make the artifact SHIP, and
-         * dropping it entirely ships something strictly smaller — so the
-         * uniform rule costs no pattern its compile and the size rung needs no
-         * exception. (`tuning.md` §2.17 states both.)
-         *
-         * `-fprefilter` OUTRANKS IT, which is the one asymmetry and it is
-         * do-or-die's (D46/D47.3): the decline's alternative is NO prefilter,
-         * and that is precisely what an explicit `-fprefilter` forbids — a
-         * request this pass cannot honour must REFUSE, never be silently
-         * answered with the opposite. `-fprefilter-collapse` does NOT outrank
-         * it: that flag chooses a LANGUAGE for a prefilter, not whether one
-         * exists, and a caller who wants existence has `-fprefilter`. */
-        /* [OPT-4.1] `prefilter_has_collapsible_rep` IS LOAD-BEARING HERE AND
-         * WAS MISSING (r47sel finding 1). `compile_driver`'s `retry_collapse`
-         * does NOT test it, so the [SEL-1] rung is offered to a pattern with
-         * no collapsible repeat — and for such a pattern the collapsed
-         * lowering IS the exact one, so there is no distinct rescue and
-         * nothing to refuse. Declining one and stamping `declined-nullable`
-         * would report a REFUSED rescue where none was ever available, which
-         * is the inversion `match_api.md`'s value table warns about and which
-         * the bench buckets on. Without the conjunct the fallback also loses
-         * its own name: the honest stamp there is `overflowed-dfa`.
-         *
-         * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two
-         * sites now read ONE derivation off `EngineFit` rather than each
-         * calling the predicate — which is what makes "they cannot disagree"
-         * structural instead of a thing to remember. `!pfc_deny` and
-         * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
-         * CR_NONE` already implies both: neither rung is offered under
-         * `-fno-prefilter-collapse`, and a rung excludes the DFA. */
-        /* [OPT-4.2] THE NULLABILITY DECLINE, GENERALIZED TO EVERY RUNG —
-         * INCLUDING THE ONE THAT IS NOT A RUNG AT ALL. `lang_nullable_
-         * declinable` is the one predicate common to both scopes: nullable,
-         * no backreference, no linked call, not forced on by `-fprefilter`
-         * (that flag outranks the decline on either scope, for [OPT-4.1]'s
-         * own reason — its alternative is no prefilter at all, and forcing
-         * one on is precisely what `-fprefilter` exists to demand). The two
-         * fields below are its two SCOPES and are never both true for one
-         * compile, since one requires `collapse_reason != CR_NONE` and the
-         * other its negation:
-         *
-         *   `prefilter_declined_nullable`         a RUNG offered the
-         *     collapsed rescue and it was refused (unchanged from [OPT-4.1]
-         *     — ALSO needs `prefilter_has_collapsible_rep`, because without a
-         *     collapsible repeat the collapsed lowering IS the exact one and
-         *     there is no distinct rescue to decline).
-         *   `prefilter_declined_nullable_default`  the ORDINARY, un-rung
-         *     hybrid's own EXACT prefilter is nullable ([OPT-4.2], new — NO
-         *     collapsible-repeat conjunct needed: this path never collapses
-         *     anything, so there is always a concrete prefilter to decline —
-         *     but it DOES need `would_prefilter` below, plus `!cx->dfa_
-         *     disabled`, for the r47sel-1 reason `prefilter_declined_
-         *     nullable` needs `prefilter_has_collapsible_rep`: without them
-         *     a DFA-chosen artifact, a forced `--engine=vm` build with no
-         *     `-fprefilter` (R21 E-6 already turns the prefilter off there
-         *     for its own reason), or a retry whose OWN prefilter machine
-         *     overflowed with no collapse rung offered (`dfa_disabled &&
-         *     collapse_reason == CR_NONE` — `ESEL_OVERFLOWED_DFA`/
-         *     `_PREFILTER`'s own population) would each stamp "a rescue was
-         *     refused" on an artifact that never had a working prefilter to
-         *     refuse in the first place.
-         *
-         * internal.h's own field comments carry the full argument for each;
-         * this is the ONE site that derives both, off the one local. */
-        bool lang_nullable_declinable =
-            fit.lang_nullable && !has_bref && !has_call && !force_on;
-        /* [OPT-4.2] "would this compile build a prefilter at all, absent the
-         * nullability decline" — the SAME condition the final ternary below
-         * falls through to when nothing declines it, read once here so the
-         * decline and its baseline cannot disagree about what they are
-         * declining. NOT `&& !cx->dfa_disabled` — this expression is ALSO
-         * the final fallback value below, and on the CR_SEL1 rung `dfa_
-         * disabled` is true precisely while a collapsed rescue is surviving,
-         * where `fit.prefilter` must still be able to read true. The
-         * DFA-overflowed-with-no-rung-offered case (`dfa_disabled &&
-         * collapse_reason == CR_NONE`) already forces `fit.prefilter` false
-         * through the OR-clause below regardless of this value, so nothing
-         * here needs to special-case it — only the DEFAULT decline's own
-         * attribution does, immediately below. */
-        bool would_prefilter = (fit.chosen == ENGM_VM) &&
-                                (cx->opt->engine != PCREC_ENGINE_VM);
-        fit.prefilter_declined_nullable =
-            cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
-            fit.prefilter_has_collapsible_rep;
-        fit.prefilter_declined_nullable_default =
-            cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
-            lang_nullable_declinable && would_prefilter;
-        fit.prefilter = (has_bref || has_call ||
-                         (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
-                         fit.prefilter_declined_nullable ||
-                         fit.prefilter_declined_nullable_default)
-                        ? false
-                       : force_on ? true
-                       : force_off ? false
-                       : would_prefilter;
-    }
-
-    /* [OPT-4] `<PREFIX>_ENGINE_SEL`, derived HERE and nowhere else — the one
-     * site where the fit is final and the driver's attempt record is in hand
-     * (`internal.h`'s `ESEL_*`). `fit.why`'s prose and this token are two
-     * readers of one decision (D81); neither is parsed from the other.
-     *
-     * THE LADDER IS IN OUTCOME ORDER, NOT CONJUNCT ORDER. `forced` first
-     * because a named engine means auto never selected anything; then "no
-     * overflow happened", which is the common case; then the three fallback
-     * outcomes, distinguished by what SURVIVED rather than by what failed.
-     *
-     * `ESEL_COLLAPSED_PREFILTER` carries `fit.prefilter` as a conjunct and
-     * that is not belt-and-braces: a pattern can reach the collapse rung and
-     * still end with no prefilter (a backreference or a linked call drops it
-     * through the clause above), and stamping "a prefilter survived" on an
-     * artifact that has none would be the stamp naming a decision the artifact
-     * did not take — the defect §2 of run_prefilter_collapse.sh exists to
-     * catch on the language stamp, through the same door. */
-    /* [OPT-4.1] `ESEL_DECLINED_NULLABLE` SITS BETWEEN THE TWO, and it is the
-     * same shape as the arm above it: `ESEL_COLLAPSED_PREFILTER` says the rung
-     * ran and a prefilter survived, this says the rung ran and was DECLINED.
-     * Without it the declined artifact is byte-indistinguishable in its stamps
-     * from one whose COLLAPSED machine also overflowed — the two outcomes cost
-     * a consumer quite different things (one is a rescue that was not
-     * available, the other a rescue that was refused as useless), and the
-     * bench buckets on this macro precisely because it cannot bucket on prose.
-     *
-     * [LIM-1] (D90, 2026-08-30) THE CONJUNCT WIDENED FROM `CR_SEL1` TO
-     * `collapse_reason != CR_NONE`, FOLDING IN THE SIZE RUNG'S OWN DECLINE.
-     * It used to be CR_SEL1-only, on the ARGUMENT that "the SIZE rung reaches
-     * ESEL_SELECTED above and keeps it, declined or not" — true of the SIZE
-     * rung's SUCCESS (which now has its own value, ESEL_SIZE_CAP_RETRY,
-     * below) but never true of its DECLINE: a SIZE-rung nullable decline
-     * used to fall through to `!cx->dfa_disabled ? ESEL_SELECTED` (dfa_
-     * disabled is never set on this rung) and stamp `"selected"` —
-     * indistinguishable from an ordinary compile, the exact "closed value
-     * set silently losing a member" shape K35 exists to name. Both rungs'
-     * declines are now ONE arm; the CR_SEL1-scoped `ESEL_COLLAPSED_
-     * PREFILTER` arm above is UNCHANGED (a SIZE-rung success is a different
-     * value, tested next), so `>= ESEL_OVERFLOWED_DFA && <= ESEL_
-     * DECLINED_NULLABLE` still means exactly "a DFA STATE cap overflowed"
-     * (internal.h's own updated invariant comment). */
-    /* [OPT-4.2] `ESEL_DECLINED_NULLABLE_DEFAULT` TESTED IMMEDIATELY AFTER
-     * `ESEL_FORCED`, AHEAD OF EVERY FALLBACK ARM BELOW — not because it
-     * outranks them in some priority sense, but because it CANNOT OVERLAP
-     * WITH THEM: `fit.prefilter_declined_nullable_default` requires
-     * `collapse_reason == CR_NONE && !cx->dfa_disabled`, which is precisely
-     * the condition every arm below it is testing the NEGATION or a further
-     * refinement of (a SIZE/SEL1 rung ran, or `dfa_disabled` is set). Testing
-     * it here rather than after `ESEL_SELECTED` is the same non-overlap
-     * argument stated positively: this is the one case where `!cx->dfa_
-     * disabled` holds AND the ordinary `"selected"` fallthrough would be the
-     * wrong stamp — internal.h's own placement note explains why the VALUE
-     * sits outside both the bounded and the unbounded fallback ranges. */
-    fit.engine_sel =
-          cx->opt->engine != PCREC_ENGINE_AUTO        ? ESEL_FORCED
-        : fit.prefilter_declined_nullable_default      ? ESEL_DECLINED_NULLABLE_DEFAULT
-        : (cx->collapse_reason != CR_NONE && fit.prefilter_declined_nullable)
-                                                      ? ESEL_DECLINED_NULLABLE
-        : /* [LIM-1] THE SIZE RUNG'S OWN SUCCESS — `dfa_disabled` is never set
-           * on this rung (it is not a DFA-overflow fallback at all: the DFA
-           * build succeeded, the WHOLE ARTIFACT was refused by an emitted-
-           * size cap), so without this arm it would fall through to
-           * `ESEL_SELECTED` next and read `"selected"` — the exact gap
-           * docs/spec/limits.md §3.3's own [OPT-4] section named without a
-           * fix ("the SIZE rung's own decline is not this value... the
-           * route stays selected", which this arm's own header addendum
-           * corrects: that sentence was true of the decline only, and was
-           * being silently read as true of the rung's SUCCESS too).
-           * `fit.prefilter` is a conjunct for `ESEL_COLLAPSED_PREFILTER`'s
-           * own reason: a size-cap-refused compile can still end with no
-           * prefilter (a backreference/linked call), and that case is
-           * already `ESEL_SELECTED` — nothing about ITS route through a
-           * cap is observable in any other stamp, so leaving it alone is
-           * the conservative choice pending a named consumer (D77). */
-          /* [K53-SELRETRY] (2026-09-10) THE DROP LADDER'S RUNG JOINS THIS ARM
-           * RATHER THAN MINTING A VALUE, and internal.h's own comment on the
-           * value is what settles it: `ESEL_SIZE_CAP_RETRY` means "an
-           * emitted-SIZE cap forced a retry and the retry succeeded", which
-           * is exactly what happened. Its stated reachability ("ONLY from
-           * `collapse_reason == CR_SIZECAP`") described the one rung that
-           * existed when it was written; it was never part of the meaning,
-           * and it is corrected there.
-           *
-           * WHICH CONTRIBUTOR THE RETRY DROPPED IS ANSWERED BY THE
-           * ARTIFACT'S OWN AXIS STAMPS, not by a second value here: the
-           * prefilter rung is legible as `_DFA_PREFILTER` with `_LANG_WHY`
-           * "count-collapsed", the drop rung as `_DFA_MATCH "search-filter"`
-           * on a DFA-engine artifact. The two rungs are mutually exclusive
-           * by engine (the first requires a VM hybrid, the second implies
-           * `ENGM_DFA` through `Job.anchored_ok`), so the pair is exact and
-           * a consumer needs no third fact. A second value would be a second
-           * home for "a size cap forced a retry", which is the drift this
-           * macro's entire comment history is about.
-           *
-           * NO `fit.prefilter` CONJUNCT ON THIS HALF. That conjunct is there
-           * because a size-refused VM compile can end with no prefilter at
-           * all and stamping "a prefilter survived" would name a decision the
-           * artifact did not take. A DFA-engine artifact has no prefilter to
-           * survive — `fit.prefilter` is false on every member of this rung's
-           * population — so requiring one would make the arm unreachable on
-           * exactly the patterns it exists for. */
-          ((cx->collapse_reason == CR_SIZECAP && fit.prefilter) ||
-           cx->size_drop_rung != SDR_NONE)
-                                                      ? ESEL_SIZE_CAP_RETRY
-        : !cx->dfa_disabled                           ? ESEL_SELECTED
-        : (cx->collapse_reason == CR_SEL1 && fit.prefilter)
-                                                      ? ESEL_COLLAPSED_PREFILTER
-        : cx->dfa_was_engine                          ? ESEL_OVERFLOWED_DFA
-                                                      : ESEL_OVERFLOWED_PREFILTER;
+    prefilter_decision(cx, root, &fit, why_pos);
+    fit.engine_sel = esel_of(cx, &fit);
 
     cx->job->fit = fit;
 

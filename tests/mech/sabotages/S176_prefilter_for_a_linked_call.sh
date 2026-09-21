@@ -27,5 +27,13 @@ SAB_HARNESS_TARGET="tests/recursion/prefilter.rxt"
 SAB_DESC="fit.prefilter stops consulting the call predicate, so a pattern whose calls take the CALL LINKAGE -- a recursive callee, or one the size budget declined -- is handed a capture-erased DFA prefilter. Design 8.2 MEASURED that the erasure is a DIFFERENT language and not a superset ('a(?1)b' with group 1 = x matches axb; the erased 'ab' does not), so the filter would false-negative."
 SAB_DOC_FIGURE="PREDICTED: every RECURSIVE call-bearing pattern REFUSES with 'a LINKED subroutine call reached the machine builder; a linked call is VM-only and carries no prefilter' -- nfa.c's arm catching it at compile time rather than emitting a filter for the wrong language. prefilter.rxt, leftrec.rxt, whole.rxt's (?R) cells and mrl.rxt red as compile failures. The SPLICEABLE half of the corpus stays GREEN, which is the pair that separates this row from S-SR17: wave E's version would have taken the whole population red. Canonical figure owed from run_sabotage_matrix.sh S176. MEASURED BY HAND at the wave: '(a(?1)?b)' refuses with 'a LINKED subroutine call reached the machine builder; a linked call is VM-only and carries no prefilter'; '(a)(?1)' and '(x)(?1)' still COMPILE, which is the green half that separates this row from S-SR17."
 SAB_COUNT=1
-SAB_BEFORE='        const bool has_call = pcrec_has_linked_call(root);'
-SAB_AFTER='        const bool has_call = false;   /* SABOTAGE S176 */'
+# [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
+# decision moved out of `pcrec_select_engine`'s braced block into its own
+# `prefilter_decision` function (r61 F2) as a VERBATIM relocation: every line
+# lost exactly four columns of indent and `fit.` became `fit->`. The plant
+# still pins `has_call` false at its one definition, leaving `has_bref`
+# live — so the population stays "a LINKED call's prefilter turns on". Re-applied through tests/mech/lib/replace.py on a scratch copy at the
+# landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
+# -Werror.
+SAB_BEFORE='    const bool has_call = pcrec_has_linked_call(root);'
+SAB_AFTER='    const bool has_call = false;   /* SABOTAGE S176 */'

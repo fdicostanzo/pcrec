@@ -5479,9 +5479,9 @@ bool pcrec_state_view_invariant(const DState *st);  /* src/opt/scanedge.c */
  * selection, possessify/revdet/mrl, both machine builds, both emitters) --
  * the plan row's interaction note: post-merge/post-factor shapes must be
  * what those analyses see, not the alternation spelling. Returns the
- * (possibly rewritten) root; the original tree is never mutated in place,
- * matching select_engine.c's `discharge` hook shape, because stage 1/2 both
- * change tree SHAPE rather than annotate existing nodes. Self-gated on
+ * (possibly rewritten) root; the original tree is never mutated in place and
+ * the caller must PUBLISH the return value, because stage 1/2 both change
+ * tree SHAPE rather than annotate existing nodes. Self-gated on
  * PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR (cx->opt->flags), so a denied
  * build's cx->job->altcls_merges/altcls_factored stay at 0 -- the same
  * "no trace" rule possessify.c's -fno-possessify follows. */
@@ -5562,12 +5562,16 @@ void  pcrec_poss_survey(Ctx *cx, Ast *root,
  * callable (U1)/(U2) predicate over an arbitrary subtree, which is strictly
  * more than the A_REP verdict above.
  *
- * RUN FROM THE TOP OF `pcrec_select_engine`, BEFORE the analysis loop, and NOT
- * from the `EngineAnalysis.discharge` socket — see that file for the three
- * reasons, one of which is that the socket's fixpoint never CALLS a registered
- * hook today. NOT gated by `-fno-possessify` either: the discharge is
- * semantics-preserving by its own verdict, and gating it would make an
- * optimisation flag change which ENGINE a pattern gets.
+ * RUN FROM `src/core/compile.c`'s pipeline, between `pcrec_altcls` and
+ * `pcrec_callgraph_build` and therefore before engine selection ([DD-14]
+ * wave G hoisted it out of `pcrec_select_engine`, which had assigned the
+ * rewritten root to a LOCAL and so dropped a discharge at the very root).
+ * It was never registered in the `EngineAnalysis.discharge` socket — see
+ * src/opt/atomic.c for the three reasons; [TOUR-5] has since deleted that
+ * socket, so the pipeline call is the only shape there is. NOT gated by
+ * `-fno-possessify` either: the discharge is semantics-preserving by its own
+ * verdict, and gating it would make an optimisation flag change which ENGINE
+ * a pattern gets.
  *
  * D67 contract note 3 holds by construction: this is a DELETION, so the nodes
  * that survive are the body's own and keep their own stamps, and no new node

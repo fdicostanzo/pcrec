@@ -45,8 +45,16 @@ SAB_SUITES="prefilter"
 SAB_DESC="fit.prefilter_declined_nullable_default (the [OPT-4.2] rungless nullability decline) is forced to false unconditionally, so an ordinary VM-chosen nullable pattern ('(a)*': captures force the VM, own language matches empty) goes back to building and shipping its exact prefilter unconditionally -- RX_VM_PREFILTER reverts to 'hybrid' and RX_ENGINE_SEL to 'selected' instead of 'none'/'declined-nullable-default'. Answer-identity-preserving by design (the VM re-derives the true answer regardless of the filter), so no .rxt corpus, no differential and no other structural check can see it -- only tests/prefilter/run_prefilter_tests.sh's [OPT-4.2] section (checks 1 and 4) reads the stamp/listing this way"
 SAB_DOC_FIGURE="docs/spec/tuning.md SS2.17's [OPT-4.2] subsection; src/opt/CLAUDE.md's [OPT-4.2] section; docs/spec/match_api.md SS6.3's declined-nullable-default value-table row. HAND-TRACED by lane o42 (2026-08-31) against the box hold; the mech matrix's own DETECTED figure is owed at the manager's battery run once the hold lifts"
 SAB_COUNT=1
-SAB_BEFORE='        fit.prefilter_declined_nullable_default =
-            cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
-            lang_nullable_declinable && would_prefilter;'
-SAB_AFTER='        /* SABOTAGE S216: the rungless decline never fires. */
-        fit.prefilter_declined_nullable_default = false;'
+# [TOUR-5] (2026-09-20) RE-AIMED BY DEDENT, INTENT RE-VERIFIED. The prefilter
+# decision moved out of `pcrec_select_engine`'s braced block into its own
+# `prefilter_decision` function (r61 F2) as a VERBATIM relocation: every line
+# lost exactly four columns of indent and `fit.` became `fit->`. The plant
+# still pins `prefilter_declined_nullable_default` false at its one
+# assignment, leaving its rung-scoped sibling untouched. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
+# landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
+# -Werror.
+SAB_BEFORE='    fit->prefilter_declined_nullable_default =
+        cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
+        lang_nullable_declinable && would_prefilter;'
+SAB_AFTER='    /* SABOTAGE S216: the rungless decline never fires. */
+    fit->prefilter_declined_nullable_default = false;'
