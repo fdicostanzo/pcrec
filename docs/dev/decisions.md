@@ -7819,3 +7819,38 @@ that cannot say which pcrec produced it — is worse for a support page
 that asks users to report versions. The spec hunk is docs/spec/cli.md
 (the flag) + docs/spec/match_api.md §6 (the abi log entry and the stamp
 line's wording), D80.
+
+## D116 — The public root CLAUDE.md keeps its content behind a three-line preface; the README is BRIEF AND FRIENDLY with no drifting numbers, and the user guide waits on an interface discussion (Frank, 2026-09-21, seventy-fifth session)
+
+**Ruling 3 of the [REL-1] pre-flight (Frank: "agree 2").** The repo is
+public and root CLAUDE.md — the lane/manager process, the situation
+index, box rules — is the first file many visitors and every cloning AI
+agent read. The problem rel1pre_facts.md §7 names is a missing line
+between "our process" and "your obligations", not the process itself.
+So: a preface at the top of CLAUDE.md saying it is the maintainers'
+internal working agreement with their tooling and that contributors
+read README.md / CONTRIBUTING.md instead. Nothing moves: every path the
+skills, BOILERPLATE.md and the memory files cite stays valid. Rejected:
+leave as is (the beta's "open for business" sign would point a newcomer
+at a manager's runbook); move the process under docs/dev/ (a
+re-pointing exercise across the whole process layer for a cosmetic
+gain, and a split runbook for a future maintainer).
+
+**The README (Frank, same session, superseding [REL-1.1]'s first
+landing 9bf01318 which was thorough but dense):** "a better README that
+is maintained ... brief and friendly ... every line means another line
+to maintain ... point to specs for details." The README is a rundown of
+current features, a simple how-to-use, what space pcrec targets, where
+it is going, what it is good at — and nothing else. Not production, so
+no bells and whistles. MAINTAINED means it carries NO number that
+drifts (no abi digit, no test counts, no file inventories of docs/spec/):
+anything derivable points at the artifact that derives it (`--list-*`,
+the compliance page, the spec). Feature changes are the only event that
+touches it; that is the maintenance contract.
+
+**The user guide ([REL-1.3]/[GUIDE-1]) HOLDS** until Frank and the
+manager discuss the pcrec interface ("i want to put docs together but i
+want to discuss the pcrec interface a touch"). A one-page digest of the
+current public interface (CLI, library, generated artifact) is the
+basis for that discussion; the guide's chapters follow whatever it
+settles.

@@ -1,5 +1,9 @@
 # pcrec — PCRE-to-C regex compiler
 
+> This file is the maintainers' internal working agreement with their AI
+> tooling (process, lanes, box rules). Contributors: read README.md and
+> CONTRIBUTING.md; nothing below is required of you.
+
 ## MANDATE: repository scope
 
 Work in this project touches ONLY the two mandated repositories:
