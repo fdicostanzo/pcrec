@@ -7783,3 +7783,39 @@ ladder compiles — START NOW; REL-1.4's own start still waits on the
 for the milestone proper. The only coupling with the floor decision is
 two abi bumps in sequence (the header stamp; a floor move if measured),
 which is two rituals, not a conflict.
+
+## D115 — The product version is a semver string that versions the TOOL, independent of `abi`: `0.1.0-beta`, reported by `--version`, exported from lib/pcrec.h, stamped in the emitted header (Frank, 2026-09-21, seventy-fifth session)
+
+**Context.** [REL-1.4]. The tree had no product version at all
+(rel1pre_facts.md §4: no `--version`, no version macro, no tags, no
+install rule). The only number in the tree is `abi` (27), which versions
+the EMITTED SCAFFOLDING per artifact under D76/D94 and which D113/D114
+rule the beta must not reset. A `v0.1` tag with nothing behind it in
+the source would be a bare label.
+
+**Decision (Frank: "agree").** One constant, `PCREC_VERSION`, a semver
+string `"0.1.0-beta"`, in the public header lib/pcrec.h (a library user
+reads it), printed by a new CLI flag `--version`, stamped as one line in
+the emitted header of every artifact (a generated file records which
+pcrec wrote it), and seeding a root CHANGELOG.md. The git tag ([REL-1.8])
+is `v0.1.0-beta`, matching the string exactly; dropping the pre-release
+suffix later is a one-line change.
+
+**Why independent of `abi`.** The two answer different questions: abi
+answers "can my consumer code compile against this artifact" and bumps
+whenever scaffolding changes, far more often than releases; the version
+answers "which pcrec did I run". Tying them would give the release
+number no meaning of its own; a 0.1.x point release shipping several
+abi bumps is the truthful picture. Rejected: a bare `0.1` pair (no room
+for point releases or the beta marker), a date version (says nothing
+about compatibility), reusing abi (conflates the axes; D113 already
+rules it untouched).
+
+**The cost, accepted.** The emitted-header stamp is scaffolding text, so
+landing it is abi 27→28 with the full grep-every-reader re-pin (D94:
+the `.abi` stamp, the identity gates' (B) pin, the resource suite's
+byte-size figures, every spec sentence); the alternative — an artifact
+that cannot say which pcrec produced it — is worse for a support page
+that asks users to report versions. The spec hunk is docs/spec/cli.md
+(the flag) + docs/spec/match_api.md §6 (the abi log entry and the stamp
+line's wording), D80.
