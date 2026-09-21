@@ -1,5 +1,17 @@
 # PCRE2 syntax compliance — anticipated and actual
 
+**What this page is, for a first-time reader:** a construct-by-construct
+report of what pcrec supports out of PCRE2's syntax. PCRE2 is the source of
+truth for what a regex construct means and whether it is real, not a target
+pcrec must reproduce byte for byte (D26); this page states, for each PCRE2
+construct, whether pcrec compiles it today, and if not, which module would
+add it. What a pattern MATCHES and whether a construct exists are exact
+claims here; the exact WORDING of a diagnostic for something pcrec does not
+implement is not — "requires module 'X'" is a complete, correct answer for
+that case. If you just want the current, generated list of what ships, skip
+to "Registry construct index" at the end; the sections above it are the
+fuller hand-written survey and its supporting detail.
+
 Reference: <https://www.pcre.org/current/doc/html/pcre2syntax.html> (the syntax
 quick reference; section names and order below follow it). DFA-feasibility
 judgements additionally draw on
@@ -7,11 +19,22 @@ judgements additionally draw on
 PCRE2's OWN non-backtracking matcher (`pcre2_dfa_match`) can and cannot do —
 useful prior art, since pcrec is also non-backtracking by construction.
 
-**Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46.
-**Last refreshed: 2026-08-22** ([M6.5.2], module `backrefs`) — components 1
-and 3 regenerated and reconciled; component 2 (the independent PCRE2-side
-survey) is UNCHANGED, because no PCRE2 construct appeared or moved: what
-changed is which of them pcrec compiles.
+**Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46
+(component 2, the independent PCRE2-side survey below — UNCHANGED since: no
+PC-2 re-survey has fired and libpcre2 is still 10.46, so nothing has moved on
+the PCRE2 side to survey).
+**Last refreshed: 2026-09-21** ([REL-1.2], lane rel1a — the `compliance-refresh`
+skill's procedure re-run for real: components 1 and 3 regenerated
+(`compliance_section.py --check`/`--names`/`--check-annotations`, all PASS)
+and reconciled against the tree at `6b856bea`+, confirming ZERO DRIFT since
+the prior content refresh (2026-09-12, [M5.0] close-out, K53's fix reconciled
+into the unicode-properties survey prose) — the two touches since then
+(2026-09-12's own close-out commit and 2026-09-19's `src/dump/` file-move,
+which only updated a source-file-path citation) changed nothing this page's
+own checks measure. This header itself had gone stale for six weeks before
+today: the page was edited twice (2026-09-12, 2026-09-19) without this line
+being bumped, which is exactly the recurrence [DOC-DRV] exists to retire —
+recorded here so it is not repeated silently again.
 This is a living document; see "Keeping this current" at the end.
 
 **This page is three components of DIFFERENT provenance, held in checked
