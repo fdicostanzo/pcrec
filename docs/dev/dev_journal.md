@@ -24601,3 +24601,29 @@ the intended asymmetry), anchors 286/286, codegen 65/65, registry
 way; check the log). DARWIN GATE launched by the manager at 4c2b06d2:
 build/gate_4c2b06d2/{build,strict,test,trailer}.log, Monitor on the
 trailer.
+
+**~10:5x — I-81 came back with the HARNESS broken, not the numbers (O-42)**:
+both floor runs green at load < 0.30 with the m=2 bimodal signature
+visible raw again (ratios ~0.9-1.0 mixed with ~1.8 spikes; m=3/4/8
+~0.92-1.02), but every cell read "forward edges = 0" and the ladder's
+reference arms "COMPILE FAILED" on every rung — rc=0 regardless. Triage
+lane `edgefix` (sonnet): (1) run_ladder.sh built the before/after arm
+paths from a RELATIVE $OUT before its own cd — never found since
+2026-09-04 (the step11 arm alone had been hardened); (2) the floor's edge
+census greps the `[OPT-5] SCAN EDGE` COMMENT and D112 turned comments
+off — `-fcomments` on the one census build (byte-neutral, D108), no
+non-comment stamp exists; (3) rc=0 on an empty measurement was its own
+defect — both scripts and both Makefile targets now fail loudly; the
+median/IQR block the 2026-09-04 report cited was a hand-run one-liner,
+now printed by run_floor.sh. Mac verification: floorcells read edges = 1
+on all eight cells (was 0/8). MERGED 0cf627fb (fast-forward; nothing
+under src/). Logs archived under studies/scan_edge_ladder/runs/. O-41
+(B65 closed; \p{L}+ gain = [M5.0] stage 5) acked.
+
+**11:51 — DARWIN GATE at 4c2b06d2 RED ON PINS ONLY** (100 min under box
+load): build/strict clean, 53 sections at 0 failed, the standing nm
+probe, and the corpus-census readers: 212→213 .rxt, 3939→3944 blocks,
+28955→28971 cells — adm0921's k62_class_range_e.rxt (5 blocks/16 cells)
+landed without its pins (the delivery-bar miss BOILERPLATE names). Lane
+`k62pin` (sonnet) re-pins every reader by grep, components re-derived,
+red sections solo. Main HELD unpushed until it lands.
