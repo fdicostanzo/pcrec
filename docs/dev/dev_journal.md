@@ -24642,3 +24642,11 @@ bench inbox at that pin (the edgefix report's command block verbatim;
 logs to /tmp instead of the session scratchpad — harmless, noted.
 Lanes this session so far: edge3 (stopped, unused), rel1pre, adm0921,
 edgefix, k62pin — none alive.
+
+**SESSION CLOSE (2026-09-21 ~13:0x EDT, Frank: "ready for session reset?").**
+Main = origin/main at the close commit (abi 27), clean; no worktrees, no
+live agents, no monitors, no watchers; heartbeat cron deleted. Rows
+archived: [ADMIN-0921], [LIM-2]. OPEN: I-82 queued on the bench (launch
+~1-2 h behind a viewer wave; tables → the a+b·k fit + the floor decision
+close [OPT-EDGE]); Frank's three [REL-1] rulings (sequencing lift; what
+the version constant versions; the public CLAUDE.md). wake.md rewritten.
