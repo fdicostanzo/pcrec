@@ -31,10 +31,7 @@ the prior content refresh (2026-09-12, [M5.0] close-out, K53's fix reconciled
 into the unicode-properties survey prose) — the two touches since then
 (2026-09-12's own close-out commit and 2026-09-19's `src/dump/` file-move,
 which only updated a source-file-path citation) changed nothing this page's
-own checks measure. This header itself had gone stale for six weeks before
-today: the page was edited twice (2026-09-12, 2026-09-19) without this line
-being bumped, which is exactly the recurrence [DOC-DRV] exists to retire —
-recorded here so it is not repeated silently again.
+own checks measure (this header had not been bumped for either touch).
 This is a living document; see "Keeping this current" at the end.
 
 **This page is three components of DIFFERENT provenance, held in checked
