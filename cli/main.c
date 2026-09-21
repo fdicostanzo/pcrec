@@ -1449,9 +1449,10 @@ static int compile_sources(const CliState *cli)
      * at a build step that it says so, on stderr, at exit 0, where a
      * script that meant it is unaffected. */
     if (rc == 0 && nall == 0)
-        fprintf(stderr, "pcrec: no target declared across %zu input file%s "
-                "(each is a library of definitions; add a `target <prefix> "
-                "= <definition>` line to build from one)\n",
+        fprintf(stderr, "pcrec: %zu input file%s declared no target, so "
+                "this build builds nothing (each is a library of "
+                "definitions; add a `target <prefix> = <definition>` line "
+                "to build from one)\n",
                 cli->nfiles, cli->nfiles == 1 ? "" : "s");
 
     /* THE OUTPUT NAMING RULE (w1_impl §1.5, D118 item 1). Three forms, and

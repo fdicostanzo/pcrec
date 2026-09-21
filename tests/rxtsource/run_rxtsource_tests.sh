@@ -2800,21 +2800,25 @@ fi
 # --- the three agree, end to end through run.sh (H11) -----------------
 #
 # §6.3's "identity between them is a free control", run. run.sh builds
-# each target through `--source --target` and requires it to answer this
-# block's own cases exactly as the block's own compile did. The
-# `--source` CALL COUNT is asserted through the wrapper for the reason the
-# seam's own check asserts `--list-source`'s: three green cases would also
-# be true of a run.sh that never built a target at all.
+# each target through a FILE OPERAND + `--target` ([REL-1.10]/D118 --
+# `--source` retired) and requires it to answer this block's own cases
+# exactly as the block's own compile did. The CALL COUNT is asserted
+# through the wrapper for the reason the seam's own check asserts
+# `--list-source`'s: three green cases would also be true of a run.sh
+# that never built a target at all. `--target` is the marker now (the
+# flag survives the flip unchanged, and every one of these three calls
+# carries it; a bare file operand has no fixed string of its own to grep
+# for).
 : > "$CALLLOG"
 if PCREC="$WRAPDIR/pcrec" "$TIMEOUT_BIN" 300 bash "$RUNSH" "$TC" > "$W12/tc.run" 2>&1; then
-    w12_srccalls=$(grep -c -- '--source' "$CALLLOG" || true)
+    w12_srccalls=$(grep -c -- '--target' "$CALLLOG" || true)
     w12_pass=$(awk '/^cases passed:/ { print $3 }' "$W12/tc.run")
     w12_fail=$(awk '/^cases failed:/ { print $3 }' "$W12/tc.run")
     if [ "${w12_fail:-1}" = "0" ] && [ "${w12_pass:-0}" = "3" ] && [ "$w12_srccalls" = "3" ]; then
-        pass "W1.2 (H11): run.sh built all 3 targets (3 --source calls) and they answered the block's 3 cases identically to its own compile"
+        pass "W1.2 (H11): run.sh built all 3 targets (3 --target calls) and they answered the block's 3 cases identically to its own compile"
     else
-        fail "W1.2 (H11): run.sh on the three-config fixture reported ${w12_pass:-?} passed / ${w12_fail:-?} failed / $w12_srccalls --source call(s), expected 3 / 0 / 3.
-  Zero --source calls means the target build path did not fire and the
+        fail "W1.2 (H11): run.sh on the three-config fixture reported ${w12_pass:-?} passed / ${w12_fail:-?} failed / $w12_srccalls --target call(s), expected 3 / 0 / 3.
+  Zero --target calls means the target build path did not fire and the
   agreement control asserted nothing.
 $(tail -25 "$W12/tc.run")"
     fi
