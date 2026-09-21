@@ -7,6 +7,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* [REL-1.4] (D115, 2026-09-21): `PCREC_VERSION` versions the TOOL — pcrec
+ * itself and the generated-artifact contract as a whole — and is
+ * INDEPENDENT of `abi` (`PCREC_ARTIFACT_ABI`, src/gen/emit_dfa.c), which
+ * versions one artifact's emitted scaffolding and bumps far more often
+ * than a release does (a 0.1.x point release can ship several abi bumps).
+ * `pcrec --version` prints it; the emitted artifact's provenance line
+ * stamps it beside the abi digit (docs/spec/match_api.md §6). Semver;
+ * dropping the `-beta` suffix later is a one-line change. */
+#define PCREC_VERSION "0.1.0-beta"
+
 /* [M5-SEAM] (D58, 2026-08-18) THE ENCODING NAMESPACE. Exactly one encoding
  * per COMPILE CALL — a `pcrec_options` field, never process- or file-global,
  * so mixed encodings in one compilation unit or binary are supported by

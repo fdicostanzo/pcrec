@@ -229,6 +229,7 @@ static void usage(FILE *f)
           "                 exactly where the pattern's depth is statically\n"
           "                 bounded, a stamped default otherwise\n"
           "  -h, --help     this help\n"
+          "  --version      print the pcrec version and exit\n"
           "\n"
           "compiling from a .rxt SOURCE file (docs/spec/rxt_format.md):\n"
           "  --source FILE  compile the `target` lines of a .rxt source. Each\n"
@@ -382,6 +383,12 @@ typedef struct {
     int         pattern_esc;
     int         saw_prefix;
     int         want_help;
+    /* [REL-1.4] `--version` -- same shape as `want_help` immediately above
+     * (a FLAG, not a print-and-exit here): a `config` block's `pcrec
+     * --version` must not print and exit 0 in the middle of a compile, and
+     * `cli_extras_clean`'s byte-span check already refuses any nonzero byte
+     * in CliState's tail with no clause of its own, this field included. */
+    int         want_version;
     const char *explain;
     const char *flavour;
     const char *probe_want;
@@ -725,6 +732,10 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
          * there with no clause of its own. */
         else if ((!strcmp(a, "-h") || !strcmp(a, "--help")))
             st->want_help = 1;
+        /* [REL-1.4] `--version` -- parsed identically to `-h`/`--help` just
+         * above, for the same reason (the second caller, `config` blocks). */
+        else if (!strcmp(a, "--version"))
+            st->want_version = 1;
         else if (!strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
         else if (!strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
@@ -1422,6 +1433,9 @@ int main(int argc, char **argv)
         free(st.libdirs);
         return 1;
     }
+    /* [REL-1.4] same shape as the `want_help` check just below: prints and
+     * exits 0, one line, stdout. */
+    if (st.want_version) { printf("pcrec %s\n", PCREC_VERSION); return 0; }
     if (st.want_help) { usage(stdout); return 0; }
 
     /* [DD-13b.W1.2] `--target`/`--lib-path` APPLY TO `--source` ALONE, and
