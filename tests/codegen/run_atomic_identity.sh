@@ -145,7 +145,7 @@ fi
 # would put a different `#include "<name>.h"` line in each and every comparison
 # would "differ" for a reason unrelated to this module.
 gen_a() { pcrec_run "$PCREC" --features all -p rx $2 -o - --pattern "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -p rx $2 -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 
 # ---- the corpus ----------------------------------------------------------
 # Every `pattern` line from every .rxt under tests/, known_fail included: a
@@ -224,7 +224,7 @@ fi
 ctl_ok=0; ctl_bad=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    if "$REF" --features all -p rx -o - --pattern "$pat" >/dev/null 2>&1; then
+    if "$REF" --features all -p rx -o - -- "$pat" >/dev/null 2>&1; then
         ctl_bad=$((ctl_bad + 1))
         [ "$ctl_bad" -le 5 ] && echo "  CONTROL: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
     else

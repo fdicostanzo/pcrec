@@ -201,7 +201,7 @@ pcrec_run() {
     local hostile=0
     if [ "${1:-}" = "--hostile" ]; then hostile=1; shift; fi
     local what
-    what="$(basename --pattern "${BASH_SOURCE[1]:-${0:-pcrec_run}}"):${BASH_LINENO[0]:-0}"
+    what="$(basename -- "${BASH_SOURCE[1]:-${0:-pcrec_run}}"):${BASH_LINENO[0]:-0}"
     if [ "$hostile" -eq 0 ] && [ "$#" -gt 0 ]; then
         local pat="${@: -1}"
         case "$pat" in
@@ -225,7 +225,7 @@ pcrec_run() {
     if [ "$hostile" -eq 1 ]; then
         "$GEN_LIB_ROOT/scripts/watchdog" -l "$what" -S "${WATCHDOG_SECTION:-pcrec_run}" \
             -s "$((_secs * 3))" -c "$_secs" -m "${PCRECRUNMEM:-512m}" \
-            -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" --pattern "$@"
+            -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"
     else
         "$TIMEOUT_BIN" "$((_secs * 3))" "$@"
     fi

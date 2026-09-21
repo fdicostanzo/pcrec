@@ -231,7 +231,7 @@ shapes=(
 for pat in "${shapes[@]}"; do
     out="$WORKDIR/o.c"
     rm -f "$out"
-    log="$("$ROOT_DIR/scripts/watchdog" -l "compile $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx -o "$out" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
+    log="$("$ROOT_DIR/scripts/watchdog" -l "compile $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" --pattern "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
     rc=$?
     case $rc in
         0) ok "'$pat' compiles within the ceiling" ;;
@@ -487,7 +487,7 @@ for entry in "${size_moved[@]}"; do
     was="${rest##*:}"; pat="${rest%:*}"
     out="$WORKDIR/o.c"; rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx $extra -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$out" --pattern "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'bytes of emitted C source'; then
         ok "'$pat' refused by the total emitted-size cap (was $was bytes before [ART-SIZE]): $(printf '%s' "$log" | head -1 | cut -c1-90)"
@@ -500,7 +500,7 @@ for entry in "${size_moved[@]}"; do
     # the override re-accepts it
     rm -f "$out"
     # shellcheck disable=SC2086
-    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-raise $pat" -s "$SIZECAP_SECS" -c "$SIZECAP_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra --max-emit-bytes=9000000 -o "$out" --pattern "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -eq 0 ]; then
         ok "'$pat' is re-accepted with --max-emit-bytes raised (the override works end to end)"
@@ -519,7 +519,7 @@ done
 # force flag, no new gate" design). A compiler that stopped taking this rung
 # would make this cell refuse again — its own inverse of the loop above.
 out="$WORKDIR/o.c"; rm -f "$out"
-log="$("$ROOT_DIR/scripts/watchdog" -l "k59premul a{5,25000}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -o "$out" 'a{5,25000}' 2>&1)"
+log="$("$ROOT_DIR/scripts/watchdog" -l "k59premul a{5,25000}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -fno-scan-edge -fno-start-pinned -o "$out" --pattern 'a{5,25000}' 2>&1)"
 rc=$?
 if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DFA transition table'; then
     # [EMIT-VERB]/D112, 2026-09-19: RE-PINNED 769835 -> 762105, and the move is
@@ -608,7 +608,7 @@ size_rung_cell() {  # size_rung_cell PATTERN want_prefilter(none|hybrid) LABEL [
     rm -f "$WORKDIR/o.c"
     local dflog rc
     # shellcheck disable=SC2086
-    dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx $extra -o "$WORKDIR/o.c" "$pat" 2>&1)"
+    dflog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-default $label" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx $extra -o "$WORKDIR/o.c" --pattern "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -ne 0 ]; then
         bad "[OPT-4] '$pat' no longer compiles at the DEFAULT — the size rung has stopped rescuing this shape, or a cap moved: $(printf '%s' "$dflog" | head -1)"
@@ -735,7 +735,7 @@ size_rung_cell '(a|b){1,30000}' hybrid 'alternation non-nullable' '-fno-scan-edg
 # gives: a rung OFFERED and REFUSED a rescue is a different population from
 # an ordinary compile that never had a rung to begin with.
 rm -f "$WORKDIR/o.c"
-o42log="$("$ROOT_DIR/scripts/watchdog" -l "opt42-tripwire" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx -o "$WORKDIR/o.c" '(a|b){0,30000}' 2>&1)"
+o42log="$("$ROOT_DIR/scripts/watchdog" -l "opt42-tripwire" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/o.c" --pattern '(a|b){0,30000}' 2>&1)"
 if [ $? -eq 0 ]; then
     o42pf=$(grep -oE '^#define RX_VM_PREFILTER .*' "$WORKDIR/o.c" | head -1 | sed 's/.*PREFILTER //;s/"//g')
     o42sel=$(grep -oE '^#define RX_ENGINE_SEL .*' "$WORKDIR/o.c" | head -1 | sed 's/.*SEL //;s/"//g')
@@ -879,7 +879,7 @@ elif ! $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         -o "$REFCAP" "$ROOT_DIR/cli/main.c" $REFCAP_SRCS 2>"$WORKDIR/refcap.err"; then
     bad "[OPT-4.1] could not build the lowered-cap (PCREC_MAX_EMIT_BYTES=$REFCAP_CAP) reference compiler: $(head -3 "$WORKDIR/refcap.err")"
 else
-fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$REFCAP" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" "$FPPAT" 2>&1)"
+fplog="$("$ROOT_DIR/scripts/watchdog" -l "sizecap-fprefilter alternation" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$REFCAP" -p rx -fno-scan-edge -fno-start-pinned -fprefilter -o "$WORKDIR/o.c" --pattern "$FPPAT" 2>&1)"
 fprc=$?
 case $fprc in
     0)
@@ -942,7 +942,7 @@ enomem_case() {   # enomem_case <vlimKB> <pattern> [pcrec flags...]
     local out="$WORKDIR/e.c"
     rm -f "$out"
     local log rc
-    log="$( (ulimit -v "$vlim"; exec "$TIMEOUT_BIN" -s KILL "$K7_SECS" "$PCREC" -p rx "$@" -o "$out" "$pat") 2>&1 )"   # [K37]/[TT-6]: exec'd GNU-timeout bound, one line
+    log="$( (ulimit -v "$vlim"; exec "$TIMEOUT_BIN" -s KILL "$K7_SECS" "$PCREC" -p rx "$@" -o "$out" --pattern "$pat") 2>&1 )"   # [K37]/[TT-6]: exec'd GNU-timeout bound, one line
     rc=$?
     case $rc in
         0)   bad "under ${vlim}KB, '$pat' compiled — the limit did not bind, so this cell proved nothing. Lower it or pick a hungrier pattern" ;;
@@ -1124,7 +1124,7 @@ echo "== [K7] the refusal's identity =="
 name_check() {
     local pat="$1" want="$2" why="$3"; shift 3
     local log rc
-    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx "$@" -o "$WORKDIR/w.c" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
+    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx "$@" -o "$WORKDIR/w.c" --pattern "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
     rc=$?
     if [ "$rc" -ne 1 ]; then
         bad "'$pat' should be a diagnosed refusal (rc 1), got rc $rc: $log"
@@ -1173,7 +1173,7 @@ name_check 'a{65535}' 'too complex for the DFA engine' \
 # already the do-or-die twin of this cell with nothing else to control for.
 out="$WORKDIR/w3.c"
 rm -f "$out"
-log="$("$ROOT_DIR/scripts/watchdog" -l "auto fallback a{65535}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx -o "$out" 'a{65535}' 2>&1)"   # [K37]
+log="$("$ROOT_DIR/scripts/watchdog" -l "auto fallback a{65535}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" --pattern 'a{65535}' 2>&1)"   # [K37]
 rc=$?
 if [ "$rc" -ne 0 ]; then
     bad "'a{65535}' under plain auto should COMPILE (SEL-1's fallback), got rc $rc: $log"
@@ -1197,7 +1197,7 @@ fi
 # run_trie_identity.sh's own finding one section over. `--no-captures` is
 # answer-neutral for what this check reads: D31's A_CAP erasure already makes
 # captures invisible to nfa.c's construction, so the automaton is unchanged.
-log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" --pattern "$PCREC" -p rx --no-captures --engine=dfa -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
+log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --no-captures --engine=dfa -o "$WORKDIR/w2.c" --pattern '(a|b)*a(a|b){20}' 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
 rc=$?
 if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'states'; then
     ok "the state-COUNT cap still fires on its own shape: $(printf '%s' "$log" | head -1)"

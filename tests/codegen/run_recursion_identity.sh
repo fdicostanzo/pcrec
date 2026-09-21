@@ -960,7 +960,7 @@ fi
 # must agree — read off an actual artifact from each, on a call-free
 # pattern, rather than re-derived from source text.
 ABI_SUBJ_ART="$(pcrec_run "$PCREC"   --features all -p rx -o - --pattern 'a' 2>/dev/null)"   # [K37] bounded
-ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - --pattern 'a' 2>/dev/null)"   # [K37] bounded
+ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
 ABI_SUBJ="$(printf '%s\n' "$ABI_SUBJ_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 ABI_PIN="$(printf '%s\n' "$ABI_PIN_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 if [ -z "$ABI_SUBJ" ] || [ -z "$ABI_PIN" ]; then
@@ -1021,9 +1021,9 @@ stamp_count() {
 # shellcheck disable=SC2086
 gen_a() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -o - --pattern "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_b() { "$REF"   --features all -p rx $2 -o - --pattern "$1" 2>/dev/null; }
+gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - --pattern "$1" 2>/dev/null; }
+gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
 # [ENG-ISL] THE FOURTH BUILD, and the one that turns the island's excuse from a
 # per-artifact exemption into a CLAIM (panel r53, F3): the SUBJECT compiler with
 # the new axis DENIED. It is the only reference that ISOLATES the island — the
@@ -1233,7 +1233,7 @@ control() { # control <label> <extra pcrec args>
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
         # shellcheck disable=SC2086
-        if "$REF" --features all -p rx $args -o - --pattern "$pat" >/dev/null 2>&1; then
+        if "$REF" --features all -p rx $args -o - -- "$pat" >/dev/null 2>&1; then
             ctl_bad=$((ctl_bad + 1))
             [ "$ctl_bad" -le 5 ] && echo "  CONTROL[$label]: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
         else
@@ -1789,7 +1789,7 @@ CEOF
         npat=$((npat + 1))
         local eng_a eng_b
         eng_a="$(pcrec_run "$PCREC" --features all -p rx -o - --pattern "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
-        eng_b="$("$REF"   --features all -p rx -o - --pattern "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        eng_b="$("$REF"   --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
         case "$eng_b" in *PCREC_ENGINE_VM*) ;; *)
             bad "[elision] the pre-module reference does NOT choose the VM for '$pat' ($eng_b), so this pattern is not an instance of the change the list names"
             bads=$((bads + 1)); continue ;;
@@ -1801,7 +1801,7 @@ CEOF
         local ok_build=1
         rm -rf "$d/a" "$d/b"; mkdir -p "$d/a" "$d/b"
         pcrec_run "$PCREC" --features all -p q -o "$d/a/q.c" --pattern "$pat" >/dev/null 2>&1 || ok_build=0
-        "$REF"   --features all -p q -o "$d/b/q.c" --pattern "$pat" >/dev/null 2>&1 || ok_build=0
+        "$REF"   --features all -p q -o "$d/b/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
         if [ "$ok_build" -eq 0 ]; then
             bad "[elision] '$pat' did not compile on both builds"
             bads=$((bads + 1)); continue

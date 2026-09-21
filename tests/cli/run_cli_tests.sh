@@ -323,10 +323,13 @@ case6() {
     assert_contains "case6: no pattern gives a diagnostic on stderr" \
         "$(cat "$d/e_nopat.txt")" "pattern"
 
-    pcrec_run "$PCREC" -o "$d/y.c" --pattern 'a' 'b' 2>"$d/e_twopat.txt"; rc=$?
-    assert_eq "case6: two patterns exits 1" "1" "$rc"
-    assert_contains "case6: two patterns gives a diagnostic on stderr" \
-        "$(cat "$d/e_twopat.txt")" "one pattern"
+    # [REL-1.10]/D118: a positional operand is a FILE now, never a second
+    # pattern, so the modern equivalent of "two patterns" is two --pattern
+    # flags -- cli_parse's own "exactly one --pattern expected" refusal.
+    pcrec_run "$PCREC" -o "$d/y.c" --pattern 'a' --pattern 'b' 2>"$d/e_twopat.txt"; rc=$?
+    assert_eq "case6: two --pattern flags exits 1" "1" "$rc"
+    assert_contains "case6: two --pattern flags gives a diagnostic on stderr" \
+        "$(cat "$d/e_twopat.txt")" "--pattern"
 
     pcrec_run "$PCREC" -z -o "$d/z.c" --pattern 'a' 2>"$d/e_unk.txt"; rc=$?
     assert_eq "case6: unknown option exits 1" "1" "$rc"
@@ -435,7 +438,7 @@ case8() {
     # pcrec_run's function form cannot reach across that fork, so the bound is
     # applied the same way gen_cc bounds an arbitrary `bash -c` compile: an
     # outer "$TIMEOUT_BIN" wall wrapper at pcrec_timeout_secs.
-    out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" bash -c "ulimit -s 512; exec \"$PCREC\" -p rx -o \"$WORKDIR/deep.c\" -- \"$pat\"" 2>&1)"
+    out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" bash -c "ulimit -s 512; exec \"$PCREC\" -p rx -o \"$WORKDIR/deep.c\" --pattern \"$pat\"" 2>&1)"
     rc=$?
     if [ $rc -ge 128 ]; then
         fail "case8: 9000-branch alternation within a 512 KB stack" \
@@ -1586,9 +1589,9 @@ case13() {
     local rc out err
 
     # [M5-SEAM] (D58) `byte` is the encoding's name, in BOTH spellings.
-    pcrec_run "$PCREC" -e byte -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
+    pcrec_run "$PCREC" -e byte -o "$d/ok.c" --pattern 'ab' 2>"$d/e0.txt"; rc=$?
     assert_eq "case13: -e byte compiles" "0" "$rc" "stderr: $(cat "$d/e0.txt")"
-    pcrec_run "$PCREC" --encoding=byte -o "$d/ok2.c" 'ab' 2>"$d/e0b.txt"; rc=$?
+    pcrec_run "$PCREC" --encoding=byte -o "$d/ok2.c" --pattern 'ab' 2>"$d/e0b.txt"; rc=$?
     assert_eq "case13: --encoding=byte compiles" "0" "$rc" "stderr: $(cat "$d/e0b.txt")"
 
     # ABSENT means byte: the default artifact must be byte-identical to the
@@ -1597,9 +1600,9 @@ case13() {
     # merely two that happen to work. Compared through `-o -` (self-contained),
     # the idiom case9/case10 established for exactly this: two artifacts
     # written to different BASENAMES differ in their emitted #include line.
-    pcrec_run "$PCREC" -o - 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
+    pcrec_run "$PCREC" -o - --pattern 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
     assert_eq "case13: no -e at all compiles" "0" "$rc" "stderr: $(cat "$d/e0c.txt")"
-    pcrec_run "$PCREC" -e byte -o - 'ab' > "$d/expl.c" 2>/dev/null
+    pcrec_run "$PCREC" -e byte -o - --pattern 'ab' > "$d/expl.c" 2>/dev/null
     if cmp -s "$d/def.c" "$d/expl.c"; then
         pass "case13: the DEFAULT encoding is byte (default and -e byte artifacts are byte-identical)"
     else
@@ -1617,7 +1620,7 @@ case13() {
     # [M5-SEAM] `ascii` was this encoding's name before D58 and is NOT an
     # alias: one namespace member, one spelling ([SR-10]). The diagnostic
     # offers the menu the registry actually holds.
-    pcrec_run "$PCREC" -e ascii -o "$d/no0.c" 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
+    pcrec_run "$PCREC" -e ascii -o "$d/no0.c" --pattern 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
     assert_eq "case13: -e ascii is no longer a known encoding (D58 renamed it 'byte')" "1" "$rc"
     assert_contains "case13: ...and the refusal offers the real menu" \
         "$(cat "$d/eold.txt")" "want byte, utf8"
@@ -1630,7 +1633,7 @@ case13() {
     # both built; UTF-16/32 are ruled out of the namespace entirely, [DD-12]
     # (6)), so the refusal path's standing witness is the unknown-name arm
     # above (`-e ascii` -> the menu), which never expired.
-    pcrec_run "$PCREC" -e utf8 -o "$d/u8.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    pcrec_run "$PCREC" -e utf8 -o "$d/u8.c" --pattern 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
     assert_eq "case13: -e utf8 compiles (stage 2 delivered the encoding)" "0" "$rc" "stderr: $(cat "$d/e1.txt")"
     if grep -q '^    \.encoding = 1,$' "$d/u8.c"; then
         pass "case13: the utf8 artifact stamps .encoding = 1 (PCREC_ENC_UTF8)"
@@ -1643,7 +1646,7 @@ case13() {
     # namespace STILL has no 'utf8' — encodings are `-e`'s namespace, never
     # `--features`' — so a diagnostic naming a module by that name is still
     # over-promising (K14's shape).
-    out="$(pcrec_run "$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
+    out="$(pcrec_run "$PCREC" --features utf8 -o - --pattern 'a' 2>&1)"; rc=$?
     assert_eq "case13: --features utf8 is still refused by name" "1" "$rc"
     assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
 
@@ -1651,8 +1654,8 @@ case13() {
     # one lookup, so they cannot drift into two answers — the same
     # both-spellings-one-request claim the byte arms above make, asserted the
     # same way (`-o -`, case9/case10's basename idiom).
-    pcrec_run "$PCREC" -e utf8 -o - 'ab' > "$d/u8a.c" 2>/dev/null
-    pcrec_run "$PCREC" --encoding=utf8 -o - 'ab' > "$d/u8b.c" 2>/dev/null
+    pcrec_run "$PCREC" -e utf8 -o - --pattern 'ab' > "$d/u8a.c" 2>/dev/null
+    pcrec_run "$PCREC" --encoding=utf8 -o - --pattern 'ab' > "$d/u8b.c" 2>/dev/null
     if cmp -s "$d/u8a.c" "$d/u8b.c"; then
         pass "case13: -e utf8 and --encoding=utf8 are the SAME request (byte-identical artifacts)"
     else

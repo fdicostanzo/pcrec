@@ -55,7 +55,7 @@ while IFS=$'\t' read -r cell prio; do
     pat=$(cat "$PATS/$cell.rx")
     ok=1
     for r in $RUNGS; do
-        "$W/build/pcrec" -p rx --engine=vm --vm-entry-shape=$r -o "$d/art$r.c" "$pat" >/dev/null 2>&1 || { ok=0; break; }
+        "$W/build/pcrec" -p rx --engine=vm --vm-entry-shape=$r -o "$d/art$r.c" --pattern "$pat" >/dev/null 2>&1 || { ok=0; break; }
         cp "$d/art$r.h" "$d/art.h"
         $CC -O2 -std=gnu11 -I"$d" -o "$d/run$r" "$S/lad_driver.c" "$d/art$r.c" 2>/dev/null || { ok=0; break; }
         $CC -O2 -std=gnu11 -c -o "$d/art$r.o" "$d/art$r.c" 2>/dev/null

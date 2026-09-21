@@ -398,6 +398,29 @@ def _err_tail(b, n=200):
     return b.decode("utf-8", errors="replace").strip().replace("\n", " | ")[:n]
 
 
+# [REL-1.10]/D118: REF is built from an arbitrary `git archive REV` and may
+# predate the gcc-shaped CLI flip; WORKING is usually the tree's own current
+# build but can itself be `--bin`/a second REVISION. Neither side's dialect
+# can be assumed, so each binary is probed ONCE (its own --help text names
+# --pattern iff this build has it) and cached, rather than hard-coding one
+# grammar for both sides the way this file did before the flip existed.
+_dialect_cache = {}
+
+
+def pcrec_speaks_pattern_flag(pcrec_bin):
+    """True iff `pcrec_bin` understands --pattern / a positional FILE
+    operand (D118) rather than the retired positional-pattern / --source
+    grammar."""
+    if pcrec_bin not in _dialect_cache:
+        try:
+            r = subprocess.run([pcrec_bin, "--help"], capture_output=True,
+                               text=True, timeout=10)
+            _dialect_cache[pcrec_bin] = "--pattern" in (r.stdout + r.stderr)
+        except Exception:
+            _dialect_cache[pcrec_bin] = True   # assume current grammar
+    return _dialect_cache[pcrec_bin]
+
+
 def compile_stream_c(pcrec_bin, pattern, timeout, engine=None):
     argv = [pcrec_bin, "-p", "rx", "--features", "all"]
     if engine:
@@ -406,26 +429,30 @@ def compile_stream_c(pcrec_bin, pattern, timeout, engine=None):
     # derived from -o, so writing a.c vs b.c reads 100% movers with an innocent compiler
     # (the -o basename trap, fifth instance: dd8_report.md §3.1). Vary NOTHING the artifact
     # can observe; the composition arm likewise writes fixture-named files into fresh dirs.
-    argv += ["-o", "-", "--pattern", pattern]
+    argv += ["-o", "-"]
+    argv += ["--pattern", pattern] if pcrec_speaks_pattern_flag(pcrec_bin) else ["--", pattern]
     rc, out, err = run(argv, timeout)
     ok = rc == 0
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
 
 
 def compile_stream_ir(pcrec_bin, pattern, timeout):
-    argv = [pcrec_bin, "--features", "all", "--engine=vm", "--emit-ir",
-            "--pattern", pattern]
+    argv = [pcrec_bin, "--features", "all", "--engine=vm", "--emit-ir"]
+    argv += ["--pattern", pattern] if pcrec_speaks_pattern_flag(pcrec_bin) else ["--", pattern]
     rc, out, err = run(argv, timeout)
     ok = rc == 0
     return ok, (out if ok else None), ("" if ok else _err_tail(err))
 
 
 def run_composition(pcrec_bin, rxt_file, out_root, tag, timeout):
-    """FILE operand -o <fresh dir> [REL-1.10]; returns (rc, {filename: bytes})."""
+    """A FILE operand (post-D118) or `--source FILE` (pre-D118) -o <fresh
+    dir>, whichever `pcrec_bin` speaks; returns (rc, {filename: bytes})."""
     outdir = os.path.join(out_root, tag)
     os.makedirs(outdir, exist_ok=True)
-    argv = [pcrec_bin, "--features", "all", rxt_file,
-            "-o", outdir]
+    if pcrec_speaks_pattern_flag(pcrec_bin):
+        argv = [pcrec_bin, "--features", "all", rxt_file, "-o", outdir]
+    else:
+        argv = [pcrec_bin, "--features", "all", "--source", rxt_file, "-o", outdir]
     rc, out, err = run(argv, timeout)
     artifacts = {}
     if os.path.isdir(outdir):

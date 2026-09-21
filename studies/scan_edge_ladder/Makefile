@@ -53,7 +53,7 @@ rungs: refs
 	@mkdir -p $(OUT)/work
 	@set -e; bad=0; k=1; for p in '\d{2}y' '\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}y\d{4}'; do \
 	  for arm in before after; do \
-	    $(OUT)/c_$$arm/build/pcrec -p rx --features all -o $(OUT)/work/a_$${arm}_$$k.c --pattern "$$p" >/dev/null; \
+	    $(OUT)/c_$$arm/build/pcrec -p rx --features all -o $(OUT)/work/a_$${arm}_$$k.c -- "$$p" >/dev/null; \
 	  done; \
 	  $(PCREC) -p rx --features all -o $(OUT)/work/a_step11_$$k.c --pattern "$$p" >/dev/null; \
 	  e=$$(awk '/\[OPT-5\] SCAN EDGE/{q=1;next} q && /if \(forward_state ==/{n++;q=0} END{print n+0}' $(OUT)/work/a_after_$$k.c); \

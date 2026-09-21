@@ -157,10 +157,10 @@ fi
 # ---- assertion 3: std1's expansion (from the BUILT pcrec) is a subset of
 # the floored names — two independent sources, no shared source between
 # pcrec's own claim and the hand-pinned floors file. -----------------------
-STAMP_LINE=$(pcrec_run "$PCREC" -o - 'a' 2>/dev/null | grep '^#define PCREC_FEATURE_MODULES' | head -1)
+STAMP_LINE=$(pcrec_run "$PCREC" -o - --pattern 'a' 2>/dev/null | grep '^#define PCREC_FEATURE_MODULES' | head -1)
 if [ -z "$STAMP_LINE" ]; then
     echo "  FAIL: could not read PCREC_FEATURE_MODULES from a bare-default"
-    echo "        compile of \`pcrec_run $PCREC -o - 'a'\` — assertion 3 has no stamp"
+    echo "        compile of \`pcrec_run $PCREC -o - --pattern 'a'\` — assertion 3 has no stamp"
     echo "        to read"
     FAILS=$((FAILS + 1))
 else

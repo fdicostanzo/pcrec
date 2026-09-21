@@ -360,7 +360,7 @@ fi
 ctl_ok=0; ctl_bad=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
-    if "$REF" --features all -p rx -o - --pattern "$pat" >/dev/null 2>&1; then
+    if "$REF" --features all -p rx -o - -- "$pat" >/dev/null 2>&1; then
         ctl_bad=$((ctl_bad + 1))
         [ "$ctl_bad" -le 5 ] && echo "  CONTROL: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
     else
@@ -389,9 +389,13 @@ pats = [p.rstrip("\n") for p in
         open(patfile, encoding="utf-8", errors="surrogateescape") if p.strip()]
 res = open(os.path.join(work, "axis_results"), "w")
 
-def run(binary, args, pat):
+def run(binary, args, pat, pattern_flag):
+    # [REL-1.10]/D118: `subj` (the tree's own build/pcrec) understands
+    # --pattern; `ref` is compiled from a PINNED OLD COMMIT via `git
+    # archive` (predating D118) and still needs the positional `--`
+    # shape -- the two are NOT interchangeable, so the caller says which.
     r = subprocess.run([binary, "--features", "all", "-p", "rx"] + args
-                       + ["-o", "-", "--", pat],
+                       + ["-o", "-", pattern_flag, pat],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return r.returncode, r.stdout, r.stderr
 
@@ -426,7 +430,7 @@ for label, args in AXES:
                encoding="utf-8", errors="surrogateescape")
 
     def one(pat):
-        return pat, run(subj, args, pat), run(ref, args, pat)
+        return pat, run(subj, args, pat, "--pattern"), run(ref, args, pat, "--")
 
     with ThreadPoolExecutor(max_workers=jobs) as ex:
         for pat, (ac, ao, ae), (bc, bo, be) in ex.map(one, pats):

@@ -94,8 +94,19 @@ stamp() { grep -oE "^#define RX_$1 .*" "$2" 2>/dev/null | head -1 | sed "s/^#def
 # `-o -` writes a self-contained artifact to stdout, so every comparison below
 # is over ONE file and no `.h` sidecar can differ unnoticed.
 emit() {  # emit OUTFILE FLAGS... -- PATTERN
+    # [REL-1.10]/D118: every caller in this file still spells its own
+    # trailing pattern `-- PATTERN` (this function's own calling
+    # convention, not pcrec's CLI grammar) -- translated here, ONCE, into
+    # `--pattern PATTERN` before forwarding, exactly as
+    # tests/codegen/run_tune_dial.sh's own `emit()` does, so no call site
+    # below needed touching.
     local out="$1"; shift
-    pcrec_run "$PCREC" --features all -p rx -o - "$@" > "$out" 2>"$out.err"
+    local args=() p=""
+    while [ $# -gt 0 ]; do
+        if [ "$1" = "--" ]; then shift; p="$1"; break; fi
+        args+=("$1"); shift
+    done
+    pcrec_run "$PCREC" --features all -p rx -o - "${args[@]}" --pattern "$p" > "$out" 2>"$out.err"
 }
 
 # ---------------------------------------------------------------------------
