@@ -24650,3 +24650,42 @@ archived: [ADMIN-0921], [LIM-2]. OPEN: I-82 queued on the bench (launch
 ~1-2 h behind a viewer wave; tables → the a+b·k fit + the floor decision
 close [OPT-EDGE]); Frank's three [REL-1] rulings (sequencing lift; what
 the version constant versions; the public CLAUDE.md). wake.md rewritten.
+
+## 2026-09-21 (afternoon) — seventy-fifth session: the [REL-1] rulings land (D114 addendum, D115, D116); REL-1.1/1.2 merged; version plumbing, README rework and the interface digest in flight
+
+Woke ~12:1x on `/pcrec-manager` (Frank's `/model fable5.2` did not
+resolve — Fable 5.1). Main = origin/main at 89d986c3, clean, nothing in
+flight. O-43 NOT arrived: the bench outbox still tops at O-42, I-82 acked
+as queued behind a viewer wave (03f65dd). Heartbeat cron up.
+
+**Rulings, in order, each after a "describe N" from Frank:**
+1. SEQUENCING LIFTED (D114 addendum, 6b856bea): REL-1.1/1.2/1.4 start
+   while I-82 waits — none touch what the ladder measures; the only
+   coupling is two abi bumps in sequence.
+2. D115 (919388bd): the product version is `PCREC_VERSION` = "0.1.0-beta",
+   semver, versioning the TOOL, independent of abi; `--version`,
+   lib/pcrec.h, one emitted-header stamp line (abi 27→28 with the D94
+   ritual), CHANGELOG seed, cli.md + match_api.md §6 hunks.
+3. D116 (16a62901, "agree 2"): root CLAUDE.md keeps its content behind a
+   three-line preface (applied); the README is BRIEF AND FRIENDLY with NO
+   drifting numbers ("every line means another line to maintain");
+   [REL-1.3]/[GUIDE-1] HELD until Frank and the manager discuss the
+   interface — a one-page digest is the basis.
+
+**Lanes.** `rel1a` (sonnet): REL-1.1 + REL-1.2 delivered 9bf01318, merged
+74cdf53c. README rewritten (facts right, but dense — superseded by
+D116's shape, see rel1c); compliance-refresh run for real: components
+1+3 all PASS, ZERO DRIFT since 2026-09-12, component 2 correctly not
+re-run (libpcre2 still 10.46), header bumped + public front matter (I
+trimmed its process-prose sentence at landing). Registry suite solo:
+225/0, PC-3 209/0, DD-11.3 101,244 comparisons 0 disagreements.
+emit_sweep --ref 6b856bea: 0 movers / 0 asymmetric on all 5 streams
+(the docs-only control). Stale-out-of-scope finding: cli/main.c's -e
+help text still says "utf8 is refused until milestone M5" — owed.
+`rel1b` (sonnet, in flight): REL-1.4 per D115. `rel1c` (sonnet, in
+flight): the README rework per D116. `ifacedig` (sonnet, read-only, in
+flight): docs/dev/lanes/iface_digest.md. Watchers on each.
+
+**Push policy this session:** main is HELD UNPUSHED until O-43 — I-82's
+command block says `git pull --ff-only origin main` and "expect
+8607a83d, else STOP"; a push would trip the executor's own guard.
