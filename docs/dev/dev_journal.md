@@ -24689,3 +24689,50 @@ flight): docs/dev/lanes/iface_digest.md. Watchers on each.
 **Push policy this session:** main is HELD UNPUSHED until O-43 — I-82's
 command block says `git pull --ff-only origin main` and "expect
 8607a83d, else STOP"; a push would trip the executor's own guard.
+
+**~12:4x — rel1c + ifacedig merged; [REL-1.4] merged (a70982c9), gate
+launched.** rel1c: README 125→65 lines per D116, digit audit clean,
+example verified `match 2 7`. ifacedig: docs/dev/lanes/iface_digest.md
+(the three surfaces, every flag, knobs, encodings, the spec's own open
+questions + an "observed, not ruled" list: `_search` 0 vs `_match` 0
+mean opposite things; `--features` has no pcrec_options field; pattern
+NUL-terminated vs subject length-counted; three exit-code
+vocabularies) — presented to Frank as the interface discussion's basis,
+recommendation: fix the library `--features` gap now, document the
+rest. rel1b: PCREC_VERSION "0.1.0-beta", `--version` → `pcrec
+0.1.0-beta`, the essential generated-by line stamps it (abi 27→28; the
+comments-axis recognizer had hardcoded the old text — a REAL regression
+its first run caught, fixed); readers re-pinned by grep (resource byte
+pin 762114→762125, ABI_EXPECT, match_api §6); (B) FILEPIN re-pinned to
+the merge a70982c9 by the manager (579588da); riders: -e help text,
+limits.md's --source sentence. DARWIN GATE at 579588da:
+build/gate_579588da/, watcher on the trailer.
+
+**~12:5x-13:1x — I-82 ran and O-43 landed.** pcrecdev2 found its
+checkout at 89d986c3 (= 8607a83d + two doc-only commits), asked to
+proceed under the I-81 option-(a) precedent — approved live + inbox
+addendum (bench 3226df2). O-43 (bench 7102616): six stages rc=0, zero
+I-81 failure lines, 15/15 valid rounds, both floor median/IQR blocks.
+Lane `edgefit` (sonnet, python only while the gate ran) fetched the
+logs (studies/scan_edge_ladder/runs/2026-09-21-i82-89d986c3/, "I-82
+logs fetched" = I-83, bench 24792b7) and computed the fit + the m=2
+mechanism table: 0 of 16 cells separate under D77; the m=2 bimodality's
+moving binary FLIPS between runs, no order correlation, mode-match 50%;
+before−after per-edge cost 1.00/0.57/0.22/0.24 ns/byte at k=1..4.
+
+**14:25 — GATE at 579588da: build/strict clean, 40/40 sections, test
+rc=2 on TWO reds:** the standing nm probe, and run_cpset_structure.sh
+CHECK 3 — tests/codegen/manifests/m5_stage1_stamps.tsv's EMITTED_BYTES
+rows moved +11 each (the ` 0.1.0-beta` text; the [EMIT-VERB] precedent
+exactly; a reader that never cites the abi number — D94 addendum, again;
+rel1b's grep could not have found it). Size log re-archived at the gate:
+0 movers (e9f666bc; the header line is .c text, not .o bytes). edgefit
+merged after the trailer (parked until then — the never-merge-mid-run
+rule). **D117 (b735df4d): [OPT-EDGE] CLOSED** — floor stays 2, the m=2
+signature named box-side noise, the ladder recorded. Lane `edgeclose`
+(sonnet) launched: the manifest re-record (whole diff reviewed, +11 on
+every EMITTED_BYTES row and nothing else, or STOP), tuning.md §2.18 +
+limits.def:371's clause with its --list-limits readers re-pinned, the
+study README's runs note, five missing docs/dev/lanes/CLAUDE.md lines.
+Main HELD UNPUSHED until edgeclose lands green (the executor released
+the abi-28 push in O-43).
