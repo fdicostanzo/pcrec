@@ -16,6 +16,17 @@
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=${OUT:-$HERE/out}          # every generated file lives here; gitignored
+# OUT MUST BE MADE ABSOLUTE HERE, for the same reason PCREC is (below) and
+# run_ladder.sh's own $OUT is (see its header comment). This script does not
+# currently re-read a relative $OUT after its own `cd` into $OUT/fwork, so
+# it was not exploiting the bug that broke the ladder's before/after arms --
+# but `make floor` passes the identical relative `OUT=out`, so the same
+# fragility exists the moment a future edit adds one more $OUT-relative
+# reference after the cd. Hardened symmetrically, 2026-09-21 (O-42 triage).
+case "$OUT" in
+  /*) : ;;
+  *)  OUT="$HERE/$OUT" ;;
+esac
 ROUNDS=${ROUNDS:-15}; SWEEPS=${SWEEPS:-10}; CORE=${CORE:-3}; LOADMAX=${LOADMAX:-0.5}
 # REFUSAL 3 (README, "Three refusals"): a cell whose subject never ENTERED the
 # chain measures nothing. run_ladder.sh had this check from the start; this
@@ -59,6 +70,13 @@ wait_quiet() {
 
 mkdir -p "$OUT/fwork"; cd "$OUT/fwork"
 
+# RC ACCUMULATES every failure this harness used to only PRINT: a build that
+# fails, a cell that takes no edge, or a cell whose subject never entered the
+# chain. A harness that reports success with no measurement is itself a
+# defect (docs/dev/learnings.md sec 3) -- found live 2026-09-21 (O-42):
+# every cell read "forward edges = 0" and `make floor` still exited rc=0.
+RC=0
+
 # TWO FAMILIES, because they behave differently: the exact count [0-9]{m} and
 # the NULLABLE [a-z]{0,m}, whose find-all regime issues one rx_search per
 # subject byte (edge1's t-digits-016k note).
@@ -84,39 +102,108 @@ for m in 2 3 4 8; do
     # A NEAR-MISS unit that STRADDLES m: the run is entered and abandoned one
     # short of the bound, which is where an entry cost is visible.
     awk -v u="$unit" 'BEGIN{n=262144;s="";while(length(s)<n)s=s u;printf "%s",substr(s,1,n)}' > "s_${fam}_$m.bin"
-    $PCREC -p rx --features all           -o "e_${fam}_$m.c" -- "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: compile failed"; continue; }
-    $PCREC -p rx --features all -fno-scan-edge -o "n_${fam}_$m.c" -- "$pat" >/dev/null 2>&1
-    gcc -O2 -w -o "e_${fam}_$m" "e_${fam}_$m.c" "$HERE/bench.c" || continue
-    gcc -O2 -w -o "n_${fam}_$m" "n_${fam}_$m.c" "$HERE/bench.c" || continue
+    # `-fcomments` on the `e_` build ONLY: D112 (2026-09-19) flipped emitted
+    # comments OFF by default (abi 26->27), and the `[OPT-5] SCAN EDGE`
+    # marker this census reads below is exactly the comment class the flip
+    # removes. Unlike run_ladder.sh's rung census, there is no old-reference
+    # stand-in here -- $PCREC IS the compiler under test -- so the census
+    # must ask for the fact explicitly. Proven byte/behaviour neutral for
+    # the machine under test (D108; emitverb_report.md's `.o` proof and its
+    # own AUTO-rung fix for the one place a raw-byte comparison had read
+    # comment bytes), so this does not perturb what is measured below, only
+    # what the count can see. Found 2026-09-21 (O-42): every cell here read
+    # "forward edges = 0" and the run measured anyway with no way to tell.
+    $PCREC -p rx --features all -fcomments    -o "e_${fam}_$m.c" -- "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: compile failed"; RC=1; continue; }
+    $PCREC -p rx --features all -fno-scan-edge -o "n_${fam}_$m.c" -- "$pat" >/dev/null 2>&1 || { echo "m=$m $fam: noedge compile failed"; RC=1; continue; }
+    gcc -O2 -w -o "e_${fam}_$m" "e_${fam}_$m.c" "$HERE/bench.c" || { echo "m=$m $fam: e_ CC FAILED"; RC=1; continue; }
+    gcc -O2 -w -o "n_${fam}_$m" "n_${fam}_$m.c" "$HERE/bench.c" || { echo "m=$m $fam: n_ CC FAILED"; RC=1; continue; }
     ec=$(awk '/\[OPT-5\] SCAN EDGE/{p=1;next} p && /if \(forward_state ==/{n++;p=0} END{print n+0}' "e_${fam}_$m.c")
     printf 'm=%-2d %-8s pattern %-16s forward edges=%s\n' "$m" "$fam" "$pat" "$ec"
-    [ "$ec" -ge 1 ] || echo "  *** m=$m $fam TAKES NO EDGE — the cell measures nothing and is dropped ***"
+    if [ "$ec" -lt 1 ]; then
+      echo "  *** m=$m $fam TAKES NO EDGE — the cell measures nothing and is dropped ***"
+      rm -f "e_${fam}_$m" "n_${fam}_$m"; RC=1; continue
+    fi
     # ENTRY probe, once per cell, on the edge arm: below the floor the subject
     # never engaged and the cell is disabled rather than reported.
     ns=$(taskset -c "$CORE" "./e_${fam}_$m" "s_${fam}_$m.bin" 3 | cut -d' ' -f1)
     if awk -v v="$ns" -v f="$ENTRY_FLOOR" 'BEGIN{exit !(v<=f)}'; then
       echo "  *** m=$m $fam SUBJECT NEVER ENTERED THE CHAIN ($ns ns/byte <= $ENTRY_FLOOR) — cell dropped ***"
-      rm -f "e_${fam}_$m" "n_${fam}_$m"
+      rm -f "e_${fam}_$m" "n_${fam}_$m"; RC=1
     fi
   done
 done
 
 echo
 echo "round  m  family    edge     noedge   edge/noedge"
+declare -A RATIO   # RATIO["m,fam,r"] -> that round's edge/noedge, ACCEPTED rounds only
 for r in $(seq 1 "$ROUNDS"); do
   fb_pre=$(wait_quiet) || { echo "ROUND $r DISCARDED: box busy ${fb_pre} core-equivalents (> $FOREIGNMAX) after ${QUIETWAIT}s"; continue; }
   round_out=""
+  declare -A RTMP   # this round's own values, committed to RATIO only if accepted below
   for m in 2 3 4 8; do for fam in exact nullable; do
     [ -x "e_${fam}_$m" ] && [ -x "n_${fam}_$m" ] || continue
     a=$(taskset -c "$CORE" "./e_${fam}_$m" "s_${fam}_$m.bin" "$SWEEPS" | cut -d' ' -f1)
     b=$(taskset -c "$CORE" "./n_${fam}_$m" "s_${fam}_$m.bin" "$SWEEPS" | cut -d' ' -f1)
+    RTMP["$m,$fam"]=$(awk -v a="$a" -v b="$b" 'BEGIN{printf "%.6f", (b>0)?a/b:0}')
     round_out+=$(awk -v r="$r" -v m="$m" -v f="$fam" -v a="$a" -v b="$b" \
       'BEGIN{printf "%5d %2d  %-8s %7.4f  %7.4f  %9.4f", r,m,f,a,b,a/b}')$'\n'
   done; done
   fb_post=$(foreign_busy)
   if awk -v f="$fb_post" -v m="$FOREIGNMAX" 'BEGIN{exit !(f<m)}'; then
     printf '%s' "$round_out"
+    for key in "${!RTMP[@]}"; do RATIO["$key,$r"]=${RTMP[$key]}; done
   else
     echo "ROUND $r DISCARDED: box went busy DURING the round (${fb_post} core-equivalents > $FOREIGNMAX)"
   fi
 done
+
+# THE MEDIAN/IQR SUMMARY BLOCK. The 2026-09-04 report cited these numbers but
+# they were never a harness feature: they came from an interactive python3
+# one-liner run BY HAND against the raw per-round lines above (statistics.
+# median plus a manually interpolated IQR), never saved as a file, so this
+# script had NO summary block of its own and every re-run had to be
+# post-processed by hand again -- found 2026-09-21 (O-42) when neither log
+# carried one. This block computes the same two statistics from the SAME
+# per-round data the table above already prints, using linear-interpolated
+# percentiles (the numpy/"type 7" convention) for Q1/Q3 -- a standard,
+# documented choice, not necessarily byte-identical to the 2026-09-04
+# hand-run's own interpolation (that report's own cross-check of the two
+# already found "not identical, but not a different finding").
+echo
+echo "=== median / IQR summary (edge/noedge ratio, per m x family) ==="
+printf '%-3s %-9s %8s %8s %8s %8s %6s\n' "m" "family" "median" "IQR" "min" "max" "n"
+SUMMARY_BAD=0
+for m in 2 3 4 8; do for fam in exact nullable; do
+  [ -x "e_${fam}_$m" ] && [ -x "n_${fam}_$m" ] || continue
+  vals=()
+  for key in "${!RATIO[@]}"; do
+    case "$key" in
+      "$m,$fam,"*) vals+=("${RATIO[$key]}") ;;
+    esac
+  done
+  n=${#vals[@]}
+  if [ "$n" -eq 0 ]; then
+    printf '%-3s %-9s  *** NO VALID ROUNDS -- cell measures nothing ***\n' "$m" "$fam"
+    SUMMARY_BAD=1
+    continue
+  fi
+  printf '%s\n' "${vals[@]}" | awk -v m="$m" -v fam="$fam" '
+    { a[NR] = $1 + 0 }
+    function pct(p,   idx, lo, hi, frac) {
+      idx = p * (NR - 1) + 1
+      lo = int(idx); hi = lo + ((idx > lo) ? 1 : 0)
+      if (hi > NR) hi = NR
+      frac = idx - lo
+      return a[lo] + frac * (a[hi] - a[lo])
+    }
+    END {
+      for (i = 1; i <= NR; i++)
+        for (j = i + 1; j <= NR; j++)
+          if (a[j] < a[i]) { t = a[i]; a[i] = a[j]; a[j] = t }
+      med = pct(0.50); q1 = pct(0.25); q3 = pct(0.75)
+      printf "%-3s %-9s %8.4f %8.4f %8.4f %8.4f %6d\n", m, fam, med, q3 - q1, a[1], a[NR], NR
+    }'
+done; done
+[ "$SUMMARY_BAD" -eq 0 ] || RC=1
+
+exit "$RC"

@@ -40,18 +40,28 @@ refs:
 # what the pattern suggested.  The count is read from the artifact's own
 # `[OPT-5] SCAN EDGE` markers, attributed by the state variable each block
 # tests, and a mismatch is printed as a REFUSAL rather than a warning.
+# The census reads the `[OPT-5] SCAN EDGE` COMMENT marker in a_after_$$k.c,
+# which is fine here (never for a_step11) because `after` is a git-archive'd
+# OLD reference compiler (b048fa61, predates D112) that always emits
+# comments unconditionally -- no `-fcomments` flag exists at that commit and
+# passing one would itself be a hard CLI error. See run_ladder.sh's own
+# header comment for why the step11 arm never needs this census: it shares
+# scanedge.c's edge-taking decision with `after` by precondition, so
+# `after`'s topology stands in for it. A rung whose count is wrong now
+# FAILS the target (rc<>0), not just a printed line (2026-09-21, O-42).
 rungs: refs
 	@mkdir -p $(OUT)/work
-	@set -e; k=1; for p in '\d{2}y' '\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}y\d{4}'; do \
+	@set -e; bad=0; k=1; for p in '\d{2}y' '\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}' '\d{2}y\d{2}y\d{2}y\d{4}'; do \
 	  for arm in before after; do \
 	    $(OUT)/c_$$arm/build/pcrec -p rx --features all -o $(OUT)/work/a_$${arm}_$$k.c -- "$$p" >/dev/null; \
 	  done; \
 	  $(PCREC) -p rx --features all -o $(OUT)/work/a_step11_$$k.c -- "$$p" >/dev/null; \
 	  e=$$(awk '/\[OPT-5\] SCAN EDGE/{q=1;next} q && /if \(forward_state ==/{n++;q=0} END{print n+0}' $(OUT)/work/a_after_$$k.c); \
 	  if [ "$$e" = "$$k" ]; then printf 'rung %s  %-26s forward edges = %s  OK\n' "$$k" "$$p" "$$e"; \
-	  else printf 'rung %s  %-26s forward edges = %s  *** REFUSED (want %s) ***\n' "$$k" "$$p" "$$e" "$$k"; fi; \
+	  else printf 'rung %s  %-26s forward edges = %s  *** REFUSED (want %s) ***\n' "$$k" "$$p" "$$e" "$$k"; bad=1; fi; \
 	  k=$$((k+1)); \
-	done
+	done; \
+	[ "$$bad" -eq 0 ] || { echo "rungs: one or more rungs REFUSED -- see above"; exit 1; }
 
 # The floor's cells, same discipline: a cell that takes no edge measures
 # nothing and says so -- AND THIS ARM ALREADY EARNED ITS KEEP. The nullable
@@ -61,18 +71,31 @@ rungs: refs
 # only forms that take one are the BARE nullable `[a-z]{0,m}` and the exact
 # `[0-9]{m}x`. Timing the first version would have compared two identical
 # machines and reported a ratio of 1.000 as a finding.
+#
+# `-fcomments` is REQUIRED on the `e_` build: D112 (2026-09-19) flipped
+# emitted comments OFF by default (abi 26->27), and the `[OPT-5] SCAN EDGE`
+# marker this census reads is exactly the kind of comment the flip removes
+# -- unlike `rungs` above, `$(PCREC)` here IS the compiler under test, so
+# there is no old-reference stand-in to fall back on. Proven byte/behaviour
+# neutral for the machine under test (D108; emitverb_report.md's own `.o`
+# proof, plus its own AUTO-rung fix for the one place a raw-byte comparison
+# had read comment bytes) -- this flag changes what the CENSUS can see, not
+# what is built. Found 2026-09-21 (O-42): every cell read "edges = 0" here.
+# A cell that genuinely takes no edge, or whose census still comes up
+# empty, now FAILS the target (rc<>0), not just a printed line.
 floorcells:
 	@mkdir -p $(OUT)/fwork
-	@set -e; for m in 2 3 4 8; do \
+	@set -e; bad=0; for m in 2 3 4 8; do \
 	  for fam in exact nullable; do \
 	    case $$fam in exact) p="[0-9]{$$m}x";; nullable) p="[a-z]{0,$$m}";; esac; \
-	    $(PCREC) -p rx --features all               -o $(OUT)/fwork/e_$${fam}_$$m.c -- "$$p" >/dev/null; \
+	    $(PCREC) -p rx --features all -fcomments    -o $(OUT)/fwork/e_$${fam}_$$m.c -- "$$p" >/dev/null; \
 	    $(PCREC) -p rx --features all -fno-scan-edge -o $(OUT)/fwork/n_$${fam}_$$m.c -- "$$p" >/dev/null; \
 	    e=$$(awk '/\[OPT-5\] SCAN EDGE/{q=1;next} q && /if \(forward_state ==/{n++;q=0} END{print n+0}' $(OUT)/fwork/e_$${fam}_$$m.c); \
 	    if [ "$$e" -ge 1 ]; then printf 'm=%-2s %-8s %-14s forward edges = %s  OK\n' "$$m" "$$fam" "$$p" "$$e"; \
-	    else printf 'm=%-2s %-8s %-14s forward edges = 0  *** TAKES NO EDGE, cell measures nothing ***\n' "$$m" "$$fam" "$$p"; fi; \
+	    else printf 'm=%-2s %-8s %-14s forward edges = 0  *** TAKES NO EDGE, cell measures nothing ***\n' "$$m" "$$fam" "$$p"; bad=1; fi; \
 	  done; \
-	done
+	done; \
+	[ "$$bad" -eq 0 ] || { echo "floorcells: one or more cells take no edge -- see above"; exit 1; }
 
 ladder: rungs
 	OUT=$(OUT) PCREC=$(PCREC) ./run_ladder.sh

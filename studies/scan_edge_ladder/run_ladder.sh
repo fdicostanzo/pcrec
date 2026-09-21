@@ -20,6 +20,22 @@
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=${OUT:-$HERE/out}          # every generated file lives here; gitignored
+# OUT MUST BE MADE ABSOLUTE HERE, for the identical reason PCREC is made
+# absolute below. `make ladder` always passes `OUT=out` (the Makefile's own
+# `OUT ?= out` default is a non-empty string, so the `${OUT:-...}` fallback
+# above never fires) -- a RELATIVE value that resolves fine from $HERE, but
+# this script then `cd`s into $OUT/work, and the ARM[before]/ARM[after]
+# paths below are built from $OUT BEFORE that cd. A relative $OUT there
+# resolves ONE LEVEL TOO DEEP after the cd (out/work/out/c_before/...,
+# which does not exist), while ARM[step11] escapes it only because $PCREC
+# already gets this same absolute treatment. Found 2026-09-21 (O-42): every
+# rung printed "arm before: COMPILE FAILED" / "arm after: COMPILE FAILED"
+# while step11 ran fine -- the mirror image of the bug the PCREC block below
+# already documents.
+case "$OUT" in
+  /*) : ;;
+  *)  OUT="$HERE/$OUT" ;;
+esac
 ROUNDS=${ROUNDS:-15}; SWEEPS=${SWEEPS:-10}; ENTRY_FLOOR=${ENTRY_FLOOR:-0.15}
 CORE=${CORE:-3}
 LOADMAX=${LOADMAX:-0.5}
@@ -103,28 +119,43 @@ declare -A SUBJ=(
   [4]='12y34y56y789x '
 )
 
+# RC ACCUMULATES every failure this harness used to only PRINT: a bad build,
+# a wrong edge count, or (below) a rung with zero valid rounds. A harness
+# that reports success with no measurement is itself a defect
+# (docs/dev/learnings.md sec 3) -- found live 2026-09-21 (O-42): `make
+# ladder` exited rc=0 while every arm read COMPILE FAILED.
+RC=0
 mkdir -p "$OUT/work"; cd "$OUT/work"
 for k in 1 2 3 4; do
   # the subject: repeat the near-miss field to 256 KB
   awk -v u="${SUBJ[$k]}" 'BEGIN{ n=262144; s=""; while (length(s) < n) s = s u; printf "%s", substr(s,1,n) }' > "subj$k.bin"
   for arm in before after step11; do
     "${ARM[$arm]}" -p rx --features all -o "a_${arm}_$k.c" -- "${PAT[$k]}" >/dev/null 2>&1 \
-      || { echo "rung $k arm $arm: COMPILE FAILED"; continue; }
-    gcc -O2 -w -o "b_${arm}_$k" "a_${arm}_$k.c" "$HERE/bench.c" || { echo "rung $k arm $arm: CC FAILED"; continue; }
+      || { echo "rung $k arm $arm: COMPILE FAILED"; RC=1; continue; }
+    gcc -O2 -w -o "b_${arm}_$k" "a_${arm}_$k.c" "$HERE/bench.c" || { echo "rung $k arm $arm: CC FAILED"; RC=1; continue; }
   done
   "${ARM[$NOEDGE_ARM]}" -p rx --features all -fno-scan-edge -o "a_noedge_$k.c" -- "${PAT[$k]}" >/dev/null 2>&1 \
     && gcc -O2 -w -o "b_noedge_$k" "a_noedge_$k.c" "$HERE/bench.c"
-  # VERIFY the forward edge count from the artifact's own markers
+  # VERIFY the forward edge count from the artifact's own markers. This
+  # reads a_after_$k.c -- the OLD "after" reference compiler (b048fa61,
+  # predates D112), which always emits comments unconditionally, never
+  # a_step11_$k.c -- so no -fcomments is needed or wanted here (an old
+  # compiler given a flag it predates would itself be a hard CLI error).
+  # step11 shares scanedge.c's edge-taking decision with `after` by
+  # precondition, so `after`'s topology stands in for it (run_ladder.sh's
+  # own header comment).
   e=$(awk '/\[OPT-5\] SCAN EDGE/{p=1;next} p && /if \(forward_state ==/{n++;p=0} END{print n+0}' "a_after_$k.c")
   printf 'rung %d  pattern %-28s forward edges = %s  (want %d)\n' "$k" "${PAT[$k]}" "$e" "$k"
-  [ "$e" = "$k" ] || echo "  *** RUNG $k REFUSED: edge count is $e, not $k ***"
+  [ "$e" = "$k" ] || { echo "  *** RUNG $k REFUSED: edge count is $e, not $k ***"; RC=1; }
 done
 
 echo
 echo "round  rung  before   after    step11   noedge   after/before  step11/after"
+declare -A VALID=( [1]=0 [2]=0 [3]=0 [4]=0 )   # per-rung count of measured rounds
 for r in $(seq 1 "$ROUNDS"); do
   fb_pre=$(wait_quiet) || { echo "ROUND $r DISCARDED: box busy ${fb_pre} core-equivalents (> $FOREIGNMAX) after ${QUIETWAIT}s"; continue; }
   round_out=""
+  declare -A ROUND_HIT=( [1]=0 [2]=0 [3]=0 [4]=0 )
   for k in 1 2 3 4; do
     declare -A T=()
     for arm in before after step11 noedge; do        # INTERLEAVED inside the round
@@ -133,6 +164,7 @@ for r in $(seq 1 "$ROUNDS"); do
     done
     ok=$(awk -v v="${T[after]:-0}" -v f="$ENTRY_FLOOR" 'BEGIN{print (v>f)?"y":"n"}')
     [ "$ok" = y ] || { echo "$r $k  SUBJECT NEVER ENTERED THE CHAIN (${T[after]:-?} ns/byte < $ENTRY_FLOOR) — rung dropped"; continue; }
+    ROUND_HIT[$k]=1
     round_out+=$(awk -v r="$r" -v k="$k" -v b="${T[before]}" -v a="${T[after]}" -v s="${T[step11]}" -v n="${T[noedge]:-0}" \
         'BEGIN{ printf "%5d %5d  %7.4f %7.4f %7.4f %7.4f   %8.4f      %8.4f", r,k,b,a,s,n, a/b, s/a }')$'\n'
   done
@@ -141,7 +173,18 @@ for r in $(seq 1 "$ROUNDS"); do
   fb_post=$(foreign_busy)
   if awk -v f="$fb_post" -v m="$FOREIGNMAX" 'BEGIN{exit !(f<m)}'; then
     printf '%s' "$round_out"
+    for k in 1 2 3 4; do [ "${ROUND_HIT[$k]}" = 1 ] && VALID[$k]=$((VALID[$k]+1)); done
   else
     echo "ROUND $r DISCARDED: box went busy DURING the round (${fb_post} core-equivalents > $FOREIGNMAX)"
   fi
 done
+
+# A rung that measured ZERO valid rounds is a harness defect (rc=0 here would
+# be the exact O-42 shape: "SUBJECT NEVER ENTERED" on every round yet the
+# run reporting success). Report per-rung counts and fail loudly.
+echo
+echo "valid rounds per rung: 1=${VALID[1]} 2=${VALID[2]} 3=${VALID[3]} 4=${VALID[4]}"
+for k in 1 2 3 4; do
+  [ "${VALID[$k]}" -gt 0 ] || { echo "  *** RUNG $k: ZERO valid rounds -- measures nothing ***"; RC=1; }
+done
+exit "$RC"
