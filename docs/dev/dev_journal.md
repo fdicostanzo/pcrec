@@ -24627,3 +24627,18 @@ probe, and the corpus-census readers: 212→213 .rxt, 3939→3944 blocks,
 landed without its pins (the delivery-bar miss BOILERPLATE names). Lane
 `k62pin` (sonnet) re-pins every reader by grep, components re-derived,
 red sections solo. Main HELD unpushed until it lands.
+
+**~12:4x — [ADMIN-0921] GATED, RE-PINNED, PUSHED; I-82 POSTED.** Lane
+k62pin: tests/rxtsource/run_rxtsource_tests.sh was the ONLY live manifest
+(CENSUS 212/3939/28955 → 213/3944/28971; RUNSH +1/+5/+16; C3_PASS +1 the
+perr, C3_SKIP_NOPYTHON +15 — the class-range `\E` dissolution has no
+python `re` spelling, a structural classification that carries across
+boxes); two other hits were historical lane reports (never edited after
+merge). Merged 2dc8e021; rxtsource solo on the merged main 212/0; size
+log re-archived at the gate: 0 movers, +4 rows (K62's four compiling
+patterns), 0 gone. Main PUSHED at 8607a83d (abi 27). I-82 written to the
+bench inbox at that pin (the edgefix report's command block verbatim;
+"I-81 logs fetched" releases their out/). Process: k62pin wrote its solo
+logs to /tmp instead of the session scratchpad — harmless, noted.
+Lanes this session so far: edge3 (stopped, unused), rel1pre, adm0921,
+edgefix, k62pin — none alive.
