@@ -415,7 +415,12 @@ def pcrec_speaks_pattern_flag(pcrec_bin):
         try:
             r = subprocess.run([pcrec_bin, "--help"], capture_output=True,
                                text=True, timeout=10)
-            _dialect_cache[pcrec_bin] = "--pattern" in (r.stdout + r.stderr)
+            # "--pattern" alone, never "--pattern-esc" (a flag every
+            # pre-D118 build also has, which made a naive substring test
+            # false-positive on the OLD grammar during this fix's own
+            # first validation run).
+            import re as _re
+            _dialect_cache[pcrec_bin] = bool(_re.search(r'--pattern(?!-)', r.stdout + r.stderr))
         except Exception:
             _dialect_cache[pcrec_bin] = True   # assume current grammar
     return _dialect_cache[pcrec_bin]
