@@ -285,3 +285,19 @@ documented at length in its own comment rather than repeated here.
 `PCREC_MAX_DFA_STATES_TABLE` gets no field: see `src/core/limits.def`'s
 comment on that row for why raising it is not a lever this project can
 safely offer.
+
+## [REL-1.4] `PCREC_VERSION` (2026-09-21, D115)
+
+One new macro, `#define PCREC_VERSION "0.1.0-beta"`, added near the top of
+the file (before the encoding namespace, the first thing a reader meets).
+It is a PRODUCT version — pcrec the tool, semver — and is deliberately
+INDEPENDENT of `abi` (`PCREC_ARTIFACT_ABI`, `src/gen/emit_dfa.c`): `abi`
+versions one artifact's emitted scaffolding and bumps on every emitted-text
+change (D76), far more often than a release; a 0.1.x point release can ship
+several abi bumps. `pcrec --version` prints it (`cli/CLAUDE.md`); the
+emitted artifact's essential provenance line stamps it beside the abi
+digit (`docs/spec/match_api.md` §6), which is why it survives
+`-fno-comments` (D112) — it rides the one comment line D112 never
+removes. A plain `#define`, matching this header's existing style for
+simple constants (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`) rather than a new
+accessor-function mechanism.
