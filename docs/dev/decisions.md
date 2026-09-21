@@ -7854,3 +7854,56 @@ want to discuss the pcrec interface a touch"). A one-page digest of the
 current public interface (CLI, library, generated artifact) is the
 basis for that discussion; the guide's chapters follow whatever it
 settles.
+
+## D117 — [OPT-EDGE] CLOSES on measured-no-gap: `PCREC_MIN_SCAN_CHAIN` stays at 2; the m=2 bimodality is named as box-side measurement noise, not a mechanism of the edge (manager's D77 reading of I-82 / O-43, 2026-09-21, seventy-fifth session)
+
+**The measurement.** I-82 (bench executor, ubuntubudu, pcrec pin
+89d986c3 = 8607a83d + two doc-only commits, load1 < 0.7 throughout):
+the scan-edge ladder (4 rungs × 15 rounds, four arms) and two floor runs
+(8 m×family cells × 15 rounds each), on the harness FIXED by lane edgefix
+(0cf627fb) — every I-81 failure class gone, 15/15 valid rounds per rung,
+both median/IQR blocks printed by the harness itself. Logs archived at
+studies/scan_edge_ladder/runs/2026-09-21-i82-89d986c3/ with the fit
+script (fit.py) and its output; the analysis is
+docs/dev/lanes/edgefit_report.md (lane edgefit).
+
+**The floor (D77's test, per the study README: a limit moves only inside
+a measured gap).** Zero of 16 cells separate: on every m ∈ {2,3,4,8} ×
+{exact, nullable}, both runs, |median − 1| ≤ the cell's own IQR AND 1.0
+lies inside the round-to-round min..max. m=3/4/8 sit at ~1.00 with IQR
+≤ 0.03 (exact) — the edge neither costs nor saves time at those chain
+lengths, and its SIZE win (limits.def:371, unconditional) remains the
+standing reason to admit m=2. `PCREC_MIN_SCAN_CHAIN` STAYS AT 2; no
+abi event; the 2026-09-04 measured-no-gap finding is re-confirmed on a
+third independent pass with the harness's own summaries.
+
+**The m=2 bimodality, named.** The signature is real and reproduces
+(2026-09-04 edge2, O-42 raw, O-43 fixed-harness summaries: m=2 exact
+medians 1.06 / 1.44, IQR 0.67 / 0.83, rounds split between a ~1.0 mode
+and a ~1.8 mode). It is NOT a mechanism of the scan edge: which BINARY
+moves flips between runs (in three of four run×family cells the edge
+binary's absolute time jumps +52..81% in HIGH rounds; in run2/exact the
+noedge binary halves while edge stays flat), neither round index
+(r ≈ 0.2-0.3) nor the immediately preceding cell in measurement order
+(r = 0.62 then −0.08; mode-match rate exactly 50%) predicts the mode,
+and it appears only on the SHORTEST-chain cell — the cheapest subject,
+hence the most sensitive to whatever the box does between rounds
+(frequency/scheduling class; not diagnosed further — the answer to the
+floor question does not depend on it). Recorded so the next reader of
+an m=2 spike does not re-open the floor on it.
+
+**The ladder, recorded.** Over per-rung medians, the shared-sentinel
+dispatch's arms (`after`, `step11`) fit b ≈ −0.001..−0.002 ns/byte/rung
+against the old per-edge if-chain's b ≈ −0.27; the README's isolation
+(before − after, never noedge) reads 1.00, 0.57, 0.22, 0.24 ns/byte at
+k = 1..4 — a saving at every k, not flat and not linear, because each
+rung is a structurally different subject (deepest near-miss at k=4).
+"Flat" is therefore shown for this ladder, not proven subject-invariant;
+no [OPT-5] claim depended on it being more.
+
+**Disposition.** [OPT-EDGE] CLOSED — the last of D113 step 1's finish
+rows; the two owed measurements are on file. tuning.md §2.18's
+measurement paragraph and limits.def:371's measurement text gain the
+2026-09-21 re-confirmation (the .def string is `--list-limits` output —
+its readers are re-pinned by grep in the same change). [REL-1] proceeds
+without it.
