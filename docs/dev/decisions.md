@@ -7956,3 +7956,32 @@ serves (3); the gcc shape serves (1).
 ([REL-1.3]): the guide documents the shape the beta ships with. The
 spec hunk is docs/spec/cli.md's usage line and `--source` section
 (D80); the README example changes with it.
+
+**Addendum (manager, 2026-09-21, from lane clicensus's census —
+docs/dev/lanes/clicensus_report.md).** (i) THE QUERY MODES: the rule is
+uniform — a literal PATTERN is always `--pattern`, so `--count-groups`
+becomes `--count-groups --pattern 'X'`; `--probe-ask WANT CONSTRUCT`'s
+CONSTRUCT is a syntax fragment, not a pattern and not a file, and
+becomes the flag's own second argument (flag-owned, consumed like
+`--explain SYNTAX`, never through the operand slot). A positional operand
+in a query mode is an error. (ii) `cli_operand` accepts N operands
+(today `--` routes everything to a slot that refuses a second one — the
+"several files" behaviour is a change to the slot, not a renaming);
+`--` keeps its meaning (end of options; what follows are operands, i.e.
+files). (iii) THE WRAPPER DOES NOT INSERT ANYTHING: `pcrec_run` is a
+pass-through that reads the last argument only to route hostile
+constructs to the watchdog — the census found no safe uniform
+insertion rule (it would wrongly touch `--explain`/`--list-source`
+values). Call sites migrate EXPLICITLY, `-- "$pat"` → `--pattern "$pat"`
+(the pattern stays last, so the hostile heuristic is undisturbed), by a
+scripted rewrite whose before/after census must reconcile site for site:
+510 wrapper-mediated calls / 78 files, ~200 direct shell lines, ~61
+`SAB_REACH` strings in tests/mech/sabotages/ (the population easiest to
+under-count), 25 Python subprocess files (a lower bound — enumerate),
+98 `--source`/`--target`/`--lib-path` occurrences / 7 files (69 in the
+rxtsource suite), 6 bare-positional calls in
+studies/form_char_twins/gen_base.sh (never run by make — migrate anyway,
+with a note). (iv) The `.rxt` `config` block's raw-flags line is a second
+parser caller; no corpus file carries a positional pattern there today
+(5 flags-only fixture lines) — the spec sentence says a pattern there is
+`--pattern` too.
