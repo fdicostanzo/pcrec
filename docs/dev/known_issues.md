@@ -31,7 +31,7 @@ dissolves the `\E`, and the class's own `]` is consumed as the high
 endpoint. `[0-\E9]` and `[0-\Ea]` are correct; only the bare-`\E`-then-`]`
 case was wrong.
 
-**THE FIX**: one shared helper, `cls_dissolve_len(cx, pos)` — "how many
+**THE FIX**: one shared helper, `cls_dissolve_len(cx, pos, in_quote)` — "how many
 bytes at `pos` are a dissolving quote marker with nothing between its open
 and its close" (2 for a bare `\E`, 4 for `\Q\E`, 0 for neither), called by
 both `cls_skip` (which mutates `cx->pos`) and `cls_peek_past_dash` (which
