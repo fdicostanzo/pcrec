@@ -4838,10 +4838,11 @@ const RxtSchemaRow *pcrec_rxt_schema_row(RxtSchemaScope scope, const char *kind,
 /* THE THREE STRUCTURE-LAYER PARAMETERS (format_design §1.2.1), each ONE
  * column read and no predicate: a generic reader FETCHES them rather than
  * hard-coding them, which is what `--list-schema`'s three row-set queries
- * are. Parameter 2 is the PAIR — `value: prose` AND `children: prose` —
+ * are. Parameter 1 (`opens_group`) has no accessor -- its two readers
+ * (`rxt_schema.c`, `schema_dump.c`) read `r->opens_group` directly.
+ * Parameter 2 is the PAIR — `value: prose` AND `children: prose` —
  * because reading `value` alone would leave a corrupted `children` with no
  * detector anywhere (S-R5's plant (b)). */
-int pcrec_rxt_schema_opens_group(const RxtSchemaRow *r);
 int pcrec_rxt_schema_prose_region(const RxtSchemaRow *r);
 int pcrec_rxt_schema_open_subtree(const RxtSchemaRow *r);
 
@@ -5103,10 +5104,6 @@ void       pcrec_rxt_source_free(RxtSource *src);
 /* `--list-source`: the file AS WRITTEN, one row per declaration and per
  * block, in file order, under docs/spec/table_contract.md. Caller frees. */
 char      *pcrec_rxt_source_tsv(const RxtSource *src);
-/* The dump's column count, so a checker asserts the header's own width
- * against the producer rather than against a literal it maintains by
- * hand (the D65 incident's lesson, table_contract.md's History). */
-size_t     pcrec_rxt_source_ncols(void);
 
 /* ---- [DD-13b.W1.3] THE DEFINITION SET — the composer's input ----------
  *
@@ -5419,8 +5416,6 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse, bool collapse);
 
 void pcrec_nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
-
-bool pcrec_nfa_has_asserts(const Nfa *nfa);
 
 bool pcrec_nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
 
@@ -5847,8 +5842,6 @@ typedef struct {
 } GenNames;
 
 void pcrec_gen_names(Ctx *cx, GenNames *g);
-
-void pcrec_emit_abi_types(StrBuf *sb);
 
 /* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
  * one emitter for both engines so the two can never spell it differently

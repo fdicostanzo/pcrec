@@ -1,4 +1,4 @@
-# include_graph.py --out-matrix -- commit d0c8b4c220c1f0df42b1857749e9c01747a9eba4 -- generated 2026-09-19 -- rows 10 local_edges=99
+# include_graph.py --out-matrix -- commit ed15116d53f31c499b50d6ba69018362b6f1c8a7 -- generated 2026-09-21 -- rows 10 local_edges=100
 from_layer\to_layer	lib	core	enc	parse	ir	opt	gen	driver	dump	cli
 lib	0	0	0	0	0	0	0	0	0	0
 core	2	10	0	0	0	0	0	0	0	0
@@ -7,6 +7,6 @@ parse	2	24	2	13	0	0	0	0	0	0
 ir	0	2	2	0	0	0	0	0	0	0
 opt	0	14	1	0	0	0	0	0	0	0
 gen	0	3	2	0	0	0	0	0	0	0
-driver	0	1	1	0	0	0	0	0	0	0
+driver	0	2	1	0	0	0	0	0	0	0
 dump	3	7	0	1	0	0	0	0	0	0
 cli	1	2	1	0	0	0	0	0	0	0

@@ -1197,12 +1197,3 @@ bool pcrec_nfa_has_bot(const Nfa *nfa)
     return false;
 }
 
-/* True iff `nfa` carries any position assertion (N_BOT/N_EOL/N_BOT_M/N_EOL_M)
- * -- pcrec_nfa_has_bot's own EOL-inclusive sibling. */
-bool pcrec_nfa_has_asserts(const Nfa *nfa)
-{
-    for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_EOL ||
-            nfa->st[i].k == N_BOT_M || nfa->st[i].k == N_EOL_M) return true;
-    return false;
-}

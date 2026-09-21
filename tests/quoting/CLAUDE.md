@@ -11,6 +11,13 @@ was a scratch differential probe set, see the [M4-QUOTING] journal entry.
 
 ## Files
 
+- `k62_class_range_e.rxt` — NOT part of the D27-blinded corpus: an
+  implementation-authored regression pin for
+  docs/dev/known_issues.md K62 (a bare `\E` immediately after a class
+  range's dash, e.g. `[0-\E]`, was wrongly refused — only the four-byte
+  `\Q\E` spelling dissolved there). Oracle-verified against local
+  libpcre2 10.48-Homebrew (this box's own copy, not the 10.46
+  reference). 5 blocks, 16 cells.
 - `d27/*.rxt` — 9 corpus files, 52 blocks, 95 oracle-checked cells.
   Every block carries a `features` list naming `quoting` (the module is
   NOT in `std1`) PLUS any std1 module its pattern also uses — the .rxt

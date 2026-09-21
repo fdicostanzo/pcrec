@@ -1,0 +1,57 @@
+# K62 fix regression pins -- a bare `\E` (not just the four-byte `\Q\E`)
+# dissolving right after a range dash, inside a character class.
+#
+# Not part of the D27-blinded d27/ corpus: these are implementation-authored
+# regression pins for docs/dev/known_issues.md K62 (cls_peek_past_dash used
+# to recognise only `\Q\E`, so the dash-vs-literal lookahead on `[0-\E]` saw
+# a live backslash, committed to a range, and the class's own closing `]`
+# was consumed as the high endpoint -- "missing terminating ]" on a legal
+# two-member class). Oracle-verified against local libpcre2 10.48-Homebrew
+# (this box's libpcre2, per docs/dev/lanes/BOILERPLATE.md's box facts --
+# NOT the 10.46 reference oracle; K62's own repro was confirmed the same
+# way). Fixed by src/parse/parse.c's cls_dissolve_len, the one dissolution
+# rule cls_skip and cls_peek_past_dash now both read.
+
+# a bare \E right after the dash dissolves to nothing, so the dash has no
+# high endpoint and is itself a literal member -- {0, -}, matching PCRE2
+pattern [0-\E]
+features quoting
+m "0" 0 1
+m "-" 0 1
+n "1"
+n "9"
+
+# same shape, letter low endpoint -- {a, -}
+pattern [a-\E]
+features quoting
+m "a" 0 1
+m "-" 0 1
+n "b"
+
+# a bare \E in the MIDDLE of a range (between the dash and a real high
+# endpoint) dissolves too, so this is still the ordinary range 0-9, not
+# three literal members
+pattern [0-\E9]
+features quoting
+m "0" 0 1
+m "5" 0 1
+m "9" 0 1
+n "-"
+n "a"
+
+# \Q\E (the four-byte empty quote K62 says already worked) right after the
+# dash is the SAME shape as the first pattern above, oracle-verified here
+# too as the fix's own control -- both spellings must answer identically
+pattern [0-\Q\E]
+features quoting
+m "0" 0 1
+m "-" 0 1
+n "1"
+
+# negative control: a bare \E with the class never closed still refuses --
+# the fix must not turn a genuinely unterminated class into a compile
+pattern [0-\E
+features quoting
+# PCRE2 rejects this pattern too: error 106 (missing terminating ] for
+# character class) -- provenance only (D26), not a wording pin
+perr

@@ -13,7 +13,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K62 — [TOUR-3] review (lane tour3rev, 2026-09-20), pre-existing, module `quoting`: `[0-\E]` is REFUSED where PCRE2 compiles the two-member class {'0','-'}
 
-Status: `deferred`. Repro (CONFIRMED by the manager against local libpcre2
+**Status: FIXED 2026-09-21 (lane adm0921, ADMIN-0921 item 4).** Repro (CONFIRMED by the manager against local libpcre2
 10.48 with pcre2test — `/[0-\E]/` matches "0" and "-"; the repo's own 10.46
 record agrees: extension_design.md §16.1's order/dissolution line, the
 probe_qe.c F-x4 pin, check08_endpoints.c's step-1 comment):
@@ -29,12 +29,25 @@ dash-vs-literal lookahead) is transparent only to the four-byte `\Q\E` —
 so the lookahead sees the backslash, commits to a RANGE, `cls_skip` then
 dissolves the `\E`, and the class's own `]` is consumed as the high
 endpoint. `[0-\E9]` and `[0-\Ea]` are correct; only the bare-`\E`-then-`]`
-case is wrong. Tier: a clean REFUSAL of a legal pattern (no miscompile);
-nothing in tests/ pins pcrec's current answer. FIX SHAPE: make the two
-lookaheads agree on what a bare `\E` is (one dissolution rule, not two —
-memory `general mechanisms, not special cases`); pin `[0-\E]` = {0,-},
-`[a-\E]` = {a,-}, `[0-\E9]` = 0-9 oracle-verified in tests/quoting (or
-tests/classes). Small; a sonnet admin lane.
+case was wrong.
+
+**THE FIX**: one shared helper, `cls_dissolve_len(cx, pos)` — "how many
+bytes at `pos` are a dissolving quote marker with nothing between its open
+and its close" (2 for a bare `\E`, 4 for `\Q\E`, 0 for neither), called by
+both `cls_skip` (which mutates `cx->pos`) and `cls_peek_past_dash` (which
+only looks ahead), so the two cannot disagree about what dissolves — the
+`general mechanisms, not special cases` shape rather than a second
+narrower recognizer. `cls_peek_past_dash` previously recognised only the
+four-byte `\Q\E` spelling; it now reads the same rule `cls_skip` always
+did. Oracle-verified against local libpcre2 10.48-Homebrew (the box's own
+libpcre2, per the standing NOT-the-reference caveat) and pinned in
+`tests/quoting/k62_class_range_e.rxt` (outside the D27-blinded `d27/`
+corpus): `[0-\E]` = {0,-}, `[a-\E]` = {a,-}, `[0-\E9]` = 0-9, `[0-\Q\E]`
+= {0,-} (the pre-existing spelling, kept as the fix's own control), and
+the negative control `[0-\E` (never closed) still refuses. Neither
+`tests/reject/` nor any other corpus pinned the pre-fix refusal of
+`[0-\E]` (grepped for it — none found), so nothing needed re-pinning in
+the other direction.
 
 ## K61 — [TOUR-4], r61 F1, found 2026-09-20 (Fable's personal review of the five most complicated sections): `DFA_INVARIANT` in `src/ir/dfa.c` was `abort()`, contradicting `docs/spec/match_api.md`'s "It never `abort()`s the caller on the compile path" promise
 

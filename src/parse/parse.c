@@ -326,6 +326,50 @@ static void xskip(Ctx *cx)
  * bounded POSIX-bracket scan reads raw too (`(?xx)[[: alpha :]]` is PCRE2's
  * unknown-name 130, the spaces belong to the name). Single `x` NEVER
  * touches a class interior. */
+/* [K62 FIX] THE ONE DISSOLUTION RULE a bare `\E` and an immediately-empty
+ * `\Q\E` both answer to, read by cls_skip (which MUTATES cx->pos, below)
+ * and cls_peek_past_dash (which only LOOKS AHEAD, further down) so the two
+ * cannot disagree about what "in a class, at this byte, is there a quote
+ * marker with nothing between its open and its close" means. Before this
+ * helper existed cls_peek_past_dash recognised ONLY the four-byte `\Q\E`
+ * spelling, so its dash-vs-literal lookahead saw a live backslash at a
+ * bare `\E` and committed to a RANGE — `[0-\E]` then read the class's own
+ * `]` as the high endpoint and refused as an unterminated class (K62). A
+ * NON-empty `\Q` is never a candidate here: it is real content, opened
+ * only by p_class's own explicit check, never dissolved. Returns the
+ * number of bytes at `pos` this dissolves to nothing (2 for a bare `\E`,
+ * 4 for `\Q\E`, 0 for neither) — a length, not a mutation, so the mutating
+ * caller advances `cx->pos` itself and the lookahead advances its own
+ * local index.
+ *
+ * `in_quote` DISTINGUISHES THE TWO SPELLINGS AND MUST NOT BE DROPPED. A
+ * bare `\E` closes/dissolves regardless of whether a quote is open. A
+ * `\Q\E` does NOT — while a quote is ALREADY open (real content pending),
+ * its own `\` and `Q` are two ordinary quoted BYTES, not a nested open,
+ * and only the trailing `\E` closes; `cls_skip`'s caller always passes its
+ * live `cx->in_quote`. `cls_peek_past_dash` passes `false` unconditionally
+ * because its walk never enters a real (non-empty) quote in the first
+ * place — every dissolve it takes is itself immediately-empty, so there is
+ * no live quote state to carry between steps. Getting this backwards was
+ * measured live: `[\Qa\Q\E]` (quote opened once, `a`, then a nested `\Q`
+ * that is really the literal bytes `\` and `Q` followed by the real
+ * closing `\E`) lost its `\` and `Q` members entirely under a version of
+ * this helper that ignored `in_quote` and dissolved all four bytes as an
+ * empty nested quote — caught by tests/quoting/d27/charclass.rxt:52-53,
+ * which is why that file's own two cells are the regression witness for
+ * this rule and not merely incidental corpus coverage. */
+static size_t cls_dissolve_len(const Ctx *cx, size_t pos, bool in_quote)
+{
+    if (!pcrec_feature_enabled(FEAT_QUOTING)) return 0;
+    if (pos + 1 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'E')
+        return 2;
+    if (!in_quote &&
+        pos + 3 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'Q' &&
+        cx->pat[pos + 2] == '\\' && cx->pat[pos + 3] == 'E')
+        return 4;
+    return 0;
+}
+
 /* [M4-QUOTING] the class-interior twin of xskip's boundary transparency,
  * called at every position p_class might be about to read a NEW item from
  * (its own header comment lists them). A `\E` — closing an open quote OR
@@ -336,19 +380,21 @@ static void xskip(Ctx *cx)
  * loop's own explicit open is the range endpoint: `[a-\Q\Ez]` is measured
  * as the range a-z, i.e. the dash-lookahead and the high-endpoint read
  * (both call this function first) must see straight through it to the
- * real `z`. A NON-empty `\Q` is declined — real content, opened only by
- * p_class's own explicit check or (for a high endpoint) its own inline
- * mirror of it. While `in_quote` is true and NOT positioned at `\E`,
- * this returns immediately without touching xx's ws/tab deletion: every
- * byte there is quoted content, and xx must not delete it (design's own
- * semantics list item 5; no oracle probe needed beyond `(?x)\Q a b \E`
- * keeping its literal spaces, already measured for xskip above). */
+ * real `z`. Both spellings go through `cls_dissolve_len` (K62) so this
+ * function and its own lookahead sibling read one rule. A NON-empty `\Q`
+ * is declined — real content, opened only by p_class's own explicit check
+ * or (for a high endpoint) its own inline mirror of it. While `in_quote`
+ * is true and NOT positioned at a dissolving marker, this returns
+ * immediately without touching xx's ws/tab deletion: every byte there is
+ * quoted content, and xx must not delete it (design's own semantics list
+ * item 5; no oracle probe needed beyond `(?x)\Q a b \E` keeping its
+ * literal spaces, already measured for xskip above). */
 static void cls_skip(Ctx *cx)
 {
     for (;;) {
-        if (pcrec_feature_enabled(FEAT_QUOTING) &&
-            peekc(cx) == '\\' && peekc2(cx) == 'E') {
-            cx->pos += 2;
+        size_t dl = cls_dissolve_len(cx, cx->pos, cx->in_quote);
+        if (dl) {
+            cx->pos += dl;
             cx->in_quote = false;
             continue;
         }
@@ -356,14 +402,6 @@ static void cls_skip(Ctx *cx)
         if (cx->mods->xlevel >= 2) {
             int c = peekc(cx);
             if (c == ' ' || c == '\t') { cx->pos++; continue; }
-        }
-        if (pcrec_feature_enabled(FEAT_QUOTING) &&
-            peekc(cx) == '\\' && peekc2(cx) == 'Q' &&
-            cx->pos + 3 < cx->patlen && cx->pat[cx->pos + 2] == '\\' &&
-            cx->pat[cx->pos + 3] == 'E') {
-            cx->pos += 2;   /* the "\E" this uncovers is swept up by the
-                              * stray-\E branch above on the next spin */
-            continue;
         }
         return;
     }
@@ -379,9 +417,20 @@ static void cls_skip(Ctx *cx)
  * `[a-\Q\E]` is members {a,-} (the trailing-dash rule, reached only if this
  * lookahead sees past the empty quote to the real `]`) and `[a-\Q\Ez]` is
  * the range a-z (reached only if it sees past the empty quote to the real
- * `z`). A NON-empty `\Q` is not dissolved here — real content is a value,
+ * `z`). [K62 FIX] AND NOW THROUGH A BARE `\E` TOO, via the same
+ * `cls_dissolve_len` cls_skip calls — this function used to recognise only
+ * the four-byte `\Q\E` spelling, so `[0-\E]` saw a live backslash after
+ * the dash, committed to a range, and the class's own closing `]` was
+ * consumed as the high endpoint (K62: "missing terminating ]" on a legal
+ * two-member class). Measured now: `[0-\E]` is {0,-}, `[a-\E]` is {a,-}.
+ * A NON-empty `\Q` is not dissolved here — real content is a value,
  * not something to skip past — so this only removes exactly what cls_skip
- * itself would remove without touching cx->pos. */
+ * itself would remove without touching cx->pos. ALWAYS PASSES `in_quote =
+ * false` to `cls_dissolve_len`: every call site gates on `!cx->in_quote`
+ * before invoking this lookahead (a dash inside an open quote is already
+ * literal text, never a range operator), and the walk itself never enters
+ * a REAL quote — every dissolve it takes is itself immediately empty, so
+ * there is no live quote state for a later step to inherit. */
 static int cls_peek_past_dash(Ctx *cx)
 {
     size_t i = cx->pos + 1;
@@ -389,12 +438,8 @@ static int cls_peek_past_dash(Ctx *cx)
         if (cx->mods->xlevel >= 2)
             while (i < cx->patlen &&
                    (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
-        if (pcrec_feature_enabled(FEAT_QUOTING) &&
-            i + 3 < cx->patlen && cx->pat[i] == '\\' && cx->pat[i + 1] == 'Q' &&
-            cx->pat[i + 2] == '\\' && cx->pat[i + 3] == 'E') {
-            i += 4;
-            continue;
-        }
+        size_t dl = cls_dissolve_len(cx, i, false);
+        if (dl) { i += dl; continue; }
         break;
     }
     return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
