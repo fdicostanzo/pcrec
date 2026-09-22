@@ -8,21 +8,50 @@
 # particular regex construct's behavior — the same reason run.sh/driver.c
 # themselves live in tests/harness/ rather than under tests/base/.
 #
-# The two patterns and budgets below are the SAME cells
-# tests/vm/run_vm_tests.sh's own `build()` calls use to drive each bound to
-# its own limit (§4/§4.5 there): '(a*)*b' at --step-budget=50 for STEPS,
-# '((a)|b)*c' at --backtrack-frames=4 for FRAMES. That file exercises them
-# through its own C driver (`err_steps`/`err_frames`); this file exercises
-# the identical mechanism through the .rxt corpus's own vocabulary, which
-# before this commit had no way to assert a give-up at all (§10.3).
+# The two patterns and budgets below drive the SAME two bounds
+# tests/vm/run_vm_tests.sh's own `build()` calls do (§4/§4.5 there):
+# --step-budget=50 for STEPS, --backtrack-frames=4 for FRAMES. That file
+# exercises them through its own C driver (`err_steps`/`err_frames`); this
+# file exercises the identical mechanism through the .rxt corpus's own
+# vocabulary, which before this commit had no way to assert a give-up at
+# all (§10.3).
+#
+# [MECH-REACH fix, lane axesfix, 2026-09-22] THE TRAILING ANCHOR IS A
+# TWO-MEMBER CLASS, NOT THE BARE LITERAL 'b'/'c' run_vm_tests.sh USES,
+# and that is deliberate rather than cosmetic. [OPT-ANCHOR-VM]/[OPT-ENDWIN]/
+# [OPT-REQBYTE] (D119 batch 1) landed a whole-window `memchr` pre-check
+# for a pattern's one NECESSARY byte (src/opt/reqbyte.c); for the bare
+# '(a*)*b'/'((a)|b)*c' shapes that byte is 'b'/'c', and BOTH witness
+# subjects below are deliberately 'b'/'c'-free (that is what forces the
+# catastrophic backtracking these cells exist to exhaust a budget on). A
+# `.rxt` `pattern` block has NO directive that can deny a compiler axis
+# (`pcrec --list-schema`: the `pcrec` raw-flags line is `config`-scope
+# only, never `block`-scope; `RXTFLAGS` is the format's own escape hatch
+# for exactly this, but it is a RUN-WIDE env var with no per-file/per-block
+# form) — so unlike run_vm_tests.sh's own copies of these two witnesses,
+# which build with an explicit `-fno-req-byte`, this file cannot deny the
+# axis and reach its VM under bare default flags.
+#
+# The fix is at the PATTERN, not the flag: [OPT-REQBYTE] itself declines
+# on a class with more than one member (src/opt/reqbyte.c's own "safe
+# direction" arm — a class it cannot reduce to a single byte earns the
+# empty set, which disables the memchr entirely). Swapping the trailing
+# literal for a two-member class the subject still never satisfies
+# ('[bc]', '[cd]') keeps the identical catastrophic-backtracking shape
+# and the identical subjects/budgets, while making [OPT-REQBYTE] decline
+# for the WHOLE pattern regardless of axis flags — VERIFIED via
+# `--pattern '(a*)*[bc]'`/`--pattern '((a)|b)*[cd]' -fcomments`: both stamp
+# `RX_REQ_BYTE "none"`. This changes no directive, no line count and no
+# block count, so it moves none of tests/rxtsource/run_rxtsource_tests.sh's
+# RUNSH_*/CENSUS_* pins or verify_rxt.py's `gu`-line census.
 
-pattern (a*)*b
+pattern (a*)*[bc]
 engine vm
 budget steps=50
 budget frames=4096
 gu steps "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-pattern ((a)|b)*c
+pattern ((a)|b)*[cd]
 engine vm
 budget frames=4
 gu frames "aaaaaaaaaaaaaaaaaaaaa"
