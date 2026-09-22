@@ -84,6 +84,35 @@ the implementation's own record goes to `docs/dev/lanes/`.
   markdown tables.
 
 **The scripts carry the authoring session's scratchpad path in an `SP`
+## Not a cycle: the captures-via-DFA survey
+
+- `captures_via_dfa_survey.md` — **lane `capsurvey`, 2026-09-22**, Frank's
+  question *"I'd be interested in if anyone is capturing using dfa"*. A
+  SURVEY plus a fit analysis, filed here rather than in `docs/design/`
+  because it proposes no mechanism and ranks candidates for the loop the
+  way a cycle's analysis does. §2 covers ten engines/techniques (RE2,
+  rust `regex-automata`, Laurikari/TRE, re2c's TDFA(1), `regex-tdfa`,
+  .NET `NonBacktracking`, Go's `onepass`, Hyperscan, PCRE2's own DFA
+  matcher, and the derivative/streaming-parser family), each with its
+  disambiguation semantics, complexity, and whether it bails to a
+  backtracker; §2.12 separates first-hand sources from this lane's reading
+  and lists what it left uncertain. **Read §1 first**: pcrec ALREADY
+  implements the RE2/rust two-pass hybrid (`RX_VM_PREFILTER "hybrid"` /
+  `RX_VM_PREFILTER_LANG "exact"`), so the question is not whether to adopt
+  it but whether the DFA should assign the captures itself. Ranks the three
+  candidates against D119's engine constraint and the four standing design
+  lenses — the one-pass DFA first, (a)'s residual hard-end-bound second,
+  TDFA a recorded deferral — and ends with the two D77 measurements that
+  decide it.
+- `capsurvey_census.py`, `capsurvey_census.tsv` — that survey's §1.5
+  census: every `capability` pattern export compiled at the SHIPPED
+  DEFAULT (`--features all`) with the engine/prefilter/capture stamps and
+  the `--emit-ir` `prefilter` reason per row. Compile-side only, no
+  timing, no subject matched. Unlike the cycle-1 scripts it takes its
+  paths from the environment (`PCREC`, `BENCH`, `OUT`) and is runnable as
+  it stands.
+
+**The cycle-1 scripts carry the authoring session's scratchpad path in an `SP`
 constant at the top.** They are archived as the reproduction record, not as
 a runnable harness: re-point `SP` (and `stamps.py`'s `P`, the compiler
 path) before re-running any of them.

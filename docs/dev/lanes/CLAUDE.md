@@ -812,6 +812,49 @@ never edited afterwards.
   call sites could not have caught it and neither could a sweep built from
   the shipped population's two widths.
 
+- `capsurvey_report.md` — **capsurvey** (2026-09-22, opus; docs-only,
+  nothing under `src/`/`tests/`/`docs/spec/`, no timing, pcrec-bench
+  read-only). Delivers `docs/dev/optloop/captures_via_dfa_survey.md` plus
+  its census and 27 `REFERENCES.md` entries, answering Frank's *"I'd be
+  interested in if anyone is capturing using dfa"*. Read it for five
+  findings, of which the first reframes the brief. **F1: pcrec ALREADY
+  implements the RE2/rust two-pass hybrid** — the capture-erased
+  forward+reverse DFA pair hands the VM an exact anchored window and the VM
+  assigns the captures, which is that design line for line — so "adopt the
+  RE2 shape" is not a mechanism anyone can propose; the residual is that
+  the END the DFA computes exactly is consumed only as an MRL pruning
+  ceiling. **F2: and the tree has already ruled against taking that
+  residual** — `emit_vm.c:12199-12213` writes out the structural
+  span-equality argument and then declines it, because R21 split it into
+  "erasure STRUCTURAL, span-equality BELIEVED-WITH-GATE" after K17/K18; a
+  hard end bound would make a *believed* claim load-bearing in the
+  unsound direction, so the residual is a GATE question, not a design one.
+  **F3: the census's first cut was the wrong cut.** `RX_ENGINE` ×
+  `RX_VM_PREFILTER` reads "26 hybrid"; adding `RX_ENGINE_WHY` shows 26
+  patterns are VM *because of a capture group* and only 17 of those are on
+  the hybrid, while 10 of the 27 hybrid rows carry `RX_NCAPS 1` and assign
+  no groups at all — and those same 10 are exactly the rows where `mrl_win`
+  is false, so captures and an exact end coincide on this population and
+  nothing makes them coincide in general. Of the 9 capture-forced rows with
+  no prefilter, **7 are patterns no DFA can express**, leaving the hybrid's
+  genuinely unserved population at TWO, for [OPT-4.2]'s nullable reason
+  that `f2_rescue_split.md` already owns. **F5 is a citation lesson worth
+  the read**: two of sixteen `file:line` cites were wrong, and neither by
+  ordinary drift — one was copied from another document in this repository
+  and was exactly as stale as that document with nothing marking it, and
+  one was a line number read off an EMITTED ARTIFACT rather than the
+  emitter, which is precise, checkable, points at the wrong file, and
+  survives a "does this line exist" check (reading the real site then
+  showed there are TWO prune macros, not one). Ranking delivered:
+  **one-pass DFA first** (the only construction in the survey that gives
+  leftmost-first captures from a DFA, and `rx_match_anchored` is already
+  the anchored capture-assigning call it would replace), (a)'s residual
+  second, **TDFA a recorded deferral** (it replaces determinization AND
+  minimization, and its published disambiguation policies are
+  leftmost-greedy or POSIX — neither is PCRE preference; re-open condition
+  named as a fragment-level tagged machine, which `APPROACH.md` §2 tier 3
+  already calls "a later upgrade"). Nothing owed.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `w3_report.md` — [REVW.3] WAVE 3 (LAYERING) (2026-09-19, lane w3, opus):
