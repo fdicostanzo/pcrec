@@ -315,7 +315,15 @@ The header row is
 `#name<TAB>value<TAB>unit<TAB>kind<TAB>override<TAB>anchor<TAB>desc`, and
 `override` is the column a caller acts on: `flag` means a CLI flag or a
 `pcrec_options` field moves this number per compile, `-D` means only
-pcrec's own build does, `none` means nothing does. NULL on allocation
+pcrec's own build does (never a caller lever), `flag+-D` means BOTH exist —
+a caller flag moves it per compile AND a build-time `-D` moves the
+built-in default that flag's own floor is measured against
+(`PCREC_MAX_AUTO_DFA_ELEMS`/`PCREC_MAX_VM_EMIT_CODE_BYTES`/
+`PCREC_MAX_EMIT_BYTES`/`PCREC_DEFAULT_WARN_EMIT_BYTES` — [LIM-OVR],
+2026-09-22: these four rendered plain `-D` before this fix, which is
+false for a row a caller CAN move; `PCREC_ANCHORED_MAX_STATES` and
+`PCREC_SIZE_TERM_THRESHOLD` are the two rows for which `-D` is still
+accurate) — `none` means nothing does. NULL on allocation
 failure. It is the same table `pcrec --list-limits` prints, from the same
 call.
 

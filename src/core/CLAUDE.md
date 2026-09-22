@@ -500,7 +500,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   attempt compile.c's retry reads it after. K38-precedent margin over the
   76-byte worst-case text src/ir/dfa.c's two overflow sites emit.
   **[LIM-2] N1 adds `PCREC_MAX_AUTO_DFA_ELEMS`** (30,000,000; `limits.def`,
-  home LIMITS_H, override BUILD_D + a runtime raise flag — the two-lever
+  home LIMITS_H, override FLAG_D (was BUILD_D until [LIM-OVR], 2026-09-22 —
+  see that row's limits.def comment) + a runtime raise flag — the two-lever
   shape `PCREC_MAX_VM_EMIT_CODE_BYTES` already has, for the identical
   reason: `tests/codegen/run_n1_budget.sh`'s reference compiler needs a
   `-D`-lowered build to drive its positive control, since the natural

@@ -1776,8 +1776,9 @@ shipped default, 30,000,000, sits above every corpus/bench artifact's
 measured spend — `docs/dev/lanes/n1budget_report.md`) and the CLI override
 is raise-only, so the branch is driven through a REFERENCE COMPILER built
 with `-DPCREC_MAX_AUTO_DFA_ELEMS` lowered at pcrec's own compile time (a
-`BUILD_D` row for precisely this reason, matching
-`PCREC_MAX_VM_EMIT_CODE_BYTES`'s own precedent).
+`FLAG_D` row for precisely this reason — was `BUILD_D` until [LIM-OVR]
+(2026-09-22) split the token, since this row also has a real caller-facing
+raise flag — matching `PCREC_MAX_VM_EMIT_CODE_BYTES`'s own precedent).
 
 **THE WITNESS AND ITS BISECTED THRESHOLDS.** `a{0,2000}` is ordinary,
 capture-free and DFA-eligible; `studies/n1budget/n1_measure` reports 6,000

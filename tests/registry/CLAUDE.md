@@ -361,7 +361,7 @@ directory asserts that the description and the shipped parser actually agree.
   lever; never point these at a file under this repo's own tracked tree)
 - **limits_check.sh** — [LIM-1] (D90, 2026-08-30): the numeric-limits
   table's own check, the SIXTH registry-family TSV surface's independent
-  side. Three parts: the `--list-limits` row count pinned by NAME
+  side. Four parts (part 4 added [LIM-OVR], 2026-09-22): the `--list-limits` row count pinned by NAME
   MANIFEST (58 today, not a bare number); every ANCHORED row's value, comma-
   grouped, found within its own cited `docs/spec/limits.md` section
   (forward only — that document's prose is full of MEASURED WITNESS
@@ -406,6 +406,39 @@ directory asserts that the description and the shipped parser actually agree.
   carries none of the vocabulary the pre-D107 filter keyed on, which is
   why the row could not be written until the inversion landed: the
   detector had no failing direction for its own central defect.
+
+  **Part 4, OVERRIDE HONESTY** ([LIM-OVR], 2026-09-22, the manager's O-18
+  §3(a) finding): the token BUILD_D's own rendering, `-D`, carries a claim
+  — "only a build-time `-D` moves it; never a caller lever" — and that
+  claim was FALSE for four of its six rows: `PCREC_MAX_AUTO_DFA_ELEMS`/
+  `PCREC_MAX_VM_EMIT_CODE_BYTES`/`PCREC_MAX_EMIT_BYTES` each have a real
+  `cli/main.c` raise-only flag (`raise_only_limits[]`) on top of the
+  `-D`-movable built-in default, and `PCREC_DEFAULT_WARN_EMIT_BYTES` has a
+  real (non-raise-only) `--warn-emit-bytes=` flag on the same shape — a
+  caller reading `-D` at face value had no way to learn the flag existed.
+  The fix is a NEW token, `FLAG_D`, carrying `BUILD_D`'s identical
+  `-D`-movable-default generation machinery (limits.h's dispatch macros)
+  but rendering `flag+-D` in the dump; `BUILD_D`'s own rendering is
+  UNCHANGED and still true for its two remaining rows
+  (`PCREC_ANCHORED_MAX_STATES`, `PCREC_SIZE_TERM_THRESHOLD`), which really
+  have no caller lever. Part 4 is what would have caught the drift: it
+  reads `cli/main.c`'s `raise_only_limits[]` table BY GREP (never
+  `limits.def`'s own override token — the K35 "a control must not share a
+  source with what it controls" rule, part 3's own discipline applied
+  here) plus one named, live-verified bespoke-flag site
+  (`--warn-emit-bytes=`), and cross-checks BOTH directions against every
+  `-D`/`flag+-D` dump row — a row with a real lever whose override does
+  not say so, or a row claiming one it does not have. Deliberately scoped
+  to the `BUILD_D`/`FLAG_D` population (six rows) rather than to every
+  row rendering plain `flag` (eleven), since the other five FLAG rows have
+  no `-D` machinery at all and are a different, unchartered question.
+  Sabotage row S208 was RE-AIMED in the same change (its `SAB_BEFORE`/
+  `SAB_AFTER` anchors quote `PCREC_MAX_VM_EMIT_CODE_BYTES`'s full row
+  text, which moved from `BUILD_D` to `FLAG_D` plus a derivation note) and
+  re-verified DETECTED at the same predicted cell. Sabotage-validated live
+  (scratch: reverted `PCREC_MAX_EMIT_BYTES`'s token to `BUILD_D`, rebuilt,
+  reverted before commit): part 4 fails naming the row and the exact
+  [LIM-OVR] shape; every other part stays green.
 
 ## What it asserts
 

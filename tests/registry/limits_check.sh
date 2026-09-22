@@ -7,7 +7,7 @@
 # §3: "a control must not share a source with what it controls" — this
 # script's second half reads the TREE, never limits.def, for that reason).
 #
-# THREE PARTS:
+# FOUR PARTS:
 #
 #   1. ROW COUNT, pinned by NAME MANIFEST rather than by a bare number
 #      (docs/dev/learnings.md §3: "exact counts disarm themselves via their
@@ -45,6 +45,18 @@
 #      constants") or an API sentinel value (not the limit itself). A row
 #      that is neither is the sabotage shape S208 exists to catch: a new
 #      policy number introduced as a bare literal instead of a table row.
+#   4. OVERRIDE HONESTY ([LIM-OVR], 2026-09-22): does the dump's `override`
+#      column agree with cli/main.c's ACTUAL flag surface — the drift O-18
+#      §3(a) found (four rows rendered `-D`, "never a caller lever", while
+#      each one has a real cli/main.c flag) and that nothing in this file
+#      checked before. Independent-source discipline again: this part reads
+#      cli/main.c's `raise_only_limits[]` table BY GREP, plus one named
+#      bespoke flag site verified the same way, never limits.def's own
+#      claim about itself. Two directions: every row whose override
+#      CONTAINS "flag" must have a real cli/main.c site, and every row with
+#      a real site must claim one. Scoped to the FLAG_D/BUILD_D population
+#      specifically (the six rows the token split concerns), not to every
+#      "flag" row in the table — see the arm's own header for why.
 #
 # Usage: bash tests/registry/limits_check.sh
 # Env: PCREC (default build/pcrec), LIMITSMD (default docs/spec/limits.md),
@@ -509,6 +521,93 @@ if [ -z "$unreached" ]; then
     ok "[code-reach] every one of the $(printf '%s\n%s\n' "$LIMIT_ALLOWLIST" "$NONLIMIT_ALLOWLIST" | grep -c .) allowlist names was actually reached by the scan — no entry is excusing a constant that is no longer there, and none is masking a site the scan stopped reaching"
 else
     bad "[code-reach] allowlist name(s) the scan never reached:$unreached — either the constant is gone (drop the entry) or the scan no longer reaches its site (fix the scan, do not drop the entry)"
+fi
+
+# ---------------------------------------------------------------------------
+# 4. OVERRIDE HONESTY: the dump's override column vs cli/main.c's ACTUAL
+#    caller-facing flag surface ([LIM-OVR], O-18 §3(a))
+# ---------------------------------------------------------------------------
+# BUILD_D's own rendering ("-D") carries a CLAIM — "only a build-time -D
+# moves it; never a caller lever" — and this arm is what would have caught
+# it being false: it reads cli/main.c directly (never limits.def's own
+# override token, K35's "a control must not share a source with what it
+# controls") and cross-checks BOTH directions against the dump.
+#
+# Scoped to the FLAG_D/BUILD_D population (the six rows the [LIM-OVR] token
+# split concerns), not to every "flag"-rendering row in the table: eleven
+# rows render bare "flag" and five of those six have no `-D` machinery at
+# all (a caller flag with no build-time-movable default is not this arm's
+# question), so widening the manifest below to cover them would be a
+# different, larger claim this row's charter never asked for.
+
+# (a) cli/main.c's raise_only_limits[] table, extracted independently of
+#     limits.def -- every PCREC_* token inside the array literal (the flag
+#     strings and pcrec_options/offsetof text contain none).
+RAISE_ONLY_NAMES="$(awk '
+    /raise_only_limits\[\][[:space:]]*=[[:space:]]*\{/ { f = 1; next }
+    f && /^\};/ { f = 0 }
+    f { print }
+' "$ROOT_DIR/cli/main.c" | grep -oE 'PCREC_[A-Z0-9_]+' | sort -u)"
+
+EXPECT_RAISE_ONLY="$(cat <<'EOF' | sort
+PCREC_MAX_VM_EMIT_CODE_BYTES
+PCREC_MAX_EMIT_BYTES
+PCREC_MAX_NFA_STATES
+PCREC_MAX_DFA_STATES_GOTO
+PCREC_MAX_SUBSET_ELEMS
+PCREC_MAX_AUTO_DFA_ELEMS
+EOF
+)"
+if [ "$RAISE_ONLY_NAMES" = "$EXPECT_RAISE_ONLY" ]; then
+    ok "[override-src] cli/main.c's raise_only_limits[] table names exactly the 6 expected limits.def rows"
+else
+    bad "[override-src] cli/main.c's raise_only_limits[] table drifted from the expected 6-row manifest -- a raise-only flag was added, removed or renamed with this check's manifest left behind. Diff:"
+    diff <(printf '%s\n' "$EXPECT_RAISE_ONLY") <(printf '%s\n' "$RAISE_ONLY_NAMES") >&2 || true
+fi
+
+# (b) the one BESPOKE (non-table) caller lever among the FLAG_D population:
+#     --warn-emit-bytes= sets pcrec_options.warn_emit_bytes directly in
+#     cli_parse's own else-if chain, never through the table above, because
+#     it is SETTABLE rather than raise-only (docs/spec/limits.md's "the one
+#     size option that is not raise-only" section) and so does not fit that
+#     table's shape. Verified live rather than assumed.
+BESPOKE_FLAG_NAMES=""
+if grep -q '"--warn-emit-bytes=' "$ROOT_DIR/cli/main.c"; then
+    ok "[override-src] cli/main.c still carries the bespoke --warn-emit-bytes= flag (PCREC_DEFAULT_WARN_EMIT_BYTES's caller lever)"
+    BESPOKE_FLAG_NAMES="PCREC_DEFAULT_WARN_EMIT_BYTES"
+else
+    bad "[override-src] --warn-emit-bytes= is gone from cli/main.c -- PCREC_DEFAULT_WARN_EMIT_BYTES's FLAG_D override is now UNVERIFIED against a real site"
+fi
+
+CALLER_LEVER_NAMES="$(printf '%s\n%s\n' "$RAISE_ONLY_NAMES" "$BESPOKE_FLAG_NAMES" | grep -v '^$' | sort -u)"
+
+# (c) cross-check every dump row whose RENDERED override is "-D" or
+#     "flag+-D" (the two spellings override_name() gives BUILD_D/FLAG_D --
+#     see limits_dump.c), BOTH directions -- this is what would have
+#     caught [LIM-OVR]: a row with a real caller-facing lever whose
+#     override does not say so, or a row claiming one it does not have.
+FLAGD_ROWS="$(printf '%s\n' "$DATA" | awk -F'\t' '$5 == "-D" || $5 == "flag+-D"')"
+n_flagd="$(printf '%s\n' "$FLAGD_ROWS" | grep -vc '^$' || true)"
+n_flagd_honest=0
+mismatch=0
+while IFS=$'\t' read -r name value unit kind override anchor desc; do
+    [ -z "$name" ] && continue
+    has_lever=0
+    grep -qxF "$name" <<< "$CALLER_LEVER_NAMES" && has_lever=1
+    if [ "$has_lever" -eq 1 ] && [ "$override" != "flag+-D" ]; then
+        bad "[override-honesty] $name has a REAL caller-facing flag in cli/main.c but its dump override is '$override' -- the exact [LIM-OVR] shape, a hidden lever"
+        mismatch=$((mismatch + 1))
+    elif [ "$has_lever" -eq 0 ] && [ "$override" = "flag+-D" ]; then
+        bad "[override-honesty] $name's dump override is 'flag+-D' (claims a caller flag) but no cli/main.c site (table or bespoke) was found for it -- a stale claim"
+        mismatch=$((mismatch + 1))
+    else
+        n_flagd_honest=$((n_flagd_honest + 1))
+    fi
+done <<< "$FLAGD_ROWS"
+if [ "$mismatch" -eq 0 ]; then
+    n_flag_plus_d="$(awk -F'\t' '$5=="flag+-D"' <<< "$FLAGD_ROWS" | grep -vc '^$')"
+    n_plain_d="$(awk -F'\t' '$5=="-D"' <<< "$FLAGD_ROWS" | grep -vc '^$')"
+    ok "[override-honesty] all $n_flagd_honest '-D'/'flag+-D' rows agree with cli/main.c's actual flag surface, both directions ($n_flag_plus_d render 'flag+-D' with a real lever each, $n_plain_d render plain '-D' with none)"
 fi
 
 echo
