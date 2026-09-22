@@ -17,6 +17,10 @@ Process and status documents for pcrec. The architecture itself lives in
   `match_api.md`, the as-built match-API contract, graduated from
   `docs/design/match_api_m4.md`/`engine_m4.md` per D40. See `spec/CLAUDE.md`
   for the charter and file list.
+- `guide/` — the human use-case GUIDE tier (D80): short, task-oriented
+  chapters for someone USING pcrec, pointing at `spec/` for every exact
+  detail rather than restating it. Lower priority than `spec/`, "basically
+  maintained". Chartered as [GUIDE-1]/[REL-1.3]. See `guide/CLAUDE.md`.
 
 ## Files
 
