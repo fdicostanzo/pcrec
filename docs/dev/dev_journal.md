@@ -24802,3 +24802,20 @@ shelved [FEAT-GLOBAL-RETIRE]; S111's anchor re-derived; the digest's
 "std1 unconditionally" claim corrected. Gate on the merged main
 launching; pushed so CI doubles as the Linux gate (tests/thread runs
 there — the D19 TSan confirmation). Lane rel13 (sonnet) starts the guide.
+
+**23:0x — gate at 6a54b0ac GREEN (41/41, nm probe only; RUN-STAMP's first
+live line: tree=b8a4171b DIRTY — the digest-fix commit landed mid-run,
+docs-only, and the size log is written by the run itself; cifix moved
+the dirty capture before the run). The guide MERGED (rel13, 8 chapters,
+every snippet run). CI: run 1 CANCELLED by my own 21:20 push (the
+workflow's supersede rule — lesson: no push to main while a CI
+measurement is in flight); run 2 = THE FIT MEASUREMENT: make test real
+39m17s, 41/41 sections on ubuntu-latest — IT FITS; red on environment
+only (apt libpcre2 10.42 vs the 10.46 pins → 60 PC-3 reds; shallow
+clone lost cb546b3a; C3 pins keyed on uname; the stamp's dirty flag).
+cifix MERGED: pcre2 10.46 from source + cache, a version floor that
+SKIPs loudly, fetch-depth 0, C3 keyed on python version, the stamp
+fix; rehearsed the from-source build end to end in scratch. limits.md
+§4's stale positional command fixed at landing. Pushing → CI run 3.
+[REL-1] rows left: 1.8 the tag, 1.9 [REL-META]'s disposition (Frank's
+yes), 1.6's badge after run 3.

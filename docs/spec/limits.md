@@ -379,7 +379,7 @@ rather than carried forward from the ruling.
 **Command** (from a clean build):
 
 ```
-build/pcrec -p rx --features all --emit-main -o rec.c '^(a(?1)?b)$'
+build/pcrec -p rx --features all --emit-main -o rec.c --pattern '^(a(?1)?b)$'
 cc -O2 -o rec rec.c
 ./rec "$(python3 -c "import sys;n=342;sys.stdout.write('a'*n+'b'*n)")"   # 684-byte subject
 ./rec "$(python3 -c "import sys;n=343;sys.stdout.write('a'*n+'b'*n)")"   # 686-byte subject
