@@ -28,7 +28,28 @@
  * D37 (docs/dev/decisions.md) ADDS frozen named sets on top of the mask
  * machinery above, WITHOUT changing it: a named set is just a fixed list of
  * module names that expands to a mask through the same registry lookup an
- * explicit list already uses. See STD1_MODULES and g_named_sets below. */
+ * explicit list already uses. See STD1_MODULES and g_named_sets below.
+ *
+ * [REL-1.11] (2026-09-21) `pcrec_options.features` promoted a LIBRARY
+ * channel for this spec vocabulary (D20's own "promote later" clause).
+ * D19 (thread-safety) is why `pcrec_compile` does NOT simply call
+ * `pcrec_enabled_set_spec` below on every call: that would make the
+ * process-global a per-call WRITE from every concurrent compile, which is
+ * exactly the race D19 exists to rule out (one thread's install racing
+ * another thread's mid-parse read of a DIFFERENT spec). Instead
+ * `pcrec_enabled_resolve_spec` (bottom of this file) is the SAME
+ * validation/expansion logic, factored out to touch no global state at
+ * all; `compile_driver` (src/core/compile.c) calls it once per compile and
+ * stores the result on that compile's own `Ctx` (`Ctx.enabled_features`,
+ * internal.h), which `pcrec_feature_enabled` now takes explicitly rather
+ * than reading a global. Everything below this comment is UNCHANGED and
+ * stays the mechanism for this file's OTHER customers, none of which goes
+ * through `pcrec_compile`: the CLI's own query surfaces
+ * (--probe-ask/--count-groups/--list-source/--explain, installed once in
+ * cli/main.c before mode dispatch, exactly as before) and
+ * `--list-syntax`'s built-status probe (src/dump/syntax_dump.c's
+ * save/force/restore dance) — both keep reading `pcrec_enabled_mask()`
+ * into their own throwaway `Ctx`es. */
 
 #include <stdio.h>
 #include <string.h>
@@ -51,10 +72,14 @@ static char g_enabled_label[24]   = "none";
 static char g_enabled_modules[512] = "";
 
 /* The membership question the gate asks. A zero mask (base/rejected rows)
- * is never "enabled": there is nothing to switch. */
-bool pcrec_feature_enabled(unsigned featmask)
+ * is never "enabled": there is nothing to switch. [REL-1.11]: `enabled_mask`
+ * is the caller's OWN resolved mask (a compile's `Ctx.enabled_features`, or
+ * a query surface's own `pcrec_enabled_mask()` read) — this function no
+ * longer reads `g_enabled_features` itself, which is what makes it safe to
+ * call with a mask that was never installed anywhere. */
+bool pcrec_feature_enabled(unsigned enabled_mask, unsigned featmask)
 {
-    return featmask != 0 && (g_enabled_features & featmask) == featmask;
+    return featmask != 0 && (enabled_mask & featmask) == featmask;
 }
 
 /* The full FEAT_* mask currently installed by install() -- read-only after
@@ -215,62 +240,98 @@ static void install(unsigned mask, const char *label)
     render_modules(mask, g_enabled_modules, sizeof g_enabled_modules);
 }
 
-/* Parse an enabled-set spec: a comma-separated list of module names exactly
- * as `--list-syntax`'s module column spells them, "all", "none" / the empty
- * string, or (D37) a frozen named set's own name ("std1" today). Unknown
- * names are refused BY NAME — a typo must not silently enable nothing (the
- * --flavour rule, applied here). Returns 0 and installs the set, or -1 with
- * `err` filled and the set UNCHANGED. */
-int pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz)
+/* [REL-1.11] THE PURE RESOLVER: `pcrec_enabled_set_spec`'s own validation
+ * and expansion logic, factored out to write NOTHING — no global, no
+ * static buffer — so `compile_driver` can call it once per
+ * `pcrec_compile()` with no D19 hazard (see this file's own top comment
+ * and internal.h's declaration). Every rule below is copied verbatim from
+ * the pre-[REL-1.11] `pcrec_enabled_set_spec` body: same vocabulary
+ * (`all`/`none`/empty/a D37 named set/a comma list), same order of
+ * checks, same unknown-module wording. `render_modules` (above) is
+ * already pure; this function is what makes the REST of spec resolution
+ * pure alongside it. */
+int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
+                                char *label_out, size_t label_sz,
+                                char *modules_out, size_t modules_sz,
+                                char *err, size_t errsz)
 {
     if (!spec) spec = "";
+    unsigned mask = 0;
+    const char *label;
 
     if (!strcmp(spec, "all")) {
-        unsigned mask = 0;
         for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
             size_t n;
             const RegRow *rows = pcrec_registry(kinds[k], &n);
             for (size_t i = 0; i < n; i++) mask |= rows[i].feature;
         }
-        install(mask, "all");
-        return 0;
-    }
-    if (!*spec || !strcmp(spec, "none")) {
-        install(0, "none");
-        return 0;
+        label = "all";
+    } else if (!*spec || !strcmp(spec, "none")) {
+        mask = 0;
+        label = "none";
+    } else {
+        /* D37 named-set resolution: a spec that is EXACTLY one known frozen
+         * set's name (no comma, nothing composed with it) expands to that
+         * set's module list. Checked before the explicit-list parse below,
+         * so "std1" resolves as a SET rather than being looked up as a
+         * (nonexistent) module name. */
+        const char *named = NULL;
+        for (size_t s = 0; s < sizeof g_named_sets / sizeof g_named_sets[0]; s++) {
+            if (strcmp(spec, g_named_sets[s].name) != 0) continue;
+            for (size_t i = 0; i < g_named_sets[s].nmodules; i++) {
+                const char *m = g_named_sets[s].modules[i];
+                mask |= find_module_bits(m, strlen(m));
+            }
+            named = g_named_sets[s].name;
+            break;
+        }
+        if (named) {
+            label = named;
+        } else {
+            const char *p = spec;
+            while (*p) {
+                const char *comma = strchr(p, ',');
+                size_t len = comma ? (size_t)(comma - p) : strlen(p);
+                unsigned bits = find_module_bits(p, len);
+                if (!bits) {
+                    snprintf(err, errsz, "unknown module '%.*s' (names are "
+                             "--list-syntax's module column; also 'all', "
+                             "'none', or a named set: std1)", (int)len, p);
+                    return -1;
+                }
+                mask |= bits;
+                p = comma ? comma + 1 : p + len;
+            }
+            label = "explicit";
+        }
     }
 
-    /* D37 named-set resolution: a spec that is EXACTLY one known frozen
-     * set's name (no comma, nothing composed with it) expands to that
-     * set's module list. Checked before the explicit-list parse below, so
-     * "std1" resolves as a SET rather than being looked up as a
-     * (nonexistent) module name. */
-    for (size_t s = 0; s < sizeof g_named_sets / sizeof g_named_sets[0]; s++) {
-        if (strcmp(spec, g_named_sets[s].name) != 0) continue;
-        unsigned mask = 0;
-        for (size_t i = 0; i < g_named_sets[s].nmodules; i++) {
-            const char *m = g_named_sets[s].modules[i];
-            mask |= find_module_bits(m, strlen(m));
-        }
-        install(mask, g_named_sets[s].name);
-        return 0;
-    }
+    *mask_out = mask;
+    snprintf(label_out, label_sz, "%s", label);
+    render_modules(mask, modules_out, modules_sz);
+    return 0;
+}
 
-    unsigned mask = 0;
-    const char *p = spec;
-    while (*p) {
-        const char *comma = strchr(p, ',');
-        size_t len = comma ? (size_t)(comma - p) : strlen(p);
-        unsigned bits = find_module_bits(p, len);
-        if (!bits) {
-            snprintf(err, errsz, "unknown module '%.*s' (names are "
-                     "--list-syntax's module column; also 'all', 'none', "
-                     "or a named set: std1)", (int)len, p);
-            return -1;
-        }
-        mask |= bits;
-        p = comma ? comma + 1 : p + len;
-    }
-    install(mask, "explicit");
+/* Parse an enabled-set spec: a comma-separated list of module names exactly
+ * as `--list-syntax`'s module column spells them, "all", "none" / the empty
+ * string, or (D37) a frozen named set's own name ("std1" today). Unknown
+ * names are refused BY NAME — a typo must not silently enable nothing (the
+ * --flavour rule, applied here). Returns 0 and installs the set, or -1 with
+ * `err` filled and the set UNCHANGED. [REL-1.11]: now a thin caller of the
+ * pure resolver above plus the global install — see this file's top
+ * comment for why the two are separate functions. */
+int pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz)
+{
+    unsigned mask;
+    char label[sizeof g_enabled_label];
+    char modules[sizeof g_enabled_modules];
+    if (pcrec_enabled_resolve_spec(spec, &mask, label, sizeof label,
+                                    modules, sizeof modules, err, errsz) != 0)
+        return -1;
+    /* `install()` re-renders the module list from `mask` rather than
+     * copying `modules` above — the same render_modules call, done twice,
+     * which is cheap and keeps `install()` the ONE writer exactly as its
+     * own comment states (unchanged by this refactor). */
+    install(mask, label);
     return 0;
 }

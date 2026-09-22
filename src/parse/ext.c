@@ -72,11 +72,18 @@
  *
  * NON-STATIC since MOD-0.4: `pcrec_ext_verb` moved out to mod_verbs.c and
  * still needs this exact gate, so this is now the ONE definition two TUs
- * share (declared in internal.h) rather than a second copy risking drift. */
-ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want)
+ * share (declared in internal.h) rather than a second copy risking drift.
+ *
+ * [REL-1.11] `enabled_mask` is the CALLER's own resolved mask — every call
+ * site here passes `cx->enabled_features`, the per-compile mask
+ * `compile_driver` resolves from `pcrec_options.features` with no global
+ * write (internal.h's own comment on `Ctx.enabled_features` has the D19
+ * argument). */
+ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want)
 {
     if (want == WANT_RESULT &&
-        !(r && r->status == RS_MODULE && pcrec_feature_enabled(r->feature)))
+        !(r && r->status == RS_MODULE &&
+          pcrec_feature_enabled(enabled_mask, r->feature)))
         return WANT_VERDICT;
     return want;
 }
@@ -222,7 +229,7 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
      * answers at the level the CALLER asked, whatever the enabled set —
      * per-port gating, §14.3's split. Module ports keep the demoted level. */
     ExtWant asked = want;
-    want = pcrec_ext_gate(r, want);
+    want = pcrec_ext_gate(cx->enabled_features, r, want);
 
     if (!r) {
         if (in_class) REFUSE(at, "unknown escape \\%c in class", c);
@@ -398,7 +405,7 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     const RegRow *r = pcrec_registry_arbitrate(RK_GROUP, c2, tl, avail, &amb);
     *elected = r;   /* MOD-0.7 slice 2 */
     int shown = c2 < 0 ? '?' : c2;
-    want = pcrec_ext_gate(r, want);
+    want = pcrec_ext_gate(cx->enabled_features, r, want);
 
     /* Only reachable by deleting the catch-all row, which tests/registry's
      * hand-written manifest also refuses; a NULL deref is not an acceptable
@@ -593,7 +600,7 @@ static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
     *elected = r;   /* MOD-0.7 slice 2; NULL on the decline below */
     if (!r) DECLINE();
-    want = pcrec_ext_gate(r, want);
+    want = pcrec_ext_gate(cx->enabled_features, r, want);
 
     /* K4, fixed 2026-08-10 (FIX-2): the three-rule delimiter-pair scan, which
      * used to run to the end of the PATTERN rather than the end of the CLASS

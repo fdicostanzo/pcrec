@@ -194,35 +194,39 @@ static void emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
  * human, the macros for a machine (or a future pcrec: pass
  * PCREC_FEATURE_MODULES's value to --features and get the same gate state
  * this artifact was built with, even if a named set's own meaning, or
- * "all"'s membership, has since changed). Both values come from
- * src/parse/enabled.c's OWN render of the currently-installed set — there
- * is no second copy of "what does this mask mean as names" here. Every
- * value in play (a named set's name, "all"/"none"/"explicit", and every
- * module name) comes from pcrec's own fixed vocabulary, never from the
- * pattern text, so unlike emit_pattern_comment above nothing here needs
- * escaping. */
-static void emit_feature_comment(StrBuf *sb)
+ * "all"'s membership, has since changed). [REL-1.11]: both values come
+ * from THIS COMPILE's own `Ctx.enabled_features`-resolution (`cx->
+ * enabled_label`/`enabled_modules`, resolved once by `compile_driver` —
+ * internal.h's own comment), not from src/parse/enabled.c's process-global
+ * getters any more, which is what makes a compile's stamp depend only on
+ * that compile's own `pcrec_options.features` and never on a DIFFERENT
+ * concurrent compile's. Every value in play (a named set's name,
+ * "all"/"none"/"explicit", and every module name) comes from pcrec's own
+ * fixed vocabulary, never from the pattern text, so unlike
+ * emit_pattern_comment above nothing here needs escaping. */
+static void emit_feature_comment(Ctx *cx, StrBuf *sb)
 {
-    const char *label = pcrec_enabled_set_label();
-    const char *mods = pcrec_enabled_set_modules();
+    const char *label = cx->enabled_label;
+    const char *mods = cx->enabled_modules;
     pcrec_sb_cmt_open(sb, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(sb, "/* Feature set: %s (modules: %s) */\n",
               label, *mods ? mods : "none");
     pcrec_sb_cmt_close(sb);
 }
 
-/* Macros, ONCE PER FILE like the ABI-types block below — the enabled set is
- * process-wide (one set for the whole compile), so every engine a future
- * multi-engine file carries (OS-0b) shares one stamp. Lives only in the .c:
- * a paired .h gets the comment (emit_header, matching its existing
+/* Macros, ONCE PER FILE like the ABI-types block below — one set per
+ * compile ([REL-1.11]: `cx->enabled_features`, not a process-global any
+ * more — see `emit_feature_comment`'s own comment), so every engine a
+ * future multi-engine file carries (OS-0b) shares one stamp. Lives only in
+ * the .c: a paired .h gets the comment (emit_header, matching its existing
  * pattern-comment convention) but not these, so a .c that #includes its own
  * .h never sees the pair twice. */
-static void emit_feature_macros(StrBuf *sb)
+static void emit_feature_macros(Ctx *cx, StrBuf *sb)
 {
     pcrec_sb_printf(sb, "#define PCREC_FEATURE_SET \"%s\"\n",
-              pcrec_enabled_set_label());
+              cx->enabled_label);
     pcrec_sb_printf(sb, "#define PCREC_FEATURE_MODULES \"%s\"\n",
-              pcrec_enabled_set_modules());
+              cx->enabled_modules);
 }
 
 /* [DD-13] (D46, and the D76 abi-4 event) THE ENGINE STAMP, EMITTED FROM ONE
@@ -2130,7 +2134,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     guard[gi] = 0;
 
     emit_pattern_comment(h, cx->pat);
-    emit_feature_comment(h);
+    emit_feature_comment(cx, h);
     pcrec_sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", guard, guard);
     pcrec_sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
     emit_rx_abi_types(h);
@@ -7409,8 +7413,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
                     g->upper, ncaps, bs);
 
     emit_pattern_comment(c, cx->pat);
-    emit_feature_comment(c);
-    emit_feature_macros(c);
+    emit_feature_comment(cx, c);
+    emit_feature_macros(cx, c);
     emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
     /* [K50] THE CALLER-STARTPOS AXIS'S STAMP — a §6.3 family (a) SELECTION
      * FACT: unconditional, on every artifact of both engines, with an

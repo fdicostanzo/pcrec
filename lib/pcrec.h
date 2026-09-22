@@ -1014,6 +1014,38 @@ typedef struct {
      * it, so a mirror would be a field no consumer can act on. The artifact
      * records the request in the compile-time stamp `<PREFIX>_TUNE`. */
     int         tune;
+    /* [REL-1.11] (2026-09-21) THE ENABLED FEATURE-MODULE SET, the library's
+     * own promotion of the CLI's `--features` lever (D20's "promote a
+     * library channel later if a real caller wants one" — this is that).
+     * Same spec vocabulary `--features` accepts: a comma-separated list of
+     * module names exactly as `pcrec --list-syntax`'s `module` column
+     * spells them, the frozen named set `"std1"` (D37), `"all"`, or
+     * `"none"`. An unknown name is refused BY NAME (the `--flavour` rule),
+     * surfaced through `pcrec_error` exactly as any other compile-time
+     * refusal — the CLI's own `--features: <text>` stderr line quotes this
+     * SAME wording, just prefixed.
+     *
+     * NULL MEANS "MAKE NO REQUEST" — deliberately NOT the CLI's own bare-
+     * invocation default (`std1`). A caller who links this library
+     * directly and never sets this field gets today's unchanged raw
+     * default (no module gated on), which is what every existing
+     * `pcrec_compile()` caller in this tree already assumes; asking for
+     * the CLI's own bare-invocation behaviour is one explicit line
+     * (`opt.features = pcrec_default_features;`, `src/parse/enabled.c`
+     * declares it, or the literal `"std1"`). The CLI itself always
+     * resolves and assigns a concrete value here before compiling — it
+     * never leaves this field NULL — so a bare `pcrec` invocation is
+     * unaffected by this rule either way.
+     *
+     * PER-CALL, NOT PROCESS-GLOBAL (D19): applying this field does not
+     * touch any shared state, so two concurrent `pcrec_compile()` calls
+     * asking for different sets cannot race — see `Ctx.enabled_features`'s
+     * own comment (src/core/internal.h) for the mechanism. This is a
+     * NARROWER promise than `--features` at the CLI, which ALSO installs
+     * a process-global the CLI's own query surfaces
+     * (`--probe-ask`/`--count-groups`/`--list-source`) still read; this
+     * field affects only the one `pcrec_compile()` call it is passed to. */
+    const char *features;
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

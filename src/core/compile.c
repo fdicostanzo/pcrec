@@ -655,6 +655,61 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     }
     defo.flags |= pcrec_tune_deny_flags(defo.tune);
 
+    /* [REL-1.11] THE ENABLED FEATURE SET, RESOLVED ONCE, HERE — before the
+     * retry loop, the same altitude as the tune validation just above.
+     * `opt->features` is the same spec vocabulary the CLI's `--features`
+     * accepts, applied via the PURE `pcrec_enabled_resolve_spec`
+     * (src/parse/enabled.c) — no global write, which is the whole D19
+     * argument: two concurrent `pcrec_compile()` calls asking for
+     * different specs cannot race, because neither ever touches shared
+     * state. The result is copied onto EVERY retry attempt's `Ctx` below
+     * (`cx.enabled_features`/`enabled_label`/`enabled_modules`), never
+     * re-resolved per attempt.
+     *
+     * NULL MEANS "NO REQUEST", NOT "std1" — a DELIBERATE NARROWING of the
+     * plan row's own text ("NULL = the default resolution [std1], exactly
+     * as a bare CLI invocation"), recorded here because it is a real
+     * deviation with real evidence, not an oversight. D37's own addendum
+     * (docs/dev/decisions.md) states as settled fact that "a library
+     * caller ... runs at the raw enabled mask, which is EMPTY ... and
+     * tests/registry RELIES ON THIS (pcre2_check.c compiles at the empty
+     * set by construction and is FLIP-IMMUNE)". Measured: dozens of call
+     * sites across tests/registry/{pcre2_check,registry_check}.c and
+     * tests/registry/definitions_{check,oracle_gen}.c call
+     * `pcrec_compile()`/build a `Ctx` directly with default (NULL)
+     * options and depend on an EMPTY gate — several of them installing a
+     * DIFFERENT non-empty set into the (still-live, for OTHER consumers)
+     * process-global first and asserting the compile reflects it. Making
+     * NULL resolve to "std1" here would silently flip every one of those
+     * closed-gate assumptions (`\d` stops being refused, etc.) with no
+     * way to find every affected call site short of migrating the whole
+     * suite off the global-install idiom — exactly what D37's addendum
+     * flags as the re-opened question this promotion answers. The CLI
+     * achieves full bare-invocation parity WITHOUT this: it resolves
+     * `features ? features : pcrec_default_features` itself and always
+     * assigns the resolved value to `opt.features` (cli/main.c) — it
+     * never leaves the field NULL — so `pcrec_compile()`'s NULL branch is
+     * reached only by a DIRECT library/test caller, where "no request"
+     * preserving today's raw default is the conservative, backward-
+     * compatible answer. A caller that explicitly wants the CLI's
+     * bare-invocation default passes `pcrec_default_features` (or
+     * `"std1"`) as `opt.features` itself — one line, not a trap. See
+     * docs/dev/lanes/libfeat_report.md for the full evidence. */
+    unsigned feat_mask = 0;
+    char feat_label[24] = "none";
+    char feat_modules[512] = "";
+    if (defo.features) {
+        char ferr[256];
+        if (pcrec_enabled_resolve_spec(defo.features, &feat_mask, feat_label,
+                                        sizeof feat_label, feat_modules,
+                                        sizeof feat_modules, ferr,
+                                        sizeof ferr) != 0) {
+            if (err)
+                snprintf(err->msg, sizeof(err->msg), "%s", ferr);
+            return -1;
+        }
+    }
+
     /* [SEL-1] `dfa_disabled` is this driver's own retry input, carried across
      * attempts; `overflow_why` carries the failed attempt's own diagnosis
      * forward, because `job_cleanup` (called before the retry's `Ctx` is
@@ -763,6 +818,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.patlen = pattern ? strlen(pattern) : 0;
         cx.err = err;
         cx.opt = &defo;
+        /* [REL-1.11] copied from the ONE resolution above — every retry
+         * attempt of this same compile gets the identical resolved values,
+         * never a re-resolve, and nothing here touches src/parse/enabled.c's
+         * global. */
+        cx.enabled_features = feat_mask;
+        memcpy(cx.enabled_label, feat_label, sizeof cx.enabled_label);
+        memcpy(cx.enabled_modules, feat_modules, sizeof cx.enabled_modules);
         /* PARSE-1: the CLI option is the SEED for the parse state, not the state
          * itself. `opt` stays const and caller-owned; `cx.mods` is what the
          * parser reads and what a scoped `(?i:...)` saves/sets/restores
@@ -2012,6 +2074,12 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.patlen = pattern ? strlen(pattern) : 0;
     cx.err = err;
     cx.opt = &defo;
+    /* [REL-1.11] `--count-groups` is a CLI query surface, not a
+     * `pcrec_compile()` caller (it builds its own throwaway `defo` above
+     * and ignores whatever `--features` the CLI parsed) — it inherits the
+     * process-global gate exactly as it always has, unchanged by this row.
+     * See src/parse/enabled.c's own top comment for the customer list. */
+    cx.enabled_features = pcrec_enabled_mask();
     /* Parse-only: nothing is emitted, so no capture node is wanted and the
      * tree stays exactly D31's. This matters beyond tidiness — --count-groups
      * pins its refusal behaviour to pcrec_compile's, and an AST that differed

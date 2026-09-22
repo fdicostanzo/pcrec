@@ -332,7 +332,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              * rest of the class uses. `-m` needs no gate — it asks for the
              * semantics pcrec's anchors have with no module at all. */
             if (!hyphen) {
-                if (!pcrec_feature_enabled(FEAT_ASSERTIONS))
+                if (!pcrec_feature_enabled(cx->enabled_features, FEAT_ASSERTIONS))
                     return modport_refuse(want, i,
                         "inline option 'm' (multiline) requires module "
                         "'assertions'");
@@ -393,7 +393,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              * Nothing downstream reads it, which src/parse/parse_mods.h makes
              * a compile error rather than a convention. */
             if (!hyphen) {
-                if (!pcrec_feature_enabled(FEAT_BACKREFS))
+                if (!pcrec_feature_enabled(cx->enabled_features, FEAT_BACKREFS))
                     return modport_refuse(want, i,
                         "inline option 'J' (dupnames) requires module "
                         "'backrefs'");

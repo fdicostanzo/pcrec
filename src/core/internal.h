@@ -2774,6 +2774,25 @@ struct Ctx {
      * above already have this shape; this field is the same idiom applied
      * to `pcrec_ctx_nomem`'s own arrival. */
     bool                 failed_nomem;
+    /* [REL-1.11] THE PER-COMPILE ENABLED FEATURE SET. Resolved ONCE by
+     * `compile_driver` from `pcrec_options.features` (NULL = the CLI's own
+     * bare-invocation default, `pcrec_default_features`), via the PURE
+     * `pcrec_enabled_resolve_spec` — no global write, which is what makes
+     * two concurrent `pcrec_compile()` calls asking for different
+     * `--features` values safe under D19 (see `pcrec_feature_enabled`'s own
+     * comment above for the full argument). Every doorway reached from a
+     * real compile reads THIS field, never the process-global mask in
+     * src/parse/enabled.c — that global keeps its OTHER customers
+     * (--probe-ask/--count-groups/--list-source, --list-syntax's
+     * built-status probe) exactly as it was; their own throwaway `Ctx`es
+     * seed this field from `pcrec_enabled_mask()` instead (see
+     * src/dump/syntax_dump.c). `enabled_label`/`enabled_modules` are
+     * `emit_feature_comment`/`emit_feature_macros`'s own copy of D37's
+     * self-describing artifact stamp, sized exactly like the global's own
+     * buffers (enabled.c). */
+    unsigned             enabled_features;
+    char                 enabled_label[24];
+    char                 enabled_modules[512];
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
@@ -4618,8 +4637,11 @@ const PosixName *pcrec_registry_posix_names(size_t *n);
  * full rationale comments live there, not duplicated here). */
 /* Demotes RESULT to VERDICT for a row whose module is not enabled, floors at
  * VERDICT. See ext.c's own comment on the definition for the full ASK-contract
- * rationale. */
-ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want);
+ * rationale. `enabled_mask` is the CALLER's own resolved feature mask
+ * ([REL-1.11] — `Ctx.enabled_features` for every real doorway call; a bare
+ * `pcrec_enabled_mask()` read for the process-global query surfaces that
+ * predate a compile-scoped mask, see enabled.c's own header). */
+ExtWant pcrec_ext_gate(unsigned enabled_mask, const RegRow *r, ExtWant want);
 
 /* Format a refusal at claim time and return it — relies on the enclosing
  * doorway naming its gated ask level `want`, exactly as ext.c's comment on
@@ -4711,11 +4733,42 @@ size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
 
 /* src/parse/enabled.c — the enabled feature set (slice 9): one home,
  * process-wide, written once by the CLI's --features before any compile.
- * NOT a pcrec_options field (D20 keeps the core API's option surface
- * scalar); promote a library channel later if a caller wants one. */
-bool     pcrec_feature_enabled(unsigned featmask);
+ *
+ * [REL-1.11] (2026-09-21) `pcrec_options.features` PROMOTED a library
+ * channel (D20's own "promote later if a caller wants one" — the row this
+ * is), and D19 (thread-safety, docs/dev/decisions.md) is why the promotion
+ * did NOT simply make `pcrec_compile` call `pcrec_enabled_set_spec` on
+ * every call: that would make the global a per-call WRITE from every
+ * concurrent `pcrec_compile`, exactly the TOCTOU hazard D19 exists to rule
+ * out (one thread's install racing another's read mid-parse). Instead
+ * `pcrec_feature_enabled`/`pcrec_ext_gate` take an EXPLICIT mask, never
+ * read one implicitly, and `Ctx.enabled_features` (below) is
+ * `compile_driver`'s own per-call, purely-local resolution of
+ * `pcrec_options.features` via `pcrec_enabled_resolve_spec` — no global
+ * write, so two concurrent `pcrec_compile()` calls with different
+ * `--features` values cannot race. The global below is UNCHANGED and
+ * stays the mechanism for its OTHER customers, none of which goes through
+ * `pcrec_compile`: the CLI's own `--probe-ask`/`--count-groups`/
+ * `--list-source`/`--explain` query surfaces (cli/main.c installs it once,
+ * before mode dispatch, exactly as before) and `--list-syntax`'s
+ * built-status probe (src/dump/syntax_dump.c's save/force/restore dance).
+ * See docs/dev/lanes/libfeat_report.md for the full design note. */
+bool     pcrec_feature_enabled(unsigned enabled_mask, unsigned featmask);
 unsigned pcrec_enabled_mask(void);
 int      pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz);
+/* [REL-1.11] THE PURE RESOLVER: parses `spec` into a mask/label/rendered
+ * module list with NO global write at all — `pcrec_enabled_set_spec`
+ * above is now a two-line caller of this plus the global install, so
+ * there is exactly one place the spec vocabulary (`all`/`none`/a D37
+ * named set/a comma list) is parsed. `label_out`/`modules_out` are sized
+ * by the caller (`pcrec_enabled_set_spec` and `compile_driver` both use
+ * the global's own 24/512 — see enabled.c); on failure `err` gets the
+ * SAME wording `pcrec_enabled_set_spec` gives (the CLI's `--features:`
+ * prefix stays a caller-side concern, so its stderr text is unchanged). */
+int pcrec_enabled_resolve_spec(const char *spec, unsigned *mask_out,
+                                char *label_out, size_t label_sz,
+                                char *modules_out, size_t modules_sz,
+                                char *err, size_t errsz);
 /* D37 (docs/dev/decisions.md): the currently-installed set's own NAME
  * ("std1", "all", "none", or "explicit" for a hand-written module list)
  * and its EXPANDED module list (comma-separated, rendered from the mask —

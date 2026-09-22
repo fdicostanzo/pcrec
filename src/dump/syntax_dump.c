@@ -826,6 +826,7 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
 {
     Ctx cx;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this probe Ctx inherits the CLI's process-global gate, unchanged */
     cx.pat = r->syntax;
     cx.patlen = strlen(r->syntax);
     cx.arena.cx = &cx;
@@ -1135,6 +1136,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
      * here and `doorway_call` can raise, so guarding early costs nothing. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this probe Ctx inherits the CLI's process-global gate, unchanged */
     cx.err = err;
     cx.pat = construct;
     cx.patlen = strlen(construct);
@@ -1424,7 +1426,7 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
                         "a value");
             return 1;
         }
-        if (!pcrec_feature_enabled(r->feature)) {
+        if (!pcrec_feature_enabled(pcrec_enabled_mask(), r->feature)) {
             pcrec_sb_printf(sb, "DISSENT: gate: the row produced a value with its "
                           "module '%s' NOT in the enabled set", r->module);
             return 1;
@@ -1633,6 +1635,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      * the full history. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this probe Ctx inherits the CLI's process-global gate, unchanged */
     cx.err = err;
     cx.arena.cx = &cx;   /* [M4.7b/K7] arena OOM -> this setjmp, not abort() */
     /* [M5.0 stage 1] see `built_status_probe`'s note: a probe Ctx reaching the

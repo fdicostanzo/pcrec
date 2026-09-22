@@ -326,7 +326,7 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
      * ORIGINAL ask rather than from the demoted one is what makes the second
      * gate a fresh question instead of a second demotion. */
     const ExtWant asked = want;
-    want = pcrec_ext_gate(r, want);
+    want = pcrec_ext_gate(cx->enabled_features, r, want);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
     size_t star = at + 1;           /* the '*'; `at` is the '(' */
@@ -509,7 +509,7 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
     if (nrow) {
         r = nrow;
         *elected = r;
-        want = pcrec_ext_gate(r, asked);
+        want = pcrec_ext_gate(cx->enabled_features, r, asked);
     }
 
     /* THE PRODUCER, in the shape doorways 1 and 2 already use: position
