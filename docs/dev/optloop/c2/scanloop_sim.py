@@ -25,8 +25,15 @@ It reads the tables straight out of an emitted `.c` (so the machine is
 pcrec's, not a reimplementation of it) and requires
 `RX_DFA_TABLE "premultiplied"`, which is today's default.
 
-Usage:  python3 scanloop_sim.py ART.c SUBJECT.bin [SUBSTITUTE_BYTES ...]
-        e.g. ... json.c t-1m.bin tfn
+IT ALSO CARRIES THE SOUNDNESS ARM.  `-reseed` reconstructs the machine's
+state from the byte before the landing position on every skip-loop exit,
+which is what makes a NARROWED candidate set sound for a pattern whose
+start state carries context (a leading `\b`).  `firstset_design.md` §4 is
+that finding; this is where it is reproduced.
+
+Usage:  python3 scanloop_sim.py ART.c SUBJECT.bin [SUBSTITUTE_BYTES] [-reseed]
+        e.g. ... json.c t-1m.bin tfn -reseed
+        SUBJECT.bin may be `@<literal>` for a short hand-written witness.
 """
 import re, sys
 
@@ -41,7 +48,10 @@ def arr(src, name):
 
 def main():
     art, subj = sys.argv[1], sys.argv[2]
-    subst = sys.argv[3] if len(sys.argv) > 3 else None
+    rest = sys.argv[3:]
+    reseed = "-reseed" in rest
+    rest = [x for x in rest if x != "-reseed"]
+    subst = rest[0] if rest else None
     src = open(art).read()
     if 'RX_DFA_TABLE "premultiplied"' not in src:
         sys.exit("this simulator models the premultiplied table only")
@@ -49,6 +59,7 @@ def main():
     nxt  = arr(src, "rx_forward_next_state")
     beg  = arr(src, "rx_can_begin_match")
     accC = arr(src, "rx_forward_is_accepting_by_class")
+    seed = arr(src, "rx_forward_seed_state")
     if beg is None:
         sys.exit("artifact has no rx_can_begin_match (no byte-class prefilter)")
     ncls = len(nxt) // (len(accC) // len(nxt) * 0 + 1)      # placeholder
@@ -60,7 +71,8 @@ def main():
         beg = [0] * 256
         for ch in subst.encode("latin-1"):
             beg[ch] = 1
-    b = open(subj, "rb").read()
+    b = (subj[1:].encode("latin-1") if subj.startswith("@")
+         else open(subj, "rb").read())
     n = len(b)
 
     # The emitted loop, verbatim in structure.  DEAD = 65535.
@@ -75,9 +87,16 @@ def main():
         if st == 0 and last_accept == -1:
             at_state0 += 1
             skip_entries += 1
+            s0 = scan
             while scan + 1 < n and not beg[b[scan]]:
                 scan += 1
                 skipped += 1
+            if reseed and scan > s0:
+                # The emitted entry line's own expression, reused: the state
+                # that represents "the preceding byte had this class, nothing
+                # in flight".  Without it a narrowed set SKIPS the byte the
+                # machine needed in order to know its own context.
+                st = seed[bcls[b[scan - 1]]]
         if scan >= n:
             break
         cl = bcls[b[scan]]
@@ -96,6 +115,8 @@ def main():
     print("skip-loop entries %d" % skip_entries)
     print("BYTES SKIPPED     %d   (%.4f%% of subject)" % (skipped, 100.0*skipped/n))
     print("bytes per entry   %.4f" % (skipped/skip_entries if skip_entries else 0.0))
+    print("reseed on exit    %s" % ("YES" if reseed else "no"))
+    print("last_accept       %d   (-1 = no match found)" % last_accept)
 
 if __name__ == "__main__":
     main()
