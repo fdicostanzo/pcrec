@@ -472,3 +472,616 @@ this matrix, and pcrec has exactly one of them:
 | required code unit anywhere in the match → one `memchr` per call | `LASTCODETYPE`/`LASTCODEUNIT` | **no** | §2.3(c)'s five |
 | pattern is start-anchored → one attempt | `PCRE2_ANCHORED` | **DFA only** (`start_max`) | §2.3(b)'s three, plus §1.1's three default-config cells |
 | pattern is end-anchored and bounded → scan only the tail | (rust/re2 reject `abc$` in O(1)) | **no** | `wild-semdiv-dollar-trailing-newline-pcre2` |
+
+---
+
+## 3. The five target MECHANISMS
+
+Ranked by the sum of the class-weighted scores of the rows each explains.
+They are mechanisms, not patterns (memory `pcrec-general-mechanisms-not-special-cases`):
+each is stated in its general form, names the existing primitive it extends,
+and carries the Linux measurement that must confirm the diagnosis **before**
+any implementation (D77).
+
+| rank | mechanism | score covered | rows | size | architecture fit |
+|---|---|---|---|---|---|
+| M1 | **[OPT-REQBYTE]** required-byte whole-window pre-check | 3.714 | 5 | S–M | extends the prefilter, both engines |
+| M2 | **[OPT-ANCHOR-VM]** the VM's attempt-loop start bound | 2.112 (+ §1.1's three default cells) | 2 (+3) | S | moves an existing DFA primitive to the VM |
+| M3 | **[OPT-FIRSTSET]** candidate-start set derived from the AST, not the start state | 1.002 | 4 | M | replaces one derivation inside the existing prefilter |
+| M4 | **[OPT-ENDWIN]** end-anchor start-window bound | 0.871 | 1 | M | D77's own named `\z` fold |
+| M5 | **[OPT-ATTEMPT-SPLIT]** `^` on some branches stops costing the whole DFA toolkit | 0.306 | 2 | M–L | reuses both existing DFA shapes |
+
+Their union covers 8.005 of the losing rows' 10.284 weighted score. The
+remainder is §2.3(f)'s backtracking bucket (1.004, no mechanism named yet —
+M6 below is the measurement that would name one) and §2.3(j)'s SIMD
+deferrals (1.275).
+
+**The natural first implementation batch (D119 caps it at three) is
+M1 + M2 + M3**: they are one analysis and two consumers, they share their
+validation population, and they carry 6.828 of the 8.005.
+
+### The shared profile setup (run once on ubuntubudu)
+
+`perf` is unavailable there (`perf_event_paranoid=4`,
+`opt5_step0_profile.md` §1) — so this follows the [OPT-5] step-0 method:
+a real driver, a calibrated clock, and static disassembly. Every command is
+verbatim. Nothing is written inside `/home/duxevents/pcrec-bench`.
+
+```sh
+# 0.1  a scratch root OUTSIDE both repos
+export OPT1=/tmp/optloop1 && mkdir -p "$OPT1" && cd "$OPT1"
+
+# 0.2  the pin under test: pcrec at the analysis commit
+git -C /home/duxevents/pcrec worktree add "$OPT1/pcrec" lane/optrev
+cd "$OPT1/pcrec" && make -j4 && cd "$OPT1"
+
+# 0.3  the three throughput subjects, regenerated into the scratch root.
+#      This WRITES NOTHING in pcrec-bench (the repo's own generator would
+#      rewrite a committed manifest; this snippet does not call it).
+mkdir -p "$OPT1/subj"
+python3 - <<'PY'
+import sys, os, hashlib
+sys.path.insert(0, "/home/duxevents/pcrec-bench/bench/capability")
+import captext as ct
+for sid, n, seed in (("t-64k",65536,0xC0FFEE1),("t-256k",262144,0xC0FFEE2),("t-1m",1048576,0xC0FFEE3)):
+    b = ct.text(n, seed)
+    open(os.path.join(os.environ["OPT1"], "subj", sid + ".bin"), "wb").write(b)
+    print(sid, len(b), hashlib.sha256(b).hexdigest())
+PY
+# EXPECT, byte for byte against bench/capability/manifest_throughput.tsv:
+#   t-64k  65536   d2e4f134473cc40a9a4e7df7a30e0efa11f566d96ee990c62cd663a2439c8524
+#   t-256k 262144  3cf7b248873da164518b74e039cc2380f39e233b2899716c82c8eb4b7b49b5a7
+#   t-1m   1048576 ccbdf7eb97f15776a68b8bbb9d6387870cd01d4796207fb20032958caf9754ee
+# A mismatch means the subject changed and every number below is off-pin: STOP.
+
+# 0.4  the clock calibration (opt5_step0_profile.md §1's dependent add-chain,
+#      with the volatile barrier that stops gcc folding it to a closed form)
+cat > "$OPT1/clock.c" <<'EOF'
+#include <stdio.h>
+#include <time.h>
+static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);
+  return t.tv_sec + 1e-9*t.tv_nsec;}
+int main(void){volatile long v=0; long N=2000000000L; double t0=now();
+  for(long i=0;i<N;i++){ v=v+1; __asm__ volatile("":"+r"(v)); }
+  double dt=now()-t0; printf("%.4f GHz (N=%ld, %.3f s)\n", N/dt/1e9, N, dt); return 0;}
+EOF
+gcc -O2 -o "$OPT1/clock" "$OPT1/clock.c" && for i in 1 2 3 4 5; do "$OPT1/clock"; done
+uptime   # load1 must be < 0.5 before any timed phase; discard above 2.0
+
+# 0.5  the shared find-all driver: the bench's own loop shape
+#      (testees/pcrec/driver.c:714-740), reproduced so a hand-twin can be
+#      timed against the shipped artifact with one variable moved.
+cat > "$OPT1/findall.c" <<'EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "art.h"
+static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);
+  return t.tv_sec + 1e-9*t.tv_nsec;}
+int main(int argc,char**argv){
+  FILE*f=fopen(argv[1],"rb"); fseek(f,0,SEEK_END); long n=ftell(f); rewind(f);
+  unsigned char*b=malloc(n); if(fread(b,1,n,f)!=(size_t)n) return 2; fclose(f);
+  long iters = argc>2 ? atol(argv[2]) : 5;
+  ptrdiff_t caps[RX_NCAPS][2];
+  double best=1e30; long count=0;
+  for(long it=0; it<iters; it++){
+    double t0=now(); size_t pos=0; count=0;
+    for(;;){ int r=rx_search(b,(size_t)n,pos,caps); if(r==0) break;
+             if(r<0){ printf("giveup %d\n", r); break; }
+             size_t s=(size_t)caps[0][0], e=(size_t)caps[0][1];
+             count++; pos = (e>s)?e:s+1; if(pos>(size_t)n) break; }
+    double dt=now()-t0; if(dt<best) best=dt; }
+  printf("%-24s n=%ld matches=%ld best=%.9f s  %.4f ns/byte\n",
+         argv[1], n, count, best, best*1e9/(double)n);
+  return 0; }
+EOF
+```
+
+---
+
+### M1 — `[OPT-REQBYTE]`: the required-byte whole-window pre-check
+
+**Rows explained** (all `large-subject-throughput`): `tag-depth3-bound`
+(rank 2, 193.19×), `dup-param-detect` (3, 576.38×), `tag-pair-match`
+(5, 199.50×), `wild-secrets-username-password-pair` (6, 55.16×),
+`wild-logparse-winpath-grok` (8, 149.20×). Weighted score **3.714**, the
+largest of any mechanism in the matrix.
+
+**Diagnosis.** Per call, on a 1 MiB subject with no match:
+`pcre2-interp` does **one** `memchr`-class pass (0.0169 ns/byte, the §2.2
+floor rate three independent engines share) and returns NOMATCH for the
+whole subject. pcrec runs a full VM attempt at every one of the 1,048,576
+start positions (2.52–9.74 ns/byte). The deciding fact is not the first
+byte — for `dup-param-detect` and `winpath-grok` the first-byte set is 63
+and 53 bytes wide and useless — it is that **every match of these patterns
+must contain a literal byte that occurs zero times in the subject**
+(`'>'`, `'='`, `'\'`, §2.1's census; `PCRE2_INFO_LASTCODEUNIT` per pattern,
+§2.3(c)'s table, measured here with `docs/dev/optloop/p2info.c`). pcrec
+computes no such fact at any point in the pipeline: `--list-axes` has no
+axis for it and no stamp reports one.
+
+**The mechanism, in general form.** Compute, at compile time from the AST, a
+**necessary literal byte**: a byte `c` such that every string in the
+pattern's language contains `c` at some position past its start. The
+derivation is the obvious one — walk the AST bottom-up returning a set of
+necessary bytes (`concat` unions its children's sets; `alternation`
+intersects; a quantifier with minimum 0 returns the empty set; a class
+returns a singleton only when it is one byte; a backreference or a linked
+call returns the empty set, which is always sound because the empty set
+disables the check). Emit one byte (the rightmost, matching PCRE2's own
+choice, so a later multi-byte form is a widening and not a different
+mechanism) into the artifact and test it **once per `<prefix>_search`
+call**, before the attempt loop, with the `memchr` the prefilter path
+already emits:
+
+```c
+    if (!memchr(subject + search_from, RX_REQ_BYTE, subject_length - search_from))
+        return 0;
+```
+
+This EXTENDS the existing prefilter primitive rather than paralleling it:
+`RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same window
+for a *candidate start*; this is the same instrument keyed on a *necessary
+byte* and hoisted one level out, so it also serves the VM, where the hybrid
+prefilter is declined outright for backreferences and linked calls
+(`src/opt/select_engine.c:604,651`). Three of the five rows are exactly
+those declines.
+
+**Architecture fit.** Inside the architecture: one compile-time analysis,
+one emitted constant, one `memchr` in a function that already contains one
+on the DFA route. No new engine, no new pass ordering constraint.
+
+**Size expectation.** Two emitted lines and one `#define` per artifact where
+the byte exists; zero where it does not. Under 100 bytes of emitted C.
+Nothing in the tables moves.
+
+**The axis.** `-fno-req-byte` / `PCREC_NO_REQ_BYTE`, stamp
+`<PREFIX>_REQ_BYTE` (the byte, or `none`), one row in `src/core/axes.def`.
+Sabotage direction: invert the `memchr` test's sense (`if (memchr(...)) return 0;`)
+— a plant that must turn matching subjects into NOMATCH on the five rows'
+own hit subjects; the reach witness is any pattern whose stamp is not
+`none`. `make test-axes` must read answer-identical denied and forced over
+the whole corpus.
+
+**Owed Linux measurement** (confirms the diagnosis and sizes the landing bar
+before anything is built):
+
+```sh
+cd "$OPT1"
+# M1.a  baseline: the shipped artifacts, the bench's own flags and subjects
+for P in tag-depth3-bound dup-param-detect tag-pair-match \
+         wild-secrets-username-password-pair wild-logparse-winpath-grok; do
+  "$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/$P.c" \
+      "/home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx" 2>/dev/null \
+    || "$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/$P.c" \
+         --pattern "$(cat /home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx)"
+  cp "$OPT1/$P.h" "$OPT1/art.h"; cp "$OPT1/$P.c" "$OPT1/art.c"
+  gcc -O2 -I"$OPT1" -o "$OPT1/base_$P" "$OPT1/findall.c" "$OPT1/art.c"
+  for S in t-64k t-256k t-1m; do "$OPT1/base_$P" "$OPT1/subj/$S.bin" 5; done
+done
+# EXPECT (Ryzen 1600, the bench's own figures): matches=0 everywhere, and
+# ns/byte flat across the three sizes at
+#   tag-depth3-bound 3.26 | dup-param-detect 9.74 | tag-pair-match 3.37
+#   username-password-pair 0.93 | winpath-grok 2.52
+# A non-flat ns/byte is a finding in its own right (the set's own rule R6).
+
+# M1.b  the HAND-TWIN: the same artifact with the pre-check inserted by hand.
+#       REQ is the byte PCRE2 records; this lane measured it per pattern.
+#       tag-depth3-bound '>' | dup-param-detect '=' | tag-pair-match '>'
+#       username-password-pair '=' | winpath-grok '\\'
+#       Insert immediately after `if (search_from > subject_length) return 0;`
+#       in <prefix>_search (DFA) / rx_search_run (VM):
+#           if (!memchr(subject + search_from, REQ, subject_length - search_from))
+#               return 0;
+#       and add #include <string.h>.
+#       Then rebuild exactly as in M1.a and re-run the same three subjects.
+# EXPECT: ns/byte collapses to the §2.2 floor (~0.017) on all five, i.e.
+#   192x / 576x / 199x / 55x / 149x, reproducing the matrix's own ratios.
+#   ANY twin that does NOT reach ~0.017 ns/byte refutes the diagnosis.
+
+# M1.c  the CARVE-OUT: the pre-check must cost nothing where it cannot fire.
+#       Same twin, run on a subject that DOES contain the byte, so the
+#       memchr succeeds immediately and the attempt loop runs as before.
+printf 'x%.0s' $(seq 1 1000000) > "$OPT1/subj/hit.bin"; printf '>' >> "$OPT1/subj/hit.bin"
+"$OPT1/base_tag-pair-match" "$OPT1/subj/hit.bin" 5
+"$OPT1/twin_tag-pair-match" "$OPT1/subj/hit.bin" 5
+# EXPECT: within noise of each other (the memchr finds the byte at offset
+#   1,000,000 and is one pass; the attempt loop is unchanged). A twin more
+#   than ~2% slower here is the landing bar's carve-out failing.
+```
+
+---
+
+### M2 — `[OPT-ANCHOR-VM]`: the start-position bound in the VM's attempt loop
+
+**Rows explained.** `bracket-array-define` thr (rank 1, **52,122.95×**) and
+srch (rank 18, 2.34×); weighted score **2.112**. Plus, at the shipped
+default config only (§1.1), `evil-alt-nested` thr (49,016× vs the
+algorithmic target) and `trim-nested-star` thr (39,447×), which score zero
+in the ranking because `--no-captures` rescues them.
+
+**Diagnosis.** `bracket-array-define` is `PCRE2_ANCHORED` (measured here).
+`oniguruma` answers it in **31 ns at every subject size** — one attempt at
+position 0, first byte is not `[`, done. pcrec runs 1,048,576 attempts
+(3.54 ns/byte, perfectly linear, x15.9 for x16 subject). The bound already
+exists in this tree, in the other emitter: `src/gen/emit_dfa.c:6802-6812`
+derives `bool anchored = dfa_interior_dead(d->s1u) && dfa_interior_dead(d->s1g)`
+and writes `const size_t start_max = 0 /* fully ^-anchored */;`. The VM's
+`rx_search_run` writes `for (;;) { ... attempt_position++; }` with no bound
+at all. The DFA control is direct: `ipv4-near-miss` and
+`wild-validator-ipv4-owasp` are equally anchored, take the DFA route, and
+read a flat 6.2 ns at 64 KiB and at 1 MiB.
+
+**The mechanism, in general form.** Give the VM's search loop the *same
+three-valued bound the DFA already has*, derived from the same kind of fact
+one layer up (the AST/NFA rather than the DFA's start-state interior,
+because a VM-routed pattern has no DFA to ask): `start_max = search_from`
+when every alternative of the whole pattern begins with `\A`/`^` outside
+multiline or with `\G`; `subject_length` otherwise. This is
+**implement-then-replace**, not a parallel mechanism: the derived fact
+should become one predicate both emitters read, so the DFA's
+`dfa_interior_dead` pair becomes a *confirmation* of an AST-level answer
+rather than a second source of truth. Fourteen of the 64 patterns are
+`PCRE2_ANCHORED` **and** VM-routed at `auto-caps`; three of those carry
+`RX_VM_PREFILTER "none"` and are the ones with no rescue at all
+(`bracket-array-define`, `evil-alt-nested`, `trim-nested-star`).
+
+**Architecture fit.** Inside the architecture, and the smallest of the five:
+one predicate, one emitted bound, one loop condition. No new engine.
+
+**Size expectation.** Net **negative** on an anchored VM artifact (the
+`attempt_position++` path becomes dead and gcc deletes it); under 50 bytes
+elsewhere.
+
+**The axis.** `-fno-vm-anchor-bound` / `PCREC_NO_VM_ANCHOR_BOUND`, stamp
+`<PREFIX>_VM_START` (`anchored` / `gstart` / `unanchored`, so it reads
+against the DFA's own `RX_DFA_SCAN`). Sabotage direction: emit
+`subject_length` where the predicate says `search_from` — undetectable by
+any answer check (it is a pure cost regression), so the row's detector must
+be the **stamp**, and the reach witness is `bracket-array-define` itself.
+That asymmetry is worth stating in the row: *a bound that only removes
+provably-failing attempts has no answer-level detector, so its sabotage row
+is a stamp row.*
+
+**Owed Linux measurement:**
+
+```sh
+cd "$OPT1"
+# M2.a  baseline + the anchored-DFA control, same artifact family
+for P in bracket-array-define evil-alt-nested trim-nested-star ipv4-near-miss; do
+  "$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/$P.c" \
+      --pattern "$(cat /home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx)"
+  grep -E '^#define RX_(ENGINE|VM_PREFILTER|DFA_SCAN) ' "$OPT1/$P.c"
+  cp "$OPT1/$P.h" "$OPT1/art.h"
+  gcc -O2 -I"$OPT1" -o "$OPT1/base_$P" "$OPT1/findall.c" "$OPT1/$P.c"
+  for S in t-64k t-1m; do "$OPT1/base_$P" "$OPT1/subj/$S.bin" 5; done
+done
+# EXPECT: bracket-array-define / evil-alt-nested / trim-nested-star read
+#   ~3.5 / ~4.1 / ~3.1 ns/byte and IDENTICAL at both sizes;
+#   ipv4-near-miss (DFA, start_max = 0) reads ~6 ns TOTAL at both sizes.
+#   The last line is the control that says the bound, not the engine, is
+#   what separates them.
+
+# M2.b  the HAND-TWIN: in each VM artifact's rx_search_run, replace
+#           if (attempt_position >= subject_length) return 0;
+#           attempt_position++;
+#       with
+#           return 0;
+#       (the bound start_max == search_from, spelled by hand). Rebuild and
+#       re-run the same two subjects.
+# EXPECT: all three collapse to a constant ~30-120 ns at BOTH sizes, i.e.
+#   the O(1) shape oniguruma and pcre2-interp already read. Answer identity
+#   must be checked first: the twin must print matches=0 on both subjects,
+#   as the baseline does.
+
+# M2.c  the CARVE-OUT: an UNANCHORED VM artifact must not move.
+"$OPT1/base_nested-comment-rec" "$OPT1/subj/t-1m.bin" 5   # built as in M2.a
+# EXPECT: unchanged by the twin (the predicate is false there, so no line
+#   of its emitted text differs) -- confirm by `cmp` of the two .c files.
+```
+
+---
+
+### M3 — `[OPT-FIRSTSET]`: the candidate-start set, derived from the AST
+
+**Rows explained.** `wild-secrets-aws-access-key-id` thr (rank 7, 29.65×
+vs rust, **18.93× vs the best scalar engine**) and srch (rank 29),
+`wild-codegrammar-json-constant` thr (rank 10, 14.96× / 1.88× scalar),
+`wild-waf-crs-942140-dbnames` thr (rank 24, 1.82×). Weighted score
+**1.002**.
+
+**Diagnosis.** pcrec derives `rx_can_begin_match[256]` from the bytes that
+leave the DFA's start state. A leading `\b` makes that state track word
+context, so every word byte leaves it and the set becomes the 63-byte word
+class — 77.21% of the throughput text, i.e. the skip loop can never skip.
+The minimal witness, built in this worktree, is one construct wide:
+`A[A-Z0-9]{16}` stamps `RX_DFA_PREFILTER "memchr"` with a 1-byte set;
+`\bA[A-Z0-9]{16}` stamps `byte-class-bounded` with a 63-byte set. PCRE2
+records `FIRSTCODEUNIT = 'A'` for both. This is the named cause of
+[OPT-3]'s own measured symptom (`opt3_dfa_scan_measurement.md`: the skip
+loop *"is entered 190,651 times and skips ZERO bytes"*).
+
+**The mechanism, in general form.** Compute the candidate-start set from the
+**bytes that can begin a match** — an AST-level first-byte analysis that
+looks *through* leading zero-width assertions (`\b`, `\B`, `^`, `\A`,
+lookahead, lookbehind) to the first byte-consuming element — rather than
+from the automaton start state's live transitions. Intersect with the
+current derivation (never widen it: the start-state set is sound, so the
+new set must be a subset or the analysis is wrong, which is a free
+compile-time assertion and the natural identity check). Two consumers, one
+analysis: (i) the DFA route's existing `rx_can_begin_match` skip loop, whose
+representation, sizes and stamps do not change at all — only the set's
+contents; (ii) the VM route, where it gives a candidate-start skip to the
+eleven `RX_VM_PREFILTER "none"` artifacts that have no prefilter today,
+soundly, because a first-byte set is a necessary condition on the match's
+own first byte and a backreference or linked call in leading position simply
+yields "unknown" and disables it. `nested-comment-rec` is the case that
+shows (ii) matters on its own: first byte `/`, 2.86% of the subject, so 35×
+fewer attempts than today's every-position walk.
+
+**Architecture fit.** Inside the architecture; it replaces one derivation
+inside an existing pass and adds one consumer. It shares its analysis with
+M1 (the same bottom-up AST walk returns the first-byte set and the necessary
+byte), which is why M1+M2+M3 is the natural batch.
+
+**Size expectation.** Zero on the DFA route (same tables, different
+contents; a narrower set can flip `byte-class` to `memchr`, which is
+*smaller*). On the VM route it adds one 256-byte table or one `memchr` per
+prefilter-less artifact — bounded by `PCREC_MAX_*`, and the `-fno-` flag is
+the recourse.
+
+**The axis.** `-fno-first-set` / `PCREC_NO_FIRST_SET` (deny → fall back to
+today's start-state derivation, which is exactly what makes this change
+bisectable), plus `PCREC_FORCE_FIRST_SET`. Stamp: the existing
+`RX_DFA_PREFILTER` value moves on the reached population, which IS the
+observable; add `<PREFIX>_VM_PREFILTER` value `first-byte` for consumer
+(ii). Sabotage direction: widen the derived set by one byte that cannot
+begin a match — invisible to every answer check (it only costs time), so
+again a **stamp/count** detector, with the corpus census of
+`|can_begin_match|` as the pinned population. `make test-axes` denied/forced
+answer-identity over the corpus is the correctness bar.
+
+**Owed Linux measurement:**
+
+```sh
+cd "$OPT1"
+# M3.a  the minimal witness pair -- the whole claim in two artifacts
+for PAT in 'A[A-Z0-9]{16}' '\bA[A-Z0-9]{16}'; do
+  "$OPT1/pcrec/build/pcrec" --features all --no-captures -p rx \
+      -o "$OPT1/w.c" --pattern "$PAT"
+  echo "== $PAT"; grep -E '^#define RX_DFA_PREFILTER ' "$OPT1/w.c"
+  cp "$OPT1/w.h" "$OPT1/art.h"
+  gcc -O2 -I"$OPT1" -o "$OPT1/w" "$OPT1/findall.c" "$OPT1/w.c"
+  "$OPT1/w" "$OPT1/subj/t-1m.bin" 5
+done
+# EXPECT: memchr / byte-class-bounded, and a ns/byte ratio of roughly the
+#   candidate-density ratio (0.17% vs 77.21%). This is the number the
+#   mechanism is worth on this shape; if the two artifacts time the SAME,
+#   the skip loop is not where the cost is and M3 is refuted.
+
+# M3.b  the three real rows, baseline
+for P in wild-secrets-aws-access-key-id wild-codegrammar-json-constant \
+         wild-waf-crs-942140-dbnames; do
+  "$OPT1/pcrec/build/pcrec" --features all --no-captures -p rx -o "$OPT1/$P.c" \
+      --pattern "$(cat /home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx)"
+  cp "$OPT1/$P.h" "$OPT1/art.h"
+  gcc -O2 -I"$OPT1" -o "$OPT1/base_$P" "$OPT1/findall.c" "$OPT1/$P.c"
+  "$OPT1/base_$P" "$OPT1/subj/t-1m.bin" 5
+done
+# EXPECT 3.83 / 3.05 / 2.97 ns/byte (the matrix's own figures).
+
+# M3.c  the HAND-TWIN: in each artifact, overwrite rx_can_begin_match[256]
+#       with the set PCRE2 records -- aws: {'A'} only; json-constant:
+#       {'t','f','n'}; dbnames: the 14-bit bitmap (print it with
+#       docs/dev/optloop/p2info.c, extended to dump FIRSTBITMAP). Rebuild,
+#       re-run t-1m, and CHECK matches= is unchanged from the baseline.
+# EXPECT aws-access-key-id to approach pcre2-dfa's 0.20 ns/byte (the 18.93x
+#   scalar gap); json-constant and dbnames to approach re2's 1.62 ns/byte.
+#   A twin that is answer-identical but NOT faster refutes M3 for that row.
+
+# M3.d  the disassembly read (static, no timer): confirm the skip loop is
+#       the thing that changed, not the transition loop.
+objdump -d --no-show-raw-insn "$OPT1/base_wild-secrets-aws-access-key-id" \
+  | sed -n '/<rx_search>:/,/^$/p' > "$OPT1/aws_base.s"
+objdump -d --no-show-raw-insn "$OPT1/twin_wild-secrets-aws-access-key-id" \
+  | sed -n '/<rx_search>:/,/^$/p' > "$OPT1/aws_twin.s"
+diff "$OPT1/aws_base.s" "$OPT1/aws_twin.s" | head -40
+# EXPECT: the only instruction-level difference is inside the
+#   `while (... && !rx_can_begin_match[subject[scan_position]]) scan_position++;`
+#   block (a different table CONTENT, possibly a different table SIZE if gcc
+#   folds a 1-element set to a compare). Any difference in the transition
+#   loop means the twin changed more than the candidate set: redo it.
+```
+
+---
+
+### M4 — `[OPT-ENDWIN]`: the end-anchor start-window bound
+
+**Row explained.** `wild-semdiv-dollar-trailing-newline-pcre2` thr (rank 4,
+**1,401.23×** vs rust, **725.16×** vs the best scalar engine, oniguruma).
+Weighted score **0.871**. The pattern is `abc$`.
+
+**Diagnosis.** `rust` reads **25.7 ns at 64 KiB and 25.7 ns at 1 MiB**; re2
+99 ns flat; oniguruma 151 ns flat. pcrec reads 3,521 / 16,746 / 89,433 ns —
+linear, 0.085 ns/byte. pcrec is already fast *per byte* (its
+`RX_DFA_PREFILTER "offset-set-bounded"` skip is working); it is scanning a
+megabyte that cannot contain a match at all. Every match of `abc$` must
+**end** at the subject end (or just before a final newline), and the
+pattern's maximum width is 4, so only start positions in `[n-4, n]` can
+match. The three O(1) engines are exploiting that; pcrec is not. This is
+exactly the general optimization **D77 named and deferred** — *"the gap is a
+FOLD ON THE IDIOM (the skip loop reasoning about `\z`), a general
+optimization for every `\z` user, already a [DD-13] candidate for the bench
+loop"* — now with the measured number D77 said to wait for.
+
+**The mechanism, in general form.** When every alternative of the pattern
+ends in `$`/`\Z`/`\z` (outside multiline) **and** `pcrec_maxw(root)` is
+finite, the scan's start window is `[subject_length - maxw - ε,
+subject_length]` rather than `[search_from, subject_length]`, where `ε` is
+the `$`-before-final-newline allowance (1 byte under the shipped newline
+convention). Where `maxw` is unbounded the mechanism declines, which is the
+common case and costs nothing. It extends the existing **position view**
+axis (`--list-axes`: `view` = `end+eol`/`end`/`eol`/`none`), which already
+*recognises* a `\z`/`$` view and uses it to choose the `-bounded` prefilter
+candidates — this mechanism gives that same recognised view its second, much
+larger consumer: the scan's start bound, not just its accept test.
+
+**Architecture fit.** Inside the architecture: `pcrec_maxw` exists, the view
+axis exists, and the bound is one clamp on the loop the DFA already writes.
+The VM gets the same clamp through M2's `start_max` if that lands first,
+which is another reason to sequence M2 early.
+
+**Size expectation.** Under 100 bytes of emitted C.
+
+**The axis.** `-fno-end-window` / `PCREC_NO_END_WINDOW`, stamp
+`<PREFIX>_END_WINDOW` (the `maxw` bound, or `none`). Sabotage direction:
+widen the window by one byte too FEW (clamp to `n - maxw + 1`) — this one
+**does** have an answer-level detector, because it drops a legal match, and
+the reach witness is any `$`-terminated corpus pattern with finite `maxw`.
+
+**Owed Linux measurement:**
+
+```sh
+cd "$OPT1"
+# M4.a  baseline, and the scaling shape that is the whole claim
+"$OPT1/pcrec/build/pcrec" --features all --no-captures -p rx -o "$OPT1/dol.c" --pattern 'abc$'
+grep -E '^#define RX_DFA_(PREFILTER|SCAN|START) ' "$OPT1/dol.c"
+cp "$OPT1/dol.h" "$OPT1/art.h"
+gcc -O2 -I"$OPT1" -o "$OPT1/base_dol" "$OPT1/findall.c" "$OPT1/dol.c"
+for S in t-64k t-256k t-1m; do "$OPT1/base_dol" "$OPT1/subj/$S.bin" 5; done
+# EXPECT ~3,500 / ~16,700 / ~89,400 ns, matches=0, i.e. LINEAR in n.
+
+# M4.b  the HAND-TWIN: in <prefix>_search, before the scan loop, insert
+#           if (subject_length > 5 && search_from < subject_length - 5)
+#               search_from = subject_length - 5;   /* maxw(abc$) = 4, +1 for $\n */
+#       and re-run. (5 is hand-computed here; the landed mechanism derives
+#       it from pcrec_maxw.)
+# EXPECT: ~25-150 ns, IDENTICAL at all three sizes -- the O(1) shape.
+#   Answer identity: matches=0 on all three, as the baseline reports.
+
+# M4.c  the correctness carve-out the twin must survive, on a MATCHING
+#       subject and on one where the match is NOT at the end.
+printf 'abc' > "$OPT1/subj/e1.bin"                    # matches at 0
+printf 'abc\n' > "$OPT1/subj/e2.bin"                  # $ before final newline
+python3 -c "import sys; sys.stdout.buffer.write(b'x'*100000+b'abc')" > "$OPT1/subj/e3.bin"
+python3 -c "import sys; sys.stdout.buffer.write(b'abc'+b'x'*100000)" > "$OPT1/subj/e4.bin"
+for S in e1 e2 e3 e4; do "$OPT1/base_dol" "$OPT1/subj/$S.bin" 1; \
+                          "$OPT1/twin_dol" "$OPT1/subj/$S.bin" 1; done
+# EXPECT: matches= agrees base-vs-twin on all four (1,1,1,0). e2 is the
+#   trailing-newline case the +1 exists for; e4 is the one a window that is
+#   one byte too wide would still get right and a wrong VIEW test would not.
+```
+
+---
+
+### M5 — `[OPT-ATTEMPT-SPLIT]`: `^` on some branches costs the whole DFA toolkit
+
+**Rows explained.** `wild-waf-crs-942360-concat-sqli` thr (rank 11, 5.41×
+vs `re2-longest`) and srch (rank 27, 1.53×). Weighted score **0.306**.
+
+**Diagnosis.** The pattern carries `^(?:json\.)?...` in one branch of a
+1,460-byte top-level alternation. `src/gen/emit_dfa.c:13-17` routes any
+pattern containing `^` to `ENG_ATTEMPT`, the per-start-position
+computed-goto shape, and says in its own comment that *"fully-anchored
+patterns get the start_max=0 fast path, so the slow shape is `^` on only
+SOME branches."* This artifact is the slow shape: `start_max = subject_length`,
+and its stamps read `RX_DFA_PREFILTER "none"`, `RX_DFA_TABLE "none"`,
+`RX_DFA_SCAN_EDGE "none"` — **no prefilter, no premultiplied table, no
+[OPT-5] scan edge**, because `ENG_ATTEMPT` has none of that machinery. It
+reads 8.83 ns/byte, the highest per-byte cost of any DFA artifact in the
+set, against `re2-longest`'s 1.62. One `^` in one branch of a 2,000-state
+pattern costs the entire optimization toolkit.
+
+**The mechanism, in general form.** Split a pattern whose top-level
+alternation mixes `^`-anchored and unanchored branches into **one attempt of
+the original machine at `search_from`**, followed by the ordinary
+`ENG_UNANCH` engine — with its prefilter, its premultiplied table and its
+scan edge — built from the pattern with the anchored branches removed, for
+positions past `search_from`. Leftmost-first is preserved by construction:
+at `search_from` the original machine decides (so branch order is the
+original's), and no anchored branch can match anywhere later. This is not a
+new engine: both halves are engines the tree already emits, and the
+"optional contributor" shape is the one `[K53-SELRETRY]`'s drop ladder
+already established.
+
+**Architecture fit.** Inside the architecture, but it is the largest of the
+five: it builds two machines where one is built today, and the emitted entry
+has to sequence them. A real risk the design pass must price is that a
+two-machine artifact doubles the table budget on exactly the patterns whose
+tables are already largest.
+
+**Size expectation.** Up to **2×** the table bytes on a reached artifact.
+That is the axis's whole argument, and it is why this one may belong at a
+`--tune` position rather than at the default (D119 item 4's second axis).
+
+**The axis.** `-fno-attempt-split` / `PCREC_NO_ATTEMPT_SPLIT`, stamp
+`<PREFIX>_DFA_SCAN` gains the value `attempt+unanchored`. Sabotage
+direction: drop the anchored half (answer-detectable: a subject matching
+only through the `^` branch answers NOMATCH) and, separately, drop the
+`search_from` attempt of the original (also answer-detectable). Reach
+witness: `wild-waf-crs-942360-concat-sqli` itself, plus the shipped corpus's
+own `attempt`-scan-with-`start_max = subject_length` population, which must
+be counted before the row is sized.
+
+**Owed Linux measurement:**
+
+```sh
+cd "$OPT1"
+P=wild-waf-crs-942360-concat-sqli
+"$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/$P.c" \
+    --pattern "$(cat /home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx)"
+grep -E '^#define RX_(ENGINE|DFA_SCAN|DFA_PREFILTER|DFA_TABLE|DFA_SCAN_EDGE) ' "$OPT1/$P.c"
+grep -m1 'const size_t start_max' "$OPT1/$P.c"
+cp "$OPT1/$P.h" "$OPT1/art.h"
+gcc -O2 -I"$OPT1" -o "$OPT1/base_$P" "$OPT1/findall.c" "$OPT1/$P.c"
+for S in t-64k t-1m; do "$OPT1/base_$P" "$OPT1/subj/$S.bin" 5; done
+# EXPECT 8.83 ns/byte at both sizes, start_max = subject_length.
+
+# M5.b  the UPPER BOUND the mechanism is chasing, measured without building
+#       it: compile the SAME pattern with its one ^-bearing alternative
+#       deleted by hand (it is the `^(?:json\.)?...` arm) and time that.
+#       That artifact takes ENG_UNANCH and gets prefilter+table+scan edge.
+#       Write the edited pattern to "$OPT1/split.rx" first.
+"$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/split.c" \
+    --pattern "$(cat "$OPT1/split.rx")"
+grep -E '^#define RX_(DFA_SCAN|DFA_PREFILTER|DFA_TABLE|DFA_SCAN_EDGE) ' "$OPT1/split.c"
+cp "$OPT1/split.h" "$OPT1/art.h"
+gcc -O2 -I"$OPT1" -o "$OPT1/split" "$OPT1/findall.c" "$OPT1/split.c"
+"$OPT1/split" "$OPT1/subj/t-1m.bin" 5
+wc -c "$OPT1/$P.c" "$OPT1/split.c"
+# EXPECT: ns/byte at or below re2-longest's 1.62, and a SIZE figure that is
+#   the other half of the decision -- the landed mechanism emits BOTH
+#   machines, so the size to price is the sum. If the split artifact is not
+#   materially faster, ENG_ATTEMPT is not the cost and M5 is refuted.
+```
+
+---
+
+### M6 — the measurement that would name a sixth mechanism (no mechanism yet)
+
+§2.3(f)'s eleven rows (weighted 1.004) are VM rows where pcrec and the
+winner are both linear and pcrec costs 1.05–5.2× per byte. Nothing in the
+emitted C names a mechanism: `rx_reset_for_next_attempt` is O(trail depth),
+i.e. proportional to work already done. **A mechanism must not be proposed
+before the profile says what the per-byte cost is.** The measurement:
+
+```sh
+cd "$OPT1"
+for P in nested-comment-rec quoted-delim-match balanced-parens-rec; do
+  "$OPT1/pcrec/build/pcrec" --features all -p rx -o "$OPT1/$P.c" \
+      --pattern "$(cat /home/duxevents/pcrec-bench/bench/capability/patterns/$P.rx)"
+  cp "$OPT1/$P.h" "$OPT1/art.h"
+  gcc -O2 -I"$OPT1" -o "$OPT1/base_$P" "$OPT1/findall.c" "$OPT1/$P.c"
+  "$OPT1/base_$P" "$OPT1/subj/t-1m.bin" 5
+  objdump -d --no-show-raw-insn "$OPT1/base_$P" \
+    | sed -n '/<rx_match_anchored>:/,/^$/p' | wc -l
+done
+# Then: instrument a COPY of each artifact with a counter incremented once
+# per rx_match_anchored call and once per VM dispatch step, run it on t-1m,
+# and divide the measured wall time by each count. That gives ns/attempt
+# and ns/step separately -- which is the fact that decides whether the
+# bucket is an attempt-COUNT problem (M2/M3 territory) or a per-STEP
+# problem (an emitted-code problem), and no proposal should precede it.
+```
+
