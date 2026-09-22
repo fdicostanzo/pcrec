@@ -1,16 +1,15 @@
 # Changelog
 
 All notable changes to pcrec are recorded here. Format loosely follows
-[Keep a Changelog](https://keepachangelog.com/); this project has not yet
-made its first tagged release, so everything below sits under
-`[Unreleased]`.
+[Keep a Changelog](https://keepachangelog.com/). Tags are `v<version>`
+(the first is `v0.1.0-beta`).
 
 `PCREC_VERSION` (`lib/pcrec.h`) is the product version this file tracks —
 independent of `abi` (`docs/spec/match_api.md` §6), the emitted-artifact
 scaffolding version, which changes far more often than a release does. See
 `docs/dev/decisions.md` D115 for the ruling.
 
-## [0.1.0-beta] — unreleased
+## [0.1.0-beta] — 2026-09-22
 
 The first tagged milestone. An ahead-of-time PCRE-to-C compiler: an
 input pattern compiles to specialized, self-contained gcc-dialect C source
