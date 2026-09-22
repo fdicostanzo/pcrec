@@ -24786,3 +24786,19 @@ SIMD until the end, engine-constrained, fastest-algorithmic-engine
 target, capability subbench first) → [OPTLOOP] + [BENCH-REVIEW]
 re-scoped; [EMIT-ENTRIES]/[LANG-1]/[LANG-2] chartered. GATE on 7aaf7152
 launching now; push after.
+
+**~21:2x — [REL-1.5]/[REL-1.6]/[REL-1.7]/[REL-1.11] landed; CI's first run
+in flight; the guide starts.** rel15: CONTRIBUTING.md + RUN-STAMP on the
+trailer + darwin stranger's build (no undeclared prerequisite); the
+Linux arm via executor I-84 all rc=0 (gcc 15.2.0). rel16: the CI
+workflow (ubuntu, libpcre2-dev, make/strict/timed make test, 90-min
+step) — merged and pushed; run 35673045457 is the "does it fit"
+measurement. libfeat: `pcrec_options.features` per call through a PURE
+resolver on Ctx (the brief's "apply the global per call" would have
+reintroduced the D19 race — the lane argued and I agree); NULL = the
+empty raw default (D37's addendum; the plan row said std1 — wrong, the
+row corrected); the global installer survives for the query modes →
+shelved [FEAT-GLOBAL-RETIRE]; S111's anchor re-derived; the digest's
+"std1 unconditionally" claim corrected. Gate on the merged main
+launching; pushed so CI doubles as the Linux gate (tests/thread runs
+there — the D19 TSan confirmation). Lane rel13 (sonnet) starts the guide.
