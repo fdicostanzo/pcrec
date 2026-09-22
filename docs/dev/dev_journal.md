@@ -24854,3 +24854,57 @@ clifix, rel15, rel16, libfeat, rel13, cifix, pc3floor (15, all sonnet,
 all closed); two darwin gates green; CI green on run 4. NEXT (D113 step
 3 / D119): [OPTLOOP] cycle 1 = [BENCH-REVIEW] + [BACKLOG-TRIAGE] on the
 bench's `capability` subbench — starts on Frank's word.
+
+## 2026-09-22 (seventy-sixth session) — [OPTLOOP] cycle 1 OPENED; [BACKLOG-TRIAGE] + [OPTLOOP.1.analysis] delivered and merged
+
+Frank: "start opt loop" (D113 step 3, D119). Main fe1dbb7a → ab341bfe
+(rows started) → a58f7ecb (backtri merged) → 405668e9 (optrev merged).
+Two lanes, both docs-only, both closed by TaskStop at delivery, worktrees
+removed; a zero-model-call watcher script (bash 3: no `declare -A` on
+darwin — fixed) covered liveness.
+
+**backtri (sonnet, [BACKLOG-TRIAGE], docs/dev/backlog_triage_2026-09-22.md):**
+93 rows = 81 ANCHORED not-started + 12 dormant started (the plan row's
+"102" was an unanchored grep counting "formerly STATE:not-started" prose —
+recipe added to plan.md's header). Close/fold candidates: DD-1 (shipped
+under M5.0 stage 4), DD-12 (stub), DD-7 (M4.3 panel confirmed in
+plan_completed by the manager), BENCH-1 (fold into D119), OPT-4.2 (a closed
+ruling in an open row), TT-14 (fold into TT-4M — confirmed by the manager's
+read). Systemic: DD-2/M4-CALLOUTS/M4-SUBST/DD-6/DD-11 wait on milestones
+that shipped; proposed standing rule "milestone completes → grep plan.md
+for rows naming it as a trigger". Column proposals: M3.0 / ENG-DIRECT
+(provisional) / MACPORT-XARGS+LIM-OVR.
+
+**optrev (opus, [OPTLOOP.1.analysis], docs/dev/optloop/cycle1_analysis.md,
+1,386 lines + cycle1_rows.tsv + scripts):** capability@0.1 at bench pin
+25b1984f (the 09-22 wrapfix sample confirmed order-unchanged by pcrecdev2;
+two whole-subject refusal cells were the bench's instrument, excluded).
+Criterion: JIT is never the target (its start-up optimizations are
+compile-time pattern facts shared with the interpreter); vectorscan
+excluded; rust counted with its SIMD component separated (best-scalar
+column). pcrec fastest or tied on 91/125 ranked cells; best floor in the
+roster (665 ns vs rust 1,228). 34 losing cells: nine SIMD-phase deferrals;
+the rest dominated by four compile-time pre-checks PCRE2 computes and
+pcrec does not. Engine-selection bucket EMPTY (every VM-routed loser is
+VM-routed for a construct the DFA cannot express). Five mechanisms:
+[OPT-REQBYTE] required-byte memchr once per call (3.714; five throughput
+rows 55-576x where the winner answers 1 MiB in one memchr pass);
+[OPT-ANCHOR-VM] the DFA's three-valued start_max moved to the VM's
+`for(;;)` (2.112; bracket-array-define 52,123x; the shipped auto-caps
+default reads 49,016x/39,447x on evil-alt-nested/trim-nested-star);
+[OPT-FIRSTSET] AST first-byte set looking through leading \b etc. (1.002;
+the named cause of OPT-3's "skips ZERO bytes"); [OPT-ENDWIN] the \z start
+window D77 deferred (0.871; `abc$` 725x behind the best scalar engine);
+[OPT-ATTEMPT-SPLIT] `^` on some branches costs the whole DFA toolkit
+(0.306; size argues for --tune). M6 = measurement before any mechanism
+for eleven linear VM rows. Parked rows ENG-ISL/CLS-TREE score 0 here
+(ENG-ISL's customer is altwide; CLS-TREE has no \p population). Owed:
+the Linux profile pass (§3 blocks M1-M6, verbatim, [OPT-5] step-0
+method) — I-85. Two side findings for the bench: evil-alt-nested's
+"wrong" labels cover the two subjects NOTES.md dropped from expectations;
+`pcrec --list-source`'s pattern column is field-escaped (nine phantom
+refusals if fed back undecoded).
+
+NEXT: Frank ratifies §5's rows + batch 1 (REQBYTE+ANCHOR-VM+FIRSTSET) and
+the triage's closes; I-85 sent; [OPTLOOP.1.impl] opens on the profile's
+confirmation.
