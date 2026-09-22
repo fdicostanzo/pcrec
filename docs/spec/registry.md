@@ -352,6 +352,16 @@ already true of the compiler before this pass, so there is no `abi` bump.
   says nothing about `built` (a pcrec-only fact PCRE2 has no opinion
   on) and nothing about `class_expect`'s exact measured value beyond
   what its own generated cells happen to cover.
+
+  **[REL-1.6], 2026-09-22 — PC-3 carries a VERSION FLOOR** (libpcre2
+  10.46, `PCREC_PCRE2_FLOOR_{MAJOR,MINOR}` in `pcre2_check.c`, D98): a
+  resolved libpcre2 older than the floor SKIPs with the same banner
+  shape absence does, naming the floor and the resolved version, rather
+  than running checks written against constructs (the `(?a)`/`(?r)`
+  group modifiers, several verb names) only the floor and newer have.
+  This is what a stranger's older distro package gets; CI builds the
+  pinned 10.46 itself (`.github/workflows/ci.yml`) precisely so its own
+  run exercises the checks rather than skipping them.
 - **`compliance_section.py`** (`docs/pcre2_compliance.md`'s generator,
   [SPEC-1.9]) is the same 17-column dump rendered as the page's
   "Registry construct index" — component 1 of that page's three-

@@ -1159,6 +1159,21 @@ C3_TIMEOUT=1
 # same reviewed commit, beside CENSUS_LINES.
 C3_TIMEOUT_FILE_LINES=89
 
+# THE C3 PINS ARE PYTHON-VERSION-SENSITIVE, NOT BOX-SENSITIVE (measured
+# above, "BOX SENSITIVITY" / [pyrole re-pin]) — the reference box
+# (ubuntubudu) runs python 3.14, and the darwin RECORD-not-assert
+# exception below existed only because this box's python has always been
+# older than that. `uname -s = Darwin` was a proxy for "this box's python
+# isn't 3.14", true by accident of which boxes existed when it was
+# written. CI's ubuntu-latest runner is `uname -s = Linux` — the ASSERT
+# branch — with whatever python3 Actions' image ships (typically NEWER
+# than 3.11 but not necessarily 3.14), so the proxy is wrong in the other
+# direction there: a real, non-canonical Linux box gets asserted against
+# pins that are not its own. Read the actual resolved version instead of
+# guessing from the OS.
+C3_PY_REF="3.14"
+C3_PY_VER="$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo unknown)"
+
 # THE PER-FILE WALL BOUND IS NOT OPTIONAL HERE, and this is the one place
 # it is armed. MEASURED: `tests/base/d27_k23_ambiguous_decomposition.rxt`
 # (`(a{1,3}){65}`, subjects to 100+ characters) does not return under
@@ -1230,15 +1245,19 @@ if [ "$c3rc" -eq 0 ]; then
     done
     if [ -z "$c3_bad" ]; then
         pass "C3: all eleven population pins hold (verified, informational, skips by reason, timeouts)"
-    elif [ "$(uname -s)" = "Darwin" ]; then
-        # The pins are the LINUX REFERENCE BOX's numbers (the BOX
-        # SENSITIVITY notes above; I-61's pins, python 3.14 there vs this
-        # box's older python). On darwin a delta against them is the
-        # documented box skew, not a verdict — RECORDED every run so the
-        # populations stay visible, asserted only where the pins are
-        # native. A REAL local movement still surfaces: the reconciliation
-        # check below (sums must equal the census) stays hard on every box.
-        record "C3: population pins are Linux-reference numbers; this box's deltas (documented box sensitivity, not asserted here):$c3_bad"
+    elif [ "$C3_PY_VER" != "$C3_PY_REF" ]; then
+        # The pins are the REFERENCE BOX's numbers, at python $C3_PY_REF
+        # (I-61's pins; the BOX SENSITIVITY notes above). This process's
+        # own python3 resolved to $C3_PY_VER, so a delta against those
+        # pins is the documented python-version skew, not a verdict —
+        # RECORDED every run so the populations stay visible, asserted
+        # only where the resolved version actually matches the pins'
+        # own. A REAL movement still surfaces: the reconciliation check
+        # below (sums must equal the census) stays hard regardless of
+        # python version, and a box that DOES resolve python $C3_PY_REF
+        # (the reference itself, or any other box lucky enough to match)
+        # gets the full assertion below, not this exemption.
+        record "C3: population pins are python $C3_PY_REF's numbers; this python ($C3_PY_VER)'s deltas (documented version sensitivity, not asserted here):$c3_bad"
     else
         fail "C3: population pin(s) MOVED:$c3_bad
   A skip reason that grows is coverage lost without a failing case to
