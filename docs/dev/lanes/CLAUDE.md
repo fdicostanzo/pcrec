@@ -2290,3 +2290,18 @@ never edited afterwards.
   independently-derived `patterns/*.rx` exports, 64 of 64 identical.
   Nothing owed by the lane; the Linux profile blocks are a precondition on
   any implementation lane and are named by section id in report §5.
+- `capsview_report.md` — [OPTLOOP.1-CAPSVIEW] (2026-09-22, lane `capsview`,
+  docs-only): Frank's apples-to-apples ruling on `cycle1_analysis.md`'s
+  ranking, answered by re-ranking pcrec's SHIPPED DEFAULT (`auto-caps`)
+  against capture-bearing competitor engines only, instead of §1's
+  best-of-four-pcrec-variants figure. 65 of §1's 91 win/tie rows were
+  carried by `auto-nocaps`, not the default; 58 of those still hold under
+  the caps-only view, 5 flip to a loss (two more than §1.1 named), and one
+  pattern (`wild-datetime-datefinder-alternation`) never had a real
+  `auto-caps` number at all. The five §3 mechanisms are robust (move
+  under 2%) under `auto-caps` alone; the remaining unexplained caps-losing
+  population (25 rows, score 6.0106) is dominated by a 14-row "capture
+  group" `RX_ENGINE_WHY` bucket (score 4.6833), named as the population
+  for the manager's separate captures-mechanism survey. See
+  `docs/dev/optloop/cycle1_caps_view.md` (the memo) and
+  `docs/dev/optloop/CLAUDE.md` for the reproduction scripts/data.
