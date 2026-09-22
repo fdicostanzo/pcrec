@@ -4153,6 +4153,14 @@ bucket: `fuzz.py` gained `size_cap` on `state_cap`'s precedent, because a
 documented ceiling doing its job is not an accept/reject divergence and would
 otherwise be counted as one.
 
+**CROSS-REFERENCE (2026-09-22, lane closefold, [BACKLOG-TRIAGE]'s close/fold
+pass):** the rung-scoped `ESEL_DECLINED_NULLABLE` value this row's
+`compile_driver` size-cap retry produces has its own documented, unwitnessed
+retry-path gap — Frank ruled "WAIT FOR A WITNESS — no row, no hunt" on it
+(2026-09-03), impact bounded to performance only. The closed plan row is
+archived at `docs/dev/plan_completed.md` under `[OPT-4.2]`; nothing here
+changed by that ruling.
+
 ---
 
 ## K41 — the ORIGINAL entry (2026-08-28, found by the manager's [SEL-1] landing battery, tests/fuzz/run_capturediff_gate.sh) — a VM artifact for a deeply-nested, wide bounded-repeat pattern can exceed D45's gcc compile-time budget, and [SEL-1] is what UNHID it rather than caused it

@@ -82,6 +82,7 @@ never expand a row into a paragraph.
 | brief a lane | the Conventions below + `.claude/skills/pcrec-manager` §3 (scope mandate, worktree/cell, async validation, WIP commits, `gnutimeout` on every uncertain command) |
 | wake up, or rule anything that touches pcrec-bench | read `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md` (its durable messages to us); WRITE durable rulings/priorities/pins to `.../inbox_from_pcrec.md` there as a single-file `[inbox]` commit — the ONLY file we write in that repo (one writer each way; live coordination stays interprocess; D78). Use absolute paths / `git -C` — a `cd` in a compound command persists to its tail (the manager committed into the wrong repo once) |
 | end or pause a session | rewrite docs/dev/wake.md from scratch (skill §6) |
+| complete a milestone or close a row | grep plan.md for rows naming it as a TRIGGER or gate (DD-2/M4-CALLOUTS/M4-SUBST/DD-6/DD-11 sat months behind shipped M4/M6/M6.6 — backlog_triage_2026-09-22.md) |
 
 ## Compatibility standard (D26)
 
