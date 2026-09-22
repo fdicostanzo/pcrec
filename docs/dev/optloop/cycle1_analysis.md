@@ -578,6 +578,13 @@ int main(int argc,char**argv){
 EOF
 ```
 
+**Naming convention used by every block below.** `base_<pattern>` is the
+shipped artifact compiled and linked against `findall.c`; `twin_<pattern>`
+is the SAME artifact with the one hand edit that block describes, built by
+the identical `gcc -O2 -I"$OPT1" -o "$OPT1/twin_<pattern>" "$OPT1/findall.c"
+"$OPT1/<pattern>_twin.c"` line. Every twin must be answer-checked against
+its base (`matches=` equal on every subject) before its timing is read.
+
 ---
 
 ### M1 — `[OPT-REQBYTE]`: the required-byte whole-window pre-check
@@ -775,8 +782,9 @@ done
 #   must be checked first: the twin must print matches=0 on both subjects,
 #   as the baseline does.
 
-# M2.c  the CARVE-OUT: an UNANCHORED VM artifact must not move.
-"$OPT1/base_nested-comment-rec" "$OPT1/subj/t-1m.bin" 5   # built as in M2.a
+# M2.c  the CARVE-OUT: an UNANCHORED VM artifact must not move. Build
+#       nested-comment-rec with the same three lines M2.a uses, then:
+"$OPT1/base_nested-comment-rec" "$OPT1/subj/t-1m.bin" 5
 # EXPECT: unchanged by the twin (the predicate is false there, so no line
 #   of its emitted text differs) -- confirm by `cmp` of the two .c files.
 ```
