@@ -2419,3 +2419,48 @@ never edited afterwards.
   had another lane's `make test-axes` still running, so `make
   test-registry` itself was not re-run before handback — see the report
   for the exact command owed.
+
+- `c2prep_report.md` — **cycle-2 PREPARATION** (2026-09-22, lane `c2prep`,
+  opus; docs + throwaway census instruments only, nothing under
+  `src/`/`lib/`/`cli/`/`tests/`, no timing anywhere). Three deliverables under
+  `docs/dev/optloop/`: `firstset_design.md`, `reqpos_census.md`,
+  `onepass_census.md`. Read the report for five findings, of which the first
+  two are refutations of ratified text.
+  **`[OPT-FIRSTSET]`'s mechanism as ratified is UNSOUND, and its own proposed
+  identity check passes it** — narrowing `rx_can_begin_match` to the AST-level
+  first-byte set makes `\b(?:true|false|null)\b` report a SPURIOUS match on
+  `"atrue xnull "` where the shipped artifact answers `matches=0`, because the
+  DFA's start state encodes the preceding byte's word class and the bytes
+  leaving it live include every word byte; `{t,f,n}` IS a subset of word-63,
+  so M3's "the new set must be a subset" guard is satisfied by the unsound
+  narrowing. The repair is one line reusing `rx_forward_seed_state`, a table
+  the artifact already emits, and changes no count.
+  **The cost model the note was chartered to supply declines nothing**:
+  `skipped + steps == n` exactly, so cost per byte is `(L·b + w·a + c)/(L+w)`
+  with `L = (1−d)/d`, an identity predicting the measured skipped fraction to
+  within 0.03% on four configurations, whose derivative in `L` is negative for
+  every admissible parameter — and the one measurement contradicting it
+  (`json-constant`'s ×1.10) is the one no accounting over its own artifact's
+  counts reproduces, missing it by 2.36×.
+  **`[OPT-REQPOS]` tier 2 does not clear D77** (two of cycle 1's 34 losing
+  cells; 6.0% of the corpus) while **tier 2b does** (27.3% of the bench, and
+  five `capability` patterns whose byte is PRESENT and whose RUN is ABSENT).
+  **The one-pass DFA survives its kill gate by 3×** (capture-bearing reach
+  31.46% corpus / 29.41% hybrid against ~10%), with two results beyond it: the
+  UTF-8 narrowing the survey expected moves that figure 0.06 points because
+  46.3% of the population is excluded by node KIND first, and `pcrec_altcls`
+  factoring is worth +3.16 points, so pcrec's reach is measured on pcrec's
+  trees.
+  Also worth reading for **F1, the cheapest item in the delivery**: 14 of 36
+  `capability` patterns have a rarer necessary byte than PCRE2's rightmost
+  rule picks and on three the rarer byte is ABSENT while the picked one is
+  PRESENT, so batch 1's shipped pre-check cannot fire where a
+  frequency-informed pick would answer the whole call in one pass — no new
+  emitted mechanism, just which member of a set `reqbyte.c` already carries.
+  And for **F5**, two build-time findings recorded in the probe sources: a
+  census walk must fold the `A_CAT` spine iteratively (the first draft died on
+  the corpus), and a census that reconstructs the pipeline must reconstruct
+  every REWRITING pass above the analysis's own call site (the first draft
+  read `s` where batch 1 stamps `r` on `/user|/users`, because
+  `pcrec_altcls` factors it) — caught only because the census was built with
+  a cross-check against a shipped stamp rather than against its own reasoning.

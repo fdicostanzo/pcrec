@@ -136,7 +136,8 @@ so no gate, pin, manifest or sabotage anchor is touched.
 
 | check | result |
 |---|---|
-| `git diff --stat main..lane/c2prep -- src lib cli tests` | **empty** |
+| `git diff --stat b3086b46..lane/c2prep` (the branch point; `main` has since advanced) | **22 files, 19,617 insertions, 0 deletions, every one under `docs/`** |
+| the same restricted to `src lib cli tests` | **empty** |
 | both probes compiled `-Wall -Wextra -std=gnu11` with `gcc-16` | clean, no warnings |
 | `reqpos_probe` vs batch 1's `RX_REQ_BYTE` on the capability set | **63 checked, 63 agree, 0 disagree, 1 skipped** |
 | `reqpos_probe` smoke cases (11, hand-derived answers) | all correct, and identical across the iterative rewrite |
