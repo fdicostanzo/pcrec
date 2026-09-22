@@ -680,7 +680,80 @@ enum {
      * not move a non-comment byte over a knob that only removes comments —
      * which is also what makes the object-file identity above checkable. */
     PCREC_NO_COMMENTS   = 1u << 26,
-    PCREC_FORCE_COMMENTS = 1u << 27
+    PCREC_FORCE_COMMENTS = 1u << 27,
+
+    /* [OPT-ANCHOR-VM] DENY THE VM'S ATTEMPT-LOOP START BOUND.
+     *
+     * A VM-routed pattern whose every match must begin at offset 0 (`^`,
+     * `\A`) or at the caller's own startpos (`\G`) can only match at ONE
+     * start position, so the search loop's remaining attempts are provably
+     * dead. The DFA emitter has bounded its attempt loop on exactly this fact
+     * since [M6.2] wave D; the VM's loop had no bound at all, which is a
+     * measured 52,122x on `bracket-array-define` at 1 MiB
+     * (docs/dev/optloop/cycle1_analysis.md M2).
+     *
+     * ANSWER-IDENTITY-PRESERVING, and in the strongest sense this file has:
+     * the removed attempts are attempts the artifact would have RUN AND
+     * FAILED, so the denial changes run TIME and nothing else. That is also
+     * why its sabotage row is a STAMP row — a plant that emits the unbounded
+     * form is invisible to every answer-level check in the tree.
+     *
+     * `<PREFIX>_VM_START` reports the derived value on every VM artifact
+     * (`anchored` / `gstart` / `unanchored`), so a denied build is legible
+     * as `unanchored` exactly like a pattern with nothing to bound. */
+    PCREC_NO_VM_ANCHOR_BOUND = 1u << 28,
+
+    /* [OPT-ENDWIN] DENY THE END-ANCHOR START WINDOW.
+     *
+     * A pattern whose every alternative ends in `$`/`\Z`/`\z` (outside
+     * multiline) and whose maximum width is finite can only be matched by a
+     * string that ENDS at the subject's end, so it can only START within
+     * `maxw + eps` bytes of it. A search may therefore begin its scan there
+     * rather than at the caller's `search_from`, which turns a linear walk of
+     * the whole subject into a constant-size one: `abc$` on 1 MiB measured
+     * 1,401x behind rust and collapses to a flat 30 ns under the hand-twin
+     * (docs/dev/optloop/cycle1_analysis.md M4, cycle1_profile.md M4).
+     *
+     * ANSWER-IDENTITY-PRESERVING, but UNLIKE its two batch siblings it is the
+     * kind of mechanism that CAN delete a match if it is wrong: a window one
+     * byte too narrow drops a legal `$`-before-final-newline match. That is
+     * why its sabotage row plants exactly that and is detectable by ordinary
+     * `.rxt` cases, and why the analysis declines rather than guesses on
+     * every construct it cannot price (an unbounded width, a multi-byte
+     * encoding, `\G`, a multiline `$`).
+     *
+     * `<PREFIX>_END_WINDOW` reports the derived bound on every artifact, so a
+     * denied build is legible as `"none"` exactly like a pattern with nothing
+     * to prove. */
+    PCREC_NO_END_WINDOW = 1u << 29,
+
+    /* [OPT-REQBYTE] DENY THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK.
+     *
+     * Where every match of a pattern must contain some literal byte, a search
+     * over a window that does not contain that byte can answer NOMATCH in one
+     * `memchr`-class pass instead of running an attempt at every start
+     * position. PCRE2 records the same fact as
+     * `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT` and 25 of `capability@0.1`'s
+     * 64 patterns have one; pcrec computed nothing like it, which is the
+     * largest single weighted gap that subbench measured
+     * (docs/dev/optloop/cycle1_analysis.md M1 -- five throughput rows at
+     * 0.93-9.74 ns/byte against a 0.017 floor).
+     *
+     * IT EXTENDS THE PREFILTER PRIMITIVE, keyed on a NECESSARY byte instead
+     * of a CANDIDATE START and hoisted one level out, which is what lets it
+     * serve the VM route -- where the hybrid prefilter is declined outright
+     * for a backreference or a linked call, and where three of those five
+     * rows live.
+     *
+     * ANSWER-IDENTITY-PRESERVING in its batch siblings' strongest sense: the
+     * check returns NOMATCH only where every attempt would have failed, so
+     * denying it changes run time alone. It is nevertheless the one of the
+     * three with an answer-level SABOTAGE, because the natural corruption
+     * (inverting the `memchr` sense) is not in the sound direction and turns
+     * matching subjects into NOMATCH.
+     *
+     * `<PREFIX>_REQ_BYTE` reports the byte, or `"none"`. */
+    PCREC_NO_REQ_BYTE = 1u << 30
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

@@ -856,6 +856,30 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # the only thing that changed, on every artifact of both engines
 # regardless of `-fcomments`.
 #
+# [OPTLOOP.1] batch 1, 2026-09-22 — abi 28 -> 29. THE THREE WHOLE-WINDOW
+# PRE-CHECKS (D119). Every artifact of both engines gains the
+# `<PREFIX>_END_WINDOW` and `<PREFIX>_REQ_BYTE` stamp lines in the SHARED
+# PROLOGUE, every VM artifact gains `<PREFIX>_VM_START` beside its own
+# stamps, and the three analyses' populations gain the emitted bound, clamp
+# and `memchr` those stamps name.
+#
+# **(A) IS UNTOUCHED, and unlike [REL-1.4]'s entry below that is a claim
+# about WHERE the new text goes rather than about how little of it there
+# is.** All three stamps are `#define` lines in the prologue, above
+# `goto <p>_L0;` and therefore outside `prog_region()`. The two emitted
+# PROGRAM additions likewise sit in the SEARCH ENTRY (the clamp and the
+# `memchr`, both above the scan/attempt machinery), and
+# [OPT-ANCHOR-VM]'s `attempt_max` declaration and rewritten continue test
+# sit in `<prefix>_search_run`, which is not the VM PROGRAM region either.
+# MEASURED, not argued: comparison (A) reads zero movers on every label.
+#
+# **(B) IS LEFT AT THE PRE-BUMP VALUE AND IS OWED TO THE MANAGER**, on
+# opt5i's, ccdiff1's and [EMIT-VERB]'s recorded precedent one paragraph up:
+# D76's pin must name a commit REACHABLE AFTER THE MERGE, which a lane
+# branch's own commit is not. This gate is therefore RED on `lane/optimpl1`
+# BY CONSTRUCTION, with the exact message "the emitted scaffolding changed:
+# bump `abi` ... and re-pin comparison (B)" — the gate working, not a defect.
+#
 # **(A) IS UNTOUCHED, for the plainest reason any row in this list has
 # given.** The generated-by line sits at the very TOP of the file, above
 # the shared prologue and above `goto <p>_L0;` — `prog_region()` reads

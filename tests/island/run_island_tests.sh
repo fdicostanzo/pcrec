@@ -394,8 +394,15 @@ BDRV_EOF
 
 bud_ok=1
 for arm in on off; do
-    fl=""; [ "$arm" = off ] && fl="-fno-alt-island"
+    fl="-fno-req-byte"; [ "$arm" = off ] && fl="-fno-alt-island -fno-req-byte"
     d="$WORKDIR/bud_$arm"; mkdir -p "$d"
+    # -fno-req-byte: [OPT-REQBYTE] stamps a whole-window memchr for this
+    # pattern's one required byte ('q'), absent from every BUDGET_SUBJECTS
+    # witness by construction (they exist to burn the chain's step budget
+    # on the 'a'/'b' body, never reaching a 'q'). With the axis on, both
+    # arms answer nomatch via the pre-check before either the island or the
+    # chain ever runs, so the divergence this block exists to witness
+    # cannot occur ([MECH-REACH]).
     # shellcheck disable=SC2086
     pcrec_run "$PCREC" -p rx --engine=vm $fl -o "$d/gen.c" --pattern "$BUDGET_PAT" >/dev/null 2>&1         || { bad "the budget witness did not compile ($arm)"; bud_ok=0; break; }
 

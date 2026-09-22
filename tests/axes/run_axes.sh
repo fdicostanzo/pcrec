@@ -43,7 +43,10 @@
 # one per source line): AGREE (same trc+out), MISMATCH (same key, different
 # answer — the axis's answer-identity promise broken), LOST (case ran under
 # default, not under the axis — the axis changed what compiles), GAINED (the
-# reverse). Every one of the twelve bit-flag axes is DENY-ONLY or FORCE-PAIR
+# reverse). Every one of the bit-flag axes (the COUNT is derived from
+# lib/pcrec.h below and is deliberately not restated here -- it has grown at
+# nearly every wave, and this line read "twelve" at twenty-four) is
+# DENY-ONLY or FORCE-PAIR
 # over the DEFAULT (auto) engine selection, which tuning.md documents as
 # never refusing EXCEPT `PCREC_FORCE_PREFILTER` (§2.5, bit 9) — the one
 # member of the family that is DO-OR-DIE (refuses on a pattern that compiles
@@ -148,7 +151,8 @@
 # Env:
 #   AXES        space-separated list of CLI flag spellings (e.g.
 #               "-fno-possessify -fno-revdet") to restrict the sweep to —
-#               empty (default) runs all twelve bit-flag axes plus both
+#               empty (default) runs every bit-flag axis derived from
+#               lib/pcrec.h (bits 4..31) plus both
 #               engine directions plus the [OPT-DIAL] `--tune=` positions
 #               (matched by the substring "--tune", same shape "--engine"/
 #               "--vm-entry-shape" already use). For a QUICK check, not the

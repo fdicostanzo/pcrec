@@ -209,14 +209,27 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
     d="$WORKDIR/p$pass$fail$skipped$$"
     rm -rf "$d"; mkdir -p "$d"
 
+    # -fno-req-byte on the pruned (pa) and denied (pb) builds below:
+    # [OPT-REQBYTE] stamps a whole-window memchr for a pattern's one
+    # required byte, which the EXCUSED population ((a*)*b / (a{1,4})+b,
+    # both requiring a trailing 'b') deliberately omits from its give-up
+    # subjects (long runs of the body's own byte, no 'b'). With the axis
+    # on, both arms answer nomatch via the pre-check before either the
+    # denied build's give-up or the pruned build's real MRL answer is ever
+    # computed, so they trivially AGREE instead of diverging by the
+    # answer-more exemption -- the differential no longer reaches the
+    # give-up-vs-answer asymmetry it exists to measure ([MECH-REACH]). The
+    # referee build (pc, below) is left as-is: it is a pure, always-
+    # terminating DFA machine with no give-up path for the pre-check to
+    # mask, so its answer is unaffected either way.
     # shellcheck disable=SC2086
-    if ! pcrec_run "$PCREC" -p pa $eng --step-budget=$MRLDIFF_STEPS -o "$d/pa.c" --pattern "$pat" \
+    if ! pcrec_run "$PCREC" -p pa $eng -fno-req-byte --step-budget=$MRLDIFF_STEPS -o "$d/pa.c" --pattern "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
     # shellcheck disable=SC2086
-    if ! pcrec_run "$PCREC" -p pb $eng -fno-length-prune --step-budget=$MRLDIFF_STEPS \
+    if ! pcrec_run "$PCREC" -p pb $eng -fno-length-prune -fno-req-byte --step-budget=$MRLDIFF_STEPS \
             -o "$d/pb.c" --pattern "$pat" >/dev/null 2>"$d/err_b"; then
         bad "'$pat' [$eng]: the pruned build compiled and the DENIED (ground-truth) one did not"
         return 0

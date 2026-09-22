@@ -1201,6 +1201,35 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/tunedial.log" | grep -oE '[0-9]+')"
                 score_arm "$work/tunedial.log" "$f" "tunedial:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            prechecks)
+                # [OPTLOOP.1] batch 1 (D119)
+                # tests/codegen/run_prechecks.sh — the three WHOLE-WINDOW
+                # PRE-CHECKS (`<PREFIX>_VM_START`, `<PREFIX>_END_WINDOW`,
+                # `<PREFIX>_REQ_BYTE`) held to the emitted text rather than to
+                # the predicates that wrote them. ITS OWN ARM rather than
+                # `codegen`, for `vmframeless`'s reason: what it guards is one
+                # ANALYSIS above both engines, orthogonal to every emitter
+                # property the other arms check.
+                #
+                # A ROW ON THIS ARM MAY LEGITIMATELY SCORE `corpus:0fail`, and
+                # for TWO of the three mechanisms it MUST. [OPT-ANCHOR-VM]'s
+                # bound removes only attempts the artifact would have run and
+                # FAILED, so a plant that emits the unbounded form changes run
+                # TIME and no answer anywhere; [OPT-REQBYTE]'s pre-check, left
+                # in its sound sense, likewise. This arm is their only
+                # detector, which is stated in each row's own SAB_DESC rather
+                # than inferred from a green corpus. [OPT-ENDWIN] is the
+                # exception and is answer-detectable as well.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE rather than "not detected".
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_prechecks.sh" \
+                    > "$work/prechecks.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/prechecks.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/prechecks.log" | grep -oE '[0-9]+')"
+                score_arm "$work/prechecks.log" "$f" "prechecks:${f:-ERR}fail/${p:-?}pass"
+                ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
                 # tests/codegen/run_vm_frameless.sh — `<PREFIX>_VM_FRAMELESS`

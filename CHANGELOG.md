@@ -9,6 +9,34 @@ independent of `abi` (`docs/spec/match_api.md` §6), the emitted-artifact
 scaffolding version, which changes far more often than a release does. See
 `docs/dev/decisions.md` D115 for the ruling.
 
+## [Unreleased]
+
+### Added
+
+- Three whole-subject PRE-CHECKS, each derived above either engine and each
+  its own `-f`/`-fno-` axis (`docs/spec/tuning.md` §2.25–§2.27). They change
+  no answer; they remove work a search would have done and thrown away, or
+  narrow the range of start positions it has to try.
+  - `-fno-vm-anchor-bound` — a VM-routed pattern whose every alternative
+    begins with `^`/`\A` or with `\G` can only match at one start position,
+    so its search loop stops after one attempt. The DFA route has bounded
+    its attempt loop on this fact since [M6.2]; both engines now read one
+    predicate. Stamp `<PREFIX>_VM_START`.
+  - `-fno-end-window` — a pattern whose every alternative ends in `$`/`\Z`/
+    `\z` outside multiline, with a finite maximum width, can only be matched
+    by a string ending at the subject's end, so a search scans only the tail.
+    Stamp `<PREFIX>_END_WINDOW`.
+  - `-fno-req-byte` — where every match must contain some literal byte, a
+    subject without that byte is rejected in one `memchr` pass. PCRE2 records
+    the same fact as `PCRE2_INFO_LASTCODEUNIT`. Stamp `<PREFIX>_REQ_BYTE`.
+
+### Changed
+
+- `rx_info.abi` 28 → 29: every artifact of both engines carries two more
+  stamp lines, every VM artifact a third, and the three analyses' own
+  populations carry the emitted bound, clamp and `memchr` those stamps name.
+  No struct offset moves and no `rx_info` member changes.
+
 ## [0.1.0-beta] — 2026-09-22
 
 The first tagged milestone. An ahead-of-time PCRE-to-C compiler: an

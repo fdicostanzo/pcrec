@@ -1189,6 +1189,104 @@ construction (src/ir) and emission (src/gen).
   terminates, behaviour-preserving — a cost, not a failure — but it is what
   currently sets tests/resource/'s CPU budget.
 
+- **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
+  ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which
+  positions can a match BEGIN* in three values (`PCREC_SANCH_BOT` /
+  `_GSTART` / `_NONE`), read by BOTH emitters through `Job.start_anchor`.
+
+  **IT EXISTS BECAUSE THE ANSWER WAS ONLY AVAILABLE TO ONE ENGINE.**
+  `src/gen/emit_dfa.c` has derived exactly this fact from its own subset
+  construction since `[M6.2]` wave D (`dfa_interior_dead(d->s1u)`/`(d->s1g)`
+  -> `start_max`), and a VM-routed pattern has no DFA to ask — the hybrid
+  prefilter is declined outright for a backreference or a linked call, which
+  is exactly the population `cycle1_analysis.md` M2 measures at 52,122x. So
+  the fact moves one layer UP and the DFA's pair becomes a CONFIRMATION:
+  `emit_attempt` asserts the implication rather than deriving a second
+  answer. Implement-then-replace, not a parallel mechanism.
+
+  **THE IMPLICATION IS ONE-DIRECTIONAL.** `PCREC_SANCH_BOT` must imply the
+  DFA's `anchored`; the converse is FALSE and is not asserted, because the
+  subset construction has already pruned branches this walk still carries.
+  The file's own header carries the whole argument, including why
+  `pcrec_cwmax(l) == 0` and not `pcrec_minw(l) == 0` is the `A_CAT` arm's
+  test and why `A_BREF`/`A_CALL` decline.
+
+  Tests: `tests/codegen/run_prechecks.sh` §1 (the stamp held to the emitted
+  bound, in both directions, with a population floor); failing-direction
+  control `tests/mech/sabotages/S263`.
+
+- **endwin.c** — [OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119): THE END-ANCHOR
+  START WINDOW. `pcrec_end_window` answers *how far from the subject's END
+  can a match BEGIN* as a byte count, or `-1` where it declines, read by both
+  emitters through `Job.end_window`.
+
+  **IT IS THE POSITION VIEW'S SECOND CONSUMER, not a second derivation.**
+  `--list-axes`' `view` axis already recognises a `\z`/`$` view and uses it to
+  pick the `-bounded` prefilter candidates — the scan's ACCEPT test. This adds
+  the consumer D77 named and deferred: the scan's START BOUND, which is the
+  larger of the two by the measurement D77 asked for (`abc$` on 1 MiB, 1,401x
+  rust, collapsing to a flat 30 ns under the hand-twin).
+
+  **FOUR STRUCTURAL DECLINES, each recorded in the file's own header with its
+  reason**: an unbounded `pcrec_cwmax`; a multi-byte encoding (the clamp
+  computes a byte offset and a mid-character start is a wrong ANSWER, K49/K50
+  — tested as `PcrecEnc.start_cls != NULL`, the same field
+  `<PREFIX>_STARTPOS_GUARD` reads, which is also what makes `pcrec_cwmax`'s
+  CHARACTER count a BYTE count here); a `\G` anywhere in the pattern, since
+  `\G` is the one assertion whose truth is a function of the `search_from`
+  the clamp moves; and a multiline `$` (D62 control 3).
+
+  **UNLIKE ITS TWO BATCH SIBLINGS IT CAN LOSE A MATCH IF IT IS WRONG**, which
+  is why it has an answer-level net and they do not: it moves the position a
+  search starts at rather than removing work that would have failed.
+
+  Tests: `tests/assertions/end_window.rxt` (66 oracle-verified cases, every
+  claim at a subject length that leaves the clamp inert AND at one that makes
+  it fire); `tests/codegen/run_prechecks.sh` §2 (the stamp held to the emitted
+  clamp's own literal, the four declines, both engines, a population floor);
+  failing-direction control `tests/mech/sabotages/S264`.
+
+- **reqbyte.c** — [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
+  BYTE. `pcrec_req_byte` answers *which byte does every match of this pattern
+  contain* — PCRE2's `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT`, which pcrec
+  computed nowhere and which is the largest single weighted gap
+  `capability@0.1` measured (`cycle1_analysis.md` M1: five throughput rows at
+  0.93-9.74 ns/byte against a 0.017 floor three other engines reach).
+
+  **IT EXTENDS THE PREFILTER PRIMITIVE.** The DFA scan's
+  `RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same window,
+  keyed on a CANDIDATE START; this is the same instrument keyed on a
+  NECESSARY byte and hoisted one level out, which is what lets it serve the
+  VM route — where the hybrid prefilter is declined outright for a
+  backreference or a linked call, and where three of the five target rows
+  live.
+
+  **THE ANALYSIS PRODUCES A SET AND THE EMITTER PICKS ONE MEMBER**, because
+  `A_ALT` INTERSECTS: a one-byte-per-node analysis would give up at every
+  alternation. The member is the RIGHTMOST, PCRE2's own choice, so a later
+  multi-byte form is a WIDENING of this mechanism rather than a different
+  one — and "rightmost" is carried alongside the set rather than recovered
+  from it, since a set has no order.
+
+  **TWO THINGS DIFFER FROM PCRE2's OWN FACT, both deliberately.** The whole
+  window counts, not "other than at its start" — PCRE2 excludes the first
+  unit because its consumer is a per-attempt check, and this one runs once
+  per call over `[search_from, subject_length)` where every byte of every
+  match lies. And a LOOKAROUND's body is not descended into, because a
+  lookbehind's bytes sit BEFORE the match's start and can be outside that
+  window entirely: a correctness decline, not a missed opportunity.
+
+  **THE EMPTY SET IS THE SAFE ANSWER** and disables the check — which is why
+  the exhaustive switch matters more here than the default would cost: a
+  default arm inheriting "empty" would be SOUND, so a new node kind that
+  really did carry a necessary byte would silently never contribute one.
+
+  Tests: `tests/codegen/run_prechecks.sh` §3 (the stamp held to the emitted
+  `memchr`'s own argument AND, separately, to its SENSE; the caseless-fold
+  decline; the NULL-subject obligation; both engines, with the
+  prefilter-declined VM witness named; a population floor); failing-direction
+  control `tests/mech/sabotages/S265`.
+
 ## Conventions
 
 A TRANSFORMATION pass takes (Ctx *, Dfa *) or (Ctx *, Nfa *), mutates in

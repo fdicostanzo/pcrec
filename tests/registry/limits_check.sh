@@ -340,6 +340,23 @@ done <<< "$anchored"
 #     ordinals plus its own highest-rung marker, which is what makes the enum
 #     non-ordinal), and TRIE_ENABLED (a 0/1 BUILD SWITCH, not a magnitude).
 #     These are numbers nothing can be measured against by construction.
+#   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
+#     EW_EOL_SLACK (src/opt/endwin.c, [OPT-ENDWIN]). It is how many bytes
+#     `$`/`\Z` may hold BEFORE the subject's end, which is the width of the
+#     shipped newline convention and not a bound on anything: no pattern and
+#     no subject can be measured against it, it can never be raised or
+#     lowered as a policy, and the only thing that would move it is pcrec
+#     adopting a multi-byte newline convention (DD-11), which is a semantics
+#     change and would move the `$` position set with it. A limits.def row
+#     would invite `--eol-slack=`, which is not a knob this tree can offer.
+#   A SIXTH KIND — BIT POSITIONS IN A FILE-PRIVATE SET:
+#     SA_BOT / SA_GSTART (src/opt/startanch.c, [OPT-ANCHOR-VM]). The start
+#     analysis learns TWO independent facts (`^`/`\A` and `\G`) that are not
+#     ordered — a pattern can carry both and neither refines the other — so
+#     the walk returns them as a set and these are which bit is which. They
+#     are the same kind of number as `VM_NRUNG`'s above: nothing is measured
+#     against a bit position, and the values are forced by the
+#     representation rather than chosen as a policy.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -483,7 +500,10 @@ SDR_NONE
 SDR_NO_ANCHORED
 SDR_NO_PREMUL
 SDR_MAX
-TRIE_ENABLED"
+TRIE_ENABLED
+EW_EOL_SLACK
+SA_BOT
+SA_GSTART"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

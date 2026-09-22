@@ -223,8 +223,16 @@ fi
 # is about what POSSESSIFICATION removes from the FRAMES rung, and the
 # reverse-deterministic rung removes the same frames on its own, which would
 # leave both sides stamping 0 and the comparison measuring nothing.
+# `-fno-req-byte` on ceil_off (kept, since §3b reuses this same artifact for
+# its runtime probe below): [OPT-REQBYTE] stamps a whole-window memchr for
+# 'd' (this pattern's one required byte), which the §3b harness's subject
+# ('x' + n*'a', no 'd') never carries -- with the axis on, the DENIED build
+# would answer nomatch via the pre-check at every length, never reaching its
+# own stamped frame ceiling ([MECH-REACH]). Denying it here does not change
+# the STATIC subject_ceiling stamp this section itself reads (measured:
+# still 1024 either way), so it costs this section nothing.
 if gen ceil_on '(x)(?:a|bc)+d' -fno-revdet \
-   && gen ceil_off '(x)(?:a|bc)+d' -fno-possessify -fno-revdet; then
+   && gen ceil_off '(x)(?:a|bc)+d' -fno-possessify -fno-revdet -fno-req-byte; then
     c_on="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_on.c" | grep -oE '[0-9]+$')"
     c_off="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_off.c" | grep -oE '[0-9]+$')"
     if [ "${c_off:-0}" -gt 0 ] && [ "${c_on:-1}" -eq 0 ]; then
@@ -272,8 +280,15 @@ fi
 # rather than conservative, which is what makes the intersection computable
 # instead of guessed — and the direction of the divergence above it is the
 # feature (the possessified build is strictly more capable, never less).
+#
+# `-fno-req-byte`: this rebuild of ceil_on is the DEFAULT-axes build (the
+# possessified one this row means to test), and [OPT-REQBYTE]'s memchr
+# pre-check for 'd' (absent from the bnd.c harness's subject below) would
+# otherwise answer every length identically to the denied build's own
+# pre-check -- correct, but for the wrong reason, masking whichever build's
+# real frame/revdet machinery is under test ([MECH-REACH]).
 # ---------------------------------------------------------------------------
-if gen ceil_on '(x)(?:a|bc)+d' >/dev/null 2>&1; then
+if gen ceil_on '(x)(?:a|bc)+d' -fno-req-byte >/dev/null 2>&1; then
     ceil="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_off.c" | grep -oE '[0-9]+$')"
     cat > "$WORKDIR/bnd.c" <<'BND_EOF'
 #include <stdio.h>

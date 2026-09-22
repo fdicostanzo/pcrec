@@ -2502,3 +2502,49 @@ never edited afterwards.
   read `s` where batch 1 stamps `r` on `/user|/users`, because
   `pcrec_altcls` factors it) — caught only because the census was built with
   a cross-check against a shipped stamp rather than against its own reasoning.
+  documented in 29 other lane reports).
+
+- `optimpl1_report.md` — [OPTLOOP.1.impl] BATCH 1 (2026-09-22, lane
+  optimpl1, opus): the three WHOLE-WINDOW PRE-CHECKS — [OPT-ANCHOR-VM]
+  (`src/opt/startanch.c`, the VM's attempt-loop start bound), [OPT-ENDWIN]
+  (`src/opt/endwin.c`, the end-anchor start window) and [OPT-REQBYTE]
+  (`src/opt/reqbyte.c`, the necessary-byte pre-check), each an axis, each its
+  own commit group, plus ONE `abi` 28 -> 29 bump with the full D94 ritual.
+  Read §0 first — three findings.
+  **[OPT-REQBYTE]'s own plan row names a carve-out cell that this
+  implementation FALSIFIES**: `router-prefix-order` is listed as
+  byte-identical because PCRE2 records no required unit for it, and pcrec
+  stamps `'r'` — the row's premise was PCRE2's derivation, and this one
+  INTERSECTS an alternation's branches and does not impose PCRE2's "other
+  than at its start" restriction, both deliberately. The cell is no longer a
+  byte-identity control.
+  **`cycle1_analysis.md`'s own M4 hand-twin over-counts the window by one**
+  (`maxw(abc$)` is 3, not 4), so the landed artifact stamps a window of 4
+  where the twin used 5 — the twin is sound and is not what the mechanism
+  computes.
+  **And two of the three mechanisms have NO answer-level detector anywhere in
+  the tree**, which is why S263 measures `corpus:0fail/28960pass` beside a red
+  structural arm while S264 — the one mechanism that MOVES where a search
+  starts — measures `corpus:178fail/28848pass`. The trio is a small
+  experiment in which optimizations a corpus can police.
+  Also worth reading: §1.2 on the encoding decline discharging TWO
+  obligations with one test (`start_cls != NULL` is both "no mid-character
+  start" and "one byte per character", the second of which is what lets
+  `pcrec_cwmax`'s CHARACTER count stand as a BYTE count); §5.2 on D107's scan
+  producing a fifth and a sixth NON-LIMIT kind; and §5.4 on why every claim
+  in `tests/assertions/end_window.rxt` is carried at two subject lengths.
+  **TRIAGE (b1triage, 2026-09-22, sonnet), appended to the same report**:
+  batch 1's owed suite runs surfaced 13 reds in `make test` plus a FATAL
+  `make test-axes` baseline. 12 of the 13 are ONE mechanism, confirmed
+  before any fix by grepping each witness's own emitted `!memchr(...)`:
+  [OPT-REQBYTE] short-circuits to nomatch before the give-up/exemption/
+  divergence path under test ever runs, because six checks' witnesses
+  deliberately omit the pattern's own required byte
+  ([MECH-REACH] — `tests/cli` case15, `run_gen_timeout_tests.sh`,
+  `run_vm_tests.sh` §4/§4.5/§4.7, `run_possessify_tests.sh` §3b,
+  `run_mrldiff.sh`'s answer-more exemption, `run_island_tests.sh` §2.20).
+  `-fno-req-byte` at each exact build site, six commits, no `src/` change.
+  The 13th (`run_expansion_diff.sh`'s §6.3 population) is a REAL corpus
+  move — batch 1's own `tests/assertions/end_window.rxt` (+13 blocks/+66
+  cells) — re-derived and re-pinned with the corpus change named in the
+  pin's own comment, per that check's stated instruction.

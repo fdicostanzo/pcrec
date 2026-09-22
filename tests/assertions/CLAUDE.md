@@ -487,3 +487,21 @@ PIN, and wave E re-homed it to `backrefs`/`lookaround`/`atomic-groups`/
 `quoting` in the same change. Leaving the first behind turns a true statement into a false one
 the day the producer lands, which is exactly the `(?J)` wording history
 recorded in `src/parse/mod_modifiers.c`.
+
+- **`end_window.rxt`** — [OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (2026-09-22):
+  the END-ANCHOR START WINDOW's correctness carve-outs, 66 cases over eleven
+  blocks. The mechanism raises a search's start position to
+  `subject_length - (maxw + eps)` on any pattern whose every alternative ends
+  in `$`/`\Z`/`\z` outside multiline with a finite width
+  (`docs/spec/tuning.md` §2.26), so a window one byte too narrow DELETES a
+  legal match — silently, and only on subjects longer than the window.
+  **EVERY CLAIM IS CARRIED TWICE, at a subject length that leaves the clamp
+  inert and at one that makes it fire**, because a 3-byte subject exercises
+  the guard's false arm and nothing else. The blocks cover the final-newline
+  allowance that IS `eps`, `\z` against `$` on the same subject (a different
+  WINDOW WIDTH, not only a different accept test), `\Z` as `$`'s exact alias,
+  and the four declines (multiline, unbounded width, `\G`, a trailing
+  lookaround). `\Z` blocks carry `# pcre2-only` under this directory's own
+  oracle rule; the rest agree with python3 `re` under the documented mapping
+  (`\z` is python's `\Z`), checked by the lane against an independently
+  written reader as well as by the directory's own verifier.

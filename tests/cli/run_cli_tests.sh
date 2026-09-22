@@ -1893,8 +1893,14 @@ case15() {
 
     # (a) the step budget. `(a*)*b`'s O(n^2) resumption count burns a
     # --step-budget=50 well inside 20 bytes of 'a' with no 'b' to end it.
+    # -fno-req-byte: [OPT-REQBYTE] (src/opt/reqbyte.c) stamps a whole-window
+    # memchr for the pattern's one required byte ('b'), which is ABSENT from
+    # this witness subject by design — with the axis on, that pre-check
+    # answers nomatch before the VM ever runs, so the give-up contract this
+    # case exists to test is never reached ([MECH-REACH]). Deny the axis so
+    # the witness reaches the engine it is meant to exhaust.
     local rc build_log build_rc
-    pcrec_run "$PCREC" --emit-main --engine=vm --step-budget=50 -o "$d/steps.c" \
+    pcrec_run "$PCREC" --emit-main --engine=vm -fno-req-byte --step-budget=50 -o "$d/steps.c" \
         --pattern '(a*)*b' >/dev/null 2>"$d/steps.err"
     rc=$?
     assert_eq "case15: steps witness compiles pcrec-side" "0" "$rc" \
@@ -1916,7 +1922,11 @@ case15() {
 
     # (b) the frame capacity. `((a)|b)*c` overflows a --backtrack-frames=4
     # array in a handful of choice points.
-    pcrec_run "$PCREC" --emit-main --engine=vm --backtrack-frames=4 -o "$d/frames.c" \
+    # -fno-req-byte: same reason as (a) above — the pattern's required byte
+    # ('c') is absent from this witness subject on purpose, so the axis's
+    # memchr pre-check would answer nomatch before the VM ever exhausts its
+    # frame capacity.
+    pcrec_run "$PCREC" --emit-main --engine=vm -fno-req-byte --backtrack-frames=4 -o "$d/frames.c" \
         --pattern '((a)|b)*c' >/dev/null 2>"$d/frames.err"
     rc=$?
     assert_eq "case15: frames witness compiles pcrec-side" "0" "$rc" \

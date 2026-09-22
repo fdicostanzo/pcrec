@@ -200,6 +200,16 @@ spec and a design doc disagree, the spec is what the tool promises.
   headroom at call depth ~0, not as the rule. No shipped-behaviour claim
   changed.
 
+  **`[OPTLOOP.1]` batch 1, 2026-09-22 (D119) — `abi` 28 -> 29, THE THREE
+  WHOLE-WINDOW PRE-CHECKS.** §6's `abi` change log gains its next entry:
+  every artifact of both engines gains the `<PREFIX>_END_WINDOW` and
+  `<PREFIX>_REQ_BYTE` stamps, every VM artifact gains `<PREFIX>_VM_START`,
+  and the three analyses' own populations gain the emitted bound, clamp and
+  `memchr` those stamps name. ONE bump for three mechanisms — one landing,
+  one emitted-scaffolding event. No struct offset moves, no `rx_info` member
+  is added or changed, no answer moves; §2.25-§2.27 of `tuning.md` carry the
+  axes and `end_window.rxt` the one mechanism that has an answer-level net.
+
   **[REL-1.4], 2026-09-21 (D115) — `abi` 27 -> 28, THE VERSION STAMP.** §6's
   `abi` change log gains its next entry: the essential generated-by line
   now also names `PCREC_VERSION` (`lib/pcrec.h`) beside the abi digit —

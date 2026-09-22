@@ -281,9 +281,15 @@ fi
 # matcher is allocation-free by construction, so no real artifact can runaway
 # on RSS — the 122 path's positive control lives in scripts/test_watchdog.sh
 # (case 5), and gen_run adds only the budget selection this section covers.
+#
+# -fno-req-byte: [OPT-REQBYTE] (src/opt/reqbyte.c) stamps a whole-window
+# memchr for this pattern's one required byte ('b'), which the 200-'a'
+# subject deliberately never carries — with the axis on, that pre-check
+# answers nomatch in microseconds and the artifact never reaches the ~5s
+# VM run this control needs ([MECH-REACH]). Deny it so the slow run is real.
 mkdir -p "$WORKDIR/slowrun"
 slow_subj="$(printf 'a%.0s' $(seq 200))"
-if ! pcrec_run "$PCREC" -p rx --engine=vm --step-budget=400000000 \
+if ! pcrec_run "$PCREC" -p rx --engine=vm -fno-req-byte --step-budget=400000000 \
         -o "$WORKDIR/slowrun/gen.c" --pattern '(a*)*b' >/dev/null 2>&1 \
    || ! gen_cc "the run positive control" "$CC" -O1 -std=gnu11 \
         -I "$WORKDIR/slowrun" -o "$WORKDIR/slowrun/t" \

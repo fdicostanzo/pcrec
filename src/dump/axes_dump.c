@@ -577,6 +577,66 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
+    /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
+     * bound, from `Job.start_anchor`'s one AST-level derivation. Its stamp is
+     * a closed TOKEN, so `stamp_value` is spelled on every row — and the
+     * three tokens are `src/opt/startanch.c`'s own, through
+     * `pcrec_start_anchor_name`, so this registry surface and the emitted
+     * `<PREFIX>_VM_START` cannot name different sets.
+     *
+     * THE AXIS IS THE VM's AND THE FACT IS NOT. The same three values
+     * describe the DFA's `start_max`, which this dump reports nowhere because
+     * that emitter derives it from its own machine; the `search-start` axis
+     * above is a different question (where the MATCH begins once one is
+     * found), not this one (where an ATTEMPT may begin at all). */
+    {
+        PredAxis p = { "vm-anchor-bound", NULL, "RX_VM_START", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, pcrec_start_anchor_name(PCREC_SANCH_BOT),
+                     pcrec_start_anchor_name(PCREC_SANCH_BOT),
+                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
+                     "per artifact on the VM route: every alternative of the whole pattern begins with ^ (outside multiline) or \\A, so only offset 0 can start a match and the attempt loop stops after one pass");
+        emit_pred_row(sb, &p, 2, pcrec_start_anchor_name(PCREC_SANCH_GSTART),
+                     pcrec_start_anchor_name(PCREC_SANCH_GSTART),
+                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
+                     "per artifact on the VM route: every alternative begins with \\G, so only the caller's own search_from can start a match and the attempt loop stops after one pass");
+        emit_pred_row(sb, &p, 3, pcrec_start_anchor_name(PCREC_SANCH_NONE),
+                     pcrec_start_anchor_name(PCREC_SANCH_NONE),
+                     0, 0, "",
+                     "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has");
+    }
+    /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW, from
+     * `Job.end_window`'s one AST-level derivation, on BOTH engines.
+     *
+     * `stamp_value` IS SPELLED ON THE FALLBACK ROW AND EMPTY ON THE OTHER,
+     * which no other axis in this dump does, and the asymmetry is the stamp's
+     * own shape rather than an omission: `<PREFIX>_END_WINDOW` carries a
+     * NUMBER when the analysis proved a bound (there is no named value to
+     * put here, `alt-island`'s reason) and the literal token `"none"` when it
+     * declined (which IS a named value, and a consumer buckets on it). */
+    {
+        PredAxis p = { "end-window", NULL, "RX_END_WINDOW", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "window", "",
+                     PCREC_NO_END_WINDOW, 0, "",
+                     "per artifact, both engines: every alternative ends in $/\\Z/\\z outside multiline AND pcrec_cwmax is finite, so a match can only BEGIN in the last maxw+eps bytes and both search entries raise search_from to there (eps is 1 for $/\\Z's final-newline allowance, 0 for \\z); the stamp carries the bound");
+        emit_pred_row(sb, &p, 2, "none", "none",
+                     0, 0, "",
+                     "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag");
+    }
+    /* [OPT-REQBYTE] req-byte — §2.27. The NECESSARY-BYTE whole-window
+     * pre-check, from `Job.req_byte`'s one AST-level derivation, on BOTH
+     * engines' search entries. `stamp_value` is spelled on the fallback row
+     * and empty on the other, `end-window`'s asymmetry one axis up and for
+     * its reason: the stamp carries a NUMBER where the analysis found a byte
+     * and the token `"none"` where it did not. */
+    {
+        PredAxis p = { "req-byte", NULL, "RX_REQ_BYTE", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "byte", "",
+                     PCREC_NO_REQ_BYTE, 0, "",
+                     "per artifact, both engines: every match of the pattern must contain some literal byte (a bottom-up AST walk — concatenation unions, alternation intersects, a min-0 quantifier contributes nothing, a one-byte class is a singleton, a backreference/call/assertion is empty), so ONE memchr over [search_from, subject_length) answers NOMATCH for the whole call; the stamp carries the byte, the RIGHTMOST member like PCRE2's own LASTCODEUNIT");
+        emit_pred_row(sb, &p, 2, "none", "none",
+                     0, 0, "",
+                     "always (fallback) — no byte is necessary on every path (an alternation with no common literal, a caselessly folded literal, a nullable quantifier), or the deny flag");
+    }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
      * mid-character caller startpos, and which one an artifact carries is a

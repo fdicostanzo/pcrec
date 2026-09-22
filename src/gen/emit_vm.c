@@ -10841,6 +10841,25 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
     /* [REVW.4] wave 4: the rung's NAME comes from `src/core/tune.c`'s one
      * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
      * four-arm ladder that stood here was the second of three spellings. */
+    /* [OPT-ANCHOR-VM] `<PREFIX>_VM_START` — WHERE A MATCH CAN BEGIN, a §6.3
+     * family-(b) fact: on every VM artifact, whatever its value, because a
+     * check reading a fact off a macro's ABSENCE is a shape this tree has
+     * twice had to remove (`ccdiff1`'s `RX_DFA_UNIFORM_FOLDS` ruling).
+     *
+     * IT READS AGAINST `<PREFIX>_DFA_SCAN`, deliberately: the DFA's own
+     * three-valued `start_max` is the same fact on the other engine, and the
+     * two vocabularies are now one. `unanchored` covers both "nothing to
+     * prove" and `-fno-vm-anchor-bound`, which is the no-trace rule a denied
+     * axis follows everywhere in this tree.
+     *
+     * IT IS THE SABOTAGE ROW'S ONLY DETECTOR, and that is a property of the
+     * mechanism rather than a gap in the checks: a bound that removes only
+     * attempts the artifact would have run and FAILED cannot change an
+     * answer, so no differential, no oracle and no corpus cell can see a
+     * plant that emits the unbounded form. The stamp and the emitted bound
+     * come from one variable three lines apart for exactly that reason. */
+    pcrec_sb_stamp_str(c, v->up, "VM_START",
+                       pcrec_start_anchor_name(job->start_anchor));
     pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
@@ -12074,6 +12093,44 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
                               "subject_length");
 
+    /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW, the same clamp the DFA's own
+     * search entries write, from the same `Job.end_window` and the same
+     * emitter (`pcrec_emit_end_window_clamp`, src/gen/emit_dfa.c) — one text,
+     * so the two routes cannot take the bound in two shapes.
+     *
+     * IT GOES HERE, ABOVE EVERYTHING THAT READS `search_from`, and that is
+     * the placement the mechanism needs rather than a preference: the root
+     * minimum-width test below, the prefilter's entry call and
+     * `attempt_position`'s initialiser all read the parameter, and all three
+     * are sound at the clamped value — the window is at least `maxw` wide, so
+     * it cannot be narrower than the root minimum, and the prefilter answers
+     * for whatever suffix it is handed. [OPT-ANCHOR-VM]'s own bound reads
+     * `search_from` too and stays correct for the same reason: it says "stop
+     * after this attempt", and which position that attempt began at does not
+     * change the claim.
+     *
+     * The two mechanisms DECLINE DISJOINTLY on the one construct where they
+     * would interact — `src/opt/endwin.c`'s decline (3) refuses any pattern
+     * containing `\G`, precisely because `\G` is the assertion that reads
+     * this parameter by name. */
+    pcrec_emit_end_window_clamp(v->cx, c, "    ", "search_from", "subject_length");
+
+    /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, the same text the DFA's
+     * search entries write, from the same `Job.req_byte` and the same
+     * emitter. AFTER the clamp for the clamp's own reason (a narrower window
+     * is cheaper to scan and still contains every match), and ABOVE the root
+     * minimum-width test and the prefilter entry below — both of which are
+     * pure cost on a window this check has just proved holds no match.
+     *
+     * THIS ROUTE IS THE MECHANISM'S POINT. A VM artifact with
+     * `<PREFIX>_VM_PREFILTER "none"` has no scan of any kind ahead of its
+     * program, because the hybrid prefilter is declined outright for a
+     * backreference or a linked call — so this is the only whole-window fact
+     * such an artifact can act on, and three of `cycle1_analysis.md` M1's
+     * five target rows are exactly those declines. */
+    pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from", "subject",
+                              "subject_length");
+
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
      * width cannot fit in what is left of the subject.
@@ -12260,6 +12317,38 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         if (v->nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
 
+    /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
+     * arriving on this engine. `Job.start_anchor` (src/opt/startanch.c) is
+     * the SHARED predicate — an AST-level fact, because a VM-routed pattern
+     * has no DFA to ask — and both non-`unanchored` values give the same
+     * bound: run the attempt this search already began and stop.
+     *
+     * WHY ONE EXPRESSION SERVES BOTH. `anchored` means every match begins at
+     * offset 0 and `gstart` means every match begins at `search_from`; in
+     * both cases at most ONE start position can match, and the loop has
+     * already tried it by the time this test is reached (the prefilter may
+     * have seeded `attempt_position` PAST `search_from`, which only makes the
+     * bound fire sooner and is sound for the same reason — the prefilter's
+     * seed is a lower bound on the first match start, so a failure there on
+     * an anchored pattern ends the search). The STAMP is what tells the two
+     * apart, so no fact is lost by spelling one bound.
+     *
+     * THE DECLARATION IS CONDITIONAL AND THE UNANCHORED TEXT IS UNCHANGED:
+     * an artifact with nothing to bound must be byte-identical to the one
+     * before this mechanism, which is what makes `-fno-vm-anchor-bound`'s
+     * sweep a real control rather than a comparison of two new shapes. */
+    const char *att_max = "subject_length";
+    if (job->start_anchor != PCREC_SANCH_NONE) {
+        att_max = "attempt_max";
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "    /* [OPT-ANCHOR-VM] this pattern is %s: at most one start\n"
+            "     * position can match, so there is no second attempt. */\n",
+            pcrec_start_anchor_name(job->start_anchor));
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_puts(c, "    const size_t attempt_max = search_from;\n");
+    }
+
     pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
         "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
@@ -12288,7 +12377,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
-        "        if (attempt_position >= subject_length) return 0;\n"
+        "        if (attempt_position >= %s) return 0;\n"
         "%s"
         "%s"
         "    }\n"
@@ -12304,7 +12393,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, retry_adv, retry_win, v->p);
+        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_win,
+        v->p);
 }
 
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /

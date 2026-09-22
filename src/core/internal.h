@@ -2308,6 +2308,26 @@ typedef struct {
      * ceiling where the default declared none has LOWERED it. */
     long long vm_frame_capacity;
     long long vm_subject_ceiling;
+    /* [OPT-ANCHOR-VM] THE START ANCHOR, derived ONCE per attempt from the
+     * LOWERED tree by `pcrec_start_anchor` (src/opt/startanch.c) and read by
+     * both emitters: the VM bounds its attempt loop on it and the DFA asserts
+     * its own, independently derived answer agrees in the sound direction.
+     * `PCREC_SANCH_NONE` under `-fno-vm-anchor-bound`, deliberately
+     * indistinguishable from "nothing to bound" — possessify's own no-trace
+     * rule for a denied axis, one file over. */
+    int    start_anchor;
+    /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW in BYTES, or -1 where the
+     * analysis declines — derived ONCE per attempt from the LOWERED tree by
+     * `pcrec_end_window` (src/opt/endwin.c) beside `start_anchor` above, and
+     * read by both emitters. `-1` under `-fno-end-window`, deliberately
+     * indistinguishable from "nothing to prove". */
+    long long end_window;
+    /* [OPT-REQBYTE] THE NECESSARY BYTE (0..255), or -1 — derived ONCE per
+     * attempt from the LOWERED tree by `pcrec_req_byte` (src/opt/reqbyte.c)
+     * beside the two fields above, and read by both emitters' search entries.
+     * -1 under `-fno-req-byte`, deliberately indistinguishable from "no byte
+     * is necessary". */
+    int    req_byte;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5364,6 +5384,19 @@ static inline bool pcrec_startgate_needed(const Ctx *cx)
  * called from BOTH emitters — one derivation, four call sites. Emits nothing
  * under an encoding that restricts no position, and nothing under
  * `-fno-startpos-guard`. See the function's own comment. */
+/* [OPT-ENDWIN] Raises `posvar` to `lenvar - Job.end_window` where the
+ * analysis proved every match must begin there or later; emits nothing where
+ * it declined. ONE text for both engines' search entries — src/gen/emit_dfa.c
+ * carries the underflow guard's argument and the soundness sentence. */
+void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
+                                 const char *posvar, const char *lenvar);
+/* [OPT-REQBYTE] Answers NOMATCH when `[posvar, lenvar)` does not contain the
+ * byte the analysis proved every match must carry; emits nothing where it
+ * found none. ONE text for both engines' search entries — src/gen/emit_dfa.c
+ * carries the NULL-subject obligation and the soundness sentence. */
+void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar);
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
@@ -5778,6 +5811,37 @@ long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.
 long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
 
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
+
+/* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
+ * ONE predicate, read by both emitters (src/opt/startanch.c's header carries
+ * the whole account, including why the DFA's own `dfa_interior_dead` pair
+ * becomes a CONFIRMATION of this answer rather than a second source of it,
+ * and why the implication runs in only one direction). `_NONE` is the safe
+ * answer and every undecidable arm gives it. */
+enum {
+    PCREC_SANCH_NONE = 0,   /* a match may begin anywhere */
+    PCREC_SANCH_GSTART,     /* every match begins at the caller's startpos */
+    PCREC_SANCH_BOT         /* every match begins at absolute offset 0 */
+};
+int pcrec_start_anchor(const Ast *root);             /* src/opt/startanch.c */
+/* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
+ * and `--list-axes`' own row cannot drift from the enum. */
+const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
+
+/* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
+ * last `W` bytes of the subject, or `-1` where the analysis declines (the
+ * four structural declines are in src/opt/endwin.c's own header, which also
+ * carries the soundness argument every emitter site rests on). BYTES, and
+ * the encoding decline is what makes that true. */
+long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
+
+/* [OPT-REQBYTE] THE NECESSARY BYTE — a byte every match of this pattern must
+ * contain, or -1 where the analysis found none (which DISABLES the check and
+ * is always sound). src/opt/reqbyte.c's header carries the account: why the
+ * whole window and not PCRE2's "other than at its start", why the analysis
+ * produces a SET and the emitter picks the rightmost member, and why a
+ * lookaround's body is a correctness decline. */
+int pcrec_req_byte(const Ast *root);                  /* src/opt/reqbyte.c */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

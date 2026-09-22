@@ -2012,8 +2012,28 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `28` on every artifact today ([REL-1.4] bumped it
-  from 27, D115: THE VERSION STAMP. The essential generated-by line —
+- **`rx_info.abi` is `29` on every artifact today (`[OPTLOOP.1]` batch 1
+  bumped it from 28, D119: THE THREE WHOLE-WINDOW PRE-CHECKS.** One bump for
+  three mechanisms, because they are one emitted-scaffolding event on one
+  landing. EVERY artifact of BOTH engines gains two shared-prologue stamp
+  lines — `<PREFIX>_END_WINDOW` and `<PREFIX>_REQ_BYTE`, each a string
+  carrying a number or the token `"none"`, since `0` is a legal value of both
+  facts and no number is free to mean "declined" — and every VM artifact
+  gains a third, `<PREFIX>_VM_START`. On the populations the three analyses
+  actually reach, the artifact additionally gains emitted PROGRAM text: a
+  `const size_t attempt_max = search_from;` declaration with the attempt
+  loop's existing continue test rewritten to read it ([OPT-ANCHOR-VM]); a
+  two-line clamp raising `search_from` to `subject_length - W` at both
+  engines' search entries ([OPT-ENDWIN]); and a three-line `memchr`
+  pre-check at those same two places, plus a `#include <string.h>` on a VM
+  artifact that had none ([OPT-REQBYTE]). No struct offset moves, no
+  `rx_info` member is added or changed, and NO ANSWER MOVES on any of the
+  three — two of them remove only attempts the artifact would have run and
+  FAILED, and the third moves a search's start position only within a window
+  it has proved no match can begin before. Each of `-fno-vm-anchor-bound`,
+  `-fno-end-window` and `-fno-req-byte` restores the pre-mechanism text on its
+  own population exactly (`tuning.md` §2.25-§2.27).
+  The bump before it was [REL-1.4], from 27 (D115: THE VERSION STAMP. The essential generated-by line —
   already the one line D112 keeps under every `-fcomments` setting —
   now also names `PCREC_VERSION` (`lib/pcrec.h`, a semver string
   independent of `abi`: it versions the tool, `abi` versions one
@@ -2023,8 +2043,8 @@ the bump's own commit.**
   `rx_info` member is added or changed, and no answer moves at all — the
   comment TEXT is the only thing that changed, on every artifact of both
   engines regardless of `-fcomments`, because the line it rides is the
-  ESSENTIAL class the switch never removes.
-  The bump before it was [EMIT-VERB]:
+  ESSENTIAL class the switch never removes.)
+  The bump before that was [EMIT-VERB]:
   THE EMITTED-COMMENT AXIS. A default artifact no longer carries
   its NON-ESSENTIAL prose — every comment LINE leaves every artifact of
   both engines except the generated-by/pattern-echo provenance line and
@@ -2564,13 +2584,94 @@ engine-scoped.**
   that would make one owed is the one `_DFA_TABLE`'s entry names, and it would
   be a struct append moving no existing offset.
 
+  **[OPT-ENDWIN], 2026-09-22: `<PREFIX>_END_WINDOW` — HOW FAR FROM THE
+  SUBJECT'S END A MATCH MAY BEGIN.** Family (a): on EVERY artifact pcrec
+  emits, both engines, because the analysis is neither engine's.
+
+  ```c
+  #define RX_END_WINDOW "4"      /* a match begins in [n - 4, n] */
+  #define RX_END_WINDOW "none"   /* nothing was proved */
+  ```
+
+  **A STRING WITH A `"none"` MEMBER AND NOT A NUMBER WITH A SENTINEL**, and
+  the reason is not style: `0` is a LEGAL window — a `\z` pattern of maximum
+  width 0 may begin only at the subject's end — so no numeric value is free
+  to mean "declined". `<PREFIX>_DFA_TABLE`'s shape, for `_DFA_TABLE`'s
+  reason.
+
+  The value is the bound BOTH search entries clamp to, emitted from the same
+  compile-time field as the clamp itself. `"none"` is what a pattern that is
+  not end-anchored, one whose width is unbounded, one containing `\G`, one
+  under a multi-byte encoding and one built with `-fno-end-window` all
+  report — `tuning.md` §2.26 lists the declines and why each is structural.
+  A consumer may conclude that a non-`"none"` artifact does constant work on
+  an arbitrarily long subject; it may NOT read `"none"` as "this pattern is
+  not end-anchored".
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
+
+  **[OPT-REQBYTE], 2026-09-22: `<PREFIX>_REQ_BYTE` — A BYTE EVERY MATCH MUST
+  CONTAIN.** Family (a): on EVERY artifact pcrec emits, both engines.
+
+  ```c
+  #define RX_REQ_BYTE "62"       /* every match contains '>' */
+  #define RX_REQ_BYTE "none"     /* no byte is necessary on every path */
+  ```
+
+  A string with a `"none"` member for `<PREFIX>_END_WINDOW`'s reason: `0` is
+  a legal byte value, so no number is free to mean "declined". The value is
+  the decimal the artifact's own `memchr` carries, and it is the RIGHTMOST
+  member of the necessary set — the same choice PCRE2's
+  `PCRE2_INFO_LASTCODEUNIT` makes, so a later multi-byte form widens this
+  fact rather than replacing it. `tuning.md` §2.27 carries the derivation and
+  its declines.
+
+  A consumer may conclude that a non-`"none"` artifact rejects a whole
+  subject in one pass when the byte is absent. It may NOT read `"none"` as
+  "this pattern has no required literal" — it is the safe answer of a
+  conservative analysis, and a caselessly folded literal, an alternation with
+  no common byte and `-fno-req-byte` all report it.
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
-  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, the
+  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_START`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
+
+  **[OPT-ANCHOR-VM], 2026-09-22: `<PREFIX>_VM_START` — WHERE AN ATTEMPT MAY
+  BEGIN.** A closed three-token selection stamp, on EVERY VM artifact,
+  hybrids included, and never defined on a pure-DFA artifact:
+
+  ```c
+  #define RX_VM_START "anchored"   /* or "gstart", or "unanchored" */
+  ```
+
+  | value | what it says |
+  |---|---|
+  | `"anchored"` | every alternative of the whole pattern begins with `^` (outside multiline) or `\A`, so only offset 0 can start a match |
+  | `"gstart"` | every alternative begins with `\G`, so only the caller's own `search_from` can start a match |
+  | `"unanchored"` | nothing was proved, or `-fno-vm-anchor-bound` was given |
+
+  Either non-`"unanchored"` value means the emitted search loop stops after
+  ONE attempt (`tuning.md` §2.25). The fact is `pcrec_start_anchor`'s, derived
+  from the AST above either engine; the DFA's own `start_max` is the same fact
+  on the other engine, legible there through `<PREFIX>_DFA_SCAN "attempt"`,
+  and the two vocabularies are deliberately one.
+
+  **A CONSUMER MAY NOT read `"unanchored"` as "this pattern is not
+  anchored".** It is the SAFE answer of a conservative analysis and is what a
+  denied build, a backreference-leading pattern and a genuinely unanchored one
+  all report. What it may conclude from the other two values is a fact about
+  the ARTIFACT's loop, never a promise about run time.
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
 
   **[OPT-VMFL], 2026-09-02: `<PREFIX>_VM_FRAMELESS`, and it is (b) for
   `_VM_CALL_SPLICED`'s reason rather than a new one.** It is not a decision

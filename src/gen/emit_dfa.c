@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 28
+#define PCREC_ARTIFACT_ABI 29
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -592,6 +592,91 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                          posvar, subjvar, lenvar));
 }
 
+
+/* [OPT-ENDWIN] THE END-ANCHOR START WINDOW'S CLAMP, written ONCE and emitted
+ * by BOTH engines' search entries (`emit_unanchored`/`emit_attempt` here,
+ * `<prefix>_search_run` in emit_vm.c) — one text, so the two routes cannot
+ * take the bound in two different shapes.
+ *
+ * Emits NOTHING when `Job.end_window` declines, which is what keeps every
+ * artifact outside the mechanism's population byte-identical to the shape
+ * before it and makes `-fno-end-window`'s own sweep a control.
+ *
+ * THE `%s > %llu` GUARD IS NOT BELT AND BRACES: `subject_length - W`
+ * underflows on a subject shorter than the window, and an underflowed
+ * `size_t` is a start position past the end of every subject — a lost match
+ * on precisely the short inputs the mechanism must leave alone. It also
+ * makes the second test's subtraction well-defined, which is why the two are
+ * one `&&` and not two statements.
+ *
+ * SOUNDNESS is `src/opt/endwin.c`'s header: every match ends at
+ * `subject_length - eps` or later and spans at most `maxw`, so none begins
+ * before `subject_length - W`. Raising the scan's start to that position
+ * therefore finds the same LEFTMOST match and skips no earlier one. */
+void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
+                                 const char *posvar, const char *lenvar)
+{
+    long long w = cx->job->end_window;
+    if (w < 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-ENDWIN] every match of this pattern ends at the subject's\n"
+        "%s * end (or one byte before it), and spans at most %lld bytes, so\n"
+        "%s * none can begin earlier than this. */\n",
+        indent, indent, w, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%sif (%s > %lluULL && %s < %s - %lluULL)\n"
+        "%s    %s = %s - %lluULL;\n",
+        indent, lenvar, (unsigned long long)w, posvar, lenvar,
+        (unsigned long long)w,
+        indent, posvar, lenvar, (unsigned long long)w);
+}
+
+/* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
+ * BOTH engines' search entries — one text, so the two routes cannot test the
+ * byte in two different shapes. Emits nothing where `Job.req_byte` declined,
+ * which keeps every artifact outside the mechanism's population
+ * byte-identical to the shape before it.
+ *
+ * THE WINDOW IS THE WHOLE REMAINING SUBJECT and the soundness is one line:
+ * every match begins at or after `posvar` and ends at or before `lenvar`, so
+ * every byte of every match lies in `[posvar, lenvar)`. If the necessary byte
+ * is not in that window, no match exists in it.
+ *
+ * THE `<=` ARM IS TWO OBLIGATIONS IN ONE TEST, and neither is defensive
+ * padding. (a) `memchr(p, c, 0)` with `p` NULL is undefined behaviour, and
+ * `match_api.md` §3.1 permits a legal EMPTY subject whose pointer is NULL —
+ * UBSan reads the emitted artifact, so this is a report and not a theory.
+ * (b) An empty window cannot hold the byte, so NOMATCH is the right answer
+ * there anyway: a pattern with a necessary byte has a minimum width of at
+ * least one, so nothing can match in zero bytes. The test therefore answers
+ * correctly rather than merely avoiding the call.
+ *
+ * `%d` AND NOT A CHARACTER LITERAL: the byte may be any of 256 values,
+ * including ones no source character spells and ones that would need escaping
+ * inside a `'...'`. The decimal form has one spelling for all of them, and
+ * the same number reaches `<PREFIX>_REQ_BYTE` from this same field. */
+void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar)
+{
+    int b = cx->job->req_byte;
+    if (b < 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-REQBYTE] every match of this pattern contains the byte\n"
+        "%s * %d, so a window without it holds no match at all. */\n",
+        indent, indent, b);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%sif (%s <= %s ||\n"
+        "%s    !memchr(%s + %s, %d, %s - %s))\n"
+        "%s    return 0;\n",
+        indent, lenvar, posvar,
+        indent, subjvar, posvar, b, lenvar, posvar,
+        indent);
+}
 
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
@@ -6363,6 +6448,19 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
 
     emit_search_head(cx, c, fn, storage);
+    /* [OPT-ENDWIN] `fit.chosen == ENGM_DFA` for `emit_search_head`'s own
+     * reason: this emitter's OTHER customer is the VM hybrid's internal
+     * `static <prefix>_prefilter`, whose caller (`<prefix>_search_run`) has
+     * already clamped the position it passes. One clamp per search, on the
+     * caller-facing entry. */
+    if (cx->job->fit.chosen == ENGM_DFA) {
+        pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        /* AFTER the clamp, deliberately: the clamp can only narrow the
+         * window, so scanning the narrowed one is both cheaper and still
+         * sound — every match lies inside it. */
+        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
+    }
     emit_machine_tables(c, &fwd);
     if (!pinned) emit_machine_tables(c, &rev);
 
@@ -6618,6 +6716,18 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     const char *p = cx->opt->prefix;
 
     emit_search_head(cx, c, fn, storage);
+    /* [OPT-ENDWIN] the clamp, on the caller-facing entry only — the sibling
+     * site in `emit_unanchored` carries the reason. It composes with
+     * `start_max` below rather than competing with it: both bounds are sound
+     * on their own, so an empty `[search_from, start_max]` range on an
+     * `^`-anchored pattern whose window starts past 0 is the correct answer
+     * (no match can satisfy both), reached by arithmetic rather than by a
+     * third rule about their interaction. */
+    if (cx->job->fit.chosen == ENGM_DFA) {
+        pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
+    }
 
     /* [DD-13c] THE EMPTY ENGINE, through the SHARED derivation. The condition
      * used to be `d->n == 0` spelled here; it is `dfa_engine_is_empty`'s now,
@@ -6805,6 +6915,33 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                       * unreachable — see the knob's comment above */
 #endif
     bool anchored = a_bot && a_gst;
+
+    /* [OPT-ANCHOR-VM] THE AGREEMENT ASSERTION, and it runs in ONE DIRECTION
+     * BY DESIGN. `Job.start_anchor` (src/opt/startanch.c) is the AST-level
+     * answer to the question the two lines above answer from the machine.
+     * Since [OPTLOOP.1] batch 1 there is one predicate and the VM reads it;
+     * this route keeps its own derivation because the subset construction
+     * knows strictly MORE — it has already pruned unsatisfiable branches and
+     * emptied classes the tree still carries — so `anchored` may hold where
+     * the tree could not prove it. That direction is a tighter bound and is
+     * welcome. The other direction is a MISCOMPILE: if every match begins at
+     * offset 0 and this machine still has a live interior start state, one of
+     * the two derivations is wrong and the VM is about to emit a bound that
+     * deletes matches. It cannot be an answer-level failure on either engine
+     * (the VM's bound removes only failing attempts), so it is asserted here,
+     * at the one site that holds both answers, rather than left to a check
+     * with no witness. Verified silent over the whole shipped corpus and
+     * every axis of `make test-axes` at the landing. */
+    if (cx->job->start_anchor == PCREC_SANCH_BOT && !anchored)
+        pcrec_ctx_fail(cx, 0,
+            "internal error: the pattern's AST proves every match begins at "
+            "offset 0, but this machine has a live interior start state");
+    if (cx->job->start_anchor == PCREC_SANCH_GSTART && !a_bot)
+        pcrec_ctx_fail(cx, 0,
+            "internal error: the pattern's AST proves every match begins at "
+            "the caller's startpos, but this machine has a live interior "
+            "start state");
+
     pcrec_sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"
@@ -7407,6 +7544,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         dfa_body && (cx->job->engine == PCREC_ENG_UNANCH ||
                      (cx->job->engine == PCREC_ENG_ATTEMPT &&
                       attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
+    /* [OPT-REQBYTE] A SECOND `memchr` CUSTOMER, and it reaches artifacts the
+     * test above cannot: the pre-check is emitted into BOTH engines' search
+     * entries, including a VM artifact with no DFA scan in it at all — which
+     * is exactly the population the mechanism exists for. The condition is
+     * the SAME field `pcrec_emit_req_byte_check` reads, never a restatement
+     * of when that function emits (this file's standing rule). */
+    if (cx->job->req_byte >= 0) need_string_h = true;
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
@@ -7464,6 +7608,47 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * two readers DIFFERENT deltas for one change. With this one line the
      * delta is 23-28 bytes (by token) for both, which is what makes the
      * manifest re-record a POSITIVE assertion rather than a re-baseline. */
+    /* [OPT-ENDWIN] `<PREFIX>_END_WINDOW` — HOW FAR FROM THE SUBJECT'S END A
+     * MATCH MAY BEGIN. A §6.3 family-(a) SELECTION FACT: unconditional, on
+     * every artifact of BOTH engines, riding the SHARED prologue because the
+     * analysis is neither engine's — `src/opt/endwin.c` walks the tree above
+     * both, and both search entries emit the same clamp from it.
+     *
+     * A STRING WITH A `"none"` MEMBER, `<PREFIX>_DFA_TABLE`'s shape, rather
+     * than a number with a sentinel: `0` is a LEGAL window (a `\z` pattern of
+     * maximum width 0 may begin only at the subject's end), so no numeric
+     * value is free to mean "declined". The emitted clamp carries the same
+     * number as a C literal and comes from the same `Job` field, which is
+     * what stops the stamp and the bound drifting apart.
+     *
+     * UNCONDITIONAL, INCLUDING `"none"`, on `RX_DFA_UNIFORM_FOLDS`'s ruling:
+     * this tree has twice had to remove a check reading a fact off a macro's
+     * absence, and absence here would mean "declined" and "built by a pcrec
+     * too old to have the analysis" identically. */
+    {
+        char ewbuf[32];
+        if (cx->job->end_window < 0) {
+            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", "none");
+        } else {
+            snprintf(ewbuf, sizeof ewbuf, "%lld", cx->job->end_window);
+            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", ewbuf);
+        }
+    }
+    /* [OPT-REQBYTE] `<PREFIX>_REQ_BYTE` — THE BYTE EVERY MATCH MUST CONTAIN.
+     * A §6.3 family-(a) SELECTION FACT for `<PREFIX>_END_WINDOW`'s reason,
+     * in the same place and the same shape: a string with a `"none"` member,
+     * because 0 IS A LEGAL BYTE VALUE and no number is free to mean
+     * "declined". The value is the decimal the emitted `memchr` carries, read
+     * from the same field three lines apart. */
+    {
+        char rbbuf[32];
+        if (cx->job->req_byte < 0) {
+            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
+        } else {
+            snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
+            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", rbbuf);
+        }
+    }
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
