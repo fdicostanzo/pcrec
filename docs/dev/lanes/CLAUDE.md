@@ -2290,3 +2290,25 @@ never edited afterwards.
   independently-derived `patterns/*.rx` exports, 64 of 64 identical.
   Nothing owed by the lane; the Linux profile blocks are a precondition on
   any implementation lane and are named by section id in report §5.
+
+- `admin1_report.md` — [MACPORT-XARGS] + [LIM-OVR] bundle (2026-09-22,
+  lane admin1, sonnet). [MACPORT-XARGS] is a FINDING, not a fix: Frank
+  himself closed the row's whole charter directly on 2026-09-10 (commit
+  `fb1b9c5e`), four days after it was chartered and never re-flagged in
+  plan.md — live-verified 212/0/1 on darwin, no code change made or
+  needed; also flags that `docs/dev/backlog_triage_2026-09-22.md`'s own
+  MACPORT-XARGS row cites the same now-stale 14-failure figure as if the
+  row were still open. [LIM-OVR]: the audit the charter asked for
+  ("audit the other five BUILD_D rows") found FOUR two-lever rows, not
+  one — `PCREC_DEFAULT_WARN_EMIT_BYTES` was missed by any audit that
+  only greps `cli/main.c`'s `raise_only_limits[]` table, since its
+  `--warn-emit-bytes=` flag is wired through a separate bespoke
+  `else if` block (it is settable, not raise-only). Built the `FLAG_D`
+  token exactly as scoped (identical `-D`-movable-default machinery to
+  `BUILD_D`, an honest `"flag+-D"` dump rendering) and the owed
+  override-honesty check (`tests/registry/limits_check.sh` part 4, reads
+  `cli/main.c` independently of `limits.def`'s own claim, both
+  directions), sabotage-validated live and S208 re-aimed. `make strict`
+  clean; `limits_check.sh` 27/0; `make test-codegen` 9/10 scripts (the
+  sole red is the standing darwin `nm arm_a.o` probe, unrelated,
+  documented in 29 other lane reports).

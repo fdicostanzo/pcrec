@@ -72,8 +72,10 @@ new `pcrec_options` fields. Otherwise: split edge order encodes choice preferenc
   currently-compiling artifact's spend at 24,050,003 elements
   (`tests/counterk/counterk.rxt:1845`). Gate: `tests/codegen/
   run_n1_budget.sh`, a `-DPCREC_MAX_AUTO_DFA_ELEMS`-lowered reference
-  compiler (this row's OWN raise-only default is BUILD_D, `[ART-SIZE]`'s
-  own two-lever shape, since the natural population at the shipped
+  compiler (this row's OWN raise-only default is FLAG_D — was BUILD_D
+  until [LIM-OVR], 2026-09-22 corrected the false "-D, never a caller
+  lever" rendering for exactly this two-lever shape — `[ART-SIZE]`'s
+  own precedent, since the natural population at the shipped
   default is zero and the CLI override can only raise it).
   **[M6.2
   wave A] A THIRD CLOSURE VIEW**, `end_ok`, for `\z` (N_END): true

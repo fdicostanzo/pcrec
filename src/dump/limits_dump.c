@@ -28,18 +28,32 @@
 #include "core/internal.h"
 #include "pcrec.h"
 
-/* `override`'s table token (a bare identifier — NONE/FLAG/BUILD_D, chosen so
- * limits.def's per-HOME dispatch can `##`-paste it — see that file's own
- * header) is stringified HERE rather than compared against; the C token
- * text is what a `#override` in this row's own macro invocation yields, so
- * this function's input is always one of exactly three spellings and a
- * fourth is a build error at the switch below, not a silently-wrong TSV
- * cell. */
+/* `override`'s table token (a bare identifier — NONE/FLAG/BUILD_D/FLAG_D,
+ * chosen so limits.def's per-HOME dispatch can `##`-paste it — see that
+ * file's own header) is stringified HERE rather than compared against; the
+ * C token text is what a `#override` in this row's own macro invocation
+ * yields, so this function's input is always one of exactly four spellings
+ * and a fifth is a build error at the switch below, not a silently-wrong
+ * TSV cell.
+ *
+ * [LIM-OVR fix, 2026-09-22] FLAG_D is the fourth spelling, added because
+ * BUILD_D's rendering ("-D") carried a claim — "only a build-time -D
+ * moves it; never a caller lever" — that was FALSE for four of its six
+ * rows: PCREC_MAX_AUTO_DFA_ELEMS/PCREC_MAX_VM_EMIT_CODE_BYTES/
+ * PCREC_MAX_EMIT_BYTES each have a real cli/main.c raise-only flag AND a
+ * -D-movable built-in default, and PCREC_DEFAULT_WARN_EMIT_BYTES has a
+ * real (non-raise-only) --warn-emit-bytes flag on the same shape — a
+ * caller reading "-D" at face value (O-18 §3(a)) had no way to learn the
+ * flag existed. "flag+-D" states both levers explicitly; BUILD_D's own
+ * rendering is UNCHANGED and still true for its two remaining rows
+ * (PCREC_ANCHORED_MAX_STATES, PCREC_SIZE_TERM_THRESHOLD), which really do
+ * have no caller lever at all. */
 static const char *override_name(const char *tok)
 {
     if (!strcmp(tok, "NONE"))    return "none";
     if (!strcmp(tok, "FLAG"))    return "flag";
     if (!strcmp(tok, "BUILD_D")) return "-D";
+    if (!strcmp(tok, "FLAG_D"))  return "flag+-D";
     return tok; /* unreached on a well-formed table; visible rather than lost */
 }
 
@@ -86,7 +100,10 @@ char *pcrec_limits_tsv(void)
         "#   naming-tied count).\n"
         "# override: \"flag\" (a CLI flag or pcrec_options field moves it per\n"
         "#   compile) | \"-D\" (only a build-time -D at pcrec's OWN compile\n"
-        "#   moves it) | \"none\" (fixed).\n"
+        "#   moves it, never a caller lever) | \"flag+-D\" (BOTH: a caller\n"
+        "#   flag moves it per compile AND a build-time -D moves the\n"
+        "#   built-in default the flag's own floor is measured against) |\n"
+        "#   \"none\" (fixed).\n"
         "# anchor: the docs/spec/limits.md section this number is\n"
         "#   documented in, empty when it is not (limits.md states caller-\n"
         "#   facing PROMISES, not an internals catalogue — see this file's\n"

@@ -701,29 +701,47 @@
  * reference-compiler build passes e.g. `-DPCREC_MAX_VM_EMIT_CODE_BYTES=
  * 31000`, which makes `name`'s PLAIN (unglued) occurrence below expand to
  * `31000` before substitution — safe for `_NONE`/`_FLAG`, which use only
- * that occurrence, and exactly why `_BUILD_D` must use `default_name`
- * instead. See limits.def's own comment at `PCREC_LIMIT`'s definition for
- * the full mechanism. */
+ * that occurrence, and exactly why `_BUILD_D`/`_FLAG_D` must use
+ * `default_name` instead. See limits.def's own comment at `PCREC_LIMIT`'s
+ * definition for the full mechanism.
+ *
+ * [LIM-OVR fix, 2026-09-22] `_FLAG_D` is a SECOND token with the IDENTICAL
+ * generation body to `_BUILD_D` below — the `-D`-movable-default machinery
+ * these two tokens both drive does not care whether a caller-facing flag
+ * ALSO exists, only the dump's `override` column does. Splitting the token
+ * rather than adding a ninth field lets a row that gains or loses a caller
+ * flag move by editing ONE word in limits.def, with no generation-side
+ * change here; `tests/registry/limits_check.sh`'s override-honesty arm
+ * verifies the split token against cli/main.c's ACTUAL flag surface, not
+ * against limits.def's own claim (K35: a control must not share a source
+ * with what it controls). */
 #define PCREC_LIMIT_LIMITS_H(name, value, unit, kind, override, anchor, desc, default_name) \
     PCREC_LIMIT_LIMITS_H_##override(name, value, default_name)
 #define PCREC_LIMIT_LIMITS_H_NONE(name, value, default_name)    enum { name = (value) };
 #define PCREC_LIMIT_LIMITS_H_FLAG(name, value, default_name)    enum { name = (value) };
 #define PCREC_LIMIT_LIMITS_H_BUILD_D(name, value, default_name) enum { default_name = (value) };
+#define PCREC_LIMIT_LIMITS_H_FLAG_D(name, value, default_name)  enum { default_name = (value) };
 #include "core/limits.def"
 #undef PCREC_LIMIT_LIMITS_H
 #undef PCREC_LIMIT_LIMITS_H_NONE
 #undef PCREC_LIMIT_LIMITS_H_FLAG
 #undef PCREC_LIMIT_LIMITS_H_BUILD_D
+#undef PCREC_LIMIT_LIMITS_H_FLAG_D
 
-/* The six BUILD_D rows need a REAL `#ifndef`/`#define`/`#endif` at their
- * site — a preprocessor DIRECTIVE, which no macro expansion can generate,
- * is the one shape limits.def's table rows cannot produce by themselves.
- * Each block below references only the SYMBOLIC `_DEFAULT` name the table
- * generated above; the literal value is spelled exactly once, in
- * limits.def, same as every other row's. A `-D` on pcrec's own build line
- * (e.g. `-DPCREC_ANCHORED_MAX_STATES=6`) is already defined by the time
- * this file is preprocessed, so the `#ifndef` guard leaves it exactly as
- * it was before [LIM-1]. */
+/* The six rows below (two BUILD_D-only, four FLAG_D since [LIM-OVR]
+ * 2026-09-22 — see limits.def's own header for the token split) need a
+ * REAL `#ifndef`/`#define`/`#endif` at their site — a preprocessor
+ * DIRECTIVE, which no macro expansion can generate, is the one shape
+ * limits.def's table rows cannot produce by themselves. This wiring is
+ * IDENTICAL for both tokens: it is keyed on the row's own NAME, never on
+ * which of the two override tokens named it, since a caller-facing flag
+ * (FLAG_D's extra fact) changes nothing about how the built-in default
+ * itself is moved at pcrec's OWN build time. Each block below references
+ * only the SYMBOLIC `_DEFAULT` name the table generated above; the literal
+ * value is spelled exactly once, in limits.def, same as every other row's.
+ * A `-D` on pcrec's own build line (e.g. `-DPCREC_ANCHORED_MAX_STATES=6`)
+ * is already defined by the time this file is preprocessed, so the
+ * `#ifndef` guard leaves it exactly as it was before [LIM-1]. */
 #ifndef PCREC_ANCHORED_MAX_STATES
 #define PCREC_ANCHORED_MAX_STATES PCREC_ANCHORED_MAX_STATES_DEFAULT
 #endif

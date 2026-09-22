@@ -10,8 +10,10 @@
 # RAISE-ONLY, so it cannot be lowered from outside either. Exactly
 # run_size_term.sh's §5 shape: a reference compiler built with the cap
 # LOWERED at pcrec's own compile time (`-DPCREC_MAX_AUTO_DFA_ELEMS`, a
-# BUILD_D row for precisely this reason — see limits.def's own comment on
-# that row).
+# FLAG_D row for precisely this reason -- was BUILD_D until [LIM-OVR]
+# (2026-09-22) split the token so the dump would stop claiming this row
+# has no caller lever, when --max-auto-dfa-elems is exactly that lever --
+# see limits.def's own comment on the row).
 #
 # THE WITNESS. `a{0,2000}` is an ordinary, capture-free, DFA-eligible
 # pattern; studies/n1budget/n1_measure reports 6,000 K7 elements TOTAL
