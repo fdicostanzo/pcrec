@@ -54,6 +54,11 @@ the implementation's own record goes to `docs/dev/lanes/`.
   the Mac's Homebrew libpcre2 10.48, NOT the 10.46 reference — see the
   analysis §6.
 
+**The scripts carry the authoring session's scratchpad path in an `SP`
+constant at the top.** They are archived as the reproduction record, not as
+a runnable harness: re-point `SP` (and `stamps.py`'s `P`, the compiler
+path) before re-running any of them.
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
