@@ -84,6 +84,27 @@ static int pass = 0, fail = 0;
  * sites) rather than silently accepting whatever it measures. */
 static int g_lib_major, g_lib_minor;
 
+/* [REL-1.6] THE VERSION FLOOR (2026-09-22, CI run 35675372280's own
+ * measurement). Every check below is written against knowledge this
+ * project's two named reference points (10.46, 10.48) carry — the `(?a)`/
+ * `(?r)` group modifiers, the CASELESS_RESTRICT/TURKISH_CASING/scs/
+ * scan_substring verb names, the two-value `want_probes` pin below — none
+ * of which libpcre2 10.42 (Debian/Ubuntu's `libpcre2-dev` package, still
+ * what `apt install` resolves on ubuntu-latest as of this writing) has.
+ * Before this floor, CI's first real run measured 60 failures here, every
+ * one of them this same fact restated once per row: not a regression, a
+ * library four minor releases short of what this file assumes. `pcre2_
+ * check.c`'s job is comparing pcrec against a SPECIFIC reference, not
+ * against "whatever libpcre2 a box happens to have" the way [ORACLE-LINK]
+ * treats absence — an older-than-floor library gets the same loud SKIP
+ * shape absence does (main(), just below), naming the floor and the
+ * resolved version, so a stranger's older distro package reads SKIP, not
+ * 60 reds. Bump this pair only alongside a deliberate re-measurement of
+ * every version-conditional pin in this file (the `u15b_excluded` 10.47+
+ * gate, the `want_probes` 10.46/10.48 pair) against the new floor. */
+#define PCREC_PCRE2_FLOOR_MAJOR 10
+#define PCREC_PCRE2_FLOOR_MINOR 46
+
 /* [REL-1.11]: `pcrec_compile()` no longer reads src/parse/enabled.c's
  * process-global implicitly — it resolves gating from `pcrec_options.
  * features` per call (D19: a global read would race two concurrent
@@ -3355,10 +3376,42 @@ int main(void)
     }
 
     pcre2_abi_version(&pcre2, ver, sizeof ver);
-    if (sscanf(ver, "%d.%d", &g_lib_major, &g_lib_minor) != 2)
+    if (sscanf(ver, "%d.%d", &g_lib_major, &g_lib_minor) != 2) {
         bad("could not parse a major.minor out of the resolved libpcre2 "
             "version string \"%s\" — the U15b/D98 version-conditional pins "
             "below cannot key off it", ver);
+    } else if (g_lib_major < PCREC_PCRE2_FLOOR_MAJOR ||
+               (g_lib_major == PCREC_PCRE2_FLOOR_MAJOR &&
+                g_lib_minor < PCREC_PCRE2_FLOOR_MINOR)) {
+        /* THE VERSION FLOOR (see the #define site above). Same SKIP shape
+         * run_registry_tests.sh prints for outright absence, so the outer
+         * script's own `grep -q "^SKIP:"` coverage-guard gate treats this
+         * exactly like a box with no libpcre2 at all: no PC-3 checks ran,
+         * so no PASS/FAIL count is expected or compared. */
+        printf("SKIP: pcre2_check (PC-3): resolved libpcre2 %s is older "
+               "than\n", ver);
+        printf("SKIP: this project's version floor (%d.%d) — every check "
+               "here is\n", PCREC_PCRE2_FLOOR_MAJOR, PCREC_PCRE2_FLOOR_MINOR);
+        printf("SKIP: written against constructs/verbs %d.%d and %d.%d "
+               "both have\n", PCREC_PCRE2_FLOOR_MAJOR, PCREC_PCRE2_FLOOR_MINOR,
+               PCREC_PCRE2_FLOOR_MAJOR, 48);
+        printf("SKIP: (docs/dev/decisions.md D98) and %s does not, so "
+               "running them\n", ver);
+        printf("SKIP: would compare pcrec against a library this file was "
+               "never\n");
+        printf("SKIP: measured against, not against a regression.\n");
+        printf("SKIP: the registry's EXTERNAL checks did not run. "
+               "Everything \n");
+        printf("SKIP: else in `make test` compares pcrec with pcrec.\n");
+        printf("SKIP: install libpcre2 %d.%d+ (Debian/Ubuntu's "
+               "'libpcre2-dev' package\n", PCREC_PCRE2_FLOOR_MAJOR,
+               PCREC_PCRE2_FLOOR_MINOR);
+        printf("SKIP: trails upstream; build from the official release "
+               "tarball, or use\n");
+        printf("SKIP: a distro whose package is current) to enable "
+               "them.\n");
+        return 0;
+    }
     const char *path = pcre2_abi_path(&pcre2);
     printf("== registry vs libpcre2 (PC-3) ==\n");
     printf("  libpcre2 version: %s\n", ver);

@@ -276,12 +276,14 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
 test:
 	@dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
+	stamp_sha="$$(git rev-parse HEAD 2>/dev/null || echo unknown)"; \
+	stamp_dirty="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)"; \
 	start=$$(date +%s); \
 	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $(TEST_SECTIONS); \
 	[ $$? -eq 0 ] || rc=1; \
 	end=$$(date +%s); \
-	RUN_STAMP_SHA="$$(git rev-parse HEAD 2>/dev/null || echo unknown)" \
-	RUN_STAMP_DIRTY="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)" \
+	RUN_STAMP_SHA="$$stamp_sha" \
+	RUN_STAMP_DIRTY="$$stamp_dirty" \
 	RUN_STAMP_DURATION="$$((end - start))s" \
 	bash tests/lib/test_trailer.sh "$$dir" $(TEST_SECTIONS); \
 	[ $$? -eq 0 ] || rc=1; \

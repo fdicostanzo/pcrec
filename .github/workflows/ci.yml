@@ -9,11 +9,18 @@ name: CI
 #
 # Runs on ubuntu-latest with GNU gcc as CC (D2: gcc is the target compiler;
 # CI needs no cc_resolve.sh dance the way the darwin dev box does, since
-# ubuntu-latest's `gcc` already IS GNU gcc). `libpcre2-dev` is installed so
-# the differential tiers (PC-3/PC-4, the definitions oracle, uprops) RUN
-# rather than SKIP -- a CI run that only ever exercises the skip path would
-# never notice a real divergence from libpcre2, which is most of what those
-# checks are for.
+# ubuntu-latest's `gcc` already IS GNU gcc). The pinned libpcre2 10.46 (D98)
+# is BUILT FROM SOURCE below, never taken from the distro package, so the
+# differential tiers (PC-3/PC-4, the definitions oracle, uprops) RUN against
+# the version this tree is actually measured against rather than SKIPping
+# (no oracle at all) or, worse, running against the wrong one -- run 1
+# (35675372280) installed `libpcre2-dev` (Ubuntu 22.04's package, 10.42,
+# four minor releases behind) and measured 60 PC-3 failures that were the
+# version gap restated once per row, not a real divergence. tests/registry/
+# pcre2_check.c now carries a version FLOOR (D98) that SKIPs loudly on
+# anything older than 10.46, so a stranger's box with an older distro
+# package gets a clean skip rather than that -- but CI is exactly the box
+# that should never take the skip path, which is why it pins its own copy.
 on:
   pull_request:
   push:
@@ -36,18 +43,101 @@ jobs:
     # this is only a ceiling in case some earlier step itself hangs.
     timeout-minutes: 120
     steps:
+      # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
+      # default: run 2 (2026-09-21/22) measured tests/codegen/
+      # run_cpset_structure.sh's CHECK 1R hard-failing because its pin
+      # (cb546b3a, a pre-stage-1 commit `git archive`s to build the
+      # failing-direction reference) does not resolve on a shallow clone.
+      # It is the only git-archive/rev-parse pin `make test`'s own section
+      # list (Makefile TEST_SECTIONS) reaches — the four codegen/run_*
+      # _identity.sh scripts with their own REFCOMMIT/FILEPIN pins
+      # (lookaround eacac76, recursion ac4917d/a70982c9, atomic e2f81d5,
+      # backref 5286265) are each their own opt-in `make test-*-identity`
+      # target, never in TEST_SECTIONS, so they neither ran nor were
+      # exercised by the shallow clone in run 2 — nothing to say passed
+      # "by luck" there, they simply did not run. `make mech`'s sabotage
+      # matrix `git archive`s HEAD itself (no ancestor pin) and is not
+      # part of `make test` either. The repo is small (this history costs
+      # nothing worth trimming for); see the `make test` step's own timing
+      # for the actual checkout-step cost next run.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # libpcre2-dev pulls in libpcre2-8-0 as a dependency on Debian/Ubuntu,
-      # so this one package satisfies both "the shared library is present"
-      # (what run_registry_tests.sh's SKIP text checks for) and "pkg-config
-      # can resolve headers+libs for a direct #include/link" (D98/
-      # [ORACLE-LINK] -- tests/lib/resolve_pcre2.sh's pkg-config leg).
       # pkg-config itself ships on ubuntu-latest images already; named
       # explicitly here so a future, leaner runner image doesn't silently
-      # fall back to resolve_pcre2.sh's slower header-probe leg.
-      - name: Install libpcre2 (oracle dependency)
-        run: sudo apt-get update && sudo apt-get install -y libpcre2-dev pkg-config
+      # fall back to resolve_pcre2.sh's slower header-probe leg. Nothing
+      # named `libpcre2` is installed via apt at all -- see below, the
+      # pinned 10.46 build is the ONLY libpcre2-8 pkg-config sees.
+      - name: Install build tools (pkg-config)
+        run: sudo apt-get update && sudo apt-get install -y pkg-config
+
+      # [REL-1.6]/D98: build the PINNED libpcre2 10.46 from the official
+      # release tarball rather than trusting a distro package (see the job
+      # header comment for run 1's measurement of what trusting apt cost).
+      # Cached by version+os so a cache hit — every run after the first —
+      # pays nothing for this step; bump the cache key's `v2` suffix if the
+      # pin ever moves or the configure flags change again. DEFAULT
+      # CONFIGURE (shared AND static), NOT
+      # `--disable-shared` — measured locally (darwin, this lane) before
+      # settling on this shape: a static-only build makes `pcre2_abi_path()`
+      # resolve to the TEST BINARY itself (there is no separate library file
+      # for `dladdr` to name), which is exactly what `pool_from_library`'s
+      # anti-circularity design (D98/[ORACLE-LINK]'s own header) depends on
+      # NOT happening — it reads the resolved path's ASCII runs to build the
+      # verb-name candidate pool INDEPENDENTLY of pcrec's own table, and
+      # reading the test binary instead pulls in pcrec's own strings too,
+      # moving the pinned probe count from 149804 to 234580 (measured, this
+      # session). A default (shared+static) build resolves the real,
+      # separate `.so`, matching the shape the 149804 pin was measured
+      # against.
+      - name: Cache libpcre2 10.46 (D98 pin)
+        id: cache-pcre2-10-46
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/pcre2-10.46
+          key: pcre2-10.46-${{ runner.os }}-v2
+
+      - name: Build libpcre2 10.46 from source (D98 pin)
+        if: steps.cache-pcre2-10-46.outputs.cache-hit != 'true'
+        run: |
+          set -eu
+          curl -fsSL -o "$RUNNER_TEMP/pcre2-10.46.tar.bz2" \
+            https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2
+          mkdir -p "$RUNNER_TEMP/pcre2-10.46-src"
+          tar xjf "$RUNNER_TEMP/pcre2-10.46.tar.bz2" -C "$RUNNER_TEMP/pcre2-10.46-src" --strip-components=1
+          cd "$RUNNER_TEMP/pcre2-10.46-src"
+          ./configure --prefix="$RUNNER_TEMP/pcre2-10.46"
+          make -j"$(nproc)"
+          make install
+
+      # PKG_CONFIG_PATH takes priority over pkg-config's own default search
+      # path, so putting the pinned build's .pc directory there is enough
+      # to make `pkg-config libpcre2-8` (tests/lib/resolve_pcre2.sh's own
+      # resolution point, used identically by every PC-3/PC-4/definitions-
+      # oracle/uprops consumer) resolve THIS copy — no distro libpcre2
+      # package is installed at all, so there is nothing else it could
+      # resolve to instead (verified below, not merely assumed).
+      # LD_LIBRARY_PATH is needed too, now that the build is shared-capable
+      # by default: every gcc-linked consumer of `-lpcre2-8` will prefer
+      # the pinned `.so` at LINK time (pkg-config's `-L` puts it first on
+      # the search path) but still needs the DYNAMIC LOADER to find it at
+      # RUN time, since it is not installed anywhere on the runner's
+      # default library search path.
+      - name: Point PC-3's oracle at the pinned 10.46 build
+        run: |
+          echo "PKG_CONFIG_PATH=$RUNNER_TEMP/pcre2-10.46/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$RUNNER_TEMP/pcre2-10.46/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
+      - name: Verify libpcre2 resolves to the pin, not a distro package
+        run: |
+          set -eu
+          ver="$(pkg-config --modversion libpcre2-8)"
+          echo "resolved libpcre2: $ver"
+          case "$ver" in
+            10.46) ;;
+            *) echo "expected 10.46, pkg-config resolved '$ver' instead -- PKG_CONFIG_PATH ordering or the cache is wrong" >&2; exit 1 ;;
+          esac
 
       - name: Compiler version
         run: gcc --version

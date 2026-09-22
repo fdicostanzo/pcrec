@@ -409,14 +409,25 @@ shipped with nothing exercising them.
   is a CLAIM and a claim nothing checks is a comment. `PCREC_BENCH_PATTERNS`
   overrides the path.
 
-- `record()` / the darwin pin RECORD (2026-09-11, manager landing-bar,
-  post-pyrole): the C3 population-pin comparison asserts only where its
-  pinned values are native (the Linux reference box, I-61's numbers);
-  on darwin the deltas print as a counted `RECORD:` line every run (the
-  tests/thread run_stackdepth_tests.sh shape) — the box skew stays
-  visible without fabricating a verdict, and the reconciliation check
-  (sums = census) stays HARD on every box, so a real local movement
-  still fails loudly. Summary gained a `checks recorded:` line.
+- `record()` / the C3 pin RECORD (2026-09-11, manager landing-bar,
+  post-pyrole; **re-keyed 2026-09-22, [REL-1.6]'s first real CI run**):
+  the C3 population-pin comparison asserts only where its pinned values
+  are native. Originally keyed on `uname -s = Darwin`, because darwin was
+  the only non-reference box in the picture and its python was always
+  older than the reference's 3.14 — but the pins are PYTHON-VERSION-
+  sensitive, not OS-sensitive (the BOX SENSITIVITY note in
+  `run_rxtsource_tests.sh` above), and `uname` was only ever a proxy for
+  that. CI's ubuntu-latest runner is `Linux`, so the darwin-only gate
+  ASSERTED there against pins that are not its python's, which is exactly
+  what the first CI run measured (13705 got vs 13721 pinned, PASS/SKIP/
+  no-python-expression all off by 16 — the same 3.14-vs-older shape the
+  darwin note already named). The gate now reads `python3`'s own resolved
+  `major.minor` and compares it to the pinned reference version (`3.14`)
+  directly — RECORDS the delta when they differ, on ANY box including a
+  Linux one, and asserts the full pin only where the resolved python
+  actually matches. The reconciliation check (sums = census) stays HARD
+  regardless of python version, so a real local movement still fails
+  loudly. Summary gained a `checks recorded:` line.
 
 ## [DD-13b.W23.1] the structure layer, its fixtures, and W23-S3
 
