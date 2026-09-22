@@ -54,6 +54,35 @@ the implementation's own record goes to `docs/dev/lanes/`.
   the Mac's Homebrew libpcre2 10.48, NOT the 10.46 reference — see the
   analysis §6.
 
+- `cycle1_caps_view.md` — **[OPTLOOP.1-CAPSVIEW], 2026-09-22, lane
+  `capsview`**, Frank's apples-to-apples ruling on cycle 1's ranking ("we
+  need to consider capture vs capture engines... apples vs apples"): pcrec's
+  SHIPPED DEFAULT (`auto-caps`) re-ranked against capture-bearing competitor
+  engines only, instead of `cycle1_analysis.md` §1's best-of-four-pcrec-
+  variants figure. A CAPS table (123 scorable cells, 84 win/tie, 39 lose, 2
+  no-data — `auto-caps` cannot even compile `wild-datetime-datefinder-
+  alternation`), a NOCAPS table (110 scorable, `pcre2-dfa` the only
+  algorithmic nocaps target per §0), a DELTA table (5 rows §1 called a WIN
+  that flip to a LOSS under the caps view — not the 3 `cycle1_analysis.md`
+  §1.1 named), the five §3 mechanisms re-scored under `auto-caps` alone
+  (ROBUST: all move under 2%), and the caps-losing population's remainder
+  (25 rows, score 6.0106) bucketed by `RX_ENGINE_WHY` — dominated by a
+  14-row "capture group" bucket (score 4.6833), named as the population for
+  the manager's separate captures-mechanism survey, explicitly separating
+  three ~20,000×-factor rows from eight where captures cost near-nothing
+  (0.98×–1.71×). No new mechanism proposed (that survey's job); every
+  number reads off `capsview_data.json`, never re-derived by hand.
+- `capsview.py` — the caps-view analysis script: reads `cycle1_analysis.md`'s
+  own reproduction artifacts (`rank.json`'s per-testee ns dict, `stamps.json`'s
+  `RX_*` stamps) from the shared scratchpad, applies §0's engine-exclusion
+  rules to the CAPS/NOCAPS/DELTA/mechanism populations, and writes
+  `capsview_data.json` — the single source `cycle1_caps_view.md`'s tables are
+  rendered from. Same `SP`-repointing caveat as the scripts below.
+- `capsview_data.json` — `capsview.py`'s output: the caps/nocaps/delta rows,
+  the five mechanisms re-scored, and the bucketed unexplained population,
+  as structured data. Read this rather than re-deriving a number from the
+  markdown tables.
+
 **The scripts carry the authoring session's scratchpad path in an `SP`
 constant at the top.** They are archived as the reproduction record, not as
 a runnable harness: re-point `SP` (and `stamps.py`'s `P`, the compiler
