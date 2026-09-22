@@ -29,11 +29,20 @@ LIGHT probes only (small compiles, transcripts archived), never suite runs
 (the bench owns that box); PC-3 red locally is U13-expected; known darwin
 reds are listed in docs/dev/wake.md-era notes — A/B against a scratch build
 of your branch point before claiming a red as yours or pre-existing.
+- DARWIN TIMEOUTS: the `.rxt` corpus section alone runs 20-30 min;
+  `make test-axes` is MULTI-HOUR (one full corpus run PER AXIS) — sweep only
+  your own axes with `AXES="-fno-…"` rather than the whole table; `make test`
+  itself is ≈100 min. Size your `timeout`/watchdog accordingly — a 15-min
+  wrapper on a corpus run is a self-inflicted kill, not a finding.
 
 ## Process rules (each has cost a lane before)
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - Long validation (>~2 min) runs in a BACKGROUND task writing a log — never
   a blocking foreground call; never a Monitor on a progress log.
+- ARM OWED RUNS DETACHED: a run you launch as a plain background task DIES
+  WITH YOUR SHELL the moment the manager closes your session (b1triage's
+  did, 2026-09-22) — a chain you are owing past your own end must be
+  `nohup … > log 2>&1 & disown`, not a bare `&`.
 - DO-THEN-FINISH (Frank 2026-09-08): your context cache lives 5 MINUTES; an
   idle wait longer than that busts it and every later turn re-pays your
   whole context at full price. So: a run ≤~4 min you may poll (log tail)
@@ -56,6 +65,11 @@ of your branch point before claiming a red as yours or pre-existing.
   taught primitives in their current state, emitted-text and anchor-column
   rules, the altitude rubric, the do-nots.
 - Before writing/altering any CHECK: docs/dev/learnings.md §3.
+- "RE-RAN STANDALONE, CLEAN" MUST NAME THE FILE THE SUITE RUNS. A file you
+  edited and re-ran directly can read green while the suite that CHAINS it
+  is red — a different file's own coverage-count guard on your edited
+  script's output can still be stale (regred_report.md, learnings.md §3.y).
+  Name the exact file/command you validated, not just "the check."
 - D26: never gold-plate diagnostic wording. D80: caller-observable changes
   carry their docs/spec/ hunk in the same change. D76/D94: emitted-
   scaffolding changes ARE an abi bump + identity re-pin, readers found BY
