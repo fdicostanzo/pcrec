@@ -300,12 +300,12 @@ static void xskip(Ctx *cx)
             }
             if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
         }
-        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+        if (pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
             peekc(cx) == '\\' && peekc2(cx) == 'E') {
             cx->pos += 2;   /* a stray \E: in_quote is already false here */
             continue;
         }
-        if (pcrec_feature_enabled(FEAT_QUOTING) &&
+        if (pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
             peekc(cx) == '\\' && peekc2(cx) == 'Q' && q_open_is_empty(cx)) {
             cx->pos += 2;   /* consume "\Q"; a following "\E" (if any) is
                               * picked up by the stray-\E branch above on
@@ -360,7 +360,7 @@ static void xskip(Ctx *cx)
  * this rule and not merely incidental corpus coverage. */
 static size_t cls_dissolve_len(const Ctx *cx, size_t pos, bool in_quote)
 {
-    if (!pcrec_feature_enabled(FEAT_QUOTING)) return 0;
+    if (!pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING)) return 0;
     if (pos + 1 < cx->patlen && cx->pat[pos] == '\\' && cx->pat[pos + 1] == 'E')
         return 2;
     if (!in_quote &&
@@ -869,7 +869,7 @@ static Ast *esc_atom(Ctx *cx)
      * already dissolved every EMPTY `\Q\E` before parsing ever reaches an
      * atom position, so a live `\Q` here is guaranteed to have at least
      * one byte to quote before its `\E` or the true end of the pattern. */
-    if (pcrec_feature_enabled(FEAT_QUOTING) && peekc(cx) == 'Q') {
+    if (pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) && peekc(cx) == 'Q') {
         cx->pos++;               /* the 'Q' */
         cx->in_quote = true;
         return p_quote_next(cx);
@@ -1042,7 +1042,7 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * no-op claims fail together — check them, not one of them. */
 static int cls_read_member(Ctx *cx, size_t opening, ExtResult *claim, bool *quoted)
 {
-    if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+    if (!cx->in_quote && pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
         peekc(cx) == '\\' && peekc2(cx) == 'Q') {
         cx->pos += 2;
         cx->in_quote = true;
@@ -1189,7 +1189,7 @@ static Ast *p_class(Ctx *cx)
          * both of which require an opening `\Q` to be as inert to `first`
          * as the bytes it goes on to quote are loud about being ordinary
          * members. */
-        if (!cx->in_quote && pcrec_feature_enabled(FEAT_QUOTING) &&
+        if (!cx->in_quote && pcrec_feature_enabled(cx->enabled_features, FEAT_QUOTING) &&
             peekc(cx) == '\\' && peekc2(cx) == 'Q') {
             cx->pos += 2;
             cx->in_quote = true;
@@ -1863,7 +1863,7 @@ have:
                 pcrec_ctx_fail(cx, cx->pos,
                          "internal error: no registry row for the possessive "
                          "quantifier suffix");
-            if (!pcrec_feature_enabled(rw->feature))
+            if (!pcrec_feature_enabled(cx->enabled_features, rw->feature))
                 pcrec_ctx_fail(cx, cx->pos,
                          "possessive quantifier requires module '%s'",
                          rw->module);

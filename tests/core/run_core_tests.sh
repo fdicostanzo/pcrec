@@ -104,6 +104,27 @@ else
     bad "sb_stamp_check: $(grep -c '^FAIL' "$OUT3") sub-check(s) failed — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [REL-1.11] the library's own --features lever, pcrec_options.features.
+# Four spec cases (NULL/all/std1/an unknown name) plus the D19 per-call-not-
+# global claim (interleaved calls with no install/restore between them). See
+# the check's own header for why this directory, not tests/spec_mod0/ (which
+# runs the CLI as a black box and cannot exercise a library struct field).
+# ---------------------------------------------------------------------------
+BIN4="$WORKDIR/features_opt_check"
+if ! unit_build "$BIN4" "$SCRIPT_DIR/features_opt_check.c"; then
+    echo "core: FAILED TO BUILD features_opt_check.c" >&2
+    exit 1
+fi
+OUT4="$WORKDIR/features_opt_check.out"
+"$BIN4" | tee "$OUT4"
+bin4_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN4's
+if [ "$bin4_rc" -eq 0 ]; then
+    ok "features_opt_check: $(grep -c '^PASS' "$OUT4") sub-checks green"
+else
+    bad "features_opt_check: $(grep -c '^FAIL' "$OUT4") sub-check(s) failed — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"

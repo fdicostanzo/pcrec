@@ -3470,6 +3470,9 @@ typedef struct {
     const char *name;        /* what rx_info.name reports; NULL = use prefix */
     int         tune;        /* PCREC_TUNE_MIN_SIZE .. _MAX_SPEED, -2..+2,
                                 0 = balanced and a structural no-op */
+    const char *features;    /* enabled feature-module set for THIS call;
+                                 same vocabulary as --features; NULL = no
+                                 request (see below) */
 } pcrec_options;
 ```
 
@@ -3480,6 +3483,36 @@ MANUFACTURE someone else's refusal. `warn_emit_bytes` is deliberately not
 raise-only — it never refuses anything, so lowering it cannot break a
 build. `docs/spec/limits.md` is their home; the per-field derivations are
 `lib/pcrec.h`'s own comments.
+
+**`features` is [REL-1.11]'s library promotion of the CLI's `--features`
+lever** (2026-09-21, docs/dev/decisions.md D20's own "promote a library
+channel later"), applied PER `pcrec_compile()` CALL: a comma-separated
+module-name list exactly as `pcrec --list-syntax`'s `module` column spells
+them, the frozen named set `"std1"` (D37), `"all"`, or `"none"`. An unknown
+name is refused by name — the same `--flavour` rule the CLI's own
+`--features` follows — surfaced through `pcrec_error` exactly like any
+other compile-time refusal, with the identical wording the CLI's own
+`--features: <text>` stderr line quotes (minus that prefix).
+
+**`NULL` means "make no request" and is deliberately NOT the CLI's own
+bare-invocation default (`std1`).** A direct library caller who never sets
+this field gets the raw, ungated compile that predates this field — no
+module enabled — which is what every pre-existing `pcrec_compile()` caller
+in this tree already assumes. A caller that wants the CLI's own
+bare-invocation behaviour passes `"std1"` (or the exported constant
+`pcrec_default_features`) explicitly. The CLI itself always resolves and
+assigns a concrete value to this field before compiling (`features ?
+features : pcrec_default_features`) — it never leaves it NULL — so a bare
+`pcrec 'PATTERN'` invocation is unaffected by this rule either way.
+
+**Applying this field touches no shared state (D19).** Two concurrent
+`pcrec_compile()` calls asking for different `features` values cannot
+race — each call resolves its own request into that compile's own
+internal state, never a process-global. This is narrower than the CLI's
+own `--features`, which ALSO installs a process-global the CLI's other
+query surfaces (`--probe-ask`, `--count-groups`, `--list-source`) still
+read; this field affects only the one `pcrec_compile()` call it is passed
+to.
 
 **`encoding` is a PER-COMPILE-CALL scalar** ([M5-SEAM], D58): one encoding
 per `pcrec_compile()` call, carried in this field and nowhere else. There is

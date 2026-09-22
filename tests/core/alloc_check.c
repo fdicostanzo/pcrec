@@ -255,10 +255,6 @@ typedef struct {
  * every allocation after it). */
 static void child_attempt(const Witness *w, long long n, int sust, int fd)
 {
-    if (w->enable_unicode_props) {
-        char featerr[256];
-        pcrec_enabled_set_spec("unicode-props", featerr, sizeof featerr);
-    }
     fail_at = n;
     sustained = sust;
     call_n = 0;
@@ -266,6 +262,12 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
 
     pcrec_options opt;
     pcrec_default_options(&opt);
+    /* [REL-1.11]: pcrec_compile() resolves gating from opt.features per
+     * call now, not from src/parse/enabled.c's process-global -- this
+     * witness's own module request rides that field directly instead of
+     * a separate pcrec_enabled_set_spec() call the compile would no
+     * longer see. */
+    if (w->enable_unicode_props) opt.features = "unicode-props";
     opt.encoding = w->encoding;
     if (w->force_engine) opt.engine = w->force_engine;
 

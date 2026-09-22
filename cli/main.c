@@ -1289,8 +1289,19 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
     if (t->budget_steps  >= 0) ts.opt.step_budget = t->budget_steps;
     if (t->budget_frames >= 0) ts.opt.frame_capacity = (int)t->budget_frames;
 
-    /* The enabled set is PROCESS-WIDE (src/parse/enabled.c), so it is
-     * installed per target, immediately before that target's compile. */
+    /* [REL-1.11] The enabled set used to be installed into
+     * src/parse/enabled.c's process-global here, which `pcrec_compile()`
+     * read implicitly; the compile's own gating now comes SOLELY from
+     * `ts.opt.features` below (D19 — a per-call field, not a global write,
+     * so two concurrent `pcrec_compile()` calls with different specs
+     * cannot race). This block still ALSO installs the global — early,
+     * with the CLI's own error text and timing unchanged — because that
+     * global is still what `--probe-ask`/`--count-groups`/`--list-source`
+     * read (src/parse/enabled.c's own top comment names the customer
+     * list), and this same `apply_target` path is reached before those
+     * modes' own dispatch in some callers. One spec, one resolution,
+     * fed to both the (still-live, for those OTHER surfaces) global and
+     * the (new, load-bearing for THIS compile) options field. */
     {
         char ferr[256];
         const char *fspec = t->features ? t->features
@@ -1307,6 +1318,7 @@ static int apply_target(const CliState *cli, const RxtTarget *t,
                         : "");
             return 1;
         }
+        ts.opt.features = fspec;
     }
 
     *out = ts.opt;
@@ -1654,6 +1666,16 @@ int main(int argc, char **argv)
      * INSTALLED (never left at whatever a previous call left it), which is
      * also what gives the artifact stamp (src/gen) something honest to
      * report for a bare invocation. */
+    /* [REL-1.11] This still installs the process-global (unchanged: same
+     * resolution, same error text, same timing) for the query surfaces
+     * below that read it (`--probe-ask`/`--count-groups`/`--list-source`/
+     * `--explain` all dispatch further down in this same function).
+     * `opt.features` is the ONE thing that now decides what an actual
+     * compile's gate sees — `pcrec_compile()` no longer reads this
+     * global at all (D19) — and it is fed the SAME resolved `fspec`, so a
+     * bare `pcrec 'PATTERN'` invocation is unaffected: `opt.features`
+     * carries `pcrec_default_features` ("std1") exactly as before, just
+     * via the field a library caller can also set instead of this global. */
     {
         char ferr[256];
         const char *fspec = features ? features : pcrec_default_features;
@@ -1661,6 +1683,7 @@ int main(int argc, char **argv)
             cli_err("--features: %s", ferr);
             return 1;
         }
+        opt.features = fspec;
     }
 
     /* [DD-13b.W1.2][REL-1.10] A FILE OPERAND VERSUS EVERY QUERY, CHECKED

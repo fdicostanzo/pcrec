@@ -294,7 +294,7 @@ static ExtResult rc_name_call(Ctx *cx, const RegRow *rw, ExtWant want, size_t at
                               const char *body, size_t blen, size_t end,
                               const char *what)
 {
-    if (!pcrec_feature_enabled(FEAT_NAMED_GROUPS))
+    if (!pcrec_feature_enabled(cx->enabled_features, FEAT_NAMED_GROUPS))
         REFUSE(at, "%s names a capture group, which requires module "
                    "'named-groups'", what);
     if (blen == 0)
