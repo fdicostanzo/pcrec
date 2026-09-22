@@ -788,9 +788,39 @@ gitdir's `hooks/`, not a nonexistent `.git/hooks` under the worktree).
 Bypass with `git push --no-verify` when you deliberately need to push past
 a failing local gate.
 
-CI itself stays deferred, not rejected (Frank, 2026-08-12): revisit when a
-red lands on `main` that this local pre-push discipline should have caught,
-or when a second regular contributor appears.
+CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
+
+## CI ([REL-1.6], 2026-09-21)
+
+`.github/workflows/ci.yml` runs on every `pull_request` (including from
+forks — the repo is public, the workflow touches no secrets) and every push
+to `main`: checkout, install `libpcre2-dev` (so PC-3/PC-4/the definitions
+oracle/uprops run their real differential against libpcre2 rather than
+SKIPping loudly), `make -j$(nproc)`, `make strict`, then `make test` under a
+90-minute step timeout. One job, `ubuntu-latest`, plain `gcc` (already real
+GNU gcc on that image — none of the darwin dev box's `cc_resolve.sh`
+CC-picking dance is needed here). A superseded run of the same PR/branch is
+cancelled via a `concurrency` group.
+
+**This is also [REL-1.6]'s own first MEASUREMENT** — the row's charter asks
+whether the full suite fits on a hosted runner at all, and the workflow
+answers that with the plainest possible `make test` (no `-j`, no
+`HARNESS_BATCH`): the row's own instrumentation, not a report about it. See
+`docs/dev/lanes/rel16_report.md` for what to read off that first run and the
+(designed but NOT built, per D77) fallback if it does not fit.
+
+**Deliberately NOT built**: a second `strict-clang` job. D2 fixes gcc as the
+target compiler and the generated code leans on GNU C extensions (computed
+goto and friends); `make strict` and `make test` both resolve `CC` to `gcc`
+on this image regardless, so a clang-only warning here would be a false
+alarm about a compiler pcrec does not target. A root README badge is also
+deliberately not added yet — that is the manager's, once the first run is
+green.
+
+Full-gate stages (`make ubsan`/`asan`/`lint`/`test-axes`, `make mech`'s
+sabotage matrix) never run in CI — those are the manager's battery, run by
+hand on `ubuntubudu` per the box-concurrency rules above `CLAUDE.md`
+already states; CI is the per-PR/per-push TIER only, never the full gate.
 
 ## The atomic landing gate ([M6.4.4], 2026-08-22) — OPT-IN, and its archived result
 

@@ -1,0 +1,119 @@
+name: CI
+
+# [REL-1.6] the per-PR/per-push tier ONLY. The full gate (make ubsan/asan/
+# lint, make mech's sabotage matrix, make test-axes) never runs here — see
+# docs/testing.md "CI" for the tier split and why. This workflow's own
+# `make test` step is also this row's first MEASUREMENT: whether the full
+# `make test` suite fits inside a hosted runner at all (docs/dev/plan.md
+# [REL-1.6], Frank: "curious to see if the test run fits in actions").
+#
+# Runs on ubuntu-latest with GNU gcc as CC (D2: gcc is the target compiler;
+# CI needs no cc_resolve.sh dance the way the darwin dev box does, since
+# ubuntu-latest's `gcc` already IS GNU gcc). `libpcre2-dev` is installed so
+# the differential tiers (PC-3/PC-4, the definitions oracle, uprops) RUN
+# rather than SKIP -- a CI run that only ever exercises the skip path would
+# never notice a real divergence from libpcre2, which is most of what those
+# checks are for.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel a superseded run of the same PR (or the same branch on push) rather
+# than let two runs race to the same conclusion.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Backstop for the whole job (checkout + deps + build + strict + test).
+    # The `make test` step below carries its own, tighter timeout-minutes;
+    # this is only a ceiling in case some earlier step itself hangs.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # libpcre2-dev pulls in libpcre2-8-0 as a dependency on Debian/Ubuntu,
+      # so this one package satisfies both "the shared library is present"
+      # (what run_registry_tests.sh's SKIP text checks for) and "pkg-config
+      # can resolve headers+libs for a direct #include/link" (D98/
+      # [ORACLE-LINK] -- tests/lib/resolve_pcre2.sh's pkg-config leg).
+      # pkg-config itself ships on ubuntu-latest images already; named
+      # explicitly here so a future, leaner runner image doesn't silently
+      # fall back to resolve_pcre2.sh's slower header-probe leg.
+      - name: Install libpcre2 (oracle dependency)
+        run: sudo apt-get update && sudo apt-get install -y libpcre2-dev pkg-config
+
+      - name: Compiler version
+        run: gcc --version
+
+      - name: Build (make)
+        run: make -j"$(nproc)"
+
+      # Opt-in warnings-as-errors gate (R5-Q1: NOT the default `make`/`make
+      # test`, so a stranger's build never breaks on a newer gcc's new
+      # opinion) -- CI is exactly the place to run it anyway, on a pinned
+      # runner image, so a real new warning is caught before merge instead
+      # of waiting for someone to run `make strict` by hand. Writes nothing;
+      # safe to run before `make test` touches the same build/ tree.
+      - name: make strict
+        run: make strict
+
+      # THE MEASUREMENT: does the full suite (40 sections, docs/dev/plan.md
+      # TEST_SECTIONS) fit inside a hosted runner. 90 minutes is generous
+      # against the two comparison points in docs/testing.md/dev_journal.md
+      # -- a Mac-box serial run measured 5124.29s (~85.4 min) at 38 sections
+      # (docs/dev/tt4m_time.md, 2026-09-12/13; the suite has since grown to
+      # 40) and an earlier Mac run of nominally the same section count read
+      # 42.6 min under different load -- so neither number is a confident
+      # prediction for THIS runner's hardware, but both sit under 90. See
+      # docs/dev/lanes/rel16_report.md for the fallback plan if the real
+      # run does not fit.
+      # `time` wraps the whole invocation for a free wall/user/sys number in
+      # the log -- not a harness change (nothing under tests/ instrumented),
+      # just the cheapest possible answer to "did it fit and how much
+      # slack was left". `make test` prints no PER-SECTION timing on its
+      # own (confirmed precedent: docs/dev/tt4m_time.md's own two timing
+      # runs found "no per-section timestamps survive in either log") --
+      # see rel16_report.md for what a per-section breakdown would cost.
+      - name: make test
+        timeout-minutes: 90
+        run: |
+          set -o pipefail
+          { time make test; } 2>&1 | tee build/ci_test.log
+
+      # build/watchdog.log accumulates one line per scripts/watchdog-wrapped
+      # call across the whole `make test` run (compiler invocations under a
+      # CPU/RSS/wall budget) -- the single most useful artifact for a hung
+      # or budget-killed case. build/ci_test.log is this job's own captured
+      # stdout+stderr of the `make test` step. Both are gitignored (build/)
+      # so they only exist on the runner; upload them on failure only, per
+      # the brief -- a green run has nothing here worth keeping.
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcrec-test-logs
+          path: |
+            build/ci_test.log
+            build/watchdog.log
+          if-no-files-found: warn
+          retention-days: 14
+
+# NOT built here, per D2 (gcc is the target compiler; generated code uses
+# GNU C extensions) and Frank's charter for this row: a second `strict-clang`
+# job. clang is not what pcrec targets, `make strict` and `make test` both
+# resolve CC to gcc unconditionally on this image, and a clang-only warning
+# would be a false alarm this workflow has no business raising. See
+# docs/testing.md "CI" for the one-line version of this.
+#
+# Forks: pull_request events from a fork run this SAME job, unmodified. The
+# repo is public, this workflow uses no secrets, no repository dispatch and
+# no self-hosted runner, so there is nothing here a fork's PR could leak or
+# abuse by running it -- the usual pull_request_target dance (needed when a
+# workflow touches secrets or writes back to the base repo) does not apply.

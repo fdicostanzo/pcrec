@@ -39,6 +39,10 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
 Plain GNU make on purpose (docs/dev/decisions.md D2). gcc is the target compiler;
 generated code uses computed goto and other GNU C extensions.
 
+`.github/workflows/ci.yml` ([REL-1.6]) runs `make`/`make strict`/`make test`
+(the per-PR/per-push tier only, never the full gate) on every PR and push to
+`main`; see docs/testing.md "CI" for what it does and does not cover.
+
 `-Werror` is deliberately NOT the default (R5-Q1, answered 2026-08-10): a
 stranger's `make` must not fail on a newer gcc's new opinion. `make strict` is
 the opt-in gate, it writes nothing, and it is safe to run alongside `make test`.
