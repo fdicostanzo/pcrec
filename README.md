@@ -41,7 +41,9 @@ turns on the drop-in modules above (`std1` by default, or a comma list,
 suite, SKIPping the libpcre2 differential check loudly if libpcre2-8-0
 isn't installed. Every flag: [docs/spec/cli.md](docs/spec/cli.md). The
 generated artifact's API: [docs/spec/match_api.md](docs/spec/match_api.md).
-Everything else lives under [docs/spec/](docs/spec/).
+Everything else lives under [docs/spec/](docs/spec/). For a guided,
+use-case-first walkthrough instead of the contract itself, start at
+[docs/guide/](docs/guide/).
 
 ## Requirements
 
