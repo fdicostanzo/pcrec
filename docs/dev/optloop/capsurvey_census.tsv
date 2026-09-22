@@ -1,0 +1,65 @@
+name	RX_ENGINE	RX_ENGINE_WHY	RX_VM_PREFILTER	RX_VM_PREFILTER_LANG	RX_NCAPS	prefilter_reason
+balanced-parens-rec	"vm"	"(\?R) at pattern offset 11"	"none"	-	1	no-linked-call
+base10num-near-miss	"dfa"	-	-	-	1	
+bracket-array-define	"vm"	"(\?&name) at pattern offset 58"	"none"	-	2	no-linked-call
+codegrammar-flat	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	2	yes
+codegrammar-xflag	"vm"	"capture group at pattern offset 47"	"hybrid"	"exact"	2	yes
+currency-lookbehind-fixed	"vm"	"(\?<=...) at pattern offset 0"	"hybrid"	"exact"	1	yes
+date-nested-plus	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	3	yes
+doubled-word	"vm"	"capture group at pattern offset 2"	"none"	-	2	no-backreference
+dup-param-detect	"vm"	"capture group at pattern offset 2"	"none"	-	2	no-backreference
+email-local-nodup	"vm"	"(\?=...) at pattern offset 1"	"hybrid"	"exact"	1	yes
+email-nested-plus	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	2	yes
+evil-alt-nested	"vm"	"capture group at pattern offset 1"	"none"	-	3	no-nullable-exact
+file-ext-order	"dfa"	-	-	-	1	
+float-literal-bound	"vm"	"(\?!...) at pattern offset 0"	"hybrid"	"exact"	1	yes
+floor-byte	"dfa"	-	-	-	1	
+high-byte-run	"dfa"	-	-	-	1	
+ipv4-near-miss	"dfa"	-	-	-	1	
+keyword-prefix-order	"dfa"	-	-	-	1	
+logparse-atomic-removed	"vm"	"capture group at pattern offset 101"	"hybrid"	"exact"	2	yes
+logparse-atomic	"vm"	"capture group at pattern offset 101"	"hybrid"	"exact"	2	yes
+mojibake-curly-quote	"dfa"	-	-	-	1	
+negation-scope-lookbehind-var	REFUSED	pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)				
+nested-comment-rec	"vm"	"capture group at pattern offset 0"	"none"	-	2	no-linked-call
+numeric-id-nested-plus	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	2	yes
+phone-list-nested-plus	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	2	yes
+phone-palindrome-6	"vm"	"capture group at pattern offset 0"	"none"	-	4	no-backreference
+pwd-strength-chain	"vm"	"(\?=...) at pattern offset 1"	"hybrid"	"exact"	1	yes
+quoted-delim-match	"vm"	"capture group at pattern offset 0"	"none"	-	2	no-backreference
+router-prefix-order	"dfa"	-	-	-	1	
+tag-depth3-bound	"vm"	"capture group at pattern offset 1"	"none"	-	4	no-backreference
+tag-pair-match	"vm"	"capture group at pattern offset 1"	"none"	-	2	no-backreference
+trim-nested-star	"vm"	"capture group at pattern offset 1"	"none"	-	2	no-nullable-exact
+utf8-lead-no-cont	"vm"	"(\?!...) at pattern offset 11"	"hybrid"	"exact"	1	yes
+uuid-near-miss	"dfa"	-	-	-	1	
+wild-codegrammar-json-array-begin	"dfa"	-	-	-	1	
+wild-codegrammar-json-constant	"dfa"	-	-	-	1	
+wild-codegrammar-json-number-extended	"dfa"	-	-	-	1	
+wild-codegrammar-json-object-begin	"dfa"	-	-	-	1	
+wild-codegrammar-json-stringcontent-escape	"dfa"	-	-	-	1	
+wild-datetime-datefinder-alternation	REFUSED	pcrec: pattern too large: 670187 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, try --unroll=1, or raise --max-emit-code-bytes (pattern offset 0)				
+wild-datetime-moment-iso8601	"vm"	"capture group at pattern offset 4"	"hybrid"	"exact"	5	yes
+wild-logparse-base10num-grok	"vm"	"(\?>...) at pattern offset 0"	"hybrid"	"exact"	1	yes
+wild-logparse-base10num-noatomic	"vm"	"(\?<!...) at pattern offset 0"	"hybrid"	"exact"	1	yes
+wild-logparse-quotedstring-grok	"vm"	"(\?>...) at pattern offset 3"	"hybrid"	"exact"	1	yes
+wild-logparse-quotedstring-noatomic	"vm"	"(\?<!...) at pattern offset 3"	"hybrid"	"exact"	1	yes
+wild-logparse-syslogbase-expanded	"vm"	"capture group at pattern offset 0"	"hybrid"	"count-collapsed"	83	yes-collapsed
+wild-logparse-winpath-grok	"vm"	"(\?>...) at pattern offset 0"	"hybrid"	"exact"	1	yes
+wild-secrets-aws-access-key-id	"vm"	"capture group at pattern offset 2"	"hybrid"	"exact"	2	yes
+wild-secrets-github-pat	"vm"	"capture group at pattern offset 2"	"hybrid"	"exact"	2	yes
+wild-secrets-slack-webhook-url	"vm"	"capture group at pattern offset 37"	"hybrid"	"exact"	2	yes
+wild-secrets-username-password-pair	"vm"	"capture group at pattern offset 48"	"hybrid"	"exact"	3	yes
+wild-semdiv-altorder-foo-foobar-rustregex	"dfa"	-	-	-	1	
+wild-semdiv-dollar-trailing-newline-pcre2	"dfa"	-	-	-	1	
+wild-semdiv-empty-alt-repeat-pcre2	"vm"	"capture group at pattern offset 0"	"hybrid"	"exact"	2	yes
+wild-validator-email-owasp	"dfa"	-	-	-	1	
+wild-validator-ipv4-owasp	"vm"	"capture group at pattern offset 1"	"hybrid"	"exact"	5	yes
+wild-validator-us-zip-owasp	"vm"	"capture group at pattern offset 6"	"hybrid"	"exact"	2	yes
+wild-validator-uuid-grok	"dfa"	-	-	-	1	
+wild-waf-crs-942140-dbnames	"dfa"	-	-	-	1	
+wild-waf-crs-942160-sleep-benchmark	"dfa"	-	-	-	1	
+wild-waf-crs-942270-union-select	"dfa"	-	-	-	1	
+wild-waf-crs-942360-concat-sqli	"dfa"	-	-	-	1	
+wild-waf-crs-942500-comment-obfuscation	"dfa"	-	-	-	1	
+winpath-near-miss	"dfa"	-	-	-	1	
