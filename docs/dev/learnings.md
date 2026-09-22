@@ -260,6 +260,61 @@ distilled forms:
   lived on the reverse machine (no prefilter at all). Count per machine,
   from the machine's own markers.
 
+### 3.y (2026-09-22, the ff63ebf3 gate misread and its trace) — a coverage guard, a gate's own verdict, and a mechanism's reach are three different things a check can silently stop meaning
+
+- **A coverage-count guard can live in a DIFFERENT FILE from the one it
+  counts, and land unpinned there.** `tests/registry/run_registry_tests.sh:586`
+  pins `limits_check.sh`'s PASS count at a literal (24). `[LIM-OVR]`
+  (lane admin1, same day) added three PASS lines to `limits_check.sh`
+  (27) and validated `limits_check.sh` STANDALONE (27/0, correctly) —
+  but never ran the file that guards its count, which stayed pinned at
+  24 and fired its "COVERAGE CHANGED" branch. That branch's own message
+  never contains the substring `FAIL:` (`registry:
+  limits_check COVERAGE CHANGED — 27 passing checks, expected 24.`,
+  the same wording every coverage guard in that file shares by design),
+  so a log grepped for `FAIL:` reads entirely green while `test-registry`
+  exits 1. Lane regred traced and re-pinned it (24→27,
+  `docs/dev/lanes/regred_report.md`) — and the guard's own comment
+  history at that site names this the FOURTH instance of the identical
+  failure mode ([LIM-2] N1's row, `[REVW.4]` wave 4, this one), which is
+  its own instance of the "a named defect is not a fixed defect" lesson
+  above: naming the class three times did not stop a fourth site from
+  having it, because each fix targeted its own site rather than the
+  guard-in-another-file SHAPE.
+- **"sections ran: N/M" counts sections `make -k` LAUNCHED, never sections
+  that PASSED.** A gate's actual verdict is make's own
+  `*** [test-<section>] Error` lines; two readings of the same gate log on
+  2026-09-22 read a red `test-registry` section (the guard above) as
+  green because they read the trailer's launched-count line instead of
+  grepping for those `Error` lines (lane axesfix's finding; correction
+  recorded at journal commit `b3086b46`). The generalization: a summary
+  line that counts how much of a suite RAN is not a substitute for the
+  line that says how much of it FAILED, and a battery-reading habit built
+  on the first will eventually read a real red as a clean run.
+- **A whole-window pre-check answers, before the engine, a question a
+  check exists to exercise the engine ON — and can retire the check's
+  whole population by construction.** `[OPT-REQBYTE]`'s required-byte
+  memchr runs once per `<prefix>_search` call, before any attempt; seven
+  give-up/budget witnesses in `tests/harness/giveup.rxt` (the population
+  `[MECH-REACH]` exists to keep visible — this is its seventh recorded
+  instance) lost their reach in one landing because every witness subject
+  happened to omit the pattern's own required byte, so the memchr never
+  finds a candidate start and the engine that was supposed to give up
+  never runs at all. THE FIX is at the CHECK'S BUILD SITE, not the
+  witness's answer: the axis's own deny flag (`-fno-req-byte`), or a
+  witness shape the mechanism structurally declines (a two-member class,
+  which carries no single required byte) — never a per-witness `.rxt`
+  line, because no `.rxt` block kind can deny a compiler axis (a format
+  gap worth naming, not closing here). Related, same mechanism class: a
+  mechanism that only removes provably-discarded work (never changes an
+  answer) has NO answer-level detector at all, so its sabotage row is
+  necessarily a STAMP row, not an answer-diff row
+  (`optimpl1_report.md` §0.3). The transferable form of all three
+  instances above: a check that stops seeing its subject can look
+  identical, in its own summary line, to one that is still watching it —
+  the difference only shows up in what the summary line COUNTS, not in
+  whether it prints green.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
