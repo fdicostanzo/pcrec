@@ -2221,3 +2221,16 @@ never edited afterwards.
   between runs; neither round index nor measurement order predicts the
   mode) rather than dismissed as unexamined noise. Does not rule on the
   floor itself — that is the manager's, per D117.
+- `rel16_report.md` — [REL-1.6] CI (2026-09-21, lane rel16, sonnet):
+  `.github/workflows/ci.yml` (checkout, `libpcre2-dev` so PC-3/PC-4/uprops
+  run rather than SKIP, `make`/`make strict`/`make test` at a 90-minute
+  step timeout, upload-on-failure), `.github/PULL_REQUEST_TEMPLATE.md`,
+  and the `docs/testing.md`/root `CLAUDE.md` CI notes. The report is the
+  "does it fit?" reading plan (job status, `time`'s wall/user/sys tail, the
+  `sections ran: N/M` trailer) plus the reasoned finding that NO
+  per-section timing exists to read (`run_group.sh` prints none;
+  `tt4m_time.md` already found the same structural gap on the Mac box) and
+  a DESIGNED-not-built `test-ci` subset fallback (D77) with its removal
+  order and why `test-corpus` is never a candidate for it. Cannot be
+  validated further from this worktree — running Actions and reading the
+  result is the manager's, per the brief.
