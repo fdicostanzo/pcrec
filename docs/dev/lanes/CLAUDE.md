@@ -2360,3 +2360,33 @@ never edited afterwards.
   clean; `limits_check.sh` 27/0; `make test-codegen` 9/10 scripts (the
   sole red is the standing darwin `nm arm_a.o` probe, unrelated,
   documented in 29 other lane reports).
+
+- `optimpl1_report.md` — [OPTLOOP.1.impl] BATCH 1 (2026-09-22, lane
+  optimpl1, opus): the three WHOLE-WINDOW PRE-CHECKS — [OPT-ANCHOR-VM]
+  (`src/opt/startanch.c`, the VM's attempt-loop start bound), [OPT-ENDWIN]
+  (`src/opt/endwin.c`, the end-anchor start window) and [OPT-REQBYTE]
+  (`src/opt/reqbyte.c`, the necessary-byte pre-check), each an axis, each its
+  own commit group, plus ONE `abi` 28 -> 29 bump with the full D94 ritual.
+  Read §0 first — three findings.
+  **[OPT-REQBYTE]'s own plan row names a carve-out cell that this
+  implementation FALSIFIES**: `router-prefix-order` is listed as
+  byte-identical because PCRE2 records no required unit for it, and pcrec
+  stamps `'r'` — the row's premise was PCRE2's derivation, and this one
+  INTERSECTS an alternation's branches and does not impose PCRE2's "other
+  than at its start" restriction, both deliberately. The cell is no longer a
+  byte-identity control.
+  **`cycle1_analysis.md`'s own M4 hand-twin over-counts the window by one**
+  (`maxw(abc$)` is 3, not 4), so the landed artifact stamps a window of 4
+  where the twin used 5 — the twin is sound and is not what the mechanism
+  computes.
+  **And two of the three mechanisms have NO answer-level detector anywhere in
+  the tree**, which is why S263 measures `corpus:0fail/28960pass` beside a red
+  structural arm while S264 — the one mechanism that MOVES where a search
+  starts — measures `corpus:178fail/28848pass`. The trio is a small
+  experiment in which optimizations a corpus can police.
+  Also worth reading: §1.2 on the encoding decline discharging TWO
+  obligations with one test (`start_cls != NULL` is both "no mid-character
+  start" and "one byte per character", the second of which is what lets
+  `pcrec_cwmax`'s CHARACTER count stand as a BYTE count); §5.2 on D107's scan
+  producing a fifth and a sixth NON-LIMIT kind; and §5.4 on why every claim
+  in `tests/assertions/end_window.rxt` is carried at two subject lengths.
