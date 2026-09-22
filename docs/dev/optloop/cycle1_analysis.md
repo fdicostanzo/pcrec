@@ -1085,3 +1085,292 @@ done
 # problem (an emitted-code problem), and no proposal should precede it.
 ```
 
+---
+
+### 3.1 The three PARKED rows, placed in the same ranking
+
+D119's sequencing note says the parked rows compete with fresh findings for
+the same lane. Scored by the same rule — the weighted score of the
+`capability@0.1` rows each would move — all three score **zero**, and the
+matrix does not support any of them. Said plainly, because that is the
+result:
+
+**[ENG-ISL]** (the VM alternation island, STEP 1 shipped at `cee7c741`).
+**Score 0 on this subbench.** The island already fires here: four patterns
+carry `RX_VM_ALT_ISLANDS ≥ 1` (`logparse-atomic` 2, `logparse-atomic-removed` 2,
+`wild-secrets-aws-access-key-id` 1, `wild-secrets-username-password-pair` 2),
+and none of the four is a losing row *because of* its alternation. The
+remaining [ENG-ISL] work is STEP 2's shapes (the `ab[cd]|abx` tail form, the
+class-member expansion) and there is **no pattern in `capability@0.1` whose
+losing row those shapes would move**. Its measured customer is still
+`bench/altwide` (the ×8.87/×20.1 order effect at w-256/w-512, the VM refusal
+wall), which this cycle did not analyse. The honest statement is *not in
+this matrix*, not *refuted*.
+
+**[CLS-TREE]** (the class-matcher kit). **Score 0 on this subbench, and
+structurally so.** Every testee here compiles for byte semantics and **no
+pattern in the set uses `\p{...}`** — the code-point-class population the
+study measured (312 script sets, K53's six, `\P{Unknown}`) has no member
+here. The one candidate that looked adjacent is
+`wild-datetime-datefinder-alternation`'s size-cap refusal, and it is not a
+class problem: its diagnostic is *"A repeat's body is replicated and counts
+MULTIPLY through nesting"*, `--no-captures` compiles it at 20,432 bytes of
+code against 670,153 with captures, and neither `--unroll=1` (675,615) nor
+`--tune=min-size` (670,109) moves it. That is VM lowering size, §4.
+[CLS-TREE]'s own D77 trigger (K53/K55) is unchanged and is elsewhere.
+
+**[DD-13]** (the `.rxt` format half). **Not an optimization row at all.** It
+moves no cell in any matrix by construction; it is ranked here only because
+the brief asked, and the answer is that it does not belong in this ranking.
+
+---
+
+## 4. Fundamental / deferral dispositions
+
+One line each, for every losing or non-numeric cell no mechanism above
+covers. A recorded deferral is a result (D119 item 3).
+
+| cell | disposition | reason |
+|---|---|---|
+| `negation-scope-lookbehind-var` thr + srch | **MODULE GAP, not a performance gap** | Variable-length lookbehind is not implemented; `onig`, `re2`, `re2-longest`, `rust`, `tre` and `vectorscan` all declare it unsupported too, and `pcre2-dfa` gives up. Only the PCRE2 interpreter and JIT answer. Nothing to optimize; it is a feature row. |
+| `wild-datetime-datefinder-alternation` thr + srch (captures on) | **SIZE, own row, not cycle 1** | 670,153 bytes of emitted VM code against the 500,000 limit; `--no-captures` takes the DFA at 20,432 bytes of code. The VM's lowering of a ~2,200-branch alternation carrying ~100 capture groups is linear in (total literal bytes × capture slots) where the DFA's is not. Neither `--unroll=1` nor `--tune=min-size` rescues it. A VM-lowering size row, adjacent to [ENG-ISL] STEP 2, not to [CLS-TREE]. |
+| `evil-alt-nested` srch | **NO RANKING GROUP** | Every roster engine is excluded (§1.2). The two "wrong" subjects are the two the PCRE2 oracle itself gave up on at derivation time and `NOTES.md` records as dropped from `expectations.tsv`; the label needs a bench-side read before it is called a divergence. Not a timing target under any reading. |
+| `trim-nested-star` srch, default config (8.97 ms vs `auto-nocaps`'s 419 ns) | **BACKTRACKING, FUNDAMENTAL for this engine** | `^(\s+)*$` on a ≤75-byte subject with whitespace runs is ambiguous decomposition; the VM explores it, the DFA does not. M2's start bound does not help (the subject is short, the cost is inside one attempt). pcrec's own `--no-captures` DFA answers it 21,411× faster, so the *engine* is not missing anything — the **capture-forced VM selection** is. Candidate for a later cycle: a partial-capture route (`f2_rescue_split.md` §"design-event candidates" already names two). Not cycle 1. |
+| `balanced-parens-rec`, `nested-comment-rec`, `quoted-delim-match`, `currency-lookbehind-fixed`, `dup-param-detect` srch, `tag-pair-match` srch, `tag-depth3-bound` srch, `bracket-array-define` srch | **DEFERRED PENDING M6's PROFILE** | 1.05–5.2× against `onig`/`pcre2-interp`, both engines linear, no mechanism visible from the emitted C. §3 M6 is the measurement that would name one; proposing a mechanism first would be building ahead of measurement (D77, memory `pcrec-build-under-measurement`). |
+| `wild-secrets-github-pat`, `keyword-prefix-order`, `wild-waf-crs-942160-sleep-benchmark`, `router-prefix-order`, `uuid-near-miss` thr, `wild-validator-ipv4-owasp` thr, `ipv4-near-miss` thr, `wild-secrets-aws-access-key-id` srch, `wild-waf-crs-942360-concat-sqli` srch | **SIMD-PHASE DEFERRAL** | pcrec already beats **every scalar engine** on these nine rows (0.21×–0.98×); only `rust` is ahead, with a vectorized multi-literal prefilter. D119 defers SIMD to the end of the loop. Recording them here means the SIMD phase starts with a named population instead of a survey. |
+| `wild-waf-crs-942270-union-select` (2.28× scalar), `wild-semdiv-altorder-foo-foobar-rustregex` (1.26×), `file-ext-order` (1.17×) | **RESIDUAL MULTI-LITERAL GAP, not sized for cycle 1** | After the SIMD subtraction these keep a real but small scalar gap against `re2`/`re2-longest`. The mechanism would be a scalar multi-literal (Aho-Corasick-shaped) prefilter — a genuinely new primitive, not an extension of one, so it is the largest architecture bet on this page for the smallest measured return. Revisit when M1–M4 have landed and the matrix is re-run. |
+| `wild-codegrammar-json-constant` (1.88× scalar), `wild-waf-crs-942140-dbnames` (1.82×) | **COVERED BY M3, partially** | Both carry the 63-byte `can_begin_match` of §2.3(d). M3's hand-twin (M3.c) is what says how much of the 1.88×/1.82× the first-byte fix recovers and how much is residual multi-literal. |
+
+**Two non-findings worth recording so nobody re-derives them.**
+D119's **engine-selection** bucket (VM where the DFA could serve) is
+**empty** here: every VM-routed losing row is VM-routed for a construct the
+DFA cannot express. D119's **per-call-overhead** bucket is empty *in pcrec's
+disfavour*: pcrec holds the best floor in the roster (665 ns against
+`rust`'s 1,228 and `pcre2-interp`'s 2,583) and wins 53 of 62 short-regime
+rows.
+
+---
+
+## 5. Proposed plan rows, for Frank to ratify
+
+`docs/dev/plan.md` is **not edited by this lane**. These are the rows as
+they would be written, in `plan.md`'s own format. Each names its D119
+landing-bar cells: the exact `(pattern, regime)` cells whose median must
+improve by more than their IQR, and the carve-out cells that must not
+regress by more than theirs. Sizes are S/M/L in the house sense (S = one
+predicate and one emitted line; M = a pass-level analysis with two
+consumers; L = a second machine).
+
+**A note on the bar's feasibility.** At the analysis pin the per-cell
+spreads are tiny against the gaps — `bracket-array-define` thr `auto-caps`
+carries a median of 4,880,764 ns against a `stddev_ns` of 1,303 (0.027%),
+`tag-depth3-bound` thr 4,512,599 against 11,175 (0.25%), `floor-byte` thr
+23,115 against 40 (0.17%). The bar will not be the hard part on the target
+cells; the carve-outs are where it bites, which is why every row below names
+`floor-byte` in both regimes.
+
+```
+- [OPT-REQBYTE] STATE:not-started (SIZE S-M) (PROPOSED 2026-09-22 by
+  [OPTLOOP.1.analysis], docs/dev/optloop/cycle1_analysis.md M1 — the
+  largest single weighted gap in capability@0.1, 3.714 of the losing
+  rows' 10.284) — THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK. Compute at
+  compile time, from the AST, a byte every match must contain past its
+  start (PCRE2's PCRE2_INFO_LASTCODETYPE/LASTCODEUNIT, `man pcre2api`);
+  emit it and test it ONCE per <prefix>_search call, before the attempt
+  loop, with the memchr the prefilter path already emits. Extends the
+  prefilter primitive (RX_DFA_PREFILTER "memchr" is the same instrument
+  keyed on a candidate START); serves BOTH engines, which is the point,
+  since the VM's hybrid prefilter is declined outright for backrefs and
+  linked calls (src/opt/select_engine.c:604,651) and three of the five
+  target cells are exactly those declines. Axis -fno-req-byte /
+  PCREC_NO_REQ_BYTE, stamp <PREFIX>_REQ_BYTE, one src/core/axes.def row;
+  sabotage inverts the memchr sense (answer-detectable). PROFILE FIRST
+  (D77): cycle1_analysis.md M1.a/M1.b/M1.c, exact commands for the Linux
+  executor. LANDING BAR — improve: (tag-depth3-bound, thr),
+  (dup-param-detect, thr), (tag-pair-match, thr),
+  (wild-secrets-username-password-pair, thr),
+  (wild-logparse-winpath-grok, thr). Do not regress: (floor-byte, thr),
+  (floor-byte, srch), (wild-secrets-github-pat, thr),
+  (router-prefix-order, thr), (email-nested-plus, thr) — every one a cell
+  where the required byte is PRESENT, so the memchr is pure added cost.
+```
+
+```
+- [OPT-ANCHOR-VM] STATE:not-started (SIZE S) (PROPOSED 2026-09-22 by
+  [OPTLOOP.1.analysis], cycle1_analysis.md M2 — the single largest RATIO
+  in the matrix, 52,122.95x, and the three worst DEFAULT-CONFIG cells in
+  the set) — THE START-POSITION BOUND IN THE VM'S ATTEMPT LOOP. The DFA
+  emitter already derives a three-valued start_max (0 for ^, search_from
+  for \G, subject_length otherwise; src/gen/emit_dfa.c:6802-6812); the VM
+  emitter writes `for (;;)` with no bound. Derive the same fact one layer
+  up (AST/NFA, since a VM-routed pattern has no DFA to ask) and have both
+  emitters read ONE predicate — implement-then-replace, not a parallel
+  mechanism. Population: 14 of capability@0.1's 64 patterns are
+  PCRE2_ANCHORED and VM-routed at auto-caps; 3 carry
+  RX_VM_PREFILTER "none" and have no rescue at all. Axis
+  -fno-vm-anchor-bound / PCREC_NO_VM_ANCHOR_BOUND, stamp
+  <PREFIX>_VM_START (anchored/gstart/unanchored). NOTE FOR THE SABOTAGE
+  ROW: a bound that only removes provably-failing attempts has NO
+  answer-level detector, so the row is a STAMP row with
+  bracket-array-define as its reach witness. PROFILE FIRST:
+  cycle1_analysis.md M2.a/M2.b/M2.c. LANDING BAR — improve:
+  (bracket-array-define, thr), (bracket-array-define, srch), and at the
+  auto-caps ARM specifically (evil-alt-nested, thr) and
+  (trim-nested-star, thr), which the best-variant ranking hides.
+  Do not regress: (floor-byte, thr), (floor-byte, srch),
+  (nested-comment-rec, thr), (codegrammar-flat, thr) — unanchored VM
+  artifacts whose emitted text must be byte-identical.
+```
+
+```
+- [OPT-FIRSTSET] STATE:not-started (SIZE M) (PROPOSED 2026-09-22 by
+  [OPTLOOP.1.analysis], cycle1_analysis.md M3; NAMES THE CAUSE of
+  [OPT-3]'s own measured symptom, docs/dev/opt3_dfa_scan_measurement.md
+  "the skip loop is entered 190,651 times and skips ZERO bytes") — THE
+  CANDIDATE-START SET, DERIVED FROM THE AST RATHER THAN FROM THE DFA'S
+  START STATE. A leading \b makes the start state track word context, so
+  rx_can_begin_match[256] becomes the 63-byte word class: MEASURED
+  minimal witness, `A[A-Z0-9]{16}` stamps memchr with a 1-byte set and
+  `\bA[A-Z0-9]{16}` stamps byte-class-bounded with a 63-byte one, while
+  PCRE2 records FIRSTCODEUNIT='A' for both. Compute the first-byte set
+  from the bytes that can BEGIN A MATCH, looking through leading
+  zero-width assertions; intersect with today's derivation, never widen
+  (a free compile-time assertion and the natural identity check). TWO
+  CONSUMERS, ONE ANALYSIS: the DFA's existing skip loop (contents change,
+  representation does not) and the VM's eleven RX_VM_PREFILTER "none"
+  artifacts, which gain a candidate-start skip they have none of today
+  (nested-comment-rec: first byte '/', 2.86% of the bench text, 35x fewer
+  attempts). Shares its AST walk with [OPT-REQBYTE]. Axis -fno-first-set
+  / PCREC_NO_FIRST_SET + PCREC_FORCE_FIRST_SET; the sabotage widens the
+  set by one impossible byte and is therefore a STAMP/COUNT row, pinned
+  against a corpus census of |can_begin_match|. PROFILE FIRST:
+  cycle1_analysis.md M3.a-M3.d. LANDING BAR — improve:
+  (wild-secrets-aws-access-key-id, thr),
+  (wild-codegrammar-json-constant, thr),
+  (wild-waf-crs-942140-dbnames, thr), (nested-comment-rec, thr).
+  Do not regress: (floor-byte, thr), (floor-byte, srch),
+  (wild-logparse-quotedstring-grok, thr), (high-byte-run, thr),
+  (uuid-near-miss, srch) — cells whose prefilter is already narrow, where
+  the new derivation must produce the identical set.
+```
+
+```
+- [OPT-ENDWIN] STATE:not-started (SIZE M) (PROPOSED 2026-09-22 by
+  [OPTLOOP.1.analysis], cycle1_analysis.md M4 — D77's OWN NAMED
+  CANDIDATE, "a FOLD ON THE IDIOM (the skip loop reasoning about \z), a
+  general optimization for every \z user", now with the measured number
+  D77 said to wait for: 1,401x against rust and 725x against the best
+  scalar engine on `abc$`) — THE END-ANCHOR START-WINDOW BOUND. When
+  every alternative ends in $/\Z/\z outside multiline AND pcrec_maxw is
+  finite, the scan's start window is [n - maxw - eps, n], not
+  [search_from, n]; eps is the $-before-final-newline allowance. Extends
+  the EXISTING position-view axis (--list-axes `view` already recognises
+  the \z/$ view and uses it to pick the -bounded prefilter candidates):
+  this gives that recognised view its second and much larger consumer,
+  the scan's start bound rather than only its accept test. Declines where
+  maxw is unbounded, which costs nothing. Axis -fno-end-window /
+  PCREC_NO_END_WINDOW, stamp <PREFIX>_END_WINDOW; the sabotage clamps one
+  byte too FEW and IS answer-detectable (it drops a legal match).
+  PROFILE FIRST: cycle1_analysis.md M4.a/M4.b/M4.c, including the four
+  correctness carve-out subjects (match at 0 / trailing newline / match
+  at the end of 100 KB / match at the start of 100 KB). LANDING BAR —
+  improve: (wild-semdiv-dollar-trailing-newline-pcre2, thr).
+  Do not regress: (floor-byte, thr), (floor-byte, srch),
+  (wild-validator-email-owasp, thr), (uuid-near-miss, thr),
+  (ipv4-near-miss, thr) — anchored-at-both-ends cells already at O(1),
+  where a second bound must be free.
+```
+
+```
+- [OPT-ATTEMPT-SPLIT] STATE:not-started (SIZE M-L) (PROPOSED 2026-09-22
+  by [OPTLOOP.1.analysis], cycle1_analysis.md M5; the emitter's own
+  comment already names the shape, src/gen/emit_dfa.c:13-17 "the slow
+  shape is ^ on only SOME branches") — `^` IN ONE BRANCH STOPS COSTING
+  THE WHOLE DFA TOOLKIT. A pattern containing ^ routes to ENG_ATTEMPT,
+  which has no prefilter, no premultiplied table and no [OPT-5] scan
+  edge; when it is FULLY anchored start_max=0 makes that free, and when
+  it is not it pays for everything (wild-waf-crs-942360-concat-sqli:
+  RX_DFA_PREFILTER/TABLE/SCAN_EDGE all "none", start_max =
+  subject_length, 8.83 ns/byte, the highest per-byte cost of any DFA
+  artifact in the set, against re2-longest's 1.62). Split into ONE
+  attempt of the original machine at search_from, then the ordinary
+  ENG_UNANCH engine built from the pattern with the anchored branches
+  removed; leftmost-first holds by construction. Both halves are engines
+  the tree already emits; the "optional contributor" shape is
+  [K53-SELRETRY]'s. SIZE IS THE ARGUMENT AGAINST IT: up to 2x the table
+  bytes on exactly the patterns whose tables are already largest, so this
+  may belong at a --tune position rather than at the default (D119 item
+  4's second axis). PRECONDITION: count the shipped corpus's own
+  ENG_ATTEMPT-with-start_max=subject_length population before sizing the
+  row (D81's 2026-08-25 census recorded 180 of 995 DFA artifacts on the
+  attempt scan and did NOT split them by start_max). Axis
+  -fno-attempt-split / PCREC_NO_ATTEMPT_SPLIT, stamp value
+  RX_DFA_SCAN "attempt+unanchored"; both sabotage directions are
+  answer-detectable. PROFILE FIRST: cycle1_analysis.md M5.a/M5.b.
+  LANDING BAR — improve: (wild-waf-crs-942360-concat-sqli, thr),
+  (wild-waf-crs-942360-concat-sqli, srch). Do not regress:
+  (ipv4-near-miss, thr), (uuid-near-miss, thr), (base10num-near-miss,
+  thr), (winpath-near-miss, thr), (wild-validator-email-owasp, thr) —
+  the five FULLY anchored attempt-scan artifacts, whose emitted text must
+  be byte-identical because the predicate is false for them.
+```
+
+```
+- [OPTLOOP.1.M6] STATE:not-started (SIZE S, MEASUREMENT ONLY) (PROPOSED
+  2026-09-22 by [OPTLOOP.1.analysis], cycle1_analysis.md M6) — WHAT THE
+  VM COSTS PER ATTEMPT AND PER STEP. Eleven losing rows (weighted 1.004)
+  are VM rows where pcrec and the winner are both linear and pcrec costs
+  1.05-5.2x per byte, and NOTHING in the emitted C names a mechanism
+  (rx_reset_for_next_attempt is O(trail depth), i.e. proportional to work
+  already done). Instrument a COPY of nested-comment-rec /
+  quoted-delim-match / balanced-parens-rec with a per-call and a
+  per-dispatch-step counter, run on t-1m, and divide: ns/attempt and
+  ns/step SEPARATELY. That number decides whether the bucket is an
+  attempt-COUNT problem ([OPT-ANCHOR-VM]/[OPT-FIRSTSET] territory) or a
+  per-STEP problem (an emitted-code problem), and NO mechanism should be
+  proposed before it (D77; memory pcrec-build-under-measurement).
+  Nothing under src/. LANDING BAR: n/a, the deliverable is the number.
+```
+
+**Sequencing recommendation.** D119 caps an implementation batch at three
+mechanisms. **Batch 1 = [OPT-REQBYTE] + [OPT-ANCHOR-VM] + [OPT-FIRSTSET]**:
+they carry 6.828 of the 8.005 weighted score the five cover, the first and
+third share one AST walk, and all three are extensions of primitives that
+already exist rather than new machinery. `[OPT-ENDWIN]` and
+`[OPT-ATTEMPT-SPLIT]` are batch 2, and `[OPTLOOP.1.M6]` can run as a
+measurement lane beside either, since it touches nothing.
+
+**Run [OPTLOOP.1.M6] and every `PROFILE FIRST` block before any
+implementation lane opens.** They are all one Linux executor session on
+ubuntubudu and they share the setup in §3; several of them are capable of
+refuting their own mechanism, which is what they are for.
+
+---
+
+## 6. What this analysis does NOT establish
+
+- **No timing was taken on this box.** Every pcrec-vs-engine number is the
+  bench's Ryzen 1600 measurement at pin `25b1984f`; every pcrec structural
+  fact is from `ab341bfe`'s own compiler. The two pins differ by
+  [REL-1.4]'s version/`abi` stamp, which this lane confirmed accounts for
+  the 39–46-byte size difference on the one artifact where it is visible
+  (`wild-datetime-datefinder-alternation`'s refusal byte count) and for
+  nothing else it looked at.
+- **The `pcre2_pattern_info` facts were measured against libpcre2 10.48
+  (Homebrew)**, not the 10.46 reference. They are structural pattern
+  properties, so drift is unlikely, but the executor should re-run
+  `docs/dev/optloop/p2info.c` against 10.46 on ubuntubudu if any of them
+  becomes load-bearing for a landed change.
+- **The 0.0169 ns/byte floor rate is an observation, not an identification.**
+  Three independent engines share it and pcrec is the fastest of them, which
+  is what licenses calling it "one `memchr`-class pass". No disassembly of
+  libpcre2 was done and none is needed for the mechanism, whose own witness
+  is pcrec's `floor-byte` row.
+- **The `evil-alt-nested` short-regime "wrong" labels are unresolved.** §1.2
+  gives the reason to suspect a dropped-expectation artifact rather than a
+  pcrec divergence; confirming it is a bench-side read this lane could not
+  make.
+- **Nothing here re-ranks the other five sub-benches.** `bench/altwide`,
+  `bench/bounded`, `bench/loglines`, `bench/syntax` and
+  `bench/email-specimen` were not analysed, which is why [ENG-ISL]'s
+  zero in §3.1 is "not in this matrix" and not "refuted".
