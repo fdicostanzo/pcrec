@@ -355,3 +355,47 @@ an assertion of the form "every artifact that stamps X also contains Y" is
 vacuously green when nothing stamps X, and each floor additionally asserts
 that its own EXTRACTOR is healthy before reading the count — the repair
 `w233_report.md` had to make to W23-S3 arm 4, applied at birth.
+
+---
+
+## Triage (lane b1triage)
+
+The manager's hypothesis was VERIFIED before any fix: `-p pa`/`-p pb`/`-p rx`
+builds of every red witness were reproduced and grepped for
+`!memchr(subject + search_from, <byte>, ...)`. Every one of the 13 reds
+(25 of the log's 26 non-standing `FAIL` lines) is [MECH-REACH] — [OPT-REQBYTE]
+(src/opt/reqbyte.c) short-circuits to nomatch before the mechanism under test
+ever runs, because each witness's subject deliberately omits the pattern's
+one required byte. None was a genuine regression. `-fno-req-byte` denies the
+axis at the exact call site(s) each check builds from; where a build is
+reused by more than one assertion, the flag was added once and re-verified
+against every consumer.
+
+| red | cause | fix | re-run |
+|---|---|---|---|
+| `tests/cli` case15 (4 FAILs): step-budget/frame-capacity give-up | `(a*)*b`/`((a)|b)*c` witnesses over a 'b'/'c'-free subject; req-byte's memchr answers nomatch before the VM budget can exhaust | `-fno-req-byte` on both `pcrec_run` calls (`tests/cli/run_cli_tests.sh`) | 10/10 case15 assertions PASS |
+| `tests/lib/run_gen_timeout_tests.sh` gen-run CPU/wall kill controls (2 FAILs) | `(a*)*b` over 200 'a's (no 'b') needs a real ~5s VM run for the kill controls to fire; req-byte answers instantly | `-fno-req-byte` on the slowrun build | 18/18 PASS (CPU kill 123/cpukill, wall kill 124) |
+| `tests/vm/run_vm_tests.sh` §4/§4.5/§4.7 CONTRAST (3 FAILs) | same shape: `(a*)*b`/`(a*)b`/`((a)|b)*c` witnesses missing their required byte | `-fno-req-byte` on the `steps`/`frames`/`cliffvm` builds (the `hy` default-engine and `vmp` possessified-rescan rows are unaffected, verified) | 48/48 PASS |
+| `tests/possessify/run_possessify_tests.sh` §3b boundary probe (1 FAIL) | `(x)(?:a|bc)+d` over an 'x'+'a'*n harness subject with no 'd'; both the denied and possessified arms answer via the pre-check at every probed length | `-fno-req-byte` on `ceil_off` (section 3, reused) and the section-3b `ceil_on` rebuild; verified it does not move the static `subject_ceiling` stamp either arm reports | 18/18 PASS; `run_possdiff.sh` re-run clean (155/0/0) |
+| `tests/mrl/run_mrldiff.sh` answer-more exemption (1 FAIL) | `(a*)*b` / `(a{1,4})+b` excused population needs the denied arm to GIVE UP and the pruned arm to ANSWER on a 'b'-free subject; req-byte makes both answer via the pre-check, so they trivially agree instead of diverging | `-fno-req-byte` on the pruned (`pa`) and denied (`pb`) builds; referee (`pc`, a pure DFA, no give-up path) left untouched | excused_total back to the pinned 22 (8+14 by pattern), 22 refereed, 0 unrefereed |
+| `tests/island/run_island_tests.sh` §2.20 budget witness (1 FAIL) | `(?:aabb|...)+?q` over four 'a'/'b'-only subjects with no 'q'; req-byte answers both the island and chain arms before either runs | `-fno-req-byte` on both the `on`/`off` arms | 4/4 witnesses diverge correctly; 39/39 island checks PASS |
+| `tests/lookaround/run_expansion_diff.sh` §6.3 population (13 FAILs: §1's 10 counts + policy P1/P2/NONE's 3) | NOT [MECH-REACH] — a real corpus-population move. `[OPTLOOP.1.impl]` batch 1 added `tests/assertions/end_window.rxt` (13 qualifying blocks / 66 cells, confirmed via `wc -l`/`grep -c` against the file itself) between this check's pin and HEAD | re-derived and re-pinned every moved literal (`tot_blocks` 469→482, `tot_beh` 10136→10202, `qual_blocks` 264→277, `qual_beh` 8276→8342, `p1_patterns` 264→277, `p2_patterns` 362→377, `p1_identity` 56→58, `p2_identity` 84→86, `p1_lookaround` 200→211, `p2_lookaround` 249→261); Q1-Q6 disqualification counts confirmed UNCHANGED before re-pinning, not merely assumed | 11/11 PASS, 29,319 three-way cells / 931 patterns, 0 disagreements |
+
+S265 (already DETECTED per the prior report, unaffected by this triage) is
+untouched.
+
+**A note on scope**: no [OPT-REQBYTE]/[OPT-ENDWIN]/[OPT-ANCHOR-VM] `src/`
+code changed in this triage — every fix is test-side, denying an axis whose
+mechanism is working exactly as batch 1 designed it (a whole class of
+ReDoS witnesses answering in one `memchr` is the feature). Six files
+touched, six commits, each independently re-verified green before the next.
+
+**Validation, chained** (box confirmed free at hand-off — no main-tree
+`make test` running): `build/b1triage_final.sh`, pid recorded in
+`build/b1triage_chain.log`, runs `make test-axes` then `make test` in
+series, each to its own log (`build/b1triage_axes.log`,
+`build/b1triage_test.log`). Completion lines: `run_axes.sh:` with its
+verdict for the axes run, `sections ran: N/M` for the full suite. BOTH ARE
+OWED at hand-off — this is the lane's last act per BOILERPLATE's
+DO-THEN-FINISH. Kill with `scripts/safekill <chain pid>` if the manager
+needs the box first.

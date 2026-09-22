@@ -2390,3 +2390,18 @@ never edited afterwards.
   `pcrec_cwmax`'s CHARACTER count stand as a BYTE count); §5.2 on D107's scan
   producing a fifth and a sixth NON-LIMIT kind; and §5.4 on why every claim
   in `tests/assertions/end_window.rxt` is carried at two subject lengths.
+  **TRIAGE (b1triage, 2026-09-22, sonnet), appended to the same report**:
+  batch 1's owed suite runs surfaced 13 reds in `make test` plus a FATAL
+  `make test-axes` baseline. 12 of the 13 are ONE mechanism, confirmed
+  before any fix by grepping each witness's own emitted `!memchr(...)`:
+  [OPT-REQBYTE] short-circuits to nomatch before the give-up/exemption/
+  divergence path under test ever runs, because six checks' witnesses
+  deliberately omit the pattern's own required byte
+  ([MECH-REACH] — `tests/cli` case15, `run_gen_timeout_tests.sh`,
+  `run_vm_tests.sh` §4/§4.5/§4.7, `run_possessify_tests.sh` §3b,
+  `run_mrldiff.sh`'s answer-more exemption, `run_island_tests.sh` §2.20).
+  `-fno-req-byte` at each exact build site, six commits, no `src/` change.
+  The 13th (`run_expansion_diff.sh`'s §6.3 population) is a REAL corpus
+  move — batch 1's own `tests/assertions/end_window.rxt` (+13 blocks/+66
+  cells) — re-derived and re-pinned with the corpus change named in the
+  pin's own comment, per that check's stated instruction.
