@@ -8093,3 +8093,25 @@ subbench, where the parked rows ([ENG-ISL], [CLS-TREE], [DD-13]) compete
 with fresh findings for the same lane. Plan rows: [OPTLOOP] (the
 standing loop) with per-cycle children [OPTLOOP.N.analysis] /
 [OPTLOOP.N.impl].
+
+**Addendum (Frank, 2026-09-22, seventy-sixth session — THE LOOP'S ITERATION
+POLICY: repeat, adaptive, searching).** "Cycle 2 should do repeat on
+capabilities until under threshold however if a test warrants deeper
+investigation that would be helped by diving into a different bench then
+let's do that. Also, consider opening a new subbench if there is anything
+that should be more thoroughly dissected. Adaptive. Searching." So: (1) the
+loop REPEATS on `capability` — each cycle re-ranks the same subbench at the
+new pin and takes the next mechanisms — UNTIL the losing population is
+under threshold; (2) a row that warrants deeper investigation may take the
+cycle INTO ANOTHER SUBBENCH where that investigation is better served
+(altwide for alternation shapes, bounded for counted repeats, loglines for
+find-all, ...) — the subbench follows the question, not a schedule; (3) a
+NEW SUBBENCH is opened (an inbox request to the bench, which builds; pcrec
+runs — D78) when something deserves more thorough dissection than any
+existing set gives it. THE THRESHOLD is not yet named by Frank; the
+manager's proposed operationalization, pending his word: a cycle on
+`capability` ends when every ranked cell either sits within its own IQR
+band of its algorithmic SCALAR target (cycle1_analysis.md §0's criterion)
+or carries a recorded disposition (fundamental / SIMD-phase deferral /
+module gap / size-cap own row), with the captures-vs-captures view
+(cycle1_caps_view.md) as the population, not the best-variant view.
