@@ -697,6 +697,12 @@ change.
   contingent on `run_ir_listing.sh` gaining a per-pattern `--features`
   flag it does not have today; 2 sites are structurally unreachable by
   any pattern, having no literal prefix at all).
+- `optloop/` — the OPTIMIZATION LOOP's per-cycle analyses (D119): one
+  `cycleN_analysis.md` per cycle, with the machine-readable ranked table and
+  the scripts that produced it. Cycle 1 (2026-09-22, lane optrev) ranks all
+  128 (pattern, regime) cells of pcrec-bench's `capability@0.1` at pin
+  `25b1984f`, buckets them by cause off the D81 stamps, and proposes six
+  plan rows. See `optloop/CLAUDE.md`.
 - `meta/` — the SIDECAR: learnings about developing WITH models that
   transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
   that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is
