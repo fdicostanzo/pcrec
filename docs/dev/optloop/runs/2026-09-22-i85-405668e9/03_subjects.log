@@ -1,0 +1,17 @@
+-- 0.3 subjects
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/home/duxevents/pcrec-bench/bench/capability/captext.py", line 12, in <module>
+    from pcrecbench.periodic import periodic_field  # noqa: F401  (re-export)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'pcrecbench'
+subjects rc=1
+-- EXPECT d2e4f134... / 3cf7b248... / ccbdf7eb... (manifest_throughput.tsv)
+t-64k	65536	d2e4f134473cc40a9a4e7df7a30e0efa11f566d96ee990c62cd663a2439c8524	throughput/mixed log+http+source+prose grammar, seed 0xc0ffee1	no
+t-256k	262144	3cf7b248873da164518b74e039cc2380f39e233b2899716c82c8eb4b7b49b5a7	throughput/mixed log+http+source+prose grammar, seed 0xc0ffee2	no
+t-1m	1048576	ccbdf7eb97f15776a68b8bbb9d6387870cd01d4796207fb20032958caf9754ee	throughput/mixed log+http+source+prose grammar, seed 0xc0ffee3	no
+-- 0.3 RETRY with repo root on sys.path (captext imports pcrecbench; read-only)
+t-64k 65536 d2e4f134473cc40a9a4e7df7a30e0efa11f566d96ee990c62cd663a2439c8524
+t-256k 262144 3cf7b248873da164518b74e039cc2380f39e233b2899716c82c8eb4b7b49b5a7
+t-1m 1048576 ccbdf7eb97f15776a68b8bbb9d6387870cd01d4796207fb20032958caf9754ee
+subjects rc=0

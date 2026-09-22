@@ -1,0 +1,29 @@
+== M1.a baseline, 2026-09-22T09:59:11-04:00
+compile tag-depth3-bound rc=0
+gcc base_tag-depth3-bound rc=0
+compile dup-param-detect rc=0
+gcc base_dup-param-detect rc=0
+compile tag-pair-match rc=0
+gcc base_tag-pair-match rc=0
+pcrec: warning: large artifact: 552422 bytes of emitted C source (43155 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language exact. See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+compile wild-secrets-username-password-pair rc=0
+gcc base_wild-secrets-username-password-pair rc=0
+compile wild-logparse-winpath-grok rc=0
+gcc base_wild-logparse-winpath-grok rc=0
+ 09:59:33 up 40 days, 11:06,  5 users,  load average: 0.35, 0.58, 0.32
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000478921 s  7.3078 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.001937557 s  7.3912 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003966874 s  3.7831 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000636033 s  9.7051 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.002590219 s  9.8809 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.010311297 s  9.8336 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000212190 s  3.2378 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000848573 s  3.2370 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003411662 s  3.2536 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000061980 s  0.9457 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000244751 s  0.9337 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000979173 s  0.9338 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000164031 s  2.5029 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000660182 s  2.5184 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.002640749 s  2.5184 ns/byte
+ 09:59:33 up 40 days, 11:06,  5 users,  load average: 0.35, 0.58, 0.32

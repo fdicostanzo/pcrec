@@ -1,0 +1,8 @@
+== M3.b real rows baseline, 2026-09-22T10:02:12-04:00
+compile wild-secrets-aws-access-key-id rc=0
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003239702 s  3.0896 ns/byte
+compile wild-codegrammar-json-constant rc=0
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003243332 s  3.0931 ns/byte
+compile wild-waf-crs-942140-dbnames rc=0
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003226122 s  3.0767 ns/byte
+ 10:02:13 up 40 days, 11:08,  5 users,  load average: 0.26, 0.41, 0.28

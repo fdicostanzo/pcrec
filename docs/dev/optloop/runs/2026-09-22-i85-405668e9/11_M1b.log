@@ -1,0 +1,28 @@
+== M1.b hand-twins, 2026-09-22T10:00:10-04:00
+twin tag-depth3-bound: guard at rx_search_run line 442, REQ '>'
+twin dup-param-detect: guard at rx_search_run line 306, REQ '='
+twin tag-pair-match: guard at rx_search_run line 328, REQ '>'
+twin wild-secrets-username-password-pair: guard at rx_search_run line 6448, REQ '='
+twin wild-logparse-winpath-grok: guard at rx_search_run line 458, REQ '\\'
+gcc twin_tag-depth3-bound rc=0
+gcc twin_dup-param-detect rc=0
+gcc twin_tag-pair-match rc=0
+gcc twin_wild-secrets-username-password-pair rc=0
+gcc twin_wild-logparse-winpath-grok rc=0
+ 10:00:21 up 40 days, 11:07,  5 users,  load average: 0.15, 0.49, 0.30
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000002450 s  0.0374 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000009580 s  0.0365 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000038490 s  0.0367 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000002440 s  0.0372 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000009570 s  0.0365 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000038460 s  0.0367 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000002430 s  0.0371 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000009570 s  0.0365 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000038531 s  0.0367 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000002430 s  0.0371 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000009630 s  0.0367 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000038420 s  0.0366 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000002410 s  0.0368 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000009560 s  0.0365 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000038350 s  0.0366 ns/byte
+ 10:00:21 up 40 days, 11:07,  5 users,  load average: 0.15, 0.49, 0.30

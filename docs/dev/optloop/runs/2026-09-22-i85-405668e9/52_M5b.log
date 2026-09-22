@@ -1,0 +1,12 @@
+== M5.b upper bound, 2026-09-22T10:04:31-04:00
+compile rc=0
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "byte-class-bounded"
+#define RX_DFA_TABLE "premultiplied"
+#define RX_DFA_SCAN_EDGE "none"
+gcc rc=0
+ 10:04:31 up 40 days, 11:11,  5 users,  load average: 0.15, 0.31, 0.26
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.002512499 s  2.3961 ns/byte
+388428 /tmp/optloop1/wild-waf-crs-942360-concat-sqli.c
+148650 /tmp/optloop1/split.c
+537078 total

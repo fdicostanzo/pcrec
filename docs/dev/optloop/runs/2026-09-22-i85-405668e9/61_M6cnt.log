@@ -1,0 +1,21 @@
+== M6 instrumented counts, 2026-09-22T10:05:22-04:00
+-- instrumentation rule: g_steps++ inserted after EVERY 'rx_L<n>:'/'rx_fail:'/'rx_accept:' label line;
+   g_attempts++ at rx_match_anchored entry; counters printed by a destructor; 1 iter so counts are per-run.
+nested-comment-rec: 56 label counters + 1 entry counter
+quoted-delim-match: 19 label counters + 1 entry counter
+balanced-parens-rec: 24 label counters + 1 entry counter
+gcc cnt_nested-comment-rec rc=0
+ATTEMPTS=1048577 STEPS=3175731
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.006664043 s  6.3553 ns/byte
+gcc cnt_quoted-delim-match rc=0
+ATTEMPTS=1017656 STEPS=3315211
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=2975 best=0.015495605 s  14.7778 ns/byte
+gcc cnt_balanced-parens-rec rc=0
+ATTEMPTS=1005534 STEPS=2231728
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=6061 best=0.005050578 s  4.8166 ns/byte
+== M6 derived (baseline best wall / deterministic 1-run counts)
+nested-comment-rec       wall(base)=5.952 ms  attempts=1,048,577  steps=3,175,731  ns/attempt=5.68  ns/step=1.87  steps/attempt=3.03
+quoted-delim-match       wall(base)=5.936 ms  attempts=1,017,656  steps=3,315,211  ns/attempt=5.83  ns/step=1.79  steps/attempt=3.26
+balanced-parens-rec      wall(base)=3.828 ms  attempts=1,005,534  steps=2,231,728  ns/attempt=3.81  ns/step=1.72  steps/attempt=2.22
+(instrumented walls 6.355/14.778/4.817 ns/byte vs baselines 5.676/5.661/3.650 -- counter overhead
+ included there; the divisions above use the UNinstrumented baseline wall and the deterministic counts)

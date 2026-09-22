@@ -1,0 +1,66 @@
+== (b)2 p2info at 10.46 FULL RERUN, 2026-09-22T10:06:48-04:00 (prior attempt truncated by a display pipe; noted)
+ii  libpcre2-8-0:amd64                                  10.46-1build1                              amd64        New Perl Compatible Regular Expression Library- 8 bit runtime files
+balanced-parens-rec	OK	firstcodetype=1	firstcodeunit=40	lastcodetype=1	lastcodeunit=41	minlength=2	bitmapbits=-1
+base10num-near-miss	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=11	bitmap=2d,30,31,32,33,34,35,36,37,38,39,
+bracket-array-define	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=0	bitmapbits=-1
+codegrammar-flat	OK	firstcodetype=1	firstcodeunit=34	lastcodetype=1	lastcodeunit=58	minlength=4	bitmapbits=-1
+codegrammar-xflag	OK	firstcodetype=1	firstcodeunit=34	lastcodetype=1	lastcodeunit=58	minlength=4	bitmapbits=-1
+currency-lookbehind-fixed	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+date-nested-plus	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+doubled-word	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=3	bitmapbits=63	bitmap=30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5f,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+dup-param-detect	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=61	minlength=5	bitmapbits=63	bitmap=30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5f,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+email-local-nodup	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=63	bitmap=2e,30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+email-nested-plus	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=64	minlength=2	bitmapbits=67	bitmap=25,2b,2d,2e,30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5f,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+evil-alt-nested	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=0	bitmapbits=-1
+file-ext-order	OK	firstcodetype=1	firstcodeunit=46	lastcodetype=0	lastcodeunit=0	minlength=4	bitmapbits=-1
+float-literal-bound	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=46	minlength=3	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+floor-byte	OK	firstcodetype=1	firstcodeunit=126	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=-1
+high-byte-run	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=128	bitmap=80,81,82,83,84,85,86,87,88,89,8a,8b,8c,8d,8e,8f,90,91,92,93,94,95,96,97,98,99,9a,9b,9c,9d,9e,9f,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aa,ab,ac,ad,ae,af,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,ba,bb,bc,bd,be,bf,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,ca,cb,cc,cd,ce,cf,d0,d1,d2,d3,d4,d5,d6,d7,d8,d9,da,db,dc,dd,de,df,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,ea,eb,ec,ed,ee,ef,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,fa,fb,fc,fd,fe,ff,
+ipv4-near-miss	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=46	minlength=7	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+keyword-prefix-order	OK	firstcodetype=1	firstcodeunit=105	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=-1
+logparse-atomic-removed	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=10	bitmapbits=7	bitmap=61,63,64,6b,6d,73,75,
+logparse-atomic	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=10	bitmapbits=7	bitmap=61,63,64,6b,6d,73,75,
+mojibake-curly-quote	OK	firstcodetype=1	firstcodeunit=147	lastcodetype=1	lastcodeunit=148	minlength=2	bitmapbits=-1
+negation-scope-lookbehind-var	OK	firstcodetype=1	firstcodeunit=97	lastcodetype=1	lastcodeunit=101	minlength=9	bitmapbits=-1
+nested-comment-rec	OK	firstcodetype=1	firstcodeunit=47	lastcodetype=1	lastcodeunit=47	minlength=4	bitmapbits=-1
+numeric-id-nested-plus	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+phone-list-nested-plus	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+phone-palindrome-6	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=6	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+pwd-strength-chain	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=8	bitmapbits=-1
+quoted-delim-match	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=2	bitmap=22,27,
+router-prefix-order	OK	firstcodetype=1	firstcodeunit=47	lastcodetype=0	lastcodeunit=0	minlength=5	bitmapbits=-1
+tag-depth3-bound	OK	firstcodetype=1	firstcodeunit=60	lastcodetype=1	lastcodeunit=62	minlength=7	bitmapbits=-1
+tag-pair-match	OK	firstcodetype=1	firstcodeunit=60	lastcodetype=1	lastcodeunit=62	minlength=7	bitmapbits=-1
+trim-nested-star	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=0	bitmapbits=-1
+utf8-lead-no-cont	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=30	bitmap=c2,c3,c4,c5,c6,c7,c8,c9,ca,cb,cc,cd,ce,cf,d0,d1,d2,d3,d4,d5,d6,d7,d8,d9,da,db,dc,dd,de,df,
+uuid-near-miss	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=36	bitmapbits=22	bitmap=30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,61,62,63,64,65,66,
+wild-codegrammar-json-array-begin	OK	firstcodetype=1	firstcodeunit=91	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=-1
+wild-codegrammar-json-constant	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=4	bitmapbits=3	bitmap=66,6e,74,
+wild-codegrammar-json-number-extended	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=11	bitmap=2d,30,31,32,33,34,35,36,37,38,39,
+wild-codegrammar-json-object-begin	OK	firstcodetype=1	firstcodeunit=123	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=-1
+wild-codegrammar-json-stringcontent-escape	OK	firstcodetype=1	firstcodeunit=92	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=-1
+wild-datetime-datefinder-alternation	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=38	bitmap=09,0a,0b,0c,0d,20,2b,2c,2d,2e,2f,30,31,32,33,34,35,36,37,38,39,3a,40,5f,61,62,64,65,66,6a,6c,6d,6e,6f,73,74,75,77,
+wild-datetime-moment-iso8601	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=45	minlength=7	bitmapbits=18	bitmap=09,0a,0b,0c,0d,20,2b,2d,30,31,32,33,34,35,36,37,38,39,
+wild-logparse-base10num-grok	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=13	bitmap=2b,2d,2e,30,31,32,33,34,35,36,37,38,39,
+wild-logparse-base10num-noatomic	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=13	bitmap=2b,2d,2e,30,31,32,33,34,35,36,37,38,39,
+wild-logparse-quotedstring-grok	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=3	bitmap=22,27,60,
+wild-logparse-quotedstring-noatomic	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=2	bitmapbits=3	bitmap=22,27,60,
+wild-logparse-syslogbase-expanded	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=58	minlength=16	bitmapbits=16	bitmap=41,44,46,4a,4d,4e,4f,53,61,64,66,6a,6d,6e,6f,73,
+wild-logparse-winpath-grok	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=92	minlength=2	bitmapbits=53	bitmap=41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5c,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+wild-secrets-aws-access-key-id	OK	firstcodetype=1	firstcodeunit=65	lastcodetype=0	lastcodeunit=0	minlength=20	bitmapbits=-1
+wild-secrets-github-pat	OK	firstcodetype=1	firstcodeunit=103	lastcodetype=1	lastcodeunit=95	minlength=93	bitmapbits=-1
+wild-secrets-slack-webhook-url	OK	firstcodetype=1	firstcodeunit=104	lastcodetype=1	lastcodeunit=47	minlength=77	bitmapbits=-1
+wild-secrets-username-password-pair	OK	firstcodetype=1	firstcodeunit=85	lastcodetype=1	lastcodeunit=61	minlength=22	bitmapbits=-1
+wild-semdiv-altorder-foo-foobar-rustregex	OK	firstcodetype=1	firstcodeunit=102	lastcodetype=0	lastcodeunit=0	minlength=3	bitmapbits=-1
+wild-semdiv-dollar-trailing-newline-pcre2	OK	firstcodetype=1	firstcodeunit=97	lastcodetype=1	lastcodeunit=99	minlength=3	bitmapbits=-1
+wild-semdiv-empty-alt-repeat-pcre2	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=1	bitmapbits=11	bitmap=30,31,32,33,34,35,36,37,38,39,61,
+wild-validator-email-owasp	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=46	minlength=6	bitmapbits=67	bitmap=26,2a,2b,2d,30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5f,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,
+wild-validator-ipv4-owasp	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=46	minlength=7	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+wild-validator-us-zip-owasp	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=5	bitmapbits=10	bitmap=30,31,32,33,34,35,36,37,38,39,
+wild-validator-uuid-grok	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=45	minlength=36	bitmapbits=22	bitmap=30,31,32,33,34,35,36,37,38,39,41,42,43,44,45,46,61,62,63,64,65,66,
+wild-waf-crs-942140-dbnames	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=4	bitmapbits=14	bitmap=44,49,4d,4e,50,53,54,64,69,6d,6e,70,73,74,
+wild-waf-crs-942160-sleep-benchmark	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=1	lastcodeunit=41	minlength=7	bitmapbits=4	bitmap=42,53,62,73,
+wild-waf-crs-942270-union-select	OK	firstcodetype=1	firstcodeunit=117	lastcodetype=1	lastcodeunit=109	minlength=15	bitmapbits=-1
+wild-waf-crs-942360-concat-sqli	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=5	bitmapbits=256	bitmap=00,01,02,03,04,05,06,07,08,09,0a,0b,0c,0d,0e,0f,10,11,12,13,14,15,16,17,18,19,1a,1b,1c,1d,1e,1f,20,21,22,23,24,25,26,27,28,29,2a,2b,2c,2d,2e,2f,30,31,32,33,34,35,36,37,38,39,3a,3b,3c,3d,3e,3f,40,41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,5b,5c,5d,5e,5f,60,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,7b,7c,7d,7e,7f,80,81,82,83,84,85,86,87,88,89,8a,8b,8c,8d,8e,8f,90,91,92,93,94,95,96,97,98,99,9a,9b,9c,9d,9e,9f,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aa,ab,ac,ad,ae,af,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,ba,bb,bc,bd,be,bf,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,ca,cb,cc,cd,ce,cf,d0,d1,d2,d3,d4,d5,d6,d7,d8,d9,da,db,dc,dd,de,df,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,ea,eb,ec,ed,ee,ef,f0,f1,f2,f3,f4,f5,f6,f7,f8,f9,fa,fb,fc,fd,fe,ff,
+wild-waf-crs-942500-comment-obfuscation	OK	firstcodetype=1	firstcodeunit=47	lastcodetype=1	lastcodeunit=47	minlength=5	bitmapbits=-1
+winpath-near-miss	OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=4	bitmapbits=52	bitmap=41,42,43,44,45,46,47,48,49,4a,4b,4c,4d,4e,4f,50,51,52,53,54,55,56,57,58,59,5a,61,62,63,64,65,66,67,68,69,6a,6b,6c,6d,6e,6f,70,71,72,73,74,75,76,77,78,79,7a,

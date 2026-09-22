@@ -1,0 +1,3 @@
+top-level arms: 5
+^-bearing arm(s): ['^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:(?:(?:(?:cre|trunc)at|re...']
+split.rx written: 5 -> 4 arms, 1460 -> 291 bytes

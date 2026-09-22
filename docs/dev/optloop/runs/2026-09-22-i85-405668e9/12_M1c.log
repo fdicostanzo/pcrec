@@ -1,0 +1,5 @@
+== M1.c carve-out, 2026-09-22T10:00:37-04:00
+1000001 /tmp/optloop1/subj/hit.bin
+ 10:00:38 up 40 days, 11:07,  5 users,  load average: 0.11, 0.46, 0.29
+/tmp/optloop1/subj/hit.bin n=1000001 matches=0 best=0.003251562 s  3.2516 ns/byte
+/tmp/optloop1/subj/hit.bin n=1000001 matches=0 best=0.003268462 s  3.2685 ns/byte

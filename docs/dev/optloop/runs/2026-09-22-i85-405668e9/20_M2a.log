@@ -1,0 +1,27 @@
+== M2.a baseline + anchored-DFA control, 2026-09-22T10:00:48-04:00
+compile bracket-array-define rc=0
+#define RX_ENGINE "vm"
+#define RX_VM_PREFILTER "none"
+gcc base_bracket-array-define rc=0
+compile evil-alt-nested rc=0
+#define RX_ENGINE "vm"
+#define RX_VM_PREFILTER "none"
+gcc base_evil-alt-nested rc=0
+compile trim-nested-star rc=0
+#define RX_ENGINE "vm"
+#define RX_VM_PREFILTER "none"
+gcc base_trim-nested-star rc=0
+compile ipv4-near-miss rc=0
+#define RX_ENGINE "dfa"
+#define RX_DFA_SCAN "attempt"
+gcc base_ipv4-near-miss rc=0
+ 10:00:59 up 40 days, 11:07,  5 users,  load average: 0.20, 0.46, 0.29
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000507562 s  7.7448 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003777924 s  3.6029 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000213230 s  3.2536 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003254441 s  3.1037 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000154261 s  2.3538 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.002476279 s  2.3616 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000000030 s  0.0005 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000000030 s  0.0000 ns/byte
+ 10:00:59 up 40 days, 11:07,  5 users,  load average: 0.20, 0.46, 0.29

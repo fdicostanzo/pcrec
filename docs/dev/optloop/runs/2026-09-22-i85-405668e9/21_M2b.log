@@ -1,0 +1,14 @@
+== M2.b hand-twins, 2026-09-22T10:01:20-04:00
+twin bracket-array-define: advance replaced with return 0
+twin evil-alt-nested: advance replaced with return 0
+twin trim-nested-star: advance replaced with return 0
+gcc twin_bracket-array-define rc=0
+gcc twin_evil-alt-nested rc=0
+gcc twin_trim-nested-star rc=0
+ 10:01:29 up 40 days, 11:08,  5 users,  load average: 0.13, 0.42, 0.28
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000000110 s  0.0017 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000000110 s  0.0001 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000022920 s  0.3497 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000002710 s  0.0026 ns/byte
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000000080 s  0.0012 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000000080 s  0.0001 ns/byte

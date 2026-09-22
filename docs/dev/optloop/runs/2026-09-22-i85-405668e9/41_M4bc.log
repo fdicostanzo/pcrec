@@ -1,0 +1,16 @@
+== M4.b hand-twin, 2026-09-22T10:03:56-04:00
+twin dol: clamp inserted before scan_position init (line 128)
+gcc rc=0
+ 10:03:56 up 40 days, 11:10,  5 users,  load average: 0.17, 0.34, 0.27
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000000030 s  0.0005 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000000030 s  0.0001 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000000030 s  0.0000 ns/byte
+== M4.c correctness carve-out
+/tmp/optloop1/subj/e1.bin n=3 matches=1 best=0.000000350 s  116.7258 ns/byte
+/tmp/optloop1/subj/e1.bin n=3 matches=1 best=0.000000330 s  110.0513 ns/byte
+/tmp/optloop1/subj/e2.bin n=4 matches=1 best=0.000000340 s  84.9832 ns/byte
+/tmp/optloop1/subj/e2.bin n=4 matches=1 best=0.000000320 s  79.9773 ns/byte
+/tmp/optloop1/subj/e3.bin n=100003 matches=1 best=0.000002040 s  0.0204 ns/byte
+/tmp/optloop1/subj/e3.bin n=100003 matches=1 best=0.000000360 s  0.0036 ns/byte
+/tmp/optloop1/subj/e4.bin n=100003 matches=0 best=0.000001990 s  0.0199 ns/byte
+/tmp/optloop1/subj/e4.bin n=100003 matches=0 best=0.000000210 s  0.0021 ns/byte

@@ -1,0 +1,11 @@
+== M3.c hand-twins (table overwrite), 2026-09-22T10:02:58-04:00
+twin wild-secrets-aws-access-key-id: set 63 -> 1 bytes
+twin wild-codegrammar-json-constant: set 63 -> 3 bytes
+twin wild-waf-crs-942140-dbnames: set 63 -> 14 bytes
+gcc twin_wild-secrets-aws-access-key-id rc=0
+gcc twin_wild-codegrammar-json-constant rc=0
+gcc twin_wild-waf-crs-942140-dbnames rc=0
+ 10:03:06 up 40 days, 11:09,  5 users,  load average: 0.26, 0.38, 0.28
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000893643 s  0.8522 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.003571873 s  3.4064 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.002873100 s  2.7400 ns/byte

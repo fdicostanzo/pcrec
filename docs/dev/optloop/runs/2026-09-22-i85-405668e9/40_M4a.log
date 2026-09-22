@@ -1,0 +1,9 @@
+== M4.a baseline abc$, 2026-09-22T10:03:32-04:00
+compile rc=0
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "offset-set-bounded"
+#define RX_DFA_START "reverse-pass"
+ 10:03:32 up 40 days, 11:10,  5 users,  load average: 0.17, 0.35, 0.27
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000012740 s  0.1944 ns/byte
+/tmp/optloop1/subj/t-256k.bin n=262144 matches=0 best=0.000051630 s  0.1970 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.000234831 s  0.2240 ns/byte

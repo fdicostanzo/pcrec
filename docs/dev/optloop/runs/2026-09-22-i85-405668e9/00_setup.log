@@ -1,0 +1,19 @@
+== I-85 phase 0 transcript, 2026-09-22T09:57:17-04:00
+-- 0.1 scratch root
+OPT1=/tmp/optloop1
+-- 0.2 worktree (SUBSTITUTION per I-85: main, not lane/optrev)
+69172a00 plan + journal: [OPTLOOP.1.analysis] and [BACKLOG-TRIAGE] delivered; cycle-1 findings recorded
+Preparing worktree (checking out 'main')
+fatal: 'main' is already used by worktree at '/home/duxevents/pcrec'
+worktree rc=128
+-- 0.2 RETRY with --detach (main is checked out in the primary clone; pin identical)
+Preparing worktree (detached HEAD 69172a00)
+HEAD is now at 69172a00 plan + journal: [OPTLOOP.1.analysis] and [BACKLOG-TRIAGE] delivered; cycle-1 findings recorded
+worktree rc=0
+69172a00 plan + journal: [OPTLOOP.1.analysis] and [BACKLOG-TRIAGE] delivered; cycle-1 findings recorded
+-- 0.2 build
+gcc -O2 -g -Wall -Wextra -std=gnu11 -Ilib -Isrc -c -o build/obj/dump/syntax_dump.o src/dump/syntax_dump.c
+ar rcs build/libpcrec.a build/obj/core/arena.o build/obj/core/compile.o build/obj/core/compile_defs.o build/obj/core/cpset.o build/obj/core/fold.o build/obj/core/sb.o build/obj/core/tune.o build/obj/parse/definitions.o build/obj/parse/enabled.o build/obj/parse/ext.o build/obj/parse/mod_assertions.o build/obj/parse/mod_atomic_groups.o build/obj/parse/mod_backrefs.o build/obj/parse/mod_classes.o build/obj/parse/mod_lookaround.o build/obj/parse/mod_modifiers.o build/obj/parse/mod_named_groups.o build/obj/parse/mod_recursion.o build/obj/parse/mod_uprops.o build/obj/parse/mod_verbs.o build/obj/parse/parse.o build/obj/parse/registry.o build/obj/parse/rxt_compose.o build/obj/parse/rxt_schema.o build/obj/parse/rxt_source.o build/obj/parse/scans.o build/obj/ir/dfa.o build/obj/ir/nfa.o build/obj/opt/altcls.o build/obj/opt/atomic.o build/obj/opt/callgraph.o build/obj/opt/lower_enc.o build/obj/opt/minimize.o build/obj/opt/mrl.o build/obj/opt/possessify.o build/obj/opt/postresolve.o build/obj/opt/prefix_k.o build/obj/opt/revdet.o build/obj/opt/scanedge.o build/obj/opt/select_engine.o build/obj/gen/emit_dfa.o build/obj/gen/emit_vm.o build/obj/enc/enc_byte.o build/obj/enc/enc.o build/obj/enc/enc_utf8.o build/obj/dump/axes_dump.o build/obj/dump/limits_dump.o build/obj/dump/schema_dump.o build/obj/dump/syntax_dump.o
+gcc -O2 -g -Wall -Wextra -std=gnu11 -Ilib -Isrc -o build/pcrec cli/main.c build/libpcrec.a
+make rc=0
+-rwxrwxr-x 1 duxevents duxevents 2486904 Sep 22 09:57 /tmp/optloop1/pcrec/build/pcrec

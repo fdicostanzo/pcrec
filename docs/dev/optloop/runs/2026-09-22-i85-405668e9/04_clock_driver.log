@@ -1,0 +1,10 @@
+-- 0.4 clock calibration
+0.2253 GHz (N=2000000000, 8.875 s)
+0.2254 GHz (N=2000000000, 8.875 s)
+0.2256 GHz (N=2000000000, 8.866 s)
+0.2257 GHz (N=2000000000, 8.863 s)
+0.2256 GHz (N=2000000000, 8.865 s)
+clock rc=0
+ 09:58:48 up 40 days, 11:05,  5 users,  load average: 0.74, 0.67, 0.33
+-- 0.5 findall.c driver
+findall.c written

@@ -1,0 +1,15 @@
+== M5.a baseline, 2026-09-22T10:04:07-04:00
+pcrec: warning: large artifact: 393542 bytes of emitted C source (99062 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+compile rc=0
+#define RX_ENGINE "dfa"
+#define RX_DFA_SCAN "attempt"
+#define RX_DFA_PREFILTER "none"
+#define RX_DFA_TABLE "none"
+#define RX_DFA_SCAN_EDGE "none"
+    const size_t start_max = subject_length;
+gcc rc=0
+ 10:04:09 up 40 days, 11:10,  5 users,  load average: 0.21, 0.34, 0.27
+/tmp/optloop1/subj/t-64k.bin n=65536 matches=0 best=0.000571872 s  8.7261 ns/byte
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.008830891 s  8.4218 ns/byte
+-- the pattern head (for the M5.b arm deletion):
+(?i)\b(?:(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\s\x0b]+(?:char|group_concat|load_file)\b[\s\x0b]*\(?|end[\s\x0b]*?\);)|[\s\x0b\(]load_file[\s\x0b]*?\(|[\"'`][\s\

@@ -1,0 +1,7 @@
+== M3.d disassembly read, 2026-09-22T10:03:19-04:00
+ 132 /tmp/optloop1/aws_base.s
+ 132 /tmp/optloop1/aws_twin.s
+ 264 total
+diff rc=0 (0=identical, 1=differs)
+/tmp/optloop1/base_wild-secrets-aws-access-key-id /tmp/optloop1/twin_wild-secrets-aws-access-key-id differ: byte 865, line 1
+(binaries differ = the table content; instruction stream identical per the diff above)

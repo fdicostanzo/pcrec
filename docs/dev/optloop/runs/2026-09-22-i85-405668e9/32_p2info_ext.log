@@ -1,0 +1,4 @@
+== p2info_ext build, 2026-09-22T10:02:44-04:00
+p2info_ext.c written (EXTENSION: bitmap byte dump appended to the OK line)
+gcc rc=0
+OK	firstcodetype=0	firstcodeunit=0	lastcodetype=0	lastcodeunit=0	minlength=4	bitmapbits=14	bitmap=44,49,4d,4e,50,53,54,64,69,6d,6e,70,73,74,

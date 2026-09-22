@@ -1,0 +1,11 @@
+== M2.c carve-out (unanchored control), 2026-09-22T10:01:52-04:00
+compile nested-comment-rec rc=0
+#define RX_ENGINE "vm"
+#define RX_VM_PREFILTER "none"
+gcc rc=0
+ 10:01:52 up 40 days, 11:08,  5 users,  load average: 0.14, 0.40, 0.28
+/tmp/optloop1/subj/t-1m.bin n=1048576 matches=0 best=0.005955392 s  5.6795 ns/byte
+-- carve-out note: the M2 predicate (every alternative ^/\A/\G-anchored) is FALSE for nested-comment-rec,
+   so the mechanism licenses NO edit; the emitted .c is the artifact unchanged (cmp of the
+   mechanism-applied text vs baseline is byte-identity by construction — no twin was built,
+   matching the block's own 'no line of its emitted text differs').
