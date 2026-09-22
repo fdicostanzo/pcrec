@@ -25001,3 +25001,80 @@ for `FAIL:` (the gate watcher now prints them); (2) a lane's armed
 background chain dies with the lane's shell at TaskStop unless launched
 detached (`nohup … & disown`) — b1triage's did; (3) a lane's "standalone
 re-run was clean" must name the FILE the suite actually runs.
+
+## 2026-09-22 (seventy-sixth session, evening) — BATCH 1 MERGED (abi 29); cycle-2 prep landed; three lessons about reading a gate
+
+**[OPTLOOP.1.impl] batch 1 MERGED at 6ab2464e** — [OPT-ANCHOR-VM],
+[OPT-ENDWIN], [OPT-REQBYTE] as src/opt/{startanch,endwin,reqbyte}.c, axes
+bits 28-30, stamps RX_VM_START / RX_END_WINDOW / RX_REQ_BYTE, abi 28→29
+(one D94 ritual for the batch). Validation on the branch: identity vs each
+deny flag at every startpos × 3 engines 0 mismatches; corpus at 3 engine
+settings 0 internal errors; run_prechecks 113/0 (new gate: two of the
+three mechanisms have NO answer-level detector, by nature — their
+sabotage rows are STAMP rows, S263 corpus:0fail beside a red structural
+arm, S264 corpus:178fail, S265 DETECTED solo); the full make test on the
+branch with every section green except registry (main's stale pin, fixed
+48057d99) and corpus (giveup.rxt's two witnesses, fixed by axesfix
+ae7259b3); `make test-axes` restricted to the three new axes:
+24,343/24,343 agree, 0 mismatches, each. The full all-axes sweep is
+MULTI-HOUR on darwin (one corpus run per axis; the lane's 60-min wrapper
+killed it at axis 6 of ~30) — OWED on Linux. Post-merge: the recursion
+identity (B) pin re-pinned to 6ab2464e — the FIRST post-D118 pin, so the
+reference compiler speaks `--pattern`; the gate gained the same
+per-binary grammar probe emit_sweep.py already had (a `-- 'a'` to a
+post-D118 reference would have read 'a' as a FILE); emit_sweep vs the
+beta ref c9305c24: self-check PASSED; c-default/c-vm move on every
+artifact (the abi-29 header + three stamp lines), emit-ir-vm 0/3,536
+movers (the program region is untouched, as the lane predicted),
+composition 98/98 (header), dumps 2 (--list-axes +3 rows; --list-limits
+"flag+-D"); test-codegen 65/0, 9/10 (nm). Triage lanes: b1triage (12 of
+13 reds = [MECH-REACH]: budget/give-up witnesses whose subject omits the
+required byte never reach the engine — `-fno-req-byte` at the check's
+build site; the 13th = the §6.3 population pins moved by end_window.rxt),
+axesfix (the seventh instance, in the harness's own giveup.rxt — no .rxt
+block can deny an axis, a format gap; witnesses rewritten as two-member
+classes the mechanism declines), regred (the registry red = a stale
+coverage pin in ANOTHER file, from admin1's landing).
+
+**Cycle-2 prep MERGED (lane c2prep, a689f9f2):** firstset_design.md —
+[OPT-FIRSTSET] AS RATIFIED IS UNSOUND (spurious match; the DFA start
+state encodes the preceding byte's word class; the subset guard passes
+the unsound narrowing; repair = re-seed via rx_forward_seed_state, an
+abi event, or VM-consumer-only); the cost model declines nothing;
+json-constant's ×1.10 unexplained → Linux re-run FIRST; the PAIR filter is
+its answer (7.89% → 0.33% candidates); the `freq` schema block ALREADY
+SHIPS (rxt_schema.def:146) — only config name resolution is open (where
+D83 addendum (4) lands). reqpos_census.md — tier 2 6-8%, two losing
+cells → re-scoped to tier 2b (pair/word run; on 60 of 68 bench patterns
+the run never occurs in t-1m); the cheapest finding: the RIGHTMOST pick
+rule leaves three whole-call answers on the table (a rarer necessary byte
+ABSENT while the picked byte is PRESENT) — needs a freq value, where a
+static named analysis first pays. onepass_census.md — capture-bearing
+one-pass reach 31.46% (corpus) / 29.41% (the 17 hybrid rows) vs the ~10%
+kill → (c) survives; M-B (Linux timing) is the deciding measurement. Two
+instrument lessons: a census reconstructing the pipeline must include
+every REWRITING pass above the analysis's call site (altcls factoring
+changed /user|/users's answer — caught by cross-checking against batch
+1's stamps: 63/63 agree); the A_CAT spine walk must be iterative.
+[OPT-REQPOS] row FILED (Frank's three additions today: the position as a
+start bound; the pair A + word B at a delta; B up to 8 bytes, may overlap
+A) and re-scoped on the census.
+
+**Admin merged:** admin2 (62 resident completed rows archived, 8 kept by
+argument; learnings §3.y; BOILERPLATE: detached owed runs, darwin
+timeouts, "name the file the suite runs"; the situation-index row for
+reading a gate log), regred (the 24→27 pin).
+
+**Rulings today (evening):** D119 addendum — the loop's iteration policy
+(repeat on capability until under threshold; the subbench follows the
+question; open new subbenches; adaptive, searching; the manager's
+threshold operationalization pending Frank). D83 addendum (four points).
+Batch-1 swap confirmed; cycle 2 opens on the bench ledger.
+
+**NEXT:** push; I-87 (bench re-pin + measure batch 1 on capability, the
+target cells + the carve-out moves + router-prefix-order as a target);
+the full darwin gate on merged main tonight (verdict = make's `*** [`
+lines); tomorrow: the ledger vs the D119 bar, the cycle-1 executive
+summary, the all-axes sweep on Linux, cycle 2's analysis on Frank's word
+(candidates ranked by c2prep: the rarest-byte pick → [OPT-REQPOS] 2b →
+FIRSTSET's VM consumer after F1/F2; M-B for one-pass).

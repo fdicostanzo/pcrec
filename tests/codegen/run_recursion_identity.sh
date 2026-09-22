@@ -897,7 +897,7 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # gate is therefore RED on the lane branch BY CONSTRUCTION, with the exact
 # message "the emitted scaffolding changed: bump `abi` ... and re-pin
 # comparison (B)" -- which is the gate working, not a defect.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a70982c9}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ab2464e}"   # [OPTLOOP.1.impl] batch 1, abi 28->29: (B) re-pinned to the merge 6ab2464e (D76; the first pin AFTER D118, so the reference speaks --pattern — see the grammar probe below)
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -983,8 +983,14 @@ fi
 # CURRENT `abi` number, so the two compilers' emitted `rx_info.abi` stamps
 # must agree — read off an actual artifact from each, on a call-free
 # pattern, rather than re-derived from source text.
+# [OPTLOOP.1.impl] batch 1 (2026-09-22): the (B) pin is POST-D118 for the first
+# time, so the reference compiler may speak the gcc-shaped grammar (`--pattern`)
+# rather than the retired `-- PATTERN`. Probe its OWN --help once, the way
+# scripts/emit_sweep.py does (pcrec_speaks_pattern_flag) — never assume one
+# grammar for both sides; (A)'s pre-module reference $REF keeps `--`.
+if "$FILEREF" --help 2>&1 | grep -qE -- '--pattern([^-]|$)'; then FILEREF_PAT='--pattern'; else FILEREF_PAT='--'; fi
 ABI_SUBJ_ART="$(pcrec_run "$PCREC"   --features all -p rx -o - --pattern 'a' 2>/dev/null)"   # [K37] bounded
-ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
+ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - $FILEREF_PAT 'a' 2>/dev/null)"   # [K37] bounded
 ABI_SUBJ="$(printf '%s\n' "$ABI_SUBJ_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 ABI_PIN="$(printf '%s\n' "$ABI_PIN_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 if [ -z "$ABI_SUBJ" ] || [ -z "$ABI_PIN" ]; then
@@ -1047,7 +1053,7 @@ gen_a() { pcrec_run "$PCREC" --features all -p rx -fcomments $2 -o - --pattern "
 # shellcheck disable=SC2086
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
-gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - -- "$1" 2>/dev/null; }
+gen_c() { "$FILEREF" --features all -p rx -fcomments $2 -o - $FILEREF_PAT "$1" 2>/dev/null; }
 # [ENG-ISL] THE FOURTH BUILD, and the one that turns the island's excuse from a
 # per-artifact exemption into a CLAIM (panel r53, F3): the SUBJECT compiler with
 # the new axis DENIED. It is the only reference that ISOLATES the island — the
