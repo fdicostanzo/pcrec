@@ -1,0 +1,8 @@
+[OPT-REQPOS] cross-check: c2/reqpos_probe.c's req_byte column against
+batch 1's landed RX_REQ_BYTE stamp, read off an artifact emitted by
+worktrees/optimpl1/build/pcrec, over the 64 capability patterns.
+
+checked  63
+agree    63
+disagree 0
+skipped  1 (batch 1's build refuses the pattern)

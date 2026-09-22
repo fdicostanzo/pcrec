@@ -1,0 +1,73 @@
+{
+ "hybrid17": {
+  "population": "hybrid17 (capture-forced hybrid capability rows)",
+  "probed": 17,
+  "refused": 0,
+  "ok": 17,
+  "onepass": 5,
+  "reach_pct": 29.41,
+  "capture_bearing": 17,
+  "capture_onepass": 5,
+  "capture_reach_pct": 29.41,
+  "capped_onepass": 5,
+  "capped_reach_pct": 29.41,
+  "capture_onepass_and_leading_anchor": 1,
+  "not_onepass_why": {
+   "ambiguous": 12
+  }
+ },
+ "corpus": {
+  "population": "corpus, --features all, byte",
+  "probed": 3944,
+  "refused": 412,
+  "ok": 3532,
+  "onepass": 1921,
+  "reach_pct": 54.39,
+  "capture_bearing": 1173,
+  "capture_onepass": 369,
+  "capture_reach_pct": 31.46,
+  "capped_onepass": 366,
+  "capped_reach_pct": 31.2,
+  "capture_onepass_and_leading_anchor": 23,
+  "not_onepass_why": {
+   "ambiguous": 708,
+   "kind": 903
+  }
+ },
+ "corpus_utf8": {
+  "population": "corpus, --features all, -e utf8",
+  "probed": 3944,
+  "refused": 368,
+  "ok": 3576,
+  "onepass": 1748,
+  "reach_pct": 48.88,
+  "capture_bearing": 1175,
+  "capture_onepass": 369,
+  "capture_reach_pct": 31.4,
+  "capped_onepass": 366,
+  "capped_reach_pct": 31.15,
+  "capture_onepass_and_leading_anchor": 23,
+  "not_onepass_why": {
+   "ambiguous": 919,
+   "kind": 909
+  }
+ },
+ "corpus_nofactor": {
+  "population": "corpus, byte, altcls merge+factor DENIED (the precedents' criterion)",
+  "probed": 3944,
+  "refused": 412,
+  "ok": 3532,
+  "onepass": 1844,
+  "reach_pct": 52.21,
+  "capture_bearing": 1173,
+  "capture_onepass": 332,
+  "capture_reach_pct": 28.3,
+  "capped_onepass": 329,
+  "capped_reach_pct": 28.05,
+  "capture_onepass_and_leading_anchor": 21,
+  "not_onepass_why": {
+   "ambiguous": 787,
+   "kind": 901
+  }
+ }
+}
