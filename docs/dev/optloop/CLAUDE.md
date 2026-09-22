@@ -140,6 +140,59 @@ path) before re-running any of them.
   per-STEP dispatch-cost effect. Closing table gives a batch-1 fitness
   read per mechanism (recommendation only).
 
+## Cycle 2's PREPARATION (lane `c2prep`, 2026-09-22)
+
+Three compile-side deliverables written for `[OPTLOOP.2.analysis]`'s ranking,
+none of which builds anything.  Their reproduction pieces share one
+directory, `c2/` (its own `CLAUDE.md`); nothing in any of them reads a clock.
+
+- `firstset_design.md` — **`[OPT-FIRSTSET]`'s design note.**  Read §0 first:
+  it delivers the cost model the I-85 profile demanded and two findings that
+  change what the model is for.  **The mechanism as `cycle1_analysis.md` M3
+  states it is UNSOUND** — narrowing `rx_can_begin_match` to the AST-level
+  first-byte set makes `\b(?:true|false|null)\b` report a SPURIOUS match on
+  `"atrue xnull "` (the shipped artifact answers `matches=0`), because the
+  DFA's start state encodes the preceding byte's word class and skipping past
+  a word byte loses it — **and M3's own proposed identity check, "the new set
+  must be a subset", passes the unsound narrowing.**  The repair is one line
+  reusing `rx_forward_seed_state`, a table the artifact already emits; it
+  restores the answer and changes no count.  Second, **the cost model
+  declines nothing**: `skipped + steps == n` exactly, so cost per byte is
+  `(L·b + w·a + c)/(L+w)` with `L = (1−d)/d`, an identity that predicts the
+  measured skipped fraction to within 0.03% on four configurations and whose
+  derivative in `L` is negative for every admissible parameter — while the
+  one measurement contradicting it (`json-constant`'s ×1.10) is the one no
+  accounting over its own artifact's counts reproduces, missing it by 2.36×.
+  So the D77 gate is "re-run M3.c on `json-constant` first".  The findings
+  value is `freq`, and the note corrects its own charter: **the format for it
+  ALREADY SHIPPED** (`src/parse/rxt_schema.def:146`, a `DATA` scope, a
+  `--list-schema` row and a spec section), so what is proposed is the
+  CONSUMER interface and the static default, not a schema line.
+- `reqpos_census.md` — **`[OPT-REQPOS]`'s D77 census.**  Verdict: **tier 2,
+  the bounded-`dmax` skip loop the row is really about, has a population of
+  TWO among cycle 1's 34 losing cells** and 6.0% of the corpus, the smallest
+  live tier on every population measured; it does not clear D77.  **Tier 2b,
+  the pair / word compare, is the tier with a population** (27.3% of the
+  bench, 18.6% of the corpus), and five `capability` patterns have the single
+  byte PRESENT in the throughput subject and the RUN ABSENT — four of them
+  losing rows carrying 1.4617 of the matrix's 10.284.  All five
+  `[OPT-REQBYTE]` target rows are TIER 3 with the byte ABSENT, confirming the
+  row's own prediction and showing nothing positional can add anything there.
+  A finding the row did not ask for: **14 of 36 `capability` patterns have a
+  rarer necessary byte than PCRE2's rightmost rule picks, and on three the
+  rarer byte is ABSENT while the picked byte is PRESENT.**
+- `onepass_census.md` — **the one-pass reach census**
+  (`captures_via_dfa_survey.md` §3.6 M-A).  **Capture-bearing reach 31.46% on
+  the corpus and 29.41% on the 17 capture-forced hybrid rows, against a ~10%
+  kill threshold: candidate (c) SURVIVES.**  Two results beyond that: the
+  UTF-8 narrowing the survey expected moves the capture-bearing figure by
+  0.06 points (46.3% of that population is excluded by a node KIND before any
+  first-set question is asked), refuting a stated expectation; and pcrec's own
+  `pcrec_altcls` factoring makes patterns one-pass that the three precedents
+  classify as not — `(xy|xz)`, which the survey names — worth +3.16 points,
+  so pcrec's reach is measured on pcrec's trees.  M-B, the measurement that
+  actually decides the row, is untouched and is Linux work.
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
