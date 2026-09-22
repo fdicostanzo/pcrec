@@ -794,9 +794,8 @@ CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
 
 `.github/workflows/ci.yml` runs on every `pull_request` (including from
 forks — the repo is public, the workflow touches no secrets) and every push
-to `main`: checkout, install `libpcre2-dev` (so PC-3/PC-4/the definitions
-oracle/uprops run their real differential against libpcre2 rather than
-SKIPping loudly), `make -j$(nproc)`, `make strict`, then `make test` under a
+to `main`: full-history checkout, build the pinned libpcre2 10.46 from
+source (below), `make -j$(nproc)`, `make strict`, then `make test` under a
 90-minute step timeout. One job, `ubuntu-latest`, plain `gcc` (already real
 GNU gcc on that image — none of the darwin dev box's `cc_resolve.sh`
 CC-picking dance is needed here). A superseded run of the same PR/branch is
@@ -808,6 +807,59 @@ answers that with the plainest possible `make test` (no `-j`, no
 `HARNESS_BATCH`): the row's own instrumentation, not a report about it. See
 `docs/dev/lanes/rel16_report.md` for what to read off that first run and the
 (designed but NOT built, per D77) fallback if it does not fit.
+
+**Run 1 (35675372280, 2026-09-21) measured `make test` fitting the runner**
+(41/41 sections, 39m17s wall) **and four classes of red for the wrong
+reasons**, fixed by lane `cifix` (`docs/dev/lanes/cifix_report.md`):
+`actions/checkout@v4`'s shallow default broke `tests/codegen/
+run_cpset_structure.sh`'s `git archive`-built pre-stage-1 pin (now
+`fetch-depth: 0`); the workflow's own `libpcre2-dev` apt package resolved
+Ubuntu 22.04's libpcre2 10.42, four minor releases behind what PC-3 is
+written against (60 failures, all attributable to that gap) — the workflow
+now BUILDS the pinned 10.46 from the official release tarball instead (see
+below), and `tests/registry/pcre2_check.c` gained a version FLOOR (D98) so
+a box whose resolved libpcre2 is older SKIPs loudly rather than failing;
+`tests/rxtsource/run_rxtsource_tests.sh`'s C3 population-pin RECORD
+exception was keyed on `uname -s = Darwin`, a proxy for "not the reference
+box's python 3.14" that read backwards on a non-canonical `Linux` box —
+re-keyed on the actually-resolved `python3` version; and the `test:`
+recipe's `RUN_STAMP_DIRTY` was read AFTER the section run, so
+`test-corpus`'s own `docs/dev/artifact_size_log.tsv` write made every run
+print `(dirty)` regardless of the tree's state at push time — now captured
+before the run.
+
+**Building libpcre2 10.46 from source** (rather than trusting whatever a
+distro's package manager ships, D98): the official release tarball,
+`./configure && make && make install` into `$RUNNER_TEMP`, cached by
+version via `actions/cache@v4` so every run after the first pays nothing
+for it. `PKG_CONFIG_PATH` is pointed at the pinned build's own `.pc`
+directory and no `libpcre2-dev` (or any other libpcre2 package) is
+installed via apt at all, so `tests/lib/resolve_pcre2.sh`'s pkg-config
+leg has nothing else to resolve to — verified by a dedicated step that
+fails the job if the resolved version is not exactly `10.46`. Built with
+DEFAULT configure flags (shared AND static), not `--disable-shared`: a
+static-only build was tried first and measured to break PC-3's
+verb-name candidate pool (`pcre2_check.c`'s `pool_from_library`) — with
+no separate shared object file, `pcre2_abi_path()` resolves to the TEST
+BINARY itself, and reading ITS ASCII runs pulls in pcrec's own strings
+alongside libpcre2's, moving the pinned probe count from 149804 to
+234580 in a local measurement. The default build resolves the real,
+separate `.so`/`.dylib`, and needs `LD_LIBRARY_PATH` set alongside
+`PKG_CONFIG_PATH` so the dynamic loader (not just the linker) finds it
+at run time, since it is installed nowhere on the runner's default
+search path.
+
+**Residual risk, not yet measured**: the 149804-probe pin for 10.46 was
+recorded against the Linux reference box's own toolchain (`ubuntubudu`,
+gcc). `pool_from_library`'s candidate count depends on the exact ASCII
+layout of the compiled libpcre2 SHARED OBJECT, which can in principle
+still drift with the runner image's own gcc version even building the
+identical upstream 10.46 source — CI's own gcc is a different one from
+`ubuntubudu`'s. This was NOT measurable from a Mac dev session (Apple
+clang, Mach-O, a structurally different binary format, measured 155742
+vs the 149804 pin locally for that reason alone); the next real CI run
+is the only place this can actually be confirmed. If it drifts, the fix
+is a re-measurement and a re-pin, not a workflow change.
 
 **Deliberately NOT built**: a second `strict-clang` job. D2 fixes gcc as the
 target compiler and the generated code leans on GNU C extensions (computed
