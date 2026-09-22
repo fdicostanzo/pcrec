@@ -2402,4 +2402,20 @@ never edited afterwards.
   directions), sabotage-validated live and S208 re-aimed. `make strict`
   clean; `limits_check.sh` 27/0; `make test-codegen` 9/10 scripts (the
   sole red is the standing darwin `nm arm_a.o` probe, unrelated,
-  documented in 29 other lane reports).
+  documented in 29 other lane reports). **This landing's own count guard
+  in `tests/registry/run_registry_tests.sh` (a DIFFERENT file from the
+  one edited, and never re-run here) was left pinned at the pre-[LIM-OVR]
+  value — see lane regred below.**
+- `regred_report.md` — (2026-09-22, lane regred, sonnet) why `make
+  test`'s registry section exited 1 on darwin with every check inside it,
+  `limits_check.sh` included, reporting `checks failed: 0` and no `FAIL:`
+  line anywhere: `run_registry_tests.sh`'s own coverage guard on
+  `limits_check.sh`'s PASS count was still pinned at 24 after [LIM-OVR]
+  (lane admin1, same day) added three PASS lines, taking the real count
+  to 27 — a stale-pin recipe bug, not a darwin-specific red (the same
+  drift reproduces identically on Linux). Re-pinned 24 -> 27 with the
+  file's own explanatory-comment convention. Zero `src/` changes.
+  Validation OWED at handback: the box's one-heavy-suite-at-a-time rule
+  had another lane's `make test-axes` still running, so `make
+  test-registry` itself was not re-run before handback — see the report
+  for the exact command owed.
