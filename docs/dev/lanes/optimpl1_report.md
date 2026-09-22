@@ -399,3 +399,96 @@ verdict for the axes run, `sections ran: N/M` for the full suite. BOTH ARE
 OWED at hand-off — this is the lane's last act per BOILERPLATE's
 DO-THEN-FINISH. Kill with `scripts/safekill <chain pid>` if the manager
 needs the box first.
+
+---
+
+## Axes fix (lane axesfix)
+
+**Cause, established from `make test-axes`'s own baseline output (not
+guessed):** the baseline run (`bash tests/axes/run_axes.sh`, HARNESS_BATCH
+unset, no `RXTFLAGS`) is `tests/harness/run.sh` with no args over the whole
+`.rxt` corpus, no extra flags — the SAME mechanism `test-corpus` rides
+(`tests/size/run_size_log.sh` wraps the identical no-args `run.sh` call).
+Reproduced standalone with the checked-out build binary:
+`env PCREC=build/pcrec CC=gcc-16 bash tests/harness/run.sh
+tests/harness/giveup.rxt` failed 2/2, both `gu` cells, before this fix.
+This is [MECH-REACH] again — same class the triage section above fixed six
+times over — but a SEVENTH instance the triage's own six-file list never
+reached, because `tests/harness/giveup.rxt` isn't a suite script with a
+`build()` call to add `-fno-req-byte` to; it's swept generically by
+`run.sh`'s tree-wide `.rxt` discovery (same path `test-corpus` and the
+axes baseline both take). Confirmed via `pcrec --list-schema`: the `pcrec`
+raw-flags line is `config`-scope only, never `block`-scope, so no `.rxt`
+`pattern` block can deny a compiler axis at all; `RXTFLAGS` is the
+format's one escape hatch for exactly this gap, but it's a run-wide env
+var, not a per-file one — so the flag-based fix the other six suites used
+does not exist for a bare corpus file.
+
+**Fix, at the pattern rather than the flag**: `src/opt/reqbyte.c`'s own
+"safe direction" arm declines outright on a class of more than one
+member. Swapped the trailing literal for an equally-unsatisfied two-member
+class (`(a*)*b` -> `(a*)*[bc]`, `((a)|b)*c` -> `((a)|b)*[cd]`), keeping the
+identical catastrophic-backtracking shape, subjects and budgets. Verified
+both patterns now stamp `RX_REQ_BYTE "none"` (`--pattern '(a*)*[bc]'
+-fcomments` / `--pattern '((a)|b)*[cd]' -fcomments`), and the file now
+passes 2/2 standalone. Zero `src/` changes. No directive, line, or block
+count moved (still 2 `pattern` / 2 `gu` / 3 `budget` / 2 `engine` lines),
+so no `tests/rxtsource/run_rxtsource_tests.sh` RUNSH_*/CENSUS_* pin and no
+`verify_rxt.py` `gu`-census pin moved either — both count by directive
+keyword, never by pattern text. `tests/harness/CLAUDE.md`'s two mentions
+of this file updated to match. Commit `ae7259b3` on `lane/optimpl1`.
+
+**A side finding, not this task's fix but worth the manager's attention:**
+the "make test is GREEN (42/42)" reading in this report's own §4 OWED
+section and in the triage section above is a MISREADING of the trailer.
+`sections ran: N/M` (the Makefile's `test:` recipe, `tests/lib/
+test_trailer.sh`) counts sections `make -k` LAUNCHED, per the recipe's own
+comment block — never sections that PASSED. `build/b1triage_test.log`
+itself shows `make: *** [test-corpus] Error 1` (this exact giveup.rxt
+failure), `make: *** [test-registry] Error 1`, and `make: *** [test-codegen]
+Error 1` (the latter is the documented standing darwin `nm arm_a.o` probe,
+correctly accounted for) — plus `make: *** [test] Error 1` at the very
+end. Re-ran `bash tests/registry/run_registry_tests.sh` standalone just
+now: exit 0, clean, 0 failures visible in the log — so `test-registry`'s
+Error 1 reads as a box-contention flake from running concurrently with
+the main tree's own `make test` at the time (that report's own §4 already
+flagged the box as contended throughout), not a second standing
+regression. Recommend the manager re-run `make test-registry` once more
+in isolation before trusting that verdict fully, since this lane only
+re-ran it once.
+
+**Validation status at hand-off:**
+- Standalone `tests/harness/giveup.rxt`: **2/2 PASS** (was 2/2 FAIL) —
+  confirmed directly, not OWED.
+- `make test-corpus CC=gcc-16`: launched detached, but hit its OWN 900s
+  timeout wrapper (this section measures 1,717s serial per docs/testing.md
+  TT-14, longer than the 900s I wrapped it in) — killed before finishing,
+  no verdict. `docs/dev/artifact_size_log.tsv`'s partial regeneration from
+  that run was `git checkout`'d back, per this report's own §4 caveat
+  (never commit a size-log regen from a run that didn't finish clean).
+  Superseded by the next item, which runs the identical corpus pass as
+  its own baseline.
+- `make test-axes CC=gcc-16`: **OWED.** Launched detached
+  (`nohup timeout 3600 make test-axes CC=gcc-16 > build/axesfix_axes.log
+  2>&1 & disown`), PID 66860, started 17:25:41. Log: `build/axesfix_axes.log`
+  in the worktree. Completion is `run_axes.sh:` with its verdict line
+  (agree/budget-bound/refused-documented/lost/mismatches/gained per axis,
+  including bits 28-30 [OPT-ANCHOR-VM]/[OPT-ENDWIN]/[OPT-REQBYTE]) followed
+  by `tests/codegen/run_form_census.sh`'s own summary. Expect the BASELINE
+  to now complete (source of the original FATAL) and every axis
+  answer-identical to default, same bar the manager's brief set.
+- Not re-run: the corpus-section identity gates this touched file rides
+  (`make test-rxtsource`, to confirm the RUNSH_*/CENSUS_* reconciliation
+  really did not move) — reasoned about from the awk census's own field
+  rules (keyword-only, not pattern-text) rather than measured live. Worth
+  a manager spot-check if there is any doubt.
+- `docs/testing.md`'s "Answer-identity sweep" section carries one
+  historical prose line (`-fprefilter`: "2 MISMATCH in
+  tests/harness/giveup.rxt") from BEFORE [OPT-REQBYTE] existed, describing
+  a different axis (`-fprefilter`'s forced hybrid prefilter, unrelated to
+  `-fno-req-byte`) that should be unaffected by this fix in mechanism but
+  was not independently re-confirmed at the digit — flagged rather than
+  edited blind.
+
+Kill the axes run with `scripts/safekill 66860` if the box is needed first;
+nothing here is required before review, only before merge.
