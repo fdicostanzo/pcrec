@@ -791,8 +791,21 @@ decides whether to perform it — and then run the row through
     both directions, the deny flag's no-trace property, the one-directional
     agreement with the DFA route's `start_max` read off a second artifact,
     and a population floor.
-  - §2 `<PREFIX>_END_WINDOW` ([OPT-ENDWIN]) and §3 `<PREFIX>_REQ_BYTE`
-    ([OPT-REQBYTE]) — the same shape for the other two mechanisms.
+  - §2 `<PREFIX>_END_WINDOW` ([OPT-ENDWIN]) — the derived bound against the
+    clamp's own emitted literal, the four structural declines (multiline,
+    unbounded width, `\G`, a multi-byte encoding), both engines, the deny
+    flag, and a floor read from `tests/assertions/end_window.rxt`'s own
+    pattern list.
+  - §3 `<PREFIX>_REQ_BYTE` ([OPT-REQBYTE]) — the derived byte against the
+    `memchr`'s own argument AND, asserted SEPARATELY, against its SENSE
+    (S265 inverts the sense and leaves the byte alone, so one assertion
+    covering both would have named the wrong half); the caseless-fold
+    decline, which is the arm an analysis reading pattern TEXT instead of
+    the lowered tree gets wrong; the NULL-subject obligation
+    (`memchr(NULL, c, 0)` is UB and `match_api.md` §3.1 permits an empty
+    subject), asserted on the emitted text rather than left for UBSan; and
+    the prefilter-declined VM witness, which is the population the mechanism
+    exists for.
   - **WHY IT IS A STRUCTURAL GATE AT ALL.** Two of the three mechanisms have
     NO answer-level detector anywhere in the tree: [OPT-ANCHOR-VM]'s bound
     and [OPT-REQBYTE]'s pre-check each remove only work the artifact would

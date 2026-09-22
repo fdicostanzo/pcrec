@@ -12115,6 +12115,22 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * this parameter by name. */
     pcrec_emit_end_window_clamp(v->cx, c, "    ", "search_from", "subject_length");
 
+    /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, the same text the DFA's
+     * search entries write, from the same `Job.req_byte` and the same
+     * emitter. AFTER the clamp for the clamp's own reason (a narrower window
+     * is cheaper to scan and still contains every match), and ABOVE the root
+     * minimum-width test and the prefilter entry below — both of which are
+     * pure cost on a window this check has just proved holds no match.
+     *
+     * THIS ROUTE IS THE MECHANISM'S POINT. A VM artifact with
+     * `<PREFIX>_VM_PREFILTER "none"` has no scan of any kind ahead of its
+     * program, because the hybrid prefilter is declined outright for a
+     * backreference or a linked call — so this is the only whole-window fact
+     * such an artifact can act on, and three of `cycle1_analysis.md` M1's
+     * five target rows are exactly those declines. */
+    pcrec_emit_req_byte_check(v->cx, c, "    ", "search_from", "subject",
+                              "subject_length");
+
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
      * width cannot fit in what is left of the subject.

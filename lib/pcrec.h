@@ -725,7 +725,35 @@ enum {
      * `<PREFIX>_END_WINDOW` reports the derived bound on every artifact, so a
      * denied build is legible as `"none"` exactly like a pattern with nothing
      * to prove. */
-    PCREC_NO_END_WINDOW = 1u << 29
+    PCREC_NO_END_WINDOW = 1u << 29,
+
+    /* [OPT-REQBYTE] DENY THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK.
+     *
+     * Where every match of a pattern must contain some literal byte, a search
+     * over a window that does not contain that byte can answer NOMATCH in one
+     * `memchr`-class pass instead of running an attempt at every start
+     * position. PCRE2 records the same fact as
+     * `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT` and 25 of `capability@0.1`'s
+     * 64 patterns have one; pcrec computed nothing like it, which is the
+     * largest single weighted gap that subbench measured
+     * (docs/dev/optloop/cycle1_analysis.md M1 -- five throughput rows at
+     * 0.93-9.74 ns/byte against a 0.017 floor).
+     *
+     * IT EXTENDS THE PREFILTER PRIMITIVE, keyed on a NECESSARY byte instead
+     * of a CANDIDATE START and hoisted one level out, which is what lets it
+     * serve the VM route -- where the hybrid prefilter is declined outright
+     * for a backreference or a linked call, and where three of those five
+     * rows live.
+     *
+     * ANSWER-IDENTITY-PRESERVING in its batch siblings' strongest sense: the
+     * check returns NOMATCH only where every attempt would have failed, so
+     * denying it changes run time alone. It is nevertheless the one of the
+     * three with an answer-level SABOTAGE, because the natural corruption
+     * (inverting the `memchr` sense) is not in the sound direction and turns
+     * matching subjects into NOMATCH.
+     *
+     * `<PREFIX>_REQ_BYTE` reports the byte, or `"none"`. */
+    PCREC_NO_REQ_BYTE = 1u << 30
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

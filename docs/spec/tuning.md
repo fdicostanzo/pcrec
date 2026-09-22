@@ -2293,6 +2293,56 @@ rather than a number with a sentinel, because `0` is a LEGAL window — a `\z`
 pattern of maximum width 0 may begin only at the subject's end — so no
 numeric value is free to mean "declined". A denied build reads `"none"`.
 
+### 2.27 `-fno-req-byte` — `PCREC_NO_REQ_BYTE` (bit 30)
+
+**[OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119).** Denies the REQUIRED-BYTE
+whole-window pre-check.
+
+**What the axis is.** Where every match of a pattern must contain some
+literal byte, a search over a window that does not contain that byte can
+answer NOMATCH in ONE `memchr`-class pass instead of running an attempt at
+every start position. PCRE2 records the same fact as
+`PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT` and has one for 25 of
+`capability@0.1`'s 64 patterns; pcrec computed nothing like it, which is the
+largest single weighted gap that subbench measured — five throughput rows at
+0.93–9.74 ns/byte against a 0.017 ns/byte floor three other engines reach
+(`docs/dev/optloop/cycle1_analysis.md` M1).
+
+**It extends the prefilter primitive rather than paralleling it.** The DFA
+scan's `RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same
+window, keyed on a CANDIDATE START. This is the same instrument keyed on a
+NECESSARY byte and hoisted one level out — which is what lets it serve the VM
+route, where the hybrid prefilter is declined outright for a backreference or
+a linked call and where three of those five rows live.
+
+**How the byte is derived.** A bottom-up walk of the LOWERED AST
+(`src/opt/reqbyte.c`) producing a SET: concatenation unions, alternation
+INTERSECTS, a quantifier admitting zero iterations contributes nothing, a
+one-byte class is a singleton, and a backreference, a linked call or any
+assertion contributes the empty set — which disables the check and is always
+sound. A lookaround's body is deliberately not descended into, because a
+LOOKBEHIND's bytes sit before the match's start and can be outside the window
+entirely. The emitted byte is the RIGHTMOST member, matching PCRE2's own
+choice, so a later multi-byte form is a WIDENING of this mechanism rather
+than a different one.
+
+**Unlike PCRE2's fact, the whole window counts.** `LASTCODEUNIT` excludes the
+match's first unit because its consumer is a per-attempt check; this one runs
+once per call over `[search_from, subject_length)`, where every byte of every
+match lies whatever its position in the match. The restriction is therefore
+not imposed, and strictly more patterns get the check.
+
+**Answer-identity.** Preserved, in its batch siblings' strongest sense: the
+check answers NOMATCH only where every attempt would have failed. It is
+nevertheless the one of the three with an ANSWER-LEVEL sabotage, because the
+natural corruption — inverting the `memchr` sense — is not in the sound
+direction and turns matching subjects into NOMATCH.
+
+**The stamp.** `<PREFIX>_REQ_BYTE`, on EVERY artifact of both engines: the
+byte as a decimal string, or `"none"`. A string with a `"none"` member for
+`<PREFIX>_END_WINDOW`'s reason — `0` is a legal byte value, so no number is
+free to mean "declined".
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -2570,6 +2620,7 @@ not-a-tuning-axis list that follows.
 | `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
 | `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
 | `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
+| `flags` bit `PCREC_NO_REQ_BYTE` | `-fno-req-byte` | §2.27 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

@@ -633,6 +633,51 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
         indent, posvar, lenvar, (unsigned long long)w);
 }
 
+/* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
+ * BOTH engines' search entries — one text, so the two routes cannot test the
+ * byte in two different shapes. Emits nothing where `Job.req_byte` declined,
+ * which keeps every artifact outside the mechanism's population
+ * byte-identical to the shape before it.
+ *
+ * THE WINDOW IS THE WHOLE REMAINING SUBJECT and the soundness is one line:
+ * every match begins at or after `posvar` and ends at or before `lenvar`, so
+ * every byte of every match lies in `[posvar, lenvar)`. If the necessary byte
+ * is not in that window, no match exists in it.
+ *
+ * THE `<=` ARM IS TWO OBLIGATIONS IN ONE TEST, and neither is defensive
+ * padding. (a) `memchr(p, c, 0)` with `p` NULL is undefined behaviour, and
+ * `match_api.md` §3.1 permits a legal EMPTY subject whose pointer is NULL —
+ * UBSan reads the emitted artifact, so this is a report and not a theory.
+ * (b) An empty window cannot hold the byte, so NOMATCH is the right answer
+ * there anyway: a pattern with a necessary byte has a minimum width of at
+ * least one, so nothing can match in zero bytes. The test therefore answers
+ * correctly rather than merely avoiding the call.
+ *
+ * `%d` AND NOT A CHARACTER LITERAL: the byte may be any of 256 values,
+ * including ones no source character spells and ones that would need escaping
+ * inside a `'...'`. The decimal form has one spelling for all of them, and
+ * the same number reaches `<PREFIX>_REQ_BYTE` from this same field. */
+void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar)
+{
+    int b = cx->job->req_byte;
+    if (b < 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-REQBYTE] every match of this pattern contains the byte\n"
+        "%s * %d, so a window without it holds no match at all. */\n",
+        indent, indent, b);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%sif (%s <= %s ||\n"
+        "%s    !memchr(%s + %s, %d, %s - %s))\n"
+        "%s    return 0;\n",
+        indent, lenvar, posvar,
+        indent, subjvar, posvar, b, lenvar, posvar,
+        indent);
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
  * argued above), the caller-startpos boundary guard, and the permanently
@@ -6408,8 +6453,14 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * `static <prefix>_prefilter`, whose caller (`<prefix>_search_run`) has
      * already clamped the position it passes. One clamp per search, on the
      * caller-facing entry. */
-    if (cx->job->fit.chosen == ENGM_DFA)
+    if (cx->job->fit.chosen == ENGM_DFA) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        /* AFTER the clamp, deliberately: the clamp can only narrow the
+         * window, so scanning the narrowed one is both cheaper and still
+         * sound — every match lies inside it. */
+        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
+    }
     emit_machine_tables(c, &fwd);
     if (!pinned) emit_machine_tables(c, &rev);
 
@@ -6672,8 +6723,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * `^`-anchored pattern whose window starts past 0 is the correct answer
      * (no match can satisfy both), reached by arithmetic rather than by a
      * third rule about their interaction. */
-    if (cx->job->fit.chosen == ENGM_DFA)
+    if (cx->job->fit.chosen == ENGM_DFA) {
         pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
+        pcrec_emit_req_byte_check(cx, c, "    ", "search_from", "subject",
+                                  "subject_length");
+    }
 
     /* [DD-13c] THE EMPTY ENGINE, through the SHARED derivation. The condition
      * used to be `d->n == 0` spelled here; it is `dfa_engine_is_empty`'s now,
@@ -7490,6 +7544,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         dfa_body && (cx->job->engine == PCREC_ENG_UNANCH ||
                      (cx->job->engine == PCREC_ENG_ATTEMPT &&
                       attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
+    /* [OPT-REQBYTE] A SECOND `memchr` CUSTOMER, and it reaches artifacts the
+     * test above cannot: the pre-check is emitted into BOTH engines' search
+     * entries, including a VM artifact with no DFA scan in it at all — which
+     * is exactly the population the mechanism exists for. The condition is
+     * the SAME field `pcrec_emit_req_byte_check` reads, never a restatement
+     * of when that function emits (this file's standing rule). */
+    if (cx->job->req_byte >= 0) need_string_h = true;
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
@@ -7571,6 +7632,21 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         } else {
             snprintf(ewbuf, sizeof ewbuf, "%lld", cx->job->end_window);
             pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", ewbuf);
+        }
+    }
+    /* [OPT-REQBYTE] `<PREFIX>_REQ_BYTE` — THE BYTE EVERY MATCH MUST CONTAIN.
+     * A §6.3 family-(a) SELECTION FACT for `<PREFIX>_END_WINDOW`'s reason,
+     * in the same place and the same shape: a string with a `"none"` member,
+     * because 0 IS A LEGAL BYTE VALUE and no number is free to mean
+     * "declined". The value is the decimal the emitted `memchr` carries, read
+     * from the same field three lines apart. */
+    {
+        char rbbuf[32];
+        if (cx->job->req_byte < 0) {
+            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
+        } else {
+            snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
+            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", rbbuf);
         }
     }
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));

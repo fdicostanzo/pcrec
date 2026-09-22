@@ -1246,6 +1246,47 @@ construction (src/ir) and emission (src/gen).
   clamp's own literal, the four declines, both engines, a population floor);
   failing-direction control `tests/mech/sabotages/S264`.
 
+- **reqbyte.c** — [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
+  BYTE. `pcrec_req_byte` answers *which byte does every match of this pattern
+  contain* — PCRE2's `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT`, which pcrec
+  computed nowhere and which is the largest single weighted gap
+  `capability@0.1` measured (`cycle1_analysis.md` M1: five throughput rows at
+  0.93-9.74 ns/byte against a 0.017 floor three other engines reach).
+
+  **IT EXTENDS THE PREFILTER PRIMITIVE.** The DFA scan's
+  `RX_DFA_PREFILTER "memchr"` already emits a `memchr` over the same window,
+  keyed on a CANDIDATE START; this is the same instrument keyed on a
+  NECESSARY byte and hoisted one level out, which is what lets it serve the
+  VM route — where the hybrid prefilter is declined outright for a
+  backreference or a linked call, and where three of the five target rows
+  live.
+
+  **THE ANALYSIS PRODUCES A SET AND THE EMITTER PICKS ONE MEMBER**, because
+  `A_ALT` INTERSECTS: a one-byte-per-node analysis would give up at every
+  alternation. The member is the RIGHTMOST, PCRE2's own choice, so a later
+  multi-byte form is a WIDENING of this mechanism rather than a different
+  one — and "rightmost" is carried alongside the set rather than recovered
+  from it, since a set has no order.
+
+  **TWO THINGS DIFFER FROM PCRE2's OWN FACT, both deliberately.** The whole
+  window counts, not "other than at its start" — PCRE2 excludes the first
+  unit because its consumer is a per-attempt check, and this one runs once
+  per call over `[search_from, subject_length)` where every byte of every
+  match lies. And a LOOKAROUND's body is not descended into, because a
+  lookbehind's bytes sit BEFORE the match's start and can be outside that
+  window entirely: a correctness decline, not a missed opportunity.
+
+  **THE EMPTY SET IS THE SAFE ANSWER** and disables the check — which is why
+  the exhaustive switch matters more here than the default would cost: a
+  default arm inheriting "empty" would be SOUND, so a new node kind that
+  really did carry a necessary byte would silently never contribute one.
+
+  Tests: `tests/codegen/run_prechecks.sh` §3 (the stamp held to the emitted
+  `memchr`'s own argument AND, separately, to its SENSE; the caseless-fold
+  decline; the NULL-subject obligation; both engines, with the
+  prefilter-declined VM witness named; a population floor); failing-direction
+  control `tests/mech/sabotages/S265`.
+
 ## Conventions
 
 A TRANSFORMATION pass takes (Ctx *, Dfa *) or (Ctx *, Nfa *), mutates in

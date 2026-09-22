@@ -1492,6 +1492,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.job->end_window =
             (defo.flags & PCREC_NO_END_WINDOW) ? -1
                                                : pcrec_end_window(&cx, root);
+        cx.job->req_byte =
+            (defo.flags & PCREC_NO_REQ_BYTE) ? -1 : pcrec_req_byte(root);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the

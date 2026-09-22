@@ -304,6 +304,125 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/assertions/end_window.rxt")
     && ok "[2.5] $s2_win of $s2_tot corpus patterns carry an end window (floor $S2_FLOOR)" \
     || bad "[2.5] only $s2_win corpus patterns carry an end window, floor is $S2_FLOOR — §2.1 may be vacuous"
 
+# =========================================================================
+# SECTION 3 — [OPT-REQBYTE]: <PREFIX>_REQ_BYTE and the memchr it names
+# =========================================================================
+#
+# The stamp is a decimal string or `"none"`, and the emitted pre-check
+# carries the same number as a `memchr` argument. As in §1 and §2 the
+# assertion is the BICONDITIONAL between them, read off the artifact's text.
+
+# §3.1 — the derived byte, on witnesses covering every arm of the walk that
+# can contribute one and every arm that must decline. `(?i)abc` is the arm
+# worth naming: D23 folds a caseless literal to a two-member class at PARSE
+# time, so there is no singleton left to find — an analysis that read the
+# pattern text instead of the lowered tree would answer 99 here and emit a
+# `memchr` for `c` that `(?i)abC` legitimately does not contain.
+while IFS='%' read -r pat _sep want; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s3_$RANDOM$RANDOM.c"
+    if ! emit "$a" "$pat"; then
+        bad "[3.1] $pat: refused; expected RX_REQ_BYTE \"$want\""
+        continue
+    fi
+    got="$(stamp "$a" REQ_BYTE)"
+    [ "$got" = "$want" ] \
+        && ok "[3.1] $pat -> RX_REQ_BYTE \"$got\"" \
+        || bad "[3.1] $pat: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"$want\""
+    if [ "$got" = "none" ]; then
+        grep -q 'memchr(subject + search_from,' "$a" \
+            && bad "[3.1b] $pat: stamps \"none\" and still emits a required-byte memchr" \
+            || ok "[3.1b] $pat: declining artifact emits no pre-check"
+    else
+        grep -q "memchr(subject + search_from, ${got}, subject_length - search_from)" "$a" \
+            && ok "[3.1b] $pat: the memchr carries the stamped byte $got" \
+            || bad "[3.1b] $pat: stamps \"$got\" but no memchr for that byte is emitted"
+        # THE SENSE OF THE TEST, asserted separately from its argument,
+        # because the sabotage row inverts exactly this and leaves the byte
+        # alone. `!memchr(...)` returns 0 when the byte is ABSENT.
+        grep -q '!memchr(subject + search_from,' "$a" \
+            && ok "[3.1c] $pat: the pre-check returns NOMATCH when the byte is ABSENT" \
+            || bad "[3.1c] $pat: the pre-check's sense is not '!memchr(...)' — it may be inverted"
+    fi
+done <<'ROWS'
+<[a-z]+>%%62
+a=b%%98
+abc%%99
+\w+@\w+%%64
+x(?:yz)+%%122
+(ab|cd)e%%101
+(a)(b)%%98
+[^x]c%%99
+a{2,4}b%%98
+(a)\1?b%%98
+foo|bar%%none
+(?i)abc%%none
+a*%%none
+(?:ab)*c%%99
+(?<=xyz)ab%%98
+q%%113
+ROWS
+
+# §3.2 — THE DENIAL LEAVES NO TRACE.
+if emit "$WORKDIR/s3_deny.c" 'a=b' -fno-req-byte; then
+    got="$(stamp "$WORKDIR/s3_deny.c" REQ_BYTE)"
+    if [ "$got" = "none" ] && ! grep -q 'memchr(subject + search_from,' "$WORKDIR/s3_deny.c"; then
+        ok "[3.2] -fno-req-byte: a=b stamps \"none\" and emits no pre-check"
+    else
+        bad "[3.2] -fno-req-byte: a=b stamps \"${got:-<absent>}\" / pre-check text still present"
+    fi
+else
+    bad "[3.2] -fno-req-byte: a=b refused"
+fi
+
+# §3.3 — BOTH ENGINES, and the VM route is the one the mechanism exists for:
+# a backreference declines the hybrid prefilter outright, so the pre-check is
+# the only whole-window fact such an artifact can act on.
+for e in dfa vm; do
+    if emit "$WORKDIR/s3_$e.c" '(a)b\1=z' --engine=$e; then
+        [ "$(stamp "$WORKDIR/s3_$e.c" REQ_BYTE)" = "122" ] \
+            && grep -q 'memchr(subject + search_from, 122, subject_length - search_from)' "$WORKDIR/s3_$e.c" \
+            && ok "[3.3] --engine=$e: a backreference pattern stamps 122 and emits its memchr" \
+            || bad "[3.3] --engine=$e: the backreference witness does not carry the byte in both the stamp and the memchr"
+    else
+        ok "[3.3] --engine=$e: the backreference witness is refused by this engine (do-or-die), nothing to check"
+    fi
+done
+if emit "$WORKDIR/s3_pf.c" '(a)b\1=z' --engine=vm; then
+    [ "$(stamp "$WORKDIR/s3_pf.c" VM_PREFILTER)" = "none" ] \
+        && ok "[3.3b] the VM witness really has NO prefilter — the pre-check is its only whole-window fact" \
+        || bad "[3.3b] the VM witness carries a prefilter; §3.3's population is not the declined one it claims"
+fi
+
+# §3.4 — THE NULL-SUBJECT OBLIGATION, asserted on the emitted text rather
+# than left to UBSan to find in some later run: `memchr(NULL, c, 0)` is
+# undefined and match_api.md §3.1 permits a legal empty subject, so the
+# window-empty arm must come FIRST and must short-circuit.
+if emit "$WORKDIR/s3_null.c" 'a=b'; then
+    grep -q 'if (subject_length <= search_from ||' "$WORKDIR/s3_null.c" \
+        && ok "[3.4] the pre-check tests the window for emptiness before dereferencing the subject" \
+        || bad "[3.4] the pre-check's empty-window arm is missing or not first — memchr(NULL, c, 0) is UB"
+fi
+
+# §3.5 — THE POPULATION FLOOR (K35), over patterns the shipped corpus really
+# contains rather than over §3.1's own sixteen.
+S3_FLOOR=6
+s3_have=0; s3_tot=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    s3_tot=$((s3_tot + 1))
+    emit "$WORKDIR/s3_c.c" "$pat" || continue
+    [ "$(stamp "$WORKDIR/s3_c.c" REQ_BYTE)" = "none" ] || s3_have=$((s3_have + 1))
+done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/alternation.rxt" \
+                                 "$ROOT_DIR/tests/base/classes.rxt" \
+                                 "$ROOT_DIR/tests/base/bounded_repeats.rxt")
+[ "$s3_tot" -ge 30 ] \
+    && ok "[3.5] the floor's own population is live: $s3_tot corpus patterns read" \
+    || bad "[3.5] only $s3_tot corpus patterns extracted — the floor below measures nothing"
+[ "$s3_have" -ge "$S3_FLOOR" ] \
+    && ok "[3.5] $s3_have of $s3_tot corpus patterns carry a required byte (floor $S3_FLOOR)" \
+    || bad "[3.5] only $s3_have corpus patterns carry a required byte, floor is $S3_FLOOR — §3.1 may be vacuous"
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1

@@ -2322,6 +2322,12 @@ typedef struct {
      * read by both emitters. `-1` under `-fno-end-window`, deliberately
      * indistinguishable from "nothing to prove". */
     long long end_window;
+    /* [OPT-REQBYTE] THE NECESSARY BYTE (0..255), or -1 — derived ONCE per
+     * attempt from the LOWERED tree by `pcrec_req_byte` (src/opt/reqbyte.c)
+     * beside the two fields above, and read by both emitters' search entries.
+     * -1 under `-fno-req-byte`, deliberately indistinguishable from "no byte
+     * is necessary". */
+    int    req_byte;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5384,6 +5390,13 @@ static inline bool pcrec_startgate_needed(const Ctx *cx)
  * carries the underflow guard's argument and the soundness sentence. */
 void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar);
+/* [OPT-REQBYTE] Answers NOMATCH when `[posvar, lenvar)` does not contain the
+ * byte the analysis proved every match must carry; emits nothing where it
+ * found none. ONE text for both engines' search entries — src/gen/emit_dfa.c
+ * carries the NULL-subject obligation and the soundness sentence. */
+void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar);
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
@@ -5821,6 +5834,14 @@ const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
  * carries the soundness argument every emitter site rests on). BYTES, and
  * the encoding decline is what makes that true. */
 long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
+
+/* [OPT-REQBYTE] THE NECESSARY BYTE — a byte every match of this pattern must
+ * contain, or -1 where the analysis found none (which DISABLES the check and
+ * is always sound). src/opt/reqbyte.c's header carries the account: why the
+ * whole window and not PCRE2's "other than at its start", why the analysis
+ * produces a SET and the emitter picks the rightmost member, and why a
+ * lookaround's body is a correctness decline. */
+int pcrec_req_byte(const Ast *root);                  /* src/opt/reqbyte.c */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

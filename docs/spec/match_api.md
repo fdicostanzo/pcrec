@@ -2591,6 +2591,31 @@ engine-scoped.**
   It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
   its reason: no consumer reads the fact at RUN time today (D77).
 
+  **[OPT-REQBYTE], 2026-09-22: `<PREFIX>_REQ_BYTE` — A BYTE EVERY MATCH MUST
+  CONTAIN.** Family (a): on EVERY artifact pcrec emits, both engines.
+
+  ```c
+  #define RX_REQ_BYTE "62"       /* every match contains '>' */
+  #define RX_REQ_BYTE "none"     /* no byte is necessary on every path */
+  ```
+
+  A string with a `"none"` member for `<PREFIX>_END_WINDOW`'s reason: `0` is
+  a legal byte value, so no number is free to mean "declined". The value is
+  the decimal the artifact's own `memchr` carries, and it is the RIGHTMOST
+  member of the necessary set — the same choice PCRE2's
+  `PCRE2_INFO_LASTCODEUNIT` makes, so a later multi-byte form widens this
+  fact rather than replacing it. `tuning.md` §2.27 carries the derivation and
+  its declines.
+
+  A consumer may conclude that a non-`"none"` artifact rejects a whole
+  subject in one pass when the byte is absent. It may NOT read `"none"` as
+  "this pattern has no required literal" — it is the safe answer of a
+  conservative analysis, and a caselessly folded literal, an alternation with
+  no common byte and `-fno-req-byte` all report it.
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,

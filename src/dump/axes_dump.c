@@ -622,6 +622,21 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "",
                      "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag");
     }
+    /* [OPT-REQBYTE] req-byte — §2.27. The NECESSARY-BYTE whole-window
+     * pre-check, from `Job.req_byte`'s one AST-level derivation, on BOTH
+     * engines' search entries. `stamp_value` is spelled on the fallback row
+     * and empty on the other, `end-window`'s asymmetry one axis up and for
+     * its reason: the stamp carries a NUMBER where the analysis found a byte
+     * and the token `"none"` where it did not. */
+    {
+        PredAxis p = { "req-byte", NULL, "RX_REQ_BYTE", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "byte", "",
+                     PCREC_NO_REQ_BYTE, 0, "",
+                     "per artifact, both engines: every match of the pattern must contain some literal byte (a bottom-up AST walk — concatenation unions, alternation intersects, a min-0 quantifier contributes nothing, a one-byte class is a singleton, a backreference/call/assertion is empty), so ONE memchr over [search_from, subject_length) answers NOMATCH for the whole call; the stamp carries the byte, the RIGHTMOST member like PCRE2's own LASTCODEUNIT");
+        emit_pred_row(sb, &p, 2, "none", "none",
+                     0, 0, "",
+                     "always (fallback) — no byte is necessary on every path (an alternation with no common literal, a caselessly folded literal, a nullable quantifier), or the deny flag");
+    }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
      * mid-character caller startpos, and which one an artifact carries is a
