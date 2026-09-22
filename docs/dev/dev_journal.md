@@ -24819,3 +24819,15 @@ fix; rehearsed the from-source build end to end in scratch. limits.md
 §4's stale positional command fixed at landing. Pushing → CI run 3.
 [REL-1] rows left: 1.8 the tag, 1.9 [REL-META]'s disposition (Frank's
 yes), 1.6's badge after run 3.
+
+**~23:5x — CI run 3 (3fcd05c8): 41/41, real 36m33s, libpcre2 10.46 from
+source resolved, RUN-STAMP clean — ONE red, the residual cifix
+predicted: PC-3's POSIX class-name probe count (read off the resolved
+library BINARY's strings) 154210 on the runner vs 149804 pinned on
+ubuntubudu (darwin 155742) — three legitimate values for one version.
+Ruled a FLOOR (smallest known-good) + RECORD line naming every measured
+(box, toolchain, count); lane pc3floor landed it with the failing
+direction demonstrated (floor above the count → the FAIL fires). The
+other four exact probe pins iterate pcrec-owned generators
+(build-invariant) and stay exact. Pushing → CI run 4, the green
+candidate.
