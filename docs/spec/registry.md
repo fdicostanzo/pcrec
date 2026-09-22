@@ -362,6 +362,22 @@ already true of the compiler before this pass, so there is no `abi` bump.
   This is what a stranger's older distro package gets; CI builds the
   pinned 10.46 itself (`.github/workflows/ci.yml`) precisely so its own
   run exercises the checks rather than skipping them.
+
+  **[pc3floor], 2026-09-21 — the POSIX-class-names probe count is a
+  FLOOR, not a pin.** That one count (`expect_probes_floor()` in
+  `pcre2_check.c`) reads `pool_from_library()`, i.e. the RESOLVED
+  LIBRARY BINARY's own ASCII strings — a property of the (version,
+  toolchain, build) triple, not of the version alone, unlike every
+  other exact `expect_probes()` pin in the same file (those iterate
+  pcrec-owned tables/loops and are build-invariant). CI run 35681785230
+  measured a THIRD legitimate value for libpcre2 10.46 alone: 149804
+  (ubuntubudu's own build), 154210 (the GitHub Actions runner's own
+  from-source build), 155742 (darwin's from-source build). The check
+  now asserts `>= floor` (the smallest known-good measurement per
+  resolved version — 149804 at 10.46, 187872 at 10.48) and prints a
+  `RECORD:` line naming every measured value per box/toolchain, so a
+  real coverage drop still fails loudly (below the floor) while an
+  ordinary different-build-same-version reading does not.
 - **`compliance_section.py`** (`docs/pcre2_compliance.md`'s generator,
   [SPEC-1.9]) is the same 17-column dump rendered as the page's
   "Registry construct index" — component 1 of that page's three-

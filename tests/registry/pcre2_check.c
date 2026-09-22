@@ -1348,6 +1348,50 @@ static void expect_probes(const char *what, unsigned long got, unsigned long wan
     }
 }
 
+/* [pc3floor] THE PROBE-COUNT FLOOR, for the one count in this file that is
+ * NOT a property of pcrec's own generator (`expect_probes`'s exact-match
+ * pins above and below all iterate pcrec-owned tables/loops, so the same
+ * source produces the same count on every box; this one instead reads
+ * `pool_from_library()`, i.e. the RESOLVED LIBRARY BINARY's own ASCII
+ * strings — a property of the (version, toolchain, build) triple, not of
+ * the version alone). CI run 35681785230 measured this the hard way:
+ * three DIFFERENT, individually legitimate probe counts for the same
+ * libpcre2 10.46 — 149804 (ubuntubudu's gcc build), 154210 (the GitHub
+ * Actions runner's own gcc build), 155742 (darwin's Apple-clang/Mach-O
+ * build) — because a richer or leaner string table in the linked object
+ * changes how many real names `pool_from_library()` recovers, which
+ * mechanically changes every probe count downstream of it. An exact pin
+ * cannot hold across that; it would have to be re-measured and re-pinned
+ * every time a stranger's `make test` resolves a different build of the
+ * SAME version, which is exactly the "someone made an innocuous change and
+ * now has to guess a magic number" failure `expect_probes` exists to avoid
+ * for everything else. A FLOOR still catches what this check is FOR
+ * (coverage removed — a trimmed table, a probe source that stopped
+ * reaching the binary): asserting `>= smallest known-good measurement`
+ * fails loudly on a real drop and passes on ordinary build-to-build noise.
+ * The exact recorded values stay live in the RECORD line (never folded
+ * into the floor itself) so a future reader sees the spread across boxes
+ * without re-deriving it, and a genuine regression on a box that has
+ * always read high still shows as a floor-breach, not silently absorbed
+ * into "well, it varies". */
+static void expect_probes_floor(const char *what, unsigned long got,
+                                 unsigned long floor, const char *recorded)
+{
+    printf("  RECORD: %s: %lu probes (floor %lu; recorded %s)\n",
+           what, got, floor, recorded);
+    if (got < floor)
+        bad("%s: %lu probes, expected at least %lu (floor). If you widened or "
+            "trimmed a table on purpose and this is a genuine increase, update "
+            "the floor AND the RECORD list in the same commit — if not, "
+            "coverage was removed", what, got, floor);
+    else {
+        char line[160];
+        snprintf(line, sizeof line, "%s: probe count at or above floor (%lu >= %lu)",
+                 what, got, floor);
+        ok(line);
+    }
+}
+
 static void check_class_brackets(void)
 {
     unsigned long probed = 0, agree = 0, deferred = 0;
@@ -1702,16 +1746,41 @@ static void check_posix_names(void)
      * SAME prefix/suffix expansion as every other source before landing
      * here — more real names in means more total probes out, mechanically,
      * with no change to what "agrees with libpcre2" means for any one of
-     * them. So the pin is PER RESOLVED VERSION, the smallest honest
+     * them. So the pin was PER RESOLVED VERSION, the smallest honest
      * mechanism (no parallel pin table — a version this project has not
-     * measured yet fails loudly naming itself rather than guessing). */
-    unsigned long want_probes = 0;
-    if (g_lib_major == 10 && g_lib_minor == 46) want_probes = 149804;
-    else if (g_lib_major == 10 && g_lib_minor == 48) want_probes = 187872;
-    else bad("POSIX class names: no probe-count pin for libpcre2 %d.%d — "
-             "measure it and add one beside the 10.46/10.48 pins "
-             "(docs/dev/decisions.md D98)", g_lib_major, g_lib_minor);
-    if (want_probes) expect_probes("POSIX class names", probed, want_probes);
+     * measured yet fails loudly naming itself rather than guessing).
+     *
+     * [pc3floor] "per resolved version" wasn't small enough: CI run
+     * 35681785230 (ubuntu-latest, libpcre2 10.46 built from source BY the
+     * workflow, not by hand) measured 154210 here against the 149804 pin
+     * measured on ubuntubudu's own build of the same 10.46 — a THIRD real
+     * value (darwin's own from-source 10.46 build reads 155742) for a
+     * version this file already treated as fully pinned. The library
+     * BINARY, not the library VERSION, is what pool_from_library() reads;
+     * "per resolved version" was only ever "per resolved version, on the
+     * one build I measured it on". Below is now a FLOOR (see
+     * expect_probes_floor's comment) at the smallest of the values known
+     * for each version, with every measured value kept visible in the
+     * RECORD line — not a wider pin, and not a per-build pin table (a
+     * version this project has not measured a floor for still fails
+     * loudly naming itself). */
+    unsigned long want_floor = 0;
+    const char *want_recorded = NULL;
+    if (g_lib_major == 10 && g_lib_minor == 46) {
+        want_floor = 149804;
+        want_recorded = "149804 ubuntubudu (gcc, hand-built 10.46) / "
+                         "154210 ubuntu-latest (gcc, CI-built 10.46, run "
+                         "35681785230) / 155742 darwin (Apple clang/Mach-O, "
+                         "hand-built 10.46)";
+    } else if (g_lib_major == 10 && g_lib_minor == 48) {
+        want_floor = 187872;
+        want_recorded = "187872 darwin (Homebrew 10.48)";
+    } else
+        bad("POSIX class names: no probe-count floor for libpcre2 %d.%d — "
+            "measure it and add one beside the 10.46/10.48 floors "
+            "(docs/dev/decisions.md D98)", g_lib_major, g_lib_minor);
+    if (want_floor)
+        expect_probes_floor("POSIX class names", probed, want_floor, want_recorded);
     if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
 
     /* Liveness, both directions. A pool that produced no real name would make

@@ -849,17 +849,21 @@ separate `.so`/`.dylib`, and needs `LD_LIBRARY_PATH` set alongside
 at run time, since it is installed nowhere on the runner's default
 search path.
 
-**Residual risk, not yet measured**: the 149804-probe pin for 10.46 was
-recorded against the Linux reference box's own toolchain (`ubuntubudu`,
-gcc). `pool_from_library`'s candidate count depends on the exact ASCII
-layout of the compiled libpcre2 SHARED OBJECT, which can in principle
-still drift with the runner image's own gcc version even building the
-identical upstream 10.46 source — CI's own gcc is a different one from
-`ubuntubudu`'s. This was NOT measurable from a Mac dev session (Apple
-clang, Mach-O, a structurally different binary format, measured 155742
-vs the 149804 pin locally for that reason alone); the next real CI run
-is the only place this can actually be confirmed. If it drifts, the fix
-is a re-measurement and a re-pin, not a workflow change.
+**Residual risk, CONFIRMED and closed ([pc3floor], CI run 35681785230)**:
+the concern above was real — CI's own from-source gcc build of 10.46
+measured 154210 probes, not the 149804 pin recorded against
+`ubuntubudu`'s build, and darwin's own from-source 10.46 build separately
+reads 155742. Three legitimate values for one version, because
+`pool_from_library`'s candidate count is a property of the compiled
+libpcre2 SHARED OBJECT's exact ASCII layout, which drifts with the
+toolchain/build even for byte-identical upstream source. Rather than
+chase a growing per-build pin table, `pcre2_check.c`'s POSIX-class-names
+count is now a FLOOR (`expect_probes_floor()`): `>= 149804` at 10.46 (the
+smallest of the three measurements), `>= 187872` at 10.48, with a
+`RECORD:` output line naming every measured (box, toolchain, count) so
+far. A genuine coverage drop still fails loudly; an ordinary different
+build of the same version does not. `docs/spec/registry.md`'s PC-3
+paragraph carries the same note.
 
 **Deliberately NOT built**: a second `strict-clang` job. D2 fixes gcc as the
 target compiler and the generated code leans on GNU C extensions (computed
