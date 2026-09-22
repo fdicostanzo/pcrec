@@ -36,7 +36,26 @@ jobs:
     # this is only a ceiling in case some earlier step itself hangs.
     timeout-minutes: 120
     steps:
+      # fetch-depth: 0 (full history), not actions/checkout@v4's shallow
+      # default: run 2 (2026-09-21/22) measured tests/codegen/
+      # run_cpset_structure.sh's CHECK 1R hard-failing because its pin
+      # (cb546b3a, a pre-stage-1 commit `git archive`s to build the
+      # failing-direction reference) does not resolve on a shallow clone.
+      # It is the only git-archive/rev-parse pin `make test`'s own section
+      # list (Makefile TEST_SECTIONS) reaches — the four codegen/run_*
+      # _identity.sh scripts with their own REFCOMMIT/FILEPIN pins
+      # (lookaround eacac76, recursion ac4917d/a70982c9, atomic e2f81d5,
+      # backref 5286265) are each their own opt-in `make test-*-identity`
+      # target, never in TEST_SECTIONS, so they neither ran nor were
+      # exercised by the shallow clone in run 2 — nothing to say passed
+      # "by luck" there, they simply did not run. `make mech`'s sabotage
+      # matrix `git archive`s HEAD itself (no ancestor pin) and is not
+      # part of `make test` either. The repo is small (this history costs
+      # nothing worth trimming for); see the `make test` step's own timing
+      # for the actual checkout-step cost next run.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # libpcre2-dev pulls in libpcre2-8-0 as a dependency on Debian/Ubuntu,
       # so this one package satisfies both "the shared library is present"

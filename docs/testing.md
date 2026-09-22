@@ -3678,6 +3678,20 @@ section subset misread as the whole suite — the same way the trailer's
 anti-fraud control; a claimed run can always be fabricated the same way
 its `sections ran` line could be.
 
+**`sha`/`dirty` are read BEFORE `$(MAKE) -k $(TEST_SECTIONS)` runs, not
+after** (fixed at [REL-1.6]'s first real CI run, 2026-09-21/22 — the run
+that found it printed `(dirty)` on a clean checkout every time). The
+suite's own sections write tracked-but-derived files as they run
+(`tests/size/run_size_log.sh`'s `docs/dev/artifact_size_log.tsv` is the
+one that bit this), so a `git diff` taken AFTER the sections finish reads
+the run's own side effects as an uncommitted change — the tree that gets
+tested is thereby scored dirty regardless of what a reviewer's `git
+status` showed at push time. `test:`'s recipe now captures `stamp_sha`/
+`stamp_dirty` into shell variables in the same line order as
+`start=$(date +%s)`, both BEFORE the `$(MAKE) -k` line, and hands those
+captured values to the trailer call afterward — the tree's identity is
+what it was when the run started, matching what a PR's own diff shows.
+
 ## The artifact-size log ([ART-SIZE.1b], 2026-08-28)
 
 Frank's ruling on docs/dev/plan.md's `[ART-SIZE.1b]` row: the zero-cost
