@@ -701,3 +701,13 @@ change.
   transfer beyond pcrec (Frank, 2026-09-20) — what helps, the instruments
   that measured it, ideas for future tests. `meta/ai_dev_learnings.md` is
   the living record; see `meta/CLAUDE.md`.
+- `backlog_triage_2026-09-22.md` — [BACKLOG-TRIAGE] (2026-09-22, lane
+  backtri, D113/D86): the 93-row backlog inventory (81 `STATE:not-started`
+  + 12 dormant `STATE:started` rows), each placed into a D86 lane column
+  with its D77 trigger/dependencies, three ranked column lists, close/fold
+  candidates, and one top proposal per column. Corrects an unanchored-grep
+  row-count error (100/102 claimed elsewhere vs. 81 anchored) and flags
+  several rows whose trigger milestone already landed without the row
+  being revisited (DD-1's content already shipped under [M5.0] stage 4;
+  DD-2/DD-6/M4-CALLOUTS/M4-SUBST all name the now-shipped M4/M6). See
+  `docs/dev/lanes/backtri_report.md` for the delivery record.

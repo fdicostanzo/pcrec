@@ -2234,3 +2234,23 @@ never edited afterwards.
   order and why `test-corpus` is never a candidate for it. Cannot be
   validated further from this worktree — running Actions and reading the
   result is the manager's, per the brief.
+- `backtri_report.md` — [BACKLOG-TRIAGE] (2026-09-22, lane backtri,
+  sonnet, docs-only, read-only against plan.md): the triage inventory
+  (`docs/dev/backlog_triage_2026-09-22.md`), 93 rows (81 not-started + 12
+  dormant-started, corrected from the brief's unanchored-grep 100/102 —
+  an anchored count is 81, the discrepancy traced to rows whose own prose
+  says "formerly STATE:not-started"). Worth reading for the honesty-check
+  findings surfaced while dispositioning triggers rather than asked for:
+  [DD-1]'s remaining charter already shipped under [M5.0] stage 4's own
+  "DD-1's FOLD CLOSURE" (plan.md never got a closure note); [DD-12] is a
+  one-line unfinished stub superseded by the real UTF-8 design; [DD-7]'s
+  both halves are already dispositioned in its own text pending one
+  unverified "M4.3 panel" citation; a cluster of four rows (DD-2,
+  M4-CALLOUTS, M4-SUBST, DD-6) name M4/M6-assertions as their trigger and
+  that milestone shipped months ago with none of them revisited;
+  [CC-CLANG] still reads "awaiting merge review" though `git merge-base`
+  confirms it merged; [DD-11]'s stated M6.6 gate closed 2026-08-24 with
+  the follow-on never reopened; [BENCH-1]'s own text already concedes it
+  is superseded by D78/D119. Recommends folding [BENCH-1] into D119's
+  OPTLOOP model and closing [OPT-4.2] (a closed Frank ruling sitting in
+  an open row) as plan-row cleanup, neither acted on here (read-only).
