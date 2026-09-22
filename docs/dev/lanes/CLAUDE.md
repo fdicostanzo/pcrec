@@ -2234,3 +2234,39 @@ never edited afterwards.
   order and why `test-corpus` is never a candidate for it. Cannot be
   validated further from this worktree — running Actions and reading the
   result is the manager's, per the brief.
+
+- `optrev_report.md` — [OPTLOOP.1.analysis] = [BENCH-REVIEW], cycle 1 of
+  the optimization loop (2026-09-22, lane optrev, opus; analysis only,
+  nothing under `src/`/`tests/`, nothing written in pcrec-bench). Delivers
+  `docs/dev/optloop/cycle1_analysis.md` + its reproduction pieces: all 128
+  (pattern, regime) cells of `capability@0.1` at pin `25b1984f` ranked by
+  D119's priority rule, cause-bucketed off the D81 stamps, five target
+  mechanisms with their owed Linux profile command lists, the deferral
+  dispositions, and six proposed plan rows. Read the report for four
+  things. **The bench's own `floor-byte` row is the control that makes the
+  analysis citable**: pcrec reads 17,611 ns at 1 MiB against libpcre2's
+  17,693 and rust's 17,817, so the 0.0168 ns/byte "one memchr-class pass"
+  rate every winner achieves is a rate pcrec ALREADY achieves — which is
+  why the gaps are attributed to pre-checks pcrec does not compute rather
+  than to a speed it cannot reach; the same row read the other way shows
+  `--engine=vm` on the single literal `~` costing 35x `auto`, because a
+  forced VM has no prefilter and walks every start position. **A
+  best-of-variants ranking hides the shipped default**, and on
+  `evil-alt-nested`/`trim-nested-star` that hides 49,016x and 39,447x
+  (captures move the artifact off the DFA onto a prefilter-less VM), so
+  the analysis carries a separate default-config table. **The
+  [OPT-FIRSTSET] witness is one construct wide and was built rather than
+  argued**: `A[A-Z0-9]{16}` stamps `memchr` with a 1-byte candidate set
+  and `\bA[A-Z0-9]{16}` stamps `byte-class-bounded` with the 63-byte word
+  class (77.21% of the bench text), while PCRE2 records
+  `FIRSTCODEUNIT='A'` for both — the named cause of [OPT-3]'s own measured
+  "the skip loop skips ZERO bytes". And **an extraction bug that reads as
+  a compiler bug**: `--list-source`'s `pattern` column is escaped in
+  `pcrec_sb_field`'s vocabulary, so a pattern taken from it and handed
+  back to `--pattern` undecoded produces nine plausible refusals ("range
+  out of order in character class", "missing terminating ]") on patterns
+  the bench compiles at the same pin — caught not by re-reading the
+  decoder but by diffing all 64 decoded patterns against the bench's
+  independently-derived `patterns/*.rx` exports, 64 of 64 identical.
+  Nothing owed by the lane; the Linux profile blocks are a precondition on
+  any implementation lane and are named by section id in report §5.
