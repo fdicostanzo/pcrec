@@ -24840,3 +24840,17 @@ Four runs to green: run 1 cancelled by my own push, run 2 the fit
 measurement (39m17s) red on environment, run 3 one residual (the
 build-dependent probe count), run 4 green. [REL-1] rows left: 1.8 the
 tag (Frank's word), 1.9 [REL-META]'s disposition (Frank's yes).
+
+**SESSION CLOSE (2026-09-22 ~01:3x EDT, Frank: "go ahead and tag and
+meta then close session").** `v0.1.0-beta` TAGGED at c9305c24 (annotated,
+pushed) + GitHub pre-release created via gh (notes = CHANGELOG's
+0.1.0-beta section + pointers to the compliance page, the guide, the
+spec). [REL-META] folded into [REL-1]'s expansion; [REL-1] COMPLETED —
+D113 step 2 done. Main = origin/main = c9305c24 (abi 28), clean; no
+worktrees, no live agents, no watchers, no runs on this box; heartbeat
+cron deleted. Session tally: rulings D114 addendum, D115-D119; lanes
+rel1a, rel1c, ifacedig, rel1b, edgefit, edgeclose, clicensus, clishape,
+clifix, rel15, rel16, libfeat, rel13, cifix, pc3floor (15, all sonnet,
+all closed); two darwin gates green; CI green on run 4. NEXT (D113 step
+3 / D119): [OPTLOOP] cycle 1 = [BENCH-REVIEW] + [BACKLOG-TRIAGE] on the
+bench's `capability` subbench — starts on Frank's word.
