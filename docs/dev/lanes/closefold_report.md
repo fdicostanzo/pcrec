@@ -145,3 +145,41 @@ a worktree per the writer ritual, since the brief calls this lane a
   lane's six-row scope) — the brief names [REL-1] explicitly as an
   exception the manager will handle separately; [PLAN-AUDIT] was not
   named and was left alone rather than guessed at.
+
+## Scope addition — inserting the six ratified OPTLOOP rows
+
+Mid-flight scope addition (same lane, same branch, since `plan.md` gets
+one writer): Frank ratified docs/dev/optloop/cycle1_analysis.md §5's six
+proposed rows, batch 1 = [OPT-REQBYTE] + [OPT-ANCHOR-VM] + [OPT-FIRSTSET].
+The six rows were extracted PROGRAMMATICALLY from §5's fenced code blocks
+(a small Python script joining each block's wrapped lines into one row
+and inserting the required prefix), never hand-transcribed, then verified
+byte-exact against the source (minus the line-wrap join and the prefix)
+before committing — every one of the six confirmed as an EXACT MATCH.
+
+Inserted as `  - [ID] STATE:not-started ...` sub-rows (two-space indent,
+matching the existing `[OPTLOOP.1.analysis]`/`[OPTLOOP.1.impl]` sibling
+rows) directly after `[OPTLOOP.1.impl]`, each STATE tag kept at
+`not-started` per the instruction, each row's own text prefixed with one
+of three annotations right after `STATE:not-started` and before its
+existing `(SIZE ...)` parenthetical:
+
+- `(RATIFIED by Frank 2026-09-22; batch 1)` — [OPT-REQBYTE],
+  [OPT-ANCHOR-VM], [OPT-FIRSTSET]
+- `(RATIFIED by Frank 2026-09-22; batch 2 or later)` — [OPT-ENDWIN],
+  [OPT-ATTEMPT-SPLIT]
+- `(RATIFIED 2026-09-22; measurement-only, runs in the I-85 profile
+  pass)` — [OPTLOOP.1.M6] (the row's actual bracket ID in
+  `cycle1_analysis.md`, not `[OPT-M6]`)
+
+`[OPTLOOP.1.impl]`'s own text updated to: "batch 1 ratified 2026-09-22
+(REQBYTE + ANCHOR-VM + FIRSTSET); opens on the I-85 profile's
+confirmation (bench [B73], in flight)".
+
+**Verification**: anchored `not-started` count 77 → 83 (+6, exactly the
+six new rows — the six-row close/fold pass's own -4 and this addition's
++6 net to 81 → 83 across the whole lane); `started`/`plan_completed.md`
+counts unchanged (17 / 199) since none of the six new rows touch either.
+`git diff --stat` for this addition alone: `docs/dev/plan.md`, 7
+insertions / 1 deletion (six new lines + one edited `[OPTLOOP.1.impl]`
+line), no other file touched.

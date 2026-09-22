@@ -2301,4 +2301,9 @@ never edited afterwards.
   ENG-ISL, ENG-PGO, SIMD-META, OPT-SIMD) without changing their STATE;
   one root-CLAUDE.md situation-index row added; [OPT-4.2]'s witness-gap
   ruling cross-referenced into `known_issues.md`'s K41 entry (no prior
-  cross-reference existed).
+  cross-reference existed). SCOPE ADDITION, same lane: Frank's
+  ratification of cycle1_analysis.md §5's six proposed rows landed as
+  `  - [ID]` sub-rows under `[OPTLOOP.1.impl]`, extracted programmatically
+  from the source's fenced blocks and verified byte-exact before commit,
+  each carrying a `(RATIFIED ...)` batch-tag prefix; not-started count
+  moves 77→83 (+6).
