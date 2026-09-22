@@ -2255,6 +2255,23 @@ never edited afterwards.
   OPTLOOP model and closing [OPT-4.2] (a closed Frank ruling sitting in
   an open row) as plan-row cleanup, neither acted on here (read-only).
 
+- `profread_report.md` — [OPTLOOP.1.profile] (2026-09-22, lane profread,
+  sonnet, docs-only): the I-85 profile pass (12 transcripts on
+  ubuntubudu) read against `cycle1_analysis.md` §3's own EXPECT lines,
+  block by block, numbers cited to transcript file:line. See
+  `docs/dev/optloop/cycle1_profile.md` for the full reading. Four of
+  five mechanisms (M1, M2, M3, M5) PARTIALLY CONFIRMED — real,
+  correctly-directioned effects that miss a stated numeric target or
+  fail a named target/carve-out cell; M4 CONFIRMED cleanly. Two
+  target-cell anomalies: M2's `evil-alt-nested` twin is non-constant and
+  INVERTED with subject size; M3's `json-constant` twin REGRESSES
+  (×1.10 slower), refuting M3 for that row by the block's own stated
+  criterion. M1's uniform ~2.2x floor gap (0.037 measured vs. 0.017
+  stated) is shown NOT a set-grain artefact by direct recompute. M6
+  decides its own open question (a steps-per-attempt effect, not a
+  per-step one). Also finds the run's own stated pin (`405668e9`) is one
+  commit behind what was actually built (`69172a00`, docs-only,
+  inert for the measurements).
 - `optrev_report.md` — [OPTLOOP.1.analysis] = [BENCH-REVIEW], cycle 1 of
   the optimization loop (2026-09-22, lane optrev, opus; analysis only,
   nothing under `src/`/`tests/`, nothing written in pcrec-bench). Delivers
