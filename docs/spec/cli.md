@@ -380,6 +380,13 @@ enabled set is refused with `requires module 'X'` — D26's tier-3 discharge
 in full (verified live: a bare invocation on `(?<name>a)` answers
 "requires module 'named-groups'"; `--features named-groups` accepts it).
 
+**[REL-1.11] (2026-09-21) the library has this same lever**:
+`pcrec_options.features` (`lib/pcrec.h`) takes the identical spec
+vocabulary, applied per `pcrec_compile()` call with no process-global
+write (D19) — see `docs/spec/match_api.md` §8.2 for the field's own
+contract, including why `NULL` there means "no request" rather than the
+CLI's own `std1` bare default.
+
 **The 17 module names** (confirmed live,
 `build/pcrec --list-syntax | cut -f4 | sort -u`), each with its shipped
 status measured the same way

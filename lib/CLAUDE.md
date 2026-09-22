@@ -301,3 +301,53 @@ digit (`docs/spec/match_api.md` §6), which is why it survives
 removes. A plain `#define`, matching this header's existing style for
 simple constants (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`) rather than a new
 accessor-function mechanism.
+
+## [REL-1.11] `pcrec_options.features` (2026-09-21) — the library's own `--features` lever
+
+One new field, APPENDED so no existing member's offset moves (not an `abi`
+event either way — `pcrec_options` is the LIBRARY struct, not the emitted
+artifact). Same spec vocabulary the CLI's `--features` accepts, applied
+PER `pcrec_compile()` CALL rather than through the process-global
+`src/parse/enabled.c` mechanism the CLI still uses for its own query
+surfaces (`--probe-ask`/`--count-groups`/`--list-source`).
+
+**`NULL` means "make no request", not the CLI's `std1` bare default —
+read this before assuming the two are the same thing.** D20 always said a
+library channel could be promoted "later if a real caller wants one"; this
+is that promotion, and D37's own addendum (docs/dev/decisions.md) already
+recorded, as settled fact, that a direct library caller's raw default is
+EMPTY and that "tests/registry relies on this ... flip-immune". Making
+`NULL` resolve to `std1` inside `pcrec_compile()` would silently flip that
+assumption for every existing internal caller (measured: dozens of
+`pcrec_compile()`/direct-`Ctx` call sites across
+`tests/registry/{pcre2_check,registry_check}.c` and
+`tests/registry/definitions_{check,oracle_gen}.c` build default options
+and expect an empty gate, several of them installing a DIFFERENT set into
+the still-live global first and expecting the compile to see it through
+the now-retired implicit read) — a correctness regression far worse than
+the feature is worth, for a class of caller the row's own charter never
+named. So `NULL` here is the conservative, backward-compatible answer:
+"leave the gate exactly as empty as it always was for a bare
+`pcrec_compile()` call." A caller that wants the CLI's own bare-invocation
+behaviour passes `pcrec_default_features` (`"std1"`) explicitly — one
+line, not a hidden trap — and the CLI itself never actually exercises the
+`NULL` branch: `cli/main.c` always resolves `features ? features :
+pcrec_default_features` and assigns the CONCRETE result to `opt.features`
+before calling `pcrec_compile()`. See
+`docs/dev/lanes/libfeat_report.md` for the full evidence and
+`docs/spec/match_api.md` §8.2 for the contract.
+
+**Thread-safety (D19) is why this is per-call state, not a global
+install-and-read.** `pcrec_enabled_resolve_spec` (src/parse/enabled.c) is
+a PURE function — spec in, mask/label/rendered-module-list out, no shared
+write — called once per `pcrec_compile()` and stored on that compile's own
+`Ctx` (`Ctx.enabled_features`, `src/core/internal.h`). Two concurrent
+`pcrec_compile()` calls asking for different specs therefore cannot race:
+neither ever touches memory the other can see. `pcrec_feature_enabled`
+and `pcrec_ext_gate` (internal.h) both take the caller's resolved mask as
+an explicit parameter now rather than reading a global implicitly. The
+OLD process-global mechanism (`pcrec_enabled_set_spec`/
+`pcrec_enabled_mask`) is UNCHANGED and stays the mechanism for its other
+customers — the CLI's own query surfaces above and `--list-syntax`'s
+built-status probe (`src/dump/syntax_dump.c`) — none of which goes
+through `pcrec_compile()`.

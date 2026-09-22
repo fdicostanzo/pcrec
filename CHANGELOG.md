@@ -47,6 +47,9 @@ dependency on pcrec in the generated code.
   `main.c` links against.
 - A small public library surface (`lib/pcrec.h`): `pcrec_compile()`,
   `pcrec_output_free()`, `pcrec_default_options()`, `pcrec_limits_tsv()`.
+- `pcrec_options.features` ([REL-1.11]): the CLI's `--features` module-gate
+  lever, promoted to the library and applied per `pcrec_compile()` call
+  with no shared state to race across concurrent calls.
 - `pcrec --version`, printing the tool's own version (this file's own
   addition, [REL-1.4]).
 - Resource-bound contracts and caller-provided-buffer entries for
