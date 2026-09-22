@@ -1,0 +1,30 @@
+cycle1 ranked cells: 125 ; LOSING (ratio>1): 34
+
+losing CELLS by tier of the pattern's required byte:
+   tier 3       11 cells
+   tier 1       11 cells
+   tier none    10 cells
+   tier 2        2 cells
+
+losing PATTERNS (distinct 25), top 20 by best rank:
+  pattern                                    tier  rank  score    run   dmax   t-1m count
+  bracket-array-define                       none  1     1.9587   0     -1     None
+  tag-depth3-bound                           3     2     0.9492   2     -1     0
+  dup-param-detect                           3     3     0.9171   1     -1     0
+  wild-semdiv-dollar-trailing-newline-pcre2  1     4     0.8710   3     2      22334
+  tag-pair-match                             3     5     0.7640   2     -1     0
+  wild-secrets-username-password-pair        3     6     0.7232   1     -1     0
+  wild-secrets-aws-access-key-id             1     7     0.6112   1     0      1754
+  wild-logparse-winpath-grok                 3     8     0.3611   1     -1     0
+  nested-comment-rec                         1     9     0.2972   2     0      30000
+  wild-codegrammar-json-constant             none  10    0.2788   0     -1     None
+  wild-waf-crs-942360-concat-sqli            none  11    0.2435   0     -1     None
+  router-prefix-order                        1     12    0.2258   5     4      54781
+  file-ext-order                             1     13    0.2213   4     3      54781
+  wild-semdiv-altorder-foo-foobar-rustregex  1     14    0.1931   3     1      38684
+  wild-waf-crs-942270-union-select           none  15    0.1831   0     -1     None
+  wild-secrets-github-pat                    1     16    0.1763   11    6      6061
+  wild-waf-crs-942160-sleep-benchmark        3     17    0.1708   1     -1     6061
+  quoted-delim-match                         none  19    0.1348   0     -1     None
+  balanced-parens-rec                        3     21    0.1145   1     -1     6061
+  wild-waf-crs-942140-dbnames                none  24    0.0866   0     -1     None
