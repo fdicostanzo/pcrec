@@ -46,10 +46,13 @@ budgets/caps, `vm_entry_shape`, `tune`, `name`, `header_name` —
 `PCREC_ENC_BYTE`/`PCREC_ENC_UTF8` (`lib/pcrec.h:24-28`) is the `--features`
 equivalent's *encoding* half; the module-gate equivalent is
 `pcrec_options.flags` for the boolean axes plus a SEPARATE mechanism,
-`pcrec_enabled_set_spec` (`src/parse/enabled.c`), which the library does
-not expose as a `pcrec_options` field at all — `--features` is CLI-only
-today (no `lib/pcrec.h` member sets the enabled-module set; a library
-caller gets the default `std1` set unconditionally). Error reporting is a
+`pcrec_enabled_set_spec` (`src/parse/enabled.c`). [CORRECTED 2026-09-21
+evening, [REL-1.11]: `pcrec_options.features` now carries the same spec
+string, applied per `pcrec_compile` call; NULL means the EMPTY raw
+library default per D37's addendum — NOT `std1`, which is the CLI's bare
+default and one explicit line for a library caller. The original digest
+sentence "a library caller gets the default `std1` set unconditionally"
+was wrong on both counts.] Error reporting is a
 fixed 256-byte message buffer plus a byte offset (`pos`) into whichever
 input `pcrec_err_input` names (`lib/pcrec.h:1009-1024`) — today always
 `PCREC_ERR_INPUT_PATTERN`, since no other input exists yet.
