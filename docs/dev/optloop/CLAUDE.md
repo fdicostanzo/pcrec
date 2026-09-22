@@ -88,6 +88,29 @@ constant at the top.** They are archived as the reproduction record, not as
 a runnable harness: re-point `SP` (and `stamps.py`'s `P`, the compiler
 path) before re-running any of them.
 
+- `runs/2026-09-22-i85-405668e9/` — [I-85]'s 12 raw transcripts from the
+  bench executor's profile pass (setup 0.1-0.5, blocks M1.a-M6, the two
+  (b) reads), run on ubuntubudu at pcrec's `405668e9`-named pin (the
+  worktree actually built one commit later, at `69172a00`, a docs-only
+  journal/plan commit — see `cycle1_profile.md`'s provenance note). See
+  its own README.md.
+- `cycle1_profile.md` — **[OPTLOOP.1.profile], 2026-09-22, lane
+  profread**: the profile pass read against `cycle1_analysis.md` §3's own
+  EXPECT lines, block by block, table by table, numbers cited to
+  transcript file:line. Four of five mechanisms (M1, M2, M3, M5) are
+  PARTIALLY CONFIRMED — real, correctly-directioned effects that miss a
+  stated numeric target or fail a named target/carve-out cell; M4 is
+  CONFIRMED cleanly. Two target-cell anomalies stand out:
+  `evil-alt-nested`'s M2.b twin is non-constant and INVERTED with subject
+  size (22,920 ns @64k vs 2,710 ns @1m), and M3's `json-constant` hand-twin
+  REGRESSES (×1.10 slower), refuting M3 for that row by the block's own
+  stated criterion. M1's uniform ~2.2x floor gap (0.037 measured vs.
+  0.017 stated) is shown NOT to be a set-grain computation artefact by
+  direct recompute. M6 decides its own open question: the per-byte cost
+  spread across its three witnesses is a STEPS-PER-ATTEMPT effect, not a
+  per-STEP dispatch-cost effect. Closing table gives a batch-1 fitness
+  read per mechanism (recommendation only).
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
