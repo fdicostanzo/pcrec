@@ -263,8 +263,21 @@ orders of magnitude away and did not move.
 
 ## 4. OWED at hand-off
 
-Sequenced per BOILERPLATE's DO-THEN-FINISH: the suite-scale runs were held
-until the manager's box-free message and launched as this lane's LAST act.
+**The box was never free during this lane's working period.** The MAIN
+TREE's own `make test` (pid 24849, launched 10:25, `timeout 9000`) was still
+running at hand-off, so no suite-scale command was run here — the brief's own
+rule. Instead the three owed runs are ARMED AND CHAINED:
+`build/optimpl1_final.sh`, running as **pid 25279**, polls for pid 24849 to
+exit and then runs them in series, each to its own log, one heavy suite at a
+time. Progress line by line in `build/optimpl1_chain.log`; the last line it
+writes is `[chain] ALL OWED RUNS COMPLETE`. Kill the whole chain with
+`scripts/safekill 25279` if the manager wants the box for a merge battery
+instead — nothing in it is required before review, only before merge.
+
+One caveat on item 1's own side effect: a full `make test` REGENERATES
+`docs/dev/artifact_size_log.tsv`. Per `tt4m_time.md` that regeneration is not
+to be committed from a run taken on a warm, contended box; `git checkout` it
+after reading the suite's verdict.
 
 1. **`make test`** — full suite. Log: `build/optimpl1_test.log` in the
    worktree. Completion line: `sections ran: N/M`.
@@ -292,6 +305,11 @@ until the manager's box-free message and launched as this lane's LAST act.
    §3's per-shape deltas are what a reader checks it against.
 6. **The bench's own measurement** of the landing-bar cells, after merge, via
    the executor. Nothing in this report is a timing claim.
+7. **`tests/codegen/run_recursion_identity.sh`** was launched here and had
+   not finished at hand-off (it builds a reference compiler and compiles the
+   corpus twice). It is NOT in `TEST_SECTIONS`, so item 1 does not cover it;
+   run it after the chain. Expected: comparison **(A)** at zero movers,
+   comparison **(B)** RED with the re-pin message, per item 4.
 
 ---
 
