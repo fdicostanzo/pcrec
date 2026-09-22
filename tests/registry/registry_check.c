@@ -1962,6 +1962,11 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
         return false;
     }
     pcrec_default_options(&opt);
+    /* [REL-1.11]: pcrec_compile() no longer reads the global implicitly —
+     * the install above is now for pcrec_enabled_mask()'s own readers
+     * (none, here) plus documentation; the actual gate this compile sees
+     * comes from opt.features. */
+    opt.features = feats;
     opt.engine = PCREC_ENGINE_DFA;
     /* [DD-14 wave G] `-fno-splice-calls`, AND IT IS A REFINEMENT OF THIS
      * CHECK'S CLAIM RATHER THAN A HOLE IN IT.
@@ -2019,6 +2024,7 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
     } else {
         /* The other direction: it must COMPILE on the default engine. */
         pcrec_default_options(&opt);
+        opt.features = feats;   /* [REL-1.11]: same gate, still open */
         memset(&out, 0, sizeof out);
         memset(&perr, 0, sizeof perr);
         if (pcrec_compile(pat, &opt, &out, &perr) != 0) {
@@ -2659,6 +2665,7 @@ static void check_free_discharge(void)
         pcrec_output  out;
         pcrec_error   perr;
         pcrec_default_options(&opt);
+        opt.features = "atomic-groups";   /* [REL-1.11]: the gate installed above */
         opt.engine = PCREC_ENGINE_DFA;
         opt.flags |= PCREC_NO_CAPTURES;
         memset(&out, 0, sizeof out);

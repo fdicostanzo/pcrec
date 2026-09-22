@@ -84,6 +84,26 @@ static int pass = 0, fail = 0;
  * sites) rather than silently accepting whatever it measures. */
 static int g_lib_major, g_lib_minor;
 
+/* [REL-1.11]: `pcrec_compile()` no longer reads src/parse/enabled.c's
+ * process-global implicitly — it resolves gating from `pcrec_options.
+ * features` per call (D19: a global read would race two concurrent
+ * compiles asking for different specs). This file's whole method rests on
+ * "pcrec at whatever the current enabled set is" (see `pcrec_try_emit`'s
+ * own comment below), installed once per pass via `pcrec_enabled_set_spec`
+ * and left in force across many `pcrec_compile()` calls — so every call
+ * this file makes to install a spec also updates this mirror, and every
+ * compile helper passes it through `opt.features`, which is the ONE
+ * mechanism `pcrec_compile()` now reads. Default "none" matches the
+ * process-global's own default (empty) that every closed-gate sweep above
+ * the GATED pass believes it runs at. */
+static const char *g_pc2_features = "none";
+static int pc2_set_spec(const char *spec, char *err, size_t errsz)
+{
+    int rc = pcrec_enabled_set_spec(spec, err, errsz);
+    if (rc == 0) g_pc2_features = spec;
+    return rc;
+}
+
 static void ok(const char *what)  { printf("PASS: %s\n", what); pass++; }
 static void bad(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 static void bad(const char *fmt, ...)
@@ -121,6 +141,7 @@ static int pcrec_try(const char *pat, char *msg, size_t msgsz)
 {
     pcrec_options opt; pcrec_output out; pcrec_error err; int rc;
     pcrec_default_options(&opt);
+    opt.features = g_pc2_features;   /* [REL-1.11]: whatever this pass installed */
     memset(&out, 0, sizeof out);
     memset(&err, 0, sizeof err);
     rc = pcrec_compile(pat, &opt, &out, &err);
@@ -136,6 +157,7 @@ static int pcrec_try_pos(const char *pat, char *msg, size_t msgsz, size_t *pos)
 {
     pcrec_options opt; pcrec_output out; pcrec_error err; int rc;
     pcrec_default_options(&opt);
+    opt.features = g_pc2_features;   /* [REL-1.11]: whatever this pass installed */
     memset(&out, 0, sizeof out);
     memset(&err, 0, sizeof err);
     rc = pcrec_compile(pat, &opt, &out, &err);
@@ -2675,6 +2697,7 @@ static int pcrec_try_emit(const char *pat, bool *emitted)
 {
     pcrec_options opt; pcrec_output out; pcrec_error err; int rc;
     pcrec_default_options(&opt);
+    opt.features = g_pc2_features;   /* [REL-1.11]: whatever this pass installed */
     memset(&out, 0, sizeof out);
     memset(&err, 0, sizeof err);
     rc = pcrec_compile(pat, &opt, &out, &err);
@@ -2779,7 +2802,7 @@ static void check_gated_option_space(const char *set)
             "set, so their results are not what their PASS lines claim.",
             set, mask_before);
 
-    if (pcrec_enabled_set_spec(set, err, sizeof err) != 0) {
+    if (pc2_set_spec(set, err, sizeof err) != 0) {
         bad("gated[%s]: could not open the module gate: %s. The whole pass "
             "measured nothing.", set, err);
         return;
@@ -3018,7 +3041,7 @@ static void check_gated_option_space(const char *set)
     /* ---- restore, and prove it -----------------------------------------
      * The enabled set is process-global. Leaving it open would silently
      * re-scope every check added after this one. */
-    if (pcrec_enabled_set_spec("none", err, sizeof err) != 0)
+    if (pc2_set_spec("none", err, sizeof err) != 0)
         bad("gated[%s]: could not restore the empty enabled set: %s", set, err);
     else if (pcrec_enabled_mask() != 0)
         bad("gated[%s]: the enabled set is still 0x%x after restoring 'none'. Any "
@@ -3083,7 +3106,7 @@ static void check_gated_uprops_space(const char *set)
     if (mask_before != 0)
         bad("gated[%s]: the enabled set was ALREADY non-empty (0x%x) on entry",
             set, mask_before);
-    if (pcrec_enabled_set_spec(set, err, sizeof err) != 0) {
+    if (pc2_set_spec(set, err, sizeof err) != 0) {
         bad("gated[%s]: could not open the module gate: %s. The whole pass "
             "measured nothing.", set, err);
         return;
@@ -3308,7 +3331,7 @@ static void check_gated_uprops_space(const char *set)
         ok("gated[unicode-props] liveness: real-but-unshipped names exist to "
            "check the wording against");
 
-    if (pcrec_enabled_set_spec("none", err, sizeof err) != 0)
+    if (pc2_set_spec("none", err, sizeof err) != 0)
         bad("gated[%s]: could not restore the empty enabled set: %s", set, err);
     else if (pcrec_enabled_mask() != 0)
         bad("gated[%s]: the enabled set did not return to empty (0x%x) — every "

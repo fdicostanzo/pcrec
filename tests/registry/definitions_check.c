@@ -85,6 +85,7 @@ static void bad(const char *fmt, ...)
 static Ast *parse_one(const char *pat, Ctx *cx, pcrec_options *defo)
 {
     memset(cx, 0, sizeof(*cx));
+    cx->enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
     pcrec_default_options(defo);
     cx->pat = pat;
     cx->patlen = strlen(pat);
@@ -151,6 +152,7 @@ static void check_row_chain_entry(const char *owner, const char *target_syntax)
     }
     Ctx cx; pcrec_options defo;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
     pcrec_default_options(&defo);
     cx.pat = "";
     cx.patlen = 0;
@@ -215,6 +217,7 @@ static void check_textfn_entry(const char *owner, DefTextFn textfn,
 {
     Ctx cx; pcrec_options defo;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
     pcrec_default_options(&defo);
     cx.pat = "";   /* pcrec_parse_mods_init needs a valid (empty) pattern */
     cx.patlen = 0;
@@ -489,6 +492,7 @@ static void mods_ctx(Ctx *cx, pcrec_options *defo, bool multiline)
 {
     const char *seed = multiline ? "(?m)a" : "a";
     memset(cx, 0, sizeof *cx);
+    cx->enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
     pcrec_default_options(defo);
     cx->pat = seed;
     cx->patlen = strlen(seed);

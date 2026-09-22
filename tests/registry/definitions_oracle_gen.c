@@ -321,6 +321,7 @@ static void textfn_cells(const RegRow *r, const RegDef *d,
         Ctx cx;
         pcrec_options defo;
         memset(&cx, 0, sizeof cx);
+        cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
         pcrec_default_options(&defo);
         cx.pat = "";
         cx.patlen = 0;
@@ -403,6 +404,7 @@ static void one_state(const RegRow *r, bool multiline, bool nocap)
     Ctx cx;
     pcrec_options defo;
     memset(&cx, 0, sizeof cx);
+    cx.enabled_features = pcrec_enabled_mask();   /* [REL-1.11]: this white-box Ctx inherits the process-global gate this file installed via pcrec_enabled_set_spec, unchanged */
     pcrec_default_options(&defo);
     cx.pat = seed;
     cx.patlen = strlen(seed);
