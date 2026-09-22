@@ -62,4 +62,5 @@ feature set; after that, development turns to bench-driven optimization.
 [docs/spec/](docs/spec/) (the contract) ·
 [docs/testing.md](docs/testing.md) ·
 [docs/dev/decisions.md](docs/dev/decisions.md) ·
+[CONTRIBUTING.md](CONTRIBUTING.md) ·
 [LICENSE](LICENSE) (MIT)
