@@ -226,7 +226,7 @@ lane `optrev`'s cause-ranked mechanisms.**
 
 ### 2c. Administrative/structural column
 
-1. **MACPORT-XARGS** — already measured (14 pre-existing darwin failures,
+1. **MACPORT-XARGS** — *(SUPERSEDED at delivery: lane admin1 found the charter already fixed by Frank on 2026-09-10, fb1b9c5e, the row never re-flagged — archived 2026-09-22; the "14 failures" below is the pre-fix figure.)* already measured (14 pre-existing darwin failures,
    A/B'd), small, self-declared admin column, blocks nothing else but
    fixes a real coverage gap (two legs of the harness never run on darwin).
 2. **LIM-OVR** — already measured (O-18 §3), small, self-declared admin +
