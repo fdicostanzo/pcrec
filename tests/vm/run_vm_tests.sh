@@ -110,7 +110,12 @@ assert_rungs() { # assert_rungs <name> <expected-hex, e.g. 0x5> -> 0 iff exact
 
 # (a) STEP BUDGET. `(a*)*b` on all-`a` is the O(n^2) resumption shape §4.7
 # names; with a tiny budget it must give up honestly and say WHICH bound.
-if build steps '(a*)*b' --engine=vm --step-budget=50 --backtrack-frames=4096; then
+# -fno-req-byte: [OPT-REQBYTE] stamps a whole-window memchr for this
+# pattern's one required byte ('b'), absent from the all-'a' subject on
+# purpose -- with the axis on, that pre-check answers nomatch before the VM
+# ever runs, so the step budget this case exists to exhaust is never
+# reached ([MECH-REACH]).
+if build steps '(a*)*b' --engine=vm -fno-req-byte --step-budget=50 --backtrack-frames=4096; then
     out="$(gen_run "steps budget-fires" "$WORKDIR/steps/t" 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"
     if [ "$out" = "err_steps" ]; then
         ok "[M4.5b] §4: the step budget FIRES and reports RX_ERR_STEPS ('(a*)*b', --step-budget=50)"
@@ -134,7 +139,10 @@ fi
 # (b) FRAME CAPACITY — a DIFFERENT failure, and it must not report the step
 # code. `((a)|b)*` has a choice point inside an unbounded quantifier, which is
 # exactly D44.1's residual class: one frame per iteration.
-if build frames '((a)|b)*c' --engine=vm --backtrack-frames=4; then
+# -fno-req-byte: same reason as (a) above -- the required byte 'c' is
+# absent from the all-'a' subject on purpose, so the axis's memchr
+# pre-check would answer nomatch before the frame capacity is ever tested.
+if build frames '((a)|b)*c' --engine=vm -fno-req-byte --backtrack-frames=4; then
     out="$(gen_run "frames budget-fires" "$WORKDIR/frames/t" 'aaaaaaaaaaaaaaaaaaaa')"
     if [ "$out" = "err_frames" ]; then
         ok "[M4.5b] §4.5: the frame capacity FIRES and reports RX_ERR_FRAMES, distinctly from the step budget"
@@ -412,7 +420,13 @@ hy="$(cliff_run cliffhy)"
 # 5x10^8; the give-up is still correct at that value and takes 500x longer to
 # reach, which the run watchdog killed. Pinning restores what this row measured
 # and stops it depending on a knob it does not own.
-vmo="$(cliff_run cliffvm --engine=vm -fno-possessify --step-budget=1000000)"
+# -fno-req-byte: [OPT-REQBYTE] stamps a whole-window memchr for '(a*)b's one
+# required byte ('b'), absent from the 1 MB all-'a' subject on purpose --
+# with the axis on, that pre-check answers nomatch before the VM ever runs,
+# so the row can no longer distinguish "the prefilter answered" from "the
+# required-byte pre-check answered", which is exactly the ambiguity this
+# CONTRAST exists to remove ([MECH-REACH]).
+vmo="$(cliff_run cliffvm --engine=vm -fno-possessify -fno-req-byte --step-budget=1000000)"
 # ...and what possessification does to the SAME prefilter-free build, pinned at
 # a size both can finish, because the honest answer is more interesting than
 # "it got faster" and this lane measured it the hard way.
