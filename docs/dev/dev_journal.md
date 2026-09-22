@@ -24975,3 +24975,29 @@ emit_sweep → bench request I-87 (batch 1's landing-bar cells + the two
 carve-out moves: floor-byte/nested-comment-rec gain a memchr, uuid/ipv4-
 near-miss gain a window; router-prefix-order is a TARGET now) → the
 [OPT-FIRSTSET] design note against [ENG-PGO]'s findings-file shape.
+
+**CORRECTION (2026-09-22 ~17:5x) — the ff63ebf3 gate was NOT green, and
+"sections ran: N/M" never said it was.** Lane axesfix found it: `sections
+ran:` counts sections `make -k` LAUNCHED, not sections that PASSED; the
+verdict is make's own `*** [test-<section>] Error` lines. Read that way,
+the ff63ebf3 gate had `test-registry` red beside the standing `test-codegen`
+nm probe, and every summary INSIDE the registry section read green. Lane
+regred traced it: tests/registry/run_registry_tests.sh:586's coverage guard
+pins limits_check.sh's PASS count at 24; [LIM-OVR] (admin1, merged
+fa97294a, IN that gate) added three PASS lines (27); admin1 validated
+limits_check.sh standalone (27/0) but never ran the DIFFERENT file that
+guards its count, and the guard's message ("COVERAGE CHANGED") never says
+`FAIL:` — so a log grepped for FAIL reads all green while the section is
+red. Re-pinned 24→27 (48057d99, fourth miss in that file's own comment
+history); the registry section's re-run on main is OWED after the axes
+sweep. Batch 1's branch runs (optimpl1_test.log, b1triage_test.log) carry
+the same registry red (same cause — they branched after admin1) plus, in
+the triage run, test-corpus red from tests/harness/giveup.rxt's two
+give-up cells (the seventh [MECH-REACH] instance; axesfix rewrote the
+witnesses as two-member classes, which [OPT-REQBYTE] declines by design —
+no .rxt block can deny a compiler axis, a format gap noted). LESSONS: (1)
+a gate verdict is the `*** [` lines, never `sections ran` and never a grep
+for `FAIL:` (the gate watcher now prints them); (2) a lane's armed
+background chain dies with the lane's shell at TaskStop unless launched
+detached (`nohup … & disown`) — b1triage's did; (3) a lane's "standalone
+re-run was clean" must name the FILE the suite actually runs.
