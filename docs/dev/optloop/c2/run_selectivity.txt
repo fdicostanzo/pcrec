@@ -1,0 +1,72 @@
+pattern                                      run             len  byte hits   run hits      gain
+altwide/pfx3-256                             'qux'             3       6387          0       inf
+altwide/pfx3-512                             'qux'             3       6387          0       inf
+altwide/sfx-256                              'ing'             3      12795          0       inf
+altwide/sfx-512                              'ing'             3      12795          0       inf
+altwide/sfx-64                               'ing'             3      12795          0       inf
+capability/file-ext-order                    '.tar'            4      14826          0       inf
+capability/keyword-prefix-order              'in'              2      30683       7243      4.2x
+capability/logparse-atomic                   ': '              2       9070       9070      1.0x
+capability/logparse-atomic-removed           ': '              2       9070       9070      1.0x
+capability/nested-comment-rec                '*/'              2          0          0       inf
+capability/router-prefix-order               '/user'           5      29144        245    119.0x
+capability/tag-depth3-bound                  '</'              2          0          0       inf
+capability/tag-pair-match                    '</'              2          0          0       inf
+capability/wild-secrets-github-pat           'github_pat_'    11       4973          0       inf
+capability/wild-secrets-slack-webhook-url    '://'             3       9070          0       inf
+capability/wild-semdiv-altorder-foo-foobar-r 'foo'             3      18853          0       inf
+capability/wild-semdiv-dollar-trailing-newli 'abc'             3       4973          0       inf
+capability/wild-waf-crs-942500-comment-obfus '*/'              2          0          0       inf
+capability/winpath-near-miss                 ':\\'             2          0          0       inf
+loglines/http-5xx                            ' HTTP/1.'        8       6236       6000      1.0x
+loglines/kv-quoted                           '="'              2          0          0       inf
+loglines/stack-frame                         'at '             3      30306          0       inf
+syntax/anc-a-uc                              'item'            4      13757          0       inf
+syntax/anc-caret                             'item'            4      13757          0       inf
+syntax/anc-dollar                            'done'            4      28106          0       inf
+syntax/anc-g-uc                              'item'            4      13757          0       inf
+syntax/anc-m-caret                           'item'            4      13757          0       inf
+syntax/anc-m-dollar                          'done'            4      28106          0       inf
+syntax/anc-z-lc                              'done'            4      28106          0       inf
+syntax/anc-z-uc                              'done'            4      28106          0       inf
+syntax/asr-k-uc                              'key='            4          0          0       inf
+syntax/asr-nwb                               'cat'             3      22334          0       inf
+syntax/asr-wb                                'cat'             3      22334          0       inf
+syntax/bak-k-named                           '</'              2          0          0       inf
+syntax/cls-h                                 'value'           5      12333       3016      4.1x
+syntax/cls-n-uc                              'it'              2      30306          0       inf
+syntax/cls-range                             '0x'              2      10657          0       inf
+syntax/cls-s-lc                              'sat'             3      30306          0       inf
+syntax/cls-v                                 'done'            4      28106          0       inf
+syntax/esc-cr                                'item\r\ndone'   10          0          0       inf
+syntax/esc-hex                               'cat'             3      22334          0       inf
+syntax/esc-hex-braced                        'café'            4          0          0       inf
+syntax/esc-nl                                'item\ndone'      9      13757          0       inf
+syntax/esc-octal-0                           'item done'       9      13757          0       inf
+syntax/esc-quote                             'f(x)'            4       6061          0       inf
+syntax/esc-tab                               'key\tvalue'      9          0          0       inf
+syntax/grp-atomic-rep                        'ab'              2       4973          0       inf
+syntax/grp-cap                               'cat'             3      22334          0       inf
+syntax/grp-named                             'cat'             3      22334          0       inf
+syntax/grp-named-quote                       'cat'             3      22334          0       inf
+syntax/grp-noncap                            'ab'              2       4973          0       inf
+syntax/lit-cat                               'cat'             3      22334          0       inf
+syntax/lka-neg                               'item'            4      13757          0       inf
+syntax/lka-nonatomic                         'item'            4      13757          0       inf
+syntax/lka-pos                               'item'            4      13757          0       inf
+syntax/lka-verb                              'item'            4      13757          0       inf
+syntax/lkb-neg                               'done'            4      28106          0       inf
+syntax/lkb-pos                               'done'            4      28106          0       inf
+syntax/mod-n                                 'cat'             3      22334          0       inf
+syntax/mod-reset                             'at'              2      30306       3230      9.4x
+syntax/mod-s                                 'done'            4      28106          0       inf
+syntax/mod-unset                             'at'              2      30306       3230      9.4x
+syntax/mod-x                                 'cat'             3      22334          0       inf
+syntax/qnt-plus                              'ab'              2       4973          0       inf
+syntax/qnt-plus-ctl                          'aab'             3       4973          0       inf
+syntax/qnt-poss-brace                        'ab'              2       4973          0       inf
+syntax/qnt-poss-plus                         'aab'             3       4973          0       inf
+syntax/qnt-quest                             'colo'            4      22334          0       inf
+
+runs >= 2 bytes: 68   run NEVER occurs (gain infinite): 60
+finite gains: min 1.00x  median 4.24x  max 118.96x
