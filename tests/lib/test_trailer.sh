@@ -76,6 +76,15 @@ done
 echo
 echo "== make test: completion trailer =="
 echo "sections ran: $ran/$total"
+# [REL-1.5] RUN-STAMP: three env vars the Makefile's `test:` recipe sets
+# (tree SHA, dirty flag, wall duration) around the SAME `$(MAKE) -k`
+# invocation this trailer already counts sections for — printed here, not
+# derived here, so this script stays the one place section counts are
+# read. Unset (a direct, non-`make test` invocation of this script) means
+# silent: no stamp line, no behavior change for any existing caller.
+if [ -n "${RUN_STAMP_SHA:-}" ] || [ -n "${RUN_STAMP_DIRTY:-}" ] || [ -n "${RUN_STAMP_DURATION:-}" ]; then
+    echo "RUN-STAMP: tree=${RUN_STAMP_SHA:-unknown} (${RUN_STAMP_DIRTY:-unknown}) sections=$ran/$total duration=${RUN_STAMP_DURATION:-unknown}"
+fi
 if [ "${#missing[@]}" -gt 0 ]; then
     echo "MISSING — make never launched this section's recipe at all (its" >&2
     echo "  own output, if any exists from a stale prior run, is NOT" >&2

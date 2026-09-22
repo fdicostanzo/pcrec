@@ -3626,6 +3626,28 @@ role; never built inside this worktree, never committed):
    Named every section, by name, rather than merely reporting a shortfall
    count.
 
+### RUN-STAMP ([REL-1.5], 2026-09-21)
+
+`make test`'s trailer line above also prints, when run through `make test`
+itself (never when the trailer script is invoked directly, as the
+reproduction transcripts above do):
+
+```
+RUN-STAMP: tree=<sha> (clean|dirty) sections=N/M duration=<seconds>s
+```
+
+`<sha>` is `git rev-parse HEAD`, `clean|dirty` is whether `git diff` and
+`git diff --cached` are both empty, and `<seconds>` is the wall time of the
+`$(MAKE) -k $(TEST_SECTIONS)` pass — computed in `test:`'s own recipe (the
+one place `test:` already runs `git`/timing) and handed to the EXISTING
+trailer script as three env vars rather than a second mechanism. It is a
+paste-into-your-PR device (CONTRIBUTING.md "Before you open a PR"): it
+catches honest mistakes — a report against a stale or dirty tree, a
+section subset misread as the whole suite — the same way the trailer's
+`sections ran: N/M` catches an honest miscount. It is not a provenance or
+anti-fraud control; a claimed run can always be fabricated the same way
+its `sections ran` line could be.
+
 ## The artifact-size log ([ART-SIZE.1b], 2026-08-28)
 
 Frank's ruling on docs/dev/plan.md's `[ART-SIZE.1b]` row: the zero-cost

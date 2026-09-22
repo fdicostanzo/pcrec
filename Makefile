@@ -263,11 +263,26 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
 # `rc` accumulates both halves so the overall exit code still reflects a
 # failure either way. Marker dir is a `mktemp -d`, matching every suite's
 # own convention, removed on exit.
+#
+# [REL-1.5] RUN-STAMP (docs/dev/plan.md [REL-META] item a, CONTRIBUTING.md
+# "Before you open a PR"): three env vars (RUN_STAMP_SHA/_DIRTY/_DURATION),
+# computed HERE — the one place `test:` already runs `git`/timing — and
+# handed to the EXISTING trailer script rather than a parallel mechanism.
+# The trailer prints them if set and stays silent about them otherwise (a
+# direct `bash tests/lib/test_trailer.sh ...` call, as any section target's
+# own ad hoc debugging might do, is unaffected). This is a PASTE-INTO-YOUR-
+# PR device catching honest mistakes (wrong commit, a dirty tree, a stale
+# subset) — never a provenance/fraud control (CLAUDE.md's RUN-STAMP note).
 test:
 	@dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
 	rc=0; \
+	start=$$(date +%s); \
 	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $(TEST_SECTIONS); \
 	[ $$? -eq 0 ] || rc=1; \
+	end=$$(date +%s); \
+	RUN_STAMP_SHA="$$(git rev-parse HEAD 2>/dev/null || echo unknown)" \
+	RUN_STAMP_DIRTY="$$( (git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null) && echo clean || echo dirty)" \
+	RUN_STAMP_DURATION="$$((end - start))s" \
 	bash tests/lib/test_trailer.sh "$$dir" $(TEST_SECTIONS); \
 	[ $$? -eq 0 ] || rc=1; \
 	rm -rf "$$dir"; \
