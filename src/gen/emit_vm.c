@@ -10841,6 +10841,25 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
     /* [REVW.4] wave 4: the rung's NAME comes from `src/core/tune.c`'s one
      * table, which `cli/main.c`'s `--vm-entry-shape` menu also reads. The
      * four-arm ladder that stood here was the second of three spellings. */
+    /* [OPT-ANCHOR-VM] `<PREFIX>_VM_START` — WHERE A MATCH CAN BEGIN, a §6.3
+     * family-(b) fact: on every VM artifact, whatever its value, because a
+     * check reading a fact off a macro's ABSENCE is a shape this tree has
+     * twice had to remove (`ccdiff1`'s `RX_DFA_UNIFORM_FOLDS` ruling).
+     *
+     * IT READS AGAINST `<PREFIX>_DFA_SCAN`, deliberately: the DFA's own
+     * three-valued `start_max` is the same fact on the other engine, and the
+     * two vocabularies are now one. `unanchored` covers both "nothing to
+     * prove" and `-fno-vm-anchor-bound`, which is the no-trace rule a denied
+     * axis follows everywhere in this tree.
+     *
+     * IT IS THE SABOTAGE ROW'S ONLY DETECTOR, and that is a property of the
+     * mechanism rather than a gap in the checks: a bound that removes only
+     * attempts the artifact would have run and FAILED cannot change an
+     * answer, so no differential, no oracle and no corpus cell can see a
+     * plant that emits the unbounded form. The stamp and the emitted bound
+     * come from one variable three lines apart for exactly that reason. */
+    pcrec_sb_stamp_str(c, v->up, "VM_START",
+                       pcrec_start_anchor_name(job->start_anchor));
     pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
@@ -12260,6 +12279,38 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         if (v->nclamp > 0) pcrec_sb_puts(c, "    window_end = subject_length;\n");
     }
 
+    /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
+     * arriving on this engine. `Job.start_anchor` (src/opt/startanch.c) is
+     * the SHARED predicate — an AST-level fact, because a VM-routed pattern
+     * has no DFA to ask — and both non-`unanchored` values give the same
+     * bound: run the attempt this search already began and stop.
+     *
+     * WHY ONE EXPRESSION SERVES BOTH. `anchored` means every match begins at
+     * offset 0 and `gstart` means every match begins at `search_from`; in
+     * both cases at most ONE start position can match, and the loop has
+     * already tried it by the time this test is reached (the prefilter may
+     * have seeded `attempt_position` PAST `search_from`, which only makes the
+     * bound fire sooner and is sound for the same reason — the prefilter's
+     * seed is a lower bound on the first match start, so a failure there on
+     * an anchored pattern ends the search). The STAMP is what tells the two
+     * apart, so no fact is lost by spelling one bound.
+     *
+     * THE DECLARATION IS CONDITIONAL AND THE UNANCHORED TEXT IS UNCHANGED:
+     * an artifact with nothing to bound must be byte-identical to the one
+     * before this mechanism, which is what makes `-fno-vm-anchor-bound`'s
+     * sweep a real control rather than a comparison of two new shapes. */
+    const char *att_max = "subject_length";
+    if (job->start_anchor != PCREC_SANCH_NONE) {
+        att_max = "attempt_max";
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "    /* [OPT-ANCHOR-VM] this pattern is %s: at most one start\n"
+            "     * position can match, so there is no second attempt. */\n",
+            pcrec_start_anchor_name(job->start_anchor));
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_puts(c, "    const size_t attempt_max = search_from;\n");
+    }
+
     pcrec_sb_printf(c,
         "    %s_run_state_init(run);\n"
         "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
@@ -12288,7 +12339,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(run);\n"
-        "        if (attempt_position >= subject_length) return 0;\n"
+        "        if (attempt_position >= %s) return 0;\n"
         "%s"
         "%s"
         "    }\n"
@@ -12304,7 +12355,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v->ngst > 0 ? ", search_from" : "",
-        v->up, v->up, v->up, v->up, v->up, v->p, retry_adv, retry_win, v->p);
+        v->up, v->up, v->up, v->up, v->up, v->p, att_max, retry_adv, retry_win,
+        v->p);
 }
 
 /* Writes the artifact's SIX PUBLIC ENTRIES: `<prefix>_search` /

@@ -577,6 +577,33 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
+    /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
+     * bound, from `Job.start_anchor`'s one AST-level derivation. Its stamp is
+     * a closed TOKEN, so `stamp_value` is spelled on every row — and the
+     * three tokens are `src/opt/startanch.c`'s own, through
+     * `pcrec_start_anchor_name`, so this registry surface and the emitted
+     * `<PREFIX>_VM_START` cannot name different sets.
+     *
+     * THE AXIS IS THE VM's AND THE FACT IS NOT. The same three values
+     * describe the DFA's `start_max`, which this dump reports nowhere because
+     * that emitter derives it from its own machine; the `search-start` axis
+     * above is a different question (where the MATCH begins once one is
+     * found), not this one (where an ATTEMPT may begin at all). */
+    {
+        PredAxis p = { "vm-anchor-bound", NULL, "RX_VM_START", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, pcrec_start_anchor_name(PCREC_SANCH_BOT),
+                     pcrec_start_anchor_name(PCREC_SANCH_BOT),
+                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
+                     "per artifact on the VM route: every alternative of the whole pattern begins with ^ (outside multiline) or \\A, so only offset 0 can start a match and the attempt loop stops after one pass");
+        emit_pred_row(sb, &p, 2, pcrec_start_anchor_name(PCREC_SANCH_GSTART),
+                     pcrec_start_anchor_name(PCREC_SANCH_GSTART),
+                     PCREC_NO_VM_ANCHOR_BOUND, 0, "",
+                     "per artifact on the VM route: every alternative begins with \\G, so only the caller's own search_from can start a match and the attempt loop stops after one pass");
+        emit_pred_row(sb, &p, 3, pcrec_start_anchor_name(PCREC_SANCH_NONE),
+                     pcrec_start_anchor_name(PCREC_SANCH_NONE),
+                     0, 0, "",
+                     "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has");
+    }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
      * mid-character caller startpos, and which one an artifact carries is a

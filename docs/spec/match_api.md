@@ -2567,10 +2567,39 @@ engine-scoped.**
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
-  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, the
+  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_START`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
+
+  **[OPT-ANCHOR-VM], 2026-09-22: `<PREFIX>_VM_START` — WHERE AN ATTEMPT MAY
+  BEGIN.** A closed three-token selection stamp, on EVERY VM artifact,
+  hybrids included, and never defined on a pure-DFA artifact:
+
+  ```c
+  #define RX_VM_START "anchored"   /* or "gstart", or "unanchored" */
+  ```
+
+  | value | what it says |
+  |---|---|
+  | `"anchored"` | every alternative of the whole pattern begins with `^` (outside multiline) or `\A`, so only offset 0 can start a match |
+  | `"gstart"` | every alternative begins with `\G`, so only the caller's own `search_from` can start a match |
+  | `"unanchored"` | nothing was proved, or `-fno-vm-anchor-bound` was given |
+
+  Either non-`"unanchored"` value means the emitted search loop stops after
+  ONE attempt (`tuning.md` §2.25). The fact is `pcrec_start_anchor`'s, derived
+  from the AST above either engine; the DFA's own `start_max` is the same fact
+  on the other engine, legible there through `<PREFIX>_DFA_SCAN "attempt"`,
+  and the two vocabularies are deliberately one.
+
+  **A CONSUMER MAY NOT read `"unanchored"` as "this pattern is not
+  anchored".** It is the SAFE answer of a conservative analysis and is what a
+  denied build, a backreference-leading pattern and a genuinely unanchored one
+  all report. What it may conclude from the other two values is a fact about
+  the ARTIFACT's loop, never a promise about run time.
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
 
   **[OPT-VMFL], 2026-09-02: `<PREFIX>_VM_FRAMELESS`, and it is (b) for
   `_VM_CALL_SPLICED`'s reason rather than a new one.** It is not a decision

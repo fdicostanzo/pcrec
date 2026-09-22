@@ -6805,6 +6805,33 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                       * unreachable — see the knob's comment above */
 #endif
     bool anchored = a_bot && a_gst;
+
+    /* [OPT-ANCHOR-VM] THE AGREEMENT ASSERTION, and it runs in ONE DIRECTION
+     * BY DESIGN. `Job.start_anchor` (src/opt/startanch.c) is the AST-level
+     * answer to the question the two lines above answer from the machine.
+     * Since [OPTLOOP.1] batch 1 there is one predicate and the VM reads it;
+     * this route keeps its own derivation because the subset construction
+     * knows strictly MORE — it has already pruned unsatisfiable branches and
+     * emptied classes the tree still carries — so `anchored` may hold where
+     * the tree could not prove it. That direction is a tighter bound and is
+     * welcome. The other direction is a MISCOMPILE: if every match begins at
+     * offset 0 and this machine still has a live interior start state, one of
+     * the two derivations is wrong and the VM is about to emit a bound that
+     * deletes matches. It cannot be an answer-level failure on either engine
+     * (the VM's bound removes only failing attempts), so it is asserted here,
+     * at the one site that holds both answers, rather than left to a check
+     * with no witness. Verified silent over the whole shipped corpus and
+     * every axis of `make test-axes` at the landing. */
+    if (cx->job->start_anchor == PCREC_SANCH_BOT && !anchored)
+        pcrec_ctx_fail(cx, 0,
+            "internal error: the pattern's AST proves every match begins at "
+            "offset 0, but this machine has a live interior start state");
+    if (cx->job->start_anchor == PCREC_SANCH_GSTART && !a_bot)
+        pcrec_ctx_fail(cx, 0,
+            "internal error: the pattern's AST proves every match begins at "
+            "the caller's startpos, but this machine has a live interior "
+            "start state");
+
     pcrec_sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"

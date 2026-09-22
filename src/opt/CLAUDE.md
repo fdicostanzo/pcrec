@@ -1189,6 +1189,32 @@ construction (src/ir) and emission (src/gen).
   terminates, behaviour-preserving — a cost, not a failure — but it is what
   currently sets tests/resource/'s CPU budget.
 
+- **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
+  ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which
+  positions can a match BEGIN* in three values (`PCREC_SANCH_BOT` /
+  `_GSTART` / `_NONE`), read by BOTH emitters through `Job.start_anchor`.
+
+  **IT EXISTS BECAUSE THE ANSWER WAS ONLY AVAILABLE TO ONE ENGINE.**
+  `src/gen/emit_dfa.c` has derived exactly this fact from its own subset
+  construction since `[M6.2]` wave D (`dfa_interior_dead(d->s1u)`/`(d->s1g)`
+  -> `start_max`), and a VM-routed pattern has no DFA to ask — the hybrid
+  prefilter is declined outright for a backreference or a linked call, which
+  is exactly the population `cycle1_analysis.md` M2 measures at 52,122x. So
+  the fact moves one layer UP and the DFA's pair becomes a CONFIRMATION:
+  `emit_attempt` asserts the implication rather than deriving a second
+  answer. Implement-then-replace, not a parallel mechanism.
+
+  **THE IMPLICATION IS ONE-DIRECTIONAL.** `PCREC_SANCH_BOT` must imply the
+  DFA's `anchored`; the converse is FALSE and is not asserted, because the
+  subset construction has already pruned branches this walk still carries.
+  The file's own header carries the whole argument, including why
+  `pcrec_cwmax(l) == 0` and not `pcrec_minw(l) == 0` is the `A_CAT` arm's
+  test and why `A_BREF`/`A_CALL` decline.
+
+  Tests: `tests/codegen/run_prechecks.sh` §1 (the stamp held to the emitted
+  bound, in both directions, with a population floor); failing-direction
+  control `tests/mech/sabotages/S263`.
+
 ## Conventions
 
 A TRANSFORMATION pass takes (Ctx *, Dfa *) or (Ctx *, Nfa *), mutates in

@@ -680,7 +680,28 @@ enum {
      * not move a non-comment byte over a knob that only removes comments —
      * which is also what makes the object-file identity above checkable. */
     PCREC_NO_COMMENTS   = 1u << 26,
-    PCREC_FORCE_COMMENTS = 1u << 27
+    PCREC_FORCE_COMMENTS = 1u << 27,
+
+    /* [OPT-ANCHOR-VM] DENY THE VM'S ATTEMPT-LOOP START BOUND.
+     *
+     * A VM-routed pattern whose every match must begin at offset 0 (`^`,
+     * `\A`) or at the caller's own startpos (`\G`) can only match at ONE
+     * start position, so the search loop's remaining attempts are provably
+     * dead. The DFA emitter has bounded its attempt loop on exactly this fact
+     * since [M6.2] wave D; the VM's loop had no bound at all, which is a
+     * measured 52,122x on `bracket-array-define` at 1 MiB
+     * (docs/dev/optloop/cycle1_analysis.md M2).
+     *
+     * ANSWER-IDENTITY-PRESERVING, and in the strongest sense this file has:
+     * the removed attempts are attempts the artifact would have RUN AND
+     * FAILED, so the denial changes run TIME and nothing else. That is also
+     * why its sabotage row is a STAMP row — a plant that emits the unbounded
+     * form is invisible to every answer-level check in the tree.
+     *
+     * `<PREFIX>_VM_START` reports the derived value on every VM artifact
+     * (`anchored` / `gstart` / `unanchored`), so a denied build is legible
+     * as `unanchored` exactly like a pattern with nothing to bound. */
+    PCREC_NO_VM_ANCHOR_BOUND = 1u << 28
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

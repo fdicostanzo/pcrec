@@ -146,6 +146,15 @@ PCREC_AXIS(PCREC_NO_START_PINNED, "-fno-start-pinned", 0, "", PCREC_AXIS_DEFAULT
  * the SPELLING and the BIT, and those are the same kind of fact either way. */
 PCREC_AXIS(PCREC_NO_STARTPOS_GUARD, "-fno-startpos-guard", 0, "", PCREC_AXIS_DEFAULT_ON)
 
+/* ---- the whole-window PRE-CHECKS ([OPTLOOP.1] batch 1, D119) -----------
+ * Facts about the WHOLE pattern, derived from the AST above either engine,
+ * that let a search answer NOMATCH or narrow its start range before any
+ * attempt runs. Deny-only: each is one artifact-level verdict, so there is
+ * nothing to address inside a pattern and nothing to force — the analysis
+ * either proves the fact or does not, and a forced build could only ask it
+ * to emit a bound it has not proved. */
+PCREC_AXIS(PCREC_NO_VM_ANCHOR_BOUND, "-fno-vm-anchor-bound", 0, "", PCREC_AXIS_DEFAULT_ON)
+
 /* ---- the emitted artifact's human commentary ([EMIT-VERB], D112) -------
  * The first row whose axis is not an OPTIMIZATION at all: it changes no
  * emitted CODE, only whether the prose around it is written. It is a FORCE

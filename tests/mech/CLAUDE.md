@@ -2601,3 +2601,30 @@ exists on the clean tree (a population-of-zero floor, per this
 directory's `SAB_REACH_POP`-vs-`SAB_REACH` distinction — this is a
 `SAB_REACH` count, not a population floor, since the clean tree's count
 must be EXACTLY zero rather than merely at-least-some).
+
+## [OPTLOOP.1] batch 1 — `prechecks`, and a row whose ONLY detector is a stamp
+
+**`prechecks` is a new suite word** (registered before S263, R31 C11),
+running `tests/codegen/run_prechecks.sh` — the three WHOLE-WINDOW PRE-CHECKS
+(`<PREFIX>_VM_START`, `<PREFIX>_END_WINDOW`, `<PREFIX>_REQ_BYTE`) held to the
+emitted text rather than to the predicates that wrote them. Its own arm for
+`vmframeless`'s reason: what it guards is ONE ANALYSIS above both engines,
+orthogonal to every emitter property the other arms check.
+
+**S263 is the first row in this directory whose sabotage has no answer-level
+detector AT ALL, and that is a fact about the mechanism rather than a gap in
+the suite.** [OPT-ANCHOR-VM] bounds the VM's attempt loop on a pattern that
+has PROVED only one start position can match, so every attempt the bound
+removes is one the artifact would have RUN AND FAILED. Emitting
+`attempt_max = subject_length` where the predicate says `search_from` is
+therefore a pure cost regression: no differential, no oracle, no corpus cell
+and no `.rxt` expectation in this tree can see it. `corpus:0fail` beside a
+red `prechecks` is the row WORKING.
+
+**Why the plant is the sound-direction one and not the loud one.** Inverting
+the emission CONDITION (`!= PCREC_SANCH_NONE` -> `==`) would put the bound on
+artifacts that never proved it and delete real matches — detectable
+everywhere, and a test of a different claim. The row that measures whether
+this mechanism has a detector at all is the one that only costs time. The
+same asymmetry governs the batch's other two rows, and each says so in its
+own `SAB_DESC` rather than leaving it to be inferred from a green corpus arm.

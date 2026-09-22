@@ -219,7 +219,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table test-anchored-match \
       test-search-pinned test-vm-frameless test-dfa-uniform-fold \
-      test-tune-dial \
+      test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
       test-uprops test-core test-examples
@@ -533,6 +533,19 @@ test-encoding-checks: all
 test-vm-frameless: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vm-frameless.ran"; fi
 	bash tests/codegen/run_vm_frameless.sh
+
+# [OPTLOOP.1] batch 1 (D119) — THE WHOLE-WINDOW PRE-CHECKS' structural gate:
+# `<PREFIX>_VM_START`, `<PREFIX>_END_WINDOW` and `<PREFIX>_REQ_BYTE`, each
+# held to the emitted text rather than to the predicate that wrote it. Its
+# OWN section rather than a block of `test-codegen`, for the reason
+# `test-search-pinned` and `test-vm-frameless` are each their own: what it
+# guards is an ANALYSIS above both engines, orthogonal to every emitter
+# property those two check, and TWO of its three mechanisms have no
+# answer-level detector anywhere in the tree, so this is where they are
+# defended. It IS part of `make test`.
+test-prechecks: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-prechecks.ran"; fi
+	bash tests/codegen/run_prechecks.sh
 
 # [CC-DIFF] STEP 1 (b) the UNIFORM-TABLE FOLD's own check. Its OWN section for
 # `test-vm-frameless`'s reason exactly, and it is the same shape: it sweeps
@@ -1520,6 +1533,7 @@ clean:
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec test-premul-table test-anchored-match \
         test-search-pinned test-vm-frameless test-dfa-uniform-fold \
+        test-prechecks \
         test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure \
         test-encoding-checks test-startbnd test-core test-examples \

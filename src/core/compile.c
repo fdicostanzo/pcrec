@@ -1475,6 +1475,21 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * the invariant instead of the position. */
         root = pcrec_lower_enc(&cx, root);
 
+        /* [OPTLOOP.1] THE WHOLE-WINDOW PRE-CHECK FACTS, derived HERE and
+         * nowhere else: after the encoding lowering, so every `A_CLASS` this
+         * walk sees is a BYTE class and the answers are in the artifact's own
+         * units, and before either emitter, so both read one derivation
+         * rather than two. `Job` is the carrier because `pcrec_emit_dfa` takes
+         * no root — the DFA emitter is handed a machine, not a tree.
+         *
+         * THE DENIAL IS APPLIED HERE, at the analysis, not at the emission
+         * site: a denied build must be indistinguishable from a pattern with
+         * nothing to find, which is `src/opt/possessify.c`'s no-trace rule and
+         * what makes `-fno-` sweeps answer-identical by construction. */
+        cx.job->start_anchor =
+            (defo.flags & PCREC_NO_VM_ANCHOR_BOUND) ? PCREC_SANCH_NONE
+                                                    : pcrec_start_anchor(root);
+
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
          * prefilter is deliberately off (D44/R21 E-6) and so nothing needs an

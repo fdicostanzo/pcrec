@@ -2308,6 +2308,14 @@ typedef struct {
      * ceiling where the default declared none has LOWERED it. */
     long long vm_frame_capacity;
     long long vm_subject_ceiling;
+    /* [OPT-ANCHOR-VM] THE START ANCHOR, derived ONCE per attempt from the
+     * LOWERED tree by `pcrec_start_anchor` (src/opt/startanch.c) and read by
+     * both emitters: the VM bounds its attempt loop on it and the DFA asserts
+     * its own, independently derived answer agrees in the sound direction.
+     * `PCREC_SANCH_NONE` under `-fno-vm-anchor-bound`, deliberately
+     * indistinguishable from "nothing to bound" — possessify's own no-trace
+     * rule for a denied axis, one file over. */
+    int    start_anchor;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5778,6 +5786,22 @@ long long pcrec_cg_sat_mul(long long a, long long b);      /* src/opt/callgraph.
 long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
 
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
+
+/* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
+ * ONE predicate, read by both emitters (src/opt/startanch.c's header carries
+ * the whole account, including why the DFA's own `dfa_interior_dead` pair
+ * becomes a CONFIRMATION of this answer rather than a second source of it,
+ * and why the implication runs in only one direction). `_NONE` is the safe
+ * answer and every undecidable arm gives it. */
+enum {
+    PCREC_SANCH_NONE = 0,   /* a match may begin anywhere */
+    PCREC_SANCH_GSTART,     /* every match begins at the caller's startpos */
+    PCREC_SANCH_BOT         /* every match begins at absolute offset 0 */
+};
+int pcrec_start_anchor(const Ast *root);             /* src/opt/startanch.c */
+/* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
+ * and `--list-axes`' own row cannot drift from the enum. */
+const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

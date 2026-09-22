@@ -2198,6 +2198,51 @@ emit every comment event they always did, and the buffer decides whether the
 text is written. It is not a post-hoc strip, so no line is ever repaired and
 no comment can be half-removed.
 
+### 2.25 `-fno-vm-anchor-bound` — `PCREC_NO_VM_ANCHOR_BOUND` (bit 28)
+
+**[OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119).** Denies the VM's
+attempt-loop START BOUND.
+
+**What the axis is.** A pattern whose every alternative begins with `^`
+(outside multiline) or `\A` can only match at absolute offset 0; one whose
+every alternative begins with `\G` can only match at the caller's own
+`search_from`. Either way at most ONE start position can match, so a search
+that has tried it is finished. The DFA emitter has bounded its attempt loop
+on exactly this fact since `[M6.2]` wave D (`start_max`); the VM's search
+loop ran to `subject_length` whatever the pattern said. The measured cost of
+that on `bracket-array-define` at 1 MiB is 52,122× the fastest engine in the
+roster (`docs/dev/optloop/cycle1_analysis.md` M2).
+
+**Where the fact comes from.** ONE predicate, `pcrec_start_anchor`
+(`src/opt/startanch.c`), walked over the LOWERED AST above either engine —
+above, because a VM-routed pattern has no DFA to ask, which is the whole
+reason the three rows with no rescue at all (`bracket-array-define`,
+`evil-alt-nested`, `trim-nested-star`) are VM rows. The DFA route keeps its
+own, tighter derivation for its own loop and ASSERTS that this one does not
+disagree in the unsound direction; the converse is expected and allowed,
+since the subset construction has already pruned branches the tree still
+carries.
+
+**What it changes.** On a VM artifact whose answer is not `unanchored`, one
+declaration (`const size_t attempt_max = search_from;`) and the loop's
+existing continue test reading that name instead of `subject_length`. On
+every other VM artifact, and on every DFA artifact, NOTHING — the emitted
+text is byte-identical to the form before the mechanism, which is what makes
+this flag's own sweep a control rather than a comparison of two new shapes.
+
+**Answer-identity.** Preserved, and in the strongest sense any axis in this
+document has: every attempt the bound removes is an attempt the artifact
+would have RUN AND FAILED. Denying the axis therefore changes run time and
+nothing a caller can observe — which is also why `<PREFIX>_VM_START` is the
+only detector the mechanism has, and why its sabotage row is a STAMP row.
+
+**The stamp.** `<PREFIX>_VM_START`, on EVERY VM artifact whatever its value:
+`"anchored"`, `"gstart"` or `"unanchored"`. A denied build reads
+`"unanchored"`, deliberately indistinguishable from a pattern with nothing to
+prove — the same no-trace rule §2.1's denial follows. It is the VM's reading
+of the fact `<PREFIX>_DFA_SCAN`'s `"attempt"` shape carries on the other
+engine; `--list-axes`' `vm-anchor-bound` rows name all three values.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -2473,6 +2518,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_CLS_FOLD` | `-fno-cls-fold` | §2.22 |
 | `flags` bit `PCREC_NO_STARTPOS_GUARD` | `-fno-startpos-guard` | §2.23 |
 | `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
+| `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

@@ -781,6 +781,28 @@ decides whether to perform it — and then run the row through
   - Landing figures: 14 witnesses × 5 shapes, rungs realised
     plain/shared/forward/inline, 0 differences, every witness matching.
 
+- **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
+  WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
+  section for `run_vm_frameless.sh`'s reason. Three independent sections,
+  one per mechanism, each holding a stamp to the EMITTED TEXT it names
+  rather than to the predicate that wrote it:
+  - §1 `<PREFIX>_VM_START` ([OPT-ANCHOR-VM]) — the three values on named
+    witnesses, the BICONDITIONAL against the attempt loop's own bound in
+    both directions, the deny flag's no-trace property, the one-directional
+    agreement with the DFA route's `start_max` read off a second artifact,
+    and a population floor.
+  - §2 `<PREFIX>_END_WINDOW` ([OPT-ENDWIN]) and §3 `<PREFIX>_REQ_BYTE`
+    ([OPT-REQBYTE]) — the same shape for the other two mechanisms.
+  - **WHY IT IS A STRUCTURAL GATE AT ALL.** Two of the three mechanisms have
+    NO answer-level detector anywhere in the tree: [OPT-ANCHOR-VM]'s bound
+    and [OPT-REQBYTE]'s pre-check each remove only work the artifact would
+    have done and thrown away, so a plant in the sound direction changes run
+    TIME and nothing a caller can observe. This file is where they are
+    defended, and `tests/mech`'s `prechecks` arm is where that is measured.
+  - **EVERY SECTION CARRIES ITS OWN POPULATION FLOOR (K35)**, because "every
+    artifact that stamps X also contains Y" is vacuously green when nothing
+    stamps X.
+
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
   `has_push` bool that wrote it. Its own section, `make test-codegen`, one
