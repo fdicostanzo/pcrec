@@ -12093,6 +12093,28 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_emit_startpos_guard(v->cx, c, "    ", "search_from", "subject",
                               "subject_length");
 
+    /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW, the same clamp the DFA's own
+     * search entries write, from the same `Job.end_window` and the same
+     * emitter (`pcrec_emit_end_window_clamp`, src/gen/emit_dfa.c) — one text,
+     * so the two routes cannot take the bound in two shapes.
+     *
+     * IT GOES HERE, ABOVE EVERYTHING THAT READS `search_from`, and that is
+     * the placement the mechanism needs rather than a preference: the root
+     * minimum-width test below, the prefilter's entry call and
+     * `attempt_position`'s initialiser all read the parameter, and all three
+     * are sound at the clamped value — the window is at least `maxw` wide, so
+     * it cannot be narrower than the root minimum, and the prefilter answers
+     * for whatever suffix it is handed. [OPT-ANCHOR-VM]'s own bound reads
+     * `search_from` too and stays correct for the same reason: it says "stop
+     * after this attempt", and which position that attempt began at does not
+     * change the claim.
+     *
+     * The two mechanisms DECLINE DISJOINTLY on the one construct where they
+     * would interact — `src/opt/endwin.c`'s decline (3) refuses any pattern
+     * containing `\G`, precisely because `\G` is the assertion that reads
+     * this parameter by name. */
+    pcrec_emit_end_window_clamp(v->cx, c, "    ", "search_from", "subject_length");
+
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
      * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
      * width cannot fit in what is left of the subject.

@@ -701,7 +701,31 @@ enum {
      * `<PREFIX>_VM_START` reports the derived value on every VM artifact
      * (`anchored` / `gstart` / `unanchored`), so a denied build is legible
      * as `unanchored` exactly like a pattern with nothing to bound. */
-    PCREC_NO_VM_ANCHOR_BOUND = 1u << 28
+    PCREC_NO_VM_ANCHOR_BOUND = 1u << 28,
+
+    /* [OPT-ENDWIN] DENY THE END-ANCHOR START WINDOW.
+     *
+     * A pattern whose every alternative ends in `$`/`\Z`/`\z` (outside
+     * multiline) and whose maximum width is finite can only be matched by a
+     * string that ENDS at the subject's end, so it can only START within
+     * `maxw + eps` bytes of it. A search may therefore begin its scan there
+     * rather than at the caller's `search_from`, which turns a linear walk of
+     * the whole subject into a constant-size one: `abc$` on 1 MiB measured
+     * 1,401x behind rust and collapses to a flat 30 ns under the hand-twin
+     * (docs/dev/optloop/cycle1_analysis.md M4, cycle1_profile.md M4).
+     *
+     * ANSWER-IDENTITY-PRESERVING, but UNLIKE its two batch siblings it is the
+     * kind of mechanism that CAN delete a match if it is wrong: a window one
+     * byte too narrow drops a legal `$`-before-final-newline match. That is
+     * why its sabotage row plants exactly that and is detectable by ordinary
+     * `.rxt` cases, and why the analysis declines rather than guesses on
+     * every construct it cannot price (an unbounded width, a multi-byte
+     * encoding, `\G`, a multiline `$`).
+     *
+     * `<PREFIX>_END_WINDOW` reports the derived bound on every artifact, so a
+     * denied build is legible as `"none"` exactly like a pattern with nothing
+     * to prove. */
+    PCREC_NO_END_WINDOW = 1u << 29
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

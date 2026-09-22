@@ -2243,6 +2243,56 @@ prove — the same no-trace rule §2.1's denial follows. It is the VM's reading
 of the fact `<PREFIX>_DFA_SCAN`'s `"attempt"` shape carries on the other
 engine; `--list-axes`' `vm-anchor-bound` rows name all three values.
 
+### 2.26 `-fno-end-window` — `PCREC_NO_END_WINDOW` (bit 29)
+
+**[OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119).** Denies the END-ANCHOR START
+WINDOW.
+
+**What the axis is.** When every alternative of a pattern ends in `$`/`\Z`/
+`\z` outside multiline, every match ENDS at the subject's end (or one byte
+before it, under `$`/`\Z`'s final-newline allowance). If the pattern's
+maximum width is also finite, every match therefore BEGINS within
+`maxw + eps` bytes of the end, and a search may start its scan there instead
+of at the caller's `search_from`. `abc$` on a 1 MiB subject measured 1,401×
+behind `rust` and 725× behind the best scalar engine, and the hand-twin
+collapses it to a flat 30 ns at every subject size
+(`docs/dev/optloop/cycle1_analysis.md` M4, `cycle1_profile.md` M4). This is
+the general optimization D77 named and deferred — *"a FOLD ON THE IDIOM (the
+skip loop reasoning about `\z`)"* — with the measurement D77 asked for.
+
+**It is the position view's SECOND consumer.** `--list-axes`' `view` axis
+already recognises a `\z`/`$` view and uses it to choose the `-bounded`
+prefilter candidates, i.e. to shape the scan's ACCEPT test. This gives the
+same recognised view the scan's START BOUND.
+
+**Where the fact comes from.** `pcrec_end_window` (`src/opt/endwin.c`), one
+walk over the LOWERED AST above either engine; both search entries emit the
+same clamp from the same `Job` field, through one emitter.
+
+**The four declines, each structural.** The analysis answers "no window" —
+never a guess — when the maximum width is unbounded (the common case, and it
+costs nothing); when the encoding has positions that are not character
+boundaries, because a computed byte offset could land inside a character and
+a mid-character start is a wrong ANSWER and not merely a wasted attempt (K49
+/K50); when the pattern contains `\G` anywhere, because `\G` is the one
+assertion whose truth is a function of the `search_from` this clamp moves;
+and on a multiline `$`, which holds before every newline and says nothing
+about the subject's end (D62 control 3).
+
+**Answer-identity.** Preserved — but UNLIKE its two batch siblings this
+mechanism is one that CAN delete a match if it is wrong, because it moves the
+position a search starts at rather than removing work that would have failed.
+A window one byte too narrow drops a legal `$`-before-final-newline match.
+`tests/assertions/end_window.rxt` is the answer-level net (66 oracle-verified
+cases, each claim carried at a subject length that leaves the mechanism inert
+AND at one that makes it fire).
+
+**The stamp.** `<PREFIX>_END_WINDOW`, on EVERY artifact of both engines:
+the bound as a decimal string, or `"none"`. A string with a `"none"` member
+rather than a number with a sentinel, because `0` is a LEGAL window — a `\z`
+pattern of maximum width 0 may begin only at the subject's end — so no
+numeric value is free to mean "declined". A denied build reads `"none"`.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -2519,6 +2569,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_STARTPOS_GUARD` | `-fno-startpos-guard` | §2.23 |
 | `flags` bits `PCREC_NO_COMMENTS` / `PCREC_FORCE_COMMENTS` | `-fno-comments` / `-fcomments` | §2.24 |
 | `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
+| `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |

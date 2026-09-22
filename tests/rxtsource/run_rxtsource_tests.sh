@@ -233,9 +233,17 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # other C3_SKIP_* reason and C3_INFO/C3_STOREUNCOVERED/C3_TIMEOUT
 # untouched (this file times out nothing and is not composed/pcre2-only/
 # giveup/perr-accept/own-oracle/under-convention).
-CENSUS_FILES=213
-CENSUS_BLOCKS=3944
-CENSUS_LINES=28971
+# [OPT-ENDWIN] 2026-09-22 ([OPTLOOP.1] batch 1): +1/+13/+66 for
+# tests/assertions/end_window.rxt — the end-anchor start window's
+# correctness carve-outs (13 blocks, 66 cases). It lands in
+# tests/assertions/, which has its OWN oracle
+# (tests/assertions/verify_pcre2.py), so all 66 cases are
+# C3_SKIP_OWNORACLE skips: C3_SKIP and C3_SKIP_OWNORACLE each move +66
+# and C3_PASS does not move at all. RUNSH_* move by the same
+# +1/+13/+66 (the file is not under tests/known_fail/).
+CENSUS_FILES=214
+CENSUS_BLOCKS=3957
+CENSUS_LINES=29037
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -267,9 +275,9 @@ CENSUS_LINES=28971
 # 2026-09-21 (lane adm0921, [K62]) — +1/+5/+16, the SAME delta as
 # CENSUS_* above (tests/quoting/k62_class_range_e.rxt is not under
 # tests/known_fail/).
-RUNSH_FILES=212
-RUNSH_BLOCKS=3941
-RUNSH_LINES=28960
+RUNSH_FILES=213
+RUNSH_BLOCKS=3954
+RUNSH_LINES=29026
 # 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
 # widest divergence this pair has shown. A known_fail file being RETIRED moves
 # the two in different directions on every column: the census loses a file
@@ -1134,13 +1142,13 @@ C3_FILES=179
 # `pcre2-only` does — the prior re-pins' own stated method). Reconciliation:
 # 13721+15161+89 = 28971 = CENSUS_LINES (matches the pin above).
 C3_PASS=13721
-C3_SKIP=15161
+C3_SKIP=15227
 C3_SKIP_PCRE2ONLY=2944
 C3_SKIP_GIVEUP=23
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14
-C3_SKIP_OWNORACLE=10290
+C3_SKIP_OWNORACLE=10356
 C3_INFO=0
 C3_STOREUNCOVERED=0
 C3_TIMEOUT=1

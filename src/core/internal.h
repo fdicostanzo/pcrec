@@ -2316,6 +2316,12 @@ typedef struct {
      * indistinguishable from "nothing to bound" — possessify's own no-trace
      * rule for a denied axis, one file over. */
     int    start_anchor;
+    /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW in BYTES, or -1 where the
+     * analysis declines — derived ONCE per attempt from the LOWERED tree by
+     * `pcrec_end_window` (src/opt/endwin.c) beside `start_anchor` above, and
+     * read by both emitters. `-1` under `-fno-end-window`, deliberately
+     * indistinguishable from "nothing to prove". */
+    long long end_window;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5372,6 +5378,12 @@ static inline bool pcrec_startgate_needed(const Ctx *cx)
  * called from BOTH emitters — one derivation, four call sites. Emits nothing
  * under an encoding that restricts no position, and nothing under
  * `-fno-startpos-guard`. See the function's own comment. */
+/* [OPT-ENDWIN] Raises `posvar` to `lenvar - Job.end_window` where the
+ * analysis proved every match must begin there or later; emits nothing where
+ * it declined. ONE text for both engines' search entries — src/gen/emit_dfa.c
+ * carries the underflow guard's argument and the soundness sentence. */
+void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
+                                 const char *posvar, const char *lenvar);
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
@@ -5802,6 +5814,13 @@ int pcrec_start_anchor(const Ast *root);             /* src/opt/startanch.c */
 /* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
+
+/* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
+ * last `W` bytes of the subject, or `-1` where the analysis declines (the
+ * four structural declines are in src/opt/endwin.c's own header, which also
+ * carries the soundness argument every emitter site rests on). BYTES, and
+ * the encoding decline is what makes that true. */
+long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

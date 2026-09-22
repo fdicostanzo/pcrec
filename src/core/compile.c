@@ -1489,6 +1489,9 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.job->start_anchor =
             (defo.flags & PCREC_NO_VM_ANCHOR_BOUND) ? PCREC_SANCH_NONE
                                                     : pcrec_start_anchor(root);
+        cx.job->end_window =
+            (defo.flags & PCREC_NO_END_WINDOW) ? -1
+                                               : pcrec_end_window(&cx, root);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the

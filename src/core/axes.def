@@ -154,6 +154,7 @@ PCREC_AXIS(PCREC_NO_STARTPOS_GUARD, "-fno-startpos-guard", 0, "", PCREC_AXIS_DEF
  * either proves the fact or does not, and a forced build could only ask it
  * to emit a bound it has not proved. */
 PCREC_AXIS(PCREC_NO_VM_ANCHOR_BOUND, "-fno-vm-anchor-bound", 0, "", PCREC_AXIS_DEFAULT_ON)
+PCREC_AXIS(PCREC_NO_END_WINDOW, "-fno-end-window", 0, "", PCREC_AXIS_DEFAULT_ON)
 
 /* ---- the emitted artifact's human commentary ([EMIT-VERB], D112) -------
  * The first row whose axis is not an OPTIMIZATION at all: it changes no

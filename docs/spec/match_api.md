@@ -2564,6 +2564,33 @@ engine-scoped.**
   that would make one owed is the one `_DFA_TABLE`'s entry names, and it would
   be a struct append moving no existing offset.
 
+  **[OPT-ENDWIN], 2026-09-22: `<PREFIX>_END_WINDOW` — HOW FAR FROM THE
+  SUBJECT'S END A MATCH MAY BEGIN.** Family (a): on EVERY artifact pcrec
+  emits, both engines, because the analysis is neither engine's.
+
+  ```c
+  #define RX_END_WINDOW "4"      /* a match begins in [n - 4, n] */
+  #define RX_END_WINDOW "none"   /* nothing was proved */
+  ```
+
+  **A STRING WITH A `"none"` MEMBER AND NOT A NUMBER WITH A SENTINEL**, and
+  the reason is not style: `0` is a LEGAL window — a `\z` pattern of maximum
+  width 0 may begin only at the subject's end — so no numeric value is free
+  to mean "declined". `<PREFIX>_DFA_TABLE`'s shape, for `_DFA_TABLE`'s
+  reason.
+
+  The value is the bound BOTH search entries clamp to, emitted from the same
+  compile-time field as the clamp itself. `"none"` is what a pattern that is
+  not end-anchored, one whose width is unbounded, one containing `\G`, one
+  under a multi-byte encoding and one built with `-fno-end-window` all
+  report — `tuning.md` §2.26 lists the declines and why each is structural.
+  A consumer may conclude that a non-`"none"` artifact does constant work on
+  an arbitrarily long subject; it may NOT read `"none"` as "this pattern is
+  not end-anchored".
+
+  It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
+  its reason: no consumer reads the fact at RUN time today (D77).
+
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,

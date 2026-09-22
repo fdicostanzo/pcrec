@@ -593,6 +593,46 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 }
 
 
+/* [OPT-ENDWIN] THE END-ANCHOR START WINDOW'S CLAMP, written ONCE and emitted
+ * by BOTH engines' search entries (`emit_unanchored`/`emit_attempt` here,
+ * `<prefix>_search_run` in emit_vm.c) — one text, so the two routes cannot
+ * take the bound in two different shapes.
+ *
+ * Emits NOTHING when `Job.end_window` declines, which is what keeps every
+ * artifact outside the mechanism's population byte-identical to the shape
+ * before it and makes `-fno-end-window`'s own sweep a control.
+ *
+ * THE `%s > %llu` GUARD IS NOT BELT AND BRACES: `subject_length - W`
+ * underflows on a subject shorter than the window, and an underflowed
+ * `size_t` is a start position past the end of every subject — a lost match
+ * on precisely the short inputs the mechanism must leave alone. It also
+ * makes the second test's subtraction well-defined, which is why the two are
+ * one `&&` and not two statements.
+ *
+ * SOUNDNESS is `src/opt/endwin.c`'s header: every match ends at
+ * `subject_length - eps` or later and spans at most `maxw`, so none begins
+ * before `subject_length - W`. Raising the scan's start to that position
+ * therefore finds the same LEFTMOST match and skips no earlier one. */
+void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
+                                 const char *posvar, const char *lenvar)
+{
+    long long w = cx->job->end_window;
+    if (w < 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-ENDWIN] every match of this pattern ends at the subject's\n"
+        "%s * end (or one byte before it), and spans at most %lld bytes, so\n"
+        "%s * none can begin earlier than this. */\n",
+        indent, indent, w, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "%sif (%s > %lluULL && %s < %s - %lluULL)\n"
+        "%s    %s = %s - %lluULL;\n",
+        indent, lenvar, (unsigned long long)w, posvar, lenvar,
+        (unsigned long long)w,
+        indent, posvar, lenvar, (unsigned long long)w);
+}
+
 /* Writes the search entry's attributes, signature and opening brace, plus
  * everything that must run before the first table: the `noclone` block (K24,
  * argued above), the caller-startpos boundary guard, and the permanently
@@ -6363,6 +6403,13 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
 
     emit_search_head(cx, c, fn, storage);
+    /* [OPT-ENDWIN] `fit.chosen == ENGM_DFA` for `emit_search_head`'s own
+     * reason: this emitter's OTHER customer is the VM hybrid's internal
+     * `static <prefix>_prefilter`, whose caller (`<prefix>_search_run`) has
+     * already clamped the position it passes. One clamp per search, on the
+     * caller-facing entry. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
     emit_machine_tables(c, &fwd);
     if (!pinned) emit_machine_tables(c, &rev);
 
@@ -6618,6 +6665,15 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     const char *p = cx->opt->prefix;
 
     emit_search_head(cx, c, fn, storage);
+    /* [OPT-ENDWIN] the clamp, on the caller-facing entry only — the sibling
+     * site in `emit_unanchored` carries the reason. It composes with
+     * `start_max` below rather than competing with it: both bounds are sound
+     * on their own, so an empty `[search_from, start_max]` range on an
+     * `^`-anchored pattern whose window starts past 0 is the correct answer
+     * (no match can satisfy both), reached by arithmetic rather than by a
+     * third rule about their interaction. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        pcrec_emit_end_window_clamp(cx, c, "    ", "search_from", "subject_length");
 
     /* [DD-13c] THE EMPTY ENGINE, through the SHARED derivation. The condition
      * used to be `d->n == 0` spelled here; it is `dfa_engine_is_empty`'s now,
@@ -7491,6 +7547,32 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * two readers DIFFERENT deltas for one change. With this one line the
      * delta is 23-28 bytes (by token) for both, which is what makes the
      * manifest re-record a POSITIVE assertion rather than a re-baseline. */
+    /* [OPT-ENDWIN] `<PREFIX>_END_WINDOW` — HOW FAR FROM THE SUBJECT'S END A
+     * MATCH MAY BEGIN. A §6.3 family-(a) SELECTION FACT: unconditional, on
+     * every artifact of BOTH engines, riding the SHARED prologue because the
+     * analysis is neither engine's — `src/opt/endwin.c` walks the tree above
+     * both, and both search entries emit the same clamp from it.
+     *
+     * A STRING WITH A `"none"` MEMBER, `<PREFIX>_DFA_TABLE`'s shape, rather
+     * than a number with a sentinel: `0` is a LEGAL window (a `\z` pattern of
+     * maximum width 0 may begin only at the subject's end), so no numeric
+     * value is free to mean "declined". The emitted clamp carries the same
+     * number as a C literal and comes from the same `Job` field, which is
+     * what stops the stamp and the bound drifting apart.
+     *
+     * UNCONDITIONAL, INCLUDING `"none"`, on `RX_DFA_UNIFORM_FOLDS`'s ruling:
+     * this tree has twice had to remove a check reading a fact off a macro's
+     * absence, and absence here would mean "declined" and "built by a pcrec
+     * too old to have the analysis" identically. */
+    {
+        char ewbuf[32];
+        if (cx->job->end_window < 0) {
+            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", "none");
+        } else {
+            snprintf(ewbuf, sizeof ewbuf, "%lld", cx->job->end_window);
+            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", ewbuf);
+        }
+    }
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);

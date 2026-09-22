@@ -604,6 +604,24 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "",
                      "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has");
     }
+    /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW, from
+     * `Job.end_window`'s one AST-level derivation, on BOTH engines.
+     *
+     * `stamp_value` IS SPELLED ON THE FALLBACK ROW AND EMPTY ON THE OTHER,
+     * which no other axis in this dump does, and the asymmetry is the stamp's
+     * own shape rather than an omission: `<PREFIX>_END_WINDOW` carries a
+     * NUMBER when the analysis proved a bound (there is no named value to
+     * put here, `alt-island`'s reason) and the literal token `"none"` when it
+     * declined (which IS a named value, and a consumer buckets on it). */
+    {
+        PredAxis p = { "end-window", NULL, "RX_END_WINDOW", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "window", "",
+                     PCREC_NO_END_WINDOW, 0, "",
+                     "per artifact, both engines: every alternative ends in $/\\Z/\\z outside multiline AND pcrec_cwmax is finite, so a match can only BEGIN in the last maxw+eps bytes and both search entries raise search_from to there (eps is 1 for $/\\Z's final-newline allowance, 0 for \\z); the stamp carries the bound");
+        emit_pred_row(sb, &p, 2, "none", "none",
+                     0, 0, "",
+                     "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag");
+    }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
      * mid-character caller startpos, and which one an artifact carries is a

@@ -187,6 +187,123 @@ PATS
     && ok "[1.4] $s1_anch of $s1_vm VM artifacts carry a start bound (floor $S1_FLOOR)" \
     || bad "[1.4] only $s1_anch VM artifacts carry a start bound, floor is $S1_FLOOR — §1.1's biconditional may be vacuous"
 
+# =========================================================================
+# SECTION 2 — [OPT-ENDWIN]: <PREFIX>_END_WINDOW and the clamp it names
+# =========================================================================
+#
+# THE STAMP IS A STRING BECAUSE 0 IS A LEGAL WINDOW (a `\z` pattern of
+# maximum width 0 may begin only at the subject's end), so this section reads
+# `"none"` as the decline and any other value as a decimal bound — and then
+# requires the EMITTED CLAMP to carry that same number as a C literal.
+#
+# THE ANSWER-LEVEL HALF OF THIS MECHANISM LIVES ELSEWHERE:
+# tests/assertions/end_window.rxt, 66 oracle-verified cases. This section is
+# the structural half — that the bound was DERIVED, that a declining pattern
+# emitted no clamp at all, and that the two agree.
+
+# §2.1 — the derived bound on witnesses whose arithmetic is checkable by hand,
+# and the four structural declines.
+while IFS='%' read -r pat _sep want; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s2_$RANDOM$RANDOM.c"
+    if ! emit "$a" "$pat"; then
+        bad "[2.1] $pat: refused; expected RX_END_WINDOW \"$want\""
+        continue
+    fi
+    got="$(stamp "$a" END_WINDOW)"
+    [ "$got" = "$want" ] \
+        && ok "[2.1] $pat -> RX_END_WINDOW \"$got\"" \
+        || bad "[2.1] $pat: RX_END_WINDOW is \"${got:-<absent>}\", expected \"$want\""
+    # The BICONDITIONAL against the emitted clamp, at the same witness: the
+    # stamp's number and the clamp's literal are the same fact, so they are
+    # compared rather than each checked for plausibility.
+    nclamp="$(grep -c "search_from = subject_length - ${got}ULL;" "$a" 2>/dev/null || true)"
+    if [ "$got" = "none" ]; then
+        grep -q 'search_from = subject_length - ' "$a" \
+            && bad "[2.1b] $pat: stamps \"none\" and still emits an end-window clamp" \
+            || ok "[2.1b] $pat: declining artifact emits no clamp"
+    else
+        [ "${nclamp:-0}" -ge 1 ] \
+            && ok "[2.1b] $pat: the clamp carries the stamped bound $got" \
+            || bad "[2.1b] $pat: stamps \"$got\" but no clamp to subject_length - ${got}ULL is emitted"
+    fi
+done <<'ROWS'
+abc$%%4
+abc\z%%3
+abc\Z%%4
+(?:foo|barbaz)$%%7
+a{0,4}$%%5
+\z%%0
+$%%1
+^abc$%%4
+(ab)(c)$%%4
+abc%%none
+(?m)abc$%%none
+a+$%%none
+\Gabc$%%none
+abc(?=x)$%%4
+abc(?=\z)%%none
+(\1)?abc$%%none
+ROWS
+
+# §2.2 — THE DENIAL LEAVES NO TRACE, `-fno-end-window` on a witness that
+# otherwise carries a bound.
+if emit "$WORKDIR/s2_deny.c" 'abc$' -fno-end-window; then
+    got="$(stamp "$WORKDIR/s2_deny.c" END_WINDOW)"
+    if [ "$got" = "none" ] && ! grep -q 'search_from = subject_length - ' "$WORKDIR/s2_deny.c"; then
+        ok "[2.2] -fno-end-window: abc\$ stamps \"none\" and emits no clamp"
+    else
+        bad "[2.2] -fno-end-window: abc\$ stamps \"${got:-<absent>}\" / clamp text still present"
+    fi
+else
+    bad "[2.2] -fno-end-window: abc\$ refused"
+fi
+
+# §2.3 — BOTH ENGINES CARRY IT, which is the half a DFA-only sweep would
+# miss: the stamp is family (a) and the clamp is one emitter read from two
+# search entries. `(ab)(c)$` forces the VM through its captures.
+for e in dfa vm; do
+    if emit "$WORKDIR/s2_$e.c" '(ab)(c)$' --engine=$e; then
+        [ "$(stamp "$WORKDIR/s2_$e.c" END_WINDOW)" = "4" ] \
+            && grep -q 'search_from = subject_length - 4ULL;' "$WORKDIR/s2_$e.c" \
+            && ok "[2.3] --engine=$e: (ab)(c)\$ stamps 4 and clamps to it" \
+            || bad "[2.3] --engine=$e: (ab)(c)\$ does not carry the window in both the stamp and the clamp"
+    else
+        ok "[2.3] --engine=$e: (ab)(c)\$ refused by this engine (do-or-die), nothing to check"
+    fi
+done
+
+# §2.4 — THE ENCODING DECLINE, measured rather than asserted. Under a
+# multi-byte encoding the clamp could land inside a character, which is a
+# WRONG ANSWER and not a wasted attempt (K49/K50) — so the analysis must
+# decline there even though the pattern's shape is identical.
+if emit "$WORKDIR/s2_utf8.c" 'abc$' -e utf8; then
+    got="$(stamp "$WORKDIR/s2_utf8.c" END_WINDOW)"
+    [ "$got" = "none" ] \
+        && ok "[2.4] -e utf8: abc\$ declines (stamps \"none\"), the mid-character hazard" \
+        || bad "[2.4] -e utf8: abc\$ stamps \"$got\" — the encoding decline is not in force"
+else
+    bad "[2.4] -e utf8: abc\$ refused"
+fi
+
+# §2.5 — THE POPULATION FLOOR (K35). §2.1's biconditional is a statement
+# about fifteen hand-written patterns unless something says the derived half
+# is reachable at all; this counts the corpus file written for the mechanism.
+S2_FLOOR=8
+s2_win=0; s2_tot=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    s2_tot=$((s2_tot + 1))
+    emit "$WORKDIR/s2_c.c" "$pat" || continue
+    [ "$(stamp "$WORKDIR/s2_c.c" END_WINDOW)" = "none" ] || s2_win=$((s2_win + 1))
+done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/assertions/end_window.rxt")
+[ "$s2_tot" -ge 12 ] \
+    && ok "[2.5] the floor's own population is live: $s2_tot patterns read from tests/assertions/end_window.rxt" \
+    || bad "[2.5] only $s2_tot patterns extracted from tests/assertions/end_window.rxt — the floor below measures nothing"
+[ "$s2_win" -ge "$S2_FLOOR" ] \
+    && ok "[2.5] $s2_win of $s2_tot corpus patterns carry an end window (floor $S2_FLOOR)" \
+    || bad "[2.5] only $s2_win corpus patterns carry an end window, floor is $S2_FLOOR — §2.1 may be vacuous"
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1

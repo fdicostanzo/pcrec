@@ -1,0 +1,232 @@
+# tests/assertions/end_window.rxt — [OPT-ENDWIN], `[OPTLOOP.1]` batch 1
+# (D119): THE END-ANCHOR START WINDOW'S correctness carve-outs.
+#
+# WHAT THE MECHANISM DOES, so these cells are readable as a net rather than
+# as a pile: when every alternative of a pattern ends in `$`/`\Z`/`\z`
+# outside multiline AND its maximum width is finite, both engines' search
+# entries RAISE `search_from` to `subject_length - (maxw + eps)` before any
+# attempt runs — `eps` is 1 for `$`/`\Z` (they hold before a final newline)
+# and 0 for `\z`. `docs/spec/tuning.md` §2.26, `src/opt/endwin.c`.
+#
+# WHY IT NEEDS A CORPUS FILE WHEN ITS TWO BATCH SIBLINGS DO NOT. [OPT-ANCHOR-VM]
+# and [OPT-REQBYTE] remove only work an artifact would have done and thrown
+# away, so no answer can move and their only detector is a stamp. THIS one
+# moves the position a search STARTS AT, and a window one byte too narrow
+# DELETES A LEGAL MATCH — silently, and only on subjects longer than the
+# window. Every block below is a cell where a plausible off-by-one or a
+# plausible over-generalisation of the view test produces a different answer.
+#
+# THE SUBJECTS ARE LONG ON PURPOSE. A window is only consulted when
+# `subject_length > maxw + eps`; a 3-byte subject exercises the guard's
+# false arm and nothing else. Each block therefore carries a SHORT subject
+# (the mechanism inert) and a LONG one (the mechanism firing) for the same
+# claim, so a regression cannot hide in the half nobody wrote.
+#
+# ORACLE. `$`, `\z`, `(?m)$` and `\b` blocks are python3 `re`-verifiable and
+# are verified by tests/harness/verify_rxt.py like any base-tier cell
+# (python's `\Z` IS PCRE2's `\z`, which is the only mapping this file needs).
+# The `\Z` blocks carry `# pcre2-only` and are verified by
+# tests/assertions/verify_pcre2.py instead — `absolute.rxt`'s own header
+# carries that rule and the measured divergence behind it, and it applies
+# here for the same reason whether or not these particular subjects expose it.
+#
+# WHAT THIS FILE CANNOT SEE: it pins ANSWERS. That the window was DERIVED at
+# all, that a declining pattern emitted no clamp, and that the stamp agrees
+# with the emitted bound are tests/codegen/run_prechecks.sh §2's job.
+
+
+# ======================================================================
+# (1) `$`: the FINAL-NEWLINE ALLOWANCE is the whole of `eps`
+#
+# `abc$` has maxw 3 and eps 1, so the window is 4 and a search over a long
+# subject begins at `n - 4`. On "...abc\n" the match starts at `n - 4`
+# EXACTLY — one byte narrower and this block is a lost match, which is the
+# direction the sabotage row plants.
+# ======================================================================
+
+pattern abc$
+features assertions
+m "abc" 0 3
+m "abc\n" 0 3
+n "abcx"
+n "abc\nx"
+n "abc\n\n"
+m "xxxabc" 3 6
+m "xxxabc\n" 3 6
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc" 32 35
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc\n" 32 35
+n "abcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+n "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# The same pattern asked from a startpos INSIDE the window and from one
+# BEYOND the match's start: the clamp may only ever RAISE `search_from`, so
+# a caller who asked for a later position must still get the later answer.
+pattern abc$
+features assertions
+ns 1 "abc"
+ms 0 "xxxabc" 3 6
+ms 3 "xxxabc" 3 6
+ns 4 "xxxabc"
+
+
+# ======================================================================
+# (2) `\z` AGAINST `$` ON THE SAME SUBJECT — the `eps` distinction, which is
+# a DIFFERENT WINDOW WIDTH and not only a different accept test. `abc\z` has
+# window 3; `abc$` has window 4. The trailing-newline subject is where the
+# two answers separate, and it separates them at BOTH lengths.
+# ======================================================================
+
+pattern abc\z
+features assertions
+m "abc" 0 3
+n "abc\n"
+m "xxxabc" 3 6
+n "xxxabc\n"
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc" 32 35
+n "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc\n"
+
+
+# ======================================================================
+# (3) `\Z` IS `$`'s EXACT ALIAS HERE, which is why the analysis gives them
+# one arm. If a later change made `\Z` take `\z`'s window, the
+# trailing-newline rows below become lost matches.
+# ======================================================================
+
+# pcre2-only
+pattern abc\Z
+features assertions
+m "abc" 0 3
+m "abc\n" 0 3
+n "abc\nx"
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc" 32 35
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc\n" 32 35
+
+
+# ======================================================================
+# (4) MULTILINE DECLINES — D62 control 3. Under `(?m)` a `$` holds before
+# EVERY newline, so no window exists at all. A clamp emitted here would
+# lose every match but the last line's, which is what these rows say.
+# ======================================================================
+
+pattern (?m)abc$
+features assertions,modifiers
+m "abc\ndef" 0 3
+m "xxabc\nyy" 2 5
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc\nyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" 32 35
+m "abc\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 0 3
+
+
+# ======================================================================
+# (5) AN UNBOUNDED WIDTH DECLINES. `a+$` is end-anchored and has no finite
+# maximum, so there is no window to compute. The long row is a match whose
+# start is arbitrarily far from the end.
+# ======================================================================
+
+pattern a+$
+features assertions
+m "aaa" 0 3
+m "xaaa" 1 4
+m "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 1 36
+
+
+# ======================================================================
+# (6) A BOUNDED QUANTIFIER IS THE WINDOW'S ARITHMETIC. `a{0,4}$` has maxw 4
+# and window 5; the nullable body makes the EMPTY match at the subject end
+# the leftmost answer on a subject with no trailing `a`, which a window that
+# started one byte too late would miss entirely.
+# ======================================================================
+
+pattern a{0,4}$
+features assertions
+m "" 0 0
+m "xxxxx" 5 5
+m "xxaaa" 2 5
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 32 32
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxaaaa" 28 32
+
+
+# ======================================================================
+# (7) THE WIDEST ALTERNATIVE SETS THE WINDOW, and the NARROWEST match must
+# still be found. `(?:foo|barbaz)$` has window 7; a `foo` match starts 3
+# bytes from the end, comfortably inside it, and a window computed from the
+# FIRST branch rather than the widest would still find this one — so the
+# `barbaz` row is the one that discriminates.
+# ======================================================================
+
+pattern (?:foo|barbaz)$
+features assertions
+m "xxfoo" 2 5
+m "barbaz" 0 6
+n "fooo"
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxfoo" 32 35
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbarbaz" 30 36
+
+
+# ======================================================================
+# (8) A ZERO-WIDTH PATTERN: window 0 for `\z`, 1 for `$`. The empty match at
+# the subject end is the only answer, and `$`'s own row additionally has to
+# find it BEFORE the final newline.
+# ======================================================================
+
+pattern \z
+features assertions
+m "" 0 0
+m "abc" 3 3
+ms 1 "abc" 3 3
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 32 32
+
+pattern $
+features assertions
+m "" 0 0
+m "abc" 3 3
+m "abc\n" 3 3
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 32 32
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" 31 31
+
+
+# ======================================================================
+# (9) A WORD-CONTEXT SEED AT THE CLAMPED POSITION. `\bfoo$` starts the scan
+# at `n - 4`, where the machine's start state depends on `subject[n - 5]` —
+# the byte BEFORE the clamped position. A clamp that moved the position
+# without letting the seed read its own context byte answers these rows
+# wrong in both directions.
+# ======================================================================
+
+pattern \bfoo$
+features assertions
+m "a foo" 2 5
+n "afoo"
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx foo" 32 35
+n "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxfoo"
+
+
+# ======================================================================
+# (10) ANCHORED AT BOTH ENDS — the [OPT-ANCHOR-VM] interaction. `^abc$`
+# carries a start bound of 0 AND a window of 4, and on a long subject the
+# two ranges are DISJOINT. The correct answer is no match, reached by
+# arithmetic rather than by a rule about their interaction, and the short
+# rows are what say the composition did not break the ordinary case.
+# ======================================================================
+
+pattern ^abc$
+features assertions
+m "abc" 0 3
+m "abc\n" 0 3
+n "xabc"
+n "abcx"
+n "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc"
+n "abcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+
+# ======================================================================
+# (11) CAPTURES, so the VM route's own copy of the clamp is exercised on a
+# long subject. A capturing group forces the VM, where the clamp sits at the
+# top of `<prefix>_search_run` rather than in the DFA's search entry.
+# ======================================================================
+
+pattern (ab)(c)$
+features assertions
+m "abc" 0 3
+m "xxabc" 2 5
+m "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxabc" 30 33
+n "abcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
