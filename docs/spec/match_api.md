@@ -2012,8 +2012,28 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `28` on every artifact today ([REL-1.4] bumped it
-  from 27, D115: THE VERSION STAMP. The essential generated-by line —
+- **`rx_info.abi` is `29` on every artifact today (`[OPTLOOP.1]` batch 1
+  bumped it from 28, D119: THE THREE WHOLE-WINDOW PRE-CHECKS.** One bump for
+  three mechanisms, because they are one emitted-scaffolding event on one
+  landing. EVERY artifact of BOTH engines gains two shared-prologue stamp
+  lines — `<PREFIX>_END_WINDOW` and `<PREFIX>_REQ_BYTE`, each a string
+  carrying a number or the token `"none"`, since `0` is a legal value of both
+  facts and no number is free to mean "declined" — and every VM artifact
+  gains a third, `<PREFIX>_VM_START`. On the populations the three analyses
+  actually reach, the artifact additionally gains emitted PROGRAM text: a
+  `const size_t attempt_max = search_from;` declaration with the attempt
+  loop's existing continue test rewritten to read it ([OPT-ANCHOR-VM]); a
+  two-line clamp raising `search_from` to `subject_length - W` at both
+  engines' search entries ([OPT-ENDWIN]); and a three-line `memchr`
+  pre-check at those same two places, plus a `#include <string.h>` on a VM
+  artifact that had none ([OPT-REQBYTE]). No struct offset moves, no
+  `rx_info` member is added or changed, and NO ANSWER MOVES on any of the
+  three — two of them remove only attempts the artifact would have run and
+  FAILED, and the third moves a search's start position only within a window
+  it has proved no match can begin before. Each of `-fno-vm-anchor-bound`,
+  `-fno-end-window` and `-fno-req-byte` restores the pre-mechanism text on its
+  own population exactly (`tuning.md` §2.25-§2.27).
+  The bump before it was [REL-1.4], from 27 (D115: THE VERSION STAMP. The essential generated-by line —
   already the one line D112 keeps under every `-fcomments` setting —
   now also names `PCREC_VERSION` (`lib/pcrec.h`, a semver string
   independent of `abi`: it versions the tool, `abi` versions one
@@ -2023,8 +2043,8 @@ the bump's own commit.**
   `rx_info` member is added or changed, and no answer moves at all — the
   comment TEXT is the only thing that changed, on every artifact of both
   engines regardless of `-fcomments`, because the line it rides is the
-  ESSENTIAL class the switch never removes.
-  The bump before it was [EMIT-VERB]:
+  ESSENTIAL class the switch never removes.)
+  The bump before that was [EMIT-VERB]:
   THE EMITTED-COMMENT AXIS. A default artifact no longer carries
   its NON-ESSENTIAL prose — every comment LINE leaves every artifact of
   both engines except the generated-by/pattern-echo provenance line and

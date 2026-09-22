@@ -2628,3 +2628,27 @@ everywhere, and a test of a different claim. The row that measures whether
 this mechanism has a detector at all is the one that only costs time. The
 same asymmetry governs the batch's other two rows, and each says so in its
 own `SAB_DESC` rather than leaving it to be inferred from a green corpus arm.
+
+**S264 and S265 are the other two, and the trio's real subject is the
+ASYMMETRY between them.** All three mechanisms are answer-identity-preserving
+and one of them can still lose a match, which is not a contradiction:
+
+| row | mechanism | plant | corpus arm | why |
+|---|---|---|---|---|
+| S263 | [OPT-ANCHOR-VM] | the bound emitted as `subject_length` | `0fail/28960pass` | removes only attempts that would have run and FAILED |
+| S264 | [OPT-ENDWIN] | the window one byte too FEW | `178fail/28848pass` | MOVES where a search starts, so an error deletes matches |
+| S265 | [OPT-REQBYTE] | the `memchr` sense inverted | red | the SOUND-direction plant would be invisible; this one is not |
+
+**S264's 178 is what the corpus file was built to produce.**
+`tests/assertions/end_window.rxt` carries every claim TWICE — at a subject
+length that leaves the clamp inert and at one that makes it fire — because a
+window one byte too narrow is silent on short subjects, which is every
+subject a hand-written test tends to use.
+
+**S265 is not S263's mechanism with a louder plant.** Its sound-direction
+corruption (deleting the pre-check) is as undetectable as S263's, and its
+own plant was chosen to isolate the SENSE while leaving the byte, the
+empty-window arm and the stamp alone — which is why
+`tests/codegen/run_prechecks.sh` asserts the sense in §3.1c SEPARATELY from
+the byte in §3.1b. One assertion covering both would have named the wrong
+half.
