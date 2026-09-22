@@ -28,7 +28,19 @@ SAB_DOC_FIGURE="PREDICTED: reject RED broadly; the corpus RED on gated.rxt's ref
 SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" --pattern "(a)\\1"'
 SAB_REACH_EXPECT="\\1 (backreference/octal) requires module 'backrefs' (pattern offset 3)"
 SAB_COUNT=1
-SAB_BEFORE='    want = pcrec_ext_gate(r, want);
+# [REL-1.11] RE-ANCHORED (2026-09-21, lane libfeat): `pcrec_ext_gate` gained
+# an explicit `enabled_mask` parameter (Ctx.enabled_features, D19 — no
+# process-global read any more), so the escape doorway's call site's literal
+# text changed from `pcrec_ext_gate(r, want)` to
+# `pcrec_ext_gate(cx->enabled_features, r, want)`. Re-derived from the text
+# THIS CHANGE LEAVES BEHIND (sabotages/CLAUDE.md's own rule for the case
+# where the current lane is what moved the line, not `git show HEAD:` —
+# HEAD still has the pre-libfeat spelling). Intent unchanged and
+# re-verified: the AFTER text still deletes the ONE call that demotes a
+# RESULT ask to VERDICT for a disabled module, at the same site (the escape
+# doorway, ext.c's `esc_answer`-shaped function), immediately before the
+# same `if (!r) {` this row has always anchored on.
+SAB_BEFORE='    want = pcrec_ext_gate(cx->enabled_features, r, want);
 
     if (!r) {'
 SAB_AFTER='    /* SABOTAGE S111: the gate no longer demotes */
