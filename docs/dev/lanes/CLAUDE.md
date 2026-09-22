@@ -2419,3 +2419,41 @@ never edited afterwards.
   had another lane's `make test-axes` still running, so `make
   test-registry` itself was not re-run before handback — see the report
   for the exact command owed.
+- `admin2_report.md` — plan archive sweep + learnings + BOILERPLATE
+  (2026-09-22, lane admin2, sonnet, docs-only, three commits). (1) Moves
+  62 of plan.md's 70 resident `STATE:completed` rows to `plan_completed.md`
+  (the header's own promise, unhonored since same-day closefold/admin1/
+  regred/capsurvey merges had already made the brief's 71/72 baseline
+  stale by the time this lane started — the real count was 70, since
+  `STATE:completed-in-place` is a genuinely distinct, deliberately-kept
+  state the loose grep also matched). Grouped by parent `##` heading;
+  [REL-1] and its 11 numbered children collapse to one stub matching the
+  file's own pre-existing "archived to plan_completed.md (...)"
+  convention, with a similar pointer under the still-open [SPEC-1]. Kept
+  8 rows resident despite being `STATE:completed`, each argued from the
+  file's own content: [TT-4]/[TT-4.1] (an adjacent STATE:started sibling,
+  [TT-4M], explicitly narrates re-opening [TT-4]'s closed levers),
+  [OPTLOOP.1.analysis] (the brief's named exception), [ENG-ISL.S0] (same
+  shape, judged), and the four indented [DD-13a]/[DD-13b.W1]/[DD-13b]/
+  [DD-13b.panel] children of the still-STATE:started [DD-13] (with
+  [DD-13b.W1.3], also started, physically wedged between two of them) —
+  [DD-13c], despite the similar name, is a separate non-child row and
+  archived normally. Corrects one mechanical block-boundary
+  mis-attribution before it shipped: a naive "next bullet or heading"
+  scanner would have swept ten lines of the PARENT [ENG-ISL]'s own
+  continuation prose into the archived [ENG-ISL.S0] block, because that
+  prose restarts a different topic with no bullet marker of its own.
+  Anchored counts reconcile exactly (81/14/70->8 in plan.md,
+  203->265 in plan_completed.md). (2) `learnings.md` §3 addendum, three
+  lessons from the ff63ebf3 gate misread: a coverage guard living in a
+  DIFFERENT FILE from what it counts (regred's finding, its own comment
+  history's fourth instance of the shape); "sections ran: N/M" counting
+  launched, not passed, sections (lane axesfix's finding); and
+  [MECH-REACH]'s seventh instance, a whole-window pre-check retiring a
+  witness population by omitting the pattern's required byte. (3) Three
+  terse `BOILERPLATE.md` additions (detached owed runs; darwin timeout
+  sizing per suite, `AXES=` verified against `run_axes.sh` before
+  citing; naming the FILE a "re-ran standalone, clean" claim covers) plus
+  one root-`CLAUDE.md` situation-index row on reading a gate's real
+  verdict. Docs-only throughout; no build or suite run applicable to any
+  of the three deliverables.
