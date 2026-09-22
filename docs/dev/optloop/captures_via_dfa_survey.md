@@ -196,9 +196,12 @@ for §3.**
 && !job->fit.prefilter_collapsed`. Only on that predicate does `window_end`
 become `min(window[0][1], n)`; otherwise it is the subject end, because an
 atomic group or a lookaround makes the erased machine a superset whose span
-END is not a bound. `window_end` then feeds the MRL length-prune macro
-(`src/gen/emit_vm.c:97-99`) — it kills a path whose remaining *minimum
-width* cannot fit, and nothing else. **The VM still searches for an end the
+END is not a bound. `window_end` then feeds the two emitted MRL prune macros,
+`<PREFIX>_PRUNE_TOO_SHORT` and `<PREFIX>_PRUNE_CLAMP_SPAN`
+(`src/gen/emit_vm.c:11363-11368`) — the first kills a path whose remaining
+*minimum width* cannot fit before the ceiling, the second shortens a scan
+to a whole number of iterations. Both are width arguments; neither tells
+the VM where the answer ends. **The VM still searches for an end the
 DFA has already computed exactly.**
 
 **(ii) Span-equality between the priority DFA and the VM is BELIEVED, not
@@ -766,8 +769,9 @@ the survey's most useful single result.**
 §1.4 shows the shipped artifact doing exactly what RE2 and
 `regex-automata` do, and §1.5 measures its reach: **17 of the 26
 capture-forced `capability` patterns at the shipped default**, plus 10 more
-capture-free rows that use the same prefilter purely to avoid scanning. `src/gen/emit_vm.c:11665-11679` and the
-`--emit-ir` `prefilter` line both call the window **exact**, and it is
+capture-free rows that use the same prefilter purely to avoid scanning.
+`src/gen/emit_vm.c:11665-11679` and the `--emit-ir` `prefilter` line both
+call the window **exact**, and it is
 exact for a structural reason pcrec owns — D31 erases the group at parse
 time and `A_CAP` is invisible to the NFA builder, so the prefilter's DFA is
 not an approximation of the pattern, it *is* the pattern's DFA.
@@ -834,8 +838,9 @@ closure holds an assertion or an atomic operator: 12 of 18 positive-control
 cells are false negatives; where it *is* a superset the span is wrong on up
 to 389 of 12,786 subject-family pairs) and the call case is a *different
 language*, not a superset (`a(?1)b` with group 1 = `x` matches `axb`;
-erase the call and `ab` does not). Those 9 rows — 7 of them capture-forced —
-stay VM-only under every mechanism in this survey, permanently. Lookaround is a third case with a
+erase the call and `ab` does not). Those 9 rows — 7 of them
+capture-forced — stay VM-only under every mechanism in this survey,
+permanently. Lookaround is a third case with a
 different shape: the erasure *is* a sound superset, so a prefilter is built,
 but its span END is not a bound — which is exactly why `mrl_win` excludes
 it (`src/gen/emit_vm.c:9899-9902`).
@@ -848,10 +853,10 @@ reason rather than filing it as unranked.**
 **What it would take.** A tagged construction replaces, not extends,
 `src/ir/dfa.c`'s priority subset construction: states become
 (NFA-state-list, tag→register map) pairs, transitions gain register
-operation lists, and the interner
-(`src/ir/dfa.c:809`/`:871`, which today interns on the priority-ordered
-per-view list plus `eolvar`/`endvar`) must intern on the register mapping
-too or the machine stops being finite. `src/opt/minimize.c`'s Hopcroft
+operation lists, and the interner (`intern`/`dhash`,
+`src/ir/dfa.c:896-985`, which today keys a state on its priority-ordered
+per-view position list plus `eolvar`/`endvar` and nothing else) must key on
+the register mapping too, or the machine stops being finite. `src/opt/minimize.c`'s Hopcroft
 refinement must become tag-aware — two states with identical transition
 behaviour but different register operations are not equivalent — and
 `docs/dev/dfa_online_minimization_study.md`'s whole analysis of the
