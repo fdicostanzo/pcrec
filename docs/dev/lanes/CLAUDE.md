@@ -2290,3 +2290,15 @@ never edited afterwards.
   independently-derived `patterns/*.rx` exports, 64 of 64 identical.
   Nothing owed by the lane; the Linux profile blocks are a precondition on
   any implementation lane and are named by section id in report §5.
+
+- `closefold_report.md` — [BACKLOG-TRIAGE]'s close/fold pass (2026-09-22,
+  lane closefold, sonnet, docs-only): applies Frank's ruling "Agree with
+  close items" — DD-1/DD-12/DD-7/BENCH-1/OPT-4.2/TT-14 flipped to
+  `STATE:completed` with a closure note and archived to
+  `plan_completed.md` (anchored counts 81→77 not-started, 19→17 started,
+  reconciling exactly); [BENCH-1]'s dependency/gate text re-pointed at
+  [OPTLOOP] in seven rows found by grep (BENCH-CEIL, ENG-ABS, ENG-CUT,
+  ENG-ISL, ENG-PGO, SIMD-META, OPT-SIMD) without changing their STATE;
+  one root-CLAUDE.md situation-index row added; [OPT-4.2]'s witness-gap
+  ruling cross-referenced into `known_issues.md`'s K41 entry (no prior
+  cross-reference existed).
