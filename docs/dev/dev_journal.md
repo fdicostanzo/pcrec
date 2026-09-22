@@ -24831,3 +24831,12 @@ direction demonstrated (floor above the count → the FAIL fires). The
 other four exact probe pins iterate pcrec-owned generators
 (build-invariant) and stay exact. Pushing → CI run 4, the green
 candidate.
+
+**2026-09-22 ~00:5x — CI GREEN.** Run 35684843294 on 13f71687: every
+section green on ubuntu-latest against the from-source pcre2 10.46 (the
+version cache hit on this run), PC-3's RECORD line carrying the runner's
+probe count over the floor. [REL-1.6] COMPLETED; the README badge added.
+Four runs to green: run 1 cancelled by my own push, run 2 the fit
+measurement (39m17s) red on environment, run 3 one residual (the
+build-dependent probe count), run 4 green. [REL-1] rows left: 1.8 the
+tag (Frank's word), 1.9 [REL-META]'s disposition (Frank's yes).

@@ -1,5 +1,7 @@
 # pcrec
 
+[![CI](https://github.com/fdicostanzo/pcrec/actions/workflows/ci.yml/badge.svg)](https://github.com/fdicostanzo/pcrec/actions/workflows/ci.yml)
+
 An ahead-of-time **PCRE-to-C regex compiler**: give it a PCRE pattern, it emits
 specialized, self-contained, gcc-dialect C source that matches exactly that
 pattern — no runtime interpreter, no dependency on pcrec in the generated code.
