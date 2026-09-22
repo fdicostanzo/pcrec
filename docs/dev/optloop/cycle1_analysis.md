@@ -1190,9 +1190,13 @@ cells; the carve-outs are where it bites, which is why every row below names
   (dup-param-detect, thr), (tag-pair-match, thr),
   (wild-secrets-username-password-pair, thr),
   (wild-logparse-winpath-grok, thr). Do not regress: (floor-byte, thr),
-  (floor-byte, srch), (wild-secrets-github-pat, thr),
-  (router-prefix-order, thr), (email-nested-plus, thr) — every one a cell
-  where the required byte is PRESENT, so the memchr is pure added cost.
+  (floor-byte, srch), (nested-comment-rec, thr),
+  (wild-secrets-github-pat, thr), (wild-validator-uuid-grok, thr),
+  (float-literal-bound, thr) — every one a cell whose required byte IS
+  PRESENT in the bench text ('/', '_', '-', '.'), so the memchr succeeds
+  and is pure added cost; plus (router-prefix-order, thr), which records
+  no required unit at all and whose emitted text must therefore be
+  byte-identical.
 ```
 
 ```
