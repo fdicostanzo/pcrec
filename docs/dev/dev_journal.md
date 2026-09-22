@@ -24908,3 +24908,70 @@ refusals if fed back undecoded).
 NEXT: Frank ratifies §5's rows + batch 1 (REQBYTE+ANCHOR-VM+FIRSTSET) and
 the triage's closes; I-85 sent; [OPTLOOP.1.impl] opens on the profile's
 confirmation.
+
+## 2026-09-22 (seventy-sixth session, afternoon) — cycle 1 ratified; batch 1 IMPLEMENTED (parked for its owed runs); gate green; D83 addendum
+
+**Frank's rulings today:** closes/folds agreed (applied, lane closefold:
+DD-1, DD-12, DD-7, BENCH-1→[OPTLOOP], OPT-4.2, TT-14; SEVEN rows gated on
+BENCH-1 re-pointed, not two); features HELD unless quick (M3.0 parked);
+the six cycle-1 rows RATIFIED with batch 1 = REQBYTE+ANCHOR-VM+FIRSTSET,
+then the SWAP to REQBYTE+ANCHOR-VM+ENDWIN on the I-85 profile (FIRSTSET's
+json-constant twin ×1.10 slower = a subject-density problem); apples-to-
+apples ("capture vs capture engines") → lane capsview; "is anyone capturing
+using dfa" → lane capsurvey (opus); [ENG-PGO] IS the subject-analysis item
+FIRSTSET needs → D83 ADDENDUM (findings file = a SET of named values, not
+freq only; pattern-blind vs pattern-specific analyses kept apart; a set of
+STATIC NAMED ANALYSES "html"/"tsv"/... ships; consider the .rxt
+include/library opcode as their mechanism — not a ruling).
+
+**Lanes (all closed by TaskStop at delivery, worktrees removed):** admin1
+(sonnet): [LIM-OVR] FLAG_D token, four two-lever rows not one, override-
+honesty check reads cli/main.c's table (27/0); [MACPORT-XARGS] found
+ALREADY FIXED by Frank 2026-09-10 fb1b9c5e, never re-flagged — the
+"trigger landed, row not revisited" class again. profread (sonnet):
+cycle1_profile.md, verbatim numbers, per-mechanism verdicts (M4 clean; M1/
+M2/M5 partial; M3 one row refuted; M6 = steps/attempt, not per-step).
+capsview (sonnet): 65 of §1's 91 wins were carried by auto-nocaps; caps-
+only view 84/123; 14-row "capture group" population, 3 catastrophic (the
+nullable declines), 11 near-free. capsurvey (opus): pcrec's hybrid
+prefilter IS the RE2/rust two-pass design already; the exact END is used
+only as an MRL ceiling and the emitter itself declines the hard bound
+(R21: span-equality believed-with-gate); one-pass DFA ranked first; TDFA a
+recorded deferral; none of the three moves the 39,000-49,000x default
+cells (nullable-decline, f2_rescue_split.md's territory); the census's
+first cut (engine × prefilter) was the WRONG cut — RX_ENGINE_WHY is the
+cut; two of 16 cites were wrong by copy-from-a-stale-study and by reading
+a line number off an EMITTED artifact (F5). optimpl1 (opus, ~1 h): the
+three mechanisms as src/opt/{startanch,endwin,reqbyte}.c, each an axis
+(bits 28-30), each a stamp (RX_VM_START / RX_END_WINDOW / RX_REQ_BYTE),
+abi 28→29 once with the D94 ritual; identity vs each deny flag at every
+startpos × 3 engines = 0 mismatches; corpus at 3 engine settings 0 internal
+errors; run_prechecks 113/0 (new gate — two of the three mechanisms have
+NO answer-level detector, by nature); S263/S264/S265; findings: REQBYTE's
+own carve-out cell router-prefix-order FALSIFIED (the walk intersects
+alternation branches — PCRE2 doesn't — sound, the cell becomes a target);
+the analysis's M4 twin over-counted the window by one. OWED, armed as a
+chain behind the gate (pid 25279, build/optimpl1_chain.log → "[chain]
+ALL OWED RUNS COMPLETE"): S265 solo, make test-axes, make test. The
+recursion-identity (B) pin is left for the merge (D76 precedent).
+
+**GATE at ff63ebf3 (darwin, 6859 s): 41/41, reds = the nm arm_a.o probe +
+resource's documented skip; size log re-archived (6e1fca39).** Merged since
+the morning: backtri a58f7ecb, optrev 405668e9, closefold 8220b7b4,
+capsview c7985e83, admin1 fa97294a, profread e640f01b, capsurvey da08ae2c.
+I-85 profile pass: executor [B73] ran it 09:57-10:10, logs archived under
+docs/dev/optloop/runs/, I-86 "logs fetched"; bench KB-27 opened on the
+evil-alt-nested wrong labels (no derived expectation behind them).
+
+**Process:** the lane watcher (bash 3: no declare -A; a fresh worktree's
+age is its creation time, not its branch point; a committed report re-fires
+every relaunch — drop delivered lanes from LANES). Five lanes live at the
+peak — over the three-lane rule; two were docs-only and small, but noted.
+plan.md holds 71 resident STATE:completed rows against its header's "zero"
+claim — an archive sweep is queued as a small admin item.
+
+NEXT: optimpl1's chain → merge → re-pin recursion identity → run it +
+emit_sweep → bench request I-87 (batch 1's landing-bar cells + the two
+carve-out moves: floor-byte/nested-comment-rec gain a memchr, uuid/ipv4-
+near-miss gain a window; router-prefix-order is a TARGET now) → the
+[OPT-FIRSTSET] design note against [ENG-PGO]'s findings-file shape.

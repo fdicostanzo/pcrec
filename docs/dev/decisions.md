@@ -5938,6 +5938,51 @@ work starts); `--exemplar FILE` (or whatever the flag is named) takes
 the FINDINGS file, never the raw text. A built-in static frequency
 table is the fallback when no findings file is given.
 
+**Addendum (Frank, 2026-09-22, seventy-sixth session — on [OPT-FIRSTSET]'s
+profile failure and [ENG-PGO]).** The I-85 profile refuted [OPT-FIRSTSET]
+on one target row (json-constant's twin ×1.10 SLOWER: the candidate bytes
+are common in that subject, so the skip loop finds a candidate at nearly
+every step and its overhead exceeds a plain DFA walk) — a SUBJECT property
+compile time cannot see. The manager proposed the fix be designed against
+this decision's findings-file shape rather than a private density
+heuristic; Frank agreed with two refinements that now bind: (1) THE
+FINDINGS FILE IS A SET OF NAMED ANALYSIS VALUES, NOT A FREQUENCY TABLE —
+`freq` is the first value, not the shape; the block is an open set a
+target's config references, and a later analysis (run lengths at a
+repeat, candidate-start density, escalation rates) is a new named value
+in the same file, never a new mechanism. (2) TWO ANALYSES, KEPT APART: the
+PATTERN-BLIND analysis reads the exemplar once and serves every pattern
+(file-general facts); a PATTERN-SPECIFIC analysis is a separate,
+unrelated shape (a statistics-recording build of one pattern run over
+the exemplar for one question) — two result files, two builds, as ruled
+above, and neither grows to absorb the other. Consequences: [OPT-FIRSTSET]'s
+design note reads a named value through the findings-file consumer
+interface with a profile-less static default; the same interface serves
+[OPT-A]'s rarest-byte prior and [OPT-4]'s collapse decision; the `freq`
+block's FORMAT work stays under [DD-13b] and is not opened by this ruling.
+(3) A SET OF STATIC NAMED ANALYSES SHIPS WITH PCREC (Frank, same
+conversation: "it might be helpful to have a set of static named analysis.
+'html', 'tsv', etc. that can be referred to") — canned findings for common
+subject classes ("html", "tsv", "json", "log", "prose", ...) that a
+target's config references BY NAME, so a caller gets a subject-aware
+compile without running an exemplar analysis; a caller's own findings
+file is the same shape and overrides or extends a named one. Provenance
+follows the tree's derived-data rule (third_party/'s shape): a reference
+corpus sample compiles to the shipped table through a generator beside
+it, never hand-written. Consequence: the findings-file consumer interface
+is the DEFAULT path, not an expert path — [OPT-FIRSTSET]'s cost model may
+assume a findings value in the common case and fall back to the static
+default only when no name is given.
+(4) DESIGN CONSIDERATION, NOT A RULING (Frank, same conversation:
+"consider for the named analysis that it's implemented by the include or
+library opcode in rxt. not specifying it be so"): a named analysis may be
+a shipped .rxt file carrying findings data blocks, resolved through the
+SAME `-I` library path and include/library opcode pattern libraries use
+([DD-13b], D118's `-I`), so "html" resolves the way any library name
+resolves and a caller's own findings file is just another include — no
+parallel lookup mechanism. The design note weighs this against a
+dedicated lookup and records why, either way.
+
 ## D84 — the emitted-size cap is NOT deniable but IS overridable upward; shipped BYTES are a concern in their own right, and UNPREDICTABILITY is the worse half (Frank, 2026-08-28 ~23:1x, forty-fourth session, on r40's Q2/Q4)
 
 **Context.** The [ART-SIZE] STEP 2 design note (docs/design/
