@@ -25108,3 +25108,37 @@ the substring.
 
 NEXT (Frank rules each): the I-87 ledger vs the D119 bar → cycle-1
 executive summary; the all-axes sweep on Linux; cycle 2 on Frank's word.
+
+## 2026-09-22 (seventy-seventh session, late evening, cont.) — "Proceed on all": cycle 2 opened; I-89 sent; two design notes BUILD (byte-encoding scope); FIRSTSET's unsoundness CONFIRMED on real binaries as a DELETED match
+
+Frank: "Proceed on all" → D119 threshold RATIFIED (second addendum);
+[OPTLOOP.2.analysis] opened (the ranking waits on O-45). Lanes: linuxask
+(sonnet) drafted I-89 — the Linux executor bundle (all-axes test-axes,
+FIRSTSET F1+F2, one-pass M-B), every command verified by darwin probes;
+sent (bench 7e9680e). Its finding: the real base/twin/reseed binaries read
+0/0/0 on firstset_design §4.1's witness where the forward-only simulator
+said 0/1/0. c2design (opus): reqbyte_freq_pick.md + reqpos_2b.md, both
+BUILD — the static prior ALREADY SHIPS (prefix_k.c:91, pcrec_byte_freq_ppm,
+OFSK's consumer), so the pick is a second call, not plumbing; honest bar
+populations 0.43 (pick, one losing cell) / 1.46 (2b, four cells); one abi
+event 29→30 proposed. Frank's consideration ("the freq line and set depend
+on encoding") was sent to the lane and was NOT in its first delivery
+(change request; lesson: a mid-flight ruling to a lane is verified in the
+delivery by grep, not assumed) — the encoding round found a REAL hazard:
+the shipped prior's 0x80-0xFF half is a flat 2-ppm floor, INVERTED under
+-e utf8 (é@ would pick 0xC3 over @), so event 1 is byte-encoding only,
+fallback = today's rule; the `freq` schema lacks an encoding key (one row,
+DD-13b); [OPT-OFSK] under utf8 reads the same inverted prior today
+(speed-only, unmeasured — a utf8 subbench candidate). fsreconcile (opus):
+the UNSOUND verdict STANDS — the reverse walk vetoes the spurious
+candidate and rx_search returns 0 for the whole call: "atrue true" shipped
+(6,10) / twin 0 / re-seed (6,10); 4.03M exhaustive: 552 lost, 0 spurious;
+the repair already ships as pf_emit_ofs_reseed ([OPT-K]); I-89's F2 was
+non-discriminating → I-89a amendment (add 'atrue true', EXPECT 1,0,1).
+Merges: linuxask, c2design, fsreconcile (all docs+probes; no src). Lessons:
+(1) a soundness witness must be one whose CORRECT answer differs from the
+unsound answer — §4.1's had matches=0 either way; (2) a simulator of one
+pass of a two-pass engine predicts the wrong symptom (spurious vs deleted).
+PENDING FRANK: fifteen rulings (the notes' closing sections; the manager's
+package = every recommendation). Owed small: abi-constant citation fix in
+coding_guide §3.1 + src/gen/CLAUDE.md:25; a utf8 row in run_prechecks §3.
