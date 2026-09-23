@@ -25164,3 +25164,18 @@ families in the first release, five named for growth, multi-script subjects,
 the UTF-8 roster surface per engine asked); plan row [BENCH-UTF8] started.
 The first use of D119's open-a-new-subbench clause. Also Frank: flag bits
 spelled via ONE macro (PCREC_BIT(n)) in the widening — sent to optimpl2.
+
+**optimpl2 DELIVERED (~23:5x, head 0102ce8d, parked on lane/optimpl2):**
+[OPT-FREQPICK] + [OPT-REQPOS] 2b as ONE abi 29→30 event; axis bit 31 (bare
+`1ull` widening — Frank's PCREC_BIT-macro directive arrived after the lane's
+chain was armed: a fresh lane respells AFTER the chain completes, never
+during a running suite); prechecks 200/0; identity vs both deny flags 25,296
+cells × 2, 0 mismatches; movers: byte 475 (406 runs, 69 pick moves, none to
+a commoner byte), utf8 449 (all runs, 0 pick moves), utf8 -fno-req-run 0;
+S266-S268 written (solo runs owed); the (B) pin re-pin owed at merge. Three
+findings: a min-0 repeat between literals must BREAK run contiguity (the
+design's table lacked the arm; first build joined `/*`+`*/`); every deny bit
+moves rx_info.flags unless in the strategy_denials mask (batch 1's three bits
+still outside it — their own delivery); the utf8 zero-movers control is true
+only with -fno-req-run (the run is not encoding-gated, the pick is). Chain
+running detached: restricted test-axes → full make test (build/optimpl2_*.log).
