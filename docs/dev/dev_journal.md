@@ -25527,3 +25527,24 @@ stamps (abi 31) are the first attribution axis for every miss (A
 expected-fixed / B the pick's own defect / C unattributed + the ask). The
 durable inbox ack + asks follow the reading. admitimpl's chain: stage 5
 (full make test) since 11:11.
+
+**b2ledger MERGED (~12:4x):** the batch-2 reading (docs/dev/optloop/
+cycle2_batch2_reading.md, 835 lines + instruments + O-49/O-50 archive). 17
+misses = 6 A (fixed by admitimpl, stamp-proven) / 6 B (the run mechanism's
+own defect) / 5 C (floor noise); only 2 of 17 outside the pin pair's null
+band (131/192 artifact-configs program-identical; 34/34 named non-target
+regressions sit on them → I-104). The floor jump = the pick's '.'→'@'
+move on a one-attempt artifact (sign predicted backwards in
+reqbyte_freq_pick.md §7.1); the falsifier is anchored (no run check left
+under the fix → trigger NOT fired; keyword-prefix-order is the real
+falsifier); router's +80.8% = memchr called per SCAN-BYTE occurrence
+(124×), and the fix's one-byte scoping inverts the cost there → cycle-3
+row (run-form dominance rule). O-50 (Block D under the store's driver):
+deletion −15.35% (hyp. 2 not refuted), wrapper placement fails the literal
+test → G3 RETIRED; moot at the batch-2 pin, and the manager verified from
+the lane's stampdiff.json that the fix KEEPS nested-comment-rec's check
+(REQ_WHY emitted ×3 configs) — §6a written by the manager. Dispositions:
+FREQPICK default-on with the fix's merge as PRECONDITION; 2b default-on
+with the fix + a cycle-3 row. Lanes: inbox103 (I-102a/b acks, I-103,
+I-104; I-102 proper waits for the abi-31 pin), execsum2 (the cycle-2 exec
+summary). Plan rows appended.
