@@ -209,7 +209,7 @@ Readers found BY GREP of the current number, and their dispositions:
 | `src/gen/emit_dfa.c:51` `PCREC_ARTIFACT_ABI` | 30 → 31 |
 | `tests/codegen/run_codegen_tests.sh` `ABI_EXPECT` | 30 → 31, and the bump appended to the `[DD-14.FB]` narrative |
 | `docs/spec/match_api.md` §6 (the ONE change log, [REVW.A1]) | new `31` entry; the old `30` entry re-headed "was"; **and its "gap-free from `2` to `29`" sentence corrected to `31`** — pre-existing drift, batch 2 bumped the log and not that sentence |
-| `tests/codegen/run_recursion_identity.sh` `RECURSION_IDENTITY_FILEPIN` | **OWED to the manager at merge**, deliberately: D76's (B) pin must name a commit reachable AFTER the merge, which a lane branch's is not (opt5i/ccdiff1/optimpl2 precedent). Comparison (B) is therefore RED on this branch, by design |
+| `tests/codegen/run_recursion_identity.sh` `RECURSION_IDENTITY_FILEPIN` | **OWED to the manager at merge**, deliberately: D76's (B) pin must name a commit reachable AFTER the merge, which a lane branch's is not (opt5i/ccdiff1/optimpl2 precedent). Comparison (B) is therefore RED on this branch, by design. **It surfaces in neither `make test` nor `make test-codegen`**: `run_recursion_identity.sh` is `make test-recursion-identity`, an on-demand gate absent from `TEST_SECTIONS`, so the manager must run it deliberately after re-pinning |
 | `tests/rxtsource/run_rxtsource_tests.sh:1457` `n30` | NOT a reader — a 30-word keyword census that collides with the digit |
 | `src/gen/CLAUDE.md`, `docs/dev/decisions.md` | pointers only, by [REVW.A1]'s own cut; no digit to move |
 
@@ -267,10 +267,11 @@ All logs in `build/` of the worktree `/Users/fdicostanzo/pcrec/worktrees/admitim
 | `tests/resource/run_resource_tests.sh` | `build/res2.log` | **27/0**, 1 platform-expected darwin skip |
 | `tests/codegen/run_cpset_structure.sh` | `build/cpset3.log` | **28/0** |
 | `make test-registry CC=gcc-16` | `build/reg1.log` | **rc=0**, 649 PASS, 0 failed (PC-4 354 cells / 0 disagreements) |
+| `tests/codegen/run_prechecks.sh` re-run after every edit | `build/pc7.log` | 250/0 |
 | mech field validation (`VALIDATE_ONLY=1`) | `build/mechvalid.log` | **278 definitions valid**, 0 rows measured; S269/S270 FIELDS OK with their reach probes validated |
 | movers census ×3 axes | `build/census_{dflt,feat,utf8}.log`, `build/census2_*.tsv` | §2's table; 0 refusal mismatches, 0 unexplained movers |
 | REF-vs-TIP ANSWER differential | `build/adiff_feat.log`, `build/adiff_dflt.log` | see §5.1 |
-| `make test-codegen CC=gcc-16` | `build/codegen1.log` | see §5.1 |
+| `make test-codegen CC=gcc-16` | `build/codegen1.log` | **9/10 scripts**, sole red the standing darwin `nm arm_a.o` probe |
 | `make test-axes AXES="-fno-req-byte -fno-req-run"` | `build/axes1.log` | see §5.1 |
 | `scripts/emit_sweep.py --ref ed9c9392` | `build/sweep1.log` | see §5.1 |
 | S269 solo, S270 solo | `build/S269.log`, `build/S270.log` | see §5.1 |
@@ -292,10 +293,13 @@ Order and what to read:
    26 subjects chosen so the declined byte is sometimes absent and sometimes
    present. Read the single JSON line: `"differing": 0` is the pass.
 2. **`make test-codegen CC=gcc-16`** (`build/codegen1.log`) — the suite D94's
-   addendum names. Expect **9 of 10 scripts**, the sole red being the standing
-   darwin `nm arm_a.o` probe, and comparison (B) of
-   `run_recursion_identity.sh` RED on the un-re-pinned FILEPIN (§3, owed to
-   the manager). Verdict line: make's `*** [test-codegen] Error`.
+   addendum names. **RUN, and the verdict is in**: `run_group: 9/10 scripts
+   passed`, `make: *** [test-codegen] Error 1`, and the sole red is the
+   standing darwin `nm arm_a.o (no rx_search symbol)` probe in
+   `run_inline_capability.sh` — the one this file's 29 sibling reports already
+   carry. Log `build/codegen1.log`. `run_recursion_identity.sh` is NOT in this
+   group (it is its own on-demand target), so the owed FILEPIN does not show
+   here.
 3. **`make test-axes AXES="-fno-req-byte -fno-req-run" CC=gcc-16`**
    (`build/axes1.log`) — restricted to this change's own two axes, per
    BOILERPLATE's darwin sizing note. Expect answer-identity on both.
@@ -313,9 +317,9 @@ Order and what to read:
    (§6).
 6. **full `make test CC=gcc-16`** (`build/admitimpl_test.log`) — the last act.
    Read it by make's `*** [test-X] Error` lines, never by a `FAIL:` grep
-   (learnings §3). Completion line: `sections ran: N/M`. The standing darwin
-   red is `test-codegen`'s `nm` probe; comparison (B) is expected red until the
-   manager re-pins the FILEPIN at merge.
+   (learnings §3). Completion line: `sections ran: N/M`. The only expected red
+   is `test-codegen`'s standing darwin `nm` probe; comparison (B) is NOT in
+   `TEST_SECTIONS` and cannot appear here.
 
 ---
 

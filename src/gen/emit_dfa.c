@@ -5327,8 +5327,9 @@ static bool req_byte_dominated_by(Ctx *cx, int p, int q)
     return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
 }
 
-/* [OPT-PRECHECK-ADMIT] THE ADMISSION — the one derivation, declared far above
- * beside the readers that must agree with it.
+/* Decides whether this artifact emits a whole-window pre-check at all, and
+ * names the reason when it does not — [OPT-PRECHECK-ADMIT]'s one derivation,
+ * declared far above beside the readers that must agree with it.
  *
  * ORDER IS PART OF THE ANSWER. "No necessary byte" comes first because the
  * other two are claims ABOUT a byte; G2 comes before G1 because it is a
@@ -5347,8 +5348,8 @@ static ReqAdmit req_admit(Ctx *cx)
     return REQ_ADMIT_EMITTED;
 }
 
-/* `<PREFIX>_REQ_WHY`'s value: a CLOSED FOUR-TOKEN SET, `<PREFIX>_ENGINE_WHY`'s
- * shape. A consumer buckets on a value; prose with a byte number in it would
+/* Renders an admission verdict as the token `<PREFIX>_REQ_WHY` carries: a
+ * CLOSED FOUR-TOKEN SET, `<PREFIX>_ENGINE_WHY`'s shape. A consumer buckets on a value; prose with a byte number in it would
  * be neither greppable nor stable, and the byte is already the business of
  * `<PREFIX>_REQ_BYTE` and `<PREFIX>_DFA_PREFILTER`. */
 static const char *req_why_name(ReqAdmit a)
