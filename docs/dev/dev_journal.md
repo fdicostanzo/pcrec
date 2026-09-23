@@ -25156,3 +25156,11 @@ reqbyte_freq_pick.md §10 and reqpos_2b.md §9 stands. [OPT-FREQPICK] filed +
 started, [OPT-REQPOS] started: ONE implementation lane (optimpl2, opus), one
 abi event 29→30, parked on its branch until the bench's I-87 window has
 closed (never merge during a measurement).
+
+**Frank ~23:4x: the `utf8` SUBBENCH** — "Build the utf bench... somewhat
+complete... specify that it will grow... any functionality which might be
+affected by encoding. Classes come to mind." I-90 sent (the charter: six
+families in the first release, five named for growth, multi-script subjects,
+the UTF-8 roster surface per engine asked); plan row [BENCH-UTF8] started.
+The first use of D119's open-a-new-subbench clause. Also Frank: flag bits
+spelled via ONE macro (PCREC_BIT(n)) in the widening — sent to optimpl2.
