@@ -84,6 +84,128 @@ append-only or historical records.
   POST-RULING UPDATES section. Dispositions APPLIED; [M4.3] CLOSED
   2026-08-14 — this doc remains a design input; the applied frozen
   surface is match_api_m4.md.
+- `variables_common.md` — THE COMMON VARIABLE DESIGN (2026-09-23, lane
+  vardesign; PROPOSED, no panel yet), the shared half of the three-note set
+  Frank chartered that day: one expansion grammar `${ [scope] selector
+  [operator word] }` serving two consumers, a pattern (`variables_pattern.md`)
+  and a replacement template (`replace_design.md`), phased by
+  `variables_roadmap.md`. §1 is the bash/zsh survey, form by form, with five
+  DECLINES each carrying its own distinct reason rather than one rejection
+  wearing five hats — `:=` (assignment) is unavailable because writing to the
+  environment would give a generated matcher mutable state, which
+  `docs/spec/match_api.md` §5.3 forbids as a BINDING CONTRACT on future
+  emitters; `${n/pat/repl}` is a run-time pattern, which an AOT compiler
+  cannot have; zsh's `${(U)n}`/`${n:u}` are a parallel spelling of a form
+  already taken; arrays are a second value model. **§0 carries the three
+  findings that reshaped the charter.** (1) The replacement side's `${name}`
+  is ALREADY TAKEN and ruled — D38 made it the named capture group — so a
+  design whose two consumers are character-for-character identical is NOT
+  AVAILABLE, and what is shared is the grammar, the evaluator and the value
+  model, differing in exactly one place (which namespace a bare selector
+  resolves in, and in a pattern only one namespace exists because there is no
+  match yet). (2) **[MEASURED] `${...}` in a PATTERN is a spelling PCRE2
+  accepts and that no subject can match** — `$` asserts that the next byte is
+  a newline and `{` is not one, in every mode including `(?m)` — verified on
+  the shipped compiler (compiles, `nomatch` on every subject), against python
+  `re` over six pattern forms and eight subjects, and EXHAUSTIVELY for
+  `${n}` over every subject of length 0..7 from a targeted alphabet (zero
+  matches); corpus population 0 of 4,198 shipped `pattern` lines. The proof,
+  not the zero, is the evidence — `reqbyte_freq_pick.md`'s own lesson is that
+  a zero population is where a hazard ships unobserved — and it makes the
+  module gate `design_callout_abi.md` §3's collision rule demands protect a
+  population of patterns that could never have matched. (3) The runtime span
+  compare already exists and is NOT a literal (see `variables_pattern.md`).
+  §2 is the value model: UNSET vs EMPTY are **two** states, not three, and
+  the tree already spells both (`{-1,-1}` vs a zero-length span; `p == NULL`
+  vs `len == 0`), which is bash's own `:-`-vs-`-` distinction arriving for
+  free. §2.3 tabulates agreement and departure against `pcre2_substitute`
+  under D26, all five departures tier 3. §2.4 is the DELIBERATE ASYMMETRY in
+  the unset default, argued from blast radius: empty in a replacement (wrong
+  output — visible, recoverable), refused in a pattern (a WIDER LANGUAGE —
+  silent, and on a security boundary). §3 rules out a resolver callback with
+  a sharper reason than simplicity — the names are known at compile time, so
+  there is no run-time lookup to choose an implementation for, and D23's
+  measured 26% run-time-fold indirection is the precedent for what asking at
+  run time costs. §4.2 is the load-bearing rule: **a value is matched
+  literally, always, with no opt-in**, and a pattern-valued variable is not
+  deferred but RE-HOMED to `[LIB]`/definitions (D85/D87/D89), where it is
+  already designed.
+- `variables_pattern.md` — PATTERN VARIABLES (2026-09-23, lane vardesign;
+  PROPOSED), `[FEAT-VAR]`'s design. **The central claim: a pattern variable
+  IS a backreference whose span comes from the caller instead of from
+  `slot_values[]`.** §1 establishes it by reading the emitter: the VM has no
+  compile-time-literal `memcmp` to give a runtime operand to (literals are
+  singleton `A_CLASS` nodes emitted as per-byte `if` chains,
+  `emit_vm.c:8298-8319`; the file's one `memcmp` at `:1566` deduplicates
+  class bitmaps), while `vm_bref` (`:8103-8245`) already reads a runtime
+  `(start,end)`, calls `<prefix>_bref_match[_caseless]` through the encoding
+  seam, **returns a LENGTH rather than a boolean** because a length-changing
+  fold makes them differ (`enc_byte.c:118-127`), and meters work on partial
+  failure. So the new operand form is one seam entry pair taking a pointer
+  and a length instead of two offsets, and the emitted block is `vm_bref`'s
+  with the span source swapped — no new opcode family. §2 is the five
+  analysis declines (`reqbyte.c`, `startanch.c`, `endwin.c`, `mrl.c` join
+  `A_BREF`'s own case labels; `prefix_k.c` is structurally unreachable),
+  made safe by the no-`default:` house rule that turns a new `AKind` into a
+  COMPILE ERROR at every site, and naming `[PATFACTS]` (D120) as the row that
+  absorbs them in either order. It flags the one arm that is not free:
+  `A_BREF`'s width is bounded by the subject and `A_VAR`'s is not, so
+  anything reading "unbounded" as "at most n" needs checking, `pcrec_cwmax`
+  first. §3 shows the DFA decline costs NO code in `select_engine.c` — one
+  registry row with `engines = ENGM_VM` and `forces_registry` (SR-8) does it,
+  including the `--engine=dfa` sentence. §5 is Frank's asked-for opinion on
+  null variables: an UNSET value at a bare `${name}` is a REFUSED CALL,
+  `PCREC_ERR_UNSET_VAR` below `PCREC_ERR_FLOOR` in `PCREC_ERR_STARTPOS`'s
+  existing "caller refusal, nothing attempted" class — because rendering it
+  empty turns `^${prefix}-[0-9]+$` into `^-[0-9]+$` silently. **§6 answers
+  the caseless question against the charter's own leaning**: caseless is
+  viable NOW by the existing mechanism (`bref_match_caseless` ships, folds
+  arithmetically inline per D23, handles length-changing folds end to end —
+  `tests/utf8/axis06_caseless_fold.rxt:25-37` pins `k` matching a 3-byte
+  KELVIN SIGN, and `axis07` pins the 1:1-only negative controls), and
+  PREPROCESSING THE VALUE is the thing to decline, for a structural reason: a
+  fold is a relation between two sides, the subject side is not folded, and
+  under `utf8` there is no canonical byte string to fold to.
+- `replace_design.md` — SEARCH/REPLACE, the variable layer (2026-09-23, lane
+  vardesign; PROPOSED over a RULED baseline). **§0 exists to stop a reader
+  re-designing substitution**: `subst_template_design.md` already did and D38
+  ruled all fourteen of its questions, so §1 TABULATES what is settled (the
+  template language, the compile-time bounds check, the unset generation axis,
+  length-only output, `${!...}` reserved, `rx_renderfn`, `--replace`,
+  first-vs-global as a generation axis, the measured empty-match rule) and the
+  note adds only the caller's variable environment. Three corrections to the
+  charter's premises: **the shell style and PCRE2's `SUBSTITUTE_EXTENDED`
+  style are the SAME style** (`${n:-word}`/`${n:+yes:no}` are bash's
+  operators, already ruled in, so there is no departure to state for them);
+  **"callouts that return strings? I think we support that" is not the case**
+  — native callouts are match-or-fail only, ruled at D38 and enforced with
+  `__builtin_trap()` at every generated call site, while the string-returning
+  sibling `rx_renderfn` is ruled (D38 Q13), carried in `docs/spec/match_api.md`
+  §2, and RESERVED WITH NO PRODUCER; and **the two-call overflow protocol is
+  the one PCRE2 shape D38 deliberately declined**, replaced by one function
+  with `out == NULL` sizing that always reports the required capacity. §3 is
+  the brainstorm with a verdict each; §3.8 carries a finding neither note owns
+  both sides of — **the emitted global substitution loop is NOT
+  `match_api.md` §3.1's caller-driven find-all loop with a splice in it**,
+  because §3.1 is explicitly lossy for empty-preferring patterns (no
+  NOTEMPTY_ATSTART retry is expressible) and §6.1's emitted loop does express
+  the retry, so building it that way would give a different substitution count
+  on exactly the cells §6.1 measured.
+- `variables_roadmap.md` — the MVP AND PHASES (2026-09-23, lane vardesign),
+  Frank's 2026-09-23 charter quoted verbatim at the top. §1 collects the five
+  places the design came out differently from the charter's framing. §2 is a
+  ten-item MVP (the expansion engine, the value model, the array interface,
+  module `vars`, the five declines, the VM arm and seam pair **with caseless
+  in the MVP because it is the same work**, the entry parameter and its abi
+  ritual, the refusal classes, the replacement side, the tests) with an
+  explicit not-in-it list, and the sequencing fact that the pattern half is
+  startable immediately while the replacement half is gated on `[M4-SUBST]`.
+  §3 is seven phases, each row carrying its D77 trigger — the operator suite
+  (Frank's stated want), renderer producers (`[M4-SUBST]` landing), the
+  streaming sink (`[M3]`, the trigger `subst_template_design.md` §7.2 option
+  (c) already names), the DFA route (a measured throughput bottleneck plus the
+  placement precondition), width declarations, and `[V-E]`/`[LIB]`. §6 maps
+  the design onto five plan rows.
 - `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
