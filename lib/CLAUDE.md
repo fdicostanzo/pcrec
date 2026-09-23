@@ -351,3 +351,37 @@ OLD process-global mechanism (`pcrec_enabled_set_spec`/
 customers — the CLI's own query surfaces above and `--list-syntax`'s
 built-status probe (`src/dump/syntax_dump.c`) — none of which goes
 through `pcrec_compile()`.
+
+## [b2fix] `PCREC_BIT(n)` (2026-09-23) — the flags enum's third spelling, and bit 31 leaves the enum
+
+Frank's directive: every `PCREC_(NO|FORCE)_*` flag constant is respelled
+through a new public macro, `#define PCREC_BIT(n) (1ull << (n))`, declared
+just above the flags `enum`. Purely a SPELLING event, the third one this
+enum has had (`1u << N` -> [OPT-REQPOS]'s `1ull << N` -> this) — no value
+moved, `pcrec_options.flags` stays `uint64_t`.
+
+**`PCREC_NO_REQ_RUN` (bit 31) is a `#define`, not an enum member, and that
+is forced rather than stylistic.** `PCREC_BIT(31)` is 2^31, which
+numerically exceeds `INT_MAX` — `-Wpedantic` on gcc-16 refuses it as an
+enumerator ("ISO C restricts enumerator values to range of 'int' before
+C23"), a warning `make strict` does not enable (no `-Wpedantic` anywhere
+in this project's build discipline) but a stricter downstream embedder's
+build might hit. Pulling this one bit out of the enum also returns bits
+0-30 to plain `int` range, so the REST of the flags enum needs no GNU
+widening extension at all. Every future bit from 32 to 63 will need the
+identical `#define` treatment for the identical reason — named at the
+`#define`'s own site in `lib/pcrec.h` so nobody has to re-derive it from
+a pedantic build failure. `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM` above are
+this header's existing `#define` precedent, for an unrelated reason (an
+artifact's own `#define` of the identical name); this is a second,
+independent reason to reach the same spelling.
+
+Two checks derive their bit tables by grepping this header
+(`tests/registry/axes_registry_check.sh`, `tests/axes/run_axes.sh`, both
+hard-failing on deriving zero bits by design) and both now read EITHER
+shape — `NAME = PCREC_BIT(N)` or `#define NAME PCREC_BIT(N)` — so the
+mixed enum/`#define` population is transparent to them.
+
+**[D77] THE SUCCESSOR BEYOND 64 BITS** is a word-array bitset behind the
+same `PCREC_BIT`-family macro shape, built when the count approaches this
+word's width — the trigger, not a timeline.

@@ -171,8 +171,26 @@ assoc_new HDR_BIT   # macro -> bit
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
     assoc_set HDR_BIT "$macro" "$bit"
-done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
-          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
+# THE SPELLING IS `PCREC_BIT(N)` SINCE [b2fix] (2026-09-23) — every member
+# respelled from a bare `1ull << N` (itself the [OPT-REQPOS] (2026-09-22)
+# widening from `1u << N`; the bit after 31 cannot be spelled `1u <<` at
+# all, `1u << 32` being undefined behaviour) through the PUBLIC
+# `#define PCREC_BIT(n) (1ull << (n))` macro declared just above the enum
+# in lib/pcrec.h. No value moved either time; only the SPELLING did.
+#
+# TWO SHAPES, because bit 31 is not an enum member: `PCREC_NO_REQ_RUN =
+# PCREC_BIT(31)` would numerically exceed INT_MAX and trip `-Wpedantic`'s
+# "ISO C restricts enumerator values to range of 'int' before C23" (a
+# GNU extension `make strict` does not require but a stricter downstream
+# build might), so that one member alone is a `#define PCREC_NO_REQ_RUN
+# PCREC_BIT(31)` line, matching PCREC_ENGINE_DFA/VM's existing `#define`
+# precedent for an unrelated reason. Every future bit from 32 to 63 will
+# need the SAME `#define` shape for the identical reason (named at its
+# own site in lib/pcrec.h) — this extraction reads both shapes so it
+# keeps deriving every bit as that population grows.
+done < <(grep -oE '(PCREC_(NO|FORCE)_[A-Z_]+ *= *PCREC_BIT\([0-9]+\))|(#define PCREC_(NO|FORCE)_[A-Z_]+ +PCREC_BIT\([0-9]+\))' "$ROOT_DIR/lib/pcrec.h" \
+          | sed -E 's/^#define +//; s/ *= */ /' \
+          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) +PCREC_BIT\(([0-9]+)\)$/\1\t\3/')
 if [ "$(assoc_count HDR_BIT)" -eq 0 ]; then
     echo "axes_registry: FATAL: derived ZERO PCREC_(NO|FORCE)_* bit constants from lib/pcrec.h" >&2
     exit 1
@@ -355,8 +373,8 @@ else
 fi
 
 # NO UPPER BOUND. The LOW bound is the one doing real work -- bits below 4
-# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
-# friends) and must never be swept in -- while the top of the deny/force
+# are unrelated `PCREC_BIT(N)` constants in the same header (PCREC_CASELESS
+# and friends) and must never be swept in -- while the top of the deny/force
 # family moves every time an axis is added. It was `-le 15`, the family's
 # extent on the day this was written, and [OPT-K]'s bit 16 was therefore
 # FILTERED OUT BEFORE THE COMPARISON: `-fno-offset-skip` could have been

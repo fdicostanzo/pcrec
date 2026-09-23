@@ -9,28 +9,30 @@ and it does not get to break the build either.
 
 ## Files
 
-- **`k34_leftrec_giveup.rxt`** — [K34] (`docs/dev/known_issues.md`), landed
-  2026-08-24 by the [DD-14.D27] corpus's landing lane. Eleven cells, three
-  patterns (`(a|(?1)a)`, `(a|(?1)a)b`, `(a|(?1)a)c`): pcrec `frames`
-  gives-up where libpcre2 10.46 reaches a clean, definite NOMATCH on a
-  runaway left recursion whose callee has a non-recursive alternative (so
-  [DD-14.EMPTY]'s root-width nomatch does not apply — the language is not
-  empty). **The population is NOT empty as of this landing** — the
-  directory's "legitimate good state" note below describes the period
-  2026-08-24 (post-[DD-14.LB]) to this same day (pre-K34-park). Ratchet
-  line at landing: `still failing: 1    now passing: 0` (this file is the
-  1). The `.rxt` is GENERATED, not hand-written — see
-  `tests/recursion/d27/sr_gen.py`'s `parked=`/`parked_ref` mechanism
-  (its own docstring) and `tests/recursion/d27/CLAUDE.md`: it is rendered
-  in the SAME generator run that leaves a pointer stanza at each cell's
-  former position in `tests/recursion/d27/sr_depth.rxt`, from the identical
-  oracle-verified case data, so the pointer and this file cannot drift
-  apart — unlike `u9_atomic.rxt`/the closed `dd14_bc_open.rxt`, both
-  hand-copied from a generated corpus's oracle answers. Closes when K34's
-  loop-rule measurement (`docs/dev/known_issues.md` K34 "What is needed")
-  lands and this directory's ratchet flags it; move the cells to
-  `tests/recursion/leftrec.rxt` or `sr_depth.rxt` per the "Removing one"
-  convention below.
+- **`k34_leftrec_giveup.rxt` — GONE, 2026-09-23, by the front door
+  ([OPTLOOP.1.impl] batch 2, lane `optimpl2`; the known-fail triage, lane
+  `b2fix`).** Lived here 2026-08-24 .. 2026-09-23. [K34] (`docs/dev/
+  known_issues.md`): pcrec `frames` gave up where libpcre2 10.46 reaches a
+  clean, definite NOMATCH on a runaway left recursion whose callee has a
+  non-recursive alternative. **NOT closed by K34's own charted "What is
+  needed" (measuring PCRE2's `−52` loop rule) — D74 declined that route and
+  it is still declined.** `[OPT-REQPOS]` tier 2b (the necessary
+  CONTIGUOUS-LITERAL-RUN precheck) landed as an unrelated general
+  optimization and, as a side effect, proves every match of `(a|(?1)a)`
+  (and its `b`/`c`-tailed siblings) ends in a fixed literal REGARDLESS OF
+  RECURSION DEPTH — branch 1 IS `"a"`, branch 2 always appends a trailing
+  literal `"a"` after its call — so a subject lacking that literal (or the
+  run `"ab"`/`"ac"` once the outer literal joins it) concludes NOMATCH in
+  O(1) without ever entering the recursion. All 11 cells now pass; see
+  `docs/dev/known_issues.md` K34's CLOSED note for the full mechanism and
+  why this is a genuine resolution and not a `[MECH-REACH]` check-witness
+  artifact. The 11 cells went back to their originally-parked position in
+  `tests/recursion/d27/sr_depth.rxt`, placed BY HAND (this box's dlopen
+  shim resolves libpcre2 10.42, not the pinned 10.46 reference, so a live
+  `sr_gen.py` regeneration here would have re-derived the whole ten-file
+  D27 corpus against the wrong oracle) — `sr_gen.py`'s spec was still
+  edited so a future correctly-oracled regeneration reproduces the live
+  cells rather than re-parking them.
 - **`k49_utf8_lookbehind_retry.rxt` — GONE, 2026-09-05, by the front door.**
   It lived here for one day. Lane `utfprom` parked it at promotion (the
   `(?<!.)` mid-character retry, `(3,3)`); lane `k49fix` FIXED K49 the same

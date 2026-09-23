@@ -230,6 +230,27 @@ void pcrec_sb_field(StrBuf *sb, const char *s)
     }
 }
 
+/* Appends `n` bytes of `b` as the BODY of an emitted C string literal (the
+ * quotes are the caller's). The contract, the escape set and why the numeric
+ * escape is OCTAL rather than hex are stated once at the declaration in
+ * core/internal.h. */
+void pcrec_sb_cstr(StrBuf *sb, const unsigned char *b, size_t n)
+{
+    if (!b) return;
+    for (size_t i = 0; i < n; i++) {
+        unsigned char c = b[i];
+        switch (c) {
+        case '"':  pcrec_sb_puts(sb, "\\\""); break;
+        case '\\': pcrec_sb_puts(sb, "\\\\"); break;
+        case '?':  pcrec_sb_puts(sb, "\\?");  break;
+        default:
+            if (c >= 32 && c < 127) pcrec_sb_putc(sb, (char)c);
+            else                    pcrec_sb_printf(sb, "\\%03o", (unsigned)c);
+            break;
+        }
+    }
+}
+
 /* Appends `names[0..n)` separated by `sep`, skipping a NULL entry -- the
  * unbounded join; a fixed-capacity destination uses its own bounded join
  * instead (see the declaration's own comment). */

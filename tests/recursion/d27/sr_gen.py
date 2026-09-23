@@ -1146,9 +1146,13 @@ F_DEPTH.append(B(
 F_DEPTH.append(B(
     "(a|(?1)a)", [R],
     "the same shape UNANCHORED, where the leftmost answer is one "
-    "character and no depth is needed at all.",
-    [m("aaa"), m("a")],
-    parked=[n("bbb")], parked_ref="K34"))
+    "character and no depth is needed at all. K34 (docs/dev/"
+    "known_issues.md, CLOSED [OPTLOOP.1.impl] batch 2): 'bbb' used to "
+    "exhaust pcrec's frame budget instead of concluding nomatch; the "
+    "necessary-run precheck ([OPT-REQPOS] tier 2b) now proves every "
+    "match of this group ends in the literal 'a', so a subject with no "
+    "'a' at all concludes in O(1) without entering the recursion.",
+    [m("aaa"), m("a"), n("bbb")]))
 
 for lr in ["((?1)?a)", "((?1)*a)"]:
     F_DEPTH.append(B(
@@ -1202,13 +1206,17 @@ for tail in ["b", "c"]:
         "nomatch on the rest -- so there is no give-up to expect and none "
         "is written. The nomatch cases are the load-bearing ones: "
         "concluding NO on a left-recursive shape is harder than "
-        "concluding YES, and only the nomatch cases ask for it. K34: "
-        "pcrec currently GIVES UP (frames) on every nomatch case below "
-        "instead of concluding -- parked, not written here."
-        % (tail, tail),
-        [m("a" + tail)],
-        parked=[n("a"), n("aa"), n("aaa"), n("b"), n("")],
-        parked_ref="K34"))
+        "concluding YES, and only the nomatch cases ask for it. K34 "
+        "(docs/dev/known_issues.md, CLOSED [OPTLOOP.1.impl] batch 2): "
+        "pcrec used to GIVE UP (frames) on every nomatch case below "
+        "instead of concluding. It concludes now, but NOT by "
+        "characterising libpcre2's loop rule (D74 declined that route) "
+        "-- the necessary-run precheck ([OPT-REQPOS] tier 2b) proves "
+        "every match of this pattern contains the contiguous run 'a%s' "
+        "as its own tail, so a subject lacking that run concludes in "
+        "O(1) without ever entering the recursion."
+        % (tail, tail, tail),
+        [m("a" + tail), n("a"), n("aa"), n("aaa"), n("b"), n("")]))
 
 for q in ["(?R)*", "(?R)?", "(?R){0,2}"]:
     F_DEPTH.append(B(

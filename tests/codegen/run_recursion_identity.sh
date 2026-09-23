@@ -897,7 +897,29 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # gate is therefore RED on the lane branch BY CONSTRUCTION, with the exact
 # message "the emitted scaffolding changed: bump `abi` ... and re-pin
 # comparison (B)" -- which is the gate working, not a defect.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ab2464e}"   # [OPTLOOP.1.impl] batch 1, abi 28->29: (B) re-pinned to the merge 6ab2464e (D76; the first pin AFTER D118, so the reference speaks --pattern — see the grammar probe below)
+#
+# [OPTLOOP.2] batch 2, 2026-09-22 — abi 29 -> 30. THE NECESSARY LITERAL RUN
+# AND ITS SCAN PICK (D119). Every artifact of both engines gains the
+# `<PREFIX>_REQ_RUN` stamp line in the SHARED PROLOGUE; on the run analysis's
+# own population the search entry's three-line `memchr` pre-check becomes a
+# ~ten-line scan loop, and on the disjoint byte-only population the decimal
+# inside that `memchr` moves where [OPT-FREQPICK] chooses a rarer member of
+# the same necessary set.
+#
+# **(A) IS UNTOUCHED, and for batch 1's own reason rather than a new one.**
+# The stamp is a `#define` in the prologue, above `goto <p>_L0;` and therefore
+# outside `prog_region()`; the scan loop replaces text that already sat in the
+# SEARCH ENTRY, above the scan/attempt machinery, so nothing the region reads
+# moves. MEASURED, not argued: comparison (A) reads zero movers on every
+# label.
+#
+# **(B) IS LEFT AT THE PRE-BUMP VALUE AND IS OWED TO THE MANAGER**, on the
+# recorded precedent of opt5i, ccdiff1, [EMIT-VERB], [REL-1.4] and batch 1
+# itself: D76's pin must name a commit REACHABLE AFTER THE MERGE, which a lane
+# branch's own commit is not. This gate is therefore RED on `lane/optimpl2` BY
+# CONSTRUCTION, with the exact message "the emitted scaffolding changed: bump
+# `abi` ... and re-pin comparison (B)" — the gate working, not a defect.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ab2464e}"   # [OPTLOOP.1.impl] batch 1, abi 28->29: (B) re-pinned to the merge 6ab2464e (D76; the first pin AFTER D118, so the reference speaks --pattern — see the grammar probe below). [OPTLOOP.2] batch 2 (abi 29->30) LEAVES IT HERE DELIBERATELY: OWED to the manager, who re-pins it to THIS batch's merge commit.
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

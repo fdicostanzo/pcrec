@@ -220,24 +220,43 @@ t_start=$(date +%s)
 # bit -> macro name, e.g. bits[4]=PCREC_NO_POSSESSIFY. Scoped to 4..31.
 #
 # THE LOW BOUND IS THE LOAD-BEARING ONE and the high one is not: bits below 4
-# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
-# friends) and must never be swept in, while the top of the deny/force family
-# simply moves every time an axis is added. It was written as `4..15` — the
-# family's extent on the day it was written — and [OPT-K]'s bit 16 was
+# are unrelated `PCREC_BIT(N)` constants in the same header (PCREC_CASELESS
+# and friends) and must never be swept in, while the top of the deny/force
+# family simply moves every time an axis is added. It was written as `4..15`
+# — the family's extent on the day it was written — and [OPT-K]'s bit 16 was
 # therefore DERIVED AWAY SILENTLY: the new axis would have been absent from
 # the sweep with no failure, which is exactly the "an axis shipped without its
 # five things" gap [CHK-2] exists to close, arriving through [CHK-2]'s own
-# instrument. 31 is the width of the `unsigned` the flags live in, so it needs
-# no maintenance; the cross-check below catches a bit that has a constant and
-# no doc heading either way.
+# instrument. 63 is the width of the `uint64_t` `pcrec_options.flags` has always
+# been, and since [OPT-REQPOS] widened the enum's spelling to `1ull << N`
+# (itself since respelled `PCREC_BIT(N)` at [b2fix], 2026-09-23) it is also
+# the width the CONSTANTS can name — so the bound needs no maintenance; the
+# cross-check below catches a bit that has a constant and no doc heading either
+# way. (It read 31 until 2026-09-22, when `PCREC_NO_REQ_RUN` took the last
+# `1u <<` bit and the enum had to widen.)
 declare -A bit_macro=()
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
-    if [ "$bit" -ge 4 ] && [ "$bit" -le 31 ]; then
+    if [ "$bit" -ge 4 ] && [ "$bit" -le 63 ]; then
         bit_macro[$bit]="$macro"
     fi
-done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
-          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
+# `PCREC_BIT(N)`: the flags enum is spelled through this macro since
+# [b2fix] (2026-09-23), respelling [OPT-REQPOS]'s (2026-09-22) bare
+# `1ull << N` — itself a widening from `1u << N`, because bit 31 is the
+# last bit an `unsigned` constant can name. This extraction hard-fails on
+# deriving ZERO bits below, which is what makes reading only the current
+# spelling safe rather than sloppy — a tree still on the bare `1ull << N`
+# or `1u << N` spelling fails LOUD here, not silently.
+#
+# TWO SHAPES: `NAME = PCREC_BIT(N)` (an enum member, bits 0-30) and
+# `#define NAME PCREC_BIT(N)` (bit 31 on — PCREC_NO_REQ_RUN's own value
+# numerically exceeds INT_MAX, which -Wpedantic refuses as an enumerator
+# before C23, so [b2fix] pulled it out of the enum; every future bit will
+# need the same #define shape for the identical reason). Both are read so
+# this extraction keeps deriving every bit as that population grows.
+done < <(grep -oE '(PCREC_(NO|FORCE)_[A-Z_]+ *= *PCREC_BIT\([0-9]+\))|(#define PCREC_(NO|FORCE)_[A-Z_]+ +PCREC_BIT\([0-9]+\))' "$ROOT_DIR/lib/pcrec.h" \
+          | sed -E 's/^#define +//; s/ *= */ /' \
+          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) +PCREC_BIT\(([0-9]+)\)$/\1\t\3/')
 
 n_bits=${#bit_macro[@]}
 if [ "$n_bits" -eq 0 ]; then
@@ -317,7 +336,7 @@ reg_bits="$(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n -u)"
 if [ "$doc_bits" != "$reg_bits" ]; then
     echo "run_axes.sh: FATAL: tuning.md §2's documented bits and lib/pcrec.h's derived bits DISAGREE" >&2
     echo "  documented (tuning.md \"(bit N)\" mentions): $(echo "$doc_bits" | tr '\n' ' ')" >&2
-    echo "  derived    (lib/pcrec.h 1u << N, bits 4-31): $(echo "$reg_bits" | tr '\n' ' ')" >&2
+    echo "  derived    (lib/pcrec.h PCREC_BIT(N), bits 4-63): $(echo "$reg_bits" | tr '\n' ' ')" >&2
     echo "  a bit in one column and not the other means a new axis shipped with no" >&2
     echo "  doc heading, or a heading survived its axis's removal" >&2
     exit 1

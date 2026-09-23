@@ -2006,13 +2006,42 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `28` while the three narrative copies
+which is why it is gap-free from `2` to `29` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `29` on every artifact today (`[OPTLOOP.1]` batch 1
+- **`rx_info.abi` is `30` on every artifact today (`[OPTLOOP.2]` batch 2
+  bumped it from 29, D119: THE NECESSARY LITERAL RUN AND ITS SCAN PICK.** One
+  bump for two mechanisms, which land as one event because their populations
+  overlap and two bumps would re-pin the same manifests twice
+  (`docs/design/reqpos_2b.md` §7 item 5). EVERY artifact of BOTH engines gains
+  one shared-prologue stamp line, `<PREFIX>_REQ_RUN` — the run's bytes as
+  lowercase hex, then `@`, then the scanned member's index within them, or the
+  token `"none"` at `L < 2`, the same `"none"`-member shape its two siblings
+  have and for the same reason. On the population the run analysis reaches
+  (18.6% of pcrec's own `.rxt` corpus) the three-line `memchr` pre-check
+  `abi` 29 described is REPLACED by a scan loop of about ten lines: one
+  `memchr` for the run's rarest member, one constant-length `memcmp` of the
+  run at each hit, and a window guard of one or two conjuncts depending on
+  whether the scanned member is the run's first byte. On the DISJOINT
+  population where the pattern has a necessary byte and no run, the emitted
+  text is that same three-line check with, on 13.60% of the corpus, a
+  DIFFERENT decimal in it: `[OPT-FREQPICK]` chooses the member of the
+  necessary set that a subject is least likely to contain rather than PCRE2's
+  rightmost one, and PCRE2's rule survives as the tiebreak. No struct offset
+  moves, no `rx_info` member is added or changed, and NO ANSWER MOVES: every
+  byte of every run is a byte every match must contain, so both the wider
+  check and the different pick can move a speed and nothing else.
+  `-fno-req-run` restores `abi` 29's emitted text on the run population
+  exactly, and `-fno-req-byte` restores the pre-batch-1 text on both
+  (`tuning.md` §2.27-§2.28). The flags enum in `lib/pcrec.h` is respelled
+  `1ull << N` in the same change, because `PCREC_NO_REQ_RUN` is bit 31 and
+  `1u << 32` is undefined behaviour; no VALUE moved and `pcrec_options.flags`
+  was already `uint64_t`.
+
+- **`rx_info.abi` was `29` (`[OPTLOOP.1]` batch 1
   bumped it from 28, D119: THE THREE WHOLE-WINDOW PRE-CHECKS.** One bump for
   three mechanisms, because they are one emitted-scaffolding event on one
   landing. EVERY artifact of BOTH engines gains two shared-prologue stamp

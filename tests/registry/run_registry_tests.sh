@@ -545,17 +545,22 @@ fi
 # from. The D94 ADDENDUM'S SHAPE a third time: this pin cites no axis, no
 # macro and no abi digit, so the bump's own grep sweep cannot reach it, and
 # it moved anyway; the registry run is what COUNTS over the area touched.
+#
+# 120 -> 123 at `[OPTLOOP.2]` batch 2 (2026-09-22): `req-run` is one more axis
+# self-registering the same triple. A FOURTH instance of the addendum's shape,
+# found the same way — by running the suite that counts, not by grepping the
+# abi digit this line still does not cite.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 120 ]; then
+if [ "$axesn" -ne 123 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 120." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 123." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (120 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (123 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 120 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 123 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

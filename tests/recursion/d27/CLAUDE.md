@@ -61,23 +61,52 @@ not by moving files. Worth knowing if a future D27 author's tooling is
 landed the same way: the CELL's own relative-path arithmetic does not
 survive the move by construction and needs the identical fix.
 
-## K34: eleven cells parked, not written here
+## K34 — CLOSED 2026-09-23 (lane b2fix, `[OPTLOOP.1.impl]` batch 2); WAS "eleven cells parked, not written here"
 
-`docs/dev/known_issues.md` K34: pcrec `frames` gives up where libpcre2
-10.46 reaches a clean, definite NOMATCH on a runaway left recursion whose
-callee has a non-recursive alternative (`(a|(?1)a)` and its `b`/`c`-tailed
-siblings in `sr_depth.rxt` — NOT the empty-language `((?1)a)`/`(?R)a`
-family, which [DD-14.EMPTY] answers correctly and stays live here). `B()`'s
-`parked=`/`parked_ref` keyword arguments (see `sr_gen.py`'s own docstring)
-move a block's affected CASES — not necessarily the whole block, since a
-K34 pattern's MATCH cells are unaffected — out of the live `.rxt` and into
-`tests/known_fail/k34_leftrec_giveup.rxt`, rendered by `emit_known_fail`
-in the SAME run through the SAME `render_cases` oracle-verifier every live
-cell uses, with a pointer comment left at each cell's former position. One
-generator run produces both outputs from one in-memory case list, so they
-cannot drift apart. Regenerating (`python3 sr_gen.py`) reproduces both
-byte-for-byte (idempotency checked both directions, not just on the live
-`.rxt` files).
+`docs/dev/known_issues.md` K34: pcrec `frames` USED TO give up where
+libpcre2 10.46 reaches a clean, definite NOMATCH on a runaway left
+recursion whose callee has a non-recursive alternative (`(a|(?1)a)` and its
+`b`/`c`-tailed siblings in `sr_depth.rxt` — NOT the empty-language
+`((?1)a)`/`(?R)a` family, which [DD-14.EMPTY] answers correctly and stayed
+live here throughout). **Closed by an unrelated general optimization, not
+by K34's own charted "measure PCRE2's loop rule" route (D74 declined that
+route and it is still declined)**: `[OPT-REQPOS]` tier 2b's necessary
+CONTIGUOUS-LITERAL-RUN precheck proves every match of this pattern family
+ends in a fixed literal regardless of recursion depth (branch 1 IS `"a"`;
+branch 2 always appends a trailing literal `"a"` after its call), so a
+subject lacking that literal/run concludes NOMATCH in O(1) without entering
+the recursion. See `docs/dev/known_issues.md` K34's CLOSED note for the
+full mechanism.
+
+The eleven cells are LIVE in `sr_depth.rxt` again, at their original
+positions. `sr_gen.py`'s spec had the `parked=`/`parked_ref="K34"` keyword
+arguments removed from both `B()` calls that carried them (the
+`(a|(?1)a)` block and the `for tail in ["b", "c"]` loop), so a future
+regeneration reproduces the live cells rather than re-parking them — but
+the CURRENT `sr_depth.rxt` lines were placed BY HAND, copied verbatim from
+the already-oracle-verified `tests/known_fail/k34_leftrec_giveup.rxt`
+cells, rather than by actually running `python3 sr_gen.py`: this box's
+dlopen shim resolves libpcre2 **10.42** (`sr_oracle.version()`), not the
+pinned 10.46 reference, so a live regeneration here would have silently
+re-derived the WHOLE ten-file D27 corpus against the wrong oracle. A
+future regeneration from a 10.46-correct box should reproduce this file's
+K34 lines byte-for-byte; if it does not, that is itself a finding.
+
+**The mechanism paragraph below (`B()`'s `parked=`/`parked_ref`) is
+UNCHANGED and still correct** — it describes the generator's PARKING
+mechanism in general, which a future defect may use again; K34 simply no
+longer exercises it. `B()`'s `parked=`/`parked_ref` keyword arguments (see
+`sr_gen.py`'s own docstring) move a block's affected CASES — not
+necessarily the whole block, since a K34 pattern's MATCH cells were never
+affected — out of the live `.rxt` and into
+`tests/known_fail/<parked_ref-derived file>.rxt`, rendered by
+`emit_known_fail` in the SAME run through the SAME `render_cases`
+oracle-verifier every live cell uses, with a pointer comment left at each
+cell's former position. One generator run produces both outputs from one
+in-memory case list, so they cannot drift apart. Regenerating
+(`python3 sr_gen.py`) reproduces both byte-for-byte (idempotency checked
+both directions, not just on the live `.rxt` files) — ON A BOX WHOSE
+RESOLVED LIBPCRE2 IS THE 10.46 REFERENCE, which this box is not.
 
 ## A NEW finding at this same landing — RULED by the manager, corrected
 

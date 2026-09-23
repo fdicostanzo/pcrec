@@ -2175,7 +2175,11 @@ append-only or historical records.
   scope.
 
 - `reqbyte_freq_pick.md` — **`[OPTLOOP.2]` cycle-2 design note, lane
-  `c2design`, 2026-09-22** (design only; ratification and a D6 panel owed):
+  `c2design`, 2026-09-22.** RATIFIED by Frank 2026-09-22 (~23:2x, all nine
+  questions per recommendation) and **IMPLEMENTED on `lane/optimpl2` the same
+  night, as one `abi` 29 -> 30 event with `reqpos_2b.md`** — see
+  `docs/dev/lanes/optimpl2_report.md` for the delivery, the measured mover
+  census and the three findings the build produced against the notes:
   `[OPT-REQBYTE]`'s emitted byte chosen by ARGMIN over a byte-frequency prior
   instead of by PCRE2's rightmost rule, which survives as the tiebreak. Read
   §0 first — **the static prior ALREADY SHIPS and is already this mechanism's
@@ -2231,8 +2235,11 @@ append-only or historical records.
   generator and one provenance record per subject class serving every
   encoding, instead of an N×M grid.
 - `reqpos_2b.md` — **`[OPTLOOP.2]` cycle-2 design note, lane `c2design`,
-  2026-09-22** (design only; ratification and a D6 panel owed):
-  `[OPT-REQPOS]` tier 2b, **VERDICT BUILD**. Read §0 first — it is not the
+  2026-09-22.** RATIFIED by Frank 2026-09-22 (all six §9 questions per
+  recommendation, plus the truncation-window ruling of the same evening) and
+  **IMPLEMENTED on `lane/optimpl2`** as one `abi` event with
+  `reqbyte_freq_pick.md`; `docs/dev/lanes/optimpl2_report.md` carries the
+  delivery. `[OPT-REQPOS]` tier 2b, **VERDICT BUILD**. Read §0 first — it is not the
   mechanism the plan row describes. **It is not a start bound**: the run's
   own internal delta is all the compare needs, so none of the census's
   `dmin`/`dmax`/`run_pmin`/`run_pmax` columns is read, four of the fourteen
@@ -2282,6 +2289,19 @@ append-only or historical records.
   run's LEFTMOST member, which is what the plan row already specifies for the
   no-findings-file case), while the RUN itself is encoding-sound by
   construction and `-e utf8` RAISES its population.
+  **THREE OF THE NOTES' OWN SENTENCES DID NOT SURVIVE THE BUILD**, each
+  recorded in the implementation report rather than edited into the notes
+  (D80: a design document's own revision is its own change): §5.5 arm 2's
+  `-fno-req-run` BYTE IDENTITY was unavailable until the new bit joined
+  `rx_info.flags`' `strategy_denials` mask — and the three `[OPTLOOP.1]`
+  batch-1 bits are still outside it, so each of them moves five bytes of
+  `rx_info.flags` on every artifact including ones it cannot act on;
+  `reqbyte_freq_pick.md` §8 item 4's "`-e utf8` reads ZERO movers" is
+  FALSIFIED by the combined event and true only with `-fno-req-run`, because
+  the RUN is deliberately not encoding-gated while the PICK is; and §2.2's
+  `A_REP` table entry says nothing about a min-0 repeat's contiguity, which is
+  the one arm of the run walk where the conservative answer is load-bearing
+  rather than merely tidy.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

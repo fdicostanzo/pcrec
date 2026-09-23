@@ -409,6 +409,25 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `pcrec_sb_row` is `pcrec_sb_join` with `"\t"`, `pcrec_sb_text` per cell and a newline — the
   COUNT is its point, since a row whose field count differs from its header's
   is the defect the table contract's integrity rule exists to catch.
+
+  **[OPT-REQPOS] tier 2b (2026-09-22) ADDS A THIRD VOCABULARY,
+  `pcrec_sb_cstr`** — the body of an emitted C STRING LITERAL, quotes left to
+  the caller. It joins the layer rather than living in the emitter because the
+  tree will want it again the first time anything else emits pattern-derived
+  bytes outside a comment (`coding_guide` §4.1's "common extracts FIRST"); the
+  necessary-run pre-check is simply the first emitter to do so. Its escape set
+  is not one this project chooses: the frame it protects is a C TOKEN read by
+  the ARTIFACT's own compiler, so `"` and `\` must be escaped or the token ends
+  early, and `?` is escaped so no pair this function writes can begin a
+  trigraph. **The numeric escape is OCTAL, and that is the load-bearing
+  choice**: a hex escape in C consumes as many hex digits as follow it, so
+  `\x0a` immediately before a literal `b` is ONE character with the value 0xab
+  — a silent corruption of the next byte, inside a literal whose whole job is
+  to be compared against a subject. An octal escape takes at most three digits
+  (C11 6.4.4.4), so a fixed three-digit `\NNN` is self-terminating against any
+  following byte, digit or not. Verified live on a run containing `"`, `\`, a
+  NUL, three control bytes and an `0x01` followed by the literal `2`, each
+  compiling clean under the harness's own `-Wall -Wextra -Werror`.
   **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
   NULL is a legitimate state here. `src/dump/syntax_dump.c` builds
   `--features`/syntax-query text in bare `StrBuf sb = {0}` locals belonging to

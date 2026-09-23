@@ -29,8 +29,33 @@ scaffolding version, which changes far more often than a release does. See
   - `-fno-req-byte` — where every match must contain some literal byte, a
     subject without that byte is rejected in one `memchr` pass. PCRE2 records
     the same fact as `PCRE2_INFO_LASTCODEUNIT`. Stamp `<PREFIX>_REQ_BYTE`.
+- `-fno-req-run` — the same fact at WORD grain
+  (`docs/spec/tuning.md` §2.28): where every match must contain a RUN of two
+  or more contiguous literal bytes, the search scans for the run's rarest
+  member and compares the whole run at each hit, so a subject containing the
+  byte but not the run is rejected in one pass where the byte alone could not.
+  `-fno-req-byte` denies this with it; denying this alone leaves the one-byte
+  check standing. Stamp `<PREFIX>_REQ_RUN`.
 
 ### Changed
+
+- Which member of the necessary set `-fno-req-byte`'s pre-check tests is now
+  the one a subject is least likely to contain, chosen by pcrec's shipped
+  static byte-frequency prior rather than by PCRE2's rightmost rule, which
+  survives as the tiebreak. Under any encoding the prior is not keyed to the
+  rightmost rule is the whole answer, unchanged. No axis and no answer moves:
+  every member is a byte every match must contain.
+- `rx_info.abi` 29 → 30: every artifact of both engines carries one more stamp
+  line (`<PREFIX>_REQ_RUN`), the run analysis's own population carries a scan
+  loop in place of the one-byte `memchr`, and the byte that `memchr` tests
+  moves on part of the rest. No struct offset moves and no `rx_info` member
+  changes.
+- `lib/pcrec.h`'s option-flag constants are spelled `1ull << N` rather than
+  `1u << N`. No value moved and `pcrec_options.flags` has always been
+  `uint64_t`; bit 31 is the last bit an `unsigned` constant can name.
+- `lib/pcrec.h`'s option-flag constants are respelled again, through a new
+  public macro `#define PCREC_BIT(n) (1ull << (n))`, every member now
+  `PCREC_BIT(N)` rather than a bare `1ull << N`. Still no value moved.
 
 - `rx_info.abi` 28 → 29: every artifact of both engines carries two more
   stamp lines, every VM artifact a third, and the three analyses' own

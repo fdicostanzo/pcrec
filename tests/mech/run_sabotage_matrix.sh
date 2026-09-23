@@ -900,6 +900,26 @@ run_one() {
         # measured at all. A checker whose subject is its own text is this
         # tree's oldest shape, and it found a new place to live.
         #
+        # [b2fix, 2026-09-23] THE SAME TRAP HAS A SECOND SITE: `SAB_DESC`
+        # ITSELF, since the trailer's `unreached`/`unexpected`/`anomalies`/
+        # `oracle_skipped` counters below are ALSO a `grep -c` over the WHOLE
+        # ROW LINE (id/file/edit/suites/results/verdict, tab-joined), not just
+        # the verdict column -- found live on S268, whose own `SAB_DESC`
+        # prose used the word "UNREACHED" to explain WHY its plant's witness
+        # was chosen (a corpus-reachable general form, in place of a
+        # bespoke one that would have needed a witness nothing in the tree
+        # supplies), which alone inflated the trailer's `unreached` count to
+        # 1 on a row whose real verdict was DETECTED with no anomaly. Fixed
+        # at S268's own `SAB_DESC` wording rather than at the extraction
+        # (the established convention here, this comment's own precedent);
+        # any future `SAB_DESC`/`SAB_DOC_FIGURE` must avoid `UNEXPECTED`,
+        # `UNDETECTED`, `ANOMALY`, `APPLY-FAILED`, `BUILD-FAILED`, `FATAL`,
+        # `SKIPPED-no-oracle`, `UNREACHED` and `NOW REACHED` as prose for the
+        # identical reason -- a ROBUST fix would anchor each `grep -c` on the
+        # verdict column alone (`awk -F'\t' '{print $NF}'` before the grep,
+        # here and at every trailer counter below); not built here, named as
+        # the trigger for whoever next has cause to touch this section (D77).
+        #
         # (i) THE INSTRUMENT REQUIREMENT, first, because an unsatisfiable
         # instrument makes the reach question moot: nothing measurable follows
         # either way. Frank's ruling 2026-08-25 -- when the run cannot satisfy

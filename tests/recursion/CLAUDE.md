@@ -321,13 +321,17 @@ re-measuring it.
   2. **The depth ceiling is n = 342 MATCHES / n = 343 GIVES UP** — the
      extract said "gives up at 342" in two places; both corrected (D73's
      ruling number is unchanged, only the boundary's exact side).
-  3. **K34** (`docs/dev/known_issues.md`): pcrec `frames` gives up where
-     libpcre2 CONCLUDES a clean nomatch, on a runaway left recursion whose
-     callee has a non-recursive alternative — `(a|(?1)a)` on `"bbb"`;
-     `(a|(?1)a)b`/`(a|(?1)a)c` on `"a"`/`"aa"`/`"aaa"`/`"b"`/`""`. **Eleven
-     cells parked** in `tests/known_fail/k34_leftrec_giveup.rxt` (see
-     `d27/CLAUDE.md`'s own K34 section and `d27/sr_gen.py`'s `parked=`
-     mechanism); 0 corpus-wrong at every stage.
+  3. **K34** (`docs/dev/known_issues.md`) — **CLOSED 2026-09-23** (lane
+     b2fix, `[OPTLOOP.1.impl]` batch 2, unrelated to this entry's own
+     "what was needed"): pcrec `frames` USED TO give up where libpcre2
+     CONCLUDES a clean nomatch, on a runaway left recursion whose callee
+     has a non-recursive alternative — `(a|(?1)a)` on `"bbb"`;
+     `(a|(?1)a)b`/`(a|(?1)a)c` on `"a"`/`"aa"`/`"aaa"`/`"b"`/`""`. The
+     eleven cells are LIVE again in `sr_depth.rxt` (see `d27/CLAUDE.md`'s
+     own K34 section and `docs/dev/known_issues.md` K34's CLOSED note for
+     the mechanism — a necessary-run precheck proves every match ends in
+     a fixed literal, unrelated to characterising PCRE2's own loop rule);
+     0 corpus-wrong at every stage.
   4. **The inverse**: `((?1)?a)`/`((?1)*a)` on `"a"` — pcrec ANSWERS (0,1)
      where libpcre2 returns −52. Reported, not encoded (no expectation is
      writable against a give-up the oracle side does not share); a

@@ -811,11 +811,56 @@ decides whether to perform it — and then run the row through
     INTERSECTION rule (`(?i)é` folds to {é, É}, whose two-byte encodings
     share only their LEAD byte 0xC3) were exercised only by the identity
     sweep until now. 113 checks -> 123.
-  - **WHY IT IS A STRUCTURAL GATE AT ALL.** Two of the three mechanisms have
-    NO answer-level detector anywhere in the tree: [OPT-ANCHOR-VM]'s bound
-    and [OPT-REQBYTE]'s pre-check each remove only work the artifact would
-    have done and thrown away, so a plant in the sound direction changes run
-    TIME and nothing a caller can observe. This file is where they are
+  - §3 GAINED A SECOND STAMP PER ROW at `[OPTLOOP.2]` batch 2 (2026-09-22):
+    `<PREFIX>_REQ_RUN` is asserted beside `<PREFIX>_REQ_BYTE` on every §3.1
+    and §3.6 witness, because the two facts are now chosen TOGETHER — a
+    pattern with a run of two or more bytes emits the run check and its
+    `REQ_BYTE` is the run's own scan member, while a pattern with a byte and
+    no run emits the one-byte check with the whole set's own pick. A row
+    asserting one stamp could not tell those apart, and the population split
+    is what the whole section turns on.
+  - §3.7 `[OPT-FREQPICK]` — WHICH member of the necessary set the `memchr`
+    tests. Eight witnesses, every expected byte a LITERAL hand-derived from
+    the shipped prior and quoted with its ppm, never recomputed here (a check
+    that recomputed the rule from the table it checks would pass under any
+    table, `learnings.md` §3). **BOTH DIRECTIONS**: four rows whose minimum is
+    NOT the rightmost member, so a compiler that kept PCRE2's rule fails them;
+    four whose minimum IS, so a compiler that always returned the largest byte
+    passes those and must be caught by the first four; and one of the eight is
+    a TIE at the minimum, which a rule breaking ties by "largest byte" rather
+    than by the threaded pick gets wrong. §3.7b asserts its own population is
+    RUN-FREE, without which the arm would silently be reading the run's scan
+    index instead; §3.7c asserts the encoding decline on a pattern where the
+    two rules DISAGREE, without which the decline could be a comment.
+  - §4 `<PREFIX>_REQ_RUN` (`[OPT-REQPOS]` tier 2b) — the run's own emitted
+    scan loop: the constant-length `memcmp` with its run, its length and its
+    OFFSET (where a sign error would live, and where no answer check would see
+    it on a subject that happens to start the run at the scan hit), the
+    compare's SENSE asserted separately from both, the scan byte, and — the
+    arm that catches what no grep can — a compile of every run artifact under
+    the harness's OWN `-Wall -Wextra -Werror`, which is the live detector for
+    the two emitted-text hazards this mechanism introduces (a `-Wtype-limits`
+    always-true guard at scan index 0, and a `-Wcomment` pair inside the run's
+    own comment text — `nested-comment-rec`'s actual run is a star then a
+    slash). §4.2 asserts the two shapes are EXCLUSIVE in both directions,
+    because an artifact emitting both would be sound and twice as slow. §4.3
+    carries the positive control an absence assertion needs. §4.5 pins the
+    truncation window, computed BY HAND from the prior with all four candidate
+    sums written out, so a rule that took the leftmost window instead is
+    caught. §4.4b is the arm that makes "81.4% of the corpus is untouched" a
+    checked fact: an artifact with no run must be BYTE-IDENTICAL under
+    `-fno-req-run`, which is why that bit joined `rx_info.flags`'
+    `strategy_denials` mask. **`grep -qF`, not a BRE, on every needle
+    containing run bytes**: a run beginning with `*` makes the preceding quote
+    a QUANTIFIER, measured on the `*/x` row, which read NOMATCH against text
+    that was verbatim present.
+  - **WHY IT IS A STRUCTURAL GATE AT ALL.** Three of the five mechanisms it
+    now guards have NO answer-level detector anywhere in the tree:
+    [OPT-ANCHOR-VM]'s bound, [OPT-REQBYTE]'s pre-check and
+    [OPT-FREQPICK]'s CHOICE of member each remove only work the artifact
+    would have done and thrown away — or, in the pick's case, choose among
+    bytes that are all equally sound — so a plant in the sound direction
+    changes run TIME and nothing a caller can observe. This file is where they are
     defended, and `tests/mech`'s `prechecks` arm is where that is measured.
   - **EVERY SECTION CARRIES ITS OWN POPULATION FLOOR (K35)**, because "every
     artifact that stamps X also contains Y" is vacuously green when nothing

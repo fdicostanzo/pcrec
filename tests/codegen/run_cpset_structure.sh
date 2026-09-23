@@ -530,6 +530,16 @@ else
 fi
 
 # THE MANIFEST IS WRITTEN OUT, which is the deliverable stage 2 diffs against.
+# RE-RECORDED 2026-09-22 at `[OPTLOOP.2]` batch 2 (abi 29 -> 30), the whole
+# manifest's SIXTH such event and the third from this reader class: all twelve
+# `EMITTED_BYTES` rows moved and NONE of them cites an abi digit, so the bump's
+# own grep sweep could not reach them (`battriage_report.md`'s SECOND READER
+# CLASS). The diff was read row by row rather than bumped: every delta is one of
+# two numbers and both are accounted for line by line — +26 on the eight rows
+# that gain only the `#define <PREFIX>_REQ_RUN "none"` stamp line, and
+# +421/+423/+426/+458 on the four whose search entry's three-line `memchr`
+# pre-check becomes the run scan loop, the spread being the run's own length in
+# the emitted comment, the string literal and the guard.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

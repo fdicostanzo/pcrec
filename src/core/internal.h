@@ -179,6 +179,31 @@ void pcrec_sb_text (StrBuf *sb, const char *s);              /* NUL-terminated *
 void pcrec_sb_textn(StrBuf *sb, const char *s, size_t n);    /* n bytes, may not be */
 void pcrec_sb_field(StrBuf *sb, const char *s);
 
+/* A THIRD VOCABULARY, and it protects something the two above do not: the
+ * body of an EMITTED C STRING LITERAL ([OPT-REQPOS] tier 2b, the first
+ * emitter to write pattern-derived bytes outside a comment). `n` bytes of
+ * `b` are appended as the INSIDE of a `"..."`, with the quotes left to the
+ * caller.
+ *
+ * WHY IT IS NOT `pcrec_sb_text` WITH ANOTHER CASE. The frame it protects is a
+ * C TOKEN read by the artifact's own compiler, not a line in a TSV, so the
+ * escape set is the one the C standard fixes and not one this project
+ * chooses: `"` and `\` must be escaped or the token ends early, and `?` is
+ * escaped so no byte pair this function writes can begin a trigraph.
+ *
+ * OCTAL, NOT `\xNN`, AND THAT IS THE LOAD-BEARING CHOICE. A hex escape in C
+ * consumes as many hex digits as follow it, so `\x0a` immediately before a
+ * literal `b` is ONE character escape with the value 0xab — a silent
+ * corruption of the next byte, in an emitted literal whose whole job is to
+ * be compared against a subject. An octal escape takes AT MOST three digits
+ * (C11 6.4.4.4), so a fixed three-digit `\NNN` is self-terminating against
+ * any following byte, digit or not.
+ *
+ * NOTHING HERE IS ABOUT READABILITY. A printable byte prints as itself so a
+ * human reading the artifact sees the run; everything else goes out by
+ * number, and the artifact's compiler is the only reader that must agree. */
+void pcrec_sb_cstr(StrBuf *sb, const unsigned char *b, size_t n);
+
 /* `n` names joined by `sep`. Cannot truncate, cannot reorder, cannot drop —
  * which is the whole reason it exists; see enabled.c/enc.c for the bounded
  * joins that could do all three. A NULL name contributes nothing but still
@@ -2198,6 +2223,28 @@ enum {
     SDR_NO_PREMUL   = 2,
     SDR_MAX         = 2
 };
+
+/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN, in the bounded form the
+ * emitted compare needs: `len` contiguous bytes every match of the pattern
+ * must contain, and the INDEX within them of the one the emitted `memchr`
+ * scans for.
+ *
+ * `len == 0` is the decline and is the safe direction, exactly as
+ * `Job.req_byte`'s -1 is: no run, no compare, the artifact is the shape it
+ * was before this mechanism. `len` is never 1 — a one-byte run is
+ * `[OPT-REQBYTE]`'s own `L = 1` case and is carried by `Job.req_byte`
+ * alone, so the two facts never describe the same emitted text.
+ *
+ * `idx` is a position INSIDE the run and nothing else. It is not an offset
+ * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
+ * thing — a run is a statement about its own members' RELATIVE positions
+ * (docs/design/reqpos_2b.md §0 finding 1). */
+typedef struct {
+    unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
+    int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
+    int idx;   /* 0..len-1: which member the emitted memchr tests */
+} ReqRun;
+
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
     Nfa    nfa;      /* forward NFA (unanchored-wrapped for ENG_UNANCH) */
@@ -2326,8 +2373,21 @@ typedef struct {
      * attempt from the LOWERED tree by `pcrec_req_byte` (src/opt/reqbyte.c)
      * beside the two fields above, and read by both emitters' search entries.
      * -1 under `-fno-req-byte`, deliberately indistinguishable from "no byte
-     * is necessary". */
+     * is necessary".
+     *
+     * [OPT-REQPOS] WIDENED: when `req_run` below carries a run, this byte is
+     * the run's own scan member (`req_run.bytes[req_run.idx]`) rather than
+     * the argmin over the whole necessary SET, because the emitted `memchr`
+     * is the run loop's and the stamp reports what that `memchr` tests. The
+     * two are chosen at ONE site (`pcrec_req_byte`) so they cannot disagree. */
     int    req_byte;
+    /* [OPT-REQPOS] tier 2b THE NECESSARY LITERAL RUN — derived by the SAME
+     * walk as `req_byte` above, as a second accumulator, and read by the same
+     * one emitted pre-check. `len == 0` under `-fno-req-run` (and under
+     * `-fno-req-byte`, which denies the run with it — there is no run check
+     * without a byte to `memchr`), deliberately indistinguishable from "no
+     * run of two or more bytes is necessary". */
+    ReqRun req_run;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5835,13 +5895,24 @@ const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
  * the encoding decline is what makes that true. */
 long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
 
-/* [OPT-REQBYTE] THE NECESSARY BYTE — a byte every match of this pattern must
- * contain, or -1 where the analysis found none (which DISABLES the check and
- * is always sound). src/opt/reqbyte.c's header carries the account: why the
- * whole window and not PCRE2's "other than at its start", why the analysis
- * produces a SET and the emitter picks the rightmost member, and why a
- * lookaround's body is a correctness decline. */
-int pcrec_req_byte(const Ast *root);                  /* src/opt/reqbyte.c */
+/* [OPT-REQBYTE] + [OPT-REQPOS] tier 2b — THE NECESSARY BYTE AND THE NECESSARY
+ * LITERAL RUN, from ONE walk over the lowered tree. Returns the byte every
+ * match must contain, or -1 where the analysis found none (which DISABLES the
+ * check and is always sound), and writes the run into `*run` (`len == 0` where
+ * it found none). src/opt/reqbyte.c's header carries the whole account: why
+ * the whole window and not PCRE2's "other than at its start", why the analysis
+ * produces a SET and a RUN, why the member it picks is the argmin of a
+ * frequency prior under the `byte` encoding and the rightmost elsewhere, and
+ * why a lookaround's body is a correctness decline.
+ *
+ * `run_ok` is [OPT-REQPOS]'s own axis, threaded rather than read here, because
+ * the BYTE the artifact emits depends on whether the run ships: with a run the
+ * `memchr` is the run loop's and tests the run's scan member, without one it
+ * tests the whole set's own pick. Both answers come out of this one call so
+ * they cannot be chosen in two places and disagree. `cx` is read for the
+ * ENCODING alone (the prior is a fact about a corpus under one). */
+int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run);
+                                                      /* src/opt/reqbyte.c */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

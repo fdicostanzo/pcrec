@@ -83,9 +83,21 @@ bool pcrec_axis_on(uint64_t flags, uint64_t deny, uint64_t force)
 {
     if (deny  && (flags & deny))  return false;
     if (force && (flags & force)) return true;
+/* The `!= 0` is spelled rather than left implicit because a row's `0`
+ * column and MOST of its macro column are ENUM CONSTANTS since
+ * [OPT-REQPOS] widened the flags enum to `1ull << N`, and gcc reads an
+ * enum constant in a boolean context as a likely mistake
+ * (`-Wint-in-bool-context`, which `make strict` promotes to an error).
+ * [b2fix] (2026-09-23) pulled bit 31 (`PCREC_NO_REQ_RUN`) out of the enum
+ * into a `#define` (its value exceeds `INT_MAX`, which `-Wpedantic`
+ * refuses as an enumerator before C23 — lib/pcrec.h's own comment at that
+ * site), so this row's `dm` is now a plain integer constant expression
+ * rather than an enum constant; the cast is still correct and still
+ * needed for every OTHER row, so it stays uniform here rather than
+ * special-cased per macro. Same value, same generated code either way. */
 #define PCREC_AXIS(dm, df, fm, ff, defst)                                 \
-    if ((deny  && (dm) && (uint64_t)(dm) == deny) ||                      \
-        (force && (fm) && (uint64_t)(fm) == force))                       \
+    if ((deny  && (uint64_t)(dm) != 0 && (uint64_t)(dm) == deny) ||       \
+        (force && (uint64_t)(fm) != 0 && (uint64_t)(fm) == force))        \
         return (defst) == PCREC_AXIS_DEFAULT_ON;
 #include "core/axes.def"
     return true;
@@ -1492,8 +1504,18 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         cx.job->end_window =
             (defo.flags & PCREC_NO_END_WINDOW) ? -1
                                                : pcrec_end_window(&cx, root);
-        cx.job->req_byte =
-            (defo.flags & PCREC_NO_REQ_BYTE) ? -1 : pcrec_req_byte(root);
+        /* [OPT-REQBYTE] + [OPT-REQPOS] are ONE call because they are one walk
+         * and, more importantly, one emitted `memchr`: with a run the byte
+         * the artifact scans for is the run's own scan member, without one it
+         * is the whole necessary set's pick, and choosing them in two places
+         * is how they would come to disagree. `-fno-req-byte` denies both —
+         * there is no run check without a byte to `memchr` — and
+         * `-fno-req-run` leaves the one-byte check standing. */
+        cx.job->req_run = (ReqRun){ { 0 }, 0, 0 };
+        cx.job->req_byte = -1;
+        if (!(defo.flags & PCREC_NO_REQ_BYTE))
+            cx.job->req_byte = pcrec_req_byte(
+                &cx, root, !(defo.flags & PCREC_NO_REQ_RUN), &cx.job->req_run);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
