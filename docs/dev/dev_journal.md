@@ -25309,3 +25309,12 @@ populations on Linux (end-window 59+10; req-byte 9,632, floor 8000) where
 darwin's restricted runs read refused=0; -fprefilter clean; -fno-possessify
 230 documented. The lane fetches the transcript into runs/ (then "I-89 logs
 fetched"). [B78] (I-93) running; [B80] (I-95) queued.
+
+**axesrec MERGED (~06:5x):** O-47's three "facts" were ONE transcription
+artifact — a constant +2-row offset in the bench's prose (seven cited
+figures verified against the raw transcript): bits 28-30 read 24,343/0/0/0
+on Linux exactly as darwin; -fprefilter carries its documented 15,426
+population; -fno-possessify is clean (the 230 was -fno-counter's). No
+script-version or box difference. Transcript archived under
+docs/dev/optloop/runs/2026-09-23-i89A-8d716693/; linux_ask_i89.md annotated.
+I-96: "I-89 logs fetched" + the offset reported to the bench.
