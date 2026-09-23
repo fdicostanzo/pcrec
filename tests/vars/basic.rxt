@@ -1,0 +1,85 @@
+# tests/vars/basic.rxt -- module `vars` ([VAR] M10): a caller variable matches
+# its own bytes, and the two states the value model has.
+#
+# ORACLE: QUOTEMETA-SPLICE (variables_common.md §3.6). Every SET cell below is
+# the same question as the spliced pattern with `(?:` + quotemeta(value) + `)`
+# in the variable's place, and the splice is WRAPPED unconditionally because a
+# variable reference is ONE node -- `${x}+` with x="ab" means `(?:ab)+` and a
+# bare splice would read `ab+`. tests/vars/verify_vars.py is the helper.
+#
+# The UNSET and ill-formed cells are ORACLE-LESS BY CONSTRUCTION: there is no
+# PCRE2 spelling for "this literal is absent" to splice, so they are refusal
+# cells and tests/reject/ carries the compile-time half.
+
+pattern ^${prefix}-[0-9]+$
+features vars
+var prefix "abc"
+m "abc-1" 0 5
+m "abc-12345" 0 9
+n "xyz-1"
+n "abc-"
+n "-1"
+
+# THE SAME PATTERN, EMPTY. `p != NULL, len == 0` -- a bare `${name}` bound to
+# an empty value does NOT refuse; it matches the empty string, so the pattern
+# is `^-[0-9]+$`. That is correct and also surprising, which is why it is a
+# cell rather than a sentence.
+pattern ^${prefix}-[0-9]+$
+features vars
+var prefix ""
+m "-1" 0 2
+n "abc-1"
+
+# A VARIABLE IN THE MIDDLE, and one whose value carries bytes that would be
+# PATTERN SYNTAX if anything ever parsed them. It never does
+# (variables_common.md §4.2's literal rule, which is the injection boundary).
+pattern ^a${v}b$
+features vars
+var v ".*"
+m "a.*b" 0 4
+n "aXXXb"
+n "ab"
+
+# THE SAME NAME TWICE is two references to ONE value, not a backreference.
+# `${v}-${v}` with v="ab" is `(?:ab)-(?:ab)`, which matches "ab-ab" and
+# nothing else (design §9 Q4).
+pattern ^${v}-${v}$
+features vars
+var v "ab"
+m "ab-ab" 0 5
+n "ab-cd"
+
+# UNDER A QUANTIFIER: the reference is ONE node, so the quantifier applies to
+# the WHOLE value (design §9 Q3). v="ab" and `${v}{2}` is `(?:ab){2}`.
+pattern ^${v}{2}$
+features vars
+var v "ab"
+m "abab" 0 4
+n "ab"
+n "abb"
+
+# IN AN ALTERNATION.
+pattern ^(${a}|${b})$
+features vars
+var a "cat"
+var b "dog"
+m "cat" 0 3
+m "dog" 0 3
+n "cow"
+
+# AN UNKNOWN NAME IN THE CALLER'S ARRAY IS IGNORED, and the name the pattern
+# mentions is then UNSET -- which refuses. Both halves are asserted by one
+# cell: the binding below names something no pattern mentions.
+pattern ^${prefix}x$
+features vars
+var other "abc"
+gu unset-var "x"
+
+# A NAME BOUND TWICE: FIRST MATCH WINS (variables_common.md §3.2). The second
+# binding is carried through to the artifact verbatim and ignored there.
+pattern ^${v}$
+features vars
+var v "first"
+var v "second"
+m "first" 0 5
+n "second"

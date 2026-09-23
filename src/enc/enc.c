@@ -123,6 +123,16 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
     return false;
 }
 
+/* True iff entry `id` is present in `e`'s table at all, whatever its other
+ * columns say. False for a backend with no table. */
+bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id)
+{
+    if (!e || !e->entries) return false;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+        if (t->id == id) return true;
+    return false;
+}
+
 /* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE
  * templating rule every backend's decls/defs/advance text shares. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)

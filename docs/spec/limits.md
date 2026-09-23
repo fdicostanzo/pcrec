@@ -379,6 +379,31 @@ here" contract as a caller sizing a match-time buffer.
   long sentence truncates in the direction that keeps the actionable
   part (which file, which line) rather than losing it.
 
+### 3.6 Module `vars`: the expansion grammar's own two caps ([VAR])
+
+Module `vars` gives a pattern the shell-shaped expansion
+`${ [!] name [ operator word ] }`, whose value the caller supplies per
+call (`docs/spec/vars.md`). Two numbers bound the SPELLING, both at
+compile time, both refusing the pattern by name when crossed — so a
+caller never meets either at match time.
+
+- **A variable NAME is at most `PCREC_MAX_VAR_NAME_LEN` = 64 bytes.**
+  A name is emitted into the artifact twice — once as part of an
+  internal index macro's identifier and once as a string in the
+  artifact's variable-names table (`rx_info.vars`) — which is the same
+  reason `-p` is bounded by `PCREC_MAX_PREFIX_LEN`. Crossing it refuses
+  the compile naming the cap; nothing truncates.
+- **An operator's WORD may nest further `${...}` expansions at most
+  `PCREC_MAX_VAR_NEST_DEPTH` = 8 levels deep.** Nesting is permitted in
+  the word position only (`${a:-${b:-c}}` is a fallback chain), and the
+  bound is a COMPILE-time one: an over-deep template is a compile error,
+  and no run-time recursion is introduced in the emitted matcher by
+  this feature at all. The outermost reference is depth 0, so a chain of
+  nine expansions is the deepest legal one.
+
+Neither number is movable by a flag; both are `--list-limits` rows like
+every other number in this document.
+
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 
 This is D73's own example, re-measured against this worktree's build

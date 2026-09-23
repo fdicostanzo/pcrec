@@ -108,12 +108,26 @@ enum {
     /* Always in the mask: docs/spec/match_api.md §3.1 promises it
      * unconditionally and tests/codegen's K27 fixture calls it directly. */
     PCREC_ENCE_NEXT_POS       = 1u << 0,
-    /* In the mask only when the artifact contains a backreference of that
-     * caselessness — two entries rather than one with a flag, because D18/D23
-     * say an option compiles away and D23 MEASURED a runtime fold indirection
-     * costing 26% on a pattern with no letters in it. */
-    PCREC_ENCE_BREF           = 1u << 1,
-    PCREC_ENCE_BREF_CASELESS  = 1u << 2,
+    /* THE RUNTIME SPAN COMPARE, and it is ONE PAIR SERVING TWO CONSTRUCTS
+     * (Frank's ruling, 2026-09-23). In the mask when the artifact contains a
+     * BACKREFERENCE or a `${...}` VARIABLE of that caselessness.
+     *
+     * NAMED `SPAN` AND NOT `BREF`, because the operand shape stopped being
+     * span-source-specific. The entry takes the reference side as a POINTER
+     * AND A LENGTH rather than a pair of offsets into the subject, so a
+     * backreference passes `subject + start, end - start` and a variable
+     * passes the caller's own resolved `(p, len)` — and there is nothing
+     * left in the contract that says "backreference". `variables_pattern.md`
+     * §1.3 first proposed a SIBLING pair for the variable and said in the
+     * same paragraph that its body is this one's "with `s[ref_start + i]`
+     * replaced by `v[i]`": two bodies differing only in how they index the
+     * reference side are one function with the wrong operand shape.
+     *
+     * TWO ENTRIES RATHER THAN ONE WITH A FLAG, still: D18/D23 say an option
+     * compiles away, and D23 MEASURED a runtime fold indirection costing 26%
+     * on a pattern with no letters in it. */
+    PCREC_ENCE_SPAN           = 1u << 1,
+    PCREC_ENCE_SPAN_CASELESS  = 1u << 2,
     /* [M6.6.2 wave D] In the mask only when the artifact contains a
      * LOOKBEHIND. D58 named this entry before it existed — see the "ROAD NOT
      * TAKEN" paragraph above, which predicted it by name as the reason the
@@ -123,7 +137,21 @@ enum {
      * added to `PcrecEncEntry`, no signature changes, `pcrec_enc_ready` is
      * untouched, both emit functions are untouched, and the third-encoding
      * recipe in this header is unchanged. */
-    PCREC_ENCE_BACK_STEP      = 1u << 3
+    PCREC_ENCE_BACK_STEP      = 1u << 3,
+    /* [VAR] IS A CALLER-SUPPLIED VALUE WELL FORMED UNDER THIS ENCODING? In
+     * the mask only when the artifact carries a variable AND this backend has
+     * an answer — which is the whole mechanism, because a backend under which
+     * every byte string is valid simply HAS NO ROW HERE and the emitter then
+     * emits no check at all. `entries_byte[]` carries none; `entries_utf8[]`
+     * does. That is how `variables_common.md` §2.1's per-encoding refusal
+     * reaches the artifact WITHOUT an `if (encoding == utf8)` in the emitter,
+     * which DD-12 (7) forbids: the emitter asks whether the TABLE has a row,
+     * never which encoding it is looking at.
+     *
+     * NOT `engine_callable`: it is called from the entry wrapper's
+     * once-per-call resolution, never from an engine body, so the [M5-SEAM]
+     * check's rule applies to it exactly as it does to `next_pos`. */
+    PCREC_ENCE_VAR_VALID      = 1u << 4
 };
 
 typedef struct {
@@ -324,6 +352,14 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
  * inheriting one from a list somewhere else. False for an id no backend
  * carries. */
 bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
+
+/* [VAR] Does this backend's table CARRY entry `id` at all? A different
+ * question from `engine_callable` above, and the one an emitter asks when a
+ * mechanism is OPTIONAL PER BACKEND rather than optional per artifact — the
+ * value-validity entry is the first such: a backend under which every byte
+ * string is valid has no row, and "no row" is the answer. */
+bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
+
 
 /* Copy `text` into `sb`, replacing every `$` with `prefix`. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);

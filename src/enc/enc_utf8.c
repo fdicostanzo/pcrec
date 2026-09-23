@@ -87,7 +87,7 @@ static const char u8_defs_next_pos[] =
  * vindicated the protocol (design §5.3). */
 
 static const char u8_decls_bref_doc[] =
-"/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
+"/* $_span_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
 " * backreference compare (pcrec DD-12/D58).\n"
 " *\n"
 " * PRECONDITION: ref_start <= ref_end <= n. The caller passes a PUBLISHED\n"
@@ -112,29 +112,28 @@ static const char u8_decls_bref_doc[] =
 " * fact and the exact compare is byte-wise. */\n";
 
 static const char u8_decls_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at);\n";
 
 static const char u8_defs_bref_doc[] =
 "/* utf8 encoding: the exact compare is a byte compare (UTF-8 is a prefix\n"
 " * code -- equal characters and equal bytes are the same fact). */\n";
 
 static const char u8_defs_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t need = ref_end - ref_start;\n"
 "    size_t i;\n"
-"    for (i = 0; i < need; i++) {\n"
-"        if (at + i >= n || s[at + i] != s[ref_start + i])\n"
+"    for (i = 0; i < reflen; i++) {\n"
+"        if (at + i >= n || s[at + i] != ref[i])\n"
 "            return -(ptrdiff_t)i - 1;\n"
 "    }\n"
-"    return (ptrdiff_t)need;\n"
+"    return (ptrdiff_t)reflen;\n"
 "}\n";
 
 static const char u8_decls_bref_ci_doc[] =
-"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
-" * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
+"/* $_span_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * backreference compare (pcrec DD-12/D58): $_span_match, folding case.\n"
 " *\n"
 " * Same contract, same return protocol. THIS artifact folds by Unicode\n"
 " * DEFAULT SIMPLE case folding -- the same relation its character classes\n"
@@ -146,8 +145,9 @@ static const char u8_decls_bref_ci_doc[] =
 " * match of length 4 -- one byte captured, three consumed. */\n";
 
 static const char u8_decls_bref_ci[] =
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at);\n";
 
 static const char u8_defs_bref_ci_doc[] =
 "/* THE SIMPLE CASE-FOLD MAP, sorted by source code point: {from, to}, where\n"
@@ -162,7 +162,7 @@ static const char u8_defs_bref_ci_doc[] =
 " * none of it. */\n";
 
 static const char u8_defs_bref_ci[] =
-"static const unsigned $_bref_ci_fold_pairs[][2] =\n"
+"static const unsigned $_span_ci_fold_pairs[][2] =\n"
 /* The brace is on its own line so ONE brace-matching walk serves both a
  * function body and this initializer -- `tests/codegen/run_encoding_
  * checks.sh`'s DD12a(i) excision, which must treat this table as part of
@@ -171,15 +171,15 @@ static const char u8_defs_bref_ci[] =
 #include "utf8_fold_pairs.inc"
 "};\n"
 "\n"
-"static unsigned $_bref_ci_fold(unsigned c)\n"
+"static unsigned $_span_ci_fold(unsigned c)\n"
 "{\n"
 "    size_t lo = 0;\n"
-"    size_t hi = sizeof $_bref_ci_fold_pairs / sizeof $_bref_ci_fold_pairs[0];\n"
+"    size_t hi = sizeof $_span_ci_fold_pairs / sizeof $_span_ci_fold_pairs[0];\n"
 "    while (lo < hi) {\n"
 "        size_t mid = lo + (hi - lo) / 2;\n"
-"        if ($_bref_ci_fold_pairs[mid][0] < c) lo = mid + 1;\n"
-"        else if ($_bref_ci_fold_pairs[mid][0] > c) hi = mid;\n"
-"        else return $_bref_ci_fold_pairs[mid][1];\n"
+"        if ($_span_ci_fold_pairs[mid][0] < c) lo = mid + 1;\n"
+"        else if ($_span_ci_fold_pairs[mid][0] > c) hi = mid;\n"
+"        else return $_span_ci_fold_pairs[mid][1];\n"
 "    }\n"
 "    return c;\n"
 "}\n"
@@ -191,7 +191,7 @@ static const char u8_defs_bref_ci[] =
 " * subject this compare rejects is one no other part of the artifact would\n"
 " * have matched either. This matcher's rule is that ill-formed input matches\n"
 " * nothing, never that it is an error. */\n"
-"static size_t $_bref_ci_decode(const unsigned char *s, size_t end, size_t p,\n"
+"static size_t $_span_ci_decode(const unsigned char *s, size_t end, size_t p,\n"
 "                               unsigned *cp)\n"
 "{\n"
 "    unsigned char b = s[p];\n"
@@ -217,16 +217,17 @@ static const char u8_defs_bref_ci[] =
 " * reference's character and the subject's may be different byte lengths.\n"
 " * The prefix reported on failure is the SUBJECT bytes that did compare\n"
 " * equal, because that is the work this call actually did. */\n"
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at)\n"
 "{\n"
-"    size_t i = ref_start, j = at;\n"
-"    while (i < ref_end) {\n"
+"    size_t i = 0, j = at;\n"
+"    while (i < reflen) {\n"
 "        unsigned x = 0, y = 0;\n"
-"        size_t lx = $_bref_ci_decode(s, ref_end, i, &x);\n"
-"        size_t ly = (j < n) ? $_bref_ci_decode(s, n, j, &y) : 0;\n"
+"        size_t lx = $_span_ci_decode(ref, reflen, i, &x);\n"
+"        size_t ly = (j < n) ? $_span_ci_decode(s, n, j, &y) : 0;\n"
 "        if (lx == 0 || ly == 0 ||\n"
-"            $_bref_ci_fold(x) != $_bref_ci_fold(y))\n"
+"            $_span_ci_fold(x) != $_span_ci_fold(y))\n"
 "            return -(ptrdiff_t)(j - at) - 1;\n"
 "        i += lx;\n"
 "        j += ly;\n"
@@ -319,19 +320,94 @@ static const char u8_defs_back_step[] =
 "    return pos;\n"
 "}\n";
 
+/* ---- entry 7: the VALUE VALIDITY PREDICATE ([VAR], variables_common.md §2.1)
+ *
+ * A caller-supplied value that is not well-formed UTF-8 is a REFUSED CALL
+ * under this encoding, not a silent nomatch — the opposite of the rule for a
+ * SUBJECT, whose ill-formed bytes correctly match nothing because the
+ * automaton was built over well-formed classes and the reference span a
+ * backreference compares came out of that automaton. A value came from the
+ * caller and has passed through nothing.
+ *
+ * SO THE CHECK IS THE ENTRY WRAPPER'S, once per call per resolved expansion,
+ * and it is a SEPARATE ENTRY rather than a line inside the compare for the
+ * reason the D6 panel's MECH-M4 states: the compare's return space is
+ * two-valued by sign and has no room for "refuse" without breaking the
+ * protocol `$_span_match` already fixed.
+ *
+ * THE BACKEND'S HAVING A ROW HERE IS WHAT TURNS THE CHECK ON. `entries_byte[]`
+ * has none, because every byte string is a valid `byte` string, and the
+ * emitter then emits nothing — no encoding conditional anywhere (DD-12 (7)).
+ *
+ * IT IS ITS OWN DECODER AND DELIBERATELY NOT `$_span_ci_decode`'s. That one
+ * ships only in a CASELESS artifact, and validity is asked of every variable
+ * whatever its caselessness; depending on it would make an exact-compare
+ * artifact drag in a 1,484-pair fold table to answer a question about byte
+ * shapes. The two agree on what well-formed means — same lead-byte families,
+ * same overlong floors, same surrogate and U+10FFFF exclusions, which are the
+ * automaton's own — and that agreement is the thing to preserve if either
+ * moves. */
+static const char u8_decls_var_valid_doc[] =
+"/* $_var_valid -- is a caller-supplied value well-formed under this\n"
+" * artifact's encoding? (pcrec [VAR], variables_common.md section 2.1.)\n"
+" *\n"
+" * Called ONCE PER CALL per resolved variable, before the match begins. A\n"
+" * false answer is a REFUSED CALL (PCREC_ERR_UNSET_VAR), never a nomatch:\n"
+" * the caller handed this matcher bytes it cannot interpret, which is a\n"
+" * different thing from a subject that simply does not match. */\n";
+
+static const char u8_decls_var_valid[] =
+"int $_var_valid(const unsigned char *v, size_t vlen);\n";
+
+static const char u8_defs_var_valid_doc[] =
+"/* Well-formed means exactly what the automaton's own lowered classes mean:\n"
+" * the four lead-byte families, the right number of continuation bytes, no\n"
+" * overlong form, no surrogate, nothing above U+10FFFF. */\n";
+
+static const char u8_defs_var_valid[] =
+"int $_var_valid(const unsigned char *v, size_t vlen)\n"
+"{\n"
+"    size_t p = 0;\n"
+"    while (p < vlen) {\n"
+"        unsigned char b = v[p];\n"
+"        size_t len, i;\n"
+"        unsigned c, floor;\n"
+"        if (b < 0x80u)                 { p += 1; continue; }\n"
+"        else if ((b & 0xE0u) == 0xC0u) { len = 2; c = b & 0x1Fu; floor = 0x80u; }\n"
+"        else if ((b & 0xF0u) == 0xE0u) { len = 3; c = b & 0x0Fu; floor = 0x800u; }\n"
+"        else if ((b & 0xF8u) == 0xF0u) { len = 4; c = b & 0x07u; floor = 0x10000u; }\n"
+"        else return 0;\n"
+"        if (p + len > vlen) return 0;\n"
+"        for (i = 1; i < len; i++) {\n"
+"            if ((v[p + i] & 0xC0u) != 0x80u) return 0;\n"
+"            c = (c << 6) | (unsigned)(v[p + i] & 0x3Fu);\n"
+"        }\n"
+"        if (c < floor || c > 0x10FFFFu || (c >= 0xD800u && c <= 0xDFFFu))\n"
+"            return 0;\n"
+"        p += len;\n"
+"    }\n"
+"    return 1;\n"
+"}\n";
+
 static const PcrecEncEntry entries_utf8[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       u8_decls_next_pos_doc,  u8_decls_next_pos,
       u8_defs_next_pos_doc,   u8_defs_next_pos  },
-    { PCREC_ENCE_BREF,          true,
+    { PCREC_ENCE_SPAN,          true,
       u8_decls_bref_doc,      u8_decls_bref,
       u8_defs_bref_doc,       u8_defs_bref      },
-    { PCREC_ENCE_BREF_CASELESS, true,
+    { PCREC_ENCE_SPAN_CASELESS, true,
       u8_decls_bref_ci_doc,   u8_decls_bref_ci,
       u8_defs_bref_ci_doc,    u8_defs_bref_ci   },
     { PCREC_ENCE_BACK_STEP,     true,
       u8_decls_back_step_doc, u8_decls_back_step,
       u8_defs_back_step_doc,  u8_defs_back_step },
+    /* [VAR] NOT engine-callable: the entry wrapper's once-per-call
+     * resolution calls it, never an engine body -- `next_pos`'s own status,
+     * and the [M5-SEAM] check's rule applies to it on the same terms. */
+    { PCREC_ENCE_VAR_VALID,     false,
+      u8_decls_var_valid_doc, u8_decls_var_valid,
+      u8_defs_var_valid_doc,  u8_defs_var_valid },
     { 0, false, NULL, NULL, NULL, NULL }
 };
 

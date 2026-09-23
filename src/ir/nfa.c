@@ -906,6 +906,14 @@ static Frag compile_ast(NB *b, const Ast *a)
      * facts stopped being true, which is exactly when a loud internal error
      * is worth more than a machine that answers for a different language. */
     case A_BREF:
+    /* [VAR] NO MACHINE, and it falls into the same loud internal error for
+     * the same reason one level further out: determinization cannot see bytes
+     * that do not exist until the call. Enforced upstream identically — the
+     * `${...}` registry row is VM_ONLY so the pattern is VM-forced by its
+     * stamp, and `has_var` (src/opt/select_engine.c) forces
+     * `EngineFit.prefilter` OFF, which makes src/core/compile.c's build
+     * condition false. Reaching this line means one of those stopped holding. */
+    case A_VAR:
     /* [DD-14] NO MACHINE, AND IT FALLS INTO THE ERROR BELOW WITH `A_BREF` —
      * deliberately, and NOT because a call is as hopeless as a backreference.
      *

@@ -108,12 +108,21 @@ static const char defs_byte[] =
  * ENGINE-CALLABLE, unlike `next_pos`, and the seam's check reads that off the
  * row rather than from a list of its own — see `engine_callable` in enc.h. */
 static const char decls_bref_doc[] =
-"/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
-" * backreference compare (pcrec DD-12/D58).\n"
+"/* $_span_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE compare\n"
+" * of a RUNTIME SPAN against the subject (pcrec DD-12/D58).\n"
 " *\n"
-" * PRECONDITION: ref_start <= ref_end <= n. The caller passes a PUBLISHED\n"
-" * capture pair, and a published pair is ordered BY CONSTRUCTION -- the start\n"
-" * was recorded before the group's body ran and the end after it.\n"
+" * ONE ENTRY, TWO CONSTRUCTS. A BACKREFERENCE passes a slice of the subject\n"
+" * itself (`s + start, end - start`); a ${name} VARIABLE passes the bytes the\n"
+" * CALLER supplied for that name. The reference side is a POINTER AND A\n"
+" * LENGTH rather than a pair of offsets precisely so both fit: the two\n"
+" * compares differ only in where the reference bytes live, which is not a\n"
+" * difference a matcher can see.\n"
+" *\n"
+" * PRECONDITION: ref points at reflen readable bytes. For a backreference\n"
+" * that is STRUCTURAL -- a published capture pair is ordered by construction,\n"
+" * the start recorded before the group's body ran and the end after it. For a\n"
+" * variable it is CALLER DATA, checked once per call at the entry wrapper\n"
+" * (a NULL value is PCREC_ERR_UNSET_VAR before the match begins).\n"
 " *\n"
 " * RETURNS, and the sign carries two different facts:\n"
 " *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not\n"
@@ -133,29 +142,28 @@ static const char decls_bref_doc[] =
 " * another encoding exports this same entry with that encoding's body. */\n";
 
 static const char decls_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at);\n";
 
 static const char defs_bref_doc[] =
 "/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
 " * a prefix count. */\n";
 
 static const char defs_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t need = ref_end - ref_start;\n"
 "    size_t i;\n"
-"    for (i = 0; i < need; i++) {\n"
-"        if (at + i >= n || s[at + i] != s[ref_start + i])\n"
+"    for (i = 0; i < reflen; i++) {\n"
+"        if (at + i >= n || s[at + i] != ref[i])\n"
 "            return -(ptrdiff_t)i - 1;\n"
 "    }\n"
-"    return (ptrdiff_t)need;\n"
+"    return (ptrdiff_t)reflen;\n"
 "}\n";
 
 static const char decls_bref_ci_doc[] =
-"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
-" * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
+"/* $_span_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * runtime-span compare (pcrec DD-12/D58): $_span_match, folding case.\n"
 " *\n"
 " * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
 " * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"
@@ -163,8 +171,9 @@ static const char decls_bref_ci_doc[] =
 " * about a locale the caller owns and pcrec does not. */\n";
 
 static const char decls_bref_ci[] =
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at);\n";
 
 static const char defs_bref_ci_doc[] =
 "/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
@@ -172,21 +181,21 @@ static const char defs_bref_ci_doc[] =
 " * answers must not change with setlocale(). */\n";
 
 static const char defs_bref_ci[] =
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at)\n"
 "{\n"
-"    size_t need = ref_end - ref_start;\n"
 "    size_t i;\n"
-"    for (i = 0; i < need; i++) {\n"
+"    for (i = 0; i < reflen; i++) {\n"
 "        unsigned char x, y;\n"
 "        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
 "        x = s[at + i];\n"
-"        y = s[ref_start + i];\n"
+"        y = ref[i];\n"
 "        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
 "        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
 "        if (x != y) return -(ptrdiff_t)i - 1;\n"
 "    }\n"
-"    return (ptrdiff_t)need;\n"
+"    return (ptrdiff_t)reflen;\n"
 "}\n";
 
 /* ---- entry 4: the LOOKBEHIND BACK-STEP ([M6.6.2] wave D, D58 scope item 3;
@@ -204,7 +213,7 @@ static const char defs_bref_ci[] =
  * [M5-SEAM] check is its ONLY possible detector, because inlining changes no
  * answer under THIS backend.
  *
- * THE RETURN PROTOCOL DIVERGES FROM ENTRY 2's, DELIBERATELY. `$_bref_match`
+ * THE RETURN PROTOCOL DIVERGES FROM ENTRY 2's, DELIBERATELY. `$_span_match`
  * returns a signed length whose sign carries a second fact — the compared
  * prefix, which the caller charges. A back-step's failure carries no second
  * fact: "fewer than k characters precede pos" is one bit, and the WORK the
@@ -256,12 +265,16 @@ static const char defs_back_step[] =
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte      },
-    { PCREC_ENCE_BREF,          true,
+    { PCREC_ENCE_SPAN,          true,
       decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref      },
-    { PCREC_ENCE_BREF_CASELESS, true,
+    { PCREC_ENCE_SPAN_CASELESS, true,
       decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci   },
     { PCREC_ENCE_BACK_STEP,     true,
       decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step },
+    /* [VAR] NO `$_var_valid` ROW HERE, and the ABSENCE is the mechanism:
+     * every byte string is a valid `byte` string, so this backend has no
+     * answer to give and the emitter (asking `pcrec_enc_has_entry`) emits no
+     * check at all. `entries_utf8[]` carries one. */
     { 0, false, NULL, NULL, NULL, NULL }
 };
 

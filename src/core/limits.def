@@ -369,7 +369,7 @@ PCREC_LIMIT(VM_ISL_SIZE_FACTOR, 2, "count", "selection knee", NONE, "", "[ENG-IS
  * measurement. The measurement is here; the ruling is the manager's. */
 PCREC_LIMIT(VM_INLINE_CHAIN_MAX_BYTES, 4096, "bytes", "selection knee", FLAG, "", "[CC-DIFF] STEP 2: emitted VM program bytes at or below which the entry chain is inlined into the three _in entries (rung FORWARD); above it one shared out-of-line body (rung SHARED). --vm-entry-shape=N overrides the decision outright", EMIT_VM)
 
-/* ---- home: INTERNAL_H (8) — src/core/internal.h's own compile-side caps */
+/* ---- home: INTERNAL_H (10) — src/core/internal.h's own compile-side caps */
 
 PCREC_LIMIT(PCREC_PREFIX_K_MAX, 24, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many literal-prefix candidates the offset-skip analysis may carry", INTERNAL_H)
 PCREC_LIMIT(PCREC_OFSK_MAX_SET, 4, "count", "compile budget", NONE, "", "src/opt/prefix_k.c: how many offsets the selected offset-set prefilter candidate may carry", INTERNAL_H)
@@ -379,6 +379,15 @@ PCREC_LIMIT(PCREC_STARTPOS_GUARD_TEXT_MAX, 1024, "bytes", "identifier cap", NONE
 PCREC_LIMIT(PCREC_MIN_SCAN_CHAIN, 2, "states", "selection knee", NONE, "", "[OPT-5] precondition (5): the SHORTEST bounded counted-class run src/opt/scanedge.c will collapse into a scan edge (the unbounded self-loop is admitted at any length). MEASURED 2026-09-04 against the STEP 1.1 loop -- studies/scan_edge_ladder/run_floor.sh, 3 runs x 15 rounds, edge vs -fno-scan-edge on the same pattern: at m=2, 3 and 4 the two arms are NOT separated by more than the per-round range on either family, so D77 no-gap-no-move keeps this at 2; the only resolvable separation is m=8 nullable, edge/noedge 0.9855 median [IQR 0.0243]. The edge SIZE win is unconditional and is the standing reason to admit m=2. RE-CONFIRMED 2026-09-21 on the fixed harness (I-82, D117): 0 of 16 cells separate, still keeping this at 2", INTERNAL_H)
 
 PCREC_LIMIT(PCREC_MAX_REQ_RUN_EMIT, 8, "bytes", "selection knee", NONE, "", "[OPT-REQPOS] tier 2b: the LONGEST necessary literal run the pre-check will compare (src/opt/reqbyte.c derives the run, src/gen/emit_dfa.c sizes the emitted memcmp by it). A longer run is TRUNCATED to its lowest-frequency window of this length containing the scan byte, never split into two compares (reqpos_2b.md §2.4 item 3, Frank's ruling 2026-09-22). 8 is where gcc lowers a constant-length memcmp to ONE word load and one compare with no call out of line, measured on both this box's gcc-16 and the reference gcc-15.2 (reqpos_2b.md §3.2); above it the compare decomposes and a second mechanism's cost question opens, which is the D77 trigger for moving this", INTERNAL_H)
+/* [VAR] module `vars` — the expansion grammar's own two bounds
+ * (docs/design/variables_common.md §1.7 for the nesting one, which that
+ * section requires be a row here rather than a bare number). Both are
+ * COMPILE-time: a pattern crossing either is refused by name at the
+ * doorway, so both are caller-observable and carry docs/spec/limits.md
+ * §3.6. */
+PCREC_LIMIT(PCREC_MAX_VAR_NAME_LEN, 64, "bytes", "identifier cap", NONE, "3.6", "[VAR]: the longest selector `${name}` may carry. A name is emitted into the artifact as part of an identifier (the internal <PREFIX>_VAR_<NAME> index macro) and into rx_info's names table, so it is bounded for the same reason -p is (PCREC_MAX_PREFIX_LEN); 64 is well above any name a caller would write and well under PCREC_MAX_EMIT_NAME_LEN's own margin", INTERNAL_H)
+PCREC_LIMIT(PCREC_MAX_VAR_NEST_DEPTH, 8, "levels", "compile budget", NONE, "3.6", "[VAR]: how deep a `${name:-word}` operator's WORD may nest further `${...}` expansions. variables_common.md §1.7: nesting is permitted in the word position only and the bound is COMPILE-time, so an over-deep template is a compile error and no run-time recursion is introduced in either consumer. 8 is a fallback-chain depth no real caller approaches; the parser recurses once per level, so this also bounds that recursion", INTERNAL_H)
+
 PCREC_LIMIT(PCREC_MAX_REQ_RUN_SCAN, 32, "bytes", "compile budget", NONE, "", "[OPT-REQPOS] tier 2b: how much of a necessary literal run the ANALYSIS tracks before truncating it (src/opt/reqbyte.c's RbRun). Bounds the walk's per-frame state on a pattern whose literal is as long as the pattern — this project has segfaulted its own compiler on a 20,000-byte literal — and every truncation is SOUND in the only direction that matters, because a prefix of a necessary contiguous run is itself a necessary contiguous run. Sized at four times PCREC_MAX_REQ_RUN_EMIT so the window choice above is EXACT for every run length the shipped corpus and the bench contain (longest measured 11, docs/dev/optloop/reqpos_census.md §1.1)", INTERNAL_H)
 
 /* ---- home: MOD_RECURSION / MOD_BACKREFS / MOD_LOOKAROUND (3) ----------- *

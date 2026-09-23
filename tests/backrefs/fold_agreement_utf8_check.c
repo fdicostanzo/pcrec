@@ -44,7 +44,7 @@
  * THE TWO SIDES ARE INDEPENDENT in the same sense the byte check's are: the
  * residual is read out of an artifact PCREC ACTUALLY EMITTED (this file is
  * compiled against a generated `gen.c` and calls the shipped
- * `rx_bref_match_caseless` directly), and the compiler side is the
+ * `rx_span_match_caseless` directly), and the compiler side is the
  * `PcrecFold` object the PARSER uses. Neither can be edited into agreement
  * with the other without moving the thing it stands for. */
 
@@ -91,7 +91,8 @@ static int resid_eq(unsigned a, unsigned b)
     int lb = u8enc(b, buf + la);
     ptrdiff_t r;
     if (la == 0 || lb == 0) return -1;
-    r = rx_bref_match_caseless(buf, (size_t)(la + lb), 0, (size_t)la,
+    /* [VAR ruling, 2026-09-23] pointer + length, the span unchanged. */
+    r = rx_span_match_caseless(buf, (size_t)(la + lb), buf + 0, (size_t)la,
                                (size_t)la);
     return r == (ptrdiff_t)lb;
 }
@@ -270,7 +271,7 @@ int main(void)
     }
     printf("fold-agreement-utf8: %ld folding code points / %ld ordered pairs "
            "compare EQUAL and %ld adjacent-pair controls compare as the "
-           "compiler says, in the SHIPPED utf8 $_bref_match_caseless; the "
+           "compiler says, in the SHIPPED utf8 $_span_match_caseless; the "
            "vendored relation restricted to ASCII is pcrec_ascii_fold's %ld "
            "bytes exactly\n", classes, members, negatives, ascii_tied);
     return 0;

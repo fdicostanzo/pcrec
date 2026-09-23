@@ -95,6 +95,59 @@ every property a pattern variable needs is already in it:
 
 ### 1.3 The minimal new operand form
 
+> **[RATIFIED — Frank, 2026-09-23 ~14:1x] ONE SEAM ENTRY PAIR, NOT A SIBLING
+> PAIR.** This section proposed `$_var_match` / `$_var_match_caseless` beside
+> `$_bref_match` / `$_bref_match_caseless`, and said in the same paragraph
+> that the variable body is the backreference body "with `s[ref_start + i]`
+> replaced by `v[i]`". **Two bodies differing only in how they index the
+> reference side are ONE function with the wrong operand shape** (the
+> general-mechanisms rule, memory
+> `pcrec-general-mechanisms-not-special-cases`). The EXISTING pair is
+> generalised instead: the reference side becomes
+> `const unsigned char *ref, size_t reflen` in place of the offset pair, per
+> encoding, with the same length-returning protocol and the same
+> negative-return work charge. `vm_bref` passes `subject + start,
+> end - start` — one line — and `A_VAR`'s arm passes the resolved
+> `run->var_value[slot], run->var_length[slot]`.
+>
+> **RENAMED `$_span_match` / `$_span_match_caseless`**, on the ruling's own
+> "rename if the spelling is span-source-specific" clause: `bref` names the
+> backreference, and with a pointer-and-length operand nothing in the
+> contract does. The utf8 caseless entry's private helpers follow
+> (`$_span_ci_fold` / `$_span_ci_decode` / `$_span_ci_fold_pairs`). The D94
+> grep covers every reader of the old spelling; they are re-pinned in the
+> same change.
+>
+> **THE RETURNED LENGTH IS REDUNDANT UNDER `byte` AND ESSENTIAL UNDER `utf8`
+> CASELESS, and the single protocol is kept across both deliberately**
+> (Frank, ~14:2x). With the reference passed as pointer and length, a `byte`
+> success always returns `reflen`, so the return there carries only
+> match-or-not plus the failure work count. Under a non-length-preserving
+> fold it carries the real answer — `k` against U+212A is one reference byte
+> and three subject bytes. ONE protocol across encodings because DD-12
+> forbids an encoding-shaped call site in the engine, and stating it here is
+> what stops somebody later "optimizing" the byte case into a second one.
+>
+> **AND THE GENERALISATION MADE TWO MECHANISMS UNNECESSARY.** With one
+> caseless entry there is no cross-entry dependency, so
+> `PcrecEncEntry.requires` and `pcrec_enc_mask_close` — built for the
+> withdrawn sibling pair, whose utf8 body needed the backreference entry's
+> 1,484-pair fold map — are DELETED rather than kept for a customer that no
+> longer exists (D77). `pcrec_enc_has_entry` survives, because the
+> value-validity entry still asks "does this backend carry a row".
+>
+> **ONE DEFECT THE RENAME EXPOSED**, recorded because nothing else would
+> have: `src/gen/emit_vm.c`'s `--emit-ir` listing derived `st.has_bref` from
+> `v->enc_mask & (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)`. That bit is
+> now `PCREC_ENCE_SPAN` and a variable sets it, so the listing would have
+> reported "NO (backreference)" for a pattern with none. It reads
+> `pcrec_has_bref(root)` now — the same source `select_engine.c` forces the
+> prefilter off from, which is what the neighbouring `has_call` line already
+> does and says why. *A fact read off a shared bit stops being that fact the
+> day the bit is shared, and nothing about the sharing makes a sound.*
+
+
+
 What genuinely differs is one thing: a backreference's span is an offset pair
 *into the subject*, so `bref_match(s, n, ref_start, ref_end, at)` needs one
 buffer. A variable's bytes live in a **different buffer**. So the new seam

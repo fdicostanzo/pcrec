@@ -3,7 +3,7 @@
 #
 # THE S68 SHAPE, one construct over: IT CHANGES NO ANSWER. Under the byte
 # backend an inlined `s[at+i] != s[ref_start+i]` loop is exactly what
-# `$_bref_match` does, so every oracle in this tree stays green while the
+# `$_span_match` does, so every oracle in this tree stays green while the
 # artifact has acquired encoding-sensitive byte arithmetic in SHARED EMITTER
 # CODE — the residue class D58 scope item 3 enumerates by name ("caseless
 # backref comparison when M6 lands") and the thing the seam exists to prevent.
@@ -14,8 +14,15 @@
 # the length itself cannot be corrected from `src/enc/`.
 #
 # WHAT CATCHES IT is the codegen check's fixture-DECLARED per-site count —
-# the artifact must call `rx_bref_match` exactly as many times as the fixture
+# the artifact must call `rx_span_match` exactly as many times as the fixture
 # says, and an inlined compare calls it zero times. Nothing behavioural can.
+# [VAR ruling, 2026-09-23] ANCHOR RE-DERIVED FROM THE LIVE SOURCE. The seam's
+# compare pair was GENERALISED to take the reference side as a POINTER AND A
+# LENGTH, so one entry serves a backreference and a ${name} variable both --
+# which changed the ARGUMENT LINES this row anchors on while leaving the call
+# itself exactly where it was. The plant is UNCHANGED in meaning: it still
+# replaces the seam CALL with an inline byte loop, which is what makes the
+# fixture-declared per-site count its only possible detector.
 SAB_ID="S109-compare-inlined"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
@@ -24,7 +31,8 @@ SAB_DESC="The A_BREF emission writes an inline byte-compare loop instead of call
 SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residbref1/residbref3/residbrefci/residbrefboth fixtures; the corpus and brefdiff GREEN. Canonical figure owed from run_sabotage_matrix.sh S109."
 SAB_COUNT=1
 SAB_BEFORE='        "        took = %s(subject, subject_length,\n"
-        "                  (size_t)ref_start, (size_t)ref_end,\n"
+        "                  subject + (size_t)ref_start,\n"
+        "                  (size_t)(ref_end - ref_start),\n"
         "                  scan_position);\n",'
 SAB_AFTER='        "        { size_t i_; took = (ptrdiff_t)(ref_end - ref_start);\n"
         "          for (i_ = 0; i_ < (size_t)(ref_end - ref_start); i_++)\n"

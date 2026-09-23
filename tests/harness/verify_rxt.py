@@ -853,10 +853,16 @@ def parse_rxt(path):
                       "'gu internal' is refused: PCREC_ERR_INTERNAL is the "
                       "artifact catching its own inconsistency, never a "
                       "planned outcome a .rxt block may expect")
-            if code not in ('steps', 'frames', 'work', 'recurse'):
+            # [VAR] `unset-var` joins the set, and it is the first member
+            # that is NOT a give-up: PCREC_ERR_UNSET_VAR sits BELOW
+            # PCREC_ERR_FLOOR and means the call was REFUSED before anything
+            # was attempted. A block MAY expect it -- unlike `internal` two
+            # lines up -- because it is the CALLER's own doing and is exactly
+            # what a `var-unset` line is written to produce.
+            if code not in ('steps', 'frames', 'work', 'recurse', 'unset-var'):
                 _fail(path, lineno, 'value-shape',
                       f"unknown 'gu' code {code!r} (want steps, frames, "
-                      "work or recurse)")
+                      "work, recurse or unset-var)")
             subj, tail = parse_quoted(rest[len(code):].lstrip())
             if tail.strip() != '':
                 _fail(path, lineno, 'value-shape',
@@ -1072,6 +1078,39 @@ def parse_rxt(path):
                       "'ext' wants a consumer name -- a letter or '_' then "
                       f"letters, digits, '_', '-' or '.' (got {v!r})")
             last_opens_tree = True
+        elif line.startswith('var ') or line == 'var':
+            # [VAR] M10 A SET BINDING: `var <name> "<value>"`. Block-scoped,
+            # repeatable, one line per variable, and the value carries the
+            # EXISTING quoted-subject escape set -- no second vocabulary
+            # (variables_common.md §3.5).
+            #
+            # THIS LEG VALIDATES THE SHAPE AND READS NOTHING ELSE, which is
+            # the same verdict it gives every expectation kind: the harness
+            # (leg B) is what turns these lines into an `rx_var[]` array, and
+            # a second reader that built one would be a second harness.
+            m = re.match(r'^var\s+([A-Za-z_][A-Za-z0-9_]*)\s+"(.*)"\s*$', line)
+            if not m:
+                _fail(path, lineno, 'value-shape',
+                      "'var' wants a name then a double-quoted value -- "
+                      f'var <name> "<value>" (got {line!r})')
+            # NOT appended to `results`, and that is a correction the
+            # rxtsource census made rather than a preference: `results` is
+            # the EXPECTATION stream C3 reconciles against the corpus census,
+            # and a binding is not an expectation. Appending them put 45
+            # extra entries into a total the census does not count, and C3's
+            # own reconciliation — the check that exists so expectations
+            # cannot go somewhere neither counted nor reported — is what
+            # said so.
+        elif line.startswith('var-unset ') or line == 'var-unset':
+            # [VAR] M10 AN UNSET SLOT. It is a DECLARATION and not an
+            # omission: omitting the name entirely also reads UNSET at the
+            # artifact, so a block can assert both routes to one state.
+            m = re.match(r'^var-unset\s+([A-Za-z_][A-Za-z0-9_]*)\s*$', line)
+            if not m:
+                _fail(path, lineno, 'value-shape',
+                      "'var-unset' wants a bare variable name -- "
+                      f"var-unset <name> (got {line!r})")
+            # Not appended, for the sibling reason above.
         else:
             # [DD-13b.W23.2] unknown-token-in-scope: the first token has
             # no schema row in this scope at all -- the same fact leg A's

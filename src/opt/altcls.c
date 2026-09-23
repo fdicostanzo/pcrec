@@ -417,6 +417,11 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * both, and it is the same answer for the same reason `\G` gets it: the
      * node is opaque to a transformation that reasons about bytes. */
     case A_BREF:
+    /* [VAR] A LEAF for the identical reason, one step stronger: a variable
+     * consumes a match-time number of bytes AND its bytes are not in the
+     * subject at all, so it is neither a single-byte branch stage 1 could
+     * merge nor a compile-time first byte stage 2 could peel. */
+    case A_VAR:
     /* [M6.2 wave E] `\K` likewise AS A LEAF — but it is the first kind here
      * that could be damaged by the two stages rather than merely unserved by
      * them, so the reason it is safe is written down instead of assumed.

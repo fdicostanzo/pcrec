@@ -160,6 +160,10 @@ bool pcrec_ast_is_core(AKind k)
     case A_CAP:
     case A_ATOMIC:
     case A_BREF:     /* backrefs, the path-fact family */
+    case A_VAR:      /* [VAR] caller variables, the path-fact family: a
+                      * variable's bytes arrive at match time, so there is no
+                      * substitution in any other construct's vocabulary that
+                      * could stand for it. CORE, for A_BREF's own reason. */
     case A_LOOK:     /* lookaround */
     case A_CALL:     /* DD-14 call, the path-fact family */
         return true;

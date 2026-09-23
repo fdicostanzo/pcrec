@@ -875,8 +875,17 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
          * producer (a lexer-mode transition, not a port) declined. See that
          * arm's own comment for why `PCREC_BUILT_DEFECT` (the "parsed but
          * stamped nothing" outcome `RK_QUANTSUFFIX` can reach) does not
-         * apply to a lexical row at all. */
-        return (r->kind == RK_QUANTSUFFIX || (r->flags & RF_LEXICAL))
+         * apply to a lexical row at all.
+         *
+         * [VAR] `RK_BARE` joins them here too, for the SAME reason again:
+         * `${name}` is the first `RK_BARE` row this guard ever sees (every
+         * earlier one — `^`, `$`, `(a)` — is `RS_BASE` and returns
+         * `PCREC_BUILT_NA` before `built_status_probe` is ever called, see
+         * the exported entry below), and its own arm runs an ordinary parse
+         * the same way `RK_QUANTSUFFIX`'s does. A raise here means the
+         * `vars` module's own producer declined. */
+        return (r->kind == RK_QUANTSUFFIX || r->kind == RK_BARE ||
+                (r->flags & RF_LEXICAL))
                ? PCREC_BUILT_NO : PCREC_BUILT_DEFECT;
     }
     pcrec_parse_mods_init(&cx);
@@ -919,6 +928,32 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
      * derive `unbuilt`; with it in place, all four derive `built`. The DEFECT
      * arm was demonstrated by pointing a row's `syntax` at `ab`. */
     if (r->kind == RK_QUANTSUFFIX) {
+        Ast *root = pcrec_parse(&cx);
+        PcrecBuiltStatus st = pcrec_ast_stamped_by(root, r) ? PCREC_BUILT_YES
+                                                            : PCREC_BUILT_DEFECT;
+        pcrec_arena_free(&cx.arena);
+        return st;
+    }
+
+    /* [VAR] THE `RK_BARE` ARM, `pcrec_ast_stamped_by`'s own header claiming
+     * its precedent: "generic in the row, not special-cased to
+     * `atomic-groups`: the next non-doorway kind gets this arm for free"
+     * (src/opt/atomic.c). Every EARLIER `RK_BARE` row (`^`, `$`, `(a)`) is
+     * `RS_BASE` and never reaches this function at all — the exported
+     * entry below returns `PCREC_BUILT_NA` for any non-`RS_MODULE` row
+     * before `built_status_probe` runs. `${name}` is the first `RK_BARE`
+     * row that IS `RS_MODULE` (registry.c's own comment on the row: no
+     * doorway arbitrates it, `p_atom` recognises it directly), so without
+     * this arm it fell into the general doorway arm below, which requires
+     * `doorway_route` to recognise the row's `syntax` — and `RK_BARE`
+     * constructs, by definition, route nowhere (there is no doorway for
+     * `${` any more than there is for `^`/`$`/plain `(`), so every
+     * `RS_MODULE` `RK_BARE` row derived `PCREC_BUILT_DEFECT` unconditionally,
+     * a registry defect the dump reports on a construct that is, in fact,
+     * built. Same shape as `RK_QUANTSUFFIX`'s arm above: an ordinary parse
+     * at the forced-open gate, classified on whether the row's own producer
+     * stamped a node. */
+    if (r->kind == RK_BARE) {
         Ast *root = pcrec_parse(&cx);
         PcrecBuiltStatus st = pcrec_ast_stamped_by(root, r) ? PCREC_BUILT_YES
                                                             : PCREC_BUILT_DEFECT;

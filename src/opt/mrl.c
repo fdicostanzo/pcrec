@@ -153,6 +153,7 @@ long long pcrec_minw(const Ast *a)
          * The same fact is why `vm_nullable` must answer TRUE for this kind
          * (src/gen/emit_vm.c): the two are one property read by two passes. */
         case A_BREF:
+        case A_VAR:
         /* [M6.2 wave D] `\G` consumes nothing either — it compares the
          * position against `startpos` and reads no byte at all. */
         case A_GSTART:
@@ -337,6 +338,7 @@ long long pcrec_cwmax(const Ast *a)
         case A_LOOK:
             return acc;
         case A_BREF:
+        case A_VAR:
             /* UNBOUNDED — see the header. This is the one arm where minw's
              * "and it is EXACT" argument does not carry over to maxw. */
             return pcrec_mrl_sat_add(acc, PCREC_W_UNBOUNDED);
@@ -457,6 +459,7 @@ long long pcrec_cwmin(const Ast *a)
          * argument (a group can publish an empty capture), and the unit does
          * not change it: zero bytes is zero characters. */
         case A_BREF:
+        case A_VAR:
         case A_GSTART:
         case A_KRESET:
         /* A lookaround consumes nothing in either unit; the body is not

@@ -273,6 +273,87 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * the CASE TRANSFORM is a derivation somebody could get differently. */
 const char *pcrec_sb_upper(Arena *a, const char *s);
 
+/* ---- [VAR] M1: THE EXPANSION GRAMMAR (src/core/varexp.c) -----------------
+ *
+ * `${ [!] selector [ operator word ] }`, parsed ONCE and shared by both
+ * consumers — a variable inside a PATTERN (module `vars`) and a variable
+ * inside a REPLACEMENT template (module `subst-pcrec`, not built).
+ * docs/design/variables_common.md §1 owns the grammar; §1.1's table is the
+ * list of forms that are here and the list of forms that are declined, each
+ * with its own reason.
+ *
+ * ONE PARSER, ONE VALUE MODEL, TWO CONSUMERS — and the ONE place the two
+ * differ is not in this file at all (§1.3): a bare selector resolves in the
+ * VAR scope in a pattern and in the GROUP scope in a replacement, which is a
+ * question about what EXISTS at each expansion point, not about syntax. The
+ * tree below carries the selector and the `!`; who it names is the
+ * consumer's. */
+
+/* Which operator a reference carries. The COLON is deliberately NOT part of
+ * this enum: `:-` and `-` are ONE operator under two emptiness rules
+ * (variables_common.md §2.2 — the `:` folds EMPTY in with UNSET), so it is a
+ * `bool` beside this and not four more enumerators. */
+typedef enum {
+    VXOP_NONE = 0,   /* `${name}`                — the value itself */
+    VXOP_DEFAULT,    /* `${name-w}` `${name:-w}` — the word when unset       */
+    VXOP_ALT,        /* `${name+w}` `${name:+w}` — the word when SET         */
+    VXOP_REQUIRE     /* `${name:?w}`             — refuse the call when unset */
+} VarExpOp;
+
+typedef struct VarExp VarExp;
+
+/* One piece of an operator's WORD: either a literal byte run or a NESTED
+ * expansion. Exactly one of `lit`/`nest` is non-NULL. Literal runs are
+ * coalesced by the parser, so a word with no nesting is ONE piece however
+ * many escapes it carries. */
+typedef struct {
+    const unsigned char *lit;      /* literal bytes, or NULL if `nest` */
+    size_t               litlen;
+    const VarExp        *nest;     /* nested `${...}`, or NULL if `lit` */
+} VarWord;
+
+/* One `${...}` reference. Arena-owned, immutable once parsed.
+ *
+ * `at` is the PATTERN OFFSET of the `$`, carried for the same reason every
+ * other parse-resolved node carries one: a diagnostic about this reference
+ * must point at the reference and not at wherever the analysis noticed it. */
+struct VarExp {
+    const char    *name;          /* NUL-terminated selector */
+    VarExpOp       op;
+    bool           colon;         /* the ':' that folds EMPTY in with UNSET */
+    bool           explicit_var;  /* the leading `!` — `${!name}` (D121: BOTH
+                                   * spellings are accepted in a pattern and
+                                   * mean the same thing there; the flag is
+                                   * kept so the render is faithful and so the
+                                   * replacement side can read it) */
+    const VarWord *word;          /* NULL when `op == VXOP_NONE` */
+    size_t         nword;
+    size_t         at;
+};
+
+/* A refusal this grammar raised, RETURNED rather than thrown: `varexp.c`
+ * takes an `Arena *` and nothing else (D108's data-in/text-out rule), so the
+ * caller — the doorway that alone knows its own diagnostic conventions —
+ * decides how a refusal is reported. `msg` is always a static string. */
+typedef struct {
+    size_t      at;     /* pattern offset of the offending byte */
+    const char *msg;    /* NULL iff the parse succeeded */
+} VarExpErr;
+
+/* Parse the `${...}` whose `$` sits at `text[*pos]`, advancing `*pos` one
+ * past the closing `}`. Returns NULL with `*err` filled and `*pos` untouched
+ * on refusal. */
+const VarExp *pcrec_varexp_parse(Arena *a, const char *text, size_t n,
+                                 size_t *pos, VarExpErr *err);
+
+/* Render `x` back to its CANONICAL spelling, arena-owned. Canonical rather
+ * than verbatim — the source's own escapes are re-derived from the bytes —
+ * which is what makes it a statement about the PARSE rather than about the
+ * input text, and therefore usable both as `--emit-ir`'s listing value and as
+ * the grammar's own unit check (tests/core/varexp_check.c). */
+const char *pcrec_varexp_render(Arena *a, const VarExp *x);
+
+
 /* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
  *
  * ONE artifact stamp line: `#define <UPPER>_<NAME> <value>`, newline-
@@ -621,7 +702,53 @@ typedef enum {
      * `.body` treats a call as an OPAQUE ZERO-WIDTH ATOM — which is SOUND
      * for a decline and WRONG for a descent. Design §9.3 makes that three
      * sabotage rows rather than a comment. */
-    A_CALL
+    A_CALL,
+    /* [VAR] `${name}` `${!name}` `${name:-word}` and the rest of
+     * `variables_common.md` §1.1's operator table — A CALLER VARIABLE: match
+     * the bytes the CALLER supplied for this name, at this position
+     * (docs/design/variables_pattern.md §1).
+     *
+     * IT IS `A_BREF` WITH THE SPAN SOURCE SWAPPED, and that sentence is the
+     * whole design (design §1.2). A backreference reads a `(start, end)` pair
+     * out of the VM's own `slot_values[]`; a variable reads a `(p, len)` pair
+     * the entry wrapper resolved from `ctx->vars` before the match began.
+     * Everything downstream of "here is a start and a length" — the encoding
+     * seam call, the LENGTH return that a length-changing caseless fold
+     * needs, the work charge on a partial compare — is `vm_bref`'s and is
+     * reused unchanged.
+     *
+     * THE ONE DIFFERENCE TO STATE IN EVERY ANALYSIS THAT MEETS IT: an
+     * `A_BREF`'s bytes are a slice of the SUBJECT, so they are at least IN
+     * the text being matched; an `A_VAR`'s bytes are not in the subject at
+     * all and have no relationship to it. Nothing in the tree currently
+     * relies on the weaker `A_BREF` property, which is why every analysis
+     * arm below is `A_BREF`'s own — but an analysis that ever starts to rely
+     * on it must not inherit this kind into that reasoning.
+     *
+     * `l` AND `r` ARE BOTH UNUSED; the payload is `u.var` below.
+     *
+     * ITS MINIMUM WIDTH IS 0 AND ITS MAXIMUM IS UNBOUNDED. 0 is EXACT, not
+     * conservative: a caller may supply an EMPTY value (`variables_common.md`
+     * §2.2's EMPTY state, `p != NULL && len == 0`), so `${v}` genuinely
+     * matches the empty string then — and `vm_nullable` must answer TRUE for
+     * the same reason, or a nullable quantifier body loses its
+     * empty-iteration guard and the artifact hangs. Unbounded is exact too:
+     * the value's length is a MATCH-time quantity, which is the identical
+     * property `pcrec_cwmax`'s `A_BREF` arm already answers
+     * `PCREC_W_UNBOUNDED` for.
+     *
+     * VM-ONLY, per its one registry row, and the `engines`/`reg` stamp is how
+     * that reaches `src/opt/select_engine.c`. A DFA cannot implement it at
+     * all: determinization cannot see bytes that do not exist until the call
+     * (`(${v}|ab)c` cannot be determinized without them), which is
+     * `[FEAT-VAR]` (a)'s own placement problem, DEFERRED by Frank's
+     * 2026-09-23 charter. AND — unlike engine selection, which the registry
+     * row settles for free — THE PREFILTER DECLINE IS ITS OWN MECHANISM:
+     * `src/ir/nfa.c` has no lowering for this kind, so a prefilter build that
+     * walked one would reach that file's loud internal error. `has_var` in
+     * `src/opt/select_engine.c` is what stops it, joining `has_bref` and
+     * `has_call` (design §3; the D6 panel's MECH-B1). */
+    A_VAR
 } AKind;
 
 /* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
@@ -878,6 +1005,22 @@ struct Ast {
              * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
              * the flag, for one reason with three shapes:
              *
+             * THE COUNT IS FIVE, NOT FOUR, and the correction is K63
+             * (docs/dev/known_issues.md, filed by `[VAR]`'s D6 panel and closed
+             * here by `[VAR]` M5): `vm_isl_words` (`emit_vm.c`'s island-trie
+             * word scan) landed with `[ENG-ISL]` STEP 1 on 2026-09-03, after
+             * this census was taken, and carries a `default:` of its own. Its
+             * verdict is the same as the two UNREACHABLE sites below and for a
+             * stronger reason — it runs only over an island's own literal
+             * branches, which are `A_CLASS` chains by construction, so no
+             * anchor of either spelling can reach it. The general lesson is
+             * the one the count itself demonstrates: A CENSUS WRITTEN INTO A
+             * COMMENT IS A NUMBER WITH NO READER, and nothing failed when a
+             * fifth site appeared. It is left as prose rather than promoted to
+             * a check because the population it counts is the population that
+             * raises NO compiler alarm — a check over it would share a source
+             * with the thing it is about (learnings.md §3).
+             *
              *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
              *     spelling is zero-width, so "scan ahead by stride" is wrong for
              *     both, and its `default: return 0` is right without reading a field.
@@ -933,7 +1076,7 @@ struct Ast {
              * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
              * because the operand is subject text not known until the match runs. So
              * this field selects WHICH residual seam entry the emitter calls
-             * (`$_bref_match` or `$_bref_match_caseless`) — two entries chosen at emit
+             * (`$_span_match` or `$_span_match_caseless`) — two entries chosen at emit
              * time, never one entry with a runtime flag, which is D18/D23's rule that
              * an option compiles away.
              *
@@ -943,6 +1086,42 @@ struct Ast {
              * and by sabotage row S106. */
             bool        caseless;
         } bref;
+
+        /* [VAR] A_VAR: the caller-variable payload. */
+        struct {
+            /* THE PARSED EXPANSION (src/core/varexp.c), shared verbatim with
+             * the replacement-side consumer: one grammar, one tree, two
+             * consumers (variables_common.md §1.3). It carries the selector,
+             * the operator, the colon and the operator's WORD; who the
+             * selector NAMES is the consumer's question, and in a pattern
+             * there is no match yet, so it is always the caller's variable
+             * (§1.3, and D121 ruling Q4 accepts both `${v}` and `${!v}` here
+             * for that reason). */
+            const VarExp *exp;
+            /* THE ARTIFACT'S OWN INTERNAL INDEX for this reference's
+             * selector, assigned at end of parse by `pcrec_vars_resolve` over
+             * `Ctx.var_names`, and NEVER something a caller writes — under
+             * Frank's 2026-09-23 by-name ruling (variables_common.md
+             * §3.1-§3.2) the caller passes NAMES and the artifact resolves
+             * them itself, once per entry call. Two references to one name
+             * share a slot, which is what makes `${v}-${v}` compare the same
+             * span twice (design §9 Q4). */
+            int           slot;
+            /* IS THE COMPARE CASELESS? `A_BREF.u.bref.caseless`'s rule, one
+             * kind over, and for the identical reason: there is no bitmap to
+             * widen at parse time (D23) because the operand is not known
+             * until the match runs, so this field selects WHICH residual seam
+             * entry the emitter calls (`$_var_match` or
+             * `$_var_match_caseless`) rather than setting a runtime flag.
+             * D62: read from the scoped `(?i)` state in force AT THE
+             * REFERENCE, never re-derived downstream.
+             *
+             * ANY ANALYSIS THAT PATTERN-MATCHES `case A_VAR:` AND DOES NOT
+             * READ THIS FIELD reproduces possessify.c's pre-D62 bug, and no
+             * compiler diagnostic will say so — D62 control 3's accepted
+             * residual, covered here and by this module's sabotage rows. */
+            bool          caseless;
+        } var;
 
         /* [M6.6.2] A_LOOK: the lookaround payload — THREE FLAGS AND A WIDTH
          * TABLE, i.e. FIVE parse-resolved fields (design §3.1(a')). Every one
@@ -2835,6 +3014,35 @@ struct Ctx {
      * nothing. */
     PendingRef          *pending_refs;
     unsigned             n_pending_refs;
+    /* [VAR] module `vars`: THE DISTINCT SELECTORS this pattern mentions, in
+     * FIRST-MENTION order, and how many. Filled by `pcrec_vars_resolve` at
+     * the end of `pcrec_parse_info`, which is the one place that has seen
+     * every reference — including the ones nested inside another reference's
+     * operator WORD, which a per-node walk at the doorway would miss.
+     *
+     * FIRST-MENTION ORDER IS THE CONTRACT, not an implementation detail: it
+     * is the order `<PREFIX>_VAR_<NAME>` indexes are assigned in and the
+     * order `rx_info.vars` lists names in, so a caller reading that table
+     * and a reader of the emitted source see one order. NULL/0 for every
+     * pattern with no variable, which is what makes the whole mechanism cost
+     * a var-free compile nothing. */
+    const char         **var_names;
+    unsigned             n_vars;
+    /* [VAR] THE DISTINCT EXPANSIONS, keyed by CANONICAL RENDERING, in
+     * first-mention order — a SECOND table beside the names above, and the
+     * two genuinely count different things rather than one fact twice.
+     *
+     * `${v}` and `${v:-d}` name ONE variable and have TWO answers: bare
+     * refuses when the slot is unset, the default form substitutes. So the
+     * caller-facing table (`rx_info.vars`, `<PREFIX>_NVARS`) is keyed by
+     * NAME, and the artifact's own resolved `(p, len)` table is keyed by
+     * EXPANSION — which is what `Ast.u.var.slot` indexes. Two references
+     * spelled identically share a slot, which is why the key is the render
+     * rather than the node.
+     *
+     * NULL/0 for every pattern with no variable. */
+    const VarExp       **var_exps;
+    unsigned             n_var_exps;
     /* [K60] docs/dev/known_issues.md, disposition (2) — set by `pcrec_ctx_nomem`
      * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can
      * tell a genuine allocation failure from every other `pcrec_ctx_fail` arrival
@@ -3029,7 +3237,12 @@ enum {
      * construct while naming itself, and set-operation classes are real
      * work `classes` does not contain. The registry row's own comment had
      * reserved this call for whoever implemented the doorway. */
-    FEAT_EXTENDED_CLASSES = 1u << 16
+    FEAT_EXTENDED_CLASSES = 1u << 16,
+    /* [VAR] module `vars`: `${name}` in a PATTERN, whose bytes the caller
+     * supplies per call. The REPLACEMENT-side consumer is NOT this module —
+     * it rides D38's already-named `subst` / `subst-extended` / `subst-pcrec`
+     * (variables_common.md §7 Q6, ruled). */
+    FEAT_VARS             = 1u << 17
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -3616,7 +3829,7 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * where the full account lives. `pcrec_ascii_fold[c]` is c's case PARTNER, or
  * c itself when it has none. `cls_casefold` derives its class widening from
  * it, and `tests/backrefs/fold_agreement_check.c` asserts the SHIPPED
- * `$_bref_match_caseless` residual entry induces the identical partition over
+ * `$_span_match_caseless` residual entry induces the identical partition over
  * all 65,536 byte pairs. Two spellings of one fact, with a mechanism between
  * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];
@@ -4105,6 +4318,11 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        /* [VAR] A_VAR IS A LEAF LIKE A_BREF: its bytes come from the
+         * caller, not from a subtree, and `l`/`r` are unused. The operator's
+         * WORD is a VarExp, not an Ast, so there is nothing here to descend
+         * into either. */
+        case A_VAR:
         /* THE BACK EDGE STOPS HERE — see this function's header. */
         case A_CALL:
             return;
@@ -4128,6 +4346,35 @@ static inline void pcrec_ast_visit(const Ast *a, AstVisit f, void *ud)
 
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
+
+/* ---- [VAR] module `vars` (src/parse/mod_vars.c) ------------------------ */
+
+/* Is the `$` just consumed the start of a `${...}` reference? Purely
+ * LEXICAL — it does not consult the feature mask, because a recogniser must
+ * not depend on what is switched on (extension_design.md §12). */
+bool pcrec_vars_is_doorway(const Ctx *cx);
+
+/* Parse the `${...}` whose `$` is at `at` and return its `A_VAR`, leaving
+ * `cx->pos` one past the closing `}`. Refuses (never returns) on a gate miss
+ * or a grammar error. */
+Ast *pcrec_vars_atom(Ctx *cx, size_t at);
+
+/* Assign every `A_VAR` its internal slot and fill `Ctx.var_names`. Called
+ * once at END OF PARSE, beside `pcrec_bref_resolve`. */
+void pcrec_vars_resolve(Ctx *cx, Ast *root);
+
+/* Does this tree contain an `A_VAR`? The third whole-tree predicate in
+ * `prefilter_decision`'s hand-written set (`has_bref`/`has_call`'s shape). */
+bool pcrec_has_var(const Ast *root);
+
+/* [VAR] The trailing `vars, nvars` pair as PARAMETER text or as ARGUMENT
+ * text, or `""` on an artifact that mentions no variable — one derivation
+ * for both emitters, because a second spelling of "which entries take the
+ * pair" is exactly the drift that makes a declaration and its definition
+ * disagree. Defined in src/gen/emit_dfa.c beside the entry declarations it
+ * serves. */
+const char *pcrec_vars_param_text(Ctx *cx);
+const char *pcrec_vars_arg_text(Ctx *cx);
 /* [DD-11.1] the CROSS-KIND syntax lookup a `DEFK_ROW` chain resolves through
  * (below) — `family`'s own resolution idiom (mod_lookaround.c's `la_kind`),
  * generalised past ONE `RegKind`: `family` only ever names another `RK_GROUP`

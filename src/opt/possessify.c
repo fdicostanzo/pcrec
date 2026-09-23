@@ -206,6 +206,7 @@ static First first_of(const Ast *a)
      * quantifier near a backreference keeps its machinery — the direction
      * `pcrec_revdet_first` already takes for `$`, and the direction this file
      * is allowed to be wrong in. */
+    case A_VAR:
     case A_BREF: {
         First r;
         memset(r.f, 0xff, 32);
@@ -584,6 +585,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
      * available and always safe here (the caller reads `g->ok`), and it costs
      * only the possessification of a quantifier whose body holds a reference. */
     case A_BREF:
+    case A_VAR:
         g->ok = false;
         return gk_parts_empty(true);
     /* [M6.6.2] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for a reason
@@ -897,6 +899,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * verdict to, and a backreference hosts none. What it MEANS to the
      * analysis is `first_of`'s answer above (every byte, nullable). */
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+    case A_VAR:
         return;
 
     /* [M6.6.2] THIS WALK DOES NOT ENTER A LOOKAROUND BODY AT ALL, so no

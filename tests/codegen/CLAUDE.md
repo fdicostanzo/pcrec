@@ -2280,8 +2280,8 @@ comment and a residual NAME inside one is not counted as a call, and runs
 BEFORE head-detection and the column-0 brace rules — because a comment can
 otherwise contain something that looks like a definition head or a `}` at
 column 0 and desynchronise the `inbody` tracking. Matching is at TOKEN
-boundaries, not substring: `rx_bref_match` is a proper prefix of
-`rx_bref_match_caseless`, and a substring rule would count every caseless call
+boundaries, not substring: `rx_span_match` is a proper prefix of
+`rx_span_match_caseless`, and a substring rule would count every caseless call
 as a case-sensitive one and pass with the emitter wired backwards.
 
 **Every failing direction was demonstrated before the check was trusted**: a
@@ -3037,3 +3037,38 @@ The two builds go to the SAME BASENAME in two directories: an artifact
 carries `#include "<basename>.h"` from `-o`, so `x_def.c` vs `x_full.c` would
 make arm 3's control pass for the wrong reason and arm 4 read a phantom
 one-byte move.
+
+## [VAR lane, 2026-09-23] DD12a(i) HAD BEEN COMPARING ZERO PAIRS
+
+`run_encoding_checks.sh`'s hot-loop shape identity — the instrument that
+proves no encoding conditional reached the engine body — invoked the compiler
+with a BARE OPERAND after `--`. **D118 retired `--source` by making a bare
+operand mean a FILE**, so since then every call answered *"not an existing
+file; a literal pattern is given with `--pattern`"*, returned 1, and was
+skipped. `PAIRS=0`, every bucket 0, every EXCISED counter 0.
+
+Three things about it are worth keeping:
+
+1. **Its own non-vacuity floor is the only reason it was visible.** With a
+   `>= 0` there, a dead instrument and a clean one print the same thing. The
+   floor is not decoration; it is the whole detector.
+2. **It went stale because `test-encoding-checks` is OPT-IN** and rides no
+   `TEST_SECTIONS` entry. An opt-in check is a check nothing re-runs when the
+   surface it drives moves underneath it — which is the same reason
+   `run_specimen_identity.sh` carried two independent stalenesses until
+   [EMIT-VERB] met it.
+3. **A mechanical rename over this file reached the regex and the tables and
+   missed the one place a NAME IS MAPPED TO A DIFFERENT NAME** — a
+   `startswith('bref_ci_')` normalisation. The renamed helper matched, fell
+   through with its own name, and the counts dict raised `KeyError`. *Find
+   the places a rename has to think, not just the places it has to type.*
+
+Also repaired in the same pass: `int` joined the return-type alternation
+(module `vars`' `$_var_valid` returns one, which no residual entry before it
+did, so the walk did not see its region at all), and `^${v}$` joined the
+explicit witness list because `var_valid` otherwise read 0 — this file's own
+"a check that never exercised `span_match` would be dead code passing
+silently", one entry over. That witness is the only one reaching an entry
+present in ONE backend's table and absent from the other's, which is the
+sharpest available test of what the excision claims.
+

@@ -74,6 +74,15 @@
 # each independently disagree, which is exactly the shape a reader following
 # the `-Wswitch` alarm could talk themselves into.
 # ============================================================================
+# [VAR] 2026-09-23: BOTH ANCHORS RE-DERIVED FROM THE LIVE SOURCE. `A_VAR`
+# joined `A_BREF`'s case label at both sites — the same decline for the same
+# reason one construct over — so both three-line anchors gained a line. The
+# plant is UNCHANGED in meaning and DELIBERATELY WIDER BY ONE KIND at both:
+# accepting a backreference into the reverse-deterministic body reversal and
+# accepting a variable into it are the same defect, and separating them would
+# mean two rows whose `SAB_AFTER` differed by one label while their DETECTION
+# is identical. The witness is unchanged (tests/backrefs/nested.rxt), so the
+# recorded figures still describe what this row plants.
 SAB_ID="S108-rdshape-accepts-bref"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="brefdiff harness"
@@ -82,16 +91,20 @@ SAB_DESC="rd_shape ACCEPTS a backreference in a quantifier body AND pcrec_uniq_i
 SAB_DOC_FIGURE="MEASURED 2026-08-22 with both sites: harness tests/backrefs 390 pass / 65 fail, 13 distinct pattern-compile failures, 33 internal-error lines from rd_reverse's wall (nested.rxt 22, selfref.rxt 30, dupnames.rxt 16); clean 455/0. Canonical figure from run_sabotage_matrix.sh S108 below. The SINGLE-site form measured UNDETECTED -- zero checks failed, artifact byte-identical -- see header."
 SAB_COUNT=1
 SAB_BEFORE='        case A_BREF:
+        case A_VAR:
             S->ok = false;
             return;'
 SAB_AFTER='        case A_BREF:
+        case A_VAR:
             return;   /* SABOTAGE S108 site 1: ACCEPT it */'
 
 # SITE 2 -- the independent decline that made the one-hunk form unfalsifiable.
 SAB_FILE2="src/opt/possessify.c"
 SAB_COUNT2=1
 SAB_BEFORE2='    case A_BREF:
+    case A_VAR:
         g->ok = false;
         return gk_parts_empty(true);'
 SAB_AFTER2='    case A_BREF:
+    case A_VAR:
         return gk_parts_empty(true);   /* SABOTAGE S108 site 2: no independent decline */'

@@ -348,8 +348,8 @@ fi
 #
 # THE NAMED ENCODING-OWNED REGIONS -- excised from BOTH texts before the
 # compare, never trusted to cancel by accident:
-#   (1) each of the four residual entries (next_pos, back_step, bref_match,
-#       bref_match_caseless) -- and, since [M5.0] stage 4, the private helpers
+#   (1) each of the four residual entries (next_pos, back_step, span_match,
+#       span_match_caseless) -- and, since [M5.0] stage 4, the private helpers
 #       and fold table the caseless compare's UTF-8 body needs beside it,
 #       counted under that entry because they ARE its implementation and a
 #       counter of their own would be a vacuity row the `byte` backend can
@@ -390,11 +390,11 @@ fi
 #     trusted to reach all four by luck): `a*` (VM, unanchored -- forces the
 #     retry advance, reusing the K49 check's own witness for consistency),
 #     `(?i)(?<=a)(b)\1x` (DD12a(ii)'s own witness -- back_step +
-#     bref_match_caseless) and its case-sensitive twin `(?<=a)(b)\1x`
-#     (back_step + bref_match). Aggregate floors below assert each of the six
+#     span_match_caseless) and its case-sensitive twin `(?<=a)(b)\1x`
+#     (back_step + span_match). Aggregate floors below assert each of the six
 #     counters (four residuals, the advance, the encoding field) is reached
 #     at least once across the whole run -- a check that never exercised
-#     `bref_match` would be dead code passing silently on that population.
+#     `span_match` would be dead code passing silently on that population.
 # (b) THE NORMALIZATION COUNT IS PINNED AND PRINTED, per pattern: a pattern
 #     whose byte and utf8 sides disagree on HOW MANY of a given region they
 #     each contain is itself a finding (an asymmetric residual population is
@@ -416,7 +416,7 @@ import sys, os, re, subprocess, base64, tempfile, shutil, difflib
 
 pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 
-# [M5.0 stage 4] `bref_match_caseless`'s UTF-8 body needs two private
+# [M5.0 stage 4] `span_match_caseless`'s UTF-8 body needs two private
 # helpers and a table beside it (decode a character, fold it through the
 # generated pair map). They are the SAME encoding-owned region as the
 # entry they implement -- they exist only in that backend's own text --
@@ -426,7 +426,15 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # initializer's brace is deliberately on the following line (see
 # `src/enc/enc_utf8.c`), which is what lets one brace-matching walk
 # serve a function body and an array initializer alike.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|bref_match|bref_match_caseless|bref_ci_fold|bref_ci_decode|bref_ci_fold_pairs)\s*[\(\[]')
+# [VAR lane, 2026-09-23] `int` JOINS THE RETURN-TYPE ALTERNATION and
+# `var_valid` the name one: module `vars`' value-validity entry is an
+# encoding-owned residual exactly as the four above are — it exists in
+# `entries_utf8[]` and NOT in `entries_byte[]`, which is the sharpest possible
+# form of "encoding-owned" — so it must be excised on the utf8 side or every
+# var-bearing pair would differ by a whole function. It returns `int`, which
+# no entry before it did, and a return type absent from this alternation is a
+# region this walk silently does not see.
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 GUARD = 'if (attempt_position >= subject_length) return 0;'
 # [K50] the caller-startpos guard's two emitted texts, both MARKER-DELIMITED,
@@ -663,9 +671,9 @@ def widens_under_utf8(pat):
 
 def excise(text, label):
     lines = text.splitlines(keepends=True)
-    counts = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
-              'bref_match_caseless': 0, 'advance': 0, 'encoding': 0,
-              'startpos_guard': 0, 'startpos_stamp': 0,
+    counts = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
+              'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
+              'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0}
     out = []
     i, n = 0, len(lines)
@@ -674,8 +682,16 @@ def excise(text, label):
         m = SIG_RE.match(line)
         if m:
             name = m.group(1)
-            if name.startswith('bref_ci_'):
-                name = 'bref_match_caseless'
+            # [VAR lane, 2026-09-23] `span_ci_`, not `bref_ci_`. The seam's
+            # compare pair was renamed when it was generalised to serve a
+            # backreference AND a `${name}` variable, and its three private
+            # helpers followed; this NORMALISATION string did not, so a
+            # helper matched SIG_RE, fell through with its own name, and
+            # `counts[name]` raised KeyError. The mechanical rename over this
+            # file reached the regex and the tables and missed the one place
+            # a NAME is mapped to a DIFFERENT name.
+            if name.startswith('span_ci_'):
+                name = 'span_match_caseless'
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
                 while k >= 0 and not out[k].lstrip().startswith('/*'):
@@ -759,13 +775,27 @@ def compile_pair(pat, workdir, idx):
     du = os.path.join(workdir, "p%d" % idx, "utf8")
     os.makedirs(db, exist_ok=True)
     os.makedirs(du, exist_ok=True)
+    # [VAR lane, 2026-09-23] `--pattern`, NOT a bare operand after `--`.
+    # D118 retired `--source` by making a BARE OPERAND mean a FILE, so this
+    # call has been answering "not an existing file; a literal pattern is
+    # given with --pattern" and returning 1 on EVERY pattern since — which
+    # this function turns into `return None`, so DD12a(i) has been comparing
+    # ZERO pairs. Its own non-vacuity floor (200) is what says so, and the
+    # floor is the only reason this is visible at all: every bucket, every
+    # EXCISED counter and every divergence count reads 0, which is exactly
+    # what a clean run would look like if the floor were a `>= 0`.
+    #
+    # IT WENT STALE BECAUSE `test-encoding-checks` IS OPT-IN and rides no
+    # TEST_SECTIONS entry, so nothing was running it when the CLI moved
+    # underneath it. REPRODUCED at this lane's branch point with that tree's
+    # OWN script and OWN binary before being attributed here.
     rb = subprocess.run([pcrec, "--features", "all", "-e", "byte", "-p", "rx",
-                         "-o", os.path.join(db, "rx.c"), "--", pat],
+                         "-o", os.path.join(db, "rx.c"), "--pattern", pat],
                         capture_output=True, text=True, timeout=30)
     if rb.returncode != 0:
         return None
     ru = subprocess.run([pcrec, "--features", "all", "-e", "utf8", "-p", "rx",
-                         "-o", os.path.join(du, "rx.c"), "--", pat],
+                         "-o", os.path.join(du, "rx.c"), "--pattern", pat],
                         capture_output=True, text=True, timeout=30)
     if ru.returncode != 0:
         return "byte-only"
@@ -788,13 +818,24 @@ def main():
             if max_blocks and emitted >= max_blocks:
                 break
     # explicit witnesses: guarantee non-vacuity for each named region (a) --
-    # the corpus is not trusted to reach all four residuals plus the advance
+    # the corpus is not trusted to reach all five residuals plus the advance
     # by luck alone.
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x']
+    #
+    # [VAR lane, 2026-09-23] `${v}` IS THE FIFTH WITNESS, and it is here for
+    # the reason this comment already gives about the other four: with the
+    # corpus alone the `var_valid` counter read 0, which is a counter that
+    # exists and is never reached -- "a check that never exercised
+    # `span_match` would be dead code passing silently on that population",
+    # one entry over. It is also the ONLY witness that reaches an entry
+    # present in `entries_utf8[]` and ABSENT from `entries_byte[]`, which is
+    # the sharpest test of the excision's own claim: the two sides must agree
+    # after normalisation even when one of them carries a whole function the
+    # other does not have.
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
-    agg = {'next_pos': 0, 'back_step': 0, 'bref_match': 0,
-           'bref_match_caseless': 0, 'advance': 0, 'encoding': 0,
+    agg = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
+           'span_match_caseless': 0, 'var_valid': 0, 'advance': 0, 'encoding': 0,
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0}
     npairs = nstrict = nwidens = 0
@@ -824,7 +865,7 @@ def main():
                 if len(findings) < 20:
                     findings.append("pat=[%s]: next_pos not exactly 1 per side (byte=%d utf8=%d)"
                                      % (pat, cb['next_pos'], cu['next_pos']))
-            for k in ('back_step', 'bref_match', 'bref_match_caseless', 'advance'):
+            for k in ('back_step', 'span_match', 'span_match_caseless', 'advance'):
                 if cb[k] != cu[k] and len(findings) < 20:
                     findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
                                      % (pat, k, cb[k], cu[k]))
@@ -875,7 +916,8 @@ def main():
 
     print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
           (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
-    for k in ('next_pos', 'back_step', 'bref_match', 'bref_match_caseless', 'advance', 'encoding',
+    for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless',
+              'var_valid', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
@@ -914,7 +956,7 @@ else
     else
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step bref_match bref_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt; do
+        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
@@ -1091,14 +1133,14 @@ fi
 # forces next_pos + back_step + a bref compare) and require them equal.
 # ---------------------------------------------------------------------------
 # The witness forces three of the four residual entries: next_pos (always),
-# back_step (the lookbehind) and bref_match_caseless (the caseless backref).
+# back_step (the lookbehind) and span_match_caseless (the caseless backref).
 # The name-bearing FIRST LINE of each signature is a stable comparable line
 # (the bref signatures wrap onto a second line, which a `)`-terminated grep
 # would miss). Prefix-normalised, the two backends' lines must be identical —
 # the entries-table interface is backend-neutral (D58 P-1).
 sigpat='(?i)(?<=a)(b)\1x'
 db="$WORKDIR/sigb"; du="$WORKDIR/sigu"; mkdir -p "$db" "$du"
-sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|bref_match|bref_match_caseless)\(' "$1" \
+sigs_of() { grep -oE '(size_t|ptrdiff_t) [A-Za-z]+_(next_pos|back_step|span_match|span_match_caseless)\(' "$1" \
             | sed -E 's/ [bu]_/ PFX_/' | LC_ALL=C sort -u; }
 if pcrec_run "$PCREC" --features all -e byte -p b -o "$db/a.c" --pattern "$sigpat" >/dev/null 2>&1 \
    && pcrec_run "$PCREC" --features all -e utf8 -p u -o "$du/a.c" --pattern "$sigpat" >/dev/null 2>&1; then

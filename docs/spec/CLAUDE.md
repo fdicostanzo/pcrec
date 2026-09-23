@@ -385,6 +385,18 @@ spec and a design doc disagree, the spec is what the tool promises.
   column also gained a sixth value, `bare`, at the manager's `RK_BARE`
   ruling, 2026-08-29).
 
+- `vars.md` — **module `vars`' caller-observable contract** ([VAR], 2026-09-23):
+  `${name}` in a pattern, whose bytes the caller supplies per call. The
+  spelling and its five bash-shaped operators, the `rx_var` type and the
+  BY-NAME rule (an index is meaningless across separately compiled
+  artifacts), where the array is passed (`rx_ctx` for the `rx_matchfn`-shaped
+  entries, a trailing pair for `<prefix>_search` and its `_in` siblings),
+  `PCREC_ERR_UNSET_VAR`'s below-the-floor refusal class and why an unset
+  variable is loud rather than empty, every refusal the module can raise, and
+  the engine/caseless facts. The ABI surface itself is `match_api.md` §2 and
+  §6's `abi` 32 entry; the numbers are `limits.md` §3.6. Design:
+  `docs/design/variables_common.md` / `variables_pattern.md`.
+
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
 three-component annotated-derivation discipline (generated facts +

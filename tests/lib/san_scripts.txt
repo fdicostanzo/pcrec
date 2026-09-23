@@ -83,3 +83,9 @@ tests/known_fail/run_known_fail.sh
 # unit_cc.sh's unit_build, which threads $SANFLAGS unconditionally, so this
 # entry is what actually instruments it under the sanitizer axes.
 tests/core/run_core_tests.sh
+
+# [VAR] M10 — module `vars`' corpus and its splice oracle. It compiles
+# generated matchers through the harness, so both sanitizer axes reach the
+# emitted variable resolver and both seam entries; the oracle arm is a python
+# process the sanitizers do not instrument and costs nothing here.
+tests/vars/run_vars_tests.sh

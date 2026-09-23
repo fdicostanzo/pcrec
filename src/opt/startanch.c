@@ -127,6 +127,7 @@ static unsigned sa_walk(const Ast *a)
         case A_LOOK:
         /* The two deliberate declines — see the header. */
         case A_BREF:
+        case A_VAR:
         case A_CALL:
             return acc;
         }

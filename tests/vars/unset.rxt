@@ -1,0 +1,175 @@
+# tests/vars/unset.rxt -- module `vars` ([VAR] M10): the UNSET/EMPTY/SET value
+# model and the five operators that read it.
+#
+# ORACLE-LESS BY CONSTRUCTION for every UNSET cell, and that is stated rather
+# than implied (variables_common.md §3.6): there is no PCRE2 spelling for
+# "this literal is absent" to quotemeta-splice, so the refusals below are
+# REFUSAL-TABLE rows. Every SET and EMPTY cell IS splice-verifiable and is
+# covered by tests/vars/verify_vars.py's sweep.
+#
+# THE THREE STATES (variables_common.md §2.2), and the whole point of the
+# `:` is that it moves EMPTY from one column to the other:
+#
+#   state   spelling            `:` operators   bare operators
+#   UNSET   var-unset n         fire            fire
+#   EMPTY   var n ""            fire            do NOT fire
+#   SET     var n "x"           do not fire     do not fire
+
+# ---------------------------------------------------------------
+# A BARE ${name}: UNSET is a REFUSED CALL, not an empty match
+# ---------------------------------------------------------------
+
+# The loud default, and the reason it is loud: rendering an unset variable as
+# empty would turn `^${prefix}-[0-9]+$` into `^-[0-9]+$` and match inputs the
+# caller never authorized. Invisible, widening, and on a security boundary.
+pattern ^${prefix}-[0-9]+$
+features vars
+var-unset prefix
+gu unset-var "-1"
+gu unset-var "abc-1"
+
+# OMITTING THE NAME ENTIRELY reaches the same state by the other route: a name
+# the artifact mentions and the caller's array does not carry is UNSET. Both
+# routes are asserted so a regression that confused them moves a cell.
+pattern ^${prefix}-[0-9]+$
+features vars
+gu unset-var "-1"
+
+# EMPTY IS NOT UNSET. A bare `${name}` bound to an empty value does not
+# refuse -- it matches the empty string.
+pattern ^${prefix}-[0-9]+$
+features vars
+var prefix ""
+m "-1" 0 2
+
+# ---------------------------------------------------------------
+# ${name:-word} -- the word when UNSET *or* EMPTY
+# ---------------------------------------------------------------
+
+pattern ^${v:-dev}$
+features vars
+var-unset v
+m "dev" 0 3
+n "prod"
+
+pattern ^${v:-dev}$
+features vars
+var v ""
+m "dev" 0 3
+n ""
+
+pattern ^${v:-dev}$
+features vars
+var v "prod"
+m "prod" 0 4
+n "dev"
+
+# THE EMPTY WORD is the caller's explicit opt-in to permissiveness: `${v:-}`
+# says "unset is fine, use nothing" and is what a reviewer sees written down.
+pattern ^${v:-}-x$
+features vars
+var-unset v
+m "-x" 0 2
+
+# ---------------------------------------------------------------
+# ${name-word} -- the word when UNSET only
+# ---------------------------------------------------------------
+
+pattern ^${v-dev}$
+features vars
+var-unset v
+m "dev" 0 3
+
+# THE ONE CELL THAT SEPARATES `-` FROM `:-`, and the reason the format has to
+# be able to spell EMPTY at all: bound to "", the bare operator does NOT fire,
+# so the value is the empty string and the pattern is `^$`.
+pattern ^${v-dev}$
+features vars
+var v ""
+m "" 0 0
+n "dev"
+
+# ---------------------------------------------------------------
+# ${name:+word} -- the word when SET AND NON-EMPTY, else nothing
+# ---------------------------------------------------------------
+
+pattern ^a${v:+yes}b$
+features vars
+var v "anything"
+m "ayesb" 0 5
+n "ab"
+
+pattern ^a${v:+yes}b$
+features vars
+var v ""
+m "ab" 0 2
+n "ayesb"
+
+pattern ^a${v:+yes}b$
+features vars
+var-unset v
+m "ab" 0 2
+
+# ---------------------------------------------------------------
+# ${name+word} -- the word when SET, empty or not
+# ---------------------------------------------------------------
+
+# The separating cell again, mirrored: bound to "", the BARE operator fires.
+pattern ^a${v+yes}b$
+features vars
+var v ""
+m "ayesb" 0 5
+n "ab"
+
+pattern ^a${v+yes}b$
+features vars
+var-unset v
+m "ab" 0 2
+
+# ---------------------------------------------------------------
+# ${name:?word} -- refuse when UNSET or EMPTY
+# ---------------------------------------------------------------
+
+pattern ^${v:?}$
+features vars
+var-unset v
+gu unset-var ""
+
+# AND IT REFUSES ON EMPTY TOO, which is what makes it different from a bare
+# `${v}`: `${v:?}` is how a caller asks for BOTH states to be refused.
+pattern ^${v:?}$
+features vars
+var v ""
+gu unset-var ""
+
+pattern ^${v:?}$
+features vars
+var v "ok"
+m "ok" 0 2
+
+# ---------------------------------------------------------------
+# NESTING, in the word position only -- the fallback chain
+# ---------------------------------------------------------------
+
+pattern ^${a:-${b}}$
+features vars
+var-unset a
+var b "fallback"
+m "fallback" 0 8
+n "a"
+
+pattern ^${a:-${b}}$
+features vars
+var a "primary"
+var b "fallback"
+m "primary" 0 7
+n "fallback"
+
+# THE CHAIN'S OWN FAILURE MODE: the inner reference is a BARE `${b}`, so an
+# unset `b` refuses the call even though the outer operator would have used
+# it. Every expansion is evaluated, in slot order, before the match begins.
+pattern ^${a:-${b}}$
+features vars
+var-unset a
+var-unset b
+gu unset-var "x"

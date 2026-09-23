@@ -6,7 +6,7 @@
  * no flag, no branch and no `tolower()` in it (D23's rule that an option
  * compiles away). A CASELESS BACKREFERENCE cannot fold at parse time — its
  * operand is subject text nobody has seen yet — so the fold has to exist a
- * second time, in the ENCODING RESIDUAL entry `$_bref_match_caseless`
+ * second time, in the ENCODING RESIDUAL entry `$_span_match_caseless`
  * (src/enc/enc_byte.c), which is TEXT compiled by someone else's toolchain.
  *
  * TWO SPELLINGS OF ONE FACT WITH NOTHING BETWEEN THEM is the shape this

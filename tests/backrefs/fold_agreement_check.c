@@ -7,7 +7,7 @@
  *   - at PARSE time, as the class widener `cls_casefold` applies (D23: an
  *     option compiles away, so `-i '[a]'` becomes the class {a, A} and the
  *     emitted matcher has no flag, no branch and no `tolower()`);
- *   - at MATCH time, inside the encoding residual `$_bref_match_caseless`,
+ *   - at MATCH time, inside the encoding residual `$_span_match_caseless`,
  *     because a caseless backreference's operand is SUBJECT TEXT nobody has
  *     seen at compile time and there is no bitmap to widen.
  *
@@ -24,7 +24,7 @@
  * from it — so the table IS the parse-time fold by construction. The other
  * side is read out of an artifact PCREC ACTUALLY EMITTED: this file is
  * compiled against a generated `gen.c` and calls the shipped
- * `rx_bref_match_caseless` directly. Neither side can be edited into agreement
+ * `rx_span_match_caseless` directly. Neither side can be edited into agreement
  * with the other without moving the thing it stands for.
  *
  * THE SWEEP IS ORDERED PAIRS, not the 52-byte set, because equality under a
@@ -59,7 +59,12 @@ int main(void)
              * under THIS ARTIFACT's fold. */
             buf[0] = (unsigned char)i;
             buf[1] = (unsigned char)j;
-            r = rx_bref_match_caseless(buf, 2, 0, 1, 1);
+            /* [VAR ruling, 2026-09-23] THE REFERENCE SIDE IS A POINTER
+             * AND A LENGTH now, one entry serving a backreference and a
+             * `${name}` variable both. The span this check compares is
+             * unchanged -- byte 0 against byte 1 -- and is spelled as the
+             * slice it always was. */
+            r = rx_span_match_caseless(buf, 2, buf + 0, 1, 1);
             resid_eq = (r == 1);
             table_eq = (i == j) || (pcrec_ascii_fold[i] == (unsigned char)j);
 
@@ -109,7 +114,7 @@ int main(void)
         return 1;
     }
     printf("fold-agreement: 65536 ordered byte pairs, the SHIPPED "
-           "$_bref_match_caseless and pcrec_ascii_fold induce the SAME "
+           "$_span_match_caseless and pcrec_ascii_fold induce the SAME "
            "partition; %d bytes fold, each with exactly one partner, none "
            ">= 0x80\n", partnered);
     return 0;

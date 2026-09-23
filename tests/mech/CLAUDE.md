@@ -1140,6 +1140,61 @@ The repair slice's own anchor movement, by contrast, was one row and was
 re-derived in the same change: S81's line gained `upc_emit_of_class` when the
 emitter's knob half landed. See that row's own note.
 
+## [VAR] M10 — `vars`, and the two rows that SHIP REACHED
+
+**`vars` is a new suite word** (registered before S271/S272, R31 C11),
+running `tests/vars/run_vars_tests.sh` — the module's corpus AND its
+quotemeta-splice oracle in one section. Its own arm for `prechecks`' reason
+one construct over: the `harness` arm would run the corpus and silently skip
+the ORACLE, which is the half that says the corpus's own expectations are
+right rather than merely consistent with the artifact.
+
+**`variables_roadmap.md` §2.5 PREDICTED these rows would ship UNREACHED and
+they do not, which is itself the finding.** That section says any row planted
+against `A_VAR`'s emit arm or the analysis declines DURING M4-M8 — before any
+`.rxt` file can express a var-bearing pattern — "will necessarily read
+UNREACHED, the shape `[MECH-REACH]` exists to make explicit rather than
+silent." It is right about the mechanism and its premise did not hold:
+`tests/vars/` landed in the same delivery, which §2.3 had already said was
+possible. Both rows declare `SAB_REACH` anyway, and that is not ceremony —
+each probe asserts a property of the CLEAN tree that a future change could
+remove for a reason unrelated to the line being planted (that a caseless
+variable really does route through the caseless residual; that a var-bearing
+pattern really does declare no prefilter).
+
+- **S271** — `vm_var` stops reading `Ast.u.var.caseless`. D62 control 3's
+  accepted residual for this kind, and `S106`'s plant one construct over.
+  ANSWER-DETECTABLE, unlike the precheck-admission rows: a caseless variable
+  bound to `abc` stops matching `ABC`. MEASURED DETECTED at `ba6a6c3b`,
+  `vars:1fail/1pass`, `corpus:18fail/7pass` — and the `vars` arm's own
+  ORACLE half stays GREEN under the plant, which is exactly the split the
+  two arms exist for.
+- **S272** — `has_var` stops forcing the prefilter off. `S102`/`S165`'s plant
+  one construct over, and the same paragraph applies: on THIS tree the
+  failure is a COMPILE ERROR rather than a silent skip, because
+  `src/ir/nfa.c` has no `A_VAR` arm and the prefilter build reaches its
+  internal-error wall. Both are detections; the row says which this tree
+  gives rather than carrying the design's prediction. MEASURED DETECTED at
+  `ba6a6c3b`, `vars:1fail/1pass`, `corpus:26fail/50pass`.
+
+**A BACKTICK INSIDE A DOUBLE-QUOTED `SAB_DESC`/`SAB_DOC_FIGURE` IS COMMAND
+SUBSTITUTION**, and it made both rows unsourceable — the tripwire reported
+`DOES NOT SOURCE`, which is the right alarm. `w12_report.md` recorded this
+exact defect in 2026-08-31. It is worth this directory's own line because a
+row file is the one place in the tree where prose and shell share a quote
+character, so the hazard is structural here and nowhere else: use single
+quotes in a row's prose.
+
+**IT BIT TWICE IN ONE LANE**, which is why this paragraph is here rather
+than in a commit message. The second time was a later edit to the SAME two
+rows — recording their measured figures — where the prose naturally said
+"the `vars` arm's own 1fail", and the backticks went back in. The tripwire
+caught it both times and named it both times (`DOES NOT SOURCE`), which is
+the check working; what did not work was remembering. Any edit to a row's
+`SAB_DESC` or `SAB_DOC_FIGURE`, including one that only appends a measured
+figure, re-opens this.
+
+
 Maintenance: when a codegen/reject/trie sabotage table gains a new row with an
 exact literal edit, add a matching `sabotages/S<NN>_*.sh` here in the same
 change, per the project's own sabotage-validation convention.

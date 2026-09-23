@@ -306,7 +306,7 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
   residual bodies where a character is one to four bytes: `next_pos` skips
   forward over continuation bytes; `back_step` walks back one
   DECLARED-LENGTH-validated run per step (§5.2.1's repair — a malformed run
-  answers `BACK_STEP_NONE`); the case-sensitive `bref_match` is `enc_byte.c`'s
+  answers `BACK_STEP_NONE`); the case-sensitive `span_match` is `enc_byte.c`'s
   body verbatim (UTF-8 is a prefix code, so an exact compare is a byte
   compare); the caseless one ([M5.0] stage 4) decodes a character from each side and folds
   each through the generated `utf8_fold_pairs.inc` map — the LENGTH-return
@@ -329,7 +329,7 @@ was a clause: 21 oracle-verified `tests/utf8` cells stopped answering.
 
   - `<prefix>_next_pos` — the next character boundary strictly after `pos`,
     every position >= n counting as a boundary.
-  - `<prefix>_bref_match` / `<prefix>_bref_match_caseless` ([M6.5.2]) — the
+  - `<prefix>_span_match` / `<prefix>_span_match_caseless` ([M6.5.2]) — the
     backreference compare, case-sensitive and case-folding. **TWO ENTRIES, NOT
     ONE WITH A FLAG**: D18/D23's rule is that an option compiles away, and D23
     MEASURED the alternative (a runtime fold indirection) costing 26% on a
@@ -419,6 +419,61 @@ the residual text it always did.
 `src/core/compile.c` gates on the registry (a member with no backend is
 refused, a non-member is refused with the rendered menu) and `cli/main.c`
 resolves `-e NAME` / `--encoding=NAME` through `pcrec_enc_by_name`.
+
+## [VAR] — ONE COMPARE PAIR SERVING TWO CONSTRUCTS, AND A VALIDITY ENTRY
+
+**Frank's ruling, 2026-09-23.** The backreference compare pair is
+GENERALISED and RENAMED rather than duplicated: `$_span_match` /
+`$_span_match_caseless` take the reference side as a **pointer and a length**
+(`const unsigned char *ref, size_t reflen`) in place of the offset pair, so a
+BACKREFERENCE passes `subject + start, end - start` and a `${name}` VARIABLE
+passes the caller's own resolved `(p, len)`.
+
+**The first design proposed a SIBLING pair and refuted itself in the same
+paragraph.** `variables_pattern.md` §1.3 said the variable body is this one's
+"with `s[ref_start + i]` replaced by `v[i]`" — two bodies differing only in
+how they index the reference side are ONE function with the wrong operand
+shape (memory `pcrec-general-mechanisms-not-special-cases`).
+
+**RENAMED because `bref` was span-source-specific.** With a pointer-and-length
+operand nothing in the contract says "backreference". The utf8 entry's private
+helpers follow: `$_span_ci_fold` / `$_span_ci_decode` /
+`$_span_ci_fold_pairs`.
+
+**THE RETURNED LENGTH IS REDUNDANT UNDER `byte` AND ESSENTIAL UNDER `utf8`
+CASELESS.** A `byte` success always returns `reflen`, so the return there
+carries only match-or-not plus the failure work count; under a
+non-length-preserving fold it carries the real answer (`k` against U+212A is
+one reference byte and three subject bytes). ONE protocol across encodings
+because DD-12 forbids an encoding-shaped call site in the engine — stated so
+nobody later "optimizes" the byte case into a second protocol.
+
+**`$_var_valid` IS PRESENT IN ONE TABLE AND ABSENT FROM THE OTHER, AND THAT
+ABSENCE IS THE MECHANISM.** `variables_common.md` §2.1 promises a value that
+is not well-formed is a REFUSED CALL under a multi-byte encoding; the
+compare's return space is two-valued by sign and has no room for "refuse"
+(the D6 panel's MECH-M4), so the check runs once per call in the entry
+wrapper. The emitter asks `pcrec_enc_has_entry` — does this backend CARRY the
+row — and emits the calls or does not. `entries_byte[]` has none, because
+every byte string is a valid `byte` string. **No encoding test anywhere in the
+emitter**, which is the third-encoding recipe's own standing rule. It is
+deliberately NOT `engine_callable`: the entry wrapper calls it, never an
+engine body, so [M5-SEAM]'s rule applies to it exactly as to `next_pos`. And
+it is its OWN decoder rather than the caseless entry's, because validity is
+asked of every variable whatever its caselessness and depending on that one
+would make an exact-compare artifact drag in a 1,484-pair fold table to answer
+a question about byte shapes. The two agree on what well-formed means — same
+lead-byte families, same overlong floors, same surrogate and U+10FFFF
+exclusions, the automaton's own — and that agreement is the thing to preserve
+if either moves.
+
+**A COLUMN THAT WAS BUILT AND THEN DELETED.** The withdrawn sibling pair
+needed `PcrecEncEntry.requires` (and `pcrec_enc_mask_close`) so its utf8
+caseless body could share the backreference entry's fold map. With ONE
+caseless entry there is no cross-entry dependency and no customer, so both are
+gone (D77). `pcrec_enc_has_entry` survives, because the validity entry still
+asks a question about the table.
+
 
 Maintenance: update this file when files are added/removed or their roles
 change.

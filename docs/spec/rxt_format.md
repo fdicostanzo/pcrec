@@ -470,14 +470,41 @@ off.
     regardless of `g`/`gp`.
 
 - `gu <code> "<subject>"` — asserts that searching `<subject>` from byte
-  offset 0 GIVES UP with the typed code `<code>`, one of `steps` / `frames`
-  / `work` / `recurse` (`recurse` is `PCREC_ERR_RECURSE`, reserved with no
-  producer yet, so no block can pass with it today — the directive still
-  accepts the word). `internal` is REFUSED at parse time, by name:
-  `PCREC_ERR_INTERNAL` is the artifact catching its own analysis/emission
-  bug, never a planned outcome a corpus block gets to expect. Scored
-  against the driver's exit `3` plus its printed word, the one case kind
-  that WANTS that exit — see "The driver protocol" below.
+  offset 0 returns the typed negative code `<code>`, one of `steps` /
+  `frames` / `work` / `recurse` / `unset-var` (`recurse` is
+  `PCREC_ERR_RECURSE`, reserved with no producer yet, so no block can pass
+  with it today — the directive still accepts the word). `internal` is
+  REFUSED at parse time, by name: `PCREC_ERR_INTERNAL` is the artifact
+  catching its own analysis/emission bug, never a planned outcome a corpus
+  block gets to expect. Scored against the driver's exit `3` plus its
+  printed word, the one case kind that WANTS that exit — see "The driver
+  protocol" below.
+
+  **`unset-var` is the one member that is NOT a give-up** ([VAR]):
+  `PCREC_ERR_UNSET_VAR` sits BELOW `PCREC_ERR_FLOOR` and means the call was
+  REFUSED before anything was attempted, which is `PCREC_ERR_STARTPOS`'s
+  class. A block MAY expect it — unlike `internal` — because it is the
+  CALLER's own doing and is exactly what a `var-unset` line is written to
+  produce. `gu` is the directive for it rather than a new one: this line
+  kind already means "the search returned a typed negative code and here is
+  which", and a second directive for a second class of negative code would
+  be two spellings of one question.
+
+- `var <name> "<value>"` — block-scoped, repeatable: binds a module-`vars`
+  variable for every case in this block ([VAR]). `<name>` is a letter or `_`
+  then letters, digits or `_`; the value is a double-quoted string in the
+  SAME escape vocabulary a subject carries, and there is no second one.
+  `var n ""` is the EMPTY state (`rx_var.p != NULL`, `len == 0`).
+- `var-unset <name>` — block-scoped, repeatable: declares the slot UNSET
+  (`rx_var.p == NULL`). It is a DECLARATION and not an omission, and the
+  difference is testable: omitting the name entirely ALSO reads UNSET at the
+  artifact, so a block can assert both routes to one state.
+
+  The harness builds an `rx_var[]` array from these lines VERBATIM — one
+  entry per line, in source order, with no lookup and no de-duplication —
+  and passes it through. A DUPLICATE name is legal to write and the
+  artifact's own rule is FIRST MATCH WINS; collapsing it here would make
+  that cell untestable. `docs/spec/vars.md` is the module's contract.
 - `name <defname>` — block-scoped: names the block, declaring it as a
   DEFINITION. A `<defname>` is a first byte that is a letter or `_`,
   then letters, digits, `_`, `-` or `.`. **The name is in the FILE

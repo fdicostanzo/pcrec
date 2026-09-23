@@ -199,6 +199,7 @@ static void rd_shape(Shape *S, const Ast *a)
          * ACCEPT instead, because the `-Wswitch` alarm that brought a reader
          * here says an arm is MISSING, never which arm is right. */
         case A_BREF:
+        case A_VAR:
             S->ok = false;
             return;
         case A_CAP:
@@ -358,6 +359,14 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
 
     case A_BREF:
         pcrec_ctx_fail(cx, 0, "internal error: a backreference reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
+
+    /* [VAR] THE SAME LOUD REFUSAL WITH ITS OWN SENTENCE, for this file's own
+     * standing reason, stated two arms down: an internal error that names the
+     * WRONG CONSTRUCT sends the next reader hunting in the wrong file. */
+    case A_VAR:
+        pcrec_ctx_fail(cx, 0, "internal error: a ${...} variable reached the "
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
@@ -588,6 +597,7 @@ static bool rd_alt_disjoint(const Ast *a)
          * reproduce a match-time compare. Unreachable — `rd_shape` rejects
          * the body first. */
         case A_BREF:
+        case A_VAR:
         case A_KRESET:
             return false;
         /* [DD-14] DECLINES with them, same sound direction and same reason:
@@ -705,6 +715,7 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
      * hosts none. The verdict about `\K` is rd_shape's, one level down.
      * [M6.5.2] `A_BREF` joins for the identical reason. */
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+    case A_VAR:
         return;
     /* [M6.6.2] DOES NOT DESCEND, and this is the ONE arm in this file where
      * the decline is a CHOICE rather than a correctness requirement — which is

@@ -142,6 +142,10 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * corpus cells, so a backreference is an ORDINARY REPEATABLE ATOM. It
      * consumes text, which is the property this list's members all lack. */
     case A_BREF:
+    /* [VAR] NOT a bare anchor: a variable CONSUMES text, which is the
+     * property every member of the list above lacks. `${v}*` is an ordinary
+     * quantified atom. */
+    case A_VAR:
     /* [M6.4.2] NOT a bare anchor, and it is `A_CAP`'s answer for `A_CAP`'s
      * reason: this predicate is about a BARE assertion standing alone as a
      * group's whole body, and an atomic group is a BRACKETING construct with a
@@ -1569,8 +1573,21 @@ static Ast *p_atom(Ctx *cx)
      * later. */
     case '^': { Ast *a = node(cx, A_BOL); a->u.anch.multiline = cx->mods->multiline;
                 return a; }
-    case '$': { Ast *a = node(cx, A_EOL); a->u.anch.multiline = cx->mods->multiline;
-                return a; }
+    case '$': {
+        /* [VAR] THE `${` DOORWAY, and it is an `if` here rather than a
+         * registry lookup because `$` is base grammar with no doorway to hang
+         * a row off — `RK_BARE`'s own charter, and the same shape `\Q`'s
+         * FEAT_QUOTING test takes three functions down. The module GATE lives
+         * in `pcrec_vars_atom`, not here, so that a recogniser stays
+         * independent of what is switched on (extension_design.md §12) and so
+         * the refusal can name the module.
+         *
+         * WHAT THIS COSTS A PATTERN WITH NO VARIABLE: one byte compare, and
+         * only on a `$`. A lone `$` still falls through to `A_EOL` below,
+         * byte for byte. */
+        if (pcrec_vars_is_doorway(cx)) return pcrec_vars_atom(cx, apos);
+        Ast *a = node(cx, A_EOL); a->u.anch.multiline = cx->mods->multiline;
+        return a; }
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
         pcrec_ctx_fail(cx, apos, "quantifier does not follow a repeatable item");
@@ -2074,5 +2091,12 @@ Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
      * ONLY parse entry point, so `--count-groups`, `--explain` and the
      * built-status probe all inherit one definition of "group k exists"
      * instead of each acquiring their own. */
-    return pcrec_bref_resolve(cx, a);
+    a = pcrec_bref_resolve(cx, a);
+    /* [VAR] the same position, one module over: assign every `A_VAR` its
+     * internal slot and fill `Ctx.var_names`, at the one place that has seen
+     * every reference (including the ones nested inside another reference's
+     * operator WORD) and before any rewriting pass. A var-free pattern pays
+     * one tree walk that interns nothing. */
+    pcrec_vars_resolve(cx, a);
+    return a;
 }

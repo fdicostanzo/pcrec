@@ -1906,7 +1906,7 @@ DFA's own "try the next start" mechanism has the same defect and is OPEN as
 K50.
 
 **[M6.5.2] BOTH FUNCTIONS TAKE A MASK NOW**, because the seam gained its
-SECOND and THIRD entries (`<prefix>_bref_match` and its caseless twin) and an
+SECOND and THIRD entries (`<prefix>_span_match` and its caseless twin) and an
 artifact with no backreference must not carry them. `Job.enc_mask` starts at
 `PCREC_ENCE_NEXT_POS` and the VM emitter ORs in whichever compare entries its
 `A_BREF` arm actually emits calls to — which is why the prologue is written
@@ -3076,6 +3076,53 @@ function, the cheap witnesses that exercise each arm are `x[0-9]{500}y` (a
 502-byte example truncated to 40), `(?i)a{2,40}Z` (41 bytes, the first byte
 past the bound), `((a)|b){0,4000}c` (brief mode, 4002 accepting states) and
 `[a-z]{0,16384}` (a deep scan edge).
+
+## [VAR] — the CALLER-VARIABLE surface (abi 31 -> 32)
+
+Module `vars` gives a pattern `${name}`, whose bytes the caller supplies per
+call. The whole ABI surface lands in ONE event; the narrative is
+`docs/spec/match_api.md` §6, which is the change log's only home (D76
+addendum), and the module's contract page is `docs/spec/vars.md`.
+
+Three things a reader of THIS directory needs.
+
+**`rx_ctx` gained the fields, not the entries.** `<prefix>_match` IS
+`rx_matchfn`, a fixed-literal ABI type shared by every artifact, so giving it
+a `vars` parameter would have made a var-bearing artifact's `_match` no longer
+one — the D6 panel's MECH-B2 blocker. Two fields APPENDED to `rx_ctx`
+(`const rx_var *vars; size_t nvars;`) instead, so `rx_matchfn` is untouched
+and a composed call passes the environment through because it already passes
+the ctx. `<prefix>_search` and its `_in` siblings are NOT `rx_ctx`-shaped and
+so take a trailing pair, through `pcrec_vars_param_text`/`pcrec_vars_arg_text`
+(`emit_dfa.c`) — ONE derivation for both emitters, because two spellings of
+"which entries take the pair" is how a declaration and its definition come to
+disagree, which is exactly what the first var-bearing build caught.
+
+**The resolution is ONCE PER CALL and lives in `vm_emit_vars_resolve`.** Its
+three call sites are the three places `<prefix>_run_state_init` is called, and
+that is not a coincidence: the run state's lifetime IS a call, which is why
+the resolved `(pointer, length)` pairs live there rather than in locals of
+`<prefix>_match_anchored` (called once per ATTEMPT POSITION). The emitted
+instruction `vm_var` writes is `vm_bref`'s with the span source swapped and
+carries no unset test at all.
+
+**`PcrecEncEntry` gained a `requires` column, and `enc.c` closes the mask
+inside BOTH emit functions rather than at the sites that build one.** utf8's
+caseless variable compare is the caseless backreference compare one operand
+over, so its text CALLS that entry's `$_span_ci_fold`/`$_span_ci_decode`
+rather than carrying a second copy of a 1,484-pair table — and renaming them
+into a shared entry would have moved the emitted bytes of every
+caseless-backreference artifact ever built. `pcrec_enc_has_entry` is the
+sibling question ("does this backend carry a row at all"), which is how the
+value-validity refusal reaches a utf8 artifact and no byte artifact with NO
+encoding test anywhere in the emitter (DD-12 (7)).
+
+**One timing rule, learned the hard way.** `job->enc_mask` is copied BEFORE
+the prologue writes the residual declarations. `vm_var` may OR its compare's
+bit during the body walk because the walk runs above that copy;
+`vm_emit_vars_resolve` runs BELOW it, so the value-validity entry's bit is set
+in the plan phase instead. The first utf8 build failed at `implicit
+declaration of rx_var_valid`.
 
 ## [OPT-PRECHECK-ADMIT] — the whole-window pre-checks' ADMISSION (abi 30 -> 31)
 

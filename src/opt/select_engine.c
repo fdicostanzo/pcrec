@@ -246,6 +246,13 @@ static const RegRow *first_dfa_excluding(const Ast *a)
          * generic walk finds the first one. D67's whole point, and the reason
          * `analyses[]` gains no line for this module. */
         case A_BREF:
+        /* [VAR] A LEAF whose OWN stamp excludes the DFA, exactly as a
+         * backreference's does — the `${...}` registry row is VM_ONLY and the
+         * module's producer stamps every `A_VAR` it builds, so the test at
+         * the top of this loop finds it and `analyses[]` gains no line. The
+         * PREFILTER decline is a different mechanism and is NOT free — see
+         * `has_var` in `prefilter_decision` below. */
+        case A_VAR:
             return NULL;
         /* [M6.6.2] DESCENDS, and there is NO new predicate anywhere for this
          * module (design §5.1). SR-8 does the whole job through `Ast.reg`: the
@@ -649,14 +656,48 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * with even one LINKED call still gets nothing, because the machine
      * for that call cannot be built at all. */
     const bool has_call = pcrec_has_linked_call(root);
-    if (force_on && (has_bref || has_call))
+    /* [VAR] THE THIRD PREDICATE, and it is MANDATORY rather than an
+     * optimisation decline — `[DD-14]`'s own paragraph above is the
+     * precedent, incident for incident. `src/ir/nfa.c` has NO `A_VAR` arm;
+     * it falls into the same loud internal error `A_BREF` does, because a
+     * variable's bytes do not exist until the call and determinization
+     * cannot see them (`(${v}|ab)c` cannot be determinized without them —
+     * `[FEAT-VAR]` (a)'s placement problem, deferred by Frank's 2026-09-23
+     * charter).
+     *
+     * ENGINE SELECTION ALONE DOES NOT STOP IT. A VM-only pattern normally
+     * still gets a hybrid DFA prefilter, so "VM-only" and "prefilter-free"
+     * are two facts with two mechanisms: the `${...}` row's VM_ONLY stamp
+     * settles the first through `forces_registry` above, and THIS LINE
+     * settles the second. Without it a var-bearing pattern routes to the VM,
+     * the VM asks for its prefilter, and the prefilter build walks a node it
+     * refuses — the exact "a compiler that cannot compile the module's own
+     * corpus" outcome wave E's paragraph describes.
+     *
+     * ERASING A VARIABLE IS NOT A SUPERSET EITHER, on the same one-line
+     * argument: `a${v}b` with `v` = `x` matches "axb", and the erased `ab`
+     * does not. So the prefilter's rejection would be a FALSE NEGATIVE, and
+     * this is `A_BREF`'s case rather than `A_LOOK`'s.
+     *
+     * `[PATFACTS]` (D120) is the eventual general home for all three of
+     * these hand-written predicates (`variables_pattern.md` §3); until it
+     * lands, a third one in the shape of the first two is the tree's answer
+     * and not a parallel mechanism. */
+    const bool has_var = pcrec_has_var(root);
+    /* [VAR] the construct-named refusal gains its THIRD noun. The name is
+     * chosen ONCE and used twice, which is what `[DD-14]`'s own two-argument
+     * ternary pair was already doing and what stops the two halves of one
+     * sentence naming different constructs. */
+    const char *pf_noun = has_bref ? "backreference"
+                        : has_call ? "subroutine call"
+                        :            "${...} variable";
+    if (force_on && (has_bref || has_call || has_var))
         pcrec_ctx_fail(cx, why_pos,
                  "-fprefilter cannot be honoured for a pattern containing a "
                  "%s: the prefilter is a capture-erased DFA, and "
                  "erasing a %s changes the language it answers "
                  "for (drop -fprefilter)",
-                 has_bref ? "backreference" : "subroutine call",
-                 has_bref ? "backreference" : "subroutine call");
+                 pf_noun, pf_noun);
     if (force_on && force_off)
         pcrec_ctx_fail(cx, why_pos,
                  "-fprefilter and -fno-prefilter cannot both be requested");
@@ -816,7 +857,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
     fit->prefilter_declined_nullable_default =
         cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
         lang_nullable_declinable && would_prefilter;
-    fit->prefilter = (has_bref || has_call ||
+    fit->prefilter = (has_bref || has_call || has_var ||
                      (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
                      fit->prefilter_declined_nullable ||
                      fit->prefilter_declined_nullable_default)

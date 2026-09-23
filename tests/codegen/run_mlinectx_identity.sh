@@ -160,12 +160,17 @@ root, src, mout, nout = sys.argv[1:5]
 sys.path.insert(0, os.path.join(root, "tests", "lib"))
 from mlscan import multiline_anchor      # ONE implementation, three readers
 
-raw = [l.rstrip("\n") for l in open(src) if l.strip()]
+# [VAR] `errors="surrogateescape"` ON BOTH READ AND WRITE: same fix as
+# run_endvar_identity.sh's own -- module `vars`' corpus carries a raw
+# non-UTF-8 byte in a pattern line (`^${v:-\xff}$`), which plain `open(src)`
+# cannot read at all. The classifier only asks about pattern TEXT shape,
+# never decodes it as a string, so round-tripping the byte costs nothing.
+raw = [l.rstrip("\n") for l in open(src, encoding="utf-8", errors="surrogateescape") if l.strip()]
 mentions = [p for p in raw if '(?' in p and 'm' in p]
 real = [p for p in raw if multiline_anchor(p)]
 rest = [p for p in raw if not multiline_anchor(p)]
-open(mout, "w").write("".join(p + "\n" for p in real))
-open(nout, "w").write("".join(p + "\n" for p in rest))
+open(mout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in real))
+open(nout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in rest))
 print("mlinectx-identity: corpus %d patterns; contain both `(?` and an `m`: "
       "%d; carry a `^`/`$` IN SCOPE of a set `m`: %d; everything else "
       "(including patterns that set `m` with no anchor to receive it): %d"

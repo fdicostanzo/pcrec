@@ -2988,3 +2988,73 @@ never edited afterwards.
   measured, but the row should not open on this lane's 5-cell population;
   names the still-owed ctx/level-context-vs-JIT bench run as the actual
   gate. Memo: `docs/dev/optloop/vmlit_trigger_read.md`.
+
+- `varmvp_report.md` — **[VAR] THE MVP's PATTERN HALF** (2026-09-23, lane
+  varmvp, opus): M1-M8 + M10, `abi` 31 -> 32. `${name}` in a pattern, whose
+  bytes the caller supplies per call. Read §0 for the eight findings, of
+  which five are refutations of the design set's own sentences and three are
+  defects the checks found on their first populated run.
+  **The sharpest is that a mechanical "join `A_BREF`'s case label" pass over
+  the 43 `AKind` switch sites gets 42 right and the wrong one is SILENT**:
+  in `atomic.c`'s nine predicate walks, eight ask something general (a
+  backreference is a leaf) and ONE — `pcrec_has_bref` — asks "does anything
+  here compare SUBJECT TEXT TO SUBJECT TEXT", where `case A_BREF:` IS the
+  question. Found by READING the `-fprefilter` refusal, which named "a
+  backreference" for a pattern that has none; no test could have gone red,
+  because the one caller that reads it for a decision ORs it with `has_var`.
+  **Second: two checks this landing was the first to POPULATE both failed in
+  the K35 shape.** The rxtsource census counted ONE block opener and the
+  format has had two since W23.3 — its own header calls it "a control for
+  all three parsers" — and nothing failed because the corpus had zero
+  `pattern-esc` blocks until this module added one. And leg C's first version
+  counted the binding lines as EXPECTATIONS, putting 45 entries into a total
+  the census does not count; C3's own sentence about expectations going
+  somewhere neither counted nor reported is what said so.
+  Also worth reading: the +34-byte var-free identity measurement (four
+  witnesses, 13 KB to 762 KB, at the same `-o` basename, six changed lines
+  each) which is STRONGER than the design's own MECH-M1 wording; the
+  `PcrecEncEntry.requires` column and why all three alternatives to it were
+  worse; and §2's three failing-direction plants on the expansion grammar,
+  where emitting ONE WORD PIECE PER BYTE reddened NOTHING because the round
+  trip is an agreement between the parse and the render and the render
+  flattens exactly that representation.
+
+- `vartriage_report.md` — TRIAGE of varmvp's five red `make test` sections
+  (2026-09-23, lane vartriage, sonnet): test-cli, test-registry,
+  test-codegen, test-assertions, test-cpset-structure and
+  test-anchored-match, on the same `lane/varmvp` branch. Reproduced each
+  section by running its own script(s) STANDALONE rather than by parsing
+  the full log's line ranges — the log is interleaved output from a
+  non-`-j1` `make -k` run, confirmed by finding `test-registry`'s own
+  "registry well-formedness" output printed inside what looked like
+  `test-cli`'s own range. **ONE real defect, fixed in `src/`**:
+  `pcrec_construct_built_status` (`src/dump/syntax_dump.c`) had no arm for
+  an `RK_BARE` row that is `RS_MODULE` — `${name}` is the first one (every
+  earlier `RK_BARE` row is `RS_BASE` and short-circuits before this
+  function runs), so it fell into the general doorway arm, which
+  `RK_BARE` constructs can never satisfy (no doorway, by design), deriving
+  `PCREC_BUILT_DEFECT` unconditionally. Fixed with a new arm mirroring
+  `RK_QUANTSUFFIX`'s existing one — precedented by the row's OWN header
+  comment in registry.c, which names that precedent explicitly.
+  **Everything else is stale pins or a test-harness fragility**, all
+  downstream of `${name}`'s row existing or the M6 mid-flight seam-pair
+  rename (`bref_match`→`span_match`) landing after some manifests were
+  already re-pinned for the abi bump alone: registry's row/family/SR-8/
+  built-status counts and three PASS-line coverage guards (the SECOND
+  READER CLASS this house keeps re-finding — a reader whose text never
+  cites the number still moves with it); `docs/pcre2_compliance.md`
+  regenerated with `compliance_section.py --write`; cpset's one
+  backreference-bearing manifest row, re-pinned and VERIFIED by diffing a
+  scratch build of the rename's parent commit against the current tree at
+  the same `-o` basename; and `run_anchored_match.sh`'s K53 drop-rung cap,
+  whose margin eroded across several same-day landings until the smallest
+  witness crossed it — re-measured by binary search on the cap itself,
+  reading the artifact's own stamp rather than a diagnostic's byte count.
+  **The test-harness fragility**: three codegen identity scripts
+  (`run_endvar_identity.sh`/`run_wordctx_identity.sh`/
+  `run_mlinectx_identity.sh`) read the corpus's pattern lines through
+  plain `open()`, which cannot survive module `vars`' own corpus carrying
+  a deliberate raw non-UTF-8 byte (`^${v:-\xff}$`, testing that a default
+  value may contain an arbitrary byte) — fixed with
+  `errors="surrogateescape"` on both the read and the write side,
+  verified to round-trip the exact byte rather than re-encode it.

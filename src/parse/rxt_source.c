@@ -2878,6 +2878,17 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
          * harness — recording is `--list-source`'s own job (§2.24), not a
          * step toward scoring. */
         if (tok_is(tok, "perr")) continue;
+        /* [VAR] module `vars`' two binding lines. RECOGNISED HERE AND NEVER
+         * READ, which is the same verdict this parser's own header gives the
+         * expectation kinds and for the identical reason: a variable binding
+         * is a TEST fact (what the harness passes the artifact for this
+         * block's cases), and a compiler that started recording them would be
+         * a second harness. The schema walk above has already checked the
+         * value's SHAPE — `var`'s qualified name-then-subject, `var-unset`'s
+         * bare token — so this leg's whole obligation is discharged by
+         * accepting the line, which is what makes the three-leg agreement
+         * real rather than a claim about a line one leg drops silently. */
+        if (tok_is(tok, "var") || tok_is(tok, "var-unset")) continue;
         if (tok_is(tok, "frames-buffer=")) {
             /* [DD-13b.W23.4] POSITIONAL, not block-scoped (rxt_format.md's
              * own words): the route named here governs every CASE row
