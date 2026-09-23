@@ -220,7 +220,7 @@ t_start=$(date +%s)
 # bit -> macro name, e.g. bits[4]=PCREC_NO_POSSESSIFY. Scoped to 4..31.
 #
 # THE LOW BOUND IS THE LOAD-BEARING ONE and the high one is not: bits below 4
-# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
+# are unrelated `1ull << N` constants in the same header (PCREC_CASELESS and
 # friends) and must never be swept in, while the top of the deny/force family
 # simply moves every time an axis is added. It was written as `4..15` — the
 # family's extent on the day it was written — and [OPT-K]'s bit 16 was
@@ -325,7 +325,7 @@ reg_bits="$(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n -u)"
 if [ "$doc_bits" != "$reg_bits" ]; then
     echo "run_axes.sh: FATAL: tuning.md §2's documented bits and lib/pcrec.h's derived bits DISAGREE" >&2
     echo "  documented (tuning.md \"(bit N)\" mentions): $(echo "$doc_bits" | tr '\n' ' ')" >&2
-    echo "  derived    (lib/pcrec.h 1u << N, bits 4-31): $(echo "$reg_bits" | tr '\n' ' ')" >&2
+    echo "  derived    (lib/pcrec.h 1ull << N, bits 4-63): $(echo "$reg_bits" | tr '\n' ' ')" >&2
     echo "  a bit in one column and not the other means a new axis shipped with no" >&2
     echo "  doc heading, or a heading survived its axis's removal" >&2
     exit 1

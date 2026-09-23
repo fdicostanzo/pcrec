@@ -360,7 +360,7 @@ else
 fi
 
 # NO UPPER BOUND. The LOW bound is the one doing real work -- bits below 4
-# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
+# are unrelated `1ull << N` constants in the same header (PCREC_CASELESS and
 # friends) and must never be swept in -- while the top of the deny/force
 # family moves every time an axis is added. It was `-le 15`, the family's
 # extent on the day this was written, and [OPT-K]'s bit 16 was therefore

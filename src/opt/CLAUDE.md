@@ -1263,10 +1263,51 @@ construction (src/ir) and emission (src/gen).
 
   **THE ANALYSIS PRODUCES A SET AND THE EMITTER PICKS ONE MEMBER**, because
   `A_ALT` INTERSECTS: a one-byte-per-node analysis would give up at every
-  alternation. The member is the RIGHTMOST, PCRE2's own choice, so a later
-  multi-byte form is a WIDENING of this mechanism rather than a different
-  one — and "rightmost" is carried alongside the set rather than recovered
+  alternation. "Rightmost" is carried alongside the set rather than recovered
   from it, since a set has no order.
+
+  **[OPT-FREQPICK]** (`[OPTLOOP.2]` batch 2, 2026-09-22,
+  `docs/design/reqbyte_freq_pick.md`): WHICH member is no longer PCRE2's
+  choice. It is the ARGMIN of `pcrec_byte_freq_ppm` — the static
+  byte-frequency prior `prefix_k.c` already ships for `[OPT-OFSK]`, a second
+  CALL and not a second table — because every member is a byte every match
+  must contain, so the `memchr` is sound for any of them and the one that pays
+  is the one a subject is least likely to hold. PCRE2's rightmost rule
+  survives as the TIEBREAK, which preserves the property it was chosen for: a
+  later multi-byte form is a WIDENING of this mechanism, and `req_run` below
+  IS that widening. Measured: 13.60% of the corpus moves its emitted byte,
+  and no new axis bit — which member is tested is a VALUE under
+  `-fno-req-byte`.
+
+  **THE PRIOR IS READ ONLY UNDER `byte`**, and the reason is not caution: a
+  byte-frequency table is a fact about a corpus UNDER an encoding, and the
+  shipped one is keyed to `byte` by its contents — its whole 0x80-0xFF half is
+  the 2 ppm floor, so under `-e utf8` it calls the bytes a Latin corpus uses
+  MOST the rarest there are and an argmin over it would take a shared UTF-8
+  lead byte. Elsewhere the pick falls back to the rightmost member, which is
+  byte for byte the pre-[OPT-FREQPICK] answer, so the fallback can never
+  regress anything and the `-e utf8` identity gates are a free control.
+
+  **[OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN** (same batch,
+  `docs/design/reqpos_2b.md`): the same fact at WORD grain, produced by a
+  SECOND ACCUMULATOR on this same walk rather than by a second pass. Each
+  subtree carries the longest guaranteed-contiguous literal run it contains
+  plus its own guaranteed head and tail runs, so a concatenation can JOIN the
+  left factor's suffix to the right factor's prefix — which is what finds a run
+  neither factor carries alone. `Job.req_byte` becomes the run's own scan
+  member when a run ships, chosen at this file's single return so the stamp and
+  the one emitted `memchr` cannot disagree.
+
+  Three declines are its own, each a missed opportunity and never an unsound
+  claim, and the SECOND is the one where the opposite deletes a match: a
+  multi-member class contributes nothing and breaks contiguity around it (every
+  caselessly folded literal); a MIN-0 REPEAT breaks contiguity, because a
+  C-comment pattern's two delimiters abut only in the match where the repeat
+  takes no iterations; and an alternation keeps only its branches' longest
+  common prefix and common suffix, so nothing is claimed across a
+  non-common interior and nothing is ever joined across a repeat's iterations.
+  A run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to the
+  lowest-prior window containing the scan member, never split in two.
 
   **TWO THINGS DIFFER FROM PCRE2's OWN FACT, both deliberately.** The whole
   window counts, not "other than at its start" — PCRE2 excludes the first
@@ -1281,11 +1322,22 @@ construction (src/ir) and emission (src/gen).
   default arm inheriting "empty" would be SOUND, so a new node kind that
   really did carry a necessary byte would silently never contribute one.
 
-  Tests: `tests/codegen/run_prechecks.sh` §3 (the stamp held to the emitted
+  Tests: `tests/codegen/run_prechecks.sh` §3 (both stamps held to the emitted
   `memchr`'s own argument AND, separately, to its SENSE; the caseless-fold
-  decline; the NULL-subject obligation; both engines, with the
-  prefilter-declined VM witness named; a population floor); failing-direction
-  control `tests/mech/sabotages/S265`.
+  decline; the NULL-subject obligation in both emitted shapes; both engines,
+  with the prefilter-declined VM witness named; population floors for the byte
+  and for the run), §3.7 (the pick rule's own both-directions witness set, with
+  every expected byte a hand-derived LITERAL and the encoding decline asserted
+  rather than trusted) and §4 (the run's emitted scan loop, its window guard's
+  two forms with the positive control an absence assertion needs, the
+  truncation window computed by hand from the prior, the `-fno-req-run`
+  fallback's byte identity, both engines, the declines one witness each, and a
+  population floor); failing-direction controls
+  `tests/mech/sabotages/S265` (the byte check's sense), `S266` (the pick's
+  argmin inverted — structural detector only, since every member is sound),
+  `S267` (the run compare's sense) and `S268` (an alternation's head claimed
+  from one branch, the answer-detectable form of "a run longer than the
+  analysis proved").
 
 ## Conventions
 

@@ -3320,7 +3320,7 @@ header→dump arm filtered the header's bits to `4..15` before comparing —
 the deny/force family's extent on the day it was written — so
 `PCREC_NO_OFFSET_SKIP` at bit 16 was dropped before the comparison and that
 arm could not report it missing. Fixed to `>= 4` with no upper bound (the
-LOW bound is the one doing real work: bits below 4 are unrelated `1u << N`
+LOW bound is the one doing real work: bits below 4 are unrelated `1ull << N`
 constants in the same header), and both verdict strings and the section
 comment now DERIVE the range from the bit set instead of spelling it.
 
@@ -3395,7 +3395,7 @@ check BY CONVENTION, and before this row only 4 of the 13 documented axes
 ### The answer-identity sweep (`tests/axes/run_axes.sh`)
 
 Sweeps the WHOLE `.rxt` corpus over every bit-flag axis (12, derived live
-from `lib/pcrec.h`'s `1u << N` constants and `cli/main.c`'s flag-parsing
+from `lib/pcrec.h`'s `1ull << N` constants and `cli/main.c`'s flag-parsing
 loop — never hand-copied, cross-checked against `tuning.md` §2's own
 `(bit N)` headings so a new axis with no doc heading, or vice versa, is
 RED) plus the coarse `--engine=vm`/`--engine=dfa` axis, comparing PER-CASE

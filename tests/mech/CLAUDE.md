@@ -2639,6 +2639,46 @@ and one of them can still lose a match, which is not a contradiction:
 | S264 | [OPT-ENDWIN] | the window one byte too FEW | `178fail/28848pass` | MOVES where a search starts, so an error deletes matches |
 | S265 | [OPT-REQBYTE] | the `memchr` sense inverted | red | the SOUND-direction plant would be invisible; this one is not |
 
+## [OPTLOOP.2] batch 2 — three more rows on the same suite word
+
+`prechecks` gains `<PREFIX>_REQ_RUN` and the frequency-informed pick, and the
+three rows below extend batch 1's asymmetry rather than repeat it:
+
+| row | mechanism | plant | corpus arm | why |
+|---|---|---|---|---|
+| S266 | [OPT-FREQPICK] | the set pick's `argmin` inverted to `argmax` | expected `0fail` | EVERY member of the necessary set is a byte every match must contain, so the `memchr` is sound for any of them — the choice moves a SPEED and nothing a caller can observe |
+| S267 | [OPT-REQPOS] | the run compare's `!memcmp` sense inverted | red | S265's plant one grain over, and answer-detectable for S265's reason |
+| S268 | [OPT-REQPOS] | an alternation's head run taken from ONE branch | red | the analysis claims a run beyond what every match guarantees, so every match of the other branch is deleted |
+
+**S266 is the SECOND row in this directory whose only detector is one
+structural arm**, and its reason is different from S263's in a way worth
+keeping straight. S263's plant throws away a bound; S266's plant keeps
+everything and picks differently, so there is not even a missing instruction
+to grep for — the whole difference is one decimal inside a `memchr` that is
+correct under either choice. Its `SAB_DESC` says so, and
+`tests/codegen/run_prechecks.sh` §3.7's both-directions population is what
+makes the arm discriminate at all; §3.7b's run-freeness assertion is what
+keeps it from silently reading a different fact.
+
+**S268 IS reqpos_2b.md §5.4's "a run one byte longer than the analysis
+proved", in the form the shipped corpus can reach.** The note proposes taking
+`.tar` to `.tarz` and observes in the same paragraph that such a row needs its
+own witness — a subject containing the short run and not the long one, which
+no corpus file has a reason to carry — so it would ship UNREACHED
+([MECH-REACH] flagged before the fact rather than after). An alternation's
+common prefix is the same property at a site every `A|B` pattern exercises, so
+the plant deletes real matches with no bespoke fixture at all. Its §4.1
+`(?:/user|/users)` row stays GREEN under the plant by construction, because
+there one branch's head IS the common prefix — which is why §4.7 exists as a
+separate arm with a population chosen for the difference.
+
+**S267 plants BOTH emitted shapes at once** (`SAB_COUNT=2`), and that is
+deliberate: the window guard has a one-conjunct form at scan index 0 and a
+two-conjunct form above it, written as two `printf` formats, and the compare's
+sense is the same claim in both. A plant reaching one of them would leave half
+the population correct and read as a smaller failure rather than as a wrong
+mechanism.
+
 **S264's 178 is what the corpus file was built to produce.**
 `tests/assertions/end_window.rxt` carries every claim TWICE — at a subject
 length that leaves the clamp inert and at one that makes it fire — because a
