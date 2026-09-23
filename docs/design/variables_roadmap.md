@@ -70,6 +70,19 @@ phases.
    `bref_match_caseless` already handles all of it.
    `variables_pattern.md` §6.
 
+6. **Variables are passed BY NAME, not by compile-assigned index — ruled
+   2026-09-23, after the D6 panel's MECH-B2 finding that the index-based
+   call interface first proposed here broke `rx_matchfn`'s composability.**
+   `rx_var` gains a third member, `name`; the compile-time index macros
+   (`RX_VAR_PREFIX` and siblings) survive only as an artifact's own INTERNAL
+   bookkeeping, resolved once per entry call by a linear name scan, never
+   as something a caller writes. The array itself now rides `rx_ctx` (two
+   fields appended, `vars`/`nvars`) rather than being a new parameter on
+   `<prefix>_match` — which is what keeps `<prefix>_match` an `rx_matchfn`
+   byte for byte and resolves the contradiction the panel found between the
+   note's own §4.1 and §4.2. `variables_common.md` §3.1-§3.3;
+   `variables_pattern.md` §4 carries the full ruling text.
+
 And one measurement that makes the pattern side cheaper than expected:
 **`${...}` in a pattern is a spelling PCRE2 accepts and that no subject can
 match** — `$` asserts that the next byte is a newline, and `{` is not one.
@@ -92,15 +105,15 @@ with the call interface and the refusal classes settled.
 | # | item | size | depends on |
 |---|---|---|---|
 | M1 | The expansion grammar and evaluator: `${ [!] selector [op word] }` with `:-`, `-`, `:+`, `+`, `:?`. One parser, one evaluator, both consumers. Nesting in the `word` position only, bounded by a `limits.def` row. | **M** | — |
-| M2 | The value model: `rx_var {const unsigned char *p; size_t len;}` as a fixed-literal ABI type; UNSET is `p == NULL`, EMPTY is `p != NULL && len == 0`; the `:` operators fold EMPTY in with UNSET. | **S** | M1 |
-| M3 | The array interface: compile-assigned indices, `<PREFIX>_NVARS`, one `<PREFIX>_VAR_<NAME>` macro per name. No run-time name lookup anywhere. | **S** | M2 |
+| M2 | The value model: `rx_var {const char *name; const unsigned char *p; size_t len;}` as a fixed-literal ABI type (`name` added by the 2026-09-23 ruling); UNSET is `p == NULL`, EMPTY is `p != NULL && len == 0`; the `:` operators fold EMPTY in with UNSET. | **S** | M1 |
+| M3 | The array interface: passed BY NAME (Frank, 2026-09-23), resolved once per entry call by a linear name scan against the artifact's own compile-time table (`<PREFIX>_NVARS`, one `<PREFIX>_VAR_<NAME>` internal index per name — never a caller-written index). Sized S→same: the resolution work moved from "none" to "one linear scan per call," but it is still no `abi`-shaped design work of its own. | **S** | M2 |
 | M4 | Module `vars`: the registry row for the `${` doorway with `engines = ENGM_VM`, the producer, the `A_VAR` node kind with its own `union u.var`. The DFA decline and the `--engine=dfa` diagnostic come free from `forces_registry`. | **M** | M1 |
 | M5 | The five analysis declines: `reqbyte.c`, `startanch.c`, `endwin.c`, `mrl.c` join `A_BREF`'s case labels; `prefix_k.c` is structurally unreachable via the new `has_var` prefilter predicate (M4). Forced complete by the no-`default:` rule — which forces completion of the WIDER 44-site/17-file `AKind`-switch surface `variables_pattern.md` §2 censuses, of which this row is only the five ANALYSIS declines; the further sites needing real (non-decline) work — `nfa.c`'s lowering arm, `emit_vm.c`'s emission (M6), `lower_enc.c`'s three encoding-lowering-of-the-expansion-template sites, `definitions.c`'s core/reducible ruling, `rxt_compose.c`'s composer leaf lists — are real per-kind wiring the no-`default:` rule surfaces as compile errors during M4/M6, not new items of their own. | **M** | M4 |
 | M6 | The VM emit arm and the encoding-seam entry pair `$_var_match` / `$_var_match_caseless`, per encoding — `vm_bref`'s block with the span source swapped, same length-returning protocol, same work metering. **Caseless is in the MVP**, because it is the same work. | **M** | M4 |
-| M7 | The entry-point parameter: `const rx_var *vars` last, on var-bearing artifacts only; the `_in` siblings too. The `abi` bump with the full D76/D94 ritual, the `docs/spec/match_api.md` hunk, `rx_info.nvars` appended, **and the `rx_info` variable-names table on the `rx_info.groups` model** (promoted from an open question into the MVP, `[VAR]`'s D6 panel TEST-F1 — the `.rxt` test harness has no OTHER route from a case's named variable binding to a compiled artifact's index, `driver.c` never being templated per pattern). | **M** | M3, M6 |
+| M7 | The entry shape (2026-09-23 ruling): `rx_ctx` gains `vars`/`nvars` APPENDED fields, so `rx_match`/`rx_match_caps` take NO new parameter and stay `rx_matchfn`; `rx_search` and its `_in` siblings (not `rx_ctx`-shaped) take a trailing `vars, nvars` pair instead, present only on var-bearing artifacts. The `abi` bump with the full D76/D94 ritual (now a struct-layout event on `rx_ctx` itself), the `docs/spec/match_api.md` hunk, `rx_info.nvars` appended, **and the `rx_info` variable-names table on the `rx_info.groups` model** (promoted from an open question into the MVP, `[VAR]`'s D6 panel TEST-F1 — its role narrowed under the ruling from the driver's only resolution route to a VALIDATION aid, since the artifact now resolves names itself). | **M** | M3, M6 |
 | M8 | The refusal classes: `PCREC_ERR_UNSET_VAR` below `PCREC_ERR_FLOOR` (the `PCREC_ERR_STARTPOS` shape), and the UTF-8 validity refusal for a value under `-e utf8`. | **S** | M7 |
-| M9 | Replacement side: `${!name}` as the caller variable in a template (module `subst-pcrec`), `${n:-}`/`${n:+}` on both selectors, the entry's `vars` parameter. | **M** | M1, and `[M4-SUBST]`'s own core |
-| M10 | Tests: the `.rxt` production (`var` / `var-unset`, ONE line per variable per case shared by BOTH consumers — pattern-side matching and replacement, `variables_common.md` §3.5), its `rxt_schema.def` row, three-leg agreement, the `RX_VAR_<NAME>` name resolution through M7's `rx_info` names table, the sabotage rows, and the pattern-side oracle (`variables_common.md` §3.6: QUOTEMETA-SPLICE + backref-equivalence differential). | **L** | M7, M9, and the manager's spelling ruling |
+| M9 | Replacement side: `${!name}` as the caller variable in a template (module `subst-pcrec`), `${n:-}`/`${n:+}` on both selectors, `rx_subst`'s trailing `vars, nvars` pair (`replace_design.md` §4.2 — `rx_subst` is not `rx_ctx`-shaped, so it takes the pair directly rather than through the ctx append M7 gives the pattern side). | **M** | M1, and `[M4-SUBST]`'s own core |
+| M10 | Tests: the `.rxt` production (`var` / `var-unset`, ONE line per variable per case shared by BOTH consumers — pattern-side matching and replacement, `variables_common.md` §3.5), its `rxt_schema.def` row, three-leg agreement, building an `rx_var[]` array VERBATIM from a case's name/value lines (no NAME→INDEX lookup of its own, under the ruling — the artifact resolves its own names at entry), the sabotage rows, and the pattern-side oracle (`variables_common.md` §3.6: QUOTEMETA-SPLICE + backref-equivalence differential). | **L** | M7, M9, and the manager's spelling ruling |
 
 ### 2.2 What is deliberately *not* in it
 
@@ -286,16 +299,29 @@ M10 is **L**, and the comparison this size rests on is **not** a same-shape
 recent schema landing: `[DD-13b.W23.4]` (four new `#section` blocks, three
 pattern-row columns, four head-row kinds — a comparably-sized schema/dump-
 format footprint) touched no `driver.c` at all, because it never needed to
-pass a caller-supplied, NAME-INDEXED RUNTIME VALUE into the compiled
+pass a caller-supplied, NAME-CARRYING RUNTIME VALUE into the compiled
 artifact's own entry call. M10 is the FIRST `.rxt` production in this tree's
 history that does: `driver.c` is one static file with only POSITIONAL/ENUM
-runtime inputs today (`<subject> [startpos] [route] [mode]`), so resolving a
-case's `var name` against a compiled artifact's `RX_VAR_<NAME>` index needs
-the `rx_info` variable-names table (promoted into M7, `[VAR]`'s D6 panel
-TEST-F1) PLUS the driver-side NAME→INDEX lookup that reads it — new harness
-machinery a pure dump-format extension does not need. The size still counts
-the ordinary schema machinery too: a `rxt_schema.def` row with its ten
-columns, agreement across all three parser legs (`pcrec`,
+runtime inputs today (`<subject> [startpos] [route] [mode]`).
+
+**The 2026-09-23 by-name ruling (roadmap item 6, `variables_common.md`
+§3.1-§3.3) changes WHAT the driver's new machinery does, but not WHETHER it
+is new.** The withdrawn index-based design would have needed the `rx_info`
+variable-names table PLUS a driver-side NAME→INDEX lookup reading it, before
+`driver.c` could write a caller-assigned index slot. Under the ruling the
+driver performs NO lookup — it builds an `rx_var[]` array directly from a
+case's `var name "value"` / `var-unset name` lines, one entry per line, and
+passes it through unconditionally (`variables_common.md` §3.5) — but
+`driver.c` still needs NEW machinery it does not have today: constructing
+that array from parsed `.rxt` lines, and wiring the new `rx_ctx.vars`/
+`rx_ctx.nvars` fields (or the trailing `vars, nvars` pair on non-`rx_ctx`
+entries, `variables_pattern.md` §4.1) into every call site the driver
+already has for `rx_match`/`rx_search`/the `_in` family. The `rx_info`
+variable-names table (promoted into M7, `[VAR]`'s D6 panel TEST-F1) is still
+in the MVP, but its cost category changed from "the only resolution route" to
+"an optional typo-catching validation pass" (`variables_common.md` §3.5). The
+size still counts the ordinary schema machinery too: a `rxt_schema.def` row
+with its ten columns, agreement across all three parser legs (`pcrec`,
 `tests/harness/run.sh`, `tests/harness/verify_rxt.py`), W23-S3's per-row
 drive, the corpus census pins, and the sabotage rows. The `ext`-block staging
 path exists if that work is not ready (`docs/spec/rxt_format.md`'s graduation
@@ -307,7 +333,11 @@ the identity-gate re-pin, the spec hunk in the same change, and the site list
 found **by grep over the number** — with `battriage`/`evtriage3`'s addendum
 that a reader whose text cites a *byte count* and no abi digit still moves
 with it, and `w4_report.md` §0(5)'s that a coverage guard can move while
-spelling a number it never touched.
+spelling a number it never touched. Under the 2026-09-23 ruling this grep is
+WIDER than a per-artifact signature change: `vars`/`nvars` append to `rx_ctx`
+itself, a fixed-literal type shared by every artifact, so the site list must
+also find every reader of `rx_ctx`'s own layout, not only every `<prefix>_*`
+entry-point signature.
 
 ---
 
@@ -317,7 +347,7 @@ spelling a number it never touched.
 |---|---|---|
 | `[FEAT-VAR]` | `STATE:not-started`, "expand on arrival, not before" | Its four recorded design questions: (b) and (c) answered from the code, (d) answered as a signature change with the abi ritual, (a) deferred to phase 5 by the 2026-09-23 charter |
 | `[M4-SUBST]` | `STATE:not-started`, design ruled by D38 | The variable layer it predates; §3.8's finding that the emitted global loop is **not** `match_api.md` §3.1's caller loop with a splice; §5 Q6's question about whether a var-bearing pattern can stream |
-| `[M4-CALLOUTS]` | `STATE:not-started`, ABI ruled by D38/D39 | `rx_renderfn`'s first producer (phase 3), and §5 Q2's question routed back to `design_callout_abi.md` to be ruled once |
+| `[M4-CALLOUTS]` | `STATE:not-started`, ABI ruled by D38/D39 | `rx_renderfn`'s first producer (phase 3); §5 Q2 (whether a renderer sees the variable environment directly) is now RULED — `rx_ctx` gains `vars`/`nvars`, so a renderer sees them with no further work owed here |
 | `[PATFACTS]` | `STATE:not-started` (D120) | A first outside customer, and a concrete five-site instance of the ad-hoc-analysis observation that chartered it |
 | `[LIB]` | `STATE:not-started`, blocked on `[DD-13b]` | Permanent ownership of the pattern-valued variable, rather than that feature being half-built here |
 
@@ -335,10 +365,12 @@ there with its recommendation.
   (`variables_common.md` §7 Q2, `replace_design.md` §5 Q1).
 - Whether `rx_info` carries a variable names table in the same `abi` event
   (`variables_pattern.md` §9 Q2). Recommendation is yes, because adding it
-  later is a second event for a `.rodata`-only table.
-- Whether a renderer sees the environment through `ctx->user` or a new
-  `rx_ctx` member (`replace_design.md` §5 Q2). Belongs to
-  `design_callout_abi.md`, ruled once.
+  later is a second event for a `.rodata`-only table — its role is now a
+  validation aid rather than the resolution route (the 2026-09-23 ruling,
+  roadmap item 6), but the table itself is still in the MVP.
+- ~~Whether a renderer sees the environment through `ctx->user` or a new
+  `rx_ctx` member~~ RULED 2026-09-23: a new `rx_ctx` member (`vars`/`nvars`,
+  appended). `replace_design.md` §5 Q2.
 - The `.rxt` production's spelling and staging (`replace_design.md` §5 Q5).
   The manager's.
 - Module naming: `vars` on the pattern side; the replacement side rides D38's
