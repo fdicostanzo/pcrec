@@ -586,6 +586,22 @@ fi
 # initializer pair is COMMENT and comments are off by default since
 # [EMIT-VERB]. Both numbers are the same event seen through two settings, and
 # `tests/resource`'s own pin (762367 -> 762401) is the +34 one.
+#
+# RE-RECORDED A NINTH TIME, same day, ONE ROW ONLY: `(\w+)\s+\1` alone moved
+# a further +11 on top of the +1001 above (26076 -> 26087), because it is the
+# manifest's only backreference-bearing pattern and the M6 mid-flight ruling
+# (docs/dev/lanes/varmvp_report.md §0.0) RENAMED the seam pair
+# `bref_match`->`span_match` AFTER this manifest's own +1001 re-pin, widening
+# the reference side from two `size_t` offsets to a pointer+length
+# (`const unsigned char *ref, size_t reflen`) so a backreference now passes
+# `subject + start, end - start` at the call site instead of the two bare
+# offsets. VERIFIED BY DIFFING the two artifacts written to the SAME `-o`
+# basename (a scratch build of the M6 ruling's parent commit vs this tree):
+# the only changed lines are the `rx_bref_match`/`rx_span_match` declaration,
+# definition and one call site, `RX_VM_PROGRAM_BYTES` (+42, program bytes,
+# unrelated to this manifest's own byte count), and the loop body's operand
+# (`s[ref_start + i]` -> `ref[i]`) -- no other row in the manifest carries a
+# backreference, so none of the other eleven moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

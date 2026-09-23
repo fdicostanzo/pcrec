@@ -57,7 +57,7 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	27218
 (\w+)\s+\1	RX_VM_STRATS	0x3u
 (\w+)\s+\1	RX_VM_ALT_ISLANDS	0
 (\w+)\s+\1	RX_VM_FRAMELESS	0
-(\w+)\s+\1	EMITTED_BYTES	26076
+(\w+)\s+\1	EMITTED_BYTES	26087
 (?<=foo)bar	RX_ENGINE	"vm"
 (?<=foo)bar	RX_ENGINE_SEL	"selected"
 (?<=foo)bar	RX_DFA_TABLE	"premultiplied"
