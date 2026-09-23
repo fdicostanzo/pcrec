@@ -27,3 +27,17 @@ each cites the ledger/review it summarises and never replaces it.
   the same day.
 
 Maintenance: update this file when files are added or removed.
+
+- `2026-09-23-optloop-cycle1-exec-summary.md` — the optimization loop's
+  CYCLE 1, end to end (memory `pcrec-exec-summary-after-bench-reports`,
+  written after the bench's O-45 ledger): the analysis's five mechanisms
+  and the caps view, the profile pass, batch 1's landing (abi 28→29,
+  three axes), the ledger (39 of 41 target rows meet the bar), and the
+  four surprises — 16 "regressions" on artifacts whose program text did
+  not change, the pre-check emitted above the free check that decides the
+  call, one artifact running the same `memchr` twice, and four
+  regressions 111×-60,674× larger than the mechanism's own work. Carries
+  the recommended per-mechanism dispositions for Frank and what cycle 2
+  already has in flight. Cites `docs/dev/optloop/cycle1_ledger_reading.md`
+  for every derivation.
+
