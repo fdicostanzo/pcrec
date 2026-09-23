@@ -8271,3 +8271,8 @@ spelling no other meaning (a pattern), and the capture group where it does
 initial development; Q6 the module is `vars`. Same day: the pattern-side
 oracle's splice is wrapped `(?:…)` because a variable reference is one node
 (variables_common.md §3.6).
+Frank (~13:5x) also RATIFIED the replacement-side scope rule as written
+(variables_common.md §1.3/§3.4): in a template a bare `${a}` is ALWAYS the
+capture group, never a fallback to the variable; a template naming a group
+the pattern lacks is a compile-time refusal, pointed at `${!a}` when the
+variable set holds that name.
