@@ -2653,3 +2653,19 @@ never edited afterwards.
   `tests/lib/run_gen_timeout_tests.sh`, not `giveup.rxt`) was found by a
   broader grep and is flagged but not touched — out of the brief's scope
   (`grep giveup` does not reach it) and its own axis interaction unverified.
+
+- `b1ledger_report.md` — reading the bench's batch-1 after-measurement
+  (O-45) against the D119 bar (2026-09-23, lane b1ledger, opus; analysis +
+  compile-side measurement, no clock read). Per-mechanism verdicts:
+  [OPT-ANCHOR-VM] MEETS, [OPT-ENDWIN] MEETS, [OPT-REQBYTE] targets meet and
+  the carve-out clause FAILS. Read it for the NULL CONTROL the ledger
+  contained for free — 56 of 187 artifacts program-identical across the
+  pin, 16 of the 64 regressing cells sitting on them, the worst moving
+  +8.46% at 35× its own IQR with `__text` byte-identical — which re-reads
+  the ledger's own finding 6 from 64 cells to 14 and puts both D119 misses
+  inside the band; and for the three rules the measurement produced where
+  the brief anticipated one (dominance, admission, placement), each with
+  its measured population. The memo is
+  `docs/dev/optloop/cycle1_ledger_reading.md`; the executive summary is
+  `docs/dev/summaries/2026-09-23-optloop-cycle1-exec-summary.md`.
+
