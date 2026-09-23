@@ -805,7 +805,12 @@ decides whether to perform it — and then run the row through
     (`memchr(NULL, c, 0)` is UB and `match_api.md` §3.1 permits an empty
     subject), asserted on the emitted text rather than left for UBSan; and
     the prefilter-declined VM witness, which is the population the mechanism
-    exists for.
+    exists for. **§3.6 (2026-09-22, lane admin3) adds FIVE `-e utf8`
+    witnesses** — every §3.1 witness compiles under the byte encoding, so
+    the derived byte's lead-vs-trailing choice and the caseless fold's
+    INTERSECTION rule (`(?i)é` folds to {é, É}, whose two-byte encodings
+    share only their LEAD byte 0xC3) were exercised only by the identity
+    sweep until now. 113 checks -> 123.
   - **WHY IT IS A STRUCTURAL GATE AT ALL.** Two of the three mechanisms have
     NO answer-level detector anywhere in the tree: [OPT-ANCHOR-VM]'s bound
     and [OPT-REQBYTE]'s pre-check each remove only work the artifact would

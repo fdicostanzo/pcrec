@@ -423,6 +423,45 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/alternation.rxt" \
     && ok "[3.5] $s3_have of $s3_tot corpus patterns carry a required byte (floor $S3_FLOOR)" \
     || bad "[3.5] only $s3_have corpus patterns carry a required byte, floor is $S3_FLOOR — §3.1 may be vacuous"
 
+# §3.6 — THE MULTI-BYTE SHAPE, UNDER ITS OWN ENCODING. Every §3.1 witness
+# compiles under the BYTE encoding, so the derived byte's LEAD-vs-TRAILING
+# choice and the caseless fold's INTERSECTION rule are exercised only by the
+# identity sweep — never by this file — until now. `é` is one code point
+# encoded as two bytes (0xC3 0xA9); a run of one, the analysis must still
+# pick a byte, and it picks the RIGHTMOST (D23's rule for a run, unmodified,
+# with no run in sight). `(?i)é` folds to {é, É} — 0xC3 0xA9 / 0xC3 0x89 —
+# whose two-byte encodings share only their LEAD byte, so the derived byte is
+# the INTERSECTION 0xC3 (195), not either trailing byte: an analysis that
+# read pattern text instead of the lowered per-byte contribution set would
+# answer "none" here, §3.1's own `(?i)abc` lesson one encoding over.
+while IFS='%' read -r pat _sep want; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s3u_$RANDOM$RANDOM.c"
+    if ! emit "$a" "$pat" -e utf8; then
+        bad "[3.6] -e utf8: $pat: refused; expected RX_REQ_BYTE \"$want\""
+        continue
+    fi
+    got="$(stamp "$a" REQ_BYTE)"
+    [ "$got" = "$want" ] \
+        && ok "[3.6] -e utf8: $pat -> RX_REQ_BYTE \"$got\"" \
+        || bad "[3.6] -e utf8: $pat: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"$want\""
+    if [ "$got" = "none" ]; then
+        grep -q 'memchr(subject + search_from,' "$a" \
+            && bad "[3.6b] -e utf8: $pat: stamps \"none\" and still emits a required-byte memchr" \
+            || ok "[3.6b] -e utf8: $pat: declining artifact emits no pre-check"
+    else
+        grep -q "memchr(subject + search_from, ${got}, subject_length - search_from)" "$a" \
+            && ok "[3.6b] -e utf8: $pat: the memchr carries the stamped byte $got" \
+            || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no memchr for that byte is emitted"
+    fi
+done <<'ROWS'
+é%%169
+(?i)é%%195
+x(é|è)y%%121
+a\x{1F600}b%%98
+(?i)k%%none
+ROWS
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1
