@@ -810,7 +810,7 @@ decides whether to perform it — and then run the row through
     the derived byte's lead-vs-trailing choice and the caseless fold's
     INTERSECTION rule (`(?i)é` folds to {é, É}, whose two-byte encodings
     share only their LEAD byte 0xC3) were exercised only by the identity
-    sweep until now. 113 checks -> 123.
+    sweep until now. 113 checks -> 123; 213 -> 250 at §5.
   - §3 GAINED A SECOND STAMP PER ROW at `[OPTLOOP.2]` batch 2 (2026-09-22):
     `<PREFIX>_REQ_RUN` is asserted beside `<PREFIX>_REQ_BYTE` on every §3.1
     and §3.6 witness, because the two facts are now chosen TOGETHER — a
@@ -862,9 +862,43 @@ decides whether to perform it — and then run the row through
     bytes that are all equally sound — so a plant in the sound direction
     changes run TIME and nothing a caller can observe. This file is where they are
     defended, and `tests/mech`'s `prechecks` arm is where that is measured.
+  - §5 `<PREFIX>_REQ_WHY` (`[OPT-PRECHECK-ADMIT]`, 2026-09-23, abi 30 -> 31) —
+    not a fifth analysis but the ADMISSION of §3's and §4's pre-checks, ruled
+    by Frank as G1 + G2 of the batch-1 after-ledger's §6 (G3 dropped on
+    x86_64 measurement). The section's whole difficulty is that **neither
+    decline is answer-detectable in either direction**: a declined pre-check
+    is a check not run, and the check could only ever return the answer the
+    engine below it then returns anyway — so the corpus arm sees nothing and
+    this file is the only detector, which is also why S269/S270 list their
+    `harness` arm as EXPECTED GREEN. §5.1 asserts the four values against
+    the artifact's own text in both directions, on the ledger's own witness
+    shapes (`^[A-Za-z]:x` is `winpath-near-miss`'s anchor, `\[` IS
+    `wild-codegrammar-json-array-begin`), with a count arm so the controls
+    cannot all stop controlling. §5.2 is the INHERITANCE: a `one-attempt`
+    decline must be accompanied by the route's own emitted bound (`start_max`
+    of `0`/`search_from`, or `attempt_max = search_from`), without which §5.1
+    would pass on a compiler that declined for no reason. §5.3 is G1's
+    DIRECTION and its ENCODING rule on ONE pair of witnesses read three ways —
+    `Q[0-9]+x` and `x[0-9]+Q` are the same two bytes in the two orders, so a
+    compiler comparing the densities backwards fails exactly one of them, and
+    `Q[0-9]+x` under `-e utf8` must EMIT because the prior is not keyed to
+    that encoding and identity is then the whole rule. §5.4 is the
+    `<string.h>` follow-through in both directions, which is where reading
+    `Job.req_byte` instead of the admission would show.
+  - **§3's AND §4's STAMPS NAME THE ANALYSIS; §5's NAMES THE EMISSION**, and
+    that split is why §3.1/§3.6's biconditional arms read `REQ_WHY` while
+    their VALUE arms still read `REQ_BYTE`/`REQ_RUN`. The alternative was
+    tried first — fold the decline into `REQ_BYTE` as a widened `"none"` —
+    and it is wrong for a reason this file finds immediately: it hides the
+    derived byte on exactly the artifacts a decline applies to, so §3.7's
+    whole `[OPT-FREQPICK]` surface would go silently vacuous as G1's
+    population grew, and a compiler that stopped deriving bytes altogether
+    would read identical to one that derived them and declined.
   - **EVERY SECTION CARRIES ITS OWN POPULATION FLOOR (K35)**, because "every
     artifact that stamps X also contains Y" is vacuously green when nothing
-    stamps X.
+    stamps X. §5 carries TWO, one per rule, plus a third on the population
+    that still EMITS — the last being the arm that would catch a rule
+    declining a population it was never measured on.
 
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the

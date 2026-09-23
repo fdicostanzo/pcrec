@@ -1226,7 +1226,9 @@ run_one() {
                 # tests/codegen/run_prechecks.sh — the three WHOLE-WINDOW
                 # PRE-CHECKS (`<PREFIX>_VM_START`, `<PREFIX>_END_WINDOW`,
                 # `<PREFIX>_REQ_BYTE`) held to the emitted text rather than to
-                # the predicates that wrote them. ITS OWN ARM rather than
+                # the predicates that wrote them — plus, since
+                # [OPT-REQPOS] tier 2b and [OPT-PRECHECK-ADMIT],
+                # `<PREFIX>_REQ_RUN` and `<PREFIX>_REQ_WHY`. ITS OWN ARM rather than
                 # `codegen`, for `vmframeless`'s reason: what it guards is one
                 # ANALYSIS above both engines, orthogonal to every emitter
                 # property the other arms check.
@@ -1240,6 +1242,14 @@ run_one() {
                 # detector, which is stated in each row's own SAB_DESC rather
                 # than inferred from a green corpus. [OPT-ENDWIN] is the
                 # exception and is answer-detectable as well.
+                #
+                # [OPT-PRECHECK-ADMIT]'s TWO ROWS (S269, S270) MAKE THAT
+                # STRONGER RATHER THAN REPEATING IT: their plants remove an
+                # ADMISSION rule, so the compiler they produce is CORRECT and
+                # merely slower on a population the bench measured. There is no
+                # plant of either rule that any corpus can see in either
+                # direction, so `corpus:0fail` is not a tolerated outcome there
+                # but the PREDICTED one, and this arm is the whole detector.
                 #
                 # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
                 # vocabulary is CLOSED, and a row naming a word that does not

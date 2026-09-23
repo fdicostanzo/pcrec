@@ -2372,6 +2372,11 @@ free to mean "declined". Where §2.28's run shipped, this stamp is the run's
 own scan member rather than the whole set's pick, because there is ONE emitted
 `memchr` and this stamp reports what it tests.
 
+**This stamp names the ANALYSIS, not the emission.** Since §2.29 the two can
+differ: an artifact may carry a derived byte here and emit no pre-check at
+all. `<PREFIX>_REQ_WHY` is the stamp that says which, and a consumer asking
+"does this artifact pre-check a byte" must read that one.
+
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
 
 **[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the
@@ -2446,7 +2451,75 @@ within them — `2e746172@0` for `.tar` — or `"none"` at `L < 2`. Hex because 
 run is arbitrary bytes inside a `#define`'s string body; the index because it
 is the one fact about the emitted check a reader cannot derive from the bytes,
 and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which makes the two
-stamps checkable against each other.
+stamps checkable against each other. Like its sibling it names the ANALYSIS
+and not the emission — see §2.29.
+
+### 2.29 The pre-checks' ADMISSION — `<PREFIX>_REQ_WHY`, and no axis bit
+
+**[OPT-PRECHECK-ADMIT], `[OPTLOOP.1]` ledger reading §6, ratified 2026-09-23
+(G1 + G2; G3 dropped on measurement).** NOT an axis: there is no flag here and
+no bit. It is the rule that decides whether §2.27's and §2.28's pre-check is
+emitted at all, and it is stated in this document because its outcome is
+caller-observable — one stamp, and the presence or absence of a `memchr` in
+the artifact.
+
+**Why it exists.** A whole-window pre-check is a pass over the subject. Batch 1
+emitted one wherever the analysis found a byte, and the bench's after-measurement
+(`docs/dev/optloop/cycle1_ledger_reading.md`) attributed 33 regressing cells to
+two shapes of that, each of which is pure cost with no possible benefit. Both
+are decided at emit time from facts the emitters already hold.
+
+**G2 — ADMISSION. Not in front of an exit that is already cheaper.** Where the
+artifact's search route tries exactly ONE start position, a pass over the whole
+window can only add work: the single attempt reads at most the same window, and
+the check that precedes it can at best replace an O(n) walk with an O(n) scan.
+The route is one attempt on the DFA side when every interior start state is
+dead — the two rows of the three-valued `start_max` that read the literal `0`
+(`^`-anchored) or `search_from` (`\G`-anchored) — and on the VM side when
+`<PREFIX>_VM_START` is `"anchored"` or `"gstart"`. This is the rule the
+candidate-start prefilter has always applied to itself, which is why those
+artifacts read `<PREFIX>_DFA_PREFILTER "none"`; the pre-check, emitted one
+level above it, now inherits it from the same predicates rather than restating
+them. Measured: 29 ledger cells, headed by `winpath-near-miss` and
+`email-nested-plus` at 20 ns → 23 µs.
+
+**G1 — DOMINANCE. Not a second pass on a byte already scanned.** Where the
+artifact's own candidate-start prefilter is the single-byte `memchr` form on a
+byte `p`, a one-byte pre-check on `q` is worth emitting only if `q` is
+STRICTLY rarer than `p` by `pcrec_byte_freq_ppm` — otherwise it dismisses no
+window that pass would not dismiss sooner. Identity (`p == q`) is the
+redundant case and needs no table, so it declines under EVERY encoding; the
+density comparison is read only under `byte`, §2.27's own encoding rule and
+for its reason. The rule is scoped to the ONE-BYTE form: §2.28's run check
+dismisses strictly more than a `memchr` on its scan byte does, so it is not
+dominated by one, and the ledger measured only the one-byte shape. Measured: 4
+ledger cells, all `wild-codegrammar-json-array-begin`, whose artifact ran
+`memchr(…, 91, …)` twice per call.
+
+**Answer-identity.** Preserved, and more simply than for either axis: a
+declined pre-check is a check not run, and the check could only ever return
+the answer the engine below it then returns anyway. Neither decline is
+answer-detectable in either direction, which is why both sabotage rows
+(S269, S270) are structural.
+
+**The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
+FOUR-TOKEN set:
+
+| value | meaning |
+|---|---|
+| `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name |
+| `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
+| `"one-attempt"` | G2 declined: the route tries one start position |
+| `"dominated"` | G1 declined: an equally rare byte is already scanned |
+
+`"none"` here holds if and only if `<PREFIX>_REQ_BYTE` is `"none"`, which is
+what makes the pair checkable against each other. It is a separate stamp
+rather than a wider `<PREFIX>_REQ_BYTE` value in `<PREFIX>_ENGINE` /
+`<PREFIX>_ENGINE_WHY`'s shape: those two answer what the analysis found, a
+fact about the pattern, and this one answers whether the artifact acted on it.
+
+**One further emitted consequence.** A declined artifact whose body calls no
+other `memchr` also loses its `#include <string.h>`. Nothing else moves.
 
 ## 3. The DFA side's own stamps
 

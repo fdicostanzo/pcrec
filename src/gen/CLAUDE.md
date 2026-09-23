@@ -3076,3 +3076,55 @@ function, the cheap witnesses that exercise each arm are `x[0-9]{500}y` (a
 502-byte example truncated to 40), `(?i)a{2,40}Z` (41 bytes, the first byte
 past the bound), `((a)|b){0,4000}c` (brief mode, 4002 accepting states) and
 `[a-z]{0,16384}` (a deep scan edge).
+
+## [OPT-PRECHECK-ADMIT] — the whole-window pre-checks' ADMISSION (abi 30 -> 31)
+
+`pcrec_emit_req_byte_check` used to emit wherever `Job.req_byte` was set. It
+now asks `req_admit` first, and the bench's after-measurement is why
+(`docs/dev/optloop/cycle1_ledger_reading.md` §6, ratified G1 + G2): 33
+regressing cells came from emitting a whole-window pass in front of a route
+that was already cheaper, or on top of a pass the artifact was already running.
+
+- **ONE DERIVATION, FOUR READERS**, this file's standing rule. `req_admit` is
+  declared beside `dfa_search_is_pinned`'s forward declaration at the top and
+  defined next to the two prefilter derivations it reads. Its readers are the
+  emitter (whether to write the text), `<PREFIX>_REQ_WHY` (what to say about
+  it), and `pcrec_emit_prologue`'s `#include <string.h>` decision — which
+  reads the ADMISSION and not `Job.req_byte`, because an admitted-out artifact
+  may call no `memchr` at all.
+- **G2 inherits `attempt_cand`'s rule rather than restating it.** That
+  function's own header already declines the candidate-start prefilter on a
+  fully-anchored machine ("`start_max` is the literal 0, so there is nothing
+  between attempts to skip"), which is why the ledger's one-attempt artifacts
+  read `RX_DFA_PREFILTER "none"`. `req_route_one_attempt` asks the same
+  question of each route from the field that route's own bound is written
+  from: `dfa_interior_dead(d->s1u)` on the DFA side (both the `0` and the
+  `search_from` rows of the three-valued `start_max` are one iteration), and
+  `Job.start_anchor` on the VM's. The DFA's answer is the TIGHTER one and is
+  deliberately not replaced by the AST's — `emit_attempt` asserts the other
+  direction at the one site holding both.
+- **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan_byte`
+  calls `dfa_pf_of` and compares the chosen object's own `name`, because the
+  deny mask and the offset-set candidates sit between the two: an artifact
+  whose `kind` is `DFA_PF_MEMCHR` may still have had an offset-set form
+  selected over it, and only the memchr forms scan a single byte value.
+- **G1 is scoped to the ONE-BYTE form, and that is the dominance argument's
+  own boundary rather than a carve-out.** The claim is "this pass dismisses no
+  window the existing pass would not dismiss sooner", which is true of one
+  `memchr` against another and FALSE of [OPT-REQPOS] tier 2b's run check — a
+  run check dismisses a window that holds the byte and not the run. The ledger
+  measured the one-byte shape and nothing else.
+- **THE THREE STAMPS SPLIT ALONG ANALYSIS vs EMISSION.**
+  `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` keep naming what the analysis found;
+  `<PREFIX>_REQ_WHY` names whether the artifact acted on it. Folding the
+  decline into `REQ_BYTE` as a widened `"none"` was tried first and is wrong:
+  it hides the derived byte on exactly the declining artifacts, so
+  `tests/codegen/run_prechecks.sh` §3.7's `[OPT-FREQPICK]` surface would go
+  silently vacuous as G1's population grew.
+- **AN abi EVENT because one stamp line joins every artifact** (D76/D94); the
+  emitted PROGRAM only ever SHRINKS, and no answer moves in either direction,
+  which is why both sabotage rows (S269, S270) are structural and both list
+  their `harness` arm as expected green. Cheap witnesses for each arm:
+  `^abc$` (G2, DFA), `^([a-z]+)+@` (G2, VM), `\[` (G1 by identity),
+  `Q[0-9]+x` (G1 by density, and `-e utf8` on the same pattern is the
+  encoding rule's own control), `x[0-9]+Q` (the direction that must EMIT).

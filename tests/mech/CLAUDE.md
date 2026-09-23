@@ -2692,3 +2692,33 @@ empty-window arm and the stamp alone — which is why
 `tests/codegen/run_prechecks.sh` asserts the sense in §3.1c SEPARATELY from
 the byte in §3.1b. One assertion covering both would have named the wrong
 half.
+
+## [OPT-PRECHECK-ADMIT] — two rows whose plants RESTORE A CORRECT COMPILER
+
+The admission rules (`docs/spec/tuning.md` §2.29) decide whether §3's and §4's
+pre-check is emitted at all. Both rows below plant the rule's ABSENCE, and the
+resulting compiler is CORRECT — only slower, on a population the bench
+measured:
+
+| row | mechanism | plant | corpus arm | why |
+|---|---|---|---|---|
+| S269 | [OPT-PRECHECK-ADMIT] G2 | `req_route_one_attempt` emptied | expected `0fail` | the pre-check returns to a one-attempt route, where it only ever repeats the attempt's own work |
+| S270 | [OPT-PRECHECK-ADMIT] G1 | `req_byte_dominated_by` emptied | expected `0fail` | the pre-check returns on top of a prefilter already scanning the same byte |
+
+**THESE ARE THE FIRST TWO ROWS IN THIS DIRECTORY WHOSE PLANT CANNOT MOVE AN
+ANSWER IN EITHER DIRECTION**, which is a stronger statement than S263's and
+S266's. Those two plant a mechanism that could in principle have been wired to
+delete matches — the row says the SOUND direction is the undetectable one.
+Here the mechanism is a DECISION NOT TO EMIT, so both directions are sound by
+construction: the pre-check it restores answers NOMATCH only where the engine
+below it then answers NOMATCH anyway. There is no plant of either rule that a
+corpus can see, and the rows say so in their own `SAB_DESC` rather than
+leaving a green `harness` arm to be misread as an undetected regression.
+
+**THE PLANTS EMPTY THE PREDICATE, NOT THE CALL SITE**, and that choice is
+about keeping the failure singular. Deleting `req_admit`'s own
+`if (req_route_one_attempt(cx))` line would leave the function unreferenced
+and the build would WARN, which is a different failure from the one under
+test; emptying the predicate leaves every caller, every stamp and every other
+rule where they are, so `run_prechecks.sh` §5 reports one rule's absence and
+nothing else.

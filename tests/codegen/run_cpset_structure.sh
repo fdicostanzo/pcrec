@@ -540,6 +540,28 @@ fi
 # +421/+423/+426/+458 on the four whose search entry's three-line `memchr`
 # pre-check becomes the run scan loop, the spread being the run's own length in
 # the emitted comment, the string literal and the guard.
+#
+# RE-RECORDED AGAIN 2026-09-23 at `[OPT-PRECHECK-ADMIT]` (abi 30 -> 31), the
+# SEVENTH such event and the FOURTH from this same reader class — no row here
+# cites an abi digit and all twelve moved. Read row by row, and the twelve
+# deltas are four numbers, each accounted for:
+#   +29 on seven rows (`abc`, `a(b|c)+d`, `(a)(b)(c)`, `[a-z]+@[a-z]+`,
+#       `\bword\b`, `(?<=foo)bar`, `(a(?1)?b)`): the one new stamp line at its
+#       longest value, `#define <PREFIX>_REQ_WHY "emitted"`.
+#   +26 on three rows (`(?i)HeLLo`, `cat|dog|cow|calf|camel`, `(\w+)\s+\1`):
+#       the same line at `"none"` — no necessary byte to admit or decline.
+#   -102 on `a`: +29 for the stamp and -131 for the three-line `memchr`
+#       pre-check plus its comment, DECLINED by G1 DOMINANCE (`a` is the byte
+#       its own candidate-start prefilter already scans). `<string.h>` STAYS:
+#       that prefilter is the memchr caller.
+#   -514 on `^foo$`: +29 for the stamp and -543 for the whole run scan loop,
+#       its comment AND the `#include <string.h>` with it, DECLINED by G2
+#       ADMISSION (a `^`-anchored route runs one attempt, and nothing else in
+#       the artifact calls memchr).
+# Both declining rows were VERIFIED BY DIFFING the two artifacts written to the
+# same `-o` basename rather than inferred from their sizes: in each the only
+# changed lines are the two abi digits, the inserted stamp, and the pre-check
+# text itself.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

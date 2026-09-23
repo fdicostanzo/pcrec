@@ -596,11 +596,25 @@ if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DF
     #           joined across a repeat's iterations, so its run is one byte and
     #           one byte is [OPT-REQBYTE]'s own L = 1 case)
     #   = 762338
+    #
+    # RE-PINNED AGAIN 762338 -> 762367, 2026-09-23 ([OPT-PRECHECK-ADMIT],
+    # abi 30 -> 31), the SECOND READER CLASS's eighth instance and the abi
+    # digit's own third: the digit moves 30 -> 31 in this same line and in
+    # `.abi = 31`, both same-length substitutions, so the +29 comes from the
+    # change's one new stamp line and nothing else. VERIFIED BY DIFFING the two
+    # artifacts written to the SAME `-o` basename (the house's recorded
+    # basename trap), which prints exactly three changed lines -- the two abi
+    # digits and one INSERTED `#define RX_REQ_WHY "emitted"`:
+    #   762338  the previous pin
+    #   +29     `#define RX_REQ_WHY "emitted"`   ([OPT-PRECHECK-ADMIT]: this
+    #           artifact's pre-check is ADMITTED, so the value is the
+    #           four-token set's `emitted` and no emitted `memchr` moved)
+    #   = 762367
     sz=$(wc -c <"$out" | tr -d ' ')
-    if [ "$sz" -eq 762338 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762338 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp) — the cap still works, this witness no longer reaches it"
+    if [ "$sz" -eq 762367 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762367 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762338 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762367 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"
