@@ -232,6 +232,48 @@ directory, `c2/` (its own `CLAUDE.md`); nothing in any of them reads a clock.
   hand-edits, and a `[derived]` mapping from the one-pass survey's "match
   regime" wording to `expectations.tsv`'s `search_short`/`match` rows.
 
+- `cycle1_nocaps_view.md` — **[OPTLOOP.1-NOCAPSVIEW], 2026-09-23, lane
+  `nocapsview`**, the OTHER half of Frank's D119 addendum
+  ("THE POPULATION IS TWO CLASS-PURE LEDGERS", `decisions.md`,
+  2026-09-23): pcrec's `auto-nocaps` testee re-ranked against every
+  roster config declared non-capturing. **REVISED same day** after two
+  follow-ups: the manager forwarding pcrec-bench's own authoritative,
+  run-derived classification table (I-99 ack `e8c5a12`, I-100 rulings
+  `5435ac6`/`e8d6109`, in pcrec-bench's `docs/dev/inbox_from_pcrec.md`) in
+  place of this lane's own `configs.toml` read, and Frank adding a
+  standing cross-class anomaly query (I-101, `7f440dd`) as a new §6.
+  **The authoritative table moves `rust-default` from caps into the
+  nocaps class** (I-100 ruling 2: its driver's `find_at`-driven loop calls
+  `captures_at` once per CALL, not once per match — ruled a NO-class
+  config with that cost declared, not a factual reclassification) — this
+  changes every number in §0–§4 from the first cut, since `rust` becomes
+  a scored NOCAPS competitor alongside `pcre2-dfa`, not merely a
+  curiosity. Revised headline: BEFORE 87/113 win-or-tie (77.0%), AFTER
+  92/113 (81.4%), losing score 7.6062 → 4.0091. `rust` is the losing
+  competitor on 17/26 BEFORE and 18/21 AFTER rows (it already dominated
+  `cycle1_analysis.md`'s own mixed ranking, now scored on its ruled side).
+  Batch 1's mechanisms still land — 8 BEFORE losses flip to win/tie; 3
+  flip the other way, including the two floor-entry catastrophes
+  `winpath-near-miss`/thr and `email-nested-plus`/thr (`[OPT-REQBYTE]`'s
+  required-byte-absent cost, `cycle1_ledger_reading.md` §5, reproduced to
+  within 25 ns — now 256×/215× losses against the wider set, since `rust`
+  answers these two patterns even faster than `pcre2-dfa`). **§6 (I-101,
+  Frank's sanity check)**: 40/29 cells (BEFORE/AFTER) show SOME
+  capturing (YES-class) competitor beating `auto-nocaps`, but 30/25 of
+  those are `pcre2-jit` (non-algorithmic, already excluded elsewhere in
+  this cycle for the same reason) — the genuinely surprising **non-JIT**
+  population is 10 BEFORE / 4 AFTER, all clearing the within-window
+  noise floor; two of the AFTER ones are the SAME floor-entry cells §3
+  finds (the mechanism is bad enough that even an interpreted capturing
+  competitor now beats the artifact), and two
+  (`wild-waf-crs-942140-dbnames`, `-942360-concat-sqli`, both losing to
+  `re2`) persist on BOTH pins, unrelated to batch 1 — flagged for a
+  cycle-2 cause read. Flags an OPEN ITEM: `cycle1_caps_view.md`'s own
+  CAPS table still scores `rust` as a caps competitor and has not been
+  revised to match I-100 (out of this lane's scope, owned by `capsview`).
+- `nocapsview/` — that memo's reproduction pieces (`build_nocaps_view.py`,
+  `nocaps_rows.json`/`.tsv`). See its own `CLAUDE.md`.
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
