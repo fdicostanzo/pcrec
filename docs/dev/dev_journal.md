@@ -25497,3 +25497,33 @@ Lesson (panel economics): three concurrent read-only critics + one sonnet
 compile-and-apply lane with a verbatim disposition table cost the manager
 four short turns; the lane's grep-verification pass caught a stale copy the
 disposition table did not name.
+
+**B2 RULED (Frank ~11:5x) = D121; varnames MERGED (3e58d700, pushed):**
+Frank's question "is the ctx structure the same for every call?" → the
+artifact builds ONE rx_ctx on its own stack per top-level call
+(emit_vm.c ~12074/~12354: subject/len/caps/user filled once, only `pos`
+per attempt), nothing persists between calls; a callout receives a ctx the
+outer constructs (designed ABI, no emitted producer yet). Ruling: variables
+passed BY NAME (`rx_var` = name/p/len), riding rx_ctx as appended
+vars/nvars — rx_matchfn untouched, composition passes the environment
+through unchanged; resolved ONCE PER ENTRY CALL by linear scan (length
+check, memcmp, first wins) into a stack table; absent = UNSET, unknown
+ignored; a var-bearing inner artifact resolves per invocation ("it better
+be worth it to the user"); per-instance parameterization declined with
+re-open; the MVP goes straight to names. Lane varnames (sonnet, docs-only)
+rewrote the four notes + closed MECH-B2 in the review file; manager fixed
+the reviews/CLAUDE.md index line at merge. Plan row + D121 committed.
+
+**O-49 ARRIVED (~11:3x via the bridge; bench 53db8c4): batch 2's
+capability ledger at b1885a83 — 11 of 28 named-target rows MEET, 17 MISS;
+router-prefix-order (the freq pick's own live case) the worst miss
+(+80.8% DFA-route large-subject throughput); the falsifier logparse-atomic
+REGRESSES on all four configs (+7..+41.8%) and carries a genuine ": "@0
+run; a NEW from-below floor jump (wild-validator-email-owasp 44-85 ns →
+~23,100 ns, O-45's floor band); clean meets nested-comment-rec −99.75% ×4
+and github-pat forced-VM −97.6%; census 5/5 exact, engine routes unchanged
+on all 62. Lane b2ledger (opus) reads it — the admission fix's REQ_WHY
+stamps (abi 31) are the first attribution axis for every miss (A
+expected-fixed / B the pick's own defect / C unattributed + the ask). The
+durable inbox ack + asks follow the reading. admitimpl's chain: stage 5
+(full make test) since 11:11.
