@@ -1,25 +1,28 @@
 # [OPTLOOP.1-NOCAPSVIEW] (2026-09-23, lane nocapsview, sonnet)
 
-Delivers `docs/dev/optloop/cycle1_nocaps_view.md`: the nocaps-vs-nocaps
-half of D119's two-class-pure-ledger ruling (`decisions.md` addendum,
-2026-09-23), paired with `cycle1_caps_view.md`'s caps-vs-caps half.
+Delivers `docs/dev/optloop/cycle1_nocaps_view.md`, the nocaps-vs-nocaps
+half of D119's two-class-pure-ledger ruling. **REVISED** after two
+follow-ups: pcrec-bench's own authoritative classification table
+(I-99/I-100, `e8c5a12`/`5435ac6`/`e8d6109`) replaces Step 1's earlier
+`configs.toml` read and moves `rust-default` from caps into the NOCAPS
+scored class (a ruling, not a factual correction — its driver calls one
+`captures_at` per call, declared a fixed cost); and Frank's standing
+cross-class anomaly query (I-101, `7f440dd`) is added as §6.
 
-Step 1 classifies the roster from `testees/*/configs.toml`'s own
-`captures` field, never guessed from a name; no UNKNOWN rows.
-`pcrec-nocaps` is the only pcrec nocaps config; `pcre2-dfa` is the only
-algorithmic nocaps competitor (`vectorscan` excluded, SIMD/boolean-grain).
+With `rust` now a scored NOCAPS competitor: BEFORE 87/113 win-or-tie
+(77.0%), AFTER 92/113 (81.4%), losing score 7.6062 → 4.0091. `rust` is
+the losing competitor on 17/26 BEFORE and 18/21 AFTER rows. Batch 1's
+mechanisms still land (8 flips to win); 3 flip the other way, including
+the two floor-entry catastrophes (`winpath-near-miss`/thr,
+`email-nested-plus`/thr — now 256×/215× against the wider set).
 
-BEFORE (pin `25b1984f`): 100/110 win-or-tie (reproduces
-`cycle1_caps_view.md` §2's totals exactly, a cross-check). AFTER (pin
-`8d716693`): 104/110, losing score 4.7066 → 1.4094. Six BEFORE losses flip
-to wins. Two flip WIN → catastrophic LOSS: `winpath-near-miss`/thr
-(+113,334%) and `email-nested-plus`/thr (+72,253%) — independently
-reproduces `cycle1_ledger_reading.md` §5's required-byte-absent
-floor-entry cost to within 25 ns; its consequence is nocaps-specific,
-since `pcre2-dfa`'s near-instant reject is the one competitor fast enough
-for the new floor cost to flip a win into an 87× loss. `pcre2-dfa` is
-absent from the AFTER report's roster; its BEFORE numbers are reused as
-the AFTER competitor reference, flagged as an assumption (§0/§5).
+§6 (I-101): 40/29 cells show a capturing competitor beating `auto-nocaps`,
+but 30/25 are `pcre2-jit` (non-algorithmic, excluded elsewhere). Real
+population: 10 BEFORE / 4 AFTER non-JIT anomalies; two AFTER ones are §3's
+floor-entry cells, two (`wild-waf-crs-942140-dbnames`,
+`-942360-concat-sqli`, both losing to `re2`) persist both pins,
+unrelated to batch 1 — flagged for cycle 2.
 
-No `src/`/`tests/`/`docs/spec/` changes. Reproduction:
-`docs/dev/optloop/nocapsview/` (own CLAUDE.md).
+Flag: `cycle1_caps_view.md`'s CAPS table still scores `rust` as caps and
+is unrevised (out of scope, owned by `capsview`). No `src/`/`tests/`/
+`docs/spec/` changes. Reproduction: `docs/dev/optloop/nocapsview/`.

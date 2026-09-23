@@ -2816,14 +2816,25 @@ never edited afterwards.
 
 - `nocapsview_report.md` — (2026-09-23, lane nocapsview, sonnet,
   docs-only): renders `docs/dev/optloop/cycle1_nocaps_view.md`, the
-  nocaps-vs-nocaps half of D119's two-class-pure-ledger ruling. BEFORE
-  100/110 win-or-tie (cross-checks `cycle1_caps_view.md` §2 exactly);
-  AFTER 104/110, losing score 4.7066 → 1.4094. Finds two cells flip WIN →
-  catastrophic LOSS (`winpath-near-miss`/thr +113,334%,
-  `email-nested-plus`/thr +72,253%) — the required-byte-absent floor-entry
-  cost `cycle1_ledger_reading.md` §5 already priced, reproduced to within
-  25 ns, whose consequence (flipping a win to an 87x loss) is
-  nocaps-specific since `pcre2-dfa` is the one competitor fast enough for
-  it to matter. `pcre2-dfa` is absent from the AFTER bench report; its
-  BEFORE numbers are reused as the AFTER competitor reference, flagged as
-  an open question for the bench.
+  nocaps-vs-nocaps half of D119's two-class-pure-ledger ruling.
+  **REVISED same day** after the manager forwarded pcrec-bench's own
+  authoritative classification table (I-99/I-100) — `rust-default` moves
+  from caps into the scored NOCAPS class (a ruling on its declared
+  per-call `captures_at` cost, I-100 point 2) — and Frank added a
+  standing cross-class anomaly query (I-101) as a new §6. Revised
+  headline: BEFORE 87/113 win-or-tie (77.0%), AFTER 92/113 (81.4%),
+  losing score 7.6062 → 4.0091; `rust` is the losing competitor on
+  17/26 BEFORE and 18/21 AFTER rows. Batch 1's mechanisms still land (8
+  flips to win); 3 flip the other way, including the two floor-entry
+  catastrophes (`winpath-near-miss`/thr, `email-nested-plus`/thr — the
+  required-byte-absent cost `cycle1_ledger_reading.md` §5 already priced,
+  reproduced to within 25 ns, now 256×/215× losses since `rust` answers
+  these two patterns even faster than `pcre2-dfa`). §6 (I-101): 40/29
+  cells show a capturing competitor beating `auto-nocaps`, but 30/25 are
+  `pcre2-jit` (non-algorithmic, excluded elsewhere); the real population
+  is 10 BEFORE / 4 AFTER non-JIT anomalies — two AFTER ones are the same
+  floor-entry cells, two (`wild-waf-crs-942140-dbnames`,
+  `-942360-concat-sqli`, losing to `re2`) persist both pins, unrelated to
+  batch 1. Flags an open item: `cycle1_caps_view.md`'s own CAPS table
+  still scores `rust` as caps and is unrevised (owned by lane
+  `capsview`).
