@@ -2935,23 +2935,34 @@ never edited afterwards.
   precedent). Sabotage rows S269/S270 are the first two in the tree whose
   plant cannot move an answer in either direction.
 
-- `litrun_report.md` — VM literal-run fusion measurement (2026-09-23, lane
-  litrun, sonnet; measurement only, nothing under `src/`). Does gcc fuse
-  the VM's per-byte literal-run if/goto chain into a word compare, and is
-  there a losing-cell population that would trigger building it. **No**:
-  gcc-16 -O2/-O3 never fuses a hand-written `&&` chain of scalar per-byte
-  tests, arm64 or x86_64 (light tailnet probe) — only an explicit
-  `memcmp()` against a compile-time constant gets gcc's own fusion (11→3
-  loads arm64, 11→2 x86_64). Crossing `b2ledger/stampdiff.json`'s
-  `RX_ENGINE` against the 60 losing match-regime cells of
-  `cycle1_caps_view.md`+`cycle1_nocaps_view.md` finds only **5** genuine
-  VM-route losing cells with a real literal run ≥4 (3 `wild-secrets-*`
-  patterns; a rough literal-run parser's 2 other raw hits were a
-  `(?<name>`/`(?&name)` group-syntax false positive, caught by hand-check)
-  — and rules out the prefilter as their cause (`RX_VM_PREFILTER` already
-  `"hybrid"` on all three). States the fusion mechanism (a `memcmp`
-  emission off a maximal single-byte `A_CLASS` run; caseless needs a
-  masked-word path) without building it. **Verdict: NOT MET** — names the
-  one more measurement (hand-patch `github-pat`'s generated matcher to the
-  `memcmp` form, re-time its cells) that would decide it. Memo:
-  `docs/dev/optloop/litrun_census.md`.
+- `litrun_report.md` — `[OPT-VMLIT]` trigger read (2026-09-23, lane
+  litrun, sonnet; measurement only, nothing under `src/`). Reads against
+  the plan row verbatim (TRIGGER PARTIALLY MEASURED 2026-08-31 by
+  [OPT-5] STEP 0) rather than re-deriving the question from scratch.
+  **Closes the row's open half**: gcc-16 -O2/-O3 never fuses a
+  hand-written `&&` chain of scalar per-byte tests on its own, arm64 or
+  x86_64 (light tailnet probe) — only explicit `memcmp()` gets gcc's own
+  fusion (11→3 loads arm64, 11→2 x86_64), the same lowering
+  `docs/design/reqpos_2b.md` §3.2 already measured for the search-side
+  prefilter (cited, not re-derived), now confirmed at a second landing
+  site with the added negative result that `&&` alone never gets it.
+  **Is explicit that it does NOT measure the row's own named trigger**
+  (`bench/bounded`'s `ctx-lazy-*`/`ctx-greedy-*` + `bench/loglines`'s
+  `level-context` vs `pcre2-jit`) — out of this lane's light-probe scope,
+  still owed as a real bench-window run. Reports a SECOND,
+  independently-found population instead: crossing
+  `b2ledger/stampdiff.json`'s `RX_ENGINE` against the 60 losing
+  match-regime cells of `cycle1_caps_view.md`+`cycle1_nocaps_view.md`
+  finds only **5** genuine VM-route losing cells with a real literal run
+  ≥4 (3 `wild-secrets-*` patterns; 2 other raw hits were a
+  `(?<name>`/`(?&name)` group-syntax false positive, caught by
+  hand-check) — rules out the prefilter as their cause (`RX_VM_PREFILTER`
+  already `"hybrid"` on all three). Points at already-designed siblings
+  rather than inventing mechanisms: caseless is `[WORD-FOLD]`'s own
+  AND-mask cube compare, not a new masked compare; `[CLS-TREE]`/
+  `[OPT-CLSPACK]`'s atom-table form is named as the adjacent but
+  different per-position kit member. **Recommends `[OPT-VMLIT]` stay
+  `STATE:not-started`** — the "never memcmp" clause is now fully
+  measured, but the row should not open on this lane's 5-cell population;
+  names the still-owed ctx/level-context-vs-JIT bench run as the actual
+  gate. Memo: `docs/dev/optloop/vmlit_trigger_read.md`.

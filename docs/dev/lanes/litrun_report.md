@@ -1,66 +1,73 @@
-# litrun — VM literal-run fusion measurement (2026-09-23)
+# litrun — `[OPT-VMLIT]` trigger read (2026-09-23)
 
 Lane `litrun`, sonnet, branch `lane/litrun` from `main`. Measurement only
-(D77): nothing under `src/`. Frank's question: the VM emits a literal run
-(`xyzabcdefgh`) as N per-byte if/goto tests; should it fuse them into a
-word compare / `memcmp`?
+(D77): nothing under `src/`. Frank's original question — the VM emits a
+literal run as N per-byte if/goto tests; should it fuse them into a word
+compare / `memcmp` — turned out to have PRIOR ART: `docs/dev/plan.md`'s
+`[OPT-VMLIT]` row (TRIGGER PARTIALLY MEASURED 2026-08-31 by [OPT-5]
+STEP 0), plus siblings `[WORD-FOLD]` (the caseless AND-mask cube compare)
+and `[CLS-TREE]`/`[OPT-CLSPACK]` (the per-position class kit). The manager
+course-corrected mid-task to frame this as the `[OPT-VMLIT]` trigger read
+rather than a fresh census — the deliverable below is the corrected one.
 
-**Deliverable**: `docs/dev/optloop/litrun_census.md` (its own CLAUDE.md
-entry added), this report, and `lanes/CLAUDE.md`'s entry below.
+**Deliverable**: `docs/dev/optloop/vmlit_trigger_read.md` (its own
+CLAUDE.md entry), this report, and `lanes/CLAUDE.md`'s entry below.
 
 ## What was done
 
-1. **What gcc already does.** Compiled `xyzabcdefgh` / `(?i)xyzabcdefgh` /
-   `[0-9]+abcdefgh` with `--engine=vm`, read the emitted C (confirmed the
-   brief's cited per-byte if/goto shape at `emit_vm.c`'s `A_CLASS` arm —
-   pcrec has no `A_LIT` kind, every literal byte is a one-byte class node)
-   and disassembled at `gcc-16 -O2`/`-O3` on this Mac (arm64). Then
-   hand-rewrote the run as one `&&`-chain expression and, separately, as an
-   explicit `memcmp()` call, and disassembled both. Repeated the `&&`-chain
-   and `memcmp()` pair on x86_64 via a light probe over the tailnet
-   (`ssh duxevents@100.69.121.107`, gcc 15.2.0 — two small compiles, no
-   suite, scratch dir removed after).
-   **Finding**: gcc never fuses the `&&`-chain shape (11 separate
-   `ldrb`+`cmp`/`cmpb`+branch, arm64 and x86_64, -O2 and -O3). Only
-   `memcmp()` against a compile-time constant gets gcc's own builtin
-   fusion (11→3 loads arm64, 11→2 x86_64). This is the load-bearing fact:
-   pcrec cannot rely on the compiler finding this on its own; it has to
-   emit the `memcmp` form directly.
-2. **The population.** Parsed literal runs out of all 64
-   `pcrec-bench/bench/capability/patterns/*.rx` texts with a rough
-   tokenizer, joined against `docs/dev/optloop/b2ledger/stampdiff.json`'s
-   per-pattern `RX_ENGINE`, and cross-referenced the 60 losing match-regime
-   cells from `cycle1_caps_view.md` + `cycle1_nocaps_view.md` (AFTER pin).
-   Hand-verified every raw hit against its `.rx` file, which caught the
-   parser's real limitation (it misreads `(?<name>`/`(?&name)` DEFINE/
-   subroutine-call syntax as literal bytes — 2 of 7 raw VM-route hits were
-   this false positive on `bracket-array-define`). **5 genuine VM-route
-   losing cells carry a real literal run ≥4**, all three `wild-secrets-*`
-   patterns, all on `auto-caps`; `auto-nocaps` has zero. Checked
-   `RX_VM_PREFILTER` for the three before speculating about cause: already
-   `"hybrid"` on all of them, so the 55.16x/29.65x ratios are not an
-   absent-prefilter artifact — whatever's left is per-attempt match cost,
-   which a fused compare would actually touch.
-3. **The general-mechanism note.** `src/opt/reqbyte.c` already derives the
-   necessary-run fact (`RX_REQ_RUN`) but only for the prefilter; a fused
-   VM compare would be a second PATFACTS reader for `github-pat`'s
-   single-branch case, but most of the real population has no
-   whole-pattern `REQ_RUN` (alternation, per-branch literals) so the
-   fusion has to key directly off `emit_vm.c`'s own `A_CAT`/`A_CLASS`
-   shape. Stated the caseless complication (masked-word path vs `memcmp`)
-   without building either.
+1. **Closed the row's open half.** `[OPT-VMLIT]`'s 2026-08-31 measurement
+   confirmed the emitted form is per-byte, "never memcmp", but left open
+   whether that's because gcc doesn't find the fusion or because pcrec
+   never asks for it. Compiled the brief's literal-run patterns with
+   `--engine=vm`, read the emitted C (confirmed the per-byte if/goto
+   shape) and disassembled at `gcc-16 -O2`/`-O3` on this Mac (arm64), then
+   hand-rewrote the run as an `&&`-chain and, separately, as an explicit
+   `memcmp()`, disassembling both — plus the same pair on x86_64 via a
+   light tailnet probe (`ssh duxevents@100.69.121.107`, gcc 15.2.0, two
+   small compiles, no suite). Finding: gcc never fuses the `&&`-chain
+   shape, at either optimization level or target; only explicit `memcmp()`
+   gets gcc's own builtin fusion. This reproduces `docs/design/
+   reqpos_2b.md` §3.2's already-measured lowering (cited as prior art,
+   not re-derived) at a second landing site (the VM's per-attempt literal
+   consume, vs. that note's search-side prefilter), and adds the new
+   negative result that `&&` alone is not enough.
+2. **The population — and an honest scope mismatch.** `[OPT-VMLIT]`'s own
+   named trigger population is `bench/bounded`'s `ctx-lazy-*`/`ctx-
+   greedy-*` and `bench/loglines`'s `level-context` cells against
+   `pcre2-jit`. This lane did not measure that population — those
+   subbenches are outside this lane's light-probe scope and a fresh JIT
+   ratio is a bench-window operation, not something to run here. Read the
+   patterns directly instead: they are exactly literal-word alternation
+   branches (`fail|abort|panic`, `disk|memory|socket|quota`, etc), so the
+   row's premise reads correctly, but the trigger number itself is still
+   owed. As a SECOND, independently-found population (not a substitute):
+   crossed `capability@0.1`'s `stampdiff.json` engine stamps against the
+   60 losing match-regime cells of `cycle1_caps_view.md`+
+   `cycle1_nocaps_view.md`, finding 5 genuine VM-route losing cells with a
+   real literal run ≥4 (after catching a parser false positive on
+   `(?<name>`/`(?&name)` group syntax) — and ruled out the prefilter as
+   their cause (`RX_VM_PREFILTER` already `"hybrid"`).
+3. **Pointed at the shipped design rather than inventing one.** The
+   caseless form is `[WORD-FOLD]`'s own AND-mask cube compare
+   (`(w & K) == T`), not a newly-invented masked compare — that row's own
+   D77 census is still unrun, and this memo does not build on it, only
+   cites it. `[CLS-TREE]`/`[OPT-CLSPACK]`'s shared atom-table form
+   (`form_char_step0.md:84`) is named as the adjacent but different
+   per-position kit member, not the answer for a sequence-level run.
 
-## Verdict
+## Recommended row disposition
 
-**NOT MET.** Named the one more measurement: hand-patch `github-pat`'s
-generated matcher to the `memcmp` form, rebuild just that `.c`, and
-re-time its `thr`/`srch` bench cells against the current 2.66x/1.01x
-ratios — if the ratio closes substantially the trigger is met on this
-5-cell population, if not the gap is elsewhere.
+**`[OPT-VMLIT]` stays `STATE:not-started`.** Its "never memcmp" clause is
+now fully measured (cite this memo) — an emission choice, not a missed
+compiler opportunity. The row should NOT open in cycle 3 on this lane's
+5-cell `capability` population; that is a real but second population, not
+the row's own named trigger. The gate that still decides the row: a bench
+pass timing `ctx-lazy-*`/`ctx-greedy-*`/`level-context` against
+`pcre2-jit` at the current pin.
 
 ## Validation
 
 No `src/` changes to validate. Own build: `make -j4 CC=gcc-16` in the
-worktree, clean. Every number in the census names its exact command
-(`gcc-16 -O2 -S`/`-c` + `objdump -d`, the ssh probe commands, the Python
-join script). Nothing owed.
+worktree, clean. Every number in the memo names its exact command. Nothing
+owed beyond the named bench measurement, which is explicitly out of this
+lane's scope.
