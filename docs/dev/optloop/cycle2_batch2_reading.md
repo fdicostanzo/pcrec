@@ -647,6 +647,28 @@ Two further notes for whoever takes that row:
 
 ---
 
+## 6a. O-50 (Block D under the store's own driver) — superseded by the pick, and the fix keeps the win
+
+**[MEASURED, manager 2026-09-23 ~12:3x]** O-50 (bench e91a8b8; archived as
+`runs/2026-09-23-o49-b1885a83/O-50.md` + `O-50-b81blockd_report.md`) re-ran
+I-98's Block D on `nested-comment-rec` under the bench's own driver at the
+batch-1 pin: (a) as-is 9,584,243 ns; (b) pre-check DELETED 8,113,432 ns
+(−15.35%, an order of magnitude past the null band → hypothesis 2, "the
+pre-check itself costs here", NOT refuted); (c) moved to the entry wrappers
+8,407,235 ns (−12.28%, ~80% of the deletion's gain but OUTSIDE (b)'s band:
+gap 293,803 ns vs max-IQR 140,521 → G3's literal acceptance FAILS); (d)
+`-fno-partial-inlining` +3.37%, noise (O-48's no-split reading confirmed).
+**G3 placement is retired for good.** Hypothesis 2 is now MOOT rather than
+discharged: at the batch-2 pin the freq pick moved this pattern's byte to
+`*` (42) with the run `*/`@0, and the artifact collapses from 9.3 ms to the
+23.1 µs floor (§4.1, −99.75% on 4 of 4). The question O-50 raises against
+the admission fix — does G1/G2 DECLINE that pre-check and hand the 9.3 ms
+back? — is answered by the stamp: under cb437f26 all three configs read
+`RX_REQ_WHY "emitted"` (byte 42, run `2a2f@0`, memchr site kept, run loop
+kept; `stampdiff.json`), i.e. the fix KEEPS the check on an unanchored
+multi-attempt artifact, and the win survives. I-102 names
+`nested-comment-rec` among the six meeting targets as a NO-MOVE control.
+
 ## 7. RECOMMENDED DISPOSITIONS
 
 | mechanism | recommendation | the number that decides it |

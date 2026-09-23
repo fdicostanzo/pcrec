@@ -34,3 +34,7 @@ on the bench side. The reading reads no timing number that the ledger does
 not itself print, so nothing here depends on them; every other number in it
 is reproduced on this box by `docs/dev/optloop/b2ledger/`'s own three
 instruments from the bench's patterns and subjects, never from its records.
+
+O-50.md / O-50-b81blockd_report.md — the bench's O-50 (bench e91a8b8): I-98's
+Block D re-run on nested-comment-rec under the store's own driver (G3
+placement retired; hypothesis 2 moot at the batch-2 pin — reading §6a).
