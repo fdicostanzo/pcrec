@@ -168,6 +168,18 @@ directory, `c2/` (its own `CLAUDE.md`); nothing in any of them reads a clock.
   ALREADY SHIPPED** (`src/parse/rxt_schema.def:146`, a `DATA` scope, a
   `--list-schema` row and a spec section), so what is proposed is the
   CONSUMER interface and the static default, not a schema line.
+  **§4.6 (lane `fsreconcile`, 2026-09-22) reconciles §4 against the REAL
+  compiled two-pass `rx_search`**, after lane `linuxask` built the binaries
+  and read `0,0,0` where §4.1 states `0,1,0`. The verdict STANDS and the
+  symptom is worse than §4 says: `rx_search` has ONE forward scan, so the
+  reverse walk's veto of a spurious accept is `return 0` for the whole call
+  — a **DELETED match**, not a spurious one. `"atrue true"` answers `(6,10)`
+  shipped and `matches=0` narrowed (§4.1's own witness is non-discriminating,
+  answering `matches=0` under either hypothesis). Measured 552 lost / 0
+  spurious / 0 wrong-span over 4.03M exhaustively compared subjects; 0 of
+  3,535 corpus artifacts run a skip with no reverse walk and 0 of 217
+  `pinned` ones carry a prefilter, both structural; and §4.4's repair is
+  already shipped as `pf_emit_ofs_reseed` for [OPT-K]. Instruments in `c2/`.
 - `reqpos_census.md` — **`[OPT-REQPOS]`'s D77 census.**  Verdict: **tier 2,
   the bounded-`dmax` skip loop the row is really about, has a population of
   TWO among cycle 1's 34 losing cells** and 6.0% of the corpus, the smallest

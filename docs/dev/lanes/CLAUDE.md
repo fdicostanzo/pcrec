@@ -2597,3 +2597,31 @@ never edited afterwards.
   move — batch 1's own `tests/assertions/end_window.rxt` (+13 blocks/+66
   cells) — re-derived and re-pinned with the corpus change named in the
   pin's own comment, per that check's stated instruction.
+
+- `fsreconcile_report.md` — `[OPT-FIRSTSET]` §4 RECONCILED against the real
+  two-pass `rx_search` (2026-09-22, lane fsreconcile, opus; analysis +
+  probes, nothing under `src/`/`tests/`, no clock read). Delivers
+  `docs/dev/optloop/firstset_design.md` §4.6 and its instruments under
+  `docs/dev/optloop/c2/`. **Verdict: §4's UNSOUND verdict STANDS on real
+  binaries, and the symptom is a DELETED match rather than the spurious one
+  §4.2 names** — `"atrue true"` answers `(6,10)` shipped and `matches=0`
+  narrowed, restored by §4.4's re-seed. Lane `linuxask` was right that the
+  reverse walk vetoes the spurious accept and right that §4.1's own witness
+  reads `0,0,0`; the veto is not a rescue, because `rx_search` has ONE
+  forward scan and a vetoed candidate is `return 0` for the whole call.
+  Worth reading for three things. **A witness whose correct answer is the
+  same under both hypotheses is not a test** — §4.1's `"atrue xnull "`
+  answers `matches=0` sound or unsound, which is why a forward-only
+  simulator and a real binary could disagree on it with neither being
+  informative, and why I-89's F2 needs one added subject to become a test.
+  **The general argument became a COUNT**: 0 of 3,535 compiled corpus
+  artifacts run a candidate-start skip with no reverse walk, and 0 of 217
+  `RX_DFA_START "pinned"` artifacts carry any prefilter — structurally, since
+  the prefilter is gated on `!start_acc` and `pinned` requires the accept
+  that implies it. **And the repair was already in the tree under another
+  name**: `pf_emit_ofs_reseed`, shipped for [OPT-K] with a comment calling it
+  "not optional on a machine that has one", so §4.4 is a second call site
+  rather than a mechanism. Also carries a [MECH-REACH] instrument instance:
+  the census's first detector required the reverse TRANSITION TABLE, which
+  [CC-DIFF] STEP 1's uniform fold may delete while the reverse WALK stays,
+  and read 84 false positives.

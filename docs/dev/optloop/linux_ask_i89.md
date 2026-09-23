@@ -285,6 +285,18 @@ model, and the missing term must be named before the row proceeds.
 
 **F2 — THE SOUNDNESS ARM (a correctness run, not a timing one).**
 
+> **SUPERSEDED IN PART by `firstset_design.md` §4.6 (lane `fsreconcile`,
+> 2026-09-22) — read that before sending this block.** F2 as written below
+> is NON-DISCRIMINATING: `"atrue xnull "`'s correct answer is `matches=0`,
+> so the twin reads `matches=0` whether the narrowing is sound or not, and
+> the `0,0,0` this lane predicts is what BOTH hypotheses produce. §4.6 adds
+> the one subject that discriminates —
+> `printf 'atrue true' > "$OPT2/subj/ctx2.bin"`, EXPECT `1,0,1` — and
+> measures the real binaries answering exactly that on darwin. The
+> soundness finding is CONFIRMED, with the symptom a DELETED match rather
+> than a spurious one, so F3 is no longer conditional on F2.
+
+
 ```sh
 printf 'atrue xnull ' > "$OPT2/subj/ctx.bin"
 for B in base_$P twin_$P reseed_$P; do
