@@ -292,6 +292,22 @@ static const char *dfa_search_start_name(Ctx *cx);
  * `strcmp(name, "pinned")` grows anywhere as a second reading. */
 static bool dfa_search_is_pinned(Ctx *cx);
 
+/* [OPT-PRECHECK-ADMIT] WHY THIS ARTIFACT DOES OR DOES NOT CARRY A
+ * WHOLE-WINDOW PRE-CHECK — the four-token answer, derived once and read by
+ * three sites that must not disagree: `pcrec_emit_req_byte_check` (whether to
+ * write the text), `pcrec_emit_prologue`'s `<PREFIX>_REQ_BYTE`/
+ * `<PREFIX>_REQ_RUN`/`<PREFIX>_REQ_WHY` stamps (what to say about it), and
+ * the same prologue's `#include <string.h>` decision (whether the body calls
+ * `memchr` at all). The derivation itself is far below, beside the two
+ * prefilter derivations it reads. */
+typedef enum {
+    REQ_ADMIT_EMITTED = 0,  /* a pre-check is emitted, on `Job.req_byte` */
+    REQ_ADMIT_NONE,         /* there is no necessary byte to check */
+    REQ_ADMIT_ONE_ATTEMPT,  /* G2: the route answers in ONE attempt */
+    REQ_ADMIT_DOMINATED     /* G1: an equally rare byte is already scanned */
+} ReqAdmit;
+static ReqAdmit req_admit(Ctx *cx);
+
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
  * THE CONDITION IS src/core/compile.c's, VERBATIM AND ON PURPOSE: that file
@@ -761,6 +777,12 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
 {
     int b = cx->job->req_byte;
     if (b < 0) return;
+    /* [OPT-PRECHECK-ADMIT] THE ADMISSION, and it is asked HERE rather than at
+     * the three call sites for the reason this file states everywhere else: a
+     * condition spelled at the site is a condition that drifts from the stamp
+     * that describes it. `req_admit` is the one derivation; the prologue's
+     * three stamps and its `<string.h>` decision read the same call. */
+    if (req_admit(cx) != REQ_ADMIT_EMITTED) return;
     /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
      * check subsumes this one, so where a run shipped it is the only
      * pre-check emitted — and `Job.req_byte` is then the run's own scan
@@ -5182,6 +5204,165 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
     return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags);
 }
 
+/* ---- [OPT-PRECHECK-ADMIT] ADMITTING THE WHOLE-WINDOW PRE-CHECK ----------
+ *
+ * THE MECHANISM AND ITS MEASUREMENT. [OPTLOOP.1]'s batch 1 emitted
+ * `pcrec_emit_req_byte_check` unconditionally wherever `src/opt/reqbyte.c`
+ * found a necessary byte, and the bench's after-ledger
+ * (docs/dev/optloop/cycle1_ledger_reading.md §6) attributes 33 regressing
+ * cells to exactly two shapes of that: a pass the artifact ALREADY RUNS on an
+ * equally rare byte, and a pass placed in front of a route that answers in ONE
+ * ATTEMPT. Both are cost with no possible benefit, and both are decidable
+ * here, from derivations this file already owns. The pre-check's SOUNDNESS is
+ * untouched by either — declining emits less text, never a different answer,
+ * which is why the identity sweeps over `-fno-req-byte`/`-fno-req-run` are a
+ * control on this change rather than a comparison of two new shapes.
+ *
+ * G1 IS "DOMINATED", NOT "DUPLICATED", and the distinction is what scopes it.
+ * The claim being made is that the pre-check's pass dismisses no window the
+ * artifact's existing candidate-start pass would not dismiss sooner. That is
+ * true of one memchr against another on a byte at least as rare, and it is
+ * FALSE of [OPT-REQPOS] tier 2b's RUN check, which dismisses strictly more
+ * (a window holding the byte but not the run). So G1 reads the one-byte form
+ * only; the run form is left to G2 and to the axis. The ledger measured the
+ * one-byte form and nothing else, so this is also the boundary of what the
+ * measurement supports.
+ *
+ * G2 IS THE RULE `attempt_cand` ALREADY APPLIES, INHERITED. Its own header
+ * says "A fully-anchored pattern already runs ONE attempt (`start_max` is the
+ * literal 0), so there is nothing between attempts to skip" and declines the
+ * candidate-start prefilter on exactly that ground — which is why the ledger's
+ * one-attempt artifacts read `<PREFIX>_DFA_PREFILTER "none"`. The pre-check is
+ * emitted one level above, and did not inherit the decline. It does now, from
+ * the same two predicates each route's own bound is written from
+ * (`dfa_interior_dead(d->s1u)` on the DFA route, `Job.start_anchor` on the
+ * VM's), never a third statement of either. */
+
+/* The byte the artifact's candidate-start `memchr` already scans for, or -1
+ * where it has no single-byte candidate-start pass at all.
+ *
+ * READ OFF THE SAME DERIVATIONS THE LOOP IS EMITTED FROM — `attempt_cand` on
+ * ENG_ATTEMPT, `unanch_start` plus axis B's own selection on ENG_UNANCH —
+ * exactly as `dfa_prefilter_name` reads them, so this cannot name a byte the
+ * emitted scan does not carry. The VM HYBRID is covered with no clause of its
+ * own: `pcrec_artifact_has_dfa_scan` is true for it and its inlined
+ * `static <prefix>_prefilter` IS this emitter's output on the same
+ * `job->dfa`/`job->engine`, so the same two arms answer for it.
+ *
+ * THE MEMCHR FORMS ONLY. A byte-class or offset-set prefilter scans a
+ * membership table rather than one byte value, so there is no single density
+ * to compare against and no dominance to claim; the honest answer there is
+ * "no dominating byte", which is what -1 says. */
+static int dfa_cand_scan_byte(Ctx *cx)
+{
+    if (!pcrec_artifact_has_dfa_scan(cx)) return -1;
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) {
+        CandSet acand;
+        /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
+         * a true answer already means a single-byte scan. */
+        return attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
+    }
+    {
+        UnanchStart us;
+        const DfaPf *pf;
+        unanch_start(cx, &us);
+        pf = dfa_pf_of(cx, &us);
+        /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset-set
+         * candidates sit between the two, so an artifact whose `kind` is
+         * DFA_PF_MEMCHR may still have had an offset-set form selected over
+         * it. Comparing the chosen object's own name is how the four other
+         * readers of this selection ask the same question. */
+        if (strcmp(pf->c.name, "memchr") && strcmp(pf->c.name, "memchr-bounded"))
+            return -1;
+        return us.cand.byte;
+    }
+}
+
+/* Does the artifact's search route try exactly ONE start position?
+ *
+ * ONE QUESTION, TWO MACHINES, and that is not a parallel mechanism: the two
+ * routes carry different bounds derived by different passes, and each arm here
+ * reads the field its own emitter writes the bound from. The DFA's
+ * `emit_attempt` writes `start_max` from `dfa_interior_dead(d->s1u)` (the
+ * `^`-anchored row gives the literal 0 and the `\G`-anchored row gives
+ * `search_from`; both are one iteration at most), and `attempt_cand` declines
+ * the prefilter on that same predicate. The VM's `emit_vm` writes
+ * `attempt_max = search_from` under `Job.start_anchor != PCREC_SANCH_NONE`,
+ * which is the `RX_VM_START "anchored"`/`"gstart"` pair.
+ *
+ * THE DFA'S ANSWER IS THE TIGHTER ONE and is deliberately not replaced by the
+ * AST's: the subset construction has already pruned unsatisfiable branches, so
+ * `dfa_interior_dead` can hold where `Job.start_anchor` could not prove it.
+ * `emit_attempt` asserts the other direction (an AST-proved anchor with a live
+ * interior start state is a miscompile) at the one site that holds both.
+ *
+ * ENG_UNANCH is never one attempt — it is the scan engine — so it needs no
+ * clause; `job->engine` answers for it. */
+static bool req_route_one_attempt(Ctx *cx)
+{
+    if (cx->job->fit.chosen == ENGM_VM)
+        return cx->job->start_anchor != PCREC_SANCH_NONE;
+    return cx->job->engine == PCREC_ENG_ATTEMPT &&
+           dfa_interior_dead(cx->job->dfa.s1u);
+}
+
+/* Is a pre-check on `q` dominated by a candidate-start scan already running
+ * on `p`?
+ *
+ * THE ENCODING RULE IS `src/opt/reqbyte.c`'s, FOR ITS REASON
+ * (docs/design/reqbyte_freq_pick.md §3): `pcrec_byte_freq_ppm` is a table
+ * about a subject corpus UNDER the `byte` encoding — its whole 0x80-0xFF half
+ * is the floor — so under any other encoding it would call a UTF-8 lead byte
+ * the rarest thing there is. IDENTITY needs no table and is sound under every
+ * encoding: the same byte scanned twice dismisses exactly the same windows,
+ * which is the shape `wild-codegrammar-json-array-begin` measured at +32.6%.
+ *
+ * `<=` AND NOT `<`: the rule admits the pre-check only where its byte is
+ * STRICTLY rarer, so an equally rare byte is a second pass buying nothing. */
+static bool req_byte_dominated_by(Ctx *cx, int p, int q)
+{
+    if (p < 0) return false;
+    if (p == q) return true;
+    if (cx->opt->encoding != PCREC_ENC_BYTE) return false;
+    return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
+}
+
+/* [OPT-PRECHECK-ADMIT] THE ADMISSION — the one derivation, declared far above
+ * beside the readers that must agree with it.
+ *
+ * ORDER IS PART OF THE ANSWER. "No necessary byte" comes first because the
+ * other two are claims ABOUT a byte; G2 comes before G1 because it is a
+ * property of the route and holds whatever the artifact scans, while G1 has to
+ * ask what that is. A declined artifact keeps `Job.req_byte` — the analysis
+ * ran and its answer is still true — so the decline is a statement about
+ * EMISSION, which is what `<PREFIX>_REQ_WHY` reports and why
+ * `<PREFIX>_REQ_BYTE` reads `"none"` beside it: that stamp names the byte the
+ * emitted check tests, and there is no emitted check. */
+static ReqAdmit req_admit(Ctx *cx)
+{
+    if (cx->job->req_byte < 0) return REQ_ADMIT_NONE;
+    if (req_route_one_attempt(cx)) return REQ_ADMIT_ONE_ATTEMPT;
+    if (cx->job->req_run.len < 2 &&
+        req_byte_dominated_by(cx, dfa_cand_scan_byte(cx), cx->job->req_byte))
+        return REQ_ADMIT_DOMINATED;
+    return REQ_ADMIT_EMITTED;
+}
+
+/* `<PREFIX>_REQ_WHY`'s value: a CLOSED FOUR-TOKEN SET, `<PREFIX>_ENGINE_WHY`'s
+ * shape. A consumer buckets on a value; prose with a byte number in it would
+ * be neither greppable nor stable, and the byte is already the business of
+ * `<PREFIX>_REQ_BYTE` and `<PREFIX>_DFA_PREFILTER`. */
+static const char *req_why_name(ReqAdmit a)
+{
+    switch (a) {
+    case REQ_ADMIT_EMITTED:     return "emitted";
+    case REQ_ADMIT_NONE:        return "none";
+    case REQ_ADMIT_ONE_ATTEMPT: return "one-attempt";
+    case REQ_ADMIT_DOMINATED:   return "dominated";
+    }
+    return "none";
+}
+
 /* [OPT-EDGE] STEP 1.1 — WILL THIS MACHINE'S EMITTED SCAN LOOP WRITE THE STATE
  * VARIABLE FROM ANYWHERE BUT THE STEP AND THE ENTRY SEED?
  *
@@ -7686,9 +7867,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * test above cannot: the pre-check is emitted into BOTH engines' search
      * entries, including a VM artifact with no DFA scan in it at all — which
      * is exactly the population the mechanism exists for. The condition is
-     * the SAME field `pcrec_emit_req_byte_check` reads, never a restatement
-     * of when that function emits (this file's standing rule). */
-    if (cx->job->req_byte >= 0) need_string_h = true;
+     * `pcrec_emit_req_byte_check`'s OWN, through the shared admission
+     * ([OPT-PRECHECK-ADMIT]) rather than a restatement of when that function
+     * emits: reading `Job.req_byte` alone would declare `<string.h>` for an
+     * artifact whose pre-check was admitted out and whose body then calls no
+     * `memchr` at all. */
+    ReqAdmit admit = req_admit(cx);
+    if (admit == REQ_ADMIT_EMITTED) need_string_h = true;
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
@@ -7780,7 +7965,16 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * from the same field three lines apart. */
     {
         char rbbuf[32];
-        if (cx->job->req_byte < 0) {
+        if (admit != REQ_ADMIT_EMITTED) {
+            /* [OPT-PRECHECK-ADMIT] `"none"` COVERS THE DECLINE, deliberately,
+             * and the reason it is not widened to carry one is the
+             * biconditional the gates are built on: this stamp names the byte
+             * the emitted `memchr` tests, so it reads `"none"` exactly when no
+             * pre-check is emitted, whatever made that true. The WHY is a
+             * stamp of its own three lines down — the
+             * `<PREFIX>_VM_PREFILTER_LANG`/`_LANG_WHY` pair's shape — so that
+             * a reader gains a fact and no reader's existing value space
+             * moves. */
             pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
         } else {
             snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
@@ -7809,7 +8003,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     {
         char rrbuf[2 * PCREC_MAX_REQ_RUN_EMIT + 16];
         const ReqRun *rr = &cx->job->req_run;
-        if (rr->len < 2) {
+        /* [OPT-PRECHECK-ADMIT] the admission is the FIRST conjunct for
+         * `<PREFIX>_REQ_BYTE`'s reason, one stamp up: both stamps describe the
+         * emitted check, and an admitted-out artifact has none. */
+        if (admit != REQ_ADMIT_EMITTED || rr->len < 2) {
             pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", "none");
         } else {
             size_t o = 0;
@@ -7820,6 +8017,27 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
             pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", rrbuf);
         }
     }
+    /* [OPT-PRECHECK-ADMIT] `<PREFIX>_REQ_WHY` — WHY THIS ARTIFACT DOES OR DOES
+     * NOT CARRY A WHOLE-WINDOW PRE-CHECK. A §6.3 family-(a) SELECTION FACT for
+     * its two siblings' reason, in the same place: unconditional, on every
+     * artifact of both engines, a closed token set.
+     *
+     * IT IS A SEPARATE STAMP AND NOT A WIDER `<PREFIX>_REQ_BYTE` VALUE. Those
+     * two stamps answer "what does the emitted check test", a question with a
+     * `"none"` answer that every reader in the tree already parses; this one
+     * answers "why is there nothing to test", which since
+     * [OPT-PRECHECK-ADMIT] has FOUR answers where it had one. Folding them
+     * would put a decline reason into a field readers `atoi`, and the tree
+     * already spells exactly this split twice — `<PREFIX>_ENGINE` /
+     * `<PREFIX>_ENGINE_WHY`, `<PREFIX>_VM_PREFILTER_LANG` / `_LANG_WHY`.
+     *
+     * `"none"` AND NOT `"no-necessary-byte"`: the value is honest about what
+     * it knows. `src/core/compile.c` skips the analysis entirely under
+     * `-fno-req-byte`, so "the analysis found nothing" and "the analysis never
+     * ran" are one state here, and a token claiming the first would be a
+     * second, undeclared claim. The axis's own denial is visible in
+     * `rx_info.flags`, which is where a reader asks that question. */
+    pcrec_sb_stamp_str(c, g->upper, "REQ_WHY", req_why_name(admit));
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));
     if (cx->opt->header_name) {
         pcrec_sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
