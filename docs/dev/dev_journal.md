@@ -25356,3 +25356,17 @@ D under the store's own driver, after [B80]) sent. Scope slip: the lane's
 scp landed the archive in the MAIN tree too (untracked, identical to its
 branch copy; removed before the merge) — an absolute path in a lane's scp
 target must be its WORKTREE path.
+
+## 2026-09-23 (seventy-seventh session, morning, Frank back ~08:3x) — batch 1's dispositions RULED; [OPT-PRECHECK-ADMIT] RATIFIED (G1+G2); the population is TWO CLASS-PURE LEDGERS
+
+Frank on the cycle-1 reading: "the batch was a mostly success and we just
+need some fixes to when they are applied" — "i agree": ANCHOR-VM and ENDWIN
+default-on as shipped; REQBYTE default-on with the admission fix;
+[OPT-PRECHECK-ADMIT] ratified as G1 dominance + G2 admission (G3 dropped on
+O-48) → lane admitimpl. THE THRESHOLD CLARIFIED (D119 addendum): "compare
+capturing vs capturing and non-capturing vs non-capturing engine runs" — two
+class-pure ledgers, never a cross-class cell; the cycle-1 "91 of 125" was
+the MIXED best-variant view (65 of the 91 carried by auto-nocaps) and is
+retired as a headline; caps-vs-caps = 84/123; the nocaps-vs-nocaps ledger
+has never been rendered → lane nocapsview (from O-45's TSVs) + I-99 to the
+bench (per-config capture-mode declarations; two views in every report).
