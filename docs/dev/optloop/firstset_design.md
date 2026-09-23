@@ -27,6 +27,11 @@ what the model is for.**
    `"atrue xnull "` — the shipped artifact answers `matches=0`, the twin
    answers a match at offset 1. §4 is the witness, the mechanism and the
    one-line repair, all three reproducible from `c2/scanloop_sim.py`.
+   **READ §4.6 WITH IT** (lane `fsreconcile`, 2026-09-22): the verdict stands
+   against the REAL two-pass binaries, but the symptom is a **LOST match, not
+   a spurious one** — `"atrue true"` answers `(6,10)` shipped and `matches=0`
+   narrowed — §4.1's own witness is non-discriminating, and §4.2's stated
+   error direction is backwards.
 2. **Under a cost model that reproduces three of the four measured
    configurations to within 0.03%, narrowing the set is monotonically
    non-harmful for any parameter values** — so the model as calibrated
@@ -573,3 +578,222 @@ and are structurally blind to it.
 * **Whether a size term should price the pair filter's constants.** §6's word
   compares add emitted bytes on a route (`[OPT-REQPOS]` tier 2b) whose row is
   not this one.
+
+---
+
+## 4.6 Reconciliation against the real two-pass `rx_search` (2026-09-22, lane `fsreconcile`)
+
+**Chartered as "§4.5" and renumbered on arrival: §4.5 is already taken, and
+this document is cited by section id — `linux_ask_i89.md` block (B) cites
+§4.1, §4.4 and §4.5 by number.** Nothing in §4.1-§4.5 is edited; everything
+below is addition.
+
+Reproduction: `c2/firstset_witness.sh` (spans, structured set, exhaustive
+comparator), `c2/skiproute_census.py` (the route census). Both ANSWER-ONLY —
+no clock was read, the lane ran on darwin.
+
+### 4.6.0 The verdict
+
+**§4's UNSOUND verdict STANDS, and the real binaries make it worse than §4
+states.** Lane `linuxask` was right that the shipped `rx_search` is two-pass
+and right that the reverse walk vetoes §4.1's spurious accept — and that veto
+is not a rescue. `rx_search` has ONE forward scan; a vetoed accept is
+`return 0` for the whole call. So the narrowing's observable symptom is a
+**LOST match, not a spurious one**, and the loss is invisible on §4.1's own
+witness because that witness's correct answer is `matches=0` either way.
+
+| | `"atrue xnull "` | **`"atrue true"`** |
+|---|---|---|
+| shipped artifact | `matches=0` | **`(6,10)`** |
+| narrowed twin | `matches=0` | **`matches=0`** ← deleted |
+| twin + §4.4 re-seed | `matches=0` | **`(6,10)`** |
+
+Both rows are the REAL `base_`/`twin_`/`reseed_` binaries (`--features all
+--no-captures -p rx`, `gcc-16 -O2`), not `c2/scanloop_sim.py`.
+
+### 4.6.1 What the reverse pass re-derives, and what it TRUSTS
+
+Read off the emitted artifact, not from the design:
+
+* it **re-derives the match START**, independently and with full context —
+  it seeds from `subject[match_end_position]` (the trailing `\b`'s right
+  context), walks down over `rx_reverse_*` tables the candidate-set patch
+  never touches, and at the bottom tests `subject[search_from - 1]` for the
+  leading `\b`. Nothing it reads comes from the forward pass's tables;
+* it **TRUSTS the candidate END** — `match_end_position = last_accept_position`,
+  taken verbatim — and, load-bearingly, trusts that this end is the end of
+  the LEFTMOST match, which is a property of the forward scan and of nothing
+  else;
+* **there is no re-entry.** One forward scan, then the reverse walk, then
+  `if (match_start_position == (size_t)-1) return 0;`. A vetoed candidate is
+  not a rejected start position to be retried past; it is the answer.
+
+So the reverse pass is a sound veto on the SPAN and no veto at all on the
+SEARCH. §4.2's "the error direction is spurious matches, not lost ones" has
+it exactly backwards: the narrowing seeds a spurious accept, the forward
+machine reaches its completed-then-nonword state and DIES there (the emitted
+`rx_forward_next_state` row for that state sends class 0 to `65535`), the
+scan breaks with the spurious end committed, and the reverse pass turns a
+would-be false positive into a false NEGATIVE that swallows every real match
+further along the subject.
+
+**The tree already recorded this direction.** `src/gen/emit_dfa.c:4768` is
+MISCOMPILE-1 — *"`can_begin_match` is the DFA start state's ESCAPE set … the
+right question for the SCAN that walks it and the wrong one for a VERIFY"* —
+and `tests/codegen/run_offset_skip.sh:290` states its measured symptom in the
+same words this section reaches independently: *"using it as a verify LOSES
+MATCHES on every pattern with a leading assertion."* [OPT-FIRSTSET] is the
+same substitution with the two sets exchanged, and it produces the same
+direction for the same reason.
+
+### 4.6.2 The witness set
+
+`c2/firstset_witness.sh` part (1): `<ctx> × <keyword> × <tail>` over
+`ctx ∈ {"", a, _, 9, " ", -}`, `kw ∈ {true,false,null}`,
+`tail ∈ {"", " ", x, " true"}` — 72 subjects, every span compared.
+
+| | disagreements with the shipped artifact |
+|---|---|
+| narrowed twin | **9 of 72** |
+| twin + §4.4 re-seed | **0 of 72** |
+
+All nine are the same cell — a WORD byte before the keyword (`a`/`_`/`9`) and
+a real match in the tail — and all nine are LOST matches. The `""`/`" "`/`"-"`
+context rows never disagree, which is the mechanism confirming itself: those
+are the contexts in which `forward_state == 0` is the TRUE state after the
+skip.
+
+Part (2) is exhaustive, all three artifacts linked in one process at three
+emitted prefixes:
+
+| pattern | alphabet | maxlen | subjects | twin: fewer / more / wrong-span | reseed |
+|---|---|---|---|---|---|
+| `\b(?:true\|false\|null)\b` | `atrue ` | 8 | 2,015,539 | 0 / 0 / 0 | 0 |
+| `\b(?:ab\|cd)\b` | `abcdx ` | 8 | 2,015,539 | **552** / 0 / 0 | **0** |
+
+The first row reads zero because its minimal lost-match witness is 10 bytes
+(`a` + keyword + separator + keyword) and the sweep stops at 8 — a REACH
+limit, not a result; that is the whole reason the second, shorter
+`\b`-leading pattern is in the sweep at all. Over 4.03M compared subjects the
+classifier reports **552 lost matches, zero spurious, zero wrong-span**, and
+the re-seed is answer-identical to the shipped artifact everywhere.
+
+On the bench's own `t-1m` throughput subject all three binaries read
+`matches=0` with an identical span hash, confirming §9's structural-blindness
+claim by measurement.
+
+### 4.6.3 The general argument: is the reverse pass's independence guaranteed?
+
+The reverse pass's independence is real and is beside the point — it vetoes
+spans, and the damage is to the search. The question that DOES generalize is
+whether any shipped route runs the candidate-start skip with the veto absent,
+because there the error direction flips back to §4's spurious match with
+nothing to catch it. `c2/skiproute_census.py` compiles every shipped `.rxt`
+pattern line at `--features all -p rx` and reads the stamps and the emitted
+TEXT:
+
+| | |
+|---|---|
+| pattern lines / compiled | 3,957 / 3,535 |
+| artifacts carrying a candidate-start skip | 2,305 |
+| **skip present and NO reverse walk** | **0** |
+| `RX_DFA_START "pinned"` | 217 |
+| **`pinned` with any prefilter but `none`** | **0** |
+| skip over a SEEDED machine — the reach the narrowing would move | **54** (42 plain DFA, 12 VM hybrid) |
+
+**The empty `pinned` × prefilter cell is structural, not lucky.**
+`emit_dfa.c:3191` gates the prefilter on `!start_acc`, where `start_acc` is
+`state_acc_any` over `s0` and every live seed state; `start_pinned_applies`
+(`emit_dfa.c:5521`) requires `fd->st[fs].up[UPC_PLAIN].accept`, which implies
+`state_acc_any`. So `pinned ⟹ start_acc ⟹ kind == DFA_PF_NONE`: a start-pinned
+artifact, the one shape whose reverse machine is *not emitted at all*
+(`emit_dfa.c:5387`), can never carry a skip to be narrowed. The two mechanisms
+are mutually exclusive by construction.
+
+A NOTE ON THE CENSUS'S OWN FIRST CUT, because it is the [MECH-REACH] shape:
+its first detector required `match_start_position` AND `_reverse_next_state`,
+and read 84 "skip without reverse" rows. Every one of them stamped
+`RX_DFA_START "reverse-pass"` — [CC-DIFF] STEP 1's uniform-table fold had
+deleted the reverse transition table while the reverse WALK stayed. The
+corrected detector reads the walk's own variable. *A route census must detect
+the CODE, not a table the optimizer is allowed to fold away.*
+
+### 4.6.4 §4.4's repair is already in the tree, under another name
+
+`pf_emit_ofs_reseed` (`emit_dfa.c:4951`) is §4.4's two lines, shipped, for
+[OPT-K]'s offset-set skip, with an emitter comment that reaches this
+section's mechanism independently and states it is **"not optional on a
+machine that has one"**: *"Today's skip jumps over bytes that leave the
+machine PARKED in the start state … This one jumps over bytes that LEAVE it —
+and on a `\b`-bearing machine those bytes are how the class of the byte to
+the left is carried."*
+
+That is precisely what [OPT-FIRSTSET] converts the byte-class skip into. So
+the repair is not a new mechanism and should not be designed as one: it is
+`pf_emit_ofs_reseed` called from a second site, and the row's cost is the
+call, the `entry_position` local and the one lookup per skip that skipped.
+
+### 4.6.5 Consumer (ii) splits in two, and §4.5 is right about only one half
+
+§4.5's "Nothing" holds for the half it argues — a first-byte set used to
+advance a **prefilter-less VM's attempt position** (`RX_VM_PREFILTER "none"`,
+412 corpus artifacts) is sound, and the reason is sharper than "a first-byte
+set is a necessary condition": the VM's attempt loop **carries no state
+across an advance**, so it re-evaluates `\b` from the subject at every start
+it tries. The hazard in §4 is not the set; it is the CARRIED STATE the skip
+jumps over.
+
+It does NOT hold for the `hybrid` half. A hybrid's prefilter is the same
+emitted DFA search, skip loop and all — measured on
+`\b(true|false|null)\b` (`RX_ENGINE "vm"`, `RX_VM_PREFILTER "hybrid"`,
+`RX_DFA_PREFILTER "byte-class-bounded"`), whose narrowed twin reproduces the
+deleted match identically:
+
+```
+base  [atrue true] (6,10)  matches=1        base  [atrue xnull true] (12,16)
+twin  [atrue true]         matches=0        twin  [atrue xnull true] matches=0
+```
+
+and the route is visible in the emitted text: `hy_search_run` calls
+`hy_prefilter(...)` and `return 0`s on anything but 1, so the VM never runs.
+P5's *"`rx_search_run` consumes `window[0][0]` as a LOWER BOUND, never as the
+answer"* (`emit_dfa.c:5454`) makes a pinned hybrid conservative about the
+START and says nothing about a prefilter that reports NO MATCH AT ALL. The
+corpus carries 1,344 `hybrid` artifacts, 12 of them in the seeded-skip reach.
+
+### 4.6.6 What this does to I-89's F2
+
+**F2 as written is not a discriminating test and should not be read as one.**
+Its subject `"atrue xnull "` has correct answer `matches=0`, and the twin
+answers `matches=0` whether or not the narrowing is sound — so the `0,0,0`
+`linux_ask_i89.md` predicts from its own darwin build is the reading a SOUND
+mechanism and an UNSOUND one both produce. The expected `0,1,0` in §4.1 came
+from `c2/scanloop_sim.py`, a forward-only replay, and is wrong about the
+compiled artifact for the reason §4.6.1 gives.
+
+The executor's raw triple is still worth having as an independent
+confirmation, and it needs one added line to become a test:
+
+```sh
+printf 'atrue true' > "$OPT2/subj/ctx2.bin"
+for B in base_$P twin_$P reseed_$P; do "$OPT2/$B" "$OPT2/subj/ctx2.bin" 1; done
+# EXPECT matches = 1, 0, 1.  THIS is the discriminating cell: a twin reading
+# matches=1 here would refute the soundness finding; a twin reading 0 confirms
+# it, and confirms the direction is a LOST match.
+```
+
+F1 (the decline-rule re-run) and F3 (the repair's cost) are untouched by this
+section, and F3 stops being conditional on F2: the repair is needed.
+
+### 4.6.7 What §4 should be read as saying
+
+Unchanged: the mechanism is unsound as ratified; the subset property is not a
+check for it; the repair is one line of already-emitted text and changes no
+count. Corrected by measurement: the symptom is a **deleted match** rather
+than a spurious one (§4.2), the shipped two-pass shape does not mask it
+(`linuxask`'s reading of one non-discriminating witness), consumer (ii)'s
+`hybrid` half is in scope where §4.5 puts the whole of it out, and the repair
+already exists as `pf_emit_ofs_reseed`. The sabotage direction §9 names —
+**delete the re-seed** — keeps its fixture requirement and gains a better
+witness: `"atrue true"`, where the answer moves, rather than `"atrue xnull "`,
+where it does not.

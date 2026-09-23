@@ -72,3 +72,44 @@ scratch directory and verified against the SHA-256 values
 - `onepass_census.py`, `onepass_census.tsv`, `onepass_summary.json` — the
   three populations the survey names, their per-row verdicts and the summary
   `../onepass_census.md` is written from.
+
+## `[OPT-FIRSTSET]` §4.6's reconciliation pieces (lane `fsreconcile`, 2026-09-22)
+
+The instruments behind `../firstset_design.md` §4.6, which re-opens §4's
+soundness finding against the REAL compiled two-pass `rx_search` rather than
+against `scanloop_sim.py`'s forward-only replay.  **Every one of them is
+answer-only; none reads a clock.**
+
+- `firstset_witness.c` — the witness driver: one subject per line, the
+  artifact's own find-all loop, every SPAN printed.  Spans rather than a
+  count because the question has three answers a count cannot separate (a
+  LOST match, a SPURIOUS one, a match at the wrong span).  The emitted prefix
+  is a build parameter (`-DART_SEARCH=`/`-DART_NCAPS=`), which is what lets
+  the same file drive an artifact emitted at any `-p`.
+- `firstset_exhaust.c` — the exhaustive comparator: every string of length
+  0..L over an alphabet through all THREE artifacts in ONE process, and it
+  CLASSIFIES each disagreement by direction, since the direction is the
+  finding.  The three link together only because they are emitted at three
+  different `-p` prefixes (`rx`/`tw`/`rs`) and hand-edited afterwards.
+- `firstset_witness.sh` — the runner that produces both from a pcrec build
+  and nothing else: emits the three variants per pattern, applies the
+  narrowing and §4.4's re-seed through two asserting Python patchers (the
+  asserts are the STOP signal if the artifact's shape has moved), then runs
+  the 72-subject structured set and the two exhaustive sweeps.  Env:
+  `PCREC`, `CC` (default `gcc-16`), `OUT`.
+- `firstset_witness_results.txt` — that script's own output as measured on
+  darwin: 9 of 72 structured-set disagreements (all LOST matches, all in the
+  word-context cell), 0 for the re-seed, and 552 / 0 / 0 by direction over
+  4.03M exhaustively compared subjects.
+- `skiproute_census.py`, `skiproute_census.tsv`, `skiproute_summary.json` —
+  THE ROUTE CENSUS, which is what makes §4.6.3's general argument a count
+  rather than an argument: every shipped `.rxt` pattern line compiled at
+  `--features all -p rx`, cross-tabbed `RX_ENGINE × RX_DFA_PREFILTER ×
+  RX_DFA_START × RX_VM_PREFILTER`, with three facts read off the EMITTED TEXT
+  (does it carry a skip, a reverse walk, a seeded start).  Headline: 0 of
+  3,535 compiled artifacts run a skip with no reverse walk, 0 of 217
+  `pinned` artifacts carry any prefilter, and the narrowing's real reach is
+  54 artifacts (42 plain DFA, 12 VM hybrid).  Its own first detector is
+  documented in place as a [MECH-REACH] instance — it required the reverse
+  TRANSITION TABLE, which [CC-DIFF] STEP 1's uniform fold is allowed to
+  delete while the reverse WALK stays, and read 84 false positives.
