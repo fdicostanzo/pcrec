@@ -10,7 +10,7 @@ lane opens.
 
 ---
 
-## 0. Read this first — three findings, of which two change the note's shape
+## 0. Read this first — four findings, of which three change the note's shape
 
 1. **THE STATIC PRIOR ALREADY SHIPS, AND IT IS ALREADY THIS MECHANISM'S
    INTENDED HOOK.** `src/opt/prefix_k.c:91` holds a normalised 256-entry
@@ -35,7 +35,7 @@ lane opens.
    paying mechanism, not its precondition.
 
 3. **AND THE PRIOR'S ORDERING AGREES WITH THE BENCH SUBJECT ON EVERY MOVER,
-   12 OF 12** (§3.3): of the twelve `capability` patterns whose pick moves,
+   12 OF 12** (§4.3): of the twelve `capability` patterns whose pick moves,
    eleven move to a byte that is STRICTLY RARER in `t-1m` and one moves
    between two bytes that are both absent. Zero move to a commoner byte. That
    is evidence worth its own sentence because the prior was deliberately NOT
@@ -43,10 +43,26 @@ lane opens.
    discipline, `learnings.md` §3), so this is an out-of-sample agreement and
    not a fit.
 
+4. **THE PRIOR IS A FACT ABOUT A CORPUS UNDER AN ENCODING, AND THE SHIPPED
+   ONE IS KEYED TO `byte`** (§3, Frank's consideration of 2026-09-22 evening).
+   Its whole 0x80–0xFF half sits at the table's 2 ppm FLOOR, so under `-e utf8`
+   it calls the very bytes a Latin corpus uses most the rarest bytes there are:
+   on `é@` the argmin would take 0xC3, the shared UTF-8 lead byte, over a
+   genuinely rare `@` — a constructed witness, then verified against the
+   shipped compiler. Population zero on the corpus at both encodings and on the
+   bench, which is the state in which a hazard ships unobserved rather than a
+   reason to ignore it. **So event 1 applies the pick under `byte` and DECLINES
+   under every other encoding**, falling back to today's rightmost rule — which
+   is byte-for-byte today's answer, so the fallback can never regress anything
+   and the `-e utf8` identity gates become a free control. The encoding KEY
+   itself is one `DATA`-scope schema row the format lacks (§3.4), and it is
+   `[DD-13b]`'s to write, not this row's.
+
 **Recommendation, stated once.** Land the pick rule as ONE `abi` event over
-the shipped prior, with no findings-file plumbing and no new axis bit. The
-population is measured (§3.2: 304 of 2,236 corpus patterns with a necessary
-byte, 13.60%) and the landing bar's target cells are named (§6). The findings
+the shipped prior, under the `byte` encoding only, with no findings-file
+plumbing and no new axis bit. The
+population is measured (§4.2: 304 of 2,236 corpus patterns with a necessary
+byte, 13.60%) and the landing bar's target cells are named (§7). The findings
 file, its name resolution and the static named analyses are a SEPARATE later
 row this note deliberately does not open.
 
@@ -101,7 +117,7 @@ Only **one** of the three is a cycle-1 LOSING cell. Joined against
 and they move no bar. **The D119 improve population is `nested-comment-rec`'s
 two cells, 0.4294 of the losing matrix's 10.284** — and that is the honest
 figure this mechanism is priced at, not the census's "three whole-call
-answers", which counted wins and losses together. §6 is built on it.
+answers", which counted wins and losses together. §7 is built on it.
 
 ### 1.4 A second measured need the census did not frame as one
 
@@ -136,7 +152,7 @@ binds this note:
   of machine-written lines raised above its prose frequency — **deliberately
   NOT from the comparative bench's own log text**, because that would be a
   control sharing a source with what it controls (`learnings.md` §3). This is
-  what makes §3.3's 12-of-12 agreement out-of-sample.
+  what makes §4.3's 12-of-12 agreement out-of-sample.
 * **Every byte has a floor of 2 ppm rather than zero**, so the model can never
   believe a byte is impossible. The pick rule inherits that: it can select a
   byte the subject never contains, which is the WIN case, but it can never
@@ -222,9 +238,193 @@ edit.** That is the property D83's header claims and this note preserves.
 
 ---
 
-## 3. The pick rule
+## 3. The encoding dependence — the value is a fact about a corpus UNDER an encoding
 
-### 3.1 The rule
+**Frank's consideration, 2026-09-22 evening**, and it is the note's sharpest
+constraint. Everything in §2 describes WHERE the value comes from; this
+section is about what the value is a fact ABOUT, and the answer changes what
+may be consumed and when.
+
+### 3.1 The pick is encoding-sound; the VALUE is where the question lives
+
+`pcrec_req_byte` walks the tree AFTER `pcrec_lower_enc`, so every `A_CLASS` is
+a BYTE class and the set it produces is a set of bytes in the artifact's own
+encoding. That is stated in `reqbyte.c`'s header ("THE WALK IS OVER THE
+LOWERED TREE, which is what makes the answer a BYTE rather than a code point")
+and confirmed live on this box against the shipped compiler: `@é` under
+`-e utf8` stamps `RX_REQ_BYTE "169"` (0xA9, é's UTF-8 continuation byte, the
+rightmost necessary byte), and `é@` stamps `"64"` (`@`). So **the analysis is
+encoding-sound by construction and this section changes nothing about it.**
+
+What is NOT encoding-sound is the PRIOR the pick would read. A byte-frequency
+table is a fact about a subject corpus **under an encoding**: the same French
+text has one byte histogram as UTF-8 (0xC3 near-universal, since it is the
+lead byte of all of Latin-1 Supplement; 0xE2 carrying the punctuation range)
+and a completely different one as latin1 (0xC3 is a bare `Ã`, essentially
+absent; 0xE9 is `é` itself and common). **Same text, same code points, two
+different values of the thing this mechanism consumes.**
+
+### 3.2 The shipped table is keyed to `byte`, and it says so by its contents
+
+`byte_freq_ppm_tbl`'s entire high half is the FLOOR:
+
+| range | distinct ppm values |
+|---|---|
+| 0x80–0xFF | **`{2}`** — every one of the 128 bytes at the table's global minimum |
+
+2 ppm is the table's floor, shared by 158 of 256 bytes, and its header says
+why it is a floor rather than a zero ("a zero would let the model believe a
+byte is IMPOSSIBLE"). Under `byte`/latin1 prose that is a defensible prior.
+**Under `-e utf8` it is not merely imprecise, it is inverted**: the bytes a
+UTF-8 Latin corpus uses MOST are exactly the ones the table calls rarest, so
+an argmin over it prefers them.
+
+**THE WITNESS, constructed and then verified live rather than argued.**
+Under `-e utf8`, `é@` lowers to the three singleton byte classes
+`{0xC3, 0xA9, 0x40}`, all necessary — confirmed by compiling both orderings
+above. Today's rightmost rule stamps `@` (0x40, 665 ppm). The proposed argmin
+reads `ppm[0xC3] = ppm[0xA9] = 2` against `ppm[0x40] = 665`, so the minima are
+the two UTF-8 bytes, `@` is not among them, and §4.1's tiebreak takes the
+largest — **0xC3, the shared lead byte, in place of a genuinely rare `@`.**
+That is this mechanism's §7.2 absent→present hazard arriving SYSTEMATICALLY
+rather than by luck, and the artifact already shows the byte in play: the same
+compile emits `memchr(subject + scan_position, 195, …)` for the DFA's
+candidate-start scan, 195 being 0xC3.
+
+**The population is ZERO and the note says so plainly.** Over the shipped
+corpus at both encodings and the whole bench, the number of patterns where a
+high byte wins the argmin over an ASCII member of the same set is:
+
+| population | with a necessary byte | with a ≥ 0x80 member | high byte wins the argmin |
+|---|---|---|---|
+| corpus | 2,236 | 66 | **0** |
+| corpus `-e utf8` | 2,285 | 113 | **0** |
+| bench | 131 | 2 | 1, and it does not MOVE (today's rule already picks it) |
+
+So nothing in the tree reaches the hazard today, and the witness above had to
+be constructed. That is a reason to guard it cheaply, not a reason to ignore
+it: an empty population is exactly the state in which a hazard ships unobserved
+(`dialimpl_report.md`'s K59 is this house's worked example, and D105/§2's
+population-pin lesson is its sibling).
+
+### 3.3 The rule: the pick consumes a value whose encoding KEY matches the compile
+
+Three clauses, and the first is what ships in event 1.
+
+1. **A `freq` value carries an ENCODING KEY, and the pick reads only a value
+   whose key equals the compile's `-e`.** No key, or a key that disagrees, is
+   never silently applied.
+2. **When no matching value is available, the pick falls back to today's
+   rightmost rule** — not to a mismatched table. The fallback is *exactly*
+   today's emitted byte, so a fallback can never regress anything, which is
+   what makes this the safe default rather than a degraded one.
+3. **Therefore, in event 1 — which ships over the shipped table and no
+   findings file — the pick applies under `byte` and DECLINES under every
+   other encoding**, because `byte_freq_ppm_tbl`'s key is `byte` (§3.2). The
+   `-e utf8` corpus keeps today's answers byte-for-byte, the hazard is
+   structurally unreachable rather than merely unpopulated, and §4.2's 304
+   movers are all `byte`-encoding artifacts already.
+
+Clause 3 costs the mechanism nothing measurable: every bar cell in §7.1 and
+every mover in §4.3 is a `byte`-encoding compile, and the `capability`
+subbench has no UTF-8 regime. It also means **the utf8 arm of `make test-axes`
+and every `-e utf8` identity gate sees a byte-identical artifact**, which is a
+free control rather than a new obligation.
+
+The diagnostic when a value is present and its key disagrees follows lane
+`rulefix`'s ruling-1 precedent (an explicit CLI `--engine=` over a target's
+`engine` row): a **non-fatal stderr diagnostic naming both sources and both
+values**, then the fallback. Silence is not acceptable, and a hard refusal is
+wrong here because the compile has a correct answer available.
+
+### 3.4 What the schema expresses today, and what it lacks
+
+`src/parse/rxt_schema.def:254-260` is the whole `DATA` scope:
+
+```
+DATA "question"   LINE  ONE         required
+DATA "reader"     LINE  ONE         required
+DATA "analyzer"   LINE  ONE         required
+DATA "row"        LIST  REPEAT
+DATA "provenance" NONE  AT_MOST_ONE required
+```
+
+**There is no encoding row, and nothing else in the block can carry the key.**
+`question` and `analyzer` are prose. `provenance` is the eleven-field record
+shared with a pattern block and its `source`/`retrieved`/`bytes`/`sha256`
+describe the EXEMPLAR FILE, not the encoding the histogram was taken under —
+two different facts about the same file, and a `sha256` of the bytes is
+identical whichever way you tally them. The `defname` (`freq prose-utf8`)
+would be a naming convention rather than a checked fact, which is exactly the
+shape `w233`'s report records this format refusing elsewhere.
+
+**What it needs is one row**, at `DATA` scope, `ONE`, `required`, a CLOSED set
+over the encoding names `-e` itself takes:
+
+```
+DATA "encoding"   TOKEN ONE         required, closed
+```
+
+Required is the load-bearing word. It makes "a value with no encoding key" a
+PARSE ERROR rather than a runtime judgement — the same device the format
+already uses for `question` and `reader`, whose spec text says being required
+"is what makes *a block nobody reads is not emitted* a parse-time fact rather
+than a review convention." A closed set over the existing encoding vocabulary
+means a typo is refused by name rather than silently never matching.
+
+**That row is `[DD-13b]`'s to write, not this row's.** D83's addendum is
+explicit that "the `freq` block's FORMAT work stays under `[DD-13b]` and is
+not opened by this ruling," and this note honours that: it states the
+requirement and the spelling, and does not schedule the change. Until it
+exists, §3.3 clause 3 is the whole behaviour and it needs no format work at
+all.
+
+### 3.5 Code points or bytes — carry BOTH, as two named values, with one derivation
+
+The pick consumes BYTES. The question is what an exemplar analysis should
+WRITE, and the answer is not one of the two:
+
+* **`freq` carries a BYTE histogram, keyed by encoding.** It is what the
+  consumer reads, it is measurable with no decoding, and — the decisive
+  reason — **an exemplar with invalid UTF-8 has no code-point histogram at
+  all.** Real log files contain bad bytes; an analyzer that refuses one is
+  useless, and `[M5.0]`/K49/K50 are this tree's own record that invalid input
+  is a real case and not an edge one. A byte tally always succeeds.
+* **A code-point histogram is a SECOND NAMED VALUE**, say `cpfreq`, which is
+  exactly the shape D83's addendum item (1) rules ("a later analysis … is a
+  new named value in the same file, never a new mechanism"). It is
+  encoding-INDEPENDENT, so ONE analysis of a reference corpus serves every
+  encoding.
+* **The derivation from `cpfreq` to a byte table is one function per
+  encoding, and it is the encoder the tree already owns.** `count(byte b) =
+  Σ_cp count(cp) × (occurrences of b in encode(cp))` — exact, not approximate,
+  because a code point's byte sequence under an encoding is fixed. It reuses
+  `pcrec_lower_enc`'s own encoder rather than a second one, which is what
+  makes it a general mechanism and not a per-encoding special case.
+
+**Which should the SHIPPED static named analyses carry?** `cpfreq`. D83
+addendum item (3) rules that a set of canned analyses ships (`html`, `tsv`,
+`json`, `log`, `prose`, …) with provenance following `third_party/`'s
+derived-data shape — a reference corpus sample compiled through a generator
+beside it. Writing those as `cpfreq` means **one generator, one provenance
+record and one curated corpus per subject class, serving every encoding**,
+instead of an N×M grid that would have to be regenerated whenever an encoding
+is added. The generator controls its own corpus and can therefore decode it,
+which is precisely the condition a `cpfreq` needs and a user's arbitrary
+exemplar does not have.
+
+**And this retires a question §2.1 leaves open.** The shipped
+`byte_freq_ppm_tbl` is a hand-assigned byte table with no key and no
+generator. Under this shape it becomes the `byte`-encoding derivation of a
+shipped `prose` `cpfreq`, with its hand-assignment replaced by a generator
+over a citable corpus — at which point its own header's independence
+discipline ("deliberately NOT from the comparative bench's own log text") is
+enforced by the corpus choice rather than by a comment. That is a strictly
+later row; nothing here depends on it.
+
+## 4. The pick rule
+
+### 4.1 The rule
 
 > **Among the members of the necessary set, choose the one with the lowest
 > `pcrec_byte_freq_ppm`. On a tie, choose the member today's rule would have
@@ -253,7 +453,7 @@ member of the minima, and a rule that silently fell back to "whichever bit a
 loop found first" is the thing `reqbyte.c`'s header already refuses for
 `rb_intersect`.
 
-### 3.2 The population, measured
+### 4.2 The population, measured
 
 Computed over `reqpos_census.tsv`'s `set_hex` column (the whole necessary set
 per pattern, from a probe cross-checked against batch 1's own landed
@@ -265,13 +465,19 @@ shipped `byte_freq_ppm_tbl`:
 | shipped corpus | 2,236 | 903 (40.4%) | **304 — 13.60%** |
 | bench (6 sets) | 131 | 89 (67.9%) | **51 — 38.93%** |
 
+**These are `byte`-encoding compiles, which under §3.3 clause 3 is the whole
+of event 1's population.** The census's `-e utf8` arm computes 304 movers too
+(over a slightly larger 2,285-pattern base), and every one of them DECLINES in
+event 1, so the shipped behaviour under `-e utf8` is today's byte on every
+pattern and the utf8 identity gates must read zero movers.
+
 Among movers, the ratio of the old byte's ppm to the new byte's: corpus
 median **3.4×**, range 1.11× to 2,492×; bench median 3.3×, range 1.11× to
 101×. A pattern with a singleton necessary set can never move, which is
 59.6% of the corpus's own population — so the mechanism's reach is bounded
 by the alternation/concatenation shapes that produce a set at all.
 
-### 3.3 The direction, on the one subject where it can be checked
+### 4.3 The direction, on the one subject where it can be checked
 
 For the 12 `capability` movers, both bytes' counts in the bench's 1 MiB
 throughput subject (`c2/subject_freq.json`, `t-1m`, 1,048,576 bytes):
@@ -298,10 +504,10 @@ pick that moved it to a PRESENT byte would have destroyed that cell's
 whole-call answer. `&` is absent too, so the cell is unharmed — and that is a
 measurement, not a property: **the prior is subject-blind, so an
 absent→present move is possible in general and is the mechanism's one real
-hazard.** §6.2 makes it a carve-out with a named control rather than an
+hazard.** §7.2 makes it a carve-out with a named control rather than an
 assumption.
 
-### 3.4 What the rule does NOT do
+### 4.4 What the rule does NOT do
 
 It does not change the SET, so every decline `reqbyte.c`'s header lists stays
 exactly as it is (a multi-member class, a zero-admitting quantifier, a
@@ -313,7 +519,7 @@ but the walk.
 
 ---
 
-## 4. The `abi` question
+## 5. The `abi` question
 
 **Yes, and it is a plain one.** The emitted `memchr`'s decimal argument and
 the `<PREFIX>_REQ_BYTE` stamp both move on 13.60% of the corpus, so this is a
@@ -355,9 +561,9 @@ that would carry another stamp's value by construction does not ship.
 
 ---
 
-## 5. The axis and the identity story
+## 6. The axis and the identity story
 
-### 5.1 No new axis bit, and the reason is not frugality
+### 6.1 No new axis bit, and the reason is not frugality
 
 `-fno-req-byte` / `PCREC_NO_REQ_BYTE` (bit 30, `src/core/axes.def:158`)
 already denies the mechanism, and this change is **which member of a set the
@@ -384,11 +590,11 @@ is fine (`pcrec_options.flags` is `uint64_t`); the SPELLING is what moves.
 Spending the second-to-last cheap bit on a tiebreak is worth stating, not
 worth hiding.
 
-### 5.2 How `make test-axes` and the identity gates cover it
+### 6.2 How `make test-axes` and the identity gates cover it
 
 * **`make test-axes`** sweeps `-fno-req-byte` denied/forced for
   answer-identity over the whole corpus. The pick rule is answer-identity
-  preserving by construction (§3.1), so the sweep's verdict on the changed
+  preserving by construction (§4.1), so the sweep's verdict on the changed
   arm must be IDENTICAL to its verdict today — a test whose passing is
   evidence of nothing new, and the note says so rather than claiming coverage
   it does not get. On darwin sweep only this axis (`AXES="-fno-req-byte"`),
@@ -398,7 +604,7 @@ worth hiding.
   instruments that DO see this: 304 corpus artifacts move, which is a
   positive control the abi bump owes anyway. Run the sweep against the branch
   point and confirm the mover set equals the predicted set — not just its
-  size. §7 names it as the acceptance measurement.
+  size. §8 names it as the acceptance measurement.
 * **`tests/codegen/run_prechecks.sh` §3** is batch 1's gate and already holds
   the right shape: it asserts the `memchr`'s SENSE separately from its
   ARGUMENT, because S265 inverts the sense and leaves the byte alone. The
@@ -406,7 +612,7 @@ worth hiding.
   §3's sense arm needs no change** — which is the gate's own design paying
   off. What it owes is one new arm.
 
-### 5.3 The new arm, and its sabotage row
+### 6.3 The new arm, and its sabotage row
 
 **The arm.** Assert, on a fixture whose necessary set has ≥ 2 members of
 known differing ppm, that the emitted `memchr` argument is the MINIMUM-ppm
@@ -434,9 +640,9 @@ reading green on an empty population (`w233_report.md`'s wave-tier zero).
 
 ---
 
-## 6. The landing bar and its cells
+## 7. The landing bar and its cells
 
-### 6.1 Improve
+### 7.1 Improve
 
 D119 rule 4: the target cells' median improvement must exceed their IQR.
 **The target cells are `nested-comment-rec`'s two, and they are the only ones
@@ -458,11 +664,11 @@ Two effects are gains and are NOT bar cells, because both rows already win:
 `wild-validator-email-owasp` throughput (`.`→`@`, 14,826→0) and
 `wild-waf-crs-942500-comment-obfuscation` throughput (`/`→`*`, 30,000→0).
 
-### 6.2 Do not regress — and the carve-out that matters
+### 7.2 Do not regress — and the carve-out that matters
 
 | cell | why it is a carve-out |
 |---|---|
-| `dup-param-detect`, throughput | **THE ONE THAT COULD BREAK.** A batch-1 improve cell whose picked `=` is ABSENT from `t-1m`; the rule moves it to `&`, also absent, so the whole-call answer survives. MEASURED (§3.3), not assumed |
+| `dup-param-detect`, throughput | **THE ONE THAT COULD BREAK.** A batch-1 improve cell whose picked `=` is ABSENT from `t-1m`; the rule moves it to `&`, also absent, so the whole-call answer survives. MEASURED (§4.3), not assumed |
 | `tag-depth3-bound`, `tag-pair-match`, `wild-secrets-username-password-pair`, `wild-logparse-winpath-grok` | batch 1's other four improve cells. **None moves** — `tag-depth3-bound`'s set `{<, >, /}` ties at 332 ppm between `<` and `>` and the tiebreak keeps `>`; the others are singletons or already minimal |
 | `floor-byte`, throughput and search | the floor control. Single literal `~`, singleton set, cannot move. Its emitted text must be byte-identical |
 | `router-prefix-order`, throughput | rank 12, score 0.2258. MOVES `r`→`/` (54,781→30,000): fewer candidate hits, both present. **This cell has already lost its byte-identity control status** (`optimpl1_report.md` §0: batch 1 falsified the plan row's claim that it is byte-identical), so it is a speed carve-out only |
@@ -472,13 +678,17 @@ Two effects are gains and are NOT bar cells, because both rows already win:
 The prior is subject-blind. On a subject whose distribution differs from
 `byte_freq_ppm_tbl`'s, the rule can move a pick from a byte that is ABSENT to
 one that is PRESENT, turning a one-pass answer into a full attempt loop. The
-`capability` set contains zero instances (§3.3) and that is luck plus a
-well-ordered prior, not a theorem. **The acceptance measurement is therefore
+`capability` set contains zero instances (§4.3) and that is luck plus a
+well-ordered prior, not a theorem. **Its one SYSTEMATIC form is the encoding
+mismatch of §3.2** — where the divergence is not a subject's idiosyncrasy but
+a whole encoding's — and §3.3 clause 3 closes that form structurally rather
+than by measurement, which is why the residue here is a measured carve-out and
+not an open risk. **The acceptance measurement is therefore
 not just "the target cells improve" but "no cell's picked byte goes from
 absent to present"**, which is a COUNT over the bench's own subjects and is
-checkable before any timing run (§7 item 2).
+checkable before any timing run (§8 item 2).
 
-### 6.3 Size
+### 7.3 Size
 
 Zero. No line is added or removed on any artifact; the emitted decimal changes
 width by at most two characters per occurrence, three occurrences per
@@ -490,14 +700,14 @@ rather than assumed, `scripts/size_diff` being the reader.
 
 ---
 
-## 7. The D77 measurements this note's landing rests on
+## 8. The D77 measurements this note's landing rests on
 
 Named, in the order they must happen, because D77 requires each build to name
 the measurement that triggers it:
 
 1. **The corpus mover set, by identity sweep, not by prediction** (darwin,
    free). `scripts/emit_sweep.py --ref <branch point>` over all five streams.
-   ACCEPTANCE: the mover set is exactly the 304 patterns §3.2 predicts —
+   ACCEPTANCE: the mover set is exactly the 304 patterns §4.2 predicts —
    compared as a SET of pattern ids, never as a count, because two errors in
    opposite directions cancel in a count (`dialdesign_report.md` §3's K45
    lesson). A disagreement here is a probe/compiler divergence and must be
@@ -511,18 +721,27 @@ the measurement that triggers it:
    moves. A non-zero result is not a blocker but it names the carve-out cells
    before the bench measures them.
 3. **The bench cells, on Linux, through the executor** (D119's landing bar).
-   `nested-comment-rec` throughput and search, plus every §6.2 carve-out,
+   `nested-comment-rec` throughput and search, plus every §7.2 carve-out,
    at the shipped default `auto-caps` and at the variants `cycle1_caps_view.md`
    ranks. ACCEPTANCE: median gain on the two target cells exceeds their IQR;
    no carve-out regresses by more than its IQR.
-4. **NOT owed, and named so nobody waits for it**: nothing here needs a
-   findings file, a name resolution, a static named analysis, or
+4. **The `-e utf8` identity arm** (darwin, free, and it is a CONTROL rather
+   than a hunt). Compile the whole corpus at `-e utf8` against the branch
+   point. ACCEPTANCE: **ZERO movers**, which is §3.3 clause 3 asserted rather
+   than trusted. A single mover means the encoding gate is not where the note
+   says it is, and it is worth more than any of the byte-side numbers because
+   it is the one arm that fails loudly if clause 3 was implemented as a
+   comment. Pair it with the constructed witness: `é@` at `-e utf8` must still
+   stamp `RX_REQ_BYTE "64"`.
+5. **NOT owed, and named so nobody waits for it**: nothing here needs a
+   findings file, a name resolution, a static named analysis, an `encoding`
+   schema row, or
    `firstset_design.md` §7's `json-constant` re-run. This mechanism is
    independent of `[OPT-FIRSTSET]`'s verdict in both directions.
 
 ---
 
-## 8. The four design lenses
+## 9. The four design lenses
 
 **Specific vs general.** General, and it removes a special case rather than
 adding one. The necessary SET is what the analysis already produces; today's
@@ -544,10 +763,14 @@ is about the SET.
 
 **Applicable vs assumption-changing.** Applicable. Answer identity holds by
 construction, every existing decline stands, the emitter's shape and window
-are unchanged, and `prefix_k.c`'s own sentence ("a badly-fitted prior costs
+are unchanged, and it touches no encoding assumption at all — the analysis was
+already encoding-sound over the lowered byte tree, and the one place an
+assumption COULD have been smuggled in (a byte prior consumed under an
+encoding it was not measured for) is refused by §3.3 rather than assumed away.
+`prefix_k.c`'s own sentence ("a badly-fitted prior costs
 speed on some input and can never cost a match") is already the tree's ruling
 on exactly this trade. The one assumption that does move is a PERFORMANCE
-assumption in the unsound-for-speed direction — §6.2's absent→present
+assumption in the unsound-for-speed direction — §7.2's absent→present
 hazard — and it is made a measured carve-out rather than an argued one.
 
 **Fits the architecture vs needs a refactor.** Fits, at the smallest scale
@@ -560,7 +783,7 @@ designed to give and this note does not spend.
 
 ---
 
-## 9. Open questions for Frank
+## 10. Open questions for Frank
 
 1. **Does the pick rule ship over the SHIPPED static prior now, or wait for a
    findings file?** (This note recommends now: §0 finding 2 — the prior
@@ -570,19 +793,35 @@ designed to give and this note does not spend.
    (Recommend yes: memory `pcrec-abi-changes-pre-release`, and the bump's
    ritual cost is the same at 1 artifact as at 304.)
 3. **`PCREC_NO_FREQ_PICK` — mint the bit, or keep the pick a value under
-   `-fno-req-byte`?** (Recommend the latter: §5.1, plus bit 31 is the last
+   `-fno-req-byte`?** (Recommend the latter: §6.1, plus bit 31 is the last
    `1u <<` bit.)
 4. **Should `tuning.md` §2.27's "matching PCRE2's own choice" sentence be
    replaced or kept with an exception?** (Recommend replaced: after this
    change the rightmost rule survives only as a TIEBREAK, and a spec sentence
    that describes a tiebreak as the rule is the drift D80 exists to prevent.)
-5. **Does the findings-file row get opened as its own plan row now**, carrying
+5. **Is `byte`-only the right scope for event 1**, or should a second static
+   table for `utf8` ship with it? (Recommend `byte`-only: we have no
+   utf8-keyed prior, the fallback is today's exact answer so the decline costs
+   nothing measurable, and inventing a utf8 table by hand would repeat the
+   hand-assignment §3.5 wants to retire.)
+6. **Does `[DD-13b]` get the one-row `encoding` schema addition (§3.4)
+   scheduled now**, or when a findings file first needs it? (Recommend when it
+   is needed: D83's addendum keeps `freq`'s format under `[DD-13b]` and event
+   1 needs no format work at all. But the row is one line and the note states
+   its exact spelling, so it is cheap to take early if `[DD-13b]` has an open
+   wave.)
+7. **Is `cpfreq` the right shape for the SHIPPED named analyses (§3.5)** — one
+   code-point analysis per subject class, derived to bytes per encoding —
+   against one byte table per (class, encoding) pair? (Recommend `cpfreq`: one
+   generator and one provenance record per class, and the derivation reuses
+   the encoder rather than adding a mechanism.)
+8. **Does the findings-file row get opened as its own plan row now**, carrying
    name resolution, the `row` reader, the CLI surface and D83 addendum (4)'s
    `-I` question — or does it wait for a second consumer to ask? (Recommend
    waiting: D77, and this mechanism is the second consumer already served by
    the fallback.)
-6. **Is the absent→present hazard (§6.2) acceptable as a measured carve-out**,
+9. **Is the absent→present hazard (§7.2) acceptable as a measured carve-out**,
    or does it want a guard — e.g. "never move a pick whose ppm is already
    below a floor"? (Recommend no guard: a guard would be a threshold with no
-   measurement behind it, D77, and the sweep in §7 item 2 answers the question
+   measurement behind it, D77, and the sweep in §8 item 2 answers the question
    the guard would be insuring against.)

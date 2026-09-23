@@ -2209,6 +2209,27 @@ append-only or historical records.
   real hazard as a MEASURED carve-out rather than an argued one: the prior is
   subject-blind, so an absent→present move is possible in general and
   `dup-param-detect` is the batch-1 improve cell where it nearly happened.
+  **§3 is Frank's ENCODING consideration (2026-09-22 evening) worked in
+  full**, and it is the note's sharpest constraint: a byte-frequency value is
+  a fact about a corpus UNDER an encoding, and the shipped table is keyed to
+  `byte` by its own contents — its whole 0x80–0xFF half sits at the 2 ppm
+  FLOOR, so under `-e utf8` it calls the bytes a Latin corpus uses most the
+  rarest there are, and on `é@` the argmin takes 0xC3 (the shared UTF-8 lead
+  byte) over a genuinely rare `@`. Constructed, then verified against the
+  shipped compiler; population ZERO on the corpus at both encodings and on the
+  bench, which is the state in which a hazard ships unobserved. So event 1
+  applies the pick under `byte` and DECLINES elsewhere, falling back to
+  today's exact answer — making the `-e utf8` identity gates a free control
+  rather than a new obligation. The encoding KEY is one `DATA`-scope schema
+  row the format LACKS (`rxt_schema.def:254-260` has no place for it;
+  `provenance` describes the exemplar file, not the tally), spelled out here
+  and left to `[DD-13b]` per D83's addendum. And on code points vs bytes: a
+  user's exemplar carries BYTES keyed by encoding (a byte tally always
+  succeeds; an exemplar with invalid UTF-8 has no code-point histogram at
+  all), while the SHIPPED named analyses carry a second named value,
+  `cpfreq`, derived to bytes by the encoder the tree already owns — one
+  generator and one provenance record per subject class serving every
+  encoding, instead of an N×M grid.
 - `reqpos_2b.md` — **`[OPTLOOP.2]` cycle-2 design note, lane `c2design`,
   2026-09-22** (design only; ratification and a D6 panel owed):
   `[OPT-REQPOS]` tier 2b, **VERDICT BUILD**. Read §0 first — it is not the
@@ -2254,7 +2275,13 @@ append-only or historical records.
   long) has no witness in the shipped corpus and must ship with its fixture
   or read UNREACHED, and `coding_guide.md` §3.1 plus `src/gen/CLAUDE.md:25`
   both cite the wrong file for `PCREC_ARTIFACT_ABI` (it is
-  `src/gen/emit_dfa.c:51`, not `src/core/limits.def`).
+  `src/gen/emit_dfa.c:51`, not `src/core/limits.def`). §2.3 also carries
+  Frank's encoding consideration for this row in one paragraph: `A`'s
+  frequency-informed choice inherits `reqbyte_freq_pick.md` §3.3's rule
+  unchanged (applies under `byte`, declines elsewhere, falling back to the
+  run's LEFTMOST member, which is what the plan row already specifies for the
+  no-findings-file case), while the RUN itself is encoding-sound by
+  construction and `-e utf8` RAISES its population.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

@@ -70,14 +70,68 @@ stays declined and is not even a precondition.
     `1ull` widening reaches `axes_registry_check.sh`, whose bit table is
     derived by grepping `PCREC_(NO|FORCE)_`.
 
+## The encoding round (Frank, 2026-09-22 evening)
+
+Frank's consideration that the `freq` value depends on the ENCODING is
+`reqbyte_freq_pick.md` **§3** (a new top-level section; the old §3-§9 renumber
+to §4-§10, every internal cross-reference re-pointed) and `reqpos_2b.md`
+**§2.3**'s new paragraph. Three things came out of working it.
+
+14. **The shipped table is keyed to `byte` BY ITS OWN CONTENTS.** Its entire
+    0x80-0xFF half is a single value — 2 ppm, the table's global FLOOR, shared
+    with 158 of 256 bytes. Under `-e utf8` that is not imprecise but INVERTED:
+    the bytes a UTF-8 Latin corpus uses most are exactly the ones the table
+    calls rarest, so an argmin over it prefers them.
+15. **A live witness, constructed and then verified against the shipped
+    compiler.** `é@` at `-e utf8` lowers to `{0xC3, 0xA9, 0x40}`; today's rule
+    stamps `RX_REQ_BYTE "64"` (confirmed, and `@é` stamps `"169"`, é's
+    continuation byte, confirming both UTF-8 bytes are in the set). The argmin
+    reads 2/2/665 ppm, so `@` is not among the minima and the tiebreak takes
+    **0xC3, the shared lead byte, over a genuinely rare `@`** — the note's own
+    absent→present hazard arriving systematically rather than by luck. The
+    same artifact already emits `memchr(..., 195, ...)` for the DFA's
+    candidate-start scan, which is 0xC3.
+16. **Population ZERO, and that is the argument FOR the guard rather than
+    against it.** High byte wins the argmin over an ASCII member: 0 of 2,236
+    corpus patterns, 0 of 2,285 at `-e utf8`, 1 of 131 bench (and it does not
+    MOVE — today's rule already picks it). An empty population is exactly the
+    state in which a hazard ships unobserved (K59's precedent). So event 1
+    applies the pick under `byte` and DECLINES elsewhere, falling back to
+    today's exact answer: the hazard becomes structurally unreachable rather
+    than merely unpopulated, the `-e utf8` corpus stays byte-identical, and
+    the utf8 identity gates become a free control (a new §8 item 4, whose
+    acceptance is ZERO movers).
+
+Two further answers the section owed. **The schema LACKS the encoding key** —
+`rxt_schema.def:254-260`'s whole `DATA` scope is
+question/reader/analyzer/row/provenance, and `provenance` describes the
+exemplar FILE, not the tally, so a `sha256` is identical whichever way you
+count. What it needs is one `DATA "encoding" TOKEN ONE required, closed` row,
+whose REQUIRED-ness makes "no key" a parse error the way `question`/`reader`
+already do; spelled out and left to `[DD-13b]` per D83's addendum. **And on
+code points vs bytes the answer is both, as two named values**: a user's
+exemplar carries BYTES keyed by encoding (a byte tally always succeeds, and an
+exemplar with invalid UTF-8 has no code-point histogram at all — K49/K50's own
+territory), while the SHIPPED named analyses carry `cpfreq` and are derived to
+bytes by the encoder the tree already owns, so one generator and one
+provenance record per subject class serve every encoding instead of an N×M
+grid. That also retires the hand-assignment in `byte_freq_ppm_tbl` as a
+strictly later row.
+
 ## Open questions
 
-`reqbyte_freq_pick.md` §9 (six): ship over the shipped prior now (rec. yes);
-13.60% of the corpus as an `abi` 29 → 30 event for a two-cell bar (rec. yes);
-mint `PCREC_NO_FREQ_PICK` (rec. no, keep it a value); replace `tuning.md`
-§2.27's "matching PCRE2's own choice" sentence (rec. replace); open the
-findings-file row now (rec. wait); guard the absent→present hazard (rec. no
-guard, measure it — §7 item 2).
+`reqbyte_freq_pick.md` §10 (NINE after the encoding round): ship over the
+shipped prior now (rec. yes); 13.60% of the corpus as an `abi` 29 → 30 event
+for a two-cell bar (rec. yes); mint `PCREC_NO_FREQ_PICK` (rec. no, keep it a
+value); replace `tuning.md` §2.27's "matching PCRE2's own choice" sentence
+(rec. replace); **is `byte`-only the right scope for event 1** (rec. yes — no
+utf8-keyed prior exists and the fallback is today's exact answer); **schedule
+`[DD-13b]`'s one-row `encoding` schema addition now or when needed** (rec.
+when needed, but it is one line and the spelling is given); **is `cpfreq` the
+right shape for the shipped named analyses** (rec. yes — one generator per
+class, derivation reuses the encoder); open the findings-file row now (rec.
+wait); guard the absent→present hazard (rec. no guard, measure it — §8
+item 2).
 
 `reqpos_2b.md` §9 (six): accept BUILD-2b / DECLINE-2 (rec. yes); ship with no
 decline rule (rec. yes); truncate a long run to 8 (rec. yes); take bit 31 or do
@@ -90,5 +144,8 @@ COMPLETE for a docs-only lane — no build, suite or sabotage run applies. The
 prior's sum was re-verified by parsing the shipped array (1,000,000); the
 `memcmp` lowering is reproducible in one command (`reqpos_2b.md` §7 item 3),
 and re-running it on the Linux reference toolchain is item 3 of that note's own
-owed list, not this lane's. Commits: `eb28addd`, `4f8a2cc8`, plus the
-`docs/design/CLAUDE.md` entries and this report. NOTHING OWED.
+owed list, not this lane's. The encoding round added one live check against
+the shipped compiler (`/Users/fdicostanzo/pcrec/build/pcrec`, read-only):
+`é@` and `@é` at `-e utf8` and at `byte`, stamping 64/169 exactly as §3.2
+predicts. Commits `eb28addd`, `4f8a2cc8`, `acbac885` and the encoding round's
+own. NOTHING OWED.

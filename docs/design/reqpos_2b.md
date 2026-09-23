@@ -224,6 +224,31 @@ run's members**, ties to the leftmost. Two consequences:
 gives a boolean; the index is owed as a one-column census extension (§7 item
 1) before an implementation lane can pin a fixture's expected emitted text.
 
+**THE SAME ENCODING DEPENDENCE APPLIES HERE, AND IT BINDS THIS ROW TOO**
+(Frank's consideration of 2026-09-22 evening, worked in full at
+`reqbyte_freq_pick.md` §3). A byte-frequency value is a fact about a subject
+corpus UNDER an encoding — a UTF-8 corpus's histogram is a different value
+from a latin1 corpus's over the same text — and this mechanism's `i` is
+chosen by exactly that value over exactly the same lowered byte tree, so it
+inherits the hazard whole: the shipped `byte_freq_ppm_tbl`'s entire 0x80–0xFF
+half sits at the table's 2 ppm floor, which under `-e utf8` calls the bytes a
+Latin corpus uses most the rarest bytes there are, and picking a UTF-8 lead
+byte as the `memchr` target is the worst available choice for the scan cost
+§3.3 prices. **So `i`'s frequency-informed choice carries
+`reqbyte_freq_pick.md` §3.3's rule unchanged: it applies under `byte` and
+DECLINES under every other encoding, falling back to the run's LEFTMOST
+member** — which needs no prior, is what the plan row already specifies for
+the no-findings-file case ("with an `[ENG-PGO]` findings value it picks the
+RAREST pair, without one the leftmost"), and costs nothing measurable, since
+the census's `-e utf8` arm shares no bar cell with §6.1. The RUN itself is
+encoding-sound by construction for `reqbyte.c`'s own reason — it is built
+from post-`lower_enc` singleton byte classes, and §2.4 item 7 already records
+that `-e utf8` RAISES the population rather than complicating it. And when a
+run-rate analysis is eventually written (§4.3's named trigger), it is a
+findings value like any other and is keyed by encoding the same way — one
+`DATA`-scope row, `[DD-13b]`'s to write, spelled out at
+`reqbyte_freq_pick.md` §3.4.
+
 ### 2.4 What the mechanism declines, stated as a list
 
 1. **Any pattern with no run of length ≥ 2** — 81.4% of the corpus. It keeps
@@ -446,7 +471,9 @@ Three reasons, and the third is the decisive one:
    trigger is named: a second `freq`-family named analysis value carrying RUN
    rates (D83 addendum item 1 permits exactly this — "a later analysis … is a
    new named value in the same file, never a new mechanism"), whose first
-   consumer would be this decline.
+   consumer would be this decline — and which is KEYED BY ENCODING for §2.3's
+   reason, since a run's rate is as much a fact about an encoded corpus as a
+   byte's is.
 3. **The axis IS the decline rule for now.** `-fno-req-run` (or the value form
    §5 recommends) lets a caller who has measured a regression turn it off,
    which is what a tuning axis is for and what `tuning.md` §1 says it is for.

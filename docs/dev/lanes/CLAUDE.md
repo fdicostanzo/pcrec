@@ -885,6 +885,24 @@ never edited afterwards.
   §3.1 and `src/gen/CLAUDE.md:25` both cite `src/core/limits.def` for
   `PCREC_ARTIFACT_ABI`, which lives at `src/gen/emit_dfa.c:51`; and bit 31 is
   the last bit spellable `1u << N` in the flags enum.
+  **A SECOND ROUND the same evening** works Frank's consideration that the
+  `freq` value DEPENDS ON THE ENCODING (`reqbyte_freq_pick.md` §3, a new
+  top-level section with the old §3-§9 renumbered; `reqpos_2b.md` §2.3's new
+  paragraph). The shipped table is keyed to `byte` by its own contents — its
+  whole 0x80-0xFF half is the 2 ppm FLOOR, so under `-e utf8` it calls the
+  bytes a Latin corpus uses most the rarest there are — witnessed live on
+  `é@`, where the argmin would take 0xC3 (the shared UTF-8 lead byte) over a
+  genuinely rare `@`, with the shipped compiler confirming today's `"64"` and
+  `@é`'s `"169"`. Population ZERO on the corpus at both encodings and on the
+  bench, which is the state in which a hazard ships unobserved, so event 1
+  applies the pick under `byte` and DECLINES elsewhere, falling back to
+  today's exact answer and making the `-e utf8` identity gates a free control.
+  The encoding KEY is one `DATA`-scope schema row the format lacks, spelled
+  out and left to `[DD-13b]`; and on code points vs bytes the answer is both
+  as two named values — a user's exemplar carries BYTES keyed by encoding
+  (an exemplar with invalid UTF-8 has no code-point histogram at all), the
+  shipped named analyses carry `cpfreq` and derive to bytes through the
+  encoder the tree already owns.
 
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
