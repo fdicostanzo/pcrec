@@ -319,23 +319,30 @@ value, same generated code.
 
 ## 6. OWED at hand-off
 
-**Two chained runs, armed detached as this lane's last act** (BOILERPLATE's
+**Three chained runs, armed detached as this lane's last act** (BOILERPLATE's
 DO-THEN-FINISH; `nohup … & disown`, so they survive this session's close), one
 heavy suite at a time:
 
-1. **`make test-axes CC=gcc-16 AXES="-fno-req-byte -fno-req-run"`** — the
+1. **Every corpus pattern compiled at the three engine settings** (default /
+   `--engine=dfa` / `--engine=vm`), asserting **zero internal errors** — an
+   internal error reachable from a user pattern is a refusal regression, and the
+   run walk added arms to a switch both engines read. Log:
+   **`build/optimpl2_corpus3.log`**, last line
+   `corpus-x-engines: N compiles, internal errors: M`. Runs first because it is
+   the cheapest of the three.
+2. **`make test-axes CC=gcc-16 AXES="-fno-req-byte -fno-req-run"`** — the
    answer-identity sweep restricted to this batch's two axes, verified against
    `run_axes.sh`'s own spelling before citing it (the whole table is
    multi-hour on darwin). Log: **`build/optimpl2_axes.log`**. Completion line:
    `run_axes.sh:` with its verdict, followed by
    `tests/codegen/run_form_census.sh`'s summary. Expect both axes
    answer-identical to default. **The all-axes sweep is a Linux ask** (I-89).
-2. **`make test CC=gcc-16`** — the full suite. Log:
+3. **`make test CC=gcc-16`** — the full suite. Log:
    **`build/optimpl2_test.log`**. The verdict is make's `*** [test-X] Error`
    lines, never `sections ran: N/M` (which counts sections LAUNCHED —
    `learnings.md` §3, lane axesfix's finding).
 
-Both are launched by `build/optimpl2_final.sh` in series; progress in
+All three are launched by `build/optimpl2_final.sh` in series; progress in
 `build/optimpl2_chain.log`, whose last line is
 `[chain] ALL OWED RUNS COMPLETE`. Kill with `scripts/safekill <pid>` (recorded
 in that log) if the manager wants the box for a merge battery instead.
@@ -348,9 +355,9 @@ predicted.
 
 **Also owed:**
 
-3. **The three sabotage rows SOLO** — `bash tests/mech/run_sabotage_matrix.sh
+1. **The three sabotage rows SOLO** — `bash tests/mech/run_sabotage_matrix.sh
    S266` / `S267` / `S268`. Each rebuilds a tree; expectations in §3.2.
-4. **The bench's own measurement** of the landing-bar cells, after merge, via
+2. **The bench's own measurement** of the landing-bar cells, after merge, via
    the executor. `reqpos_2b.md` §6.1's four improve cells and
    `reqbyte_freq_pick.md` §7.1's two, plus every carve-out in both notes' §6.2
    / §7.2. **The two `logparse-atomic` cells are the ones to read first**:
