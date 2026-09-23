@@ -464,3 +464,27 @@ that cycle's analysis lands.
   written against: pcrec-bench's O-49 outbox entry, the I-95 ask it answers,
   and the 698-line ledger `2026-09-23-optloop2-batch2-after-b1885a83.md`,
   copied verbatim at read time.
+
+- `litrun_census.md` — **[OPTLOOP.litrun], 2026-09-23, lane `litrun`**,
+  measurement only (D77): does gcc fuse the VM's per-byte literal-run
+  if/goto chain (`emit_vm.c`'s `A_CLASS` arm — pcrec has no `A_LIT` kind)
+  into a word compare, and is there a population that would trigger
+  building it. **§1: no.** gcc-16 -O2/-O3 never fuses a hand-written `&&`
+  chain of scalar per-byte tests, arm64 or x86_64 (light probe over the
+  tailnet); only routing the same bytes through `memcmp()` against a
+  compile-time constant gets gcc's own fusion (11→3 loads arm64, 11→2
+  x86_64) — pcrec has to ask for this explicitly. **§2**: crosses
+  `b2ledger/stampdiff.json`'s per-pattern `RX_ENGINE` against the 60
+  losing match-regime cells of `cycle1_caps_view.md`+`cycle1_nocaps_view.md`
+  (AFTER pin) via a rough literal-run parser (limitation found and
+  hand-verified: misreads `(?<name>`/`(?&name)` group syntax as literal
+  bytes, caught on `bracket-array-define`) — only **5** genuine VM-route
+  losing cells carry a real literal run ≥4 (3 `wild-secrets-*` patterns),
+  all on `auto-caps`; `auto-nocaps` has zero. Checks `RX_VM_PREFILTER`
+  before speculating further: already `"hybrid"` on all three, so the
+  55.16x/29.65x ratios are not an absent-prefilter artifact. **§3** states
+  the mechanism (a `memcmp` emission off a maximal single-byte `A_CLASS`
+  run under one `A_CAT`; caseless needs a masked-word path since `memcmp`
+  has no fold) without building it. **Verdict: NOT MET** — names the one
+  more measurement (hand-patch `github-pat`'s generated matcher to the
+  `memcmp` form, re-time its `thr`/`srch` cells) that would decide it.
