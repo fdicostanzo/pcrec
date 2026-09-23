@@ -2775,3 +2775,19 @@ never edited afterwards.
   row-by-row evidence and a named (evidence-backed) mechanical cause for
   the offset; `linux_ask_i89.md` annotated in place with a dated
   correction note.
+
+- `g3rec_report.md` — (2026-09-23, lane g3rec, sonnet, docs-only):
+  reconciles pcrec-bench's [B78]/O-48 answer to `cycle1_ledger_reading.md`
+  §8's I-91 block, forwarded as inbox I-93. **G3 (PLACEMENT) is REFUTED ON
+  x86_64** — no `.part.0` partial-inlining split at either pin on the box
+  that measures the ledger, so `nested-comment-rec`'s regression is
+  UNATTRIBUTED; §4.1's next-ranked hypothesis is not confirmed by Block
+  C's own disassembly either. Resolves the `wild-secrets-github-pat`
+  no-`rx_search_run`-symbol fact (a frameless VM artifact's always-inline
+  entry rung, [CC-DIFF] STEP 1, unrelated to batch 1) and the 15-vs-16
+  program-identical population gap (two different identity criteria; the
+  one differing pattern named). Archives the transcripts at
+  `docs/dev/optloop/runs/2026-09-23-i93-8d716693/`, appends §9 to
+  `cycle1_ledger_reading.md`, updates the exec summary and
+  `docs/dev/optloop/CLAUDE.md`, and drafts an I-98 candidate block to
+  re-run the placement hand-twin under the bench's own driver.
