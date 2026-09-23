@@ -2813,3 +2813,30 @@ never edited afterwards.
   `cycle1_ledger_reading.md`, updates the exec summary and
   `docs/dev/optloop/CLAUDE.md`, and drafts an I-98 candidate block to
   re-run the placement hand-twin under the bench's own driver.
+
+- `admitimpl_report.md`, `admitimpl_census.py`, `admitimpl_answerdiff.py` —
+  [OPT-PRECHECK-ADMIT] (2026-09-23, lane admitimpl, opus): the whole-window
+  pre-checks' ADMISSION, ratified G1 + G2, `abi` 30 -> 31 for one new stamp
+  `<PREFIX>_REQ_WHY`. Read §0 for three findings, of which the first two are
+  refutations. **The brief's own suggested stamp spelling is refuted by the
+  suite**: folding the decline into `<PREFIX>_REQ_BYTE`'s value hides the
+  DERIVED byte on exactly the declining artifacts, so `run_prechecks.sh`
+  §3.7's whole `[OPT-FREQPICK]` surface goes vacuous as G1's population grows
+  and a compiler that stopped deriving bytes would read identical to one that
+  derived and declined — four of the six reds that fix produced were that,
+  and the shipped split (`REQ_BYTE`/`REQ_RUN` name the ANALYSIS, `REQ_WHY`
+  names the EMISSION) cleared them with no witness rewritten. **G1's fire
+  condition has collapsed to IDENTITY under `byte`** because
+  `[OPT-FREQPICK]`'s argmin always picks a byte at least as rare as the one
+  escaping the DFA's start state — so the density comparison's non-identity
+  arm has an empty population today and the only witness that exercises it as
+  a comparison is one where it must NOT fire. And **`router-prefix-order` is
+  no longer the cell the ledger measured**: batch 2 gave it a RUN on the same
+  byte as its prefilter, and a run check dismisses strictly more than a
+  `memchr` does, so it is not dominated by one and keeps its check. Movers
+  census 1,100 of 2,814 at `--features all`, 0 refusal mismatches on three
+  axes, every mover a pure text DELETION with zero added lines; REF-vs-TIP
+  answer differential 240/240 identical over 6,000 cells. The two
+  reproduction scripts are committed beside the report (`w4_modesweep.py`'s
+  precedent). Sabotage rows S269/S270 are the first two in the tree whose
+  plant cannot move an answer in either direction.
