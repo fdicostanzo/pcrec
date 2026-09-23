@@ -241,9 +241,25 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # C3_SKIP_OWNORACLE skips: C3_SKIP and C3_SKIP_OWNORACLE each move +66
 # and C3_PASS does not move at all. RUNSH_* move by the same
 # +1/+13/+66 (the file is not under tests/known_fail/).
-CENSUS_FILES=214
-CENSUS_BLOCKS=3957
+CENSUS_FILES=213
+CENSUS_BLOCKS=3954
 CENSUS_LINES=29037
+# 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
+# batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
+# tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
+# DELETED, and its 11 live cells were placed BY HAND into the already-
+# census-counted tests/recursion/d27/sr_depth.rxt as lines under EXISTING
+# blocks (no new block opened there) — verified by diffing the awk census
+# before/after against `git show 1bc0db30^:tests/known_fail/
+# k34_leftrec_giveup.rxt` rather than by subtracting: the deleted file's 11
+# lines exactly cancel the 11 lines gained by sr_depth.rxt, so CENSUS_LINES
+# is unchanged at 29037 while CENSUS_FILES/CENSUS_BLOCKS lose exactly what
+# the deleted file held (214->213, 3957->3954). This is a RELOCATION into
+# an already-counted file, a THIRD shape beside the two the notes below
+# already carry (a plain new-file addition; a known_fail RETIREMENT whose
+# content leaves the corpus outright) — see RUNSH_* below for the second
+# half, which moves differently again because the exclusion itself (not
+# just its file) goes to zero.
 # 2026-09-08 (bat4triage, [M5.0] stage 4 battery triage) — +1 file, +18
 # blocks, +57 lines for tests/utf8/fold.rxt, NEW at the stage-4 merge
 # (83f7175b, lane utf8s4/foldhunks) and never re-pinned there — the lane's
@@ -277,7 +293,19 @@ CENSUS_LINES=29037
 # tests/known_fail/).
 RUNSH_FILES=213
 RUNSH_BLOCKS=3954
-RUNSH_LINES=29026
+RUNSH_LINES=29037
+# 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
+# +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
+# (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
+# -name '*.rxt'` finds nothing), so RUNSH_* = CENSUS_* exactly. RUNSH_FILES
+# and RUNSH_BLOCKS are UNCHANGED (213, 3954) because CENSUS_FILES/
+# CENSUS_BLOCKS dropped by precisely what kf_files/kf_blocks used to
+# subtract (1/3) — the exclusion and the excluded file left together.
+# RUNSH_LINES moves BY the previously-subtracted amount (29026 -> 29037,
+# +11) because CENSUS_LINES itself did NOT drop (the 11 lines relocated
+# within the census rather than leaving it) while kf_lines dropped to 0 —
+# derived from the reconciliation identity CENSUS - kf = RUNSH, not by
+# guessing which column moves.
 # 2026-09-10 ([K53-SELRETRY]) — +0/+16/+56 where CENSUS_* moved -1/+0/+0, the
 # widest divergence this pair has shown. A known_fail file being RETIRED moves
 # the two in different directions on every column: the census loses a file

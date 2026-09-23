@@ -315,6 +315,46 @@ distilled forms:
   the difference only shows up in what the summary line COUNTS, not in
   whether it prints green.
 
+### 3.z (2026-09-23, lane b2fix's K34 closure, found by lane rxtfix) — relocating corpus content between two files a lane's OWN checks both read green needs the corpus-wide CENSUS re-run too, not just those two files
+
+- **A lane can move content between two files, watch both of its own
+  checks read green, and still leave a corpus-wide census red for the
+  NEXT lane to find.** `[OPTLOOP.1.impl]` batch 2's K34 closure
+  (`docs/dev/known_issues.md` K34) deleted
+  `tests/known_fail/k34_leftrec_giveup.rxt` (1 file / 3 blocks / 11
+  lines) and placed its 11 now-passing cells by hand into the
+  already-census-counted `tests/recursion/d27/sr_depth.rxt`. The lane's
+  own validation — `tests/known_fail/run_known_fail.sh` (green: the
+  ratchet has nothing left to track) and the recursion diff (green: the
+  cells answer correctly either way) — could not see the problem,
+  because both checks are ANSWER-level and every answer was already
+  right. What went stale was `tests/rxtsource/run_rxtsource_tests.sh`'s
+  three-literal corpus CENSUS (`CENSUS_FILES`/`CENSUS_BLOCKS`/
+  `CENSUS_LINES`, plus the derived `RUNSH_*` triple) — a check neither
+  of the lane's own two touches this content, and 9 checks failed on
+  the next full gate.
+- **A relocation moves the three census literals in three DIFFERENT
+  shapes, not one delta applied three times.** `CENSUS_FILES` and
+  `CENSUS_BLOCKS` dropped by exactly what the deleted file held (214->213,
+  3957->3954), because that content left the census's file/block
+  population outright. `CENSUS_LINES` did NOT move (29037 unchanged)
+  because the 11 lines reappeared inside a file the census already
+  counted. And `RUNSH_LINES` (census minus `tests/known_fail/`) moved by
+  the OPPOSITE sign and a different magnitude again (29026->29037, +11)
+  because the EXCLUSION itself — not just the excluded file — went to
+  zero, while `RUNSH_FILES`/`RUNSH_BLOCKS` stayed put because the census
+  and the exclusion dropped by the identical amount and cancelled. Four
+  numbers, one event, three distinct derivations — matching this file's
+  own recorded rule to derive each from the mechanism (`CENSUS - kf =
+  RUNSH`), never by copying one column's delta onto the others.
+- The transferable form, extending 3.y's coverage-guard-in-another-file
+  finding to CONTENT rather than counts: **when a change relocates
+  corpus material between files (not just adds or deletes it), the
+  re-validation list is not "the files touched" — it is every census
+  that counts the corpus those files belong to**, found by grepping for
+  what reads `find tests -name '*.rxt'` or an equivalent whole-corpus
+  walk, not by re-running the two files a diff shows as changed.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
