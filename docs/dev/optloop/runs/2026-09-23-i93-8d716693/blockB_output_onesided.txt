@@ -1,0 +1,11 @@
+# sanity: vm-caps vs vm-in-caps AFTER emit_bytes mismatches: 0 []
+
+# PROGRAM-IDENTICAL PATTERNS (all 3 forms pass): 0
+
+# Non-identical patterns' failing form + reason (first failing form only, for context):
+
+# PER-CELL Delta% for program-identical patterns, all 4 testees, both regimes
+# (after-before)/before *100; positive = slower (regression), negative = faster (improvement)
+pattern                                  regime                     testee              before_ns   before_IQR         after_ns    after_IQR  delta_pct
+
+# n cells = 0

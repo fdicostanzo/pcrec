@@ -1,0 +1,28 @@
+uptime before: 06:26:45 up 41 days,  7:33,  5 users,  load average: 0.22, 0.12, 0.25
+trial=1 bin_a_asis       total_ns=8955579.000 matches=[0, 0, 0]
+trial=1 bin_b_deleted    total_ns=10117633.000 matches=[0, 0, 0]
+trial=1 bin_c_moved      total_ns=8759608.000 matches=[0, 0, 0]
+trial=1 bin_d_nopartial  total_ns=9993272.000 matches=[0, 0, 0]
+trial=2 bin_a_asis       total_ns=10330353.000 matches=[0, 0, 0]
+trial=2 bin_b_deleted    total_ns=8343037.000 matches=[0, 0, 0]
+trial=2 bin_c_moved      total_ns=8351147.000 matches=[0, 0, 0]
+trial=2 bin_d_nopartial  total_ns=8591737.000 matches=[0, 0, 0]
+trial=3 bin_a_asis       total_ns=9096869.000 matches=[0, 0, 0]
+trial=3 bin_b_deleted    total_ns=8346557.000 matches=[0, 0, 0]
+trial=3 bin_c_moved      total_ns=8872209.000 matches=[0, 0, 0]
+trial=3 bin_d_nopartial  total_ns=7983735.000 matches=[0, 0, 0]
+trial=4 bin_a_asis       total_ns=10049982.000 matches=[0, 0, 0]
+trial=4 bin_b_deleted    total_ns=8899829.000 matches=[0, 0, 0]
+trial=4 bin_c_moved      total_ns=8575698.000 matches=[0, 0, 0]
+trial=4 bin_d_nopartial  total_ns=9894452.000 matches=[0, 0, 0]
+trial=5 bin_a_asis       total_ns=9314519.000 matches=[0, 0, 0]
+trial=5 bin_b_deleted    total_ns=9181689.000 matches=[0, 0, 0]
+trial=5 bin_c_moved      total_ns=9808672.000 matches=[0, 0, 0]
+trial=5 bin_d_nopartial  total_ns=10272132.000 matches=[0, 0, 0]
+uptime after: 06:26:46 up 41 days,  7:33,  5 users,  load average: 0.22, 0.12, 0.25
+
+# SUMMARY (median of 5 trials, ns for the 3-subject throughput sum)
+  bin_a_asis       median=   9314519.000 ns  IQR=953113.000  Delta_vs_a= +0.0000%  matches(all trials)={(0, 0, 0)}
+  bin_b_deleted    median=   8899829.000 ns  IQR=835132.000  Delta_vs_a= -4.4521%  matches(all trials)={(0, 0, 0)}
+  bin_c_moved      median=   8759608.000 ns  IQR=296511.000  Delta_vs_a= -5.9575%  matches(all trials)={(0, 0, 0)}
+  bin_d_nopartial  median=   9894452.000 ns  IQR=1401535.000  Delta_vs_a= +6.2261%  matches(all trials)={(0, 0, 0)}

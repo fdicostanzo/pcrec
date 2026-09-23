@@ -53,6 +53,12 @@ compiled `__text` is byte-identical by md5. D119's bar uses a cell's
 within-window IQR as its noise model, but the comparison spans two windows a
 day apart. Re-read against that null band, **the ledger's "64-cell everyday
 regression population" is 14 cells**, and the two misses sit inside the band.
+Independently confirmed by the Linux executor (O-48, [B78], on the box that
+measures the ledger): the null band is **two-sided** — 120 program-identical
+cells, min −5.74%, max +8.46% (matching this file's own worst cell to four
+significant figures), median −0.08%, 41 regressing / 79 improving — so a
+claimed IMPROVEMENT of less than roughly that magnitude is equally inside
+the noise. No verdict in this file turns on an improvement that small.
 
 **B. The pre-check is emitted above the free check that decides the call.**
 Nine patterns are `^`-anchored: the artifact emits `const size_t start_max =
@@ -70,11 +76,19 @@ On `router-prefix-order` the pre-check's byte is 1.85× **commoner** than the
 prefilter's, so it can dismiss nothing.
 
 **D. Four regressions are 111× to 60,674× larger than the mechanism's own
-work.** `nested-comment-rec`'s pre-check reads 1,051 bytes in 3 calls (≈25
-ns); the cell regresses **+1,528,965 ns** on a four-line diff. Measured cause:
-putting the check inside `rx_search_run`, the function holding the attempt
-loop, removes gcc's partial-inlining split of it on **24 of 62** forced-VM
-artifacts.
+work, and the proposed cause does not hold on the box that measures.**
+`nested-comment-rec`'s pre-check reads 1,051 bytes in 3 calls (≈25 ns); the
+cell regresses **+1,528,965 ns** on a four-line diff. The arm64/gcc-16
+reading attributed this to gcc losing a partial-inlining split of
+`rx_search_run` (the function holding the attempt loop) on 24 of 62
+forced-VM artifacts. **The Linux executor's disassembly (O-48, [B78])
+REFUTES this on gcc-15.2/x86_64 — no `.part.0` symbol exists at EITHER pin,
+on any pattern** — and it does not confirm the next-ranked hypothesis
+either (an x86_64-specific inlining/frame effect: `rx_match_anchored` is
+out-of-line at both pins, the stack frame is flat 104 B at both pins). The
+regression is **unattributed** as of this writing
+(`docs/dev/optloop/cycle1_ledger_reading.md` §9); a driver-level
+acceptance test is drafted (I-98) to settle it.
 
 **E. [OPT-FIRSTSET] is unsound as ratified and the symptom is a deleted
 match** (`firstset_design.md` §4.6): 4.03M subjects, **552 lost, 0 spurious**;
@@ -85,13 +99,14 @@ the repair already ships as `pf_emit_ofs_reseed` ([OPT-K]).
 Eight named pathological patterns fell from 1.28-20.1 million ns to
 23,100-89,500 ns on all four configurations; `bracket-array-define` to 72-90
 ns, `trim-nested-star` −99.9986%. Size grew +200 to +334 bytes per artifact.
-Every regressing cell is attributed (reading §4-5):
+Every regressing cell was attributed at reading time (§4-5); one class is
+now **unattributed** pending a driver-level re-measurement (§9):
 
 | class | cells | fix |
 |---|---|---|
 | pre-check on a one-attempt route | 29 | one predicate |
 | duplicated / dominated pass | 4 | one comparison |
-| code-generation perturbation | ~4 | move three emitted lines |
+| code-generation perturbation | ~4 | **unattributed (placement mechanism refuted on x86_64, O-48; §9)** |
 | inside the null band | 50 | not attributable |
 
 **Recommended dispositions, yours to rule:** [OPT-ANCHOR-VM] and [OPT-ENDWIN]
@@ -102,10 +117,17 @@ parking it forfeits the loop's largest win.
 
 ## 4. NEXT STEPS
 
-**Proposed as cycle 2's first row, [OPT-PRECHECK-ADMIT]**: admit and place the
-pre-checks by cost — decline where the artifact already filters on a byte at
-least as rare, decline where the candidate-start set is a single position,
-emit the VM's check in the entry wrappers (reading §6).
+**Proposed as cycle 2's first row, [OPT-PRECHECK-ADMIT] — SCOPE NOW G1+G2
+ONLY.** G1 (decline where the artifact already filters on a byte at least
+as rare) and G2 (decline where the candidate-start set is a single
+position) stand: they rest on this file's own arithmetic, not on the
+refuted placement claim. **G3 (emit the VM's check in the entry wrappers)
+is DROPPED from this row pending the driver-level measurement** — O-48
+refutes its stated mechanism (the arm64/gcc-16 partial-inlining loss) on
+the gcc-15.2/x86_64 box that measures the ledger, and Block C's own
+disassembly does not confirm the next-ranked hypothesis either (reading
+§9). G3 may still be worth landing as a byte-identity DISCIPLINE (its own
+acceptance criterion), but not yet as a claimed performance fix.
 
 | already in flight | state |
 |---|---|
@@ -114,12 +136,16 @@ emit the VM's check in the entry wrappers (reading §6).
 | `utf8` subbench (I-90) | requested of the bench; the byte-frequency prior is inverted under UTF-8 and has three readers |
 | [PATFACTS] (D120) | chartered; inventory in cycle 3's measurement waits |
 
-**Owed to the Linux executor (I-91, drafted ready to send, §8):** the
-deny-flag axis isolation on four patterns; the null-control band re-reported;
-the disassembly read that confirms or refutes the partial-inlining mechanism;
-the placement hand-twin, which is also the fix's acceptance test.
+**I-91 (§8) is ANSWERED — O-48, [B78], 2026-09-23, reconciled at
+`cycle1_ledger_reading.md` §9.** Every EXPECT direction held on the axis
+isolation; the null band came back two-sided; the partial-inlining
+mechanism was REFUTED on the box that measures; the placement hand-twin
+did not resolve on its own instrument. A follow-on block (I-98 candidate,
+§9(D)) re-runs the hand-twin under the bench's own driver rather than the
+hand-rolled `findall.c` instrument.
 
-**One ask of the bench beyond measurement:** carry a NULL-CONTROL BAND in
-future `capability` reports from the program-identical population, and state
-D119's bar as |Δ| > max(IQR, null band). Without it the loop will keep
-diagnosing cells whose code never moved.
+**One ask of the bench beyond measurement — MET.** O-48 already carries a
+two-sided null-control band from the program-identical population (§9(B)
+above); a standing per-report NULL-CONTROL BAND, and stating D119's bar as
+|Δ| > max(IQR, null band), remains the ask for every future `capability`
+report.

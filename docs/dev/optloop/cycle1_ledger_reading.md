@@ -258,6 +258,8 @@ fixes that remove them are already designed.
 
 ### 4.1 `nested-comment-rec` — +18.8% to +25.0% on all four configs
 
+**Hypothesis 1 below is REFUTED on x86_64 — see §9(C).**
+
 `(/\*(?:[^*/]|\*(?!/)|/(?!\*)|(?1))*\*/)`. Route `vm` under BOTH auto
 configs (so the four testees are four VM measurements, not a DFA/VM
 split), `RX_VM_PREFILTER "none"`, `RX_VM_START "unanchored"`,
@@ -516,6 +518,12 @@ every subject longer than 37/16 bytes.
 
 ### G3 — PLACEMENT. Do not compile the pre-check into the hot function.
 
+**REFUTED on x86_64, see §9.** The arm64/gcc-16 `.part.0`-loss mechanism
+below does not reproduce on the bench's own gcc-15.2/x86_64 box; G3's
+rule may still stand as a byte-identity discipline (its own acceptance
+criterion), but not yet as a demonstrated performance win on the box that
+measures.
+
 On the VM route the check is emitted inside `rx_search_run`, the function
 holding the attempt loop. Measured consequence: 24 of 62 forced-VM
 artifacts lose gcc's partial-inlining split of that function, and the
@@ -662,3 +670,185 @@ BLOCK E — instructions vs cycles (perf is unavailable at
   counts within 0.1% and cycles differing by ~19% => a front-end/placement
   effect, not added work.
 ```
+
+---
+
+## 9. Reconciliation against O-48 (2026-09-23, lane g3rec)
+
+O-48 (`pcrec-bench/docs/dev/outbox_to_pcrec.md`, [B78], full transcript
+`pcrec-bench/docs/dev/lanes/b78blocks_report.md`) is the bench's answer to
+§8's I-91 block, forwarded as inbox item I-93, executed on ubuntubudu
+(gcc 15.2.0, x86_64) — the box that measures the after-ledger this whole
+file reads. Raw transcripts archived at
+`docs/dev/optloop/runs/2026-09-23-i93-8d716693/` (README there names what
+was and was not archived, and why).
+
+### (A) — EXPECT directions vs the instrument gap
+
+Every direction held: `-fno-req-byte` reads faster than default on all
+four Block A patterns (−8.58% to −25.29%); `-fno-end-window` leaves
+`uuid-near-miss`/`ipv4-near-miss` WORSE than default (+14.29%, +4.76%),
+consistent with §4.2's arithmetic above. **The ABSOLUTE recovery clauses
+are unverifiable on this instrument**: every `-fno-req-byte` median reads
+**2×-10× the cited BEFORE value** (O-48 Block A's own stated gap; e.g.
+router 793,050 ns measured vs. 393,757-393,998 ns cited, uuid 190 ns vs.
+19.9-20.4 ns) — the `findall.c` hand-rolled driver (I-89 §0.4) reads
+systematically higher than the bench's own committed `store` numbers, on
+every cell, trivial and real-match alike (b78blocks_report.md §0 item 3).
+Direction is trustworthy here; absolute magnitude is not.
+
+### (B) — the null band is now two-sided, and the bar's numbers stand
+
+`docs/dev/optloop/runs/2026-09-23-i93-8d716693/blockB_output_twosided.txt`.
+120 cells (15 patterns × 2 regimes × 4 testees): **min −5.7393%, max
++8.4605%, median −0.0806%, mean −0.4488%; 41 regressing / 79 improving.**
+This §1's own reading was already one-sided in the direction that matters
+(regressions) and cites the identical worst cell to four significant
+figures — `phone-palindrome-6`/thr/`auto-caps`, +8.4605% here against
++8.46% there — so **the reading's own bar, `|Δ| > max(IQR, null band)`,
+is UNCHANGED for every regression verdict already drawn** (§1's +8.46%
+ceiling and O-48's +8.4605% ceiling are the same measurement read twice).
+What is new is the OTHER side: an artifact whose program did not move can
+also read up to **−5.74%** "faster" between two windows a day apart, so a
+claimed IMPROVEMENT under roughly that magnitude is equally inside the
+band and not, on its own, evidence of a real speedup. No verdict in §2-§5
+turns on an improvement smaller than 5.74% (every named target row
+improves by double digits or more), so this widens the bar's definition
+without moving any of this file's own conclusions.
+
+**The 15-vs-16 pattern-identity population differs by exactly one
+pattern**, and the two identity criteria differ in KIND, not just count.
+Ours (§1, `docs/dev/optloop/b1ledger/artifact_identity.tsv`) is a
+near-full **artifact TEXT diff** — the two emitted `.c`/`.h` files
+compared line by line, ignoring only the generated-by comment, the three
+new `#define`s, `#include <string.h>`, and the `.abi` integer. Theirs
+(O-48 Block B) is a **record STAMP-EQUALITY test** — no compiled-object
+diff at all, since the committed JSONL record carries no emitted text or
+hash of it, so identity is decided by comparing the record's own
+`engine_metadata` KEYS (excluding `abi`/`emit_bytes`/`emit_code_bytes`,
+requiring the three new stamps read their neutral value). Diffing our
+16-pattern list (§1's TSV) against O-48's named 15 finds the populations
+agree on 15 of 16; the one pattern in ours and not in theirs is
+**`wild-waf-crs-942360-concat-sqli`**. Per O-48's own discipline
+("stated as fact, not chased further per I-57 terms") this lane did not
+root-cause the single-pattern gap beyond confirming it is real and
+isolated to one row — a metadata-key comparison and a source-text
+comparison are different instruments and are not guaranteed to agree on
+every row even when they agree on 15 of 16.
+
+### (C) — G3 PLACEMENT IS REFUTED ON x86_64
+
+`docs/dev/optloop/runs/2026-09-23-i93-8d716693/blockC_disasm_search_run.txt`.
+`nm -g | grep rx_search_run` on gcc-15.2/x86_64 finds **no `.part.0`
+symbol at either pin, on any of the three patterns that have a
+`rx_search_run` symbol at all** — `nested-comment-rec`, `float-literal-
+bound`, `file-ext-order`. The arm64/gcc-16 reading §4.1 hypothesis 1
+measured (24 of 62 forced-VM artifacts lose the partial-inlining split at
+the AFTER pin) **does not transfer to the box that measures the ledger
+this file reads.** The bench's own committed `capability@0.1` records are
+built on `gcc-15.2.0`/Ryzen — the box O-48 ran on IS the box the ledger's
+numbers come from, so this is not a cross-architecture caveat on a
+side finding; it is a refutation of the mechanism on the record's own
+compiler.
+
+**`nested-comment-rec`'s +18.8% to +25.0% regression (§4.1) is therefore
+UNATTRIBUTED as of now.** Block C's own disassembly tests hypothesis 1's
+sibling, hypothesis 2 ("An x86_64/gcc-15.2-specific inline decision that
+reaches the per-attempt path", [CC-DIFF] STEP 0's frame/canary mechanism,
+explicitly named in §4.1 as "why §8 block C exists"), and **does not
+confirm it either**: `rx_match_anchored` is called out-of-line by
+`rx_search_run` at BOTH pins (it was never inlined, so it cannot "stop"
+being inlined), `__stack_chk_fail` is present at BOTH pins (not an
+AFTER-only canary addition), and the total stack footprint is a FLAT
+104 B at both pins on all three patterns — none of hypothesis 2's two
+named preconditions (an inlining state change, a frame that grows) is
+observed. **The second hypothesis §4.1's own list ranks after the now-
+refuted first — hypothesis 2 — is therefore the reading's nominal new
+lead by elimination, but it survives only in a weakened form**: what
+Block C(ii)/(iv) actually finds is the new `memchr` call itself (+9 to
++17 disassembled instructions per pattern) and the hot-loop's absolute
+address shifting by exactly 64 bytes (same mod-64 residue before/after,
+so alignment CLASS is unchanged, only the address) — closer to §4.1's
+hypothesis 3 (pure layout) than to hypothesis 2 as literally stated. No
+witness in hand yet distinguishes "the new instructions cost something
+real on this box" from "this is more of the between-window noise (B)
+already measures at up to 8.46%" — that is exactly what Block D was
+chartered to resolve and did not (below).
+
+**`wild-secrets-github-pat` has no `rx_search_run` symbol at either
+pin — resolved here, not investigated by O-48 (its own text: "not
+investigated further, out of scope").** Compiled in this worktree at
+`8d716693`'s successor tip (`--engine=vm --features all --emit-main`,
+`build/pcrec -p rx`): the emitted artifact stamps `RX_VM_FRAMELESS 1` and
+`RX_VM_ENTRY_SHAPE "inline"`, and at that entry shape `rx_search_run` is
+declared `static inline __attribute__((always_inline))`
+(`worktrees/g3rec` build, verified in the emitted `.c`). A frameless VM
+artifact's entry chain is unconditionally always-inlined into its three
+callers under this rung ([CC-DIFF] STEP 1, `ccdiff1_report.md`, gated on
+the same `has_push`-derived bool `RX_VM_START`/frameless test) — so
+`rx_search_run` has no independent existence to be a linkable symbol at
+all, on any compiler, at any pin. This is a **[CC-DIFF] STEP 1 fact,
+landed 2026-09-03, wholly unrelated to batch 1 or [OPT-REQBYTE]** — not,
+as the brief's own working guess had it, a pinned-start/anchored route
+with no search loop (the artifact's own `RX_VM_START` stamp reads
+`"unanchored"`; there is a search loop, it is simply folded entirely into
+its own three call sites and leaves no symbol of its own).
+
+### (D) — the hand-twin did not resolve; the next measurement, and the second-ranked hypothesis
+
+`docs/dev/optloop/runs/2026-09-23-i93-8d716693/blockD_time_output_iters{5,25}.txt`.
+All four EXPECT clauses failed to resolve: every measured Δ (variants
+(a)/(b)/(c)/(d) against each other) sits inside the per-variant IQR
+(300K-1.5M ns on an 8.4M-9.9M ns median, roughly 3-17%), and variant
+(b)'s sign flips between the two internal-iters settings tried (+9.86% at
+iters=5, −4.45% at iters=25). O-48's own read matches this file's §4.1
+framing exactly: the pre-check's own measured work is ≈25 ns against a
+claimed ~1.53M ns delta (a 60,674× ratio), so a probe built to separate
+"the partial-inlining split" from "plain layout" is, on this box, asking
+a question its own compiler does not structurally raise the way arm64's
+does — Block C(i) already confirmed there is no split to separate.
+
+**Ready-to-append executor block (I-98 candidate):**
+
+```
+## I-98 (2026-09-23, [OPTLOOP.1] ledger reading §9) — Block D re-run under
+   the bench's own driver, and the second-hypothesis discriminator
+
+Motivation: O-48/[B78] Block D's findall.c instrument could not resolve
+the nested-comment-rec hand-twin -- every measured delta sat inside the
+per-variant IQR (300K-1.5M ns, ~3-17% of an 8.4M-9.9M ns median), and
+variant (b)'s sign flipped between the two internal-iters settings tried.
+O-48 names its own fix: "it needs either the bench's own driver as the
+instrument ... or a subject/iters shape whose delta clears this
+pattern's own noise." This block is that re-run, using the SAME four
+builds Block D already produced (or rebuilt from the report's verbatim
+3-line diff, its own BLOCK D section):
+  (a) as-is
+  (b) the three pre-check lines deleted by hand
+  (c) the three pre-check lines moved to the entry wrappers
+      (<prefix>_search / _search_in / _search_deep) -- the shape
+      [OPT-PRECHECK-ADMIT] G3 proposes
+  (d) as-is, -fno-partial-inlining
+Method: time all four with the bench's OWN capability@0.1 shim/driver and
+record protocol (store/records/..., large-subject-throughput regime, the
+same 3 subjects, the store's own trial count and X13 hygiene gate) --
+NOT findall.c. Answer-check matches=[0,0,0] on all three subjects, all
+four variants, before timing (as O-48 already did).
+
+EXPECT: if (b) reads below (a) by a delta that clears the null-control
+band (O-48 Block B: up to +8.46%/-5.74% BETWEEN interleaved windows;
+tighter within one run of this block's own 5 interleaved trials), the
+pre-check costs something real on this box and hypothesis 2 -- WEAKENED,
+per this file's own §9(C): not an inlining-state or frame-size change
+(Block C already measured neither moves), but the added instructions
+and the hot-loop's shifted address -- is the surviving candidate; go on
+to ask whether (c) is within the band of (b), which is G3's literal
+acceptance test. If (b) does NOT clear the band even under the store's
+own driver, hypothesis 2 is refuted too, nested-comment-rec's regression
+has no confirmed x86_64 mechanism, and G3's placement rule should be kept
+only as the byte-identity DISCIPLINE its own §6 acceptance criterion
+states (`rx_search_run` compiled identical between -freq-byte and
+-fno-req-byte builds) -- a correctness/hygiene rule, not a claimed
+performance win, absent a new witness.
+```
+

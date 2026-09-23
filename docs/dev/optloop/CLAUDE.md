@@ -309,3 +309,31 @@ that cycle's analysis lands.
   `REFUSAL_PATTERN`/`REFUSAL_FLOOR`/output-format lines touched).
   Annotates `linux_ask_i89.md` in place with a dated correction note
   rather than rewriting the sent ask.
+
+- `runs/2026-09-23-i93-8d716693/` — the five discrimination blocks
+  (Block A-E) pcrec-bench executed against `cycle1_ledger_reading.md`
+  §8's I-91 ask, forwarded as inbox I-93. Raw transcripts (driver source,
+  build scripts, timing/census/disassembly output; generated `.c`/`.h`
+  artifacts and compiled binaries deliberately NOT archived — they
+  regenerate from the pinned compiler). See its own README.md and pcrec-
+  bench outbox O-48 ([B78], full report `docs/dev/lanes/
+  b78blocks_report.md` there).
+- `cycle1_ledger_reading.md` §9 — **[reconciliation, 2026-09-23, lane
+  `g3rec`]** against O-48/I-93. Read it for the headline: **G3 (PLACEMENT)
+  IS REFUTED ON x86_64** — no `.part.0` partial-inlining split exists at
+  either pin, on the box that measures the ledger, so `nested-comment-rec`'s
+  +18.8% to +25.0% regression is UNATTRIBUTED as of now; §4.1's own
+  hypothesis 2 (the next-ranked candidate) is not confirmed by Block C's
+  disassembly either (no inlining-state change, no frame growth), so an
+  I-98 candidate block is drafted to re-run the placement hand-twin under
+  the bench's own driver rather than the noisy `findall.c` instrument that
+  left Block D unresolved. Also resolves `wild-secrets-github-pat`'s
+  missing `rx_search_run` symbol (a frameless VM artifact's
+  `RX_VM_ENTRY_SHAPE "inline"` rung, [CC-DIFF] STEP 1, unrelated to batch
+  1) and the 15-vs-16 program-identical population gap between the two
+  identity criteria (a near-full artifact-text diff vs. a record
+  stamp-equality test; the one differing pattern is
+  `wild-waf-crs-942360-concat-sqli`). The null band is now confirmed
+  two-sided by an independent Linux measurement. `[OPT-PRECHECK-ADMIT]`'s
+  scope narrows to G1+G2 for cycle 2; G3 is dropped from that row pending
+  the driver-level measurement.

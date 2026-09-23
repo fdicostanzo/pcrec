@@ -1,0 +1,492 @@
+=========== nested-comment-rec / before : rx_search_run ===========
+
+work/nested-comment-rec/before/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000bf0 <rx_search_run>:
+     bf0:	41 55                	push   %r13
+     bf2:	41 54                	push   %r12
+     bf4:	55                   	push   %rbp
+     bf5:	53                   	push   %rbx
+     bf6:	48 83 ec 48          	sub    $0x48,%rsp
+     bfa:	64 4c 8b 2c 25 28 00 	mov    %fs:0x28,%r13
+     c01:	00 00 
+     c03:	4c 89 6c 24 38       	mov    %r13,0x38(%rsp)
+     c08:	49 89 f5             	mov    %rsi,%r13
+     c0b:	49 39 d5             	cmp    %rdx,%r13
+     c0e:	0f 82 ec 00 00 00    	jb     d00 <rx_search_run+0x110>
+     c14:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+     c18:	48 89 3c 24          	mov    %rdi,(%rsp)
+     c1c:	49 89 d4             	mov    %rdx,%r12
+     c1f:	48 89 cd             	mov    %rcx,%rbp
+     c22:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # c2a <rx_search_run+0x3a>
+     c29:	00 
+     c2a:	49 c7 40 40 ff ff ff 	movq   $0xffffffffffffffff,0x40(%r8)
+     c31:	ff 
+     c32:	4c 89 c6             	mov    %r8,%rsi
+     c35:	49 c7 40 78 ff ff ff 	movq   $0xffffffffffffffff,0x78(%r8)
+     c3c:	ff 
+     c3d:	4c 89 6c 24 08       	mov    %r13,0x8(%rsp)
+     c42:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+     c49:	00 00 
+     c4b:	41 0f 11 00          	movups %xmm0,(%r8)
+     c4f:	41 0f 11 40 10       	movups %xmm0,0x10(%r8)
+     c54:	41 0f 11 40 20       	movups %xmm0,0x20(%r8)
+     c59:	41 0f 11 40 30       	movups %xmm0,0x30(%r8)
+     c5e:	66 0f ef c0          	pxor   %xmm0,%xmm0
+     c62:	41 0f 11 40 68       	movups %xmm0,0x68(%r8)
+     c67:	41 0f 11 88 80 00 00 	movups %xmm1,0x80(%r8)
+     c6e:	00 
+     c6f:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+     c74:	90                   	nop
+     c75:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+     c7c:	00 00 00 00 
+     c80:	4c 89 ea             	mov    %r13,%rdx
+     c83:	48 89 e7             	mov    %rsp,%rdi
+     c86:	4c 89 64 24 10       	mov    %r12,0x10(%rsp)
+     c8b:	e8 70 f3 ff ff       	call   0 <rx_match_anchored>
+     c90:	48 8d 50 06          	lea    0x6(%rax),%rdx
+     c94:	48 83 fa 04          	cmp    $0x4,%rdx
+     c98:	76 68                	jbe    d02 <rx_search_run+0x112>
+     c9a:	48 85 c0             	test   %rax,%rax
+     c9d:	79 7e                	jns    d1d <rx_search_run+0x12d>
+     c9f:	48 8b 46 70          	mov    0x70(%rsi),%rax
+     ca3:	48 85 c0             	test   %rax,%rax
+     ca6:	74 34                	je     cdc <rx_search_run+0xec>
+     ca8:	48 8b 7e 58          	mov    0x58(%rsi),%rdi
+     cac:	48 c1 e0 04          	shl    $0x4,%rax
+     cb0:	48 01 f8             	add    %rdi,%rax
+     cb3:	66 90                	xchg   %ax,%ax
+     cb5:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+     cbc:	00 00 00 00 
+     cc0:	48 8b 48 f8          	mov    -0x8(%rax),%rcx
+     cc4:	8b 50 f0             	mov    -0x10(%rax),%edx
+     cc7:	48 83 e8 10          	sub    $0x10,%rax
+     ccb:	48 89 0c d6          	mov    %rcx,(%rsi,%rdx,8)
+     ccf:	48 39 c7             	cmp    %rax,%rdi
+     cd2:	75 ec                	jne    cc0 <rx_search_run+0xd0>
+     cd4:	48 c7 46 70 00 00 00 	movq   $0x0,0x70(%rsi)
+     cdb:	00 
+     cdc:	48 c7 46 68 00 00 00 	movq   $0x0,0x68(%rsi)
+     ce3:	00 
+     ce4:	48 c7 46 78 ff ff ff 	movq   $0xffffffffffffffff,0x78(%rsi)
+     ceb:	ff 
+     cec:	4d 39 ec             	cmp    %r13,%r12
+     cef:	74 0f                	je     d00 <rx_search_run+0x110>
+     cf1:	49 83 c4 01          	add    $0x1,%r12
+     cf5:	e9 86 ff ff ff       	jmp    c80 <rx_search_run+0x90>
+     cfa:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+     d00:	31 c0                	xor    %eax,%eax
+
+=========== nested-comment-rec / after : rx_search_run ===========
+
+work/nested-comment-rec/after/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000bf0 <rx_search_run>:
+     bf0:	41 56                	push   %r14
+     bf2:	41 55                	push   %r13
+     bf4:	41 54                	push   %r12
+     bf6:	55                   	push   %rbp
+     bf7:	53                   	push   %rbx
+     bf8:	48 83 ec 40          	sub    $0x40,%rsp
+     bfc:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+     c03:	00 00 
+     c05:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+     c0a:	31 c0                	xor    %eax,%eax
+     c0c:	48 39 f2             	cmp    %rsi,%rdx
+     c0f:	72 27                	jb     c38 <rx_search_run+0x48>
+     c11:	31 c0                	xor    %eax,%eax
+     c13:	48 8b 54 24 38       	mov    0x38(%rsp),%rdx
+     c18:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx
+     c1f:	00 00 
+     c21:	0f 85 41 01 00 00    	jne    d68 <rx_search_run+0x178>
+     c27:	48 83 c4 40          	add    $0x40,%rsp
+     c2b:	5b                   	pop    %rbx
+     c2c:	5d                   	pop    %rbp
+     c2d:	41 5c                	pop    %r12
+     c2f:	41 5d                	pop    %r13
+     c31:	41 5e                	pop    %r14
+     c33:	c3                   	ret
+     c34:	0f 1f 40 00          	nopl   0x0(%rax)
+     c38:	48 89 d5             	mov    %rdx,%rbp
+     c3b:	48 89 f2             	mov    %rsi,%rdx
+     c3e:	48 89 fb             	mov    %rdi,%rbx
+     c41:	49 89 f4             	mov    %rsi,%r12
+     c44:	48 29 ea             	sub    %rbp,%rdx
+     c47:	48 8d 3c 2f          	lea    (%rdi,%rbp,1),%rdi
+     c4b:	be 2f 00 00 00       	mov    $0x2f,%esi
+     c50:	49 89 ce             	mov    %rcx,%r14
+     c53:	4d 89 c5             	mov    %r8,%r13
+     c56:	e8 00 00 00 00       	call   c5b <rx_search_run+0x6b>
+     c5b:	48 85 c0             	test   %rax,%rax
+     c5e:	74 b1                	je     c11 <rx_search_run+0x21>
+     c60:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+     c64:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # c6c <rx_search_run+0x7c>
+     c6b:	00 
+     c6c:	48 89 1c 24          	mov    %rbx,(%rsp)
+     c70:	49 c7 45 40 ff ff ff 	movq   $0xffffffffffffffff,0x40(%r13)
+     c77:	ff 
+     c78:	49 c7 45 78 ff ff ff 	movq   $0xffffffffffffffff,0x78(%r13)
+     c7f:	ff 
+     c80:	4c 89 64 24 08       	mov    %r12,0x8(%rsp)
+     c85:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+     c8c:	00 00 
+     c8e:	41 0f 11 45 00       	movups %xmm0,0x0(%r13)
+     c93:	41 0f 11 45 10       	movups %xmm0,0x10(%r13)
+     c98:	41 0f 11 45 20       	movups %xmm0,0x20(%r13)
+     c9d:	41 0f 11 45 30       	movups %xmm0,0x30(%r13)
+     ca2:	66 0f ef c0          	pxor   %xmm0,%xmm0
+     ca6:	41 0f 11 45 68       	movups %xmm0,0x68(%r13)
+     cab:	41 0f 11 8d 80 00 00 	movups %xmm1,0x80(%r13)
+     cb2:	00 
+     cb3:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+     cb8:	0f 1f 84 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+     cbf:	00 
+     cc0:	4c 89 e2             	mov    %r12,%rdx
+     cc3:	4c 89 ee             	mov    %r13,%rsi
+     cc6:	48 89 e7             	mov    %rsp,%rdi
+     cc9:	48 89 6c 24 10       	mov    %rbp,0x10(%rsp)
+     cce:	e8 2d f3 ff ff       	call   0 <rx_match_anchored>
+     cd3:	48 8d 50 06          	lea    0x6(%rax),%rdx
+     cd7:	48 83 fa 04          	cmp    $0x4,%rdx
+     cdb:	0f 86 32 ff ff ff    	jbe    c13 <rx_search_run+0x23>
+     ce1:	48 85 c0             	test   %rax,%rax
+     ce4:	79 59                	jns    d3f <rx_search_run+0x14f>
+     ce6:	49 8b 45 70          	mov    0x70(%r13),%rax
+     cea:	48 85 c0             	test   %rax,%rax
+     ced:	74 2e                	je     d1d <rx_search_run+0x12d>
+     cef:	49 8b 75 58          	mov    0x58(%r13),%rsi
+
+=========== float-literal-bound / before : rx_search_run ===========
+
+work/float-literal-bound/before/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000440 <rx_search_run>:
+ 440:	41 56                	push   %r14
+ 442:	41 55                	push   %r13
+ 444:	41 54                	push   %r12
+ 446:	55                   	push   %rbp
+ 447:	53                   	push   %rbx
+ 448:	48 83 ec 40          	sub    $0x40,%rsp
+ 44c:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+ 453:	00 00 
+ 455:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+ 45a:	31 c0                	xor    %eax,%eax
+ 45c:	48 39 d6             	cmp    %rdx,%rsi
+ 45f:	0f 82 cb 00 00 00    	jb     530 <rx_search_run+0xf0>
+ 465:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+ 469:	48 89 3c 24          	mov    %rdi,(%rsp)
+ 46d:	49 89 f4             	mov    %rsi,%r12
+ 470:	48 89 d5             	mov    %rdx,%rbp
+ 473:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # 47b <rx_search_run+0x3b>
+ 47a:	00 
+ 47b:	48 89 74 24 08       	mov    %rsi,0x8(%rsp)
+ 480:	49 89 ce             	mov    %rcx,%r14
+ 483:	4d 89 c5             	mov    %r8,%r13
+ 486:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+ 48d:	00 00 
+ 48f:	41 0f 11 00          	movups %xmm0,(%r8)
+ 493:	41 0f 11 40 10       	movups %xmm0,0x10(%r8)
+ 498:	41 0f 11 40 20       	movups %xmm0,0x20(%r8)
+ 49d:	66 0f ef c0          	pxor   %xmm0,%xmm0
+ 4a1:	41 0f 11 40 50       	movups %xmm0,0x50(%r8)
+ 4a6:	41 0f 11 48 60       	movups %xmm1,0x60(%r8)
+ 4ab:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+ 4b0:	4c 89 e2             	mov    %r12,%rdx
+ 4b3:	4c 89 ee             	mov    %r13,%rsi
+ 4b6:	48 89 e7             	mov    %rsp,%rdi
+ 4b9:	48 89 6c 24 10       	mov    %rbp,0x10(%rsp)
+ 4be:	e8 6d fb ff ff       	call   30 <rx_match_anchored>
+ 4c3:	48 8d 50 06          	lea    0x6(%rax),%rdx
+ 4c7:	48 83 fa 04          	cmp    $0x4,%rdx
+ 4cb:	76 65                	jbe    532 <rx_search_run+0xf2>
+ 4cd:	48 85 c0             	test   %rax,%rax
+ 4d0:	79 7d                	jns    54f <rx_search_run+0x10f>
+ 4d2:	49 8b 45 58          	mov    0x58(%r13),%rax
+ 4d6:	48 85 c0             	test   %rax,%rax
+ 4d9:	74 42                	je     51d <rx_search_run+0xdd>
+ 4db:	49 8b 75 40          	mov    0x40(%r13),%rsi
+ 4df:	48 c1 e0 04          	shl    $0x4,%rax
+ 4e3:	48 01 f0             	add    %rsi,%rax
+ 4e6:	0f 1f 40 00          	nopl   0x0(%rax)
+ 4ea:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 4f1:	00 00 00 00 
+ 4f5:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 4fc:	00 00 00 00 
+ 500:	48 8b 48 f8          	mov    -0x8(%rax),%rcx
+ 504:	8b 50 f0             	mov    -0x10(%rax),%edx
+ 507:	48 83 e8 10          	sub    $0x10,%rax
+ 50b:	49 89 4c d5 00       	mov    %rcx,0x0(%r13,%rdx,8)
+ 510:	48 39 f0             	cmp    %rsi,%rax
+ 513:	75 eb                	jne    500 <rx_search_run+0xc0>
+ 515:	49 c7 45 58 00 00 00 	movq   $0x0,0x58(%r13)
+ 51c:	00 
+ 51d:	49 c7 45 50 00 00 00 	movq   $0x0,0x50(%r13)
+ 524:	00 
+ 525:	4c 39 e5             	cmp    %r12,%rbp
+ 528:	74 06                	je     530 <rx_search_run+0xf0>
+ 52a:	48 83 c5 01          	add    $0x1,%rbp
+ 52e:	eb 80                	jmp    4b0 <rx_search_run+0x70>
+ 530:	31 c0                	xor    %eax,%eax
+ 532:	48 8b 54 24 38       	mov    0x38(%rsp),%rdx
+ 537:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx
+ 53e:	00 00 
+ 540:	75 23                	jne    565 <rx_search_run+0x125>
+ 542:	48 83 c4 40          	add    $0x40,%rsp
+ 546:	5b                   	pop    %rbx
+ 547:	5d                   	pop    %rbp
+
+=========== float-literal-bound / after : rx_search_run ===========
+
+work/float-literal-bound/after/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000440 <rx_search_run>:
+ 440:	41 56                	push   %r14
+ 442:	41 55                	push   %r13
+ 444:	41 54                	push   %r12
+ 446:	55                   	push   %rbp
+ 447:	53                   	push   %rbx
+ 448:	48 83 ec 40          	sub    $0x40,%rsp
+ 44c:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+ 453:	00 00 
+ 455:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+ 45a:	31 c0                	xor    %eax,%eax
+ 45c:	48 39 f2             	cmp    %rsi,%rdx
+ 45f:	72 27                	jb     488 <rx_search_run+0x48>
+ 461:	31 c0                	xor    %eax,%eax
+ 463:	48 8b 54 24 38       	mov    0x38(%rsp),%rdx
+ 468:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx
+ 46f:	00 00 
+ 471:	0f 85 19 01 00 00    	jne    590 <rx_search_run+0x150>
+ 477:	48 83 c4 40          	add    $0x40,%rsp
+ 47b:	5b                   	pop    %rbx
+ 47c:	5d                   	pop    %rbp
+ 47d:	41 5c                	pop    %r12
+ 47f:	41 5d                	pop    %r13
+ 481:	41 5e                	pop    %r14
+ 483:	c3                   	ret
+ 484:	0f 1f 40 00          	nopl   0x0(%rax)
+ 488:	48 89 d5             	mov    %rdx,%rbp
+ 48b:	48 89 f2             	mov    %rsi,%rdx
+ 48e:	48 89 fb             	mov    %rdi,%rbx
+ 491:	49 89 f4             	mov    %rsi,%r12
+ 494:	48 29 ea             	sub    %rbp,%rdx
+ 497:	48 8d 3c 2f          	lea    (%rdi,%rbp,1),%rdi
+ 49b:	be 2e 00 00 00       	mov    $0x2e,%esi
+ 4a0:	49 89 ce             	mov    %rcx,%r14
+ 4a3:	4d 89 c5             	mov    %r8,%r13
+ 4a6:	e8 00 00 00 00       	call   4ab <rx_search_run+0x6b>
+ 4ab:	48 85 c0             	test   %rax,%rax
+ 4ae:	74 b1                	je     461 <rx_search_run+0x21>
+ 4b0:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+ 4b4:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # 4bc <rx_search_run+0x7c>
+ 4bb:	00 
+ 4bc:	48 89 1c 24          	mov    %rbx,(%rsp)
+ 4c0:	4c 89 64 24 08       	mov    %r12,0x8(%rsp)
+ 4c5:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+ 4cc:	00 00 
+ 4ce:	41 0f 11 45 00       	movups %xmm0,0x0(%r13)
+ 4d3:	41 0f 11 45 10       	movups %xmm0,0x10(%r13)
+ 4d8:	41 0f 11 45 20       	movups %xmm0,0x20(%r13)
+ 4dd:	66 0f ef c0          	pxor   %xmm0,%xmm0
+ 4e1:	41 0f 11 45 50       	movups %xmm0,0x50(%r13)
+ 4e6:	41 0f 11 4d 60       	movups %xmm1,0x60(%r13)
+ 4eb:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+ 4f0:	4c 89 e2             	mov    %r12,%rdx
+ 4f3:	4c 89 ee             	mov    %r13,%rsi
+ 4f6:	48 89 e7             	mov    %rsp,%rdi
+ 4f9:	48 89 6c 24 10       	mov    %rbp,0x10(%rsp)
+ 4fe:	e8 2d fb ff ff       	call   30 <rx_match_anchored>
+ 503:	48 8d 50 06          	lea    0x6(%rax),%rdx
+ 507:	48 83 fa 04          	cmp    $0x4,%rdx
+ 50b:	0f 86 52 ff ff ff    	jbe    463 <rx_search_run+0x23>
+ 511:	48 85 c0             	test   %rax,%rax
+ 514:	79 61                	jns    577 <rx_search_run+0x137>
+ 516:	49 8b 45 58          	mov    0x58(%r13),%rax
+ 51a:	48 85 c0             	test   %rax,%rax
+ 51d:	74 3e                	je     55d <rx_search_run+0x11d>
+ 51f:	49 8b 75 40          	mov    0x40(%r13),%rsi
+ 523:	48 c1 e0 04          	shl    $0x4,%rax
+ 527:	48 01 f0             	add    %rsi,%rax
+ 52a:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 531:	00 00 00 00 
+ 535:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 53c:	00 00 00 00 
+ 540:	48 8b 48 f8          	mov    -0x8(%rax),%rcx
+ 544:	8b 50 f0             	mov    -0x10(%rax),%edx
+
+=========== file-ext-order / before : rx_search_run ===========
+
+work/file-ext-order/before/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000001a0 <rx_search_run>:
+ 1a0:	41 56                	push   %r14
+ 1a2:	41 54                	push   %r12
+ 1a4:	55                   	push   %rbp
+ 1a5:	53                   	push   %rbx
+ 1a6:	48 83 ec 48          	sub    $0x48,%rsp
+ 1aa:	64 48 8b 1c 25 28 00 	mov    %fs:0x28,%rbx
+ 1b1:	00 00 
+ 1b3:	48 89 5c 24 38       	mov    %rbx,0x38(%rsp)
+ 1b8:	48 89 f3             	mov    %rsi,%rbx
+ 1bb:	48 39 d3             	cmp    %rdx,%rbx
+ 1be:	0f 82 ac 00 00 00    	jb     270 <rx_search_run+0xd0>
+ 1c4:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+ 1c8:	48 89 3c 24          	mov    %rdi,(%rsp)
+ 1cc:	49 89 d4             	mov    %rdx,%r12
+ 1cf:	49 89 ce             	mov    %rcx,%r14
+ 1d2:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # 1da <rx_search_run+0x3a>
+ 1d9:	00 
+ 1da:	48 89 5c 24 08       	mov    %rbx,0x8(%rsp)
+ 1df:	4c 89 c6             	mov    %r8,%rsi
+ 1e2:	48 89 e5             	mov    %rsp,%rbp
+ 1e5:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+ 1ec:	00 00 
+ 1ee:	41 0f 11 00          	movups %xmm0,(%r8)
+ 1f2:	66 0f ef c0          	pxor   %xmm0,%xmm0
+ 1f6:	41 0f 11 40 30       	movups %xmm0,0x30(%r8)
+ 1fb:	41 0f 11 48 40       	movups %xmm1,0x40(%r8)
+ 200:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+ 205:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 20c:	00 00 00 00 
+ 210:	48 89 ef             	mov    %rbp,%rdi
+ 213:	4c 89 64 24 10       	mov    %r12,0x10(%rsp)
+ 218:	e8 e3 fd ff ff       	call   0 <rx_match_anchored>
+ 21d:	48 8d 50 06          	lea    0x6(%rax),%rdx
+ 221:	48 83 fa 04          	cmp    $0x4,%rdx
+ 225:	76 4b                	jbe    272 <rx_search_run+0xd2>
+ 227:	48 85 c0             	test   %rax,%rax
+ 22a:	79 61                	jns    28d <rx_search_run+0xed>
+ 22c:	48 8b 46 38          	mov    0x38(%rsi),%rax
+ 230:	48 85 c0             	test   %rax,%rax
+ 233:	74 27                	je     25c <rx_search_run+0xbc>
+ 235:	48 8b 7e 20          	mov    0x20(%rsi),%rdi
+ 239:	48 c1 e0 04          	shl    $0x4,%rax
+ 23d:	48 01 f8             	add    %rdi,%rax
+ 240:	48 8b 48 f8          	mov    -0x8(%rax),%rcx
+ 244:	8b 50 f0             	mov    -0x10(%rax),%edx
+ 247:	48 83 e8 10          	sub    $0x10,%rax
+ 24b:	48 89 0c d6          	mov    %rcx,(%rsi,%rdx,8)
+ 24f:	48 39 f8             	cmp    %rdi,%rax
+ 252:	75 ec                	jne    240 <rx_search_run+0xa0>
+ 254:	48 c7 46 38 00 00 00 	movq   $0x0,0x38(%rsi)
+ 25b:	00 
+ 25c:	48 c7 46 30 00 00 00 	movq   $0x0,0x30(%rsi)
+ 263:	00 
+ 264:	49 39 dc             	cmp    %rbx,%r12
+ 267:	74 07                	je     270 <rx_search_run+0xd0>
+ 269:	49 83 c4 01          	add    $0x1,%r12
+ 26d:	eb a1                	jmp    210 <rx_search_run+0x70>
+ 26f:	90                   	nop
+ 270:	31 c0                	xor    %eax,%eax
+ 272:	48 8b 54 24 38       	mov    0x38(%rsp),%rdx
+ 277:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx
+ 27e:	00 00 
+ 280:	75 21                	jne    2a3 <rx_search_run+0x103>
+ 282:	48 83 c4 48          	add    $0x48,%rsp
+ 286:	5b                   	pop    %rbx
+ 287:	5d                   	pop    %rbp
+ 288:	41 5c                	pop    %r12
+ 28a:	41 5e                	pop    %r14
+ 28c:	c3                   	ret
+ 28d:	4d 85 f6             	test   %r14,%r14
+ 290:	74 0a                	je     29c <rx_search_run+0xfc>
+ 292:	4c 01 e0             	add    %r12,%rax
+ 295:	4d 89 26             	mov    %r12,(%r14)
+
+=========== file-ext-order / after : rx_search_run ===========
+
+work/file-ext-order/after/art_pic.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000001a0 <rx_search_run>:
+ 1a0:	41 56                	push   %r14
+ 1a2:	41 55                	push   %r13
+ 1a4:	41 54                	push   %r12
+ 1a6:	55                   	push   %rbp
+ 1a7:	53                   	push   %rbx
+ 1a8:	48 83 ec 40          	sub    $0x40,%rsp
+ 1ac:	64 48 8b 04 25 28 00 	mov    %fs:0x28,%rax
+ 1b3:	00 00 
+ 1b5:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+ 1ba:	31 c0                	xor    %eax,%eax
+ 1bc:	48 39 f2             	cmp    %rsi,%rdx
+ 1bf:	72 27                	jb     1e8 <rx_search_run+0x48>
+ 1c1:	31 c0                	xor    %eax,%eax
+ 1c3:	48 8b 54 24 38       	mov    0x38(%rsp),%rdx
+ 1c8:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx
+ 1cf:	00 00 
+ 1d1:	0f 85 19 01 00 00    	jne    2f0 <rx_search_run+0x150>
+ 1d7:	48 83 c4 40          	add    $0x40,%rsp
+ 1db:	5b                   	pop    %rbx
+ 1dc:	5d                   	pop    %rbp
+ 1dd:	41 5c                	pop    %r12
+ 1df:	41 5d                	pop    %r13
+ 1e1:	41 5e                	pop    %r14
+ 1e3:	c3                   	ret
+ 1e4:	0f 1f 40 00          	nopl   0x0(%rax)
+ 1e8:	49 89 d4             	mov    %rdx,%r12
+ 1eb:	48 89 f2             	mov    %rsi,%rdx
+ 1ee:	48 89 fd             	mov    %rdi,%rbp
+ 1f1:	48 89 f3             	mov    %rsi,%rbx
+ 1f4:	4c 29 e2             	sub    %r12,%rdx
+ 1f7:	4a 8d 3c 27          	lea    (%rdi,%r12,1),%rdi
+ 1fb:	be 72 00 00 00       	mov    $0x72,%esi
+ 200:	49 89 ce             	mov    %rcx,%r14
+ 203:	4d 89 c5             	mov    %r8,%r13
+ 206:	e8 00 00 00 00       	call   20b <rx_search_run+0x6b>
+ 20b:	48 85 c0             	test   %rax,%rax
+ 20e:	74 b1                	je     1c1 <rx_search_run+0x21>
+ 210:	66 0f 76 c0          	pcmpeqd %xmm0,%xmm0
+ 214:	48 89 5c 24 08       	mov    %rbx,0x8(%rsp)
+ 219:	66 0f 6f 0d 00 00 00 	movdqa 0x0(%rip),%xmm1        # 221 <rx_search_run+0x81>
+ 220:	00 
+ 221:	48 c7 44 24 18 00 00 	movq   $0x0,0x18(%rsp)
+ 228:	00 00 
+ 22a:	41 0f 11 45 00       	movups %xmm0,0x0(%r13)
+ 22f:	66 0f ef c0          	pxor   %xmm0,%xmm0
+ 233:	48 89 2c 24          	mov    %rbp,(%rsp)
+ 237:	48 89 e5             	mov    %rsp,%rbp
+ 23a:	41 0f 11 45 30       	movups %xmm0,0x30(%r13)
+ 23f:	41 0f 11 4d 40       	movups %xmm1,0x40(%r13)
+ 244:	0f 29 44 24 20       	movaps %xmm0,0x20(%rsp)
+ 249:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+ 250:	4c 89 ee             	mov    %r13,%rsi
+ 253:	48 89 ef             	mov    %rbp,%rdi
+ 256:	4c 89 64 24 10       	mov    %r12,0x10(%rsp)
+ 25b:	e8 a0 fd ff ff       	call   0 <rx_match_anchored>
+ 260:	48 8d 50 06          	lea    0x6(%rax),%rdx
+ 264:	48 83 fa 04          	cmp    $0x4,%rdx
+ 268:	0f 86 55 ff ff ff    	jbe    1c3 <rx_search_run+0x23>
+ 26e:	48 85 c0             	test   %rax,%rax
+ 271:	79 64                	jns    2d7 <rx_search_run+0x137>
+ 273:	49 8b 45 38          	mov    0x38(%r13),%rax
+ 277:	48 85 c0             	test   %rax,%rax
+ 27a:	74 41                	je     2bd <rx_search_run+0x11d>
+ 27c:	49 8b 75 20          	mov    0x20(%r13),%rsi
+ 280:	48 c1 e0 04          	shl    $0x4,%rax
+ 284:	48 01 f0             	add    %rsi,%rax
+ 287:	0f 1f 00             	nopl   (%rax)
+ 28a:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 291:	00 00 00 00 
+ 295:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+ 29c:	00 00 00 00 
+ 2a0:	48 8b 48 f8          	mov    -0x8(%rax),%rcx
+ 2a4:	8b 50 f0             	mov    -0x10(%rax),%edx
+
