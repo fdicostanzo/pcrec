@@ -3531,7 +3531,60 @@ vs. "macOS grants more than requested"):
   IS present and working on darwin; what's absent is the platform's stack
   under-grant, not a missing capability).
 
-## K34 — RULED: DOCUMENTED DIVERGENCE (D74, Frank 2026-08-25; was OPEN 2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
+## K34 — CLOSED 2026-09-23 (lane b2fix, `[OPTLOOP.1.impl]` batch 2 known-fail triage; was RULED: DOCUMENTED DIVERGENCE, D74, Frank 2026-08-25; was OPEN 2026-08-24, found by the [DD-14.D27] blinded author) — pcrec used to GIVE UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
+
+**CLOSED, and not by the route D74 declined.** Lane `optimpl2`'s
+`[OPT-REQPOS]` tier 2b (the necessary CONTIGUOUS-LITERAL-RUN precheck,
+2026-09-22/23) makes `tests/known_fail/k34_leftrec_giveup.rxt`'s known-fail
+ratchet fire "NOW PASSING" on all 11 parked cells as a SIDE EFFECT: every
+match of `(a|(?1)a)` (and its `b`/`c`-tailed siblings) provably ends in the
+fixed literal 'a' (branch 1 IS "a"; branch 2 always appends a trailing
+literal 'a' after its recursive call), so the run analysis proves the
+necessary contiguous substring "a"/"ab"/"ac" REGARDLESS OF RECURSION DEPTH —
+a subject lacking it answers NOMATCH in O(1), before the engine ever pushes a
+frame trying to explore the (provably futile) recursion. Verified: all 11
+cells pass (`bash tests/harness/run.sh tests/known_fail/k34_leftrec_giveup.rxt`
+before the move, `cases passed: 11 / cases failed: 0`). This is NOT a
+`[MECH-REACH]` short-circuit artifact of a CHECK's witness deliberately
+omitting a pattern's required byte (batch 1's own seven such sites, and the
+new hazard grain batch 2's report names as unconfirmed-by-inspection): this
+FILE is not a check exercising some OTHER mechanism whose witness happens to
+omit the required byte — it IS the correctness question (does pcrec answer
+these 11 cells right), and its subjects genuinely lack the pattern's proven
+necessary run, so the precheck's nomatch answer is the CORRECT answer, not
+an accidental bypass of an unrelated assertion.
+
+D74's ruling — do not adopt PCRE2's own `−52` loop-detection rule as a
+general mechanism, since a faithful copy needs a stored subject pointer and
+a `last_used_ptr` high-water mark threaded through the emitted artifact —
+STANDS, unmoved: the necessary-run precheck characterises NOTHING about
+PCRE2's loop rule and was not built with K34 in mind at all. It resolves
+these 11 cells because they happen to have a required trailing literal, a
+property ORDINARY required-byte/required-run analysis can prove for any
+pattern shaped this way, recursion or no. The "what was needed"/"RULING"
+paragraphs below are kept verbatim as the record of the declined route;
+K34's own population (this file's 11 cells, the whole of the D27 corpus's
+"class 1" as measured 2026-08-24) is now covered by a DIFFERENT mechanism.
+`class 2` (the inverse: `((?1)?a)`/`((?1)*a)` on "a", pcrec matches where
+libpcre2 −52s, "arguably better; no expectation writable") is UNCHANGED and
+UNRELATED — it has no required-byte precheck to trigger and stays exactly as
+D74 left it, a reported-not-encoded observation.
+
+The 11 cells moved from `tests/known_fail/k34_leftrec_giveup.rxt` back to
+their originally-parked position in `tests/recursion/d27/sr_depth.rxt` (the
+"Removing one" convention, `tests/known_fail/CLAUDE.md`); `tests/recursion/
+d27/sr_gen.py`'s spec had its `parked=`/`parked_ref="K34"` keywords removed
+from both `B()` calls so a future regeneration reproduces the live cells
+rather than re-parking them. The live `.rxt` lines were placed BY HAND
+(copied verbatim from the already-oracle-verified known_fail cells) rather
+than by running `python3 sr_gen.py`: this box's dlopen shim resolves
+libpcre2 10.42, not the pinned 10.46 reference (`sr_oracle.version()`), so a
+live regeneration here would have silently re-derived the WHOLE ten-file D27
+corpus against the wrong oracle — see `sr_depth.rxt`'s own header note.
+`tests/known_fail/` is empty again (`run_known_fail.sh`'s own legitimate
+good state).
+
+THE ORIGINAL ENTRY FOLLOWS, UNCHANGED, AS THE RECORD OF THE DECLINED ROUTE.
 
 **Symptom.** `(a|(?1)a)b` on "a" / "aaa" / "": libpcre2 returns a clean
 NOMATCH (rc PCRE2_ERROR_NOMATCH, not −52); on "ab" both match (0,2) g1

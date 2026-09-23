@@ -25156,3 +25156,37 @@ reqbyte_freq_pick.md §10 and reqpos_2b.md §9 stands. [OPT-FREQPICK] filed +
 started, [OPT-REQPOS] started: ONE implementation lane (optimpl2, opus), one
 abi event 29→30, parked on its branch until the bench's I-87 window has
 closed (never merge during a measurement).
+
+**2026-09-23, lane b2fix (sonnet), resuming worktree lane/optimpl2.** Triage
+of the full-suite red left by optimpl2's own owed chain
+(`build/optimpl2_test.log`, `make test` rc=2, 42/42 sections launched): two
+`*** [test-X] Error` lines, `test-codegen` and `test-known-fail`.
+`test-codegen`'s 9/10 is the standing darwin `nm arm_a.o` probe
+(`run_inline_capability.sh`), expected, unrelated. `test-known-fail`'s
+ratchet flagged `tests/known_fail/k34_leftrec_giveup.rxt` "NOW PASSING"
+(11/11 cells) — diagnosed as a GENUINE resolution, not a `[MECH-REACH]`
+check-witness short-circuit: `[OPT-REQPOS]` tier 2b's necessary-run
+precheck proves every match of `(a|(?1)a)` (and its `b`/`c`-tailed
+siblings) ends in a fixed literal regardless of recursion depth — branch 1
+IS `"a"`, branch 2 always appends a trailing literal `"a"` after its
+recursive call — so a subject lacking that literal/run concludes NOMATCH
+in O(1) without ever pushing a frame into the recursion. Confirmed live
+(`RX_REQ_RUN "6162@1"` on the emitted artifact; the harness reports
+`cases passed: 11 / cases failed: 0`) before touching anything. K34
+(`docs/dev/known_issues.md`) closed with the mechanism recorded; D74's own
+ruling (do not adopt PCRE2's `−52` loop rule) stands unmoved — this
+resolves K34 by an unrelated general optimization, not by the declined
+route. The eleven cells moved back to their originally-parked position in
+`tests/recursion/d27/sr_depth.rxt` (the "Removing one" convention);
+`sr_gen.py`'s spec had `parked=`/`parked_ref="K34"` removed from both
+`B()` calls, but the live `.rxt` lines were placed BY HAND rather than by
+running the generator — this box's dlopen shim resolves libpcre2 **10.42**
+(`sr_oracle.version()`), not the pinned 10.46 reference, so a live
+regeneration would have silently re-derived the whole ten-file D27 corpus
+against the wrong oracle. `tests/known_fail/` is empty again.
+`docs/dev/known_issues.md`, `tests/known_fail/CLAUDE.md`,
+`tests/recursion/CLAUDE.md`, `tests/recursion/d27/CLAUDE.md` updated.
+`bash tests/harness/run.sh tests/recursion` 1701/0 clean;
+`bash tests/known_fail/run_known_fail.sh` "nothing to ratchet", rc=0.
+Continuing to items 2-4 of the b2fix brief (macro respell, sabotage rows,
+re-validation).
