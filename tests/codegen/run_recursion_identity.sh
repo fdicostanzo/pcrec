@@ -921,7 +921,16 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # reachable from main that carries abi 30, closing the gate's own RED-BY-
 # CONSTRUCTION state on `lane/optimpl2` with the exact message "the emitted
 # scaffolding changed: bump `abi` ... and re-pin comparison (B)".
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e4e9c6c}"   # [OPTLOOP.2] batch 2, abi 29->30: (B) re-pinned to the merge 8e4e9c6c (D76; lane repin2, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6ab2464e ([OPTLOOP.1.impl] batch 1, abi 28->29).
+# **(B) RE-PINNED AGAIN — [OPT-PRECHECK-ADMIT], 2026-09-23: `abi` 30 -> 31,
+# to `6ef76820`, the admitimpl merge commit.** `admitimpl_report.md` §3 left
+# this FILEPIN explicitly OWED to the manager, on the same precedent as
+# every prior re-pin: D76's pin must name a commit REACHABLE AFTER THE
+# MERGE, which `lane/admitimpl`'s own tip is not. **RE-PINNED (lane repin3,
+# 2026-09-23) to `6ef76820`** — the first commit reachable from main that
+# carries abi 31 (the `<PREFIX>_REQ_WHY` stamp), closing the gate's own
+# RED-BY-CONSTRUCTION state with the exact message "the emitted scaffolding
+# changed: bump `abi` ... and re-pin comparison (B)".
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ef76820}"   # [OPT-PRECHECK-ADMIT], abi 30->31: (B) re-pinned to the merge 6ef76820 (D76; lane repin3, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 8e4e9c6c ([OPTLOOP.2] batch 2, abi 29->30).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
