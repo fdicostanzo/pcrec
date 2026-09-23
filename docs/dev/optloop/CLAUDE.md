@@ -505,3 +505,39 @@ that cycle's analysis lands.
   entries), and `'e'` already occurs in the EXISTING throughput subjects
   at 8.5212% — no new subject needed, only a new pattern. Drafts I-105's
   ask text on that basis.
+
+- `vmlit_trigger_read.md` — **`[OPT-VMLIT]` trigger read, 2026-09-23, lane
+  `litrun`**, measurement only (D77). Reads against the plan row verbatim
+  rather than re-deriving the question — the row's own 2026-08-31 partial
+  measurement ("[OPT-5] STEP 0: literal words confirmed one-byte-per-label
+  consume chains, never memcmp") left open WHY: does gcc simply not find
+  the fusion, or is emission the only way to get it. **§1 closes it: gcc
+  never fuses a compare-chain shape on its own** — a hand-rewritten `&&`
+  chain over an 11-byte literal run stays 11 separate `ldrb`/`cmpb`+branch
+  pairs at gcc-16 -O2 AND -O3, arm64 (this Mac) and x86_64 (light tailnet
+  probe); only explicit `memcmp()` against a compile-time constant gets
+  gcc's own fusion (11→3 loads arm64, 11→2 x86_64) — the SAME lowering
+  `docs/design/reqpos_2b.md` §3.2 already measured for the search-side
+  prefilter (cited as prior art, not re-derived), extended here to a
+  second landing site and the new negative result that `&&` alone never
+  gets it. **§2 is explicit that it does NOT answer the row's own named
+  trigger** (ctx/level-context cells vs `pcre2-jit`, "1.5-2.9× residual")
+  — that bench population (`bench/bounded`, `bench/loglines`) is outside
+  this lane's reach and still owed as a real bench-window run; instead
+  reports a SECOND, independently-found population from `capability@0.1`:
+  crossing `b2ledger/stampdiff.json`'s `RX_ENGINE` against the 60 losing
+  match-regime cells of `cycle1_caps_view.md`+`cycle1_nocaps_view.md`
+  finds only **5** genuine VM-route losing cells with a real literal run
+  ≥4 (3 `wild-secrets-*` patterns; 2 other raw hits were a
+  `(?<name>`/`(?&name)` group-syntax false positive in the literal-run
+  parser, caught by hand-check) — `RX_VM_PREFILTER` already `"hybrid"` on
+  all three, ruling out the prefilter as their cause. **§3 points at
+  already-designed mechanisms rather than inventing new ones**: the
+  caseless form is `[WORD-FOLD]`'s own AND-mask cube compare (not a new
+  masked compare), `[CLS-TREE]`/`[OPT-CLSPACK]`'s shared atom-table form
+  (`form_char_step0.md:84`) is named as the adjacent but DIFFERENT
+  per-position kit member. **§4 recommends the row stay
+  `STATE:not-started`**: record the "never memcmp" clause as now fully
+  closed (cite this memo), but do not open on §2's numbers — name the
+  still-owed bench measurement (ctx/level-context vs `pcre2-jit` at the
+  current pin) as the actual gate.
