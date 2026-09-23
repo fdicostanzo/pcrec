@@ -25344,3 +25344,15 @@ learnings §3.z added. Main is now green on every section except the nm
 probe. PLAN NOTE: the batch-2 merge's plan.md resolution had DROPPED the
 [OPT-PRECHECK-ADMIT] row — restored 2279ac0f (lesson: after a plan.md
 conflict, diff the ROW SET before and after, not just the hunk).
+
+**g3rec MERGED (~07:5x, f1f04842):** O-48 reconciled in the reading's §9 —
+G3 REFUTED on x86_64 (no .part.0 at either pin; the hand-twins within IQR on
+findall.c), nested-comment-rec's regression UNATTRIBUTED; the null band
+two-sided; the 15-vs-16 identity difference = artifact-text diff (ours) vs
+record stamp-equality (theirs), one pattern apart; github-pat's missing
+rx_search_run = the always-inline entry shape ([CC-DIFF] STEP 1). Exec
+summary revised + page republished. I-97 ("I-93 logs fetched") + I-98 (block
+D under the store's own driver, after [B80]) sent. Scope slip: the lane's
+scp landed the archive in the MAIN tree too (untracked, identical to its
+branch copy; removed before the merge) — an absolute path in a lane's scp
+target must be its WORKTREE path.
