@@ -25078,3 +25078,14 @@ lines); tomorrow: the ledger vs the D119 bar, the cycle-1 executive
 summary, the all-axes sweep on Linux, cycle 2's analysis on Frank's word
 (candidates ranked by c2prep: the rarest-byte pick → [OPT-REQPOS] 2b →
 FIRSTSET's VM consumer after F1/F2; M-B for one-pass).
+
+**SESSION CLOSE (2026-09-22 ~20:1x EDT, Frank: "lets reset session").**
+Main = origin/main = 8d716693 (abi 29), clean at close; no worktrees, no
+live agents; heartbeat cron deleted. The darwin gate on 8d716693 runs
+DETACHED past this close (log path in wake.md; verdict = make's `*** [`
+lines; expected red = the nm probe only; commit the size-log re-archive).
+I-87 sent (bench measures batch 1 overnight). Session tally: lanes
+backtri, optrev, closefold, admin1, capsview, capsurvey, profread,
+optimpl1, b1triage, axesfix, regred, c2prep, admin2 (13; sonnet except
+optrev/capsurvey/optimpl1/c2prep on opus; all closed); rulings D119 +
+two addenda, D83 addendum; merges 11; abi 28→29.
