@@ -8140,6 +8140,16 @@ best-variant view and is retired as a headline; the caps-vs-caps figure is
 rendered — it is owed from the existing after-report (lane nocapsview) and
 from every capability report hereafter (bench inbox I-99).
 
+**Nuance (Frank, same hour):** "it's possible a capturing competitive engine
+is faster than our non-capturing. That would be surprising. We should
+validate that this isn't true. We should have the data to do a query." So
+beside the two class-pure ledgers stands ONE cross-class QUERY, not a
+ranking: every cell where a CAPTURING competitor beats pcrec's
+NON-capturing run beyond the cell's IQR and the null band is a FINDING by
+definition (our engine doing less work and still losing) and is what the
+next analysis wave explains first. Rendered by lane nocapsview from the
+O-45 report; a standing query in every capability report hereafter.
+
 ## D120 — ONE ORGANIZED PATTERN-ANALYSIS RECORD, computed once and read by every step, replaces the ad-hoc per-pass walks; chartered on the two-customer trigger, timing TBD (Frank, 2026-09-22, seventy-seventh session)
 
 **Frank's direction, verbatim in substance.** "We are doing a bunch of
