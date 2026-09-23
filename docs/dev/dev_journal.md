@@ -25318,3 +25318,16 @@ population; -fno-possessify is clean (the 230 was -fno-counter's). No
 script-version or box difference. Transcript archived under
 docs/dev/optloop/runs/2026-09-23-i89A-8d716693/; linux_ask_i89.md annotated.
 I-96: "I-89 logs fetched" + the offset reported to the bench.
+
+**O-48 (~07:1x EDT, bench b223caf, [B78] = I-93's five blocks):** BLOCK C
+REFUTES the partial-inlining mechanism on x86_64/gcc 15.2 — rx_search_run
+has no .part.0 at EITHER pin on any pattern; BLOCK D's hand-twins all sit
+inside the per-variant IQR on findall.c (which they measure at a 2-10×
+scale gap vs the store's driver) → nested-comment-rec's +1.5 ms is
+UNATTRIBUTED again (the arm64 read did not transfer; G3 placement is
+dropped from [OPT-PRECHECK-ADMIT] pending a driver-level measurement);
+BLOCK A: every EXPECT direction holds (-fno-req-byte recovers on all four;
+-fno-end-window worse on uuid/ipv4); BLOCK B: the null band is TWO-SIDED,
+−5.74..+8.46%, median −0.08% over 120 program-identical cells. Lane g3rec
+reconciles (§9 of the reading, the exec summary, the I-98 driver-level
+block, the archive). [B80] (batch 2's re-pin + window) starts; window tonight.
