@@ -277,3 +277,35 @@ that cycle's analysis lands.
   census (sha256-checked against the bench's committed manifest), the
   artifact-identity census, and the find-all cost model. See its
   `CLAUDE.md`.
+
+- `runs/2026-09-23-i89A-8d716693/` — I-89 block (A)'s raw transcript: the
+  full `make test-axes` (unrestricted) run on ubuntubudu at pcrec main
+  `8d716693`, fetched from pcrec-bench outbox O-47. See its own README.md.
+- `axes_reconciliation_2026-09-23.md` — **[AXESREC], 2026-09-23, lane
+  `axesrec`**: reconciles O-47's three "facts beside your stated EXPECTs,
+  reported not reconciled" against the real transcript above. **Verdict:
+  all three are ONE mechanism, not three, and it is a reporting artifact,
+  not a pcrec finding** — O-47's own "Facts" prose paragraph quotes every
+  named axis's `agree`/`budget-bound`/`refused-documented` numbers from
+  the row TWO POSITIONS LATER in the per-axis run order (a constant +2
+  offset, confirmed for all seven cited figures against the raw log), so
+  bits 28-30's real numbers (all `24,343/0/0/0`, identical to darwin's
+  restricted run and to `linux_ask_i89.md`'s own EXPECT) got reported
+  under bit 29/30's names as `--engine=vm`/`--engine=dfa`'s real
+  refusal-population numbers, `-fprefilter`'s real 15,426-row
+  refused-documented population (floor 12,000, exactly as I-89 predicted)
+  got reported as clean under its own name using the NEXT clean axis's
+  data, and `-fno-counter`'s real, already-documented 230-row exception
+  (floor 180) got reported a second time under `-fno-possessify`'s name.
+  Read against the corrected rows, every one of I-89's own EXPECT
+  sentences holds exactly on Linux. Names a plausible mechanical cause
+  (two non-axis `axes: --tune=...` prose sentences in the log preamble,
+  textually shaped like the real per-axis announcement lines, that a
+  naive extraction could count as two phantom axis entries). No
+  `src/`/`tests/`/`docs/spec/` change — `tests/axes/run_axes.sh` is
+  unchanged in substance between the O-47 pin and `main` (`git diff
+  8d716693 main -- tests/axes/run_axes.sh` is the `[b2fix]`
+  `PCREC_BIT(N)` bit-derivation respelling only, zero
+  `REFUSAL_PATTERN`/`REFUSAL_FLOOR`/output-format lines touched).
+  Annotates `linux_ask_i89.md` in place with a dated correction note
+  rather than rewriting the sent ask.
