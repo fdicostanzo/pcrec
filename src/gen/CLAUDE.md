@@ -1906,7 +1906,7 @@ DFA's own "try the next start" mechanism has the same defect and is OPEN as
 K50.
 
 **[M6.5.2] BOTH FUNCTIONS TAKE A MASK NOW**, because the seam gained its
-SECOND and THIRD entries (`<prefix>_bref_match` and its caseless twin) and an
+SECOND and THIRD entries (`<prefix>_span_match` and its caseless twin) and an
 artifact with no backreference must not carry them. `Job.enc_mask` starts at
 `PCREC_ENCE_NEXT_POS` and the VM emitter ORs in whichever compare entries its
 `A_BREF` arm actually emits calls to — which is why the prologue is written
@@ -3109,7 +3109,7 @@ carries no unset test at all.
 **`PcrecEncEntry` gained a `requires` column, and `enc.c` closes the mask
 inside BOTH emit functions rather than at the sites that build one.** utf8's
 caseless variable compare is the caseless backreference compare one operand
-over, so its text CALLS that entry's `$_bref_ci_fold`/`$_bref_ci_decode`
+over, so its text CALLS that entry's `$_span_ci_fold`/`$_span_ci_decode`
 rather than carrying a second copy of a 1,484-pair table — and renaming them
 into a shared entry would have moved the emitted bytes of every
 caseless-backreference artifact ever built. `pcrec_enc_has_entry` is the

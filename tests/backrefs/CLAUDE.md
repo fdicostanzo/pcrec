@@ -175,7 +175,7 @@ comment and the row's header.
   ASCII fold exists TWICE and cannot be made to exist once (a parse-time class
   widener; match-time arithmetic in the encoding residual), so this walks all
   65,536 ordered byte pairs comparing the SHIPPED
-  `rx_bref_match_caseless` — compiled out of an artifact pcrec actually
+  `rx_span_match_caseless` — compiled out of an artifact pcrec actually
   emitted — against `pcrec_ascii_fold`, which `cls_casefold` derives from.
   Neither side can be edited into agreement with the other.
 - **fold_agreement_utf8_check.c** — the same obligation for the `utf8`

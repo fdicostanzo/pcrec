@@ -83,27 +83,6 @@
 typedef struct {
     unsigned    id;              /* PCREC_ENCE_* below */
     bool        engine_callable; /* may an engine body call it? */
-    /* [VAR] OTHER ENTRIES THIS ONE'S TEXT DEPENDS ON, as a mask, or 0.
-     *
-     * WHY A COLUMN AND NOT A RULE IN THE EMITTER. Module `vars`' caseless
-     * compare is the same decode-and-fold walk the caseless BACKREFERENCE
-     * compare is, one operand over — so under `utf8` its residual text calls
-     * that entry's own `$_bref_ci_decode`/`$_bref_ci_fold` helpers rather
-     * than carrying a second copy of a 1,484-pair table, and under `byte`
-     * (where the fold is two lines of arithmetic) it depends on nothing.
-     * WHICH of those is true is a fact about a BACKEND'S TEXT, so the
-     * backend states it, exactly as `engine_callable` above is a fact about
-     * an entry rather than about any artifact. The alternative — an
-     * implication written into `src/gen/emit_vm.c` — would be the emitter
-     * knowing something about an encoding's residual, which DD-12 (7)
-     * forbids outright.
-     *
-     * The dependency is CLOSED ONCE by `pcrec_enc_mask_close` before the
-     * mask reaches either emit function, so a row may name a row that names
-     * another. Cost to every artifact that existed before this column:
-     * NOTHING — every pre-existing row declares 0 and the closure is then
-     * the identity. */
-    unsigned    requires;
     /* [EMIT-VERB] (D112) EACH TEXT BLOB IS A PAIR: the entry's DOC-COMMENT
      * and the C it documents, as two constants rather than one. The
      * `-fno-comments` gate is a render-time decision over comment EVENTS
@@ -129,12 +108,26 @@ enum {
     /* Always in the mask: docs/spec/match_api.md §3.1 promises it
      * unconditionally and tests/codegen's K27 fixture calls it directly. */
     PCREC_ENCE_NEXT_POS       = 1u << 0,
-    /* In the mask only when the artifact contains a backreference of that
-     * caselessness — two entries rather than one with a flag, because D18/D23
-     * say an option compiles away and D23 MEASURED a runtime fold indirection
-     * costing 26% on a pattern with no letters in it. */
-    PCREC_ENCE_BREF           = 1u << 1,
-    PCREC_ENCE_BREF_CASELESS  = 1u << 2,
+    /* THE RUNTIME SPAN COMPARE, and it is ONE PAIR SERVING TWO CONSTRUCTS
+     * (Frank's ruling, 2026-09-23). In the mask when the artifact contains a
+     * BACKREFERENCE or a `${...}` VARIABLE of that caselessness.
+     *
+     * NAMED `SPAN` AND NOT `BREF`, because the operand shape stopped being
+     * span-source-specific. The entry takes the reference side as a POINTER
+     * AND A LENGTH rather than a pair of offsets into the subject, so a
+     * backreference passes `subject + start, end - start` and a variable
+     * passes the caller's own resolved `(p, len)` — and there is nothing
+     * left in the contract that says "backreference". `variables_pattern.md`
+     * §1.3 first proposed a SIBLING pair for the variable and said in the
+     * same paragraph that its body is this one's "with `s[ref_start + i]`
+     * replaced by `v[i]`": two bodies differing only in how they index the
+     * reference side are one function with the wrong operand shape.
+     *
+     * TWO ENTRIES RATHER THAN ONE WITH A FLAG, still: D18/D23 say an option
+     * compiles away, and D23 MEASURED a runtime fold indirection costing 26%
+     * on a pattern with no letters in it. */
+    PCREC_ENCE_SPAN           = 1u << 1,
+    PCREC_ENCE_SPAN_CASELESS  = 1u << 2,
     /* [M6.6.2 wave D] In the mask only when the artifact contains a
      * LOOKBEHIND. D58 named this entry before it existed — see the "ROAD NOT
      * TAKEN" paragraph above, which predicted it by name as the reason the
@@ -145,19 +138,6 @@ enum {
      * untouched, both emit functions are untouched, and the third-encoding
      * recipe in this header is unchanged. */
     PCREC_ENCE_BACK_STEP      = 1u << 3,
-    /* [VAR] In the mask only when the artifact contains a `${...}` variable
-     * of that caselessness — the same two-entries-not-one-with-a-flag rule
-     * the backreference pair above states, for the same D18/D23 reason.
-     *
-     * A SEPARATE PAIR RATHER THAN A WIDER `bref_match`, and the reason is the
-     * BUFFER: a backreference's two operands are both slices of the SUBJECT,
-     * so its entry takes one pointer and two offsets; a variable's second
-     * operand is the CALLER's own buffer, so this entry takes a pointer and a
-     * length. Adding the value pair to the existing entry would have changed
-     * `$_bref_match`'s signature in every artifact that has ever carried one.
-     * `variables_pattern.md` §1.3. */
-    PCREC_ENCE_VAR            = 1u << 4,
-    PCREC_ENCE_VAR_CASELESS   = 1u << 5,
     /* [VAR] IS A CALLER-SUPPLIED VALUE WELL FORMED UNDER THIS ENCODING? In
      * the mask only when the artifact carries a variable AND this backend has
      * an answer — which is the whole mechanism, because a backend under which
@@ -171,7 +151,7 @@ enum {
      * NOT `engine_callable`: it is called from the entry wrapper's
      * once-per-call resolution, never from an engine body, so the [M5-SEAM]
      * check's rule applies to it exactly as it does to `next_pos`. */
-    PCREC_ENCE_VAR_VALID      = 1u << 6
+    PCREC_ENCE_VAR_VALID      = 1u << 4
 };
 
 typedef struct {
@@ -380,12 +360,6 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
  * string is valid has no row, and "no row" is the answer. */
 bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
 
-/* [VAR] Close `mask` under every entry's own `requires` column and return the
- * result. Called ONCE, where the artifact's mask is finished and before it
- * reaches either emit function, so no emitter has to know which entries lean
- * on which. Identity for a mask naming only rows that require nothing, which
- * is every row that existed before the column did. */
-unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask);
 
 /* Copy `text` into `sb`, replacing every `$` with `prefix`. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);

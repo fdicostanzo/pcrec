@@ -1076,7 +1076,7 @@ struct Ast {
              * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
              * because the operand is subject text not known until the match runs. So
              * this field selects WHICH residual seam entry the emitter calls
-             * (`$_bref_match` or `$_bref_match_caseless`) — two entries chosen at emit
+             * (`$_span_match` or `$_span_match_caseless`) — two entries chosen at emit
              * time, never one entry with a runtime flag, which is D18/D23's rule that
              * an option compiles away.
              *
@@ -3829,7 +3829,7 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * where the full account lives. `pcrec_ascii_fold[c]` is c's case PARTNER, or
  * c itself when it has none. `cls_casefold` derives its class widening from
  * it, and `tests/backrefs/fold_agreement_check.c` asserts the SHIPPED
- * `$_bref_match_caseless` residual entry induces the identical partition over
+ * `$_span_match_caseless` residual entry induces the identical partition over
  * all 65,536 byte pairs. Two spellings of one fact, with a mechanism between
  * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];

@@ -2280,8 +2280,8 @@ comment and a residual NAME inside one is not counted as a call, and runs
 BEFORE head-detection and the column-0 brace rules — because a comment can
 otherwise contain something that looks like a definition head or a `}` at
 column 0 and desynchronise the `inbody` tracking. Matching is at TOKEN
-boundaries, not substring: `rx_bref_match` is a proper prefix of
-`rx_bref_match_caseless`, and a substring rule would count every caseless call
+boundaries, not substring: `rx_span_match` is a proper prefix of
+`rx_span_match_caseless`, and a substring rule would count every caseless call
 as a case-sensitive one and pass with the emitter wired backwards.
 
 **Every failing direction was demonstrated before the check was trusted**: a

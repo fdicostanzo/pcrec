@@ -1140,7 +1140,7 @@ residual_names() {
             sub(/\(.*/, "", line)
             sub(/^.*[^A-Za-z0-9_]/, "", line)
             # THE FIXED SURFACE, BY EXACT NAME. A suffix rule was tried and
-            # is WRONG: `rx_bref_match` ends in `_match`, so a `_match$`
+            # is WRONG: `rx_span_match` ends in `_match`, so a `_match$`
             # exclusion silently swallows a residual entry and the check
             # reports the mask SHRINKING — a false red that reads exactly
             # like the defect it exists to find. The fixture set is `rx`-
@@ -1164,8 +1164,8 @@ residual_names() {
 # and a demo `main()` doing find-all through `<prefix>_next_pos` would be the
 # documented caller protocol rather than a violation of it.
 #
-# TOKEN, not substring: `rx_bref_match` is a proper prefix of
-# `rx_bref_match_caseless`, so a substring rule would count every caseless call
+# TOKEN, not substring: `rx_span_match` is a proper prefix of
+# `rx_span_match_caseless`, so a substring rule would count every caseless call
 # as a case-sensitive one and both fixtures would pass with the emitter wired
 # backwards.
 # [M6.6.2 wave D] AN OPTIONAL THIRD ARGUMENT, `$3`, NAMES THE FUNCTION WHOSE
@@ -1267,7 +1267,7 @@ while IFS=$'\t' read -r nm pat extra decl; do
     nback=0
     for pair in $(printf '%s' "$decl" | tr ',' ' '); do
         want_set="$want_set rx_${pair%%:*}"
-        case "${pair%%:*}" in bref_match|bref_match_caseless) nbref=$((nbref + 1)) ;; esac
+        case "${pair%%:*}" in span_match|span_match_caseless) nbref=$((nbref + 1)) ;; esac
         case "${pair%%:*}" in back_step) nback=$((nback + 1)) ;; esac
     done
     want_set="$(printf '%s\n' $want_set | LC_ALL=C sort -u | tr '\n' ' ')"
@@ -1339,6 +1339,13 @@ while IFS=$'\t' read -r nm pat extra decl; do
     # is regex syntax the fixture patterns need — and the count column is a
     # HUMAN-WRITTEN integer, never derived: see this block's header for the
     # `(a)\10` / `(a)\18` cells that a pattern scanner would get wrong.
+    #
+    # [VAR ruling, 2026-09-23] THE HEREDOC BELOW IS UNQUOTED, so a `${v}` in a
+    # fixture pattern is PARAMETER EXPANSION and not pattern text — the three
+    # `vars` rows write `\${v}`, which this heredoc delivers as `${v}`. The
+    # first draft did not, and the script died at `v: unbound variable` under
+    # `set -u`, which is the loud version of this mistake; the quiet version
+    # (an unset variable expanding to nothing) is what `set -u` is on for.
 done <<EOF
 residmemchr	a(b|c)+d	--no-captures	next_pos:0
 residbitmap	[ab]c[de]	--no-captures	next_pos:0
@@ -1346,17 +1353,20 @@ residanchor	^ab(c|d)	--no-captures	next_pos:0
 residvm	a(b|c)+d	-	next_pos:0
 residvmonly	(x)(a|bc)+d	--engine=vm	next_pos:0
 residmain	a(b|c)+d	--emit-main	next_pos:0
-residbref1	(a|b)\1	--features backrefs	next_pos:0,bref_match:1
-residbref3	(a)(b)\2\1\2	--features backrefs	next_pos:0,bref_match:3
-residbrefci	(?i:(a))(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match_caseless:1
-residbrefboth	(a)\1(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match:1,bref_match_caseless:1
+residbref1	(a|b)\1	--features backrefs	next_pos:0,span_match:1
+residbref3	(a)(b)\2\1\2	--features backrefs	next_pos:0,span_match:3
+residbrefci	(?i:(a))(?i:\1)	--features backrefs,modifiers	next_pos:0,span_match_caseless:1
+residbrefboth	(a)\1(?i:\1)	--features backrefs,modifiers	next_pos:0,span_match:1,span_match_caseless:1
 residlb1	(?<=ab)c	--features lookaround	next_pos:0,back_step:1
 residlb2	(?<=a|bc)x	--features lookaround	next_pos:0,back_step:2
 residlb3	(?<=a|bc|def)x	--features lookaround	next_pos:0,back_step:3
 residlbneg	(?<!ab|cd)x	--features lookaround	next_pos:0,back_step:2
 residlbna	(?<*a|bc)x	--features lookaround	next_pos:0,back_step:2
 residlbtwo	(?<=ab)(?<=b)c	--features lookaround	next_pos:0,back_step:2
-residlbbref	(a)(?<=a)\1	--features backrefs,lookaround	next_pos:0,bref_match:1,back_step:1
+residlbbref	(a)(?<=a)\1	--features backrefs,lookaround	next_pos:0,span_match:1,back_step:1
+residvar	^\${v}$	--features vars	next_pos:0,span_match:1
+residvarci	^(?i)\${v}$	--features vars,modifiers	next_pos:0,span_match_caseless:1
+residvarbref	(a)\1\${v}	--features vars,backrefs	next_pos:0,span_match:2
 EOF
 # THE SCOPED NON-VACUITY GUARD, EXACT AND NOT A FLOOR (R32 C2(b), and the
 # final re-check's wording item 1). The GLOBAL guard below cannot serve here:
@@ -1369,8 +1379,22 @@ EOF
 # declaration — which is the population-shrinking failure the guard exists to
 # catch, arriving through the guard itself. EXACT is this file's own
 # convention (check_class_ports, check_class_syntax_reach).
-if [ "$resid_brefdecl" -ne 5 ]; then
-    bad "[M5-SEAM/D58]: $resid_brefdecl fixtures declare a backreference residual entry, expected EXACTLY 5 — the population this check's second entry pair is asserted over moved. Deleting a fixture row must go RED here, which is the whole reason this guard is not the global one below"
+# [VAR ruling, 2026-09-23] 5 -> 8, AND WHAT THE COUNT MEANS CHANGED WITH IT.
+# The second entry pair is no longer "the backreference compare": it is the
+# RUNTIME SPAN COMPARE, one pair serving a backreference AND a `${name}`
+# variable, taking the reference side as a pointer and a length so both fit
+# (`variables_pattern.md` §1.3's [RATIFIED] correction). The three new
+# fixtures are the variable's own three shapes — case-sensitive, caseless,
+# and one artifact carrying BOTH constructs, which declares `span_match:2`
+# and is the cell that says the sharing is real rather than two entries with
+# one name.
+#
+# THE EXACT-NOT-FLOOR ARGUMENT IS UNCHANGED and now has a second edge: with
+# two constructs feeding one entry, a floor would also let the whole VARIABLE
+# half of the population vanish while the backreference half kept it
+# satisfied.
+if [ "$resid_brefdecl" -ne 8 ]; then
+    bad "[M5-SEAM/D58]: $resid_brefdecl fixtures declare a runtime span-compare residual entry, expected EXACTLY 8 — the population this check's second entry pair is asserted over moved. Deleting a fixture row must go RED here, which is the whole reason this guard is not the global one below. Since the [VAR] ruling that pair serves BOTH a backreference and a \${name} variable, so this count spans two constructs and a floor would let either half vanish"
 fi
 # [M6.6.2 wave D] THE SAME GUARD FOR THE FOURTH ENTRY, WITH ITS OWN LITERAL,
 # and it is a SECOND guard rather than a wider first one — lookaround_design.md
@@ -1397,7 +1421,7 @@ fi
 if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
     bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
 elif [ "$resid_bad" -eq 0 ]; then
-    ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare, $resid_backdecl a lookbehind back-step, each population guarded by its own EXACT literal; comment stripping is token-level and runs before the body tracking)"
+    ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a runtime span compare — backreference or \${name} variable, one entry pair since the [VAR] ruling — $resid_backdecl a lookbehind back-step, each population guarded by its own EXACT literal; comment stripping is token-level and runs before the body tracking)"
 fi
 
 # ---- [M6.5-DUPNAMES] THE REFLECTION TABLE'S ORDER, READ OFF THE ARTIFACT ---

@@ -305,7 +305,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   matcher has no flag, no branch and no `tolower()` (D23). A caseless
   BACKREFERENCE cannot fold at parse time — its operand is subject text nobody
   has seen — so the fold appears a second time inside the encoding residual
-  `$_bref_match_caseless` (src/enc/enc_byte.c), which is TEXT compiled by
+  `$_span_match_caseless` (src/enc/enc_byte.c), which is TEXT compiled by
   someone else's toolchain and cannot call a `static` function here. Two
   spellings of one fact with nothing between them is the shape this project
   keeps cataloguing; this table is what

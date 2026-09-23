@@ -2027,9 +2027,9 @@ the bump's own commit.**
   below-the-floor code and `PCREC_ERR_STARTPOS`'s shape exactly (a caller
   REFUSAL: nothing attempted, `caps` untouched); and TWO members appended to
   `rx_info` (`const char *const *vars; int nvars;`), the variable-NAME table on
-  `rx_info.groups`' model. **A var-free artifact's whole change is the `abi`
-  digit (a same-length substitution) and those two `rx_info` initializer
-  lines — MEASURED at exactly +34 bytes on four witnesses spanning 13 KB to
+  `rx_info.groups`' model. **A var-free AND backreference-free artifact's whole
+  change is the `abi` digit (a same-length substitution) and those two
+  `rx_info` initializer lines — MEASURED at exactly +34 bytes on four witnesses spanning 13 KB to
   762 KB at the same `-o` basename, six changed lines each and no emitted
   program byte among them.** On a VAR-BEARING artifact only: `<PREFIX>_NVARS`
   and one internal `<PREFIX>_VAR_<NAME>` index macro per name (the ARTIFACT's
@@ -2037,9 +2037,16 @@ the bump's own commit.**
   are passed BY NAME, because an index is meaningless across separately
   compiled artifacts); a `<prefix>_var_names[]` table `rx_info.vars` points
   at; a `<prefix>_vars_resolve` static that scans the caller's array ONCE PER
-  CALL and evaluates each distinct expansion; the encoding seam's fifth and
-  sixth residual entries `$_var_match`/`$_var_match_caseless` and, under a
-  multi-byte encoding, a seventh, `$_var_valid`; and a trailing
+  CALL and evaluates each distinct expansion; **no new compare entry at all** — the
+  encoding seam's existing pair is GENERALISED and RENAMED
+  `$_span_match`/`$_span_match_caseless`, taking the reference side as a
+  POINTER AND A LENGTH instead of a pair of offsets, so ONE pair serves a
+  backreference (which passes `subject + start, end - start`) and a variable
+  (which passes the caller's resolved value); under a multi-byte encoding a
+  fifth entry `$_var_valid` joins them. **Every artifact carrying a
+  backreference therefore moves too**: its residual's NAME and signature
+  change, which is emitted text and is part of this bump rather than a
+  separate one; and a trailing
   `const rx_var *vars, size_t nvars` pair on `<prefix>_search` and its `_in`
   siblings — which are NOT `rx_ctx`-shaped and so cannot read the ctx,
   `<prefix>_search_in`'s own trailing-descriptor precedent (D18, §10.2), with

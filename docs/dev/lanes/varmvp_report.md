@@ -11,9 +11,52 @@ call. Contract: `docs/spec/vars.md`. M9 (the replacement side) is gated on
 
 ## §0 — FINDINGS FIRST
 
-Eight, in the order a reviewer should read them. Five are places the design
-set met the tree and lost; three are defects checks found on their first
+Nine, in the order a reviewer should read them. Six are places the design set
+met the tree and lost; three are defects checks found on their first
 populated run.
+
+### 0.0 The manager's M6 ruling, and the defect it exposed
+
+**RULED mid-flight (Frank, 2026-09-23 ~14:1x) and implemented after M10:** do
+not add `$_var_match` / `$_var_match_caseless` as siblings of
+`$_bref_match`. `variables_pattern.md` §1.3 proposed the siblings and
+**refuted itself in the same paragraph** — it says the variable body is the
+backreference body "with `s[ref_start + i]` replaced by `v[i]`", and two
+bodies differing only in how they index the reference side are ONE function
+with the wrong operand shape.
+
+The existing pair is generalised instead: the reference side becomes
+`const unsigned char *ref, size_t reflen`, a backreference passes
+`subject + start, end - start` (one line in `vm_bref`), a variable passes its
+resolved `(p, len)`. **Renamed `$_span_match` / `$_span_match_caseless`** on
+the ruling's own "rename if the spelling is span-source-specific" clause:
+`bref` names the backreference and nothing in the new contract does.
+
+**AND THE RENAME EXPOSED A DEFECT NOTHING ELSE WOULD HAVE.**
+`src/gen/emit_vm.c`'s `--emit-ir` listing derived `st.has_bref` from
+`v->enc_mask & (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)`. That bit is now
+`PCREC_ENCE_SPAN` and a `${name}` variable sets it, so the listing would have
+reported **"NO (backreference)" for a pattern that has none**. It reads
+`pcrec_has_bref(root)` now — the same source `select_engine.c` forces the
+prefilter off from, which is exactly what the neighbouring `has_call` line
+already does and says why. *A fact read off a shared bit stops being that
+fact the day the bit is shared, and nothing about the sharing makes a sound.*
+
+**TWO MECHANISMS WERE DELETED RATHER THAN KEPT.**
+`PcrecEncEntry.requires` and `pcrec_enc_mask_close` existed solely so the
+withdrawn sibling pair's utf8 caseless body could share the backreference
+entry's 1,484-pair fold map. With ONE caseless entry there is no cross-entry
+dependency and no customer, so both are gone (D77). `pcrec_enc_has_entry`
+survives; the validity entry still asks a question about the table.
+
+**IT IS AN EMITTED-TEXT EVENT FOR BACKREFERENCE-BEARING ARTIFACTS TOO**, and
+it rides the same `abi` 32 bump rather than a second one. The §0.8 identity
+measurement's scope narrows accordingly: +34 bytes is the change for an
+artifact carrying neither a variable nor a backreference.
+
+---
+
+The other eight follow.
 
 ### 0.1 A mechanical "join `A_BREF`'s case label" pass gets 42 of 43 right, and the wrong one is SILENT
 
@@ -270,6 +313,8 @@ with it).
 | `tests/resource/run_resource_tests.sh` | 762367 → 762401 (+34) |
 | `tests/codegen/manifests/m5_stage1_stamps.tsv` | all twelve rows +1001 |
 | `tests/codegen/run_cpset_structure.sh` CHECK 3 | the accounting note |
+| **the `bref_match` spelling, by grep** | 19 files: `run_encoding_checks.sh` (the signature regex, three count tables, the aggregate floors), `run_codegen_tests.sh` (the `[M5-SEAM]` fixture table and its two token rules), `run_backref_diff.sh` §9/§9b, both `fold_agreement*_check.c` (whose CALLS also take the new operand shape), S106/S109/S116, and six CLAUDE.md files |
+| `tests/codegen/run_codegen_tests.sh` `[M5-SEAM]` | three `vars` fixtures added; `resid_brefdecl` 5 → 8, and **what the count MEANS changed with it** — the pair is now the runtime span compare serving two constructs, so a floor would let either half vanish |
 
 **Found by the suites and NOT by the grep:** the resource and cpset pins
 cite byte COUNTS and no abi digit — `battriage_report.md`'s SECOND READER
@@ -368,15 +413,20 @@ The section's own reserved-with-no-producer precedent (`VE_ISLAND`,
 reads, which is most likely the replacement side (M9), whose template
 rendering has more to say in a listing than a single span compare does.
 
-**The `[M5-SEAM]` fixture rows** for `var_match`/`var_match_caseless`
-(`variables_pattern.md` §4.3's named site). The two new entries are
-engine-callable and appear in var-bearing artifacts; the check's fixture
-table asserts an entry set FROM THE TEST with exact per-family population
-pins. **OWED**, and named here rather than left to be discovered: adding a
-var fixture moves that table's entry-set assertion and its exact pin, which
-is a re-pin this lane did not take because the fixture set is the check's
-own and a wrong pin there is worse than a missing row. `run_codegen_tests.sh`
-is green today because no fixture carries a variable.
+**The `[M5-SEAM]` fixture rows** — **DONE, and the M6 ruling is why it got
+cheap.** `variables_pattern.md` §4.3 named this as a site the abi grep does
+not reach, and it was owed while the design had TWO new entries needing their
+own per-family pin. With ONE generalised pair there is no new entry at all:
+three `vars` fixtures join the existing table (case-sensitive, caseless, and
+one artifact carrying a backreference AND a variable, which declares
+`span_match:2` and is the cell that says the sharing is real rather than two
+entries with one name), and `resid_brefdecl` re-pins 5 → 8. A ruling that
+removed a mechanism removed its check obligation with it.
+
+**One thing the fixture table taught:** its heredoc is UNQUOTED, so `${v}` in
+a fixture pattern is parameter expansion and not pattern text. The script
+died at `v: unbound variable` under `set -u` — the loud version. The quiet
+version, an unset variable expanding to nothing, is what `set -u` is on for.
 
 ---
 

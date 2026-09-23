@@ -149,6 +149,13 @@ A var-bearing pattern compiles to the **VM engine only**, and gets **no DFA
 prefilter**: determinization cannot see bytes that do not exist until the
 call. The DFA route for variables is a separate, unstarted effort.
 
+A variable and a backreference share ONE encoding-seam compare
+(`$_span_match` / `$_span_match_caseless`): both hand it a runtime span as a
+pointer and a length, and the only difference is where those bytes live —
+inside the subject for a backreference, in the caller's own buffer for a
+variable. That is not a detail a caller can observe, and it is stated here
+only because an artifact's emitted residual names it.
+
 **Caseless works**, including the length-changing case. Under `-e utf8` a
 value of `k` matches U+212A KELVIN SIGN, consuming three subject bytes
 against one value byte, exactly as a caseless backreference does. The value

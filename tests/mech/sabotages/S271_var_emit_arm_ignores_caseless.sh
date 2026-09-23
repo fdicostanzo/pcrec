@@ -34,6 +34,11 @@ SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED — tests/vars/caseless.rxt's case
 SAB_REACH='"$PCREC" --features vars,modifiers -p rx -o "$REACH_TMP/o.c" --pattern "(?i)\${v}" && grep -q "rx_var_match_caseless" "$REACH_TMP/o.c" && echo REACH-VAR-CASELESS-ENTRY-EMITTED'
 SAB_REACH_EXPECT="REACH-VAR-CASELESS-ENTRY-EMITTED"
 SAB_COUNT=1
-SAB_BEFORE='    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_VAR_CASELESS
-                                                  : PCREC_ENCE_VAR;'
-SAB_AFTER='    const unsigned seam_entry = PCREC_ENCE_VAR;   /* SABOTAGE S271: the field is not read */'
+# [VAR ruling, 2026-09-23] ANCHOR RE-DERIVED FROM THE LIVE SOURCE: the bits
+# are the GENERALISED span compare's, shared with the backreference, since the
+# manager ruled the sibling entry out. The plant is UNCHANGED in meaning --
+# `Ast.u.var.caseless` stops being read and every variable routes through the
+# case-SENSITIVE compare.
+SAB_BEFORE='    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_SPAN_CASELESS
+                                                  : PCREC_ENCE_SPAN;'
+SAB_AFTER='    const unsigned seam_entry = PCREC_ENCE_SPAN;   /* SABOTAGE S271: the field is not read */'

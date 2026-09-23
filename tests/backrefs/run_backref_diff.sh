@@ -639,7 +639,7 @@ fi
 # ---- §9 THE 256-BYTE FOLD AGREEMENT CHECK (§4.1, R32 E8) ----------------
 # pcrec's caseless fold exists TWICE and cannot be made to exist once: as the
 # class widener `cls_casefold` applies at PARSE time (D23), and as arithmetic
-# inside the encoding residual `$_bref_match_caseless` at MATCH time, because
+# inside the encoding residual `$_span_match_caseless` at MATCH time, because
 # a backreference's operand is subject text nobody has seen at compile time.
 # Two spellings of one fact with nothing between them is this project's named
 # failure shape pointed the other way, and `tests/backrefs/fold_agreement_check.c`
@@ -649,8 +649,8 @@ FOLD="$WORKDIR/fold"; mkdir -p "$FOLD"
 if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" --pattern '(?i:(.))(?i:\1)' \
         >/dev/null 2>"$FOLD/pc.log"; then
     bad "§9: pcrec refused the caseless-backreference fixture: $(head -1 "$FOLD/pc.log")"
-elif ! grep -q 'rx_bref_match_caseless' "$FOLD/gen.h"; then
-    bad "§9: the fixture artifact carries no rx_bref_match_caseless entry — this check has lost the thing it compares against, which is exactly the empty-population shape it exists to avoid"
+elif ! grep -q 'rx_span_match_caseless' "$FOLD/gen.h"; then
+    bad "§9: the fixture artifact carries no rx_span_match_caseless entry — this check has lost the thing it compares against, which is exactly the empty-population shape it exists to avoid"
 elif ! $CC $GENCFLAGS -I"$FOLD" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
         -o "$FOLD/chk" "$SCRIPT_DIR/fold_agreement_check.c" "$FOLD/gen.c" \
         "$LIBA" 2>"$FOLD/cc.log"; then
@@ -677,8 +677,8 @@ FOLDU="$WORKDIR/foldu"; mkdir -p "$FOLDU"
 if ! pcrec_run "$PCREC" -p rx -e utf8 --features "$FEATS" -o "$FOLDU/gen.c" \
         --pattern '(?i:(.))(?i:\1)' >/dev/null 2>"$FOLDU/pc.log"; then
     bad "§9b: pcrec refused the caseless-backreference fixture under -e utf8: $(head -1 "$FOLDU/pc.log")"
-elif ! grep -q 'rx_bref_match_caseless' "$FOLDU/gen.h"; then
-    bad "§9b: the utf8 fixture artifact carries no rx_bref_match_caseless entry — this check has lost the thing it compares against"
+elif ! grep -q 'rx_span_match_caseless' "$FOLDU/gen.h"; then
+    bad "§9b: the utf8 fixture artifact carries no rx_span_match_caseless entry — this check has lost the thing it compares against"
 elif ! $CC $GENCFLAGS -I"$FOLDU" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
         -o "$FOLDU/chk" "$SCRIPT_DIR/fold_agreement_utf8_check.c" \
         "$FOLDU/gen.c" "$LIBA" 2>"$FOLDU/cc.log"; then

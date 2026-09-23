@@ -8178,12 +8178,12 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
     const char *fn;
     /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
      * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
-     * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
+     * emitted the label `PCREC_ENCE_SPAN` (2) instead of the caller's, so
      * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
      * not compile. Caught by the corpus within one run; recorded because
      * `-Wall -Wextra` does not include `-Wshadow`. */
-    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_BREF_CASELESS
-                                            : PCREC_ENCE_BREF;
+    const unsigned seam_entry = a->u.bref.caseless ? PCREC_ENCE_SPAN_CASELESS
+                                            : PCREC_ENCE_SPAN;
     /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
      * EMITTED, and this is `engine_callable`'s one consumer on the compile
      * path (enc.h). DD-12 (7) forbids the matching machinery from
@@ -8206,7 +8206,7 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
                  "not declared engine-callable, so it cannot be routed "
                  "through the seam from an engine body");
     v->enc_mask |= seam_entry;
-    fn = vm_rolef(v, "%s_bref_match%s", v->p,
+    fn = vm_rolef(v, "%s_span_match%s", v->p,
                   a->u.bref.caseless ? "_caseless" : "");
     vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
                               a->u.bref.nrefs == 1 ? "one group" : "a name-run",
@@ -8231,8 +8231,14 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
     pcrec_sb_cmt_close(bb);
     pcrec_sb_printf(bb,
         "        if (ref_start == PCREC_UNSET) goto %s_fail;\n"
+        /* [VAR ruling, 2026-09-23] THE REFERENCE SIDE IS A POINTER AND A
+         * LENGTH, which is what lets one seam entry serve this construct and
+         * a `${name}` variable both. A backreference's bytes are a slice of
+         * the subject, so the slice is spelled here rather than the entry
+         * being told to index into `s` itself. */
         "        took = %s(subject, subject_length,\n"
-        "                  (size_t)ref_start, (size_t)ref_end,\n"
+        "                  subject + (size_t)ref_start,\n"
+        "                  (size_t)(ref_end - ref_start),\n"
         "                  scan_position);\n",
         v->p, fn);
     vm_ev(v, VE_FAIL, 0, 0, NULL);
@@ -8275,8 +8281,8 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
 static void vm_var(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *bb = v->b;
-    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_VAR_CASELESS
-                                                  : PCREC_ENCE_VAR;
+    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_SPAN_CASELESS
+                                                  : PCREC_ENCE_SPAN;
     /* `vm_bref`'s own rule, one construct over: the BACKEND's declaration is
      * consulted before the call is emitted, so a backend whose variable
      * compare is not engine-callable fails HERE and by name rather than two
@@ -8284,11 +8290,11 @@ static void vm_var(Vm *v, int entry, const Ast *a, int next)
     if (!pcrec_enc_entry_engine_callable(
             pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
         pcrec_ctx_fail(v->cx, 0,
-                 "internal error: this encoding's variable compare is not "
-                 "declared engine-callable, so it cannot be routed through "
-                 "the seam from an engine body");
+                 "internal error: this encoding's runtime span compare is "
+                 "not declared engine-callable, so it cannot be routed "
+                 "through the seam from an engine body");
     v->enc_mask |= seam_entry;
-    const char *fn = vm_rolef(v, "%s_var_match%s", v->p,
+    const char *fn = vm_rolef(v, "%s_span_match%s", v->p,
                               a->u.var.caseless ? "_caseless" : "");
     vm_lbl(v, entry, vm_rolef(v, "caller variable %s%s",
                               pcrec_varexp_render(&v->cx->arena, a->u.var.exp),
@@ -13161,8 +13167,21 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl, Ast *ro
         /* [OPT-4.2] its rungless twin, the same rule. */
         st.prefilter_declined_nullable_default =
             job->fit.prefilter_declined_nullable_default;
-        st.has_bref  = (v->enc_mask &
-                        (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
+        /* [VAR ruling, 2026-09-23] THE AST PREDICATE, NOT THE MASK BIT, and
+         * the rename that generalised the seam entry is what exposed this.
+         * The bit used to be `PCREC_ENCE_BREF` and meant exactly what this
+         * field is named for; it is now `PCREC_ENCE_SPAN` and is set by a
+         * `${name}` VARIABLE too, so reading it here would make the listing
+         * report "NO (backreference)" for a pattern that has none.
+         *
+         * `pcrec_has_bref` is the one source `select_engine.c` forces the
+         * prefilter off from, so the listing now reports the SAME fact
+         * rather than a second derivation of it — which is precisely what
+         * the `has_call` line below already says for its own construct, and
+         * why that line reads a predicate rather than a bit. A FACT READ OFF
+         * A SHARED BIT STOPS BEING THAT FACT THE DAY THE BIT IS SHARED, and
+         * nothing about the sharing makes a sound. */
+        st.has_bref  = pcrec_has_bref(root);
         /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a
          * call has no residual encoding entry to leave a bit in. The AST
          * predicate is the one source `select_engine.c` forces the prefilter

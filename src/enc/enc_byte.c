@@ -108,12 +108,21 @@ static const char defs_byte[] =
  * ENGINE-CALLABLE, unlike `next_pos`, and the seam's check reads that off the
  * row rather than from a list of its own — see `engine_callable` in enc.h. */
 static const char decls_bref_doc[] =
-"/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
-" * backreference compare (pcrec DD-12/D58).\n"
+"/* $_span_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE compare\n"
+" * of a RUNTIME SPAN against the subject (pcrec DD-12/D58).\n"
 " *\n"
-" * PRECONDITION: ref_start <= ref_end <= n. The caller passes a PUBLISHED\n"
-" * capture pair, and a published pair is ordered BY CONSTRUCTION -- the start\n"
-" * was recorded before the group's body ran and the end after it.\n"
+" * ONE ENTRY, TWO CONSTRUCTS. A BACKREFERENCE passes a slice of the subject\n"
+" * itself (`s + start, end - start`); a ${name} VARIABLE passes the bytes the\n"
+" * CALLER supplied for that name. The reference side is a POINTER AND A\n"
+" * LENGTH rather than a pair of offsets precisely so both fit: the two\n"
+" * compares differ only in where the reference bytes live, which is not a\n"
+" * difference a matcher can see.\n"
+" *\n"
+" * PRECONDITION: ref points at reflen readable bytes. For a backreference\n"
+" * that is STRUCTURAL -- a published capture pair is ordered by construction,\n"
+" * the start recorded before the group's body ran and the end after it. For a\n"
+" * variable it is CALLER DATA, checked once per call at the entry wrapper\n"
+" * (a NULL value is PCREC_ERR_UNSET_VAR before the match begins).\n"
 " *\n"
 " * RETURNS, and the sign carries two different facts:\n"
 " *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not\n"
@@ -133,29 +142,28 @@ static const char decls_bref_doc[] =
 " * another encoding exports this same entry with that encoding's body. */\n";
 
 static const char decls_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at);\n";
 
 static const char defs_bref_doc[] =
 "/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
 " * a prefix count. */\n";
 
 static const char defs_bref[] =
-"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
-"                       size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match(const unsigned char *s, size_t n,\n"
+"                       const unsigned char *ref, size_t reflen, size_t at)\n"
 "{\n"
-"    size_t need = ref_end - ref_start;\n"
 "    size_t i;\n"
-"    for (i = 0; i < need; i++) {\n"
-"        if (at + i >= n || s[at + i] != s[ref_start + i])\n"
+"    for (i = 0; i < reflen; i++) {\n"
+"        if (at + i >= n || s[at + i] != ref[i])\n"
 "            return -(ptrdiff_t)i - 1;\n"
 "    }\n"
-"    return (ptrdiff_t)need;\n"
+"    return (ptrdiff_t)reflen;\n"
 "}\n";
 
 static const char decls_bref_ci_doc[] =
-"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
-" * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
+"/* $_span_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * runtime-span compare (pcrec DD-12/D58): $_span_match, folding case.\n"
 " *\n"
 " * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
 " * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"
@@ -163,8 +171,9 @@ static const char decls_bref_ci_doc[] =
 " * about a locale the caller owns and pcrec does not. */\n";
 
 static const char decls_bref_ci[] =
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at);\n";
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at);\n";
 
 static const char defs_bref_ci_doc[] =
 "/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
@@ -172,133 +181,21 @@ static const char defs_bref_ci_doc[] =
 " * answers must not change with setlocale(). */\n";
 
 static const char defs_bref_ci[] =
-"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
-"                                size_t ref_start, size_t ref_end, size_t at)\n"
+"ptrdiff_t $_span_match_caseless(const unsigned char *s, size_t n,\n"
+"                                const unsigned char *ref, size_t reflen,\n"
+"                                size_t at)\n"
 "{\n"
-"    size_t need = ref_end - ref_start;\n"
 "    size_t i;\n"
-"    for (i = 0; i < need; i++) {\n"
+"    for (i = 0; i < reflen; i++) {\n"
 "        unsigned char x, y;\n"
 "        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
 "        x = s[at + i];\n"
-"        y = s[ref_start + i];\n"
+"        y = ref[i];\n"
 "        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
 "        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
 "        if (x != y) return -(ptrdiff_t)i - 1;\n"
 "    }\n"
-"    return (ptrdiff_t)need;\n"
-"}\n";
-
-/* ---- entries 5 and 6: the CALLER-VARIABLE COMPARE ([VAR], D58 scope item 3)
- *
- * `variables_pattern.md` §1.3. A pattern variable is a backreference whose
- * span comes from the CALLER instead of from `slot_values[]`, so this pair is
- * the `$_bref_match` pair with one operand's source changed: a pointer and a
- * length in place of two offsets into the subject. Same return protocol, byte
- * for byte, because the caller's work charge and its fail path are the same
- * code (`vm_var` in src/gen/emit_vm.c reuses `vm_bref`'s own charge line).
- *
- * WHY THE WELL-FORMEDNESS REFUSAL IS NOT HERE. `variables_common.md` §2.1
- * promises that a value which is not well-formed UTF-8 is a REFUSED CALL
- * under `-e utf8`, not a silent nomatch — and this entry's return space is
- * two-valued by sign, with no third value for "refuse" that would not break
- * the protocol the backreference pair already fixed. So the check runs ONCE
- * PER CALL in the entry wrapper, over the resolved value, before the match
- * begins; by the time either body below runs, its `v` is well formed. Under
- * `byte` there is nothing to check at all: every byte string is a valid
- * `byte` string by definition.
- *
- * ENGINE-CALLABLE, for `$_bref_match`'s reason exactly: a variable has no
- * automaton representation whatsoever, so forbidding the call would forbid
- * the construct. */
-static const char decls_var_doc[] =
-"/* $_var_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE compare\n"
-" * against a CALLER-SUPPLIED value (pcrec [VAR]).\n"
-" *\n"
-" * PRECONDITION: v points at vlen readable bytes. Unlike $_bref_match's\n"
-" * ordered capture pair, that is a fact about CALLER DATA rather than a\n"
-" * structural one -- the entry wrapper checks `p != NULL` and (under a\n"
-" * multi-byte encoding) well-formedness before the match begins, so by the\n"
-" * time this runs the value is one this encoding can compare.\n"
-" *\n"
-" * RETURNS, exactly as $_bref_match does:\n"
-" *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not\n"
-" *            equal vlen: under an encoding whose case folding is not\n"
-" *            length-preserving it may differ, which is why this entry\n"
-" *            returns a length rather than a bool.\n"
-" *     <  0   no match, and -(result) - 1 is the number of subject bytes\n"
-" *            that DID compare equal before the mismatch -- the WORK this\n"
-" *            call did, which the caller charges against its budget.\n"
-" *\n"
-" * Reads v only at offsets in [0, vlen) and s only at offsets in [at, n).\n"
-" *\n"
-" * THE VALUE'S BYTES ARE MATCHED AS THEMSELVES, never parsed as pattern\n"
-" * syntax, under any flag -- pcrec's injection boundary (variables_common.md\n"
-" * section 4.2). A caller interpolating untrusted input into a pattern can\n"
-" * rely on that.\n"
-" *\n"
-" * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
-" * character and the compare is length-preserving. */\n";
-
-static const char decls_var[] =
-"ptrdiff_t $_var_match(const unsigned char *s, size_t n,\n"
-"                      const unsigned char *v, size_t vlen, size_t at);\n";
-
-static const char defs_var_doc[] =
-"/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
-" * a prefix count. */\n";
-
-static const char defs_var[] =
-"ptrdiff_t $_var_match(const unsigned char *s, size_t n,\n"
-"                      const unsigned char *v, size_t vlen, size_t at)\n"
-"{\n"
-"    size_t i;\n"
-"    for (i = 0; i < vlen; i++) {\n"
-"        if (at + i >= n || s[at + i] != v[i])\n"
-"            return -(ptrdiff_t)i - 1;\n"
-"    }\n"
-"    return (ptrdiff_t)vlen;\n"
-"}\n";
-
-static const char decls_var_ci_doc[] =
-"/* $_var_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
-" * compare against a caller-supplied value (pcrec [VAR]): $_var_match,\n"
-" * folding case.\n"
-" *\n"
-" * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
-" * letters and nothing else, which is what an 8-bit non-UTF match does.\n"
-" *\n"
-" * THE VALUE IS NOT PRE-FOLDED, and that is a correctness matter rather than\n"
-" * a cost one: a fold is a relation between TWO sides, and the subject side\n"
-" * is not folded, so a pre-folded value would fail on every subject carrying\n"
-" * the other case. */\n";
-
-static const char decls_var_ci[] =
-"ptrdiff_t $_var_match_caseless(const unsigned char *s, size_t n,\n"
-"                               const unsigned char *v, size_t vlen,\n"
-"                               size_t at);\n";
-
-static const char defs_var_ci_doc[] =
-"/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
-" * tolower(): that is locale-dependent at YOUR run time, and this matcher's\n"
-" * answers must not change with setlocale(). */\n";
-
-static const char defs_var_ci[] =
-"ptrdiff_t $_var_match_caseless(const unsigned char *s, size_t n,\n"
-"                               const unsigned char *v, size_t vlen,\n"
-"                               size_t at)\n"
-"{\n"
-"    size_t i;\n"
-"    for (i = 0; i < vlen; i++) {\n"
-"        unsigned char x, y;\n"
-"        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
-"        x = s[at + i];\n"
-"        y = v[i];\n"
-"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
-"        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
-"        if (x != y) return -(ptrdiff_t)i - 1;\n"
-"    }\n"
-"    return (ptrdiff_t)vlen;\n"
+"    return (ptrdiff_t)reflen;\n"
 "}\n";
 
 /* ---- entry 4: the LOOKBEHIND BACK-STEP ([M6.6.2] wave D, D58 scope item 3;
@@ -316,7 +213,7 @@ static const char defs_var_ci[] =
  * [M5-SEAM] check is its ONLY possible detector, because inlining changes no
  * answer under THIS backend.
  *
- * THE RETURN PROTOCOL DIVERGES FROM ENTRY 2's, DELIBERATELY. `$_bref_match`
+ * THE RETURN PROTOCOL DIVERGES FROM ENTRY 2's, DELIBERATELY. `$_span_match`
  * returns a signed length whose sign carries a second fact — the compared
  * prefix, which the caller charges. A back-step's failure carries no second
  * fact: "fewer than k characters precede pos" is one bit, and the WORK the
@@ -366,23 +263,19 @@ static const char defs_back_step[] =
 "}\n";
 
 static const PcrecEncEntry entries_byte[] = {
-    { PCREC_ENCE_NEXT_POS,      false, 0,
+    { PCREC_ENCE_NEXT_POS,      false,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte      },
-    { PCREC_ENCE_BREF,          true,  0,
+    { PCREC_ENCE_SPAN,          true,
       decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref      },
-    { PCREC_ENCE_BREF_CASELESS, true,  0,
+    { PCREC_ENCE_SPAN_CASELESS, true,
       decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci   },
-    { PCREC_ENCE_BACK_STEP,     true,  0,
+    { PCREC_ENCE_BACK_STEP,     true,
       decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step },
-    /* [VAR] `requires` is 0 for BOTH: under `byte` the fold is two lines of
-     * arithmetic spelled inline, so neither variable compare leans on any
-     * other entry's text. The utf8 backend's caseless row is where the
-     * column earns its place. */
-    { PCREC_ENCE_VAR,           true,  0,
-      decls_var_doc,       decls_var,       defs_var_doc,       defs_var       },
-    { PCREC_ENCE_VAR_CASELESS,  true,  0,
-      decls_var_ci_doc,    decls_var_ci,    defs_var_ci_doc,    defs_var_ci    },
-    { 0, false, 0, NULL, NULL, NULL, NULL }
+    /* [VAR] NO `$_var_valid` ROW HERE, and the ABSENCE is the mechanism:
+     * every byte string is a valid `byte` string, so this backend has no
+     * answer to give and the emitter (asking `pcrec_enc_has_entry`) emits no
+     * check at all. `entries_utf8[]` carries one. */
+    { 0, false, NULL, NULL, NULL, NULL }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field). One byte is
