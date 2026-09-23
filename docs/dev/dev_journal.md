@@ -25214,3 +25214,18 @@ returned no row for date-nested-plus. Block (A) running detached (6h).
 regime 32.75% median on own subjects that are 5-93 byte hand literals (a
 per-call-overhead confound; 3 patterns clean above 50%). Next: larger
 match-regime subjects (bench data ask) before candidate (c) is ranked.
+
+**b1ledger MERGED (~08:5x, ead8bf62; one CLAUDE.md conflict with mbread's
+entry, both kept):** the O-45 reading — ANCHOR-VM MEETS 13/13, ENDWIN MEETS
+4/4, REQBYTE targets meet / carve-out clause FAILS, attributed to THREE
+rules (dominance 4 cells, admission 29, placement ~4) + a NULL BAND (56/187
+artifacts program-identical across the pin; 16 "regressions" with
+byte-identical __text, worst +8.46% at 35× IQR — D119's IQR is a
+within-window noise model, the comparison spans two windows). The cost
+model is exact once find-all calls are counted (winpath/email predicted
++23,120.8 ns, measured +23,103.5/+23,059.6). Dispositions recommended
+(pending Frank): ANCHOR-VM/ENDWIN default-on; REQBYTE default-on WITH the
+admission fix → proposed row [OPT-PRECHECK-ADMIT]. Exec summary written;
+I-93 (five executor blocks) sent. LESSONS: the `-o`-basename trap fired a
+fifth time (a POPULATION COUNT reading zero caught it); a bar's noise model
+must match the comparison's span (ask the bench for a null-control band).
