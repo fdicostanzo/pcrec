@@ -8123,3 +8123,37 @@ written — a `capability` cycle ends when every ranked cell (captures-vs-
 captures population) either sits within its own IQR band of its
 algorithmic scalar target or carries a recorded disposition. Cycle 2
 opens on the I-87 ledger (O-45) at pin 8d716693.
+
+## D120 — ONE ORGANIZED PATTERN-ANALYSIS RECORD, computed once and read by every step, replaces the ad-hoc per-pass walks; chartered on the two-customer trigger, timing TBD (Frank, 2026-09-22, seventy-seventh session)
+
+**Frank's direction, verbatim in substance.** "We are doing a bunch of
+analysis in various places. You are starting to use them in different
+locations but it's ad hoc. Let's consider a more organized method of
+analyzing the pattern such that various steps can access it. The usual
+two incidents have probably occurred to consider moving forward on this.
+Timing TBD."
+
+**The two incidents (the D77 trigger, named).** (1) `reqbyte.c`'s necessary
+set and `reqpos_2b.md`'s run are the SAME bottom-up walk with a second
+accumulator, beside `prefix_k.c`'s fixed-offset tier-1 analysis and
+`mrl.c`'s width analysis, each a separate pass over the lowered tree with
+its own exhaustive switch; (2) the byte-frequency prior
+(`pcrec_byte_freq_ppm`) now has THREE readers — [OPT-K]'s selection, the
+freq pick, 2b's `i` and window choice — reached by three call sites with
+the encoding rule restated at each (`reqbyte_freq_pick.md` §3). The
+pattern: each optimization discovers a fact about the pattern, computes it
+in its own file, and stores it in its own `Job` field; a later consumer
+either recomputes it or reaches across files for it.
+
+**What is chartered (not started).** A plan row ([PATFACTS]) whose first
+step is an INVENTORY, not a design: every analysis in the tree (file,
+question answered, tree level it walks — parsed vs lowered, its `Job`
+field, its consumers, its encoding dependence), the redundancies, and the
+facts computed twice or reached ad hoc. Then a design through the four
+lenses (memory `pcrec-design-evaluation-lenses`): one per-pattern analysis
+record (a `PatFacts` computed after `pcrec_lower_enc`, or a family of
+memoized queries) that every opt pass, engine selection and both emitters
+read; the general mechanism, not a parallel one (memory
+`pcrec-general-mechanisms-not-special-cases`). Implement-then-replace is
+fine: new analyses (the run, the freq pick) may land in today's shape and
+migrate. Timing is Frank's; nothing in cycle 2 waits on it.

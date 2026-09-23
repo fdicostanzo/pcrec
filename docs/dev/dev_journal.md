@@ -25142,3 +25142,11 @@ pass of a two-pass engine predicts the wrong symptom (spurious vs deleted).
 PENDING FRANK: fifteen rulings (the notes' closing sections; the manager's
 package = every recommendation). Owed small: abi-constant citation fix in
 coding_guide §3.1 + src/gen/CLAUDE.md:25; a utf8 row in run_prechecks §3.
+
+**Rulings (Frank, ~23:1x EDT):** 2b's long-run window = the LOWEST-frequency
+8-byte window containing the memchr byte (same prior, same encoding rule) —
+"precisely the sort of precompiling analysis that gives this project its
+advantage". D120 chartered: ONE organized pattern-analysis record read by
+every step, replacing the ad-hoc per-pass walks (the two incidents named:
+reqbyte/run/prefix_k/mrl as separate walks; the freq prior's three readers);
+plan row [PATFACTS], step 1 = inventory; TIMING TBD (Frank's word).

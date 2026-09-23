@@ -260,7 +260,12 @@ findings value like any other and is keyed by encoding the same way — one
    compare, a separate row (§3.4).
 3. **Runs longer than a cap.** The emitted compare is priced at L ≤ 8: the
    run is TRUNCATED to its best 8-byte window around `i`, never split into two
-   compares. `github_pat_`'s eleven bytes become eight, which is already a
+   compares. **"Best" RULED by Frank (2026-09-22 evening): the 8-byte window
+   containing `i` whose members sum to the LOWEST `pcrec_byte_freq_ppm`,
+   ties to the leftmost — the same prior and accessor as `i`'s own choice,
+   under the same encoding rule (byte only; elsewhere the leftmost window
+   containing `i`). "That is precisely the sort of precompiling analysis
+   that gives this project its advantage."** `github_pat_`'s eleven bytes become eight, which is already a
    whole-call answer on this subject. A second compare would be a second
    mechanism with its own cost question and no measured need (D77).
 4. **Runs joined across a repeat's iterations.** `(?:ab){2,}` guarantees
@@ -747,8 +752,8 @@ helper.
    1.00× rows until a run-rate analysis exists?** (Recommend yes: the prior
    structurally cannot price a run, §4.2, and a guessed threshold is worse
    than the axis.)
-3. **Is truncating a run to 8 bytes right, or should a long run emit two
-   compares?** (Recommend truncate: `github_pat_`'s eight bytes are already a
+3. **RULED 2026-09-22 (Frank): truncate, and the window is the LOWEST-frequency 8-byte window containing `i` (§2.4 item 3).** Original question — is truncating a run to 8 bytes right, or should a long run emit two
+   compares? (Recommend truncate: `github_pat_`'s eight bytes are already a
    whole-call answer, and 25 of 734 corpus patterns have L ≥ 8 at all.)
 4. **Bit 31 is the last `1u <<` bit in the flags enum. Take it, or do the
    `1ull` widening in this change?** (Recommend the widening, in this change:
