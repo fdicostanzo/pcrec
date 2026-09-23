@@ -240,3 +240,40 @@ into a scratch directory and checked against the bench's own committed
 
 Maintenance: add a cycle's files and their one-line descriptions here when
 that cycle's analysis lands.
+
+- `cycle1_ledger_reading.md` — THE READING of the bench's batch-1
+  after-measurement (O-45) against the D119 bar (2026-09-23, lane
+  `b1ledger`, opus; analysis + compile-side measurement only, no clock read
+  on this box). Per-MECHANISM verdicts where the ledger computes per-CELL
+  ones: **[OPT-ANCHOR-VM] MEETS** (13/13 targets), **[OPT-ENDWIN] MEETS**
+  (4/4), **[OPT-REQBYTE] targets meet and the carve-out clause FAILS**
+  (12 cells regress 18.7-38.5%). Read it for four things.
+  **§1 is a NULL CONTROL nobody had computed**: 56 of 187 artifacts are
+  program-identical across the pin (verified byte-for-byte in `__text` on
+  four of them), 16 of the ledger's 64 regressing cells sit on those
+  artifacts, and the worst moved **+8.46%, 35× its own IQR** — so the
+  within-window IQR is the wrong noise model for a comparison spanning two
+  windows, the "64-cell everyday regression population" is 14 cells, and
+  the two D119 misses sit inside the band.
+  **§5 closes the ~23,100 ns floor exactly**: that number is one
+  `memchr`-class pass over the regime's 1,376,256 subject bytes, and the
+  two cells that RISE into it do so because their required byte occurs
+  zero times — predicted 23,120.8 ns, measured +23,103.5 and +23,059.6,
+  with `floor-byte` as the control where the pre-check REPLACES the
+  prefilter's own pass instead of adding one.
+  **§6 states the general finding as three rules with three populations**:
+  G1 dominance (do not emit a pass the artifact already runs — one
+  artifact calls `memchr` on the same byte at lines 49 and 107), G2
+  admission (`emit_dfa.c:2999` already declines the PREFILTER on a
+  fully-anchored machine and the pre-check did not inherit it; 9 patterns,
+  29 cells), G3 placement (the check compiled into `rx_search_run` removes
+  gcc's partial-inlining split on 24 of 62 forced-VM artifacts). Proposed
+  as one cycle-2 row, [OPT-PRECHECK-ADMIT], through the four lenses.
+  **§8 is a ready-to-append I-91 executor block**, five measurements, each
+  with its EXPECT line, headed by the hand-twin that is also the fix's own
+  acceptance test.
+  Reproduction pieces: `b1ledger/` (its own `CLAUDE.md`).
+- `b1ledger/` — that reading's reproduction pieces: the subject byte
+  census (sha256-checked against the bench's committed manifest), the
+  artifact-identity census, and the find-all cost model. See its
+  `CLAUDE.md`.
