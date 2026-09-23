@@ -2174,5 +2174,114 @@ append-only or historical records.
   failure) rather than causes — named, not fixed, out of this lane's
   scope.
 
+- `reqbyte_freq_pick.md` — **`[OPTLOOP.2]` cycle-2 design note, lane
+  `c2design`, 2026-09-22** (design only; ratification and a D6 panel owed):
+  `[OPT-REQBYTE]`'s emitted byte chosen by ARGMIN over a byte-frequency prior
+  instead of by PCRE2's rightmost rule, which survives as the tiebreak. Read
+  §0 first — **the static prior ALREADY SHIPS and is already this mechanism's
+  intended hook**: `src/opt/prefix_k.c:91`'s normalised ppm table behind
+  `pcrec_byte_freq_ppm`, with `[OPT-OFSK]`'s selection as its first consumer,
+  a sum check (`run_offset_skip.sh` §1) and a header naming D83's findings
+  file as the replacement for that one function. So the note proposes a
+  SECOND CALL, not an interface — and it **declines
+  `firstset_design.md` §5.2's proposed `double
+  pcrec_findings_density(const Ctx *, const unsigned char[32])`** as a
+  parallel mechanism that additionally contradicts `prefix_k.c`'s own stated
+  integer rule ("the selection must be bit-reproducible across boxes"),
+  recommending the shipped accessor and, if a set grain is wanted, publishing
+  the existing private `set_ppm` rather than writing a second summer.
+  **The prior delivers all three of `reqpos_census.md` §5's whole-call wins
+  with NO findings file** (`nested-comment-rec` `/`→`*`,
+  `wild-validator-email-owasp` `.`→`@`, `wild-waf-crs-942500` `/`→`*`, each
+  present→absent in the bench's 1 MiB subject), and on the twelve
+  `capability` patterns whose pick moves, **eleven move to a strictly RARER
+  byte in that subject, one moves absent→absent, and none moves to a commoner
+  one** — an out-of-sample agreement, since `prefix_k.c` deliberately did not
+  derive the table from the bench's own text. Population measured: **304 of
+  2,236 corpus patterns with a necessary byte, 13.60%** (bench 51/131), so it
+  is an `abi` event with no scaffolding change. It also **corrects the
+  census's own framing**: only ONE of the three witnesses is a cycle-1 LOSING
+  cell, so the honest D119 improve population is `nested-comment-rec`'s two
+  cells at 0.4294 weighted, not "three whole-call answers". Recommends no new
+  axis bit (the pick is a value under `-fno-req-byte`, `--unroll=K`'s
+  precedent; bit 31 is the last `1u <<` bit), no pick-source stamp
+  (`ccdiff1_report.md`'s `RX_VM_INLINE_CHAIN` precedent), and names the one
+  real hazard as a MEASURED carve-out rather than an argued one: the prior is
+  subject-blind, so an absent→present move is possible in general and
+  `dup-param-detect` is the batch-1 improve cell where it nearly happened.
+  **§3 is Frank's ENCODING consideration (2026-09-22 evening) worked in
+  full**, and it is the note's sharpest constraint: a byte-frequency value is
+  a fact about a corpus UNDER an encoding, and the shipped table is keyed to
+  `byte` by its own contents — its whole 0x80–0xFF half sits at the 2 ppm
+  FLOOR, so under `-e utf8` it calls the bytes a Latin corpus uses most the
+  rarest there are, and on `é@` the argmin takes 0xC3 (the shared UTF-8 lead
+  byte) over a genuinely rare `@`. Constructed, then verified against the
+  shipped compiler; population ZERO on the corpus at both encodings and on the
+  bench, which is the state in which a hazard ships unobserved. So event 1
+  applies the pick under `byte` and DECLINES elsewhere, falling back to
+  today's exact answer — making the `-e utf8` identity gates a free control
+  rather than a new obligation. The encoding KEY is one `DATA`-scope schema
+  row the format LACKS (`rxt_schema.def:254-260` has no place for it;
+  `provenance` describes the exemplar file, not the tally), spelled out here
+  and left to `[DD-13b]` per D83's addendum. And on code points vs bytes: a
+  user's exemplar carries BYTES keyed by encoding (a byte tally always
+  succeeds; an exemplar with invalid UTF-8 has no code-point histogram at
+  all), while the SHIPPED named analyses carry a second named value,
+  `cpfreq`, derived to bytes by the encoder the tree already owns — one
+  generator and one provenance record per subject class serving every
+  encoding, instead of an N×M grid.
+- `reqpos_2b.md` — **`[OPTLOOP.2]` cycle-2 design note, lane `c2design`,
+  2026-09-22** (design only; ratification and a D6 panel owed):
+  `[OPT-REQPOS]` tier 2b, **VERDICT BUILD**. Read §0 first — it is not the
+  mechanism the plan row describes. **It is not a start bound**: the run's
+  own internal delta is all the compare needs, so none of the census's
+  `dmin`/`dmax`/`run_pmin`/`run_pmax` columns is read, four of the fourteen
+  `capability` runs have an UNBOUNDED offset from the match start and are
+  served anyway, and **tier 2 is not a precondition** (the census already
+  declined it on population). What it IS: `[OPT-REQBYTE]` widened from a
+  1-byte necessary fact to an L-byte one, with today's mechanism as the
+  `L = 1` case — the widening `reqbyte.c`'s own header chose the rightmost
+  rule to preserve. Clears D119's bar on **four losing throughput cells
+  carrying 1.4617 of the matrix's 10.284** (`wild-semdiv-dollar-trailing-
+  newline-pcre2`, `file-ext-order`, `wild-semdiv-altorder-foo-foobar-
+  rustregex`, `wild-secrets-github-pat` — each a pattern whose single
+  necessary byte is PRESENT and whose RUN is ABSENT, so a byte-grain
+  pre-check cannot fire and a run-grain one answers the whole find-all call
+  in one pass). Three further findings. **The decline rule cannot come from a
+  byte-frequency prior, and that is arithmetic**: a run's density is a JOINT
+  property and `freq` a MARGINAL one, so an independence product
+  over-predicts the measured gain by 5×, 8× and **3,257×** on the three rows
+  where a gain is finite — a 650× spread no constant fits — so the note ships
+  with NO decline rule and names the trigger (a second `freq`-family named
+  value carrying run rates, which D83's addendum already permits).
+  **Constant-length `memcmp` is a better emitted form than the row's own
+  `memcpy`-into-`uint64` sketch, measured**: `gcc-16 -O2` lowers
+  `memcmp(p,".tar",4)` to one 32-bit load and one compare and
+  `memcmp(p,"github_p",8)` to one 64-bit load and one compare, with no call,
+  while reading only the L bytes the run occupies — so `[WORD-FOLD]`'s own
+  over-read/page-boundary worry never arises, and the masked small-CLASS form
+  that genuinely needs a hand-rolled load is event 2, gated on `[WORD-FOLD]`
+  and deliberately not built on here. **And the "60 of 68 runs never occur"
+  figure is the mechanism's BEST case, not its worst** — the real weakness is
+  the eight finite-gain rows, whose median is 4.24× and whose three 1.00× rows
+  are pure added cost; the longest finite-gain run in the whole population
+  (`loglines/http-5xx`'s eight-byte `" HTTP/1."`) has gain **1.00×**, which is
+  why no decline rule keyed on length can work. Recommends its OWN axis bit
+  (unlike the pick — it adds emitted code, a stamp and a cost profile), a
+  `<PREFIX>_REQ_RUN` stamp beside `REQ_BYTE` with `REQ_BYTE`'s meaning
+  UNCHANGED, and landing as ONE `abi` event with `reqbyte_freq_pick.md`.
+  Flags three things a lane needs before it starts: the census does not carry
+  `A`'s index within the run, the second sabotage row (a run one byte too
+  long) has no witness in the shipped corpus and must ship with its fixture
+  or read UNREACHED, and `coding_guide.md` §3.1 plus `src/gen/CLAUDE.md:25`
+  both cite the wrong file for `PCREC_ARTIFACT_ABI` (it is
+  `src/gen/emit_dfa.c:51`, not `src/core/limits.def`). §2.3 also carries
+  Frank's encoding consideration for this row in one paragraph: `A`'s
+  frequency-informed choice inherits `reqbyte_freq_pick.md` §3.3's rule
+  unchanged (applies under `byte`, declines elsewhere, falling back to the
+  run's LEFTMOST member, which is what the plan row already specifies for the
+  no-findings-file case), while the RUN itself is encoding-sound by
+  construction and `-e utf8` RAISES its population.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
