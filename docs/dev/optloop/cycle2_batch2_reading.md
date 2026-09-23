@@ -30,6 +30,13 @@ AFTER), `cb437f26` (the admission fix). Every artifact pair below was
 emitted to the **same `-o` basename** in two directories — this house's
 recorded `-o`-basename trap, whose sixth instance is still one lane away.
 
+**The compiler this lane read is the compiler that was measured.**
+`git diff b1885a83..main -- src/ cli/ lib/` is **empty**, so nothing in the
+emitter has moved since the measured pin; `8d716693` and `b1885a83` are
+both ancestors of `main`, and `cb437f26` is NOT (lane `admitimpl` is
+parked, not merged), which is why the fix's side of every comparison below
+had to be built from its branch rather than read off the tree.
+
 ---
 
 ## 0. THE INSTRUMENT, AND WHY ITS NUMBERS ARE THE BENCH'S OWN
@@ -330,10 +337,19 @@ independently established for a short `memchr` call on this box. **The
 model reproduces the single worst miss in the ledger with one free
 parameter taken from the previous cycle.**
 
-**And the pick alone would have been free.** Compiled at the AFTER pin with
-`-fno-req-run`, the pre-check collapses to one `memchr(subject +
-search_from, 47, …)` — 315 calls over ~35 bytes each, **cheaper than the
-batch-1 byte-114 check it replaced**. So on this pattern the PICK is an
+**And the pick alone would have been an improvement.** Compiled at the
+AFTER pin with `-fno-req-run`, the pre-check collapses to one
+`memchr(subject + search_from, 47, …)`. Counted over the same subjects:
+
+| pre-check form | `memchr` calls | bytes scanned | per call |
+|---|---|---|---|
+| batch 1, byte 114 `r` | 315 | 18,260 | 58.0 B |
+| batch 2 pick only, byte 47 `/` (`-fno-req-run`) | **315** | **1,363** | **4.3 B** |
+| batch 2 as shipped, run `/user` | **39,098** | **1,375,008** | 35.2 B |
+
+Same call count as batch 1 and 13.4× less scanning — **the pick alone is
+strictly cheaper than the check it replaced, on both axes**. So on this
+pattern the PICK is an
 improvement and the RUN is the entire +80.8%. The design note's own §7.2
 scored this cell as "MOVES `r`→`/` (54,781→30,000): fewer candidate hits" —
 correct about the hits, and the hits were never the cost.
