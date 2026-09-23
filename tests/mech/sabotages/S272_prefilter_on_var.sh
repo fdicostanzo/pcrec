@@ -25,7 +25,7 @@ SAB_FILE="src/opt/select_engine.c"
 SAB_SUITES="vars harness"
 SAB_HARNESS_TARGET="tests/vars"
 SAB_DESC="fit.prefilter is left ON for a var-bearing pattern, so the hybrid's capture-erased DFA is built from a pattern whose variable has been erased — not a superset but a DIFFERENT language. On this tree the failure is a COMPILE ERROR, because src/ir/nfa.c has no A_VAR arm and the prefilter build reaches its internal-error wall"
-SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED with every tests/vars/ pattern failing to compile ('internal error: bad AST node'), and the harness arm the same. Canonical figure owed from run_sabotage_matrix.sh S272."
+SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED with every tests/vars/ pattern failing to compile ('internal error: bad AST node'), and the harness arm the same. MEASURED 2026-09-23 at ba6a6c3b (lane varmvp, run solo): DETECTED, reach:ok(1/1), vars:1fail/1pass, corpus:26fail/50pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S272."
 # [MECH-REACH] THE PROBE says the SITE is reached: on the clean tree a
 # var-bearing pattern compiles AND declares no prefilter. Without it, a
 # future change that stopped routing variables to the VM at all would make

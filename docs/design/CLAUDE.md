@@ -2461,5 +2461,27 @@ append-only or historical records.
   the one arm of the run walk where the conservative answer is load-bearing
   rather than merely tidy.
 
+**[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
+M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
+where the build met them and lost, and those places are in
+`docs/dev/lanes/varmvp_report.md` rather than edited in here (D80: a design
+document's own revision is its own change). **Five sentences did not
+survive**, each with its own entry in that report: `variables_pattern.md`
+§3's SR-9 tail-arbitration paragraph is wrong about the MECHANISM and right
+about the outcome (`pcrec_registry_find`/`arbitrate` are never called with
+`RK_BARE` at all, so nothing ranks the `${` row over the bare `$` row —
+recognition is an `if` in `p_atom`, gated the way `\Q` is);
+`variables_common.md` §4.1's "with the module off today's parse stands in
+full" contradicts `variables_pattern.md` §7's table, which says it refuses,
+and the table is what shipped; §2.5's prediction that this wave's sabotage
+rows would ship UNREACHED is FALSE because `tests/vars/` landed in the same
+change, which is what §2.3 said would make the difference; §5's "M10 is the
+FIRST `.rxt` production needing a name-carrying runtime value" is right and
+under-priced the DRIVER's half at zero (the trailing-argv shape, the
+`-DRXT_HAS_VARS` discriminator and the `gu unset-var` code); and the roadmap's
+own MECH-M1 wording ("unchanged except for the `abi` digit") is understated —
+a var-free artifact also gains two `rx_info` initializer lines, MEASURED at
+exactly +34 bytes.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

@@ -420,5 +420,56 @@ the residual text it always did.
 refused, a non-member is refused with the rendered menu) and `cli/main.c`
 resolves `-e NAME` / `--encoding=NAME` through `pcrec_enc_by_name`.
 
+## [VAR] — TWO NEW COMPARE ENTRIES, A VALIDITY ENTRY, AND A NEW COLUMN
+
+Module `vars` adds `$_var_match` / `$_var_match_caseless` (entries 5 and 6,
+`PCREC_ENCE_VAR` / `_VAR_CASELESS`) to BOTH backends, and `$_var_valid`
+(entry 7, `PCREC_ENCE_VAR_VALID`) to `utf8` ALONE.
+
+**They are a separate pair and not a wider `bref_match`, and the reason is
+the BUFFER.** A backreference's two operands are both slices of the SUBJECT,
+so its entry takes one pointer and two offsets; a variable's second operand
+is the CALLER's own buffer, so this pair takes a pointer and a length.
+Widening the existing entry would have changed `$_bref_match`'s signature in
+every artifact that has ever carried one.
+
+**`PcrecEncEntry` GAINED A COLUMN, `requires`,** and the utf8 caseless
+variable compare is its one customer. That body calls
+`$_bref_ci_fold`/`$_bref_ci_decode`, which the caseless BACKREFERENCE entry's
+own text defines — a 1,484-pair map and a thirty-line decoder. The three
+alternatives were all worse: carry a second copy (doubles a table in any
+artifact using both), rename them into a shared entry (moves the emitted
+bytes of every caseless-backreference artifact ever built), or write the
+implication into `src/gen/emit_vm.c` (the emitter knowing something about an
+encoding's residual, which DD-12 (7) forbids outright). Declaring the
+dependency does none of them; a caseless-variable artifact additionally
+carries `$_bref_match_caseless` itself, one exported function it never calls,
+which is `next_pos`'s own shape and this header's own reason a residual
+cannot be `static`. **The mask is closed inside BOTH emit functions**
+(`pcrec_enc_mask_close`, `enc.c`) rather than at the sites that build one, so
+"every caller remembers to close it" cannot become an obligation anybody
+forgets.
+
+**`$_var_valid` IS PRESENT IN ONE TABLE AND ABSENT FROM THE OTHER, and that
+absence IS the mechanism.** `variables_common.md` §2.1 promises that a value
+which is not well-formed is a REFUSED CALL under a multi-byte encoding; the
+compare's return space is two-valued by sign and has no room for "refuse"
+(the D6 panel's MECH-M4), so the check runs once per call in the entry
+wrapper. The emitter asks `pcrec_enc_has_entry` — does this backend CARRY the
+row — and emits the calls or does not. `entries_byte[]` has no row because
+every byte string is a valid `byte` string. **No encoding test anywhere in
+the emitter**, which is the third-encoding recipe's own standing rule.
+
+It is deliberately NOT `engine_callable`: the entry wrapper calls it, never
+an engine body, so [M5-SEAM]'s rule applies to it exactly as it does to
+`next_pos`. And it is its own decoder rather than `$_bref_ci_decode`'s,
+because validity is asked of EVERY variable whatever its caselessness and
+depending on that one would make an exact-compare artifact drag in a fold
+table to answer a question about byte shapes. The two agree on what
+well-formed means — same lead-byte families, same overlong floors, same
+surrogate and U+10FFFF exclusions, which are the automaton's own — and that
+agreement is the thing to preserve if either moves.
+
+
 Maintenance: update this file when files are added/removed or their roles
 change.

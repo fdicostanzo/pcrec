@@ -2934,3 +2934,33 @@ never edited afterwards.
   reproduction scripts are committed beside the report (`w4_modesweep.py`'s
   precedent). Sabotage rows S269/S270 are the first two in the tree whose
   plant cannot move an answer in either direction.
+
+- `varmvp_report.md` — **[VAR] THE MVP's PATTERN HALF** (2026-09-23, lane
+  varmvp, opus): M1-M8 + M10, `abi` 31 -> 32. `${name}` in a pattern, whose
+  bytes the caller supplies per call. Read §0 for the eight findings, of
+  which five are refutations of the design set's own sentences and three are
+  defects the checks found on their first populated run.
+  **The sharpest is that a mechanical "join `A_BREF`'s case label" pass over
+  the 43 `AKind` switch sites gets 42 right and the wrong one is SILENT**:
+  in `atomic.c`'s nine predicate walks, eight ask something general (a
+  backreference is a leaf) and ONE — `pcrec_has_bref` — asks "does anything
+  here compare SUBJECT TEXT TO SUBJECT TEXT", where `case A_BREF:` IS the
+  question. Found by READING the `-fprefilter` refusal, which named "a
+  backreference" for a pattern that has none; no test could have gone red,
+  because the one caller that reads it for a decision ORs it with `has_var`.
+  **Second: two checks this landing was the first to POPULATE both failed in
+  the K35 shape.** The rxtsource census counted ONE block opener and the
+  format has had two since W23.3 — its own header calls it "a control for
+  all three parsers" — and nothing failed because the corpus had zero
+  `pattern-esc` blocks until this module added one. And leg C's first version
+  counted the binding lines as EXPECTATIONS, putting 45 entries into a total
+  the census does not count; C3's own sentence about expectations going
+  somewhere neither counted nor reported is what said so.
+  Also worth reading: the +34-byte var-free identity measurement (four
+  witnesses, 13 KB to 762 KB, at the same `-o` basename, six changed lines
+  each) which is STRONGER than the design's own MECH-M1 wording; the
+  `PcrecEncEntry.requires` column and why all three alternatives to it were
+  worse; and §2's three failing-direction plants on the expansion grammar,
+  where emitting ONE WORD PIECE PER BYTE reddened NOTHING because the round
+  trip is an agreement between the parse and the render and the render
+  flattens exactly that representation.
