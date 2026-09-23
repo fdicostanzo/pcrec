@@ -2838,3 +2838,34 @@ never edited afterwards.
   batch 1. Flags an open item: `cycle1_caps_view.md`'s own CAPS table
   still scores `rust` as caps and is unrevised (owned by lane
   `capsview`).
+
+- `vardesign_report.md` — THE VARIABLE DESIGN SET (2026-09-23, lane
+  vardesign, opus; docs-only, nothing under `src/`/`cli`/`lib/`/`tests/`, no
+  runs). Delivers `docs/design/variables_common.md`, `variables_pattern.md`,
+  `replace_design.md` and `variables_roadmap.md` against Frank's 2026-09-23
+  charter. Read the report for the four opinions it was asked for (the two
+  call interfaces, the null-variable model, caseless viability) and for five
+  findings, of which three correct the charter's own premises. **The
+  search/replace half was already designed and ruled** — D38 settled all
+  fourteen of `subst_template_design.md`'s questions in 2026-08-14, so that
+  note is the design of record and `replace_design.md` adds only the caller's
+  variable environment. **"Callouts that return strings? I think we support
+  that" is not the case**: native callouts are match-or-fail only, ruled at
+  D38 and enforced at every generated call site with `__builtin_trap()`,
+  while the string-returning sibling `rx_renderfn` is ruled (D38 Q13),
+  carried in `docs/spec/match_api.md` §2, and reserved with no producer. And
+  **caseless is viable today while the charter's own preprocessing proposal
+  is the one to decline** — `bref_match_caseless` ships and already handles
+  length-changing folds end to end, whereas pre-folding a value cannot work
+  because a fold is a relation between two sides and the subject side is not
+  folded. Two measured findings carry the pattern side: **`${...}` in a
+  pattern is a spelling PCRE2 accepts and that NO SUBJECT CAN MATCH** (`$`
+  asserts the next byte is a newline; `{` is not one) — verified on the
+  shipped compiler, against python `re`, and exhaustively over every subject
+  of length 0..7 from a targeted alphabet, with a corpus population of 0 of
+  4,198 `pattern` lines, where the proof rather than the zero is the evidence
+  — and **the VM's runtime span compare already exists and is not the literal
+  emitter**: there is no compile-time-literal `memcmp` in `emit_vm.c` (the
+  one hit deduplicates class bitmaps), while `vm_bref` reads a runtime
+  `(start,end)`, calls through the encoding seam and returns a LENGTH rather
+  than a boolean precisely because a fold can change it. Nothing owed.
