@@ -2625,3 +2625,31 @@ never edited afterwards.
   the census's first detector required the reverse TRANSITION TABLE, which
   [CC-DIFF] STEP 1's uniform fold may delete while the reverse WALK stays,
   and read 84 false positives.
+
+- `admin3_report.md` — three owed doc/test items (2026-09-22, lane admin3,
+  sonnet). (1) The wrong `PCREC_ARTIFACT_ABI` citation (`src/core/limits.def`
+  where the constant is `src/gen/emit_dfa.c:51`) fixed at its two live
+  readers, `docs/dev/coding_guide.md` §3.1 and `src/gen/CLAUDE.md`; two more
+  grep hits (`docs/design/reqpos_2b.md`, `docs/design/CLAUDE.md`) already
+  DESCRIBE the wrong citation as a finding rather than repeating it, so left
+  unedited. (2) `tests/codegen/run_prechecks.sh` §3 [OPT-REQBYTE] gains §3.6,
+  five `-e utf8` witnesses in the section's own idiom — every §3.1 witness
+  compiled under `byte` only, so the multi-byte lead/trailing-byte choice and
+  the caseless fold's lead-byte INTERSECTION rule were exercised solely by
+  the identity sweep. 113 checks -> 123 (`checks passed:`/`checks failed:`,
+  the file's own trailer); no pinned total exists elsewhere for this file
+  (grepped `tests/mech/`/`tests/rxtsource/` for a consumer — the mech
+  `prechecks` arm scores by scraping its own log, not a pinned number), so
+  nothing else needed re-pinning. (3) `docs/testing.md`'s `giveup.rxt`/
+  `-fprefilter` prose (line ~3458) is NOT stale — live-verified against the
+  axesfix-rewritten file (`(a*)*[bc]`/`((a)|b)*[cd]`): default still gives
+  up steps/frames (2/2 pass), `-fprefilter` still builds a real hybrid
+  prefilter that answers `nomatch` on both cells (2/2 fail against
+  the `gu` expectation) — exactly the "2 MISMATCH" shape the prose
+  describes, which is precisely what the axesfix rewrite was built to
+  preserve against [OPT-REQBYTE]'s intervening whole-window pre-check. No
+  edit made. A separate, UNRELATED bare-literal `(a*)*b` witness at line
+  ~2437 (the `gen_run` wrapper's own fire-control example, in
+  `tests/lib/run_gen_timeout_tests.sh`, not `giveup.rxt`) was found by a
+  broader grep and is flagged but not touched — out of the brief's scope
+  (`grep giveup` does not reach it) and its own axis interaction unverified.
