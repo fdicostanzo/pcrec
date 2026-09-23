@@ -25370,3 +25370,16 @@ the MIXED best-variant view (65 of the 91 carried by auto-nocaps) and is
 retired as a headline; caps-vs-caps = 84/123; the nocaps-vs-nocaps ledger
 has never been rendered → lane nocapsview (from O-45's TSVs) + I-99 to the
 bench (per-config capture-mode declarations; two views in every report).
+
+**nocapsview MERGED (~09:5x):** the NOCAPS-vs-NOCAPS ledger under the
+bench's frozen classification — 87/113 BEFORE → 92/113 AFTER batch 1
+(losing score −47%); rust-default is the losing competitor on 18 of 21
+AFTER losses; the floor-entry pair (winpath-near-miss, email-nested-plus)
+flips WIN → 256×/215× LOSS (rust answers them faster than pcre2-dfa) — the
+admission defect from the other side. Frank's cross-class anomaly query
+(§6): 40/29 raw cells BEFORE/AFTER, 30/25 of them pcre2-jit (excluded by
+§0 rule 1); the surprising non-JIT population is 10 → 4 (the floor pair +
+dbnames/concat-sqli losing to re2 on both pins — cycle-2 cause reads).
+Mirror: pcrec's capturing default beats every nocaps competitor on 87/111
+AFTER. OWED: cycle1_caps_view.md scored rust as CAPS (84/123) — inconsistent
+with I-100; cycle 2's re-rank re-renders both views under the frozen table.
