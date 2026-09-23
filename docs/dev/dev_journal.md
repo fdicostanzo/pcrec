@@ -25280,3 +25280,12 @@ wrote delivery notes into two rows — lanes don't edit plan.md; both kept),
 the journal and lanes/CLAUDE.md, all resolved keeping both sides; make +
 strict clean. Lane repin2: the (B) pin 6ab2464e→8e4e9c6c + emit_sweep vs
 c051a69b + the abi-30 reader grep. Then the full darwin gate on merged main.
+
+**utf8 subbench (I-90 → bench [B77]) at design v0.2, paneled (18 findings):**
+76 members over the six families, five generated script corpora with
+committed histograms, PCRE2_UTF oracle, roster pcre2 ×3 / pcrec ×4 / re2 ×2
+/ rust / onig-utf8 / vectorscan, TRE per-pattern-excluded (ranks on 3
+byte-safe controls). Ten questions: the manager RULED all (I-94) under
+Frank's charter — defaults as recommended, Q5 (syntaxutf reservation) BOTH
+STAND, Q10 deferred to growth (h). Frank may override. First sample: seven
+cells ≈ 5 h the night the set merges; build ~1-1.5 days after rulings.
