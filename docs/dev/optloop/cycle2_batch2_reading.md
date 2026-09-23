@@ -776,13 +776,12 @@ up to +11.16% (search) and +41.09% (throughput, sub-100 ns baselines).
 **Findings.** Batch 2's two mechanisms both land on their own targets and
 both carry one real defect apiece, and neither defect is what O-49's
 headline names. `[OPT-FREQPICK]`'s target collapses 9.3 ms to 23.1 us on
-4 of 4 configs, predicted to 0.2% of its absolute value; `[OPT-REQPOS]`
-tier 2b's forced-VM targets collapse 5.4 ms to 129 us. Of the 17 missing
+4 of 4 configs, predicted to 0.2% of its absolute value; tier 2b's
+forced-VM targets collapse 5.4 ms to 129 us. Of the 17 missing
 target rows, **6 are removed outright by the already-built admission fix,
 6 are the run mechanism's own defect, and 5 were at the measurement floor
 before the batch started and could not have improved.** Only **2 of 17**
-lie outside this pin pair's own null band, both `router-prefix-order`'s DFA
-route.
+lie outside this pin pair's own null band, both `router-prefix-order`'s.
 
 **Surprises.** Three, each a prediction whose sign or scope was wrong before
 any measurement. (1) The ledger's largest movement, a 500x floor jump on
@@ -802,15 +801,15 @@ calls and admits the form costing 39,098.**
 SCAN BYTE, not of the run, which the design note prices the other way; on
 `router-prefix-order` that is a 124x call amplification and 97% of a +80.8%
 regression, reproduced by an exact clock-free model with one parameter
-carried from cycle 1. Separately, the null control cycle 1 found for free is
-larger this cycle: 131 of 192 artifacts program-identical, **34 of 34 named
-non-target regressions sitting on them**, one at +41.09%. For the second
-cycle running the within-window IQR is the wrong noise model for a
-two-window comparison, and the records to fix it are already in the store.
+carried from cycle 1. Separately, cycle 1's free null control is larger this
+cycle: 131 of 192 artifacts program-identical, **34 of 34 named non-target
+regressions sitting on them**, one at +41.09%. For the second cycle running
+the within-window IQR is the wrong noise model for a two-window comparison,
+and the records to fix it are already in the bench's own store.
 
 **Next steps.** Merge `[OPT-PRECHECK-ADMIT]` -- a precondition on shipping
 the pick, not an improvement on it. Open a cycle-3 row for the run-form
 dominance rule, whose statistic compares two counts the compiler already
 holds. Send I-102 (acceptance cells, `wild-validator-email-owasp`
-discriminating, the six meeting targets as controls), I-103 (the timing
-block deciding the run-form rule), I-104 (carry a null-control band).
+discriminating, the six meeting targets as controls), I-103 (the run-form
+timing block), I-104 (carry a null-control band).
