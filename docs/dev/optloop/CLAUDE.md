@@ -464,3 +464,44 @@ that cycle's analysis lands.
   written against: pcrec-bench's O-49 outbox entry, the I-95 ask it answers,
   and the 698-line ledger `2026-09-23-optloop2-batch2-after-b1885a83.md`,
   copied verbatim at read time.
+
+## Cycle 2's run-form discriminator (lane `o51read`, 2026-09-23)
+
+- `runs/2026-09-23-o51-i103/` — the archived sources of O-51
+  (pcrec-bench `[B83]`, full raw report `b83runform_report.md`, 495
+  lines), answering inbox asks I-103 (the one three-artifact
+  default/`-fno-req-run`/`-fno-req-byte` timing block deciding whether
+  G1 should widen to cover tier 2b's run check) and I-103a (Frank's
+  addendum: a fourth, inline-scalar hand-twin arm, and the three-arm
+  run-check FORM rule now recorded on `plan.md`'s `[OPT-REQPOS]` row).
+  See its own README.md.
+- `cycle2_i103_reading.md` — **the READING** (2026-09-23, lane
+  `o51read`): O-51's four answers checked against I-103/I-103a's own
+  EXPECT lines and against `cycle2_batch2_reading.md` §4.1/§6 and the
+  `[OPT-REQPOS]` three-arm form rule. **ESTABLISHED**: memchr-run beats
+  the scalar inline loop at both 2.8% and 3.2% scan-byte frequency on
+  every measured cell (the common-tier inline mechanism correctly does
+  not fire below the ~8% crossover); router's pre-check cost is entirely
+  the run form, settling the dominance-rule worked example §6's
+  candidate rule needs by measurement. **NOT ESTABLISHED**: keyword's
+  IQR-crossing verdict (the decision rule needs I-104's null-control
+  band — the (b)-(c) delta stays positive and same-order across two
+  sessions while the bar itself flips); the crossover constant (two
+  points 0.36 percentage points apart cannot solve the two-parameter
+  system, shown and stopped rather than forced). Records a process
+  finding as a `learnings.md` §3 CANDIDATE, not applied: a hand-twin
+  template written from one witness's own byte-offset generalizes wrong
+  to a second witness whose scan byte sits at a different offset within
+  its run.
+  **§4 is the cycle-3 ask, designed not built**: counted every
+  run-carrying capability pattern's scan-byte hit frequency (14 of 64,
+  via `b2ledger/stampdiff.json`'s `RX_REQ_RUN` against the regenerated
+  throughput subjects, sha256-matched to O-51's own cited hashes) —
+  widest real spread is 0.4773% to 3.2067%, **no candidate clears 6%**.
+  Verified the argmin-picks-the-rarest-run-byte mechanism against all 14
+  real cases using the shipped `pcrec_byte_freq_ppm` table (14/14 exact),
+  then used it to design a synthetic witness: a run built only from
+  `e`/space bytes forces `'e'` as the pick (the table's two highest
+  entries), and `'e'` already occurs in the EXISTING throughput subjects
+  at 8.5212% — no new subject needed, only a new pattern. Drafts I-105's
+  ask text on that basis.
