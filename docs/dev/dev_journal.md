@@ -25389,3 +25389,27 @@ search/replace** (shell-style syntax, one common variable design referenced
 by a pattern-variable design and a replacement design; MVP/roadmap after).
 Lane vardesign (opus). The session reset moves to after its delivery (or
 the next session resumes from its committed branch).
+
+**admitimpl DELIVERED (~09:5x, lane/admitimpl head cb437f26, PARKED; chain
+armed detached):** [OPT-PRECHECK-ADMIT] G1+G2 — ONE predicate `req_admit`
+with four readers; G2 inherits attempt_cand's own one-attempt rule
+(`dfa_interior_dead(s1u)` on the DFA, `start_anchor != NONE` on the VM —
+BOTH one-attempt rows, ^ and \G, covered); G1 = the artifact's own
+candidate-start scan byte vs the pre-check byte, identity under every
+encoding then the prior under byte only. THREE FINDINGS: (F1) folding the
+decline into REQ_BYTE's value made §3.7's freq-pick suite VACUOUS on the
+declining population → a new closed-token stamp REQ_WHY
+(emitted/none/one-attempt/dominated), the ENGINE/ENGINE_WHY split; abi
+30→31 (ritual by grep + the value-only readers by suite: resource 762367,
+cpset ×12); (F2) under byte G1 fires only on IDENTITY because the freq
+pick already makes the pre-check byte the argmin — the comparison stays as
+the rule that survives a pick change; (F3) G1 scoped to the ONE-BYTE form —
+a run check dismisses strictly more than a memchr, so router-prefix-order
+KEEPS its check (the ledger's bar unaffected). Movers: 1,100/2,814 (294
+one-attempt + 806 dominated), every changed line a pure deletion, 0 lines
+added, 0 refusal mismatches; REF-vs-TIP answer differential 321/321
+identical (8,025 cells). Fast suites green (prechecks 250/0, registry
+649/0, codegen 9/10 nm-only, resource, cpset). OWED at merge: the (B) pin
+→ the merge commit; then the darwin gate; then the bench measures it
+(acceptance: winpath-near-miss / email-nested-plus back to ~20-48 ns;
+json-array-begin one memchr).
