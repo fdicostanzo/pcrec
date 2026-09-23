@@ -499,7 +499,27 @@ fi
 # width is part of the size it bounds. The table is a `=1` build's (one
 # digit); §6b and §6c run a `=15000` build (five), hence 19,188 and 16,102.
 # The rows are therefore written as BOUNDS rather than as equalities.
-K53_CAP_HI=20000
+#
+# RE-MEASURED 2026-09-23 (lane vartriage, triaging [VAR]'s red): `ab`'s
+# WITH-MACHINE size grew past 20,000 -- several same-day landings
+# ([OPTLOOP.1.impl] batches 1+2, [OPT-PRECHECK-ADMIT], [VAR]) each added a
+# few dozen to a few hundred bytes of scaffolding to EVERY artifact, and
+# `ab` is the smallest witness here, so it was the first to cross. Found the
+# new window by binary search on the CAP itself rather than by reading a
+# diagnostic (the `=1`-build trick above needs the drop ladder to still be
+# ABLE to retry, which stops being informative once the pattern names the
+# ONLY compiler under test rather than a size-1 probe): building the real
+# compiler at successive `-DPCREC_MAX_EMIT_BYTES=N` values and reading
+# `RX_DFA_MATCH`'s own stamp off the artifact, `ab` flips search-filter ->
+# unwrapped between N=20,410 and N=20,420 (its own with-machine size);
+# `a[bc]d[ef]g[hi]j[kl]m`, the next smallest of the three drop witnesses,
+# flips the OTHER way between N=22,650 and N=22,700. The valid window is
+# therefore (20,420, 22,700) exclusive; `K53_CAP_HI` moves to 21,500,
+# comfortably inside it with ~1,080 bytes of margin below and ~1,200 above.
+# `K53_CAP_LO` is UNCHANGED: still far below every dropped figure (live-
+# verified same day: `foobarbazqux` at a 15,000 cap still fully refuses,
+# quoting 19,665 bytes, under this section's own `-ge 23000` ceiling).
+K53_CAP_HI=21500
 K53_CAP_LO=15000
 k53_build_ref() {   # $1 = cap, $2 = output path
     $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \

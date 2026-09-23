@@ -159,7 +159,18 @@ root, src, zout, nout = sys.argv[1:5]
 sys.path.insert(0, os.path.join(root, "tests", "lib"))
 from mlscan import multiline_anchor
 
-raw = [l.rstrip("\n") for l in open(src) if l.strip()]
+# [VAR] `errors="surrogateescape"` ON BOTH READ AND WRITE: module `vars`'
+# corpus deliberately carries a raw non-UTF-8 byte in a pattern line
+# (`^${v:-\xff}$`, the default-value operand's own byte-literal cell), which
+# plain `open(src)` cannot read at all -- `UnicodeDecodeError` on that one
+# line kills the whole script before it classifies a single pattern. This is
+# a defect in the SCRIPT's reading, not in pcrec: the classifier below only
+# asks whether a pattern TEXT contains `\z` or a multiline anchor, never
+# decodes it as a string, so round-tripping the byte through a surrogate
+# escape (verified: writes back out as the SAME byte, not a re-encoding of
+# it) costs nothing and fixes every future raw-byte pattern this class of
+# script meets, not just this one.
+raw = [l.rstrip("\n") for l in open(src, encoding="utf-8", errors="surrogateescape") if l.strip()]
 def has_end_view(p):
     # BOTH `(?m)` anchors, not just `(?m)$`, and the reason is the tidiest
     # fact in wave C: they read the `pos == n` view for OPPOSITE purposes.
@@ -170,8 +181,8 @@ def has_end_view(p):
     return "\\z" in p or multiline_anchor(p)
 z    = [p for p in raw if has_end_view(p)]
 noz  = [p for p in raw if not has_end_view(p)]
-open(zout, "w").write("".join(p + "\n" for p in z))
-open(nout, "w").write("".join(p + "\n" for p in noz))
+open(zout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in z))
+open(nout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in noz))
 print("endvar-identity: corpus %d patterns; create a `pos == n` view: %d "
       "(%d mention \\z, %d are (?m) anchor shapes); identity population: %d"
       % (len(raw), len(z), sum(1 for p in raw if "\\z" in p),

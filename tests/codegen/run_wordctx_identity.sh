@@ -184,12 +184,17 @@ def has_word_assertion(p):
         i += 1
     return False
 
-raw = [l.rstrip("\n") for l in open(src) if l.strip()]
+# [VAR] `errors="surrogateescape"` ON BOTH READ AND WRITE: same fix as
+# run_endvar_identity.sh's own -- module `vars`' corpus carries a raw
+# non-UTF-8 byte in a pattern line (`^${v:-\xff}$`), which plain `open(src)`
+# cannot read at all. The classifier only asks about pattern TEXT shape,
+# never decodes it as a string, so round-tripping the byte costs nothing.
+raw = [l.rstrip("\n") for l in open(src, encoding="utf-8", errors="surrogateescape") if l.strip()]
 mentions = [p for p in raw if '\\b' in p or '\\B' in p]
 real = [p for p in raw if has_word_assertion(p)]
 rest = [p for p in raw if not has_word_assertion(p)]
-open(bout, "w").write("".join(p + "\n" for p in real))
-open(nout, "w").write("".join(p + "\n" for p in rest))
+open(bout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in real))
+open(nout, "w", encoding="utf-8", errors="surrogateescape").write("".join(p + "\n" for p in rest))
 print("wordctx-identity: corpus %d patterns; MENTION \\b or \\B: %d; "
       "carry one as an ASSERTION (outside a class): %d; "
       "class-position-only (backspace, no word context): %d"
