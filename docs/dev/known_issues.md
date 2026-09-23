@@ -13,7 +13,16 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K63 — [VAR] panel (varfix, 2026-09-23), pre-existing, documentation/tree fact (not a compiler bug): `src/core/internal.h:877`'s own census of `default:`-carrying `AKind` switches names four sites; there are five
 
-**Status: deferred (a tree-audit fact, not a code defect — safe as found).**
+**Status: FIXED 2026-09-23 ([VAR] M5, lane varmvp)** — the census comment
+now states five, names `vm_isl_words` and gives its verdict (UNREACHABLE for
+either anchor spelling, since it runs only over an island's own `A_CLASS`
+literal branches), and records the general lesson the miscount demonstrates:
+a census written into a comment is a number with no reader, and nothing
+failed when a fifth site appeared. Left as prose rather than promoted to a
+check, because the population it counts is exactly the population that raises
+no compiler alarm, so a check over it would share a source with its subject
+(learnings.md §3). Original entry below, unchanged.
+
 `src/core/internal.h:877-879` records D62 control 3's discharge: "§8.3 names
 four sites as the residual the flag spelling cannot cover — the `Ast.k`
 switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and

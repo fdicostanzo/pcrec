@@ -67,6 +67,7 @@ bool pcrec_has_atomic(const Ast *a)
         /* [M6.5.2] A backreference carries no subtree at all — `l` and `r` are
          * unused — so it can neither BE a cut nor CONTAIN one. */
         case A_BREF:
+        case A_VAR:
             return false;
         /* [M6.6.2] DESCENDS INTO THE BODY. A cut inside a lookaround body is
          * still a cut in the tree — `(?=(?>a|ab))b` carries one — and this
@@ -155,6 +156,7 @@ bool pcrec_has_lookaround(const Ast *a)
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:
+        case A_VAR:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
@@ -227,6 +229,7 @@ bool pcrec_has_collapsible_rep(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        case A_VAR:
             return false;
         case A_CAP: case A_ATOMIC:
             a = a->l;
@@ -294,6 +297,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
         /* [M6.5.2] no subtree; the `a->reg == row` test at the top of the loop
          * has already answered for the node itself. */
         case A_BREF:
+        case A_VAR:
             return false;
         /* [M6.6.2] DESCENDS, generically: this walk is not about lookaround at
          * all, it asks whether ANY row's producer built anything anywhere in
@@ -431,6 +435,7 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
     /* [M6.5.2] TRANSPARENT to nothing and containing nothing: a backreference
      * has no body for a cut to hide in. */
     case A_BREF:
+    case A_VAR:
         return a;
     /* [M6.6.2] DESCENDS INTO THE BODY, and the A_LOOK node itself is never
      * touched. Two halves, and they are different decisions:
@@ -563,6 +568,22 @@ bool pcrec_has_bref(const Ast *a)
         switch (a->k) {
         case A_BREF:
             return true;
+        /* [VAR] FALSE, AND THIS IS THE ONE ARM IN THIS FILE'S NINE WALKS
+         * WHERE `A_VAR` DOES NOT TAKE `A_BREF`'s ANSWER — because here
+         * `case A_BREF:` is the QUESTION, not a per-kind answer. Eight of
+         * these walks ask something general and answer "a leaf with no
+         * subtree"; this one asks "does anything in here compare SUBJECT
+         * TEXT TO SUBJECT TEXT", and a variable compares subject text to
+         * the CALLER's bytes, which is a different fact and the whole
+         * distinction `A_VAR`'s own header states.
+         *
+         * IT WAS WRONG FOR ONE BUILD and the symptom was a diagnostic: the
+         * `-fprefilter` refusal named "a backreference" for a pattern that
+         * has none. Nothing else broke, because the one caller that reads
+         * this for a DECISION (`prefilter_decision`) ORs it with `has_var`
+         * and would have declined either way — which is exactly why it had
+         * to be found by reading the message rather than by a red test. */
+        case A_VAR:
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
             return false;
@@ -628,6 +649,7 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
     for (;;) {
         switch (a->k) {
         case A_BREF:
+        case A_VAR:
             for (int i = 0; i < a->u.bref.nrefs; i++)
                 if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;
             return;
@@ -791,6 +813,7 @@ bool pcrec_has_live_capture(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        case A_VAR:
             return false;
         /* CAPTURE-TRANSPARENT (§3.1), and no descent — see the header — EXCEPT
          * WHEN THE SITE DELIVERS.
@@ -902,6 +925,7 @@ bool pcrec_has_linked_call(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        case A_VAR:
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
@@ -937,6 +961,7 @@ bool pcrec_has_call(const Ast *a)
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         /* no subtree at all — `l` and `r` are unused on a backreference. */
         case A_BREF:
+        case A_VAR:
             return false;
         case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:

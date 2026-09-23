@@ -83,6 +83,27 @@
 typedef struct {
     unsigned    id;              /* PCREC_ENCE_* below */
     bool        engine_callable; /* may an engine body call it? */
+    /* [VAR] OTHER ENTRIES THIS ONE'S TEXT DEPENDS ON, as a mask, or 0.
+     *
+     * WHY A COLUMN AND NOT A RULE IN THE EMITTER. Module `vars`' caseless
+     * compare is the same decode-and-fold walk the caseless BACKREFERENCE
+     * compare is, one operand over — so under `utf8` its residual text calls
+     * that entry's own `$_bref_ci_decode`/`$_bref_ci_fold` helpers rather
+     * than carrying a second copy of a 1,484-pair table, and under `byte`
+     * (where the fold is two lines of arithmetic) it depends on nothing.
+     * WHICH of those is true is a fact about a BACKEND'S TEXT, so the
+     * backend states it, exactly as `engine_callable` above is a fact about
+     * an entry rather than about any artifact. The alternative — an
+     * implication written into `src/gen/emit_vm.c` — would be the emitter
+     * knowing something about an encoding's residual, which DD-12 (7)
+     * forbids outright.
+     *
+     * The dependency is CLOSED ONCE by `pcrec_enc_mask_close` before the
+     * mask reaches either emit function, so a row may name a row that names
+     * another. Cost to every artifact that existed before this column:
+     * NOTHING — every pre-existing row declares 0 and the closure is then
+     * the identity. */
+    unsigned    requires;
     /* [EMIT-VERB] (D112) EACH TEXT BLOB IS A PAIR: the entry's DOC-COMMENT
      * and the C it documents, as two constants rather than one. The
      * `-fno-comments` gate is a render-time decision over comment EVENTS
@@ -123,7 +144,34 @@ enum {
      * added to `PcrecEncEntry`, no signature changes, `pcrec_enc_ready` is
      * untouched, both emit functions are untouched, and the third-encoding
      * recipe in this header is unchanged. */
-    PCREC_ENCE_BACK_STEP      = 1u << 3
+    PCREC_ENCE_BACK_STEP      = 1u << 3,
+    /* [VAR] In the mask only when the artifact contains a `${...}` variable
+     * of that caselessness — the same two-entries-not-one-with-a-flag rule
+     * the backreference pair above states, for the same D18/D23 reason.
+     *
+     * A SEPARATE PAIR RATHER THAN A WIDER `bref_match`, and the reason is the
+     * BUFFER: a backreference's two operands are both slices of the SUBJECT,
+     * so its entry takes one pointer and two offsets; a variable's second
+     * operand is the CALLER's own buffer, so this entry takes a pointer and a
+     * length. Adding the value pair to the existing entry would have changed
+     * `$_bref_match`'s signature in every artifact that has ever carried one.
+     * `variables_pattern.md` §1.3. */
+    PCREC_ENCE_VAR            = 1u << 4,
+    PCREC_ENCE_VAR_CASELESS   = 1u << 5,
+    /* [VAR] IS A CALLER-SUPPLIED VALUE WELL FORMED UNDER THIS ENCODING? In
+     * the mask only when the artifact carries a variable AND this backend has
+     * an answer — which is the whole mechanism, because a backend under which
+     * every byte string is valid simply HAS NO ROW HERE and the emitter then
+     * emits no check at all. `entries_byte[]` carries none; `entries_utf8[]`
+     * does. That is how `variables_common.md` §2.1's per-encoding refusal
+     * reaches the artifact WITHOUT an `if (encoding == utf8)` in the emitter,
+     * which DD-12 (7) forbids: the emitter asks whether the TABLE has a row,
+     * never which encoding it is looking at.
+     *
+     * NOT `engine_callable`: it is called from the entry wrapper's
+     * once-per-call resolution, never from an engine body, so the [M5-SEAM]
+     * check's rule applies to it exactly as it does to `next_pos`. */
+    PCREC_ENCE_VAR_VALID      = 1u << 6
 };
 
 typedef struct {
@@ -324,6 +372,20 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
  * inheriting one from a list somewhere else. False for an id no backend
  * carries. */
 bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id);
+
+/* [VAR] Does this backend's table CARRY entry `id` at all? A different
+ * question from `engine_callable` above, and the one an emitter asks when a
+ * mechanism is OPTIONAL PER BACKEND rather than optional per artifact — the
+ * value-validity entry is the first such: a backend under which every byte
+ * string is valid has no row, and "no row" is the answer. */
+bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id);
+
+/* [VAR] Close `mask` under every entry's own `requires` column and return the
+ * result. Called ONCE, where the artifact's mask is finished and before it
+ * reaches either emit function, so no emitter has to know which entries lean
+ * on which. Identity for a mask naming only rows that require nothing, which
+ * is every row that existed before the column did. */
+unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask);
 
 /* Copy `text` into `sb`, replacing every `$` with `prefix`. */
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix);

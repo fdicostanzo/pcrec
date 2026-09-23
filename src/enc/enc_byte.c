@@ -189,6 +189,118 @@ static const char defs_bref_ci[] =
 "    return (ptrdiff_t)need;\n"
 "}\n";
 
+/* ---- entries 5 and 6: the CALLER-VARIABLE COMPARE ([VAR], D58 scope item 3)
+ *
+ * `variables_pattern.md` §1.3. A pattern variable is a backreference whose
+ * span comes from the CALLER instead of from `slot_values[]`, so this pair is
+ * the `$_bref_match` pair with one operand's source changed: a pointer and a
+ * length in place of two offsets into the subject. Same return protocol, byte
+ * for byte, because the caller's work charge and its fail path are the same
+ * code (`vm_var` in src/gen/emit_vm.c reuses `vm_bref`'s own charge line).
+ *
+ * WHY THE WELL-FORMEDNESS REFUSAL IS NOT HERE. `variables_common.md` §2.1
+ * promises that a value which is not well-formed UTF-8 is a REFUSED CALL
+ * under `-e utf8`, not a silent nomatch — and this entry's return space is
+ * two-valued by sign, with no third value for "refuse" that would not break
+ * the protocol the backreference pair already fixed. So the check runs ONCE
+ * PER CALL in the entry wrapper, over the resolved value, before the match
+ * begins; by the time either body below runs, its `v` is well formed. Under
+ * `byte` there is nothing to check at all: every byte string is a valid
+ * `byte` string by definition.
+ *
+ * ENGINE-CALLABLE, for `$_bref_match`'s reason exactly: a variable has no
+ * automaton representation whatsoever, so forbidding the call would forbid
+ * the construct. */
+static const char decls_var_doc[] =
+"/* $_var_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE compare\n"
+" * against a CALLER-SUPPLIED value (pcrec [VAR]).\n"
+" *\n"
+" * PRECONDITION: v points at vlen readable bytes. Unlike $_bref_match's\n"
+" * ordered capture pair, that is a fact about CALLER DATA rather than a\n"
+" * structural one -- the entry wrapper checks `p != NULL` and (under a\n"
+" * multi-byte encoding) well-formedness before the match begins, so by the\n"
+" * time this runs the value is one this encoding can compare.\n"
+" *\n"
+" * RETURNS, exactly as $_bref_match does:\n"
+" *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not\n"
+" *            equal vlen: under an encoding whose case folding is not\n"
+" *            length-preserving it may differ, which is why this entry\n"
+" *            returns a length rather than a bool.\n"
+" *     <  0   no match, and -(result) - 1 is the number of subject bytes\n"
+" *            that DID compare equal before the mismatch -- the WORK this\n"
+" *            call did, which the caller charges against its budget.\n"
+" *\n"
+" * Reads v only at offsets in [0, vlen) and s only at offsets in [at, n).\n"
+" *\n"
+" * THE VALUE'S BYTES ARE MATCHED AS THEMSELVES, never parsed as pattern\n"
+" * syntax, under any flag -- pcrec's injection boundary (variables_common.md\n"
+" * section 4.2). A caller interpolating untrusted input into a pattern can\n"
+" * rely on that.\n"
+" *\n"
+" * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
+" * character and the compare is length-preserving. */\n";
+
+static const char decls_var[] =
+"ptrdiff_t $_var_match(const unsigned char *s, size_t n,\n"
+"                      const unsigned char *v, size_t vlen, size_t at);\n";
+
+static const char defs_var_doc[] =
+"/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
+" * a prefix count. */\n";
+
+static const char defs_var[] =
+"ptrdiff_t $_var_match(const unsigned char *s, size_t n,\n"
+"                      const unsigned char *v, size_t vlen, size_t at)\n"
+"{\n"
+"    size_t i;\n"
+"    for (i = 0; i < vlen; i++) {\n"
+"        if (at + i >= n || s[at + i] != v[i])\n"
+"            return -(ptrdiff_t)i - 1;\n"
+"    }\n"
+"    return (ptrdiff_t)vlen;\n"
+"}\n";
+
+static const char decls_var_ci_doc[] =
+"/* $_var_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * compare against a caller-supplied value (pcrec [VAR]): $_var_match,\n"
+" * folding case.\n"
+" *\n"
+" * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
+" * letters and nothing else, which is what an 8-bit non-UTF match does.\n"
+" *\n"
+" * THE VALUE IS NOT PRE-FOLDED, and that is a correctness matter rather than\n"
+" * a cost one: a fold is a relation between TWO sides, and the subject side\n"
+" * is not folded, so a pre-folded value would fail on every subject carrying\n"
+" * the other case. */\n";
+
+static const char decls_var_ci[] =
+"ptrdiff_t $_var_match_caseless(const unsigned char *s, size_t n,\n"
+"                               const unsigned char *v, size_t vlen,\n"
+"                               size_t at);\n";
+
+static const char defs_var_ci_doc[] =
+"/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
+" * tolower(): that is locale-dependent at YOUR run time, and this matcher's\n"
+" * answers must not change with setlocale(). */\n";
+
+static const char defs_var_ci[] =
+"ptrdiff_t $_var_match_caseless(const unsigned char *s, size_t n,\n"
+"                               const unsigned char *v, size_t vlen,\n"
+"                               size_t at)\n"
+"{\n"
+"    size_t i;\n"
+"    for (i = 0; i < vlen; i++) {\n"
+"        unsigned char x, y;\n"
+"        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
+"        x = s[at + i];\n"
+"        y = v[i];\n"
+"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
+"        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
+"        if (x != y) return -(ptrdiff_t)i - 1;\n"
+"    }\n"
+"    return (ptrdiff_t)vlen;\n"
+"}\n";
+
 /* ---- entry 4: the LOOKBEHIND BACK-STEP ([M6.6.2] wave D, D58 scope item 3;
  * lookaround_design.md §4)
  *
@@ -254,15 +366,23 @@ static const char defs_back_step[] =
 "}\n";
 
 static const PcrecEncEntry entries_byte[] = {
-    { PCREC_ENCE_NEXT_POS,      false,
+    { PCREC_ENCE_NEXT_POS,      false, 0,
       decls_byte_doc,      decls_byte,      defs_byte_doc,      defs_byte      },
-    { PCREC_ENCE_BREF,          true,
+    { PCREC_ENCE_BREF,          true,  0,
       decls_bref_doc,      decls_bref,      defs_bref_doc,      defs_bref      },
-    { PCREC_ENCE_BREF_CASELESS, true,
+    { PCREC_ENCE_BREF_CASELESS, true,  0,
       decls_bref_ci_doc,   decls_bref_ci,   defs_bref_ci_doc,   defs_bref_ci   },
-    { PCREC_ENCE_BACK_STEP,     true,
+    { PCREC_ENCE_BACK_STEP,     true,  0,
       decls_back_step_doc, decls_back_step, defs_back_step_doc, defs_back_step },
-    { 0, false, NULL, NULL, NULL, NULL }
+    /* [VAR] `requires` is 0 for BOTH: under `byte` the fold is two lines of
+     * arithmetic spelled inline, so neither variable compare leans on any
+     * other entry's text. The utf8 backend's caseless row is where the
+     * column earns its place. */
+    { PCREC_ENCE_VAR,           true,  0,
+      decls_var_doc,       decls_var,       defs_var_doc,       defs_var       },
+    { PCREC_ENCE_VAR_CASELESS,  true,  0,
+      decls_var_ci_doc,    decls_var_ci,    defs_var_ci_doc,    defs_var_ci    },
+    { 0, false, 0, NULL, NULL, NULL, NULL }
 };
 
 /* [K49] THE UNANCHORED RETRY ADVANCE (enc.h's `advance` field). One byte is

@@ -489,6 +489,7 @@ static RbVal rb_walk(const Ast *a)
          * linked call's body is `callgraph.c`'s cycle problem. Both are the
          * empty set, which disables the check — always sound. */
         case A_BREF:
+        case A_VAR:
         case A_CALL:
             acc.runs = rr_cat(rr_none(), acc.runs);
             return acc;

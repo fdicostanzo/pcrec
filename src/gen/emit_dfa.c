@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 31
+#define PCREC_ARTIFACT_ABI 32
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -434,16 +434,52 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  * without any emitter knowing that options have a product. Today there is one
  * engine per file and the name is "<prefix>_search". */
 
+/* [VAR] THE TRAILING `vars, nvars` PAIR, as parameter text or as argument
+ * text, or `""` on an artifact that mentions no variable.
+ *
+ * WHY THE TOP-LEVEL ENTRIES TAKE A PAIR AND `<prefix>_match` DOES NOT. The
+ * environment rides `rx_ctx` (Frank, 2026-09-23), so every `rx_ctx`-shaped
+ * entry reads `ctx->vars` and keeps its signature — which is what makes a
+ * var-bearing artifact's `<prefix>_match` an `rx_matchfn` byte for byte and
+ * resolves the D6 panel's MECH-B2. `<prefix>_search` and its `_in` siblings
+ * are NOT `rx_ctx`-shaped: they build the ctx themselves, so the environment
+ * has to reach them some other way, and a trailing parameter present exactly
+ * when meaningful is the existing precedent — `<prefix>_search_in` IS the
+ * un-suffixed twin plus a trailing descriptor (D18, spec §10.2).
+ *
+ * `vars` GOES BEFORE THE `_in` DESCRIPTOR, not after it, and the compiler is
+ * what settled that: the `_in` entries are built as "the un-suffixed sibling
+ * in every respect, PLUS one argument naming where the working storage lives"
+ * (spec §10.2) — a rule `vm_emit_default_entry` implements by APPENDING the
+ * descriptor to the un-suffixed parameter list. Putting the pair after the
+ * descriptor made the two spellings disagree, which the first build of a
+ * var-bearing artifact caught as a conflicting declaration. The descriptor
+ * stays last, which is what §10.2 already said.
+ *
+ * THE EMPTY DEFAULT IS A BYTE-IDENTITY CONTRACT: an artifact with no variable
+ * emits the signature it has always had, which is what makes `emit_sweep`'s
+ * zero-mover claim for this landing a real control. */
+const char *pcrec_vars_param_text(Ctx *cx)
+{
+    return cx->n_var_exps ? ",\n       const rx_var *vars, size_t nvars" : "";
+}
+
+const char *pcrec_vars_arg_text(Ctx *cx)
+{
+    return cx->n_var_exps ? ", vars, nvars" : "";
+}
+
 /* Writes the `<prefix>_search` entry's declaration.
  *
  * [M4.4] (D44.2, match_api_m4.md §1.0/§11 item 1): RETIRES emit_span_typedef
  * and its `<prefix>_span` out-struct — the search entry's fourth parameter
  * is now `ptrdiff_t (*caps)[2]` directly, already its FINAL shape (no
  * further signature change is owed when RX_NCAPS grows past 1 at [M4.5]). */
-static void emit_search_decl(StrBuf *sb, const char *fn)
+static void emit_search_decl(StrBuf *sb, Ctx *cx, const char *fn)
 {
     pcrec_sb_printf(sb, "int %s(const unsigned char *subject, size_t subject_length, "
-                  "size_t search_from, ptrdiff_t (*capture_spans)[2]);\n", fn);
+                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s);\n",
+                  fn, pcrec_vars_param_text(cx));
 }
 
 /* The definition's signature, kept next to the declaration it must match.
@@ -847,7 +883,15 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
                "__attribute__((noclone))\n"
                "#endif\n");
     pcrec_sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
-                 "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
+                 "size_t search_from, ptrdiff_t (*capture_spans)[2]%s)\n{\n",
+                 storage, fn,
+                 /* The DFA engine never emits a var-bearing artifact — an
+                  * `A_VAR` forces the VM and forces the prefilter off — so
+                  * this reads "" today at BOTH of this emitter's customers.
+                  * It is threaded anyway rather than hard-coded to "",
+                  * because the alternative is a second definition of "which
+                  * entries take the pair" living in one engine's emitter. */
+                 pcrec_vars_param_text(cx));
     /* [K50] `fit.chosen == ENGM_DFA` is the same discriminator the dead-group
      * fill below uses, and for the same reason: this emitter has TWO customers
      * and only one of them is a caller-facing entry. The other is the VM
@@ -1011,6 +1055,26 @@ static void emit_rx_abi_types(StrBuf *sb)
         "#ifndef PCREC_RX_ABI_H\n"
         "#define PCREC_RX_ABI_H\n"
         "\n"
+        /* [VAR] ONE CALLER VARIABLE — a fixed-literal ABI type, never
+         * `--prefix`-scoped, joining `rx_ctx`/`rx_matchfn`/`rx_callout_ref`
+         * (D41.1) and `rx_info`/`rx_group_entry` (D43/D44).
+         *
+         * BY NAME, AND THAT IS THE RULING RATHER THAN A PREFERENCE (Frank,
+         * 2026-09-23). An INDEX is meaningful only inside the artifact that
+         * assigned it: two separately compiled artifacts composed alongside
+         * each other cannot agree that index 0 names the same variable, and a
+         * caller juggling two artifacts' index tables by hand would be
+         * re-deriving the compiler's own bookkeeping outside the compiler. A
+         * name is the only key both sides can agree on without sharing a
+         * compile-time fact. */
+        "typedef struct rx_var {\n"
+        "    const char          *name;  /* NUL-terminated; the pattern's own\n"
+        "                                    spelling of the name */\n"
+        "    const unsigned char *p;     /* NULL == UNSET. When p is NULL, len\n"
+        "                                    is IGNORED and never read. */\n"
+        "    size_t               len;   /* bytes; 0 with p != NULL == EMPTY */\n"
+        "} rx_var;\n"
+        "\n"
         "typedef struct rx_ctx {\n"
         "    const unsigned char *subject;   /* whole subject, not a slice */\n"
         "    size_t                len;      /* subject length */\n"
@@ -1019,6 +1083,22 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                        mid-match; ncaps on completion) */\n"
         "    const ptrdiff_t     (*caps)[2]; /* [start,end); {-1,-1} = unset */\n"
         "    void                 *user;     /* per-binding user data */\n"
+        /* [VAR] (Frank, 2026-09-23; variables_common.md S3.3) THE CALLER'S
+         * VARIABLE ENVIRONMENT, APPENDED AT THE END so no existing member's
+         * offset moves and `rx_matchfn`'s signature is untouched — which is
+         * the whole point of putting it here rather than on the entries. A
+         * var-bearing artifact's `<prefix>_match` IS an `rx_matchfn` byte for
+         * byte, and a matcher composed as a callout receives the outer call's
+         * environment simply because it already receives the outer `ctx`.
+         *
+         * PER-CALL, NOT PER-BINDING. `user` one line up is filled once at
+         * BINDING time from an `rx_callout_ref`; these two are filled fresh
+         * on every call exactly as `subject`/`caps` are, which is why D38's
+         * refusal of a second per-binding arrival discipline does not reach
+         * them. An artifact that mentions no variable never reads either. */
+        "    const rx_var         *vars;     /* caller variables, by NAME;\n"
+        "                                        NULL when none */\n"
+        "    size_t                nvars;    /* entries in vars[] */\n"
         "} rx_ctx;\n"
         "\n"
         "/* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a\n"
@@ -1093,7 +1173,28 @@ static void emit_rx_abi_types(StrBuf *sb)
          * handed a non-boundary means the engine broke its own rule, which is
          * exactly what a trap is for. */
         "#define PCREC_ERR_STARTPOS (-7)  /* [K50] below PCREC_ERR_FLOOR: "
-        "NOT a give-up -- a mid-character startpos was REFUSED */\n"
+        "NOT a give-up -- a mid-character startpos was REFUSED */\n"        /* [VAR] THE THIRD BELOW-THE-FLOOR PRODUCER, and `PCREC_ERR_STARTPOS`
+         * is its shape exactly: a CALLER REFUSAL, where nothing was attempted
+         * and `caps` is untouched, rather than an engine that tried and ran
+         * out. Two situations raise it, both checked in the entry wrapper
+         * before the match begins: a bare `${name}` whose slot the caller
+         * left UNSET, and (under a multi-byte encoding) a value that is not
+         * well-formed.
+         *
+         * IT IS RAISED RATHER THAN MATCHED EMPTY because an unset variable
+         * rendering as empty WIDENS THE LANGUAGE — `^${prefix}-[0-9]+$` with
+         * `prefix` unset becomes `^-[0-9]+$` and matches inputs the caller
+         * never authorized. That failure is invisible and sits on a security
+         * boundary, so it gets the loud default; `${name:-}` is the caller's
+         * explicit, reviewable opt-in to permissiveness (variables_common.md
+         * S2.4).
+         *
+         * EVERY ARTIFACT DEFINES IT; ONLY A VAR-BEARING ONE EMITS IT.
+         * `PCREC_ERR_STARTPOS`'s own rule one line up — a caller's `switch`
+         * written today must survive a later compile of the same pattern with
+         * a variable in it. */
+        "#define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below PCREC_ERR_FLOOR: "
+        "NOT a give-up -- an UNSET or ill-formed variable value was REFUSED */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */
@@ -1318,6 +1419,32 @@ static void emit_rx_abi_types(StrBuf *sb)
         "       is \"has a DFA scan\" and not \"the DFA emitter wrote _match\".\n"
         "       NULL only on a plain VM artifact. */\n"
         "    const char           *search_form;\n"
+        /* [VAR] THE VARIABLE-NAME TABLE and its count, APPENDED AT THE END
+         * after `search_form` on `rx_info.groups`' own model — the
+         * [DD-13c]/[OPT-5] discipline restated once more: append, so no
+         * existing member's offset moves, and let the `abi` bump announce the
+         * growth.
+         *
+         * ITS ROLE IS VALIDATION, NOT RESOLUTION. Under the 2026-09-23
+         * by-name ruling the ARTIFACT resolves its own mentioned names
+         * against whatever array the caller supplies, once per entry call, so
+         * nothing in the match path reads this table. A reflective caller — a
+         * binding, a debugger, the `.rxt` harness's driver — MAY consult it to
+         * catch a typo in a name before calling, which is exactly what
+         * `groups[]` is for one fact over. It costs `.rodata` and nothing
+         * else, which is why it lands in THIS abi event rather than being a
+         * second one later.
+         *
+         * THE ORDER IS FIRST MENTION, not sorted — unlike `groups[]`, which is
+         * sorted because §6's caller algorithm bsearches it. This table is
+         * 1-3 entries in every case the design has looked at and its index IS
+         * the artifact's own internal slot number, so first-mention order is
+         * the order the `<PREFIX>_VAR_<NAME>` macros carry and a reader of the
+         * emitted source sees one order rather than two. */
+        "    const char *const    *vars;        /* variable NAMES this pattern\n"
+        "                                           mentions, in first-mention\n"
+        "                                           order; NULL when none */\n"
+        "    int                   nvars;       /* entries in vars[] */\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1499,11 +1626,13 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
  * (emit_search_decl and friends), which they mirror argument for argument
  * plus the descriptor -- spec §10.2's "its un-suffixed sibling in every
  * respect, plus one argument naming where the working storage lives". */
-static void emit_search_in_decl(StrBuf *sb, const char *fn, const char *prefix)
+static void emit_search_in_decl(StrBuf *sb, Ctx *cx, const char *fn,
+                                const char *prefix)
 {
     pcrec_sb_printf(sb, "int %s_in(const unsigned char *subject, size_t subject_length, "
-                  "size_t search_from, ptrdiff_t (*capture_spans)[2], "
-                  "const %s_buffers *buffers);\n", fn, prefix);
+                  "size_t search_from, ptrdiff_t (*capture_spans)[2]%s, "
+                  "const %s_buffers *buffers);\n",
+                  fn, pcrec_vars_param_text(cx), prefix);
 }
 
 /* Writes `<prefix>_match_in`'s declaration.
@@ -2308,6 +2437,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         pcrec_sb_printf(c, "    .search_form = \"%s\",\n", dfa_search_start_name(cx));
     else
         pcrec_sb_puts(c, "    .search_form = NULL,\n");
+    /* [VAR] the variable-NAME table and its count. `vars` points at the SAME
+     * `<prefix>_var_names[]` array `<prefix>_vars_resolve` scans against
+     * (src/gen/emit_vm.c), which is what makes the caller-facing table and
+     * the artifact's own resolution ONE derivation rather than two that could
+     * disagree about order or spelling. */
+    if (cx->n_vars > 0)
+        pcrec_sb_printf(c, "    .vars = %s_var_names,\n    .nvars = %u,\n",
+                        cx->opt->prefix, cx->n_vars);
+    else
+        pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
     pcrec_sb_puts(c,   "};\n");
 }
 
@@ -2387,7 +2526,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_ncaps_macros(h, upper, ncaps);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
     pcrec_sb_putc(h, '\n');
-    emit_search_decl(h, fn);
+    emit_search_decl(h, cx, fn);
     emit_match_decl(h, matchfn);
     emit_match_caps_decl(h, matchcapsfn);
     emit_info_decl(h, infoname);
@@ -2396,7 +2535,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
      * entries, the `<prefix>_buffers` type and all five macros are emitted on
      * EVERY artifact", so a consumer's code does not stop compiling when the
      * same pattern selects the other engine. */
-    emit_search_in_decl(h, fn, cx->opt->prefix);
+    emit_search_in_decl(h, cx, fn, cx->opt->prefix);
     emit_match_in_decl(h, matchfn, cx->opt->prefix);
     emit_match_caps_in_decl(h, matchcapsfn, cx->opt->prefix);
     pcrec_sb_putc(h, '\n');
@@ -7874,6 +8013,13 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * `memchr` at all. */
     ReqAdmit admit = req_admit(cx);
     if (admit == REQ_ADMIT_EMITTED) need_string_h = true;
+    /* [VAR] A THIRD CUSTOMER: `<prefix>_vars_resolve` matches the caller's
+     * variable NAMES against this artifact's own with a length check and a
+     * `memcmp`, once per entry call. `strcmp` would read past a caller's
+     * buffer if a name were not NUL-terminated; `memcmp` after an equal-length
+     * test cannot, and the length is the contract this artifact already knows
+     * (variables_common.md §3.2). */
+    if (cx->n_var_exps > 0) need_string_h = true;
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
@@ -8061,11 +8207,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_ncaps_macros(c, g->upper, ncaps);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
         pcrec_sb_putc(c, '\n');
-        emit_search_decl(c, g->searchfn);
+        emit_search_decl(c, cx, g->searchfn);
         emit_match_decl(c, g->matchfn);
         emit_match_caps_decl(c, g->matchcapsfn);
         emit_info_decl(c, g->infoname);
-        emit_search_in_decl(c, g->searchfn, cx->opt->prefix);
+        emit_search_in_decl(c, cx, g->searchfn, cx->opt->prefix);
         emit_match_in_decl(c, g->matchfn, cx->opt->prefix);
         emit_match_caps_in_decl(c, g->matchcapsfn, cx->opt->prefix);
         pcrec_sb_putc(c, '\n');

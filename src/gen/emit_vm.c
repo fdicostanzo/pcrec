@@ -1309,6 +1309,7 @@ static bool vm_nullable(const Ast *a)
          * zero-width iteration. Sabotage row S107, whose detector is the
          * harness's derived timeout rather than a wrong span. */
         case A_BREF: return true;
+        case A_VAR:  return true;   /* [VAR] an EMPTY value matches nothing, so a variable is nullable exactly as a backreference to an empty group is */
         /* [M6.6.2] TRUE, AND GETTING IT WRONG IS A BUDGET BURN RATHER THAN A
          * WRONG SPAN — which makes it the arm most likely to be written by
          * reflex and least likely to be caught by a corpus reading answers.
@@ -1940,6 +1941,8 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
          * because there is no reversed spelling of "compare against what group
          * k captured". */
         case A_BREF:
+        /* [VAR] carries no capture NUMBER either, and is unreachable here for `A_BREF`'s own reason: `rd_shape` declines a body holding one. */
+        case A_VAR:
         /* [DD-14] DECLINES, joining `A_BREF` and `A_ATOMIC`: it carries no
          * capture NUMBER of its own, and it is UNREACHABLE for their reason —
          * `rd_shape` (src/opt/revdet.c) declines every body holding a call.
@@ -2729,6 +2732,10 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * never sees, which is exactly what that budget meters and not what
      * this analysis sizes. */
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    /* [VAR] ZERO analysis cost, `A_BREF`'s cell for `A_BREF`'s reason: the
+     * compare's byte-by-byte work is charged against the WORK budget at the
+     * emission site, which is per-SUBJECT work this analysis does not size. */
+    case A_VAR:
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_BREF: {
         Cost c = { 0, 0, 0, 0, false, false };
         return c;
@@ -2995,6 +3002,10 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * repeat around a marked group is the "slot two live loops share" failure
      * this file's own warning names. */
     case A_BREF:
+    /* [VAR] allocates no slot: its span is EXTERNAL — resolved into the
+     * entry wrapper's own stack table before the match loop begins — which
+     * is this feature's whole distinction from a backreference. */
+    case A_VAR:
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
@@ -7000,6 +7011,7 @@ static void vm_walk_caps(Vm *v, const Ast *a,
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF: case A_CALL:
+        case A_VAR:
             return;
         case A_CAP:
             on_cap(v, a->u.cap.no, u);
@@ -7083,6 +7095,7 @@ static void vm_walk_calls(Vm *v, Ast *a,
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        case A_VAR:
             return;
         case A_CALL:
             on_call(v, a, u);
@@ -8244,6 +8257,67 @@ static void vm_bref(Vm *v, int entry, const Ast *a, int next)
     vm_ev(v, VE_GOTO, next, 0, NULL);
 }
 
+/* A CALLER VARIABLE: the resolved span, the seam call and its work charge.
+ *
+ * [VAR] `vm_bref` ABOVE WITH THE SPAN SOURCE SWAPPED, and that is the whole
+ * design (`variables_pattern.md` §1.2). Everything downstream of "here is a
+ * pointer and a length" is that function's and is reused unchanged: the seam
+ * call through `engine_callable`, the LENGTH return a length-changing
+ * caseless fold needs, the work charge on a partial compare, the two fail
+ * events.
+ *
+ * WHAT IS *NOT* HERE, and its absence is the point. There is no unset test
+ * and no evaluation of the expansion's operator: both happen ONCE PER CALL in
+ * `<prefix>_vars_resolve`, before the match loop begins, and by the time this
+ * instruction runs `run->var_value[slot]` is a concrete non-NULL span. A test
+ * here would be D23's measured 26% per-POSITION indirection for a fact that
+ * cannot change during a call. */
+static void vm_var(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *bb = v->b;
+    const unsigned seam_entry = a->u.var.caseless ? PCREC_ENCE_VAR_CASELESS
+                                                  : PCREC_ENCE_VAR;
+    /* `vm_bref`'s own rule, one construct over: the BACKEND's declaration is
+     * consulted before the call is emitted, so a backend whose variable
+     * compare is not engine-callable fails HERE and by name rather than two
+     * steps and one test run later at the [M5-SEAM] codegen check. */
+    if (!pcrec_enc_entry_engine_callable(
+            pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
+        pcrec_ctx_fail(v->cx, 0,
+                 "internal error: this encoding's variable compare is not "
+                 "declared engine-callable, so it cannot be routed through "
+                 "the seam from an engine body");
+    v->enc_mask |= seam_entry;
+    const char *fn = vm_rolef(v, "%s_var_match%s", v->p,
+                              a->u.var.caseless ? "_caseless" : "");
+    vm_lbl(v, entry, vm_rolef(v, "caller variable %s%s",
+                              pcrec_varexp_render(&v->cx->arena, a->u.var.exp),
+                              a->u.var.caseless ? ", caseless" : ""));
+    pcrec_sb_printf(bb,
+        "    {\n"
+        "        ptrdiff_t took;\n"
+        "        took = %s(subject, subject_length,\n"
+        "                  run->var_value[%d], run->var_length[%d],\n"
+        "                  scan_position);\n",
+        fn, a->u.var.slot, a->u.var.slot);
+    /* The SAME `vm_work` primitive and the same charge expression the
+     * backreference uses: `took` on success, and on failure the entry's
+     * negative encoding carries the PREFIX it compared, so the bytes the fail
+     * label never sees are charged either way. Without it `(${v})*` over a
+     * long subject does unbounded uncharged byte comparison per step. */
+    vm_work_at(v, "        ", "took >= 0 ? took : -took - 1",
+               "caller-variable compare: the bytes it examined, which the "
+               "fail label never sees");
+    pcrec_sb_printf(bb,
+        "        if (took < 0) goto %s_fail;\n"
+        "        scan_position += (size_t)took;\n"
+        "        goto %s_L%d;\n"
+        "    }\n",
+        v->p, v->p, next);
+    vm_ev(v, VE_FAIL, 0, 0, NULL);
+    vm_ev(v, VE_GOTO, next, 0, NULL);
+}
+
 /* A CONCATENATION: the left-leaning spine flattened iteratively, then each
  * element emitted with its own follow-min.
  *
@@ -8482,6 +8556,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     case A_NWORDB: vm_wordb(v, entry, a, next); return;
     case A_CAP:    vm_cap(v, entry, a, next);   return;
     case A_BREF:   vm_bref(v, entry, a, next);  return;
+    case A_VAR:    vm_var(v, entry, a, next);   return;
     case A_CAT:    vm_cat(v, entry, a, next);   return;
     case A_ALT:
         vm_alt(v, entry, a, next);
@@ -10261,6 +10336,23 @@ static void vm_plan(Vm *v, Ast *root, VmPlan *pl)
      * both gets `(ctx, w, ceil, startpos)`. */
     const char *gst_param = vm_rolef(v, ", const size_t %s_search_from", v->p);
 
+    /* [VAR] THE VALUE-VALIDITY ENTRY'S BIT IS SET HERE, not where the check
+     * is emitted, and the reason is this comment's own next sentence: the
+     * mask is copied BEFORE the prologue. `vm_var` can OR its compare's bit
+     * during the body walk because the walk runs above this line;
+     * `vm_emit_vars_resolve` runs BELOW it, so a bit set there would never
+     * reach the prologue and the artifact would CALL a residual it had not
+     * declared. Measured exactly that way — the first utf8 build failed at
+     * `implicit declaration of rx_var_valid`.
+     *
+     * The need is fully known here: this artifact has variables iff
+     * `cx->n_var_exps > 0`, and this BACKEND answers the validity question
+     * iff its table carries the row. No encoding test (DD-12 (7)). */
+    if (cx->n_var_exps > 0 &&
+        pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
+                            PCREC_ENCE_VAR_VALID))
+        v->enc_mask |= PCREC_ENCE_VAR_VALID;
+
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
     job->enc_mask = v->enc_mask;
@@ -10959,6 +11051,33 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
     }
     pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl->nstate < 1 ? 1 : pl->nstate);
 
+    /* [VAR] THE VARIABLE STAMPS: how many NAMES this artifact mentions, and
+     * one index macro per name.
+     *
+     * THE INDEX IS THE ARTIFACT'S OWN AND NEVER SOMETHING A CALLER WRITES
+     * (Frank's 2026-09-23 by-name ruling, variables_common.md §3.1). It
+     * indexes `rx_info.vars`, the artifact's own NAME table, and it is stamped
+     * so that a reader of the emitted source can follow the resolver's
+     * subscripts — which is the same reason the slot legend below this exists.
+     * A caller writes `{ "prefix", buf, n }` and the artifact finds its own
+     * slot.
+     *
+     * The NAME is uppercased through the emission kit's one derivation
+     * (`pcrec_sb_upper`), so a name that is not a legal C identifier tail
+     * cannot reach here: the grammar's own selector rule
+     * (`src/core/varexp.c`) already restricts it to `[A-Za-z_][A-Za-z0-9_]*`,
+     * which is the C identifier rule, and that is why no escaping is needed
+     * at this site. */
+    if (cx->n_vars > 0) {
+        pcrec_sb_stampf(c, v->up, "NVARS", "%u", cx->n_vars);
+        for (unsigned i = 0; i < cx->n_vars; i++)
+            pcrec_sb_stampf(c,
+                v->up,
+                pcrec_sb_fragf(&cx->arena, "VAR_%s",
+                               pcrec_sb_upper(&cx->arena, cx->var_names[i])),
+                "%u", i);
+    }
+
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
      * indexes, and naming them is the single largest readability gain in a VM
@@ -11183,6 +11302,25 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
          * resume stack's capacity is now a caller-chosen `size_t`. */
         v->has_linked_calls ? "\n    size_t call_top;   /* the CURRENT activation's"
                       " frame index, or CALL_TOP_NONE */" : "");
+    /* [VAR] THE RESOLVED EXPANSIONS, one `(pointer, length)` pair per DISTINCT
+     * expansion this pattern spells — filled once per entry call by
+     * `<prefix>_vars_resolve` and read by every `A_VAR` instruction at every
+     * position after that. They live in the RUN STATE rather than in locals of
+     * `<prefix>_match_anchored` because the resolution must be per CALL and
+     * that function is called once per ATTEMPT POSITION; the run state is the
+     * one object whose lifetime is exactly a call.
+     *
+     * KEYED BY EXPANSION, NOT BY NAME: `${v}` and `${v:-d}` name one variable
+     * and have two answers (src/core/internal.h's `Ctx.var_exps`).
+     *
+     * EMITTED ONLY ON A VAR-BEARING ARTIFACT, which is what keeps every
+     * artifact that existed before this module byte-identical in this half. */
+    if (cx->n_var_exps > 0)
+        pcrec_sb_printf(c,
+            "    const unsigned char *var_value[%u];  /* resolved span, per"
+            " expansion */\n"
+            "    size_t var_length[%u];\n",
+            cx->n_var_exps, cx->n_var_exps);
     if (has_budget) pcrec_sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         pcrec_sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
@@ -11543,6 +11681,284 @@ static void vm_emit_storage(Vm *v, const VmPlan *pl)
  * THE INVARIANT A CALLER MUST NOT BREAK: after `vm_emit_storage`, and before
  * `vm_emit_entries`, whose six entries all delegate into what is written
  * here. */
+/* Emits a WORD's bytes as a C string-literal initializer's contents, escaped
+ * so every byte survives. `\xNN` uniformly for anything that is not a plain
+ * printable ASCII character, because a value's bytes are DATA and a
+ * half-escaped one is a miscompile a reader cannot see. */
+static void vm_var_word_bytes(StrBuf *b, const unsigned char *p, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        unsigned char ch = p[i];
+        if (ch >= 0x20 && ch < 0x7F && ch != '"' && ch != '\\' && ch != '?')
+            pcrec_sb_printf(b, "%c", (char)ch);
+        else
+            pcrec_sb_printf(b, "\\x%02x\"\"", (unsigned)ch);
+    }
+}
+
+/* Emit the assignment that gives expansion slot `slot` its resolved span,
+ * given `raw_p`/`raw_len` already filled for every NAME.
+ *
+ * THE FIVE OPERATORS ARE FOUR SHAPES, because the COLON is not part of an
+ * operator's identity (variables_common.md §2.2) — it only decides whether
+ * EMPTY counts as unset, which is one extra conjunct in the test:
+ *
+ *     ${v}        the value; REFUSE the call when it is unset
+ *     ${v-w}      the word when unset;            ${v:-w} also when empty
+ *     ${v+w}      the word when SET;              ${v:+w} only when non-empty
+ *     ${v:?w}     REFUSE the call, naming `w`, when unset or empty
+ *
+ * THE WORD IS A COMPILE-TIME LITERAL OR ONE NESTED SLOT, and nothing else —
+ * see `vm_emit_vars_resolve`'s own header for the refusal that makes that
+ * true and why the MVP draws the line there. */
+static void vm_var_emit_eval(Vm *v, StrBuf *c, int slot, const VarExp *x,
+                             int nameidx)
+{
+    /* `${v:+w}` is the one operator whose SET arm is the word and whose unset
+     * arm is EMPTY rather than the value, so it is written out separately
+     * rather than folded into the others with a flag. */
+    const char *test = x->colon
+        ? pcrec_sb_fragf(&v->cx->arena,
+                         "raw_p[%d] == NULL || raw_len[%d] == 0", nameidx, nameidx)
+        : pcrec_sb_fragf(&v->cx->arena, "raw_p[%d] == NULL", nameidx);
+
+    switch (x->op) {
+    case VXOP_NONE:
+        pcrec_sb_printf(c,
+            "    if (raw_p[%d] == NULL) return PCREC_ERR_UNSET_VAR;\n"
+            "    run->var_value[%d]  = raw_p[%d];\n"
+            "    run->var_length[%d] = raw_len[%d];\n",
+            nameidx, slot, nameidx, slot, nameidx);
+        return;
+    case VXOP_REQUIRE:
+        pcrec_sb_printf(c,
+            "    if (%s) return PCREC_ERR_UNSET_VAR;\n"
+            "    run->var_value[%d]  = raw_p[%d];\n"
+            "    run->var_length[%d] = raw_len[%d];\n",
+            test, slot, nameidx, slot, nameidx);
+        return;
+    case VXOP_DEFAULT:
+    case VXOP_ALT:
+        break;
+    }
+
+    /* The word's own span: a compile-time literal, or a nested slot. */
+    const char *wp, *wl;
+    if (x->nword == 1 && x->word[0].nest) {
+        int ns = -1;
+        for (unsigned i = 0; i < v->cx->n_var_exps; i++)
+            if (v->cx->var_exps[i] == x->word[0].nest) { ns = (int)i; break; }
+        if (ns < 0)
+            pcrec_ctx_fail(v->cx, x->at,
+                     "internal error: a nested ${...} expansion has no "
+                     "resolved slot");
+        wp = pcrec_sb_fragf(&v->cx->arena, "run->var_value[%d]", ns);
+        wl = pcrec_sb_fragf(&v->cx->arena, "run->var_length[%d]", ns);
+    } else {
+        StrBuf lit;
+        memset(&lit, 0, sizeof lit);
+        lit.cx = v->cx;
+        size_t total = 0;
+        for (size_t i = 0; i < x->nword; i++) {
+            vm_var_word_bytes(&lit, x->word[i].lit, x->word[i].litlen);
+            total += x->word[i].litlen;
+        }
+        wp = pcrec_sb_fragf(&v->cx->arena, "(const unsigned char *)\"%s\"",
+                            lit.p ? lit.p : "");
+        wl = pcrec_sb_fragf(&v->cx->arena, "%zu", total);
+        pcrec_sb_free(&lit);
+    }
+
+    if (x->op == VXOP_DEFAULT)
+        pcrec_sb_printf(c,
+            "    if (%s) {\n"
+            "        run->var_value[%d]  = %s;\n"
+            "        run->var_length[%d] = %s;\n"
+            "    } else {\n"
+            "        run->var_value[%d]  = raw_p[%d];\n"
+            "        run->var_length[%d] = raw_len[%d];\n"
+            "    }\n",
+            test, slot, wp, slot, wl, slot, nameidx, slot, nameidx);
+    else
+        pcrec_sb_printf(c,
+            "    if (%s) {\n"
+            "        run->var_value[%d]  = (const unsigned char *)\"\";\n"
+            "        run->var_length[%d] = 0;\n"
+            "    } else {\n"
+            "        run->var_value[%d]  = %s;\n"
+            "        run->var_length[%d] = %s;\n"
+            "    }\n",
+            test, slot, slot, slot, wp, slot, wl);
+}
+
+/* THE ONCE-PER-CALL VARIABLE RESOLUTION — the EXPANSION half of
+ * `variables_common.md` §5, emitted as C because it needs the caller's
+ * environment and that arrives at match time.
+ *
+ * WHAT IT DOES, in order. (1) Scan the caller's `rx_var[]` array ONCE per
+ * NAME this artifact mentions — equal length then `memcmp`, FIRST MATCH WINS
+ * on a duplicate, an unknown name IGNORED, an absent name UNSET. (2) Evaluate
+ * each distinct EXPANSION in slot order, which is bottom-up by construction
+ * (`pcrec_vars_resolve` interns a nested expansion before its container), so
+ * a nested slot is always already resolved when the slot that reads it is
+ * evaluated — no dependency analysis in the emitter and none in the artifact.
+ * (3) Under a multi-byte encoding, validate every resolved span.
+ *
+ * WHY HERE AND NOT PER POSITION. D23 MEASURED a run-time fold indirection at
+ * 26% on a pattern containing no letters, and that was a PER-POSITION
+ * indirection. This is a per-CALL one over one to three short names, upstream
+ * of the scan; the match loop itself reads a compile-time-indexed local.
+ *
+ * WHAT THE MVP REFUSES, stated here because the refusal is this function's
+ * and not the grammar's: an operator WORD that MIXES literal text with a
+ * nested `${...}`, or nests two of them. Such a word would have to be
+ * CONCATENATED at run time into storage whose size is not known until the
+ * call, and sizing that buffer is a question `variables_common.md` does not
+ * rule and the MVP does not need — `${a:-${b}}`, the fallback chain §1.7
+ * calls "the useful case and the only one with a real customer", is a single
+ * nested expansion and is supported. The GRAMMAR accepts the mixed form
+ * (src/core/varexp.c parses it, and the replacement-side consumer will be
+ * able to render it, since it writes into an output buffer already); this
+ * CONSUMER refuses it by name. Re-open condition: a caller who wants it, or
+ * the replacement side landing and making the buffer question answered
+ * anyway. */
+static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
+{
+    Ctx *cx = v->cx;
+    StrBuf *c = &cx->job->csb;
+
+    if (cx->n_var_exps == 0) return;
+
+    /* The refusal above, checked before a byte is emitted so it names the
+     * expansion rather than failing somewhere in the middle of one. */
+    for (unsigned i = 0; i < cx->n_var_exps; i++) {
+        const VarExp *x = cx->var_exps[i];
+        bool nested = false;
+        for (size_t k = 0; k < x->nword; k++) if (x->word[k].nest) nested = true;
+        if (nested && x->nword != 1)
+            pcrec_ctx_fail(cx, x->at,
+                     "a ${...} default that MIXES literal text with a nested "
+                     "${...} (or nests two of them) is not supported in a "
+                     "pattern: it would have to be assembled at match time. "
+                     "Write the whole default as one nested reference "
+                     "(${a:-${b}}) or as literal text");
+    }
+
+    /* The artifact's own NAME table. `rx_info.vars` points at this same
+     * array, so the caller-facing table and the resolver's own are ONE
+     * derivation rather than two that could disagree. */
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* The variable NAMES this pattern mentions, in first-mention order.\n"
+        " * rx_info.vars points here, so a caller reading the table and this\n"
+        " * artifact resolving against it see one list. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "static const char *const %s_var_names[%s_NVARS] = {\n",
+                    v->p, v->up);
+    for (unsigned i = 0; i < cx->n_vars; i++)
+        pcrec_sb_printf(c, "    \"%s\",\n", cx->var_names[i]);
+    pcrec_sb_puts(c, "};\n\n");
+
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_puts(c,
+        "/* Resolve this call's variables ONCE, before the match begins.\n"
+        " * Returns 0, or PCREC_ERR_UNSET_VAR when a reference that requires a\n"
+        " * value did not get one (or, under a multi-byte encoding, got one\n"
+        " * that is not well formed). A refusal means NOTHING WAS ATTEMPTED\n"
+        " * and caps is untouched -- PCREC_ERR_STARTPOS's class. */\n");
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c,
+        "static %sptrdiff_t %s_vars_resolve(const rx_ctx *ctx, %s_run_state *run)\n"
+        "{\n"
+        "    const unsigned char *raw_p[%s_NVARS];\n"
+        "    size_t raw_len[%s_NVARS];\n"
+        "    size_t i, k;\n"
+        "\n"
+        "    for (i = 0; i < %s_NVARS; i++) {\n"
+        "        raw_p[i] = NULL; raw_len[i] = 0;\n"
+        "        for (k = 0; k < ctx->nvars; k++) {\n"
+        "            const rx_var *cv = &ctx->vars[k];\n"
+        "            size_t nl;\n"
+        "            if (cv->name == NULL) continue;\n"
+        "            nl = strlen(%s_var_names[i]);\n"
+        "            if (strlen(cv->name) != nl) continue;\n"
+        "            if (memcmp(cv->name, %s_var_names[i], nl) != 0) continue;\n"
+        "            raw_p[i] = cv->p; raw_len[i] = cv->len;\n"
+        "            break;   /* FIRST match wins on a duplicate name */\n"
+        "        }\n"
+        "    }\n",
+        en->ai, v->p, v->p, v->up, v->up, v->up, v->p, v->p);
+
+    for (unsigned i = 0; i < cx->n_var_exps; i++) {
+        const VarExp *x = cx->var_exps[i];
+        int nameidx = -1;
+        for (unsigned j = 0; j < cx->n_vars; j++)
+            if (strcmp(cx->var_names[j], x->name) == 0) { nameidx = (int)j; break; }
+        if (nameidx < 0)
+            pcrec_ctx_fail(cx, x->at,
+                     "internal error: a ${...} selector has no resolved name "
+                     "slot");
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c, "    /* %s */\n",
+                        pcrec_varexp_render(&cx->arena, x));
+        pcrec_sb_cmt_close(c);
+        vm_var_emit_eval(v, c, (int)i, x, nameidx);
+    }
+
+    /* [VAR] THE WELL-FORMEDNESS REFUSAL (variables_common.md §2.1), and it is
+     * HERE rather than in the seam entry because the seam's return space is
+     * two-valued by sign and has no third value for "refuse" — which is the
+     * D6 panel's MECH-M4. It runs over the RESOLVED span, so a default WORD's
+     * own bytes are validated on exactly the same terms as a caller's value,
+     * with no second mechanism and no compile-time special case.
+     *
+     * UNDER `byte` THERE IS NOTHING TO CHECK and nothing is emitted, which is
+     * why this is a per-ENCODING question asked through the backend's own
+     * guard text rather than an `if (encoding == utf8)` here — DD-12 (7). */
+    /* The BIT was set in the plan phase (see its own comment there); this
+     * asks the same question again only to decide whether to WRITE the calls,
+     * which is the same split `pcrec_emit_req_byte_check` and its stamps
+     * already have. */
+    if (pcrec_enc_has_entry(pcrec_enc_by_id(cx->opt->encoding),
+                            PCREC_ENCE_VAR_VALID)) {
+        for (unsigned i = 0; i < cx->n_var_exps; i++)
+            pcrec_sb_printf(c,
+                "    if (!%s_var_valid(run->var_value[%u], run->var_length[%u]))\n"
+                "        return PCREC_ERR_UNSET_VAR;\n",
+                v->p, i, i);
+    }
+
+    pcrec_sb_puts(c, "    return 0;\n}\n\n");
+}
+
+/* The ONE LINE that turns `<prefix>_vars_resolve` on at a call site, or `""`
+ * on a var-free artifact.
+ *
+ * THERE ARE THREE CALL SITES — `<prefix>_run`, `<prefix>_match` and
+ * `<prefix>_match_caps` — and they are exactly the three places
+ * `<prefix>_run_state_init` is called, which is not a coincidence: the run
+ * state's lifetime IS a call, and the resolution must be per call. Spelling
+ * the insert once here rather than three times is [DD-14.FB]'s own reason for
+ * `<prefix>_run_state_bind` ("six copies of four assignments is exactly the
+ * shape a one-site typo somebody's eye slides over").
+ *
+ * THE EMPTY DEFAULT IS A BYTE-IDENTITY CONTRACT, not an absence: a var-free
+ * artifact emits nothing at all here, which is what makes every artifact that
+ * existed before this module byte-identical apart from the shared ABI block's
+ * own `abi` digit. */
+static const char *vm_vars_resolve_insert(Vm *v, const char *ctxexpr)
+{
+    if (v->cx->n_var_exps == 0) return "";
+    return pcrec_sb_fragf(&v->cx->arena,
+        "    { ptrdiff_t vr = %s_vars_resolve(%s, run); if (vr) return %s; }\n",
+        v->p, ctxexpr,
+        /* `<prefix>_run` returns `int` and its two siblings `ptrdiff_t`; both
+         * PROPAGATE the code rather than folding it into a plain no-match,
+         * which is D49's rule and the shape the four give-up lines below
+         * already take. */
+        strcmp(ctxexpr, "&ctx") == 0 ? "(int)vr" : "vr");
+}
+
 static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
                                 const VmEntry *en)
 {
@@ -11583,6 +11999,10 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    run->trail_cap    = ntrail;\n"
         "}\n\n",
         en->ai, v->p, v->p, v->p, v->p);
+
+    /* [VAR] THE ONCE-PER-CALL RESOLUTION (variables_common.md §3.2, §5's
+     * EXPANSION half), emitted only on a var-bearing artifact. */
+    vm_emit_vars_resolve(v, en);
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -12069,14 +12489,14 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "static %sint %s_run(const unsigned char *subject, size_t subject_length,\n"
-        "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run)\n"
+        "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run%s)\n"
         "{\n"
         "    rx_ctx ctx;\n"
         "    ptrdiff_t result;\n"
         "    size_t attempt_position;\n"
         "%s"
         "    if (search_from > subject_length) return 0;\n",
-        en->ai, g->searchfn, v->p,
+        en->ai, g->searchfn, v->p, pcrec_vars_param_text(cx),
         v->nclamp > 0 ? "    size_t window_end;\n" : "");
 
     /* [K50] The caller-startpos boundary guard, site 1 of 3 on this engine.
@@ -12353,6 +12773,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    %s_run_state_init(run);\n"
         "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
         "    ctx.caps = NULL; ctx.user = NULL;\n"
+        /* [VAR] the ctx's OWN `vars`/`nvars`, from this entry's trailing
+         * pair, and then the once-per-call resolution — in that order,
+         * because the resolve reads the fields the line above writes. */
+        "%s"
+        "%s"
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
         "        result = %s_match_anchored(&ctx, run%s%s);\n"
@@ -12384,7 +12809,11 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
         "    if (capture_spans) %s_report_captures(run, capture_spans, attempt_position, result);\n"
         "    return 1;\n"
         "}\n\n",
-        v->p, v->p, v->nclamp > 0 ? ", window_end" : "",
+        v->p,
+        /* [VAR] the ctx's own `vars`/`nvars`, then the resolve. */
+        v->cx->n_var_exps ? "    ctx.vars = vars; ctx.nvars = nvars;\n" : "",
+        vm_vars_resolve_insert(v, "&ctx"),
+        v->p, v->nclamp > 0 ? ", window_end" : "",
         /* [M6.2 wave D] `startpos`, NOT `start`. `start` is the position this
          * ATTEMPT begins at and the loop below moves it; `\G` asks about the
          * position the SEARCH was asked to begin at, which is the parameter.
@@ -12468,13 +12897,20 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     }
 
     vm_emit_default_entry(c, v, pl->tiered, en->fwd_entries, "int", g->searchfn,
-        "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "       ptrdiff_t (*capture_spans)[2]",
+        pcrec_sb_fragf(&cx->arena,
+            "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+            "       ptrdiff_t (*capture_spans)[2]%s", pcrec_vars_param_text(cx)),
         "   /* this artifact's stamped default */",
-        "subject, subject_length, search_from, capture_spans, &run",
-        "subject, subject_length, search_from, capture_spans",
+        pcrec_sb_fragf(&cx->arena,
+            "subject, subject_length, search_from, capture_spans, &run%s",
+            pcrec_vars_arg_text(cx)),
+        pcrec_sb_fragf(&cx->arena,
+            "subject, subject_length, search_from, capture_spans%s",
+            pcrec_vars_arg_text(cx)),
         "PCREC_ERR_FRAMES",
-        "subject, subject_length, search_from, capture_spans");
+        pcrec_sb_fragf(&cx->arena,
+            "subject, subject_length, search_from, capture_spans%s",
+            pcrec_vars_arg_text(cx)));
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -12486,15 +12922,16 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
     pcrec_sb_cmt_close(c);
     pcrec_sb_printf(c,
         "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
+        "          ptrdiff_t (*capture_spans)[2]%s, const %s_buffers *buffers)\n"
         "{\n"
         "    %s_run_state run;\n"
-        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans);\n"
+        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
         "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
         "}\n\n",
-        g->searchfn, v->p, v->p, g->searchfn, v->p, g->searchfn);
+        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
+        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -12572,8 +13009,14 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "    if (ctx->pos > ctx->len) return -1;\n"
         "%s"
         "    %s_run_state_init(run);\n"
+        /* [VAR] `rx_matchfn`'s OWN signature is untouched: the environment
+         * arrives on `rx_ctx` (Frank, 2026-09-23), so this entry reads
+         * `ctx->vars` with no new parameter and stays an `rx_matchfn` byte
+         * for byte. That is the whole reason the pair rides the ctx. */
+        "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n",
-        en->ai, g->matchfn, v->p, mguard, v->p, v->p,
+        en->ai, g->matchfn, v->p, mguard, v->p,
+        vm_vars_resolve_insert(v, "ctx"), v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
          * `ctx->pos` — it is threaded, not absent — so `\G` here is
@@ -12616,12 +13059,14 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
         "    if (ctx->pos > ctx->len) return -1;\n"
         "%s"
         "    %s_run_state_init(run);\n"
+        "%s"
         "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    if (result < 0) return result;\n"
         "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
-        en->ai, g->matchcapsfn, v->p, mguard, v->p, v->p,
+        en->ai, g->matchcapsfn, v->p, mguard, v->p,
+        vm_vars_resolve_insert(v, "ctx"), v->p,
         v->nclamp > 0 ? ", ctx->len" : "",
         v->ngst > 0 ? ", ctx->pos" : "", v->p);
 

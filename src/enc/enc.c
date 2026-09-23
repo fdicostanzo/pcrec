@@ -83,6 +83,16 @@ void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                           const char *prefix)
 {
     if (!e || !e->entries) return;
+    /* [VAR] CLOSE THE MASK HERE, in both emit functions, rather than at each
+     * site that BUILDS one. An entry whose text calls another entry's helper
+     * (utf8's caseless variable compare calls the caseless backreference
+     * compare's fold map and decoder) must not be emittable without it, and
+     * "every caller remembers to close" is the shape of obligation this tree
+     * has learned to make structural instead — `<prefix>_match_anchored`'s MRL
+     * ceiling is a PARAMETER for the same reason. Identity for a mask naming
+     * only rows that require nothing, which is every row that existed before
+     * the column did. */
+    mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (mask & t->id) {
             /* [EMIT-VERB] the entry's doc half, through the render gate. */
@@ -102,6 +112,16 @@ void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
                          const char *prefix)
 {
     if (!e || !e->entries) return;
+    /* [VAR] CLOSE THE MASK HERE, in both emit functions, rather than at each
+     * site that BUILDS one. An entry whose text calls another entry's helper
+     * (utf8's caseless variable compare calls the caseless backreference
+     * compare's fold map and decoder) must not be emittable without it, and
+     * "every caller remembers to close" is the shape of obligation this tree
+     * has learned to make structural instead — `<prefix>_match_anchored`'s MRL
+     * ceiling is a PARAMETER for the same reason. Identity for a mask naming
+     * only rows that require nothing, which is every row that existed before
+     * the column did. */
+    mask = pcrec_enc_mask_close(e, mask);
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (mask & t->id) {
             if (t->defs_doc) {
@@ -121,6 +141,36 @@ bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
     for (const PcrecEncEntry *t = e->entries; t->decls; t++)
         if (t->id == id) return t->engine_callable;
     return false;
+}
+
+/* True iff entry `id` is present in `e`'s table at all, whatever its other
+ * columns say. False for a backend with no table. */
+bool pcrec_enc_has_entry(const PcrecEnc *e, unsigned id)
+{
+    if (!e || !e->entries) return false;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+        if (t->id == id) return true;
+    return false;
+}
+
+/* [VAR] Close `mask` under every entry's `requires` column: repeatedly OR in
+ * the dependencies of every entry already named, until nothing new appears.
+ *
+ * THE LOOP IS BOUNDED BY THE TABLE, not by trust: each pass either adds a bit
+ * or stops, and there are at most as many bits as rows, so a backend whose
+ * rows required each other in a cycle would terminate rather than hang — the
+ * closure of a cycle is simply all of it, which is the right answer for a set
+ * of entries that genuinely need one another. */
+unsigned pcrec_enc_mask_close(const PcrecEnc *e, unsigned mask)
+{
+    if (!e || !e->entries) return mask;
+    for (;;) {
+        unsigned grown = mask;
+        for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+            if (mask & t->id) grown |= t->requires;
+        if (grown == mask) return mask;
+        mask = grown;
+    }
 }
 
 /* Emits `text` verbatim, substituting `prefix` for every `$` -- the ONE

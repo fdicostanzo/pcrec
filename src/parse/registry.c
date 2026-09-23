@@ -152,6 +152,7 @@
 #define M_modifiers      FEAT_MODIFIERS,     "modifiers"
 #define M_verbs          FEAT_VERBS,         "verbs"
 #define M_extended_classes FEAT_EXTENDED_CLASSES, "extended-classes"
+#define M_vars           FEAT_VARS,          "vars"
 /* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
  * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
  * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
@@ -1547,6 +1548,42 @@ static const RegRow bare_rows[] = {
  "\\Z itself reduces to (?=\\n?\\z), so this row's DEF_ALWAYS entry is a "
  "real substitution, not an identity",
  ROADMAP_NONE, QF_NO, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, eol_def},
+/* [VAR] module `vars`: `${name}` in a PATTERN — the bytes the CALLER supplies
+ * for that name, matched literally at this position.
+ *
+ * `RK_BARE` AND NOT A NEW DOORWAY, and that is `RK_QUANTSUFFIX`'s own
+ * precedent applied a third time (see `RegKind`'s comment on both). `$` is
+ * base grammar parsed directly in `p_atom`, with no `\` or `(?` doorway to
+ * hang a row off, so `${` is recognised the same way `$` itself is: a direct
+ * test in `p_atom`, gated on `pcrec_feature_enabled(FEAT_VARS)` exactly as
+ * `\Q` is gated on FEAT_QUOTING.
+ *
+ * WHICH MEANS THE `tail` COLUMN DOES NOT ARBITRATE THIS ROW, and
+ * `variables_pattern.md` §3's paragraph on SR-9 tail arbitration resolving
+ * `${` against the bare `$` row is wrong about the MECHANISM while right
+ * about the OUTCOME: `pcrec_registry_find`/`arbitrate` are never called with
+ * `RK_BARE` at all (that kind's own comment says so), so nothing ranks a
+ * tailed row over a tail-less one here. The recognition order is `p_atom`'s
+ * own `if`, and the `tail` is carried anyway because it is what
+ * `--list-syntax` prints and what a reader comparing the two `$` rows needs.
+ *
+ * THE ROW'S REAL JOBS ARE TWO. (1) The DUMP — without it `--list-syntax`
+ * would say nothing at all about `${...}` and a reader could not tell "not
+ * implemented" from "not in the table", the same D26 tier-2 discoverability
+ * defect `RK_QUANTSUFFIX` exists to close. (2) The ENGINE DECLINE — the
+ * module's producer stamps every `A_VAR` with this row (D67), and
+ * `forces_registry` (src/opt/select_engine.c) walks for the first node whose
+ * row excludes `ENGM_DFA`, which is SR-8's "a fifth VM_ONLY module needs no
+ * line here". The PREFILTER decline is NOT this row's job and is not free;
+ * see `has_var` in `prefilter_decision`. */
+{RK_BARE, '$', "{", "${name}", M_vars, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE,
+ NULL, NULL, 0,
+ "a caller-supplied variable: the bytes passed for `name` in this call's "
+ "rx_var array, matched LITERALLY (never as pattern syntax) at this "
+ "position — with bash-shaped defaults ${name:-word} / ${name-word} / "
+ "${name:+word} / ${name+word} / ${name:?word}; ${!name} is the same "
+ "thing spelled explicitly (D121)",
+ ROADMAP_PLANNED, QF_YES, NULL, 0, NULL, NO_PORT, NO_PORT, NULL, NULL},
 {RK_BARE, '(', NULL, "(a)", 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE,
  NULL, NULL, 0,
  "a capturing group — already core (A_CAP) unless (?n) is scoped over "

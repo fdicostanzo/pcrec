@@ -134,6 +134,7 @@ static int ew_walk(const Ast *a)
          * reasons: a backreference's width is the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. */
         case A_BREF:
+        case A_VAR:
         case A_CALL:
             return EW_NONE;
         }
