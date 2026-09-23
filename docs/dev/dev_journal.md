@@ -25331,3 +25331,16 @@ BLOCK A: every EXPECT direction holds (-fno-req-byte recovers on all four;
 −5.74..+8.46%, median −0.08% over 120 program-identical cells. Lane g3rec
 reconciles (§9 of the reading, the exec summary, the I-98 driver-level
 block, the archive). [B80] (batch 2's re-pin + window) starts; window tonight.
+
+**rxtfix MERGED (~07:3x, cf84e419):** the rxtsource red was the corpus
+CENSUS pins (CENSUS_FILES 214→213, CENSUS_BLOCKS 3957→3954, RUNSH_LINES
+29026→29037 — three literals, three different shapes, each DIFFED not
+subtracted) after K34's file left tests/known_fail/ and its 11 cells
+re-entered an already-counted file; both of b2fix's own checks are
+answer-level and stayed green. rxtsource 212/0, known-fail green (the
+directory is empty), recursion 1701/0 (its detached log read by the
+manager — the lane idled on its notification; accepted from the artifact).
+learnings §3.z added. Main is now green on every section except the nm
+probe. PLAN NOTE: the batch-2 merge's plan.md resolution had DROPPED the
+[OPT-PRECHECK-ADMIT] row — restored 2279ac0f (lesson: after a plan.md
+conflict, diff the ROW SET before and after, not just the hunk).
