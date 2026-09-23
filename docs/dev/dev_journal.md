@@ -25264,3 +25264,19 @@ against the wrong oracle. `tests/known_fail/` is empty again.
 `bash tests/known_fail/run_known_fail.sh` "nothing to ratchet", rc=0.
 Continuing to items 2-4 of the b2fix brief (macro respell, sabotage rows,
 re-validation).
+
+**BATCH 2 MERGED (~09:4x, 8e4e9c6c, abi 30):** b2fix's four items landed on
+the branch first — the test-known-fail red was K34 CLOSING for real (the
+necessary-run pre-check proves `(a|(?1)a)`'s every match ends in a fixed
+literal, so the recursion is never entered on a subject lacking it; 11 cells
+moved back to sr_depth.rxt, tests/recursion 1701/0); PCREC_BIT(n) respell of
+all 32 members, with PCREC_NO_REQ_RUN a #define (2^31 exceeds INT_MAX as an
+enumerator under -Wpedantic before C23 — a real pre-existing issue the
+directive's own conditional caught), the beyond-64-bits successor written
+down in lib/pcrec.h; S266-S268 DETECTED solo (S268's "UNREACHED" prose
+tripped run_sabotage_matrix's whole-line grep — reworded; the column-anchored
+grep is owed); re-validation green. Merge conflicts in plan.md (the lane
+wrote delivery notes into two rows — lanes don't edit plan.md; both kept),
+the journal and lanes/CLAUDE.md, all resolved keeping both sides; make +
+strict clean. Lane repin2: the (B) pin 6ab2464e→8e4e9c6c + emit_sweep vs
+c051a69b + the abi-30 reader grep. Then the full darwin gate on merged main.
