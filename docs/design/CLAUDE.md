@@ -2174,5 +2174,87 @@ append-only or historical records.
   failure) rather than causes — named, not fixed, out of this lane's
   scope.
 
+- `reqbyte_freq_pick.md` — **`[OPTLOOP.2]` cycle-2 design note, lane
+  `c2design`, 2026-09-22** (design only; ratification and a D6 panel owed):
+  `[OPT-REQBYTE]`'s emitted byte chosen by ARGMIN over a byte-frequency prior
+  instead of by PCRE2's rightmost rule, which survives as the tiebreak. Read
+  §0 first — **the static prior ALREADY SHIPS and is already this mechanism's
+  intended hook**: `src/opt/prefix_k.c:91`'s normalised ppm table behind
+  `pcrec_byte_freq_ppm`, with `[OPT-OFSK]`'s selection as its first consumer,
+  a sum check (`run_offset_skip.sh` §1) and a header naming D83's findings
+  file as the replacement for that one function. So the note proposes a
+  SECOND CALL, not an interface — and it **declines
+  `firstset_design.md` §5.2's proposed `double
+  pcrec_findings_density(const Ctx *, const unsigned char[32])`** as a
+  parallel mechanism that additionally contradicts `prefix_k.c`'s own stated
+  integer rule ("the selection must be bit-reproducible across boxes"),
+  recommending the shipped accessor and, if a set grain is wanted, publishing
+  the existing private `set_ppm` rather than writing a second summer.
+  **The prior delivers all three of `reqpos_census.md` §5's whole-call wins
+  with NO findings file** (`nested-comment-rec` `/`→`*`,
+  `wild-validator-email-owasp` `.`→`@`, `wild-waf-crs-942500` `/`→`*`, each
+  present→absent in the bench's 1 MiB subject), and on the twelve
+  `capability` patterns whose pick moves, **eleven move to a strictly RARER
+  byte in that subject, one moves absent→absent, and none moves to a commoner
+  one** — an out-of-sample agreement, since `prefix_k.c` deliberately did not
+  derive the table from the bench's own text. Population measured: **304 of
+  2,236 corpus patterns with a necessary byte, 13.60%** (bench 51/131), so it
+  is an `abi` event with no scaffolding change. It also **corrects the
+  census's own framing**: only ONE of the three witnesses is a cycle-1 LOSING
+  cell, so the honest D119 improve population is `nested-comment-rec`'s two
+  cells at 0.4294 weighted, not "three whole-call answers". Recommends no new
+  axis bit (the pick is a value under `-fno-req-byte`, `--unroll=K`'s
+  precedent; bit 31 is the last `1u <<` bit), no pick-source stamp
+  (`ccdiff1_report.md`'s `RX_VM_INLINE_CHAIN` precedent), and names the one
+  real hazard as a MEASURED carve-out rather than an argued one: the prior is
+  subject-blind, so an absent→present move is possible in general and
+  `dup-param-detect` is the batch-1 improve cell where it nearly happened.
+- `reqpos_2b.md` — **`[OPTLOOP.2]` cycle-2 design note, lane `c2design`,
+  2026-09-22** (design only; ratification and a D6 panel owed):
+  `[OPT-REQPOS]` tier 2b, **VERDICT BUILD**. Read §0 first — it is not the
+  mechanism the plan row describes. **It is not a start bound**: the run's
+  own internal delta is all the compare needs, so none of the census's
+  `dmin`/`dmax`/`run_pmin`/`run_pmax` columns is read, four of the fourteen
+  `capability` runs have an UNBOUNDED offset from the match start and are
+  served anyway, and **tier 2 is not a precondition** (the census already
+  declined it on population). What it IS: `[OPT-REQBYTE]` widened from a
+  1-byte necessary fact to an L-byte one, with today's mechanism as the
+  `L = 1` case — the widening `reqbyte.c`'s own header chose the rightmost
+  rule to preserve. Clears D119's bar on **four losing throughput cells
+  carrying 1.4617 of the matrix's 10.284** (`wild-semdiv-dollar-trailing-
+  newline-pcre2`, `file-ext-order`, `wild-semdiv-altorder-foo-foobar-
+  rustregex`, `wild-secrets-github-pat` — each a pattern whose single
+  necessary byte is PRESENT and whose RUN is ABSENT, so a byte-grain
+  pre-check cannot fire and a run-grain one answers the whole find-all call
+  in one pass). Three further findings. **The decline rule cannot come from a
+  byte-frequency prior, and that is arithmetic**: a run's density is a JOINT
+  property and `freq` a MARGINAL one, so an independence product
+  over-predicts the measured gain by 5×, 8× and **3,257×** on the three rows
+  where a gain is finite — a 650× spread no constant fits — so the note ships
+  with NO decline rule and names the trigger (a second `freq`-family named
+  value carrying run rates, which D83's addendum already permits).
+  **Constant-length `memcmp` is a better emitted form than the row's own
+  `memcpy`-into-`uint64` sketch, measured**: `gcc-16 -O2` lowers
+  `memcmp(p,".tar",4)` to one 32-bit load and one compare and
+  `memcmp(p,"github_p",8)` to one 64-bit load and one compare, with no call,
+  while reading only the L bytes the run occupies — so `[WORD-FOLD]`'s own
+  over-read/page-boundary worry never arises, and the masked small-CLASS form
+  that genuinely needs a hand-rolled load is event 2, gated on `[WORD-FOLD]`
+  and deliberately not built on here. **And the "60 of 68 runs never occur"
+  figure is the mechanism's BEST case, not its worst** — the real weakness is
+  the eight finite-gain rows, whose median is 4.24× and whose three 1.00× rows
+  are pure added cost; the longest finite-gain run in the whole population
+  (`loglines/http-5xx`'s eight-byte `" HTTP/1."`) has gain **1.00×**, which is
+  why no decline rule keyed on length can work. Recommends its OWN axis bit
+  (unlike the pick — it adds emitted code, a stamp and a cost profile), a
+  `<PREFIX>_REQ_RUN` stamp beside `REQ_BYTE` with `REQ_BYTE`'s meaning
+  UNCHANGED, and landing as ONE `abi` event with `reqbyte_freq_pick.md`.
+  Flags three things a lane needs before it starts: the census does not carry
+  `A`'s index within the run, the second sabotage row (a run one byte too
+  long) has no witness in the shipped corpus and must ship with its fixture
+  or read UNREACHED, and `coding_guide.md` §3.1 plus `src/gen/CLAUDE.md:25`
+  both cite the wrong file for `PCREC_ARTIFACT_ABI` (it is
+  `src/gen/emit_dfa.c:51`, not `src/core/limits.def`).
+
 Maintenance: update this file when files are added/removed or their roles
 change.

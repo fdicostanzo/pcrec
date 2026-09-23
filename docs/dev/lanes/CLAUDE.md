@@ -855,6 +855,37 @@ never edited afterwards.
   named as a fragment-level tagged machine, which `APPROACH.md` §2 tier 3
   already calls "a later upgrade"). Nothing owed.
 
+- `c2design_report.md` — **cycle-2 DESIGN NOTES** (2026-09-22, lane
+  `c2design`, opus; docs-only, nothing under `src/`/`cli`/`lib/`/`tests/`/
+  `docs/spec/`, pcrec-bench read-only, no timing). Delivers
+  `docs/design/reqbyte_freq_pick.md` (**BUILD**: `[OPT-REQBYTE]`'s pick by
+  argmin over a byte-frequency prior, PCRE2's rightmost rule surviving as the
+  tiebreak) and `docs/design/reqpos_2b.md` (**BUILD**: `[OPT-REQPOS]` tier 2b
+  as the necessary literal RUN; tier 2 declined and not a precondition). Read
+  the report for thirteen findings, headed by the one that reshapes the first
+  note: **the static byte-frequency prior ALREADY SHIPS** at
+  `src/opt/prefix_k.c:91` with `[OPT-OFSK]` as its consumer, a sum check, and
+  a header naming D83's findings file as the replacement for that one
+  function — so the pick is a second CALL, not an interface, and it already
+  delivers all three of `reqpos_census.md` §5's whole-call wins with no
+  findings file (11 of 12 `capability` movers go to a strictly rarer byte in
+  the bench's own subject, 0 to a commoner one). Also: `firstset_design.md`
+  §5.2's proposed `double pcrec_findings_density` is refuted by
+  `prefix_k.c`'s own stated integer rule; the census's "three whole-call
+  answers" counts two rows pcrec already WINS, so the pick's honest D119
+  improve population is 0.4294 weighted and not 1.4617; tier 2b reads no
+  offset from the match start at all; 2b's decline rule cannot come from
+  `freq`, by arithmetic (an independence product over-predicts the measured
+  run gain by 5×/8×/**3,257×**); a run's gain is not a function of its length
+  (the longest finite-gain run in the population, 8 bytes, has gain 1.00×);
+  and constant-length `memcmp` lowers to one load + one compare at L ∈ {4,8}
+  on gcc-16, which is a better emitted form than the row's own
+  `memcpy`-into-`uint64` sketch and avoids `[WORD-FOLD]`'s over-read question
+  entirely. Two drive-by corrections flagged and not fixed: `coding_guide.md`
+  §3.1 and `src/gen/CLAUDE.md:25` both cite `src/core/limits.def` for
+  `PCREC_ARTIFACT_ABI`, which lives at `src/gen/emit_dfa.c:51`; and bit 31 is
+  the last bit spellable `1u << N` in the flags enum.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `w3_report.md` — [REVW.3] WAVE 3 (LAYERING) (2026-09-19, lane w3, opus):
