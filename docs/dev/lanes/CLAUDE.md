@@ -2754,6 +2754,20 @@ never edited afterwards.
   deliberately pins main at the batch-1 commit for a scoped measurement
   — flagged for the ask's owner, not touched here.
 
+- `repin3_report.md` — post-`[OPT-PRECHECK-ADMIT]` landing item (2026-09-23,
+  lane repin3, sonnet): re-pins `tests/codegen/run_recursion_identity.sh`'s
+  `RECURSION_IDENTITY_FILEPIN` from `8e4e9c6c` (batch 2's own merge, which
+  admitimpl left it at per D76) to `6ef76820` (the admitimpl merge, abi 31).
+  Gate 16/0; `scripts/emit_sweep.py --ref 32902104` self-check PASSED and the
+  real sweep matches the predicted five-stream shape exactly (c-default/c-vm
+  move on every reached artifact — the abi header plus the new `RX_REQ_WHY`
+  stamp, three sample diffs confirm nothing else moves; emit-ir-vm 0 movers;
+  composition header-only at 98/98; dumps 0 movers, matching admitimpl's own
+  prediction that no registry surface moved). Also carries the abi-30-reader
+  grep sweep: every hit besides the FILEPIN itself was already correctly
+  updated by admitimpl's own delivery (the resource/cpset pins, the
+  match_api.md §6 change log) or is a deliberate historical/dated citation.
+
 - `axesrec_report.md` — (2026-09-23, lane axesrec, sonnet, docs-only):
   reconciles pcrec-bench outbox O-47's three "facts beside your stated
   EXPECTs, reported not reconciled" against I-89 block (A)'s own real
