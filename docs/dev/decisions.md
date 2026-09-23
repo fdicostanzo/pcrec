@@ -8259,3 +8259,15 @@ has a cost so it better be worth it to the user."
 
 **Applied by** lane varnames (docs-only; the four notes + the review file's
 MECH-B2 disposition), same day.
+
+**D121 addendum (Frank, 2026-09-23 ~13:3x) — the common note's open
+questions ruled.** variables_common.md §7: Q1 no `flags` word on `rx_var`;
+Q2 `${!name}` is spent on the caller's environment; Q3 UTF-8 validation of a
+value is unconditional in the MVP (re-open only under a profile); Q4 BOTH
+spellings are accepted in a pattern — `${!name}` is "definitely a variable"
+everywhere, a bare `${name}` is the variable wherever the consumer gives the
+spelling no other meaning (a pattern), and the capture group where it does
+(a replacement, D38); Q5 the operator phases are decided AFTER the MVP's
+initial development; Q6 the module is `vars`. Same day: the pattern-side
+oracle's splice is wrapped `(?:…)` because a variable reference is one node
+(variables_common.md §3.6).

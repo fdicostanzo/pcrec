@@ -858,6 +858,18 @@ optimistic.
 
 Numbered for reference; recommendations are this note's, not rulings.
 
+> **[RATIFIED — Frank, 2026-09-23 ~13:3x]** Q1, Q2, Q3, Q6: **as recommended**
+> (no `flags` word; `${!name}` is spent here; UTF-8 validation of a value is
+> unconditional in the MVP; the module is `vars`). **Q4: BOTH FORMS ARE
+> ACCEPTED in a pattern.** `${!name}` means "definitely the caller's
+> variable" in every consumer; a bare `${name}` means "the variable, unless
+> this consumer already gives that spelling a meaning" — in a REPLACEMENT it
+> is the capture group (D38), in a PATTERN there is no group spelled that
+> way, so it is the variable. One rule, read per consumer; §3.4's pointed
+> diagnostic stays as the mitigation on the replacement side. **Q5:
+> DEFERRED — the phase question is decided after the MVP's initial
+> development**, not before it.
+
 1. **Does `rx_var` carry a `flags` word?** §3.1 ships three members
    (`name`, `p`, `len`). Every candidate flag is a compile-time property of
    the *use site*, which belongs in the pattern text where a reader can see
