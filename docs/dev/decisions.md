@@ -8189,3 +8189,73 @@ or 3 as you see."** The manager's schedule: the inventory (step 1,
 read-only) during cycle 3's measurement waits, after batch 2 has landed
 and been measured; design and implement-then-replace after cycle 3's
 batch. Recorded in the plan row.
+
+## D121 — [VAR] VARIABLES ARE PASSED BY NAME, RESOLVED ONCE PER ENTRY CALL, AND RIDE `rx_ctx` — `rx_matchfn` is untouched, composition passes the environment through unchanged (Frank, 2026-09-23, seventy-eighth session)
+
+**Context.** The [VAR] design (lane vardesign, four notes under
+docs/design/) proposed compile-time index macros (`RX_VAR_<NAME>`) as the
+caller's ABI and a trailing `const rx_var *vars` parameter on the
+var-bearing artifact's existing entries, declining a run-time resolver
+because "the names are known at compile time" (variables_common.md §3.2).
+The D6 panel (docs/dev/reviews/2026-09-23-r1-var-design.md, MECH-B2) found
+that `<prefix>_match` IS `rx_matchfn` — the fixed-literal type a callout
+binding (`rx_callout_ref.fn`) or a composed submatcher invokes — so the
+parameter made a var-bearing artifact no longer composable. The manager's
+first recommendation was a second typedef (`rx_varmatchfn`) plus
+"not composable in the MVP". Reading `rx_ctx` showed the better shape: the
+signature is frozen but the STRUCT appends (pcrec.h's own comment calls
+that "the only shape the frozen rx_matchfn signature leaves open").
+
+**Frank's argument (verbatim in substance).** A callout to another compiled
+pattern exists for COMPOSITION of large shared pieces (space) — anything
+small or bespoke is inline or a subroutine call. In every remaining case
+the inner artifact was compiled without knowledge of the outer's layout,
+so no index scheme can be aligned across separately compiled artifacts
+(an enum is an index in disguise). Therefore the passed variables carry a
+NAME; the artifact's variable-handling code resolves the names it needs at
+run start; the same structure is passed unchanged to whoever needs it;
+unknown variables are ignored. "There is a small startup cost but if a
+caller is using variables they should expect some cost. For low N, the
+cost is minimal." And on composition: "the use of variables in a callout
+has a cost so it better be worth it to the user."
+
+**Ruled.**
+1. `rx_var` = `{const char *name; const unsigned char *p; size_t len;}` —
+   `p == NULL` is UNSET, `len == 0` with `p != NULL` is EMPTY (the
+   two-state model of variables_common.md §2.2 unchanged). Index macros
+   are NOT the caller's ABI (they may survive as the artifact's internal
+   resolved-table indices).
+2. The environment rides `rx_ctx`: `const rx_var *vars; size_t nvars;`
+   APPENDED (an `abi` event, D76/D94 ritual, match_api.md §2 hunk under
+   D80). `rx_matchfn` is untouched; a composed call passes the ctx through.
+   The notes' objection to riding `rx_ctx` was about `user`'s PER-BINDING
+   semantics; a new per-call field is not reached by it. Top-level
+   `<prefix>_search`-family entries of a var-bearing artifact take the same
+   pair (present exactly when meaningful, D18; the `_in` descriptor
+   precedent is the alternative spelling — [PROPOSED] in the notes).
+3. Resolution ONCE PER ENTRY CALL, after the artifact's own `rx_ctx` fill
+   and before the attempt loop: a static const table of the names the
+   artifact mentions, a LINEAR scan of the supplied array (length check,
+   then memcmp, first match wins) into a small stack table the match loop
+   reads. The hot path is exactly the span compare already designed
+   (vm_bref's shape); D23's 26% was a per-POSITION indirection and does not
+   apply. Sorted search / hashing wait on a measurement (D77).
+4. ABSENT name == UNSET; UNKNOWN names ignored; duplicates: first wins. No
+   new error code beyond `PCREC_ERR_UNSET_VAR`.
+5. Composition: a var-bearing INNER artifact resolves its names on every
+   invocation (can be per position) — a documented cost on var-bearing
+   inner artifacts only; measured before any caching (a cache is bound
+   state, forbidden by match_api.md §5.3). Today the callout invocation
+   site is a designed ABI without an emitted producer.
+6. DECLINED with a named re-open condition: the same inner artifact
+   composed twice in one master with DIFFERENT values for one name
+   (per-instance parameterization = definitions territory; re-open on a
+   measured need).
+7. The MVP goes STRAIGHT to names — no index-first phase (an index ABI
+   would be a parallel mechanism thrown away; memory
+   `pcrec-general-mechanisms-not-special-cases`). The rx_info var-name
+   table (promoted into the MVP by TEST-F1) lets the .rxt driver pass
+   name/value lines through verbatim and lets a caller validate a set.
+
+**Applied by** lane varnames (docs-only; the four notes + the review file's
+MECH-B2 disposition), same day.
