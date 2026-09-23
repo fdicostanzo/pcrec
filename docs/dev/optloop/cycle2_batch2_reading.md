@@ -800,12 +800,11 @@ calls and admits the form costing 39,098.**
 **Impact.** The run scan loop costs one `memchr` CALL per occurrence of its
 SCAN BYTE, not of the run, which the design note prices the other way; on
 `router-prefix-order` that is a 124x call amplification and 97% of a +80.8%
-regression, reproduced by an exact clock-free model with one parameter
-carried from cycle 1. Separately, cycle 1's free null control is larger this
-cycle: 131 of 192 artifacts program-identical, **34 of 34 named non-target
-regressions sitting on them**, one at +41.09%. For the second cycle running
-the within-window IQR is the wrong noise model for a two-window comparison,
-and the records to fix it are already in the bench's own store.
+regression, reproduced by an exact clock-free model. Separately, cycle 1's
+free null control is larger this cycle: 131 of 192 artifacts
+program-identical, **34 of 34 named non-target regressions sitting on
+them**, one at +41.09% -- so for the second cycle running the within-window
+IQR is the wrong noise model for a two-window comparison.
 
 **Next steps.** Merge `[OPT-PRECHECK-ADMIT]` -- a precondition on shipping
 the pick, not an improvement on it. Open a cycle-3 row for the run-form
