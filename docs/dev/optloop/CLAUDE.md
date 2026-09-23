@@ -379,3 +379,88 @@ that cycle's analysis lands.
   two-sided by an independent Linux measurement. `[OPT-PRECHECK-ADMIT]`'s
   scope narrows to G1+G2 for cycle 2; G3 is dropped from that row pending
   the driver-level measurement.
+
+## Cycle 2's READING (lane `b2ledger`, 2026-09-23)
+
+- `cycle2_batch2_reading.md` — THE READING of the bench's batch-2
+  after-measurement (O-49) against the D119 bar (2026-09-23, lane
+  `b2ledger`, opus; analysis + compile-side measurement only, no clock read
+  on this box). BEFORE `8d716693` (abi 29), AFTER `b1885a83` (abi 30), and
+  a THIRD compiler — lane `admitimpl`'s parked admission fix `cb437f26`
+  (abi 31) — built alongside them so every miss could be classified by what
+  the fix does to its artifact rather than by resemblance.
+  Per-MECHANISM verdicts where the ledger computes per-CELL ones:
+  **[OPT-FREQPICK]'s target MEETS spectacularly** (`nested-comment-rec`
+  9.3 ms → 23.1 µs on 4 of 4 configs, the cost model predicting its
+  ABSOLUTE after-value to 0.2%) **and the mechanism carries one unpriced
+  hazard its own design note classified as a gain**;
+  **[OPT-REQPOS] tier 2b's targets meet and the carve-out clause FAILS**.
+  O-49's 17 missing target rows classify **6 (A) removed outright by the
+  admission fix, 6 (B) the run mechanism's own defect the fix does not
+  reach, 5 (C) cells already at the measurement floor before the batch
+  started**. Read it for five things.
+  **§1 is the NULL CONTROL again, and larger**: 131 of 192 capability
+  artifact-configs are program-identical across this pin (43 of 64 patterns
+  on all three configs), and **34 of the 34 non-target regressions the
+  ledger NAMES sit on one** — its §2.1 top-20 and all 14 of its §2.2,
+  including the +41.09% cell it calls "the one genuine outlier". The band
+  is banded by scale: +8.77% at microsecond-scale throughput, +11.16% at
+  search, **+41.09% below 100 ns**. Only **2 of the 17 misses** lie outside
+  it, both `router-prefix-order`'s DFA route.
+  **§4.1 is the worst miss, counted exactly**: tier 2b's emitted loop makes
+  one `memchr` CALL per occurrence of its SCAN BYTE, not of the run, so
+  `router-prefix-order` goes 315 calls → 39,098 (**124×**) and the model
+  reproduces its +80.83% with one free parameter carried from cycle 1
+  (`c_call` = 7.72 ns). `reqpos_2b.md` §4.3 prices the loop per `memcmp`
+  and is silent about the `memchr` restart that precedes each one — the
+  restarts are **97% of the regression**.
+  **§4.2 is O-49's largest movement and its sign was predicted backwards**:
+  `wild-validator-email-owasp`'s +27,010%..+52,757% floor jump is the pick
+  moving to an ABSENT byte on a ONE-ATTEMPT artifact, predicted to within
+  the measured range by one full `memchr` pass — and
+  `reqbyte_freq_pick.md` §7.1 lists that cell among the effects that "are
+  gains". *A pick move is a hazard in BOTH directions, and which direction
+  is which depends on the artifact, not on the byte*; the note's acceptance
+  check ("no cell's picked byte goes from absent to present") is sound and
+  its converse is missing, so this cell passes it and regresses 500×.
+  **§4.3 retires the named falsifier**: `logparse-atomic` is `^`-anchored,
+  so the admission fix deletes its whole pre-check — **the cell chosen to
+  falsify the no-decline-rule has no run check left to have a rate about**,
+  and its largest regression (+41.82% on a 49 ns baseline) is numerically
+  indistinguishable from a program-identical null cell of the same size
+  (`date-nested-plus`, +41.09% on 52 ns). The cell that CAN answer the
+  question, `keyword-prefix-order` (+59.7%, the ledger's largest carve-out
+  regression), was never named.
+  **§6 is the finding for whoever takes the next row**: G1's one-byte
+  scoping — sound on its own reasoning (`admitimpl_report.md` §0 F3) and
+  now measured — **declines the form of `router-prefix-order`'s pre-check
+  that costs 315 `memchr` calls and admits the form that costs 39,098**,
+  shown by compiling the same pattern with and without `-fno-req-run` under
+  the fix's own compiler (`REQ_WHY` reads `dominated` and `emitted`
+  respectively). The candidate rule and the measurement that would trigger
+  building it are stated, not built (D77).
+  **§5 reconciles the census three ways** (the bench's, the re-pin lane's
+  item 7, and this lane's own read of emitted `#define` lines — 20 of 20
+  named rows agree by value) and adds the census the ledger could not
+  compute: `REQ_WHY` over all 64 patterns × 3 configs at the fix, whose
+  `one-attempt` population is **exactly the 9 patterns and 27
+  artifact-configs `cycle1_ledger_reading.md` §6 G2 predicted by name**.
+  §8 carries inbox asks **I-102** (the fix's acceptance cells, extended by
+  batch 2, with the six meeting targets as explicit controls), **I-103**
+  (the one three-artifact timing block that decides the run-form dominance
+  rule; no new pcrec build needed, both axes ship), and **I-104** (carry a
+  null-control band in the capability report, with this lane's own
+  population offered to the bench). §9 is the exec-summary addendum.
+
+- `b2ledger/` — the reading's reproduction instruments (`stampdiff.py`,
+  `nullctl.py`, `costmodel.py` and their committed JSON outputs). See its
+  own `CLAUDE.md`, whose closing section records the one trap this lane
+  walked into: a pre-check's cost is ADDITIVE only where it passes through,
+  and a SUBSTITUTION where the byte or run is absent — which is exactly the
+  population the mechanism exists to serve, and where the first cost model
+  over-predicted by 17×.
+
+- `runs/2026-09-23-o49-b1885a83/` — the archived sources the reading is
+  written against: pcrec-bench's O-49 outbox entry, the I-95 ask it answers,
+  and the 698-line ledger `2026-09-23-optloop2-batch2-after-b1885a83.md`,
+  copied verbatim at read time.
