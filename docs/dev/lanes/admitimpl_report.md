@@ -270,7 +270,8 @@ All logs in `build/` of the worktree `/Users/fdicostanzo/pcrec/worktrees/admitim
 | `tests/codegen/run_prechecks.sh` re-run after every edit | `build/pc7.log` | 250/0 |
 | mech field validation (`VALIDATE_ONLY=1`) | `build/mechvalid.log` | **278 definitions valid**, 0 rows measured; S269/S270 FIELDS OK with their reach probes validated |
 | movers census ×3 axes | `build/census_{dflt,feat,utf8}.log`, `build/census2_*.tsv` | §2's table; 0 refusal mismatches, 0 unexplained movers |
-| REF-vs-TIP ANSWER differential | `build/adiff_feat.log`, `build/adiff_dflt.log` | see §5.1 |
+| REF-vs-TIP ANSWER differential | `build/adiff_feat.log`, `build/adiff_dflt.log` | **321 declining patterns, 321 identical, 0 differing, 0 skipped, 8,025 cells** |
+| `scripts/m6read_check_sab_anchors.py` | — | 278 sabotages / 294 anchor sites, all resolve |
 | `make test-codegen CC=gcc-16` | `build/codegen1.log` | **9/10 scripts**, sole red the standing darwin `nm arm_a.o` probe |
 | `make test-axes AXES="-fno-req-byte -fno-req-run"` | `build/axes1.log` | see §5.1 |
 | `scripts/emit_sweep.py --ref ed9c9392` | `build/sweep1.log` | see §5.1 |
@@ -280,18 +281,31 @@ All logs in `build/` of the worktree `/Users/fdicostanzo/pcrec/worktrees/admitim
 ### §5.1 THE CHAINED RUNS — OWED, WITH THEIR LOG PATHS AND COMPLETION LINES
 
 Per BOILERPLATE's DO-THEN-FINISH the heavy runs are the lane's LAST act,
-chained DETACHED in one sequential script (`build/chain.sh`, `nohup … & disown`)
+chained DETACHED in one sequential script (`docs/dev/lanes/admitimpl_chain.sh`,
+copied to `build/chain.sh` and run there as `nohup … & disown`)
 so the box runs one at a time. The chain writes `build/chain.done` when every
 stage has finished and `build/chain_status.txt` with one line per stage.
 
 Order and what to read:
 
-1. **REF-vs-TIP answer differential** (`build/adiff_feat.log`,
-   `build/adiff_dflt.log`) — for a stratified sample of the DECLINING
-   population (every Nth row of each `why` class, cap 120 / 60), both
-   compilers' `--emit-main` artifacts are built with `gcc-16 -O1` and run over
-   26 subjects chosen so the declined byte is sometimes absent and sometimes
-   present. Read the single JSON line: `"differing": 0` is the pass.
+1. **REF-vs-TIP answer differential — RUN, and the result is in.** For a
+   stratified sample of the DECLINING population (every Nth row of each `why`
+   class, cap 120 per class), both compilers' `--emit-main` artifacts are
+   built with `gcc-16 -O1` and run over 25 subjects chosen so the declined
+   byte is sometimes absent and sometimes present: **`--features all` 240 of
+   240 identical, 0 differing, 0 skipped; default axes 81 of 81 identical —
+   8,025 answer cells, zero divergences.** Logs `build/adiff_feat.log`,
+   `build/adiff_dflt.log`; the instrument is committed at
+   `docs/dev/lanes/admitimpl_answerdiff.py`.
+
+   **Its first build read 240 of 240 DIFFERING and the compiler was
+   innocent**, which is worth the paragraph. The emitted `--emit-main` program
+   takes its subject in ARGV; the driver fed it on stdin, so both sides
+   printed their own usage line — *with their own executable path in it* — and
+   every cell differed on the filename. This house's recorded `-o`-basename
+   trap in a new place, and the fifth instance of its shape: a comparison
+   whose difference is a NAME reads as a finding until you look at it. The
+   fixed driver passes argv and normalises the exe name out of both streams.
 2. **`make test-codegen CC=gcc-16`** (`build/codegen1.log`) — the suite D94's
    addendum names. **RUN, and the verdict is in**: `run_group: 9/10 scripts
    passed`, `make: *** [test-codegen] Error 1`, and the sole red is the
