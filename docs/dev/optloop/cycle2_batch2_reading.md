@@ -810,6 +810,5 @@ and the records to fix it are already in the bench's own store.
 **Next steps.** Merge `[OPT-PRECHECK-ADMIT]` -- a precondition on shipping
 the pick, not an improvement on it. Open a cycle-3 row for the run-form
 dominance rule, whose statistic compares two counts the compiler already
-holds. Send I-102 (acceptance cells, `wild-validator-email-owasp`
-discriminating, the six meeting targets as controls), I-103 (the run-form
-timing block), I-104 (carry a null-control band).
+holds. Send I-102 (acceptance cells, the six meeting targets as controls),
+I-103 (the run-form timing block), I-104 (carry a null-control band).
