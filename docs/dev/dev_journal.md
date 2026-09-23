@@ -25179,3 +25179,23 @@ moves rx_info.flags unless in the strategy_denials mask (batch 1's three bits
 still outside it — their own delivery); the utf8 zero-movers control is true
 only with -fno-req-run (the run is not encoding-gated, the pick is). Chain
 running detached: restricted test-axes → full make test (build/optimpl2_*.log).
+
+## 2026-09-23 (seventy-seventh session, overnight) — O-45: batch 1's ledger (39/41 at the bar; two carve-out regressions and a 23 µs floor are the findings); optimpl2's chain: axes green, known-fail red → b2fix
+
+O-45 (bench 56f4a7e, ~04:0x): 39/41 targets meet D119's bar (ReDoS/
+pathological throughput collapses 98.2-99.9% on all four configs); misses =
+router-prefix-order DFA large-subject throughput +1.2% (~10× IQR; RX_REQ_BYTE
+"114" confirmed). OUTSIDE THE BAR, carve-outs: nested-comment-rec throughput
++18.8-25.0% on ALL FOUR configs (a memchr pass over 1 MiB is ~25 µs; +1.2 ms
+is something else — diagnosis owed), uuid/ipv4-near-miss +18.7-38.5% on the
+DFA route (forced-VM improves 81-100%). A common ~23.1 µs large-subject floor
+entered from both directions: winpath-near-miss and email-nested-plus were
+~20-48 ns cells (an O(1) engine exit) and ROSE into the floor because they now
+stamp a required byte whose whole-window memchr runs BEFORE the engine's own
+exit — the PRE-CHECK ORDERING finding (a whole-window check must not precede
+an exit cheaper than itself). Stamp census 5/5 exact. Lane b1ledger (opus):
+the per-mechanism bar reading, the regression hypotheses with their Linux
+measurements (→ I-92), the cycle-1 executive summary. I-91 sent (received;
+[B76] proceeds). optimpl2's chain: restricted test-axes GREEN (24,343/24,343
+both new axes); full suite red on test-codegen (nm) AND test-known-fail (new)
+→ lane b2fix (triage + the PCREC_BIT macro respell + S266-S268 solo).
