@@ -2006,13 +2006,38 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `29` while the three narrative copies
+which is why it is gap-free from `2` to `31` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `30` on every artifact today (`[OPTLOOP.2]` batch 2
+- **`rx_info.abi` is `31` on every artifact today (`[OPT-PRECHECK-ADMIT]`
+  bumped it from 30, D119 / the `[OPTLOOP.1]` ledger reading §6, ratified
+  2026-09-23: ADMITTING THE WHOLE-WINDOW PRE-CHECKS BY COST.** EVERY artifact
+  of BOTH engines gains one shared-prologue stamp line, `<PREFIX>_REQ_WHY` — a
+  closed four-token set (`"emitted"`, `"none"`, `"one-attempt"`,
+  `"dominated"`) saying whether the artifact acted on what `abi` 29's and 30's
+  analyses found, and if not which of two measured declines applies. It is a
+  SEPARATE stamp rather than a wider `<PREFIX>_REQ_BYTE` value, in
+  `<PREFIX>_ENGINE` / `<PREFIX>_ENGINE_WHY`'s shape: the `REQ_BYTE`/`REQ_RUN`
+  pair keeps naming what the ANALYSIS found, so neither value space moves and
+  no existing reader of either changes. On the two declined populations the
+  artifact LOSES emitted text rather than gaining it — the three-line `memchr`
+  pre-check (or `abi` 30's scan loop) goes, and with it the
+  `#include <string.h>` on an artifact whose body calls no other `memchr`.
+  The two rules are `tuning.md` §2.29's: G2 declines where the search route
+  tries ONE start position (the DFA's `start_max` rows reading the literal `0`
+  or `search_from`; the VM's `<PREFIX>_VM_START "anchored"`/`"gstart"`), which
+  is the rule the candidate-start prefilter already applies to itself; G1
+  declines where the artifact's own single-byte `memchr` prefilter already
+  scans a byte at least as rare. No struct offset moves, no `rx_info` member
+  is added or changed, and NO ANSWER MOVES — a declined pre-check is a check
+  not run, and it could only ever have returned the answer the engine below it
+  then returns anyway, which is why both of this change's sabotage rows are
+  structural. `-fno-req-byte` still removes the whole mechanism.
+
+- **`rx_info.abi` was `30` (`[OPTLOOP.2]` batch 2
   bumped it from 29, D119: THE NECESSARY LITERAL RUN AND ITS SCAN PICK.** One
   bump for two mechanisms, which land as one event because their populations
   overlap and two bumps would re-pin the same manifests twice
@@ -2650,20 +2675,64 @@ engine-scoped.**
 
   A string with a `"none"` member for `<PREFIX>_END_WINDOW`'s reason: `0` is
   a legal byte value, so no number is free to mean "declined". The value is
-  the decimal the artifact's own `memchr` carries, and it is the RIGHTMOST
-  member of the necessary set — the same choice PCRE2's
-  `PCRE2_INFO_LASTCODEUNIT` makes, so a later multi-byte form widens this
-  fact rather than replacing it. `tuning.md` §2.27 carries the derivation and
-  its declines.
+  the member of the necessary set a subject is least likely to contain, by
+  pcrec's shipped static byte-frequency prior, with PCRE2's own RIGHTMOST rule
+  surviving as the tiebreak and as the whole answer under every encoding that
+  prior is not keyed to (`[OPT-FREQPICK]`, `tuning.md` §2.27, which carries
+  the derivation and its declines). Where §2.28's RUN shipped it is the run's
+  own scan member.
 
   A consumer may conclude that a non-`"none"` artifact rejects a whole
-  subject in one pass when the byte is absent. It may NOT read `"none"` as
-  "this pattern has no required literal" — it is the safe answer of a
-  conservative analysis, and a caselessly folded literal, an alternation with
-  no common byte and `-fno-req-byte` all report it.
+  subject in one pass when the byte is absent — **provided
+  `<PREFIX>_REQ_WHY` reads `"emitted"`**, which is the stamp that says whether
+  this fact was acted on. It may NOT read `"none"` as "this pattern has no
+  required literal": that is the safe answer of a conservative analysis, and a
+  caselessly folded literal, an alternation with no common byte and
+  `-fno-req-byte` all report it.
 
   It has **no `rx_info` mirror**, on `<PREFIX>_DFA_TABLE`'s precedent and for
   its reason: no consumer reads the fact at RUN time today (D77).
+
+  **[OPT-REQPOS] tier 2b, 2026-09-22: `<PREFIX>_REQ_RUN` — A LITERAL RUN
+  EVERY MATCH MUST CONTAIN.** Family (a): on EVERY artifact pcrec emits, both
+  engines.
+
+  ```c
+  #define RX_REQ_RUN "2e746172@0"   /* every match contains ".tar"; the
+                                       memchr scans member 0, '.' */
+  #define RX_REQ_RUN "none"         /* no run of two or more bytes */
+  ```
+
+  The run's bytes as lowercase hex, then `@`, then the index within them of
+  the member the emitted `memchr` scans for; or `"none"` at a length below 2,
+  which is `<PREFIX>_REQ_BYTE`'s own case. Hex because a run is arbitrary
+  bytes inside a `#define`'s string body; the index because it is the one fact
+  about the emitted check a reader cannot derive from the bytes, and because
+  `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]` — which is what makes the two
+  stamps checkable against each other. `tuning.md` §2.28 carries the
+  derivation. No `rx_info` mirror, its sibling's reason.
+
+  **[OPT-PRECHECK-ADMIT], 2026-09-23: `<PREFIX>_REQ_WHY` — WHETHER THE
+  ARTIFACT ACTED ON EITHER FACT, AND WHY NOT.** A closed four-token
+  selection stamp, family (a): on EVERY artifact pcrec emits, both engines.
+
+  ```c
+  #define RX_REQ_WHY "emitted"      /* or "none", "one-attempt", "dominated" */
+  ```
+
+  | value | what it says |
+  |---|---|
+  | `"emitted"` | the artifact emits a pre-check, on the byte or run its two siblings name |
+  | `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
+  | `"one-attempt"` | declined: the search route tries ONE start position, so a whole-window pass in front of it can only add work |
+  | `"dominated"` | declined: the artifact's own candidate-start `memchr` already scans a byte at least as rare |
+
+  `"none"` here holds **if and only if** `<PREFIX>_REQ_BYTE` is `"none"`. Any
+  other value asserts that a byte WAS derived, and only `"emitted"` asserts
+  that the artifact tests it — so a consumer asking "does this artifact reject
+  a subject in one pass" reads THIS stamp and then its siblings for the value,
+  never the siblings alone. `tuning.md` §2.29 carries both rules and their
+  measured populations. No `rx_info` mirror, its siblings' reason.
 
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
