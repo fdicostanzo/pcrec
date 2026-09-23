@@ -25,6 +25,23 @@ SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/caseless.rxt"
 SAB_DESC="The caseless residual entry's fold covers A-Y instead of A-Z, so a caseless backreference stops folding 'Z'/'z' while pcrec's class fold still does. Two spellings of one fact drifting by ONE BYTE is what the 65,536-pair agreement check exists to see; a corpus that used no 'z' would not"
 SAB_DOC_FIGURE="PREDICTED: the fold-agreement check RED on the 'Z'/'z' pair; brefdiff RED if a caseless cell uses it. Canonical figure owed from run_sabotage_matrix.sh S116."
+# [VAR] 2026-09-23: ANCHOR WIDENED BY ONE LINE TO STAY UNIQUE, and the reason
+# is worth the line. Module `vars`' CASELESS value compare is the caseless
+# BACKREFERENCE compare with one operand's source changed, so `enc_byte.c` now
+# carries the identical fold line TWICE and the one-line anchor matched both —
+# reported as `ANCHOR COUNT 2, SAB_COUNT 1`, which is the tripwire doing
+# exactly its job. The fix is the preceding line, which is the one thing the
+# two bodies genuinely differ in (`y = s[ref_start + i];` reads the SUBJECT,
+# the variable compare's `y = v[i];` reads the CALLER's buffer).
+#
+# THE PLANT IS DELIBERATELY NOT WIDENED TO BOTH. This row exists to catch the
+# FOLD-AGREEMENT check — two spellings of one fact (this residual and
+# `src/core/fold.c`) drifting by one byte — and that check reads the
+# BACKREFERENCE entry. Planting in both would still be detected, by the same
+# check, for the same reason, and would tell a reader that a two-site plant
+# was needed when it is not.
 SAB_COUNT=1
-SAB_BEFORE="\"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\\n\""
-SAB_AFTER="\"        if (x >= 'A' && x <= 'Y') x = (unsigned char)(x + 32);\\n\"   /* SABOTAGE S116 */"
+SAB_BEFORE="\"        y = s[ref_start + i];\\n\"
+\"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\\n\""
+SAB_AFTER="\"        y = s[ref_start + i];\\n\"
+\"        if (x >= 'A' && x <= 'Y') x = (unsigned char)(x + 32);\\n\"   /* SABOTAGE S116 */"

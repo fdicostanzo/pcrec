@@ -34,6 +34,14 @@ SAB_DOC_FIGURE="PREDICTED: the corpus RED across tests/backrefs; reject RED on t
 # resolution pass had been gone for a milestone.
 SAB_REACH='"$PCREC" --features backrefs -p rx -o "$REACH_TMP/o0.c" --pattern "(a)\\2"'
 SAB_REACH_EXPECT="\\2 refers to capture group 2, but this pattern has 1 (pattern offset 3)"
+# [VAR] 2026-09-23: ANCHOR RE-DERIVED FROM THE LIVE SOURCE. `pcrec_parse_info`
+# no longer RETURNS the resolution's result — module `vars`' own end-of-parse
+# pass runs after it, so the call became an assignment and the `return` moved
+# two lines down. The plant is UNCHANGED in meaning: the resolution pass is
+# what stops running, and the `(void)0;` keeps the statement a statement so
+# the surrounding function still compiles. `pcrec_vars_resolve` below it is
+# deliberately LEFT RUNNING — this row's population is backreference
+# resolution, and neutering a second pass would widen it.
 SAB_COUNT=1
-SAB_BEFORE='    return pcrec_bref_resolve(cx, a);'
-SAB_AFTER='    return a;   /* SABOTAGE S119: nothing resolves, nothing refuses */'
+SAB_BEFORE='    a = pcrec_bref_resolve(cx, a);'
+SAB_AFTER='    (void)0;   /* SABOTAGE S119: nothing resolves, nothing refuses */'

@@ -610,11 +610,32 @@ if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DF
     #           artifact's pre-check is ADMITTED, so the value is the
     #           four-token set's `emitted` and no emitted `memchr` moved)
     #   = 762367
+    #
+    # RE-PINNED AGAIN 762367 -> 762401, 2026-09-23 ([VAR] M7, abi 31 -> 32),
+    # the SECOND READER CLASS's ninth instance and the abi digit's own fourth:
+    # the digit moves 31 -> 32 in this same line and in `.abi = 32`, both
+    # same-length substitutions, so the +34 comes from the change's two
+    # APPENDED `rx_info` initializer lines and nothing else. VERIFIED BY
+    # DIFFING the two artifacts written to the SAME `-o` basename (the house's
+    # recorded basename trap), which prints exactly six changed lines -- the
+    # two abi digits and two INSERTED initializer lines:
+    #   762367  the previous pin
+    #   +18     `    .vars = NULL,`
+    #   +16     `    .nvars = 0,`
+    #   = 762401
+    #
+    # +34 IS THE WHOLE CHANGE FOR EVERY VAR-FREE ARTIFACT, measured on four
+    # witnesses spanning 13 KB to 762 KB at the same `-o` basename: the same
+    # six changed lines and the same delta on every one. That is [VAR]'s own
+    # MECH-M1 claim, and it is STRONGER than the design's wording ("unchanged
+    # except for the abi digit") -- two initializer lines land too, because
+    # `rx_info` gains members on every artifact while `PCREC_ERR_UNSET_VAR`'s
+    # EMISSION is gated on the var-bearing bit.
     sz=$(wc -c <"$out" | tr -d ' ')
-    if [ "$sz" -eq 762367 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762367 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp) — the cap still works, this witness no longer reaches it"
+    if [ "$sz" -eq 762401 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762401 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762367 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762401 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

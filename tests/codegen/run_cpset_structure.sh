@@ -562,6 +562,30 @@ fi
 # same `-o` basename rather than inferred from their sizes: in each the only
 # changed lines are the two abi digits, the inserted stamp, and the pre-check
 # text itself.
+#
+# RE-RECORDED AGAIN 2026-09-23 at `[VAR]` (abi 31 -> 32), the EIGHTH such event
+# and the FIFTH from this same reader class — no row here cites an abi digit
+# and all twelve moved. Read row by row, and this time the twelve deltas are
+# ONE number, +1001 on every row without exception, which is itself the
+# finding: `[VAR]`'s whole emitted footprint on a var-free artifact is the
+# shared `PCREC_RX_ABI_H` block plus two `rx_info` initializer lines, and that
+# block is K-INVARIANT — identical on every artifact of both engines. VERIFIED
+# BY DIFFING two artifacts written to the SAME `-o` basename (the house's
+# recorded basename trap), which prints these and nothing else:
+#   +5      `,vars` inside `PCREC_FEATURE_MODULES` — a `--features all` fact,
+#           not a per-artifact one; this census compiles with `--features all`
+#   +~300   the `rx_var` type and its three member doc-comments
+#   +~150   `rx_ctx`'s two appended members and their comments
+#   +~120   `#define PCREC_ERR_UNSET_VAR (-8)` and its trailing comment
+#   +~390   `rx_info`'s two appended members and their comments
+#   +34     the two `rx_info` INITIALIZER lines (`.vars = NULL,`/`.nvars = 0,`)
+#   = 1001, with the two abi digits same-length substitutions
+#
+# THE SAME CHANGE IS +34 ON A DEFAULT-FLAG ARTIFACT, measured on four
+# witnesses from 13 KB to 762 KB, because every byte above except the
+# initializer pair is COMMENT and comments are off by default since
+# [EMIT-VERB]. Both numbers are the same event seen through two settings, and
+# `tests/resource`'s own pin (762367 -> 762401) is the +34 one.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

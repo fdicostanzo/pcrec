@@ -297,4 +297,27 @@ under D45's gen-timeout budgets), and no check in this tier may read the
   battery.sh`'s `alloc` stage (D110) — `make test` itself is NOT the home
   for the per-witness pins, only for section 2b's coarser verdict check.
 
+- `varexp_check.c` — [VAR] M1 (2026-09-23): the expansion grammar
+  (`src/core/varexp.c`), checked below any artifact and below any match.
+  47 sub-checks: accept rows, refuse rows with their OFFSETS, both limits in
+  both directions, and the parsed FIELDS read directly.
+
+  **THE ORACLE IS A ROUND TRIP, not a transcription of the parser's own
+  decisions**: each accept row states the canonical rendering, and the check
+  re-parses and re-renders that, so the fixed point is reached from two
+  different strings (the source's escapes are not the render's).
+
+  **AND §5's coalescing arm is there because the round trip CANNOT SEE IT.**
+  Measured: a plant emitting ONE WORD PIECE PER BYTE left every other arm of
+  this file green, because the render concatenates the pieces and so flattens
+  exactly the representation that plant moves. An agreement check cannot see
+  a difference its own two halves agree to erase; only a field read can. The
+  other two plants (drop the colon, drop the word escape) redden 21 and 4.
+
+  **WHAT IT DOES NOT COVER, and the file's header says so**: what an
+  expansion EVALUATES to. There is no evaluator in the tree to check —
+  evaluation needs the caller's environment and so lives in emitted C, whose
+  semantics are `tests/vars/`'s oracle. A reader who takes this file as
+  covering the feature would be wrong about exactly half of it.
+
 Maintenance: update this file when files are added/removed or their roles change.

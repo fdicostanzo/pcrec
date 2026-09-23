@@ -981,6 +981,51 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   is `first_kreset_pos`'s twin, first-wins, and supplies the DIAGNOSTIC's
   offset only — the verdict walks the post-discharge tree.
 
+- **mod_vars.c** — module `vars` ([VAR], 2026-09-23): `${name}` in a pattern,
+  whose bytes the CALLER supplies per call. Design:
+  `docs/design/variables_common.md` (the grammar, the value model, the call
+  interface) and `docs/design/variables_pattern.md` (this consumer); contract:
+  `docs/spec/vars.md`.
+
+  **THE GRAMMAR IS NOT HERE.** `src/core/varexp.c` parses
+  `${ [!] selector [op word] }` for BOTH consumers — this one and the
+  replacement-side template, which is unbuilt — so this file is only the
+  doorway, the node constructor and the end-of-parse resolution. The one
+  per-consumer difference (which scope a bare selector resolves in) costs no
+  code at all here: in a pattern there is no match when a variable is
+  expanded, so there is no group scope to resolve in.
+
+  **THERE IS NO DOORWAY DISPATCH, AND THAT IS `RK_BARE`'s CHARTER.** `$` is
+  base grammar parsed directly in `p_atom`, with no `\` or `(?` doorway to
+  hang a row off, so `pcrec_registry_find`/`pcrec_ext_gate` are never called
+  for it and cannot be called for `${` either. Recognition is one `if` in
+  `p_atom` and the module GATE is a direct `pcrec_feature_enabled` test here,
+  which is `\Q`'s FEAT_QUOTING shape one construct over. The registry row
+  exists for the DUMP and for the D67 stamp `forces_registry` reads —
+  `variables_pattern.md` §3's paragraph about SR-9 tail arbitration resolving
+  `${` against the bare `$` row is wrong about the MECHANISM (nothing
+  arbitrates an `RK_BARE` row) and right about the outcome.
+
+  **TWO INTERN TABLES, AND THEY COUNT DIFFERENT THINGS.** `Ctx.var_names` is
+  the distinct NAMES, which is what the caller sees (`rx_info.vars`,
+  `<PREFIX>_NVARS`); `Ctx.var_exps` is the distinct EXPANSIONS keyed by
+  canonical rendering, which is what `Ast.u.var.slot` indexes. `${v}` and
+  `${v:-d}` name ONE variable and have TWO answers. A nested expansion is
+  interned BOTTOM-UP, so its slot is always below its container's, which is
+  what lets the emitted resolver evaluate the table in index order with no
+  dependency analysis anywhere.
+
+  **RESOLUTION RUNS AT END OF PARSE, beside `pcrec_bref_resolve`**, because
+  that is the one place that has seen every reference — including the ones
+  nested inside another reference's operator WORD, which a per-node walk at
+  the doorway would miss — and no rewriting pass has run yet.
+
+  `pcrec_has_var` is the THIRD whole-tree predicate in
+  `prefilter_decision`'s hand-written set. It is MANDATORY rather than an
+  optimisation decline: `src/ir/nfa.c` has no `A_VAR` arm, so a prefilter
+  build that walked one reaches that file's loud internal error.
+  `[PATFACTS]` (D120) is the eventual general home for all three.
+
 - **mod_backrefs.c** — module `backrefs` ([M6.5.2]): four producing ports and
   the end-of-parse resolution pass they all feed. Design:
   docs/design/backrefs_design.md, panel-approved R32.

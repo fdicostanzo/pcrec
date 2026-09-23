@@ -358,7 +358,9 @@ typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 #define PCREC_ERR_WORK     (-4)
 #define PCREC_ERR_RECURSE  (-5)  /* [DD-14] reserved: no producer yet (D71 item 1) */
 #define PCREC_ERR_FLOOR    (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
-#define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
+#define PCREC_ERR_INTERNAL  (-6)  /* [DD-14] below PCREC_ERR_FLOOR: NOT a give-up, D71 item 1 */
+#define PCREC_ERR_STARTPOS  (-7)  /* [K50] below the floor: a mid-character startpos was REFUSED */
+#define PCREC_ERR_UNSET_VAR (-8)  /* [VAR] below the floor: an UNSET or ill-formed variable value was REFUSED */
 
 #define PCREC_UNSET ((ptrdiff_t)-1)
 
@@ -2006,13 +2008,46 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `31` while the three narrative copies
+which is why it is gap-free from `2` to `32` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `31` on every artifact today (`[OPT-PRECHECK-ADMIT]`
+- **`rx_info.abi` is `32` on every artifact today (`[VAR]` bumped it from 31,
+  2026-09-23: THE CALLER-VARIABLE SURFACE.** Module `vars` gives a pattern
+  `${name}`, whose bytes the CALLER supplies per call, and the surface it
+  needs lands in one event. On EVERY artifact of BOTH engines: a new
+  fixed-literal ABI type `rx_var {name, p, len}` in the shared
+  `PCREC_RX_ABI_H` block; TWO fields appended to `rx_ctx`
+  (`const rx_var *vars; size_t nvars;`), so no existing member's offset moves
+  and — the point of putting them there — **`rx_matchfn`'s signature is
+  UNTOUCHED and a var-bearing artifact's `<prefix>_match` is still an
+  `rx_matchfn` byte for byte**; `#define PCREC_ERR_UNSET_VAR (-8)`, the THIRD
+  below-the-floor code and `PCREC_ERR_STARTPOS`'s shape exactly (a caller
+  REFUSAL: nothing attempted, `caps` untouched); and TWO members appended to
+  `rx_info` (`const char *const *vars; int nvars;`), the variable-NAME table on
+  `rx_info.groups`' model. **A var-free artifact's whole change is the `abi`
+  digit (a same-length substitution) and those two `rx_info` initializer
+  lines — MEASURED at exactly +34 bytes on four witnesses spanning 13 KB to
+  762 KB at the same `-o` basename, six changed lines each and no emitted
+  program byte among them.** On a VAR-BEARING artifact only: `<PREFIX>_NVARS`
+  and one internal `<PREFIX>_VAR_<NAME>` index macro per name (the ARTIFACT's
+  own index into its names table, never something a caller writes — variables
+  are passed BY NAME, because an index is meaningless across separately
+  compiled artifacts); a `<prefix>_var_names[]` table `rx_info.vars` points
+  at; a `<prefix>_vars_resolve` static that scans the caller's array ONCE PER
+  CALL and evaluates each distinct expansion; the encoding seam's fifth and
+  sixth residual entries `$_var_match`/`$_var_match_caseless` and, under a
+  multi-byte encoding, a seventh, `$_var_valid`; and a trailing
+  `const rx_var *vars, size_t nvars` pair on `<prefix>_search` and its `_in`
+  siblings — which are NOT `rx_ctx`-shaped and so cannot read the ctx,
+  `<prefix>_search_in`'s own trailing-descriptor precedent (D18, §10.2), with
+  the descriptor staying LAST. NO ANSWER MOVES on any artifact that mentions
+  no variable, and a var-bearing pattern could not be compiled at all before
+  this bump. `docs/spec/vars.md` is the module's own contract page.
+
+- **`rx_info.abi` was `31` (`[OPT-PRECHECK-ADMIT]`
   bumped it from 30, D119 / the `[OPTLOOP.1]` ledger reading §6, ratified
   2026-09-23: ADMITTING THE WHOLE-WINDOW PRE-CHECKS BY COST.** EVERY artifact
   of BOTH engines gains one shared-prologue stamp line, `<PREFIX>_REQ_WHY` — a

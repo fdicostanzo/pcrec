@@ -87,12 +87,22 @@ SAB_COUNT=1
 # force-false clause, leaving `has_call` and both nullability declines live. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    fit->prefilter = (has_bref || has_call ||
+
+# [VAR] 2026-09-23: ANCHOR RE-DERIVED FROM THE LIVE SOURCE. The guard gained
+# a FOURTH disjunct, `has_var` — module `vars` needs its own whole-tree
+# predicate for the same reason the first two exist (src/ir/nfa.c has no
+# `A_VAR` arm either), so the three-disjunct line this row anchored on
+# stopped existing. The same re-home shape this row's notes already record
+# twice. The sabotage is UNCHANGED in meaning: `has_var` is carried through
+# in `SAB_AFTER` exactly as the other untouched disjuncts are, so the
+# population stays exactly what it was and does not widen to var-bearing
+# patterns.
+SAB_BEFORE='    fit->prefilter = (has_bref || has_call || has_var ||
                      (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
                      fit->prefilter_declined_nullable ||
                      fit->prefilter_declined_nullable_default)
                     ? false'
-SAB_AFTER='    fit->prefilter = (false || has_call ||   /* SABOTAGE S102 */
+SAB_AFTER='    fit->prefilter = (false || has_call || has_var ||   /* SABOTAGE S102 */
                      (cx->dfa_disabled && cx->collapse_reason != CR_SEL1) ||
                      fit->prefilter_declined_nullable ||
                      fit->prefilter_declined_nullable_default)

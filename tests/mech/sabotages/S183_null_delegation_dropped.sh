@@ -32,15 +32,26 @@ SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <prefix>_search_in drops its NULL-descriptor delegation line, so a NULL descriptor binds a null resume stack at capacity 0 instead of meaning 'use the stamped default'. Spec 10.3 defines the NULL case to BE the un-suffixed call"
 SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 12pass/4fail -- every frames-buffer=null cell in the file crashes (exit 139), across all THREE patterns including the DFA-selected one, which also shows the null route reaching that engine's inert _in entry. No default or buffered cell is affected. RE-VALIDATED 2026-08-26 (lane srAnchor) after re-anchoring past [OPT-1]'s two-tier entry: run_sabotage_matrix.sh S183 -- DETECTED, corpus:4fail/12pass (the harness arm, unchanged 12pass/4fail signature), framebuf:10fail/5pass, codegen:1fail/104pass."
+# [VAR] 2026-09-23: ANCHOR RE-DERIVED FROM THE LIVE SOURCE. The `_in` entry
+# gained a trailing `const rx_var *vars, size_t nvars` pair on a var-bearing
+# artifact — emitted through `pcrec_vars_param_text`/`_arg_text`, which read
+# "" on every other artifact — so the emitter's format string and its argument
+# list both moved. The plant is UNCHANGED in meaning: it still edits exactly
+# the same emitted line, and the vars inserts are carried through verbatim in
+# `SAB_AFTER`, so this row's population does not widen to var-bearing
+# artifacts (its witness, tests/recursion/framebuffer.rxt, has no variable in
+# it and the inserts are empty there).
 SAB_COUNT=1
-SAB_BEFORE='        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans);\n"
+SAB_BEFORE='        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans%s);\n"
         "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
         "}\n\n",
-        g->searchfn, v->p, v->p, g->searchfn, v->p, g->searchfn);'
+        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p, g->searchfn,
+        pcrec_vars_arg_text(cx), v->p, g->searchfn, pcrec_vars_arg_text(cx));'
 SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run%s);\n"
         "}\n\n",
-        g->searchfn, v->p, v->p, v->p, g->searchfn);   /* SABOTAGE S183 */'
+        g->searchfn, pcrec_vars_param_text(cx), v->p, v->p,
+        v->p, g->searchfn, pcrec_vars_arg_text(cx));   /* SABOTAGE S183 */'
