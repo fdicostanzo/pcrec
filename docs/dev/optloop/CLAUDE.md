@@ -193,6 +193,33 @@ directory, `c2/` (its own `CLAUDE.md`); nothing in any of them reads a clock.
   so pcrec's reach is measured on pcrec's trees.  M-B, the measurement that
   actually decides the row, is untouched and is Linux work.
 
+- `linux_ask_i89.md` — **draft for I-89, lane `linuxask`, 2026-09-22**: an
+  exact-command executor request bundle for pcrecdev2 (I-57 terms),
+  written for the manager to lightly edit and append to pcrec-bench's
+  inbox. Four blocks: (A) the whole-corpus, unrestricted `make test-axes`
+  (CPU-heavy, must not overlap the bench's own capability window, run
+  detached under a 6-hour `gnutimeout`); (B) `[OPT-FIRSTSET]` F1 (the
+  `json-constant` twin re-run that gates the decline rule) and F2 (the
+  soundness arm), with F3 deliberately not asked; (C) the one-pass DFA's
+  M-B measurement (`captures_via_dfa_survey.md` §3.6) — ARM 1
+  (`--features all`) vs ARM 2 (`--no-captures`) over the 17 capture-forced
+  hybrid patterns, on both the bench's throughput subjects and each
+  pattern's own `search_short`/`match` subject. **Read this file's own F2
+  block first**: this lane built and RAN the exact base_/twin_/reseed_
+  binaries on darwin (a verification step, not the timed ask) and found
+  all three read `matches=0`, contradicting `firstset_design.md` §4.1's
+  stated `0,1,0` — `rx_search`'s real two-pass shape (a reverse walk
+  independently re-deriving the match START from `rx_reverse_*` tables the
+  forward-only `rx_can_begin_match` patch never touches) appears to VETO
+  the spurious forward accept that `c2/scanloop_sim.py`'s forward-only
+  replay predicts. The doc asks the executor to run and report the raw
+  triple regardless, flagged as unresolved for the manager either way.
+  Also carries two `[derived — manager to confirm]` Python patchers (built
+  and verified against the real artifact by this lane, not merely written
+  from the design note's illustrative C) for the `twin_`/`reseed_`
+  hand-edits, and a `[derived]` mapping from the one-pass survey's "match
+  regime" wording to `expectations.tsv`'s `search_short`/`match` rows.
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
