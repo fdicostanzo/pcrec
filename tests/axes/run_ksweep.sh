@@ -3,8 +3,8 @@
 # docs/design/artifact_size_term.md §6.2 control 1).
 #
 # WHY THIS EXISTS AS ITS OWN SCRIPT. `make test-axes` derives its axis list
-# from `lib/pcrec.h`'s `PCREC_(NO|FORCE)_* = 1ull << N` constants, so it sweeps
-# only PREDICATE bits. `--unroll=K` is a VALUE axis (`pcrec_options.unroll_k`)
+# from `lib/pcrec.h`'s `PCREC_(NO|FORCE)_* = PCREC_BIT(N)` constants, so it
+# sweeps only PREDICATE bits. `--unroll=K` is a VALUE axis (`pcrec_options.unroll_k`)
 # and has never been swept by anything — which means that until this script,
 # NO GATE PROVED ANY K ANSWER-IDENTICAL, and the size term's whole licence is
 # that changing K cannot change an answer. [CHK-2] item (c)

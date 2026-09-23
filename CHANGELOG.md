@@ -53,6 +53,9 @@ scaffolding version, which changes far more often than a release does. See
 - `lib/pcrec.h`'s option-flag constants are spelled `1ull << N` rather than
   `1u << N`. No value moved and `pcrec_options.flags` has always been
   `uint64_t`; bit 31 is the last bit an `unsigned` constant can name.
+- `lib/pcrec.h`'s option-flag constants are respelled again, through a new
+  public macro `#define PCREC_BIT(n) (1ull << (n))`, every member now
+  `PCREC_BIT(N)` rather than a bare `1ull << N`. Still no value moved.
 
 - `rx_info.abi` 28 → 29: every artifact of both engines carries two more
   stamp lines, every VM artifact a third, and the three analyses' own

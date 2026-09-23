@@ -327,7 +327,7 @@ directory asserts that the description and the shipped parser actually agree.
   individually: (1) every dumped deny/force bit checked against
   `lib/pcrec.h`'s own definition and (where it has one) its CLI spelling
   driven live against `build/pcrec`; (2) both `tuning.md`'s documented bits and
-  `lib/pcrec.h`'s own `1ull << N` bits (range 4-63, DERIVED with no upper
+  `lib/pcrec.h`'s own `PCREC_BIT(N)` bits (range 4-63, DERIVED with no upper
   bound since optk's 2e2914e — a hard-coded `4-15` here would have filtered
   bit 16 away before comparing, and bit 17 after it) swept to confirm every
   one appears SOMEWHERE in the dump — the reverse loss, an axis quietly

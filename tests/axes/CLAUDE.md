@@ -15,9 +15,12 @@ It read `4..15` — the family's extent on the day this was written — and
 the sweep with no failure, which is the exact "an axis shipped without its
 five things" gap this row exists to close, arriving through this row's own
 instrument. Only the LOW bound does real work (bits below 4 are unrelated
-`1ull << N` constants in the same header — `1u <<` until [OPT-REQPOS] took
-bit 31, the last bit an `unsigned` constant can name; the extraction reads
-both spellings). The section anchor for the doc
+`PCREC_BIT(N)` constants in the same header — bare `1ull <<` until
+[b2fix] respelled the whole enum through that macro, `1u <<` before
+[OPT-REQPOS] took bit 31, the last bit an `unsigned` constant can name;
+the extraction reads only the current spelling and hard-fails on deriving
+zero bits, so a tree on an older spelling fails loud rather than silently
+deriving nothing). The section anchor for the doc
 cross-check does not spell the axis count in English either, for the same
 reason: it read `/^## 2\. The thirteen axes/`, [OPT-K] correctly renamed that
 heading, and the range then matched nothing and the check compared against an
@@ -271,8 +274,8 @@ change.
 
 - **run_ksweep.sh** — [ART-SIZE]'s K-SWEEP IDENTITY GATE (`make test-ksweep`,
   opt-in, 2026-08-29). `run_axes.sh` derives its axis list from
-  `lib/pcrec.h`'s `PCREC_(NO|FORCE)_* = 1ull << N` constants, so it sweeps only
-  PREDICATE bits — and `--unroll=K` is a VALUE axis. Until this script **no
+  `lib/pcrec.h`'s `PCREC_(NO|FORCE)_* = PCREC_BIT(N)` constants, so it sweeps
+  only PREDICATE bits — and `--unroll=K` is a VALUE axis. Until this script **no
   gate proved any K answer-identical**, which is the size term's entire
   licence. [CHK-2] item (c) folds value axes into the generic sweep; this row
   is its named trigger and this script is the gate meanwhile.
