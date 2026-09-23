@@ -25383,3 +25383,9 @@ dbnames/concat-sqli losing to re2 on both pins — cycle-2 cause reads).
 Mirror: pcrec's capturing default beats every nocaps competitor on 87/111
 AFTER. OWED: cycle1_caps_view.md scored rust as CAPS (84/123) — inconsistent
 with I-100; cycle 2's re-rank re-renders both views under the frozen table.
+
+**Frank ~09:2x: the feature hold LIFTED for a design — [VAR] variables +
+search/replace** (shell-style syntax, one common variable design referenced
+by a pattern-variable design and a replacement design; MVP/roadmap after).
+Lane vardesign (opus). The session reset moves to after its delivery (or
+the next session resumes from its committed branch).
