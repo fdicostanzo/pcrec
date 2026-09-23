@@ -774,50 +774,43 @@ up to +11.16% (search) and +41.09% (throughput, sub-100 ns baselines).
 ## 9. EXEC SUMMARY ADDENDUM
 
 **Findings.** Batch 2's two mechanisms both land on their own targets and
-both carry one real defect apiece, and they are not the defects the ledger's
-headline names. `[OPT-FREQPICK]`'s target collapses 9.3 ms to 23.1 µs on
-four of four configs, predicted to 0.2% of its absolute value.
-`[OPT-REQPOS]` tier 2b's forced-VM targets collapse 5.4 ms to 129 µs. Of
-O-49's 17 missing target rows, **6 are removed outright by the already-built
-admission fix, 6 are the run mechanism's own defect, and 5 are cells that
-were at the measurement floor before the batch started and could not have
-improved.** Only **2 of the 17** lie outside this pin pair's own null band,
-and both are `router-prefix-order`'s DFA route.
+both carry one real defect apiece, and neither defect is what O-49's
+headline names. `[OPT-FREQPICK]`'s target collapses 9.3 ms to 23.1 us on
+4 of 4 configs, predicted to 0.2% of its absolute value; `[OPT-REQPOS]`
+tier 2b's forced-VM targets collapse 5.4 ms to 129 us. Of the 17 missing
+target rows, **6 are removed outright by the already-built admission fix,
+6 are the run mechanism's own defect, and 5 were at the measurement floor
+before the batch started and could not have improved.** Only **2 of 17**
+lie outside this pin pair's own null band, both `router-prefix-order`'s DFA
+route.
 
 **Surprises.** Three, each a prediction whose sign or scope was wrong before
-any measurement. (1) The ledger's largest movement — a 500× floor jump on
-`wild-validator-email-owasp` — is a cell the design note lists among the
-effects that "are gains", because it read an absent required byte as a
-one-pass answer without asking whether the artifact had an attempt loop to
-skip; on a one-attempt artifact absent is the worst case. (2) The named
-no-decline-rule falsifier, `logparse-atomic`, is anchored, so the admission
-fix deletes its entire pre-check — **the cell chosen to answer the run-rate
-question has no run check left to have a rate about**, and the cell that can
-answer it (`keyword-prefix-order`, +59.7%, the largest carve-out regression)
-was never named. (3) The admission fix's dominance rule, scoped to the
-one-byte form on sound reasoning, **declines the form of
-`router-prefix-order`'s pre-check that costs 315 `memchr` calls and admits
-the form that costs 39,098** — measured by compiling the same pattern with
-and without `-fno-req-run` under the fix's own compiler.
+any measurement. (1) The ledger's largest movement, a 500x floor jump on
+`wild-validator-email-owasp`, is a cell the design note lists among effects
+that "are gains" -- it read an absent required byte as a one-pass answer
+without asking whether the artifact had an attempt loop to skip, and on a
+one-attempt artifact absent is the worst case. (2) The named
+no-decline-rule falsifier, `logparse-atomic`, is anchored, so the fix
+deletes its entire pre-check: **the cell chosen to answer the run-rate
+question has no run check left to have a rate about**, and the cell that
+can answer it (`keyword-prefix-order`, +59.7%) was never named. (3) The
+fix's dominance rule, scoped to the one-byte form on sound reasoning,
+**declines the form of `router-prefix-order`'s pre-check costing 315 memchr
+calls and admits the form costing 39,098.**
 
-**Impact.** The run scan loop's cost is one `memchr` CALL per occurrence of
-its scan byte, not per occurrence of the run, which the design note prices
-the other way; on `router-prefix-order` that is a 124× call amplification
-and 97% of a +80.8% regression, reproduced by an exact clock-free model with
-one parameter carried over from cycle 1. Separately, the null control that
-cycle 1 found for free is larger this cycle — 131 of 192 artifacts
-program-identical, and **34 of 34 named non-target regressions sitting on
-them**, including one at +41.09%. For the second cycle running, the D119
-bar's within-window IQR is the wrong noise model for a two-window
-comparison, and the records to fix it are already in the bench's store.
+**Impact.** The run scan loop costs one `memchr` CALL per occurrence of its
+SCAN BYTE, not of the run, which the design note prices the other way; on
+`router-prefix-order` that is a 124x call amplification and 97% of a +80.8%
+regression, reproduced by an exact clock-free model with one parameter
+carried from cycle 1. Separately, the null control cycle 1 found for free is
+larger this cycle: 131 of 192 artifacts program-identical, **34 of 34 named
+non-target regressions sitting on them**, one at +41.09%. For the second
+cycle running the within-window IQR is the wrong noise model for a
+two-window comparison, and the records to fix it are already in the store.
 
-**Next steps.** (1) Merge `[OPT-PRECHECK-ADMIT]` — it is a precondition on
-shipping the pick, not an improvement on it, because the pick's one severe
-hazard is an admission defect. (2) Open a cycle-3 row for the run-form
-dominance rule, whose statistic is a comparison between two counts the
-compiler already holds rather than the corpus run-rate the design note
-deferred. (3) Send I-102 (the fix's acceptance cells, with
-`wild-validator-email-owasp` as the discriminating one and the six meeting
-targets as controls), I-103 (the one three-artifact timing block that
-decides the run-form rule), and I-104 (carry a null-control band in the
-report; we can hand over the population).
+**Next steps.** Merge `[OPT-PRECHECK-ADMIT]` -- a precondition on shipping
+the pick, not an improvement on it. Open a cycle-3 row for the run-form
+dominance rule, whose statistic compares two counts the compiler already
+holds. Send I-102 (acceptance cells, `wild-validator-email-owasp`
+discriminating, the six meeting targets as controls), I-103 (the timing
+block deciding the run-form rule), I-104 (carry a null-control band).
