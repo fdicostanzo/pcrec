@@ -25299,3 +25299,13 @@ I-95 SENT: the bench measures batch 2 at b1885a83 after [B78]; the
 logparse-atomic cells read first. Timestamp correction for this morning's
 entries: the "~08:5x-10:2x EDT" labels were UTC misreads; the box clock put
 them at ~03:5x-04:2x EDT.
+
+**O-47 (~06:3x EDT, bench 80d43c2):** the ALL-AXES `make test-axes` at
+8d716693 on Linux is GREEN — 2h18m, 35 axis passes × 24,343 keys,
+mismatches/lost/gained 0 everywhere, oracle cross-check OK (the owed
+all-axes sweep from batch 1 is DISCHARGED). Three reported-not-reconciled
+facts → lane axesrec: bits 29/30 carry refused-documented/budget
+populations on Linux (end-window 59+10; req-byte 9,632, floor 8000) where
+darwin's restricted runs read refused=0; -fprefilter clean; -fno-possessify
+230 documented. The lane fetches the transcript into runs/ (then "I-89 logs
+fetched"). [B78] (I-93) running; [B80] (I-95) queued.
