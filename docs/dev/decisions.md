@@ -8276,3 +8276,11 @@ Frank (~13:5x) also RATIFIED the replacement-side scope rule as written
 capture group, never a fallback to the variable; a template naming a group
 the pattern lacks is a compile-time refusal, pointed at `${!a}` when the
 variable set holds that name.
+Frank (~14:1x), reading variables_pattern.md: "why a new var_match form
+instead of merging bref_match?" — RULED: ONE seam entry pair per encoding.
+The existing backreference entry's reference side becomes a pointer +
+length (in place of the offset pair); vm_bref passes `subject + start,
+end - start`, A_VAR passes the resolved value. The note's own "mechanical
+substitution" sentence was the tell: two bodies that differ only in how
+they index the reference side are one function. Sent to lane varmvp before
+its M6; the D94 grep covers the residual's readers.
