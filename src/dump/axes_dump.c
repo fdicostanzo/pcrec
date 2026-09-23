@@ -637,6 +637,20 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "",
                      "always (fallback) — no byte is necessary on every path (an alternation with no common literal, a caselessly folded literal, a nullable quantifier), or the deny flag");
     }
+    /* [OPT-REQPOS] tier 2b req-run — §2.28. The NECESSARY literal RUN, the
+     * same fact at word grain, from `Job.req_run`'s second accumulator on the
+     * same walk. `req-byte` above is its `L = 1` case, which is why the two
+     * rows read as one mechanism at two grains and why the run's own stamp
+     * carries the scan member's INDEX as well as the bytes. */
+    {
+        PredAxis p = { "req-run", NULL, "RX_REQ_RUN", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "run", "",
+                     PCREC_NO_REQ_RUN, 0, "",
+                     "per artifact, both engines: every match of the pattern must contain a RUN of two or more contiguous literal bytes (the same bottom-up walk as req-byte with a second accumulator — a concatenation joins the left factor's guaranteed suffix to the right factor's guaranteed prefix, an alternation keeps only its branches' common prefix and suffix, nothing is joined across a repeat's iterations), so one memchr for the run's rarest member plus one constant-length memcmp per hit answers NOMATCH for the whole call where the byte alone could not; the stamp carries the run's bytes in lowercase hex and the scanned member's index");
+        emit_pred_row(sb, &p, 2, "none", "none",
+                     0, 0, "",
+                     "always (fallback) — no run of two or more bytes is necessary (a single literal between non-literals, a caselessly folded literal, an alternation with no common affix), or either this axis's deny flag or -fno-req-byte's");
+    }
     /* [K50] startpos-guard — §2.23. THE ONE AXIS IN THIS DUMP THAT IS NOT
      * ANSWER-IDENTICAL: both rows describe a real semantics for a
      * mid-character caller startpos, and which one an artifact carries is a

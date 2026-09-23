@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 29
+#define PCREC_ARTIFACT_ABI 30
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -633,6 +633,104 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
         indent, posvar, lenvar, (unsigned long long)w);
 }
 
+/* [OPT-REQPOS] tier 2b THE NECESSARY-RUN PRE-CHECK'S EMITTED TEXT — the
+ * `L >= 2` sibling of the one-byte check below, inside the same function so
+ * the two engines cannot test the run in two different shapes (that
+ * function's own stated reason for existing).
+ *
+ * WHAT IT COMPUTES. `memchr` for the run's rarest member `A = R[i]`, and at
+ * each hit one constant-length `memcmp` of the whole run at the position the
+ * hit implies (`rp_c - i`). No run in the window means no match in the
+ * window, so the whole call answers 0 from here.
+ *
+ * `memcmp` WITH A LITERAL LENGTH, never `memmem` and never a hand-rolled
+ * word load. `memmem` is a GNU extension and pcrec emits portable C; a
+ * VARIABLE length defeats the lowering this form is chosen for (gcc turns a
+ * constant-length `memcmp` into one word load and one compare with no call
+ * out of line at L in {2,4,8}, measured on gcc-16 here and gcc-15.2 on the
+ * reference box — reqpos_2b.md §3.2); and a `memcpy` into a `uint64_t` would
+ * read bytes the run does not occupy, which is the over-read `[WORD-FOLD]`'s
+ * own row already refuses because pcrec does not own the caller's buffer.
+ *
+ * THE WINDOW GUARD IS TWO CONJUNCTS AND NEITHER IS DEFENSIVE. The run must
+ * lie ENTIRELY inside `[posvar, lenvar)` because every byte of every match
+ * does, so a hit too near either end cannot be this run's own `A` and the
+ * scan advances past it. AT `i == 0` THE FIRST CONJUNCT IS OMITTED RATHER
+ * THAN EMITTED AS `>= 0`: an always-true unsigned comparison is a
+ * `-Wtype-limits` report under the harness's own `-Wall -Wextra -Werror`
+ * GENCFLAGS, which is the exact defect class `edge1_report.md` recorded in
+ * emitted code that no answer check can see.
+ *
+ * THE RUN IS PATTERN-DERIVED BYTES IN TWO FRAMES AT ONCE, and each gets its
+ * own escape. In the COMMENT they go through `emit_comment_safe_byte` with
+ * `*prevp` threaded, for `-Wcomment` under those same GENCFLAGS — and this is
+ * not hypothetical, since `nested-comment-rec`'s own run is a STAR then a
+ * SLASH, which would close this very comment if spelled here. In the C
+ * STRING LITERAL they go through `pcrec_sb_cstr`, whose octal numeric escape
+ * is what keeps a non-printable byte from swallowing the byte after it. */
+static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
+                              const char *posvar, const char *subjvar,
+                              const char *lenvar)
+{
+    const ReqRun *r = &cx->job->req_run;
+    int prev = 0, k;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
+        "%s * \"", indent, r->len, indent);
+    for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+    pcrec_sb_printf(c,
+        "\", so a window without them holds no match at all;\n"
+        "%s * the scan is on byte %d at offset %d of the run. */\n",
+        indent, (int)r->bytes[r->idx], r->idx);
+    pcrec_sb_cmt_close(c);
+    /* The `<=` arm is the one-byte check's own two-obligations-in-one-test,
+     * unchanged and for its own reasons (see below): `memchr(NULL, c, 0)` is
+     * undefined and an empty window cannot hold the run anyway. */
+    pcrec_sb_printf(c,
+        "%sif (%s <= %s) return 0;\n"
+        "%s{\n"
+        "%s    size_t rp_pos = %s;\n"
+        "%s    for (;;) {\n"
+        "%s        const void *rp_q = memchr(%s + rp_pos, %d, %s - rp_pos);\n"
+        "%s        size_t rp_c;\n"
+        "%s        if (!rp_q) return 0;\n"
+        "%s        rp_c = (size_t)((const unsigned char *)rp_q - %s);\n",
+        indent, lenvar, posvar,
+        indent,
+        indent, posvar,
+        indent,
+        indent, subjvar, (int)r->bytes[r->idx], lenvar,
+        indent,
+        indent,
+        indent, subjvar);
+    if (r->idx == 0) {
+        pcrec_sb_printf(c,
+            "%s        if (rp_c + %d <= %s\n"
+            "%s            && !memcmp(%s + rp_c, \"",
+            indent, r->len, lenvar,
+            indent, subjvar);
+    } else {
+        pcrec_sb_printf(c,
+            "%s        if (rp_c - %s >= %d && rp_c - %d + %d <= %s\n"
+            "%s            && !memcmp(%s + rp_c - %d, \"",
+            indent, posvar, r->idx, r->idx, r->len, lenvar,
+            indent, subjvar, r->idx);
+    }
+    pcrec_sb_cstr(c, r->bytes, (size_t)r->len);
+    pcrec_sb_printf(c,
+        "\", %d)) break;\n"
+        "%s        rp_pos = rp_c + 1;\n"
+        "%s        if (rp_pos >= %s) return 0;\n"
+        "%s    }\n"
+        "%s}\n",
+        r->len,
+        indent,
+        indent, lenvar,
+        indent,
+        indent);
+}
+
 /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
  * BOTH engines' search entries — one text, so the two routes cannot test the
  * byte in two different shapes. Emits nothing where `Job.req_byte` declined,
@@ -663,6 +761,17 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
 {
     int b = cx->job->req_byte;
     if (b < 0) return;
+    /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
+     * check subsumes this one, so where a run shipped it is the only
+     * pre-check emitted — and `Job.req_byte` is then the run's own scan
+     * member, chosen with the run at one site (src/opt/reqbyte.c's single
+     * return) so the stamp and the emitted `memchr` cannot disagree. The
+     * one-byte text below is left at its own indent, un-nested, because
+     * sabotage row S265's anchor is in it. */
+    if (cx->job->req_run.len >= 2) {
+        emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
+        return;
+    }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
         "%s/* [OPT-REQBYTE] every match of this pattern contains the byte\n"
@@ -7647,6 +7756,39 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         } else {
             snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
             pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", rbbuf);
+        }
+    }
+    /* [OPT-REQPOS] tier 2b `<PREFIX>_REQ_RUN` — THE NECESSARY LITERAL RUN,
+     * beside `<PREFIX>_REQ_BYTE` and in the same family-(a) shape for the same
+     * reasons: unconditional on every artifact of both engines, and a string
+     * with a `"none"` member because no numeric value is free to mean
+     * "declined" when 0 is a legal byte.
+     *
+     * THE VALUE IS HEX PLUS THE SCAN INDEX (`2e746172@0` for `.tar`), and both
+     * halves are load-bearing. Hex because a run is arbitrary bytes and this
+     * is a `#define`'s string body — escape-free, one spelling for all 256
+     * values, the `%d`-not-a-character-literal argument one stamp up. The
+     * index because it is the one fact about the emitted check a reader cannot
+     * derive from the bytes: it says which member the `memchr` tests, and
+     * `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which is what makes the two
+     * stamps checkable against each other.
+     *
+     * UNCONDITIONAL, INCLUDING `"none"`, on `RX_DFA_UNIFORM_FOLDS`'s ruling and
+     * D108's: an absent population is a ROW with empty cells, never an absent
+     * row, because a check cannot distinguish "no run" from "the stamp stopped
+     * being emitted". */
+    {
+        char rrbuf[2 * PCREC_MAX_REQ_RUN_EMIT + 16];
+        const ReqRun *rr = &cx->job->req_run;
+        if (rr->len < 2) {
+            pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", "none");
+        } else {
+            size_t o = 0;
+            int k;
+            for (k = 0; k < rr->len; k++)
+                o += (size_t)snprintf(rrbuf + o, sizeof rrbuf - o, "%02x", rr->bytes[k]);
+            snprintf(rrbuf + o, sizeof rrbuf - o, "@%d", rr->idx);
+            pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", rrbuf);
         }
     }
     pcrec_sb_stamp_str(c, g->upper, "TUNE", pcrec_tune_token(cx->opt->tune));

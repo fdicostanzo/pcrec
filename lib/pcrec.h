@@ -47,11 +47,25 @@ enum {
  * this header does not need revisiting when M4.5 wires it.
  *
  * [M4.5b] PCREC_NO_CAPTURES is now LIVE (D42.1: captures are ON by default;
- * this bit recovers the pre-M4.5 pure-DFA artifact, <PREFIX>_NCAPS 1). */
+ * this bit recovers the pre-M4.5 pure-DFA artifact, <PREFIX>_NCAPS 1).
+ *
+ * [OPT-REQPOS] (2026-09-22) THE CONSTANTS ARE SPELLED `1ull << N`, not
+ * `1u << N`, and the widening is a CONTRACT change rather than a tidy-up:
+ * `PCREC_NO_REQ_RUN` below is bit 31, the LAST bit an `unsigned` constant can
+ * name, and `1u << 32` is undefined behaviour — so the bit after it would
+ * either be silently wrong or force this edit under whatever change happened
+ * to need it. The storage never moved (`pcrec_options.flags` has been
+ * `uint64_t` throughout) and no value changed; what moved is the SPELLING,
+ * which two checks derive their bit tables from by grepping this header
+ * (`tests/registry/axes_registry_check.sh`, `tests/axes/run_axes.sh` — both
+ * hard-fail on deriving zero bits, by design). Doing it here, under an `abi`
+ * bump that is already re-pinning three reader classes, is cheaper than doing
+ * it alone later (`reqpos_2b.md` §5.3 / §8 question 4, Frank's ruling
+ * 2026-09-22). */
 enum {
-    PCREC_CASELESS    = 1u << 0,  /* was pcrec_options.caseless */
-    PCREC_EMIT_MAIN   = 1u << 1,  /* was pcrec_options.emit_main */
-    PCREC_NO_CAPTURES = 1u << 2,  /* --no-captures (D42.1) */
+    PCREC_CASELESS    = 1ull << 0,  /* was pcrec_options.caseless */
+    PCREC_EMIT_MAIN   = 1ull << 1,  /* was pcrec_options.emit_main */
+    PCREC_NO_CAPTURES = 1ull << 2,  /* --no-captures (D42.1) */
     /* [M4.5c] (DD-8, engine_m4.md S10): emit an INSTRUMENTED matcher that
      * prints every resume-frame push/pop and capture write to stderr as it
      * runs. A GENERATION AXIS like every other option here (D18) — the
@@ -60,7 +74,7 @@ enum {
      * a shipped matcher should ever do. The artifact stamps that it is
      * traced, so no one has to guess. VM artifacts only; a DFA matcher has
      * no resume frames to trace. */
-    PCREC_TRACE       = 1u << 3,
+    PCREC_TRACE       = 1ull << 3,
     /* [ENG-BREP] `-fno-possessify`: DENY the possessification rewrite
      * (docs/design/eng_brep_design.md §2, D47.3).
      *
@@ -78,7 +92,7 @@ enum {
      * inside a pattern. It is the first member of a family — the rest of the
      * ladder's denials (`-fno-counter`, a rung selector, a value parameter for
      * K) arrive with the strategies they deny. */
-    PCREC_NO_POSSESSIFY = 1u << 4,
+    PCREC_NO_POSSESSIFY = 1ull << 4,
     /* [ENG-BREP] `-fno-revdet`: DENY the REVERSE-DETERMINISTIC rung
      * (docs/design/engine_m4.md §2.5, D47.3), the second member of the family
      * the bit above opened.
@@ -97,7 +111,7 @@ enum {
      * skipping the denied rungs. Denying this one drops a qualifying
      * quantifier to frames; denying it does not, and must not, deny
      * possessification, which is an orthogonal modifier at every rung. */
-    PCREC_NO_REVDET     = 1u << 5,
+    PCREC_NO_REVDET     = 1ull << 5,
     /* [ENG-BREP] `-fno-counter`: DENY the COUNTER rung
      * (docs/design/counterk_impl/counterk_design.md), the THIRD member of the
      * family, and the one whose denial is load-bearing beyond testing.
@@ -115,7 +129,7 @@ enum {
      * against, because the cap is what refuses it. §8.1's differential is blind
      * there by construction, and §8.5 cell 1 covers that region by the oracle
      * sweep and by the strategy's own N-independence instead. */
-    PCREC_NO_COUNTER    = 1u << 6,
+    PCREC_NO_COUNTER    = 1ull << 6,
     /* [M4.6d] `-fno-length-prune`: DENY MINIMUM-REMAINING-LENGTH pruning
      * (docs/design/k23_impl/k23_design.md, D51 ruling 1), the family's FOURTH
      * member and D46's controllability half for this optimization.
@@ -128,7 +142,7 @@ enum {
      * ground truth of the differential: the same corpus, the same subjects,
      * pruned against unpruned, byte-identical answers expected on every
      * capture slot (§7.4's pcrec-vs-pcrec instrument). */
-    PCREC_NO_LENGTH_PRUNE = 1u << 7,
+    PCREC_NO_LENGTH_PRUNE = 1ull << 7,
     /* [M4.6f] `-fno-prefilter`/`-fprefilter`: the D46 close-out for the
      * PREFILTER axis (docs/design/engine_m4.md §6.1/§4.7, D46/D47.3).
      *
@@ -165,8 +179,8 @@ enum {
      * (src/gen/emit_vm.c), which reports what the emitter did rather than
      * what it was asked — the D46 half a denied-or-forced request can be
      * checked against. */
-    PCREC_NO_PREFILTER    = 1u << 8,
-    PCREC_FORCE_PREFILTER = 1u << 9,
+    PCREC_NO_PREFILTER    = 1ull << 8,
+    PCREC_FORCE_PREFILTER = 1ull << 9,
     /* [OPT-ALTCLS] `-fno-altcls-merge`/`-fno-altcls-factor`: D46's
      * controllability half for the ALTERNATION->CLASS NORMALIZATION pass
      * (docs/dev/plan.md's [OPT-ALTCLS] row, src/opt/altcls.c).
@@ -201,8 +215,8 @@ enum {
      * emitters since this pass runs before either engine is built,
      * unlike the VM-only possessify/revdet stamps) — the D46 half a
      * denied request can be checked against. */
-    PCREC_NO_ALTCLS_MERGE  = 1u << 10,
-    PCREC_NO_ALTCLS_FACTOR = 1u << 11,
+    PCREC_NO_ALTCLS_MERGE  = 1ull << 10,
+    PCREC_NO_ALTCLS_FACTOR = 1ull << 11,
     /* [M6.4.2] `-fno-atomic-discharge`: DENY the FREE DISCHARGE
      * (docs/design/atomic_groups_design.md §5.3; src/opt/atomic.c).
      *
@@ -226,7 +240,7 @@ enum {
      * because an OPTIMISATION denial must not decide which engine a pattern
      * gets. Folding the two together would have made `-fno-possessify` do
      * exactly that. */
-    PCREC_NO_ATOMIC_DISCHARGE = 1u << 12,
+    PCREC_NO_ATOMIC_DISCHARGE = 1ull << 12,
     /* [DD-14 wave G] `-fno-splice-calls`: DENY the SPLICE LINKAGE for every
      * subroutine call site (docs/design/subroutines_design.md §6.3, §9.2;
      * src/opt/callgraph.c's eligibility rule).
@@ -260,7 +274,7 @@ enum {
      * `<PREFIX>_VM_CALL_LINKED` (two counts, not one string — docs/spec/tuning.md §2.9)
      * (src/gen/emit_vm.c) — sites spliced vs sites linked — which is the D46
      * half a denied request is checked against. */
-    PCREC_NO_SPLICE_CALLS = 1u << 13,
+    PCREC_NO_SPLICE_CALLS = 1ull << 13,
     /* [OPT-1] `-fno-tiered-entry`: DENY the TWO-TIER DEFAULT ENTRY
      * (docs/design/two_tier_entry.md, docs/spec/tuning.md §2.12), D46's
      * controllability half for the entry-shape axis.
@@ -290,7 +304,7 @@ enum {
      * exactly when the artifact has one tier — by this flag or by the three
      * degenerate cases §3.1 enumerates. That is the D46 half a denied request
      * is checked against. */
-    PCREC_NO_TIERED_ENTRY = 1u << 14,
+    PCREC_NO_TIERED_ENTRY = 1ull << 14,
     /* [OPT-3] `-fno-premul-table`: DENY the PRE-MULTIPLIED DFA TRANSITION
      * TABLE (docs/design/premultiplied_dfa_table.md, docs/spec/tuning.md
      * §2.13), D46's controllability half for the DFA scan's table-form axis.
@@ -322,7 +336,7 @@ enum {
      * `<PREFIX>_DFA_TABLE`, which reads `"indexed"` under this flag and
      * `"premultiplied"`, `"mixed"` or `"none"` otherwise. That is the D46 half
      * a denied request is checked against. */
-    PCREC_NO_PREMUL_TABLE = 1u << 15,
+    PCREC_NO_PREMUL_TABLE = 1ull << 15,
 
     /* [OPT-K] `-fno-offset-skip` — deny the OFFSET-k candidate-start skip.
      *
@@ -356,7 +370,7 @@ enum {
      * What the emitter DID is reported by `<PREFIX>_DFA_PREFILTER`
      * (`"offset-set"` / `"offset-set-bounded"`) and by
      * `<PREFIX>_DFA_PREFILTER_OFFSETS`, which names the chosen offsets. */
-    PCREC_NO_OFFSET_SKIP = 1u << 16,
+    PCREC_NO_OFFSET_SKIP = 1ull << 16,
 
     /* [ENG-ABS] `-fno-anchored-dfa` — deny the UNWRAPPED anchored match-here
      * machine on a DFA artifact.
@@ -390,7 +404,7 @@ enum {
      * behave identically must not differ in their reflection surface over it.
      * What the emitter DID is reported by `<PREFIX>_DFA_MATCH`, which reads
      * `"search-filter"` under this flag and `"unwrapped"` otherwise. */
-    PCREC_NO_ANCHORED_DFA = 1u << 17,
+    PCREC_NO_ANCHORED_DFA = 1ull << 17,
 
     /* [ART-SIZE] DENY THE SIZE TERM'S K SELECTION (D84; docs/design/
      * artifact_size_term.md §7.2). Bit 17 is [ENG-ABS]'s.
@@ -412,7 +426,7 @@ enum {
      * still be REFUSED for size — correctly: denying the term removes the
      * mechanism that would have made the artifact smaller, it does not make a
      * 2 MB artifact acceptable. */
-    PCREC_NO_SIZE_TERM = 1u << 18,
+    PCREC_NO_SIZE_TERM = 1ull << 18,
 
     /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
      * prefilter_count_independence.md). Bit 18 is [ART-SIZE]'s.
@@ -451,8 +465,8 @@ enum {
      * NFA state count the budget was compared against, so a caller deciding
      * whether to pass either flag can see how close this pattern sits to the
      * knee without recompiling it. */
-    PCREC_NO_PREFILTER_COLLAPSE    = 1u << 19,
-    PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20,
+    PCREC_NO_PREFILTER_COLLAPSE    = 1ull << 19,
+    PCREC_FORCE_PREFILTER_COLLAPSE = 1ull << 20,
 
     /* [OPT-5] THE DFA SCAN EDGE (docs/dev/opt5_step0_profile.md;
      * src/opt/scanedge.c). A region of a DFA whose states differ only in HOW
@@ -467,7 +481,7 @@ enum {
      * rather than 16,385. Denying it restores both the states and the table
      * walk, which is what makes the denied build a byte-for-byte reference
      * for the answer-identity sweep. It changes no answer either way. */
-    PCREC_NO_SCAN_EDGE = 1u << 21,
+    PCREC_NO_SCAN_EDGE = 1ull << 21,
 
     /* [OPT-5 STEP 2] `-fno-start-pinned` — deny the START-PINNED SEARCH on a
      * DFA artifact (docs/design/opt5_step2_twopass.md; docs/spec/tuning.md
@@ -504,7 +518,7 @@ enum {
      * declined population a usable reference. What the emitter DID is reported
      * by `<PREFIX>_DFA_START` (`"pinned"` / `"reverse-pass"`) and mirrored at
      * run time by `rx_info.search_form`. */
-    PCREC_NO_START_PINNED = 1u << 22,
+    PCREC_NO_START_PINNED = 1ull << 22,
 
     /* [ENG-ISL] STEP 1 `-fno-alt-island` — deny the VM's ALTERNATION ISLAND
      * (docs/design/alt_dispatch_study.md algorithm (e); docs/spec/tuning.md
@@ -545,7 +559,7 @@ enum {
      *
      * What the emitter DID is reported by `<PREFIX>_VM_ALT_ISLANDS`, an
      * activity COUNT (docs/spec/match_api.md §6.3 family (b)). */
-    PCREC_NO_ALT_ISLAND = 1u << 23,
+    PCREC_NO_ALT_ISLAND = 1ull << 23,
 
     /* [FORM-CHAR] STEP 1 `-fno-cls-fold` — deny the VM's ASCII-FOLD class
      * test (docs/dev/form_char_step0.md family A; docs/spec/tuning.md
@@ -580,7 +594,7 @@ enum {
      * denied population a usable reference. What the emitter DID is reported
      * by `<PREFIX>_VM_CLS_FOLDS`, an activity COUNT (docs/spec/match_api.md
      * §6.3 family (b)). */
-    PCREC_NO_CLS_FOLD = 1u << 24,
+    PCREC_NO_CLS_FOLD = 1ull << 24,
 
     /* [K50] `-fno-startpos-guard` — deny the emitted entries' CALLER-STARTPOS
      * BOUNDARY GUARD (docs/spec/match_api.md §3.1; docs/spec/tuning.md §2.23;
@@ -631,7 +645,7 @@ enum {
      * flag — and this axis governs only where the CALLER may point the entry.
      * A build that denied both would be the K50 bug, and there is no way to
      * ask for it. */
-    PCREC_NO_STARTPOS_GUARD = 1u << 25,
+    PCREC_NO_STARTPOS_GUARD = 1ull << 25,
 
     /* [EMIT-VERB] `-fno-comments` / `-fcomments` — the emitted artifact's
      * HUMAN COMMENTARY (D112; docs/spec/tuning.md §2.24).
@@ -679,8 +693,8 @@ enum {
      * (src/gen/emit_dfa.c): the axis changes no answer, and an artifact must
      * not move a non-comment byte over a knob that only removes comments —
      * which is also what makes the object-file identity above checkable. */
-    PCREC_NO_COMMENTS   = 1u << 26,
-    PCREC_FORCE_COMMENTS = 1u << 27,
+    PCREC_NO_COMMENTS   = 1ull << 26,
+    PCREC_FORCE_COMMENTS = 1ull << 27,
 
     /* [OPT-ANCHOR-VM] DENY THE VM'S ATTEMPT-LOOP START BOUND.
      *
@@ -701,7 +715,7 @@ enum {
      * `<PREFIX>_VM_START` reports the derived value on every VM artifact
      * (`anchored` / `gstart` / `unanchored`), so a denied build is legible
      * as `unanchored` exactly like a pattern with nothing to bound. */
-    PCREC_NO_VM_ANCHOR_BOUND = 1u << 28,
+    PCREC_NO_VM_ANCHOR_BOUND = 1ull << 28,
 
     /* [OPT-ENDWIN] DENY THE END-ANCHOR START WINDOW.
      *
@@ -725,7 +739,7 @@ enum {
      * `<PREFIX>_END_WINDOW` reports the derived bound on every artifact, so a
      * denied build is legible as `"none"` exactly like a pattern with nothing
      * to prove. */
-    PCREC_NO_END_WINDOW = 1u << 29,
+    PCREC_NO_END_WINDOW = 1ull << 29,
 
     /* [OPT-REQBYTE] DENY THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK.
      *
@@ -752,8 +766,50 @@ enum {
      * (inverting the `memchr` sense) is not in the sound direction and turns
      * matching subjects into NOMATCH.
      *
-     * `<PREFIX>_REQ_BYTE` reports the byte, or `"none"`. */
-    PCREC_NO_REQ_BYTE = 1u << 30
+     * `<PREFIX>_REQ_BYTE` reports the byte, or `"none"`.
+     *
+     * [OPT-FREQPICK] (2026-09-22) WHICH member of the necessary set the check
+     * tests is a VALUE under this bit and not a second axis: the rarest under
+     * the shipped byte-frequency prior (`pcrec_byte_freq_ppm`), with PCRE2's
+     * rightmost rule surviving as the tiebreak and as the whole answer under
+     * every encoding the prior is not keyed to. Every member is a byte every
+     * match must contain, so the choice moves a speed and can never move an
+     * answer; `--unroll=K` and `--vm-entry-shape=N` are the same shape, a
+     * value parameter with no deny bit of its own. */
+    PCREC_NO_REQ_BYTE = 1ull << 30,
+
+    /* [OPT-REQPOS] tier 2b DENY THE REQUIRED-RUN WHOLE-WINDOW PRE-CHECK.
+     *
+     * The bit above tests ONE byte every match must contain; this one is the
+     * same fact at word grain — the longest run of CONTIGUOUS bytes every
+     * match must contain — and today's one-byte check is its `L = 1` case
+     * exactly. Where a run exists the emitted pre-check scans for the run's
+     * rarest member and compares the run at each hit, so a window containing
+     * the byte but not the RUN answers NOMATCH in one `memchr`-class pass
+     * instead of running the attempt loop. Measured population: 27.3% of
+     * `capability@0.1`'s patterns and 18.6% of pcrec's own `.rxt` corpus, with
+     * five bench patterns whose necessary BYTE is present in the throughput
+     * subject and whose RUN is absent (docs/design/reqpos_2b.md §1).
+     *
+     * A SEPARATE BIT FROM `PCREC_NO_REQ_BYTE`, and the asymmetry is
+     * deliberate: this one adds emitted code, adds a stamp and has its own
+     * cost profile (one constant-length `memcmp` per scan hit, which on a
+     * subject where the run is as common as its rarest byte buys nothing), so
+     * D119 rule 5 makes it a mechanism and mechanisms get bits. Denying
+     * `PCREC_NO_REQ_BYTE` denies this too — there is no run check without a
+     * byte to scan for — while denying this alone leaves the one-byte check
+     * standing, byte-identical.
+     *
+     * ANSWER-IDENTITY-PRESERVING in its siblings' strongest sense: the check
+     * returns NOMATCH only where every attempt would have failed. It is
+     * nevertheless answer-DETECTABLE under corruption in both of its natural
+     * forms — an inverted compare and a run one byte longer than the analysis
+     * proved each delete matches — which is why both are sabotage rows.
+     *
+     * `<PREFIX>_REQ_RUN` reports the run's bytes as lowercase hex followed by
+     * `@` and the scanned member's index (`2e746172@0` for `.tar`), or
+     * `"none"`. */
+    PCREC_NO_REQ_RUN = 1ull << 31
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
