@@ -1,0 +1,8561 @@
+[
+ {
+  "pattern": "balanced-parens-rec",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "balanced-parens-rec",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "balanced-parens-rec",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?R) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "base10num-near-miss",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "base10num-near-miss",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "base10num-near-miss",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "bracket-array-define",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "bracket-array-define",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "bracket-array-define",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?&name) at pattern offset 58\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "codegrammar-flat",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ],
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "codegrammar-flat",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ],
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "codegrammar-flat",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "codegrammar-xflag",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 47\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ],
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 47\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "codegrammar-xflag",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ],
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "codegrammar-xflag",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 47\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"34\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 47\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "34"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "currency-lookbehind-fixed",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "currency-lookbehind-fixed",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "currency-lookbehind-fixed",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<=...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "date-nested-plus",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "date-nested-plus",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "date-nested-plus",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "doubled-word",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "doubled-word",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "doubled-word",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "dup-param-detect",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "dup-param-detect",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 25\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 25\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "dup-param-detect",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"38\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "38"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "email-local-nodup",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "email-local-nodup",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "email-local-nodup",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "email-nested-plus",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "email-nested-plus",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "email-nested-plus",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "evil-alt-nested",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "evil-alt-nested",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "evil-alt-nested",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "file-ext-order",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ],
+    [
+     "scan_position",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ],
+    [
+     "scan_position",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "file-ext-order",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ],
+    [
+     "scan_position",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ],
+    [
+     "scan_position",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "file-ext-order",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"2e746172@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "float-literal-bound",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "float-literal-bound",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "float-literal-bound",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "floor-byte",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "126"
+    ],
+    [
+     "scan_position",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "floor-byte",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "126"
+    ],
+    [
+     "scan_position",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "floor-byte",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"126\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "126"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "high-byte-run",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "high-byte-run",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "high-byte-run",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "ipv4-near-miss",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "ipv4-near-miss",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "ipv4-near-miss",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "keyword-prefix-order",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "keyword-prefix-order",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "keyword-prefix-order",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"110\"",
+   "RX_REQ_RUN": "\"696e@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "110"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "logparse-atomic",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "logparse-atomic",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "logparse-atomic",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "logparse-atomic-removed",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "logparse-atomic-removed",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "logparse-atomic-removed",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"3a20@0\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 101\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "mojibake-curly-quote",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "148"
+    ],
+    [
+     "scan_position",
+     "147"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "147"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "mojibake-curly-quote",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "148"
+    ],
+    [
+     "scan_position",
+     "147"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "147"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "mojibake-curly-quote",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "148"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"148\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "148"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "negation-scope-lookbehind-var",
+  "config": "auto-caps",
+  "ledger_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)",
+  "fix_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)"
+ },
+ {
+  "pattern": "negation-scope-lookbehind-var",
+  "config": "auto-nocaps",
+  "ledger_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)",
+  "fix_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)"
+ },
+ {
+  "pattern": "negation-scope-lookbehind-var",
+  "config": "vm-caps",
+  "ledger_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)",
+  "fix_err": "pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 4..51 characters) (pattern offset 0)"
+ },
+ {
+  "pattern": "nested-comment-rec",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "nested-comment-rec",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?1) at pattern offset 15\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?1) at pattern offset 15\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "nested-comment-rec",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "numeric-id-nested-plus",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "numeric-id-nested-plus",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "numeric-id-nested-plus",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-list-nested-plus",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-list-nested-plus",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-list-nested-plus",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-palindrome-6",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-palindrome-6",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "phone-palindrome-6",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "pwd-strength-chain",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "pwd-strength-chain",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "pwd-strength-chain",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?=...) at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "quoted-delim-match",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "quoted-delim-match",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 12\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "quoted-delim-match",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "router-prefix-order",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ],
+    [
+     "scan_position",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ],
+    [
+     "scan_position",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "router-prefix-order",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ],
+    [
+     "scan_position",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ],
+    [
+     "scan_position",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "router-prefix-order",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"2f75736572@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-depth3-bound",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-depth3-bound",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 44\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 44\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-depth3-bound",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-pair-match",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-pair-match",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 36\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"\\\\1 at pattern offset 36\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "tag-pair-match",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"60\"",
+   "RX_REQ_RUN": "\"3c2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "60"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "trim-nested-star",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "trim-nested-star",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "trim-nested-star",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "utf8-lead-no-cont",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "utf8-lead-no-cont",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "utf8-lead-no-cont",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 11\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "uuid-near-miss",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "uuid-near-miss",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "uuid-near-miss",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"37\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-array-begin",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "91"
+    ],
+    [
+     "scan_position",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-array-begin",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "91"
+    ],
+    [
+     "scan_position",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-array-begin",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"91\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "91"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-constant",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-constant",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-constant",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-number-extended",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-number-extended",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-number-extended",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-object-begin",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "123"
+    ],
+    [
+     "scan_position",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-object-begin",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "123"
+    ],
+    [
+     "scan_position",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-object-begin",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"123\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "123"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-stringcontent-escape",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ],
+    [
+     "scan_position",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-stringcontent-escape",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ],
+    [
+     "scan_position",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"dominated\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "scan_position",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-codegrammar-json-stringcontent-escape",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-datetime-datefinder-alternation",
+  "config": "auto-caps",
+  "ledger_err": "pcrec: pattern too large: 670267 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, ",
+  "fix_err": "pcrec: pattern too large: 670293 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, "
+ },
+ {
+  "pattern": "wild-datetime-datefinder-alternation",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-datetime-datefinder-alternation",
+  "config": "vm-caps",
+  "ledger_err": "pcrec: pattern too large: 665215 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, ",
+  "fix_err": "pcrec: pattern too large: 665241 bytes of emitted code (limit 500000), which gcc cannot compile in reasonable time. A repeat's body is replicated and counts MULTIPLY through nesting -- lower a count, "
+ },
+ {
+  "pattern": "wild-datetime-moment-iso8601",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 4\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 4\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-datetime-moment-iso8601",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-datetime-moment-iso8601",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 4\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 4\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-grok",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-grok",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-grok",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-noatomic",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-noatomic",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-base10num-noatomic",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-grok",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-grok",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-grok",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 3\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-noatomic",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-noatomic",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-quotedstring-noatomic",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?<!...) at pattern offset 3\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-logparse-syslogbase-expanded",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-syslogbase-expanded",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 298\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?!...) at pattern offset 298\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-syslogbase-expanded",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"58\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "58"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-winpath-grok",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-winpath-grok",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-logparse-winpath-grok",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"(\\?>...) at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-aws-access-key-id",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-aws-access-key-id",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-aws-access-key-id",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"65\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "65"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-github-pat",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-github-pat",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-github-pat",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"95\"",
+   "RX_REQ_RUN": "\"6875625f7061745f@3\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 2\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "95"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-slack-webhook-url",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 37\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 37\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-slack-webhook-url",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-slack-webhook-url",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 37\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"47\"",
+   "RX_REQ_RUN": "\"3a2f2f@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 37\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "47"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-username-password-pair",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 48\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 48\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-username-password-pair",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-secrets-username-password-pair",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 48\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"61\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 48\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "61"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-altorder-foo-foobar-rustregex",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ],
+    [
+     "scan_position",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ],
+    [
+     "scan_position",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-altorder-foo-foobar-rustregex",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ],
+    [
+     "scan_position",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"memchr\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ],
+    [
+     "scan_position",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-altorder-foo-foobar-rustregex",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"102\"",
+   "RX_REQ_RUN": "\"666f6f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "102"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-dollar-trailing-newline-pcre2",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-dollar-trailing-newline-pcre2",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-dollar-trailing-newline-pcre2",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"98\"",
+   "RX_REQ_RUN": "\"616263@1\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"4\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "98"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-empty-alt-repeat-pcre2",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-empty-alt-repeat-pcre2",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-semdiv-empty-alt-repeat-pcre2",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 0\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-email-owasp",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-email-owasp",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-email-owasp",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "64"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"64\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-ipv4-owasp",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-ipv4-owasp",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-ipv4-owasp",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "46"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"46\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"16\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 1\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-us-zip-owasp",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 6\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": "\"hybrid\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 6\"",
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-us-zip-owasp",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-us-zip-owasp",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 6\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"11\"",
+   "RX_ENGINE_WHY": "\"capture group at pattern offset 6\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-validator-uuid-grok",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-validator-uuid-grok",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-validator-uuid-grok",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"45\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "45"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942140-dbnames",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942140-dbnames",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class-bounded\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942140-dbnames",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942160-sleep-benchmark",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942160-sleep-benchmark",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942160-sleep-benchmark",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"41\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "search_from",
+     "41"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942270-union-select",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942270-union-select",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"byte-class\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942270-union-select",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942360-concat-sqli",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942360-concat-sqli",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942360-concat-sqli",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"none\"",
+   "RX_REQ_RUN": "\"none\"",
+   "RX_REQ_WHY": "\"none\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942500-comment-obfuscation",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942500-comment-obfuscation",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"offset-set\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "wild-waf-crs-942500-comment-obfuscation",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"42\"",
+   "RX_REQ_RUN": "\"2a2f@0\"",
+   "RX_REQ_WHY": "\"emitted\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"unanchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "42"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  }
+ },
+ {
+  "pattern": "winpath-near-miss",
+  "config": "auto-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "winpath-near-miss",
+  "config": "auto-nocaps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"dfa\"",
+   "RX_DFA_PREFILTER": "\"none\"",
+   "RX_VM_PREFILTER": null,
+   "RX_VM_START": null,
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": null,
+   "RX_DFA_START": "\"reverse-pass\""
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ },
+ {
+  "pattern": "winpath-near-miss",
+  "config": "vm-caps",
+  "ledger_err": null,
+  "fix_err": null,
+  "ledger": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": null,
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "ledger_pc": {
+   "memchr_sites": [
+    [
+     "rp_pos",
+     "92"
+    ]
+   ],
+   "run_loop": true,
+   "string_h": true
+  },
+  "fix": {
+   "RX_REQ_BYTE": "\"92\"",
+   "RX_REQ_RUN": "\"3a5c@1\"",
+   "RX_REQ_WHY": "\"one-attempt\"",
+   "RX_ENGINE": "\"vm\"",
+   "RX_DFA_PREFILTER": null,
+   "RX_VM_PREFILTER": "\"none\"",
+   "RX_VM_START": "\"anchored\"",
+   "RX_END_WINDOW": "\"none\"",
+   "RX_ENGINE_WHY": "\"--engine=vm\"",
+   "RX_DFA_START": null
+  },
+  "fix_pc": {
+   "memchr_sites": [],
+   "run_loop": true,
+   "string_h": false
+  }
+ }
+]
