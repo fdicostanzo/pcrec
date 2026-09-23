@@ -8115,3 +8115,11 @@ band of its algorithmic SCALAR target (cycle1_analysis.md §0's criterion)
 or carries a recorded disposition (fundamental / SIMD-phase deferral /
 module gap / size-cap own row), with the captures-vs-captures view
 (cycle1_caps_view.md) as the population, not the best-variant view.
+
+**Addendum (Frank, 2026-09-22, seventy-seventh session — THE THRESHOLD IS
+RATIFIED).** Frank's "Proceed on all" to the queue that carried the
+proposal above as its fourth item: the operationalization stands as
+written — a `capability` cycle ends when every ranked cell (captures-vs-
+captures population) either sits within its own IQR band of its
+algorithmic scalar target or carries a recorded disposition. Cycle 2
+opens on the I-87 ledger (O-45) at pin 8d716693.
