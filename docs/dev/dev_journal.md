@@ -25089,3 +25089,22 @@ backtri, optrev, closefold, admin1, capsview, capsurvey, profread,
 optimpl1, b1triage, axesfix, regred, c2prep, admin2 (13; sonnet except
 optrev/capsurvey/optimpl1/c2prep on opus; all closed); rulings D119 +
 two addenda, D83 addendum; merges 11; abi 28→29.
+
+## 2026-09-22 (seventy-seventh session, late evening) — the darwin gate on 8d716693 is GREEN (nm probe only); I-88 opens the bench's I-87 window
+
+Woke at 20:02 EDT into the SAME evening (Frank's "reset session" at
+~20:1x): the detached gate on 8d716693 was 5 min in, watched by a
+zero-model script on its `GATE DONE` trailer. Verdict at 21:34, read by
+make's `*** [` lines: `test-codegen` only (run_group 9/10, 65/0 — the
+standing darwin `nm arm_a.o` probe); the other 41 sections green, the
+registry section green at the 27 pin; wall 5817 s. Size log re-archived
+(3695f8bd): every row moved (abi-29 header + three stamps), 3485→3498
+rows (the end_window.rxt population). CI on Actions green on 2ce98a7b
+(50 min). Bench: I-88 appended to the inbox (a475c6f) + SendMessage to
+pcrecdev2 — [B74]'s target stays 8d716693, no re-pin, I-87 proceeds as
+written; ledger expected as O-45. Watcher lesson: make's error lines on
+this box are `make[1]: *** [` — a `^\*\*\*` anchor prints nothing; grep
+the substring.
+
+NEXT (Frank rules each): the I-87 ledger vs the D119 bar → cycle-1
+executive summary; the all-axes sweep on Linux; cycle 2 on Frank's word.
