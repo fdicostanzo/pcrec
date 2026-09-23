@@ -25655,3 +25655,17 @@ Bench: [B84]'s I-102 acceptance window OPENED at 16:00 (six hours early);
 all ten stamp predictions held by value; REQ_WHY census digit-exact with
 ours (none 79/27, emitted 67/27, one-attempt 27/9, dominated 14/7); the
 ledger + O-52 expected this evening — next session's first read.
+
+**LANDING of 809aab12 (~18:1x-18:3x):** emit_sweep --ref 1e90aa8a:
+c-default 3573/3573 movers, c-vm 3574/3574 (abi 32 + NVARS stamps), NO
+FLOOR VIOLATION, DELIVER witness OK; UNPREDICTED: emit-ir-vm movers=41
+(the lane predicted 0), composition asymmetric=4, dumps movers=4
+(predicted 1) — dispositions OWED (wake.md act 1b). The identity gate at
+FILEPIN 809aab12 came back UNPOPULATED (2/12: "compiled 0 of
+call-bearing patterns", floor 700 unmet on every axis) — the corpus
+lister crashing on vars' raw non-UTF-8 byte is the working hypothesis
+(the fourth reader; vartriage fixed three) → lane recidfix (sonnet) at
+close. Lesson: a corpus file carrying a deliberate invalid byte is a
+witness against EVERY reader of the corpus — census them all in the
+landing (four found so far: three codegen identity scripts + the
+recursion-identity gate).
