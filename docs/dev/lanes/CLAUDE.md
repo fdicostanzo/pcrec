@@ -2753,3 +2753,26 @@ never edited afterwards.
   draft executor ask (`docs/dev/optloop/linux_ask_i89.md`) that
   deliberately pins main at the batch-1 commit for a scoped measurement
   — flagged for the ask's owner, not touched here.
+
+- `rxtfix_report.md` — triage of the full darwin gate's `test-rxtsource`
+  red on `b1885a83` (2026-09-23, lane rxtfix, sonnet): lane b2fix's K34
+  closure deleted a known_fail file and placed its 11 cells by hand into
+  an already-census-counted corpus file, without re-running the
+  corpus-wide census `test-rxtsource` pins — neither of b2fix's own two
+  touched checks (the known-fail ratchet, the recursion diff) could see
+  the population move, since both are answer-level and every cell reads
+  correctly either way. Four census literals re-derived from the
+  mechanism (`CENSUS - kf = RUNSH`), each moving in its OWN shape rather
+  than by one delta copied three times: `CENSUS_FILES`/`CENSUS_BLOCKS`
+  drop by what the deleted file held (214->213, 3957->3954),
+  `CENSUS_LINES` is UNCHANGED (the 11 lines reappeared inside a
+  file the census already counted), `RUNSH_LINES` moves the OPPOSITE
+  direction (29026->29037) because the known_fail EXCLUSION itself went
+  to zero while `RUNSH_FILES`/`RUNSH_BLOCKS` stay put (the census and the
+  exclusion cancelled). `test-rxtsource` 212/0/1 (was 202/9, the 1 RECORD
+  a pre-existing darwin python-version-skew note), `test-known-fail`
+  green. Adds `learnings.md` §3.z: a corpus-content RELOCATION between two
+  files needs the corpus-wide census re-run too, not just the two files a
+  lane's own answer-level checks touch — checked against §3.y (a
+  different, coverage-guard-in-another-file instance) first, and is a new
+  instance, not a duplicate.
