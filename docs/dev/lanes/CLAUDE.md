@@ -3058,3 +3058,29 @@ never edited afterwards.
   value may contain an arbitrary byte) — fixed with
   `errors="surrogateescape"` on both the read and the write side,
   verified to round-trip the exact byte rather than re-encode it.
+
+- `recidfix_report.md` — the FOURTH READER (2026-09-23, lane recidfix,
+  sonnet): `tests/codegen/run_recursion_identity.sh`'s corpus lister has
+  the identical `open(src)`-cannot-decode-the-vars-byte defect vartriage
+  fixed in three [M6.2] scripts, and was not among those three — its
+  `checks passed: 2 / checks failed: 12` empty-population red was this
+  same class, root-caused rather than assumed and fixed identically
+  (`errors="surrogateescape"` both directions). `FILEPIN` re-pinned
+  `6ef76820` → `809aab12` (D76, the [VAR] MVP merge, abi 31 -> 32).
+  **With the population restored, comparison (B) is CLEAN on every axis
+  (0 differing) and `[ART-SIZE] SIZE_TERM_REGION_MOVERS` fired live again
+  with no re-derivation needed** — the described bug is fully closed.
+  **Comparison (A) — program region vs the frozen pre-module pin
+  `ac4917d` — surfaced a SEPARATE, real divergence for the first time**:
+  170 call-free (backreference-bearing) patterns now differ on all four
+  axes, root-caused (built the `ac4917d` reference directly and diffed a
+  witness's program region) to the varmvp lane's own ruled seam-pair
+  rename (`d93aa931`, `bref_match`→`span_match` — the same rename
+  `vartriage_report.md` already names for its cpset manifest fix, one
+  gate over). This gate is opt-in and appears never to have run with a
+  real population since the rename landed. FILED rather than fixed: the
+  file has an established shape for exactly this class
+  (`island-moved`/`fold-moved`/`size-term-moved` named exception
+  buckets, each with a non-vacuity arm), and building one correctly is
+  check-design work outside this lane's time box — left for a ruling on
+  the bucket's shape.

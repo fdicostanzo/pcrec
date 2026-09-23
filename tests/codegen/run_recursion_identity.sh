@@ -930,7 +930,15 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # carries abi 31 (the `<PREFIX>_REQ_WHY` stamp), closing the gate's own
 # RED-BY-CONSTRUCTION state with the exact message "the emitted scaffolding
 # changed: bump `abi` ... and re-pin comparison (B)".
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ef76820}"   # [OPT-PRECHECK-ADMIT], abi 30->31: (B) re-pinned to the merge 6ef76820 (D76; lane repin3, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 8e4e9c6c ([OPTLOOP.2] batch 2, abi 29->30).
+# **(B) RE-PINNED AGAIN — [VAR] MVP pattern half, 2026-09-23: abi 31 -> 32,
+# to `809aab12`, the varmvp merge commit.** `${name}` in a pattern (module
+# `vars`) adds no scaffolding of its own to a var-free artifact, but the
+# module's own D76 ritual bumped `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c`,
+# via `41e9aa38` on `lane/varmvp`) as every abi event does, closing the
+# gate's own RED-BY-CONSTRUCTION state with the exact message "the emitted
+# scaffolding changed: bump `abi` ... and re-pin comparison (B)". Re-pinned
+# per D76 at merge.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-809aab12}"   # [VAR] MVP pattern half, abi 31->32: (B) re-pinned to the merge 809aab12 (D76, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6ef76820 ([OPT-PRECHECK-ADMIT], abi 30->31).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1261,13 +1269,25 @@ print("recursion-identity: classifier self-test %d/%d rows"
       % (len(_SELFTEST), len(_SELFTEST)))
 
 call, free = [], []
-for line in open(src):
+# [VAR] `errors="surrogateescape"` ON BOTH READ AND WRITE: module `vars`'
+# corpus deliberately carries a raw non-UTF-8 byte in a pattern line
+# (`^${v:-\xff}$`, the default-value operand's own byte-literal cell), which
+# plain `open(src)` cannot read at all -- `UnicodeDecodeError` on that one
+# line kills the whole script before it classifies a single pattern. This is
+# a defect in the SCRIPT's reading, not in pcrec: the classifier below only
+# asks whether a `(?` tail or a `\g` spelling is present in the pattern
+# TEXT, never decodes it as a string, so round-tripping the byte through a
+# surrogate escape (verified: writes back out as the SAME byte, not a
+# re-encoding of it) costs nothing and fixes every future raw-byte pattern
+# this class of script meets, not just this one -- vartriage's fix to the
+# three [M6.2] identity scripts, same shape, one gate over.
+for line in open(src, encoding="utf-8", errors="surrogateescape"):
     p = line.rstrip("\n")
     if not p:
         continue
     (call if is_call(p) else free).append(p)
-open(cout, "w").write("\n".join(call) + ("\n" if call else ""))
-open(fout, "w").write("\n".join(free) + ("\n" if free else ""))
+open(cout, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(call) + ("\n" if call else ""))
+open(fout, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(free) + ("\n" if free else ""))
 PY
 
 nc=$(grep -c . "$WORKDIR/call" || true)
