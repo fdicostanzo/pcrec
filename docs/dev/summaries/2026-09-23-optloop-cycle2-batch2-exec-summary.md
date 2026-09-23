@@ -3,7 +3,7 @@
 For Frank. Batch 2 landed two mechanisms — [OPT-FREQPICK] (the necessary
 byte picked by argmin over the shipped byte-frequency prior) and
 [OPT-REQPOS] tier 2b (the necessary literal run) — as one `abi` 29→30
-event, parked on `lane/optimpl2`. The bench's after-measurement (O-49) is
+event, MERGED into main at `b1885a83` (the ledger's pin). The bench's after-measurement (O-49) is
 read against the D119 bar in
 `docs/dev/optloop/cycle2_batch2_reading.md`; a follow-on Linux
 measurement (O-50) answers a question left over from batch 1. Numbers
