@@ -273,6 +273,86 @@ const char *pcrec_sb_fragfv(Arena *a, const char *fmt, va_list ap);
  * the CASE TRANSFORM is a derivation somebody could get differently. */
 const char *pcrec_sb_upper(Arena *a, const char *s);
 
+/* ---- [VAR] M1: THE EXPANSION GRAMMAR (src/core/varexp.c) -----------------
+ *
+ * `${ [!] selector [ operator word ] }`, parsed ONCE and shared by both
+ * consumers — a variable inside a PATTERN (module `vars`) and a variable
+ * inside a REPLACEMENT template (module `subst-pcrec`, not built).
+ * docs/design/variables_common.md §1 owns the grammar; §1.1's table is the
+ * list of forms that are here and the list of forms that are declined, each
+ * with its own reason.
+ *
+ * ONE PARSER, ONE VALUE MODEL, TWO CONSUMERS — and the ONE place the two
+ * differ is not in this file at all (§1.3): a bare selector resolves in the
+ * VAR scope in a pattern and in the GROUP scope in a replacement, which is a
+ * question about what EXISTS at each expansion point, not about syntax. The
+ * tree below carries the selector and the `!`; who it names is the
+ * consumer's. */
+
+/* Which operator a reference carries. The COLON is deliberately NOT part of
+ * this enum: `:-` and `-` are ONE operator under two emptiness rules
+ * (variables_common.md §2.2 — the `:` folds EMPTY in with UNSET), so it is a
+ * `bool` beside this and not four more enumerators. */
+typedef enum {
+    VXOP_NONE = 0,   /* `${name}`                — the value itself */
+    VXOP_DEFAULT,    /* `${name-w}` `${name:-w}` — the word when unset       */
+    VXOP_ALT,        /* `${name+w}` `${name:+w}` — the word when SET         */
+    VXOP_REQUIRE     /* `${name:?w}`             — refuse the call when unset */
+} VarExpOp;
+
+typedef struct VarExp VarExp;
+
+/* One piece of an operator's WORD: either a literal byte run or a NESTED
+ * expansion. Exactly one of `lit`/`nest` is non-NULL. Literal runs are
+ * coalesced by the parser, so a word with no nesting is ONE piece however
+ * many escapes it carries. */
+typedef struct {
+    const unsigned char *lit;      /* literal bytes, or NULL if `nest` */
+    size_t               litlen;
+    const VarExp        *nest;     /* nested `${...}`, or NULL if `lit` */
+} VarWord;
+
+/* One `${...}` reference. Arena-owned, immutable once parsed.
+ *
+ * `at` is the PATTERN OFFSET of the `$`, carried for the same reason every
+ * other parse-resolved node carries one: a diagnostic about this reference
+ * must point at the reference and not at wherever the analysis noticed it. */
+struct VarExp {
+    const char    *name;          /* NUL-terminated selector */
+    VarExpOp       op;
+    bool           colon;         /* the ':' that folds EMPTY in with UNSET */
+    bool           explicit_var;  /* the leading `!` — `${!name}` (D121: BOTH
+                                   * spellings are accepted in a pattern and
+                                   * mean the same thing there; the flag is
+                                   * kept so the render is faithful and so the
+                                   * replacement side can read it) */
+    const VarWord *word;          /* NULL when `op == VXOP_NONE` */
+    size_t         nword;
+    size_t         at;
+};
+
+/* A refusal this grammar raised, RETURNED rather than thrown: `varexp.c`
+ * takes an `Arena *` and nothing else (D108's data-in/text-out rule), so the
+ * caller — the doorway that alone knows its own diagnostic conventions —
+ * decides how a refusal is reported. `msg` is always a static string. */
+typedef struct {
+    size_t      at;     /* pattern offset of the offending byte */
+    const char *msg;    /* NULL iff the parse succeeded */
+} VarExpErr;
+
+/* Parse the `${...}` whose `$` sits at `text[*pos]`, advancing `*pos` one
+ * past the closing `}`. Returns NULL with `*err` filled and `*pos` untouched
+ * on refusal. */
+const VarExp *pcrec_varexp_parse(Arena *a, const char *text, size_t n,
+                                 size_t *pos, VarExpErr *err);
+
+/* Render `x` back to its CANONICAL spelling, arena-owned. Canonical rather
+ * than verbatim — the source's own escapes are re-derived from the bytes —
+ * which is what makes it a statement about the PARSE rather than about the
+ * input text, and therefore usable both as `--emit-ir`'s listing value and as
+ * the grammar's own unit check (tests/core/varexp_check.c). */
+const char *pcrec_varexp_render(Arena *a, const VarExp *x);
+
 /* ---- THE STAMP ([REVW.2] wave 2, EP2 step 10 / lens 1 X8; D108) ---------
  *
  * ONE artifact stamp line: `#define <UPPER>_<NAME> <value>`, newline-

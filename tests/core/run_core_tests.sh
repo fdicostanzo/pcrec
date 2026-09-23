@@ -125,6 +125,27 @@ else
     bad "features_opt_check: $(grep -c '^FAIL' "$OUT4") sub-check(s) failed — see above"
 fi
 
+# ---------------------------------------------------------------------------
+# [VAR] M1 — the expansion grammar (src/core/varexp.c), checked below any
+# artifact and below any match. See varexp_check.c's own header for what is
+# and is NOT covered here: the grammar is, and the EVALUATOR is not, because
+# evaluation needs the caller's environment and so lives in emitted C
+# (tests/vars/ carries its oracle).
+# ---------------------------------------------------------------------------
+BIN5="$WORKDIR/varexp_check"
+if ! unit_build "$BIN5" "$SCRIPT_DIR/varexp_check.c"; then
+    echo "core: FAILED TO BUILD varexp_check.c" >&2
+    exit 1
+fi
+OUT5="$WORKDIR/varexp_check.out"
+"$BIN5" | tee "$OUT5"
+bin5_rc="${PIPESTATUS[0]}"   # a pipeline's own $? is tee's, never $BIN5's
+if [ "$bin5_rc" -eq 0 ]; then
+    ok "varexp_check: $(grep -c '^PASS' "$OUT5") sub-checks green"
+else
+    bad "varexp_check: $(grep -c '^FAIL' "$OUT5") sub-check(s) failed — see above"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"
