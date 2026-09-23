@@ -25199,3 +25199,12 @@ measurements (→ I-92), the cycle-1 executive summary. I-91 sent (received;
 [B76] proceeds). optimpl2's chain: restricted test-axes GREEN (24,343/24,343
 both new axes); full suite red on test-codegen (nm) AND test-known-fail (new)
 → lane b2fix (triage + the PCREC_BIT macro respell + S266-S268 solo).
+
+**O-46 (~07:3x, [B76] at 8d716693):** F1 — the twin's ×1.10 slowdown was a
+one-sample artefact: twin 1.52-1.66 vs base 3.09 ns/byte (trial 1 cold on
+both arms) → FIRSTSET's cost model holds (~×1.9), the decline rule retires;
+F2 — 0/0/0 and 1/0/1 on Linux exactly as darwin (the re-seed is REQUIRED and
+sufficient on the witness) → [OPT-FIRSTSET] = batch-3 candidate (narrowing +
+re-seed + VM consumer; F3 owed). M-B — zero answer mismatches, 17×4×2 raw
+timings delivered; shares → lane mbread. One derived regime lookup (mine)
+returned no row for date-nested-plus. Block (A) running detached (6h).
