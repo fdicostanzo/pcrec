@@ -1185,6 +1185,15 @@ row file is the one place in the tree where prose and shell share a quote
 character, so the hazard is structural here and nowhere else: use single
 quotes in a row's prose.
 
+**IT BIT TWICE IN ONE LANE**, which is why this paragraph is here rather
+than in a commit message. The second time was a later edit to the SAME two
+rows — recording their measured figures — where the prose naturally said
+"the `vars` arm's own 1fail", and the backticks went back in. The tripwire
+caught it both times and named it both times (`DOES NOT SOURCE`), which is
+the check working; what did not work was remembering. Any edit to a row's
+`SAB_DESC` or `SAB_DOC_FIGURE`, including one that only appends a measured
+figure, re-opens this.
+
 
 Maintenance: when a codegen/reject/trie sabotage table gains a new row with an
 exact literal edit, add a matching `sabotages/S<NN>_*.sh` here in the same

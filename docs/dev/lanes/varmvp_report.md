@@ -244,6 +244,14 @@ substitution and made both rows unsourceable. `w12_report.md` recorded this
 exact defect on 2026-08-31; it is in `tests/mech/CLAUDE.md` now because a
 row file is the one place in this tree where prose and shell share a quote.
 
+**IT BIT TWICE IN THIS LANE.** The second time was the later edit that
+recorded the measured figures above, where the prose naturally wrote "the
+`vars` arm's own 1fail". The tripwire caught it both times and named it both
+times (`DOES NOT SOURCE`) — the check works; remembering does not. That is
+why the note lives in the directory's CLAUDE.md with the explicit rule that
+appending a measured figure re-opens the hazard, rather than in a commit
+message somebody would have to find.
+
 ---
 
 ## §3 — THE `abi` 31 → 32 RITUAL, BY GREP
