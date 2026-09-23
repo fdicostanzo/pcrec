@@ -1,5 +1,7 @@
 # EXECUTIVE SUMMARY — the optimization loop, cycle 1 end to end (2026-09-23)
 
+Published page: https://claude.ai/artifact/6my3pgvehYA3J3aNkZvpHp (2026-09-23; private; the file below is the source of record).
+
 For Frank. Cycle 1 of D119's loop ran 2026-09-21 → 2026-09-23 on pcrec-bench's
 `capability@0.1`: analysis, Linux profile pass, a batch of three mechanisms,
 and the bench's after-measurement. Numbers cite sources.

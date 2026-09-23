@@ -25229,3 +25229,5 @@ admission fix → proposed row [OPT-PRECHECK-ADMIT]. Exec summary written;
 I-93 (five executor blocks) sent. LESSONS: the `-o`-basename trap fired a
 fifth time (a POPULATION COUNT reading zero caught it); a bar's noise model
 must match the comparison's span (ask the bench for a null-control band).
+Exec summary page published: https://claude.ai/artifact/6my3pgvehYA3J3aNkZvpHp
+(memory rule: summary + page after each major ledger). I-93 sent + relayed.
