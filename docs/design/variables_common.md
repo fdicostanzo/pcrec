@@ -72,13 +72,22 @@ means the same thing in both.
   could need): **zero matches**.
 
 The mechanism is structural, not a sample: `$` asserts a position whose next
-byte is a newline or which has no next byte at all, in every mode — `(?m)`
-included, since multiline only widens *which* newlines count. `{` is not a
-newline. So a `$` immediately followed by a literal `{` is an assertion
+byte is a newline or which has no next byte at all, in every mode — checked
+explicitly under three named variations rather than left to "every mode" to
+imply coverage: the active newline convention (CR/LF/CRLF/ANYCRLF/ANY, a
+fixed small set of control bytes, none of them `0x7B` `{`), `(?m)` (which only
+widens *which* newlines count, never what counts as one), and
+`PCRE2_DOLLAR_ENDONLY` (which only narrows where `$` can match). No PCRE2
+option ever widens "newline" to include `{`. `{` is not a newline under any of
+the three. So a `$` immediately followed by a literal `{` is an assertion
 followed by a byte that assertion has just forbidden.
 
 **[MEASURED]** the corpus population of the colliding spelling is **zero of
-4,198 shipped `pattern` lines** (`grep` over `tests/`, 2026-09-23).
+3,954 shipped `pattern` lines** (`find tests -name "*.rxt" | xargs grep -cE
+'^pattern ' | awk -F: '{s+=$2} END{print s}'`, 2026-09-23, independently
+re-run and reproduced). The structural unsatisfiability proof above is the
+primary evidence; this corpus count is corroboration, reproducible by the
+command cited, not the argument itself.
 
 **Why this matters more than the zero.** `docs/design/reqbyte_freq_pick.md`'s
 own lesson — restated in `c2design_report.md` — is that *a population of zero
@@ -93,11 +102,17 @@ a spelling PCRE2 rejects").
 
 ### 0.3 The runtime string compare already exists, and it is not a literal
 
-**[MEASURED]** by reading `src/gen/emit_vm.c`. A compile-time literal in the
-VM is **not** a `memcmp` — literals are normalized to singleton `A_CLASS`
-nodes (`src/core/internal.h:328`) and emitted as a chain of per-byte `if`
-tests (`emit_vm.c:8298-8319`), one `goto` per byte. The single `memcmp` in the
-file (`:1566`) is class-bitmap pool deduplication.
+**[MEASURED]** by reading `src/gen/emit_vm.c`. A compile-time literal's
+INSTRUCTION shape in the VM is **not** a `memcmp` — literals are normalized to
+singleton `A_CLASS` nodes (`src/core/internal.h:328`) and emitted as a chain
+of per-byte `if` tests (`emit_vm.c:8298-8319`), one `goto` per byte. (The
+claim is narrowly about the emitted per-position instruction stream, not about
+`memcmp`'s absence from the emitters generally — `src/gen/emit_dfa.c`'s
+`emit_req_run_check`, landed at `[OPT-REQPOS]` tier 2b after this note's own
+survey, emits a constant-length `memcmp` against a compile-time literal as a
+whole-window pre-check, `variables_pattern.md` §1.1 has the detail; the
+argument here does not depend on its absence.) The single `memcmp` in
+`emit_vm.c` (`:1566`) is class-bitmap pool deduplication.
 
 What *does* compare against a runtime pointer and length is the
 **backreference**, `vm_bref` (`emit_vm.c:8103-8245`): it reads a `(start,
@@ -223,7 +238,17 @@ why the replacement is the one that needs the explicit form.
 **[RATIFIED]** D38 Q5 ruled `${!...}` reserved as pcrec's template-extension
 prefix, on the §7.1 rule that every pcrec-only template form must be a
 spelling PCRE2 rejects — **[MEASURED]** there against libpcre2 10.46 in both
-dialects (`-35` in each).
+dialects (`-35` in each). That measurement was run against the
+*replacement/substitution-template* dialect (`subst_template_design.md`), a
+different grammar from a PCRE2 *pattern*; §1.4 spends the reservation in
+BOTH consumers, so the pattern side owes its own derivation rather than
+borrowing the template side's, which is worked out here explicitly: `{!name}`
+is not quantifier-shaped (its body is not digits), so `$` followed by
+`{!name}}`-as-literal-text is exactly §0.2's `${name}` unsatisfiability
+argument again — `$` asserts a next byte that is a newline, and `{` is not
+one. The template-side measurement and the pattern-side structural argument
+are two different safety properties for two different grammars; both hold,
+independently.
 
 **[PROPOSED]** that reservation is spent here, once, on the thing it is most
 useful for: **`${!name}` is the caller's environment, explicitly, in both
@@ -273,7 +298,11 @@ when the artifact is built, so an over-deep template is a compile error, not
 a run-time recursion. The bound is a `src/core/limits.def` row like every
 other bound in the tree, which makes it visible to `--list-limits` and
 raisable by the documented mechanism. No run-time recursion is introduced in
-either consumer.
+either consumer. **A new `limits.def` row is caller-observable, so it carries
+its own `docs/spec/limits.md` hunk in the same change (D80/D90) —
+`docs/spec/limits.md` is D90's own spec, "the ONE TABLE that `--list-limits`
+dumps and the spec derives from," and this is the one D80 obligation this
+round of notes must not miss.**
 
 ---
 
@@ -368,8 +397,10 @@ that the silent-and-widening failure gets the loud default.
 ### 3.1 The type
 
 **[PROPOSED]**, one fixed-literal ABI type, never `--prefix`-scoped, joining
-the family D41.1 fixed (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_info`,
-`rx_group_entry`):
+the family of fixed-literal ABI types: `rx_ctx`, `rx_matchfn`, `rx_callout_ref`
+(fixed at D41 ruling 1, cited as D41.1) and `rx_info`, `rx_group_entry`
+(fixed later, at D43 and D44 respectively — see `match_api_m4.md`'s own
+changelog):
 
 ```c
 typedef struct {
@@ -481,6 +512,90 @@ The generic "unknown group" refusal stands when the variable set does not
 contain the name either; this is the *pointed* arm of it, and D26 tier 3
 leaves the wording ours.
 
+### 3.5 The `.rxt` binding directive — one line, shared by both consumers
+
+**[PROPOSED]**, added here rather than in either consumer's own note because
+the underlying array is shared (§3.2-§3.3) and a test author reading either
+consumer's note needs one pointer, not two independent proposals that could
+drift: a `.rxt` case binds a variable with
+
+```
+    var <name> "<value>"        block-scoped, repeatable; sets a variable
+    var-unset <name>            block-scoped; declares the slot UNSET
+```
+
+**One line per variable per case, and the same line serves BOTH consumers**:
+a case with a bare `m`/`ms`/`n`/`ns` block (pattern matching, no `repl`) and a
+case with a `repl` block (replacement) read `var`/`var-unset` identically —
+there is no substitution-only reading of this directive. Both UNSET and
+EMPTY are spellable and distinguishable: `var-unset name` is UNSET
+(`p == NULL`, §2.2); `var name ""` is EMPTY (`p != NULL, len == 0`) — a
+format that could not tell the two apart could not test the operator
+(`:-` vs `-`) that exists to distinguish them. A value's bytes are read
+under the artifact's own encoding and reuse the existing quoted-subject
+escape set (`docs/spec/rxt_format.md`'s five-escape TSV-framing subset) —
+no second escape vocabulary.
+
+**Name resolution is by NAME, through `rx_info`'s variable-names table**
+(§3.3's stamps, promoted into the MVP by `[VAR]`'s D6 panel): the driver
+looks up a case's `var name` against the artifact's own compiled
+`RX_VAR_<NAME>` index set, the same shape `rx_info.groups` already gives a
+name-indexed consumer for capture groups. This is the only route available —
+`docs/spec/rxt_format.md`'s `driver.c` is one static file, compiled fresh per
+test case but never templated per pattern, so it cannot reference a
+compile-assigned macro name it does not know at its own compile time, and a
+per-case driver-codegen alternative is not proposed.
+
+**The SPELLING above is the manager's call, not this note's** (memory
+`pcrec-dd13b-syntax-is-managers`): the two production names, the block-scoped
+repeatable shape, and where this directive sits relative to `repl`/`s`/`sg`/
+`serr` are all open to the manager's ruling at `[DD-13b]`'s own pace. What is
+fixed here is the SEMANTICS above, which do not depend on the spelling.
+
+### 3.6 The pattern-side oracle — what verifies a compiled `${name}` artifact's match answers
+
+**[PROPOSED]**, and it is the one piece of MVP measurability the design owed
+and did not previously name: nothing in `variables_pattern.md` proposes an
+oracle for the built feature's MATCH semantics, only for the `${...}`
+spelling's compile-time unsatisfiability (§0.2, a proof about SYNTAX, not
+about what a landed `A_VAR` recognizes). Two techniques, covering different
+axes, neither a substitute for the other:
+
+1. **QUOTEMETA-SPLICE, the primary technique.** Interpolate the variable's
+   value, quotemeta-escaped, into the pattern text as a literal, and run
+   libpcre2/python on the composed pattern. §4.2's own D87 citation
+   (`docs/design/…`: "textual append silently breaks absolute backrefs and
+   name collisions") does **not** foreclose this: D87's hazard is about
+   splicing a CAPTURING sub-pattern's own text into a composed whole, which
+   shifts group numbers — the `[LIB]`/definitions use case §4.2 re-homes AWAY
+   from itself. A quotemeta'd VALUE carries no capturing groups; inserting it
+   as plain literal text perturbs no numbering. This covers caseless folding
+   and ordinary SET values, external to and independent of pcrec's own
+   mechanism.
+2. **BACKREF-EQUIVALENCE, a second-order WIRING check.** `A_VAR`'s emitted
+   code and its caseless fold call are the same encoding-seam mechanism
+   (`bref_match[_caseless]`-shaped, §1 of `variables_pattern.md`) the already
+   oracle-verified backreference module uses. A same-compiler A==B
+   differential — `${v}`-pattern vs. the semantically matched `(literal)\1`
+   pattern on one subject — catches VAR-SPECIFIC wiring bugs (wrong index,
+   UNSET mishandling, wrong caseless bit threaded through). **Labeled
+   explicitly, per `docs/dev/learnings.md` §3's opening rule ("a control must
+   not share a source with what it controls"): a bug in the shared fold code
+   would pass BOTH sides of this differential**, since the var path and the
+   backref path call the SAME per-encoding fold function — its real value is
+   wiring correctness, not an independent check on the fold itself, which is
+   covered transitively by CITING `tests/utf8/axis06_caseless_fold.rxt`'s and
+   `axis07_caseless_1ton.rxt`'s existing KELVIN-SIGN pins as already
+   discharging that population, not by re-deriving it.
+
+**Neither technique reaches the UNSET/EMPTY population or the UTF-8-validity
+refusal**: there is no PCRE2 spelling for "this literal is absent" to splice,
+so those cells are oracle-less by construction and are tested as refusal-
+table rows instead (`variables_pattern.md` §7's table). Stated per
+`docs/dev/learnings.md` §3's rule to "name the set the claim is measured
+over, and ask what is outside it." This oracle section is a delivery-bar
+item for `variables_roadmap.md`'s MVP (M10).
+
 ---
 
 ## 4. Escaping, quoting, and the literal rule
@@ -518,20 +633,30 @@ Three independent reasons, and the design is safe if any one of them holds:
    span-versus-span byte comparison. A value that could be *pattern* would
    have to be compiled, at match time, which is not a feature this
    architecture can have (§1.2).
-3. **The general form already exists elsewhere and is better.** A value that
-   *is* a pattern is precisely a **definition**, and pcrec has a ruled,
-   largely-built architecture for those: D85's predicate-scanned definitions
-   table, D87's AST-level composition (explicitly *not* textual, because
-   textual append silently breaks absolute backrefs and name collisions —
-   measured live), D89's numbering rules, and the `[LIB]` row's user-facing
-   form. A pattern-valued variable is that feature wearing this feature's
-   syntax, and building it here would be the parallel mechanism memory
-   `pcrec-general-mechanisms-not-special-cases` exists to prevent.
+3. **A caller-supplied, match-time pattern is declined architecturally, for
+   the identical reason §1.2 declines `${name/pat/repl}`.** D85's
+   predicate-scanned definitions table, D87's AST-level composition, D89's
+   numbering rules and the `[LIB]` row's user-facing form are every one of
+   them a COMPILE-TIME mechanism: entered through `pcrec_compile()`/
+   `--source`/`--lib-path`/the `.rxt` `lib`/`name` grammar, resolved by the
+   pcrec compiler before or during one compile call. None of them has any
+   path from an `rx_var.p` pointer supplied at MATCH time into anything the
+   DFA/VM tables can use — that would mean running the compiler again after
+   the artifact is already generated, the one thing AOT-ness forbids, and it
+   is exactly the shape §1.2 already declines for `${name/pat/repl}`: "a
+   run-time pattern would require running the compiler at match time, which
+   is the one thing the architecture is built to avoid."
 
-So the charter's "explicit opt-in for a value that IS a pattern" is not
-deferred — it is **re-homed**, to `[LIB]`/definitions, where it is already
-designed. The honest statement is that the opt-in does not belong to this
-feature at all.
+So the charter's "explicit opt-in for a value that IS a pattern" has two
+readings, and they get different answers. Read as a pattern AUTHOR composing
+a known library subpattern at COMPILE time, `[LIB]`/D85/D87/D89 answer it in
+full and this feature has nothing to add — that is a genuine re-homing.
+Read as a CALLER-supplied value used as pattern syntax at MATCH time — which
+is what "a value the caller supplies" naturally means in a document about
+`rx_var` — it is **declined, permanently, with no re-open condition**, for
+the same architectural reason `${name/pat/repl}` is declined. `[LIB]` will
+never let a caller hand pcrec a pattern at match time; a reader must not come
+away believing otherwise.
 
 ### 4.3 What the caller still owes
 
@@ -588,8 +713,8 @@ optimistic.
 |---|---|
 | **specific vs general** | **GENERAL.** One grammar, one parser, one evaluator, one value model, serving two consumers that already exist in the plan as separate rows (`[FEAT-VAR]`, `[M4-SUBST]`). The alternative — a bespoke substitution syntax for templates and a different bespoke one for patterns — is the parallel-mechanism shape memory `pcrec-general-mechanisms-not-special-cases` names. The one per-consumer difference (§1.3) is a *scope* resolution, not a second grammar, and it is forced by what exists at each expansion point rather than chosen. |
 | **core vs derived** | **DERIVED on the expansion half, CORE on one narrow line of the insertion half.** The expansion is a new pass over new input that touches no automaton, no table and no existing analysis. The insertion adds one AST kind and one encoding-seam entry; determinization, minimization, both emitters' existing paths and every optimization pass are untouched except for the forced-audit arms (`variables_pattern.md` §2), each of which takes the neutral element that `A_BREF` already takes. |
-| **applicable vs assumption-changing** | **APPLICABLE**, with one assumption named and closed. A build with module `vars` disabled is byte-identical to today, because recognition is live but production is gated (`extension_design.md` §12, D34 ruling 5) and §0.2 proves the gated spelling matches nothing. The one assumption that *would* change is "a value may be pattern syntax" — §4.2 refuses it, permanently and with its reason, precisely so the assumption stays where it is. |
-| **fits-arch vs refactor** | **FITS.** Every piece has a home that predates it: the module gate (D37/`--features`), the registry row carrying `ENGM_VM` (SR-8, so `select_engine.c` needs no line), the encoding seam's entry table (`src/enc/enc.h`'s `PcrecEncEntry[]`), the fixed-literal ABI type family (D41.1), the per-artifact stamp and `rx_info` append rule, the `limits.def` row for the nesting bound, and `axes.def` for the deny flag. Nothing here asks for a new *kind* of thing. The one structural debt it adds — a fifth and sixth analysis site to keep in step — is exactly what `[PATFACTS]` (D120) is chartered to absorb, and `variables_pattern.md` §2 names it as that row's first outside customer. |
+| **applicable vs assumption-changing** | **APPLICABLE**, with one assumption named and closed. A build with module `vars` disabled is unchanged in emitted code for every var-free artifact, because recognition is live but production is gated (`extension_design.md` §12, D34 ruling 5) and §0.2 proves the gated spelling matches nothing — except for the shared ABI block's `abi` digit, which every artifact carries once `PCREC_ERR_UNSET_VAR` lands in it, gated to EMISSION not existence (`variables_pattern.md` §5's precise statement). The one assumption that *would* change is "a value may be pattern syntax" — §4.2 refuses it, permanently and with its reason, precisely so the assumption stays where it is. |
+| **fits-arch vs refactor** | **FITS.** Every piece has a home that predates it: the module gate (D37/`--features`), the registry row carrying `ENGM_VM` (SR-8, so engine selection needs no line in `select_engine.c` — though the PREFILTER decline does need one, a third construct-named predicate joining `has_bref`/`has_call`'s existing shape, `variables_pattern.md` §3), the encoding seam's entry table (`src/enc/enc.h`'s `PcrecEncEntry[]`), the fixed-literal ABI type family (D41.1 for `rx_ctx`/`rx_matchfn`/`rx_callout_ref`, D43/D44 for `rx_info`/`rx_group_entry`), the per-artifact stamp and `rx_info` append rule, the `limits.def` row for the nesting bound, and `axes.def` for the deny flag. Nothing here asks for a new *kind* of thing. The one structural debt it adds — six analysis/predicate sites to keep in step, five analysis declines plus the new prefilter predicate — is exactly what `[PATFACTS]` (D120) is chartered to absorb, and `variables_pattern.md` §2 names it as that row's first outside customer. |
 
 ---
 

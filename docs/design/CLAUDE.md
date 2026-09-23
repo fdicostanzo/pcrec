@@ -85,7 +85,11 @@ append-only or historical records.
   2026-08-14 — this doc remains a design input; the applied frozen
   surface is match_api_m4.md.
 - `variables_common.md` — THE COMMON VARIABLE DESIGN (2026-09-23, lane
-  vardesign; PROPOSED, no panel yet), the shared half of the three-note set
+  vardesign; **PANELED (r1, `../dev/reviews/2026-09-23-r1-var-design.md`)
+  AND REVISED same day, lane varfix** — read the panel's dispositions before
+  any section; §4.2's re-homing argument, §0.2's corpus count, §1.4's
+  `${!name}` derivation, §3.1's ABI-family attribution and §1.7's D80
+  obligation all moved), the shared half of the three-note set
   Frank chartered that day: one expansion grammar `${ [scope] selector
   [operator word] }` serving two consumers, a pattern (`variables_pattern.md`)
   and a replacement template (`replace_design.md`), phased by
@@ -109,7 +113,9 @@ append-only or historical records.
   the shipped compiler (compiles, `nomatch` on every subject), against python
   `re` over six pattern forms and eight subjects, and EXHAUSTIVELY for
   `${n}` over every subject of length 0..7 from a targeted alphabet (zero
-  matches); corpus population 0 of 4,198 shipped `pattern` lines. The proof,
+  matches); corpus population 0 of 3,954 shipped `pattern` lines (corrected
+  by `[VAR]`'s D6 panel, SPEC-F2 — the count is now cited with its exact
+  reproduction command). The proof,
   not the zero, is the evidence — `reqbyte_freq_pick.md`'s own lesson is that
   a zero population is where a hazard ships unobserved — and it makes the
   module gate `design_callout_abi.md` §3's collision rule demands protect a
@@ -131,8 +137,14 @@ append-only or historical records.
   deferred but RE-HOMED to `[LIB]`/definitions (D85/D87/D89), where it is
   already designed.
 - `variables_pattern.md` — PATTERN VARIABLES (2026-09-23, lane vardesign;
-  PROPOSED), `[FEAT-VAR]`'s design. **The central claim: a pattern variable
-  IS a backreference whose span comes from the caller instead of from
+  **PANELED (r1) AND REVISED (lane varfix, same day) — the central claim
+  HELD; §3's prefilter decline needed a third predicate the note had not
+  named (a BLOCKER), §4's `<prefix>_match`/`rx_matchfn` conflict is OPEN to
+  Frank (boxed at the top of §4), and §2's forced-audit-site census was
+  corrected from 5 files to 44 sites/17 files** — read the panel's
+  dispositions before any section), `[FEAT-VAR]`'s design. **The central
+  claim: a pattern variable IS a backreference whose span comes from the
+  caller instead of from
   `slot_values[]`.** §1 establishes it by reading the emitter: the VM has no
   compile-time-literal `memcmp` to give a runtime operand to (literals are
   singleton `A_CLASS` nodes emitted as per-byte `if` chains,
@@ -167,7 +179,11 @@ append-only or historical records.
   fold is a relation between two sides, the subject side is not folded, and
   under `utf8` there is no canonical byte string to fold to.
 - `replace_design.md` — SEARCH/REPLACE, the variable layer (2026-09-23, lane
-  vardesign; PROPOSED over a RULED baseline). **§0 exists to stop a reader
+  vardesign; PROPOSED over a RULED baseline; **PANELED (r1) AND REVISED
+  (lane varfix, same day) — §3.9's `.rxt` var-line proposal moved to
+  `variables_common.md` §3.5 (it was documented substitution-only though
+  the array is shared) and §3.8 now lists the four empty-match-advancement
+  gaps the variable layer inherits explicitly**). **§0 exists to stop a reader
   re-designing substitution**: `subst_template_design.md` already did and D38
   ruled all fourteen of its questions, so §1 TABULATES what is settled (the
   template language, the compile-time bounds check, the unset generation axis,
@@ -191,7 +207,12 @@ append-only or historical records.
   NOTEMPTY_ATSTART retry is expressible) and §6.1's emitted loop does express
   the retry, so building it that way would give a different substitution count
   on exactly the cells §6.1 measured.
-- `variables_roadmap.md` — the MVP AND PHASES (2026-09-23, lane vardesign),
+- `variables_roadmap.md` — the MVP AND PHASES (2026-09-23, lane vardesign;
+  **PANELED (r1) AND REVISED (lane varfix, same day)** — M7 gains the `rx_info`
+  variable-names table (promoted from an open question into the MVP), M5
+  resizes S→M for the widened forced-audit census, M10's **L** sizing
+  corrected against the right comparison class, and two new subsections
+  (§2.4 D27 applicability, §2.5 two owed test-corpus obligations) added),
   Frank's 2026-09-23 charter quoted verbatim at the top. §1 collects the five
   places the design came out differently from the charter's framing. §2 is a
   ten-item MVP (the expansion engine, the value model, the array interface,

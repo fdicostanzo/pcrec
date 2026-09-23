@@ -11,7 +11,30 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K62 — [TOUR-3] review (lane tour3rev, 2026-09-20), pre-existing, module `quoting`: `[0-\E]` is REFUSED where PCRE2 compiles the two-member class {'0','-'}
+## K63 — [VAR] panel (varfix, 2026-09-23), pre-existing, documentation/tree fact (not a compiler bug): `src/core/internal.h:877`'s own census of `default:`-carrying `AKind` switches names four sites; there are five
+
+**Status: deferred (a tree-audit fact, not a code defect — safe as found).**
+`src/core/internal.h:877-879` records D62 control 3's discharge: "§8.3 names
+four sites as the residual the flag spelling cannot cover — the `Ast.k`
+switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
+`src/opt/revdet.c` x1." Measured (D6 panel, `[VAR]` design review,
+mech.md F10): there are **five** — `src/gen/emit_vm.c:1723`/`default:1747`
+(`vm_det_seq`), `:1792`/`:1817` (`vm_cap_offsets`), **`:3711`/`:3785`
+(`vm_isl_words`)**, `:5006`/`:5128` (`vm_rev_emit`), and
+`src/opt/revdet.c:475`/`:526` (`pcrec_revdet_first`). `vm_isl_words`
+postdates the census — it landed with `[ENG-ISL]` STEP 1 on 2026-09-03 — and
+appears in neither the wave-C nor the `[M6.6.2]` nor the `[DD-14]`
+re-inspection records at that field.
+
+**All five happen to be safe** for every kind added since, including
+`[VAR]`'s own `A_VAR` (decline / decline / decline / hard compile error /
+widen-to-all-bytes), so this is not a soundness bug — it is a finding about
+the AUDIT RECORD: a lane following `internal.h:877`'s "forced audit site"
+framing reads the comment, inspects four sites, and never opens the fifth.
+Fix: update `internal.h:877-879`'s prose to name all five sites when a lane
+next touches that comment (D80 does not require an immediate edit for a
+count correction with no behavioral consequence, but the next lane adding an
+`AKind` should not inherit the miscount). — [TOUR-3] review (lane tour3rev, 2026-09-20), pre-existing, module `quoting`: `[0-\E]` is REFUSED where PCRE2 compiles the two-member class {'0','-'}
 
 **Status: FIXED 2026-09-21 (lane adm0921, ADMIN-0921 item 4).** Repro (CONFIRMED by the manager against local libpcre2
 10.48 with pcre2test — `/[0-\E]/` matches "0" and "-"; the repo's own 10.46

@@ -356,6 +356,40 @@ for this reason. **[PROPOSED]** the implementation note for `[M4-SUBST]` states
 this seam explicitly; it is the kind of thing that reads as a defect when
 found later.
 
+**The variable layer inherits four empty-match-advancement gaps from the
+ruled baseline, stated here explicitly rather than left implicit.**
+`subst_template_design.md` §6.1's rule is oracle-verified for two axes —
+empty match after a non-empty match (the rule's whole point) and empty match
+at end (the `"aab"` example's trailing `[]`) — with empty match at start
+implicit in the same trace (`"bab"`'s empty match at offset 0). Four more are
+**explicitly** marked open in that ruled baseline, and this note does not
+reopen them, only names them so the variable layer's own inheritance is on
+the record rather than silent:
+
+- **`\G`** — cited, not solved, deferred to `[DD-4]` (`subst_template_design.md`
+  §6.2, "whichever lands second must not introduce a second copy of it").
+- **UTF-8 mid-codepoint advancement** — deferred entirely (`subst_template_design.md`
+  §6.2, "a step-width question in the emitted loop... Deferred entirely"), in
+  contrast to `docs/spec/rxt_format.md`'s own `mc` find-all count, which
+  states the identical-shaped rule NORMATIVELY — the eventual
+  `[M4-SUBST]` implementation should reuse that rule rather than re-derive
+  it.
+- **Newline/CRLF conventions inside the loop** — deferred to `[DD-11]`
+  (`subst_template_design.md` §6.2, "the probe does not exercise it,
+  deliberately... `[DD-11]` owns `NEWLINE`/`BSR`").
+- **Lookbehind-anchored interaction with the global loop** — not discussed in
+  either the ruled baseline or this note before now; recorded here as a
+  fifth open item with no owner yet named.
+
+None of these four are variable-specific, and `[DD-4]`/`[DD-11]` are
+pre-existing dependencies of the ruled baseline this design correctly
+declines to re-litigate. But the variable layer makes the UTF-8 question
+MORE material than it was: a caller-supplied variable's bytes are spliced
+into the output stream at exactly the position the deferred step-width
+question governs, so caller-controlled multi-byte content is a new way to
+exercise a rule nobody has built yet — worth a note for whoever opens
+`[M4-SUBST]`, not a design change here.
+
 ### 3.9 A `--replace` `.rxt` block kind
 
 **Verdict: MVP, and this note PROPOSES rather than rules.**
@@ -367,17 +401,16 @@ that fails to compile. The `<expected>` field reuses the existing quoted-subject
 escape set unchanged, which matters because substitution output is exactly
 where an embedded NUL or newline needs writing down.
 
-**[PROPOSED]** two additions for the variable layer, and nothing else:
-
-```
-    var <name> "<value>"        block-scoped, repeatable; sets a variable
-    var-unset <name>            block-scoped; declares the slot UNSET
-```
-
-`var-unset` exists because `var name ""` is EMPTY, which is a *different state*
-(`variables_common.md` §2.2), and a format in which the two cannot be told
-apart cannot test the operator that distinguishes them. That is the whole
-reason for a second spelling and it is worth the row.
+**The variable-binding directive itself lives in `variables_common.md` §3.5,
+not here** — the underlying `rx_var` array is shared between the pattern and
+replacement consumers (§4.2 below), and a test author reading this note
+needs one pointer to the shared binding mechanism rather than a
+substitution-scoped proposal that a pattern-side reader (`variables_pattern.md`
+proposes no `.rxt` syntax of its own) would have no reason to find. In brief:
+`var <name> "<value>"` (block-scoped, repeatable) and `var-unset <name>`
+(declares the slot UNSET, a state distinct from `var name ""`'s EMPTY,
+`variables_common.md` §2.2) bind a variable identically whether the block is
+a bare `m`/`n` match case or a `repl`-bearing substitution case.
 
 **This does not rule the spelling.** Memory `pcrec-dd13b-syntax-is-managers`:
 `.rxt` format spelling and syntax are the manager's call, and the machinery a

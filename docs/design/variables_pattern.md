@@ -49,8 +49,17 @@ does not exist in the shape it assumes:
   The shape is chosen by `vm_cls_shape`/`vm_cls_test` (`:1607-1659`):
   `byte == N`, or `(unsigned)(b-lo) <= hi-lo`, or `(b|0x20) == lower` for a
   compile-time ASCII fold pair, or a 32-byte bitmap read.
-- **There is no compile-time-constant `memcmp` anywhere in the VM.** The one
-  `memcmp` in `emit_vm.c` (`:1566`) deduplicates class bitmaps in a pool.
+- **There is no compile-time-literal span compare in the VM's instruction
+  stream.** The one `memcmp` in `emit_vm.c` (`:1566`) deduplicates class
+  bitmaps in a pool, at COMPILE time, not in the emitted matcher.
+  `src/gen/emit_dfa.c`'s `emit_req_run_check` (`:671-772`, landed at `[OPT-
+  REQPOS]` tier 2b, abi 30) is the near miss that proves the distinction
+  rather than the exception to it: it DOES emit a constant-length
+  `memcmp(%s + rp_c, "…", L)` against a compile-time literal (`:710`, `:716`),
+  for both engines — but it is a whole-window PRE-CHECK computed once before
+  the scan begins, not an instruction in the per-position match loop, and it
+  takes a compile-time literal it can never take a runtime operand for
+  without becoming exactly the mechanism §1.3 below builds.
 
 So "the literal instruction, with a runtime operand" names nothing. A literal
 is not a span compare; it is a chain of byte tests the compiler unrolled
@@ -104,7 +113,29 @@ consumed at `at`; `< 0` is no match with `-(r)-1` the bytes that did compare,
 for the work charge. Under `byte` the body is `enc_byte.c:143-154` with `s[ref_start + i]`
 replaced by `v[i]` and `need` replaced by `vlen` — a mechanical substitution.
 Under `utf8` it is `enc_utf8.c`'s decode-and-fold loop with the same
-substitution.
+substitution, **once the value is known well-formed** — see below.
+
+**Where `variables_common.md` §2.1's UTF-8 well-formedness refusal lives, and
+why it cannot live in the seam entry.** `enc_utf8.c`'s decoder returns 0 for a
+truncated or ill-formed sequence, and its compare turns that into
+`return -(ptrdiff_t)(j - at) - 1` (`:226-231`) — a silent NOMATCH, which is the
+documented and correct rule for a *subject*, since the reference span there
+came out of the automaton and is well-formed by construction
+(`enc_utf8.c:274-278`: "ill-formed input matches nothing, never an error").
+For a caller-supplied value that rule is the opposite of what §2.1 promises,
+and the seam entry's return space is two-valued by sign — there is no third
+value for "refuse the call" without breaking §1.3's "byte for byte" protocol.
+So the well-formedness check does **not** move into `$_var_match[_caseless]`.
+**[PROPOSED]** it runs once, in the calling wrapper, before the match begins —
+an `O(vlen)` pass over the value, paid once per call per variable rather than
+once per position, which is the general place a per-call precondition
+belongs (the wrapper already owns `PCREC_ERR_UNSET_VAR`'s check, §5). Once a
+value has passed it, both the caseless and the `exact` `utf8` compares can
+keep assuming well-formed input exactly as the subject-side code already
+does — `enc_utf8.c`'s `u8_defs_bref` (the exact `utf8` compare) is a byte loop
+identical to `byte`'s and never decodes at all, so a value that reached the
+compare well-formed is the only case either compare needs to handle, and
+`${v}` and `(?i)${v}` agree.
 
 **[PROPOSED]** the emitted VM block is `vm_bref`'s, with the span source
 swapped:
@@ -146,9 +177,17 @@ bytes are not in the subject at all and have no relationship to it.
 
 The tree makes this safe by construction rather than by diligence: **each of
 these files has an exhaustive `switch` over `AKind` with no `default:`**, a
-house rule `src/opt/mrl.c:18-24` states as "a node kind added after this file
-is written must be a COMPILE ERROR here." So adding `A_VAR` does not risk a
-silently-wrong analysis; it *cannot build* until every site names it.
+house rule `src/opt/mrl.c:39-45` states as "a node kind added after this file
+is written must be a COMPILE ERROR here" — **under `-Wswitch`, which `make
+strict` promotes to an error** (`Makefile:1229-1233`; the default `make` build
+is `CFLAGS ?= -O2 -g` with no `-Werror`, deliberately, per the root
+`CLAUDE.md`). So adding `A_VAR` does not risk a silently-wrong analysis under
+`make strict`, which CI runs on every PR and push (`.github/workflows/
+ci.yml`); a contributor's plain `make` sees the missing case as a warning, not
+a build failure, and what an unhandled kind does at that point differs by
+site — some spin forever in a bare `for (;;)`, some silently fall to a
+`return;` — so the alarm is real in CI but the sentence should not promise
+more than a plain `make` delivers.
 
 Each arm below is the same answer `A_BREF` already takes, which is what makes
 this a widening of an existing decline rather than a new decline:
@@ -158,48 +197,117 @@ this a widening of an existing decline rather than a new decline:
 | necessary byte + necessary run ([OPT-REQBYTE], [OPT-REQPOS] 2b) | `src/opt/reqbyte.c`, `rb_walk` (`:380`, switch `:387`) | `case A_BREF: case A_CALL: acc.runs = rr_cat(rr_none(), acc.runs); return acc;` (`:487-494`) — the empty set, "always sound" | **join the same case label.** The empty set for both the byte set and the run |
 | start anchor ([OPT-ANCHOR-VM]) | `src/opt/startanch.c`, `sa_walk` (`:70-134`) | `case A_BREF: case A_CALL: return acc;` (`:129-131`) | same case label; contribute nothing |
 | end window ([OPT-ENDWIN]) | `src/opt/endwin.c`, `ew_walk` (`:81-141`) | `case A_BREF: case A_CALL: return EW_NONE;` (`:136-138`) | same case label; `EW_NONE` |
-| min/max width | `src/opt/mrl.c`, `pcrec_minw`/`pcrec_maxw`/`pcrec_cwmax` | `A_BREF` contributes `0` to `minw` | `minw = 0` (a variable may be EMPTY), `maxw` unbounded |
-| first-byte set / prefix, frequency prior | `src/opt/prefix_k.c`, `wclose` (`:172-221`) | no `N_BREF` kind exists — the analysis runs over the lowered `Nfa`, and backref-bearing patterns are VM-only with no prefilter, so they never reach it | **structurally unreachable, identically.** §3's registry row makes a var-bearing pattern VM-only before this pass runs |
+| min/max width | `src/opt/mrl.c`, `pcrec_minw`/`pcrec_cwmin`/`pcrec_cwmax` | `A_BREF` contributes `0` to `minw` and to `pcrec_cwmin`; `pcrec_cwmax`'s `A_BREF` arm already returns `PCREC_W_UNBOUNDED` | `minw = 0` and `pcrec_cwmin = 0` (a variable may be EMPTY); `pcrec_cwmax` joins `A_BREF`'s existing unbounded arm |
+| first-byte set / prefix, frequency prior | `src/opt/prefix_k.c`, `wclose` (`:172-221`) | no `N_BREF` kind exists — the analysis runs over the lowered `Nfa`, and backref-bearing patterns are VM-only with no prefilter, so they never reach it | **structurally unreachable, identically.** §3's `has_var` PREFILTER predicate is what declines the prefilter build before this pass runs — engine selection alone (the registry row) makes the pattern VM-only but does not, by itself, stop a prefilter from being built; it is the third whole-tree predicate in `prefilter_decision` that does that |
 
 Two consequences worth stating rather than leaving to be discovered.
 
-**The `maxw` arm is the one that is not free.** `A_BREF`'s width is bounded by
-the subject (a captured span cannot exceed the text), so several places can
-reason about it loosely. `A_VAR`'s cannot: the value is external and may be
-longer than the subject. Anything that treats "unbounded" as "at most *n*"
-needs checking at the `A_VAR` arm specifically, and `pcrec_cwmax` — whose
-customers include `[M4-SUBST]`'s streaming holdback sizing — is the one to
-look at first.
+**`pcrec_cwmax`'s `A_BREF` arm is already unbounded, and `A_VAR` joining it is
+free.** There is no `pcrec_maxw` — that function was retired at [M5.0] stage
+2 and `pcrec_cwmax` (BYTES) took its role; `src/core/internal.h:5864` records
+the rename. `pcrec_cwmax`'s `A_BREF` arm already returns `PCREC_W_UNBOUNDED`
+(`mrl.c:339-341`, "this is the one arm where minw's 'and it is EXACT' argument
+does not carry over to maxw"), for the header's own stated reason
+(`:295-303`): a backreference's width is a match-time quantity, not derivable
+at compile time — exactly the property `A_VAR`'s value has too. So the arm
+`A_VAR` needs is the one `A_BREF` already has, and every consumer is already
+written for it: `src/opt/endwin.c:171-172` tests `w >= PCREC_W_UNBOUNDED` and
+bails; `src/opt/startanch.c:84` tests `pcrec_cwmax(a->l) == 0`, which an
+unbounded value fails; and `src/parse/mod_lookaround.c:307/318`'s
+fixed-width rule (`pcrec_cwmin(branch) == pcrec_cwmax(branch)`, both finite)
+already refuses a lookbehind containing a backreference for the same
+reason (`mrl.c:300-303`) — **so a lookbehind containing a variable,
+`(?<=${v})x`, is refused for free too, by the identical mechanism**, provided
+`A_VAR` joins `A_BREF`'s arm in both `pcrec_cwmin` and `pcrec_cwmax`. No
+function in the tree computes a byte-unit upper bound for a backreference or
+a variable, and none is needed: `pcrec_cwmin = 0` is exact and safe for the
+byte-width consumers that read it (`emit_vm.c`'s `Vm.fmin` accumulator, the
+MRL clamp).
 
-**This is `[PATFACTS]`'s first outside customer.** D120
-(`docs/dev/decisions.md:8171-8200`, plan row `docs/dev/plan.md:560`,
-`STATE:not-started`) charters one per-pattern analysis record computed once
-after `pcrec_lower_enc` and read by every pass, on Frank's own observation
-that "we are doing a bunch of analysis in various places... it's ad hoc." Five
-separate files each needing the same one-line decline is that observation with
-a new instance. **[PROPOSED]** the sequencing note, not a dependency: if
-`[PATFACTS]` lands first the decline is one field; if it does not, the five
-arms land as written and migrate under `[PATFACTS]`'s own implement-then-
-replace clause, which D120 explicitly sanctions ("new analyses... may land in
-today's shape and migrate"). Neither order blocks the other.
+**The forced-audit surface is larger than the five-row table above, and the
+honest number matters to sizing.** A brace-matched census of every `switch` in
+`src/`, `cli/`, `lib/` whose body contains a `case A_…` label (comments and
+string literals stripped) finds **44 `AKind` switches with no `default:`**,
+across **17 distinct files** — `src/core/internal.h`, `src/gen/emit_vm.c`
+(8 sites), `src/ir/nfa.c`, `src/opt/{altcls,atomic (10 sites),endwin,lower_enc
+(3),mrl (3),possessify (3),reqbyte,revdet (4),select_engine,startanch}.c`,
+`src/parse/{definitions,mod_backrefs,mod_lookaround,parse (2),rxt_compose
+(2)}.c` — against 5 switches that carry a `default:`. **Most of the 44 are not
+declines.** The five-row table above is the ANALYSIS-DECLINE population; the
+rest are sites that must do real work, not join an existing empty-set case
+label: `src/ir/nfa.c:586` must LOWER the kind (there is no NFA representation
+for `A_VAR`, so this arm routes it to the same loud internal error `A_BREF`
+takes at `:908` — the only sound arm, since neither ε-erasure nor Σ*-erasure
+is safe here, the same reasoning `select_engine.c` already applies to
+`A_BREF`/linked `A_CALL`; this is a declared unreachability, not a decline);
+`src/gen/emit_vm.c:8303` must EMIT it (§1.3's instruction); `src/opt/
+lower_enc.c:476/517/592` must decide whether the variable's stored expansion
+template (`variables_common.md` §5, `${…:-word}`'s literal fallback text)
+lowers under the artifact's encoding; `src/parse/definitions.c:149`
+(`pcrec_ast_is_core`) must rule the kind core or reducible — its own header is
+explicit that this function is EXHAUSTIVE, NO DEFAULT, "a new `AKind` is a
+compile error here until this function states which side of the reduction it
+falls on"; and `src/parse/rxt_compose.c:288/442` must place it in the
+composer's leaf lists. (The five `AKind` switches that carry a `default:` arm
+instead — `internal.h:877`'s own census names four; `known_issues.md` K63
+records that there are actually five, `vm_isl_words` postdating the census —
+are all safe for `A_VAR` without a code change, per `[VAR]`'s D6 panel; this
+is a tree-audit fact recorded there, not a design decision this note makes.)
+**This is `[PATFACTS]`'s first outside customer**, and
+D120 (`docs/dev/decisions.md:8171-8200`, plan row `docs/dev/plan.md:560`,
+`STATE:not-started`) — one per-pattern analysis record computed once after
+`pcrec_lower_enc` and read by every pass, on Frank's own observation that "we
+are doing a bunch of analysis in various places... it's ad hoc" — absorbs the
+five one-line ANALYSIS declines specifically; it does not and cannot absorb
+`nfa.c`'s lowering or `emit_vm.c`'s emission, which are real per-kind work no
+shared record removes. **[PROPOSED]** the sequencing note, not a dependency:
+if `[PATFACTS]` lands first the five analysis declines are one field each; if
+it does not, they land as written and migrate under `[PATFACTS]`'s own
+implement-then-replace clause, which D120 explicitly sanctions ("new
+analyses... may land in today's shape and migrate"). Neither order blocks the
+other, and neither order touches the sites that are not declines.
 
 ---
 
-## 3. The DFA declines, and the decline is free
+## 3. The DFA declines, and the ENGINE decline is free — the PREFILTER decline is not
 
 **[PROPOSED]** a pattern containing a variable compiles to the VM engine only.
 
-The mechanism needs **no code in `src/opt/select_engine.c`**. Engine selection
-is a mask ANDed across a small table of analyses (`:393-417`), of which
-`forces_registry` (`:318-343`) is the generic one: it walks the tree for the
-first node whose registry row's `engines` mask excludes `ENGM_DFA` (`:237`),
-and uses that row's own `syntax` string as the diagnostic's reason (`:341`).
-This is SR-8's whole point — "a fifth VM_ONLY module needs no line here."
+**Engine selection needs no code in `src/opt/select_engine.c`.** Engine
+selection is a mask ANDed across a small table of analyses (`:393-417`), of
+which `forces_registry` (`:318-343`) is the generic one: it walks the tree for
+the first node whose registry row's `engines` mask excludes `ENGM_DFA`
+(`:237`), and uses that row's own `syntax` string as the diagnostic's reason
+(`:341`). This is SR-8's whole point — "a fifth VM_ONLY module needs no line
+here."
+
+**But the PREFILTER decline is a separate decision in the same file, and it is
+not registry-driven — this design owes it a line.** `prefilter_decision`
+(`select_engine.c:549`) carries hand-written, construct-named predicates:
+`has_bref = pcrec_has_bref(root)` (`:606`) and `has_call =
+pcrec_has_linked_call(root)` (`:648`, `[DD-14]`'s own precedent for exactly
+this shape — module `recursion`'s subroutine calls, `internal.h:4398`), each
+feeding a `-fprefilter` refusal that names the construct in its own text
+(`:653-657`). A VM-only pattern normally still gets a hybrid DFA prefilter
+(`engine_m4.md` §6.1, `[OPT-4]`), so "VM-only" and "no prefilter" are two
+facts with two mechanisms, and `A_VAR` needs the second one stated: `src/ir/
+nfa.c`'s `compile_ast` (`:583`, switch `:586`) sends `A_BREF` and a linked
+`A_CALL` to a loud internal error at `:908` — "a backreference and a linked
+call are loud internal errors (nothing may build a machine for either)" — and
+a var-bearing pattern reaches that same state by the identical route. So the
+design adds a **third** whole-tree predicate, `has_var = pcrec_has_var(root)`,
+following the mechanism that already exists (the same shape `has_bref` and
+`has_call` take), plus the third named noun in the `-fprefilter` refusal's
+text. `[PATFACTS]` (D120) is named, as it is in §2 below, as the eventual
+general home for all three predicates via its implement-then-replace clause —
+the interim hand-written predicate is not a permanent parallel mechanism, it
+is the acceptable shape while D120 has not landed.
 
 So the decline is: **one `RegRow` for the `${` doorway with `engines =
-ENGM_VM` and `syntax = "${…}"`**, and the module's producer stamping every
-`A_VAR` it builds with that row (`pcrec_ast_stamp`, D67). Everything else
-follows:
+ENGM_VM` and `syntax = "${…}"`** for engine selection, **plus the third
+prefilter predicate** above for the prefilter decline, and the module's
+producer stamping every `A_VAR` it builds with the registry row
+(`pcrec_ast_stamp`, D67). Everything else follows:
 
 - `--engine=dfa` refuses with the existing sentence, `select_engine.c:1022-1039`:
   `"${…} requires the VM engine, which --engine=dfa excludes"`.
@@ -208,6 +316,18 @@ follows:
   diagnostic obligation **in full** — no PCRE2 wording is reproduced anywhere.
 - `rx_info.engine_why` carries the reason for a caller to read, with no new
   field.
+
+**[PROPOSED]** how the new row resolves against the shipped bare `$` row.
+`src/parse/registry.c:1542` carries `{RK_BARE, '$', NULL, "$", 0, …}` — a bare
+row on the byte `$` with a NULL tail, which SR-9's `byte + tail` design
+(`pcrec_recognise_tail_default`, `registry.c:1753-1764`) already resolves
+correctly: a tailed row (this design's `${` row) always outranks the
+tail-less fallback, so `${` parses as the new doorway and a lone `$` not
+followed by `{` still falls through to the existing bare row and parses as
+`A_EOL`, exactly as `variables_common.md` §0.2's "matches nothing" proof
+requires when module `vars` is off. No new mechanism — the existing
+tail-arbitration rule is the whole answer, and it is worth stating rather
+than leaving a reader of the parser half to re-derive it.
 
 **Why the DFA route is deferred rather than refused.** `[FEAT-VAR]` (a) is
 right that the hard part is *placement*: determinization cannot see the
@@ -223,6 +343,37 @@ bottleneck and the placement rule's precondition holds.
 ---
 
 ## 4. The call interface
+
+> **[OPEN-FRANK]** §4.1's proposal below makes `<prefix>_match` and
+> `<prefix>_match_caps` gain a `const rx_var *vars` parameter — but
+> `<prefix>_match` **is** `rx_matchfn`, a fixed-literal ABI type shared by
+> every artifact (`docs/spec/match_api.md:915-918` declares
+> `ptrdiff_t rx_matchfn(const rx_ctx *ctx); ptrdiff_t <prefix>_match(const
+> rx_ctx *ctx);`, emitted unconditionally at `src/gen/emit_dfa.c:1013`, and
+> `match_api.md:1238`/`lib/pcrec.h:1326` bind the unprefixed spelling to
+> composability — installing `<prefix>_match` as a callout (`rx_callout_ref.
+> fn`) or invoking it as a composed submatcher across differently-prefixed
+> generated matchers). §4.1 makes a var-bearing artifact's `<prefix>_match`
+> **no longer an `rx_matchfn`** — a narrower version of the exact harm D38
+> rejected in the sentence §4.2 itself quotes approvingly ("it changes
+> `rx_matchfn`'s signature for every caller"), scoped to var-bearing
+> artifacts rather than all of them, and the note does not currently mark
+> the tension. §4.1 and §4.2 as written contradict each other.
+>
+> **The manager's recommended option, for Frank to rule on:** a var-bearing
+> artifact's match entry gets its own fixed-literal typedef,
+> `rx_varmatchfn` (`rx_matchfn`'s shape plus the trailing `vars` parameter),
+> declared alongside `rx_matchfn` and named in `rx_info`/the artifact's
+> stamp; a var-bearing artifact is **not** a composable submatcher or
+> callout target in the MVP — declined, with a named re-open condition: a
+> measured need to compose a var-bearing artifact as a callout or
+> submatcher. Alternatives, one line each: **(a)** vars ride `rx_ctx`
+> instead — rejected by this note's own §4.2 per-binding argument (a
+> variable environment is per-*call* input, not per-*binding* state); **(b)**
+> a separate `<prefix>_match_vars` entry beside an unmodified,
+> `rx_matchfn`-shaped `<prefix>_match` that simply refuses on a var-bearing
+> pattern — two entries per var-bearing artifact, D18's cost for keeping one
+> code path per axis.
 
 ### 4.1 The shape
 
@@ -256,6 +407,22 @@ would be mutable state or thread-local, and thread-local fails reentrancy. A
 existing one: concurrent calls are fine provided each has its own `caps` array
 **and its own `vars` array**. The artifact still holds nothing.
 
+**[PROPOSED]** the descriptor's memory-safety precondition, stated explicitly
+because it is caller data rather than structural. `bref_match`'s precondition
+is *structural*: `ref_start <= ref_end <= n` holds because the caller passes a
+PUBLISHED capture pair, and a published pair is ordered by construction
+(`enc_byte.c:113-116`). `$_var_match(s, n, v, vlen, at)`'s `v`/`vlen` have no
+such construction — they are caller fields, and `variables_common.md` §2.2's
+`p == NULL` vs `len == 0` spelling leaves the pair `p == NULL && len > 0`
+unspecified. The contract: **`p == NULL` implies `len` is ignored** (UNSET is
+determined by `p` alone), so a caller-supplied `len` on a NULL `p` is never
+read and never a null-deref hazard — the artifact checks `p` first, at the
+entry wrapper, before any use of `len`, the same refusal shape
+`PCREC_ERR_UNSET_VAR` already gives a bare `${name}`. `${name:-}` admitting an
+UNSET value into the match path (§5) still resolves to a concrete, non-NULL
+zero-length span by the time it reaches `$_var_match`, since the expansion
+half (`variables_common.md` §5) runs before the seam entry is called.
+
 ### 4.2 The callout-ABI precedent, and where it does *not* reach
 
 `design_callout_abi.md` §1.1 is worth citing precisely, because it is the
@@ -275,7 +442,11 @@ it is **not** the right precedent here:
   changing it taxes every caller. A `<prefix>_search` signature is
   **per-artifact** and already varies (`<PREFIX>_NCAPS`, the `_in` family, the
   DFA/VM split), so the parameter appears only on artifacts whose pattern has
-  variables, and a var-free artifact is byte-identical to today.
+  variables, and a var-free artifact's entry SIGNATURE is unchanged. (§5's
+  own byte-identity claim for the shared ABI block, once `PCREC_ERR_UNSET_VAR`
+  lands, is narrower than "byte-identical" and is stated precisely there: a
+  var-free artifact is unchanged except for the `abi` digit every artifact
+  carries.)
 
 So the precedent constrains the design without supplying it: variables do not
 ride `ctx->user`, because `user` is per-*binding* state for a callout and a
@@ -293,15 +464,45 @@ and no abi digit still moves with it.
 The stamps: `<PREFIX>_NVARS` and one `<PREFIX>_VAR_<NAME>` index macro per
 variable; `rx_info.nvars` **appended at the end** of the struct per §6's
 standing rule so no existing member's offset moves; and a `vars` names table
-on the `rx_info.groups` model if §7 Q2 wants one.
+on the `rx_info.groups` model — **in the MVP, not conditional** (§9 Q2), since
+it is the only route a name-indexed consumer (the `.rxt` test harness's
+driver, §5 of the common note) has from a `.rxt` case's variable name to the
+compiled artifact's `RX_VAR_<NAME>` slot, and deferring it would be a second
+`abi` event for a table that costs `.rodata` only.
+
+**One named site the `abi`-grep ritual does not reach on its own, because it
+asserts a POPULATION from the test rather than from the artifact:**
+`tests/codegen/run_codegen_tests.sh`'s `[M5-SEAM]` fixture table
+(`:1349-1359`) is one row per pattern with per-entry call counts
+(`next_pos:0,bref_match:1`, …), fails if an artifact's declared entry set
+differs from its fixture's (`:1287`, "asserted from the TEST and not read off
+the artifact"), and carries EXACT population pins for its existing residual
+families (`:1373` five, `:1395` seven). Adding `var_match`/
+`var_match_caseless` as engine-callable entries moves the entry-set assertion
+on every new fixture and needs its own per-site count rows and its own exact
+population pin, or the pair ships with no detector — the implementer owes
+this the same treatment `bref` and `back_step` each already have. (The two
+new `PCREC_ENCE_*` bits take the next free values, `1u << 4` and `1u << 5`,
+after `enc.h`'s current top bit `PCREC_ENCE_BACK_STEP` at `1u << 3`;
+`Job.enc_mask` is `unsigned` at `internal.h:2295`, so there is room, and
+`src/enc/CLAUDE.md` gets the update its own third-encoding-recipe section
+implies.)
 
 ### 4.4 `--emit-ir`
 
 D108 and `dd8_report.md` made the listing a machine-first TSV of named
 `#section` blocks. **[PROPOSED]** one `VE_VAR` listing event carrying the
-variable's index and its caseless bit, and one row in the existing `slots`
-section family. The `irsb` byte-identity arm (`w1stage0.md` (2)) is the gate
-that would catch a drift, and a var-free artifact's listing is unchanged.
+variable's index and its caseless bit. **Not** a row in the `slots` family:
+the `slots` section reports `slot_values[]` slots specifically —
+`VE_SET`'s own comment is "a: `slot_values` slot" (`emit_vm.c:263`), and
+[DD-8] gave the section a FAMILY column exactly to classify entries like this
+one. `A_VAR` occupies no slot — its span is external, which is this note's
+own central claim (§1.4) — so putting the row in `slots` would make the
+`irsb` baseline assert a falsehood. `VE_VAR` gets its own section, or joins
+`program`; reserving the enumerator with no producer yet has precedent
+(`VE_ISLAND`, `VE_CALLOUT` at `:269-270`). The `irsb` byte-identity arm
+(`w1stage0.md` (2)) is the gate that would catch a drift, and a var-free
+artifact's listing is unchanged.
 
 ---
 
@@ -327,6 +528,22 @@ The three candidates and why two lose:
   "nothing was attempted and `caps` is untouched." **[PROPOSED]**
   `PCREC_ERR_UNSET_VAR` is its second instance and needs no new vocabulary,
   only the next value.
+
+  **This value lands in the shared ABI block, which `src/gen/emit_dfa.c`
+  emits UNCONDITIONALLY into every artifact** (`:1034`, `:1051`, `:1073` are
+  straight `puts` of the three existing `#define` lines with no gate) — the
+  same block `docs/spec/match_api.md:178-179` records moving abi 24→25 for
+  the last such addition ("`[K50]` ... **every artifact** gains `#define
+  PCREC_ERR_STARTPOS (-7)` in the shared ABI block"). So the VALUE
+  `PCREC_ERR_UNSET_VAR (-8)` is fixed once, in the spec, for every artifact —
+  but its **emission** is gated on whether the artifact is var-bearing, the
+  same `enc_mask`/residual pattern the encoding seam already uses to keep a
+  var-free artifact's *entries* unchanged. Under that gate, a var-free
+  artifact stays byte-identical across this module's landing **except for the
+  `abi` digit itself** — the one line every artifact carries regardless — and
+  that is the precise claim, not an unqualified "byte-identical," since §4.3's
+  identity gates re-pin against the new `abi` number in the same change as
+  every prior such event.
 
 And the caller's opt-in to permissiveness is explicit and already in the
 grammar: `${name:-}` for "empty is fine, use nothing", `${name:-dev}` for a
@@ -437,8 +654,8 @@ the list against the code rather than reconstructing it.
 | lens | verdict |
 |---|---|
 | **specific vs general** | **GENERAL**, and more so than the charter anticipated. The feature adds one AST kind, one registry row and one encoding-seam entry pair, and every one of those is an existing *kind* of thing with existing siblings. The instruction is `vm_bref`'s with one operand changed. The decline arms join `A_BREF`'s own case labels rather than adding new ones. The one genuinely new surface is the entry parameter, and it is per-artifact. |
-| **core vs derived** | **DERIVED.** No automaton changes: determinization, minimization, the DFA emitter, every optimization pass and both prefilters are untouched (the DFA route declines rather than adapting — §3). The VM gains one emit arm. The five analysis arms are declines, not new derivations. |
-| **applicable vs assumption-changing** | **APPLICABLE**, with the one assumption that *would* change named and refused: a value is never pattern syntax (§7's last row). A build with module `vars` disabled is byte-identical to today — recognition is live and production is gated (D34 ruling 5), and `variables_common.md` §0.2 proves the gated spelling matches nothing, so the gate protects a population of patterns that could never have worked. |
+| **core vs derived** | **DERIVED.** No automaton changes: determinization, minimization, the DFA emitter and every optimization pass are untouched. The DFA engine route declines rather than adapting, and the VM hybrid's prefilter route declines too, via its own third whole-tree predicate (§3) rather than by adaptation. The VM gains one emit arm. The five analysis arms are declines, not new derivations. |
+| **applicable vs assumption-changing** | **APPLICABLE**, with the one assumption that *would* change named and refused: a value is never pattern syntax (§7's last row). A build with module `vars` disabled is unchanged in EMITTED CODE for every var-free artifact — recognition is live and production is gated (D34 ruling 5), and `variables_common.md` §0.2 proves the gated spelling matches nothing — except for the shared ABI block's `abi` digit, which every artifact carries regardless of whether it uses variables (§5's precise statement); the gate protects a population of patterns that could never have worked. |
 | **fits-arch vs refactor** | **FITS**, with one debt named rather than hidden. Everything lands in an existing mechanism: `AKind` + `union u.*` (D70), a registry row (SR-8), `PcrecEncEntry[]` (`src/enc/enc.h`), `axes.def` for the deny flag, `limits.def` for the nesting bound, the `rx_info` append rule, the D76/D94 abi ritual. The debt is the five analysis sites that must stay in step — which is D120's `[PATFACTS]` charter arriving with a new instance rather than a refactor this feature has to perform (§2). |
 
 ---
@@ -458,12 +675,19 @@ repeated here.
    Spelling, if it is ever built, should be a pattern-text declaration rather
    than an `rx_var` flag (`variables_common.md` §7 Q1's reasoning).
 
-2. **Does `rx_info` carry a variable NAMES table?** §4.3 proposes index macros,
-   which is what a compiled caller needs. A *reflective* caller (V-A's
-   `pcre2_pattern_info` analogue, a debugger, a test harness) would want
-   names. `rx_info.groups` is the precedent and it costs `.rodata` only.
-   *Recommend: yes, on the `groups` model, in the same abi event* — adding it
-   later is a second abi event for a table that costs nothing.
+2. **~~Does `rx_info` carry a variable NAMES table?~~ PROMOTED INTO THE MVP**
+   (was an open question here; `variables_roadmap.md` M7 now ships it, per
+   `[VAR]`'s D6 panel, TEST-F1). §4.3 proposes index macros, which is what a
+   *compiled* caller needs; a *reflective* caller (V-A's `pcre2_pattern_info`
+   analogue, a debugger, and — the concrete customer — the `.rxt` test
+   harness's driver, which has no OTHER way to resolve a `.rxt` case's named
+   variable binding to a compiled artifact's `RX_VAR_<NAME>` index, since
+   `driver.c` is one static file never templated per pattern) needs names.
+   `rx_info.groups` is the precedent and it costs `.rodata` only. This note's
+   own words for what deferring it would cost are the reason it is not
+   deferred: "adding it later is a second `abi` event for a `.rodata`-only
+   table." It ships on the `rx_info.groups` model, in the same `abi` event as
+   the rest of §4.3.
 
 3. **May a variable appear inside a quantifier or an alternation?**
    `${v}{2,4}` and `(${a}|${b})` are both expressible and both sound on the VM
