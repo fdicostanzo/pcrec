@@ -8157,3 +8157,9 @@ read; the general mechanism, not a parallel one (memory
 `pcrec-general-mechanisms-not-special-cases`). Implement-then-replace is
 fine: new analyses (the run, the freq pick) may land in today's shape and
 migrate. Timing is Frank's; nothing in cycle 2 waits on it.
+
+**Addendum (Frank, 2026-09-22 ~23:5x): "Patfacts scheduled after cycle 2
+or 3 as you see."** The manager's schedule: the inventory (step 1,
+read-only) during cycle 3's measurement waits, after batch 2 has landed
+and been measured; design and implement-then-replace after cycle 3's
+batch. Recorded in the plan row.
