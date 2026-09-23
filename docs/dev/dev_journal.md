@@ -25289,3 +25289,13 @@ byte-safe controls). Ten questions: the manager RULED all (I-94) under
 Frank's charter — defaults as recommended, Q5 (syntaxutf reservation) BOTH
 STAND, Q10 deferred to growth (h). Frank may override. First sample: seven
 cells ≈ 5 h the night the set merges; build ~1-1.5 days after rulings.
+
+**GATE on b1885a83 (04:27→06:04 EDT, 5803 s):** make's `*** [` lines =
+test-codegen (nm probe, standing) + test-rxtsource (NEW; every summary the
+batch-2 lanes ran was green because b2fix moved K34's 11 cells into
+sr_depth.rxt AFTER optimpl2's rxtsource run and did not re-run it —
+hypothesis for lane rxtfix, a census pin). Size log re-archived (1bc0db30).
+I-95 SENT: the bench measures batch 2 at b1885a83 after [B78]; the
+logparse-atomic cells read first. Timestamp correction for this morning's
+entries: the "~08:5x-10:2x EDT" labels were UTC misreads; the box clock put
+them at ~03:5x-04:2x EDT.
