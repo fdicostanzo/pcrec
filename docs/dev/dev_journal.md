@@ -25441,3 +25441,59 @@ ledgers + the anomaly query), D120 ([PATFACTS]), the 15 design decisions,
 2b's window rule, PCREC_BIT, batch-1 dispositions, [OPT-PRECHECK-ADMIT]
 G1+G2, the utf8 subbench, [VAR]; bench messages I-88..I-101 sent, O-45..O-48
 received. wake.md rewritten.
+
+## 2026-09-23 (seventy-eighth session, 10:3x → ) — [VAR] D6 panel; admitimpl's chain running
+
+Frank at wake: "proceed with scheduled work" + the [VAR] question — "you
+said it found that pattern variables were back references but what about
+user supplied values?" / "perhaps it was a reference to the mechanism".
+Answer given: yes, MECHANISM only — vm_bref is the VM's one runtime span
+compare, so the variable instruction is that compare with the span pointed
+at a CALLER buffer; user values enter per call as `const rx_var *vars`
+(pointer+len; NULL=UNSET, len 0=EMPTY) indexed by compile-time macros,
+never bound; values are literal bytes, never pattern syntax; a dynamic SET
+of names is declined with a re-open condition.
+
+**admitimpl's chain** (worktrees/admitimpl, detached): stage 1 test-axes
+rc=0 (both axes answer-identical, 2399 s); stage 2 emit_sweep rc=1 = MOVERS
+FOUND, not red: every reachable artifact moves (3,532/3,532 c-default,
+3,533 c-vm, 98 composition) because abi 30→31 changes every stamp; refusal
+populations identical both sides (422/421), asymmetric=0 — the abi-bump
+signature. Stage 3 (S269 solo) running ~10:41. A zero-model watcher script
+(scratchpad chain_watch.sh) exits on chain.done / 25-min stall / 4h cap.
+
+**[VAR] D6 PANEL (three read-only critics, concurrent, in the scratchpad;
+mech=opus, spec=sonnet, test=sonnet; ~15 min each):** 30 findings compiled
+into docs/dev/reviews/2026-09-23-r1-var-design.md by lane varfix (sonnet,
+docs-only, merged 42701cee fast-forward). The central claim SURVIVED every
+lens. The four blockers were all at the design's EDGES: (MECH-B1) VM-only is
+not prefilter-free — select_engine.c's prefilter decision carries
+per-construct predicates (has_bref/has_call) and without a third (has_var)
+nfa.c:908 fires — accepted, the predicate is added in the existing form
+with [PATFACTS] the eventual general home; (SPEC-F1) "re-homed to [LIB]"
+for pattern-VALUED variables was a decline in disguise (definitions are
+compile-time) — now a hard decline; (TEST-F1) driver.c has no name-indexed
+path from an .rxt case to a variable slot — the rx_info var-name table is
+promoted INTO the MVP, the .rxt line's spelling stays the manager's
+(DD-13b); (TEST-F3) no oracle existed for pattern-side matching — ruled:
+quotemeta-splice into libpcre2 (a value has no groups, D87's hazard does
+not apply) + a backref-equivalence differential labeled as a wiring check
+(learnings §3 shared-source). Majors: the shared-ABI error code must be
+EMISSION-gated so var-free artifacts stay byte-identical (MECH-M1); 44
+default-less AKind switches in 17 files, not five (M5 S→M — the lane
+correctly re-mapped my "M7" to M5 and flagged it); pcrec_maxw is retired,
+cwmax's A_BREF arm already answers unbounded (lookbehind refusal free);
+the seam's two-valued return cannot express the UTF-8 refusal → the
+wrapper checks validity once per call; a compile-time memcmp exists since
+abi 30 (§1.1 reworded); the corpus witness is 3,954 not 4,198 (verdict
+intact; the lane found and fixed a SECOND stale copy in the roadmap). New
+K63 (internal.h:877's own census of default:-carrying switches says four,
+there are five). OPEN TO FRANK: MECH-B2 — `<prefix>_match` IS rx_matchfn;
+recommended rx_varmatchfn typedef + not-composable-in-MVP; boxed at
+variables_pattern.md §4. Manager fix at merge: the review header had all
+three critics as opus (spec/test were sonnet).
+
+Lesson (panel economics): three concurrent read-only critics + one sonnet
+compile-and-apply lane with a verbatim disposition table cost the manager
+four short turns; the lane's grep-verification pass caught a stale copy the
+disposition table did not name.
