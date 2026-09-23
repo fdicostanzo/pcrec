@@ -2813,3 +2813,17 @@ never edited afterwards.
   `cycle1_ledger_reading.md`, updates the exec summary and
   `docs/dev/optloop/CLAUDE.md`, and drafts an I-98 candidate block to
   re-run the placement hand-twin under the bench's own driver.
+
+- `nocapsview_report.md` — (2026-09-23, lane nocapsview, sonnet,
+  docs-only): renders `docs/dev/optloop/cycle1_nocaps_view.md`, the
+  nocaps-vs-nocaps half of D119's two-class-pure-ledger ruling. BEFORE
+  100/110 win-or-tie (cross-checks `cycle1_caps_view.md` §2 exactly);
+  AFTER 104/110, losing score 4.7066 → 1.4094. Finds two cells flip WIN →
+  catastrophic LOSS (`winpath-near-miss`/thr +113,334%,
+  `email-nested-plus`/thr +72,253%) — the required-byte-absent floor-entry
+  cost `cycle1_ledger_reading.md` §5 already priced, reproduced to within
+  25 ns, whose consequence (flipping a win to an 87x loss) is
+  nocaps-specific since `pcre2-dfa` is the one competitor fast enough for
+  it to matter. `pcre2-dfa` is absent from the AFTER bench report; its
+  BEFORE numbers are reused as the AFTER competitor reference, flagged as
+  an open question for the bench.

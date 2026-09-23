@@ -232,6 +232,37 @@ directory, `c2/` (its own `CLAUDE.md`); nothing in any of them reads a clock.
   hand-edits, and a `[derived]` mapping from the one-pass survey's "match
   regime" wording to `expectations.tsv`'s `search_short`/`match` rows.
 
+- `cycle1_nocaps_view.md` — **[OPTLOOP.1-NOCAPSVIEW], 2026-09-23, lane
+  `nocapsview`**, the OTHER half of Frank's D119 addendum
+  ("THE POPULATION IS TWO CLASS-PURE LEDGERS", `decisions.md`,
+  2026-09-23): pcrec's `auto-nocaps` testee re-ranked against every
+  roster config declared non-capturing (`pcrec-bench/testees/*/
+  configs.toml`'s own `captures` field — Step 1's classification table,
+  no UNKNOWN rows), BEFORE batch 1 (pin `25b1984f`) and AFTER it (pin
+  `8d716693`). `pcre2-dfa` is the only algorithmic nocaps competitor on
+  the whole roster (`vectorscan` excluded, SIMD/boolean-grain, cycle 1's
+  own rule 2). BEFORE: 100/110 win-or-tie (reproduces `cycle1_caps_view.md`
+  §2's own NOCAPS-table totals exactly, a cross-check between two
+  independently-written parsers of the same report). AFTER: 104/110,
+  losing score 4.7066 → 1.4094 — batch 1's three mechanisms reach the
+  nocaps testee too (named targets improve 71-100%, matching the ledger's
+  own ranges independently). **A new finding the caps view's own
+  competitor set could not surface**: two cells flip from a clean WIN to
+  a catastrophic LOSS — `winpath-near-miss`/thr (+113,334%) and
+  `email-nested-plus`/thr (+72,253%) — `[OPT-REQBYTE]`'s
+  required-byte-absent floor-entry cost (`cycle1_ledger_reading.md` §5),
+  reproduced here to within 25 ns of its own prediction, whose
+  CONSEQUENCE is nocaps-specific: `pcre2-dfa`'s near-instant reject on
+  these two patterns is the one competitor fast enough for the new floor
+  cost to matter this much. The AFTER bench report carries no `pcre2-dfa`
+  row at all (narrowed to spot-check competitors); this memo reuses its
+  BEFORE-window number as the AFTER competitor reference, flagged as an
+  assumption (§0, §5 asks the bench to close it). Also finds six smaller
+  band-clearing regressions (10-60%) not named in any of the ledger's own
+  target/carve-out tables. No new mechanism proposed.
+- `nocapsview/` — that memo's reproduction pieces (`build_nocaps_view.py`,
+  `nocaps_rows.json`/`.tsv`). See its own `CLAUDE.md`.
+
 Everything here is read-only with respect to `/Users/fdicostanzo/pcrec-bench`:
 the scripts read its reports, its `patterns.rxt` and its `captext.py`, and
 write nothing there. The throughput subjects they census are regenerated
