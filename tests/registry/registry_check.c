@@ -611,8 +611,11 @@ static void check_wellformed(void)
      * the plain capturing group `(...)`, each with no RegRow home before
      * this (confirmed by grep: pure base grammar, no doorway at all,
      * unlike the literal escapes). */
-    if (total != 138) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 138. If you added or "
+    /* 138 -> 139 ([VAR], 2026-09-23): `${name}` joins RK_BARE as a fourth
+     * no-doorway row — module `vars`' own row, RS_MODULE/VM_ONLY rather
+     * than RS_BASE (registry.c's own header comment on the row). */
+    if (total != 139) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 139. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -742,6 +745,16 @@ static void check_row_ranks(void)
              * that each name resolves back to its own row, and that no
              * arbitration anywhere can elect one. */
             if (rows[i].flags & RF_INDEX) continue;
+            /* [VAR] SAME SHAPE, A SECOND KIND: `${name}`'s `tail` ("{") is
+             * carried for the DUMP alone (registry.c's own comment on the
+             * row: "WHICH MEANS THE `tail` COLUMN DOES NOT ARBITRATE THIS
+             * ROW... `pcrec_registry_find`/`arbitrate` are never called
+             * with `RK_BARE` at all" — internal.h's own comment on the
+             * kind says the same). Every rule below is about arbitration
+             * a `RK_BARE` row never enters, same as an `RF_INDEX` row
+             * never entering it above — excluded here for the identical
+             * reason, not because this row is somehow deficient. */
+            if ((RegKind)k == RK_BARE) continue;
             tailed++;
             if (rows[i].rank <= 0) {
                 bad("%s: '%c' tail \"%s\" has rank %d — a tailed row at (or below) "
@@ -912,6 +925,14 @@ static void check_arbitration_liveness(void)
             size_t n;
             const RegRow *rows = pcrec_registry((RegKind)k, &n);
             if (!rows) continue;
+            /* [VAR] `pcrec_registry_arbitrate` is never called with
+             * `RK_BARE` by any real caller (see check_row_ranks's own
+             * comment on the identical exclusion, above) — exercising it
+             * here anyway, now that `${name}`'s tail gives this kind a
+             * genuine same-`sel` pair for the first time (`$` tail-less,
+             * `${name}` tail "{"), finds a "tie" in a code path production
+             * never reaches, at a rank comparison nothing depends on. */
+            if ((RegKind)k == RK_BARE) continue;
             for (int sel = 1; sel < 256; sel++) {
                 int nt = bucket_probe_texts(rows, n, sel, texts);
                 for (int t = 0; t < nt; t++) {
@@ -1244,9 +1265,25 @@ static void check_table_to_parser(void)
      * like `(?:...)`'s own row above (not RS_MODULE like the possessive
      * suffixes): there is no diagnostic to verify, only that the row's own
      * `syntax` claim of base-grammar support is true. */
+    /* [VAR] `${name}` JOINS THIS KIND BUT NOT THIS RULE: it is RS_MODULE,
+     * not RS_BASE (registry.c's own row: `p_atom` recognises `${` the same
+     * way it recognises `$` itself, but gated on `FEAT_VARS`) — the SAME
+     * split the QUANTSUFFIX loop above already makes between an
+     * unconditionally-compiling base row and a module-gated one, applied
+     * to this kind for the first time now that it has a member of each.
+     * An RS_MODULE row here gets the QUANTSUFFIX loop's `expect_msg`
+     * treatment instead, against mod_vars.c's own diagnostic text. */
     rows = pcrec_registry(RK_BARE, &n);
     for (size_t i = 0; i < n; i++) {
         const RegRow *r = &rows[i];
+        if (r->status == RS_MODULE) {
+            snprintf(want, sizeof want, "${...} requires module '%s'", r->module);
+            snprintf(label, sizeof label,
+                     "bare %s: refused, as the row claims (module '%s')",
+                     r->syntax, r->module);
+            expect_msg(label, r->syntax, want);
+            continue;
+        }
         snprintf(label, sizeof label,
                  "bare %s: supported by the base grammar, as the row claims", r->syntax);
         expect_compiles(label, r->syntax);
@@ -2453,9 +2490,17 @@ static void check_engine_capability(void)
      * which is already in the table above, plus `check_index_shape_witnesses`
      * below — D71 item 3's per-RESOLVER-DISTINGUISHED-SHAPE requirement,
      * which is a different demand from this loop's per-wired-row one. */
-    if (qualifying != 75 || wired != 62 || built_wired != 62)
+    /* [VAR] `qualifying` 75 -> 76, `wired`/`built_wired` UNMOVED at 62 —
+     * the WAVE F shape again. `${name}`'s row is RS_MODULE and VM_ONLY (the
+     * structural argument is registry.c's own comment on the row: `p_atom`
+     * recognises `${` directly, gated on FEAT_VARS), so it joins
+     * `qualifying`. It has NO PORT — `aport`/`cport` are both `NO_PORT`,
+     * since its producer is that same direct `p_atom` test rather than a
+     * doorway dispatch — so it cannot be `wired` and this loop must not
+     * demand a witness for it, same reasoning as the nine index rows above. */
+    if (qualifying != 76 || wired != 62 || built_wired != 62)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 75, 62 "
+            "have a wired producer and %d of THOSE are BUILT, expected 76, 62 "
             "and 62 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
@@ -3004,9 +3049,15 @@ static void check_built_status_defects(void)
      * it enabled but esc_atom's/p_class's quote-mode dispatch reverted,
      * both derive `unbuilt` again; with everything in place, both derive
      * `built`. */
-    else if (checked != 138 || built != 110 || unbuilt != 12 || na != 16)
+    /* 138 = 110 + 12 + 16 -> 139 = 111 + 12 + 16 ([VAR], 2026-09-23):
+     * `${name}` is RS_MODULE, and with `built_status_probe`'s new RK_BARE
+     * arm (src/dump/syntax_dump.c) it parses at the forced-open gate and
+     * stamps an A_VAR node, so it classifies `built` — the module `vars`
+     * producer having actually landed. `unbuilt`/`na` are unmoved: no
+     * other row's classification changes with it. */
+    else if (checked != 139 || built != 111 || unbuilt != 12 || na != 16)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 138 = 110 + 12 + 16. Zero defects does NOT imply "
+            "%d n/a, expected 139 = 111 + 12 + 16. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3211,9 +3262,12 @@ static void check_families(void)
      * (family == NULL). */
     /* 97 -> 100: the 3 new RK_BARE rows are each their own family
      * (family == NULL). */
-    if (families != 100 || multi != 12 || members_in_multi != 50)
+    /* 100 -> 101 ([VAR], 2026-09-23): `${name}` is a fourth RK_BARE row,
+     * also its own family (family == NULL, the same shape as `^`/`$`/`(a)`
+     * above it). `multi`/`members_in_multi` are untouched. */
+    if (families != 101 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 100 / 12 / 50. The index "
+            "member, %d members in those -- expected 101 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {

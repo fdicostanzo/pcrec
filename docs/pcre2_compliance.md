@@ -2220,7 +2220,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 138 rows from one declarative table (D24), rendered as 100 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 139 rows from one declarative table (D24), rendered as 101 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2325,6 +2325,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 138 rows 
 | quant-suffix | `a{1,2}+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+ |
 | bare | `^` | `OK` | — | — | — | dfa|vm | start of subject, or after an internal newline under (?m) — D62's field+fold lowering; already core (A_BOL, the same node \A builds) outside (?m) |
 | bare | `$` | `OK` | — | — | — | dfa|vm | end of subject (or before a final newline), or before an internal newline under (?m) — D62's field+fold lowering outside (?m) it aliases \Z (A_EOL), which is NOT core under full reduction (unlike ^/A_BOL) — \Z itself reduces to (?=\n?\z), so this row's DEF_ALWAYS entry is a real substitution, not an identity |
+| bare | `${name}` | `REJECTED` | `built` | planned | `vars` | vm | a caller-supplied variable: the bytes passed for `name` in this call's rx_var array, matched LITERALLY (never as pattern syntax) at this position — with bash-shaped defaults ${name:-word} / ${name-word} / ${name:+word} / ${name+word} / ${name:?word}; ${!name} is the same thing spelled explicitly (D121) |
 | bare | `(a)` | `OK` | — | — | — | dfa|vm | a capturing group — already core (A_CAP) unless (?n) is scoped over it, in which case it is (?:...)'s identity (D31's erasure: no A_CAP wrapper) |
 
 <!-- END GENERATED -->
