@@ -25669,3 +25669,25 @@ close. Lesson: a corpus file carrying a deliberate invalid byte is a
 witness against EVERY reader of the corpus — census them all in the
 landing (four found so far: three codegen identity scripts + the
 recursion-identity gate).
+
+**recidfix MERGED (~18:5x):** the cause was the briefed one (the fourth
+corpus reader, plain open() on vars' raw 0xff byte → surrogateescape);
+population 3187 (313 call-bearing / 2874 call-free); (B) vs 809aab12 CLEAN
+on every axis; SIZE_TERM movers 4/4 live again. NEW, filed not fixed:
+(A) program-region identity vs the frozen pre-module pin ac4917d differs
+on 170 backreference-bearing patterns on all four axes — the ruled
+span_match rename inside the program region; needs a named-exception
+bucket with a non-vacuity arm (learnings §3) — gate reads 8/4, opt-in,
+not in make test. OWED first next session.
+
+**SESSION CLOSE (2026-09-23 ~18:5x EDT; Frank: finish varmvp, wait out
+the runs, close — 92% of the weekly token cap).** Main pushed; worktrees
+none; live agents none; heartbeat cron deleted. Session tally (78th):
+lanes varcrit-mech/spec/test (panel), varfix, varnames, b2ledger,
+inbox103, execsum2, inbox103a, repin3, inbox102, o51read, varmvp (opus),
+litrun, vartriage, recidfix (16; opus: varcrit-mech, b2ledger, varmvp);
+merges 11 (+ admitimpl = abi 31, varmvp = abi 32); rulings: D121 + four
+addenda, the (?:…) oracle wrap, the three-arm run-check form rule, the
+one-seam-entry merge, batch-2 dispositions STILL OPEN (FREQPICK/2b
+default-on recommended); bench I-102a/b..I-105 sent, O-49..O-51 received,
+[B84] window opened early. wake.md rewritten.
