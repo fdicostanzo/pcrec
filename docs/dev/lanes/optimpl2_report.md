@@ -415,3 +415,178 @@ admin3 landed the `PCREC_ARTIFACT_ABI` citation fix at both live readers on
 2026-09-22, before this lane started; `reqpos_2b.md` §5.1's note that they
 were wrong is now historical and was deliberately left as it stands (D80: a
 design document's own revision is its own change).
+
+---
+
+## 8. b2fix (2026-09-23, sonnet) — the known-fail RED and the flag-bit macro directive
+
+Resumed this worktree from the OWED chain's landing (§6/§7 above), starting
+at `0102ce8d` (optimpl2's last commit). Four items, four commits
+(`a3b0cd85`, `9dcdc001`, `677dbf86`, this section's own).
+
+### 8.1 The `test-known-fail` red was K34 CLOSED, not a `[MECH-REACH]` artifact
+
+`make test`'s owed run (§6) left `build/optimpl2_test.log` at rc=2, two
+`*** [test-X] Error` lines: `test-codegen` (9/10, the standing darwin `nm
+arm_a.o` probe, confirmed unrelated) and `test-known-fail` (the ratchet
+flagging `tests/known_fail/k34_leftrec_giveup.rxt` "NOW PASSING", 11/11
+cells).
+
+**Diagnosed as GENUINE, not accidental.** `[OPT-REQPOS]` tier 2b's
+necessary-run precheck proves every match of `(a|(?1)a)` (and its
+`b`/`c`-tailed siblings) ends in a fixed literal REGARDLESS OF RECURSION
+DEPTH — branch 1 IS `"a"`, branch 2 always appends a trailing literal `"a"`
+after its recursive call — so a subject lacking that literal/run (`"ab"`/
+`"ac"`) concludes NOMATCH in O(1) without ever pushing a frame into the
+recursion. Verified directly on the emitted artifact (`RX_REQ_RUN
+"6162@1"` on `(a|(?1)a)b`) before touching anything, then with the harness
+(`cases passed: 11 / cases failed: 0`). K34 (`docs/dev/known_issues.md`,
+RULED D74 2026-08-25) is CLOSED — but NOT by D74's own charted "measure
+PCRE2's `−52` loop rule" route, which D74 declined and which stays
+declined: this resolves the file's whole population by an UNRELATED
+general optimization landing seven weeks later, the shape D74's own
+closing paragraph named as the alternative ("an OPTIONAL ahead-of-time
+analysis", parked as [PAT-LINT]) arriving by accident through [OPT-REQPOS]
+instead. The file's own K34 cells are the WHOLE of K34's "class 1"
+population (11 of 11), so the entry is closed in full; "class 2" (the
+inverse divergence, pcrec matches where PCRE2 `−52`s) is untouched and
+unrelated.
+
+The eleven cells went back to their originally-parked position in
+`tests/recursion/d27/sr_depth.rxt` (the directory's own "Removing one"
+convention). `sr_gen.py`'s spec had `parked=`/`parked_ref="K34"` removed
+from both `B()` calls, but the LIVE `.rxt` lines were placed BY HAND,
+copied verbatim from the already-oracle-verified `k34_leftrec_giveup.rxt`
+cells, rather than by running `python3 sr_gen.py`: this box's dlopen shim
+resolves libpcre2 **10.42** (`sr_oracle.version()`), not the pinned 10.46
+reference, so a live regeneration here would have silently re-derived the
+WHOLE ten-file D27 corpus against the wrong oracle — a hazard this box's
+`[MACPORT]`/`[M5.0]` stage-3 history already names for exactly this dlopen
+shim, applied here to a tool this project had not yet run against it.
+`docs/dev/known_issues.md`, `tests/known_fail/CLAUDE.md`,
+`tests/recursion/CLAUDE.md` and `tests/recursion/d27/CLAUDE.md` all
+updated. `bash tests/harness/run.sh tests/recursion` (the whole module,
+corpus + d27): **1701 / 0**. `tests/known_fail/run_known_fail.sh`:
+"nothing to ratchet", rc=0.
+
+### 8.2 The flag-bit macro directive, and a `-Wpedantic` finding it surfaced
+
+Every `PCREC_(NO|FORCE)_*` flag constant respelled from a bare `1ull << N`
+through a new public macro, `#define PCREC_BIT(n) (1ull << (n))`, per
+Frank's directive (the four non-axis flags CASELESS/EMIT_MAIN/
+NO_CAPTURES/TRACE included, 32 members, matching the brief's stated count
+of 33 occurrences with the one prose mention at line 52). No value moved.
+
+**`make strict CC=gcc-16` (`-Werror -Wshadow`) passes clean, and checking
+`-Wpedantic` as the brief asked found a real, pre-existing condition**:
+`gcc-16 -std=gnu11 -Wpedantic -Werror` on a header-only translation unit
+reports `PCREC_NO_REQ_RUN = PCREC_BIT(31)` as "ISO C restricts enumerator
+values to range of 'int' before C23" — reproduced IDENTICALLY against the
+tree before this commit (`PCREC_NO_REQ_RUN = 1ull << 31`, batch 2's own
+widening), so it is not something `PCREC_BIT` introduced. `2^31` exceeds
+`INT_MAX`; every OTHER bit (0-30) is under it and compiles pedantic-clean
+either way. `make strict` does not enable `-Wpedantic` anywhere in this
+project's discipline (grepped: zero hits), so this was never a gate
+failure — but per the directive's own conditional ("if a C enum cannot
+portably carry `1ull << 31`+, make the members `#defines`... and state
+which and why"), **`PCREC_NO_REQ_RUN` (only) is pulled OUT of the enum
+into `#define PCREC_NO_REQ_RUN PCREC_BIT(31)`**, matching this header's
+existing `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM` `#define` precedent (for an
+unrelated reason). Pulling the one bit out also returns bits 0-30 to
+plain `int` range, so the REST of the enum needs no GNU widening
+extension at all — verified: `-Wpedantic` clean after the split, `make
+strict` clean before and after.
+
+**The successor beyond 64 bits, stated as the brief asked**: a word-array
+bitset behind the same `PCREC_BIT`-family macro shape, built when the bit
+count approaches this word's width — the D77 trigger, written down at
+the `#define`'s own site in `lib/pcrec.h` and in `lib/CLAUDE.md`'s new
+entry, not a timeline. Every future bit from 32 to 63 will hit the
+IDENTICAL `-Wpedantic` numeric-range issue the day it is added (2^32 and
+up all exceed `INT_MAX`), so each is a `#define` too, until the bitset
+successor replaces the whole family.
+
+The two derived-table greps (`tests/registry/axes_registry_check.sh`,
+`tests/axes/run_axes.sh`) now read EITHER shape —
+`PCREC_(NO|FORCE)_[A-Z_]+ *= *PCREC_BIT\([0-9]+\)` (the enum members) OR
+`#define PCREC_(NO|FORCE)_[A-Z_]+ +PCREC_BIT\([0-9]+\)` (bit 31) — since
+the population is now mixed, both still hard-failing on deriving zero
+bits. VERIFIED LIVE: `axes_registry_check.sh` **123/0**, derived bit list
+unchanged (`4 5 6 ... 31`, 28 bits, the SAME list as before the respell);
+the identical extraction pipeline standalone for `run_axes.sh` also
+derives 28 bits (the heavy corpus-wide `test-axes` sweep itself was not
+run — out of scope for this triage, `-Wshadow`/`-Wpedantic`/the
+registry check are what the directive asked verified). `--list-axes`
+reports `PCREC_NO_REQ_BYTE` bit 30 / `PCREC_NO_REQ_RUN` bit 31 correctly
+(`src/dump/axes_dump.c`'s `V()` macro reads plain C identifiers, blind to
+enum-vs-`#define` by construction).
+
+Prose readers of the bare spelling updated where they describe CURRENT
+mechanics (`tests/axes/CLAUDE.md`, `tests/registry/CLAUDE.md`,
+`docs/testing.md`, `tests/axes/run_ksweep.sh`, `src/core/compile.c`'s
+`pcrec_axis_on` comment — the enum/`#define` split changed what that
+comment's blanket "both are ENUM CONSTANTS" claim could say); dated
+historical narrative in design notes, lane reports and
+`run_codegen_tests.sh`'s own abi-bump message string left as the record
+of what was true when written, this project's own append-only convention
+for that tier — none of it is a live check assertion. `CHANGELOG.md`
+gets a new `[Unreleased]` bullet beside the existing `1u`->`1ull` one
+rather than an edit to it.
+
+### 8.3 The three sabotage rows, and a reporting-layer false positive S268 surfaced
+
+`bash tests/mech/run_sabotage_matrix.sh S266` / `S267` / `S268`, each
+solo, one heavy suite at a time. All three **DETECTED**, matching §3.2's
+predictions exactly (counts in the commit message). No witness needed
+re-pointing.
+
+**S268's run surfaced a real finding in the trailer, not in the row**:
+`run_sabotage_matrix.sh`'s `unreached`/`unexpected`/`anomalies`/
+`oracle_skipped` counters are `grep -c '<token>'` over the WHOLE
+tab-joined row line, not the verdict column alone — an already-known
+class in this file (the 2026-08-25 "anomaly sentence must not contain
+UNDETECTED" comment is its first recorded instance) with a second,
+undocumented site: `SAB_DESC` itself. S268's own description used the
+word "UNREACHED" as ordinary prose (explaining why its plant was chosen
+over `reqpos_2b.md` §5.4's proposed one), which alone printed "1 row(s)
+reported UNREACHED" beside a verdict that read DETECTED with no anomaly —
+`unreached` does not fail the exit code (only `unexpected` does, verified
+by reading the script), so this never broke `make mech`, but it is
+exactly the false signal this project's own trailer text warns a reader
+against acting on. Fixed at `SAB_DESC`'s wording (this file's own
+established convention for the class) rather than at the extraction; the
+more robust fix (anchor each `grep -c` on the verdict column,
+`awk -F'\t' '{print $NF}'`) is named as owed at the comment's own site,
+not built here (D77). Re-ran S268 after the fix: `unreached` count 0,
+verdict and every measured count unchanged.
+
+### 8.4 Re-validation, live, on the final committed tree (`677dbf86`)
+
+| what | verdict |
+|---|---|
+| `make -j4 CC=gcc-16` | clean (already built; `make strict` also rebuilt the objects it touched) |
+| `make strict CC=gcc-16` | clean |
+| `tests/codegen/run_prechecks.sh` | **200 / 0** |
+| `tests/registry/axes_registry_check.sh` | **123 / 0** |
+| `make test-registry CC=gcc-16` | rc=0, 0 `FAIL:` lines (PC-3 209/0, PC-4 + definitions-oracle clean) |
+| `make test-codegen CC=gcc-16` | 9/10 scripts; sole red is the standing darwin `nm arm_a.o` probe (`run_inline_capability.sh`), confirmed unrelated |
+| `tests/known_fail/run_known_fail.sh` | green, "nothing to ratchet" (the directory is empty again) |
+| `scripts/m6read_check_sab_anchors.py` | 276 sabotages / 292 anchor sites, all resolve |
+
+No full `make test` run — the manager's merge gate, per the brief. Nothing
+owed.
+
+Head commit: **`677dbf86`**. Four one-line outcomes:
+
+1. `test-known-fail` red: K34 CLOSED (genuine resolution via `[OPT-REQPOS]`
+   tier 2b, not a check-witness accident) — 11 cells live again in
+   `sr_depth.rxt`, `tests/known_fail/` empty.
+2. Flag-bit macro: `PCREC_BIT(n)` respell done, `PCREC_NO_REQ_RUN` split
+   into a `#define` (a real `-Wpedantic` finding, `make strict` unaffected),
+   both derived-table checks re-verified live at 123/0 with the SAME bit
+   list.
+3. Sabotage rows: S266/S267/S268 all DETECTED; S268's own description text
+   was tripping the trailer's `grep -c` false-positive class, fixed at the
+   wording.
+4. Re-validation: every named check green or at its documented standing
+   red; no new red anywhere.

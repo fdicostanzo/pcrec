@@ -2691,3 +2691,20 @@ never edited afterwards.
   `tests/lib/run_gen_timeout_tests.sh`, not `giveup.rxt`) was found by a
   broader grep and is flagged but not touched — out of the brief's scope
   (`grep giveup` does not reach it) and its own axis interaction unverified.
+
+- **b2fix section in `optimpl2_report.md` §8** — (2026-09-23, lane b2fix,
+  sonnet, resumed worktree `lane/optimpl2`): triage of the OWED `make
+  test` chain's known-fail red (K34 CLOSED — `[OPT-REQPOS]` tier 2b's
+  necessary-run precheck proves every match of `(a|(?1)a)` and its
+  `b`/`c`-tailed siblings ends in a fixed literal regardless of recursion
+  depth, a genuine resolution D74's own declined route had nothing to do
+  with; the 11 cells moved back to `tests/recursion/d27/sr_depth.rxt`),
+  Frank's flag-bit macro directive (`PCREC_BIT(n)` respell, plus a real
+  `-Wpedantic` finding that pulled `PCREC_NO_REQ_RUN` out of the enum into
+  a `#define` — 2^31 exceeds `INT_MAX`, a warning `make strict` does not
+  gate on but a stricter downstream build might), the three sabotage rows
+  (S266/S267/S268, all DETECTED — S268's own `SAB_DESC` prose was
+  tripping `run_sabotage_matrix.sh`'s trailer substring-match bug, fixed
+  at the wording), and full re-validation on the final tree. See the
+  report's §8 for the mechanism, the `-Wpedantic` measurement, and the
+  re-run counts.
