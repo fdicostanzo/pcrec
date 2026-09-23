@@ -1,0 +1,37 @@
+{
+ "pattern_lines": 3957,
+ "compiled": 3535,
+ "refused": 422,
+ "skip_and_no_reverse": 0,
+ "skip_total": 2305,
+ "reverse_total": 2403,
+ "by_start_x_prefilter": {
+  "vm|memchr|reverse-pass": 661,
+  "vm|byte-class|reverse-pass": 147,
+  "dfa|byte-class|reverse-pass": 424,
+  "dfa|offset-set|reverse-pass": 189,
+  "dfa|memchr|reverse-pass": 435,
+  "vm|offset-set|reverse-pass": 284,
+  "dfa|none|pinned": 217,
+  "dfa|memchr-bounded|reverse-pass": 79,
+  "dfa|none|reverse-pass": 344,
+  "dfa|byte-class-bounded|reverse-pass": 47,
+  "vm||": 412,
+  "vm|none|reverse-pass": 217,
+  "dfa|offset-set-bounded|reverse-pass": 44,
+  "vm|memchr-bounded|reverse-pass": 13,
+  "vm|offset-set-bounded|reverse-pass": 13,
+  "vm|byte-class-bounded|reverse-pass": 9
+ },
+ "skip_no_reverse_rows": [],
+ "vm_prefilter_values": {
+  "hybrid": 1344,
+  "": 1779,
+  "none": 412
+ },
+ "skip_and_seed": 54,
+ "skip_and_seed_dfa": 42,
+ "skip_and_seed_vm_hybrid": 12,
+ "pinned_with_prefilter": 0,
+ "pinned_total": 217
+}

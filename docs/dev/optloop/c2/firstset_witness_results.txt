@@ -1,0 +1,54 @@
+== [OPT-FIRSTSET] §4.5 witness run
+== pcrec: pcrec 0.1.0-beta
+
+-- (1) structured set, 72 subjects, pattern \b(?:true|false|null)\b
+   shipped vs narrowed twin:
+   16c16
+   < [atrue true]	(6,10) 	matches=1
+   ---
+   > [atrue true]		matches=0
+   20c20
+   < [afalse true]	(7,11) 	matches=1
+   ---
+   > [afalse true]		matches=0
+   24c24
+   < [anull true]	(6,10) 	matches=1
+   ---
+   > [anull true]		matches=0
+   28c28
+   < [_true true]	(6,10) 	matches=1
+   ---
+   > [_true true]		matches=0
+   32c32
+   < [_false true]	(7,11) 	matches=1
+   ---
+   > [_false true]		matches=0
+   36c36
+   < [_null true]	(6,10) 	matches=1
+   ---
+   > [_null true]		matches=0
+   40c40
+   < [9true true]	(6,10) 	matches=1
+   ---
+   > [9true true]		matches=0
+   44c44
+   < [9false true]	(7,11) 	matches=1
+   ---
+   > [9false true]		matches=0
+   48c48
+   < [9null true]	(6,10) 	matches=1
+   ---
+   > [9null true]		matches=0
+   twin disagreements: 9
+   reseed disagreements: 0
+
+-- (2) exhaustive, pattern \b(?:true|false|null)\b  alphabet 'atrue ' maxlen 8
+   twin disagreements by kind: fewer_matches=0 more_matches=0 same_count_different_span=0
+   alphabet='atrue ' maxlen=8 subjects=2015539  twin_disagree=0  reseed_disagree=0
+
+-- (2) exhaustive, pattern \b(?:ab|cd)\b  alphabet 'abcdx ' maxlen 8
+     twin     n=0
+   twin disagreements by kind: fewer_matches=552 more_matches=0 same_count_different_span=0
+   alphabet='abcdx ' maxlen=8 subjects=2015539  twin_disagree=552  reseed_disagree=0
+
+== done
