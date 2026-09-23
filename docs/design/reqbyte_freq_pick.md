@@ -785,6 +785,8 @@ designed to give and this note does not spend.
 
 ## 10. Open questions for Frank
 
+**ALL RULED 2026-09-22 ~23:2x EDT — Frank: "Agree with 15 design decisions": every recommendation below stands as the ruling** (question 3 of reqpos_2b.md was ruled separately the same hour, with the window rule).
+
 1. **Does the pick rule ship over the SHIPPED static prior now, or wait for a
    findings file?** (This note recommends now: §0 finding 2 — the prior
    already delivers all three whole-call wins, and waiting buys nothing.)

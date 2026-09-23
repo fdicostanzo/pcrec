@@ -25150,3 +25150,9 @@ advantage". D120 chartered: ONE organized pattern-analysis record read by
 every step, replacing the ad-hoc per-pass walks (the two incidents named:
 reqbyte/run/prefix_k/mrl as separate walks; the freq prior's three readers);
 plan row [PATFACTS], step 1 = inventory; TIMING TBD (Frank's word).
+
+**Frank ~23:2x: "Agree with 15 design decisions"** — every recommendation in
+reqbyte_freq_pick.md §10 and reqpos_2b.md §9 stands. [OPT-FREQPICK] filed +
+started, [OPT-REQPOS] started: ONE implementation lane (optimpl2, opus), one
+abi event 29→30, parked on its branch until the bench's I-87 window has
+closed (never merge during a measurement).

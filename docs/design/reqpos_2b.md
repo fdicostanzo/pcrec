@@ -745,6 +745,8 @@ helper.
 
 ## 9. Open questions for Frank
 
+**ALL RULED 2026-09-22 ~23:2x EDT — Frank: "Agree with 15 design decisions": every recommendation below stands as the ruling** (question 3 of reqpos_2b.md was ruled separately the same hour, with the window rule).
+
 1. **Is the verdict accepted — tier 2b BUILD, tier 2 DECLINED?** (The census
    already recommends declining tier 2; this note adds that tier 2 is not even
    a precondition for 2b, so the two are fully separable.)
