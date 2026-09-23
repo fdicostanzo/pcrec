@@ -2934,3 +2934,25 @@ never edited afterwards.
   reproduction scripts are committed beside the report (`w4_modesweep.py`'s
   precedent). Sabotage rows S269/S270 are the first two in the tree whose
   plant cannot move an answer in either direction.
+
+- `o51read_report.md` — reading pcrec-bench's O-51 against inbox asks
+  I-103/I-103a (2026-09-23, lane o51read, sonnet, docs-only): see
+  `docs/dev/optloop/cycle2_i103_reading.md` for the full reading and
+  `docs/dev/optloop/CLAUDE.md` for the archive pointer
+  (`docs/dev/optloop/runs/2026-09-23-o51-i103/`). Headline: router's
+  `(b)−(c) ≈ 0` matches I-103's EXPECT exactly (the run form is router's
+  whole pre-check cost); keyword's same delta is positive and same-order
+  across two sessions but the IQR-crossing verdict flips with single-run
+  noise (a decision-rule robustness finding, not resolved here — I-104's
+  own ask); memchr-run beats the inline scalar hand-twin on all six
+  measured cells at both 2.8%/3.2% frequency; the crossover constant does
+  not condition on two points 0.36 percentage points apart, shown and
+  stopped rather than forced. Designs (not builds) cycle 3's well-
+  separated pattern pair: no real capability pattern's run scan byte
+  clears 6% (widest real spread 0.4773%-3.2067%), so the report verifies
+  the byte-pick argmin mechanism against all 14 real run-carrying cases
+  from `src/opt/prefix_k.c`'s shipped table (14/14 exact) and uses it to
+  propose a synthetic `e`/space-run witness — `'e'` is the table's second-
+  highest-ppm entry and already occurs at 8.5212% in the EXISTING
+  throughput subjects, so no new subject text is needed. Last act: bench
+  inbox entry I-105 ("I-103 logs fetched"), releasing `/tmp/optloop5`.
