@@ -25597,3 +25597,23 @@ merged main b1a100f3 (gate.sh → scratchpad gate_6ef76820.log; ~100 min;
 expected red = the nm probe only). NO MERGES TO MAIN UNTIL ITS TRAILER.
 Live agents: none. Worktrees: none (lane/admitimpl branch kept until the
 gate is green).
+
+**GATE GREEN (15:00, 101 min on b1a100f3): build OK, strict OK, make test
+red ONLY at test-codegen's nm probe.** Size-log row committed (6cdcbb62).
+Merged after the trailer: lane/varrule (Frank's §7 Q1-Q6 rulings + D121
+addenda: no-fallback scope rule; ONE seam entry — bref_match generalized
+to pointer+length, Frank ~14:1x; the return-length redundancy note),
+lane/o51read (O-51 = I-103/I-103a's discriminator: router's run form is
+the whole cost; memchr-run beats the inline scalar hand-twin on all six
+cells at 2.8-3.2%; the crossover cannot be fitted from a 0.36-pp pair;
+keyword's IQR flip = I-104's case; I-105 sent = "I-103 logs fetched" + the
+cycle-3 crossover-pair ask: no real capability pattern's scan byte exceeds
+3.2%, so a synthetic e/space-run witness — 'e' at 8.52% in the existing
+subjects), lane/litrun (the [OPT-VMLIT] trigger read: gcc fuses only an
+explicit memcmp; the row's own population still unmeasured; stays
+not-started; manager lesson → memory `pcrec-grep-plan-before-chartering`:
+Frank: "i think we discussed ideas like this several times" — [OPT-VMLIT]/
+[WORD-FOLD]/[CLS-TREE] already held it). Frank ~14:5x: finish varmvp,
+wait out the runs, close the session (92% of the weekly token cap).
+varmvp trail: M1, M4-M8, the abi 31→32 ritual, M10 1/2 landed by 14:4x;
+the M6 one-seam-entry refactor reminded as owed; .lift created at 15:0x.
