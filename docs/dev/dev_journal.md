@@ -25413,3 +25413,16 @@ identical (8,025 cells). Fast suites green (prechecks 250/0, registry
 → the merge commit; then the darwin gate; then the bench measures it
 (acceptance: winpath-near-miss / email-nested-plus back to ~20-48 ns;
 json-array-begin one memchr).
+
+**vardesign MERGED (~10:1x):** four notes. The sharp finding: a PATTERN
+VARIABLE IS A BACKREFERENCE WITH A CALLER-SUPPLIED SPAN — vm_bref is the
+mechanism (there is no compile-time-literal memcmp in the VM to hand a
+runtime operand), so caseless comes free as the backref's own compare and
+the charter's "preprocess the value" is declined (a fold is a relation
+between two sides). Interfaces: existing entries gain a trailing vars
+parameter on var-bearing artifacts only; replace is D38's one function
+(subst_template_design.md already ruled wholesale — the replace note adds
+only the variable layer); UNSET vs EMPTY, two states; `${…}` in a pattern
+can never match today (corpus 0/4,198), so the syntax costs nothing.
+MVP = the shared expansion engine with `${name}` + `:-`/`:+`, one VM-route
+pattern variable, first/global replace. Awaits Frank's read, then a D6 panel.
