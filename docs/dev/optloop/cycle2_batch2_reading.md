@@ -776,20 +776,20 @@ up to +11.16% (search) and +41.09% (throughput, sub-100 ns baselines).
 **Findings.** Batch 2's two mechanisms both land on their own targets and
 both carry one real defect apiece, and neither defect is what O-49's
 headline names. `[OPT-FREQPICK]`'s target collapses 9.3 ms to 23.1 us on
-4 of 4 configs, predicted to 0.2% of its absolute value; tier 2b's
-forced-VM targets collapse 5.4 ms to 129 us. Of the 17 missing
-target rows, **6 are removed outright by the already-built admission fix,
-6 are the run mechanism's own defect, and 5 were at the measurement floor
-before the batch started and could not have improved.** Only **2 of 17**
-lie outside this pin pair's own null band, both `router-prefix-order`'s.
+4 of 4 configs, predicted to 0.2% of its absolute value; tier 2b's forced-VM
+targets collapse 5.4 ms to 129 us. Of the 17 missing target rows,
+**6 are removed outright by the already-built admission fix,
+6 are the run mechanism's own defect, and 5 were at the floor before the
+batch started and could not have improved.** Only **2 of 17** lie outside
+this pin pair's own null band, both `router-prefix-order`'s DFA route.
 
 **Surprises.** Three, each a prediction whose sign or scope was wrong before
 any measurement. (1) The ledger's largest movement, a 500x floor jump on
 `wild-validator-email-owasp`, is a cell the design note lists among effects
 that "are gains" -- it read an absent required byte as a one-pass answer
 without asking whether the artifact had an attempt loop to skip, and on a
-one-attempt artifact absent is the worst case. (2) The named
-no-decline-rule falsifier, `logparse-atomic`, is anchored, so the fix
+one-attempt artifact absent is worst. (2) The named no-decline-rule
+falsifier, `logparse-atomic`, is anchored, so the fix
 deletes its entire pre-check: **the cell chosen to answer the run-rate
 question has no run check left to have a rate about**, and the cell that
 can answer it (`keyword-prefix-order`, +59.7%) was never named. (3) The
