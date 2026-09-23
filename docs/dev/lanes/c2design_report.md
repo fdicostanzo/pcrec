@@ -147,5 +147,4 @@ and re-running it on the Linux reference toolchain is item 3 of that note's own
 owed list, not this lane's. The encoding round added one live check against
 the shipped compiler (`/Users/fdicostanzo/pcrec/build/pcrec`, read-only):
 `é@` and `@é` at `-e utf8` and at `byte`, stamping 64/169 exactly as §3.2
-predicts. Commits `eb28addd`, `4f8a2cc8`, `acbac885` and the encoding round's
-own. NOTHING OWED.
+predicts. Commits `eb28addd`, `4f8a2cc8`, `acbac885`, `05ae224c`. NOTHING OWED.
