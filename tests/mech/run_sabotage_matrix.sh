@@ -1260,6 +1260,30 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/prechecks.log" | grep -oE '[0-9]+')"
                 score_arm "$work/prechecks.log" "$f" "prechecks:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            vars)
+                # [VAR] M10 — module `vars`' own arm:
+                # tests/vars/run_vars_tests.sh, which is the corpus AND the
+                # quotemeta-splice oracle in one section.
+                #
+                # ITS OWN ARM rather than `harness`, and for `prechecks`'
+                # reason one construct over: what it guards is a MODULE's
+                # whole surface (the emit arm, the two seam entries, the
+                # once-per-call resolution, the five operators) and the
+                # ORACLE beside it, not an emitter property the other arms
+                # already cover. The `harness` arm would run the corpus and
+                # silently skip the oracle, which is the half that says the
+                # corpus's own expectations are right.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does
+                # not exist yet scores UNKNOWN-SUITE rather than "not
+                # detected".
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/vars/run_vars_tests.sh" \
+                    > "$work/vars.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/vars.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/vars.log" | grep -oE '[0-9]+')"
+                score_arm "$work/vars.log" "$f" "vars:${f:-ERR}fail/${p:-?}pass"
+                ;;
             vmframeless)
                 # [OPT-VMFL] STEP 0 (r51fix item 3)
                 # tests/codegen/run_vm_frameless.sh — `<PREFIX>_VM_FRAMELESS`
