@@ -86,10 +86,17 @@ append-only or historical records.
   surface is match_api_m4.md.
 - `variables_common.md` — THE COMMON VARIABLE DESIGN (2026-09-23, lane
   vardesign; **PANELED (r1, `../dev/reviews/2026-09-23-r1-var-design.md`)
-  AND REVISED same day, lane varfix** — read the panel's dispositions before
+  AND REVISED same day, lane varfix — read the panel's dispositions before
   any section; §4.2's re-homing argument, §0.2's corpus count, §1.4's
   `${!name}` derivation, §3.1's ABI-family attribution and §1.7's D80
-  obligation all moved), the shared half of the three-note set
+  obligation all moved. THEN RULED ON THE OPEN MECH-B2 BLOCKER same day,
+  lane varnames: §3 (the call interface) is REWRITTEN — variables are
+  passed BY NAME (`rx_var` gains a `name` field; a resolver callback is
+  still declined, but the "no run-time lookup" claim below is FALSE under
+  the ruling and §3.2's title changed to say so), and the array rides
+  `rx_ctx` (§3.3) rather than a new `<prefix>_match` parameter, which is
+  what resolves MECH-B2 without `variables_pattern.md` needing its own
+  fixed-literal `rx_varmatchfn` typedef**), the shared half of the three-note set
   Frank chartered that day: one expansion grammar `${ [scope] selector
   [operator word] }` serving two consumers, a pattern (`variables_pattern.md`)
   and a replacement template (`replace_design.md`), phased by
@@ -128,21 +135,29 @@ append-only or historical records.
   under D26, all five departures tier 3. §2.4 is the DELIBERATE ASYMMETRY in
   the unset default, argued from blast radius: empty in a replacement (wrong
   output — visible, recoverable), refused in a pattern (a WIDER LANGUAGE —
-  silent, and on a security boundary). §3 rules out a resolver callback with
-  a sharper reason than simplicity — the names are known at compile time, so
-  there is no run-time lookup to choose an implementation for, and D23's
-  measured 26% run-time-fold indirection is the precedent for what asking at
-  run time costs. §4.2 is the load-bearing rule: **a value is matched
-  literally, always, with no opt-in**, and a pattern-valued variable is not
-  deferred but RE-HOMED to `[LIB]`/definitions (D85/D87/D89), where it is
-  already designed.
+  silent, and on a security boundary). §3 (REWRITTEN by the 2026-09-23
+  ruling above) still rules out a resolver CALLBACK, but for a sharper
+  reason than the withdrawn "no run-time lookup exists" claim — a callback
+  would put an indirect call on the same per-call boundary a by-name array
+  already resolves inline; variables ARE resolved at run time now, once per
+  call by a linear name scan, because an index is meaningless across
+  separately compiled artifacts, and D23's measured 26% run-time-fold
+  indirection is the precedent for why that per-call cost does not
+  transfer into a per-position one. §4.2 is the load-bearing rule: **a
+  value is matched literally, always, with no opt-in**, and a
+  pattern-valued variable is not deferred but RE-HOMED to `[LIB]`/
+  definitions (D85/D87/D89), where it is already designed.
 - `variables_pattern.md` — PATTERN VARIABLES (2026-09-23, lane vardesign;
   **PANELED (r1) AND REVISED (lane varfix, same day) — the central claim
   HELD; §3's prefilter decline needed a third predicate the note had not
-  named (a BLOCKER), §4's `<prefix>_match`/`rx_matchfn` conflict is OPEN to
+  named (a BLOCKER), §4's `<prefix>_match`/`rx_matchfn` conflict was OPEN to
   Frank (boxed at the top of §4), and §2's forced-audit-site census was
-  corrected from 5 files to 44 sites/17 files** — read the panel's
-  dispositions before any section), `[FEAT-VAR]`'s design. **The central
+  corrected from 5 files to 44 sites/17 files — read the panel's
+  dispositions before any section. THEN RULED same day (lane varnames): the
+  `[OPEN-FRANK]` box is replaced by a `[RATIFIED]` one — variables ride
+  `rx_ctx` (appended `vars`/`nvars`), NOT a new `<prefix>_match` parameter,
+  so `rx_matchfn` stays untouched and §4.1-§4.3 are rewritten to that
+  shape**), `[FEAT-VAR]`'s design. **The central
   claim: a pattern variable IS a backreference whose span comes from the
   caller instead of from
   `slot_values[]`.** §1 establishes it by reading the emitter: the VM has no

@@ -222,15 +222,23 @@ The charter says "I think we support that." The precise state of the tree:
   user-data question into the `rx_callout_ref` binding unit.
 
 What the variable layer adds is one line: a renderer should also see the
-caller's environment. **[PROPOSED]** it does, by the same route the captures
-take — the `rx_ctx` the renderer already receives gains nothing, and the
-renderer reads variables through `ctx->user` if it needs them, because a
-renderer that wants the environment is a renderer the *embedder* wired to it.
-Adding a `vars` member to `rx_ctx` would change a fixed-literal ABI type
-shared by every artifact to serve the minority that needs it — the exact
-change D38 §1.1 recorded Frank rejecting ("ouch").
+caller's environment. **[RATIFIED — Frank 2026-09-23]** it does, and §5 Q2
+below is now ANSWERED rather than open, by the same ruling that resolved
+MECH-B2 on the pattern side (`variables_common.md` §3.3): `rx_ctx` gains
+`vars`/`nvars` as two fields APPENDED at the end — a per-*call* field, not
+the per-*binding* one `user` is — so a renderer reading `const rx_ctx *ctx`
+sees `ctx->vars`/`ctx->nvars` directly, with no route through `ctx->user`
+needed at all. This is the same fixed-literal ABI type every artifact
+already shares, appended once rather than substituted, which is what makes
+it NOT the change D38 §1.1 recorded Frank rejecting: that rejection was
+about a per-call `user` PARAMETER threading a second, inconsistent way for
+data to reach a callout alongside `user`'s own per-binding arrival, not
+about `rx_ctx` gaining a new field outright. A var-free artifact's
+`rx_renderfn` callers see `ctx->nvars == 0` and read nothing further.
 
-**[OPEN]** §5 Q2 records the alternative.
+The withdrawn draft below is retained as the record of what was proposed
+before the ruling (`ctx->user`, in the meantime) — it is superseded, not
+merely an alternative.
 
 ### 3.2 Case transforms
 
@@ -462,25 +470,40 @@ end, and it is the pre-flight call.
 
 ### 4.2 Variables on the entry
 
-**[PROPOSED]**, by the same rule the pattern side takes, so that there is one
-rule and not two:
+**[RATIFIED — Frank 2026-09-23]**, by the same rule the pattern side takes
+(`variables_common.md` §3.1-§3.3; `variables_pattern.md` §4), so that there
+is one rule and not two — and by the manager's default extension of it to
+this entry (`variables_common.md` §3.3's caller-buffer-siblings precedent):
 
 ```c
 int rx_subst(const unsigned char *s, size_t n,
              unsigned char *out, size_t *outlen,
-             const rx_var *vars);
+             const rx_var *vars, size_t nvars);
 ```
 
-The parameter appears **only on artifacts whose template names a variable**,
-which is D18's rule unchanged (a fixed choice is compiled away) and which
-means a variable-free substituter is byte-identical to the ruled surface. The
-index macros are shared with the pattern side: one `<PREFIX>_NVARS`, one
-`<PREFIX>_VAR_<NAME>` per name, over the union of the names the pattern and
-the template mention — which is the right union, because a single artifact can
-carry both a pattern variable and a template variable and they should share a
-namespace and an array.
+`rx_subst` is not `rx_ctx`-shaped — it takes no context struct to append
+`vars`/`nvars` to — so it takes the pair directly, the same shape
+`variables_pattern.md` §4.1 gives `rx_search` and its `_in` siblings rather
+than the shape `rx_match` keeps (unchanged, because `rx_match` **is**
+`rx_ctx`-shaped and carries the array through its context instead — the
+ruling that resolved MECH-B2, `variables_common.md` §3.3). The pair
+appears **only on artifacts whose template names a variable**, which is
+D18's rule unchanged (a fixed choice is compiled away) and which means a
+variable-free substituter is byte-identical to the ruled surface.
 
-`vars` goes last, after `outlen`, so the ruled parameter positions do not move.
+Each `rx_var` now carries a `name` (`variables_common.md` §3.1); the
+artifact resolves its own mentioned names against the supplied array once
+per call, at entry, before the match+splice begins (§3.2's mechanism) — a
+caller no longer writes to a compile-assigned index. The internal index
+macros are still shared with the pattern side: one `<PREFIX>_NVARS`, one
+`<PREFIX>_VAR_<NAME>` per name, over the union of the names the pattern and
+the template mention — the right union, because a single artifact can carry
+both a pattern variable and a template variable and they should share a
+namespace and one resolved table — but, per the ruling, these are the
+artifact's own INTERNAL bookkeeping, never what a caller writes.
+
+`vars`/`nvars` go last, after `outlen`, so the ruled parameter positions do
+not move.
 
 ### 4.3 First and global
 
@@ -513,6 +536,16 @@ file, always.** Composition is linking, never a multi-pattern translation
 unit. So several templates over one matcher is several entry points in one
 file (one artifact), and several *patterns* is several files.
 
+**One consequence of §4.2's ruling worth stating for this packaging claim.**
+`rx_subst_redact` and `rx_subst_expand` sharing one matcher each carry their
+OWN `vars, nvars` pair (§4.2) — the pair is per-ENTRY, resolved by that
+entry alone at call time, not a value bound once for the whole artifact.
+Two templates over one pattern that mention different variable sets do not
+force either call site to supply more than it needs, even though the
+artifact's own internal index table (`variables_pattern.md` §4.3 covers the
+pattern side's; this side shares it, §4.2 above) is sized to the union of
+every name either side mentions.
+
 ---
 
 ## 5. Open questions
@@ -527,13 +560,13 @@ ruled by D38 are not re-opened here.
    generally and this is the extension with the widest reach; the remaining
    namespace after it is still large.
 
-2. **Does a renderer see the variable environment directly?** §3.1 routes it
-   through `ctx->user`, refusing to add a member to a fixed-literal ABI type
-   shared by every artifact. The alternative is a `vars` member on `rx_ctx`,
-   which is a D38 §1.1-shaped decision ("it changes the signature for every
-   caller to serve the minority that needs it") and belongs on the ABI side,
-   ruled once, not twice. *Recommend: rule it in `design_callout_abi.md`, and
-   `ctx->user` in the meantime.*
+2. **~~Does a renderer see the variable environment directly?~~ RULED**
+   (Frank, 2026-09-23, §3.1 above): yes, automatically — `rx_ctx` gains
+   `vars`/`nvars` as appended fields (`variables_common.md` §3.3), so a
+   renderer receiving `const rx_ctx *` already has them, with no route
+   through `ctx->user` needed. Ruled once, on the ABI side
+   (`variables_common.md` §3.3), exactly as this question anticipated it
+   would be rather than twice.
 
 3. **The counter's spelling.** §3.5 proposes a reserved *variable name* rather
    than a new operator, to avoid colliding with bash's `${#name}` length

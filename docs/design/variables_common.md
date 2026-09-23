@@ -396,73 +396,170 @@ that the silent-and-widening failure gets the loud default.
 
 ### 3.1 The type
 
-**[PROPOSED]**, one fixed-literal ABI type, never `--prefix`-scoped, joining
-the family of fixed-literal ABI types: `rx_ctx`, `rx_matchfn`, `rx_callout_ref`
-(fixed at D41 ruling 1, cited as D41.1) and `rx_info`, `rx_group_entry`
-(fixed later, at D43 and D44 respectively — see `match_api_m4.md`'s own
-changelog):
+**[RATIFIED — Frank 2026-09-23]**, one fixed-literal ABI type, never
+`--prefix`-scoped, joining the family of fixed-literal ABI types: `rx_ctx`,
+`rx_matchfn`, `rx_callout_ref` (fixed at D41 ruling 1, cited as D41.1) and
+`rx_info`, `rx_group_entry` (fixed later, at D43 and D44 respectively — see
+`match_api_m4.md`'s own changelog):
 
 ```c
 typedef struct {
+    const char          *name; /* NUL-terminated; the pattern's own spelling
+                                   of the name */
     const unsigned char *p;    /* NULL == UNSET; see §2.2 */
     size_t               len;  /* bytes; 0 with p != NULL == EMPTY */
 } rx_var;
 ```
 
-Two members, no flags word. The charter asks about a `flags` field; **[OPEN]**
+Three members, no flags word. **This is Frank's 2026-09-23 ruling, and it
+overturns §3.2's own original premise** ("the array, and there is nothing to
+resolve"): variables are passed BY NAME. The compile-time index macros this
+note originally proposed as the caller's ABI (`RX_VAR_PREFIX` and its
+siblings) cannot serve that role, because indices cannot be aligned across
+SEPARATELY COMPILED artifacts — a caller filling `vars[RX_VAR_PREFIX]` for
+one artifact has no way to know that the same index means the same name in
+a second, independently compiled artifact composed alongside it (§3.3's own
+composition case; an artifact invoked as a callout exists precisely for
+composing pieces the outer artifact was compiled with no knowledge of, or
+for a bind-time choice of the inner artifact — in every such case the inner
+artifact's layout is unknown to the outer at compile time). A name is the
+only key both sides can agree on without coordinating a shared compile-time
+fact; an enum is an index in disguise. §3.2 below carries the ruling's
+argument in full and rewrites the array-vs-resolver answer accordingly; the
+index macros SURVIVE, but only as the artifact's own INTERNAL indices into
+its resolved table (§4.3's stamps in `variables_pattern.md`), never as
+something a caller writes.
+
+The charter asks about a `flags` field; **[OPEN]**
 §7 Q1 records what one would be for, and the MVP does not have it, because
 every candidate use (declare-non-empty, declare-a-pattern, declare-prefolded)
 is a *compile-time* property of the use site, not a per-call property of the
 value — and a compile-time property belongs in the pattern text where the
 reader can see it, not in a caller's array where they cannot.
 
-### 3.2 Array or resolver? The array, and there is nothing to resolve
+### 3.2 Array or resolver? The array, resolved BY NAME, once per call
 
-The charter asks the question as array-versus-callback and notes the array is
-a resolver. **[PROPOSED]** the array, and the callback is not built — but the
-reason is sharper than "the array is simpler":
+**[RATIFIED — Frank 2026-09-23]**, overturning this section's own original
+premise. The charter asks the question as array-versus-callback and notes
+the array is a resolver; the first draft answered "the array, and there is
+nothing to resolve," on the argument that the emitter assigns every
+mentioned name a compile-time index and the caller writes
+`vars[RX_VAR_PREFIX]` with no string comparison anywhere at match time.
+**That argument is false, and the reason is a coordination problem, not a
+performance one: the artifact knows its own names, but not the caller's
+layout.** An index is meaningful only inside the artifact that assigned it.
+Two separately compiled artifacts — the ordinary case, since composition
+exists precisely for pieces compiled with no knowledge of each other's
+layout (§4.2's re-homing argument for a pattern-valued variable makes the
+same point from the opposite direction) — cannot agree that index 0 names
+the same variable, and a caller juggling two different artifacts' index
+tables by hand would be re-deriving the compiler's own bookkeeping outside
+the compiler.
 
-**The names are known at compile time, so no name lookup exists at run time to
-choose an implementation for.** The emitter sees every name the pattern or
-template mentions, assigns each an index, and emits both the count and the
-index macros:
+So the design is **the array, resolved BY NAME** — still an array, not a
+callback, and the charter's array-versus-resolver framing was never really
+about names versus indices. A caller still fills a flat `rx_var[]` with no
+indirect call anywhere:
 
 ```c
-#define RX_NVARS 2
-#define RX_VAR_PREFIX 0
-#define RX_VAR_SUFFIX 1
+rx_var vars[] = {
+    { "prefix", buf,  n  },
+    { "suffix", buf2, n2 },
+};
 ```
 
-The caller writes `vars[RX_VAR_PREFIX] = (rx_var){ buf, n };` — an index the
-C compiler checks, with no string comparison anywhere at match time. That is
-the same AOT win `subst_template_design.md` §4 claims for `$n` (resolved and
-bounds-checked at build time) and the same shape `rx_info.groups` already
-uses for name → number, one surface over.
+What changes from the withdrawn draft is what each entry carries and when
+the artifact reads it:
 
-A resolver callback would put an indirect call on the hot path to answer a
-question the compiler already answered. D23's measured precedent is the one
-to cite: a run-time fold indirection cost **26%** on a pattern with no letters
-in it — the cost of asking at run time what could be decided at compile time,
-paid by callers who never use the feature. A caller whose environment really
-is dynamic fills the array from it once per call, which is the same work
-performed outside the matcher where it does not repeat per position.
+- **Compile time, unchanged.** The emitter still knows every name the
+  pattern or template mentions (typically 1-3) and still emits a small
+  static table of them (`#define RX_NVARS 2` and the like) — this part of
+  the original argument survives.
+- **Once per entry call, before the match loop — new.** The artifact scans
+  the caller-supplied array for each of ITS OWN mentioned names — length
+  check then `memcmp`, FIRST MATCH WINS on a duplicate name in the caller's
+  array (§3.4) — resolving each into a small stack array of `(p, len)`
+  pairs. The match loop itself is unchanged: it still reads a
+  compile-time-indexed local (`RX_VAR_PREFIX` now names that internal
+  slot, not anything the caller writes). Only the boundary between "the
+  caller's array" and "the artifact's own index" moved — from a
+  compile-time-shared index (unsound across separately compiled artifacts)
+  to a run-time name resolution the artifact performs once on entry and
+  never again per position.
+- **The hot path is unaffected.** §1's span compare already reads from a
+  small resolved local, not from the caller's array directly — the
+  resolution above happens once, upstream of the scan the mechanism
+  performs at every position it is reached. D23's measured **26%**
+  run-time-fold-indirection cost is a PER-POSITION indirection; this is a
+  PER-CALL one over a handful of short names, and the precedent that
+  justified declining a resolver callback in the withdrawn draft does not
+  transfer to this cost the way that draft implied.
 
-**[PROPOSED]** the resolver form is declined with a named re-open condition
-rather than forever: a measured case where the *set* of names is not known
-until run time. Such a case is not expressible in this design at all (a name
-the compiler never saw has no index), so re-opening it re-opens §4.2's
-literal-only rule too. They are one question.
+**[RATIFIED — Frank 2026-09-23]** LINEAR SCAN ONLY. A sorted search or a
+hash table waits on a measured need (D77): the set size is 1-3 names in
+every case this design has looked at, and a length-check-then-`memcmp` scan
+of a few short strings is not a mechanism to optimize ahead of a
+measurement.
+
+A resolver CALLBACK — the charter's other named alternative — stays
+declined, and for the sharper reason above rather than the withdrawn
+draft's "the compiler already answered this": a callback would put an
+INDIRECT CALL on the same per-call boundary the by-name array already
+resolves inline with a few comparisons, buying nothing a caller could not
+get by filling the array themselves. **[PROPOSED]** the resolver form
+stays declined with the same named re-open condition as before: a measured
+case where the *set* of names is not known until run time. Such a case is
+not expressible in this design at all (a name the compiler never saw has no
+compile-time table entry to resolve against), so re-opening it re-opens
+§4.2's literal-only rule too. They are one question.
 
 ### 3.3 Where the array is passed
 
-`variables_pattern.md` §4 and `replace_design.md` §3 settle this per consumer,
-and they reach the same answer by the same precedent, so it is stated once
-here:
+**[RATIFIED — Frank 2026-09-23]**, overturning this section's own original
+answer. `variables_pattern.md` §4 and `replace_design.md` §3 settle this per
+consumer; the shared rule stated once here changed with the ruling.
 
-**The entry point of a variable-bearing artifact gains a `const rx_var *vars`
-parameter. No new entry point, and no bound state.**
+**The array rides `rx_ctx`: TWO FIELDS APPENDED AT THE END —
+`const rx_var *vars; size_t nvars;`. `rx_matchfn` is UNTOUCHED, and a
+composed call passes the ctx through unchanged.** This is what resolves
+MECH-B2, the D6 panel's blocker (`docs/dev/reviews/2026-09-23-r1-var-design.md`,
+boxed at the top of `variables_pattern.md` §4): `<prefix>_match` **is**
+`rx_matchfn`, a fixed-literal ABI type shared by every artifact, and the
+withdrawn draft's `const rx_var *vars` entry PARAMETER would have made a
+var-bearing artifact's `<prefix>_match` no longer an `rx_matchfn` — the
+identical harm D38 rejected for a per-call `user` parameter, narrowed to
+var-bearing artifacts rather than every one. Appending to `rx_ctx` instead
+means `rx_matchfn`'s signature — and every already-compiled caller of it —
+is untouched by construction, and a matcher composed as a callout or a
+submatcher receives the outer's `vars`/`nvars` simply because it already
+receives the outer's `ctx`.
 
-Three reasons, all of them citations rather than preferences:
+**This does not reopen the objection the withdrawn entry-parameter draft
+raised against riding `rx_ctx` (retained below as reasons 1-3).** Those
+reasons argue against a BOUND STATE — a handle set once and read implicitly
+on every later call — which is a real hazard `rx_ctx.user`'s per-*binding*
+semantics also has to respect. A `vars`/`nvars` pair appended to `rx_ctx` is
+not that: it is an ordinary per-*call* field, filled fresh on every call
+exactly as `ctx->caps`/`ctx->subject` already are, so it is not reached by
+the argument that refused a bound handle or by D38's refusal of a second,
+inconsistent way for per-call data to reach the engine alongside `user`'s
+per-binding one.
+
+**Top-level entries (the `<prefix>_search` family) of a var-bearing
+artifact take the same pair by the caller-buffer-siblings precedent** —
+`docs/spec/match_api.md`'s own `<prefix>_search_in` = the un-suffixed twin
+plus a final caller-buffer descriptor is the existing precedent for a
+per-artifact entry gaining a trailing parameter present exactly when
+meaningful (D18). **[PROPOSED]** the manager's default: the var-bearing
+artifact's un-suffixed entries gain a trailing
+`const rx_var *vars, size_t nvars` pair (present exactly when meaningful).
+**The exact spelling is [PROPOSED], not ruled** — an `_in`-style descriptor
+folding the pair in instead of a bare trailing pair is a live alternative,
+named here in one line rather than chosen.
+
+**The three reasons below explain why a BOUND state is refused; they are
+unchanged by the ruling** (riding `rx_ctx` as an ordinary per-call field is
+not a bound state):
 
 1. **A bound state would be mutable state.** `docs/spec/match_api.md` §5.3 is
    a binding contract, not an observation: a generated matcher holds none.
@@ -480,9 +577,12 @@ Three reasons, all of them citations rather than preferences:
    each call has its own buffer") extends by one noun.
 
 It is caller-observable, so it is an `abi` event with a `docs/spec/` hunk in
-the same change (D80), a stamp (`<PREFIX>_NVARS`, and `rx_info.nvars`
-appended at the end of the struct per §6's rule), and the D94 grep ritual over
-every reader of the number.
+the same change (D80), a stamp (`<PREFIX>_NVARS` on the artifact's own
+internal-index table, and `rx_info.nvars` appended at the end of the struct
+per §6's rule), and the D94 grep ritual over every reader of the number —
+now widened, since this lands as a struct-layout event on `rx_ctx` itself
+rather than a per-artifact signature change, so every site that reads
+`rx_ctx`'s layout is in scope.
 
 ### 3.4 What a missing variable does
 
@@ -536,15 +636,30 @@ under the artifact's own encoding and reuse the existing quoted-subject
 escape set (`docs/spec/rxt_format.md`'s five-escape TSV-framing subset) —
 no second escape vocabulary.
 
-**Name resolution is by NAME, through `rx_info`'s variable-names table**
-(§3.3's stamps, promoted into the MVP by `[VAR]`'s D6 panel): the driver
-looks up a case's `var name` against the artifact's own compiled
-`RX_VAR_<NAME>` index set, the same shape `rx_info.groups` already gives a
-name-indexed consumer for capture groups. This is the only route available —
-`docs/spec/rxt_format.md`'s `driver.c` is one static file, compiled fresh per
-test case but never templated per pattern, so it cannot reference a
-compile-assigned macro name it does not know at its own compile time, and a
-per-case driver-codegen alternative is not proposed.
+**[RATIFIED — Frank 2026-09-23]** Name resolution is by NAME, and it now
+happens INSIDE THE ARTIFACT, not in the driver — the ruling in §3.1-§3.2
+above simplifies this directive's implementation rather than complicating
+it. The driver builds an `rx_var[]` array directly from a case's
+`var name "value"` / `var-unset name` lines — one entry per line, `name`
+copied verbatim into the entry's `rx_var.name` field — and passes it
+through unconditionally (`rx_ctx.vars`/`rx_ctx.nvars`, §3.3). It performs NO
+lookup of its own against any compiled index: `docs/spec/rxt_format.md`'s
+`driver.c` is one static file, compiled fresh per test case but never
+templated per pattern, so it never needed to (and, under the WITHDRAWN
+index-based draft, could not have) referenced a compile-assigned macro name
+it does not know at its own compile time. The artifact resolves its own
+mentioned names against whatever the driver supplied, the same way it
+resolves any other caller's array.
+
+**`rx_info`'s variable-names table (§3.3's stamps, promoted into the MVP by
+`[VAR]`'s D6 panel) now does DOUBLE DUTY as a validation aid rather than a
+load-bearing lookup route.** A driver — or any caller — MAY consult it to
+catch a typo in a `.rxt` case's `var name` line before the call (the
+`rx_info.groups` precedent for capture-group names), but nothing in the
+match path depends on that check running: the artifact's own entry-time
+resolution (§3.2) is authoritative regardless. This is a SMALLER obligation
+on `driver.c` than the withdrawn index-based design placed on it — no
+per-case NAME→INDEX resolution machinery is needed there at all.
 
 **The SPELLING above is the manager's call, not this note's** (memory
 `pcrec-dd13b-syntax-is-managers`): the two production names, the block-scoped
@@ -660,13 +775,19 @@ away believing otherwise.
 
 ### 4.3 What the caller still owes
 
-Two obligations pcrec cannot discharge, stated so they are in the contract
-rather than discovered:
+Three obligations pcrec cannot discharge, stated so they are in the contract
+rather than discovered — the third new with the by-name ruling above:
 
 - **Lifetime.** `rx_var.p` must stay valid for the duration of the call. This
   is F9's rule for `rx_ctx.caps` (`design_callout_abi.md` §5) pointed the
   other way, and like F9 it is the embedder's bug when violated, with nothing
   in the generated code detecting it.
+- **`rx_var.name`'s lifetime is the same rule, one field over.** It, too,
+  must stay valid for the duration of the call — the resolution scan (§3.2)
+  reads it during entry, not only at array-construction time. A caller who
+  passes a `name` pointer that is freed between filling the array and
+  calling the artifact has the identical bug class as an `rx_var.p` freed
+  early, and the same absence of detection in generated code.
 - **NUL.** A value may contain `0x00`; pcrec is 8-bit clean and the length is
   the contract, exactly as D38 Q4 ruled for substitution output. The caller
   passing a `strlen`-derived length over data that contains a NUL is the
@@ -722,10 +843,11 @@ optimistic.
 
 Numbered for reference; recommendations are this note's, not rulings.
 
-1. **Does `rx_var` carry a `flags` word?** §3.1 ships two members. Every
-   candidate flag is a compile-time property of the *use site*, which belongs
-   in the pattern text where a reader can see it. *Recommend: no flags; a
-   per-use-site declaration syntax if a phase ever needs one.*
+1. **Does `rx_var` carry a `flags` word?** §3.1 ships three members
+   (`name`, `p`, `len`). Every candidate flag is a compile-time property of
+   the *use site*, which belongs in the pattern text where a reader can see
+   it. *Recommend: no flags; a per-use-site declaration syntax if a phase
+   ever needs one.*
 
 2. **Is `${!name}` spent here?** §1.4 spends D38's reserved extension prefix
    on "the caller's environment," which is one use of a namespace ruled for

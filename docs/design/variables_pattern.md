@@ -142,14 +142,21 @@ swapped:
 
 ```c
     took = rx_var_match(subject, subject_length,
-                        vars[RX_VAR_PREFIX].p, vars[RX_VAR_PREFIX].len,
+                        rvars[RX_VAR_PREFIX].p, rvars[RX_VAR_PREFIX].len,
                         scan_position);
     if (took < 0) goto rx_fail;
     scan_position += (size_t)took;
 ```
 
-That is the whole instruction. No new opcode family, no new dispatch, no new
-`VEKind` beyond a listing event for `--emit-ir` (§4.4).
+`rvars` here is the small stack array the entry wrapper RESOLVED at
+`ctx->vars`/`ctx->nvars` before the match loop began (`variables_common.md`
+§3.2), indexed by the artifact's OWN internal `RX_VAR_PREFIX` — never the
+caller's array, which under the 2026-09-23 by-name ruling carries `name`
+fields and is not itself index-addressable. The match loop's instruction is
+otherwise unaffected by the ruling: it reads a compile-time-indexed local
+exactly as this section always described. That is the whole instruction. No
+new opcode family, no new dispatch, no new `VEKind` beyond a listing event
+for `--emit-ir` (§4.4).
 
 ### 1.4 The AST kind
 
@@ -344,57 +351,65 @@ bottleneck and the placement rule's precondition holds.
 
 ## 4. The call interface
 
-> **[OPEN-FRANK]** §4.1's proposal below makes `<prefix>_match` and
-> `<prefix>_match_caps` gain a `const rx_var *vars` parameter — but
-> `<prefix>_match` **is** `rx_matchfn`, a fixed-literal ABI type shared by
-> every artifact (`docs/spec/match_api.md:915-918` declares
-> `ptrdiff_t rx_matchfn(const rx_ctx *ctx); ptrdiff_t <prefix>_match(const
-> rx_ctx *ctx);`, emitted unconditionally at `src/gen/emit_dfa.c:1013`, and
-> `match_api.md:1238`/`lib/pcrec.h:1326` bind the unprefixed spelling to
-> composability — installing `<prefix>_match` as a callout (`rx_callout_ref.
-> fn`) or invoking it as a composed submatcher across differently-prefixed
-> generated matchers). §4.1 makes a var-bearing artifact's `<prefix>_match`
-> **no longer an `rx_matchfn`** — a narrower version of the exact harm D38
-> rejected in the sentence §4.2 itself quotes approvingly ("it changes
-> `rx_matchfn`'s signature for every caller"), scoped to var-bearing
-> artifacts rather than all of them, and the note does not currently mark
-> the tension. §4.1 and §4.2 as written contradict each other.
+> **[RATIFIED — Frank 2026-09-23]** MECH-B2 (the D6 panel's blocker,
+> `docs/dev/reviews/2026-09-23-r1-var-design.md`) is RESOLVED. The box this
+> replaces recorded the contradiction: §4.1's withdrawn draft gave
+> `<prefix>_match` a `const rx_var *vars` parameter, but `<prefix>_match`
+> **is** `rx_matchfn`, a fixed-literal ABI type shared by every artifact
+> (`docs/spec/match_api.md:915-918`; `match_api.md:1238`/`lib/pcrec.h:1326`
+> bind the unprefixed spelling to composability), so that draft made a
+> var-bearing artifact's `<prefix>_match` **no longer an `rx_matchfn`** —
+> the identical harm D38 rejected for a per-call `user` parameter, narrowed
+> to var-bearing artifacts rather than all of them.
 >
-> **The manager's recommended option, for Frank to rule on:** a var-bearing
-> artifact's match entry gets its own fixed-literal typedef,
-> `rx_varmatchfn` (`rx_matchfn`'s shape plus the trailing `vars` parameter),
-> declared alongside `rx_matchfn` and named in `rx_info`/the artifact's
-> stamp; a var-bearing artifact is **not** a composable submatcher or
-> callout target in the MVP — declined, with a named re-open condition: a
-> measured need to compose a var-bearing artifact as a callout or
-> submatcher. Alternatives, one line each: **(a)** vars ride `rx_ctx`
-> instead — rejected by this note's own §4.2 per-binding argument (a
-> variable environment is per-*call* input, not per-*binding* state); **(b)**
-> a separate `<prefix>_match_vars` entry beside an unmodified,
-> `rx_matchfn`-shaped `<prefix>_match` that simply refuses on a var-bearing
-> pattern — two entries per var-bearing artifact, D18's cost for keeping one
-> code path per axis.
+> **Frank ruled: variables ride `rx_ctx` instead — two fields appended at
+> the end, `const rx_var *vars; size_t nvars;` — so `rx_matchfn` is
+> UNTOUCHED and a composed call passes the ctx through unchanged.**
+> `variables_common.md` §3.1-§3.3 carries the ruling's full argument
+> (`rx_var` gaining a `name` field, by-name resolution once per call, why
+> appending to `rx_ctx` is not the per-binding hazard the withdrawn
+> alternative-(a) line below worried about). §4.1 and §4.3 below are
+> rewritten to this shape. Of the two named alternatives the box offered,
+> neither is what was ruled: **(a)** ("vars ride `rx_ctx` instead") is the
+> shape actually chosen, but the manager's stated objection to it — that
+> this note's own per-binding argument rejects it — turned out not to
+> apply, because a `vars`/`nvars` pair is per-*call* state appended
+> alongside `caps`/`subject`, not per-*binding* state the way `user` is;
+> **(b)** (a separate `<prefix>_match_vars` entry) and the manager's own
+> `rx_varmatchfn` recommendation are both DECLINED, superseded by the
+> `rx_ctx`-append shape, which needed no second entry point or typedef at
+> all.
 
 ### 4.1 The shape
 
-**[PROPOSED]**, and the argument is `variables_common.md` §3.3's, which is not
-repeated: **the artifact's existing entry points gain a `const rx_var *vars`
-parameter. No new entries, no `rx_bind`, no bound state.**
+**[RATIFIED — Frank 2026-09-23]**, and the argument is
+`variables_common.md` §3.2-§3.3's, not repeated here: **the array rides
+`rx_ctx`. No new entries, no `rx_bind`, no bound state, and — unlike the
+withdrawn draft — no change to `rx_matchfn`'s own signature.**
 
 ```c
 #define RX_NVARS       1
-#define RX_VAR_PREFIX  0
+#define RX_VAR_PREFIX  0   /* the artifact's OWN internal index into its
+                               resolved table; never written by a caller —
+                               variables_common.md §3.1-§3.2 */
 
 int       rx_search    (const unsigned char *s, size_t n, size_t startpos,
-                        ptrdiff_t (*caps)[2], const rx_var *vars);
-ptrdiff_t rx_match     (const rx_ctx *ctx, const rx_var *vars);
-ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2],
-                        const rx_var *vars);
+                        ptrdiff_t (*caps)[2],
+                        const rx_var *vars, size_t nvars);
+ptrdiff_t rx_match     (const rx_ctx *ctx);
+ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
 ```
 
 and identically for the three `_in` siblings, so the caller-buffer feature
-([DD-14.FB]) composes rather than conflicting. `vars` is last so the `_in`
-descriptor's position is unchanged in the sources of anyone reading both.
+([DD-14.FB]) composes rather than conflicting. `rx_match`/`rx_match_caps`
+take **no new parameter at all** — `ctx->vars`/`ctx->nvars` is where the
+array lives, exactly as `ctx->caps` already is, which is what keeps
+`<prefix>_match` an `rx_matchfn` byte for byte. `rx_search` and its `_in`
+siblings are not `rx_ctx`-shaped (`variables_common.md` §3.3's
+caller-buffer-siblings precedent), so they take the pair as a trailing
+`vars, nvars` argument, present only on a var-bearing artifact; `vars` is
+last so the `_in` descriptor's own position is unchanged in the sources of
+anyone reading both.
 
 **Why a bound state is refused, in one line each:** `docs/spec/match_api.md`
 §5.3 is a *binding contract on future emitters* that a generated matcher holds
@@ -404,30 +419,34 @@ would be mutable state or thread-local, and thread-local fails reentrancy. A
 `rx_bind(vars)` handle is that refusal's exact shape one noun over.
 
 **Thread safety** therefore needs no new rule, only one more noun in §5.3's
-existing one: concurrent calls are fine provided each has its own `caps` array
-**and its own `vars` array**. The artifact still holds nothing.
+existing one: concurrent calls are fine provided each has its own `ctx`
+**and its own `vars` array reachable through it**. The artifact still holds
+nothing.
 
 **[PROPOSED]** the descriptor's memory-safety precondition, stated explicitly
 because it is caller data rather than structural. `bref_match`'s precondition
 is *structural*: `ref_start <= ref_end <= n` holds because the caller passes a
 PUBLISHED capture pair, and a published pair is ordered by construction
 (`enc_byte.c:113-116`). `$_var_match(s, n, v, vlen, at)`'s `v`/`vlen` have no
-such construction — they are caller fields, and `variables_common.md` §2.2's
-`p == NULL` vs `len == 0` spelling leaves the pair `p == NULL && len > 0`
-unspecified. The contract: **`p == NULL` implies `len` is ignored** (UNSET is
-determined by `p` alone), so a caller-supplied `len` on a NULL `p` is never
-read and never a null-deref hazard — the artifact checks `p` first, at the
-entry wrapper, before any use of `len`, the same refusal shape
-`PCREC_ERR_UNSET_VAR` already gives a bare `${name}`. `${name:-}` admitting an
-UNSET value into the match path (§5) still resolves to a concrete, non-NULL
-zero-length span by the time it reaches `$_var_match`, since the expansion
-half (`variables_common.md` §5) runs before the seam entry is called.
+such construction — they are caller fields, resolved once per call at entry
+by `variables_common.md` §3.2's mechanism, from an array whose entries now
+also carry a `name`. On the RESOLVED `(p, len)` pair the match loop reads,
+`variables_common.md` §2.2's `p == NULL` vs `len == 0` spelling leaves the
+pair `p == NULL && len > 0` unspecified. The contract: **`p == NULL` implies
+`len` is ignored** (UNSET is determined by `p` alone), so a caller-supplied
+`len` on a NULL `p` is never read and never a null-deref hazard — the
+artifact checks `p` first, at the entry wrapper, before any use of `len`,
+the same refusal shape `PCREC_ERR_UNSET_VAR` already gives a bare `${name}`.
+`${name:-}` admitting an UNSET value into the match path (§5) still resolves
+to a concrete, non-NULL zero-length span by the time it reaches
+`$_var_match`, since the expansion half (`variables_common.md` §5) runs
+before the seam entry is called.
 
-### 4.2 The callout-ABI precedent, and where it does *not* reach
+### 4.2 The callout-ABI precedent, and where it draws the line differently than the withdrawn draft thought
 
 `design_callout_abi.md` §1.1 is worth citing precisely, because it is the
 nearest thing in the tree to "caller-supplied data reaching the engine," and
-it is **not** the right precedent here:
+its ruling constrains this design's shape without supplying it directly:
 
 - `rx_ctx` carries `void *user`, filled from a `rx_callout_ref` binding unit,
   and the D38 ruling explicitly **rejected** both alternatives a variable
@@ -436,39 +455,61 @@ it is **not** the right precedent here:
   every call site (Frank: "ouch — over-callback-friendly, and it changes
   `rx_matchfn`'s signature for every caller to serve the minority that needs
   it").
-- That second rejection is the one to read carefully, because §4.1 does
-  something adjacent: it changes an entry's signature. The difference is that
-  `rx_matchfn` is a **fixed-literal ABI type shared by every artifact** —
-  changing it taxes every caller. A `<prefix>_search` signature is
-  **per-artifact** and already varies (`<PREFIX>_NCAPS`, the `_in` family, the
-  DFA/VM split), so the parameter appears only on artifacts whose pattern has
-  variables, and a var-free artifact's entry SIGNATURE is unchanged. (§5's
-  own byte-identity claim for the shared ABI block, once `PCREC_ERR_UNSET_VAR`
-  lands, is narrower than "byte-identical" and is stated precisely there: a
-  var-free artifact is unchanged except for the `abi` digit every artifact
-  carries.)
+- **That second rejection is about `user` specifically, and it is a
+  per-*binding* argument** — `user` is filled once, at binding time, from a
+  `rx_callout_ref`, and threading a SEPARATE per-call parameter alongside it
+  would have meant two different data-arrival disciplines on one call. The
+  withdrawn §4.1 draft read this as a general argument against any
+  ctx-carried caller data and concluded the opposite of Frank's actual
+  2026-09-23 ruling — that a variable array had to be its own entry
+  PARAMETER to avoid "the identical harm." **`variables_common.md` §3.3
+  says why that inference does not carry over**: a variable environment is
+  per-*call* input, filled fresh on every call the same way
+  `ctx->caps`/`ctx->subject` already are, not per-binding state the way
+  `user` is — it is not reached by the sentence that rejected a per-call
+  `user` parameter, because appending `vars`/`nvars` to `rx_ctx` never
+  threatens `rx_matchfn`'s signature at all (§4.1's whole point).
+- A `<prefix>_search` signature, separately, **is per-artifact** and already
+  varies (`<PREFIX>_NCAPS`, the `_in` family, the DFA/VM split), which is why
+  IT — not `rx_match` — is where a trailing `vars, nvars` pair belongs
+  (§4.1). (§5's own byte-identity claim for the shared ABI block, once
+  `PCREC_ERR_UNSET_VAR` lands, is narrower than "byte-identical" and is
+  stated precisely there: a var-free artifact is unchanged except for the
+  `abi` digit every artifact carries.)
 
-So the precedent constrains the design without supplying it: variables do not
-ride `ctx->user`, because `user` is per-*binding* state for a callout and a
-variable environment is per-*call* input to the match.
+So the precedent constrains the design the same way it always did: variables
+do not ride `ctx->user`, because `user` is per-*binding* state for a callout
+and a variable environment is per-*call* input to the match — but a per-call
+input CAN ride `rx_ctx` as its own APPENDED field, which is exactly what
+Frank's ruling does and what the withdrawn draft's reading of D38 foreclosed
+too broadly.
 
 ### 4.3 Stamps and the abi event
 
-**[PROPOSED]** this is caller-observable, so the D76/D94 ritual applies in
-full: an `abi` bump, the identity-gate re-pin, a `docs/spec/match_api.md` hunk
-in the same change (D80), and the site list found **by grep over the current
-abi number**, never hand-enumerated — D94's own lesson, and the
-`battriage`/`evtriage3` addendum that a reader whose text cites a *byte count*
-and no abi digit still moves with it.
+**[RATIFIED — Frank 2026-09-23]** this is caller-observable, so the D76/D94
+ritual applies in full: an `abi` bump, the identity-gate re-pin, a
+`docs/spec/match_api.md` hunk in the same change (D80), and the site list
+found **by grep over the current abi number**, never hand-enumerated — D94's
+own lesson, and the `battriage`/`evtriage3` addendum that a reader whose
+text cites a *byte count* and no abi digit still moves with it. This is now
+a struct-layout event on `rx_ctx` itself (§4.1's `vars`/`nvars` append)
+rather than only a per-artifact signature change, so the grep must also
+find every reader of `rx_ctx`'s layout.
 
 The stamps: `<PREFIX>_NVARS` and one `<PREFIX>_VAR_<NAME>` index macro per
-variable; `rx_info.nvars` **appended at the end** of the struct per §6's
-standing rule so no existing member's offset moves; and a `vars` names table
-on the `rx_info.groups` model — **in the MVP, not conditional** (§9 Q2), since
-it is the only route a name-indexed consumer (the `.rxt` test harness's
-driver, §5 of the common note) has from a `.rxt` case's variable name to the
-compiled artifact's `RX_VAR_<NAME>` slot, and deferring it would be a second
-`abi` event for a table that costs `.rodata` only.
+variable — **now explicitly the artifact's own INTERNAL index into its
+resolved table** (`variables_common.md` §3.1-§3.2), never something a
+caller writes; `rx_info.nvars` **appended at the end** of the struct per
+§6's standing rule so no existing member's offset moves; and a `vars` names
+table on the `rx_info.groups` model — **in the MVP, not conditional**
+(§9 Q2). Its role changed with the ruling: it is no longer the only route
+from a `.rxt` case's variable name to a compiled slot (the driver performs
+no lookup at all under the ruling, `variables_common.md` §3.5 — the
+artifact resolves names itself, by name, at entry), but it remains in the
+MVP as the VALIDATION route a caller or a driver MAY use to catch a typo
+against a compiled artifact's declared names, on the same `rx_info.groups`
+precedent — and deferring it would still be a second `abi` event for a
+table that costs `.rodata` only.
 
 **One named site the `abi`-grep ritual does not reach on its own, because it
 asserts a POPULATION from the test rather than from the artifact:**
@@ -653,7 +694,7 @@ the list against the code rather than reconstructing it.
 
 | lens | verdict |
 |---|---|
-| **specific vs general** | **GENERAL**, and more so than the charter anticipated. The feature adds one AST kind, one registry row and one encoding-seam entry pair, and every one of those is an existing *kind* of thing with existing siblings. The instruction is `vm_bref`'s with one operand changed. The decline arms join `A_BREF`'s own case labels rather than adding new ones. The one genuinely new surface is the entry parameter, and it is per-artifact. |
+| **specific vs general** | **GENERAL**, and more so than the charter anticipated. The feature adds one AST kind, one registry row and one encoding-seam entry pair, and every one of those is an existing *kind* of thing with existing siblings. The instruction is `vm_bref`'s with one operand changed. The decline arms join `A_BREF`'s own case labels rather than adding new ones. The genuinely new surface is split in two by the 2026-09-23 by-name ruling: an APPENDED pair on the shared `rx_ctx` type (`vars`/`nvars`, §4.1), and a per-artifact trailing pair on the non-`rx_ctx`-shaped entries (`rx_search` and siblings) — `rx_matchfn` itself gains nothing. |
 | **core vs derived** | **DERIVED.** No automaton changes: determinization, minimization, the DFA emitter and every optimization pass are untouched. The DFA engine route declines rather than adapting, and the VM hybrid's prefilter route declines too, via its own third whole-tree predicate (§3) rather than by adaptation. The VM gains one emit arm. The five analysis arms are declines, not new derivations. |
 | **applicable vs assumption-changing** | **APPLICABLE**, with the one assumption that *would* change named and refused: a value is never pattern syntax (§7's last row). A build with module `vars` disabled is unchanged in EMITTED CODE for every var-free artifact — recognition is live and production is gated (D34 ruling 5), and `variables_common.md` §0.2 proves the gated spelling matches nothing — except for the shared ABI block's `abi` digit, which every artifact carries regardless of whether it uses variables (§5's precise statement); the gate protects a population of patterns that could never have worked. |
 | **fits-arch vs refactor** | **FITS**, with one debt named rather than hidden. Everything lands in an existing mechanism: `AKind` + `union u.*` (D70), a registry row (SR-8), `PcrecEncEntry[]` (`src/enc/enc.h`), `axes.def` for the deny flag, `limits.def` for the nesting bound, the `rx_info` append rule, the D76/D94 abi ritual. The debt is the five analysis sites that must stay in step — which is D120's `[PATFACTS]` charter arriving with a new instance rather than a refactor this feature has to perform (§2). |
@@ -677,17 +718,20 @@ repeated here.
 
 2. **~~Does `rx_info` carry a variable NAMES table?~~ PROMOTED INTO THE MVP**
    (was an open question here; `variables_roadmap.md` M7 now ships it, per
-   `[VAR]`'s D6 panel, TEST-F1). §4.3 proposes index macros, which is what a
-   *compiled* caller needs; a *reflective* caller (V-A's `pcre2_pattern_info`
-   analogue, a debugger, and — the concrete customer — the `.rxt` test
-   harness's driver, which has no OTHER way to resolve a `.rxt` case's named
-   variable binding to a compiled artifact's `RX_VAR_<NAME>` index, since
-   `driver.c` is one static file never templated per pattern) needs names.
-   `rx_info.groups` is the precedent and it costs `.rodata` only. This note's
-   own words for what deferring it would cost are the reason it is not
-   deferred: "adding it later is a second `abi` event for a `.rodata`-only
-   table." It ships on the `rx_info.groups` model, in the same `abi` event as
-   the rest of §4.3.
+   `[VAR]`'s D6 panel, TEST-F1). §4.3 proposes index macros, which under the
+   2026-09-23 by-name ruling are the artifact's own INTERNAL indices, not
+   what a compiled caller writes — a compiled caller now writes
+   `{ "prefix", buf, n }` by name (`variables_common.md` §3.2), so the
+   table's role narrowed from "the only route" to a VALIDATION aid: a
+   reflective caller (V-A's `pcre2_pattern_info` analogue, a debugger, or the
+   `.rxt` test harness's driver, which under the ruling passes name/value
+   lines through verbatim with no lookup of its own,
+   `variables_common.md` §3.5) MAY consult it to catch a typo before the
+   call. `rx_info.groups` is still the precedent and it still costs
+   `.rodata` only. This note's own words for what deferring it would cost
+   are still the reason it is not deferred: "adding it later is a second
+   `abi` event for a `.rodata`-only table." It ships on the `rx_info.groups`
+   model, in the same `abi` event as the rest of §4.3.
 
 3. **May a variable appear inside a quantifier or an alternation?**
    `${v}{2,4}` and `(${a}|${b})` are both expressible and both sound on the VM

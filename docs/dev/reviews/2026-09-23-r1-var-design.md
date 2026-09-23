@@ -12,8 +12,8 @@ D18/D26/D37/D38/D41.1/D80/D85/D87/D89/D94/D120 and
 against `docs/dev/learnings.md` §3, D27, D77, D119). Nobody ran `make`;
 nobody wrote anything in their own reports.
 
-**TOTALS: 2 BLOCKERS holding a third BLOCKER-shaped finding (MECH-B2, open to
-Frank), 12 MAJOR, 4 MEDIUM, 6 MINOR, 6 NOTE — 30 findings across the three
+**TOTALS: 2 BLOCKERS (MECH-B1, and MECH-B2 now RULED by Frank 2026-09-23),
+12 MAJOR, 4 MEDIUM, 6 MINOR, 6 NOTE — 30 findings across the three
 lenses, plus 2 refuted BLOCKER candidates from TEST that on inspection are
 not foreclosed and become a design gap (TEST-F3) and a wrong-attribution
 correction (TEST-F1 vs a names-table already half-proposed).** The
@@ -33,11 +33,13 @@ match semantics.
 
 **DISPOSITION SUMMARY:** every ACCEPTed finding is applied in this same
 change (lane `varfix`, branch `lane/varfix`) directly to the four notes,
-verified by grep (list at the end of this file). MECH-B2 is OPEN — Frank's
-ruling, boxed at the top of `variables_pattern.md` §4 rather than resolved
-in text. A handful of NOTE-severity mechanism findings (MECH-F11, F15) and
-one SPEC NOTE (SPEC-F3's "in every mode" tightening) needed no rebuttal,
-only the citation/derivation fix already applied.
+verified by grep (list at the end of this file). MECH-B2 was OPEN, boxed at
+the top of `variables_pattern.md` §4; Frank RULED on it 2026-09-23 (lane
+`varnames`, branch `lane/varnames`), and the ruling is applied in that same
+follow-on change across all four notes (see "MECH-B2 disposition" below). A
+handful of NOTE-severity mechanism findings (MECH-F11, F15) and one SPEC
+NOTE (SPEC-F3's "in every mode" tightening) needed no rebuttal, only the
+citation/derivation fix already applied.
 
 ---
 
@@ -68,12 +70,27 @@ composability load-bearing per `match_api.md:1238`/`lib/pcrec.h:1326`).
 §4.1 gives a var-bearing artifact's `<prefix>_match` a `vars` parameter,
 which makes it no longer an `rx_matchfn` — the identical harm D38 rejected
 in the very sentence §4.2 quotes approvingly, narrowed to var-bearing
-artifacts. **DISPOSITION: OPEN — FRANK'S RULING.** An `[OPEN-FRANK]` box
-added at the top of `variables_pattern.md` §4 stating the contradiction and
-the manager's recommended option (a var-bearing artifact's own
-`rx_varmatchfn` typedef; declining composition as a callout/submatcher in
-the MVP with a named re-open condition) plus two one-line alternatives.
-Text of §4 itself is unchanged pending the ruling.
+artifacts.
+
+**DISPOSITION: RULED (Frank, 2026-09-23, lane `varnames`).** Neither of the
+box's two named alternatives is what Frank ruled: variables are passed BY
+NAME (`rx_var` gains a `name` field; the compile-time index macros survive
+only as the artifact's own internal bookkeeping, resolved once per call by
+a linear scan — closing a coordination problem the original array design
+missed, that an index is meaningless across separately compiled artifacts),
+and the array RIDES `rx_ctx` — two fields appended at the end,
+`const rx_var *vars; size_t nvars;` — so `rx_matchfn`'s signature is
+untouched for every artifact and a composed call passes `ctx` through
+unchanged. Top-level, non-`rx_ctx`-shaped entries (`rx_search` and its `_in`
+siblings, `rx_subst`) take the pair as a trailing parameter instead, by the
+existing caller-buffer-siblings precedent. The manager's `rx_varmatchfn`
+recommendation and both of the box's named alternatives are superseded, not
+chosen — the `rx_ctx`-append shape needed neither a second entry point nor
+a new typedef. Applied across all four notes (lane `varnames`, branch
+`lane/varnames`): `variables_common.md` §3.1-§3.3 carries the ruling's full
+argument; `variables_pattern.md` §4 replaces the `[OPEN-FRANK]` box with a
+`[RATIFIED]` one and rewrites §4.1-§4.3; `replace_design.md` §3.1/§4.2/§4.4
+and `variables_roadmap.md` §1/§2.1/§5/§7 follow.
 
 ---
 
@@ -418,11 +435,14 @@ $ grep -n "44 .AKind. switches" docs/design/variables_pattern.md
 
 ## OPEN (to Frank)
 
-- **MECH-B2**: whether a var-bearing artifact's `<prefix>_match` gets its
+- ~~**MECH-B2**: whether a var-bearing artifact's `<prefix>_match` gets its
   own `rx_varmatchfn` fixed-literal typedef (the manager's recommendation,
   boxed in `variables_pattern.md` §4) or one of the two named alternatives
   (vars on `rx_ctx`; a separate `_match_vars` entry beside an unmodified
-  `_match`).
+  `_match`).~~ **RULED 2026-09-23** (lane `varnames`): vars ride `rx_ctx`,
+  appended (`const rx_var *vars; size_t nvars;`); `rx_matchfn` untouched;
+  neither the manager's typedef nor the box's other named alternative was
+  chosen. See the MECH-B2 entry above for the full disposition.
 - **MECH-M2's roadmap-item mapping**: the manager's brief named "M7" as the
   item whose size moves up from the 44-site census finding; this delivery
   resized M5 instead, since M5 ("the five analysis declines") is the item
