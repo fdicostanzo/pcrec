@@ -11,9 +11,10 @@ call. Contract: `docs/spec/vars.md`. M9 (the replacement side) is gated on
 
 ## §0 — FINDINGS FIRST
 
-Nine, in the order a reviewer should read them. Six are places the design set
-met the tree and lost; three are defects checks found on their first
-populated run.
+Ten, in the order a reviewer should read them. Six are places the design set
+met the tree and lost, three are defects checks found on their first
+populated run, and one is a check that had been silently comparing nothing
+since a CLI change months ago.
 
 ### 0.0 The manager's M6 ruling, and the defect it exposed
 
@@ -53,6 +54,85 @@ survives; the validity entry still asks a question about the table.
 it rides the same `abi` 32 bump rather than a second one. The §0.8 identity
 measurement's scope narrows accordingly: +34 bytes is the change for an
 artifact carrying neither a variable nor a backreference.
+
+### 0.0a And the rename found a check that had been comparing ZERO pairs
+
+`tests/codegen/run_encoding_checks.sh`'s **DD12a(i)** — the hot-loop shape
+identity, the instrument that proves no encoding conditional reached the
+engine body — invokes the compiler as
+
+```
+pcrec --features all -e byte -p rx -o rx.c -- <pattern>
+```
+
+**D118 retired `--source` by making a BARE OPERAND mean a FILE.** Since then
+every one of those calls has answered *"not an existing file; a literal
+pattern is given with `--pattern`"* and returned 1, which the instrument
+turns into "skip this pattern". `PAIRS=0`. Every bucket, every EXCISED
+counter, every divergence count: 0.
+
+**REPRODUCED AT THE BRANCH POINT** with that tree's own script and own
+binary — `checks passed: 10 / checks failed: 1`, identical — before being
+attributed anywhere. It is PRE-EXISTING and not this lane's.
+
+**Its own non-vacuity floor is the only reason it is visible at all.** With a
+`>= 0` there, a dead instrument and a clean one print the same thing. And it
+went stale because **`test-encoding-checks` is OPT-IN** and rides no
+`TEST_SECTIONS` entry, so nothing was running it when the CLI moved
+underneath it.
+
+FIXED here rather than reported, for one reason: this lane RENAMED the
+entries that instrument reads, and leaving it dead would ship that rename
+unverified by the only check that looks at those names — *a witness must
+reach its site*. Two further repairs the fix then surfaced:
+
+- **The mechanical rename over that file reached the regex and the tables and
+  missed the one place a NAME IS MAPPED TO A DIFFERENT NAME.** A
+  `name.startswith('bref_ci_')` normalisation still said `bref_ci_`, so a
+  renamed helper matched, fell through with its own name, and `counts[name]`
+  raised `KeyError`.
+- **`int` was not in the return-type alternation.** `$_var_valid` returns
+  `int`, which no residual entry before it did, so the walk did not see its
+  region at all — and a region this walk does not see is a whole function on
+  the utf8 side with no counterpart on the byte side. `int` and `var_valid`
+  are in the pattern now.
+
+And the counter then read `var_valid=0`, which is the file's own stated
+failure mode one entry over ("a check that never exercised `span_match`
+would be dead code passing silently"), so `^${v}$` joins the explicit
+witness list. It is the only witness that reaches an entry present in one
+backend's table and **absent from the other's**, which is the sharpest test
+of the excision's own claim.
+
+**AFTER THE REPAIR THE INSTRUMENT IS ALIVE AND SAYS SO**: 254 pairs compared,
+244 strict-identity / 10 widens-under-utf8, and real excision counts —
+`next_pos=508`, `span_match=4`, `span_match_caseless=5`, `var_valid=1`,
+`advance=144`, `startpos_guard=420`. **That is what verifies this lane's
+rename**: the generalised entries are seen, counted and excised under their
+new names, which nothing else in the tree checks.
+
+**AND REVIVING IT SURFACED A BACKLOG THAT IS NOT THIS LANE'S TO CLEAR.** Three
+reds appear that were unreachable while `PAIRS=0`, and all three are `[K50]`
+startpos territory with no relationship to variables:
+
+| red | what it says |
+|---|---|
+| `startpos_attempt` never excised | a named region is dead code certifying nothing |
+| 2 `[K50]` manifest rows STALE | reached this run and not swept into the gate-refinement class (first: `\z`) |
+| 5 pairs entered that class with NO manifest row | the named exclusion grew silently (first: `(?:\Gab)+`) |
+
+**DELIBERATELY NOT RE-DERIVED.** The check's own failure message says *"Re-derive
+the rows deliberately; do NOT delete them to go green"*, and that manifest is
+a judgement about which patterns legitimately diverge under `[K50]` — a
+different row's, not a variable lane's. **They do not touch `make test`**:
+`test-encoding-checks` is opt-in and rides no `TEST_SECTIONS` entry, which is
+the same fact that let the instrument die.
+
+**Why revive it at all rather than report and leave it**: leaving it dead
+would have shipped this lane's rename unverified by the only instrument that
+reads those names. Reviving it is what makes §0.0's claim checkable; the
+backlog it exposes is a separate row and is named here so it is a list rather
+than a silence.
 
 ---
 

@@ -426,7 +426,15 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # initializer's brace is deliberately on the following line (see
 # `src/enc/enc_utf8.c`), which is what lets one brace-matching walk
 # serve a function body and an array initializer alike.
-SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|span_ci_fold_pairs)\s*[\(\[]')
+# [VAR lane, 2026-09-23] `int` JOINS THE RETURN-TYPE ALTERNATION and
+# `var_valid` the name one: module `vars`' value-validity entry is an
+# encoding-owned residual exactly as the four above are — it exists in
+# `entries_utf8[]` and NOT in `entries_byte[]`, which is the sharpest possible
+# form of "encoding-owned" — so it must be excised on the utf8 side or every
+# var-bearing pair would differ by a whole function. It returns `int`, which
+# no entry before it did, and a return type absent from this alternation is a
+# region this walk silently does not see.
+SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
 GUARD = 'if (attempt_position >= subject_length) return 0;'
 # [K50] the caller-startpos guard's two emitted texts, both MARKER-DELIMITED,
@@ -664,8 +672,8 @@ def widens_under_utf8(pat):
 def excise(text, label):
     lines = text.splitlines(keepends=True)
     counts = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
-              'span_match_caseless': 0, 'advance': 0, 'encoding': 0,
-              'startpos_guard': 0, 'startpos_stamp': 0,
+              'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
+              'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0}
     out = []
     i, n = 0, len(lines)
@@ -674,7 +682,15 @@ def excise(text, label):
         m = SIG_RE.match(line)
         if m:
             name = m.group(1)
-            if name.startswith('bref_ci_'):
+            # [VAR lane, 2026-09-23] `span_ci_`, not `bref_ci_`. The seam's
+            # compare pair was renamed when it was generalised to serve a
+            # backreference AND a `${name}` variable, and its three private
+            # helpers followed; this NORMALISATION string did not, so a
+            # helper matched SIG_RE, fell through with its own name, and
+            # `counts[name]` raised KeyError. The mechanical rename over this
+            # file reached the regex and the tables and missed the one place
+            # a NAME is mapped to a DIFFERENT name.
+            if name.startswith('span_ci_'):
                 name = 'span_match_caseless'
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
@@ -759,13 +775,27 @@ def compile_pair(pat, workdir, idx):
     du = os.path.join(workdir, "p%d" % idx, "utf8")
     os.makedirs(db, exist_ok=True)
     os.makedirs(du, exist_ok=True)
+    # [VAR lane, 2026-09-23] `--pattern`, NOT a bare operand after `--`.
+    # D118 retired `--source` by making a BARE OPERAND mean a FILE, so this
+    # call has been answering "not an existing file; a literal pattern is
+    # given with --pattern" and returning 1 on EVERY pattern since — which
+    # this function turns into `return None`, so DD12a(i) has been comparing
+    # ZERO pairs. Its own non-vacuity floor (200) is what says so, and the
+    # floor is the only reason this is visible at all: every bucket, every
+    # EXCISED counter and every divergence count reads 0, which is exactly
+    # what a clean run would look like if the floor were a `>= 0`.
+    #
+    # IT WENT STALE BECAUSE `test-encoding-checks` IS OPT-IN and rides no
+    # TEST_SECTIONS entry, so nothing was running it when the CLI moved
+    # underneath it. REPRODUCED at this lane's branch point with that tree's
+    # OWN script and OWN binary before being attributed here.
     rb = subprocess.run([pcrec, "--features", "all", "-e", "byte", "-p", "rx",
-                         "-o", os.path.join(db, "rx.c"), "--", pat],
+                         "-o", os.path.join(db, "rx.c"), "--pattern", pat],
                         capture_output=True, text=True, timeout=30)
     if rb.returncode != 0:
         return None
     ru = subprocess.run([pcrec, "--features", "all", "-e", "utf8", "-p", "rx",
-                         "-o", os.path.join(du, "rx.c"), "--", pat],
+                         "-o", os.path.join(du, "rx.c"), "--pattern", pat],
                         capture_output=True, text=True, timeout=30)
     if ru.returncode != 0:
         return "byte-only"
@@ -788,13 +818,24 @@ def main():
             if max_blocks and emitted >= max_blocks:
                 break
     # explicit witnesses: guarantee non-vacuity for each named region (a) --
-    # the corpus is not trusted to reach all four residuals plus the advance
+    # the corpus is not trusted to reach all five residuals plus the advance
     # by luck alone.
-    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x']
+    #
+    # [VAR lane, 2026-09-23] `${v}` IS THE FIFTH WITNESS, and it is here for
+    # the reason this comment already gives about the other four: with the
+    # corpus alone the `var_valid` counter read 0, which is a counter that
+    # exists and is never reached -- "a check that never exercised
+    # `span_match` would be dead code passing silently on that population",
+    # one entry over. It is also the ONLY witness that reaches an entry
+    # present in `entries_utf8[]` and ABSENT from `entries_byte[]`, which is
+    # the sharpest test of the excision's own claim: the two sides must agree
+    # after normalisation even when one of them carries a whole function the
+    # other does not have.
+    patterns += ['a*', '(?i)(?<=a)(b)\\1x', '(?<=a)(b)\\1x', '^${v}$']
 
     workdir = tempfile.mkdtemp(prefix="dd12ai_")
     agg = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
-           'span_match_caseless': 0, 'advance': 0, 'encoding': 0,
+           'span_match_caseless': 0, 'var_valid': 0, 'advance': 0, 'encoding': 0,
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0}
     npairs = nstrict = nwidens = 0
@@ -875,7 +916,8 @@ def main():
 
     print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
           (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
-    for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless', 'advance', 'encoding',
+    for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless',
+              'var_valid', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
