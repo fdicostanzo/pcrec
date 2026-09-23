@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 30
+#define PCREC_ARTIFACT_ABI 31
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -5333,11 +5333,10 @@ static bool req_byte_dominated_by(Ctx *cx, int p, int q)
  * ORDER IS PART OF THE ANSWER. "No necessary byte" comes first because the
  * other two are claims ABOUT a byte; G2 comes before G1 because it is a
  * property of the route and holds whatever the artifact scans, while G1 has to
- * ask what that is. A declined artifact keeps `Job.req_byte` — the analysis
- * ran and its answer is still true — so the decline is a statement about
- * EMISSION, which is what `<PREFIX>_REQ_WHY` reports and why
- * `<PREFIX>_REQ_BYTE` reads `"none"` beside it: that stamp names the byte the
- * emitted check tests, and there is no emitted check. */
+ * ask what that is. A declined artifact keeps `Job.req_byte` and its
+ * `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` stamps unchanged — the analysis ran
+ * and its answer is still true of the pattern — so this enum is a statement
+ * about EMISSION alone, and it is the only thing that moves. */
 static ReqAdmit req_admit(Ctx *cx)
 {
     if (cx->job->req_byte < 0) return REQ_ADMIT_NONE;
@@ -7965,16 +7964,21 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * from the same field three lines apart. */
     {
         char rbbuf[32];
-        if (admit != REQ_ADMIT_EMITTED) {
-            /* [OPT-PRECHECK-ADMIT] `"none"` COVERS THE DECLINE, deliberately,
-             * and the reason it is not widened to carry one is the
-             * biconditional the gates are built on: this stamp names the byte
-             * the emitted `memchr` tests, so it reads `"none"` exactly when no
-             * pre-check is emitted, whatever made that true. The WHY is a
-             * stamp of its own three lines down — the
-             * `<PREFIX>_VM_PREFILTER_LANG`/`_LANG_WHY` pair's shape — so that
-             * a reader gains a fact and no reader's existing value space
-             * moves. */
+        /* [OPT-PRECHECK-ADMIT] THIS STAMP KEEPS NAMING THE ANALYSIS, NOT THE
+         * EMISSION, and the choice is the difference between a gate that can
+         * see the derivation and one that cannot. The heading above is the
+         * contract — "THE BYTE EVERY MATCH MUST CONTAIN" — which is a fact
+         * about the PATTERN and stays true whether or not the check is
+         * emitted; whether it IS emitted is `<PREFIX>_REQ_WHY`'s question,
+         * three lines down. Folding the decline in here (`"none"` on an
+         * admitted-out artifact) was tried first and is WRONG for a reason the
+         * suite finds immediately: it hides the derived byte, so
+         * [OPT-FREQPICK]'s whole assertion surface
+         * (tests/codegen/run_prechecks.sh §3.7) would go silently vacuous on
+         * every artifact G1 declines, and a compiler that stopped deriving
+         * bytes altogether would read identical to one that derived them and
+         * declined. Two facts, two stamps, each checkable on its own. */
+        if (cx->job->req_byte < 0) {
             pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
         } else {
             snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
@@ -8003,10 +8007,11 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     {
         char rrbuf[2 * PCREC_MAX_REQ_RUN_EMIT + 16];
         const ReqRun *rr = &cx->job->req_run;
-        /* [OPT-PRECHECK-ADMIT] the admission is the FIRST conjunct for
-         * `<PREFIX>_REQ_BYTE`'s reason, one stamp up: both stamps describe the
-         * emitted check, and an admitted-out artifact has none. */
-        if (admit != REQ_ADMIT_EMITTED || rr->len < 2) {
+        /* [OPT-PRECHECK-ADMIT] unchanged by the admission, for
+         * `<PREFIX>_REQ_BYTE`'s reason one stamp up: this names the run the
+         * analysis found, and `<PREFIX>_REQ_WHY` names whether it was
+         * emitted. */
+        if (rr->len < 2) {
             pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", "none");
         } else {
             size_t o = 0;
@@ -8022,14 +8027,20 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * its two siblings' reason, in the same place: unconditional, on every
      * artifact of both engines, a closed token set.
      *
-     * IT IS A SEPARATE STAMP AND NOT A WIDER `<PREFIX>_REQ_BYTE` VALUE. Those
-     * two stamps answer "what does the emitted check test", a question with a
-     * `"none"` answer that every reader in the tree already parses; this one
-     * answers "why is there nothing to test", which since
-     * [OPT-PRECHECK-ADMIT] has FOUR answers where it had one. Folding them
-     * would put a decline reason into a field readers `atoi`, and the tree
-     * already spells exactly this split twice — `<PREFIX>_ENGINE` /
-     * `<PREFIX>_ENGINE_WHY`, `<PREFIX>_VM_PREFILTER_LANG` / `_LANG_WHY`.
+     * IT IS A SEPARATE STAMP AND NOT A WIDER `<PREFIX>_REQ_BYTE` VALUE, and the
+     * tree already spells exactly this split twice — `<PREFIX>_ENGINE` /
+     * `<PREFIX>_ENGINE_WHY`, `<PREFIX>_VM_PREFILTER_LANG` / `_LANG_WHY`. Those
+     * two siblings answer what the ANALYSIS found, a fact about the pattern
+     * that every reader in the tree already parses as a number or `"none"`;
+     * this one answers whether the artifact ACTED on it, which since
+     * [OPT-PRECHECK-ADMIT] has four answers where it had one. Folding them
+     * would put a decline reason into a field readers `atoi` AND would hide
+     * the derived byte on exactly the artifacts a decline applies to — see
+     * `<PREFIX>_REQ_BYTE`'s own note above for what that costs the suite.
+     *
+     * THE TWO ARE CHECKABLE AGAINST EACH OTHER, which is the point of keeping
+     * both: `"none"` here holds if and only if `<PREFIX>_REQ_BYTE` is `"none"`,
+     * and any other value here asserts that it is not.
      *
      * `"none"` AND NOT `"no-necessary-byte"`: the value is honest about what
      * it knows. `src/core/compile.c` skips the analysis entirely under

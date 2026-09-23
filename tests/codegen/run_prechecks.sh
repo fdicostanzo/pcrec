@@ -14,10 +14,20 @@
 #   [OPT-ENDWIN]     <PREFIX>_END_WINDOW    how far from the subject END a
 #                                           match may begin
 #   [OPT-REQBYTE]    <PREFIX>_REQ_BYTE      a byte every match must contain
+#   [OPT-REQPOS] 2b  <PREFIX>_REQ_RUN       a literal RUN every match contains
 #
-# Each is an axis (`docs/spec/tuning.md` §2.25-§2.27) and each carries a
-# stamp; the three sections below are independent and a section is deleted
-# with its own mechanism.
+# Each is an axis (`docs/spec/tuning.md` §2.25-§2.28) and each carries a
+# stamp; the sections below are independent and a section is deleted with its
+# own mechanism.
+#
+# AND ONE FACT ABOUT THE OTHERS. [OPT-PRECHECK-ADMIT] (§5) is not a fifth
+# analysis — it is the ADMISSION of the two `REQ_*` pre-checks, stamped
+# `<PREFIX>_REQ_WHY`, which says whether the artifact acted on what the
+# analysis found and, when it did not, which of the two measured declines
+# applies. The split matters to every assertion in §3 and §4: those stamps name
+# what the ANALYSIS found and this one names what was EMITTED, so an arm that
+# wants the emitted text must read `REQ_WHY` and an arm that wants the
+# derivation must not.
 #
 # =========================================================================
 # THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS
@@ -350,10 +360,24 @@ while IFS='%' read -r pat _sep want wantrun; do
     [ "$gotrun" = "$wantrun" ] \
         && ok "[3.1r] $pat -> RX_REQ_RUN \"$gotrun\"" \
         || bad "[3.1r] $pat: RX_REQ_RUN is \"${gotrun:-<absent>}\", expected \"$wantrun\""
-    if [ "$got" = "none" ]; then
+    # [OPT-PRECHECK-ADMIT] THE EMISSION IS `RX_REQ_WHY`'s QUESTION, NOT THIS
+    # STAMP'S. `RX_REQ_BYTE` names what the ANALYSIS found, a fact about the
+    # pattern; whether the artifact ACTED on it is the fourth stamp's, and an
+    # artifact admitted out by G1/G2 carries a derived byte and no `memchr`.
+    # The cross-check is asserted on EVERY row rather than only on the
+    # declining ones — otherwise a compiler that stamped `"none"` in both
+    # places together would pass it.
+    gotwhy="$(stamp "$a" REQ_WHY)"
+    if { [ "$got" = "none" ] && [ "$gotwhy" = "none" ]; } \
+       || { [ "$got" != "none" ] && [ "$gotwhy" != "none" ]; }; then
+        ok "[3.1w] $pat: RX_REQ_BYTE \"$got\" and RX_REQ_WHY \"$gotwhy\" agree about whether a byte was derived"
+    else
+        bad "[3.1w] $pat: RX_REQ_BYTE \"$got\" and RX_REQ_WHY \"$gotwhy\" disagree about whether a byte was derived"
+    fi
+    if [ "$gotwhy" != "emitted" ]; then
         grep -q 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a" \
-            && bad "[3.1b] $pat: stamps \"none\" and still emits a required-byte memchr" \
-            || ok "[3.1b] $pat: declining artifact emits no pre-check"
+            && bad "[3.1b] $pat: RX_REQ_WHY \"$gotwhy\" and still emits a required-byte memchr" \
+            || ok "[3.1b] $pat: RX_REQ_WHY \"$gotwhy\" — no pre-check emitted"
     elif [ "$gotrun" != "none" ]; then
         # The RUN form scans a moving position, so its memchr's second
         # argument is where the stamped byte appears; §4 asserts the loop's
@@ -512,10 +536,14 @@ while IFS='%' read -r pat _sep want wantrun; do
     [ "$gotrun" = "$wantrun" ] \
         && ok "[3.6r] -e utf8: $pat -> RX_REQ_RUN \"$gotrun\"" \
         || bad "[3.6r] -e utf8: $pat: RX_REQ_RUN is \"${gotrun:-<absent>}\", expected \"$wantrun\""
-    if [ "$got" = "none" ]; then
+    # [OPT-PRECHECK-ADMIT] the same split §3.1 carries: `RX_REQ_BYTE` names
+    # what the analysis found, `RX_REQ_WHY` whether the artifact acted on it,
+    # and an admitted-out artifact carries a derived byte and no `memchr`.
+    gotwhy="$(stamp "$a" REQ_WHY)"
+    if [ "$gotwhy" != "emitted" ]; then
         grep -q 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a" \
-            && bad "[3.6b] -e utf8: $pat: stamps \"none\" and still emits a required-byte memchr" \
-            || ok "[3.6b] -e utf8: $pat: declining artifact emits no pre-check"
+            && bad "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" and still emits a required-byte memchr" \
+            || ok "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" — no pre-check emitted"
     elif [ "$gotrun" != "none" ]; then
         grep -q "memchr(subject + rp_pos, ${got}, subject_length - rp_pos)" "$a" \
             && ok "[3.6b] -e utf8: $pat: the run scan's memchr carries the stamped byte $got" \
@@ -794,6 +822,217 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
 [ "$s4_run" -ge "$S4_FLOOR" ] \
     && ok "[4.8] $s4_run of $s4_tot corpus patterns carry a required run (floor $S4_FLOOR)" \
     || bad "[4.8] only $s4_run corpus patterns carry a required run, floor is $S4_FLOOR — §4.1 may be vacuous"
+
+# =========================================================================
+# SECTION 5 — [OPT-PRECHECK-ADMIT]: <PREFIX>_REQ_WHY and the text it explains
+# =========================================================================
+#
+# §3 and §4 assert what the pre-check tests. This section asserts WHETHER it is
+# there, which since [OPT-PRECHECK-ADMIT] (docs/dev/optloop/
+# cycle1_ledger_reading.md §6, ratified G1+G2) is a separate question with four
+# answers. The two declines are the bench's own measured regressions:
+#
+#   G2 ADMISSION  the route answers in ONE attempt, so a whole-window pass in
+#                 front of it can only be cost — `<PREFIX>_REQ_WHY
+#                 "one-attempt"`. 29 ledger cells.
+#   G1 DOMINANCE  the artifact ALREADY scans a byte at least as rare, so the
+#                 pre-check dismisses no window that pass would not dismiss
+#                 sooner — `"dominated"`. 4 ledger cells.
+#
+# THE ASSERTION IS THE BICONDITIONAL, in this file's standing shape: the stamp
+# on one side and the artifact's own EMITTED TEXT on the other. This section
+# never reads the predicate that decided; it reads whether a `memchr` is in the
+# file, whether `<string.h>` is included, and what the route's own emitted bound
+# says.
+#
+# THE DECLINES ARE NOT ANSWER-DETECTABLE, which is why they need this section
+# at all: the pre-check only ever returned the answer the engine below it then
+# returns anyway, so removing it moves no cell of any `.rxt` corpus. The
+# movement it DOES produce is emitted text, and that is what is asserted here.
+
+# §5.1 — the four values, on witnesses that name their route, plus the
+# biconditional against the emitted text in both directions.
+#
+# THE WITNESSES ARE THE LEDGER'S OWN SHAPES, so that a reader can put each row
+# beside the cell it came from. `^[A-Za-z]:` is `winpath-near-miss`'s anchor
+# (DFA route, `start_max` the literal 0, ledger §5: 20 ns -> 23 µs);
+# `^([a-z]+)+@` is `email-nested-plus`'s (VM route, `RX_VM_START "anchored"`,
+# same table); `\[` IS `wild-codegrammar-json-array-begin` (§4.3: `memchr(91)`
+# at the pre-check and `memchr(91)` at the prefilter, every call); and
+# `x[0-9]+Q` is the CONTROL that must keep its check — its necessary byte `Q`
+# (66 ppm) is strictly rarer than the byte its own prefilter scans, `x`
+# (997 ppm), which is the direction G1 must not decline.
+s5_emitted=0
+while IFS='%' read -r pat _sep want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s5_$RANDOM$RANDOM.c"
+    if ! emit "$a" "$pat"; then
+        bad "[5.1] $pat: refused; expected RX_REQ_WHY \"$want\""
+        continue
+    fi
+    got="$(stamp "$a" REQ_WHY)"
+    [ "$got" = "$want" ] \
+        && ok "[5.1] $pat -> RX_REQ_WHY \"$got\" ($why)" \
+        || bad "[5.1] $pat: RX_REQ_WHY is \"${got:-<absent>}\", expected \"$want\" ($why)"
+    # THE TEXT, not the stamp: `emitted` must put a required-byte `memchr` in
+    # the file and every other value must leave none. `head -1` is deliberate —
+    # the candidate-start prefilter's own `memchr` is a DIFFERENT call on a
+    # different position variable, and counting all of them would make this arm
+    # green on a dominated artifact for the wrong reason.
+    n="$(grep -c 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a")"
+    if [ "$got" = "emitted" ]; then
+        s5_emitted=$((s5_emitted + 1))
+        [ "$n" -ge 1 ] \
+            && ok "[5.1b] $pat: \"emitted\" and the pre-check is in the file" \
+            || bad "[5.1b] $pat: RX_REQ_WHY \"emitted\" and NO required-byte memchr is emitted"
+    else
+        [ "$n" -eq 0 ] \
+            && ok "[5.1b] $pat: \"$got\" and no pre-check is in the file" \
+            || bad "[5.1b] $pat: RX_REQ_WHY \"$got\" but $n required-byte memchr call(s) are still emitted"
+    fi
+done <<'ROWS'
+^[A-Za-z]:x%%one-attempt%winpath-near-miss's anchor: a ^-anchored DFA runs one attempt
+^abc$%%one-attempt%the same on the plainest possible witness
+\Gfoo%%one-attempt%the \G row of the three-valued start_max: start_max = search_from, also one attempt
+^([a-z]+)+@%%one-attempt%email-nested-plus's shape: the VM route, RX_VM_START "anchored"
+\[%%dominated%json-array-begin: the prefilter's memchr byte IS the pre-check's, 91 twice per call
+q%%dominated%the same by identity on a single literal
+x[0-9]+Q%%emitted%THE CONTROL: Q (66 ppm) is strictly rarer than the prefilter's x (997), so the check earns its pass
+\w+@\w+%%emitted%a byte-class prefilter scans a table, not one byte — there is no byte to be dominated by
+[a-z]+q%%emitted%the necessary byte is not the prefilter's table, so there is nothing to compare it against
+a*%%none%no necessary byte at all: the analysis found nothing to admit or decline
+ROWS
+[ "$s5_emitted" -ge 3 ] \
+    && ok "[5.1c] $s5_emitted of §5.1's rows still EMIT — the section is not asserting a mechanism that declines everything" \
+    || bad "[5.1c] only $s5_emitted of §5.1's rows emit a pre-check; the controls have stopped controlling"
+
+# §5.2 — G2's INHERITANCE, read off each route's own emitted bound rather than
+# off the predicate. The rule `attempt_cand` already applies to the
+# candidate-start prefilter is the rule the pre-check now inherits, so the
+# artifact must AGREE WITH ITSELF: a `one-attempt` decline must be accompanied
+# by the bound that justifies it, on whichever route it is.
+#
+# WITHOUT THIS ARM §5.1 WOULD PASS ON A COMPILER THAT DECLINED FOR NO REASON.
+while IFS='%' read -r pat _sep route; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s52_$RANDOM$RANDOM.c"
+    if ! emit "$a" "$pat"; then bad "[5.2] $pat: refused"; continue; fi
+    [ "$(stamp "$a" REQ_WHY)" = "one-attempt" ] || {
+        bad "[5.2] $pat: RX_REQ_WHY is not \"one-attempt\" — the witness no longer reaches the rule"
+        continue
+    }
+    case "$route" in
+      dfa)
+        if grep -q 'const size_t start_max = 0 /\* fully \^-anchored \*/;' "$a" \
+           || grep -q 'const size_t start_max = search_from' "$a"; then
+            ok "[5.2] $pat: the DFA's own start_max bound is the one-attempt row the decline claims"
+        else
+            bad "[5.2] $pat: declined \"one-attempt\" but its emitted start_max is neither 0 nor search_from"
+        fi
+        ;;
+      vm)
+        if grep -q 'const size_t attempt_max = search_from;' "$a"; then
+            ok "[5.2] $pat: the VM's own attempt_max bound is the one-attempt bound the decline claims"
+        else
+            bad "[5.2] $pat: declined \"one-attempt\" but emits no 'attempt_max = search_from' bound"
+        fi
+        ;;
+    esac
+done <<'ROWS'
+^[A-Za-z]:x%%dfa
+^abc$%%dfa
+\Gfoo%%dfa
+^([a-z]+)+@%%vm
+ROWS
+
+# §5.3 — G1's DIRECTION and its ENCODING RULE, the two places the dominance
+# comparison can be got wrong.
+#
+# THE DIRECTION. `Q[0-9]+x` and `x[0-9]+Q` are the SAME two bytes in the two
+# orders, and under `byte` the pick is the argmin either way (`Q`, 66 ppm).
+# `Q[0-9]+x` therefore has its own prefilter scanning the byte the pre-check
+# would test and must DECLINE; `x[0-9]+Q` has a prefilter on `x` (997 ppm) and
+# must EMIT. A compiler that compared the two densities backwards, or that
+# declined on the mere PRESENCE of a memchr prefilter, fails one of the pair.
+#
+# THE ENCODING RULE. `pcrec_byte_freq_ppm` is keyed to `byte` by its own
+# contents (docs/design/reqbyte_freq_pick.md §3), so under any other encoding
+# the comparison is IDENTITY ONLY. `Q[0-9]+x` is the discriminating witness a
+# second time: under `-e utf8` the pick reverts to the RIGHTMOST member (`x`,
+# 120), which is not the prefilter's byte, so the same pattern must EMIT there.
+# Without this row the encoding decline could be implemented as a comment.
+while IFS='%' read -r pat _sep enc want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s53_$RANDOM$RANDOM.c"
+    if [ "$enc" = "utf8" ]; then set -- -e utf8; else set -- ; fi
+    if ! emit "$a" "$pat" "$@"; then bad "[5.3] $pat ($enc): refused"; continue; fi
+    got="$(stamp "$a" REQ_WHY)"
+    [ "$got" = "$want" ] \
+        && ok "[5.3] $pat ($enc) -> RX_REQ_WHY \"$got\" ($why)" \
+        || bad "[5.3] $pat ($enc): RX_REQ_WHY is \"${got:-<absent>}\", expected \"$want\" ($why)"
+    # and the prefilter really is the single-byte form on every row here, or
+    # the comparison the row is about never happened
+    [ "$(stamp "$a" DFA_PREFILTER)" = "memchr" ] \
+        && ok "[5.3b] $pat ($enc): the artifact really carries a single-byte candidate-start memchr" \
+        || bad "[5.3b] $pat ($enc): RX_DFA_PREFILTER is \"$(stamp "$a" DFA_PREFILTER)\" — this row's dominance comparison has no second byte to make"
+done <<'ROWS'
+Q[0-9]+x%%byte%dominated%the pick is Q (66 ppm) and the prefilter scans Q: identity
+x[0-9]+Q%%byte%emitted%the pick is still Q but the prefilter scans x (997 ppm), so the check is strictly rarer
+Q[0-9]+x%%utf8%emitted%under utf8 the pick is the RIGHTMOST member (x), which is not the prefilter's byte — identity only
+ROWS
+
+# §5.4 — THE `<string.h>` FOLLOW-THROUGH. The include is declared from the
+# admission and not from `Job.req_byte`, so an artifact declined by G2 whose
+# body calls no other `memchr` must not carry the header. This is the one
+# emitted consequence of the decline that is not a `memchr` line, and it is
+# where reading the raw field instead of the admission would show.
+if emit "$WORKDIR/s54.c" '^abc$'; then
+    grep -q '#include <string.h>' "$WORKDIR/s54.c" \
+        && bad "[5.4] a one-attempt-declined artifact with no other memchr customer still includes <string.h>" \
+        || ok "[5.4] a one-attempt-declined artifact with no other memchr customer includes no <string.h>"
+fi
+# ... and the other direction: a DOMINATED artifact still needs it, because the
+# prefilter that dominated the pre-check is itself a `memchr` caller.
+if emit "$WORKDIR/s54b.c" '\['; then
+    grep -q '#include <string.h>' "$WORKDIR/s54b.c" \
+        && ok "[5.4b] a dominated artifact keeps <string.h> — its own prefilter is the memchr caller" \
+        || bad "[5.4b] a dominated artifact lost <string.h> and its prefilter still calls memchr"
+fi
+
+# §5.5 — THE POPULATION FLOORS (K35), over the shipped corpus rather than over
+# §5.1's own nine, and with the extractor's own health asserted first. Both
+# declines get a floor: an assertion that declining artifacts emit no
+# pre-check is vacuous when nothing declines, and this mechanism's whole
+# measured value IS the declining population.
+S5_ONE_FLOOR=2   # D110: half the measured 4
+S5_DOM_FLOOR=6   # D110: half the measured 12
+s5_tot=0; s5_one=0; s5_dom=0; s5_emit=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    s5_tot=$((s5_tot + 1))
+    emit "$WORKDIR/s5_c.c" "$pat" || continue
+    case "$(stamp "$WORKDIR/s5_c.c" REQ_WHY)" in
+      one-attempt) s5_one=$((s5_one + 1)) ;;
+      dominated)   s5_dom=$((s5_dom + 1)) ;;
+      emitted)     s5_emit=$((s5_emit + 1)) ;;
+    esac
+done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
+                                 "$ROOT_DIR/tests/base/alternation.rxt" \
+                                 "$ROOT_DIR/tests/base/anchors.rxt" \
+                                 "$ROOT_DIR/tests/base/classes.rxt" 2>/dev/null)
+[ "$s5_tot" -ge 40 ] \
+    && ok "[5.5] the floors' own population is live: $s5_tot corpus patterns read" \
+    || bad "[5.5] only $s5_tot corpus patterns extracted — the floors below measure nothing"
+[ "$s5_one" -ge "$S5_ONE_FLOOR" ] \
+    && ok "[5.5] $s5_one of $s5_tot corpus patterns decline on G2 ADMISSION (floor $S5_ONE_FLOOR)" \
+    || bad "[5.5] only $s5_one corpus patterns decline on G2, floor is $S5_ONE_FLOOR — §5.1's one-attempt rows may be the only population"
+[ "$s5_dom" -ge "$S5_DOM_FLOOR" ] \
+    && ok "[5.5] $s5_dom of $s5_tot corpus patterns decline on G1 DOMINANCE (floor $S5_DOM_FLOOR)" \
+    || bad "[5.5] only $s5_dom corpus patterns decline on G1, floor is $S5_DOM_FLOOR — §5.3's dominance rows may be the only population"
+# D110's floor convention, the other two floors' own: half the measured 8
+[ "$s5_emit" -ge 4 ] \
+    && ok "[5.5] $s5_emit of $s5_tot corpus patterns still EMIT the pre-check — the admission has not swallowed the mechanism" \
+    || bad "[5.5] only $s5_emit corpus patterns still emit a pre-check — G1/G2 may be declining a population they were never measured on"
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"
