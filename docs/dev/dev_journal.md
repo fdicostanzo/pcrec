@@ -25556,3 +25556,27 @@ sections; manager fix at merge: batch 2 is MERGED at b1885a83, not
 https://claude.ai/artifact/8eEKJGqvJnK4k7hq6NNRm4 . Bench inbox 8c94841
 (I-102a/b acks, I-103, I-104; I-102 proper waits for the abi-31 pin).
 Live agents: none. admitimpl's make test still in stage 5 (since 11:11).
+
+**admitimpl MERGED (~13:0x, 6ef76820, abi 31 ON MAIN, pushed):** the
+chain's five stages: test-axes (both axes 24,343 answer-identical), the
+emit_sweep rc=1 = every reachable artifact moves (the abi-30→31 stamp),
+S269/S270 DETECTED solo, the full make test red ONLY at test-codegen's nm
+probe (9/10 scripts, 65/0 checks in the last script). Head-vs-chain-start
+diff docs-only. Merge conflicts: docs/dev/lanes/CLAUDE.md (both sides
+kept) and plan.md (the lane's BUILT row for [OPT-PRECHECK-ADMIT]; main's
+batch-2-annotated rows for FREQPICK/REQPOS; the row set diffed before/after
+— identical, 110 rows). `make strict` clean on the resolved tree before the
+commit. The worktree's make test had appended a docs/dev/
+artifact_size_log.tsv row (saved to the scratchpad; the darwin gate on
+merged main produces the row that gets committed); worktree removed, the
+branch kept until the gate. Lanes: repin3 (the (B) pin 8e4e9c6c→6ef76820 +
+test-recursion-identity + emit_sweep --ref 32902104 + the abi-30 reader
+grep), inbox102 (the pin note to the bench: acceptance cells, the six
+no-move controls, router/keyword as negative controls, REQ_WHY census
+expectation). Frank's question "what were the other regression causes?"
+answered from the reading §3: three causes only — the one-attempt scan
+(fixed), the run check's restarts (cycle-3 rule), and window noise on
+program-identical artifacts. I-103a sent (bench d06257f): the inline-loop
+hand-twin joins I-103's block; Frank's three-arm compile-time form rule
+(memchr / run-if-restarts-pay / inline loop above ≈8% byte frequency, SIMD
+later) recorded in the [OPT-REQPOS] row as cycle 3's shape.
