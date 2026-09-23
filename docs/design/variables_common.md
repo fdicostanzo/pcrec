@@ -669,6 +669,21 @@ fixed here is the SEMANTICS above, which do not depend on the spelling.
 
 ### 3.6 The pattern-side oracle — what verifies a compiled `${name}` artifact's match answers
 
+> **[RATIFIED — Frank, 2026-09-23 ~13:2x] The splice is WRAPPED: `(?:` +
+> quotemeta(value) + `)`, never the bare escaped bytes.** A variable
+> reference is ONE node (`A_VAR`, `A_BREF`'s twin), so a quantifier,
+> alternation or lookaround written against `${name}` applies to the WHOLE
+> value: `${x}+` with `x = "ab"` means `(?:ab)+`, and a bare splice would
+> read `ab+`, quantifying only the last byte and making the oracle disagree
+> with the artifact on a correct artifact. The same wrap makes `${x}{2}`,
+> `a|${x}`, `(?=${x})` and `${x}?` splice correctly; EMPTY splices to
+> `(?:)`, which PCRE2 accepts. `(?:…)` and `(?>…)` are equivalent here — a
+> literal byte sequence matches in exactly one way at a position (the fold
+> compare returns ONE consumed length), so there is nothing to backtrack
+> into; the artifact's span compare is atomic by construction and the
+> oracle's group need not be. The implementing lane's oracle helper wraps
+> unconditionally; a test that relies on the bare splice is wrong.
+
 **[PROPOSED]**, and it is the one piece of MVP measurability the design owed
 and did not previously name: nothing in `variables_pattern.md` proposes an
 oracle for the built feature's MATCH semantics, only for the `${...}`
