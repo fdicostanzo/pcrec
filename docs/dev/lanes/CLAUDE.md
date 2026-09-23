@@ -2653,3 +2653,20 @@ never edited afterwards.
   `tests/lib/run_gen_timeout_tests.sh`, not `giveup.rxt`) was found by a
   broader grep and is flagged but not touched — out of the brief's scope
   (`grep giveup` does not reach it) and its own axis interaction unverified.
+
+- `mbread_report.md` — [B76]/O-46 M-B reduced (2026-09-23, lane mbread,
+  sonnet, docs-only): pcrec-bench lane b76optloop's raw arm1/arm2
+  `ns/byte` timing (block (C)) reduced into `captures_via_dfa_survey.md`
+  §3.6's VM-pass share for the 17 capture-forced hybrid `capability`
+  patterns. Verdict **SPLIT** — throughput regime clears the ~10%
+  "not the cost" bar (median 0.00%), match regime does not clear either
+  named bucket (median 32.75%, between the ~25% floor and 50% ceiling);
+  5 of 16 patterns clean NOT-THE-COST, 3 of 16 clean HAS-A-TARGET, 8 in
+  the gap. Flags a likely confound the split doesn't resolve: every
+  match-regime subject is a tiny (5-93 byte) hand-authored literal, so
+  the elevated shares there may be fixed per-call overhead rather than
+  genuine capture-assignment cost — names the next measurement (re-run
+  at larger subject sizes) rather than guessing. See
+  `docs/dev/optloop/onepass_census.md` "M-B — measured" for the full
+  table and `docs/dev/optloop/c2/onepass_mb.py`/`.tsv` for the
+  reproduction.

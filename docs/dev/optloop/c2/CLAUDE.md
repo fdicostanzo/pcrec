@@ -101,6 +101,21 @@ answer-only; none reads a clock.**
   darwin: 9 of 72 structured-set disagreements (all LOST matches, all in the
   word-context cell), 0 for the re-seed, and 552 / 0 / 0 by direction over
   4.03M exhaustively compared subjects.
+## M-B reduction pieces (lane `mbread`, 2026-09-23)
+
+- `onepass_mb.py`, `onepass_mb.tsv` — the reducer for `../onepass_census.md`'s
+  "M-B — measured" section: turns pcrec-bench lane `b76optloop`'s raw
+  arm1 (`--features all`)/arm2 (`--features all --no-captures`) `ns/byte`
+  lines (`docs/dev/lanes/b76optloop_report.md` block (C), pcrec-bench
+  commit `efec5366`) into a per-(pattern, subject) VM-pass share
+  `(arm1-arm2)/arm1`, per-pattern medians, the population median/IQR, and
+  a regime split (throughput vs. match) since `captures_via_dfa_survey.md`
+  §3.6's own decision rule uses different thresholds for each. The
+  17x4-cell table is hardcoded in `RAW_TABLE` (the bench report presents
+  it as markdown, not a machine-readable file) — a re-run against a new
+  bench report edits that constant. Re-run: `python3 onepass_mb.py`
+  (regenerates `onepass_mb.tsv` in place). Reads no clock itself (the
+  bench lane already did the timing); this is a pure reduction.
 - `skiproute_census.py`, `skiproute_census.tsv`, `skiproute_summary.json` —
   THE ROUTE CENSUS, which is what makes §4.6.3's general argument a count
   rather than an argument: every shipped `.rxt` pattern line compiled at
