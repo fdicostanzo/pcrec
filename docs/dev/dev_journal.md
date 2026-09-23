@@ -25426,3 +25426,18 @@ only the variable layer); UNSET vs EMPTY, two states; `${…}` in a pattern
 can never match today (corpus 0/4,198), so the syntax costs nothing.
 MVP = the shared expansion engine with `${name}` + `:-`/`:+`, one VM-route
 pattern variable, first/global replace. Awaits Frank's read, then a D6 panel.
+
+**SESSION CLOSE (2026-09-23 ~10:2x EDT, Frank: reset at a natural completion
+point).** Main = origin/main = 32902104 (abi 30), clean; ONE worktree kept:
+worktrees/admitimpl (abi 31, head cb437f26, its five-stage chain running
+detached — the next session reads chain_status.txt / admitimpl_test.log
+by make's `*** [` lines, merges, re-pins (B), gates, then I-102). No live
+agents; heartbeat cron deleted. Session tally (77th): lanes linuxask,
+c2design, fsreconcile, admin3, optimpl2, b2fix, b1ledger, mbread, repin2,
+rxtfix, axesrec, g3rec, nocapsview, admitimpl, vardesign (15; opus:
+c2design, fsreconcile, optimpl2, b1ledger, admitimpl, vardesign); merges 14
+(+ batch 2 = abi 30); rulings: D119 (threshold ratified; two class-pure
+ledgers + the anomaly query), D120 ([PATFACTS]), the 15 design decisions,
+2b's window rule, PCREC_BIT, batch-1 dispositions, [OPT-PRECHECK-ADMIT]
+G1+G2, the utf8 subbench, [VAR]; bench messages I-88..I-101 sent, O-45..O-48
+received. wake.md rewritten.
