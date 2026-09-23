@@ -345,6 +345,24 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   implementation lane. See its own CLAUDE.md for why the sweep had to be
   batched (44 cells/minute -> 60 seconds) and for the non-vacuity floor that
   stops the whole thing being green on a compiler that ignores the atomicity
+- **`vars/`** — module `vars` ([VAR] M10): `${name}` in a pattern, whose
+  bytes the CALLER supplies per call. Three `.rxt` files (the SET state and
+  the literal rule; the UNSET/EMPTY/SET model and the five operators; the
+  caseless compare under both encodings with the KELVIN SIGN in both
+  directions), plus `verify_vars.py` and a section of its own
+  (`make test-vars`) that runs the corpus AND that oracle.
+  **IT DECLARES ITS OWN ORACLE, AND IT HAS TO**: neither standing one can
+  express a caller variable — python `re` has no such feature, and libpcre2
+  reads `${v}` as an assertion followed by a literal `{`, a spelling no
+  subject can match — so scoring these cells against either would report a
+  divergence on every one and mean nothing. `verify_vars.py` quotemeta-
+  splices the value into the pattern as a WRAPPED literal (`(?:…)`, Frank's
+  ruling: a reference is ONE node, so `${x}+` means `(?:ab)+` and a bare
+  splice would read `ab+`) and asks libpcre2 the resulting ORDINARY pattern.
+  Its uncovered population is PRINTED rather than implied, and it fails on an
+  empty checked one. `gen_corpus_plan.md` is the K35 census stated before the
+  fact; see the directory's own CLAUDE.md.
+
 - **`backrefs/`** — module `backrefs` ([M6.5.2]): every backreference
   spelling, PCRE2's octal disambiguation at the atom position, and
   `(?J)`/DUPNAMES. Nine `.rxt` files, and they are **GENERATED** —
