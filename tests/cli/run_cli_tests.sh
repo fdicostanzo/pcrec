@@ -807,7 +807,11 @@ case10() {
     # at [manager ruling, 2026-08-29]: the new no-doorway RK_BARE kind
     # (RK_QUANTSUFFIX's own precedent) — base grammar with no doorway at
     # all, same "no route" shape the possessive-suffix family already has.
-    noroute_expect="$(printf '%s\n' '(?:...)' 'a*+' 'a++' 'a?+' 'a{1,2}+' '^' '$' '(a)' | LC_ALL=C sort | tr '\n' ' ')"
+    # [VAR] M1-M8+M10 (2026-09-23): `${name}` joined the same RK_BARE kind
+    # (src/parse/registry.c's own comment on the row: "WHICH MEANS THE
+    # `tail` COLUMN DOES NOT ARBITRATE THIS ROW" — `p_atom` recognises it
+    # directly, exactly as `$` itself is, so it reaches no doorway either).
+    noroute_expect="$(printf '%s\n' '(?:...)' 'a*+' 'a++' 'a?+' 'a{1,2}+' '^' '$' '(a)' '${name}' | LC_ALL=C sort | tr '\n' ' ')"
     while IFS= read -r syn; do
         for w in claim verdict; do
             if line="$(pcrec_run "$PCREC" --probe-ask "$w" "$syn" 2>/dev/null)"; then
@@ -834,9 +838,10 @@ case10() {
         "$(printf '%s' "$noroute_set" | grep . | LC_ALL=C sort -u | tr '\n' ' ')"
     # TWO probes per row (claim and verdict), so the count is 2x the set.
     # 10 -> 16 at [DD-11.1]/[manager ruling, 2026-08-29]: RK_BARE's three
-    # new no-doorway rows, 2 probes each.
+    # new no-doorway rows, 2 probes each. 16 -> 18 at [VAR] (2026-09-23):
+    # `${name}` joined RK_BARE as a fourth no-doorway row.
     assert_eq "case10: ...and each of them was probed at both want levels" \
-        "16" "$noroute"
+        "18" "$noroute"
     # channel-cannot-run is exit 1 and distinct from a measured refusal
     pcrec_run "$PCREC" --probe-ask verdict 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
     assert_eq "case10: --probe-ask on non-doorway text exits 1" "1" "$rc"
