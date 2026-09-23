@@ -6,9 +6,9 @@ the four-note `[VAR]` design set (lane `vardesign`, merged into `main` at
 top of `variables_roadmap.md`). Three read-only critics, distinct lenses,
 launched concurrently in the session scratchpad: **mech** (opus — engine
 mechanism: `select_engine.c`, the emit arm, the analysis declines, the ABI
-byte-identity claims), **spec** (opus — contract/spec/prior-rulings:
+byte-identity claims), **spec** (sonnet — contract/spec/prior-rulings:
 D18/D26/D37/D38/D41.1/D80/D85/D87/D89/D94/D120 and
-`docs/spec/match_api.md`), **test** (opus — tests/checks/MVP-measurability
+`docs/spec/match_api.md`), **test** (sonnet — tests/checks/MVP-measurability
 against `docs/dev/learnings.md` §3, D27, D77, D119). Nobody ran `make`;
 nobody wrote anything in their own reports.
 
