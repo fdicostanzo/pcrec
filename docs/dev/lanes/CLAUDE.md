@@ -904,6 +904,44 @@ never edited afterwards.
   shipped named analyses carry `cpfreq` and derive to bytes through the
   encoder the tree already owns.
 
+- `optimpl2_report.md` — **[OPTLOOP.1.impl] BATCH 2** (2026-09-22, lane
+  optimpl2, opus): `[OPT-FREQPICK]` + `[OPT-REQPOS]` tier 2b as ONE `abi`
+  29 → 30 event — the necessary byte chosen by ARGMIN over the shipped
+  byte-frequency prior (byte encoding only), and the necessary literal RUN as a
+  second accumulator on `reqbyte.c`'s own walk with its own axis (bit 31, with
+  the `1ull` widening of the flags enum), its `<PREFIX>_REQ_RUN` stamp, one
+  emitted scan loop for both engines, and `pcrec_sb_cstr` as the emission kit's
+  third vocabulary. Read §0 for three findings, of which two are refutations of
+  the ratified notes' own acceptance measurements. **`reqbyte_freq_pick.md` §8
+  item 4's "`-e utf8` reads ZERO movers" is FALSIFIED by the combined event**
+  and true only with `-fno-req-run`, because the RUN is deliberately not
+  encoding-gated while the PICK is — all 449 utf8 movers are run gains and zero
+  are byte-pick moves, and `-e utf8 -fno-req-run` reads 0 of 2,836, which
+  separates the two mechanisms instead of asserting a property of their sum.
+  **`reqpos_2b.md` §5.5 arm 2's `-fno-req-run` byte identity was UNAVAILABLE as
+  written** until the new bit joined `rx_info.flags`' `strategy_denials` mask —
+  and the three batch-1 bits are STILL outside it, so each of them moves five
+  bytes of that initializer on every artifact including ones it cannot act on,
+  which is the defect the mask's own comment records as measured on bit 19.
+  **And the one arm of the run walk where the conservative answer deletes a
+  match is not in the design's table**: `reqpos_2b.md` §2.2 lists a min-0
+  repeat as contributing the empty byte set and says nothing about
+  CONTIGUITY, so the first build joined the two literals around one and
+  reported a four-byte run for a C-comment pattern — true of the match where
+  the repeat takes zero iterations and false of every other. *An accumulator
+  that carries a JOIN needs an arm for every node kind that can sit BETWEEN the
+  things being joined, which is a larger set than the kinds that contribute to
+  the thing being accumulated.* Movers census (base-vs-tip, same `-o`
+  basename): 475 of 2,814 at default (406 gain a run, 69 move the byte with no
+  run, 0 to a commoner byte), 449 of 2,836 under `-e utf8` (all run gains), 0
+  under `-e utf8 -fno-req-run`. Also worth reading: §7.1, a check needle built
+  from pattern-derived bytes is an untrusted regex (`grep -q` on a run starting
+  with `*` read NOMATCH against text verbatim present); §7.2, the `-Wcomment`
+  hazard firing twice on the LANE's own comments before any emitted text; and
+  §4's two abi readers the ritual's grep is structurally blind to, both found
+  by running the suites that count. `make test-axes` (restricted) and the full
+  `make test` are chained detached as the lane's last act, log paths in §6.
+
 - `<lane>_rulings.md` — the manager's rulings to a lane, written BY FILE while the lane runs (a busy lane reads messages only when it idles; the file is polled at each stage boundary — memory `pcrec-lane-hold-lift-artifact`). GITIGNORED BY DESIGN (see .gitignore): it is live coordination, not a deliverable; the lane's report §"Rulings received" restates every ruling that shaped the delivered work, and the journal carries the manager's side. When a delivered worktree is removed, its rulings file is copied here as a LOCAL, still-ignored file (edge1, w13 on 2026-09-04; lim2's was lost with its worktree — its rulings 1-5 are in lim2_report.md §7 and 6-7 in journal parts 62-64) — these local files do NOT travel by git (memory `pcrec-two-machine-split`).
 
 - `w3_report.md` — [REVW.3] WAVE 3 (LAYERING) (2026-09-19, lane w3, opus):
