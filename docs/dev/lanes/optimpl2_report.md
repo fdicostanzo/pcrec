@@ -180,6 +180,7 @@ Every log path below is in the worktree unless marked otherwise.
 | `make strict CC=gcc-16` | `build/strict.log` | **clean** (`whole tree compiles clean with -Werror -Wshadow`) |
 | answer identity vs `-fno-req-run`, every startpos × 3 engines | scratchpad `ident/` | **0 mismatches**, 37 patterns × 3 engines × 36 subjects = **25,296 cells**, 9 engine-refusals |
 | answer identity vs `-fno-req-byte`, same shape | scratchpad `ident/` | **0 mismatches**, 25,296 cells |
+| every corpus pattern × 3 engine settings | `build/optimpl2_corpus3.log` | **9,513 compiles, 0 internal errors** (3,171 distinct patterns × default / `--engine=dfa` / `--engine=vm`) |
 | `tests/codegen/run_prechecks.sh` | run live | **200 / 0** (was 113/0 at batch 1, 123/0 after admin3) |
 | `make test-codegen CC=gcc-16` | `build/codegen2.log` | **9 of 10 scripts**; the sole red is the standing darwin `nm arm_a.o` probe (documented in 30 other lane reports) |
 | `tests/codegen/run_cpset_structure.sh` | `build/cpset2.log` | **28 / 0** after re-recording the manifest |
@@ -323,13 +324,11 @@ value, same generated code.
 DO-THEN-FINISH; `nohup … & disown`, so they survive this session's close), one
 heavy suite at a time:
 
-1. **Every corpus pattern compiled at the three engine settings** (default /
-   `--engine=dfa` / `--engine=vm`), asserting **zero internal errors** — an
-   internal error reachable from a user pattern is a refusal regression, and the
-   run walk added arms to a switch both engines read. Log:
-   **`build/optimpl2_corpus3.log`**, last line
-   `corpus-x-engines: N compiles, internal errors: M`. Runs first because it is
-   the cheapest of the three.
+1. **Every corpus pattern compiled at the three engine settings** — RAN AND
+   GREEN before hand-off: `9,513 compiles, internal errors: 0`
+   (`build/optimpl2_corpus3.log`). It is item 1 of the chain rather than a §3
+   row only because the chain is where it ran; the number is measured, not
+   owed.
 2. **`make test-axes CC=gcc-16 AXES="-fno-req-byte -fno-req-run"`** — the
    answer-identity sweep restricted to this batch's two axes, verified against
    `run_axes.sh`'s own spelling before citing it (the whole table is
