@@ -227,17 +227,25 @@ t_start=$(date +%s)
 # therefore DERIVED AWAY SILENTLY: the new axis would have been absent from
 # the sweep with no failure, which is exactly the "an axis shipped without its
 # five things" gap [CHK-2] exists to close, arriving through [CHK-2]'s own
-# instrument. 31 is the width of the `unsigned` the flags live in, so it needs
-# no maintenance; the cross-check below catches a bit that has a constant and
-# no doc heading either way.
+# instrument. 63 is the width of the `uint64_t` `pcrec_options.flags` has always
+# been, and since [OPT-REQPOS] respelled the enum `1ull << N` it is also the
+# width the CONSTANTS can name — so the bound needs no maintenance; the
+# cross-check below catches a bit that has a constant and no doc heading either
+# way. (It read 31 until 2026-09-22, when `PCREC_NO_REQ_RUN` took the last
+# `1u <<` bit and the enum had to widen.)
 declare -A bit_macro=()
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
-    if [ "$bit" -ge 4 ] && [ "$bit" -le 31 ]; then
+    if [ "$bit" -ge 4 ] && [ "$bit" -le 63 ]; then
         bit_macro[$bit]="$macro"
     fi
-done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
-          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
+# `1u(ll)?`: the flags enum is spelled `1ull << N` since [OPT-REQPOS]
+# (2026-09-22), because bit 31 is the last bit an `unsigned` constant can name.
+# Both spellings are read so this extraction works either side of that change;
+# it hard-fails on deriving ZERO bits below, which is what makes the tolerance
+# safe rather than sloppy.
+done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u(ll)? << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
+          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u(ll)? << ([0-9]+)$/\1\t\4/')
 
 n_bits=${#bit_macro[@]}
 if [ "$n_bits" -eq 0 ]; then

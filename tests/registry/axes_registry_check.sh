@@ -171,8 +171,13 @@ assoc_new HDR_BIT   # macro -> bit
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
     assoc_set HDR_BIT "$macro" "$bit"
-done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
-          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u << ([0-9]+)$/\1\t\3/')
+# THE SPELLING IS `1ull << N` SINCE [OPT-REQPOS] (2026-09-22), and `1u` is
+# accepted too so this extraction reads a tree either side of that widening
+# rather than silently deriving zero bits on one of them. The bit after 31
+# cannot be spelled `1u <<` at all (`1u << 32` is undefined behaviour), which
+# is why the header moved; the values did not.
+done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u(ll)? << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
+          | sed -E 's/^(PCREC_(NO|FORCE)_[A-Z_]+) *= *1u(ll)? << ([0-9]+)$/\1\t\4/')
 if [ "$(assoc_count HDR_BIT)" -eq 0 ]; then
     echo "axes_registry: FATAL: derived ZERO PCREC_(NO|FORCE)_* bit constants from lib/pcrec.h" >&2
     exit 1
