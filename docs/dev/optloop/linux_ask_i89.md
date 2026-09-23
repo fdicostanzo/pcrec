@@ -175,6 +175,25 @@ census"; `run_axes.sh`'s own header):
   (BUDGET-bound on the K23 ambiguous-decomposition patterns), and
   `-fprefilter` (REFUSED-DOCUMENTED + BUDGET, the do-or-die force-refusal
   on every DFA-selected pattern).
+
+  > **CORRECTION, 2026-09-23 (lane `axesrec`, reading O-47's real
+  > returned transcript, `docs/dev/optloop/runs/
+  > 2026-09-23-i89A-8d716693/axes_full.log`):** the executor's O-47
+  > report reproduced this block's own EXPECT text VERBATIM AND
+  > CORRECTLY — every one of the four documented exceptions above reads
+  > exactly as stated on Linux, and batch 1's bits 28-30 read
+  > `24,343/24,343 agree, 0 mismatches, each`, IDENTICAL to darwin's
+  > restricted run, exactly as this ask's own paragraph above predicted.
+  > O-47's SEPARATE prose paragraph ("Facts beside your stated EXPECTs,
+  > reported not reconciled") that appeared to contradict this block was
+  > itself wrong: it quoted every named axis's data from the row TWO
+  > POSITIONS LATER in the per-axis run order (a constant +2 offset,
+  > confirmed against the raw transcript for all seven cited figures —
+  > see `docs/dev/optloop/axes_reconciliation_2026-09-23.md` for the
+  > row-by-row evidence and the likely mechanical cause). Nothing here
+  > needed correcting; nothing in pcrec needed fixing. Three "facts"
+  > that read as anomalies were a transcription artifact in the
+  > REPORTING of an otherwise-clean, fully-EXPECT-matching run.
 - Final summary line: `run_axes.sh: all axes answer-identical to default
   (documented refusal populations excepted); --vm-entry-shape tier: ...;
   oracle cross-check ...; DIAL-S3 ...` — EXPECT the oracle cross-check

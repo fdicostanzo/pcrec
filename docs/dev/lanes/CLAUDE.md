@@ -2753,3 +2753,25 @@ never edited afterwards.
   draft executor ask (`docs/dev/optloop/linux_ask_i89.md`) that
   deliberately pins main at the batch-1 commit for a scoped measurement
   — flagged for the ask's owner, not touched here.
+
+- `axesrec_report.md` — (2026-09-23, lane axesrec, sonnet, docs-only):
+  reconciles pcrec-bench outbox O-47's three "facts beside your stated
+  EXPECTs, reported not reconciled" against I-89 block (A)'s own real
+  transcript. **Verdict: all three are ONE mechanism, not three, and it
+  is a reporting artifact in O-47's own prose, not a pcrec finding** — a
+  constant +2-row mislabeling (confirmed for all seven cited figures
+  against the raw log) that quoted every named axis's data from the row
+  two positions later in the per-axis run order. Read against the
+  correct row, bits 28-30 (batch 1's own axes) read clean
+  `24,343/0/0/0` each on Linux, identical to darwin's restricted run and
+  to I-89's own EXPECT; `-fprefilter` carries its real, already-
+  documented 15,426-row refused-documented population (floor 12,000);
+  `-fno-possessify` is clean and the 230-row exception belongs to
+  `-fno-counter`, already one of I-89's four documented exceptions.
+  `run_axes.sh` is unchanged in classification logic between the O-47
+  pin and `main` (diff is `[b2fix]`'s `PCREC_BIT(N)` respelling only),
+  ruling out a script-version explanation. See
+  `docs/dev/optloop/axes_reconciliation_2026-09-23.md` for the
+  row-by-row evidence and a named (evidence-backed) mechanical cause for
+  the offset; `linux_ask_i89.md` annotated in place with a dated
+  correction note.
