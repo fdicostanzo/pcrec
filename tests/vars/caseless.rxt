@@ -1,0 +1,151 @@
+# tests/vars/caseless.rxt -- module `vars` ([VAR] M10): a caseless variable
+# compare, under both encodings, including the LENGTH-CHANGING fold.
+#
+# CASELESS IS THE SAME WORK A CASELESS BACKREFERENCE IS, one operand over
+# (variables_pattern.md §6.1): `$_var_match_caseless` is `$_bref_match_caseless`
+# with the reference cursor reading the caller's buffer. Under `utf8` it
+# SHARES that entry's fold map and decoder rather than carrying a second copy
+# (the `PcrecEncEntry.requires` column's one customer).
+#
+# THE VALUE IS NOT PRE-FOLDED, and §6.2 is why: a fold is a relation between
+# TWO sides and the subject side is not folded, so a pre-folded value would
+# fail on every subject carrying the other case. Under `utf8` it could not
+# work at all, because the fold can change byte LENGTH.
+#
+# ORACLE: QUOTEMETA-SPLICE with `(?i)` carried through — the spliced pattern
+# is the same question, and libpcre2 answers it. tests/vars/verify_vars.py.
+
+# ---------------------------------------------------------------
+# BYTE encoding: the ASCII fold, arithmetic and inline
+# ---------------------------------------------------------------
+
+pattern ^(?i)${v}$
+features vars,modifiers
+var v "abc"
+m "abc" 0 3
+m "ABC" 0 3
+m "AbC" 0 3
+n "abd"
+
+# THE VALUE'S OWN CASE IS IMMATERIAL: both sides fold, so a value in upper
+# case matches a lower-case subject and the reverse.
+pattern ^(?i)${v}$
+features vars,modifiers
+var v "ABC"
+m "abc" 0 3
+m "ABC" 0 3
+
+# CASE-SENSITIVE IS THE DEFAULT, and this is the negative control that says
+# the caseless cells above are testing the fold rather than the compare.
+pattern ^${v}$
+features vars
+var v "abc"
+m "abc" 0 3
+n "ABC"
+
+# NON-LETTERS ARE UNTOUCHED under `byte`: in the C locale a byte >= 0x80 has
+# no case, and folding it would be a guess about a locale the caller owns.
+pattern ^(?i)${v}$
+features vars,modifiers
+var v "a-1_z"
+m "A-1_Z" 0 5
+n "a-2_z"
+
+# ---------------------------------------------------------------
+# UTF-8: the same mechanism, and the case the return-a-LENGTH protocol
+# exists for
+# ---------------------------------------------------------------
+
+pattern ^(?i)${v}$
+features vars,modifiers
+encoding utf8
+var v "abc"
+m "ABC" 0 3
+
+# THE KELVIN SIGN. U+212A folds to `k`, and it is THREE bytes where the value
+# is ONE -- so the subject bytes consumed do not equal the value's length,
+# which is exactly why `$_var_match_caseless` returns a LENGTH rather than a
+# bool. The same cell `tests/utf8/axis06_caseless_fold.rxt` pins for a
+# literal, here for a caller-supplied value.
+pattern ^(?i)${v}$
+features vars,modifiers
+encoding utf8
+var v "k"
+m "k" 0 1
+m "K" 0 1
+m "\xe2\x84\xaa" 0 3
+
+# AND THE OTHER DIRECTION: the VALUE is the Kelvin sign and the subject is
+# `k`, one byte where the value is three.
+pattern ^(?i)${v}$
+features vars,modifiers
+encoding utf8
+var v "\xe2\x84\xaa"
+m "k" 0 1
+m "K" 0 1
+m "\xe2\x84\xaa" 0 3
+
+# THE FOLD IS SIMPLE (1:1), like PCRE2's: the sharp s does not match "SS".
+# tests/utf8/axis07_caseless_1ton.rxt pins the same negative for a literal.
+pattern ^(?i)${v}$
+features vars,modifiers
+encoding utf8
+var v "\xc3\x9f"
+n "SS"
+n "ss"
+m "\xc3\x9f" 0 2
+
+# ---------------------------------------------------------------
+# UTF-8: an ILL-FORMED VALUE is a REFUSED CALL, not a silent nomatch
+# ---------------------------------------------------------------
+#
+# The opposite of the rule for a SUBJECT, and deliberately: a subject's
+# ill-formed bytes correctly match nothing, because the automaton was built
+# over well-formed classes. A VALUE came from the caller and has passed
+# through nothing, so it is checked once per call before the match begins.
+# ORACLE-LESS BY CONSTRUCTION -- there is no PCRE2 spelling to splice.
+
+pattern ^${v}$
+features vars
+encoding utf8
+var v "\xff"
+gu unset-var "x"
+
+# A TRUNCATED SEQUENCE: a two-byte lead with no continuation.
+pattern ^${v}$
+features vars
+encoding utf8
+var v "\xc3"
+gu unset-var "x"
+
+# A SURROGATE, encoded: well-formed by shape and excluded by range, exactly
+# as the automaton's own lowered classes exclude it.
+pattern ^${v}$
+features vars
+encoding utf8
+var v "\xed\xa0\x80"
+gu unset-var "x"
+
+# THE SAME BYTES UNDER `byte` ARE A PERFECTLY GOOD VALUE, which is the
+# control that says the refusal above is the ENCODING's and not a blanket
+# rule about high bytes.
+pattern ^${v}$
+features vars
+var v "\xff"
+m "\xff" 0 1
+
+# A DEFAULT WORD IS VALIDATED ON THE SAME TERMS as a caller's value: the
+# check runs over the RESOLVED span, so there is no second mechanism and no
+# compile-time special case for a word.
+#
+# `pattern-esc` AND NOT `pattern`, and the first draft of this cell got it
+# wrong in a way worth recording: a `pattern` line's text reaches `--pattern`
+# VERBATIM, so `\xff` there is four ASCII bytes and the word is the perfectly
+# valid `xff` — the cell read `nomatch` and asserted nothing. `pattern-esc`
+# is the line kind whose value carries the escape vocabulary, and it is what
+# puts a real 0xFF into the pattern text.
+pattern-esc "^${v:-\xff}$"
+features vars
+encoding utf8
+var-unset v
+gu unset-var "x"

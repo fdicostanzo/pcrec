@@ -1530,6 +1530,39 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
     pcrec_sb_stampf(sb, upper, "NCAPS", "%d", ncaps);
 }
 
+/* [VAR] Stamps this artifact's variable surface: `<PREFIX>_NVARS` and one
+ * `<PREFIX>_VAR_<NAME>` index macro per name, or nothing at all on an
+ * artifact that mentions none.
+ *
+ * IT IS CALLED FROM `emit_ncaps_macros`' OWN TWO SITES, and that placement is
+ * the point rather than convenience: `<PREFIX>_NVARS` is CALLER-FACING —
+ * `docs/spec/vars.md` §4 publishes it, and a caller reading a header to find
+ * out whether this artifact takes variables reads exactly this. A first
+ * version stamped it into the `.c` beside `<PREFIX>_NSLOTS` (which is
+ * genuinely `.c`-private), and the corpus caught it on its first
+ * DIRECTORY-mode run: the harness's own var-bearing/not discriminator greps
+ * the HEADER, so the stamp was invisible to it and a block with no `var` line
+ * but a var-bearing pattern failed to compile. The same question a caller
+ * asks, asked by a test.
+ *
+ * THE INDEX IS THE ARTIFACT'S OWN and never something a caller writes
+ * (Frank's 2026-09-23 by-name ruling): it indexes `rx_info.vars`, and it is
+ * stamped so a reader of the emitted source can follow the resolver's
+ * subscripts. The NAME is uppercased through the emission kit's ONE
+ * derivation, and needs no escaping because the grammar's selector rule
+ * (`src/core/varexp.c`) is already the C identifier rule. */
+static void emit_vars_macros(StrBuf *sb, Ctx *cx, const char *upper)
+{
+    if (cx->n_vars == 0) return;
+    pcrec_sb_stampf(sb, upper, "NVARS", "%u", cx->n_vars);
+    for (unsigned i = 0; i < cx->n_vars; i++)
+        pcrec_sb_stampf(sb, upper,
+                        pcrec_sb_fragf(&cx->arena, "VAR_%s",
+                                       pcrec_sb_upper(&cx->arena,
+                                                      cx->var_names[i])),
+                        "%u", i);
+}
+
 /* Writes the caller-buffer sizing surface: the five per-prefix capacity/alignment macros and the `<prefix>_buffers` descriptor type.
  *
  * [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
@@ -2524,6 +2557,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_rx_abi_types(h);
     pcrec_sb_putc(h, '\n');
     emit_ncaps_macros(h, upper, ncaps);
+    emit_vars_macros(h, cx, upper);
     emit_buffers_surface(h, upper, cx->opt->prefix, bs);
     pcrec_sb_putc(h, '\n');
     emit_search_decl(h, cx, fn);
@@ -8205,6 +8239,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
         emit_rx_abi_types(c);
         pcrec_sb_putc(c, '\n');
         emit_ncaps_macros(c, g->upper, ncaps);
+        emit_vars_macros(c, cx, g->upper);
         emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
         pcrec_sb_putc(c, '\n');
         emit_search_decl(c, cx, g->searchfn);

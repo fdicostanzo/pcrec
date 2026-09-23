@@ -1133,7 +1133,14 @@ run_case_loop() {
             else
                 case "$darg" in '@'*) darg='\x40'"${darg:1}" ;; esac
             fi
-            out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$darg" "$pos" "$route" "$dmode")"
+            # [VAR] M10 THE BLOCK'S BINDINGS, appended as trailing arguments,
+            # one per `var`/`var-unset` line, IN SOURCE ORDER. `${cur_vars[@]+...}`
+            # rather than a bare expansion because `set -u` is on and an
+            # empty array is unset under bash 3.2 — the same guard every
+            # other optional array expansion in this file carries. A block
+            # with no bindings produces NO extra argument at all, which is
+            # what keeps every existing case's argv byte-identical.
+            out="$("$TIMEOUT_BIN" "$RUN_SECS" "$exe" "$darg" "$pos" "$route" "$dmode" ${cur_vars[@]+"${cur_vars[@]}"})"
         fi
         trc=$?
         if [ "$mode" = "standalone" ]; then
@@ -1892,11 +1899,35 @@ flush_block() {
     # decimal points to sum two fixed-3-decimal numbers as integer
     # milliseconds), so a plain run (SIZELOG unset) pays for exactly one
     # `time` builtin per compile and nothing else this block adds.
+    # [VAR] M10 `-DRXT_HAS_VARS` EXACTLY WHEN THE ARTIFACT IS VAR-BEARING, and
+    # THE ARTIFACT IS THE DISCRIMINATOR RATHER THAN THE BLOCK — a correction
+    # the corpus made on its first run rather than a preference. The first
+    # version asked whether the BLOCK carried `var` lines, which is a
+    # different question and wrong in exactly the cell written to test it:
+    # `^${prefix}-…$` with NO binding at all is the "an omitted name reads
+    # UNSET" case, and its artifact HAS the trailing pair while its block has
+    # no `var` line. It failed to compile, naming `too few arguments to
+    # rx_search`.
+    #
+    # `<PREFIX>_NVARS` is the artifact's own stamp and is read the same way
+    # `artifact_ncaps` reads `RX_NCAPS` one screen down. The header exists by
+    # here: `pcrec` has already run and its gen.c/gen.h have already been
+    # checked for above.
+    local _var_def=""
+    grep -q '^#define RX_NVARS ' "$bdir/gen.h" && _var_def="-DRXT_HAS_VARS"
     local _sz_tf
     _sz_tf="$WORKDIR/.sz_time.$$"
     {
         TIMEFORMAT='ARTSIZE_TIME %3R %3U %3S'
-        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+        # [VAR] M10 `-DRXT_HAS_VARS` EXACTLY WHEN THE BLOCK HAS BINDINGS, and
+        # it gates only the CALL SHAPE: `<prefix>_search` gains a trailing
+        # `vars, nvars` pair on a var-bearing artifact and not otherwise, so
+        # one static driver has to be compiled against two signatures. The
+        # BLOCK's own bindings are the right discriminator rather than a grep
+        # of the artifact, because a block that binds a variable the pattern
+        # never mentions is exactly the "unknown name is ignored" cell, and it
+        # must still compile against the un-paired signature.
+        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS $_var_def -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
     } 2> "$_sz_tf"
     build_rc=$?
     build_log="$GEN_CC_LOG"
@@ -2143,6 +2174,11 @@ for file in "${files[@]}"; do
     cur_features_only=0
     cur_pattern_esc=0
     cur_route="$RXTROUTE"
+    # [VAR] M10 declared at FILE scope as well as reset at every block, for
+    # `set -u`'s sake: under bash 3.2 an array that has never been assigned is
+    # unset, and `${#cur_vars[@]}` on one is a hard error — the same reason
+    # every other array here is initialised at both places.
+    cur_vars=()
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     case_route=(); case_file=()
     have_block=0
@@ -2559,6 +2595,7 @@ for file in "${files[@]}"; do
             # the env axis is a floor a block can raise rather than a setting
             # the first `pattern` line silently discards.
             cur_route="$RXTROUTE"
+            cur_vars=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
@@ -2737,7 +2774,7 @@ for file in "${files[@]}"; do
             # letter check already applies two elif arms up.
             record_fail_class value-shape "$file" "$lineno" \
                 "'gu internal' is refused: PCREC_ERR_INTERNAL is the artifact catching its own inconsistency, never a planned outcome a .rxt block may EXPECT (docs/testing.md's 'gu' directive; see tests/mech/sabotages/S136 for how this code IS exercised)"
-        elif [[ "$line" =~ ^gu[[:space:]]+(steps|frames|work|recurse)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
+        elif [[ "$line" =~ ^gu[[:space:]]+(steps|frames|work|recurse|unset-var)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             # [DD-14 wave A commit 3, §10.3] asserts the search GAVE UP with
             # this TYPED code, scored against driver.c's exit 3 + printed
             # word instead of the default HARD failure that branch below
@@ -2746,6 +2783,17 @@ for file in "${files[@]}"; do
             # nothing in this wave's landing bar needs one, and D42.3's own
             # "getting the partition wrong costs a renumber, not more" spirit
             # says add the knob when a real cell needs it, not speculatively).
+            # [VAR] `unset-var` JOINS THE CODE SET, and it is the first
+            # member that is NOT a give-up: `PCREC_ERR_UNSET_VAR` sits BELOW
+            # `PCREC_ERR_FLOOR` and means the call was REFUSED before
+            # anything was attempted. A corpus block MAY expect it — unlike
+            # `internal` one arm up — because it is the CALLER's own doing
+            # and is exactly what a `var-unset` line is written to produce.
+            # `gu` is the right directive for it rather than a new one: this
+            # line kind already means "the search returned a typed negative
+            # code and here is which", and adding a second directive for a
+            # second class of negative code would be two spellings of one
+            # question.
             # [DD-13b.W1.1] the `have_block` guard (see the `perr` arm
             # above for why the case arms lacked it and what it makes loud).
             if [ "$have_block" != "1" ]; then
@@ -3003,8 +3051,46 @@ for file in "${files[@]}"; do
             cur_encoding=""
             cur_features_only=0
             cur_route="$RXTROUTE"
+            cur_vars=()
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=(); case_file=()
             have_block=1
+        elif [[ "$line" =~ ^var[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
+            # [VAR] M10 A SET VARIABLE. Block-scoped and repeatable, one line
+            # per variable, carried VERBATIM: the name as written and the
+            # value in the EXISTING quoted-subject escape vocabulary, which
+            # driver.c decodes with the same `decode()` a subject goes
+            # through. No second escape set (variables_common.md §3.5).
+            #
+            # `var n ""` IS THE EMPTY STATE and is deliberately reachable:
+            # EMPTY and UNSET are two different things and the `:` operators
+            # are what distinguish them, so a format that could not spell both
+            # could not test the distinction.
+            #
+            # NOTHING IS LOOKED UP HERE. Under the 2026-09-23 by-name ruling
+            # the ARTIFACT resolves its own mentioned names against whatever
+            # array it is handed, so this arm's whole job is to carry the pair
+            # to the driver's argv unchanged — a name the artifact does not
+            # mention is simply ignored by the matcher, which is itself a cell
+            # a `.rxt` file may want to assert.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'var' line before any pattern block"
+            else
+                cur_vars+=("${BASH_REMATCH[1]}=${BASH_REMATCH[2]}")
+            fi
+        elif [[ "$line" =~ ^var-unset[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*$ ]]; then
+            # [VAR] M10 AN UNSET SLOT: `rx_var.p == NULL`. An argv element
+            # with NO `=` is what driver.c reads as unset, and a name cannot
+            # contain one, so the two spellings cannot collide.
+            #
+            # IT IS A DECLARATION AND NOT AN OMISSION, and the difference is
+            # testable: omitting the name entirely also reads UNSET at the
+            # artifact, so a block can assert BOTH routes to the same state
+            # and a regression that confused them would move one cell.
+            if [ "$have_block" != "1" ]; then
+                record_fail_class unknown-token-in-scope "$file" "$lineno" "'var-unset' line before any pattern block"
+            else
+                cur_vars+=("${BASH_REMATCH[1]}")
+            fi
         elif [[ "$line" =~ ^mc[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             # `mc "<subject>" <n>` — the FIND-ALL COUNT (format_design
             # §2.21). The rule is `docs/spec/match_api.md` §3.1's shipped

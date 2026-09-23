@@ -200,6 +200,30 @@ PCREC_RXT_SCHEMA(BLOCK, "g",              CASE,  0, NONE,  REPEAT,      "", FORM
 PCREC_RXT_SCHEMA(BLOCK, "gp",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 PCREC_RXT_SCHEMA(BLOCK, "gu",             CASE,  0, NONE,  REPEAT,      "", FORMAT, PCREC,       1)
 
+/* [VAR] module `vars`' TWO BINDING LINES ([VAR] M10, 2026-09-23;
+ * `docs/design/variables_common.md` §3.5, spelling ruled by the manager under
+ * DD-13b). ONE LINE PER VARIABLE PER BLOCK, block-scoped and repeatable, and
+ * the SAME two lines serve BOTH consumers — a block that matches a pattern
+ * and (when the replacement side lands) a block that substitutes read them
+ * identically. There is no substitution-only reading of this directive.
+ *
+ * BOTH UNSET AND EMPTY ARE SPELLABLE, and that is the requirement rather than
+ * a nicety: `var-unset n` is UNSET (`p == NULL`) and `var n ""` is EMPTY
+ * (`p != NULL, len == 0`), and a format that could not tell them apart could
+ * not test the operator (`:-` versus `-`) that exists to distinguish them.
+ *
+ * `var` IS `QUALIFIED` and not `PAIR`, because its first token IS the
+ * variable NAME and the rest of the line is a quoted SUBJECT in the existing
+ * escape vocabulary — exactly `under`'s shape, and the row therefore needs no
+ * arm in `rxt_source.c` at all: the generic qualified-value check is the
+ * whole of leg A's obligation here. NO SECOND ESCAPE VOCABULARY (§3.5).
+ *
+ * ALL_READERS: all three legs recognise both, which is what the harness needs
+ * (it builds the `rx_var[]` array from these lines) and what makes a typo in
+ * one leg visible to the other two. */
+PCREC_RXT_SCHEMA(BLOCK, "var",        QUALIFIED, 0, NONE,       REPEAT,      "", FORMAT, ALL_READERS, 1)
+PCREC_RXT_SCHEMA(BLOCK, "var-unset",  TOKEN,     0, NONE,       REPEAT,      "", FORMAT, ALL_READERS, 1)
+
 /* W23's block lines — rows only at W23.1, arms at W23.3. */
 PCREC_RXT_SCHEMA(BLOCK, "tag",        LIST,      0, NONE,       REPEAT,      "closed per-key",       FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(BLOCK, "mc",         CASE,      0, NONE,       REPEAT,      "",                     FORMAT, NONE,  23)

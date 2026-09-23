@@ -11051,33 +11051,6 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
     }
     pcrec_sb_stampf(c, v->up, "NSLOTS", "%d", pl->nstate < 1 ? 1 : pl->nstate);
 
-    /* [VAR] THE VARIABLE STAMPS: how many NAMES this artifact mentions, and
-     * one index macro per name.
-     *
-     * THE INDEX IS THE ARTIFACT'S OWN AND NEVER SOMETHING A CALLER WRITES
-     * (Frank's 2026-09-23 by-name ruling, variables_common.md §3.1). It
-     * indexes `rx_info.vars`, the artifact's own NAME table, and it is stamped
-     * so that a reader of the emitted source can follow the resolver's
-     * subscripts — which is the same reason the slot legend below this exists.
-     * A caller writes `{ "prefix", buf, n }` and the artifact finds its own
-     * slot.
-     *
-     * The NAME is uppercased through the emission kit's one derivation
-     * (`pcrec_sb_upper`), so a name that is not a legal C identifier tail
-     * cannot reach here: the grammar's own selector rule
-     * (`src/core/varexp.c`) already restricts it to `[A-Za-z_][A-Za-z0-9_]*`,
-     * which is the C identifier rule, and that is why no escaping is needed
-     * at this site. */
-    if (cx->n_vars > 0) {
-        pcrec_sb_stampf(c, v->up, "NVARS", "%u", cx->n_vars);
-        for (unsigned i = 0; i < cx->n_vars; i++)
-            pcrec_sb_stampf(c,
-                v->up,
-                pcrec_sb_fragf(&cx->arena, "VAR_%s",
-                               pcrec_sb_upper(&cx->arena, cx->var_names[i])),
-                "%u", i);
-    }
-
     /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
      * replace. Requirement (5): these table numbers are IDENTITIES, not
      * indexes, and naming them is the single largest readability gain in a VM
@@ -11886,7 +11859,19 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
         "            raw_p[i] = cv->p; raw_len[i] = cv->len;\n"
         "            break;   /* FIRST match wins on a duplicate name */\n"
         "        }\n"
-        "    }\n",
+        "    }\n"
+        /* [VAR] `(void)`, and it is NOT decoration. An expansion set may read
+         * only the POINTERS — `${v+w}` tests `raw_p[i] == NULL` and answers
+         * with the word or with nothing, never with the value — so `raw_len`
+         * is written and never read, which `-Wunused-but-set-variable` under
+         * the harness's own `-Werror` GENCFLAGS rejects. Found by the corpus
+         * on its first run, K28's class exactly: a warning no ANSWER check
+         * can see. Spelled for BOTH arrays rather than only the one that
+         * failed, because the mirror shape (`${v:-w}` with an always-taken
+         * word) makes `raw_p` write-only by the same argument, and the
+         * emitted `_match_anchored` two screens down already carries this
+         * idiom for its own three. */
+        "    (void)raw_p; (void)raw_len;\n",
         en->ai, v->p, v->p, v->up, v->up, v->up, v->p, v->p);
 
     for (unsigned i = 0; i < cx->n_var_exps; i++) {

@@ -36,6 +36,30 @@
  *                        `+ 1` and never the bench's `max(end, pos+1)`,
  *                        which double-counts an empty match found beyond
  *                        the scan position.
+ *   [var...] ([VAR] M10) are this case's VARIABLE BINDINGS, one trailing
+ *   argument per binding, BUILT VERBATIM from the block's `var`/`var-unset`
+ *   lines with no lookup of any kind:
+ *       NAME=<escaped value>   a SET variable (empty value == EMPTY)
+ *       NAME                   an UNSET variable (rx_var.p == NULL)
+ *   The first `=` splits; a name cannot contain one, so the split is
+ *   unambiguous and a value may. The value's escapes are the SAME ones a
+ *   quoted subject carries and are decoded by the SAME `decode()` — no
+ *   second vocabulary (variables_common.md §3.5).
+ *
+ *   THE DRIVER PERFORMS NO NAME->INDEX RESOLUTION, and that is the 2026-09-23
+ *   by-name ruling rather than a simplification: the ARTIFACT resolves its
+ *   own mentioned names against whatever array it is handed, once per entry
+ *   call. So an unknown name here is simply ignored by the matcher and a name
+ *   the artifact mentions and this array omits reads UNSET — both are facts a
+ *   `.rxt` case can assert, and neither needs the driver to know anything
+ *   about the compiled artifact.
+ *
+ *   `RXT_HAS_VARS` is defined by run.sh exactly when the block has bindings,
+ *   and it gates only the CALL: `<prefix>_search` gains a trailing
+ *   `vars, nvars` pair on a var-bearing artifact and not otherwise, and the
+ *   driver is ONE static file compiled against either shape. The `rx_var`
+ *   TYPE needs no gate — it is in the shared ABI block every artifact emits.
+ *
  *   [startpos] is an optional non-negative decimal integer passed as
  *   rx_search's startpos argument; if omitted, startpos defaults to 0
  *   (the `m`/`n` directives always mean startpos 0; `ms`/`ns` pass it
@@ -354,8 +378,8 @@ static int parse_route(const char *s, int *use_in, int *have_buffers,
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2 || argc > 5) {
-        fprintf(stderr, "usage: %s <subject> [startpos] [route] [mode]\n", argc > 0 ? argv[0] : "t");
+    if (argc < 2) {
+        fprintf(stderr, "usage: %s <subject> [startpos] [route] [mode] [var...]\n", argc > 0 ? argv[0] : "t");
         return 2;
     }
 
@@ -383,9 +407,45 @@ int main(int argc, char **argv) {
     /* [DD-13b.W23.3, H15] `@path` names a FILE whose bytes are the subject,
      * byte-exact; anything else is the escaped inline form. */
     size_t len = 0;
+    /* [VAR] THE BINDINGS, built VERBATIM from argv[5..] — one `rx_var` per
+     * argument, in the order run.sh wrote them, which is the order the
+     * block's `var`/`var-unset` lines appear in. No sorting, no lookup, no
+     * de-duplication: a DUPLICATE name is a case a `.rxt` file may want to
+     * write (the artifact's own rule is FIRST MATCH WINS) and collapsing it
+     * here would make that cell untestable.
+     *
+     * The value's storage is `argv`'s own decoded copy, which outlives the
+     * call by construction — `rx_var.p`'s lifetime rule (variables_common.md
+     * §4.3) satisfied without a second allocation policy. */
+    size_t nvars = 0;
+    rx_var *vars = NULL;
+    if (argc > 5) {
+        vars = calloc((size_t)(argc - 5), sizeof *vars);
+        if (!vars) { fprintf(stderr, "driver: out of memory for %d binding(s)\n", argc - 5); return 2; }
+        for (int i = 5; i < argc; i++) {
+            char *eq = strchr(argv[i], '=');
+            if (!eq) {
+                /* No `=` at all: an UNSET slot. `len` stays 0 and is never
+                 * read, which is the contract `p == NULL` carries. */
+                vars[nvars].name = argv[i];
+                vars[nvars].p    = NULL;
+                vars[nvars].len  = 0;
+            } else {
+                size_t vlen = 0;
+                *eq = '\0';                 /* split in place; argv is ours */
+                unsigned char *vb = decode(eq + 1, &vlen);
+                if (!vb) { free(vars); return 2; }
+                vars[nvars].name = argv[i];
+                vars[nvars].p    = vb;
+                vars[nvars].len  = vlen;
+            }
+            nvars++;
+        }
+    }
+
     unsigned char *buf = argv[1][0] == '@' ? read_subject_file(argv[1] + 1, &len)
                                            : decode(argv[1], &len);
-    if (!buf) return 2;
+    if (!buf) { free(vars); return 2; }
 
     /* [DD-13b.W23.3, H7] THE FIND-ALL LOOP, which is the `mc` line's whole
      * question. It is `docs/spec/match_api.md` §3.1's loop TRANSCRIBED —
@@ -408,14 +468,19 @@ int main(int argc, char **argv) {
         ptrdiff_t fa[RXMAC(_NCAPS)][2];
         size_t p = startpos, nmatch = 0;
         while (p <= len) {
+#ifdef RXT_HAS_VARS
+            int r = RXFN(_search)(buf, len, p, fa, vars, nvars);
+#else
             int r = RXFN(_search)(buf, len, p, fa);
+#endif
             if (r != 1) {
                 if (r < 0) {
-                    const char *w = r == PCREC_ERR_STEPS    ? "steps"
-                                  : r == PCREC_ERR_FRAMES   ? "frames"
-                                  : r == PCREC_ERR_WORK     ? "work"
-                                  : r == PCREC_ERR_RECURSE  ? "recurse"
-                                  : r == PCREC_ERR_INTERNAL ? "internal"
+                    const char *w = r == PCREC_ERR_STEPS     ? "steps"
+                                  : r == PCREC_ERR_FRAMES    ? "frames"
+                                  : r == PCREC_ERR_WORK      ? "work"
+                                  : r == PCREC_ERR_RECURSE   ? "recurse"
+                                  : r == PCREC_ERR_INTERNAL  ? "internal"
+                                  : r == PCREC_ERR_UNSET_VAR ? "unset-var"
                                   : NULL;
                     if (w) printf("%s\n", w);
                     else printf("giveup %d\n", r);
@@ -495,9 +560,17 @@ int main(int argc, char **argv) {
     rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
     if (have_buffers) bufp = &rxb;
     if (!use_in) {
+#ifdef RXT_HAS_VARS
+        found = RXFN(_search)(buf, len, startpos, caps, vars, nvars);
+#else
         found = RXFN(_search)(buf, len, startpos, caps);
+#endif
     } else {
+#ifdef RXT_HAS_VARS
+        found = RXFN(_search_in)(buf, len, startpos, caps, vars, nvars, bufp);
+#else
         found = RXFN(_search_in)(buf, len, startpos, caps, bufp);
+#endif
     }
 
     /*
@@ -543,6 +616,11 @@ int main(int argc, char **argv) {
         int k, bad = 0;
         ctx.subject = buf; ctx.len = len; ctx.pos = startpos;
         ctx.ncap = 0; ctx.caps = NULL; ctx.user = NULL;
+        /* [VAR] the environment rides the ctx, which is why the two anchored
+         * entries take no new parameter and stay `rx_matchfn`. Filled
+         * unconditionally: on a var-free artifact these are NULL/0 and
+         * nothing reads them. */
+        ctx.vars = vars; ctx.nvars = nvars;
 
         m_plain = RXFN(_match)(&ctx);
         m_in    = RXFN(_match_in)(&ctx, bufp);
@@ -613,11 +691,26 @@ int main(int argc, char **argv) {
          * directive (docs/testing.md) refuses to let any corpus block
          * EXPECT it: nothing may plan for the artifact catching its own
          * bug, that is what sabotage rows are for. */
-        const char *word = found == PCREC_ERR_STEPS    ? "steps"
-                          : found == PCREC_ERR_FRAMES   ? "frames"
-                          : found == PCREC_ERR_WORK     ? "work"
-                          : found == PCREC_ERR_RECURSE  ? "recurse"
-                          : found == PCREC_ERR_INTERNAL ? "internal"
+        /* [VAR] `unset-var` joins the word table, and it is NOT a give-up:
+         * `PCREC_ERR_UNSET_VAR` sits BELOW `PCREC_ERR_FLOOR` and means the
+         * call was REFUSED before anything was attempted. It gets a word for
+         * the same reason the give-ups do — a printed number is a fact a
+         * corpus cell cannot read — and unlike `internal` a corpus block MAY
+         * expect it, because it is the caller's own doing.
+         *
+         * `PCREC_ERR_STARTPOS` (-7), the OTHER below-the-floor caller
+         * refusal, still has no word and prints `giveup -7`. That is a
+         * pre-existing gap this line sits next to rather than one it creates;
+         * it is flagged in docs/dev/lanes/varmvp_report.md rather than fixed
+         * here, because adding a word is only half of it (run.sh's `gu` arm
+         * and the spec's directive list are the other half) and `[K50]`'s own
+         * suite tests that code a different way. */
+        const char *word = found == PCREC_ERR_STEPS     ? "steps"
+                          : found == PCREC_ERR_FRAMES    ? "frames"
+                          : found == PCREC_ERR_WORK      ? "work"
+                          : found == PCREC_ERR_RECURSE   ? "recurse"
+                          : found == PCREC_ERR_INTERNAL  ? "internal"
+                          : found == PCREC_ERR_UNSET_VAR ? "unset-var"
                           : NULL;
         if (word) printf("%s\n", word);
         else printf("giveup %d\n", found);
