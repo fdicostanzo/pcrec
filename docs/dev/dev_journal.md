@@ -25580,3 +25580,20 @@ program-identical artifacts. I-103a sent (bench d06257f): the inline-loop
 hand-twin joins I-103's block; Frank's three-arm compile-time form rule
 (memchr / run-if-restarts-pay / inline loop above ≈8% byte frequency, SIMD
 later) recorded in the [OPT-REQPOS] row as cycle 3's shape.
+
+**repin3 MERGED (~13:2x, b1a100f3, pushed):** (B) FILEPIN 8e4e9c6c →
+6ef76820; test-recursion-identity 16/0; emit_sweep --ref 32904104's shape
+exactly the abi-bump signature (c-default 3532/3532, c-vm 3533/3533,
+emit-ir-vm 0, composition 98/98, dumps 0/7; 0 asymmetric; three sampled
+full-artifact diffs = the two abi digits + one inserted RX_REQ_WHY line);
+abi-30 reader grep: only the FILEPIN was stale. The lane idled on its
+Monitor after the gate's verdict (lesson 9 again) — nudged with the
+verdict line + a bounded foreground sweep; delivered 12 min later.
+Frank's ruling (~13:2x): the [VAR] quotemeta-splice oracle WRAPS the value
+in `(?:…)` — a variable reference is one node, so a quantifier against
+`${x}` quantifies the whole value; `(?>…)` is equivalent for a literal
+(f35272f8, variables_common.md §3.6). THE DARWIN GATE launched ~13:3x on
+merged main b1a100f3 (gate.sh → scratchpad gate_6ef76820.log; ~100 min;
+expected red = the nm probe only). NO MERGES TO MAIN UNTIL ITS TRAILER.
+Live agents: none. Worktrees: none (lane/admitimpl branch kept until the
+gate is green).
