@@ -2869,3 +2869,27 @@ never edited afterwards.
   one hit deduplicates class bitmaps), while `vm_bref` reads a runtime
   `(start,end)`, calls through the encoding seam and returns a LENGTH rather
   than a boolean precisely because a fold can change it. Nothing owed.
+
+- `b2ledger_report.md` — reading the bench's batch-2 after-measurement
+  (O-49) against the D119 bar (2026-09-23, lane b2ledger, opus; analysis +
+  compile-side measurement, no clock read). Per-mechanism verdicts:
+  [OPT-FREQPICK]'s target MEETS (`nested-comment-rec` 9.3 ms → 23.1 µs on
+  4/4, absolute after-value predicted to 0.2%) with one hazard its own
+  design note classified as a gain; [OPT-REQPOS] tier 2b's targets meet and
+  the carve-out clause FAILS. O-49's 17 missing target rows classify **6
+  removed outright by lane admitimpl's parked fix, 6 the run mechanism's own
+  defect, 5 cells already at the measurement floor** — each by compiling the
+  pattern with a compiler built from `cb437f26` and diffing the stamps and
+  the emitted pre-check, never by resemblance. Read it for the null control
+  (131 of 192 artifacts program-identical, **34 of 34 named non-target
+  regressions sitting on them**, +41.09% at the worst); for tier 2b's loop
+  costing one `memchr` CALL per occurrence of its SCAN BYTE rather than of
+  the run (`router-prefix-order` 315 → 39,098 calls, 97% of its +80.83%);
+  for O-49's largest movement being a pick move to an ABSENT byte on a
+  ONE-ATTEMPT artifact, which the design note lists among effects that "are
+  gains"; for the named falsifier being anchored and therefore losing its
+  whole pre-check under the fix; and for the fix's one-byte scoping
+  declining the form of one pre-check that costs 315 calls while admitting
+  the form that costs 39,098. The memo is
+  `docs/dev/optloop/cycle2_batch2_reading.md`; instruments and the
+  null-control population are `docs/dev/optloop/b2ledger/`.

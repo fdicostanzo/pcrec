@@ -4,7 +4,7 @@ Lane `b2ledger`, 2026-09-23, opus, branch `lane/b2ledger` from `3e58d700`.
 Analysis + compile-side measurement only; nothing under `src/`/`cli`/`lib/`/
 `tests/`, nothing written in pcrec-bench, **no clock read on this box**.
 
-**Delivered.** `docs/dev/optloop/cycle2_batch2_reading.md` (822 lines,
+**Delivered.** `docs/dev/optloop/cycle2_batch2_reading.md` (813 lines,
 §9 the exec-summary addendum at the 40-line bar),
 `docs/dev/optloop/b2ledger/` (three instruments + committed JSON + its own
 `CLAUDE.md`), `docs/dev/optloop/runs/2026-09-23-o49-b1885a83/` (the ledger,
