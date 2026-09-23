@@ -2129,7 +2129,36 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * comments had been stripped by
                                            * something other than pcrec. */
                                           PCREC_NO_COMMENTS |
-                                          PCREC_FORCE_COMMENTS;
+                                          PCREC_FORCE_COMMENTS |
+                                          /* [OPT-REQPOS] tier 2b the necessary-run
+                                           * axis, in the mask for the mask's own
+                                           * reason and concretely so that an
+                                           * artifact with NO RUN is byte-for-byte
+                                           * the same under `-fno-req-run` — which
+                                           * is 81.4% of the corpus and is the
+                                           * property `run_prechecks.sh` §4.4b
+                                           * asserts. The run check answers NOMATCH
+                                           * only where every attempt would have
+                                           * failed, so the denial changes no
+                                           * answer, and `<PREFIX>_REQ_RUN` is where
+                                           * what the emitter DID is recorded.
+                                           *
+                                           * NOTE FOR A FUTURE READER: the three
+                                           * [OPTLOOP.1] batch-1 bits above
+                                           * (`PCREC_NO_VM_ANCHOR_BOUND`,
+                                           * `PCREC_NO_END_WINDOW`,
+                                           * `PCREC_NO_REQ_BYTE`) are NOT in this
+                                           * mask, so each of them moves five bytes
+                                           * of `rx_info.flags` on EVERY artifact
+                                           * including ones it cannot act on —
+                                           * exactly the defect the
+                                           * `-fno-prefilter-collapse` comment above
+                                           * records as MEASURED on bit 19. Left
+                                           * alone here because changing it changes
+                                           * those axes' own denied artifacts and
+                                           * belongs to their own delivery, not to
+                                           * this one. */
+                                          PCREC_NO_REQ_RUN;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

@@ -2322,9 +2322,36 @@ one-byte class is a singleton, and a backreference, a linked call or any
 assertion contributes the empty set — which disables the check and is always
 sound. A lookaround's body is deliberately not descended into, because a
 LOOKBEHIND's bytes sit before the match's start and can be outside the window
-entirely. The emitted byte is the RIGHTMOST member, matching PCRE2's own
-choice, so a later multi-byte form is a WIDENING of this mechanism rather
-than a different one.
+entirely.
+
+**Which member of the set the check tests, and it is no longer PCRE2's
+choice** ([OPT-FREQPICK], `docs/design/reqbyte_freq_pick.md`, ratified
+2026-09-22). The emitted byte is the member with the LOWEST value in pcrec's
+shipped static byte-frequency prior (`pcrec_byte_freq_ppm`, the table
+`-fno-offset-skip`'s own selection already reads), because the member that
+pays is the one a subject is least likely to contain. PCRE2's RIGHTMOST rule
+survives as the TIEBREAK — today's `pick` where it is among the minima, the
+largest such byte otherwise — so the property the rightmost rule was chosen
+for is preserved: a later multi-byte form is a WIDENING of this mechanism
+rather than a different one, and §2.28 is that widening. Every member of the
+set is a byte every match must contain, so the choice can move a SPEED and
+can never move an ANSWER. Measured population: 13.60% of pcrec's own `.rxt`
+corpus moves its emitted byte, and no new axis bit is spent — which member is
+tested is a VALUE under this one, the shape `--unroll=K` and
+`--vm-entry-shape=N` already have.
+
+**The prior is read only under the `byte` encoding.** A byte-frequency table
+is a fact about a subject corpus UNDER an encoding, and the shipped table is
+keyed to `byte` by its own contents: its whole 0x80–0xFF half sits at the
+table's 2 ppm floor, so under `-e utf8` it calls the bytes a Latin corpus
+uses MOST the rarest bytes there are. Under every encoding but `byte` the
+pick therefore falls back to the rightmost member — byte for byte the answer
+before this change — so the fallback can never regress anything. A later
+findings-file value (D83) carries its own encoding key and is read only when
+that key matches the compile's `-e`; a value whose key disagrees is never
+silently applied and draws a non-fatal stderr diagnostic naming both sources.
+Note that §2.28's RUN is NOT encoding-gated (a run of bytes is a run of bytes
+under either encoding) — only the choice of which member of it to scan for.
 
 **Unlike PCRE2's fact, the whole window counts.** `LASTCODEUNIT` excludes the
 match's first unit because its consumer is a per-attempt check; this one runs
@@ -2341,7 +2368,85 @@ direction and turns matching subjects into NOMATCH.
 **The stamp.** `<PREFIX>_REQ_BYTE`, on EVERY artifact of both engines: the
 byte as a decimal string, or `"none"`. A string with a `"none"` member for
 `<PREFIX>_END_WINDOW`'s reason — `0` is a legal byte value, so no number is
-free to mean "declined".
+free to mean "declined". Where §2.28's run shipped, this stamp is the run's
+own scan member rather than the whole set's pick, because there is ONE emitted
+`memchr` and this stamp reports what it tests.
+
+### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
+
+**[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the
+REQUIRED-RUN whole-window pre-check.
+
+**What the axis is.** §2.27's fact at WORD grain: the longest run of
+CONTIGUOUS literal bytes every match of the pattern must contain. Where such
+a run exists, the search scans for the run's rarest member and compares the
+whole run at each hit, so a window that contains the byte but not the RUN
+answers NOMATCH in one `memchr`-class pass where the byte alone could not.
+§2.27's one-byte check is this mechanism's `L = 1` case exactly, and `L = 1`
+artifacts are byte-identical to what they were before this axis existed.
+Measured population: 27.3% of `capability@0.1`'s patterns and 18.6% of
+pcrec's own `.rxt` corpus, with five bench patterns whose necessary BYTE is
+present in the throughput subject and whose RUN is absent
+(`docs/design/reqpos_2b.md` §1).
+
+**How the run is derived.** The SAME bottom-up walk of the lowered AST as
+§2.27, with a second accumulator (`src/opt/reqbyte.c`). A concatenation joins
+the left factor's guaranteed literal SUFFIX to the right factor's guaranteed
+literal PREFIX; a singleton byte class is a one-byte run; an alternation keeps
+only its branches' longest common prefix and common suffix; and everything
+that breaks the byte analysis breaks the run too, plus three declines of its
+own, each of which is a missed opportunity and never an unsound claim:
+
+- a multi-member class contributes nothing and breaks contiguity around it,
+  which is every caselessly folded literal (D23 folds `(?i)a` to `[aA]` at
+  parse time) — the largest decline by population;
+- a quantifier that admits zero iterations breaks contiguity, and this is the
+  one arm where the opposite would DELETE a match: a C-comment pattern's two
+  delimiters abut only in the match where the repeat takes no iterations;
+- nothing is joined across a repeat's ITERATIONS, so `(?:ab){2,}` reports
+  `ab` and not `abab`, and nothing is claimed across an alternation's
+  non-common interior, so `(?:xabcy|zabcw)` reports no run at all.
+
+**Which member the scan tests, and how a long run is truncated.** The member
+with the lowest value in the same static prior §2.27 describes, ties to the
+LEFTMOST, and the leftmost member outright under any encoding the prior is not
+keyed to. A run longer than `PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a
+`--list-limits` row) is TRUNCATED and never split into two compares: to the
+8-byte window containing the scan member whose bytes sum to the lowest prior,
+ties leftmost, and to the leftmost such window where the prior does not apply.
+8 is where gcc lowers a constant-length `memcmp` to one word load and one
+compare with no call out of line.
+
+**Relation to `-fno-req-byte`, which is an asymmetry and not an implicit.**
+Denying `-fno-req-byte` denies this too — there is no run check without a byte
+to scan for. Denying `-fno-req-run` alone leaves the one-byte check standing,
+byte-identical to what it emits without this axis. The two are independently
+revertible in that one direction because their populations differ and a caller
+who has measured a regression will want exactly one of them off.
+
+**Answer-identity.** Preserved in the same strongest sense: the check answers
+NOMATCH only where every attempt would have failed, because the run is
+necessary. Unlike §2.27 it is answer-DETECTABLE under corruption in BOTH of
+its natural forms — an inverted compare, and a run one byte longer than the
+analysis proved — so both are sabotage rows.
+
+**What it costs where it does not pay.** One constant-length `memcmp` per
+occurrence of the scanned member in the window. On a subject where the run is
+as common as its rarest byte that buys nothing: `": "` over log text pays
+9,070 two-byte compares per MiB and learns nothing. It ships with NO decline
+rule, deliberately — a run's rate is a JOINT property and the prior is a
+MARGINAL distribution, so predicting one from the other over-predicts the
+measured gain by 5×, 8× and 3,257× on the three measured rows and no threshold
+over that product separates them (`reqpos_2b.md` §4.2). This axis is the
+decline rule until a run-rate analysis exists.
+
+**The stamp.** `<PREFIX>_REQ_RUN`, on EVERY artifact of both engines: the
+run's bytes as lowercase hex, then `@`, then the scanned member's index
+within them — `2e746172@0` for `.tar` — or `"none"` at `L < 2`. Hex because a
+run is arbitrary bytes inside a `#define`'s string body; the index because it
+is the one fact about the emitted check a reader cannot derive from the bytes,
+and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which makes the two
+stamps checkable against each other.
 
 ## 3. The DFA side's own stamps
 
@@ -2621,6 +2726,7 @@ not-a-tuning-axis list that follows.
 | `flags` bit `PCREC_NO_VM_ANCHOR_BOUND` | `-fno-vm-anchor-bound` | §2.25 |
 | `flags` bit `PCREC_NO_END_WINDOW` | `-fno-end-window` | §2.26 |
 | `flags` bit `PCREC_NO_REQ_BYTE` | `-fno-req-byte` | §2.27 |
+| `flags` bit `PCREC_NO_REQ_RUN` | `-fno-req-run` | §2.28 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `vm_entry_shape` (`PCREC_VM_ENTRY_AUTO` = 0, `_PLAIN`, `_SHARED`, `_FORWARD`, `_INLINE`) | `--vm-entry-shape=N` | §2.21 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
