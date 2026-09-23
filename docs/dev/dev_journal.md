@@ -25617,3 +25617,41 @@ Frank: "i think we discussed ideas like this several times" — [OPT-VMLIT]/
 wait out the runs, close the session (92% of the weekly token cap).
 varmvp trail: M1, M4-M8, the abi 31→32 ritual, M10 1/2 landed by 14:4x;
 the M6 one-seam-entry refactor reminded as owed; .lift created at 15:0x.
+
+**varmvp + vartriage MERGED (~18:2x, 809aab12 = abi 32 ON MAIN):** the
+[VAR] MVP's pattern half (M1-M8 + M10), in nine lane commits + four triage
+commits. First delivery (adab16b6, 15:1x) REJECTED: the M6 one-seam-entry
+ruling (sent 14:1x, reminded 14:4x) was not applied — var_match siblings
+still beside bref_match; the lane's running make test was on that shape;
+merging it would have forced a SECOND abi bump. Revised delivery (89655b7e,
+15:4x): the seam pair generalised to pointer+length and RENAMED
+span_match/span_match_caseless; two mechanisms that existed only for the
+sibling (PcrecEncEntry.requires, pcrec_enc_mask_close) deleted; the rename
+exposed --emit-ir reading has_bref off the enc_mask bit; [M5-SEAM] rows
+done cheaply because no new entry = no new pin; DD12a(i) revived (it had
+compared ZERO pairs since D118; a [K50] startpos manifest backlog surfaced,
+untouched, wants a row). Its full make test (16:21): six reds — the nm
+probe + FIVE unexpected → triage lane vartriage (sonnet): 4 stale pins/
+checks (case10's no-doorway manifest; cpset's backreference row missed the
+rename; three codegen identity scripts crashed on vars' deliberate non-
+UTF-8 byte → surrogateescape; K53_CAP_HI's margin eroded across the day's
+landings, 20000→21500 by binary search) + ONE real src defect
+(syntax_dump.c's built-status had no RK_BARE×RS_MODULE arm — precedented
+by RK_QUANTSUFFIX's). All six sections green by per-section re-run; the
+full make test NOT re-run on the box (CI runs it on push; owed on darwin
+next session). Merge conflicts: decisions.md (main's superset of the
+cherry-picked addendum — verified 0 lane-only lines) and lanes/CLAUDE.md
+(both kept); make strict clean before the merge commit. The (B) FILEPIN
+6ef76820→809aab12 re-pinned by the manager; the identity gate + emit_sweep
+--ref 1e90aa8a running (scratchpad landing_varmvp.sh). Lessons: (1) a
+ruling sent mid-lane is VERIFIED IN THE TREE by grep before acceptance
+(the lane's report never mentioned it); (2) a lane's post-refactor
+re-validation list must include every suite that PINS the renamed names
+(registry/cpset/cli were not re-run after the rename — four of the five
+reds); (3) resumed lanes idled on Monitors twice more today (repin3,
+vartriage ×2) — the nudge-with-the-verdict-line rule stands.
+
+Bench: [B84]'s I-102 acceptance window OPENED at 16:00 (six hours early);
+all ten stamp predictions held by value; REQ_WHY census digit-exact with
+ours (none 79/27, emitted 67/27, one-attempt 27/9, dominated 14/7); the
+ledger + O-52 expected this evening — next session's first read.
