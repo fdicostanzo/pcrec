@@ -25208,3 +25208,9 @@ sufficient on the witness) → [OPT-FIRSTSET] = batch-3 candidate (narrowing +
 re-seed + VM consumer; F3 owed). M-B — zero answer mismatches, 17×4×2 raw
 timings delivered; shares → lane mbread. One derived regime lookup (mine)
 returned no row for date-nested-plus. Block (A) running detached (6h).
+
+**mbread MERGED (~08:2x):** one-pass M-B reduced — SPLIT: throughput share
+0% (captures cost nothing where the memchr or the scan dominates), match
+regime 32.75% median on own subjects that are 5-93 byte hand literals (a
+per-call-overhead confound; 3 patterns clean above 50%). Next: larger
+match-regime subjects (bench data ask) before candidate (c) is ranked.
