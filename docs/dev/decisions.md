@@ -8124,6 +8124,22 @@ captures population) either sits within its own IQR band of its
 algorithmic scalar target or carries a recorded disposition. Cycle 2
 opens on the I-87 ledger (O-45) at pin 8d716693.
 
+**Addendum (Frank, 2026-09-23 ~08:5x, seventy-seventh session — THE POPULATION
+IS TWO CLASS-PURE LEDGERS).** "I meant that we should compare capturing vs
+capturing and non-capturing vs non-capturing engine runs. If an engine is
+run non-capturing on a pattern, then we can't compare that to a capturing
+engine run — they are almost completely different things with different
+objectives." So the threshold, the ranking and the bar are each computed
+TWICE: once over the capturing class (every testee config that assigns
+captures, pcrec's shipped default among them) and once over the
+non-capturing class (pcrec auto-nocaps against every config declared
+non-capturing); a cell never crosses classes, and a config is in exactly
+one class by declaration. The cycle-1 "91 of 125" was the MIXED
+best-variant view and is retired as a headline; the caps-vs-caps figure is
+84/123 (cycle1_caps_view.md); the nocaps-vs-nocaps ledger has not yet been
+rendered — it is owed from the existing after-report (lane nocapsview) and
+from every capability report hereafter (bench inbox I-99).
+
 ## D120 — ONE ORGANIZED PATTERN-ANALYSIS RECORD, computed once and read by every step, replaces the ad-hoc per-pass walks; chartered on the two-customer trigger, timing TBD (Frank, 2026-09-22, seventy-seventh session)
 
 **Frank's direction, verbatim in substance.** "We are doing a bunch of
