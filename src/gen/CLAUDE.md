@@ -22,7 +22,7 @@ each is the design record for ITS milestone, with the reasoning behind that
 change, and the number is there to locate it. **They are not a log and must
 not be read as one** — the last abi number appearing in a section title here
 is whatever milestone last needed a `src/gen` design section, not the current
-`abi`. The current value is `PCREC_ARTIFACT_ABI` (`src/core/limits.def`), and
+`abi`. The current value is `PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:51`), and
 what every bump since means is §6.
 
 ## [M6-READ] THE EMITTED VOCABULARY, and the two rules that keep it working

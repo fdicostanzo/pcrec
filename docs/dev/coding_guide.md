@@ -232,7 +232,7 @@ site and do not add a third field.
 **3.1 Any change to an emitted byte IS an `abi` event.** Comments, declarations,
 layout, whitespace — all of it (D76/D94). The change carries the bump, the
 identity-gate re-pin and the spec hunk in ONE commit; the current value is
-`PCREC_ARTIFACT_ABI` (`src/core/limits.def`) and the change log is
+`PCREC_ARTIFACT_ABI` (`src/gen/emit_dfa.c:51`) and the change log is
 `docs/spec/match_api.md` §6, which the ritual maintains and which is the ONLY
 home (D76 addendum, [REVW.A1]). Find readers **by grep**, never by memory — a
 hand-enumerated "four sites" list missed a fifth in `match_api.md` (D94). And grep
