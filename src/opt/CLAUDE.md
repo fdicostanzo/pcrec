@@ -1524,3 +1524,25 @@ which is the drift this macro's whole comment history is about.
 
 Sabotage S238 is the failing direction (the rung fires and stamps
 `"selected"`); S237 is its sibling one file over (the rung never fires at all).
+
+## [OPT-PRECHECK-ADMIT] whether a pre-check is EMITTED is not this directory's question
+
+`reqbyte.c` derives two facts — the necessary BYTE and the necessary literal
+RUN — and since 2026-09-23 it does not decide whether either is acted on.
+`src/gen/emit_dfa.c`'s `req_admit` does (`docs/spec/tuning.md` §2.29, ratified
+G1 + G2 of the batch-1 after-ledger), and it declines on two grounds the bench
+measured as pure cost: a search route that runs ONE attempt, and a
+candidate-start `memchr` already scanning a byte at least as rare.
+
+**The split is visible in the stamps and a reader has to know which is which.**
+`<PREFIX>_REQ_BYTE` and `<PREFIX>_REQ_RUN` name what THIS pass found — a fact
+about the pattern, unchanged by any decline. `<PREFIX>_REQ_WHY` names whether
+the artifact used it, and which rule declined. So a check that wants to assert
+this pass's derivation reads the first two, and a check that wants the emitted
+text reads the third; `tests/codegen/run_prechecks.sh` §3 and §5 are those two
+readers.
+
+**Nothing here changed, and that is the point.** The admission is an emit-time
+decision over facts this directory already produced, so no pass, no field and
+no walk moved — which is why the change's own byte census shows every moving
+artifact only LOSING text.
