@@ -25548,3 +25548,11 @@ FREQPICK default-on with the fix's merge as PRECONDITION; 2b default-on
 with the fix + a cycle-3 row. Lanes: inbox103 (I-102a/b acks, I-103,
 I-104; I-102 proper waits for the abi-31 pin), execsum2 (the cycle-2 exec
 summary). Plan rows appended.
+
+**execsum2 MERGED (~12:3x) + PAGE PUBLISHED:** docs/dev/summaries/
+2026-09-23-optloop-cycle2-batch2-exec-summary.md (1,112 words, four
+sections; manager fix at merge: batch 2 is MERGED at b1885a83, not
+"parked"). Page (same series identity as cycle 1's):
+https://claude.ai/artifact/8eEKJGqvJnK4k7hq6NNRm4 . Bench inbox 8c94841
+(I-102a/b acks, I-103, I-104; I-102 proper waits for the abi-31 pin).
+Live agents: none. admitimpl's make test still in stage 5 (since 11:11).
