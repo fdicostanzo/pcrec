@@ -222,7 +222,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-examples
+      test-uprops test-core test-vars test-examples
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -775,6 +775,14 @@ test-atomic-identity: all
 #
 # `run_backref_identity.sh` IS NOT HERE. It is `test-backrefs-identity` below,
 # on the ruling ASK-4 gave it and for the reason `test-atomic-identity` has.
+# [VAR] M10 — module `vars`' corpus AND its own splice oracle. The corpus
+# reaches `test-corpus` too (tests/vars/ is an ordinary `.rxt` directory); this
+# section is what runs the ORACLE, which nothing else does, and what makes a
+# targeted run one command.
+test-vars: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vars.ran"; fi
+	bash tests/vars/run_vars_tests.sh
+
 test-backrefs: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \

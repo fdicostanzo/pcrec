@@ -241,9 +241,40 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # C3_SKIP_OWNORACLE skips: C3_SKIP and C3_SKIP_OWNORACLE each move +66
 # and C3_PASS does not move at all. RUNSH_* move by the same
 # +1/+13/+66 (the file is not under tests/known_fail/).
-CENSUS_FILES=213
-CENSUS_BLOCKS=3954
-CENSUS_LINES=29037
+# [VAR] M10 2026-09-23 — +3 files / +41 blocks / +76 lines for tests/vars/
+# (basic.rxt, unset.rxt, caseless.rxt): module `vars`' own corpus. Not under
+# tests/known_fail/, so RUNSH_* move by the same +3/+41/+76.
+#
+# 41 AND NOT 40, and the one extra is a finding rather than arithmetic: the
+# census awk above counted `pattern` only, and the format has had TWO block
+# openers since [DD-13b.W23.3]. caseless.rxt's ill-formed-default cell is the
+# corpus's FIRST `pattern-esc` block, so the awk read 3994 where all three
+# legs read 3995 — K35 in the file whose own header calls itself a control
+# for all three parsers. Both census sites now count both openers.
+#
+# ALL 121 of its expectation lines are C3_SKIP_OWNORACLE skips, and that is
+# the interesting part rather than an accident: tests/vars/ declares its own
+# oracle by holding a `verify_vars.py`, exactly as tests/assertions/ does with
+# `verify_pcre2.py`. It has to — NEITHER standing oracle can express a caller
+# variable. python `re` has no such feature, and libpcre2 reads `${v}` as an
+# assertion followed by a literal `{`, a spelling no subject can match, so
+# scoring these cells against either would report a divergence on every one
+# and mean nothing. C3_SKIP and C3_SKIP_OWNORACLE each move +76 (the
+# `m`/`n`/`gu` lines the census counts) and C3_PASS does not move at all.
+#
+# 76 AND NOT 121, and the 45 between them is a defect C3 caught on this
+# landing: leg C's first version APPENDED each `var`/`var-unset` line to its
+# `results` stream, which is the EXPECTATION stream C3 reconciles against the
+# census — and a binding is not an expectation. It put 45 entries into a
+# total the census does not count, and "expectations are going somewhere
+# neither counted nor reported" is the exact sentence that check exists to
+# say. The two arms still VALIDATE both lines; they no longer count them.
+#
+# C3_* ARE NOT RE-PINNED HERE, per this file's own 2026-09-08 note: they are
+# box-sensitive on darwin and are owed from a Linux/10.46 run.
+CENSUS_FILES=216
+CENSUS_BLOCKS=3995
+CENSUS_LINES=29113
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -291,9 +322,9 @@ CENSUS_LINES=29037
 # 2026-09-21 (lane adm0921, [K62]) — +1/+5/+16, the SAME delta as
 # CENSUS_* above (tests/quoting/k62_class_range_e.rxt is not under
 # tests/known_fail/).
-RUNSH_FILES=213
-RUNSH_BLOCKS=3954
-RUNSH_LINES=29037
+RUNSH_FILES=216
+RUNSH_BLOCKS=3995
+RUNSH_LINES=29113
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -360,6 +391,14 @@ nfiles=$(wc -l < "$FILES" | tr -d ' ')
 read -r awk_files awk_blocks awk_lines <<EOF
 $(xargs awk < "$FILES" '
     FNR == 1 { files++ }
+    # [VAR] M10 2026-09-23 BOTH BLOCK OPENERS, not one. This awk is written
+    # from the FORMAT and the format has had TWO since [DD-13b.W23.3]:
+    # `pattern` and `pattern-esc` are the only two rows in rxt_schema.def
+    # carrying `opens_group`. It counted one, and NOTHING FAILED, because the
+    # shipped corpus had zero `pattern-esc` blocks until this module added
+    # one -- K35 exactly, in the file whose own header calls itself a control
+    # for all three parsers. All three legs read 3995 where this read 3994.
+    /^pattern-esc[ \t]/ { blocks++; next }
     /^pattern[ \t]/ { blocks++; next }
     /^(m|n|ms|ns|gu|perr|g|gp)([ \t]|$)/ { lines++ }
     END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
@@ -396,6 +435,14 @@ fi
 read -r kf_files kf_blocks kf_lines <<EOF
 $(grep '/known_fail/' "$FILES" | tr '\n' '\0' | xargs -0 --no-run-if-empty awk '
     FNR == 1 { files++ }
+    # [VAR] M10 2026-09-23 BOTH BLOCK OPENERS, not one. This awk is written
+    # from the FORMAT and the format has had TWO since [DD-13b.W23.3]:
+    # `pattern` and `pattern-esc` are the only two rows in rxt_schema.def
+    # carrying `opens_group`. It counted one, and NOTHING FAILED, because the
+    # shipped corpus had zero `pattern-esc` blocks until this module added
+    # one -- K35 exactly, in the file whose own header calls itself a control
+    # for all three parsers. All three legs read 3995 where this read 3994.
+    /^pattern-esc[ \t]/ { blocks++; next }
     /^pattern[ \t]/ { blocks++; next }
     /^(m|n|ms|ns|gu|perr|g|gp)([ \t]|$)/ { lines++ }
     END { printf "%d %d %d\n", files+0, blocks+0, lines+0 }' \
@@ -1364,7 +1411,12 @@ END_MARK='# --- END PINNED ARM REGION ---'
 # marker — an append that cannot move the pin, on the same reasoning
 # W1.1's own new arms went AFTER the END marker. See this step's own
 # lane report for the full list. Previous: 8ea2cd29... (W1.3).
-ARM_PIN='b5a00e6142d024f2978bce13bd8debd9733818df3ab4023ce7e4075d62036356'
+# [VAR] M10 2026-09-23 RE-PINNED. The region gained `cur_vars=()` at the
+# `pattern` opener's own reset block -- block-scoped means block-scoped, the
+# same sentence the three W1.1 directives beside it carry. The two `var`
+# ARMS are deliberately OUTSIDE the region, appended after it with every arm
+# added since W1.1, so what moved inside is one initialiser and nothing else.
+ARM_PIN='bcd81d89fab3af14fa1dcb4d4e4376cb9586c36ee6d50fba5fe5390ff9f1fc0a'
 
 region="$WORKDIR/armregion.txt"
 awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
@@ -2113,6 +2165,13 @@ check_accept_all3_kind name     block_kinds_accept.rxt block-kinds-accept-name
 check_accept_all3_kind flags    block_kinds_accept.rxt block-kinds-accept-flags
 check_accept_all3_kind encoding block_kinds_accept.rxt block-kinds-accept-encoding
 check_accept_all3_kind engine   block_kinds_accept.rxt block-kinds-accept-engine
+
+# [VAR] M10 THE ACCEPT-SIDE RECEIPTS for module `vars`' two `all-readers`
+# rows, from ONE fixture carrying both at once (`var_bindings_accept.rxtin`).
+# A receipt is written only when all three legs actually RAN and accepted, so
+# a leg that stopped reading the production cannot leave this green.
+check_accept_all3_kind var        var_bindings_accept.rxt var-bindings-accept-var
+check_accept_all3_kind var-unset  var_bindings_accept.rxt var-bindings-accept-unset
 
 # --- [RXTDUP lane, sem25] a SECOND file-level 'description' is refused
 # the same way, naming the earlier line — docs/spec/rxt_format.md calls
@@ -3803,6 +3862,15 @@ probe_line() {
         gp)              echo 'gp 1 0 1' ;;
         gu)              echo 'gu steps "a"' ;;
         frames-buffer=)  echo 'frames-buffer=64' ;;
+        # [VAR] M10 the two binding lines. Both are REPEAT, and a second one
+        # must be ACCEPTED -- which is the whole point of block-scoped
+        # bindings: a block binds as many variables as its pattern mentions,
+        # one line each. The probe's two lines name the SAME variable on
+        # purpose, because that is also a legal thing to write (the artifact's
+        # own rule is FIRST MATCH WINS) and a cardinality arm that used two
+        # different names would be testing a weaker claim.
+        var)             echo 'var v "x"' ;;
+        var-unset)       echo 'var-unset v' ;;
         *)               return 1 ;;
     esac
 }

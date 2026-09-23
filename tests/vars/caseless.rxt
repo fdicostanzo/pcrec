@@ -138,13 +138,18 @@ m "\xff" 0 1
 # check runs over the RESOLVED span, so there is no second mechanism and no
 # compile-time special case for a word.
 #
-# `pattern-esc` AND NOT `pattern`, and the first draft of this cell got it
-# wrong in a way worth recording: a `pattern` line's text reaches `--pattern`
-# VERBATIM, so `\xff` there is four ASCII bytes and the word is the perfectly
-# valid `xff` — the cell read `nomatch` and asserted nothing. `pattern-esc`
-# is the line kind whose value carries the escape vocabulary, and it is what
-# puts a real 0xFF into the pattern text.
-pattern-esc "^${v:-\xff}$"
+# THE PATTERN LINE CARRIES A RAW 0xFF BYTE, and this cell took two tries to
+# write. A `pattern` line's text reaches `--pattern` VERBATIM, so a literal
+# `\xff` there is four ASCII bytes and the word is the perfectly valid `xff`
+# — the first draft read `nomatch` and asserted nothing. `pattern-esc` is the
+# line kind whose value carries the escape vocabulary and it fixed that, but
+# it introduced a second problem: leg A DECODES a `pattern-esc` value into the
+# dump while legs B and C carry it as written, which is the A-vs-(B==C) seam
+# [DD-13b.W23.5]'s R-A excludes BY DESIGN for a fixture and which the
+# corpus-wide C1 comparison has no exclusion for. So the byte goes in the
+# `pattern` line directly, where all three legs read rest-of-line RAW and
+# agree byte for byte, and the corpus stays free of the seam.
+pattern ^${v:-�}$
 features vars
 encoding utf8
 var-unset v

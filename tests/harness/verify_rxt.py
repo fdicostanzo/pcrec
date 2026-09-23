@@ -1093,7 +1093,14 @@ def parse_rxt(path):
                 _fail(path, lineno, 'value-shape',
                       "'var' wants a name then a double-quoted value -- "
                       f'var <name> "<value>" (got {line!r})')
-            results.append((lineno, 'var', m.group(1)))
+            # NOT appended to `results`, and that is a correction the
+            # rxtsource census made rather than a preference: `results` is
+            # the EXPECTATION stream C3 reconciles against the corpus census,
+            # and a binding is not an expectation. Appending them put 45
+            # extra entries into a total the census does not count, and C3's
+            # own reconciliation — the check that exists so expectations
+            # cannot go somewhere neither counted nor reported — is what
+            # said so.
         elif line.startswith('var-unset ') or line == 'var-unset':
             # [VAR] M10 AN UNSET SLOT. It is a DECLARATION and not an
             # omission: omitting the name entirely also reads UNSET at the
@@ -1103,7 +1110,7 @@ def parse_rxt(path):
                 _fail(path, lineno, 'value-shape',
                       "'var-unset' wants a bare variable name -- "
                       f"var-unset <name> (got {line!r})")
-            results.append((lineno, 'var-unset', m.group(1)))
+            # Not appended, for the sibling reason above.
         else:
             # [DD-13b.W23.2] unknown-token-in-scope: the first token has
             # no schema row in this scope at all -- the same fact leg A's

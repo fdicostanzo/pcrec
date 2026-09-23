@@ -1,0 +1,16 @@
+# [VAR] M10 THE ACCEPT-SIDE RECEIPT for `var` and `var-unset` (the module's
+# two `all-readers` rows), `block_kinds_accept.rxtin`'s own shape one
+# production over: this file's own REFUSAL fixtures prove the three legs
+# agree on what to REJECT, and this is what proves they agree on what to
+# ACCEPT, headless -- the population every corpus file is in.
+#
+# BOTH SPELLINGS AND BOTH STATES IN ONE BLOCK, because block-scoped and
+# repeatable is the production's whole shape: a block binds as many variables
+# as its pattern mentions, one line each, and UNSET and EMPTY are two
+# different states the format has to be able to tell apart.
+pattern ^${a}${b}${c}$
+features vars
+var a "x"
+var b ""
+var-unset c
+m "x" 0 1
