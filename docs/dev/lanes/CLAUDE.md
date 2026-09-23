@@ -2739,3 +2739,17 @@ never edited afterwards.
   at the wording), and full re-validation on the final tree. See the
   report's §8 for the mechanism, the `-Wpedantic` measurement, and the
   re-run counts.
+
+- `repin2_report.md` — post-batch-2 landing item (2026-09-23, lane
+  repin2, sonnet): re-pins `tests/codegen/run_recursion_identity.sh`'s
+  `RECURSION_IDENTITY_FILEPIN` from `6ab2464e` (batch 1's own merge,
+  which optimpl2 left it at per D76) to `8e4e9c6c` (the batch-2 merge,
+  abi 30). Gate 16/0; `scripts/emit_sweep.py --ref c051a69b` self-check
+  PASSED and the real sweep matches the predicted five-stream shape
+  exactly (c-default/c-vm move on every reached artifact, emit-ir-vm 0
+  movers, composition header-only at 98/98, dumps +2 rows). Also carries
+  the abi-29-reader grep sweep: every hit besides the FILEPIN itself was
+  already correctly updated historical narrative, except one unsent
+  draft executor ask (`docs/dev/optloop/linux_ask_i89.md`) that
+  deliberately pins main at the batch-1 commit for a scoped measurement
+  — flagged for the ask's owner, not touched here.

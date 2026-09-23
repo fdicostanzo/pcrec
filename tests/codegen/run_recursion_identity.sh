@@ -913,13 +913,15 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # moves. MEASURED, not argued: comparison (A) reads zero movers on every
 # label.
 #
-# **(B) IS LEFT AT THE PRE-BUMP VALUE AND IS OWED TO THE MANAGER**, on the
+# **(B) WAS LEFT AT THE PRE-BUMP VALUE AND OWED TO THE MANAGER**, on the
 # recorded precedent of opt5i, ccdiff1, [EMIT-VERB], [REL-1.4] and batch 1
 # itself: D76's pin must name a commit REACHABLE AFTER THE MERGE, which a lane
-# branch's own commit is not. This gate is therefore RED on `lane/optimpl2` BY
-# CONSTRUCTION, with the exact message "the emitted scaffolding changed: bump
-# `abi` ... and re-pin comparison (B)" — the gate working, not a defect.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6ab2464e}"   # [OPTLOOP.1.impl] batch 1, abi 28->29: (B) re-pinned to the merge 6ab2464e (D76; the first pin AFTER D118, so the reference speaks --pattern — see the grammar probe below). [OPTLOOP.2] batch 2 (abi 29->30) LEAVES IT HERE DELIBERATELY: OWED to the manager, who re-pins it to THIS batch's merge commit.
+# branch's own commit is not. **RE-PINNED by the manager (lane repin2,
+# 2026-09-23) to `8e4e9c6c`, the batch-2 merge commit** — the first commit
+# reachable from main that carries abi 30, closing the gate's own RED-BY-
+# CONSTRUCTION state on `lane/optimpl2` with the exact message "the emitted
+# scaffolding changed: bump `abi` ... and re-pin comparison (B)".
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8e4e9c6c}"   # [OPTLOOP.2] batch 2, abi 29->30: (B) re-pinned to the merge 8e4e9c6c (D76; lane repin2, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6ab2464e ([OPTLOOP.1.impl] batch 1, abi 28->29).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
