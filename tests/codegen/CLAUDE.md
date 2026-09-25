@@ -2572,6 +2572,119 @@ were reading each other. Each axis also fired its floor check, which is the
 second, independent reason the run is red. Reverted; `make` and the green
 run above are on the reverted tree.
 
+## recidfix/varland — TWO MORE NAMED EXCEPTIONS, and a mech arm this gate never had (2026-09-25)
+
+The [VAR] MVP landing (809aab12) left comparison (A) red 8/4 on every axis:
+170 call-free patterns per axis differing from `ac4917d` for reasons the file
+had no bucket for (`recidfix_report.md`). **Reading the actual 170-pattern
+list rather than trusting its size found TWO CAUSES, not one** — the report's
+own "corpus-wide count of `\1..\9`-bearing patterns (165) closely matches the
+reported 170" was a coincidence of MAGNITUDE, not of COMPOSITION.
+
+**THE FOURTH EXCEPTION, `bref_rename_rewrite()` (near `prog_region()`), is a
+MECHANICAL REWRITE rather than a manifest — the first of the four that is.**
+`d93aa931`'s [VAR] M6 ruling generalised the backreference compare
+(`<p>_bref_match` → `<p>_span_match`, two offsets → a pointer+length pair) so
+one seam entry could serve both `\1` and `${name}`. Every backreference
+spelling moves the SAME textual way, so listing them would be "every
+backreference-bearing pattern in the corpus, kept in step with it forever" —
+the K35 shape this file's other three exceptions exist to avoid. The
+admission instead rewrites the pre-module region with the ONE substitution
+the rename made and compares the result to the subject's; a region differing
+for any OTHER reason still lands in `rdiff`. It composes with the fold
+bucket (the rewrite is applied to `rb` BEFORE the fold's own deny-axis
+restore test, since `^(?i:(a))\1$`-shaped patterns need both). **MEASURED:
+155 of 170 on every axis** (union of numeric `\1`..`\9` and named
+`\k<>`/`\k''`/`\k{}`/`(?P=)` spellings — the numeric-only text census (126)
+undercounts by exactly the named population (35), which is why the
+non-vacuity arm's independent census counts both).
+
+**THE FIFTH EXCEPTION is what reading the population's REMAINDER found: 15
+of the 170 are not backreferences at all.** `^${v}$`, `^${v:-dev}$`,
+`^${a:-${b}}$` and their siblings are module `vars`' OWN construct, and no
+rewrite explains them — at `ac4917d` (which predates module `vars` by a
+month) `${` is not special syntax at all, so the pre-module reference
+compiles a COMPLETELY DIFFERENT program (two end-anchors around a literal
+`{v}`) with no relationship to `vm_var`'s emission. This is `rcallbearing`'s
+own shape one module later: module `recursion`'s call-bearing population is
+EXCLUDED from this file's classifier and asserted absent here; module `vars`
+has no such classifier (this gate is `recursion`'s, not `vars`'), so its
+population is ADMITTED instead, unconditionally, once the subject's own
+region proves `vm_var` wrote it (`run->var_value[`, that construct's one
+emitted marker). **MEASURED: 15 of 170 on every axis**, against an
+independent `${` text census of 16 (the one-byte gap is
+`tests/vars/caseless.rxt`'s deliberate raw `\xff` witness, which this
+script's `prog_region`/`stamp_strip`/`bref_rename_rewrite` pipeline reads
+through a locale-dependent `awk`/`sed` and does not decode safely — a
+PRE-EXISTING gap this lane found and did not fix, since the python
+corpus-splitting stage already carries the `surrogateescape` repair
+`vartriage_report.md`/`recidfix_report.md` made and this is a different
+stage of the same script).
+
+Both exceptions carry their own counter (`bref-rename-moved`,
+`var-construct-moved` in the axis summary line), their own printed message
+per admitted pattern, and a non-vacuity arm comparing against an
+INDEPENDENTLY DERIVED text census (never the rewrite/marker itself,
+learnings.md §3) at a wide named band — not equality, since the census
+over-counts spellings an axis can route away from the VM and the bucket only
+ever counts a REAL emitted difference.
+
+**`recidentity` IS A NEW `tests/mech/run_sabotage_matrix.sh` ARM** — this
+gate had NONE before this lane, unlike its three `run_*_identity.sh`
+siblings (`atomicidentity`/`brefidentity`/`endvarid`), because its two
+from-source reference builds make it the most expensive row that vocabulary
+can name. **S273** is the row: an off-by-one in `vm_bref`'s renamed
+`span_match` call (`ref_end - ref_start` → `ref_end - ref_start + 1`) that
+shares the rename's own emission site and must NOT be admitted by the fourth
+exception's rewrite — proving the admission is exact-text-equality-after-
+substitution and not "resembles the rename". It is also an ordinary
+wrong-answer row (`brefdiff`/`harness` catch the length defect
+independently); `recidentity`'s job is narrower — proving the new bucket
+does not swallow it.
+
+**AND WIRING THE ARM FOUND THE REASON `atomicidentity`/`brefidentity` HAVE
+SAT REGISTERED WITH ZERO ROWS SINCE 2026-08-22.** `run_recursion_identity.sh`
+(and, by the identical mechanism, `run_atomic_identity.sh` and
+`run_backref_identity.sh`) `git archive`s its two pinned reference commits —
+the pre-module pin AND the abi FILEPIN — which needs FULL GIT HISTORY.
+`tests/mech/run_sabotage_matrix.sh`'s own scratch trees are built via
+`git archive HEAD | tar -x` with NO `.git` directory (MECH-2's own stated
+rule), so the gate failed INSTANTLY inside one — `fatal: not a git
+repository`, then a hard-coded FAIL naming the pin unresolvable — **regardless
+of whether any sabotage was applied at all**. That is the worst kind of
+check-design defect: a control reporting the SAME VERDICT no matter what it
+is checking. Nobody had noticed because nobody had ever wired a real row to
+any of the three `-identity.sh` mech arms until this lane tried; the same
+structural gap is latent in `atomicidentity` and `brefidentity` today and is
+recorded here rather than fixed there (out of this lane's scope).
+
+**THE FIX IS A `git rev-parse --is-inside-work-tree` GUARD**, added to
+`run_recursion_identity.sh` right after `ROOT_DIR`/`PCREC` are resolved: "no
+git history at all" is an ENVIRONMENT limitation (SKIP, `checks passed: 0` /
+`checks failed: 0`, exit 0), distinct from "the pin doesn't resolve IN a real
+repo" (still the pre-existing loud FAIL — a real claim that the pin itself is
+wrong). `run_sabotage_matrix.sh`'s `recidentity` case detects the `^SKIP:`
+banner and routes to `any_skip=1`, the established `pc3`/`laexpand`
+convention, rather than reading an unmeasured suite as a false verdict.
+
+**CONSEQUENCE: `recidentity` WILL ALWAYS SKIP INSIDE THE MECH MATRIX** — no
+scratch tree built there will ever carry `.git` — so S273 can never get a
+real DETECTED/UNDETECTED verdict through that route; a solo
+`bash tests/mech/run_sabotage_matrix.sh S273` run reads
+`recidentity:SKIPPED-no-git-history` with `brefdiff`/`harness` (S273's other
+two assigned suites, which are answer-level and unaffected by the guard)
+carrying the row's real verdict. **S273's bucket-admission claim specifically
+— that the bref-rename exception does NOT swallow this off-by-one — was
+therefore validated MANUALLY** rather than through the mech matrix: a copy of
+`src`/`lib`/`cli` with the exact `ref_end - ref_start + 1` edit applied,
+rebuilt, and run through the SAME `bref_rename_rewrite()`/`prog_region()`
+logic this file's comparison (A) uses, against the real pre-module reference
+binary — confirming the sabotaged region differs from the rewritten
+reference (lands in `rdiff`, not the bref-rename bucket) and that the defect
+is a genuine answer-level miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`,
+sabotaged `match 0 3`, reading one byte past the referenced group's end).
+See `docs/dev/lanes/varland_report.md` for the full transcript.
+
 ## [DD-14.FB] the caller-provided frame buffer's structural block (2026-08-25)
 
 Six checks in `run_codegen_tests.sh`, all of them things a `.rxt` cell is

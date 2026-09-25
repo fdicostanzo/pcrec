@@ -3110,3 +3110,32 @@ never edited afterwards.
   mechanism. Its load-bearing challenge is that the four losing WAF cells are
   DFA-route with no literal-compare site, so the exact VM compare and a
   WAF attribution read come before any caseless mask.
+
+- `varland_report.md` — recidfix's owed bucket, BUILT AND CLOSED
+  (2026-09-25, lane varland, sonnet): `run_recursion_identity.sh`'s
+  comparison (A) is fully GREEN on all four axes (16/0 trailer), via TWO
+  new named exceptions — a MECHANICAL REWRITE (`bref_rename_rewrite()`)
+  admitting the ruled [VAR] M6 seam rename (`bref_match`→`span_match`,
+  155 of 170 patterns on every axis) and a marker-based admission for
+  module `vars`' own `${...}` construct (`run->var_value[`, 15 of 170),
+  each with an independent-text-census non-vacuity arm. Read §0 for
+  seven findings, the sharpest being finding 7: wiring the gate's first
+  ever `tests/mech/run_sabotage_matrix.sh` arm (`recidentity`, for
+  negative-control row **S273**) found that `run_recursion_identity.sh`
+  (like its two siblings `run_atomic_identity.sh`/`run_backref_
+  identity.sh`) structurally CANNOT be scored inside that matrix at all —
+  every scratch tree there is `git archive HEAD | tar -x` with no `.git`
+  (MECH-2), and the gate needs full git history to `git archive` its
+  pinned reference commits, so it failed UNCONDITIONALLY (not merely on
+  S273) until a `git rev-parse --is-inside-work-tree` guard routed "no
+  git history" to a loud SKIP — the retroactive explanation for why
+  `atomicidentity`/`brefidentity` have sat registered with zero rows
+  since 2026-08-22. S273's own claim (the bucket does not admit a
+  resembling-but-different off-by-one) was validated MANUALLY instead,
+  against a hand-sabotaged compiler and the real pre-module reference
+  binary. Also finds (finding 1) the report's own "165≈170" was a
+  coincidence of magnitude, not composition — 15 of the 170 are module
+  `vars` patterns entirely, not backreferences. Part (b)'s three
+  `emit_sweep.py` cells: `dumps movers=4` fully dispositioned (all
+  legitimate `vars` registry/limit/schema additions); `composition`/
+  `emit-ir-vm` dispositioned from a real sweep run (see report §5).

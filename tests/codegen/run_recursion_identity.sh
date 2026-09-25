@@ -194,6 +194,18 @@ FOLD_PATTERNS='(?i)(?>abc)
 (a(?i)b)C
 (?i)a*+A'
 #
+# [recidfix->varland] A FOURTH NAMED EXCEPTION EXISTS, `bref_rename_rewrite()`
+# below (near `prog_region()`), and it is NOT a manifest like the three
+# above: `d93aa931`'s seam generalisation (`<p>_bref_match` -> `<p>_span_
+# match`, two offsets -> a pointer+length pair, "[VAR] M6 RULING: one seam
+# entry pair serving two constructs, not a sibling pair") moves EVERY
+# `\1`-shaped pattern's region the same textual way, so the admission is a
+# MECHANICAL REWRITE of the pre-module text rather than a list of every
+# backreference-bearing pattern in the corpus. See that function's own
+# comment for the full account and the fold-composition case
+# (`^(?i:(a))\1$` above needs both this rewrite AND the fold's own deny-axis
+# excuse before the two sides agree).
+#
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
 # ASSERTED, NOT TRUSTED: exactly three stamp lines must be removed from each
@@ -245,6 +257,40 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 . "$ROOT_DIR/tests/lib/cc_resolve.sh"   # [MACPORT] resolves a real GNU gcc when bare gcc is Apple clang
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
+
+# [recidfix->varland, tests/mech S273] THIS GATE NEEDS A REAL GIT REPOSITORY
+# WITH FULL HISTORY, and it needs to SAY SO rather than report a false FAIL,
+# which is a DIFFERENT claim from "the pin does not resolve" below. Both
+# `$REFCOMMIT` and `$FILEPIN` are built via `git -C "$ROOT_DIR" archive
+# <commit-ish>`, and `tests/mech/run_sabotage_matrix.sh`'s scratch trees are
+# `git archive HEAD | tar -x` with NO `.git` directory AT ALL (its own MECH-2
+# rule) -- discovered live wiring `recidentity` in as this gate's first mech
+# arm: `git -C "$tree" rev-parse --verify ac4917d^{commit}` fails with "fatal:
+# not a git repository" regardless of whether a sabotage is applied, so an
+# earlier version of this check read `bad()`/FAIL unconditionally -- a
+# FALSE DETECTED on every row, the worst kind of control (`docs/dev/
+# learnings.md` §3): one that reports the same verdict whatever the tree
+# contains. `atomicidentity`/`brefidentity` (this file's siblings,
+# `run_atomic_identity.sh`/`run_backref_identity.sh`) build their own pinned
+# reference the identical way and are "REGISTERED AND RESERVED WITH ZERO
+# ROWS" in `tests/mech/CLAUDE.md` -- now explained: nobody has wired a row to
+# either, so nobody has hit this.
+#
+# THE DISTINCTION THAT MAKES THIS A SKIP AND NOT A FAIL: "this tree has no
+# git history at all" is an ENVIRONMENT LIMITATION (no oracle, `pc3`/
+# `laexpand`'s own shape), never a claim about whether either pin is right.
+# "$ROOT_DIR is a git repo but $REFCOMMIT/$FILEPIN do not resolve IN it" is
+# still the real, load-bearing FAIL this file's later checks give it credit
+# for saying loudly ("a gate that cannot build its reference must SAY so
+# rather than skip") -- that sentence is right about a WRONG PIN and wrong
+# about a git-archive scratch tree, which was never a case its author had in
+# view.
+if ! git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "SKIP: $ROOT_DIR is not inside a git working tree at all (no .git found in any parent) -- this gate needs FULL GIT HISTORY to git-archive its two pinned commits (the pre-module reference and the current abi's file pin, both resolved further down) and cannot tell 'no history available here' from 'the pin itself is wrong' without one. Structurally unrunable inside a git-archive-only scratch tree (tests/mech/run_sabotage_matrix.sh's own MECH-2 shape); run it against a real checkout instead." >&2
+    echo "checks passed: 0"
+    echo "checks failed: 0"
+    exit 0
+fi
 
 # ===========================================================================
 # [DD-14.FB] THIS GATE IS NOW **TWO COMPARISONS**, NOT ONE, AND THE SPLIT IS
@@ -1127,6 +1173,47 @@ prog_region() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
 # The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
 # artifact only. Counted, never stripped.
 FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
+#
+# [recidfix->varland] THE FOURTH NAMED EXCEPTION, AND IT IS THE FIRST ONE THAT
+# IS NOT A LIST. `d93aa931` ("[VAR] M6 RULING: one seam entry pair serving two
+# constructs, not a sibling pair") generalised the backreference compare so it
+# could ALSO serve `${name}`: the call renamed `<p>_bref_match[_caseless]` to
+# `<p>_span_match[_caseless]` and changed its reference-side ARGUMENTS from two
+# offsets to a pointer+length pair, root-caused byte for byte against a
+# from-source `ac4917d` build (`docs/dev/lanes/recidfix_report.md`):
+#
+#   took = <p>_bref_match(subject, subject_length,
+#                     (size_t)ref_start, (size_t)ref_end,
+#                     scan_position);
+#   -- becomes --
+#   took = <p>_span_match(subject, subject_length,
+#                     subject + (size_t)ref_start,
+#                     (size_t)(ref_end - ref_start),
+#                     scan_position);
+#
+# ELIDED_PATTERNS/SIZE_TERM_REGION_MOVERS/ISLAND_PATTERNS are each a hand-kept
+# MANIFEST because the fact they defend ("this specific pattern moves") is not
+# derivable from anything else in the artifact. This one is different: EVERY
+# `\1`-shaped pattern moves for the SAME textual reason, so a manifest here
+# would be a list of "every backreference-bearing pattern in the corpus,
+# forever kept in step with it" -- exactly the K35 shape this file's own
+# comments warn against elsewhere. So the admission is MECHANICAL: rewrite the
+# PRE-MODULE region text with the one substitution the rename made (the
+# function-name swap, applied wherever it occurs, and the two-argument line
+# split into the pointer+length pair, wherever THAT occurs) and compare the
+# rewritten text against the subject's region. Two regions differing for any
+# OTHER reason fail the comparison and land in `rdiff`, exactly as an
+# unlisted difference always has.
+bref_rename_rewrite() {
+    sed 's/_bref_match/_span_match/g' | awk '
+        /^                  \(size_t\)ref_start, \(size_t\)ref_end,$/ {
+            print "                  subject + (size_t)ref_start,"
+            print "                  (size_t)(ref_end - ref_start),"
+            next
+        }
+        { print }
+    '
+}
 
 # ---- the corpus ------------------------------------------------------------
 PATFILE="$WORKDIR/patterns"
@@ -1294,6 +1381,74 @@ nc=$(grep -c . "$WORKDIR/call" || true)
 nf=$(grep -c . "$WORKDIR/free" || true)
 echo "recursion-identity: corpus $(grep -c . "$PATFILE") patterns; call-bearing: $nc; call-free: $nf"
 
+# [recidfix->varland] THE FOURTH AND FIFTH EXCEPTIONS' NON-VACUITY
+# POPULATIONS, derived INDEPENDENTLY of the buckets they check (learnings.md
+# §3: a control sharing a source with what it controls proves nothing).
+# `bref_rename_rewrite`/the `run->var_value[` check both read EMITTED TEXT;
+# this reads PATTERN TEXT — on the masked scan the call/free classifier
+# above already uses (`[\1]` is an octal literal, not a reference; a `${`
+# inside a class is class members, not a variable). NEITHER count here is
+# expected to equal its bucket's count exactly: this is a TEXT census over
+# what a pattern SAYS, each bucket is a BEHAVIOURAL count over what an
+# artifact DOES, and they are read against each other below only as an
+# approximate cross-check, never folded into one number.
+#
+# THE BACKREF CENSUS IS TWO NUMBERS, NOT ONE, because a narrow `\1`..`\9`
+# reading undercounts what actually reaches `vm_bref`'s renamed call: a
+# NAMED backreference (`\k<n>`, `\k'n'`, `\k{n}`, `(?P=n)`) resolves to the
+# identical slot-pair compare and the identical rename, and the narrow
+# census alone measured 126 against a real `bref-rename-moved` of 155 on
+# this tree — a 29-pattern gap that reading the actual differing list
+# explained. The BROAD count (union of both spellings) is what the
+# non-vacuity check below compares against.
+python3 - "$WORKDIR/free" "$WORKDIR/bref_pop" "$WORKDIR/var_pop" <<'PY'
+import sys, re
+
+def mask_classes(pat):
+    out = []; i = 0; n = len(pat); in_class = False
+    while i < n:
+        c = pat[i]
+        if c == "\\" and i + 1 < n:
+            out.append("XX" if in_class else c + pat[i+1]); i += 2; continue
+        if not in_class and c == "[":
+            in_class = True; out.append(c); i += 1; continue
+        if in_class and c == "]":
+            in_class = False; out.append(c); i += 1; continue
+        out.append("X" if in_class else c); i += 1
+    return "".join(out)
+
+NUMERIC_RE = re.compile(r"\\[1-9]")
+NAMED_RE = re.compile(
+    r"\\k<[A-Za-z_][A-Za-z0-9_]*>|\\k'[A-Za-z_][A-Za-z0-9_]*'"
+    r"|\\k\{[A-Za-z_][A-Za-z0-9_]*\}|\(\?P=[A-Za-z_][A-Za-z0-9_]*\)")
+src, brefout, varout = sys.argv[1], sys.argv[2], sys.argv[3]
+numeric = set(); named = set(); varhits = []
+for line in open(src, encoding="utf-8", errors="surrogateescape"):
+    p = line.rstrip("\n")
+    if not p:
+        continue
+    m = mask_classes(p)
+    if NUMERIC_RE.search(m):
+        numeric.add(p)
+    if NAMED_RE.search(p):
+        named.add(p)
+    if "${" in m:
+        varhits.append(p)
+bref_union = numeric | named
+open(brefout, "w", encoding="utf-8", errors="surrogateescape").write(
+    "\n".join(sorted(bref_union)) + ("\n" if bref_union else ""))
+open(varout, "w", encoding="utf-8", errors="surrogateescape").write(
+    "\n".join(varhits) + ("\n" if varhits else ""))
+print("recursion-identity: backref population in the call-free bucket "
+      "(text census, independent of the artifact): numeric \\1..\\9 = %d, "
+      "named (\\k<>/\\k''/\\k{}/(?P=)) = %d, union = %d"
+      % (len(numeric), len(named), len(bref_union)))
+print("recursion-identity: ${...} var population in the call-free bucket "
+      "(text census, independent of the artifact): %d" % len(varhits))
+PY
+NBREF=$(grep -c . "$WORKDIR/bref_pop" || true)
+NVARPOP=$(grep -c . "$WORKDIR/var_pop" || true)
+
 if [ "$nf" -lt 700 ]; then
     bad "corpus extraction found only $nf call-free patterns — the gate has no population"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
@@ -1349,6 +1504,18 @@ sweep() { # sweep <label> <extra pcrec args>
     # build is byte-identical (a stamp claiming a compare the program does not
     # contain), `rnofoldmoved` a fold-free VM artifact the deny flag moves.
     local rfold=0 rfoldsame=0 rnofoldmoved=0
+    # [recidfix->varland] the fourth exception's own counter: a region that
+    # differs from the pre-module pin for EXACTLY the ruled seam rename,
+    # whether that is the whole of the difference or (composed with the fold
+    # bucket above) the part of it the fold's own deny-axis excuse does not
+    # explain.
+    local rbrefrename=0
+    # [recidfix->varland] the fifth exception's counter: a region admitted
+    # because it uses module `vars`' `${...}` construct, which existed in NO
+    # compiler before it shipped and needs no rewrite to explain, only proof
+    # that the construct is really what moved (`run->var_value[` in the
+    # subject's own region).
+    local rvarnew=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -1395,6 +1562,12 @@ sweep() { # sweep <label> <extra pcrec args>
             # artifact (the stamp is VM-route-only), which the arithmetic
             # below treats as 0.
             fold_a="$(printf '%s\n' "$a" | sed -n 's/^#define RX_VM_CLS_FOLDS \([0-9]*\)$/\1/p' | head -1)"
+            # [recidfix->varland] the fourth exception's own baseline: the
+            # pre-module region with the ONE ruled rename applied. A no-op on
+            # every pattern the rename never touches (`rb_bref` == `rb`), so
+            # every comparison below that used to read `rb` reads this
+            # instead without changing anything for a rename-free pattern.
+            rb_bref="$(printf '%s\n' "$rb" | bref_rename_rewrite)"
             if [ "$ra" = "$rb" ]; then
                 rsame=$((rsame + 1))
             elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
@@ -1402,6 +1575,38 @@ sweep() { # sweep <label> <extra pcrec args>
             elif printf '%s\n' "$SIZE_TERM_REGION_MOVERS" | grep -qxF -- "$pat"; then
                 rsizeterm=$((rsizeterm + 1))
                 printf 'REGION MOVED (ruled, [ART-SIZE] size term chose K) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif [ "$ra" = "$rb_bref" ]; then
+                # [recidfix->varland] THE RENAME EXPLAINS THE WHOLE
+                # DIFFERENCE ON ITS OWN — no island, no fold, nothing else:
+                # the rewritten pre-module region is now byte-identical to
+                # the subject's.
+                rbrefrename=$((rbrefrename + 1))
+                printf 'REGION MOVED (ruled, [VAR] M6 seam rename bref_match(subject,len,off,off)->span_match(subject,len,ptr,len)) %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            elif printf '%s\n' "$ra" | grep -qF 'run->var_value['; then
+                # [recidfix->varland] A FIFTH THING FOUND WHILE BUILDING THE
+                # FOURTH: reading the actual 170-pattern population (not just
+                # its count) shows 15 of them are NOT backreferences at all —
+                # `^${v}$`, `^${v:-dev}$`, `^${a:-${b}}$` and their siblings,
+                # module `vars`' own construct. `${...}` PREDATES no earlier
+                # compiler's grammar in the sense a rewrite can repair: at
+                # `ac4917d` it is not a variable reference at all — `{` is an
+                # ORDINARY LITERAL there (no vars module to give it meaning),
+                # so the pre-module reference compiles a completely different
+                # program (two anchors around a literal `{v}`) with no
+                # relationship to `vm_var`'s emission. No rewrite of `rb` can
+                # explain this, unlike the bref rename; the ONLY correct claim
+                # is "this construct did not exist yet", so it is admitted
+                # UNCONDITIONALLY once the subject's own region proves it used
+                # `vm_var` — `run->var_value[` is that construct's one emitted
+                # marker, unique to it (verified: no other arm of this emitter
+                # writes that token). This is `rcallbearing`'s own shape one
+                # module later: recursion's call-bearing population is
+                # EXCLUDED from this file's classifier and asserted absent
+                # from the region here; vars has no such classifier (this
+                # gate is module `recursion`'s, not module `vars`'), so its
+                # population is ADMITTED here instead of excluded upstream.
+                rvarnew=$((rvarnew + 1))
+                printf 'REGION MOVED (ruled, [VAR] module postdates ac4917d entirely -- no earlier compiler can express ${...}) %s\n' "$pat" >> "$WORKDIR/diff.$label"
             elif [ "${isl_a:-0}" -gt 0 ] || [ "${fold_a:-0}" -gt 0 ]; then
                 # [ENG-ISL]/[FORM-CHAR] THE EXCUSE IS A CLAIM ABOUT THE DENY
                 # AXES, NOT A PER-ARTIFACT EXEMPTION (panel r53, F3). Build
@@ -1412,6 +1617,16 @@ sweep() { # sweep <label> <extra pcrec args>
                 # something else in this artifact moved too and neither axis
                 # is a licence for it — that lands in `rdiff` and fails,
                 # exactly as it would on an artifact stamping neither.
+                #
+                # [recidfix->varland] THE RESTORE TARGET IS `rb_bref`, NOT
+                # `rb`: a fold-stamped backreference pattern (the FOLD_
+                # PATTERNS manifest's own `^(?i:(a))\1$`) needs BOTH the
+                # rename normalised away AND the fold denied before the two
+                # sides agree — measured directly, `rn = rb` never holds for
+                # that witness (the rename is still live in `rb`) while
+                # `rn = rb_bref` does. Comparing against the raw `rb` would
+                # make the island/fold bucket unreachable for exactly the one
+                # corpus member that most needs it.
                 if [ "${isl_a:-0}" -gt 0 ] && [ "${fold_a:-0}" -gt 0 ]; then
                     rn="$(printf '%s\n' "$(gen_denyboth "$pat" "$args")" | stamp_strip | prog_region)"
                 elif [ "${isl_a:-0}" -gt 0 ]; then
@@ -1419,10 +1634,18 @@ sweep() { # sweep <label> <extra pcrec args>
                 else
                     rn="$(printf '%s\n' "$(gen_nofold "$pat" "$args")" | stamp_strip | prog_region)"
                 fi
-                if [ "$rn" = "$rb" ]; then
+                if [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
                     [ "${fold_a:-0}" -gt 0 ] && rfold=$((rfold + 1))
-                    printf 'REGION MOVED (ruled, islands=%s folds=%s; denying the stamped axes restores the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
+                    # the rename bucket ALSO gets credit here iff it was the
+                    # rewrite (not a no-op) that made the restore work — a
+                    # pattern with no backreference at all must not inflate
+                    # this count just because it also stamps a fold or island.
+                    [ "$rb_bref" != "$rb" ] && rbrefrename=$((rbrefrename + 1))
+                    printf 'REGION MOVED (ruled, islands=%s folds=%s%s; denying the stamped axes restores the pinned region) %s\n' \
+                        "${isl_a:-0}" "${fold_a:-0}" \
+                        "$([ "$rb_bref" != "$rb" ] && printf ' +bref-rename')" \
+                        "$pat" >> "$WORKDIR/diff.$label"
                 else
                     rdiff=$((rdiff + 1))
                     printf 'REGION DIFFERS (islands=%s folds=%s stamped, but denying them does NOT restore the pinned region) %s\n' "${isl_a:-0}" "${fold_a:-0}" "$pat" >> "$WORKDIR/diff.$label"
@@ -1509,7 +1732,7 @@ sweep() { # sweep <label> <extra pcrec args>
         fi
     done < "$WORKDIR/free"
     echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
-    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved call-bearing-in-population=$rcallbearing"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided size-term-moved=$rsizeterm bref-rename-moved=$rbrefrename var-construct-moved=$rvarnew island-moved=$risland island-stamped-but-deny-is-a-noop=$rislsame unstamped-but-deny-moves=$rnoislmoved fold-moved=$rfold fold-stamped-but-deny-is-a-noop=$rfoldsame unstamped-but-fold-deny-moves=$rnofoldmoved call-bearing-in-population=$rcallbearing"
     SIZETERM_TOTAL=$((SIZETERM_TOTAL + rsizeterm))
     # THE SHARPER HALF: under `--no-captures` no VM body is emitted at all, so
     # the size term cannot act and this count must be ZERO. An axis-independent
@@ -1577,6 +1800,30 @@ sweep() { # sweep <label> <extra pcrec args>
     fi
     if [ "$rcallbearing" -ne 0 ]; then
         bad "[$label] (A) $rcallbearing artifacts in the CALL-FREE population carry RX_VM_CALL_ macros. The two [DD-14.FB] region lines (the region-exit guard's type and capacity operand) are emitted only for a call-BEARING artifact, so this population's asserted count for them is ZERO; a non-zero one means the call-free classifier has leaked, not that the named exception fired"
+    fi
+    # [recidfix->varland] THE FOURTH EXCEPTION'S NON-VACUITY ARM. `rbrefrename`
+    # must fire SOMEWHERE (a stale bucket that never admits anything is a
+    # bucket that has stopped defending its claim, `ELIDED_PATTERNS`'s own
+    # rule) and must land within a wide, named band of the independent TEXT
+    # census -- not equality, because the bucket is BEHAVIOURAL (it only
+    # fires when a real emitted difference needed the rewrite to explain it)
+    # and the census is a TEXT overcount of every spelling PCRE recognises as
+    # a backreference, including ones an axis can route away from the VM
+    # entirely. The band is wide on purpose: this is a cross-check that the
+    # bucket is admitting roughly the right POPULATION, not a second pin on
+    # its exact count.
+    if [ "$rbrefrename" -eq 0 ]; then
+        bad "[$label] (A) the bref-rename bucket admitted ZERO patterns. Either every backreference-bearing pattern left the corpus (the bucket's population went to zero, which is itself a failure this file's own convention treats as one) or the rewrite has stopped matching real emitted text"
+    elif [ "$rbrefrename" -lt $((NBREF - 30)) ] || [ "$rbrefrename" -gt $((NBREF + 30)) ]; then
+        bad "[$label] (A) the bref-rename bucket admitted $rbrefrename patterns against an independent text census of $NBREF backreference-bearing call-free patterns (numeric \\1..\\9 plus named \\k<>/\\k''/\\k{}/(?P=) spellings) -- outside the +/-30 band this cross-check allows. Either the census's own regex has drifted from what the parser actually accepts as a backreference, or the bucket is now admitting (or missing) patterns for a reason unrelated to the rename"
+    fi
+    # [recidfix->varland] THE FIFTH EXCEPTION'S NON-VACUITY ARM, the same
+    # shape one construct over: `rvarnew` must fire somewhere and land near
+    # the independent `${` text census.
+    if [ "$rvarnew" -eq 0 ]; then
+        bad "[$label] (A) the var-construct bucket admitted ZERO patterns. Module vars' \${...} population went to zero on this axis, or the run->var_value[ marker has stopped identifying vm_var's emission"
+    elif [ "$rvarnew" -lt $((NVARPOP - 10)) ] || [ "$rvarnew" -gt $((NVARPOP + 10)) ]; then
+        bad "[$label] (A) the var-construct bucket admitted $rvarnew patterns against an independent text census of $NVARPOP \${...}-bearing call-free patterns -- outside the +/-10 band this cross-check allows"
     fi
     if [ "$rislsame" -ne 0 ]; then
         bad "[$label] (A) $rislsame artifacts stamp RX_VM_ALT_ISLANDS > 0 and yet are BYTE-IDENTICAL to their own -fno-alt-island build. The stamp claims a trie the program does not contain — the direction a merely decorative count fails in, and the reason this is a biconditional against the DENY AXIS rather than against a pin that decays:"
@@ -1676,7 +1923,7 @@ FOLD_EOF
        && [ "$elided" -eq 0 ] && [ "$rdiff" -eq 0 ] && [ "$rcallbearing" -eq 0 ] \
        && [ "$relided" -eq "$nelide_region" ]; then
         ok "[$label] (B) WHOLE-FILE byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the pin $FILEPIN — zero differing, zero refusal mismatches, and zero elision movement, which is what a post-wave-G pin must show"
-        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), and 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception"
+        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception, $rbrefrename moved for the ruled [VAR] M6 seam rename (bref_match's two offsets generalised to span_match's pointer+length), and $rvarnew moved because module vars' \${...} construct exists in no compiler before it"
     fi
 }
 

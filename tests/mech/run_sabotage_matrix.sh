@@ -270,6 +270,20 @@
 #     all before this (the `registry` arm builds registry_check.c, never
 #     pc4_check.c) and scored a real UNDETECTED once its [MECH-REACH]
 #     probe was separately fixed.
+#   recidentity — added 2026-09-25 (varland lane, the [VAR] M6 seam-rename
+#     named-exception bucket). Runs
+#     tests/codegen/run_recursion_identity.sh, the ONE identity gate in the
+#     tree with NO arm here before this — its two from-source reference
+#     builds (a pinned pre-module commit AND the current abi's file pin) made
+#     it the most expensive row this vocabulary can name, which is why no
+#     prior row asked for it. Its own arm for `atomicidentity`'s reason: what
+#     it guards (comparison (A)'s program-region claim, and specifically
+#     whether the fourth named exception's MECHANICAL REWRITE admits only
+#     the difference it was built to explain) is orthogonal to every other
+#     identity gate. S273 is the row: a defect in `vm_bref`'s emission that
+#     is NOT the ruled rename still changes an ANSWER, so `brefdiff`/
+#     `harness` catch it too — this arm's job is narrower and sharper than
+#     either: proving the new bucket's admission rule did NOT absorb it.
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1605,6 +1619,37 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
                 score_arm "$work/brefidentity.log" "$f" "brefidentity:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            recidentity)
+                # [VAR] M6 the seam-rename named-exception bucket
+                # (`bref_rename_rewrite` in the script itself). TWO
+                # from-source reference builds per run (the pre-module pin
+                # AND the current abi's file pin), so this is the single
+                # most expensive arm in this vocabulary — assign it only
+                # where the signal really is this gate's own admission rule.
+                #
+                # [recidfix->varland] THE SCRATCH TREE HAS NO `.git`
+                # (MECH-2's own `git archive HEAD | tar -x`), so
+                # `run_recursion_identity.sh`'s own two pinned-commit builds
+                # cannot resolve — a FACT ABOUT THIS ENVIRONMENT, not about
+                # the sabotage, `pc3`/`laexpand`'s own "a skip is not a
+                # pass" shape one identity gate over. The script's own
+                # header now detects the no-`.git`-at-all case and prints a
+                # `SKIP:` banner (never the loud `bad()`/FAIL that case used
+                # to fall into by accident, which read as an unconditional
+                # false DETECTED regardless of any plant — the worst kind of
+                # control, `docs/dev/learnings.md` §3). Read it the same way
+                # `laexpand`/`pc3` are read.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_recursion_identity.sh" \
+                    > "$work/recidentity.log" 2>&1
+                if grep -q '^SKIP:' "$work/recidentity.log"; then
+                    suite_bits+=("recidentity:SKIPPED-no-git-history")
+                    any_skip=1
+                else
+                    p="$(grep -m1 '^checks passed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
+                    f="$(grep -m1 '^checks failed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
+                    score_arm "$work/recidentity.log" "$f" "recidentity:${f:-ERR}fail/${p:-?}pass"
+                fi
                 ;;
             lookaround)
                 # [M6.6.2 wave B+C] module `lookaround`'s behavioural
