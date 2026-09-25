@@ -9,26 +9,30 @@ and it does not get to break the build either.
 
 ## Files
 
-- **`k64_precheck_forced_vm.rxt`** — [K64] (`docs/dev/known_issues.md`),
-  landed 2026-09-25 (lane `chkgaps`, check-design closure). On a
-  step-budgeted, framed, forced-`--engine=vm` build of
-  `^([a-zA-Z0-9._%+-]+)+@`, `[OPT-PRECHECK-ADMIT]`'s G2 rule declines the
-  necessary-byte pre-check for this one-attempt route without checking
-  that the attempt is LINEAR, so a subject with no `@` anywhere gives up
-  (`PCREC_ERR_STEPS`) where PCRE2 10.46/10.48 and python3 `re` both answer
-  NOMATCH. **THE FILE EXISTS TO CLOSE A REACH GAP, NOT ONLY TO DOCUMENT THE
-  BUG**: nothing else in `make test` compiled this pattern under a FORCED
-  VM route before this — the admission differential
-  (`docs/dev/lanes/admitimpl_answerdiff.py`) ran AUTO-route arms only, and
-  this pattern's auto route is a different (linear, unaffected) machine —
-  so the known-fail ratchet is the first standing, always-run instrument
-  to reach the population K64 lives in. `budget steps=10000` keeps the
-  file's own runtime trivial (the pattern's own `3*2^(L-2)-2` cost clears
-  the budget at L=16, five times over). Closes when K64's fix
-  (`docs/dev/optloop/cycle2_admitfix_reading.md` §1.8 A) lands — per that
-  fix's own owed item, the 4 `n` cells move to a live corpus file with
-  their expectations UNCHANGED (the K34 close's own precedent, `docs/dev/
-  learnings.md` §3.z).
+- **`k64_precheck_forced_vm.rxt` — GONE, 2026-09-25, RETIRED AT MERGE (lane
+  `chkgaps` landed it as standing check-gap coverage while K64 was still
+  open; lane `k64fix` fixed K64 the same day, concurrently, with its own
+  regression at `tests/base/k64_precheck_forced_vm.rxt` — same basename,
+  same witness pattern `^([a-zA-Z0-9._%+-]+)+@` under `--engine=vm`,
+  budget `steps=10000`).** Lived here 2026-09-25 only, never shipped in a
+  `make test` run from this directory. The fix's own regression is a
+  SUPERSET of this file's population (both the anchored/framed block this
+  file carried AND a second frameless-arm block, plus the `gu` control
+  proving the budget really reaches the VM), so retiring rather than
+  promoting-in-place is the K34 close's own precedent applied the other
+  direction: where K34's cells had no other home and were placed BY HAND
+  into an already-counted file, this file's cells already had a home that
+  landed independently, and keeping both would be two files asserting the
+  identical claim. `docs/dev/known_issues.md` K64 is CLOSED (fix A,
+  lane `k64fix`); this file's own two check-gap closures (the axes
+  `GIVEUP1` bucket in `tests/axes/dump_diff.awk`/`run_axes.sh`, and
+  `tests/codegen/run_prechecks.sh` §5.7's UNANCHORED positive control,
+  sabotage S276) are UNRETIRED and stand on their own — they close a reach
+  gap (no check before this compiled a forced-VM route outside K64's own
+  narrow anchored witness) that is independent of which fix landed, and
+  §5.7's own witness is deliberately NOT K64's population (see that
+  section's header). See `docs/dev/lanes/chkgapsmerge_report.md` for the
+  merge-time reconciliation.
 - **`k34_leftrec_giveup.rxt` — GONE, 2026-09-23, by the front door
   ([OPTLOOP.1.impl] batch 2, lane `optimpl2`; the known-fail triage, lane
   `b2fix`).** Lived here 2026-08-24 .. 2026-09-23. [K34] (`docs/dev/

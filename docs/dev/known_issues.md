@@ -119,19 +119,28 @@ frameless program.
 This is a learnings.md §3 candidate: count give-up TRANSITIONS as their own
 population.
 
-**Both check gaps CLOSED 2026-09-25 (lane `chkgaps`), the bug itself still
-open.** `tests/known_fail/k64_precheck_forced_vm.rxt` gives `make test`'s
-known-fail ratchet standing reach into this exact population (4 `n` cells,
-PCRE2's real NOMATCH expectation, currently failing against the shipped
-give-up — the ratchet's own "still failing, expected" state). `dump_diff.awk`
-now classifies a one-sided give-up as its own `GIVEUP1` bucket, and
-`run_axes.sh` promotes every such case to a failure unless the axis names it
-in `GIVEUP1_ALLOWANCE` (empty today — see `tests/axes/CLAUDE.md`). Neither
-change fixes the admission rule itself; the answer differential
-(`run_prechecks.sh` §5.6) closes the general SHAPE of the gap on an
-unanchored witness independent of this fix (sabotage S276), since a
-positive-answer check over K64's own anchored population would be red on
-the clean tree until the fix (§1.8 A) lands.
+**Three check gaps CLOSED, standing (lane `chkgaps`, merged 2026-09-25
+alongside fix A above — this paragraph is UPDATED from chkgaps' own
+"the bug itself still open" wording, written before the two lanes'
+work was reconciled).** `dump_diff.awk` now classifies a one-sided
+give-up as its own `GIVEUP1` bucket, and `run_axes.sh` promotes every
+such case to a failure unless the axis names it in `GIVEUP1_ALLOWANCE`
+(empty today — see `tests/axes/CLAUDE.md`); mech's `encoding` arm scores
+against a clean-tree baseline rather than the tree under test (see
+`tests/mech/CLAUDE.md`'s [ENCCHK-DD12A] entry). None of the three is
+the fix itself, and none needed the fix to be worth landing: they close
+REACH gaps a differential check had (`admitimpl_answerdiff.py` ran only
+auto-route arms; `run_axes.sh` could not distinguish a give-up from an
+ordinary budget-bound case), independent of which fix shape won.
+`tests/codegen/run_prechecks.sh` §5.7 (sabotage S276) is the fourth —
+an UNANCHORED positive control for G2's admission rule, a population
+K64's own witness (anchored, §5.6, sabotage S274) never reaches, and
+one this construct had NO check on before this lane. chkgaps also
+briefly added `tests/known_fail/k64_precheck_forced_vm.rxt`; it was
+RETIRED at merge (never shipped in a `make test` run) because lane
+`k64fix`'s own regression, `tests/base/k64_precheck_forced_vm.rxt`,
+landed the same day covering a superset of the same witnesses — see
+`docs/dev/lanes/chkgapsmerge_report.md`.
 
 ---
 
