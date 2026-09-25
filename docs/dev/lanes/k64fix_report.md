@@ -156,8 +156,14 @@ ruled it (docs/dev/known_issues.md K64; cycle2_admitfix_reading.md §1.8 A).
 
 - `make strict`: clean.
 - The targeted runs above, with the files they ran named.
-- `make test-codegen`, `make test-rxtsource` and `make test-prechecks`:
-  running at the time of writing. The results are in the handback message.
+- `make test-prechecks` passes (rc 0). `make test-rxtsource` passes (rc 0),
+  including the re-pinned census and C3.
+- `make test-codegen` is red on ONE script,
+  `tests/codegen/run_inline_capability.sh` ("nm could not read arm_a.o (no
+  rx_search symbol)"). It is **pre-existing and not mine**: the same script
+  run with `PCREC=<b8aa188e build>` fails identically. It is a darwin
+  Mach-O `nm` issue. Every other codegen script is green, including the
+  sab-anchor tripwire, which resolves S269's re-anchor and S273's new anchor.
 - **Owed:**
   - the abi ruling, and the bump ritual if it is ruled;
   - the full `make test`, after the manager's slot go (log path in the
