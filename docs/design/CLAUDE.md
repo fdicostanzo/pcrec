@@ -2486,9 +2486,33 @@ append-only or historical records.
   literal-compare site. The last one is why §6 puts the exact VM compare and a WAF
   attribution read ahead of any caseless mask.
 
-- `litscan_s1.md` — **REVISION 2, OPTION B** (lane `s1b`, 2026-09-25, from
-  main `4976f385`, per D122 ADDENDUM 4; awaiting a FULL D6 panel before any
-  build). **Read its §R ("what changed from the panelled version") first.**
+- `litscan_s1.md` — **REVISION 3** (lane `s1r3`, 2026-09-25, from main
+  `0832bb1e`): the FULL D6 panel D122 addendum 4 item 3 requires
+  (`../dev/reviews/2026-09-25-r3-litscan-s1-panel.md`, three critics —
+  s1crit-sound/opus, s1crit-axis/sonnet, s1crit-consumer/sonnet). **No
+  BLOCKING finding; the mechanism holds — read §R3 first.** Fixes the G1
+  pseudocode to keep `dfa_cand_scan_byte`'s own DFA-scan guard and
+  `ENG_ATTEMPT` arm verbatim (the drafted widening would have run a
+  DFA-shaped derivation on exactly the no-DFA routes K65/K66 live on);
+  files **K66** (`../dev/known_issues.md`), the RUN-WINDOW analogue of K65
+  ("C2b" — r2's argued case, now measured on the unmerged k65fix build),
+  states the invariant that S1's pin and any C2b fix must read the SAME
+  `Job.req_run` field, and SEQUENCES step 6 (Q1's floating-run conversion)
+  after GIVEUP1 (`lane/chkgaps`) merges and a ruling on K66; corrects the
+  R4 deny-widening site list (`compile.c:1576` was missing) to a grep
+  recipe with a stated ordering rule; adds a coordination paragraph to
+  BOTH this note (§1.5) and `findings/design.md` §6.2a naming the shared
+  `req_admit`/G1 site and the rebase order; tightens §1.5's two
+  "must-not-preclude" claims to name the VMSEED plumbing gap precisely
+  (the fact/struct are engine-neutral, their sole producer/constructor
+  input is not); and rules the three open items revision 2's own §9
+  raised (the two-bit deny ACCEPTED, a `!views` alternative REJECTED with
+  R7 ratified, row (j)'s reachability upgraded to a hard delivery-bar
+  item). Nothing under `src/`/`cli/`/`lib/`/`tests/` changed; awaiting a
+  build lane. Revision 2's own entry follows.
+- `litscan_s1.md` (revision 2) — **OPTION B** (lane `s1b`, 2026-09-25, from
+  main `4976f385`, per D122 ADDENDUM 4). **Read its §R ("what changed from
+  the panelled version") first.**
   The decision moved out of `prefix_k.c`: the stage-1 table is WITHDRAWN,
   `prefix_k.c` only PUBLISHES "`Job.req_run` is pinned at `o`"
   (`PrefixKSets.run_pinned`/`run_o`), and ONE selector decides every scan
