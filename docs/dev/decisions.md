@@ -8359,3 +8359,9 @@ axis for free. The shape already exists: emit_dfa.c's DFA_SELECT
 generalises it (not a parallel selector). Reason recorded: once SIMD
 arrives, testing becomes arch-specific; the rows keep that contained.
 Teddy-class multi-literal is therefore NOT in scope now — a future SIMD row.
+
+D122 ADDENDUM 3 (Frank, 2026-09-25): "SWAR is fine — I want to avoid ARCH-SPECIFIC
+techniques until later." The hold's line is ARCH-SPECIFICITY, not data
+parallelism: portable-C SWAR over uint64_t (no intrinsics, no ISA predicate)
+is admitted now as an ordinary row; intrinsics/ISA-gated forms are the held
+SIMD rows. (Consistent with [WORD-FOLD]'s 2026-09-11 charter sentence.)
