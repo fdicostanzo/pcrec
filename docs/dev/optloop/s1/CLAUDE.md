@@ -29,6 +29,13 @@ directory, never here.
   `-fno-req-byte` (= S1 = `25b1984f`'s program) for keyword, on the 3
   throughput + 75 short subjects (sha256 75/75, 3/3). Span hashes equal
   across every arm of a pattern.
+- `router_c_identity.sh` — S1 review (lane `s1rev`, 2026-09-25) C1's
+  reproducible recipe for the litscan_s1.md §10 claim "arm (c) was verified
+  program-identical at `b5c1423b`": git-archives 25b1984f and a HEAD ref to
+  a scratch dir, builds both with the pinned compiler, emits router
+  (`/user|/users`) from each (25b1984f predates `-fno-req-run`, so its
+  default artifact IS arm (c) there; HEAD compiles with `-fno-req-run`),
+  and diffs. `router_c_identity_output.txt` is its recorded run.
 
 ## Reproduce
 

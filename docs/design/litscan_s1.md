@@ -522,7 +522,11 @@ paragraph as its trigger (§9 Q3).
 > `capability@0.1`, both regimes. **Arms:** (a) the base pin (`b5c1423b`, or
 > k64fix's if it has merged); (b) the S1 pin; (c) the S1 pin with
 > `-fno-run-prefilter -fno-req-run`. That is router's `25b1984f` program:
-> arm (c) was verified program-identical at `b5c1423b`, and the lane
+> arm (c) was verified program-identical at `b5c1423b`
+> (`s1/router_c_identity.sh` + its recorded `s1/router_c_identity_output.txt`,
+> S1 review C1: every differing line is the header comment, a stamp `#define`
+> a LATER feature introduced, or `rx_info`'s `.abi`/`.vars`/`.nvars` fields —
+> no function body or table moves), and the lane
 > re-verifies it at S1. **Targets:** router and keyword thr, auto ×2. Bar:
 > (b) ≤ `25b1984f` + band. Predicted router 337k (range 330-394k), keyword
 > 731k. **(i)'s question:** router (b) against (c), reported as a number.
