@@ -1627,11 +1627,29 @@ run_one() {
                 # AND the current abi's file pin), so this is the single
                 # most expensive arm in this vocabulary — assign it only
                 # where the signal really is this gate's own admission rule.
+                #
+                # [recidfix->varland] THE SCRATCH TREE HAS NO `.git`
+                # (MECH-2's own `git archive HEAD | tar -x`), so
+                # `run_recursion_identity.sh`'s own two pinned-commit builds
+                # cannot resolve — a FACT ABOUT THIS ENVIRONMENT, not about
+                # the sabotage, `pc3`/`laexpand`'s own "a skip is not a
+                # pass" shape one identity gate over. The script's own
+                # header now detects the no-`.git`-at-all case and prints a
+                # `SKIP:` banner (never the loud `bad()`/FAIL that case used
+                # to fall into by accident, which read as an unconditional
+                # false DETECTED regardless of any plant — the worst kind of
+                # control, `docs/dev/learnings.md` §3). Read it the same way
+                # `laexpand`/`pc3` are read.
                 PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_recursion_identity.sh" \
                     > "$work/recidentity.log" 2>&1
-                p="$(grep -m1 '^checks passed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
-                f="$(grep -m1 '^checks failed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
-                score_arm "$work/recidentity.log" "$f" "recidentity:${f:-ERR}fail/${p:-?}pass"
+                if grep -q '^SKIP:' "$work/recidentity.log"; then
+                    suite_bits+=("recidentity:SKIPPED-no-git-history")
+                    any_skip=1
+                else
+                    p="$(grep -m1 '^checks passed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
+                    f="$(grep -m1 '^checks failed:' "$work/recidentity.log" | grep -oE '[0-9]+')"
+                    score_arm "$work/recidentity.log" "$f" "recidentity:${f:-ERR}fail/${p:-?}pass"
+                fi
                 ;;
             lookaround)
                 # [M6.6.2 wave B+C] module `lookaround`'s behavioural

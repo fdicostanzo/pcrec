@@ -258,6 +258,40 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
 
+# [recidfix->varland, tests/mech S273] THIS GATE NEEDS A REAL GIT REPOSITORY
+# WITH FULL HISTORY, and it needs to SAY SO rather than report a false FAIL,
+# which is a DIFFERENT claim from "the pin does not resolve" below. Both
+# `$REFCOMMIT` and `$FILEPIN` are built via `git -C "$ROOT_DIR" archive
+# <commit-ish>`, and `tests/mech/run_sabotage_matrix.sh`'s scratch trees are
+# `git archive HEAD | tar -x` with NO `.git` directory AT ALL (its own MECH-2
+# rule) -- discovered live wiring `recidentity` in as this gate's first mech
+# arm: `git -C "$tree" rev-parse --verify ac4917d^{commit}` fails with "fatal:
+# not a git repository" regardless of whether a sabotage is applied, so an
+# earlier version of this check read `bad()`/FAIL unconditionally -- a
+# FALSE DETECTED on every row, the worst kind of control (`docs/dev/
+# learnings.md` §3): one that reports the same verdict whatever the tree
+# contains. `atomicidentity`/`brefidentity` (this file's siblings,
+# `run_atomic_identity.sh`/`run_backref_identity.sh`) build their own pinned
+# reference the identical way and are "REGISTERED AND RESERVED WITH ZERO
+# ROWS" in `tests/mech/CLAUDE.md` -- now explained: nobody has wired a row to
+# either, so nobody has hit this.
+#
+# THE DISTINCTION THAT MAKES THIS A SKIP AND NOT A FAIL: "this tree has no
+# git history at all" is an ENVIRONMENT LIMITATION (no oracle, `pc3`/
+# `laexpand`'s own shape), never a claim about whether either pin is right.
+# "$ROOT_DIR is a git repo but $REFCOMMIT/$FILEPIN do not resolve IN it" is
+# still the real, load-bearing FAIL this file's later checks give it credit
+# for saying loudly ("a gate that cannot build its reference must SAY so
+# rather than skip") -- that sentence is right about a WRONG PIN and wrong
+# about a git-archive scratch tree, which was never a case its author had in
+# view.
+if ! git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "SKIP: $ROOT_DIR is not inside a git working tree at all (no .git found in any parent) -- this gate needs FULL GIT HISTORY to git-archive its two pinned commits (the pre-module reference and the current abi's file pin, both resolved further down) and cannot tell 'no history available here' from 'the pin itself is wrong' without one. Structurally unrunable inside a git-archive-only scratch tree (tests/mech/run_sabotage_matrix.sh's own MECH-2 shape); run it against a real checkout instead." >&2
+    echo "checks passed: 0"
+    echo "checks failed: 0"
+    exit 0
+fi
+
 # ===========================================================================
 # [DD-14.FB] THIS GATE IS NOW **TWO COMPARISONS**, NOT ONE, AND THE SPLIT IS
 # A RULING (manager, 2026-08-25) RATHER THAN A CONVENIENCE.
