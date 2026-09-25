@@ -2483,7 +2483,28 @@ append-only or historical records.
   literal-compare site. The last one is why §6 puts the exact VM compare and a WAF
   attribution read ahead of any caseless mask.
 
-- `litscan_s1.md` — **`[OPT-LITSCAN]` S1's design note, PROPOSED, PANELED
+- `litscan_s1.md` — **REVISION 2, OPTION B** (lane `s1b`, 2026-09-25, from
+  main `4976f385`, per D122 ADDENDUM 4; awaiting a FULL D6 panel before any
+  build). **Read its §R ("what changed from the panelled version") first.**
+  The decision moved out of `prefix_k.c`: the stage-1 table is WITHDRAWN,
+  `prefix_k.c` only PUBLISHES "`Job.req_run` is pinned at `o`"
+  (`PrefixKSets.run_pinned`/`run_o`), and ONE selector decides every scan
+  form — a new row PAIR `run-pinned-bounded`/`run-pinned` at the head of
+  `dfa_pfs[]` (deny `PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER`, bit 32;
+  `reseeds = true`) emitting the existing `<p>_ofsskip` through one new
+  derivation, `OfsTest`, that the `offset-set` rows are routed through first,
+  byte-identically. The emitted PROGRAM is revision 1's exactly; what moved
+  is where it is selected and what it is called (two new `RX_DFA_PREFILTER`
+  values and every reader of that set). Found while placing the row: the
+  DFA_SELECT deny plumbing is 32 bits wide (bit 32 would silently not deny).
+  Census re-run under B's predicate on every artifact (`s1/census_b.py`):
+  the row selects exactly B ∪ C1 plus five `memchr-bounded` corpus
+  artifacts (`foo\b` family), and five corpus "A" rows turn out to keep their
+  pre-check (A2: G1's identity conjunct) — totals 34 bench / 513 corpus,
+  unchanged but explained. Records the engine-neutral reading of `dfa_pfs[]`
+  (§1.5) and what S1 must not preclude for `[OPT-VMSEED]`. Revision 1's
+  entry follows.
+- `litscan_s1.md` (revision 1) — **`[OPT-LITSCAN]` S1's design note, PROPOSED, PANELED
   (r1, LIGHT) AND REVISED** (lane `s1design`, 2026-09-25, from main
   `b5c1423b`; design only, instruments in `../dev/optloop/s1/`; panel +
   fixes lane `s1rev`, same day, `../dev/reviews/2026-09-25-r1-litscan-s1.md`).
