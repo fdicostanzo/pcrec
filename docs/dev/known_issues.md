@@ -11,6 +11,33 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K65 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
+
+**Status: deferred** — owner to be ruled (fix shape below). Pre-existing on
+main; not a wrong answer (a give-up is honest under `docs/spec/limits.md`
+§1), but an answer → give-up divergence driven by a SPEED decision, and it
+falsifies `src/opt/reqbyte.c`'s / `src/opt/prefix_k.c`'s "can never cost a
+match" at the give-up level. [FINDINGS] would make every user bundle a
+switch for it.
+
+**Repro** (main, reproduced by the critic):
+
+    build/pcrec -p rx --features all -e byte --emit-main --pattern '(x?)([a-z]+)+Z.@\1'   # RX_REQ_BYTE "90" (Z)
+    build/pcrec -p rx --features all -e utf8 --emit-main --pattern '(x?)([a-z]+)+Z.@\1'   # RX_REQ_BYTE "64" (@)
+    subject: 'a' x 31 + 'Zb'  ->  byte artifact: steps (≈2.4 s);  utf8 artifact: nomatch (instant)
+
+The backreference declines the hybrid, so no DFA scan proves absence
+linearly; only the one picked byte's memchr does.
+
+**Why no check saw it:** run_axes.sh counts a one-sided give-up as
+"budget-bound" (closed on unmerged lane/chkgaps as GIVEUP1); the corpus has
+no exponential-on-length-30 subject.
+
+**Fix candidates (to rule):** (a) on no-DFA-front VM routes, pre-check EVERY
+member of the necessary set (any absent member proves NOMATCH) — pick- and
+findings-independent; (b) readers take a findings-blind fixed rule there;
+(c) K64's option C (the pre-check refills the step budget). Manager leans (a).
+
 ## K64 — [OPT-PRECHECK-ADMIT] G2 (found by pcrec-bench [B84]/O-52, diagnosed by lane b84read 2026-09-25): on a step-budgeted, framed, forced-VM one-attempt artifact, declining the necessary-byte pre-check turns a NOMATCH into `PCREC_ERR_STEPS`
 
 **Status: deferred** — the proposed fix is in
