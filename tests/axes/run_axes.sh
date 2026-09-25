@@ -566,6 +566,25 @@ declare -A REFUSAL_FLOOR=(
 )
 
 # ============================================================================
+# GIVEUP1_ALLOWANCE — [chkgaps] 2026-09-25's check-design close-out
+# (docs/dev/learnings.md §3: "count answer->give-up TRANSITIONS as their own
+# population"; K64's own check-gap note, docs/dev/lanes/k64fix_report.md
+# §"Check gaps"). A GIVEUP1 case (dump_diff.awk: exactly one side gives up
+# or times out, the other reports a real answer) is a FAILURE unless this
+# axis names the EXACT case here, keyed "<flags>|<file:line>" — a COUNT
+# ceiling would disarm itself the moment a different case moved into it
+# (K35, the REFUSAL_PATTERN/REFUSAL_FLOOR precedent two tables up), so this
+# is a manifest, never a number. EMPTY TODAY: no legitimate one-sided
+# give-up has been MEASURED on the real corpus (the previous behaviour
+# folded every such case into the two-sided BUDGET bucket and never counted
+# it at all, so there is no prior population to seed this from). Add an
+# entry only from a live measurement naming the axis, the case, and why the
+# transition is contract-legal rather than a regression — never from
+# plausibility.
+declare -A GIVEUP1_ALLOWANCE=(
+)
+
+# ============================================================================
 # THE BASELINE
 # ============================================================================
 
@@ -683,9 +702,10 @@ run_one_axis() {
     diffline="$(awk -v BASEFILE="$BASE_DUMP" -v ROWSFILE="$rowsfile" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$diffe")"
     cat "$diffe" >&2
     echo "  $diffline"
-    local mismatches budget refused lost gained agree_n keys_base_n keys_axis_n
+    local mismatches budget giveup1 refused lost gained agree_n keys_base_n keys_axis_n
     mismatches="$(echo "$diffline" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
     budget="$(echo "$diffline" | grep -oE 'budget=[0-9]+' | cut -d= -f2)"
+    giveup1="$(echo "$diffline" | grep -oE 'giveup1=[0-9]+' | cut -d= -f2)"
     refused="$(echo "$diffline" | grep -oE 'refused=[0-9]+' | cut -d= -f2)"
     lost="$(echo "$diffline" | grep -oE 'lost=[0-9]+' | cut -d= -f2)"
     gained="$(echo "$diffline" | grep -oE 'gained=[0-9]+' | cut -d= -f2)"
@@ -755,7 +775,39 @@ run_one_axis() {
             fi
         done < "$rowsfile"
     fi
-    local total_mismatches=$((mismatches + refused_undocumented))
+    # THE GIVEUP1 RECLASSIFICATION ([chkgaps] 2026-09-25, docs/dev/
+    # learnings.md §3's own filed candidate: "count answer->give-up
+    # TRANSITIONS as their own population"). dump_diff.awk's GIVEUP1
+    # bucket is a case where EXACTLY ONE side gives up/times out and the
+    # other reports a real answer -- distinct from BUDGET (both sides give
+    # up; tuning.md §2.5 licenses that boundary moving) and previously
+    # folded into it wholesale, which is exactly how the K64 admission
+    # defect's own forced-VM give-up would have read here: "budget-bound,
+    # never a failure" on a case that used to answer correctly.
+    #
+    # EVERY GIVEUP1 CASE IS A FAILURE UNLESS THIS AXIS NAMES IT, BY EXACT
+    # KEY, IN GIVEUP1_ALLOWANCE below -- "derive, never blanket-excuse"
+    # (the brief's own wording), K35's "a manifest naming irreplaceable
+    # rows" rule one table up from REFUSAL_PATTERN's own precedent. A
+    # COUNT-ONLY allowance (e.g. "up to N giveup1 cases on this axis") would
+    # disarm itself the moment a DIFFERENT case moved into the count under
+    # its ceiling -- exactly the failure mode K35 exists to name -- so the
+    # manifest is per (axis, file:line) pair, never a number.
+    local giveup1_allowed=0 giveup1_unallowed=0
+    if [ "$giveup1" -gt 0 ]; then
+        while IFS=$'\t' read -r cls key btrc bout atrc aout; do
+            [ "$cls" = "GIVEUP1" ] || continue
+            if [ -n "${GIVEUP1_ALLOWANCE[$flags|$key]:-}" ]; then
+                giveup1_allowed=$((giveup1_allowed + 1))
+            else
+                giveup1_unallowed=$((giveup1_unallowed + 1))
+                if [ "$giveup1_unallowed" -le 20 ]; then
+                    echo "AXIS FAIL: $label: UNALLOWED one-sided give-up at $key: default={trc=$btrc out=$bout} axis={trc=$atrc out=$aout} (not in GIVEUP1_ALLOWANCE — an answer<->give-up transition, not a moving budget boundary)" >&2
+                fi
+            fi
+        done < "$rowsfile"
+    fi
+    local total_mismatches=$((mismatches + refused_undocumented + giveup1_unallowed))
     # K35 FLOOR: an axis with a documented refusal population must still be
     # REACHING it — a change that quietly stopped the cap/force refusal
     # from firing would otherwise read as "0 refused, cleaner!" instead of
@@ -769,20 +821,23 @@ run_one_axis() {
         echo "AXIS FAIL: $label: refused_documented=$refused_documented is BELOW its K35 floor ($floor) — the documented refusal population shrank; find out why before lowering the floor" >&2
         floor_breach=1
     fi
-    echo "  agree=$agree_n budget-bound=$budget refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
+    echo "  agree=$agree_n budget-bound=$budget giveup1-allowed=$giveup1_allowed giveup1-unallowed=$giveup1_unallowed refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
     if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ]; then
         verdict="FAIL"
         fail=1
-        echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2
+        echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s), $giveup1_unallowed unallowed one-sided give-up(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2
     fi
     if [ "$budget" -gt 0 ]; then
-        echo "  ($budget case(s) budget-bound — a give-up/timeout on one side, not an answer disagreement, never a failure)"
+        echo "  ($budget case(s) budget-bound — BOTH sides give up/time out, only the boundary moved, never a failure)"
+    fi
+    if [ "$giveup1_allowed" -gt 0 ]; then
+        echo "  ($giveup1_allowed case(s) one-sided give-up, named in GIVEUP1_ALLOWANCE — a measured population, not a failure)"
     fi
     if [ "$refused_documented" -gt 0 ]; then
         echo "  ($refused_documented case(s) refused with this axis's own documented limit — a population, not a failure)"
     fi
-    axis_results+=("$label|$verdict|$diffline refused_doc=$refused_documented refused_undoc=$refused_undocumented|$((t1 - t0))s")
+    axis_results+=("$label|$verdict|$diffline refused_doc=$refused_documented refused_undoc=$refused_undocumented giveup1_allowed=$giveup1_allowed giveup1_unallowed=$giveup1_unallowed|$((t1 - t0))s")
     [ "$KEEP" = "1" ] || rm -f "$dump" "$rowsfile" "$outlog" "$errlog" "$diffe"
 }
 

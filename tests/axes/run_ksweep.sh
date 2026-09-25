@@ -21,9 +21,13 @@
 # backtrack frames is 39 at K=1 against 28 at K=8 (descending K RAISES the
 # frame need), and RX_TRAIL_FRAMES runs 62 down to 51. A sweep that included
 # them would fail on a TRUE property, and the next person would weaken the
-# gate to make it green. `dump_diff.awk` already buckets exactly these as
-# `budget=` (either side trc 3 or 124), so the exclusion is the one the axes
-# sweep already uses rather than a second rule invented here.
+# gate to make it green. `dump_diff.awk` already buckets exactly these —
+# `budget=` when BOTH sides give up/time out, `giveup1=` when only one side
+# does ([chkgaps] 2026-09-25 split the two apart; see that file's own
+# header) — so the exclusion is the one the axes sweep already uses rather
+# than a second rule invented here. This script excludes BOTH buckets: its
+# whole claim is that K may move the give-up SURFACE, in either direction,
+# never that it may only shift the boundary between two give-ups.
 #
 # AN EXCLUSION WITH NOTHING BEHIND IT IS HOW A REAL DEFECT HIDES, so on the
 # excluded cells this script asserts the weaker property that IS K-invariant:
@@ -112,8 +116,18 @@ for k in $LADDER; do
     echo "  $line"
     mm="$(echo "$line" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
     bd="$(echo "$line" | grep -oE 'budget=[0-9]+' | cut -d= -f2)"
+    # [chkgaps, 2026-09-25] dump_diff.awk SPLIT its old `budget=` bucket into
+    # `budget=` (BOTH sides give up) and `giveup1=` (exactly one side does) —
+    # see that file's own header. This script's whole exclusion is about K
+    # moving the give-up SURFACE at all (§6.1's measured "the minimum step
+    # budget that completes runs 89 at K=1 to 110 at K=8" is precisely a
+    # one-sided flip waiting to happen at whichever K crosses a fixed
+    # budget), so both buckets are this gate's excluded population, not just
+    # the two-sided one — read together here rather than letting the split
+    # silently narrow what this script already measured and documented.
+    gu1="$(echo "$line" | grep -oE 'giveup1=[0-9]+' | cut -d= -f2)"
     rf="$(echo "$line" | grep -oE 'refused=[0-9]+' | cut -d= -f2)"
-    total_excluded=$((total_excluded + ${bd:-0}))
+    total_excluded=$((total_excluded + ${bd:-0} + ${gu1:-0}))
     if [ "${mm:-1}" -ne 0 ]; then
         echo "KSWEEP FAIL: --unroll=$k changed ${mm} ANSWER(s). K is the counter rung's chunking factor: it may move the give-up surface (excluded, see the header) but never a match result or a capture." >&2
         fail=1
@@ -151,7 +165,12 @@ for k in $LADDER; do
     # asked for -- rule 2, the declared-capacity floor -- so it fails here.
     if [ -s "$rows" ]; then
         while IFS=$'\t' read -r cls key _rest; do
-            [ "$cls" = "BUDGET" ] || continue
+            # [chkgaps, 2026-09-25] BOTH give-up buckets: see the `gu1`
+            # comment above. A "give-up flip" this rule cares about IS the
+            # one-sided case (GIVEUP1) as much as the two-sided one — a
+            # pattern whose default artifact is already at K<8 must not
+            # gain OR lose a give-up under this axis either way.
+            case "$cls" in (BUDGET|GIVEUP1) ;; (*) continue ;; esac
             f="${key%:*}"; ln="${key##*:}"
             case "$f" in /*) ff="$f" ;; *) ff="$ROOT_DIR/$f" ;; esac
             [ -r "$ff" ] || continue
