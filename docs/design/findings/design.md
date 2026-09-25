@@ -558,7 +558,7 @@ row per built-in analysis"). `-I` directories are not enumerated (§4.1).
 | `source` | provenance `source` of its first block (`authored` / `exemplar` / …) |
 | `license` | provenance `license`, or empty |
 | `retrieved` | provenance `retrieved` |
-| `digest` | FNV-1a-64 of the bundle's canonical row data (all blocks). This is not the stamp's digest; see §7 |
+| `rows_digest` | FNV-1a-64 of the bundle's canonical row data (all blocks). This is NOT the stamp's digest, which covers consumed values only (§7, where `#section resolution` carries that one) |
 | `bytes` | embedded text size |
 
 **`--list-analysis NAME [-I DIR…] [-e ENC]`**: the chain as THIS
@@ -1021,3 +1021,156 @@ Each reader gets one constructed pattern + one named bundle under
 `tests/findings/witness/` whose choice moves against the default. Each is
 REACH-checked, so a witness that stops reaching its site turns red
 ([MECH-REACH]). C1–C4 are owed at B2. C6 is owed at B4.
+
+---
+
+## 12. Migration: implement-then-replace (today's gates → declared data)
+
+| today | step | after | proof it did not move |
+|---|---|---|---|
+| hand table `byte_freq_ppm_tbl` in `prefix_k.c` | B1 | `src/findings/default.rxt`, authored, embedded, normalized by §2.5 | §0.7 arithmetic + §11.4 (default normalizes to the pinned dump) + §11.3 (0 `byte` movers) |
+| three gate spellings (`bytekey` in `reqbyte.c`, `!= PCREC_ENC_BYTE` in `emit_dfa.c`, none in `prefix_k.c`) | B1 | ONE rule, "use what the data declares", plus the default's `serves byte-rate when byte` | §11.3 (`utf8` movers = exactly C4's manifest) + §11.7 grep |
+| `config … analysis <list>` parsed and skipped (`rxt_source.c:2756`) | B0/B2 | `analysis <name>`, AT_MOST_ONE, resolved | B0 changes the row (no corpus user, MEASURED), and B2 wires resolution |
+| file-level `freq <name>` row (no reader, no user) | B0 | a kind block inside `analysis <name>` | `--list-schema` diff; no `.rxt` in the tree carries it |
+| `run_offset_skip.sh` §1 (sum of the C table) | B1 | `tests/findings/` normalization check over `default.rxt` | the same assertion over the new source; the old check is deleted in the same change, not left reading a deleted table |
+
+Each replacement deletes the old form in the SAME change once the new form
+proves identity. Two priors, or two gates, never coexist on main (the
+general-mechanisms memory).
+
+---
+
+## 13. Build plan (ordered, lane-sized; each gated by a measurement, D77)
+
+| step | scope | tier | gating measurement / acceptance | depends |
+|---|---|---|---|---|
+| **B0** format (`[DD-13b]` wave) | §3.1's schema rows: the `analysis` bundle opener + BUNDLE scope, DATA `encoding`/`serves`, the `row` key grammar, CONFIG `analysis` → AT_MOST_ONE TOKEN, `freq <name>` withdrawn, §0.10's provenance conditions (a conjunctive `required-if`). The `bigram`/`cpfreq` rows are NOT in B0 (R2). Parse + `--list-schema` only; nothing consumed. Spec: `rxt_format.md` | sonnet | `--list-schema` diff reviewed; parse fixtures for every new row incl. refusals; confirm the structure layer nests three levels; `tests/rxtsource` green | — |
+| **B1** the accessor + default + gate move (**abi 32→33**) | `src/core/findings.c` (§2.5 normalization, S3-only chain `[default]`, `pcrec_find_byte_rate`/`set_mass`, the consumption record), `src/findings/default.rxt` + build-time embed, the four sites migrated (§6.3), prefix_k's cardinality fallback, `<P>_FINDINGS` + `rx_info.findings`, D94 ritual. Spec: `findings.md` (new), `match_api.md` §6, `tuning.md` §2.27 & neighbours, `limits.md` | **opus** | **(1)** `b1_byte_movers` EMPTY with a nonzero REACH count; **(2)** `b1_utf8_prefixk` manifest named and answer-identical; **(3)** the compile-time cost of parsing `default.rxt` per compile, measured against a minimal compile. Above noise, a pre-parsed table is generated FROM the same text at build time with an agreement check, not a second source. **(4)** codegen/registry/rxtsource suites (D94 addendum) | B0 |
+| **B2** resolution + CLI + library | S1/S2 stops, the chain algorithm (§4.3), config `analysis` resolution, `--analysis`, `-I` with `--pattern`, `--list-analyses`/`--list-analysis`, the `pcrec_options` fields, §9's diagnostics, §11.5 fixtures, the FINDINGS axis + adversarial bundles (§11.1), witnesses C1–C4 (§11.9), sabotage F-2..F-6, F-8, F-9, F-11. Spec: `cli.md`, `table_contract.md`, `findings.md` | opus | all §11.5 fixtures; the sampled answer-identity slice green on every adversarial bundle; the full FINDINGS axis run once (owed/background, per BOILERPLATE); no default-path mover vs B1 | B1 |
+| **B3** analyzer prototype | `scripts/pcrec_analyze.py` (from `ngram_count.py`): §10's CLI incl. shards/merge/check, the output format, §10.2's declarations | sonnet | §11.8 determinism/shard-merge/`--check`/R26/R27a; its output for RUNEST's `web_request` sample normalizes (through B1's function) to RUNEST's unigram | B2 (R27a needs `--list-analysis`) |
+| **B5** first shipped bundle(s) + `cpfreq` | a sourcing pass for licensable, stably retrievable samples (§16 Q2); `third_party/<src>/` + `generate.py` via the analyzer; `src/findings/{log,weblog}.rxt` carrying `freq`+`cpfreq` (R5); the `cpfreq` schema row + `encode-utf8`/`encode-latin1` derivations; §11.4 cpfreq checks | sonnet (sourcing) + sonnet (build) | **R35 census** `ship_<name>_movers`: a bundle whose byte-rate census is EMPTY does not ship yet (R31). `log`'s predicted mover is C4's iso-ts (OKS C2). If `weblog`'s byte census is empty, it waits for B4 | B3 |
+| **B4** `bigram` + `run-rarity` + its first reader | the `bigram` schema row, `markov1` (§2.6, `L(x)`), `pcrec_find_run_rarity`, bigram blocks regenerated into the shipped bundles, and **in the same change** the first reader: S4(a)'s run pick (C6) if its row is ready, otherwise whichever of C2-window / C3-widening has a measured trigger first. Witness C6, sabotage F-5 | opus | §11.4 markov1 acceptance (RUNEST rank equality + the WAF sign); the reader's own row's measured bench cell with `analysis weblog` (R38: names the analysis; disjoint subject, R30) | B5, and the reader's own row |
+| **B6** analyzer in C (end state) | `analyze/` → `build/pcrec-analyze`; generators switch to it; python ≡ C agreement; then the python prototype is DELETED | sonnet | §11.8 python ≡ C on in-tree samples + seeded random input; `make gen-tables` byte-identical before/after the switch | B3 (can run in parallel with B4/B5) |
+
+- **After B6:** the D123-2 round-trip helper script (reading
+  `--list-analysis` sections, writing an includable bundle) is a separate
+  small row.
+- **Default regeneration** from a corpus is its own row (D123-5), measured
+  against RUNEST's data and B5's shipped bundles. It is never folded into
+  any step above.
+
+---
+
+## 14. Spec hunks owed (D80), by step
+
+| spec document | hunk | step |
+|---|---|---|
+| `docs/spec/rxt_format.md` | head table: the `analysis <name>` bundle opener replaces file-level `freq <name>`; a new "`analysis` — the bundle" section (BUNDLE scope, `include <name>` in the SEARCH spelling, include_next, AT_MOST_ONE per kind); the DATA section rewritten (`encoding`, `serves`, `row` key grammar per kind, rows ascending); CONFIG `analysis` becomes "names ONE analysis (a bundle)" (D123's consequence text); provenance's data-parent conditions (§0.10). Also REQ §4's two noted spec drifts: `lib` contents being read since W1.3, and `provenance`'s `required` flag | B0 (format), B2 (resolution semantics) |
+| **`docs/spec/findings.md` (NEW)** | the contract: terms (§2.1); kinds and key grammars; the closed query/derivation/encoding vocabularies; §2.5 normalization with test vectors; §2.6 `markov1` + the `L(x)` algorithm and vectors; resolution stops + chain algorithm + include_next + terminal; per-reader NONE fallbacks (§6.2); stamp grammar + digest byte layout; the analyzer's CLI, one-pass table, merge rules, declaration defaults and disclosure table | B1 (core), B2 (resolution), B3/B6 (analyzer), B4 (`markov1`), B5 (`cpfreq`) |
+| `docs/spec/cli.md` | `--analysis`; `-I`/`--lib-path` legal with `--pattern`; §2 "Listing surfaces" count EIGHT → TEN with `--list-analyses`/`--list-analysis`; §3 the two notes and the new hard errors | B2 |
+| `docs/spec/table_contract.md` | two rows in the Scope table | B2 |
+| `docs/spec/match_api.md` | §6 `rx_info.findings`; the §6.3 observability macro `<P>_FINDINGS`; the §6 abi change-log line 32 → 33 | B1 |
+| `docs/spec/tuning.md` | §2.27 and the `[OPT-REQPOS]`/G1/offset-k paragraphs: "the prior is read only under `byte`" becomes "the rates are whatever the resolved analysis declares; the default declares `byte` only"; offset-k's cardinality NONE fallback | B1 |
+| `docs/spec/limits.md` | rows for `PCREC_MAX_FIND_{CHAIN,BUNDLE_BYTES,STORE_BYTES,COUNT,CPFREQ_ROWS,RUN}` and `PCREC_FIND_FLOOR_PPM` (§8.3) | B1/B2 |
+| `lib/pcrec.h` contract comment | the `pcrec_options` fields (§5.3) | B2 |
+
+---
+
+## 15. Requirements disposition (R1–R41)
+
+✓ = honoured as written. **CHANGED** = changed, with the reason given.
+
+| R | status | where / why |
+|---|---|---|
+| R1 open set | ✓ | a kind = one schema row + one derivation entry + an accessor path. Resolution, merge and stamp never change (§2.2, §2.4) |
+| R2 membership | ✓ | `cpfreq` lands with B5's shipped bundle (existing byte-rate readers), `bigram` with B4's reader. Every `serves` query has a `src/` reader (the §11.7 grep) |
+| R3 integer | ✓ | §2.5, §2.6, integer `L(x)` |
+| R4 row shape | ✓ decided | keyed hex rows of counts (§2.3) |
+| R5 cpfreq | ✓ | `encode-utf8`/`encode-latin1` (§2.4), §11.4 |
+| R6 run kind by measurement | ✓ | RUNEST → `bigram` + `markov1` |
+| R7 four sources, one shape | ✓ strengthened | one READER too (text-embedded store, §0.11) |
+| R8 resolution unit (name, kind) | ✓ | per-kind along the chain (§4.4), sharpened to per-QUERY from one block (§0.3) |
+| R9 no blending | ✓ strengthened | one query, one block, and derivations never read two blocks |
+| R10 precedence | **CHANGED** by D123 | there is no config list. Chain order is the bundle's own `include`. The CLI replaces the one name, with a note |
+| R11 per target | ✓ | configs per target |
+| R12 `--pattern` | ✓ | `-I` + `--analysis` (§0.2) |
+| R13 no ambient state | ✓ | §4.1 |
+| R14 in-tree source of truth | ✓ | `src/findings/*.rxt` |
+| R15 two flags | **CHANGED** | one naming flag. A FILE is reached through `-I` + name = file, so `-I` stays the only path concept (§4.2). §16 Q3 asks about path sugar |
+| R16 `.rxt` | ✓ | config resolves; block scope DECLINED with its reason (§3.2) |
+| R17 library | ✓ | three fields; the library parses (§5.3) |
+| R18 introspection | ✓ | `#section resolution` + the stamp |
+| R19 deterministic | ✓ | equal consumed values give an equal digest, so an identical artifact |
+| R20 stamp over values | ✓ | §7 |
+| R21 one abi event | ✓ | 32 → 33 carries the stamp, the field and the gate move |
+| R22 data change visible | ✓ | the digest in the stamp (§7) |
+| R23 gate in accessor | ✓ | §6.3, §11.7 |
+| R24 NONE explicit | ✓ | per-reader fallbacks (§6.2). C4's fallback is cardinality, deliberately and censused (§0.8) |
+| R25 encoding key | **CHANGED** by D123-4 | `encoding` DESCRIBES the data. Applicability is the separate, operative `serves … when` line |
+| R26 invalid bytes | ✓ | `freq` from anything; `cpfreq` refused on undecodable input |
+| R27a outside | ✓ | a separate binary |
+| R27b one counter | ✓ | counting in the analyzer only, normalization in the compiler only |
+| R27c deterministic, pattern-blind | ✓ | no clock (`--retrieved` flag), no pattern argument |
+| R27d only writer | **CHANGED** by D123-4 ("user visible and editable") | SHIPPED generated bundles are analyzer-only (`--check` makes a hand edit red). USER bundles are editable by design. `default` is `authored` |
+| R28 third_party shape | ✓ | §8.1 |
+| R29 licence | ✓ | §8.1, §16 Q2 |
+| R30 bench independence | ✓ | PROVENANCE review + a grep for bench paths in findings PROVENANCE. RUNEST's bench use was evaluation-only |
+| R31 earned | ✓ | an empty census does not ship (B5) |
+| R32 limits | ✓ | §8.3 |
+| R33 footprint | ✓ | sparse counts; ≈55–75 KB total (§8.3) |
+| R33a wording | ✓ | §9 |
+| R34 answer identity | ✓ | §11.1 |
+| R35 census | ✓ | §11.3, named manifests |
+| R36 witnesses | ✓ | §11.9 |
+| R37 gate control | **CHANGED** by D122-2(3) | "zero movers under `utf8`" becomes "zero movers except the named C4 manifest" |
+| R38 perf claims name the analysis | ✓ | B4's acceptance |
+| R39–R41 rows | ✓ | §6.1, §11.1, §11.7 |
+
+---
+
+## 16. Open questions for Frank
+
+1. **The chain's implicit terminal is the BUILT-IN `default`, by identity,
+   not by name (§0.6).** A user changes "the default" only by naming their
+   own bundle. The alternative, resolving `default` by name so a `-I` dir
+   can shadow it globally, is more "editable" but lets a directory added
+   for `lib` silently move every artifact. **Rec: by identity**, as
+   designed.
+2. **`log`'s licensable source (§0.9).** RUNEST's HDFS sample cannot be
+   redistributed. Options:
+   - (a) a sourcing lane looks for a permissively licensed, stably
+     retrievable real log corpus (pinned commit / DOI);
+   - (b) a `fidelity synthesized` generator, labelled as such (D123-6
+     allows it only where nothing is licensable);
+   - (c) ship `weblog` alone first.
+
+   **Rec: (a), with (b) as its declared fallback.** `weblog`'s source
+   (elastic/examples, Apache-2.0) needs only re-pinning to a commit.
+3. **Path sugar for `--analysis`?** `--analysis ./dir/x.rxt` would mean
+   `-I ./dir --analysis x`. It is convenient, but it is a second spelling,
+   and it would decide by the value's SHAPE whether a name or a path was
+   meant. **Rec: no**; revisit on a user ask.
+
+(Deliberately NOT asked, because the design decides them with reasons:
+Route I (§4.2); text embedding (§0.11); the `rx_info` mirror (§7, D43);
+cardinality as C4's NONE fallback (§0.8, D122-2(3) accepted the movement);
+no block-scope `analysis` (§3.2). The critique loop may reopen any of
+them.)
+
+---
+
+## 17. Not built (D77), each with the measurement that would build it
+
+| item | trigger |
+|---|---|
+| `trigram` kind / `markov2` | RUNEST §0.3: a repeat of the estimator measurement on a ≥10× larger licensable exemplar per class shows trigram's ranking edge survives, with no sign inversion |
+| top-K token table | a customer run that IS a word and a measured bigram mis-rank on it (RUNEST §0.4: 3 of 14 runs are word-shaped). It also needs a privacy statement (§10.5) and is not one-pass (§10.3) |
+| gap / burstiness, set-membership run length | C5's "restarts pay" arm or C7 (conditional on the plainloop twin, REQ C7) landing with a measured cell |
+| line-length / chunk statistics (D83 (1)) | any customer (REQ: none) |
+| selective include (`kinds=`) | D123-3: its own effort. The extension point is §3.3 |
+| `rows <name>` block reference | a user ask to change a block's declarations without copying it (§3.3) |
+| `independence` derivation (`freq` → `run-rarity`) | none: RUNEST measured it wrong-signed (ρ ≈ 0 on web). Listed so its absence is on purpose |
+| C2 window choice / C3 widening on `run-rarity` | their own rows' measured cells (B2R §6, I-103) |
+| pattern-specific findings | D83 (2): a separate shape and a separate build |
+| the round-trip helper script | after B6 (D123-2) |
+| default regeneration from a corpus | its own row (D123-5) |
