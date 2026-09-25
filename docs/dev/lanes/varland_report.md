@@ -225,11 +225,14 @@ by this lane, as expected.
 
 ## §5 — PART (b): THE THREE UNPREDICTED `emit_sweep.py` CELLS
 
-Read from the tree directly (dump-surface diffing on `build/pcrec`, which
-at this lane's HEAD is byte-for-byte 809aab12's emitted output — nothing
-under `src/`/`cli`/`lib` touched), not from a fresh sweep run: the box's
-one-heavy-suite rule kept the identity-gate validation running for this
-lane's whole remaining time.
+**ALL THREE FULLY DISPOSITIONED, `dumps` from the tree directly, the other
+two from a REAL SWEEP RUN.** `python3 scripts/emit_sweep.py --ref 1e90aa8a
+--bin build/pcrec --tree .` run once the identity gate + `make strict` +
+S273 freed the box (log `/tmp/emit_sweep_varland.log`, 266.2s): self-check
+PASSED (two independent rebuilds of the reference, all five streams
+identical, no asymmetry, at full reach) before the real ref-vs-tree
+comparison ran. Population: `argv=3995 composition_files=310
+composition_producing=33 composition_artifacts=98`.
 
 **dumps movers=4 (predicted +1, `--list-syntax`): DISPOSITIONED, all four
 legitimate.** Reading each of the seven dump surfaces for a `vars`-shaped
@@ -255,27 +258,55 @@ named, 4 measured). **DISPOSITION: no fix owed; the emit_sweep.py witness
 baseline / composition manifest that names this row should record 4, not
 1, going forward.**
 
-**composition asymmetric=4 and emit-ir-vm movers=41: OWED, NOT YET
-DISPOSITIONED FROM A REAL SWEEP RUN.** The hypothesis in the brief
-(the 1e90aa8a reference refuses `.rxt`/`.rxtin` sources carrying a `var`/
-`var-unset` line) matches exactly THREE files by direct grep
-(`tests/vars/basic.rxt`, `tests/vars/unset.rxt`,
-`tests/rxtsource/fixtures/var_bindings_accept.rxtin`) — one short of the
-measured 4, and `tests/vars/caseless.rxt` (no `var`/`var-unset` line, only
-inline `${...}` patterns) is the most likely fourth, but WHETHER it
-actually reads asymmetric (a refusal-vs-success split, or a differing
-artifact NAME SET — `sweep_composition`'s two distinct triggers) versus
-merely a byte-content mover needs the real sweep's diff hunk to say, not a
-guess. The emit-ir-vm figure (41 vs the corpus's own union backref/var
-population of ~176) likewise needs the actual `sweep_argv_stream`
-population and mover list — plausibly the backref-rename population
-restricted to patterns that both (a) reach `--engine=vm --emit-ir`
-successfully on both sides and (b) show a listing-text (not just
-program-region) difference, which is a narrower filter than comparison
-(A)'s. **OWED**: `python3 scripts/emit_sweep.py --ref 1e90aa8a --bin
-build/pcrec --tree .` (backgrounded once the box frees), then read
-`composition`'s and `emit-ir-vm`'s printed mover/asymmetric lists against
-these two hypotheses before disposing either cell.
+**composition asymmetric=4: DISPOSITIONED, all four legitimate — and the
+brief's own hypothesis was right, the fourth file was just found by the
+wrong grep.** The sweep's own diff prints the FOUR rows by name and by
+exact cause, all four `side_a_ok=False side_b_ok=True`:
+
+| file | side_a's refusal |
+|---|---|
+| `tests/rxtsource/fixtures/var_bindings_accept.rxtin` | `[unknown-token-in-scope] ...:13: 'var' is not a pattern-block directive` |
+| `tests/vars/basic.rxt` | `...:16: 'var' is not a pattern-block directive` |
+| `tests/vars/caseless.rxt` | `...:24: 'var' is not a pattern-block directive` |
+| `tests/vars/unset.rxt` | `...:27: 'var-unset' is not a pattern-block directive` |
+
+`caseless.rxt` line 24 **is** `var v "abc"` (`^(?i)${v}$`'s binding) — the
+lane's earlier grep for a `var`/`var-unset` line missed it (a plain
+`grep -n "^var"` run against the file's raw \xff byte silently returns 0
+matches under BSD grep's binary-file heuristic without `-a`; the file is
+readable, the grep invocation was not `-a`). The refusal is at the
+**format's own HEAD-PARSER level** (`[unknown-token-in-scope]`, nothing to
+do with pattern compilation at all) — module `vars`' `var`/`var-unset`
+`.rxt` directives postdate the pinned reference exactly as its pattern
+construct does, so all four files are refused identically at the same
+layer. **DISPOSITION: no fix owed; a fully expected consequence of the
+[VAR] module landing, not a defect.**
+
+**emit-ir-vm movers=41: DISPOSITIONED, all 41 legitimate and it is a
+completely different population from the hypothesis (the backref-rename
+one) — the number simply coincided.** The sweep's diff shows every mover
+is a `${...}`-bearing pattern from `tests/vars/{basic,caseless,unset}.rxt`
+(the fixture never reaches the argv streams, only `composition`), and
+every one moves the SAME one line — the `--emit-ir` listing's `engine`
+reason:
+
+```
+- engine  vm  forced by: --engine=vm
++ engine  vm  forced by: ${name} at pattern offset N
+```
+
+The pre-module reference has no `${...}` construct, so this stream's own
+forced `--engine=vm` (D106/w2x's rule: `emit-ir-vm` ALWAYS forces the VM
+route regardless of stream 1's engine) is the only reason it can name;
+the post-module compiler recognizes `${...}` as its OWN VM-forcing cause
+and reports the specific one instead. **41 reconciles exactly**: `wc -l`
+on the three files' `pattern` lines gives 8 (`basic.rxt`) + 13
+(`caseless.rxt`, `grep -a` needed for the same \xff-byte reason) + 20
+(`unset.rxt`) = 41, and the `.rxtin` fixture's one pattern is not in this
+count because it is composition-only. **DISPOSITION: no fix owed; a
+diagnostic-text improvement that ships with the module, correctly
+attributing the VM-forcing cause to the real construct instead of to the
+sweep's own forced flag.**
 
 ---
 
