@@ -8435,3 +8435,18 @@ parallel processes to achieve threading if that makes it easier. threading
 is pita." Process-level parallelism (one process per switched-on scan, or
 per input shard, merged after) satisfies the bonus; the merge step must be
 order-independent so the result is deterministic.
+D123 ADDENDUM 4 (Frank, same session, requirements.md §3 Q6): (b) — the
+encoding key describes the DATA (what the exemplar text was, what the table
+counts), not the compile; a measured byte histogram serves byte-level
+decisions for any text encoding; utf8 compiles take utf8/ascii-keyed tables
+and cpfreq for per-code-point decisions. GOVERNING PRINCIPLE, binding on the
+design ("it shouldn't be hidden rules … the goal should be a clear, user
+visible and editable"; Frank explicitly NOT specifying the mechanism, e.g.
+"include or similar references"): every applicability fact is DECLARED IN
+THE DATA, not hardcoded in the compiler — which encodings/decision kinds a
+table serves, any derivation (cpfreq → byte view) stated as a visible,
+editable reference, and the hand default's own restriction (its flat
+0x80–0xFF half is not usable outside `byte`) written INTO the default bundle
+where the details listing shows it and a user bundle can override it. The
+compiler's only fixed rule is "use what the data declares"; the stamp
+records the declaration that was applied.
