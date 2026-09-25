@@ -2801,3 +2801,29 @@ independently of anything `recidentity` does. What only `recidentity` can
 say is WHERE inside the identity gate's own bucket machinery the difference
 landed — `rdiff`, never the bref-rename bucket — which is the property this
 row exists to prove and no other arm can.
+
+**AND `recidentity` CAN NEVER SAY IT INSIDE THIS MATRIX, which is a
+structural finding rather than a gap in this row.** `run_recursion_identity.sh`
+(like its two siblings `run_atomic_identity.sh`/`run_backref_identity.sh`)
+`git archive`s its pinned reference commits, which needs full git history —
+and every scratch tree this matrix builds is `git archive HEAD | tar -x`
+with deliberately NO `.git` (MECH-2). Before this lane's own guard, wiring
+`recidentity` at all made it fail INSTANTLY and UNCONDITIONALLY inside a
+scratch tree (`fatal: not a git repository`, then a hard FAIL naming the pin
+unresolvable) — the same verdict whether or not S273's sabotage was applied,
+the worst shape a control can take. That is also the retroactive explanation
+for why `atomicidentity`/`brefidentity` have sat registered with ZERO rows
+since 2026-08-22: nobody had wired a real row to any of the three
+`-identity.sh` mech arms before this lane, so nobody had hit this. The fix
+(a `git rev-parse --is-inside-work-tree` guard in `run_recursion_identity.sh`
+routing "no git history" to a loud SKIP rather than a FAIL) makes
+`recidentity` read `recidentity:SKIPPED-no-git-history` / `any_skip=1` on
+every future run instead — correct, but it means this row's OWN claim (that
+the bref-rename bucket does not swallow S273) has no mech-matrix detector at
+all, ever. It was validated MANUALLY instead: `src`/`lib`/`cli` copied to a
+scratch tree, the exact `ref_end - ref_start + 1` edit applied and rebuilt,
+then the identity gate's own `bref_rename_rewrite()`/`prog_region()` logic
+run by hand against the real pre-module reference binary — confirming the
+sabotaged region lands in `rdiff` (not the bucket) and that the defect is a
+genuine miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`, sabotaged
+`match 0 3`). Full transcript: `docs/dev/lanes/varland_report.md`.

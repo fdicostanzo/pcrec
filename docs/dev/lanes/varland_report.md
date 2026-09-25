@@ -49,6 +49,24 @@ plus `scripts/emit_sweep.py --ref 1e90aa8a`'s three unpredicted cells on
    because the box's one-heavy-suite rule kept it queued behind the
    identity gate's four-axis validation for this lane's whole working
    period. See §5 for the dispositions and what is OWED.
+7. **Wiring `recidentity` found WHY its three siblings
+   (`atomicidentity`/`brefidentity`/`endvaridentity`) have sat registered
+   with ZERO rows since 2026-08-22.** `run_recursion_identity.sh` (like
+   `run_atomic_identity.sh`/`run_backref_identity.sh`) `git archive`s its
+   pinned reference commits, which needs full git history — and every
+   scratch tree `tests/mech/run_sabotage_matrix.sh` builds is
+   `git archive HEAD | tar -x` with NO `.git` (MECH-2's own deliberate
+   rule). The FIRST wiring attempt made `recidentity` fail INSTANTLY and
+   UNCONDITIONALLY inside a scratch tree — `fatal: not a git repository`,
+   then a hard-coded FAIL naming the pin unresolvable, regardless of
+   whether S273's sabotage was applied at all: the worst possible shape a
+   control can take. Fixed with a `git rev-parse --is-inside-work-tree`
+   guard routing "no git history" to a loud SKIP (`checks passed: 0` /
+   `checks failed: 0`, distinct from the pre-existing "pin doesn't resolve
+   in a real repo" FAIL). Consequence: `recidentity` will now ALWAYS SKIP
+   inside the mech matrix, so S273's OWN bucket-admission claim has no
+   mech-matrix detector and had to be validated MANUALLY instead (§3a).
+   See `tests/codegen/CLAUDE.md`/`tests/mech/CLAUDE.md`'s new sections.
 
 ---
 
@@ -111,34 +129,78 @@ caseless.rxt`'s raw `\xff` witness (finding 5, §0).
 
 ## §3 — VALIDATION
 
-Ran fresh, foreground-then-backgrounded, `CC=gcc-16`, `KEEP=1`:
+**COMPLETE. Full 4-axis run, `CC=gcc-16`, `KEEP=1`, log `/tmp/recid_run3.log`:**
 
-| axis | (B) same/differing | (A) same/differing | bref-rename | var-construct | verdict |
-|---|---|---|---|---|---|
-| default | 2561/0 | 2164/0 | 155 | 15 | PASS/PASS |
-| vm | 2562/0 | 2143/0 | 155 | 15 | PASS/PASS |
-| noprefilter | OWED | OWED | OWED | OWED | OWED |
-| nocaptures | OWED | OWED | OWED | OWED | OWED |
+| axis | (B) same/differing | (A) same/differing | bref-rename | var-construct | island | fold | verdict |
+|---|---|---|---|---|---|---|---|
+| default | 2561/0 | 2164/0 | 155 | 15 | 34 | 18 | PASS/PASS |
+| vm | 2562/0 | 2143/0 | 155 | 15 | 52 | 27 | PASS/PASS |
+| noprefilter | 2561/0 | 2165/0 | 155 | 15 | 34 | 18 | PASS/PASS |
+| nocaptures | 2561/0 | 2188/0 | 155 | 15 | 23 | 10 | PASS/PASS |
 
-**OWED AT HAND-OFF**: the noprefilter/nocaptures axes and the script's own
-`checks passed:`/`checks failed:` trailer. Log: `/tmp/recid_run3.log`
-(this box; not under the repo, KEEP=1 workdir printed at the log's own
-tail on completion). Exact command already running detached
-(`nohup ... & disown`); poll for the line `checks failed: 0` — the
-`elision`/`linkage` axes note in the script's own header does not apply
-here (this gate only sweeps `default`/`vm`/`noprefilter`/`nocaptures`).
-If `noprefilter`/`nocaptures` do not also read `differing=0`, that is a
-NEW finding (this lane's two exceptions were validated only on `default`
-and `vm` at hand-off) — read the axis's own diff file's `REGION DIFFERS`
-lines before assuming they need a third exception.
+Trailer: **`checks passed: 16` / `checks failed: 0`** — fully GREEN on all
+four axes. Text census (printed once, independent of any axis):
+numeric `\1`..`\9` = 126, named (`\k<>`/`\k''`/`\k{}`/`(?P=)`) = 35, union
+= 161 (bref); `${` var population = 16. Both non-vacuity bands (bref
+±30, var ±10) satisfied on every axis — 155 sits inside [131,191], 15
+sits inside [6,26].
 
-`make strict CC=gcc-16`: OWED (not yet run — nothing under `src/`/`cli`/
-`lib/` touched by this lane, so it is not expected to move, but per
-BOILERPLATE it must still be run before delivery is called complete).
+**§3a — S273, THE MECH-MATRIX ROUTE AND THE MANUAL ROUTE.** Wiring
+`recidentity` found it can NEVER produce a real verdict inside
+`tests/mech/run_sabotage_matrix.sh` (finding 7, §0): every scratch tree
+that driver builds is `git archive HEAD | tar -x` with no `.git`, and
+`run_recursion_identity.sh` needs full git history to `git archive` its
+two pinned reference commits. Before the fix this made the arm fail
+UNCONDITIONALLY (`fatal: not a git repository`, then a hard FAIL) —
+detected only because a first solo `S273` run walked into it directly.
+Fixed with a `git rev-parse --is-inside-work-tree` guard: "no git
+history" now reads `SKIP: ... exit 0`, and `run_sabotage_matrix.sh`'s
+`recidentity` case routes a `^SKIP:` banner to `any_skip=1` (the
+`pc3`/`laexpand` convention). A solo `bash tests/mech/run_sabotage_matrix.sh
+S273` re-run against the committed fix (tree `df867383`) **COMPLETED**:
 
-**S273 solo sabotage run**: OWED
-(`bash tests/mech/run_sabotage_matrix.sh S273`) — held behind the
-identity-gate validation by the one-heavy-suite rule.
+```
+reach:ok(1/1), recidentity:SKIPPED-no-git-history,
+brefdiff:23fail/7pass, corpus:467fail/28646pass
+DETECTED ( SKIPPED -- no oracle)
+== mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0,
+   unreached: 0, anomalies: 0, oracle-skipped: 0) at df867383 ==
+```
+
+`recidentity` reads exactly the predicted `SKIPPED-no-git-history` — the
+guard fires as designed, no crash, no false verdict. `brefdiff` (23
+fail/7 pass) and `harness` (the `corpus:` cell, 467 fail/28646 pass) both
+independently DETECT the plant on their own answer-level terms —
+`brefdiff`'s failing cells show exactly the predicted signature
+(`'(a)\1'` answering `match 0 3` where the oracle says `match 0 2`, one
+byte too long, on multiple subjects and via the find-all loop). The
+overall row verdict is **DETECTED (SKIPPED — no oracle)**, the
+`pc3`/`laexpand` suffix convention correctly naming the one arm that
+declined to measure. `unexpected: 0` confirms no `SAB_EXPECT` mismatch.
+
+Because `recidentity` structurally can never score S273 for real, the
+row's OWN claim — that the bref-rename bucket does not admit this
+off-by-one — was validated MANUALLY: `src`/`lib`/`cli` copied to a
+scratch tree, the exact sabotage edit applied
+(`"                  (size_t)(ref_end - ref_start),\n"` →
+`"                  (size_t)(ref_end - ref_start + 1),\n"` in
+`src/gen/emit_vm.c`), rebuilt with `gcc-16` (clean compile), then the
+identity gate's own `bref_rename_rewrite()`/`prog_region()`/
+`stamp_strip()` logic run by hand against `(a)\1`'s program region from
+BOTH the sabotaged compiler and the real pre-module reference binary
+(`$WD/pcrec_premodule` built during the earlier real 4-axis run).
+**Result: the sabotaged region DIFFERS from the rewritten reference**
+(the diff shows exactly the `+ 1` token) — it lands in `rdiff`, not the
+bref-rename bucket, confirming the bucket does NOT admit it. Also
+confirmed via `--emit-main` that the plant is a genuine answer-level
+miscompile: `(a)\1` on `"aaa"` answers `match 0 2` on the clean compiler
+and `match 0 3` on the sabotaged one (reading one byte past the
+referenced group's end). All temp artifacts (`/tmp/s273_manual`,
+`/tmp/s273_test*`, `/tmp/clean_test*`) cleaned up afterward.
+
+`make strict CC=gcc-16`: **DONE, CLEAN** ("strict: whole tree compiles
+clean with -Werror -Wshadow") — nothing under `src/`/`cli`/`lib/` touched
+by this lane, as expected.
 
 ---
 
@@ -148,13 +210,18 @@ identity-gate validation by the one-heavy-suite rule.
   `rb_bref` baseline threaded through the (A) comparison, two new named
   buckets (`rbrefrename`/`rvarnew`) with their own messages and
   non-vacuity arms, a corpus-wide backref/var text census printed at
-  startup, and the acceptance-line message extended to name both.
+  startup, the acceptance-line message extended to name both, and a
+  `git rev-parse --is-inside-work-tree` SKIP guard (finding 7, §0)
+  distinguishing "no git history at all" (environment limitation, SKIP)
+  from "the pin doesn't resolve in a real repo" (the pre-existing loud
+  FAIL).
 - `tests/mech/run_sabotage_matrix.sh`: the `recidentity` suite word +
-  case arm.
+  case arm, plus its own `^SKIP:` detection routing to `any_skip=1`.
 - `tests/mech/sabotages/S273_span_match_length_off_by_one.sh`: the new
   row (see §0 finding 4).
 - `tests/codegen/CLAUDE.md`, `tests/mech/CLAUDE.md`: documentation for
-  both of the above.
+  all of the above, including the git-archive/SKIP discovery and its
+  consequence for S273's validation route (§0 finding 7, §3a).
 
 ## §5 — PART (b): THE THREE UNPREDICTED `emit_sweep.py` CELLS
 

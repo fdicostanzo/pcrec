@@ -2642,6 +2642,49 @@ wrong-answer row (`brefdiff`/`harness` catch the length defect
 independently); `recidentity`'s job is narrower — proving the new bucket
 does not swallow it.
 
+**AND WIRING THE ARM FOUND THE REASON `atomicidentity`/`brefidentity` HAVE
+SAT REGISTERED WITH ZERO ROWS SINCE 2026-08-22.** `run_recursion_identity.sh`
+(and, by the identical mechanism, `run_atomic_identity.sh` and
+`run_backref_identity.sh`) `git archive`s its two pinned reference commits —
+the pre-module pin AND the abi FILEPIN — which needs FULL GIT HISTORY.
+`tests/mech/run_sabotage_matrix.sh`'s own scratch trees are built via
+`git archive HEAD | tar -x` with NO `.git` directory (MECH-2's own stated
+rule), so the gate failed INSTANTLY inside one — `fatal: not a git
+repository`, then a hard-coded FAIL naming the pin unresolvable — **regardless
+of whether any sabotage was applied at all**. That is the worst kind of
+check-design defect: a control reporting the SAME VERDICT no matter what it
+is checking. Nobody had noticed because nobody had ever wired a real row to
+any of the three `-identity.sh` mech arms until this lane tried; the same
+structural gap is latent in `atomicidentity` and `brefidentity` today and is
+recorded here rather than fixed there (out of this lane's scope).
+
+**THE FIX IS A `git rev-parse --is-inside-work-tree` GUARD**, added to
+`run_recursion_identity.sh` right after `ROOT_DIR`/`PCREC` are resolved: "no
+git history at all" is an ENVIRONMENT limitation (SKIP, `checks passed: 0` /
+`checks failed: 0`, exit 0), distinct from "the pin doesn't resolve IN a real
+repo" (still the pre-existing loud FAIL — a real claim that the pin itself is
+wrong). `run_sabotage_matrix.sh`'s `recidentity` case detects the `^SKIP:`
+banner and routes to `any_skip=1`, the established `pc3`/`laexpand`
+convention, rather than reading an unmeasured suite as a false verdict.
+
+**CONSEQUENCE: `recidentity` WILL ALWAYS SKIP INSIDE THE MECH MATRIX** — no
+scratch tree built there will ever carry `.git` — so S273 can never get a
+real DETECTED/UNDETECTED verdict through that route; a solo
+`bash tests/mech/run_sabotage_matrix.sh S273` run reads
+`recidentity:SKIPPED-no-git-history` with `brefdiff`/`harness` (S273's other
+two assigned suites, which are answer-level and unaffected by the guard)
+carrying the row's real verdict. **S273's bucket-admission claim specifically
+— that the bref-rename exception does NOT swallow this off-by-one — was
+therefore validated MANUALLY** rather than through the mech matrix: a copy of
+`src`/`lib`/`cli` with the exact `ref_end - ref_start + 1` edit applied,
+rebuilt, and run through the SAME `bref_rename_rewrite()`/`prog_region()`
+logic this file's comparison (A) uses, against the real pre-module reference
+binary — confirming the sabotaged region differs from the rewritten
+reference (lands in `rdiff`, not the bref-rename bucket) and that the defect
+is a genuine answer-level miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`,
+sabotaged `match 0 3`, reading one byte past the referenced group's end).
+See `docs/dev/lanes/varland_report.md` for the full transcript.
+
 ## [DD-14.FB] the caller-provided frame buffer's structural block (2026-08-25)
 
 Six checks in `run_codegen_tests.sh`, all of them things a `.rxt` cell is
