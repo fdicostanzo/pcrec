@@ -99,7 +99,10 @@ the pre-check tests EVERY member of the necessary set.
   tree. `run_sabotage_matrix.sh S277` run before the §5.7 frameless row was
   added: **DETECTED, `reach:ok(1/1)`, `prechecks:3fail/263pass`,
   `corpus:9fail/15pass`**, with 0 unexpected, 0 undetected and 0 unreached.
-  The re-run after the frameless row is recorded under Validation.
+  Re-run on the final tree (`626d564c`, with the frameless row): **DETECTED,
+  `reach:ok(1/1)`, `prechecks:4fail/263pass`, `corpus:9fail/15pass`**, again
+  0 unexpected/undetected/unreached/anomalies. That is the figure in the
+  row's `SAB_DOC_FIGURE`.
 - S269/S270 clean-tree figures now read 267 (258 before K65). S274's
   measured `prechecks:2fail/256pass` figure predates §5.7. §5.7's rows
   are not one-attempt, so S274 should now read 2 fail / 265 pass
@@ -116,4 +119,27 @@ the pre-check tests EVERY member of the necessary set.
 
 ## Validation
 
-OWED/DONE markers are filled below as runs complete.
+- `make strict`: clean ("whole tree compiles clean with -Werror -Wshadow").
+- `make test-codegen` (after the abi bump): `run_group: 9/10 scripts
+  passed`. The one red is `run_inline_capability.sh` ("nm could not read
+  arm_a.o (no rx_search symbol)"), the known darwin Mach-O `nm` red that
+  k64fix A/B'd as pre-existing. That includes `ABI_EXPECT=34` and the
+  sab-anchor tripwire (S277's anchor).
+- `make test-prechecks`: 267 passed / 0 failed.
+- `make test-rxtsource`: exit 0, including the re-pinned census and C3.
+- Targeted: the regression `.rxt` (24/0 fix, 9/15 base) and S277 (above).
+- **OWED: the full `make test`.** Lane chkgapsmerge held the box's one
+  heavy slot: its `worktrees/chkgaps/build/watchdog.log` was being written
+  at 17:02. So a detached chain
+  (`/tmp/k65fix.RMJi/maketest_chain.sh`) waits until that log has been
+  idle for 10 minutes, then runs `make test CC=gcc-16` in this worktree.
+  - Log: `/tmp/k65fix.RMJi/maketest.log`. Its completion line is
+    `EXIT=<rc>`, appended at the end.
+  - The verdict is make's `*** [test-X] Error` lines. The expected darwin
+    red is the nm probe only (`test-codegen`'s `run_inline_capability.sh`).
+  - The chain's own start/finish stamps are in `/tmp/k65fix.RMJi/chain.log`.
+- **OWED at merge/mech:** `make test-recursion-identity` (the (B) re-pin,
+  opt-in gate, not run), S274's prechecks figure (predicted 2 fail / 265
+  pass, not re-run), and `make test-axes` for `-fno-req-byte` /
+  `-fno-req-run` (the whole-set block is under `-fno-req-byte`, so that
+  sweep should stay answer-identical).
