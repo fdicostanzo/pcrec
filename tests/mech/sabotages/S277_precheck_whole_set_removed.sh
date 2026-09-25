@@ -21,6 +21,6 @@ SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "
 SAB_REACH_EXPECT="REACH-K65-WHOLE-SET-EMITTED"
 SAB_COUNT=1
 SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx)) return;
-    if (r->len >= 2) for (k = 0; k < r->len; k++) done[r->bytes[k]] = true;'
+    if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;'
 SAB_AFTER='    return;   /* SABOTAGE S277: the K65 whole-set half never emitted */
-    if (r->len >= 2) for (k = 0; k < r->len; k++) done[r->bytes[k]] = true;'
+    if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;'
