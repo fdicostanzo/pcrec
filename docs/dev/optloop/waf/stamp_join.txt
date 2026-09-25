@@ -1,0 +1,63 @@
+  0.000  wild-validator-us-zip-owasp                        none none dfa attempt none none
+  0.000  numeric-id-nested-plus                             none none dfa attempt none none
+  0.000  trim-nested-star                                   none none dfa attempt none none
+  0.000  phone-list-nested-plus                             none none dfa attempt none none
+  0.000  date-nested-plus                                   none none dfa attempt none none
+  0.000  base10num-near-miss                                none none dfa attempt none none
+  0.000  ipv4-near-miss                                     46 none dfa attempt none none
+  0.000  wild-semdiv-dollar-trailing-newline-pcre2          98 616263@1 dfa unanchored offset-set-bounded none
+  0.000  wild-validator-ipv4-owasp                          46 none dfa attempt none none
+  0.000  evil-alt-nested                                    none none dfa attempt none none
+  0.000  uuid-near-miss                                     45 none dfa attempt none none
+  0.000  logparse-atomic-removed                            58 3a20@0 dfa attempt none none
+  0.000  wild-datetime-moment-iso8601                       45 none dfa attempt none none
+  0.000  logparse-atomic                                    58 3a20@0 vm attempt none none
+  0.000  bracket-array-define                               none none vm
+  0.000  pwd-strength-chain                                 none none vm attempt none none
+  0.001  email-local-nodup                                  none none vm attempt none none
+  0.017  tag-depth3-bound                                   60 3c2f@0 vm
+  0.017  mojibake-curly-quote                               148 none dfa unanchored memchr none
+  0.017  wild-secrets-username-password-pair                61 none dfa unanchored byte-class range
+  0.017  wild-validator-email-owasp                         64 none dfa attempt none none
+  0.017  floor-byte                                         126 none dfa unanchored memchr none
+  0.017  wild-waf-crs-942500-comment-obfuscation            42 2a2f@0 dfa unanchored offset-set none
+  0.017  wild-logparse-winpath-grok                         92 none vm unanchored byte-class none
+  0.017  dup-param-detect                                   38 none vm
+  0.017  email-nested-plus                                  64 none dfa attempt none none
+  0.017  wild-codegrammar-json-stringcontent-escape         92 none dfa unanchored memchr none
+  0.017  nested-comment-rec                                 42 2a2f@0 vm
+  0.017  wild-codegrammar-json-object-begin                 123 none dfa unanchored memchr none
+  0.017  winpath-near-miss                                  92 3a5c@1 dfa attempt none none
+  0.017  tag-pair-match                                     60 3c2f@0 vm
+  0.060  wild-validator-uuid-grok                           45 none dfa unanchored offset-set bitmap
+  0.094  wild-secrets-github-pat                            95 6875625f7061745f@3 dfa unanchored offset-set-bounded none
+  0.189  file-ext-order                                     46 2e746172@0 dfa unanchored memchr none
+  0.254  wild-codegrammar-json-array-begin                  91 none dfa unanchored memchr none
+  0.255  wild-secrets-slack-webhook-url                     47 3a2f2f@1 dfa unanchored offset-set mixed
+  0.261  wild-semdiv-altorder-foo-foobar-rustregex          102 666f6f@0 dfa unanchored memchr range
+  0.350  utf8-lead-no-cont                                  none none vm unanchored byte-class none
+  0.351  high-byte-run                                      none none dfa unanchored byte-class range
+  0.439  codegrammar-flat                                   34 none dfa unanchored memchr bitmap
+  0.448  codegrammar-xflag                                  34 none dfa unanchored memchr bitmap
+  0.523  router-prefix-order                                47 2f75736572@0 dfa unanchored memchr none
+  0.677  wild-logparse-quotedstring-noatomic                none none vm unanchored byte-class none
+  0.725  wild-waf-crs-942270-union-select                   none none dfa unanchored byte-class none
+  0.734  wild-logparse-quotedstring-grok                    none none vm unanchored byte-class none
+  0.899  keyword-prefix-order                               110 696e@1 dfa unanchored offset-set none
+  0.989  wild-waf-crs-942160-sleep-benchmark                41 none dfa unanchored byte-class bitmap
+  1.374  float-literal-bound                                46 none vm unanchored byte-class range
+  1.794  wild-codegrammar-json-number-extended              none none dfa unanchored byte-class none
+  2.758  wild-semdiv-empty-alt-repeat-pcre2                 none none dfa unanchored byte-class range
+  2.894  wild-secrets-aws-access-key-id                     65 none dfa unanchored byte-class-bounded none
+  2.898  wild-logparse-syslogbase-expanded                  58 none vm unanchored byte-class-bounded none
+  2.900  wild-logparse-base10num-noatomic                   none none vm unanchored byte-class range
+  2.933  wild-logparse-base10num-grok                       none none vm unanchored byte-class range
+  2.966  wild-waf-crs-942140-dbnames                        none none dfa unanchored byte-class-bounded mixed
+  3.050  wild-codegrammar-json-constant                     none none dfa unanchored byte-class-bounded none
+  3.789  balanced-parens-rec                                41 none vm
+  5.443  phone-palindrome-6                                 none none vm
+  7.050  quoted-delim-match                                 none none vm
+  7.605  wild-datetime-datefinder-alternation               none none dfa unanchored byte-class range
+  8.125  currency-lookbehind-fixed                          none none vm unanchored byte-class-bounded range
+  8.836  wild-waf-crs-942360-concat-sqli                    none none dfa attempt none none
+ 18.455  doubled-word                                       none none vm

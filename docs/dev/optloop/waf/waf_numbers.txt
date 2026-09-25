@@ -1,0 +1,141 @@
+## (1) large-subject-throughput, set-grain median, ns/B; source report stem
+== wild-waf-crs-942360-concat-sqli
+    0.638  vectorscan_5.4.11_block-nosom-nocaps-simd    2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    1.632  re2_11.0.0_longest-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    1.634  re2_11.0.0_default-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    1.785  rust_1.13.1_default-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    8.799  pcrec_b1885a83_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    8.804  pcrec_cf0962e3_auto-caps-simdna              2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    8.819  pcrec_8d716693_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    8.822  pcrec_6ef76820_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    8.824  pcrec_8d716693_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    8.825  pcrec_cf0962e3_auto-nocaps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    8.826  pcrec_25b1984f_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    8.832  pcrec_6ef76820_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    8.836  pcrec_b1885a83_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    8.863  pcrec_25b1984f_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+   12.509  libpcre2_10.46_jit-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+  108.440  oniguruma_6.9.10_default-caps-simdna         2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+  165.502  libpcre2_10.46_dfa-nocaps-simdna             2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+  202.698  libpcre2_10.46_interp-caps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+  842.955  tre_0.9.0_default-caps-simdna                2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+== wild-waf-crs-942270-union-select
+    0.044  libpcre2_10.46_jit-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.063  vectorscan_5.4.11_block-nosom-nocaps-simd    2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.204  rust_1.13.1_default-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.319  re2_11.0.0_longest-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    0.319  re2_11.0.0_default-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    0.724  pcrec_b1885a83_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.725  pcrec_b1885a83_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.727  pcrec_25b1984f_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.727  pcrec_8d716693_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.727  pcrec_8d716693_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.728  pcrec_25b1984f_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.728  pcrec_cf0962e3_auto-nocaps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.729  pcrec_cf0962e3_auto-caps-simdna              2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.735  pcrec_6ef76820_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    0.737  pcrec_6ef76820_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    1.773  libpcre2_10.46_dfa-nocaps-simdna             2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    2.061  libpcre2_10.46_interp-caps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    2.490  oniguruma_6.9.10_default-caps-simdna         2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+   22.477  tre_0.9.0_default-caps-simdna                2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+== wild-waf-crs-942160-sleep-benchmark
+    0.116  vectorscan_5.4.11_block-nosom-nocaps-simd    2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.282  rust_1.13.1_default-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.764  libpcre2_10.46_jit-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.920  pcrec_cf0962e3_auto-nocaps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.921  pcrec_25b1984f_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.921  pcrec_25b1984f_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.922  pcrec_cf0962e3_auto-caps-simdna              2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.987  pcrec_8d716693_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.988  pcrec_6ef76820_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    0.989  pcrec_b1885a83_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.989  pcrec_8d716693_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.989  pcrec_b1885a83_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.990  pcrec_6ef76820_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    1.627  re2_11.0.0_default-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    1.628  re2_11.0.0_longest-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    3.599  oniguruma_6.9.10_default-caps-simdna         2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    4.048  libpcre2_10.46_dfa-nocaps-simdna             2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    4.855  libpcre2_10.46_interp-caps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+   43.657  tre_0.9.0_default-caps-simdna                2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+== wild-waf-crs-942140-dbnames
+    0.436  vectorscan_5.4.11_block-nosom-nocaps-simd    2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    1.629  re2_11.0.0_default-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    1.630  re2_11.0.0_longest-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    1.779  rust_1.13.1_default-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    2.964  pcrec_25b1984f_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    2.964  pcrec_cf0962e3_auto-nocaps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    2.965  pcrec_cf0962e3_auto-caps-simdna              2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    2.965  pcrec_6ef76820_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    2.966  pcrec_b1885a83_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    2.966  pcrec_8d716693_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    2.967  pcrec_8d716693_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    2.967  pcrec_6ef76820_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    2.967  pcrec_b1885a83_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    2.969  pcrec_25b1984f_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    3.926  libpcre2_10.46_jit-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+   17.099  libpcre2_10.46_dfa-nocaps-simdna             2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+   21.861  libpcre2_10.46_interp-caps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+   47.407  oniguruma_6.9.10_default-caps-simdna         2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+  204.786  tre_0.9.0_default-caps-simdna                2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+== wild-secrets-slack-webhook-url
+    0.038  libpcre2_10.46_jit-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.081  vectorscan_5.4.11_block-nosom-nocaps-simd    2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.246  pcrec_cf0962e3_auto-nocaps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.246  pcrec_25b1984f_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.246  pcrec_8d716693_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.248  pcrec_cf0962e3_auto-caps-simdna              2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    0.248  pcrec_25b1984f_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-8d716693.tsv
+    0.248  pcrec_8d716693_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.253  pcrec_b1885a83_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.253  pcrec_6ef76820_auto-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    0.254  pcrec_6ef76820_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-6ef76820.tsv
+    0.255  pcrec_b1885a83_auto-nocaps-simdna            2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.319  re2_11.0.0_longest-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    0.319  re2_11.0.0_default-caps-simdna               2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+    0.469  rust_1.13.1_default-caps-simdna              2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    0.908  oniguruma_6.9.10_default-caps-simdna         2026-09-23-capability-0.1-budu-ryzen1600-after-b1885a83.tsv
+    1.290  libpcre2_10.46_interp-caps-simdna            2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+    1.342  libpcre2_10.46_dfa-nocaps-simdna             2026-09-20-capability-0.1-budu-ryzen1600-pinconfirm-25b1984f
+   25.564  tre_0.9.0_default-caps-simdna                2026-09-20-capability-0.1-budu-ryzen1600-fullroster-25b1984f
+
+## (2) subject census, N = 1376256
+  {u,U}               42563  3.09%
+  {s,S,b,B}           72849  5.29%
+  word class (63)   1063479  77.27%
+  ')'                  7861  0.57%
+  '('                  7861  0.57%
+  ':'                 11812  0.86%
+  '/'                 39095  2.84%
+  letter u  lower  38400 upper   4163  3.09%
+  letter n  lower  44132 upper   3937  3.49%
+  letter i  lower  40383 upper   2257  3.10%
+  letter o  lower  50963 upper   5882  4.13%
+  letter s  lower  60250 upper   3784  4.65%
+  letter e  lower 117274 upper  12186  9.41%
+  letter l  lower  34278 upper   2010  2.64%
+  letter c  lower  29365 upper    962  2.20%
+  letter t  lower  40027 upper  24080  4.66%
+  letter f  lower  24889 upper   2285  1.97%
+  letter r  lower  72341 upper   8355  5.86%
+  letter m  lower  17978 upper    306  1.33%
+  caseless 'union'              0
+  caseless 'select'             0
+  caseless 'from'               0
+  caseless 'sleep'              0
+  caseless 'benchmark'          0
+  caseless 'information_schema' 0
+  caseless 'database'           0
+  caseless 'schema'             0
+  caseless '://'                0
+  caseless 'hooks.slack'        0
+  caseless 'un'                 0
+  caseless 'sl'                 0
+  caseless 'be'                 0
+  caseless 'fr'                 0
+  caseless 'om'                 0
+  caseless 'ct'                 0
+  caseless 'se'                 13009
+  caseless 'on'                 10191
+  words 242004, bytes/word 5.69
