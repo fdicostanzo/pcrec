@@ -1173,6 +1173,7 @@ done <<'ROWS'
 (x?)([a-z]+)+Z.@\1%-e byte%64%K65's witness under byte: the prior picks Z (90), so @ (64) is the rest
 (x?)([a-z]+)+Z.@\1%-e utf8%90%the same under utf8: the rightmost fallback picks @ (64), so Z (90) is the rest
 (x?)([a-z]+)+Z.@#\1%-e byte%90%the RUN form: the run @# (64 35) is tested whole, so Z (90) alone is the rest
+[a-z]+Z.@%--engine=vm -e byte%64%a FRAMELESS unanchored forced-VM program: linear per attempt but retried at every start, so its give-up (work, on ~200 KB) followed the pick too
 (Z)\1%-e byte%none%a one-member set: the pick IS the set, nothing is left to emit
 (x?)([a-z]+)+Z.@%-e byte%none%no backreference: an exact hybrid DFA scans in front, so the pick alone suffices
 Z.@%--no-captures -e byte%none%the DFA engine: its scan is linear whatever the pre-check tests

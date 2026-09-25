@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 33
+#define PCREC_ARTIFACT_ABI 34
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -790,8 +790,10 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
  * WHY THIS ROUTE AND ONLY THIS ONE. The pre-check is sound on any member, so
  * elsewhere which one it tests is a SPEED choice. Here it is also the call's
  * only linear NO-MATCH PROOF — a backreference or a linked call declines the
- * hybrid, so nothing else scans the window — and a backtracking program that
- * gets no proof can spend its whole step budget and give up. With one member
+ * hybrid, so nothing else scans the window — and a program that gets no
+ * proof can exhaust a budget and give up: a framed one by backtracking inside
+ * an attempt, a frameless one by being retried at every start position
+ * (`[a-z]+Z.@` under `--engine=vm` gave up on work over 200 KB). With one member
  * tested, the same subject answered NOMATCH or `PCREC_ERR_STEPS` according to
  * the pick (`(x?)([a-z]+)+Z.@\1` on 31 `a`s + "Zb": `@` absent, `Z` present;
  * the byte encoding's prior picks `Z`, every other encoding `@`). Testing
