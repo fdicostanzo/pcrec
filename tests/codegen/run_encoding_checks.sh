@@ -371,6 +371,15 @@ fi
 #       field whose VALUE legitimately differs and whose LINE always exists,
 #       so it is normalized (value replaced by a placeholder) rather than
 #       deleted.
+#   (4) [K50]'s entry guard, attempt-loop `continue` and stamp (marker- or
+#       code-anchored; see K50_* below).
+#   (5) [enctriage, 2026-09-25] the ENCODING-KEYED SELECTIONS: a choice made
+#       per encoding AT COMPILE TIME and declared in the artifact's own stamp
+#       -- [OPT-ENDWIN]'s clamp, [OPT-FREQPICK]'s scanned member,
+#       [OPT-PRECHECK-ADMIT]'s dominance verdict -- plus `var_valid`'s call
+#       site. None is a run-time encoding test; each is excised or normalized,
+#       COUNTED, floored, and held to its stamp per pair (SELECT_BAD), with
+#       any byte/utf8 asymmetry admitted in the documented direction only.
 #
 # WHY NAIVE PER-SYMBOL OBJECT EXCLUSION WAS TRIED AND REJECTED (K52's own
 # finding): under `always_inline` the K49 advance's inlined body SMEARS across
