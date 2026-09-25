@@ -1,0 +1,46 @@
+# [K64] REGRESSION — G2 ([OPT-PRECHECK-ADMIT]) MAY DECLINE THE NECESSARY-BYTE
+# PRE-CHECK ON THE VM ROUTE ONLY WHERE THE ONE ATTEMPT IS LINEAR
+# (docs/dev/known_issues.md K64; docs/spec/tuning.md §2.29; the reading is
+# docs/dev/optloop/cycle2_admitfix_reading.md §1).
+#
+# Block 1 is `email-nested-plus`'s pattern under `--engine=vm`: a FRAMED
+# (`RX_VM_FRAMELESS 0`), unguarded (`RX_VM_PREFILTER "none"`), `^`-anchored
+# program. Its one attempt over a leading class run of length L costs
+# `3·2^(L-2) - 2` steps before failing on the absent `@`, so at 6ef76820 (G2
+# declining on `Job.start_anchor` alone) every `n` cell below GAVE UP
+# (`steps`, driver exit 3, a hard failure) where PCRE2 answers NOMATCH; with
+# the pre-check emitted the call returns NOMATCH after one `memchr` and no
+# VM step. The bench's five subjects (`sd-empty-alt-*`, `sec-github-pat`,
+# `v-uuid-*`, L = 36..93) do the same under the DEFAULT budget; the block
+# uses `budget steps=10000` and runs of L = 16..20 instead so that the
+# failing direction costs milliseconds and python `re` (which has no such
+# check and backtracks the same way) can still verify every `n` here.
+#
+# The `gu` cell is the CONTROL that the budget really reaches the VM: with
+# the `@` present no pre-check can help, and the same run still exhausts the
+# block's budget — at both pins, as PCRE2 does past its own match limit. It
+# proves the `n` cells pass because of the pre-check, not because 10000
+# steps happened to be enough.
+#
+# Block 2 is the frameless arm G2 still declines on: a program that never
+# pushes a resume frame cannot backtrack, so its one attempt is linear and
+# the same subjects answer NOMATCH inside the same budget with no pre-check.
+# (tests/codegen/run_prechecks.sh §5.5 asserts the two stamps; this file
+# asserts the answers.)
+
+pattern ^([a-zA-Z0-9._%+-]+)+@
+engine vm
+budget steps=10000
+n "aaaaaaaaaaaaaaaa"
+n "aaaaaaaaaaaaaaaaaaaa"
+n "a1b2c3d4-e5f6.7_8%9+"
+n "ghp_0123456789abcdef"
+m "abc@x" 0 4
+gu steps "aaaaaaaaaaaaaaaaaaaa!@"
+
+pattern ^[a-zA-Z0-9._%+-]+@
+engine vm
+budget steps=10000
+n "aaaaaaaaaaaaaaaaaaaa"
+n "a1b2c3d4-e5f6.7_8%9+"
+m "abc@x" 0 4
