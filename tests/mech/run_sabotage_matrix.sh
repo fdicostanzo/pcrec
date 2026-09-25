@@ -284,6 +284,15 @@
 #     is NOT the ruled rename still changes an ANSWER, so `brefdiff`/
 #     `harness` catch it too — this arm's job is narrower and sharper than
 #     either: proving the new bucket's admission rule did NOT absorb it.
+#   clsfold — added 2026-09-25 ([chkgaps] check-design closure); runs
+#     tests/codegen/run_cls_fold_agreement.sh, the VM class-fold shape
+#     (emit_vm.c's vm_cls_shape/vm_cls_test) tied to src/core/fold.c's real
+#     table. Its own arm because `codegen` and `harness`/S228's own
+#     detector (tests/base/cls_fold.rxt) both reach only the RECOGNIZER's
+#     conjuncts, never the emitted compare's own numeric constant, which is
+#     the population this arm exists for. Registered before S275, its
+#     first consumer (renumbered from S273 to avoid colliding with the
+#     k64fix/varland lanes' own S273/S274).
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -1182,6 +1191,22 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
                 score_arm "$work/offsetskip.log" "$f" "offsetskip:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            clsfold)
+                # [FORM-CHAR] tests/codegen/run_cls_fold_agreement.sh — the
+                # VM class-fold shape (emit_vm.c's vm_cls_shape/vm_cls_test)
+                # tied to src/core/fold.c's real table. Its own arm for
+                # `offsetskip`'s reason: what it guards (the emitted FOLD
+                # compare's own constant, and the recognizer's population
+                # against fold.c) is orthogonal to every check in
+                # run_codegen_tests.sh and to tests/base/cls_fold.rxt's own
+                # S228 detector, which reaches only the RECOGNIZER's
+                # conjuncts and never the emitted compare's own constant.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_cls_fold_agreement.sh" \
+                    > "$work/clsfold.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/clsfold.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/clsfold.log" | grep -oE '[0-9]+')"
+                score_arm "$work/clsfold.log" "$f" "clsfold:${f:-ERR}fail/${p:-?}pass"
                 ;;
             anchoredmatch)
                 # [ENG-ABS] tests/codegen/run_anchored_match.sh — the anchored
