@@ -8465,3 +8465,10 @@ source that they can be reliably retrieved from" — prefer sources with a
 STABLE, versioned retrieval point (a tagged release, a DOI/archive snapshot,
 a pinned commit), recorded in the manifest with sha256, so every committed
 sample is also independently re-derivable.
+D123 ADDENDUM 7 (Frank, same session, Q10): the FIRST shipped named analyses
+are only classes with a measured customer — web-request traffic (C6, the WAF
+cells / S4(a)'s run pick) and log lines (C4); nothing else ships until a
+census shows it moves an artifact's decision (R31/R35, D77). json/prose stay
+measurement controls. With this, requirements.md §3 Q1–Q10 are all ruled
+(Q1/Q2 D123 body; Q3 addendum; Q4 addendum 2; Q5/Q8 addenda 3/3a; Q6
+addendum 4; Q7 addendum 5; Q9 addendum 6; Q10 here).
