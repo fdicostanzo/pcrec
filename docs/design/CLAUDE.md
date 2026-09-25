@@ -2483,6 +2483,39 @@ append-only or historical records.
   literal-compare site. The last one is why §6 puts the exact VM compare and a WAF
   attribution read ahead of any caseless mask.
 
+- `litscan_s1.md` — **`[OPT-LITSCAN]` S1's design note, PROPOSED, NOT YET
+  PANELED** (lane `s1design`, 2026-09-25, from main `b5c1423b`; design only,
+  instruments in `../dev/optloop/s1/`). compare_stack.md §6.1's step S1: a
+  necessary literal run PINNED at a fixed offset from the candidate start
+  goes to the DFA prefilter, and a pre-check the prefilter then dominates is
+  elided. Read §0 first. It has three findings.
+  - **Router needs both halves; keyword needs only the elision.** Router's
+    run `/user` is pinned (`prefix_k.c`'s walk proves offsets 0..4), but the
+    k-set model's measured "scan must move" rule keeps it out of the
+    prefilter. Keyword's `offset-set` prefilter ALREADY verifies `in`, and
+    `dfa_cand_scan_byte`'s −1 for every offset-set is what hides the
+    duplicate from G1.
+  - **The mechanism is one selection ROW, one `req_admit` conjunct and one
+    extracted primitive.** The row is `run-pinned` (deny
+    `-fno-run-prefilter`, bit 32), and it applies only where the prefilter
+    already scans the run's pick byte at its offset: identity, no prior
+    read. It adds a RUN TERM to the k-set, verified by the P4 constant
+    `memcmp`. The conjunct: G1 elides a run pre-check only where the
+    selection IMPLIES the run. The primitive is P4, re-emitted
+    byte-identically for REQ_RUN.
+  - **Both after-programs are known and answer-checked.** Keyword's is
+    `25b1984f`'s program exactly, so it is predicted at that pin's measured
+    731k ns (from 1,238k). Router's hand twin counts 39,098 calls and 1,872
+    DFA steps, against 77,822 and 78,696 shipped; it is predicted at ≈337k
+    ns (range 330-394k), from 720k.
+
+  The census moves 34 bench and 523 corpus artifacts. Every bench carve-out
+  it touches has its run ABSENT from the subject (H1: the pre-check was the
+  whole answer). The note also names k64fix's interaction (favourable by the
+  implication conjunct, plus one pre-existing density-clause gap), the
+  forced-VM residual as the next row's (the VM seed, `[OPT-REQPOS]` tier 2
+  re-opened), four questions for Frank, and a ready Linux request.
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places were first recorded in
