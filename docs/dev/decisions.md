@@ -8429,3 +8429,9 @@ than silently buffering); each scan/analysis is SWITCHABLE (on/off per
 kind); THREADED is a bonus, not a requirement. Q8's counter-sharing rule
 stands: the analyzer and the shipped-analysis generators share one counting
 implementation (R27b), so the C end state serves both.
+D123 ADDENDUM 3a (Frank, same session): parallelism need not be threads —
+"a set of different scripts or switches on the same script that are run in
+parallel processes to achieve threading if that makes it easier. threading
+is pita." Process-level parallelism (one process per switched-on scan, or
+per input shard, merged after) satisfies the bonus; the merge step must be
+order-independent so the result is deterministic.
