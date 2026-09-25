@@ -8456,3 +8456,12 @@ byte-identical to today's hand table, repackaged as the `default` bundle
 restriction DECLARED in the bundle per addendum 4). Regenerating it from a
 corpus is its OWN later row, measured against runest's data and the first
 shipped analyses — never bundled into the plumbing change.
+D123 ADDENDUM 6 (Frank, same session, Q9): (a) — small permissively
+licensed samples committed in-tree under third_party/'s rule (PROVENANCE.md +
+generate.py beside the data); synthetic only for a class with no licensable
+sample, labelled `fidelity synthesized`; manifest-only (re-fetch) where the
+licence forbids redistribution. PREFERENCE: "ideally there is some online
+source that they can be reliably retrieved from" — prefer sources with a
+STABLE, versioned retrieval point (a tagged release, a DOI/archive snapshot,
+a pinned commit), recorded in the manifest with sha256, so every committed
+sample is also independently re-derivable.
