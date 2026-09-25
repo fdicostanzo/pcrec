@@ -2008,13 +2008,48 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `32` while the three narrative copies
+which is why it is gap-free from `2` to `33` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `32` on every artifact today (`[VAR]` bumped it from 31,
+- **`rx_info.abi` is `33` on every artifact today (`[K64]` bumped it from 32,
+  2026-09-25: G2'S ONE-ATTEMPT ADMISSION RULE GAINS A LINEARITY CONJUNCT.**
+  `[OPT-PRECHECK-ADMIT]`'s G2 rule (`abi` 31) declined the necessary-byte
+  pre-check wherever the VM's own route tries at most one start position,
+  arguing the attempt reads no more than the check would scan — true of a
+  DFA and false of a backtracking VM program, where the pre-check is also
+  the NO-MATCH PROOF bounding the call: a framed, unguarded, `^`-anchored
+  forced-VM one-attempt program (`^([a-zA-Z0-9._%+-]+)+@` over a long run
+  with no `@`) spent its whole step budget and gave up (`PCREC_ERR_STEPS`)
+  where PCRE2 and the fixed compiler answer NOMATCH — filed as `K64`.
+  `req_route_one_attempt` (`src/gen/emit_dfa.c`) now additionally requires
+  the one attempt to be LINEAR: an EXACT-language hybrid DFA in front (an
+  exact match is itself the no-match proof; a count-collapsed superset is
+  not), or a frameless VM program, which cannot backtrack at all — a new
+  `Job.vm_frameless` field (`src/core/internal.h`), published by
+  `vm_plan_entry` (`src/gen/emit_vm.c`) beside its own derivation of
+  `has_push`. No new stamp, no declaration and no layout change: the bump
+  moves a STAMP VALUE (`<PREFIX>_REQ_WHY` `"one-attempt"` -> `"emitted"`)
+  and the emitted PROGRAM TEXT it names, on the population the narrowing
+  gives its pre-check back to — 176 of 6,634 measured artifact-configs (256
+  bench configs + 6,378 corpus configs over 3,189 distinct patterns x
+  `--features all`/`+ --engine=vm`), every one `VM_FRAMELESS 0` /
+  `VM_PREFILTER "none"` / `VM_START` anchored-or-`gstart`, gaining either
+  the 5-line byte check or the 16-line run check (plus
+  `#include <string.h>` where nothing else in the body calls `memchr`), and
+  none of them a hybrid — including 41 on the AUTO route (backreference and
+  linked-call VM artifacts, which decline the hybrid outright and so have
+  the K64 hazard too). **This is the SECOND bump in this list (after
+  `[K50]`'s `23 -> 24`) whose change moves an ANSWER rather than only a
+  speed or a byte count**, and only in the direction of REPAIR: a give-up
+  becoming a NOMATCH within the same step budget, never the reverse.
+  `-fno-req-byte` still removes the whole mechanism on both routes.
+  `docs/spec/tuning.md` §2.29's G2 paragraph and Answer-identity paragraph
+  are corrected in the same change.
+
+- **`rx_info.abi` was `32` (`[VAR]` bumped it from 31,
   2026-09-23: THE CALLER-VARIABLE SURFACE.** Module `vars` gives a pattern
   `${name}`, whose bytes the CALLER supplies per call, and the surface it
   needs lands in one event. On EVERY artifact of BOTH engines: a new
