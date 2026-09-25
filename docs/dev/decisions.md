@@ -8539,3 +8539,33 @@ THE GUIDELINE (manager's proposal, adopted — "record the approach"):
    guideline governs how code is organized, not what is tested.
 APPROACH.md ("two engines") is amended AFTER [PATFACTS] step 2 so the
 rewrite describes a concrete structure, not an aspiration.
+D123 ADDENDUM 8 (Frank, same session, answering the [FINDINGS] D6 panel's
+ruling asks — review compiled by the revision lane):
+1. K65's fix shape = (a): on VM routes with no DFA in front, pre-check EVERY
+   member of the necessary set (any absent member proves NOMATCH), so the
+   give-up is independent of the pick and of findings.
+2. D93 KEEPS ITS SINGLE EXCEPTION (`--engine`). Frank: "it was your idea
+   that the file wins over cli. you've been chipping away at it" — so
+   `--analysis` on the CLI is FILL-ONLY: it applies only when the target's
+   config names no analysis, never overrides it; an experiment is spelled
+   as a config VARIANT in the file (`config waf-prose from waf` / `analysis
+   prose`, then `--target waf-prose`), so the experiment is in the
+   contract. Supersedes the "CLI replaces the one name" clause of D123
+   item 2. `--analysis` inside a config's own `pcrec` line is refused.
+3. The FIRST RESOLUTION STOP is the compiling `.rxt` FILE ITSELF ONLY (no
+   `lib` closure, no new include splice); bundles in other files are found
+   via `-I DIR/<name>.rxt`, then the embedded store. A BOONIES row
+   re-examines this under stated triggers ([FINDINGS-S1-REVISIT]).
+4. ONE `include` per bundle now (the chain stays linear, readable at the
+   line). Multiple includes only LATER, together with selective include,
+   and only when every line names its kinds (`include json kinds=freq`) so
+   disjointness is visible at the include lines; notes kept in a BOONIES
+   row ([FINDINGS-SELINC]).
+5. Analysis names are lowercase-only, matched by EXACT directory-entry name
+   (no case-insensitive filesystem surprises); ONE bundle per `-I` file; a
+   file that exists but lacks the bundle FALLS THROUGH to the next stop
+   with a note (never a hard error).
+6. The design's own §16: terminal default taken by identity — yes; `log`
+   sourcing — one sourcing-lane attempt, then a labelled synthesized
+   corpus; no `--analysis` path sugar — Frank: "ok as long as these are
+   small or reversible" (all three are).
