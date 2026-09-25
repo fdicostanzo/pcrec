@@ -2841,19 +2841,25 @@ genuine miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`, sabotaged
 **S276 is the OPPOSITE direction of S269, AND IT DOES MOVE AN ANSWER** — the
 one case in this family whose plant is not sound by construction. Where S269
 empties `req_route_one_attempt` (nobody is admitted, only slower), S276 drops
-just the `Job.start_anchor != PCREC_SANCH_NONE` conjunct from its VM arm, so
-EVERY VM route is admitted as one-attempt, anchored or not. An unanchored
-route may restart at every subject position, so admitting it deletes the one
-mechanism (the whole-subject necessary-byte `memchr`) that used to prove
-NO-MATCH in a single bounded pass — this is K64's own defect
-(`docs/dev/known_issues.md`) one conjunct further up, on a population K64's
-own witness (an ANCHORED route, S274 above) does not reach: S274 catches the
-anchored decline landing correctly (fix A, K64 CLOSED); S276 catches the
-UNANCHORED decline it also gets right, today, which had NO check anywhere
-before this row. `run_prechecks.sh` §5.7 is the detector — a real
-compile-link-RUN check, not a stamp read — because unlike S269/S270 this
-decline changes what a caller observes: its own witness flips `RX_REQ_WHY`
-from `"emitted"` to `"one-attempt"` and its no-`@` subject from a fast
-NOMATCH to a step give-up. Re-verify with
-`bash tests/mech/run_sabotage_matrix.sh S276` after the rebase (was S274
-before the chkgaps/k64fix renumber; see `docs/dev/lanes/chkgapsmerge_report.md`).
+BOTH the `Job.start_anchor != PCREC_SANCH_NONE` conjunct AND K64 fix A's own
+linearity conjunct from its VM arm (**RE-ANCHORED at the chkgaps/k64fix
+merge**, 2026-09-25 — K64's own fix rewrote this exact function from a
+single-line `return start_anchor != NONE` to the two-conjunct form; the
+original chkgaps plant anchored on the pre-fix body and drifted), so EVERY
+VM route is admitted as one-attempt, anchored or not, linear or not. An
+unanchored route may restart at every subject position, so admitting it
+deletes the one mechanism (the whole-subject necessary-byte `memchr`) that
+used to prove NO-MATCH in a single bounded pass — this is K64's own defect
+(`docs/dev/known_issues.md`, CLOSED) one conjunct further up, on a population
+K64's own witness (an ANCHORED route, S274 above) does not reach: S274
+catches the anchored decline landing correctly; S276 catches the UNANCHORED
+decline it also gets right, today, which had NO check anywhere before this
+row. `run_prechecks.sh` §5.7 is the detector — a real compile-link-RUN
+check, not a stamp read — because unlike S269/S270 this decline changes what
+a caller observes: its own witness flips `RX_REQ_WHY` from `"emitted"` to
+`"one-attempt"` and its no-`@` subject from a fast NOMATCH to a step
+give-up. **MEASURED post-re-anchor, tree `4106b318`: DETECTED,
+`prechecks:10fail/250pass`; S274 re-verified unaffected in the same tree
+(`prechecks:2fail/260pass, corpus:4fail/5pass`, DETECTED)** — the two rows
+share their anchor text (both target the same function) but plant disjoint
+AFTERs, so neither's scratch build touches the other's row.
