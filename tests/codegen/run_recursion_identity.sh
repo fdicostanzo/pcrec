@@ -1008,7 +1008,16 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # own admission/decline moves this gate's (A) has already measured
 # untouched twice. MEASURED, not argued: comparison (A) reads zero movers
 # on every label after this re-pin (see the run below).
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-1e6a90b0}"   # [K64] fix A, abi 32->33: (B) re-pinned to this lane's own tip 1e6a90b0 (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 809aab12 ([VAR] MVP pattern half, abi 31->32).
+# **(B) RE-PINNED AGAIN — [K65] fix (a), 2026-09-25: abi 33 -> 34, to
+# `3b3c06f0`, the `lane/k65fix` commit carrying the bump.** On a VM artifact
+# with no DFA scan in front (`<PREFIX>_VM_PREFILTER "none"`) an emitted
+# pre-check now also `memchr`s every remaining member of the necessary set
+# (a 6-line `rq_set[]` block after the byte or run check), so the no-match
+# proof no longer rests on the pick (K65). No stamp and no stamp value moves;
+# 452 of 6,642 census artifact-configs gain the block, each a pure insertion.
+# (A) is untouched for the reason above: the block sits in the SEARCH ENTRY
+# beside the check it extends, never inside `prog_region()`.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-3b3c06f0}"   # [K65] fix (a), abi 33->34: (B) re-pinned to 3b3c06f0 on lane/k65fix (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 1e6a90b0 ([K64] fix A, abi 32->33).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
