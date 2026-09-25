@@ -616,3 +616,34 @@ that cycle's analysis lands.
   only), `wf_offsetk_probe.c`/`wf_offsetk.json` (the `(?i)` walk against
   the SHIPPED `pcrec_prefix_ksets`, not a re-derivation), `wf_report.py`/
   `wf_summary.txt` (the rendered numbers). See its own `CLAUDE.md`.
+
+## S3: the WAF cells' attribution (lane `wafread`, 2026-09-25)
+
+- `waf_attribution.md` — **compare_stack.md §6.1 S3.** It attributes the four
+  cycle-1 losing WAF caseless cells on `large-subject-throughput` plus the
+  slack near-tie. It is a read: no timing on darwin, and every prediction is
+  labelled and owed in §4's Linux block.
+  - **All five are zero-match single-call scans**, and every keyword is absent
+    from the subjects.
+  - **Only `union-select` needs a caseless mechanism.** That makes it the one
+    S4 customer. The shape is S4(a): a caseless necessary run searched by two
+    leapfrogged `memchr` streams, with a masked verify. It is PREDICTED at
+    0.12-0.27 ns/B against re2's ShiftDFA at 0.319, from slack's measured
+    8.66 ns/hit.
+  - **S4(b) scalar is what already ships** (the `{u,U}` table walk, ~80% of the
+    cell). SWAR is a ruling question.
+  - **`concat-sqli` needs no caseless mechanism.** It is `[OPT-ATTEMPT-SPLIT]`
+    (measured ×3.51) plus a per-step residual.
+  - **`dbnames` needs no caseless mechanism.** It is `[OPT-FIRSTSET]`'s cell
+    (the 63-byte `\b` cluster sits at 2.89-3.05 ns/B for four unrelated
+    patterns) plus the same per-step residual.
+  - The per-step residual on both is against re2's plain lazy DFA at 1.63,
+    with no prefilter. **This refutes §6.3's "(c) multi-literal" guess.**
+  - **`sleep-benchmark` is not an algorithmic loss.** pcrec beats every scalar
+    engine; it has an unexplained +7.5% drift since the pin.
+  - **`slack` is a WIN** (0.77×).
+  - The `from`-vs-`union` pick is a joint-vs-marginal run-prior hazard (§5 Q2).
+- `waf/` — its instruments: the twin generator, the answer checker with its
+  failing-direction controls, the input and numbers scripts, and the stamp
+  join. See its own `CLAUDE.md`.
+
