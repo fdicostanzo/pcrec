@@ -1080,6 +1080,72 @@ if emit "$WORKDIR/s56r.c" '^([a-z]+)+[0-9]{3}@' -fprefilter-collapse; then
         || bad "[5.6r] the -fprefilter-collapse row is no longer a framed count-collapsed hybrid — [5.6]'s superset row tests nothing"
 fi
 
+# =========================================================================
+# SECTION 5.7 — [chkgaps] 2026-09-25: G2's ANSWER, ON A FORCED-VM ROUTE
+# =========================================================================
+#
+# §5's own header says the two declines are "not answer-detectable in either
+# direction" and that is true of every witness §5.1-§5.5 use, all of which
+# are either DFA-route or already correctly declined. It is NOT true in
+# general: K64 (docs/dev/known_issues.md) is exactly a G2 decline that DID
+# move an answer, on a forced `--engine=vm` route the corpus's own
+# `admitimpl_answerdiff.py` differential never drove — that script ran
+# AUTO-route arms only, and this pattern's auto route is a different
+# (linear, unaffected) machine. This section closes that reach gap with a
+# real compile-link-RUN check, independent of K64's own fix (§5.6 above,
+# landed while this section was in flight — this section's own witness is
+# UNANCHORED and is not K64's population; see the next paragraph).
+#
+# THE WITNESS IS UNANCHORED ON PURPOSE, so it is NOT K64's own population —
+# `req_route_one_attempt`'s VM arm (src/gen/emit_dfa.c) already declines
+# ONLY when `Job.start_anchor != PCREC_SANCH_NONE`, so an UNANCHORED VM
+# route (this one) is admitted TODAY: REQ_WHY reads "emitted" and the
+# necessary-byte pre-check runs, exactly as it should for a route that can
+# restart at every position. This section is therefore a POSITIVE CONTROL
+# for the admission rule on forced VM, answer-checked end to end — not
+# merely stamp-checked — so a FUTURE broadening of the same defect class
+# (declining the pre-check for a route that is not genuinely bounded) has a
+# real detector rather than only a structural one, independent of §5.6's
+# own narrower witness.
+S57_PAT='([a-zA-Z0-9._%+-]+)+@'
+a="$WORKDIR/s57.c"
+if ! emit "$a" "$S57_PAT" --engine=vm --step-budget=5000 --emit-main; then
+    bad "[5.7] $S57_PAT: --engine=vm refused it"
+else
+    got="$(stamp "$a" REQ_WHY)"
+    [ "$got" = "emitted" ] \
+        && ok "[5.7] $S57_PAT --engine=vm -> RX_REQ_WHY \"emitted\" (unanchored: G2 correctly does NOT decline)" \
+        || bad "[5.7] $S57_PAT --engine=vm: RX_REQ_WHY is \"${got:-<absent>}\", expected \"emitted\" — an unanchored route was declined, which is not this rule's population"
+    if grep -qF 'memchr(subject + search_from,' "$a"; then
+        ok "[5.7] the required-byte pre-check is in the file, as \"emitted\" promises"
+    else
+        bad "[5.7] RX_REQ_WHY is \"emitted\" but no required-byte memchr is in the file"
+    fi
+    bin="$WORKDIR/s57_bin"
+    if ! gen_cc "[5.7] emit-main link" "$CC" -O1 -std=gnu11 -Wall -Wextra -o "$bin" "$a"; then
+        bad "[5.7] $S57_PAT: the --emit-main artifact did not compile: $(printf '%s' "$GEN_CC_LOG" | tail -3 | tr '\n' ' ')"
+    else
+        # No '@' anywhere: the necessary-byte pre-check proves NOMATCH in one
+        # memchr pass, in bounded time, regardless of the step budget — the
+        # ANSWER a caller-visible run must keep giving no matter what a
+        # future change to this rule does. 20 bytes is comfortably past the
+        # nested-quantifier's own catastrophic threshold (K64's own
+        # 3*2^(L-2)-2 formula reaches ~262,000 steps at L=20, 52x this
+        # witness's own --step-budget=5000), so a wrongly-declined admission
+        # would give up here rather than merely run slower.
+        gen_run "prechecks-5.7-nomatch" "$bin" "aaaaaaaaaaaaaaaaaaaa" >/dev/null 2>"$WORKDIR/s57.err"
+        rc=$?
+        [ "$rc" -eq 1 ] \
+            && ok "[5.7] subject with no '@' -> exit 1 (nomatch), in bounded time" \
+            || bad "[5.7] subject with no '@' -> exit $rc, expected 1 (nomatch) ($(cat "$WORKDIR/s57.err" | tr '\n' ' '))"
+        gen_run "prechecks-5.7-match" "$bin" "a@" >/dev/null 2>"$WORKDIR/s57b.err"
+        rc=$?
+        [ "$rc" -eq 0 ] \
+            && ok "[5.7] subject \"a@\" -> exit 0 (match)" \
+            || bad "[5.7] subject \"a@\" -> exit $rc, expected 0 (match) ($(cat "$WORKDIR/s57b.err" | tr '\n' ' '))"
+    fi
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1
