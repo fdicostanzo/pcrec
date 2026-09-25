@@ -35,15 +35,31 @@
 #                    run_axes.sh (which DOES hold the per-axis expected-
 #                    refusal pattern) does the documented-vs-undocumented
 #                    split.
-#   BUDGET           neither side is REFUSED, the two disagree, and EITHER
-#                    side's trc is 3 (a give-up: steps/frames/work — driver.c
-#                    exits 3 for all three uniformly) or 124 (a per-case
-#                    timeout, tests/harness/run.sh's own TIMEOUT_BIN wrap).
-#                    tuning.md §2.5's "identity holds modulo which budget
-#                    binds" is the spec sentence this extends to the
-#                    harness's own per-case wall timeout: a budget boundary
-#                    moving under a denied optimization is not an answer
+#   BUDGET           neither side is REFUSED, the two disagree, and BOTH
+#                    sides give up or time out (trc 3 — steps/frames/work,
+#                    driver.c exits 3 for all three uniformly — or 124, a
+#                    per-case timeout, tests/harness/run.sh's own
+#                    TIMEOUT_BIN wrap). tuning.md §2.5's "identity holds
+#                    modulo which budget binds" is the spec sentence this
+#                    extends to the harness's own per-case wall timeout: a
+#                    budget BOUNDARY moving under a denied optimization,
+#                    both sides still giving up, is not an answer
 #                    disagreement.
+#   GIVEUP1          [chkgaps, 2026-09-25, docs/dev/learnings.md §3's own
+#                    filed candidate: "count answer->give-up TRANSITIONS as
+#                    their own population"] neither side is REFUSED, the
+#                    two disagree, and EXACTLY ONE side gives up or times
+#                    out (trc 3 or 124) while the OTHER reports a real
+#                    answer (match/nomatch/span/captures). This is NOT the
+#                    BUDGET case above: tuning.md §2.5 licenses a moving
+#                    BOUNDARY between two give-ups, never an axis that turns
+#                    a real answer into a give-up (or the reverse) on the
+#                    SAME case. Reported separately so a one-sided
+#                    transition cannot hide inside the two-sided bucket's
+#                    "never a failure" reading — run_axes.sh decides
+#                    per-axis whether a GIVEUP1 case is a failure or a
+#                    named, floored, DERIVED allowance (never a blanket
+#                    exemption).
 #   LOST             the axis produced NO record for this key at all —
 #                    neither an ordinary case line nor a REFUSED line. What
 #                    remains after the REFUSED producer above: a PROCS
@@ -65,7 +81,7 @@
 #   goes to stderr regardless of ROWSFILE.
 #
 # Prints one summary line to stdout:
-#   keys_base=N keys_axis=N agree=N budget=N refused=N lost=N gained=N mismatches=N
+#   keys_base=N keys_axis=N agree=N budget=N giveup1=N refused=N lost=N gained=N mismatches=N
 # Exit status is always 0 — classification is this script's whole job;
 # PASS/FAIL is run_axes.sh's call, made only after it has re-split REFUSED
 # into documented/undocumented.
@@ -131,14 +147,27 @@ END {
             agree++
             continue
         }
-        if (b_trc == "3" || b_trc == "124" || a_trc == "3" || a_trc == "124") {
+        b_gu = (b_trc == "3" || b_trc == "124")
+        a_gu = (a_trc == "3" || a_trc == "124")
+        if (b_gu && a_gu) {
             budget++
             emit_row("BUDGET", key, b_trc, b_out, a_trc, a_out)
             if (budget <= 20)
                 print "BUDGET-BOUND " key " (" base_kind[key] "): default={trc=" \
                       b_trc " out=" b_out "} axis={trc=" a_trc " out=" a_out \
-                      "} — a give-up/timeout on one side, not an answer" \
-                      " disagreement" > "/dev/stderr"
+                      "} — both sides give up/time out, only the BOUNDARY moved," \
+                      " not an answer disagreement" > "/dev/stderr"
+            continue
+        }
+        if (b_gu != a_gu) {
+            giveup1++
+            emit_row("GIVEUP1", key, b_trc, b_out, a_trc, a_out)
+            if (giveup1 <= 20)
+                print "GIVEUP1 " key " (" base_kind[key] "): default={trc=" \
+                      b_trc " out=" b_out "} axis={trc=" a_trc " out=" a_out \
+                      "} — ONE side gives up/times out and the OTHER reports a" \
+                      " real answer: an answer<->give-up TRANSITION, not a" \
+                      " moving budget boundary" > "/dev/stderr"
             continue
         }
         mismatches++
@@ -147,6 +176,6 @@ END {
             print "MISMATCH " key " (" base_kind[key] "): default={trc=" b_trc \
                   " out=" b_out "} axis={trc=" a_trc " out=" a_out "}" > "/dev/stderr"
     }
-    printf "keys_base=%d keys_axis=%d agree=%d budget=%d refused=%d lost=%d gained=%d mismatches=%d\n", \
-        n_base, n_axis, agree+0, budget+0, refused+0, lost+0, gained+0, mismatches+0
+    printf "keys_base=%d keys_axis=%d agree=%d budget=%d giveup1=%d refused=%d lost=%d gained=%d mismatches=%d\n", \
+        n_base, n_axis, agree+0, budget+0, giveup1+0, refused+0, lost+0, gained+0, mismatches+0
 }

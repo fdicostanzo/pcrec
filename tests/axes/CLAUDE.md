@@ -50,8 +50,8 @@ EMPTY documented column. Anchor on numbers a human does not maintain.
   subset for a quick local run; `SKIP_ORACLE=1` skips the PC-4 leg.
 - **dump_diff.awk** — the comparator: two `RXTDUMP` files keyed by
   `<.rxt file>:<line>` (unique — one case per source line), classifying
-  every case AGREE / REFUSED / BUDGET / LOST / MISMATCH / GAINED — see
-  "The classification rule" below.
+  every case AGREE / REFUSED / BUDGET / GIVEUP1 / LOST / MISMATCH / GAINED
+  — see "The classification rule" below.
 
 ## The classification rule (manager's ruling, 2026-08-26, from the first
 full-corpus sweep's own findings)
@@ -69,19 +69,37 @@ BASE key in this order:
    pcrec's own diagnostic text). `dump_diff.awk` does not know whether an
    axis's OWN documented limit produced it — that is `run_axes.sh`'s job
    (below), via `REFUSAL_PATTERN`/`REFUSAL_FLOOR`.
-3. **BUDGET** — neither side is REFUSED, the two disagree, and EITHER
-   side's `trc` is `3` (a give-up — `driver.c` exits 3 uniformly for
-   steps/frames/work) or `124` (a per-case harness timeout). `tuning.md`
-   §2.5's "identity holds modulo which budget binds" is the spec sentence
-   this extends to the harness's own per-case wall timeout: a budget
-   boundary moving under a denied optimization is not an answer
-   disagreement.
-4. **LOST** — the axis produced NO record for this key at all (not even a
+3. **BUDGET** — neither side is REFUSED, the two disagree, and BOTH sides
+   give up or time out (`trc` `3` — a give-up, `driver.c` exits 3
+   uniformly for steps/frames/work — or `124`, a per-case harness
+   timeout). `tuning.md` §2.5's "identity holds modulo which budget binds"
+   is the spec sentence this extends to the harness's own per-case wall
+   timeout: a budget BOUNDARY moving under a denied optimization, both
+   sides still giving up, is not an answer disagreement.
+4. **GIVEUP1** — [chkgaps, 2026-09-25, closing the check-design gap
+   `docs/dev/known_issues.md` K64 found: `docs/dev/learnings.md` §3's own
+   filed candidate, "count give-up TRANSITIONS as their own population"]
+   neither side is REFUSED, the two disagree, and EXACTLY ONE side gives
+   up or times out while the OTHER reports a real answer. This is NOT the
+   BUDGET case above — it is an answer<->give-up TRANSITION, which
+   `tuning.md` §2.5 never licenses. **Before this split, EVERY GIVEUP1 case
+   silently joined BUDGET and was never a failure**, which is precisely how
+   K64's own defect (an axis turning a NOMATCH into a step give-up on a
+   forced-VM route) would have read here: budget-bound, never investigated.
+   `run_axes.sh` promotes every GIVEUP1 case to a FAILURE unless the axis
+   names the exact `(flags, file:line)` pair in `GIVEUP1_ALLOWANCE` — a
+   manifest, never a count (K35's `REFUSAL_PATTERN`/`REFUSAL_FLOOR`
+   precedent one section down: a count ceiling disarms itself the moment a
+   DIFFERENT case moves under it). The manifest is empty as of this
+   writing — no legitimate one-sided give-up has been measured on the real
+   corpus, because nothing before this split ever counted the population
+   separately enough to find one.
+5. **LOST** — the axis produced NO record for this key at all (not even a
    REFUSED one) — a structural gap beyond a documented refusal: a PROCS
    worker vanishing, a whole file failing to parse. Always a failure.
-5. **MISMATCH** — neither REFUSED nor budget-bound, and the two disagree: a
-   genuine answer difference. Always a failure.
-6. **GAINED** — a key the axis produced that the baseline never had. Never
+6. **MISMATCH** — neither REFUSED, budget-bound, nor a one-sided give-up,
+   and the two disagree: a genuine answer difference. Always a failure.
+7. **GAINED** — a key the axis produced that the baseline never had. Never
    documented as possible for any axis; always a failure.
 
 **`run_axes.sh` does the axis-specific half of step 2**: `REFUSAL_PATTERN`
@@ -102,9 +120,23 @@ except the force-prefilter pair as NEVER refusing under the default (auto)
 engine this sweep uses, so an axis with no entry treats ANY refusal as
 worth investigating rather than silently absorbing it.
 
-Per-axis output line: `agree=N budget-bound=N refused-documented=N
-(floor F) lost-other=N mismatches=N gained=N` — every bucket printed
-beside the verdict, never only a pass/fail count.
+Per-axis output line: `agree=N budget-bound=N giveup1-allowed=N
+giveup1-unallowed=N refused-documented=N (floor F) lost-other=N
+mismatches=N gained=N` — every bucket printed beside the verdict, never
+only a pass/fail count. `mismatches` already includes any unallowed
+GIVEUP1 cases (folded in alongside undocumented refusals, per the same
+"a floor breach is a policy failure, a mismatch is a per-case one" split
+this file's own REFUSAL_FLOOR uses).
+
+**`run_ksweep.sh` (`dump_diff.awk`'s other consumer) treats BOTH BUDGET and
+GIVEUP1 as its own already-documented K-dependent give-up exclusion** —
+its own §6.1 measurement (the minimum step budget a witness needs moves
+with K) already predicts a one-sided flip wherever K crosses a fixed
+budget, so narrowing to BUDGET alone would have made that script go red on
+its own known, true property the day this split landed. Its §3.3a
+declared-capacity-floor rule (a give-up flip must not belong to a pattern
+the size TERM already builds at K<8) now scans both `BUDGET` and
+`GIVEUP1` rows for the identical reason.
 
 ## Pairwise execution ([TT-12] STEP 1 item 1, 2026-09-03)
 

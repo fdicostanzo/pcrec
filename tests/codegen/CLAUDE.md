@@ -909,6 +909,29 @@ decides whether to perform it — and then run the row through
     stamps X. §5 carries TWO, one per rule, plus a third on the population
     that still EMITS — the last being the arm that would catch a rule
     declining a population it was never measured on.
+  - §5.6 (2026-09-25, lane `chkgaps`, check-design closure) is the ONE
+    ANSWER-DETECTABLE ARM IN THE WHOLE SECTION, and it exists because K64
+    (`docs/dev/known_issues.md`) is exactly the case §5's own "neither
+    decline is answer-detectable" sentence gets wrong: on a step-budgeted,
+    framed, forced-`--engine=vm` one-attempt route, G2's decline is NOT
+    provably "the answer the engine below it returns anyway" — the VM can
+    give up instead. `admitimpl_answerdiff.py` (the differential this
+    admission rule was itself validated with) ran AUTO-route arms only and
+    never saw it. §5.6's witness is deliberately NOT K64's own
+    population — an UNANCHORED VM route (`([a-zA-Z0-9._%+-]+)+@`, no `^`),
+    which `req_route_one_attempt`'s own `start_anchor` conjunct already
+    keeps admitted (`REQ_WHY "emitted"`) — compiled with `--emit-main` and
+    RUN, not merely stamp-checked, so a FUTURE widening of the same defect
+    class (admitting a route that is not genuinely one-attempt) has a real
+    behavioural detector independent of whether K64's own fix has landed.
+    Sabotage S276 is that widening's failing direction: dropping the
+    `start_anchor` conjunct entirely (every VM route admitted, anchored or
+    not) flips this witness's `REQ_WHY` to `"one-attempt"` and its no-`@`
+    subject from a fast NOMATCH to a step give-up. K64's own real
+    population stays in `tests/known_fail/k64_precheck_forced_vm.rxt`,
+    reached by the known-fail ratchet rather than by this section, because
+    its current answer is the give-up itself and a section asserting the
+    CORRECT answer here would be red on the clean tree.
 
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
@@ -3202,4 +3225,49 @@ explicit witness list because `var_valid` otherwise read 0 — this file's own
 silently", one entry over. That witness is the only one reaching an entry
 present in ONE backend's table and absent from the other's, which is the
 sharpest available test of what the excision claims.
+
+## `run_cls_fold_agreement.sh` + `fold_pairs_dump.c` — the VM class-fold
+shape, tied to `src/core/fold.c`'s table (2026-09-25, [FORM-CHAR]'s CLS
+FOLD close-out; `docs/design/compare_stack.md` §duplications)
+
+The gap S228 (`tests/base/cls_fold.rxt`'s own detector) does not close:
+`vm_cls_shape`'s FOLD recognizer (`src/gen/emit_vm.c` ~1633) and the compare
+it emits (~1655) are the one ASCII-fold spelling in the tree with NO
+agreement check against `pcrec_ascii_fold` (`src/core/fold.c`), the table
+`tests/backrefs/fold_agreement_check.c` otherwise treats as ground truth.
+S228 sabotages the RECOGNIZER's conjuncts and is caught by hand-picked
+witnesses in `cls_fold.rxt` (2 of the 26 real pairs); nothing ties the
+POPULATION to fold.c's real table, and nothing at all exercises the EMITTED
+COMPARE LINE itself independent of the recognizer that selects it.
+
+**Two independent sources, `fold_agreement_check.c`'s shape one mechanism
+over.** SOURCE A: `fold_pairs_dump.c`, linked against `libpcrec.a`, reads
+`pcrec_ascii_fold` directly and derives — never hand-types — every real
+fold pair (26, `A B..Z z`-shaped) and every 0x20-shaped NEAR-MISS pair that
+does not fold (6: `@`` ` / `[{` / `\|` / `]}` / `^~` / `_`DEL). SOURCE B: a
+real `--emit-main` artifact PER PAIR, compiled and RUN (never read as
+source text for its behaviour) against four probe bytes (`lo`, `hi`, and
+two fixed digit controls `'0'`/`'9'` outside the whole 0x40-0x7f candidate
+range), reading its EXIT CODE. Structural (does the artifact take the FOLD
+or the BITMAP shape) and behavioural (does the compiled binary actually
+answer right) are both asserted, on both the fold and the near-miss
+population — 26 pairs x 4 probes + 6 pairs x 4 probes + one shape assertion
+each, 163 checks measured at landing.
+
+**Floors are HALF the measured population (D110), never the measured
+number itself** — 13 fold pairs, 3 near-miss pairs — so a future change to
+`pcrec_ascii_fold` that shrank either bucket is caught as a floor breach
+rather than silently read as "fewer pairs, fine".
+
+Sabotage S275 shifts the emitted compare's own constant (`hi` -> `lo` at
+emit_vm.c:1655) — the "shift the emitted mask" case S228 cannot reach,
+since S228 only ever touches the recognizer that SELECTS the fold shape,
+never the line that RENDERS it. The plant makes `(byte | 0x20) == lo`
+unsatisfiable for every fold pair (`lo` never carries bit 0x20, and
+`byte | 0x20` always does), so every one of the 26 real fold pairs loses
+its structural shape check (the emitted constant is no longer `hi`) AND
+both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
+(`tests/mech/run_sabotage_matrix.sh S275`) — while the 6 near-miss
+(bitmap-shape) rows and SOURCE A's own checks stay green. Read the
+current DETECTED figure from a `make mech` run.
 

@@ -260,8 +260,8 @@ Ast *pcrec_def_build_identity(Ctx *cx, Ast *body)
  * (`toupper` on a byte already known to be plain text, not emitted-
  * artifact text — the `tolower()`-in-generated-code prohibition
  * elsewhere in this tree does not apply to the COMPILER's own internals,
- * src/parse/mod_backrefs.c's identical `toupper((unsigned char)c)` idiom
- * is the precedent); a byte with no case (digits, punctuation) is
+ * src/core/sb.c's `pcrec_sb_upper` is the same idiom on the same kind of
+ * host-side byte); a byte with no case (digits, punctuation) is
  * unaffected by `toupper`, so the fix changes only the previously-wrong
  * lower-case-letter cells. */
 Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx)

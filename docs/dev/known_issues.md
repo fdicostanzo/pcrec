@@ -164,6 +164,32 @@ frameless program.
 This is a learnings.md §3 candidate: count give-up TRANSITIONS as their own
 population.
 
+**Two check gaps CLOSED, standing (lane `chkgaps`, merged 2026-09-25
+alongside fix A above — this paragraph is UPDATED from chkgaps' own
+"the bug itself still open" wording, written before the two lanes'
+work was reconciled; chkgaps' OTHER two closures, the mech `encoding`
+arm's clean-tree baseline and the VM class-fold agreement check, are
+unrelated to K64 and are not repeated here — see `tests/mech/CLAUDE.md`
+and `docs/dev/lanes/chkgapsmerge_report.md`).** `dump_diff.awk` now
+classifies a one-sided give-up as its own `GIVEUP1` bucket, and
+`run_axes.sh` promotes every such case to a failure unless the axis
+names it in `GIVEUP1_ALLOWANCE` (empty today — see
+`tests/axes/CLAUDE.md`) — exactly K64's own shape (an axis turning a
+NOMATCH into a step give-up) would previously have read as ordinary
+budget-bound, never investigated. Neither this nor the change below is
+the fix itself, and neither needed the fix to be worth landing: they
+close a REACH gap the admission differential
+(`admitimpl_answerdiff.py`) had by running AUTO-route arms only.
+`tests/codegen/run_prechecks.sh` §5.7 (sabotage S276) is the second —
+an UNANCHORED positive control for G2's admission rule, a population
+K64's own witness (anchored, §5.6, sabotage S274) never reaches, and
+one this construct had NO check on before this lane. chkgaps also
+briefly added `tests/known_fail/k64_precheck_forced_vm.rxt`; it was
+RETIRED at merge (never shipped in a `make test` run) because lane
+`k64fix`'s own regression, `tests/base/k64_precheck_forced_vm.rxt`,
+landed the same day covering a superset of the same witnesses — see
+`docs/dev/lanes/chkgapsmerge_report.md`.
+
 ---
 
 ## K63 — [VAR] panel (varfix, 2026-09-23), pre-existing, documentation/tree fact (not a compiler bug): `src/core/internal.h:877`'s own census of `default:`-carrying `AKind` switches names four sites; there are five

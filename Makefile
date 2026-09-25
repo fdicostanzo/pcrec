@@ -421,7 +421,8 @@ test-codegen: all
 	    'bash tests/codegen/run_scan_edge_census.sh' \
 	    'bash tests/codegen/run_n1_budget.sh' \
 	    'bash tests/codegen/run_comment_escape.sh' \
-	    'bash tests/codegen/run_comments_axis.sh'
+	    'bash tests/codegen/run_comments_axis.sh' \
+	    'bash tests/codegen/run_cls_fold_agreement.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

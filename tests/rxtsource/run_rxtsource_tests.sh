@@ -289,6 +289,15 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # tests/known_fail/, so RUNSH_* move by the same +1/+2/+9. Rebased onto
 # varfollow's own re-pin above rather than replacing it (the two lanes'
 # corpus additions are disjoint files): 216+1=217 / 3999+2=4001 / 29120+9=29129.
+# 2026-09-25 (lane chkgaps, K64 check-gap closure) — landed +1 file, +1
+# block, +6 lines for tests/known_fail/k64_precheck_forced_vm.rxt at
+# rebase time (1 `pattern` block; 1 `m`, 1 `g`, 4 `n` lines), THEN
+# RETIRED IN THE SAME MERGE (docs/dev/lanes/chkgapsmerge_report.md): K64
+# was fixed by lane k64fix, concurrently, with its own regression at
+# tests/base/k64_precheck_forced_vm.rxt covering a SUPERSET of this
+# file's witnesses — keeping both would assert the identical claim
+# twice, so chkgaps' known_fail copy is deleted rather than promoted.
+# Net delta at merge: +0/+0/+0 against the k64fix/varfollow pin above.
 CENSUS_FILES=217
 CENSUS_BLOCKS=4001
 CENSUS_LINES=29129
@@ -345,6 +354,11 @@ CENSUS_LINES=29129
 # above (tests/base/k64_precheck_forced_vm.rxt is not under known_fail/).
 # Combined per the same rebase note above: 216+1=217 / 3999+2=4001 /
 # 29120+9=29129.
+# 2026-09-25 (lane chkgaps, K64 check-gap closure) — UNCHANGED throughout.
+# The file it briefly added (CENSUS_* above) was under tests/known_fail/,
+# so run.sh's own no-argument population never moved for it, and its
+# retirement at merge (net +0/+0/+0 on CENSUS_* too) does not move this
+# pin either.
 RUNSH_FILES=217
 RUNSH_BLOCKS=4001
 RUNSH_LINES=29129

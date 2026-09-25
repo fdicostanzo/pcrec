@@ -3181,3 +3181,15 @@ never edited afterwards.
   one derivation every `<p>_ofsskip` reader reads; the 32-bit DFA_SELECT
   deny plumbing found; the census re-run under B's own predicate
   (`docs/dev/optloop/s1/census_b*`). Awaits a FULL D6 panel.
+- `chkgapsmerge_report.md` — landing `lane/chkgaps` (four check-design
+  closures) onto main after `lane/k64fix` fixed K64 concurrently
+  (2026-09-25): the three-file conflict (both lanes registered a new mech
+  arm entry, both re-pinned the rxtsource census, both numbered a new
+  `run_prechecks.sh` section "§5.6" — chkgaps' renumbered to §5.7), S276's
+  re-anchor (its target function was the exact one k64fix's fix A
+  rewrote — anchor drift caught LOUD by the mech matrix as `ANOMALY`, per
+  design, never a false verdict), and the retirement of chkgaps' own
+  `tests/known_fail/k64_precheck_forced_vm.rxt` (superseded by k64fix's
+  passing regression at the same basename in `tests/base/`, net +0/+0/+0
+  on the rxtsource census). `make test` launched detached as the lane's
+  last act; verdict OWED, log path in the report.
