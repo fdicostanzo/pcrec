@@ -9,6 +9,26 @@ and it does not get to break the build either.
 
 ## Files
 
+- **`k64_precheck_forced_vm.rxt`** — [K64] (`docs/dev/known_issues.md`),
+  landed 2026-09-25 (lane `chkgaps`, check-design closure). On a
+  step-budgeted, framed, forced-`--engine=vm` build of
+  `^([a-zA-Z0-9._%+-]+)+@`, `[OPT-PRECHECK-ADMIT]`'s G2 rule declines the
+  necessary-byte pre-check for this one-attempt route without checking
+  that the attempt is LINEAR, so a subject with no `@` anywhere gives up
+  (`PCREC_ERR_STEPS`) where PCRE2 10.46/10.48 and python3 `re` both answer
+  NOMATCH. **THE FILE EXISTS TO CLOSE A REACH GAP, NOT ONLY TO DOCUMENT THE
+  BUG**: nothing else in `make test` compiled this pattern under a FORCED
+  VM route before this — the admission differential
+  (`docs/dev/lanes/admitimpl_answerdiff.py`) ran AUTO-route arms only, and
+  this pattern's auto route is a different (linear, unaffected) machine —
+  so the known-fail ratchet is the first standing, always-run instrument
+  to reach the population K64 lives in. `budget steps=10000` keeps the
+  file's own runtime trivial (the pattern's own `3*2^(L-2)-2` cost clears
+  the budget at L=16, five times over). Closes when K64's fix
+  (`docs/dev/optloop/cycle2_admitfix_reading.md` §1.8 A) lands — per that
+  fix's own owed item, the 4 `n` cells move to a live corpus file with
+  their expectations UNCHANGED (the K34 close's own precedent, `docs/dev/
+  learnings.md` §3.z).
 - **`k34_leftrec_giveup.rxt` — GONE, 2026-09-23, by the front door
   ([OPTLOOP.1.impl] batch 2, lane `optimpl2`; the known-fail triage, lane
   `b2fix`).** Lived here 2026-08-24 .. 2026-09-23. [K34] (`docs/dev/

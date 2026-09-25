@@ -29,7 +29,7 @@ SAB_ID="S274-precheck-g2-unanchored-admitted"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks"
 SAB_DESC="req_route_one_attempt's VM arm drops the Job.start_anchor != PCREC_SANCH_NONE conjunct and admits EVERY VM route as one-attempt, anchored or not -- so an unanchored, forced-VM, necessary-byte-bearing pattern loses its whole-subject memchr pre-check and must instead try a catastrophic-backtracking nested quantifier at every start position under one shared step budget"
-SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane chkgaps, solo single-row scratch run via tests/mech/run_sabotage_matrix.sh S274): DETECTED. tests/codegen/run_prechecks.sh's own §5.6 positive control flips from RX_REQ_WHY \"emitted\" to \"one-attempt\" and its no-'@' subject flips from exit 1 (nomatch, bounded) to a step give-up. Read the current figure from a run."
+SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane chkgaps, solo single-row scratch run via tests/mech/run_sabotage_matrix.sh S274): DETECTED, reach:ok(1/1), prechecks:8fail/244pass. Section 5.6's own positive control flips from RX_REQ_WHY \"emitted\" to \"one-attempt\" and its no-'@' subject flips from exit 1 (nomatch, bounded) to a step give-up; the other 4 failures are the same missing conjunct reached through §5's own other witnesses (every VM-route pattern is now admitted regardless of anchoring). Read the current figure from a run."
 SAB_REACH='"$PCREC" -p rx --engine=vm -o "$REACH_TMP/o.c" --pattern "([a-zA-Z0-9._%+-]+)+@" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-UNANCHORED-VM-EMITS'
 SAB_REACH_EXPECT="REACH-UNANCHORED-VM-EMITS"
 SAB_COUNT=1

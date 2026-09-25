@@ -2835,3 +2835,25 @@ run by hand against the real pre-module reference binary — confirming the
 sabotaged region lands in `rdiff` (not the bucket) and that the defect is a
 genuine miscompile (`(a)\1` on `"aaa"`: clean `match 0 2`, sabotaged
 `match 0 3`). Full transcript: `docs/dev/lanes/varland_report.md`.
+
+## S276 ([chkgaps], 2026-09-25): the UNANCHORED admission, and it MOVES AN ANSWER
+
+**S276 is the OPPOSITE direction of S269, AND IT DOES MOVE AN ANSWER** — the
+one case in this family whose plant is not sound by construction. Where S269
+empties `req_route_one_attempt` (nobody is admitted, only slower), S276 drops
+just the `Job.start_anchor != PCREC_SANCH_NONE` conjunct from its VM arm, so
+EVERY VM route is admitted as one-attempt, anchored or not. An unanchored
+route may restart at every subject position, so admitting it deletes the one
+mechanism (the whole-subject necessary-byte `memchr`) that used to prove
+NO-MATCH in a single bounded pass — this is K64's own defect
+(`docs/dev/known_issues.md`) one conjunct further up, on a population K64's
+own witness (an ANCHORED route, S274 above) does not reach: S274 catches the
+anchored decline landing correctly (fix A, K64 CLOSED); S276 catches the
+UNANCHORED decline it also gets right, today, which had NO check anywhere
+before this row. `run_prechecks.sh` §5.7 is the detector — a real
+compile-link-RUN check, not a stamp read — because unlike S269/S270 this
+decline changes what a caller observes: its own witness flips `RX_REQ_WHY`
+from `"emitted"` to `"one-attempt"` and its no-`@` subject from a fast
+NOMATCH to a step give-up. Re-verify with
+`bash tests/mech/run_sabotage_matrix.sh S276` after the rebase (was S274
+before the chkgaps/k64fix renumber; see `docs/dev/lanes/chkgapsmerge_report.md`).

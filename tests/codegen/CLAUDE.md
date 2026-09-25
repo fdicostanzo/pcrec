@@ -909,6 +909,29 @@ decides whether to perform it — and then run the row through
     stamps X. §5 carries TWO, one per rule, plus a third on the population
     that still EMITS — the last being the arm that would catch a rule
     declining a population it was never measured on.
+  - §5.6 (2026-09-25, lane `chkgaps`, check-design closure) is the ONE
+    ANSWER-DETECTABLE ARM IN THE WHOLE SECTION, and it exists because K64
+    (`docs/dev/known_issues.md`) is exactly the case §5's own "neither
+    decline is answer-detectable" sentence gets wrong: on a step-budgeted,
+    framed, forced-`--engine=vm` one-attempt route, G2's decline is NOT
+    provably "the answer the engine below it returns anyway" — the VM can
+    give up instead. `admitimpl_answerdiff.py` (the differential this
+    admission rule was itself validated with) ran AUTO-route arms only and
+    never saw it. §5.6's witness is deliberately NOT K64's own
+    population — an UNANCHORED VM route (`([a-zA-Z0-9._%+-]+)+@`, no `^`),
+    which `req_route_one_attempt`'s own `start_anchor` conjunct already
+    keeps admitted (`REQ_WHY "emitted"`) — compiled with `--emit-main` and
+    RUN, not merely stamp-checked, so a FUTURE widening of the same defect
+    class (admitting a route that is not genuinely one-attempt) has a real
+    behavioural detector independent of whether K64's own fix has landed.
+    Sabotage S274 is that widening's failing direction: dropping the
+    `start_anchor` conjunct entirely (every VM route admitted, anchored or
+    not) flips this witness's `REQ_WHY` to `"one-attempt"` and its no-`@`
+    subject from a fast NOMATCH to a step give-up. K64's own real
+    population stays in `tests/known_fail/k64_precheck_forced_vm.rxt`,
+    reached by the known-fail ratchet rather than by this section, because
+    its current answer is the give-up itself and a section asserting the
+    CORRECT answer here would be red on the clean tree.
 
 - **run_vm_frameless.sh** — [OPT-VMFL] STEP 0 (2026-09-02) `<PREFIX>_VM_
   FRAMELESS`, held to the VM PROGRAM'S OWN `goto *` COUNT rather than to the
