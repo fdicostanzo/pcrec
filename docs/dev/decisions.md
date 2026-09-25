@@ -8472,3 +8472,31 @@ census shows it moves an artifact's decision (R31/R35, D77). json/prose stay
 measurement controls. With this, requirements.md §3 Q1–Q10 are all ruled
 (Q1/Q2 D123 body; Q3 addendum; Q4 addendum 2; Q5/Q8 addenda 3/3a; Q6
 addendum 4; Q7 addendum 5; Q9 addendum 6; Q10 here).
+
+D122 ADDENDUM 4 (Frank, 2026-09-25, on the S1 run-pinned placement; "make
+sure such a change is well-considered and critiqued — it's close to the
+vital organs"):
+1. S1 takes OPTION B: `prefix_k.c` stays a pure ANALYSIS that publishes the
+   fact "run R is pinned at offset o"; the DECISION is ONE new row in
+   `dfa_pfs[]` (deny `-fno-run-prefilter`), emitting the existing
+   `<p>_ofsskip` with the run term. No decision table inside prefix_k.c —
+   one selector decides every scan form (the S1 note's first "stage-1 table"
+   shape is withdrawn: it steered form selection through a second table).
+2. `dfa_pfs[]` IS THE ENGINE-NEUTRAL CANDIDATE-FINDING TABLE (compare_stack
+   L3) — "same table, different hats": every row answers "the next position
+   ≥ p where a match could start"; only the CONSUMER differs (the DFA
+   re-enters its machine there — `reseeds`; the VM begins an attempt
+   there). The VM hybrid already reuses it (emit_vm.c:10758). When
+   [OPT-VMSEED] is built, the no-DFA VM's seed is added as rows / a VM
+   consumer hook on THIS table (generalized, renamed if useful,
+   implement-then-replace) — NEVER a VM-local search table. Engine appears
+   only in a row's predicate and its emit hook. A later arch-specific scan
+   is then one row serving both engines.
+3. PROCESS BAR for any change to this table's shape (S1's row, the
+   engine-neutral generalization, VMSEED): a design revision, then a FULL
+   D6 panel (not a light one) with distinct lenses — answer soundness,
+   selection/axis semantics (deny flags, test-axes, stamps, D76), the
+   hybrid/VM consumer contract — before any build; the build then passes
+   answer-identity over corpus × every startpos × all engines, the identity
+   gates, test-axes, ASan/UBSan on moved artifacts, and a sabotage row per
+   new predicate.
