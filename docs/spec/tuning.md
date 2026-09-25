@@ -2523,7 +2523,7 @@ condition is part of this claim and not only of G2's cost argument. Removing
 either rule outright is answer-invisible (the pre-check comes back and only
 costs time), which is why S269 and S270 are structural rows; removing the
 LINEARITY CONDITION is answer-detectable (NOMATCH becomes `PCREC_ERR_STEPS`),
-and S273 is that row, detected by `tests/base/k64_precheck_forced_vm.rxt`.
+and S274 is that row, detected by `tests/base/k64_precheck_forced_vm.rxt`.
 
 **The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
 FOUR-TOKEN set:

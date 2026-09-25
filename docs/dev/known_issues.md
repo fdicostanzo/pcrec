@@ -22,7 +22,7 @@ NOMATCH after one `memchr` at 0 VM steps; the bench's five subjects answer
 as PCRE2 does (71 no-match / 4 match over the 75, as at `b1885a83`).
 Regression: `tests/base/k64_precheck_forced_vm.rxt` (4 of its 9 cells fail
 on 6ef76820-behaviour, all pass after), `tests/codegen/run_prechecks.sh`
-§5.6, sabotage S273 (DETECTED, `corpus:4fail/5pass`,
+§5.6, sabotage S274 (DETECTED, `corpus:4fail/5pass`,
 `prechecks:2fail/256pass`). Spec: `docs/spec/tuning.md` §2.29's G2 and
 answer-identity paragraphs corrected. Emitted-C census: 176 of 6,634
 artifact-configs move, every one `one-attempt` → `emitted` on a framed,

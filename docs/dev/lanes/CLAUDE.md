@@ -2912,7 +2912,7 @@ never edited afterwards.
   VM arm declines the pre-check only on a LINEAR one attempt (an exact hybrid
   in front, or a frameless program — `Job.vm_frameless`), one conjunct in
   `req_route_one_attempt`. Regression `tests/base/k64_precheck_forced_vm.rxt`
-  + `run_prechecks.sh` §5.6 + S273 (answer-detectable, unlike S269/S270);
+  + `run_prechecks.sh` §5.6 + S274 (answer-detectable, unlike S269/S270);
   census `docs/dev/optloop/admitfix/k64_census.py`: 176 movers, 41 of them
   on the AUTO route (backref / linked-call VM artifacts, which have no hybrid
   to be exact) — a finding against the brief's prediction, covered by the

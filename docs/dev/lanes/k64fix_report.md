@@ -105,10 +105,10 @@ ruled it (docs/dev/known_issues.md K64; cycle2_admitfix_reading.md §1.8 A).
 
   It passes **258/0** on the fix. On b8aa188e it goes **256/2**: the two
   "emitted" rows fail.
-- **Sabotage S273** (`tests/mech/sabotages/S273_precheck_g2_vm_linearity_removed.sh`)
+- **Sabotage S274** (`tests/mech/sabotages/S274_precheck_g2_vm_linearity_removed.sh`)
   plants the pre-K64 VM arm. `SAB_HARNESS_TARGET` aims the corpus arm at the
   new `.rxt`, and `SAB_REACH` probes the clean tree (framed, unguarded, keeps
-  its pre-check). The `run_sabotage_matrix.sh S273` run scored it
+  its pre-check). The `run_sabotage_matrix.sh S274` run scored it
   **DETECTED: `corpus:4fail/5pass`, `prechecks:2fail/256pass`**, with
   0 unexpected, 0 undetected, 0 unreached and 0 anomalies. The highest S-id
   on main was S272.
@@ -120,8 +120,8 @@ ruled it (docs/dev/known_issues.md K64; cycle2_admitfix_reading.md §1.8 A).
   - Its harness arm (full corpus, expected green) was NOT run. It is owed at
     `make mech`.
   - S269 and S270's "measured on the clean tree at 250" figures now read 258.
-- `tests/mech/CLAUDE.md` gains the S273 table row and a paragraph saying
-  S273 is the one plant in the admission family a corpus can see.
+- `tests/mech/CLAUDE.md` gains the S274 table row and a paragraph saying
+  S274 is the one plant in the admission family a corpus can see.
 
 ## Re-pins (readers found by grep)
 
@@ -140,7 +140,7 @@ ruled it (docs/dev/known_issues.md K64; cycle2_admitfix_reading.md §1.8 A).
 
 - `docs/dev/lanes/admitimpl_answerdiff.py` ran auto-route arms only. It is a
   one-shot lane instrument that nothing re-runs, so editing it closes
-  nothing. Its standing replacement is the new corpus file plus S273, which
+  nothing. Its standing replacement is the new corpus file plus S274, which
   put a forced-VM witness where every `make test` sees it.
 - `tests/axes/run_axes.sh:780` counts a one-sided give-up as "budget-bound"
   and never as a failure. Changing that is a policy change to a multi-hour
@@ -163,7 +163,7 @@ ruled it (docs/dev/known_issues.md K64; cycle2_admitfix_reading.md §1.8 A).
   rx_search symbol)"). It is **pre-existing and not mine**: the same script
   run with `PCREC=<b8aa188e build>` fails identically. It is a darwin
   Mach-O `nm` issue. Every other codegen script is green, including the
-  sab-anchor tripwire, which resolves S269's re-anchor and S273's new anchor.
+  sab-anchor tripwire, which resolves S269's re-anchor and S274's new anchor.
 - **Owed:**
   - the abi ruling, and the bump ritual if it is ruled;
   - the full `make test`, after the manager's slot go (log path in the
