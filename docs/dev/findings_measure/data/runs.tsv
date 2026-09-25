@@ -1,0 +1,17 @@
+capability/file-ext-order	2e746172	b'.tar'	4
+capability/keyword-prefix-order	696e	b'in'	2
+capability/logparse-atomic-removed	3a20	b': '	2
+capability/logparse-atomic	3a20	b': '	2
+capability/nested-comment-rec	2a2f	b'*/'	2
+capability/router-prefix-order	2f75736572	b'/user'	5
+capability/tag-depth3-bound	3c2f	b'</'	2
+capability/tag-pair-match	3c2f	b'</'	2
+capability/wild-secrets-github-pat	6769746875625f7061745f	b'github_pat_'	11
+capability/wild-secrets-slack-webhook-url	3a2f2f	b'://'	3
+capability/wild-semdiv-altorder-foo-foobar-rustregex	666f6f	b'foo'	3
+capability/wild-semdiv-dollar-trailing-newline-pcre2	616263	b'abc'	3
+capability/wild-waf-crs-942500-comment-obfuscation	2a2f	b'*/'	2
+capability/winpath-near-miss	3a5c	b':\\'	2
+waf/union	756e696f6e	b'union'	5
+waf/select	73656c656374	b'select'	6
+waf/from	66726f6d	b'from'	4

@@ -1,0 +1,5 @@
+# log_lines.txt and json.txt are NOT committed (R29: no clearly permissive
+# redistribution licence at fetch time) -- re-fetch with
+# ../scripts/fetch_corpora.sh, checked against ../manifest.tsv.
+log_lines.txt
+json.txt

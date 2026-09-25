@@ -1,0 +1,42 @@
+{
+  "web_request": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 58620,
+    "trigram_kept": 11724,
+    "trigram_dropped": 0,
+    "token_bytes": 47603,
+    "token_kept": 3315,
+    "train_len": 800000,
+    "test_len": 200000
+  },
+  "log_lines": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 13550,
+    "trigram_kept": 2710,
+    "trigram_dropped": 0,
+    "token_bytes": 66254,
+    "token_kept": 4000,
+    "train_len": 230278,
+    "test_len": 57570
+  },
+  "prose": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 44110,
+    "trigram_kept": 8822,
+    "trigram_dropped": 0,
+    "token_bytes": 44211,
+    "token_kept": 4000,
+    "train_len": 590436,
+    "test_len": 147610
+  },
+  "json": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 23225,
+    "trigram_kept": 4645,
+    "trigram_dropped": 0,
+    "token_bytes": 19281,
+    "token_kept": 1338,
+    "train_len": 152729,
+    "test_len": 38183
+  }
+}
