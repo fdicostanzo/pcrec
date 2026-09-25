@@ -783,6 +783,70 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
         indent);
 }
 
+/* [K65] Writes the pre-check's second half on a VM route with no DFA scan in
+ * front: a `memchr` for every member of the necessary set the first half did
+ * not already test, any absent one answering NOMATCH.
+ *
+ * WHY THIS ROUTE AND ONLY THIS ONE. The pre-check is sound on any member, so
+ * elsewhere which one it tests is a SPEED choice. Here it is also the call's
+ * only linear NO-MATCH PROOF — a backreference or a linked call declines the
+ * hybrid, so nothing else scans the window — and a backtracking program that
+ * gets no proof can spend its whole step budget and give up. With one member
+ * tested, the same subject answered NOMATCH or `PCREC_ERR_STEPS` according to
+ * the pick (`(x?)([a-z]+)+Z.@\1` on 31 `a`s + "Zb": `@` absent, `Z` present;
+ * the byte encoding's prior picks `Z`, every other encoding `@`). Testing
+ * every member makes the proof a fact about the SET, which is the pattern's.
+ * A DFA-scanning artifact needs none of this: its scan is already linear in
+ * the window whatever the pre-check tests.
+ *
+ * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: `Job.req_byte`
+ * for the one-byte form, every byte of the run for the run form (a window
+ * holding the run holds each of its bytes). Members go out in ascending byte
+ * order; the order moves no answer, and the rarest member has already been
+ * scanned first by the half above.
+ *
+ * Emits nothing where no member is left, so an artifact whose set is its pick
+ * alone is byte-identical to the shape before this. Runs only after the first
+ * half, which has already returned on an empty window, so no `memchr` here
+ * can see a NULL subject. */
+static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
+                              const char *posvar, const char *subjvar,
+                              const char *lenvar)
+{
+    const ReqSet *set = &cx->job->req_set;
+    const ReqRun *r = &cx->job->req_run;
+    bool done[256] = { false };
+    int b, k, n = 0;
+    if (pcrec_artifact_has_dfa_scan(cx)) return;
+    if (r->len >= 2) for (k = 0; k < r->len; k++) done[r->bytes[k]] = true;
+    else done[cx->job->req_byte] = true;
+    for (b = 0; b < 256; b++)
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) n++;
+    if (n == 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [K65] every match also contains each byte below; with no DFA\n"
+        "%s * scan in front this is the call's only linear no-match proof,\n"
+        "%s * so it tests the whole necessary set, not one member of it. */\n",
+        indent, indent, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "%s{\n%s    static const unsigned char rq_set[] = {",
+                    indent, indent);
+    for (b = 0, k = 0; b < 256; b++)
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
+            pcrec_sb_printf(c, "%s %d", k++ ? "," : "", b);
+    pcrec_sb_printf(c,
+        " };\n"
+        "%s    for (size_t rq_i = 0; rq_i < sizeof rq_set; rq_i++)\n"
+        "%s        if (!memchr(%s + %s, rq_set[rq_i], %s - %s))\n"
+        "%s            return 0;\n"
+        "%s}\n",
+        indent,
+        indent, subjvar, posvar, lenvar, posvar,
+        indent,
+        indent);
+}
+
 /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
  * BOTH engines' search entries — one text, so the two routes cannot test the
  * byte in two different shapes. Emits nothing where `Job.req_byte` declined,
@@ -806,7 +870,11 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
  * `%d` AND NOT A CHARACTER LITERAL: the byte may be any of 256 values,
  * including ones no source character spells and ones that would need escaping
  * inside a `'...'`. The decimal form has one spelling for all of them, and
- * the same number reaches `<PREFIX>_REQ_BYTE` from this same field. */
+ * the same number reaches `<PREFIX>_REQ_BYTE` from this same field.
+ *
+ * [K65] On a VM route with no DFA scan the byte (or run) is followed by a
+ * test of every other necessary-set member, `emit_req_set_rest` above, so the
+ * no-match proof there does not rest on the pick. */
 void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar)
@@ -828,6 +896,7 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
      * sabotage row S265's anchor is in it. */
     if (cx->job->req_run.len >= 2) {
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
+        emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
         return;
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -843,6 +912,7 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
         indent, lenvar, posvar,
         indent, subjvar, posvar, b, lenvar, posvar,
         indent);
+    emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
 }
 
 /* Writes the search entry's attributes, signature and opening brace, plus

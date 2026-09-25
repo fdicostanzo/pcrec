@@ -579,13 +579,19 @@ static int rn_window_start(const RbRun *r, int idx, bool bytekey)
  * for why the empty set and the empty run are the safe answers, why the
  * member returned is the argmin of a frequency prior under `byte` and the
  * rightmost elsewhere, and why a run's presence MOVES the byte: there is one
- * emitted `memchr`, and `<PREFIX>_REQ_BYTE` reports what it tests. */
-int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run)
+ * emitted `memchr`, and `<PREFIX>_REQ_BYTE` reports what it tests.
+ *
+ * [K65] The whole set is published too, whatever was picked from it: the
+ * pick is a SPEED choice, and the one route whose ANSWER on a hostile subject
+ * would otherwise follow it tests every member instead. */
+int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run,
+                   ReqSet *set)
 {
     bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
     RbVal v = rb_walk(root);
     RbRun r = v.runs.best;
 
+    memcpy(set->bits, v.set.bits, sizeof set->bits);
     memset(run->bytes, 0, sizeof run->bytes);
     run->len = 0;
     run->idx = 0;
