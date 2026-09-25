@@ -2925,6 +2925,14 @@ and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
   not exist in source text read before any compiler sees it. See
   `run_encoding_checks.sh`'s own DD12a(i) section header for the full
   account and docs/dev/lanes/encchk_report.md for the validation transcript.
+  **[enctriage] 2026-09-25**: five reds on the revived instrument were ONE
+  class — check gaps, no DD-12 (7) violation: four encoding-keyed emission
+  choices landed while it compared zero pairs ([EMIT-VERB] dropped the K50
+  attempt guard's comment marker; [OPT-ANCHOR-VM] moved the K49 advance's
+  anchor line; [OPT-ENDWIN] and [OPT-FREQPICK]/[OPT-PRECHECK-ADMIT] choose
+  per encoding at compile time and stamp the choice), plus `var_valid`'s call
+  site. Each is now a named, COUNTED, floored region held to its own stamp
+  (`SELECT_BAD`); docs/dev/lanes/enctriage_report.md.
 - **DD12a(ii) THE SECOND-BACKEND VALIDATION of D58's revisit-when names.** The
   seam's four residual entries appear in a utf8 artifact under the SAME
   signatures the byte backend emits — the property [M6.6.2] wave D

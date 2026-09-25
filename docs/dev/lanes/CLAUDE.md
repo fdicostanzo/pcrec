@@ -3091,3 +3091,15 @@ never edited afterwards.
   buckets, each with a non-vacuity arm), and building one correctly is
   check-design work outside this lane's time box — left for a ruling on
   the bucket's shape.
+- `enctriage_report.md` — TRIAGE of `run_encoding_checks.sh`'s five reds
+  (2026-09-25, lane enctriage, opus). NO DD-12 (7) violation: all five
+  were CHECK GAPS from four emission changes that landed while DD12a(i)
+  compared zero pairs ([EMIT-VERB]'s nonessential K50 marker,
+  [OPT-ANCHOR-VM]'s `attempt_max` guard, [OPT-ENDWIN]'s byte-only clamp,
+  [OPT-FREQPICK]/[OPT-PRECHECK-ADMIT]'s byte-keyed prior), plus
+  `var_valid`'s call site. The three "[K50]" reds share those causes, and
+  the manifest is untouched. Each cause is now a named, counted, floored
+  region held to its own stamp (`SELECT_BAD`), sabotage-validated four
+  ways. 11/0 at slice 250; the full-population run is OWED. Side finding:
+  mech's `encoding` arm has no clean baseline, so S229/S-U8 read that arm
+  DETECTED by default while the script was red.
