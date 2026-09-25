@@ -13,7 +13,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ## K65 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
 
-**Status: deferred** — owner to be ruled (fix shape below). Pre-existing on
+**Status: deferred** — FIX SHAPE RULED 2026-09-25 (D123 addendum 8 item 1): candidate (a), pre-check every necessary-set member on no-DFA-front VM routes; a fix lane is owed (next session). Pre-existing on
 main; not a wrong answer (a give-up is honest under `docs/spec/limits.md`
 §1), but an answer → give-up divergence driven by a SPEED decision, and it
 falsifies `src/opt/reqbyte.c`'s / `src/opt/prefix_k.c`'s "can never cost a
