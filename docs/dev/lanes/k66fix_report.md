@@ -177,3 +177,127 @@ Invariant: S1 reads `Job.req_run`, so that field must not fork.
 - `docs/dev/known_issues.md` carries main's K66 block, marked fixed. Main
   added the same block at the same place, so expect a both-added conflict
   there. Resolve by keeping this branch's version.
+
+## Landing (2026-09-25, resumed session, rebase onto main `84b4a7a9`)
+
+Rebased the whole 16-commit stack (k65fix's 5 + k66fix's own 4 + the two
+lanes' abi/re-pin/report commits) onto main `84b4a7a9` (which had picked up
+`lane/chkgaps` and `lane/s1r3`'s K66 filing in the meantime). `git rebase
+main` hit conflicts at three commits; each is resolved and recorded below.
+
+**Conflict 1/2 — `tests/codegen/run_prechecks.sh` §5.7 vs §5.8** (k65fix's
+first WIP commit and its later re-pin commit). Main already carried §5.6
+(K64) and §5.7 (chkgaps' own unanchored G2 positive control, filed at
+`84b4a7a9` itself). K65's WIP had ALSO opened its section as §5.7. Resolved
+by renumbering K65's whole section to §5.8 (heading, all seven `[5.7]`/
+`[5.7r]` bracket tags, and the `s57*`/`S57_PAT` variable/file names — not
+just the number) while keeping chkgaps' §5.7 verbatim as HEAD's content, per
+the brief's instruction.
+
+**Conflict 3 — `docs/dev/known_issues.md`**. HEAD (main) carried K66 as OPEN
+(filed by s1r3) beside the *unfixed* K65 header line; the incoming commit's
+diff only touched K65's header (adding "FIXED 2026-09-25 —"). Resolved by
+keeping K66's OPEN block (K66 becomes FIXED two commits later, when k66fix's
+own commits replay) and taking the incoming FIXED header for K65.
+
+**A fourth conflict, `tests/rxtsource/run_rxtsource_tests.sh`'s CENSUS_*/
+RUNSH_* pins**, merged with the SAME three-way shape at the same two
+commits: HEAD carried chkgaps' net +0/+0/+0 (a known_fail file added then
+retired at the chkgapsmerge landing), the incoming k65fix diff computed its
+own +1/+3/+24 against the identical pre-chkgaps baseline (217/4001/29129),
+so the two deltas summed cleanly to 218/4004/29153 with no arithmetic
+re-derivation needed for THIS pair — merged by concatenating the two
+dated notes and taking the incoming numbers.
+
+**The renumbering left a live bug the rebase's own conflict markers did not
+show**: `lane/k66fix`'s OWN commit (built on top of `lane/k65fix`'s pre-rebase
+tip, before chkgaps existed) had opened ITS section as "§5.8" too — the exact
+number K65 now occupies after the fix above — because at the time it was
+written, K65 really was §5.7 and K66 really was §5.8. This commit applied
+CLEANLY during the rebase (no conflict, since nothing in main's diff touched
+that hunk), so it silently reintroduced a duplicate-§5.8 collision that
+`bash -n`, the build, and `make strict` all missed (nothing gates on section
+NUMBERS). Found by re-grepping `^# §5\.` after the rebase finished. Fixed the
+same way: K66's section (heading, all `[5.8]`/`[5.8r]` tags, `s58*` variable/
+file names) renumbered to §5.9, in a separate commit (`84741e51`) on top of
+the completed rebase.
+
+**Every other reader of the old numbers was swept by grep**, not assumed
+fixed by the section-header edit alone: `docs/dev/known_issues.md`'s K65
+entry (`§5.7` → `§5.8`, with a one-line note on why), `docs/dev/plan.md`'s
+`[OPT-PRECHECK-ADMIT]` row (both K65's and K66's inline section citations),
+`tests/codegen/CLAUDE.md`'s `run_prechecks.sh` entry (its own §5.7/§5.8
+sub-bullets, renumbered, with a parenthetical explaining why), this file's
+own `docs/dev/lanes/CLAUDE.md` index bullets for `k65fix_report.md`/
+`k66fix_report.md` (added a renumbering note rather than editing the
+per-lane report bodies, which stay historical per that directory's own
+convention), and the `S269`/`S270`/`S277`/`S278` sabotage rows' `SAB_DOC_FIGURE`
+prose and inline doc-comments (section numbers AND the stale check-count
+figures those figures quoted). Left untouched, correctly: every `§5.6`
+(K64, unmoved) and `§5.7` (chkgaps, unmoved) reference found by the same
+grep sweep, and the per-lane report bodies (`k64fix_report.md`,
+`k65fix_report.md`'s own body, `chkgaps_report.md`, `chkgapsmerge_report.md`)
+— historical, never edited after merge.
+
+**Re-derived by running, not by arithmetic, per the brief's instruction**:
+`bash tests/codegen/run_prechecks.sh` standalone on the fixed tree reads
+**278 passed / 0 failed** — higher than either lane's own predicted total
+(274) because chkgaps' §5.7 and admin3's §3.6 (five extra `-e utf8`
+witnesses) both landed on main concurrently with the k65fix/k66fix stack
+and neither lane's own arithmetic could have seen the other's addition.
+S269/S270's SAB_DOC_FIGURE "clean tree" total updated to 278 to match;
+S277/S278's own figures re-measured live (below) rather than copied
+forward.
+
+**Validation, in order, on the rebased + fixed tree** (commit `84741e51`,
+then `f0b54f0b` for the sabotage-figure update):
+
+- `make -j4 CC=gcc-16`: clean.
+- `make strict CC=gcc-16`: clean ("whole tree compiles clean with -Werror
+  -Wshadow").
+- `bash tests/mech/run_sabotage_matrix.sh S274` (ran alone; the script
+  takes exactly one filter argument, not a space-separated list — a second
+  invocation covered the other four): **DETECTED**,
+  `prechecks:2fail/276pass, corpus:4fail/5pass`.
+- `bash tests/mech/run_sabotage_matrix.sh S275`: **DETECTED**,
+  `clsfold:78fail/85pass` (unrelated to this stack — the standing VM
+  class-fold row from chkgapsmerge — included because it was in the
+  brief's named list).
+- `bash tests/mech/run_sabotage_matrix.sh S276`: **DETECTED**,
+  `prechecks:20fail/256pass`.
+- `bash tests/mech/run_sabotage_matrix.sh S277`: **DETECTED**,
+  `reach:ok(1/1), prechecks:6fail/272pass, corpus:9fail/15pass`.
+- `bash tests/mech/run_sabotage_matrix.sh S278`: **DETECTED**,
+  `reach:ok(1/1), prechecks:3fail/275pass, corpus:8fail/8pass`.
+- `make test-codegen CC=gcc-16`: `run_group: 10/11 scripts passed`. The
+  one red is `run_inline_capability.sh` ("nm could not read arm_a.o (no
+  rx_search symbol)") — the standing darwin Mach-O `nm` probe red, A/B'd
+  as pre-existing by k64fix/k65fix and ~20 other lane reports; not this
+  stack's.
+- `make test-rxtsource CC=gcc-16`: exit 0, `checks passed: 214 / checks
+  failed: 0`, including the re-pinned census (219/4006/29169) and C3. One
+  `RECORD:` line (python 3.9 vs the pinned 3.14's population-count deltas)
+  — the box's own pre-existing darwin/python-version note, unrelated.
+- `make test-recursion-identity CC=gcc-16` (opt-in gate, the (B) FILEPIN
+  re-pin): `checks passed: 16 / checks failed: 0`. Comparison (B),
+  whole-file vs the abi-35 pin `a446a99e`: 2,568 call-free patterns
+  identical, 0 differing, 0 refusal mismatches, on both the default and
+  `-fno-prefilter` axes. Comparison (A), program-region vs the frozen
+  pre-module pin `ac4917d`: 2,145/2,167 identical, 0 differing, every
+  named exception bucket (bref-rename/var-construct/island/fold/
+  size-term-moved) accounted for with zero UNSTAMPED-BUT-DENY-MOVES or
+  UNSTAMPED-BUT-FOLD-DENY-MOVES anomalies. Confirms the K66 abi-35 FILEPIN
+  is correctly set.
+- `make test CC=gcc-16`: launched **detached** (`nohup … & disown`) as the
+  last act, per BOILERPLATE's DO-THEN-FINISH — log
+  `/tmp/k66land/maketest.log`, started 2026-09-25 19:31:18 EDT. **OWED.**
+  Read the verdict from make's own `*** [test-X] Error` lines (never
+  `sections ran:` alone) plus a `FAIL:` grep; the one expected red is the
+  same standing `run_inline_capability.sh` nm probe named above.
+
+## Delivered
+
+Tip: `f0b54f0b` on `lane/k66fix`, rebased cleanly onto main `84b4a7a9`
+(now 84741e51/f0b54f0b past it). Not merged, per the brief. `make test`
+is the only owed item; everything else above is measured green on this
+tree.
