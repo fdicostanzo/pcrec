@@ -1400,11 +1400,11 @@ general-mechanisms memory).
 
 | spec document | hunk | step |
 |---|---|---|
-| `docs/spec/rxt_format.md` | head table: the `analysis <name>` bundle opener replaces file-level `freq <name>`; a new "`analysis` — the bundle" section (BUNDLE scope, `include <name>` in the SEARCH spelling, include_next, AT_MOST_ONE per kind); the DATA section rewritten (`encoding`, `serves`, `row` key grammar per kind, rows ascending); CONFIG `analysis` becomes "names ONE analysis (a bundle)" (D123's consequence text); provenance's data-parent conditions (§0.10). Also REQ §4's two noted spec drifts: `lib` contents being read since W1.3, and `provenance`'s `required` flag | B0 (format), B2 (resolution semantics) |
-| **`docs/spec/findings.md` (NEW)** | the contract: terms (§2.1); kinds and key grammars; the closed query/derivation/encoding vocabularies; §2.5 normalization with test vectors; §2.6 `markov1` + the `L(x)` algorithm and vectors; resolution stops + chain algorithm + include_next + terminal; per-reader NONE fallbacks (§6.2); stamp grammar + digest byte layout; the analyzer's CLI, one-pass table, merge rules, declaration defaults and disclosure table | B1 (core), B2 (resolution), B3/B6 (analyzer), B4 (`markov1`), B5 (`cpfreq`) |
-| `docs/spec/cli.md` | `--analysis`; `-I`/`--lib-path` legal with `--pattern`; §2 "Listing surfaces" count EIGHT → TEN with `--list-analyses`/`--list-analysis`; §3 the two notes and the new hard errors | B2 |
-| `docs/spec/table_contract.md` | two rows in the Scope table | B2 |
-| `docs/spec/match_api.md` | §6 `rx_info.findings`; the §6.3 observability macro `<P>_FINDINGS`; the §6 abi change-log line 32 → 33 | B1 |
+| `docs/spec/rxt_format.md` | head table: the `analysis <name>` bundle opener replaces file-level `freq <name>`; a new "`analysis` — the bundle" section (BUNDLE scope, `include <name>` in the SEARCH spelling, include_next, AT_MOST_ONE per kind); the DATA section rewritten (`encoding`, `serves`, `row` key grammar per kind, rows ascending); CONFIG `analysis` becomes "names ONE analysis (a bundle)" (D123's consequence text); provenance's data-parent conditions (§0.10). Also REQ §4's two noted spec drifts: `lib` contents being read since W1.3, and `provenance`'s `required` flag. **[r2 M-S11] Named sites:** (a) the head table's **`lib` row (`rxt_format.md:54`) is STALE** — it says "its CONTENTS are not read", false since W1.3 — rewritten in the same hunk; (b) the "config keys" paragraph at `:67-69` and the CONFIG section at `:880` ("`analysis <list>` names data blocks") become "names ONE analysis (a bundle)"; (c) the `--list-source` row table (`:1166-1169`: `kind`'s value set, `name`, `value`) gains an `analysis` row kind (name = the bundle name, value = its `include`) and states that a bundle's `include <x>` is NOT a head `include` row; (d) the bundle-level collision rule, lowercase names, the fragment refusal and the buffer-mode refusal | B0 (format), B2 (resolution semantics) |
+| **`docs/spec/findings.md` (NEW)** | the contract: terms (§2.1); kinds and key grammars; the closed query/derivation/encoding vocabularies; §2.5 normalization with test vectors; §2.6 `markov1` + the `L(x)` algorithm and vectors; resolution stops + chain algorithm + include_next + terminal; per-reader NONE fallbacks (§6.2) and per-reader answer/give-up guarantees (§6.2a); the bundle-level collision rule; stamp grammar + digest byte layout (§7's two tags) + the name-disclosure statement; the analyzer's CLI, one-pass table, merge rules, declaration defaults and disclosure table | B1 (core), B2 (resolution), B3/B6 (analyzer), B4 (`markov1`), B5 (`cpfreq`) |
+| `docs/spec/cli.md` | `--analysis` (FILL-ONLY); `-I`/`--lib-path` legal with `--pattern` AND on every query mode that resolves a bundle (the `-I DIR` entry at `cli.md:592` and each such query's own entry) [r2 M-S11]; **the file-wins section (`cli.md:~660-700`): `--analysis` joins `--tune` as a NON-exception, with its conflict note in the same shape, and `--analysis` inside a config's `pcrec` line is refused** [r2 M-S11, D123-8 item 2]; §2 "Listing surfaces" count EIGHT → TEN with `--list-analyses`/`--list-analysis` (both views); §3 the notes and the new errors | B2 |
+| `docs/spec/table_contract.md` | two rows in the Scope table, and the producers' free-text columns named under its escaping rule [r2 M-S10] | B2 |
+| `docs/spec/match_api.md` | §6 `rx_info.findings`; the §6.3 observability macro `<P>_FINDINGS` (incl. the name-disclosure sentence, [r2 A-7]); the §6 abi change-log line **from the number current at landing to the next** [r2 S-F11]; **the `<PREFIX>_REQ_BYTE` entry's prior sentence (`match_api.md:~2755`: "by pcrec's shipped static byte-frequency prior … under every encoding that prior is not keyed to") rewritten to "by the resolved analysis's `byte-rate` answer, with the rightmost rule as tiebreak and as the whole answer where the answer is NONE"** [r2 M-S11] | B1 |
 | `docs/spec/tuning.md` | §2.27 and the `[OPT-REQPOS]`/G1/offset-k paragraphs: "the prior is read only under `byte`" becomes "the rates are whatever the resolved analysis declares; the default declares `byte` only"; offset-k's cardinality NONE fallback | B1 |
 | `docs/spec/limits.md` | rows for `PCREC_MAX_FIND_{CHAIN,BUNDLE_BYTES,STORE_BYTES,COUNT,CPFREQ_ROWS,RUN}` and `PCREC_FIND_FLOOR_PPM` (§8.3) | B1/B2 |
 | `lib/pcrec.h` contract comment | the `pcrec_options` fields (§5.3) | B2 |
@@ -1426,18 +1426,18 @@ general-mechanisms memory).
 | R7 four sources, one shape | ✓ strengthened | one READER too (text-embedded store, §0.11) |
 | R8 resolution unit (name, kind) | ✓ | per-kind along the chain (§4.4), sharpened to per-QUERY from one block (§0.3) |
 | R9 no blending | ✓ strengthened | one query, one block, and derivations never read two blocks |
-| R10 precedence | **CHANGED** by D123 | there is no config list. Chain order is the bundle's own `include`. The CLI replaces the one name, with a note |
+| R10 precedence | **CHANGED** by D123 and D123-8 | there is no config list. Chain order is the bundle's own `include`. The CLI only FILLS a config with no analysis; a conflict keeps the file's and notes it (D93) |
 | R11 per target | ✓ | configs per target |
 | R12 `--pattern` | ✓ | `-I` + `--analysis` (§0.2) |
 | R13 no ambient state | ✓ | §4.1 |
 | R14 in-tree source of truth | ✓ | `src/findings/*.rxt` |
-| R15 two flags | **CHANGED** | one naming flag. A FILE is reached through `-I` + name = file, so `-I` stays the only path concept (§4.2). §16 Q3 asks about path sugar |
+| R15 two flags | **CHANGED** | one naming flag. A FILE is reached through `-I` + name = file, so `-I` stays the only path concept (§4.2). No path sugar (§16 Q3, ruled) |
 | R16 `.rxt` | ✓ | config resolves; block scope DECLINED with its reason (§3.2) |
 | R17 library | ✓ | three fields; the library parses (§5.3) |
 | R18 introspection | ✓ | `#section resolution` + the stamp |
 | R19 deterministic | ✓ | equal consumed values give an equal digest, so an identical artifact |
 | R20 stamp over values | ✓ | §7 |
-| R21 one abi event | ✓ | 32 → 33 carries the stamp, the field and the gate move |
+| R21 one abi event | ✓ | one bump (the next number at landing) carries the stamp, the field and the gate move |
 | R22 data change visible | ✓ | the digest in the stamp (§7) |
 | R23 gate in accessor | ✓ | §6.3, §11.7 |
 | R24 NONE explicit | ✓ | per-reader fallbacks (§6.2). C4's fallback is cardinality, deliberately and censused (§0.8) |
@@ -1454,43 +1454,36 @@ general-mechanisms memory).
 | R32 limits | ✓ | §8.3 |
 | R33 footprint | ✓ | sparse counts; ≈55–75 KB total (§8.3) |
 | R33a wording | ✓ | §9 |
-| R34 answer identity | ✓ | §11.1 |
+| R34 answer identity | ✓ strengthened | answers AND give-ups (§6.2a, §11 head, §11.1) |
 | R35 census | ✓ | §11.3, named manifests |
 | R36 witnesses | ✓ | §11.9 |
-| R37 gate control | **CHANGED** by D122-2(3) | "zero movers under `utf8`" becomes "zero movers except the named C4 manifest" |
+| R37 gate control | **CHANGED** by D122-2(3) | "zero movers under `utf8`" becomes "zero movers except the named per-ARTIFACT manifest" (§11.3) |
 | R38 perf claims name the analysis | ✓ | B4's acceptance |
 | R39–R41 rows | ✓ | §6.1, §11.1, §11.7 |
 
 ---
 
-## 16. Open questions for Frank
+## 16. Open questions for Frank — ALL THREE RULED (D123-8 item 6)
 
 1. **The chain's implicit terminal is the BUILT-IN `default`, by identity,
-   not by name (§0.6).** A user changes "the default" only by naming their
-   own bundle. The alternative, resolving `default` by name so a `-I` dir
-   can shadow it globally, is more "editable" but lets a directory added
-   for `lib` silently move every artifact. **Rec: by identity**, as
-   designed.
-2. **`log`'s licensable source (§0.9).** RUNEST's HDFS sample cannot be
-   redistributed. Options:
-   - (a) a sourcing lane looks for a permissively licensed, stably
-     retrievable real log corpus (pinned commit / DOI);
-   - (b) a `fidelity synthesized` generator, labelled as such (D123-6
-     allows it only where nothing is licensable);
-   - (c) ship `weblog` alone first.
+   not by name (§0.6).** **RULED: by identity**, as designed. A user
+   changes "the default" only by naming their own bundle.
+2. **`log`'s licensable source (§0.9).** **RULED: one sourcing-lane
+   attempt** for a permissively licensed, stably retrievable real log
+   corpus (pinned commit / DOI); failing that, a `fidelity synthesized`
+   corpus, labelled as such. `weblog`'s source (elastic/examples,
+   Apache-2.0) needs only re-pinning to a commit.
+3. **Path sugar for `--analysis`?** **RULED: no**; revisit on a user ask.
 
-   **Rec: (a), with (b) as its declared fallback.** `weblog`'s source
-   (elastic/examples, Apache-2.0) needs only re-pinning to a commit.
-3. **Path sugar for `--analysis`?** `--analysis ./dir/x.rxt` would mean
-   `-I ./dir --analysis x`. It is convenient, but it is a second spelling,
-   and it would decide by the value's SHAPE whether a name or a path was
-   meant. **Rec: no**; revisit on a user ask.
+Frank's condition on all three: "ok as long as these are small or
+reversible" — each is.
 
 (Deliberately NOT asked, because the design decides them with reasons:
 Route I (§4.2); text embedding (§0.11); the `rx_info` mirror (§7, D43);
 cardinality as C4's NONE fallback (§0.8, D122-2(3) accepted the movement);
 no block-scope `analysis` (§3.2). The critique loop may reopen any of
-them.)
+them. What the r2 panel left OPEN to Frank is listed in the review
+record's "OPEN FOR FRANK" section, not here.)
 
 ---
 
