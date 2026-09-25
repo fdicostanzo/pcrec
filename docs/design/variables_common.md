@@ -736,12 +736,28 @@ Nothing new is needed in either consumer.
 
 - **In a pattern**, `\$` is already an escaped literal `$` — today's PCRE2
   meaning, unchanged. And `${` only becomes a doorway when module `vars` is
-  enabled, so with the module off today's parse stands in full. That is
-  `design_callout_abi.md` §3's **collision rule** ("a spelling that
-  reinterprets a currently-valid pattern must be module-gated") satisfied by
-  the ordinary mechanism — and §0.2 shows the gate is protecting a population
-  of patterns that could never match, which is why enabling the module by
-  default later is a cheaper conversation than the rule normally makes it.
+  enabled. **[CORRECTED — lane varmvp, 2026-09-23,
+  `docs/dev/lanes/varmvp_report.md` §0.3.]** This sentence used to continue
+  "so with the module off today's parse stands in full," which contradicts
+  what shipped: `variables_pattern.md` §7's refusal table is what shipped,
+  and with the module off a pattern containing `${` is a NAMED REFUSAL
+  ("requires module 'vars'"), not a fall-through to `$`'s ordinary
+  end-of-line-assertion parse. The house rule (D34 ruling 5 /
+  `extension_design.md` §12) is that a recogniser is always live and
+  production is gated — `${` is recognised whether or not the module is
+  enabled, and the module gate decides whether recognition PRODUCES an
+  `A_VAR` node or a refusal — so "today's parse stands in full" was never
+  the right description of a gated construct's off state; it described a
+  spelling nothing recognises at all, which `${` never was. The collision
+  rule below is still satisfied, and by a stronger argument than the ordinary
+  module-gating mechanism gives most constructs: `design_callout_abi.md` §3's
+  rule exists to protect a currently-*working* pattern from reinterpretation,
+  and §0.2 proves the colliding spelling matches nothing under any option
+  combination, so the population the refusal protects is exactly zero
+  regardless of which of the two descriptions above is used — which is why
+  enabling the module by default later is a cheaper conversation than the
+  rule normally makes it, unchanged from the original point this paragraph
+  was making.
 - **In a replacement**, `$$` is a literal `$` in the core tier and `\$` is one
   under `subst-extended` — both **[RATIFIED]** at D38, both measured against
   PCRE2. The `$$` spelling is the one that works in every tier.
