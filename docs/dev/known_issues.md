@@ -129,7 +129,7 @@ now classifies a one-sided give-up as its own `GIVEUP1` bucket, and
 in `GIVEUP1_ALLOWANCE` (empty today — see `tests/axes/CLAUDE.md`). Neither
 change fixes the admission rule itself; the answer differential
 (`run_prechecks.sh` §5.6) closes the general SHAPE of the gap on an
-unanchored witness independent of this fix (sabotage S274), since a
+unanchored witness independent of this fix (sabotage S276), since a
 positive-answer check over K64's own anchored population would be red on
 the clean tree until the fix (§1.8 A) lands.
 

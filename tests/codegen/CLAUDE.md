@@ -924,7 +924,7 @@ decides whether to perform it — and then run the row through
     RUN, not merely stamp-checked, so a FUTURE widening of the same defect
     class (admitting a route that is not genuinely one-attempt) has a real
     behavioural detector independent of whether K64's own fix has landed.
-    Sabotage S274 is that widening's failing direction: dropping the
+    Sabotage S276 is that widening's failing direction: dropping the
     `start_anchor` conjunct entirely (every VM route admitted, anchored or
     not) flips this witness's `REQ_WHY` to `"one-attempt"` and its no-`@`
     subject from a fast NOMATCH to a step give-up. K64's own real
@@ -3259,7 +3259,7 @@ number itself** — 13 fold pairs, 3 near-miss pairs — so a future change to
 `pcrec_ascii_fold` that shrank either bucket is caught as a floor breach
 rather than silently read as "fewer pairs, fine".
 
-Sabotage S273 shifts the emitted compare's own constant (`hi` -> `lo` at
+Sabotage S275 shifts the emitted compare's own constant (`hi` -> `lo` at
 emit_vm.c:1655) — the "shift the emitted mask" case S228 cannot reach,
 since S228 only ever touches the recognizer that SELECTS the fold shape,
 never the line that RENDERS it. The plant makes `(byte | 0x20) == lo`
@@ -3267,7 +3267,7 @@ unsatisfiable for every fold pair (`lo` never carries bit 0x20, and
 `byte | 0x20` always does), so every one of the 26 real fold pairs loses
 its structural shape check (the emitted constant is no longer `hi`) AND
 both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
-(`tests/mech/run_sabotage_matrix.sh S273`) — while the 6 near-miss
+(`tests/mech/run_sabotage_matrix.sh S275`) — while the 6 near-miss
 (bitmap-shape) rows and SOURCE A's own checks stay green. Read the
 current DETECTED figure from a `make mech` run.
 

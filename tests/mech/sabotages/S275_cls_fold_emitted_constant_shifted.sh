@@ -1,4 +1,4 @@
-# S273 ([chkgaps] check-design closure) — THE EMITTED FOLD COMPARE'S OWN
+# S275 ([chkgaps] check-design closure) — THE EMITTED FOLD COMPARE'S OWN
 # CONSTANT SHIFTED: the fold form's OTHER unsound direction.
 #
 # WHAT IT BREAKS, AND WHY S228 CANNOT SEE IT. S228 (tests/base/cls_fold.rxt's
@@ -27,16 +27,16 @@
 # stay green -- the split that names the failure as the EMITTED LINE's, not
 # the recognizer's, exactly as S228's own split names the recognizer's
 # conjuncts by leaving the fold-PAIR rows green.
-SAB_ID="S273-cls-fold-emitted-constant-shifted"
+SAB_ID="S275-cls-fold-emitted-constant-shifted"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="clsfold"
 SAB_DESC="vm_cls_test's FOLD case prints (byte | 0x20) == lo instead of == hi -- an unsatisfiable compare (lo never carries bit 0x20) that loses BOTH members of every ASCII fold-pair class, everywhere the VM class-fold shape fires"
-SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane chkgaps, solo single-row scratch run via tests/mech/run_sabotage_matrix.sh S273): DETECTED, reach:ok(1/1), clsfold:78fail/85pass -- all 26 fold-pair witnesses fail their structural shape check plus both their lo/hi behavioural probes (3 of 5 checks each, 78 total), the 6 near-miss (bitmap-shape) witnesses and SOURCE A's own checks stay green. Read the current figure from a run."
+SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane chkgaps, solo single-row scratch run via tests/mech/run_sabotage_matrix.sh S275): DETECTED, reach:ok(1/1), clsfold:78fail/85pass -- all 26 fold-pair witnesses fail their structural shape check plus both their lo/hi behavioural probes (3 of 5 checks each, 78 total), the 6 near-miss (bitmap-shape) witnesses and SOURCE A's own checks stay green. Read the current figure from a run."
 SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/fp.c" --pattern "([Aa])x" && grep -q "0x20) == 97" "$REACH_TMP/fp.c" && echo REACH-CLS-FOLD-EMIT'
 SAB_REACH_EXPECT="REACH-CLS-FOLD-EMIT"
 SAB_COUNT=1
 SAB_BEFORE='        pcrec_sb_printf(b, "(%s | 0x20) == %d", byte, hi);'
-SAB_AFTER='        /* SABOTAGE S273: the emitted constant shifted from hi to lo --
+SAB_AFTER='        /* SABOTAGE S275: the emitted constant shifted from hi to lo --
          * unsatisfiable, since (byte | 0x20) never equals an uppercase
          * letter. */
         pcrec_sb_printf(b, "(%s | 0x20) == %d", byte, lo);'
