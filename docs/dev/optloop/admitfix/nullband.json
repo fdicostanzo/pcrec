@@ -1,0 +1,117 @@
+{
+ "bands": {
+  "large-subject-throughput|100ns-1us": {
+   "n": 6,
+   "min": -0.3607800312498575,
+   "max": 0.3456769503636128,
+   "median": 0.12806397888016813
+  },
+  "large-subject-throughput|<100ns": {
+   "n": 33,
+   "min": -29.683526694194825,
+   "max": 12.50751804330394,
+   "median": 0.9568984282485097
+  },
+  "large-subject-throughput|>=1us": {
+   "n": 160,
+   "min": -8.181480090201639,
+   "max": 6.751634686935083,
+   "median": 0.011394879146026202
+  },
+  "short-subject-search|100ns-1us": {
+   "n": 65,
+   "min": -3.798550075791249,
+   "max": 11.85372070495233,
+   "median": 0.05431947564213887
+  },
+  "short-subject-search|>=1us": {
+   "n": 130,
+   "min": -7.069102516123096,
+   "max": 2.5568572848569797,
+   "median": 0.024417333879955195
+  }
+ },
+ "n": 394,
+ "worst": [
+  [
+   6.751634686935083,
+   "wild-semdiv-empty-alt-repeat-pcre2",
+   "large-subject-throughput",
+   "auto-caps",
+   7015508.052631579,
+   7489169.527777777
+  ],
+  [
+   6.758100944792848,
+   "base10num-near-miss",
+   "large-subject-throughput",
+   "auto-nocaps",
+   16.031361974910418,
+   17.1147776
+  ],
+  [
+   6.826185843812529,
+   "trim-nested-star",
+   "short-subject-search",
+   "auto-nocaps",
+   406.97205098900616,
+   434.7527195218912
+  ],
+  [
+   7.179598396036224,
+   "base10num-near-miss",
+   "short-subject-search",
+   "auto-nocaps",
+   528.0753803524618,
+   565.9890718901094
+  ],
+  [
+   7.533957988022976,
+   "base10num-near-miss",
+   "short-subject-search",
+   "auto-caps",
+   527.6496055508032,
+   567.4025051569697
+  ],
+  [
+   11.11264463596093,
+   "phone-list-nested-plus",
+   "short-subject-search",
+   "auto-nocaps",
+   454.70726068253884,
+   505.2372626961019
+  ],
+  [
+   11.525565489563963,
+   "wild-validator-us-zip-owasp",
+   "short-subject-search",
+   "auto-nocaps",
+   417.7670312834944,
+   465.91704406788074
+  ],
+  [
+   11.838511755948057,
+   "phone-list-nested-plus",
+   "large-subject-throughput",
+   "auto-nocaps",
+   14.325393758739972,
+   16.021307182954253
+  ],
+  [
+   11.85372070495233,
+   "numeric-id-nested-plus",
+   "short-subject-search",
+   "auto-nocaps",
+   445.64312223284765,
+   498.4684132831587
+  ],
+  [
+   12.50751804330394,
+   "numeric-id-nested-plus",
+   "large-subject-throughput",
+   "auto-nocaps",
+   14.245728,
+   16.027515
+  ]
+ ]
+}

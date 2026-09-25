@@ -11,6 +11,74 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K64 — [OPT-PRECHECK-ADMIT] G2 (found by pcrec-bench [B84]/O-52, diagnosed by lane b84read 2026-09-25): on a step-budgeted, framed, forced-VM one-attempt artifact, declining the necessary-byte pre-check turns a NOMATCH into `PCREC_ERR_STEPS`
+
+**Status: deferred** — the proposed fix is in
+`docs/dev/optloop/cycle2_admitfix_reading.md` §1.8 (A) and is not built.
+The owning row is `[OPT-PRECHECK-ADMIT]`, which stays `STATE:started` until
+the fix lands. Not a wrong answer: `docs/spec/limits.md` §1 makes a give-up
+honest. It is an answer → give-up regression, and a divergence from PCRE2.
+It also breaks `docs/spec/tuning.md` §2.29's answer-identity sentence.
+
+**Repro** (`docs/dev/optloop/admitfix/giveup_repro.sh`, transcripts beside it):
+
+    pcrec -p rx --features all --engine=vm --pattern '^([a-zA-Z0-9._%+-]+)+@' -o a.c
+    subject: 'a' x 30 (no '@')  ->  rx_search returns -2 (PCREC_ERR_STEPS)
+
+- At `6ef76820`, 500,000,001 VM steps; at `b1885a83` (pre-check emitted),
+  0 after one `memchr`.
+- PCRE2 10.46 (reference box) and 10.48 both answer `No match` for any such
+  subject under 5,000 bytes. Their last-code-unit check applies to anchored
+  patterns below `REQ_CU_MAX`; the 4,999/5,000 boundary was measured.
+- The bench hits it on 5 of 75 `capability` short subjects (`sd-empty-alt-hit`,
+  `sd-empty-alt-miss`, `sec-github-pat`, `v-uuid-badnibble`, `v-uuid-valid`)
+  on `vm-caps` and `vm-in-caps`. **The same five gave up identically at
+  `25b1984f`**, before batch 1's pre-check existed. Batch 1 fixed them without
+  anyone intending it, and G2 reverted that. Across the four pins' 1,992 cells
+  this pair is the only one whose pass/fail ever changed.
+
+**Mechanism.** `req_route_one_attempt` (`src/gen/emit_dfa.c`) calls a VM
+artifact "one attempt" from `Job.start_anchor` alone, and `req_admit` then
+declines the pre-check (`REQ_WHY "one-attempt"`). The argument in §2.29 is
+that "the single attempt reads at most the same window". That holds for the
+DFA, and for a VM with `RX_VM_PREFILTER_LANG "exact"` in front (the auto route
+here: a linear decider). It fails for a backtracking program. This pattern's
+one attempt costs `3·2^(L−2) − 2` steps over a leading class run of length L,
+so the 500M default budget (D51, per call) runs out at L = 30. The pre-check
+was also a NO-MATCH PROOF that bounded the call, not only an attempt skipper.
+
+**Population at `6ef76820`, `capability@0.1`:** the 6 forced-VM one-attempt
+artifacts with `RX_VM_FRAMELESS 0` (`email-nested-plus`, `ipv4-near-miss`,
+`wild-datetime-moment-iso8601`, `wild-validator-email-owasp`,
+`wild-validator-ipv4-owasp`, `winpath-near-miss`). Only `email-nested-plus`
+reaches the budget on the bench's subjects. The others pay polynomial
+search-regime cost (+24% to +79%, reading §4). Every auto-route one-attempt
+artifact is a DFA or an exact hybrid, so none is affected.
+
+**Proposed fix (A):** G2's VM arm declines only where the attempt is linear
+by a fact the emitter holds: an exact-language hybrid prefilter, or a
+frameless program.
+- **Cost:** the forced-VM throughput wins on 6 cells go back to the ~23.1 µs
+  floor, which is `b1885a83`'s state (reading §1.8).
+- **The same change must also carry:**
+  - a `tuning.md` §2.29 hunk that corrects both sentences (D80);
+  - a sabotage row whose witness is the repro above (answer-detectable,
+    `-2` vs `0`);
+  - a `tests/known_fail/` → corpus regression.
+- The general follow-on, the pre-check as the step budget's first refill (C),
+  is D77-gated (reading §1.8).
+
+**Why no check saw it:**
+- `admitimpl_answerdiff.py` ran only auto-route arms, although its own
+  subject list holds the witness (`b"a"*40`).
+- `tests/axes/run_axes.sh:780` classifies a one-sided give-up as
+  budget-bound, never a failure.
+
+This is a learnings.md §3 candidate: count give-up TRANSITIONS as their own
+population.
+
+---
+
 ## K63 — [VAR] panel (varfix, 2026-09-23), pre-existing, documentation/tree fact (not a compiler bug): `src/core/internal.h:877`'s own census of `default:`-carrying `AKind` switches names four sites; there are five
 
 **Status: FIXED 2026-09-23 ([VAR] M5, lane varmvp)** — the census comment

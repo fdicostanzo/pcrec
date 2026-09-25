@@ -1,0 +1,1700 @@
+{
+ "balanced-parens-rec|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "balanced-parens-rec|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "balanced-parens-rec|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "base10num-near-miss|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "base10num-near-miss|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "base10num-near-miss|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "bracket-array-define|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "bracket-array-define|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "bracket-array-define|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "codegrammar-flat|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "34",
+  "req_why": "dominated",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "codegrammar-flat|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "34",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "codegrammar-flat|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "34",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "codegrammar-xflag|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "34",
+  "req_why": "dominated",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "codegrammar-xflag|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "34",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "codegrammar-xflag|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "34",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "currency-lookbehind-fixed|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "currency-lookbehind-fixed|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "currency-lookbehind-fixed|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "date-nested-plus|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "date-nested-plus|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "date-nested-plus|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "doubled-word|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "doubled-word|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "doubled-word|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "dup-param-detect|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "38",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "dup-param-detect|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "38",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "dup-param-detect|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "38",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "email-local-nodup|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "email-local-nodup|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "email-local-nodup|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "email-nested-plus|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "email-nested-plus|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "email-nested-plus|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "evil-alt-nested|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "evil-alt-nested|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "evil-alt-nested|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "file-ext-order|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "file-ext-order|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "file-ext-order|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "float-literal-bound|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "float-literal-bound|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "float-literal-bound|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "46",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "floor-byte|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "126",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "floor-byte|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "126",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "floor-byte|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "126",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "high-byte-run|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "high-byte-run|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "high-byte-run|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "ipv4-near-miss|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "ipv4-near-miss|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "ipv4-near-miss|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "keyword-prefix-order|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "110",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "keyword-prefix-order|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "110",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "keyword-prefix-order|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "110",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "logparse-atomic-removed|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "logparse-atomic-removed|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "logparse-atomic-removed|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "logparse-atomic|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "logparse-atomic|auto-nocaps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "logparse-atomic|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "mojibake-curly-quote|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "148",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "mojibake-curly-quote|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "148",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "mojibake-curly-quote|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "148",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "negation-scope-lookbehind-var|auto-caps": {
+  "identity": "refused"
+ },
+ "negation-scope-lookbehind-var|auto-nocaps": {
+  "identity": "refused"
+ },
+ "negation-scope-lookbehind-var|vm-caps": {
+  "identity": "refused"
+ },
+ "nested-comment-rec|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "nested-comment-rec|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "nested-comment-rec|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "numeric-id-nested-plus|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "numeric-id-nested-plus|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "numeric-id-nested-plus|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "phone-list-nested-plus|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "phone-list-nested-plus|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "phone-list-nested-plus|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "phone-palindrome-6|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "phone-palindrome-6|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "phone-palindrome-6|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "pwd-strength-chain|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "pwd-strength-chain|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "pwd-strength-chain|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "quoted-delim-match|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "quoted-delim-match|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "quoted-delim-match|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "router-prefix-order|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "router-prefix-order|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "router-prefix-order|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-depth3-bound|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-depth3-bound|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-depth3-bound|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-pair-match|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-pair-match|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "tag-pair-match|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "60",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "trim-nested-star|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "trim-nested-star|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "trim-nested-star|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "utf8-lead-no-cont|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "utf8-lead-no-cont|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "utf8-lead-no-cont|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "uuid-near-miss|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "uuid-near-miss|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "uuid-near-miss|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "wild-codegrammar-json-array-begin|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "91",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-array-begin|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "91",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-array-begin|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "91",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-codegrammar-json-constant|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-constant|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-constant|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-codegrammar-json-number-extended|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-number-extended|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-number-extended|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-codegrammar-json-object-begin|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "123",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-object-begin|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "123",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-object-begin|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "123",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-codegrammar-json-stringcontent-escape|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "92",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-stringcontent-escape|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "92",
+  "req_why": "dominated",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-codegrammar-json-stringcontent-escape|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "92",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-datetime-datefinder-alternation|auto-caps": {
+  "identity": "refused"
+ },
+ "wild-datetime-datefinder-alternation|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-datetime-datefinder-alternation|vm-caps": {
+  "identity": "refused"
+ },
+ "wild-datetime-moment-iso8601|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "wild-datetime-moment-iso8601|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-datetime-moment-iso8601|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "45",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "wild-logparse-base10num-grok|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-base10num-grok|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-base10num-grok|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-base10num-noatomic|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-base10num-noatomic|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-base10num-noatomic|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-grok|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-grok|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-grok|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-noatomic|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-noatomic|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-quotedstring-noatomic|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-syslogbase-expanded|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "count-collapsed",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-syslogbase-expanded|auto-nocaps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "58",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "count-collapsed",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-syslogbase-expanded|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "58",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-winpath-grok|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "92",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-winpath-grok|auto-nocaps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "92",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-logparse-winpath-grok|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "92",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-aws-access-key-id|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "65",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-aws-access-key-id|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "65",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-secrets-aws-access-key-id|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "65",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-github-pat|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "95",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-github-pat|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "95",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-secrets-github-pat|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "95",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-slack-webhook-url|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-slack-webhook-url|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-secrets-slack-webhook-url|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "47",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-username-password-pair|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "61",
+  "req_why": "emitted",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-secrets-username-password-pair|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "61",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-secrets-username-password-pair|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "61",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-semdiv-altorder-foo-foobar-rustregex|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "102",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-semdiv-altorder-foo-foobar-rustregex|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "102",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-semdiv-altorder-foo-foobar-rustregex|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "102",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-semdiv-dollar-trailing-newline-pcre2|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "98",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-semdiv-dollar-trailing-newline-pcre2|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "98",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-semdiv-dollar-trailing-newline-pcre2|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "98",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-semdiv-empty-alt-repeat-pcre2|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "unanchored"
+ },
+ "wild-semdiv-empty-alt-repeat-pcre2|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-semdiv-empty-alt-repeat-pcre2|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-validator-email-owasp|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-email-owasp|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-email-owasp|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "64",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "wild-validator-ipv4-owasp|auto-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "wild-validator-ipv4-owasp|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-ipv4-owasp|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "46",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "wild-validator-us-zip-owasp|auto-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "hybrid",
+  "vm_prefilter_lang": "exact",
+  "vm_start": "anchored"
+ },
+ "wild-validator-us-zip-owasp|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-us-zip-owasp|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ },
+ "wild-validator-uuid-grok|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "45",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-uuid-grok|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "45",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-validator-uuid-grok|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "45",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-waf-crs-942140-dbnames|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942140-dbnames|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942140-dbnames|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-waf-crs-942160-sleep-benchmark|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942160-sleep-benchmark|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942160-sleep-benchmark|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "41",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-waf-crs-942270-union-select|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942270-union-select|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942270-union-select|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-waf-crs-942360-concat-sqli|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942360-concat-sqli|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942360-concat-sqli|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "none",
+  "req_why": "none",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "wild-waf-crs-942500-comment-obfuscation|auto-caps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942500-comment-obfuscation|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "wild-waf-crs-942500-comment-obfuscation|vm-caps": {
+  "engine": "vm",
+  "identity": "identical",
+  "req_byte": "42",
+  "req_why": "emitted",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "unanchored"
+ },
+ "winpath-near-miss|auto-caps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "92",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "winpath-near-miss|auto-nocaps": {
+  "engine": "dfa",
+  "identity": "changed",
+  "req_byte": "92",
+  "req_why": "one-attempt",
+  "vm_prefilter": null,
+  "vm_prefilter_lang": null,
+  "vm_start": null
+ },
+ "winpath-near-miss|vm-caps": {
+  "engine": "vm",
+  "identity": "changed",
+  "req_byte": "92",
+  "req_why": "one-attempt",
+  "vm_prefilter": "none",
+  "vm_prefilter_lang": null,
+  "vm_start": "anchored"
+ }
+}
