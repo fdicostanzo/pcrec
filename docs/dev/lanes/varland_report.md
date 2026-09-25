@@ -44,11 +44,16 @@ plus `scripts/emit_sweep.py --ref 1e90aa8a`'s three unpredicted cells on
    does not appear to corrupt any count (the var-construct bucket's
    admitted population matches its independent text census within the
    stated band on every axis measured).
-6. Part (b), the `emit_sweep.py` unpredicted cells, was read from the tree
-   directly (dump-surface diffing) rather than from a fresh sweep run,
-   because the box's one-heavy-suite rule kept it queued behind the
-   identity gate's four-axis validation for this lane's whole working
-   period. See §5 for the dispositions and what is OWED.
+6. Part (b)'s three `emit_sweep.py` cells are ALL fully dispositioned —
+   `dumps` by direct dump-surface diffing (needed no sweep run), then
+   `composition`/`emit-ir-vm` by a real `python3 scripts/emit_sweep.py`
+   run once the box freed. **`emit-ir-vm movers=41` turned out to be a
+   completely different population from the brief's own hypothesis**
+   (the backref-rename population) — every mover is a `${...}`-bearing
+   `tests/vars/*.rxt` pattern whose `--emit-ir` engine-forcing reason
+   improves from a generic CLI-flag citation to the specific construct
+   that forces it; the number 41 is coincidental, not evidence for the
+   hypothesized cause. See §5.
 7. **Wiring `recidentity` found WHY its three siblings
    (`atomicidentity`/`brefidentity`/`endvaridentity`) have sat registered
    with ZERO rows since 2026-08-22.** `run_recursion_identity.sh` (like
@@ -312,5 +317,12 @@ sweep's own forced flag.**
 
 ## §6 — RULINGS RECEIVED
 
-None mid-flight; the brief's own two-part charter is restated in full at
-the top of this report.
+No design rulings mid-flight. One process instruction: the manager
+directed the lane to stop idle-waiting on the Monitor tool for the
+in-flight background validation ("the LOG is your trigger... poll the
+log tail with a bounded foreground `timeout ... bash -c 'until grep -q
+... ; do sleep 30; done'`"), and to proceed directly through `make
+strict`, the S273 solo run, and `emit_sweep.py` in that order while
+holding heavy-suite slot #1 across all three. Followed for the remainder
+of the lane; the brief's own two-part charter is restated in full at the
+top of this report.
