@@ -263,7 +263,7 @@ lane from assuming the wrong thing.
 | **block** | one data block inside a bundle, headed by its KIND keyword (`freq` / `cpfreq` / `bigram`), holding counts plus declarations plus provenance |
 | **query** | what a compiler READER asks (§2.4). Closed set: `byte-rate`, `run-rarity` |
 | **derivation** | the named arithmetic that turns a block's counts into a query's answer (§2.4). Closed set, and each derivation is legal only on its kinds |
-| **stop** | a place a bundle name is looked up: S1 own source, S2 `-I` directories, S3 the embedded store (§4.1) |
+| **stop** | a place a bundle name is looked up: S1 the compiling file itself, S2 `-I` directories, S3 the embedded store (§4.1) |
 | **chain** | the selected bundle, then its `include`, then that bundle's `include`, …, then the built-in `default` |
 | **answer** | for (query, compile encoding): the FIRST block along the chain that has a `serves` line for that query listing that encoding. Otherwise **NONE** |
 
@@ -314,6 +314,16 @@ encoding E), walk the chain and take the first block with a `serves Q when
 block qualifies, the answer is NONE. There is no other rule. In
 particular, nothing in `src/` tests `-e` next to a findings read (R23).
 
+**[r2 M-B1] One block per (query, encoding) per bundle.** Within ONE
+bundle, at most one block may list a given encoding on a `serves` line for
+a given query. Two blocks of one bundle both declaring `serves byte-rate
+when …utf8…` is a **parse error** naming both lines. Without this rule,
+"the first block with a matching line" inside one bundle would be decided
+by the order the kinds are written or checked in, which is exactly a hidden
+rule (D123-4). With it, a bundle is a total function from (query, encoding)
+to at most one of its own blocks, and the chain walk is the only ordering
+there is. Across bundles, the chain order decides, as before.
+
 **The closed derivation vocabulary.** Each derivation is compiler code
 with a spec-stated definition (§2.5, §2.6). Adding one is a spec change
 plus one function (R1):
@@ -329,7 +339,10 @@ Where the declarations come from:
 
 - **The analyzer writes them from what it observed (§10.2).** Pure ASCII
   or valid UTF-8 gets `when byte,utf8`. Invalid UTF-8 gets `when byte`.
-  The declaration is visible and editable in the output.
+  When it writes BOTH `freq` and `cpfreq`, it splits the encodings between
+  them so the two can never collide (§10.2's table, [r2 M-B1]). The
+  declaration is visible and editable in the output, and an edit that
+  creates a collision is refused at parse.
 - **The shipped default declares `serves byte-rate when byte via
   unigram`.** This is its byte-only restriction (D123-4/5), written where
   `--list-analysis default` shows it.
@@ -378,11 +391,29 @@ T(S, S')  = Σ_{a∈S} Σ_{b∈S'} (c(a,b) + 1)           pooled transition nume
 rarity    = [L(N+256) − L(U(S_0))] + Σ_{i≥1} [L(D(S_{i−1})) − L(T(S_{i−1}, S_i))]
 ```
 
-- **`L(x)`** is `⌊log2(x)·2^16⌋` for integer `x ≥ 1`. It is computed by
-  the integer squaring method: normalize `x` to a 32-bit mantissa, then do
-  16 rounds of "square, shift, take the carry bit". It is bit-exact on
-  every box and uses no libm. The spec states the algorithm and a test
-  vector table (§14).
+- **`L(x)`**, for integer `x ≥ 1`, **is DEFINED BY ITS ALGORITHM**
+  [r2 S-F5]: normalize `x` to a 32-bit mantissa, then do 16 rounds of
+  "square, shift, take the carry bit". It approximates `⌊log2(x)·2^16⌋`
+  and may differ from it in the last Q16 bit, because each round truncates
+  its square; that is acceptable, since only COMPARISONS between rarities
+  are read, and both sides go through the same function. What is not
+  acceptable is two implementations of `L` that disagree, so the spec
+  states the algorithm (not the real-valued formula) and a test vector
+  table (§14). It is bit-exact on every box and uses no libm. `L(0)` is
+  never evaluated (the guards below).
+- **Empty sets and ties** [r2 S-F6]:
+  - A run query with any EMPTY set `S_i` is a caller error, asserted in
+    the accessor. It cannot arise from a necessary run, whose every
+    position is non-empty by construction. The guard exists so that the
+    add-one smoothing never hides it: `U(∅) = 0` and `L(0)` has no value.
+  - With the smoothing, every other term is `≥ 1`: `U(S) ≥ |S|`,
+    `T(S, S') ≥ |S|·|S'|`, `D(S) ≥ 256·|S|`, `N + 256 ≥ 256`. So `L` is
+    never asked for zero on a non-empty query.
+  - **Ties.** Two runs of equal `rarity` are a tie. The accessor never
+    breaks one: it returns the number, and the READER applies its own
+    pre-findings rule as the tiebreak (for C6, the letter argmin's own
+    order). That keeps each reader's choice a pure function of (rarity,
+    its own stated order), with no hidden order inside the accessor.
 - **Bounds:** counts are ≤ 2^40 and sums are ≤ 2^48, so `uint64_t`
   suffices. Each term is ≤ ~48 bits of Q16, so the sum of a
   `PCREC_MAX_FIND_RUN`-long run fits in `uint64_t`.
@@ -463,18 +494,19 @@ manager's call under `[DD-13b]` (memory `pcrec-dd13b-syntax-is-managers`).
 
 | scope | kind | value | children | cardinality | constraints | change |
 |---|---|---|---|---|---|---|
-| FILE | `analysis` | TOKEN (defname) | BUNDLE | REPEAT | unique-by value | **NEW**: opens a bundle |
+| FILE | `analysis` | TOKEN (defname, **lowercase only** [r2 M-S6]) | BUNDLE | REPEAT | unique-by value; `[a-z][a-z0-9_-]*` | **NEW**: opens a bundle |
 | FILE | `freq` | TOKEN | DATA | — | — | **WITHDRAWN**: moves under BUNDLE with no name. MEASURED: no `.rxt` under `tests/` or `examples/` carries a `freq` line |
 | BUNDLE | `include` | ANGLE-NAME (`<defname>`) | NONE | AT_MOST_ONE | — | **NEW**: C's search spelling. FILE-scope `include "path"` is unchanged and `include <x>` stays refused THERE |
 | BUNDLE | `description` | PROSE | PROSE | AT_MOST_ONE | — | NEW |
 | BUNDLE | `freq` / `cpfreq` / `bigram` | NONE | DATA | AT_MOST_ONE each | — | NEW (`cpfreq` at B5, `bigram` at B4: R2) |
 | DATA | `encoding` | TOKEN | NONE | ONE | `closed data-encoding ascii utf8 latin1 bytes` | **NEW** (R25's key; describes the data) |
-| DATA | `serves` | LIST | NONE | REPEAT, ≥1 | per-kind derivation check (§2.4); unique-by query | **NEW** (operative) |
+| DATA | `serves` | LIST | NONE | REPEAT, ≥1 | per-kind derivation check (§2.4); unique-by query within the block; **no (query, enc) pair claimed by two blocks of one bundle** [r2 M-B1] | **NEW** (operative) |
 | DATA | `row` | LIST | NONE | REPEAT | key shape per kind, strictly ascending | CHANGED: value grammar fixed (§2.3) |
 | DATA | `question`, `reader`, `analyzer`, `provenance` | as today | | | | unchanged. `reader` stays prose; `serves` is the machine-checked version of "a block nobody reads is not emitted" |
 | PROVENANCE | `bytes`, `sha256` | as today | | | required-if parent == data **and** source != authored | CHANGED (§0.10; needs a conjunctive condition clause) |
 | PROVENANCE | `url`, `ref` | as today | | | optional under a data parent | CHANGED (§0.10) |
-| CONFIG | `analysis` | **TOKEN** (was LIST) | NONE | **AT_MOST_ONE** (was REPEAT) | — | CHANGED: names ONE bundle (D123-1/2) |
+| CONFIG | `analysis` | **TOKEN** (was LIST) | NONE | **AT_MOST_ONE** (was REPEAT) | lowercase defname | CHANGED: names ONE bundle (D123-1/2) |
+| CONFIG | `pcrec` (raw CLI) | as today | | | refuses `--analysis` inside it [r2 M-B2] | CHANGED: a config names its analysis with the `analysis` line only (D123-8 item 2) |
 
 `--list-schema` gains a `bundle` scope. That makes three nesting levels
 (`analysis` → kind → `provenance`). `freq` → `provenance` already nests
@@ -491,6 +523,19 @@ third (B0).
   "no precedence list" ruling holds.
 - **No `analysis` anywhere** means the chain is just `default`: today's
   behaviour, byte-identical.
+- **An experiment is a config VARIANT, in the file** [r2 M-B2, D123-8
+  item 2]. To try `waf` under the `prose` analysis, the file says:
+
+  ```
+  config waf-prose from waf
+      analysis prose
+  target waf_prose = waf with waf-prose
+  ```
+
+  and the build selects that target. The experiment is then in the
+  contract, visible to `--list-source`, and never an invisible CLI
+  override of what the file says. `--analysis` on the command line only
+  FILLS a target whose config names no analysis (§5.1).
 - **Pattern-BLOCK-scope `analysis` is DECLINED** (R16's open point). An
   analysis describes the SUBJECTS a build will see, which is a build
   configuration fact. R11's use case (one pattern built against two
@@ -501,7 +546,14 @@ third (B0).
 
 - **`include <name>`**: at most one, resolved by §4.3. Its value is an
   angle-bracketed defname, which is exactly the spelling `rxt_format.md`
-  reserves for store lookups.
+  reserves for store lookups. **RULED (D123-8 item 4, [r2 M-S9]): one
+  `include` per bundle now**, so the chain stays linear and readable at
+  the line. Several includes come only LATER, together with selective
+  include, and only when every line names its kinds (`include <json>
+  kinds=freq`), so that disjointness is visible at the include lines
+  without opening the included files. The notes, and the open scope
+  question (does `kinds=` filter one link or the whole onward chain?), are
+  kept in the boonies row `[FINDINGS-SELINC]`.
 - **SELECTIVE include (D123-3, deferred, not precluded).** A future
   `include <json> kinds=freq` adds one optional `kinds=` item to this
   line's value. The resolution algorithm (§4.4) is already per-kind, so
@@ -522,15 +574,28 @@ third (B0).
 
 | stop | what is searched | how a NAME maps to a bundle | present when |
 |---|---|---|---|
-| **S1** own source | the bundles defined in the compile's own `.rxt` CLOSURE (the file plus its FILE-scope `include "path"` fragments, as parsed today), or `pcrec_options.analysis_source` for a library call | the bundle whose `analysis` line carries the name. **A name defined twice in S1 is a parse error** (`unique-by value` across the closure) | a file-operand compile, or a library call with `analysis_source` |
-| **S2** `-I DIR`, in order | the file `DIR/<name>.rxt` | that file must define bundle `<name>`, or it is a hard error (§9). Other bundles in the file are ignored for this lookup | `-I` given (now legal with `--pattern`, §0.2), or `pcrec_options.analysis_dirs` |
+| **S1** own file | the bundles defined in the compiling `.rxt` FILE ITSELF, or `pcrec_options.analysis_source` for a library call. **Not** its `include "path"` fragments and not its `lib` closure [r2 M-B3, D123-8 item 3] | the bundle whose `analysis` line carries the name. **A name defined twice in the file is a parse error** (`unique-by value`) | a file-operand compile, or a library call with `analysis_source` |
+| **S2** `-I DIR`, in order | the file `DIR/<name>.rxt`, whose directory entry is EXACTLY `<name>.rxt`, byte for byte [r2 M-S6] | the file's ONE bundle, if it is named `<name>`. A file that exists but defines no bundle, or a bundle of another name, **FALLS THROUGH** to the next stop with a note (a `lib` library in the same directory is the common case) [r2 M-S4]. A file defining MORE THAN ONE bundle is a hard error naming the file [r2 M-S5] | `-I` given (now legal with `--pattern`, §0.2), or `pcrec_options.analysis_dirs` |
 | **S3** embedded store | the shipped bundles compiled into `libpcrec` | by name | always |
 
 - **Nothing else is read (R13).** There is no environment variable, no
   cwd-relative path other than paths given explicitly, and no home
   directory.
-- **S2 never enumerates a directory.** It only probes `DIR/<name>.rxt`,
-  which is what keeps `-I` order the entire ordering rule.
+- **S2 never DISCOVERS by enumeration.** It asks for `DIR/<name>.rxt` only,
+  which is what keeps `-I` order the entire ordering rule. To make the
+  match exact on a case-insensitive filesystem (where opening `log.rxt`
+  succeeds on `Log.rxt`), it confirms the directory holds an entry whose
+  name is byte-equal to `<name>.rxt`. That reads the directory's entries
+  for an EQUALITY test, never to find bundles; names are lowercase-only
+  (§3.1), so a `Log.rxt` can never be the answer to any lookup.
+- **A bundle inside an `include "path"` fragment** is not an S1
+  definition. It is refused at parse, naming the rule ("bundles resolve
+  from the compiling file, `-I`, or the store"), rather than accepted as
+  text no lookup can reach. This is this revision's own call, small and
+  reversible; the review lists it for Frank's confirmation. The boonies
+  row `[FINDINGS-S1-REVISIT]` re-examines S1 under its stated triggers (a
+  real include splice for patterns; users keeping bundles beside `lib`
+  libraries; `[LIB]`'s store sharing the `<name>` namespace).
 
 ### 4.2 The route decision (D83-A4's weighing, decided)
 
@@ -541,18 +606,18 @@ There is no dedicated `--findings FILE` loader.
 | criterion | Route I (chosen) | Route D (`--findings FILE`, dedicated namespace) |
 |---|---|---|
 | mechanisms | ONE search path (`-I`) for everything a compile draws on: `lib` definitions today, analyses now, `[LIB]`'s store later. General-mechanism memory; D83-A4's own suggestion | a second loader with its own ordering rule (flag order), beside `-I` |
-| "a user's findings file is just another include" | literal: `include "my.rxt"` puts its bundles in S1, or `-I` finds `name.rxt` | needs its own flag even inside a `.rxt` build |
+| "a user's findings file is just another include" | a bundle in the compiling file is S1; any other file is found by `-I` as `name.rxt` (S1 is the file itself only, D123-8 item 3 — the first draft's claim that `include "my.rxt"` puts its bundles in S1 is withdrawn [r2 M-B3]) | needs its own flag even inside a `.rxt` build |
 | `--pattern` compiles (R12) | `-I DIR --analysis NAME` (after §0.2's one-line un-refusal) | `--findings FILE --analysis NAME` |
 | built-in names | S3, the last stop. D123's addendum shape exactly, with shadowing for free | the same store, reached by a separate lookup |
 | namespace vs `[LIB]` | per PRODUCTION: `lib <x>` reads definitions, `analysis x` / `include <x>` reads bundles. One file may carry both, and neither reads the other's blocks | separate by construction, but at the cost of a second path concept |
 | ambient state (R13) | none: explicit `-I` only | none |
-| cost | lift the `-I`-needs-a-file-operand refusal; add the `DIR/<name>.rxt` probe | a new flag, a new loader, a new ordering rule |
+| cost | lift the `-I`-needs-a-file-operand refusal (every query mode, the mode tables, the lib-dirs lifecycle: §0.2 [r2 M-S7]); add the `DIR/<name>.rxt` probe | a new flag, a new loader, a new ordering rule |
 
 **R15 changes because of this** (§15): there is no flag taking a findings
 FILE. A one-off file is `-I "$(dirname F)" --analysis "$(basename F .rxt)"`.
 The name→file convention is what lets `-I` stay the only path concept. A
-path-accepting spelling of `--analysis` would be sugar; §16 Q3 asks
-whether it is wanted.
+path-accepting spelling of `--analysis` would be sugar, and it is not
+built (§16 Q3, RULED by D123-8 item 6).
 
 ### 4.3 The chain algorithm
 
@@ -560,6 +625,8 @@ whether it is wanted.
 find(name, from_stop):                         # first stop ≥ from_stop defining `name`
     for s in stops[from_stop:]:                # S1, S2 (each -I DIR in order), S3
         if s defines name: return (bundle, s)
+        if s is an S2 file that exists but lacks `name`:
+            note "DIR/name.rxt defines no bundle 'name'; continuing"   (§9, [r2 M-S4])
     fail "unknown analysis 'name'" listing the stops searched          (§9)
 
 chain(selected_name):
