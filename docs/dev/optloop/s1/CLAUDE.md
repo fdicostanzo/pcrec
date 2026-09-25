@@ -58,6 +58,23 @@ directory, never here.
   default artifact IS arm (c) there; HEAD compiles with `-fno-req-run`),
   and diffs. `router_c_identity_output.txt` is its recorded run.
 
+- `probe_b_patch.py` — lane `s1b`'s option-B probe (litscan_s1.md
+  revision 2, §6.1): the SAME `S1\t...` line and keys as `probe_patch.py`
+  (so `census.py`'s `classify()` reads it unchanged), plus `kind`, `cbyte`,
+  `views`, `seeded`, `se` (today's `pcrec_dfa_scan_state_written`), `implm`
+  (the MODEL's selection verifies the run, read off `sel` rather than off
+  the selected row's name) and `rowb` (the run row predicate as option B
+  writes it, clauses 0-4, evaluated on EVERY artifact regardless of
+  REQ_WHY). Same anchor, same SCRATCH-ONLY rule.
+- `census_b.py` — option B's census: re-uses `census.py`'s `probe` and
+  `classify`, splits C → C1/C2/C0 by `class_c_split.py`'s rule and A →
+  A/A2 by G1's identity conjunct (scan byte == pick, off the probe's own
+  walk), cross-tabulates `rowb` against the classes, and computes the
+  program-change total itself (A + E + rowb) — no hand arithmetic.
+  Outputs `census_b.tsv` / `census_b_summary.txt` (at `b5c1423b`, the
+  panelled base, corpus from that tree) and `census_b_main.tsv` /
+  `census_b_main_summary.txt` (at `4976f385`, revision 2's branch point).
+
 ## Reproduce
 
     SCR=<scratch>; git -C <repo> archive b5c1423b | tar -x -C $SCR/probe
