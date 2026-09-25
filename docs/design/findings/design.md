@@ -1171,12 +1171,24 @@ pcrec-analyze --check BUNDLE.rxt [FILE | -]      → exit 0 iff a recount reprod
 
 ---
 
-## 11. Test and oracle plan: findings may change SPEED, NEVER ANSWERS
+## 11. Test and oracle plan: findings may change SPEED, NEVER ANSWERS, NEVER GIVE-UPS
 
 New test directory `tests/findings/` (with its own CLAUDE.md) and a
 `make test` section `test-findings`. Sabotage ids below are provisional:
-at landing they are renumbered from main's highest, which is **S273** at
-`f94b9dd8` (BOILERPLATE), with anchors copied from `git show HEAD:<path>`.
+at landing they are renumbered from main's highest, which is **S274** at
+`5a2094e7` (K64's row; it was S273 when this note was first written), with
+anchors copied from `git show HEAD:<path>`.
+
+**[r2 S-F1] The invariant has two halves, and the second is checked as its
+own population.** For every cell and every bundle: (1) the ANSWER equals
+the default's; (2) there is no give-up TRANSITION — a cell that answers
+under the default and gives up under a bundle, or the reverse, is a
+FAILURE, never "budget-bound". Transitions are counted and reported as
+their own population (GIVEUP1, closed on `lane/chkgaps` and not yet on
+main: `tests/axes/run_axes.sh` today classifies a one-sided give-up as
+budget-bound, which is how K64 and K65 went unseen). Every FINDINGS-axis
+run reports that population's size beside its answer count, so a zero is
+a counted zero. §6.2a is the argument; this is its check.
 
 ### 11.1 Answer identity under adversarial findings (R34)
 
@@ -1187,11 +1199,17 @@ at landing they are renumbered from main's highest, which is **S273** at
 | `onehot-e`, `onehot-80` | all mass on `e` / on 0x80, every other byte at the floor | same |
 | `floor-but-one` | 255 bytes at the floor, the remainder on `/` | same |
 | `random-<seed>` | seeded; the seed is in the file | same |
-| `fire-all` | derived by `tests/findings/gen_adversarial.py` from §11.3's per-reader census, so that every reader whose choice CAN differ from the default's DOES | same |
+| `fire-<reader>` for each of C1, C2a, C2b, C3, C4 (C6 at B4) [r2 S-F3] | derived by `tests/findings/gen_adversarial.py` from THAT reader's census alone: the table that moves that reader's choice on the most corpus artifacts. One bundle per reader, because one `fire-all` table cannot maximise five readers' choices at once, and a reader it happens not to move is then untested with nobody told | same |
 
 - **Every adversarial bundle declares `when byte,utf8`.** Readers are
   therefore exercised under both encodings, including the `utf8` arms that
   the default leaves at NONE.
+- **Each `fire-<reader>` bundle carries a REACH count** [r2 S-F3]: the
+  number of corpus artifacts whose choice for THAT reader differs from the
+  default's under the bundle, read from the reader's own stamp
+  (`RX_REQ_BYTE`, `RX_REQ_RUN`'s member index, `RX_REQ_WHY`,
+  `RX_DFA_PREFILTER_OFFSETS`). A zero is red: a bundle that fires nothing
+  proves nothing about answer identity.
 - **Oracle:** the corpus's existing expectations (libpcre2 / python `re`),
   unchanged. This is legitimate because a prior is "a prior and not a
   promise" (`prefix_k.c`).
@@ -1215,10 +1233,12 @@ at landing they are renumbered from main's highest, which is **S273** at
 | F-5 | `run-rarity` reads `P(first)` from another block along the chain | the cross-source fixture (user `freq` + `include <weblog>`): the digest must equal weblog's bigram digest and the ranking weblog's alone |
 | F-6 | normalization: residue to the wrong entry / zero floor | §2.5 vectors + the sum/floor assertion |
 | F-7 | shard merge without the seam overlap | §11.8 shard-merge equality |
-| F-8 | `--analysis` replacement without the note | the CLI fixture's stderr expectation |
+| F-8 | `--analysis` OVERRIDES a config's `analysis` (fill-only broken, D93) [r2 M-B2] | the CLI fixture: a target whose config names `y`, compiled with `--analysis x`, must stamp `y`'s digest and print the note |
 | F-9 | the consumption record is not reset per compile attempt | a fixture forcing the `[SEL-1]` ladder: its stamp must list only the final attempt's queries |
 | F-10 | a reader reads a rate table directly (re-adds a private table) | the structural grep (§11.7) |
 | F-11 | the chain terminal resolves `default` by name | the `-I` dir with a planted `default.rxt`: an unnamed compile must stay byte-identical |
+| F-12 | K65's fix reverted (a no-DFA-front VM route pre-checks only the picked member) [r2 S-F1] | **a REACH row whose witness is K65's own repro** (`(x?)([a-z]+)+Z.@\1`, subject `'a'×31 + 'Zb'`) under two bundles that pick `Z` and `@` respectively: both must answer NOMATCH; the sabotaged tree gives up under one of them, which the GIVEUP1 transition count reports |
+| F-13 | G1 elides a pre-check with no DFA scan in front (the `p < 0` guard dropped) [r2 S-F2] | a no-DFA-front VM witness in K64/K65's exponential shape, under `fire-C3`: the sabotaged tree elides the only absence proof and gives up; the transition count reports it |
 
 Every row ships with `SAB_REACH`. A row with no reachable witness ships
 declared `UNREACHED` with its reason, never silently.
