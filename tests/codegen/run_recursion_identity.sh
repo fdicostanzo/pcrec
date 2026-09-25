@@ -1017,7 +1017,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 452 of 6,642 census artifact-configs gain the block, each a pure insertion.
 # (A) is untouched for the reason above: the block sits in the SEARCH ENTRY
 # beside the check it extends, never inside `prog_region()`.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-3b3c06f0}"   # [K65] fix (a), abi 33->34: (B) re-pinned to 3b3c06f0 on lane/k65fix (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 1e6a90b0 ([K64] fix A, abi 32->33).
+# **(B) RE-PINNED AGAIN — [K66], 2026-09-25: abi 34 -> 35, to `a446a99e`,
+# the `lane/k66fix` commit carrying the bump.** On the same route a necessary
+# run longer than its 8-byte window is also compared whole (a 13-line scan
+# loop after the window's), and the `rq_set[]` block drops the whole run's
+# bytes; 12 of 6,642 census artifact-configs move. (A) is untouched for the
+# same reason: the loop sits in the SEARCH ENTRY, never inside
+# `prog_region()`.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a446a99e}"   # [K66], abi 34->35: (B) re-pinned to a446a99e on lane/k66fix (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 3b3c06f0 ([K65] fix (a), abi 33->34).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
