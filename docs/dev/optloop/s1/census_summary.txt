@@ -16,8 +16,8 @@ bench	nocaps	V	13
 bench	nocaps	refused	14
 corpus	caps	-	2912
 corpus	caps	A	79
-corpus	caps	B	74
-corpus	caps	C	155
+corpus	caps	B	66
+corpus	caps	C	163
 corpus	caps	D	32
 corpus	caps	E	253
 corpus	caps	V	71

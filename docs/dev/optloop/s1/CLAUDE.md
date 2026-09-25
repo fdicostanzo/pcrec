@@ -17,8 +17,29 @@ directory, never here.
   `.rxt` corpus (reusing `../c2/reqpos_census.py`'s population builders) and
   classifies every artifact into the note's §6 classes (A/B/C/D/E/V/P).
   Outputs `census.tsv` (one row per artifact-config) and
-  `census_summary.txt` (the tallies §6 quotes; C1/C2 and B's sub-split are
-  computed from the TSV in the note).
+  `census_summary.txt` (the tallies §6 quotes; C1/C2/C0 and B's sub-split
+  are computed from the TSV, `class_c_split.py` below, not by `classify()`
+  itself). **`classify()`'s B branch was CORRECTED by S1 review C2
+  (2026-09-25, lane `s1rev`)**: it now folds litscan_s1.md §1.1 clause 3's
+  second disjunct in full (`clause3b`: `pin + idx == 0`, `pf == "memchr"`
+  exactly, and the memchr byte equal to `run[idx]`) instead of the loose
+  `not sel and pf != "none"` the first cut shipped with. The committed
+  `census.tsv`/`census_summary.txt` are this corrected run's output
+  (re-run against `b5c1423b`'s own corpus, byte-identical to a run against
+  the current tree's corpus — the two commits' `tests/` content is
+  unchanged for this population). The rebuilt corpus count is **513**
+  program-changing artifacts, not the note's original hand-adjusted 523 —
+  see litscan_s1.md §6 for the reconciliation (8 rows excluded, not 3; 5 of
+  the 8 are a form the note's own hand count missed, `pf == "memchr-bounded"`
+  under a view, not the plain `memchr` clause 3(b) names).
+- `class_c_split.py` — S1 review C2's downstream split of `census.tsv`'s
+  single `C` tag into C1 (sel non-empty, the starred scan offset equals the
+  pick's offset `pin + idx`) / C2 (sel non-empty, it does not) / C0 (sel
+  empty — clause 3(b) also failed; a B-shaped residual neither C1 nor C2's
+  own definition covers, since both assume a k-set exists). Also prints
+  each population's `program changes = A + B + C1 + E`. Reads `census.tsv`
+  directly (the raw `sel` string still carries the starred offset;
+  `classify()`'s own parsed `sel` list does not).
 - `mk_twin.py` — router's S1 TWIN, hand-made from the base's `-fno-req-run`
   artifact (`--twin`), and the COUNT instrumentation (`--count`: `memchr`
   and forward-step counters) for any router arm.

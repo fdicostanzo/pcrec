@@ -840,8 +840,8 @@ corpus	tests/assertions/multiline.rxt:3758	caps	-	0	dominated	memchr-bounded	97	
 corpus	tests/assertions/start_pinned_startpos.rxt:20	caps	-	0	none	none	-1	-	0			-1
 corpus	tests/assertions/wordb_basic.rxt:63	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
 corpus	tests/assertions/wordb_basic.rxt:143	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
-corpus	tests/assertions/wordb_basic.rxt:218	caps	B	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
-corpus	tests/assertions/wordb_basic.rxt:296	caps	B	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
+corpus	tests/assertions/wordb_basic.rxt:218	caps	C	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
+corpus	tests/assertions/wordb_basic.rxt:296	caps	C	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
 corpus	tests/assertions/wordb_basic.rxt:375	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
 corpus	tests/assertions/wordb_basic.rxt:450	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
 corpus	tests/assertions/wordb_basic.rxt:525	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
@@ -866,7 +866,7 @@ corpus	tests/assertions/wordb_empty_compose.rxt:556	caps	-	0	none	none	-1	-	0			
 corpus	tests/assertions/wordb_empty_compose.rxt:631	caps	-	0	none	none	-1	-	0			-1
 corpus	tests/assertions/wordb_empty_compose.rxt:706	caps	-	0	none	none	-1	-	0			-1
 corpus	tests/assertions/wordb_empty_compose.rxt:791	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
-corpus	tests/assertions/wordb_empty_compose.rxt:866	caps	B	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
+corpus	tests/assertions/wordb_empty_compose.rxt:866	caps	C	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
 corpus	tests/assertions/wordb_empty_compose.rxt:942	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
 corpus	tests/assertions/wordb_empty_compose.rxt:1017	caps	-	0	none	byte-class-bounded	-1	-	0	*63.		-1
 corpus	tests/assertions/wordb_empty_compose.rxt:1092	caps	-	0	none	byte-class-bounded	-1	-	0	*63.		-1
@@ -892,8 +892,8 @@ corpus	tests/assertions/wordb_engattempt.rxt:1112	caps	-	0	none	-	-1	-	0			-1
 corpus	tests/assertions/wordb_engattempt.rxt:1187	caps	-	0	none	-	-1	-	0			-1
 corpus	tests/assertions/wordb_vm.rxt:39	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
 corpus	tests/assertions/wordb_vm.rxt:114	caps	C	0	emitted	offset-set-bounded	102	666f6f	0	66.6f.6f.	0,1*,	0
-corpus	tests/assertions/wordb_vm.rxt:189	caps	B	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
-corpus	tests/assertions/wordb_vm.rxt:264	caps	B	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
+corpus	tests/assertions/wordb_vm.rxt:189	caps	C	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
+corpus	tests/assertions/wordb_vm.rxt:264	caps	C	0	emitted	memchr-bounded	102	666f6f	0	66.6f.6f.		0
 corpus	tests/assertions/wordb_vm.rxt:339	caps	-	0	none	byte-class-bounded	-1	-	0	*63.		-1
 corpus	tests/assertions/wordb_vm.rxt:414	caps	-	0	emitted	byte-class-bounded	120	-	0	78.		-1
 corpus	tests/assertions/wordb_vm.rxt:489	caps	-	0	dominated	memchr-bounded	120	-	0	78.79.		-1
@@ -1899,7 +1899,7 @@ corpus	tests/base/literals.rxt:20	caps	-	0	dominated	memchr	65	-	0	41.		-1
 corpus	tests/base/literals.rxt:24	caps	C	0	emitted	offset-set	49	313233	0	31.32.33.	0,1*,	0
 corpus	tests/base/literals.rxt:27	caps	-	0	dominated	memchr	120	-	0	78.		-1
 corpus	tests/base/literals.rxt:30	caps	B	0	emitted	memchr	122	7a7a7a	0	7a.7a.7a.		0
-corpus	tests/base/long_subjects.rxt:6	caps	B	0	emitted	memchr	122	78797a	2	78.79.7a.		0
+corpus	tests/base/long_subjects.rxt:6	caps	C	0	emitted	memchr	122	78797a	2	78.79.7a.		0
 corpus	tests/base/long_subjects.rxt:10	caps	C	0	emitted	offset-set	122	7778797a	3	77.78.79.7a.	0,1*,	0
 corpus	tests/base/long_subjects.rxt:14	caps	-	0	emitted	memchr	98	-	0	61.*2.		-1
 corpus	tests/base/long_subjects.rxt:18	caps	E	0	emitted	offset-set	97	-	0	61.61.61.61.61.61.61.61.61.61.	0,1*,	-1
@@ -1918,8 +1918,8 @@ corpus	tests/base/possess_lazy_guard.rxt:63	caps	-	0	dominated	memchr	122	-	0	7a
 corpus	tests/base/possess_lazy_guard.rxt:68	caps	-	0	dominated	memchr	122	-	0	7a.61.61.61.		-1
 corpus	tests/base/possess_lazy_guard.rxt:73	caps	-	0	dominated	memchr	122	-	0	7a.61.		-1
 corpus	tests/base/possess_lazy_guard.rxt:78	caps	-	0	dominated	memchr	122	-	0	7a.61.		-1
-corpus	tests/base/possess_lazy_guard.rxt:83	caps	B	0	emitted	memchr	98	6162	1	7a.61.62.61.62.61.62.		1
-corpus	tests/base/possess_lazy_guard.rxt:88	caps	B	0	emitted	memchr	98	6162	1	7a.61.62.61.62.61.62.		1
+corpus	tests/base/possess_lazy_guard.rxt:83	caps	C	0	emitted	memchr	98	6162	1	7a.61.62.61.62.61.62.		1
+corpus	tests/base/possess_lazy_guard.rxt:88	caps	C	0	emitted	memchr	98	6162	1	7a.61.62.61.62.61.62.		1
 corpus	tests/base/possess_lazy_guard.rxt:93	caps	-	0	dominated	memchr	122	-	0	7a.*2.*3.*3.		-1
 corpus	tests/base/possess_lazy_guard.rxt:98	caps	-	0	dominated	memchr	122	-	0	7a.*2.*3.*3.		-1
 corpus	tests/base/possess_lazy_guard.rxt:103	caps	-	0	dominated	memchr	122	-	0	7a.61.		-1
