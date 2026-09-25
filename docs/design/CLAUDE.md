@@ -628,7 +628,9 @@ append-only or historical records.
 - `findings/` — the [FINDINGS] row (D83 + addendum; Frank 2026-09-25):
   the findings-file consumer's requirements + questions (step 1,
   `requirements.md`), then its design note (step 2, `design.md`, lane
-  findesign, PROPOSED). See its own CLAUDE.md.
+  findesign, PROPOSED; PANELED r2 and REVISED by lane findrev,
+  `../dev/reviews/2026-09-25-r2-findings-design.md`; its abi bump is "the
+  next number at landing", never a literal). See its own CLAUDE.md.
 - `dd13_format/` — the [DD-13] unified pattern-source/test file format:
   Frank's accumulated design inputs (frank_inputs.md, append-only, with
   the OD-n open-decision ledger) ahead of the staged

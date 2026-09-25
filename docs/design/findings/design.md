@@ -1026,7 +1026,7 @@ is never silent.
 |---|---|---|
 | `default` | 256 rows ≈ 3.3 KB text | — |
 | `weblog` (freq + cpfreq + bigram) | freq ≈ 3 KB, cpfreq (86 code points MEASURED on RUNEST's sample) ≈ 1.5 KB, bigram **3,288 pairs ≈ 42 KB MEASURED** | — |
-| `log` | bigram **471 pairs ≈ 6.5 KB MEASURED** on HDFS; the real source is TBD (§16 Q2) | — |
+| `log` | bigram **471 pairs ≈ 6.5 KB MEASURED** on HDFS; the real source is one sourcing-lane attempt, else synthesized (§16 Q2, ruled) | — |
 | whole store | ≈ 55–75 KB | `PCREC_MAX_FIND_STORE_BYTES` 256 KiB, checked at gen time and in `make test` |
 | any one bundle (user files too) | worst dense bigram ≈ 65,536 × ~16 B ≈ 1 MB | `PCREC_MAX_FIND_BUNDLE_BYTES` 1 MiB, refused by name |
 | rows per kind | freq 256, bigram 65,536 (structural); cpfreq | `PCREC_MAX_FIND_CPFREQ_ROWS` 65,536 |
@@ -1495,10 +1495,12 @@ record's "OPEN FOR FRANK" section, not here.)
 | top-K token table | a customer run that IS a word and a measured bigram mis-rank on it (RUNEST §0.4: 3 of 14 runs are word-shaped). It also needs a privacy statement (§10.5) and is not one-pass (§10.3) |
 | gap / burstiness, set-membership run length | C5's "restarts pay" arm or C7 (conditional on the plainloop twin, REQ C7) landing with a measured cell |
 | line-length / chunk statistics (D83 (1)) | any customer (REQ: none) |
-| selective include (`kinds=`) | D123-3: its own effort. The extension point is §3.3 |
+| selective include (`kinds=`), and several includes per bundle | D123-3 and D123-8 item 4: its own effort, kept as the boonies row `[FINDINGS-SELINC]` (trigger: a real user bundle needing two sources for disjoint kinds). The extension point is §3.3 |
 | `rows <name>` block reference | a user ask to change a block's declarations without copying it (§3.3) |
 | `independence` derivation (`freq` → `run-rarity`) | none: RUNEST measured it wrong-signed (ρ ≈ 0 on web). Listed so its absence is on purpose |
 | C2 window choice / C3 widening on `run-rarity` | their own rows' measured cells (B2R §6, I-103) |
 | pattern-specific findings | D83 (2): a separate shape and a separate build |
 | the round-trip helper script | after B6 (D123-2) |
+| a wider first resolution stop (the `lib` closure, an include splice) | `[FINDINGS-S1-REVISIT]`'s triggers (D123-8 item 3) |
+| a stamp redaction mode (digest without the bundle name) | OPEN to Frank (§7, [r2 A-7]) |
 | default regeneration from a corpus | its own row (D123-5) |
