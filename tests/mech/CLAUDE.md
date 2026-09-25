@@ -2777,3 +2777,27 @@ and the build would WARN, which is a different failure from the one under
 test; emptying the predicate leaves every caller, every stamp and every other
 rule where they are, so `run_prechecks.sh` §5 reports one rule's absence and
 nothing else.
+
+## [recidfix/varland] S273, and the FIRST ARM `run_recursion_identity.sh` has ever had (2026-09-25)
+
+`run_recursion_identity.sh` predates this matrix's every other identity gate
+sabotage and had NO arm here until now — `atomicidentity`/`brefidentity`/
+`endvaridentity` all got one at their own landing, and this gate's own two
+from-source reference builds (a pinned pre-module commit AND the current
+abi's file pin) are what kept it off the vocabulary: it is the single most
+expensive row this file can name. `recidentity` is registered for exactly
+one row, **S273**, the negative control the fourth named exception
+(`docs/dev/lanes/recidfix_report.md`'s owed bucket, built by the `varland`
+lane) needed before it could be trusted: a `vm_bref`/`vm_var` emission
+defect that shares the ruled seam rename's own site (`(size_t)(ref_end -
+ref_start)` → `(size_t)(ref_end - ref_start + 1)`) must NOT be admitted by
+the rewrite that explains the rename, because a bucket loose enough to
+swallow a resembling-but-different defect is worse than no bucket at all.
+
+**S273 is also an ordinary wrong-answer row**, unlike S269/S270's
+admission-only pair one section up: reading one byte past a referenced
+group's end is answer-detectable, so `brefdiff`/`harness` catch it
+independently of anything `recidentity` does. What only `recidentity` can
+say is WHERE inside the identity gate's own bucket machinery the difference
+landed — `rdiff`, never the bref-rename bucket — which is the property this
+row exists to prove and no other arm can.
