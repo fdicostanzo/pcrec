@@ -436,7 +436,13 @@ pcrec, root, blocks_tsv, max_blocks = sys.argv[1], sys.argv[2], sys.argv[3], int
 # region this walk silently does not see.
 SIG_RE = re.compile(r'^(?:size_t|ptrdiff_t|int|unsigned|static\s+unsigned|static\s+size_t|static\s+const\s+unsigned)\s+rx_(next_pos|back_step|span_match|span_match_caseless|span_ci_fold|span_ci_decode|span_ci_fold_pairs|var_valid)\s*[\(\[]')
 ENC_RE = re.compile(r'^(\s*\.encoding = )\d+(,\s*)$')
-GUARD = 'if (attempt_position >= subject_length) return 0;'
+# [enctriage, 2026-09-25] TWO emitted forms of the loop's own end guard, not
+# one. [OPT-ANCHOR-VM] (2026-09-22) bounds an anchored VM's retry loop by
+# `attempt_max` instead of `subject_length` (emit_vm.c's `attempt_position >=
+# %s`), and the one-literal anchor stopped matching on every such artifact:
+# the K49 advance was left IN the compared text, where its utf8 skip loop read
+# as an encoding conditional in the hot path (`\A(cat|dog)`, `\Gcat\Kdog`).
+GUARD_RE = re.compile(r'^\s*if \(attempt_position >= (?:subject_length|attempt_max)\) return 0;$')
 # [K50] the caller-startpos guard's two emitted texts, both MARKER-DELIMITED,
 # which is what lets them be excised the way the residual entries are rather
 # than excused as a diff. K52's repair direction names exactly this mechanism
@@ -452,7 +458,79 @@ K50_GUARD_END = 'return PCREC_ERR_STARTPOS;'
 # beside the entry guard rather than left for the diff classifier to argue about.
 K50_CONT_OPEN = '[K50] A match may begin only at a character'
 K50_CONT_END = ')) continue;'
+# [enctriage, 2026-09-25] THE CODE LINE ALONE IS THE ANCHOR TOO. [EMIT-VERB]
+# (2026-09-19) classed the marker comment above NONESSENTIAL, so a default
+# (`-fno-comments`) artifact carries the guard's `continue` WITHOUT it: the
+# region was never excised (`startpos_attempt=0` across the whole run) and the
+# `continue` itself was compared as a hot-path encoding conditional (`\A`).
+# A marker that lives in a comment is a marker the verbosity axis can delete;
+# the statement's own shape (emit_dfa.c's ENG_ATTEMPT guard) cannot be.
+K50_CONT_RE = re.compile(r'^\s*if \(start > search_from && !\(.*\)\) continue;$')
 K50_STAMP_RE = re.compile(r'^(#define RX_STARTPOS_GUARD ")(?:guarded|permissive)(")$')
+
+# [enctriage, 2026-09-25] TWO ENCODING-KEYED SELECTIONS [OPTLOOP.1.impl]
+# landed on 2026-09-22 while this instrument still compared ZERO pairs, and
+# both are named regions here for the reason `startpos_guard` is: their text
+# is chosen per encoding BY DESIGN, at compile time, and the artifact DECLARES
+# the choice in its own stamp. Neither is a run-time encoding test — there is
+# no `if (encoding ...)` in either artifact — which is what DD-12 (7) forbids.
+#
+# (i) [OPT-ENDWIN]'s start-window clamp. `pcrec_end_window` DECLINES under any
+# encoding with non-boundary positions (`PcrecEnc.start_cls != NULL`): the
+# clamp computes a byte offset, and a mid-character start is a wrong answer
+# (K49/K50). So a `b\z` byte artifact carries two lines its utf8 twin does not,
+# and `<PREFIX>_END_WINDOW` reads a number on one side and "none" on the other.
+# Excised and COUNTED, the stamp normalized — and held to the stamp in BOTH
+# directions per side (a clamp with a "none" stamp, or a window with no clamp,
+# is a finding), and the asymmetry admitted in ONE direction only: byte
+# clamps, utf8 declines. A utf8 window its byte twin lacks is not the decline
+# this region names, and fails.
+ENDWIN_IF_RE = re.compile(r'^\s*if \(subject_length > \d+ULL && search_from < subject_length - \d+ULL\)$')
+ENDWIN_SET_RE = re.compile(r'^\s*search_from = subject_length - \d+ULL;$')
+ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
+#
+# (ii) [OPT-FREQPICK]'s scan-member pick. `pcrec_req_byte` reads its
+# byte-frequency prior only under `byte` (the shipped table is keyed to that
+# encoding — reqbyte.c's header) and takes the leftmost run position
+# elsewhere, so `abc\z` scans for `b` at offset 1 under byte and `a` at offset
+# 0 under utf8. The byte VALUE and the offset are integers, which the data
+# bar already normalizes; what is not is `emit_req_run_check`'s offset-0
+# SPECIALIZATION, which elides a lower-bound test that is vacuous at offset 0.
+# That one line pair is rewritten to the general form's text with offset 0
+# (`rp_c - search_from >= 0 && rp_c - 0 + L`, `subject + rp_c - 0`) — an
+# identity, so the rest of the pre-check loop is still compared token for
+# token — and COUNTED, and only where the side's own `<PREFIX>_REQ_RUN` stamp
+# says the offset is 0.
+# [enctriage, 2026-09-25] `var_valid`'s CALL SITES belong to it too. The
+# entry exists only in `entries_utf8[]`, and `emit_vm.c` writes its per-call
+# well-formedness refusal only where the backend HAS the entry
+# (`pcrec_enc_has_entry(..., PCREC_ENCE_VAR_VALID)` — a backend question, not
+# an encoding test). The definition was excised from the start; the two-line
+# call was not, so this file's own `^${v}$` witness has diverged in the strict
+# bucket since the day it was added.
+VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
+VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
+REQRUN0_IF_RE = re.compile(r'^(\s*)if \(rp_c \+ (\d+) <= subject_length$')
+REQRUN0_CMP_RE = re.compile(r'^(\s*&& !memcmp\(subject \+ rp_c), (.*)$')
+#
+# (iii) [OPT-PRECHECK-ADMIT]'s G1 DOMINANCE rule (`req_byte_dominated_by`,
+# emit_dfa.c): a single-byte pre-check is declined as "dominated" when the
+# candidate-start scan already runs on a byte at least as rare — and that
+# comparison reads the same `byte`-keyed prior, so under utf8 only IDENTITY
+# dominates. `(?m)^a` under byte scans for `\n` and declines the `a` pre-check;
+# under utf8 it keeps it. The three-line pre-check is excised and COUNTED, the
+# `<PREFIX>_REQ_WHY` stamp normalized, and each side held to its stamp (a
+# pre-check — single-byte or run — is present iff the stamp reads "emitted");
+# the verdicts may differ in ONE direction only: byte "dominated", utf8
+# "emitted".
+REQCHK_IF_RE = re.compile(r'^\s*if \(subject_length <= search_from \|\|$')
+REQCHK_MEMCHR_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, \d+, subject_length - search_from\)\)$')
+REQCHK_RET_RE = re.compile(r'^\s*return 0;$')
+REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated)(")$')
+REQWHY_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_WHY "([^"]*)"$', re.M)
+REQRUN_BLOCK_RE = re.compile(r'^\s*size_t rp_pos = search_from;$', re.M)
+ENDWIN_STAMP_VAL_RE = re.compile(r'^#define RX_END_WINDOW "([^"]*)"$', re.M)
+REQRUN_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_RUN "([^"]*)"$', re.M)
 
 # WIDENS_UNDER_UTF8: a pattern using an unescaped dot or a negated class is
 # NOT covered by "the lowering is the identity below 0x7F" -- both mean "any
@@ -674,7 +752,9 @@ def excise(text, label):
     counts = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
               'span_match_caseless': 0, 'var_valid': 0, 'advance': 0,
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
-              'startpos_attempt': 0}
+              'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
+              'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
+              'var_valid_call': 0, 'span_ci_helper': 0}
     out = []
     i, n = 0, len(lines)
     while i < n:
@@ -690,8 +770,12 @@ def excise(text, label):
             # `counts[name]` raised KeyError. The mechanical rename over this
             # file reached the regex and the tables and missed the one place
             # a NAME is mapped to a DIFFERENT name.
+            # [enctriage] ...and the helpers count under their OWN key, which
+            # no floor reads and (b)'s per-pair symmetry rule does not compare:
+            # counted under `span_match_caseless` they made every caseless
+            # pair "asymmetric (byte=1 utf8=4)" by design.
             if name.startswith('span_ci_'):
-                name = 'span_match_caseless'
+                name = 'span_ci_helper'
             if out and out[-1].rstrip().endswith('*/'):
                 k = len(out) - 1
                 while k >= 0 and not out[k].lstrip().startswith('/*'):
@@ -715,7 +799,7 @@ def excise(text, label):
             counts[name] += 1
             i = fe
             continue
-        if GUARD in line:
+        if GUARD_RE.match(line.rstrip('\n')):
             out.append(line)
             i += 1
             gi = i
@@ -749,6 +833,11 @@ def excise(text, label):
             counts['startpos_guard'] += 1
             i = gi + 1
             continue
+        if K50_CONT_RE.match(line.rstrip('\n')):
+            out.append("/* [K50] attempt-loop boundary guard excised for comparison */\n")
+            counts['startpos_attempt'] += 1
+            i += 1
+            continue
         if K50_CONT_OPEN in line:
             gi = i
             while gi < n and K50_CONT_END not in lines[gi]:
@@ -760,6 +849,47 @@ def excise(text, label):
             counts['startpos_attempt'] += 1
             i = gi + 1
             continue
+        if (ENDWIN_IF_RE.match(line.rstrip('\n')) and i + 1 < n
+                and ENDWIN_SET_RE.match(lines[i + 1].rstrip('\n'))):
+            out.append("/* [OPT-ENDWIN] start-window clamp excised for comparison */\n")
+            counts['end_window'] += 1
+            i += 2
+            continue
+        mw = ENDWIN_STAMP_RE.match(line.rstrip('\n'))
+        if mw:
+            out.append(mw.group(1) + "N" + mw.group(2) + "\n")
+            counts['end_window_stamp'] += 1
+            i += 1
+            continue
+        if (REQCHK_IF_RE.match(line.rstrip('\n')) and i + 2 < n
+                and REQCHK_MEMCHR_RE.match(lines[i + 1].rstrip('\n'))
+                and REQCHK_RET_RE.match(lines[i + 2].rstrip('\n'))):
+            out.append("/* [OPT-REQBYTE] single-byte pre-check excised for comparison */\n")
+            counts['req_check'] += 1
+            i += 3
+            continue
+        mq = REQWHY_STAMP_RE.match(line.rstrip('\n'))
+        if mq:
+            out.append(mq.group(1) + "N" + mq.group(2) + "\n")
+            counts['req_why_stamp'] += 1
+            i += 1
+            continue
+        if (VARVALID_CALL_RE.match(line.rstrip('\n')) and i + 1 < n
+                and VARVALID_RET_RE.match(lines[i + 1].rstrip('\n'))):
+            out.append("/* [ENCCHK-DD12A] var_valid call excised for comparison */\n")
+            counts['var_valid_call'] += 1
+            i += 2
+            continue
+        mr = REQRUN0_IF_RE.match(line.rstrip('\n'))
+        if mr and i + 1 < n:
+            mc = REQRUN0_CMP_RE.match(lines[i + 1].rstrip('\n'))
+            if mc:
+                out.append("%sif (rp_c - search_from >= 0 && rp_c - 0 + %s <= subject_length\n"
+                           % (mr.group(1), mr.group(2)))
+                out.append("%s - 0, %s\n" % (mc.group(1), mc.group(2)))
+                counts['req_run_offset0'] += 1
+                i += 2
+                continue
         ms = K50_STAMP_RE.match(line.rstrip('\n'))
         if ms:
             out.append(ms.group(1) + "N" + ms.group(2) + "\n")
@@ -837,7 +967,10 @@ def main():
     agg = {'next_pos': 0, 'back_step': 0, 'span_match': 0,
            'span_match_caseless': 0, 'var_valid': 0, 'advance': 0, 'encoding': 0,
            'startpos_guard': 0, 'startpos_stamp': 0,
-           'startpos_attempt': 0}
+           'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
+           'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
+           'var_valid_call': 0, 'span_ci_helper': 0}
+    nselect_bad = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
     findings = []
@@ -869,6 +1002,49 @@ def main():
                 if cb[k] != cu[k] and len(findings) < 20:
                     findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
                                      % (pat, k, cb[k], cu[k]))
+            # [enctriage] the two encoding-keyed SELECTIONS, held to their
+            # own stamps (see ENDWIN_IF_RE / REQRUN0_IF_RE above).
+            bad_sel = []
+            ew = {}
+            for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
+                m = ENDWIN_STAMP_VAL_RE.search(text)
+                ew[side] = m.group(1) if m else None
+                if ew[side] is None or cnt['end_window_stamp'] != 1:
+                    bad_sel.append("%s END_WINDOW stamp not exactly 1" % side)
+                elif (cnt['end_window'] > 0) != (ew[side] != 'none'):
+                    bad_sel.append("%s END_WINDOW stamp \"%s\" but %d clamp(s) excised"
+                                   % (side, ew[side], cnt['end_window']))
+                m = REQRUN_STAMP_VAL_RE.search(text)
+                off0 = bool(m) and m.group(1).endswith('@0')
+                if cnt['var_valid_call'] > 0 and cnt['var_valid'] == 0:
+                    bad_sel.append("%s calls var_valid %d time(s) but defines none"
+                                   % (side, cnt['var_valid_call']))
+                if cnt['req_run_offset0'] > 0 and not off0:
+                    bad_sel.append("%s REQ_RUN offset-0 form rewritten under stamp \"%s\""
+                                   % (side, m.group(1) if m else '(absent)'))
+            why = {}
+            for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
+                m = REQWHY_STAMP_VAL_RE.search(text)
+                why[side] = m.group(1) if m else None
+                pre = cnt['req_check'] + len(REQRUN_BLOCK_RE.findall(text))
+                if why[side] is None or cnt['req_why_stamp'] != 1:
+                    bad_sel.append("%s REQ_WHY stamp not exactly 1" % side)
+                elif (pre > 0) != (why[side] == 'emitted'):
+                    bad_sel.append("%s REQ_WHY stamp \"%s\" but %d pre-check(s) present"
+                                   % (side, why[side], pre))
+            if (why.get('byte') != why.get('utf8')
+                    and (why.get('byte'), why.get('utf8')) != ('dominated', 'emitted')):
+                bad_sel.append("REQ_WHY byte \"%s\" vs utf8 \"%s\" -- not the byte-keyed dominance rule"
+                               % (why.get('byte'), why.get('utf8')))
+            if (ew.get('byte') is not None and ew.get('utf8') is not None
+                    and ew['byte'] != ew['utf8'] and ew['utf8'] != 'none'):
+                bad_sel.append("END_WINDOW byte \"%s\" vs utf8 \"%s\" -- not the utf8 decline"
+                               % (ew['byte'], ew['utf8']))
+            if bad_sel:
+                nselect_bad += 1
+                if len(findings) < 20:
+                    findings.append("pat=[%s]: encoding-keyed selection incoherent with its stamp: %s"
+                                    % (pat, "; ".join(bad_sel)))
             if cb['encoding'] != 1 or cu['encoding'] != 1:
                 if len(findings) < 20:
                     findings.append("pat=[%s]: .encoding field not exactly 1 per side (byte=%d utf8=%d)"
@@ -916,9 +1092,12 @@ def main():
 
     print("PAIRS=%d STRICT=%d WIDENS=%d DIVERGE_STRICT=%d DIVERGE_WIDENS=%d BYTEONLY=%d NEXTPOS_BAD=%d GATE=%d GATEFORM=%d" %
           (npairs, nstrict, nwidens, ndiverge_strict, ndiverge_widens, nbyteonly, nnextpos_bad, ngate, ngateform))
+    print("SELECT_BAD=%d" % nselect_bad)
     for k in ('next_pos', 'back_step', 'span_match', 'span_match_caseless',
               'var_valid', 'advance', 'encoding',
-              'startpos_guard', 'startpos_stamp', 'startpos_attempt'):
+              'startpos_guard', 'startpos_stamp', 'startpos_attempt',
+              'end_window', 'end_window_stamp', 'req_run_offset0',
+              'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
         print("GATEPAT %s" % p)
@@ -943,6 +1122,13 @@ else
     echo "  DD12a(i) pairs compared: $PAIRS (byte-only: $BYTEONLY) — strict-identity bucket: $STRICT, widens-under-utf8 bucket: $WIDENS"
     grep '^EXCISED ' "$WORKDIR/dd12ai.out" | sed 's/^/    /'
     [ -n "${K50_HARVEST:-}" ] && cp "$WORKDIR/dd12ai.out" "$K50_HARVEST"
+    # [enctriage] the encoding-keyed selections ([OPT-ENDWIN]'s clamp,
+    # [OPT-FREQPICK]'s offset-0 form) must agree with their own stamps on
+    # every pair — independent of the chain below, so it can never be masked.
+    SELECT_BAD="$(grep -oE '^SELECT_BAD=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
+    if [ "${SELECT_BAD:-missing}" != 0 ]; then
+        bad "DD12a(i) ${SELECT_BAD:-an unknown number of} pair(s) carry an encoding-keyed selection ([OPT-ENDWIN] clamp / [OPT-FREQPICK] offset-0 form / [OPT-PRECHECK-ADMIT] dominance) that disagrees with its own stamp, or an END_WINDOW asymmetry that is not the utf8 decline: $(grep '^FINDING .*encoding-keyed selection' "$WORKDIR/dd12ai.out" | head -1)"
+    fi
     if grep -q '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null; then
         bad "DD12a(i) extraction FAILED on at least one artifact (an anchor did not match -- see dd12ai.out/.err): $(grep '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null | head -1)"
     elif [ "$PAIRS" -lt 200 ]; then
@@ -956,7 +1142,7 @@ else
     else
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt; do
+        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
