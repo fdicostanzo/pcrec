@@ -1146,6 +1146,53 @@ else
     fi
 fi
 
+# =========================================================================
+# SECTION 5.8 — [K65] ON A VM ROUTE WITH NO DFA SCAN, THE PRE-CHECK TESTS THE
+# WHOLE NECESSARY SET.
+# =========================================================================
+#
+# There the pre-check is the call's only linear no-match proof, and with one
+# member tested a hostile subject answered NOMATCH or gave up according to
+# which member the PICK chose. The second half of the check is an `rq_set[]`
+# array of every member the first half did not test; each row's expected list
+# is derived BY HAND from the pattern (never from a stamp), so the row fails
+# if the analysis, the pick exclusion or the route test drifts. The
+# answer-level witness is tests/base/k65_precheck_whole_set.rxt.
+#   rq_set lists the members in ascending byte order; "none" = no array.
+rqset() { sed -n 's/^ *static const unsigned char rq_set\[\] = { \(.*\) };$/\1/p' "$1" | head -1; }
+while IFS='%' read -r pat flags want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s58_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.8] $pat [$flags]: refused"; continue; fi
+    got="$(rqset "$a")"; got="${got:-none}"
+    [ "$got" = "$want" ] \
+        && ok "[5.8] $pat [$flags] -> rq_set { $got } ($why)" \
+        || bad "[5.8] $pat [$flags]: rq_set is { $got }, expected { $want } ($why)"
+done <<'ROWS'
+(x?)([a-z]+)+Z.@\1%-e byte%64%K65's witness under byte: the prior picks Z (90), so @ (64) is the rest
+(x?)([a-z]+)+Z.@\1%-e utf8%90%the same under utf8: the rightmost fallback picks @ (64), so Z (90) is the rest
+(x?)([a-z]+)+Z.@#\1%-e byte%90%the RUN form: the run @# (64 35) is tested whole, so Z (90) alone is the rest
+(Z)\1%-e byte%none%a one-member set: the pick IS the set, nothing is left to emit
+(x?)([a-z]+)+Z.@%-e byte%none%no backreference: an exact hybrid DFA scans in front, so the pick alone suffices
+Z.@%--no-captures -e byte%none%the DFA engine: its scan is linear whatever the pre-check tests
+ROWS
+# ... and the rows that expect an array really are the route the rule reads:
+# a VM artifact with no DFA scan (`RX_VM_PREFILTER "none"`) that emits the
+# pre-check at all — or the rest-array rows test nothing.
+if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+Z.@\1' -e byte; then
+    [ "$(stamp "$WORKDIR/s58r.c" VM_PREFILTER)" = "none" ] \
+      && [ "$(stamp "$WORKDIR/s58r.c" REQ_WHY)" = "emitted" ] \
+      && grep -q 'memchr(subject + search_from, 90, subject_length - search_from)' "$WORKDIR/s58r.c" \
+        && ok "[5.8r] the K65 witness is an unguarded VM artifact whose first half memchr's the pick (90)" \
+        || bad "[5.8r] the K65 witness is no longer an unguarded VM artifact memchr'ing 90 first — [5.8]'s rows test nothing"
+fi
+if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+Z.@' -e byte; then
+    [ "$(stamp "$WORKDIR/s58r.c" VM_PREFILTER)" = "hybrid" ] \
+        && ok "[5.8r] the backreference-free control is a hybrid (a DFA scans in front)" \
+        || bad "[5.8r] the backreference-free control is no longer a hybrid — [5.8]'s DFA-front row tests nothing"
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1
