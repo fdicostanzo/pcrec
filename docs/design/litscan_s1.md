@@ -474,6 +474,14 @@ dominated  ⇔  p ≥ 0
   Soundness would allow it (§3.3). Cost is unmeasured.
 - No axis bit (§2.29 of `tuning.md`). `REQ_WHY`'s four-token set is
   unchanged. `"dominated"` now reaches `offset-set` and `run-pinned` artifacts.
+- **The dependency is one-way, and must stay so.** The run rows read
+  `Job.req_run` and the pin (analysis). `req_admit` reads the selection.
+  No row reads `req_admit` or `REQ_WHY`. That is why the population
+  restriction "the pre-check is emitted today" is a census FACT (§6.2:
+  186/186) and not a predicate clause. A clause reading G2 would be
+  harmless (G2 does not read the selection), but it would buy nothing on
+  today's population (D77), and it would start a mutual reference between
+  admission and selection that the next edit could close into a cycle.
 
 ### 1.5 The engine-neutral direction (addendum 4 item 2), and what S1 does not do
 
@@ -840,9 +848,15 @@ re-pinned by S1.
 
 ### 6.3 At `4976f385` (this revision's branch point)
 
-Filled from `s1/census_b_main_summary.txt` (the same instrument over a probe
-build of `4976f385` and its own corpus): see the table appended below this
-line.
+The same instrument over a probe build of `4976f385` and that tree's own
+corpus (`s1/census_b_main.tsv`, `s1/census_b_main_summary.txt`) is
+**byte-identical to the `b5c1423b` run**, TSV and summary alike. The
+commits between the two moved no artifact of either population in any
+column the probe reads. §6.2's table is therefore also the count at
+this revision's branch point: **34 bench / 513 corpus program changes,
+186 corpus and 27 bench-per-config run-row artifacts.** The landing pin
+is re-counted by the build lane (k64fix and anything else that lands
+first can move it).
 
 ---
 

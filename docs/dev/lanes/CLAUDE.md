@@ -3165,3 +3165,10 @@ never edited afterwards.
   `src/` access in this lane's charter). Filed in the new `plan.md` row
   `[K50-DD12AI-MANIFEST]` rather than folded silently into its three
   chartered items.
+- `s1b_report.md` — `[OPT-LITSCAN]` S1 revision 2, OPTION B (2026-09-25,
+  lane s1b, design only, D122 addendum 4): the run-pinned decision moves
+  from a `prefix_k.c` stage-1 table to a row pair at the head of
+  `dfa_pfs[]` (`prefix_k.c` only publishes the pin fact); `OfsTest` as the
+  one derivation every `<p>_ofsskip` reader reads; the 32-bit DFA_SELECT
+  deny plumbing found; the census re-run under B's own predicate
+  (`docs/dev/optloop/s1/census_b*`). Awaits a FULL D6 panel.
