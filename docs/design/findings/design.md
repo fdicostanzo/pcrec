@@ -1247,8 +1247,8 @@ declared `UNREACHED` with its reason, never silently.
 
 | event | population | expected | form |
 |---|---|---|---|
-| B1, `-e byte`, default | corpus + bench patterns (bench read-only) | program region: **0 movers**; whole file: all (abi + stamp) | `tests/findings/manifests/b1_byte_movers.txt`, asserted EMPTY, with a REACH count of how many artifacts consumed `byte-rate` (so "0 movers" is not vacuous) |
-| B1, `-e utf8`, default | same | movers = **exactly** the C4 (`prefix_k`) population; C1–C3 0 | `b1_utf8_prefixk.txt`, the named list, answer-identical |
+| B1, `-e byte`, default | corpus + bench patterns (bench read-only) | **0 movers under §7's named-lines gate** (whole file minus the abi, `<P>_FINDINGS` and `rx_info.findings` lines) [r2 S-F9] | `tests/findings/manifests/b1_byte_movers.txt`, asserted EMPTY, with a REACH count of how many artifacts consumed `byte-rate` (so "0 movers" is not vacuous) |
+| B1, `-e utf8`, default | same | movers = **exactly** the named ARTIFACTS, each with the stamps that moved [r2 S-F8] | `b1_utf8_movers.txt`: one row per moved ARTIFACT (not per reader), naming every stamp that moved on it. The expected population is C4's (offset-k selections move under the cardinality fallback) PLUS any artifact where that moved selection changed `dfa_cand_scan_byte` and so G1's identity test (C3's `REQ_WHY` moving on the same artifact). The first draft's "C1–C3 0" was a per-reader count that could not see that fallout. Answer-identical and give-up-identical |
 | each shipped bundle vs default | same | per reader (via `RX_REQ_BYTE`, `RX_REQ_RUN`, `RX_DFA_PREFILTER_OFFSETS`, …) | `ship_<name>_movers.txt`. **Empty means not earned (R31)**. An empty population is reported as empty, never as "no hazard" (K59) |
 | B4 (`bigram` + first reader) | that reader's population | the reader's own row decides | its row's manifest |
 
@@ -1257,8 +1257,13 @@ declared `UNREACHED` with its reason, never silently.
 - **§2.5 normalization vectors** (four tables). The DEFAULT normalizes to
   `default_ppm.tsv` exactly. This replaces `run_offset_skip.sh` §1's sum
   check.
-- **`L(x)` vectors** (§2.6) against an independent python reference using
-  exact rationals rather than floats.
+- **`L(x)` vectors** (§2.6) against an INDEPENDENT python re-implementation
+  of the SAME squaring algorithm [r2 S-F5], written from the spec's text,
+  not from the C, and compared bit for bit over the vector table plus
+  seeded random `x` up to 2^48. An exact-rational `⌊log2(x)·2^16⌋` is
+  reported beside it as information only (max deviation, in Q16 units): it
+  is the algorithm, not the real-valued formula, that is the definition,
+  and the two legitimately differ in the last bit.
 - **`markov1` acceptance:** over RUNEST's four train/test splits and 14
   runs, the accessor's rank order must equal RUNEST's bigram scorer's,
   including `union < select < from` on `web_request`. This is the design's
@@ -1277,13 +1282,19 @@ declared `UNREACHED` with its reason, never silently.
 4. The non-self cycle error.
 5. The depth limit.
 6. Unknown name (the stops are listed).
-7. A file found by name that does not define the bundle.
+7. A file found by name that does not define the bundle FALLS THROUGH
+   with the note and the next stop answers [r2 M-S4]; a file with two
+   bundles is the hard error [r2 M-S5]; a `Log.rxt` on a case-insensitive
+   filesystem is not found for `log` [r2 M-S6].
 8. A duplicate name in S1.
 9. A planted `default.rxt` (F-11).
 10. Explicit `include <default>`.
 11. **R8 fall-through:** user `bigram` only + `include <weblog>`. `byte-rate`
     must come from weblog and `run-rarity` from the user.
-12. The CLI replacement note (F-8).
+12. The fill-only CLI (F-8) [r2 M-B2]: `--analysis` fills a config with
+    no `analysis`, loses (with the note) to one that has it, and is
+    refused inside a config's `pcrec` line; the config-variant spelling
+    of §3.2 builds and stamps the variant's bundle.
 13. **R13:** the same invocation from two cwds with explicit paths gives
     identical bytes.
 14. **R20:** a provenance edit moves nothing, and a one-row edit moves the
@@ -1294,8 +1305,18 @@ declared `UNREACHED` with its reason, never silently.
     artifact's stamp. The comparison uses an INDEPENDENT python digest
     implementation (`tests/findings/digest_ref.py`), because two readings
     of one C function would share a source (learnings §3).
-18. **Every embedded bundle** parses and normalizes: `--list-analysis
-    <each name from --list-analyses>` exits 0.
+18. **Every embedded bundle** parses (in the no-filesystem mode, §5.3)
+    and normalizes: `--list-analysis <each name from --list-analyses>`
+    exits 0.
+19. **Every embedded bundle equals its committed source** [r2 A-3]: §8.1's
+    digest comparison, per name.
+20. **The per-target view** (§5.2, [r2 M-S8]): a file with three targets
+    (config analysis; CLI fill; none) reports `named_by` correctly and its
+    `resolution` digests equal each compiled target's stamp.
+21. **Bundle-level collision** [r2 M-B1]: two blocks serving one (query,
+    enc) refuse at parse; the analyzer's `freq`+`cpfreq` output parses
+    clean; its `freq`-answered `byte` digest equals its `cpfreq`-answered
+    `utf8` digest on a valid-UTF-8 sample.
 
 ### 11.6 Stamp checks
 
@@ -1321,8 +1342,11 @@ These are grep checks, each with a sabotage row (F-10).
 | determinism (R27c) | run twice, byte-compare |
 | stdin ≡ file | same input both ways |
 | shard/merge (F-7, D123-3a) | N = 1..7 shards, merged in every permutation for N ≤ 4 and in seeded shuffles above that. Each must equal the whole-file output byte for byte |
+| shard 1's first byte [r2 A-1] | a file whose byte 0 occurs nowhere else: its `freq` count is exactly 1 under every N |
+| `cpfreq` seam [r2 A-2] | a file where a 2-, a 3- and a 4-byte code point each straddle every possible cut offset (the file is built so each nominal `start_K` lands on each continuation position in turn): every N gives the whole-file `cpfreq` byte for byte |
 | python ≡ C (implement-then-replace) | the in-tree samples + seeded random byte strings (invalid UTF-8 included). Byte-identical output |
 | `--check` | a positive case, and a one-byte-changed negative case |
+| manifest-only `--check` [r2 A-5] | the `make test` loop prints a named SKIP and a skip count for a manifest-only source (never a silent pass); the opt-in fetch target fails closed on a planted sha256 mismatch |
 | R26 | `--scan cpfreq` on invalid UTF-8 is a hard error; `freq` on the same input succeeds |
 | R27a | analyzer output → `pcrec --list-analysis NAME -I <dir>` parses clean |
 
