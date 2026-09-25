@@ -10422,6 +10422,10 @@ static void vm_plan_entry(Vm *v, const VmPlan *pl, VmEntry *en)
      * the scratch buffer by `vm_plan`, which is the only place `vm_push_at`
      * runs, and `has_linked_calls` is set from `rgn_emit[]` before that. */
     v->has_push = v->emitted_push || v->has_linked_calls;
+    /* [K64] ...and a FOURTH reader outside this file: the pre-check admission
+     * asks whether the one attempt can backtrack, in the prologue, which runs
+     * after this and before the stamps. Published, not re-derived. */
+    job->vm_frameless = !v->has_push;
 
     /* [CC-DIFF] STEP 2 — THE ENTRY SHAPE AS AN ORDINAL RUNG, AND EVERY TERM
      * OF IT READ OFF SOMETHING ALREADY DERIVED.

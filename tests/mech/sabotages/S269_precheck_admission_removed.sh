@@ -24,18 +24,25 @@ SAB_ID="S269-precheck-admission-removed"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks harness"
 SAB_DESC="the [OPT-PRECHECK-ADMIT] G2 ADMISSION rule is removed, so every artifact whose route runs exactly ONE attempt (the DFA's start_max row that is the literal 0 or search_from; the VM's RX_VM_START anchored/gstart) emits the whole-window memchr pre-check again in front of an exit that was already cheaper than the scan, which is the 29-cell regression class the batch-1 after-ledger attributed to this exact missing predicate"
-SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the detector and names the rule directly: section 5.1 reports the four one-attempt witnesses stamping RX_REQ_WHY 'emitted' where 'one-attempt' is expected, 5.1b reports the pre-check back in the file on each of them, 5.2 reports each witness no longer reaching the rule, 5.4 reports the <string.h> include returning to an artifact with no other memchr customer, and 5.5's G2 population floor drops to 0. Measured on the clean tree at 250 passed / 0 failed. The harness arm is expected to stay GREEN: the decline moves no answer in either direction, which is exactly why this row exists. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S269."
+SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the detector and names the rule directly: section 5.1 reports the four one-attempt witnesses stamping RX_REQ_WHY 'emitted' where 'one-attempt' is expected, 5.1b reports the pre-check back in the file on each of them, 5.2 reports each witness no longer reaching the rule, 5.4 reports the <string.h> include returning to an artifact with no other memchr customer, and 5.5's G2 population floor drops to 0. Measured on the clean tree at 258 passed / 0 failed (250 before K64 added §5.6). The harness arm is expected to stay GREEN: the decline moves no answer in either direction, which is exactly why this row exists. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S269."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree a
 # `^`-anchored pattern with a necessary byte DECLINES, stamping the reason and
 # emitting no pre-check. Both halves are asserted, because a later change that
 # kept the stamp and moved the emission must read UNREACHED and not green.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "^abc$" && grep -q "^#define RX_REQ_WHY \"one-attempt\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_BYTE \"98\"" "$REACH_TMP/o.c" && ! grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-ADMISSION-DECLINES-ONE-ATTEMPT'
 SAB_REACH_EXPECT="REACH-ADMISSION-DECLINES-ONE-ATTEMPT"
+# [K64 re-anchor, lane k64fix, 2026-09-25] the VM arm gained its linearity
+# conjunct (an exact hybrid in front, or a frameless program); the plant and
+# its intent — the predicate always says no — are unchanged, and §5.6's
+# one-attempt rows (the auto-route hybrid, the frameless forced VM) now fail
+# under it beside §5.1/5.2's. Its K64 rows expect "emitted" and stay green.
 SAB_COUNT=1
 SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
 {
     if (cx->job->fit.chosen == ENGM_VM)
-        return cx->job->start_anchor != PCREC_SANCH_NONE;
+        return cx->job->start_anchor != PCREC_SANCH_NONE &&
+               ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
+                cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
            dfa_interior_dead(cx->job->dfa.s1u);
 }'

@@ -894,7 +894,7 @@ done <<'ROWS'
 ^[A-Za-z]:x%%one-attempt%winpath-near-miss's anchor: a ^-anchored DFA runs one attempt
 ^abc$%%one-attempt%the same on the plainest possible witness
 \Gfoo%%one-attempt%the \G row of the three-valued start_max: start_max = search_from, also one attempt
-^([a-z]+)+@%%one-attempt%email-nested-plus's shape: the VM route, RX_VM_START "anchored"
+^([a-z]+)+@%%one-attempt%email-nested-plus's shape: the VM route, RX_VM_START "anchored", an exact hybrid in front (§5.6)
 \[%%dominated%json-array-begin: the prefilter's memchr byte IS the pre-check's, 91 twice per call
 q%%dominated%the same by identity on a single literal
 x[0-9]+Q%%emitted%THE CONTROL: Q (66 ppm) is strictly rarer than the prefilter's x (997), so the check earns its pass
@@ -1033,6 +1033,52 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
 [ "$s5_emit" -ge 4 ] \
     && ok "[5.5] $s5_emit of $s5_tot corpus patterns still EMIT the pre-check — the admission has not swallowed the mechanism" \
     || bad "[5.5] only $s5_emit corpus patterns still emit a pre-check — G1/G2 may be declining a population they were never measured on"
+
+# §5.6 — [K64] G2's VM ARM NEEDS A LINEAR ATTEMPT. On the VM route "one
+# attempt" is not enough: a backtracking program's one attempt can cost the
+# whole step budget, and there the pre-check is the no-match proof that bounds
+# the call. G2 may decline only where an EXACT-language hybrid DFA runs in
+# front (it is that proof itself) or the program is frameless (it cannot
+# backtrack). The rows are the same pattern shape through every arm, so each
+# pair differs by exactly the fact the arm reads; the flags are the route.
+# The answer-level witness is tests/base/k64_precheck_forced_vm.rxt.
+while IFS='%' read -r pat flags want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s56_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.6] $pat [$flags]: refused"; continue; fi
+    got="$(stamp "$a" REQ_WHY)"
+    [ "$got" = "$want" ] \
+        && ok "[5.6] $pat [$flags] -> RX_REQ_WHY \"$got\" ($why)" \
+        || bad "[5.6] $pat [$flags]: RX_REQ_WHY is \"${got:-<absent>}\", expected \"$want\" ($why)"
+done <<'ROWS'
+^([a-z]+)+@%--engine=vm%emitted%K64's own witness: framed, no prefilter — a backtracking one attempt keeps the check
+^([a-z]+)+@%%one-attempt%the same pattern on the auto route: an exact-language hybrid runs in front
+^([a-z]+)+[0-9]{3}@%-fprefilter-collapse%emitted%a COUNT-COLLAPSED hybrid is a superset language, not a no-match proof — keeps the check
+^([a-z]+)+[0-9]{3}@%%one-attempt%the same pattern with the exact language in front
+^[a-z]+@%--engine=vm%one-attempt%frameless forced VM: the program never pushes a frame, so the attempt is linear
+ROWS
+# ... and each row really took the route its reason names, or the pair above
+# compares nothing: the framed witness is framed and unguarded, the frameless
+# one frameless, the collapsed one collapsed.
+if emit "$WORKDIR/s56r.c" '^([a-z]+)+@' --engine=vm; then
+    [ "$(sed -n 's/^#define RX_VM_FRAMELESS //p' "$WORKDIR/s56r.c")" = "0" ] \
+      && [ "$(stamp "$WORKDIR/s56r.c" VM_PREFILTER)" = "none" ] \
+        && ok "[5.6r] ^([a-z]+)+@ --engine=vm is framed with no prefilter" \
+        || bad "[5.6r] ^([a-z]+)+@ --engine=vm is no longer framed+unguarded — [5.6]'s K64 row tests nothing"
+fi
+if emit "$WORKDIR/s56r.c" '^[a-z]+@' --engine=vm; then
+    [ "$(sed -n 's/^#define RX_VM_FRAMELESS //p' "$WORKDIR/s56r.c")" = "1" ] \
+      && [ "$(stamp "$WORKDIR/s56r.c" VM_PREFILTER)" = "none" ] \
+        && ok "[5.6r] ^[a-z]+@ --engine=vm is frameless with no prefilter" \
+        || bad "[5.6r] ^[a-z]+@ --engine=vm is no longer frameless+unguarded — [5.6]'s frameless row tests nothing"
+fi
+if emit "$WORKDIR/s56r.c" '^([a-z]+)+[0-9]{3}@' -fprefilter-collapse; then
+    [ "$(stamp "$WORKDIR/s56r.c" VM_PREFILTER_LANG)" = "count-collapsed" ] \
+      && [ "$(sed -n 's/^#define RX_VM_FRAMELESS //p' "$WORKDIR/s56r.c")" = "0" ] \
+        && ok "[5.6r] the -fprefilter-collapse row is a framed count-collapsed hybrid" \
+        || bad "[5.6r] the -fprefilter-collapse row is no longer a framed count-collapsed hybrid — [5.6]'s superset row tests nothing"
+fi
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"

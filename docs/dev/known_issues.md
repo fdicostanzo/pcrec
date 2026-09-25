@@ -38,14 +38,29 @@ member of the necessary set (any absent member proves NOMATCH) — pick- and
 findings-independent; (b) readers take a findings-blind fixed rule there;
 (c) K64's option C (the pre-check refills the step budget). Manager leans (a).
 
-## K64 — [OPT-PRECHECK-ADMIT] G2 (found by pcrec-bench [B84]/O-52, diagnosed by lane b84read 2026-09-25): on a step-budgeted, framed, forced-VM one-attempt artifact, declining the necessary-byte pre-check turns a NOMATCH into `PCREC_ERR_STEPS`
+## K64 — FIXED 2026-09-25 — [OPT-PRECHECK-ADMIT] G2 (found by pcrec-bench [B84]/O-52, diagnosed by lane b84read 2026-09-25): on a step-budgeted, framed, forced-VM one-attempt artifact, declining the necessary-byte pre-check turns a NOMATCH into `PCREC_ERR_STEPS`
 
-**Status: deferred** — the proposed fix is in
-`docs/dev/optloop/cycle2_admitfix_reading.md` §1.8 (A) and is not built.
-The owning row is `[OPT-PRECHECK-ADMIT]`, which stays `STATE:started` until
-the fix lands. Not a wrong answer: `docs/spec/limits.md` §1 makes a give-up
-honest. It is an answer → give-up regression, and a divergence from PCRE2.
-It also breaks `docs/spec/tuning.md` §2.29's answer-identity sentence.
+**Status: fixed** (2026-09-25, lane `k64fix`, fix A as ruled by Frank;
+`docs/dev/lanes/k64fix_report.md`). `req_route_one_attempt`'s VM arm now also
+requires a linear attempt — `fit.prefilter && !fit.prefilter_collapsed` (an
+exact hybrid) or `Job.vm_frameless` (published by `vm_plan_entry` from the
+same `has_push` that stamps `<PREFIX>_VM_FRAMELESS`). The repro answers
+NOMATCH after one `memchr` at 0 VM steps; the bench's five subjects answer
+as PCRE2 does (71 no-match / 4 match over the 75, as at `b1885a83`).
+Regression: `tests/base/k64_precheck_forced_vm.rxt` (4 of its 9 cells fail
+on 6ef76820-behaviour, all pass after), `tests/codegen/run_prechecks.sh`
+§5.6, sabotage S274 (DETECTED, `corpus:4fail/5pass`,
+`prechecks:2fail/256pass`). Spec: `docs/spec/tuning.md` §2.29's G2 and
+answer-identity paragraphs corrected. Emitted-C census: 176 of 6,634
+artifact-configs move, every one `one-attempt` → `emitted` on a framed,
+unguarded, anchored VM artifact — including 41 on the AUTO route (backref /
+linked-call patterns, which decline the hybrid outright), which the brief's
+prediction did not name and the rule covers; see the report.
+
+*As filed:* the fix was `docs/dev/optloop/cycle2_admitfix_reading.md` §1.8
+(A). Not a wrong answer: `docs/spec/limits.md` §1 makes a give-up honest. It
+was an answer → give-up regression, and a divergence from PCRE2, and it
+broke `docs/spec/tuning.md` §2.29's answer-identity sentence.
 
 **Repro** (`docs/dev/optloop/admitfix/giveup_repro.sh`, transcripts beside it):
 

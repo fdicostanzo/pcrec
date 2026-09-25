@@ -984,7 +984,31 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # gate's own RED-BY-CONSTRUCTION state with the exact message "the emitted
 # scaffolding changed: bump `abi` ... and re-pin comparison (B)". Re-pinned
 # per D76 at merge.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-809aab12}"   # [VAR] MVP pattern half, abi 31->32: (B) re-pinned to the merge 809aab12 (D76, 2026-09-23). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6ef76820 ([OPT-PRECHECK-ADMIT], abi 30->31).
+# **(B) RE-PINNED AGAIN — [K64] fix A, 2026-09-25: abi 32 -> 33, to
+# `1e6a90b0`, this lane's own tip (`lane/k64fix`).** G2's VM one-attempt
+# admission rule (`req_route_one_attempt`, [OPT-PRECHECK-ADMIT]'s own abi
+# 30->31 predicate) declined the necessary-byte pre-check wherever the VM
+# route tries at most one start position, arguing the attempt reads no more
+# than the check would scan — true of a DFA and false of a backtracking VM
+# program, where the pre-check is the NO-MATCH PROOF bounding the call: a
+# framed, unguarded, `^`-anchored forced-VM one-attempt program gave up on
+# its step budget where PCRE2 answers NOMATCH (K64). The predicate now also
+# requires the one attempt to be LINEAR — an exact hybrid DFA in front, or a
+# frameless VM program that cannot backtrack at all (`Job.vm_frameless`,
+# published beside `emit_vm.c`'s own `has_push` derivation). No new stamp,
+# no declaration and no layout change: the bump moves a STAMP VALUE
+# (`<PREFIX>_REQ_WHY` "one-attempt" -> "emitted") and the search-entry
+# PROGRAM TEXT it names, on 176 of 6,634 measured artifact-configs.
+#
+# **(A) IS UNTOUCHED, for [OPT-PRECHECK-ADMIT]'s own reason one narrowing
+# over.** The re-admitted text (the byte check or the run check, plus
+# `#include <string.h>`) sits in the SEARCH ENTRY, above the scan/attempt
+# machinery, never inside `prog_region()` — the same site batch 1's
+# [OPT-REQBYTE] and batch 2's [OPT-REQPOS] pre-checks already occupy, whose
+# own admission/decline moves this gate's (A) has already measured
+# untouched twice. MEASURED, not argued: comparison (A) reads zero movers
+# on every label after this re-pin (see the run below).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-1e6a90b0}"   # [K64] fix A, abi 32->33: (B) re-pinned to this lane's own tip 1e6a90b0 (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 809aab12 ([VAR] MVP pattern half, abi 31->32).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

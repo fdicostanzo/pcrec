@@ -104,6 +104,15 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   fail to compile — see `src/gen/emit_dfa.c`'s `emit_comment_safe_byte` and
   `tests/codegen/run_comment_escape.sh`'s structural check for the mechanism.
   Two blocks, both oracle-verified against python3 `re`
+- **k64_precheck_forced_vm.rxt** — [K64]'s regression (2026-09-25, lane
+  k64fix): `email-nested-plus`'s pattern under `engine vm` with `budget
+  steps=10000`, whose framed one attempt backtracks exponentially over a
+  class run with no `@`. The four `n` cells gave up (`steps`, a hard failure)
+  on 6ef76820-behaviour and answer NOMATCH once G2 keeps the pre-check; the
+  `gu steps` cell is the control that the budget reaches the VM, and block 2
+  is the frameless control G2 still declines on. Oracle-verified against
+  python3 `re` (class runs of 16..20 bytes keep python's own backtracking
+  fast); sabotage S274 is its failing direction
 - **possess_lazy_guard.rxt** — the 20 D47.6 lazy-possessification guard cells (docs/dev/decisions.md D47 ruling 6): every quantifier `eng_brep_design.md`'s repaired possessification analysis declines under its lazy non-nullable-remainder conjunct, whose "20 false declines" turned out to be a probe defect, not a real cost — `probe_possess.py`'s subject alphabet omitted the prefix byte `z` these 20 patterns are built from, so it could not reach the subjects (`za{1,3}?` on "zaa", `(?:ab){3,}?` on "abababab", …) where all 20 GENUINELY diverge lazy-vs-possessive. The possessification pass now EXISTS (src/opt/possessify.c, merged 2026-08-16), so these cells are live-fire: 79 cases (span + capture-slot) pin the lazy behavior the shipped pass must preserve by declining, oracle-verified three ways (python3 `re`, libpcre2, pcrec's own build). Extended 2026-08-16 (nested-lazy lane follow-up) with the lazy-`$` family — a bare `$` follow makes the remainder nullable REGARDLESS of `(?m)`, so the lazy conjunct declines it even though the greedy twin possessifies under the D47.5 `$` exemption; discriminating subjects end in `\n` (`$` holds before a final newline, so a wrongly-possessified lazy loop swallows it), plus the greedy control pinning the exemption's own soundness on the same subjects
 - **opt41_rung_nullable_decline.rxt** — the [OPT-4.1] `--emit-ir` prefilter
   value `no-nullable-collapsed` REACHABILITY WITNESS (adm71 item 4,

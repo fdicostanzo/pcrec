@@ -32,6 +32,13 @@ builds of `b1885a83/` and `6ef76820/` (`make CC=gcc-16 build/pcrec`).
   (3/3), then compile `email-nested-plus` at both pins under the bench's
   `vm`/`auto` flags. Each artifact is instrumented with one line after
   `rx_search_run` returns, so the driver prints the VM steps each call used.
+- `k64_census.py` (lane `k64fix`, 2026-09-25): fix A's emitted-C census —
+  the bench's capability patterns under its four configs and every corpus
+  `pattern` line under `--features all` with and without `--engine=vm`,
+  compiled by the branch point and the fix and compared byte for byte;
+  prints each mover's stamps and whether the brief predicted it. Numbers in
+  `docs/dev/lanes/k64fix_report.md`. `giveup_repro.sh` was re-run against
+  the pair by sed-substituting its pin names (the script itself is unchanged).
 - `transcripts/`: the four short-subject and four throughput runs (the
   `enp_<pin>_<cfg>_{short,thr}.txt` files), plus the two PCRE2 probes. The
   first is `pcre2_reqcu_probe.*` on the **10.46 reference box**, one light
