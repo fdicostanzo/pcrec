@@ -3103,3 +3103,10 @@ never edited afterwards.
   ways. 11/0 at slice 250; the full-population run is OWED. Side finding:
   mech's `encoding` arm has no clean baseline, so S229/S-U8 read that arm
   DETECTED by default while the script was red.
+- `cmpmap_report.md` — `[OPT-LITSCAN]`'s coordination map lane (2026-09-25,
+  opus, docs only): delivered `docs/design/compare_stack.md`, the
+  site inventory, duplications, shared primitives, per-row declarations
+  and the gated sequence for every overlapping literal/class/fold/scan
+  mechanism. Its load-bearing challenge is that the four losing WAF cells are
+  DFA-route with no literal-compare site, so the exact VM compare and a
+  WAF attribution read come before any caseless mask.
