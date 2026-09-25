@@ -598,3 +598,426 @@ size_t      analysis_source_len;
   second input shape to validate.
 - **A caller with no filesystem** passes `analysis_source` and/or relies
   on S3.
+
+---
+
+## 6. The accessor: the ONE seam (D122, R23, R39)
+
+### 6.1 Signatures (`src/core/findings.h`, internal; `src/core/findings.c`)
+
+```c
+/* byte-rate for THIS compile: 256 ppm entries, Σ = 1,000,000, each >= FLOOR,
+ * from the ONE block §4.4 selects — or NULL (NONE: no block along the chain
+ * declares byte-rate under this compile's encoding). Derived once per compile
+ * and memoized in Ctx; the call records the consumption for the stamp (§7). */
+const uint32_t *pcrec_find_byte_rate(Ctx *cx);
+
+/* Σ rate[b] over the set, capped at 1,000,000 — prefix_k.c's private set_ppm,
+ * published (RFP §2.3's own recommendation). rate == NULL is the
+ * CARDINALITY fallback: ⌊|set|·10^6/256⌋ (§0.8, C4's declared NONE rule). */
+uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256]);
+
+/* run-rarity (§2.6) of a run of byte SETS (house class bitmaps, one per
+ * position; an exact run is singletons), in Q16 bits of -log2(density per
+ * position). Returns false for NONE. Records consumption. len <=
+ * PCREC_MAX_FIND_RUN. */
+bool pcrec_find_run_rarity(Ctx *cx, const uint8_t (*const sets)[32], int len,
+                           uint64_t *rarity_q16);
+```
+
+These three are the whole surface. `pcrec_byte_freq_ppm` and
+`byte_freq_ppm_tbl` are DELETED at B1: the default's values now live in
+`src/findings/default.rxt`. Every reader reaches findings only through the
+accessor, with `Ctx` carrying the resolved chain. `DfaSel` keeps no table
+pointer (R39), and a row predicate calls the accessor through `DfaSel.cx`.
+
+### 6.2 Customers → query → NONE fallback (C1–C11)
+
+The NONE fallback is each READER's own rule, stated in the spec (R24).
+These fallbacks are code; APPLICABILITY is data (§2.4).
+
+| # | reader (site) | query | NONE fallback | lands |
+|---|---|---|---|---|
+| C1 | `rb_pick` (`reqbyte.c`) | `byte-rate` | PCRE2's rightmost member (today's non-`byte` answer) | B1 (migrated, byte-identical) |
+| C2 | `rn_scan_index`, `rn_window_start` (`reqbyte.c`) | `byte-rate` (argmin; Σ over the 8-byte window) | leftmost / leftmost window | B1 (migrated). Moving the WINDOW choice to `run-rarity` is its own row, with its trigger: a measured window mis-pick |
+| C3 | `req_byte_dominated_by` (`emit_dfa.c:5495`), G1 | `byte-rate` | identity only (`p == q`) | B1 (migrated). The WIDENING (scan run rate vs prefilter byte rate, B2R §6) reads `run-rarity` + `byte-rate` and stays D77-held (I-103) |
+| C4 | `set_ppm` → `pcrec_find_set_mass` (`prefix_k.c`) | `byte-rate` | **cardinality** (§0.8). NEW: today it is ungated | B1. **Moves** under `utf8` + default (named manifest, §11.3) |
+| C5 | `[OPT-LITSCAN]` form rows (`DfaSel` predicates) | `byte-rate` (hit rate); `run-rarity` (restart arm) | the list's total fallback row | with those rows (D122-2(4)) |
+| C6 | S4(a) caseless run pick | `run-rarity` over fold-pair sets | letter argmin (REQ C6: known wrong in deployment) | **B4**, which admits `bigram` (R2) |
+| C7 | `dfa_scans[]` stay/skip | `byte-rate` set mass + a run-length kind (not built) | today's dispatch | conditional (REQ C7). The kind is not built (§17) |
+| C8 | `[OPT-A]` rarest-byte start scan | `byte-rate` | `cand_from_escapes` | with its row |
+| C9 | `[OPT-FIRSTSET]` density | `pcrec_find_set_mass` | no decline arm | no customer now (REQ §0.1) |
+| C10 | `[OPT-4]` | — | — | retired (REQ) |
+| C11 | `[ENG-PGO]` | — | — | out of scope: D83 (2), a separate shape |
+
+### 6.3 What changes at each of today's sites (B1)
+
+| site | today | after |
+|---|---|---|
+| `reqbyte.c:585` | `bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE` | `const uint32_t *rate = pcrec_find_byte_rate(cx)`. `rb_pick`/`rn_*` take `rate` and treat `rate == NULL` exactly as they treat `!bytekey` today |
+| `emit_dfa.c:5498` | `if (cx->opt->encoding != PCREC_ENC_BYTE) return false;` then two `pcrec_byte_freq_ppm` reads | `rate = pcrec_find_byte_rate(cx); if (!rate) return false;` then `rate[p] <= rate[q]` |
+| `prefix_k.c:302` `set_ppm` | reads `byte_freq_ppm_tbl` ungated | `pcrec_find_set_mass(pcrec_find_byte_rate(cx), set)`: NULL gives cardinality |
+| `prefix_k.c:89-137` | the table + `pcrec_byte_freq_total_ppm` | deleted. `run_offset_skip.sh` §1's sum assertion moves to `tests/findings/` over the NORMALIZED default (§11.4) |
+
+Under `-e byte` with no analysis named, all four read the default's
+normalized table. §0.7 makes it equal to today's table entry for entry, so
+the program region is byte-identical.
+
+### 6.4 The consumption record
+
+`Ctx.find.used[Q]` holds the answering (link, block) or NONE, and is set
+on the first accessor call for Q. The stamp (§7) reads it after emission.
+**The record must belong to the FINAL compile attempt**: the
+`compile_driver` engine-selection retry ladder re-runs readers, so the
+record resets per attempt, like every `Job` field. This is an
+implementation obligation with a sabotage row (§11.2 F-9).
+
+---
+
+## 7. Stamps and the digest (D123-2, D76/D94, R19–R22)
+
+**The stamp**, always present in every artifact, next to `RX_REQ_BYTE`'s
+family:
+
+```c
+#define <P>_FINDINGS "byte-rate=default:1f0e2d3c4b5a6978;run-rarity=weblog:0a1b2c3d4e5f6071"
+```
+
+- **One `query=bundle:digest` item per query the compile ASKED**, in the
+  fixed query order (`byte-rate`, `run-rarity`), `;`-joined.
+- **Asked but unanswered:** `query=none`, for example `-e utf8` under the
+  default gives `byte-rate=none`.
+- **Nothing asked:** the empty string. A pattern whose readers never ran
+  (no required byte, anchored DFA) carries `""`, and that is still a stamp.
+- **`bundle`** is the name of the bundle whose block ANSWERED. It is not
+  the selected head and not the stop. A user's byte-identical copy of a
+  shipped bundle therefore gives a byte-identical artifact (R7), and the
+  digest tells a reader which one it was (compare it with
+  `--list-analysis`'s `resolution.digest`).
+- **`rx_info.findings`** (`const char *`, appended, a layout event) mirrors
+  the macro. D43 makes `rx_info` the canonical machine-readable record, and
+  a macro-only stamp would be invisible to a linked binary.
+  `docs/spec/match_api.md` §6 gets the field and the change-log line.
+
+**The digest** is FNV-1a-64, rendered as 16 lowercase hex characters, over
+a canonical byte string of exactly what the reader consumed:
+
+| query | digested bytes (after the tag `pcrec-find-1\0<query>\0<kind>\0<via>\0`) |
+|---|---|
+| `byte-rate` | the 256 DERIVED ppm values, `uint32` little-endian, byte order. The same values from a `freq` or a `cpfreq` block give the same digest |
+| `run-rarity` | the block's nonzero `(a, b, count)` rows ascending, as `u8, u8, u64le`. `markov1` reads exactly these |
+
+- **Excluded:** provenance, `question`/`reader`/`analyzer`, `encoding`,
+  the `when` list beyond the fact that it matched, other kinds, and
+  queries not asked. That satisfies D123-2's "a pattern that never reads a
+  kind does not move when that kind's table changes; provenance edits move
+  nothing".
+- **Why FNV-1a-64 and not SHA-256:** this is identity against accidental
+  change, not an adversarial setting. FNV is ~10 lines in `src/core` and
+  leaves `libpcrec` dependency-free. Collisions between two consumed tables
+  would need adversarial construction, and would cost a stale identity pin
+  at worst, never an answer.
+- **The `--list-analyses` `digest` column is a different hash** (over the
+  bundle's rows) and is renamed **`rows_digest`** so the two cannot be
+  confused (§5.2).
+
+**The abi event:** 32 → 33, ONE bump carrying the `<P>_FINDINGS` line, the
+`rx_info.findings` field and D122-2(3)'s gate move (R21, D123-2). The
+D94 ritual applies (readers found by grep for `32`, `make test-codegen`,
+then registry/codegen/rxtsource). The whole-file pin re-pins. The program
+region is unchanged for every `-e byte` artifact and moves only for §11.3's
+`utf8` prefix_k manifest.
+
+**R22 (a shipped-data change is a visible event):** regenerating a shipped
+bundle, or editing `default.rxt`, changes the digest of every artifact
+that consumed it. Pinned artifacts then fail the whole-file identity gate,
+and the stamp diff NAMES the bundle. No abi bump is needed, and the change
+is never silent.
+
+---
+
+## 8. The embedded store build
+
+### 8.1 Layout
+
+| path | what | written by | checked by |
+|---|---|---|---|
+| `third_party/<source>-<version>/` (for example `elastic-examples-apache-logs-<commit8>/`) | the vendored sample UNMODIFIED + `LICENSE` + `PROVENANCE.md` (naming `src/findings/<name>.rxt` as what derives from it) + `generate.py` | a sourcing lane (§13 B5) | the existing `make test` `generate.py --check` loop |
+| `src/findings/default.rxt` | the authored default (§2.7) | hand. It is `source authored`, the one bundle with no generator | `tests/findings/`: normalizes to the pinned `default_ppm.tsv` (the dump RUNEST already made, `data/byte_freq_ppm.tsv`) |
+| `src/findings/<name>.rxt` | a shipped bundle's SOURCE OF TRUTH (R14), committed so it diffs and reviews | `third_party/<src>/generate.py` running **the analyzer** (R27b) over the sample | `generate.py --check` (drift = red) |
+| `build/gen/findings_store.inc` | every `src/findings/*.rxt` as a C string literal plus a name index | a Makefile rule (`scripts/embed_text.sh`, POSIX sh + `od`), at BUILD time | nothing needed: it is a mechanical build product, never committed (§8.2) |
+| `src/findings/CLAUDE.md` | directory charter | the build lane | convention |
+
+### 8.2 Why TEXT and why build-time (§0.11)
+
+- **Embedding the `.rxt` text means S3 is read by the same parser as S1
+  and S2.** There is no second representation to agree with, and no
+  generated C table to `--check`.
+- **The `.inc` is a mechanical ENCODING of committed text, not a
+  derivation.** It is produced at build time into `build/` like an object
+  file. A committed `.inc` would be a second copy of the committed `.rxt`
+  and would need its own drift check.
+- **This does not break the `third_party/` rule** ("a data source compiles
+  to generated tables"): the source → `generate.py` → committed derived
+  artifact chain is intact, and the derived artifact is `src/findings/<name>.rxt`.
+
+### 8.3 Size bounds (R32, R33)
+
+| item | estimate (MEASURED where marked) | bound (proposed limits rows) |
+|---|---|---|
+| `default` | 256 rows ≈ 3.3 KB text | — |
+| `weblog` (freq + cpfreq + bigram) | freq ≈ 3 KB, cpfreq (86 code points MEASURED on RUNEST's sample) ≈ 1.5 KB, bigram **3,288 pairs ≈ 42 KB MEASURED** | — |
+| `log` | bigram **471 pairs ≈ 6.5 KB MEASURED** on HDFS; the real source is TBD (§16 Q2) | — |
+| whole store | ≈ 55–75 KB | `PCREC_MAX_FIND_STORE_BYTES` 256 KiB, checked at gen time and in `make test` |
+| any one bundle (user files too) | worst dense bigram ≈ 65,536 × ~16 B ≈ 1 MB | `PCREC_MAX_FIND_BUNDLE_BYTES` 1 MiB, refused by name |
+| rows per kind | freq 256, bigram 65,536 (structural); cpfreq | `PCREC_MAX_FIND_CPFREQ_ROWS` 65,536 |
+| a single count | — | `PCREC_MAX_FIND_COUNT` 2^40 (keeps §2.5/§2.6 in `uint64_t`) |
+| chain length | — | `PCREC_MAX_FIND_CHAIN` 8 |
+| run length for `run-rarity` | — | `PCREC_MAX_FIND_RUN` 64 |
+
+A DENSE kind would need its own D77 justification (R33). Counts are stored
+sparse, so the text is proportional to what the corpus observed.
+
+---
+
+## 9. Failure modes and diagnostic tiers (D26; R33a: name the thing and the reason, nothing more)
+
+| failure | tier | behaviour |
+|---|---|---|
+| unknown analysis name (config, `--analysis`, or a bundle `include`) | **hard error** | refuse the compile, naming the name and the stops searched (the unknown-`lib` class) |
+| `-I DIR/<name>.rxt` exists but does not define bundle `<name>` | hard error | naming the file |
+| an include cycle (not self-reference) / chain over `PCREC_MAX_FIND_CHAIN` | hard error | naming the chain |
+| a bundle name defined twice in S1 | **parse error** (schema `unique-by`) | the existing `rxt_fail` machinery, naming both lines |
+| a malformed block, a row key out of range or not ascending, a `serves` naming a derivation illegal for its kind, an unknown `encoding` | parse error | same |
+| a block with all-zero counts, a count over `PCREC_MAX_FIND_COUNT`, a bundle over `PCREC_MAX_FIND_BUNDLE_BYTES`, cpfreq over its row limit | hard error, by limit name | never truncated, never a silent fallback |
+| the same name at two stops | **not an error** | shadowing is the rule (D123 addendum), visible in `#section chain` |
+| `--analysis X` replacing a config's `Y ≠ X` | **non-fatal note** (stderr) | per target |
+| the SELECTED chain declares no query at all under this compile's `-e` (for example a `bytes`-only user bundle on a `-e utf8` compile) | **non-fatal note** | computed at resolution, independent of the pattern. The user's evident intent is unmet and a correct fallback exists (RFP §3.3 precedent) |
+| a query unanswered for this compile | **silent** | the stamp records `query=none` and the reader takes its NONE fallback (§6.2). The normal case |
+| stale findings (the exemplar changed since analysis) | **not pcrec's** | pcrec never sees the exemplar. `pcrec-analyze --check` compares |
+| an embedded bundle fails to parse | **internal error** (abort) | made unreachable by `make test`'s parse-every-store-bundle check (§11.5) |
+
+---
+
+## 10. The analyzer contract (`pcrec-analyze`; D83, D123-3/3a, R26–R27d)
+
+### 10.1 Where it lives
+
+| tier | location | status |
+|---|---|---|
+| prototype | `scripts/pcrec_analyze.py`, graduated from RUNEST's `ngram_count.py`: same CLI, same output BYTES as the end state | B3 |
+| end state | `analyze/` (a new top-level directory: `main.c`, `count.c`, `sha256.c`, `CLAUDE.md`), built by `make` into **`build/pcrec-analyze`**, a separate zero-dependency binary. **NOT** in `libpcrec` or `pcrec` (R27a) | B6. Implement-then-replace: the python version is deleted once §11.8's agreement holds |
+| the ONE counter (R27b) | `analyze/count.c` (python: the prototype's `Counts`) | shipped `generate.py`s invoke the analyzer. They never count themselves |
+
+### 10.2 Command line (pattern-blind: there is no pattern argument, R27c)
+
+```
+pcrec-analyze --name NAME --retrieved DATE [--scan freq,cpfreq,bigram]
+              [--source TOKEN] [--url U] [--ref R] [--license L]
+              [--shard K/N] [FILE | -]          → one bundle (.rxt) on stdout
+pcrec-analyze --merge --name NAME PART.rxt…     → the merged bundle on stdout
+pcrec-analyze --digest-only [FILE | -]           → bytes + sha256 (for --merge)
+pcrec-analyze --check BUNDLE.rxt [FILE | -]      → exit 0 iff a recount reproduces the rows
+```
+
+- **Switches.** `--scan` selects kinds, default `freq,bigram`. A requested
+  scan that cannot run is a hard error. The main case is `cpfreq` on input
+  that does not decode as UTF-8 (R26). The analyzer never silently skips a
+  requested scan (D123-3).
+- **No clock.** `--retrieved` is required, so the same input and flags give
+  byte-identical output (R27c).
+- **Written declarations (§2.4)**, from what the pass observed:
+
+  | observed | `encoding` | `freq`/`bigram` `serves … when` | `cpfreq` |
+  |---|---|---|---|
+  | every byte < 0x80 | `ascii` | `byte,utf8` | `when byte,utf8 via encode-utf8` |
+  | valid UTF-8 with non-ASCII | `utf8` | `byte,utf8` | same |
+  | invalid UTF-8 | `bytes` | `byte` | refused (hard error if requested) |
+
+  These are the analyzer's defaults, written into its output where the
+  user can see and edit them. The compiler applies whatever the file says.
+- **Output.** §2.7's shape: kinds in canonical order, rows ascending,
+  provenance in schema order, `bytes` and `sha256` filled, and `analyzer
+  pcrec-analyze <version> --scan <canonical list>`.
+
+### 10.3 One-pass, per analysis (D123-3: "stated per analysis")
+
+| scan | one-pass? | state | stdin streaming |
+|---|---|---|---|
+| `freq` | yes | 256 × u64 | yes |
+| `bigram` | yes | 65,536 × u64 (512 KB) + the previous byte | yes |
+| `cpfreq` | yes | UTF-8 decoder carry (≤ 3 bytes) + a sparse code-point map (≤ 1,114,112 keys worst case) | yes |
+| sha256 + bytes (always) | yes | 32 B + u64 | yes |
+| *(not built)* trigram | yes | sparse contexts, unbounded | — |
+| *(not built)* top-K tokens | **NO**: exact top-K needs the full dictionary, which means buffering proportional to the vocabulary. It would have to declare itself not-one-pass | — | — |
+
+### 10.4 Parallelism (D123-3a: processes, order-independent)
+
+- **Per scan:** one process per `--scan` kind over the same file, then
+  `--merge`. The merge is a UNION of disjoint kinds.
+- **Per shard:** `--shard K/N` reads bytes `[start_K − 1, end_K)` of a
+  seekable FILE (§0.5). It counts the leading byte ONLY as the first
+  element of a pair, never into `freq` or `cpfreq`, and never into `bytes`.
+  A `cpfreq` shard boundary is moved forward to the next UTF-8 lead byte,
+  where the decoder can resynchronize, so neighbouring shards agree on
+  where the cut is without communicating.
+- **Merge rules.** Counts ADD. `encoding` combines by the lattice
+  `ascii < utf8 < bytes`, and `serves` is recomputed from it by §10.2's
+  table. `bytes` and `sha256` come from a `--digest-only` run over the
+  whole input (sha256 is sequential), and `--merge` checks that the
+  shards' byte total equals it. Every rule is commutative and associative,
+  so the result does not depend on part order.
+- **stdin** cannot be sharded. Per-scan parallelism over stdin is the
+  shell's business (`tee`).
+
+### 10.5 Disclosure: what each kind reveals (REQ §4 privacy risk)
+
+| kind | reveals | stated where |
+|---|---|---|
+| `freq` | charset and language mix, structural punctuation density | analyzer `--help`, `findings.md` |
+| `cpfreq` | script mix, rare characters (possibly identifying for a small corpus) | same |
+| `bigram` | adjacent byte-pair rates. It cannot reconstruct strings longer than 2 bytes, but chaining frequent pairs hints at frequent tokens | same, and it is why `trigram`/tokens stay unbuilt without a customer and a privacy statement (§17) |
+
+---
+
+## 11. Test and oracle plan: findings may change SPEED, NEVER ANSWERS
+
+New test directory `tests/findings/` (with its own CLAUDE.md) and a
+`make test` section `test-findings`. Sabotage ids below are provisional:
+at landing they are renumbered from main's highest, which is **S273** at
+`f94b9dd8` (BOILERPLATE), with anchors copied from `git show HEAD:<path>`.
+
+### 11.1 Answer identity under adversarial findings (R34)
+
+| bundle (`tests/findings/adversarial/*.rxt`) | shape | serves |
+|---|---|---|
+| `uniform` | every byte and every pair equal | byte-rate and run-rarity, `when byte,utf8` |
+| `inverted` | the default's ranks reversed | same |
+| `onehot-e`, `onehot-80` | all mass on `e` / on 0x80, every other byte at the floor | same |
+| `floor-but-one` | 255 bytes at the floor, the remainder on `/` | same |
+| `random-<seed>` | seeded; the seed is in the file | same |
+| `fire-all` | derived by `tests/findings/gen_adversarial.py` from §11.3's per-reader census, so that every reader whose choice CAN differ from the default's DOES | same |
+
+- **Every adversarial bundle declares `when byte,utf8`.** Readers are
+  therefore exercised under both encodings, including the `utf8` arms that
+  the default leaves at NONE.
+- **Oracle:** the corpus's existing expectations (libpcre2 / python `re`),
+  unchanged. This is legitimate because a prior is "a prior and not a
+  promise" (`prefix_k.c`).
+- **Where it runs:**
+  - `make test-axes` runs a new FINDINGS axis: the whole corpus × each
+    bundle, via `AXES="-I tests/findings/adversarial --analysis <b>"`
+    (multi-hour on darwin, per BOILERPLATE).
+  - `make test` runs a fixed sampled slice of the corpus × every bundle,
+    plus all of `tests/findings/`'s own cases.
+- **Row order (R40):** the `DfaSel` lists are `static const`, and a grep
+  check asserts that no findings read sits in a list definition.
+
+### 11.2 Sabotage rows
+
+| id | sabotage | detector |
+|---|---|---|
+| F-1 | a reader lets a rate decide SOUNDNESS (for example it skips a verify when `rate[b] < 10`) | `onehot-e`/`floor-but-one` answer-identity. Needs a witness whose skipped verify changes an answer (REACH) |
+| F-2 | the accessor ignores the `when` list | the `utf8` + default control: `byte-rate=none` expected, and a witness pattern whose C1 pick moves if the default leaks into `utf8` |
+| F-3 | the digest covers provenance | the provenance-edit fixture: editing `retrieved` must move no artifact byte |
+| F-4 | self-`include` resolves from S1 rather than the next stop | the self-shadow fixture: the stamp must name the shipped `log`'s digest, and the compile must not loop (watchdog-wrapped) |
+| F-5 | `run-rarity` reads `P(first)` from another block along the chain | the cross-source fixture (user `freq` + `include <weblog>`): the digest must equal weblog's bigram digest and the ranking weblog's alone |
+| F-6 | normalization: residue to the wrong entry / zero floor | §2.5 vectors + the sum/floor assertion |
+| F-7 | shard merge without the seam overlap | §11.8 shard-merge equality |
+| F-8 | `--analysis` replacement without the note | the CLI fixture's stderr expectation |
+| F-9 | the consumption record is not reset per compile attempt | a fixture forcing the `[SEL-1]` ladder: its stamp must list only the final attempt's queries |
+| F-10 | a reader reads a rate table directly (re-adds a private table) | the structural grep (§11.7) |
+| F-11 | the chain terminal resolves `default` by name | the `-I` dir with a planted `default.rxt`: an unnamed compile must stay byte-identical |
+
+Every row ships with `SAB_REACH`. A row with no reachable witness ships
+declared `UNREACHED` with its reason, never silently.
+
+### 11.3 Census: what moves (R35, R37; NAMED MANIFESTS, not counts; learnings §3)
+
+| event | population | expected | form |
+|---|---|---|---|
+| B1, `-e byte`, default | corpus + bench patterns (bench read-only) | program region: **0 movers**; whole file: all (abi + stamp) | `tests/findings/manifests/b1_byte_movers.txt`, asserted EMPTY, with a REACH count of how many artifacts consumed `byte-rate` (so "0 movers" is not vacuous) |
+| B1, `-e utf8`, default | same | movers = **exactly** the C4 (`prefix_k`) population; C1–C3 0 | `b1_utf8_prefixk.txt`, the named list, answer-identical |
+| each shipped bundle vs default | same | per reader (via `RX_REQ_BYTE`, `RX_REQ_RUN`, `RX_DFA_PREFILTER_OFFSETS`, …) | `ship_<name>_movers.txt`. **Empty means not earned (R31)**. An empty population is reported as empty, never as "no hazard" (K59) |
+| B4 (`bigram` + first reader) | that reader's population | the reader's own row decides | its row's manifest |
+
+### 11.4 Value correctness (oracles for the NUMBERS)
+
+- **§2.5 normalization vectors** (four tables). The DEFAULT normalizes to
+  `default_ppm.tsv` exactly. This replaces `run_offset_skip.sh` §1's sum
+  check.
+- **`L(x)` vectors** (§2.6) against an independent python reference using
+  exact rationals rather than floats.
+- **`markov1` acceptance:** over RUNEST's four train/test splits and 14
+  runs, the accessor's rank order must equal RUNEST's bigram scorer's,
+  including `union < select < from` on `web_request`. This is the design's
+  headline customer, reproduced through pcrec's own arithmetic.
+- **`cpfreq` (R5):**
+  - on an ASCII-only sample, `encode-utf8` gives exactly the `freq` view
+    (MEASURED true for `web_request` by construction, §0.9);
+  - a known Latin-1-text sample comes out `0xC3`-heavy under `encode-utf8`;
+  - `encode-latin1` reports its drop count.
+
+### 11.5 Resolution and surface fixtures (R7, R8, R12, R13, R18, R20)
+
+1. S1 over S2 over S3.
+2. `-I` order.
+3. Self-shadow (F-4).
+4. The non-self cycle error.
+5. The depth limit.
+6. Unknown name (the stops are listed).
+7. A file found by name that does not define the bundle.
+8. A duplicate name in S1.
+9. A planted `default.rxt` (F-11).
+10. Explicit `include <default>`.
+11. **R8 fall-through:** user `bigram` only + `include <weblog>`. `byte-rate`
+    must come from weblog and `run-rarity` from the user.
+12. The CLI replacement note (F-8).
+13. **R13:** the same invocation from two cwds with explicit paths gives
+    identical bytes.
+14. **R20:** a provenance edit moves nothing, and a one-row edit moves the
+    stamp.
+15. **R7:** a shipped bundle copied into `-I` gives an identical artifact.
+16. `--pattern` + `-I` + `--analysis` (R12).
+17. **R18:** `#section resolution`'s digest equals the compiled
+    artifact's stamp. The comparison uses an INDEPENDENT python digest
+    implementation (`tests/findings/digest_ref.py`), because two readings
+    of one C function would share a source (learnings §3).
+18. **Every embedded bundle** parses and normalizes: `--list-analysis
+    <each name from --list-analyses>` exits 0.
+
+### 11.6 Stamp checks
+
+- `<P>_FINDINGS` is present in every artifact the corpus builds.
+- It equals `rx_info.findings`.
+- Its items appear in query order.
+- `none` appears exactly when the resolution section says `none` for this
+  `-e`.
+
+### 11.7 Structural checks (R23, R39)
+
+- No `PCREC_ENC_` comparison inside any function in `src/opt`/`src/gen`
+  that calls a `pcrec_find_*`.
+- No rate table outside `src/core/findings.c`.
+- No table pointer in any `*Sel` struct.
+
+These are grep checks, each with a sabotage row (F-10).
+
+### 11.8 Analyzer checks
+
+| check | method |
+|---|---|
+| determinism (R27c) | run twice, byte-compare |
+| stdin ≡ file | same input both ways |
+| shard/merge (F-7, D123-3a) | N = 1..7 shards, merged in every permutation for N ≤ 4 and in seeded shuffles above that. Each must equal the whole-file output byte for byte |
+| python ≡ C (implement-then-replace) | the in-tree samples + seeded random byte strings (invalid UTF-8 included). Byte-identical output |
+| `--check` | a positive case, and a one-byte-changed negative case |
+| R26 | `--scan cpfreq` on invalid UTF-8 is a hard error; `freq` on the same input succeeds |
+| R27a | analyzer output → `pcrec --list-analysis NAME -I <dir>` parses clean |
+
+### 11.9 Witnesses (R36)
+
+Each reader gets one constructed pattern + one named bundle under
+`tests/findings/witness/` whose choice moves against the default. Each is
+REACH-checked, so a witness that stops reaching its site turns red
+([MECH-REACH]). C1–C4 are owed at B2. C6 is owed at B4.
