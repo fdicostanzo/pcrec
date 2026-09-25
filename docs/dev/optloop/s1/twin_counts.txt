@@ -1,0 +1,14 @@
+# S1 twin COUNT transcript (darwin, counts only -- no timing). Base: build/pcrec at b5c1423b.
+# subjects: pcrec-bench capability gen_subjects.build() 75/75 sha-match, captext throughput 3/3 sha-match
+# arms: a = as shipped; c = -fno-req-run (router) -- program-identical to 25b1984f; b = S1 (router: mk_twin.py --twin; keyword: -fno-req-byte, program-identical to 25b1984f)
+== ra thr: matches=312 calls=315 memchr=77822 steps=78696 spanhash=84add1f383605913
+== ra short: matches=1 calls=76 memchr=94 steps=6 spanhash=72c5c22fcf1b7a36
+== rc thr: matches=312 calls=315 memchr=39098 steps=79438 spanhash=84add1f383605913
+== rc short: matches=1 calls=76 memchr=92 steps=40 spanhash=72c5c22fcf1b7a36
+== rb thr: matches=312 calls=315 memchr=39098 steps=1872 spanhash=84add1f383605913
+== rb short: matches=1 calls=76 memchr=77 steps=6 spanhash=72c5c22fcf1b7a36
+== ka thr: matches=9467 calls=9470 memchr=88264 steps=28401 spanhash=c1f0d584ccfebf9b
+== ka short: matches=4 calls=79 memchr=109 steps=12 spanhash=49ea9de4adc742d4
+== kb thr: matches=9467 calls=9470 memchr=44135 steps=28401 spanhash=c1f0d584ccfebf9b
+== kb short: matches=4 calls=79 memchr=100 steps=12 spanhash=49ea9de4adc742d4
+# thr subject counts: '/' 39,095; '/user' 312; 'n' 44,132; 'in' 9,467

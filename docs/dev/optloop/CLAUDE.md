@@ -647,3 +647,11 @@ that cycle's analysis lands.
   failing-direction controls, the input and numbers scripts, and the stamp
   join. See its own `CLAUDE.md`.
 
+## `[OPT-LITSCAN]` S1's census and twin (lane `s1design`, 2026-09-25)
+
+- `s1/` — the counts behind `docs/design/litscan_s1.md` (the S1 design
+  note lives in `docs/design/`): the probe patch, the classifying census
+  over bench + corpus (`census.tsv`, `census_summary.txt`), router's S1
+  twin generator and the counted find-all driver with its transcript. See
+  its own `CLAUDE.md`.
+
