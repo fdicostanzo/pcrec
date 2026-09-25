@@ -450,3 +450,24 @@ Maintenance: add a file per checkpoint and list it here.
 - `2026-09-23-r1-var-design.md` — three-critic panel (mech/opus, spec/sonnet, test/sonnet) on the [VAR] design (variables_common.md, variables_pattern.md, replace_design.md, variables_roadmap.md; lane vardesign). 30 findings, 2 blockers; the central claim (a pattern variable is a backreference with a caller-supplied span) survived every lens. MECH-B1 (VM-only ≠ prefilter-free) applied; MECH-B2 (`<prefix>_match` IS rx_matchfn) RULED by Frank same day = D121 (variables passed BY NAME, riding rx_ctx, resolved once per entry call; lane varnames applied it). Every ACCEPTed disposition applied to the notes by lane varfix.
 - `2026-09-25-r1-litscan-s1.md` — S1 LIGHT panel (s1crit-cost + s1crit-sem, sonnet) on the [OPT-LITSCAN] S1 design note (litscan_s1.md, lane s1design), applied by lane s1rev same day. 3 findings from s1crit-cost (a program-identity claim with no artifact, now reproduced; the census's own B-branch predicate corrected — the corpus "program changes" count moves 523 → **513**, not the hand-adjusted number, 8 rows excluded rather than 3; the k-set table's status as a feeder analysis, not a parallel selector, flagged for Frank's sign-off) and 7 from s1crit-sem (the loop guard's ASan read-safety widening; §8.1's "K64 sibling gap" REFUTED and closed, with a note that k64fix's own conjunct is more conservative than required; the caseless exclusion rewritten as a structural consequence rather than a rule, with `(?i)`-no-letters shown to move soundly; a soundness-argument grounding fix (clause 2, never `k0`); the G1 admission conjunct specified exactly; a seeded-machine performance hazard; two implementation obligations). No finding refutes S1's mechanism or its acceptance targets. Frank's §9 Q1–Q3 recorded PENDING (unruled).
 - `2026-09-25-r2-findings-design.md` — three-critic D6 panel (fcrit-model, fcrit-sound, fcrit-analyzer) on the [FINDINGS] design note (`docs/design/findings/design.md`, lane findesign), applied by lane findrev the same day as ONE disposition table (the note's §R) plus `[r2 <id>]`-marked in-place edits. Five blocking findings, all applied: the bundle-level (query, encoding) collision rule and the settled digest (M-B1); `--analysis` FILL-ONLY and the first stop = the compiling file only (M-B2/M-B3, RULED by D123 addendum 8); **K65** (the necessary-byte pick decides a no-DFA-front VM give-up), which widens the invariant to answers AND give-ups with GIVEUP1 as its check (S-F1); and C3's soundness argument (S-F2). The revision found one more K65-shaped case itself (C2b, the run-window choice; argued, not measured). Three items are OPEN to Frank. Its record is honest about what the relay did not carry: fcrit-model notes 13–19 and fcrit-sound F4/F7/F12 are NOT dispositioned. Verdict: no blocking item remains in the design; a focused re-check is recommended; B2 has three external preconditions.
+- `2026-09-25-r3-litscan-s1-panel.md` — the FULL D6 panel D122 addendum 4
+  item 3 requires on `[OPT-LITSCAN]` S1 revision 2 (s1crit-sound/opus,
+  s1crit-axis/sonnet, s1crit-consumer/sonnet), applied by lane `s1r3` the
+  same day as revision 3's `§R3`. **No BLOCKING finding; the mechanism
+  holds.** Sharpest items: a G1 pseudocode fix that keeps
+  `dfa_cand_scan_byte`'s own DFA-scan guard and `ENG_ATTEMPT` arm verbatim
+  (dropping them would have called a DFA-shaped derivation on exactly the
+  no-DFA routes K65/K66 live on); **K66 filed** (`known_issues.md`), the
+  RUN-WINDOW analogue of K65 (C2b, the fcrit-sound-argued case from r2
+  now MEASURED on the k65fix build), with a stated coupling invariant (S1's
+  pin and the eventual C2b fix must read the SAME `Job.req_run` field) and
+  step 6 (Q1's floating-run conversion) SEQUENCED after GIVEUP1
+  (`lane/chkgaps`) merges and a ruling on K66; the R4 deny-widening site
+  list corrected (`compile.c:1576` was missing) and replaced with a grep
+  recipe, plus an ordering rule (the bit-32 `#define` must not land first);
+  a coordination paragraph added to BOTH `litscan_s1.md` §1.5 and
+  `findings/design.md` §6.2a naming the shared `req_admit`/G1 site and
+  which lane rebases onto which; and the two open N1-N3 items from
+  revision 2's own §9 ruled (two-bit deny ACCEPTED, a `!views` alternative
+  REJECTED with R7 ratified, row (j)'s reachability upgraded to a hard
+  delivery-bar item).
