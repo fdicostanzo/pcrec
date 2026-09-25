@@ -996,10 +996,10 @@ is never silent.
 
 | path | what | written by | checked by |
 |---|---|---|---|
-| `third_party/<source>-<version>/` (for example `elastic-examples-apache-logs-<commit8>/`) | the vendored sample UNMODIFIED + `LICENSE` + `PROVENANCE.md` (naming `src/findings/<name>.rxt` as what derives from it) + `generate.py` | a sourcing lane (§13 B5) | the existing `make test` `generate.py --check` loop |
+| `third_party/<source>-<version>/` (for example `elastic-examples-apache-logs-<commit8>/`) | the vendored sample UNMODIFIED + `LICENSE` + `PROVENANCE.md` (naming `src/findings/<name>.rxt` as what derives from it) + `generate.py` | a sourcing lane (§13 B5) | the existing `make test` `generate.py --check` loop. **A manifest-only source** (no redistributable sample in tree, D123-6) cannot be recounted there: its `--check` prints a named `SKIP (manifest-only: <source>)`, the loop counts and prints skips at its end (PC-3's "skips loudly" shape), and a separate opt-in target re-fetches by the manifest's url/sha256 and then runs `--check` FAILING CLOSED on any fetch or hash mismatch [r2 A-5] |
 | `src/findings/default.rxt` | the authored default (§2.7) | hand. It is `source authored`, the one bundle with no generator | `tests/findings/`: normalizes to the pinned `default_ppm.tsv` (the dump RUNEST already made, `data/byte_freq_ppm.tsv`) |
 | `src/findings/<name>.rxt` | a shipped bundle's SOURCE OF TRUTH (R14), committed so it diffs and reviews | `third_party/<src>/generate.py` running **the analyzer** (R27b) over the sample | `generate.py --check` (drift = red) |
-| `build/gen/findings_store.inc` | every `src/findings/*.rxt` as a C string literal plus a name index | a Makefile rule (`scripts/embed_text.sh`, POSIX sh + `od`), at BUILD time | nothing needed: it is a mechanical build product, never committed (§8.2) |
+| `build/gen/findings_store.inc` | every `src/findings/*.rxt` as a C string literal plus a name index | a Makefile rule (`scripts/embed_text.sh`, POSIX sh + `od`), at BUILD time. **The invocation is pinned** [r2 A-8]: `LC_ALL=C od -An -v -tx1`, whose output (hex pairs, `-v` so repeated lines are not collapsed to `*`) is the same bytes under BSD and GNU `od`; the script consumes only the hex pairs, never `od`'s column spacing | never committed (§8.2). **Checked** [r2 A-3]: `tests/findings/` compares, for every name in `--list-analyses`, a digest of the embedded text (read back through the library) against the same digest of the committed `src/findings/<name>.rxt`, so an embed that drops, truncates or mis-escapes a byte is red |
 | `src/findings/CLAUDE.md` | directory charter | the build lane | convention |
 
 ### 8.2 Why TEXT and why build-time (§0.11)
@@ -1010,7 +1010,12 @@ is never silent.
 - **The `.inc` is a mechanical ENCODING of committed text, not a
   derivation.** It is produced at build time into `build/` like an object
   file. A committed `.inc` would be a second copy of the committed `.rxt`
-  and would need its own drift check.
+  and would need its own drift check. The embed is still CHECKED (§8.1's
+  digest comparison, [r2 A-3]), because "mechanical" is a claim about the
+  script and the check is about its output.
+- **The embedded text is parsed in the reader's NO-FILESYSTEM mode**
+  (§5.3, [r2 M-S12]): a store bundle carrying an `include "…"` or `lib
+  "…"` head line is refused, so S3 can never open a file.
 - **This does not break the `third_party/` rule** ("a data source compiles
   to generated tables"): the source → `generate.py` → committed derived
   artifact chain is intact, and the derived artifact is `src/findings/<name>.rxt`.
@@ -1039,13 +1044,19 @@ sparse, so the text is proportional to what the corpus observed.
 | failure | tier | behaviour |
 |---|---|---|
 | unknown analysis name (config, `--analysis`, or a bundle `include`) | **hard error** | refuse the compile, naming the name and the stops searched (the unknown-`lib` class) |
-| `-I DIR/<name>.rxt` exists but does not define bundle `<name>` | hard error | naming the file |
+| `-I DIR/<name>.rxt` exists but defines no bundle, or a bundle of another name | **non-fatal note, FALL THROUGH** to the next stop [r2 M-S4, D123-8 item 5] | naming the file; the lookup continues (a `lib` library in a shared `-I` dir is the common case) |
+| `-I DIR/<name>.rxt` defines MORE THAN ONE bundle | hard error [r2 M-S5] | naming the file: one bundle per `-I` file |
+| an `analysis` name with an uppercase letter (config, bundle, `include`, `--analysis`) | parse error / usage error [r2 M-S6] | naming the rule: names are lowercase |
+| an `analysis` block inside an `include "path"` fragment | parse error [r2 M-B3] | naming the rule: bundles resolve from the compiling file, `-I`, or the store |
+| `include "…"` or `lib "…"` in a BUFFER-parsed bundle (store, `analysis_source`) | parse error [r2 M-S12] | a buffer opens nothing |
+| two blocks of one bundle serving one (query, encoding) | parse error [r2 M-B1] | naming both `serves` lines |
+| `--analysis` inside a config's `pcrec` line | parse error [r2 M-B2] | naming the rule: a config names its analysis with its `analysis` line |
 | an include cycle (not self-reference) / chain over `PCREC_MAX_FIND_CHAIN` | hard error | naming the chain |
-| a bundle name defined twice in S1 | **parse error** (schema `unique-by`) | the existing `rxt_fail` machinery, naming both lines |
+| a bundle name defined twice in the compiling file | **parse error** (schema `unique-by`) | the existing `rxt_fail` machinery, naming both lines |
 | a malformed block, a row key out of range or not ascending, a `serves` naming a derivation illegal for its kind, an unknown `encoding` | parse error | same |
 | a block with all-zero counts, a count over `PCREC_MAX_FIND_COUNT`, a bundle over `PCREC_MAX_FIND_BUNDLE_BYTES`, cpfreq over its row limit | hard error, by limit name | never truncated, never a silent fallback |
 | the same name at two stops | **not an error** | shadowing is the rule (D123 addendum), visible in `#section chain` |
-| `--analysis X` replacing a config's `Y ≠ X` | **non-fatal note** (stderr) | per target |
+| `--analysis X` where a target's config names `Y ≠ X` | **non-fatal note** (stderr); the FILE's `Y` is used [r2 M-B2, D123-8 item 2] | per target, in `--tune`'s conflict shape (§5.1) |
 | the SELECTED chain declares no query at all under this compile's `-e` (for example a `bytes`-only user bundle on a `-e utf8` compile) | **non-fatal note** | computed at resolution, independent of the pattern. The user's evident intent is unmet and a correct fallback exists (RFP §3.3 precedent) |
 | a query unanswered for this compile | **silent** | the stamp records `query=none` and the reader takes its NONE fallback (§6.2). The normal case |
 | stale findings (the exemplar changed since analysis) | **not pcrec's** | pcrec never sees the exemplar. `pcrec-analyze --check` compares |
