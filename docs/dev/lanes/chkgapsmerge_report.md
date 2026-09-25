@@ -138,10 +138,18 @@ none of them depended on K64 being open:
 CLOSED 2026-09-25 (lane chkgaps), the bug itself still open**" — true when
 chkgaps wrote it, stale the moment k64fix's fix A merged (K64 is now
 marked FIXED at the top of the same entry, from main). Rewrote the
-paragraph to state four closures (the third bucket in gap 3 was omitted
-from the old count), point at the surviving §5.7/S276 detector by its
-correct number, and record the known_fail retirement with a pointer to
-this report. `tests/known_fail/CLAUDE.md` got the same treatment (see
+paragraph to name its two K64-relevant closures (gap 1's prechecks
+differential, now §5.7/S276 after renumbering, and gap 2's axes GIVEUP1
+bucket) and record the known_fail retirement with a pointer to this
+report. **A first pass at this rewrite over-corrected**: it folded
+chkgaps' gap 3 (mech's `encoding` arm clean-tree baseline, S229/S-U8) —
+unrelated to K64, a separate scoring defect found the same session — into
+K64's own entry, miscounting "two" as "three". Caught on review and fixed
+in a follow-up commit; K64's entry now names exactly the two closures that
+are actually about K64's own shape. Gaps 3 and 4 (the encoding baseline
+and the class-fold agreement check) are recorded only in
+`tests/mech/CLAUDE.md` and `tests/codegen/CLAUDE.md`, where they belong.
+`tests/known_fail/CLAUDE.md` got the retirement treatment (see
 "Retirement" above).
 
 ## Validation
