@@ -1,0 +1,48 @@
+# tests/known_fail/k64_precheck_forced_vm.rxt — K64 (docs/dev/known_issues.md):
+# [OPT-PRECHECK-ADMIT] G2 turns a NOMATCH into PCREC_ERR_STEPS on a
+# step-budgeted, framed, forced-VM one-attempt artifact.
+#
+# WHAT THIS CLOSES. Nothing in `make test` reached the forced-`--engine=vm`
+# admission population before this file: `docs/dev/lanes/admitimpl_
+# answerdiff.py` (the REF-vs-TIP answer differential [OPT-PRECHECK-ADMIT]
+# itself was validated with) ran AUTO-route arms only, and
+# `tests/axes/run_axes.sh` sweeps `--engine=vm`/`--engine=dfa` as its own
+# coarse axis but never `--engine=vm` ALONE against auto for a pattern whose
+# auto route is a DIFFERENT (linear, unaffected) machine — which is exactly
+# `^([a-zA-Z0-9._%+-]+)+@`'s shape (K64's own "why no check saw it" note).
+# This file is that reach, standing: every `make test` run exercises the
+# forced-VM population through the known-fail ratchet
+# (tests/known_fail/run_known_fail.sh), even though the bug itself is not
+# yet fixed.
+#
+# THE EXPECTATIONS ARE PCRE2's, NOT THE CURRENT BUILD's (known_fail/
+# CLAUDE.md's own convention, U9's precedent): PCRE2 10.46/10.48 answer
+# "No match" for every subject below their 5,000-byte last-code-unit-check
+# boundary, confirmed against python3 `re` too (a nested `(class+)+` with no
+# trailing byte is an ordinary catastrophic-backtrack NOMATCH, not
+# PCRE2-specific). The CURRENT compiler instead returns PCREC_ERR_STEPS
+# (a give-up, `gu steps`) on the `n` cells below — that mismatch is what
+# keeps this file's own cells FAILING under `tests/harness/run.sh`, which is
+# the ratchet's "still failing, expected" branch. The ratchet FLAGS this
+# file (NOW PASSING) the day K64's fix (docs/dev/optloop/
+# cycle2_admitfix_reading.md §1.8 A) lands, per known_issues.md K64's own
+# owed item — at which point these cells move to a live corpus file with the
+# `n` expectations unchanged (the K34 close's own precedent, `docs/dev/
+# learnings.md` §3.z).
+#
+# `budget steps=10000` keeps this file's own runtime trivial: L=16 already
+# costs `3*2^14 - 2 = 49150` VM steps under the pattern's own exponential
+# shape (docs/dev/known_issues.md K64's own formula), 5x the budget, so the
+# give-up fires almost immediately rather than needing the shipped default
+# (500,000,000 steps) or a subject anywhere near L=30.
+pattern ^([a-zA-Z0-9._%+-]+)+@
+engine vm
+budget steps=10000
+# the fast path: '@' present, one attempt, no give-up on either build.
+m "a@" 0 2
+g 1 0 1
+# no '@' anywhere: PCRE2/python say NOMATCH; the current build gives up.
+n "aaaaaaaaaaaaaaaa"
+n "aaaaaaaaaaaaaaaaa"
+n "aaaaaaaaaaaaaaaaaa"
+n "aaaaaaaaaaaaaaaaaaa"
