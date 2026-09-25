@@ -2483,6 +2483,24 @@ level above it, now inherits it from the same predicates rather than restating
 them. Measured: 29 ledger cells, headed by `winpath-near-miss` and
 `email-nested-plus` at 20 ns → 23 µs.
 
+**G2 needs the one attempt to be LINEAR, and on the VM route that is a second
+condition** ([K64], 2026-09-25). "Reads at most the same window" is true of a
+DFA walk and false of a backtracking program: `^([a-zA-Z0-9._%+-]+)+@` under
+`--engine=vm` spends `3·2^(L−2) − 2` steps on a leading class run of length L
+before failing on the absent `@`, so on 30 or more such bytes its one attempt
+exhausts the step budget (§3.1 of `limits.md`) and returns `PCREC_ERR_STEPS`,
+where the pre-check answered NOMATCH after one `memchr` and PCRE2 answers
+NOMATCH too. There the pre-check is a NO-MATCH PROOF that bounds the call, not
+only a skipped attempt. So G2 declines on the VM route only where the attempt
+is linear by a fact the artifact already states: an EXACT-language hybrid DFA
+runs in front of it (`<PREFIX>_VM_PREFILTER "hybrid"` with
+`<PREFIX>_VM_PREFILTER_LANG "exact"` — that scan is itself the no-match proof;
+a `"count-collapsed"` superset is not), or the program is frameless
+(`<PREFIX>_VM_FRAMELESS 1` — it never pushes a resume frame, so it cannot
+backtrack). Every other one-attempt VM artifact — framed, with no prefilter or
+a collapsed one — emits the pre-check (`<PREFIX>_REQ_WHY "emitted"`). The DFA
+route is linear by construction and is unchanged.
+
 **G1 — DOMINANCE. Not a second pass on a byte already scanned.** Where the
 artifact's own candidate-start prefilter is the single-byte `memchr` form on a
 byte `p`, a one-byte pre-check on `q` is worth emitting only if `q` is
@@ -2496,11 +2514,16 @@ dominated by one, and the ledger measured only the one-byte shape. Measured: 4
 ledger cells, all `wild-codegrammar-json-array-begin`, whose artifact ran
 `memchr(…, 91, …)` twice per call.
 
-**Answer-identity.** Preserved, and more simply than for either axis: a
-declined pre-check is a check not run, and the check could only ever return
-the answer the engine below it then returns anyway. Neither decline is
-answer-detectable in either direction, which is why both sabotage rows
-(S269, S270) are structural.
+**Answer-identity.** Preserved, including for give-ups: a declined
+pre-check is a check not run, and the check could only ever return NOMATCH
+where the engine below it then returns NOMATCH anyway — within the same step
+budget, which is what G2's linearity condition above guarantees. Without that
+condition the engine below could return a GIVE-UP instead ([K64]), so the
+condition is part of this claim and not only of G2's cost argument. Removing
+either rule outright is answer-invisible (the pre-check comes back and only
+costs time), which is why S269 and S270 are structural rows; removing the
+LINEARITY CONDITION is answer-detectable (NOMATCH becomes `PCREC_ERR_STEPS`),
+and S273 is that row, detected by `tests/base/k64_precheck_forced_vm.rxt`.
 
 **The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
 FOUR-TOKEN set:
@@ -2509,7 +2532,7 @@ FOUR-TOKEN set:
 |---|---|
 | `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name |
 | `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
-| `"one-attempt"` | G2 declined: the route tries one start position |
+| `"one-attempt"` | G2 declined: the route tries one start position, linearly (a DFA, an exact hybrid, or a frameless VM program) |
 | `"dominated"` | G1 declined: an equally rare byte is already scanned |
 
 `"none"` here holds if and only if `<PREFIX>_REQ_BYTE` is `"none"`, which is

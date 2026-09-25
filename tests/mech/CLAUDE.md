@@ -2759,6 +2759,7 @@ measured:
 |---|---|---|---|---|
 | S269 | [OPT-PRECHECK-ADMIT] G2 | `req_route_one_attempt` emptied | expected `0fail` | the pre-check returns to a one-attempt route, where it only ever repeats the attempt's own work |
 | S270 | [OPT-PRECHECK-ADMIT] G1 | `req_byte_dominated_by` emptied | expected `0fail` | the pre-check returns on top of a prefilter already scanning the same byte |
+| S273 | [K64] G2's linearity | the VM arm's exact-hybrid/frameless conjunct removed | **expected RED**, `corpus:4fail/5pass` on `SAB_HARNESS_TARGET` `tests/base/k64_precheck_forced_vm.rxt` | 6ef76820's defect: a framed forced-VM one attempt declines the pre-check and gives up on the step budget where the answer is NOMATCH |
 
 **THESE ARE THE FIRST TWO ROWS IN THIS DIRECTORY WHOSE PLANT CANNOT MOVE AN
 ANSWER IN EITHER DIRECTION**, which is a stronger statement than S263's and
@@ -2769,6 +2770,13 @@ construction: the pre-check it restores answers NOMATCH only where the engine
 below it then answers NOMATCH anyway. There is no plant of either rule that a
 corpus can see, and the rows say so in their own `SAB_DESC` rather than
 leaving a green `harness` arm to be misread as an undetected regression.
+
+**S273 IS THE EXCEPTION THAT PROVES THE CLAIM'S SCOPE ([K64], 2026-09-25).**
+"Both directions are sound" held for removing a rule and was false for one
+direction of NARROWING it: G2 as first built declined on a backtracking VM
+attempt, where the pre-check was the only thing bounding the call, and a
+NOMATCH became `PCREC_ERR_STEPS`. The rule now carries a linearity conjunct,
+and S273 plants its absence — the one plant in this family a corpus sees.
 
 **THE PLANTS EMPTY THE PREDICATE, NOT THE CALL SITE**, and that choice is
 about keeping the failure singular. Deleting `req_admit`'s own

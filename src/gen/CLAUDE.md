@@ -3150,6 +3150,16 @@ that was already cheaper, or on top of a pass the artifact was already running.
   `Job.start_anchor` on the VM's. The DFA's answer is the TIGHTER one and is
   deliberately not replaced by the AST's — `emit_attempt` asserts the other
   direction at the one site holding both.
+- **[K64] ON THE VM ROUTE ONE ATTEMPT IS NOT ENOUGH; IT MUST BE LINEAR.** A
+  backtracking program's one attempt can spend the whole step budget, and
+  there the pre-check is the no-match proof that bounds the call (the bench's
+  `email-nested-plus` under `--engine=vm` gave up where PCRE2 answers
+  NOMATCH). So the VM arm also asks `fit.prefilter && !fit.prefilter_collapsed`
+  (an exact hybrid DFA in front) or `Job.vm_frameless`. The latter is
+  `!Vm.has_push`, PUBLISHED by `vm_plan_entry` — the same bool that stamps
+  `<PREFIX>_VM_FRAMELESS` — and it is published there rather than at the end
+  of `pcrec_emit_vm` beside `vm_rungs` and friends because the prologue, which
+  asks `req_admit`, runs between the two.
 - **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan_byte`
   calls `dfa_pf_of` and compares the chosen object's own `name`, because the
   deny mask and the offset-set candidates sit between the two: an artifact

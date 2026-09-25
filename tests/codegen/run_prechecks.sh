@@ -894,7 +894,7 @@ done <<'ROWS'
 ^[A-Za-z]:x%%one-attempt%winpath-near-miss's anchor: a ^-anchored DFA runs one attempt
 ^abc$%%one-attempt%the same on the plainest possible witness
 \Gfoo%%one-attempt%the \G row of the three-valued start_max: start_max = search_from, also one attempt
-^([a-z]+)+@%%one-attempt%email-nested-plus's shape: the VM route, RX_VM_START "anchored"
+^([a-z]+)+@%%one-attempt%email-nested-plus's shape: the VM route, RX_VM_START "anchored", an exact hybrid in front (§5.6)
 \[%%dominated%json-array-begin: the prefilter's memchr byte IS the pre-check's, 91 twice per call
 q%%dominated%the same by identity on a single literal
 x[0-9]+Q%%emitted%THE CONTROL: Q (66 ppm) is strictly rarer than the prefilter's x (997), so the check earns its pass

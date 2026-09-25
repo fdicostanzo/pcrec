@@ -2908,6 +2908,15 @@ never edited afterwards.
   `docs/dev/optloop/cycle2_batch2_reading.md`; instruments and the
   null-control population are `docs/dev/optloop/b2ledger/`.
 
+- `k64fix_report.md` — [K64] fix A (2026-09-25, lane k64fix, opus): G2's
+  VM arm declines the pre-check only on a LINEAR one attempt (an exact hybrid
+  in front, or a frameless program — `Job.vm_frameless`), one conjunct in
+  `req_route_one_attempt`. Regression `tests/base/k64_precheck_forced_vm.rxt`
+  + `run_prechecks.sh` §5.6 + S273 (answer-detectable, unlike S269/S270);
+  census `docs/dev/optloop/admitfix/k64_census.py`: 176 movers, 41 of them
+  on the AUTO route (backref / linked-call VM artifacts, which have no hybrid
+  to be exact) — a finding against the brief's prediction, covered by the
+  rule. No abi event.
 - `b84read_report.md` — reading the bench's [B84] admission-fix acceptance
   ledger (O-52) against I-102 (2026-09-25, lane b84read, opus; analysis +
   step-count measurement only): the one new give-up is K64 — a G2 defect

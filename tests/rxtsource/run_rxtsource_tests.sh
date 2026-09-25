@@ -283,9 +283,15 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # SAME +0/+4/+7. Measured with this file's own awk census run standalone
 # against the three tests/vars/ files (45 blocks / 83 lines against the
 # prior 41/76).
-CENSUS_FILES=216
-CENSUS_BLOCKS=3999
-CENSUS_LINES=29120
+# 2026-09-25 (lane k64fix, [K64]) — +1 file / +2 blocks / +9 lines for
+# tests/base/k64_precheck_forced_vm.rxt (the forced-VM give-up regression:
+# block 1 carries 4 n + 1 m + 1 gu, block 2 carries 2 n + 1 m). Not under
+# tests/known_fail/, so RUNSH_* move by the same +1/+2/+9. Rebased onto
+# varfollow's own re-pin above rather than replacing it (the two lanes'
+# corpus additions are disjoint files): 216+1=217 / 3999+2=4001 / 29120+9=29129.
+CENSUS_FILES=217
+CENSUS_BLOCKS=4001
+CENSUS_LINES=29129
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -335,9 +341,13 @@ CENSUS_LINES=29120
 # tests/known_fail/).
 # [VAR] follow-up (lane varfollow, 2026-09-25) — +0/+4/+7, the SAME delta as
 # CENSUS_* above (tests/vars/ is not under tests/known_fail/).
-RUNSH_FILES=216
-RUNSH_BLOCKS=3999
-RUNSH_LINES=29120
+# 2026-09-25 (lane k64fix, [K64]) — +1/+2/+9, the SAME delta as CENSUS_*
+# above (tests/base/k64_precheck_forced_vm.rxt is not under known_fail/).
+# Combined per the same rebase note above: 216+1=217 / 3999+2=4001 /
+# 29120+9=29129.
+RUNSH_FILES=217
+RUNSH_BLOCKS=4001
+RUNSH_LINES=29129
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1229,10 +1239,19 @@ C3_FILES=179
 # sensitive divergence, so it carries across boxes the same way
 # `pcre2-only` does — the prior re-pins' own stated method). Reconciliation:
 # 13721+15161+89 = 28971 = CENSUS_LINES (matches the pin above).
-C3_PASS=13721
-C3_SKIP=15227
+#
+# [k64fix re-pin, 2026-09-25, lane k64fix] +8 PASS, +1 SKIP (under giveup),
+# nothing else moved. tests/base/k64_precheck_forced_vm.rxt ISOLATED
+# directly — `python3 tests/harness/verify_rxt.py --file-timeout 10
+# tests/base/k64_precheck_forced_vm.rxt` reports `PASS=8 FAIL=0` and
+# `SKIP=1 (... giveup=1 ...)`: eight plain m/n cells python `re` answers
+# (the class runs are kept to 16..20 bytes so its own backtracking stays
+# in milliseconds) and the one `gu steps` control, which is a budget
+# question python cannot ask.
+C3_PASS=13729
+C3_SKIP=15228
 C3_SKIP_PCRE2ONLY=2944
-C3_SKIP_GIVEUP=23
+C3_SKIP_GIVEUP=24
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14
