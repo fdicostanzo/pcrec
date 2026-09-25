@@ -8500,3 +8500,42 @@ vital organs"):
    answer-identity over corpus × every startpos × all engines, the identity
    gates, test-axes, ASan/UBSan on moved artifacts, and a sabotage row per
    new predicate.
+
+## D124 — ONE ARTIFACT, TWO EMISSION STRATEGIES: mechanisms are organized by the QUESTION they answer, not by engine; the engine is a row predicate and a consumer hat; the execution cores and their contracts stay distinct (Frank, 2026-09-25, seventy-ninth session)
+
+Frank: "we treat vm and dfa as two different engines and partition thus,
+but really they are two ways of emitting code into the same artifact. the
+lines are already blurred. they are both choices in each other path: vm
+using prefilter, dfa using edges." The tree already shows it: the VM hybrid
+calls the DFA's candidate scan (emit_vm.c:10758); the DFA emits VM-shaped
+scan edges and [ENG-ISL] plans VM-in-DFA islands; both share the req_admit
+prologue, the span_match residual, the fold table and the frequency prior;
+engine choice is per pattern and heading to per region.
+THE GUIDELINE (manager's proposal, adopted — "record the approach"):
+1. ORGANIZE BY QUESTION. Each mechanism is designed against the question it
+   answers — where can a match start (compare_stack L3), does this span
+   match (L2), what facts does the pattern have ([PATFACTS], D120), which
+   check runs where (L4) — with ONE table/record per question for the
+   whole artifact. The engine appears only as a ROW PREDICATE and a
+   CONSUMER HOOK ("same table, different hats"; D122 addendum 4).
+2. AN ENGINE-LOCAL COPY OF A SHARED DECISION IS A DEFECT (the class of a
+   second fold spelling): no VM-local search table, no DFA-only copy of a
+   fact the VM needs.
+3. THE EXECUTION CORES STAY DISTINCT, AND THEIR CONTRACTS ARE EXPLICIT: the
+   DFA steps states without backtracking, reseeds after a scan, has fixed
+   per-byte cost; the VM backtracks, keeps frames, carries the step budget
+   and captures. Every shared row states what it guarantees to EACH
+   consumer — K64 was a shared decision correct for the DFA consumer and
+   wrong for the VM's step budget. Changes to those contracts take the full
+   D6 bar (D122 addendum 4 item 3).
+4. CONVERGE BY IMPLEMENT-THEN-REPLACE, NEVER BIG-BANG: emit_dfa.c/emit_vm.c
+   stay engine-partitioned files until rows touching them move a piece
+   (S1 → dfa_pfs[] consumer hook; [OPT-VMSEED] → the table engine-neutral;
+   [PATFACTS] → one analysis record).
+5. A DESIGN-LENS QUESTION, beside the four standing lenses: "is this a
+   question both emissions share? then one table, engine hats."
+6. TESTING IS UNCHANGED: the engine axes (--engine, the deny flags) stay —
+   they are how the emission choices are proven answer-identical; this
+   guideline governs how code is organized, not what is tested.
+APPROACH.md ("two engines") is amended AFTER [PATFACTS] step 2 so the
+rewrite describes a concrete structure, not an aspiration.
