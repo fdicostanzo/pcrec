@@ -1093,14 +1093,27 @@ pcrec-analyze --check BUNDLE.rxt [FILE | -]      → exit 0 iff a recount reprod
   byte-identical output (R27c).
 - **Written declarations (§2.4)**, from what the pass observed:
 
-  | observed | `encoding` | `freq`/`bigram` `serves … when` | `cpfreq` |
-  |---|---|---|---|
-  | every byte < 0x80 | `ascii` | `byte,utf8` | `when byte,utf8 via encode-utf8` |
-  | valid UTF-8 with non-ASCII | `utf8` | `byte,utf8` | same |
-  | invalid UTF-8 | `bytes` | `byte` | refused (hard error if requested) |
+  | observed | `encoding` | `bigram` | `freq` (no `cpfreq` scanned) | `freq` + `cpfreq` both scanned |
+  |---|---|---|---|---|
+  | every byte < 0x80 | `ascii` | `run-rarity when byte,utf8` | `byte-rate when byte,utf8` | `freq`: `byte-rate when byte`; `cpfreq`: `byte-rate when utf8 via encode-utf8` |
+  | valid UTF-8 with non-ASCII | `utf8` | `run-rarity when byte,utf8` | `byte-rate when byte,utf8` | same split |
+  | invalid UTF-8 | `bytes` | `run-rarity when byte` | `byte-rate when byte` | `cpfreq` refused (hard error if requested) |
+
+  **[r2 M-B1] The defaults can never collide.** The first draft gave
+  `freq` and `cpfreq` both `when byte,utf8`, which §2.4's rule now refuses
+  at parse. When both are scanned, the `byte` compile reads `freq` and the
+  `utf8` compile reads `cpfreq`. On input that decodes, the two derived
+  tables are IDENTICAL (decoding valid UTF-8 and re-encoding it is the
+  identity on bytes, so `encode-utf8`'s counts equal `freq`'s), and by
+  §7's digest rule so are their digests; the split is therefore a choice
+  of which block is SHOWN answering, not of the answer. It gives the
+  `utf8` compile the block whose applicability the data declares
+  per-code-point (D123-4), and it leaves `freq` the one block a `bytes`
+  exemplar can have.
 
   These are the analyzer's defaults, written into its output where the
-  user can see and edit them. The compiler applies whatever the file says.
+  user can see and edit them. The compiler applies whatever the file says,
+  and refuses a file whose edits create a collision.
 - **Output.** §2.7's shape: kinds in canonical order, rows ascending,
   provenance in schema order, `bytes` and `sha256` filled, and `analyzer
   pcrec-analyze <version> --scan <canonical list>`.
@@ -1120,12 +1133,24 @@ pcrec-analyze --check BUNDLE.rxt [FILE | -]      → exit 0 iff a recount reprod
 
 - **Per scan:** one process per `--scan` kind over the same file, then
   `--merge`. The merge is a UNION of disjoint kinds.
-- **Per shard:** `--shard K/N` reads bytes `[start_K − 1, end_K)` of a
-  seekable FILE (§0.5). It counts the leading byte ONLY as the first
-  element of a pair, never into `freq` or `cpfreq`, and never into `bytes`.
-  A `cpfreq` shard boundary is moved forward to the next UTF-8 lead byte,
-  where the decoder can resynchronize, so neighbouring shards agree on
-  where the cut is without communicating.
+- **Per shard:** `--shard K/N` covers the nominal range `[start_K, end_K)`
+  of a seekable FILE, `start_K = ⌊(K−1)·size/N⌋`, `end_K = ⌊K·size/N⌋`.
+  - **`bigram` seam (§0.5).** Shard K > 1 also reads the one byte at
+    `start_K − 1` and counts it ONLY as the first element of the pair it
+    opens — never into `freq`, `cpfreq` or `bytes`. **Shard 1 has no such
+    byte** [r2 A-1]: it reads from offset 0 and counts its first byte into
+    `freq` like any other. An implementation that treats "the first byte
+    read" as the overlap byte uniformly drops byte 0 from `freq`; the
+    k = 1 exception is stated so it cannot.
+  - **`cpfreq` seam** [r2 A-2]. Shard K owns exactly the code points whose
+    LEAD byte lies in `[start_K, end_K)`. So shard K skips the continuation
+    bytes (`10xxxxxx`) at its start — at most 3 on valid input — and reads
+    past `end_K` to finish the code point whose lead byte is before
+    `end_K` — at most 3 more bytes. Each shard computes its cut from the
+    file alone, the two neighbours' cuts are the same byte offset, and no
+    code point is counted twice or missed. More than 3 continuation bytes
+    in a row is invalid UTF-8, which `cpfreq` refuses anyway (R26), so the
+    reach never exceeds 3 bytes on any input `cpfreq` accepts.
 - **Merge rules.** Counts ADD. `encoding` combines by the lattice
   `ascii < utf8 < bytes`, and `serves` is recomputed from it by §10.2's
   table. `bytes` and `sha256` come from a `--digest-only` run over the
@@ -1142,6 +1167,7 @@ pcrec-analyze --check BUNDLE.rxt [FILE | -]      → exit 0 iff a recount reprod
 | `freq` | charset and language mix, structural punctuation density | analyzer `--help`, `findings.md` |
 | `cpfreq` | script mix, rare characters (possibly identifying for a small corpus) | same |
 | `bigram` | adjacent byte-pair rates. It cannot reconstruct strings longer than 2 bytes, but chaining frequent pairs hints at frequent tokens | same, and it is why `trigram`/tokens stay unbuilt without a customer and a privacy statement (§17) |
+| the bundle NAME [r2 A-7] | whatever the name says (a customer, a product, a site); it is stamped into EVERY artifact built under the bundle (§7) | same; the advice is to name bundles neutrally. A redaction option is OPEN to Frank |
 
 ---
 
