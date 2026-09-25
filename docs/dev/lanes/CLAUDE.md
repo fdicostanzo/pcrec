@@ -3091,3 +3091,10 @@ never edited afterwards.
   buckets, each with a non-vacuity arm), and building one correctly is
   check-design work outside this lane's time box — left for a ruling on
   the bucket's shape.
+- `cmpmap_report.md` — `[OPT-LITSCAN]`'s coordination map lane (2026-09-25,
+  opus, docs only): delivered `docs/design/compare_stack.md`, the
+  site inventory, duplications, shared primitives, per-row declarations
+  and the gated sequence for every overlapping literal/class/fold/scan
+  mechanism. Its load-bearing challenge is that the four losing WAF cells are
+  DFA-route with no literal-compare site, so the exact VM compare and a
+  WAF attribution read come before any caseless mask.

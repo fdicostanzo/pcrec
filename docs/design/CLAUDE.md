@@ -2461,6 +2461,25 @@ append-only or historical records.
   the one arm of the run walk where the conservative answer is load-bearing
   rather than merely tidy.
 
+- `compare_stack.md` — **the COMPARE-STACK COORDINATION MAP**, owned by
+  `[OPT-LITSCAN]` (D122 + ADDENDUM; lane `cmpmap`, 2026-09-25, written from
+  main at 897a97f0). A MAP rather than a design. It records every place `src/`
+  folds case, tests class membership, compares a literal or span, or scans
+  for candidates, each located by layer: L0 fold, the byte cube, L1
+  membership spelling, L2 across-position compare, L3 candidate finding,
+  L4 placement/elision. It lists the definitions that exist more than once and
+  which agreement check covers each, the single source for each shared
+  primitive, and each member row's consumes / produces / must-not-re-derive
+  line. The sequence is gated per step by its measurement (D77). **Keep it
+  true**: a site that joins the kit, leaves it or keeps its own form
+  updates §2 and §5 in the same change. Its sharpest facts: the literal
+  compare is spelled six ways and only REQ_RUN's is fused by gcc; the byte
+  cube (`cube_of`) exists three times, all outside `src/`; the frequency
+  prior's encoding gate is present in two readers and absent in the
+  offset-k model; and the four losing WAF cells are DFA-route with no
+  literal-compare site. The last one is why §6 puts the exact VM compare and a WAF
+  attribution read ahead of any caseless mask.
+
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
 where the build met them and lost, and those places are in
