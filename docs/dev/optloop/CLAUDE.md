@@ -542,6 +542,38 @@ that cycle's analysis lands.
   still-owed bench measurement (ctx/level-context vs `pcre2-jit` at the
   current pin) as the actual gate.
 
+## The admission fix's acceptance (lane `b84read`, 2026-09-25)
+
+- `cycle2_admitfix_reading.md` — **THE READING of pcrec-bench's [B84]
+  ledger / O-52** (`[OPT-PRECHECK-ADMIT]`, `6ef76820`, against I-102), same
+  method as `cycle2_batch2_reading.md`, over FOUR pins' records reduced with
+  the bench's own reducer. Findings first. **(1) The one new give-up
+  (`email-nested-plus` srch, forced VM, 5 subjects `PCREC_ERR_STEPS`) is
+  the fix's defect and an OLD outcome returning**: reproduced exactly on
+  darwin; the same five gave up identically at `25b1984f` (batch-1
+  BEFORE), batch 1's `memchr('@')` cured them by accident, G2 removed it.
+  Mechanism: a framed backtracking VM attempt costs `3·2^(L−2) − 2` steps
+  over a class run, the 500M budget dies at L = 30; the auto route is
+  guarded by an exact hybrid DFA. `tuning.md` §2.29's G2 argument and
+  answer-identity sentence are false for a step-budgeted VM; PCRE2 10.46
+  answers these (its req-code-unit check applies to anchored patterns
+  below 5,000 bytes, boundary measured on the reference box). Filed K64;
+  fix proposed (G2's VM arm only where the attempt is linear: exact hybrid
+  or frameless), not built. **(2) (c)'s 3/4 miss is null**: the forced-VM
+  artifact is program-identical, has no candidate-start scan for G1, and
+  I-102(c) over-scoped it. **(3)** grid per cell against this pin pair's
+  own scale-matched null band (146 program-identical artifact-configs);
+  the six meeting targets and router/keyword are clean controls; (b)'s
+  forced-VM 7,207 ns predicted to 6,525-7,600 ns from 826 counted VM steps.
+  **(4) the 29 G2 cells itemized** — the count cited the BATCH-1 LEDGER's
+  §1.2/§2.1/§2.2, not the reading's — 27/29 improve, 2 in band, (e) MET;
+  §4.1 is a ready-to-append inbox entry. **(5)** FREQPICK default-on
+  (precondition met); REQPOS 2b default-on with the router/keyword residual
+  handed to [OPT-LITSCAN] by D122's own clause; PRECHECK-ADMIT stays
+  started until K64's fix.
+- `admitfix/` — that reading's instruments and transcripts. See its own
+  `CLAUDE.md`.
+
 ## `[WORD-FOLD]`'s D77 census (lane `wfcensus`, 2026-09-25)
 
 - `wordfold_census.md` — **`[WORD-FOLD]`'s D77 census.** The row's own gate

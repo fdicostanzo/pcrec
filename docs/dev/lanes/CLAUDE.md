@@ -2908,6 +2908,13 @@ never edited afterwards.
   `docs/dev/optloop/cycle2_batch2_reading.md`; instruments and the
   null-control population are `docs/dev/optloop/b2ledger/`.
 
+- `b84read_report.md` — reading the bench's [B84] admission-fix acceptance
+  ledger (O-52) against I-102 (2026-09-25, lane b84read, opus; analysis +
+  step-count measurement only): the one new give-up is K64 — a G2 defect
+  on framed forced-VM artifacts that re-exposes a 25b1984f-era outcome;
+  (c)'s miss is null; the 29 G2 cells itemized and MET; dispositions. The
+  reading is `docs/dev/optloop/cycle2_admitfix_reading.md`, instruments
+  `docs/dev/optloop/admitfix/`.
 - `admitimpl_report.md`, `admitimpl_census.py`, `admitimpl_answerdiff.py` —
   [OPT-PRECHECK-ADMIT] (2026-09-23, lane admitimpl, opus): the whole-window
   pre-checks' ADMISSION, ratified G1 + G2, `abi` 30 -> 31 for one new stamp
