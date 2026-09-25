@@ -2908,6 +2908,13 @@ never edited afterwards.
   `docs/dev/optloop/cycle2_batch2_reading.md`; instruments and the
   null-control population are `docs/dev/optloop/b2ledger/`.
 
+- `k65fix_report.md` — [K65] fix (a) (2026-09-25, lane k65fix, opus): on a
+  VM route with no DFA scan the pre-check tests EVERY necessary-set member
+  (`emit_req_set_rest`, `Job.req_set`), so NOMATCH-vs-give-up no longer
+  follows the pick. Regression `tests/base/k65_precheck_whole_set.rxt` +
+  `run_prechecks.sh` §5.7 + S277; census
+  `docs/dev/optloop/admitfix/k65_census.py`: 452 of 6,642 movers, all pure
+  6-line insertions; abi 33 -> 34.
 - `k64fix_report.md` — [K64] fix A (2026-09-25, lane k64fix, opus): G2's
   VM arm declines the pre-check only on a LINEAR one attempt (an exact hybrid
   in front, or a frameless program — `Job.vm_frameless`), one conjunct in

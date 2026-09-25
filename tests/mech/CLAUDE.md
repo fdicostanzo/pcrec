@@ -2759,6 +2759,7 @@ measured:
 |---|---|---|---|---|
 | S269 | [OPT-PRECHECK-ADMIT] G2 | `req_route_one_attempt` emptied | expected `0fail` | the pre-check returns to a one-attempt route, where it only ever repeats the attempt's own work |
 | S270 | [OPT-PRECHECK-ADMIT] G1 | `req_byte_dominated_by` emptied | expected `0fail` | the pre-check returns on top of a prefilter already scanning the same byte |
+| S277 | [K65] the whole-set half | `emit_req_set_rest` returns before emitting | **expected RED**, `corpus:9fail/15pass` on `SAB_HARNESS_TARGET` `tests/base/k65_precheck_whole_set.rxt` | the pre-fix defect: an unguarded VM artifact tests only the picked member and gives up on a subject lacking another |
 | S274 | [K64] G2's linearity | the VM arm's exact-hybrid/frameless conjunct removed | **expected RED**, `corpus:4fail/5pass` on `SAB_HARNESS_TARGET` `tests/base/k64_precheck_forced_vm.rxt` | 6ef76820's defect: a framed forced-VM one attempt declines the pre-check and gives up on the step budget where the answer is NOMATCH |
 
 **THESE ARE THE FIRST TWO ROWS IN THIS DIRECTORY WHOSE PLANT CANNOT MOVE AN
@@ -2777,6 +2778,10 @@ direction of NARROWING it: G2 as first built declined on a backtracking VM
 attempt, where the pre-check was the only thing bounding the call, and a
 NOMATCH became `PCREC_ERR_STEPS`. The rule now carries a linearity conjunct,
 and S274 plants its absence — the one plant in this family a corpus sees.
+S277 ([K65], 2026-09-25) is the second, one mechanism over: it does not
+remove an admission rule but the WHOLE-SET half of an admitted check, which
+on an unguarded VM route is the difference between a no-match proof and a
+give-up.
 
 **THE PLANTS EMPTY THE PREDICATE, NOT THE CALL SITE**, and that choice is
 about keeping the failure singular. Deleting `req_admit`'s own

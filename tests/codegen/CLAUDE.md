@@ -895,6 +895,15 @@ decides whether to perform it — and then run the row through
     is answer-detectable" sentence above is about REMOVING a rule; one
     direction of NARROWING G2 is answer-detectable, and
     `tests/base/k64_precheck_forced_vm.rxt` / S274 are that detector.
+    **§5.7 ([K65], 2026-09-25, 258 -> 267 checks)** is the WHOLE-SET half on
+    a VM route with no DFA scan: each row's expected `rq_set[]` member list is
+    derived by hand from the pattern (never from a stamp) — K65's witness
+    under `-e byte` and `-e utf8` (the two picks, so the two complements), the
+    run form, a frameless unanchored forced-VM program, and three `none`
+    controls (a one-member set, an exact hybrid in front, the DFA engine);
+    `[5.7r]` rows prove the witness is unguarded VM and the control a hybrid.
+    `tests/base/k65_precheck_whole_set.rxt` / S277 are the answer-level
+    detector.
   - **§3's AND §4's STAMPS NAME THE ANALYSIS; §5's NAMES THE EMISSION**, and
     that split is why §3.1/§3.6's biconditional arms read `REQ_WHY` while
     their VALUE arms still read `REQ_BYTE`/`REQ_RUN`. The alternative was

@@ -113,6 +113,16 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   is the frameless control G2 still declines on. Oracle-verified against
   python3 `re` (class runs of 16..20 bytes keep python's own backtracking
   fast); sabotage S274 is its failing direction
+- **k65_precheck_whole_set.rxt** — [K65]'s regression (2026-09-25, lane
+  k65fix): `(x?)([a-z]+)+Z.@\1` (backreference, so no hybrid: an unguarded
+  framed VM program) under `encoding byte` and `encoding utf8`, whose picks
+  differ (`Z` / `@`), plus the run form `...Z.@#\1`, each with `budget
+  steps=10000`. The `n` cells lacking the member the pick did NOT test gave
+  up (`steps`) before the pre-check tested the whole necessary set — 9 of 24
+  cells at 5a2094e7, 24/24 after; the `gu steps` cells prove the budget
+  reaches the VM. Oracle-verified against python3 `re` (PASS=21, 3 gu
+  skipped; runs of 16..18 bytes) and spot-checked on libpcre2 10.48;
+  sabotage S277 is its failing direction
 - **possess_lazy_guard.rxt** — the 20 D47.6 lazy-possessification guard cells (docs/dev/decisions.md D47 ruling 6): every quantifier `eng_brep_design.md`'s repaired possessification analysis declines under its lazy non-nullable-remainder conjunct, whose "20 false declines" turned out to be a probe defect, not a real cost — `probe_possess.py`'s subject alphabet omitted the prefix byte `z` these 20 patterns are built from, so it could not reach the subjects (`za{1,3}?` on "zaa", `(?:ab){3,}?` on "abababab", …) where all 20 GENUINELY diverge lazy-vs-possessive. The possessification pass now EXISTS (src/opt/possessify.c, merged 2026-08-16), so these cells are live-fire: 79 cases (span + capture-slot) pin the lazy behavior the shipped pass must preserve by declining, oracle-verified three ways (python3 `re`, libpcre2, pcrec's own build). Extended 2026-08-16 (nested-lazy lane follow-up) with the lazy-`$` family — a bare `$` follow makes the remainder nullable REGARDLESS of `(?m)`, so the lazy conjunct declines it even though the greedy twin possessifies under the D47.5 `$` exemption; discriminating subjects end in `\n` (`$` holds before a final newline, so a wrongly-possessified lazy loop swallows it), plus the greedy control pinning the exemption's own soundness on the same subjects
 - **opt41_rung_nullable_decline.rxt** — the [OPT-4.1] `--emit-ir` prefilter
   value `no-nullable-collapsed` REACHABILITY WITNESS (adm71 item 4,

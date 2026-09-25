@@ -56,9 +56,27 @@ proves NOMATCH); (b) readers take a findings-blind fixed window rule there
 (the shape `findings/design.md` §6.2a's C2b row already frames); (c) K64's
 option C analogue (refill the step budget at the run pre-check).
 
-## K65 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
+## K65 — FIXED 2026-09-25 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
 
-**Status: deferred** — FIX SHAPE RULED 2026-09-25 (D123 addendum 8 item 1): candidate (a), pre-check every necessary-set member on no-DFA-front VM routes; a fix lane is owed (next session). Pre-existing on
+**Status: fixed** (2026-09-25, lane `k65fix`, fix (a) as ruled — D123
+addendum 8 item 1; `docs/dev/lanes/k65fix_report.md`; branch `lane/k65fix`,
+pending merge). On a VM artifact with no DFA scan in front
+(`RX_VM_PREFILTER "none"`) an emitted pre-check is now followed by a
+`memchr` of every remaining member of the necessary set
+(`emit_req_set_rest`, src/gen/emit_dfa.c, reading the new `Job.req_set`
+that `pcrec_req_byte` publishes), so any absent member proves NOMATCH
+whatever the pick. The repro answers NOMATCH under both `-e byte` and
+`-e utf8`. The same hazard held for a FRAMELESS unanchored forced-VM program
+(retried at every start: `[a-z]+Z.@` gave up on WORK over 200 KB of `a`s
+lacking `@`), and the fix covers it by the same predicate. Regression:
+`tests/base/k65_precheck_whole_set.rxt` (9 of its 24 cells give up at
+5a2094e7, all pass after), `tests/codegen/run_prechecks.sh` §5.7, sabotage
+S277 (DETECTED). abi 33 -> 34 (452 of 6,642 census artifact-configs gain
+the 6-line block). Residue, stated in `docs/spec/tuning.md` §2.29 and not
+closed: a run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to a window
+the prior chooses, so a subject holding every set byte and one window of a
+long run but not another is still prior-dependent. The text below is the
+original filing. Pre-existing on
 main; not a wrong answer (a give-up is honest under `docs/spec/limits.md`
 §1), but an answer → give-up divergence driven by a SPEED decision, and it
 falsifies `src/opt/reqbyte.c`'s / `src/opt/prefix_k.c`'s "can never cost a
