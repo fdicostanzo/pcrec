@@ -8407,3 +8407,11 @@ analysis; its values as named `#section`s per kind, plus provenance), both
 conforming producers at birth. Design question left open: whether the
 details output also round-trips as an includable `.rxt` (the
 copy-edit-shadow workflow) or that stays a separate concern.
+D123 ADDENDUM 2 (Frank, same session): the round-trip question is answered
+— constructing an includable `.rxt` from the details table is a LATER HELPER
+SCRIPT (it reads the table-contract output; not a compiler feature, not in
+this design). Q4: STAMP ALWAYS, the default included — the source name per
+consumed kind + a digest over the CONSUMED VALUES ONLY (a pattern that never
+reads a kind does not move when that kind's table changes; provenance edits
+move nothing, R20); one abi event shared with the prior-gate accessor move
+(D122 addendum 2 (3)).
