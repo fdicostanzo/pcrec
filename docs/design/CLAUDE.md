@@ -2483,9 +2483,23 @@ append-only or historical records.
   literal-compare site. The last one is why §6 puts the exact VM compare and a WAF
   attribution read ahead of any caseless mask.
 
-- `litscan_s1.md` — **`[OPT-LITSCAN]` S1's design note, PROPOSED, NOT YET
-  PANELED** (lane `s1design`, 2026-09-25, from main `b5c1423b`; design only,
-  instruments in `../dev/optloop/s1/`). compare_stack.md §6.1's step S1: a
+- `litscan_s1.md` — **`[OPT-LITSCAN]` S1's design note, PROPOSED, PANELED
+  (r1, LIGHT) AND REVISED** (lane `s1design`, 2026-09-25, from main
+  `b5c1423b`; design only, instruments in `../dev/optloop/s1/`; panel +
+  fixes lane `s1rev`, same day, `../dev/reviews/2026-09-25-r1-litscan-s1.md`).
+  **Read the review before citing §6's census numbers**: the corpus
+  "program changes" count is **513**, not the note's original hand-adjusted
+  523 (C2 — `classify()`'s B-branch predicate corrected, folding §1.1
+  clause 3's second disjunct in full; bench's 34/235 reproduces exactly).
+  Also revised: §8.1's "pre-existing K64 gap" REFUTED and closed (S1-2);
+  §8.3's caseless exclusion rewritten as a structural consequence, not a
+  rule (S1-3); §3's soundness grounding fixed (clause 2, never `k0`, S1-4);
+  §1.2's G1 conjunct specified exactly (S1-5); the loop guard widened for
+  ASan read-safety (S1-1); a seeded-machine hazard (S1-6) and two
+  implementation obligations (S1-7) added; §1.1 gains a paragraph on why
+  the k-set table is a feeder analysis, not a parallel selector (C3, "for
+  Frank's sign-off"). §9 Q1–Q3 are unruled (recorded PENDING by the
+  review). compare_stack.md §6.1's step S1: a
   necessary literal run PINNED at a fixed offset from the candidate start
   goes to the DFA prefilter, and a pre-check the prefilter then dominates is
   elided. Read §0 first. It has three findings.

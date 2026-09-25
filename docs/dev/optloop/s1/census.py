@@ -72,6 +72,25 @@ def chains(sel, scank, walk):
     return [c for c in out if len(c) >= 2]
 
 
+def run_bytes(d):
+    """decoded req_run.bytes, or None if there is no run"""
+    if d["run"] == "-":
+        return None
+    return [int(d["run"][2 * i:2 * i + 2], 16) for i in range(len(d["run"]) // 2)]
+
+
+def clause3b(d, pin, idx):
+    """litscan_s1.md Section 1.1 clause 3's SECOND disjunct: the model
+    selected nothing (no k-set), the pick's offset s = pin + idx is 0, and
+    the offset-0 filter is the plain `memchr` form on exactly
+    req_run.bytes[idx] -- i.e. the SAME scan req-byte already runs, at the
+    SAME offset the run needs it at. Checked explicitly (not inferred from
+    idx/pin alone) per S1 review C2: the memchr byte must equal run[idx]."""
+    rb = int(d["rb"])
+    rbytes = run_bytes(d)
+    return pin + idx == 0 and d["pf"] == "memchr" and rbytes is not None and rb == rbytes[idx]
+
+
 def classify(d):
     walk = [None if t.startswith("*") else int(t, 16) for t in d["walk"].split(".") if t]
     sel = [int(x.rstrip("*")) for x in d["sel"].split(",") if x]
@@ -82,11 +101,12 @@ def classify(d):
         if d["dscan"] == "0":
             return "V", p4
         if d["run"] != "-":
-            if int(d["pin"]) < 0:
+            pin, idx = int(d["pin"]), int(d["idx"])
+            if pin < 0:
                 return "D", p4
             if d["implies"] == "1":
                 return "A", p4
-            if not sel and d["pf"] != "none":
+            if not sel and clause3b(d, pin, idx):
                 return "B", p4
             return "C", p4
         if pofs and 0 <= scank < len(walk) and walk[scank] == rb:

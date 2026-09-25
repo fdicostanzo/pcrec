@@ -63,9 +63,11 @@ rule from `[OPT-REQPOS]`.
    forced-VM cells are **no-move controls**: those artifacts have no DFA scan,
    and S1 does not touch them. What they are owed is §8's VM seed, not S1.
 5. **The same double pass exists well beyond the two witnesses.** Census at
-   `b5c1423b` (§6): **34 of 235 bench artifacts and 523 of 3,576 corpus
-   artifacts** change program under S1. In every one of them, the same byte
-   was being scanned twice. The seven bench cells S1 changes besides the
+   `b5c1423b` (§6, corrected by S1 review C2 — 513, not 523, corpus: no
+   hand subtraction, see §6's own note): **34 of 235 bench artifacts and
+   513 of 3,576 corpus artifacts** change program under S1. In every one of
+   them, the same byte was being scanned twice. The seven bench cells S1
+   changes besides the
    witnesses (six capability patterns, §5) all share one property, which
    makes them the carve-out class the mechanism names: **the run is absent
    from the throughput subject**. So today the pre-check is the whole answer,
@@ -94,6 +96,22 @@ its answer, the run, and nothing:
 | 1 | `run-pinned` | **`PCREC_NO_RUN_PREFILTER`** (new, bit 32, a `#define` per `pcrec.h`'s >30 rule) | see the predicate below | the model's selection (or `{0*}` if it has none), **plus a RUN TERM** `(o, L)`. In-run singleton verifies become redundant and are dropped |
 | 2 | `cost-model` | none of its own (`PCREC_NO_OFFSET_SKIP` sits on the `dfa_pfs[]` rows as today) | the model's material, moved scan (today's rule, unchanged) | today's |
 | 3 | `none` | — | always | `nsel = 0` |
+
+**Why this is a feeder analysis, not a second selector (S1 review C3; for
+Frank's sign-off).** D122 addendum 2 warns against a PARALLEL selector
+beside `dfa_pfs[]`'s own preference-ordered FORM list (`memchr` /
+`memchr-bounded` / `offset-set` / `offset-set-bounded` / `byte-class` /
+`byte-class-bounded` / `none`, the `prefilter` rows `--list-axes` already
+prints). This table is not that: it never picks an EMITTED FORM. Every
+row's output is consumed as the OFFSET SET `pcrec_prefix_ksets` already
+produces for `dfa_pfs[]`'s existing `offset-set`/`offset-set-bounded` rows
+to read (below, "Where it lands" — no new `DfaPf`, no new emitted loop). It
+answers one question upstream of form selection — which offsets, and which
+run if any, the ONE k-set analysis publishes — before `dfa_pf_of`'s
+existing selection ever reads it. So it is a second STAGE of the SAME
+analysis (still one cost model, computed once), the shape `[OPT-K]`
+already established for `nsel`/`sel[]`/`scan`, extended by one more row —
+not a second mechanism choosing between forms.
 
 **The predicate for `run-pinned`:**
 1. `Job.req_run.len ≥ 2`.
@@ -128,6 +146,21 @@ loop: `pf_block_ofs`'s `<p>_ofsskip` IS the search. Its `sc->k == 0` arm
 already exists (`emit_dfa.c:5243`). Only the selection has never produced
 it.
 
+**The loop guard must widen with the run (S1 review S1-1).**
+`pf_block_ofs`'s `<p>_ofsskip` guards its scan with `pos + maxk < n`, where
+`maxk` is the model's own largest SELECTED offset. A run term can need more
+bytes than that: its last byte sits at `o + L − 1`, and `PCREC_OFSK_MAX_SET`'s
+cap of 4 can leave the model's own `maxk` short of it (router's run alone is
+5 bytes, one more than the cap, which is exactly why the run rides a TERM
+rather than more offsets, above). The guard becomes
+`pos + max(maxk, o + L − 1) < n`. Left unwidened, P4's `memcmp` can read
+past the subject end — an ASan heap-buffer-overflow READ, not a wrong
+answer (§3's byte-by-byte soundness argument is untouched; only the READ
+goes out of bounds before any byte is compared). Witness: `[ab]/user` on a
+subject ending `.../us` (S1's own run is 5 bytes at offset 0, so `maxk`
+without the widening is whatever the — here empty — selection's own max
+would be, 0; the fix's sabotage row is §7's "guard not widened").
+
 ### 1.2 G1 widened inside `req_admit`: one conjunct, not a second predicate
 
 `req_admit` (`emit_dfa.c:5514`) keeps its order: NONE, then G2, then G1. G1
@@ -135,19 +168,34 @@ becomes:
 
 ```
 dominated  ⇔  p = the artifact's candidate-scan byte (memchr OR offset-set scan)
-              ∧ ( p == q                                     -- identity, any encoding
-                  ∨ (L < 2 ∧ memchr form ∧ byte enc ∧ ppm(p) ≤ ppm(q)) )   -- today's clause, unchanged scope
-              ∧ ( L < 2 ∨ the selection's verifies ⊇ the run at its pinned offsets )
+              ∧ ( p == q                                          -- identity, any encoding
+                  ∨ (L < 2 ∧ MEMCHR FORM ONLY ∧ byte enc ∧ ppm(p) ≤ ppm(q)) )  -- today's clause, unchanged scope
+              ∧ ( L < 2 ∨ verifies(sel, o, L) )
 ```
+
+**`verifies(sel, o, L)` (S1 review S1-5, specifying what §0/§6's prose left
+implicit):** true iff, for every `i` in `0 .. L−1`, offset `o + i` is a
+member of the SELECTED `DfaPf`'s offsets with `count == 1` and
+`byte == req_run.bytes[i]`. "Selected" means the offsets the emitter is
+ACTUALLY about to emit — the selection AFTER any deny mask applies. In
+particular `-fno-offset-skip` restores today's plain pre-check FIRST (the
+`cost-model`/`none` rows of §1.1's table), and G1 reads THAT restored
+selection, never the model's undenied analysis; a denied build is a D82
+control, not a third variant (§7).
 
 - `dfa_cand_scan_byte` is widened to return the offset-set scan byte (it is
   a singleton by construction, so the −1 there is a stale claim). It gains
-  a companion that answers "does the selection verify this run". Both are
-  read off the SAME `dfa_pf_of` + `unanch_start` derivation the emitter
-  uses, as today.
-- **Identity only for runs, and for the offset-set one-byte case.** The
-  prior's density clause stays scoped to the one-byte `memchr` form it was
-  measured on (F3; D77).
+  a companion that answers `verifies(sel, o, L)`. Both are read off the
+  SAME `dfa_pf_of` + `unanch_start` derivation the emitter uses, as today.
+- **Identity only for runs, and for the offset-set one-byte case. The
+  density clause stays memchr-form-only, EXPLICITLY** — not merely inherited
+  from `L < 2` reading a memchr-shaped `p`. `dfa_cand_scan_byte` now ALSO
+  returns a byte for an offset-set candidate, so a stray density-clause pass
+  on an offset-set candidate needs its own guard rather than relying on `p`'s
+  shape to keep it out; a sabotage row plants that false pass (or extends an
+  existing row, §7). Its impact if missed is COST-only, by S1-2's argument
+  below: a wrongly-admitted elision here still sits behind the prefilter's
+  own rejection, so no answer changes.
 - No axis bit, as §2.29 of `tuning.md` already rules for admission.
   `REQ_WHY`'s four-token set is unchanged, and `"dominated"` now reaches
   offset-set artifacts.
@@ -238,21 +286,29 @@ facts complete the argument, and all three are inherited unchanged from
 `[OPT-K]`:
 - the landing state (reseeded where the machine seeds, `pf_emit_ofs_reseed`);
 - the D11 bounded variant (a miss clamps to n−1, with no early return);
-- the `pos + maxk < n` loop guard. It also closes K27's
-  `memchr(NULL, c, 0)`: `n > 0` is implied.
+- the `pos + max(maxk, o + L − 1) < n` loop guard, widened per S1-1 above.
+  It also closes K27's `memchr(NULL, c, 0)`: `n > 0` is implied.
 
-The only new element is a scan at offset 0. That offset is `k0`'s own
-single `memchr` byte, by clause 3. So the landing byte is one the step
-provably leaves the start state on, which is the invariant that
-"offset 0 is always a member" exists to keep (`prefix_k.c`, the
-comment above the verify selection).
+The only new element is a scan at offset 0. **Its grounding, corrected
+(S1 review S1-4): clause 2 of §1.1's predicate, not `k0`.** The walk's own
+singleton at `us.ofsk.k[0]` — never `k0`, a request-byte-only quantity that
+answers a different question, MISCOMPILE-1's confusion — proves offset 0 is
+one byte, by construction, for every match; that is clause 2's own PINNED
+argument applied at `o = 0`. So the landing byte is one the step provably
+leaves the start state on. But `{0*}` is a genuinely NEW selection shape:
+today's code carries two invariants that assumed no selection ever scans
+offset 0 — `ofsk_emit_verify`'s own `pcrec_ctx_fail` text ("offset 0 is
+always a verify") and `prefix_k.c`'s comment ("`o->k[0]` ALWAYS role B …
+never the scan"). Both are IMPLEMENTATION OBLIGATIONS of this row, not
+proof gaps: the build edits both comments/assertions to admit `{0*}` as
+this row's own new legitimate shape (§7).
 
 **The elision is a check not run.** It can only remove a NOMATCH the engine
 below returns anyway (§2.29 of `tuning.md`). The stronger property G1' adds
 is that the elided NOMATCH is still reached WITHOUT an attempt:
 - The window lacks the run, so no candidate passes the prefilter's run
-  term. Any candidate `c ≥ pos` with `c + maxk < n` would put the run at
-  `c + o`, inside `[pos, n)`.
+  term. Any candidate `c ≥ pos` with `c + max(maxk, o + L − 1) < n` would put
+  the run at `c + o`, inside `[pos, n)`.
 - The first skip therefore returns `n`, and the entry returns 0 (or clamps
   to n−1 under a view).
 
@@ -348,6 +404,7 @@ one of those, and each is named here with the members it has:
 | **H1. The pre-check WAS the whole answer** (the run is absent from the subject), and the prefilter must now dismiss at the same cost. Same byte and same stream by clause 3; the verify replaces the pre-check's own `memcmp` | `wild-secrets-slack-webhook-url` (C1, **a 0.77× WIN**); `wild-secrets-github-pat` (C1); `file-ext-order` (B); `wild-semdiv-altorder-foo-foobar-rustregex` (B); `wild-semdiv-dollar-trailing-newline-pcre2` (C1). Run occurrences in the throughput set: **0 for all five**; scan hits 39,095 / 7,861 / 19,436 / 24,889 / 6,569 | 347.7k / 1,201; 129.3k / 1,091; 260.6k / 683; 358.3k / 647; 26.1 / 629 | = now ± band. Per hit, the verify is one `memcmp` either way. C1 adds the model's offset-0 test ahead of it, which fails first on most hits |
 | **H2. A run-dense subject**: every scan hit starts the run, so the verify saves nothing and costs ~0.1 ns per hit | none in the bench (router 0.8%, keyword 21% of hits) | — | a corpus-only hazard. Its size bound is hits × 0.1 ns |
 | **H3. A one-byte pre-check dropped from an offset-set artifact** (class E): one `memchr` call per `rx_search` removed | `wild-validator-uuid-grok` | 82.4k / 776 | ≤ now (the `json-array-begin` −24.7% shape, scaled by its call count) |
+| **H4. A seeded start state skips past the prefilter's first call** (S1 review S1-6): `search_from > 0` lands inside a word run on a word-seeded machine (`\bin\b`, class A, word seed state 4) — the DFA steps over the rest of that run before the elided pre-check's own prefilter runs at all, so §3's "the first skip returns `n`" is not the FIRST thing that happens on this population | none in the bench (no word-seeded class-A pattern there); corpus-only, unmeasured population | — | linear in the run length, no VM attempt: performance-only, not a soundness hazard |
 
 **Not a carve-out, and why.** The WAF cells are not affected:
 - `942270`, `942160`, `942140` and `942360` are either `byte-class`
@@ -373,22 +430,48 @@ own derivations. Populations are the reqpos census's:
 
 Output: `s1/census.tsv` and `census_summary.txt`.
 
+**Corrected by S1 review C2 (2026-09-25).** The first cut's B-branch matched
+clause 3's SECOND disjunct too loosely (`not sel and pf != "none"`, no check
+that `pf` is exactly the plain `memchr` form or that the pick sits at offset
+0) and the note excluded 3 corpus rows from B "in prose" — hand-subtracted,
+not re-derived from `classify()`. `s1/class_c_split.py` folds clause 3(b)
+into `classify()` (`docs/dev/optloop/s1/census.py`'s `clause3b`) and
+re-derives C1/C2 from `census.tsv`'s raw `sel`/`pin`/`idx` columns (the scan
+offset a starred `sel` entry carries — `classify()` itself never writes
+`C1`/`C2`, only `C`, per the file's own header). **The rebuilt count does
+NOT reproduce 71/120/523 — it is smaller, and the true, no-hand-subtraction
+numbers are below.** The gap is 8 rows, not 3: 3 have the pick at offset 0
+but the model actually landed on a DIFFERENT prefilter form the memchr-only
+reading of "the memchr form" (clause 3(b)) excludes (the census's `pf`
+column reads something other than plain `memchr` there — e.g. a bounded
+form under a view), and 5 more have the plain `memchr` form but the pick is
+NOT at offset 0. All 8 move from B to a class neither C1 nor C2 covers,
+since both of the note's own C definitions assume a k-set exists (`sel`
+non-empty) — these 8 have none. Recorded as **C0**.
+
 | class | what S1 does | bench (per auto config) | corpus |
 |---|---|---|---|
 | A: run pre-check; the selection already verifies the pinned run (keyword) | elide | 3 | 79 |
-| B: run pinned; no k-set; scan@0 == the `memchr` byte (router) | run-pinned `{0*}` + run term; elide | 12 | 71 (+3 whose pick is not the `memchr` byte, excluded by clause 3) |
-| C1: run pinned; the k-set scans the pick's offset | add the run term; elide | 15 | 120 |
+| B: run pinned; no k-set; scan@0 == the `memchr` byte (router) | run-pinned `{0*}` + run term; elide | 12 | 66 |
+| C1: run pinned; the k-set scans the pick's offset | add the run term; elide | 15 | 115 |
 | E: one-byte pre-check; offset-set scanning the same byte | elide | 4 | 253 |
-| **program changes** | | **34** | **523** (14.6%) |
-| C2: run pinned; the k-set scans a different run member (the "scan must move" rule pushed it off the offset-0 pick) | unchanged, recorded | 12 | 35 |
+| **program changes** | | **34** | **513** (14.3%) |
+| C0: run pinned; no k-set; clause 3(b) fails (pick not at offset 0, or the prefilter isn't the plain `memchr` form) | unchanged, recorded | 0 | 8 |
+| C2: run pinned; the k-set scans a different run member (the "scan must move" rule pushed it off the offset-0 pick) | unchanged, recorded | 12 | 40 |
 | D: floating run | unchanged | 14 | 32 |
 | V: no DFA scan (VM without hybrid) | unchanged | 13 | 71 |
 
 Every artifact moves in the whole-file pin anyway, through the abi bump.
 The "program changes" row is what the D76 program-region comparison and
-the Linux window see. C2 is S1's honest residual: the same double pass, on a
-DIFFERENT byte of the same run. Resolving it needs a density judgement
-between two run members, and nothing has measured one (§9 Q2).
+the Linux window see. Bench reproduces the note's original **34/235**
+exactly (bench's B/C1/C2 counts are all unchanged by the fix — the 3 loose
+rows the fix excludes are all corpus-only). C2 is S1's honest residual: the
+same double pass, on a DIFFERENT byte of the same run. Resolving it needs a
+density judgement between two run members, and nothing has measured one
+(§9 Q2). C0 is a narrower residual of the SAME shape as B (a plain
+`memchr`-form pre-check the k-set model has no offsets for at all) that
+simply misses clause 3(b)'s exact requirement; §9 Q2's question applies to
+it too, and it is not itself acted on here (D77).
 
 ---
 
@@ -427,11 +510,38 @@ between two run members, and nothing has measured one (§9 Q2).
     S268 mirror;
   - (c) G1's implication conjunct dropped: structural, a class-C2/D witness
     whose `REQ_WHY` must read `"emitted"` (`run_prechecks.sh` §6).
+  - (d) **the loop guard not widened** (S1-1): `<p>_ofsskip` guarded by
+    `pos + maxk < n` instead of `pos + max(maxk, o + L − 1) < n`.
+    Answer-identical (§3's soundness is byte-by-byte, untouched) but an ASan
+    heap-buffer-overflow READ under `make asan`'s both-axes generated-code
+    instrumentation — the structural check `make asan` already runs is the
+    detector, no new one needed. Witness: `[ab]/user` on a subject ending
+    `.../us` (the run's own 5 bytes need `maxk ≥ 4`; an unwidened guard
+    reads past `n` verifying the run's tail against `us`'s short remainder).
+  - (e) **the density clause's memchr-form guard dropped** (S1-5): admits an
+    elision off an offset-set candidate's `p`. Structural only (S1-2's
+    argument: the prefilter still gates it), detected the same way as (c),
+    `REQ_WHY` reading `"dominated"` where it should read `"emitted"` on a
+    constructed offset-set-candidate/low-`ppm` witness.
   - Each row carries a reach witness ([MECH-REACH]).
 - **Existing anchors that move:** S267/S268 anchor in `emit_req_run_check`.
   The P4 extraction moves their source lines, so re-anchor them from
   `git show HEAD:` and re-verify intent. S269/S270 (G1/G2) anchor in
   `req_admit`, which S1 and k64fix both edit.
+- **Implementation obligations beyond the emitter (S1 review S1-4, S1-7),
+  none of them proof gaps:**
+  - `ofsk_emit_verify`'s `pcrec_ctx_fail` text ("offset 0 is always a
+    verify") and `prefix_k.c`'s comment ("`o->k[0]` ALWAYS role B … never
+    the scan") both assumed no selection ever scans offset 0; both are
+    edited to admit `{0*}` as this row's own new legitimate shape (§3).
+  - REQ_RUN's byte-identity through P4's extraction is confirmed BY
+    CONSTRUCTION (the same call, the same `(base, bytes, L)` arguments,
+    §1.3) and needs no separate proof; the identity gate on the extraction
+    commit alone is P4's acceptance.
+  - Any place the run's bytes are rendered into a C COMMENT (never code)
+    must go through `emit_comment_safe_byte`. A real class-B corpus member's
+    run is `2a 2f 78` (`*/x`) at offset 0 — a comment-terminator sequence if
+    ever written raw.
 - **`compare_stack.md` updates in the same change:**
   - §2.3's `emit_req_run_check` and `ofsk_emit_verify` rows name P4;
   - §2.5's G1 row loses "blind to an offset-set scan";
@@ -451,12 +561,29 @@ only where a DFA scan exists AND its candidate test implies the run. By §3,
 the elided pre-check's NOMATCH is then reached with zero attempts, which is
 the no-match proof K64 exists to keep.
 
-**One pre-existing gap sits beside this.** Today's one-byte density clause
-(`p ≠ q`, `ppm(p) ≤ ppm(q)`) elides WITHOUT implication. On a VM hybrid
-whose prefilter is count-collapsed (not exact), that could reopen K64's
-give-up on an unanchored pattern where `q` is absent and `p` is present.
-S1 does not widen that clause. It is reported here for k64fix / Frank, and
-it is not verified with a witness (§9 Q4).
+**The one-byte density clause is NOT a second K64 gap — REFUTED (S1 review
+S1-2).** Today's density clause (`p ≠ q`, `ppm(p) ≤ ppm(q)`) elides WITHOUT
+implication, which first looked like it could reopen K64's give-up on a
+count-collapsed VM hybrid where `q` is absent and `p` is present. It
+cannot: `rx_prefilter`'s own construction — exact OR count-collapsed —
+declines the SAME constructs `req_byte`/`req_run` decline (`A_LOOK`,
+`A_BREF`, `A_VAR`, `A_CALL` are all treated as contributing nothing, on
+both analyses), treats `A_ATOMIC` transparently on both sides, and a
+count-collapse only ever lowers a repeat's `rmin` to `min(rmin, 1)` — never
+below 1 where it started at ≥1 — so a byte `req_byte` calls necessary stays
+necessary in the collapsed language too. Any subject lacking it is a
+prefilter REJECTION, zero VM attempts, before K64's mechanism is ever
+reached — confirmed on four constructed witnesses (a count-collapsed VM
+hybrid, `q` absent and `p` present): all answer nomatch at 0.00 s. The
+implication conjunct in §1.2 is therefore a COST property (which pre-check
+form is cheaper to keep), not a soundness precondition, and this closes
+§9 Q4 — no witness build is owed.
+
+Worth recording here, not changing: k64fix's own `!prefilter_collapsed`
+conjunct is now known to be MORE CONSERVATIVE than this argument requires —
+it declines K64's narrowing on every count-collapsed hybrid, where only the
+density-clause-without-implication cells needed the caution, and even those
+are sound. Not a change request against k64fix; a fact for its own lane.
 
 **Textual:** both lanes edit `req_admit`'s neighbourhood and re-anchor
 S269. Whichever lands second rebases.
@@ -480,7 +607,17 @@ paragraph as its trigger (§9 Q3).
 
 ### 8.3 What S1 must not absorb
 
-- No caseless, no K/T mask, no cube: S4.
+- **Caseless is excluded from the run TERM by construction, not by a rule
+  (S1 review S1-3, corrected — the earlier "no caseless" here read as a
+  scope EXCLUSION; it is a structural CONSEQUENCE).** A caselessly folded
+  letter is a 2-member set in `prefix_k.c`'s walk, so it is never a run
+  SINGLETON and never sits inside `req_run`'s contiguous-singleton run —
+  which is what already keeps `union-select`'s caseless run out today, with
+  no special case written for it. An `(?i)` pattern whose run has NO
+  letters DOES take `run-pinned`, soundly: `(?i)/1234` (class B) and
+  `(?i)x/1234` (class C1) both measured 0 diffs against python `re` over
+  4,001 subjects at every `search_from`, plus the utf8 axis. The masked/SWAR
+  compare for an actually-caseless run is still S4.
 - No SWAR form row: S1 adds no form at all.
 - No change to the model's constants or its "scan must move" rule for
   patterns without a pinned run.
@@ -501,17 +638,19 @@ paragraph as its trigger (§9 Q3).
      event, with those controls re-scored as "changed program, predicted
      equal". If you prefer the controls kept clean, defer it to S2, the
      first row that would otherwise fork the loop.
-2. **Class C2** (12 bench, 35 corpus): the same double pass, but the
-   prefilter scans a different run member than the pick. Leave it (S1 is
-   identity-only; D77), or let the run-pinned row re-point the scan to the
-   pick? The second choice overrides the measured "scan must move" rule on
-   these patterns, and nothing has measured that.
+2. **Class C2** (12 bench, 40 corpus, corrected by S1 review C2 — plus 8
+   corpus C0 rows of the narrower B-shaped-but-excluded kind, §6): the same
+   double pass, but the prefilter scans a different run member than the
+   pick. Leave it (S1 is identity-only; D77), or let the run-pinned row
+   re-point the scan to the pick? The second choice overrides the measured
+   "scan must move" rule on these patterns, and nothing has measured that.
 3. **The VM seed (§8.2):** open it as its own row (tier 2's re-opening,
    with the forced-VM residual as its measured need)? Or is the forced-VM
    testee not a population you want optimized?
-4. **The one-byte density clause without implication (§8.1):** should
+4. ~~The one-byte density clause without implication (§8.1): should
    k64fix's lane, or a probe, try to build a K64-sibling witness on a
-   collapsed VM hybrid before S1 lands?
+   collapsed VM hybrid before S1 lands?~~ **CLOSED (S1 review S1-2,
+   2026-09-25): refuted, see §8.1. No witness is owed.**
 
 ---
 
@@ -522,7 +661,11 @@ paragraph as its trigger (§9 Q3).
 > `capability@0.1`, both regimes. **Arms:** (a) the base pin (`b5c1423b`, or
 > k64fix's if it has merged); (b) the S1 pin; (c) the S1 pin with
 > `-fno-run-prefilter -fno-req-run`. That is router's `25b1984f` program:
-> arm (c) was verified program-identical at `b5c1423b`, and the lane
+> arm (c) was verified program-identical at `b5c1423b`
+> (`s1/router_c_identity.sh` + its recorded `s1/router_c_identity_output.txt`,
+> S1 review C1: every differing line is the header comment, a stamp `#define`
+> a LATER feature introduced, or `rx_info`'s `.abi`/`.vars`/`.nvars` fields —
+> no function body or table moves), and the lane
 > re-verifies it at S1. **Targets:** router and keyword thr, auto ×2. Bar:
 > (b) ≤ `25b1984f` + band. Predicted router 337k (range 330-394k), keyword
 > 731k. **(i)'s question:** router (b) against (c), reported as a number.
