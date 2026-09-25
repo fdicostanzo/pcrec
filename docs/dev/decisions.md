@@ -8450,3 +8450,9 @@ editable reference, and the hand default's own restriction (its flat
 where the details listing shows it and a user bundle can override it. The
 compiler's only fixed rule is "use what the data declares"; the stamp
 records the declaration that was applied.
+D123 ADDENDUM 5 (Frank, same session, Q7): the shipped DEFAULT stays
+byte-identical to today's hand table, repackaged as the `default` bundle
+(`provenance source authored`, cited priors listed, its byte-only
+restriction DECLARED in the bundle per addendum 4). Regenerating it from a
+corpus is its OWN later row, measured against runest's data and the first
+shipped analyses — never bundled into the plumbing change.
