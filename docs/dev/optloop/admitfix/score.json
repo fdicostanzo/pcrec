@@ -1,0 +1,2559 @@
+{
+ "grid": {
+  "(a)": [
+   {
+    "pattern": "wild-validator-email-owasp",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 40.444362,
+     "8d716693": 43.8697664,
+     "b1885a83": 23158.81852004961,
+     "6ef76820": 37.00297359762112
+    },
+    "d": -99.84022080588618,
+    "iqr_pct": 0.11884790292357283,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -8.508944713675733
+   },
+   {
+    "pattern": "wild-validator-email-owasp",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 38.95412725504729,
+     "8d716693": 43.739662416540135,
+     "b1885a83": 23119.51127214171,
+     "6ef76820": 37.98693561045151
+    },
+    "d": -99.83569317204285,
+    "iqr_pct": 0.10219657364177948,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -2.482899021875686
+   },
+   {
+    "pattern": "wild-validator-email-owasp",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4474981.0,
+     "8d716693": 79.17824818610218,
+     "b1885a83": 23200.52992252204,
+     "6ef76820": 63.12533404959913
+    },
+    "d": -99.72791425773286,
+    "iqr_pct": 0.13319444352238888,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.9985893720208
+   },
+   {
+    "pattern": "wild-validator-email-owasp",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4474056.898305085,
+     "8d716693": 85.27838408864636,
+     "b1885a83": 23118.83861019737,
+     "6ef76820": 68.75330459471266
+    },
+    "d": -99.70260917620496,
+    "iqr_pct": 0.19851573006680628,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.99846328944496
+   }
+  ],
+  "(b)": [
+   {
+    "pattern": "winpath-near-miss",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 20.08765752987398,
+     "8d716693": 23123.580625000002,
+     "b1885a83": 23143.30701876303,
+     "6ef76820": 18.762867999999997
+    },
+    "d": -99.91892745498822,
+    "iqr_pct": 0.14336211849888242,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -6.595042393090287
+   },
+   {
+    "pattern": "winpath-near-miss",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 20.381705294635765,
+     "8d716693": 23119.7380293385,
+     "b1885a83": 23144.97585913093,
+     "6ef76820": 18.907199274240583
+    },
+    "d": -99.91830970406141,
+    "iqr_pct": 0.11726155693967164,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -7.234458545444947
+   },
+   {
+    "pattern": "winpath-near-miss",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4930833.259259259,
+     "8d716693": 23145.487131289763,
+     "b1885a83": 23143.23073747936,
+     "6ef76820": 27.68097463805072
+    },
+    "d": -99.88039278114606,
+    "iqr_pct": 0.01694361037458055,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.9994386146685
+   },
+   {
+    "pattern": "winpath-near-miss",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4923754.441860465,
+     "8d716693": 23146.392117663858,
+     "b1885a83": 23156.000489955906,
+     "6ef76820": 36.434164
+    },
+    "d": -99.84265778532955,
+    "iqr_pct": 0.04601683695469086,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.99926003287878
+   },
+   {
+    "pattern": "email-nested-plus",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 47.27866497706802,
+     "8d716693": 23106.906275873487,
+     "b1885a83": 23136.06373655557,
+     "6ef76820": 48.060000527999364
+    },
+    "d": -99.79227235421183,
+    "iqr_pct": 0.0952325494478441,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": 1.652617626386708
+   },
+   {
+    "pattern": "email-nested-plus",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 31.980554223334934,
+     "8d716693": 23138.802172481897,
+     "b1885a83": 23133.782647471016,
+     "6ef76820": 37.06740131911842
+    },
+    "d": -99.83976938884582,
+    "iqr_pct": 0.09549168821218451,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": 15.90606297895805
+   },
+   {
+    "pattern": "email-nested-plus",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4480502.220338983,
+     "8d716693": 23153.502444134076,
+     "b1885a83": 23126.731566517974,
+     "6ef76820": 7206.878118263013
+    },
+    "d": -68.83745505700051,
+    "iqr_pct": 0.13197902595368183,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.83915021656395
+   },
+   {
+    "pattern": "email-nested-plus",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 4480668.033898305,
+     "8d716693": 23134.74218178015,
+     "b1885a83": 23148.112409390887,
+     "6ef76820": 7257.376576279568
+    },
+    "d": -68.6480847858016,
+    "iqr_pct": 0.15157741026402619,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -99.83802913937444
+   }
+  ],
+  "(c)": [
+   {
+    "pattern": "wild-codegrammar-json-array-begin",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "dominated",
+    "m": {
+     "25b1984f": 263784.54029850743,
+     "8d716693": 349512.72657450073,
+     "b1885a83": 349719.46236559143,
+     "6ef76820": 263314.2061965812
+    },
+    "d": -24.70701961639284,
+    "iqr_pct": 0.01003454074247955,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -0.17830237564111925
+   },
+   {
+    "pattern": "wild-codegrammar-json-array-begin",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "dominated",
+    "m": {
+     "25b1984f": 263616.4345654346,
+     "8d716693": 349566.5802968961,
+     "b1885a83": 349629.09078771697,
+     "6ef76820": 263573.7081218274
+    },
+    "d": -24.61333594181369,
+    "iqr_pct": 0.1975822640715732,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -0.016207807255120124
+   },
+   {
+    "pattern": "wild-codegrammar-json-array-begin",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 955686.1942446043,
+     "8d716693": 1093164.9708333332,
+     "b1885a83": 1101475.3524590165,
+     "6ef76820": 1098667.1130434782
+    },
+    "d": -0.2549525424485386,
+    "iqr_pct": 0.20412004337580913,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "within",
+    "vs_b1_before": 14.96107400734079
+   },
+   {
+    "pattern": "wild-codegrammar-json-array-begin",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 957768.0579710144,
+     "8d716693": 1105767.7792207792,
+     "b1885a83": 1094794.5450819673,
+     "6ef76820": 1114970.975
+    },
+    "d": 1.8429421308929,
+    "iqr_pct": 0.2747255493169819,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": 16.41346417023058
+   }
+  ],
+  "(d)": [
+   {
+    "pattern": "uuid-near-miss",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 19.930216455826834,
+     "8d716693": 27.57646516941393,
+     "b1885a83": 27.5692736,
+     "6ef76820": 13.478129599999999
+    },
+    "d": -51.11177104064142,
+    "iqr_pct": 0.10191055596039154,
+    "band_edge": -29.683526694194825,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -32.373390776398175
+   },
+   {
+    "pattern": "uuid-near-miss",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 19.914089668728266,
+     "8d716693": 27.589336000000003,
+     "b1885a83": 27.576306969477216,
+     "6ef76820": 13.345908930818213
+    },
+    "d": -51.603712035878814,
+    "iqr_pct": 0.1115478868498772,
+    "band_edge": -29.683526694194825,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -32.98258091216832
+   },
+   {
+    "pattern": "uuid-near-miss",
+    "regime": "srch",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 561.9616644121403,
+     "8d716693": 667.2825285388699,
+     "b1885a83": 671.5266782070656,
+     "6ef76820": 547.9334535313129
+    },
+    "d": -18.40481230108965,
+    "iqr_pct": 0.9293457920651048,
+    "band_edge": -3.798550075791249,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -2.4962932116556518
+   },
+   {
+    "pattern": "uuid-near-miss",
+    "regime": "srch",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 565.5480361698692,
+     "8d716693": 671.5722181200558,
+     "b1885a83": 671.4460105076432,
+     "6ef76820": 548.5520250548959
+    },
+    "d": -18.302884152939406,
+    "iqr_pct": 0.46126246476691474,
+    "band_edge": -3.798550075791249,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -3.0052285620294
+   },
+   {
+    "pattern": "ipv4-near-miss",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 18.790932567253947,
+     "8d716693": 24.961444661688542,
+     "b1885a83": 24.882503293997367,
+     "6ef76820": 12.550820000000002
+    },
+    "d": -49.55965703407442,
+    "iqr_pct": 0.07885534695292805,
+    "band_edge": -29.683526694194825,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -33.20810473306838
+   },
+   {
+    "pattern": "ipv4-near-miss",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 18.736835410531672,
+     "8d716693": 24.88786368970905,
+     "b1885a83": 24.896824000000002,
+     "6ef76820": 12.6157544
+    },
+    "d": -49.32785643662823,
+    "iqr_pct": 0.10096066871822616,
+    "band_edge": -29.683526694194825,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -32.66870245917361
+   },
+   {
+    "pattern": "ipv4-near-miss",
+    "regime": "srch",
+    "testee": "auto-caps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 492.116213504,
+     "8d716693": 626.8828571288858,
+     "b1885a83": 627.2088768160236,
+     "6ef76820": 444.9051111910365
+    },
+    "d": -29.065877790256692,
+    "iqr_pct": 0.05710695795923647,
+    "band_edge": -3.798550075791249,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -9.593486460608098
+   },
+   {
+    "pattern": "ipv4-near-miss",
+    "regime": "srch",
+    "testee": "auto-nocaps",
+    "req_why": "one-attempt",
+    "m": {
+     "25b1984f": 497.03284550094907,
+     "8d716693": 627.0374505498803,
+     "b1885a83": 627.4274564367129,
+     "6ef76820": 444.81956221577417
+    },
+    "d": -29.104224296782576,
+    "iqr_pct": 0.2720646818525152,
+    "band_edge": -3.798550075791249,
+    "verdict": "improve",
+    "nb_verdict": "improve",
+    "vs_b1_before": -10.504996552602115
+   }
+  ],
+  "(f)": [
+   {
+    "pattern": "nested-comment-rec",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 7798115.088235294,
+     "8d716693": 9327080.303030303,
+     "b1885a83": 23118.46349499209,
+     "6ef76820": 23172.800054555373
+    },
+    "d": 0.23503534123300437,
+    "iqr_pct": 0.05818567554073289,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": -99.70284100975228
+   },
+   {
+    "pattern": "nested-comment-rec",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 7808166.44117647,
+     "8d716693": 9275952.272727273,
+     "b1885a83": 23134.72677316294,
+     "6ef76820": 23148.615172413796
+    },
+    "d": 0.060032691922548745,
+    "iqr_pct": 0.058090616600247016,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": -99.70353327702723
+   },
+   {
+    "pattern": "nested-comment-rec",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 7799381.617647059,
+     "8d716693": 9350863.090909092,
+     "b1885a83": 23152.516660426805,
+     "6ef76820": 23138.689808481533
+    },
+    "d": -0.05972072992352322,
+    "iqr_pct": 0.12173331255726119,
+    "band_edge": -8.181480090201639,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": -99.70332661045683
+   },
+   {
+    "pattern": "nested-comment-rec",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 7799560.264705882,
+     "8d716693": 9746259.518518519,
+     "b1885a83": 23149.29210238024,
+     "6ef76820": 23133.301367989057
+    },
+    "d": -0.06907655888768824,
+    "iqr_pct": 0.17312358665306649,
+    "band_edge": -8.181480090201639,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": -99.70340249215496
+   }
+  ],
+  "(g)": [
+   {
+    "pattern": "wild-secrets-github-pat",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 5228975.3,
+     "8d716693": 5387513.306122449,
+     "b1885a83": 129145.43325242719,
+     "6ef76820": 129109.73609394314
+    },
+    "d": -0.027641053643977308,
+    "iqr_pct": 0.19271191749401356,
+    "band_edge": -8.181480090201639,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": -97.53087883023768
+   },
+   {
+    "pattern": "wild-secrets-github-pat",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 4776127.517857143,
+     "8d716693": 5857018.066666666,
+     "b1885a83": 125586.10338785048,
+     "6ef76820": 125631.89439374185
+    },
+    "d": 0.03646184144272077,
+    "iqr_pct": 0.06835286969799216,
+    "band_edge": 6.751634686935083,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": -97.3695866803383
+   }
+  ],
+  "(h)": [
+   {
+    "pattern": "router-prefix-order",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 393757.0086206896,
+     "8d716693": 398422.8480620155,
+     "b1885a83": 720485.5877437326,
+     "6ef76820": 719995.56302521
+    },
+    "d": -0.06801311877134388,
+    "iqr_pct": 0.023603316806701777,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "within",
+    "vs_b1_before": 82.85276128730182
+   },
+   {
+    "pattern": "router-prefix-order",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 393998.2146118721,
+     "8d716693": 398752.23076923075,
+     "b1885a83": 720106.081232493,
+     "6ef76820": 720273.2765363129
+    },
+    "d": 0.023218149127928304,
+    "iqr_pct": 0.10834499247895484,
+    "band_edge": 6.751634686935083,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": 82.81130467706676
+   },
+   {
+    "pattern": "router-prefix-order",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 4068366.272727273,
+     "8d716693": 4050506.171875,
+     "b1885a83": 4451241.0,
+     "6ef76820": 4459252.084745763
+    },
+    "d": 0.17997418575545268,
+    "iqr_pct": 0.14181322188266737,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": 9.607930697853696
+   },
+   {
+    "pattern": "router-prefix-order",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 4067713.3378378376,
+     "8d716693": 4049652.4923076923,
+     "b1885a83": 4441972.610169492,
+     "6ef76820": 4443144.305084746
+    },
+    "d": 0.026377805945316087,
+    "iqr_pct": 0.14400114739067793,
+    "band_edge": 6.751634686935083,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": 9.229533550327965
+   },
+   {
+    "pattern": "keyword-prefix-order",
+    "regime": "thr",
+    "testee": "auto-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 731121.5,
+     "8d716693": 774694.6809815951,
+     "b1885a83": 1236473.035,
+     "6ef76820": 1238485.2349999999
+    },
+    "d": 0.16273707093013587,
+    "iqr_pct": 0.08493189663453915,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": 69.39526945931694
+   },
+   {
+    "pattern": "keyword-prefix-order",
+    "regime": "thr",
+    "testee": "auto-nocaps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 731389.9275362319,
+     "8d716693": 775044.9480122323,
+     "b1885a83": 1237361.0625,
+     "6ef76820": 1239078.3125
+    },
+    "d": 0.1387832583425907,
+    "iqr_pct": 0.031142614923600178,
+    "band_edge": 6.751634686935083,
+    "verdict": "REGRESS",
+    "nb_verdict": "within",
+    "vs_b1_before": 69.41418877259804
+   },
+   {
+    "pattern": "keyword-prefix-order",
+    "regime": "thr",
+    "testee": "vm-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 4181697.8571428573,
+     "8d716693": 4283134.033333333,
+     "b1885a83": 4625668.982142857,
+     "6ef76820": 4617899.071428572
+    },
+    "d": -0.16797377296734298,
+    "iqr_pct": 0.12136198230136991,
+    "band_edge": -8.181480090201639,
+    "verdict": "improve",
+    "nb_verdict": "within",
+    "vs_b1_before": 10.431198742411025
+   },
+   {
+    "pattern": "keyword-prefix-order",
+    "regime": "thr",
+    "testee": "vm-in-caps",
+    "req_why": "emitted",
+    "m": {
+     "25b1984f": 4193358.4677419355,
+     "8d716693": 4286675.419354839,
+     "b1885a83": 4643087.035714285,
+     "6ef76820": 4640082.736842105
+    },
+    "d": -0.06470477182683496,
+    "iqr_pct": 0.1869261288962148,
+    "band_edge": -8.181480090201639,
+    "verdict": "within",
+    "nb_verdict": "within",
+    "vs_b1_before": 10.653138112008927
+   }
+  ]
+ },
+ "g2_29": [
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.930216455826834,
+    "8d716693": 27.57646516941393,
+    "b1885a83": 27.5692736,
+    "6ef76820": 13.478129599999999
+   },
+   "d": -51.11177104064142,
+   "iqr_pct": 0.10191055596039154,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.373390776398175,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.914089668728266,
+    "8d716693": 27.589336000000003,
+    "b1885a83": 27.576306969477216,
+    "6ef76820": 13.345908930818213
+   },
+   "d": -51.603712035878814,
+   "iqr_pct": 0.1115478868498772,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.98258091216832,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 561.9616644121403,
+    "8d716693": 667.2825285388699,
+    "b1885a83": 671.5266782070656,
+    "6ef76820": 547.9334535313129
+   },
+   "d": -18.40481230108965,
+   "iqr_pct": 0.9293457920651048,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.4962932116556518,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 565.5480361698692,
+    "8d716693": 671.5722181200558,
+    "b1885a83": 671.4460105076432,
+    "6ef76820": 548.5520250548959
+   },
+   "d": -18.302884152939406,
+   "iqr_pct": 0.46126246476691474,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -3.0052285620294,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.790932567253947,
+    "8d716693": 24.961444661688542,
+    "b1885a83": 24.882503293997367,
+    "6ef76820": 12.550820000000002
+   },
+   "d": -49.55965703407442,
+   "iqr_pct": 0.07885534695292805,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -33.20810473306838,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.736835410531672,
+    "8d716693": 24.88786368970905,
+    "b1885a83": 24.896824000000002,
+    "6ef76820": 12.6157544
+   },
+   "d": -49.32785643662823,
+   "iqr_pct": 0.10096066871822616,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.66870245917361,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 492.116213504,
+    "8d716693": 626.8828571288858,
+    "b1885a83": 627.2088768160236,
+    "6ef76820": 444.9051111910365
+   },
+   "d": -29.065877790256692,
+   "iqr_pct": 0.05710695795923647,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -9.593486460608098,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 497.03284550094907,
+    "8d716693": 627.0374505498803,
+    "b1885a83": 627.4274564367129,
+    "6ef76820": 444.81956221577417
+   },
+   "d": -29.104224296782576,
+   "iqr_pct": 0.2720646818525152,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -10.504996552602115,
+   "source": "B1 \u00a71.2 carve-out"
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 492.61983522193384,
+    "8d716693": 660.4199840609604,
+    "b1885a83": 649.8573665396898,
+    "6ef76820": 517.7485363210527
+   },
+   "d": -20.32889631182916,
+   "iqr_pct": 0.07737717206541281,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 5.101033150197444,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 498.641255296,
+    "8d716693": 626.4706104512327,
+    "b1885a83": 626.7226123355124,
+    "6ef76820": 446.28604788569777
+   },
+   "d": -28.7904985233274,
+   "iqr_pct": 0.03704397908941859,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -10.499573963093665,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 499.9340826735371,
+    "8d716693": 585.2541226879475,
+    "b1885a83": 644.9035666787607,
+    "6ef76820": 488.9508659696042
+   },
+   "d": -24.18232876464144,
+   "iqr_pct": 0.42532131852708854,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.1969329726825344,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 499.7646916734134,
+    "8d716693": 584.7217811238376,
+    "b1885a83": 644.8549954336552,
+    "6ef76820": 494.2174606472985
+   },
+   "d": -23.35990817362828,
+   "iqr_pct": 0.15638091071825963,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -1.109968574918836,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 589.0539330959458,
+    "8d716693": 631.49665845804,
+    "b1885a83": 633.7546695999998,
+    "6ef76820": 589.3339012693084
+   },
+   "d": -7.009142569115586,
+   "iqr_pct": 0.10527995642558537,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.04752844478792211,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 809.5094898502435,
+    "8d716693": 858.5851942036662,
+    "b1885a83": 894.4830869117542,
+    "6ef76820": 822.5347429176978
+   },
+   "d": -8.043566731089513,
+   "iqr_pct": 1.6962614419903068,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 1.6090303116599551,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 852.179217868114,
+    "8d716693": 876.4237938000003,
+    "b1885a83": 830.5047198156226,
+    "6ef76820": 843.8856840765811
+   },
+   "d": 1.6111846136081196,
+   "iqr_pct": 0.18412563555401448,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": -0.9732147437578624,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 838.7302767971372,
+    "8d716693": 859.8594881930587,
+    "b1885a83": 815.7418577670979,
+    "6ef76820": 840.7330194383726
+   },
+   "d": 3.063611537561907,
+   "iqr_pct": 0.8549175911363235,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": 0.23878268099290129,
+   "source": "B1 \u00a72.1"
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 20.08765752987398,
+    "8d716693": 23123.580625000002,
+    "b1885a83": 23143.30701876303,
+    "6ef76820": 18.762867999999997
+   },
+   "d": -99.91892745498822,
+   "iqr_pct": 0.14336211849888242,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -6.595042393090287,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 20.381705294635765,
+    "8d716693": 23119.7380293385,
+    "b1885a83": 23144.97585913093,
+    "6ef76820": 18.907199274240583
+   },
+   "d": -99.91830970406141,
+   "iqr_pct": 0.11726155693967164,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -7.234458545444947,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 31.980554223334934,
+    "8d716693": 23138.802172481897,
+    "b1885a83": 23133.782647471016,
+    "6ef76820": 37.06740131911842
+   },
+   "d": -99.83976938884582,
+   "iqr_pct": 0.09549168821218451,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 15.90606297895805,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 47.27866497706802,
+    "8d716693": 23106.906275873487,
+    "b1885a83": 23136.06373655557,
+    "6ef76820": 48.060000527999364
+   },
+   "d": -99.79227235421183,
+   "iqr_pct": 0.0952325494478441,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 1.652617626386708,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.68421192631523,
+    "8d716693": 36.90730531123363,
+    "b1885a83": 36.88271684691326,
+    "6ef76820": 18.782180974255223
+   },
+   "d": -49.0759288362264,
+   "iqr_pct": 0.35617210087552925,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -4.5825098583403685,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.774419490232205,
+    "8d716693": 30.007188799999998,
+    "b1885a83": 35.63081454767418,
+    "6ef76820": 18.918398
+   },
+   "d": -46.90439093193588,
+   "iqr_pct": 0.48878234345197785,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.7668866131530869,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 32.9091168,
+    "8d716693": 48.67443546045163,
+    "b1885a83": 49.17768183141814,
+    "6ef76820": 32.765850468299064
+   },
+   "d": -33.3725193053611,
+   "iqr_pct": 1.311252406551439,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -0.4353393394651531,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 30.01560058751953,
+    "8d716693": 41.51843788937266,
+    "b1885a83": 44.432901014716755,
+    "6ef76820": 30.12080630335496
+   },
+   "d": -32.21057906307185,
+   "iqr_pct": 0.3565643687443975,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.3505034507927723,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.699514399999998,
+    "8d716693": 24.94865444107645,
+    "b1885a83": 24.989138804344478,
+    "6ef76820": 12.4969688
+   },
+   "d": -49.990398237223985,
+   "iqr_pct": 0.35788333854732457,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -33.16955439227876,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 30.324291670283333,
+    "8d716693": 40.4504672,
+    "b1885a83": 43.87515084993966,
+    "6ef76820": 30.123389753220494
+   },
+   "d": -31.342937472175272,
+   "iqr_pct": 0.27543597986509705,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -0.6625114916030049,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 32.3066048,
+    "8d716693": 40.34390618731258,
+    "b1885a83": 43.22211653346017,
+    "6ef76820": 30.181196000000003
+   },
+   "d": -30.171869356200094,
+   "iqr_pct": 0.31576342662160306,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -6.5788677366678865,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 38.95412725504729,
+    "8d716693": 43.739662416540135,
+    "b1885a83": 23119.51127214171,
+    "6ef76820": 37.98693561045151
+   },
+   "d": -99.83569317204285,
+   "iqr_pct": 0.10219657364177948,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.482899021875686,
+   "source": "B1 \u00a72.2"
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 40.444362,
+    "8d716693": 43.8697664,
+    "b1885a83": 23158.81852004961,
+    "6ef76820": 37.00297359762112
+   },
+   "d": -99.84022080588618,
+   "iqr_pct": 0.11884790292357283,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -8.508944713675733,
+   "source": "B1 \u00a72.2"
+  }
+ ],
+ "g2_superset": [
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 47.27866497706802,
+    "8d716693": 23106.906275873487,
+    "b1885a83": 23136.06373655557,
+    "6ef76820": 48.060000527999364
+   },
+   "d": -99.79227235421183,
+   "iqr_pct": 0.0952325494478441,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 1.652617626386708
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 31.980554223334934,
+    "8d716693": 23138.802172481897,
+    "b1885a83": 23133.782647471016,
+    "6ef76820": 37.06740131911842
+   },
+   "d": -99.83976938884582,
+   "iqr_pct": 0.09549168821218451,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 15.90606297895805
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4480502.220338983,
+    "8d716693": 23153.502444134076,
+    "b1885a83": 23126.731566517974,
+    "6ef76820": 7206.878118263013
+   },
+   "d": -68.83745505700051,
+   "iqr_pct": 0.13197902595368183,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.83915021656395
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4480668.033898305,
+    "8d716693": 23134.74218178015,
+    "b1885a83": 23148.112409390887,
+    "6ef76820": 7257.376576279568
+   },
+   "d": -68.6480847858016,
+   "iqr_pct": 0.15157741026402619,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.83802913937444
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 1436.15062819987,
+    "8d716693": 905.8657285548258,
+    "b1885a83": 905.9489006772994,
+    "6ef76820": 1394.4871000834055
+   },
+   "d": 53.925580023428296,
+   "iqr_pct": 0.05622570839225868,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -2.90105559252425
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 976.2105939733617,
+    "8d716693": 645.219772748111,
+    "b1885a83": 650.0164747543408,
+    "6ef76820": 1000.0143022859405
+   },
+   "d": 53.844454890758506,
+   "iqr_pct": 1.1757988198949407,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": 2.438378405185423
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": null,
+    "8d716693": 833.2413968779298,
+    "b1885a83": 835.0579484471028,
+    "6ef76820": null
+   },
+   "verdict": "GIVE-UP",
+   "nb_verdict": "GIVE-UP",
+   "failing": [
+    "sd-empty-alt-hit",
+    "sd-empty-alt-miss",
+    "sec-github-pat",
+    "v-uuid-badnibble",
+    "v-uuid-valid"
+   ]
+  },
+  {
+   "pattern": "email-nested-plus",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": null,
+    "8d716693": 895.6112109987665,
+    "b1885a83": 896.5352575687275,
+    "6ef76820": null
+   },
+   "verdict": "GIVE-UP",
+   "nb_verdict": "GIVE-UP",
+   "failing": [
+    "sd-empty-alt-hit",
+    "sd-empty-alt-miss",
+    "sec-github-pat",
+    "v-uuid-badnibble",
+    "v-uuid-valid"
+   ]
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.790932567253947,
+    "8d716693": 24.961444661688542,
+    "b1885a83": 24.882503293997367,
+    "6ef76820": 12.550820000000002
+   },
+   "d": -49.55965703407442,
+   "iqr_pct": 0.07885534695292805,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -33.20810473306838
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.736835410531672,
+    "8d716693": 24.88786368970905,
+    "b1885a83": 24.896824000000002,
+    "6ef76820": 12.6157544
+   },
+   "d": -49.32785643662823,
+   "iqr_pct": 0.10096066871822616,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.66870245917361
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4067060.184615385,
+    "8d716693": 28.456885234491814,
+    "b1885a83": 28.437348,
+    "6ef76820": 37.30706
+   },
+   "d": 31.19036275815874,
+   "iqr_pct": 0.06355022978936041,
+   "band_edge": 12.50751804330394,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -99.99908270204259
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4065788.7538461536,
+    "8d716693": 34.50493359802656,
+    "b1885a83": 34.33689973048021,
+    "6ef76820": 42.493031605574714
+   },
+   "d": 23.75325652319874,
+   "iqr_pct": 0.12168823306936916,
+   "band_edge": 12.50751804330394,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -99.99895486376253
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 492.116213504,
+    "8d716693": 626.8828571288858,
+    "b1885a83": 627.2088768160236,
+    "6ef76820": 444.9051111910365
+   },
+   "d": -29.065877790256692,
+   "iqr_pct": 0.05710695795923647,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -9.593486460608098
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 497.03284550094907,
+    "8d716693": 627.0374505498803,
+    "b1885a83": 627.4274564367129,
+    "6ef76820": 444.81956221577417
+   },
+   "d": -29.104224296782576,
+   "iqr_pct": 0.2720646818525152,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -10.504996552602115
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6407.728945963497,
+    "8d716693": 985.8625926493592,
+    "b1885a83": 893.5171540917282,
+    "6ef76820": 1194.1660661291255
+   },
+   "d": 33.64780526715358,
+   "iqr_pct": 0.3057294876278618,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -81.36366135022952
+  },
+  {
+   "pattern": "ipv4-near-miss",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6392.6611697597855,
+    "8d716693": 1021.4194431997086,
+    "b1885a83": 1135.3626544981078,
+    "6ef76820": 1269.625640653641
+   },
+   "d": 11.825559491815845,
+   "iqr_pct": 0.10969981054613552,
+   "band_edge": 2.5568572848569797,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -80.13932528350553
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 30.01560058751953,
+    "8d716693": 41.51843788937266,
+    "b1885a83": 44.432901014716755,
+    "6ef76820": 30.12080630335496
+   },
+   "d": -32.21057906307185,
+   "iqr_pct": 0.3565643687443975,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.3505034507927723
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 32.3066048,
+    "8d716693": 40.34390618731258,
+    "b1885a83": 43.22211653346017,
+    "6ef76820": 30.181196000000003
+   },
+   "d": -30.171869356200094,
+   "iqr_pct": 0.31576342662160306,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -6.5788677366678865
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 2855387.7526881723,
+    "8d716693": 43.585667331466134,
+    "b1885a83": 58.87920914494903,
+    "6ef76820": 27.15535067571946
+   },
+   "d": -53.8795594063291,
+   "iqr_pct": 0.5403330357991373,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99904897852663
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 2847149.59139785,
+    "8d716693": 49.178822385413135,
+    "b1885a83": 69.74470740423408,
+    "6ef76820": 34.552197137363436
+   },
+   "d": -50.45904065938366,
+   "iqr_pct": 0.16046280016618872,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99878642846018
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 852.179217868114,
+    "8d716693": 876.4237938000003,
+    "b1885a83": 830.5047198156226,
+    "6ef76820": 843.8856840765811
+   },
+   "d": 1.6111846136081196,
+   "iqr_pct": 0.18412563555401448,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": -0.9732147437578624
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 838.7302767971372,
+    "8d716693": 859.8594881930587,
+    "b1885a83": 815.7418577670979,
+    "6ef76820": 840.7330194383726
+   },
+   "d": 3.063611537561907,
+   "iqr_pct": 0.8549175911363235,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": 0.23878268099290129
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4122.729102987835,
+    "8d716693": 836.8286645299588,
+    "b1885a83": 861.2298809428974,
+    "6ef76820": 690.5973445046284
+   },
+   "d": -19.812658642481836,
+   "iqr_pct": 1.2810710338073166,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -83.24902443859004
+  },
+  {
+   "pattern": "logparse-atomic",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4123.994175066845,
+    "8d716693": 951.0010750707752,
+    "b1885a83": 950.0122101179243,
+    "6ef76820": 853.811222089934
+   },
+   "d": -10.126289641693022,
+   "iqr_pct": 0.13485202511787192,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -79.29649786481345
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 30.324291670283333,
+    "8d716693": 40.4504672,
+    "b1885a83": 43.87515084993966,
+    "6ef76820": 30.123389753220494
+   },
+   "d": -31.342937472175272,
+   "iqr_pct": 0.27543597986509705,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -0.6625114916030049
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.774419490232205,
+    "8d716693": 30.007188799999998,
+    "b1885a83": 35.63081454767418,
+    "6ef76820": 18.918398
+   },
+   "d": -46.90439093193588,
+   "iqr_pct": 0.48878234345197785,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.7668866131530869
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 3660145.7671232875,
+    "8d716693": 38.9603362475965,
+    "b1885a83": 51.2139616,
+    "6ef76820": 25.15904840914191
+   },
+   "d": -50.87462945037645,
+   "iqr_pct": 0.1401555313385376,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99931262168204
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 3658667.694444444,
+    "8d716693": 45.42865882853647,
+    "b1885a83": 54.918580162839675,
+    "6ef76820": 29.716476313409473
+   },
+   "d": -45.88994066252837,
+   "iqr_pct": 0.10133708578992581,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99918777875459
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 809.5094898502435,
+    "8d716693": 858.5851942036662,
+    "b1885a83": 894.4830869117542,
+    "6ef76820": 822.5347429176978
+   },
+   "d": -8.043566731089513,
+   "iqr_pct": 1.6962614419903068,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 1.6090303116599551
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 492.61983522193384,
+    "8d716693": 660.4199840609604,
+    "b1885a83": 649.8573665396898,
+    "6ef76820": 517.7485363210527
+   },
+   "d": -20.32889631182916,
+   "iqr_pct": 0.07737717206541281,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 5.101033150197444
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4817.000860851501,
+    "8d716693": 809.4343180990107,
+    "b1885a83": 859.519119877247,
+    "6ef76820": 640.6673592185386
+   },
+   "d": -25.462116618181092,
+   "iqr_pct": 0.47317655562177496,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -86.69987036071885
+  },
+  {
+   "pattern": "logparse-atomic-removed",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4789.709223750452,
+    "8d716693": 892.1617722109996,
+    "b1885a83": 907.4089925471079,
+    "6ef76820": 753.5189938348337
+   },
+   "d": -16.95927635456897,
+   "iqr_pct": 0.26662549029745647,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -84.26795952250288
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.930216455826834,
+    "8d716693": 27.57646516941393,
+    "b1885a83": 27.5692736,
+    "6ef76820": 13.478129599999999
+   },
+   "d": -51.11177104064142,
+   "iqr_pct": 0.10191055596039154,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.373390776398175
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.914089668728266,
+    "8d716693": 27.589336000000003,
+    "b1885a83": 27.576306969477216,
+    "6ef76820": 13.345908930818213
+   },
+   "d": -51.603712035878814,
+   "iqr_pct": 0.1115478868498772,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -32.98258091216832
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 2444993.849056604,
+    "8d716693": 33.758982,
+    "b1885a83": 35.17426146059083,
+    "6ef76820": 26.648629
+   },
+   "d": -24.23826999222977,
+   "iqr_pct": 0.16933391030018174,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99891007378157
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 2766890.798165138,
+    "8d716693": 40.530634,
+    "b1885a83": 38.40851,
+    "6ef76820": 30.10855
+   },
+   "d": -21.609690144189397,
+   "iqr_pct": 0.39678706619965237,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99891182731099
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 561.9616644121403,
+    "8d716693": 667.2825285388699,
+    "b1885a83": 671.5266782070656,
+    "6ef76820": 547.9334535313129
+   },
+   "d": -18.40481230108965,
+   "iqr_pct": 0.9293457920651048,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.4962932116556518
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 565.5480361698692,
+    "8d716693": 671.5722181200558,
+    "b1885a83": 671.4460105076432,
+    "6ef76820": 548.5520250548959
+   },
+   "d": -18.302884152939406,
+   "iqr_pct": 0.46126246476691474,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -3.0052285620294
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4452.764331668298,
+    "8d716693": 769.1568831945484,
+    "b1885a83": 778.4304250495305,
+    "6ef76820": 964.6520266190878
+   },
+   "d": 23.92270337554037,
+   "iqr_pct": 0.3611652830720182,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -78.33588407636059
+  },
+  {
+   "pattern": "uuid-near-miss",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4757.90055575125,
+    "8d716693": 900.6706145879243,
+    "b1885a83": 828.4256429999998,
+    "6ef76820": 911.0252674543433
+   },
+   "d": 9.97067451403644,
+   "iqr_pct": 0.04574218618189276,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": -80.8523684600109
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 32.9091168,
+    "8d716693": 48.67443546045163,
+    "b1885a83": 49.17768183141814,
+    "6ef76820": 32.765850468299064
+   },
+   "d": -33.3725193053611,
+   "iqr_pct": 1.311252406551439,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -0.4353393394651531
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 19.68421192631523,
+    "8d716693": 36.90730531123363,
+    "b1885a83": 36.88271684691326,
+    "6ef76820": 18.782180974255223
+   },
+   "d": -49.0759288362264,
+   "iqr_pct": 0.35617210087552925,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -4.5825098583403685
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4271081.548387097,
+    "8d716693": 74.34689648993124,
+    "b1885a83": 72.30870530607152,
+    "6ef76820": 57.90862800000001
+   },
+   "d": -19.914721533345425,
+   "iqr_pct": 0.42055532892729613,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99864416946049
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4272179.935483871,
+    "8d716693": 78.26287748454702,
+    "b1885a83": 77.32395948166483,
+    "6ef76820": 66.26989418408465
+   },
+   "d": -14.295782797053139,
+   "iqr_pct": 1.2674532428209826,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99844880376799
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 980.682404965764,
+    "8d716693": 844.7807070910873,
+    "b1885a83": 847.3277594942474,
+    "6ef76820": 975.0299594962552
+   },
+   "d": 15.071169163421555,
+   "iqr_pct": 0.19558519954550935,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -0.5763787991797586
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 589.0539330959458,
+    "8d716693": 631.49665845804,
+    "b1885a83": 633.7546695999998,
+    "6ef76820": 589.3339012693084
+   },
+   "d": -7.009142569115586,
+   "iqr_pct": 0.10527995642558537,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": 0.04752844478792211
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6322.005657529338,
+    "8d716693": 845.2340770960592,
+    "b1885a83": 816.9456583711955,
+    "6ef76820": 1390.4765756841803
+   },
+   "d": 70.2042922238519,
+   "iqr_pct": 0.40339128162694776,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -78.00576824811664
+  },
+  {
+   "pattern": "wild-datetime-moment-iso8601",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6294.850010970086,
+    "8d716693": 922.158057129088,
+    "b1885a83": 924.9063195515809,
+    "6ef76820": 1557.6081855637435
+   },
+   "d": 68.40712974249254,
+   "iqr_pct": 0.4280442254060204,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -75.25583321525872
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 40.444362,
+    "8d716693": 43.8697664,
+    "b1885a83": 23158.81852004961,
+    "6ef76820": 37.00297359762112
+   },
+   "d": -99.84022080588618,
+   "iqr_pct": 0.11884790292357283,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -8.508944713675733
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 38.95412725504729,
+    "8d716693": 43.739662416540135,
+    "b1885a83": 23119.51127214171,
+    "6ef76820": 37.98693561045151
+   },
+   "d": -99.83569317204285,
+   "iqr_pct": 0.10219657364177948,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.482899021875686
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4474981.0,
+    "8d716693": 79.17824818610218,
+    "b1885a83": 23200.52992252204,
+    "6ef76820": 63.12533404959913
+   },
+   "d": -99.72791425773286,
+   "iqr_pct": 0.13319444352238888,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.9985893720208
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4474056.898305085,
+    "8d716693": 85.27838408864636,
+    "b1885a83": 23118.83861019737,
+    "6ef76820": 68.75330459471266
+   },
+   "d": -99.70260917620496,
+   "iqr_pct": 0.19851573006680628,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99846328944496
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 1063.7202758625533,
+    "8d716693": 783.3614806116624,
+    "b1885a83": 663.2006244831755,
+    "6ef76820": 1099.5552062976024
+   },
+   "d": 65.7952609972997,
+   "iqr_pct": 0.3256915643653902,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": 3.3688302506024046
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 1065.6111264802194,
+    "8d716693": 783.4148605950215,
+    "b1885a83": 662.1587591788085,
+    "6ef76820": 1101.7087612488147
+   },
+   "d": 66.38136186782823,
+   "iqr_pct": 0.31171390499491314,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": 3.3875054296615743
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6489.381011159869,
+    "8d716693": 978.6220498516294,
+    "b1885a83": 785.7380739529559,
+    "6ef76820": 1405.5124469839857
+   },
+   "d": 78.8779866442029,
+   "iqr_pct": 0.4822250904220195,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -78.34134804896016
+  },
+  {
+   "pattern": "wild-validator-email-owasp",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6417.431421367831,
+    "8d716693": 1029.113132812307,
+    "b1885a83": 850.1668495614971,
+    "6ef76820": 1465.7441639523547
+   },
+   "d": 72.40664755493147,
+   "iqr_pct": 0.08823885007214145,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -77.1599559432465
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 32.1274587490165,
+    "8d716693": 31.091622,
+    "b1885a83": 31.14661914135234,
+    "6ef76820": 26.4881912
+   },
+   "d": -14.956448146782964,
+   "iqr_pct": 0.09820837255479434,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -17.55279679314546
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 18.699514399999998,
+    "8d716693": 24.94865444107645,
+    "b1885a83": 24.989138804344478,
+    "6ef76820": 12.4969688
+   },
+   "d": -49.990398237223985,
+   "iqr_pct": 0.35788333854732457,
+   "band_edge": -29.683526694194825,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -33.16955439227876
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4269920.709677419,
+    "8d716693": 28.8816288,
+    "b1885a83": 28.45635641745743,
+    "6ef76820": 29.417410066071945
+   },
+   "d": 3.377289890932505,
+   "iqr_pct": 0.0985979665331656,
+   "band_edge": 12.50751804330394,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99931105488682
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4270443.887096774,
+    "8d716693": 34.241820206543835,
+    "b1885a83": 34.646748,
+    "6ef76820": 35.2403792
+   },
+   "d": 1.7133821621584722,
+   "iqr_pct": 0.07691111442839979,
+   "band_edge": 12.50751804330394,
+   "verdict": "REGRESS",
+   "nb_verdict": "within",
+   "vs_b1_before": -99.99917478416455
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 871.8884949856724,
+    "8d716693": 870.0347292534369,
+    "b1885a83": 858.3493942526266,
+    "6ef76820": 805.7644803148416
+   },
+   "d": -6.126283106842653,
+   "iqr_pct": 0.4132492539375216,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -7.5839989919717175
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 498.641255296,
+    "8d716693": 626.4706104512327,
+    "b1885a83": 626.7226123355124,
+    "6ef76820": 446.28604788569777
+   },
+   "d": -28.7904985233274,
+   "iqr_pct": 0.03704397908941859,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -10.499573963093665
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6434.6184148009925,
+    "8d716693": 888.606629265308,
+    "b1885a83": 909.0176702752225,
+    "6ef76820": 1168.704372830914
+   },
+   "d": 28.567838783273206,
+   "iqr_pct": 0.2205641158960388,
+   "band_edge": 11.85372070495233,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -81.83723886186249
+  },
+  {
+   "pattern": "wild-validator-ipv4-owasp",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6611.204226699715,
+    "8d716693": 1022.445048740396,
+    "b1885a83": 1039.3828956262564,
+    "6ef76820": 1438.079445045599
+   },
+   "d": 38.358967719890856,
+   "iqr_pct": 0.052344918328810754,
+   "band_edge": 2.5568572848569797,
+   "verdict": "REGRESS",
+   "nb_verdict": "REGRESS",
+   "vs_b1_before": -78.24784417885874
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 20.08765752987398,
+    "8d716693": 23123.580625000002,
+    "b1885a83": 23143.30701876303,
+    "6ef76820": 18.762867999999997
+   },
+   "d": -99.91892745498822,
+   "iqr_pct": 0.14336211849888242,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -6.595042393090287
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 20.381705294635765,
+    "8d716693": 23119.7380293385,
+    "b1885a83": 23144.97585913093,
+    "6ef76820": 18.907199274240583
+   },
+   "d": -99.91830970406141,
+   "iqr_pct": 0.11726155693967164,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -7.234458545444947
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4930833.259259259,
+    "8d716693": 23145.487131289763,
+    "b1885a83": 23143.23073747936,
+    "6ef76820": 27.68097463805072
+   },
+   "d": -99.88039278114606,
+   "iqr_pct": 0.01694361037458055,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.9994386146685
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "thr",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 4923754.441860465,
+    "8d716693": 23146.392117663858,
+    "b1885a83": 23156.000489955906,
+    "6ef76820": 36.434164
+   },
+   "d": -99.84265778532955,
+   "iqr_pct": 0.04601683695469086,
+   "band_edge": -8.181480090201639,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -99.99926003287878
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "auto-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 499.9340826735371,
+    "8d716693": 585.2541226879475,
+    "b1885a83": 644.9035666787607,
+    "6ef76820": 488.9508659696042
+   },
+   "d": -24.18232876464144,
+   "iqr_pct": 0.42532131852708854,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -2.1969329726825344
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "auto-nocaps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 499.7646916734134,
+    "8d716693": 584.7217811238376,
+    "b1885a83": 644.8549954336552,
+    "6ef76820": 494.2174606472985
+   },
+   "d": -23.35990817362828,
+   "iqr_pct": 0.15638091071825963,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -1.109968574918836
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "vm-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6161.950969490405,
+    "8d716693": 839.9552985053307,
+    "b1885a83": 886.9490962000001,
+    "6ef76820": 768.5483873783546
+   },
+   "d": -13.349211282689783,
+   "iqr_pct": 0.2667480253530256,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "improve",
+   "vs_b1_before": -87.52751537323715
+  },
+  {
+   "pattern": "winpath-near-miss",
+   "regime": "srch",
+   "testee": "vm-in-caps",
+   "req_why": "one-attempt",
+   "m": {
+    "25b1984f": 6177.2340804099795,
+    "8d716693": 905.2262748987887,
+    "b1885a83": 949.8918601656222,
+    "6ef76820": 922.3277057490807
+   },
+   "d": -2.9018202568590805,
+   "iqr_pct": 0.09161420288359949,
+   "band_edge": -3.798550075791249,
+   "verdict": "improve",
+   "nb_verdict": "within",
+   "vs_b1_before": -85.06892091601188
+  }
+ ]
+}

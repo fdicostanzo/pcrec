@@ -1,0 +1,6 @@
+/^([a-zA-Z0-9._%+-]+)+@/
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!@
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@
+
+/^([a-zA-Z0-9._%+-]+)+@/I

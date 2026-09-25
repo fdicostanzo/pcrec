@@ -1,0 +1,12 @@
+PCRE2 version 10.46 2025-08-27 (8-bit)
+/^([a-zA-Z0-9._%+-]+)+@/
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+No match
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Failed: error -47: match limit exceeded
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Failed: error -47: match limit exceeded
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Failed: error -47: match limit exceeded
