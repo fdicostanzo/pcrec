@@ -256,6 +256,15 @@
 #     "that suite is not wired into this matrix's dispatch today". S229 and
 #     S-U8 (whose header carries the identical unfulfilled claim about the
 #     clamp-stride probe) both gain it in the same change.
+#     **[chkgaps, 2026-09-25] SCORED AGAINST A CLEAN-TREE BASELINE, NOT
+#     AN ABSOLUTE COUNT** (docs/dev/lanes/enctriage_report.md finding 4):
+#     the script is opt-in and rides no `TEST_SECTIONS` entry, so it went
+#     standing-red on main for two weeks (D118, 2026-09-21, until
+#     enctriage's fix) with nothing to notice, and every row naming
+#     `encoding` scored DETECTED regardless of its own plant for that
+#     whole window. `ENCODING_BASELINE_FAIL` (computed once per matrix run,
+#     see its own header above the `CLEAN_TREE` block) is subtracted from
+#     each row's own count before `score_arm` ever sees it.
 #   pc4 — added 2026-09-09 (mechreach triage of S-U11). Builds
 #     tests/registry/pc4_check.c ALONE (no pattern-space sweep, no gcc
 #     fan-out — the full run_pc4.sh differential is deliberately still
@@ -516,6 +525,15 @@ fi
 # mechanism existed.
 CLEAN_TREE=""
 needs_clean=0
+# needs_enc_baseline: does some SELECTED row's SAB_SUITES include `encoding`?
+# See "THE encoding ARM'S CLEAN-TREE BASELINE" below (chkgaps, 2026-09-25,
+# docs/dev/lanes/enctriage_report.md finding 4) for why that arm alone needs
+# one: run_encoding_checks.sh is opt-in, rides no TEST_SECTIONS entry, and
+# went standing-red on main between D118 (2026-09-21) and this lane's fix
+# with nothing to notice — a sabotage scored on ABSOLUTE `checks failed`
+# reads DETECTED whatever the plant does the moment the clean tree is
+# already red, which is precisely the shape S229/S-U8 hit.
+needs_enc_baseline=0
 [ "$VALIDATE_ONLY" = "1" ] && needs_clean=-1
 for f in "${sab_files[@]}"; do
     [ "$needs_clean" -eq -1 ] && break
@@ -524,8 +542,15 @@ for f in "${sab_files[@]}"; do
          source "$f" >/dev/null 2>&1
          [ -n "${SAB_REACH}${SAB_REACH_POP//[[:space:]]/}" ] ); then
         needs_clean=1
-        break
     fi
+    if ( SAB_SUITES=""
+         # shellcheck disable=SC1090
+         source "$f" >/dev/null 2>&1
+         case " $SAB_SUITES " in (*" encoding "*) exit 0 ;; (*) exit 1 ;; esac ); then
+        needs_clean=1
+        needs_enc_baseline=1
+    fi
+    [ "$needs_clean" -eq 1 ] && [ "$needs_enc_baseline" -eq 1 ] && break
 done
 CLEAN_REUSED=0
 if [ "$needs_clean" -eq 1 ]; then
@@ -566,6 +591,56 @@ if [ "$needs_clean" -eq 1 ] && [ "$CLEAN_REUSED" -eq 0 ]; then
     # half a tree.
     printf '%s\n' "$SHA" > "$MECH_SCRATCH/_clean/SHA"
     echo "reach reference: clean tree built at $SHA ($CLEAN_TREE)"
+    echo
+fi
+
+# ---- THE `encoding` ARM'S CLEAN-TREE BASELINE (chkgaps, 2026-09-25) -------
+#
+# docs/dev/lanes/enctriage_report.md finding 4: the `encoding` arm
+# (tests/codegen/run_encoding_checks.sh) scored a sabotaged row's ABSOLUTE
+# `checks failed` count with no reference to what the SAME script reads on a
+# CLEAN tree. That script is opt-in (rides no `TEST_SECTIONS` entry), so a
+# standing red on main between two ordinary landings goes unnoticed by
+# anything else in the tree and every row naming `encoding` in its
+# `SAB_SUITES` reads DETECTED whatever its own plant did -- S229 and S-U8
+# both did, from D118 (2026-09-21) until enctriage's fix. This makes the
+# comparison the control it should have been from the start: a sabotage is
+# DETECTED on this arm only if it ADDS a failure the clean tree does not
+# already have.
+#
+# COMPUTED ONCE (like CLEAN_TREE itself), never per row: the baseline is a
+# property of the COMMIT, not of any one sabotage, and re-running the whole
+# script per row would pay its cost N times for a number that cannot move
+# within one invocation of this matrix (D45's "commit before you start,
+# commit nothing during the run" rule, restated for THIS control the way it
+# already governs CLEAN_TREE above). Cached to a file keyed by nothing but
+# CLEAN_TREE's own presence -- CLEAN_TREE is itself SHA-keyed (the reuse
+# check just above), so a stale baseline can only survive alongside a tree
+# it was genuinely measured against.
+ENCODING_BASELINE_FAIL=""
+if [ "$needs_enc_baseline" -eq 1 ]; then
+    ENC_BASELINE_CACHE="$MECH_SCRATCH/_clean/encoding_baseline_fail.txt"
+    if [ "$CLEAN_REUSED" -eq 1 ] && [ -s "$ENC_BASELINE_CACHE" ]; then
+        ENCODING_BASELINE_FAIL="$(cat "$ENC_BASELINE_CACHE")"
+        echo "encoding baseline: REUSING $ENCODING_BASELINE_FAIL failure(s) already measured on the clean tree"
+    else
+        PCREC="$CLEAN_TREE/build/pcrec" CC="$CC" \
+            bash "$CLEAN_TREE/tests/codegen/run_encoding_checks.sh" \
+            > "$MECH_SCRATCH/_clean/encoding_baseline.log" 2>&1
+        ENCODING_BASELINE_FAIL="$(grep -m1 '^checks failed:' "$MECH_SCRATCH/_clean/encoding_baseline.log" | grep -oE '[0-9]+')"
+        # An unscrapeable baseline (the script crashed, or its own output
+        # shape moved) must NOT read as zero -- that would be exactly the
+        # "missing count defaults to a verdict" failure score_arm's own
+        # header already names, one level up: a baseline that cannot be
+        # measured makes every encoding-arm row for this run UNMEASURABLE,
+        # never silently permissive.
+        if ! [ "${ENCODING_BASELINE_FAIL:-}" -ge 0 ] 2>/dev/null; then
+            echo "FATAL: could not scrape a clean-tree 'checks failed:' count for the encoding baseline (see $MECH_SCRATCH/_clean/encoding_baseline.log) -- the encoding arm cannot be scored without one" >&2
+            exit 2
+        fi
+        printf '%s\n' "$ENCODING_BASELINE_FAIL" > "$ENC_BASELINE_CACHE"
+        echo "encoding baseline: $ENCODING_BASELINE_FAIL failure(s) measured on the clean tree ($CLEAN_TREE)"
+    fi
     echo
 fi
 
@@ -1924,7 +1999,21 @@ run_one() {
                     > "$work/encoding.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/encoding.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/encoding.log" | grep -oE '[0-9]+')"
-                score_arm "$work/encoding.log" "$f" "encoding:${f:-ERR}fail/${p:-?}pass"
+                # THE CLEAN-TREE BASELINE (chkgaps, 2026-09-25; see its own
+                # computation above). `f` is this row's ABSOLUTE count; a
+                # sabotage is DETECTED on this arm only if `f` exceeds what
+                # the clean tree already reads, never on the raw count alone
+                # -- a standing pre-existing red must not read as every row
+                # catching its own plant. `f_over` is what score_arm actually
+                # sees; the cell still prints BOTH numbers, so a reader can
+                # tell "this row's own failures" from "the arm's known floor"
+                # at a glance rather than having to go compute the subtraction.
+                f_over=""
+                if [ "${f:-}" -ge 0 ] 2>/dev/null && [ "${ENCODING_BASELINE_FAIL:-}" -ge 0 ] 2>/dev/null; then
+                    f_over=$(( f > ENCODING_BASELINE_FAIL ? f - ENCODING_BASELINE_FAIL : 0 ))
+                fi
+                score_arm "$work/encoding.log" "$f_over" \
+                    "encoding:${f:-ERR}fail/${p:-?}pass(baseline ${ENCODING_BASELINE_FAIL:-?}fail, over-baseline ${f_over:-?})"
                 ;;
             gentimeout)
                 # [M4.5c fix] D45's own checks. Its own arm because what it
