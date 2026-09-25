@@ -25691,3 +25691,70 @@ addenda, the (?:…) oracle wrap, the three-arm run-check form rule, the
 one-seam-entry merge, batch-2 dispositions STILL OPEN (FREQPICK/2b
 default-on recommended); bench I-102a/b..I-105 sent, O-49..O-51 received,
 [B84] window opened early. wake.md rewritten.
+
+## 2026-09-25 — seventy-ninth session (manager, Opus 5.5): K64 found+fixed (abi 33), [VAR] landing closed, compare-stack map, [FINDINGS] opened → requirements → design → panel, S1 designed twice, D122 addenda 1–4, D123 (+8 addenda), D124
+
+Session ran 09:3x → ~16:3x EDT. Main at close = ce658cb7 (abi 33), PUSHED.
+Frank restarted the bench session (tmux `bench` on ubuntubudu, now `claude
+-n pcrecdev2 --remote-control pcrecdev2`, Claude Code 2.1.282, Remote
+Control session_01MP9NzAij62x3ZGPxXCtTYr; its login expires ~09-28).
+
+MERGED (all on main, pushed): varland (identity gate green 16/0: bref-rename
+155 + var-construct 15 named exceptions, S273, recidentity mech arm + the
+no-.git SKIP guard; emit_sweep's three cells dispositioned — emit-ir-vm 41 =
+`${}` diagnostic text, composition 4 = pre-module refusals, dumps 4 = new
+rows); varfollow ([VAR] design-note debt, census cells ${v-w}/${v+w} +
+lookaround pair, [K50-DD12AI-MANIFEST] row); enctriage (run_encoding_checks'
+five reds = CHECK GAPS, DD-12(7) holds, ENDWIN hypothesis refuted);
+wfcensus ([WORD-FOLD] population non-zero: 16 patterns, 4 WAF losing cells —
+later shown NOT to execute a literal compare); cmpmap
+(docs/design/compare_stack.md, L0–L4 map); b84read (O-52 read:
+cycle2_admitfix_reading.md; K64 found; I-106 sent); wafread (S3:
+waf_attribution.md — union-select the only caseless customer; concat-sqli /
+dbnames re2 plain lazy DFA; I-107 → bench [B89] running); findthink
+(findings/requirements.md); pfinv (patfacts/inventory.md, R1–R12);
+s1design + s1rev + s1b (litscan_s1.md revision 2 = option B, light panel
+r1 applied, census 34/235 bench 513/3,576 corpus, the 32-bit deny-plumbing
+trap found); runest (findings_measure/: per-class BIGRAM wins, fixes the
+union/from sign flip); findesign (findings/design.md); k64fix/k64land (fix A,
+abi 33, 176 movers incl. 41 auto backref/linked-call, S274, regression
+k64_precheck_forced_vm.rxt; make test 43/43 green except nm probe).
+
+RULINGS (Frank): FREQPICK + 2b default-on; K64 fix A; SWAR admitted, the
+hold is ARCH-SPECIFIC techniques (D122 add. 3); D122 (one literal-search kit
+as an OUTCOME not a mandate, pay-for-what-you-use), add. 2 (S3 before S2,
+cube in src/core, prior gate into the accessor, table-driven rows, Teddy
+out), add. 4 (S1 option B; dfa_pfs[] = the engine-neutral candidate-finding
+table, VMSEED joins it; FULL panel bar); D123 + addenda 1–8 ([FINDINGS]
+Q1–Q10 + panel asks: bundle; compose by include inside a bundle; embed +
+--list-* inspection; stamp always; data-declared applicability, no hidden
+rules; default byte-identical; in-tree licensed samples; web+log first;
+analyzer python→C/stdin/switchable/process-parallel; D93 KEPT — CLI
+--analysis fill-only, experiments as config variants; first stop = own
+file; one include; lowercase exact names; K65 fix (a)); D124 (one artifact,
+two emission strategies; organize by question, engine = predicate/hat).
+New rows: [OPT-LITSCAN], [FINDINGS], [OPT-VMSEED], boonies
+[FINDINGS-S1-REVISIT]/[FINDINGS-SELINC]; [M4-SUBST] explicitly held.
+
+FOUND: K64 (fixed); K65 (pre-existing: the pre-check PICK decides give-up on
+no-DFA-front VM routes; witness '(x?)([a-z]+)+Z.@\1' a×31+Zb; fix (a) ruled,
+lane owed). GitHub push protection blocked a synthetic Slack token in
+docs/dev/optloop/waf/mk_inputs.py (Frank allowed it; a split-literal
+follow-up is owed so it never re-flags).
+
+OWED (next session): the [FINDINGS] revision lane (three critic reports +
+addendum 8 → one disposition table); the S1 FULL D6 panel (N1–N3); chkgaps
+merge (branch lane/chkgaps 6629a658, worktree kept; conflicts with k64:
+known_fail k64 file to retire, run_prechecks §5.6, census) + its make test
+and the multi-hour test-axes under GIVEUP1; K65 fix lane; the full-population
+encoding run; bench O-53/O-54 unread, [B89] results, I-108 (K64 pin).
+
+LESSONS: (1) the manager `cd`'d into lane worktrees TWICE — in-process lanes
+inherit the session cwd change (memory pcrec-manager-never-cd-worktree);
+(2) lanes idle on Monitors/notifications repeatedly (varland, chkgaps,
+k64land, s1b >60 min) — the stall watcher MISSED s1b (quiet 60+ min, never
+fired) → debug /tmp/pcrec_lanewatch.sh's find/threshold before relying on it;
+(3) critics' long reports truncate in idle notifications — ask for the
+tail; (4) a sabotage-number collision (S273 ×2) — allocate numbers in briefs;
+(5) "name targets FROM the mechanism" struck again (WAF cells carry runs in
+the PATTERN but execute no literal compare).
