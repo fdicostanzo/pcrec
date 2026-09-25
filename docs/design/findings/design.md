@@ -126,7 +126,7 @@ lane from assuming the wrong thing.
      would give (R5's own test holds trivially).
    - §16 Q2 asks how to source `log`.
 10. **The provenance record's DATA-parent requirements do not fit two
-    kinds of shipped data.** The schema (`rxt_schema.def:238-294`)
+    kinds of shipped data.** The schema (`rxt_schema.def:253-263`, the PROVENANCE rows)
     requires three things of a data block:
     - `bytes` and `sha256` are required-if parent == data;
     - `url` and `ref` are required-if `source != authored`.
