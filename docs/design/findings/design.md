@@ -679,7 +679,7 @@ parses.
 
 | flag | effect | notes |
 |---|---|---|
-| `--analysis NAME` | selects bundle `NAME` for every target this invocation builds, or for the one `--pattern` artifact | **On a file operand it REPLACES each target's config `analysis`.** For every target whose joined config names a DIFFERENT bundle, a non-fatal stderr note: `pcrec: note: --analysis X replaces analysis Y of target T (config C)` (D123-2, R10's diagnostic). The same name gives no note |
+| `--analysis NAME` | **FILL-ONLY** [r2 M-B2, D123-8 item 2]: selects bundle `NAME` for the one `--pattern` artifact, and for every target of a file operand whose joined config names NO analysis | **It never overrides a config's `analysis`** — D93's file-wins rule keeps its single exception (`--engine`). For a target whose config names a DIFFERENT bundle, a non-fatal note in `--tune`'s shape (`cli.md`'s file-wins section): `pcrec: FILE:LINE: target 'T': CLI --analysis X and this file's analysis Y disagree; using the file's value (--analysis is fill-only)`. The same name gives no note. An experiment is a config VARIANT in the file (§3.2). **`--analysis` inside a config's `pcrec` line is REFUSED**: a config names its analysis with its `analysis` line |
 | `-I DIR`, `--lib-path DIR` | unchanged meaning (search path, repeatable, ordered), **now also legal with `--pattern`** | §0.2. For a `--pattern` compile it serves only analysis lookup, since there is no `lib` line to serve |
 | `--list-analyses` | the NAME LIST (§5.2) | a query: no pattern, no `-o` |
 | `--list-analysis NAME` | the DETAILS and RESOLUTION view (§5.2). Honours `-I` and `-e` | a query |
@@ -716,9 +716,29 @@ sections:
 | `#section provenance` | one per block × field | `kind`, `field`, `value` |
 
 - **R18** ("show which source each consumed kind resolved to, before
-  anything is compiled") is `#section resolution`. A target's NAME is its
-  config line, and `--list-source` already reports that as written. The
-  post-compile truth is the stamp.
+  anything is compiled") is `#section resolution`. The post-compile truth
+  is the stamp.
+- **[r2 M-S8] The per-TARGET view.** `--list-analysis NAME` answers for a
+  name; a user building a file wants to know what each TARGET resolves to,
+  after config joins and the fill-only `--analysis`. So `--list-analysis`
+  also takes a FILE operand in place of `NAME` (`pcrec --list-analysis
+  [-I DIR…] [--analysis X] FILE`) and emits:
+
+  | section | rows | columns |
+  |---|---|---|
+  | `#section targets` | one per target | `target`, `configs` (the joined list), `analysis` (the name, or empty), `named_by` (`config` / `cli-fill` / `none`), `config_line` |
+  | `#section resolution` | one per (target × query × compile encoding) | `target` plus the name-view's `resolution` columns |
+
+  The chain and block sections are the name view's, one per distinct
+  bundle. Spelling is the manager's under `[DD-13b]`; the content is the
+  finding.
+- **[r2 M-S10] Table-contract enrolment.** Both producers join
+  `docs/spec/table_contract.md`'s Scope table at birth (B2) and its
+  conformance check, not only its prose. Every free-text column
+  (`question`, `reader`, `analyzer`, provenance `value`, `description`,
+  paths) passes through the contract's own field escaping, since a user
+  bundle's prose can carry a TAB or a newline; the hex `key` and decimal
+  `count` columns need none by grammar.
 - **The copy-edit-shadow round trip (D123-2)** is a later helper script
   reading `#section declarations`, the kind sections and
   `#section provenance`. It is not a compiler feature.
@@ -740,6 +760,17 @@ size_t      analysis_source_len;
   second input shape to validate.
 - **A caller with no filesystem** passes `analysis_source` and/or relies
   on S3.
+- **[r2 M-S12] The buffer parse opens nothing.** The embedded store and
+  `analysis_source` are BUFFERS, while the `.rxt` reader today resolves
+  head lines against the filesystem (`include "path"` by `realpath` at
+  parse time, `lib "path"` by existence). The reader gains a
+  NO-FILESYSTEM mode for buffer input: a head line that would open a file
+  (`include "…"`, `lib "…"`) is refused in a buffer, by name, and nothing
+  else changes. The store's bundles never carry such lines (a `tests/`
+  check parses every one in this mode, §11.5), and a library caller's
+  `analysis_source` gets the same refusal rather than a relative path
+  resolved against the process cwd (R13). Owed at B1, where the store is
+  first parsed.
 
 ---
 
@@ -756,7 +787,9 @@ const uint32_t *pcrec_find_byte_rate(Ctx *cx);
 
 /* Σ rate[b] over the set, capped at 1,000,000 — prefix_k.c's private set_ppm,
  * published (RFP §2.3's own recommendation). rate == NULL is the
- * CARDINALITY fallback: ⌊|set|·10^6/256⌋ (§0.8, C4's declared NONE rule). */
+ * CARDINALITY fallback: ⌊|set|·10^6/256⌋ (§0.8, C4's declared NONE rule).
+ * An EMPTY set returns 0 under both arms [r2 S-F6]; a caller comparing
+ * masses breaks ties by its own pre-findings order, never inside here. */
 uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256]);
 
 /* run-rarity (§2.6) of a run of byte SETS (house class bitmaps, one per
@@ -766,6 +799,14 @@ uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256]);
 bool pcrec_find_run_rarity(Ctx *cx, const uint8_t (*const sets)[32], int len,
                            uint64_t *rarity_q16);
 ```
+
+**D124's lens** ("is this a question both emissions share? then one
+table, engine hats"): yes, and the accessor already has that shape. The
+queries are engine-neutral; C1/C2 feed both engines' pre-checks, C3 and C4
+feed the DFA scan that the VM hybrid also runs. No reader holds an
+engine-local copy of a rate. What each reader's choice may and may not
+change for each CONSUMER is §6.2a's table (D124 item 3: every shared row
+states what it guarantees to each consumer).
 
 These three are the whole surface. `pcrec_byte_freq_ppm` and
 `byte_freq_ppm_tbl` are DELETED at B1: the default's values now live in
@@ -792,6 +833,26 @@ These fallbacks are code; APPLICABILITY is data (§2.4).
 | C10 | `[OPT-4]` | — | — | retired (REQ) |
 | C11 | `[ENG-PGO]` | — | — | out of scope: D83 (2), a separate shape |
 
+### 6.2a Why no reader's choice can move an answer OR a give-up [r2 S-F1, S-F2]
+
+The invariant is stronger than the first draft stated: for ANY rate table,
+the compile must give the same answers AND the same give-up behaviour
+(`docs/spec/limits.md` §1 makes a give-up honest, but a give-up that a
+user's bundle can switch on or off is a speed decision moving an outcome,
+which is K64's and K65's class). Per reader:
+
+| reader | what the rate chooses | why the choice cannot move an answer or a give-up | premise the build must keep |
+|---|---|---|---|
+| C1 `rb_pick` | WHICH necessary byte the whole-window pre-check scans | Any member's absence proves NOMATCH, so the answer is pick-independent. The GIVE-UP was not: on a VM route with no DFA in front, only the picked byte's `memchr` proves absence, so a subject lacking a different member reaches the backtracker (**K65**). K65's ruled fix (D123-8 item 1, (a)) pre-checks EVERY member on those routes, which makes the give-up pick-independent too | K65's fix is on main before any non-default rate reaches C1 (B2's dependency, §13) |
+| C2a `rn_scan_index` | which member of the (emitted) run the run pre-check's `memchr` scans | The run pre-check compares the WHOLE emitted run at each hit, so the subjects it rejects are the subjects lacking that run, whichever member is scanned | the run compare stays whole-run (REQ_RUN's P4); a sabotage that verified only the scanned member would be F-1's class |
+| C2b `rn_window_start` | WHICH 8-byte window of a longer necessary run is emitted | **NOT covered — K65's shape, found by this revision (argued from K65's mechanism, not measured).** Any window's absence proves NOMATCH, so the answer is window-independent; but on a VM route with no DFA in front, a subject lacking window B and holding window A reaches the backtracker only when A is the one emitted. So the window choice can switch a give-up exactly as C1's pick did | ruled fix needed: extend K65 (a) to runs (pre-check every necessary window on those routes) OR take the window findings-blind there. Listed OPEN in the review; until ruled, B1 migrates C2b's rate read but B2's non-default bundles must not reach it on no-DFA-front VM routes |
+| C3 `req_byte_dominated_by` (G1) | whether the byte pre-check is EMITTED or ELIDED as dominated by the candidate scan | G1 can only elide where `dfa_cand_scan_byte` returns `p ≥ 0`, which requires `pcrec_artifact_has_dfa_scan` (`emit_dfa.c:5507`, `dfa_cand_scan_byte` just above it): a DFA route, or the VM hybrid's inlined DFA prefilter. On the DFA the search is linear. On the hybrid, every reqbyte-necessary byte is necessary to the prefilter's language as well — the r1 S1 panel's argument (`../../dev/reviews/2026-09-25-r1-litscan-s1.md` S1-2: `A_LOOK`/`A_BREF`/`A_VAR`/`A_CALL` decline, `A_ATOMIC` is transparent on both sides, count-collapse keeps `rmin ≥ 1`) — so a subject lacking `q` is rejected by a linear machine before any VM attempt. Hence for every rate table the elided and the emitted forms answer and give up identically; the rate chooses cost only. On a VM route with NO DFA scan, `p = -1` and the pre-check is always kept | the `p < 0 → false` guard and the "every necessary byte is prefilter-necessary" property. Sabotage F-13 breaks the first |
+| C4 `set_ppm` (offset-k) | which offset SETS the `ofsskip` filter scans and verifies | offset-k is a DFA prefilter: every (offset, set) it tests is necessary for every match, so any selection is a sound filter in front of a linear machine | the derivation, not the rate, decides necessity (the rate only ranks sets) |
+
+**What this does NOT cover.** A future reader on a VM route with no DFA
+front must bring its own row here before it reads a rate. That is the
+place the next K65 would enter.
+
 ### 6.3 What changes at each of today's sites (B1)
 
 | site | today | after |
@@ -813,6 +874,31 @@ on the first accessor call for Q. The stamp (§7) reads it after emission.
 `compile_driver` engine-selection retry ladder re-runs readers, so the
 record resets per attempt, like every `Job` field. This is an
 implementation obligation with a sabotage row (§11.2 F-9).
+
+**[r2 S-F10] "Consumed" means ASKED, so asking must not depend on deny
+flags or on reader order.** If a reader called the accessor only when its
+own deny flag was off (or only after an earlier short-circuit), then
+`-fno-req-byte` would drop `byte-rate` from the stamp and the axis builds
+would differ from the default in the stamp alone, for no answer reason.
+Rules:
+
+1. **Deny-independent asking.** Each reader asks at its ANALYSIS, before
+   and regardless of any deny or emission decision. The analyses already
+   run under their deny flags ("a declined artifact keeps `Job.req_byte`
+   … the analysis ran", `emit_dfa.c`'s `req_admit` header); the ask moves
+   with the analysis, not with the emission. So the asked set is a
+   function of (pattern, encoding, engine route, resolved chain) only.
+2. **The stamp is written after the last reader.** The `<P>_FINDINGS`
+   line and the `rx_info.findings` initializer are rendered from the
+   FINAL attempt's record after emission completes (the header text is
+   assembled last, or the line is back-filled); a reader running after the
+   stamp is written would be an unstamped consumption.
+3. **Fallback, only where rule 1 cannot hold for some reader:** the axis
+   answer-identity sweep and the identity gates exempt exactly the
+   `<P>_FINDINGS` line and the `rx_info.findings` initializer (F9's
+   named-lines gate, §11.3), and the exemption is listed by name in the
+   gate. This is a fallback, not the design: the build first tries rule 1
+   everywhere and names any reader it could not arrange.
 
 ---
 
@@ -840,14 +926,28 @@ family:
   the macro. D43 makes `rx_info` the canonical machine-readable record, and
   a macro-only stamp would be invisible to a linked binary.
   `docs/spec/match_api.md` §6 gets the field and the change-log line.
+- **The bundle NAME is a privacy surface** [r2 A-7]. Every artifact built
+  under a user bundle carries that bundle's name in plain text, in the
+  macro and in `rx_info`, so a shipped binary discloses it (`acme-gateway`
+  says whose traffic was analyzed). `findings.md` and the analyzer's
+  `--help` state this beside §10.5's per-kind disclosure table; the
+  mitigation today is to name bundles neutrally. Whether pcrec should offer
+  a redaction (digest only) is OPEN to Frank, because D123-2 rules "the
+  source name per consumed kind" into the stamp.
 
 **The digest** is FNV-1a-64, rendered as 16 lowercase hex characters, over
 a canonical byte string of exactly what the reader consumed:
 
-| query | digested bytes (after the tag `pcrec-find-1\0<query>\0<kind>\0<via>\0`) |
-|---|---|
-| `byte-rate` | the 256 DERIVED ppm values, `uint32` little-endian, byte order. The same values from a `freq` or a `cpfreq` block give the same digest |
-| `run-rarity` | the block's nonzero `(a, b, count)` rows ascending, as `u8, u8, u64le`. `markov1` reads exactly these |
+| query | tag | digested bytes after the tag |
+|---|---|---|
+| `byte-rate` | `pcrec-find-1\0byte-rate\0` | the 256 DERIVED ppm values, `uint32` little-endian, byte order. **No kind and no `via`** [r2 M-B1]: the reader consumes the derived table and nothing else, so the same values from a `freq` block (`unigram`) or a `cpfreq` block (`encode-utf8`) give the SAME digest and a byte-identical artifact (R19) |
+| `run-rarity` | `pcrec-find-1\0run-rarity\0<via>\0` | the block's nonzero `(a, b, count)` rows ascending, as `u8, u8, u64le`. Here the digest covers the reader's INPUT (the rows), not a derived table, so the derivation that will read them is part of what was consumed and `via` is in the tag. Today `markov1` is the only one |
+
+The rule, stated once: **the digest covers exactly the bytes whose change
+could change what a reader sees.** For `byte-rate` that is the derived
+table; for `run-rarity` it is (derivation, rows). The first draft put
+`<kind>\0<via>` in every tag while also claiming `freq` and `cpfreq` give
+one digest; the two could not both hold.
 
 - **Excluded:** provenance, `question`/`reader`/`analyzer`, `encoding`,
   the `when` list beyond the fact that it matched, other kinds, and
@@ -863,12 +963,24 @@ a canonical byte string of exactly what the reader consumed:
   bundle's rows) and is renamed **`rows_digest`** so the two cannot be
   confused (§5.2).
 
-**The abi event:** 32 → 33, ONE bump carrying the `<P>_FINDINGS` line, the
-`rx_info.findings` field and D122-2(3)'s gate move (R21, D123-2). The
-D94 ritual applies (readers found by grep for `32`, `make test-codegen`,
-then registry/codegen/rxtsource). The whole-file pin re-pins. The program
-region is unchanged for every `-e byte` artifact and moves only for §11.3's
-`utf8` prefix_k manifest.
+**The abi event:** ONE bump, to **the next abi number at landing**
+[r2 S-F11], carrying the `<P>_FINDINGS` line, the `rx_info.findings` field
+and D122-2(3)'s gate move (R21, D123-2). The first draft said 32 → 33;
+main is already at 33 (K64's fix, `src/gen/emit_dfa.c:51`), and K65's fix
+is expected to take the next number, so no literal is written here. The
+D94 ritual applies (readers found by grep for the CURRENT number at
+landing, `make test-codegen`, then registry/codegen/rxtsource). The
+whole-file pin re-pins.
+
+**The identity gate is whole-file minus NAMED lines** [r2 S-F9]. "Program
+region unchanged" named no check. The gate is: the whole-file diff of each
+artifact against its pre-change twin, after deleting exactly these lines
+and no others, must be EMPTY for every `-e byte` artifact — (1) the abi
+stamp line(s) the D94 grep finds, (2) the `<P>_FINDINGS` line, (3) the
+`rx_info.findings` initializer line. Under `-e utf8` it must be empty
+except on the artifacts §11.3's per-artifact manifest names. The list of
+deleted lines lives in the gate script, by name, so a fourth line moving
+is a red gate rather than a silent widening.
 
 **R22 (a shipped-data change is a visible event):** regenerating a shipped
 bundle, or editing `default.rxt`, changes the digest of every artifact
