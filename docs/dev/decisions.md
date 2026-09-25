@@ -8415,3 +8415,17 @@ consumed kind + a digest over the CONSUMED VALUES ONLY (a pattern that never
 reads a kind does not move when that kind's table changes; provenance edits
 move nothing, R20); one abi event shared with the prior-gate accessor move
 (D122 addendum 2 (3)).
+D123 ADDENDUM 3 (Frank, same session, requirements.md §3 Q5 + Q8):
+Q5 = (a): the run-level estimator MEASUREMENT runs now (corpus arithmetic,
+no src/) — and its DATA IS KEPT for [FINDINGS] to consume (derived tables,
+the scoring, the corpus fetch manifest with url/sha256/licence; raw samples
+committed only where the licence permits, per Q9's pending ruling).
+Q8 = the ANALYZER (exemplar scanner): a python PROTOTYPE is acceptable; the
+END scanner is C (a separate zero-dependency binary, like pcrec). It reads
+STDIN (at least optionally) for streaming; ONE-PASS is the ideal (Frank
+expects it may not be achievable for every analysis — the design states per
+analysis whether it is one-pass, and a non-one-pass analysis says so rather
+than silently buffering); each scan/analysis is SWITCHABLE (on/off per
+kind); THREADED is a bonus, not a requirement. Q8's counter-sharing rule
+stands: the analyzer and the shipped-analysis generators share one counting
+implementation (R27b), so the C end state serves both.
