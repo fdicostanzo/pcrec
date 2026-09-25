@@ -8284,3 +8284,36 @@ end - start`, A_VAR passes the resolved value. The note's own "mechanical
 substitution" sentence was the tell: two bodies that differ only in how
 they index the reference side are one function. Sent to lane varmvp before
 its M6; the D94 grep covers the residual's readers.
+
+## D122 — ONE LITERAL-SEARCH KIT: every site that scans for or verifies a literal (prefilter, pre-check, offset-k skip, VM literal run, REQ_RUN) emits through ONE parameterized primitive; a dominated pre-check is ELIDED; facts a pre-pass verified are CARRIED into the matcher (Frank, 2026-09-25, seventy-ninth session)
+
+Context: the batch-2 reading (cycle2_batch2_reading.md §4.1) traced
+`router-prefix-order`'s +80.8% to tier 2b's pre-check running memchr on the
+SAME byte the DFA prefilter scans right after, restarting per occurrence
+(315 → 39,098 calls). Frank asked whether the `/user` prefix should be
+searched as a string; the manager's answer: yes, and in the PREFILTER — a
+literal prefix at a fixed offset is the candidate-start search, which
+cuts DFA attempts from every `/` to every `/user` and leaves the pre-check
+nothing to dismiss.
+
+Ruled (Frank, same conversation — "we don't want a bunch of different but
+otherwise the same string search algorithms depending on where they are
+used"):
+1. ONE KIT. A literal search/verify is one emitted primitive, parameterized
+   by the run (with [WORD-FOLD]'s K/T mask per position, so exact and
+   caseless are one vocabulary), its offset relative to the candidate
+   start, and a FORM chosen at compile time from the frequency prior
+   (memchr+verify / skip search / inline loop — the cycle-3 run-form rule).
+   The sites that today carry their own scanner (DFA_PF_MEMCHR, prefix-k
+   memchr-at-k, rx_ofsskip, the REQ_BYTE/REQ_RUN pre-check loop, the VM's
+   per-byte literal chain) become CALLERS. Reason given: SIMD comes last
+   (D119), and it must slot into one place, not N bespoke ones.
+   Implement-then-replace applies (memory: general mechanisms).
+2. ELIDE the pre-check wherever a later pass dominates it (the prefilter
+   scans the same byte/run, or the verified run IS the candidate start).
+3. CARRY VERIFIED FACTS FORWARD ("advanced juju"): a prefilter or pre-pass
+   that verified a literal at a candidate knows things the matcher then
+   re-checks — e.g. the DFA can enter at δ*(s0, run) instead of s0 and
+   skip re-reading the run; the VM can resume after the literal; bounds
+   checks covered by the verified span are dead. Direction, not yet a
+   design: its facts are [PATFACTS] (D120) customers.
