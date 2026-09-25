@@ -1,0 +1,58 @@
+# [K66] REGRESSION — ON A VM ROUTE WITH NO DFA SCAN IN FRONT, A NECESSARY RUN
+# LONGER THAN THE PRE-CHECK'S 8-BYTE WINDOW IS COMPARED WHOLE, SO WHETHER A
+# HOSTILE SUBJECT ANSWERS NOMATCH OR GIVES UP NO LONGER DEPENDS ON WHICH
+# WINDOW THE PRIOR CHOSE (docs/dev/known_issues.md K66; docs/spec/tuning.md
+# §2.29; K65's fix (a) extended to runs, Frank's ruling 2026-09-25).
+#
+# The backreference declines the hybrid, so the artifact is a FRAMED VM
+# program (`RX_VM_PREFILTER "none"`) and the pre-check is its only linear
+# no-match proof. The necessary run is the 16 bytes `eeeeeeee~#~#~#~#`; the
+# pre-check's window (`RX_REQ_RUN`) is `~#~#~#~#` under `encoding byte` (the
+# frequency prior) and `eeeeeeee` under `encoding utf8` (the leftmost
+# fallback). On a class run of 16..18 letters, `([a-z]+)+` backtracks
+# exponentially before the absent run fails the attempt, so with only the
+# window compared (and K65's whole-set half, which every subject here
+# satisfies: each holds `e`, `~` and `#`) a block GAVE UP (`steps`) on every
+# subject holding its own window and not the whole run: under byte the
+# `e...~#~#~#~#` cells, under utf8 the `...eeeeeeee~#` cells, and under both
+# the `...eeeeeeee!~#~#~#~#` cells, which hold BOTH windows and still not the
+# run. Every `n` cell is NOMATCH in PCRE2 and must be NOMATCH here under
+# either encoding. The byte block's scan member sits at offset 8 of the
+# whole run and the utf8 block's at offset 0, so both window-guard shapes of
+# the whole-run compare are exercised.
+#
+# The `gu` cells are the CONTROL that the budget really reaches the VM: with
+# the whole run present no pre-check can help and the same class run still
+# exhausts the block's budget. They prove the `n` cells pass because of the
+# pre-check, not because 10000 steps happened to be enough. `budget
+# steps=10000` and class runs of 16..18 letters keep the failing direction to
+# milliseconds and let python `re` verify every cell; the 16-byte `!` tail
+# keeps the VM's minimum-remaining-length prune from cutting the backtracking
+# short, which at these lengths would otherwise hide the defect. (tests/codegen/run_prechecks.sh §5.8
+# asserts the emitted whole-run text; this file asserts the answers.)
+
+pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#\1
+features backrefs
+encoding byte
+budget steps=10000
+n "eaaaaaaaaaaaaaaa~#~#~#~#!!!!!!!!!!!!!!!!"
+n "eaaaaaaaaaaaaaaaaa~#~#~#~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
+m "abceeeeeeee~#~#~#~#" 0 19
+gu steps "aaaaaaaaaaaaaaaaaaZb!eeeeeeee~#~#~#~#"
+
+pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#\1
+features backrefs
+encoding utf8
+budget steps=10000
+n "eaaaaaaaaaaaaaaa~#~#~#~#!!!!!!!!!!!!!!!!"
+n "eaaaaaaaaaaaaaaaaa~#~#~#~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaaaeeeeeeee~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
+n "aaaaaaaaaaeeeeeeee!~#~#~#~#!!!!!!!!!!!!!!!!"
+m "abceeeeeeee~#~#~#~#" 0 19
+gu steps "aaaaaaaaaaaaaaaaaaZb!eeeeeeee~#~#~#~#"
