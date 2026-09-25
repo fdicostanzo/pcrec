@@ -31,13 +31,20 @@ number this plan exists to cut down honestly rather than to generate.
 Three sub-products, chosen because each is where a wrong answer is SILENT —
 it changes a match rather than raising anything.
 
-- **state × operator (18 cells).** This is the value model itself, and the
-  `:`'s whole job is to move EMPTY from one column to the other. A design
-  that folded EMPTY in with SET, or that fired a bare operator on EMPTY,
-  would pass every cell of any smaller set. `tests/vars/unset.rxt` covers
-  **16 of 18** today; the two missing are `${v+w}` and `${v:+w}` with the
-  variable SET-and-non-empty, which are the arms whose answers are the
-  same in both and therefore the two least likely to be wrong.
+- **state × operator (18 cells). CLOSED — lane varfollow, 2026-09-25.** This
+  is the value model itself, and the `:`'s whole job is to move EMPTY from
+  one column to the other. A design that folded EMPTY in with SET, or that
+  fired a bare operator on EMPTY, would pass every cell of any smaller set.
+  **[CORRECTED]** This entry originally said `tests/vars/unset.rxt` covered
+  16 of 18, naming the two missing cells as `${v+w}` and `${v:+w}` with the
+  variable SET-and-non-empty. Re-counting the shipped file against the full
+  state×operator grid (including `${prefix}` SET, which `basic.rxt` — not
+  `unset.rxt` — carries) does land on 16 of 18, but the wrong PAIR was
+  named: `${v:+w}` SET-and-non-empty was already present (the `var v
+  "anything"` cell under `${v:+yes}`), and the cell actually missing beside
+  `${v+w}` SET was the BARE-MINUS `${v-w}` SET-and-non-empty cell, not a
+  second `:+` one. Both `${v-w}` and `${v+w}` now carry a SET-and-non-empty
+  cell in `unset.rxt`, closing the grid at 18 of 18.
 
 - **caseless × encoding (4 cells), with a length-changing witness in the
   one cell that has one.** `caseless.rxt` covers all four, and the
@@ -50,13 +57,17 @@ it changes a match rather than raising anything.
   which is also the rule the splice oracle's unconditional `(?:…)` wrap
   encodes, so a wrong answer here disagrees with the oracle rather than
   hiding. `basic.rxt` covers **5 of 12**: bare, under `{2}`, in an
-  alternation, same-name-twice, two-names. **The 7 not covered are every
-  cell whose position is a LOOKAROUND**, and they are not covered because
-  a lookbehind containing a variable is REFUSED by construction
-  (`pcrec_cwmax` answers unbounded, `mod_lookaround.c`'s fixed-width rule
-  refuses) while a lookAHEAD is an ordinary body — so the honest shape is
-  ONE refusal row for the behind and ONE match cell for the ahead, not
-  seven. **OWED.**
+  alternation, same-name-twice, two-names. The `lookaround` position value
+  is not a per-multiplicity cell (a reference inside a lookaround body is one
+  fact about the BODY, not about how many names it carries), so the grid's
+  own 12-cell shape never had a slot for it that "5 of 12" was missing —
+  **CLOSED — lane varfollow, 2026-09-25**: `basic.rxt` now carries the
+  lookaround pair on its own terms, ONE refusal row for the behind
+  (`pcrec_cwmax` answers unbounded for `A_VAR`, joining `A_BREF`'s own arm,
+  so `mod_lookaround.c`'s fixed-width rule refuses exactly as it does for a
+  backreference) and ONE match cell for the ahead (an ordinary body, no
+  width rule) — the honest shape this entry itself named, not a
+  seven-cell fill-in.
 
 ## 3. What gets SAMPLED, and on what rule
 
@@ -98,6 +109,10 @@ than a silence.
 
 ## 6. OWED, in one place
 
-- The two `+`/`:+` SET-and-non-empty cells (§2).
-- The lookaround pair: a refused lookbehind and a matching lookahead (§2).
+- ~~The two `+`/`:+` SET-and-non-empty cells (§2).~~ **CLOSED — lane
+  varfollow, 2026-09-25**, and corrected in the same change: the pair that
+  was actually missing is `${v-w}` and `${v+w}`, not `${v+w}` and `${v:+w}`
+  (§2's own entry carries the recount).
+- ~~The lookaround pair: a refused lookbehind and a matching lookahead
+  (§2).~~ **CLOSED — lane varfollow, 2026-09-25.**
 - The generator, on §5's stated trigger.

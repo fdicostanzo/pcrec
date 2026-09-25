@@ -10,12 +10,19 @@ supplies per call. The contract is `docs/spec/vars.md`; the design is
   that would be pattern syntax if anything parsed it (it never is —
   `variables_common.md` §4.2's literal rule is the injection boundary), the
   same name twice, a variable under a quantifier and inside an alternation,
-  an unknown caller name ignored, and a name bound twice (first wins).
-- `unset.rxt` — the UNSET/EMPTY/SET value model and the five operators.
-  **The cells that separate `-` from `:-` and `+` from `:+` are the reason
-  the format has to be able to spell EMPTY at all**: bound to `""`, the bare
-  operator does not fire and the colon one does, and a format that could not
-  write both could not test the distinction they exist for.
+  an unknown caller name ignored, a name bound twice (first wins), and
+  (`gen_corpus_plan.md` §2's OWED closure, lane varfollow 2026-09-25) the
+  LOOKAROUND pair: a variable inside a lookbehind body is REFUSED (its width
+  is unbounded, the same rule that refuses a backreference-bearing
+  lookbehind), and a variable inside a lookahead body is an ordinary match.
+- `unset.rxt` — the UNSET/EMPTY/SET value model and the five operators, now
+  EXHAUSTIVE over the full 18-cell state×operator grid (closed by lane
+  varfollow, 2026-09-25 — `gen_corpus_plan.md` §2 has the count and the
+  correction to which two cells were actually missing). **The cells that
+  separate `-` from `:-` and `+` from `:+` are the reason the format has to
+  be able to spell EMPTY at all**: bound to `""`, the bare operator does not
+  fire and the colon one does, and a format that could not write both could
+  not test the distinction they exist for.
 - `caseless.rxt` — the caseless compare under both encodings, including the
   KELVIN SIGN in both directions (one value byte against three subject
   bytes, and the reverse), the 1:1 negative control, and the ill-formed-value

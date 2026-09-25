@@ -272,9 +272,20 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 #
 # C3_* ARE NOT RE-PINNED HERE, per this file's own 2026-09-08 note: they are
 # box-sensitive on darwin and are owed from a Linux/10.46 run.
+# [VAR] follow-up, lane varfollow, 2026-09-25 -- +0 files, +4 blocks, +7
+# lines, closing gen_corpus_plan.md §6's two OWED census cells. +2 blocks /
+# +4 lines in tests/vars/unset.rxt (the ${v-w} and ${v+w} SET-and-non-empty
+# cells the state×operator grid was actually missing -- §2's own entry there
+# names which pair the plan had mis-attributed) and +2 blocks / +3 lines in
+# tests/vars/basic.rxt (the lookaround pair: one `perr` refusal for a
+# variable inside a lookbehind, one `m`+`n` match cell for a variable inside
+# a lookahead). Not under tests/known_fail/, so RUNSH_* below moves by the
+# SAME +0/+4/+7. Measured with this file's own awk census run standalone
+# against the three tests/vars/ files (45 blocks / 83 lines against the
+# prior 41/76).
 CENSUS_FILES=216
-CENSUS_BLOCKS=3995
-CENSUS_LINES=29113
+CENSUS_BLOCKS=3999
+CENSUS_LINES=29120
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -322,9 +333,11 @@ CENSUS_LINES=29113
 # 2026-09-21 (lane adm0921, [K62]) — +1/+5/+16, the SAME delta as
 # CENSUS_* above (tests/quoting/k62_class_range_e.rxt is not under
 # tests/known_fail/).
+# [VAR] follow-up (lane varfollow, 2026-09-25) — +0/+4/+7, the SAME delta as
+# CENSUS_* above (tests/vars/ is not under tests/known_fail/).
 RUNSH_FILES=216
-RUNSH_BLOCKS=3995
-RUNSH_LINES=29113
+RUNSH_BLOCKS=3999
+RUNSH_LINES=29120
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail

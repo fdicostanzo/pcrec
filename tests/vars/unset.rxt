@@ -89,6 +89,16 @@ var v ""
 m "" 0 0
 n "dev"
 
+# THE SET-AND-NON-EMPTY CELL (gen_corpus_plan.md §2/§6's OWED closure): the
+# bare operator does not fire on a genuinely SET value either, so the value
+# is "prod" and not the word -- the same non-firing rule the EMPTY cell above
+# exercises, one state over.
+pattern ^${v-dev}$
+features vars
+var v "prod"
+m "prod" 0 4
+n "dev"
+
 # ---------------------------------------------------------------
 # ${name:+word} -- the word when SET AND NON-EMPTY, else nothing
 # ---------------------------------------------------------------
@@ -118,6 +128,18 @@ m "ab" 0 2
 pattern ^a${v+yes}b$
 features vars
 var v ""
+m "ayesb" 0 5
+n "ab"
+
+# THE SET-AND-NON-EMPTY CELL (gen_corpus_plan.md §2/§6's OWED closure): a
+# genuinely SET value fires the bare operator exactly as EMPTY does above --
+# the operator's rule is "SET, empty or not" and this cell is the "or not"
+# half, the answer §2 predicts is the arm least likely to be wrong (it
+# agrees with `${v:+yes}`'s own SET cell above) and therefore the one worth
+# having a witness for rather than trusting the prediction.
+pattern ^a${v+yes}b$
+features vars
+var v "anything"
 m "ayesb" 0 5
 n "ab"
 
