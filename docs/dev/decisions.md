@@ -8365,3 +8365,30 @@ techniques until later." The hold's line is ARCH-SPECIFICITY, not data
 parallelism: portable-C SWAR over uint64_t (no intrinsics, no ISA predicate)
 is admitted now as an ordinary row; intrinsics/ISA-gated forms are the held
 SIMD rows. (Consistent with [WORD-FOLD]'s 2026-09-11 charter sentence.)
+
+## D123 — [FINDINGS]: a named analysis is a BUNDLE; composition happens INSIDE a bundle by `include`, never in a config precedence list (Frank, 2026-09-25, seventy-ninth session, answering docs/design/findings/requirements.md §3 Q1/Q2)
+
+Context: requirements.md §0 finding 4 — the shipped schema's `config …
+analysis <list>` and DD-13's `analysis freq <ident>` disagree on the unit.
+Frank asked for explicit use cases (manager's five: json-shape + own
+vocabulary; a privacy-stripped exemplar keeping only its byte table; an old
+findings file after a new kind ships; a CLI experiment; nothing specified)
+and chose predictability:
+1. `analysis <name>` selects a BUNDLE — every data block of that name,
+   across kinds (Q1 (a)).
+2. COMPOSITION IS AUTHORED ONCE, INSIDE A BUNDLE (option B): a bundle that
+   builds on another says `include <other>` and adds/overrides its own
+   blocks; resolution is per KIND along that bundle's own include chain
+   (own block first, then the included bundle's, then the shipped default).
+   A config names ONE analysis; the CLI override replaces that one name
+   (with a diagnostic when it overrides a config). No precedence list in the
+   config — one composition mechanism (include), not two that both merge.
+   This also answers Q2's merge rule: per-kind, first-found along the
+   chain, no blending inside a value (R8/R9).
+3. DEFERRED to its own later effort (Frank: "lets save it for another
+   effort"): SELECTIVE include — naming WHICH kinds to take from an
+   included bundle (e.g. take json's byte table but let its run table fall
+   to the default instead). Not designed now; the design note records it
+   as an open extension point and must not preclude it.
+Consequence: the spec sentence "`analysis <list>` names data blocks"
+becomes "names one analysis (a bundle)" in the design change's spec hunk.
