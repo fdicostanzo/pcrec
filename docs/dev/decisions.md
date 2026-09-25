@@ -8392,3 +8392,18 @@ and chose predictability:
    as an open extension point and must not preclude it.
 Consequence: the spec sentence "`analysis <list>` names data blocks"
 becomes "names one analysis (a bundle)" in the design change's spec hunk.
+
+D123 ADDENDUM (Frank, same session, answering requirements.md §3 Q3):
+EMBED the shipped named analyses in libpcrec (the `uprops` derived-data
+shape: third_party-style corpus sample → generator → compiled table); the
+built-in store is the LAST stop of `include <name>` resolution, so a user's
+own same-named bundle found first shadows it (the route before the built-in
+store — `-I` include path vs dedicated lookup — stays the design note's
+weighing, D83 (4)). INSPECTION is NOT a bespoke dump: it follows the TABLE
+CONTRACT (docs/spec/table_contract.md) and the existing `--list-*` CLI
+pattern — a NAME LIST command (one row per built-in analysis: name, kinds,
+provenance summary, value digest, size) and a NAME DETAILS command (one
+analysis; its values as named `#section`s per kind, plus provenance), both
+conforming producers at birth. Design question left open: whether the
+details output also round-trips as an includable `.rxt` (the
+copy-edit-shadow workflow) or that stays a separate concern.
