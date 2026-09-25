@@ -8333,3 +8333,29 @@ The same for the offset, the form choice and any later SIMD path — each is
 present only where the case needs it. What (1) rules out is only the
 failure it names: two implementations of the SAME search, differing by
 where they are called from.
+
+D122 ADDENDUM 2 (Frank, 2026-09-25, answering docs/design/compare_stack.md §7):
+(1) ORDER: S3 (the WAF attribution read) runs before S2 ([OPT-VMLIT]); S1
+(router/keyword elision, exact) and S3 may run side by side.
+(2) THE CUBE'S HOME — Frank: "is it a lib/ type situation?" YES: the byte
+cube (cube_of over an interval set → K,T) is a shared COMPILE-TIME fact like
+fold.c, so its one definition lives in src/core/ (the internal shared layer;
+lib/ is the public header only) with its own agreement check — never inside
+whichever member (the kit or [CLS-TREE]) needs it first. D77 still decides
+WHEN it lands (on its first customer); this rules WHERE. The three copies
+outside src/ (studies/cls_tree_study discover.c/kit.py, docs/dev/optloop/wf)
+are then checked against it or retired.
+(3) THE PRIOR'S ENCODING GATE moves INTO the accessor (one derivation);
+the abi bump it costs (offset-k selections move under utf8) is acceptable —
+"I don't mind bumping abi if that is only concern."
+(4) SIMD HELD, generally, and the design ORGANIZES AROUND it: "do what we can
+algorithmically" (memchr's libc SIMD is the accepted baseline, not ours);
+every form choice in the kit (L2 compare, L3 scan) is TABLE-DRIVEN — an
+ordered candidate list of rows {deny flag, applies predicate, cost}, total
+fallback last — so a SIMD form later drops in as ONE ROW whose predicate
+includes the arch capability, and its deny flag gives it an answer-identity
+axis for free. The shape already exists: emit_dfa.c's DFA_SELECT
+(dfa_pfs[], dfa_scans[], dfa_reprs[], dfa_matches[]); the kit reuses or
+generalises it (not a parallel selector). Reason recorded: once SIMD
+arrives, testing becomes arch-specific; the rows keep that contained.
+Teddy-class multi-literal is therefore NOT in scope now — a future SIMD row.
