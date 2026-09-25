@@ -3242,8 +3242,9 @@ since S228 only ever touches the recognizer that SELECTS the fold shape,
 never the line that RENDERS it. The plant makes `(byte | 0x20) == lo`
 unsatisfiable for every fold pair (`lo` never carries bit 0x20, and
 `byte | 0x20` always does), so every one of the 26 real fold pairs loses
-BOTH its members — a clean, complete miscompile this check catches at
-every one of its 26x2 = 52 behavioural probes for the fold population,
-while the 6 near-miss (bitmap) rows are untouched. Read the current DETECTED
-figure from a `make mech` run.
+its structural shape check (the emitted constant is no longer `hi`) AND
+both its `lo`/`hi` behavioural probes — MEASURED `clsfold:78fail/85pass`
+(`tests/mech/run_sabotage_matrix.sh S273`) — while the 6 near-miss
+(bitmap-shape) rows and SOURCE A's own checks stay green. Read the
+current DETECTED figure from a `make mech` run.
 
