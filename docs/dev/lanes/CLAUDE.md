@@ -3139,3 +3139,29 @@ never edited afterwards.
   `emit_sweep.py` cells: `dumps movers=4` fully dispositioned (all
   legitimate `vars` registry/limit/schema additions); `composition`/
   `emit-ir-vm` dispositioned from a real sweep run (see report §5).
+
+- `varfollow_report.md` — [VAR] MVP FOLLOW-UPS (2026-09-25, lane
+  varfollow, sonnet, docs-only): the four items `varmvp_report.md`
+  §0.2/§0.3/§5/§6 and `tests/vars/gen_corpus_plan.md` §6 left owed. Two
+  design-note debt sentences (`variables_pattern.md` §3's SR-9 mechanism,
+  `variables_common.md` §4.1's module-off claim) edited in place rather
+  than left as report-only. Both `gen_corpus_plan.md` §6 census cells
+  CLOSED, with a correction found while closing the first: the plan's own
+  "16 of 18, missing `${v+w}`/`${v:+w}`" mis-named one of the two
+  actually-missing cells (`${v:+w}` SET already had a cell; `${v-w}`'s
+  was the one genuinely missing beside `${v+w}`'s). `VE_VAR`'s D77
+  trigger restated explicitly in `plan.md`'s `[VAR]` row rather than
+  cited bare. **Worth reading for what it found rather than what it was
+  asked to do**: re-running `tests/codegen/run_encoding_checks.sh`'s
+  DD12a(i) fresh (rather than trusting `varmvp_report.md`'s number
+  forward) found FIVE failing checks today, not the report's three — the
+  other two (an 11-row `#UNDECLARED`-form exact-match list no longer
+  matching; 102 of 244 strict-identity pairs differing outside every
+  excused region, dominated by `RX_END_WINDOW`-stamped anchor patterns)
+  look like the SAME shape as the M6-rename finding one lane over — a
+  check dead at exactly the moment a landing needed it, this time for
+  [OPT-ENDWIN] (merged one day before this instrument's revival) rather
+  than the seam-pair rename — but neither diagnosed nor fixed here (no
+  `src/` access in this lane's charter). Filed in the new `plan.md` row
+  `[K50-DD12AI-MANIFEST]` rather than folded silently into its three
+  chartered items.

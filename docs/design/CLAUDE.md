@@ -2482,17 +2482,20 @@ append-only or historical records.
 
 **[VAR] THE MVP's PATTERN HALF LANDED 2026-09-23** (lane varmvp, M1-M8 +
 M10; M9 stays gated on `[M4-SUBST]`). The four notes stand as written except
-where the build met them and lost, and those places are in
+where the build met them and lost, and those places were first recorded in
 `docs/dev/lanes/varmvp_report.md` rather than edited in here (D80: a design
-document's own revision is its own change). **Five sentences did not
-survive**, each with its own entry in that report: `variables_pattern.md`
-§3's SR-9 tail-arbitration paragraph is wrong about the MECHANISM and right
-about the outcome (`pcrec_registry_find`/`arbitrate` are never called with
-`RK_BARE` at all, so nothing ranks the `${` row over the bare `$` row —
-recognition is an `if` in `p_atom`, gated the way `\Q` is);
-`variables_common.md` §4.1's "with the module off today's parse stands in
-full" contradicts `variables_pattern.md` §7's table, which says it refuses,
-and the table is what shipped; §2.5's prediction that this wave's sabotage
+document's own revision is its own change) — **two of the five were EDITED
+INTO the notes themselves by lane varfollow, 2026-09-25** (the debt this
+entry used to carry as unresolved): `variables_pattern.md` §3's SR-9
+tail-arbitration paragraph is corrected in place (`pcrec_registry_find`/
+`arbitrate` are never called with `RK_BARE` at all, so nothing ranks the `${`
+row over the bare `$` row — recognition is an `if` in `p_atom`, gated the way
+`\Q` is), and `variables_common.md` §4.1's "with the module off today's parse
+stands in full" is corrected in place to state the shipped fact — a
+module-off `${` is a NAMED refusal ("requires module 'vars'"), per
+`variables_pattern.md` §7's table, not a fall-through to `$`'s ordinary
+parse. **Three sentences remain as recorded in the report only, per the same
+D80 rule** (a future editor's list, not a silence): §2.5's prediction that this wave's sabotage
 rows would ship UNREACHED is FALSE because `tests/vars/` landed in the same
 change, which is what §2.3 said would make the difference; §5's "M10 is the
 FIRST `.rxt` production needing a name-carrying runtime value" is right and

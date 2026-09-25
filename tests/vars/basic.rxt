@@ -67,6 +67,26 @@ m "cat" 0 3
 m "dog" 0 3
 n "cow"
 
+# IN A LOOKAROUND (gen_corpus_plan.md §2's OWED closure): a reference is
+# ONE node whose width is unbounded at compile time (`pcrec_cwmax` answers
+# PCREC_W_UNBOUNDED for `A_VAR`, joining `A_BREF`'s own arm --
+# variables_pattern.md §2), so a lookBEHIND containing one is REFUSED by
+# `mod_lookaround.c`'s fixed-width rule exactly as a backreference-bearing
+# lookbehind is -- the general mechanism, not a variable-specific carve-out.
+# A lookAHEAD has no width rule at all and is an ordinary body, so the honest
+# shape is one refusal row for the behind and one match cell for the ahead,
+# not a cross-product over every other position value.
+pattern (?<=${v})x
+features vars,lookaround
+var v "ab"
+perr
+
+pattern ^a(?=${v})bc$
+features vars,lookaround
+var v "bc"
+m "abc" 0 3
+n "abd"
+
 # AN UNKNOWN NAME IN THE CALLER'S ARRAY IS IGNORED, and the name the pattern
 # mentions is then UNSET -- which refuses. Both halves are asserted by one
 # cell: the binding below names something no pattern mentions.

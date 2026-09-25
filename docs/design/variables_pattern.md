@@ -377,17 +377,28 @@ producer stamping every `A_VAR` it builds with the registry row
 - `rx_info.engine_why` carries the reason for a caller to read, with no new
   field.
 
-**[PROPOSED]** how the new row resolves against the shipped bare `$` row.
-`src/parse/registry.c:1542` carries `{RK_BARE, '$', NULL, "$", 0, …}` — a bare
-row on the byte `$` with a NULL tail, which SR-9's `byte + tail` design
-(`pcrec_recognise_tail_default`, `registry.c:1753-1764`) already resolves
-correctly: a tailed row (this design's `${` row) always outranks the
-tail-less fallback, so `${` parses as the new doorway and a lone `$` not
-followed by `{` still falls through to the existing bare row and parses as
-`A_EOL`, exactly as `variables_common.md` §0.2's "matches nothing" proof
-requires when module `vars` is off. No new mechanism — the existing
-tail-arbitration rule is the whole answer, and it is worth stating rather
-than leaving a reader of the parser half to re-derive it.
+**[CORRECTED — lane varmvp, 2026-09-23, `docs/dev/lanes/varmvp_report.md` §0.2.]
+This paragraph proposed that the new row resolves against the shipped bare
+`$` row by SR-9's `byte + tail` tail arbitration
+(`pcrec_recognise_tail_default`), "a tailed row always outranks the
+tail-less fallback." That mechanism is never reached: `pcrec_registry_find`/
+`pcrec_ext_gate` are never called with `RK_BARE` at all — `internal.h`'s own
+comment on `RK_BARE` says its rows exist for `--list-syntax`'s dump and for
+D85's definitions machinery, because `RK_BARE`'s constructs have no doorway
+to arbitrate through. `$` is base grammar, recognised directly in `p_atom`
+(it has no `\` or `(?` doorway), so `${` is recognised there too — one `if`
+testing whether the byte after `$` is `{`, gated by a direct
+`pcrec_feature_enabled(FEAT_VARS)` call, exactly the shape `\Q`'s
+FEAT_QUOTING gate takes. The `${` `RegRow` still exists (SR-9's `byte + tail`
+row shape is the right way to STATE the construct), but it is looked up for
+the dump and for the D67 stamp `forces_registry` reads, not consulted to
+decide what `p_atom` does with the bytes. The OUTCOME this paragraph
+predicted is unchanged: `${` parses as the new doorway when module `vars` is
+enabled, and a lone `$` not followed by `{` still parses as `A_EOL` — see §7
+below for what happens to `${` when the module is OFF, which is a REFUSAL,
+not the tail-less fallback this paragraph's argument implied. `src/parse/
+mod_vars.c`'s own header comment carries the same correction, verbatim, at
+the file that has to get it right.
 
 **Why the DFA route is deferred rather than refused.** `[FEAT-VAR]` (a) is
 right that the hard part is *placement*: determinization cannot see the
