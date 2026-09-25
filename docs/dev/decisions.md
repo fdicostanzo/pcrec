@@ -8317,3 +8317,19 @@ used"):
    skip re-reading the run; the VM can resume after the literal; bounds
    checks covered by the verified span are dead. Direction, not yet a
    design: its facts are [PATFACTS] (D120) customers.
+
+D122 ADDENDUM (Frank, same conversation, minutes later): **the kit is an
+OUTCOME, not a mandate.** "I don't want it to be artificially chosen by
+mandate — if it works in a number of places, great. I don't want it to
+require the mask if the use case doesn't need it." So: (a) a site becomes
+a caller only where the shared primitive fits it as well as its own form
+would, on the measurement; a site whose needs genuinely differ keeps its
+own form, with the reason recorded (the rule is the Teddy clause of
+[OPT-A]: a rejection with its reason is a result). (b) Capabilities are
+PAY-FOR-WHAT-YOU-USE: an all-exact run emits the plain exact compare
+(constant-length memcmp / memchr), never a K=0xFF mask; the K/T mask form
+appears only where a position is caseless or another non-singleton cube.
+The same for the offset, the form choice and any later SIMD path — each is
+present only where the case needs it. What (1) rules out is only the
+failure it names: two implementations of the SAME search, differing by
+where they are called from.
