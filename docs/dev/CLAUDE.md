@@ -697,6 +697,15 @@ change.
   contingent on `run_ir_listing.sh` gaining a per-pattern `--features`
   flag it does not have today; 2 sites are structurally unreachable by
   any pattern, having no literal prefix at all).
+- `findings_measure/` — `[FINDINGS]` Q5's run-level estimator measurement
+  (D123 addendum 3, lane `runest`, 2026-09-25): which estimator (byte
+  independence product / bigram / trigram / word-token / hybrid) best
+  predicts a literal run's rarity per subject class, at what table size,
+  scored against true held-out occurrence counts and the WAF `union`/
+  `select`/`from` sign question. Recommends a per-class BIGRAM table as
+  the run-level KIND. Read `findings_measure/estimator_report.md`; its own
+  CLAUDE.md indexes the corpora manifest, the shared counting module
+  (R27b) and the derived data.
 - `optloop/` — the OPTIMIZATION LOOP's per-cycle analyses (D119): one
   `cycleN_analysis.md` per cycle, with the machine-readable ranked table and
   the scripts that produced it. Cycle 1 (2026-09-22, lane optrev) ranks all

@@ -1,0 +1,70 @@
+class=web_request	estimator=baseline	spearman_rho=-0.0055	log2_MAE=7.6110
+class=web_request	estimator=bigram	spearman_rho=0.5898	log2_MAE=7.4140
+class=web_request	estimator=trigram	spearman_rho=0.6862	log2_MAE=8.4690
+class=web_request	estimator=token	spearman_rho=0.5898	log2_MAE=7.4140
+class=web_request	estimator=hybrid	spearman_rho=0.6862	log2_MAE=8.4690
+class=log_lines	estimator=baseline	spearman_rho=0.3362	log2_MAE=8.1213
+class=log_lines	estimator=bigram	spearman_rho=0.6001	log2_MAE=11.4034
+class=log_lines	estimator=trigram	spearman_rho=0.7983	log2_MAE=12.2636
+class=log_lines	estimator=token	spearman_rho=0.7075	log2_MAE=10.7963
+class=log_lines	estimator=hybrid	spearman_rho=0.7983	log2_MAE=12.2222
+class=prose	estimator=baseline	spearman_rho=0.4038	log2_MAE=7.2329
+class=prose	estimator=bigram	spearman_rho=0.8468	log2_MAE=8.7583
+class=prose	estimator=trigram	spearman_rho=0.9129	log2_MAE=8.9890
+class=prose	estimator=token	spearman_rho=0.8657	log2_MAE=8.3707
+class=prose	estimator=hybrid	spearman_rho=0.9129	log2_MAE=9.0147
+class=json	estimator=baseline	spearman_rho=0.6029	log2_MAE=7.5854
+class=json	estimator=bigram	spearman_rho=0.6101	log2_MAE=9.4114
+class=json	estimator=trigram	spearman_rho=0.6101	log2_MAE=13.4888
+class=json	estimator=token	spearman_rho=0.6101	log2_MAE=9.6173
+class=json	estimator=hybrid	spearman_rho=0.6101	log2_MAE=13.6946
+{
+  "web_request": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 58620,
+    "trigram_kept": 11724,
+    "trigram_dropped": 0,
+    "token_bytes": 47603,
+    "token_kept": 3315,
+    "train_len": 800000,
+    "test_len": 200000
+  },
+  "log_lines": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 13550,
+    "trigram_kept": 2710,
+    "trigram_dropped": 0,
+    "token_bytes": 66254,
+    "token_kept": 4000,
+    "train_len": 230278,
+    "test_len": 57570
+  },
+  "prose": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 44110,
+    "trigram_kept": 8822,
+    "trigram_dropped": 0,
+    "token_bytes": 44211,
+    "token_kept": 4000,
+    "train_len": 590436,
+    "test_len": 147610
+  },
+  "json": {
+    "bigram_bytes": 131072,
+    "trigram_bytes": 23225,
+    "trigram_kept": 4645,
+    "trigram_dropped": 0,
+    "token_bytes": 19281,
+    "token_kept": 1338,
+    "train_len": 152729,
+    "test_len": 38183
+  }
+}
+
+--- WAF rank check on web_request held-out text ---
+true order (rarest first): waf/union < waf/select < waf/from
+baseline: predicted order waf/select < waf/union < waf/from  MATCHES_TRUE=False
+bigram: predicted order waf/union < waf/select < waf/from  MATCHES_TRUE=True
+trigram: predicted order waf/select < waf/union < waf/from  MATCHES_TRUE=False
+token: predicted order waf/union < waf/select < waf/from  MATCHES_TRUE=True
+hybrid: predicted order waf/select < waf/union < waf/from  MATCHES_TRUE=False
