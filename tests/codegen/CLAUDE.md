@@ -895,22 +895,23 @@ decides whether to perform it — and then run the row through
     is answer-detectable" sentence above is about REMOVING a rule; one
     direction of NARROWING G2 is answer-detectable, and
     `tests/base/k64_precheck_forced_vm.rxt` / S274 are that detector.
-    **§5.7 ([K65], 2026-09-25, 258 -> 267 checks)** is the WHOLE-SET half on
+    **§5.8 ([K65], 2026-09-25, 258 -> 267 checks; chkgaps' own §5.7 renumbers
+    K65's original §5.7 to make room)** is the WHOLE-SET half on
     a VM route with no DFA scan: each row's expected `rq_set[]` member list is
     derived by hand from the pattern (never from a stamp) — K65's witness
     under `-e byte` and `-e utf8` (the two picks, so the two complements), the
     run form, a frameless unanchored forced-VM program, and three `none`
     controls (a one-member set, an exact hybrid in front, the DFA engine);
-    `[5.7r]` rows prove the witness is unguarded VM and the control a hybrid.
+    `[5.8r]` rows prove the witness is unguarded VM and the control a hybrid.
     `tests/base/k65_precheck_whole_set.rxt` / S277 are the answer-level
     detector.
-    **§5.8 ([K66], 2026-09-25, 267 -> 274 checks)** is the WHOLE-RUN compare
+    **§5.9 ([K66], 2026-09-25, 267 -> 274 checks)** is the WHOLE-RUN compare
     on the same route: each row's expected whole run (the `memcmp` longer
     than 8 bytes, and its length) and `rq_set[]` are derived by hand — K66's
     witness under `-e byte` and `-e utf8` (two windows, one whole run), a
     10-byte run beside a set member outside it (the rest excludes the run's
     bytes outside the window), and three `none` controls (a run of exactly
-    8, an exact hybrid in front, `-fno-req-run`); `[5.8r]` proves the witness
+    8, an exact hybrid in front, `-fno-req-run`); `[5.9r]` proves the witness
     is unguarded VM with an 8-byte `REQ_RUN` window. 3 of the rows fail on
     the k65fix base. `tests/base/k66_precheck_whole_run.rxt` / S278 are the
     answer-level detector.

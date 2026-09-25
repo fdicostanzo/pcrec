@@ -1194,26 +1194,29 @@ if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+Z.@' -e byte; then
         || bad "[5.8r] the backreference-free control is no longer a hybrid — [5.8]'s DFA-front row tests nothing"
 fi
 
-# §5.8 — [K66] ON THE SAME ROUTE, A RUN LONGER THAN ITS 8-BYTE WINDOW IS
-# COMPARED WHOLE. `RX_REQ_RUN` names the window the prior cut from the run,
-# and with the window alone compared a subject holding it but not another
-# slice of the run answered NOMATCH or gave up according to that pick. The
-# whole run is a second scan loop whose `memcmp` is longer than 8 bytes; each
-# row's expected run and rq_set are derived BY HAND from the pattern (never
-# from a stamp). The answer-level witness is
-# tests/base/k66_precheck_whole_run.rxt.
+# =========================================================================
+# SECTION 5.9 — [K66] ON THE SAME ROUTE, A RUN LONGER THAN ITS 8-BYTE WINDOW
+# IS COMPARED WHOLE.
+# =========================================================================
+#
+# `RX_REQ_RUN` names the window the prior cut from the run, and with the
+# window alone compared a subject holding it but not another slice of the
+# run answered NOMATCH or gave up according to that pick. The whole run is a
+# second scan loop whose `memcmp` is longer than 8 bytes; each row's expected
+# run and rq_set are derived BY HAND from the pattern (never from a stamp).
+# The answer-level witness is tests/base/k66_precheck_whole_run.rxt.
 #   "none" = no memcmp longer than 8 bytes.
 wholerun() { sed -n 's/^.*!memcmp(subject + rp_c[^,]*, "\(.*\)", \([0-9]*\))) break;$/\1 \2/p' "$1" | awk '$NF > 8' | head -1; }
 while IFS='%' read -r pat flags want wantrq why; do
     [ -n "$pat" ] || continue
-    a="$WORKDIR/s58_$RANDOM$RANDOM.c"
+    a="$WORKDIR/s59_$RANDOM$RANDOM.c"
     # shellcheck disable=SC2086  # $flags is a word list on purpose
-    if ! emit "$a" "$pat" $flags; then bad "[5.8] $pat [$flags]: refused"; continue; fi
+    if ! emit "$a" "$pat" $flags; then bad "[5.9] $pat [$flags]: refused"; continue; fi
     got="$(wholerun "$a")"; got="${got:-none}"
     gotrq="$(rqset "$a")"; gotrq="${gotrq:-none}"
     [ "$got" = "$want" ] && [ "$gotrq" = "$wantrq" ] \
-        && ok "[5.8] $pat [$flags] -> whole run { $got }, rq_set { $gotrq } ($why)" \
-        || bad "[5.8] $pat [$flags]: whole run is { $got } / rq_set { $gotrq }, expected { $want } / { $wantrq } ($why)"
+        && ok "[5.9] $pat [$flags] -> whole run { $got }, rq_set { $gotrq } ($why)" \
+        || bad "[5.9] $pat [$flags]: whole run is { $got } / rq_set { $gotrq }, expected { $want } / { $wantrq } ($why)"
 done <<'ROWS'
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
 (x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8, whose window is eeeeeeee: both encodings now compare the same run
@@ -1224,12 +1227,12 @@ done <<'ROWS'
 ROWS
 # ... and the witness really is the route the rule reads, with a run longer
 # than its window — or the whole-run rows test nothing.
-if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
-    [ "$(stamp "$WORKDIR/s58r.c" VM_PREFILTER)" = "none" ] \
-      && [ "$(stamp "$WORKDIR/s58r.c" REQ_WHY)" = "emitted" ] \
-      && [ "$(stamp "$WORKDIR/s58r.c" REQ_RUN)" = "7e237e237e237e23@0" ] \
-        && ok "[5.8r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
-        || bad "[5.8r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.8]'s rows test nothing"
+if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
+    [ "$(stamp "$WORKDIR/s59r.c" VM_PREFILTER)" = "none" ] \
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_WHY)" = "emitted" ] \
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "7e237e237e237e23@0" ] \
+        && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
+        || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.9]'s rows test nothing"
 fi
 
 echo "checks passed: $pass"

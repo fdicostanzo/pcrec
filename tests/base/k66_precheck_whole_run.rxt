@@ -28,7 +28,7 @@
 # steps=10000` and class runs of 16..18 letters keep the failing direction to
 # milliseconds and let python `re` verify every cell; the 16-byte `!` tail
 # keeps the VM's minimum-remaining-length prune from cutting the backtracking
-# short, which at these lengths would otherwise hide the defect. (tests/codegen/run_prechecks.sh §5.8
+# short, which at these lengths would otherwise hide the defect. (tests/codegen/run_prechecks.sh §5.9
 # asserts the emitted whole-run text; this file asserts the answers.)
 
 pattern (x?)([a-z]+)+eeeeeeee~#~#~#~#\1

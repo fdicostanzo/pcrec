@@ -25,7 +25,7 @@
 # prove the `n` cells pass because of the pre-check, not because 10000 steps
 # happened to be enough. `budget steps=10000` and L = 16..18 keep the failing
 # direction to milliseconds and let python `re` (which backtracks the same
-# way) verify every cell. (tests/codegen/run_prechecks.sh §5.7 asserts the
+# way) verify every cell. (tests/codegen/run_prechecks.sh §5.8 asserts the
 # emitted all-members text; this file asserts the answers.)
 
 pattern (x?)([a-z]+)+Z.@\1

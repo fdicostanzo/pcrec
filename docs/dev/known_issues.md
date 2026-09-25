@@ -88,7 +88,9 @@ whatever the pick. The repro answers NOMATCH under both `-e byte` and
 (retried at every start: `[a-z]+Z.@` gave up on WORK over 200 KB of `a`s
 lacking `@`), and the fix covers it by the same predicate. Regression:
 `tests/base/k65_precheck_whole_set.rxt` (9 of its 24 cells give up at
-5a2094e7, all pass after), `tests/codegen/run_prechecks.sh` §5.7, sabotage
+5a2094e7, all pass after), `tests/codegen/run_prechecks.sh` §5.8 (renumbered
+at the k66fix landing rebase — chkgaps' concurrent §5.7 landed on main
+first), sabotage
 S277 (DETECTED). abi 33 -> 34 (452 of 6,642 census artifact-configs gain
 the 6-line block). Residue, stated in `docs/spec/tuning.md` §2.29 at the
 time: a run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to a window
