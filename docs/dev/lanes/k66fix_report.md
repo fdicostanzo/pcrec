@@ -152,9 +152,17 @@ Invariant: S1 reads `Job.req_run`, so that field must not fork.
 
 ## Validation
 
-(Filled in below from the logs; the chain ran detached.)
-
-VALIDATION_PLACEHOLDER
+- `make strict`: clean ("whole tree compiles clean with -Werror -Wshadow").
+- `make test-codegen` (after the abi bump): `run_group: 9/10 scripts
+  passed`. The one red is `run_inline_capability.sh` ("nm could not read
+  arm_a.o (no rx_search symbol)"), the known darwin Mach-O `nm` red that
+  k64fix/k65fix A/B'd as pre-existing. `[DD-14.FB] (§10.4)` passes with abi
+  35 on both engines (`ABI_EXPECT=35`). Log: `/tmp/k66fix/codegen.log`.
+- `make test-prechecks`: 274 passed / 0 failed (EXIT=0).
+- `make test-rxtsource`: EXIT=0, including the re-pinned census
+  (219/4006/29169) and C3.
+- Targeted: the regression `.rxt` (16/0 on the fix, 8/8 on the base), S278
+  and S277 (above).
 
 - **OWED: the full `make test`.** The box's one heavy slot is queued:
   chkgaps first, then k65fix. Not run.
