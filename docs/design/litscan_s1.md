@@ -1,5 +1,20 @@
 # `[OPT-LITSCAN]` S1: a pinned literal run goes to the prefilter, and a dominated pre-check is elided
 
+**Revision 3** (lane `s1r3`, 2026-09-25, branch `lane/s1r3` from main
+`0832bb1e`): the FULL D6 panel addendum 4 item 3 requires. Three critics,
+its own three named lenses — `s1crit-sound` (opus, answer soundness),
+`s1crit-axis` (sonnet, selection/axis semantics), `s1crit-consumer` (sonnet,
+the hybrid/VM consumer contract) — plus the manager's rulings on the three
+open items revision 2's own §9 raised (N1-N3). Panel record:
+`docs/dev/reviews/2026-09-25-r3-litscan-s1-panel.md`. **No BLOCKING finding;
+the mechanism HOLDS** (the row pair, `OfsTest`, G1's widened conjunct, the
+census). §R3 (immediately below §R) is what changed and why; §0-§11 are the
+revised note in full, edits marked `[r3 <id>]`. The panel also surfaced a
+fifth K-entry, **K66** (`docs/dev/known_issues.md`, the run-window analogue
+of K65, C2b) and a sequencing dependency for step 6 (§7.2) that this
+revision RECORDS but does not discharge — both are Frank's, or a later
+lane's.
+
 **Revision 2 — OPTION B** (lane `s1b`, 2026-09-25, branch `lane/s1b` from
 main `4976f385`, abi 32), per D122 ADDENDUM 4. Revision 1 was lane
 `s1design` (from `b5c1423b`), light-panelled in
@@ -17,8 +32,9 @@ vital organs"), and Frank's §9 rulings (Q1 conversion in S1 as a separate
 last commit; Q2 C2 left out; Q3 → `[OPT-VMSEED]`; Q4 closed).
 `compare_stack.md` §6.1 S1 is the charter. The row is plan `[OPT-LITSCAN]`.
 
-A FULL D6 panel reviews this revision (addendum 4 item 3: answer soundness,
-selection/axis semantics, the hybrid/VM consumer contract) before any build.
+A FULL D6 panel reviewed this revision (addendum 4 item 3: answer soundness,
+selection/axis semantics, the hybrid/VM consumer contract) — see revision 3
+above.
 
 ---
 
@@ -134,6 +150,154 @@ predicate).** Rows (a)-(e) are revision 1's, re-anchored. The new rows are:
 dropped, (i) the deny not honoured (R4), and (j) `reseeds` false on the run
 rows, whose reach is thin: the census found zero seeded class-B artifacts
 and exactly one seeded C1 (§7.1).
+
+---
+
+## R3. The full D6 panel (revision 3), and the resulting fixes
+
+Panel: `docs/dev/reviews/2026-09-25-r3-litscan-s1-panel.md` (three critics,
+addendum 4 item 3's own three lenses). **No BLOCKING finding; the mechanism
+holds** — the row pair, `OfsTest`, G1's widened conjunct and the census are
+unchanged in substance. Nine findings from `s1crit-sound`, four plus three
+rulings from `s1crit-axis`, four plus three PASSes from `s1crit-consumer`.
+What follows is grouped by what changed, not by critic; §0-§11 carry the
+edits marked `[r3 <id>]`.
+
+**R3-1. §1.4's widened `p` must keep `dfa_cand_scan_byte`'s own guard and its
+`ENG_ATTEMPT` arm, verbatim (s1crit-sound).** As drafted, §1.4's pseudocode
+computed `sel = dfa_pf_of(cx, &us)` and `t = ofs_test_of(...)`
+UNCONDITIONALLY — dropping today's `if (!pcrec_artifact_has_dfa_scan(cx))
+return -1;` guard and the `PCREC_ENG_ATTEMPT`/`attempt_cand` arm, both of
+which `dfa_cand_scan_byte` (`emit_dfa.c:5429-5450`) already has. Losing the
+guard would call `dfa_pf_of` where no `unanch_start`/`Job.dfa` exists at
+all — an `ENG_ATTEMPT` artifact, or one with no DFA scan of any kind, which
+is exactly the shape of every K65/K66 witness (a backreference declines the
+hybrid outright). §1.4 below is rewritten so the widening applies ONLY
+inside the existing `unanch_start` arm; the guard and the `ENG_ATTEMPT` arm
+are untouched. **New structural check**: the K65 witness
+`(x?)([a-z]+)+Z.@\1` must read `RX_REQ_WHY "emitted"` under S1
+(`run_prechecks.sh`, §7) — its route has no DFA scan of any kind, so `p ==
+-1` on both encodings and the pre-check is never elided.
+
+**R3-2. K66 filed: the run-window analogue of K65 (C2b) — NOT caused by S1,
+NOT fixed by S1, but coupled to S1's pin and to step 6 (s1crit-sound).**
+Measured on the (unmerged) `k65fix` build: `(x?)([a-z]+)+eeeeeeee~#~#~#~#\1`
+stamps `RX_REQ_RUN "7e237e237e237e23@0"` under `-e byte` and
+`"6565656565656565@0"` under `-e utf8` (both `RX_VM_PREFILTER "none"` — no
+DFA in front). On the subject `'e' + 'a'×36 + '~#~#~#~#'`: the byte artifact
+runs the backtracker to steps exhaustion (~1.97s), the utf8 artifact answers
+`nomatch` instantly (same at 40 a's). K65's own fix (candidate (a),
+pre-check every necessary SET member) does not close it, because C2b is one
+level up — a WINDOW of a run longer than `REQ_RUN`'s emitted cap, not a
+single byte. Filed as `docs/dev/known_issues.md` K66, status OPEN, fix shape
+pending Frank's ruling.
+
+**The coupling, stated as an invariant here because a later fix to C2b
+touches exactly this loop**: S1's pin field (`run_o`, §1.1) and
+`OfsTest.run_bytes`/`run_len` (§1.3) must read the SAME `Job.req_run` field
+the pre-check emits — a fix that forked the field would silently diverge
+S1's pin from the pre-check it is meant to dominate.
+
+**R3-3. Step 6's safety bar gains give-up transitions as a named, counted
+population, and is SEQUENCED after two externals (s1crit-sound).** §7.2 step
+6 (Q1's conversion, which REWRITES the floating-run pre-check's loop — the
+same loop C2b lives in) is now stated as sequenced AFTER (a) GIVEUP1 merged
+(`lane/chkgaps`, unmerged as of this revision) and (b) a ruling on K66/C2b —
+neither of which this revision discharges. Before GIVEUP1 lands,
+`run_axes.sh` counts a one-sided give-up as budget-bound, so step 6's own
+answer-identity check cannot see a give-up TRANSITION it introduces. §7.2 is
+updated below.
+
+**R3-4/5/6 (verified, no change).** `s1crit-sound` confirmed three things
+that needed no fix, recorded for the delivery record: step-5's elision
+cannot flip a give-up (DFA-scan only; the count-collapsed hybrid pin sits on
+the superset `Job.nfa`, `compile.c:1646-1647`; a run never spans a counted
+repeat, measured); `OfsTest`'s widened guard (§1.3, S1-1) is sound
+(`prefix_k.c:431-435,447-453`); the head-of-list rows are safe
+(`emit_dfa.c:4290-4299`, `pcrec_dfa_scan_state_written` at `:5590`).
+
+**R3-7. §7's R4 widening list corrected: `compile.c:1576` was missing, and
+the list becomes a grep recipe, not a hand enumeration (s1crit-sound).**
+`compile.c:1576`'s `const unsigned pfc_flags = cx.opt->flags;` truncates
+`Job`'s 64-bit flags the same way the six sites §7 already named do. §7's
+site list is replaced with the finder itself: `grep -rn 'unsigned .*=
+.*opt->flags'`. **Ordering rule, stated explicitly**: the bit-32 `#define`
+(`PCREC_NO_RUN_PREFILTER`) must NOT land before the widening commit —
+`axis_cli_flag`'s `(unsigned)(dm) == deny` with `dm = 1ull << 32` truncates
+to 0, so `0 == deny` reads true for every no-deny candidate and
+`-fno-run-prefilter` would silently tag EVERY row.
+
+**R3-8. Sabotage gap: the two-bit deny's SECOND half has no check
+(s1crit-sound).** A plant that drops `PCREC_NO_OFFSET_SKIP` from the run
+rows' `deny` mask and leaves `PCREC_NO_RUN_PREFILTER` alone is invisible to
+`make test-axes` (the run rows still deny under the surviving bit's own
+axis, so the axis sweep never distinguishes which bit did it). New check,
+§7.1 row (k): router under `-fno-offset-skip` must stamp `"memchr"` (not
+`"run-pinned"`) — the promise `PCREC_NO_OFFSET_SKIP`'s comment already
+makes for the whole `<p>_ofsskip` family, exercised here on the run rows
+specifically.
+
+**R3-9 (s1crit-axis F1/F2, confirmed; one cleanup noted, not applied).** The
+R4 32-bit truncation is independently confirmed (`emit_dfa.c:4291,6494`,
+`DfaCand.deny`/`PcrecAxisCand.deny`); `census_b.py` matches §1.2's clauses
+0-4 line for line, and `census_b_summary.txt` cross-tabs consistently with
+§6.2. The critic also flagged a vestigial unused `implies` variable in
+`probe_b_patch.py` (a rev-1 leftover) — noted for the build lane to delete,
+not fixed in this design-only revision.
+
+**R3-10 (axis F3). §7's stamp-reader list gains
+`tests/codegen/run_scan_edge_census.sh` by name** — it already reads the
+`"offset-set-bounded"` value (confirmed by the critic) but §7 named only
+§6.2's prose, not this script; fixed below.
+
+**R3-11 (axis F4/N3). Row (j)'s reachability check is now a HARD
+delivery-bar item.** The build lane must construct the check (or the
+synthetic seeded-C1 witness it needs), RUN it, and LOG the outcome — not
+choose in advance between "construct a witness" and "record unreachable".
+`UNREACHED`-with-derivation stays an allowed OUTCOME of that run (the S219
+precedent, `opt5_step2_twopass.md` §5.6b), never a decision made without
+running it.
+
+**R3-12. MANAGER RULINGS on revision 2 §9's N1-N3 (axis panel's own asks).**
+- **N1 (the two-bit deny, §1.2): ACCEPTED.** D82's rule (deny = a filter on
+  the candidate list) already covers an OR'd mask; `PCREC_NO_OFFSET_SKIP`'s
+  byte-for-byte promise (`lib/pcrec.h` ~L365) requires it; `dfa_select`'s
+  `deny & flags` needs no change.
+- **N2 (a `!views` conjunct on clause 3(b), as an alternative to B-bounded's
+  inclusion): REJECTED.** R7 (§6.2a, R7) is RATIFIED as written: the
+  `memchr`/`memchr-bounded` pair is ONE population by list-order
+  correctness, the precedent every existing `offset-set`/`offset-set-bounded`
+  pair in `dfa_pfs[]` already sets. A `!views` conjunct would special-case
+  B against its own twin for no stated reason.
+- **N3 (row (j)'s synthetic witness: construct or record-unreachable):**
+  resolved by R3-11 above — a hard delivery-bar item, not a pre-decided
+  choice.
+
+**R3-13. A coordination paragraph, in BOTH this note and `findings/
+design.md` (s1crit-consumer).** S1 and `[FINDINGS]` B1 both edit
+`req_admit`/G1 at the same site (`emit_dfa.c:5514` and neighbourhood). S1
+lands first — it is ahead in the queue. `[FINDINGS]` B1 REBASES onto S1's
+G1 and re-derives `findings/design.md` §6.2a's C3 row against the WIDENED
+conjunct S1 ships (today's C3 row is written against the un-widened
+`req_byte_dominated_by`, which S1 replaces). S1's own §1.5 (below) states
+that G1/L4 admission's RATE-TABLE dependence is OUT of S1's "what S1 must
+not preclude" scope, and why: S1 changes WHAT G1 elides (a wider `p`, from
+`OfsTest`); `[FINDINGS]` changes WHETHER a rate table may move that
+elision (it may not, §6.2a's own invariant) — orthogonal axes of the same
+conjunct, so S1 need not (and does not) speak to the second.
+
+**R3-14. §1.5 claims 1 and 2 tightened to name the VMSEED plumbing gap
+precisely (s1crit-consumer).** The pin fact depends on `(Job.nfa,
+Job.req_run)` and is computed by `pcrec_prefix_ksets`, whose SOLE caller is
+`unanch_start` — itself DFA-gated (`k0[256]`, `unanch_start`'s own
+precondition). `ofs_test_of`'s second parameter (`const UnanchStart *us`)
+is a DFA-shaped object end to end. So "the fact is available where no DFA
+exists" (claim 1) and "the candidate test is emittable without a DFA"
+(claim 2) are both true OF THE DATA S1 DEFINES and both currently
+UNREACHABLE by a no-DFA caller: `[OPT-VMSEED]` needs a caller that builds
+or walks the NFA on the VM route, and a DFA-free `UnanchStart`-shaped
+object — neither of which S1 builds. §1.5 below states this precisely
+rather than only asserting the two properties.
 
 ---
 
@@ -435,14 +599,29 @@ OfsTest *)`, and that narrowing is what §1.5 needs.
 becomes:
 
 ```
-let  sel = dfa_pf_of(cx, &us)            -- axis B's SELECTION, after the deny mask
-     t   = ofs_test_of(cx, &us, sel)     -- the candidate test it emits, if it has one
-     p   = t ? t.scan_byte : (sel is a memchr form ? us.cand.byte : -1)
+-- [r3 R3-1] dfa_cand_scan_byte's OWN guard and ENG_ATTEMPT arm are kept
+-- VERBATIM (emit_dfa.c:5429-5450); only the unanch_start arm widens.
+p = dfa_cand_scan_byte'(cx):
+    if !pcrec_artifact_has_dfa_scan(cx): return -1        -- UNCHANGED
+    if cx->job->engine == PCREC_ENG_ATTEMPT:
+        return attempt_cand(...) ? acand.byte : -1        -- UNCHANGED, verbatim
+    let  sel = dfa_pf_of(cx, &us)          -- axis B's SELECTION, after the deny mask
+         t   = ofs_test_of(cx, &us, sel)   -- the candidate test it emits, if it has one
+    return t ? t.scan_byte : (sel is a memchr form ? us.cand.byte : -1)
+
 dominated  ⇔  p ≥ 0
               ∧ ( p == q                                              -- identity, any encoding
                   ∨ (L < 2 ∧ sel is a memchr form ∧ byte enc ∧ ppm(p) ≤ ppm(q)) )  -- today's clause, today's scope
               ∧ ( L < 2 ∨ (t ∧ verifies(t, o, L)) )
 ```
+
+**`p` is never computed from `dfa_pf_of`/`ofs_test_of` on a route with no DFA
+scan at all.** Revision 2's pseudocode computed `sel`/`t` unconditionally,
+which would have called `dfa_pf_of` where no `unanch_start`/`Job.dfa` exists
+— every K65/K66 witness's own route (a backreference declines the hybrid, so
+`pcrec_artifact_has_dfa_scan` is false). New structural check (§7): the K65
+witness `(x?)([a-z]+)+Z.@\1` must read `RX_REQ_WHY "emitted"` under S1 on
+both encodings (`run_prechecks.sh`).
 
 - `q = Job.req_byte`, which for a run is `req_run.bytes[idx]`, the run's own
   scan member (`internal.h`'s `Job.req_byte` comment).
@@ -508,16 +687,31 @@ All of that is `[OPT-VMSEED]`'s, under the addendum-4 process bar, with
 implement-then-replace.
 
 **What S1 must not preclude, and how it avoids each:**
-1. *The pin must be available where no DFA exists.* The fact depends on
+1. *The pin must be available where no DFA exists* — **[r3 R3-14, tightened]:
+   the pin's DATA is engine-neutral, but its sole PRODUCER is not, and
+   VMSEED's gap is exactly there.** `pcrec_prefix_ksets`' fact depends on
    `(Job.nfa, Job.req_run)` alone and is computed before the `k0`-dependent
-   early return (§1.1 invariant 3). VMSEED needs a caller that builds or
-   walks the NFA on the VM route, but no change to the fact.
-2. *The candidate test must be emittable without a DFA.* `OfsTest` holds no
-   `Dfa *` and no `DfaForm *`. The `<p>_ofsskip` block emitter reads
-   `(cx, p, const OfsTest *)` and nothing else. The DFA-specific half (the
-   call site, the landing, the reseed) stays in `pf_emit_ofs[_bounded]`. A
-   VM hook is a second caller of the same block, not a second block (D122's
-   "never a VM-local search table").
+   early return (§1.1 invariant 3) — so nothing in the FACT assumes a DFA.
+   But `pcrec_prefix_ksets` has ONE caller, `unanch_start`, and
+   `unanch_start` is itself DFA-gated (it is where `k0[256]` comes from).
+   So today the fact is UNREACHABLE on a no-DFA VM route, not merely unused
+   there. VMSEED's precondition is precisely a second caller — one that
+   builds or walks the NFA directly on the VM route — with no change to the
+   fact `pcrec_prefix_ksets` computes.
+2. *The candidate test must be emittable without a DFA* — **[r3 R3-14,
+   tightened]: `OfsTest` itself is DFA-free, but its only constructor's
+   INPUT is not.** `OfsTest` holds no `Dfa *` and no `DfaForm *`, and the
+   `<p>_ofsskip` block emitter reads `(cx, p, const OfsTest *)` and nothing
+   else — so the STRUCT and the EMITTER are both engine-neutral already.
+   But `ofs_test_of`'s second parameter, `const UnanchStart *us`, is a
+   DFA-shaped object end to end (`unanch_start`'s own output). So "emittable
+   without a DFA" is true of the block emitter today and NOT YET true of any
+   path that could call it: a VM hook needs either a DFA-free
+   `UnanchStart`-shaped object or a second `ofs_test_of`-family constructor
+   that fills an `OfsTest` from the VM route's own facts. Neither exists in
+   S1; §1.5's job is only to confirm neither is precluded (D122's "never a
+   VM-local search table" — the future constructor still produces the SAME
+   `OfsTest`, read by the SAME block emitter).
 3. *The deny must name a mechanism, not an engine.* `-fno-run-prefilter`
    says "a run-verified candidate search". When VMSEED serves both
    consumers from the same row, the same bit denies both, and test-axes
@@ -528,6 +722,24 @@ implement-then-replace.
    clause on the same row (engine appears "only in a row's predicate and its
    emit hook", addendum 4). Nothing in the pin or in `OfsTest` assumes
    clause 3.
+
+**[r3 R3-13] Coordination with `[FINDINGS]` B1, at the SAME site (G1,
+`req_admit`).** `[FINDINGS]`'s design (`docs/design/findings/design.md`
+§6.2a) also touches G1/`req_byte_dominated_by` — its C3 row states the
+invariant "no rate table may move an answer or a give-up" against TODAY's
+un-widened conjunct. **S1 lands first** (it is ahead in the queue); when
+`[FINDINGS]` B1 lands it must REBASE onto S1's `req_admit` and re-derive
+`findings/design.md` §6.2a's C3 row against the WIDENED conjunct above (a
+wider `p`, a `verifies(t, o, L)` term, `OfsTest` in place of a bare byte
+compare) rather than against the conjunct C3 was written for. This is
+stated in both documents (this paragraph, and a matching note added to
+`findings/design.md` §6.2a in the same change as this revision). **G1/L4
+admission's rate-TABLE dependence is explicitly OUT of S1's "must not
+preclude" scope above**, and the reason is that S1 and `[FINDINGS]` change
+DIFFERENT things about the same conjunct: S1 changes WHAT G1 elides (a
+wider `p`, reading `OfsTest`); `[FINDINGS]` changes WHETHER a rate table's
+choice may be allowed to move that elision (it may not, by §6.2a's own
+invariant) — orthogonal, so S1 need not, and does not, speak to the second.
 
 ### 1.6 The extracted primitive: P4, the exact compare (unchanged)
 
@@ -862,11 +1074,12 @@ first can move it).
 
 ## 7. Stamps, abi, axes, spec, sabotage, plan (D76/D80/D94)
 
-- **abi: ONE bump**, to the next number after main's at landing (k64fix
-  takes 33 if it lands first, so S1 is probably 34). The site list is every
-  reader of the number, found by grep (D94). Then run the registry, codegen
-  and rxtsource suites (the D94 addendum). The Q1 conversion commit rides
-  the SAME abi event (Frank's ruling), with no second bump.
+- **abi: ONE bump**, to the next number after main's at landing. **[r3]**
+  k64fix has since merged at abi 33, so S1 is 34 unless another lane lands
+  first — re-check at landing rather than trust this digit. The site list is
+  every reader of the number, found by grep (D94). Then run the registry,
+  codegen and rxtsource suites (the D94 addendum). The Q1 conversion commit
+  rides the SAME abi event (Frank's ruling), with no second bump.
 - **Axis `-fno-run-prefilter`, `PCREC_NO_RUN_PREFILTER` (bit 32):**
   - a `#define` in `lib/pcrec.h` with the house doc-comment (it names the
     two-bit deny and why);
@@ -876,13 +1089,23 @@ first can move it).
     meet their second `#define`d bit (bit 31, `PCREC_NO_REQ_RUN`, was the
     first). Both must enumerate it.
 - **The 64-bit deny plumbing (R4), S1's FIRST commit, zero artifacts and
-  zero `--list-axes` bytes moved.** The type goes `unsigned` → `uint64_t` in
-  `DfaCand.deny`, `dfa_select`'s `flags` parameter, `dfa_form_derive`'s
-  local `flags`, `PcrecAxisCand.deny`, and `axes_dump.c`'s
-  `axis_macro_name` / `axis_cli_flag` / `bit_of` / `deny_cols` / `PredAxis`
-  / `emit_pred_row`. `make strict` is the tripwire it would otherwise hit
-  (gcc's `-Woverflow` on the initializer). The runtime truncation of
-  `cx->opt->flags` has no warning at all, and that is the silent half.
+  zero `--list-axes` bytes moved.** **[r3 R3-7] The site list is a GREP
+  RECIPE, not a hand enumeration** — `grep -rn 'unsigned .*= .*opt->flags'`
+  — because a hand list already missed one: `compile.c:1576`'s `const
+  unsigned pfc_flags = cx.opt->flags;` truncates exactly like the others.
+  The recipe's known matches today: `DfaCand.deny`, `dfa_select`'s `flags`
+  parameter, `dfa_form_derive`'s local `flags`, `compile.c:1576`'s
+  `pfc_flags`, `PcrecAxisCand.deny`, and `axes_dump.c`'s `axis_macro_name` /
+  `axis_cli_flag` / `bit_of` / `deny_cols` / `PredAxis` / `emit_pred_row`,
+  all going `unsigned` → `uint64_t`. `make strict` is the tripwire it would
+  otherwise hit (gcc's `-Woverflow` on the initializer). The runtime
+  truncation of `cx->opt->flags` has no warning at all, and that is the
+  silent half. **[r3 R3-7] Ordering rule**: the bit-32 `#define`
+  (`PCREC_NO_RUN_PREFILTER`, below) must NOT land before this widening
+  commit — `axis_cli_flag`'s `(unsigned)(dm) == deny` with `dm = 1ull << 32`
+  truncates to 0, so every no-deny candidate would read `0 == deny` and
+  `-fno-run-prefilter` would silently tag EVERY row (the `axis_cli_flag`
+  hazard).
 - **`--list-axes`, the prefilter axis:**
   - two new candidate rows at `order` 1 and 2, and every later row's
     `order` +2;
@@ -913,6 +1136,9 @@ first can move it).
     bounded value's corpus population is below a floor worth stating.
   - `tests/codegen/run_offset_skip.sh`: `OFS_VALUES`, plus a `router` and a
     `foo\b` row in its witness table.
+  - **[r3 R3-10] `tests/codegen/run_scan_edge_census.sh`**, named explicitly
+    (not just via §6.2's prose): it already reads the `"offset-set-bounded"`
+    value and must learn `"run-pinned-bounded"` the same way.
   - `src/dump/axes_dump.c` `AXIS_DESC`.
   - `tests/codegen/manifests/m5_stage1_stamps.tsv`: re-pinned only if one of
     its patterns is in §6's population (the implementer greps).
@@ -948,7 +1174,7 @@ first can move it).
   `src/gen/CLAUDE.md` (the rows, `OfsTest`), `tests/codegen/CLAUDE.md` if a
   check file is added.
 
-### 7.1 Sabotage (numbered after the highest S-id on main at landing: S273 today, S274+ if k64fix is in)
+### 7.1 Sabotage (numbered after the highest S-id on main at landing: S274 today, k64fix's own — `lane/chkgaps`/GIVEUP1 is UNMERGED as of this revision, so its own rows are not yet counted; renumber at landing)
 
 | row | sabotage | detector | reach witness |
 |---|---|---|---|
@@ -961,7 +1187,8 @@ first can move it).
 | **(g)** | the pin's byte-equality test dropped (`run_o` = the first all-singleton window of length L) | answer: lost matches | `/abcd[xy]/user` on `/abcdx/user`. MEASURED with the probe's walk: true pin 6 (row declines, C0); sabotaged pin 0 passes clause 3(b) (`/` at 0) and the run row compares `/user` at offset 0 |
 | **(h)** | clause 4 dropped (class A takes the run row) | structural: keyword must stamp `"offset-set"`, OFFSETS `"0,1*"` | `in\|instanceof` |
 | **(i)** | the deny not honoured (the bit-32 truncation R4 names, or the deny field left 0) | structural: router under `-fno-run-prefilter` must stamp `"memchr"` and `REQ_WHY "emitted"` | router |
-| **(j)** | `reseeds = false` on the run rows | structural: a seeded run-row witness whose forward machine has a scan-edge candidate must show 0 forward edges (`run_scan_edge_census.sh` §3's shape) | the census's ONE seeded run-row artifact is `wild-secrets-github-pat` (bench, C1, `run-pinned-bounded`). The build checks whether its forward machine has a chain whose head is a seed target; if not, it CONSTRUCTS a synthetic seeded C1 witness, or records the row as unreachable with its reason (N3) |
+| **(j)** | `reseeds = false` on the run rows | structural: a seeded run-row witness whose forward machine has a scan-edge candidate must show 0 forward edges (`run_scan_edge_census.sh` §3's shape) | the census's ONE seeded run-row artifact is `wild-secrets-github-pat` (bench, C1, `run-pinned-bounded`). **[r3 R3-11/N3, HARD delivery-bar item]** the build lane BUILDS the check, RUNS it, and LOGS the outcome: whether the artifact's forward machine has a chain whose head is a seed target, and if not, whether it CONSTRUCTS a synthetic seeded C1 witness or records the row `UNREACHED` with its derivation (the S219 precedent) — never a choice made in advance |
+| **(k)** [r3 R3-8] | the two-bit deny's SECOND half dropped (`deny = PCREC_NO_RUN_PREFILTER` only, `PCREC_NO_OFFSET_SKIP` missing from the run rows' mask) | structural: router under `-fno-offset-skip` must stamp `"memchr"` (not `"run-pinned"`) | router — this plant is invisible to `make test-axes`, which sees the surviving bit still deny the row and never distinguishes which bit did it |
 
 Every row carries a reach witness ([MECH-REACH]). Existing anchors that
 move: S267/S268 (in `emit_req_run_check`, moved by the P4 extraction; re-anchor
@@ -986,11 +1213,26 @@ from `git show HEAD:` and re-verify intent); S269/S270 (G1/G2 in
      and C1 move: 186 corpus, 27 bench).
    Each sub-commit's program-region movers must equal §6's classes, by id.
    With them go the spec hunks, the stamp-reader updates, the witness file,
-   sabotage (a)-(j), the directory CLAUDE.md files and `compare_stack.md`.
+   sabotage (a)-(k), the directory CLAUDE.md files and `compare_stack.md`.
 6. **Q1's conversion, LAST, in the same abi event, measured on its OWN pin**
    (Frank's ruling). The floating-run pre-check's loop becomes a call of the
-   one search block. It carries its own safety bar:
+   one search block. **[r3 R3-2/R3-3] SEQUENCED AFTER two externals, neither
+   of which this revision discharges:**
+   - **(a) GIVEUP1 merged** (`lane/chkgaps`, unmerged as of this revision) —
+     before it lands, `run_axes.sh` counts a one-sided give-up as
+     budget-bound, so this step's own answer-identity check cannot see a
+     give-up TRANSITION it introduces;
+   - **(b) a ruling on K66/C2b** (`docs/dev/known_issues.md` K66, filed by
+     this revision) — the floating-run pre-check's loop is EXACTLY the loop
+     C2b lives in, so converting it before C2b is fixed or findings-blind
+     risks baking the C2b hazard into the converted form.
+
+   It carries its own safety bar, extended with a NAMED, COUNTED give-up
+   population:
    - answer-identity vs commit 5 over corpus × every startpos × all engines;
+   - **give-up transitions counted as their own population (GIVEUP1's
+     vocabulary), with K64, K65 and K66 as its named give-up cells** — the
+     bar is zero UNINTENDED transitions, not merely "answers identical";
    - the identity gates;
    - test-axes on the touched axes;
    - ASan/UBSan on the converted artifacts;
@@ -1004,7 +1246,7 @@ from `git show HEAD:` and re-verify intent); S269/S270 (G1/G2 in
 
 ## 8. Interactions
 
-### 8.1 k64fix (unmerged, abi 33)
+### 8.1 k64fix (**[r3]** merged, abi 33 — main's current tip)
 
 Unchanged by option B. G1 is admission, and its placement and its
 `verifies` conjunct are the same fact, now read off `OfsTest`.
@@ -1015,8 +1257,21 @@ Unchanged by option B. G1 is admission, and its placement and its
   REFUTED; the argument is unchanged).
 - k64fix's `!prefilter_collapsed` conjunct is more conservative than
   needed. That is a fact for its lane, not a change request.
-- Textual: both lanes edit `req_admit`'s neighbourhood and re-anchor S269.
-  Whichever lands second rebases.
+- Textual: S1 edits `req_admit`'s neighbourhood on top of k64fix's already-
+  merged text and re-anchors S269 against `main`, not against a hypothetical
+  pre-k64fix state.
+
+### 8.1a K65/K66 (**[r3]** new — G1's un-widened conjunct's own gap, one
+level up)
+
+Neither K65 nor K66 is caused by S1, and S1 does not fix either. Both are
+give-up (not answer) divergences on a no-DFA-front VM route, exactly the
+route S1's widened `p` returns `-1` on (R3-1). The coupling is one-way and
+narrow: S1's `OfsTest.run_bytes`/`run_len` and its pin's `run_o` must read
+the same `Job.req_run` field K65's/K66's eventual fix reads, so a later fix
+does not fork the field S1 also depends on (R3-2). Step 6 (§7.2) is
+SEQUENCED after a ruling on K66 for that reason. See
+`docs/dev/known_issues.md` K65/K66.
 
 ### 8.2 The forced-VM residual → `[OPT-VMSEED]` (Q3, ruled)
 
@@ -1040,7 +1295,7 @@ preclude" properties there: the pin fact and a DFA-free block emitter.
 
 ---
 
-## 9. Frank's rulings on revision 1's questions (recorded; none reopened)
+## 9. Rulings on revision 1's and revision 2's questions (recorded; none reopened)
 
 1. **Q1 RULED:** the floating-run pre-check is converted within S1, as a
    separate last commit inside S1's abi event, on its own bench pin, with its
@@ -1052,12 +1307,25 @@ preclude" properties there: the pin fact and a DFA-free block emitter.
    §8.2).
 4. **Q4 CLOSED** (S1 review S1-2, refuted).
 
-**New questions this revision raises, for the panel first, then Frank if
-the panel splits:**
-- (N1) The two-bit deny (§1.2) versus any alternative the axis lens prefers.
-- (N2) B-bounded's inclusion (R7), versus a `!views` conjunct on clause 3(b).
-- (N3) Row (j)'s synthetic witness: construct one, or record it as
-  unreachable today.
+**Revision 2's own N1-N3, ruled by the panel/manager in revision 3 (R3-12;
+none went to Frank — no split):**
+5. **N1 RULED: ACCEPTED.** The two-bit deny (§1.2) stands as designed —
+   D82 (deny = a candidate-list filter) already covers an OR'd mask, and
+   `PCREC_NO_OFFSET_SKIP`'s byte-for-byte promise (`lib/pcrec.h` ~L365)
+   requires both bits.
+6. **N2 RULED: REJECTED**, and R7 (§6.2a) RATIFIED as written — B-bounded's
+   inclusion is one population with plain B by list-order correctness (the
+   `memchr`/`memchr-bounded` pair's own existing precedent), not a
+   `!views`-conjuncted special case.
+7. **N3 RULED:** resolved as R3-11 above — row (j)'s reachability check is
+   a HARD delivery-bar item (build it, run it, log the outcome); `UNREACHED`
+   -with-derivation stays an allowed OUTCOME, never a pre-decided choice.
+
+**New items this revision raises, open to Frank (none blocking a build):**
+- **K66** (`docs/dev/known_issues.md`): the run-window analogue of K65
+  (C2b). Fix shape unruled — see K66's own three candidates.
+- **Step 6's sequencing** (§7.2): after GIVEUP1 (`lane/chkgaps`) merges and
+  after a ruling on K66, neither of which is this revision's to deliver.
 
 ---
 
