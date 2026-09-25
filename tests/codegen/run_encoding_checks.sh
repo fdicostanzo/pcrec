@@ -493,14 +493,24 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # byte-frequency prior only under `byte` (the shipped table is keyed to that
 # encoding — reqbyte.c's header) and takes the leftmost run position
 # elsewhere, so `abc\z` scans for `b` at offset 1 under byte and `a` at offset
-# 0 under utf8. The byte VALUE and the offset are integers, which the data
-# bar already normalizes; what is not is `emit_req_run_check`'s offset-0
-# SPECIALIZATION, which elides a lower-bound test that is vacuous at offset 0.
-# That one line pair is rewritten to the general form's text with offset 0
-# (`rp_c - search_from >= 0 && rp_c - 0 + L`, `subject + rp_c - 0`) — an
-# identity, so the rest of the pre-check loop is still compared token for
-# token — and COUNTED, and only where the side's own `<PREFIX>_REQ_RUN` stamp
-# says the offset is 0.
+# 0 under utf8. WHICH MEMBER is scanned is therefore normalized, and NOTHING
+# ELSE about the pre-check: the scanned byte (`memchr(..., B, ...)` in the run
+# loop, the `<PREFIX>_REQ_BYTE` stamp) and the member's offset (`K` in the
+# compare, the `@K` of `<PREFIX>_REQ_RUN`) — while the RUN itself (its hex
+# bytes, its length, the loop around it) is still compared token for token.
+# `emit_req_run_check`'s offset-0 SPECIALIZATION, which elides a lower-bound
+# test vacuous at offset 0, is rewritten to the general form's text first (an
+# identity), counted separately, and only where the side's own stamp says the
+# offset is 0. Every normalization is COUNTED, and each side is held to its
+# stamp: the scanned byte must be the run's member at the stamped offset and
+# equal the stamped REQ_BYTE.
+#
+# WHY NOT LEAVE THE INTEGERS TO THE DATA BAR: that bar is [K50]'s
+# gate-refinement class, and every pair it admits must carry a manifest row
+# and be NULLABLE (the manifest's own membership rule). The FREQPICK pairs
+# (`abc$`, `\Aabc`, `\Kab`, `(?:\Gab)+` ...) are none of those — they were
+# 22 un-manifested "gate" pairs on the first run after the re-anchoring, a
+# population with no gate in it.
 # [enctriage, 2026-09-25] `var_valid`'s CALL SITES belong to it too. The
 # entry exists only in `entries_utf8[]`, and `emit_vm.c` writes its per-call
 # well-formedness refusal only where the backend HAS the entry
@@ -512,6 +522,14 @@ VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], r
 VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
 REQRUN0_IF_RE = re.compile(r'^(\s*)if \(rp_c \+ (\d+) <= subject_length$')
 REQRUN0_CMP_RE = re.compile(r'^(\s*&& !memcmp\(subject \+ rp_c), (.*)$')
+REQRUNK_IF_RE = re.compile(r'^(\s*)if \(rp_c - search_from >= (\d+) && rp_c - (\d+) \+ (\d+) <= subject_length$')
+REQRUNK_CMP_RE = re.compile(r'^(\s*&& !memcmp\(subject \+ rp_c) - \d+, (.*)$')
+REQRUN_MEMCHR_RE = re.compile(r'^(\s*const void \*rp_q = memchr\(subject \+ rp_pos, )(\d+)(, subject_length - rp_pos\);)$')
+REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
+REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+(")$')
+REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
+REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ rp_pos, (\d+),')
+REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 #
 # (iii) [OPT-PRECHECK-ADMIT]'s G1 DOMINANCE rule (`req_byte_dominated_by`,
 # emit_dfa.c): a single-byte pre-check is declined as "dominated" when the
@@ -754,7 +772,7 @@ def excise(text, label):
               'encoding': 0, 'startpos_guard': 0, 'startpos_stamp': 0,
               'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
               'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-              'var_valid_call': 0, 'span_ci_helper': 0}
+              'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0}
     out = []
     i, n = 0, len(lines)
     while i < n:
@@ -884,12 +902,34 @@ def excise(text, label):
         if mr and i + 1 < n:
             mc = REQRUN0_CMP_RE.match(lines[i + 1].rstrip('\n'))
             if mc:
-                out.append("%sif (rp_c - search_from >= 0 && rp_c - 0 + %s <= subject_length\n"
+                out.append("%sif (rp_c - search_from >= K && rp_c - K + %s <= subject_length\n"
                            % (mr.group(1), mr.group(2)))
-                out.append("%s - 0, %s\n" % (mc.group(1), mc.group(2)))
+                out.append("%s - K, %s\n" % (mc.group(1), mc.group(2)))
                 counts['req_run_offset0'] += 1
+                counts['req_pick'] += 1
                 i += 2
                 continue
+        mk = REQRUNK_IF_RE.match(line.rstrip('\n'))
+        if mk and mk.group(2) == mk.group(3) and i + 1 < n:
+            mc = REQRUNK_CMP_RE.match(lines[i + 1].rstrip('\n'))
+            if mc:
+                out.append("%sif (rp_c - search_from >= K && rp_c - K + %s <= subject_length\n"
+                           % (mk.group(1), mk.group(4)))
+                out.append("%s - K, %s\n" % (mc.group(1), mc.group(2)))
+                counts['req_pick'] += 1
+                i += 2
+                continue
+        for rx_, repl in ((REQRUN_MEMCHR_RE, r'\1B\3'), (REQBYTE_STAMP_RE, r'\1B\2'),
+                          (REQRUN_STAMP_RE, r'\1K\2')):
+            if rx_.match(line.rstrip('\n')):
+                out.append(rx_.sub(repl, line.rstrip('\n')) + "\n")
+                counts['req_pick'] += 1
+                break
+        else:
+            rx_ = None
+        if rx_ is not None:
+            i += 1
+            continue
         ms = K50_STAMP_RE.match(line.rstrip('\n'))
         if ms:
             out.append(ms.group(1) + "N" + ms.group(2) + "\n")
@@ -969,7 +1009,7 @@ def main():
            'startpos_guard': 0, 'startpos_stamp': 0,
            'startpos_attempt': 0, 'end_window': 0, 'end_window_stamp': 0,
            'req_run_offset0': 0, 'req_check': 0, 'req_why_stamp': 0,
-           'var_valid_call': 0, 'span_ci_helper': 0}
+           'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0}
     nselect_bad = 0
     npairs = nstrict = nwidens = 0
     ndiverge_strict = ndiverge_widens = nbyteonly = nnextpos_bad = 0
@@ -1022,6 +1062,20 @@ def main():
                 if cnt['req_run_offset0'] > 0 and not off0:
                     bad_sel.append("%s REQ_RUN offset-0 form rewritten under stamp \"%s\""
                                    % (side, m.group(1) if m else '(absent)'))
+                # the scanned byte IS the stamped member, on both pre-check forms
+                mb = REQBYTE_STAMP_VAL_RE.search(text)
+                rbyte = mb.group(1) if mb else None
+                if m and '@' in m.group(1):
+                    hx, k = m.group(1).split('@')
+                    k = int(k)
+                    member = int(hx[2 * k:2 * k + 2], 16) if 2 * k + 2 <= len(hx) else -1
+                    if rbyte != str(member):
+                        bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
+                                       % (side, rbyte, m.group(1)))
+                scanned = REQRUN_MEMCHR_VAL_RE.findall(text) + REQCHK_MEMCHR_VAL_RE.findall(text)
+                if any(b != rbyte for b in scanned):
+                    bad_sel.append("%s pre-check scans %s but REQ_BYTE is \"%s\""
+                                   % (side, ",".join(scanned), rbyte))
             why = {}
             for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
                 m = REQWHY_STAMP_VAL_RE.search(text)
@@ -1097,7 +1151,8 @@ def main():
               'var_valid', 'advance', 'encoding',
               'startpos_guard', 'startpos_stamp', 'startpos_attempt',
               'end_window', 'end_window_stamp', 'req_run_offset0',
-              'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper'):
+              'req_check', 'req_why_stamp', 'var_valid_call', 'span_ci_helper',
+              'req_pick'):
         print("EXCISED %s=%d" % (k, agg[k]))
     for p in gate_pats:
         print("GATEPAT %s" % p)
@@ -1127,7 +1182,7 @@ else
     # every pair — independent of the chain below, so it can never be masked.
     SELECT_BAD="$(grep -oE '^SELECT_BAD=[0-9]+' "$WORKDIR/dd12ai.out" | cut -d= -f2)"
     if [ "${SELECT_BAD:-missing}" != 0 ]; then
-        bad "DD12a(i) ${SELECT_BAD:-an unknown number of} pair(s) carry an encoding-keyed selection ([OPT-ENDWIN] clamp / [OPT-FREQPICK] offset-0 form / [OPT-PRECHECK-ADMIT] dominance) that disagrees with its own stamp, or an END_WINDOW asymmetry that is not the utf8 decline: $(grep '^FINDING .*encoding-keyed selection' "$WORKDIR/dd12ai.out" | head -1)"
+        bad "DD12a(i) ${SELECT_BAD:-an unknown number of} pair(s) carry an encoding-keyed selection ([OPT-ENDWIN] clamp / [OPT-FREQPICK] member pick / [OPT-PRECHECK-ADMIT] dominance) that disagrees with its own stamp, or an END_WINDOW asymmetry that is not the utf8 decline: $(grep '^FINDING .*encoding-keyed selection' "$WORKDIR/dd12ai.out" | head -1)"
     fi
     if grep -q '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null; then
         bad "DD12a(i) extraction FAILED on at least one artifact (an anchor did not match -- see dd12ai.out/.err): $(grep '^EXTRACT-FAIL' "$WORKDIR/dd12ai.out" "$WORKDIR/dd12ai.err" 2>/dev/null | head -1)"
@@ -1142,7 +1197,7 @@ else
     else
         # (a) non-vacuity: every named region reached at least once.
         vac=0
-        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper; do
+        for k in next_pos back_step span_match span_match_caseless advance encoding startpos_guard startpos_stamp startpos_attempt end_window end_window_stamp req_run_offset0 req_check req_why_stamp var_valid_call span_ci_helper req_pick; do
             v="$(grep "^EXCISED $k=" "$WORKDIR/dd12ai.out" | grep -oE '[0-9]+$')"
             if [ "${v:-0}" -eq 0 ]; then
                 bad "DD12a(i) region '$k' was never excised across the whole run — dead code, certifying nothing about it"
@@ -1289,7 +1344,7 @@ else
             fi
         done < "$WORKDIR/k50undecl.txt"
         LC_ALL=C sort -u "$WORKDIR/k50undecl_reachable.txt" -o "$WORKDIR/k50undecl_reachable.txt"
-        nundecl_notreached="$(comm -23 "$WORKDIR/k50undecl.txt" "$WORKDIR/k50_reachable.txt" | grep -c .)"
+        nundecl_notreached="$(comm -23 "$WORKDIR/k50undecl.txt" "$WORKDIR/k50undecl_reachable.txt" | grep -c .)"
         [ "$nundecl_notreached" -gt 0 ] && echo "  DD12a(i) [K50] $nundecl_notreached undeclared-form manifest row(s) not reached in this slice (ENC_MAX_BLOCKS=$ENC_MAX_BLOCKS; the full sweep covers all $(wc -l < "$WORKDIR/k50undecl.txt" | tr -d ' '))"
         if cmp -s "$WORKDIR/k50undecl_reachable.txt" "$WORKDIR/k50strict.txt"; then
             nundecl="$(wc -l < "$WORKDIR/k50undecl_reachable.txt" | tr -d ' ')"
