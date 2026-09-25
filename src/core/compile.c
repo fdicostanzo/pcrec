@@ -1511,7 +1511,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * is how they would come to disagree. `-fno-req-byte` denies both —
          * there is no run check without a byte to `memchr` — and
          * `-fno-req-run` leaves the one-byte check standing. */
-        cx.job->req_run = (ReqRun){ { 0 }, 0, 0 };
+        cx.job->req_run = (ReqRun){ { 0 }, 0, 0, { 0 }, 0, 0 };
         cx.job->req_set = (ReqSet){ { 0 } };
         cx.job->req_byte = -1;
         if (!(defo.flags & PCREC_NO_REQ_BYTE))

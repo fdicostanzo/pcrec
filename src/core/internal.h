@@ -2417,11 +2417,22 @@ enum {
  * `idx` is a position INSIDE the run and nothing else. It is not an offset
  * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
  * thing — a run is a statement about its own members' RELATIVE positions
- * (docs/design/reqpos_2b.md §0 finding 1). */
+ * (docs/design/reqpos_2b.md §0 finding 1).
+ *
+ * [K66] `whole` is the run the WINDOW `bytes` was cut from, as the analysis
+ * stored it (at most `PCREC_MAX_REQ_RUN_SCAN` bytes), and `bytes` is exactly
+ * `whole + at` for `len` bytes — one derivation, both halves published by it.
+ * The window is the speed choice every route compares; the whole run is what
+ * a VM route with no DFA scan in front ALSO compares, because there the
+ * pre-check is the only linear no-match proof and a proof resting on one
+ * window made NOMATCH-vs-give-up follow the prior's window pick. */
 typedef struct {
     unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
     int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
     int idx;   /* 0..len-1: which member the emitted memchr tests */
+    unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
+    int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
+    int at;          /* where the window starts inside `whole` */
 } ReqRun;
 
 /* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
@@ -2588,7 +2599,9 @@ typedef struct {
      * one emitted pre-check. `len == 0` under `-fno-req-run` (and under
      * `-fno-req-byte`, which denies the run with it — there is no run check
      * without a byte to `memchr`), deliberately indistinguishable from "no
-     * run of two or more bytes is necessary". */
+     * run of two or more bytes is necessary". [K66] It also carries the
+     * WHOLE run its window was cut from (`ReqRun.whole`), which the no-DFA-
+     * scan route's pre-check compares; one field, one derivation. */
     ReqRun req_run;
     /* [K65] THE WHOLE NECESSARY SET `req_byte` was picked from — the SAME
      * walk's set, published by the same call. Empty under `-fno-req-byte`,
