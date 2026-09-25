@@ -1,9 +1,28 @@
 # `[FINDINGS]` — design note (step 2 of 3: think → DESIGN → critique)
 
-**Lane `findesign`, opus, 2026-09-25, from main `f94b9dd8`. PROPOSED, not
-paneled.** Design only: nothing under `src/`, `cli/`, `lib/`, `tests/` or
-`docs/spec/` changes in this lane. §14 lists the spec hunks the build owes
-(D80), and §13 orders the build.
+**Lane `findesign`, opus, 2026-09-25, from main `f94b9dd8`. PROPOSED,
+PANELED (r2, three critics) AND REVISED (lane `findrev`, same day, from
+main `5a2094e7`).** Design only: nothing under `src/`, `cli/`, `lib/`,
+`tests/` or `docs/spec/` changes in these lanes. §14 lists the spec hunks
+the build owes (D80), and §13 orders the build.
+
+> **PANEL OUTCOME (r2, `../../dev/reviews/2026-09-25-r2-findings-design.md`).
+> Read §R, the one disposition table, before any other section.** Three
+> read-only critics (fcrit-model: data model and surfaces; fcrit-sound:
+> answer soundness and checks; fcrit-analyzer: the analyzer and the store
+> build). No finding refuted the mechanism — bundles, per-query single-block
+> answers, declared applicability, counts-not-ppm, the one accessor, the
+> text-embedded store. What moved: **(1)** D123 addendum 8 reversed three
+> of this note's choices — `--analysis` is FILL-ONLY (D93 keeps its single
+> exception), the first resolution stop is the compiling FILE only, and a
+> `-I` file lacking the bundle FALLS THROUGH; **(2)** the answer-identity
+> invariant widens to GIVE-UP identity, because the panel found **K65** (the
+> necessary-byte pick decides whether a no-DFA-front VM call gives up), and
+> B2 now depends on K65's fix; **(3)** a bundle may not carry two blocks
+> serving one (query, encoding) pair, and the digest's treatment of
+> kind/via is settled; **(4)** the abi number is no longer a literal (main
+> is at 33 after K64, and K65's fix takes the next). Every edit below is
+> marked `[r2 <id>]` where it lands.
 
 **Binding inputs.** Every one is cited by short name below.
 
@@ -12,6 +31,9 @@ paneled.** Design only: nothing under `src/`, `cli/`, `lib/`, `tests/` or
 | **REQ** | `requirements.md` (R1–R41, customers C1–C11), step 1 |
 | **D83**, **D83-A1..A4** | the findings-file ruling and its 2026-09-22 addendum |
 | **D123**, **D123-1..7** (+**3a**) | Frank's rulings on REQ §3 Q1–Q10 (the body is Q1/Q2, the addenda are numbered as in `decisions.md`) |
+| **D123-8** | Frank's rulings on the r2 panel's asks: K65's fix shape, `--analysis` fill-only, first stop = own file, one include, names/`-I` files, this note's §16 |
+| **D124** | organize by QUESTION; one table per question, the engine a row predicate and a consumer hat |
+| **K65** | `known_issues.md`: the necessary-byte pick decides a no-DFA-front VM give-up |
 | **RUNEST** | `docs/dev/findings_measure/estimator_report.md`: the run-level kind is a per-class BIGRAM chain |
 | **D122**, **D122-2..3** | one literal-search kit; the accessor is the ONE seam; row predicates read findings only through it; row ORDER is findings-independent |
 | **PFI** | `docs/design/patfacts/inventory.md`: the prior's call sites and their gates |
@@ -24,6 +46,51 @@ Findings come first (§0). Decisions come with their reasons (§1). Then come
 the mechanism (§2–§11), the migration and the build plan (§12–§13), and the
 spec hunks, the R-disposition table, the open questions and the not-built
 list (§14–§17).
+
+---
+
+## R. Panel r2: the disposition table
+
+One row per finding. Prefix `M` = fcrit-model, `S` = fcrit-sound, `A` =
+fcrit-analyzer. Severity: **B** blocking, **S** should-fix, **N** note.
+"Ruled" cites D123-8 where Frank ruled the panel's ask. The review record
+(`../../dev/reviews/2026-09-25-r2-findings-design.md`) carries the same
+rows plus what is still open to Frank.
+
+| id | sev | finding (essentials) | disposition | applied in |
+|---|---|---|---|---|
+| M-B1 | B | two blocks of one bundle can both serve one (query, enc): which answers was an accident of kind order; the analyzer's own defaults collided (`freq` and `cpfreq` both `when byte,utf8`); §7 said kind/via are in the digest AND that `freq`/`cpfreq` give the same digest | ACCEPT. At most one block per (query, enc) per bundle, a PARSE error otherwise; analyzer defaults made collision-free; digest settled: `byte-rate` digests the derived values only (no kind/via), `run-rarity` digests `via` + rows | §2.4, §3.1, §7, §10.2 |
+| M-B2 | B | `--analysis` REPLACING a config's name broke D93 (file wins; `--engine` the single exception) | RULED (D123-8 item 2): FILL-ONLY; an experiment is a config VARIANT in the file; `--analysis` in a config's `pcrec` line is refused | §1 row 11, §5.1, §9, §11.2 F-8, §11.5 #12, §15 R10 |
+| M-B3 | B | S1 as the whole include closure is a second resolution walk over files the compile opened for another reason | RULED (D123-8 item 3): S1 = the compiling FILE only; boonies row `[FINDINGS-S1-REVISIT]` | §1 row 8, §4.1, §4.2, §9 |
+| M-S4 | S | a `-I` dir serving `lib` may hold `<name>.rxt` that is a library, not a bundle: a hard error there punishes an unrelated file | RULED (D123-8 item 5): FALL THROUGH to the next stop with a note | §4.1, §4.3, §9, §11.5 #7 |
+| M-S5 | S | one S2 file carrying several bundles makes "which bundle" depend on file contents, not on the name | RULED (D123-8 item 5): ONE bundle per `-I` file | §4.1, §9 |
+| M-S6 | S | name → file on a case-insensitive filesystem opens `Log.rxt` for `log` | RULED (D123-8 item 5): lowercase-only names, matched by EXACT directory-entry name | §3.1, §4.1 |
+| M-S7 | S | "a one-line un-refusal" of `-I` understated: the lift touches every query mode, the CLI mode tables and the lib-dirs lifecycle | ACCEPT; enumerated as B2 scope | §0.2, §13 B2 |
+| M-S8 | S | `--list-analysis NAME` shows a name's chain, not what each TARGET of a file resolves to | ACCEPT; a per-target resolution view | §5.2 |
+| M-S9 | S | one include vs several; selective include's scope | RULED (D123-8 item 4): one `include` now; several only later, with `kinds=` on every line; boonies row `[FINDINGS-SELINC]` | §1 row 2, §3.3 |
+| M-S10 | S | the two `--list-*` producers were "table contract at birth" with no enrolment or escaping stated | ACCEPT | §5.2, §14 |
+| M-S11 | S | five spec hunks missing from §14: `cli.md` file-wins + `-I` on queries; `match_api.md`'s `REQ_BYTE` prior sentence (~:2755); `rxt_format.md` `--list-source` rows for `analysis`/`include`, the `analysis` line, and the stale `lib` row (:54) | ACCEPT | §14 |
+| M-S12 | S | the store and `analysis_source` are BUFFERS; the `.rxt` reader opens files (`include` realpath, `lib` existence) | ACCEPT; a no-filesystem parse mode | §5.3, §8.2, §13 B1 |
+| M-N13..19 | N | seven notes | NOTED ONLY. The relayed essentials did not carry their content and this lane cannot reconstruct them from the tree; they are recorded as not dispositioned, never as applied | review record |
+| S-F1 | B | **K65**: on no-DFA-front VM routes the necessary-byte PICK decides give-up vs NOMATCH, so every user bundle becomes a give-up switch; "answers identical" as checked counts a one-sided give-up as budget-bound | ACCEPT. The invariant is answers identical AND no give-up TRANSITION, counted as its own population (GIVEUP1); K65's witness is a REACH row; B2 depends on K65's fix (D123-8 item 1) and GIVEUP1 on main | §11 head, §11.1, §11.2 F-12, §13 B2 |
+| S-F2 | B | C3 (`req_byte_dominated_by`) lets a rate decide whether a pre-check is emitted; no soundness argument covered it | ACCEPT; the argument written, per reader, plus a sabotage row | §6.2a, §11.2 F-13 |
+| S-F3 | S | one `fire-all` bundle cannot show that EACH reader moved | ACCEPT; one adversarial bundle per reader, each REACH-counted | §11.1 |
+| S-F5 | S | an exact-rational `L(x)` reference disagrees with the squaring algorithm in the last bit by design; the reference must be the ALGORITHM, re-implemented independently | ACCEPT; `L(x)` is DEFINED by its algorithm | §2.6, §11.4 |
+| S-F6 | S | empty sets and ties undefined in `markov1` / `set_mass` | ACCEPT; guards and a tie rule | §2.6, §6.1 |
+| S-F8 | S | the `utf8` mover manifest counted per READER; C4's movement changes the scan byte G1 compares, so C3 moves on the same artifacts | ACCEPT; the manifest is per ARTIFACT, with each moved stamp named | §11.3 |
+| S-F9 | S | "program region: 0 movers" names no gate | ACCEPT; whole-file diff minus the NAMED lines | §7, §11.3 |
+| S-F10 | S | "consumed" = "asked", and whether a reader asks can depend on deny flags and reader order, so the stamp would differ across axis builds | ACCEPT; readers ask deny-independently; the stamp is written after the last reader; the named-lines exemption is the fallback | §6.4, §7 |
+| S-F11 | S | "abi 32 → 33" is stale (main is 33 after K64; K65's fix takes the next) | ACCEPT; "the next abi number at landing" everywhere, both CLAUDE.md files included | §1 row 14, §7, §13 B1, §14, §15 R21; `CLAUDE.md` ×2 |
+| S-F13 | S | gates | APPLIED AS: every B-step's acceptance names the suite whose `*** [test-X] Error` line is its verdict. The relayed text was one word; if the critic meant more, it is open | §13 |
+| S-F4, F7, F12 | — | not in the relayed essentials | NOT DISPOSITIONED (unknown content) | review record |
+| A-1 | S | shard 1 has no preceding byte: a uniform "first read byte is the overlap" undercounts `freq` by one | ACCEPT; the k = 1 exception + fixture | §10.4, §11.8 |
+| A-2 | S | the `cpfreq` seam rule "move forward to the next lead byte" needs an exact formula both neighbours compute alone | ACCEPT; ownership by LEAD byte, ≤ 3-byte reach + fixture | §10.4, §11.8 |
+| A-3 | S | nothing checks the embedded text equals its committed source | ACCEPT; a digest check per embedded bundle | §8.1, §11.5 #19 |
+| A-4 | S | `log`'s source | RULED (D123-8 item 6): one sourcing-lane attempt, then a labelled synthesized corpus | §0.9, §13 B5, §16 |
+| A-5 | S | `generate.py --check` on a manifest-only source (no sample in tree) cannot recount; it must not skip silently | ACCEPT; a loud, counted skip in `make test`, and a fetch-and-check target that fails closed | §8.1, §11.8 |
+| A-6 | S | B5 never wires the new generator into `GEN_TABLES` | ACCEPT | §13 B5 |
+| A-7 | S | the bundle NAME in every stamp is a privacy surface | ACCEPT; documented. Whether to offer a redaction is OPEN to Frank (it touches D123-2's "stamp the source name") | §7, §10.5 |
+| A-8 | N | `od`'s output differs between BSD and GNU unless the invocation is pinned | ACCEPT; the invocation pinned | §8.1 |
 
 ---
 
@@ -52,9 +119,15 @@ lane from assuming the wrong thing.
    - Resolving through `-I` (Route I, §4.2) therefore changes a CLI
      surface: `-I` becomes legal beside `--pattern`, as the analysis
      search path.
-   - Nothing else in the route needs building. `-I` is already
-     repeatable and ordered, and it is already the `.rxt` library search
-     path.
+   - `-I` is already repeatable and ordered, and it is already the `.rxt`
+     library search path.
+   - **[r2 M-S7] The lift is NOT one line.** It touches every query mode
+     that can resolve a bundle (`--list-analysis`, a `--pattern` compile,
+     the per-target view of §5.2), the CLI's per-mode accepted-flag tables,
+     and the lifecycle of the lib-dirs list, which today exists only for a
+     file operand and must now exist, be validated and be freed for a
+     `--pattern` compile and for a library call (`analysis_dirs`). §13 B2
+     carries it as scope.
 3. **Per-kind fall-through lets a query's inputs come from two
    sources.** D123's chain resolves each KIND independently.
    - Suppose a run estimate read `P(first byte)` from the chain's `freq`
@@ -124,7 +197,9 @@ lane from assuming the wrong thing.
    - MEASURED: the committed 1,000,000-byte `web_request` sample is **pure
      ASCII**. For it, `cpfreq` derives the identical byte view `freq`
      would give (R5's own test holds trivially).
-   - §16 Q2 asks how to source `log`.
+   - **RULED (D123-8 item 6, [r2 A-4]):** one sourcing-lane attempt for a
+     licensable, stably retrievable log corpus; failing that, a
+     `fidelity synthesized` corpus, labelled as such.
 10. **The provenance record's DATA-parent requirements do not fit two
     kinds of shipped data.** The schema (`rxt_schema.def:253-263`, the PROVENANCE rows)
     requires three things of a data block:
@@ -158,20 +233,20 @@ lane from assuming the wrong thing.
 | # | decision | choice | reason (cite) |
 |---|---|---|---|
 | 1 | unit `analysis <name>` selects | a **BUNDLE**: one textual `analysis <name>` block at file scope, holding at most one data block per KIND | D123-1. One textual unit gives an unambiguous owner for the bundle's `include` and one thing for the details listing to show (§3.1) |
-| 2 | composition | `include <other>` INSIDE a bundle, at most one per bundle, making a linear chain. Per-KIND, first-found along the chain. The built-in `default` is the implicit terminal | D123-2. A single parent keeps the chain a chain, since a list of parents would be a precedence list |
+| 2 | composition | `include <other>` INSIDE a bundle, at most one per bundle, making a linear chain. Per-QUERY, first block found along the chain. The built-in `default` is the implicit terminal | D123-2, D123-8 item 4. A single parent keeps the chain a chain, since a list of parents would be a precedence list. Several includes come only later, with `kinds=` on every line (`[FINDINGS-SELINC]`) |
 | 3 | selective include | NOT built. The `include` line's value grammar leaves room for `include <n> kinds=a,b` | D123-3, "must not preclude" (§3.3) |
 | 4 | kinds | `freq` (byte counts), `cpfreq` (code-point counts), `bigram` (byte-pair counts). Nothing else (§17) | R2, RUNEST, R5 |
 | 5 | stored form | **COUNTS**, sparse, one `row <key…> <count>` per nonzero key, ascending, hex keys | §0.1, R3/R4, lossless merge |
-| 6 | applicability | declared per block: `serves <query> when <enc,…> via <derivation>`, from CLOSED vocabularies. `encoding <x>` describes the data only | D123-4: no hidden rules |
+| 6 | applicability | declared per block: `serves <query> when <enc,…> via <derivation>`, from CLOSED vocabularies. `encoding <x>` describes the data only. **At most one block per (query, enc) in a bundle** [r2 M-B1] | D123-4: no hidden rules |
 | 7 | query ↔ block | each query is answered from EXACTLY ONE block | §0.3 |
-| 8 | resolution route | **Route I (hybrid)**: (S1) bundles in the compile's own source, then (S2) `-I DIR/<name>.rxt`, then (S3) the embedded store | D83-A4, D123 addendum, §4.2 |
+| 8 | resolution route | **Route I (hybrid)**: (S1) bundles in the compiling `.rxt` FILE itself, then (S2) `-I DIR/<name>.rxt`, then (S3) the embedded store | D83-A4, D123 addendum, D123-8 item 3, §4.2 |
 | 9 | self-include | `#include_next` semantics | §0.4 |
 | 10 | embedded store | the shipped bundles' `.rxt` TEXT, generated in-tree, embedded as string literals, parsed by the ONE reader | §0.11, R7, R14 |
-| 11 | CLI | `--analysis NAME` (replaces the config's name, with a note), `-I` legal with `--pattern`, `--list-analyses`, `--list-analysis NAME` | D123-2, D123 addendum |
+| 11 | CLI | `--analysis NAME` (**FILL-ONLY**: applies where a target's config names no analysis, never overrides one), `-I` legal with `--pattern`, `--list-analyses`, `--list-analysis NAME` | D123-8 item 2 (supersedes D123-2's "CLI replaces"); D93 |
 | 12 | library | `pcrec_options` gains `analysis`, `analysis_dirs`, `analysis_source` (in-memory `.rxt`, stop S1) | R17 |
 | 13 | accessor | `src/core/findings.c`: `pcrec_find_byte_rate`, `pcrec_find_set_mass`, `pcrec_find_run_rarity`. Integer only. Each call is recorded for the stamp | D122 seam, R23, R3 |
-| 14 | stamp | `#define <P>_FINDINGS "…"` in every artifact, plus `rx_info.findings`, abi **32 → 33**, shared with the gate move | D123-2, D43, D94 |
-| 15 | digest | FNV-1a-64 over the CONSUMED, derived values plus (query, kind, via) | D123-2, R19/R20 |
+| 14 | stamp | `#define <P>_FINDINGS "…"` in every artifact, plus `rx_info.findings`; ONE abi bump (**the next abi number at landing**), shared with the gate move | D123-2, D43, D94 |
+| 15 | digest | FNV-1a-64 over what the reader CONSUMED: `byte-rate` = the derived values; `run-rarity` = `via` + the rows [r2 M-B1] | D123-2, R19/R20 |
 | 16 | analyzer | `pcrec-analyze`, a separate zero-dependency C binary (end state). Python prototype first. Stdin streaming, `--scan` switches, `--shard k/N` + `--merge` | D123-3/3a, R27a–d |
 | 17 | counting vs normalizing | COUNTING lives in the analyzer only (the generators call it). NORMALIZING lives in the compiler only | R27b: one of each, never two |
 | 18 | first shipped | `default` (authored, byte-identical); `log` and `weblog` as their censuses earn them | D123-5/7, R31 |
