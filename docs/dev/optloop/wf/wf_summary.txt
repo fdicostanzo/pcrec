@@ -1,0 +1,75 @@
+bench: N=249
+  >=4 bytes: 78 (all-exact 69, has-cube-nonsingleton 9)
+  >=8 bytes: 44 (all-exact 36, has-cube-nonsingleton 8)
+corpus: N=3995
+  >=4 bytes: 117 (all-exact 110, has-cube-nonsingleton 7)
+  >=8 bytes: 28 (all-exact 22, has-cube-nonsingleton 6)
+corpus_utf8: N=3995
+  >=4 bytes: 465 (all-exact 167, has-cube-nonsingleton 298)
+  >=8 bytes: 29 (all-exact 23, has-cube-nonsingleton 6)
+
+caseless population (pattern text contains '(?i)' or '(?i:'):
+  bench: 12 caseless patterns, 7 with a run >= 4
+  corpus: 48 caseless patterns, 0 with a run >= 4
+
+engine route, qualifying population (best_len >= 4):
+  bench: {'dfa': 57, None: 4, 'vm': 17}
+    vm-route RX_VM_FRAMELESS dist: {'0': 8, '1': 9}
+    cube-nonsingleton rows (9):
+      altwide/ci-256                                          len=12  engine=dfa  frameless=None
+      altwide/ci-512                                          len=12  engine=dfa  frameless=None
+      capability/wild-secrets-slack-webhook-url               len=14  engine=vm   frameless=1
+      capability/wild-waf-crs-942140-dbnames                  len=19  engine=dfa  frameless=None
+      capability/wild-waf-crs-942160-sleep-benchmark          len=9   engine=dfa  frameless=None
+      capability/wild-waf-crs-942270-union-select             len=6   engine=dfa  frameless=None
+      capability/wild-waf-crs-942360-concat-sqli              len=12  engine=dfa  frameless=None
+      loglines/http-5xx                                       len=12  engine=dfa  frameless=None
+      syntax/mod-s                                            len=9   engine=dfa  frameless=None
+  corpus: {'dfa': 67, 'vm': 46, None: 4}
+    vm-route RX_VM_FRAMELESS dist: {'1': 30, '0': 16}
+    cube-nonsingleton rows (7):
+      tests/base/alternation_trie.rxt:133                     len=4   engine=dfa  frameless=None
+      tests/recursion/d27/sr_spellings.rxt:404                len=10  engine=vm   frameless=1
+      tests/recursion/d27/sr_spellings.rxt:432                len=10  engine=vm   frameless=1
+      tests/recursion/d27/sr_spellings.rxt:448                len=10  engine=vm   frameless=1
+      tests/recursion/d27/sr_spellings.rxt:466                len=10  engine=vm   frameless=1
+      tests/recursion/d27/sr_spellings.rxt:482                len=10  engine=vm   frameless=1
+      tests/recursion/d27/sr_spellings.rxt:499                len=10  engine=vm   frameless=1
+
+(?i) offset-k walk (D7 fast-path population only, k0 read as unconstrained):
+  caseless patterns probed: 60 (refused/bot-anchored, out of scope: 18)
+  walk producible: 42
+  has >=1 case-invariant offset: 11
+  fully degraded (no invariant offset anywhere): 31
+  fully-degraded ids:
+    altwide/ci-256
+    altwide/ci-512
+    capability/wild-waf-crs-942140-dbnames
+    capability/wild-waf-crs-942160-sleep-benchmark
+    capability/wild-waf-crs-942270-union-select
+    syntax/cls-i-class
+    syntax/mod-i
+    tests/assertions/d27/word_boundary.rxt:91
+    tests/assertions/gpos.rxt:676
+    tests/assertions/gpos.rxt:682
+    tests/assertions/gpos.rxt:695
+    tests/atomic_groups/atomic_case.rxt:38
+    tests/atomic_groups/atomic_case.rxt:52
+    tests/atomic_groups/atomic_case.rxt:61
+    tests/atomic_groups/atomic_case.rxt:78
+    tests/atomic_groups/d27/interactions.rxt:95
+    tests/atomic_groups/d27/interactions.rxt:113
+    tests/base/cls_fold.rxt:52
+    tests/base/cls_fold.rxt:97
+    tests/modifiers/malformed_and_gate.rxt:114
+    tests/modifiers/malformed_and_gate.rxt:144
+    tests/modifiers/scope.rxt:34
+    tests/modifiers/scope.rxt:47
+    tests/modifiers/scope.rxt:79
+    tests/modifiers/scope.rxt:94
+    tests/modifiers/scope.rxt:101
+    tests/quoting/d27/caseless.rxt:18
+    tests/utf8/axis08_lookbehind_varwidth.rxt:233
+    tests/utf8/axis08_lookbehind_varwidth.rxt:242
+    tests/utf8/axis08_lookbehind_varwidth.rxt:262
+    tests/utf8/axis08_lookbehind_varwidth.rxt:275

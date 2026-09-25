@@ -541,3 +541,46 @@ that cycle's analysis lands.
   closed (cite this memo), but do not open on §2's numbers — name the
   still-owed bench measurement (ctx/level-context vs `pcre2-jit` at the
   current pin) as the actual gate.
+
+## `[WORD-FOLD]`'s D77 census (lane `wfcensus`, 2026-09-25)
+
+- `wordfold_census.md` — **`[WORD-FOLD]`'s D77 census.** The row's own gate
+  ("count corpus+bench literal runs >= 4-8 bytes with >= 1
+  cube-but-not-singleton position; a zero-population census parks the row
+  without prejudice") plus Frank's three follow-on questions (the
+  frameless precondition, `(?i)`'s offset-k degradation, which cycle-1
+  losing cells carry such runs). **Verdict: the population is not zero —
+  16 patterns (9 bench, 7 corpus, byte domain) carry a run >= 4 with a
+  cube-not-singleton position, four of the nine bench witnesses are
+  cycle-1 LOSING cells on `large-subject-throughput`** (the WAF CRS
+  caseless SQL-keyword patterns, `concat-sqli` 5.41x behind down to
+  `dbnames` 1.82x, 0.684 of the 34-cell losing matrix's ~10.284 score),
+  **and the `(?i)` DFA offset-k degradation is measured directly against
+  the shipped `pcrec_prefix_ksets`**: of 42 producible walks, 31 (73.8%)
+  have no case-invariant offset anywhere, including three of the four
+  losing WAF cells. The VM-route frameless precondition holds on all 7
+  real cube-not-singleton VM witnesses found (small-sample, stated as
+  such). A sharp scenario asymmetry backs Frank's own charter caution:
+  the corpus's 48 `(?i)` patterns carry ZERO runs >= 4 (short
+  correctness witnesses) while the bench's realistic sets carry 7 of 12
+  — the corpus alone would have parked this row. §3 finds a genuine
+  non-caseless one-cube on real corpus material (`{j,k}`, XOR 0x01, a
+  D27 subroutine-call witness), independent confirmation that the
+  mechanism is general and not a caseless special case. **Recommends the
+  row OPEN**, corroborating Frank's 2026-09-25 placement proposal: fold
+  `[WORD-FOLD]` and `[OPT-VMLIT]`'s exact-memcmp case into one cycle-3
+  "wide literal-run compare" row, with `[OPT-REQPOS]` tier 2b's caseless
+  carve-out as its search-side twin and a still-undesigned DFA-scan-edge
+  landing site for the twelve DFA-route witnesses (neither `emit_vm.c`
+  nor `REQ_RUN` fits them). No timing anywhere in this census (D77); the
+  scan-side cost on the four named losing cells is the owed Linux
+  measurement before any build.
+- `wf/` — that census's instruments: `wf_run_probe.c` (the cube-run walk,
+  a fixed-8-bit-domain specialization of `studies/cls_tree_study`'s
+  `cube_of`, hand-verified against nine crafted patterns), `wf_census.py`/
+  `wf_census.json` (the bench+corpus+corpus_utf8 population, same
+  populations `c2/reqpos_census.py` builds), `wf_stamps.py`/
+  `wf_stamps.json` (engine-route stamps for the qualifying population
+  only), `wf_offsetk_probe.c`/`wf_offsetk.json` (the `(?i)` walk against
+  the SHIPPED `pcrec_prefix_ksets`, not a re-derivation), `wf_report.py`/
+  `wf_summary.txt` (the rendered numbers). See its own `CLAUDE.md`.
