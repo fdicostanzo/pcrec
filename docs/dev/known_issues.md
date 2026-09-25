@@ -119,6 +119,20 @@ frameless program.
 This is a learnings.md §3 candidate: count give-up TRANSITIONS as their own
 population.
 
+**Both check gaps CLOSED 2026-09-25 (lane `chkgaps`), the bug itself still
+open.** `tests/known_fail/k64_precheck_forced_vm.rxt` gives `make test`'s
+known-fail ratchet standing reach into this exact population (4 `n` cells,
+PCRE2's real NOMATCH expectation, currently failing against the shipped
+give-up — the ratchet's own "still failing, expected" state). `dump_diff.awk`
+now classifies a one-sided give-up as its own `GIVEUP1` bucket, and
+`run_axes.sh` promotes every such case to a failure unless the axis names it
+in `GIVEUP1_ALLOWANCE` (empty today — see `tests/axes/CLAUDE.md`). Neither
+change fixes the admission rule itself; the answer differential
+(`run_prechecks.sh` §5.6) closes the general SHAPE of the gap on an
+unanchored witness independent of this fix (sabotage S274), since a
+positive-answer check over K64's own anchored population would be red on
+the clean tree until the fix (§1.8 A) lands.
+
 ---
 
 ## K63 — [VAR] panel (varfix, 2026-09-23), pre-existing, documentation/tree fact (not a compiler bug): `src/core/internal.h:877`'s own census of `default:`-carrying `AKind` switches names four sites; there are five
