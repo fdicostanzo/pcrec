@@ -2534,6 +2534,15 @@ typedef struct {
      * ceiling where the default declared none has LOWERED it. */
     long long vm_frame_capacity;
     long long vm_subject_ceiling;
+    /* [K64] Whether this attempt's VM program never pushes a resume frame —
+     * `!Vm.has_push`, the value `<PREFIX>_VM_FRAMELESS` stamps, published by
+     * `vm_plan_entry` BEFORE `pcrec_emit_prologue` runs (unlike the three
+     * fields above, which are published at the end of `pcrec_emit_vm`)
+     * because the pre-check admission (`req_admit`, src/gen/emit_dfa.c) is
+     * asked in the prologue and reads it: a frameless program cannot
+     * backtrack, so its one attempt is linear. Meaningless on a DFA artifact
+     * and never read there. */
+    bool vm_frameless;
     /* [OPT-ANCHOR-VM] THE START ANCHOR, derived ONCE per attempt from the
      * LOWERED tree by `pcrec_start_anchor` (src/opt/startanch.c) and read by
      * both emitters: the VM bounds its attempt loop on it and the DFA asserts

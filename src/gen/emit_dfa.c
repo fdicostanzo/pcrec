@@ -5470,11 +5470,23 @@ static int dfa_cand_scan_byte(Ctx *cx)
  * interior start state is a miscompile) at the one site that holds both.
  *
  * ENG_UNANCH is never one attempt — it is the scan engine — so it needs no
- * clause; `job->engine` answers for it. */
+ * clause; `job->engine` answers for it.
+ *
+ * [K64] THE VM ARM ALSO ASKS THAT THE ONE ATTEMPT BE LINEAR, because G2's
+ * argument ("the attempt reads at most the window the check would scan") is
+ * false for a backtracking program: there the pre-check is also the NO-MATCH
+ * PROOF that bounds the call, and without it `^([a-z]+)+@` on 30 `a`s spends
+ * the whole step budget and gives up where PCRE2 answers NOMATCH. Two facts
+ * the emitter already holds make the attempt linear: an EXACT-language hybrid
+ * DFA in front (it is itself that proof — a count-collapsed superset is not),
+ * or a frameless program, which cannot backtrack. Anything else keeps the
+ * check. */
 static bool req_route_one_attempt(Ctx *cx)
 {
     if (cx->job->fit.chosen == ENGM_VM)
-        return cx->job->start_anchor != PCREC_SANCH_NONE;
+        return cx->job->start_anchor != PCREC_SANCH_NONE &&
+               ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
+                cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
            dfa_interior_dead(cx->job->dfa.s1u);
 }
