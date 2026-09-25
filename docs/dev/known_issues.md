@@ -11,6 +11,51 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K66 — the necessary-RUN WINDOW choice decides whether a no-DFA-front VM call gives up, "C2b" (found by the `[OPT-LITSCAN]` S1 revision-3 D6 panel, critic s1crit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which 8-byte WINDOW of a longer necessary run the pre-check's compare scans decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ steps-exhausted with the window
+
+**Status: OPEN.** K65's own shipped fix (candidate (a): pre-check every
+necessary-SET member on a no-DFA-front VM route) does NOT close it — C2b is
+the run-length analogue, one level up: a WINDOW of a necessary run LONGER
+than `REQ_RUN`'s emitted cap (`docs/design/reqpos_2b.md`), not a single
+byte. Fix shape pending Frank's ruling: extend K65 (a) to pre-check every
+necessary WINDOW on those routes (or take the window findings-blind there,
+per `docs/design/findings/design.md` §6.2a's own C2b row, which found this
+case by argument before this panel measured it). Not itself an
+`[OPT-LITSCAN]` S1 defect — S1 does not cause it and does not fix it — but
+S1's pin (`run_o`, `litscan_s1.md` §1.1) and its `OfsTest.run_bytes`/
+`run_len` (§1.3) both read `Job.req_run`, the SAME field any C2b fix reads;
+a fix that forked the field would silently diverge S1's pin from the
+pre-check it is meant to dominate. `[OPT-LITSCAN]` S1's step 6 (the
+floating-run pre-check's loop conversion, `litscan_s1.md` §7.2) is
+SEQUENCED AFTER this fix, or a ruling not to take one, because step 6
+rewrites exactly this loop.
+
+**Repro** (measured on the (unmerged) `k65fix` build by the S1 revision-3
+panel's `s1crit-sound`):
+
+    build/pcrec -p rx --features all -e byte --emit-main --pattern '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1'   # RX_REQ_RUN "7e237e237e237e23@0" (the window "~#~#~#~#")
+    build/pcrec -p rx --features all -e utf8 --emit-main --pattern '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1'   # RX_REQ_RUN "6565656565656565@0" (the window "eeeeeeee")
+    subject: 'e' + 'a'x36 + '~#~#~#~#'  ->  byte artifact: steps exhausted (~1.97s);  utf8 artifact: nomatch (instant)
+    (same result at 40 a's)
+
+Both artifacts stamp `RX_VM_PREFILTER "none"` — no DFA in front, exactly
+K65's route. The necessary run is longer than the 8-byte window `REQ_RUN`
+emits, so which slice is picked decides which subjects the compare proves
+absent linearly: a subject holding the OTHER window reaches the VM
+backtracker instead.
+
+**Why no check saw it:** the same reason as K65 — `run_axes.sh` counts a
+one-sided give-up as budget-bound (GIVEUP1 closes that, unmerged on
+`lane/chkgaps`) — and additionally, K65's own fix and regression corpus are
+scoped to the single-byte necessary SET, not the necessary RUN's window
+choice, so K65's own witnesses cannot reach this.
+
+**Fix candidates (to rule):** (a) extend K65's fix (a) to runs — pre-check
+EVERY necessary window on no-DFA-front VM routes (any window's absence
+proves NOMATCH); (b) readers take a findings-blind fixed window rule there
+(the shape `findings/design.md` §6.2a's C2b row already frames); (c) K64's
+option C analogue (refill the step budget at the run pre-check).
+
 ## K65 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
 
 **Status: deferred** — FIX SHAPE RULED 2026-09-25 (D123 addendum 8 item 1): candidate (a), pre-check every necessary-set member on no-DFA-front VM routes; a fix lane is owed (next session). Pre-existing on

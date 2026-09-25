@@ -853,6 +853,21 @@ which is K64's and K65's class). Per reader:
 front must bring its own row here before it reads a rate. That is the
 place the next K65 would enter.
 
+**Coordination with `[OPT-LITSCAN]` S1, at the SAME site (added by the S1
+revision-3 panel, `../../dev/reviews/2026-09-25-r3-litscan-s1-panel.md`,
+s1crit-consumer findings 1-2).** S1 also rewrites `req_admit`/G1's C3 row
+above — `dfa_cand_scan_byte` widens from a memchr-only byte to a wider `p`
+read off `OfsTest`, and G1 gains a `verifies(t, o, L)` term for a pinned
+run. **S1 lands first** (it is ahead in the queue). When B1 lands, it must
+REBASE onto S1's `req_admit` and re-derive the C3 row above against S1's
+WIDENED conjunct — not against today's un-widened
+`req_byte_dominated_by`, which S1 replaces. S1's own `litscan_s1.md` §1.5
+states that this row's rate-table dependence is out of S1's
+"what S1 must not preclude" scope, for the reason C3's row already
+states: S1 changes WHAT G1 elides (a wider `p`); this design changes
+WHETHER a rate table's choice may be allowed to move that elision (it may
+not) — orthogonal axes of one conjunct.
+
 ### 6.3 What changes at each of today's sites (B1)
 
 | site | today | after |
