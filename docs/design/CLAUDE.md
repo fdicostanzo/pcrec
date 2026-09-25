@@ -625,6 +625,9 @@ append-only or historical records.
   `eng_brep_measurements/` and `possessify_impl/` for the same
   never-confuse-the-lanes reason those two are separate. See its own
   CLAUDE.md.
+- `findings/` — the [FINDINGS] row (D83 + addendum; Frank 2026-09-25):
+  the findings-file consumer's requirements + questions (step 1,
+  `requirements.md`), then its design note. See its own CLAUDE.md.
 - `dd13_format/` — the [DD-13] unified pattern-source/test file format:
   Frank's accumulated design inputs (frank_inputs.md, append-only, with
   the OD-n open-decision ledger) ahead of the staged
