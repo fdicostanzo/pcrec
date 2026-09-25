@@ -2508,5 +2508,18 @@ own MECH-M1 wording ("unchanged except for the `abi` digit") is understated —
 a var-free artifact also gains two `rx_info` initializer lines, MEASURED at
 exactly +34 bytes.
 
+- `patfacts/` — [PATFACTS] (D120)'s own directory: ONE ORGANIZED
+  PATTERN-ANALYSIS RECORD, chartered to replace the ad-hoc per-pass walks
+  and cross-file reaches every per-pattern analysis in the tree uses today.
+  STEP 1 (lane pfinv, 2026-09-25, read-only INVENTORY) landed as
+  `patfacts/inventory.md`: every analysis in `src/opt/`/`src/ir/`/both
+  emitters, its question/tree-level/storage/consumers/encoding dependence,
+  the redundancies (D120's two named incidents confirmed present, ten more
+  found), the pipeline ordering re-derived directly from `src/core/
+  compile.c`, and the enumerated (not designed) requested facts of
+  [OPT-LITSCAN]/[VAR]/[FINDINGS]. See `patfacts/CLAUDE.md`. STEP 2 (the
+  design) and STEP 3 (implement-then-replace) are later plan-row steps,
+  not yet started.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
