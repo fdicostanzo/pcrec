@@ -110,3 +110,50 @@ a `testee` row after it). The design names no B0 sabotage row.
    ones `[value-shape]`; no length cap on analysis names (B2's `-I` probe
    may want one).
 6. `docs/dev/plan.md`'s [FINDINGS] row not edited (manager's).
+
+## Rebase onto main (2026-09-26)
+
+`lane/findb0` (tip `6ef8c7f5`) rebased onto main `0bb87eda` ([OPT-LITSCAN]
+S1 steps 1-5, abi 36) at the team lead's request. New tip `2b29b150`.
+
+**One conflict, in `docs/dev/lanes/CLAUDE.md`**: an adjacent-bullet
+collision between this row's own "findb0: lane report" commit and two
+bullets s1build/findb3 had appended to the same list (main tip's
+`findb3_report.md`/`s1build_report.md` entries). Resolved by keeping both
+— the findb0 bullet appended after them, content unchanged from either
+side.
+
+**Every other area the brief flagged as an expected conflict site turned
+out disjoint, not merely auto-mergeable**: findb0 never touches
+`tests/mech/CLAUDE.md` (S290/S291 are catalogued in
+`tests/rxtsource/CLAUDE.md`'s own "[FINDINGS] B0" section instead, which
+main's S279-S289 section did not touch), and its `tests/rxtsource/
+run_rxtsource_tests.sh` hunks are two self-contained additions (one kinds-
+string edit at the pre-existing W23-S4 arm, one new `[FINDINGS] B0`
+section appended at the file's end) — B0's fixtures are all `.rxtin`/head-
+scoped, so **none of them move `CENSUS_FILES`/`CENSUS_BLOCKS`/`CENSUS_LINES`
+or `RUNSH_*`**, and nothing needed re-deriving there. No conflict in
+`docs/spec/rxt_format.md`, `docs/dev/plan.md`, or any mech/cpset/resource
+manifest.
+
+**`docs/dev/plan.md`'s [FINDINGS] row was missing B0's delivery note**
+(item 6 above deliberately left it for the manager) — added here, a
+bolded sentence parallel to the existing B3 one, naming the lane, the
+mechanism, the tests and the validation, and pointing back at this report.
+
+### Validation (this box, darwin, gcc-16, tree `2b29b150`)
+
+- `make -j4 CC=gcc-16`: clean build, no warnings.
+- `make strict CC=gcc-16`: `strict: whole tree compiles clean with -Werror -Wshadow`.
+- `bash tests/rxtsource/run_rxtsource_tests.sh`: **255 passed / 0 failed** (1 recorded), census re-derived at run time and holds: `rxtsource: INV-COMPAT holds over 220 files / 4016 blocks / 29224 expectation lines`.
+- `make test-parse CC=gcc-16`: **9 passed / 0 failed**.
+- `make test-registry CC=gcc-16`: **0 failed** across all five sub-checks (226/210/123/29/54-shaped sections; `[DD-11.3]` option-matrix self-oracle PASS, `definitions-oracle` 354 cells / 101,244+101,244 comparisons / 0 disagreements).
+- mech, each row run SOLO via `bash tests/mech/run_sabotage_matrix.sh S<id>` at tree `2b29b150`:
+  - **S248**: `reach:ok(1/1),rxtsource:1fail/254pass` — **DETECTED**.
+  - **S290**: `reach:ok(1/1),rxtsource:8fail/246pass` — **DETECTED**.
+  - **S291**: `reach:ok(1/1),rxtsource:2fail/253pass` — **DETECTED**.
+  - All three: unexpected/undetected/unreached/anomalies all 0. Matches the lane's own round-2 figures exactly (S290 8fail/246, S291 2fail/253) — the rebase moved no answer.
+- `make test`, `test-codegen`, `test-mrl`, `test-axes`, etc.: **NOT run** per the brief (another lane using the box; the manager schedules the full battery).
+
+Not merged; `git -C /Users/fdicostanzo/pcrec worktree` still shows
+`worktrees/findb0` on `lane/findb0` at `2b29b150`.
