@@ -90,10 +90,23 @@ BASE key in this order:
    names the exact `(flags, file:line)` pair in `GIVEUP1_ALLOWANCE` — a
    manifest, never a count (K35's `REFUSAL_PATTERN`/`REFUSAL_FLOOR`
    precedent one section down: a count ceiling disarms itself the moment a
-   DIFFERENT case moves under it). The manifest is empty as of this
-   writing — no legitimate one-sided give-up has been measured on the real
-   corpus, because nothing before this split ever counted the population
-   separately enough to find one.
+   DIFFERENT case moves under it). **POPULATED 2026-09-26** (lane
+   giveupallow): the 27a63314 full-corpus run's own triage
+   (`/tmp/pcrec_axestriage/verdict.md`) found 52 one-sided give-ups, all
+   ruled (b) "documented budget-boundary effect", none a wrong answer —
+   45 on `-fno-length-prune` (K23/MRL's own ambiguous-decomposition band,
+   tuning.md §2.4/k23_design.md §9.1/§14.5), 2 each on `-fno-prefilter`
+   and `-fprefilter-collapse` (the same two cells, the lost sharp
+   prefilter-window start — tuning.md §2.5/§2.17, whose "fourth cost"
+   worked example is this exact file's exact pattern), and 3 on
+   `-fprefilter` REVERSED (default gives up, forcing the prefilter
+   answers nomatch — tuning.md §2.5). Every entry keys off a LIVE
+   re-measurement on this box (`run_axes.sh`'s own header comment on the
+   array has the per-group counts and citations); the manifest's
+   `<flags>|<file:line>` keys are `$ROOT_DIR`-absolute (the shape a
+   full-corpus run's `find "$ROOT_DIR/tests" ...` discovery produces), a
+   portability limit of the format itself rather than something this
+   landing could narrow further.
 5. **LOST** — the axis produced NO record for this key at all (not even a
    REFUSED one) — a structural gap beyond a documented refusal: a PROCS
    worker vanishing, a whole file failing to parse. Always a failure.
