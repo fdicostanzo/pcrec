@@ -2427,13 +2427,26 @@ own, each of which is a missed opportunity and never an unsound claim:
 
 **Which member the scan tests, and how a long run is truncated.** The member
 with the lowest value in the same static prior §2.27 describes, ties to the
-LEFTMOST, and the leftmost member outright under any encoding the prior is not
-keyed to. A run longer than `PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a
-`--list-limits` row) is TRUNCATED and never split into two compares: to the
-8-byte window containing the scan member whose bytes sum to the lowest prior,
-ties leftmost, and to the leftmost such window where the prior does not apply.
-8 is where gcc lowers a constant-length `memcmp` to one word load and one
-compare with no call out of line.
+LEFTMOST, and the RIGHTMOST member outright under any encoding the prior is
+not keyed to (`[OPT-REQRUN-ENC]`, 2026-09-26, amending this paragraph's
+former "leftmost outright" rule — `docs/dev/optloop/reqrunenc_census.md`).
+Under `-e utf8` a run's LEFTMOST member is a UTF-8 lead byte whenever the run
+opens mid-character, and a lead byte is shared by every character in its
+script block, so a scan for it stops on nearly every byte of a non-Latin
+subject rather than the rare one the literal needs — the exact defect
+pcrec-bench's O-60 measured. The rightmost member is `rb_pick`'s own
+`!bytekey` fallback, reused rather than re-derived: a run's LAST byte can
+only be a lead byte if the run itself is truncated mid-character (an
+alternation's common suffix stopping between a lead byte and its
+continuation), measured in ZERO of 912 real `-e utf8` runs. A run longer than
+`PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a `--list-limits` row) is TRUNCATED and
+never split into two compares: to the 8-byte window containing the scan
+member whose bytes sum to the lowest prior, ties leftmost, and to the
+LEFTMOST-of-the-admissible-range such window where the prior does not apply —
+which, for a member at the run's own last index, collapses to the run's own
+last eight bytes (the admissible range has exactly one candidate). 8 is
+where gcc lowers a constant-length `memcmp` to one word load and one compare
+with no call out of line.
 
 **Relation to `-fno-req-byte`, which is an asymmetry and not an implicit.**
 Denying `-fno-req-byte` denies this too — there is no run check without a byte

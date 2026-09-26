@@ -2008,13 +2008,45 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `37` while the three narrative copies
+which is why it is gap-free from `2` to `38` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `37` on every artifact today (`[OPT-LITSCAN]` S1 step 6
+- **`rx_info.abi` is `38` on every artifact today (`[OPT-REQRUN-ENC]` bumped
+  it from 37, 2026-09-26: THE RUN'S `!bytekey` DECLINE IS RIGHTMOST, NOT
+  LEFTMOST.** `src/opt/reqbyte.c`'s `rn_scan_index` chose the necessary
+  RUN's leftmost member under every encoding its byte-frequency prior is
+  not keyed to (every encoding but `byte` — today, `-e utf8` alone); it now
+  returns the RIGHTMOST member instead, matching `rb_pick`'s own `!bytekey`
+  fallback exactly (`docs/dev/optloop/reqrunenc_census.md`'s D77 census,
+  re-measuring `reqpos_2b.md` §2.3's own ratified leftmost rule against
+  pcrec-bench's O-60 finding). A `-e utf8` run is built from complete
+  lowered UTF-8 code-unit sequences, so its leftmost byte is a UTF-8 LEAD
+  BYTE whenever the run opens mid-character — shared by every character in
+  that script block, so the emitted `memchr` stopped on nearly every byte
+  of a non-Latin subject rather than the rare one the literal needs
+  (measured: the run path fires on 12.0%/28.3% of the corpus/bench under
+  `-e utf8`, and the old leftmost pick was a lead byte on 12.0%/20.7% of
+  those). A byte-range-aware "skip lead bytes" candidate was measured
+  BYTE-IDENTICAL to the rightmost one on the entire real `-e utf8`
+  population (912/912 runs, bench+corpus), so the rightmost rule is taken
+  with no new byte-range logic — one mechanism, two call sites. No new
+  stamp, no new declaration and no `rx_info` layout move: the bump moves
+  the emitted `memchr`/`memcmp` TARGET BYTE and the `<PREFIX>_REQ_RUN`
+  stamp's `@offset` VALUE, on 236 of 1,167 bench and 763 of 10,818 corpus
+  artifact-configs under `-e utf8` (every artifact whose run's leftmost
+  member is not already its rightmost) — `reqbyte_freq_pick.md`'s
+  `[OPT-FREQPICK]` precedent for a stamp-VALUE-only move, and K64fix's own
+  precedent for treating a stamp-VALUE-and-emitted-text move as an `abi`
+  event even with no new scaffolding. NO ANSWER MOVES: every byte of every
+  run is a byte every match must contain regardless of which member is
+  scanned, so the choice can only move a speed. `byte`-encoding artifacts
+  are untouched BY CONSTRUCTION (`!bytekey` gates the whole candidate
+  difference), which is what makes the `-e utf8` identity gates a free
+  control rather than a claim resting on this note alone.
+- **`rx_info.abi` was `37` (`[OPT-LITSCAN]` S1 step 6
   bumped it from 36, 2026-09-26: THE RUN PRE-CHECK IS A CALL OF THE ONE
   SEARCH BLOCK.** The necessary-run pre-check's scan loop (`[OPT-REQPOS]` tier
   2b), and `[K66]`'s whole-run loop where the route emits one, each become a
