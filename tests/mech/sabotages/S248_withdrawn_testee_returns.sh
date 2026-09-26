@@ -34,7 +34,12 @@ SAB_COUNT=1
 # unconditionally (it always runs, not gated on any corpus population).
 SAB_REACH='"$PCREC" --list-schema | awk -F"\t" "\$1 == \"config\" && \$2 == \"testee\" { n++ } END { print n+0 }"'
 SAB_REACH_EXPECT='0'
-SAB_BEFORE='PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PCREC, 23)'
-SAB_AFTER='PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PCREC, 23)
+# [FINDINGS] B0 RE-ANCHOR (lane findb0, 2026-09-26): the CONFIG `analysis`
+# row became TOKEN/AT_MOST_ONE (it names ONE bundle); the anchor is that
+# row's new text, copied from the tree. INTENT RE-VERIFIED: the plant
+# still inserts a CONFIG `testee` row immediately after it, which is the
+# withdrawn production returning — the anchor row is only a position.
+SAB_BEFORE='PCREC_RXT_SCHEMA(CONFIG, "analysis", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 23)'
+SAB_AFTER='PCREC_RXT_SCHEMA(CONFIG, "analysis", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
 /* SABOTAGE S248: a withdrawn production returns. */
 PCREC_RXT_SCHEMA(CONFIG, "testee",   TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)'

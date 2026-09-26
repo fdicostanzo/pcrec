@@ -1,0 +1,10 @@
+# [FINDINGS] B0 (r2 M-B3, D123-8 item 3): an `analysis` bundle anywhere in
+# an entry's include CLOSURE is refused at the ENTRY's parse, attributed to
+# the fragment's own file:line. The bundle sits TWO links down
+# (entry -> mid -> leaf) so the refusal is shown to propagate through a
+# clean intermediate fragment, not only from a direct child. Leg A only:
+# `include` and `analysis` are both head declarations.
+include "analysis_frag_mid.rxtfrag"
+
+pattern top
+m "top" 0 3

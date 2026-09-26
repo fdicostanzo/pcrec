@@ -26,7 +26,12 @@
 # Resolving the path, subtracting the fragment from the entry set and
 # splicing its blocks is W23.3a's — this file asserts the GRAMMAR and
 # nothing about what the path names.
-include "common.rxt"
+#
+# [FINDINGS] B0 (lane findb0, 2026-09-26): the target was `common.rxt`, a
+# LIBRARY carrying a file-level `description` — a fragment §2.5 forbids and
+# that leg A now refuses once it reads fragments. It was the tree's one
+# non-conforming include target; it now names a blocks-only fragment.
+include "include_basic_frag.rxtfrag"
 
 pattern a+
 m "aaa" 0 3

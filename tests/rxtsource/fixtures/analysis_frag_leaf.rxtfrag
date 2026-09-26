@@ -1,0 +1,6 @@
+# [FINDINGS] B0: the refused bundle, two links below the entry. Line 3 is
+# the line the refusal must name.
+analysis leaked
+
+pattern leaf
+m "leaf" 0 4

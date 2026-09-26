@@ -105,6 +105,7 @@ RxtSchemaScope pcrec_rxt_schema_child_scope(const RxtSchemaRow *r)
     if (!r) return RXT_SCOPE_NSCOPES;
     switch (r->children) {
         case RXT_CH_CONFIG:     return RXT_SCOPE_CONFIG;
+        case RXT_CH_BUNDLE:     return RXT_SCOPE_BUNDLE;
         case RXT_CH_DATA:       return RXT_SCOPE_DATA;
         case RXT_CH_PROVENANCE: return RXT_SCOPE_PROVENANCE;
         case RXT_CH_VARIANT:    return RXT_SCOPE_VARIANT;
@@ -146,6 +147,7 @@ const char *pcrec_rxt_scope_name(RxtSchemaScope s)
         case RXT_SCOPE_FILE:       return "file";
         case RXT_SCOPE_BLOCK:      return "block";
         case RXT_SCOPE_CONFIG:     return "config";
+        case RXT_SCOPE_BUNDLE:     return "bundle";
         case RXT_SCOPE_DATA:       return "data";
         case RXT_SCOPE_PROVENANCE: return "provenance";
         case RXT_SCOPE_VARIANT:    return "variant";
@@ -181,6 +183,7 @@ const char *pcrec_rxt_children_name(RxtChildren c)
         case RXT_CH_PROSE:      return "prose";
         case RXT_CH_TREE:       return "tree";
         case RXT_CH_CONFIG:     return "config";
+        case RXT_CH_BUNDLE:     return "bundle";
         case RXT_CH_DATA:       return "data";
         case RXT_CH_PROVENANCE: return "provenance";
         case RXT_CH_VARIANT:    return "variant";
@@ -325,6 +328,7 @@ const char *pcrec_rxt_scope_context(RxtSchemaScope s)
         case RXT_SCOPE_FILE:       return "file-level";
         case RXT_SCOPE_BLOCK:      return "pattern-block";
         case RXT_SCOPE_CONFIG:     return "config-block";
+        case RXT_SCOPE_BUNDLE:     return "analysis-bundle";
         case RXT_SCOPE_DATA:       return "data-block";
         case RXT_SCOPE_PROVENANCE: return "provenance";
         case RXT_SCOPE_VARIANT:    return "variant";
@@ -342,6 +346,7 @@ const char *pcrec_rxt_scope_noun(RxtSchemaScope s)
         case RXT_SCOPE_FILE:       return "file";
         case RXT_SCOPE_BLOCK:      return "pattern block";
         case RXT_SCOPE_CONFIG:     return "config body";
+        case RXT_SCOPE_BUNDLE:     return "bundle";
         case RXT_SCOPE_DATA:       return "data block";
         case RXT_SCOPE_PROVENANCE: return "provenance record";
         case RXT_SCOPE_VARIANT:    return "variant";

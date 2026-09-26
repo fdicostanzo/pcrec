@@ -1657,7 +1657,7 @@ done
 S4_OUT="$WORKDIR/w23s4.tsv"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/aux_deep_tree.rxt" \
         > "$S4_OUT" 2>"$WORKDIR/w23s4.err"; then
-    kinds="pattern m ext freq config description provenance variant tag oracle include use lib target"
+    kinds="pattern m ext freq analysis config description provenance variant tag oracle include use lib target"
     s4a=$(awk -F'\t' -v kinds="$kinds" '
         BEGIN { n = split(kinds, ks, " "); for (i = 1; i <= n; i++) kw[ks[i]] = 1 }
         /^#section / { insect = 1; next }
@@ -4434,6 +4434,152 @@ else
     fail "withdrawal-absence, parser arm: $PARSER_HITS hit(s) —$PARSER_DETAIL"
 fi
 # ARM (c) is a READ, not a grep, and stays one — §4.3's own point.
+
+# =====================================================================
+# [FINDINGS] B0 — the `.rxt` FORMAT rows of the findings design
+# (docs/design/findings/design.md §3.1, §13 B0): the `analysis` bundle,
+# BUNDLE scope, DATA `encoding`/`serves`, the `row` key grammar, CONFIG
+# `analysis` as ONE name, the `pcrec`-line `--analysis` refusal, the
+# fragment refusal and the provenance conjunctions. LEG A ONLY: every one
+# of these is head-scoped, and the head has one parser (w1_impl §1.1).
+#
+# ACCEPT FIRST, AND BY ROWS: a parser that refused every bundle would pass
+# every refusal below, so the accepting fixture is asserted on what the
+# dump SAYS (the bundle rows, the include value, the provenance record
+# four frames deep attributed to its bundle), never on exit status alone.
+AB="$FIXRUN/analysis_bundle_accept.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$AB" > "$WORKDIR/ab.tsv" 2>"$WORKDIR/ab.err"; then
+    ab_rows=$(awk -F'\t' '/^#section /{exit} $1 == "analysis" { printf "%s=%s ", $3, $4 }' "$WORKDIR/ab.tsv")
+    if [ "$ab_rows" = "weblog=<log> plain= " ]; then
+        pass "findings/B0: two bundles dump as two 'analysis' rows (name, include as written): $ab_rows"
+    else
+        fail "findings/B0: 'analysis' rows wrong; want 'weblog=<log> plain= ', got '$ab_rows'"
+    fi
+    ab_prov=$(awk -F'\t' '/^#section provenance/{s=1; next} /^#section /{s=0} s && !/^#/ { printf "%s/%s/%s ", $3, $4, $13 }' "$WORKDIR/ab.tsv")
+    if [ "$ab_prov" = "weblog/exemplar/104857600 plain/authored/ " ]; then
+        pass "findings/B0: both kind blocks' provenance records reach #section provenance, attributed to their bundle (three nesting levels under the file)"
+    else
+        fail "findings/B0: provenance under a bundle's kind block wrong; want 'weblog/exemplar/104857600 plain/authored/ ', got '$ab_prov'"
+    fi
+else
+    fail "findings/B0: the accepting bundle fixture was refused:
+  $(cat "$WORKDIR/ab.err")"
+fi
+
+# EVERY REFUSAL, one scratch file per case, each asserted on its CLASS TAG
+# and a needle naming the rule — `under_key_distinct.rxtin`'s lesson: a
+# refusal that happened for another reason is not this rule's witness.
+# Built inline on the "synthetic stream in the repair's own commit"
+# precedent (W23.4 item 3b), since each case is a one-line variation of
+# one legal bundle. `fb0_case LABEL CLASS NEEDLE BODY` (BODY via printf %b).
+FB0="$WORKDIR/fb0"
+mkdir -p "$FB0"
+fb0_n=0
+fb0_case() {
+    local label=$1 cls=$2 needle=$3 body=$4 out
+    fb0_n=$((fb0_n + 1))
+    printf '%b\npattern a\nm "a" 0 1\n' "$body" > "$FB0/$label.rxt"
+    if out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FB0/$label.rxt" 2>&1)"; then
+        fail "findings/B0/$label: ACCEPTED; it must be refused"
+        return
+    fi
+    case $out in
+        *"[$cls]"*"$needle"*) pass "findings/B0/$label: refused [$cls], naming '$needle'" ;;
+        *) fail "findings/B0/$label: want [$cls] naming '$needle', got: $out" ;;
+    esac
+}
+fb0_hd='analysis w\n    freq\n        question q\n        reader r\n        analyzer a\n'
+fb0_enc='        encoding ascii\n'
+fb0_srv='        serves byte-rate when byte via unigram\n'
+fb0_pv='        provenance\n            source authored\n            retrieved 2026-09-26\n'
+fb0_case name-upper      value-shape       'LOWERCASE'                "analysis Web\n"
+fb0_case name-dot        value-shape       'lowercase letter'         "analysis w.x\n"
+fb0_case name-dup        schema-constraint "duplicate 'analysis'"     "analysis w\nanalysis w\n"
+fb0_case include-path    value-shape       'search spelling <name>'   "analysis w\n    include \"w.rxt\"\n"
+fb0_case include-upper   value-shape       'LOWERCASE'                "analysis w\n    include <Log>\n"
+fb0_case include-two     schema-constraint "one 'include'"            "analysis w\n    include <a>\n    include <b>\n"
+fb0_case freq-two        schema-constraint "one 'freq'"               "$fb0_hd$fb0_enc$fb0_srv$fb0_pv    freq\n"
+fb0_case freq-at-file    unknown-token-in-scope "'freq' is not a file-level" "freq w\n"
+fb0_case unknown-in-bundle unknown-token-in-scope "'cpfreq'"          "analysis w\n    cpfreq\n"
+fb0_case encoding-none   schema-constraint "'encoding' line"          "$fb0_hd$fb0_srv$fb0_pv"
+fb0_case encoding-closed schema-constraint "'ebcdic' is not in the closed set" "$fb0_hd        encoding ebcdic\n$fb0_srv$fb0_pv"
+fb0_case encoding-two    schema-constraint "one 'encoding'"           "$fb0_hd$fb0_enc$fb0_enc$fb0_srv$fb0_pv"
+fb0_case question-two    schema-constraint "one 'question'"           "analysis w\n    freq\n        question q\n        question q\n        reader r\n        analyzer a\n$fb0_enc$fb0_srv$fb0_pv"
+fb0_case serves-none     schema-constraint "'serves' line"            "$fb0_hd$fb0_enc$fb0_pv"
+fb0_case serves-shape    value-shape       '<query> when'             "$fb0_hd$fb0_enc        serves byte-rate for byte via unigram\n$fb0_pv"
+fb0_case serves-query    value-shape       "query 'speed'"            "$fb0_hd$fb0_enc        serves speed when byte via unigram\n$fb0_pv"
+fb0_case serves-deriv    value-shape       "derivation 'magic'"       "$fb0_hd$fb0_enc        serves byte-rate when byte via magic\n$fb0_pv"
+fb0_case serves-kind     value-shape       "'bigram' derivation"      "$fb0_hd$fb0_enc        serves run-rarity when byte via markov1\n$fb0_pv"
+fb0_case serves-answers  value-shape       "answers 'byte-rate'"      "$fb0_hd$fb0_enc        serves run-rarity when byte via unigram\n$fb0_pv"
+fb0_case serves-enc      value-shape       "'latin1', which is not a compile encoding" "$fb0_hd$fb0_enc        serves byte-rate when latin1 via unigram\n$fb0_pv"
+fb0_case serves-query-twice schema-constraint "duplicate 'serves'"    "$fb0_hd$fb0_enc$fb0_srv        serves byte-rate when utf8 via unigram\n$fb0_pv"
+# THE BUNDLE-LEVEL (query, encoding) COLLISION (r2 M-B1). Its designed
+# population — two kind blocks of one bundle serving one pair — is EMPTY
+# at B0: `freq` is the only kind row and a bundle holds one (`freq-two`
+# above), so no file can put two blocks in one bundle. The claim table
+# lives on the BUNDLE frame all the same, and this is its one reachable
+# input: one line claiming one pair twice. B5 (`cpfreq`) owes the
+# two-block fixture — docs/dev/lanes/findb0_report.md.
+fb0_case serves-collision schema-constraint 'at most one block'       "$fb0_hd$fb0_enc        serves byte-rate when byte,byte via unigram\n$fb0_pv"
+fb0_case row-key-case    value-shape       "'0A' is not a byte"       "$fb0_hd$fb0_enc$fb0_srv        row 0A 3\n$fb0_pv"
+fb0_case row-key-arity   value-shape       'wants 1 byte key'         "$fb0_hd$fb0_enc$fb0_srv        row 61 62 3\n$fb0_pv"
+fb0_case row-descending  schema-constraint 'strictly ascending'       "$fb0_hd$fb0_enc$fb0_srv        row 61 3\n        row 41 3\n$fb0_pv"
+fb0_case row-dup-key     schema-constraint 'strictly ascending'       "$fb0_hd$fb0_enc$fb0_srv        row 61 3\n        row 61 4\n$fb0_pv"
+fb0_case row-zero        value-shape       'written by omitting'      "$fb0_hd$fb0_enc$fb0_srv        row 61 0\n$fb0_pv"
+fb0_case row-count       value-shape       'not a decimal'            "$fb0_hd$fb0_enc$fb0_srv        row 61 x3\n$fb0_pv"
+fb0_case prov-exemplar   schema-constraint "'bytes' when parent == data and source != authored" "$fb0_hd$fb0_enc$fb0_srv        provenance\n            source exemplar\n            retrieved 2026-09-26\n"
+fb0_case prov-block-url  schema-constraint "'url' when parent == block and source != authored" "config c\n    flags i\n\npattern b\nprovenance\n  source web\n  retrieved 2026-09-26\n  license MIT\n  fidelity verbatim\nm \"b\" 0 1\n"
+fb0_case config-upper    value-shape       'LOWERCASE'                "config c\n    analysis Web\n"
+fb0_case config-two      schema-constraint "one 'analysis'"           "config c\n    analysis a\n    analysis b\n"
+fb0_case config-pcrec    schema-constraint "may not carry '--analysis'" "config c\n    pcrec -e utf8 --analysis x\n"
+fb0_case config-pcrec-eq schema-constraint "may not carry '--analysis'" "config c\n    pcrec --analysis=x\n"
+if [ "$fb0_n" -ge 34 ]; then
+    pass "findings/B0: $fb0_n refusal cases driven (population floor 34)"
+else
+    fail "findings/B0: only $fb0_n refusal cases ran; the floor is 34 — a case stopped being driven"
+fi
+
+# THE CONTROLS the refusals need: an exemplar that states bytes/sha256 and
+# no url, and a data-block provenance that is authored, both ACCEPT (the
+# conjunctions' other halves), as does a `--pattern` that merely CONTAINS
+# the text `analysis`.
+printf '%bpattern a\nm "a" 0 1\n' "$fb0_hd$fb0_enc$fb0_srv        provenance\n            source exemplar\n            retrieved 2026-09-26\n            bytes 10\n            sha256 ab\n\nconfig c\n    pcrec --lib-path analysis\n\n" > "$FB0/controls.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FB0/controls.rxt" >/dev/null 2>"$WORKDIR/fb0c.err"; then
+    pass "findings/B0 controls: an exemplar with bytes/sha256 and no url, and a pcrec line whose word is not --analysis, both accept"
+else
+    fail "findings/B0 controls: refused: $(cat "$WORKDIR/fb0c.err")"
+fi
+
+# THE FRAGMENT RULE (format_design §2.5, r2 M-B3): refused at the ENTRY, naming the LEAF
+# fragment's own line, two links down. Its control is W23-S7 above:
+# `include_nested.rxtin` — the same two-link shape with no bundle — still
+# splices clean, and a broken fragment still reads as leg B's
+# [resolution] class (only THIS rule propagates to the entry).
+out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/analysis_in_fragment.rxt" 2>&1)" && rc=0 || rc=$?
+case $rc:$out in
+    0:*) fail "findings/B0/fragment: an analysis bundle in an include fragment was ACCEPTED" ;;
+    *"[schema-constraint]"*"analysis_frag_leaf.rxtfrag:3: 'analysis' is a file-level line in an include fragment"*)
+        pass "findings/B0/fragment: an analysis bundle two include links down is refused at the entry, naming the fragment's own line" ;;
+    *) fail "findings/B0/fragment: refused, but not naming analysis_frag_leaf.rxtfrag:3 as a schema-constraint: $out" ;;
+esac
+# ...and the rule is format_design §2.5's GENERAL one: any file-level line
+# but `include` in a fragment — here a `description` — refuses the same way.
+out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/fragment_head_line.rxt" 2>&1)" && rc=0 || rc=$?
+case $rc:$out in
+    0:*) fail "findings/B0/fragment-head: a file-level description in an include fragment was ACCEPTED" ;;
+    *"[schema-constraint]"*"fragment_head_line_frag.rxtfrag:3: 'description' is a file-level line in an include fragment"*)
+        pass "findings/B0/fragment-head: any file-level line but include in a fragment (here description) is refused at the entry, naming the fragment's line" ;;
+    *) fail "findings/B0/fragment-head: refused, but not naming fragment_head_line_frag.rxtfrag:3 as a schema-constraint: $out" ;;
+esac
+# ...and ONLY this rule propagates: a fragment broken for any other reason
+# leaves the entry's own parse clean (leg B's [resolution] class, rule 3).
+printf 'pattern z\nnosuchdirective 1\nm "z" 0 1\n' > "$FB0/broken.rxtfrag"
+printf 'include "broken.rxtfrag"\n\npattern a\nm "a" 0 1\n' > "$FB0/brokenentry.rxt"
+if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FB0/brokenentry.rxt" >/dev/null 2>"$WORKDIR/fb0b.err"; then
+    pass "findings/B0/fragment control: a fragment broken for another reason does not fail the entry's parse (still leg B's [resolution])"
+else
+    fail "findings/B0/fragment control: a non-bundle fragment failure propagated to the entry: $(cat "$WORKDIR/fb0b.err")"
+fi
 
 # ---------------------------------------------------------------------
 # =====================================================================

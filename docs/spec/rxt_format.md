@@ -51,24 +51,27 @@ table — which restates them for a reader, and says what each MEANS:
 
 | declaration | means |
 |---|---|
-| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED as far as existence** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; its CONTENTS are not read, so no pattern can call a definition that lives in it. `<store-name>` is refused as NOT IN THIS BUILD |
+| `lib "path"` / `lib <store>` | a subpattern library this file draws definitions from. The path reference has C's own two spellings: `"local"` and `<store-name>`. **The `"path"` form is RESOLVED** (against the source file's own directory, then each `pcrec --lib-path` in order) and refused by name if it names no readable file; **since [DD-13b.W1.3] its CONTENTS ARE READ** when a target is built (`--source`): the library's named definitions — and nothing else, not its configs, targets or cases — join the lookup a pattern's call resolves against ("The delivering call" below). `--list-source` still reads only this file's own bytes. `<store-name>` is refused as NOT IN THIS BUILD |
 | `target [<prefix>] = <definition> [with <c1,c2>]` | an artifact to build: its symbol prefix, the definition it is built from, and the configs it is built under. **BUILT** since [DD-13b.W1.2] — see "Building from a source file" below. **The prefix may be OMITTED** (`target = <definition>`), which derives it from the definition name |
 | `config <name> [from <c1,c2>]` | a named build configuration, with an indented body |
 | `description <text>` | a machine-readable prose field — a FIELD, not a comment, so a script can summarize what a file holds. `#` comments go back to being operational notes. **At most ONE per file**: a second file-level `description` is refused by name, naming the earlier line |
-| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only compiling the file could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). Repeatable |
+| `include "path"` | **[DD-13b.W23.3, resolution DD-13b.W23.3a]** a `.rxt` fragment this file draws blocks from. The path is DOUBLE-QUOTED and that is the format's only path spelling — `include <store>` is refused by value shape, unlike `lib`, which carries C's two spellings for historical reasons. **UNLIKE EVERY OTHER HEAD DECLARATION, `pcrec` DOES open something for this one**: the path is resolved (relative to the referencing file's own directory, `realpath(3)`) AT PARSE TIME, so `--list-source`'s row carries the path AS WRITTEN in `value` and the RESOLVED REAL PATH in `name` — the one deliberate exception to "a pure function of the file's own bytes", because `--list-source` is the only call the harness ever makes over an `include` line and a resolution only compiling the file could see would leave it nothing to read. A path naming no readable file, or a second `include` resolving to a file already named earlier in this same file, IS a parse error here (value-shape / schema-constraint respectively). **[FINDINGS] B0: `pcrec` also READS each fragment (and its own fragments, at any depth), and a fragment holds pattern blocks and `include` lines ONLY — any other file-level line in it (`analysis`, `description`, `lib`, `config`, …) is a schema-constraint parse error of the ENTRY, naming the fragment's own `file:line`.** Only that refusal reaches the entry: a fragment broken for any other reason (a malformed line, a cycle, a repeated target) is still the harness's `[resolution]` class, so the entry's own body still runs. Repeatable |
 | `vocabulary <key> <v1> <v2> …` | **[DD-13b.W23.3]** declares a CLOSED SET named `<key>`, whose members are the remaining words. It is how a FILE declares the members of a schema `closed` constraint whose row names no members (see "The `constraints` column's clause spellings" below); the keys it can close are `tag`'s own keys, `under`'s convention and `variant`'s `kind`. The key is an identifier; a set with no members is refused by name, because a closed set nothing satisfies can only ever refuse. **One line per key**: a second `vocabulary` for a key already declared is refused, naming the earlier line. Its value may use the block-scalar continuation form (`vocabulary <key> \|` with the members on indented lines) |
 | `oracle <engine-ref>[/<version>]` | **[DD-13b.W23.3]** the file-level default oracle (see "Oracle verification"). **At most ONE per file** |
 | `tag <item>{, <item>}` | **[DD-13b.W23.3]** file-level classification. Each item is a bare LABEL or a `key=value`, and neither half may carry whitespace. Repeatable |
 | `use <c1,c2>` | **[DD-13b.W23.3]** a config list, in `with`/`from`'s own `config-list` grammar. Parsed and validated as a list; it composes nothing in this build. Repeatable |
-| `freq <name>` | **[DD-13b.W23.3]** a DATA block, with an indented body (see "`freq` — the data block" below). Repeatable |
+| `analysis <name>` | **[FINDINGS] B0** a named ANALYSIS — a BUNDLE of subject-statistics data blocks, with an indented body (see "`analysis` — the bundle" below). The name is LOWERCASE (`[a-z][a-z0-9_-]*`), unique in the file. Repeatable. It REPLACES the file-level `freq <name>` data block, which is withdrawn: a `freq` block now lives inside a bundle |
 | `ext <consumer>` | **[DD-13b.W23.3]** an AUX block: consumer-namespaced data pcrec carries and does not interpret (see "`ext` — the aux production" below). Repeatable |
 
 A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
 `features`, `encoding`, `engine`, `tune`, `budget` and `analysis` lines —
 the same productions a pattern block's own directives use, so the two
-cannot disagree about what `budget frames=` means. `analysis <list>` names
-`freq` data blocks; its value shape is checked and its names are not
-resolved in this build. **[REL-1.10]/D118 addendum (iv)**: the `pcrec`
+cannot disagree about what `budget frames=` means. **`analysis <name>`
+names ONE analysis (a bundle)** — at most one per config body, in the
+bundle-name grammar; its name is not resolved in this build ([FINDINGS]
+B2 resolves it). **The `pcrec` line may not carry `--analysis`** (refused
+at parse): a config names its analysis with its own `analysis` line, so
+the choice is visible in the file. **[REL-1.10]/D118 addendum (iv)**: the `pcrec`
 line's raw text is re-parsed by the CLI's own option parser
 (`docs/spec/cli.md` §1.1's config-block paragraph), so a literal pattern on
 that line is spelled `--pattern 'X'` there too, exactly as on the command
@@ -817,14 +820,14 @@ has no room to say which it means.
 
 **[DD-13b.W23.3]** `provenance` takes no value and opens a SUB-BLOCK of
 indented fields. **At most one per parent**, and it has two parents — a
-pattern block and a `freq` data block — which are **one record, not two
-productions**: the eleven fields are the same eleven at both, and what
-differs is which of them are REQUIRED.
+pattern block and a bundle's DATA block (`freq`) — which are **one record,
+not two productions**: the eleven fields are the same eleven at both, and
+what differs is which of them are REQUIRED.
 
 | field | value | notes |
 |---|---|---|
 | `source` | token | **required at both parents.** The literal value `authored` means the pattern was written here |
-| `url` | token | **required unless `source authored`; FORBIDDEN when `source authored`** |
+| `url` | token | **required under a PATTERN block unless `source authored`; FORBIDDEN when `source authored`**; optional under a DATA block ([FINDINGS] B0: a user's private exemplar has no URL) |
 | `ref` | token | the same rule as `url` |
 | `retrieved` | token | **required at both parents** |
 | `license` | token | **required under a PATTERN block** |
@@ -832,17 +835,17 @@ differs is which of them are REQUIRED.
 | `fidelity` | token | **required under a PATTERN block**; a closed set — `verbatim`, `adapted`, `synthesized` |
 | `adaptation` | prose | **required when `fidelity` is not `verbatim`** — adaptation iff not verbatim |
 | `attribution` | prose | optional |
-| `bytes` | int | **required under a DATA block** |
-| `sha256` | token | **required under a DATA block** |
+| `bytes` | int | **required under a DATA block unless `source authored`** ([FINDINGS] B0: authored data, such as the shipped default table, has no exemplar to measure) |
+| `sha256` | token | the same rule as `bytes` |
 
 Every field is at-most-one within the record.
 
 - **The per-parent split is a property of the ROWS, not a second
   record.** The conditions are spelled over the reserved field `parent`
   (see "The `constraints` column's clause spellings" below), so a pattern
-  block requires `{source, license, retrieved, fidelity}` and a data
-  block requires `{source, retrieved, bytes, sha256}` off one set of
-  fields. Duplicating the scope would have produced two records that
+  block requires `{source, license, retrieved, fidelity}` (plus `url`/`ref`
+  when not authored) and a data block requires `{source, retrieved}`
+  (plus `bytes`/`sha256` when not authored) off one set of fields. Duplicating the scope would have produced two records that
   rhyme: an exemplar owes no `license` (a user's own log file has none to
   state) and no `fidelity` (nothing about a byte histogram was adapted),
   and that is the whole of the difference.
@@ -853,32 +856,70 @@ Every field is at-most-one within the record.
   authored` that forbids it, and a missing `adaptation` cannot be
   detected until the record ends.
 
-### `freq` — the data block
+### `analysis` — the bundle
 
-**[DD-13b.W23.3]** `freq <name>` is a file-level DATA block with an
-indented body. Its name is a `defname`, in its own namespace — `config
-prod` and `freq prod` do not collide. Repeatable.
+**[FINDINGS] B0** (`docs/design/findings/design.md` §3). `analysis <name>`
+is a file-level BUNDLE: the named analysis a `config`'s `analysis` line
+selects. It holds **at most one data block per KIND**, an optional
+`include <other>`, and an optional `description`. It is a HEAD
+declaration, so it sits above the first `pattern` line. Nothing in this
+build CONSUMES a bundle: B0 is the format, parsed and reported; the
+compiler's reading of it arrives with [FINDINGS] B1/B2.
 
-| body line | cardinality |
-|---|---|
-| `question <text>` | **exactly one, required** — what this table answers |
-| `reader <text>` | **exactly one, required** — the selection point that consumes it |
-| `analyzer <text>` | **exactly one, required** — the tool that produced the table |
-| `row <values>` | repeatable — the table itself, inline |
-| `provenance` | at most one — the SAME record the section above describes |
+- **The name** is LOWERCASE ONLY, `[a-z][a-z0-9_-]*`, and unique in the
+  file (a second `analysis` with the same name is refused naming the
+  first). An uppercase letter is refused by that rule's name: a bundle is
+  found as a directory entry `<name>.rxt`, matched exactly, so `Log` and
+  `log` must never both be spellable.
+- **Not in an include fragment.** An `analysis` line in a file reached
+  through an `include "path"` line — at any depth of the closure — is a
+  parse error of the ENTRY, naming the fragment's own `file:line`: it is
+  a file-level line, and a fragment holds pattern blocks and `include`
+  lines only (the head table's `include` row). A bundle is found in the
+  compiling file, a `-I` directory or the shipped store, never in a
+  fragment.
 
-`question` and `reader` being required is what makes "a block nobody
-reads is not emitted" a parse-time fact rather than a review convention.
-**`provenance` under a `freq` block is the same eleven-field record a
-pattern block takes** — five one-off fields (`exemplar`, `date`, `bytes`,
-`sha256`, and a per-block licence idea) were replaced by it rather than
-kept beside it, because two vocabularies for one idea is what a schema
-exists to prevent: the exemplar IS the `source`, and the date IS
-`retrieved`. `analyzer` stays on the data block, because it names the
-TOOL that produced the table and not where the data came from.
+| bundle line | cardinality | value |
+|---|---|---|
+| `include <other>` | at most one | another analysis, in C's SEARCH spelling `<name>` (the bundle-name grammar). A quoted path is refused: this is not the head's `include "path"` splice. `<other>` may name the bundle's own name (resolution, B2, gives that `#include_next` meaning) |
+| `description <text>` | at most one | prose; takes the block-scalar form |
+| `freq` | at most one | a DATA block (below), takes no value: a kind block is named by its bundle |
 
-A `config` body's `analysis <list>` line names data blocks. Its value
-shape is checked; the names are not resolved in this build.
+`cpfreq` and `bigram` are not bundle lines in this build; each is admitted
+with its first reader.
+
+**The DATA block** (a kind block's indented body):
+
+| body line | cardinality | value |
+|---|---|---|
+| `question <text>` | **exactly one, required** | what this table answers |
+| `reader <text>` | **exactly one, required** | the selection point that consumes it (prose) |
+| `analyzer <text>` | **exactly one, required** | the tool that produced the table |
+| `encoding <e>` | **exactly one, required** | what the COUNTED DATA was — closed set `ascii`, `utf8`, `latin1`, `bytes`. A DESCRIPTION of the data: never consulted to decide which compiles the block serves |
+| `serves <query> when <enc>[,<enc>…] via <derivation>` | **at least one**; at most one per `<query>` in the block | the OPERATIVE applicability line: this block answers `<query>` for a compile whose encoding is listed, computed by `<derivation>` |
+| `row <key> <count>` | repeatable | one table entry |
+| `provenance` | **exactly one, required** | the record the section above describes |
+
+- **`serves`' vocabularies are closed.** `<query>` is `byte-rate` or
+  `run-rarity`. `<enc>` is a compile encoding — a name `pcrec -e`
+  accepts (`byte`, `utf8`). `<derivation>` is `unigram` (a `freq`
+  derivation, answering `byte-rate`), `encode-utf8` or `encode-latin1`
+  (`cpfreq`, `byte-rate`) or `markov1` (`bigram`, `run-rarity`); a
+  derivation must belong to the block's kind and answer the line's
+  query.
+- **At most one block per (query, encoding) in a bundle.** A second claim
+  of one (query, encoding) pair anywhere in the same bundle — a second
+  block, or the same encoding twice on one line — is refused, naming the
+  line that claimed it first. (While `freq` is the only kind, a bundle
+  holds one block, so the reachable case is the duplicated encoding.)
+- **`row`'s key grammar is per kind.** Under `freq` a row is `row HH N`:
+  one byte key as TWO LOWERCASE hex digits (`00`..`ff`) and a count.
+  Keys are **strictly ascending** through the block, so a duplicate key is
+  refused at the line. The count is a canonical decimal: no leading zero,
+  and never `0` — **a zero count is written by omitting the row**.
+
+A bundle's own reach into the dump: see `--list-source`'s `analysis` row
+below.
 
 ### `variant` — a testee's own spelling
 
@@ -1049,7 +1090,7 @@ Ten columns, in two named sections.
 
 | column | what it says |
 |---|---|
-| `scope` | `file`, `block`, or a named child scope (`config`, `data`, `provenance`, `variant`) |
+| `scope` | `file`, `block`, or a named child scope (`config`, `bundle`, `data`, `provenance`, `variant`) |
 | `kind` | the line's first token, as an author types it |
 | `value` | the value shape: `none`, `token`, `int`, `line`, `prose`, `list`, `pair`, `subject`, `case`, `qualified-line`, `raw` |
 | `opens_group` | **structure-layer parameter 1** (S2) |
@@ -1121,7 +1162,9 @@ remembering it:
   ENCLOSING scope's own name. `parent` is how ONE `provenance` record
   serves two different parents without being two records: `required-if
   parent == block` and `required-if parent == data` select the two
-  required sets off a single set of rows.
+  required sets off a single set of rows. **[FINDINGS] B0: conditions
+  join with ` and `** — `required-if parent == data and source !=
+  authored` holds when every conjunct holds. Conjunction only.
 
 ### Example
 
@@ -1163,10 +1206,10 @@ boundary comes from the one head parser, and the two cannot drift.
 
 | # | column | on | value |
 |---|---|---|---|
-| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` \| `include` |
+| 1 | `kind` | all | `lib` \| `target` \| `config` \| `description` \| `pattern` \| `include` \| `analysis` |
 | 2 | `line` | all | 1-based first line of the declaration or block |
-| 3 | `name` | target, config, pattern, include | the target's PREFIX; the config's name; the block's `name` (empty if unnamed); an `include`'s RESOLVED REAL PATH |
-| 4 | `value` | lib, target, description, pattern, include | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description`; `include`'s path AS WRITTEN |
+| 3 | `name` | target, config, pattern, include, analysis | the target's PREFIX; the config's name; the block's `name` (empty if unnamed); an `include`'s RESOLVED REAL PATH; the bundle's name |
+| 4 | `value` | lib, target, description, pattern, include, analysis | `lib`'s path reference; `target`'s definition name; a `description`'s text; a block's own `description`; `include`'s path AS WRITTEN; a bundle's own `include <other>` AS WRITTEN (empty with none) |
 | 5 | `pattern` | pattern | the block's pattern text |
 | 6 | `flags` | pattern, config | the letters |
 | 7 | `features` | pattern, config | the module list |
@@ -1207,11 +1250,15 @@ since both spellings deliver the same bytes.
 `use` gain theirs above; the block-scoped `tag`/`oracle` lines reach
 columns 17-18; and `provenance`, `variant`, the eight CASE-kind lines
 (`m`/`n`/`ms`/`ns`/`mc`/`gu`/`g`/`gp`, `under`-wrapped ones included) and
-`ext` reach the four `#section` blocks below. `freq`'s own body (the
-`question`/`reader`/`analyzer`/`row` fields) remains parsed and not
-reported — no `#section freq` exists, and a `freq` block's own
-`provenance` sub-record rides `#section provenance` on the same terms as
-a pattern block's.
+`ext` reach the four `#section` blocks below. **[FINDINGS] B0**: each
+`analysis` bundle is one `analysis` row. **A bundle's `include <other>`
+is that row's `value`, NEVER a head `include` row** — the head `include`
+kind is the path splice, and a harness reading `include` rows to walk a
+closure must never meet a bundle link. A kind block's own body (`question`,
+`reader`, `analyzer`, `encoding`, `serves`, `row`) is parsed and not
+reported — no `#section freq` exists — and its `provenance` sub-record
+rides `#section provenance`, with `block_line`/`block_name` naming the
+enclosing BUNDLE (its `analysis` line and name).
 
 ### The four `#section` blocks
 

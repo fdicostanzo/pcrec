@@ -1,0 +1,6 @@
+# [FINDINGS] B0: `analysis_in_fragment.rxtin`'s clean first link. It carries
+# no bundle itself; its own include reaches the leaf that does.
+include "analysis_frag_leaf.rxtfrag"
+
+pattern mid
+m "mid" 0 3

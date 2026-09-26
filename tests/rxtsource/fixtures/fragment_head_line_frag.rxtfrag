@@ -1,0 +1,6 @@
+# [FINDINGS] B0: `fragment_head_line.rxtin`'s fragment. Line 3 is the head
+# line the refusal must name.
+description a fragment may not describe itself; it holds blocks only
+
+pattern leaf
+m "leaf" 0 4

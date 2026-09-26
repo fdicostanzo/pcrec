@@ -1,0 +1,9 @@
+# [FINDINGS] B0: format_design §2.5's GENERAL fragment rule, on a line that
+# is not `analysis` — a file-level `description` in an included fragment is
+# refused at the ENTRY's parse, naming the fragment's own line. The
+# `analysis` case is `analysis_in_fragment.rxtin`; together they are the
+# rule's two refusal classes (a bundle, any other head line). Leg A only.
+include "fragment_head_line_frag.rxtfrag"
+
+pattern top
+m "top" 0 3

@@ -5176,7 +5176,8 @@ typedef enum {
     RXT_SCOPE_FILE,        /* the head's file-level declarations           */
     RXT_SCOPE_BLOCK,       /* a pattern block's own lines                  */
     RXT_SCOPE_CONFIG,      /* the indented body of `config <name>`         */
-    RXT_SCOPE_DATA,        /* the body of a `freq <name>` data block       */
+    RXT_SCOPE_BUNDLE,      /* [FINDINGS] B0: an `analysis <name>` bundle   */
+    RXT_SCOPE_DATA,        /* a bundle's kind block (`freq`) body          */
     RXT_SCOPE_PROVENANCE,  /* a `provenance` sub-block's attributes        */
     RXT_SCOPE_VARIANT,     /* a `variant <testee>` sub-block's attributes  */
     RXT_SCOPE_NSCOPES
@@ -5194,7 +5195,8 @@ typedef enum {
  * SUBTREE); takes schema-checked lines in a named scope. */
 typedef enum {
     RXT_CH_NONE, RXT_CH_PROSE, RXT_CH_TREE,
-    RXT_CH_CONFIG, RXT_CH_DATA, RXT_CH_PROVENANCE, RXT_CH_VARIANT
+    RXT_CH_CONFIG, RXT_CH_BUNDLE, RXT_CH_DATA, RXT_CH_PROVENANCE,
+    RXT_CH_VARIANT
 } RxtChildren;
 
 typedef enum {
@@ -5344,7 +5346,12 @@ typedef enum {
                              * value=the escaped member list             */
     RXT_DECL_ORACLE,       /* file-level `oracle <ref>` — value          */
     RXT_DECL_TAG,          /* file-level `tag <item>{,<item>}` — value   */
-    RXT_DECL_USE           /* file-level `use <config-list>` — value     */
+    RXT_DECL_USE,          /* file-level `use <config-list>` — value     */
+    /* [FINDINGS] B0 (docs/design/findings/design.md §3.1): `analysis
+     * <name>` opens a BUNDLE — name=the bundle name, value=its bundle-scope
+     * `include <other>` AS WRITTEN (empty with none). A bundle's `include`
+     * is NOT an RXT_DECL_INCLUDE row: that kind is the head's path splice. */
+    RXT_DECL_ANALYSIS
 } RxtDeclKind;
 
 typedef struct {

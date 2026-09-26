@@ -55,6 +55,7 @@
 
 #include "pcrec.h"
 #include "core/internal.h"
+#include "enc/enc.h"
 
 /* [LIM-1] (D90, 2026-08-30) THE FOUR CAPS THIS HEAD PARSER HAS ALWAYS HAD
  * (docs/spec/limits.md §3.5) but never NAMED — the survey that built
@@ -225,6 +226,22 @@ typedef struct {
      * back to its root to report it. */
     size_t          depth;
     const char     *consumer;
+    /* [FINDINGS] B0 — DATA-frame-only: the KIND keyword that opened the
+     * block (`freq`), which selects the `row` key grammar and the legal
+     * `serves` derivations; and the last `row` key read, for the
+     * strictly-ascending rule (`have_key` false before the first). */
+    const char     *open_kind;
+    int             have_key;
+    unsigned long   last_key;
+    size_t          last_key_line;
+    /* [FINDINGS] B0 — BUNDLE-frame-only: every (query, encoding) pair a
+     * `serves` line anywhere in this bundle has claimed, with its line, so
+     * a second claim is refused naming both (r2 M-B1). Kept on the BUNDLE
+     * and not on the block because the rule is about the bundle. */
+    const char    **claim_q;
+    const char    **claim_e;
+    size_t         *claim_line;
+    size_t          nclaim, claimcap;
 } RxtFrame;
 
 /* ------------------------------------------------------------ the parser */
@@ -243,12 +260,23 @@ typedef struct RxtVocab {
     struct RxtVocab *next;
 } RxtVocab;
 
+/* [FINDINGS] B0: the realpaths of the files whose parse is in progress,
+ * innermost first. Non-NULL means THIS file is being read as an `include`
+ * fragment; the chain also stops a fragment cycle from recursing (the cycle
+ * itself stays leg B's [resolution] failure, rxt_format.md's rule 3). */
+typedef struct RxtChain {
+    const char            *rp;
+    const struct RxtChain *up;
+} RxtChain;
+
 typedef struct {
     const char *path;
     Arena *arena;
     pcrec_error *err;
     int failed;
     RxtVocab   *vocab;
+    const RxtChain *chain;       /* NULL for an entry file */
+    int            *frag_refused; /* set when the fragment rule refused */
 } RxtP;
 
 /* Every diagnostic from this file goes through here, so every one of them
@@ -444,6 +472,267 @@ static int defname_ok(const char *s)
         if (!isalnum((unsigned char)*p) && *p != '_' && *p != '-' && *p != '.')
             return 0;
     return 1;
+}
+
+/* [FINDINGS] B0: an ANALYSIS name — `[a-z][a-z0-9_-]*`, LOWERCASE ONLY
+ * (r2 M-S6). A bundle name becomes a `-I DIR/<name>.rxt` directory entry
+ * matched byte for byte, so `Log` and `log` must never both be spellable:
+ * on a case-insensitive filesystem they would name one file. Narrower than
+ * `defname_ok` on purpose (no uppercase, no `.`), and a separate function
+ * because the two grammars answer different questions. */
+static int analysis_name_ok_n(const char *s, size_t n)
+{
+    if (!n || !(s[0] >= 'a' && s[0] <= 'z')) return 0;
+    for (size_t i = 1; i < n; i++)
+        if (!((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= '0' && s[i] <= '9') ||
+              s[i] == '_' || s[i] == '-'))
+            return 0;
+    return 1;
+}
+
+/* Refuses a malformed analysis name on `line`, naming WHICH rule failed —
+ * an uppercase letter gets the lowercase rule by name, since that is the
+ * one an author coming from `defname` will trip over. `what` is the line
+ * kind the name sits on (`analysis`, `include`). */
+static int analysis_name_check(RxtP *p, size_t line, const char *what,
+                               const char *v, size_t n)
+{
+    if (analysis_name_ok_n(v, n)) return 0;
+    for (size_t i = 0; i < n; i++)
+        if (v[i] >= 'A' && v[i] <= 'Z')
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'%s' names '%.*s': analysis names are LOWERCASE "
+                            "(a bundle is found as a directory entry "
+                            "<name>.rxt, matched exactly)", what, (int)n, v);
+    return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                    "'%s' wants an analysis name — a lowercase letter then "
+                    "lowercase letters, digits, '_' or '-' (got '%.*s')",
+                    what, (int)n, v);
+}
+
+/* [FINDINGS] B0: THE CLOSED DERIVATION VOCABULARY (findings design §2.4)
+ * as DATA — which block KIND may declare each derivation and which QUERY it
+ * answers. The query vocabulary is this table's second column, never a
+ * second list. Rows whose kind is not a schema row yet (`cpfreq` at B5,
+ * `bigram` at B4) are the spec-stated vocabulary, so a `via markov1` on a
+ * `freq` block is refused as the wrong KIND's derivation rather than as an
+ * unknown word. B1's `src/core/findings.c` implements each derivation; this
+ * table moves beside those functions then, so there is one home. */
+static const struct {
+    const char *kind, *derivation, *query;
+} rxt_find_derivations[] = {
+    { "freq",   "unigram",       "byte-rate"  },
+    { "cpfreq", "encode-utf8",   "byte-rate"  },
+    { "cpfreq", "encode-latin1", "byte-rate"  },
+    { "bigram", "markov1",       "run-rarity" },
+};
+#define RXT_NFIND_DERIV (sizeof rxt_find_derivations / sizeof *rxt_find_derivations)
+
+/* [FINDINGS] B0: a data block's `row` KEY arity, per kind — the number of
+ * byte keys (`HH`, two lowercase hex digits each) before the count. Only
+ * the kinds this build admits have an entry; `bigram` joins with 2 at B4,
+ * `cpfreq` with its `U+HHHH` key at B5. */
+static const struct {
+    const char *kind;
+    int         nkeys;
+} rxt_find_row_keys[] = {
+    { "freq", 1 },
+};
+
+/* Reads one space-delimited word from `*s` into (`*w`, `*n`), advancing
+ * past it and the spaces after it; 0 at end of text. */
+static int next_word(const char **s, const char **w, size_t *n)
+{
+    const char *q = *s;
+    while (*q == ' ') q++;
+    if (!*q) { *s = q; return 0; }
+    *w = q;
+    while (*q && *q != ' ') q++;
+    *n = (size_t)(q - *w);
+    while (*q == ' ') q++;
+    *s = q;
+    return 1;
+}
+
+/* Is (`w`, `n`) exactly the NUL-terminated `lit`? */
+static int word_is(const char *w, size_t n, const char *lit)
+{
+    return strlen(lit) == n && !strncmp(w, lit, n);
+}
+
+/* [FINDINGS] B0: validates one `serves <query> when <enc>[,<enc>…] via
+ * <derivation>` line of a `kind` block (findings design §2.4) and records
+ * each (query, encoding) it claims on the enclosing BUNDLE frame `bf`,
+ * refusing a pair the bundle already serves, naming both lines (r2 M-B1).
+ * The encodings are the compile encodings, read from the ONE encoding
+ * registry (`pcrec_enc_by_name`), so a third backend is legal here with no
+ * edit. A duplicate encoding on one line is the same collision. */
+static int serves_check(RxtP *p, size_t line, const char *kind,
+                        RxtFrame *bf, const char *v)
+{
+    const char *s = v, *q, *w1, *e, *w2, *d;
+    size_t qn, w1n, en, w2n, dn, extra_n;
+    const char *extra;
+    if (!next_word(&s, &q, &qn) || !next_word(&s, &w1, &w1n) ||
+        !next_word(&s, &e, &en) || !next_word(&s, &w2, &w2n) ||
+        !next_word(&s, &d, &dn) || next_word(&s, &extra, &extra_n) ||
+        !word_is(w1, w1n, "when") || !word_is(w2, w2n, "via"))
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'serves' wants '<query> when <enc>[,<enc>...] via "
+                        "<derivation>' (got '%s')", v);
+
+    int qknown = 0;
+    for (size_t i = 0; i < RXT_NFIND_DERIV; i++)
+        if (word_is(q, qn, rxt_find_derivations[i].query)) qknown = 1;
+    if (!qknown)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'serves' names query '%.*s', which is not a findings "
+                        "query (byte-rate, run-rarity)", (int)qn, q);
+
+    size_t di = RXT_NFIND_DERIV;
+    for (size_t i = 0; i < RXT_NFIND_DERIV; i++)
+        if (word_is(d, dn, rxt_find_derivations[i].derivation)) di = i;
+    if (di == RXT_NFIND_DERIV)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'serves' names derivation '%.*s', which is not one "
+                        "(unigram, encode-utf8, encode-latin1, markov1)",
+                        (int)dn, d);
+    if (strcmp(rxt_find_derivations[di].kind, kind) != 0)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'serves ... via %s' is a '%s' derivation; this is a "
+                        "'%s' block", rxt_find_derivations[di].derivation,
+                        rxt_find_derivations[di].kind, kind);
+    if (!word_is(q, qn, rxt_find_derivations[di].query))
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'via %s' answers '%s', not '%.*s'",
+                        rxt_find_derivations[di].derivation,
+                        rxt_find_derivations[di].query, (int)qn, q);
+
+    const char *qs = arena_strndup(p->arena, q, qn);
+    const char *ep = e, *eend = e + en;
+    while (ep <= eend) {
+        const char *c = ep;
+        while (c < eend && *c != ',') c++;
+        const char *enc = arena_strndup(p->arena, ep, (size_t)(c - ep));
+        if (!pcrec_enc_by_name(enc)) {
+            char menu[64];
+            pcrec_enc_names(menu, sizeof menu);
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'serves ... when' names '%s', which is not a "
+                            "compile encoding (%s)", enc, menu);
+        }
+        for (size_t k = 0; k < bf->nclaim; k++)
+            if (!strcmp(bf->claim_q[k], qs) && !strcmp(bf->claim_e[k], enc))
+                return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                                "'serves %s when ...%s...' is already served "
+                                "by line %zu: a bundle answers each (query, "
+                                "encoding) from at most one block", qs, enc,
+                                bf->claim_line[k]);
+        if (bf->nclaim == bf->claimcap) {
+            size_t nc = bf->claimcap ? bf->claimcap * 2 : 4;
+            const char **nq = pcrec_arena_alloc(p->arena, nc * sizeof *nq);
+            const char **ne = pcrec_arena_alloc(p->arena, nc * sizeof *ne);
+            size_t *nl = pcrec_arena_alloc(p->arena, nc * sizeof *nl);
+            if (bf->nclaim) {
+                memcpy(nq, bf->claim_q, bf->nclaim * sizeof *nq);
+                memcpy(ne, bf->claim_e, bf->nclaim * sizeof *ne);
+                memcpy(nl, bf->claim_line, bf->nclaim * sizeof *nl);
+            }
+            bf->claim_q = nq; bf->claim_e = ne; bf->claim_line = nl;
+            bf->claimcap = nc;
+        }
+        bf->claim_q[bf->nclaim] = qs;
+        bf->claim_e[bf->nclaim] = enc;
+        bf->claim_line[bf->nclaim] = line;
+        bf->nclaim++;
+        ep = c + 1;
+    }
+    return 0;
+}
+
+/* [FINDINGS] B0: validates one `row <key>... <count>` line of data frame
+ * `f` (findings design §2.3): the kind's key arity, each key two LOWERCASE
+ * hex digits, the keys (read as one big-endian number) STRICTLY ascending
+ * across the block, and the count a canonical decimal — no leading zero,
+ * and never 0 itself, because an absent row IS a zero count. The count's
+ * upper limit (`PCREC_MAX_FIND_COUNT`) is B1's, with the limit row. */
+static int row_check(RxtP *p, size_t line, RxtFrame *f, const char *v)
+{
+    int nkeys = 0;
+    for (size_t i = 0; i < sizeof rxt_find_row_keys / sizeof *rxt_find_row_keys; i++)
+        if (!strcmp(rxt_find_row_keys[i].kind, f->open_kind))
+            nkeys = rxt_find_row_keys[i].nkeys;
+    if (!nkeys)
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "internal: no 'row' key grammar for a '%s' block",
+                        f->open_kind);
+
+    const char *s = v, *w;
+    size_t n;
+    unsigned long key = 0;
+    for (int k = 0; k < nkeys; k++) {
+        if (!next_word(&s, &w, &n))
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'row' in a '%s' block wants %d byte key(s) then "
+                            "a count (got '%s')", f->open_kind, nkeys, v);
+        int hv[2] = { -1, -1 };
+        for (size_t j = 0; n == 2 && j < 2; j++) {
+            char c = w[j];
+            hv[j] = (c >= '0' && c <= '9') ? c - '0'
+                  : (c >= 'a' && c <= 'f') ? c - 'a' + 10 : -1;
+        }
+        if (n != 2 || hv[0] < 0 || hv[1] < 0)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'row' key '%.*s' is not a byte: two lowercase hex "
+                            "digits, 00..ff", (int)n, w);
+        key = key * 256 + (unsigned long)(hv[0] * 16 + hv[1]);
+    }
+    const char *extra;
+    size_t extra_n;
+    if (!next_word(&s, &w, &n) || next_word(&s, &extra, &extra_n))
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'row' in a '%s' block wants %d byte key(s) then a "
+                        "count (got '%s')", f->open_kind, nkeys, v);
+    for (size_t j = 0; j < n; j++)
+        if (!isdigit((unsigned char)w[j]))
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'row' count '%.*s' is not a decimal integer",
+                            (int)n, w);
+    if (w[0] == '0')
+        return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                        "'row' count '%.*s' is not canonical: a zero count "
+                        "is written by omitting the row, and a count has no "
+                        "leading zero", (int)n, w);
+    if (f->have_key && key <= f->last_key)
+        return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                        "'row' keys are strictly ascending, and this key does "
+                        "not follow line %zu's", f->last_key_line);
+    f->have_key = 1;
+    f->last_key = key;
+    f->last_key_line = line;
+    return 0;
+}
+
+/* [FINDINGS] B0 (D123-8 item 2, r2 M-B2): a config names its analysis with
+ * its own `analysis` line, never with `--analysis` in its raw `pcrec`
+ * flags. Split on spaces and tabs exactly as the CLI's `raw_split` splits
+ * the joined text before re-parsing it, so the two see the same tokens. */
+static int pcrec_raw_analysis_check(RxtP *p, size_t line, const char *raw)
+{
+    const char *s = raw;
+    while (*s) {
+        while (*s == ' ' || *s == '\t') s++;
+        const char *w = s;
+        while (*s && *s != ' ' && *s != '\t') s++;
+        size_t n = (size_t)(s - w);
+        if ((n == 10 && !strncmp(w, "--analysis", 10)) ||
+            (n > 10 && !strncmp(w, "--analysis=", 11)))
+            return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
+                            "'pcrec' may not carry '--analysis': a config "
+                            "names its analysis with its own 'analysis' "
+                            "line");
+    }
+    return 0;
 }
 
 /* THE SAME RULE, over a BOUNDED span rather than a NUL-terminated string
@@ -1210,8 +1499,8 @@ static const char *under_key(Arena *a, const char *v)
  * is either the reserved word `parent` or a sibling row's kind in this scope;
  * `op` is `present`/`==`/`!=`. An absent field satisfies no comparison but
  * `present` itself. */
-static int cond_holds(const RxtFrame *f, const RxtSchemaRow *rowbase,
-                      size_t nrows, const char *arg, size_t arglen)
+static int cond_holds_one(const RxtFrame *f, const RxtSchemaRow *rowbase,
+                          size_t nrows, const char *arg, size_t arglen)
 {
     const char *fld = arg;
     size_t fldlen = 0;
@@ -1243,6 +1532,27 @@ static int cond_holds(const RxtFrame *f, const RxtSchemaRow *rowbase,
     if (oplen == 2 && !strncmp(op, "==", 2)) return eq;
     if (oplen == 2 && !strncmp(op, "!=", 2)) return !eq;
     return 0;
+}
+
+/* Evaluates a condition that may JOIN several `<field> <op> [value]`
+ * conjuncts with ` and ` ([FINDINGS] B0, findings design §0.10): it holds
+ * when every conjunct holds. ` and ` is never a legal field, operator or
+ * compared value (all three are single words), so the split is exact. */
+static int cond_holds(const RxtFrame *f, const RxtSchemaRow *rowbase,
+                      size_t nrows, const char *arg, size_t arglen)
+{
+    const char *end = arg + arglen;
+    const char *s = arg;
+    for (;;) {
+        const char *cut = NULL;
+        for (const char *q = s; q + 5 <= end; q++)
+            if (!strncmp(q, " and ", 5)) { cut = q; break; }
+        const char *stop = cut ? cut : end;
+        if (!cond_holds_one(f, rowbase, nrows, s, (size_t)(stop - s)))
+            return 0;
+        if (!cut) return 1;
+        s = cut + 5;
+    }
 }
 
 /* EVERY CONSTRAINT THAT RANGES OVER A SCOPE, EVALUATED WHEN THE SCOPE
@@ -2156,7 +2466,53 @@ static char *join_path(Arena *a, const char *dir, const char *rest);
  * RETURNED rather than raised through `pcrec_ctx_fail` — see the file header for
  * why. The structure layer (S0-S3, the attachment stack `st` below) is the
  * dispatch; `rxt_schema.def`'s rows say what is legal where. */
+static RxtSource *parse_file(const char *path, pcrec_error *err,
+                             const RxtChain *chain, int *frag_refused);
+
+/* [FINDINGS] B0 (r2 M-B3): reads the fragment an `include` line names —
+ * `cand` as the author spelled it, `rp` its real path — in FRAGMENT mode,
+ * so a head line anywhere in the include closure is refused at
+ * THIS parse, attributed to the fragment's own file:line — format_design
+ * §2.5's whole rule: a fragment holds pattern blocks and `include` lines
+ * and nothing else, so any other FILE-scope line (`analysis` among them)
+ * is refused. ONLY that refusal propagates: any other fragment failure (a
+ * malformed line, a cycle) stays leg B's [resolution] class, whose rule 3
+ * lets the entry's own body still run (docs/spec/rxt_format.md). A
+ * fragment already on the parse chain is a cycle and is not re-entered.
+ * Returns -1 with `p->err` filled when the fragment rule refused, else 0. */
+static int fragment_check(RxtP *p, const char *cand, const char *rp)
+{
+    char *self = realpath(p->path, NULL);
+    int cyc = self && !strcmp(self, rp);
+    for (const RxtChain *c = p->chain; c && !cyc; c = c->up)
+        if (!strcmp(c->rp, rp)) cyc = 1;
+    if (cyc) { free(self); return 0; }
+
+    RxtChain node = { self ? self : "", p->chain };
+    pcrec_error ferr;
+    int refused = 0;
+    RxtSource *frag = parse_file(cand, &ferr, &node, &refused);
+    free(self);
+    if (frag) { pcrec_rxt_source_free(frag); return 0; }
+    if (!refused) return 0;
+    *p->err = ferr;
+    *p->frag_refused = 1;
+    p->failed = 1;
+    return -1;
+}
+
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
+{
+    int frag_refused = 0;
+    return parse_file(path, err, NULL, &frag_refused);
+}
+
+/* The parse proper; `chain` is non-NULL when `path` is being read as an
+ * `include` fragment of the files on it ([FINDINGS] B0), and
+ * `*frag_refused` is set when the fragment rule (no file-level line but
+ * `include`) refused, here or deeper. */
+static RxtSource *parse_file(const char *path, pcrec_error *err,
+                             const RxtChain *chain, int *frag_refused)
 {
     if (err) { err->msg[0] = 0; err->pos = 0; }
     pcrec_error local;
@@ -2166,7 +2522,8 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     if (!src) return NULL;
     src->arena.cx = NULL;
 
-    RxtP p = { .path = path, .arena = &src->arena, .err = err, .failed = 0 };
+    RxtP p = { .path = path, .arena = &src->arena, .err = err, .failed = 0,
+               .chain = chain, .frag_refused = frag_refused };
     RxtLines L = { 0 };
     if (slurp_lines(&p, &L) != 0) { pcrec_rxt_source_free(src); return NULL; }
     src->path = arena_strdup(&src->arena, path);
@@ -2349,6 +2706,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                  * neither field. */
                 st[ndepth - 1].open_line = last_row_line;
                 st[ndepth - 1].open_value = last_row_value;
+                st[ndepth - 1].open_kind = last_row->kind;
             }
         } else {
             while (ndepth > 1 && indent < st[ndepth - 1].indent) {
@@ -2500,9 +2858,28 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
             goto fail;
         }
 
+        /* THE FRAGMENT RULE (format_design §2.5; [FINDINGS] B0, r2 M-B3):
+         * a file read as an `include` fragment holds pattern blocks and
+         * `include` lines and nothing else, so every other FILE-scope
+         * line — `analysis` among them — is refused here, attributed to
+         * the fragment's own line. `fragment_check` propagates this
+         * refusal, and only this one, to the entry. */
+        if (p.chain && f->scope == RXT_SCOPE_FILE && !tok_is(tok, "include")) {
+            *p.frag_refused = 1;
+            rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
+                     "'%.*s' is a file-level line in an include fragment; a "
+                     "fragment holds pattern blocks and include lines only",
+                     (int)tlen, tok);
+            goto fail;
+        }
+
         /* ---- CARDINALITY, from the column ---- */
         size_t ridx = (size_t)(row - rowbase);
-        if (row->cardinality == RXT_CARD_AT_MOST_ONE && f->seen[ridx]) {
+        /* `one` is `at-most-one` at the LINE plus `required` at the close
+         * ([FINDINGS] B0: until then a second `question` in a data block
+         * was accepted and silently lost, the first one kept). */
+        if ((row->cardinality == RXT_CARD_AT_MOST_ONE ||
+             row->cardinality == RXT_CARD_ONE) && f->seen[ridx]) {
             refuse_cardinality(&p, line, row, f->scope, f->seen[ridx]);
             goto fail;
         }
@@ -2656,6 +3033,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                              src->rows[k].value);
                     goto fail;
                 }
+                if (fragment_check(&p, cand, rp) != 0) goto fail;
                 RxtRow *r = row_push(&p, src, RXT_DECL_INCLUDE, line);
                 r->value = arena_strdup(&src->arena, v);
                 r->name = rp;
@@ -2720,12 +3098,25 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 row_push(&p, src, RXT_DECL_USE, line)->value = v;
                 continue;
             }
-            if (tok_is(tok, "freq") || tok_is(tok, "ext")) {
-                /* A `freq` block is named by a `defname`; an `ext` block is
-                 * named by its CONSUMER, which pcrec resolves against
-                 * nothing at all (§2.27: the consumer namespace is free).
-                 * The two share this arm because the only thing leg A does
-                 * with either name is check that it is a name. */
+            if (tok_is(tok, "analysis")) {
+                /* [FINDINGS] B0: a BUNDLE opener. Its body (BUNDLE scope)
+                 * attaches under the row pushed here, so a bundle-scope
+                 * `include <x>` lands in this row's `value` and a kind
+                 * block's `provenance` reports this bundle as its block. */
+                const char *v = value_trimmed(&p, tok);
+                if (analysis_name_check(&p, line, "analysis", v,
+                                        strlen(v)) != 0)
+                    goto fail;
+                RxtRow *r = row_push(&p, src, RXT_DECL_ANALYSIS, line);
+                r->name = v;
+                last_rxtrow = r;
+                continue;
+            }
+            if (tok_is(tok, "ext")) {
+                /* An `ext` block is named by its CONSUMER, which pcrec
+                 * resolves against nothing at all (§2.27: the consumer
+                 * namespace is free); leg A checks only that it is a
+                 * name. */
                 const char *v = value_trimmed(&p, tok);
                 if (!defname_ok(v)) {
                     rxt_fail(&p, RXTD_VALUE_SHAPE, line,
@@ -2737,15 +3128,12 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                 /* [DD-13b.W23.4] THE OPENER ROW, unconditionally — an
                  * `ext` block with no children still identifies itself
                  * (format_design §2.24 at 3.4.1, normative fact (a)): "the
-                 * opener line ... IS the block's identity". `freq` is not
-                 * an aux production and gets no row here. */
-                if (tok_is(tok, "ext")) {
-                    RxtAux *ar = aux_push(&src->arena, src);
-                    ar->line = line;
-                    ar->consumer = v;
-                    ar->key = "ext";
-                    ar->value = v;
-                }
+                 * opener line ... IS the block's identity". */
+                RxtAux *ar = aux_push(&src->arena, src);
+                ar->line = line;
+                ar->consumer = v;
+                ar->key = "ext";
+                ar->value = v;
                 continue;
             }
             unknown_token(&p, line, tok, f->scope);
@@ -2754,8 +3142,12 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
 
         if (f->scope == RXT_SCOPE_CONFIG) {
             if (tok_is(tok, "analysis")) {
-                /* names a `freq` data block; resolution is §2.10's and is
-                 * not this step's — the value shape is all leg A asks. */
+                /* [FINDINGS] B0: names ONE analysis (a bundle). Resolving
+                 * the name is B2's; the name GRAMMAR is checked here. */
+                const char *v = value_trimmed(&p, tok);
+                if (analysis_name_check(&p, line, "analysis", v,
+                                        strlen(v)) != 0)
+                    goto fail;
                 continue;
             }
             RxtRow *cr = f->row;
@@ -2765,6 +3157,7 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
                     rxt_fail(&p, RXTD_VALUE_SHAPE, line, "'pcrec' needs at least one flag");
                     goto fail;
                 }
+                if (pcrec_raw_analysis_check(&p, line, raw) != 0) goto fail;
                 /* ACCUMULATE, and it JOINS rather than replacing — the
                  * same rule `cfg_merge` already applies ACROSS configs,
                  * applied within one body so there is one answer to "what
@@ -2796,8 +3189,45 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
          * the region's EXTENT is structural and has to be consumed or its
          * lines reach S1 as orphans. That is the one thing a value shape
          * cannot do by being declared. */
+        /* [FINDINGS] B0: the three BUNDLE/DATA lines whose VALUE has a
+         * grammar of its own. Everything else in those scopes is fully
+         * described by its row and falls to the shared arm below. */
+        if (f->scope == RXT_SCOPE_BUNDLE && tok_is(tok, "include")) {
+            /* C's SEARCH spelling, `<name>`, and nothing after it yet —
+             * the room left for `kinds=` is [FINDINGS-SELINC]'s. A
+             * path-quoted value is the head's splice, not a bundle link. */
+            const char *v = value_trimmed(&p, tok);
+            size_t n = strlen(v);
+            if (n < 3 || v[0] != '<' || v[n - 1] != '>') {
+                rxt_fail(&p, RXTD_VALUE_SHAPE, line,
+                         "a bundle's 'include' names another analysis in "
+                         "the search spelling <name> (got '%s')", v);
+                goto fail;
+            }
+            if (analysis_name_check(&p, line, "include", v + 1, n - 2) != 0)
+                goto fail;
+            if (f->row) f->row->value = v;
+            continue;
+        }
+        if (f->scope == RXT_SCOPE_DATA && tok_is(tok, "serves")) {
+            /* the enclosing BUNDLE frame is the one below this block's */
+            if (ndepth < 2 || st[ndepth - 2].scope != RXT_SCOPE_BUNDLE) {
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "internal: a data block outside a bundle");
+                goto fail;
+            }
+            if (serves_check(&p, line, f->open_kind, &st[ndepth - 2],
+                             last_row_value) != 0)
+                goto fail;
+            continue;
+        }
+        if (f->scope == RXT_SCOPE_DATA && tok_is(tok, "row")) {
+            if (row_check(&p, line, f, last_row_value) != 0) goto fail;
+            continue;
+        }
+
         if (f->scope == RXT_SCOPE_PROVENANCE || f->scope == RXT_SCOPE_VARIANT ||
-            f->scope == RXT_SCOPE_DATA) {
+            f->scope == RXT_SCOPE_BUNDLE || f->scope == RXT_SCOPE_DATA) {
             if (pcrec_rxt_schema_prose_region(row)) {
                 const char *text = NULL;
                 if (prose_value(&p, &L, &i, row, indent, 0, &text) != 0)
@@ -3876,6 +4306,7 @@ static const char *kind_name(RxtDeclKind k)
     case RXT_DECL_ORACLE:      return "oracle";
     case RXT_DECL_TAG:         return "tag";
     case RXT_DECL_USE:         return "use";
+    case RXT_DECL_ANALYSIS:    return "analysis";
     }
     return "?";
 }
