@@ -313,6 +313,32 @@ static ReqAdmit req_admit(Ctx *cx);
 static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 
+/* [OPT-LITSCAN] S1 — THE CANDIDATE TEST a `<p>_ofsskip` block emits: one
+ * scan (offset, byte) and the terms verified at each candidate, ascending by
+ * offset -- each either one walk offset (a byte compare or a table probe) or
+ * the pinned run (one constant-length compare, P4). ONE derivation,
+ * `ofs_test_of`, and every reader that asks what the block tests reads it:
+ * the block and its verify chain, its table parameters and tables, its
+ * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
+ *
+ * It holds no `Dfa` and no `DfaForm`, so a consumer without a DFA fills one
+ * from its own facts and hands it to the same block emitter,
+ * `ofs_test_emit_fn`: the run pre-check does (`req_run_tests`, §7.2 step 6),
+ * on every route, and `[OPT-VMSEED]` is the next (§1.5). The `PrefixK`
+ * pointers point into the caller's `UnanchStart`, which outlives every use
+ * (the reason `DfaForm` held the selection by pointer before this). */
+typedef struct {
+    int scan_k, scan_byte;            /* scan_byte -1: not one byte (unreachable) */
+    int nterm;
+    struct { const PrefixK *k; } term[PCREC_OFSK_MAX_SET]; /* k == NULL: the run */
+    int run_o, run_len;               /* run_len == 0: no run term */
+    const unsigned char *run_bytes;   /* Job.req_run.bytes or .whole, never a copy */
+    int maxk;                         /* the loop guard: the largest tested offset */
+    int noffsets;                     /* distinct offsets tested */
+} OfsTest;
+static void ofs_test_emit_fn(Ctx *cx, StrBuf *c, const char *p,
+                             const char *name, const OfsTest *t);
+
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
  * THE CONDITION IS src/core/compile.c's, VERBATIM AND ON PURPOSE: that file
@@ -690,15 +716,26 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
         indent, posvar, lenvar, (unsigned long long)w);
 }
 
-/* [OPT-REQPOS] tier 2b THE NECESSARY-RUN PRE-CHECK'S EMITTED TEXT — the
- * `L >= 2` sibling of the one-byte check below, inside the same function so
- * the two engines cannot test the run in two different shapes (that
- * function's own stated reason for existing).
+/* [OPT-REQPOS] tier 2b THE NECESSARY-RUN PRE-CHECK — the `L >= 2` sibling of
+ * the one-byte check below, inside the same function so the two engines
+ * cannot test the run in two different shapes (that function's own stated
+ * reason for existing).
  *
  * WHAT IT COMPUTES. `memchr` for the run's rarest member `A = R[i]`, and at
  * each hit one constant-length `memcmp` of the whole run at the position the
- * hit implies (`rp_c - i`). No run in the window means no match in the
- * window, so the whole call answers 0 from here.
+ * hit implies. No run in the window means no match in the window, so the
+ * whole call answers 0 from here.
+ *
+ * [OPT-LITSCAN] S1 step 6: THE SEARCH IS THE OFFSET-SKIP BLOCK'S, not a loop
+ * of its own (litscan_s1.md §7.2 step 6, §1.6 P5). A run `R` of length `L`
+ * floating in `[pos, n)` is an `OfsTest` whose scan is `(i, R[i])` and whose
+ * one term is the run at offset 0 (`ofs_test_run`): the run is present iff
+ * the block returns below `n`. Its loop guard `pos + L - 1 < n` and its
+ * `cand + L - 1 >= n` exit are the run's own "lies ENTIRELY inside the
+ * window" test, since every byte of every match does, and the guard also
+ * closes [K27]'s `memchr(NULL, c, 0)` on an empty window. The block writes
+ * no `>= 0` test at `i == 0` (the `-Wtype-limits` class edge1_report.md
+ * recorded), because its scan-offset arm already omits the `+ 0`.
  *
  * `memcmp` WITH A LITERAL LENGTH, never `memmem` and never a hand-rolled
  * word load. `memmem` is a GNU extension and pcrec emits portable C; a
@@ -708,15 +745,6 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * reference box — reqpos_2b.md §3.2); and a `memcpy` into a `uint64_t` would
  * read bytes the run does not occupy, which is the over-read `[WORD-FOLD]`'s
  * own row already refuses because pcrec does not own the caller's buffer.
- *
- * THE WINDOW GUARD IS TWO CONJUNCTS AND NEITHER IS DEFENSIVE. The run must
- * lie ENTIRELY inside `[posvar, lenvar)` because every byte of every match
- * does, so a hit too near either end cannot be this run's own `A` and the
- * scan advances past it. AT `i == 0` THE FIRST CONJUNCT IS OMITTED RATHER
- * THAN EMITTED AS `>= 0`: an always-true unsigned comparison is a
- * `-Wtype-limits` report under the harness's own `-Wall -Wextra -Werror`
- * GENCFLAGS, which is the exact defect class `edge1_report.md` recorded in
- * emitted code that no answer check can see.
  *
  * THE RUN IS PATTERN-DERIVED BYTES IN TWO FRAMES AT ONCE, and each gets its
  * own escape. In the COMMENT they go through `emit_comment_safe_byte` with
@@ -732,8 +760,9 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * form gcc lowers to one word load and one compare (the reasons the run
  * pre-check below chose it are in its own header). `base` is an emitted C
  * pointer expression the caller has already bounds-checked; `bytes` go
- * through `pcrec_sb_cstr`, never raw. Callers: the run pre-check's scan loop
- * and the offset-skip block's run term (litscan_s1.md §1.6). */
+ * through `pcrec_sb_cstr`, never raw. Caller: the offset-skip block's run
+ * term, which since S1 step 6 is also the run pre-check's compare
+ * (litscan_s1.md §1.6). */
 static void emit_exact_compare(StrBuf *c, const char *base,
                                const unsigned char *bytes, int n)
 {
@@ -742,118 +771,120 @@ static void emit_exact_compare(StrBuf *c, const char *base,
     pcrec_sb_printf(c, "\", %d)", n);
 }
 
-/* Writes the run pre-check's scan loop for `n` bytes `run`: `memchr` for
- * `run[i]`, a constant-length `memcmp` of the whole of `run` at each hit,
- * NOMATCH when none compares. Shared by the window check and the [K66] whole
- * run check so the two cannot compare a run in two shapes; its caller has
- * already returned on an empty window. */
-static void emit_run_scan_loop(Ctx *cx, StrBuf *c, const char *indent,
-                               const char *posvar, const char *subjvar,
-                               const char *lenvar, const unsigned char *run,
-                               int n, int i)
+/* Fills `*t` with the candidate test of a run floating in the window: the
+ * `n` bytes `run`, scanned on `run[i]`, the run itself the one term at
+ * offset 0. The block it drives returns where the run begins, or `n`. */
+static void ofs_test_run(OfsTest *t, const unsigned char *run, int n, int i)
 {
-    pcrec_sb_printf(c,
-        "%s{\n"
-        "%s    size_t rp_pos = %s;\n"
-        "%s    for (;;) {\n"
-        "%s        const void *rp_q = memchr(%s + rp_pos, %d, %s - rp_pos);\n"
-        "%s        size_t rp_c;\n"
-        "%s        if (!rp_q) return 0;\n"
-        "%s        rp_c = (size_t)((const unsigned char *)rp_q - %s);\n",
-        indent,
-        indent, posvar,
-        indent,
-        indent, subjvar, (int)run[i], lenvar,
-        indent,
-        indent,
-        indent, subjvar);
-    if (i == 0) {
-        pcrec_sb_printf(c,
-            "%s        if (rp_c + %d <= %s\n"
-            "%s            && ",
-            indent, n, lenvar,
-            indent);
-        emit_exact_compare(c, dfa_fragf(cx, "%s + rp_c", subjvar),
-                           run, n);
-    } else {
-        pcrec_sb_printf(c,
-            "%s        if (rp_c - %s >= %d && rp_c - %d + %d <= %s\n"
-            "%s            && ",
-            indent, posvar, i, i, n, lenvar,
-            indent);
-        emit_exact_compare(c, dfa_fragf(cx, "%s + rp_c - %d", subjvar, i),
-                           run, n);
-    }
-    pcrec_sb_printf(c,
-        ") break;\n"
-        "%s        rp_pos = rp_c + 1;\n"
-        "%s        if (rp_pos >= %s) return 0;\n"
-        "%s    }\n"
-        "%s}\n",
-        indent,
-        indent, lenvar,
-        indent,
-        indent);
+    memset(t, 0, sizeof *t);
+    t->scan_k    = i;
+    t->scan_byte = run[i];
+    t->nterm     = 1;                 /* term[0].k == NULL: the run */
+    t->run_len   = n;
+    t->run_bytes = run;
+    t->maxk      = n - 1;
+    t->noffsets  = n;
 }
 
+/* The run pre-check's tests, the ONE derivation its file-scope blocks
+ * (`pcrec_emit_req_run_blocks`) and its call site (`emit_req_run_check`) both
+ * read, so a block cannot be written without its call or called unwritten:
+ * `t[0]` the window `Job.req_run.bytes` on every route that emits the run
+ * pre-check, and `t[1]` [K66]'s whole run `Job.req_run.whole` where the route
+ * has no DFA scan in front and the run is longer than its window. Returns how
+ * many, 0 where no run pre-check is emitted. Both read the one `Job.req_run`
+ * field S1's pin reads (R3-2): `bytes == whole + at`, so the whole run's scan
+ * member is the window's, at `at + idx`. */
+static int req_run_tests(Ctx *cx, OfsTest t[2])
+{
+    const ReqRun *r = &cx->job->req_run;
+    if (cx->job->req_byte < 0 || r->len < 2 || req_admit(cx) != REQ_ADMIT_EMITTED)
+        return 0;
+    ofs_test_run(&t[0], r->bytes, r->len, r->idx);
+    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;
+    ofs_test_run(&t[1], r->whole, r->whole_len, r->at + r->idx);
+    return 2;
+}
+
+/* The emitted name of run pre-check block `i`: `<p>_reqrun` for the window,
+ * `<p>_reqrun_whole` for [K66]'s whole run. */
+static const char *req_run_fn_name(Ctx *cx, int i)
+{
+    return dfa_fragf(cx, i ? "%s_reqrun_whole" : "%s_reqrun", cx->opt->prefix);
+}
+
+/* Writes the run pre-check's search blocks at file scope, above the search
+ * entry whose pre-check calls them: one `static inline` function per
+ * `req_run_tests` entry, through the offset-skip block's own emitter. Emits
+ * nothing where no run pre-check is emitted. Both engines' search-entry
+ * emitters call it exactly where they call `pcrec_emit_req_byte_check`
+ * below, one level up. */
+void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
+{
+    OfsTest t[2];
+    int n = req_run_tests(cx, t);
+    for (int i = 0; i < n; i++) {
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        pcrec_sb_printf(c,
+            "/* %s THE NECESSARY-RUN SEARCH: the first position >= `pos` at\n"
+            " * which the %d-byte %s every match contains begins inside [pos, n),\n"
+            " * or `n` when there is none -- one memchr for its byte %d at offset\n"
+            " * %d, one compare of the whole run per hit. The search entry answers\n"
+            " * NOMATCH on `n`. -fno-req-run replaces it with the one-byte check,\n"
+            " * -fno-req-byte removes the pre-check. */\n",
+            i ? "[K66]" : "[OPT-REQPOS]", t[i].run_len,
+            i ? "whole run" : "run", t[i].scan_byte, t[i].scan_k);
+        pcrec_sb_cmt_close(c);
+        ofs_test_emit_fn(cx, c, cx->opt->prefix, req_run_fn_name(cx, i), &t[i]);
+    }
+}
+
+/* Writes the run pre-check at the search entry: a call of each block
+ * `pcrec_emit_req_run_blocks` wrote, NOMATCH when one finds no run. [K66]
+ * The window is cut from the run by a frequency prior (`rn_window_start`), so
+ * with only the window compared, a subject holding the window but not another
+ * slice of the run got no linear no-match proof on a route with no DFA scan
+ * in front, and could give up on the step budget according to the prior
+ * (`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on "e" + 36 `a`s + "~#~#~#~#"); the
+ * second call compares the whole run, so the proof rests on the run, which
+ * is the pattern's. `emit_req_set_rest`'s header says why that route and
+ * only that one. */
 static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
                               const char *posvar, const char *subjvar,
                               const char *lenvar)
 {
     const ReqRun *r = &cx->job->req_run;
-    int prev = 0, k;
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_printf(c,
-        "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
-        "%s * \"", indent, r->len, indent);
-    for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
-    pcrec_sb_printf(c,
-        "\", so a window without them holds no match at all;\n"
-        "%s * the scan is on byte %d at offset %d of the run. */\n",
-        indent, (int)r->bytes[r->idx], r->idx);
-    pcrec_sb_cmt_close(c);
-    /* The `<=` arm is the one-byte check's own two-obligations-in-one-test,
-     * unchanged and for its own reasons (see below): `memchr(NULL, c, 0)` is
-     * undefined and an empty window cannot hold the run anyway. */
-    pcrec_sb_printf(c, "%sif (%s <= %s) return 0;\n", indent, lenvar, posvar);
-    emit_run_scan_loop(cx, c, indent, posvar, subjvar, lenvar,
-                       r->bytes, r->len, r->idx);
-}
-
-/* [K66] Writes the WHOLE necessary run's compare after the window's, on a VM
- * route with no DFA scan in front, when the run is longer than the window.
- *
- * The window is cut from the run by a frequency prior (`rn_window_start`), so
- * with only the window compared, a subject holding the window but not another
- * slice of the run got no linear no-match proof and could give up on the step
- * budget, and which subjects did followed the prior — the encoding moved it
- * (`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on "e" + 36 `a`s + "~#~#~#~#": the byte
- * prior takes "~#~#~#~#", every other encoding "eeeeeeee"). Comparing the whole
- * run proves NOMATCH from the absence of ANY of its windows, so the answer
- * rests on the run, which is the pattern's. `emit_req_set_rest`'s header says
- * why this route and only this one; the window check above stays exactly as
- * every route emits it. */
-static void emit_req_run_rest(Ctx *cx, StrBuf *c, const char *indent,
-                              const char *posvar, const char *subjvar,
-                              const char *lenvar)
-{
-    const ReqRun *r = &cx->job->req_run;
-    int prev = 0, k;
-    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return;
-    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-    pcrec_sb_printf(c,
-        "%s/* [K66] every match contains the whole %d-byte run \"", indent,
-        r->whole_len);
-    for (k = 0; k < r->whole_len; k++)
-        emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
-    pcrec_sb_printf(c,
-        "\";\n"
-        "%s * with no DFA scan in front this is the call's only linear\n"
-        "%s * no-match proof, so it compares all of it, not one window. */\n",
-        indent, indent);
-    pcrec_sb_cmt_close(c);
-    emit_run_scan_loop(cx, c, indent, posvar, subjvar, lenvar,
-                       r->whole, r->whole_len, r->at + r->idx);
+    OfsTest t[2];
+    int n = req_run_tests(cx, t), prev = 0, k;
+    for (int i = 0; i < n; i++) {
+        pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+        if (i == 0) {
+            pcrec_sb_printf(c,
+                "%s/* [OPT-REQPOS] every match of this pattern contains the %d bytes\n"
+                "%s * \"", indent, r->len, indent);
+            for (k = 0; k < r->len; k++) emit_comment_safe_byte(c, &prev, r->bytes[k], NULL);
+            pcrec_sb_printf(c,
+                "\", so a window without them holds no match at all;\n"
+                "%s * the scan is on byte %d at offset %d of the run. */\n",
+                indent, (int)r->bytes[r->idx], r->idx);
+        } else {
+            prev = 0;
+            pcrec_sb_printf(c,
+                "%s/* [K66] every match contains the whole %d-byte run \"", indent,
+                r->whole_len);
+            for (k = 0; k < r->whole_len; k++)
+                emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
+            pcrec_sb_printf(c,
+                "\";\n"
+                "%s * with no DFA scan in front this is the call's only linear\n"
+                "%s * no-match proof, so it compares all of it, not one window. */\n",
+                indent, indent);
+        }
+        pcrec_sb_cmt_close(c);
+        pcrec_sb_printf(c, "%sif (%s(%s, %s, %s) >= %s) return 0;\n",
+                        indent, req_run_fn_name(cx, i), subjvar, lenvar, posvar,
+                        lenvar);
+    }
 }
 
 /* [K65] Writes the pre-check's second half on a VM route with no DFA scan in
@@ -876,7 +907,7 @@ static void emit_req_run_rest(Ctx *cx, StrBuf *c, const char *indent,
  *
  * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: `Job.req_byte`
  * for the one-byte form, every byte of the WHOLE run for the run form (on
- * this route `emit_req_run_rest` has compared all of it, and a window holding
+ * this route `emit_req_run_check` has compared all of it, and a window holding
  * the run holds each of its bytes). Members go out in ascending byte
  * order; the order moves no answer, and the rarest member has already been
  * scanned first by the half above.
@@ -951,7 +982,7 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
  * [K65] On a VM route with no DFA scan the byte (or run) is followed by a
  * test of every other necessary-set member, `emit_req_set_rest` above, so the
  * no-match proof there does not rest on the pick. [K66] A run longer than its
- * window is compared whole there first, `emit_req_run_rest`, so it does not
+ * window is compared whole there first, `emit_req_run_check`, so it does not
  * rest on the window pick either. */
 void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
@@ -974,7 +1005,6 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
      * sabotage row S265's anchor is in it. */
     if (cx->job->req_run.len >= 2) {
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
-        emit_req_run_rest(cx, c, indent, posvar, subjvar, lenvar);
         emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
         return;
     }
@@ -4389,29 +4419,6 @@ struct DfaDir {
     const char *scan_back;
 };
 
-/* [OPT-LITSCAN] S1 — THE CANDIDATE TEST a `<p>_ofsskip` block emits: one
- * scan (offset, byte) and the terms verified at each candidate, ascending by
- * offset -- each either one walk offset (a byte compare or a table probe) or
- * the pinned run (one constant-length compare, P4). ONE derivation,
- * `ofs_test_of`, and every reader that asks what the block tests reads it:
- * the block and its verify chain, its table parameters and tables, its
- * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
- *
- * It holds no `Dfa` and no `DfaForm`, so a later consumer without a DFA can
- * fill one from its own facts and hand it to the same block emitter (§1.5,
- * `[OPT-VMSEED]`). The `PrefixK` pointers point into the caller's
- * `UnanchStart`, which outlives every use (the reason `DfaForm` held the
- * selection by pointer before this). */
-typedef struct {
-    int scan_k, scan_byte;            /* scan_byte -1: not one byte (unreachable) */
-    int nterm;
-    struct { const PrefixK *k; } term[PCREC_OFSK_MAX_SET]; /* k == NULL: the run */
-    int run_o, run_len;               /* run_len == 0: no run term */
-    const unsigned char *run_bytes;   /* Job.req_run.bytes, never a copy */
-    int maxk;                         /* the loop guard: the largest tested offset */
-    int noffsets;                     /* distinct offsets tested */
-} OfsTest;
-
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
     /* [OPT-K] the Ctx, originally for `pcrec_ctx_fail` alone. Two arms of the
@@ -5424,9 +5431,9 @@ static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const PrefixKSets *
  * `fs` can begin one from there. `\b\.[0-9]{4}Z` lost three matches to
  * exactly that. src/opt/prefix_k.c's `pcrec_prefix_ksets` header is the full
  * account; here the consequence is one table name. */
-static const char *ofsk_tbl_name(const DfaForm *f, const PrefixK *k)
+static const char *ofsk_tbl_name(Ctx *cx, const char *p, const PrefixK *k)
 {
-    return dfa_fragf(f->cx, "%s_ofs_k%d", f->p, k->k);
+    return dfa_fragf(cx, "%s_ofs_k%d", p, k->k);
 }
 
 /* The byte-class prefilter's one table, `can_begin_match`, with the emitted
@@ -5472,9 +5479,8 @@ static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
  * artifact sees the pattern's own order. A singleton set is a byte compare
  * rather than a table probe — cheaper, and it puts the byte in the artifact
  * where a reader can see it. */
-static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
+static void ofsk_emit_verify(Ctx *cx, StrBuf *c, const char *p, const OfsTest *t)
 {
-    const OfsTest *t = &f->ofs;
     bool first = true;
     for (int i = 0; i < t->nterm; i++) {
         const PrefixK *k = t->term[i].k;
@@ -5484,13 +5490,13 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
             /* THE RUN TERM, P4: the whole pinned run in one compare. */
             emit_exact_compare(c, t->run_o == 0
                                   ? "subject + cand"
-                                  : dfa_fragf(f->cx, "subject + cand + %d", t->run_o),
+                                  : dfa_fragf(cx, "subject + cand + %d", t->run_o),
                                t->run_bytes, t->run_len);
         } else if (k->count == 1) {
             if (k->k == 0) pcrec_sb_printf(c, "subject[cand] == %d", k->byte);
             else           pcrec_sb_printf(c, "subject[cand + %d] == %d", k->k, k->byte);
         } else {
-            const char *tbl = ofsk_tbl_name(f, k);
+            const char *tbl = ofsk_tbl_name(cx, p, k);
             if (k->k == 0) pcrec_sb_printf(c, "%s[subject[cand]]", tbl);
             else           pcrec_sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
         }
@@ -5501,27 +5507,28 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
      * term. A silent `1` would emit a skip that accepts every candidate —
      * correct, and with the whole mechanism switched off. */
     if (first)
-        pcrec_ctx_fail(f->cx, 0, "internal error: an offset-k skip with an empty "
+        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip with an empty "
                                "verify chain (the chain is never empty: an "
                                "offset-set row always verifies offset 0, and a "
                                "run row always carries its run term)");
 }
 
 /* Names the block's parameters, in the order `ofsk_emit_params` writes them. */
-static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
+static void ofsk_emit_params(Ctx *cx, StrBuf *c, const char *p,
+                             const OfsTest *t, bool decl)
 {
-    for (int i = 0; i < f->ofs.nterm; i++) {
-        const PrefixK *k = f->ofs.term[i].k;
+    for (int i = 0; i < t->nterm; i++) {
+        const PrefixK *k = t->term[i].k;
         if (!k || k->count <= 1) continue;
         pcrec_sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "",
-                  ofsk_tbl_name(f, k));
+                  ofsk_tbl_name(cx, p, k));
     }
 }
 
-/* LAYER 2 — the block. One function per artifact, at file scope. */
+/* LAYER 2 — the block. One function per artifact, at file scope: the
+ * offset-skip's comment, then `<p>_ofsskip` from `ofs_test_emit_fn`. */
 static void pf_block_ofs(StrBuf *c, const DfaForm *f)
 {
-    const char *p = f->p;
     const OfsTest *t = &f->ofs;
     int maxk = t->maxk;
 
@@ -5561,9 +5568,23 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         : " * to emit the same matcher without it.\n");
     pcrec_sb_puts(c, " */\n");
     pcrec_sb_cmt_close(c);
+    ofs_test_emit_fn(f->cx, c, f->p, dfa_fragf(f->cx, "%s_ofsskip", f->p), t);
+}
 
-    pcrec_sb_printf(c, "static inline size_t %s_ofsskip(const unsigned char *subject, size_t n, size_t pos", p);
-    ofsk_emit_params(c, f, true);
+/* Writes `static inline size_t <name>(subject, n, pos[, tables])`, the one
+ * search block every candidate test `t` is emitted through: the first
+ * position >= `pos` that passes every test of `t`, or `n` when none does.
+ * It reads no `Dfa` and no `DfaForm` (litscan_s1.md §1.3's narrowing), so a
+ * caller without a DFA -- the run pre-check on a VM route -- emits its own
+ * test through it; `p` names the verify tables, which only a model term
+ * reads. */
+static void ofs_test_emit_fn(Ctx *cx, StrBuf *c, const char *p,
+                             const char *name, const OfsTest *t)
+{
+    int maxk = t->maxk;
+
+    pcrec_sb_printf(c, "static inline size_t %s(const unsigned char *subject, size_t n, size_t pos", name);
+    ofsk_emit_params(cx, c, p, t, true);
     pcrec_sb_puts(c, ")\n{\n");
     pcrec_sb_printf(c, "    while (pos + %d < n) {\n", maxk);
     pcrec_sb_puts(c,   "        size_t cand;\n");
@@ -5573,13 +5594,16 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
          * [K27]'s memchr(NULL, c, 0) hazard closed by the loop guard rather
          * than by a second test.
          *
-         * [OPT-LITSCAN] S1: `k* == 0` is reached by ONE selection, a
-         * run-pinned row with no model selection (litscan_s1.md class B).
-         * Its refusal (a byte other than run[0] cannot begin a match) rests
-         * on the walk's own singleton at offset 0, the pin's clause 2, and
-         * its landing (the byte a returned candidate carries leaves the start
-         * state) on clause 3(b): the start state's escape set is exactly
-         * {run[0]}, today's memchr byte. Never on `k0` alone for the first. */
+         * [OPT-LITSCAN] S1: `k* == 0` is reached by ONE prefilter
+         * selection, a run-pinned row with no model selection (litscan_s1.md
+         * class B). Its refusal (a byte other than run[0] cannot begin a
+         * match) rests on the walk's own singleton at offset 0, the pin's
+         * clause 2, and its landing (the byte a returned candidate carries
+         * leaves the start state) on clause 3(b): the start state's escape
+         * set is exactly {run[0]}, today's memchr byte. Never on `k0` alone
+         * for the first. A run pre-check scanning its run's first byte
+         * reaches it too, and asks neither clause: its test is only "the
+         * run begins here", and its caller reads no start state. */
         if (t->scan_k == 0)
             pcrec_sb_printf(c, "        const void *q = memchr(subject + pos, %d, n - pos);\n", t->scan_byte);
         else
@@ -5598,11 +5622,11 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
          * bitmap-scan arm that stood here was written for a k = 0 scan and
          * read `can_begin_match`, which is the set MISCOMPILE-1 is about; it
          * is deleted rather than left as dead emitted text. */
-        pcrec_ctx_fail(f->cx, 0, "internal error: an offset-k skip whose scan "
+        pcrec_ctx_fail(cx, 0, "internal error: an offset-k skip whose scan "
                                "offset is not a single byte value");
     }
     pcrec_sb_puts(c,   "        if (");
-    ofsk_emit_verify(c, f);
+    ofsk_emit_verify(cx, c, p, t);
     pcrec_sb_puts(c,   ") return cand;\n");
     pcrec_sb_puts(c,   "        pos = cand + 1;\n"
                  "    }\n"
@@ -5657,7 +5681,7 @@ static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
     pf_open(c, f);
     pcrec_sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
               ind, f->p);
-    ofsk_emit_params(c, f, false);
+    ofsk_emit_params(f->cx, c, f->p, &f->ofs, false);
     pcrec_sb_puts(c, ");\n");
     pcrec_sb_printf(c, "%s    if (cand >= subject_length) return 0;\n", ind);
     pcrec_sb_printf(c, "%s    scan_position = cand;\n", ind);
@@ -5680,7 +5704,7 @@ static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
      * failed scan lands at n-1 and the stepped loop takes it from there. */
     pcrec_sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
               ind, f->p);
-    ofsk_emit_params(c, f, false);
+    ofsk_emit_params(f->cx, c, f->p, &f->ofs, false);
     pcrec_sb_puts(c, ");\n");
     pcrec_sb_printf(c, "%s    if (cand < subject_length) {\n", ind);
     pcrec_sb_printf(c, "%s        scan_position = cand;\n", ind);
@@ -7341,6 +7365,9 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     fwd.repr->emit_token(c, &fwd);
     if (!pinned) rev.repr->emit_token(c, &rev);
     if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
+    /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, under the same
+     * condition as its call below. */
+    if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
 
     emit_search_head(cx, c, fn, storage);
     /* [OPT-ENDWIN] `fit.chosen == ENGM_DFA` for `emit_search_head`'s own
@@ -7610,6 +7637,9 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
+    /* [OPT-LITSCAN] S1 step 6 the run pre-check's blocks, at file scope and
+     * under the same condition as its call below. */
+    if (cx->job->fit.chosen == ENGM_DFA) pcrec_emit_req_run_blocks(cx, c);
     emit_search_head(cx, c, fn, storage);
     /* [OPT-ENDWIN] the clamp, on the caller-facing entry only — the sibling
      * site in `emit_unanchored` carries the reason. It composes with
