@@ -3211,3 +3211,11 @@ never edited afterwards.
   passing regression at the same basename in `tests/base/`, net +0/+0/+0
   on the rxtsource census). `make test` launched detached as the lane's
   last act; verdict OWED, log path in the report.
+- `s1build_report.md` — `[OPT-LITSCAN]` S1 steps 1-5 built per
+  `docs/design/litscan_s1.md` revision 3 (2026-09-25): uint64 deny
+  plumbing, P4 `emit_exact_compare`, `OfsTest`, the run pin, G1 widened and
+  the run-pinned row pair with `-fno-run-prefilter` (bit 32), abi 35 -> 36.
+  Movers equal the census BY ID (corpus 505, not 513 — `census.py`'s
+  non-ASCII argv bug found and fixed); sabotage S279-S284 (row (j)
+  UNDETECTED with its measured derivation); step 6 NOT built, the report
+  states what it must re-derive on K66's shared scan loop.
