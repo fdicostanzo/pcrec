@@ -189,3 +189,61 @@ shapes" invariant is exactly what one shared loop bought.
 - spec/docs: `docs/spec/match_api.md`, `tuning.md`, `registry.md`;
   `docs/design/compare_stack.md`; CLAUDE.md files (src/gen, src/opt,
   tests, tests/offsetskip, tests/mech, docs/dev/optloop/s1); plan row.
+
+## Finish — triage S1 reds + sabotage rows (b)-(f) (2026-09-25)
+
+**PART 1, the three S1-battery reds — all diagnosed, none are S1 bugs.**
+
+- **test-codegen**: `run_group: 10/11 scripts passed`, the ONE failure is
+  `run_inline_capability.sh`'s standing `FAIL: nm could not read arm_a.o`
+  probe. Confirmed pre-existing at the branch point: `bash tests/codegen/
+  run_inline_capability.sh` against a scratch build of main `27a63314`
+  fails identically. Not S1's; not fixed (nothing to fix).
+- **test-registry**: `axes_registry_check` COVERAGE CHANGED, 123 -> 135 —
+  a real, legitimate move. The two run-pinned candidates
+  (`run-pinned-bounded`, `run-pinned`) each carry a `|`-joined TWO-BIT deny
+  cell, and the script's own S1-added multi-bit-deny arm checks EACH half
+  as its own (macro, bit, flag) triple: 2 candidates x 2 bits x 3 checks =
+  12 new PASS lines (verified against the script's live output — 6 lines
+  per candidate, `bit 16`/`bit 32` interleaved — not guessed from the new
+  axis count alone, which would predict 6 not 12). Re-pinned to 135 with
+  the derivation in the comment. **`bash tests/registry/run_registry_tests.sh`:
+  green** (registry_check 226/0, PC-3 210/0, limits_check 29/0 all already
+  matched their pins — only the axes arm's own pin was stale).
+- **test-resource**: `'a{5,25000}' -fno-scan-edge -fno-start-pinned`
+  rescued at 762270 bytes, pinned 762401 — S1's own G1 mechanism now elides
+  this witness's require-byte pre-check (the DFA candidate scan for
+  `a{5,25000}` already implies byte 'a', so `RX_REQ_WHY` flips "emitted" ->
+  "dominated" and the 133-byte memchr-guarded block is dropped; +2 bytes
+  from the longer REQ_WHY string nets -131). Confirmed by diffing the exact
+  artifact at the branch point (abi 35) against this tip (abi 36) at the
+  same `-o` basename: only the abi digit, the REQ_WHY value and the three
+  deleted lines move. Re-pinned to 762270 with the byte accounting in the
+  comment. **`bash tests/resource/run_resource_tests.sh`: 27/0/0** (was
+  26/1).
+
+**PART 2, sabotage rows (b)-(f) — S285-S289, none folded into an existing
+row.** All five are genuinely distinct sites from (a)/(g)/(h)/(i)/(j)/(k):
+(c)/(e)/(f) needed only a plant file since their structural witnesses
+already exist as `run_prechecks.sh` §5.10 rows (the build lane's own
+witness table already carries the "(sabotage row c/e/f: ...)" parentheticals
+that name them). S285 (b) and S287 (d) needed new witnesses too. All five
+validated SOLO via `bash tests/mech/run_sabotage_matrix.sh S28<N>`:
+S285/S286/S288/S289 DETECTED; S287 UNDETECTED (EXPECTED) — the defect is
+real (confirmed by a hand ASan reproduction, see the row's own header) but
+no suite arm in this matrix links generated code against a sanitizer
+runtime, and exporting `GENCFLAGS` with `-fsanitize=` into the matrix's own
+environment does not thread through to `harness`'s per-case gcc invocation
+(measured). `tests/mech/CLAUDE.md`'s S1 table extended to the full eleven
+rows.
+
+**Validation run in this finish**: `make strict CC=gcc-16` clean;
+`bash tests/registry/run_registry_tests.sh` green; `bash tests/resource/
+run_resource_tests.sh` 27/0/0; `bash tests/codegen/run_inline_capability.sh`
+confirmed pre-existing at branch point; `bash tests/codegen/run_prechecks.sh`
+289/0 (was 289/0 — unchanged by this finish, S285-S289 are new sabotage
+DEFINITIONS, not new prechecks assertions); `bash tests/rxtsource/
+run_rxtsource_tests.sh` 214/0 (1 recorded, the pre-existing darwin
+python-version note); each of S285-S289 solo. Full `make test` NOT re-run
+(the manager schedules the next heavy run, per this lane's own boilerplate).
+Not merged.
