@@ -8569,3 +8569,42 @@ ruling asks — review compiled by the revision lane):
    sourcing — one sourcing-lane attempt, then a labelled synthesized
    corpus; no `--analysis` path sugar — Frank: "ok as long as these are
    small or reversible" (all three are).
+
+## D125 — THE CLOSE-OUT SEQUENCE: close tail pieces first, then finish active items (holding the next optimization cycle), then reassess and finish older/parked items against today's architecture, then stop and take stock (Frank, 2026-09-26, eightieth session)
+
+Frank, verbatim: "I want to close currently open items before others.
+Close items (finish tail pieces) mentioned. Then let's finish active items
+and close those (hold next opt cycle). Then finish some of the older items
+although they may need reassessment consider new items and changed
+architecture. Then when all that's done, let's stop and consider where we
+are."
+
+Four phases, in order:
+
+1. **PHASE 1 — TAILS.** Close the rows that are stale-tagged `STATE:started`
+   but whose own text already shows the work is done or ruled: finish the
+   small residual pieces (a sabotage re-run, a stale-text correction, a
+   verified merge citation) and flip the STATE tag. This is the lane the
+   close-out sequence itself was chartered through (`lane/closetails`,
+   source table `/tmp/pcrec_closeplan.md`).
+2. **PHASE 2 — ACTIVE ROWS.** Finish [OPT-LITSCAN] (S1 step 6 onward),
+   [FINDINGS] (B1/B2/B4/B5/B6), and the in-flight [OPTLOOP] cycle, then
+   close what completes. **The NEXT optimization cycle is HELD** — cycle 2
+   analysis/implementation does not open until Frank lifts the hold.
+3. **PHASE 3 — OLDER/PARKED ROWS.** Every older or parked row (the "not
+   before REL-1" parking lot — [ENG-ISL], [DD-13], [CLS-TREE] and kin; the
+   D77-tail rows named in `/tmp/pcrec_closeplan.md`) is REASSESSED against
+   TODAY's architecture (D122/D124's "one artifact, two emission
+   strategies", the shipped literal-search kit, [PATFACTS]) before any
+   further work on it — a row chartered against an earlier tree may no
+   longer be the right shape, or may already be subsumed.
+4. **PHASE 4 — STOP AND TAKE STOCK.** When phases 1-3 are done, stop; no
+   new phase opens without Frank's word.
+
+**New rows may be FILED at any phase (nothing here blocks capturing a
+finding) but may NOT be SCHEDULED — i.e., no new row starts work — ahead of
+its phase's turn.** A row's own text may note "closes/depends on this
+sequence"; that is process bookkeeping, not a schedule jump.
+
+This ordering supersedes no existing D77/D86 lane-column discipline; it is
+a SEQUENCE ruling laid on top of it for this stretch of work.
