@@ -61,6 +61,7 @@ int main(void)
     ptrdiff_t (*caps_b)[2] = calloc((size_t)pb_info.ncaps, sizeof *caps_b);
     if (!caps_a || !caps_b) {
         fprintf(stderr, "definitions_oracle_driver: out of memory\n");
+        free(caps_a); free(caps_b);
         return 2;
     }
 
