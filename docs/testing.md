@@ -2316,6 +2316,45 @@ No findings from `make ubsan` at commit `c509d944` — clean across the full
 suite including the PC-3/PC-4 probe volume. `make asan` is clean too after
 F1's fix — full quiet re-run GREEN, 470.4s, in the runtime table above.
 
+**F2 — `tests/harness/driver.c` leaked its `vars` array (module `vars`'
+own `${name}` bindings), surfaced by a Linux `make asan` run** (2026-09-26,
+lane `drvleak`): `calloc`'d at `driver.c:423` for every `${name}` binding on
+`argv[5..]`, `vars` was freed on only three of `main()`'s nine exit paths —
+the `mode_count` find-all loop's two returns, the caller-buffer allocation
+failure, the `_in`-entries cross-check's `bad` exit, and both of the
+ordinary match/nomatch/give-up returns at the end of `main()` all fell
+through with the array still live. LeakSanitizer's nonzero exit on the
+leak, not a real answer disagreement, is what turned all 81 red cells in
+`tests/vars/{basic,caseless,unset}.rxt` into failures — every one reported
+`the search did not give up` against an expected `gu`/match/nomatch line,
+which is exactly the shape of the driver's own real exit code (0/1/3) being
+replaced by LSan's leak-detected exit. **A second, narrower leak in the
+same allocation rode along and was not in the LSan trace**: each SET
+binding's decoded value (`decode()`'s own fresh `malloc`, `rx_var.p`) is a
+separate allocation from the `vars` array itself and was never freed
+either — found by code review of every `rx_var.p` write, confirmed with
+macOS's native `leaks(1)` tool against a var-bearing artifact (2 leaks / 48
+bytes before the fix — the array plus one bound value's decoded buffer — 0
+leaks after), since **this Mac cannot run `ASAN_OPTIONS=detect_leaks=1` at
+all**: K54's Darwin LSan-hangs-at-exit defect (`SAN_DETECT_LEAKS=0` on
+Darwin, Makefile) fires unconditionally, leak or no leak, so the exact
+LSan-clean confirmation for the 81 cells is a Linux-only measurement,
+reproduced instead with `leaks(1)` here. Fixed by `free_vars()`, called on
+every exit path after the allocation, freeing each populated slot's `.p`
+(an UNSET slot's is already `NULL`) before the array itself. Two sibling
+drivers had the identical narrow shape (two `calloc`s checked together,
+only one freed on the shared OOM path) and were fixed alongside it as the
+same class, trivially: `tests/registry/definitions_oracle_driver.c`
+(`caps_a`/`caps_b`) and `tests/thread/ts2_driver.c` (`tids`/`args`) — the
+latter is outside every sanitizer battery (`tests/thread/` is deliberately
+excluded from `ubsan`/`asan`/`san`, the TSan-vs-ASan non-composition
+reason above) so its fix is a correctness tidy-up with no battery
+consequence. See `docs/dev/lanes/drvleak_report.md` for the harness-slice
+ASan validation and the fuller sibling-driver survey (several `Job`/`Ctx`
+allocations that LOOKED unfreed on a naive grep already have a proper
+`release()`/`pcrec_arena_free`+`free()` pair one call away — false
+positives, not findings).
+
 ### K7/K9 — read, not automated here
 
 docs/dev/known_issues.md K7 (a large bounded repeat exhausts memory and can

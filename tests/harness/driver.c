@@ -377,6 +377,23 @@ static int parse_route(const char *s, int *use_in, int *have_buffers,
     return 0;
 }
 
+/*
+ * Free a bindings array built by main()'s own `argv[5..]` loop, ITS OWN
+ * VALUES INCLUDED. `vars` is one calloc, but each SET slot's `.p` is a
+ * separate decode()-malloc'd buffer (an UNSET slot's `.p` is NULL by
+ * construction, and free(NULL) is a no-op) -- freeing the array alone
+ * leaks every bound value's storage. `nvars` is the number of slots
+ * actually populated so far, which is exactly right at every one of the
+ * loop's own early-failure returns too: entries below it hold real
+ * decoded values, entries at or above it are still the calloc's zeroed
+ * (i.e. already-NULL) bytes.
+ */
+static void free_vars(rx_var *vars, size_t nvars) {
+    if (!vars) return;
+    for (size_t i = 0; i < nvars; i++) free((void *)vars[i].p);
+    free(vars);
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "usage: %s <subject> [startpos] [route] [mode] [var...]\n", argc > 0 ? argv[0] : "t");
@@ -414,9 +431,12 @@ int main(int argc, char **argv) {
      * write (the artifact's own rule is FIRST MATCH WINS) and collapsing it
      * here would make that cell untestable.
      *
-     * The value's storage is `argv`'s own decoded copy, which outlives the
-     * call by construction — `rx_var.p`'s lifetime rule (variables_common.md
-     * §4.3) satisfied without a second allocation policy. */
+     * The value's storage is a fresh decode()-malloc'd copy, not a pointer
+     * into `argv` itself (the split above writes a NUL into `argv[i]`, which
+     * a shared pointer could not survive) — it lives for the rest of the
+     * call and is freed, alongside the `vars` array itself, by `free_vars`
+     * on every exit path from here on (`rx_var.p`'s lifetime rule,
+     * variables_common.md §4.3). */
     size_t nvars = 0;
     rx_var *vars = NULL;
     if (argc > 5) {
@@ -434,7 +454,7 @@ int main(int argc, char **argv) {
                 size_t vlen = 0;
                 *eq = '\0';                 /* split in place; argv is ours */
                 unsigned char *vb = decode(eq + 1, &vlen);
-                if (!vb) { free(vars); return 2; }
+                if (!vb) { free_vars(vars, nvars); return 2; }
                 vars[nvars].name = argv[i];
                 vars[nvars].p    = vb;
                 vars[nvars].len  = vlen;
@@ -445,7 +465,7 @@ int main(int argc, char **argv) {
 
     unsigned char *buf = argv[1][0] == '@' ? read_subject_file(argv[1] + 1, &len)
                                            : decode(argv[1], &len);
-    if (!buf) { free(vars); return 2; }
+    if (!buf) { free_vars(vars, nvars); return 2; }
 
     /* [DD-13b.W23.3, H7] THE FIND-ALL LOOP, which is the `mc` line's whole
      * question. It is `docs/spec/match_api.md` §3.1's loop TRANSCRIBED —
@@ -484,6 +504,7 @@ int main(int argc, char **argv) {
                                   : NULL;
                     if (w) printf("%s\n", w);
                     else printf("giveup %d\n", r);
+                    free_vars(vars, nvars);
                     free(buf);
                     return 3;
                 }
@@ -495,6 +516,7 @@ int main(int argc, char **argv) {
                   : RXFN(_next_pos)(buf, len, (size_t)fa[0][0]);
         }
         printf("count %zu\n", nmatch);
+        free_vars(vars, nvars);
         free(buf);
         return 0;
     }
@@ -517,7 +539,7 @@ int main(int argc, char **argv) {
             if (!frames_mem || !trail_mem) {
                 fprintf(stderr, "driver: out of memory for a %zu-frame / %zu-entry buffer\n",
                         nframes, ntrail);
-                free(frames_mem); free(trail_mem); free(buf);
+                free(frames_mem); free(trail_mem); free_vars(vars, nvars); free(buf);
                 return 2;
             }
         }
@@ -656,7 +678,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (bad) { free(frames_mem); free(trail_mem); free(buf); return 4; }
+        if (bad) { free(frames_mem); free(trail_mem); free_vars(vars, nvars); free(buf); return 4; }
     }
 
     free(frames_mem); free(trail_mem);
@@ -714,10 +736,12 @@ int main(int argc, char **argv) {
                           : NULL;
         if (word) printf("%s\n", word);
         else printf("giveup %d\n", found);
+        free_vars(vars, nvars);
         free(buf);
         return 3;
     }
 
+    free_vars(vars, nvars);
     free(buf);
     return 0;
 }

@@ -93,7 +93,11 @@ int main(int argc, char **argv)
 
     pthread_t *tids = malloc((size_t)nthreads * sizeof(pthread_t));
     ThreadArg *args = calloc((size_t)nthreads, sizeof(ThreadArg));
-    if (!tids || !args) { fprintf(stderr, "ts2_driver: out of memory\n"); return 2; }
+    if (!tids || !args) {
+        fprintf(stderr, "ts2_driver: out of memory\n");
+        free(tids); free(args);
+        return 2;
+    }
 
     for (int t = 0; t < nthreads; t++) {
         args[t].iters = iters;
