@@ -21,7 +21,8 @@
  *   PCREC_RXT_SCHEMA(scope, kind, value, opens_group, children,
  *                    cardinality, constraints, source, validated_by, wave)
  *
- *   scope        FILE | BLOCK | CONFIG | DATA | PROVENANCE | VARIANT — the
+ *   scope        FILE | BLOCK | CONFIG | BUNDLE | DATA | PROVENANCE |
+ *                VARIANT — the
  *                lexical context the kind is legal in. A bare token, pasted
  *                into `RXT_SCOPE_##scope`; the dump lowercases it.
  *   kind         the line's FIRST TOKEN, as an author types it. `frames-
@@ -83,6 +84,11 @@
  *                    ONE reserved name: it reads the ENCLOSING scope's own
  *                    name, which is how one `provenance` record serves two
  *                    parents without being two records (§2.14).
+ *                    [FINDINGS] B0: conditions JOIN with ` and ` —
+ *                    `required-if parent == data and source != authored`
+ *                    holds when every conjunct does. Conjunction only: a
+ *                    disjunction is two clauses already (docs/design/
+ *                    findings/design.md §0.10 is the measured need).
  *   source       FORMAT (pcrec declares this row) | FILE (a `vocabulary`
  *                line declares it, §2.15). Every row below is FORMAT; the
  *                FILE half arrives with `vocabulary`'s production.
@@ -143,8 +149,15 @@ PCREC_RXT_SCHEMA(FILE, "vocabulary",  LIST,  0, PROSE,      REPEAT,      "unique
 PCREC_RXT_SCHEMA(FILE, "oracle",      TOKEN, 0, NONE,       AT_MOST_ONE, "", FORMAT, PCREC,      23)
 PCREC_RXT_SCHEMA(FILE, "tag",         LIST,  0, NONE,       REPEAT,      "closed per-key", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(FILE, "use",         LIST,  0, NONE,       REPEAT,      "", FORMAT, PCREC,      23)
-PCREC_RXT_SCHEMA(FILE, "freq",        TOKEN, 0, DATA,       REPEAT,      "", FORMAT, PCREC,      23)
 PCREC_RXT_SCHEMA(FILE, "ext",         TOKEN, 0, TREE,       REPEAT,      "", FORMAT, PCREC,      23)
+
+/* [FINDINGS] B0 (docs/design/findings/design.md §3.1): `analysis <name>`
+ * opens a BUNDLE — the named analysis a config selects. It REPLACES the
+ * file-level `freq <name>` row, which had no reader and no corpus user
+ * (MEASURED): a kind block lives inside a bundle now, unnamed. The name
+ * grammar (lowercase `[a-z][a-z0-9_-]*`, matched later by EXACT directory
+ * entry, r2 M-S6) is the production's; `unique-by value` is the schema's. */
+PCREC_RXT_SCHEMA(FILE, "analysis",    TOKEN, 0, BUNDLE,     REPEAT,      "unique-by value", FORMAT, PCREC, 23)
 
 /* RESERVED, and the row exists PRECISELY so the refusal is by name. A
  * keyword with no row refuses as an unknown token, which is the truth
@@ -169,7 +182,9 @@ PCREC_RXT_SCHEMA(CONFIG, "budget",   PAIR,  0, NONE, ACCUMULATE,  "", FORMAT, PC
  * parser in src/core/tune.c rather than by a constraint spelled here, the
  * same way `engine`'s `vm` is checked in rxt_source.c. */
 PCREC_RXT_SCHEMA(CONFIG, "tune",     TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 1)
-PCREC_RXT_SCHEMA(CONFIG, "analysis", LIST,  0, NONE, REPEAT,      "", FORMAT, PCREC, 23)
+/* [FINDINGS] B0: names ONE analysis (a bundle) — TOKEN and AT_MOST_ONE,
+ * no longer a LIST of data blocks (D123-1/2). */
+PCREC_RXT_SCHEMA(CONFIG, "analysis", TOKEN, 0, NONE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
 
 /* ---- BLOCK scope — a pattern block's own lines ------------------------
  *
@@ -251,16 +266,20 @@ PCREC_RXT_SCHEMA(BLOCK, "ext",        TOKEN,     0, TREE,       REPEAT,      "",
  * finding (§2.26 item 10). */
 
 PCREC_RXT_SCHEMA(PROVENANCE, "source",       TOKEN, 0, NONE,  AT_MOST_ONE, "required",                                              FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(PROVENANCE, "url",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(PROVENANCE, "ref",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
+/* [FINDINGS] B0 (design.md §0.10): a user's private exemplar has no `url`,
+ * so `url`/`ref` are required only under a PATTERN parent; the authored
+ * `default` has no exemplar, so `bytes`/`sha256` are required under a DATA
+ * parent only when the data was not authored. Both need the conjunction. */
+PCREC_RXT_SCHEMA(PROVENANCE, "url",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block and source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "ref",          TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block and source != authored;forbidden-if source == authored", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "retrieved",    TOKEN, 0, NONE,  AT_MOST_ONE, "required",                                              FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "license",      TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block",                           FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "license-note", PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "fidelity",     TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == block;closed fidelity verbatim adapted synthesized", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "adaptation",   PROSE, 0, PROSE, AT_MOST_ONE, "required-if fidelity != verbatim",                      FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(PROVENANCE, "attribution",  PROSE, 0, PROSE, AT_MOST_ONE, "",                                                      FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(PROVENANCE, "bytes",        INT,   0, NONE,  AT_MOST_ONE, "required-if parent == data",                            FORMAT, PCREC, 23)
-PCREC_RXT_SCHEMA(PROVENANCE, "sha256",       TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == data",                            FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "bytes",        INT,   0, NONE,  AT_MOST_ONE, "required-if parent == data and source != authored",      FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(PROVENANCE, "sha256",       TOKEN, 0, NONE,  AT_MOST_ONE, "required-if parent == data and source != authored",      FORMAT, PCREC, 23)
 
 /* ---- VARIANT scope — §2.23's five attributes ------------------------- */
 
@@ -275,11 +294,33 @@ PCREC_RXT_SCHEMA(VARIANT, "kind",        TOKEN, 0, NONE,  AT_MOST_ONE, "closed k
 PCREC_RXT_SCHEMA(VARIANT, "groups",      LIST,  0, NONE,  AT_MOST_ONE, "forbidden-if unsupported present", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(VARIANT, "note",        PROSE, 0, PROSE, AT_MOST_ONE, "forbidden-if unsupported present", FORMAT, PCREC, 23)
 
-/* ---- DATA scope — the `freq <name>` block's body (§2.10) -------------- */
+/* ---- BUNDLE scope — an `analysis <name>` bundle's body ([FINDINGS] B0)
+ *
+ * At most one data block per KIND, an optional `include <other>` in C's
+ * SEARCH spelling (one per bundle, D123-8 item 4, so the chain stays a
+ * chain), and a prose `description`. `cpfreq` and `bigram` are NOT rows
+ * yet: each is admitted with its first reader (R2 — B5 and B4). With one
+ * kind a bundle holds at most one block, which is why the bundle-level
+ * (query, encoding) collision rule (r2 M-B1) reaches only a duplicated
+ * encoding on ONE `serves` line until `cpfreq` lands. */
+
+PCREC_RXT_SCHEMA(BUNDLE, "include",     TOKEN, 0, NONE,  AT_MOST_ONE, "", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BUNDLE, "description", PROSE, 0, PROSE, AT_MOST_ONE, "", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(BUNDLE, "freq",        NONE,  0, DATA,  AT_MOST_ONE, "", FORMAT, PCREC, 23)
+
+/* ---- DATA scope — a kind block's body (§2.10; findings design §2.3-§2.4)
+ *
+ * `encoding` DESCRIBES the counted data and is never consulted for
+ * selection; `serves` is the operative applicability line, and its value
+ * grammar (`<query> when <enc>[,<enc>…] via <derivation>`, closed
+ * vocabularies) is the production's — only its per-block uniqueness by
+ * query is a schema clause. `row`'s key grammar is per KIND. */
 
 PCREC_RXT_SCHEMA(DATA, "question",   LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "reader",     LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "analyzer",   LINE,  0, NONE,       ONE,         "required", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "encoding",   TOKEN, 0, NONE,       ONE,         "required;closed data-encoding ascii utf8 latin1 bytes", FORMAT, PCREC, 23)
+PCREC_RXT_SCHEMA(DATA, "serves",     LIST,  0, NONE,       REPEAT,      "required;unique-by first-word", FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "row",        LIST,  0, NONE,       REPEAT,      "",         FORMAT, PCREC, 23)
 PCREC_RXT_SCHEMA(DATA, "provenance", NONE,  0, PROVENANCE, AT_MOST_ONE, "required", FORMAT, PCREC, 23)
 
