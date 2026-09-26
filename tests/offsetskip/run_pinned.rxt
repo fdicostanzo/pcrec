@@ -100,3 +100,16 @@ m "X/1234" 0 6
 m "aX/1234" 1 7
 n "y/1234"
 n "X/123"
+
+# ---- C0: the run is pinned, but not where the scan runs --------------------
+# The walk's singletons spell `/abcd` at 0 and `/user` at 6; the run `/user`
+# is pinned at 6, the offset-0 memchr byte `/` is not its scan member there,
+# so no run row applies (clause 3). A pin that ignored the BYTES would take
+# the first all-singleton window (offset 0) and compare `/user` there,
+# losing every match — sabotage row (g)'s witness, litscan_s1.md §7.1.
+pattern /abcd[xy]/user
+features classes
+m "/abcdx/user" 0 11
+m "a/abcdy/user" 1 12
+n "/abcdz/user"
+n "/user"
