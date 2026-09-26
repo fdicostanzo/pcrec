@@ -101,12 +101,15 @@ BASE key in this order:
    worked example is this exact file's exact pattern), and 3 on
    `-fprefilter` REVERSED (default gives up, forcing the prefilter
    answers nomatch — tuning.md §2.5). Every entry keys off a LIVE
-   re-measurement on this box (`run_axes.sh`'s own header comment on the
-   array has the per-group counts and citations); the manifest's
-   `<flags>|<file:line>` keys are `$ROOT_DIR`-absolute (the shape a
-   full-corpus run's `find "$ROOT_DIR/tests" ...` discovery produces), a
-   portability limit of the format itself rather than something this
-   landing could narrow further.
+   re-measurement (`run_axes.sh`'s own header comment on the array has
+   the per-group counts and citations). The manifest's `<flags>|
+   <file:line>` keys are `$ROOT_DIR`-RELATIVE (`tests/base/...`), same
+   day, same lane: a full-corpus run's `find "$ROOT_DIR/tests" ...`
+   discovery makes `$key` itself `$ROOT_DIR`-absolute, so `run_one_axis`'s
+   lookup strips `"$ROOT_DIR"/` off `$key` before indexing the array (the
+   `tests/harness/run.sh` `SIZELOG`-row-key idiom, reused rather than
+   reinvented) — the manifest survives a different checkout root
+   unchanged.
 5. **LOST** — the axis produced NO record for this key at all (not even a
    REFUSED one) — a structural gap beyond a documented refusal: a PROCS
    worker vanishing, a whole file failing to parse. Always a failure.
