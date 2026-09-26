@@ -203,12 +203,12 @@ static const char *stamp_macro_of(const char *axis)
 /* The `#define` name (deny or force macro) whose value equals `v`, iterated
  * off core/axes.def -- the same table axis_cli_flag reads, so a bit's macro
  * name and its CLI spelling cannot drift. NULL for a bit with no row. */
-static const char *axis_macro_name(unsigned v)
+static const char *axis_macro_name(uint64_t v)
 {
     if (!v) return NULL;
 #define PCREC_AXIS(dm, df, fm, ff, defst)                 \
-    if ((dm) && (unsigned)(dm) == v) return #dm;          \
-    if ((fm) && (unsigned)(fm) == v) return #fm;
+    if ((dm) && (uint64_t)(dm) == v) return #dm;          \
+    if ((fm) && (uint64_t)(fm) == v) return #fm;
 #include "core/axes.def"
     return NULL;
 }
@@ -217,13 +217,13 @@ static const char *axis_macro_name(unsigned v)
  * deny flag, the force flag, or `"deny / force"` for the two axes that are a
  * pair. A row with no bits reports nothing from here — its `cli_flag`, if it
  * has one at all, is a VALUE parameter (`--engine=`) the caller states. */
-static void axis_cli_flag(unsigned deny, unsigned force, char *buf, size_t cap)
+static void axis_cli_flag(uint64_t deny, uint64_t force, char *buf, size_t cap)
 {
     const char *d = NULL, *f = NULL;
     buf[0] = 0;
 #define PCREC_AXIS(dm, df, fm, ff, defst)                        \
-    if ((dm) && (unsigned)(dm) == deny)  d = df;                 \
-    if ((fm) && (unsigned)(fm) == force) f = ff;
+    if ((dm) && (uint64_t)(dm) == deny)  d = df;                 \
+    if ((fm) && (uint64_t)(fm) == force) f = ff;
 #include "core/axes.def"
     if (d && f) snprintf(buf, cap, "%s / %s", d, f);
     else if (d) snprintf(buf, cap, "%s", d);
@@ -231,7 +231,7 @@ static void axis_cli_flag(unsigned deny, unsigned force, char *buf, size_t cap)
 }
 
 /* The bit INDEX of the single set bit in `flag` (0 for flag<=1). */
-static unsigned bit_of(unsigned flag)
+static unsigned bit_of(uint64_t flag)
 {
     unsigned b = 0;
     while (flag > 1u) { flag >>= 1; b++; }
@@ -241,13 +241,13 @@ static unsigned bit_of(unsigned flag)
 /* Renders a deny/force value's macro-name column (axis_macro_name, or a bare
  * hex number when no row claims the bit -- a merge-safety fallback) and its
  * bit-index column (bit_of) into `macro`/`bit`. */
-static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_t bitcap)
+static void deny_cols(uint64_t v, char *macro, size_t macrocap, char *bit, size_t bitcap)
 {
     macro[0] = 0; bit[0] = 0;
     if (!v) return;
     const char *n = axis_macro_name(v);
     if (n) snprintf(macro, macrocap, "%s", n);
-    else   snprintf(macro, macrocap, "0x%x", v);   /* a bit with no row */
+    else   snprintf(macro, macrocap, "0x%llx", (unsigned long long)v);   /* a bit with no row */
     snprintf(bit, bitcap, "%u", bit_of(v));
 }
 
@@ -364,8 +364,8 @@ typedef struct {
     const char *stamp_macro;
     const char *stamp_value;   /* "" when the stamp is a count/bitmask,
                                  * never a single value this candidate owns */
-    unsigned    deny_val;   const char *deny_macro;
-    unsigned    force_val;  const char *force_macro;
+    uint64_t    deny_val;   const char *deny_macro;
+    uint64_t    force_val;  const char *force_macro;
     const char *cli_flag;
     const char *applies;
 } PredAxis;
@@ -384,7 +384,7 @@ typedef struct {
  * fact. */
 static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
                           const char *candidate, const char *stamp_value,
-                          unsigned deny_val, unsigned force_val,
+                          uint64_t deny_val, uint64_t force_val,
                           const char *cli_flag_lit, const char *applies)
 {
     char db[8] = "", fb[8] = "", flag[96];

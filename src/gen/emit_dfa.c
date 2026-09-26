@@ -2818,7 +2818,7 @@ typedef struct DfaSel {
 
 typedef struct DfaCand {
     const char *name;         /* the stamp value, where this axis has a stamp */
-    unsigned    deny;         /* a set bit in cx->opt->flags REMOVES this entry */
+    uint64_t    deny;         /* a set bit in cx->opt->flags REMOVES this entry */
     bool      (*applies)(const DfaSel *s);
 } DfaCand;
 
@@ -4413,7 +4413,7 @@ struct DfaForm {
  * removes. A missing fallback would crash here rather than emit a machine
  * with a hole in it. */
 static const void *dfa_select(const void *list, size_t n, size_t sz,
-                              const DfaSel *s, unsigned flags)
+                              const DfaSel *s, uint64_t flags)
 {
     const char *base = (const char *)list;
     for (size_t i = 0; i < n; i++) {
@@ -6616,7 +6616,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
                             const DfaDir *dir, DfaForm *f)
 {
     DfaSel s = { cx, d, us, !dir->reverse, -1 };
-    unsigned flags = cx->opt->flags;
+    uint64_t flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
     f->cx      = cx;

@@ -6217,7 +6217,7 @@ int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run,
  * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
  * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
  * returns the number written (never more than `cap`). */
-typedef struct { const char *name; unsigned deny; } PcrecAxisCand;
+typedef struct { const char *name; uint64_t deny; } PcrecAxisCand;
 
 size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
 
