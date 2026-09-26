@@ -25758,3 +25758,69 @@ fired) → debug /tmp/pcrec_lanewatch.sh's find/threshold before relying on it;
 tail; (4) a sabotage-number collision (S273 ×2) — allocate numbers in briefs;
 (5) "name targets FROM the mechanism" struck again (WAF cells carry runs in
 the PATTERN but execute no literal compare).
+
+## 2026-09-25/26 — eightieth session (manager, Opus 5.5): K65+K66 fixed (abi 35), [OPT-LITSCAN] S1 steps 1–5 merged (abi 36) + step 6 built (abi 37, validating), [FINDINGS] r2/r3 + B0 + B3 merged, GIVEUP1 + 119 documented allowances, D125 close-out sequence, 7 tail rows closed
+
+MERGED (main 5803051b, all pushed): findrev ([FINDINGS] design r2, one
+35-row disposition table); s1r3 (S1 full D6 panel → revision 3; K66
+filed); chkgaps (four check gaps incl. GIVEUP1: a one-sided give-up is
+its own counted class; S275/S276); k65fix+k66fix via k6566land (K65:
+no-DFA-front VM pre-check tests EVERY necessary-set member, abi 34; K66:
+a necessary run > 8 bytes is also compared WHOLE, abi 35; 452 + 12
+movers; cpset manifest drift triaged EXPECTED); findr3 ([FINDINGS] r3 fixes;
+lost panel notes closed as unrecoverable, re-derived); k67doc (K67 \p{L}+
+utf8 compile time; rows [OPT-RETRY-REUSE], [OPT-CLOSURE-CTX], [CLS-TREE]
+scope addition incl. Frank's --tune bit-array note and "kit is
+engine-external"); findb3 ([FINDINGS] B3 analyzer prototype, make
+test-findings 35/0/2); giveupallow + giveupallow2 (GIVEUP1_ALLOWANCE 52 +
+67 entries, root-relative keys, each citing its spec sentence; tuning.md
+§2.11 vm/deep-nesting sentence); s1build+s1finish ([OPT-LITSCAN] S1 steps
+1–5, abi 36, movers = census 505/110 — the design's 513 was a latin-1
+census bug; S279–S289, S284 (j) and S287 (d, ASan-only) UNDETECTED-
+expected); axes2fix (HARNESS_BATCH dispatch excluded ${var} patterns — a
+pre-existing [VAR] gap first surfaced by AXES_FULL=1 HARNESS_BATCH=64);
+findb0 ([FINDINGS] B0 .rxt format: analysis bundles, serves/encoding,
+collision check, the GENERAL fragment rule — manager ruling against an
+analysis-only special case); rowsdoc (learnings §3.aa, [TEST-DISPATCH-SIG],
+[MECH-SAN-ARM]); testlog (docs/testing.md "Suite health log";
+[TEST-METRICS] amended per Frank: counts/% passing/arch, one file per run;
+[TEST-REENTRANT]; all four test rows UNSCHEDULED); closetails (D125; closed
+[OPT-ANCHOR-VM] [OPT-ENDWIN] [OPT-VMFL] [OPT-FREQPICK] [OPT-REQPOS]
+[OPT-PRECHECK-ADMIT] [SPEC-1]; [OPTLOOP] next cycle HELD). Also: [ENG-TACTICS]
+boonies row (composed-engine tactics, Frank's reverse-then-skip idea).
+
+IN FLIGHT AT CLOSE: lane/s1step6 fe233552 (S1 step 6, abi 37) — Mac make
+test (log /tmp/s1step6/maketest_mac.log), Linux ubsan → batched test-axes →
+asan detached on ubuntubudu (/home/duxevents/pcrec/worktrees/s1step6_logs/
+run.log: RUN-DONE, ASAN-DONE); Mac ASan was KILLED by its 3 h cap (clean up
+to the kill). lane/s265reach 854cc31f (S265 re-pointed to a.?b, S267 to xyz,
+S271 stale grep fixed — all three were silently UNREACHED since G1
+dominance) — detached solo mech runs /tmp/pcrec_mech3/run.log (MECH3-DONE).
+
+RULINGS (Frank): C2b → K66 fix (yes); stamp redaction no; analysis-in-
+include parse error (manager); class compile-time joins [CLS-TREE] but
+general pieces filed independently ("general solutions are best"); heavy
+runs prefer Linux, pick the box by EARLIEST COMPLETION, split stages
+across boxes, the manager runs Linux suites itself detached over ssh after
+agreeing the slot with pcrecdev2; test-improvement rows filed but NOT
+scheduled; D125 close-out sequence (tails → active, next opt cycle held →
+older rows reassessed → stop and take stock); ubuntubudu root LV is 100 GB
+of a 462.7 GB PV (~362 GB unallocated, verified: one disk, three
+partitions, one dm device) — resize at session end via
+/tmp/lvextend_root.sh on the box (verify-only default; --apply + typed
+confirmation), after a full push.
+
+BENCH: O-55 (WAF timing U1–U3 confirmed), O-56 (re-pin; I-108 P3 missed
+six backref patterns — our census baselined at abi 32), O-57 (I-108
+ACCEPTED: K64 fix restores 50/50 answers, throughput within ±0.5%), O-58
+(\p{L}+ compile), O-59 (disk survey; answers I-109). I-109 sent.
+
+LESSONS: (1) two full make tests overlapped — a waiter gated on a log mtime
+the other run didn't write; gate on the PID/trailer. (2) the manager
+cd'd into a worktree TWICE more; use git -C / absolute paths. (3) a ruling
+sent by message to a BUSY lane went unread (findb0) — rulings travel as
+files the lane polls. (4) a 5 h cap sized from a stale 70-min reference
+killed the unbatched axes sweep (~7.5 h on the Mac); batched = 2 h 13 m.
+(5) triage read a 20-per-bucket-capped stderr sample (learnings §3.aa).
+(6) three sabotage rows were silently UNREACHED after G1 dominance — a
+reach-only sweep over all rows is cheap and found them.
