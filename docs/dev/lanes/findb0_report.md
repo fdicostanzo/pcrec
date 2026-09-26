@@ -19,7 +19,7 @@ emitted byte moves (no abi event).
 | DATA `row` key grammar per kind (`freq`: `row HH N`), lowercase hex, strictly ascending, canonical nonzero count | `row_check`, `rxt_find_row_keys` |
 | CONFIG `analysis` → TOKEN, AT_MOST_ONE, lowercase name | `rxt_schema.def`, CONFIG arm |
 | `--analysis`/`--analysis=` in a config's `pcrec` line refused (r2 M-B2) | `pcrec_raw_analysis_check` (splits like the CLI's `raw_split`) |
-| `analysis` in an `include "path"` fragment (any depth) refused at the ENTRY naming the fragment's file:line (r2 M-B3) | `fragment_check` + `parse_file(…, chain, …)` |
+| format_design §2.5's GENERAL fragment rule (manager ruling, round 2): a fragment holds pattern blocks + `include` only; ANY other file-level line in a fragment (any depth) — `analysis` included (r2 M-B3) — refused at the ENTRY naming the fragment's file:line; only this refusal propagates | `fragment_check` + `parse_file(…, chain, …)`, one predicate at the wave-check site |
 | PROVENANCE: `bytes`/`sha256` required-if `parent == data and source != authored`; `url`/`ref` required-if `parent == block and source != authored` (§0.10); conjunctive condition clause ` and ` | `rxt_schema.def`, `cond_holds` |
 | `--list-source`: new main-table kind `analysis` (name = bundle, value = its `include <x>` as written); a bundle's include is never a head `include` row; a kind block's provenance reports its bundle as block_line/block_name | `RXT_DECL_ANALYSIS`, `kind_name` |
 | cardinality `one` now refused at the line (pre-existing gap: a 2nd `question` was silently dropped) | the cardinality site |
@@ -44,7 +44,7 @@ spec reader of the changed rows found by grep.
 fixture asserted on dump rows; 34 refusal cases (class tag + rule needle,
 floor 34); controls (exemplar with bytes/sha256, non-`--analysis` pcrec
 word, a fragment broken for another reason must NOT fail the entry);
-fragment refusal two links deep. Fixtures: `analysis_bundle_accept.rxtin`,
+fragment refusal two links deep, and the general class (`fragment_head_line.rxtin`, a `description` in a fragment). Fixtures: `analysis_bundle_accept.rxtin`,
 `analysis_in_fragment.rxtin`, `analysis_frag_{mid,leaf}.rxtfrag`.
 `verify_rxt.py`'s head-word list: `freq` → `analysis`. W23-S4 kind list
 gains `analysis`.
@@ -68,13 +68,28 @@ a `testee` row after it). The design names no B0 sabotage row.
 
 ## Findings / choices for the manager
 
-1. **Fragment mechanism.** pcrec never opened a fragment before, and
-   format_design §2.5's "a fragment holds pattern blocks and `include`
-   lines only" is enforced by NO leg (`include_head.rxtin`'s fragment
-   `common.rxt` carries a file-level `description`). B0 adds a fragment-mode
-   SUB-PARSE per include (cycle-guarded) that propagates ONLY the
-   `analysis` refusal; other fragment failures stay leg B's `[resolution]`
-   (spec rule 3 unchanged). The general §2.5 rule is a separate row if wanted.
+1. **Fragment mechanism (round 2, per the manager's ruling).** pcrec
+   never opened a fragment before, and format_design §2.5's "a fragment
+   holds pattern blocks and `include` lines only" was enforced by NO leg.
+   The sub-parse now enforces the GENERAL rule (one predicate: in fragment
+   mode, any FILE-scope line other than `include` is a schema-constraint
+   refusal) and propagates only that refusal; other fragment failures stay
+   leg B's `[resolution]` (spec rule 3 unchanged). The predicate replaced
+   the analysis-only arm at equal size. IN-TREE POPULATION, counted first
+   (every `include "` line under tests/, examples/, docs/): 7 distinct
+   targets in tests/ (5 fixture fragments, 2 scratch in
+   run_rxtsource_tests.sh, plus `common.rxt`); ONE violator —
+   `include_head.rxtin` included the LIBRARY `common.rxt` (file-level
+   `description`), re-pointed at `include_basic_frag.rxtfrag`. examples/:
+   none. docs/: four illustrative `include` lines in
+   `docs/design/dd13_format/format_design.md` (:6750-6751, :6933) and
+   `usecases_and_outline.md` (:452), whose targets do not exist in the tree;
+   two of them (:6933, :452) describe including an analyzer-emitted
+   `freq` exemplar file, which §2.5 itself already forbade and the findings
+   design supersedes (a bundle, found by `-I`). Design history, not a
+   user-copyable file — flagged, not edited. The broken-fragment control's
+   fragment now fails on an unknown block directive (a `lib` line would
+   now be the rule's own refusal).
 2. **Collision population is empty at B0** (one kind ⇒ one block per
    bundle). Reachable input: a duplicated encoding on one `serves` line.
    B5 owes the two-block fixture.

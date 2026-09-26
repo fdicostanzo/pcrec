@@ -2471,19 +2471,15 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
 
 /* [FINDINGS] B0 (r2 M-B3): reads the fragment an `include` line names —
  * `cand` as the author spelled it, `rp` its real path — in FRAGMENT mode,
- * so an `analysis` bundle anywhere in the include closure is refused at
- * THIS parse, attributed to the fragment's own file:line. ONLY that
- * refusal propagates: any other fragment failure (a broken head, a
- * cycle) stays leg B's [resolution] class, whose rule 3 lets the entry's
- * own body still run (docs/spec/rxt_format.md). A fragment already on the
- * parse chain is a cycle and is not re-entered. Returns -1 with `p->err`
- * filled when the fragment rule refused, else 0.
- *
- * §2.5's WIDER rule — a fragment holds pattern blocks and `include` lines
- * and nothing else — is not enforced by any leg today (the tree's own
- * `include_head.rxtin` includes a fragment carrying a file-level
- * `description`), so this is the one head kind with a ruling, not the
- * general rule. */
+ * so a head line anywhere in the include closure is refused at
+ * THIS parse, attributed to the fragment's own file:line — format_design
+ * §2.5's whole rule: a fragment holds pattern blocks and `include` lines
+ * and nothing else, so any other FILE-scope line (`analysis` among them)
+ * is refused. ONLY that refusal propagates: any other fragment failure (a
+ * malformed line, a cycle) stays leg B's [resolution] class, whose rule 3
+ * lets the entry's own body still run (docs/spec/rxt_format.md). A
+ * fragment already on the parse chain is a cycle and is not re-entered.
+ * Returns -1 with `p->err` filled when the fragment rule refused, else 0. */
 static int fragment_check(RxtP *p, const char *cand, const char *rp)
 {
     char *self = realpath(p->path, NULL);
@@ -2513,8 +2509,8 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
 
 /* The parse proper; `chain` is non-NULL when `path` is being read as an
  * `include` fragment of the files on it ([FINDINGS] B0), and
- * `*frag_refused` is set when the one fragment rule this build enforces
- * (no `analysis` bundle in a fragment) refused, here or deeper. */
+ * `*frag_refused` is set when the fragment rule (no file-level line but
+ * `include`) refused, here or deeper. */
 static RxtSource *parse_file(const char *path, pcrec_error *err,
                              const RxtChain *chain, int *frag_refused)
 {
@@ -2862,6 +2858,21 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
             goto fail;
         }
 
+        /* THE FRAGMENT RULE (format_design §2.5; [FINDINGS] B0, r2 M-B3):
+         * a file read as an `include` fragment holds pattern blocks and
+         * `include` lines and nothing else, so every other FILE-scope
+         * line — `analysis` among them — is refused here, attributed to
+         * the fragment's own line. `fragment_check` propagates this
+         * refusal, and only this one, to the entry. */
+        if (p.chain && f->scope == RXT_SCOPE_FILE && !tok_is(tok, "include")) {
+            *p.frag_refused = 1;
+            rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
+                     "'%.*s' is a file-level line in an include fragment; a "
+                     "fragment holds pattern blocks and include lines only",
+                     (int)tlen, tok);
+            goto fail;
+        }
+
         /* ---- CARDINALITY, from the column ---- */
         size_t ridx = (size_t)(row - rowbase);
         /* `one` is `at-most-one` at the LINE plus `required` at the close
@@ -3096,18 +3107,6 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
                 if (analysis_name_check(&p, line, "analysis", v,
                                         strlen(v)) != 0)
                     goto fail;
-                /* r2 M-B3 / D123-8 item 3: a bundle resolves from the
-                 * compiling FILE, a `-I` directory or the shipped store —
-                 * never from an `include` fragment, where it could only be
-                 * dead text. Refused rather than ignored. */
-                if (p.chain) {
-                    *p.frag_refused = 1;
-                    rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
-                             "'analysis %s' is in an include fragment; a "
-                             "bundle resolves only from the compiling file, "
-                             "a -I directory or the shipped store", v);
-                    goto fail;
-                }
                 RxtRow *r = row_push(&p, src, RXT_DECL_ANALYSIS, line);
                 r->name = v;
                 last_rxtrow = r;

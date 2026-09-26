@@ -1581,12 +1581,14 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   line like `at-most-one` (a second `question` in a data block used to be
   silently dropped). **THE FRAGMENT RULE IS A SUB-PARSE**: `fragment_check`
   re-reads each `include` target through `parse_file` in FRAGMENT mode
-  (a realpath chain, which also stops a cycle recursing) and propagates
-  ONLY the one refusal this build enforces there — an `analysis` line —
+  (a realpath chain, which also stops a cycle recursing), where
+  format_design §2.5's general rule holds — a fragment holds pattern
+  blocks and `include` lines only, so ANY other FILE-scope line
+  (`analysis` included) is refused — and propagates ONLY that refusal,
   so a fragment broken for any other reason is still leg B's
-  `[resolution]` class. format_design §2.5's wider "a fragment holds only
-  blocks and includes" is NOT enforced by any leg (the tree's own
-  `include_head.rxtin` fragment carries a file-level `description`).
+  `[resolution]` class. The in-tree population had one violator
+  (`include_head.rxtin` included the LIBRARY `common.rxt`), re-pointed at
+  a blocks-only fragment in the same change.
 
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every

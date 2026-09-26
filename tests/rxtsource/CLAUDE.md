@@ -988,6 +988,7 @@ is head-scoped; the head has one parser). Design:
 |---|---|
 | `analysis_bundle_accept` | THE ACCEPT HALF, asserted on the dump's ROWS: two bundles (one `include <log>`, one without) as two `analysis` rows; each kind block's `provenance` four frames deep (file → bundle → `freq` → provenance) reaching `#section provenance` attributed to its bundle; an `exemplar` owing `bytes`/`sha256` and no `url`, an `authored` block owing neither (the conjunctive `required-if`) |
 | `analysis_in_fragment` + `analysis_frag_mid.rxtfrag` + `analysis_frag_leaf.rxtfrag` | the fragment rule (r2 M-B3): a bundle TWO include links down refuses the ENTRY's parse, naming the leaf's own `file:line` |
+| `fragment_head_line` + `fragment_head_line_frag.rxtfrag` | the SAME rule's general class (format_design §2.5): a file-level `description` in a fragment refuses the entry the same way — a fragment holds pattern blocks and `include` lines only |
 
 The REFUSALS are generated inline (`fb0_case LABEL CLASS NEEDLE BODY`,
 one scratch file per case, asserted on the class tag AND a needle naming
@@ -995,7 +996,11 @@ the rule), with a population floor of 34 (the case count) so a case that stops b
 is red. Controls: an exemplar with `bytes`/`sha256`, a `pcrec` line whose
 word is not `--analysis`, and a fragment broken for ANOTHER reason (it must
 NOT fail the entry's parse — only the bundle rule propagates; everything
-else stays leg B's `[resolution]` class).
+else stays leg B's `[resolution]` class; the control's fragment fails on an
+unknown block directive, since any file-level line is now the rule's own
+refusal). `include_head.rxtin` was re-pointed from the library
+`common.rxt` (a file-level `description`, the tree's one §2.5 violator) to
+`include_basic_frag.rxtfrag`.
 
 **THE BUNDLE-LEVEL (query, encoding) COLLISION HAS AN EMPTY DESIGNED
 POPULATION AT B0**: `freq` is the only kind row and a bundle holds one, so

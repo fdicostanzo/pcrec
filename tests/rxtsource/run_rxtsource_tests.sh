@@ -4550,7 +4550,7 @@ else
     fail "findings/B0 controls: refused: $(cat "$WORKDIR/fb0c.err")"
 fi
 
-# THE FRAGMENT RULE (r2 M-B3): refused at the ENTRY, naming the LEAF
+# THE FRAGMENT RULE (format_design §2.5, r2 M-B3): refused at the ENTRY, naming the LEAF
 # fragment's own line, two links down. Its control is W23-S7 above:
 # `include_nested.rxtin` — the same two-link shape with no bundle — still
 # splices clean, and a broken fragment still reads as leg B's
@@ -4558,13 +4558,22 @@ fi
 out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/analysis_in_fragment.rxt" 2>&1)" && rc=0 || rc=$?
 case $rc:$out in
     0:*) fail "findings/B0/fragment: an analysis bundle in an include fragment was ACCEPTED" ;;
-    *"[schema-constraint]"*"analysis_frag_leaf.rxtfrag:3: 'analysis leaked' is in an include fragment"*)
+    *"[schema-constraint]"*"analysis_frag_leaf.rxtfrag:3: 'analysis' is a file-level line in an include fragment"*)
         pass "findings/B0/fragment: an analysis bundle two include links down is refused at the entry, naming the fragment's own line" ;;
     *) fail "findings/B0/fragment: refused, but not naming analysis_frag_leaf.rxtfrag:3 as a schema-constraint: $out" ;;
 esac
+# ...and the rule is format_design §2.5's GENERAL one: any file-level line
+# but `include` in a fragment — here a `description` — refuses the same way.
+out="$("$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FIXRUN/fragment_head_line.rxt" 2>&1)" && rc=0 || rc=$?
+case $rc:$out in
+    0:*) fail "findings/B0/fragment-head: a file-level description in an include fragment was ACCEPTED" ;;
+    *"[schema-constraint]"*"fragment_head_line_frag.rxtfrag:3: 'description' is a file-level line in an include fragment"*)
+        pass "findings/B0/fragment-head: any file-level line but include in a fragment (here description) is refused at the entry, naming the fragment's line" ;;
+    *) fail "findings/B0/fragment-head: refused, but not naming fragment_head_line_frag.rxtfrag:3 as a schema-constraint: $out" ;;
+esac
 # ...and ONLY this rule propagates: a fragment broken for any other reason
 # leaves the entry's own parse clean (leg B's [resolution] class, rule 3).
-printf 'lib nosuch\n\npattern z\nm "z" 0 1\n' > "$FB0/broken.rxtfrag"
+printf 'pattern z\nnosuchdirective 1\nm "z" 0 1\n' > "$FB0/broken.rxtfrag"
 printf 'include "broken.rxtfrag"\n\npattern a\nm "a" 0 1\n' > "$FB0/brokenentry.rxt"
 if "$TIMEOUT_BIN" 30 "$PCREC" --list-source "$FB0/brokenentry.rxt" >/dev/null 2>"$WORKDIR/fb0b.err"; then
     pass "findings/B0/fragment control: a fragment broken for another reason does not fail the entry's parse (still leg B's [resolution])"
