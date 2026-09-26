@@ -3180,17 +3180,35 @@ that was already cheaper, or on top of a pass the artifact was already running.
   made NOMATCH-vs-give-up follow the prior's window pick; the whole run is
   the pattern's. `emit_req_set_rest` marks the whole run's bytes done.
   `<PREFIX>_REQ_RUN` still names the window.
-- **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan_byte`
-  calls `dfa_pf_of` and compares the chosen object's own `name`, because the
-  deny mask and the offset-set candidates sit between the two: an artifact
-  whose `kind` is `DFA_PF_MEMCHR` may still have had an offset-set form
-  selected over it, and only the memchr forms scan a single byte value.
-- **G1 is scoped to the ONE-BYTE form, and that is the dominance argument's
-  own boundary rather than a carve-out.** The claim is "this pass dismisses no
-  window the existing pass would not dismiss sooner", which is true of one
-  `memchr` against another and FALSE of [OPT-REQPOS] tier 2b's run check — a
-  run check dismisses a window that holds the byte and not the run. The ledger
-  measured the one-byte shape and nothing else.
+- **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan`
+  (was `dfa_cand_scan_byte`) calls `dfa_pf_of` and reads the chosen row: the
+  deny mask and the offset rows sit between the two. Since [OPT-LITSCAN] S1
+  it reads EVERY `<p>_ofsskip` row's scan byte off `OfsTest` (an offset-set
+  or run-pinned test scans ONE byte at its scan offset), plus whether that
+  test verifies the pinned run; a byte-class row still has no single byte.
+  Its first two lines are `pcrec_artifact_has_dfa_scan`'s guard and the
+  ENG_ATTEMPT/`attempt_cand` arm, verbatim — the K65/K66 routes have no DFA
+  scan and keep their pre-check (litscan_s1.md R3-1).
+- **G1's run clause and density clause (S1).** A RUN pre-check is dominated
+  only by a test that refuses every window lacking the run at its pin
+  (`run_verified`) AND scans the pick itself (identity is kept even where
+  the run is verified: a test scanning another run member is a density
+  judgement this rule does not make). The density comparison stays the
+  one-byte check's under a `memchr` form alone — an explicit line, since an
+  offset row's `p` is now non-negative too. Each conjunct is its own line in
+  `req_byte_dominated_by` (sabotage anchors).
+- **[OPT-LITSCAN] S1 THE RUN-PINNED ROWS.** `run-pinned-bounded`/`run-pinned`
+  head `dfa_pfs[]`, deny `PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER`
+  (either removes them), `reseeds` true, `run_term` true. Their predicate
+  (`pf_run_applies_common`, clauses 0-4 of litscan_s1.md §1.2) reads the
+  analysis (`PrefixKSets.run_pinned`/`run_o`, `Job.req_run`, `UnanchStart`)
+  and never a later row or the admission. `OfsTest` is the ONE derivation of
+  what a `<p>_ofsskip` block tests (scan, ascending terms, the run as one
+  P4 term, `maxk`, `noffsets`); the block, its verify chain, tables, params,
+  comment, the OFFSETS stamp and G1 all read it, and it holds no `Dfa` so a
+  later non-DFA consumer can fill one ([OPT-VMSEED]). `emit_exact_compare`
+  is P4, the one spelling of a constant-length literal compare, shared by
+  the run pre-check's loop and the run term.
 - **THE THREE STAMPS SPLIT ALONG ANALYSIS vs EMISSION.**
   `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` keep naming what the analysis found;
   `<PREFIX>_REQ_WHY` names whether the artifact acted on it. Folding the

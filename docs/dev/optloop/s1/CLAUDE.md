@@ -75,6 +75,27 @@ directory, never here.
   panelled base, corpus from that tree) and `census_b_main.tsv` /
   `census_b_main_summary.txt` (at `4976f385`, revision 2's branch point).
 
+## The build lane's instruments (lane `s1build`, 2026-09-25, base `27a63314`)
+
+- `census.py` was CORRECTED by this lane: `probe()` passed the pattern as a
+  latin-1-decoded `str`, which `subprocess` re-encodes UTF-8 into argv, so
+  every non-ASCII pattern was probed as MOJIBAKE. It now passes the bytes.
+  The 8 corpus class-`B` rows that were artefacts of it (all under
+  `tests/utf8/`) drop out: the corpus program-change count is **505**, not
+  513. `census_b_27a63314.tsv` / `_summary.txt` are the corrected census at
+  the build's base.
+- `s1_identity.py` — the per-commit identity gate (distinct-pattern
+  populations, auto + `--engine=vm`), with the abi-digit normalization.
+- `s1_movers.py` — the mechanism's movers BY ID against `census_b.tsv`, over
+  census_b.py's own populations; `EXPECT` names the classes predicted to
+  move, `EXTRA`/`BOTH` add a deny flag to one or both sides.
+- `s1build_movers.txt` — both tools' transcripts for every step: steps 1-4
+  zero movers; 5a exactly A+E; 5b exactly A+E+rowb (505 corpus, 110 bench);
+  `-fno-run-prefilter` exactly A+E; `-fno-offset-skip` on both sides zero.
+- `rowj_reach.py` / `rowj_reach_output.txt` — sabotage row (j)'s
+  reachability RUN (litscan_s1.md R3-11): the plant built for real, both
+  populations swept, 0 artifacts moved (S284's derivation).
+
 ## Reproduce
 
     SCR=<scratch>; git -C <repo> archive b5c1423b | tar -x -C $SCR/probe
