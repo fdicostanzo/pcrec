@@ -1,0 +1,22 @@
+=== candidate L (build/pcrec) ===
+group cases pending-vm: 0
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 14
+fragments spliced: 0
+candidate L exit=0
+=== candidate R (build-candR/pcrec) ===
+group cases pending-vm: 0
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 14
+fragments spliced: 0
+candidate R exit=0
+=== candidate S (build-candS/pcrec) ===
+group cases pending-vm: 0
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 14
+fragments spliced: 0
+candidate S exit=0
+ALL_CANDIDATES_DONE

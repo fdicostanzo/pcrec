@@ -1,0 +1,110 @@
+[
+ {
+  "pattern": "lit-offset-at-tail",
+  "label": "\u00e9@",
+  "subject": "t-64k-lat",
+  "candidate": "L",
+  "byte": "c3",
+  "count": 4652,
+  "per_kb": 72.688
+ },
+ {
+  "pattern": "lit-offset-at-tail",
+  "label": "\u00e9@",
+  "subject": "t-64k-lat",
+  "candidate": "R",
+  "byte": "40",
+  "count": 0,
+  "per_kb": 0.0
+ },
+ {
+  "pattern": "lit-offset-at-tail",
+  "label": "\u00e9@",
+  "subject": "t-64k-lat",
+  "candidate": "S",
+  "byte": "40",
+  "count": 0,
+  "per_kb": 0.0
+ },
+ {
+  "pattern": "lit-cyr-run",
+  "label": "\u041c\u043e\u0441\u043a\u0432\u0430 (prefix)",
+  "subject": "t-64k-cyr",
+  "candidate": "L",
+  "byte": "d0",
+  "count": 20279,
+  "per_kb": 316.859
+ },
+ {
+  "pattern": "lit-cyr-run",
+  "label": "\u041c\u043e\u0441\u043a\u0432\u0430 (prefix)",
+  "subject": "t-64k-cyr",
+  "candidate": "R",
+  "byte": "ba",
+  "count": 860,
+  "per_kb": 13.438
+ },
+ {
+  "pattern": "lit-cyr-run",
+  "label": "\u041c\u043e\u0441\u043a\u0432\u0430 (prefix)",
+  "subject": "t-64k-cyr",
+  "candidate": "S",
+  "byte": "ba",
+  "count": 860,
+  "per_kb": 13.438
+ },
+ {
+  "pattern": "lit-run-3",
+  "label": "\u65e5\u672c\u8a9e",
+  "subject": "t-64k-cjk",
+  "candidate": "L",
+  "byte": "e6",
+  "count": 3478,
+  "per_kb": 54.344
+ },
+ {
+  "pattern": "lit-run-3",
+  "label": "\u65e5\u672c\u8a9e",
+  "subject": "t-64k-cjk",
+  "candidate": "R",
+  "byte": "9e",
+  "count": 206,
+  "per_kb": 3.219
+ },
+ {
+  "pattern": "lit-run-3",
+  "label": "\u65e5\u672c\u8a9e",
+  "subject": "t-64k-cjk",
+  "candidate": "S",
+  "byte": "9e",
+  "count": 206,
+  "per_kb": 3.219
+ },
+ {
+  "pattern": "lit-mixed-ascii",
+  "label": "user@\u4f8b\u3048.jp (prefix)",
+  "subject": "t-64k-asc",
+  "candidate": "L",
+  "byte": "75",
+  "count": 2040,
+  "per_kb": 31.875
+ },
+ {
+  "pattern": "lit-mixed-ascii",
+  "label": "user@\u4f8b\u3048.jp (prefix)",
+  "subject": "t-64k-asc",
+  "candidate": "R",
+  "byte": "8b",
+  "count": 0,
+  "per_kb": 0.0
+ },
+ {
+  "pattern": "lit-mixed-ascii",
+  "label": "user@\u4f8b\u3048.jp (prefix)",
+  "subject": "t-64k-asc",
+  "candidate": "S",
+  "byte": "8b",
+  "count": 0,
+  "per_kb": 0.0
+ }
+]
