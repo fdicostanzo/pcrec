@@ -2008,13 +2008,38 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `36` while the three narrative copies
+which is why it is gap-free from `2` to `37` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `36` on every artifact today (`[OPT-LITSCAN]` S1 bumped
+- **`rx_info.abi` is `37` on every artifact today (`[OPT-LITSCAN]` S1 step 6
+  bumped it from 36, 2026-09-26: THE RUN PRE-CHECK IS A CALL OF THE ONE
+  SEARCH BLOCK.** The necessary-run pre-check's scan loop (`[OPT-REQPOS]` tier
+  2b), and `[K66]`'s whole-run loop where the route emits one, each become a
+  file-scope `static inline size_t <prefix>_reqrun` / `<prefix>_reqrun_whole
+  (subject, n, pos)` written by the SAME emitter as the `<prefix>_ofsskip`
+  prefilter block — the run as one term at offset 0, scanned on its member at
+  that member's offset (`docs/design/litscan_s1.md` §7.2 step 6) — returning
+  the first position at which the run begins inside `[pos, n)`, or `n`; the
+  search entry's pre-check is one line per block, `if (<prefix>_reqrun(
+  subject, subject_length, search_from) >= subject_length) return 0;`. The
+  standalone empty-window `return 0` goes: the block's loop guard `pos + L-1 <
+  n` is false on an empty window, so its `memchr` is never reached there
+  (`[K27]`'s `memchr(NULL, c, 0)` obligation, discharged by the guard). No
+  stamp, no stamp VALUE, no declaration (the two helpers are `static`) and no
+  `rx_info` layout moves, and NO ANSWER MOVES: the block examines exactly the
+  candidate starts the loop did, `[K65]`'s `rq_set[]` half and every other
+  line of the entry are unchanged. MEASURED over `docs/dev/optloop/s1/
+  s1step6_movers.py`'s populations at `54bb1159`: every artifact whose base
+  stamps `REQ_WHY "emitted"` with a `REQ_RUN` moves and no other does, with
+  its stamps identical and, once the old loop(s) and the new block(s)/call(s)
+  are removed from each side, the rest byte-identical — 236 of 1,167 bench
+  artifact-configs (caps/nocaps, each also `--engine=vm`) and 763 of 10,818
+  corpus ones (auto, `--engine=vm`, `-e utf8`). `-fno-req-run` still
+  restores the one-byte check and `-fno-req-byte` removes the whole mechanism.
+- **`rx_info.abi` was `36` (`[OPT-LITSCAN]` S1 bumped
   it from 35, 2026-09-25: A PINNED NECESSARY RUN IS VERIFIED INSIDE THE DFA
   PREFILTER, AND A PRE-CHECK THE PREFILTER DOMINATES IS NOT EMITTED.** Two
   changes, one event (`docs/design/litscan_s1.md`). (1) `[OPT-PRECHECK-ADMIT]`'s

@@ -1,5 +1,5 @@
 # S278 — [K66] THE PRE-CHECK'S WHOLE-RUN COMPARE REMOVED (src/gen/emit_dfa.c,
-# `emit_req_run_rest`): a VM artifact with no DFA scan in front goes back to
+# `req_run_tests`, formerly `emit_req_run_rest`): a VM artifact with no DFA scan in front goes back to
 # comparing only the 8-byte WINDOW of a longer necessary run — the window the
 # prior cut — so whether a subject holding that window but not another slice
 # of the run answers NOMATCH or gives up on the step budget follows a SPEED
@@ -21,8 +21,13 @@ SAB_DOC_FIGURE="tests/base/k66_precheck_whole_run.rxt is the answer-level detect
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree the
 # K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window
 # and which emits the 16-byte whole-run compare.
-SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@0\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + rp_c - 8, \"eeeeeeee~#~#~#~#\", 16)) break;" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
+SAB_REACH='"$PCREC" --features all -e byte -p rx -o "$REACH_TMP/o.c" --pattern "(x?)([a-z]+)+eeeeeeee~#~#~#~#\\1" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"7e237e237e237e23@0\"" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"eeeeeeee~#~#~#~#\", 16)) return cand;" "$REACH_TMP/o.c" && grep -qF "rx_reqrun_whole(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-K66-WHOLE-RUN-EMITTED'
 SAB_REACH_EXPECT="REACH-K66-WHOLE-RUN-EMITTED"
+# [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the whole
+# run is now the second test of `req_run_tests`, the one derivation both the
+# file-scope `rx_reqrun_whole` block and its call read, so the plant (return
+# after the window's test) removes the block and the call together. Intent
+# unchanged: the K66 whole-run compare is never emitted.
 SAB_COUNT=1
-SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return;'
-SAB_AFTER='    return;   /* SABOTAGE S278: the K66 whole-run compare never emitted */'
+SAB_BEFORE='    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;'
+SAB_AFTER='    return 1;   /* SABOTAGE S278: the K66 whole-run compare never emitted */'

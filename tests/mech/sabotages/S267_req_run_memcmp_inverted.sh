@@ -35,8 +35,18 @@ SAB_DESC="the necessary-RUN whole-window pre-check emits 'memcmp(...)' where it 
 SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case of every pattern carrying a necessary run reports nomatch, so 'cases failed' moves from 0 to a large count (the run population is 406 of 2,814 corpus patterns that compile at default axes, measured 2026-09-22 by the lane's own base-vs-tip mover census). tests/codegen/run_prechecks.sh §4.1b is the structural detector and names the sense directly ('the compare's sense is not !memcmp(...) — it may be inverted') on each of the seven §4.1 witnesses. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S267."
 # [MECH-REACH] THE PROBE says the SITE still answers: on the clean tree `a=b`
 # stamps a three-byte run and emits the negated memcmp this row inverts.
-SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "&& !memcmp(subject + rp_c - 1, \"a=b\", 3)) break;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
+SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && grep -qF "if (!memcmp(subject + cand, \"a=b\", 3)) return cand;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
 SAB_REACH_EXPECT="REACH-REQ-RUN-COMPARE-EMITTED"
+# [OPT-LITSCAN] S1 step 6 (lane s1step6, 2026-09-26): the run pre-check is now
+# a call of a file-scope `rx_reqrun` block written by the offset-skip block's
+# emitter, whose compare is this same P4 at `cand`, so the probe greps the
+# block's compare and its call. `-fno-offset-skip` because since S1's run
+# rows `a=b`'s default artifact elides the pre-check as dominated (tuning.md
+# §2.29) — the probe's old default-flag grep had stopped reaching the site at
+# S1 step 5 and nothing had noticed. The plant is unchanged; the loop's
+# `subject_length <= search_from` arm and two-conjunct guard it once left
+# intact are now the block's `pos + L-1 < n` / `cand + L-1 >= n` guards, which
+# it leaves intact the same way.
 # [OPT-LITSCAN] S1 re-anchor (lane s1build, 2026-09-25): the compare is now
 # P4, `emit_exact_compare`, the ONE emitter of a constant-length literal
 # compare, and both of the loop's formats call it. The plant moves there with

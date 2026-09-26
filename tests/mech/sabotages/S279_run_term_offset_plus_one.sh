@@ -17,8 +17,14 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 # [MECH-REACH] the router takes a run row and emits the P4 run term at cand.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/user|/users" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned\"" "$REACH_TMP/o.c" && grep -qF "!memcmp(subject + cand, \"/user\", 5)" "$REACH_TMP/o.c" && echo REACH-RUN-TERM-EMITTED'
 SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
+# [OPT-LITSCAN] S1 step 6 re-anchor (lane s1step6, 2026-09-26): the verify
+# chain lost its `DfaForm` (litscan_s1.md §1.3's narrowing), so `f->cx` reads
+# `cx`; plant and intent unchanged. The run pre-check's `rx_reqrun` blocks
+# are now written by this same chain (their run term is at offset 0), so the
+# plant ALSO shifts every run pre-check's compare one byte late, turning each
+# into a false NOMATCH: the row deletes more and isolates the same site.
 SAB_COUNT=1
 SAB_BEFORE='            emit_exact_compare(c, t->run_o == 0
                                   ? "subject + cand"
-                                  : dfa_fragf(f->cx, "subject + cand + %d", t->run_o),'
-SAB_AFTER='            emit_exact_compare(c, dfa_fragf(f->cx, "subject + cand + %d", t->run_o + 1),   /* SABOTAGE S279 */'
+                                  : dfa_fragf(cx, "subject + cand + %d", t->run_o),'
+SAB_AFTER='            emit_exact_compare(c, dfa_fragf(cx, "subject + cand + %d", t->run_o + 1),   /* SABOTAGE S279 */'

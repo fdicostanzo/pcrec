@@ -3172,14 +3172,26 @@ that was already cheaper, or on top of a pass the artifact was already running.
   the three stamps are untouched, and a set that is its pick alone emits
   nothing more.
 - **[K66] ON THE SAME ROUTE, A RUN LONGER THAN ITS WINDOW IS COMPARED WHOLE.**
-  `emit_req_run_rest` follows the window's scan loop with a second loop over
-  `ReqRun.whole` (the run the window was cut from), scanned on the same
-  member; `emit_run_scan_loop` is the one loop text both emit, so the two
-  cannot compare a run in two shapes (S267's two-format anchor sits in it
-  once). Same guard as K65's half, plus `whole_len > len`. The window alone
-  made NOMATCH-vs-give-up follow the prior's window pick; the whole run is
-  the pattern's. `emit_req_set_rest` marks the whole run's bytes done.
+  The window's search is followed by a second over `ReqRun.whole` (the run
+  the window was cut from), scanned on the same member at `at + idx`. Same
+  guard as K65's half, plus `whole_len > len`. The window alone made
+  NOMATCH-vs-give-up follow the prior's window pick; the whole run is the
+  pattern's. `emit_req_set_rest` marks the whole run's bytes done.
   `<PREFIX>_REQ_RUN` still names the window.
+- **[OPT-LITSCAN] S1 step 6: THE RUN PRE-CHECK IS A CALL OF THE ONE SEARCH
+  BLOCK (abi 37).** Both searches above (window, and K66's whole run) are
+  `OfsTest`s (`ofs_test_run`: the run as one term at offset 0, scanned on its
+  member at the member's offset) derived ONCE by `req_run_tests`, which both
+  `pcrec_emit_req_run_blocks` (the file-scope `static inline`
+  `<p>_reqrun`/`<p>_reqrun_whole`, called by every search-entry emitter just
+  above its entry) and `emit_req_run_check` (the one call line each) read, so
+  a block cannot be written without its call. The blocks come from
+  `ofs_test_emit_fn`, the `<p>_ofsskip` block's own body, which since this
+  step reads no `DfaForm` (`(cx, p, name, const OfsTest *)`,
+  litscan_s1.md §1.3's narrowing); `pf_block_ofs` is its comment plus a call.
+  The K66 loop's two callers converted together: one emitter, so the window
+  and the whole run cannot be searched in two shapes (was
+  `emit_run_scan_loop`'s job).
 - **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan`
   (was `dfa_cand_scan_byte`) calls `dfa_pf_of` and reads the chosen row: the
   deny mask and the offset rows sit between the two. Since [OPT-LITSCAN] S1
