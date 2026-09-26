@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 35
+#define PCREC_ARTIFACT_ABI 36
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -5256,19 +5256,16 @@ static bool pf_ofs_bounded_applies(const DfaSel *s)
 static bool pf_ofs_applies(const DfaSel *s)
 { return pf_ofs_applies_common(s); }
 
-/* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
- * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block.
- *
- * An offset-set row's test is the model's selection re-expressed: the scan is
- * the selected offset `scan` names, the terms are every other selected offset
- * in ascending order, and the guard is the selection's own `maxk`. */
-static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
-                        OfsTest *t)
+/* Fills `*t` with the MODEL's own candidate test, `us`'s k-set selection
+ * re-expressed (it needs `nsel > 0`): the scan is the selected offset `scan`
+ * names, the terms are every other selected offset in ascending order, and
+ * the guard is the selection's own `maxk`. It is what an offset-set row
+ * emits, and what the run rows' predicate asks "does it already test the
+ * run?" of. */
+static void ofs_test_model(const UnanchStart *us, OfsTest *t)
 {
     const PrefixKSets *o = &us->ofsk;
-    (void)cx;
     memset(t, 0, sizeof *t);
-    if (pf->emit_block == NULL) return false;
     const PrefixK *sc = &o->k[o->sel[o->scan]];
     t->scan_k    = sc->k;
     t->scan_byte = sc->count == 1 ? sc->byte : -1;
@@ -5276,6 +5273,17 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
         if (i != o->scan) t->term[t->nterm++].k = &o->k[o->sel[i]];
     t->maxk     = o->maxk;
     t->noffsets = o->nsel;
+}
+
+/* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
+ * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block. */
+static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
+                        OfsTest *t)
+{
+    (void)cx;
+    memset(t, 0, sizeof *t);
+    if (pf->emit_block == NULL) return false;
+    ofs_test_model(us, t);
     return true;
 }
 
@@ -5301,6 +5309,22 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
         }
     }
     return false;
+}
+
+/* Does `t` refuse every candidate whose window lacks the necessary run at its
+ * pin — does it test each offset `run_o + i` with exactly the byte
+ * `Job.req_run.bytes[i]`, as its scan, as a singleton term, or inside its run
+ * term? False where the run is not pinned (litscan_s1.md §1.4 `verifies`). */
+static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const PrefixKSets *o)
+{
+    const ReqRun *r = &cx->job->req_run;
+    if (r->len < 2 || !o->run_pinned) return false;
+    for (int i = 0; i < r->len; i++) {
+        const PrefixK *k;
+        int b;
+        if (!ofs_test_at(t, o->run_o + i, &k, &b) || b != r->bytes[i]) return false;
+    }
+    return true;
 }
 
 /* The emitted name of the table a multi-byte offset probes.
@@ -5603,11 +5627,13 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * The claim being made is that the pre-check's pass dismisses no window the
  * artifact's existing candidate-start pass would not dismiss sooner. That is
  * true of one memchr against another on a byte at least as rare, and it is
- * FALSE of [OPT-REQPOS] tier 2b's RUN check, which dismisses strictly more
- * (a window holding the byte but not the run). So G1 reads the one-byte form
- * only; the run form is left to G2 and to the axis. The ledger measured the
- * one-byte form and nothing else, so this is also the boundary of what the
- * measurement supports.
+ * FALSE of [OPT-REQPOS] tier 2b's RUN check against a byte scan, which
+ * dismisses strictly more (a window holding the byte but not the run). So a
+ * run pre-check is dominated only by a candidate test that itself refuses
+ * every window lacking the run at its pin ([OPT-LITSCAN] S1: an offset-set
+ * selection that verifies the whole run, or a run-pinned row), and the
+ * density comparison stays the one-byte form's alone — the ledger measured
+ * that form and nothing else.
  *
  * G2 IS THE RULE `attempt_cand` ALREADY APPLIES, INHERITED. Its own header
  * says "A fully-anchored pattern already runs ONE attempt (`start_max` is the
@@ -5619,43 +5645,62 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * (`dfa_interior_dead(d->s1u)` on the DFA route, `Job.start_anchor` on the
  * VM's), never a third statement of either. */
 
-/* The byte the artifact's candidate-start `memchr` already scans for, or -1
- * where it has no single-byte candidate-start pass at all.
- *
- * READ OFF THE SAME DERIVATIONS THE LOOP IS EMITTED FROM — `attempt_cand` on
- * ENG_ATTEMPT, `unanch_start` plus axis B's own selection on ENG_UNANCH —
- * exactly as `dfa_prefilter_name` reads them, so this cannot name a byte the
- * emitted scan does not carry. The VM HYBRID is covered with no clause of its
- * own: `pcrec_artifact_has_dfa_scan` is true for it and its inlined
+/* What the artifact's candidate-start scan already proves, for G1: the byte
+ * it scans for, whether it is a `memchr` form, and whether its test refuses
+ * every candidate lacking the necessary run. Reads off the same derivations
+ * the loop is emitted from — `attempt_cand` on ENG_ATTEMPT, `unanch_start`
+ * plus axis B's own selection and its `OfsTest` on ENG_UNANCH — exactly as
+ * `dfa_prefilter_name` reads them, so this cannot name a byte the emitted
+ * scan does not carry. The VM HYBRID is covered with no clause of its own:
+ * `pcrec_artifact_has_dfa_scan` is true for it and its inlined
  * `static <prefix>_prefilter` IS this emitter's output on the same
  * `job->dfa`/`job->engine`, so the same two arms answer for it.
  *
- * THE MEMCHR FORMS ONLY. A byte-class or offset-set prefilter scans a
- * membership table rather than one byte value, so there is no single density
- * to compare against and no dominance to claim; the honest answer there is
- * "no dominating byte", which is what -1 says. */
-static int dfa_cand_scan_byte(Ctx *cx)
+ * [OPT-LITSCAN] S1 WIDENED it from the memchr forms to every `<p>_ofsskip`
+ * row: an offset-set or run row scans ONE byte at its scan offset
+ * (`OfsTest.scan_byte`), which the old "an offset-set scans a membership
+ * table" reading had missed since `[OPT-K]` required that scan to be a
+ * singleton. A byte-class row still answers -1: it has no single byte.
+ *
+ * THE FIRST TWO LINES ARE THE GUARD AND MUST STAY FIRST (litscan_s1.md
+ * R3-1): with no DFA scan at all there is no `Job.dfa` to derive from, and
+ * those routes (a backreference declines the hybrid) are exactly the K65/K66
+ * routes where the pre-check is the only linear no-match proof. */
+typedef struct {
+    int  byte;          /* the scanned byte, or -1: no single-byte scan */
+    bool memchr_form;   /* a memchr row (or ENG_ATTEMPT's memchr) */
+    bool run_verified;  /* its test refuses every window lacking the run */
+} CandScan;
+
+static void dfa_cand_scan(Ctx *cx, CandScan *cs)
 {
-    if (!pcrec_artifact_has_dfa_scan(cx)) return -1;
+    memset(cs, 0, sizeof *cs);
+    cs->byte = -1;
+    if (!pcrec_artifact_has_dfa_scan(cx)) return;
     if (cx->job->engine == PCREC_ENG_ATTEMPT) {
         CandSet acand;
         /* `attempt_cand` is memchr-or-nothing by charter (its own header), so
          * a true answer already means a single-byte scan. */
-        return attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
+        cs->memchr_form = true;
+        cs->byte = attempt_cand(&cx->job->dfa, &acand) ? acand.byte : -1;
+        return;
     }
     {
         UnanchStart us;
         const DfaPf *pf;
+        OfsTest t;
         unanch_start(cx, &us);
         pf = dfa_pf_of(cx, &us);
-        /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset-set
-         * candidates sit between the two, so an artifact whose `kind` is
-         * DFA_PF_MEMCHR may still have had an offset-set form selected over
-         * it. Comparing the chosen object's own name is how the four other
-         * readers of this selection ask the same question. */
-        if (strcmp(pf->c.name, "memchr") && strcmp(pf->c.name, "memchr-bounded"))
-            return -1;
-        return us.cand.byte;
+        /* Axis B's SELECTION, not `us.kind`: the deny mask and the offset
+         * rows sit between the two, so an artifact whose `kind` is
+         * DFA_PF_MEMCHR may still have had another form selected over it. */
+        if (ofs_test_of(cx, &us, pf, &t)) {
+            cs->byte = t.scan_byte;
+            cs->run_verified = ofs_test_verifies_run(cx, &t, &us.ofsk);
+        } else if (!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")) {
+            cs->memchr_form = true;
+            cs->byte = us.cand.byte;
+        }
     }
 }
 
@@ -5699,8 +5744,19 @@ static bool req_route_one_attempt(Ctx *cx)
            dfa_interior_dead(cx->job->dfa.s1u);
 }
 
-/* Is a pre-check on `q` dominated by a candidate-start scan already running
- * on `p`?
+/* Is a pre-check on `q` dominated by the candidate-start scan `cs` the
+ * artifact already runs?
+ *
+ * [OPT-LITSCAN] S1 THREE CONJUNCTS, each its own line (litscan_s1.md §1.4).
+ * (1) A RUN pre-check is dominated only where the scan's test refuses every
+ * window lacking the run (`run_verified`): the run check dismisses windows
+ * holding the byte but not the run, which a byte scan does not. (2) IDENTITY
+ * — the same byte scanned twice. The identity conjunct is kept even where
+ * (1) holds: a test that verifies the run but scans another member of it
+ * trades one member's pass for another's, which is a density judgement this
+ * rule does not make. (3) DENSITY, for the one-byte check under a `memchr`
+ * form alone, EXPLICITLY: an offset row's `p` is now non-negative too, and
+ * this guard is what keeps the density comparison off it.
  *
  * THE ENCODING RULE IS `src/opt/reqbyte.c`'s, FOR ITS REASON
  * (docs/design/reqbyte_freq_pick.md §3): `pcrec_byte_freq_ppm` is a table
@@ -5712,10 +5768,14 @@ static bool req_route_one_attempt(Ctx *cx)
  *
  * `<=` AND NOT `<`: the rule admits the pre-check only where its byte is
  * STRICTLY rarer, so an equally rare byte is a second pass buying nothing. */
-static bool req_byte_dominated_by(Ctx *cx, int p, int q)
+static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
+    int p = cs->byte;
     if (p < 0) return false;
+    if (cx->job->req_run.len >= 2 && !cs->run_verified) return false;
     if (p == q) return true;
+    if (cx->job->req_run.len >= 2) return false;
+    if (!cs->memchr_form) return false;
     if (cx->opt->encoding != PCREC_ENC_BYTE) return false;
     return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
 }
@@ -5733,10 +5793,11 @@ static bool req_byte_dominated_by(Ctx *cx, int p, int q)
  * about EMISSION alone, and it is the only thing that moves. */
 static ReqAdmit req_admit(Ctx *cx)
 {
+    CandScan cs;
     if (cx->job->req_byte < 0) return REQ_ADMIT_NONE;
     if (req_route_one_attempt(cx)) return REQ_ADMIT_ONE_ATTEMPT;
-    if (cx->job->req_run.len < 2 &&
-        req_byte_dominated_by(cx, dfa_cand_scan_byte(cx), cx->job->req_byte))
+    dfa_cand_scan(cx, &cs);
+    if (req_byte_dominated_by(cx, &cs, cx->job->req_byte))
         return REQ_ADMIT_DOMINATED;
     return REQ_ADMIT_EMITTED;
 }
