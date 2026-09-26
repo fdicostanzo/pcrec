@@ -1024,7 +1024,15 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # bytes; 12 of 6,642 census artifact-configs move. (A) is untouched for the
 # same reason: the loop sits in the SEARCH ENTRY, never inside
 # `prog_region()`.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-a446a99e}"   # [K66], abi 34->35: (B) re-pinned to a446a99e on lane/k66fix (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 3b3c06f0 ([K65] fix (a), abi 33->34).
+# **(B) RE-PINNED AGAIN — [OPT-LITSCAN] S1, 2026-09-25: abi 35 -> 36, to
+# `6d92764d`, the `lane/s1build` commit carrying the last `src/` change (the
+# run-pinned row pair; the bump itself rode `6be904f7`, G1's widening).**
+# A pinned necessary run is verified inside the DFA prefilter's offset-skip
+# block and a pre-check the selected test dominates is not emitted: 505 of
+# 3,583 census corpus artifacts move, by id exactly litscan_s1.md §6's
+# classes. (A) is untouched: the prefilter block and the pre-check sit
+# outside `prog_region()`. Measured: 16/0 against this pin.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6d92764d}"   # [OPT-LITSCAN] S1, abi 35->36: (B) re-pinned to 6d92764d on lane/s1build (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: a446a99e ([K66], abi 34->35).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
