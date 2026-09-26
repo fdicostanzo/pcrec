@@ -333,4 +333,23 @@ pcrec (the Makefile owns that).
   byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
   the validation transcript and the five-lane reconciliation.
 
+- **pcrec_analyze.py** — an exception to this directory's own "process
+  tooling" framing above, kept here because `docs/design/findings/
+  design.md` §10.1 names this exact path: the `[FINDINGS]` exemplar
+  analyzer's PROTOTYPE (step B3), grown from `docs/dev/findings_measure/
+  scripts/ngram_count.py`'s one-pass counting shape (that module's own
+  docstring: "intended as the prototype for the one-counter rule" — this
+  file is what graduates that role, without importing it, so the two
+  lifecycles do not couple). It is not a dev-process tool; it is a
+  BUILD-facing dependency (`third_party/*/generate.py` will call it, per
+  design.md §13 step B5) that happens to live under `scripts/` because the
+  design's own build plan puts the prototype tier there before the C end
+  state (`analyze/`, step B6) replaces it (implement-then-replace, §10.1).
+  Emits an `.rxt` `analysis <name>` bundle fragment (design.md §2.7) for
+  `--name`/`--retrieved [--scan freq,cpfreq,bigram]`/`--shard K/N`; also
+  `--merge`, `--digest-only` and `--check` (design.md §10.2). No clock is
+  read anywhere in it (R27c). See `tests/findings/CLAUDE.md` for its own
+  checks and `docs/dev/lanes/findb3_report.md` for what B3 built, what it
+  left as a manager-review judgment call, and what is owed to B1/B2/B6.
+
 Maintenance: update this file when scripts are added/removed or change role.
