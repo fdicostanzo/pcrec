@@ -31,7 +31,20 @@ SAB_DOC_FIGURE="PREDICTED: the 'vars' arm RED — tests/vars/caseless.rxt's case
 # Without this, a future change that stopped producing `A_VAR` under `(?i)` —
 # or stopped emitting the caseless residual — would make this row UNDETECTED
 # for a reason that has nothing to do with the field it plants.
-SAB_REACH='"$PCREC" --features vars,modifiers -p rx -o "$REACH_TMP/o.c" --pattern "(?i)\${v}" && grep -q "rx_var_match_caseless" "$REACH_TMP/o.c" && echo REACH-VAR-CASELESS-ENTRY-EMITTED'
+#
+# RE-POINTED 2026-09-26 (lane s265reach): the emitted caseless span-compare
+# was `rx_var_match_caseless` when this probe was written (measured DETECTED
+# at ba6a6c3b above) and has since been renamed/generalised to
+# `rx_span_match_caseless`, shared with the backreference compare (see the
+# 2026-09-23 anchor note below -- the SAME rename this row's own SAB_BEFORE/
+# SAB_AFTER already tracks via the PCREC_ENCE_SPAN_CASELESS seam-entry
+# constant, unrelated to [OPT-PRECHECK-ADMIT]). The MECHANISM stayed live
+# (the emitted `vm_var` body for `(?i)${v}` still calls
+# `rx_span_match_caseless`); only this probe's literal grep string was
+# stale, and the old string reads `reach:MISSING(1/1)` on main as of
+# `5803051b` -- UNREACHED. Verified with the reach command below run
+# directly against the built binary.
+SAB_REACH='"$PCREC" --features vars,modifiers -p rx -o "$REACH_TMP/o.c" --pattern "(?i)\${v}" && grep -q "rx_span_match_caseless" "$REACH_TMP/o.c" && echo REACH-VAR-CASELESS-ENTRY-EMITTED'
 SAB_REACH_EXPECT="REACH-VAR-CASELESS-ENTRY-EMITTED"
 SAB_COUNT=1
 # [VAR ruling, 2026-09-23] ANCHOR RE-DERIVED FROM THE LIVE SOURCE: the bits
