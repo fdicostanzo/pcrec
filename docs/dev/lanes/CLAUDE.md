@@ -3238,3 +3238,10 @@ never edited afterwards.
   UNDETECTED with its measured derivation); step 6 NOT built, the report
   states what it must re-derive on K66's shared scan loop. Finish (lane
   s1finish): registry/resource re-pins, sabotage S285-S289. MERGED 2026-09-26.
+- **findb0_report.md** — [FINDINGS] B0 (2026-09-26): the `.rxt` format
+  rows for the findings design — the `analysis` bundle (new `bundle`
+  scope), DATA `encoding`/`serves`/`row` grammars, the bundle-level
+  (query, encoding) collision, CONFIG `analysis` as one name, the
+  `pcrec`-line `--analysis` and include-fragment refusals, the conjunctive
+  provenance conditions; `rxt_format.md` hunks; S290/S291, S248
+  re-anchored. Light targets green; full `make test` OWED.
