@@ -308,6 +308,11 @@ typedef enum {
 } ReqAdmit;
 static ReqAdmit req_admit(Ctx *cx);
 
+/* This file's arena-owned fragment formatter, defined below with its reason;
+ * declared here because the run pre-check's emitter precedes it. */
+static const char *dfa_fragf(Ctx *cx, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+
 /* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
  *
  * THE CONDITION IS src/core/compile.c's, VERBATIM AND ON PURPOSE: that file
@@ -720,12 +725,29 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * SLASH, which would close this very comment if spelled here. In the C
  * STRING LITERAL they go through `pcrec_sb_cstr`, whose octal numeric escape
  * is what keeps a non-printable byte from swallowing the byte after it. */
+/* [OPT-LITSCAN] P4, THE EXACT COMPARE (compare_stack.md §3): writes
+ * `!memcmp(<base>, "<bytes>", n)`, true where the `n` bytes at `base` equal
+ * `bytes`. The literal-compare kit's first primitive, and the ONE spelling of
+ * a constant-length literal compare in emitted C, so every caller gets the
+ * form gcc lowers to one word load and one compare (the reasons the run
+ * pre-check below chose it are in its own header). `base` is an emitted C
+ * pointer expression the caller has already bounds-checked; `bytes` go
+ * through `pcrec_sb_cstr`, never raw. Callers: the run pre-check's scan loop
+ * and the offset-skip block's run term (litscan_s1.md §1.6). */
+static void emit_exact_compare(StrBuf *c, const char *base,
+                               const unsigned char *bytes, int n)
+{
+    pcrec_sb_printf(c, "!memcmp(%s, \"", base);
+    pcrec_sb_cstr(c, bytes, (size_t)n);
+    pcrec_sb_printf(c, "\", %d)", n);
+}
+
 /* Writes the run pre-check's scan loop for `n` bytes `run`: `memchr` for
  * `run[i]`, a constant-length `memcmp` of the whole of `run` at each hit,
  * NOMATCH when none compares. Shared by the window check and the [K66] whole
  * run check so the two cannot compare a run in two shapes; its caller has
  * already returned on an empty window. */
-static void emit_run_scan_loop(StrBuf *c, const char *indent,
+static void emit_run_scan_loop(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar, const unsigned char *run,
                                int n, int i)
@@ -748,24 +770,26 @@ static void emit_run_scan_loop(StrBuf *c, const char *indent,
     if (i == 0) {
         pcrec_sb_printf(c,
             "%s        if (rp_c + %d <= %s\n"
-            "%s            && !memcmp(%s + rp_c, \"",
+            "%s            && ",
             indent, n, lenvar,
-            indent, subjvar);
+            indent);
+        emit_exact_compare(c, dfa_fragf(cx, "%s + rp_c", subjvar),
+                           run, n);
     } else {
         pcrec_sb_printf(c,
             "%s        if (rp_c - %s >= %d && rp_c - %d + %d <= %s\n"
-            "%s            && !memcmp(%s + rp_c - %d, \"",
+            "%s            && ",
             indent, posvar, i, i, n, lenvar,
-            indent, subjvar, i);
+            indent);
+        emit_exact_compare(c, dfa_fragf(cx, "%s + rp_c - %d", subjvar, i),
+                           run, n);
     }
-    pcrec_sb_cstr(c, run, (size_t)n);
     pcrec_sb_printf(c,
-        "\", %d)) break;\n"
+        ") break;\n"
         "%s        rp_pos = rp_c + 1;\n"
         "%s        if (rp_pos >= %s) return 0;\n"
         "%s    }\n"
         "%s}\n",
-        n,
         indent,
         indent, lenvar,
         indent,
@@ -792,7 +816,7 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
      * unchanged and for its own reasons (see below): `memchr(NULL, c, 0)` is
      * undefined and an empty window cannot hold the run anyway. */
     pcrec_sb_printf(c, "%sif (%s <= %s) return 0;\n", indent, lenvar, posvar);
-    emit_run_scan_loop(c, indent, posvar, subjvar, lenvar,
+    emit_run_scan_loop(cx, c, indent, posvar, subjvar, lenvar,
                        r->bytes, r->len, r->idx);
 }
 
@@ -828,7 +852,7 @@ static void emit_req_run_rest(Ctx *cx, StrBuf *c, const char *indent,
         "%s * no-match proof, so it compares all of it, not one window. */\n",
         indent, indent);
     pcrec_sb_cmt_close(c);
-    emit_run_scan_loop(c, indent, posvar, subjvar, lenvar,
+    emit_run_scan_loop(cx, c, indent, posvar, subjvar, lenvar,
                        r->whole, r->whole_len, r->at + r->idx);
 }
 

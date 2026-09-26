@@ -1,5 +1,5 @@
 # S267 — [OPT-REQPOS] tier 2b THE RUN PRE-CHECK'S MEMCMP SENSE IS INVERTED
-# (src/gen/emit_dfa.c, `emit_req_run_check`): the emitted test reads
+# (src/gen/emit_dfa.c, `emit_exact_compare`, P4): the emitted test reads
 # `memcmp(...)` where it should read `!memcmp(...)`, so the scan loop breaks out
 # exactly where the necessary run is NOT present and keeps scanning exactly
 # where it IS.
@@ -37,6 +37,14 @@ SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary de
 # stamps a three-byte run and emits the negated memcmp this row inverts.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "a=b" && grep -q "^#define RX_REQ_RUN \"613d62@1\"" "$REACH_TMP/o.c" && grep -qF "&& !memcmp(subject + rp_c - 1, \"a=b\", 3)) break;" "$REACH_TMP/o.c" && echo REACH-REQ-RUN-COMPARE-EMITTED'
 SAB_REACH_EXPECT="REACH-REQ-RUN-COMPARE-EMITTED"
-SAB_COUNT=2
-SAB_BEFORE='&& !memcmp(%s + rp_c'
-SAB_AFTER='&& memcmp(%s + rp_c'
+# [OPT-LITSCAN] S1 re-anchor (lane s1build, 2026-09-25): the compare is now
+# P4, `emit_exact_compare`, the ONE emitter of a constant-length literal
+# compare, and both of the loop's formats call it. The plant moves there with
+# its intent unchanged — the SENSE of the run compare is inverted — and the
+# two-format rationale above now holds by construction (one site, both
+# shapes), so SAB_COUNT drops from 2 to 1. Since S1's run rows the same
+# primitive also writes the `<p>_ofsskip` run term, which this plant inverts
+# too; that widens what the row deletes and does not change what it isolates.
+SAB_COUNT=1
+SAB_BEFORE='    pcrec_sb_printf(c, "!memcmp(%s, \"", base);'
+SAB_AFTER='    pcrec_sb_printf(c, "memcmp(%s, \"", base);   /* SABOTAGE S267 */'
