@@ -4379,6 +4379,29 @@ struct DfaDir {
     const char *scan_back;
 };
 
+/* [OPT-LITSCAN] S1 — THE CANDIDATE TEST a `<p>_ofsskip` block emits: one
+ * scan (offset, byte) and the terms verified at each candidate, ascending by
+ * offset -- each either one walk offset (a byte compare or a table probe) or
+ * the pinned run (one constant-length compare, P4). ONE derivation,
+ * `ofs_test_of`, and every reader that asks what the block tests reads it:
+ * the block and its verify chain, its table parameters and tables, its
+ * emitted comment, the OFFSETS stamp and G1 (docs/design/litscan_s1.md §1.3).
+ *
+ * It holds no `Dfa` and no `DfaForm`, so a later consumer without a DFA can
+ * fill one from its own facts and hand it to the same block emitter (§1.5,
+ * `[OPT-VMSEED]`). The `PrefixK` pointers point into the caller's
+ * `UnanchStart`, which outlives every use (the reason `DfaForm` held the
+ * selection by pointer before this). */
+typedef struct {
+    int scan_k, scan_byte;            /* scan_byte -1: not one byte (unreachable) */
+    int nterm;
+    struct { const PrefixK *k; } term[PCREC_OFSK_MAX_SET]; /* k == NULL: the run */
+    int run_o, run_len;               /* run_len == 0: no run term */
+    const unsigned char *run_bytes;   /* Job.req_run.bytes, never a copy */
+    int maxk;                         /* the loop guard: the largest tested offset */
+    int noffsets;                     /* distinct offsets tested */
+} OfsTest;
+
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
     /* [OPT-K] the Ctx, originally for `pcrec_ctx_fail` alone. Two arms of the
@@ -4420,11 +4443,11 @@ struct DfaForm {
      * stamp path, exactly as `dfa_table_name` re-asks `dfa_repr_of` there. */
     DfaFold        tr_fold, acc_fold;
     CandSet        cand;
-    /* [OPT-K] BY POINTER into the caller's `UnanchStart`, which outlives every
-     * use: the selection carries 24 byte-sets and copying it into a stack
-     * struct twice per artifact would put 13 KB on the emitter's frame for a
-     * value nothing mutates. */
-    const PrefixKSets *ofsk;
+    /* [OPT-LITSCAN] S1 the candidate test axis B's `<p>_ofsskip` row emits,
+     * derived once from `pf` (`ofs_test_of`); all zero when the row emits no
+     * block. It replaced the raw `PrefixKSets` pointer every offset-skip
+     * reader used to read the selection through. */
+    OfsTest        ofs;
 };
 
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
@@ -5215,18 +5238,6 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
  * byte-identical to the pre-row compiler's output and is therefore a valid
  * control rather than a fourth variant (D82). */
 
-/* Which member of the selected set the SCAN uses, and which are verifies. */
-static const PrefixK *ofsk_at(const DfaForm *f, int i)
-{
-    return &f->ofsk->k[f->ofsk->sel[i]];
-}
-/* The selected offset the SKIP itself scans for; every other selected offset
- * is a verify. */
-static const PrefixK *ofsk_scan(const DfaForm *f)
-{
-    return ofsk_at(f, f->ofsk->scan);
-}
-
 /* The clause all the offset-set candidates share: this is the forward scan,
  * an offset-0 prefilter was already approved, and the k-set pass selected at
  * least one offset. The selection RIDES the offset-0 verdict and is never
@@ -5244,6 +5255,53 @@ static bool pf_ofs_bounded_applies(const DfaSel *s)
 /* And the unbounded one. */
 static bool pf_ofs_applies(const DfaSel *s)
 { return pf_ofs_applies_common(s); }
+
+/* Fills `*t` with the candidate test row `pf` emits over `us`'s selection;
+ * false, with `*t` zeroed, for a row that emits no `<p>_ofsskip` block.
+ *
+ * An offset-set row's test is the model's selection re-expressed: the scan is
+ * the selected offset `scan` names, the terms are every other selected offset
+ * in ascending order, and the guard is the selection's own `maxk`. */
+static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
+                        OfsTest *t)
+{
+    const PrefixKSets *o = &us->ofsk;
+    (void)cx;
+    memset(t, 0, sizeof *t);
+    if (pf->emit_block == NULL) return false;
+    const PrefixK *sc = &o->k[o->sel[o->scan]];
+    t->scan_k    = sc->k;
+    t->scan_byte = sc->count == 1 ? sc->byte : -1;
+    for (int i = 0; i < o->nsel; i++)
+        if (i != o->scan) t->term[t->nterm++].k = &o->k[o->sel[i]];
+    t->maxk     = o->maxk;
+    t->noffsets = o->nsel;
+    return true;
+}
+
+/* What `t` tests at offset `o`, for the readers that list the tested offsets
+ * in order (the block's comment, the OFFSETS stamp): false where it tests
+ * nothing. `*kp` is the walk term tested there, or NULL at the scan offset or
+ * a byte of the run; `*bytep` is the one byte tested there, or -1 for a set. */
+static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
+{
+    *kp = NULL;
+    *bytep = -1;
+    if (o == t->scan_k) { *bytep = t->scan_byte; return true; }
+    if (t->run_len > 0 && o >= t->run_o && o < t->run_o + t->run_len) {
+        *bytep = t->run_bytes[o - t->run_o];
+        return true;
+    }
+    for (int i = 0; i < t->nterm; i++) {
+        const PrefixK *k = t->term[i].k;
+        if (k && k->k == o) {
+            *kp = k;
+            *bytep = k->count == 1 ? k->byte : -1;
+            return true;
+        }
+    }
+    return false;
+}
 
 /* The emitted name of the table a multi-byte offset probes.
  *
@@ -5283,9 +5341,9 @@ static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
  * two loses matches. */
 static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
 {
-    for (int i = 0; i < f->ofsk->nsel; i++) {
-        const PrefixK *k = ofsk_at(f, i);
-        if (i == f->ofsk->scan || k->count <= 1) continue;
+    for (int i = 0; i < f->ofs.nterm; i++) {
+        const PrefixK *k = f->ofs.term[i].k;
+        if (!k || k->count <= 1) continue;
         pcrec_sb_printf(c, "    /* 1 for each byte a match MAY BEGIN WITH %d byte%s before\n"
                      "     * its own start -- i.e. which bytes may sit at offset %d of a\n"
                      "     * match. NOT the same question as can_begin_match, which asks\n"
@@ -5307,9 +5365,8 @@ static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
 static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
 {
     bool first = true;
-    for (int i = 0; i < f->ofsk->nsel; i++) {
-        const PrefixK *k = ofsk_at(f, i);
-        if (i == f->ofsk->scan) continue;
+    for (int i = 0; i < f->ofs.nterm; i++) {
+        const PrefixK *k = f->ofs.term[i].k;
         pcrec_sb_puts(c, first ? "" : " &&\n            ");
         first = false;
         if (k->count == 1) {
@@ -5333,9 +5390,9 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
 /* Names the block's parameters, in the order `ofsk_emit_params` writes them. */
 static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
 {
-    for (int i = 0; i < f->ofsk->nsel; i++) {
-        const PrefixK *k = ofsk_at(f, i);
-        if (i == f->ofsk->scan || k->count <= 1) continue;
+    for (int i = 0; i < f->ofs.nterm; i++) {
+        const PrefixK *k = f->ofs.term[i].k;
+        if (!k || k->count <= 1) continue;
         pcrec_sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "",
                   ofsk_tbl_name(f, k));
     }
@@ -5345,8 +5402,8 @@ static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
 static void pf_block_ofs(StrBuf *c, const DfaForm *f)
 {
     const char *p = f->p;
-    const PrefixK *sc = ofsk_scan(f);
-    int maxk = f->ofsk->maxk;
+    const OfsTest *t = &f->ofs;
+    int maxk = t->maxk;
 
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
@@ -5356,13 +5413,15 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
         " * one of them cannot begin a match and the transition loop need not\n"
         " * be entered there (docs/design/offset_k_skip.md):\n"
         " *\n");
-    for (int i = 0; i < f->ofsk->nsel; i++) {
-        const PrefixK *k = ofsk_at(f, i);
-        pcrec_sb_printf(c, " *   offset %-2d  ", k->k);
-        if (k->count == 1) { pcrec_sb_puts(c, "exactly "); legend_byte(c, k->byte);
-                             pcrec_sb_printf(c, " (%d)", k->byte); }
-        else               pcrec_sb_printf(c, "one of %d bytes", k->count);
-        if (i == f->ofsk->scan) pcrec_sb_puts(c, "   <- SCANNED FOR");
+    for (int o = 0; o <= maxk; o++) {
+        const PrefixK *k;
+        int b;
+        if (!ofs_test_at(t, o, &k, &b)) continue;
+        pcrec_sb_printf(c, " *   offset %-2d  ", o);
+        if (b >= 0) { pcrec_sb_puts(c, "exactly "); legend_byte(c, b);
+                      pcrec_sb_printf(c, " (%d)", b); }
+        else        pcrec_sb_printf(c, "one of %d bytes", k->count);
+        if (o == t->scan_k) pcrec_sb_puts(c, "   <- SCANNED FOR");
         pcrec_sb_puts(c, "\n");
     }
     pcrec_sb_puts(c,
@@ -5384,21 +5443,21 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
     pcrec_sb_puts(c, ")\n{\n");
     pcrec_sb_printf(c, "    while (pos + %d < n) {\n", maxk);
     pcrec_sb_puts(c,   "        size_t cand;\n");
-    if (sc->count == 1) {
+    if (t->scan_byte >= 0) {
         /* THE memchr FORM. `pos + maxk < n` above implies `pos + k* < n`, so
          * the pointer is inside the subject and the length is non-zero --
          * [K27]'s memchr(NULL, c, 0) hazard closed by the loop guard rather
          * than by a second test. */
-        if (sc->k == 0)
-            pcrec_sb_printf(c, "        const void *q = memchr(subject + pos, %d, n - pos);\n", sc->byte);
+        if (t->scan_k == 0)
+            pcrec_sb_printf(c, "        const void *q = memchr(subject + pos, %d, n - pos);\n", t->scan_byte);
         else
             pcrec_sb_printf(c, "        const void *q = memchr(subject + pos + %d, %d, n - pos - %d);\n",
-                      sc->k, sc->byte, sc->k);
+                      t->scan_k, t->scan_byte, t->scan_k);
         pcrec_sb_puts(c,   "        if (!q) return n;\n");
-        if (sc->k == 0)
+        if (t->scan_k == 0)
             pcrec_sb_puts(c, "        cand = (size_t)((const unsigned char *)q - subject);\n");
         else
-            pcrec_sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", sc->k);
+            pcrec_sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", t->scan_k);
         pcrec_sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
     } else {
         /* UNREACHABLE. The selection requires the scan offset to MOVE off 0
@@ -5449,7 +5508,7 @@ static void pf_comment_ofs(StrBuf *c, const DfaForm *f)
     pcrec_sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
                  "%s// skip straight to the next position that could begin a\n"
                  "%s// match. %s_ofsskip tests %d offsets, not just this one.\n",
-              ind, ind, ind, f->p, f->ofsk->nsel);
+              ind, ind, ind, f->p, f->ofs.noffsets);
     pcrec_sb_cmt_close(c);
 }
 
@@ -6661,7 +6720,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
     f->cand    = us->cand;
-    f->ofsk    = &us->ofsk;
+    ofs_test_of(cx, us, f->pf, &f->ofs);
     /* The SEARCH scan never skips out of its own start state — the prefilter
      * owns that position. The reverse machine and [ENG-ABS]'s anchored
      * MATCH-HERE machine have no prefilter, so nothing owns theirs. */
@@ -8660,11 +8719,17 @@ static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
      * because `unanch_start` is not the derivation it uses. */
     if (cx->job->engine == PCREC_ENG_ATTEMPT) { pcrec_sb_puts(out, "none"); return; }
     UnanchStart us;
+    OfsTest t;
     unanch_start(cx, &us);
-    if (dfa_pf_of(cx, &us)->emit_block == NULL) { pcrec_sb_puts(out, "none"); return; }
-    for (int i = 0; i < us.ofsk.nsel; i++)
-        pcrec_sb_printf(out, "%s%d%s", i ? "," : "", us.ofsk.k[us.ofsk.sel[i]].k,
-                  i == us.ofsk.scan ? "*" : "");
+    if (!ofs_test_of(cx, &us, dfa_pf_of(cx, &us), &t)) { pcrec_sb_puts(out, "none"); return; }
+    /* The TESTED offsets, ascending, from the one derivation the block is
+     * emitted from; the scan's is marked. */
+    for (int o = 0, n = 0; o <= t.maxk; o++) {
+        const PrefixK *k;
+        int b;
+        if (!ofs_test_at(&t, o, &k, &b)) continue;
+        pcrec_sb_printf(out, "%s%d%s", n++ ? "," : "", o, o == t.scan_k ? "*" : "");
+    }
 }
 
 /* The stamps that are facts about a DFA SCAN, and therefore shared with the
