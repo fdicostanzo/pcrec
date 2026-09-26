@@ -111,7 +111,44 @@ bench patterns, 236 configs): `docs/dev/optloop/s1/s1step6_movers_list.tsv`.
 
 ## Validation (darwin)
 
-VALIDATION_PLACEHOLDER
+Complete (this lane, darwin, tip at report time):
+
+- `make strict CC=gcc-16`: clean.
+- `run_prechecks.sh` 289/0; `run_offset_skip.sh` 25/0; `run_dfa_stamps.sh`
+  33/0 (after the marker scoping; 32/1 before); `run_cpset_structure.sh`
+  28/0 (after the one-row re-record); `run_form_census.sh` 0 failed;
+  `tests/resource/run_resource_tests.sh` 0 failed.
+- `make test-codegen`: `run_group: 10/11 scripts passed`, the one red the
+  standing darwin `run_inline_capability.sh` nm probe.
+- `make test-rxtsource` 255/0; `make test-registry` EXIT 0;
+  `make test-recursion-identity` 16/0 ((B) vs `c9dec3e4`: 2,575 identical,
+  0 differing; (A) 0 differing). BSD awk prints a `towc` multibyte warning
+  in that log on a non-ASCII pattern; the verdicts are unaffected.
+- `run_encoding_checks.sh`: 10/3 — the SAME three DD12a(i) reds as main
+  `54bb1159` (finding 8); non-vacuity arms (`req_run_offset0` 38,
+  `req_pick` 423) hold.
+- **K64/K65/K66 witnesses** (`tests/base/k6*_precheck*.rxt`, 49 cases) under
+  default, `--engine=vm` and `-e utf8`: 49/0 on both base and tip, and the
+  `RXTDUMP` per-case rows (route, trc, answer — give-ups included) are
+  IDENTICAL base vs tip on all three flag sets: zero give-up transitions in
+  the named population.
+- Mover census: finding 4 (0 bad of 13,348).
+- Sabotage, single-row mech: **S293 DETECTED** (reach ok, prechecks
+  6fail/283pass, corpus 2fail/14pass); **S267 DETECTED** (reach ok, corpus
+  752fail/28472pass, prechecks 18fail/271pass); **S278 DETECTED** (reach ok,
+  prechecks 3fail/286pass, corpus 8fail/8pass); **S279 DETECTED** (reach
+  ok, corpus 29fail/26pass, offsetskip 3fail/25pass); **S285 DETECTED**.
+
+**OWED — the heavy battery, launched DETACHED as this lane's last act**
+(`/tmp/s1step6/heavy.sh`, `nohup … & disown`), in sequence, one log each:
+`make asan` -> `/tmp/s1step6/asan.log`, `make ubsan` ->
+`/tmp/s1step6/ubsan.log`, `make test` -> `/tmp/s1step6/maketest.log`,
+`AXES_FULL=1 HARNESS_BATCH=64 make test-axes` (4 h cap) ->
+`/tmp/s1step6/axes.log`. Progress/verdict lines in `/tmp/s1step6/heavy.log`:
+one `<stage> EXIT=<rc>` per stage and a final `HEAVY-DONE`. Read verdicts
+from make's `*** [test-X] Error` lines; for axes also the `AXIS FAIL`
+lines and any NEW give-up not in `GIVEUP1_ALLOWANCE` (a new one is a
+failure). Known darwin red: the nm probe only.
 
 ## Residue (stated)
 

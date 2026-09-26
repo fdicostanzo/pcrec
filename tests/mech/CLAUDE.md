@@ -2820,6 +2820,7 @@ plant file. Detectors are `tests/offsetskip/run_pinned.rxt` (answers) and
 | S282 | (i) | `DfaCand.deny` back to `unsigned` (R4 planted) | §5.10 `-fno-run-prefilter` rows — answer-invisible, `make test-axes`-invisible |
 | S284 | (j) | `reseeds = false` on the run rows | **UNDETECTED (EXPECTED)**, S219's shape: the reachability run found no run-row machine where a chain head is a seed target (`docs/dev/optloop/s1/rowj_reach_output.txt`) |
 | S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
+| S293 | step 6 | `ofs_test_run` records the run pre-check's scan offset as 0 (`cand = hit` not `hit - i`) | DETECTED: prechecks §4.1c/§4.3 + `k66_precheck_whole_run.rxt`'s byte block — answer-detectable (lane s1step6, 2026-09-26) |
 
 **S287 IS THE SECOND ROW IN THIS DIRECTORY WHOSE DEFECT IS CONFIRMED REAL BY A
 HAND REPRODUCTION RATHER THAN BY THIS MATRIX** (S155's `framebuffer` arm is

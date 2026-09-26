@@ -29,7 +29,7 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prechecks harness"
 SAB_HARNESS_TARGET="tests/base/k66_precheck_whole_run.rxt"
 SAB_DESC="the run pre-check's candidate test records its scan member's offset as 0, so each rx_reqrun block takes a hit of run[i] as the run's start rather than hit - i and never finds a run whose scan member is not its first byte: a false NOMATCH on every matching subject of such a pattern"
-SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S293."
+SAB_DOC_FIGURE="MEASURED 2026-09-26 (lane s1step6, single-row mech): DETECTED -- reach:ok(1/1), prechecks:6fail/283pass, corpus:2fail/14pass (the byte block of tests/base/k66_precheck_whole_run.rxt). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S293."
 # [MECH-REACH] the probe: `a=b` (scan member `=` at 1) under
 # -fno-offset-skip emits its rx_reqrun block scanning at offset 1.
 SAB_REACH='"$PCREC" --features all -p rx -fno-offset-skip -o "$REACH_TMP/o.c" --pattern "a=b" && grep -qF "memchr(subject + pos + 1, 61, n - pos - 1);" "$REACH_TMP/o.c" && grep -qF "rx_reqrun(subject, subject_length, search_from)" "$REACH_TMP/o.c" && echo REACH-REQRUN-SCAN-OFFSET-EMITTED'
