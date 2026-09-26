@@ -129,3 +129,40 @@ text that no critic has yet seen:
 The findings whose content was not relayed (fcrit-model 13–19; fcrit-sound
 F4, F7, F12) are an honest gap in this record. If any of them was
 blocking, this verdict does not cover it.
+
+## Re-check (findcheck, 2026-09-25)
+
+The focused re-check this file's own Verdict recommended, run against `design.md`
+r2 (before the below dispositions): one read-only critic, `/tmp/pcrec_findcheck/findcheck.md`.
+No BLOCKING finding. Applied by lane `findr3` (this file's own commits, marked
+`[r3 <id>]` in `design.md`).
+
+| id | sev | finding | disposition | applied in |
+|---|---|---|---|---|
+| F1 | should-fix | §6.4 rule 1's justification is false for C1/C2 today: `src/core/compile.c:1517-1519` gates the CALL to `pcrec_req_byte` on `!(flags & PCREC_NO_REQ_BYTE)`, so under `-fno-req-byte`/`-fno-req-run` the analysis itself does not run (not just its emission). The note had cited `req_admit`'s "a declined artifact keeps `Job.req_byte`… the analysis ran" comment (`emit_dfa.c` ~5647), which is about G1/G2's EMISSION decline, a different axis from the deny flags | ACCEPT. Rule 1 now states it holds unconditionally only for readers with no deny gate on their own analysis call, and names C1/C2 as the exception KNOWN to need rule 3's fallback (the two `<P>_FINDINGS` lines exempted for those deny-flag builds) — not merely a hypothetical rule-3 case | §6.4 rule 1 |
+| F2 | should-fix | §6.2a's C2b row (`NOT covered… ruled fix needed… OPEN`), §11's head, and §13 B2's precondition list were stale against main: K65 fixed (abi 34), K66 (= C2b) fixed (abi 35, merge `27a63314`, `emit_req_run_rest`), GIVEUP1 merged (`84b4a7a9`). B2 is no longer gated on any of them | ACCEPT. §6.2a's C1 and C2b rows updated to FIXED with their abi/merge citations; §11's head updated (GIVEUP1 on main, `run_axes.sh` now scores the one-sided-give-up class); §13 B2's `depends` column rewritten to state all three preconditions discharged. The abi wording elsewhere ("the next abi number at landing") is UNCHANGED — it is not a literal and this re-check does not turn it into one | §6.2a (C1, C2b rows), §11 head, §13 B2 |
+| F3 | note (re-derived, model lens) | §5.2's per-target `--list-analysis` view + §4.2's Route-I table assume one global `-I` list per compile; `cli/main.c` `st.libdirs`/`ts.libdirs` are file-scope, no per-target `-I` — TRUE, not a defect; probed-and-held | RECORDED HERE, not in the design body (no design edit: it confirms a scoping the note already assumes, and the design text does not claim otherwise). No action needed unless a future revision proposes per-target `-I`, at which point this row is the probe to re-run | this review record only |
+| F4 | note (re-derived, soundness lens) | §2.6's tie rule + the C6 row (letter argmin's own order) leave C6's tiebreak population unverified beyond §11.4's rank-equality acceptance — a near-tie in a shipped bundle could diverge with no test naming it | ACCEPT (deferred, not designed here). Recorded in full here; a one-line pointer added to §13's B4 step (the step that builds C6) naming the gap as OWED at that step | this review record (full); `design.md` §13 B4 (one-line pointer) |
+
+**Not-dispositioned items, CLOSED.** fcrit-model notes 13–19, fcrit-sound F4/
+F7/F12 (and F13's full text) were never re-supplied by the manager. Their
+contents are UNRECOVERABLE — critic output that exists only in a prior
+session's transcript, lost at that session's reset, with no other copy in
+this tree. A fresh critic (findcheck) re-derived the design's soundness and
+model surfaces under both lenses independently (not by trying to
+reconstruct the lost notes) and found F3 (held, recorded above) and F4
+(deferred to B4, recorded above) — nothing else. No further action: these
+items are closed as lost, superseded by the re-check's own independent
+findings rather than recovered.
+
+**Frank's OPEN rulings, SETTLED.**
+- **OPEN 1 (C2b, run-window choice on no-DFA-front VM routes): YES**, take
+  (a) — done as **K66** (`known_issues.md`), K65's fix (a) extended to runs,
+  fixed 2026-09-25, abi 35.
+- **OPEN 2 (a stamp redaction mode, A7): NO.** Document the disclosure only
+  (already done, §7/§10.5); no redaction spelling built. Manager default
+  ruling — Frank raised no objection.
+- **OPEN 3 (an `analysis` block inside an `include "path"` fragment):
+  parse error.** Manager ruling, syntax tier (D26) — refused at parse,
+  consistent with M-B3's corollary; the `[FINDINGS-S1-REVISIT]` row still
+  reopens it under its own triggers.
