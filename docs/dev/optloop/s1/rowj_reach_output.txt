@@ -1,0 +1,10 @@
+P2 bench caps 'capability/wild-secrets-github-pat' pf=run-pinned-bounded edges real=0 sab=0
+P2 bench nocaps 'capability/wild-secrets-github-pat' pf=run-pinned-bounded edges real=0 sab=0
+bench   P1 run-pinned                                 94
+bench   P2 run-pinned + forward seed table            2
+bench   P3 ... + plant gives a forward scan edge      0
+bench   any artifact the plant moves at all           0
+corpus  P1 run-pinned                                 151
+corpus  P2 run-pinned + forward seed table            0
+corpus  P3 ... + plant gives a forward scan edge      0
+corpus  any artifact the plant moves at all           0

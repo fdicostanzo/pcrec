@@ -469,7 +469,10 @@ if emit "$WORKDIR/s3_null1.c" '\w+@\w+'; then
         && ok "[3.4] the one-byte pre-check tests the window for emptiness before dereferencing the subject" \
         || bad "[3.4] the one-byte pre-check's empty-window arm is missing or not first — memchr(NULL, c, 0) is UB"
 fi
-if emit "$WORKDIR/s3_null2.c" 'a=b'; then
+# [OPT-LITSCAN] S1: on the default build `a=b`'s offset-set prefilter now
+# verifies the whole run, so G1 elides the pre-check (tuning.md §2.29);
+# `-fno-offset-skip` restores the pre-S1 artifact whose run check this reads.
+if emit "$WORKDIR/s3_null2.c" 'a=b' -fno-offset-skip; then
     grep -q 'if (subject_length <= search_from) return 0;' "$WORKDIR/s3_null2.c" \
         && ok "[3.4b] the run pre-check tests the window for emptiness before dereferencing the subject" \
         || bad "[3.4b] the run pre-check's empty-window arm is missing — memchr(NULL, c, 0) is UB"
@@ -638,7 +641,11 @@ fi
 while IFS='%' read -r pat _sep run len idx off; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s4_$RANDOM$RANDOM.c"
-    if ! emit "$a" "$pat"; then bad "[4.1] $pat: refused"; continue; fi
+    # [OPT-LITSCAN] S1: a pinned run is now verified inside the DFA prefilter
+    # and its pre-check elided (tuning.md §2.29/§2.30); `-fno-offset-skip`
+    # removes both S1 row families and restores the run check this section
+    # reads the text of. The VM route (§4.6) needs no flag.
+    if ! emit "$a" "$pat" -fno-offset-skip; then bad "[4.1] $pat: refused"; continue; fi
     # `run` is the run as the emitted STRING LITERAL reads it (escapes and all),
     # so its length in bytes is not its length in characters: `len` is the
     # compare's own third argument and is spelled per row rather than counted.
@@ -698,12 +705,12 @@ fi
 # `idx == 0` it must be ABSENT rather than emitted as `>= 0`, which is a
 # `-Wtype-limits` report under the harness's own -Werror (edge1_report.md's
 # recorded defect class, which §4.1d is the live detector for).
-if emit "$WORKDIR/s43a.c" 'a=b'; then
+if emit "$WORKDIR/s43a.c" 'a=b' -fno-offset-skip; then   # §4.1's reason
     grep -qF 'if (rp_c - search_from >= 1 && rp_c - 1 + 3 <= subject_length' "$WORKDIR/s43a.c" \
         && ok "[4.3] idx > 0: both window conjuncts are emitted" \
         || bad "[4.3] idx > 0: the two-conjunct window guard is missing or reshaped"
 fi
-if emit "$WORKDIR/s43b.c" '\.tar'; then
+if emit "$WORKDIR/s43b.c" '\.tar' -fno-offset-skip; then
     if grep -qF 'if (rp_c + 4 <= subject_length' "$WORKDIR/s43b.c"; then
         grep -q 'rp_c - search_from >=' "$WORKDIR/s43b.c" \
             && bad "[4.3b] idx == 0: the always-true first conjunct is emitted — -Wtype-limits" \
@@ -720,7 +727,7 @@ fi
 # default build. Both artifacts are written to the SAME basename in different
 # directories, this house's four-times-recorded `-o` trap.
 mkdir -p "$WORKDIR/d1" "$WORKDIR/d2"
-if emit "$WORKDIR/d1/o.c" 'a=b' && emit "$WORKDIR/d2/o.c" 'a=b' -fno-req-run; then
+if emit "$WORKDIR/d1/o.c" 'a=b' -fno-offset-skip && emit "$WORKDIR/d2/o.c" 'a=b' -fno-offset-skip -fno-req-run; then   # §4.1's reason
     r1="$(stamp "$WORKDIR/d2/o.c" REQ_RUN)"; b1="$(stamp "$WORKDIR/d2/o.c" REQ_BYTE)"
     if [ "$r1" = "none" ] && [ "$b1" = "61" ] \
        && grep -q '!memchr(subject + search_from, 61, subject_length - search_from)' "$WORKDIR/d2/o.c" \
@@ -748,7 +755,7 @@ fi
 # run. A rule that took the LEFTMOST window containing the member would answer
 # s=0 and a rule that ignored the member would answer s=3 for a different
 # reason, so this row discriminates both.
-if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}'; then
+if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # §4.1's reason
     got="$(stamp "$WORKDIR/s45.c" REQ_RUN)"
     [ "$got" = "6875625f7061745f@3" ] \
         && ok "[4.5] an 11-byte run truncates to the lowest-prior 8-byte window containing its scanned member (hub_pat_ @3)" \
@@ -1029,8 +1036,12 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
 [ "$s5_dom" -ge "$S5_DOM_FLOOR" ] \
     && ok "[5.5] $s5_dom of $s5_tot corpus patterns decline on G1 DOMINANCE (floor $S5_DOM_FLOOR)" \
     || bad "[5.5] only $s5_dom corpus patterns decline on G1, floor is $S5_DOM_FLOOR — §5.3's dominance rows may be the only population"
-# D110's floor convention, the other two floors' own: half the measured 8
-[ "$s5_emit" -ge 4 ] \
+# D110's floor convention, the other two floors' own: half the measured 8 —
+# RE-DERIVED at [OPT-LITSCAN] S1 (abi 36): this population is mostly literal
+# runs, and S1 verifies a pinned run inside the prefilter, so 7 of the 8
+# moved emitted -> dominated by design (measured: 19 dominated, 1 emitted);
+# the floor is the one that remains.
+[ "$s5_emit" -ge 1 ] \
     && ok "[5.5] $s5_emit of $s5_tot corpus patterns still EMIT the pre-check — the admission has not swallowed the mechanism" \
     || bad "[5.5] only $s5_emit corpus patterns still emit a pre-check — G1/G2 may be declining a population they were never measured on"
 
@@ -1234,6 +1245,50 @@ if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
         && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
         || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.9]'s rows test nothing"
 fi
+
+# =========================================================================
+# SECTION 5.10 — [OPT-LITSCAN] S1: G1 READS THE SELECTED ROW'S CANDIDATE TEST,
+# AND THE RUN-PINNED ROWS.
+# =========================================================================
+#
+# Since S1 (docs/design/litscan_s1.md, abi 36) G1's scanned byte `p` comes off
+# every `<p>_ofsskip` row's test, a RUN pre-check is dominated only where that
+# test also verifies the run at its pin, and the density comparison stays the
+# one-byte check's under a memchr form alone. Each row names the prefilter
+# value, its OFFSETS and REQ_WHY it must stamp, all derived by hand from the
+# pattern; "-" = the stamp is absent (no DFA scan). Several rows are the
+# structural detectors of litscan_s1.md §7.1's sabotage rows, named in the
+# last column.
+while IFS='%' read -r pat flags wantpf wantofs wantwhy why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s510_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.10] $pat [$flags]: refused"; continue; fi
+    gpf="$(stamp "$a" DFA_PREFILTER)"; gpf="${gpf:--}"
+    gofs="$(stamp "$a" DFA_PREFILTER_OFFSETS)"; gofs="${gofs:--}"
+    gwhy="$(stamp "$a" REQ_WHY)"
+    [ "$gpf" = "$wantpf" ] && [ "$gofs" = "$wantofs" ] && [ "$gwhy" = "$wantwhy" ] \
+        && ok "[5.10] $pat [$flags] -> $gpf / $gofs / REQ_WHY \"$gwhy\" ($why)" \
+        || bad "[5.10] $pat [$flags]: $gpf / $gofs / REQ_WHY \"$gwhy\", expected $wantpf / $wantofs / \"$wantwhy\" ($why)"
+    # the TEXT: a dominated run pre-check leaves no rp_pos scan loop behind
+    n="$(grep -c 'memchr(subject + rp_pos,' "$a")"
+    if [ "$gwhy" = "dominated" ] && [ "$n" -ne 0 ]; then
+        bad "[5.10b] $pat [$flags]: \"dominated\" but $n run pre-check scan loop(s) are still emitted"
+    fi
+done <<'ROWS'
+/user|/users%%run-pinned%0*,1,2,3,4%dominated%router, class B: the run is scanned at offset 0 and compared whole in the prefilter, so the pre-check's second scan of / goes
+in|instanceof%%offset-set%0,1*%dominated%keyword, class A: the model's own selection already verifies in, so it keeps offset-set (sabotage row h: clause 4) and G1 elides
+[ab]/user%%run-pinned%0,1*,2,3,4,5%dominated%class C1: the model scans / at 1, the run's own member there
+foo\b%%run-pinned-bounded%0*,1,2%dominated%B-bounded: the trailing word context bounds the same form
+/user|/users%-fno-run-prefilter%memchr%none%emitted%the deny: today's artifact, the pre-check back (sabotage row i)
+/user|/users%-fno-offset-skip%memchr%none%emitted%the OTHER deny bit removes the run rows too (sabotage row k)
+[ab]/user%-fno-run-prefilter%offset-set%0,1*%emitted%C1 denied falls back to offset-set, whose test does not verify the run
+\Bfoo\B%%offset-set-bounded%0,1*%emitted%class C2: the model scans o at 1, not the pick f, so no run row (sabotage row f: clause 3)
+q[a-z]*qu%%memchr%none%emitted%class D: memchr on q IS the pick, but the run floats, so the scan does not verify it (sabotage row c: the verifies conjunct)
+[ab]\x80[0-9]{3}\x81%%offset-set%0,1*%emitted%a one-byte check on 0x81 beside an offset-set scanning 0x80 of equal ppm: density is a memchr form's alone (sabotage row e)
+(x?)([a-z]+)+Z.@\1%-e byte%-%-%emitted%K65's witness: no DFA scan of any kind, so G1 has no p and the pre-check stays (litscan_s1.md R3-1)
+(x?)([a-z]+)+Z.@\1%-e utf8%-%-%emitted%the same under utf8
+ROWS
 
 echo "checks passed: $pass"
 echo "checks failed: $fail"
