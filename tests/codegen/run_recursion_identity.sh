@@ -1032,7 +1032,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # 3,583 census corpus artifacts move, by id exactly litscan_s1.md §6's
 # classes. (A) is untouched: the prefilter block and the pre-check sit
 # outside `prog_region()`. Measured: 16/0 against this pin.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6d92764d}"   # [OPT-LITSCAN] S1, abi 35->36: (B) re-pinned to 6d92764d on lane/s1build (D76, 2026-09-25). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: a446a99e ([K66], abi 34->35).
+# **(B) RE-PINNED AGAIN — [OPT-LITSCAN] S1 step 6, 2026-09-26: abi 36 -> 37,
+# to `c9dec3e4`, the `lane/s1step6` commit carrying the bump (the last `src/`
+# change).** The run pre-check's scan loop(s) become calls of file-scope
+# `<p>_reqrun`/`<p>_reqrun_whole` blocks written by the offset-skip block's
+# emitter: exactly the artifacts that emit a run pre-check move
+# (`docs/dev/optloop/s1/s1step6_movers.py`). (A) is untouched: the blocks and
+# the calls sit outside `prog_region()`.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c9dec3e4}"   # [OPT-LITSCAN] S1 step 6, abi 36->37: (B) re-pinned to c9dec3e4 on lane/s1step6 (D76, 2026-09-26). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6d92764d ([OPT-LITSCAN] S1, abi 35->36).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -12477,6 +12477,9 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * nothing, and that is the whole of the 586x stack-frame difference §3
      * measures. C cannot declare a local conditionally, so a single function
      * that decided at run time would carry the arrays either way. */
+    /* [OPT-LITSCAN] S1 step 6 the run pre-check's search blocks, at file
+     * scope above the one search loop whose pre-check below calls them. */
+    pcrec_emit_req_run_blocks(v->cx, c);
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_puts(c,
         "/* The search loop. Called by both entries below with a run state\n"

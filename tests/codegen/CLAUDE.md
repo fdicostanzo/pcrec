@@ -462,6 +462,10 @@ decides whether to perform it — and then run the row through
     artifact, [DD-13c]'s hybrid IFF in both directions, every value inside
     the documented set, and stamp-equals-loop on both axes for every
     artifact that CONTAINS a DFA scan (DFA artifacts and VM hybrids alike).
+  - **The run-pinned marker is SCOPED to the `rx_ofsskip` body** (S1 step 6):
+    the run pre-check's `rx_reqrun` blocks come from the same emitter and
+    carry the same `!memcmp(subject + cand` compare, and unscoped the marker
+    read 63 offset-set artifacts with a run pre-check as run-pinned.
   - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
     verdict is derived from the EMITTED MATCHER TEXT — the `memchr` call,
     the `can_begin_match` walk, `start_max`, the skip's bound — which
@@ -854,6 +858,16 @@ decides whether to perform it — and then run the row through
     containing run bytes**: a run beginning with `*` makes the preceding quote
     a QUANTIFIER, measured on the `*/x` row, which read NOMATCH against text
     that was verbatim present.
+    **Since [OPT-LITSCAN] S1 step 6 (abi 37)** the run check is a call of a
+    file-scope `rx_reqrun` block (and, [K66], `rx_reqrun_whole`) written by
+    the offset-skip block's own emitter, so every §3-§5 reader of the run's
+    TEXT reads the block: `reqrun_fn FILE [whole]` prints it, `PRECHK_RE`
+    matches either pre-check form (never the prefilter's own `memchr`), and
+    `reqrun_scans` asserts the scanned byte. The compare is at `cand` and the
+    member's offset lives in the scan start and in `cand = hit - off`, both
+    asserted (§4.1c); §4.3's window guard is the block's `pos + L-1 < n` /
+    `cand + L-1 >= n` pair; §3.4b asserts the block's first statement is its
+    loop guard (the empty-window arm it replaced).
   - **WHY IT IS A STRUCTURAL GATE AT ALL.** Three of the five mechanisms it
     now guards have NO answer-level detector anywhere in the tree:
     [OPT-ANCHOR-VM]'s bound, [OPT-REQBYTE]'s pre-check and
@@ -3099,6 +3113,14 @@ and RUNS two artifacts per ASCII corpus block (~6,600 compiles at
   per encoding at compile time and stamp the choice), plus `var_valid`'s call
   site. Each is now a named, COUNTED, floored region held to its own stamp
   (`SELECT_BAD`); docs/dev/lanes/enctriage_report.md.
+  **[OPT-LITSCAN] S1 step 6 (abi 37)**: the run pre-check is a file-scope
+  `rx_reqrun`/`rx_reqrun_whole` block, so the FREQPICK member-pick
+  normalization reads its scan start and `cand = hit - K` INSIDE those blocks
+  only (an `rx_ofsskip` block has the same line shapes and is never
+  normalized), and the stamp-held scanned byte is read off the blocks' bodies.
+  Its three DD12a(i) reds on the step-6 tree are the same three, with the
+  same FINDING pattern list, as a run of main `54bb1159`'s own script
+  (pre-existing; lane s1step6's report).
 - **DD12a(ii) THE SECOND-BACKEND VALIDATION of D58's revisit-when names.** The
   seam's four residual entries appear in a utf8 artifact under the SAME
   signatures the byte backend emits — the property [M6.6.2] wave D

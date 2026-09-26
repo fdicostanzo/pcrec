@@ -96,6 +96,18 @@ directory, never here.
   reachability RUN (litscan_s1.md R3-11): the plant built for real, both
   populations swept, 0 artifacts moved (S284's derivation).
 
+## Step 6's instrument (lane `s1step6`, 2026-09-26, base `54bb1159`)
+
+- `s1step6_movers.py` — the Q1 conversion's movers BY ID and its RESIDUE:
+  bench (caps/nocaps, each also `--engine=vm`) and corpus (auto,
+  `--engine=vm`, `-e utf8`) from BASE and NEW; predicted = BASE stamps
+  `REQ_WHY "emitted"` with a `REQ_RUN`. Per artifact: changed iff predicted,
+  stamps identical, the texts byte-identical once BASE's `rp_pos` loop(s)
+  and NEW's `rx_reqrun*` block(s)/call(s) are removed, and one block per old
+  loop with the same run and scan byte. `LIST=` writes the changed ids (the
+  bench pin's mover list). `s1step6_movers.txt` is its recorded run and
+  `s1step6_movers_list.tsv` the ids.
+
 ## Reproduce
 
     SCR=<scratch>; git -C <repo> archive b5c1423b | tar -x -C $SCR/probe

@@ -2817,7 +2817,7 @@ measured:
 | S269 | [OPT-PRECHECK-ADMIT] G2 | `req_route_one_attempt` emptied | expected `0fail` | the pre-check returns to a one-attempt route, where it only ever repeats the attempt's own work |
 | S270 | [OPT-PRECHECK-ADMIT] G1 | `req_byte_dominated_by` emptied | expected `0fail` | the pre-check returns on top of a prefilter already scanning the same byte |
 | S277 | [K65] the whole-set half | `emit_req_set_rest` returns before emitting | **expected RED**, `corpus:9fail/15pass` on `SAB_HARNESS_TARGET` `tests/base/k65_precheck_whole_set.rxt` | the pre-fix defect: an unguarded VM artifact tests only the picked member and gives up on a subject lacking another |
-| S278 | [K66] the whole-run compare | `emit_req_run_rest` returns before emitting | **expected RED**, `corpus:8fail/8pass` on `SAB_HARNESS_TARGET` `tests/base/k66_precheck_whole_run.rxt` | the pre-fix defect: an unguarded VM artifact compares only the prior's 8-byte window of a longer run and gives up on a subject holding that window but not the run |
+| S278 | [K66] the whole-run compare | `emit_req_run_rest` returns before emitting (since S1 step 6: `req_run_tests` returns after the window's test) | **expected RED**, `corpus:8fail/8pass` on `SAB_HARNESS_TARGET` `tests/base/k66_precheck_whole_run.rxt` | the pre-fix defect: an unguarded VM artifact compares only the prior's 8-byte window of a longer run and gives up on a subject holding that window but not the run |
 | S274 | [K64] G2's linearity | the VM arm's exact-hybrid/frameless conjunct removed | **expected RED**, `corpus:4fail/5pass` on `SAB_HARNESS_TARGET` `tests/base/k64_precheck_forced_vm.rxt` | 6ef76820's defect: a framed forced-VM one attempt declines the pre-check and gives up on the step budget where the answer is NOMATCH |
 
 **THESE ARE THE FIRST TWO ROWS IN THIS DIRECTORY WHOSE PLANT CANNOT MOVE AN
@@ -2877,6 +2877,7 @@ plant file. Detectors are `tests/offsetskip/run_pinned.rxt` (answers) and
 | S282 | (i) | `DfaCand.deny` back to `unsigned` (R4 planted) | §5.10 `-fno-run-prefilter` rows — answer-invisible, `make test-axes`-invisible |
 | S284 | (j) | `reseeds = false` on the run rows | **UNDETECTED (EXPECTED)**, S219's shape: the reachability run found no run-row machine where a chain head is a seed target (`docs/dev/optloop/s1/rowj_reach_output.txt`) |
 | S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
+| S293 | step 6 | `ofs_test_run` records the run pre-check's scan offset as 0 (`cand = hit` not `hit - i`) | DETECTED: prechecks §4.1c/§4.3 + `k66_precheck_whole_run.rxt`'s byte block — answer-detectable (lane s1step6, 2026-09-26) |
 
 **S287 IS THE SECOND ROW IN THIS DIRECTORY WHOSE DEFECT IS CONFIRMED REAL BY A
 HAND REPRODUCTION RATHER THAN BY THIS MATRIX** (S155's `framebuffer` arm is

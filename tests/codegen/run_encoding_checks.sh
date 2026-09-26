@@ -504,15 +504,18 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # elsewhere, so `abc\z` scans for `b` at offset 1 under byte and `a` at offset
 # 0 under utf8. WHICH MEMBER is scanned is therefore normalized, and NOTHING
 # ELSE about the pre-check: the scanned byte (`memchr(..., B, ...)` in the run
-# loop, the `<PREFIX>_REQ_BYTE` stamp) and the member's offset (`K` in the
-# compare, the `@K` of `<PREFIX>_REQ_RUN`) — while the RUN itself (its hex
-# bytes, its length, the loop around it) is still compared token for token.
-# `emit_req_run_check`'s offset-0 SPECIALIZATION, which elides a lower-bound
-# test vacuous at offset 0, is rewritten to the general form's text first (an
-# identity), counted separately, and only where the side's own stamp says the
-# offset is 0. Every normalization is COUNTED, and each side is held to its
-# stamp: the scanned byte must be the run's member at the stamped offset and
-# equal the stamped REQ_BYTE.
+# block, the `<PREFIX>_REQ_BYTE` stamp) and the member's offset (`K` in the
+# block's scan start and in the candidate it implies, the `@K` of
+# `<PREFIX>_REQ_RUN`) — while the RUN itself (its hex bytes, its length, the
+# loop around it) is still compared token for token. Since [OPT-LITSCAN] S1
+# step 6 the run check is a file-scope `rx_reqrun`/`rx_reqrun_whole` block
+# (the offset-skip block's own emitter), and only lines INSIDE those blocks
+# are normalized, never an `rx_ofsskip` block's identically-shaped scan. The
+# block's offset-0 SPECIALIZATION, which omits a `+ 0`/`- 0`, is rewritten to
+# the general form's text first (an identity), counted separately, and only
+# where the side's own stamp says the offset is 0. Every normalization is
+# COUNTED, and each side is held to its stamp: the scanned byte must be the
+# run's member at the stamped offset and equal the stamped REQ_BYTE.
 #
 # WHY NOT LEAVE THE INTEGERS TO THE DATA BAR: that bar is [K50]'s
 # gate-refinement class, and every pair it admits must carry a manifest row
@@ -529,15 +532,16 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 # bucket since the day it was added.
 VARVALID_CALL_RE = re.compile(r'^\s*if \(!rx_var_valid\(run->var_value\[\d+\], run->var_length\[\d+\]\)\)$')
 VARVALID_RET_RE = re.compile(r'^\s*return PCREC_ERR_UNSET_VAR;$')
-REQRUN0_IF_RE = re.compile(r'^(\s*)if \(rp_c \+ (\d+) <= subject_length$')
-REQRUN0_CMP_RE = re.compile(r'^(\s*&& !memcmp\(subject \+ rp_c), (.*)$')
-REQRUNK_IF_RE = re.compile(r'^(\s*)if \(rp_c - search_from >= (\d+) && rp_c - (\d+) \+ (\d+) <= subject_length$')
-REQRUNK_CMP_RE = re.compile(r'^(\s*&& !memcmp\(subject \+ rp_c) - \d+, (.*)$')
-REQRUN_MEMCHR_RE = re.compile(r'^(\s*const void \*rp_q = memchr\(subject \+ rp_pos, )(\d+)(, subject_length - rp_pos\);)$')
+REQRUN_FN_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?\(')
+REQRUN0_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos), (\d+), n - pos\);$')
+REQRUNK_MEMCHR_RE = re.compile(r'^(\s*const void \*q = memchr\(subject \+ pos) \+ \d+, (\d+), n - pos - \d+\);$')
+REQRUN0_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\));$')
+REQRUNK_CAND_RE = re.compile(r'^(\s*cand = \(size_t\)\(\(const unsigned char \*\)q - subject\)) - \d+;$')
 REQBYTE_STAMP_RE = re.compile(r'^(#define RX_REQ_BYTE ")\d+(")$')
 REQRUN_STAMP_RE = re.compile(r'^(#define RX_REQ_RUN "[0-9a-f]+@)\d+(")$')
 REQBYTE_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_BYTE "([^"]*)"$', re.M)
-REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ rp_pos, (\d+),')
+REQRUN_MEMCHR_VAL_RE = re.compile(r'memchr\(subject \+ pos(?: \+ \d+)?, (\d+),')
+REQRUN_FN_BODY_RE = re.compile(r'^static inline size_t rx_reqrun(?:_whole)?\(.*?^}$', re.M | re.S)
 REQCHK_MEMCHR_VAL_RE = re.compile(r'!memchr\(subject \+ search_from, (\d+),')
 #
 # (iii) [OPT-PRECHECK-ADMIT]'s G1 DOMINANCE rule (`req_byte_dominated_by`,
@@ -555,7 +559,7 @@ REQCHK_MEMCHR_RE = re.compile(r'^\s*!memchr\(subject \+ search_from, \d+, subjec
 REQCHK_RET_RE = re.compile(r'^\s*return 0;$')
 REQWHY_STAMP_RE = re.compile(r'^(#define RX_REQ_WHY ")(?:emitted|none|one-attempt|dominated)(")$')
 REQWHY_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_WHY "([^"]*)"$', re.M)
-REQRUN_BLOCK_RE = re.compile(r'^\s*size_t rp_pos = search_from;$', re.M)
+REQRUN_BLOCK_RE = re.compile(r'^\s*if \(rx_reqrun(?:_whole)?\(subject, subject_length, search_from\) >= subject_length\) return 0;$', re.M)
 ENDWIN_STAMP_VAL_RE = re.compile(r'^#define RX_END_WINDOW "([^"]*)"$', re.M)
 REQRUN_STAMP_VAL_RE = re.compile(r'^#define RX_REQ_RUN "([^"]*)"$', re.M)
 
@@ -784,8 +788,13 @@ def excise(text, label):
               'var_valid_call': 0, 'span_ci_helper': 0, 'req_pick': 0}
     out = []
     i, n = 0, len(lines)
+    in_reqrun = False
     while i < n:
         line = lines[i]
+        if REQRUN_FN_RE.match(line):
+            in_reqrun = True
+        elif in_reqrun and line.rstrip('\n') == '}':
+            in_reqrun = False
         m = SIG_RE.match(line)
         if m:
             name = m.group(1)
@@ -907,29 +916,23 @@ def excise(text, label):
             counts['var_valid_call'] += 1
             i += 2
             continue
-        mr = REQRUN0_IF_RE.match(line.rstrip('\n'))
-        if mr and i + 1 < n:
-            mc = REQRUN0_CMP_RE.match(lines[i + 1].rstrip('\n'))
-            if mc:
-                out.append("%sif (rp_c - search_from >= K && rp_c - K + %s <= subject_length\n"
-                           % (mr.group(1), mr.group(2)))
-                out.append("%s - K, %s\n" % (mc.group(1), mc.group(2)))
-                counts['req_run_offset0'] += 1
+        if in_reqrun:
+            ln = line.rstrip('\n')
+            m0 = REQRUN0_MEMCHR_RE.match(ln)
+            mk = m0 or REQRUNK_MEMCHR_RE.match(ln)
+            if mk:
+                out.append("%s + K, B, n - pos - K);\n" % mk.group(1))
+                if m0:
+                    counts['req_run_offset0'] += 1
                 counts['req_pick'] += 1
-                i += 2
+                i += 1
                 continue
-        mk = REQRUNK_IF_RE.match(line.rstrip('\n'))
-        if mk and mk.group(2) == mk.group(3) and i + 1 < n:
-            mc = REQRUNK_CMP_RE.match(lines[i + 1].rstrip('\n'))
+            mc = REQRUN0_CAND_RE.match(ln) or REQRUNK_CAND_RE.match(ln)
             if mc:
-                out.append("%sif (rp_c - search_from >= K && rp_c - K + %s <= subject_length\n"
-                           % (mk.group(1), mk.group(4)))
-                out.append("%s - K, %s\n" % (mc.group(1), mc.group(2)))
-                counts['req_pick'] += 1
-                i += 2
+                out.append("%s - K;\n" % mc.group(1))
+                i += 1
                 continue
-        for rx_, repl in ((REQRUN_MEMCHR_RE, r'\1B\3'), (REQBYTE_STAMP_RE, r'\1B\2'),
-                          (REQRUN_STAMP_RE, r'\1K\2')):
+        for rx_, repl in ((REQBYTE_STAMP_RE, r'\1B\2'), (REQRUN_STAMP_RE, r'\1K\2')):
             if rx_.match(line.rstrip('\n')):
                 out.append(rx_.sub(repl, line.rstrip('\n')) + "\n")
                 counts['req_pick'] += 1
@@ -1052,7 +1055,7 @@ def main():
                     findings.append("pat=[%s]: asymmetric %s (byte=%d utf8=%d) -- (b) the normalization count"
                                      % (pat, k, cb[k], cu[k]))
             # [enctriage] the two encoding-keyed SELECTIONS, held to their
-            # own stamps (see ENDWIN_IF_RE / REQRUN0_IF_RE above).
+            # own stamps (see ENDWIN_IF_RE / REQRUN0_MEMCHR_RE above).
             bad_sel = []
             ew = {}
             for side, text, cnt in (('byte', tb, cb), ('utf8', tu, cu)):
@@ -1081,7 +1084,9 @@ def main():
                     if rbyte != str(member):
                         bad_sel.append("%s REQ_BYTE \"%s\" is not REQ_RUN \"%s\"'s member"
                                        % (side, rbyte, m.group(1)))
-                scanned = REQRUN_MEMCHR_VAL_RE.findall(text) + REQCHK_MEMCHR_VAL_RE.findall(text)
+                scanned = [b for body in REQRUN_FN_BODY_RE.findall(text)
+                           for b in REQRUN_MEMCHR_VAL_RE.findall(body)]
+                scanned += REQCHK_MEMCHR_VAL_RE.findall(text)
                 if any(b != rbyte for b in scanned):
                     bad_sel.append("%s pre-check scans %s but REQ_BYTE is \"%s\""
                                    % (side, ",".join(scanned), rbyte))

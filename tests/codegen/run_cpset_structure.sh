@@ -628,6 +628,15 @@ fi
 # the offset-skip block with its run term in). All three
 # are in litscan_s1.md §6's census population by id
 # (docs/dev/optloop/s1/s1build_movers.txt); no other sample row moved.
+#
+# RE-RECORDED A TWELFTH TIME, 2026-09-26, lane s1step6 ([OPT-LITSCAN] S1
+# step 6, abi 36 -> 37), ONE ROW: `\bword\b` (REQ_WHY "emitted", run "word"
+# at 0) is the one sample row that emits a run pre-check, and its scan loop
+# became a file-scope `rx_reqrun` block plus one call line: 27302 -> 27284,
+# -18 EMITTED_BYTES, measured by a same-basename base/new diff whose only
+# other lines are the two same-length abi digits. It is in step 6's mover
+# population by construction (docs/dev/optloop/s1/s1step6_movers.py: every
+# run-pre-check artifact moves and no other); no other sample row moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
