@@ -2748,6 +2748,63 @@ empty-window arm and the stamp alone — which is why
 the byte in §3.1b. One assertion covering both would have named the wrong
 half.
 
+**S265 WENT UNREACHED AND WAS RE-POINTED (lane s265reach, 2026-09-26), which
+IS THE [MECH-REACH] SHAPE ARRIVING THROUGH A LATER OPTIMIZATION RATHER THAN
+A MODULE LANDING.** [OPT-PRECHECK-ADMIT]'s G1 dominance rule (landed after
+this row) declines `a=b`'s whole-window pre-check outright: its run-pinned
+DFA candidate scan verifies the same run, so `req_byte_dominated_by`'s
+identity conjunct fires and `req_admit` answers `REQ_ADMIT_DOMINATED` —
+`pcrec_emit_req_byte_check` returns before printing anything, and `a=b`
+stamps `RX_REQ_WHY "dominated"` where it used to stamp `"emitted"`. The
+mechanism this row sabotages (the one-byte branch's `!memchr` sense) did not
+move; only the reach of the ONE witness the row named did.
+Re-pointed `SAB_REACH` to `a.?b`: its necessary byte (98, `'b'`) carries no
+contiguous required RUN (`.?` is optional), so `pcrec_emit_req_byte_check`
+takes the one-byte branch, and G1 does not dominate it — the artifact's own
+candidate scan is a plain `memchr` on `'a'` (97, not `'b'`, so identity
+fails) and `pcrec_byte_freq_ppm(97) > pcrec_byte_freq_ppm(98)` (density
+fails too, under `-e byte`) — `RX_REQ_WHY "emitted"`. Verified by hand
+(field validation, a direct reach-probe run against the built binary, and a
+scratch `git archive` tree with the sabotage applied and rebuilt: the
+sabotaged matcher answers `nomatch` on `"ab"`/`"axb"` where the clean one
+answers `match 0 2`/`match 0 3`) rather than through the canonical
+`bash tests/mech/run_sabotage_matrix.sh S265` run, which is OWED — the box
+was running another lane's full `make test` at the time (one-heavy-suite-at-
+a-time). **`tests/codegen/run_prechecks.sh` §3.1c's own population also
+narrowed under the same rule**: of the eight §3.1 rows with no required run,
+only `\w+@\w+`, `a{2,4}b` and `(a)\1?b` still read `RX_REQ_WHY "emitted"`
+today — `<[a-z]+>`, `(ab|cd)e`, `[^x]c`, `(?:ab)*c` and `q` now read
+`"dominated"` and no longer reach §3.1c (§3.1/§3.1b/§3.1w are unaffected,
+since those assert the BYTE/RUN stamps and the byte-vs-run-emitted
+agreement, not the sense).
+
+**THE SWEEP THIS RE-POINT PROMPTED FOUND TWO MORE ROWS AFFECTED, PLUS ONE
+UNRELATED REACH DRIFT** (same lane, an ad hoc reach-only probe over all 112
+reach-bearing rows — no cheap reach-only mode exists in the driver itself,
+`VALIDATE_ONLY=1` stops before the reach block runs). **S267**
+(`S267_req_run_memcmp_inverted.sh`, [OPT-REQPOS]) shares S265's root cause
+and its exact witness (`a=b`): its `SAB_REACH` still asserts `RX_REQ_RUN
+"613d62@1"` and the run-check's `memcmp` text, but `a=b` now stamps
+`RX_REQ_WHY "dominated"` too, and `pcrec_emit_req_byte_check` returns before
+reaching the `req_run.len >= 2` branch at all — confirmed by hand
+(no such `memcmp` line in `a=b`'s emitted C; the only `memcmp` present is
+the run-pinned candidate scan's own verify). **S267 is UNREACHED on main as
+of `5803051b`** and needs the same re-point shape S265 got — a witness with
+a required RUN whose candidate scan does not dominate it — left unfixed per
+this lane's brief (report, do not fix other rows). **S271**
+(`S271_var_emit_arm_ignores_caseless.sh`, module `vars`) is UNRELATED to
+[OPT-PRECHECK-ADMIT]: its `SAB_REACH` greps the emitted C for
+`rx_var_match_caseless`, and the caseless span-compare entry has since been
+renamed/generalised to `rx_span_match_caseless` (shared with the
+backreference compare, per that row's own anchor note) — the mechanism it
+probes is still live (the pattern's emitted `vm_var` body calls
+`rx_span_match_caseless`), only the probe's literal string is stale. Also
+UNRELATED: **S121** (`S121_revdet_node_unguarded.sh`) also reach-failed the
+ad hoc probe's `SAB_REACH_POP` check, but that row already declares
+`SAB_EXPECT=UNREACHED` with its own reason (the ad hoc probe does not read
+`SAB_EXPECT`, so this is not a new finding — the row is behaving exactly as
+documented). No other row among the 112 checked reach-failed.
+
 ## [OPT-PRECHECK-ADMIT] — two rows whose plants RESTORE A CORRECT COMPILER
 
 The admission rules (`docs/spec/tuning.md` §2.29) decide whether §3's and §4's
