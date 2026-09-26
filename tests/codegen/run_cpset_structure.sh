@@ -618,6 +618,16 @@ fi
 # pattern in this census reaches either route (none of the other eleven stamp
 # `RX_VM_PREFILTER "none"`), so none of them moved. The two abi digits are
 # same-length substitutions and net zero bytes on their own.
+#
+# RE-RECORDED AN ELEVENTH TIME, 2026-09-25, lane s1build ([OPT-LITSCAN] S1,
+# abi 35 -> 36), THREE ROWS: `abc`, `(a)(b)(c)` and `(?<=foo)bar` take the
+# new run-pinned prefilter row (their necessary run is pinned at offset 0 of
+# every match and the scan already ran on its member there), so each moves
+# `RX_DFA_PREFILTER` to "run-pinned" and loses the run pre-check G1 now
+# elides: -543, -543 and -188 EMITTED_BYTES (the pre-check scan loop out,
+# the offset-skip block with its run term in). All three
+# are in litscan_s1.md §6's census population by id
+# (docs/dev/optloop/s1/s1build_movers.txt); no other sample row moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
