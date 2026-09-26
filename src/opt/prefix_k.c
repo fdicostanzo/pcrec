@@ -35,6 +35,29 @@
  * bounded repeat that lets the frontier fan out — makes some `S_j` bigger and
  * the selection below decline it. There is no direction in which this file
  * can refuse a start the scan would have accepted.
+ *
+ * [OPT-LITSCAN] S1 — THE PIN, A FACT THIS FILE PUBLISHES AND DOES NOT ACT ON
+ * (docs/design/litscan_s1.md §1.1). Once the walk has run, `run_pinned`/
+ * `run_o` say whether the necessary run `Job.req_run` sits at a fixed offset
+ * from every match's start: the smallest `o` at which the walk's own
+ * singletons spell the run byte for byte. It is the coincidence of two facts
+ * the tree already owns, not a second analysis, and it is computed before
+ * any `k0`-dependent return, so it depends on `(Job.nfa, Job.req_run)` alone
+ * and never on the DFA or the cost model. The DECISION to use it is
+ * `src/gen/emit_dfa.c`'s run rows; nothing below the pin reads it, and the
+ * selection code, its constants and its roles are unchanged by it.
+ * Invariants a caller relies on:
+ *   - `Job.req_run` is final before `unanch_start` ever calls here
+ *     (`pcrec_req_byte` runs ahead of the DFA build), so the pass-time and
+ *     emit-time answers read the same run;
+ *   - it reads THE SAME `Job.req_run` window the pre-check emits
+ *     (`bytes`/`len`, not `whole`), so the pin and the pre-check it may
+ *     dominate cannot describe two different runs — a later fix to the run
+ *     pre-check must not fork this field (litscan_s1.md R3-2);
+ *   - a denied run (`-fno-req-run`/`-fno-req-byte`) has `len == 0`, so
+ *     nothing is pinned;
+ *   - on a count-collapsed prefilter `Job.nfa` is the superset language, and
+ *     a pin true of every superset match is true of every exact one.
  */
 
 #include "core/internal.h"
@@ -451,6 +474,21 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
         pk->byte = byte;
         pk->ppm = set_ppm(set);
         o->nwalk++;
+    }
+
+    /* [OPT-LITSCAN] S1 the pin (this file's header): the SMALLEST offset at
+     * which the walk's singletons spell the run. Any satisfying offset is a
+     * true statement; the smallest is deterministic, and a later one would
+     * only ever be a lost opportunity for the run rows, never a wrong answer. */
+    {
+        const ReqRun *r = &cx->job->req_run;
+        for (int ro = 0; r->len >= 2 && !o->run_pinned && ro + r->len <= o->nwalk; ro++) {
+            int i = 0;
+            while (i < r->len && o->k[ro + i].count == 1 &&
+                   o->k[ro + i].byte == r->bytes[i])
+                i++;
+            if (i == r->len) { o->run_pinned = true; o->run_o = ro; }
+        }
     }
 
     /* ---- pick a scan offset and its verifies -------------------------- */

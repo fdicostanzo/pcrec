@@ -1682,6 +1682,14 @@ typedef struct {
     int      maxk;                    /* k[sel[nsel-1]].k */
     unsigned rate_ppm;                /* predicted candidate rate, selected */
     unsigned base_ppm;                /* ... and under the offset-0 filter alone */
+    /* [OPT-LITSCAN] S1 — THE NECESSARY RUN'S PIN, an analysis fact and not a
+     * selection: true iff `Job.req_run` (len >= 2) sits at offset `run_o` of
+     * EVERY match — k[run_o + i] is the singleton req_run.bytes[i] for every
+     * i. Read by dfa_pfs[]'s run rows and by G1; decided by neither here.
+     * A `bool` and not a `run_o == -1` sentinel: every early return above the
+     * walk leaves the struct zeroed, and zero must mean "not pinned". */
+    bool     run_pinned;
+    int      run_o;                   /* meaningful only when run_pinned */
 } PrefixKSets;
 
 /* `k0` is the offset-0 byte set the DFA derivation already owns
