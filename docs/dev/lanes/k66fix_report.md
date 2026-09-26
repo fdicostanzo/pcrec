@@ -295,9 +295,45 @@ then `f0b54f0b` for the sabotage-figure update):
   `sections ran:` alone) plus a `FAIL:` grep; the one expected red is the
   same standing `run_inline_capability.sh` nm probe named above.
 
+## cpset-structure triage (2026-09-25, post-`make test` run at f0b54f0b)
+
+The full `make test` chain (log `/tmp/k66land/maketest.log`) came back green
+except the standing darwin `nm` probe (not this stack's) and one real red:
+`test-cpset-structure` CHECK 3, "the recorded manifest has drifted from this
+run" (r49's own DIFF-TO-REVIEW discipline, `tests/codegen/manifests/
+m5_stage1_stamps.tsv`). One moved row: `(a(?1)?b) EMITTED_BYTES 29283 ->
+29527` (+244); no other of the twelve sample stamp rows moved.
+
+**Attributed by diffing artifacts at the SAME `-o` basename across three
+scratch builds** (`git archive` of main `84b4a7a9`, of k65fix's own final
+commit `a33f8f7e`, and this branch's tip `dcdede8b`), never inferred from
+size alone:
+
+- **main -> post-K65**: +244 bytes, entirely `emit_req_set_rest`'s 6-line
+  `rq_set[]`/memchr block (`(a(?1)?b)` is a subroutine-call VM route
+  stamping `RX_VM_PREFILTER "none"` — no DFA scan in front, exactly K65's
+  route — whose necessary set is the single byte `a`).
+- **post-K65 -> tip (K66)**: BYTE-IDENTICAL past the two same-length `.abi`
+  digit substitutions (34 -> 35, confirmed by `diff`). K66's whole-run
+  extension moves nothing on this witness because its necessary run never
+  exceeds the 8-byte window K66 extends past.
+
+**Verdict: fully EXPECTED, entirely K65's own contribution, zero
+contribution from K66 — not a regression.** The branch never touched
+`m5_stage1_stamps.tsv` (`git log 84b4a7a9..HEAD -- tests/codegen/manifests/
+m5_stage1_stamps.tsv` is empty), so this is the K65fix/K66fix landing's own
+re-pin sweep missing a reader the D76/D94 abi-digit grep is structurally
+blind to — the script's own documented "SECOND READER CLASS" (its `EMITTED_
+BYTES` rows cite no abi digit). Re-recorded deliberately (row read, cause
+established, then `cp` the fresh census over the manifest) with a new dated
+comment block in `run_cpset_structure.sh` beside the file's existing
+per-event history. `bash tests/codegen/run_cpset_structure.sh` and
+`make test-cpset-structure` both now read `checks passed: 28 / checks
+failed: 0`.
+
 ## Delivered
 
 Tip: `f0b54f0b` on `lane/k66fix`, rebased cleanly onto main `84b4a7a9`
-(now 84741e51/f0b54f0b past it). Not merged, per the brief. `make test`
-is the only owed item; everything else above is measured green on this
-tree.
+(now 84741e51/f0b54f0b/`<cpset-structure fix commit>` past it). Not merged,
+per the brief. Everything above (including the cpset-structure re-pin) is
+measured green on this tree.
