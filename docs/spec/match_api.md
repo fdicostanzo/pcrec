@@ -2008,13 +2008,37 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `35` while the three narrative copies
+which is why it is gap-free from `2` to `36` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `35` on every artifact today (`[K66]` bumped it from 34,
+- **`rx_info.abi` is `36` on every artifact today (`[OPT-LITSCAN]` S1 bumped
+  it from 35, 2026-09-25: A PINNED NECESSARY RUN IS VERIFIED INSIDE THE DFA
+  PREFILTER, AND A PRE-CHECK THE PREFILTER DOMINATES IS NOT EMITTED.** Two
+  changes, one event (`docs/design/litscan_s1.md`). (1) `[OPT-PRECHECK-ADMIT]`'s
+  G1 now reads the scan byte of every `<prefix>_ofsskip` prefilter, not only
+  the `memchr` forms, and elides a RUN pre-check where the prefilter's test
+  verifies the whole run at its pin (`docs/spec/tuning.md` §2.29). (2) Two new
+  `RX_DFA_PREFILTER` values, `"run-pinned"` and `"run-pinned-bounded"` (§6.3;
+  `rx_info.prefilter` mirrors them), selected ahead of every other form where
+  the run sits at a fixed offset from every match's start and the scan already
+  runs on its scan member there: the offset-skip block then compares the whole
+  run as one constant-length `memcmp`, and its OFFSETS may start `0*`. New
+  axis bit 32, `PCREC_NO_RUN_PREFILTER` / `-fno-run-prefilter` (`tuning.md`
+  §2.30), masked out of `rx_info.flags`; `-fno-offset-skip` removes the new
+  rows too. Measured over the lane's census populations at the landing base
+  `27a63314`: 505 of 3,583 compilable corpus artifacts and 110 of 598 bench
+  artifact-configs (both auto configs) move, by id exactly the census's classes (327 corpus
+  elisions with the program otherwise unchanged, 178 run-row selections;
+  `docs/dev/optloop/s1/s1build_movers.txt`). No answer moves: every
+  refusal the new test makes is a byte the offset walk proves every match
+  carries there, and the elided pre-check's NOMATCH is still reached with no
+  attempt. `-fno-run-prefilter` restores the pre-S1 artifact on every
+  run-row artifact; the admission elisions have no axis.
+
+- **`rx_info.abi` was `35` (`[K66]` bumped it from 34,
   2026-09-25: WHERE NO DFA SCAN RUNS IN FRONT, A RUN LONGER THAN ITS WINDOW IS
   COMPARED WHOLE.** `[OPT-REQPOS]` truncates a necessary run longer than
   `PCREC_MAX_REQ_RUN_EMIT` (8) to the window `[OPT-FREQPICK]`'s prior picks,
