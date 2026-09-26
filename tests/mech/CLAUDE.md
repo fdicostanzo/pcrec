@@ -2796,27 +2796,44 @@ test; emptying the predicate leaves every caller, every stamp and every other
 rule where they are, so `run_prechecks.sh` §5 reports one rule's absence and
 nothing else.
 
-## [OPT-LITSCAN] S1 — S279-S284, the run-pinned prefilter rows (2026-09-25)
+## [OPT-LITSCAN] S1 — S279-S289, the run-pinned prefilter rows (2026-09-25)
 
-`docs/design/litscan_s1.md` §7.1 names eleven rows (a)-(k); six ship here,
-one per allocated id, and their detectors are `tests/offsetskip/
-run_pinned.rxt` (answers) and `tests/codegen/run_prechecks.sh` §5.10
-(stamps). S267 was re-anchored onto P4 (`emit_exact_compare`, COUNT 2 -> 1)
-and S270 onto the widened `req_byte_dominated_by`, intents unchanged.
+`docs/design/litscan_s1.md` §7.1 names all eleven rows (a)-(k). Six shipped
+with the build (S279-S284); the remaining five ((b),(c),(d),(e),(f)) shipped
+in the same-day PART 2 triage (S285-S289), each one plant, since (c),(e) and
+(f)'s structural witnesses were already §5.10 rows and only needed their own
+plant file. Detectors are `tests/offsetskip/run_pinned.rxt` (answers) and
+`tests/codegen/run_prechecks.sh` §5.10 (stamps). S267 was re-anchored onto P4
+(`emit_exact_compare`, COUNT 2 -> 1) and S270 onto the widened
+`req_byte_dominated_by`, intents unchanged.
 
 | row | §7.1 | plant | detector (measured) |
 |---|---|---|---|
 | S279 | (a) | the run term compared at `cand + run_o + 1` | corpus + `run_offset_skip.sh` §2 — answer-detectable |
+| S285 | (b) | the run term compared `run_len + 1` bytes (one byte longer than proved; S268's emitter-side mirror) | `run_pinned.rxt` corpus — answer-detectable (the analysis's own unwritten zero, never a heap over-read) |
+| S286 | (c) | G1's `run_verified` conjunct dropped from `req_byte_dominated_by` | §5.10 class-D/C2 rows — structural, answer-invisible |
+| S287 | (d) | `OfsTest.maxk` not widened for the run's own last byte | ASan-only (heap-buffer-overflow READ); **UNDETECTED** in this matrix — no arm links generated code against a sanitizer runtime; confirmed real by a hand ASan reproduction, see the row's own header |
+| S288 | (e) | the density clause's `!cs->memchr_form` guard dropped | §5.10 offset-set/one-byte-density row — structural, answer-invisible |
+| S289 | (f) | clause 3 (IDENTITY) dropped from `pf_run_applies_common` | §5.10 `\Bfoo\B` (C2) row + `run_offset_skip.sh` — structural, answer-invisible |
 | S280 | (g) | the pin ignores the run's bytes | the `/abcd[xy]/user` cells + §5.10 — answer-detectable |
 | S281 | (h) | clause 4 dropped (class A takes the run row) | §5.10 keyword row — answer-invisible |
 | S282 | (i) | `DfaCand.deny` back to `unsigned` (R4 planted) | §5.10 `-fno-run-prefilter` rows — answer-invisible, `make test-axes`-invisible |
-| S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
 | S284 | (j) | `reseeds = false` on the run rows | **UNDETECTED (EXPECTED)**, S219's shape: the reachability run found no run-row machine where a chain head is a seed target (`docs/dev/optloop/s1/rowj_reach_output.txt`) |
+| S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
 
-Rows (b) (run one byte longer — S268 is its analysis-side mirror), (c) (the
-verifies conjunct), (d) (`OfsTest.maxk` not widened, an ASan row), (e) (the
-density guard's memchr-form line) and (f) (clause 3) await ids; (c), (e) and
-(f)'s structural witnesses are already §5.10 rows.
+**S287 IS THE SECOND ROW IN THIS DIRECTORY WHOSE DEFECT IS CONFIRMED REAL BY A
+HAND REPRODUCTION RATHER THAN BY THIS MATRIX** (S155's `framebuffer` arm is
+the first, and it built a bespoke sanitized driver rather than reusing
+`harness` for the identical reason: `harness`'s per-case gcc invocation is not
+threaded to a sanitizer runtime, and exporting `GENCFLAGS` with `-fsanitize=`
+into this matrix's own environment before invoking it does NOT change that —
+measured, still `corpus:0fail/55pass`). The real overflow was reproduced by
+extracting the sabotaged artifact for `[ab]/user` and running it under
+`gcc-16 -fsanitize=address` against a `malloc`'d copy of `run_pinned.rxt`'s
+own `"xxa/us"` cell: `AddressSanitizer: heap-buffer-overflow, READ of size 5,
+0 bytes after a 6-byte region, in rx_search`'s `memcmp`. Building a
+`harness`-reusing sanitized arm (S155's alternative path, never taken) is
+named rather than done here (D77).
 
 ## [recidfix/varland] S273, and the FIRST ARM `run_recursion_identity.sh` has ever had (2026-09-25)
 
