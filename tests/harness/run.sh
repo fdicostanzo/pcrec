@@ -1754,18 +1754,46 @@ flush_block() {
     # [TT-4M] STEP 2c — HARNESS_BATCH's batching-eligibility decision,
     # computed HERE (before this block's own compile-time decision is made,
     # exactly where run.sh already computes cur_route per case), per
-    # docs/design/tt4m_harness_batching.md item 1's three exclusions. A
-    # `perr` block never reaches gcc at all (checked by pcrec's own exit
-    # code); an H11 target block gets a SEPARATE `pcrec --source --target`
-    # artifact from a different pcrec invocation than the one that would
-    # join a batch; a block carrying a routed cell (a `frames-buffer=`
-    # directive, or a non-`default`/non-empty `RXTROUTE` floor) cannot be
-    # served by this landing's dispatch.c, which only reproduces the
-    # DEFAULT route. All three stay OUT of the batching unit entirely,
-    # compiling/running exactly as today.
+    # docs/design/tt4m_harness_batching.md item 1's three exclusions, now
+    # FIVE (the fourth is [DD-13b.W23.3]'s `@file:`/`mc` exclusion below,
+    # the fifth is [VAR] M10's var-bearing-pattern exclusion just below
+    # this comment). A `perr` block never reaches gcc at all (checked by
+    # pcrec's own exit code); an H11 target block gets a SEPARATE `pcrec
+    # --source --target` artifact from a different pcrec invocation than
+    # the one that would join a batch; a block carrying a routed cell (a
+    # `frames-buffer=` directive, or a non-`default`/non-empty `RXTROUTE`
+    # floor) cannot be served by this landing's dispatch.c, which only
+    # reproduces the DEFAULT route. All five stay OUT of the batching unit
+    # entirely, compiling/running exactly as today.
     if [ "$HARNESS_BATCH" -ge 1 ] && [ "$cur_is_perr" != "1" ] && [ "$blk_esc" != "1" ]; then
         local _batch_excluded=0
-        if [ "${#head_target_def[@]}" -gt 0 ] && [ -n "$cur_name" ]; then
+        # [VAR] M10 A FIFTH EXCLUSION, found live 2026-09-26 (test-axes'
+        # first-ever HARNESS_BATCH run, [MECH-REACH]: dispatch_gen.sh
+        # predates module `vars`, landed 2026-09-23): a var-bearing
+        # artifact's `<prefix>_search` grows a trailing `vars, nvars`
+        # pair (src/gen/emit_dfa.c's pcrec_vars_param_text, gated on
+        # `cx->n_var_exps`, the SAME artifact-not-block discriminator
+        # this file's own [VAR] M10 comment already established a few
+        # hundred lines down for gen_cc's `-DRXT_HAS_VARS`) — a signature
+        # `dispatch_gen.sh`'s hand-rolled `gen_dispatch_c` does not know
+        # to model, and never has: it was ported from the STEP 1/2a
+        # prototype ([TT-4M], 2026-09-08) with a fixed 4-argument call,
+        # over a year before `${name}` existed. `pcrec_vars_is_doorway`
+        # (src/parse/mod_vars.c) is purely lexical: a `$` immediately
+        # followed by `{` in the UNESCAPED pattern text, outside a class,
+        # is what makes `n_var_exps` nonzero — checked here at the BLOCK
+        # level (same altitude as the `perr`/H11/routed-cell exclusions
+        # above, decided before any compile, never per-case) via a plain
+        # substring test on `cur_pattern`. Deliberately conservative in
+        # the safe direction: `\$\{` or `[${]` would also match this
+        # substring test without actually reaching the doorway, and the
+        # cost of excluding a block that did not need it is nothing more
+        # than one standalone compile instead of a batched one — the same
+        # trade the `mc`/`@file:` exclusion already makes.
+        case "$cur_pattern" in
+            (*'${'*) _batch_excluded=1 ;;
+        esac
+        if [ "$_batch_excluded" = "0" ] && [ "${#head_target_def[@]}" -gt 0 ] && [ -n "$cur_name" ]; then
             local _hti
             for _hti in "${!head_target_def[@]}"; do
                 if [ "${head_target_def[$_hti]}" = "$cur_name" ]; then
