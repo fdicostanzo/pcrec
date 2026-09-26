@@ -13,6 +13,10 @@ and the living oracle-exclusion catalog. **The `.rxt` format itself and the
 driver protocol are contract documents and live in
 `docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25, extracted from this
 file) — read that first if you are adding a test or a test directory.
+**"Suite health log" (below) is where feedback and metrics from any run —
+a battery, a lane's validation, a manager's timing sweep — get logged as a
+dated entry; read it before trusting any pinned runtime number in this
+file, since several have gone stale.**
 
 ## Running the tests
 
@@ -649,6 +653,11 @@ sections and this tiering doesn't wrap them again.
 
 ### Measured per-section runtimes
 
+**STALE** — a per-section sum on a quiet Linux box at an early tree state;
+`make test` itself now measures ~100-105 minutes on the Mac at the current,
+much larger `TEST_SECTIONS` population. See "Suite health log" below,
+2026-09-25/26 entry, before citing any number in this subsection.
+
 Measured 2026-08-13 at commit `f5e419a3e6c9d0e5629ab7bdd345d21e3b902586`, on
 the project box, `TMPDIR=/var/tmp`, `PROCS` unset (serial — the same default
 `make test` itself uses), 3 runs per section. Following the R3.10 lesson (a
@@ -789,6 +798,107 @@ Bypass with `git push --no-verify` when you deliberately need to push past
 a failing local gate.
 
 CI itself stayed deferred from 2026-08-12 until [REL-1.6] below landed it.
+
+## Suite health log
+
+**Where testing knowledge lives** (Frank asked, 2026-09-26, whether we track
+testing learnings in one place — we do, split by kind, and this paragraph is
+the index): this file (`docs/testing.md`) is ARCHITECTURE and PROCESS —
+battery composition, the runtime tables above, what each `make` target
+covers and why. `docs/dev/learnings.md` §3 is CHECK-DESIGN lessons — how a
+gate, a sweep, or a sabotage row goes wrong as a control, not how long it
+takes to run. `docs/dev/plan.md`'s `[TT-*]`/`[TEST-*]` rows are the
+OPTIMIZATION WORK ITEMS — batching, re-entrancy, metrics-driven sizing —
+each gated on a measured trigger (D77). The planned `[TEST-METRICS]` log
+(a committed TSV, one row per section/axis per run) is where MEASUREMENTS
+accumulate machine-readably, distinct from this section's dated prose
+entries. **The rule: feedback or a metric from any run — a battery, a
+lane's targeted validation, a manager's timing sweep — goes HERE as a
+dated entry**, whether or not it changes a number in the tables above; the
+tables above get updated only when someone runs the RE-RECORD TRIGGER's
+specified protocol, but a dated note that the old number is stale can and
+should land immediately, cheaply, without redoing the measurement.
+
+### 2026-09-25/26 — batching, sanitizer runtime, box choice
+
+Six findings from one week's runs, none yet folded into the tables above
+(they need their own re-measurement protocol before their numbers replace
+anything pinned there — this entry exists so nobody re-discovers them
+first).
+
+- **`make test-axes`, UNBATCHED, is far past this file's old estimate.**
+  At `PROCS=10` on the Mac, one axis costs ~865s; the table has 28 bit
+  axes, so a full unbatched sweep is ~7.5 CPU-hours of wall time serialized
+  per-axis. A real attempt hit a 5-hour cap and was killed mid-way through
+  bit 27 — 26 of 28 axes had already completed and were discarded with the
+  run, because nothing in the harness lets a re-run skip axes already
+  green at the same tree state (this is exactly [TEST-REENTRANT]'s
+  charter, below).
+- **BATCHED (`AXES_FULL=1 HARNESS_BATCH=64`) is a real, large win on the
+  same sweep**: 7,958s (2h13m) wall for the FULL axis population on the
+  Mac, a measured **3.4x** over the unbatched estimate above.
+- **`make asan` on the Mac exceeded 3 hours and was killed (exit 124)**,
+  against this file's own pinned "Measured runtimes (2026-08-13)" figure
+  of 7m50s two sections up. That figure is from a QUIET *Linux* box at a
+  much earlier tree state — it was never a Mac number and should not have
+  been read as current guidance for this box. **The pinned sanitizer
+  runtime table is STALE for darwin** (marked in place below); no fresh
+  Mac number has replaced it yet, only the lower bound "exceeds 3h".
+- **`make test` on the Mac measures ~100-105 minutes**, four separate
+  timed runs landing at 6,106s / 5,804s / 6,213s / 6,268s. This is well
+  above the ~6.5-minute figure in "Measured per-section runtimes" above —
+  that figure is a *per-section sum on a quiet Linux box at f5e419a*, not
+  a `make test` wall-clock number on this box's current, much larger
+  `TEST_SECTIONS` population; the two numbers were never measuring the
+  same thing and should not be read as a regression against each other.
+- **`HARNESS_BATCH`'s dispatch generator failed on `${var}` patterns** —
+  found while running the batched axis sweep above, over module `vars`'
+  corpus content. Fixed at `e6aa7067`; filed as [TEST-DISPATCH-SIG] (see
+  plan.md) for the general lesson (a generator built against one corpus
+  population breaks silently when a later module's population uses a
+  spelling the generator's own parsing didn't anticipate).
+- **Two full `make test` runs overlapped once** because a waiter's
+  liveness check gated on a log file's mtime, and the run it was waiting
+  on never wrote that file (a different code path than the one the waiter
+  had last observed). Gate on the PID or the completion trailer instead of
+  a log mtime — a file that isn't written doesn't mean the run is dead, it
+  can mean the run took a path that doesn't write it.
+- **Triage read a capped sample, not the population**: a stderr sample
+  capped at 20 lines per bucket was read as if it were the whole failure
+  set (learnings.md §3.aa's shape, recurring here).
+
+**Frank's rulings from this week, standing guidance**: heavy runs prefer
+Linux over the Mac where a choice exists; when both boxes are free, choose
+by earliest completion rather than by a fixed assignment; a run that
+naturally splits into stages should have its stages split across boxes
+rather than run serially on one.
+
+Linux figures for the same axis-sweep/asan comparisons: pending (s1step6
+run).
+
+### Standing optimization candidates
+
+Named here so a re-entrant reader sees the open work without re-deriving
+it from plan.md; each is its own row there and not restated in full.
+
+- **Batching everywhere** ([TT-4M]) — `HARNESS_BATCH`'s win is structural
+  (fewer gcc invocations, fewer distinct executables launched) and reaches
+  only a few of `make test`'s sections today; the batching lever itself is
+  proven, what's open is how far its customer set extends (`tests/dev/
+  tt4m_batch_customers.md`).
+- **Re-entrant sections** ([TEST-REENTRANT], Frank's idea, quoted at the
+  top of this section: *"having testing sections be re-entrant might
+  help if a part breaks"*) — a completion marker per (tree SHA, section or
+  axis unit, flags, box) so a kill or timeout loses one unit instead of
+  the whole run. See plan.md for the row; witnessed twice this week alone
+  (26 axes discarded above, ~3 CPU-hours of ASan discarded on the Mac).
+- **Metrics-driven timeout sizing** ([TEST-METRICS]) — the committed
+  per-run TSV log (see plan.md row) that would let a timeout be sized from
+  real recent numbers instead of a stale pinned figure like the two this
+  entry corrects.
+- **Sanitizer runtime on the Mac** — no current number exists (only
+  "exceeds 3h"); needs its own quiet-box measurement before any Mac
+  sanitizer timeout can be sized responsibly.
 
 ## CI ([REL-1.6], 2026-09-21)
 
@@ -2094,6 +2204,12 @@ a standing axis.
 landing edits, gcc 15.2.0 Ubuntu 15.2.0-16ubuntu1, libpcre2 10.46 present —
 PC-3/PC-4's ~1000+ checks and ~700K probes run for real under both
 sanitizers, nothing skipped)
+
+**STALE for darwin** — this table is a Linux box measurement; `make asan`
+alone has since been measured EXCEEDING 3 HOURS on the Mac (killed,
+exit 124), with no fresh Mac number yet recorded. See "Suite health log"
+below, 2026-09-25/26 entry, before sizing a Mac sanitizer timeout from this
+table.
 
 **Load provenance, per R3.10**: every run below was taken SERIALLY on an
 otherwise idle box (post-reboot), `/proc/loadavg` sampled immediately
