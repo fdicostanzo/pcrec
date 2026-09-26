@@ -1562,6 +1562,32 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (`tests/rxtsource/fixtures/o29_multi_aux_control.rxtin`). See
   `tests/rxtsource/CLAUDE.md`'s own "[O29FIX lane, 2026-09-16]" section.
 
+  **[FINDINGS] B0 (lane findb0, 2026-09-26) — THE `analysis` BUNDLE'S
+  FORMAT ROWS** (`docs/design/findings/design.md` §3.1). A FOURTH child
+  scope, `BUNDLE` (file → bundle → `freq` DATA → `provenance`, the
+  structure layer's third nesting level, needing no change to the frame
+  stack). The file-level `freq <name>` row is WITHDRAWN (no reader, no
+  corpus user). Value grammars that are the production's and not the
+  schema's: the lowercase bundle name (`analysis_name_ok_n`, deliberately
+  narrower than `defname_ok`), the bundle `include <name>`, `serves`
+  (`serves_check`: closed query/derivation vocabulary as ONE data table,
+  `rxt_find_derivations`, whose home moves beside B1's derivation
+  functions; compile encodings from the ONE encoding registry,
+  `pcrec_enc_by_name`) and `row` (`row_check`: per-kind key arity,
+  lowercase hex, strictly ascending, canonical nonzero count). The
+  bundle-level (query, encoding) claim table lives on the BUNDLE frame.
+  `cond_holds` gained the ` and ` conjunction (the provenance rows'
+  per-parent split needed it). Cardinality `one` is now refused at the
+  line like `at-most-one` (a second `question` in a data block used to be
+  silently dropped). **THE FRAGMENT RULE IS A SUB-PARSE**: `fragment_check`
+  re-reads each `include` target through `parse_file` in FRAGMENT mode
+  (a realpath chain, which also stops a cycle recursing) and propagates
+  ONLY the one refusal this build enforces there — an `analysis` line —
+  so a fragment broken for any other reason is still leg B's
+  `[resolution]` class. format_design §2.5's wider "a fragment holds only
+  blocks and includes" is NOT enforced by any leg (the tree's own
+  `include_head.rxtin` fragment carries a file-level `description`).
+
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be

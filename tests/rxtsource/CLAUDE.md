@@ -976,3 +976,31 @@ without reading it):
 
 See `docs/dev/lanes/o29fix_report.md` for the diagnosis-vs-hypothesis
 account and the validation numbers.
+
+## [FINDINGS] B0 (lane findb0, 2026-09-26) — the `analysis` bundle's format rows
+
+`run_rxtsource_tests.sh`'s `[FINDINGS] B0` section, LEG A ONLY (every row
+is head-scoped; the head has one parser). Design:
+`docs/design/findings/design.md` §3.1/§13 B0; contract:
+`docs/spec/rxt_format.md`'s "`analysis` — the bundle".
+
+| fixture | what it makes reachable |
+|---|---|
+| `analysis_bundle_accept` | THE ACCEPT HALF, asserted on the dump's ROWS: two bundles (one `include <log>`, one without) as two `analysis` rows; each kind block's `provenance` four frames deep (file → bundle → `freq` → provenance) reaching `#section provenance` attributed to its bundle; an `exemplar` owing `bytes`/`sha256` and no `url`, an `authored` block owing neither (the conjunctive `required-if`) |
+| `analysis_in_fragment` + `analysis_frag_mid.rxtfrag` + `analysis_frag_leaf.rxtfrag` | the fragment rule (r2 M-B3): a bundle TWO include links down refuses the ENTRY's parse, naming the leaf's own `file:line` |
+
+The REFUSALS are generated inline (`fb0_case LABEL CLASS NEEDLE BODY`,
+one scratch file per case, asserted on the class tag AND a needle naming
+the rule), with a population floor of 34 (the case count) so a case that stops being driven
+is red. Controls: an exemplar with `bytes`/`sha256`, a `pcrec` line whose
+word is not `--analysis`, and a fragment broken for ANOTHER reason (it must
+NOT fail the entry's parse — only the bundle rule propagates; everything
+else stays leg B's `[resolution]` class).
+
+**THE BUNDLE-LEVEL (query, encoding) COLLISION HAS AN EMPTY DESIGNED
+POPULATION AT B0**: `freq` is the only kind row and a bundle holds one, so
+no file can put two blocks in one bundle. The claim table lives on the
+BUNDLE frame regardless; its one reachable input is one `serves` line
+claiming one pair twice (`serves-collision`). B5 (`cpfreq`) owes the
+two-block fixture. Sabotage rows: S290 (the ` and ` conjunction read as its
+first conjunct only), S291 (the fragment refusal swallowed).

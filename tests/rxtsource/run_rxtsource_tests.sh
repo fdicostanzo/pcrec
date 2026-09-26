@@ -4533,10 +4533,10 @@ fb0_case config-upper    value-shape       'LOWERCASE'                "config c\
 fb0_case config-two      schema-constraint "one 'analysis'"           "config c\n    analysis a\n    analysis b\n"
 fb0_case config-pcrec    schema-constraint "may not carry '--analysis'" "config c\n    pcrec -e utf8 --analysis x\n"
 fb0_case config-pcrec-eq schema-constraint "may not carry '--analysis'" "config c\n    pcrec --analysis=x\n"
-if [ "$fb0_n" -ge 33 ]; then
-    pass "findings/B0: $fb0_n refusal cases driven (population floor 33)"
+if [ "$fb0_n" -ge 34 ]; then
+    pass "findings/B0: $fb0_n refusal cases driven (population floor 34)"
 else
-    fail "findings/B0: only $fb0_n refusal cases ran; the floor is 33 — a case stopped being driven"
+    fail "findings/B0: only $fb0_n refusal cases ran; the floor is 34 — a case stopped being driven"
 fi
 
 # THE CONTROLS the refusals need: an exemplar that states bytes/sha256 and
