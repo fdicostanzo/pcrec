@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 33
+#define PCREC_ARTIFACT_ABI 35
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -720,6 +720,58 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * SLASH, which would close this very comment if spelled here. In the C
  * STRING LITERAL they go through `pcrec_sb_cstr`, whose octal numeric escape
  * is what keeps a non-printable byte from swallowing the byte after it. */
+/* Writes the run pre-check's scan loop for `n` bytes `run`: `memchr` for
+ * `run[i]`, a constant-length `memcmp` of the whole of `run` at each hit,
+ * NOMATCH when none compares. Shared by the window check and the [K66] whole
+ * run check so the two cannot compare a run in two shapes; its caller has
+ * already returned on an empty window. */
+static void emit_run_scan_loop(StrBuf *c, const char *indent,
+                               const char *posvar, const char *subjvar,
+                               const char *lenvar, const unsigned char *run,
+                               int n, int i)
+{
+    pcrec_sb_printf(c,
+        "%s{\n"
+        "%s    size_t rp_pos = %s;\n"
+        "%s    for (;;) {\n"
+        "%s        const void *rp_q = memchr(%s + rp_pos, %d, %s - rp_pos);\n"
+        "%s        size_t rp_c;\n"
+        "%s        if (!rp_q) return 0;\n"
+        "%s        rp_c = (size_t)((const unsigned char *)rp_q - %s);\n",
+        indent,
+        indent, posvar,
+        indent,
+        indent, subjvar, (int)run[i], lenvar,
+        indent,
+        indent,
+        indent, subjvar);
+    if (i == 0) {
+        pcrec_sb_printf(c,
+            "%s        if (rp_c + %d <= %s\n"
+            "%s            && !memcmp(%s + rp_c, \"",
+            indent, n, lenvar,
+            indent, subjvar);
+    } else {
+        pcrec_sb_printf(c,
+            "%s        if (rp_c - %s >= %d && rp_c - %d + %d <= %s\n"
+            "%s            && !memcmp(%s + rp_c - %d, \"",
+            indent, posvar, i, i, n, lenvar,
+            indent, subjvar, i);
+    }
+    pcrec_sb_cstr(c, run, (size_t)n);
+    pcrec_sb_printf(c,
+        "\", %d)) break;\n"
+        "%s        rp_pos = rp_c + 1;\n"
+        "%s        if (rp_pos >= %s) return 0;\n"
+        "%s    }\n"
+        "%s}\n",
+        n,
+        indent,
+        indent, lenvar,
+        indent,
+        indent);
+}
+
 static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
                               const char *posvar, const char *subjvar,
                               const char *lenvar)
@@ -739,46 +791,110 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
     /* The `<=` arm is the one-byte check's own two-obligations-in-one-test,
      * unchanged and for its own reasons (see below): `memchr(NULL, c, 0)` is
      * undefined and an empty window cannot hold the run anyway. */
+    pcrec_sb_printf(c, "%sif (%s <= %s) return 0;\n", indent, lenvar, posvar);
+    emit_run_scan_loop(c, indent, posvar, subjvar, lenvar,
+                       r->bytes, r->len, r->idx);
+}
+
+/* [K66] Writes the WHOLE necessary run's compare after the window's, on a VM
+ * route with no DFA scan in front, when the run is longer than the window.
+ *
+ * The window is cut from the run by a frequency prior (`rn_window_start`), so
+ * with only the window compared, a subject holding the window but not another
+ * slice of the run got no linear no-match proof and could give up on the step
+ * budget, and which subjects did followed the prior — the encoding moved it
+ * (`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on "e" + 36 `a`s + "~#~#~#~#": the byte
+ * prior takes "~#~#~#~#", every other encoding "eeeeeeee"). Comparing the whole
+ * run proves NOMATCH from the absence of ANY of its windows, so the answer
+ * rests on the run, which is the pattern's. `emit_req_set_rest`'s header says
+ * why this route and only this one; the window check above stays exactly as
+ * every route emits it. */
+static void emit_req_run_rest(Ctx *cx, StrBuf *c, const char *indent,
+                              const char *posvar, const char *subjvar,
+                              const char *lenvar)
+{
+    const ReqRun *r = &cx->job->req_run;
+    int prev = 0, k;
+    if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
-        "%sif (%s <= %s) return 0;\n"
-        "%s{\n"
-        "%s    size_t rp_pos = %s;\n"
-        "%s    for (;;) {\n"
-        "%s        const void *rp_q = memchr(%s + rp_pos, %d, %s - rp_pos);\n"
-        "%s        size_t rp_c;\n"
-        "%s        if (!rp_q) return 0;\n"
-        "%s        rp_c = (size_t)((const unsigned char *)rp_q - %s);\n",
-        indent, lenvar, posvar,
-        indent,
-        indent, posvar,
-        indent,
-        indent, subjvar, (int)r->bytes[r->idx], lenvar,
-        indent,
-        indent,
-        indent, subjvar);
-    if (r->idx == 0) {
-        pcrec_sb_printf(c,
-            "%s        if (rp_c + %d <= %s\n"
-            "%s            && !memcmp(%s + rp_c, \"",
-            indent, r->len, lenvar,
-            indent, subjvar);
-    } else {
-        pcrec_sb_printf(c,
-            "%s        if (rp_c - %s >= %d && rp_c - %d + %d <= %s\n"
-            "%s            && !memcmp(%s + rp_c - %d, \"",
-            indent, posvar, r->idx, r->idx, r->len, lenvar,
-            indent, subjvar, r->idx);
-    }
-    pcrec_sb_cstr(c, r->bytes, (size_t)r->len);
+        "%s/* [K66] every match contains the whole %d-byte run \"", indent,
+        r->whole_len);
+    for (k = 0; k < r->whole_len; k++)
+        emit_comment_safe_byte(c, &prev, r->whole[k], NULL);
     pcrec_sb_printf(c,
-        "\", %d)) break;\n"
-        "%s        rp_pos = rp_c + 1;\n"
-        "%s        if (rp_pos >= %s) return 0;\n"
-        "%s    }\n"
+        "\";\n"
+        "%s * with no DFA scan in front this is the call's only linear\n"
+        "%s * no-match proof, so it compares all of it, not one window. */\n",
+        indent, indent);
+    pcrec_sb_cmt_close(c);
+    emit_run_scan_loop(c, indent, posvar, subjvar, lenvar,
+                       r->whole, r->whole_len, r->at + r->idx);
+}
+
+/* [K65] Writes the pre-check's second half on a VM route with no DFA scan in
+ * front: a `memchr` for every member of the necessary set the first half did
+ * not already test, any absent one answering NOMATCH.
+ *
+ * WHY THIS ROUTE AND ONLY THIS ONE. The pre-check is sound on any member, so
+ * elsewhere which one it tests is a SPEED choice. Here it is also the call's
+ * only linear NO-MATCH PROOF — a backreference or a linked call declines the
+ * hybrid, so nothing else scans the window — and a program that gets no
+ * proof can exhaust a budget and give up: a framed one by backtracking inside
+ * an attempt, a frameless one by being retried at every start position
+ * (`[a-z]+Z.@` under `--engine=vm` gave up on work over 200 KB). With one member
+ * tested, the same subject answered NOMATCH or `PCREC_ERR_STEPS` according to
+ * the pick (`(x?)([a-z]+)+Z.@\1` on 31 `a`s + "Zb": `@` absent, `Z` present;
+ * the byte encoding's prior picks `Z`, every other encoding `@`). Testing
+ * every member makes the proof a fact about the SET, which is the pattern's.
+ * A DFA-scanning artifact needs none of this: its scan is already linear in
+ * the window whatever the pre-check tests.
+ *
+ * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: `Job.req_byte`
+ * for the one-byte form, every byte of the WHOLE run for the run form (on
+ * this route `emit_req_run_rest` has compared all of it, and a window holding
+ * the run holds each of its bytes). Members go out in ascending byte
+ * order; the order moves no answer, and the rarest member has already been
+ * scanned first by the half above.
+ *
+ * Emits nothing where no member is left, so an artifact whose set is its pick
+ * alone is byte-identical to the shape before this. Runs only after the first
+ * half, which has already returned on an empty window, so no `memchr` here
+ * can see a NULL subject. */
+static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
+                              const char *posvar, const char *subjvar,
+                              const char *lenvar)
+{
+    const ReqSet *set = &cx->job->req_set;
+    const ReqRun *r = &cx->job->req_run;
+    bool done[256] = { false };
+    int b, k, n = 0;
+    if (pcrec_artifact_has_dfa_scan(cx)) return;
+    if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;
+    else done[cx->job->req_byte] = true;
+    for (b = 0; b < 256; b++)
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) n++;
+    if (n == 0) return;
+    pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
+    pcrec_sb_printf(c,
+        "%s/* [K65] every match also contains each byte below; with no DFA\n"
+        "%s * scan in front this is the call's only linear no-match proof,\n"
+        "%s * so it tests the whole necessary set, not one member of it. */\n",
+        indent, indent, indent);
+    pcrec_sb_cmt_close(c);
+    pcrec_sb_printf(c, "%s{\n%s    static const unsigned char rq_set[] = {",
+                    indent, indent);
+    for (b = 0, k = 0; b < 256; b++)
+        if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b])
+            pcrec_sb_printf(c, "%s %d", k++ ? "," : "", b);
+    pcrec_sb_printf(c,
+        " };\n"
+        "%s    for (size_t rq_i = 0; rq_i < sizeof rq_set; rq_i++)\n"
+        "%s        if (!memchr(%s + %s, rq_set[rq_i], %s - %s))\n"
+        "%s            return 0;\n"
         "%s}\n",
-        r->len,
         indent,
-        indent, lenvar,
+        indent, subjvar, posvar, lenvar, posvar,
         indent,
         indent);
 }
@@ -806,7 +922,13 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
  * `%d` AND NOT A CHARACTER LITERAL: the byte may be any of 256 values,
  * including ones no source character spells and ones that would need escaping
  * inside a `'...'`. The decimal form has one spelling for all of them, and
- * the same number reaches `<PREFIX>_REQ_BYTE` from this same field. */
+ * the same number reaches `<PREFIX>_REQ_BYTE` from this same field.
+ *
+ * [K65] On a VM route with no DFA scan the byte (or run) is followed by a
+ * test of every other necessary-set member, `emit_req_set_rest` above, so the
+ * no-match proof there does not rest on the pick. [K66] A run longer than its
+ * window is compared whole there first, `emit_req_run_rest`, so it does not
+ * rest on the window pick either. */
 void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar)
@@ -828,6 +950,8 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
      * sabotage row S265's anchor is in it. */
     if (cx->job->req_run.len >= 2) {
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
+        emit_req_run_rest(cx, c, indent, posvar, subjvar, lenvar);
+        emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
         return;
     }
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
@@ -843,6 +967,7 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
         indent, lenvar, posvar,
         indent, subjvar, posvar, b, lenvar, posvar,
         indent);
+    emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
 }
 
 /* Writes the search entry's attributes, signature and opening brace, plus

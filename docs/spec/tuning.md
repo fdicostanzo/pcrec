@@ -2501,6 +2501,46 @@ backtrack). Every other one-attempt VM artifact — framed, with no prefilter or
 a collapsed one — emits the pre-check (`<PREFIX>_REQ_WHY "emitted"`). The DFA
 route is linear by construction and is unchanged.
 
+**On a VM route with no DFA scan, an emitted pre-check tests the WHOLE
+necessary set** ([K65], 2026-09-25). §2.27's choice of member is a speed
+choice everywhere a linear scan already bounds the call. Where nothing does —
+a VM artifact with `<PREFIX>_VM_PREFILTER "none"`, which is every
+backreference- or linked-call-bearing pattern on the auto route and every
+`--engine=vm` build without `-fprefilter` — the pre-check is the call's
+only linear NO-MATCH PROOF, and a proof resting on one member made the ANSWER on a hostile
+subject follow the pick: `(x?)([a-z]+)+Z.@\1` on 31 `a`s + `"Zb"` (with `@`
+absent) answered `PCREC_ERR_STEPS` under `-e byte`, whose prior picks `Z`,
+and NOMATCH under `-e utf8`, whose fallback picks `@`. So on that route the
+emitted check (§2.27's byte or §2.28's run) is followed by one `memchr` per
+remaining member of the necessary set, and ANY absent member answers
+NOMATCH. Which member is tested first still moves only a speed; whether the
+call is proved a no-match now depends on the set alone, a fact about the
+pattern. An artifact whose set is its pick alone (or its run's bytes alone)
+emits nothing more. `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN`/`<PREFIX>_REQ_WHY`
+are unchanged: the first two still name the first half's own byte and run,
+and the admission rules above still decide whether any of it is emitted.
+Where a DFA scan runs in front (a DFA artifact or any VM hybrid) nothing
+changes.
+
+**On the same route, a run longer than its window is compared WHOLE**
+([K66], 2026-09-25). §2.28 truncates a run longer than
+`PCREC_MAX_REQ_RUN_EMIT` to the 8-byte window the prior chooses, and
+`<PREFIX>_REQ_RUN` names that window; so with the window alone compared, a
+subject holding the window but not another slice of the run got no linear
+proof, and which subjects did followed the prior:
+`(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on `"e"` + 36 `a`s + `"~#~#~#~#"` answered
+`PCREC_ERR_STEPS` under `-e byte` (window `~#~#~#~#`) and NOMATCH under
+`-e utf8` (window `eeeeeeee`). On a VM artifact with
+`<PREFIX>_VM_PREFILTER "none"` the window's compare is now followed by one
+compare of the whole run as the analysis holds it (up to
+`PCREC_MAX_REQ_RUN_SCAN` bytes, a structural bound no prior moves), scanned
+on the same member, and its absence answers NOMATCH — so the absence of ANY
+window of the run proves the no-match, and the answer rests on the run, a
+fact about the pattern. The whole-set half above then skips every byte of
+the whole run. `<PREFIX>_REQ_RUN` is unchanged and still names the window;
+an artifact whose run fits its window emits nothing more; where a DFA scan
+runs in front nothing changes.
+
 **G1 — DOMINANCE. Not a second pass on a byte already scanned.** Where the
 artifact's own candidate-start prefilter is the single-byte `memchr` form on a
 byte `p`, a one-byte pre-check on `q` is worth emitting only if `q` is
@@ -2524,6 +2564,11 @@ either rule outright is answer-invisible (the pre-check comes back and only
 costs time), which is why S269 and S270 are structural rows; removing the
 LINEARITY CONDITION is answer-detectable (NOMATCH becomes `PCREC_ERR_STEPS`),
 and S274 is that row, detected by `tests/base/k64_precheck_forced_vm.rxt`.
+Removing the WHOLE-SET half on the no-DFA-scan route is answer-detectable the
+same way, and S277 is that row, detected by
+`tests/base/k65_precheck_whole_set.rxt`.
+Removing the WHOLE-RUN compare there is answer-detectable too, and S278 is
+that row, detected by `tests/base/k66_precheck_whole_run.rxt`.
 
 **The stamp.** `<PREFIX>_REQ_WHY`, on EVERY artifact of both engines, a CLOSED
 FOUR-TOKEN set:

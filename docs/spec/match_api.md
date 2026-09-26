@@ -2008,13 +2008,66 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `33` while the three narrative copies
+which is why it is gap-free from `2` to `35` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `33` on every artifact today (`[K64]` bumped it from 32,
+- **`rx_info.abi` is `35` on every artifact today (`[K66]` bumped it from 34,
+  2026-09-25: WHERE NO DFA SCAN RUNS IN FRONT, A RUN LONGER THAN ITS WINDOW IS
+  COMPARED WHOLE.** `[OPT-REQPOS]` truncates a necessary run longer than
+  `PCREC_MAX_REQ_RUN_EMIT` (8) to the window `[OPT-FREQPICK]`'s prior picks,
+  and on a VM artifact with `<PREFIX>_VM_PREFILTER "none"` the pre-check is
+  the call's only linear NO-MATCH PROOF, so a subject holding that window but
+  not another slice of the run answered `PCREC_ERR_STEPS` under one prior and
+  NOMATCH under another: `(x?)([a-z]+)+eeeeeeee~#~#~#~#\1` on `"e"` + 36 `a`s
+  + `"~#~#~#~#"` gave up under `-e byte` (window `~#~#~#~#`) and answered
+  NOMATCH under `-e utf8` (window `eeeeeeee`) — filed as `K66`. Such an
+  artifact now follows the window's scan loop with a second scan loop of the
+  same shape comparing the WHOLE run (`emit_req_run_rest`,
+  `src/gen/emit_dfa.c`, reading `ReqRun.whole`/`whole_len`/`at`, which
+  `pcrec_req_byte` now publishes beside the window it cuts from them), and
+  `[K65]`'s `rq_set[]` block drops every byte of the whole run. No new stamp,
+  no stamp VALUE (`<PREFIX>_REQ_RUN` still names the window), no declaration
+  and no layout change: the bump moves emitted PROGRAM TEXT only, on 12 of
+  6,642 measured artifact-configs (2 of 256 bench configs +
+  10 of 6,386 corpus configs over 3,193 distinct patterns x `--features
+  all`/`+ --engine=vm`), every one `VM_PREFILTER "none"` with a run of 9 to
+  11 bytes, each gaining the 13-line compare and losing its 6-line `rq_set`
+  block; 2 are on the AUTO route. **The FOURTH bump in this list whose change
+  moves an ANSWER**, and again only in the direction of REPAIR: a give-up
+  becoming a NOMATCH, never the reverse. `-fno-req-run` and `-fno-req-byte`
+  still remove it. `docs/spec/tuning.md` §2.29 states the rule.
+
+- **`rx_info.abi` was `34` (`[K65]` bumped it from 33,
+  2026-09-25: THE PRE-CHECK TESTS THE WHOLE NECESSARY SET WHERE NO DFA SCAN
+  RUNS IN FRONT.** On a VM artifact with `<PREFIX>_VM_PREFILTER "none"` —
+  every backreference- or linked-call-bearing pattern on the auto route and
+  every `--engine=vm` build without `-fprefilter` — the necessary-byte
+  pre-check is the call's only linear NO-MATCH PROOF, and it tested one
+  member of the necessary set, the one `[OPT-FREQPICK]`'s prior picked. So a
+  hostile subject lacking a DIFFERENT member answered `PCREC_ERR_STEPS` (or
+  `PCREC_ERR_WORK`) under one pick and NOMATCH under another:
+  `(x?)([a-z]+)+Z.@\1` on 31 `a`s + `"Zb"` gave up under `-e byte` (pick
+  `Z`) and answered NOMATCH under `-e utf8` (pick `@`) — filed as `K65`.
+  After the byte check or the run check, such an artifact now emits one
+  6-line block — a `static const unsigned char rq_set[]` of every necessary
+  byte the first half did not test, and a loop `memchr`-ing each — any
+  absent member answering NOMATCH (`emit_req_set_rest`,
+  `src/gen/emit_dfa.c`, reading a new `Job.req_set` that `pcrec_req_byte`
+  publishes from the walk it already ran). No new stamp, no stamp VALUE, no
+  declaration and no layout change: the bump moves emitted PROGRAM TEXT
+  only, on 452 of 6,642 measured artifact-configs (30 of 256 bench configs
+  + 422 of 6,386 corpus configs over 3,193 distinct patterns x `--features
+  all`/`+ --engine=vm`), every one a pure 6-line insertion, every one
+  `VM_PREFILTER "none"`, none a DFA artifact or a hybrid; 48 are on the AUTO
+  route. **The THIRD bump in this list whose change moves an ANSWER**, and
+  again only in the direction of REPAIR: a give-up becoming a NOMATCH, never
+  the reverse. `-fno-req-byte` still removes the whole mechanism.
+  `docs/spec/tuning.md` §2.29 states the rule.
+
+- **`rx_info.abi` was `33` (`[K64]` bumped it from 32,
   2026-09-25: G2'S ONE-ATTEMPT ADMISSION RULE GAINS A LINEARITY CONJUNCT.**
   `[OPT-PRECHECK-ADMIT]`'s G2 rule (`abi` 31) declined the necessary-byte
   pre-check wherever the VM's own route tries at most one start position,

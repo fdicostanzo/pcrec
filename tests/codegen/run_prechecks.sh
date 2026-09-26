@@ -1146,6 +1146,95 @@ else
     fi
 fi
 
+# =========================================================================
+# SECTION 5.8 — [K65] ON A VM ROUTE WITH NO DFA SCAN, THE PRE-CHECK TESTS THE
+# WHOLE NECESSARY SET.
+# =========================================================================
+#
+# There the pre-check is the call's only linear no-match proof, and with one
+# member tested a hostile subject answered NOMATCH or gave up according to
+# which member the PICK chose. The second half of the check is an `rq_set[]`
+# array of every member the first half did not test; each row's expected list
+# is derived BY HAND from the pattern (never from a stamp), so the row fails
+# if the analysis, the pick exclusion or the route test drifts. The
+# answer-level witness is tests/base/k65_precheck_whole_set.rxt.
+#   rq_set lists the members in ascending byte order; "none" = no array.
+rqset() { sed -n 's/^ *static const unsigned char rq_set\[\] = { \(.*\) };$/\1/p' "$1" | head -1; }
+while IFS='%' read -r pat flags want why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s58_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.8] $pat [$flags]: refused"; continue; fi
+    got="$(rqset "$a")"; got="${got:-none}"
+    [ "$got" = "$want" ] \
+        && ok "[5.8] $pat [$flags] -> rq_set { $got } ($why)" \
+        || bad "[5.8] $pat [$flags]: rq_set is { $got }, expected { $want } ($why)"
+done <<'ROWS'
+(x?)([a-z]+)+Z.@\1%-e byte%64%K65's witness under byte: the prior picks Z (90), so @ (64) is the rest
+(x?)([a-z]+)+Z.@\1%-e utf8%90%the same under utf8: the rightmost fallback picks @ (64), so Z (90) is the rest
+(x?)([a-z]+)+Z.@#\1%-e byte%90%the RUN form: the run @# (64 35) is tested whole, so Z (90) alone is the rest
+[a-z]+Z.@%--engine=vm -e byte%64%a FRAMELESS unanchored forced-VM program: linear per attempt but retried at every start, so its give-up (work, on ~200 KB) followed the pick too
+(Z)\1%-e byte%none%a one-member set: the pick IS the set, nothing is left to emit
+(x?)([a-z]+)+Z.@%-e byte%none%no backreference: an exact hybrid DFA scans in front, so the pick alone suffices
+Z.@%--no-captures -e byte%none%the DFA engine: its scan is linear whatever the pre-check tests
+ROWS
+# ... and the rows that expect an array really are the route the rule reads:
+# a VM artifact with no DFA scan (`RX_VM_PREFILTER "none"`) that emits the
+# pre-check at all — or the rest-array rows test nothing.
+if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+Z.@\1' -e byte; then
+    [ "$(stamp "$WORKDIR/s58r.c" VM_PREFILTER)" = "none" ] \
+      && [ "$(stamp "$WORKDIR/s58r.c" REQ_WHY)" = "emitted" ] \
+      && grep -q 'memchr(subject + search_from, 90, subject_length - search_from)' "$WORKDIR/s58r.c" \
+        && ok "[5.8r] the K65 witness is an unguarded VM artifact whose first half memchr's the pick (90)" \
+        || bad "[5.8r] the K65 witness is no longer an unguarded VM artifact memchr'ing 90 first — [5.8]'s rows test nothing"
+fi
+if emit "$WORKDIR/s58r.c" '(x?)([a-z]+)+Z.@' -e byte; then
+    [ "$(stamp "$WORKDIR/s58r.c" VM_PREFILTER)" = "hybrid" ] \
+        && ok "[5.8r] the backreference-free control is a hybrid (a DFA scans in front)" \
+        || bad "[5.8r] the backreference-free control is no longer a hybrid — [5.8]'s DFA-front row tests nothing"
+fi
+
+# =========================================================================
+# SECTION 5.9 — [K66] ON THE SAME ROUTE, A RUN LONGER THAN ITS 8-BYTE WINDOW
+# IS COMPARED WHOLE.
+# =========================================================================
+#
+# `RX_REQ_RUN` names the window the prior cut from the run, and with the
+# window alone compared a subject holding it but not another slice of the
+# run answered NOMATCH or gave up according to that pick. The whole run is a
+# second scan loop whose `memcmp` is longer than 8 bytes; each row's expected
+# run and rq_set are derived BY HAND from the pattern (never from a stamp).
+# The answer-level witness is tests/base/k66_precheck_whole_run.rxt.
+#   "none" = no memcmp longer than 8 bytes.
+wholerun() { sed -n 's/^.*!memcmp(subject + rp_c[^,]*, "\(.*\)", \([0-9]*\))) break;$/\1 \2/p' "$1" | awk '$NF > 8' | head -1; }
+while IFS='%' read -r pat flags want wantrq why; do
+    [ -n "$pat" ] || continue
+    a="$WORKDIR/s59_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $flags is a word list on purpose
+    if ! emit "$a" "$pat" $flags; then bad "[5.9] $pat [$flags]: refused"; continue; fi
+    got="$(wholerun "$a")"; got="${got:-none}"
+    gotrq="$(rqset "$a")"; gotrq="${gotrq:-none}"
+    [ "$got" = "$want" ] && [ "$gotrq" = "$wantrq" ] \
+        && ok "[5.9] $pat [$flags] -> whole run { $got }, rq_set { $gotrq } ($why)" \
+        || bad "[5.9] $pat [$flags]: whole run is { $got } / rq_set { $gotrq }, expected { $want } / { $wantrq } ($why)"
+done <<'ROWS'
+(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte%eeeeeeee~#~#~#~# 16%none%K66's witness under byte: the window is ~#~#~#~#, the run is 16 bytes, and every set byte is in it
+(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e utf8%eeeeeeee~#~#~#~# 16%none%the same under utf8, whose window is eeeeeeee: both encodings now compare the same run
+(x?)([a-z]+)+Q.abcdefghij\1%-e byte%abcdefghij 10%81%a 10-byte run beside a set member outside it: the rest is Q (81) alone, never the two run bytes outside the window
+(x?)([a-z]+)+abcdefgh\1%-e byte%none%none%a run of exactly 8: the window IS the run, nothing more is emitted
+(x?)([a-z]+)+eeeeeeee~#~#~#~#%-e byte%none%none%no backreference: an exact hybrid DFA scans in front, so the window alone suffices
+(x?)([a-z]+)+eeeeeeee~#~#~#~#\1%-e byte -fno-req-run%none%35, 101%-fno-req-run: no run at all, so the one-byte pick (126) and the K65 rest (# and e) stand
+ROWS
+# ... and the witness really is the route the rule reads, with a run longer
+# than its window — or the whole-run rows test nothing.
+if emit "$WORKDIR/s59r.c" '(x?)([a-z]+)+eeeeeeee~#~#~#~#\1' -e byte; then
+    [ "$(stamp "$WORKDIR/s59r.c" VM_PREFILTER)" = "none" ] \
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_WHY)" = "emitted" ] \
+      && [ "$(stamp "$WORKDIR/s59r.c" REQ_RUN)" = "7e237e237e237e23@0" ] \
+        && ok "[5.9r] the K66 witness is an unguarded VM artifact whose REQ_RUN names an 8-byte window of a longer run" \
+        || bad "[5.9r] the K66 witness is no longer an unguarded VM artifact with an 8-byte window — [5.9]'s rows test nothing"
+fi
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1

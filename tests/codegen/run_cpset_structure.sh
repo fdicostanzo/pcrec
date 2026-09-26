@@ -602,6 +602,22 @@ fi
 # unrelated to this manifest's own byte count), and the loop body's operand
 # (`s[ref_start + i]` -> `ref[i]`) -- no other row in the manifest carries a
 # backreference, so none of the other eleven moved.
+#
+# RE-RECORDED A TENTH TIME, 2026-09-25 at lane k66fix's landing (K65 fix (a),
+# abi 33 -> 34, then K66's own extension, abi 34 -> 35), ONE ROW ONLY:
+# `(a(?1)?b)` moved +244 (29283 -> 29527). Diffed at the SAME `-o` basename
+# against a scratch build of each stage: K65's fix (a) is the WHOLE delta --
+# the pattern is a subroutine-call VM route stamping `RX_VM_PREFILTER "none"`
+# (no DFA scan in front), exactly K65's route, and its necessary set is the
+# single byte `a`, so it gains `emit_req_set_rest`'s 6-line `rq_set[]`/memchr
+# block verbatim (the same block K65's own re-pin already measured on 452 of
+# 6,642 census artifact-configs). K66's own whole-run extension moved NOTHING
+# on this witness -- the post-K65 and post-K66 artifacts are BYTE-IDENTICAL
+# past the two same-length abi-digit substitutions (34 -> 35), because this
+# pattern's necessary run never exceeds K66's 8-byte window. No other sample
+# pattern in this census reaches either route (none of the other eleven stamp
+# `RX_VM_PREFILTER "none"`), so none of them moved. The two abi digits are
+# same-length substitutions and net zero bytes on their own.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

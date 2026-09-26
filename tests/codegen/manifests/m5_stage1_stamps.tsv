@@ -73,4 +73,4 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	27218
 (a(?1)?b)	RX_VM_STRATS	0x2u
 (a(?1)?b)	RX_VM_ALT_ISLANDS	0
 (a(?1)?b)	RX_VM_FRAMELESS	0
-(a(?1)?b)	EMITTED_BYTES	29283
+(a(?1)?b)	EMITTED_BYTES	29527

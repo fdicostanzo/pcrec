@@ -297,10 +297,19 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # tests/base/k64_precheck_forced_vm.rxt covering a SUPERSET of this
 # file's witnesses — keeping both would assert the identical claim
 # twice, so chkgaps' known_fail copy is deleted rather than promoted.
-# Net delta at merge: +0/+0/+0 against the k64fix/varfollow pin above.
-CENSUS_FILES=217
-CENSUS_BLOCKS=4001
-CENSUS_LINES=29129
+# Net delta at merge: +0/+0/+0 against the k64fix/varfollow pin above:
+# 217 / 4001 / 29129.
+# 2026-09-25 (lane k65fix, [K65]) — +1 file / +3 blocks / +24 lines for
+# tests/base/k65_precheck_whole_set.rxt (the whole-set pre-check regression:
+# three blocks of 6 n + 1 m + 1 gu each). Not under tests/known_fail/, so
+# RUNSH_* move by the same +1/+3/+24: 218 / 4004 / 29153.
+# 2026-09-25 (lane k66fix, [K66]) — +1 file / +2 blocks / +16 lines for
+# tests/base/k66_precheck_whole_run.rxt (the whole-run pre-check regression:
+# two blocks of 6 n + 1 m + 1 gu each). Not under tests/known_fail/, so
+# RUNSH_* move by the same +1/+2/+16: 219 / 4006 / 29169.
+CENSUS_FILES=219
+CENSUS_BLOCKS=4006
+CENSUS_LINES=29169
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -358,10 +367,14 @@ CENSUS_LINES=29129
 # The file it briefly added (CENSUS_* above) was under tests/known_fail/,
 # so run.sh's own no-argument population never moved for it, and its
 # retirement at merge (net +0/+0/+0 on CENSUS_* too) does not move this
-# pin either.
-RUNSH_FILES=217
-RUNSH_BLOCKS=4001
-RUNSH_LINES=29129
+# pin either: 217 / 4001 / 29129.
+# 2026-09-25 (lane k65fix, [K65]) — +1/+3/+24, the SAME delta as CENSUS_*
+# above (tests/base/k65_precheck_whole_set.rxt is not under known_fail/).
+# 2026-09-25 (lane k66fix, [K66]) — +1/+2/+16, the SAME delta as CENSUS_*
+# above (tests/base/k66_precheck_whole_run.rxt is not under known_fail/).
+RUNSH_FILES=219
+RUNSH_BLOCKS=4006
+RUNSH_LINES=29169
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail
@@ -1262,10 +1275,25 @@ C3_FILES=179
 # (the class runs are kept to 16..20 bytes so its own backtracking stays
 # in milliseconds) and the one `gu steps` control, which is a budget
 # question python cannot ask.
-C3_PASS=13729
-C3_SKIP=15228
+#
+# [k65fix re-pin, 2026-09-25, lane k65fix] +21 PASS, +3 SKIP (all under
+# giveup), nothing else moved. tests/base/k65_precheck_whole_set.rxt
+# ISOLATED directly — `python3 tests/harness/verify_rxt.py
+# tests/base/k65_precheck_whole_set.rxt` reports `PASS=21 FAIL=0` and
+# `SKIP=3 (... giveup=3 ...)`: 18 n + 3 m cells python `re` answers (runs
+# of 16..18 bytes, milliseconds of python backtracking) and the three
+# `gu steps` controls.
+#
+# [k66fix re-pin, 2026-09-25, lane k66fix] +14 PASS, +2 SKIP (both under
+# giveup), nothing else moved. tests/base/k66_precheck_whole_run.rxt
+# ISOLATED directly — `python3 tests/harness/verify_rxt.py
+# tests/base/k66_precheck_whole_run.rxt` reports `PASS=14 FAIL=0` and
+# `SKIP=2 (... giveup=2 ...)`: 12 n + 2 m cells python `re` answers and the
+# two `gu steps` controls.
+C3_PASS=13764
+C3_SKIP=15233
 C3_SKIP_PCRE2ONLY=2944
-C3_SKIP_GIVEUP=24
+C3_SKIP_GIVEUP=29
 C3_SKIP_COMPOSED=0
 C3_SKIP_NOPYTHON=1890
 C3_SKIP_PERRACCEPT=14

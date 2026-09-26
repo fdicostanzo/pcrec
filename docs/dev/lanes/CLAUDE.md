@@ -2908,6 +2908,24 @@ never edited afterwards.
   `docs/dev/optloop/cycle2_batch2_reading.md`; instruments and the
   null-control population are `docs/dev/optloop/b2ledger/`.
 
+- `k65fix_report.md` — [K65] fix (a) (2026-09-25, lane k65fix, opus): on a
+  VM route with no DFA scan the pre-check tests EVERY necessary-set member
+  (`emit_req_set_rest`, `Job.req_set`), so NOMATCH-vs-give-up no longer
+  follows the pick. Regression `tests/base/k65_precheck_whole_set.rxt` +
+  `run_prechecks.sh` §5.8 (renumbered at the k66fix landing rebase — the
+  lane's own report still says §5.7, its number before chkgaps' concurrent
+  §5.7 landed on main) + S277; census
+  `docs/dev/optloop/admitfix/k65_census.py`: 452 of 6,642 movers, all pure
+  6-line insertions; abi 33 -> 34.
+- `k66fix_report.md` — [K66] (2026-09-25, lane k66fix, opus): K65's fix (a)
+  extended to runs — on a VM route with no DFA scan a necessary run longer
+  than its 8-byte window is also compared whole (`emit_req_run_rest`,
+  `ReqRun.whole`), so NOMATCH-vs-give-up no longer follows the window pick.
+  Regression `tests/base/k66_precheck_whole_run.rxt` + `run_prechecks.sh`
+  §5.9 (renumbered at landing, same reason as K65's §5.8 above) + S278;
+  census `docs/dev/optloop/admitfix/k66_census.py`: 12 of 6,642
+  movers; abi 34 -> 35. Landing/rebase record: see the report's own
+  "landing" section.
 - `k64fix_report.md` — [K64] fix A (2026-09-25, lane k64fix, opus): G2's
   VM arm declines the pre-check only on a LINEAR one attempt (an exact hybrid
   in front, or a frameless program — `Job.vm_frameless`), one conjunct in

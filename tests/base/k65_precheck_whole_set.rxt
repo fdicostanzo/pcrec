@@ -1,0 +1,68 @@
+# [K65] REGRESSION — ON A VM ROUTE WITH NO DFA SCAN IN FRONT, THE
+# NECESSARY-BYTE PRE-CHECK TESTS EVERY MEMBER OF THE NECESSARY SET, SO WHETHER
+# A HOSTILE SUBJECT ANSWERS NOMATCH OR GIVES UP NO LONGER DEPENDS ON WHICH
+# MEMBER THE PICK CHOSE (docs/dev/known_issues.md K65; docs/spec/tuning.md
+# §2.29; fix shape (a), D123 addendum 8 item 1).
+#
+# The pattern's backreference declines the hybrid, so the artifact is a
+# FRAMED VM program (`RX_VM_PREFILTER "none"`) and the pre-check is the only
+# linear no-match proof it has. Its necessary set is {Z, @}; the pick is `Z`
+# under `encoding byte` (the frequency prior) and `@` under `encoding utf8`
+# (the rightmost fallback). On a leading class run of length L, `([a-z]+)+`
+# backtracks exponentially before the absent byte fails the attempt, so with
+# ONE member tested each block GAVE UP (`steps`, driver exit 3) on the
+# subjects lacking the OTHER member: the `...Zb` cells under byte (Z present,
+# @ absent) and the `...@b` cells under utf8. Every `n` cell below is NOMATCH
+# in PCRE2 and must be NOMATCH here under either encoding.
+#
+# Block 3 is the RUN form of the same defect: `@#` is a necessary run, the run
+# check tests it and nothing else, so a subject holding the run and lacking
+# `Z` gave up under both encodings.
+#
+# The `gu` cells are the CONTROL that the budget really reaches the VM: with
+# every necessary byte present no pre-check can help, and the same run still
+# exhausts the block's budget, as PCRE2 does past its own match limit. They
+# prove the `n` cells pass because of the pre-check, not because 10000 steps
+# happened to be enough. `budget steps=10000` and L = 16..18 keep the failing
+# direction to milliseconds and let python `re` (which backtracks the same
+# way) verify every cell. (tests/codegen/run_prechecks.sh §5.8 asserts the
+# emitted all-members text; this file asserts the answers.)
+
+pattern (x?)([a-z]+)+Z.@\1
+features backrefs
+encoding byte
+budget steps=10000
+n "aaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaa@b"
+n "aaaaaaaaaaaaaaaaa@b"
+n "aaaaaaaaaaaaaaaaaa@b"
+m "abcZx@" 0 6
+gu steps "aaaaaaaaaaaaaaaaaaZb!@"
+
+pattern (x?)([a-z]+)+Z.@\1
+features backrefs
+encoding utf8
+budget steps=10000
+n "aaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaaaaZb"
+n "aaaaaaaaaaaaaaaa@b"
+n "aaaaaaaaaaaaaaaaa@b"
+n "aaaaaaaaaaaaaaaaaa@b"
+m "abcZx@" 0 6
+gu steps "aaaaaaaaaaaaaaaaaaZb!@"
+
+pattern (x?)([a-z]+)+Z.@#\1
+features backrefs
+encoding byte
+budget steps=10000
+n "aaaaaaaaaaaaaaaa@#"
+n "aaaaaaaaaaaaaaaaa@#"
+n "aaaaaaaaaaaaaaaaaa@#"
+n "aaaaaaaaaaaaaaaaZ#"
+n "aaaaaaaaaaaaaaaaaZ#"
+n "aaaaaaaaaaaaaaaaaaZ#"
+m "abcZx@#" 0 7
+gu steps "aaaaaaaaaaaaaaaaaaZb!@#"

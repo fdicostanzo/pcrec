@@ -1542,6 +1542,19 @@ this pass's derivation reads the first two, and a check that wants the emitted
 text reads the third; `tests/codegen/run_prechecks.sh` §3 and §5 are those two
 readers.
 
+**[K65] the set is PUBLISHED, not only picked from.** `pcrec_req_byte` now
+also writes the whole necessary set into `Job.req_set` (a `ReqSet` bitmap),
+because the emitter's no-DFA-scan route tests every member rather than the
+pick (`src/gen/emit_dfa.c`'s `emit_req_set_rest`). The walk, the pick and the
+run are unchanged; the set was always computed and is now kept.
+
+**[K66] the whole run is PUBLISHED beside its window.** `ReqRun` gains
+`whole`/`whole_len`/`at`: the stored run (up to `PCREC_MAX_REQ_RUN_SCAN`
+bytes) the window `bytes` is cut from, with `bytes == whole + at`. Same
+call, same derivation, so `Job.req_run` stays the one field every reader
+(the emitter, `[OPT-LITSCAN]` S1's pin) reads; the window's choice is
+unchanged.
+
 **Nothing here changed, and that is the point.** The admission is an emit-time
 decision over facts this directory already produced, so no pass, no field and
 no walk moved — which is why the change's own byte census shows every moving

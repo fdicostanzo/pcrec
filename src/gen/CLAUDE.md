@@ -3160,6 +3160,26 @@ that was already cheaper, or on top of a pass the artifact was already running.
   `<PREFIX>_VM_FRAMELESS` — and it is published there rather than at the end
   of `pcrec_emit_vm` beside `vm_rungs` and friends because the prologue, which
   asks `req_admit`, runs between the two.
+- **[K65] WHERE NO DFA SCAN RUNS IN FRONT, AN EMITTED CHECK TESTS THE WHOLE
+  NECESSARY SET.** `emit_req_set_rest` follows the byte or run check with a
+  `rq_set[]` of every member `Job.req_set` holds that the first half did not
+  test (the pick, or every run byte) and a `memchr` loop over it. Its guard is
+  `!pcrec_artifact_has_dfa_scan(cx)`, the same predicate the hybrid's stamps
+  read — no route test of its own. On that route the pre-check is the only
+  linear no-match proof, so a proof resting on the pick made NOMATCH-vs-give-up
+  follow a speed choice; elsewhere the scan bounds the call and the pick
+  stays a pure speed choice. It is not an admission rule: `req_admit` and
+  the three stamps are untouched, and a set that is its pick alone emits
+  nothing more.
+- **[K66] ON THE SAME ROUTE, A RUN LONGER THAN ITS WINDOW IS COMPARED WHOLE.**
+  `emit_req_run_rest` follows the window's scan loop with a second loop over
+  `ReqRun.whole` (the run the window was cut from), scanned on the same
+  member; `emit_run_scan_loop` is the one loop text both emit, so the two
+  cannot compare a run in two shapes (S267's two-format anchor sits in it
+  once). Same guard as K65's half, plus `whole_len > len`. The window alone
+  made NOMATCH-vs-give-up follow the prior's window pick; the whole run is
+  the pattern's. `emit_req_set_rest` marks the whole run's bytes done.
+  `<PREFIX>_REQ_RUN` still names the window.
 - **G1 reads axis B's SELECTION, not `UnanchStart.kind`.** `dfa_cand_scan_byte`
   calls `dfa_pf_of` and compares the chosen object's own `name`, because the
   deny mask and the offset-set candidates sit between the two: an artifact

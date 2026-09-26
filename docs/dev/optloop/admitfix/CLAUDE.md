@@ -39,6 +39,18 @@ builds of `b1885a83/` and `6ef76820/` (`make CC=gcc-16 build/pcrec`).
   prints each mover's stamps and whether the brief predicted it. Numbers in
   `docs/dev/lanes/k64fix_report.md`. `giveup_repro.sh` was re-run against
   the pair by sed-substituting its pin names (the script itself is unchanged).
+- `k65_census.py` (lane `k65fix`, 2026-09-25): `k64_census.py` re-aimed at
+  [K65]'s fix — same populations and configs, predicting that a mover is an
+  unguarded VM artifact (`RX_VM_PREFILTER "none"`) that emits the pre-check
+  and gains exactly the 6-line `rq_set[]` block (a pure insertion, checked by
+  `difflib`). Numbers in `docs/dev/lanes/k65fix_report.md`.
+- `k66_census.py` (lane `k66fix`, 2026-09-25): `k65_census.py` re-aimed at
+  [K66]'s whole-run compare — same populations and configs; a mover is an
+  unguarded VM artifact emitting the pre-check whose `REQ_RUN` window is
+  full (8 bytes) and whose run is longer, changing by exactly one inserted
+  whole-run scan loop plus its `rq_set[]` block shrinking or leaving
+  (checked by stripping both and requiring byte identity). Numbers in
+  `docs/dev/lanes/k66fix_report.md`.
 - `transcripts/`: the four short-subject and four throughput runs (the
   `enp_<pin>_<cfg>_{short,thr}.txt` files), plus the two PCRE2 probes. The
   first is `pcre2_reqcu_probe.*` on the **10.46 reference box**, one light

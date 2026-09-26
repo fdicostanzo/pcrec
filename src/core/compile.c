@@ -1511,11 +1511,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * is how they would come to disagree. `-fno-req-byte` denies both —
          * there is no run check without a byte to `memchr` — and
          * `-fno-req-run` leaves the one-byte check standing. */
-        cx.job->req_run = (ReqRun){ { 0 }, 0, 0 };
+        cx.job->req_run = (ReqRun){ { 0 }, 0, 0, { 0 }, 0, 0 };
+        cx.job->req_set = (ReqSet){ { 0 } };
         cx.job->req_byte = -1;
         if (!(defo.flags & PCREC_NO_REQ_BYTE))
             cx.job->req_byte = pcrec_req_byte(
-                &cx, root, !(defo.flags & PCREC_NO_REQ_RUN), &cx.job->req_run);
+                &cx, root, !(defo.flags & PCREC_NO_REQ_RUN), &cx.job->req_run,
+                &cx.job->req_set);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the

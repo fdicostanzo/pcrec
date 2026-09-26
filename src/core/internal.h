@@ -2417,12 +2417,37 @@ enum {
  * `idx` is a position INSIDE the run and nothing else. It is not an offset
  * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
  * thing — a run is a statement about its own members' RELATIVE positions
- * (docs/design/reqpos_2b.md §0 finding 1). */
+ * (docs/design/reqpos_2b.md §0 finding 1).
+ *
+ * [K66] `whole` is the run the WINDOW `bytes` was cut from, as the analysis
+ * stored it (at most `PCREC_MAX_REQ_RUN_SCAN` bytes), and `bytes` is exactly
+ * `whole + at` for `len` bytes — one derivation, both halves published by it.
+ * The window is the speed choice every route compares; the whole run is what
+ * a VM route with no DFA scan in front ALSO compares, because there the
+ * pre-check is the only linear no-match proof and a proof resting on one
+ * window made NOMATCH-vs-give-up follow the prior's window pick. */
 typedef struct {
     unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
     int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
     int idx;   /* 0..len-1: which member the emitted memchr tests */
+    unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
+    int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
+    int at;          /* where the window starts inside `whole` */
 } ReqRun;
+
+/* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
+ * every match of the pattern must contain, of which `Job.req_byte` is the one
+ * member the pick chose. Empty exactly when `Job.req_byte` is -1.
+ *
+ * It is carried past the analysis because one route needs more than the pick.
+ * On a VM artifact with no DFA scan in front, the pre-check is the only
+ * linear NO-MATCH PROOF the call has, and a proof resting on one member makes
+ * the answer on a hostile subject (NOMATCH or a step give-up) depend on which
+ * member a SPEED rule chose (K65). Testing every member makes it depend on the
+ * set alone, which is a fact about the pattern. */
+typedef struct {
+    unsigned char bits[32];
+} ReqSet;
 
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
@@ -2574,8 +2599,15 @@ typedef struct {
      * one emitted pre-check. `len == 0` under `-fno-req-run` (and under
      * `-fno-req-byte`, which denies the run with it — there is no run check
      * without a byte to `memchr`), deliberately indistinguishable from "no
-     * run of two or more bytes is necessary". */
+     * run of two or more bytes is necessary". [K66] It also carries the
+     * WHOLE run its window was cut from (`ReqRun.whole`), which the no-DFA-
+     * scan route's pre-check compares; one field, one derivation. */
     ReqRun req_run;
+    /* [K65] THE WHOLE NECESSARY SET `req_byte` was picked from — the SAME
+     * walk's set, published by the same call. Empty under `-fno-req-byte`,
+     * as `req_byte` is -1 there. Read by one emitter site only
+     * (`pcrec_emit_req_byte_check`, on a VM route with no DFA scan). */
+    ReqSet req_set;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -6166,8 +6198,11 @@ long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
  * `memchr` is the run loop's and tests the run's scan member, without one it
  * tests the whole set's own pick. Both answers come out of this one call so
  * they cannot be chosen in two places and disagree. `cx` is read for the
- * ENCODING alone (the prior is a fact about a corpus under one). */
-int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run);
+ * ENCODING alone (the prior is a fact about a corpus under one). `set`
+ * receives the whole necessary set the returned byte was picked from ([K65]),
+ * empty exactly when the return is -1. */
+int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run,
+                   ReqSet *set);
                                                       /* src/opt/reqbyte.c */
 
 

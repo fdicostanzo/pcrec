@@ -11,9 +11,27 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K66 — the necessary-RUN WINDOW choice decides whether a no-DFA-front VM call gives up, "C2b" (found by the `[OPT-LITSCAN]` S1 revision-3 D6 panel, critic s1crit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which 8-byte WINDOW of a longer necessary run the pre-check's compare scans decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ steps-exhausted with the window
+## K66 — FIXED 2026-09-25 — the necessary-RUN WINDOW choice decides whether a no-DFA-front VM call gives up, "C2b" (found by the `[OPT-LITSCAN]` S1 revision-3 D6 panel, critic s1crit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which 8-byte WINDOW of a longer necessary run the pre-check's compare scans decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ steps-exhausted with the window
 
-**Status: OPEN.** K65's own shipped fix (candidate (a): pre-check every
+**Status: fixed** (2026-09-25, lane `k66fix`, candidate (a) as ruled by
+Frank 2026-09-25 — K65's fix (a) extended to runs). On a VM artifact with no
+DFA scan in front, a necessary run longer than the 8-byte window is now ALSO
+compared WHOLE (`emit_req_run_rest`, `src/gen/emit_dfa.c`: a second scan loop
+of the window check's own shape over `ReqRun.whole`, the run the window was
+cut from), and K65's `rq_set[]` half skips every byte of the whole run. The
+absence of ANY window of the run now proves NOMATCH, so the proof no longer
+depends on the prior's window pick. `Job.req_run` is still the ONE field S1
+reads: `bytes`/`len`/`idx` are the window exactly as before, and the new
+`whole`/`whole_len`/`at` are published by the same call with
+`bytes == whole + at` — no fork. Regression
+`tests/base/k66_precheck_whole_run.rxt` (16/0; 8 failed as `steps` on the
+k65fix base `bbbf58e5`), `tests/codegen/run_prechecks.sh` §5.9, sabotage
+S278, `docs/spec/tuning.md` §2.29, abi 34 -> 35 (12 of 6,642 census
+artifact-configs move). `docs/dev/lanes/k66fix_report.md`.
+
+The original entry follows.
+
+**Status (as filed): OPEN.** K65's own shipped fix (candidate (a): pre-check every
 necessary-SET member on a no-DFA-front VM route) does NOT close it — C2b is
 the run-length analogue, one level up: a WINDOW of a necessary run LONGER
 than `REQ_RUN`'s emitted cap (`docs/design/reqpos_2b.md`), not a single
@@ -56,9 +74,30 @@ proves NOMATCH); (b) readers take a findings-blind fixed window rule there
 (the shape `findings/design.md` §6.2a's C2b row already frames); (c) K64's
 option C analogue (refill the step budget at the run pre-check).
 
-## K65 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
+## K65 — FIXED 2026-09-25 — the necessary-byte PICK decides whether a no-DFA-front VM call gives up (found by the [FINDINGS] D6 panel, critic fcrit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which member of the necessary set the pre-check memchr's decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ `PCREC_ERR_STEPS` with the pick
 
-**Status: deferred** — FIX SHAPE RULED 2026-09-25 (D123 addendum 8 item 1): candidate (a), pre-check every necessary-set member on no-DFA-front VM routes; a fix lane is owed (next session). Pre-existing on
+**Status: fixed** (2026-09-25, lane `k65fix`, fix (a) as ruled — D123
+addendum 8 item 1; `docs/dev/lanes/k65fix_report.md`; branch `lane/k65fix`,
+pending merge). On a VM artifact with no DFA scan in front
+(`RX_VM_PREFILTER "none"`) an emitted pre-check is now followed by a
+`memchr` of every remaining member of the necessary set
+(`emit_req_set_rest`, src/gen/emit_dfa.c, reading the new `Job.req_set`
+that `pcrec_req_byte` publishes), so any absent member proves NOMATCH
+whatever the pick. The repro answers NOMATCH under both `-e byte` and
+`-e utf8`. The same hazard held for a FRAMELESS unanchored forced-VM program
+(retried at every start: `[a-z]+Z.@` gave up on WORK over 200 KB of `a`s
+lacking `@`), and the fix covers it by the same predicate. Regression:
+`tests/base/k65_precheck_whole_set.rxt` (9 of its 24 cells give up at
+5a2094e7, all pass after), `tests/codegen/run_prechecks.sh` §5.8 (renumbered
+at the k66fix landing rebase — chkgaps' concurrent §5.7 landed on main
+first), sabotage
+S277 (DETECTED). abi 33 -> 34 (452 of 6,642 census artifact-configs gain
+the 6-line block). Residue, stated in `docs/spec/tuning.md` §2.29 at the
+time: a run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to a window
+the prior chooses, so a subject holding every set byte and one window of a
+long run but not another was still prior-dependent — filed as K66 and
+FIXED the same day (lane `k66fix`, the whole run compared). The text below is the
+original filing. Pre-existing on
 main; not a wrong answer (a give-up is honest under `docs/spec/limits.md`
 §1), but an answer → give-up divergence driven by a SPEED decision, and it
 falsifies `src/opt/reqbyte.c`'s / `src/opt/prefix_k.c`'s "can never cost a
