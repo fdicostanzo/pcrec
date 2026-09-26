@@ -3514,6 +3514,25 @@ the charter listed as optional). A re-run on a quiet box would be the
 confirming measurement for whether ≤40 min is reachable under normal
 conditions; not performed here.
 
+**2026-09-26 (lane axestriage's own full-corpus run, pinned `27a63314`,
+`PROCS=10`, unbatched): ~865s/axis** (28 bit-flag axes at that pin — the
+family has grown again since [TT-12]'s 19+2) — **~7.5h projected for the
+whole bit-flag family alone**, and the run's own 5-hour wall cap KILLED it
+mid-way through bit 27, never reaching `--engine=`/`--vm-entry-shape=`/
+`--tune=`. Its own triage (`/tmp/pcrec_axestriage/verdict.md`) is what
+`tests/axes/run_axes.sh`'s `GIVEUP1_ALLOWANCE` manifest is now populated
+from (lane giveupallow, same day) — 52 one-sided give-ups, all ruled (b)
+"documented budget-boundary effect", newly COUNTED by [chkgaps]'s GIVEUP1
+split rather than new behaviour. **`HARNESS_BATCH=64` — the battery's own
+setting (`scripts/battery.sh`'s axes stage) — is the RECOMMENDED shape for
+a run this size, timing UNMEASURED**: `run_axes.sh` forwards `HARNESS_BATCH`
+verbatim to every pass it makes ("`HARNESS_BATCH` adoption" in
+`tests/axes/CLAUDE.md`), and [TT-4M]'s own batched-compile measurements
+(`docs/dev/tt4m_time.md`, `docs/dev/tt4m_step2a_parallel_sizing.md`) are
+the evidence this recommendation rests on — neither of those rows timed
+`test-axes` itself, so the batched-vs-unbatched wall time for THIS sweep
+is a number nobody has taken yet, named here as owed rather than guessed.
+
 ### The form census (`tests/codegen/run_form_census.sh`)
 
 Compiles every corpus pattern twice — default (auto) engine, and

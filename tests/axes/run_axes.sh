@@ -574,14 +574,164 @@ declare -A REFUSAL_FLOOR=(
 # axis names the EXACT case here, keyed "<flags>|<file:line>" — a COUNT
 # ceiling would disarm itself the moment a different case moved into it
 # (K35, the REFUSAL_PATTERN/REFUSAL_FLOOR precedent two tables up), so this
-# is a manifest, never a number. EMPTY TODAY: no legitimate one-sided
-# give-up has been MEASURED on the real corpus (the previous behaviour
-# folded every such case into the two-sided BUDGET bucket and never counted
-# it at all, so there is no prior population to seed this from). Add an
-# entry only from a live measurement naming the axis, the case, and why the
-# transition is contract-legal rather than a regression — never from
-# plausibility.
+# is a manifest, never a number.
+#
+# POPULATED 2026-09-26 (lane giveupallow), the first real population this
+# manifest has ever held: the four groups the 27a63314 full-corpus run's own
+# triage (/tmp/pcrec_axestriage/verdict.md) ruled (b) "documented
+# budget-boundary effect" — 52 cases total, 0 wrong answers among them. Every
+# key below is a LIVE MEASUREMENT (2026-09-26, single-file/single-axis
+# `tests/harness/run.sh` + `dump_diff.awk` re-runs), never a guess from the
+# verdict's own capped log sample. `keys_base=N keys_axis=N ... giveup1=M`
+# matched the triage's stated count on all four groups (45/2/3/2).
+#
+# THE KEY IS $ROOT_DIR-RELATIVE, same day, same lane, same-branch fix. The
+# first landing of this manifest keyed on the RAW value of `$key`
+# (dump_diff.awk's `$1:$2`), which on a full-corpus run is
+# `$ROOT_DIR`-ABSOLUTE (`tests/harness/run.sh` discovers files via `find
+# "$ROOT_DIR/tests" ...`) — tying every entry to THIS checkout's own
+# absolute path. `run_one_axis`'s lookup now strips `"$ROOT_DIR"/` off
+# `$key` before indexing (the identical no-op-when-already-relative idiom
+# `tests/harness/run.sh`'s own `SIZELOG` row key already uses), and every
+# entry below is written relative (`tests/base/...`), so the manifest
+# survives a different checkout root unchanged.
+#
 declare -A GIVEUP1_ALLOWANCE=(
+# GROUP A — bit 7, `-fno-length-prune` (PCREC_NO_LENGTH_PRUNE), 45 cases, all
+# tests/base/d27_k23_ambiguous_decomposition.rxt (the D27 blinded corpus for
+# `(a{1,3}){65}`). Direction: DEFAULT answers a real match (MRL pruning
+# intact), denied axis gives up (steps). MRL pruning IS the K23 fix
+# (tuning.md §2.4: "Denies MINIMUM-REMAINING-LENGTH (MRL) pruning ... a
+# denied artifact is claimed byte-for-byte the emitter's own pre-MRL
+# output"). k23_design.md §9.1 is the step-count curve this denial reopens —
+# "the bound is measured to the SUBJECT END", pruning's own break-even is a
+# MEASURED 16-byte trailing suffix past which the UNPRUNED step count grows
+# combinatorially (1 step pruned vs. 1,153,352 unpruned at t=16 on the
+# note's own exemplar) — exactly the ambiguous-decomposition band this
+# file's own header says it exists to hit. §14.5 names THIS FILE as K23's
+# own independent D27 blinded corpus (89/89 against the MRL build). A
+# one-sided give-up denying MRL on this band is the documented
+# budget-boundary effect the mechanism exists to have, not a regression —
+# tests/mrl/run_mrldiff.sh's own 22-cell answer-more asymmetry exemption is
+# this same shape one axis over (deny MRL entirely vs. deny it on one
+# engine). Verified live 2026-09-26 (single-file baseline vs.
+# `RXTFLAGS="-fno-length-prune"`, this file alone): keys_base=89 keys_
+# axis=89 agree=44 budget=0 giveup1=45 mismatches=0 — the exact count and
+# shape (0 mismatches, 0 lost, 0 gained) the triage measured; the 45 keys
+# below are dump_diff.awk's own ROWSFILE for that run, not a re-derivation.
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:22"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:23"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:24"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:25"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:26"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:27"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:28"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:29"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:30"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:31"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:32"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:33"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:34"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:35"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:36"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:37"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:38"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:39"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:40"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:41"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:42"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:43"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:44"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:45"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:46"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:47"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:48"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:49"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:50"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:51"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:52"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:53"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:54"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:55"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:56"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:57"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:60"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:61"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:62"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:63"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:64"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:65"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:90"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:105"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+    ["-fno-length-prune|tests/base/d27_k23_ambiguous_decomposition.rxt:118"]="K23/MRL band (tuning.md §2.4, k23_design.md §9.1/§14.5): default matches with MRL pruning intact, -fno-length-prune reverts to the pre-MRL emitter and gives up (steps) inside the documented ambiguous-decomposition band"
+
+# GROUP B — bit 8, `-fno-prefilter` (PCREC_NO_PREFILTER), 2 cases, the SAME
+# file's lines 90 and 98. Direction: DEFAULT (hybrid DFA prefilter ahead of
+# the VM) answers a real match, denied axis gives up (steps): losing the
+# sharp reverse-window start. tuning.md §2.5's own witness is the identical
+# mechanism, one pattern over: "((a)|bc){0,4000}d over 1 MB of `a` is `no
+# match` with the hybrid's DFA prefilter and PCREC_ERR_WORK without it. A
+# sweep that compares answers across this axis must classify a give-up on
+# either side as budget-bound..., not as a disagreement" — GIVEUP1 is
+# exactly that classification, now split from BUDGET because only ONE side
+# gives up here. §2.17's "fourth cost" names THIS FILE's OWN PATTERN as its
+# worked example, verbatim: "`(a{1,3}){65}` on a long run of `a`s answers
+# `0,100 90,100` in 0.00 s with the exact prefilter and returns
+# PCREC_ERR_STEPS after 13.34 s with the collapsed one. Answer identity is
+# preserved in D46's unbounded sense — and `make test-axes` is right to keep
+# passing — but the step budget is a documented caller-visible bound
+# (DD-2/D22)." `-fno-prefilter` denies the SAME sharp start the collapsed
+# language in §2.17 loses a cheaper way; both land on these same two lines.
+# Verified live 2026-09-26 (this file alone, RXTFLAGS="-fno-prefilter"):
+# keys_base=89 keys_axis=89 agree=87 budget=0 giveup1=2 mismatches=0 —
+# exactly the triage's count; both keys below are default=match/axis=steps.
+    ["-fno-prefilter|tests/base/d27_k23_ambiguous_decomposition.rxt:90"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): losing the sharp prefilter-window start turns a 0.00s match into a step give-up — default matches, -fno-prefilter gives up (steps)"
+    ["-fno-prefilter|tests/base/d27_k23_ambiguous_decomposition.rxt:98"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): losing the sharp prefilter-window start turns a 0.00s match into a step give-up — default matches, -fno-prefilter gives up (steps)"
+
+# GROUP C — bit 9, `-fprefilter` (PCREC_FORCE_PREFILTER), 3 cases,
+# REVERSED direction: DEFAULT gives up (steps/frames), the FORCED axis
+# answers a real nomatch — forcing the hybrid prefilter proves no-match
+# before the VM's own catastrophic-backtracking cost is ever paid.
+# tests/harness/giveup.rxt:52 (`(a*)*[bc]`, `gu steps`) and :57
+# (`((a)|b)*[cd]`, `gu frames`) are this suite's own dedicated give-up
+# witnesses (chosen so `-freq-byte` — [OPT-REQBYTE] — declines for the WHOLE
+# pattern regardless of axis flags, per that file's own header, so the
+# prefilter axis is what is actually on trial here); tests/base/
+# k64_precheck_forced_vm.rxt:39 is K64's own `gu steps` CONTROL cell,
+# `^([a-zA-Z0-9._%+-]+)+@` on a run with no terminating `@` — built so the
+# budget genuinely reaches the VM's exponential backtrack. tuning.md §2.5:
+# "Identity is modulo WHICH BUDGET BINDS. The prefilter changes how much
+# WORK a search does before it answers, never the answer — but a give-up
+# is a bound on work, so on a subject that sits near a budget the two
+# builds can differ by a GIVE-UP CODE where neither is wrong" — the same
+# rule as Group B, opposite direction, because forcing the prefilter ON
+# where the default did not build one buys the same work reduction Group
+# B's denial takes away. Verified live 2026-09-26 (giveup.rxt +
+# k64_precheck_forced_vm.rxt together, RXTFLAGS="-fprefilter"):
+# keys_base=11 keys_axis=11 agree=8 budget=0 giveup1=3 mismatches=0 —
+# exactly the triage's count; all three keys below are
+# default=steps|frames/axis=nomatch.
+    ["-fprefilter|tests/harness/giveup.rxt:52"]="tuning.md §2.5, reversed direction: forcing the hybrid prefilter proves no-match before the VM's catastrophic-backtracking cost is paid — default gives up (steps), -fprefilter answers nomatch"
+    ["-fprefilter|tests/harness/giveup.rxt:57"]="tuning.md §2.5, reversed direction: forcing the hybrid prefilter proves no-match before the VM's catastrophic-backtracking cost is paid — default gives up (frames), -fprefilter answers nomatch"
+    ["-fprefilter|tests/base/k64_precheck_forced_vm.rxt:39"]="tuning.md §2.5, reversed direction: forcing the hybrid prefilter proves no-match before the VM's catastrophic-backtracking cost is paid (K64's own gu-steps control cell) — default gives up (steps), -fprefilter answers nomatch"
+
+# GROUP D — bit 20, `-fprefilter-collapse` (PCREC_FORCE_PREFILTER_COLLAPSE),
+# 2 cases, the SAME file/lines as Group B (90, 98), SAME direction (default
+# matches, axis gives up (steps)). tuning.md §2.5 for the give-up/budget
+# rule (identical citation to Group B); §2.17 is this flag's OWN section,
+# and its "fourth cost" paragraph is this exact file's exact pattern quoted
+# above verbatim under Group B — forcing the count-collapsed prefilter
+# LANGUAGE on `(a{1,3}){65}` reaches the identical lost-ceiling mechanism
+# `-fno-prefilter` reaches by removing the prefilter outright: "the lost
+# prefilter-window ceiling does not only make matching slower: it changes
+# which patterns fit inside a step budget... `(a{1,3}){65}` on a long run
+# of `a`s answers `0,100 90,100` in 0.00 s with the exact prefilter and
+# returns PCREC_ERR_STEPS after 13.34 s with the collapsed one." Verified
+# live 2026-09-26 (this file alone, RXTFLAGS="-fprefilter-collapse"):
+# keys_base=89 keys_axis=89 agree=87 budget=0 giveup1=2 mismatches=0 —
+# exactly the triage's count; both keys below are default=match/axis=steps.
+    ["-fprefilter-collapse|tests/base/d27_k23_ambiguous_decomposition.rxt:90"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): the count-collapsed prefilter language loses the same sharp ceiling as no prefilter at all — default matches, -fprefilter-collapse gives up (steps)"
+    ["-fprefilter-collapse|tests/base/d27_k23_ambiguous_decomposition.rxt:98"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): the count-collapsed prefilter language loses the same sharp ceiling as no prefilter at all — default matches, -fprefilter-collapse gives up (steps)"
 )
 
 # ============================================================================
@@ -793,11 +943,26 @@ run_one_axis() {
     # disarm itself the moment a DIFFERENT case moved into the count under
     # its ceiling -- exactly the failure mode K35 exists to name -- so the
     # manifest is per (axis, file:line) pair, never a number.
+    #
+    # THE KEY IS $ROOT_DIR-RELATIVE, on BOTH sides of this comparison --
+    # `$key` itself (dump_diff.awk's `$1:$2`, which is `$cur_file:$line`)
+    # is `$ROOT_DIR`-ABSOLUTE on a full-corpus run (`tests/harness/run.sh`
+    # discovers files via `find "$ROOT_DIR/tests" ...`), so a manifest keyed
+    # on the raw value would be tied to THIS checkout's own absolute path
+    # (giveupallow's own first landing did exactly that and was corrected
+    # here, same day). `${key#"$ROOT_DIR"/}` is the identical no-op-when-
+    # already-relative idiom `tests/harness/run.sh` itself already uses for
+    # `SIZELOG`'s row key (that file's own comment: "no-ops ... when it does
+    # not already start with `$ROOT_DIR/`") -- so a `RXTFLAGS`/file-argument
+    # invocation whose `$key` is ALREADY relative (e.g. a single-file
+    # `AXES=... bash tests/axes/run_axes.sh tests/base/foo.rxt` check) is
+    # unaffected, and the manifest below is written relative throughout.
     local giveup1_allowed=0 giveup1_unallowed=0
     if [ "$giveup1" -gt 0 ]; then
         while IFS=$'\t' read -r cls key btrc bout atrc aout; do
             [ "$cls" = "GIVEUP1" ] || continue
-            if [ -n "${GIVEUP1_ALLOWANCE[$flags|$key]:-}" ]; then
+            local relkey="${key#"$ROOT_DIR"/}"
+            if [ -n "${GIVEUP1_ALLOWANCE[$flags|$relkey]:-}" ]; then
                 giveup1_allowed=$((giveup1_allowed + 1))
             else
                 giveup1_unallowed=$((giveup1_unallowed + 1))
