@@ -27,16 +27,19 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh is the detector: section 5.1 repo
 # prefilter on 91, and emits NO second pass.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\[" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && ! grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-DOMINANCE-DECLINES-DUPLICATE-PASS'
 SAB_REACH_EXPECT="REACH-DOMINANCE-DECLINES-DUPLICATE-PASS"
+# [OPT-LITSCAN] S1 re-anchor (lane s1build, 2026-09-25): the function now
+# takes the candidate scan S1 derives (`CandScan`: byte, memchr form, whether
+# its test verifies the run) and carries S1's run and density conjuncts; the
+# plant and its intent are unchanged — the comparison always says no, so every
+# `"dominated"` witness (the one-byte `\[` and S1's run-row/offset-set ones)
+# goes back to `"emitted"`.
 SAB_COUNT=1
-SAB_BEFORE='static bool req_byte_dominated_by(Ctx *cx, int p, int q)
+SAB_BEFORE='static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
-    if (p < 0) return false;
-    if (p == q) return true;
-    if (cx->opt->encoding != PCREC_ENC_BYTE) return false;
-    return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
-}'
-SAB_AFTER='static bool req_byte_dominated_by(Ctx *cx, int p, int q)
+    int p = cs->byte;
+    if (p < 0) return false;'
+SAB_AFTER='static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
-    (void)cx; (void)p; (void)q;
-    return false;   /* SABOTAGE S270: the G1 dominance rule removed */
-}'
+    int p = cs->byte;
+    (void)cx; (void)q;
+    if (p < 0 || p >= 0) return false;   /* SABOTAGE S270: the G1 dominance rule removed */'

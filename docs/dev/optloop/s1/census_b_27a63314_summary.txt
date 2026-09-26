@@ -1,0 +1,52 @@
+bench	caps	# program changes (A + E + rowb)	55
+bench	caps	class=- rowb=0	201
+bench	caps	class=A rowb=0	3
+bench	caps	class=B rowb=1	28
+bench	caps	class=C0 rowb=0	1
+bench	caps	class=C0 rowb=1	1
+bench	caps	class=C1 rowb=1	18
+bench	caps	class=C2 rowb=0	15
+bench	caps	class=D rowb=0	14
+bench	caps	class=E rowb=0	5
+bench	caps	class=V rowb=0	13
+bench	caps	refused	26
+bench	caps	rowb pf=memchr views=0	28
+bench	caps	rowb pf=memchr-bounded views=1	1
+bench	caps	rowb pf=offset-set views=0	16
+bench	caps	rowb pf=offset-set-bounded views=1	2
+bench	caps	rowb why=emitted	47
+bench	nocaps	# program changes (A + E + rowb)	55
+bench	nocaps	class=- rowb=0	201
+bench	nocaps	class=A rowb=0	3
+bench	nocaps	class=B rowb=1	28
+bench	nocaps	class=C0 rowb=0	1
+bench	nocaps	class=C0 rowb=1	1
+bench	nocaps	class=C1 rowb=1	18
+bench	nocaps	class=C2 rowb=0	15
+bench	nocaps	class=D rowb=0	14
+bench	nocaps	class=E rowb=0	5
+bench	nocaps	class=V rowb=0	13
+bench	nocaps	refused	26
+bench	nocaps	rowb pf=memchr views=0	28
+bench	nocaps	rowb pf=memchr-bounded views=1	1
+bench	nocaps	rowb pf=offset-set views=0	16
+bench	nocaps	rowb pf=offset-set-bounded views=1	2
+bench	nocaps	rowb why=emitted	47
+corpus	caps	# program changes (A + E + rowb)	505
+corpus	caps	class=- rowb=0	2854
+corpus	caps	class=A rowb=0	74
+corpus	caps	class=A2 rowb=0	5
+corpus	caps	class=B rowb=1	58
+corpus	caps	class=C0 rowb=0	3
+corpus	caps	class=C0 rowb=1	5
+corpus	caps	class=C1 rowb=1	115
+corpus	caps	class=C2 rowb=0	40
+corpus	caps	class=D rowb=0	32
+corpus	caps	class=E rowb=0	253
+corpus	caps	class=V rowb=0	144
+corpus	caps	refused	423
+corpus	caps	rowb pf=memchr views=0	58
+corpus	caps	rowb pf=memchr-bounded views=1	5
+corpus	caps	rowb pf=offset-set views=0	102
+corpus	caps	rowb pf=offset-set-bounded views=1	13
+corpus	caps	rowb why=emitted	178

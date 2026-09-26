@@ -187,7 +187,8 @@ done
 # Three NESTED populations over every distinct `pattern` line under tests/:
 #
 #   P1  artifacts whose FORWARD prefilter is one of the two `offset-set`
-#       forms -- the only forms that WRITE the state variable;
+#       forms or ([OPT-LITSCAN] S1) the two `run-pinned` forms, which emit
+#       the same block -- the only forms that WRITE the state variable;
 #   P2  of those, the ones that also emit a forward SEED table, which is the
 #       set on which precondition (8) is evaluated non-trivially at all;
 #   P3  of those, the ones whose forward machine CARRIES a scan edge -- which
@@ -222,7 +223,7 @@ while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     npat=$((npat+1))
     pcrec_run "$PCREC" -p rx --features all -fcomments -o "$TMP/p.c" --pattern "$pat" >/dev/null 2>&1 || continue
-    grep -q 'RX_DFA_PREFILTER "offset-set' "$TMP/p.c" || continue
+    grep -qE 'RX_DFA_PREFILTER "(offset-set|run-pinned)' "$TMP/p.c" || continue
     p1=$((p1+1))
     grep -q 'rx_forward_seed_state' "$TMP/p.c" || continue
     p2=$((p2+1))

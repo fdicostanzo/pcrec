@@ -1,6 +1,6 @@
 # tests/offsetskip — [OPT-K]'s OFFSET-k candidate-start skip, as answers
 
-One `.rxt` file, `offset_skip.rxt`, picked up by `make test-corpus` like every
+Two `.rxt` files, `offset_skip.rxt` and ([OPT-LITSCAN] S1) `run_pinned.rxt`, picked up by `make test-corpus` like every
 other corpus directory (`tests/harness/run.sh` sweeps every `*.rxt` under
 `tests/`). There is no runner script here and there should not be: what this
 directory owns is ANSWERS, and the mechanism's structural facts live in
@@ -49,6 +49,18 @@ its `t`; `needleXYZW` has `needle` before its `X`. None can express it.
 The generalisable lesson is the one this tree keeps re-learning: a row that
 EXERCISES a line is not a row that DETECTS a change to it, and the difference
 is only ever visible by planting the change.
+
+## `run_pinned.rxt` — [OPT-LITSCAN] S1's run-pinned rows
+
+The second file here is `docs/design/litscan_s1.md` §3.4's witness corpus
+for the run-pinned prefilter rows (`RX_DFA_PREFILTER "run-pinned"` /
+`"run-pinned-bounded"`), which reuse this directory's `<p>_ofsskip` block
+with the necessary run as one compare. Same discipline as the file above:
+answers only, oracle python3 `re` (44 cells verified, 7 skipped for no python
+expression: `\K`, `\z` and scoped `(?i)` ones), and its patterns are the
+ones `tests/codegen/run_offset_skip.sh` §2 and `run_prechecks.sh` §5.10
+require to take the rows. It passes identically on the pre-S1 compiler
+(51/51 at `27a63314`), which is what answer-identity means here.
 
 ## Oracle
 

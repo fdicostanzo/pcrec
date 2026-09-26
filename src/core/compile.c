@@ -1575,7 +1575,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * and `nst` reuses the Job-owned array, so the discarded exact
              * machine costs no allocation and — the expensive half —
              * determinization never runs on it. */
-            const unsigned pfc_flags = cx.opt->flags;
+            const uint64_t pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
             /* [OPT-4.1] READ, NOT RE-CALLED: `select_engine.c` derived this

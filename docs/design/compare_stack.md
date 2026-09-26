@@ -92,7 +92,7 @@ same-change discipline D80 applies to the spec.
 | **L0.5 the cube** (new row) | is this byte set exactly one AND-mask cube `(x & K) == T` | nowhere in `src/`: three study/probe copies (§3 D2) | **Lifted out of L1**, because L1, L2 and L3 all consume it. A singleton is `nfree==0` (K=0xFF), a fold pair is K=0xDF, and a dead window tail is K=0x00. |
 | **L1 one-position membership** | how "byte ∈ set" is SPELLED in emitted C | VM: `vm_cls_shape`/`vm_cls_test` (`emit_vm.c:1622/1643`). DFA: tables + `scan_test_range` | Unchanged. The SETS come from parse/lower_enc. L1 only spells them. |
 | **L2 across-position compare** | do these k bytes at offsets o..o+k match this run | six spellings (§3 D6) | Operand axis: compile-time (literal) vs run-time (`$_span_match`, [VAR]). Direction axis: forward vs backward (`vm_rev_emit`, lookbehind). **No DFA-route site exists.** |
-| **L3 candidate finding** | where could a match start / is a necessary run present | four `memchr` sites + the byte-class walks + the stay/scan-edge skips (§2.4) | An L3 search is an L0.5 operand (a byte or cube to find) plus an L2 verify at the hit. The REQ_RUN loop is already exactly that shape. |
+| **L3 candidate finding** | where could a match start / is a necessary run present | four `memchr` sites + the byte-class walks + the stay/scan-edge skips (§2.4) | An L3 search is an L0.5 operand (a byte or cube to find) plus an L2 verify at the hit. The REQ_RUN loop is already exactly that shape. `dfa_pfs[]` is the engine-neutral candidate-finding table (D122 addendum 4): S1 added rows to it; `OfsTest` holds no `Dfa` and `pf_block_ofs` reads only the prefix, the `Ctx` and the `OfsTest` off its form, so `[OPT-VMSEED]`'s later consumer hook fills the same test from its own facts. |
 | **L4 placement / elision / carried facts** | is this pass emitted at all, and what does the next pass inherit | `req_admit` (`emit_dfa.c:5514`); `[PATFACTS]` (D120) for the facts | Unchanged. The router/keyword elision widens G1 from "same byte" to "same run at the candidate start". |
 | cross-cutting | frequency prior, the dial (λ), the subject-end guard under ASan/UBSan, SIMD last | prior: `prefix_k.c:89`; dial: `opt_dial_design.md`; guard: `[WORD-FOLD]` row + K27 | SIMD lands only inside an L2/L3 primitive, once. |
 
@@ -135,8 +135,8 @@ in the utf8 `$_span_match_caseless` residual.
 | `emit_vm.c:4157` `vm_isl_emit`, single-child arm (:4220) | compile time | VM (alternation island) | a per-node `scan_position+d < n && s[pos+d]==b` goto chain. The trie's non-branching chains are straight runs that are not path-compressed |
 | `emit_vm.c:4386` `vm_cursor_rep` (:4442-4450) | compile time | VM (fixed-length rep body) | one `&&` chain over `subject[span_cursor+i]` |
 | `emit_vm.c:5008` `vm_rev_emit` | compile time | VM, BACKWARD | per-byte L1 test with `cur--` |
-| `emit_dfa.c:723` `emit_req_run_check` (verify half) | compile time | both (shared text) | **`!memcmp(s+c-i, "run", L)` with a constant L ≤ 8**. The one site gcc fuses |
-| `emit_dfa.c:5158` `ofsk_emit_verify` | compile time | DFA / hybrid prefilter | a `&&` chain of `s[cand+k]==b` or `ofs_k<k>[s[cand+k]]` over the non-scanned offsets |
+| `emit_dfa.c` `emit_req_run_check` / `emit_req_run_rest` via `emit_run_scan_loop` (verify half) | compile time | both (shared text) | **P4 (`emit_exact_compare`, [OPT-LITSCAN] S1)**: `!memcmp(s+c-i, "run", L)` with a constant L. The one site gcc fuses |
+| `emit_dfa.c` `ofsk_emit_verify` | compile time | DFA / hybrid prefilter | a `&&` chain of `s[cand+k]==b` or `ofs_k<k>[s[cand+k]]` over `OfsTest`'s terms; **on a run-pinned row the run is ONE P4 term** (S1) |
 | `enc_byte.c:153/184` `$_span_match[_caseless]` ← `emit_vm.c:8116` `vm_bref` (:8209), `:8281` `vm_var` (:8297) | **run time** | VM | a byte loop that returns a prefix count. The caseless form uses the arithmetic fold |
 | `enc_utf8.c:115/148` | run time | VM, utf8 | decode + fold. Stays its own |
 
@@ -146,7 +146,7 @@ in the utf8 `$_span_match_caseless` residual.
 |---|---|---|
 | `emit_dfa.c:4974/5002` `pf_emit_memchr[_bounded]` (`DFA_PF_MEMCHR`) | the start state's ONE escape byte | rest-of-subject `memchr`, no verify |
 | `emit_dfa.c:5023/5039` `pf_emit_bcls[_bounded]` | the escape SET | `while (!can_begin_match[s[pos]]) pos++`, one table load per byte. **This is what `(?i)union…` gets for `{u,U}`** |
-| `emit_dfa.c:5196` `pf_block_ofs` → `<p>_ofsskip` (called `:5313/5333`) | a singleton byte at the offset k* the cost model chose | `memchr(s+pos+k*)`, then the §2.3 verify chain. Selection: `prefix_k.c:386` `pcrec_prefix_ksets` |
+| `emit_dfa.c` `pf_block_ofs` → `<p>_ofsskip` | a singleton byte at the offset k* the cost model chose, or (S1's `run-pinned[-bounded]` rows) the pinned run's scan member at its offset, offset 0 included | `memchr(s+pos+k*)`, then the §2.3 verify chain; what the block tests is `OfsTest`, ONE derivation with no `Dfa` in it. Selection: `dfa_pfs[]` (the engine-neutral L3 table, D122 addendum 4) over `prefix_k.c`'s published facts |
 | `emit_dfa.c:7203` `emit_attempt` (:7554) | `(?m)^`'s predecessor byte | `memchr('\n')`, candidate = hit + 1 |
 | `emit_dfa.c:810` `pcrec_emit_req_byte_check` (+ `:723` run form); callers `emit_dfa.c:6953`, `:7220`, `emit_vm.c:12542` | the necessary byte/run anywhere in the window | `memchr` on the pick. With a run: memchr + constant memcmp, restarting per hit |
 | `emit_dfa.c:5591/5619` `dir_fwd_skip`/reverse | in-loop stay skip for state K | a table walk per state |
@@ -157,7 +157,7 @@ in the utf8 `$_span_match_caseless` residual.
 
 | site | role |
 |---|---|
-| `emit_dfa.c:5514` `req_admit` (G2 `req_route_one_attempt` :5474; G1 `req_byte_dominated_by` :5495 over `dfa_cand_scan_byte` :5429) | the one admission derivation. Four readers. G1 is one-byte-only and blind to an offset-set scan (`dfa_cand_scan_byte` returns -1 for it). Lane `k64fix` is editing G2's VM arm now |
+| `emit_dfa.c` `req_admit` (G2 `req_route_one_attempt`; G1 `req_byte_dominated_by` over `dfa_cand_scan`) | the one admission derivation. Four readers. Since S1 G1 reads every `<p>_ofsskip` row's scan byte and elides a RUN pre-check the selected test verifies at its pin; density stays one-byte/memchr-only |
 | `src/opt/reqbyte.c:583` `pcrec_req_byte` (`rb_walk` :380, `rb_pick` :517, `rn_scan_index` :539, `rn_window_start` :559) | necessary byte + run. **Literal members are `pcrec_cls_single` singletons only, so every caseless literal contributes nothing** (`reqpos_census.md` false-negative iii) |
 | `src/opt/prefix_k.c:386` `pcrec_prefix_ksets` | the offset-k sets and cost model (NFA walk) |
 | `emit_dfa.c:3268` `cand_derive` / `CandSet` | D63's candidate-set tool. Its `use_memchr` is the count==1 verdict |
@@ -208,7 +208,7 @@ in the utf8 `$_span_match_caseless` residual.
 | `[OPT-REQPOS]` 2b | L3 + L2 (the REQ_RUN loop) | P3, P6, P7 | **the first instance of P4+P5** (`emit_req_run_check`) | — (it is the seed; it becomes a caller when the kit is extracted) |
 | `[OPT-FREQPICK]` | L4 selection | P6 | the pick | its own encoding gate (move it to P6: D7) |
 | `[OPT-PRECHECK-ADMIT]` | L4 | P6, the DFA scan selection | P7 | — (K64 fix A in flight, lane k64fix) |
-| `[OPT-K]` (shipped) | L3 | P6 (ungated, D7), the NFA walk | `PrefixKSets` (feeds P3) | the verify compare, once P4 exists (a caller) |
+| `[OPT-K]` (shipped) | L3 | P6 (ungated, D7), the NFA walk | `PrefixKSets` (feeds P3), and since S1 the run pin (`run_pinned`/`run_o`) | the verify compare: P4 exists since S1 and the run term is its caller |
 | `[PATFACTS]` (D120) | L4 facts | every analysis above | the one record (P3, the prior's readers, carried facts) | — (its STEP 1 inventory can start from §2 of this map) |
 | `[OPT-DIAL]` | cross-cutting | λ | the FORM choice's size/speed term | per-site thresholds (the dial keys P5's form and `[CLS-TREE]`'s sections, not each site) |
 | `[ENG-PGO]` `freq` block | cross-cutting | a findings file | P6's value, with its encoding key | a second prior table |

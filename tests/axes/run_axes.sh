@@ -296,7 +296,13 @@ done < <("$TIMEOUT_BIN" 60 "$PCREC" --list-axes \
           | grep -v '^#' \
           | awk -F'\t' 'NF > 10 {
                 split($11, f, " / ")
-                if ($7  != "" && f[1] != "" && f[1] !~ /^--/) print $7  "\t" f[1]
+                # [OPT-LITSCAN] S1: a multi-bit deny cell is `|`-joined in
+                # lockstep across the macro and flag columns (the run-pinned
+                # rows carry two bits) -- pair each half with its own flag.
+                if ($7  != "" && f[1] != "" && f[1] !~ /^--/) {
+                    nm = split($7, dm, "|"); nf = split(f[1], df, "|")
+                    for (i = 1; i <= nm && i <= nf; i++) print dm[i] "\t" df[i]
+                }
                 if ($9  != "" && f[2] != "") print $9 "\t" f[2]
                 else if ($9 != "" && $7 == "" && f[1] != "") print $9 "\t" f[1]
             }')

@@ -93,6 +93,8 @@ static const AxisDesc AXIS_DESC[] = {
     { "table", "premultiplied", "this machine's states*classes <= 65535 and no emitted seed cell is negative" },
     { "table", "indexed", "always (fallback)" },
 
+    { "prefilter", "run-pinned-bounded", "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated; under a $/\\Z/\\z view or a word-context accept ([OPT-LITSCAN] S1)" },
+    { "prefilter", "run-pinned", "forward scan, the necessary run is pinned at a fixed offset and the scan already runs on its scan member there: the whole run verified as one compare per candidate, the run pre-check then dominated ([OPT-LITSCAN] S1)" },
     { "prefilter", "offset-set-bounded", "forward scan, an offset-k candidate SET was selected, under a $/\\Z/\\z view or a word-context accept ([OPT-K])" },
     { "prefilter", "offset-set", "forward scan, an offset-k candidate SET was selected: one memchr at the chosen offset k*, the other offsets verified per candidate ([OPT-K])" },
     { "prefilter", "memchr-bounded", "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept" },
@@ -203,12 +205,12 @@ static const char *stamp_macro_of(const char *axis)
 /* The `#define` name (deny or force macro) whose value equals `v`, iterated
  * off core/axes.def -- the same table axis_cli_flag reads, so a bit's macro
  * name and its CLI spelling cannot drift. NULL for a bit with no row. */
-static const char *axis_macro_name(unsigned v)
+static const char *axis_macro_name(uint64_t v)
 {
     if (!v) return NULL;
 #define PCREC_AXIS(dm, df, fm, ff, defst)                 \
-    if ((dm) && (unsigned)(dm) == v) return #dm;          \
-    if ((fm) && (unsigned)(fm) == v) return #fm;
+    if ((dm) && (uint64_t)(dm) == v) return #dm;          \
+    if ((fm) && (uint64_t)(fm) == v) return #fm;
 #include "core/axes.def"
     return NULL;
 }
@@ -216,22 +218,37 @@ static const char *axis_macro_name(unsigned v)
 /* The CLI spelling a row reports, rendered from the bits it carries: the
  * deny flag, the force flag, or `"deny / force"` for the two axes that are a
  * pair. A row with no bits reports nothing from here — its `cli_flag`, if it
- * has one at all, is a VALUE parameter (`--engine=`) the caller states. */
-static void axis_cli_flag(unsigned deny, unsigned force, char *buf, size_t cap)
+ * has one at all, is a VALUE parameter (`--engine=`) the caller states.
+ *
+ * [OPT-LITSCAN] S1: a candidate removed by EITHER of two deny bits (the
+ * run-pinned prefilter rows) reports both flags `|`-joined, lowest bit first
+ * — docs/spec/registry.md's one convention for a multi-bit deny cell. */
+static void axis_cli_flag(uint64_t deny, uint64_t force, char *buf, size_t cap)
 {
-    const char *d = NULL, *f = NULL;
+    char d[96] = "";
+    const char *f = NULL;
+    size_t n = 0;
     buf[0] = 0;
+    for (unsigned b = 0; b < 64; b++) {
+        const uint64_t bit = (uint64_t)1 << b;
+        const char *one = NULL;
+        if (!(deny & bit)) continue;
 #define PCREC_AXIS(dm, df, fm, ff, defst)                        \
-    if ((dm) && (unsigned)(dm) == deny)  d = df;                 \
-    if ((fm) && (unsigned)(fm) == force) f = ff;
+        if ((dm) && (uint64_t)(dm) == bit) one = df;
 #include "core/axes.def"
-    if (d && f) snprintf(buf, cap, "%s / %s", d, f);
-    else if (d) snprintf(buf, cap, "%s", d);
+        if (one && n < sizeof d)
+            n += (size_t)snprintf(d + n, sizeof d - n, "%s%s", n ? "|" : "", one);
+    }
+#define PCREC_AXIS(dm, df, fm, ff, defst)                        \
+    if ((fm) && (uint64_t)(fm) == force) f = ff;
+#include "core/axes.def"
+    if (d[0] && f) snprintf(buf, cap, "%s / %s", d, f);
+    else if (d[0]) snprintf(buf, cap, "%s", d);
     else if (f) snprintf(buf, cap, "%s", f);
 }
 
 /* The bit INDEX of the single set bit in `flag` (0 for flag<=1). */
-static unsigned bit_of(unsigned flag)
+static unsigned bit_of(uint64_t flag)
 {
     unsigned b = 0;
     while (flag > 1u) { flag >>= 1; b++; }
@@ -240,15 +257,25 @@ static unsigned bit_of(unsigned flag)
 
 /* Renders a deny/force value's macro-name column (axis_macro_name, or a bare
  * hex number when no row claims the bit -- a merge-safety fallback) and its
- * bit-index column (bit_of) into `macro`/`bit`. */
-static void deny_cols(unsigned v, char *macro, size_t macrocap, char *bit, size_t bitcap)
+ * bit-index column (bit_of) into `macro`/`bit`, one entry per set bit,
+ * `|`-joined lowest first when a candidate carries more than one
+ * ([OPT-LITSCAN] S1's two-bit deny; axis_cli_flag's convention). */
+static void deny_cols(uint64_t v, char *macro, size_t macrocap, char *bit, size_t bitcap)
 {
+    size_t m = 0, k = 0;
     macro[0] = 0; bit[0] = 0;
-    if (!v) return;
-    const char *n = axis_macro_name(v);
-    if (n) snprintf(macro, macrocap, "%s", n);
-    else   snprintf(macro, macrocap, "0x%x", v);   /* a bit with no row */
-    snprintf(bit, bitcap, "%u", bit_of(v));
+    for (unsigned b = 0; b < 64; b++) {
+        const uint64_t one = (uint64_t)1 << b;
+        if (!(v & one)) continue;
+        const char *n = axis_macro_name(one);
+        if (m < macrocap) {
+            if (n) m += (size_t)snprintf(macro + m, macrocap - m, "%s%s", m ? "|" : "", n);
+            else   m += (size_t)snprintf(macro + m, macrocap - m, "%s0x%llx", m ? "|" : "",
+                                         (unsigned long long)one);   /* a bit with no row */
+        }
+        if (k < bitcap)
+            k += (size_t)snprintf(bit + k, bitcap - k, "%s%u", k ? "|" : "", bit_of(one));
+    }
 }
 
 /* ---- one TSV row -------------------------------------------------------- */
@@ -364,8 +391,8 @@ typedef struct {
     const char *stamp_macro;
     const char *stamp_value;   /* "" when the stamp is a count/bitmask,
                                  * never a single value this candidate owns */
-    unsigned    deny_val;   const char *deny_macro;
-    unsigned    force_val;  const char *force_macro;
+    uint64_t    deny_val;   const char *deny_macro;
+    uint64_t    force_val;  const char *force_macro;
     const char *cli_flag;
     const char *applies;
 } PredAxis;
@@ -384,7 +411,7 @@ typedef struct {
  * fact. */
 static void emit_pred_row(StrBuf *sb, const PredAxis *p, int order,
                           const char *candidate, const char *stamp_value,
-                          unsigned deny_val, unsigned force_val,
+                          uint64_t deny_val, uint64_t force_val,
                           const char *cli_flag_lit, const char *applies)
 {
     char db[8] = "", fb[8] = "", flag[96];

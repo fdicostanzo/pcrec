@@ -541,8 +541,9 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   generated code. Its NEGATIVE counterpart — no engine body may CALL a
   residual entry — lives in tests/codegen/ instead; see its own CLAUDE.md
   for why the two cannot substitute for each other
-- **offsetskip/** — [OPT-K]'s OFFSET-k candidate-start skip, as ANSWERS. One
-  `.rxt` file, no runner: the mechanism's structural facts live in
+- **offsetskip/** — [OPT-K]'s OFFSET-k candidate-start skip, as ANSWERS. Two
+  `.rxt` files (the second, `run_pinned.rxt`, is [OPT-LITSCAN] S1's
+  run-pinned rows), no runner: the mechanism's structural facts live in
   `tests/codegen/run_offset_skip.sh` and the two files NAME THE SAME PATTERNS
   on purpose, because the skip is answer-identity-preserving by construction
   and this corpus would pass just as well on a compiler that had stopped

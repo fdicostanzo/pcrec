@@ -314,6 +314,12 @@ construction (src/ir) and emission (src/gen).
   (the artifact, the population, and the prior's own sum), sabotage rows
   S185/S186/S187.
 
+  **[OPT-LITSCAN] S1** it also PUBLISHES one fact and acts on none of it:
+  `PrefixKSets.run_pinned`/`run_o`, whether `Job.req_run` (the same window
+  the pre-check emits) sits at a fixed offset of every match, read off the
+  walk's own singletons before any `k0`-dependent return. The DECISION is
+  `src/gen/emit_dfa.c`'s run-pinned rows; the selection code, constants and
+  role comments here are unchanged (docs/design/litscan_s1.md §1.1).
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass

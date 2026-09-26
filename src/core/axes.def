@@ -128,12 +128,16 @@ PCREC_AXIS(PCREC_NO_CLS_FOLD,      "-fno-cls-fold",      0, "", PCREC_AXIS_DEFAU
 PCREC_AXIS(PCREC_NO_TIERED_ENTRY, "-fno-tiered-entry", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SIZE_TERM,    "-fno-size-term",    0, "", PCREC_AXIS_DEFAULT_ON)
 
-/* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5]) ----
- * These five are the ones `--list-axes` reports on its `list`-kind rows,
+/* ---- the DFA scan's own axes ([OPT-3], [OPT-K], [ENG-ABS], [OPT-5],
+ * [OPT-LITSCAN]) ----
+ * These six are the ones `--list-axes` reports on its `list`-kind rows,
  * where the deny bit comes straight off `src/gen/emit_dfa.c`'s own live
  * candidate arrays rather than from a hand-written row. */
 PCREC_AXIS(PCREC_NO_PREMUL_TABLE, "-fno-premul-table", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_OFFSET_SKIP,  "-fno-offset-skip",  0, "", PCREC_AXIS_DEFAULT_ON)
+/* [OPT-LITSCAN] S1: the run-pinned prefilter rows, which ALSO carry the
+ * offset-skip bit above (lib/pcrec.h at both macros). */
+PCREC_AXIS(PCREC_NO_RUN_PREFILTER, "-fno-run-prefilter", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_ANCHORED_DFA, "-fno-anchored-dfa", 0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_SCAN_EDGE,    "-fno-scan-edge",    0, "", PCREC_AXIS_DEFAULT_ON)
 PCREC_AXIS(PCREC_NO_START_PINNED, "-fno-start-pinned", 0, "", PCREC_AXIS_DEFAULT_ON)

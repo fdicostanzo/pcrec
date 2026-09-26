@@ -6,8 +6,8 @@ a	EMITTED_BYTES	22415
 abc	RX_ENGINE	"dfa"
 abc	RX_ENGINE_SEL	"selected"
 abc	RX_DFA_TABLE	"premultiplied"
-abc	RX_DFA_PREFILTER	"offset-set"
-abc	EMITTED_BYTES	23627
+abc	RX_DFA_PREFILTER	"run-pinned"
+abc	EMITTED_BYTES	23084
 a(b|c)+d	RX_ENGINE	"vm"
 a(b|c)+d	RX_ENGINE_SEL	"selected"
 a(b|c)+d	RX_DFA_TABLE	"premultiplied"
@@ -24,8 +24,8 @@ a(b|c)+d	EMITTED_BYTES	31072
 (a)(b)(c)	RX_VM_STRATS	0x0u
 (a)(b)(c)	RX_VM_ALT_ISLANDS	0
 (a)(b)(c)	RX_VM_FRAMELESS	1
-(a)(b)(c)	RX_DFA_PREFILTER	"offset-set"
-(a)(b)(c)	EMITTED_BYTES	31139
+(a)(b)(c)	RX_DFA_PREFILTER	"run-pinned"
+(a)(b)(c)	EMITTED_BYTES	30596
 [a-z]+@[a-z]+	RX_ENGINE	"dfa"
 [a-z]+@[a-z]+	RX_ENGINE_SEL	"selected"
 [a-z]+@[a-z]+	RX_DFA_TABLE	"premultiplied"
@@ -65,8 +65,8 @@ cat|dog|cow|calf|camel	EMITTED_BYTES	27218
 (?<=foo)bar	RX_VM_STRATS	0x0u
 (?<=foo)bar	RX_VM_ALT_ISLANDS	0
 (?<=foo)bar	RX_VM_FRAMELESS	1
-(?<=foo)bar	RX_DFA_PREFILTER	"memchr"
-(?<=foo)bar	EMITTED_BYTES	31452
+(?<=foo)bar	RX_DFA_PREFILTER	"run-pinned"
+(?<=foo)bar	EMITTED_BYTES	31264
 (a(?1)?b)	RX_ENGINE	"vm"
 (a(?1)?b)	RX_ENGINE_SEL	"selected"
 (a(?1)?b)	RX_VM_RUNGS	0x2u

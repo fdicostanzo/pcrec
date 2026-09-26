@@ -379,7 +379,12 @@ enum {
      * behave identically must not differ in their reflection surface over it.
      * What the emitter DID is reported by `<PREFIX>_DFA_PREFILTER`
      * (`"offset-set"` / `"offset-set-bounded"`) and by
-     * `<PREFIX>_DFA_PREFILTER_OFFSETS`, which names the chosen offsets. */
+     * `<PREFIX>_DFA_PREFILTER_OFFSETS`, which names the chosen offsets.
+     *
+     * [OPT-LITSCAN] S1: it ALSO removes the run-pinned rows
+     * (`"run-pinned"` / `"run-pinned-bounded"`, `PCREC_NO_RUN_PREFILTER`
+     * below), which emit the same `<PREFIX>_ofsskip` block — so the denied
+     * build is still the pre-`[OPT-K]` artifact. */
     PCREC_NO_OFFSET_SKIP = PCREC_BIT(16),
 
     /* [ENG-ABS] `-fno-anchored-dfa` — deny the UNWRAPPED anchored match-here
@@ -847,6 +852,37 @@ enum {
  * `@` and the scanned member's index (`2e746172@0` for `.tar`), or
  * `"none"`. */
 #define PCREC_NO_REQ_RUN PCREC_BIT(31)
+
+/* [OPT-LITSCAN] S1 `-fno-run-prefilter` — DENY THE RUN-PINNED PREFILTER ROWS.
+ *
+ * Where the necessary run `PCREC_NO_REQ_RUN` describes sits at a FIXED
+ * offset from every match's start (the offset-k walk proves each of its bytes
+ * there) and the DFA's candidate-start scan already scans the run's own scan
+ * member at that offset, the prefilter tests the WHOLE run on each candidate
+ * — one constant-length compare in its `<PREFIX>_ofsskip` block — instead of
+ * leaving the run to a separate whole-window pre-check that scans the same
+ * byte a second time. The pre-check is then dominated and not emitted
+ * (`<PREFIX>_REQ_WHY "dominated"`). `<PREFIX>_DFA_PREFILTER` reads
+ * `"run-pinned"` or `"run-pinned-bounded"` on such an artifact
+ * (docs/design/litscan_s1.md).
+ *
+ * ANSWER-IDENTITY-PRESERVING: every refusal is a byte the walk proves every
+ * match carries at that offset, so the skip refuses only starts the stepped
+ * scan would refuse. Denied, the artifact is the one this compiler emitted
+ * before the rows existed: the prefilter falls back to `memchr[-bounded]` or
+ * `offset-set[-bounded]` and the run pre-check returns.
+ *
+ * THE ROWS CARRY TWO DENY BITS, this one and `PCREC_NO_OFFSET_SKIP`, and
+ * either removes them: they emit the `<PREFIX>_ofsskip` block, so they are
+ * members of the offset-skip family, and `-fno-offset-skip` keeps its promise
+ * of the pre-`[OPT-K]` artifact only if it removes them too.
+ *
+ * Masked out of `rx_info.flags` (`strategy_denials`) for the mask's own
+ * reason: it changes no answer. Bit 32, so a `#define` (see the note above
+ * `PCREC_NO_REQ_RUN`): the first bit past the `unsigned` range, and the
+ * reason every deny field and parameter that carries a bit became
+ * `uint64_t` before it landed. */
+#define PCREC_NO_RUN_PREFILTER PCREC_BIT(32)
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",

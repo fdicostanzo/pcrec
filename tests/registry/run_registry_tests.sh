@@ -563,17 +563,31 @@ fi
 # self-registering the same triple. A FOURTH instance of the addendum's shape,
 # found the same way — by running the suite that counts, not by grepping the
 # abi digit this line still does not cite.
+#
+# 123 -> 135 at `[OPT-LITSCAN]` S1 (2026-09-25): the two run-pinned prefilter
+# candidates (`run-pinned-bounded`, `run-pinned`) each carry a `|`-joined
+# TWO-BIT deny cell (`PCREC_NO_OFFSET_SKIP` bit 16 already registered
+# elsewhere, plus the new `PCREC_NO_RUN_PREFILTER` bit 32), and
+# axes_registry_check.sh's own S1 addition (the multi-bit-deny arm) checks
+# EACH half of the pair as its own (macro, bit, flag) triple — 2 candidates
+# x 2 bits x 3 checks = 12 new PASS lines, none of them the single new-axis
+# triple a reader would guess from bit 32 alone (that guess is 6, not 12).
+# A FIFTH instance of the D94 addendum's shape: this pin cites no axis, no
+# macro and no abi digit, so the bump's own grep sweep cannot reach it, and
+# it moved anyway; verified against the script's own live output (12 lines,
+# 6 per candidate, `bit 16`/`bit 32` interleaved) rather than assumed from
+# the bit count.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 123 ]; then
+if [ "$axesn" -ne 135 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 123." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 135." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (123 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (135 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 123 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 135 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

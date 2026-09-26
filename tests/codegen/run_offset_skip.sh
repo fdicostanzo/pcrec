@@ -117,7 +117,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # checks rather than accepting whatever the emitter says
 # (docs/spec/match_api.md §6.3). A new value needs a spec hunk and a line
 # here, in the same change.
-OFS_VALUES="offset-set offset-set-bounded"
+OFS_VALUES="offset-set offset-set-bounded run-pinned run-pinned-bounded"
 
 # THE CAP, spelled here as a SECOND source. `PCREC_OFSK_MAX_SET` in
 # src/core/internal.h is the first; a check that read the compiler's own
@@ -180,8 +180,12 @@ fi
 #          scan byte (decimal) | maxk
 # Every value is a LITERAL from docs/design/offset_k_skip.md §4.7, never read
 # back out of the artifact.
-witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk>
+witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk> [<run compare> <byte terms>]
+    # [OPT-LITSCAN] S1: a run-pinned witness also names the ONE P4 compare its
+    # run term must emit (verbatim) and how many walk-offset terms remain
+    # beside it, since the run's own offsets are one compare, not one term each.
     local lbl="$1" pat="$2" xs="$3" xo="$4" ks="$5" by="$6" mk="$7"
+    local xrun="${8:-}" xterms="${9:-}"
     local f="$WORKDIR/w.c"
     emit w "$pat" || { bad "§2 [$lbl] '$pat' did not compile"; return; }
 
@@ -228,6 +232,11 @@ witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk>
     # the VERIFY CHAIN has exactly (members - 1) terms
     local want_terms got_terms
     want_terms=$(( $(printf '%s' "$xo" | awk -F, '{print NF}') - 1 ))
+    if [ -n "$xrun" ]; then
+        want_terms="$xterms"
+        printf '%s\n' "$blk" | grep -qF "$xrun" \
+            || bad "§2 [$lbl] the helper does not carry the run term '$xrun' — the pinned run is not compared as one P4 term at its pin"
+    fi
     got_terms=$(printf '%s\n' "$blk" | grep -cE 'subject\[cand( \+ [0-9]+)?\]')
     # the scan's own line does not read subject[cand], so every match is a verify
     if [ "$got_terms" = "$want_terms" ]; then
@@ -235,9 +244,10 @@ witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk>
     else
         bad "§2 [$lbl] the helper reads subject[cand...] $got_terms time(s), expected $want_terms (one per selected offset except the scan)"
     fi
-    # the cap
+    # the cap (the run's offsets are one term outside it, tuning.md §2.30)
     local nmem
     nmem=$(printf '%s' "$xo" | awk -F, '{print NF}')
+    [ -n "$xrun" ] && nmem=$(( xterms + 1 ))
     [ "$nmem" -le "$OFSK_MAX_SET" ] \
         || bad "§2 [$lbl] the k-set has $nmem members, above the cap $OFSK_MAX_SET"
 }
@@ -247,6 +257,12 @@ witness "iso-ts"       '\d{4}-\d{2}-\d{2}'                        offset-set    
 witness "uuid"         '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b'  offset-set-bounded '0,8*,13' 8 45 13
 witness "stack-frame"  '\bat [a-z]'                               offset-set-bounded   '0,1*'      1  116   1
 witness "needleXYZW"   'needleXYZW'                               offset-set           '0,6*'      6   88   6
+# [OPT-LITSCAN] S1: router (class B: scan at offset 0, no model selection),
+# `foo\b` (its bounded twin) and `[ab]/user` (class C1: the model's own scan
+# offset 1 is the run's scan member, offset 0 stays a table verify).
+witness "router"       '/user|/users'                             run-pinned           '0*,1,2,3,4' 0 47  4 '!memcmp(subject + cand, "/user", 5)' 0
+witness "foo-b"        'foo\b'                                    run-pinned-bounded   '0*,1,2'     0 102 2 '!memcmp(subject + cand, "foo", 3)' 0
+witness "ab-user"      '[ab]/user'                                run-pinned           '0,1*,2,3,4,5' 1 47 5 '!memcmp(subject + cand + 1, "/user", 5)' 1
 
 # =========================================================================
 # §2b THE RESEED — the one place a wrong answer is reachable

@@ -3228,4 +3228,13 @@ never edited afterwards.
   make its own documented shard-total integrity check possible, and the
   reading taken for "normalizes to RUNEST's unigram" (count identity with
   `ngram_count.py` plus an independent §2.5 reimplementation, since B1's
-  own function does not exist yet). PARKED on `lane/findb3`, not merged.
+  own function does not exist yet). MERGED 2026-09-26.
+- `s1build_report.md` — `[OPT-LITSCAN]` S1 steps 1-5 built per
+  `docs/design/litscan_s1.md` revision 3 (2026-09-25): uint64 deny
+  plumbing, P4 `emit_exact_compare`, `OfsTest`, the run pin, G1 widened and
+  the run-pinned row pair with `-fno-run-prefilter` (bit 32), abi 35 -> 36.
+  Movers equal the census BY ID (corpus 505, not 513 — `census.py`'s
+  non-ASCII argv bug found and fixed); sabotage S279-S284 (row (j)
+  UNDETECTED with its measured derivation); step 6 NOT built, the report
+  states what it must re-derive on K66's shared scan loop. Finish (lane
+  s1finish): registry/resource re-pins, sabotage S285-S289. MERGED 2026-09-26.

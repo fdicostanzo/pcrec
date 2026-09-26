@@ -305,8 +305,16 @@ floor_check "D:RX_DFA_PREFILTER=none"         500
 # sight — K35: every value the corpus reaches gets a floor in the same change).
 floor_check "D:RX_DFA_PREFILTER=memchr"       750
 floor_check "D:RX_DFA_PREFILTER=byte-class"   250
-floor_check "D:RX_DFA_PREFILTER=offset-set"   300
+# [OPT-LITSCAN] S1 (2026-09-25, abi 36) put the run-pinned pair ahead of
+# both: pinned-run artifacts with no k-set leave memchr[-bounded] and those
+# whose k-set scans the run leave offset-set[-bounded]. Measured on this
+# census at the S1 build: memchr 872, offset-set 322 (floor re-derived
+# 300 -> 290), offset-set-bounded 34, run-pinned 150, run-pinned-bounded
+# 14 (both floored on first sight, K35).
+floor_check "D:RX_DFA_PREFILTER=offset-set"   290
 floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
+floor_check "D:RX_DFA_PREFILTER=run-pinned"   130
+floor_check "D:RX_DFA_PREFILTER=run-pinned-bounded" 12
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # [ENG-ABS] (2026-08-29, abi 10) axis G. Measured on this tree: 825
 # `unwrapped` and 184 `search-filter` (180 of them ENG_ATTEMPT, 4 the empty
@@ -404,6 +412,7 @@ declare -A KNOWN_VALUES=(
     ["D:RX_DFA_PREFILTER=byte-class"]=1 ["D:RX_DFA_PREFILTER=memchr-bounded"]=1
     ["D:RX_DFA_PREFILTER=byte-class-bounded"]=1
     ["D:RX_DFA_PREFILTER=offset-set"]=1 ["D:RX_DFA_PREFILTER=offset-set-bounded"]=1
+    ["D:RX_DFA_PREFILTER=run-pinned"]=1 ["D:RX_DFA_PREFILTER=run-pinned-bounded"]=1
     ["D:RX_DFA_TABLE=premultiplied"]=1 ["D:RX_DFA_TABLE=indexed"]=1
     ["D:RX_DFA_TABLE=mixed"]=1 ["D:RX_DFA_TABLE=none"]=1
     ["D:RX_VM_PREFILTER=hybrid"]=1 ["D:RX_VM_PREFILTER=none"]=1
