@@ -40,7 +40,7 @@ a(b|c)+d	EMITTED_BYTES	31072
 \bword\b	RX_ENGINE_SEL	"selected"
 \bword\b	RX_DFA_TABLE	"premultiplied"
 \bword\b	RX_DFA_PREFILTER	"offset-set-bounded"
-\bword\b	EMITTED_BYTES	27302
+\bword\b	EMITTED_BYTES	27284
 (?i)HeLLo	RX_ENGINE	"dfa"
 (?i)HeLLo	RX_ENGINE_SEL	"selected"
 (?i)HeLLo	RX_DFA_TABLE	"premultiplied"

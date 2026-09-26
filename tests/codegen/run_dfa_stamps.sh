@@ -263,8 +263,13 @@ read_artifact() {
         # [OPT-LITSCAN] S1 the RUN TERM, read off the helper body itself: the
         # one compare an offset-set helper never emits (its verifies are byte
         # compares and table probes), so it tells the run rows apart without
-        # reading the stamp.
-        /!memcmp\(subject \+ cand/                     { ofs_run = 1 }
+        # reading the stamp. SCOPED TO THE rx_ofsskip BODY since S1 step 6:
+        # the run pre-check blocks (rx_reqrun, rx_reqrun_whole) come from the
+        # same emitter and carry the same compare, and an unscoped match read
+        # every offset-set artifact with a run pre-check as run-pinned.
+        /^static inline size_t rx_ofsskip\(/            { in_ofs = 1 }
+        /^}$/                                           { in_ofs = 0 }
+        in_ofs && /!memcmp\(subject \+ cand/           { ofs_run = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
