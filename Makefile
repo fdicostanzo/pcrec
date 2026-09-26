@@ -1165,6 +1165,19 @@ test-capturediff: all
 test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
+# [FINDINGS] step B3 (docs/design/findings/design.md §13's B3 row, lane
+# `findb3`, 2026-09-26): the analyzer PROTOTYPE's own checks
+# (scripts/pcrec_analyze.py). DELIBERATELY LIGHT and NOT in TEST_SECTIONS:
+# python3-only, no `all` dependency (the tool needs no built pcrec/libpcrec
+# at all — it never touches this repo's C), and B0/B1/B2 have not landed
+# yet, so there is no `.rxt` schema, accessor or `--list-analysis` CLI for
+# a heavier suite to exercise. B1's own lane is expected to fold this
+# section into `TEST_SECTIONS` once the accessor exists to check answer
+# identity against (see docs/dev/lanes/findb3_report.md's manager-review
+# items). Verdict per BOILERPLATE/[r2 S-F13]: `*** [test-findings] Error`.
+test-findings:
+	python3 tests/findings/run_analyzer_tests.py
+
 # [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md
 # "Tiered testing" has the per-section numbers this was chosen from). The
 # three slow sections are deliberately OUT: test-corpus (~304s), test-reject
