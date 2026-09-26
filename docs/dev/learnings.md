@@ -355,6 +355,33 @@ distilled forms:
   what reads `find tests -name '*.rxt'` or an equivalent whole-corpus
   walk, not by re-running the two files a diff shows as changed.
 
+### 3.aa (2026-09-26) — a triage read off a sweep log's STDERR sample sees a LOWER BOUND, never the population
+
+- **`tests/axes/dump_diff.awk` caps its per-bucket human-readable print at
+  20 lines** (a deliberate convention shared with
+  `tests/possessify/possdiff_driver.c`'s divergence cap) — uncapped
+  counting still drives the pass/fail verdict, but the STDERR sample a
+  triage reads is truncated. On 2026-09-26 a triage read the `-fno-req-byte`
+  axis's `giveup1` bucket off the printed sample and saw only k65/k66
+  cells, because the sample happened to print 20 of exactly those two
+  kinds first — the UNCAPPED rowsfile behind that same run held 45 cells:
+  18 k65, 12 k66, 4 k64, and 11 from `tests/recursion/d27/sr_depth.rxt`
+  (K34's own population), none of which the printed sample showed at all.
+  `[GIVEUP1_ALLOWANCE]`'s later population count (lane giveupallow2, 67
+  entries across `-fno-req-byte`/`-fno-req-run`/`--engine=vm`) is the
+  correction.
+- **The transferable form, extending 3.y/3.z's "a check's summary line
+  is not its population" lesson to a HUMAN-FACING sample specifically**:
+  a capped print exists to keep a terminal readable, not to describe a
+  bucket's membership, and a triage that treats the sample as the
+  population is reading a lower bound as if it were exhaustive — always
+  read a bucket's true membership from the rowsfile/manifest the cap sits
+  in front of (or an uncapped re-run), never from what scrolled past.
+  Cross-ref K35 ("populations nobody counts") — the same failure shape,
+  here at the reading end rather than the counting end: K35's checks never
+  counted the whole population in the first place, while this triage had
+  the whole population on disk and read the truncated printout instead.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
