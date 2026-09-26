@@ -84,6 +84,16 @@ emit() {
 }
 # the value of a string stamp, or the empty string when the macro is absent
 stamp() { sed -n "s/^#define RX_$2 \"\\(.*\\)\"\$/\\1/p" "$1" | head -1; }
+# [OPT-LITSCAN] S1 step 6: the RUN pre-check is a call of a file-scope search
+# block written by the offset-skip block's own emitter (`ofs_test_emit_fn`):
+# `rx_reqrun` for the window and, [K66], `rx_reqrun_whole`. `reqrun_fn FILE
+# [whole]` prints that block; PRECHK_RE matches either pre-check form's text
+# (the one-byte check's memchr, or a call of the run block) and NOT the
+# candidate-start prefilter's own memchr, which scans `pos`/`scan_position`.
+reqrun_fn() { sed -n "/^static inline size_t rx_reqrun${2:+_$2}(/,/^}\$/p" "$1"; }
+PRECHK_RE='memchr(subject + search_from,\|rx_reqrun(subject, subject_length, search_from)'
+# reqrun_scans FILE BYTE: the window block's memchr is for BYTE
+reqrun_scans() { reqrun_fn "$1" | grep -q "memchr(subject + pos[ +0-9]*, $2, n - pos"; }
 
 # =========================================================================
 # SECTION 1 — [OPT-ANCHOR-VM]: <PREFIX>_VM_START and the bound it names
@@ -375,14 +385,14 @@ while IFS='%' read -r pat _sep want wantrun; do
         bad "[3.1w] $pat: RX_REQ_BYTE \"$got\" and RX_REQ_WHY \"$gotwhy\" disagree about whether a byte was derived"
     fi
     if [ "$gotwhy" != "emitted" ]; then
-        grep -q 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a" \
+        grep -q "$PRECHK_RE" "$a" \
             && bad "[3.1b] $pat: RX_REQ_WHY \"$gotwhy\" and still emits a required-byte memchr" \
             || ok "[3.1b] $pat: RX_REQ_WHY \"$gotwhy\" — no pre-check emitted"
     elif [ "$gotrun" != "none" ]; then
         # The RUN form scans a moving position, so its memchr's second
         # argument is where the stamped byte appears; §4 asserts the loop's
         # own shape and the compare.
-        grep -q "memchr(subject + rp_pos, ${got}, subject_length - rp_pos)" "$a" \
+        reqrun_scans "$a" "$got" \
             && ok "[3.1b] $pat: the run scan's memchr carries the stamped byte $got" \
             || bad "[3.1b] $pat: stamps \"$got\" with run \"$gotrun\" but no run-scan memchr for that byte is emitted"
     else
@@ -422,7 +432,7 @@ if emit "$WORKDIR/s3_deny.c" 'a=b' -fno-req-byte; then
     got="$(stamp "$WORKDIR/s3_deny.c" REQ_BYTE)"
     gotrun="$(stamp "$WORKDIR/s3_deny.c" REQ_RUN)"
     if [ "$got" = "none" ] && [ "$gotrun" = "none" ] \
-       && ! grep -q 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$WORKDIR/s3_deny.c"; then
+       && ! grep -q "$PRECHK_RE" "$WORKDIR/s3_deny.c"; then
         ok "[3.2] -fno-req-byte: a=b stamps \"none\" for BOTH facts and emits no pre-check"
     else
         bad "[3.2] -fno-req-byte: a=b stamps byte \"${got:-<absent>}\" / run \"${gotrun:-<absent>}\" / pre-check text still present"
@@ -444,7 +454,7 @@ for e in dfa vm; do
         # stamp is asserted beside it rather than instead of it.
         [ "$(stamp "$WORKDIR/s3_$e.c" REQ_BYTE)" = "122" ] \
             && [ "$(stamp "$WORKDIR/s3_$e.c" REQ_RUN)" = "3d7a@1" ] \
-            && grep -q 'memchr(subject + rp_pos, 122, subject_length - rp_pos)' "$WORKDIR/s3_$e.c" \
+            && reqrun_scans "$WORKDIR/s3_$e.c" 122 \
             && ok "[3.3] --engine=$e: a backreference pattern stamps 122 / 3d7a@1 and emits its run scan" \
             || bad "[3.3] --engine=$e: the backreference witness does not carry the byte and run in both the stamps and the emitted scan"
     else
@@ -463,7 +473,10 @@ fi
 # window-empty arm must come FIRST and must short-circuit.
 # Asserted on BOTH emitted shapes, because the obligation is the same and the
 # text is not: the one-byte check folds the empty-window arm into its own `||`,
-# and the run check states it as a standalone `return 0;` above the scan loop.
+# and the run check's `rx_reqrun` block opens with its loop guard
+# `pos + L-1 < n`, false on an empty window, so its memchr is never reached
+# there and the block returns `n` (S1 step 6; before it, a standalone
+# `return 0;` above the scan loop).
 if emit "$WORKDIR/s3_null1.c" '\w+@\w+'; then
     grep -q 'if (subject_length <= search_from ||' "$WORKDIR/s3_null1.c" \
         && ok "[3.4] the one-byte pre-check tests the window for emptiness before dereferencing the subject" \
@@ -473,9 +486,9 @@ fi
 # verifies the whole run, so G1 elides the pre-check (tuning.md §2.29);
 # `-fno-offset-skip` restores the pre-S1 artifact whose run check this reads.
 if emit "$WORKDIR/s3_null2.c" 'a=b' -fno-offset-skip; then
-    grep -q 'if (subject_length <= search_from) return 0;' "$WORKDIR/s3_null2.c" \
-        && ok "[3.4b] the run pre-check tests the window for emptiness before dereferencing the subject" \
-        || bad "[3.4b] the run pre-check's empty-window arm is missing — memchr(NULL, c, 0) is UB"
+    reqrun_fn "$WORKDIR/s3_null2.c" | sed -n '3p' | grep -qxF '    while (pos + 2 < n) {' \
+        && ok "[3.4b] the run pre-check's block tests the window for emptiness before dereferencing the subject" \
+        || bad "[3.4b] the run pre-check block's first statement is not its loop guard — memchr(NULL, c, 0) is UB"
 fi
 
 # §3.5 — THE POPULATION FLOOR (K35), over patterns the shipped corpus really
@@ -544,11 +557,11 @@ while IFS='%' read -r pat _sep want wantrun; do
     # and an admitted-out artifact carries a derived byte and no `memchr`.
     gotwhy="$(stamp "$a" REQ_WHY)"
     if [ "$gotwhy" != "emitted" ]; then
-        grep -q 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a" \
+        grep -q "$PRECHK_RE" "$a" \
             && bad "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" and still emits a required-byte memchr" \
             || ok "[3.6b] -e utf8: $pat: RX_REQ_WHY \"$gotwhy\" — no pre-check emitted"
     elif [ "$gotrun" != "none" ]; then
-        grep -q "memchr(subject + rp_pos, ${got}, subject_length - rp_pos)" "$a" \
+        reqrun_scans "$a" "$got" \
             && ok "[3.6b] -e utf8: $pat: the run scan's memchr carries the stamped byte $got" \
             || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no run-scan memchr for that byte is emitted"
     else
@@ -652,17 +665,21 @@ while IFS='%' read -r pat _sep run len idx off; do
     # `grep -qF`, not a BRE: a run is arbitrary pattern bytes, and a run
     # beginning with `*` makes the preceding quote a QUANTIFIER — measured on
     # the `*/x` row, which read NOMATCH against text that was verbatim present.
-    grep -qF "!memcmp(subject + rp_c${off:+ - $off}, \"$run\", $len)) break;" "$a" \
-        && ok "[4.1] $pat: compares the $len-byte run \"$run\" at rp_c${off:+ - $off}" \
-        || bad "[4.1] $pat: no constant-length memcmp of \"$run\" at rp_c${off:+ - $off} — the run's own compare is missing or moved"
+    # [OPT-LITSCAN] S1 step 6: the loop is the `rx_reqrun` block's, so the
+    # compare is always at `cand` and the offset lives in the scan and in the
+    # candidate it implies (`cand = hit - off`) — both asserted below.
+    reqrun_fn "$a" | grep -qF "if (!memcmp(subject + cand, \"$run\", $len)) return cand;" \
+        && ok "[4.1] $pat: compares the $len-byte run \"$run\" at cand" \
+        || bad "[4.1] $pat: no constant-length memcmp of \"$run\" at cand in rx_reqrun — the run's own compare is missing or moved"
     # THE SENSE, asserted separately from the run and from the offset, because
     # one sabotage row inverts exactly this and leaves both alone.
-    grep -qF '&& !memcmp(subject + rp_c' "$a" \
+    reqrun_fn "$a" | grep -qF 'if (!memcmp(subject + cand' \
         && ok "[4.1b] $pat: the compare's sense is '!memcmp(...)' — a MATCHING run breaks the scan" \
         || bad "[4.1b] $pat: the compare's sense is not '!memcmp(...)' — it may be inverted"
-    grep -qF "memchr(subject + rp_pos, $idx, subject_length - rp_pos)" "$a" \
-        && ok "[4.1c] $pat: the scan is on byte $idx" \
-        || bad "[4.1c] $pat: the scan is not on byte $idx"
+    reqrun_fn "$a" | grep -qF "memchr(subject + pos${off:+ + $off}, $idx, n - pos${off:+ - $off});" \
+        && reqrun_fn "$a" | grep -qF "cand = (size_t)((const unsigned char *)q - subject)${off:+ - $off};" \
+        && ok "[4.1c] $pat: the scan is on byte $idx at offset ${off:-0} of the run" \
+        || bad "[4.1c] $pat: the scan is not on byte $idx at offset ${off:-0} of the run"
     # AND THE WHOLE ARTIFACT COMPILES UNDER THE HARNESS'S OWN -Werror FLAGS,
     # which is the only arm that can see the two emitted-text hazards this
     # mechanism introduces: a `-Wtype-limits` always-true guard at idx 0 and a
@@ -691,7 +708,7 @@ if emit "$WORKDIR/s42run.c" 'a=b' && emit "$WORKDIR/s42byte.c" '\w+@\w+'; then
     grep -q '!memchr(subject + search_from,' "$WORKDIR/s42run.c" \
         && bad "[4.2] a run-bearing artifact ALSO emits the one-byte pre-check — the two shapes are not exclusive" \
         || ok "[4.2] a run-bearing artifact emits the run scan and not the one-byte pre-check"
-    grep -q 'rp_pos' "$WORKDIR/s42byte.c" \
+    grep -q 'rx_reqrun' "$WORKDIR/s42byte.c" \
         && bad "[4.2b] a byte-only artifact emits the run scan loop" \
         || ok "[4.2b] a byte-only artifact emits the one-byte pre-check and no scan loop"
 else
@@ -700,23 +717,30 @@ fi
 
 # §4.3 — THE WINDOW GUARD, with the POSITIVE CONTROL an absence assertion
 # needs (evtriage_report.md's lesson: an absence reads green when its needle
-# dies). At `idx > 0` the first conjunct is REQUIRED — a hit fewer than `idx`
-# bytes past `search_from` cannot be this run's own scanned member; at
-# `idx == 0` it must be ABSENT rather than emitted as `>= 0`, which is a
-# `-Wtype-limits` report under the harness's own -Werror (edge1_report.md's
-# recorded defect class, which §4.1d is the live detector for).
+# dies). The run must lie ENTIRELY inside the window, and since S1 step 6 that
+# is the `rx_reqrun` block's own guard pair: `pos + L-1 < n` on the loop and
+# `cand + L-1 >= n` on each candidate, with the scan started `idx` bytes into
+# the window so no hit before `search_from + idx` is ever a candidate. At
+# `idx == 0` the offset must be ABSENT rather than emitted as `+ 0`/`- 0`,
+# the spelling that (as a `>= 0` compare) was a `-Wtype-limits` report under
+# the harness's own -Werror (edge1_report.md's recorded defect class, which
+# §4.1d is the live detector for).
 if emit "$WORKDIR/s43a.c" 'a=b' -fno-offset-skip; then   # §4.1's reason
-    grep -qF 'if (rp_c - search_from >= 1 && rp_c - 1 + 3 <= subject_length' "$WORKDIR/s43a.c" \
-        && ok "[4.3] idx > 0: both window conjuncts are emitted" \
-        || bad "[4.3] idx > 0: the two-conjunct window guard is missing or reshaped"
+    blk="$(reqrun_fn "$WORKDIR/s43a.c")"
+    printf '%s\n' "$blk" | grep -qF 'while (pos + 2 < n) {' \
+      && printf '%s\n' "$blk" | grep -qF 'memchr(subject + pos + 1, 61, n - pos - 1);' \
+      && printf '%s\n' "$blk" | grep -qF 'if (cand + 2 >= n) return n;' \
+        && ok "[4.3] idx > 0: the loop guard, the offset scan start and the candidate bound are emitted" \
+        || bad "[4.3] idx > 0: the window guard (loop bound, scan offset, candidate bound) is missing or reshaped"
 fi
 if emit "$WORKDIR/s43b.c" '\.tar' -fno-offset-skip; then
-    if grep -qF 'if (rp_c + 4 <= subject_length' "$WORKDIR/s43b.c"; then
-        grep -q 'rp_c - search_from >=' "$WORKDIR/s43b.c" \
-            && bad "[4.3b] idx == 0: the always-true first conjunct is emitted — -Wtype-limits" \
-            || ok "[4.3b] idx == 0: the one-conjunct form is emitted and the always-true test is omitted"
+    blk="$(reqrun_fn "$WORKDIR/s43b.c")"
+    if printf '%s\n' "$blk" | grep -qF 'memchr(subject + pos, 46, n - pos);'; then
+        printf '%s\n' "$blk" | grep -qE 'pos \+ 0[,)]|- 0;' \
+            && bad "[4.3b] idx == 0: a vacuous zero offset is emitted" \
+            || ok "[4.3b] idx == 0: the offset-free form is emitted and no zero offset is spelled"
     else
-        bad "[4.3b] idx == 0: the one-conjunct window guard is missing — the positive control this absence assertion needs is dead"
+        bad "[4.3b] idx == 0: the offset-free scan is missing — the positive control this absence assertion needs is dead"
     fi
 fi
 
@@ -731,7 +755,7 @@ if emit "$WORKDIR/d1/o.c" 'a=b' -fno-offset-skip && emit "$WORKDIR/d2/o.c" 'a=b'
     r1="$(stamp "$WORKDIR/d2/o.c" REQ_RUN)"; b1="$(stamp "$WORKDIR/d2/o.c" REQ_BYTE)"
     if [ "$r1" = "none" ] && [ "$b1" = "61" ] \
        && grep -q '!memchr(subject + search_from, 61, subject_length - search_from)' "$WORKDIR/d2/o.c" \
-       && ! grep -q 'rp_pos' "$WORKDIR/d2/o.c"; then
+       && ! grep -q 'rx_reqrun' "$WORKDIR/d2/o.c"; then
         ok "[4.4] -fno-req-run: the run is gone and the one-byte check stands on the set's own pick (61)"
     else
         bad "[4.4] -fno-req-run: run \"$r1\" / byte \"$b1\" — the denial did not fall back to the one-byte check"
@@ -760,7 +784,7 @@ if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # 
     [ "$got" = "6875625f7061745f@3" ] \
         && ok "[4.5] an 11-byte run truncates to the lowest-prior 8-byte window containing its scanned member (hub_pat_ @3)" \
         || bad "[4.5] RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@3 — the truncation window rule moved"
-    grep -qF '"hub_pat_", 8)) break;' "$WORKDIR/s45.c" \
+    reqrun_fn "$WORKDIR/s45.c" | grep -qF '"hub_pat_", 8)) return cand;' \
         && ok "[4.5b] the emitted compare carries the truncated 8-byte window and no more" \
         || bad "[4.5b] the emitted compare does not carry the truncated window"
 fi
@@ -781,7 +805,8 @@ fi
 for e in dfa vm; do
     if emit "$WORKDIR/s46_$e.c" '(a)b\1=z' --engine=$e; then
         [ "$(stamp "$WORKDIR/s46_$e.c" REQ_RUN)" = "3d7a@1" ] \
-            && grep -qF '!memcmp(subject + rp_c - 1, "=z", 2)) break;' "$WORKDIR/s46_$e.c" \
+            && reqrun_fn "$WORKDIR/s46_$e.c" | grep -qF 'if (!memcmp(subject + cand, "=z", 2)) return cand;' \
+            && reqrun_fn "$WORKDIR/s46_$e.c" | grep -qF 'memchr(subject + pos + 1, 122, n - pos - 1);' \
             && ok "[4.6] --engine=$e: the run check is emitted from the one shared text" \
             || bad "[4.6] --engine=$e: the run stamp and the emitted compare do not agree"
     else
@@ -886,7 +911,7 @@ while IFS='%' read -r pat _sep want why; do
     # the candidate-start prefilter's own `memchr` is a DIFFERENT call on a
     # different position variable, and counting all of them would make this arm
     # green on a dominated artifact for the wrong reason.
-    n="$(grep -c 'memchr(subject + search_from,\|memchr(subject + rp_pos,' "$a")"
+    n="$(grep -c "$PRECHK_RE" "$a")"
     if [ "$got" = "emitted" ]; then
         s5_emitted=$((s5_emitted + 1))
         [ "$n" -ge 1 ] \
@@ -1213,11 +1238,12 @@ fi
 # `RX_REQ_RUN` names the window the prior cut from the run, and with the
 # window alone compared a subject holding it but not another slice of the
 # run answered NOMATCH or gave up according to that pick. The whole run is a
-# second scan loop whose `memcmp` is longer than 8 bytes; each row's expected
-# run and rq_set are derived BY HAND from the pattern (never from a stamp).
+# second search block, `rx_reqrun_whole`, whose `memcmp` is longer than 8
+# bytes; each row's expected run and rq_set are derived BY HAND from the
+# pattern (never from a stamp).
 # The answer-level witness is tests/base/k66_precheck_whole_run.rxt.
 #   "none" = no memcmp longer than 8 bytes.
-wholerun() { sed -n 's/^.*!memcmp(subject + rp_c[^,]*, "\(.*\)", \([0-9]*\))) break;$/\1 \2/p' "$1" | awk '$NF > 8' | head -1; }
+wholerun() { reqrun_fn "$1" whole | sed -n 's/^.*!memcmp(subject + cand, "\(.*\)", \([0-9]*\))) return cand;$/\1 \2/p' | head -1; }
 while IFS='%' read -r pat flags want wantrq why; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s59_$RANDOM$RANDOM.c"
@@ -1270,10 +1296,10 @@ while IFS='%' read -r pat flags wantpf wantofs wantwhy why; do
     [ "$gpf" = "$wantpf" ] && [ "$gofs" = "$wantofs" ] && [ "$gwhy" = "$wantwhy" ] \
         && ok "[5.10] $pat [$flags] -> $gpf / $gofs / REQ_WHY \"$gwhy\" ($why)" \
         || bad "[5.10] $pat [$flags]: $gpf / $gofs / REQ_WHY \"$gwhy\", expected $wantpf / $wantofs / \"$wantwhy\" ($why)"
-    # the TEXT: a dominated run pre-check leaves no rp_pos scan loop behind
-    n="$(grep -c 'memchr(subject + rp_pos,' "$a")"
+    # the TEXT: a dominated run pre-check leaves no rx_reqrun block behind
+    n="$(grep -c '^static inline size_t rx_reqrun' "$a")"
     if [ "$gwhy" = "dominated" ] && [ "$n" -ne 0 ]; then
-        bad "[5.10b] $pat [$flags]: \"dominated\" but $n run pre-check scan loop(s) are still emitted"
+        bad "[5.10b] $pat [$flags]: \"dominated\" but $n run pre-check block(s) are still emitted"
     fi
 done <<'ROWS'
 /user|/users%%run-pinned%0*,1,2,3,4%dominated%router, class B: the run is scanned at offset 0 and compared whole in the prefilter, so the pre-check's second scan of / goes
