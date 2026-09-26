@@ -171,3 +171,11 @@ Files: `scripts/pcrec_analyze.py`, `scripts/CLAUDE.md`, `tests/findings/`
 (new directory: `run_analyzer_tests.py`, `CLAUDE.md`, `fixtures/*`),
 `tests/CLAUDE.md`, `Makefile` (`test-findings` target),
 `docs/dev/plan.md`, `docs/dev/lanes/CLAUDE.md`, this report.
+
+## Manager rulings on the review items (2026-09-26, eightieth session)
+
+- `--merge --bytes/--sha256`: ACCEPTED — §10.4's shard-total check is otherwise unimplementable; B2/B5 must name them in the CLI spec hunk when the analyzer's CLI is specified.
+- `cpfreq`-alone declares utf8-only: ACCEPTED (conservative; never wrong under M-B1).
+- Provenance mismatch across merge parts = hard error: ACCEPTED (fail closed, the design's default posture).
+- `make test-findings` NOT in TEST_SECTIONS: ACCEPTED until B2 lands; B2's delivery bar wires it in (owed, named here).
+- The remaining items: accepted as recorded above unless a later panel says otherwise.
