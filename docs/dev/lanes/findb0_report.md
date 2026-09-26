@@ -64,6 +64,11 @@ a `testee` row after it). The design names no B0 sabotage row.
   DETECTED (reach ok, rxtsource 1 fail/253), S290 DETECTED (reach ok, 8
   fail/245), S291 DETECTED (reach ok, 1 fail/253); unexpected/undetected/
   unreached/anomalies all 0. Logs: `/tmp/fb0/mech_S2{48,90,91}.log`.
+- ROUND 2 (after the general fragment rule, at 6c55725a): `make strict`
+  EXIT 0; `make test-rxtsource` EXIT 0, 255 passed / 0 failed; mech S291
+  DETECTED (reach ok, rxtsource 2 fail/253 — both fragment cells), S290
+  DETECTED (8 fail/246); 0 anomalies. test-parse/test-registry not re-run
+  (no parse or registry surface moved in round 2).
 - **`make test` (full) is OWED and QUEUED — NOT run** (heavy slot booked).
 
 ## Findings / choices for the manager
