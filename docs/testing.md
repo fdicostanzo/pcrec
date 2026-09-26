@@ -4346,14 +4346,32 @@ same house rule every other axis in this file states for itself (`RXTFLAGS`,
 small-slice diffs of a `HARNESS_BATCH`-unset run against a pre-change
 `tests/harness/run.sh` were byte-identical.
 
-**Three kinds of block never batch**, checked per-block right where
-`cur_route` is already computed, before the compile-time decision: a `perr`
-block (never reaches gcc at all — pcrec's own exit code is the whole
+**Five kinds of block never batch** (three at this section's own 2026-09-08
+landing, plus [DD-13b.W23.3]'s `@file:`/`mc`/`pattern-esc` exclusion and
+[VAR] M10's var-bearing-pattern exclusion below), checked per-block right
+where `cur_route` is already computed, before the compile-time decision: a
+`perr` block (never reaches gcc at all — pcrec's own exit code is the whole
 check), an H11 target block (`--source --target` is a separate pcrec
 invocation from a different source file than the one that would join a
-batch), and any block carrying a routed cell (a `frames-buffer=` directive,
-or a non-`default`/non-empty `RXTROUTE` floor — this landing's `dispatch.c`
-only reproduces the DEFAULT route, `<prefix>_search`). An excluded block
+batch), any block carrying a routed cell (a `frames-buffer=` directive, or
+a non-`default`/non-empty `RXTROUTE` floor — this landing's `dispatch.c`
+only reproduces the DEFAULT route, `<prefix>_search`), a block carrying a
+`@file:` subject, an `mc` case or a `pattern-esc` line (`dispatch.c` has no
+`@`-prefixed subject rule and no find-all mode), and a var-bearing block —
+module `vars`' `${name}` (landed 2026-09-23, after this section's own
+landing) makes the artifact's own `<prefix>_search` grow a trailing
+`vars, nvars` pair (`pcrec_vars_param_text`, src/gen/emit_dfa.c) that
+`dispatch_gen.sh`'s hand-rolled `gen_dispatch_c` still calls with its
+original fixed 4 arguments — found live 2026-09-26 by `AXES_FULL=1
+HARNESS_BATCH=64 make test-axes`, the first run in this tree's history to
+put `HARNESS_BATCH` and `tests/vars/` in the same process (`make test`'s
+own `HARNESS_BATCH` reach is `test-corpus`/`test-rxtsource` only, neither
+of which runs the `AXES_FULL=1` population; `tt4m_batch_customers.md`),
+checked via a plain substring test for `${` in the block's pattern text
+(the same lexical trigger `pcrec_vars_is_doorway`, src/parse/mod_vars.c,
+uses — conservative in the safe direction, since an escaped or
+class-scoped `${` that would NOT actually reach the doorway still costs
+nothing worse than one needlessly-unbatched compile). An excluded block
 compiles and runs through the identical unbatched path regardless of
 `HARNESS_BATCH`, sharing the SAME per-case verification loop
 (`run_case_loop`, extracted once so the two paths cannot drift).
