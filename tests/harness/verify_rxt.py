@@ -674,7 +674,7 @@ def parse_rxt(path):
         if not seen_pattern:
             first = line.split(None, 1)[0] if line.split() else ''
             head_words = ('lib', 'target', 'config', 'description',
-                          'include', 'use', 'oracle', 'tag', 'freq')
+                          'include', 'use', 'oracle', 'tag', 'analysis')
             if first in head_words:
                 raise ValueError(
                     f"{path}:{lineno}: '{first}' is a file-level (HEAD) "

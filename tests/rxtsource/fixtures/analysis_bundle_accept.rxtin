@@ -1,0 +1,50 @@
+# [FINDINGS] B0 — THE ACCEPTING BUNDLE (docs/design/findings/design.md §3.1,
+# §2.7's second exhibit, abbreviated). Every B0 row appears once in a legal
+# spelling: the `analysis` opener, a bundle-scope `include <other>` and prose
+# `description`, a `freq` block with `encoding`, `serves` (two compile
+# encodings on one line), ascending `row`s and a `provenance` whose
+# `source exemplar` owes `bytes`/`sha256` but no `url` (design §0.10), a
+# second bundle with an AUTHORED provenance owing neither, and a config
+# naming ONE analysis. Nesting is FOUR frames deep here (file -> bundle ->
+# freq -> provenance), which is the structure layer's third level (§3.1).
+#
+# LEG A ONLY: `analysis` is a HEAD declaration and the head has one parser
+# (the seam ruling, w1_impl §1.1). tests/rxtsource/run_rxtsource_tests.sh's
+# "[FINDINGS] B0" section asserts the rows, not just the exit code.
+analysis weblog
+    include <log>
+    description |
+        Our gateway logs, extending the shipped log bundle.
+    freq
+        question How often does each byte occur in our gateway logs?
+        reader byte-rate
+        analyzer pcrec-analyze 0.1 --scan freq
+        encoding utf8
+        serves byte-rate when byte,utf8 via unigram
+        row 0a 1822
+        row 20 124561
+        row 61 54163
+        provenance
+            source exemplar
+            retrieved 2026-09-26
+            bytes 104857600
+            sha256 3f00
+analysis plain
+    freq
+        question How often does each byte occur?
+        reader byte-rate
+        analyzer authored
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 00 2
+        row ff 2
+        provenance
+            source authored
+            retrieved 2026-09-26
+
+config prod
+    analysis weblog
+
+pattern a
+name a
+m "a" 0 1

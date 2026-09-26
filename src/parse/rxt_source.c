@@ -3103,10 +3103,9 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
                 if (p.chain) {
                     *p.frag_refused = 1;
                     rxt_fail(&p, RXTD_SCHEMA_CONSTRAINT, line,
-                             "'analysis %s' is in an included fragment: a "
-                             "bundle is found in the compiling file, a -I "
-                             "directory or the shipped store, never in an "
-                             "include fragment", v);
+                             "'analysis %s' is in an include fragment; a "
+                             "bundle resolves only from the compiling file, "
+                             "a -I directory or the shipped store", v);
                     goto fail;
                 }
                 RxtRow *r = row_push(&p, src, RXT_DECL_ANALYSIS, line);
