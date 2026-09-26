@@ -59,8 +59,11 @@ a `testee` row after it). The design names no B0 sabotage row.
 - `make strict`: EXIT 0.
 - `make test-rxtsource`: EXIT 0 — 254 passed, 0 failed (40 `findings/B0` passes).
 - `make test-parse`: EXIT 0.
-- `make test-registry`: see handback (run completed after this was written).
-- mech rows S248/S290/S291: see handback.
+- `make test-registry`: EXIT 0 (sections 226/210/123/29/54 passed, 0 failed).
+- mech (`run_sabotage_matrix.sh`, one row each, at 963f5047): S248
+  DETECTED (reach ok, rxtsource 1 fail/253), S290 DETECTED (reach ok, 8
+  fail/245), S291 DETECTED (reach ok, 1 fail/253); unexpected/undetected/
+  unreached/anomalies all 0. Logs: `/tmp/fb0/mech_S2{48,90,91}.log`.
 - **`make test` (full) is OWED and QUEUED — NOT run** (heavy slot booked).
 
 ## Findings / choices for the manager
