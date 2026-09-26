@@ -2796,6 +2796,28 @@ test; emptying the predicate leaves every caller, every stamp and every other
 rule where they are, so `run_prechecks.sh` §5 reports one rule's absence and
 nothing else.
 
+## [OPT-LITSCAN] S1 — S279-S284, the run-pinned prefilter rows (2026-09-25)
+
+`docs/design/litscan_s1.md` §7.1 names eleven rows (a)-(k); six ship here,
+one per allocated id, and their detectors are `tests/offsetskip/
+run_pinned.rxt` (answers) and `tests/codegen/run_prechecks.sh` §5.10
+(stamps). S267 was re-anchored onto P4 (`emit_exact_compare`, COUNT 2 -> 1)
+and S270 onto the widened `req_byte_dominated_by`, intents unchanged.
+
+| row | §7.1 | plant | detector (measured) |
+|---|---|---|---|
+| S279 | (a) | the run term compared at `cand + run_o + 1` | corpus + `run_offset_skip.sh` §2 — answer-detectable |
+| S280 | (g) | the pin ignores the run's bytes | the `/abcd[xy]/user` cells + §5.10 — answer-detectable |
+| S281 | (h) | clause 4 dropped (class A takes the run row) | §5.10 keyword row — answer-invisible |
+| S282 | (i) | `DfaCand.deny` back to `unsigned` (R4 planted) | §5.10 `-fno-run-prefilter` rows — answer-invisible, `make test-axes`-invisible |
+| S283 | (k) | the run rows lose the offset-skip deny bit | §5.10 `-fno-offset-skip` row (R3-8) |
+| S284 | (j) | `reseeds = false` on the run rows | **UNDETECTED (EXPECTED)**, S219's shape: the reachability run found no run-row machine where a chain head is a seed target (`docs/dev/optloop/s1/rowj_reach_output.txt`) |
+
+Rows (b) (run one byte longer — S268 is its analysis-side mirror), (c) (the
+verifies conjunct), (d) (`OfsTest.maxk` not widened, an ASan row), (e) (the
+density guard's memchr-form line) and (f) (clause 3) await ids; (c), (e) and
+(f)'s structural witnesses are already §5.10 rows.
+
 ## [recidfix/varland] S273, and the FIRST ARM `run_recursion_identity.sh` has ever had (2026-09-25)
 
 `run_recursion_identity.sh` predates this matrix's every other identity gate
