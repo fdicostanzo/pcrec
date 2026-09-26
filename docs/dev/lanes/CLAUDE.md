@@ -3245,3 +3245,13 @@ never edited afterwards.
   `pcrec`-line `--analysis` and include-fragment refusals, the conjunctive
   provenance conditions; `rxt_format.md` hunks; S290/S291, S248
   re-anchored. Light targets green; full `make test` OWED.
+- `s1step6_report.md` — `[OPT-LITSCAN]` S1 step 6 (2026-09-26), Q1's
+  conversion: the run pre-check's scan loop and K66's whole-run loop (both
+  callers of `emit_run_scan_loop`, converted together) become calls of
+  file-scope `<p>_reqrun`/`<p>_reqrun_whole` blocks written by the
+  offset-skip block's emitter, now `DfaForm`-free (`ofs_test_emit_fn`);
+  abi 36 -> 37. Movers = exactly the run-pre-check artifacts, residue
+  byte-identical (bench 236/1,167, corpus 763/10,818, 0 bad); readers
+  re-derived incl. `run_encoding_checks.sh`'s normalizer and
+  `run_dfa_stamps.sh`'s marker; S267 (stale REACH since step 5) / S278 /
+  S279 re-anchored, S293 new. Heavy battery status in the report.

@@ -1242,6 +1242,20 @@ from `git show HEAD:` and re-verify intent); S269/S270 (G1/G2 in
    `OfsTest` / block-emitter split. The block emitter reads no `Dfa`, which
    is what lets a pre-check caller use it.
 
+   **[as built, lane `s1step6`, 2026-09-26, abi 36 -> 37 as its own event:
+   S1 had merged alone at 36.]** Both of K66's loop callers converted
+   together: `req_run_tests` derives the window's and (no-DFA-front, run
+   longer than its window) the whole run's `OfsTest` (`ofs_test_run`: the run
+   as one term at offset 0, scanned on its member at that member's offset,
+   `run_bytes` pointing into `Job.req_run.bytes`/`.whole` — the one field,
+   no copy), and both `pcrec_emit_req_run_blocks` (file-scope
+   `<p>_reqrun`/`<p>_reqrun_whole`) and the call site read it. §1.3's
+   narrowing is done: `ofs_test_emit_fn(cx, c, p, name, const OfsTest *)`
+   is the block, `pf_block_ofs` its comment plus a call. The window check
+   stays beside the whole compare on the K66 route (redundant there, one
+   extra pass on the 12 K66 movers; dropping it is a D77 question). Record:
+   `docs/dev/lanes/s1step6_report.md`.
+
 ---
 
 ## 8. Interactions
