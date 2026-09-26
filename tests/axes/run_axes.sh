@@ -738,6 +738,180 @@ declare -A GIVEUP1_ALLOWANCE=(
 # exactly the triage's count; both keys below are default=match/axis=steps.
     ["-fprefilter-collapse|tests/base/d27_k23_ambiguous_decomposition.rxt:90"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): the count-collapsed prefilter language loses the same sharp ceiling as no prefilter at all — default matches, -fprefilter-collapse gives up (steps)"
     ["-fprefilter-collapse|tests/base/d27_k23_ambiguous_decomposition.rxt:98"]="tuning.md §2.5/§2.17 (the fourth cost's own worked example is this file's pattern): the count-collapsed prefilter language loses the same sharp ceiling as no prefilter at all — default matches, -fprefilter-collapse gives up (steps)"
+
+# GROUP E — bit 30, `-fno-req-byte` (PCREC_NO_REQ_BYTE), 45 cases across
+# FOUR witness files/mechanisms, not just the two the flag's own name
+# suggests. tuning.md §2.638: "`-fno-req-run` and `-fno-req-byte` remove the
+# run itself, so nothing is pinned under either" — denying req-byte removes
+# BOTH the byte pre-check AND the run pre-check it carries, so it reaches
+# every mechanism either one alone can reach. Verified live 2026-09-26
+# (single-axis `tests/axes/run_axes.sh` re-runs, scoped per sub-group below,
+# KEEP=1 rowsfiles read directly for the exact key list — the capped
+# stderr detail in the original full-corpus run only ever showed 20 of
+# these per bucket, tests/axes/dump_diff.awk's own documented cap, which is
+# why a first pass at this manifest from that capped log alone would have
+# missed 25 of the 45): 18+12+4+11 = 45, matching the full-corpus
+# giveup1-unallowed=45 exactly.
+#
+# E1 (18 cases) — tests/base/k65_precheck_whole_set.rxt, K65 (tuning.md
+# §2.29, known_issues.md K65). `(x?)([a-z]+)+Z.@\1` / `(x?)([a-z]+)+
+# eeeeeeee~#~#~#~#\1` (backrefs): on the no-DFA-scan VM route the emitted
+# pre-check tests the WHOLE necessary set, the call's only linear no-match
+# proof; -fno-req-byte reads RX_REQ_BYTE "none" and removes it, and the
+# same subject exhausts the file's own `budget steps=10000` ceiling —
+# default proves nomatch via one `memchr`, axis gives up (steps). Repro
+# verified live: default RX_REQ_WHY "emitted", nomatch; -fno-req-byte
+# RX_REQ_BYTE "none", exit 3 "steps", same subject
+# ("aaaaaaaaaaaaaaaaZb"). Live re-run (this file alone,
+# RXTFLAGS="-fno-req-byte"): keys_base=40 giveup1=18 (of the file's 30
+# total — the other 12 are k66's own cells, sharing this file's pattern
+# family, see E2) — the 18 keys below are that run's own ROWSFILE, not a
+# re-derivation from the capped log.
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:35"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:36"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:37"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:38"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:39"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:40"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:48"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:49"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:50"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:51"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:52"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:53"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:61"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:62"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:63"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:64"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:65"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k65_precheck_whole_set.rxt:66"]="K65 (tuning.md §2.29, known_issues.md K65): the whole-necessary-set pre-check is the VM route's only linear no-match proof; -fno-req-byte removes it (RX_REQ_BYTE none) and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+
+# E2 (12 cases) — tests/base/k66_precheck_whole_run.rxt, K66 (tuning.md
+# §2.29, known_issues.md K66). Same pattern family, necessary RUN longer
+# than its 8-byte window: §2.638 ("`-fno-req-run` and `-fno-req-byte`
+# remove the run itself, so nothing is pinned under either") is why denying
+# req-byte alone reaches every one of K66's own cells too, not only K65's.
+# Live re-run (this file alone, RXTFLAGS="-fno-req-byte"): keys_base=16
+# giveup1=12 — all 12 of the file's own cells, exact match to the
+# dedicated -fno-req-run re-run below (F).
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:38"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:39"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:40"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:41"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:42"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:43"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:51"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:52"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:53"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:54"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:55"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k66_precheck_whole_run.rxt:56"]="K66 (tuning.md §2.29 & §2.638, known_issues.md K66): -fno-req-byte removes the run pre-check along with the byte one it rides on — default proves nomatch, axis gives up (steps)"
+
+# E3 (4 cases) — tests/base/k64_precheck_forced_vm.rxt, K64 (tuning.md
+# §2.29 G2, known_issues.md K64). `^([a-zA-Z0-9._%+-]+)+@`, forced
+# --engine=vm, framed/unguarded (RX_VM_PREFILTER "none"): the emitted
+# pre-check is this one-attempt VM route's ONLY linear no-match proof, per
+# G2's own linearity condition; -fno-req-byte removes it and the same
+# subject (repro: "aaaaaaaaaaaaaaaa") exhausts the file's own `budget
+# steps=10000`. Repro verified live: default nomatch after one memchr,
+# -fno-req-byte exit 3 "steps". Live re-run (this file alone,
+# RXTFLAGS="-fno-req-byte"): keys_base=11 giveup1=4 (the `gu steps`
+# control cell at line 39 is unaffected — both sides already give up
+# there, K64's own proof the budget genuinely reaches the VM).
+    ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:34"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:35"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:36"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-byte|tests/base/k64_precheck_forced_vm.rxt:37"]="K64 (tuning.md §2.29 G2, known_issues.md K64): the emitted pre-check is the forced-VM one-attempt route's only linear no-match proof; -fno-req-byte removes it and the subject exhausts the file's own step budget — default proves nomatch, axis gives up (steps)"
+
+# E4 (11 cases) — tests/recursion/d27/sr_depth.rxt, K34 (known_issues.md
+# K34, CLOSED [OPTLOOP.1.impl] batch 2) — a DIFFERENT known issue than
+# K64/K65/K66 but the SAME general mechanism (§2.29's necessary-run
+# pre-check, [OPT-REQPOS] tier 2b), applied to LEFT-RECURSION rather than
+# backreferences: this file's own header/inline comments say so directly
+# — "pcrec used to GIVE UP (frames) on every nomatch case below instead of
+# concluding. It concludes now via the necessary-run precheck ([OPT-REQPOS]
+# tier 2b)". `-fno-req-byte` removes that precheck and REOPENS K34's own
+# give-up shape on the left-recursive `(a|(?1)a)` / `(a|(?1)a)b` /
+# `(a|(?1)a)c` nomatch cells — default proves nomatch, axis gives up
+# (frames), not steps (the recursion module's own give-up code, distinct
+# from K64/65/66's backref-route `steps`). Found by a targeted re-run after
+# E1-E3's 34 fell 11 short of the full-corpus giveup1=45; the population is
+# NOT limited to the three K64/65/66 files by the flag's own name — always
+# derive from a live re-run, never assume a mechanism's file list is
+# closed (docs/dev/learnings.md §3). Live re-run (this file +3 other
+# `gu`-bearing recursion files ruled out as unaffected, RXTFLAGS="-fno-req-byte"):
+# keys_base=109 giveup1=11, all in sr_depth.rxt.
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:83"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:157"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:158"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:159"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:160"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:161"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:179"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:180"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:181"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:182"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+    ["-fno-req-byte|tests/recursion/d27/sr_depth.rxt:183"]="K34 (known_issues.md K34, CLOSED via the same §2.29 necessary-run precheck [OPT-REQPOS] tier 2b): -fno-req-byte removes it and reopens K34's own give-up on this left-recursive nomatch cell — default proves nomatch, axis gives up (frames)"
+
+# GROUP F — bit 31, `-fno-req-run` (PCREC_NO_REQ_RUN), 12 cases, all
+# tests/base/k66_precheck_whole_run.rxt (K66, tuning.md §2.29, known_
+# issues.md K66) — the NARROWER flag: unlike Group E, this one leaves the
+# byte pre-check standing (tuning.md §2.428: "Denying `-fno-req-run` alone
+# leaves the one-byte check standing"), so it reaches ONLY the cells whose
+# no-match proof depends on the whole-RUN compare specifically, none of
+# K65's or K64's or K34's. Verified live 2026-09-26 (this file alone,
+# RXTFLAGS="-fno-req-run"): keys_base=16 giveup1=12 — exact match to the
+# full-corpus giveup1-unallowed=12; the 12 keys below are that run's own
+# ROWSFILE, identical set to Group E2 above (same file, same direction,
+# different flag).
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:38"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:39"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:40"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:41"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:42"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:43"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:51"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:52"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:53"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:54"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:55"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+    ["-fno-req-run|tests/base/k66_precheck_whole_run.rxt:56"]="K66 (tuning.md §2.29 & §2.428, known_issues.md K66): -fno-req-run removes the whole-run compare and leaves only the byte pick, which this subject's window does not cover — default proves nomatch, axis gives up (steps)"
+
+# GROUP G — §2.11 `--engine=vm`, 10 cases, TWO mechanisms.
+#
+# G1 (2 cases) — tests/base/d27_k23_ambiguous_decomposition.rxt:90,98, the
+# SAME two cells as Groups B/D above (-fno-prefilter/-fprefilter-collapse),
+# reached a THIRD way: tuning.md §2.11 states "`--engine=vm` additionally
+# disables the DFA prefilter (D44/R21 E-6)" — forcing VM loses the identical
+# sharp reverse-window start Group B's denial removes directly. Verified
+# live 2026-09-26 (this file alone, RXTFLAGS="--engine=vm"): keys_base=113
+# giveup1=10 (2 here + 8 in G2 below) — exact match to the full-corpus
+# giveup1-unallowed=10.
+    ["--engine=vm|tests/base/d27_k23_ambiguous_decomposition.rxt:90"]="tuning.md §2.11 (\"--engine=vm additionally disables the DFA prefilter\") + §2.5/§2.17: forcing VM loses the same sharp prefilter-window start Group B's -fno-prefilter denial removes directly — default matches, --engine=vm gives up (steps)"
+    ["--engine=vm|tests/base/d27_k23_ambiguous_decomposition.rxt:98"]="tuning.md §2.11 (\"--engine=vm additionally disables the DFA prefilter\") + §2.5/§2.17: forcing VM loses the same sharp prefilter-window start Group B's -fno-prefilter denial removes directly — default matches, --engine=vm gives up (steps)"
+
+# G2 (8 cases) — tests/base/k18_deep_nesting.rxt:51,52,56,57,61,62,66,67, the
+# "a"/"aa" cells of the file's 66/70/74/78-level-nesting `(?:...*)*`
+# patterns (never the "" cells — matching empty needs no backtracking
+# frame). Repro verified live: default RX_ENGINE "dfa" matches "a" in one
+# step; --engine=vm forces RX_ENGINE "vm" and the SAME one-byte subject
+# exhausts the fixed VM resume-stack/trail budget (limits.md §4: ~2 frames
+# + ~9 trail entries per nesting level, independent of subject length) —
+# exit 3 "frames". This mechanism had NO citing sentence before this lane
+# (§2.11 named only the prefilter loss, G1 above); the one-sentence
+# addition naming it is in the same commit (docs/spec/tuning.md §2.11, D80).
+# known_issues.md's K18 entry already names this file as the deliberate
+# resource guard for exactly this nesting-depth cost. Verified live
+# 2026-09-26 (this file + d27_k23 together, RXTFLAGS="--engine=vm"):
+# keys_base=113 giveup1=10 total, 8 of them these keys.
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:51"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:52"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:56"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:57"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:61"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:62"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:66"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
+    ["--engine=vm|tests/base/k18_deep_nesting.rxt:67"]="tuning.md §2.11 (this lane's addition, K18): auto selects the DFA (no per-nesting-level frame cost) and matches instantly; forcing --engine=vm makes the fixed VM resume-stack/trail budget (limits.md §4) the binding constraint at this nesting depth — default matches, --engine=vm gives up (frames)"
 )
 
 # ============================================================================

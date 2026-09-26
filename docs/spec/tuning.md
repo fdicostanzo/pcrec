@@ -568,6 +568,18 @@ diagnostic naming the construct, never a silent fallback
 DFA prefilter** (D44/R21 E-6) — the one place this axis and §2.5 compose
 directly — which is what makes `--engine=vm` usable as an independent
 second derivation of the match span rather than an echo of the DFA's.
+**Forcing `--engine=vm` on a pattern `auto` would place on the DFA can
+also turn a trivial-subject MATCH into a `PCREC_ERR_FRAMES`/
+`PCREC_ERR_WORK` give-up**: a DFA has no per-nesting-level frame cost,
+while the VM's fixed resume-stack/trail budgets (`limits.md` §4) are
+consumed at roughly two resume frames and nine trail entries per nesting
+level regardless of subject length — so a pattern nested deep enough
+exceeds them under the forced VM even on a one-byte subject where `auto`
+selects the DFA and matches instantly. Witness: K18's own resource-guard
+file, `tests/base/k18_deep_nesting.rxt` (`docs/dev/known_issues.md`'s K18
+entry) — its 66-level-and-deeper `(?:...*)*` nestings answer `RX_ENGINE
+"dfa"` and match `"a"` under `auto`, and give up on `frames` under
+`--engine=vm` on the identical one-byte subject.
 `PCREC_ENGINE_AUTO` is an `enum` member; `PCREC_ENGINE_DFA`/
 `PCREC_ENGINE_VM` are `#define`s for the ABI-collision reason
 `lib/CLAUDE.md`'s `[ABI-NS]` entry states (an artifact's own identical
