@@ -1,0 +1,7 @@
+bench	changed	236
+bench	identical	931
+bench	refused	133
+corpus	changed	763
+corpus	identical	10055
+corpus	refused	1230
+TOTAL 13348 artifact-configs, 0 bad
