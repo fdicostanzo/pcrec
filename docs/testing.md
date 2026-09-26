@@ -4835,3 +4835,30 @@ See `docs/dev/lanes/bsweep_report.md` for this tool's own validation
 (self-check, an independent re-verification of w2y's own claim, and the
 three scratch-sabotage detection transcripts) and the reconciliation of the
 five prior lanes' composition-arm figures.
+
+### 2026-09-26 — first Linux full-battery figures (ubuntubudu, S1 step 6)
+
+The first complete sanitizer + axes figures on the Linux box, all at
+pcrec's abi-37 tree (lane/s1step6 fe233552; ASan on the trial merge
+29c9e986 = that tree + the drvleak fix), each run alone on a quiet box
+(load < 0.5 at start), detached over ssh:
+
+- **`make ubsan`: 5,889 s** (1 h 38 m), EXIT 0.
+- **batched full `make test-axes` (`AXES_FULL=1 HARNESS_BATCH=64`):
+  6,012 s** (1 h 40 m), EXIT 0, 0 AXIS FAIL — vs 7,958 s on the Mac
+  (1.32× faster).
+- **`make asan`: 6,672 s** (1 h 51 m), EXIT 0, "suite green under
+  ASan+LSan, both axes" — the first complete ASan run since the Mac's
+  3-hour-cap kill. The Linux run is also the only one that exercises the
+  LEAK tier: on darwin `SAN_DETECT_LEAKS=0` is forced (K54; `detect_leaks=1`
+  hangs unconditionally on gcc-16/arm64 — reproduced again by lane drvleak),
+  so **LSan findings surface only on Linux**. The first attempt went red
+  after 630 s on exactly such a finding (Sanitizer findings inventory F2,
+  the harness driver's `vars` leak), which stopped `make asan` at its
+  harness section.
+- Mac `make test` for the same tree: 6,872 s and 5,981 s (two runs, the
+  latter the drvleak lane's), consistent with the ~100–105 min above.
+
+Box choice consequence (memory `pcrec-cross-platform-verification`): the
+sanitizer pair belongs on Linux — ASan because only Linux completes it
+AND only Linux runs LSan.
