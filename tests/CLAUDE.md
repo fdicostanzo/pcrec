@@ -683,6 +683,18 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   than promoted to their recorded oracle, a known stage-4 gap, not a
   finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
+- **findings/** — `[FINDINGS]`'s step B3: the exemplar analyzer PROTOTYPE's
+  own checks (`scripts/pcrec_analyze.py`, `docs/design/findings/design.md`
+  §10/§13). Deliberately NOT part of `make test`/`TEST_SECTIONS` yet — B0
+  (the `.rxt` schema), B1 (the accessor) and B2 (resolution + CLI) have not
+  landed, so there is no compiler-side answer identity for a heavier suite
+  to check against. `make test-findings` (python3-only, no `all`
+  dependency) covers what B3 alone can: determinism, sharding/merging
+  (order-independent, [r2 A-1]'s k=1 exception and [r2 A-2]'s cpfreq
+  lead-byte seam), `--check`, R26, and the freq/cpfreq collision-free split
+  ([r2 M-B1]). See its own CLAUDE.md for the OWED items (R27a; python≡C,
+  owed to B6) and `docs/dev/lanes/findb3_report.md`.
+
 ## Conventions
 
 .rxt format: comments (#), pattern blocks (pattern <regex>), and match/nomatch assertions (m/n with subject and expected span). See docs/testing.md for the full format spec. Run tests via `make test` or `bash tests/harness/run.sh [files...]`. Env vars: PCREC, CC, GENCFLAGS, KEEP=1 (preserve temp dir), VERBOSE=1 (per-test output), LINTGEN=1 (SAN-1: rides the GENCFLAGS compile pass with `gcc -fanalyzer` on every generated matcher — `make test LINTGEN=1`; opt-in, see docs/testing.md "Sanitizer + lint battery"), CLANGGEN=1 ([CC-CLANG]: the same shape one compiler over — defaults CC to clang for the generated-matcher compile pass, unless CC is already set explicitly; opt-in, `make test CLANGGEN=1`, writes nothing to build/, see docs/testing.md "Sanitizer + lint battery"), CCACHE=1 ([TT-3]: routes generated-code and tree-build compiles through ccache — opt-in, MEASURED a clear NO for `make test`'s own workload, see docs/testing.md "Compile caching").
