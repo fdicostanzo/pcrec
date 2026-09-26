@@ -655,3 +655,29 @@ that cycle's analysis lands.
   twin generator and the counted find-all driver with its transcript. See
   its own `CLAUDE.md`.
 
+## `[OPT-REQRUN-ENC]`'s D77 census (lane `reqrunenc`, 2026-09-26)
+
+- `reqrunenc_census.md` — **the D77 census for the RUN path's `!bytekey`
+  decline** (`rn_scan_index`, `src/opt/reqbyte.c`), re-measuring
+  `reqpos_2b.md` §2.3's ratified leftmost decline against pcrec-bench's
+  O-60 finding. Population: the RUN path fires on 12.0%/28.3% of the
+  corpus/bench under `-e utf8`, and today's leftmost pick is a UTF-8 lead
+  byte on 12.0%/20.7% of those. Three candidates (L today, R = `rb_pick`'s
+  rightmost rule, S = rightmost non-lead-byte member) — **R and S are
+  byte-identical on the entire measured `-e utf8` population (912/912 real
+  runs), disagreeing only on a `byte`-encoding control population where
+  "lead byte" is not even a meaningful concept.** Recommends R (no new
+  byte-range logic, reuses `rb_pick`'s own fallback). Correctness: L/R/S
+  all pass the whole `-e utf8`-carrying `.rxt` population identically
+  (1,499/1,499). Byte encoding confirmed untouched (sha256-identical
+  emitted artifact under all three). Found and fixed one bug in the reused
+  `c2/reqpos_probe.c` instrument along the way: no `case A_VAR:` in its
+  `walk()` switch, an infinite loop on any `${name}` template pattern.
+- `reqrunenc/` — that census's instruments: `reqrunenc_probe.c` (the
+  reused/fixed D77 probe), `_shared_pop.py` (verbatim copy of
+  `c2/reqpos_census.py`'s population/probe-runner functions), `driver.py`/
+  `reqrunenc_census.json` (the candidate/mover analysis), `scanrate.py`/
+  `reqrunenc_scanrate.json` (the memchr-rate cost proxy against the
+  bench's regenerated throughput subjects), `timedrv.c` (the same-box
+  timing proxy driver), `harness_logs/` (the L/R/S correctness run logs).
+

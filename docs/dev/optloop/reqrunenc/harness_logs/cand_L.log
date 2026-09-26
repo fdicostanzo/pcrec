@@ -1,0 +1,11 @@
+[MACPORT] CC=gcc-16 (default 'gcc' is not GNU gcc on this box; tests/lib/cc_resolve.sh)
+
+== Summary ==
+cases passed: 1499
+cases failed: 0
+pattern-compile failures (distinct): 0
+group cases pending-vm: 0
+under expectations skipped: 0
+oracle declarations skipped: 0
+entry files: 14
+fragments spliced: 0
