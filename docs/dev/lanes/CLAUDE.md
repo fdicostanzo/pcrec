@@ -3211,3 +3211,21 @@ never edited afterwards.
   passing regression at the same basename in `tests/base/`, net +0/+0/+0
   on the rxtsource census). `make test` launched detached as the lane's
   last act; verdict OWED, log path in the report.
+- `findb3_report.md` — `[FINDINGS]` step B3 (2026-09-26, lane findb3,
+  sonnet): the analyzer PROTOTYPE, `scripts/pcrec_analyze.py` (design.md
+  §10/§13's B3 row), grown from `docs/dev/findings_measure/scripts/
+  ngram_count.py`'s counting shape. The four command forms (§10.2),
+  sharding with the k=1 exception and the cpfreq lead-byte seam ([r2
+  A-1]/[r2 A-2]), `--merge`/`--digest-only`/`--check` (fails CLOSED on a
+  missing source, [r2 A-5]'s analyzer-level analogue), and the freq/cpfreq
+  collision-free declaration split ([r2 M-B1]). `tests/findings/
+  run_analyzer_tests.py` (`make test-findings`, light, deliberately NOT in
+  `TEST_SECTIONS` — B0/B1/B2 have not landed): 35 checks green, 2 OWED
+  items named rather than skipped (R27a needs B2's `--list-analysis`;
+  python≡C needs B6's `analyze/`). Read the report for the manager-review
+  judgment calls the design left open at B3's altitude — chiefly `--merge`
+  gaining `--bytes`/`--sha256` flags (beyond §10.2's literal CLI table) to
+  make its own documented shard-total integrity check possible, and the
+  reading taken for "normalizes to RUNEST's unigram" (count identity with
+  `ngram_count.py` plus an independent §2.5 reimplementation, since B1's
+  own function does not exist yet). PARKED on `lane/findb3`, not merged.
