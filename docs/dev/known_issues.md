@@ -11,6 +11,20 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K67 — DEFERRED into [CLS-TREE] — compile TIME: `\p{L}+` under `-e utf8` takes ~77 s in pcrec itself (found by pcrec-bench, utf8@0.1 rehearsal, prp-l, 2026-09-25; diagnosed by lane plplus the same night)
+
+**Status: deferred** (Frank, 2026-09-25: "hit everything class related at the same time like the class tree work... finish [the open queue] before taking this on"). Answers are correct; this is compile time only.
+
+**Repro** (main 27a63314, Mac, one core): `build/pcrec -p rx -fcomments --features all -e utf8 -o out.c --pattern '\p{L}+'` → 77 s user, stamps `RX_ENGINE "dfa"`, `RX_ENGINE_SEL "size-cap-retry"`. Bench (ce658cb7, Linux gcc 15.2): 70.44 s plain / 106.22 s whole-subject; `\P{L}+` 41.04 / 61.89 s; gcc on the output 0.30 s. Controls: `\p{L}` (no `+`) 0.11 s; `\p{N}+` 0.07 s (`selected`).
+
+**Two causes, measured:**
+1. **The size-cap retry ladder rebuilds everything, 3×.** `compile_driver`'s retry loop (src/core/compile.c:826) re-runs parse→NFA→forward+reverse(+anchored) DFA→emit from scratch per rung (compile.c:1213 drop_eligible / K53-SELRETRY; compile.c:1269 premul_eligible / K59-PREMUL). Neither rung changes forward/reverse construction. `--max-emit-bytes` raised (no retry, `selected`) = 26.32 s; default (2 rungs) = 77.49 s. Candidate fix: keep the built DFAs across rungs, re-emit only (general, not class-specific).
+2. **The 26 s floor is subset construction** — 99.3% of samples in `make_state` (src/ir/dfa.c:1225) → `closure()`/`clo_walk()` (dfa.c:864/643). `\p{L}` is 677 UCD intervals (src/parse/uprops_tables.inc:3099); under `+` the 677-branch fan-out is re-walked at every loop-boundary DFA state (per-cell BFS calls 75,200→104,900, 1.4×; time 700×). Candidate direction: a compact class representation in the NFA/closure (cls_tree_study.md territory).
+
+No prior row covered it (K25 = minimization on long chains; K53/K59 = the size-refusal set, not time). Diagnosis record: session scratch /tmp/pcrec_plplus/report.md (transcribed here).
+
+---
+
 ## K66 — FIXED 2026-09-25 — the necessary-RUN WINDOW choice decides whether a no-DFA-front VM call gives up, "C2b" (found by the `[OPT-LITSCAN]` S1 revision-3 D6 panel, critic s1crit-sound, 2026-09-25): on a backtracking VM route with no DFA prefilter, which 8-byte WINDOW of a longer necessary run the pre-check's compare scans decides which subjects get the cheap no-match proof, so the same subject flips NOMATCH ↔ steps-exhausted with the window
 
 **Status: fixed** (2026-09-25, lane `k66fix`, candidate (a) as ruled by
