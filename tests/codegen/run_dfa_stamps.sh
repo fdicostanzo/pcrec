@@ -12,6 +12,7 @@
 #     #define RX_DFA_PREFILTER "none" | "memchr" | "memchr-bounded"
 #                            | "byte-class" | "byte-class-bounded"
 #                            | "offset-set" | "offset-set-bounded"   [OPT-K]
+#                            | "run-pinned" | "run-pinned-bounded"   [OPT-LITSCAN] S1
 #
 # ...and, since [DD-13c], the RUNTIME MIRRORS of the last two in the emitted
 # `struct rx_info` (`.scan`, `.prefilter`; docs/spec/match_api.md §6), which
@@ -203,7 +204,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
 SCAN_VALUES="unanchored attempt empty"
-PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded"
+PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded run-pinned run-pinned-bounded"
 
 # ---------------------------------------------------------------------------
 # The per-artifact derivation: read an artifact on stdin, print
@@ -259,6 +260,11 @@ read_artifact() {
         /size_t cand = rx_ofsskip\(subject, subject_length, scan_position/ {
                                                  pf_ofs = 1 }
         /^            if \(cand < subject_length\) \{$/ { ofs_bnd = 1 }         # emit_unanchored: the D11 clamp arm
+        # [OPT-LITSCAN] S1 the RUN TERM, read off the helper body itself: the
+        # one compare an offset-set helper never emits (its verifies are byte
+        # compares and table probes), so it tells the run rows apart without
+        # reading the stamp.
+        /!memcmp\(subject \+ cand/                     { ofs_run = 1 }
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
@@ -278,7 +284,8 @@ read_artifact() {
         END {
             eng = vm ? "vm" : "dfa"
             scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
-            if (pf_ofs)     pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
+            if (pf_ofs && ofs_run) pf = ofs_bnd ? "run-pinned-bounded" : "run-pinned"
+            else if (pf_ofs) pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
             else if (pf_bc) pf = bnd ? "byte-class-bounded" : "byte-class"
             else if (pf_mc) pf = bnd ? "memchr-bounded"     : "memchr"
             else if (pf_at) pf = "memchr"
@@ -414,6 +421,11 @@ witness empty      none               '^\B\b'
 # puts a word context on the machine, so it takes the D11 clamp.
 witness unanchored offset-set         '\d{4}-\d{2}-\d{2}'
 witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}'
+# [OPT-LITSCAN] S1 THE TWO RUN-PINNED FORMS: router (class B, a scan at
+# offset 0 with no model selection) and `foo\b` (the bounded twin under the
+# trailing word context).
+witness unanchored run-pinned         '/user|/users'
+witness unanchored run-pinned-bounded 'foo\b'
 
 # ---------------------------------------------------------------------------
 # THE VM SIDE, AS AN IFF — [DD-13c], r37 finding #6.

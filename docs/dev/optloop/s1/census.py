@@ -44,7 +44,7 @@ def probe(pat, extra):
     os.close(fd)
     try:
         r = subprocess.run([E["PROBE"], "-p", "rx", "--features", "all"] + extra +
-                           ["-o", tmp, "--pattern", pat.decode("latin-1")],
+                           ["-o", tmp, "--pattern", pat],   # BYTES: a str argv is re-encoded UTF-8
                            capture_output=True, timeout=120, env=dict(E, S1PROBE="x"))
     finally:
         for f in (tmp, tmp[:-2] + ".h"):

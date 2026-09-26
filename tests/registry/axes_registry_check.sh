@@ -277,6 +277,26 @@ seen_dumped_bits=""   # accumulates "N" per bit this dump names, for direction 2
 while IFS=$'\x1f' read -r axis order candidate kind stamp_macro stamp_value \
                         deny_macro deny_bit force_macro force_bit cli_flag applies; do
     [ -n "$axis" ] || continue
+    # [OPT-LITSCAN] S1: a candidate removed by EITHER of two bits (the
+    # run-pinned prefilter rows) carries all three deny cells `|`-joined in
+    # the same order (docs/spec/registry.md) — split them in lockstep and
+    # check each (macro, bit, flag) triple exactly as a one-bit row is
+    # checked, so a pair whose halves disagree fails on the half that does.
+    if [ -n "$deny_macro" ] && [ "${deny_macro#*|}" != "$deny_macro" ]; then
+        IFS='|' read -r -a dm_parts <<< "$deny_macro"
+        IFS='|' read -r -a db_parts <<< "$deny_bit"
+        IFS='|' read -r -a df_parts <<< "$cli_flag"
+        if [ "${#dm_parts[@]}" != "${#db_parts[@]}" ] || [ "${#dm_parts[@]}" != "${#df_parts[@]}" ]; then
+            bad "[$axis/$candidate] multi-bit deny cells disagree in length: macro '$deny_macro', bit '$deny_bit', flag '$cli_flag'"
+        fi
+        for i in "${!dm_parts[@]}"; do
+            check_macro_bit "${dm_parts[$i]}" "${db_parts[$i]:-}" "$axis" "$candidate"
+            seen_dumped_bits="$seen_dumped_bits ${db_parts[$i]:-}"
+            [ -n "${df_parts[$i]:-}" ] && check_cli_flag_accepted "${df_parts[$i]}" "$axis" "$candidate"
+            [ -n "${db_parts[$i]:-}" ] && check_tuning_bit_documented "${db_parts[$i]}" "$axis" "$candidate"
+        done
+        continue
+    fi
     if [ -n "$deny_macro" ]; then
         check_macro_bit "$deny_macro" "$deny_bit" "$axis" "$candidate"
         seen_dumped_bits="$seen_dumped_bits $deny_bit"

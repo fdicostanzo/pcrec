@@ -1,0 +1,129 @@
+# s1build identity/mover transcripts (s1_identity.py, s1_movers.py), base 27a63314 vs each step's build
+## s1_identity.py step 1
+== bench: 256 artifact-configs
+  identity: {'identical': 249, 'refused': 7}
+== corpus: 6388 artifact-configs
+  identity: {'identical': 5673, 'refused': 715}
+## s1_identity.py step 2
+== bench: 256 artifact-configs
+  identity: {'identical': 249, 'refused': 7}
+== corpus: 6388 artifact-configs
+  identity: {'identical': 5673, 'refused': 715}
+## s1_identity.py step 3
+== bench: 256 artifact-configs
+  identity: {'identical': 249, 'refused': 7}
+== corpus: 6388 artifact-configs
+  identity: {'identical': 5673, 'refused': 715}
+## s1_identity.py step 4
+== bench: 256 artifact-configs
+  identity: {'identical': 249, 'refused': 7}
+== corpus: 6388 artifact-configs
+  identity: {'identical': 5673, 'refused': 715}
+## s1_identity.py step 5a
+== bench: 256 artifact-configs
+  identity: {'identical': 245, 'changed': 4, 'refused': 7}
+       4  prefilter offset-set->offset-set  req_why emitted->dominated
+== corpus: 6388 artifact-configs
+  identity: {'identical': 5405, 'changed': 268, 'refused': 715}
+     255  prefilter offset-set->offset-set  req_why emitted->dominated
+      13  prefilter offset-set-bounded->offset-set-bounded  req_why emitted->dominated
+## s1_movers.py 5a (EXPECT=A,E) [census_base, pre-fix census; A/E rows unaffected by the fix]
+== bench
+        6  changed   predicted=1  class=A
+       10  changed   predicted=1  class=E
+      387  identical predicted=0  class=-
+       62  identical predicted=0  class=B+rowb
+        2  identical predicted=0  class=C0
+        2  identical predicted=0  class=C0+rowb
+       36  identical predicted=0  class=C1+rowb
+       30  identical predicted=0  class=C2
+       30  identical predicted=0  class=D
+       26  identical predicted=0  class=V
+== corpus
+       74  changed   predicted=1  class=A
+      253  changed   predicted=1  class=E
+     2846  identical predicted=0  class=-
+        5  identical predicted=0  class=A2
+       66  identical predicted=0  class=B+rowb
+        3  identical predicted=0  class=C0
+        5  identical predicted=0  class=C0+rowb
+      115  identical predicted=0  class=C1+rowb
+       40  identical predicted=0  class=C2
+       32  identical predicted=0  class=D
+      144  identical predicted=0  class=V
+mismatches: 0
+## s1_movers.py 5b (EXPECT=A,E,rowb) against the FIXED census (census_b_27a63314.tsv)
+== bench
+        6  changed   predicted=1  class=A
+       56  changed   predicted=1  class=B+rowb
+        2  changed   predicted=1  class=C0+rowb
+       36  changed   predicted=1  class=C1+rowb
+       10  changed   predicted=1  class=E
+      395  identical predicted=0  class=-
+        2  identical predicted=0  class=C0
+       30  identical predicted=0  class=C2
+       28  identical predicted=0  class=D
+       26  identical predicted=0  class=V
+== corpus
+       74  changed   predicted=1  class=A
+       58  changed   predicted=1  class=B+rowb
+        5  changed   predicted=1  class=C0+rowb
+      115  changed   predicted=1  class=C1+rowb
+      253  changed   predicted=1  class=E
+     2854  identical predicted=0  class=-
+        5  identical predicted=0  class=A2
+        3  identical predicted=0  class=C0
+       40  identical predicted=0  class=C2
+       32  identical predicted=0  class=D
+      144  identical predicted=0  class=V
+mismatches: 0
+## s1_movers.py -fno-run-prefilter on NEW only (EXPECT=A,E)
+== bench
+        6  changed   predicted=1  class=A
+       10  changed   predicted=1  class=E
+      387  identical predicted=0  class=-
+       62  identical predicted=0  class=B+rowb
+        2  identical predicted=0  class=C0
+        2  identical predicted=0  class=C0+rowb
+       36  identical predicted=0  class=C1+rowb
+       30  identical predicted=0  class=C2
+       30  identical predicted=0  class=D
+       26  identical predicted=0  class=V
+== corpus
+       74  changed   predicted=1  class=A
+      253  changed   predicted=1  class=E
+     2846  identical predicted=0  class=-
+        5  identical predicted=0  class=A2
+       66  identical predicted=0  class=B+rowb
+        3  identical predicted=0  class=C0
+        5  identical predicted=0  class=C0+rowb
+      115  identical predicted=0  class=C1+rowb
+       40  identical predicted=0  class=C2
+       32  identical predicted=0  class=D
+      144  identical predicted=0  class=V
+mismatches: 0
+## s1_movers.py -fno-offset-skip on BOTH sides (EXPECT=none)
+== bench
+      387  identical predicted=0  class=-
+        6  identical predicted=0  class=A
+       62  identical predicted=0  class=B+rowb
+        2  identical predicted=0  class=C0
+        2  identical predicted=0  class=C0+rowb
+       36  identical predicted=0  class=C1+rowb
+       30  identical predicted=0  class=C2
+       30  identical predicted=0  class=D
+       10  identical predicted=0  class=E
+       26  identical predicted=0  class=V
+== corpus
+     2846  identical predicted=0  class=-
+       74  identical predicted=0  class=A
+        5  identical predicted=0  class=A2
+       66  identical predicted=0  class=B+rowb
+        3  identical predicted=0  class=C0
+        5  identical predicted=0  class=C0+rowb
+      115  identical predicted=0  class=C1+rowb
+       40  identical predicted=0  class=C2
+       32  identical predicted=0  class=D
+      253  identical predicted=0  class=E
+      144  identical predicted=0  class=V
+mismatches: 0

@@ -1843,7 +1843,7 @@ it over the whole corpus, on both engines):
 
 | artifact | `scan` | `prefilter` |
 |---|---|---|
-| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the seven in §6.3 |
+| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the nine in §6.3 |
 | VM artifact, HYBRID | the same three values, describing the DFA scan the artifact INLINES | the same five values, describing that inlined scan's own filter |
 | VM artifact, non-hybrid | `NULL` — there is no DFA scan in this artifact | `"none"` — the VM's own vocabulary (`<PREFIX>_VM_PREFILTER`'s value on exactly these artifacts) |
 
@@ -3336,7 +3336,7 @@ wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
 value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
-carries, and its seven values are the whole set:
+carries, and its nine values are the whole set:
 
 | value | mechanism |
 |---|---|
@@ -3347,6 +3347,8 @@ carries, and its seven values are the whole set:
 | `"byte-class-bounded"` | the bitmap form under the same, bounded at `n - 1` |
 | `"offset-set"` | [OPT-K]: a SET of (offset, byte-set) tests, one scanned for and the rest verified on each candidate — see `RX_DFA_PREFILTER_OFFSETS` below |
 | `"offset-set-bounded"` | the offset-set form under the same view/word context, bounded at `n - 1` |
+| `"run-pinned"` | [OPT-LITSCAN] S1 (`abi` 36): the pattern's necessary run (`RX_REQ_RUN`) sits at a fixed offset from every match's start and the scan already runs on the run's own scan member there, so the candidate test verifies the WHOLE run as one compare — the offset-set block with the run as one term; the run pre-check is then not emitted (`RX_REQ_WHY "dominated"`). Removed by `-fno-run-prefilter` OR `-fno-offset-skip` |
+| `"run-pinned-bounded"` | the run-pinned form under the same view/word context, bounded at `n - 1` |
 
 **`<PREFIX>_DFA_PREFILTER_OFFSETS` ([OPT-K], `abi` 9) is on every
 artifact the four `RX_DFA_*` stamps are on**, and names WHICH offsets the
@@ -3359,13 +3361,17 @@ candidate's own start with `*` marking the one the scan searches for:
 ```
 
 It reads `"none"` on every artifact whose `_DFA_PREFILTER` is not one of
-the two `offset-set` values, and is non-`"none"` on exactly those two —
-the same iff, stated from the other side. It is a SECOND stamp rather than
+the two `offset-set` or two `run-pinned` values, and is non-`"none"` on
+exactly those four — the same iff, stated from the other side. On a
+`run-pinned` value it lists every offset the test covers, the run's own
+offsets individually (router `/user|/users`: `"0*,1,2,3,4"`), and its
+scan may be offset 0 (`0*`), which no other value's scan is. It is a SECOND stamp rather than
 a widening of `_DFA_PREFILTER` because that stamp's value is the emitter's
 chosen FORM (a fixed, countable set of strings) while this one is a fact
 about the individual machine; folding them would make the form's value set
 unbounded. Offset 0 is always a member: it is the test the four older
-values already make.
+values already make (on a `run-pinned` value, as the scan, a verify, or a
+byte of the run).
 
 **`<PREFIX>_DFA_MATCH` ([ENG-ABS], `abi` 10) is on every DFA
 ARTIFACT — and, unlike the four stamps above, NOT on a VM hybrid**, and

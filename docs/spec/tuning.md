@@ -876,7 +876,8 @@ declines an optimization — which is why `docs/spec/limits.md` says
 nothing about them.
 
 **The stamps.** `<PREFIX>_DFA_PREFILTER` gains the values
-`"offset-set"` and `"offset-set-bounded"`, and the new sibling
+`"offset-set"` and `"offset-set-bounded"` (and, with §2.30's run rows,
+`"run-pinned"`/`"run-pinned-bounded"`, which this flag ALSO removes), and the new sibling
 `<PREFIX>_DFA_PREFILTER_OFFSETS` names the chosen offsets with `*` on
 the scanned one (`docs/spec/match_api.md` §6.3). **MASKED out of
 `rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`), for the
@@ -2541,18 +2542,31 @@ the whole run. `<PREFIX>_REQ_RUN` is unchanged and still names the window;
 an artifact whose run fits its window emits nothing more; where a DFA scan
 runs in front nothing changes.
 
-**G1 — DOMINANCE. Not a second pass on a byte already scanned.** Where the
-artifact's own candidate-start prefilter is the single-byte `memchr` form on a
-byte `p`, a one-byte pre-check on `q` is worth emitting only if `q` is
-STRICTLY rarer than `p` by `pcrec_byte_freq_ppm` — otherwise it dismisses no
-window that pass would not dismiss sooner. Identity (`p == q`) is the
-redundant case and needs no table, so it declines under EVERY encoding; the
-density comparison is read only under `byte`, §2.27's own encoding rule and
-for its reason. The rule is scoped to the ONE-BYTE form: §2.28's run check
-dismisses strictly more than a `memchr` on its scan byte does, so it is not
-dominated by one, and the ledger measured only the one-byte shape. Measured: 4
-ledger cells, all `wild-codegrammar-json-array-begin`, whose artifact ran
-`memchr(…, 91, …)` twice per call.
+**G1 — DOMINANCE. Not a second pass on a byte already scanned.** Let `p` be
+the byte the artifact's own candidate-start scan runs on: the `memchr` form's
+byte, or — since `[OPT-LITSCAN]` S1 (`abi` 36) — the scan byte of an
+`offset-set` or `run-pinned` prefilter, which scans ONE byte at its scan
+offset. (A `byte-class` prefilter scans no single byte, and an artifact with
+no DFA scan at all has no `p`: there, as on every §2.29 [K65]/[K66] route, the
+pre-check stays.) The pre-check on `q` declines where:
+
+- **identity**: `p == q` — the same byte scanned twice. Needs no table, so it
+  declines under EVERY encoding. For a §2.28 RUN pre-check identity is
+  required AND the scan's candidate test must itself refuse every window
+  lacking the run: it must test each byte of the run at the offset where the
+  run is pinned from every match's start (an `offset-set` selection whose
+  verifies cover the whole run, or a `run-pinned` prefilter, which verifies
+  it as one compare). A run check dismisses strictly more than a `memchr` on
+  its scan byte does, so a byte scan alone never dominates it. A test that
+  verifies the run but scans a DIFFERENT member of it keeps the pre-check.
+- **density**, for the ONE-BYTE pre-check under a `memchr`-form prefilter
+  only: `q` is not STRICTLY rarer than `p` by `pcrec_byte_freq_ppm`, read
+  only under `byte`, §2.27's own encoding rule and for its reason.
+
+Measured: 4 ledger cells, all `wild-codegrammar-json-array-begin`, whose
+artifact ran `memchr(…, 91, …)` twice per call; and S1's own population
+(`docs/design/litscan_s1.md` §6), where router `/user|/users` and keyword
+`in|instanceof` ran the pre-check's scan byte a second time.
 
 **Answer-identity.** Preserved, including for give-ups: a declined
 pre-check is a check not run, and the check could only ever return NOMATCH
@@ -2578,7 +2592,7 @@ FOUR-TOKEN set:
 | `"emitted"` | the artifact emits a pre-check, on the byte or run its siblings name |
 | `"none"` | there is no necessary byte — the analysis found none, or `-fno-req-byte` denied it |
 | `"one-attempt"` | G2 declined: the route tries one start position, linearly (a DFA, an exact hybrid, or a frameless VM program) |
-| `"dominated"` | G1 declined: an equally rare byte is already scanned |
+| `"dominated"` | G1 declined: an equally rare byte is already scanned (for a run, by a candidate test that also verifies the run) |
 
 `"none"` here holds if and only if `<PREFIX>_REQ_BYTE` is `"none"`, which is
 what makes the pair checkable against each other. It is a separate stamp
@@ -2588,6 +2602,40 @@ fact about the pattern, and this one answers whether the artifact acted on it.
 
 **One further emitted consequence.** A declined artifact whose body calls no
 other `memchr` also loses its `#include <string.h>`. Nothing else moves.
+
+### 2.30 `-fno-run-prefilter` — `PCREC_NO_RUN_PREFILTER` (bit 32)
+
+**`[OPT-LITSCAN]` S1, `abi` 36. ANSWER-IDENTITY-preserving.** Where the
+pattern's necessary run (§2.28, `<PREFIX>_REQ_RUN`) sits at a FIXED offset
+from every match's start — the §2.14 offset walk proves each of its bytes
+there — and the forward DFA scan already scans the run's own scan member at
+that offset (the offset-0 `memchr` byte, or the offset-set selection's scan
+offset), the prefilter verifies the WHOLE run on each candidate as ONE
+constant-length compare inside its `<PREFIX>_ofsskip` block. The run
+pre-check is then dominated (§2.29 G1) and not emitted. The run is verified
+as one term outside §2.14's k-set cap of 4. `<PREFIX>_DFA_PREFILTER` reads
+`"run-pinned"` or, under a view or word context, `"run-pinned-bounded"`; the
+scan can sit at offset 0 (`<PREFIX>_DFA_PREFILTER_OFFSETS "0*,1,2,3,4"` on
+`/user|/users`), which no other value's does.
+
+**Why.** Without it the artifact scanned the run's byte twice per call:
+once in the pre-check's own loop, once in the prefilter
+(`docs/design/litscan_s1.md` §0). Where the offset-set selection already
+verified the run, only the pre-check's pass is removed and the program is
+otherwise unchanged (§2.29).
+
+**THE DENY IS TWO BITS, and either removes the rows.** They carry
+`PCREC_NO_RUN_PREFILTER | PCREC_NO_OFFSET_SKIP`: they emit §2.14's
+`<PREFIX>_ofsskip` block, so they are members of that family, and
+`-fno-offset-skip` keeps its promise of the pre-`[OPT-K]` artifact only if it
+removes them too. With this flag alone the artifact is the one before S1:
+the prefilter falls back to `memchr[-bounded]` or `offset-set[-bounded]`, and
+the run pre-check returns (`<PREFIX>_REQ_WHY "emitted"`). The elision of a
+pre-check an `offset-set` selection already dominates is admission (§2.29)
+and has no axis. `--list-axes` renders the pair `|`-joined
+(`docs/spec/registry.md`). Deny-only; MASKED out of `rx_info.flags`
+(`strategy_denials`) for the mask's own reason. `-fno-req-run` and
+`-fno-req-byte` remove the run itself, so nothing is pinned under either.
 
 ## 3. The DFA side's own stamps
 
