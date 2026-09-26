@@ -71,7 +71,7 @@ built in order; **step 6 (the Q1 floating-run conversion) NOT built** (brief),
 
 ## Validation (this lane, darwin)
 
-- `make strict`: clean (step 1; re-run owed on the tip by the full `make test`).
+- `make strict`: clean on step 1 and on the tip.
 - `make test-codegen`: **10/11 scripts pass**; the one red,
   `run_inline_capability.sh` ("nm could not read arm_a.o"), is
   pre-existing — identical on a scratch build of the base `27a63314`.
@@ -83,11 +83,22 @@ built in order; **step 6 (the Q1 floating-run conversion) NOT built** (brief),
   `axes_registry_check.sh` 135/0.
 - `tests/offsetskip/run_pinned.rxt`: harness 55/0; python3 `re` 48 PASS /
   7 SKIP / 0 FAIL; 51/51 on the base compiler (the pre-C0-block version).
-- `test-recursion-identity` and `test-rxtsource`: see the handback (run at
-  the end of the lane; logs `/tmp/s1build_scratch/recid.log`,
-  `/tmp/s1build_scratch/rxtsource.log`).
-- **OWED**: the full `make test` (launched detached as this lane's last act,
-  log in the handback), and the post-S1 `make test-axes` (the manager's).
+- `run_recursion_identity.sh` (test-recursion-identity): **16/0** with (B)
+  re-pinned to `6d92764d`.
+- `make test-rxtsource`: **214/0** after re-pinning the census
+  (+1 file / +10 blocks / +55 lines for `run_pinned.rxt`: 220/4016/29224).
+- Sabotage, single-row mech: S279-S283 DETECTED, S284 UNDETECTED
+  (EXPECTED); S267/S270 re-anchors validated by hand (see findings).
+- **OWED**: the full `make test`. It could not start inside the lane: the
+  manager's `make test-axes` held the heavy slot (no `EXIT=` line in
+  `/tmp/pcrec_axes/axes.log` at the lane's end). The lane armed a DETACHED
+  waiter, `/tmp/s1build_scratch/scripts/maketest_after_axes.sh`, which polls
+  for that `EXIT=` line and then runs `make test CC=gcc-16` in this worktree;
+  log `/tmp/s1build_scratch/maketest.log`, completion line
+  `MAKETEST-EXIT=<rc>` at its end (verdict = make's `*** [test-X] Error`
+  lines). Known pre-existing darwin red: `run_inline_capability.sh`.
+  Also owed: the post-S1 `make test-axes` (the manager's), which now
+  includes `-fno-run-prefilter` (bit 32, derived from the header).
 
 ## abi 35 -> 36 (D76/D94)
 
