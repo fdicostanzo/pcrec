@@ -33,7 +33,7 @@ SAB_SUITES="scanedge harness"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_EXPECT=UNDETECTED
 SAB_DESC="the run-pinned rows declare reseeds = false though their emitters reseed a seeded machine, so scanedge.c's precondition (8) stops refusing a chain head that is a seed target on those machines — unreachable on every run-row machine the corpus, the bench and 21 constructed witnesses produce"
-SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, a scratch build with this plant, docs/dev/optloop/s1/rowj_reach_output.txt): 0 artifacts moved over 151 corpus + 94 bench run-row artifact-configs (2 seeded, both wild-secrets-github-pat) and 21 constructed seeded witnesses. Expected verdict UNDETECTED (EXPECTED) with reach:ok. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S284."
+SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build): a scratch build with this plant moves 0 artifacts over 151 corpus + 94 bench run-row artifact-configs (2 seeded, both wild-secrets-github-pat) and 21 constructed seeded witnesses (docs/dev/optloop/s1/rowj_reach_output.txt); single-row mech: UNDETECTED (EXPECTED) -- reach:ok(1/1), scanedge:0fail/14pass, corpus:0fail/55pass. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S284."
 # [MECH-REACH] the site IS exercised: a seeded run-row machine with a scan edge.
 SAB_REACH='"$PCREC" --features all -p rx -fcomments -o "$REACH_TMP/o.c" --pattern "\\bat /user[0-9]{2,50}x" && grep -q "^#define RX_DFA_PREFILTER \"run-pinned-bounded\"" "$REACH_TMP/o.c" && grep -q "rx_forward_seed_state" "$REACH_TMP/o.c" && grep -q "SCAN EDGE" "$REACH_TMP/o.c" && echo REACH-SEEDED-RUN-ROW-WITH-EDGE'
 SAB_REACH_EXPECT="REACH-SEEDED-RUN-ROW-WITH-EDGE"

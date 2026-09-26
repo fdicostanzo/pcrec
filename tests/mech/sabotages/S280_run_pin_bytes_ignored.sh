@@ -13,7 +13,7 @@ SAB_FILE="src/opt/prefix_k.c"
 SAB_SUITES="harness prechecks"
 SAB_HARNESS_TARGET="tests/offsetskip/run_pinned.rxt"
 SAB_DESC="the run pin no longer checks that the walk's singletons ARE the run's bytes, so a pattern whose run is pinned later than an earlier all-singleton window (/abcd[xy]/user) is pinned at the wrong offset, takes a run row, and compares the run where it is not: lost matches"
-SAB_DOC_FIGURE="tests/offsetskip/run_pinned.rxt's /abcd[xy]/user m cells go nomatch; tests/codegen/run_prechecks.sh §5.10 reports that pattern stamping run-pinned where memchr/none/emitted is expected. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S280."
+SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED -- reach:ok(1/1), corpus:2fail/53pass (the two /abcd[xy]/user m cells of run_pinned.rxt), prechecks:1fail/288pass (§5.10 names the pattern stamping run-pinned). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S280."
 # [MECH-REACH] the witness really is the C0 shape: a run, the memchr form, no run row.
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "/abcd[xy]/user" && grep -q "^#define RX_REQ_RUN \"2f75736572@0\"" "$REACH_TMP/o.c" && grep -q "^#define RX_DFA_PREFILTER \"memchr\"" "$REACH_TMP/o.c" && echo REACH-C0-PIN-WITNESS'
 SAB_REACH_EXPECT="REACH-C0-PIN-WITNESS"
