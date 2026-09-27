@@ -1,0 +1,12 @@
+# tests/findings/witness/witness.tsv — [FINDINGS] B2 WITNESSES (design §11.9):
+# one constructed pattern + one named bundle per reader, whose choice MOVES
+# against the default. Both values are pinned: the default's, so a witness
+# that stops reaching its site (the pattern no longer exercises the reader)
+# is red, and the bundle's, so a reader that stopped reading the rate is red.
+# Compiled `--features all -e byte`; run by gen_adversarial.py witness.
+#bundle	reader	stamp	pattern	default	moved
+w-c1	c1	REQ_BYTE	[0-9]+x[0-9]+e[0-9]+	120	101
+w-c2a	c2a	REQ_RUN	github_pat_[0-9]+	6875625f7061745f@3	6769746875625f70@7
+w-c2b	c2b	REQ_RUN	(a|b)+foobarbazquux	7262617a71757578@3	666f6f6261726261@0
+w-c3	c3	REQ_WHY	a+c	emitted	dominated
+w-c4	c4	DFA_PREFILTER_OFFSETS	(a)\Q(b)\E(c)	0,1*,2,3,4	0*,1,2,3,4
