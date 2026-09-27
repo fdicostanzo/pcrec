@@ -111,13 +111,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import reviewlib as rl  # noqa: E402
 
 LAYER_ORDER = [
-    "lib", "core", "enc", "parse", "ir", "opt", "gen", "driver", "dump", "cli",
+    "lib", "core", "enc", "parse", "ir", "facts", "opt", "gen", "driver",
+    "dump", "cli",
 ]
 LAYER_INDEX = {name: i for i, name in enumerate(LAYER_ORDER)}
 
 # Directories that ARE a layer, by name under src/. `core` here means the
 # BASE tier only -- see FILE_LAYER below for the one file that is not.
-_SRC_DIR_LAYERS = ("core", "enc", "parse", "ir", "opt", "gen", "dump")
+# [PATFACTS] step 3.0a: `facts` is the ANALYSIS LAYER
+# (docs/design/patfacts/design.md §4.2.1), between the IR it reads and the
+# passes that read it.
+_SRC_DIR_LAYERS = ("core", "enc", "parse", "ir", "facts", "opt", "gen", "dump")
 
 # ---------------------------------------------------------------------------
 # THE PER-FILE TIER OVERRIDE ([REVW.3] wave 3, lens 6's L3 / manager ruling

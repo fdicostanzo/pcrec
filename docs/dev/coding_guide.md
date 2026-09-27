@@ -82,7 +82,7 @@ coefficients.
 **1.9 Know which LAYER you are writing in, and depend only leftward.**
 
 ```
-lib -> core(base) -> enc -> parse -> ir -> opt -> gen -> driver -> dump -> cli
+lib -> core(base) -> enc -> parse -> ir -> facts -> opt -> gen -> driver -> dump -> cli
 ```
 
 Two of those are tiers rather than directories, and both are wave 3's

@@ -12,6 +12,10 @@
 
 #include "core/internal.h"
 #include "enc/enc.h"
+/* [PATFACTS] step 3.0a: the E2 derivations' one caller until step 3.0 moves
+ * their calls into the record's accessors (docs/design/patfacts/design.md
+ * §9). */
+#include "facts/facts_derive.h"
 
 /* Formats the printf-style refusal into `cx->err` (position plus the PATTERN
  * input tag) when a caller supplied one, then longjmps to `cx->jb` -- the one

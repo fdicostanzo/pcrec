@@ -2411,6 +2411,10 @@ enum {
     SDR_MAX         = 2
 };
 
+/* [PATFACTS] the pattern-facts record's CONSUMER header: types and
+ * accessors, never a derivation (docs/design/patfacts/design.md §4.2.1). */
+#include "facts/facts.h"
+
 /* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN, in the bounded form the
  * emitted compare needs: `len` contiguous bytes every match of the pattern
  * must contain, and the INDEX within them of the one the emitted `memchr`
@@ -6191,39 +6195,16 @@ enum {
     PCREC_SANCH_GSTART,     /* every match begins at the caller's startpos */
     PCREC_SANCH_BOT         /* every match begins at absolute offset 0 */
 };
-int pcrec_start_anchor(const Ast *root);             /* src/opt/startanch.c */
+/* `pcrec_start_anchor` itself — the DERIVATION — is declared in
+ * src/facts/facts_derive.h ([PATFACTS] step 3.0a). */
 /* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
 
-/* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
- * last `W` bytes of the subject, or `-1` where the analysis declines (the
- * four structural declines are in src/opt/endwin.c's own header, which also
- * carries the soundness argument every emitter site rests on). BYTES, and
- * the encoding decline is what makes that true. */
-long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
-
-/* [OPT-REQBYTE] + [OPT-REQPOS] tier 2b — THE NECESSARY BYTE AND THE NECESSARY
- * LITERAL RUN, from ONE walk over the lowered tree. Returns the byte every
- * match must contain, or -1 where the analysis found none (which DISABLES the
- * check and is always sound), and writes the run into `*run` (`len == 0` where
- * it found none). src/opt/reqbyte.c's header carries the whole account: why
- * the whole window and not PCRE2's "other than at its start", why the analysis
- * produces a SET and a RUN, why the member it picks is the argmin of a
- * frequency prior under the `byte` encoding and the rightmost elsewhere, and
- * why a lookaround's body is a correctness decline.
- *
- * `run_ok` is [OPT-REQPOS]'s own axis, threaded rather than read here, because
- * the BYTE the artifact emits depends on whether the run ships: with a run the
- * `memchr` is the run loop's and tests the run's scan member, without one it
- * tests the whole set's own pick. Both answers come out of this one call so
- * they cannot be chosen in two places and disagree. `cx` is read for the
- * ENCODING alone (the prior is a fact about a corpus under one). `set`
- * receives the whole necessary set the returned byte was picked from ([K65]),
- * empty exactly when the return is -1. */
-int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run,
-                   ReqSet *set);
-                                                      /* src/opt/reqbyte.c */
+/* [OPT-ENDWIN] `pcrec_end_window` and [OPT-REQBYTE]/[OPT-REQPOS]'s
+ * `pcrec_req_byte` are pattern-fact DERIVATIONS: declared in
+ * src/facts/facts_derive.h ([PATFACTS] step 3.0a), which only their owners
+ * and the record may include. */
 
 
 /* ---- gen -- defined under src/gen/ ----------------------------------*/

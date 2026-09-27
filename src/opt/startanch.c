@@ -51,6 +51,7 @@
  * `docs/dev/optloop/cycle1_analysis.md` M2, `cycle1_profile.md` M2. */
 
 #include "core/internal.h"
+#include "facts/facts_derive.h"
 
 /* The two facts this walk can learn, as a set, because they are not ordered:
  * `^` and `\G` constrain different positions and a pattern can carry both

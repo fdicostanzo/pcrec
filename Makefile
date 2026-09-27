@@ -106,7 +106,8 @@ endif
 export CCACHE
 
 LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
-           $(wildcard src/ir/*.c) $(wildcard src/opt/*.c) \
+           $(wildcard src/ir/*.c) $(wildcard src/facts/*.c) \
+           $(wildcard src/opt/*.c) \
            $(wildcard src/gen/*.c) $(wildcard src/enc/*.c) \
            $(wildcard src/dump/*.c)
 LIBOBJS := $(patsubst src/%.c,$(BUILD_DIR)/obj/%.o,$(LIBSRCS))
@@ -160,10 +161,15 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # line editing an axis row would rebuild nothing and `--list-axes` would
 # advertise a spelling the parser no longer accepts. It is NOT in GEN_TABLES,
 # for rxt_schema.def's reason: hand-authored design, not a vendored source.
+# src/facts/facts.h and src/facts/facts_derive.h joined at [PATFACTS] step
+# 3.0a WITH the files, the class above forestalled a sixth time: facts.h is
+# included by core/internal.h (so by every translation unit), and
+# facts_derive.h by the fact owners.
+FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
-$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
+$(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
@@ -192,7 +198,7 @@ gen-tables:
 $(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
 	ar rcs $@ $^
 
-$(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h
+$(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h src/core/axes.def src/core/internal.h $(FACTS_HDRS)
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 

@@ -58,6 +58,7 @@
 
 #include "core/internal.h"
 #include "enc/enc.h"
+#include "facts/facts_derive.h"
 
 /* How strongly is the END of a match pinned to the end of the subject?
  * Ordered, weakest first, because `A_ALT` takes the WEAKEST of its branches

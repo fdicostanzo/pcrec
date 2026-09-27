@@ -129,6 +129,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "facts/facts_derive.h"
 
 /* A set of necessary bytes plus the member the emitter will use. `pick` is
  * -1 exactly when the set is empty, and is always a member of the set when it

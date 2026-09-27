@@ -5,7 +5,7 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
 ## The layer order
 
 ```
-lib → core(base) → enc → parse → ir → opt → gen → driver → dump → cli
+lib → core(base) → enc → parse → ir → facts → opt → gen → driver → dump → cli
 ```
 
 A file may depend on anything to its LEFT. `tools/review/include_graph.py`
@@ -52,6 +52,11 @@ reads 0. A clean `include_backedges.tsv` is a statement about includes.
   the third-encoding recipe
 - **parse/** — base-tier PCRE parser with module lookup hooks
 - **ir/** — NFA construction and priority subset construction (DFA)
+- **facts/** — [PATFACTS] (D120/D126) the pattern-facts ANALYSIS LAYER:
+  one derivation per pattern fact, behind a consumer header (`facts.h`) and
+  a facts-private one (`facts_derive.h`) whose includers are checked. Built
+  in `docs/design/patfacts/design.md` §9's migration order. See
+  facts/CLAUDE.md
 - **opt/** — IR/DFA optimization passes (APPROACH §5): minimization; and,
   since [M6.4.2], `atomic.c` — the free discharge, which is not an
   optimisation at all: it deletes cuts a proof shows are no-ops, which changes
