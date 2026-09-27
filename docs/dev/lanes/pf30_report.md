@@ -131,9 +131,10 @@ reverted before commit.
    CLI acceptance instrument; `--emit-facts` adds refusals only (its own mask,
    and its bit in `CLI_MODES_VS_PATTERN_QUERY`), and `--help`'s text grew by
    the new entry, which moves every usage-printing diagnostic's stderr.
-8. **Sabotage ids S296-S300** were numbered from main's highest (S294) at
-   lane start; the K68 lane may also be numbering — check for a collision at
-   merge.
+8. **Sabotage ids S296-S300** (S295-S299 as first numbered from main's
+   highest, S294, at lane start) — K68 did take S295; renumbered at landing,
+   see "Landing". Logs written before the landing (§5's
+   `/tmp/pf30_mech_S<id>.log`) carry the OLD ids.
 
 ## 5. OWED — the detached chain
 
@@ -168,3 +169,70 @@ arm_a.o` in `test-codegen`; PC-3 (U13).
   unsealed epoch. 3.4 adds the E3 seal inside the `ENG_UNANCH` arm and the
   two decline tokens (`PfWhyCode` gains them).
 - Not touched: `docs/dev/plan.md` STATE tags, the journal (manager's).
+
+## Landing (lane pf30land, 2026-09-27)
+
+`git merge main` (alone) onto e64553cc → merge commit `7343a77e`. main had
+moved past pf30's base d978a604 by 23 commits (K68: abi 38→39, rx_info.flags
+masking deny bits 28/29/30, run_prechecks §6, sabotage S295; q4amend; docs).
+pf30 carries no abi bump of its own, so the result is **abi 39**.
+
+**Conflicts (2, not the 4-5 forecast).** `src/gen/emit_dfa.c`,
+`lib/pcrec.h`, `docs/dev/known_issues.md`, `docs/dev/plan.md`,
+`tests/mech/CLAUDE.md`, `tests/codegen/CLAUDE.md` all auto-merged cleanly.
+- `docs/dev/lanes/CLAUDE.md`: two appended entries (pf30, q4amend) — both kept.
+- `docs/spec/tuning.md` §2.27: pf30's "Facts emptied" paragraph and K68's
+  "Denying this bit also reaches §2.30" cross-ref were added at the same spot —
+  both kept, pf30's first. K68's parenthetical cited `Job.req_run` and "the
+  same `src/opt/reqbyte.c` walk", which pf30 moved into the facts record
+  (`PatFacts.req_run`, derived via `src/facts/req.c`), so it now reads "empties
+  the `req_run` fact along with the byte set (the fact deny above covers the
+  whole family)"; the §2.30 consequence and the litscan_s1 cite are unchanged.
+- Conflict-marker grep over the tree afterwards: none. Build clean before commit.
+
+A stale, uncommitted `docs/dev/artifact_size_log.tsv` (a byproduct of pf30's
+own `make test` run) was in the worktree. It was copied to the scratchpad and
+restored before the merge. It was not committed.
+
+**Renumber (`a68d3760`), top-down.** main's S295 is K68's
+(`S295_vm_anchor_bound_flags_leak.sh`, untouched). pf30's rows:
+
+| was | now | row |
+|---|---|---|
+| S299 | S300 | facts-decisions-stamp-dropped |
+| S298 | S299 | facts-deny-column-flipped |
+| S297 | S298 | facts-listing-row-skipped |
+| S296 | S297 | facts-derivation-hand-extern |
+| S295 | S296 | facts-private-header-included-by-consumer |
+
+File names, SAB_ID, header and the `SABOTAGE Sxxx` comment in each row, plus
+every citation found by grep: tests/mech/CLAUDE.md (the `facts` suite prose;
+K68's table row and S295 prose untouched), tests/codegen/CLAUDE.md (the facts
+checks entry; K68's line untouched), src/facts/CLAUDE.md, src/dump/CLAUDE.md,
+docs/dev/lanes/CLAUDE.md, and this report. docs/design/patfacts/design.md and
+plan.md cited none of these ids. After the renumber, each id from S295 to S300 names
+exactly one file and one SAB_ID.
+
+**Validation on the merged head (`89545106`), serial, gcc-16.** The logs are in
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/pf30land/scratchpad/`:
+- `make -j4` (make.log): clean, 0 warnings.
+- `make strict` (strict.log): `strict: whole tree compiles clean with -Werror -Wshadow`, `PF30LAND STRICT EXIT=0`.
+- `make test-codegen` (codegen.log): `run_group: 11/12 scripts passed`. The one
+  red is the accepted `FAIL: nm could not read arm_a.o (no rx_search symbol)`.
+  run_codegen_tests.sh passes 109/0, which includes the abi=39 assertion. run_facts_checks.sh passes all
+  six `[facts-*]` checks.
+- `bash tests/codegen/run_prechecks.sh` (prechecks.log): `checks passed: 301`, `checks failed: 0`.
+- `make test-recursion-identity` (recid.log): `checks passed: 16`, `checks
+  failed: 0`. (B) is `differing=0` against the unmoved pin b255027f on all four
+  configs. The script is byte-identical to main's.
+- `bash tests/mech/run_sabotage_matrix.sh ROW` was run for each row, one at a time, at 89545106 (mech_S*.log).
+  Every row printed `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0 ...)`:
+  - S295 (K68): `reach:ok(1/1),prechecks:3fail/298pass,corpus:0fail/29224pass` DETECTED
+  - S296: `facts:1fail/5pass` DETECTED
+  - S297: `facts:1fail/5pass` DETECTED
+  - S298: `facts:2fail/4pass` DETECTED
+  - S299: `facts:1fail/5pass` DETECTED
+  - S300: `facts:1fail/5pass` DETECTED
+
+No failure appeared at the seam between the two changes. A full `make test` was not run here, per the brief: pf30 passed it on
+its own base, and K68 passed it on main.
