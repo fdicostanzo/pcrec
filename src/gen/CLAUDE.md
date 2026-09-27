@@ -3213,8 +3213,9 @@ that was already cheaper, or on top of a pass the artifact was already running.
   head `dfa_pfs[]`, deny `PCREC_NO_OFFSET_SKIP | PCREC_NO_RUN_PREFILTER`
   (either removes them), `reseeds` true, `run_term` true. Their predicate
   (`pf_run_applies_common`, clauses 0-4 of litscan_s1.md §1.2) reads the
-  analysis (`PrefixKSets.run_pinned`/`run_o`, `Job.req_run`, `UnanchStart`)
-  and never a later row or the admission. `OfsTest` is the ONE derivation of
+  analysis (the `run_pin` fact through `us_run_pin` — the kind gate every
+  reader of that pure NFA+window fact owes, [PATFACTS] step 3.4 — the
+  `req_run` fact, `UnanchStart`) and never a later row or the admission. `OfsTest` is the ONE derivation of
   what a `<p>_ofsskip` block tests (scan, ascending terms, the run as one
   P4 term, `maxk`, `noffsets`); the block, its verify chain, tables, params,
   comment, the OFFSETS stamp and G1 all read it, and it holds no `Dfa` so a

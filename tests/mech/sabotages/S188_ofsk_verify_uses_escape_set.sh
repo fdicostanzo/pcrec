@@ -30,6 +30,15 @@
 # whose first byte is consumed by an `N_CLASS` of that closure — and is
 # therefore true from `fs` and from every `s1u[u]` alike. It is also strictly
 # tighter, which is a free improvement rather than a cost.
+#
+# RE-AIMED at [PATFACTS] step 3.4 (lane pf34): the walk became the E3 fact
+# `kset_walk` (src/facts/kset.c), a function of the NFA alone with no DFA
+# set in scope, so the original plant site (the walk's own offset 0) no
+# longer exists. The defect is now reachable only where the escape set and
+# the walk MEET — the offset-k selection in src/opt/prefix_k.c, which holds
+# `k0` — so the plant hands the selection (and through `PrefixKSets.walk`,
+# the emitted verify) a copy of the walk whose offset 0 is `k0`. Same
+# defect, same observable, same detectors; the shared fact is not touched.
 SAB_ID="S188-ofsk-verify-uses-escape-set"
 SAB_FILE="src/opt/prefix_k.c"
 SAB_SUITES="harness offsetskip"
@@ -37,6 +46,14 @@ SAB_HARNESS_TARGET="tests/offsetskip/offset_skip.rxt"
 SAB_DESC="the offset-0 VERIFY is given the DFA escape set (can_begin_match) instead of the walk's own frontier[0] — the SCAN's set used to answer the START's question. Every \\b-before-a-non-word-atom pattern then refuses every real candidate and LOSES ITS MATCHES, on both engines"
 SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-28, lane optk): see the VALIDATION RECORD at the foot of tests/codegen/run_offset_skip.sh for the measured counts against the clean 22pass/0fail + 98pass/0fail baseline. The defect this row restores SHIPPED in the lane's first draft and was found by a D6 critic; no check in the tree saw it, which is what tests/offsetskip S8 and run_offset_skip.sh S2c now exist for."
 SAB_COUNT=1
-SAB_BEFORE='    o->k[0].count = frontier_union(&w, o->k[0].set);'
-SAB_AFTER='    memcpy(o->k[0].set, k0, 256);   /* SABOTAGE S188 */
-    o->k[0].count = k0count;'
+SAB_BEFORE='    for (int j = 0; j < o->walk->nwalk; j++)
+        o->ppm[j] = pcrec_find_set_ppm(cx, o->walk->k[j].set);'
+SAB_AFTER='    {   /* SABOTAGE S188: the selection reads a walk whose offset 0 is k0 */
+        KsetWalk *cp = pcrec_arena_alloc(&cx->arena, sizeof *cp);
+        *cp = *o->walk;
+        memcpy(cp->k[0].set, k0, 256);
+        cp->k[0].count = k0count;
+        o->walk = cp;
+    }
+    for (int j = 0; j < o->walk->nwalk; j++)
+        o->ppm[j] = pcrec_find_set_ppm(cx, o->walk->k[j].set);'

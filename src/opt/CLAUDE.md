@@ -258,43 +258,27 @@ construction (src/ir) and emission (src/gen).
   but never refuses; DETECTED, 4fail/33pass, the opposite half of the same
   file). Tests: `tests/recursion/inlookaround.rxt`.
 
-- **prefix_k.c** — [OPT-K] THE OFFSET-k PREFIX ANALYSIS: which bytes every
-  match must carry, at which offsets from its own start, and which of those
-  offsets are worth testing before the DFA's transition loop is entered
-  (`docs/design/offset_k_skip.md`). Like `select_engine.c` and `mrl.c` it is
-  an ANALYSIS rather than a transformation — it mutates nothing and returns a
-  `PrefixKSets` the emitter reads.
+- **prefix_k.c** — [OPT-K] THE OFFSET-k SELECTION: which of the offsets
+  every match must carry are worth testing before the DFA's transition loop
+  is entered (`docs/design/offset_k_skip.md`). Like `select_engine.c` and
+  `mrl.c` it is an ANALYSIS rather than a transformation — it mutates
+  nothing and returns a `PrefixKSets` the emitter reads.
 
-  **IT WALKS THE NFA, AND THAT IS THE ONE FACT THAT DECIDES EVERYTHING ELSE
-  ABOUT THE FILE.** The candidate-start filter pcrec shipped before this row
-  derives its byte set from the forward DFA's START STATE
-  (`cand_from_escapes`, src/gen/emit_dfa.c): the bytes on which the start
-  state does not stay put. That is exact at offset 0 and USELESS past it,
-  because an ENG_UNANCH DFA state is the merge of the threads from EVERY
-  subject position — four bytes into `\d{4}-`, the state carries threads at 4,
-  3, 2, 1 and 0 digits, so "a byte that does not return the machine to the
-  start state" at offset 4 is `[0-9-]`, not `-` (MEASURED: 11 bytes). The
-  thread whose bytes the analysis wants to constrain is the one from the
-  candidate start ALONE, and the only place it exists on its own is the
-  pattern's own NFA, walked from `Nfa.anch_start` — a FIELD published by
-  `pcrec_build_nfa` and deliberately left alone by `pcrec_nfa_wrap_unanchored`,
-  rather than a shape test on the wrap's SPLIT. **Offset 0 keeps coming from
-  the DFA derivation that already owns it**, so no fact has two sources, and
-  §2.1 of the note is why that offset-0 set is CORRECT to be as wide as it is
-  (a `\b` machine's start state escapes on every word character because it
-  must REMEMBER the left-hand context, not because a match can begin there).
-
-  **SOUND IN ONE DIRECTION ONLY, and the closure is where that lives.** The
-  walk passes every assertion node as though it held, so a set can only ever
-  be WIDER than the truth, the cost model then declines it, and the artifact
-  keeps the filter it had. There is no direction in which this file can refuse
-  a start the scan would have accepted. Its `NKind` switch has NO `default:`
-  arm for `mrl.c`'s stated reason (R26 V7) and one of its own: a new
-  CONSUMING kind silently treated as an assertion is the file's single unsound
-  direction, so the compiler is made to say so. **That switch is the SECOND
-  hand-maintained exhaustive `NKind` walk in the tree** — `src/ir/dfa.c`'s
-  closure is the first — and the two are paired by nothing but this sentence
-  and `-Wswitch`.
+  **THE WALK IS A FACT AND LEFT THIS FILE** ([PATFACTS] step 3.4, lane
+  pf34): which bytes a match carries at each offset from its own start is the
+  E3 fact `kset_walk`, derived in `src/facts/kset.c` from the wrapped NFA's
+  `anch_start` (that file's header and `src/facts/CLAUDE.md` carry why the
+  NFA and not the DFA's start state, and why the walk is sound in one
+  direction only). This file is the DECISION over it (design §4.2.2
+  carve-out (c)): it reads the walk through `pcrec_fact_kset_walk`
+  (`PrefixKSets.walk` points at the memo), weighs each offset's set by the
+  MASS primitive into its OWN `ppm[]` (the walk reads no prior, r1 A2), and
+  picks the scan offset and verifies. **Offset 0's escape set `k0` stays the
+  BASELINE's**, from the DFA derivation that owns it, so no set has two
+  sources, and §2.1 of the note is why that set is CORRECT to be as wide as
+  it is (a `\b` machine's start state escapes on every word character
+  because it must REMEMBER the left-hand context, not because a match can
+  begin there).
 
   **THE SELECTION IS A COST MODEL, AND THE MODEL WAS MEASURED WRONG ONCE.**
   Five constants, four of them measured off this box
@@ -315,14 +299,15 @@ construction (src/ir) and emission (src/gen).
 
   Tests: `tests/offsetskip/` (answers), `tests/codegen/run_offset_skip.sh`
   (the artifact, the population, and the prior's own sum), sabotage rows
-  S185/S186/S187.
+  S185/S186/S187 and S188 (re-aimed here at step 3.4: the escape set handed
+  to the selection as the walk's offset 0).
 
-  **[OPT-LITSCAN] S1** it also PUBLISHES one fact and acts on none of it:
-  `PrefixKSets.run_pinned`/`run_o`, whether `Job.req_run` (the same window
-  the pre-check emits) sits at a fixed offset of every match, read off the
-  walk's own singletons before any `k0`-dependent return. The DECISION is
-  `src/gen/emit_dfa.c`'s run-pinned rows; the selection code, constants and
-  role comments here are unchanged (docs/design/litscan_s1.md §1.1).
+  **[OPT-LITSCAN] S1**'s PIN (`run_pinned`/`run_o`) was computed here beside
+  the selection until [PATFACTS] step 3.4 made it the E3 derived fact
+  `run_pin` (`src/facts/kset.c`); nothing in this file reads it now. The
+  DECISION is `src/gen/emit_dfa.c`'s run-pinned rows, which read it through
+  `us_run_pin` — the kind gate the pure fact's readers owe
+  (docs/design/litscan_s1.md §1.1; patfacts design §4.5).
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass

@@ -1,7 +1,7 @@
 # S285 — [OPT-LITSCAN] S1 THE RUN TERM IS COMPARED ONE BYTE LONGER THAN PROVED
 # (src/gen/emit_dfa.c, `ofsk_emit_verify`): the run-pinned rows' P4 compare
 # reads `t->run_len + 1` bytes instead of `t->run_len`, so the emitted
-# `memchr`/compare tests one byte past the window `PrefixKSets.run_pinned`
+# `memchr`/compare tests one byte past the window the `run_pin` fact
 # actually proved is fixed. litscan_s1.md §7.1 row (b), the emitter-level
 # mirror of S268 (`src/opt/reqbyte.c`'s analysis-level "claims a longer run
 # than proven").

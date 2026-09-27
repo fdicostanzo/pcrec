@@ -69,6 +69,26 @@
 # The check counts those witnesses, and fails if any `PF_KIND_*` bit
 # `src/facts/facts.h` declares has no witness (a new bit arrives with one).
 #
+# =========================================================================
+# 8. THE E3 FACTS: THE SEAL IS PER BRANCH, THE DECLINE NAMES THE ROUTE
+#    (step 3.4, design §3 and §4.5)
+# =========================================================================
+# `kset_walk` and `run_pin` are sealed (E3) inside `compile_driver`'s
+# ENG_UNANCH arm alone. Every other route answers them `absent` with a
+# decline naming the route: `decline:attempt-unwrapped-nfa` (ENG_ATTEMPT —
+# a forward NFA exists, never wrapped) or `decline:no-forward-nfa` (a VM
+# route with no DFA scan). THE ROUTE ORACLE IS THE ARTIFACT, not the record:
+# each witness's `RX_DFA_SCAN` stamp is read out of the emitted `.c` file
+# (`unanchored`, `attempt`, or no stamp at all), and the E3 rows' status and
+# `why` must be the ones that route implies. The witness's route is ALSO
+# written by hand, so a witness that drifts to another route fails rather
+# than silently re-testing a covered one; REACH requires all three routes.
+# On the sealed route the walk and the pin must equal the values written BY
+# HAND from the pattern (never read off the compiler). One witness is the
+# pin's WIDENED DOMAIN (design §9 "Why 3.4 is flagged" (i)): the pin is set
+# on an artifact whose forward scan has no offset-0 prefilter, and no pass
+# asked for it — every pin reader carries the kind gate.
+#
 # Usage: bash tests/codegen/run_facts_checks.sh
 # Env: PCREC (default <root>/build/pcrec); the objects are read from
 # `$(dirname $PCREC)/obj`, the tree that binary was linked from.
@@ -343,6 +363,74 @@ elif [ -n "$ebad" ]; then
     bad "[facts-e1] the E1 facts disagree with the pattern's structure, or the E1 cross-check refused:$ebad"
 else
     ok "[facts-e1] $nwit witnesses compile and list the kind mask and nullability written by hand ($nlow on a lowering-rewritten tree; all $nbits kind bits)"
+fi
+
+# 8. the E3 facts. One witness per line, TAB-separated: E3W, extra flags
+# (`-` for none), pattern, the route by hand (`RX_DFA_SCAN`'s value, or
+# `none` where the artifact has no DFA scan), and on the sealed route the
+# walk and the pin by hand (`-` elsewhere). The walk is the listing's
+# spelling: a singleton offset as its byte in decimal, a wider set as `[N]`.
+printf '%s\n' \
+    'E3W	-	abc	unanchored	97,98,99	0' \
+    'E3W	-	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	6' \
+    'E3W	-fno-req-run	/abcd[xy]/user	unanchored	47,97,98,99,100,[2],47,117,115,101,114	none' \
+    'E3W	--engine=vm -fprefilter	abc+d	unanchored	97,98,99,[2]	0' \
+    'E3W	-	\zabc	unanchored	97,98,99	0' \
+    'E3W	-	^abc	attempt	-	-' \
+    'E3W	--engine=vm -fprefilter	^foo(?=bar)baz	attempt	-	-' \
+    'E3W	-	(a)\1b	none	-	-' > "$WORKDIR/e3w"
+nwit3=0; nwide=0; e3bad=""
+: > "$WORKDIR/e3routes"
+while IFS=$'\t' read -r _ xf pat wroute wwalk wpin; do
+    nwit3=$((nwit3 + 1))
+    [ "$xf" = - ] && xf=""
+    # shellcheck disable=SC2086
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all $xf -p rx -o - --pattern "$pat" > "$WORKDIR/e3.c" 2>/dev/null ||
+       ! "$TIMEOUT_BIN" 120 "$PCREC" --features all $xf --emit-facts --pattern "$pat" > "$WORKDIR/e3.l" 2> "$WORKDIR/e3.err"; then
+        e3bad="$e3bad '$pat': refused;"; continue
+    fi
+    route="$(sed -n 's/^#define RX_DFA_SCAN "\(.*\)"$/\1/p' "$WORKDIR/e3.c")"
+    [ -n "$route" ] || route=none
+    echo "$route" >> "$WORKDIR/e3routes"
+    if [ "$route" != "$wroute" ]; then
+        e3bad="$e3bad '$pat': the artifact's route is [$route], by hand [$wroute];"; continue
+    fi
+    case "$route" in
+        unanchored) wst=derived; wwhy="" ;;
+        attempt)    wst=absent;  wwhy="decline:attempt-unwrapped-nfa" ;;
+        *)          wst=absent;  wwhy="decline:no-forward-nfa" ;;
+    esac
+    sect "$WORKDIR/e3.l" facts > "$WORKDIR/e3.f"
+    for fact in kset_walk run_pin; do
+        row="$(grep -F "$(printf 'fact=%s\t' "$fact")" "$WORKDIR/e3.f")"
+        gst="$(col status <<< "$row")"; gwhy="$(col why <<< "$row")"; gval="$(col value <<< "$row")"
+        [ "$gst" = "$wst" ] && [ "$gwhy" = "$wwhy" ] ||
+            e3bad="$e3bad '$pat' ($route): $fact is [$gst/$gwhy], the route implies [$wst/$wwhy];"
+        if [ "$route" = unanchored ]; then
+            want="$wwalk"; [ "$fact" = run_pin ] && want="$wpin"
+            [ "$gval" = "$want" ] || e3bad="$e3bad '$pat': $fact [$gval], by hand [$want];"
+        elif [ -n "$gval" ]; then
+            e3bad="$e3bad '$pat' ($route): an absent $fact lists a value [$gval];"
+        fi
+    done
+    # The widened domain: a pin no pass asked for, on an artifact with no
+    # offset-0 prefilter to carry an offset row.
+    prow="$(grep -F "$(printf 'fact=run_pin\t')" "$WORKDIR/e3.f")"
+    if [ "$route" = unanchored ] && [ "$(col value <<< "$prow")" != none ] &&
+       grep -q '^#define RX_DFA_PREFILTER "none"$' "$WORKDIR/e3.c"; then
+        nwide=$((nwide + 1))
+        [ "$(col used <<< "$prow")" = no ] ||
+            e3bad="$e3bad '$pat': a pin on a DFA_PF_NONE artifact was ASKED by a pass (a reader without the kind gate);"
+    fi
+done < "$WORKDIR/e3w"
+nroutes="$(LC_ALL=C sort -u "$WORKDIR/e3routes" | wc -l | tr -d ' ')"
+echo "REACH: $nwit3 E3 witness(es) over $nroutes of 3 route(s); $nwide on the pin's widened domain"
+if [ "$nwit3" -eq 0 ] || [ "$nroutes" -ne 3 ] || [ "$nwide" -eq 0 ]; then
+    bad "[facts-e3] the witnesses reach $nroutes of the 3 routes and $nwide widened-domain pin(s) — the check is vacuous where it is short"
+elif [ -n "$e3bad" ]; then
+    bad "[facts-e3] the E3 facts disagree with the artifact's route or the pattern:$e3bad"
+else
+    ok "[facts-e3] $nwit3 witnesses: E3 is derived on the unanchored route alone, each other route declines by name, and the walk and pin are the ones written by hand ($nwide widened-domain pin, asked by no pass)"
 fi
 
 echo "checks passed: $pass"

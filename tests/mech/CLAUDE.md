@@ -3040,6 +3040,27 @@ the run it is the old leftmost defect, which `run_prechecks.sh` §3.6/§4.9
 catch); **S288** onto the COMPARE call, because its context line (G1's
 density encoding test) was deleted.
 
+### [PATFACTS] step 3.4 — the E3 seal's rows S306/S307, four re-anchored rows
+
+Both on the existing `facts` arm (lane pf34, 2026-09-27). The k-set walk and
+the run pin became the E3 facts `kset_walk`/`run_pin` (`src/facts/kset.c`),
+sealed inside `compile_driver`'s ENG_UNANCH arm only; every other route
+answers them `absent` with a decline naming the route.
+`run_facts_checks.sh` [facts-e3] is the detector, its route oracle the
+artifact's own `RX_DFA_SCAN` stamp. **S306** writes the seal in the
+ENG_ATTEMPT arm too — byte-neutral today (no pass asks E3 there), which is
+why only the record's claim can show it. **S307** inverts the unsealed arm's
+route test, so the two decline tokens swap.
+
+**Re-anchored in the same change**: **S280** follows the pin into
+`src/facts/kset.c`'s `pcrec_run_pin` (same plant, four columns left);
+**S188** is RE-AIMED — its site (the walk's offset 0 taking `k0`) no longer
+exists, since the walk is a fact with no DFA set in scope, so the plant now
+hands the selection a copy of the walk whose offset 0 is `k0`, the one
+place the two sets meet (the row's header says so); **S281** and **S289**
+follow the emitter's new spellings (`ofs_test_verifies_run(..., u)`,
+`o->walk->k[...]`), columns kept.
+
 ### [PATFACTS] step 3.2 — the E1 cross-check's rows S302/S303, five re-anchored rows
 
 Both on the existing `facts` arm (lane pf32, 2026-09-27). The E1 facts (the
