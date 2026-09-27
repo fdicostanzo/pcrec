@@ -2008,13 +2008,42 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `38` while the three narrative copies
+which is why it is gap-free from `2` to `39` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `38` on every artifact today (`[OPT-REQRUN-ENC]` bumped
+- **`rx_info.abi` is `39` on every artifact today (`[K68]` bumped it from 38,
+  2026-09-26: THE THREE BATCH-1 WHOLE-WINDOW PRE-CHECK BITS ARE MASKED OUT OF
+  `rx_info.flags` LIKE EVERY OTHER TESTING/TUNING DENIAL.** `[OPTLOOP.1.impl]`
+  BATCH 1 landed `PCREC_NO_VM_ANCHOR_BOUND`/`PCREC_NO_END_WINDOW`/
+  `PCREC_NO_REQ_BYTE` (bits 28-30) OUTSIDE `emit_info_def`'s
+  `strategy_denials` mask, deferring the omission "to their own delivery" —
+  which never came until now (`docs/dev/known_issues.md` K68, found by
+  pcrec-bench re-pinning I-111, fact-found by lane `bit30`). §6.3's rule for
+  the mask is that `flags` records the request "with the testing/tuning
+  denials masked OUT, because an axis that changes no answer must not make
+  two identically-behaving artifacts differ in their reflection surface" —
+  and all three bits are exactly that: each is ANSWER-IDENTITY-PRESERVING by
+  its own `lib/pcrec.h` comment (the removed attempts, window or check are
+  ones that would have run and failed). Unmasked, each moved five bytes of
+  `rx_info.flags` on EVERY artifact including ones it cannot act on — the
+  identical defect the `-fno-prefilter-collapse` comment
+  (`src/gen/emit_dfa.c`) records as MEASURED on bit 19. Repro (`ec79d98c`):
+  router-prefix-order (`/user|/users`) has baseline `.flags = 2`; before this
+  fix it read `1073741826` under `-fno-req-byte`, `536870914` under
+  `-fno-end-window`, and `268435458` under `-fno-vm-anchor-bound`. No struct
+  offset moves, no `rx_info` member is added or changed, no emitted PROGRAM
+  byte moves and NO ANSWER MOVES on any artifact — the fix is a reflection-
+  surface correction, not a behavioural one. No pcrec-side check pinned the
+  old unmasked value (confirmed by grep: no test in the tree asserted a
+  numeric `rx_info.flags` value under any of the three deny flags), so this
+  bump re-pins nothing beyond the abi digit itself and `tests/codegen/
+  run_prechecks.sh`'s bit-30/29/28 "denial leaves no trace" sections
+  (§1.2/§2.2/§3.2), which already asserted the stamp and emitted-text halves
+  and needed no change.
+- **`rx_info.abi` was `38` (`[OPT-REQRUN-ENC]` bumped
   it from 37, 2026-09-26: THE RUN'S `!bytekey` DECLINE IS RIGHTMOST, NOT
   LEFTMOST.** `src/opt/reqbyte.c`'s `rn_scan_index` chose the necessary
   RUN's leftmost member under every encoding its byte-frequency prior is
