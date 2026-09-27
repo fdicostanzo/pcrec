@@ -67,7 +67,7 @@ def main():
     path = sys.argv[1]
     text = open(path).read()
     # collect candidate symbol names present in the file
-    names = set(re.findall(r'^_?(cmp_(?:memcmp|mask|overlap)_\d+):', text, re.M))
+    names = set(re.findall(r'^_?(cmp_(?:memcmp|mask|overlap|ovmask)_\d+):', text, re.M))
     bodies = split_functions(text, names)
     print("func\tn_insns\tn_calls\tcalls\tn_loads\tn_cmps\tn_branches")
     for name in sorted(bodies, key=lambda s: (s.split('_')[1], int(s.rsplit('_',1)[1]))):

@@ -251,3 +251,165 @@ int cmp_overlap_7(const unsigned char *s, size_t pos, size_t n_) {
     return a == (uint32_t)1684234849ULL && b == (uint32_t)1734763876ULL;
 }
 
+/* cmp_ovmask_1: no natural two-window overlap (n=1) */
+
+/* cmp_ovmask_2: no natural two-window overlap (n=2) */
+
+
+int cmp_ovmask_3(const unsigned char *s, size_t pos, size_t n_) {
+    uint16_t a, b;
+    if (pos + 3u > n_) return 0;
+    memcpy(&a, s + pos, 2);
+    memcpy(&b, s + pos + 1, 2);
+    return (a & (uint16_t)57311ULL) == (uint16_t)16961ULL
+        && (b & (uint16_t)57311ULL) == (uint16_t)17218ULL;
+}
+
+
+int cmp_ovmask_4(const unsigned char *s, size_t pos, size_t n_) {
+    uint16_t a, b;
+    if (pos + 4u > n_) return 0;
+    memcpy(&a, s + pos, 2);
+    memcpy(&b, s + pos + 2, 2);
+    return (a & (uint16_t)57311ULL) == (uint16_t)16961ULL
+        && (b & (uint16_t)57311ULL) == (uint16_t)17475ULL;
+}
+
+
+int cmp_ovmask_5(const unsigned char *s, size_t pos, size_t n_) {
+    uint32_t a, b;
+    if (pos + 5u > n_) return 0;
+    memcpy(&a, s + pos, 4);
+    memcpy(&b, s + pos + 1, 4);
+    return (a & (uint32_t)3755991007ULL) == (uint32_t)1145258561ULL
+        && (b & (uint32_t)3755991007ULL) == (uint32_t)1162101570ULL;
+}
+
+
+int cmp_ovmask_6(const unsigned char *s, size_t pos, size_t n_) {
+    uint32_t a, b;
+    if (pos + 6u > n_) return 0;
+    memcpy(&a, s + pos, 4);
+    memcpy(&b, s + pos + 2, 4);
+    return (a & (uint32_t)3755991007ULL) == (uint32_t)1145258561ULL
+        && (b & (uint32_t)3755991007ULL) == (uint32_t)1178944579ULL;
+}
+
+
+int cmp_ovmask_7(const unsigned char *s, size_t pos, size_t n_) {
+    uint32_t a, b;
+    if (pos + 7u > n_) return 0;
+    memcpy(&a, s + pos, 4);
+    memcpy(&b, s + pos + 3, 4);
+    return (a & (uint32_t)3755991007ULL) == (uint32_t)1145258561ULL
+        && (b & (uint32_t)3755991007ULL) == (uint32_t)1195787588ULL;
+}
+
+
+int cmp_ovmask_8(const unsigned char *s, size_t pos, size_t n_) {
+    uint32_t a, b;
+    if (pos + 8u > n_) return 0;
+    memcpy(&a, s + pos, 4);
+    memcpy(&b, s + pos + 4, 4);
+    return (a & (uint32_t)3755991007ULL) == (uint32_t)1145258561ULL
+        && (b & (uint32_t)3755991007ULL) == (uint32_t)1212630597ULL;
+}
+
+
+int cmp_ovmask_9(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 9u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 1, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5280548930227290946ULL;
+}
+
+
+int cmp_ovmask_10(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 10u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 2, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5352889103065367619ULL;
+}
+
+
+int cmp_ovmask_11(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 11u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 3, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5425229275903444292ULL;
+}
+
+
+int cmp_ovmask_12(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 12u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 4, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5497569448741520965ULL;
+}
+
+
+int cmp_ovmask_13(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 13u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 5, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5569909621579597638ULL;
+}
+
+
+int cmp_ovmask_14(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 14u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 6, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5642249794417674311ULL;
+}
+
+
+int cmp_ovmask_15(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 15u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 7, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5714589967255750984ULL;
+}
+
+
+int cmp_ovmask_16(const unsigned char *s, size_t pos, size_t n_) {
+    uint64_t a, b;
+    if (pos + 16u > n_) return 0;
+    memcpy(&a, s + pos, 8);
+    memcpy(&b, s + pos + 8, 8);
+    return (a & (uint64_t)16131858542891098079ULL) == (uint64_t)5208208757389214273ULL
+        && (b & (uint64_t)16131858542891098079ULL) == (uint64_t)5786930140093827657ULL;
+}
+
+/* cmp_ovmask_17: no natural two-window overlap (n=17) */
+
+/* cmp_ovmask_20: no natural two-window overlap (n=20) */
+
+/* cmp_ovmask_24: no natural two-window overlap (n=24) */
+
+/* cmp_ovmask_31: no natural two-window overlap (n=31) */
+
+/* cmp_ovmask_32: no natural two-window overlap (n=32) */
+
+/* cmp_ovmask_33: no natural two-window overlap (n=33) */
+
+/* cmp_ovmask_40: no natural two-window overlap (n=40) */
+
+/* cmp_ovmask_48: no natural two-window overlap (n=48) */
+
+/* cmp_ovmask_64: no natural two-window overlap (n=64) */
+

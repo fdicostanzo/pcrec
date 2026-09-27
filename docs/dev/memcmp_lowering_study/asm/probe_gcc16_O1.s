@@ -1103,6 +1103,416 @@ L168:
 	mov	w0, 0
 	b	L166
 LFE35:
+	.align	2
+	.globl _cmp_ovmask_3
+_cmp_ovmask_3:
+LFB36:
+	add	x3, x1, 3
+	cmp	x3, x2
+	bhi	L172
+	ldrh	w2, [x0, x1]
+	mov	w3, 57311
+	and	w2, w2, w3
+	mov	w3, 16961
+	cmp	w2, w3
+	beq	L173
+L172:
+	mov	w0, 0
+L169:
+	ret
+L173:
+	add	x0, x0, x1
+	ldrh	w0, [x0, 1]
+	mov	w1, 57311
+	and	w0, w0, w1
+	mov	w1, 17218
+	cmp	w0, w1
+	cset	w0, eq
+	b	L169
+LFE36:
+	.align	2
+	.globl _cmp_ovmask_4
+_cmp_ovmask_4:
+LFB37:
+	add	x3, x1, 4
+	cmp	x3, x2
+	bhi	L177
+	ldrh	w2, [x0, x1]
+	mov	w3, 57311
+	and	w2, w2, w3
+	mov	w3, 16961
+	cmp	w2, w3
+	beq	L178
+L177:
+	mov	w0, 0
+L174:
+	ret
+L178:
+	add	x0, x0, x1
+	ldrh	w0, [x0, 2]
+	mov	w1, 57311
+	and	w0, w0, w1
+	mov	w1, 17475
+	cmp	w0, w1
+	cset	w0, eq
+	b	L174
+LFE37:
+	.align	2
+	.globl _cmp_ovmask_5
+_cmp_ovmask_5:
+LFB38:
+	add	x3, x1, 5
+	cmp	x3, x2
+	bhi	L182
+	ldr	w2, [x0, x1]
+	and	w2, w2, -538976289
+	mov	w3, 16961
+	movk	w3, 0x4443, lsl 16
+	cmp	w2, w3
+	beq	L183
+L182:
+	mov	w0, 0
+L179:
+	ret
+L183:
+	add	x0, x0, x1
+	ldr	w0, [x0, 1]
+	and	w0, w0, -538976289
+	mov	w1, 17218
+	movk	w1, 0x4544, lsl 16
+	cmp	w0, w1
+	cset	w0, eq
+	b	L179
+LFE38:
+	.align	2
+	.globl _cmp_ovmask_6
+_cmp_ovmask_6:
+LFB39:
+	add	x3, x1, 6
+	cmp	x3, x2
+	bhi	L187
+	ldr	w2, [x0, x1]
+	and	w2, w2, -538976289
+	mov	w3, 16961
+	movk	w3, 0x4443, lsl 16
+	cmp	w2, w3
+	beq	L188
+L187:
+	mov	w0, 0
+L184:
+	ret
+L188:
+	add	x0, x0, x1
+	ldr	w0, [x0, 2]
+	and	w0, w0, -538976289
+	mov	w1, 17475
+	movk	w1, 0x4645, lsl 16
+	cmp	w0, w1
+	cset	w0, eq
+	b	L184
+LFE39:
+	.align	2
+	.globl _cmp_ovmask_7
+_cmp_ovmask_7:
+LFB40:
+	add	x3, x1, 7
+	cmp	x3, x2
+	bhi	L192
+	ldr	w2, [x0, x1]
+	and	w2, w2, -538976289
+	mov	w3, 16961
+	movk	w3, 0x4443, lsl 16
+	cmp	w2, w3
+	beq	L193
+L192:
+	mov	w0, 0
+L189:
+	ret
+L193:
+	add	x0, x0, x1
+	ldr	w0, [x0, 3]
+	and	w0, w0, -538976289
+	mov	w1, 17732
+	movk	w1, 0x4746, lsl 16
+	cmp	w0, w1
+	cset	w0, eq
+	b	L189
+LFE40:
+	.align	2
+	.globl _cmp_ovmask_8
+_cmp_ovmask_8:
+LFB41:
+	add	x3, x1, 8
+	cmp	x3, x2
+	bhi	L197
+	ldr	w2, [x0, x1]
+	and	w2, w2, -538976289
+	mov	w3, 16961
+	movk	w3, 0x4443, lsl 16
+	cmp	w2, w3
+	beq	L198
+L197:
+	mov	w0, 0
+L194:
+	ret
+L198:
+	add	x0, x0, x1
+	ldr	w0, [x0, 4]
+	and	w0, w0, -538976289
+	mov	w1, 17989
+	movk	w1, 0x4847, lsl 16
+	cmp	w0, w1
+	cset	w0, eq
+	b	L194
+LFE41:
+	.align	2
+	.globl _cmp_ovmask_9
+_cmp_ovmask_9:
+LFB42:
+	add	x3, x1, 9
+	cmp	x3, x2
+	bhi	L202
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L203
+L202:
+	mov	w0, 0
+L199:
+	ret
+L203:
+	add	x0, x0, x1
+	ldr	x0, [x0, 1]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 17218
+	movk	x1, 0x4544, lsl 16
+	movk	x1, 0x4746, lsl 32
+	movk	x1, 0x4948, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L199
+LFE42:
+	.align	2
+	.globl _cmp_ovmask_10
+_cmp_ovmask_10:
+LFB43:
+	add	x3, x1, 10
+	cmp	x3, x2
+	bhi	L207
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L208
+L207:
+	mov	w0, 0
+L204:
+	ret
+L208:
+	add	x0, x0, x1
+	ldr	x0, [x0, 2]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 17475
+	movk	x1, 0x4645, lsl 16
+	movk	x1, 0x4847, lsl 32
+	movk	x1, 0x4a49, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L204
+LFE43:
+	.align	2
+	.globl _cmp_ovmask_11
+_cmp_ovmask_11:
+LFB44:
+	add	x3, x1, 11
+	cmp	x3, x2
+	bhi	L212
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L213
+L212:
+	mov	w0, 0
+L209:
+	ret
+L213:
+	add	x0, x0, x1
+	ldr	x0, [x0, 3]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 17732
+	movk	x1, 0x4746, lsl 16
+	movk	x1, 0x4948, lsl 32
+	movk	x1, 0x4b4a, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L209
+LFE44:
+	.align	2
+	.globl _cmp_ovmask_12
+_cmp_ovmask_12:
+LFB45:
+	add	x3, x1, 12
+	cmp	x3, x2
+	bhi	L217
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L218
+L217:
+	mov	w0, 0
+L214:
+	ret
+L218:
+	add	x0, x0, x1
+	ldr	x0, [x0, 4]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 17989
+	movk	x1, 0x4847, lsl 16
+	movk	x1, 0x4a49, lsl 32
+	movk	x1, 0x4c4b, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L214
+LFE45:
+	.align	2
+	.globl _cmp_ovmask_13
+_cmp_ovmask_13:
+LFB46:
+	add	x3, x1, 13
+	cmp	x3, x2
+	bhi	L222
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L223
+L222:
+	mov	w0, 0
+L219:
+	ret
+L223:
+	add	x0, x0, x1
+	ldr	x0, [x0, 5]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 18246
+	movk	x1, 0x4948, lsl 16
+	movk	x1, 0x4b4a, lsl 32
+	movk	x1, 0x4d4c, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L219
+LFE46:
+	.align	2
+	.globl _cmp_ovmask_14
+_cmp_ovmask_14:
+LFB47:
+	add	x3, x1, 14
+	cmp	x3, x2
+	bhi	L227
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L228
+L227:
+	mov	w0, 0
+L224:
+	ret
+L228:
+	add	x0, x0, x1
+	ldr	x0, [x0, 6]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 18503
+	movk	x1, 0x4a49, lsl 16
+	movk	x1, 0x4c4b, lsl 32
+	movk	x1, 0x4e4d, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L224
+LFE47:
+	.align	2
+	.globl _cmp_ovmask_15
+_cmp_ovmask_15:
+LFB48:
+	add	x3, x1, 15
+	cmp	x3, x2
+	bhi	L232
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L233
+L232:
+	mov	w0, 0
+L229:
+	ret
+L233:
+	add	x0, x0, x1
+	ldr	x0, [x0, 7]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 18760
+	movk	x1, 0x4b4a, lsl 16
+	movk	x1, 0x4d4c, lsl 32
+	movk	x1, 0x4f4e, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L229
+LFE48:
+	.align	2
+	.globl _cmp_ovmask_16
+_cmp_ovmask_16:
+LFB49:
+	add	x3, x1, 16
+	cmp	x3, x2
+	bhi	L237
+	ldr	x2, [x0, x1]
+	and	x2, x2, -2314885530818453537
+	mov	x3, 16961
+	movk	x3, 0x4443, lsl 16
+	movk	x3, 0x4645, lsl 32
+	movk	x3, 0x4847, lsl 48
+	cmp	x2, x3
+	beq	L238
+L237:
+	mov	w0, 0
+L234:
+	ret
+L238:
+	add	x0, x0, x1
+	ldr	x0, [x0, 8]
+	and	x0, x0, -2314885530818453537
+	mov	x1, 19017
+	movk	x1, 0x4c4b, lsl 16
+	movk	x1, 0x4e4d, lsl 32
+	movk	x1, 0x504f, lsl 48
+	cmp	x0, x1
+	cset	w0, eq
+	b	L234
+LFE49:
 	.literal16
 	.align	4
 lC12:
@@ -1612,5 +2022,159 @@ LASFDE71:
 	.uleb128 0
 	.align	3
 LEFDE71:
+LSFDE73:
+	.set L$set$76,LEFDE73-LASFDE73
+	.long L$set$76
+LASFDE73:
+	.long	LASFDE73-EH_frame1
+	.quad	LFB36-.
+	.set L$set$77,LFE36-LFB36
+	.quad L$set$77
+	.uleb128 0
+	.align	3
+LEFDE73:
+LSFDE75:
+	.set L$set$78,LEFDE75-LASFDE75
+	.long L$set$78
+LASFDE75:
+	.long	LASFDE75-EH_frame1
+	.quad	LFB37-.
+	.set L$set$79,LFE37-LFB37
+	.quad L$set$79
+	.uleb128 0
+	.align	3
+LEFDE75:
+LSFDE77:
+	.set L$set$80,LEFDE77-LASFDE77
+	.long L$set$80
+LASFDE77:
+	.long	LASFDE77-EH_frame1
+	.quad	LFB38-.
+	.set L$set$81,LFE38-LFB38
+	.quad L$set$81
+	.uleb128 0
+	.align	3
+LEFDE77:
+LSFDE79:
+	.set L$set$82,LEFDE79-LASFDE79
+	.long L$set$82
+LASFDE79:
+	.long	LASFDE79-EH_frame1
+	.quad	LFB39-.
+	.set L$set$83,LFE39-LFB39
+	.quad L$set$83
+	.uleb128 0
+	.align	3
+LEFDE79:
+LSFDE81:
+	.set L$set$84,LEFDE81-LASFDE81
+	.long L$set$84
+LASFDE81:
+	.long	LASFDE81-EH_frame1
+	.quad	LFB40-.
+	.set L$set$85,LFE40-LFB40
+	.quad L$set$85
+	.uleb128 0
+	.align	3
+LEFDE81:
+LSFDE83:
+	.set L$set$86,LEFDE83-LASFDE83
+	.long L$set$86
+LASFDE83:
+	.long	LASFDE83-EH_frame1
+	.quad	LFB41-.
+	.set L$set$87,LFE41-LFB41
+	.quad L$set$87
+	.uleb128 0
+	.align	3
+LEFDE83:
+LSFDE85:
+	.set L$set$88,LEFDE85-LASFDE85
+	.long L$set$88
+LASFDE85:
+	.long	LASFDE85-EH_frame1
+	.quad	LFB42-.
+	.set L$set$89,LFE42-LFB42
+	.quad L$set$89
+	.uleb128 0
+	.align	3
+LEFDE85:
+LSFDE87:
+	.set L$set$90,LEFDE87-LASFDE87
+	.long L$set$90
+LASFDE87:
+	.long	LASFDE87-EH_frame1
+	.quad	LFB43-.
+	.set L$set$91,LFE43-LFB43
+	.quad L$set$91
+	.uleb128 0
+	.align	3
+LEFDE87:
+LSFDE89:
+	.set L$set$92,LEFDE89-LASFDE89
+	.long L$set$92
+LASFDE89:
+	.long	LASFDE89-EH_frame1
+	.quad	LFB44-.
+	.set L$set$93,LFE44-LFB44
+	.quad L$set$93
+	.uleb128 0
+	.align	3
+LEFDE89:
+LSFDE91:
+	.set L$set$94,LEFDE91-LASFDE91
+	.long L$set$94
+LASFDE91:
+	.long	LASFDE91-EH_frame1
+	.quad	LFB45-.
+	.set L$set$95,LFE45-LFB45
+	.quad L$set$95
+	.uleb128 0
+	.align	3
+LEFDE91:
+LSFDE93:
+	.set L$set$96,LEFDE93-LASFDE93
+	.long L$set$96
+LASFDE93:
+	.long	LASFDE93-EH_frame1
+	.quad	LFB46-.
+	.set L$set$97,LFE46-LFB46
+	.quad L$set$97
+	.uleb128 0
+	.align	3
+LEFDE93:
+LSFDE95:
+	.set L$set$98,LEFDE95-LASFDE95
+	.long L$set$98
+LASFDE95:
+	.long	LASFDE95-EH_frame1
+	.quad	LFB47-.
+	.set L$set$99,LFE47-LFB47
+	.quad L$set$99
+	.uleb128 0
+	.align	3
+LEFDE95:
+LSFDE97:
+	.set L$set$100,LEFDE97-LASFDE97
+	.long L$set$100
+LASFDE97:
+	.long	LASFDE97-EH_frame1
+	.quad	LFB48-.
+	.set L$set$101,LFE48-LFB48
+	.quad L$set$101
+	.uleb128 0
+	.align	3
+LEFDE97:
+LSFDE99:
+	.set L$set$102,LEFDE99-LASFDE99
+	.long L$set$102
+LASFDE99:
+	.long	LASFDE99-EH_frame1
+	.quad	LFB49-.
+	.set L$set$103,LFE49-LFB49
+	.quad L$set$103
+	.uleb128 0
+	.align	3
+LEFDE99:
 	.ident	"GCC: (Homebrew GCC 16.2.0) 16.2.0"
 	.subsections_via_symbols

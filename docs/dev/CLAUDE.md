@@ -735,7 +735,13 @@ change.
   clang uses the overlapping form and renders it branchless; a real
   emitted `\.tar` artifact confirms the probe exactly, gcc even hoisting
   the compare constant out of the scan loop. Verdict: P4 needs no length
-  bound or form split for today's corpus; the overlapping two-load form is
-  recommended for `[WORD-FOLD]`'s later masked-class compare over a single
-  wide masked load, since it needs no wider safety bound. See
-  `memcmp_lowering_study/CLAUDE.md` for the reproduction pieces.
+  bound or form split for today's corpus. **§10 (same-day follow-up per
+  the manager/Frank): the primary `[WORD-FOLD]`/S4 mask candidate is the
+  OVERLAPPING masked form, never a single wide masked load (ASan would
+  flag its over-read) — and timed in a tight loop with the wide form's own
+  bounds guard assumed already discharged, the overlapping form is 17-35%
+  FASTER, not slower, at every `L ∈ {5,6,7,10,12}` tested, reproducibly;
+  gcc also regresses to a real branch on the masked overlap where the
+  unmasked one was branchless via `ccmp`, while clang stays branchless
+  either way.** See `memcmp_lowering_study/CLAUDE.md` for the reproduction
+  pieces.

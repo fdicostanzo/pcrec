@@ -52,6 +52,15 @@ it ships.
    line lowered to one `ldr w1,[x0]` + one `cmp w1,w21` — and gcc even
    **hoists the constant load out of the scan loop entirely** (`w21` is
    loaded once, before `rx_search`'s main loop, not per iteration).
+5. **[Follow-up, §10] The primary `[WORD-FOLD]`/S4 mask candidate is the
+   OVERLAPPING masked form, never the wide single-load over-read** (the
+   manager/Frank's scope note: C has no safe over-read and ASan would flag
+   it). Timed in a tight loop with the wide form's own bounds guard
+   assumed already discharged — the shape most favorable to the "one fewer
+   load" argument — the overlapping form is still **17-35% faster**, not
+   slower, at every `L ∈ {5,6,7,10,12}` tested, reproducibly. No cap-scale
+   argument survives that result; §10 has the numbers and the residual
+   open question.
 
 ## 1. Method
 
@@ -254,35 +263,53 @@ where.
 
 ## 5. Compared against the hand-written load-and-mask form
 
+**Revised 2026-09-27 per the manager/Frank's scope note** (relayed after
+this section's first draft): the wide single-load form's over-read is
+deprioritized as a *primary* candidate — C has no safe way to read past
+the subject, and `make asan`'s battery would flag exactly this — so the
+primary `[WORD-FOLD]`/S4 comparison is the **overlapping MASKED** form,
+not a plain wide masked load. §10 below is the full follow-up (a real
+ASCII-caseless instantiation, not a trivially-foldable all-ones mask, plus
+the hot-loop timing Frank asked for); this section keeps the original
+single-wide-load evidence as ONE comparison row, per the note, to show
+what the extra latitude costs.
+
 `cmp_mask_L` (load the smallest covering width, AND-mask, one compare) is
 uniformly **one load, one compare, no internal branch** at every `L`
 tested (`docs/dev/memcmp_lowering_study/asm/probe_gcc16_O2.s`, functions
-`cmp_mask_*`) — cheaper than gcc's own decomposition at every odd length
-above 4, and matching gcc's own single-load form at `L ∈ {1,2,4,8}`
-exactly (no win there, no loss either). Its cost is the wider safety
-condition: `pos + width <= n_` (4 or 8 bytes) rather than `pos + L <=
-n_`, i.e. it can read up to `width − L` bytes past the run's own extent —
-exactly the over-read `reqpos_2b.md` §3.1 already declined a `memcpy`-
-into-`uint64` sketch for ("pcrec does not own the caller's buffer").
+`cmp_mask_*`) — cheaper *in instruction count* than gcc's own decomposition
+at every odd length above 4, and matching gcc's own single-load form at
+`L ∈ {1,2,4,8}` exactly (no win there, no loss either). **This is the one
+row kept for comparison, labelled with its cost**: the safety condition is
+`pos + width <= n_` (4 or 8 bytes) rather than `pos + L <= n_`, i.e. it can
+read up to `width − L` bytes past the run's own extent — exactly the
+over-read `reqpos_2b.md` §3.1 already declined a `memcpy`-into-`uint64`
+sketch for ("pcrec does not own the caller's buffer"), and exactly the
+shape an ASan-instrumented artifact would report as a heap-buffer-overflow
+read the moment the run sits within `width − L` bytes of the subject's end.
 
-The overlapping two-load form (`cmp_overlap_L`, §3) gets both properties
-at once on gcc too, not only on clang: built by hand for `L ∈ {5,6,7}`
+The overlapping two-load form (`cmp_overlap_L`, §3) gets both the
+instruction-count win and the safe bound at once on gcc too, not only on
+clang: built by hand for `L ∈ {5,6,7}`
 (`docs/dev/memcmp_lowering_study/gen_probe.py`'s `emit_overlap_fn`), gcc-16
 -O2 renders `cmp_overlap_7` as two 4-byte loads (offset 0, offset 3) and a
 `ccmp`-chained branchless compare — the *same* shape clang derives
 automatically for the plain `!memcmp()` spelling. So the overlapping form
 is available to gcc too; gcc simply does not reach for it on its own from
 a bare `memcmp()` call at odd lengths — it has to be spelled by hand (two
-loads, `&&`) to get it.
+loads, `&&`) to get it. **This exact-byte overlap form is what §10's
+caseless instantiation extends with real masks.**
 
 **This is exactly the form `reqpos_2b.md` §3.4 reserves as "event 2",
 gated on `[WORD-FOLD]`.** Nothing here changes that gating (`[WORD-FOLD]`
 is `STATE:not-started` and its own D77 census is unrun, per
 `coding_guide.md`'s rule against reaching for an unbuilt primitive) — but
-the two-load overlapping form, not a single wide masked load, is the
+the two-load overlapping form, never the single wide masked load, is the
 right target once it lands: it needs no wider safety bound than P4
-already has, and it is a strict instruction-count win over gcc's own
-decomposition at every odd length this study measured.
+already has, it never triggers ASan's over-read report, and it is a
+strict instruction-count win over gcc's own decomposition at every odd
+length this study measured. §10 extends the comparison to the real
+caseless-mask shape and the hot-loop timing question.
 
 ## 6. Toolchain columns: gcc-16 arm64 (primary), clang arm64/x86_64 (secondary), gcc-15 x86 (OWED)
 
@@ -398,7 +425,7 @@ against the hand-rolled `mask` form on its own at this study's scale.
 own corpus and bench populations reach (per `reqpos_2b.md`'s own census)
 is inside the region where `!memcmp()` lowers to a call-free, single- or
 few-load compare on every toolchain/opt-level combination measured except
-`-Os` (not pcrec's shipped GENCFLAGS) and the one narrow `L=31` clic
+`-Os` (not pcrec's shipped GENCFLAGS) and the one narrow `L=31` cliff
 (unreached by the corpus). `emit_exact_compare`'s existing comment is
 correct in spirit and should gain one qualifying clause — its `{2,4,8}`
 claim is universal across gcc/clang/opt-level; the *general* "no call at
@@ -406,11 +433,145 @@ any tested L" claim holds for gcc at `-O1`/`-O2`/`-O3` and for clang
 everywhere tested, but not at `-Os` and not at gcc's `L=31`.
 
 **For `[WORD-FOLD]`'s later masked-class compare** (`reqpos_2b.md` §3.4's
-gated "event 2"): prefer the two-load overlapping form over a single wide
-masked load. Both are branchless and single-load-class, but the
-overlapping form needs only the run's own `pos + L <= n_` bound (P4's
-existing discipline) where the masked form needs `pos + width <= n_` (an
-over-read `reqpos_2b.md` §3.1 already declined once for the same reason).
-Nothing here builds `[WORD-FOLD]` or instructs its use ahead of its own
-D77 trigger — this is the evidence a future design note for it would
-cite.
+gated "event 2"): prefer the two-load OVERLAPPING MASKED form over a
+single wide masked load — never the over-read form as a primary
+candidate, per the manager/Frank's scope note (§10). Both are single-
+load-class per window, but the overlapping form needs only the run's own
+`pos + L <= n_` bound (P4's existing discipline, and ASan-clean) where the
+masked form needs `pos + width <= n_` (an over-read `reqpos_2b.md` §3.1
+already declined once for the same reason, and one `make asan` would
+flag). §10 measures the overlapping form's own timing against the wide
+form's in a tight loop and finds the overlap form FASTER, not merely
+safer — a genuinely counter-intuitive result worth reading before assuming
+the extra load costs anything. Nothing here builds `[WORD-FOLD]` or
+instructs its use ahead of its own D77 trigger — this is the evidence a
+future design note for it would cite.
+
+## 10. Follow-up (manager + Frank, same day): the overlapping MASKED form as primary, and the hot-loop single-wide-load timing
+
+Two notes arrived after §0-§9 were written. Both are answered here rather
+than by silently rewriting the sections above (this is the lane's own
+memo on its own day, not a ratified design document under D80, but the
+original evidence in §3/§5 stays intact and this section is additive).
+
+### 10.1 The overlapping form gets a real mask, not an all-ones one
+
+An AND-mask of all-ones is invisible to the compiler — it constant-folds
+away, so `cmp_overlap_L` (§3/§5) was never actually testing a "masked"
+compare, only an exact-byte one. `cmp_ovmask_L`
+(`docs/dev/memcmp_lowering_study/gen_probe.py`'s `emit_ovmask_fn`) is the
+real instantiation the manager asked for: two natural-width overlapping
+loads (window width `W`, the smallest power of two with `W < L <= 2W`,
+matching §3's own empirical rule for what clang picks), each AND-masked
+with the classic ASCII case-fold mask (`0xDF` per byte, clears bit 5 so
+`'a'..'z'` folds onto `'A'..'Z'`) and compared against the literal's own
+folded value — genuinely non-trivial constants a compiler cannot fold
+away. Safety condition unchanged: `pos + L <= n_` only.
+
+**Instruction counts, gcc-16 -O2, arm64** (full table in
+`docs/dev/memcmp_lowering_study/asm/probe_gcc16_O2.s`, functions
+`cmp_ovmask_*`):
+
+| L | loads | ANDs | compares | branches | shape |
+|---|---|---|---|---|---|
+| 3 | 2 (2-byte) | 2 | 2 | 1 (short-circuit) | `ldrh@0`, `and`, `cmp`, `beq` → `ldrh@1`, `and`, `cmp` |
+| 5,6,7 | 2 (4-byte) | 2 | 2 | 1 (short-circuit) | `ldr@0`, `and`, `cmp`, `beq` → `ldr@(L-4)`, `and`, `cmp` |
+| 9–15 | 2 (8-byte) | 2 | 2 | 1 (short-circuit) | `ldr@0`(x), `and`, `cmp`, `beq` → `ldr@(L-8)`(x), `and`, `cmp` |
+
+**gcc regresses to a real branch here, where the exact-byte overlap form
+(§3/§5) was branchless.** Verbatim, `cmp_ovmask_7` at -O2:
+
+```asm
+	ldr	w2, [x0, x1]
+	mov	w3, 16961
+	movk	w3, 0x4443, lsl 16
+	and	w2, w2, -538976289    /* AND with the 0xDF-per-byte mask */
+	cmp	w2, w3
+	beq	L197                  /* a REAL branch, not ccmp */
+L196:
+	mov	w0, 0
+	ret
+L197:
+	add	x0, x0, x1
+	mov	w1, 17732
+	ldr	w0, [x0, 3]
+	movk	w1, 0x4746, lsl 16
+	and	w0, w0, -538976289
+	cmp	w0, w1
+	cset	w0, eq
+	ret
+```
+
+**clang keeps the branchless `ccmp` chain even with the AND**, unaffected
+by the mask (`docs/dev/memcmp_lowering_study/asm/probe_clang_O2.s`,
+`cmp_ovmask_7`): two loads, two ANDs, `cmp` + `ccmp`, one `cset`, only the
+outer bounds branch. So the masked form costs gcc a branch it didn't pay
+for the unmasked overlap — a second gcc-vs-clang asymmetry beyond §3's
+odd-length decomposition, worth knowing before assuming the two toolchains
+converge once a mask is added.
+
+### 10.2 The hot-loop timing: overlap vs single-wide-load, guard discharged
+
+`docs/dev/memcmp_lowering_study/bench_hotloop.c`: for `L ∈ {5,6,7,10,12}`,
+scan a literal at every candidate position of a 1 MiB pseudo-random buffer
+(a handful of positions carrying a planted match, ~0.03% of the buffer —
+the realistic "mostly absent" regime `reqpos_2b.md` §3.3 already treats as
+the dominant real-world case), comparing:
+
+- **overlap**: the `cmp_ovmask_L` shape above (two natural-width masked
+  loads, `pos + L <= n_`).
+- **wide**: ONE load of the smallest covering natural width (`uint64_t`
+  for `L <= 8`, `unsigned __int128` for `L ∈ {10,12}`), masked, compared —
+  **with its own wider bounds guard (`pos + W <= n_`) assumed already
+  discharged by the caller**, i.e. neither arm does a per-position bounds
+  check inside the timed loop; the outer loop bound (established once,
+  identical for both arms) plays that role.
+
+Best-of-7 rounds, 300 repeats per round, `timeout 25` on every run, results
+reproduced by a second independent run (deltas held to within 0.1-0.2%
+across repeats — this signal is far above the earlier per-call bench's
+noise band, §8):
+
+| L | overlap (ns/iter) | wide (ns/iter) | delta | delta as % of wide |
+|---|---|---|---|---|
+| 5 | 0.656 | 1.009 | −0.353 | **−35.0%** |
+| 6 | 0.656 | 1.008 | −0.352 | **−34.9%** |
+| 7 | 0.656 | 1.003 | −0.347 | **−34.6%** |
+| 10 | 0.656 | 0.793 | −0.137 | **−17.3%** |
+| 12 | 0.645 | 0.775 | −0.130 | **−16.8%** |
+
+**Above noise, and the opposite sign from the "one fewer load must be
+faster" intuition — the overlapping form is faster, not slower, at every
+tested `L`.** Reading the generated loop bodies
+(`docs/dev/memcmp_lowering_study/bench_hotloop_results.txt` for the raw
+numbers; the loop bodies themselves are in `/tmp` scratch during this
+session and are not committed, per the box's scratch-file rule — the
+excerpt below is transcribed from them) shows the overlap loop's
+short-circuit still fires inside the tight loop: `bne L4` skips the
+SECOND load+mask+compare entirely on a first-window mismatch, so on this
+buffer's ~99.97%-mismatch population the overlap arm executes roughly one
+load+AND+cmp per iteration on its fast path — the same per-iteration work
+the wide arm always does unconditionally (its own `cmp`+`cinc` sequence is
+branchless but pays for load+AND+cmp every time, never skipping).
+
+**A quick control (all-candidate-positions-matching, not committed as a
+regime the main table reports) narrows but does not close the gap** — at
+`L=7`, all-match measures −23.9% (against −34.6% mostly-absent) and at
+`L=12`, −14.9% (against −16.8%). So the short-circuit explains PART of the
+advantage (the gap shrinks when it can't fire as often) but not all of
+it — something in the wide arm's larger immediate/constant (a 64-bit or
+128-bit mask+target, materialized via multiple `movk`s or, for `L ∈
+{10,12}`, `__uint128_t` arithmetic that gcc lowers to two 64-bit register
+operations rather than one true wide operation) costs real time even when
+both arms do the same number of "logical" comparisons. This second
+component is not fully instruction-traced here — a `perf`-level
+latency/throughput breakdown would be needed and `perf` is denied on this
+box (`opt3_dfa_scan_measurement.md`'s own precedent) — so it is reported
+as an open residual, not a diagnosed mechanism.
+
+**No recommendation beyond what this number supports, per the ask.** The
+single-wide-load form does not appear to win the hot-loop case its own
+one-fewer-load argument was made for, on this box, at these lengths, in
+this regime. Whether that holds on a different microarchitecture, at a
+higher match rate, or with the bounds-check genuinely inlined (rather than
+assumed discharged) is unmeasured.

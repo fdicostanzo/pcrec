@@ -1138,6 +1138,460 @@ LBB35_2:
 	retq
 	.cfi_endproc
                                         ## -- End function
+	.globl	_cmp_ovmask_3                   ## -- Begin function cmp_ovmask_3
+	.p2align	4
+_cmp_ovmask_3:                          ## @cmp_ovmask_3
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	3(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB36_2
+## %bb.1:
+	movzwl	(%rdi,%rsi), %ecx
+	movzwl	1(%rdi,%rsi), %edx
+	andl	$-8225, %ecx                    ## imm = 0xDFDF
+	xorl	$16961, %ecx                    ## imm = 0x4241
+	andl	$-8225, %edx                    ## imm = 0xDFDF
+	xorl	$17218, %edx                    ## imm = 0x4342
+	xorl	%eax, %eax
+	orw	%cx, %dx
+	sete	%al
+LBB36_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.section	__TEXT,__literal16,16byte_literals
+	.p2align	4, 0x0                          ## -- Begin function cmp_ovmask_4
+LCPI37_0:
+	.short	57311                           ## 0xdfdf
+	.short	57311                           ## 0xdfdf
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+LCPI37_1:
+	.short	16961                           ## 0x4241
+	.short	17475                           ## 0x4443
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+	.space	2
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl	_cmp_ovmask_4
+	.p2align	4
+_cmp_ovmask_4:                          ## @cmp_ovmask_4
+	.cfi_startproc
+## %bb.0:
+	leaq	4(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB37_2
+## %bb.1:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	movd	(%rdi,%rsi), %xmm0              ## xmm0 = mem[0],zero,zero,zero
+	pand	LCPI37_0(%rip), %xmm0
+	pcmpeqw	LCPI37_1(%rip), %xmm0
+	pmovsxwq	%xmm0, %xmm0
+	movmskpd	%xmm0, %ecx
+	xorl	%eax, %eax
+	cmpl	$3, %ecx
+	sete	%al
+	popq	%rbp
+LBB37_2:
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_5                   ## -- Begin function cmp_ovmask_5
+	.p2align	4
+_cmp_ovmask_5:                          ## @cmp_ovmask_5
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	5(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB38_2
+## %bb.1:
+	movl	1(%rdi,%rsi), %ecx
+	movl	$-538976289, %edx               ## imm = 0xDFDFDFDF
+	andl	(%rdi,%rsi), %edx
+	xorl	$1145258561, %edx               ## imm = 0x44434241
+	andl	$-538976289, %ecx               ## imm = 0xDFDFDFDF
+	xorl	$1162101570, %ecx               ## imm = 0x45444342
+	xorl	%eax, %eax
+	orl	%edx, %ecx
+	sete	%al
+LBB38_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_6                   ## -- Begin function cmp_ovmask_6
+	.p2align	4
+_cmp_ovmask_6:                          ## @cmp_ovmask_6
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	6(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB39_2
+## %bb.1:
+	movl	2(%rdi,%rsi), %ecx
+	movl	$-538976289, %edx               ## imm = 0xDFDFDFDF
+	andl	(%rdi,%rsi), %edx
+	xorl	$1145258561, %edx               ## imm = 0x44434241
+	andl	$-538976289, %ecx               ## imm = 0xDFDFDFDF
+	xorl	$1178944579, %ecx               ## imm = 0x46454443
+	xorl	%eax, %eax
+	orl	%edx, %ecx
+	sete	%al
+LBB39_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_7                   ## -- Begin function cmp_ovmask_7
+	.p2align	4
+_cmp_ovmask_7:                          ## @cmp_ovmask_7
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	7(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB40_2
+## %bb.1:
+	movl	3(%rdi,%rsi), %ecx
+	movl	$-538976289, %edx               ## imm = 0xDFDFDFDF
+	andl	(%rdi,%rsi), %edx
+	xorl	$1145258561, %edx               ## imm = 0x44434241
+	andl	$-538976289, %ecx               ## imm = 0xDFDFDFDF
+	xorl	$1195787588, %ecx               ## imm = 0x47464544
+	xorl	%eax, %eax
+	orl	%edx, %ecx
+	sete	%al
+LBB40_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.section	__TEXT,__literal16,16byte_literals
+	.p2align	4, 0x0                          ## -- Begin function cmp_ovmask_8
+LCPI41_0:
+	.long	3755991007                      ## 0xdfdfdfdf
+	.long	3755991007                      ## 0xdfdfdfdf
+	.space	4
+	.space	4
+LCPI41_1:
+	.long	1145258561                      ## 0x44434241
+	.long	1212630597                      ## 0x48474645
+	.space	4
+	.space	4
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl	_cmp_ovmask_8
+	.p2align	4
+_cmp_ovmask_8:                          ## @cmp_ovmask_8
+	.cfi_startproc
+## %bb.0:
+	leaq	8(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB41_2
+## %bb.1:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	movq	(%rdi,%rsi), %xmm0              ## xmm0 = mem[0],zero
+	pand	LCPI41_0(%rip), %xmm0
+	pcmpeqd	LCPI41_1(%rip), %xmm0
+	pmovsxdq	%xmm0, %xmm0
+	movmskpd	%xmm0, %ecx
+	xorl	%eax, %eax
+	cmpl	$3, %ecx
+	sete	%al
+	popq	%rbp
+LBB41_2:
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_9                   ## -- Begin function cmp_ovmask_9
+	.p2align	4
+_cmp_ovmask_9:                          ## @cmp_ovmask_9
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	9(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB42_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	1(%rdi,%rsi), %rax
+	movabsq	$5280548930227290946, %rcx      ## imm = 0x4948474645444342
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB42_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_10                  ## -- Begin function cmp_ovmask_10
+	.p2align	4
+_cmp_ovmask_10:                         ## @cmp_ovmask_10
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	10(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB43_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	2(%rdi,%rsi), %rax
+	movabsq	$5352889103065367619, %rcx      ## imm = 0x4A49484746454443
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB43_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_11                  ## -- Begin function cmp_ovmask_11
+	.p2align	4
+_cmp_ovmask_11:                         ## @cmp_ovmask_11
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	11(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB44_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	3(%rdi,%rsi), %rax
+	movabsq	$5425229275903444292, %rcx      ## imm = 0x4B4A494847464544
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB44_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_12                  ## -- Begin function cmp_ovmask_12
+	.p2align	4
+_cmp_ovmask_12:                         ## @cmp_ovmask_12
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	12(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB45_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	4(%rdi,%rsi), %rax
+	movabsq	$5497569448741520965, %rcx      ## imm = 0x4C4B4A4948474645
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB45_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_13                  ## -- Begin function cmp_ovmask_13
+	.p2align	4
+_cmp_ovmask_13:                         ## @cmp_ovmask_13
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	13(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB46_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	5(%rdi,%rsi), %rax
+	movabsq	$5569909621579597638, %rcx      ## imm = 0x4D4C4B4A49484746
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB46_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_14                  ## -- Begin function cmp_ovmask_14
+	.p2align	4
+_cmp_ovmask_14:                         ## @cmp_ovmask_14
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	14(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB47_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	6(%rdi,%rsi), %rax
+	movabsq	$5642249794417674311, %rcx      ## imm = 0x4E4D4C4B4A494847
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB47_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_15                  ## -- Begin function cmp_ovmask_15
+	.p2align	4
+_cmp_ovmask_15:                         ## @cmp_ovmask_15
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	15(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB48_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	7(%rdi,%rsi), %rax
+	movabsq	$5714589967255750984, %rcx      ## imm = 0x4F4E4D4C4B4A4948
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB48_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.globl	_cmp_ovmask_16                  ## -- Begin function cmp_ovmask_16
+	.p2align	4
+_cmp_ovmask_16:                         ## @cmp_ovmask_16
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	leaq	16(%rsi), %rcx
+	xorl	%eax, %eax
+	cmpq	%rdx, %rcx
+	ja	LBB49_2
+## %bb.1:
+	movabsq	$-2314885530818453537, %rax     ## imm = 0xDFDFDFDFDFDFDFDF
+	movq	(%rdi,%rsi), %rcx
+	andq	%rax, %rcx
+	movabsq	$5208208757389214273, %rdx      ## imm = 0x4847464544434241
+	xorq	%rcx, %rdx
+	andq	8(%rdi,%rsi), %rax
+	movabsq	$5786930140093827657, %rcx      ## imm = 0x504F4E4D4C4B4A49
+	xorq	%rax, %rcx
+	xorl	%eax, %eax
+	orq	%rdx, %rcx
+	sete	%al
+LBB49_2:
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
 	.section	__TEXT,__cstring,cstring_literals
 L_.str.1:                               ## @.str.1
 	.asciz	"ab"

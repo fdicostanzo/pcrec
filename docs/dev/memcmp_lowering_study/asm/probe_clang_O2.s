@@ -1013,6 +1013,412 @@ LBB35_2:
 	ret
 	.cfi_endproc
                                         ; -- End function
+	.globl	_cmp_ovmask_3                   ; -- Begin function cmp_ovmask_3
+	.p2align	2
+_cmp_ovmask_3:                          ; @cmp_ovmask_3
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #3
+	cmp	x8, x2
+	b.ls	LBB36_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB36_2:
+	add	x8, x0, x1
+	ldrh	w9, [x8]
+	ldurh	w8, [x8, #1]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	cmp	w9, w10
+	mov	w9, #57311                      ; =0xdfdf
+	and	w8, w8, w9
+	mov	w9, #17218                      ; =0x4342
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_4                   ; -- Begin function cmp_ovmask_4
+	.p2align	2
+_cmp_ovmask_4:                          ; @cmp_ovmask_4
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #4
+	cmp	x8, x2
+	b.ls	LBB37_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB37_2:
+	add	x8, x0, x1
+	ldrh	w9, [x8]
+	ldrh	w8, [x8, #2]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	cmp	w9, w10
+	mov	w9, #57311                      ; =0xdfdf
+	and	w8, w8, w9
+	mov	w9, #17475                      ; =0x4443
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_5                   ; -- Begin function cmp_ovmask_5
+	.p2align	2
+_cmp_ovmask_5:                          ; @cmp_ovmask_5
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #5
+	cmp	x8, x2
+	b.ls	LBB38_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB38_2:
+	add	x8, x0, x1
+	ldr	w9, [x8]
+	ldur	w8, [x8, #1]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	movk	w10, #17475, lsl #16
+	cmp	w9, w10
+	and	w8, w8, #0xdfdfdfdf
+	mov	w9, #17218                      ; =0x4342
+	movk	w9, #17732, lsl #16
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_6                   ; -- Begin function cmp_ovmask_6
+	.p2align	2
+_cmp_ovmask_6:                          ; @cmp_ovmask_6
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #6
+	cmp	x8, x2
+	b.ls	LBB39_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB39_2:
+	add	x8, x0, x1
+	ldr	w9, [x8]
+	ldur	w8, [x8, #2]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	movk	w10, #17475, lsl #16
+	cmp	w9, w10
+	and	w8, w8, #0xdfdfdfdf
+	mov	w9, #17475                      ; =0x4443
+	movk	w9, #17989, lsl #16
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_7                   ; -- Begin function cmp_ovmask_7
+	.p2align	2
+_cmp_ovmask_7:                          ; @cmp_ovmask_7
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #7
+	cmp	x8, x2
+	b.ls	LBB40_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB40_2:
+	add	x8, x0, x1
+	ldr	w9, [x8]
+	ldur	w8, [x8, #3]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	movk	w10, #17475, lsl #16
+	cmp	w9, w10
+	and	w8, w8, #0xdfdfdfdf
+	mov	w9, #17732                      ; =0x4544
+	movk	w9, #18246, lsl #16
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_8                   ; -- Begin function cmp_ovmask_8
+	.p2align	2
+_cmp_ovmask_8:                          ; @cmp_ovmask_8
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #8
+	cmp	x8, x2
+	b.ls	LBB41_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB41_2:
+	add	x8, x0, x1
+	ldp	w9, w8, [x8]
+	and	w9, w9, #0xdfdfdfdf
+	mov	w10, #16961                     ; =0x4241
+	movk	w10, #17475, lsl #16
+	cmp	w9, w10
+	and	w8, w8, #0xdfdfdfdf
+	mov	w9, #17989                      ; =0x4645
+	movk	w9, #18503, lsl #16
+	ccmp	w8, w9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_9                   ; -- Begin function cmp_ovmask_9
+	.p2align	2
+_cmp_ovmask_9:                          ; @cmp_ovmask_9
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #9
+	cmp	x8, x2
+	b.ls	LBB42_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB42_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #1]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #17218                      ; =0x4342
+	movk	x9, #17732, lsl #16
+	movk	x9, #18246, lsl #32
+	movk	x9, #18760, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_10                  ; -- Begin function cmp_ovmask_10
+	.p2align	2
+_cmp_ovmask_10:                         ; @cmp_ovmask_10
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #10
+	cmp	x8, x2
+	b.ls	LBB43_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB43_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #2]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #17475                      ; =0x4443
+	movk	x9, #17989, lsl #16
+	movk	x9, #18503, lsl #32
+	movk	x9, #19017, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_11                  ; -- Begin function cmp_ovmask_11
+	.p2align	2
+_cmp_ovmask_11:                         ; @cmp_ovmask_11
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #11
+	cmp	x8, x2
+	b.ls	LBB44_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB44_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #3]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #17732                      ; =0x4544
+	movk	x9, #18246, lsl #16
+	movk	x9, #18760, lsl #32
+	movk	x9, #19274, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_12                  ; -- Begin function cmp_ovmask_12
+	.p2align	2
+_cmp_ovmask_12:                         ; @cmp_ovmask_12
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #12
+	cmp	x8, x2
+	b.ls	LBB45_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB45_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #4]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #17989                      ; =0x4645
+	movk	x9, #18503, lsl #16
+	movk	x9, #19017, lsl #32
+	movk	x9, #19531, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_13                  ; -- Begin function cmp_ovmask_13
+	.p2align	2
+_cmp_ovmask_13:                         ; @cmp_ovmask_13
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #13
+	cmp	x8, x2
+	b.ls	LBB46_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB46_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #5]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #18246                      ; =0x4746
+	movk	x9, #18760, lsl #16
+	movk	x9, #19274, lsl #32
+	movk	x9, #19788, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_14                  ; -- Begin function cmp_ovmask_14
+	.p2align	2
+_cmp_ovmask_14:                         ; @cmp_ovmask_14
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #14
+	cmp	x8, x2
+	b.ls	LBB47_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB47_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #6]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #18503                      ; =0x4847
+	movk	x9, #19017, lsl #16
+	movk	x9, #19531, lsl #32
+	movk	x9, #20045, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_15                  ; -- Begin function cmp_ovmask_15
+	.p2align	2
+_cmp_ovmask_15:                         ; @cmp_ovmask_15
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #15
+	cmp	x8, x2
+	b.ls	LBB48_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB48_2:
+	add	x8, x0, x1
+	ldr	x9, [x8]
+	ldur	x8, [x8, #7]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #18760                      ; =0x4948
+	movk	x9, #19274, lsl #16
+	movk	x9, #19788, lsl #32
+	movk	x9, #20302, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
+	.globl	_cmp_ovmask_16                  ; -- Begin function cmp_ovmask_16
+	.p2align	2
+_cmp_ovmask_16:                         ; @cmp_ovmask_16
+	.cfi_startproc
+; %bb.0:
+	add	x8, x1, #16
+	cmp	x8, x2
+	b.ls	LBB49_2
+; %bb.1:
+	mov	w0, #0                          ; =0x0
+	ret
+LBB49_2:
+	add	x8, x0, x1
+	ldp	x9, x8, [x8]
+	and	x9, x9, #0xdfdfdfdfdfdfdfdf
+	mov	x10, #16961                     ; =0x4241
+	movk	x10, #17475, lsl #16
+	movk	x10, #17989, lsl #32
+	movk	x10, #18503, lsl #48
+	cmp	x9, x10
+	and	x8, x8, #0xdfdfdfdfdfdfdfdf
+	mov	x9, #19017                      ; =0x4a49
+	movk	x9, #19531, lsl #16
+	movk	x9, #20045, lsl #32
+	movk	x9, #20559, lsl #48
+	ccmp	x8, x9, #0, eq
+	cset	w0, eq
+	ret
+	.cfi_endproc
+                                        ; -- End function
 	.section	__TEXT,__cstring,cstring_literals
 l_.str.1:                               ; @.str.1
 	.asciz	"ab"

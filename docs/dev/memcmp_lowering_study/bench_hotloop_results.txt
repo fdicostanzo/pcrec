@@ -1,0 +1,25 @@
+=== L=5 ===
+L=5  W_overlap=4  W_wide=8  n_pos=1048569  iters=314570700
+  overlap-two-load: 0.206371 s  (0.6560 ns/iter)
+  single-wide-load: 0.317542 s  (1.0094 ns/iter)
+  delta (overlap - wide): -0.3534 ns/iter  (-35.0% of wide)
+=== L=6 ===
+L=6  W_overlap=4  W_wide=8  n_pos=1048569  iters=314570700
+  overlap-two-load: 0.206318 s  (0.6559 ns/iter)
+  single-wide-load: 0.317153 s  (1.0082 ns/iter)
+  delta (overlap - wide): -0.3523 ns/iter  (-34.9% of wide)
+=== L=7 ===
+L=7  W_overlap=4  W_wide=8  n_pos=1048569  iters=314570700
+  overlap-two-load: 0.206350 s  (0.6560 ns/iter)
+  single-wide-load: 0.315612 s  (1.0033 ns/iter)
+  delta (overlap - wide): -0.3473 ns/iter  (-34.6% of wide)
+=== L=10 ===
+L=10  W_overlap=8  W_wide=16  n_pos=1048561  iters=314568300
+  overlap-two-load: 0.206367 s  (0.6560 ns/iter)
+  single-wide-load: 0.249417 s  (0.7929 ns/iter)
+  delta (overlap - wide): -0.1369 ns/iter  (-17.3% of wide)
+=== L=12 ===
+L=12  W_overlap=8  W_wide=16  n_pos=1048561  iters=314568300
+  overlap-two-load: 0.202965 s  (0.6452 ns/iter)
+  single-wide-load: 0.243823 s  (0.7751 ns/iter)
+  delta (overlap - wide): -0.1299 ns/iter  (-16.8% of wide)

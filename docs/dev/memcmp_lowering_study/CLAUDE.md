@@ -9,11 +9,16 @@ is its evidence, not a second explanation of it.
 ## Files
 
 - `gen_probe.py` — generates `probe.c`: one `cmp_memcmp_L` function per
-  tested length (P4's own shape), plus `cmp_mask_L` (the `[WORD-FOLD]`
-  load-and-AND-mask shape) and `cmp_overlap_L` (the two-overlapping-load
-  shape, `L ∈ {5,6,7}`) for comparison. Deterministic, non-repeating
-  per-length literals so no two functions' constants can be folded
-  together by the compiler.
+  tested length (P4's own shape), plus `cmp_mask_L` (the wide single-load
+  over-read shape — kept as ONE comparison row only, per the 2026-09-27
+  manager/Frank scope note in the memo's §5/§10: it needs a wider bound
+  than P4 has and ASan would flag it), `cmp_overlap_L` (the exact-byte
+  two-overlapping-load shape, `L ∈ {5,6,7}`), and `cmp_ovmask_L` (the
+  PRIMARY `[WORD-FOLD]`/S4 candidate: the same overlapping windows, each
+  AND-masked with a real ASCII case-fold mask — not a trivially
+  constant-foldable all-ones one — memo §10.1). Deterministic,
+  non-repeating per-length literals so no two functions' constants can be
+  folded together by the compiler.
 - `probe.c` — the generated probe source, self-contained (no pcrec
   dependency), toolchain-agnostic. Regenerate with `python3 gen_probe.py >
   probe.c`.
@@ -38,6 +43,15 @@ is its evidence, not a second explanation of it.
 - `bench_results.txt` — the committed run this lane's memo cites (§8);
   regenerate with `timeout 25 ./bench` per length if the toolchain or box
   changes and the memo needs re-verifying.
+- `bench_hotloop.c` — the 2026-09-27 follow-up microbenchmark (memo §10.2,
+  Frank's ask): overlapping-masked vs single-wide-masked, `L ∈
+  {5,6,7,10,12}`, scanned at every candidate position of a 1 MiB buffer,
+  the wide form's own wider bounds guard assumed already discharged by
+  the caller so neither arm pays a per-position check inside the timed
+  loop. Build per length: `gcc-16 -O2 bench_hotloop.c -o bench_hotloop
+  -DL=<n>`. Also scratch/throwaway, same rule as `bench.c`.
+- `bench_hotloop_results.txt` — the committed run the memo's §10.2 table
+  reads from; regenerate with `timeout 25 ./bench_hotloop` per length.
 - `asm/` — the committed `.s` outputs the memo's tables and code excerpts
   are read from: `probe_gcc16_{O1,O2,O3,Os}.s` (this box's `gcc-16`,
   Homebrew 16.2.0), `probe_clang_O2.s` (Apple clang 21.0.0, native arm64),
