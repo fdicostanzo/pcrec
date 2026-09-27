@@ -6112,7 +6112,7 @@ long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
  * are the start-anchor FACT's value vocabulary: src/facts/facts.h. */
 
 /* [OPT-ENDWIN] `pcrec_end_window` and [OPT-REQBYTE]/[OPT-REQPOS]'s
- * `pcrec_req_byte` are pattern-fact DERIVATIONS: declared in
+ * walk and picks are pattern-fact DERIVATIONS: declared in
  * src/facts/facts_derive.h ([PATFACTS] step 3.0a), which only their owners
  * and the record may include. */
 

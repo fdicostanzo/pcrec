@@ -1203,8 +1203,15 @@ construction (src/ir) and emission (src/gen).
   where the encoding DESCRIPTOR became a declared parameter (carve-out (d)).
   Its entry lives in `src/facts/CLAUDE.md` now.
 
-- **reqbyte.c** — [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
-  BYTE. `pcrec_req_byte` answers *which byte does every match of this pattern
+- **reqbyte.c** — **SPLIT at [PATFACTS] step 3.0 (D126): the WALK and its
+  set/run lattice moved to `src/facts/req.c` (the CORE facts `req_set` and
+  `req_whole_run`); this file keeps only the PICKS (`rb_pick`,
+  `rn_scan_index`, `rn_window_start`, bodies verbatim) behind two derived-fact
+  entries, `pcrec_req_window` and `pcrec_req_pick`, until [FINDINGS] B1 moves
+  them beside the rate primitives and deletes the file (design §4.2.2
+  carve-out (b)). `pcrec_req_byte` no longer exists; the history below is
+  kept as written.** [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
+  BYTE. `pcrec_req_byte` answered *which byte does every match of this pattern
   contain* — PCRE2's `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT`, which pcrec
   computed nowhere and which is the largest single weighted gap
   `capability@0.1` measured (`cycle1_analysis.md` M1: five throughput rows at

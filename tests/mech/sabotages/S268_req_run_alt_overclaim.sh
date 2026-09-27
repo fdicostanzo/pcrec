@@ -1,5 +1,5 @@
 # S268 — [OPT-REQPOS] tier 2b THE RUN ANALYSIS CLAIMS ONE BRANCH'S PREFIX AS
-# THE ALTERNATION'S OWN (src/opt/reqbyte.c, `rr_alt`): the alternation's head
+# THE ALTERNATION'S OWN (src/facts/req.c since [PATFACTS] 3.0, `rr_alt`): the alternation's head
 # run becomes the LONGER of its two branches' heads instead of their longest
 # COMMON prefix, so the emitted pre-check demands a run that only one
 # alternative actually contains and answers NOMATCH on every match of the
@@ -32,7 +32,7 @@
 # why §4.7 exists as a separate arm with a population chosen for the
 # difference.
 SAB_ID="S268-req-run-alt-overclaim"
-SAB_FILE="src/opt/reqbyte.c"
+SAB_FILE="src/facts/req.c"
 SAB_SUITES="harness prechecks altdiff"
 SAB_DESC="the necessary-run analysis takes an alternation's head run to be the LONGER of its branches' heads instead of their longest COMMON prefix, so the emitted whole-window pre-check demands a contiguous run that only one alternative contains — a run longer than the analysis can prove, which deletes every match of every other branch; the general form of reqpos_2b.md §5.4's proposed plant, chosen because the shipped corpus reaches it while a one-byte-longer literal would have needed a bespoke witness this corpus does not supply"
 SAB_DOC_FIGURE="tests/harness/run.sh over the full .rxt corpus is the primary detector: every 'm' case whose match takes a branch other than the one whose prefix was claimed reports nomatch. tests/codegen/run_prechecks.sh §4.7 is the structural detector and names the claim rather than the symptom — its (?:xabcy|zabcw)q row reports 'run \"7861626379@0\" / byte \"113\" — expected a declined run and a live byte (an alternation contributes only its common affixes, so abc is not claimed)'. §4.1's (?:/user|/users) row stays GREEN under this plant by construction, since there the left branch's head IS the common prefix. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S268."

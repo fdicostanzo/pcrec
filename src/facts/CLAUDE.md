@@ -113,6 +113,20 @@ defect traced to that edge (design §4.2.1, §10).
   clamp's own literal, the four declines, both engines, a population floor);
   failing-direction control `tests/mech/sabotages/S264`.
 
+- **req.c** — [OPT-REQBYTE] + [OPT-REQPOS] tier 2b THE NECESSARY SET AND THE
+  NECESSARY LITERAL RUN, the two CORE facts from one walk of the lowered tree
+  (`pcrec_req_walk`): the whole set with its threaded rightmost member (the
+  tiebreak the pick falls back on) and the longest guaranteed contiguous run.
+  LIFTED out of `src/opt/reqbyte.c` at [PATFACTS] step 3.0 with its lattice
+  (`rb_union`/`rb_intersect`, the seven run operations, `rr_cat`/`rr_alt`),
+  every helper `static` here; the walk's output types (`RbSet`, `RbRun`,
+  `rb_has`) are in `facts_derive.h`, shared with the pick readers that stayed
+  in `src/opt/reqbyte.c` (the DERIVED facts `req_run`/`req_byte`) until
+  [FINDINGS] B1. Reads no prior and no option: a core fact (design §4.1).
+  Its header carries the whole analysis account (why the whole window, why a
+  SET and a RUN, the declines, why a lookaround's body is a correctness
+  decline). Sabotage S268 (`rr_alt`'s common head) is anchored here.
+
 ## What the check cannot catch
 
 A HAND RE-SPELLING: a consumer that writes its own walk calls no

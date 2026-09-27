@@ -48,9 +48,9 @@
  * selection code, its constants and its roles are unchanged by it.
  * Invariants a caller relies on:
  *   - the `req_run` fact is final before `unanch_start` ever calls here
- *     (`pcrec_req_byte` runs ahead of the DFA build), so the pass-time and
- *     emit-time answers read the same run;
- *   - it reads THE SAME the `req_run` fact window the pre-check emits
+ *     (it is sealed at E2, ahead of the DFA build, and memoized for the
+ *     attempt), so the pass-time and emit-time answers read the same run;
+ *   - it reads THE SAME `req_run` fact window the pre-check emits
  *     (`bytes`/`len`, not `whole`), so the pin and the pre-check it may
  *     dominate cannot describe two different runs — a later fix to the run
  *     pre-check must not fork this field (litscan_s1.md R3-2);

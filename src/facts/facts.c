@@ -20,11 +20,11 @@
  * it, so `--emit-facts`' `used` column says which facts a PASS consumed
  * (design §11.4), not which ones fed another fact.
  *
- * The necessary set, whole run, window and byte come off ONE derivation call
- * today, `pcrec_req_byte` — one walk and one pick, which is how
- * `compile_driver` computed them. `pf_derive_req` fills all four at once,
- * each under its own deny; the walk/pick split (core in `req.c`, derived in
- * `reqbyte.c`) is a later relocation. */
+ * The necessary SET and WHOLE RUN are core facts from ONE walk
+ * (`src/facts/req.c`); asking either derives both, each under its own deny.
+ * The WINDOW and the BYTE are derived facts, speed choices over them
+ * (`src/opt/reqbyte.c`), reading their core facts through `pf_ask`, which is
+ * the one path along the DEPENDS-ON edges `facts.def` declares. */
 
 #include <string.h>
 
@@ -57,7 +57,10 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
     switch (f) {
     case PF_START_ANCHOR: pf->start_anchor = PCREC_SANCH_NONE; break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
-    case PF_REQ_SET:      memset(&pf->req_set, 0, sizeof pf->req_set); break;
+    case PF_REQ_SET:
+        memset(pf->req_set.bits, 0, sizeof pf->req_set.bits);
+        pf->req_set.rightmost = -1;
+        break;
     case PF_REQ_WHOLE_RUN:
         memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
         pf->req_run.whole_len = 0;
@@ -104,38 +107,75 @@ static void pf_done(PatFacts *pf, PfFactId f)
     pf->why[f] = (PfWhy){ PF_DERIVED, PF_WHY_NONE, 0 };
 }
 
-/* The four necessary-byte facts from their one derivation call. Each is
- * stored only if it is still unasked and not denied (`pf_enter` has cached a
- * denied one already), so the answers are exactly `compile_driver`'s were:
- * `run_ok` is `-fno-req-run`'s complement, and under `-fno-req-byte` every
- * one of the four is denied before this is reached. */
-static void pf_derive_req(Ctx *cx)
+static void pf_ask(Ctx *cx, PfFactId f, bool pass);
+
+/* The two CORE necessary-byte facts from their one walk. Each is stored only
+ * if it is still unasked and not denied (`pf_enter` caches a denied one), so
+ * the walk runs once per attempt whichever of the two is asked first. A run
+ * shorter than two bytes is not a run fact: that is `[OPT-REQBYTE]`'s `L = 1`
+ * case, carried by the set. */
+static void pf_derive_req_walk(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
-    ReqRun run;
-    ReqSet set;
-    int byte = pcrec_req_byte(cx, pf->root, !(cx->opt->flags & PCREC_NO_REQ_RUN),
-                              &run, &set);
+    RbSet set;
+    RbRun run;
+    pcrec_req_walk(pf->root, &set, &run);
     if (pf_enter(cx, PF_REQ_SET, false)) {
-        pf->req_set = set;
+        memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
+        pf->req_set.rightmost = set.pick;
         pf_done(pf, PF_REQ_SET);
     }
     if (pf_enter(cx, PF_REQ_WHOLE_RUN, false)) {
-        memcpy(pf->req_run.whole, run.whole, sizeof run.whole);
-        pf->req_run.whole_len = run.whole_len;
+        memset(pf->req_run.whole, 0, sizeof pf->req_run.whole);
+        pf->req_run.whole_len = 0;
+        if (run.n >= 2) {
+            memcpy(pf->req_run.whole, run.bytes, (size_t)run.n);
+            pf->req_run.whole_len = run.n;
+        }
         pf_done(pf, PF_REQ_WHOLE_RUN);
     }
-    if (pf_enter(cx, PF_REQ_RUN, false)) {
-        memcpy(pf->req_run.bytes, run.bytes, sizeof run.bytes);
-        pf->req_run.len = run.len;
-        pf->req_run.idx = run.idx;
-        pf->req_run.at = run.at;
-        pf_done(pf, PF_REQ_RUN);
+}
+
+/* Step 4: fact `f`'s derivation, reading other facts only through `pf_ask`
+ * along the DEPENDS-ON edges `facts.def` declares. No `default:`, so a new
+ * row is a compile error here. */
+static void pf_derive(Ctx *cx, PfFactId f)
+{
+    PatFacts *pf = &cx->job->pf;
+    switch (f) {
+    case PF_START_ANCHOR:
+        pf->start_anchor = pcrec_start_anchor(pf->root);
+        break;
+    case PF_END_WINDOW:
+        /* The descriptor is resolved HERE, once, and handed in: the
+         * derivation's one encoding input is declared, never looked up
+         * (design §4.2.2 carve-out (d)). */
+        pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
+                                          pf->root);
+        break;
+    case PF_REQ_SET:
+    case PF_REQ_WHOLE_RUN:
+        pf_derive_req_walk(cx);
+        return;
+    case PF_REQ_RUN:
+        pf_ask(cx, PF_REQ_WHOLE_RUN, false);
+        pcrec_req_window(cx, &pf->req_run);
+        break;
+    case PF_REQ_BYTE:
+        pf_ask(cx, PF_REQ_SET, false);
+        pf_ask(cx, PF_REQ_RUN, false);
+        pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run);
+        break;
+    case PF_NFACTS:
+        return;
     }
-    if (pf_enter(cx, PF_REQ_BYTE, false)) {
-        pf->req_byte = byte;
-        pf_done(pf, PF_REQ_BYTE);
-    }
+    pf_done(pf, f);
+}
+
+/* The four steps: `pf_enter`'s three, then the derivation. */
+static void pf_ask(Ctx *cx, PfFactId f, bool pass)
+{
+    if (pf_enter(cx, f, pass)) pf_derive(cx, f);
 }
 
 void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
@@ -146,48 +186,36 @@ void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
 
 int pcrec_fact_start_anchor(Ctx *cx)
 {
-    PatFacts *pf = &cx->job->pf;
-    if (pf_enter(cx, PF_START_ANCHOR, true)) {
-        pf->start_anchor = pcrec_start_anchor(pf->root);
-        pf_done(pf, PF_START_ANCHOR);
-    }
-    return pf->start_anchor;
+    pf_ask(cx, PF_START_ANCHOR, true);
+    return cx->job->pf.start_anchor;
 }
 
 long long pcrec_fact_end_window(Ctx *cx)
 {
-    PatFacts *pf = &cx->job->pf;
-    if (pf_enter(cx, PF_END_WINDOW, true)) {
-        /* The descriptor is resolved HERE, once, and handed in: the
-         * derivation's one encoding input is declared, never looked up
-         * (design §4.2.2 carve-out (d)). */
-        pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
-                                          pf->root);
-        pf_done(pf, PF_END_WINDOW);
-    }
-    return pf->end_window;
+    pf_ask(cx, PF_END_WINDOW, true);
+    return cx->job->pf.end_window;
 }
 
 const ReqSet *pcrec_fact_req_set(Ctx *cx)
 {
-    if (pf_enter(cx, PF_REQ_SET, true)) pf_derive_req(cx);
+    pf_ask(cx, PF_REQ_SET, true);
     return &cx->job->pf.req_set;
 }
 
 const ReqRun *pcrec_fact_req_whole_run(Ctx *cx)
 {
-    if (pf_enter(cx, PF_REQ_WHOLE_RUN, true)) pf_derive_req(cx);
+    pf_ask(cx, PF_REQ_WHOLE_RUN, true);
     return &cx->job->pf.req_run;
 }
 
 const ReqRun *pcrec_fact_req_run(Ctx *cx)
 {
-    if (pf_enter(cx, PF_REQ_RUN, true)) pf_derive_req(cx);
+    pf_ask(cx, PF_REQ_RUN, true);
     return &cx->job->pf.req_run;
 }
 
 int pcrec_fact_req_byte(Ctx *cx)
 {
-    if (pf_enter(cx, PF_REQ_BYTE, true)) pf_derive_req(cx);
+    pf_ask(cx, PF_REQ_BYTE, true);
     return cx->job->pf.req_byte;
 }

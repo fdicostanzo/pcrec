@@ -34,26 +34,54 @@ int pcrec_start_anchor(const Ast *root);             /* src/facts/startanch.c */
 long long pcrec_end_window(const PcrecEnc *e, const Ast *root);
                                                      /* src/facts/endwin.c */
 
-/* [OPT-REQBYTE] + [OPT-REQPOS] tier 2b — THE NECESSARY BYTE AND THE NECESSARY
- * LITERAL RUN, from ONE walk over the lowered tree. Returns the byte every
- * match must contain, or -1 where the analysis found none (which DISABLES the
- * check and is always sound), and writes the run into `*run` (`len == 0` where
- * it found none). src/opt/reqbyte.c's header carries the whole account: why
- * the whole window and not PCRE2's "other than at its start", why the analysis
- * produces a SET and a RUN, why the member it picks is the argmin of a
- * frequency prior under the `byte` encoding and the rightmost elsewhere, and
- * why a lookaround's body is a correctness decline.
+/* ---- [OPT-REQBYTE] + [OPT-REQPOS] tier 2b: the necessary set and run ------
  *
- * `run_ok` is [OPT-REQPOS]'s own axis, threaded rather than read here, because
- * the BYTE the artifact emits depends on whether the run ships: with a run the
- * `memchr` is the run loop's and tests the run's scan member, without one it
- * tests the whole set's own pick. Both answers come out of this one call so
- * they cannot be chosen in two places and disagree. `cx` is read for the
- * ENCODING alone (the prior is a fact about a corpus under one). `set`
- * receives the whole necessary set the returned byte was picked from ([K65]),
- * empty exactly when the return is -1. */
-int pcrec_req_byte(Ctx *cx, const Ast *root, bool run_ok, ReqRun *run,
-                   ReqSet *set);
+ * The WALK's output vocabulary, shared by the walk (`src/facts/req.c`, the
+ * CORE facts `req_set`/`req_whole_run`) and the pick readers
+ * (`src/opt/reqbyte.c`, the DERIVED facts `req_run`/`req_byte`). The lattice
+ * that builds them stays `static` in req.c. */
+
+/* A set of necessary bytes plus the member the emitter will use. `pick` is
+ * -1 exactly when the set is empty, and is always a member of the set when it
+ * is not — an invariant every operation below restores rather than assumes. */
+typedef struct { unsigned char bits[32]; int pick; } RbSet;
+
+/* A necessary CONTIGUOUS run, bounded so the walk's per-frame state cannot
+ * grow with the pattern (`PCREC_MAX_REQ_RUN_SCAN`'s limits.def row says why).
+ *
+ * `trunc` means the real run is LONGER than the `n` bytes stored, and every
+ * truncation is sound in the only direction that matters: a contiguous
+ * substring of a necessary contiguous run is itself one. What differs by ROLE
+ * is which END is kept, and the two append helpers below carry that as a
+ * stated precondition rather than as a convention — a HEAD keeps its first
+ * bytes (so its first byte is still the match's first), a TAIL keeps its last
+ * (so its last byte is still the match's last), and `best` keeps whichever
+ * the operation that built it produced. */
+typedef struct { unsigned char bytes[PCREC_MAX_REQ_RUN_SCAN]; int n; bool trunc; } RbRun;
+
+static inline bool rb_has(const RbSet *s, int b)
+{
+    return b >= 0 && (s->bits[b >> 3] & (unsigned char)(1u << (b & 7))) != 0;
+}
+
+/* THE CORE FACTS from ONE walk of the lowered tree: the whole necessary set
+ * (with its threaded rightmost member) and the longest guaranteed contiguous
+ * run. src/facts/req.c's header carries the whole account: why the whole
+ * window and not PCRE2's "other than at its start", why a SET and a RUN, and
+ * why a lookaround's body is a correctness decline. */
+void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
+                                                        /* src/facts/req.c */
+
+/* THE DERIVED FACTS, speed choices over the core ones (src/opt/reqbyte.c's
+ * header says why each member choice is the argmin of a frequency prior under
+ * the `byte` encoding and the rightmost elsewhere). `pcrec_req_window` fills
+ * `run`'s window (`bytes`/`len`/`idx`/`at`) from its whole run;
+ * `pcrec_req_pick` answers the byte the emitted `memchr` tests. `cx` is read
+ * for the ENCODING alone, the prior being a fact about a corpus under one —
+ * a RATE READER's decision, which [FINDINGS] B1 moves into the findings
+ * accessor (design §6.2). */
+void pcrec_req_window(Ctx *cx, ReqRun *run);          /* src/opt/reqbyte.c */
+int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run);
                                                       /* src/opt/reqbyte.c */
 
 #endif /* PCREC_FACTS_DERIVE_H */

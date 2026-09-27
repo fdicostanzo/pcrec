@@ -82,6 +82,12 @@ typedef struct {
  * set alone, which is a fact about the pattern. */
 typedef struct {
     unsigned char bits[32];
+    /* The walk's THREADED RIGHTMOST member — PCRE2's LASTCODEUNIT rule, the
+     * tiebreak the derived pick falls back on (and its whole answer under
+     * every encoding but `byte`) — or -1 exactly when `bits` is empty. A set
+     * has no order, so it is carried beside the bits rather than recovered
+     * from them ([PATFACTS] step 3.0: the core/derived split). */
+    int rightmost;
 } ReqSet;
 
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
