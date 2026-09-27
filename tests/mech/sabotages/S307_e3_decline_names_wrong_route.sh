@@ -15,7 +15,7 @@ SAB_ID="S307-e3-decline-names-wrong-route"
 SAB_FILE="src/facts/facts.c"
 SAB_SUITES="facts"
 SAB_DESC="the unsealed-E3 decline's route test is inverted, so ENG_ATTEMPT lists decline:no-forward-nfa and a no-DFA VM route lists decline:attempt-unwrapped-nfa — the stored reason names the other route"
-SAB_DOC_FIGURE="facts:1fail expected — [facts-e3] reports every attempt-route and no-scan witness with the other route's decline token; the sealed-route witnesses and every other facts check stay green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S307."
+SAB_DOC_FIGURE="MEASURED 2026-09-27 (lane pf34, single-row mech at 88f9729d): DETECTED -- pop 3 (want>=3), reach:ok(1/1), facts:1fail/7pass. [facts-e3] reports every attempt-route and no-scan witness with the other route's decline token; the sealed-route witnesses and every other facts check stay green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S307."
 # [MECH-REACH] both unsealed routes exist: `^abc` (attempt) and `(a)\1b`
 # (a VM artifact with no DFA scan stamp).
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/a.c" --pattern "^abc" && grep -q "^#define RX_DFA_SCAN \"attempt\"" "$REACH_TMP/a.c" && "$PCREC" --features all -p rx -o "$REACH_TMP/v.c" --pattern "(a)\\1b" && ! grep -q "^#define RX_DFA_SCAN" "$REACH_TMP/v.c" && echo REACH-BOTH-UNSEALED-ROUTES'

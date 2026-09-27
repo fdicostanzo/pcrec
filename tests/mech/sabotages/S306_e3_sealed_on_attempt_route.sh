@@ -17,7 +17,7 @@ SAB_ID="S306-e3-sealed-on-attempt-route"
 SAB_FILE="src/core/compile.c"
 SAB_SUITES="facts"
 SAB_DESC="the E3 seal is also written in the ENG_ATTEMPT arm, where the forward NFA is never wrapped: the k-set walk and the pin are derived over an anchored-attempt machine and listed as derived where the route must decline them"
-SAB_DOC_FIGURE="facts:1fail expected — [facts-e3] reports both attempt-route witnesses (^abc; the hybrid ^foo(?=bar)baz) listing kset_walk/run_pin as derived where RX_DFA_SCAN \"attempt\" implies absent/decline:attempt-unwrapped-nfa; every other facts check stays green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S306."
+SAB_DOC_FIGURE="MEASURED 2026-09-27 (lane pf34, single-row mech at 88f9729d): DETECTED -- pop 2 (want>=2), reach:ok(1/1), facts:1fail/7pass. [facts-e3] reports both attempt-route witnesses (^abc; the hybrid ^foo(?=bar)baz) listing kset_walk/run_pin as derived where RX_DFA_SCAN \"attempt\" implies absent/decline:attempt-unwrapped-nfa; every other facts check stays green. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S306."
 # [MECH-REACH] the site answers: `^abc` takes the ENG_ATTEMPT arm.
 SAB_REACH='"$PCREC" -p rx -o "$REACH_TMP/o.c" --pattern "^abc" && grep -q "^#define RX_DFA_SCAN \"attempt\"" "$REACH_TMP/o.c" && echo REACH-ATTEMPT-ARM'
 SAB_REACH_EXPECT="REACH-ATTEMPT-ARM"
