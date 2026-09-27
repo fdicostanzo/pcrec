@@ -2,8 +2,8 @@
 # COUNT-COLLAPSED RESCUE IS BUILT AGAIN ON EVERY PATTERN THAT CANNOT USE IT,
 # AND EVERY ANSWER IN THE TREE IS STILL RIGHT.
 #
-# WHAT IT BREAKS. `EngineFit.lang_nullable` is written once, at
-# `src/opt/select_engine.c`'s fit site, as `pcrec_minw(root) == 0` — the one
+# WHAT IT BREAKS. The pattern-facts record's E1 `nullable` fact is derived
+# once, in `src/facts/widths.c`, as `pcrec_minw(root) == 0` — the one
 # derivation both readers of the decision consult (the `fit.prefilter` clause,
 # which drops the prefilter on a ladder RUNG, and `src/core/compile.c`'s build
 # gate, which declines the collapse under `-fprefilter-collapse`). This plant
@@ -46,7 +46,7 @@
 # readers: a plant at either reader would leave the other one working and this
 # row would be reporting a partial removal as a whole one.
 SAB_ID="S206-nullable-predicate-removed"
-SAB_FILE="src/opt/select_engine.c"
+SAB_FILE="src/facts/widths.c"
 SAB_SUITES="pfcollapse resource harness"
 SAB_HARNESS_TARGET="tests/base/bounded_repeats.rxt"
 SAB_DESC="[OPT-4.1]'s nullability predicate is pinned false, so the count-collapsed prefilter rescue is built again for languages that match the empty string at every position and can therefore dismiss nothing — the 1.2-9.9x regression pcrec-bench measured at O-10 item 3, with every answer in the tree still right (the prefilter is a FILTER, so a useless one is answer-identical to none)"
@@ -73,5 +73,12 @@ SAB_COUNT=1
 # nullability declines go dead and neither twin can fire. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    fit->lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='    fit->lang_nullable = false;   /* SABOTAGE S206 */'
+SAB_BEFORE='    return pcrec_minw(root) == 0;'
+SAB_AFTER='    (void)root; return false;   /* SABOTAGE S206 */'
+# [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
+# the nullability predicate left `EngineFit.lang_nullable` for the
+# pattern-facts record's E1 `nullable` fact, derived once in src/facts/widths.c.
+# The plant pins that derivation false: every reader (both prefilter declines,
+# compile.c's collapse gate, the K50 start gate) reads the one answer, as they
+# read the one field before; the E2 cross-check calls the same derivation, so
+# it agrees with the plant and stays silent.

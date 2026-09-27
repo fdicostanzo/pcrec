@@ -109,7 +109,8 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
 {
     if (!cx->want_caps || cx->ncap == 0) return ENGM_DFA | ENGM_VM;
     /* [DD-14 wave G] THE DEAD-CAPTURE ELISION, and it is the one place this
-     * row looks at the TREE.
+     * row looks at the TREE — through the E1 kind mask's live-capture bit
+     * ([PATFACTS] step 3.2), so `a` itself goes unread.
      *
      * The paragraph above says this analysis deliberately does not hunt for
      * `A_CAP`, because the question is whether the artifact will PROMISE group
@@ -136,7 +137,8 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
      * the VM to the DFA too. Gating would have made this a `recursion` special
      * case for a fact that is not about `recursion`. The identity gate names
      * the affected call-free patterns rather than filtering them. */
-    if (!pcrec_has_live_capture(a)) return ENGM_DFA | ENGM_VM;
+    (void)a;
+    if (!(pcrec_fact_kinds(cx) & PF_KIND_LIVE_CAPTURE)) return ENGM_DFA | ENGM_VM;
     *why_pos = cx->first_cap_pos;
     *why = "capture group";
     return ENGM_VM;
@@ -508,10 +510,10 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
 }
 
 /* Decides whether this artifact runs the VM's hybrid DFA prefilter ahead of
- * the match, and records WHY when it does not. Writes five `EngineFit`
- * fields — `prefilter` itself, the two derivations `lang_nullable` and
- * `prefilter_has_collapsible_rep` that other sites read off the fit, and the
- * two `prefilter_declined_nullable*` attributions — and REFUSES outright on a
+ * the match, and records WHY when it does not. Writes three `EngineFit`
+ * fields — `prefilter` itself and the two `prefilter_declined_nullable*`
+ * attributions — from the E1 pattern facts (the kind mask, nullability),
+ * and REFUSES outright on a
  * `-fprefilter` request this pattern cannot honour, which is why it takes
  * `why_pos`: that offset is only the position its diagnostics report. Reads
  * `fit->chosen`, `cx->opt`'s flag pair and engine, and the retry state
@@ -553,22 +555,19 @@ static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
  * OFF has no such hole: `--engine=vm` already ships a pure,
  * prefilter-free VM artifact today, so PCREC_NO_PREFILTER is always
  * buildable whatever engine was chosen. */
-static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
-                               size_t why_pos)
+static void prefilter_decision(Ctx *cx, EngineFit *fit, size_t why_pos)
 {
     bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
     bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
-    /* [OPT-4.1] THE PREFILTER LANGUAGE'S NULLABILITY, derived ONCE here
-     * and read by this pass, by `src/core/compile.c`'s build gate and by
-     * the `--emit-ir` listing off `EngineFit` (D81). It is
-     * `src/opt/mrl.c`'s existing width analysis and not a second walk —
-     * `internal.h`'s field comment carries the argument that `minw == 0`
-     * answers for the PREFILTER's lowering, and that the collapsed
-     * language is nullable exactly when the exact one is. */
-    fit->lang_nullable = pcrec_minw(root) == 0;
-    /* [OPT-4.1] AND WHETHER THERE IS ANYTHING TO COLLAPSE, derived here
-     * for the same reason and read by the same two sites (internal.h). */
-    fit->prefilter_has_collapsible_rep = pcrec_has_collapsible_rep(root);
+    /* [PATFACTS] THE PATTERN'S KINDS, read once off the E1 record. Until
+     * step 3.2 this site derived the prefilter language's nullability and
+     * its collapsible-repeat test itself and copied both into `EngineFit`
+     * for `src/core/compile.c`'s build gate; both are now E1 facts and every
+     * reader asks the record (src/facts/widths.c carries the argument that
+     * `minw == 0` answers for the PREFILTER's lowering, and that the
+     * collapsed language is nullable exactly when the exact one is). */
+    const unsigned kinds = pcrec_fact_kinds(cx);
+    const bool collapsible_rep = (kinds & PF_KIND_COLLAPSIBLE_REP) != 0;
     /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
      * is a REFUSAL of `-fprefilter` rather than a silent override, on
      * D46's own do-or-die posture — a request the pattern cannot honour is
@@ -608,7 +607,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * filter gated on the transitive closure, and a literal-prefix skip)
      * so that "VM-only, no prefilter" reads as THIS module's answer rather
      * than as a permanent verdict. */
-    const bool has_bref = pcrec_has_bref(root);
+    const bool has_bref = (kinds & PF_KIND_BREF) != 0;
     /* [DD-14] A CALL-BEARING PATTERN GETS NO PREFILTER EITHER, and this
      * line is WAVE E's by the design's own schedule (§8.2, §11 wave E,
      * sabotage row S-SR17). It lands HERE, in wave B+C, because without it
@@ -655,7 +654,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * measured the previous line's absence costing at 21x-350x. A pattern
      * with even one LINKED call still gets nothing, because the machine
      * for that call cannot be built at all. */
-    const bool has_call = pcrec_has_linked_call(root);
+    const bool has_call = (kinds & PF_KIND_LINKED_CALL) != 0;
     /* [VAR] THE THIRD PREDICATE, and it is MANDATORY rather than an
      * optimisation decline — `[DD-14]`'s own paragraph above is the
      * precedent, incident for incident. `src/ir/nfa.c` has NO `A_VAR` arm;
@@ -683,7 +682,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * these hand-written predicates (`variables_pattern.md` §3); until it
      * lands, a third one in the shape of the first two is the tree's answer
      * and not a parallel mechanism. */
-    const bool has_var = pcrec_has_var(root);
+    const bool has_var = (kinds & PF_KIND_VAR) != 0;
     /* [VAR] the construct-named refusal gains its THIRD noun. The name is
      * chosen ONCE and used twice, which is what `[DD-14]`'s own two-argument
      * ternary pair was already doing and what stops the two halves of one
@@ -782,7 +781,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * answered with the opposite. `-fprefilter-collapse` does NOT outrank
      * it: that flag chooses a LANGUAGE for a prefilter, not whether one
      * exists, and a caller who wants existence has `-fprefilter`. */
-    /* [OPT-4.1] `prefilter_has_collapsible_rep` IS LOAD-BEARING HERE AND
+    /* [OPT-4.1] `collapsible_rep` IS LOAD-BEARING HERE AND
      * WAS MISSING (r47sel finding 1). `compile_driver`'s `retry_collapse`
      * does NOT test it, so the [SEL-1] rung is offered to a pattern with
      * no collapsible repeat — and for such a pattern the collapsed
@@ -794,8 +793,8 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * its own name: the honest stamp there is `overflowed-dfa`.
      *
      * THE CONJUNCTS ARE `pfc_wanted`'s (src/core/compile.c), and the two
-     * sites now read ONE derivation off `EngineFit` rather than each
-     * calling the predicate — which is what makes "they cannot disagree"
+     * sites read ONE derivation, the E1 kind mask's collapsible-repeat
+     * bit, rather than each calling the predicate — which is what makes "they cannot disagree"
      * structural instead of a thing to remember. `!pfc_deny` and
      * `chosen != ENGM_DFA` are not restated because `collapse_reason !=
      * CR_NONE` already implies both: neither rung is offered under
@@ -813,7 +812,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      *
      *   `prefilter_declined_nullable`         a RUNG offered the
      *     collapsed rescue and it was refused (unchanged from [OPT-4.1]
-     *     — ALSO needs `prefilter_has_collapsible_rep`, because without a
+     *     — ALSO needs `collapsible_rep`, because without a
      *     collapsible repeat the collapsed lowering IS the exact one and
      *     there is no distinct rescue to decline).
      *   `prefilter_declined_nullable_default`  the ORDINARY, un-rung
@@ -822,7 +821,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      *     anything, so there is always a concrete prefilter to decline —
      *     but it DOES need `would_prefilter` below, plus `!cx->dfa_
      *     disabled`, for the r47sel-1 reason `prefilter_declined_
-     *     nullable` needs `prefilter_has_collapsible_rep`: without them
+     *     nullable` needs `collapsible_rep`: without them
      *     a DFA-chosen artifact, a forced `--engine=vm` build with no
      *     `-fprefilter` (R21 E-6 already turns the prefilter off there
      *     for its own reason), or a retry whose OWN prefilter machine
@@ -835,7 +834,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
      * internal.h's own field comments carry the full argument for each;
      * this is the ONE site that derives both, off the one local. */
     bool lang_nullable_declinable =
-        fit->lang_nullable && !has_bref && !has_call && !force_on;
+        pcrec_fact_nullable(cx) && !has_bref && !has_call && !force_on;
     /* [OPT-4.2] "would this compile build a prefilter at all, absent the
      * nullability decline" — the SAME condition the final ternary below
      * falls through to when nothing declines it, read once here so the
@@ -853,7 +852,7 @@ static void prefilter_decision(Ctx *cx, const Ast *root, EngineFit *fit,
                             (cx->opt->engine != PCREC_ENGINE_VM);
     fit->prefilter_declined_nullable =
         cx->collapse_reason != CR_NONE && lang_nullable_declinable &&
-        fit->prefilter_has_collapsible_rep;
+        collapsible_rep;
     fit->prefilter_declined_nullable_default =
         cx->collapse_reason == CR_NONE && !cx->dfa_disabled &&
         lang_nullable_declinable && would_prefilter;
@@ -1094,7 +1093,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
         break;
     }
 
-    prefilter_decision(cx, root, &fit, why_pos);
+    prefilter_decision(cx, &fit, why_pos);
     fit.engine_sel = esel_of(cx, &fit);
 
     cx->job->fit = fit;

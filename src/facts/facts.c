@@ -20,6 +20,11 @@
  * it, so `--emit-facts`' `used` column says which facts a PASS consumed
  * (design §11.4), not which ones fed another fact.
  *
+ * The two E1 facts (the kind mask, nullability) are the exception to "on
+ * first ask": `pcrec_facts_seal_e1` FORCES them on the structural tree, and
+ * `pcrec_facts_seal_e2` re-derives them on the lowered one as the invariance
+ * cross-check (design §2-§3). After the seal their accessors are memo reads.
+ *
  * The necessary SET and WHOLE RUN are core facts from ONE walk
  * (`src/facts/req.c`); asking either derives both, each under its own deny.
  * The WINDOW and the BYTE are derived facts, speed choices over them
@@ -56,6 +61,8 @@ static uint32_t pf_bit(PfFactId f) { return (uint32_t)1 << f; }
 static void pf_store_empty(PatFacts *pf, PfFactId f)
 {
     switch (f) {
+    case PF_KINDS:        pf->kinds = 0; break;
+    case PF_NULLABLE:     pf->nullable = false; break;
     case PF_START_ANCHOR: pf->start_anchor = PCREC_SANCH_NONE; break;
     case PF_END_WINDOW:   pf->end_window = -1; break;
     case PF_REQ_SET:
@@ -158,6 +165,12 @@ static void pf_derive(Ctx *cx, PfFactId f)
     PatFacts *pf = &cx->job->pf;
     PfWhyCode why = PF_WHY_NONE;
     switch (f) {
+    case PF_KINDS:
+        pf->kinds = pcrec_pattern_kinds(pf->root);
+        break;
+    case PF_NULLABLE:
+        pf->nullable = pcrec_pattern_nullable(pf->root);
+        break;
     case PF_START_ANCHOR:
         pf->start_anchor = pcrec_start_anchor(pf->root);
         break;
@@ -193,10 +206,59 @@ static void pf_ask(Ctx *cx, PfFactId f, bool pass)
     if (pf_enter(cx, f, pass)) pf_derive(cx, f);
 }
 
-void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
+/* E1 is FORCED, not lazy (design §2): both facts are derived here, on the
+ * structural tree, so their answer is a function of the seal and never of
+ * which pass asked first. `pf_ask`'s `pass` is false: the seal is not a
+ * consumer, and `used` stays the passes' record. */
+void pcrec_facts_seal_e1(Ctx *cx, const struct Ast *root)
 {
     cx->job->pf.root = root;
+    cx->job->pf.epoch = PF_E1_STRUCT;
+    pf_ask(cx, PF_KINDS, false);
+    pf_ask(cx, PF_NULLABLE, false);
+}
+
+/* THE E1 INVARIANCE CROSS-CHECK (design §3): the same two derivations over
+ * the LOWERED tree must reproduce what E1 sealed on the structural one. The
+ * proof is that every pass between the seals rewrites node flags or class
+ * contents only; this is that proof checked on every compile, in the shape of
+ * `src/ir/nfa.c`'s `cstart_check_omission` — a diagnosed internal error at
+ * the point a disagreement would start to matter, never an `abort()`. */
+static void pf_check_e1(Ctx *cx, const struct Ast *root)
+{
+    const PatFacts *pf = &cx->job->pf;
+    unsigned kinds = pcrec_pattern_kinds(root);
+    bool nullable = pcrec_pattern_nullable(root);
+    if (kinds != pf->kinds)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] the kind mask sealed "
+                       "at E1 (0x%x) disagrees with the lowered tree's (0x%x)",
+                       pf->kinds, kinds);
+    if (nullable != pf->nullable)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] nullability sealed "
+                       "at E1 (%s) disagrees with the lowered tree's (%s)",
+                       pf->nullable ? "yes" : "no", nullable ? "yes" : "no");
+}
+
+void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
+{
+    if (cx->job->pf.epoch != PF_E1_STRUCT)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] E2 sealed on an "
+                       "attempt that never sealed E1");
+    pf_check_e1(cx, root);
+    cx->job->pf.root = root;
     cx->job->pf.epoch = PF_E2_LOWERED;
+}
+
+unsigned pcrec_fact_kinds(Ctx *cx)
+{
+    pf_ask(cx, PF_KINDS, true);
+    return cx->job->pf.kinds;
+}
+
+bool pcrec_fact_nullable(Ctx *cx)
+{
+    pf_ask(cx, PF_NULLABLE, true);
+    return cx->job->pf.nullable;
 }
 
 int pcrec_fact_start_anchor(Ctx *cx)
@@ -244,8 +306,8 @@ void pcrec_facts_force_all(Ctx *cx)
         /* Never past a seal this route did not write: an unsealed epoch is
          * a DECLINE of the route, not a failure, and forcing it would build a
          * machine the compile never built (design §3, §11.4). Every fact is
-         * E2 today and every successful compile seals E2, so no row takes
-         * this arm yet; E1/E3 facts arrive with steps 3.2/3.4. */
+         * E1 or E2 today and every successful compile seals both, so no row
+         * takes this arm yet; the E3 facts arrive with step 3.4. */
         if ((int)pf->epoch < (int)pf_epoch[f]) continue;
         pf_ask(cx, f, false);
     }
@@ -278,6 +340,15 @@ static const char *pf_hex(Ctx *cx, const unsigned char *b, int n, int idx)
     return t;
 }
 
+/* The `kinds` value's member names, indexed by `PF_KIND_*` bit position. */
+static const char *const pf_kind_name[] = {
+    "bref", "linked_call", "var", "atomic", "lookaround", "live_capture",
+    "collapsible_rep"
+};
+_Static_assert(PF_KIND_COLLAPSIBLE_REP ==
+                   1u << (sizeof pf_kind_name / sizeof pf_kind_name[0] - 1),
+               "one kind name per PF_KIND_* bit, the last bit last");
+
 /* Fact `f`'s ONE renderer. Every fact with no answer to give renders
  * `"none"` — the stamps' own member for "declined", because 0 is a legal
  * byte and a legal window and no number is free to mean it. The switch has
@@ -286,6 +357,19 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
 {
     const PatFacts *pf = &cx->job->pf;
     switch (f) {
+    case PF_KINDS: {
+        StrBuf sb = { 0 };
+        const char *t;
+        sb.cx = cx;
+        for (unsigned b = 0; b < sizeof pf_kind_name / sizeof pf_kind_name[0]; b++)
+            if (pf->kinds & (1u << b))
+                pcrec_sb_printf(&sb, "%s%s", sb.len ? "," : "", pf_kind_name[b]);
+        t = sb.len ? pcrec_sb_fragf(&cx->arena, "%s", sb.p) : "none";
+        pcrec_sb_free(&sb);
+        return t;
+    }
+    case PF_NULLABLE:
+        return pf->nullable ? "yes" : "no";
     case PF_START_ANCHOR:
         return pcrec_start_anchor_name(pf->start_anchor);
     case PF_END_WINDOW:

@@ -105,12 +105,28 @@ enum {
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
 
+/* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
+ * contains, each the root answer of the node predicate named beside it
+ * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
+enum {
+    PF_KIND_BREF            = 1u << 0,   /* pcrec_has_bref */
+    PF_KIND_LINKED_CALL     = 1u << 1,   /* pcrec_has_linked_call */
+    PF_KIND_VAR             = 1u << 2,   /* pcrec_has_var */
+    PF_KIND_ATOMIC          = 1u << 3,   /* pcrec_has_atomic */
+    PF_KIND_LOOK            = 1u << 4,   /* pcrec_has_lookaround */
+    PF_KIND_LIVE_CAPTURE    = 1u << 5,   /* pcrec_has_live_capture */
+    PF_KIND_COLLAPSIBLE_REP = 1u << 6    /* pcrec_has_collapsible_rep */
+};
+
 /* ---- the record --------------------------------------------------------- */
 
-/* The seals (design §3). A fact may be asked only after its epoch's seal; E2
- * is sealed by `compile_driver` right after `pcrec_lower_enc`, the last tree
- * rewrite. E1 (structural, forced eagerly) and E3 (the wrapped NFA, sealed
- * per branch) arrive with their facts in later migration steps. */
+/* The seals (design §3). A fact may be asked only after its epoch's seal. E1
+ * is sealed by `compile_driver` right after `pcrec_callgraph_build`, on the
+ * STRUCTURAL tree, and its facts are FORCED there rather than derived on
+ * first ask, because `pcrec_lower_enc` later rewrites that tree in place. E2
+ * is sealed right after `pcrec_lower_enc`, the last tree rewrite. E3 (the
+ * wrapped NFA, sealed per branch) arrives with its facts in a later
+ * migration step. */
 typedef enum { PF_E0 = 0, PF_E1_STRUCT, PF_E2_LOWERED, PF_E3_MACHINE } PfEpoch;
 
 /* `facts.def`'s `kind` column (design §4.1): a CORE fact is a walk of the
@@ -166,7 +182,11 @@ typedef struct {
     uint32_t have;           /* one bit per fact: asked and cached */
     uint32_t used;           /* one bit per fact: asked by a PASS (§11.4) */
     PfEpoch  epoch;          /* advanced ONLY by compile_driver at the seals */
-    const struct Ast *root;  /* the tree sealed at E2 */
+    const struct Ast *root;  /* the tree sealed at the latest epoch */
+    /* E1 structural, forced at `pcrec_facts_seal_e1`: the `PF_KIND_*` mask,
+     * and whether the empty string is in the language. Neither has a deny. */
+    unsigned  kinds;
+    bool      nullable;
     /* [OPT-ANCHOR-VM] E2 core: `PCREC_SANCH_*`; `PCREC_SANCH_NONE` under
      * `-fno-vm-anchor-bound`, deliberately indistinguishable from "nothing to
      * bound". The VM bounds its attempt loop on it; the DFA asserts its own,
@@ -200,11 +220,22 @@ typedef struct {
 
 /* ---- the seals -------------------------------------------------------- */
 
-/* Seals E2 over `root`, the LOWERED tree: records it and advances the epoch.
- * Called once per attempt, by `compile_driver`, after `pcrec_lower_enc`. */
+/* Seals E1 over `root`, the STRUCTURAL tree, and derives both E1 facts on it
+ * there and then. Called once per attempt, by `compile_driver`, after
+ * `pcrec_callgraph_build`. */
+void pcrec_facts_seal_e1(Ctx *cx, const struct Ast *root);
+
+/* Seals E2 over `root`, the LOWERED tree: first re-derives the E1 facts on it
+ * and refuses the compile (an internal error) if either disagrees with the
+ * value sealed at E1 — the lowering-invariance cross-check (design §3) —
+ * then records the tree and advances the epoch. Called once per attempt, by
+ * `compile_driver`, after `pcrec_lower_enc`. */
 void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root);
 
-/* ---- the accessors (every one E2 today) ------------------------------- */
+/* ---- the accessors ------------------------------------------------------ */
+
+unsigned       pcrec_fact_kinds(Ctx *cx);        /* E1: the PF_KIND_* mask */
+bool           pcrec_fact_nullable(Ctx *cx);     /* E1 */
 
 int            pcrec_fact_start_anchor(Ctx *cx);
 long long      pcrec_fact_end_window(Ctx *cx);

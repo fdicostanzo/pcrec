@@ -9959,9 +9959,9 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * only the ceiling costs one predicate.
      *
      * EACH READ OFF THE RIGHT SOURCE, FOR ITS OWN REASON. The two AST
-     * predicates are asked of the POST-DISCHARGE tree, so a pass that ever
-     * proves a cut or an assertion vacuous gives the pattern its ceiling back
-     * (`[^"]*+"` loses nothing). The collapse is a per-artifact SELECTION and
+     * kinds are the E1 record's, sealed on the POST-DISCHARGE tree, so a pass
+     * that ever proves a cut or an assertion vacuous gives the pattern its
+     * ceiling back (`[^"]*+"` loses nothing). The collapse is a per-artifact SELECTION and
      * is read off `fit`, never re-derived: `pcrec_has_collapsible_rep(root)`
      * asked here would disagree with the builder whenever the knee or a flag
      * decided otherwise — the two-sources defect R31 E3 found in this very
@@ -9977,8 +9977,8 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * because either alone is satisfiable by a half-done edit; S-LA13 is the
      * row, and it sabotages the two BUILDERS while leaving the stamp reading
      * the flag. */
-    v->mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
-                                   && !pcrec_has_lookaround(root)
+    v->mrl_win = job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
+                                   && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
                                    && !job->fit.prefilter_collapsed;
     v->fmin    = 0;   /* nothing follows the whole pattern */
 
@@ -13127,7 +13127,7 @@ static void vm_emit_entries(Vm *v, const GenNames *g, const VmPlan *pl,
  * run, and `job->vm_emitted_nodes`/`vm_frame_capacity`/`vm_subject_ceiling`
  * are the ladder's inputs, so a phase that ran after this one could move a
  * number the ladder had already compared. */
-static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl, Ast *root)
+static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl)
 {
     Ctx *cx = v->cx;
     Job *job = cx->job;
@@ -13174,27 +13174,27 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl, Ast *ro
         /* [OPT-4.2] its rungless twin, the same rule. */
         st.prefilter_declined_nullable_default =
             job->fit.prefilter_declined_nullable_default;
-        /* [VAR ruling, 2026-09-23] THE AST PREDICATE, NOT THE MASK BIT, and
-         * the rename that generalised the seam entry is what exposed this.
-         * The bit used to be `PCREC_ENCE_BREF` and meant exactly what this
-         * field is named for; it is now `PCREC_ENCE_SPAN` and is set by a
-         * `${name}` VARIABLE too, so reading it here would make the listing
-         * report "NO (backreference)" for a pattern that has none.
+        /* [VAR ruling, 2026-09-23] THE PATTERN'S KIND, NOT THE ENCODING
+         * SEAM'S MASK BIT, and the rename that generalised the seam entry is
+         * what exposed this. The bit used to be `PCREC_ENCE_BREF` and meant
+         * exactly what this field is named for; it is now `PCREC_ENCE_SPAN`
+         * and is set by a `${name}` VARIABLE too, so reading it here would
+         * make the listing report "NO (backreference)" for a pattern that has
+         * none.
          *
-         * `pcrec_has_bref` is the one source `select_engine.c` forces the
-         * prefilter off from, so the listing now reports the SAME fact
-         * rather than a second derivation of it — which is precisely what
-         * the `has_call` line below already says for its own construct, and
-         * why that line reads a predicate rather than a bit. A FACT READ OFF
-         * A SHARED BIT STOPS BEING THAT FACT THE DAY THE BIT IS SHARED, and
-         * nothing about the sharing makes a sound. */
-        st.has_bref  = pcrec_has_bref(root);
-        /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a
-         * call has no residual encoding entry to leave a bit in. The AST
-         * predicate is the one source `select_engine.c` forces the prefilter
+         * The E1 kind mask's `BREF` bit ([PATFACTS] step 3.2) is the one
+         * source `select_engine.c` forces the prefilter off from, so the
+         * listing reports the SAME fact rather than a second derivation of it
+         * — which is precisely what the `has_call` line below says for its
+         * own construct. A FACT READ OFF A SHARED BIT STOPS BEING THAT FACT
+         * THE DAY THE BIT IS SHARED, and nothing about the sharing makes a
+         * sound; a kind bit is one construct's and is never shared. */
+        st.has_bref  = (pcrec_fact_kinds(cx) & PF_KIND_BREF) != 0;
+        /* [DD-14 wave E] NOT read off `enc_mask`: a call has no residual
+         * encoding entry to leave a bit in. The E1 kind is the one source `select_engine.c` forces the prefilter
          * off from, so the listing reports the SAME fact rather than a
          * second derivation of it. */
-        /* [DD-14 wave G] `pcrec_has_LINKED_call`, matching the verdict this
+        /* [DD-14 wave G] the LINKED-call kind, matching the verdict this
          * line EXPLAINS. `src/opt/select_engine.c` narrowed `fit.prefilter`
          * to the linked form — a SPLICED call has an exact finite lowering,
          * so it is not a reason for anything to be off — and a listing whose
@@ -13205,7 +13205,7 @@ static void vm_emit_epilogue(Vm *v, const GenNames *g, const VmPlan *pl, Ast *ro
          * change: `--engine=vm '(?:(x)){0}a(?1)b'` — a fully SPLICED call —
          * read "NO (subroutine call)" where the honest answer is
          * "NO (--engine=vm)". */
-        st.has_call  = pcrec_has_linked_call(root);
+        st.has_call  = (pcrec_fact_kinds(cx) & PF_KIND_LINKED_CALL) != 0;
         st.root_minw = v->root_minw;
         st.why = job->fit.why;
         vm_render_listing(v, &job->irsb, &st);
@@ -13270,5 +13270,5 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_emit_storage(&v, &pl);
     vm_emit_search_body(&v, &g, &pl, &en);
     vm_emit_entries(&v, &g, &pl, &en);
-    vm_emit_epilogue(&v, &g, &pl, root);
+    vm_emit_epilogue(&v, &g, &pl);
 }

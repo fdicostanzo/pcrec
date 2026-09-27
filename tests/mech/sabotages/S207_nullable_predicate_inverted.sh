@@ -34,7 +34,7 @@
 # in both directions — but they are S206's detectors, not this row's, and a
 # reader must not take their redness as evidence that the twin was checked.
 SAB_ID="S207-nullable-predicate-inverted"
-SAB_FILE="src/opt/select_engine.c"
+SAB_FILE="src/facts/widths.c"
 SAB_SUITES="pfcollapse resource harness"
 SAB_HARNESS_TARGET="tests/base/bounded_repeats.rxt"
 SAB_DESC="[OPT-4.1]'s nullability predicate is inverted, so the count-collapsed rescue is DECLINED on exactly the patterns pcrec-bench measured it winning 2.2-4.6x on and KEPT on the three it measured it losing 1.2-9.9x on. Answer-identical everywhere: the prefilter is a filter, so neither its loss nor its uselessness moves a single cell of the corpus"
@@ -54,5 +54,10 @@ SAB_COUNT=1
 # fire on exactly the complementary population. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    fit->lang_nullable = pcrec_minw(root) == 0;'
-SAB_AFTER='    fit->lang_nullable = pcrec_minw(root) != 0;   /* SABOTAGE S207 */'
+SAB_BEFORE='    return pcrec_minw(root) == 0;'
+SAB_AFTER='    return pcrec_minw(root) != 0;   /* SABOTAGE S207 */'
+# [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
+# the nullability predicate left `EngineFit.lang_nullable` for the
+# pattern-facts record's E1 `nullable` fact, derived once in src/facts/widths.c.
+# The plant inverts that derivation for every reader, as it inverted the one
+# field before; the E2 cross-check calls the same derivation and stays silent.

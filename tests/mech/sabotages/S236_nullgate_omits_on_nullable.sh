@@ -45,5 +45,9 @@ SAB_COUNT=1
 # reachable and it must score UNREACHED rather than go on certifying.
 SAB_REACH='"$PCREC" -p rx -e utf8 --features assertions -o - --pattern "\\B" | grep -o "STARTPOS_GUARD" | head -1'
 SAB_REACH_EXPECT='STARTPOS_GUARD'
-SAB_BEFORE='    return cx->job->fit.lang_nullable;'
+SAB_BEFORE='    return pcrec_fact_nullable(cx);'
 SAB_AFTER='    (void)cx; return false;   /* SABOTAGE S236 */'
+# [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
+# `pcrec_startgate_needed` reads the E1 `nullable` fact through its
+# accessor instead of `EngineFit.lang_nullable`; the plant is the same one-line
+# answer at the same site.

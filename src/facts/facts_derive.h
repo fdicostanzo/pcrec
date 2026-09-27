@@ -20,6 +20,12 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 
+/* THE E1 FACTS, derived on the STRUCTURAL tree at `pcrec_facts_seal_e1` and
+ * re-derived on the lowered one at `pcrec_facts_seal_e2` as the invariance
+ * cross-check (design §3). Pure functions of the tree. */
+unsigned pcrec_pattern_kinds(const Ast *root);       /* src/facts/kinds.c */
+bool     pcrec_pattern_nullable(const Ast *root);    /* src/facts/widths.c */
+
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
  * `PCREC_SANCH_*` and the renderer `pcrec_start_anchor_name` stay with the
  * consumers in `core/internal.h`. */

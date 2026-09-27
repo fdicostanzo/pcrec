@@ -1990,59 +1990,6 @@ typedef struct {
      * cannot leave a stamp disagreeing with a live clamp. */
     bool        prefilter_collapsed;
 
-    /* [OPT-4.1] IS THE PREFILTER'S LANGUAGE NULLABLE — can it match the empty
-     * string? Written ONCE at `src/opt/select_engine.c`'s fit site as
-     * `pcrec_minw(root) == 0` and read by the two sites that can decline the
-     * count-collapsed rescue (D81: one derivation, N readers; the predicate is
-     * `src/opt/mrl.c`'s existing width analysis, never a second walk).
-     *
-     * WHY THE COLLAPSED LANGUAGE'S NULLABILITY IS THE EXACT PATTERN'S.
-     * The collapse rewrites `X{m,n}` as `X{min(m,1),}`, and `min(m,1) == 0`
-     * iff `m == 0`, so an `A_REP` is nullable on exactly the same condition
-     * before and after; concatenation and alternation combine 0-ness
-     * identically. One walk therefore answers for both languages, which is why
-     * this field is not "collapsed_lang_nullable".
-     *
-     * WHY `pcrec_minw` IS THE RIGHT WALK AND NOT AN APPROXIMATION OF ONE. It
-     * already answers for the PREFILTER's lowering rather than for the
-     * pattern's semantics: `A_CAP`/`A_ATOMIC` are transparent (as `src/ir/
-     * nfa.c` lowers them), `A_LOOK` is 0 (as the prefilter lowers it — to
-     * epsilon), and `A_CALL` reads the callgraph fixpoint, which
-     * `src/core/compile.c` has already run by the time selection asks. Its
-     * documented direction is UNDER-estimation, so `minw == 0` may claim
-     * nullable where the true language is not — and that direction is the safe
-     * one here: declining a rescue costs a filter, never an answer.
-     *
-     * WHAT IT DECIDES (the measured need, pcrec-bench O-10 item 3 at pin
-     * 96e44c2). A nullable prefilter language admits a zero-length match at
-     * EVERY position, so the filter can never dismiss one: the artifact pays a
-     * scan whose every answer is "maybe". Measured there at 1.2-9.9x SLOWER
-     * than the same pattern with no prefilter at all (`[a-z]{0,32768}`: search
-     * x3.57, throughput 1.880 -> 6.899 ns/B). The same fact is visible inside
-     * the artifact from the other end — a nullable language's start state
-     * ACCEPTS, so `src/gen/emit_dfa.c`'s `unanch_start` can select no
-     * candidate-byte skip and the inlined scan stamps `<PREFIX>_DFA_PREFILTER
-     * "none"` — which is a genuine second derivation of this predicate and not
-     * a restatement of it.
-     *
-     * [K50-NULLGATE], 2026-09-06 — RENAMED from `prefilter_lang_nullable`,
-     * because it acquired a SECOND consumer and the old spelling scoped it to
-     * the first. It is `pcrec_minw(root) == 0` and nothing else: the empty
-     * string is in the pattern's language. [OPT-4.1] reads it to decline a
-     * collapsed prefilter; [K50-NULLGATE] reads it through
-     * `pcrec_startgate_needed` to decide whether the caller-startpos boundary
-     * gate is needed at all. Adding a second field with an identical
-     * definition would have been the parallel mechanism this tree keeps having
-     * to un-fork, so the FACT is named once and read twice.
-     *
-     * The old name's recorded reason does not survive the move and that was
-     * checked rather than assumed: `docs/dev/lanes/opt41_report.md` §1 says
-     * the `prefilter_` prefix contrasted with `collapsed_lang_nullable` — the
-     * EXACT pattern's language against the count-collapsed one, which are the
-     * same predicate — not with a general reading. Dropping it loses nothing
-     * that sentence was protecting. */
-    bool        lang_nullable;
-
     /* [OPT-4.1] AND THE DECISION IT DROVE: a collapse RUNG asked for the
      * count-collapsed prefilter and nullability declined it, so this artifact
      * has NO prefilter. False on every other path, including the two rungs
@@ -2077,12 +2024,12 @@ typedef struct {
      * backreference, no linked call, not `-fprefilter`-forced — so a future
      * conjunct added to one cannot silently miss the other): this field is
      * `collapse_reason == CR_NONE && lang_nullable_declinable`, its rung-
-     * scoped sibling above is `collapse_reason != CR_NONE && ... &&
-     * prefilter_has_collapsible_rep`. The two are therefore MUTUALLY
+     * scoped sibling above is `collapse_reason != CR_NONE && ... &&` the
+     * E1 kind mask's collapsible-repeat bit. The two are therefore MUTUALLY
      * EXCLUSIVE by construction (one requires `CR_NONE`, the other its
      * negation) and never both true for one compile.
      *
-     * IT NEEDS NO `prefilter_has_collapsible_rep` CONJUNCT, unlike its rung
+     * IT NEEDS NO COLLAPSIBLE-REPEAT CONJUNCT, unlike its rung
      * sibling. That conjunct exists there to tell "a rescue was offered and
      * refused" from "there was never a distinct rescue to refuse" (no
      * collapsible repeat means the collapsed lowering IS the exact one). On
@@ -2101,22 +2048,6 @@ typedef struct {
      * `fit.prefilter` clause below, which this field joins as a THIRD reason
      * `fit.prefilter` reads false. */
     bool        prefilter_declined_nullable_default;
-
-    /* [OPT-4.1] IS THERE A COLLAPSIBLE `A_REP` AT ALL — an `rmin > 1` or
-     * `rmax > 1` the collapse would CHANGE? `pcrec_has_collapsible_rep(root)`
-     * (src/opt/atomic.c), derived ONCE at `src/opt/select_engine.c`'s fit site
-     * and read by BOTH conjuncts that need it: this pass's
-     * `prefilter_declined_nullable` and `src/core/compile.c`'s `pfc_wanted`.
-     *
-     * IT IS A FIELD RATHER THAN TWO CALLS BECAUSE THE TWO SITES MUST NOT BE
-     * ABLE TO DISAGREE, and they DID: the decline shipped without this
-     * conjunct while the build gate had it (r47sel finding 1). A nullable
-     * pattern that overflows the [SEL-1] cap with NO collapsible repeat then
-     * stamped `_ENGINE_SEL "declined-nullable"` — a rescue REFUSED — when the
-     * collapsed lowering IS the exact one and there was never a distinct
-     * rescue to refuse. `match_api.md`'s own value table warns against exactly
-     * that inversion, and the comparative bench buckets on this macro. */
-    bool        prefilter_has_collapsible_rep;
 
     /* [OPT-4] WHY THAT LANGUAGE (D81's `_WHY`; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
      *
@@ -5699,14 +5630,13 @@ int pcrec_rxt_source_resolve(RxtSource *src,
  * subject and still accept mid-character. `pcrec_minw` answers 0 for `A_LOOK`
  * unconditionally, so `(?<=x)` reads nullable and KEEPS its gate.
  *
- * THE FIELD IT READS is [OPT-4.1]'s, whose spelling is consumer-scoped for a
- * reason that does not apply here (`docs/dev/lanes/opt41_report.md` §1: the
- * name contrasts with `collapsed_lang_nullable`, not with a general one). It
- * is `pcrec_minw(root) == 0` and nothing else; this accessor names the FACT
- * so two rows can share one derivation rather than forking it. */
-static inline bool pcrec_startgate_needed(const Ctx *cx)
+ * THE FACT IT READS is the pattern-facts record's E1 `nullable`
+ * (src/facts/widths.c: `pcrec_minw(root) == 0` and nothing else), the one
+ * derivation [OPT-4.1]'s prefilter decline reads too; this accessor names the
+ * GATE's question so its two call sites share one answer. */
+static inline bool pcrec_startgate_needed(Ctx *cx)
 {
-    return cx->job->fit.lang_nullable;
+    return pcrec_fact_nullable(cx);
 }
 
 /* [K50] The caller-startpos boundary guard, emitted by src/gen/emit_dfa.c and

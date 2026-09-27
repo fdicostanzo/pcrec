@@ -35,5 +35,9 @@ SAB_COUNT=1
 # live — so the population stays "a LINKED call's prefilter turns on". Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    const bool has_call = pcrec_has_linked_call(root);'
+SAB_BEFORE='    const bool has_call = (kinds & PF_KIND_LINKED_CALL) != 0;'
 SAB_AFTER='    const bool has_call = false;   /* SABOTAGE S176 */'
+# [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
+# `has_call` reads the E1 kind mask's LINKED_CALL bit instead of
+# calling `pcrec_has_linked_call(root)`; the plant is the same local pinned
+# false, so `fit.prefilter` stops consulting linkage exactly as before.

@@ -47,9 +47,13 @@ SAB_COUNT=1
 # it still deletes the LOOKAROUND conjunct and only that one, so the collapsed
 # conjunct is carried through to SAB_AFTER rather than quietly dropped —
 # deleting two conjuncts would be a different, easier-to-detect row.
-SAB_BEFORE='    v->mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
-                                   && !pcrec_has_lookaround(root)
+SAB_BEFORE='    v->mrl_win = job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
+                                   && !(pcrec_fact_kinds(cx) & PF_KIND_LOOK)
                                    && !job->fit.prefilter_collapsed;'
 SAB_AFTER='    /* SABOTAGE S140: the lookaround conjunct deleted (design §5.6(2)) */
-    v->mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+    v->mrl_win = job->fit.prefilter && !(pcrec_fact_kinds(cx) & PF_KIND_ATOMIC)
                                    && !job->fit.prefilter_collapsed;'
+# [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
+# the two conjuncts read the E1 kind mask's ATOMIC/LOOK bits instead
+# of calling `pcrec_has_atomic`/`pcrec_has_lookaround` on the root; column
+# layout kept, and the plant still deletes the lookaround conjunct alone.

@@ -1413,6 +1413,16 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * once — `cx.callgraph` stays NULL and nothing downstream changes. */
         pcrec_callgraph_build(&cx, root);
 
+        /* [PATFACTS] THE E1 SEAL: the structural facts (the kind mask,
+         * nullability) are derived HERE, on this tree, and stored. After the
+         * call graph, because a linked call's kind and a call's width are its
+         * answers; before engine selection, their first reader. FORCED rather
+         * than derived on first ask because `pcrec_lower_enc` below rewrites
+         * this tree in place: a lazy answer would depend on which pass asked
+         * first. The E2 seal re-derives both on the lowered tree and refuses
+         * the compile if either moved (docs/design/patfacts/design.md §2-§3). */
+        pcrec_facts_seal_e1(&cx, root);
+
         /* [M4.5b] Engine selection is a PASS (engine_m4.md §5.1), run after parse
          * and before machine construction. It also owns the §5.6 override's
          * refusals, which is why it runs before anything expensive: a caller who
@@ -1579,11 +1589,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const uint64_t pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
-            /* [OPT-4.1] READ, NOT RE-CALLED: `select_engine.c` derived this
-             * at the fit site and `fit.prefilter_declined_nullable` is built
-             * from the same value, so the two conjuncts cannot drift (they
-             * did — r47sel finding 1). */
-            const bool pfc_rep   = cx.job->fit.prefilter_has_collapsible_rep;
+            /* [OPT-4.1] READ, NOT RE-CALLED: the E1 kind mask is the one
+             * derivation, and `fit.prefilter_declined_nullable` is built from
+             * the same bit, so the two conjuncts cannot drift (they did —
+             * r47sel finding 1). */
+            const bool pfc_rep   =
+                (pcrec_fact_kinds(&cx) & PF_KIND_COLLAPSIBLE_REP) != 0;
             const bool pfc_rung  = cx.collapse_reason != CR_NONE;
             /* [OPT-4.1] THE FOURTH CONJUNCT IS SPLIT OFF so the DECISION and
              * the DECLINE are the same expression with one term negated, and
@@ -1618,7 +1629,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const bool pfc_prefilter_forced =
                 (pfc_flags & PCREC_FORCE_PREFILTER) != 0;
             bool collapse = pfc_wanted && (pfc_prefilter_forced ||
-                                           !cx.job->fit.lang_nullable);
+                                           !pcrec_fact_nullable(&cx));
             /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
              * from the SAME conjuncts (D81). The ladder branches on the
              * DECISION rather than re-walking them, which is what makes
