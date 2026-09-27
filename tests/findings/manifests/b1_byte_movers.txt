@@ -1,0 +1,40 @@
+# tests/findings/manifests/b1_byte_movers.txt — [FINDINGS] B1's named mover
+# manifest for `-e byte` (findings design §11.3, §7's named-lines gate).
+# ONE ROW PER MOVED ARTIFACT-CONFIG, naming every RX_* stamp whose value moved
+# (`program` = a non-stamp line moved too), after deleting exactly the named
+# lines (the abi digit's three sites normalized 39 -> 40; the RX_FINDINGS line;
+# the rx_info `.findings` initializer). Produced by
+# docs/dev/optloop/s1/s1_identity.py (BASE = main bd8d1075, NEW = lane/findb1
+# c7 8c24a086, DROP_FINDINGS=1) over pcrec-bench's 64 capability patterns x 4
+# configs (read-only) and every distinct corpus `pattern` line x 2 configs,
+# for each deny set below. Lane findb1, 2026-09-27.
+#
+# REACH (artifact-configs that compiled / that consumed byte-rate, read off the
+# NEW side's own RX_FINDINGS stamp), per deny set:
+#   -fno-offset-skip    5938 compiled,  5938 consumed byte-rate
+#   -fno-req-byte       5938 compiled,  1944 consumed byte-rate
+#   -fno-req-run        5938 compiled,  5938 consumed byte-rate
+#   none                5938 compiled,  5938 consumed byte-rate
+#
+# MOVERS: 8 rows.
+#
+# CLASSIFICATION: every row is ONE pcrec-bench pattern,
+# wild-logparse-syslogbase-expanded (auto-caps and auto-nocaps, under every
+# deny set), and its ONLY differing line is RX_VM_PREFILTER_LANG_WHY's quoted
+# size of the FAILED exact-prefilter attempt ("size cap retry, exact 1464304 >
+# 1000000" -> "... 1464689 > 1000000"): that attempt's artifact carried the
+# new stamp lines too, and the stamp QUOTES ITS OWN BYTE COUNT. No program
+# byte, no other stamp, the same retry either way. It is the one byte-count
+# reader §7's named-lines list did not name (findb1_report.md §2). Answer- and
+# give-up-identical: tests/findings/b1_mover_answers.py, 2 movers x 4 deny
+# sets, 2,620 cells each, 0 diverged.
+#
+# deny	pop	cfg	pattern	moved
+-fno-offset-skip	bench	auto-caps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+-fno-offset-skip	bench	auto-nocaps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+-fno-req-byte	bench	auto-caps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+-fno-req-byte	bench	auto-nocaps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+-fno-req-run	bench	auto-caps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+-fno-req-run	bench	auto-nocaps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+none	bench	auto-caps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
+none	bench	auto-nocaps	wild-logparse-syslogbase-expanded	RX_VM_PREFILTER_LANG_WHY
