@@ -166,11 +166,21 @@ srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
 # largest-fitting assertion below bite: at a 31,000 cap the walk rejects 6 and
 # takes 4 (30,347 B), and a ladder walked in the wrong direction would land on
 # 1 (28,502 B) while still being "different from the default".
+#
+# RE-CALIBRATED 31,000 -> 31,500, 2026-09-27 ([FINDINGS] B1, abi 39 -> 40):
+# every artifact grew by 385 bytes of code as the size model measures it (the
+# `<PREFIX>_FINDINGS` line and the rx_info initializer, 111 in the `.c`, plus
+# the struct's appended `findings` member and its essential doc-comment in the
+# ABI block), which put K=4 at 31,068 B, just OVER the old cap, so the ladder
+# correctly took K=2. Re-measured on this reference build: K=6 36,149, K=4
+# 31,068, K=3 31,953, K=2 29,838. At 31,500 the shape is the one this cell
+# exists for again: 6 and 3 do not fit, 4 does and is the largest that does,
+# and 2 fits too, so the wrong-direction walk is still distinguishable.
 if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
        -DPCREC_SIZE_TERM_THRESHOLD=20000 \
-       -DPCREC_MAX_VM_EMIT_CODE_BYTES=31000 \
+       -DPCREC_MAX_VM_EMIT_CODE_BYTES=31500 \
        -o "$REF" "$ROOT_DIR/cli/main.c" $srcs 2>"$WORK/ref.err"; then
-    ok "reference compiler built with the threshold at 20000 and the code cap at 31000"
+    ok "reference compiler built with the threshold at 20000 and the code cap at 31500"
     RESCUE='(?:aa|a){8,12}+b'
     if "$REF" -p rx --features all -o "$WORK/r.c" --pattern "$RESCUE" 2>/dev/null; then
         got="$(stamp UNROLL_K_WHY "$WORK/r.c" | tr -d '"')"
@@ -194,7 +204,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         if [ "$rk" = "4" ]; then
             ok "the rescue took the LARGEST fitting K (4) — not merely a different one"
         else
-            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (35,427 B against the 31,000 cap) and rung 4 does (30,347 B), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
+            bad "the rescue took K=$rk; under this reference build the ladder's rung 6 does NOT fit (36,149 B against the 31,500 cap) and rung 4 does (31,068 B), so the largest fitting rung is 4. A smaller K here means the ladder is being walked in the wrong direction"
         fi
     else
         bad "the cap-rescue witness '$RESCUE' did not compile under the lowered-cap compiler"
