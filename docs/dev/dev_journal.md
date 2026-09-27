@@ -25933,3 +25933,31 @@ three times; cost arguments must model early exit and per-call constants (F1's c
 
 **Next:** PATFACTS 3.4 (flagged mover; pre-lane grep of run_pinned/run_o readers), then 3.5; [UTF8-ATTRIB]
 after the bench's read lands; LITSCAN F1/F2/F3 in phase 2.
+
+## 2026-09-27 (late) — eighty-second session, close-out (Frank asked for a reset after this wave)
+
+**Merged since the stage record (pushed at 7dcb7d06 + this entry):** UTF8-ATTRIB (docs/dev/utf8_attrib.md;
+[OPT-HYB-RESEED] + [OPT-ENDWIN-ENC] filed; [OPT-LITSCAN] F4; B1's utf8 tie-order finding on [FINDINGS]);
+the re-seed twin package (docs/dev/utf8_attrib_twin/I-114.md — mixed: ×3-124 sparse, ×0.81-0.90 dense);
+PATFACTS 3.4 (pf34, zero movers, census identical); [FINDINGS] B5 SOURCING (third_party weblog pinned +
+synth-log-lines-v1; proxy census 104/262 of 1,960 movers, so both bundles would ship).
+
+**Left running detached (next session reads, then merges):**
+- lane/pf35 (50d91f91): PATFACTS 3.5's BYTE-IDENTICAL half (vm_nullable → exported pcrec_nullable in
+  src/opt/mrl.c). The stop rule FIRED: K69 (vm_nullable's A_CALL arm is the GREATEST fixpoint → over-
+  reports nullable → an unneeded empty-iteration guard; not an answer defect; also published only in the
+  emitter, after the E1 seal). MANAGER RULING: K69 disposition (a) — least fixpoint in callgraph.c,
+  published before the E1 seal; its own abi event (41→42); then E1 unifies with pcrec_nullable, closing
+  3.5. Chain: pf35/scratchpad/chain.log, "PF35 CHAIN: ALL DONE".
+- lane/findb2 (b6cc1a91): [FINDINGS] B2 (resolution, fill-only --analysis, the -I lift, --list-analyses,
+  pcrec_options fields; no abi event: 12,876 artifact-configs 0 changed; S308-S317). Its chain waits for
+  pf35's, then registry/rxtsource/codegen/mech/axes --analysis/make test; "FINDB2 CHAIN DONE".
+
+**Bench:** B104 read = O-63 (answered ask (a) via UTF8-ATTRIB). [B108] (I-113, S2a at a32bc86e) is next;
+I-114 (re-seed twin, x86) queued behind it. The Linux pcrec checkout's origin is FETCHED by us over ssh
+(duxevents@100.69.121.107) — the bench may not write pcrec refs (BD2).
+
+**Lessons:** (1) the stop rule in a byte-identical migration earns its keep: 3.5 found a real two-copy
+disagreement before any edit. (2) A sanitizer sweep over inlined constant memcmp is BLIND without
+-fno-builtin-memcmp (s2afix) — a control that could not fail. (3) A re-seed that re-asks a candidate
+finder can LOSE on dense candidates; "fewer wasted attempts" needs the per-ask cost priced (reseedtwin).
