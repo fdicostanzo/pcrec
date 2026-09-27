@@ -2409,6 +2409,12 @@ admission (`<PREFIX>_REQ_WHY "none"`), G1's domination test, and the run PIN
 §2.30's run-pinned prefilter rows read (so `-fno-req-byte` removes that pin
 too, which is this rule working rather than a leak).
 
+**Denying this bit also reaches §2.30.** `-fno-req-byte` empties the `req_run`
+fact along with the byte set (the fact deny above covers the whole family), so
+`u->ofsk.run_pinned` is false and §2.30's run-pinned `dfa_pfs[]` rows have no
+pin to test — a design consequence rather than a second denial
+(`docs/design/litscan_s1.md` §1.1 invariant 2).
+
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
 
 **[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the

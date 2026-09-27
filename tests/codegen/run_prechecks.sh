@@ -1390,6 +1390,52 @@ q[a-z]*qu%%memchr%none%emitted%class D: memchr on q IS the pick, but the run flo
 (x?)([a-z]+)+Z.@\1%-e utf8%-%-%emitted%the same under utf8
 ROWS
 
+# =========================================================================
+# SECTION 6 — [K68]: rx_info.flags IS BYTE-IDENTICAL TO BASELINE UNDER EACH
+# OF THE THREE BATCH-1 DENY BITS
+# =========================================================================
+#
+# K68 (docs/dev/known_issues.md): PCREC_NO_VM_ANCHOR_BOUND/PCREC_NO_END_WINDOW/
+# PCREC_NO_REQ_BYTE (bits 28-30) shipped OUTSIDE emit_info_def's
+# strategy_denials mask, so each moved five bytes of rx_info.flags on EVERY
+# artifact -- including ones the flag cannot act on -- the identical defect
+# the -fno-prefilter-collapse comment (src/gen/emit_dfa.c) measured on bit
+# 19. No check anywhere in this tree read rx_info.flags as a NUMBER for
+# these three bits before this section (confirmed by grep for the pre-fix
+# literal values, none found); §§1.2/2.2/3.2 above assert only the STAMP and
+# the emitted TEXT, which is why the leak shipped unnoticed by pcrec's own
+# suite until pcrec-bench's own reflection-surface re-pin (I-111) found it.
+#
+# THE WITNESSES ARE CHOSEN SO THE FLAG CANNOT ACT ON MOST OF THEM: K68's own
+# repro (router-prefix-order) has neither an anchor nor an end-anchor, so
+# PCREC_NO_VM_ANCHOR_BOUND and PCREC_NO_END_WINDOW leaked into its .flags
+# even though neither analysis has anything to remove there -- exactly the
+# "moves a byte on an artifact it cannot act on" shape the mask exists to
+# rule out. The other two witnesses each engage ONE of the three
+# mechanisms, so all three bits get at least one witness where the axis
+# genuinely fires as well as one where it cannot.
+flags_of() { sed -n 's/^ *\.flags = \([0-9]*\)ULL,$/\1/p' "$1"; }
+while IFS='%' read -r pat extra why; do
+    [ -n "$pat" ] || continue
+    base="$WORKDIR/s6_base_$RANDOM$RANDOM.c"
+    # shellcheck disable=SC2086  # $extra is a word list on purpose
+    if ! emit "$base" "$pat" $extra; then bad "[6] $pat [$extra]: baseline refused"; continue; fi
+    fb="$(flags_of "$base")"
+    for deny in -fno-vm-anchor-bound -fno-end-window -fno-req-byte; do
+        d="$WORKDIR/s6_deny_$RANDOM$RANDOM.c"
+        # shellcheck disable=SC2086
+        if ! emit "$d" "$pat" $extra "$deny"; then bad "[6] $pat [$extra $deny]: refused"; continue; fi
+        fd="$(flags_of "$d")"
+        [ -n "$fb" ] && [ "$fb" = "$fd" ] \
+            && ok "[6] $pat [$extra $deny] -> .flags = $fd (== baseline $fb) ($why)" \
+            || bad "[6] $pat [$extra $deny]: .flags = ${fd:-<none>}, expected baseline ${fb:-<none>} ($why)"
+    done
+done <<'ROWS'
+/user|/users%%K68's own repro: neither ^ nor $, so vm-anchor-bound and end-window cannot act at all and req-byte fires; all three used to leak
+^abc%--engine=vm%engages vm-anchor-bound (a forced-VM ^-anchored program)
+abc$%%engages end-window (a finite-width $-anchored pattern)
+ROWS
+
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] || exit 1

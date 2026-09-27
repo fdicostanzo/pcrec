@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 38
+#define PCREC_ARTIFACT_ABI 39
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -2514,24 +2514,40 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * only where every attempt would have
                                            * failed, so the denial changes no
                                            * answer, and `<PREFIX>_REQ_RUN` is where
-                                           * what the emitter DID is recorded.
-                                           *
-                                           * NOTE FOR A FUTURE READER: the three
-                                           * [OPTLOOP.1] batch-1 bits above
-                                           * (`PCREC_NO_VM_ANCHOR_BOUND`,
-                                           * `PCREC_NO_END_WINDOW`,
-                                           * `PCREC_NO_REQ_BYTE`) are NOT in this
-                                           * mask, so each of them moves five bytes
-                                           * of `rx_info.flags` on EVERY artifact
-                                           * including ones it cannot act on —
-                                           * exactly the defect the
-                                           * `-fno-prefilter-collapse` comment above
-                                           * records as MEASURED on bit 19. Left
-                                           * alone here because changing it changes
-                                           * those axes' own denied artifacts and
-                                           * belongs to their own delivery, not to
-                                           * this one. */
-                                          PCREC_NO_REQ_RUN;
+                                           * what the emitter DID is recorded. */
+                                          PCREC_NO_REQ_RUN |
+                                          /* [K68] (FIXED) the three [OPTLOOP.1]
+                                           * batch-1 whole-window pre-check bits
+                                           * join the mask for the mask's own
+                                           * reason: `PCREC_NO_VM_ANCHOR_BOUND`,
+                                           * `PCREC_NO_END_WINDOW` and
+                                           * `PCREC_NO_REQ_BYTE` are each
+                                           * ANSWER-IDENTITY-PRESERVING (their own
+                                           * comments in lib/pcrec.h say so — the
+                                           * removed attempts, window or check are
+                                           * ones that would have run and failed),
+                                           * so the denial changes run time and
+                                           * nothing else. Left OUT of this mask
+                                           * from [OPTLOOP.1.impl] BATCH 1 through
+                                           * this fix was the K68 defect itself:
+                                           * unmasked, each moved five bytes of
+                                           * `rx_info.flags` on EVERY artifact
+                                           * including ones it cannot act on — the
+                                           * identical defect the
+                                           * `-fno-prefilter-collapse` comment
+                                           * above measured on bit 19, caught here
+                                           * by the router-prefix-order repro
+                                           * (`/user|/users`, baseline `.flags = 2`
+                                           * moving to 1073741826 / 536870914 /
+                                           * 268435458 under `-fno-req-byte` /
+                                           * `-fno-end-window` /
+                                           * `-fno-vm-anchor-bound` in turn).
+                                           * `<PREFIX>_VM_START`,
+                                           * `<PREFIX>_END_WINDOW` and
+                                           * `<PREFIX>_REQ_BYTE` are where what
+                                           * each emitter DID is recorded. */
+                                          PCREC_NO_VM_ANCHOR_BOUND | PCREC_NO_END_WINDOW |
+                                          PCREC_NO_REQ_BYTE;
         pcrec_sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

@@ -25824,3 +25824,75 @@ killed the unbatched axes sweep (~7.5 h on the Mac); batched = 2 h 13 m.
 (5) triage read a 20-per-bucket-capped stderr sample (learnings §3.aa).
 (6) three sabotage rows were silently UNREACHED after G1 dominance — a
 reach-only sweep over all rows is cheap and found them.
+
+## 2026-09-26 — eighty-first session (manager, Opus 5.5): S1 step 6 merged (abi 37), [OPT-REQRUN-ENC] found+fixed (abi 38), K68 fixed on lane (abi 39 pending), [PATFACTS] designed + ruled (D126), step 3 opened
+
+**Accomplished.**
+- **Phase-1 tails closed.**
+  - lane/s265reach merged: S265/S267/S271 re-pointed, all DETECTED, which closed [OPT-REQBYTE].
+  - lane/s1step6 merged at 42ee828f (abi 37). Its gates: Mac make test 43/43, Linux ubsan and batched axes EXIT 0, and Linux asan on the trial merge after a first attempt went red.
+- **The first Linux asan failure was a harness leak.** tests/harness/driver.c's `vars` was freed on 3 of 9 paths. Fixed by lane drvleak (+2 sibling drivers). Leak detection surfaces only on Linux (darwin forces detect_leaks=0, K54).
+- **First complete Linux battery figures** (ubsan 5,889 s, axes 6,012 s, asan 6,672 s) are in docs/testing.md's Suite health log.
+- **Bench O-60** (the utf8 first sample) found `-e utf8` scanning UTF-8 lead bytes (é@ ×39.6).
+  - Fact-found (lane utf8reqbyte): not FREQPICK. The cause is [OPT-REQPOS] 2b's run pick declining LEFTMOST under non-byte encodings while rb_pick declines rightmost, a ratified choice refuted by measurement.
+  - Frank scheduled it as a tail. The census (lane reqrunenc) found rightmost == skip-lead-bytes on all 912 utf8 runs.
+  - The fix (lane reqrunenc2) merged at 43039d4e (abi 38, S294). The manager overruled the census's "no abi bump".
+- **Bench I-110/I-111 sent.**
+  - I-111 is the four-event pin at 02902356; lane pin111 did the per-cause mover census.
+  - The bench re-pinned and ran O-61: 0 answer changes over 24,180 rows, and the [OPT-REQBYTE] -fno-req-byte twin 12/12 as predicted (improve cells ×55-×580).
+  - O-61 refuted two I-111 predictions. Both are FILED on [OPT-LITSCAN]: F1, S1's dominance elision costs short failing subjects +40% (per-call constant unmodelled); F2, the step-6 extraction adds ~+1 ns/call.
+- **K68 found** (bench fact 4; lane bit30): rx_info.flags leaves deny bits 28/29/30 unmasked. Frank scheduled it. Lane k68fix built it on top of reqrunenc2 (abi 39, S295); its validation chain runs overnight.
+- **[PATFACTS] moved ahead of B1/S2** (D125 addendum 1, Frank's "the more we do without it, the more it will take to organize").
+  - Design by lane pfdesign, with Frank adding the `--emit-facts` debug listing to its scope. The D6 panel (3 critics) is docs/dev/reviews/2026-09-26-r1-patfacts-design.md.
+  - Frank's mid-panel question (analyses left in their first consumer's file couple unrelated areas) became the `src/facts/` layer. Revision 2 by lane pfrev.
+  - Frank: yes to Q1-Q11 = D126. [AXES-DENY-MASK] filed.
+  - Lane pf30 is building 3.0a/3.0 (zero-movers gate).
+
+**Lessons.**
+1. A lane launched three heavy runs at once (mech + recursion identity + make test). The manager killed the make test by PID and queued it behind the others; the one-heavy rule has to be restated in every brief.
+2. A lane's `test-recursion-identity` died without a verdict and is NOT part of make test. Re-queue it explicitly when an abi re-pin depends on it.
+3. My watcher's single-miss liveness test false-alarmed. Require ≥3 consecutive misses.
+4. A fact-finding lane classified a bench claim ("FREQPICK is byte-only") as a sibling mechanism's defect. Always test the offered diagnosis, not just the symptom.
+5. Predictions sent to the bench are refutable, and O-61 refuted two. A cost model that reasons only about throughput misses per-call constants on short subjects.
+6. I cd'd into a worktree once more (session cwd moved). Use git -C / absolute paths.
+
+**Next.**
+- Morning: read the K68 chain (/tmp/k68fix_chain.log), merge lane/k68fix (abi 39), and send I-112 (the utf8 re-measure on O-60's surface + K68).
+- Review lane/pf30's delivery.
+- Then B1 as PATFACTS' first customer, and dispose [OPT-LITSCAN] S1 F1/F2 (measure first).
+
+**Addendum (2026-09-27 ~00:5x, same session, before the reset).**
+- **K68 merged** at d911def7 (abi 39). Gates: make test (only the nm
+  probe red), recursion identity 16/0, S295 DETECTED. Main was pushed
+  (751b9c6d).
+- **I-112 sent** (bench 5b8cda1; acked ad097ff, [B104]): the utf8
+  re-measure plus O-62 §2-§6 at 751b9c6d in one night. Frank ruled yes on
+  both.
+- **[OPT-LITSCAN] F3 found while writing I-112's predictions:** after
+  [OPT-REQRUN-ENC] only the whole-window PRE-CHECK scans the rare byte.
+  The DFA candidate-start `memchr` still scans the literal's first byte =
+  the UTF-8 lead byte (é@ 195, Москва 208, 日本語 230). So the fix is
+  partial on subjects that contain the literal. The census's ×50 was on a
+  subject with no '@'.
+  - This is a third copy of the pick-a-byte decision. Its fix belongs to
+    PATFACTS' one NONE rule (D126 Q4) via B1, measured first.
+  - LESSON: when scoping a byte-choice fix, grep every `memchr` in the
+    emitted artifact, not just the stamp.
+- **The utf8@0.1 exec summary is merged:**
+  docs/dev/summaries/2026-09-27-utf8-bench-exec-summary.md.
+  - Rebuilt on the bench's reports and matrix after Frank's pointer.
+  - pcrec: 0 wrong answers; large-subject throughput 42 win / 5 ≤×2 /
+    22 >×2 (10 scan-byte, 12 unattributed); short subjects 68/1.
+  - [UTF8-ATTRIB] ruled (Frank), triggered by the re-measure + the pf30
+    merge.
+  - O-62 (outliers on the other sub-benches) is read.
+  - Frank: the reports feed the NEXT optimization cycle's rows at the
+    phase-4 stock-take. Nothing interrupts the D125 sequence. Recorded on
+    [OPTLOOP.2.analysis].
+- **New memories:** pcrec-no-question-ui and pcrec-ask-bench-dev; the
+  ubuntubudu disk memory is updated (stale bench worktrees filled root;
+  Frank cleaned up; the bench maintains its own worktrees).
+- **In flight at the reset:** pf30's detached validation chain
+  (/tmp/pf30_chain.log; strict and test-codegen done, only the nm probe
+  red; make test → recid → 11 mech rows). The bench's I-112 re-pin lane
+  b104repin and window are on Linux.

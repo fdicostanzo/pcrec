@@ -2693,6 +2693,17 @@ and one of them can still lose a match, which is not a contradiction:
 | S263 | [OPT-ANCHOR-VM] | the bound emitted as `subject_length` | `0fail/28960pass` | removes only attempts that would have run and FAILED |
 | S264 | [OPT-ENDWIN] | the window one byte too FEW | `178fail/28848pass` | MOVES where a search starts, so an error deletes matches |
 | S265 | [OPT-REQBYTE] | the `memchr` sense inverted | red | the SOUND-direction plant would be invisible; this one is not |
+| S295 | [K68] | `PCREC_NO_VM_ANCHOR_BOUND` dropped back out of `strategy_denials` | `harness` expected `0fail` | the mask states a REFLECTION-SURFACE property, not a behavioural one; the leak moves no answer, only `rx_info.flags`'s bytes on a denied build |
+
+**S295 is a FOURTH shape rather than a repeat of S263-S265**: those three
+plant a wrong ANALYSIS (a bound, a window, a sense) inside a mechanism that
+already ships masked; S295 plants a wrong MASK around three mechanisms that
+already ship correctly analysed. Its only detector is
+`tests/codegen/run_prechecks.sh` §6 — the reflection-surface guard K68's own
+fix adds — which is the sole place in this tree that reads `rx_info.flags`
+as a NUMBER for these three bits (§§1.2/2.2/3.2 assert only the stamp and
+the emitted text). `harness` is EXPECTED GREEN by design, S263's own
+precedent for a plant with no answer-level detector.
 
 ## [OPTLOOP.2] batch 2 — three more rows on the same suite word
 

@@ -729,7 +729,15 @@ enum {
      *
      * `<PREFIX>_VM_START` reports the derived value on every VM artifact
      * (`anchored` / `gstart` / `unanchored`), so a denied build is legible
-     * as `unanchored` exactly like a pattern with nothing to bound. */
+     * as `unanchored` exactly like a pattern with nothing to bound.
+     *
+     * Masked out of `rx_info.flags` (`strategy_denials`) for the mask's own
+     * reason: it changes no answer. [K68] (FIXED, docs/dev/known_issues.md):
+     * this bit shipped OUTSIDE the mask from [OPTLOOP.1.impl] BATCH 1 until
+     * this fix, moving five bytes of `rx_info.flags` on every artifact —
+     * including ones it cannot act on — the same defect the
+     * `-fno-prefilter-collapse` comment (src/gen/emit_dfa.c) measured on bit
+     * 19. */
     PCREC_NO_VM_ANCHOR_BOUND = PCREC_BIT(28),
 
     /* [OPT-ENDWIN] DENY THE END-ANCHOR START WINDOW.
@@ -753,7 +761,15 @@ enum {
      *
      * `<PREFIX>_END_WINDOW` reports the derived bound on every artifact, so a
      * denied build is legible as `"none"` exactly like a pattern with nothing
-     * to prove. */
+     * to prove.
+     *
+     * Masked out of `rx_info.flags` (`strategy_denials`) for the mask's own
+     * reason: it changes no answer. [K68] (FIXED, docs/dev/known_issues.md):
+     * this bit shipped OUTSIDE the mask from [OPTLOOP.1.impl] BATCH 1 until
+     * this fix, moving five bytes of `rx_info.flags` on every artifact —
+     * including ones it cannot act on — the same defect the
+     * `-fno-prefilter-collapse` comment (src/gen/emit_dfa.c) measured on bit
+     * 19. */
     PCREC_NO_END_WINDOW = PCREC_BIT(29),
 
     /* [OPT-REQBYTE] DENY THE REQUIRED-BYTE WHOLE-WINDOW PRE-CHECK.
@@ -790,7 +806,15 @@ enum {
      * every encoding the prior is not keyed to. Every member is a byte every
      * match must contain, so the choice moves a speed and can never move an
      * answer; `--unroll=K` and `--vm-entry-shape=N` are the same shape, a
-     * value parameter with no deny bit of its own. */
+     * value parameter with no deny bit of its own.
+     *
+     * Masked out of `rx_info.flags` (`strategy_denials`) for the mask's own
+     * reason: it changes no answer. [K68] (FIXED, docs/dev/known_issues.md):
+     * this bit shipped OUTSIDE the mask from [OPTLOOP.1.impl] BATCH 1 until
+     * this fix, moving five bytes of `rx_info.flags` on every artifact —
+     * including ones it cannot act on — the same defect the
+     * `-fno-prefilter-collapse` comment (src/gen/emit_dfa.c) measured on bit
+     * 19. */
     PCREC_NO_REQ_BYTE = PCREC_BIT(30)
 };
 

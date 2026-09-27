@@ -972,6 +972,19 @@ decides whether to perform it — and then run the row through
     is unguarded VM with an 8-byte `REQ_RUN` window. 3 of the rows fail on
     the k65fix base. `tests/base/k66_precheck_whole_run.rxt` / S278 are the
     answer-level detector.
+  - **§6 ([K68], 2026-09-26, lane `k68fix`, 274 -> 301 checks)** is the
+    REFLECTION-SURFACE guard the fix's own repair adds: `rx_info.flags` must
+    be byte-identical to baseline under each of the three batch-1 deny bits
+    (`-fno-vm-anchor-bound`/`-fno-end-window`/`-fno-req-byte`), on witnesses
+    chosen so the flag CANNOT act on most of them — K68's own repro
+    (router-prefix-order) has neither an anchor nor an end-anchor, which is
+    exactly the "moves a byte on an artifact it cannot act on" shape the
+    mask exists to rule out. No prior check in this file reads `rx_info.flags`
+    as a NUMBER for these three bits (§§1.2/2.2/3.2 assert only the stamp and
+    the emitted text), which is why the leak shipped unnoticed until
+    pcrec-bench's own reflection-surface re-pin found it. Sabotage S295
+    drops one of the three bits back out of the mask; `harness` stays green
+    by design (the leak moves no answer), §6 alone is DETECTED.
   - **§3's AND §4's STAMPS NAME THE ANALYSIS; §5's NAMES THE EMISSION**, and
     that split is why §3.1/§3.6's biconditional arms read `REQ_WHY` while
     their VALUE arms still read `REQ_BYTE`/`REQ_RUN`. The alternative was
