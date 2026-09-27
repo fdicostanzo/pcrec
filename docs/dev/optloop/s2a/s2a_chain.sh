@@ -34,10 +34,22 @@ random.Random(0x52A).shuffle(d)
 lit = [r for r in d if r["pop"] == "corpus" and (r["key"] in (
     "abcdef", "x(abc)defg", "xy(a|ab)c", "a*bcd", "^abc$", "a\\x00b", "\\x001",
     "foo(?:username|password|passphrase)bar", "(?:alpha|alps|alp)x"))]
-json.dump(lit + [r for r in d if r not in lit][:200], open(sys.argv[2], "w"))
+# + witnesses whose run is NOT necessary (a non-literal sibling branch), so no
+# whole-window pre-check or start bound keeps an attempt away from a subject
+# ending inside the run (lane s2afix). A NECESSARY run is shielded: rx_reqrun
+# proves it occurs at or after search_from and the attempt bound stops short
+# of the edge, so the control's plant cannot reach it there.
+syn = [{"pop": "corpus", "key": k, "cfg": "vm", "identity": "changed"}
+       for k in ("(?:abcdef|x+)y", "(?:abcd|x+)(?:efgh|y+)z", "(?:abc|x+)y")]
+json.dump(lit + [r for r in d if r not in lit][:200] + syn, open(sys.argv[2], "w"))
 PY
+# -fno-builtin-memcmp: gcc expands a constant-length memcmp inline with NO
+# ASan instrumentation on its loads, so the first run of this stage could not
+# see a run compare's over-read at all (lane s2afix, measured on the control's
+# own plant). As a call it goes through ASan's strict memcmp interceptor, which
+# checks all L bytes whatever the lowering would have read.
 stage asan env BASE="$BASE" NEW="$NEW" PREFIXES=1 \
-    CFLAGS="-O1 -std=gnu11 -w -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -DDIFF_EXACT_SUBJECT" \
+    CFLAGS="-O1 -std=gnu11 -w -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-builtin-memcmp -DDIFF_EXACT_SUBJECT" \
     ASAN_OPTIONS=detect_leaks=0 timeout 7200 \
     python3 tests/findings/b1_mover_answers.py "$OUT/sample.json"
 
@@ -49,15 +61,11 @@ CTL="$OUT/ctl"; rm -rf "$CTL"; mkdir -p "$CTL/tree"
 git -C "$ROOT" archive HEAD | tar -x -C "$CTL/tree"
 sed -i.bak 's/"    if (scan_position + %d <= subject_length \&\& ", len);/"    if (scan_position + %d - 1 <= subject_length \&\& ", len);/' \
     "$CTL/tree/src/gen/emit_vm.c"
-python3 - "$OUT/sample.json" "$CTL/lit.json" <<'PY'
-import json, sys
-d = json.load(open(sys.argv[1]))
-json.dump([r for r in d if r["key"] in ("abcdef", "x(abc)defg", "xy(a|ab)c", "a*bcd")], open(sys.argv[2], "w"))
-PY
+cp "$OUT/sample.json" "$CTL/lit.json"   # the SAME population the asan stage read
 stage asan-control-build make -C "$CTL/tree" -j4 CC=gcc-16 build/pcrec
 if grep -q 'scan_position + %d - 1 <= subject_length' "$CTL/tree/src/gen/emit_vm.c"; then
     stage asan-control env BASE="$BASE" NEW="$CTL/tree/build/pcrec" PREFIXES=1 \
-        CFLAGS="-O1 -std=gnu11 -w -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -DDIFF_EXACT_SUBJECT" \
+        CFLAGS="-O1 -std=gnu11 -w -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -fno-builtin-memcmp -DDIFF_EXACT_SUBJECT" \
         ASAN_OPTIONS=detect_leaks=0 timeout 3600 \
         python3 tests/findings/b1_mover_answers.py "$CTL/lit.json"
 else
