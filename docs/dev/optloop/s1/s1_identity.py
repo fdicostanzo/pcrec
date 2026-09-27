@@ -19,8 +19,18 @@ compared raw. A changed artifact is reported with the stamps S1's classes
 are read off (RX_DFA_PREFILTER, _OFFSETS, RX_REQ_WHY, RX_REQ_RUN) on BOTH
 sides, so the mover list can be joined against census_b.tsv by key.
 
+[FINDINGS] B1 (lane findb1) adds §7's NAMED-LINES gate: with
+`DROP_FINDINGS=1` the `<P>_FINDINGS` line and the `.findings =` rx_info
+initializer are DELETED from both sides before the comparison, by name and
+nothing else, so a fourth line moving is still a `changed` artifact. Every
+`changed` record also names the `#define RX_*` stamps whose VALUES moved
+(`moved`, plus `program` when a non-stamp line moved too), which is the
+per-ARTIFACT manifest form findings §11.3 asks for; and `findings` counts
+the artifacts whose NEW side consumed `byte-rate` (the gate's REACH).
+
   BASE=<pcrec> NEW=<pcrec> SCR=<scratch> [EXTRA="-fno-..."] \\
-      [ABI_FROM=35 ABI_TO=36] [POPS=bench,corpus] python3 s1_identity.py
+      [ABI_FROM=35 ABI_TO=36] [DROP_FINDINGS=1] [POPS=bench,corpus] \\
+      python3 s1_identity.py
 Writes $SCR/s1_identity.json and prints the tallies and the mover list.
 """
 import os, re, glob, json, subprocess, collections
@@ -30,6 +40,7 @@ BASE, NEW, SCR = os.environ["BASE"], os.environ["NEW"], os.environ["SCR"]
 EXTRA = os.environ.get("EXTRA", "").split()
 POPS = os.environ.get("POPS", "bench,corpus").split(",")
 ABI_FROM, ABI_TO = os.environ.get("ABI_FROM"), os.environ.get("ABI_TO")
+DROP_FINDINGS = os.environ.get("DROP_FINDINGS") == "1"
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
 PATDIR = "/Users/fdicostanzo/pcrec-bench/bench/capability/patterns"
 BENCH_CFG = {"auto-caps": ["--features", "all"],
@@ -45,6 +56,25 @@ STAMPS = ("DFA_PREFILTER", "DFA_PREFILTER_OFFSETS", "REQ_WHY", "REQ_RUN",
 def stamp(text, name):
     m = re.search(r'^#define RX_%s (.*)$' % name, text, re.M)
     return m.group(1).strip('"') if m else None
+
+
+def drop_named(text):
+    """§7's named lines, deleted by name: the stamp and its rx_info mirror."""
+    if not DROP_FINDINGS:
+        return text
+    text = re.sub(r'^#define RX_FINDINGS .*\n', '', text, flags=re.M)
+    return re.sub(r'^    \.findings = .*\n', '', text, flags=re.M)
+
+
+def moved_stamps(b, a):
+    """The RX_* stamps whose values differ, and whether anything else did."""
+    sb = dict(re.findall(r'^#define (RX_\w+) (.*)$', b, re.M))
+    sa = dict(re.findall(r'^#define (RX_\w+) (.*)$', a, re.M))
+    moved = sorted(k for k in set(sb) | set(sa) if sb.get(k) != sa.get(k))
+    rest = lambda t: [l for l in t.splitlines() if not l.startswith("#define RX_")]
+    if rest(b) != rest(a):
+        moved.append("program")
+    return moved
 
 
 def norm(text):
@@ -80,7 +110,11 @@ def one(job):
         rec["identity"] = "refused" if b is None and a is None else \
             ("timeout" if "TIMEOUT" in (a, b) else "refusal-mismatch")
         return rec
-    rec["identity"] = "identical" if norm(b) == a else "changed"
+    nb, na = drop_named(norm(b)), drop_named(a)
+    rec["identity"] = "identical" if nb == na else "changed"
+    rec["findings"] = stamp(a, "FINDINGS")
+    if rec["identity"] == "changed":
+        rec["moved"] = moved_stamps(nb, na)
     for s in STAMPS:
         rec["b_" + s], rec["a_" + s] = stamp(b, s), stamp(a, s)
     return rec
@@ -120,12 +154,18 @@ def main():
         rs = [r for r in res if r["pop"] == pop]
         print(f"== {pop}: {len(rs)} artifact-configs")
         print("  identity:", dict(collections.Counter(r["identity"] for r in rs)))
+        print("  findings REACH (new side consumed byte-rate):",
+              sum(1 for r in rs if (r.get("findings") or "").startswith("byte-rate=")),
+              "| stamps:", dict(collections.Counter(r.get("findings") for r in rs
+                                                    if r["identity"] != "refused")))
         ch = [r for r in rs if r["identity"] == "changed"]
         tr = collections.Counter(
             (r["b_DFA_PREFILTER"], r["a_DFA_PREFILTER"], r["b_REQ_WHY"], r["a_REQ_WHY"])
             for r in ch)
         for (bp, ap, bw, aw), k in sorted(tr.items(), key=lambda x: -x[1]):
             print(f"   {k:5d}  prefilter {bp}->{ap}  req_why {bw}->{aw}")
+        for r in ch:
+            print(f"   MOVER {r['cfg']} {r['key'][:70]!r} {','.join(r['moved'])}")
         for r in rs:
             if r["identity"] in ("timeout", "refusal-mismatch"):
                 print(f"   {r['identity'].upper()} {r['cfg']} {r['key'][:70]!r}")

@@ -162,13 +162,12 @@ int pcrec_find_run_window_start(const uint32_t *rate,
     return best;
 }
 
-/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): the
- * prior summed over every member of `set`, capped at 1,000,000 (the whole
- * alphabet's own total). */
+/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): the MASS
+ * of `set` under this compile's byte-rate, capped at 1,000,000. It was the
+ * one rate read with no gate at all (PFI R9); under NONE it is now the
+ * uniform rate's mass, i.e. the set's CARDINALITY, the no-information prior
+ * for choosing among sets (findings design §0.8). */
 unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256])
 {
-    unsigned t = 0;
-    (void)cx;
-    for (int b = 0; b < 256; b++) if (set[b]) t += pcrec_byte_freq_ppm(b);
-    return t > 1000000u ? 1000000u : t;
+    return pcrec_find_set_mass(pcrec_find_byte_rate(cx), set);
 }
