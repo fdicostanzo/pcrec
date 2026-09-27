@@ -385,3 +385,15 @@ mixed enum/`#define` population is transparent to them.
 **[D77] THE SUCCESSOR BEYOND 64 BITS** is a word-array bitset behind the
 same `PCREC_BIT`-family macro shape, built when the count approaches this
 word's width — the trigger, not a timeline.
+
+## [FINDINGS] B2 `pcrec_options.analysis` / `analysis_dirs` / `analysis_source` (2026-09-27)
+
+Four APPENDED fields (`docs/spec/findings.md` §9; design §5.3): the bundle
+NAME, a NULL-terminated S2 directory list, and in-memory `.rxt` text defining
+bundles (S1) with its length. All NULL is the old behaviour byte for byte (the
+chain is the built-in `default` alone). **The library PARSES** (R17): a caller
+hands text or directories, never pre-parsed values, and `analysis_source` is
+read in the no-filesystem mode (a `lib`/`include "…"` line is refused). The
+fields' own comment carries the disclosure: the chosen bundle's NAME is
+stamped into every artifact built under it.
+

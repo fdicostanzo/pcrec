@@ -228,6 +228,20 @@ one.
   (completeness, why-truthfulness against `tuning.md`, decisions=stamps)
   live in that script, with sabotage rows S298-S300.
 
+- `findings_dump.c` — [FINDINGS] B2 (2026-09-27; `docs/spec/findings.md`
+  §8): `--list-analyses` (one row per bundle BUILT INTO the library; `-I` is
+  never enumerated) and `--list-analysis NAME | FILE` (the chain this
+  invocation resolves, each (query, encoding)'s answer with the digest a
+  stamp would carry, and the named bundle's rows, declarations and
+  provenance; or, for a `.rxt` FILE, the per-target view). It asks the
+  compile's own resolver and selection rule (`pcrec_find_chain_build`,
+  `pcrec_find_chain_answer`) and the compile's own normalization and digest,
+  so a `resolution` row IS the stamp's answer — which is why
+  `tests/findings/` compares it against an INDEPENDENT digest
+  (`findings_ref.py`), never against this file. A `table_contract.md`
+  producer at birth: every table a named `#section`, every cell through
+  `pcrec_sb_row`.
+
 ## Conventions
 
 - A new `--list-*` table surface is a new file HERE, not in the tier that

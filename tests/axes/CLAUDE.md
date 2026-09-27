@@ -492,3 +492,16 @@ test-axes` in full is ~175 s per axis/26 axes on this box
 own brief rather than contend for the box against concurrently-running
 lanes; run it in the background with a log and poll the tail, never in the
 foreground.
+
+## [FINDINGS] B2 — the FINDINGS axis (2026-09-27)
+
+`run_axes.sh` gains one job per bundle in `tests/findings/adversarial/`,
+flags `-I <that dir> --analysis=<name>` through `RXTFLAGS` (design §11.1):
+the corpus under each adversarial analysis must answer identically to the
+default and must not TRANSITION between an answer and a give-up. `lost_ok` is
+0 and no bundle carries a `GIVEUP1_ALLOWANCE`: a rate may change speed and
+nothing else (§6.2a). Selected by `--analysis` in `AXES` (every bundle) or
+`--analysis=NAME` (one); part of the default (empty-`AXES`) sweep.
+`tests/findings/run_findings_tests.sh` §10 runs the same jobs over a fixed
+slice of the corpus inside `make test`.
+

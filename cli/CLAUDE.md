@@ -477,3 +477,30 @@ CLI_MODES_VS_FILES query-conflict check, and both returns from the final
 was never touched. `docs/spec/cli.md` §1/§1.1 is the contract;
 `docs/dev/lanes/clicensus_report.md` is the call-site census the flip was
 scoped against.
+
+## [FINDINGS] B2 `--analysis`, the `-I` lift, and the two analysis listings (2026-09-27)
+
+`--analysis NAME` (or `=NAME`) sets `pcrec_options.analysis`, the bundle a
+compile reads its rates from (`docs/spec/findings.md` §7). **FILL-ONLY**
+(D123-8 item 2): `apply_target` gives a target its configs' own `analysis`
+when they name one — with a non-fatal note in `tune`'s conflict shape when
+the CLI disagrees — and the CLI's value only where they name none. It is NOT
+a third file-wins exception beside `--engine`; an experiment is a config
+VARIANT in the file. A config's `pcrec` line cannot carry it (the `.rxt`
+reader refuses that at parse, so `cli_extras_clean` never sees it).
+
+**THE `-I` LIFT [r2 M-S7]**: `-I`/`--lib-path` is also the analysis search
+path (S2), so it is legal wherever a bundle is RESOLVED — a file operand, a
+plain `--pattern` compile (no other mode), and `--list-analysis` — and still
+refused elsewhere. `libdir_push` keeps `st.libdirs` NULL-TERMINATED so the
+array IS `pcrec_options.analysis_dirs`; `main` sets it once, after the
+applicability check, and frees `st.libdirs` on every exit of the two new
+paths that can hold it (the listing dispatch and the `--pattern` compile).
+
+**`--list-analyses` / `--list-analysis X`** are two members of the
+registry-query relation (`CLI_MODES_REGISTRY_QUERY`), dispatched in their own
+block just above that relation's because they are the two that must free the
+`-I` list. `X` is a bundle NAME when it matches the name grammar and a `.rxt`
+FILE otherwise (a path always has a `.` or `/`), which selects the per-target
+view. Rendering is `src/dump/findings_dump.c`.
+

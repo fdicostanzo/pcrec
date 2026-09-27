@@ -1590,6 +1590,31 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (`include_head.rxtin` included the LIBRARY `common.rxt`), re-pointed at
   a blocks-only fragment in the same change.
 
+- **rxt_find.c** — [FINDINGS] B2 ANALYSIS RESOLUTION (2026-09-27;
+  `docs/design/findings/design.md` §4, `docs/spec/findings.md` §7): from a
+  bundle NAME to the CHAIN a compile reads its rates from. Three stops in
+  order and nothing else — S1 the compiling file's own bundles (a library
+  caller's `analysis_source`, parsed here in the no-filesystem mode), S2
+  `DIR/<name>.rxt` per `-I` directory (the directory entry matched EXACTLY,
+  so a case-insensitive filesystem cannot answer `log` with `Log.rxt`; a
+  file naming no such bundle FALLS THROUGH with a stderr note, two bundles
+  refuse), S3 the store — then each bundle's `include`, with `#include_next`
+  on a self-include, `PCREC_MAX_FIND_CHAIN` links, and the built-in
+  `default` as the terminal BY IDENTITY. **A parse-layer file because it
+  opens and parses `.rxt` text**; the chain it returns is plain data
+  (`src/core/findings.h`'s `PcrecFindChain`), every link's blocks COPIED into
+  the caller's arena, so the accessor reads it without knowing a file was
+  involved. `pcrec_find_resolve` is `compile_driver`'s call (per attempt,
+  notes on the first only); `pcrec_find_chain_build` is also what
+  `--list-analysis` asks, which is why a listing's `resolution` digest is the
+  stamp's by construction. **It puts the `.rxt` reader on the library's
+  compile path** — R17 rules that the library PARSES (`analysis_source`,
+  `analysis_dirs`) — so the [REVW.3] "the pipeline does not drag in the
+  `.rxt` tier" property now holds only for the COMPOSER (`compile.o` still
+  names no `rxt_*` symbol; it names `pcrec_find_resolve`). One residual: the
+  `.rxt` reader's own arena is detached, so an allocation failure inside an
+  `-I` or `analysis_source` parse aborts rather than routing through
+  `pcrec_ctx_nomem` (K7's shape; the reader was CLI-only until now).
 - **rxt_compose.c** — [DD-13b.W1.3] THE COMPOSER: binding a `.rxt` source's
   definitions into the target pattern's tree. ONE FILE, because every
   mechanism in it is meaningless without the others and a reviewer must be

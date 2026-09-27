@@ -3090,3 +3090,26 @@ the E2 cross-check calls the same derivation and stays silent); **S236** onto
 **S176** onto `has_call`'s new spelling off the kind mask; **S140** onto
 `mrl_win`'s two conjuncts, re-spelled over the kind mask with the column
 layout kept.
+
+### [FINDINGS] B2 — rows S308-S317 on the `findings` arm (design §11.2 F-2..F-6, F-8, F-9, F-11..F-13)
+
+Ten rows, all on the existing `findings` arm (lane findb2, 2026-09-27), one
+per sabotage the design's §11.2 assigns to B2; every row's detector is a
+section of `tests/findings/run_findings_tests.sh` and every row was validated
+locally by planting it, rebuilding and reading that suite red (the numbers are
+in `docs/dev/lanes/findb2_report.md`). **S308** (F-2) ignores a block's `when`
+list; **S309** (F-3) folds a provenance field into the consumed counts;
+**S310** (F-4) restarts a self-include at S1 (the copy-edit-shadow case
+becomes a cycle); **S311** (F-5, adapted to B2's one query: `bigram` is B4's)
+normalizes the terminal's block instead of the one that matched; **S312**
+(F-6) sends the normalization's residue to the highest tied byte — only the
+independent §2.5 vectors see it; **S313** (F-8) lets `--analysis` override a
+config; **S314** (F-9) keeps the consumption record past its compile — its
+per-ATTEMPT half has NO witness (measured: no retry path asks in an earlier
+attempt and not in the final one; the row's header carries the derivation),
+so its detector is the per-COMPILE half, two targets in one invocation;
+**S315** (F-11) resolves the terminal `default` by name; **S316** (F-12) is
+S277's K65 revert seen through bundles that move the pick; **S317** (F-13)
+lets G1 elide a pre-check with no DFA scan in front. S316/S317 are the two
+whose detector is a GIVE-UP (the §9 K65 witness exits 3 where NOMATCH is the
+answer), the transition design §6.2a forbids a rate to cause.
