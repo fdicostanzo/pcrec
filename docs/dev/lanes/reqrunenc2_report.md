@@ -115,9 +115,20 @@ Solo mech-matrix run: `bash tests/mech/run_sabotage_matrix.sh S294` —
 
 ## What is OWED
 
-- `bash tests/mech/run_sabotage_matrix.sh S294` solo result.
-- `bash tests/codegen/run_recursion_identity.sh` result at the new (B) pin.
-- `make test-codegen` (the full section, `run_group.sh`'s aggregate).
-- The full `make test` battery.
+All three launched before hand-off (per BOILERPLATE's DO-THEN-FINISH — the
+lane's report and commits are complete first, these are the last acts):
+
+- `bash tests/mech/run_sabotage_matrix.sh S294` — running, log
+  `/tmp/s294_mech.log`.
+- `bash tests/codegen/run_recursion_identity.sh` at the new (B) pin —
+  running under `timeout 1800`, log `/tmp/recid.log`.
+- Full `make test CC=gcc-16` — running detached (`nohup ... & disown`,
+  survives the session) under `timeout 9000`, log
+  `/tmp/reqrunenc2_make_test.log`. Verdict is `make`'s own `*** [test-X]
+  Error` lines / the `sections ran: N/M` trailer, never a bare `FAIL:` grep
+  (learnings.md §3, 2026-09-22).
+
+A fresh agent or the manager should poll these three logs' completion
+markers rather than re-run any of them.
 
 PARKED on `lane/reqrunenc2`, not merged.
