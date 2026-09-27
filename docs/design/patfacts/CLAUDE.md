@@ -21,11 +21,29 @@ per step.
   [FINDINGS] (recorded honestly as requested-but-undesigned — its own plan
   row is still at the think-lane stage).
 
-STEP 2 (the design, through the four evaluation lenses, memory
-`pcrec-design-evaluation-lenses`) and STEP 3 (implement-then-replace,
-migrating existing analyses one at a time under the identity gates) are
-separate, later plan-row steps — nothing in this directory yet designs a
-`PatFacts` record's shape; `inventory.md` is read-only evidence for STEP 2
-to consume.
+  **Delta 2026-09-26** (appended by lane pfdesign, step 2's refresh):
+  the facts K64/K65/K66, S1 steps 1-6 and `[OPT-REQRUN-ENC]` added or
+  moved (N1-N9); the new redundancies R13 (the `[OPT-REQRUN-ENC]`
+  incident: two copies of the prior's non-byte decline, `rb_pick` vs
+  `rn_scan_index`, that diverged), R14 (the k-set walk re-run per
+  admission ask), R15 (one fact-deny, several consumers, one name); and
+  the positive precedents S1 added (`OfsTest`, `req_run_tests`).
+- `design.md` — STEP 2, THE DESIGN (lane pfdesign, 2026-09-26, PROPOSED,
+  awaiting its D6 panel): lazy memoized accessors over `Job.pf`, sealed
+  at three epochs (E1 structural / E2 lowered / E3 NFA); core vs derived
+  facts; one owner per derivation with `src/opt/facts.c` holding only
+  memo + epoch guard + deny; the encoding rule (no fact reads the
+  encoding enum; the prior's NONE answer spelled once per QUESTION KIND
+  inside findings primitives, amending `findings/design.md` §6.1-§6.3);
+  the deny story (fact denies are "nothing to find" for every consumer,
+  row denies are rows); the first customers ([FINDINGS] B1 = the data
+  tier; `[OPT-LITSCAN]` S2a = one node-grain literal-run fact; S2b
+  carried facts specified, not built); the step-3 migration order with
+  the gate and abi status of each step; §10 not-built with triggers;
+  §11 seven questions for Frank.
+
+STEP 3 (implement-then-replace, migrating existing analyses one at a
+time under the identity gates) is a later plan-row step, sequenced by
+`design.md` §9.
 
 Maintenance: update this file when a STEP 2/3 design note is added.

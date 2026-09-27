@@ -3255,3 +3255,10 @@ never edited afterwards.
   re-derived incl. `run_encoding_checks.sh`'s normalizer and
   `run_dfa_stamps.sh`'s marker; S267 (stale REACH since step 5) / S278 /
   S279 re-anchored, S293 new. Heavy battery status in the report.
+- `pfdesign_report.md` — `[PATFACTS]` step 2 (2026-09-26, lane pfdesign,
+  opus, design only): the inventory's Delta 2026-09-26 (R13 = the
+  `[OPT-REQRUN-ENC]` incident as a D120-class redundancy, R14, R15) and
+  `docs/design/patfacts/design.md` (lazy memoized accessors, three sealed
+  epochs, core vs derived, one owner per derivation, the prior's NONE once
+  per question kind, fact vs row denies, B1/S2a first customers, the
+  step-3 migration order, seven questions for Frank). D6 panel next.

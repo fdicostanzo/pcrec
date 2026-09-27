@@ -2612,9 +2612,14 @@ exactly +34 bytes.
   the redundancies (D120's two named incidents confirmed present, ten more
   found), the pipeline ordering re-derived directly from `src/core/
   compile.c`, and the enumerated (not designed) requested facts of
-  [OPT-LITSCAN]/[VAR]/[FINDINGS]. See `patfacts/CLAUDE.md`. STEP 2 (the
-  design) and STEP 3 (implement-then-replace) are later plan-row steps,
-  not yet started.
+  [OPT-LITSCAN]/[VAR]/[FINDINGS]. A **Delta 2026-09-26** section refreshes
+  it (R13 = the `[OPT-REQRUN-ENC]` incident, R14, R15). STEP 2 (lane
+  pfdesign, 2026-09-26, PROPOSED, awaiting its D6 panel) is
+  `patfacts/design.md`: lazy memoized accessors sealed at three epochs,
+  core vs derived, one owner per derivation, the prior's NONE answer once
+  per question kind (amends `findings/design.md` §6.1-§6.3), fact vs row
+  denies, B1 and S2a as first customers, the step-3 migration order.
+  See `patfacts/CLAUDE.md`. STEP 3 (implement-then-replace) is later.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
