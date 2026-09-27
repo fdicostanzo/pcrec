@@ -2390,6 +2390,12 @@ differ: an artifact may carry a derived byte here and emit no pre-check at
 all. `<PREFIX>_REQ_WHY` is the stamp that says which, and a consumer asking
 "does this artifact pre-check a byte" must read that one.
 
+**Denying this bit also reaches §2.30.** `-fno-req-byte` zeroes `Job.req_run`
+along with the byte set (both come off the same `src/opt/reqbyte.c` walk), so
+`u->ofsk.run_pinned` is false and §2.30's run-pinned `dfa_pfs[]` rows have no
+pin to test — a design consequence rather than a second denial
+(`docs/design/litscan_s1.md` §1.1 invariant 2).
+
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
 
 **[OPT-REQPOS] tier 2b, `[OPTLOOP.2]` batch 2 (D119).** Denies the

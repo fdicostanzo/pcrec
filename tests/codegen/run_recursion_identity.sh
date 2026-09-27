@@ -1050,7 +1050,18 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # untouched: `rn_scan_index` sits in the ANALYSIS (`src/opt/reqbyte.c`), not
 # `prog_region()`, and this gate's call-free-corpus population is compiled
 # at the default (`byte`) encoding.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fe5a0bbc}"   # [OPT-REQRUN-ENC], abi 37->38: (B) re-pinned to fe5a0bbc on lane/reqrunenc2 (D76, 2026-09-26). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: c9dec3e4 ([OPT-LITSCAN] S1 step 6, abi 36->37).
+# **(B) RE-PINNED AGAIN — [K68], 2026-09-26: abi 38 -> 39, to `b255027f`,
+# the `lane/k68fix` commit carrying the bump (the last `src/` change).**
+# `emit_info_def`'s `strategy_denials` mask (this file) gains the three
+# [OPTLOOP.1] batch-1 whole-window pre-check bits
+# (`PCREC_NO_VM_ANCHOR_BOUND`/`PCREC_NO_END_WINDOW`/`PCREC_NO_REQ_BYTE`),
+# shipped OUTSIDE it since that batch (`docs/dev/known_issues.md` K68).
+# `.abi` and the essential provenance-line digit are the ONLY bytes that
+# move on `prog_region()`'s own subject population: the mask states a
+# REFLECTION-SURFACE property of `rx_info.flags`, which sits ABOVE
+# `prog_region()`'s `goto <p>_L0;` start, so (A) is untouched. No answer
+# moves on any artifact.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b255027f}"   # [K68], abi 38->39: (B) re-pinned to b255027f on lane/k68fix (D76, 2026-09-26). Prior pin: fe5a0bbc ([OPT-REQRUN-ENC], abi 37->38).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -11,7 +11,31 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K68 — SCHEDULED 2026-09-26 (Frank: "agree k68" — a D125 phase-1 tail of [OPT-ANCHOR-VM]/[OPT-ENDWIN]/[OPT-REQBYTE]; fixed on top of [OPT-REQRUN-ENC] stage 2 so the bench re-pins ONCE, abi 39, as I-112) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
+## K68 — FIXED 2026-09-27 (merged; lane k68fix, on top of `lane/reqrunenc2`, abi 38 -> 39, as I-112) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
+
+**Status: FIXED, merged 2026-09-27** (lane `k68fix`, branch `lane/k68fix`,
+2026-09-26). The three bits join `emit_info_def`'s `strategy_denials` mask
+(`src/gen/emit_dfa.c`), the same shape as the bit-19 fix; `lib/pcrec.h`'s
+comments on bits 28-30 each gain a "masked out of `rx_info.flags` ...
+[K68] (FIXED)" paragraph matching every other masked bit. Verified against
+the repro: router-prefix-order (`/user|/users`) reads `.flags = 2` under
+default and under each of the three deny flags, where it read 1073741826 /
+536870914 / 268435458 before the fix. `PCREC_ARTIFACT_ABI` 38 -> 39 in the
+same change (D76/D94 ritual: the constant, `ABI_EXPECT` + the narrative
+string, `match_api.md` §6's change-log entry, `run_recursion_identity.sh`'s
+(B) pin re-derived to `b255027f`); `tuning.md` §2.27 gains the owed
+cross-reference to §2.30 (litscan_s1.md §1.1 invariant 2). No pcrec-side
+check pinned the old unmasked `.flags` value (confirmed by grep — none
+existed), so nothing else needed re-pinning; `run_prechecks.sh` gains a new
+§6 structural guard asserting `.flags` byte-identity under each of the
+three deny bits on witnesses chosen so the flag cannot act on most of
+them, validated in the failing direction (reproduces the exact pre-fix
+values when the fix is reverted). Sabotage S295 drops one of the three
+bits back out of the mask and is DETECTED by §6 alone (`harness` stays
+green by design — the leak moves no answer). See
+`docs/dev/lanes/k68fix_report.md`.
+
+The original entry follows.
 
 A reflection-surface defect, not an answer defect. `docs/spec/match_api.md`
 §6.3's rule is that `flags` records the REQUEST "with the testing/tuning
