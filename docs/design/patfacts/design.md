@@ -371,24 +371,186 @@ would also be a MOVER population, and `litscan_s1.md` R3-2 requires the
 pin and the pre-check it may dominate to describe the same run. Not done
 (§10).
 
-### 4.2 Ownership: one derivation, where it lives
+### 4.2 Ownership: one derivation, in an analysis layer (revision 2)
 
-The derivations do not move files. `facts.c` calls them. After migration,
-`pcrec_req_byte`, `pcrec_start_anchor`, `pcrec_end_window`, the `atomic.c`
-presence predicates at root and the k-set WALK have exactly one caller
-each, `facts.c`. A grep check enforces this in `make test-codegen`'s
-structural section (the `assertions_design.md` §8.4 grep-check precedent).
-The check allows the owner file and `facts.c`, and it is born with a
-sabotage row that re-inserts `pcrec_has_bref(root)` in `emit_vm.c`'s
-listing.
+**Revision 1 said "the derivations do not move files".** `facts.c` would
+call each owner where it lives today, and a grep check would forbid other
+callers. Frank asked (2026-09-26 evening) whether keeping each analysis in its
+first consumer's pass file "cause[s] crazy interdependencies when area A
+writes the analysis but it's used by unrelated area B or even C". The
+`[OPT-REQRUN-ENC]` incident is that shape. The run pick evolved inside
+`reqbyte.c` as a REQPOS-specific choice and silently diverged from its twin
+(R13). pfcrit-arch's verdict was **ADOPT WITH CARVE-OUTS**. No core fact
+needs a pass's internals:
+- `rb_walk` and its lattice (`reqbyte.c:164-498`) read only the `Ast`;
+- the k-set walk (`prefix_k.c:185-248`, `:409-477`) reads only the `Nfa`;
+- the end window and the start anchor read the `Ast`, plus (end window only)
+  the encoding descriptor (`endwin.c:156-164`).
 
-`pcrec_prefix_ksets` SPLITS (step 3.4) into its walk, the E3 core fact,
-and its selection. The selection is a DECISION: the scan offset and its
-verifies under the cost model and the rate. It stays in `prefix_k.c`,
-called by `unanch_start` with the memoized walk. Today one function does
-both, which is why the pin (a fact) sits in the middle of a selection
-routine (`prefix_k.c:479`, "a fact this file publishes and does not act
-on").
+The one real coupling is the pin AS USED TODAY. It is computed only when the
+prefilter kind is not `DFA_PF_NONE` (`emit_dfa.c:3719`), i.e. it is gated on
+`unanch_start`'s start-state verdict. The cure is to make the pin a pure
+NFA+window fact and to make the kind gate an explicit CONSUMER obligation.
+`pf_run_applies_common` already carries it (`emit_dfa.c:5294`), and §1's pin
+row now states it for every consumer.
+
+This revision drafts the relocation as the PROPOSED layout. It goes to Frank
+as §12 Q11.
+
+#### 4.2.1 The layout
+
+`src/facts/` is a new layer directory (the Makefile's `LIBSRCS`,
+`Makefile:108-111`, gains `$(wildcard src/facts/*.c)`, and the directory
+gets its own `CLAUDE.md`). It holds one file per fact FAMILY:
+
+| file | holds | moves from | moved in step (§9) | stays behind, and why |
+|---|---|---|---|---|
+| `facts.def` | the X-macro table: one row per fact (name, epoch, grain, deny bit, empty value, renderer, OWNER file, DEPENDS-ON facts) | NEW | 3.0 | — |
+| `facts.h` | the CONSUMER header: `PatFacts`, `PfEpoch`, `PfWhy`, the `pcrec_fact_*` accessors, `pcrec_facts_seal_*`. No derivation | NEW | 3.0 | — |
+| `facts_derive.h` | the FACTS-PRIVATE header: every derivation's declaration | NEW, from `core/internal.h` (carve-out (a)) | 3.0a | — |
+| `facts.c` | the memo, the epoch guard, the deny application, the E1 seal, the listing's force loop | NEW | 3.0 | — |
+| `startanch.c` | `pcrec_start_anchor` and `sa_walk` | `src/opt/startanch.c` (whole file) | 3.0 | nothing |
+| `endwin.c` | `pcrec_end_window` and its walk | `src/opt/endwin.c` (whole file) | 3.0 | nothing |
+| `req.c` | `rb_walk` and its set/run lattice (`reqbyte.c:164-498`), and the core facts' entry | `src/opt/reqbyte.c` | 3.0 | `rb_pick`, `rn_scan_index`, `rn_window_start` (`reqbyte.c:517-588`) stay in `reqbyte.c` until B1 moves them beside the rate primitives (carve-out (b)); `reqbyte.c` is then deleted |
+| `kinds.c` | the ROOT kind-mask derivation | NEW (it composes the root calls now at `select_engine.c:571/611/658/686`, `emit_vm.c:9980/13191/13208`) | 3.2 | the recursive node predicates stay in `atomic.c` and `mod_vars.c` (§4.2.2, node grain) |
+| `widths.c` | the root nullable (E1) and root byte `minw` (E2) facts | NEW (composes `pcrec_minw(root)`) | 3.2 | `pcrec_minw`/`pcrec_cwmin`/`pcrec_cwmax` stay in `mrl.c`: they are node-grain pure functions (§4.3) |
+| `kset.c` | the k-set WALK (`Walk`, `wpush`, `wclose`, `frontier_union`, the walk loop) and the PIN | `src/opt/prefix_k.c:185-248`, `:409-491` | 3.4 | the SELECTION stays in `prefix_k.c` (carve-out (c)): `verify_cost`, `model_cost`, the scan-offset choice, and the per-offset `ppm` the walk reads today (`:443`, `:475`), which moves into the selection so the core walk reads no prior [r1 A2]. `set_ppm` itself (`:325`) joins the rate primitives in B1 (carve-out (b)) |
+
+**Where the layer sits.** `tools/review/include_graph.py`'s `LAYER_ORDER`
+(`:113`) gains `facts` between `ir` and `opt`. The layer reads `core`
+(`Ast`, `Ctx`, `Job`), `enc` (the descriptor), `ir` (the `Nfa`) and the
+node-grain primitives. `opt` and `gen` read `facts.h`. One edge needs saying.
+The node-grain primitives the facts compose (`mrl.c`'s widths, `atomic.c`'s
+predicates) live under `opt/` today, so `facts → opt` reads as a back-edge in
+the layer matrix. It is a pre-existing shape: `parse → opt` already exists at
+`mod_lookaround.c:534` → `pcrec_has_call`. Moving the node primitives down is
+not part of step 3, because they are node questions with node-grain callers
+(`select_engine.c:139`, `mod_lookaround.c:534`, `atomic.c:534`'s pre-seal
+discharge). The matrix records the edge as a named exception. The trigger to
+move them is a defect traced to that edge (D77).
+
+#### 4.2.2 The inputs, and the carve-outs (all five from the r1 review)
+
+A derivation in `src/facts/` depends on exactly:
+1. the sealed IR (the `Ast` at its epoch, or the wrapped `Nfa` at E3), and
+   the node-grain pure functions over it (§4.3);
+2. OTHER FACTS, only through accessors, and only along the DEPENDS-ON edges
+   `facts.def` declares. So the pin's dependency on the window is a declared
+   edge, not a field read of `Job.req_run`, and the dependency DAG is
+   written down once;
+3. the encoding DESCRIPTOR, as a declared input (carve-out (d)).
+
+The carve-outs:
+- **(a) Split `core/internal.h` FIRST.** `internal.h` is 6,561 lines and
+  is included by 54 of the tree's source files, i.e. by everything outside
+  `src/enc/`. A rule "consumers include only `facts.h`" would pass
+  vacuously while the derivations' declarations stay there
+  (`pcrec_prefix_ksets`, `internal.h:1698`; the E2 derivations beside
+  `Job`, `:2580-2603`). So step 3.0's FIRST commit (3.0a, §9) moves every
+  derivation declaration into `src/facts/facts_derive.h` before anything else
+  moves. `internal.h` keeps the node-grain declarations (§4.3) and gains one
+  `#include "facts/facts.h"` for `Job.pf`.
+- **(b) Derived and rate readers go with B1's rate primitives**, not with
+  the walk files. `rb_pick`, `rn_scan_index`, `rn_window_start` and
+  `set_ppm` are rate READERS: after B1 each is "build the candidate order,
+  call `pcrec_find_pick`/`_seq_mass`/`_set_mass`" (§6.3). Putting them beside
+  the primitives keeps each question kind's NONE rule and its callers in one
+  file. The derived FACTS' accessors (in `facts.c`) call them, and
+  `facts.def`'s OWNER column names their file.
+- **(c) Decisions stay in their passes.** G1's `req_byte_dominated_by`
+  (`emit_dfa.c:5917`) and the offset-k SELECTION (`prefix_k.c`, after 3.4
+  everything but the walk) are DECISIONS (§4.4). They read facts and do not
+  move.
+- **(d) The encoding descriptor is a declared input.** `endwin.c:156` reads
+  `pcrec_enc_by_id(cx->opt->encoding)` [r1 A13]. After relocation the
+  derivation takes `const PcrecEnc *` as a parameter. `facts.c` resolves it
+  once, and `facts.def`'s row for the end window declares the input. §0.5(a)'s
+  rule "no fact derivation reads `cx->opt->encoding`" then holds literally.
+  The descriptor's structural fields (`start_cls`, `max_cp`) remain the only
+  encoding facts a derivation sees (§6.1).
+- **(e) One relocation per commit, each under the zero-movers gate.** A move
+  is `git mv` plus include edits plus the declaration move. It shares no
+  commit with a behaviour change, so the §9 A/B emit diff attributes any
+  mover to exactly one relocation.
+
+#### 4.2.3 The check: include graph plus link symbols (replaces the grep)
+
+Revision 1's grep for derivation calls outside the owner and `facts.c` fails
+in four ways [r1 A4, C2, C3]:
+- It is FILE-granular, so it is blind where owner and consumer share a file.
+  That is `prefix_k.c` today: the walk and the selection that consumes it.
+- It cannot tell a root call from a subtree call.
+- It is blind to a RE-DERIVATION (R13, R4, R12 are all re-spellings, not
+  re-calls).
+- Its target list was hand-kept, and its sabotage row re-inserted the exact
+  string it grepped for, so the control shared a source with the check
+  (learnings §3).
+
+The relocation lets a structural check replace it. It is born in step 3.0,
+in `make test-codegen`'s structural section. The precedent is the DD-12 (7)
+seam check (`tests/codegen/run_codegen_tests.sh:1025-1057`), a codegen
+structural check with a declared allowlist [r1 C7: revision 1 cited
+`assertions_design.md` §8.4, which is not that precedent]. It asserts two
+things:
+
+1. **Include graph.** The set of files that `#include "facts/facts_derive.h"`
+   (a regex scan of `#include` lines, `tools/review/include_graph.py`'s
+   method, no preprocessing) EQUALS the generated target list. It is not
+   "is a subset of": a listed owner that stops including the header is also a
+   failure, because it means the target list names a file that no longer owns
+   anything.
+2. **Link symbols.** For every object file under `build/`, the UNDEFINED
+   symbols it references (`nm -u`) that are DEFINED by `src/facts/*.o` and NOT
+   declared in `facts.h` must be empty unless that object's source is on the
+   target list. The symbol set comes from `nm` over the facts objects, not
+   from a list of names. This catches a hand `extern` re-declaration that
+   bypasses the header, which the include check alone cannot see.
+
+**The target list is GENERATED.** It is `src/facts/*.c` plus each distinct
+OWNER file named in `facts.def`, extracted by a plain-text scan of the
+table's row markers (one row per `PF_FACT(` line, the owner field by
+position). It is never produced through the X-macro expansion, so a
+preprocessor defect cannot hide a row from the check that polices it (C4's
+rule, §11.6). A REACH line prints the list's size and the number of symbols
+checked, so an empty list reads as vacuous rather than green.
+
+**The sabotage row** (a new S-id, numbered from main's highest at landing)
+adds `#include "facts/facts_derive.h"` to `src/gen/emit_vm.c` and nothing
+else, and the check must fail on assertion 1. It does not re-insert any
+function name, so it is independent of any grep string. A second row adds a
+hand `extern` declaration of one derivation plus one call in
+`src/gen/emit_vm.c` without the include, and the check must fail on
+assertion 2.
+
+**What it cannot catch: a hand RE-SPELLING.** A consumer that writes its
+own walk (R13's shape exactly) calls no derivation, includes no private
+header and references no facts symbol. No include or link check sees it. The
+layer's shape limits this in three ways:
+- **Helpers are private.** `rb_union`, `rr_cat`, `wclose`,
+  `frontier_union` and the rest are `static` inside their `src/facts/` file.
+  A re-spelling therefore cannot reuse half the lattice and diverge in the
+  other half, which is how R13 happened (a shared walk, two local picks).
+  It must rewrite the whole walk, which makes it a large and visible diff.
+- **The answer has one home.** A consumer that needs a pattern fact finds it
+  in `facts.h`. The accessor is the cheapest way to get the answer, and the
+  memo makes it cheaper than a walk.
+- **Review tooling sees clones.** `tools/review/clone_candidates.py` is the
+  review-time instrument for a duplicated walk. It is not a gate, and this
+  design does not make it one.
+
+The residual is stated in `src/facts/CLAUDE.md` so a reviewer knows to look
+for it.
+
+#### 4.2.4 The choice through the lenses
+
+| lens | the `src/facts/` layer | derivations stay in their first consumer's file (revision 1) |
+|---|---|---|
+| specific vs general | one home for "what the pattern has". A new fact is a `facts.def` row plus one file or function in the layer | the owner is whoever needed the fact first, which is an accident of history (R13) |
+| core vs derived | a core fact's file holds only its walk. Derived readers sit with the rate primitives (b), and decisions stay in passes (c). The layer boundary IS the core/derived/decision boundary | walk, pick and selection share a file (`reqbyte.c`, `prefix_k.c`). The pin sits inside a selection routine (`prefix_k.c:484`) |
+| applicable vs assumption-changing | applicable. Every core walk already reads only the IR (pfcrit-arch). The pin's kind gate becomes a consumer obligation the one consumer already carries | applicable, but the pin stays coupled to `unanch_start` |
+| fits the architecture vs a refactor | a directory move in five one-file commits under a zero-movers gate. `src/` already layers by directory (`include_graph.py`'s matrix) | no move at all |
+| D124 shared question / engine hat | a fact both emitters ask lives in neither emitter's neighbourhood. Consumers in `emit_dfa.c` and `emit_vm.c` are hats on one accessor | the VM asks a fact whose owner sits beside a DFA pass |
+| checkability | include graph plus link symbols, a generated target list, a string-free sabotage row | a file-granular grep that is blind in the shared-file case |
 
 ### 4.3 Node grain: one definition, no cache
 
