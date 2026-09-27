@@ -87,9 +87,11 @@ construction (src/ir) and emission (src/gen).
   **IT COMPUTES `minw` AND NOT `nullable` OR `W`, WHICH IS A DEVIATION FROM
   §4.4b's "one mechanism"** and is the wave's largest amendment to the design.
   Both exceptions are the same reason — the RECURRENCE lives in the emitter
-  and cannot be moved. `vm_nullable` is `static` to `src/gen/emit_vm.c` and is
-  the emitter's own definition of the property the empty-iteration guard is
-  emitted on; a copy here would be a second answer for the two to disagree
+  and cannot be moved. `vm_nullable` was `static` to `src/gen/emit_vm.c` and
+  was the emitter's own definition of the property the empty-iteration guard
+  is emitted on ([PATFACTS] 3.5 exported it as `mrl.c`'s `pcrec_nullable`, so
+  that half of the reason is gone and the fixpoint's home is K69's open
+  question); a copy here would be a second answer for the two to disagree
   about, which is the failure mode `vm_marked`, `vm_cuts` and
   `vm_cursor_fits` are each ONE predicate to avoid. And `W` is a set of SLOT
   INDICES, which are assigned by `vm_count_slots`' walk over the emitter's own
@@ -854,6 +856,15 @@ construction (src/ir) and emission (src/gen).
 
 - **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half, and
   since [M6.6.2] wave A the WIDTH analysis in both directions
+
+  **[PATFACTS] 3.5 (2026-09-27, lane pf35): `pcrec_nullable` LIVES HERE NOW**
+  — the ONE node-nullability function (patfacts design §4.3, R4), moved
+  verbatim from `src/gen/emit_vm.c`'s `static vm_nullable`, `A_CALL` arm
+  (`!u.call.nonnullable`) kept. A node-grain pure function, no memo, beside
+  `pcrec_minw` because `minw == 0` asks the same question through widths.
+  The two DISAGREE on `A_CALL` (K69: the `nonnullable` fixpoint is the
+  greatest one and runs in the emitter, after the E1 seal), which is why the
+  E1 fact (`src/facts/widths.c`) still composes `pcrec_minw(root) == 0`.
 
   **[M5.0] STAGE 2 RE-AIMED THE MAX-WIDTH CHAIN INTO CHARACTERS, so this file
   now holds THREE functions in TWO units.** `pcrec_minw` is unchanged (BYTES,

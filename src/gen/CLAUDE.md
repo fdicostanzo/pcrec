@@ -572,9 +572,10 @@ one per family.
 FIXPOINT** — a deviation from §4.4b's "one mechanism, and this is the only
 list of its consumers". Both for the same reason: `W` is a set of SLOT
 INDICES, which are assigned by `vm_count_slots`' own walk over this emitter's
-rung decisions and exist nowhere else, and `vm_nullable` is `static` here and
-is the emitter's own definition of the property the empty-iteration guard is
-emitted on. `callgraph.c` owns the GRAPH both iterate over. The set is
+rung decisions and exist nowhere else, and `vm_nullable` was `static` here and
+was the emitter's own definition of the property the empty-iteration guard is
+emitted on (since [PATFACTS] 3.5 it is `src/opt/mrl.c`'s `pcrec_nullable`; the
+fixpoint still runs here, K69). `callgraph.c` owns the GRAPH both iterate over. The set is
 assembled from the COUNTER RANGES each region's own `vm_count_slots` pass
 consumed — five of the seven families replicate PER EMITTED COPY
 (`^((?>a)){3}$` has ONE lexical atomic group and FOUR cut marks), so a walk
@@ -1058,8 +1059,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     reads that is not a parameter, and the ordering invariant a caller must
     not break. They stay HERE and not in `src/opt/` for the reason
     `src/core/internal.h`'s `Ast.u.call.nonnullable` comment and
-    `src/opt/CLAUDE.md` already rule: the recurrence `vm_nullable` is
-    `static` to this file, and moving a pass out would mean exporting `Vm`.
+    `src/opt/CLAUDE.md` already rule: moving a pass out would mean exporting
+    `Vm` (the other reason, the recurrence `vm_nullable` being `static` here,
+    lapsed at [PATFACTS] 3.5, when it became `src/opt/mrl.c`'s
+    `pcrec_nullable`).
     `vm_build_region_saves` takes the per-region counter SNAPSHOTS as
     parameters — they are produced by the counting pass INTERLEAVED between
     `vm_plan_regions` and it, and are the only place a region's own per-copy
