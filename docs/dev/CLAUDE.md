@@ -726,3 +726,16 @@ change.
   being revisited (DD-1's content already shipped under [M5.0] stage 4;
   DD-2/DD-6/M4-CALLOUTS/M4-SUBST all name the now-shipped M4/M6). See
   `docs/dev/lanes/backtri_report.md` for the delivery record.
+- `memcmp_lowering_study.md` — [OPT-LITSCAN] P4's `memcmp`-lowering study
+  (2026-09-27, lane memcmpstudy, measurement only, nothing under `src/`):
+  gcc-16 inlines every constant length 1-64 tested to a call-free compare
+  at `-O1`/`-O2`/`-O3` except one narrow cliff at `L=31`; odd lengths
+  decompose as a greedy NON-overlapping power-of-two chain (each piece its
+  own branch), not the overlapping or byte-tail forms guessed at, while
+  clang uses the overlapping form and renders it branchless; a real
+  emitted `\.tar` artifact confirms the probe exactly, gcc even hoisting
+  the compare constant out of the scan loop. Verdict: P4 needs no length
+  bound or form split for today's corpus; the overlapping two-load form is
+  recommended for `[WORD-FOLD]`'s later masked-class compare over a single
+  wide masked load, since it needs no wider safety bound. See
+  `memcmp_lowering_study/CLAUDE.md` for the reproduction pieces.

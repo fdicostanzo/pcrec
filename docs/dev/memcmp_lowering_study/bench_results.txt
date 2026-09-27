@@ -1,0 +1,35 @@
+=== L=2 ===
+L=2
+  match           memcmp=0.0026s (1.29 ns/call)  ifchain=0.0027s (1.37 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_first  memcmp=0.0026s (1.29 ns/call)  ifchain=0.0026s (1.29 ns/call)  mask=0.0026s (1.30 ns/call)
+  mismatch_last   memcmp=0.0026s (1.31 ns/call)  ifchain=0.0028s (1.39 ns/call)  mask=0.0025s (1.25 ns/call)
+=== L=3 ===
+L=3
+  match           memcmp=0.0024s (1.20 ns/call)  ifchain=0.0029s (1.44 ns/call)  mask=0.0029s (1.44 ns/call)
+  mismatch_first  memcmp=0.0026s (1.30 ns/call)  ifchain=0.0026s (1.31 ns/call)  mask=0.0029s (1.45 ns/call)
+  mismatch_last   memcmp=0.0025s (1.25 ns/call)  ifchain=0.0028s (1.42 ns/call)  mask=0.0029s (1.44 ns/call)
+=== L=4 ===
+L=4
+  match           memcmp=0.0026s (1.29 ns/call)  ifchain=0.0029s (1.47 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_first  memcmp=0.0026s (1.29 ns/call)  ifchain=0.0026s (1.30 ns/call)  mask=0.0026s (1.30 ns/call)
+  mismatch_last   memcmp=0.0026s (1.32 ns/call)  ifchain=0.0029s (1.45 ns/call)  mask=0.0026s (1.29 ns/call)
+=== L=7 ===
+L=7
+  match           memcmp=0.0026s (1.28 ns/call)  ifchain=0.0031s (1.53 ns/call)  mask=0.0035s (1.73 ns/call)
+  mismatch_first  memcmp=0.0026s (1.29 ns/call)  ifchain=0.0026s (1.29 ns/call)  mask=0.0034s (1.69 ns/call)
+  mismatch_last   memcmp=0.0026s (1.32 ns/call)  ifchain=0.0030s (1.52 ns/call)  mask=0.0034s (1.72 ns/call)
+=== L=8 ===
+L=8
+  match           memcmp=0.0026s (1.32 ns/call)  ifchain=0.0031s (1.55 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_first  memcmp=0.0026s (1.29 ns/call)  ifchain=0.0026s (1.29 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_last   memcmp=0.0026s (1.30 ns/call)  ifchain=0.0030s (1.52 ns/call)  mask=0.0026s (1.29 ns/call)
+=== L=10 ===
+L=10
+  match           memcmp=0.0025s (1.25 ns/call)  ifchain=0.0032s (1.59 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_first  memcmp=0.0026s (1.29 ns/call)  ifchain=0.0026s (1.29 ns/call)  mask=0.0026s (1.29 ns/call)
+  mismatch_last   memcmp=0.0025s (1.25 ns/call)  ifchain=0.0032s (1.59 ns/call)  mask=0.0026s (1.32 ns/call)
+=== L=16 ===
+L=16
+  match           memcmp=0.0027s (1.36 ns/call)  ifchain=0.0035s (1.73 ns/call)  mask=0.0026s (1.30 ns/call)
+  mismatch_first  memcmp=0.0027s (1.36 ns/call)  ifchain=0.0026s (1.29 ns/call)  mask=0.0026s (1.30 ns/call)
+  mismatch_last   memcmp=0.0027s (1.35 ns/call)  ifchain=0.0034s (1.69 ns/call)  mask=0.0026s (1.30 ns/call)
