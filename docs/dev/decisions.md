@@ -8608,3 +8608,24 @@ sequence"; that is process bookkeeping, not a schedule jump.
 
 This ordering supersedes no existing D77/D86 lane-column discipline; it is
 a SEQUENCE ruling laid on top of it for this stretch of work.
+
+**D125 addendum 1 (Frank, 2026-09-26 ~22:xx, eighty-first session) — [PATFACTS]
+step 2 moves AHEAD of [FINDINGS] B1 and [OPT-LITSCAN] S2 in phase 2.** Frank:
+"Would it be cleaner to open the item for organizing pattern findings now? I
+feel the more we do without it, the more it will take to organize into it."
+The manager agreed and Frank ruled "I agree with your approach". The evidence:
+(1) [OPT-REQRUN-ENC] (the same session) was a two-copies-of-one-decision
+defect. `rb_pick` and `rn_scan_index` each held their own non-byte decline
+and disagreed, which is D120's incident class. (2) B1 is "the accessor"
+that the prior's utf8 gate moves into (compare_stack.md §7 Q3, "[PATFACTS]'s
+shape"). Built first, it would be a parallel mechanism that [PATFACTS] then
+replaces (memory `pcrec-general-mechanisms-not-special-cases`). (3) S2
+consumes D122(3)'s carried verified facts, a named [PATFACTS] customer.
+(4) The step-1 inventory (2026-09-25) had already been overtaken by
+K65/K66, S1 steps 1-6 and [OPT-REQRUN-ENC]. So: step 2 (the design, with an
+inventory delta refresh first, then a D6 panel) runs now. B1 and S2 are
+built as the record's FIRST CUSTOMERS, and existing analyses migrate one at
+a time under the identity gates (step 3). This is a reorder INSIDE phase 2
+(a chartered prerequisite of two active rows), not new scope. The
+[OPTLOOP] cycle close stays bench-paced and proceeds in parallel. The
+phase-1 tails ([OPT-REQRUN-ENC], K68) finish first as already running.
