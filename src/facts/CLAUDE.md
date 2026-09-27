@@ -1,8 +1,9 @@
 # src/facts/ — the pattern-facts ANALYSIS LAYER ([PATFACTS], D120/D126)
 
-ONE organized record of what a pattern HAS — its necessary bytes and run,
-its start anchor, its end window, and (as the migration proceeds) its kind
-mask, nullability and the k-set walk — computed once per compile attempt,
+ONE organized record of what a pattern HAS — its kind mask and
+nullability (E1, step 3.2), its necessary bytes and run, its start anchor,
+its end window, and (as the migration proceeds) the k-set walk — computed
+once per compile attempt,
 behind one accessor per fact, sealed by epoch, with the fact-level `-fno-`
 denies applied inside the accessor. The design is
 `docs/design/patfacts/design.md` (revision 2, ruled D126: Q1-Q11 yes); §9
@@ -15,8 +16,8 @@ commit under a zero-movers A/B emit-diff gate.
 lib -> core(base) -> enc -> parse -> ir -> facts -> opt -> gen -> driver -> dump -> cli
 ```
 
-A derivation here depends on: the sealed IR (the lowered `Ast`, later the
-wrapped `Nfa`) and the node-grain pure functions over it; OTHER facts only
+A derivation here depends on: the sealed IR (the structural `Ast` at E1,
+the lowered `Ast` at E2, later the wrapped `Nfa`) and the node-grain pure functions over it; OTHER facts only
 through accessors, along the DEPENDS-ON edges `facts.def` declares; and the
 encoding DESCRIPTOR as a declared input (carve-out (d)), never
 `cx->opt->encoding`. DECISIONS (G1's domination test, the offset-k
@@ -42,7 +43,7 @@ defect traced to that edge (design §4.2.1, §10).
   `core/internal.h` includes it so `Job` can carry the record.
 - `facts.c` — the RECORD: every accessor's four steps (epoch guard, memo,
   deny, derive — `pf_enter` is the first three, so no accessor can skip
-  one), the E2 seal, and the `used` bit (set by a PASS asking, never by a
+  one), the seals, and the `used` bit (set by a PASS asking, never by a
   derived fact's own derivation). A derivation reads other facts only
   through `pf_ask`, along `facts.def`'s DEPENDS-ON edges. Also: each fact's
   ONE RENDERER (`pcrec_fact_render`, a no-default switch) which the
@@ -57,11 +58,42 @@ defect traced to that edge (design §4.2.1, §10).
   r1 A11). No failing forced ask is reachable today (no E2 derivation
   allocates); the guard was verified with a temporary plant (lane pf30's
   report).
+  **The E1 seal (step 3.2)** is the one EAGER seal: `pcrec_facts_seal_e1`
+  (called by `compile_driver` right after `pcrec_callgraph_build`) FORCES the
+  kind mask and nullability on the structural tree, because
+  `pcrec_lower_enc` rewrites that tree in place and a lazy answer would
+  depend on ask time (design §2). `pcrec_facts_seal_e2` then re-derives both
+  on the LOWERED tree and refuses the compile with an internal error if
+  either moved (`pf_check_e1`): design §3's invariance proof, checked on
+  every compile in `cstart_check_omission`'s shape. Its detector is
+  `run_facts_checks.sh` [facts-e1]; sabotage rows S302 (kind mask) and S303
+  (nullability) plant the two lowering drifts.
 - `facts_derive.h` — the FACTS-PRIVATE header: every derivation's
   declaration. Only this directory's files and the OWNER files `facts.def`
   names may include it; `tests/codegen/run_facts_checks.sh` checks that from
   the include graph AND the link symbols (`tests/codegen/run_facts_checks.sh`,
   sabotage rows S296/S297).
+
+- **kinds.c** — [PATFACTS] step 3.2: THE KIND MASK (`pcrec_pattern_kinds`),
+  E1. One `PF_KIND_*` bit (facts.h) per construct kind a pass asks about at
+  the ROOT — backreference, linked call, `${...}` variable, atomic,
+  lookaround, live capture, collapsible repeat — each the root answer of
+  the node predicate in `src/opt/atomic.c`/`src/parse/mod_vars.c`, which
+  stay node-grain (the discharge pass and module `lookaround` ask them of
+  subtrees before any seal). Readers: `select_engine.c` (`forces_captures`,
+  the prefilter decision), `compile.c`'s collapse gate, `emit_vm.c`'s
+  `mrl_win` and the `--emit-ir` listing's `has_bref`/`has_call`.
+  `pcrec_has_call` (any call) has no bit: it has no root-grain reader (D77).
+
+- **widths.c** — [PATFACTS] step 3.2: THE ROOT NULLABILITY
+  (`pcrec_pattern_nullable`, `pcrec_minw(root) == 0`), E1. Replaced
+  `EngineFit.lang_nullable`, the copy the fit site wrote; readers: the two
+  prefilter declines, `compile.c`'s collapse gate, the [K50-NULLGATE] start
+  gate (`pcrec_startgate_needed`). Its header carries why `pcrec_minw` is the
+  right walk and why the count-collapsed language's nullability is the exact
+  one's. The root byte `minw` (E2) joins it when a step moves its reader;
+  the node-grain widths stay in `src/opt/mrl.c`. Sabotage S206/S207 anchor
+  here.
 
 - **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
   ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which

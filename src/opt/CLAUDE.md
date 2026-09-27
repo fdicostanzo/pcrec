@@ -1413,9 +1413,10 @@ Maintenance: update this file when passes are added/removed.
 
 ## [OPT-4.1] the nullability predicate — ONE derivation, THREE readers
 
-`select_engine.c`'s fit site writes `EngineFit.lang_nullable` as
-`pcrec_minw(root) == 0` and nothing else in the tree computes that fact. Three
-sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
+The pattern-facts record's E1 `nullable` fact (`src/facts/widths.c`,
+`pcrec_minw(root) == 0`; until [PATFACTS] step 3.2 it was the copy
+`EngineFit.lang_nullable`, which the fit site wrote) is the one derivation of
+that fact in the tree. Three sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
 rescue is DECLINED, and what stands in its place is no prefilter at all — on a
 rung the alternative to the collapsed machine is not the exact one, because
 the exact machine is what failed), `src/core/compile.c`'s build gate (under
@@ -1433,7 +1434,7 @@ nullable where the true language is not, and that direction is the safe one
 here: declining a rescue costs a filter, never an answer.
 
 **AND THE COLLAPSED LANGUAGE'S NULLABILITY IS THE EXACT PATTERN'S**, which is
-why the field is not called `collapsed_lang_nullable`. The collapse rewrites
+why one fact serves both languages. The collapse rewrites
 `X{m,n}` as `X{min(m,1),}`, and `min(m,1) == 0` iff `m == 0`, so an `A_REP` is
 nullable on exactly the same condition before and after; concatenation and
 alternation combine 0-ness identically. One walk answers for both languages.
@@ -1466,14 +1467,14 @@ the [OPT-4] size rung's own decline above) now compile inside every cap and
 never reach a rung at all.
 
 `select_engine.c`'s fit site derives ONE shared local,
-`lang_nullable_declinable` (`lang_nullable && !has_bref &&
-!has_call && !force_on` — the exact conjuncts [OPT-4.1]'s field above
-already had, minus `prefilter_has_collapsible_rep`, which is meaningless off
+`lang_nullable_declinable` (`nullable && !has_bref &&
+!has_call && !force_on` — the exact conjuncts [OPT-4.1]'s decline above
+already had, minus the collapsible-repeat kind, which is meaningless off
 a rung: the ordinary path never collapses anything, so there is always a
 concrete prefilter to decline), and reads it into BOTH declines:
 
 - `prefilter_declined_nullable` (unchanged) additionally needs
-  `collapse_reason != CR_NONE` and `prefilter_has_collapsible_rep` — a rung
+  `collapse_reason != CR_NONE` and the E1 collapsible-repeat kind — a rung
   ran and there was a distinct rescue to refuse.
 - `prefilter_declined_nullable_default` (new) additionally needs
   `collapse_reason == CR_NONE` and `would_prefilter` — a LOCAL answering "is

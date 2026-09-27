@@ -52,6 +52,23 @@
 #      stamp the printer stops reading — is a failure rather than a silent
 #      omission.
 #
+# =========================================================================
+# 7. THE E1 FACTS AGAINST THE PATTERN'S OWN STRUCTURE (step 3.2, design §3)
+# =========================================================================
+# The kind mask and nullability are sealed on the STRUCTURAL tree and
+# re-derived on the LOWERED one at the E2 seal, where a disagreement refuses
+# the compile with an internal error (`src/facts/facts.c`'s
+# `pf_check_e1`). This check is that cross-check's detector and the E1 rows'
+# oracle at once: every witness below must COMPILE under its encoding, and
+# its listing's `kinds`/`nullable` values must equal the ones written here BY
+# HAND from the pattern's structure — never read off the compiler.
+#
+# REACH: the cross-check can only disagree where the lowering REWRITES the
+# tree, which is `-e utf8` with a class above U+007F; the witnesses are
+# chosen so every kind bit and both nullability answers sit on such a tree.
+# The check counts those witnesses, and fails if any `PF_KIND_*` bit
+# `src/facts/facts.h` declares has no witness (a new bit arrives with one).
+#
 # Usage: bash tests/codegen/run_facts_checks.sh
 # Env: PCREC (default <root>/build/pcrec); the objects are read from
 # `$(dirname $PCREC)/obj`, the tree that binary was linked from.
@@ -276,6 +293,56 @@ if [ -n "$cbad" ]; then
     bad "[facts-cli]$cbad"
 else
     ok "[facts-cli] --emit-facts refuses -o, a missing pattern, an unknown or empty encoding, the other query modes and a refused pattern (8 cases)"
+fi
+
+# 7. the E1 facts. One witness per line, TAB-separated (a pattern holds `|`):
+# E1W, encoding, pattern, kinds, nullable. `kinds` is the listing's
+# comma-joined member list in bit order, or `none`.
+printf '%s\n' \
+    'E1W	byte	abc	none	no' \
+    'E1W	byte	a?(?=b)	lookaround	yes' \
+    'E1W	utf8	\x{3b1}	none	no' \
+    'E1W	utf8	[\x{3b1}-\x{3c9}]	none	no' \
+    'E1W	utf8	\x{3b1}?	none	yes' \
+    'E1W	utf8	[\x{3b1}\x{3b2}]*	none	yes' \
+    'E1W	utf8	(\x{3b1})\1	bref,live_capture	no' \
+    'E1W	utf8	(a|(?1)\x{3b1})	linked_call,live_capture	no' \
+    'E1W	utf8	x${v}\x{3b1}	var	no' \
+    'E1W	utf8	(?>\x{3b1}|\x{3b1}b)c	atomic	no' \
+    'E1W	utf8	(?=\x{3b1})a*	lookaround	yes' \
+    'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no' > "$WORKDIR/e1w"
+nwit=0; nlow=0; ebad=""
+: > "$WORKDIR/e1kinds"
+while IFS=$'\t' read -r _ enc pat wkinds wnull; do
+    nwit=$((nwit + 1))
+    # A lowering-REWRITTEN tree: -e utf8 and some `\x{H}` above U+007F.
+    if [ "$enc" = utf8 ]; then
+        for h in $(grep -oE '\\x\{[0-9a-fA-F]+\}' <<< "$pat" | tr -d '\\x{}'); do
+            if [ $((16#$h)) -gt 127 ]; then nlow=$((nlow + 1)); break; fi
+        done
+    fi
+    tr ',' '\n' <<< "$wkinds" >> "$WORKDIR/e1kinds"
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --features all -e "$enc" --emit-facts --pattern "$pat" > "$WORKDIR/e1.l" 2> "$WORKDIR/e1.err"; then
+        ebad="$ebad $enc '$pat': refused ($(head -1 "$WORKDIR/e1.err"));"
+        continue
+    fi
+    sect "$WORKDIR/e1.l" facts > "$WORKDIR/e1.f"
+    gk="$(grep -F "$(printf 'fact=kinds\t')" "$WORKDIR/e1.f" | col value)"
+    gn="$(grep -F "$(printf 'fact=nullable\t')" "$WORKDIR/e1.f" | col value)"
+    [ "$gk" = "$wkinds" ] || ebad="$ebad $enc '$pat': kinds [$gk], by hand [$wkinds];"
+    [ "$gn" = "$wnull" ]  || ebad="$ebad $enc '$pat': nullable [$gn], by hand [$wnull];"
+done < "$WORKDIR/e1w"
+nbits="$(grep -cE '^[[:space:]]*PF_KIND_[A-Z_]+[[:space:]]*=' "$HDR")"
+ncov="$(grep -v '^none$' "$WORKDIR/e1kinds" | LC_ALL=C sort -u | wc -l | tr -d ' ')"
+echo "REACH: $nwit E1 witness(es), $nlow under utf8 with a class the lowering rewrites; $ncov of $nbits PF_KIND_* bit(s) witnessed"
+if [ "$nwit" -eq 0 ] || [ "$nlow" -eq 0 ] || [ "$nbits" -eq 0 ]; then
+    bad "[facts-e1] no witness, no lowering-rewritten witness or no PF_KIND_* bit found — the check is vacuous"
+elif [ "$ncov" -ne "$nbits" ]; then
+    bad "[facts-e1] $ncov kind(s) witnessed where facts.h declares $nbits PF_KIND_* bits — a bit has no witness"
+elif [ -n "$ebad" ]; then
+    bad "[facts-e1] the E1 facts disagree with the pattern's structure, or the E1 cross-check refused:$ebad"
+else
+    ok "[facts-e1] $nwit witnesses compile and list the kind mask and nullability written by hand ($nlow on a lowering-rewritten tree; all $nbits kind bits)"
 fi
 
 echo "checks passed: $pass"

@@ -1,6 +1,7 @@
 # `--emit-facts` — the pattern-facts listing format
 
-**[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8).** This document is the
+**[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8); rows `kinds` and
+`nullable` added at step 3.2, 2026-09-27.** This document is the
 CONTRACT for what `pcrec --emit-facts` prints: its sections, their columns,
 and what is and is not promised about each. It conforms to
 `docs/spec/table_contract.md` (the TSV producer/consumer contract) and adds
@@ -16,7 +17,8 @@ the prose are advisory. It is not part of the generated artifact, so it has
 no `abi` number and moving it is not an `abi` event.
 
 It prints **the pattern-facts record** of a compile — what pcrec concluded
-about the PATTERN (the byte every match must contain, the necessary literal
+about the PATTERN (which construct kinds it contains, whether it can match
+the empty string, the byte every match must contain, the necessary literal
 run and set, the start anchor, the end window), each fact's status, whether a
 pass consumed it, and WHY it has its value — plus the artifact's own
 **decision stamps** (which engine, which prefilter, whether a pre-check was
@@ -87,7 +89,7 @@ exists, they cannot change a byte of it.
 | `epoch` | the seal the fact is asked after: `E1` structural, `E2` lowered, `E3` machine | vocabulary yes |
 | `status` | **CLOSED**: `derived` / `denied` / `declined` / `absent` (below) | yes |
 | `used` | **CLOSED**: `yes` — a compiler pass asked for the fact while the artifact was built; `no` — only the listing asked | yes |
-| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token; `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
+| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token, the kind mask as a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`), nullability as `yes`/`no`; `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
 | `why` | **CLOSED token grammar** + detail (below) | the grammar yes; reason NAMES no |
 | `note` | prose (the fact's kind and owning source file today) | no wording promise (D26) |
 

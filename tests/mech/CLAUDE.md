@@ -3039,3 +3039,33 @@ the set pick, whose rightmost candidate is index 0, the plant is a no-op; for
 the run it is the old leftmost defect, which `run_prechecks.sh` §3.6/§4.9
 catch); **S288** onto the COMPARE call, because its context line (G1's
 density encoding test) was deleted.
+
+### [PATFACTS] step 3.2 — the E1 cross-check's rows S302/S303, five re-anchored rows
+
+Both on the existing `facts` arm (lane pf32, 2026-09-27). The E1 facts (the
+kind mask, nullability) are FORCED on the structural tree at
+`pcrec_facts_seal_e1` and re-derived on the lowered tree at
+`pcrec_facts_seal_e2`, where a disagreement is an internal-error refusal
+(`src/facts/facts.c` `pf_check_e1`); `run_facts_checks.sh` [facts-e1] is its
+detector (hand-written witnesses, ten of them on a utf8 tree the lowering
+rewrites). **S302** makes the utf8 lowering wrap each class it rewrites in an
+`A_ATOMIC` — answer-NEUTRAL (an atomic around one character's byte
+alternation cuts nothing) and invisible to every E1 reader, which keeps the
+sealed value; verified by hand that with the cross-check's call removed
+[facts-e1] is GREEN, so the detection is the cross-check's alone. **S303**
+makes a non-empty class above U+007F lower to `A_EMPTY` (design §3's
+nullability plant); the cross-check fires first, and with it removed by hand
+the same witnesses are refused by [K50-NULLGATE]'s `cstart_check_omission`
+instead — a second, machine-level detector on the DFA-unanchored route,
+recorded in the row rather than claimed away.
+
+**Re-anchored in the same change**, each copied from the tree it anchors and
+each with a dated note at the row's foot: **S206/S207** from
+`fit->lang_nullable = pcrec_minw(root) == 0;` onto the one derivation,
+`src/facts/widths.c`'s `return pcrec_minw(root) == 0;` (the plants reach
+every nullability reader through it, as they reached them through the field;
+the E2 cross-check calls the same derivation and stays silent); **S236** onto
+`pcrec_startgate_needed`'s new body `return pcrec_fact_nullable(cx);`;
+**S176** onto `has_call`'s new spelling off the kind mask; **S140** onto
+`mrl_win`'s two conjuncts, re-spelled over the kind mask with the column
+layout kept.

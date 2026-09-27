@@ -813,7 +813,14 @@ decides whether to perform it — and then run the row through
   (6) `[facts-cli]`, the query's refusals. Sabotage S298 (a row skipped),
   S299 (a deny bit flipped in facts.def), S300 (a stamp dropped from
   decisions). Every section resolves columns by header name within its
-  named section.
+  named section. (7) `[facts-e1]` ([PATFACTS] step 3.2): hand-written
+  witnesses (encoding, pattern, kind mask, nullability) must COMPILE and
+  list exactly those E1 values — the detector of the E2 seal's E1
+  invariance cross-check, which refuses a compile whose lowered tree
+  re-derives a different kind mask or nullability. REACH counts the
+  witnesses on a utf8 tree the lowering rewrites, and every `PF_KIND_*` bit
+  `facts.h` declares must have a witness. Sabotage S302 (kind mask) and
+  S303 (nullability).
 - **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
   WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
   section for `run_vm_frameless.sh`'s reason. Three independent sections,
