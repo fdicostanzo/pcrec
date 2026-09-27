@@ -293,6 +293,27 @@ Launched detached as this lane's last act:
 Read make's `*** [test-X] Error` lines. The expected red is the `nm arm_a.o`
 line in test-codegen.
 
+### 5.4 Completed after hand-off (lane findb1, same day)
+
+**Full `make test CC=gcc-16`** (`make_test_final.log`): `sections ran: 44/44`,
+`FINDB1 MAKE TEST rc=2`, with exactly two `*** [test-X] Error` lines.
+- `test-codegen`: the accepted `nm could not read arm_a.o` red.
+- `test-cpset-structure`: its stamp manifest `m5_stage1_stamps.tsv` drifted by
+  exactly +385 EMITTED_BYTES on every one of its 12 rows. That is B1's
+  per-artifact growth (§4.2), and nothing else moved. It was re-recorded in
+  `4534a637` with its own paragraph. `make test-cpset-structure` then read
+  rc 0, 28/0.
+
+**Solo mech rows, run serially at `4534a637`** (`mech_S266/S294/S288.log`).
+Each run ended `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0,
+unreached: 0)`.
+
+| row | arms | verdict |
+|---|---|---|
+| S266 | `reach:ok(1/1),prechecks:45fail/255pass,corpus:0fail/29224pass` | DETECTED |
+| S294 | `reach:ok(1/1),prechecks:11fail/290pass,corpus:0fail/29224pass` | DETECTED |
+| S288 | `reach:ok(1/1),prechecks:1fail/300pass` | DETECTED |
+
 ## 6. Held items, deviations, open questions
 
 **Held.**
