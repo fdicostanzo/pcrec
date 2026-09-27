@@ -25860,3 +25860,39 @@ reach-only sweep over all rows is cheap and found them.
 - Morning: read the K68 chain (/tmp/k68fix_chain.log), merge lane/k68fix (abi 39), and send I-112 (the utf8 re-measure on O-60's surface + K68).
 - Review lane/pf30's delivery.
 - Then B1 as PATFACTS' first customer, and dispose [OPT-LITSCAN] S1 F1/F2 (measure first).
+
+**Addendum (2026-09-27 ~00:5x, same session, before the reset).**
+- **K68 merged** at d911def7 (abi 39). Gates: make test (only the nm
+  probe red), recursion identity 16/0, S295 DETECTED. Main was pushed
+  (751b9c6d).
+- **I-112 sent** (bench 5b8cda1; acked ad097ff, [B104]): the utf8
+  re-measure plus O-62 §2-§6 at 751b9c6d in one night. Frank ruled yes on
+  both.
+- **[OPT-LITSCAN] F3 found while writing I-112's predictions:** after
+  [OPT-REQRUN-ENC] only the whole-window PRE-CHECK scans the rare byte.
+  The DFA candidate-start `memchr` still scans the literal's first byte =
+  the UTF-8 lead byte (é@ 195, Москва 208, 日本語 230). So the fix is
+  partial on subjects that contain the literal. The census's ×50 was on a
+  subject with no '@'.
+  - This is a third copy of the pick-a-byte decision. Its fix belongs to
+    PATFACTS' one NONE rule (D126 Q4) via B1, measured first.
+  - LESSON: when scoping a byte-choice fix, grep every `memchr` in the
+    emitted artifact, not just the stamp.
+- **The utf8@0.1 exec summary is merged:**
+  docs/dev/summaries/2026-09-27-utf8-bench-exec-summary.md.
+  - Rebuilt on the bench's reports and matrix after Frank's pointer.
+  - pcrec: 0 wrong answers; large-subject throughput 42 win / 5 ≤×2 /
+    22 >×2 (10 scan-byte, 12 unattributed); short subjects 68/1.
+  - [UTF8-ATTRIB] ruled (Frank), triggered by the re-measure + the pf30
+    merge.
+  - O-62 (outliers on the other sub-benches) is read.
+  - Frank: the reports feed the NEXT optimization cycle's rows at the
+    phase-4 stock-take. Nothing interrupts the D125 sequence. Recorded on
+    [OPTLOOP.2.analysis].
+- **New memories:** pcrec-no-question-ui and pcrec-ask-bench-dev; the
+  ubuntubudu disk memory is updated (stale bench worktrees filled root;
+  Frank cleaned up; the bench maintains its own worktrees).
+- **In flight at the reset:** pf30's detached validation chain
+  (/tmp/pf30_chain.log; strict and test-codegen done, only the nm probe
+  red; make test → recid → 11 mech rows). The bench's I-112 re-pin lane
+  b104repin and window are on Linux.
