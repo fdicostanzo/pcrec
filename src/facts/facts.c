@@ -23,7 +23,8 @@
  * The necessary SET and WHOLE RUN are core facts from ONE walk
  * (`src/facts/req.c`); asking either derives both, each under its own deny.
  * The WINDOW and the BYTE are derived facts, speed choices over them
- * (`src/opt/reqbyte.c`), reading their core facts through `pf_ask`, which is
+ * (`src/facts/req.c`, through the rate readers in `src/core/findings.c`),
+ * reading their core facts through `pf_ask`, which is
  * the one path along the DEPENDS-ON edges `facts.def` declares. */
 
 #include <string.h>

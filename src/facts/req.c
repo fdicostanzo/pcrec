@@ -4,7 +4,7 @@
  *
  * One AST-level analysis, read by BOTH emitters through the pattern-facts
  * record (the `req_set`/`req_whole_run` facts it derives, and the
- * `req_run`/`req_byte` facts `src/opt/reqbyte.c` picks from them). With it,
+ * `req_run`/`req_byte` facts derived at the foot of this file). With it,
  * a search over a window that does not contain the byte (or the run) answers
  * NOMATCH in ONE `memchr`-class pass instead of running an attempt at every
  * start position. PCRE2 calls the one-byte fact `PCRE2_INFO_LASTCODETYPE`/
@@ -90,8 +90,9 @@
  * tiebreak the pick falls back on) and the longest guaranteed RUN — and reads
  * no prior. WHICH member the emitted `memchr` tests, and which 8-byte window
  * of a longer run is compared, are SPEED choices made from these answers by
- * `src/opt/reqbyte.c` (until [FINDINGS] B1 moves them beside the rate
- * primitives). The lattice's helpers are `static` here, so a consumer that
+ * the rate readers beside the rate primitives (`src/core/findings.c`,
+ * [FINDINGS] B1), composed into the derived facts at the foot of this file.
+ * The lattice's helpers are `static` here, so a consumer that
  * wanted this answer another way would have to re-spell the whole walk.
  *
  * Called by the pattern-facts record (`src/facts/facts.c`) on the first ask
@@ -101,6 +102,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "core/findings.h"
 #include "facts/facts_derive.h"
 
 
@@ -168,7 +170,7 @@ static RbSet rb_intersect(RbSet l, RbSet r)
  * Seven operations, of which only the two append helpers have a precondition
  * and both state it. Nothing here reads the prior: the run analysis produces
  * a run, and WHICH member of it the scan tests is decided once, by the
- * derived `req_run` fact in `src/opt/reqbyte.c`. */
+ * derived `req_run` fact below, through `src/core/findings.c`. */
 
 static RbRun rn_none(void)
 {
@@ -460,4 +462,50 @@ void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run)
     RbVal v = rb_walk(root);
     *set = v.set;
     *run = v.runs.best;
+}
+
+/* THE WINDOW, the `req_run` fact's derived half, cut from the whole run the
+ * core `req_whole_run` fact holds (`run->whole`/`whole_len`): which member of
+ * the run the emitted `memchr` scans for (`idx`), and where a run longer than
+ * `PCREC_MAX_REQ_RUN_EMIT` is truncated to (`at`, with `bytes` exactly
+ * `whole + at` for `len` bytes). A whole run shorter than two bytes has no
+ * window (`len == 0`). The two choices are the rate readers'
+ * (`src/core/findings.c`); this composes them into the fact. */
+void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
+{
+    bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
+    int n = run->whole_len;
+
+    memset(run->bytes, 0, sizeof run->bytes);
+    run->len = 0;
+    run->idx = 0;
+    run->at = 0;
+    *why = PF_WHY_NONE;
+    if (n < 2) return;
+    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+    {
+        int i = pcrec_find_run_scan_index(run->whole, n, bytekey);
+        int s = n > PCREC_MAX_REQ_RUN_EMIT
+              ? pcrec_find_run_window_start(run->whole, n, i, bytekey) : 0;
+        int len = n - s;
+        if (len > PCREC_MAX_REQ_RUN_EMIT) len = PCREC_MAX_REQ_RUN_EMIT;
+        memcpy(run->bytes, run->whole + s, (size_t)len);
+        run->len = len;
+        run->idx = i - s;
+        run->at = s;
+    }
+}
+
+/* THE BYTE the emitted `memchr` tests — the `req_byte` fact — at ONE return:
+ * the run's own scan member where a run window shipped (there is one emitted
+ * `memchr`, and `<PREFIX>_REQ_BYTE` reports what it tests), and otherwise the
+ * set's pick (`src/core/findings.c`). -1 exactly when the set is empty. */
+int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
+                   PfWhyCode *why)
+{
+    bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
+    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+    if (run->len >= 2) return run->bytes[run->idx];
+    if (set->rightmost < 0) *why = PF_WHY_NONE;
+    return pcrec_find_set_pick(set->bits, set->rightmost, bytekey);
 }

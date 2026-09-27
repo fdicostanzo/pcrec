@@ -35,7 +35,7 @@
 # rule already carries). The argmax plant measures whether the PICK RULE has a
 # detector at all.
 SAB_ID="S266-freqpick-argmax"
-SAB_FILE="src/opt/reqbyte.c"
+SAB_FILE="src/core/findings.c"
 SAB_SUITES="prechecks harness"
 SAB_DESC="the necessary-byte pick selects the COMMONEST member of the necessary set under pcrec_byte_freq_ppm instead of the rarest, so the emitted memchr hits constantly and the whole-window pre-check answers nothing — a pure cost regression with NO answer-level detector anywhere in this tree, since every member of the set is a byte every match must contain, which is why this is a STRUCTURAL row and why a green corpus arm beside a red prechecks arm is the row working"
 SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh §3.7 is the whole detector: the four witnesses whose minimum-ppm member is not the rightmost ([0-9]+x[0-9]+e[0-9]+ -> 120, [0-9]+z[0-9]+a[0-9]+ -> 122, [a-z]+Q[a-z]+t[a-z]+ -> 81, and the 332-ppm tie row [0-9]+<[0-9]+>[0-9]+ -> 62) each report 'RX_REQ_BYTE is \"N\", expected \"M\"'. The corpus arm is expected to read ZERO failures and that is the row's point, not a half-detection. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S266."

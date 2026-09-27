@@ -40,6 +40,6 @@ PF_FACT(START_ANCHOR,  "start_anchor",  2, PF_CORE,    PCREC_NO_VM_ANCHOR_BOUND,
 PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,                 "src/facts/endwin.c",  "")
 PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "")
 PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
-PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/opt/reqbyte.c",   "req_whole_run")
-PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/opt/reqbyte.c",   "req_set req_run")
+PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "req_whole_run")
+PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "req_set req_run")
 #undef PF_FACT

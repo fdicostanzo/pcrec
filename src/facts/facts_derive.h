@@ -41,7 +41,8 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why);
  *
  * The WALK's output vocabulary, shared by the walk (`src/facts/req.c`, the
  * CORE facts `req_set`/`req_whole_run`) and the pick readers
- * (`src/opt/reqbyte.c`, the DERIVED facts `req_run`/`req_byte`). The lattice
+ * (`src/core/findings.c`, read by the DERIVED facts `req_run`/`req_byte`
+ * below). The lattice
  * that builds them stays `static` in req.c. */
 
 /* A set of necessary bytes plus the member the emitter will use. `pick` is
@@ -75,9 +76,10 @@ static inline bool rb_has(const RbSet *s, int b)
 void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
                                                         /* src/facts/req.c */
 
-/* THE DERIVED FACTS, speed choices over the core ones (src/opt/reqbyte.c's
- * header says why each member choice is the argmin of a frequency prior under
- * the `byte` encoding and the rightmost elsewhere). `pcrec_req_window` fills
+/* THE DERIVED FACTS, speed choices over the core ones, composed in
+ * src/facts/req.c from the rate readers in src/core/findings.c (whose header
+ * says why each member choice is the argmin of a frequency prior under the
+ * `byte` encoding and the rightmost elsewhere). `pcrec_req_window` fills
  * `run`'s window (`bytes`/`len`/`idx`/`at`) from its whole run;
  * `pcrec_req_pick` answers the byte the emitted `memchr` tests. `cx` is read
  * for the ENCODING alone, the prior being a fact about a corpus under one —
@@ -87,8 +89,8 @@ void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
  * answer, the rightmost member) — or `PF_WHY_NONE` where no member was
  * chosen (no window; an empty set). */
 void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why);
-                                                      /* src/opt/reqbyte.c */
+                                                        /* src/facts/req.c */
 int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
-                    PfWhyCode *why);                  /* src/opt/reqbyte.c */
+                    PfWhyCode *why);                    /* src/facts/req.c */
 
 #endif /* PCREC_FACTS_DERIVE_H */

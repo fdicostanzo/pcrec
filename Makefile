@@ -165,8 +165,11 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # 3.0a WITH the files, the class above forestalled a sixth time (facts.def,
 # the X-macro table, joined at 3.0 with the file): facts.h is
 # included by core/internal.h (so by every translation unit), and
-# facts_derive.h by the fact owners.
-FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def
+# facts_derive.h by the fact owners. src/core/findings.h joined at [FINDINGS]
+# B1 WITH the file, for the same reason: the rate seam's header, included by
+# the derived facts, the offset-k selection and G1.
+FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
+              src/core/findings.h
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
