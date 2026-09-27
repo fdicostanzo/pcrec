@@ -1,0 +1,30 @@
+=== L=5 ===
+L=5  n_pos=1048569
+  memcmp:  0.160058 s  (0.5088 ns/iter)
+  overlap: 0.147893 s  (0.4701 ns/iter)  delta vs memcmp: -0.0387 ns (-7.6%)
+  wide:    0.318920 s  (1.0138 ns/iter)  delta vs memcmp: +0.5050 ns (+99.3%)  delta vs overlap: +0.5437 ns (+115.6%)
+=== L=6 ===
+L=6  n_pos=1048569
+  memcmp:  0.156325 s  (0.4969 ns/iter)
+  overlap: 0.146761 s  (0.4665 ns/iter)  delta vs memcmp: -0.0304 ns (-6.1%)
+  wide:    0.319231 s  (1.0148 ns/iter)  delta vs memcmp: +0.5179 ns (+104.2%)  delta vs overlap: +0.5483 ns (+117.5%)
+=== L=7 ===
+L=7  n_pos=1048569
+  memcmp:  0.154012 s  (0.4896 ns/iter)
+  overlap: 0.144993 s  (0.4609 ns/iter)  delta vs memcmp: -0.0287 ns (-5.9%)
+  wide:    0.319100 s  (1.0144 ns/iter)  delta vs memcmp: +0.5248 ns (+107.2%)  delta vs overlap: +0.5535 ns (+120.1%)
+=== L=10 ===
+L=10  n_pos=1048561
+  memcmp:  0.155608 s  (0.4947 ns/iter)
+  overlap: 0.146845 s  (0.4668 ns/iter)  delta vs memcmp: -0.0279 ns (-5.6%)
+  wide:    0.251110 s  (0.7983 ns/iter)  delta vs memcmp: +0.3036 ns (+61.4%)  delta vs overlap: +0.3315 ns (+71.0%)
+=== L=12 ===
+L=12  n_pos=1048561
+  memcmp:  0.160251 s  (0.5094 ns/iter)
+  overlap: 0.150063 s  (0.4770 ns/iter)  delta vs memcmp: -0.0324 ns (-6.4%)
+  wide:    0.252230 s  (0.8018 ns/iter)  delta vs memcmp: +0.2924 ns (+57.4%)  delta vs overlap: +0.3248 ns (+68.1%)
+=== L=15 ===
+L=15  n_pos=1048561
+  memcmp:  0.158986 s  (0.5054 ns/iter)
+  overlap: 0.148658 s  (0.4726 ns/iter)  delta vs memcmp: -0.0328 ns (-6.5%)
+  wide:    0.252161 s  (0.8016 ns/iter)  delta vs memcmp: +0.2962 ns (+58.6%)  delta vs overlap: +0.3290 ns (+69.6%)

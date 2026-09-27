@@ -575,3 +575,65 @@ one-fewer-load argument was made for, on this box, at these lengths, in
 this regime. Whether that holds on a different microarchitecture, at a
 higher match rate, or with the bounds-check genuinely inlined (rather than
 assumed discharged) is unmeasured.
+
+## 11. Second follow-up (team-lead, same day): should P4 spell its own overlap under gcc — three arms in a realistic hot loop
+
+`docs/dev/memcmp_lowering_study/bench_hotloop2.c`: `memcmp` (P4's own
+form) vs the hand-written overlap (exact bytes, §3/§5) vs the wide masked
+single load (§10.2's guard-discharged shape), all under gcc-16 -O2, at
+every candidate position of a 1 MiB buffer whose content is realistic
+rather than pure-random: a dense band of NEAR MISSES (the literal with its
+last byte flipped, planted every 797 bytes — the shape that forces gcc's
+branchy multi-piece `memcmp` decomposition, §3, to walk every piece before
+failing) plus a sparse full-match band (every 4001 bytes) over an
+otherwise pseudo-random buffer. `L ∈ {5,6,7,10,12,15}`, best-of-7 rounds,
+arms interleaved within every round, `timeout 25`, reproduced by a second
+run (L=7/L=12 held within 1-3%).
+
+| L | memcmp (ns/iter) | overlap (ns/iter) | overlap vs memcmp | wide (ns/iter) | wide vs memcmp |
+|---|---|---|---|---|---|
+| 5 | 0.509 | 0.470 | **−7.6%** | 1.014 | +99.3% |
+| 6 | 0.497 | 0.467 | **−6.1%** | 1.015 | +104.2% |
+| 7 | 0.490 | 0.461 | **−5.9%** | 1.014 | +107.2% |
+| 10 | 0.495 | 0.467 | **−5.6%** | 0.798 | +61.4% |
+| 12 | 0.509 | 0.477 | **−6.4%** | 0.802 | +57.4% |
+| 15 | 0.505 | 0.473 | **−6.5%** | 0.802 | +58.6% |
+
+**Above noise and consistent in sign and rough magnitude across all six
+lengths** (5.6-7.6%), unlike §8's per-call bench where 0.2-0.4 ns
+differences on a ~1.3 ns base were noise — here the delta is measured
+inside a tight loop with no call-through-a-function-pointer overhead, and
+it reproduces run to run. **Wide is dramatically worse than both other
+arms in this regime** (57-107% slower than `memcmp` itself, not just
+slower than overlap), because it pays the same one-load-and-mask cost on
+every position including the sparse random background where `memcmp` and
+`overlap` both exit after their very first (mismatching) piece — the wide
+form has no early exit at all, so a realistic mostly-absent scan is its
+worst case, not its best one.
+
+**Answering the two questions directly, on the numbers alone (D77 — no
+recommendation beyond what they support):**
+
+- **Should P4 spell its own overlapping-load form for odd `L` under gcc,
+  instead of relying on `memcmp()`?** The measured win is real, consistent
+  across all six lengths tested, and reproducible — but it is **5.6-7.6%
+  per compare call**, not the multiple-times difference the instruction
+  counts (§3: gcc's own decomposition needs up to 4 sequential
+  loads/compares/branches at `L=15`) might suggest. Whether that is worth
+  a second emitted form (more emitter code, a second sabotage-anchor
+  surface, `[CC-DIFF]`'s own "one spelling of a constant-length literal
+  compare" discipline given up) is a question this measurement answers
+  the SIZE of, not the answer to.
+- **Is (c)'s (the wide single load's) saving worth pursuing?** No —
+  it has no saving in this regime; it is the slowest arm by a wide
+  margin, on the realistic subject this section builds specifically
+  because it stresses the near-miss case. Combined with the ASan/over-read
+  objection §5/§10 already raised, this closes the wide-single-load
+  candidate on both correctness-adjacent and performance grounds; nothing
+  further makes it worth building.
+
+Every number here is scratch-tier and box-specific (this Mac, gcc-16,
+one realistic-but-synthetic subject shape); the qualitative ranking
+(overlap ≤ memcmp ≪ wide) held across every length tried and both
+regimes measured in §10-§11, which is the strongest claim this study's
+scale supports.

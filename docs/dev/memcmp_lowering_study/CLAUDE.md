@@ -52,6 +52,17 @@ is its evidence, not a second explanation of it.
   -DL=<n>`. Also scratch/throwaway, same rule as `bench.c`.
 - `bench_hotloop_results.txt` — the committed run the memo's §10.2 table
   reads from; regenerate with `timeout 25 ./bench_hotloop` per length.
+- `bench_hotloop2.c` — the second 2026-09-27 follow-up (memo §11,
+  team-lead's ask): THREE arms under gcc-16 -O2 alone — `memcmp` (P4's own
+  form), the hand-written overlap (exact bytes), and the wide masked
+  single load (§10.2's guard-discharged shape) — at every candidate
+  position of a 1 MiB buffer built to be REALISTIC (a dense near-miss
+  band that stresses `memcmp`'s branchy decomposition, plus a sparse
+  full-match band, over a pseudo-random background), `L ∈
+  {5,6,7,10,12,15}`. Build per length: `gcc-16 -O2 bench_hotloop2.c -o
+  bench_hotloop2 -DL=<n>`. Scratch/throwaway, same rule as `bench.c`.
+- `bench_hotloop2_results.txt` — the committed run memo §11's table reads
+  from; regenerate with `timeout 25 ./bench_hotloop2` per length.
 - `asm/` — the committed `.s` outputs the memo's tables and code excerpts
   are read from: `probe_gcc16_{O1,O2,O3,Os}.s` (this box's `gcc-16`,
   Homebrew 16.2.0), `probe_clang_O2.s` (Apple clang 21.0.0, native arm64),
