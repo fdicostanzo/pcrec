@@ -645,7 +645,9 @@ the compile has one encoding, and the record is per compile. The only
 legitimate encoding inputs to a fact are the lowering's structural
 descriptor (`PcrecEnc.start_cls`, `max_cp`, as `endwin.c:156-164` and
 `nfa.c:1141` read). Those are facts about the encoding's byte structure,
-not its identity.
+not its identity. After relocation the descriptor is a declared PARAMETER of
+the one derivation that reads it (§4.2.2 (d)), not a lookup through
+`cx->opt->encoding` [r1 A13].
 
 ### 6.2 The prior: one accessor, one applicability decision
 
@@ -780,6 +782,15 @@ own row after K68 merges.
   is new, and it is the primitive `rn_window_start` needs.
 - The deletion of `pcrec_byte_freq_ppm`/`byte_freq_ppm_tbl`
   (`prefix_k.c:112-165`), as findings §6.1 already plans.
+- **The rate READERS move beside the primitives** (§4.2.2 carve-out (b)):
+  `rb_pick`, `rn_scan_index` and `rn_window_start` out of `reqbyte.c`
+  (which is then empty and deleted, since 3.0 lifted its walk into
+  `src/facts/req.c`), and `set_ppm` out of `prefix_k.c`. Each move is its own
+  commit (carve-out (e)). The moves are byte-identical under `-e byte`;
+  B1's own movers come from the primitives' NONE rules, in separate commits.
+- **§11.6 check 1 (non-perturbation), born here** [r1 A10]. B1 is the first
+  step where forcing an unasked fact can change a stamp: a derived pick asks
+  the rate, and the rate's consumption is recorded in `<P>_FINDINGS`.
 
 **B1 reads from the record: the DERIVED-fact sites and nothing else.**
 
@@ -788,7 +799,7 @@ own row after K68 merges.
 | the pick (`rb_pick`, inside `facts.c`'s derived `req_byte` accessor) | core `pcrec_fact_req_set` | `pcrec_find_pick` |
 | the run member + window (`rn_scan_index`/`rn_window_start`) | core whole run | `pcrec_find_pick`, `pcrec_find_seq_mass` |
 | G1's density conjunct (`req_byte_dominated_by`) | `CandScan` (an emission decision, unchanged) + derived `req_byte` | `pcrec_find_no_commoner` |
-| offset-k selection (`set_ppm`) | E3 k-set walk (after 3.4; before 3.4 it is the same walk inline) | `pcrec_find_set_mass` |
+| offset-k selection (`set_ppm`, moved beside the primitives) | E3 k-set walk (after 3.4; before 3.4 it is the same walk inline) | `pcrec_find_set_mass` |
 
 **B1 must NOT:** read `cx->opt->encoding` at any reader; memoize a rate
 anywhere but `Ctx`; add a second `req_*` field; or call `rb_walk`. Its
@@ -797,12 +808,25 @@ EMPTY. `b1_utf8_movers` is named per artifact: offset-k selection moves,
 plus any G1 fallout on the same artifact. Its abi event is the one D123-2
 ruled shared with the gate move.
 
-**Sequencing:** B1 rebases onto step 3.0. The three req-fact derivations
-it edits are then inside `facts.c`'s accessors, not in `compile.c`. If B1
-must land first (the manager's call on lane availability), it edits
-today's sites, and step 3.0 moves them afterwards. That is
-implement-then-replace, and it is still correct. The only forbidden order
-is a findings-local memo of any PATTERN fact.
+**What B1 exercises of the record's machinery** [r1 A6]. B1 is the
+machinery's first customer from OUTSIDE the migration. It uses:
+- the DERIVED accessors' memo, because the pick and the window are asked by
+  several emitter sites and derived once;
+- the fact DENY, because `-fno-req-byte`/`-fno-req-run` store the empty value
+  without running the derivation, so the rate is never asked and the
+  consumption record says so (§7.4);
+- the rate accessor as the one DATA input.
+
+S2a exercises none of these (§8.2).
+
+**Sequencing: step 3.0 is a HARD PREREQUISITE of B1** [r1 A5]. B1 rebases
+onto 3.0, where the req-fact derivations are already behind `facts.c`'s
+accessors and not in `compile.c`. Revision 1 offered a fallback (B1 lands
+first, editing today's sites, and 3.0 moves them afterwards). That is
+deleted, because it contradicts D125 addendum 1's reason (2): "built
+first, it would be a parallel mechanism that [PATFACTS] then replaces". B1
+editing today's sites is exactly that order. The forbidden order stays
+forbidden too: no findings-local memo of any PATTERN fact.
 
 ### 8.2 [OPT-LITSCAN] S2a: `[OPT-VMLIT]` exact, the node-grain customer
 
