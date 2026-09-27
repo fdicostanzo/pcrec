@@ -209,34 +209,56 @@ of their inputs, owned by `src/core/` per D122-2(2).
 **Shape** (spellings are the manager's; these are proposals):
 
 ```c
-/* src/core/internal.h — beside Job */
+/* src/facts/facts.h — the CONSUMER header (§4.2): types + accessors only.
+ * core/internal.h includes it for Job.pf; it declares no derivation. */
 typedef enum { PF_E0 = 0, PF_E1_STRUCT, PF_E2_LOWERED, PF_E3_MACHINE } PfEpoch;
 typedef struct {
     uint32_t have;          /* one bit per memoized fact: "asked and cached" */
-    PfEpoch  epoch;         /* advanced ONLY by compile_driver at the three seals */
-    unsigned kinds;         /* E1 */
-    bool     nullable;      /* E1 */
-    int      cwmin, cwmax;  /* E1, character units */
+    uint32_t used;          /* one bit per fact: asked by a PASS (§11.4) */
+    PfEpoch  epoch;         /* advanced ONLY by compile_driver at the seals */
+    bool     e3_sealed;     /* E3 is per BRANCH (§3): set only on ENG_UNANCH */
+    unsigned kinds;         /* E1, forced at the seal */
+    bool     nullable;      /* E1, forced at the seal */
     long long minw;         /* E2, bytes */
     int      start_anchor;  /* E2 */
     long long end_window;   /* E2 */
     ReqSet   req_set;       /* E2 core   (today Job.req_set)  */
     ReqRun   req_run;       /* E2 core `whole` + derived window (today Job.req_run) */
     int      req_byte;      /* E2 derived (today Job.req_byte) */
-    PrefixKWalk kwalk;      /* E3 core: the walk half of PrefixKSets */
+    PrefixKWalk kwalk;      /* E3 core: the walk half of PrefixKSets, no ppm */
     bool     run_pinned; int run_o;   /* E3 derived */
+    PfWhy    why[PF_NFACTS];/* stored status/why per fact (§11.3 item 3) */
 } PatFacts;                 /* Job.pf */
 
-/* src/opt/facts.c — every accessor has this shape */
+/* src/facts/facts.c — every lazy accessor has this shape */
 const ReqSet *pcrec_fact_req_set(Ctx *cx);   /* E2; deny -fno-req-byte -> empty */
 ```
 
-Each accessor does four things, in this order:
+Revision 1 carried `cwmin`/`cwmax` here. They are gone, because root
+character widths are not a record fact (§1, [r1 A1]).
+
+Each LAZY accessor (E2, E3) does four things, in this order:
 1. **Epoch guard:** `if (cx->job->pf.epoch < E) pcrec_ctx_fail(... "internal error")`.
+   An E3 accessor on a branch that never sealed E3 (`!e3_sealed`) is not an
+   internal error. It returns the fact's empty value with its decline token
+   (§3, §11.4).
 2. **Memo:** return the cached value if `have` has the bit.
 3. **Deny:** if the fact's deny bit is set, store the empty value (§7).
 4. **Derive:** otherwise call the owner's derivation ONCE, store the
    result, and set the bit.
+
+**E1 facts are EAGER, not lazy** [r1 A1]. `compile_driver` calls one
+`pcrec_facts_seal_e1(cx, root)` right after `pcrec_callgraph_build`
+(`compile.c:1397`). It derives the kind mask and nullability on the
+structural tree and stores them, and the E1 accessors are then pure reads.
+The reason is `pcrec_lower_enc`, which rewrites the tree IN PLACE
+(`compile.c:1488`, whose own comment says so at `:1464`). A lazy E1
+accessor first asked after lowering would walk the lowered tree. Kind-presence
+and nullability happen to be invariant under lowering (§3), but an answer
+that depends on ask time is the hazard this design exists to remove. Forcing
+at the seal makes the answer a function of the seal, not of the asker. It
+costs no new work: `select_engine` asks both facts on every compile today
+(`select_engine.c:568, 571, 611, 658, 686`).
 
 **Why lazy, through the lenses:**
 
@@ -268,15 +290,31 @@ does to it.
 
 | epoch | sealed at (`compile.c`) | why the facts are final there | facts |
 |---|---|---|---|
-| E1 structural | after `pcrec_callgraph_build` (`:1397`), before `pcrec_select_engine` (`:1424`) | Every later pass rewrites only (a) FLAGS on nodes (`possessive`, `revbody` by select_engine; `u.look.widths` by postresolve), or (b) `A_CLASS` contents, introducing only `A_CLASS`/`A_CAT`/`A_ALT`/`A_EMPTY` (`lower_enc.c:223-382`: the node kinds it allocates). Hence kind-presence is invariant. A non-empty class lowers to a non-empty byte sequence, so nullability is invariant. Character widths are character units by definition (`mrl.c`'s own header) | kind mask, nullable, `cwmin`/`cwmax` |
+| E1 structural | after `pcrec_callgraph_build` (`:1397`), before `pcrec_select_engine` (`:1424`) | Every later pass rewrites only (a) FLAGS on nodes (`possessive`, `revbody` by select_engine; `u.look.widths` by postresolve), or (b) `A_CLASS` contents, introducing only `A_CLASS`/`A_CAT`/`A_ALT`/`A_EMPTY` (`lower_enc.c:223-382`: the node kinds it allocates). Hence kind-presence is invariant. A non-empty class lowers to a non-empty byte sequence, so nullability is invariant. Both facts are FORCED here, eagerly (§2, [r1 A1]) | kind mask, nullable |
 | E2 lowered | after `pcrec_lower_enc` (`:1488`), i.e. where `start_anchor`/`end_window`/`req_*` are computed today (`:1501-1520`) | `lower_enc` is the last tree rewrite | byte `minw`, start anchor, end window, necessary set, whole run, the pick, the window |
-| E3 machine | after the FINAL forward NFA: after the collapse decision's rebuild (`:1648-1649`) and `pcrec_nfa_wrap_unanchored` (`:1654`), before the first DFA build | the count-collapse ladder REBUILDS `Job.nfa` (`:1648-1649`), so any walk before that point can be stale. `pcrec_dfa_scan_state_written` (`:1678`) is today's first `unanch_start` ask, and it comes after the seal | k-set walk, pin |
+| E3 machine | PER BRANCH [r1 A3]. Sealed ONLY inside the `ENG_UNANCH` arm (`:1651`), right after `pcrec_nfa_wrap_unanchored` (`:1654`) and before the first DFA build. The `ENG_ATTEMPT` arm (`:1685-1686`) never seals it | the count-collapse ladder REBUILDS `Job.nfa` (`:1648-1649`), so any walk before that point can be stale. `pcrec_dfa_scan_state_written` (`:1681`, `:1683`, [r1 F1]) is today's first `unanch_start` ask, and it comes after the seal | k-set walk, pin |
 
-**E3 exists only on a route that builds a forward NFA** (DFA or hybrid,
-`:1538`). On a no-DFA VM route the E3 accessors return NONE: no walk, no
-pin. That is already true today (`pcrec_prefix_ksets` is only reached via
-`unanch_start`). `[OPT-VMSEED]` (§9, not built) is the fact customer that
-will need an AST-level offset bound on exactly that route.
+**E3 is sealed only where the forward NFA is WRAPPED, and there are two
+routes where it is not** [r1 A3]. Revision 1 said "E3 exists on a route that
+builds a forward NFA". That is false on `ENG_ATTEMPT`: the forward NFA is built
+at `:1539` (and possibly rebuilt collapsed at `:1649`), but only the
+`ENG_UNANCH` arm wraps it (`:1651-1654`). The `ENG_ATTEMPT` arm (`:1685-1686`)
+builds its DFA from the unwrapped machine. So the seal is written inside the
+`ENG_UNANCH` arm and nowhere else, and the E3 accessors answer by route:
+
+| route | E3 sealed | E3 accessors return | listing `why` (§11.4) |
+|---|---|---|---|
+| `ENG_UNANCH` (DFA or hybrid, `:1651`) | yes, after `:1654` | the derived value (lazy, memoized) | empty, or a deny token |
+| `ENG_ATTEMPT` (`:1685`) | NO | the empty value, never derived | `decline:attempt-unwrapped-nfa` |
+| no-DFA VM (no `:1538` build) | NO | the empty value, never derived | `decline:no-forward-nfa` |
+
+Both declines are NAMED and neither is ever FORCED by the listing (§11.4). On
+`ENG_ATTEMPT` a forced walk would run over an NFA whose meaning (an
+anchored-attempt machine) is not the one the pin's contract states. Today
+`pcrec_prefix_ksets` is reached only from `unanch_start` (`emit_dfa.c:3720`),
+so both declines reproduce today's behaviour exactly. `[OPT-VMSEED]` (§10,
+not built) is the fact customer that will need an AST-level offset bound on
+the no-DFA route.
 
 **The E1 invariance claim is a PROOF plus a CHECK.** The proof is the
 table's middle column. The check is born with step 3.2: under the existing
@@ -284,8 +322,19 @@ debug self-check build shape (`cstart_check_omission`, `nfa.c:1086`, is
 the precedent: "a deliberate independent re-derivation"), re-derive the E1
 facts on the E2 tree and fail on disagreement. It is not a second source
 of truth. It is a cross-check that runs on the same function over a later
-tree, and a sabotage row proves it can fire (plant an `A_BREF` in
-`lower_enc`'s output).
+tree. Now that E1 is forced at the seal, the cross-check cannot be satisfied
+by an ask-time accident either: the stored value is the structural tree's,
+and the re-derivation is the lowered tree's. The check covers both E1 facts,
+so it has one sabotage row per fact [r1 C6]:
+- **kind mask:** plant an `A_BREF` in `lower_enc`'s output. The mask's
+  `BREF` bit then disagrees.
+- **nullability:** make `lower_enc` emit `A_EMPTY` for a non-empty class
+  (the one lowering that could break "a non-empty class lowers to a non-empty
+  byte sequence"). On a pattern whose only consuming node is that class, the
+  E2 re-derivation reads nullable and the stored E1 fact reads not nullable.
+
+Revision 1 also claimed width invariance. That claim is withdrawn, because
+root widths are no longer an E1 fact (§1).
 
 **The epoch guard closes step 1's `pcrec_minw` gap.** The ROOT byte
 `minw` is E2. `select_engine`'s pre-lowering read (`:568`) becomes the E1
