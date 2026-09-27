@@ -347,7 +347,6 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     o->k[0].count = frontier_union(&w, o->k[0].set);
     if (o->k[0].count == 0 || o->k[0].count >= 256) return;
     for (int b = 0; b < 256; b++) if (o->k[0].set[b]) o->k[0].byte = b;
-    o->k[0].ppm = pcrec_find_set_ppm(cx, o->k[0].set);
     o->nwalk = 1;
 
     for (int j = 1; j < PCREC_PREFIX_K_MAX; j++) {
@@ -379,7 +378,6 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
         memcpy(pk->set, set, 256);
         pk->count = count;
         pk->byte = byte;
-        pk->ppm = pcrec_find_set_ppm(cx, set);
         o->nwalk++;
     }
 
@@ -401,6 +399,11 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     /* ---- pick a scan offset and its verifies -------------------------- */
 
     if (k0count == 0 || k0count >= 256) return;  /* today's filter is not usable */
+
+    /* THE SELECTION'S OWN RATES: each walked offset's set weighed by the MASS
+     * primitive. They are the selection's, not the walk's — the walk reads no
+     * prior ([PATFACTS] design §4.2.1, r1 A2). */
+    for (int j = 0; j < o->nwalk; j++) o->ppm[j] = pcrec_find_set_ppm(cx, o->k[j].set);
 
     /* THE BASELINE IS ROLE A's: the offset-0 filter this artifact ships with. */
     unsigned base_scan = k0count == 1 ? C_MEMCHR : C_BITMAP;
@@ -436,7 +439,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
         for (int j = 1; j < o->nwalk; j++) if (j != si) order[no++] = j;
         for (int a = 0; a < no; a++)
             for (int b = a + 1; b < no; b++)
-                if (o->k[order[b]].ppm < o->k[order[a]].ppm) {
+                if (o->ppm[order[b]] < o->ppm[order[a]]) {
                     int t = order[a]; order[a] = order[b]; order[b] = t;
                 }
 
@@ -456,13 +459,13 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
         int sel[PCREC_OFSK_MAX_SET], n = 0;
         unsigned long long vrate, vcost;
         sel[n++] = 0;
-        vrate = o->k[0].ppm;
-        vcost = verify_cost(o->k[0].ppm);
-        unsigned long long cost = model_cost(scan_cost, o->k[si].ppm, vcost, vrate);
+        vrate = o->ppm[0];
+        vcost = verify_cost(o->ppm[0]);
+        unsigned long long cost = model_cost(scan_cost, o->ppm[si], vcost, vrate);
         for (int a = 0; a < no && n < PCREC_OFSK_MAX_SET - 1; a++) {
-            unsigned long long nv = vrate * o->k[order[a]].ppm / 1000000ull;
-            unsigned long long nvc = vcost + verify_cost(o->k[order[a]].ppm);
-            unsigned long long nc = model_cost(scan_cost, o->k[si].ppm, nvc, nv);
+            unsigned long long nv = vrate * o->ppm[order[a]] / 1000000ull;
+            unsigned long long nvc = vcost + verify_cost(o->ppm[order[a]]);
+            unsigned long long nc = model_cost(scan_cost, o->ppm[si], nvc, nv);
             if (nc >= cost) continue;
             sel[n++] = order[a];
             vrate = nv;
@@ -473,7 +476,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
             best = cost;
             best_scan = si;
             best_n = n;
-            best_rate = (unsigned long long)o->k[si].ppm * vrate / 1000000ull;
+            best_rate = (unsigned long long)o->ppm[si] * vrate / 1000000ull;
             memcpy(best_sel, sel, sizeof sel);
         }
     }

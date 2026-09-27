@@ -1680,12 +1680,12 @@ typedef struct {
     uint8_t  set[256];   /* the bytes a match may carry there */
     int      count;      /* how many */
     int      byte;       /* the single value when count == 1 */
-    unsigned ppm;        /* the prior's mass on `set`, parts per million */
 } PrefixK;
 
 typedef struct {
     int      nwalk;                   /* offsets proved: k[0..nwalk-1] */
     PrefixK  k[PCREC_PREFIX_K_MAX];
+    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on k[j].set, ppm */
     /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
      * keeps exactly the offset-0 filter it had before this row. */
     int      nsel;
