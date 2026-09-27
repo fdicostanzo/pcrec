@@ -3308,3 +3308,10 @@ never edited afterwards.
   two mover manifests (the byte one holds one quoted-size bench row — a
   ruling owed), the abi and byte-count readers, deviations (committed `.inc`,
   owner column, stamp position) and the open list.
+- **pf32_report.md** — lane `pf32` (opus, 2026-09-27): [PATFACTS] step 3.2,
+  E1 kinds + nullable, no abi event. `src/facts/kinds.c`/`widths.c`, the
+  eager E1 seal, the E1 invariance cross-check at the E2 seal with
+  `run_facts_checks.sh` [facts-e1] and S302/S303, the readers moved to the
+  accessors and the two `EngineFit` copies deleted, five re-anchored rows.
+  Per-commit A/B (zero movers), the validation verdicts, the no-`CALL`-bit
+  deviation, and S303's second detector (K50's machine self-check).
