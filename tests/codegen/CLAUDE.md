@@ -820,7 +820,17 @@ decides whether to perform it — and then run the row through
   re-derives a different kind mask or nullability. REACH counts the
   witnesses on a utf8 tree the lowering rewrites, and every `PF_KIND_*` bit
   `facts.h` declares must have a witness. Sabotage S302 (kind mask) and
-  S303 (nullability).
+  S303 (nullability). (8) `[facts-e3]` ([PATFACTS] step 3.4): the E3 facts
+  (`kset_walk`, `run_pin`) are sealed on the unanchored route alone; each
+  witness's ROUTE is read out of its emitted `.c` (`RX_DFA_SCAN`
+  `unanchored`/`attempt`/absent — the artifact, never the record) and also
+  written by hand, and the E3 rows' status/`why` must be the route's
+  (`derived`; `absent` + `decline:attempt-unwrapped-nfa`; `absent` +
+  `decline:no-forward-nfa`), with the walk and pin written by hand on the
+  sealed route. REACH requires all three routes and one pin on the WIDENED
+  domain (`\zabc`: pinned, `RX_DFA_PREFILTER "none"`, asked by no pass —
+  the kind gate held). Sabotage S306 (the seal leaks to ENG_ATTEMPT) and
+  S307 (the two decline tokens swapped).
 - **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
   WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
   section for `run_vm_frameless.sh`'s reason. Three independent sections,

@@ -2,8 +2,8 @@
 
 ONE organized record of what a pattern HAS — its kind mask and
 nullability (E1, step 3.2), its necessary bytes and run, its start anchor,
-its end window, and (as the migration proceeds) the k-set walk — computed
-once per compile attempt,
+its end window, and (E3, step 3.4) the k-set walk and the necessary run's
+pin on it — computed once per compile attempt,
 behind one accessor per fact, sealed by epoch, with the fact-level `-fno-`
 denies applied inside the accessor. The design is
 `docs/design/patfacts/design.md` (revision 2, ruled D126: Q1-Q11 yes); §9
@@ -17,7 +17,7 @@ lib -> core(base) -> enc -> parse -> ir -> facts -> opt -> gen -> driver -> dump
 ```
 
 A derivation here depends on: the sealed IR (the structural `Ast` at E1,
-the lowered `Ast` at E2, later the wrapped `Nfa`) and the node-grain pure functions over it; OTHER facts only
+the lowered `Ast` at E2, the wrapped forward `Nfa` at E3) and the node-grain pure functions over it; OTHER facts only
 through accessors, along the DEPENDS-ON edges `facts.def` declares; and the
 encoding DESCRIPTOR as a declared input (carve-out (d)), never
 `cx->opt->encoding`. DECISIONS (G1's domination test, the offset-k
@@ -68,6 +68,16 @@ defect traced to that edge (design §4.2.1, §10).
   every compile in `cstart_check_omission`'s shape. Its detector is
   `run_facts_checks.sh` [facts-e1]; sabotage rows S302 (kind mask) and S303
   (nullability) plant the two lowering drifts.
+  **The E3 seal (step 3.4) is PER BRANCH**: `pcrec_facts_seal_e3` is called
+  inside `compile_driver`'s ENG_UNANCH arm alone, right after
+  `pcrec_nfa_wrap_unanchored` (the count-collapse ladder may rebuild the
+  machine before that point; ENG_ATTEMPT never wraps it). On a route that
+  sealed E2 but not E3, `pf_enter` answers an E3 fact with its empty value,
+  status `absent`, and the route's decline — `decline:attempt-unwrapped-nfa`
+  where a forward NFA exists (read off the machine: `Job.nfa.n > 0`) or
+  `decline:no-forward-nfa` — and the force loop asks it so the listing names
+  the reason. Detector `run_facts_checks.sh` [facts-e3]; S306 (the seal
+  leaks to ENG_ATTEMPT), S307 (the tokens swap).
 - `facts_derive.h` — the FACTS-PRIVATE header: every derivation's
   declaration. Only this directory's files and the OWNER files `facts.def`
   names may include it; `tests/codegen/run_facts_checks.sh` checks that from
@@ -180,6 +190,31 @@ defect traced to that edge (design §4.2.1, §10).
   Its header carries the whole analysis account (why the whole window, why a
   SET and a RUN, the declines, why a lookaround's body is a correctness
   decline). Sabotage S268 (`rr_alt`'s common head) is anchored here.
+
+- **kset.c** — [OPT-K] + [OPT-LITSCAN] S1, [PATFACTS] step 3.4: THE K-SET
+  WALK (`pcrec_kset_walk`, fact `kset_walk`, E3 core) and THE RUN PIN
+  (`pcrec_run_pin`, fact `run_pin`, E3 derived). LIFTED out of
+  `src/opt/prefix_k.c`, whose offset-k SELECTION stays there and reads the
+  walk through the accessor (carve-out (c)); the per-offset rates the walk
+  computed inline moved into the selection, so the walk reads no prior
+  (r1 A2). The walk runs from the wrapped NFA's `anch_start` — the thread
+  from the candidate start ALONE, which no DFA state isolates — passing every
+  assertion as though it held, so a set can only be WIDER than the truth
+  (the file's header carries the whole soundness argument). Its `NKind`
+  switch has NO `default:`: a new CONSUMING kind silently treated as an
+  assertion would be its one unsound direction; it is the SECOND
+  hand-maintained exhaustive `NKind` walk in the tree (`src/ir/dfa.c`'s
+  closure is the first), paired by nothing but this sentence and
+  `-Wswitch`. The walk's scratch is arena, once per attempt: R14's seven
+  re-walks per compile (`unanch_start`'s callers) are one.
+  **THE PIN IS A PURE NFA+WINDOW FACT** (design §4.5): the smallest offset
+  at which the walk's singletons spell `req_run`'s WINDOW (the bytes the
+  pre-check compares, litscan_s1.md R3-2), DEPENDS-ON `kset_walk req_run`.
+  Before step 3.4 it was computed only inside the selection, so it read 0 on
+  every artifact with no offset-0 prefilter by accident of call order; now
+  it is true on some of those (`\zabc`), and EVERY READER OWES THE KIND
+  GATE — `src/gen/emit_dfa.c` reads it only through `us_run_pin`.
+  Sabotage S280 (the pin ignores the run's bytes) is anchored here.
 
 ## What the check cannot catch
 

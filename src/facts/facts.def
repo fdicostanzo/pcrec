@@ -10,7 +10,9 @@
  *   name     the listing's `fact` column. ADVISORY (facts_listing.md): a
  *            migration step may rename a fact.
  *   epoch    1/2/3: the seal the fact may be asked after (design §3). Asking
- *            before it is an internal-error refusal.
+ *            before it is an internal-error refusal — except an E3 fact on a
+ *            route that sealed E2 but not E3, which answers its empty value,
+ *            `absent`, with the route's decline (E3 is per branch).
  *   kind     PF_CORE — a walk of the sealed IR, reading no prior and no other
  *            fact's choice; PF_DERIVED — a function of core facts (and, from
  *            [FINDINGS] B1, the byte-rate). Design §4.1.
@@ -44,4 +46,6 @@ PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,       
 PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "")
 PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/facts/req.c",     "req_whole_run")
 PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/facts/req.c",     "req_set req_run")
+PF_FACT(KSET_WALK,     "kset_walk",     3, PF_CORE,    0,                                   "src/facts/kset.c",    "")
+PF_FACT(RUN_PIN,       "run_pin",       3, PF_DERIVED, 0,                                   "src/facts/kset.c",    "kset_walk req_run")
 #undef PF_FACT

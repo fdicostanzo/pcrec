@@ -3315,6 +3315,13 @@ never edited afterwards.
   accessors and the two `EngineFit` copies deleted, five re-anchored rows.
   Per-commit A/B (zero movers), the validation verdicts, the no-`CALL`-bit
   deviation, and S303's second detector (K50's machine self-check).
+- **pf34_report.md** — lane `pf34` (opus, 2026-09-27): [PATFACTS] step 3.4,
+  E3 the k-set walk + pin, no abi event (FLAGGED as a possible mover). §1 is
+  the pre-lane grep of every `run_pinned`/`run_o` reader and its kind gate;
+  then `src/facts/kset.c` (`kset_walk`, `run_pin`), the per-branch E3 seal
+  and its two decline tokens, the selection's own rates, `us_run_pin`,
+  `run_facts_checks.sh` [facts-e3] with S306/S307, four re-anchored rows,
+  the per-commit A/B gates, the census re-run and the widened-domain count.
 - **s2a_report.md** — lane `s2a` (opus, 2026-09-27): [OPT-LITSCAN] S2a, the
   VM's exact literal run as ONE P4 compare, abi 40 -> 41. `pcrec_lit_run`
   (the one node-grain fact, three readers), the island's single-child chains

@@ -16,5 +16,5 @@ SAB_DOC_FIGURE="MEASURED 2026-09-25 (lane s1build, single-row mech): DETECTED --
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "in|instanceof" && grep -q "^#define RX_DFA_PREFILTER \"offset-set\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_WHY \"dominated\"" "$REACH_TMP/o.c" && echo REACH-CLASS-A-KEYWORD'
 SAB_REACH_EXPECT="REACH-CLASS-A-KEYWORD"
 SAB_COUNT=1
-SAB_BEFORE='        if (ofs_test_verifies_run(s->cx, &t, o)) return false;'
-SAB_AFTER='        if (0 && ofs_test_verifies_run(s->cx, &t, o)) return false;   /* SABOTAGE S281 */'
+SAB_BEFORE='        if (ofs_test_verifies_run(s->cx, &t, u)) return false;'
+SAB_AFTER='        if (0 && ofs_test_verifies_run(s->cx, &t, u)) return false;   /* SABOTAGE S281 */'

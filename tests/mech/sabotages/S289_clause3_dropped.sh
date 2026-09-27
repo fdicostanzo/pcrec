@@ -20,7 +20,7 @@ SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "\\Bfoo\\
 SAB_REACH_EXPECT="REACH-C2-STAYS-OFFSET-SET"
 SAB_COUNT=1
 SAB_BEFORE='    if (o->nsel > 0) {
-        if (o->k[o->sel[o->scan]].k != sp) return false;
+        if (o->walk->k[o->sel[o->scan]].k != sp) return false;
     } else if (!(sp == 0 && u->kind == DFA_PF_MEMCHR &&
                  u->cand.byte == r->bytes[r->idx])) {
         return false;

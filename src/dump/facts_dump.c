@@ -102,6 +102,8 @@ static const char *fd_why(Ctx *cx, const PfWhy *w, const char *enc)
     case PF_WHY_RATE_NONE:
         return pcrec_sb_fragf(&cx->arena, "rate:none(%s)->rightmost", enc);
     case PF_WHY_FORCE_FAILED:     return "decline:force-failed";
+    case PF_WHY_ATTEMPT_UNWRAPPED: return "decline:attempt-unwrapped-nfa";
+    case PF_WHY_NO_FORWARD_NFA:   return "decline:no-forward-nfa";
     }
     return "";
 }

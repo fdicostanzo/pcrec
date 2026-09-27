@@ -1,7 +1,8 @@
 # `--emit-facts` — the pattern-facts listing format
 
 **[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8); rows `kinds` and
-`nullable` added at step 3.2, 2026-09-27.** This document is the
+`nullable` added at step 3.2, rows `kset_walk` and `run_pin` (the first
+`E3` rows) and the two route declines at step 3.4, 2026-09-27.** This document is the
 CONTRACT for what `pcrec --emit-facts` prints: its sections, their columns,
 and what is and is not promised about each. It conforms to
 `docs/spec/table_contract.md` (the TSV producer/consumer contract) and adds
@@ -19,7 +20,9 @@ no `abi` number and moving it is not an `abi` event.
 It prints **the pattern-facts record** of a compile — what pcrec concluded
 about the PATTERN (which construct kinds it contains, whether it can match
 the empty string, the byte every match must contain, the necessary literal
-run and set, the start anchor, the end window), each fact's status, whether a
+run and set, the start anchor, the end window, the bytes every match carries
+at each offset from its own start and where the necessary run sits among
+them), each fact's status, whether a
 pass consumed it, and WHY it has its value — plus the artifact's own
 **decision stamps** (which engine, which prefilter, whether a pre-check was
 emitted), which are route decisions the record deliberately does not hold.
@@ -89,7 +92,7 @@ exists, they cannot change a byte of it.
 | `epoch` | the seal the fact is asked after: `E1` structural, `E2` lowered, `E3` machine | vocabulary yes |
 | `status` | **CLOSED**: `derived` / `denied` / `declined` / `absent` (below) | yes |
 | `used` | **CLOSED**: `yes` — a compiler pass asked for the fact while the artifact was built; `no` — only the listing asked | yes |
-| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token, the kind mask as a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`), nullability as `yes`/`no`; `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
+| `value` | the fact's value, by its one renderer: a byte as decimal, a run as lowercase hex (with `@idx`, the scanned member's index, where the stamp carries it), a set as a comma-joined ascending byte list, the start anchor as `<PREFIX>_VM_START`'s token, the kind mask as a comma-joined list of kind names in a fixed order (`bref`, `linked_call`, `var`, `atomic`, `lookaround`, `live_capture`, `collapsible_rep`), nullability as `yes`/`no`, the k-set walk as a comma-joined list of its offsets in order (a one-byte offset as that byte in decimal, a wider one as `[N]`, its byte count), the run pin as the offset in decimal; `none` where the fact has no answer; EMPTY on an `absent` row | spellings shared with a stamp are that stamp's (`match_api.md` §6.3, `tuning.md` §2.25-§2.28); others advisory |
 | `why` | **CLOSED token grammar** + detail (below) | the grammar yes; reason NAMES no |
 | `note` | prose (the fact's kind and owning source file today) | no wording promise (D26) |
 
@@ -103,7 +106,11 @@ exists, they cannot change a byte of it.
 - `declined` — the derivation ran and declined for a stated structural
   reason; `why` names it;
 - `absent` — the fact is not derivable on this compile's route, or the
-  listing's own forced ask of it failed; its `value` is empty.
+  listing's own forced ask of it failed; its `value` is empty. The `E3`
+  facts are derivable only on a route whose forward scan runs the
+  unanchored machine (`<PREFIX>_DFA_SCAN "unanchored"`, a DFA or a hybrid
+  artifact); on every other route they are `absent` with a `decline:` naming
+  the route (below), and no pass can have consumed them.
 
 **`why`** is empty for a plain derivation, else exactly one of:
 
@@ -112,7 +119,11 @@ exists, they cannot change a byte of it.
   fact and both were given, the lower-numbered bit is named.
 - `decline:<reason>` — e.g. `decline:enc-multibyte` (the end window under an
   encoding with non-boundary positions), `decline:force-failed` (the
-  listing's own ask failed; the compile's result is unaffected).
+  listing's own ask failed; the compile's result is unaffected),
+  `decline:attempt-unwrapped-nfa` (an `E3` fact on a route whose forward scan
+  is the anchored-attempt machine, `<PREFIX>_DFA_SCAN "attempt"`) and
+  `decline:no-forward-nfa` (an `E3` fact on an artifact with no DFA scan at
+  all).
 - `rate:<source>` — for a fact CHOSEN by a byte-rate rule, which rule
   answered: `rate:builtin-prior` (the shipped byte-frequency prior) or
   `rate:none(<encoding>)->rightmost` (the prior does not apply to this

@@ -98,4 +98,17 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why);
 int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                     PfWhyCode *why);                    /* src/facts/req.c */
 
+/* [OPT-K] THE K-SET WALK over the wrapped forward NFA from its anchored start
+ * (src/facts/kset.c's header: why the anchored start, why it is sound). Reads
+ * the NFA alone; scratch from `cx`'s arena. */
+void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o);
+                                                        /* src/facts/kset.c */
+
+/* [OPT-LITSCAN] S1 THE RUN PIN: the smallest offset at which the walk's
+ * singletons spell the run's WINDOW `r->bytes` byte for byte (the SAME bytes
+ * the run pre-check compares, litscan_s1.md R3-2). Reads the two facts it is
+ * handed and nothing else. */
+void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin);
+                                                        /* src/facts/kset.c */
+
 #endif /* PCREC_FACTS_DERIVE_H */

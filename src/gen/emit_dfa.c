@@ -3771,7 +3771,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * an argument this function already makes — the fork D63's header
      * forbids. */
     if (o->kind != DFA_PF_NONE)
-        pcrec_prefix_ksets(cx, &cx->job->nfa, o->cand.set, &o->ofsk);
+        pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
 #ifdef OPTK_DEBUG
     { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
 #endif
@@ -5338,8 +5338,22 @@ static bool pf_ofs_applies(const DfaSel *s)
  * selection does not already test the whole run (class A keeps `offset-set`).
  * It reads analysis output only — never which row a later entry would pick,
  * and never the pre-check's admission. */
-static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const PrefixKSets *o);
+static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us);
 static void ofs_test_model(const UnanchStart *us, OfsTest *t);
+
+/* The run PIN as this file's readers may see it: the `run_pin` fact where
+ * `unanch_start` approved an offset-0 prefilter, and "not pinned" everywhere
+ * else. THE KIND GATE IS EVERY PIN READER'S OBLIGATION ([PATFACTS] design
+ * §4.5): the pin is a pure NFA+window fact, true on some `DFA_PF_NONE`
+ * artifacts, where no offset row applies and the run rows' identity clause
+ * has no scan to be the identity of. Every read below goes through here, so
+ * no reader can skip the gate. */
+static RunPin us_run_pin(Ctx *cx, const UnanchStart *us)
+{
+    if (us->kind == DFA_PF_NONE) return (RunPin){ false, 0 };
+    return *pcrec_fact_run_pin(cx);
+}
+
 static bool pf_run_applies_common(const DfaSel *s)
 {
     const UnanchStart *u = s->us;
@@ -5347,10 +5361,11 @@ static bool pf_run_applies_common(const DfaSel *s)
     const PrefixKSets *o = &u->ofsk;
     if (!s->forward || u->kind == DFA_PF_NONE) return false;
     if (r->len < 2) return false;
-    if (!o->run_pinned) return false;
-    int sp = o->run_o + r->idx;
+    RunPin pin = us_run_pin(s->cx, u);
+    if (!pin.pinned) return false;
+    int sp = pin.o + r->idx;
     if (o->nsel > 0) {
-        if (o->k[o->sel[o->scan]].k != sp) return false;
+        if (o->walk->k[o->sel[o->scan]].k != sp) return false;
     } else if (!(sp == 0 && u->kind == DFA_PF_MEMCHR &&
                  u->cand.byte == r->bytes[r->idx])) {
         return false;
@@ -5358,7 +5373,7 @@ static bool pf_run_applies_common(const DfaSel *s)
     if (o->nsel > 0) {
         OfsTest t;
         ofs_test_model(u, &t);
-        if (ofs_test_verifies_run(s->cx, &t, o)) return false;
+        if (ofs_test_verifies_run(s->cx, &t, u)) return false;
     }
     return true;
 }
@@ -5379,11 +5394,11 @@ static void ofs_test_model(const UnanchStart *us, OfsTest *t)
 {
     const PrefixKSets *o = &us->ofsk;
     memset(t, 0, sizeof *t);
-    const PrefixK *sc = &o->k[o->sel[o->scan]];
+    const PrefixK *sc = &o->walk->k[o->sel[o->scan]];
     t->scan_k    = sc->k;
     t->scan_byte = sc->count == 1 ? sc->byte : -1;
     for (int i = 0; i < o->nsel; i++)
-        if (i != o->scan) t->term[t->nterm++].k = &o->k[o->sel[i]];
+        if (i != o->scan) t->term[t->nterm++].k = &o->walk->k[o->sel[i]];
     t->maxk     = o->maxk;
     t->noffsets = o->nsel;
 }
@@ -5404,7 +5419,8 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
      * plus the run itself as ONE term at `run_o`, all ascending. The run term
      * includes the scan byte, as the pre-check's compare does, so the compare
      * is the same constant-length `memcmp`. */
-    int ro = o->run_o, rl = r->len, sp = ro + r->idx;
+    RunPin pin = us_run_pin(cx, us);
+    int ro = pin.o, rl = r->len, sp = ro + r->idx;
     t->scan_k    = sp;
     t->scan_byte = r->bytes[r->idx];
     t->run_o     = ro;
@@ -5413,17 +5429,17 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
     /* The predicate's clauses 2 and 3 read back from the emitter's side. Each
      * can fail only if the predicate and this derivation have drifted, which
      * this file prefers loud (`DfaForm.cx`'s own comment). */
-    if (!o->run_pinned)
+    if (!pin.pinned)
         pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
                                "an unpinned run");
-    if (o->nsel > 0 ? o->k[o->sel[o->scan]].k != sp
-                    : (sp != 0 || o->k[0].count != 1 || o->k[0].byte != t->scan_byte ||
+    if (o->nsel > 0 ? o->walk->k[o->sel[o->scan]].k != sp
+                    : (sp != 0 || o->walk->k[0].count != 1 || o->walk->k[0].byte != t->scan_byte ||
                        us->cand.byte != t->scan_byte))
         pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
                                "scan is not the run's scan member at offset %d", sp);
     bool placed = false;
     for (int i = 0; i < o->nsel; i++) {
-        const PrefixK *k = &o->k[o->sel[i]];
+        const PrefixK *k = &o->walk->k[o->sel[i]];
         if (k->k >= ro && k->k < ro + rl) continue;
         if (!placed && k->k > ro) { t->term[t->nterm++].k = NULL; placed = true; }
         t->term[t->nterm++].k = k;
@@ -5462,14 +5478,15 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
  * pin — does it test each offset `run_o + i` with exactly the byte
  * the `req_run` fact's `bytes[i]`, as its scan, as a singleton term, or inside its run
  * term? False where the run is not pinned (litscan_s1.md §1.4 `verifies`). */
-static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const PrefixKSets *o)
+static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const UnanchStart *us)
 {
     const ReqRun *r = pcrec_fact_req_run(cx);
-    if (r->len < 2 || !o->run_pinned) return false;
+    RunPin pin = us_run_pin(cx, us);
+    if (r->len < 2 || !pin.pinned) return false;
     for (int i = 0; i < r->len; i++) {
         const PrefixK *k;
         int b;
-        if (!ofs_test_at(t, o->run_o + i, &k, &b) || b != r->bytes[i]) return false;
+        if (!ofs_test_at(t, pin.o + i, &k, &b) || b != r->bytes[i]) return false;
     }
     return true;
 }
@@ -5896,7 +5913,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
          * DFA_PF_MEMCHR may still have had another form selected over it. */
         if (ofs_test_of(cx, &us, pf, &t)) {
             cs->byte = t.scan_byte;
-            cs->run_verified = ofs_test_verifies_run(cx, &t, &us.ofsk);
+            cs->run_verified = ofs_test_verifies_run(cx, &t, &us);
         } else if (!strcmp(pf->c.name, "memchr") || !strcmp(pf->c.name, "memchr-bounded")) {
             cs->memchr_form = true;
             cs->byte = us.cand.byte;
