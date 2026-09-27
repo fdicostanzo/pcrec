@@ -1298,9 +1298,10 @@ prints its values. Each datum has one printer.
 ### 11.8 When it lands, and what it does not do
 
 It lands WITH step 3.0 (§9). 3.0 creates `facts.def` and `Job.pf` for the
-E2 req/anchor/window facts and moves `REQ_*`/`VM_START` to the shared
-renderers. The listing's row population then grows with each migration step
-for free (§11.3 item 1). B1 adds the `rate` section. It is not an abi event
+E2 req/anchor/window facts and moves `REQ_*`/`VM_START`/`END_WINDOW` to the
+shared renderers. Checks 2-4 land with it. The listing's row population then
+grows with each migration step for free (§11.3 item 1). B1 adds the `rate`
+section and check 1 (§11.6). It is not an abi event
 (§11.5). It does NOT:
 - list node-grain facts (per-node output is `--emit-ir`'s territory for the
   VM program; a node-fact listing waits on a named need);
@@ -1310,14 +1311,19 @@ for free (§11.3 item 1). B1 adds the `rate` section. It is not an abi event
 ## 12. Open questions for Frank
 
 Each is a genuine ruling. Spellings, file names and step sizing are the
-manager's.
+manager's. Revision 2 changed Q1 (E1 is eager, E3 is per branch) and Q6
+(premise, [r1 A6]), and added Q11 (the relocation).
 
 1. **Three sealed epochs instead of the charter's one point.** D120 says
    "computed after `pcrec_lower_enc`". This design adds E1 (pre-lowering
    structural facts, because `select_engine` needs them before lowering)
    and E3 (NFA facts, because the pin is one). The alternative, moving
    `select_engine` after lowering, changes the pipeline order that
-   `possessify`/`revdet` depend on. **Recommend: accept the three epochs.**
+   `possessify`/`revdet` depend on. Revision 2 sharpens two of them (§3): E1's
+   facts are FORCED at the seal, because `pcrec_lower_enc` rewrites in place
+   and a lazy E1 answer would depend on ask time [r1 A1]. E3 is sealed PER
+   BRANCH, only where the forward NFA is wrapped, with named declines
+   elsewhere [r1 A3]. **Recommend: accept the three epochs, as revised.**
 2. **Lazy memoized accessors, not an eager struct.** D120 left both open
    ("a `PatFacts` … or a family of memoized queries"). **Recommend: the
    memoized queries** (§2's lens table: pay-for-what-you-use, dependency by
@@ -1338,10 +1344,22 @@ manager's.
    derivation each in their owner, per D124's "one table per question".
    D122(3)'s carried facts are then a DECISION published by its owner, not
    a pattern fact. **Recommend: yes.**
-6. **S2b (carried verified facts) is deferred** behind a named bench
-   trigger that follows S2a, even though D125 addendum 1 names S2 as a
-   first customer. S2a (the VM exact compare) is specified and buildable
-   against the record now. **Recommend: build S2a only.**
+6. **S2a now, or wait for S2b?** [r1 A6 changed this question's premise.]
+   Revision 1 asked only whether S2b (carried verified facts) is deferred.
+   The panel found that S2a exercises none of the pattern-grain machinery:
+   its one fact is a node-grain pure function, so it touches no memo, epoch
+   or deny (§8.2). D125 addendum 1 names S2 as a first customer, and S2a is
+   a customer of the record's one-definition RULE, not of its machinery. The
+   question is therefore:
+   (a) build S2a now as an independent step (3.3), with 3.0 plus B1 as the
+       machinery's customers; or
+   (b) hold S2 until S2b's bench trigger fires (§8.3), so that S2's first
+       build is a real outside customer of the machinery.
+   S2b stays specified and not built under either option.
+   **Recommend (manager's view, adopted here): (a).** B1 uses the deny and
+   the rate accessor, and 3.0 uses the memo, the epochs and the deny. So the
+   machinery has customers without S2. S2a is independent, is gated by its own
+   bench pass (`compare_stack.md` §6.1), and gains nothing by waiting.
 7. **File a row to derive `rx_info.flags`' `strategy_denials` mask from an
    `axes.def` classification column** (fact / row / value / answer), after
    K68 merges. The bit-19 fix and K68 are this class's two incidents.
@@ -1360,8 +1378,35 @@ manager's.
     and marks them `used no`, rather than printing `unasked` rows with no
     value (§11.4). The trade-off is completeness for a debugger versus the
     listing computing something the compile did not. The derivation is the
-    same one, and non-perturbation is checked. **Recommend: force, after
-    emission.**
+    same one, and non-perturbation is checked (from B1, §11.6). The force
+    loop never forces an unsealed epoch, and it is guarded, so it never
+    refuses a compile that succeeded (§11.4, [r1 A11]). **Recommend: force,
+    after emission.**
+11. **Adopt the `src/facts/` analysis layer** (§4.2; Frank's relocation
+    question, 2026-09-26). Revision 1 left each derivation in its first
+    consumer's pass file. Revision 2 proposes one directory with one file per
+    fact family, a consumer header and a facts-private header. Derivations
+    there depend only on the IR/NFA, on other facts through `facts.def`'s
+    declared DAG, and on the encoding descriptor as a declared input. The five
+    carve-outs apply: (a) split `internal.h` first, (b) rate readers go with
+    B1's primitives, (c) decisions stay in their passes, (d) the descriptor
+    is declared, (e) one relocation per commit under the zero-movers gate.
+    The relocations ride their migration steps (§9). An include-graph plus
+    link check replaces the grep (§4.2.3), and a hand re-spelling is its
+    stated residual.
+    **Recommend: yes.**
+    - **The critic's reason** (pfcrit-arch, ADOPT WITH CARVE-OUTS): no core
+      fact needs a pass's internals. `rb_walk` reads only the `Ast`, the
+      k-set walk only the `Nfa`, and the end window and start anchor the
+      `Ast` plus the descriptor. The one coupling, the pin's gate on
+      `unanch_start`'s verdict, is cured by making the pin a pure fact and
+      the gate a consumer obligation that the one consumer already carries.
+    - **The manager's reasons**: it answers Frank's "area A writes, B and C
+      use" directly, since a fact's home is no consumer's file. It turns the
+      revision-1 check, which was blind in the shared-file case, into a
+      structural one with a string-free sabotage row. And R13, the incident
+      that reordered the phase, grew in exactly the first-consumer-owns
+      shape this removes.
 
 ---
 
