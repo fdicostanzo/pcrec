@@ -82,3 +82,77 @@ every pattern whose non-nullability comes through a call — `(a)?(?1)`
 design's stop rule the E1 migration does not land; K69 (§4) files it for a
 ruling. What CAN land byte-identically is the other half of the 3.5 row:
 `vm_nullable` becoming the one, exported, node-nullable function (§3).
+
+## 3. What landed, commit by commit
+
+| commit | what | gate |
+|---|---|---|
+| `6e5782aa` | §1-§2 above, before any `src/` edit | — |
+| `29f3e168` c1 | **`vm_nullable` becomes `pcrec_nullable`**, moved verbatim (columns kept) from `src/gen/emit_vm.c` to `src/opt/mrl.c` beside `pcrec_minw`, declared in `internal.h` (design §4.3); the `A_CALL` arm kept. The eight `emit_vm.c` readers call it. Prose that said the function was `static` to the emitter is corrected (`internal.h` ×5, `callgraph.c` header, `mrl.c` header, `vm_resolve_nonnull`'s header — which also claimed a LEAST fixpoint and now states the greatest, K69). Sabotage S107/S127/S156 re-anchored by `SAB_FILE` (same lines), S56/S100 by spelling; each row's header says so | A/B c1 (§4) |
+| `a1b79e80` | K69 filed; CLAUDE.md (`src/opt`, `src/gen`, `tests/mech`, `docs/dev/lanes`); plan.md 3.5 note (no state flip) | docs |
+
+**Not landed, by the stop rule:** `widths.c` composing `pcrec_nullable(root)`.
+It exists only as a scratch build (`scratchpad/swap/`, `pcrec_swap`) used to
+measure K69's movers.
+
+## 4. The zero-movers gate
+
+Instrument reused, not rebuilt: `docs/dev/optloop/s1/s1_identity.py`,
+unchanged, driven by pf34's `gate.sh` (scratch copy, paths only). BASE =
+main `65482b45`'s build. The grid is `{-e byte, -e utf8} × {default,
+-fno-req-byte, -fno-req-run, -fno-end-window, -fno-vm-anchor-bound,
+-fno-run-prefilter, -fno-offset-skip, -fno-lit-run}`, 16 runs. Each run
+covers pcrec-bench's 64 capability patterns × 4 configs and every distinct
+corpus pattern × {`--features all`, `+ --engine=vm`}, so `--engine=vm` is
+inside every run.
+
+REACH: `pcrec_nullable` is asked by every VM artifact (the slot census,
+cost walk and emitter all ask it on every quantifier), so every VM-route
+artifact in the grid reached it.
+
+| commit | runs | result |
+|---|---|---|
+| c1 `29f3e168` | 16 | the first 5 runs were complete at handoff with **0 changed** (byte default: bench 251/5, corpus 5723/715). The rest are OWED: completion line `GATE c1 DONE`, then the chain prints the changed count |
+
+Mover classification (§9.1): none by construction (a verbatim move and a
+rename). A nonzero count would be a defect in the move itself.
+
+## 5. K69's mover manifest (informational, not a gate)
+
+The swap variant is diffed over the default deny set, both encodings
+(`gate_swap.log`, chain stage `gate swap`). Witnesses measured by hand
+before handoff: `(a)?(?1)` 140 diff lines and `(?:(a)|)(?1)` 130 lines, on
+both encodings; `(?(DEFINE)(?<g>a))(?&g)` 32 lines under utf8 only (the
+DFA gains the start gate). The E1 value flips `no` → `yes` on all of them
+and on `(a|(?1))`.
+
+## 6. Validation at handoff
+
+| check | result |
+|---|---|
+| `make strict` | clean (`-Werror -Wshadow`), at c1 |
+| `run_facts_checks.sh` | 8/0, at c1 |
+| sabotage anchors (`scripts/m6read_check_sab_anchors.py`) | 314 rows, 330 sites, all resolve |
+| spot byte-identity (5 nullable-guard patterns) | identical except the `-o` header name |
+| A/B gate c1 (rest), `run_vm_identity.sh`, `run_ir_listing.sh`, gate swap, `make test-codegen`, `run_prechecks.sh`, `make test-recursion-identity`, mech S56/S100/S107/S127/S156, `make test CC=gcc-16` | **OWED — the detached chain, §STATE AT HANDOFF** |
+
+## STATE AT HANDOFF
+
+Everything above is committed on `lane/pf35`. One detached chain runs each
+owed stage in series:
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/pf35/scratchpad/chain.sh`,
+log `scratchpad/chain.log`. It prints one `PF35 CHAIN:` line per stage and
+ends with `PF35 CHAIN: ALL DONE`. It first waits for gate c1
+(`scratchpad/gate_c1.log`, completion line `GATE c1 DONE`).
+
+| stage | log | verdict |
+|---|---|---|
+| A/B gate c1 | `gate_c1.log` | 32 `identity:` lines, `changed` count 0. Nonzero = a defect in the move: classify per §9.1 |
+| `run_vm_identity.sh` | `vmid.log` | rc 0 |
+| `run_ir_listing.sh` | `irlisting.log` | rc 0 |
+| gate swap (informational) | `gate_swap.log` | K69's corpus mover count. The `changed` lines are EXPECTED; copy them into K69 |
+| `make test-codegen` | `codegen.log` | the one accepted red is `FAIL: nm could not read arm_a.o (no rx_search symbol)` |
+| `run_prechecks.sh` | `prechecks.log` | rc 0 |
+| `make test-recursion-identity` | `recid.log` | rc 0; the (B) pin must NOT move |
+| mech S56 S100 S107 S127 S156 | `mech_S*.log` | `mech run COMPLETE ... (unexpected: 0 ...)`, each at its recorded verdict |
+| `make test CC=gcc-16` | `make_test.log` | make's `*** [test-X] Error` lines; the known darwin red is `test-codegen`'s nm probe |
