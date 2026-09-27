@@ -604,6 +604,16 @@ static void emit_predicate_axes(StrBuf *sb)
         emit_pred_row(sb, &p, 2, "denied", "",
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
+    /* [OPT-LITSCAN] S2a lit-run — §2.31. RX_VM_LIT_RUNS is an ACTIVITY
+     * COUNT, stamp_value left empty on both rows for alt-island's reason. */
+    {
+        PredAxis p = { "lit-run", NULL, "RX_VM_LIT_RUNS", "", 0, NULL, 0, NULL, NULL, NULL };
+        emit_pred_row(sb, &p, 1, "run", "",
+                     PCREC_NO_LIT_RUN, 0, "",
+                     "per VM literal run: two or more consecutive one-byte literals on one concatenation (pcrec_lit_run), or an island's single-child trie chain, compared as one bounds check and one constant-length memcmp");
+        emit_pred_row(sb, &p, 2, "denied", "",
+                     0, 0, "", "always (fallback) — one per-byte compare per literal");
+    }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
      * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is
      * a closed TOKEN, so `stamp_value` is spelled on every row — and the

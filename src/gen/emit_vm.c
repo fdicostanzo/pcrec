@@ -488,11 +488,12 @@ typedef struct {
                            * NOT the pre-pass's npush, whose counter-rung
                            * unbounded arm once went negative and omitted the
                            * dispatch from a program with ten live pushes. */
-    bool emitted_memcmp;  /* [OPT-LITSCAN] S2a set by the two sites that write a
-                           * literal-run compare (`vm_lit`, the island's run
-                           * arm) in the same call that writes it, so the
-                           * prologue's `<string.h>` cannot drift from the
-                           * program text (emitted_push's discipline). */
+    long long nlitrun;    /* [OPT-LITSCAN] S2a literal-run compares written,
+                           * counted by the two sites that write one (`vm_lit`,
+                           * the island's run arm) in the same call, so
+                           * `<PREFIX>_VM_LIT_RUNS` and the prologue's
+                           * `<string.h>` cannot drift from the program text
+                           * (emitted_push's discipline). */
     bool emitted_set;     /* [CC-DIFF] STEP 2 — set by vm_set, the ONE
                            * primitive that writes an `<PREFIX>_SET`, in the
                            * same call that writes the bytes (emitted_push's
@@ -2159,6 +2160,18 @@ static int vm_cat_flatten(Ctx *cx, const Ast *a, const Ast ***out)
     return n;
 }
 
+/* The literal run at element `j` of a flattened concatenation as THIS
+ * program emits it: `pcrec_lit_run`'s length, or 0 under `-fno-lit-run`
+ * (`PCREC_NO_LIT_RUN`, docs/spec/tuning.md §2.31). The one question
+ * `vm_cat`, `vm_cost_cat` and `vm_count_slots` ask, so the deny reaches all
+ * three readers at once. */
+static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
+                      unsigned char *out)
+{
+    if (v->cx->opt->flags & PCREC_NO_LIT_RUN) return 0;
+    return pcrec_lit_run(el, n, j, out);
+}
+
 /* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
  *
  * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
@@ -2488,7 +2501,7 @@ static Cost vm_cost_cat(Vm *v, const Ast *a)
         /* [OPT-LITSCAN] S2a a literal run is ONE compare, the run `vm_cat`
          * emits: no frame, no slot, no trail entry, which is each of its
          * bytes' own `A_CLASS` cost, once. */
-        int len = pcrec_lit_run(el, n, j, NULL);
+        int len = vm_lit_run(v, el, n, j, NULL);
         if (len) { j += len; continue; }
         cost_add(&c, vm_cost(v, el[j], false));
         j++;
@@ -3194,7 +3207,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         const Ast **el;
         int n = vm_cat_flatten(v->cx, a, &el);
         for (int j = 0; j < n; ) {
-            int len = pcrec_lit_run(el, n, j, NULL);
+            int len = vm_lit_run(v, el, n, j, NULL);
             if (len) { j += len; continue; }
             vm_count_slots(v, el[j], repl, false);
             j++;
@@ -4206,8 +4219,9 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
      * and a one-child parent — is compared by its parent's run compare and
      * is never emitted, so it takes no label. */
     bool *inrun = pcrec_arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *inrun);
+    const bool runs = !(v->cx->opt->flags & PCREC_NO_LIT_RUN);
     for (int x = 1; x < t->nnd; x++)
-        inrun[x] = t->nd[x].nacc == 0 && t->nd[x].nkids == 1
+        inrun[x] = runs && t->nd[x].nacc == 0 && t->nd[x].nkids == 1
                 && t->nd[t->nd[x].parent].nkids == 1;
     for (int x = 1; x < t->nnd; x++)
         if (!inrun[x]) t->nd[x].lbl = vm_label(v);
@@ -4290,7 +4304,7 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                                         ? pcrec_sb_fragf(&v->cx->arena, "subject + scan_position + %d", n->depth)
                                         : "subject + scan_position",
                                      run, len);
-            v->emitted_memcmp = true;
+            v->nlitrun++;
             pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
             vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
                   vm_rolef(v, "island: %d-byte literal run compare", len));
@@ -8443,7 +8457,7 @@ static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next
     vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
     pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
     pcrec_emit_exact_compare(v->b, "subject + scan_position", run, len);
-    v->emitted_memcmp = true;
+    v->nlitrun++;
     pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
                     len, v->p, next);
     vm_fail(v);
@@ -8480,12 +8494,12 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
      * read) is ONE element here: one label, one compare. */
     int cur = entry;
     for (int j = 0; j < n; ) {
-        int len = pcrec_lit_run(el, n, j, NULL);
+        int len = vm_lit_run(v, el, n, j, NULL);
         int span = len ? len : 1;
         int after = (j + span == n) ? next : vm_label(v);
         if (len) {
             unsigned char *run = pcrec_arena_alloc(&v->cx->arena, (size_t)len);
-            pcrec_lit_run(el, n, j, run);
+            vm_lit_run(v, el, n, j, run);
             vm_lit(v, cur, run, len, after);
         } else {
             vm_emit_f(v, cur, el[j], after, fol[j]);
@@ -11045,6 +11059,14 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today (D77). */
     pcrec_sb_stampf(c, v->up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(v));
+    /* [OPT-LITSCAN] S2a THE LITERAL-RUN STAMP, §6.3 family (b), VM route
+     * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
+     * spelled as readily as any other value — the two stamps above, for
+     * their reasons: an ACTIVITY COUNT of run compares written (spine runs
+     * and island chains), counted by the sites that write them, so it cannot
+     * report a compare the program does not contain; no `rx_info` mirror
+     * (D77). `-fno-lit-run` holds it at 0. */
+    pcrec_sb_stampf(c, v->up, "VM_LIT_RUNS", "%lld", v->nlitrun);
     /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
      * are TWO because a selection and the number it was made on are two
      * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
@@ -13396,7 +13418,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);
 
-    pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.emitted_memcmp);
+    pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en);
     vm_emit_storage(&v, &pl);
     vm_emit_search_body(&v, &g, &pl, &en);

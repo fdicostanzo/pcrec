@@ -173,6 +173,19 @@ int main(void)
             fprintf(stderr, "possdiff: malformed subject line: %s\n", line);
             return 2;
         }
+#ifdef DIFF_EXACT_SUBJECT
+        /* [OPT-LITSCAN] S2a's read-safety sweep: the subject in a block of
+         * EXACTLY its own length, and the legal (NULL, 0) for the empty one,
+         * so AddressSanitizer sees a read one byte past the end — decode()'s
+         * block can be longer than what it decoded, which would hide it. */
+        {
+            unsigned char *ex = len ? malloc(len) : NULL;
+            if (len && !ex) return 2;
+            if (len) memcpy(ex, subj, len);
+            free(subj);
+            subj = ex;
+        }
+#endif
 
         /* Every start position, not just 0. A possessified loop that gets the
          * leftmost-first search wrong would still agree at startpos 0 on many

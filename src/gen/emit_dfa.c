@@ -2496,6 +2496,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * where what the emitter DID is
                                            * recorded. */
                                           PCREC_NO_CLS_FOLD |
+                                          /* [OPT-LITSCAN] S2a the VM's
+                                           * literal-run compare: the same
+                                           * bytes accepted as the per-byte
+                                           * chain, so no answer moves, and
+                                           * masked so an artifact with no run
+                                           * is byte-identical under the flag.
+                                           * `<PREFIX>_VM_LIT_RUNS` is where
+                                           * what the emitter DID is recorded. */
+                                          PCREC_NO_LIT_RUN |
                                           /* [EMIT-VERB] the emitted-comment
                                            * axis (D112), and it joins the
                                            * mask for the mask's own reason

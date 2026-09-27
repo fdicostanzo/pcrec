@@ -2696,12 +2696,16 @@ and has no axis. `--list-axes` renders the pair `|`-joined
 (`strategy_denials`) for the mask's own reason. `-fno-req-run` and
 `-fno-req-byte` remove the run itself, so nothing is pinned under either.
 
-### 2.31 The VM's literal run: ONE exact compare, and no axis bit
+### 2.31 `-fno-lit-run` — `PCREC_NO_LIT_RUN` (bit 33)
 
 **`[OPT-LITSCAN]` S2a, `abi` 41 (`docs/design/patfacts/design.md` §8.2).
-NOT an axis: there is no flag and no bit, and no stamp names it.** It is how
-a VM program spells a literal it has to consume, stated here because the
-emitted text is caller-observable.
+ANSWER-IDENTITY-preserving.** How a VM program spells a literal it has to
+consume. Deny-only, MASKED out of `rx_info.flags` (`strategy_denials`) for
+the mask's own reason; the deny is the literal-compare kit's row flag (D122
+addendum 2 (4)). `<PREFIX>_VM_LIT_RUNS` (`match_api.md` §6.3) counts the run
+compares the program writes, `0` on every VM artifact that writes none and
+on every VM artifact under the flag. Denied, the program is the one this
+compiler emitted before `abi` 41, byte for byte apart from that stamp line.
 
 **What it is.** In a concatenation, two or more CONSECUTIVE elements that are
 each one exact byte form a RUN, and the run is consumed by one bounds check
@@ -2725,8 +2729,8 @@ between two bytes is program the matcher has to execute there, whatever the
 subject contains, which is why this run is NOT the necessary run §2.28
 names (that one is contiguous in the SUBJECT, across captures).
 
-**What it costs, and what it does not move.** No answer and no give-up
-moves: the compare accepts exactly the bytes the chain accepted, it reads
+**What it costs, and what it does not move.** The flag is swept by
+`make test-axes` like every deny axis. No answer and no give-up moves: the compare accepts exactly the bytes the chain accepted, it reads
 exactly `L` bytes after one `pos + L <= n` test (never past the subject's
 end), and the step, work and node budgets charge what the chain charged
 (`limits.md` §3.1). `<PREFIX>_VM_PROGRAM_BYTES` and the label count move

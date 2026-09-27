@@ -2027,13 +2027,41 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `40` while the three narrative copies
+which is why it is gap-free from `2` to `41` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `40` on every artifact today (`[FINDINGS]` B1 bumped it
+- **`rx_info.abi` is `41` on every artifact today (`[OPT-LITSCAN]` S2a
+  bumped it from 40, 2026-09-27: A VM LITERAL RUN IS ONE EXACT COMPARE).**
+  In a VM program, two or more consecutive one-byte literals on one
+  concatenation are consumed under ONE label by one bounds check and one
+  constant-length compare, `if (scan_position + L <= subject_length &&
+  !memcmp(subject + scan_position, "<run>", L))`, where the per-byte chain
+  wrote `L` labels; an alternation island's single-child trie chain is the
+  same compare at its node's depth (`tuning.md` §2.31). The artifact gains
+  `#include <string.h>` where nothing else in it needed one. EVERY VM
+  artifact (a hybrid included) gains ONE stamp line, `<PREFIX>_VM_LIT_RUNS`,
+  the count of run compares written (§6.3), and the new deny axis
+  `-fno-lit-run` (`PCREC_NO_LIT_RUN`, bit 33, masked out of `rx_info.flags`)
+  restores the abi-40 program exactly. No struct offset moves and no
+  `rx_info` member is added or changed. Stamp VALUES that move with the
+  program text: `<PREFIX>_VM_PROGRAM_BYTES`
+  on every mover; `<PREFIX>_VM_ENTRY_SHAPE` where the smaller program now
+  fits the inline entry rung (3 corpus artifacts); the byte count
+  `<PREFIX>_VM_PREFILTER_LANG_WHY` quotes (1 bench pattern). MEASURED over
+  pcrec-bench's capability patterns × 4 configs and every corpus pattern ×
+  {auto, `--engine=vm`}, past the new stamp line: 63 bench and 1,018 corpus
+  artifact-configs' programs move, each exactly an artifact whose VM program
+  writes a run compare; one bench
+  pattern refused by the emitted-code cap at abi 40 now compiles under
+  `--engine=vm` (666,632 → 482,736 bytes of code). NO ANSWER AND NO GIVE-UP
+  MOVES at the default budgets: the compare accepts exactly the bytes the
+  chain accepted, and the step, work and node budgets charge what the chain
+  charged (`limits.md` §3.1). The `--emit-ir` listing gains the `compare` op
+  (`ir_listing.md`).
+- **`rx_info.abi` was `40` (`[FINDINGS]` B1 bumped it
   from 39, 2026-09-27: THE BYTE-RATE IS DATA, EVERY ARTIFACT STAMPS WHERE ITS
   FINDINGS CAME FROM, AND OFFSET-k'S RATE READ TAKES THE GATE).** One D123-2
   abi event for three things. (1) Every artifact of both engines gains ONE
@@ -3044,7 +3072,8 @@ engine-scoped.**
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`,
-  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_START`, the
+  `_VM_FRAMELESS`, `_VM_ALT_ISLANDS`, `_VM_CLS_FOLDS`, `_VM_LIT_RUNS`,
+  `_VM_START`, the
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
@@ -3244,6 +3273,22 @@ the same predicate over the set's own two bytes.
 
 **It has no `rx_info` mirror**, on the same precedent and for the same
 reason as the entry above (D77).
+
+**[OPT-LITSCAN] S2a, 2026-09-27 (`abi` 41): `<PREFIX>_VM_LIT_RUNS`, (b)
+for `_VM_CLS_FOLDS`' reason.**
+
+```c
+#define RX_VM_LIT_RUNS 5   /* or 0, or any count */
+```
+
+**The IFF: it is the number of literal-run compares this artifact's VM
+program writes** — a run of two or more one-byte literals in a
+concatenation, and an alternation island's single-child trie chain, each
+compared as one bounds check and one constant-length `memcmp`
+(`docs/spec/tuning.md` §2.31). UNCONDITIONAL on every VM artifact, hybrids
+included, never defined on a pure-DFA artifact, `0` under `-fno-lit-run`.
+A COUNT for the two entries above' reason. What a consumer may NOT conclude:
+anything about the answers, which are identical either way.
 
 **[OPT-1], 2026-08-25: two more (b) macros —
 `<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the
