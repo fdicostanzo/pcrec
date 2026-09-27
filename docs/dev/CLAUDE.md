@@ -745,3 +745,17 @@ change.
   unmasked one was branchless via `ccmp`, while clang stays branchless
   either way.** See `memcmp_lowering_study/CLAUDE.md` for the reproduction
   pieces.
+- `utf8_attrib.md` — [UTF8-ATTRIB] (2026-09-27, lane utf8attrib, opus,
+  READ-ONLY, nothing under `src/`/`tests/`): attribution of the twelve
+  unattributed utf8@0.1 large-subject losses against the bench's re-measure
+  at 751b9c6d (O-63), read from the stamps, `--emit-facts` and the emitted
+  `memchr` arguments at three pins (ce658cb7 / 751b9c6d / main abi 41), with
+  SCRATCH-tier Mac hand-twins. The lookbehind trio is ONE algorithmic defect:
+  the VM hybrid re-seeds from its prefilter only when an MRL clamp exists, so
+  a lookaround-erased (over-approximating) prefilter leaves the attempt loop
+  stepping every position (twin ×25-×124; drafted row `[OPT-HYB-RESEED]`).
+  Its (B) section is the relayable answer to O-63 ask (a): `lit-sharp-s`'s
+  ×2.84 is the pre-check's rightmost byte `e`, not F3; `lit-cyr-run`'s
+  flatness IS F3 (the forced tail window `сква` passes, then memchr 0xD0);
+  main's NONE rules keep the pre-check and move the DFA scan to the
+  literal's second byte by a cost-model tie.
