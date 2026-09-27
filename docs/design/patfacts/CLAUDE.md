@@ -28,19 +28,37 @@ per step.
   `rn_scan_index`, that diverged), R14 (the k-set walk re-run per
   admission ask), R15 (one fact-deny, several consumers, one name); and
   the positive precedents S1 added (`OfsTest`, `req_run_tests`).
-- `design.md` — STEP 2, THE DESIGN (lane pfdesign, 2026-09-26, PROPOSED,
-  awaiting its D6 panel): lazy memoized accessors over `Job.pf`, sealed
-  at three epochs (E1 structural / E2 lowered / E3 NFA); core vs derived
-  facts; one owner per derivation with `src/opt/facts.c` holding only
-  memo + epoch guard + deny; the encoding rule (no fact reads the
-  encoding enum; the prior's NONE answer spelled once per QUESTION KIND
-  inside findings primitives, amending `findings/design.md` §6.1-§6.3);
-  the deny story (fact denies are "nothing to find" for every consumer,
-  row denies are rows); the first customers ([FINDINGS] B1 = the data
-  tier; `[OPT-LITSCAN]` S2a = one node-grain literal-run fact; S2b
-  carried facts specified, not built); the step-3 migration order with
-  the gate and abi status of each step; §10 not-built with triggers;
-  §11 the inspection surface `--emit-facts` (a debug listing under a spec page, one printer reading the memo, fact stamps sharing its renderers — Frank's 2026-09-26 scope addition); §12 ten questions for Frank.
+- `design.md` — STEP 2, THE DESIGN (lane pfdesign, 2026-09-26, PROPOSED;
+  **REVISION 2** the same day, lane pfrev, after the D6 panel r1,
+  `../../dev/reviews/2026-09-26-r1-patfacts-design.md`. Every FIX row is
+  applied and marked `[r1 ID]` inline, and the revision log at the top lists
+  what moved). The design: lazy memoized accessors over `Job.pf`, sealed at
+  three epochs. E1 (structural) is FORCED eagerly at its seal, because
+  `pcrec_lower_enc` rewrites in place. E2 is the lowered tree. E3 (the NFA)
+  is sealed PER BRANCH, only where the forward NFA is wrapped, with named
+  declines on `ENG_ATTEMPT` and the no-DFA route. Other topics: core vs
+  derived facts; the encoding rule (derivations take the encoding DESCRIPTOR
+  as a declared input; the prior's NONE answer is spelled once per QUESTION
+  KIND inside findings primitives, amending `findings/design.md`
+  §6.1-§6.3); fact vs row denies; the first customers ([FINDINGS] B1, with
+  step 3.0 a hard prerequisite; `[OPT-LITSCAN]` S2a, which exercises no
+  record machinery; S2b specified, not built). **Revision 2's largest change
+  answers Frank's relocation question: the PROPOSED layout is an ANALYSIS
+  LAYER, `src/facts/`** (§4.2). It has one file per fact family, a consumer
+  header `facts.h`, and a facts-private `facts_derive.h` split out of
+  `core/internal.h` first. Five carve-outs apply: decisions stay in their
+  passes, rate readers go with B1's primitives, and each relocation rides its
+  own migration step, one per commit. An include-graph plus link-symbol
+  check with a generated target list replaces revision 1's grep. The
+  residual it cannot catch, a hand re-spelling, is stated. §9 is the step-3
+  migration order (3.0a is the `internal.h` split; 3.4 is flagged a possible
+  mover), and §9.1 classifies movers as SEMANTIC (a K-row) or SCAFFOLDING
+  (the D76 ritual). §10 lists what is not built, with triggers. §11 is the
+  inspection surface `--emit-facts` (Frank's 2026-09-26 scope addition: a
+  debug listing under a spec page, one printer reading the memo, fact stamps
+  sharing its renderers, a guarded force loop that never refuses a compile,
+  four checks with independent oracles). §12 has eleven questions for Frank,
+  Q11 being "adopt the `src/facts/` layer".
 
 STEP 3 (implement-then-replace, migrating existing analyses one at a
 time under the identity gates) is a later plan-row step, sequenced by

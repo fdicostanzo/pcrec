@@ -1,9 +1,11 @@
 # [PATFACTS] STEP 2: THE DESIGN
 
-**Status: PROPOSED** (lane pfdesign, 2026-09-26, from main `e060f2e0`,
-with `lane/reqrunenc2` read unmerged). Design only: nothing under `src/`,
-`tests/` or `docs/spec/` changes in this lane. A full D6 panel follows,
-and its dispositions go inline, marked, in house style. Charter: D120,
+**Status: PROPOSED, REVISION 2** (lane pfdesign, 2026-09-26, from main
+`e060f2e0`, with `lane/reqrunenc2` read unmerged; revised by lane pfrev the
+same day after the D6 panel r1, citations re-verified against main
+`3204160a`, whose `src/` is unchanged from `e060f2e0`). Design only: nothing
+under `src/`, `tests/` or `docs/spec/` changes in these lanes. The panel's
+dispositions are applied inline and marked `[r1 ID]`. Charter: D120,
 plus D125 addendum 1 (step 2 runs now, and [FINDINGS] B1 and
 [OPT-LITSCAN] S2 are built as the record's FIRST CUSTOMERS). Evidence:
 `inventory.md` (step 1) and its **Delta 2026-09-26** section (R13-R15, N1-N9).
@@ -87,7 +89,9 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
    (a) A FACT derivation never reads `cx->opt->encoding`. The lowered tree
    and NFA are already in the encoding's units, and the only
    encoding-STRUCTURE inputs are the lowering's descriptor (`PcrecEnc.
-   start_cls`/`max_cp`, which `endwin.c:156` already reads).
+   start_cls`/`max_cp`). `endwin.c:156` reads it today through
+   `cx->opt->encoding`, and after relocation it is a declared parameter
+   (§4.2.2 (d), [r1 A13]).
    (b) Every DECISION that ranks bytes reads the byte-rate through ONE
    accessor (the findings accessor, `findings/design.md` §6.1). The prior's
    applicability is decided there, from the data's declaration (D123-4),
@@ -576,7 +580,7 @@ for a subtree.
 | thing | why not a record fact | where it stays |
 |---|---|---|
 | rewrites/annotations (`possessive`, `revbody`, discharge, `call.link`) | they are the RESULT of a rewrite and are emission material. "Revocable" (`lower_enc` clearing `revbody`) is a rewrite correcting a rewrite, and an epoch-sealed fact cannot be revoked | the AST |
-| route decisions (`fit`, engine, `engine_sel`, `pcrec_artifact_has_dfa_scan`) | a decision about the ARTIFACT, made by `select_engine`, depending on options and caps as well as the pattern | `Job.fit` (already one derivation). Two `fit` members are NOT decisions but copies of E1 facts: `fit.lang_nullable` (`select_engine.c:568`) and `fit.prefilter_has_collapsible_rep` (`:571`). A copy beside its accessor is the dual home §5.4 forbids, so both are deleted in step 3.2 and their readers (`compile.c:1585`, `:1620`; `select_engine.c:837`, `:856`) read the E1 accessors [r1 A7] |
+| route decisions (`fit`, engine, `engine_sel`, `pcrec_artifact_has_dfa_scan`) | a decision about the ARTIFACT, made by `select_engine`, depending on options and caps as well as the pattern | `Job.fit` (already one derivation). Two `fit` members are NOT decisions but copies of E1 facts: `fit.lang_nullable` (`select_engine.c:568`) and `fit.prefilter_has_collapsible_rep` (`:571`). A copy beside its accessor is the dual home §5 item 4 forbids, so both are deleted in step 3.2 and their readers (`compile.c:1585`, `:1620`; `select_engine.c:837`, `:856`) read the E1 accessors [r1 A7] |
 | emission decisions (`DFA_SELECT`, `req_admit`, `OfsTest`, `CandScan`) | depend on the machine, the deny ROWS and the selection order: L4 ("which check runs where"), a different question from "what the pattern has" | `emit_dfa.c`, one derivation each (`OfsTest`, `req_admit`), re-derived per ask. Memoized there when a reader in ANOTHER file needs one (S2b is that trigger, §8.3) |
 | emitter byproducts (`vm_frameless`/`has_push`) | a fact about the emitted PROGRAM, the VM-plan epoch (delta N3) | `Job.vm_frameless`, published by its one owner, as now |
 | machine structure (`clsmap`, states, views) | construction, not analysis | `Dfa` |
@@ -1091,7 +1095,7 @@ record (§4.4); they are inspectable anyway.
 
 ### 11.3 One printer, never a recomputation
 
-1. **One table defines the facts:** `src/opt/facts.def`, an X-macro
+1. **One table defines the facts:** `src/facts/facts.def`, an X-macro
    (`src/core/axes.def`'s precedent) with one row per fact giving name,
    epoch, deny bit, empty value and renderer. From it the build generates the
    `PatFacts` members' accessor declarations, the deny application in
@@ -1369,7 +1373,7 @@ manager's. Revision 2 changed Q1 (E1 is eager, E3 is per branch) and Q6
    (`ir_listing.md`'s precedent: format and vocabularies promised; row set,
    value spellings and reasons advisory; no `abi`), rather than a stable
    contract or an unspecified debug flag (§11.7). **Recommend: (c).**
-9. **Fact-valued stamps (`REQ_BYTE`, `REQ_RUN`, `VM_START`) render from
+9. **Fact-valued stamps (`REQ_BYTE`, `REQ_RUN`, `VM_START`, `END_WINDOW`) render from
    the record through the listing's renderers. Decision stamps stay with
    their owners and are CAPTURED as written** (§11.5), rather than moving
    decisions into the record. It is byte-identical, with no `abi`.
@@ -1419,6 +1423,9 @@ its Delta; `findings/design.md` §6, §11.3, §13; `litscan_s1.md` §1.1,
 `reqbyte_freq_pick.md` §3; `reqpos_2b.md` §2.3 + its 2026-09-26
 amendment (on `lane/reqrunenc2`); `docs/dev/optloop/reqrunenc_census.md`;
 `docs/dev/optloop/vmlit_trigger_read.md` §3; `variables_pattern.md` §2;
-`known_issues.md` K64-K68. APPROACH.md's "two engines" amendment (D124) is
+`known_issues.md` K64-K68; the D6 panel r1 and its dispositions,
+`docs/dev/reviews/2026-09-26-r1-patfacts-design.md` (revision 2 applies every
+FIX row); `tools/review/include_graph.py` (§4.2.3's scan method and the layer
+matrix). APPROACH.md's "two engines" amendment (D124) is
 due after this step. This design supplies its "one analysis record"
 paragraph (§0 items 1-8).

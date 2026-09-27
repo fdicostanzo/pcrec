@@ -2614,7 +2614,9 @@ exactly +34 bytes.
   compile.c`, and the enumerated (not designed) requested facts of
   [OPT-LITSCAN]/[VAR]/[FINDINGS]. A **Delta 2026-09-26** section refreshes
   it (R13 = the `[OPT-REQRUN-ENC]` incident, R14, R15). STEP 2 (lane
-  pfdesign, 2026-09-26, PROPOSED, awaiting its D6 panel) is
+  pfdesign, 2026-09-26, PROPOSED; PANELED (r1) and REVISED the same day by
+  lane pfrev, which also drafts Frank's relocation question as the proposed
+  `src/facts/` analysis layer, §4.2 and §12 Q11) is
   `patfacts/design.md`: lazy memoized accessors sealed at three epochs,
   core vs derived, one owner per derivation, the prior's NONE answer once
   per question kind (amends `findings/design.md` §6.1-§6.3), fact vs row
