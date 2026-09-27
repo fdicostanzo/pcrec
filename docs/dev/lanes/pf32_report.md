@@ -138,7 +138,56 @@ fail count and does not read the figure.
 
 ## 5. Validation
 
-VALIDATION_PLACEHOLDER
+Done in-lane:
+- `make strict CC=gcc-16`: `strict: whole tree compiles clean with -Werror -Wshadow` (rc 0).
+- `bash tests/codegen/run_facts_checks.sh`: `checks passed: 7`, `checks failed: 0`.
+- `tests/registry/limits_check.sh`: 31/0. The new `PF_KIND_*` enum needs no allowlist entry.
+- `scripts/m6read_check_sab_anchors.py`: 308 rows, all anchors resolve.
+- The A/B gate is in §2: 14/14 runs, zero movers.
+
+The chain results that had landed at hand-off (logs in the scratchpad
+`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/pf32/scratchpad/`):
+- `make test-codegen` (`codegen.log`): `run_group: 11/12 scripts passed`. The one red is the accepted `FAIL: nm could not read arm_a.o (no rx_search symbol)` (run_inline_capability.sh). That is GREEN by the brief's standard.
+- `run_prechecks.sh` (`prechecks.log`): `checks passed: 301`, `checks failed: 0`.
+- `run_ir_listing.sh` (`irlisting.log`): 147/0. The `--emit-ir` listing is unchanged.
+- `run_vm_identity.sh` (`vmidentity.log`): 10/0.
+
+## STATE AT HANDOFF (2026-09-27)
+
+Everything is committed on `lane/pf32`. Two detached processes are still running
+(`nohup … & disown`), serially, one heavy suite at a time. Neither needs
+this lane to be alive.
+
+**1. The validation chain.** Script `scratchpad/chain.sh`, log `scratchpad/chain.log`, completion line
+**`PF32 CHAIN: ALL DONE`**. Each stage writes one `PF32 CHAIN: <stage> rc=N` line:
+
+| stage | log | how to read the verdict |
+|---|---|---|
+| `make test-recursion-identity` | `recid.log` | the trailer `checks passed:`/`checks failed: 0`. Its (B) pin must NOT move: the script is untouched, so a (B) `differing` > 0 is a real mover (§9.1, a K-row) and must NOT be re-pinned |
+| mech solo S302 | `mech_S302.log` | `mech run COMPLETE: 1 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0 …)`. The expected cell is `facts:1fail/6pass` DETECTED |
+| mech solo S303 | `mech_S303.log` | same completion line and `facts:1fail/6pass`. Per §3, this arm cannot attribute detection to the cross-check vs K50 |
+| mech solo S140, S176, S206, S207, S236 (the re-anchored rows) | `mech_S<id>.log` | the same completion line, expected DETECTED. Compare each row's arm cells against its own `SAB_DOC_FIGURE` |
+
+The chain line for each mech row also echoes that row's `mech run
+COMPLETE` line.
+
+**2. The full `make test`.** Script `scratchpad/final.sh`, launched detached. It waits
+for `PF32 CHAIN: ALL DONE`, then runs `timeout 9000 make test CC=gcc-16`
+in the worktree. Log `scratchpad/make_test.log`. Its own status goes to
+`scratchpad/final.log`, whose completion line is
+**`PF32 FINAL: make test rc=N`**. **The verdict is make's
+`*** [test-X] Error` lines in `make_test.log`**, never a grep for FAIL
+(learnings §3). Expected accepted reds: the darwin `nm could not read
+arm_a.o` probe (test-codegen) and PC-3 (U13, local libpcre2 10.48). A
+manifest drift is a DIFF TO REVIEW, never a bump (this step is
+byte-identical). One known cause to check first for any `test-facts`-shaped
+or listing-count red: the `facts` listing gained two rows (`kinds`,
+`nullable`), so a pinned `facts` row count elsewhere would move. None was
+found by grep.
+
+**Triage owed by a fresh agent:** read the verdicts above, append them to
+this section, and triage any red beyond the accepted ones. No handback of
+the heavy-validation verdict was made: it is OWED.
 
 ## 6. Findings
 
