@@ -831,12 +831,22 @@ forbidden too: no findings-local memo of any PATTERN fact.
 ### 8.2 [OPT-LITSCAN] S2a: `[OPT-VMLIT]` exact, the node-grain customer
 
 S2a turns the VM's per-byte literal chain into P4's exact arm, one
-constant-length `memcmp` (`compare_stack.md` §6.1 S2). **What it reads:**
+constant-length `memcmp` (`compare_stack.md` §6.1 S2). **It is a customer
+of the record's node-grain RULE (one definition, §4.3), not of its
+machinery.** It asks no pattern fact, so it touches no memo, no epoch and no
+deny [r1 A6]. §0 item 9 and §12 Q6 say what that means for sequencing.
+**What it reads:**
 
 1. **ONE new node-grain fact, the emission-contiguous literal run.** Given
    an `A_CAT` spine child position, it returns the maximal `L ≥ 2`
-   consecutive spine children each with `pcrec_cls_single(child) >= 0`,
-   and their bytes. The spine is not seen through `A_CAP`, `A_ATOMIC`,
+   consecutive spine children each with
+   `child->k == A_CLASS && pcrec_cls_single(child) >= 0`, and their bytes.
+   The `A_CLASS` guard is part of the definition [r1 F5].
+   `pcrec_cls_single` reads `a->u.cls` unconditionally (`cpset.c:305-311`),
+   which is a union read on any other kind (`A_VAR`, `A_BREF`). Every
+   caller already guards: `emit_vm.c:3650` returns -1 unless `A_CLASS`,
+   `reqbyte.c:453` is inside `case A_CLASS`, and `altcls.c:190`'s operand
+   is a class by construction. The spine is not seen through `A_CAP`, `A_ATOMIC`,
    `A_LOOK`, `A_REP` or anything else: a capture write or a choice point
    between two bytes breaks EMISSION contiguity, whatever the subject says.
    - This is **NOT** `rb_walk`'s run. That run is SUBJECT-contiguous across
@@ -857,6 +867,13 @@ constant-length `memcmp` (`compare_stack.md` §6.1 S2). **What it reads:**
    - Under `-e utf8` a lowered multi-byte literal is a spine of singleton
      byte classes, so the fact is encoding-correct with no encoding read
      (§6.1).
+   - **EXACT only. Caseless is `[OPT-LITSCAN]` S4's** [r1 F4]. Under
+     `(?i)` a letter is the two-member class `[Aa]`, so
+     `pcrec_cls_single` returns -1 (`cpset.c:307`: `n != 1`) and the run is
+     empty. That is the row design (`compare_stack.md` §6.1: S2 is P4's
+     EXACT arm, and the caseless mask compare is S4, gated on its own
+     measurement), not a hole in the fact. A caseless literal keeps today's
+     per-byte chain until S4.
 2. **Nothing pattern-grain.** S2a reads no `req_*`, no pin, no rate
    (an L2 exact compare has no form choice: pay-for-what-you-use, D122
    addendum (b)), and no route decision.
