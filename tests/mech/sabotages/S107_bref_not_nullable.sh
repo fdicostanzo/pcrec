@@ -35,8 +35,10 @@
 # The guard is also what `mrl.c`'s `pcrec_minw(A_BREF) == 0` says from the
 # other side: the two are ONE property read by two passes, and getting either
 # wrong is unsound in a different direction.
+# [PATFACTS] 3.5 (lane pf35): `vm_nullable` moved verbatim to src/opt/mrl.c as
+# `pcrec_nullable`; SAB_FILE re-anchored, the planted arm and its intent unchanged.
 SAB_ID="S107-bref-not-nullable"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="harness brefdiff"
 SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="vm_nullable answers FALSE for A_BREF, so a quantifier whose body is a backreference loses its empty-iteration guard. A group that captured the EMPTY string makes the body consume nothing, the loop re-enters at zero width, and the frame stack is exhausted -- the artifact gives up LOUDLY with PCREC_ERR_FRAMES (0.10s, measured), which the corpus catches as an ordinary wrong answer. Its live population is an UNBOUNDED quantifier over a reference to a group that captured empty; a bounded repeat never reaches the rung that carries the guard"

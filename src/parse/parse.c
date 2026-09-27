@@ -169,7 +169,7 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * including `(?=a)*+`, and the empty-iteration cells (`^(?=a)*a$`,
      * `^(?:(?=a))*a$`, `^(?:(?=a)|b)*a$`, `^(?:(?!x))*a$`, `^(?:(?=(a)))*a$`)
      * all terminate in 0.0000s and agree with python. `false` is what lets
-     * `try_quant` accept the quantifier, and `vm_nullable`'s A_LOOK arm is
+     * `try_quant` accept the quantifier, and `pcrec_nullable`'s A_LOOK arm is
      * what stops accepting it from hanging. The two are one decision read by
      * two passes. */
     case A_LOOK:
@@ -192,7 +192,7 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * and the measurement agree here.
      *
      * `false` is what lets `try_quant` accept the quantifier, and
-     * `vm_nullable`'s `A_CALL` arm — the SCC fixpoint, §2.6 — is what stops
+     * `pcrec_nullable`'s `A_CALL` arm — the SCC fixpoint, §2.6 — is what stops
      * accepting it from hanging on a nullable callee. The two are one
      * decision read by two passes, `A_LOOK`'s pairing exactly. Note design
      * §2.6's further RULING that a call-bearing body is declined by every

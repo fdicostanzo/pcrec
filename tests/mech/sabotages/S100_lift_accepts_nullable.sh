@@ -21,6 +21,8 @@
 # (`tests/lib/gen_timeout.sh`) reports a timeout as a loud FAILURE naming the
 # case. A row whose symptom is "the test suite stops" would be unscoreable
 # without it.
+# [PATFACTS] 3.5 (lane pf35): `vm_nullable` is now `pcrec_nullable` (src/opt/mrl.c);
+# the anchor spelling follows, the plant and its intent unchanged.
 SAB_ID="S100-lift-accepts-nullable"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness atomicdiff"
@@ -28,5 +30,5 @@ SAB_HARNESS_TARGET="tests/atomic_groups/atomic_quant.rxt"
 SAB_DESC="vm_lifts drops its nullability condition, so a NULLABLE A_REP under an A_ATOMIC is routed onto vm_poss_star -- a rung that emits NO empty-iteration guard, because §2.2 refuses nullable bodies and nothing else licenses the omission. The emitted matcher then pushes and cuts at zero consumption FOREVER. The expected result is a TIMEOUT, which D45 makes a loud failure naming the case rather than a hang"
 SAB_DOC_FIGURE="PREDICTED: the nullable-body corpus TIMES OUT (D45's execution budget reports it as a failure naming the case) -- the only row in this table whose failing direction is not an answer. Canonical figure owed from run_sabotage_matrix.sh S100."
 SAB_COUNT=1
-SAB_BEFORE='    if (vm_nullable(r->l)) return false;   /* carve-out ONE  (§3.2.2)  */'
+SAB_BEFORE='    if (pcrec_nullable(r->l)) return false;   /* carve-out ONE  (§3.2.2)  */'
 SAB_AFTER='    /* SABOTAGE S100: carve-out one removed */'

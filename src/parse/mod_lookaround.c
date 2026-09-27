@@ -8,7 +8,7 @@
  * WHAT A LOOKAROUND IS, in one sentence (design §0.2): a SUB-MATCH whose
  * result is a VERDICT and whose POSITION is discarded. Everything this file
  * does follows from that — the node consumes nothing (the width analyses
- * all answer 0, and `vm_nullable` answers true), it is not a
+ * all answer 0, and `pcrec_nullable` answers true), it is not a
  * capturing construct (`cx->ncap` is untouched here; groups INSIDE the body
  * capture exactly as they would anywhere else, measured: `(?=(a))a` on "a" is
  * (0,1) with g1=(0,1)), and the lowering is `vm_atomic`'s shape plus a saved

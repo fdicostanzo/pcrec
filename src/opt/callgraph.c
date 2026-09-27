@@ -58,15 +58,17 @@
  * WHAT THIS FILE DOES *NOT* COMPUTE, AND WHY EACH LIVES ELSEWHERE
  * ================================================================
  *
- * `vm_nullable`'s fixpoint and `W` are both in `src/gen/emit_vm.c`, which is a
+ * The `nonnullable` fixpoint and `W` are both in `src/gen/emit_vm.c`, which is a
  * deviation from design §4.4b's "one mechanism, and this is the only list of
- * its consumers" and is the wave's largest amendment to the design. Both are
- * the same reason: the RECURRENCE lives there and cannot be moved.
+ * its consumers" and is the wave's largest amendment to the design. When it
+ * was made, both had the same reason: the RECURRENCE lived there.
  *
- *   - `vm_nullable` is `static` to the emitter and is the emitter's own
- *     definition of the property the empty-iteration guard is emitted on. A
- *     copy here would be a second answer to "can this match empty" for the two
- *     to disagree about, which is the failure mode `vm_marked`, `vm_cuts` and
+ *   - the nullability recurrence was `vm_nullable`, `static` to the emitter.
+ *     Since [PATFACTS] 3.5 it is `pcrec_nullable` (src/opt/mrl.c), the one
+ *     node-nullability function, so that reason is gone; whether the fixpoint
+ *     joins `minw`'s here is K69's second half (known_issues.md), open. A
+ *     copy of the recurrence here would still be a second answer to "can this
+ *     match empty", which is the failure mode `vm_marked`, `vm_cuts` and
  *     `vm_cursor_fits` are each ONE predicate to avoid.
  *   - `W` is a set of SLOT INDICES, and slot indices are assigned by
  *     `vm_count_slots`' own walk over the emitter's own rung decisions. They

@@ -10,6 +10,10 @@
  * characters — utf8_design.md §5.6.2 — after a grep found its ONLY consumer
  * was the rule that needed characters all along. Two units under `byte` are
  * one number, which is why nothing observable moved at the re-aim.)
+ * A FOURTH joined at [PATFACTS] 3.5: `pcrec_nullable`, the one node-
+ * nullability function (born `vm_nullable` in src/gen/emit_vm.c), beside
+ * `pcrec_minw` because `minw == 0` is the same question asked through widths
+ * (patfacts design §4.3; K69 is where the two disagree).
  *
  * WHY TWO UNITS ARE TWO FUNCTIONS AND NOT A PARAMETER (§5.6.5): an exhaustive
  * switch per analysis is the alarm that fires when a node kind is added, and
@@ -150,8 +154,8 @@ long long pcrec_minw(const Ast *a)
          * positive value here would be an OVER-estimate, this file's unsound
          * direction, and would prune positions where the match really is.
          *
-         * The same fact is why `vm_nullable` must answer TRUE for this kind
-         * (src/gen/emit_vm.c): the two are one property read by two passes. */
+         * The same fact is why `pcrec_nullable` must answer TRUE for this kind
+         * (below): the two are one property read by two passes. */
         case A_BREF:
         case A_VAR:
         /* [M6.2 wave D] `\G` consumes nothing either — it compares the
@@ -251,6 +255,174 @@ long long pcrec_minw(const Ast *a)
          * AKind was added and this switch was not extended, which -Wswitch
          * catches at build time; the trap is for a build that suppressed it. */
         return 0;
+    }
+}
+
+/* True iff the empty string is in `a`'s language: THE node-nullability
+ * function ([PATFACTS] step 3.5, design §4.3 — R4's one definition), a pure
+ * function with no memo, asked of any subtree.
+ *
+ * Born `vm_nullable`, `static` in src/gen/emit_vm.c, where it decides whether
+ * a quantifier gets its empty-iteration guard (§3.3: a quantifier whose body
+ * can match the empty string must not loop forever) and is read by
+ * `vm_lifts`, `vm_cost`, `vm_count_slots` and the call-target fixpoint.
+ * Moved here verbatim beside `pcrec_minw`, the other node-grain width
+ * question, so there is one exported answer to "can this match empty".
+ *
+ * READS ONE THING THAT IS NOT THE SUBTREE: `u.call.nonnullable`, published
+ * by the emitter's `vm_resolve_nonnull`. Until it runs, the arena zero reads
+ * NULLABLE — the safe direction for every guard. `pcrec_minw(a) == 0` is
+ * the same question through the width recurrence and agrees on every kind
+ * but `A_CALL` (known_issues.md K69). */
+bool pcrec_nullable(const Ast *a)
+{
+    /* A_CAT and A_ALT spines are walked ITERATIVELY, not recursed on. That is
+     * R1's R-2 hardening and D10/DD-10's rule, and this function violated it
+     * until a 20,000-character literal SEGFAULTED pcrec at the default 8 MB
+     * stack (`(aaa...)`, no special flag — measured, and the threshold tracks
+     * `ulimit -s`, which is what identifies it as stack exhaustion rather than
+     * anything subtler). src/ir/nfa.c's compile_ast flattens for exactly this
+     * reason and says so; three functions in src/gen/emit_vm.c did not, and
+     * this was one of them. The recursion that REMAINS is on a spine node's RIGHT
+     * child, whose own depth is bounded by the parser's group-nesting cap. */
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: return false;
+        case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
+        /* [M6.2 wave B] zero-width, hence nullable. [M6.2 wave D] `\G` too.
+         * NULLABLE is about the BYTES a node can consume, not about whether
+         * it can succeed — an assertion that fails still consumes nothing. */
+        /* [M6.2 wave E] `\K` is nullable in the strongest sense in this
+         * switch: it is not merely a test that consumes nothing, it is an
+         * epsilon (src/ir/nfa.c). */
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: return true;
+        /* [M6.5.2] TRUE, and getting it wrong is a HANG rather than a wrong
+         * answer. A referenced group can publish an EMPTY capture, and the
+         * reference then consumes nothing: `^(x?)y\1z$` on "yz" is (0,2) with
+         * group 1 = (0,0), and `^(a?)\1{3}$` matches "" at (0,0). Answering
+         * false here would let a nullable quantifier body lose its
+         * empty-iteration guard, and `(\1)*` would loop forever on a
+         * zero-width iteration. Sabotage row S107, whose detector is the
+         * harness's derived timeout rather than a wrong span. */
+        case A_BREF: return true;
+        case A_VAR:  return true;   /* [VAR] an EMPTY value matches nothing, so a variable is nullable exactly as a backreference to an empty group is */
+        /* [M6.6.2] TRUE, AND GETTING IT WRONG IS A BUDGET BURN RATHER THAN A
+         * WRONG SPAN — which makes it the arm most likely to be written by
+         * reflex and least likely to be caught by a corpus reading answers.
+         *
+         * A lookaround consumes nothing on EVERY path, whatever its body is:
+         * that is the construct's definition (keep the verdict, throw the
+         * position away), and it is why the byte and character width analyses both
+         * answer 0. `false` here would deny the empty-iteration guard to a
+         * quantifier above one, and design §2.6 measured that quantified
+         * lookaround SHIPS — all fourteen forms compile in both oracles, and
+         * `^(?=a)*a$`, `^(?:(?=a))*a$`, `^(?:(?=a)|b)*a$`, `^(?:(?!x))*a$`
+         * and `^(?:(?=(a)))*a$` all answer in 0.0000s and agree with python.
+         * That is only true because the guard is there.
+         *
+         * WHAT THE FAILURE LOOKS LIKE, stated because "it hangs" is the
+         * intuitive and wrong answer (design §9.3, R33 C2-14): every VM
+         * artifact carries a step budget by default and `--fno-step-budget` is
+         * the only opt-out, so the lost guard BURNS the budget and returns
+         * PCREC_ERR_STEPS. A harness that only compares spans scores that as
+         * an error rather than as a mismatch, which is what sabotage row
+         * S-LA9's detector has to be written to notice.
+         *
+         * NOT TRANSPARENT, unlike A_ATOMIC below: this answer does not depend
+         * on the body at all. A lookaround whose body consumes bytes still
+         * consumes none itself. */
+        case A_LOOK: return true;
+        /* [DD-14] TRUE, AND IT IS A DELIBERATELY INCOMPLETE PLACEHOLDER — the
+         * SOUND bottom of this predicate, not its answer. Read the whole
+         * comment before touching it.
+         *
+         * THE TRUE ANSWER IS "nullable iff the callee is" (design §2.6/§4.4a
+         * site 1), and it is a FIXPOINT over the SCC-condensed call graph,
+         * memoised, with cycle bottom `false` iterated upward. THIS
+         * SIGNATURE CANNOT EXPRESS IT: `pcrec_nullable` is a bare `const Ast *`
+         * walker with no context and no visited set, so following
+         * `u.call.body` would recurse for ever on `(a(?1))` and HANG THE
+         * COMPILER (design §4.4). The fixpoint is `src/opt/callgraph.c`'s
+         * (wave B+C) and this arm will read its memo.
+         *
+         * WHY `true` AND NOT THE FIXPOINT'S OWN BOTTOM. The cycle bottom
+         * `false` is correct INSIDE the iteration, where a later round can
+         * raise it; standing alone as a placeholder it is the UNSOUND
+         * direction — `false` denies the empty-iteration guard to a
+         * quantifier above a NULLABLE callee, and design §2.6 measured that
+         * `(?(DEFINE)(?<g>a?))(?&g)*` on "aaa" is (0,3) and
+         * `(?(DEFINE)(?<g>))(?&g)*` on "" is (0,0), i.e. both TERMINATE on
+         * 10.46 only because something bounds the empty iteration. `true`
+         * keeps the guard, which costs a slot and a test on a call that never
+         * needed one and can never lose a match. `A_BREF`'s arm above takes
+         * the same direction for the same reason.
+         *
+         * IT IS UNREACHABLE IN THIS WAVE — nothing produces an `A_CALL` — and
+         * `vm_emit`'s own arm is a hard `pcrec_ctx_fail`, which is what makes
+         * landing it incomplete safe rather than merely quiet. Wave B+C
+         * replaces it in the same edit that builds the graph.
+         *
+         * DESIGN §2.6's FURTHER RULING RIDES ON THIS ARM and is NOT
+         * discharged by it: the POSSESSIVE rung (`vm_poss_star`) emits no
+         * empty-iteration guard and fires no work charge at all, so a
+         * nullable callee routed there loops at zero consumption for ever.
+         * What keeps that unreachable is the RUNG DECLINES, in
+         * `src/opt/possessify.c`'s `pss_walk` and `src/opt/revdet.c`'s
+         * `rd_shape` — not this answer. THOSE ARE S-SR9a's ROW; THIS ARM IS
+         * S-SR9's, which returns `false` here and predicts the step budget
+         * ending the search on `^(?(DEFINE)(?<g>a?))(?&g)*$` rather than a
+         * wrong span — so its detector must notice an ERROR, not a
+         * mismatch. */
+        /* [DD-14 wave B+C] THE FIXPOINT'S ANSWER, READ OFF THE NODE.
+         *
+         * §2.6: a call is nullable iff its CALLEE is, and that is a fixpoint
+         * over the call graph with cycle bottom `false` iterated UP — measured
+         * on 10.46, where a NULLABLE callee (`(?&g)*` with `g` = `a?`) and an
+         * EMPTY one both TERMINATE under `*`, i.e. something bounds the empty
+         * iteration and this answer is what emits it.
+         *
+         * THE FIELD'S POLARITY IS INVERTED AND THAT IS THE WHOLE POINT.
+         * `u.call.nonnullable` reads FALSE from the arena, so an un-run
+         * fixpoint answers NULLABLE — the guard is emitted, which costs a slot
+         * and a test and can never lose a match. The other polarity's zero
+         * would DROP the guard on a nullable callee and hang the emitted
+         * matcher, which is the direction wave A2's `return true` placeholder
+         * was chosen to avoid and the reason the field is not simply
+         * `nullable`. `pcrec_emit_vm` runs the fixpoint before the first
+         * consumer; the polarity is what makes that ordering a performance
+         * property rather than a correctness one.
+         *
+         * DESIGN §2.6's FURTHER RULING RIDES ON THIS ARM and is NOT discharged
+         * by it: `vm_poss_star` emits no empty-iteration guard and fires no
+         * work charge, so a nullable callee routed onto the possessive rung
+         * loops at zero consumption for ever. What keeps that unreachable is
+         * the RUNG DECLINE in `src/opt/possessify.c` (D71.6) — S-SR9a's row.
+         * This arm is S-SR9's. */
+        case A_CALL: return !a->u.call.nonnullable;
+        case A_CAP:   a = a->l; continue;
+        /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so
+         * `(?>X)` can match empty exactly when `X` can. `(?>)` is legal and
+         * matches empty (measured: (0,0) on "abc"), and `(?>a*)*b` must get the
+         * empty-iteration guard for the same reason `(?:a*)*b` does — the star
+         * above it is what iterates, and this answer is what tells it so. */
+        case A_ATOMIC: a = a->l; continue;
+        case A_REP:   if (a->u.rep.rmin == 0) return true; a = a->l; continue;
+        case A_CAT:
+            /* nullable iff EVERY element is */
+            while (a->k == A_CAT) {
+                if (!pcrec_nullable(a->r)) return false;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            /* nullable iff ANY branch is */
+            while (a->k == A_ALT) {
+                if (pcrec_nullable(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        return true;
     }
 }
 
