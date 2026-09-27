@@ -907,6 +907,31 @@ It **derives from the emitter's own walk** rather than describing it
 the emitting call itself appended, so the listing cannot drift from the code
 it describes.
 
+### `--emit-facts[=ENC,...]` — the pattern-facts listing ([PATFACTS])
+
+A QUERY, like `--emit-ir`: it takes a PATTERN (`--pattern`), takes no `-o`,
+and emits no C. It runs the ordinary compile to completion and prints the
+PATTERN-FACTS RECORD — every fact pcrec concluded about the pattern (the
+necessary byte, run and set, the start anchor, the end window), its status,
+whether a compiler pass asked for it, and WHY it has its value — followed by
+the artifact's own decision stamps. Every compile option applies unchanged,
+so the listing describes the compile the caller would get.
+
+The bare flag lists the compile under the `-e` in effect; `=ENC,...`
+(`--emit-facts=byte,utf8`) runs one ordinary compile per listed encoding and
+concatenates their rows, each row naming its encoding; an unknown encoding
+name is refused as `-e` refuses it. It works on every engine (it is not
+VM-only), composes with no other query mode, and refuses `--flavour`. A
+pattern pcrec refuses is refused with the compile's own diagnostic.
+
+The output is `docs/spec/table_contract.md` TSV in two named sections,
+`facts` and `decisions`; `docs/spec/facts_listing.md` is that format's
+contract — its columns, the CLOSED `status`/`used` vocabularies, the `why`
+token grammar (`deny:<flag>` / `decline:<reason>` / `rate:<source>`), and
+what is NOT promised (fact names, reason names, prose). A DEBUG listing with
+`--emit-ir`'s status: no `abi` number, and it never refuses a compile that
+succeeded.
+
 ### `--explain SYNTAX` / `--flavour NAME`
 
 `--explain` is the one surface that is a CROSS-SOURCE query rather than a
@@ -1064,6 +1089,11 @@ Stated plainly rather than left for a stranger to discover by trial:
 
 ## Revision history
 
+- 2026-09-26 ([PATFACTS] step 3.0, D126): §2 gains a `--emit-facts` entry,
+  a new pattern-bearing query pointing at the new
+  `docs/spec/facts_listing.md` for its format. No existing flag's shape
+  changed; `--emit-ir` and `--probe-ask` refuse `--emit-facts` beside them
+  (a combination that did not exist before).
 - 2026-09-21 ([REL-1.10], D118): THE gcc SHAPE. §1's usage line and its
   operand rule are rewritten: a positional operand is an INPUT FILE now
   (§1.1, several may be given, pooled), never a pattern; `--pattern 'X'`

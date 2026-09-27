@@ -94,7 +94,7 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
     if (d) {
         pf->have |= pf_bit(f);
         pf_store_empty(pf, f);
-        pf->why[f] = (PfWhy){ PF_DENIED, PF_WHY_DENY, d & (~d + 1) };
+        pf->why[f] = (PfWhy){ PF_ST_DENIED, PF_WHY_DENY, d & (~d + 1) };
         return false;
     }
     return true;
@@ -104,7 +104,20 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
 static void pf_done(PatFacts *pf, PfFactId f)
 {
     pf->have |= pf_bit(f);
-    pf->why[f] = (PfWhy){ PF_DERIVED, PF_WHY_NONE, 0 };
+    pf->why[f] = (PfWhy){ PF_ST_DERIVED, PF_WHY_NONE, 0 };
+}
+
+/* Marks `f` derived with the reason its derivation REPORTED — a structural
+ * decline (status `declined`) or the rate rule a pick answered by (status
+ * `derived`). The reason is stored when the value is, never reconstructed
+ * from the value afterwards (design §11.3 item 3). */
+static void pf_done_why(PatFacts *pf, PfFactId f, PfWhyCode code)
+{
+    bool decl = code == PF_WHY_ENC_MULTIBYTE || code == PF_WHY_NOT_END_ANCHORED ||
+                code == PF_WHY_GSTART || code == PF_WHY_UNBOUNDED;
+    pf->have |= pf_bit(f);
+    pf->why[f] = (PfWhy){ decl ? PF_ST_DECLINED : PF_ST_DERIVED,
+                          (unsigned char)code, 0 };
 }
 
 static void pf_ask(Ctx *cx, PfFactId f, bool pass);
@@ -142,6 +155,7 @@ static void pf_derive_req_walk(Ctx *cx)
 static void pf_derive(Ctx *cx, PfFactId f)
 {
     PatFacts *pf = &cx->job->pf;
+    PfWhyCode why = PF_WHY_NONE;
     switch (f) {
     case PF_START_ANCHOR:
         pf->start_anchor = pcrec_start_anchor(pf->root);
@@ -151,7 +165,7 @@ static void pf_derive(Ctx *cx, PfFactId f)
          * derivation's one encoding input is declared, never looked up
          * (design §4.2.2 carve-out (d)). */
         pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
-                                          pf->root);
+                                          pf->root, &why);
         break;
     case PF_REQ_SET:
     case PF_REQ_WHOLE_RUN:
@@ -159,17 +173,17 @@ static void pf_derive(Ctx *cx, PfFactId f)
         return;
     case PF_REQ_RUN:
         pf_ask(cx, PF_REQ_WHOLE_RUN, false);
-        pcrec_req_window(cx, &pf->req_run);
+        pcrec_req_window(cx, &pf->req_run, &why);
         break;
     case PF_REQ_BYTE:
         pf_ask(cx, PF_REQ_SET, false);
         pf_ask(cx, PF_REQ_RUN, false);
-        pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run);
+        pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run, &why);
         break;
     case PF_NFACTS:
         return;
     }
-    pf_done(pf, f);
+    pf_done_why(pf, f, why);
 }
 
 /* The four steps: `pf_enter`'s three, then the derivation. */
@@ -218,6 +232,34 @@ int pcrec_fact_req_byte(Ctx *cx)
 {
     pf_ask(cx, PF_REQ_BYTE, true);
     return cx->job->pf.req_byte;
+}
+
+void pcrec_facts_force_all(Ctx *cx)
+{
+    PatFacts *pf = &cx->job->pf;
+    pf->forcing = true;
+    for (; pf->force_next < PF_NFACTS; pf->force_next++) {
+        PfFactId f = (PfFactId)pf->force_next;
+        /* Never past a seal this route did not write: an unsealed epoch is
+         * a DECLINE of the route, not a failure, and forcing it would build a
+         * machine the compile never built (design §3, §11.4). Every fact is
+         * E2 today and every successful compile seals E2, so no row takes
+         * this arm yet; E1/E3 facts arrive with steps 3.2/3.4. */
+        if ((int)pf->epoch < (int)pf_epoch[f]) continue;
+        pf_ask(cx, f, false);
+    }
+    pf->forcing = false;
+}
+
+void pcrec_facts_force_failed(Ctx *cx)
+{
+    PatFacts *pf = &cx->job->pf;
+    if (pf->force_next < PF_NFACTS) {
+        PfFactId f = (PfFactId)pf->force_next;
+        pf->have |= pf_bit(f);
+        pf->why[f] = (PfWhy){ PF_ST_ABSENT, PF_WHY_FORCE_FAILED, 0 };
+        pf->force_next++;
+    }
 }
 
 /* `n` bytes as lowercase hex, then `@idx` when `idx >= 0`: the `REQ_RUN`

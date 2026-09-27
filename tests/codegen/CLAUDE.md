@@ -800,7 +800,20 @@ decides whether to perform it — and then run the row through
   vacuously. Sabotage S295 (a consumer includes the private header, caught
   by (1) alone) and S296 (a hand extern plus call, caught by (2) alone), mech
   arm `facts`. What it cannot see — a hand RE-SPELLING of a walk — is named
-  in `src/facts/CLAUDE.md`.
+  in `src/facts/CLAUDE.md`. Plus the `--emit-facts` listing's checks
+  (design §11.6 2-4), each against an oracle the listing does not share:
+  (3) COMPLETENESS, one `facts` row per `facts.def` row per encoding, the
+  count taken from the table's plain text; (4) WHY-TRUTHFULNESS, every deny
+  flag `axes.def` spells lists `deny:<flag>` on exactly the facts
+  `docs/spec/tuning.md`'s "Facts emptied" line for that flag names (the
+  hand-written spec, never `facts.def`'s own deny column); (5) DECISIONS =
+  STAMPS, the `decisions` section equal to the value `#define`s this script
+  parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
+  machinery macros excluded by NAME here, by `(` in the printer). And
+  (6) `[facts-cli]`, the query's refusals. Sabotage S297 (a row skipped),
+  S298 (a deny bit flipped in facts.def), S299 (a stamp dropped from
+  decisions). Every section resolves columns by header name within its
+  named section.
 - **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
   WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
   section for `run_vm_frameless.sh`'s reason. Three independent sections,

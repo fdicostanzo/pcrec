@@ -32,6 +32,14 @@ typedef struct ParseMods ParseMods;
  * is for and `src/core/compile_defs.c` for the only thing that sets it. */
 struct Ast;
 typedef struct Ast *(*PcrecComposeFn)(Ctx *cx, struct Ast *root);
+/* [PATFACTS] `--emit-facts`' HOOK (design §11): called by the driver once, on
+ * the FINAL attempt's success path, after the artifact and its stamps are
+ * complete and the record's unasked facts have been forced — with that
+ * attempt's `Ctx` and its finished `.c` text. The listing lives in
+ * `src/dump/`, above the driver, so the driver names no dump symbol: the
+ * composer hook's shape one line up. NULL on every other entry. */
+typedef void (*PcrecFactsHook)(Ctx *cx, const char *artifact, size_t len,
+                               void *ud);
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
@@ -6341,7 +6349,8 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err);
  * enforces that, because nothing needs to. */
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
-                         const RxtDefs *defs, PcrecComposeFn compose);
+                         const RxtDefs *defs, PcrecComposeFn compose,
+                         PcrecFactsHook facts_hook, void *facts_ud);
 
 /* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
  * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
@@ -6350,6 +6359,15 @@ int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
  * and the test suite are its only consumers. */
 char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
                     pcrec_error *err);
+
+/* src/dump/facts_dump.c — [PATFACTS] `--emit-facts`: the pattern-facts
+ * record as a `docs/spec/table_contract.md` listing
+ * (`docs/spec/facts_listing.md`). One ordinary compile per encoding in
+ * `encs[0..nenc)` (the caller's own `-e` when `nenc` is 0), rows
+ * concatenated under each section. malloc'd, caller frees; NULL with `err`
+ * filled when a compile refuses. Internal, like `pcrec_emit_ir`. */
+char *pcrec_emit_facts(const char *pattern, const pcrec_options *opt,
+                       const int *encs, int nenc, pcrec_error *err);
 
 
 /* ---- dump -- defined under src/dump/ --------------------------------*/

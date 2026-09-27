@@ -167,7 +167,7 @@ static int rn_window_start(const RbRun *r, int idx, bool bytekey)
  * window (`len == 0`). See the header for why the member is the argmin of a
  * frequency prior under `byte` and the rightmost elsewhere, and why a long
  * run is truncated and never split. */
-void pcrec_req_window(Ctx *cx, ReqRun *run)
+void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
 {
     bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
     RbRun r;
@@ -176,7 +176,9 @@ void pcrec_req_window(Ctx *cx, ReqRun *run)
     run->len = 0;
     run->idx = 0;
     run->at = 0;
+    *why = PF_WHY_NONE;
     if (run->whole_len < 2) return;
+    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
 
     memset(&r, 0, sizeof r);
     memcpy(r.bytes, run->whole, (size_t)run->whole_len);
@@ -199,11 +201,14 @@ void pcrec_req_window(Ctx *cx, ReqRun *run)
  * set's pick, the argmin of the prior under `byte` with the walk's threaded
  * rightmost member as the tiebreak and the whole answer elsewhere. -1 exactly
  * when the set is empty. */
-int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run)
+int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
+                   PfWhyCode *why)
 {
     bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
     RbSet s;
+    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
     if (run->len >= 2) return run->bytes[run->idx];
+    if (set->rightmost < 0) *why = PF_WHY_NONE;
     memcpy(s.bits, set->bits, sizeof s.bits);
     s.pick = set->rightmost;
     return rb_pick(&s, bytekey);

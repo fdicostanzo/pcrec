@@ -35,6 +35,18 @@ contract. Nothing about the flag's SHAPE changed — still a query, still no
 `-o`, still VM-only with the same refusal — and no emitted `.c` byte moved.
 Consumers read it through `tests/lib/table.sh`, never a fixed-position grep.
 
+**[PATFACTS] step 3.0 (D126, 2026-09-26):** `--emit-facts[=ENC,...]`, a
+fourteenth MODE shaped like `--emit-ir` — a pattern-bearing QUERY, no `-o`,
+no C — printing the pattern-facts record (`src/dump/facts_dump.c`,
+`docs/spec/facts_listing.md`). Its value is a comma-separated encoding list,
+each name validated by `set_encoding` (so the diagnostic is `-e`'s), one
+ordinary compile per name; the bare flag lists the `-e` in effect. It adds
+refusals only: `CLI_MODES_VS_EMIT_FACTS` refuses every other query (and
+`--flavour`), and its bit rides `CLI_MODES_VS_PATTERN_QUERY` so the
+`--probe-ask`/`--emit-ir` blocks that run first refuse it rather than
+silently ignoring it. Its plumbing assertions are
+`tests/codegen/run_facts_checks.sh`'s `[facts-cli]`.
+
 **[REVW.4] wave 4 (D111, 2026-09-19):** the `-f`/`-fno-` grammar is ONE LOOP.
 `cli_axis_apply` walks `src/core/axes.def`, which carries each axis's deny
 bit, its spellings and its default polarity; the twenty-two `else if

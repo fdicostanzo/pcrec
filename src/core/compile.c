@@ -635,7 +635,8 @@ static void size_drop_note(const char *what, const char *cost)
  * that really happened" guarantee. */
 static int compile_driver(const char *pattern, const pcrec_options *opt,
                           pcrec_output *out, pcrec_error *err, char **ir_out,
-                          const RxtDefs *defs, PcrecComposeFn compose)
+                          const RxtDefs *defs, PcrecComposeFn compose,
+                          PcrecFactsHook facts_hook, void *facts_ud)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -991,6 +992,22 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
 
         if (setjmp(cx.jb)) {
+            /* [PATFACTS] THE FORCE LOOP'S ARRIVAL, tested FIRST (design
+             * §11.4, ruled Q10 with r1 A11's guard). `--emit-facts` asks the
+             * facts no pass asked only AFTER this attempt's artifact and
+             * every stamp are complete, so a forced ask that fails — an
+             * allocation, anything that reaches `pcrec_ctx_fail` — must not
+             * become a failed attempt: the listing never refuses a compile
+             * that succeeded. That one fact becomes `absent`
+             * (`decline:force-failed`) and the loop resumes at the next
+             * row. No second recovery point: this is the one `setjmp`, and
+             * the flag it reads lives in the heap `Job`, which the `longjmp`
+             * does not touch — K60's `failed_nomem` shape. */
+            if (cx.job && cx.job->pf.forcing) {
+                pcrec_facts_force_failed(&cx);
+                if (err) err->msg[0] = 0;
+                goto facts_force;
+            }
             /* [K60] A GENUINE ALLOCATION FAILURE PROPAGATES IMMEDIATELY,
              * ahead of every rung's own eligibility test below AND ahead of
              * the `[ART-SIZE]` ladder's blanket "this K is out" catch (the
@@ -1999,6 +2016,18 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                             "slower per-byte scan dispatch, measured ~1.27x "
                             "on scan-bound subjects "
                             "(docs/dev/opt3_dfa_scan_measurement.md)");
+        /* [PATFACTS] `--emit-facts` (design §11): the facts no pass asked
+         * are forced HERE, after the artifact and every stamp exist, so the
+         * extra asks cannot move a byte of it; then the listing's hook reads
+         * the record and the finished artifact. Only this, the FINAL
+         * attempt's record, is ever listed. The recovery point's first arm
+         * resumes at this label when a forced ask fails. */
+facts_force:
+        if (facts_hook) {
+            pcrec_facts_force_all(&cx);
+            facts_hook(&cx, cx.job->csb.p ? cx.job->csb.p : "",
+                       cx.job->csb.len, facts_ud);
+        }
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? pcrec_sb_take(&cx.job->irsb) : NULL;
@@ -2032,7 +2061,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 int pcrec_compile(const char *pattern, const pcrec_options *opt,
                   pcrec_output *out, pcrec_error *err)
 {
-    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL);
+    return compile_driver(pattern, opt, out, err, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* [REVW.3] THE DRIVER'S ONE EXPORTED FACE, and the only reason it exists is
@@ -2049,9 +2078,11 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * compile, and this function's whole body is the forward. */
 int pcrec_compile_driver(const char *pattern, const pcrec_options *opt,
                          pcrec_output *out, pcrec_error *err, char **ir_out,
-                         const RxtDefs *defs, PcrecComposeFn compose)
+                         const RxtDefs *defs, PcrecComposeFn compose,
+                         PcrecFactsHook facts_hook, void *facts_ud)
 {
-    return compile_driver(pattern, opt, out, err, ir_out, defs, compose);
+    return compile_driver(pattern, opt, out, err, ir_out, defs, compose,
+                          facts_hook, facts_ud);
 }
 
 /* DD-8's listing entry. It runs a REAL compile and throws the C away, because
@@ -2072,7 +2103,7 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
     defo.header_name = NULL;
 
     if (compile_driver(pattern, &defo, &out, err, &text, NULL,
-                             NULL) != 0) {
+                             NULL, NULL, NULL) != 0) {
         free(text);
         return NULL;
     }

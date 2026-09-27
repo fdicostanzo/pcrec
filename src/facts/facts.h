@@ -113,6 +113,11 @@ const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
  * per branch) arrive with their facts in later migration steps. */
 typedef enum { PF_E0 = 0, PF_E1_STRUCT, PF_E2_LOWERED, PF_E3_MACHINE } PfEpoch;
 
+/* `facts.def`'s `kind` column (design §4.1): a CORE fact is a walk of the
+ * sealed IR reading no prior and no other fact's choice; a DERIVED fact is a
+ * function of core facts (and, from [FINDINGS] B1, the byte-rate). */
+typedef enum { PF_CORE = 0, PF_DERIVED } PfKind;
+
 /* One id per `facts.def` row, in row order. */
 typedef enum {
 #define PF_FACT(ID, name, epoch, kind, deny, owner, depends) PF_##ID,
@@ -121,14 +126,14 @@ typedef enum {
 } PfFactId;
 
 /* A fact's STATUS — `--emit-facts`' closed `status` vocabulary
- * (docs/spec/facts_listing.md). `PF_UNASKED` never reaches the listing: the
+ * (docs/spec/facts_listing.md). `PF_ST_UNASKED` never reaches the listing: the
  * force loop asks every fact whose epoch was sealed. */
 typedef enum {
-    PF_UNASKED = 0,
-    PF_DERIVED,    /* the derivation ran; its answer may be an empty value */
-    PF_DENIED,     /* a fact deny stored the empty value; `why.deny` names it */
-    PF_DECLINED,   /* the derivation ran and declined with a stated reason */
-    PF_ABSENT      /* never derivable on this route, or forcing it failed */
+    PF_ST_UNASKED = 0,
+    PF_ST_DERIVED, /* the derivation ran; its answer may be an empty value */
+    PF_ST_DENIED,     /* a fact deny stored the empty value; `why.deny` names it */
+    PF_ST_DECLINED,   /* the derivation ran and declined with a stated reason */
+    PF_ST_ABSENT      /* never derivable on this route, or forcing it failed */
 } PfStatus;
 
 /* WHY a fact has its value, STORED when the value is stored and never
@@ -136,6 +141,18 @@ typedef enum {
 typedef enum {
     PF_WHY_NONE = 0,         /* a plain derivation */
     PF_WHY_DENY,             /* `deny` holds the one flag bit that denied it */
+    /* `end_window`'s four structural declines (src/facts/endwin.c's header):
+     * an encoding with non-boundary positions; no end anchor on every path;
+     * a `\G` anywhere; an unbounded maximum width. */
+    PF_WHY_ENC_MULTIBYTE,
+    PF_WHY_NOT_END_ANCHORED,
+    PF_WHY_GSTART,
+    PF_WHY_UNBOUNDED,
+    /* Which RATE RULE a derived pick answered by (design §6.3): the shipped
+     * byte-frequency prior, or the prior's NONE answer (the rightmost member)
+     * under an encoding it is not keyed to. */
+    PF_WHY_RATE_BUILTIN,
+    PF_WHY_RATE_NONE,
     PF_WHY_FORCE_FAILED      /* the listing's forced ask failed (§11.4) */
 } PfWhyCode;
 
@@ -170,6 +187,15 @@ typedef struct {
      * -1; -1 under `-fno-req-byte`. */
     int       req_byte;
     PfWhy     why[PF_NFACTS];
+    /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
+     * asks the facts no pass asked, after the artifact is complete, and
+     * `force_next` is the row it is on. `compile_driver`'s recovery point
+     * tests `forcing` FIRST: a forced ask that fails marks that one fact
+     * `absent` and the loop resumes at the next row, so the listing never
+     * refuses a compile that succeeded. Both live here, in the heap `Job`,
+     * because they cross that `longjmp`. */
+    bool      forcing;
+    int       force_next;
 } PatFacts;
 
 /* ---- the seals -------------------------------------------------------- */
@@ -188,6 +214,18 @@ const ReqSet  *pcrec_fact_req_set(Ctx *cx);
 const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
+
+/* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
+ *
+ * `pcrec_facts_force_all` asks every fact no pass asked — the SAME accessor
+ * and derivation, never a recomputation beside it — marking them `used no`.
+ * `compile_driver` calls it only AFTER the artifact and every stamp exist,
+ * so a forced ask cannot move the artifact, and never past a seal the route
+ * did not write. `pcrec_facts_force_failed` is the recovery point's one arm
+ * for a forced ask that `longjmp`ed: that fact becomes `absent`
+ * (`decline:force-failed`) and the loop moves on. */
+void pcrec_facts_force_all(Ctx *cx);
+void pcrec_facts_force_failed(Ctx *cx);
 
 /* ---- the renderers (design §11.3 item 4, §11.5; ruled Q9) -------------
  *

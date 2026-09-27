@@ -2256,6 +2256,13 @@ prove — the same no-trace rule §2.1's denial follows. It is the VM's reading
 of the fact `<PREFIX>_DFA_SCAN`'s `"attempt"` shape carries on the other
 engine; `--list-axes`' `vm-anchor-bound` rows name all three values.
 
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `start_anchor`.
+A FACT deny: the start-anchor fact reads `unanchored` for every consumer of it
+at once — the VM's attempt-loop bound and `<PREFIX>_VM_START`, the DFA route's
+one-directional agreement assertion, and the pre-check admission's VM
+one-attempt arm (§2.29: on a VM route a denied anchor never admits
+`"one-attempt"`, so a pre-check that arm would have elided is emitted).
+
 ### 2.26 `-fno-end-window` — `PCREC_NO_END_WINDOW` (bit 29)
 
 **[OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119).** Denies the END-ANCHOR START
@@ -2305,6 +2312,10 @@ the bound as a decimal string, or `"none"`. A string with a `"none"` member
 rather than a number with a sentinel, because `0` is a LEGAL window — a `\z`
 pattern of maximum width 0 may begin only at the subject's end — so no
 numeric value is free to mean "declined". A denied build reads `"none"`.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `end_window`.
+A FACT deny: the end-window fact reads `none` for every consumer of it — both
+engines' start clamp and `<PREFIX>_END_WINDOW`.
 
 ### 2.27 `-fno-req-byte` — `PCREC_NO_REQ_BYTE` (bit 30)
 
@@ -2389,6 +2400,14 @@ own scan member rather than the whole set's pick, because there is ONE emitted
 differ: an artifact may carry a derived byte here and emit no pre-check at
 all. `<PREFIX>_REQ_WHY` is the stamp that says which, and a consumer asking
 "does this artifact pre-check a byte" must read that one.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_set`, `req_whole_run`, `req_run`, `req_byte`.
+A FACT deny over the whole necessary-byte family: every consumer of those facts
+sees a pattern with nothing necessary — the one-byte and run pre-checks and
+their stamps, the no-DFA-scan route's whole-set and whole-run compares, the
+admission (`<PREFIX>_REQ_WHY "none"`), G1's domination test, and the run PIN
+§2.30's run-pinned prefilter rows read (so `-fno-req-byte` removes that pin
+too, which is this rule working rather than a leak).
 
 ### 2.28 `-fno-req-run` — `PCREC_NO_REQ_RUN` (bit 31)
 
@@ -2479,6 +2498,12 @@ is the one fact about the emitted check a reader cannot derive from the bytes,
 and because `<PREFIX>_REQ_BYTE` is exactly `bytes[idx]`, which makes the two
 stamps checkable against each other. Like its sibling it names the ANALYSIS
 and not the emission — see §2.29.
+
+**Facts emptied** (`--emit-facts`, `docs/spec/facts_listing.md`): `req_whole_run`, `req_run`.
+A FACT deny over the run: every consumer of it sees no run — the run pre-check
+and `<PREFIX>_REQ_RUN`, the no-DFA-scan route's whole-run compare, G1's run
+conjuncts, and the run PIN §2.30's run-pinned prefilter rows read. The
+necessary SET and the one-byte pick are untouched.
 
 ### 2.29 The pre-checks' ADMISSION — `<PREFIX>_REQ_WHY`, and no axis bit
 

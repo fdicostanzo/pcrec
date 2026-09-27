@@ -2992,3 +2992,18 @@ and S288 quoted `cx->job->start_anchor`/`cx->job->req_run.len`, which step
 `pcrec_fact_req_run(cx)->len`); only the read spelling moved, the plants'
 intent is unchanged.
 
+**The listing's three rows** (same arm, same lane): **S297** makes the
+`--emit-facts` printer skip the `req_set` row (completeness fails; the
+why-truthfulness check fails too, since the skipped fact's deny can no longer
+be read off the listing); **S298** drops `PCREC_NO_REQ_RUN` from `facts.def`'s
+`req_run` row (why-truthfulness fails against `tuning.md`'s hand-written
+"Facts emptied" line — no emitted byte moves, the window is empty either way);
+**S299** drops every `REQ_WHY` row from the `decisions` section
+(decisions=stamps fails on all three witnesses). **A lesson from S296, kept
+here because it will recur:** its plant is a hand `extern` of a derivation
+with that derivation's SIGNATURE spelled out, and the endwin relocation
+changed the signature (the descriptor became a parameter) — the committed
+plant then made a wild call and SEGFAULTED rather than planting the defect.
+A plant that quotes a signature is a reader of that signature; it was
+re-spelled to the current one in the listing commit and re-verified.
+

@@ -181,6 +181,15 @@ static void usage(FILE *f)
           "                 drift from the code it describes. TAB-separated,\n"
           "                 one #section per table with its own column header\n"
           "                 (docs/spec/ir_listing.md); a DEBUG listing, VM-only\n"
+          "  --emit-facts[=ENC,...]\n"
+          "                 print the PATTERN-FACTS record for the pattern and\n"
+          "                 exit: every fact (necessary byte/run/set, start\n"
+          "                 anchor, end window), its status, whether a pass\n"
+          "                 asked for it, and WHY, plus the artifact's own\n"
+          "                 decision stamps -- one compile per listed encoding\n"
+          "                 (default: the -e in effect). A query -- takes no -o,\n"
+          "                 emits no C. TAB-separated #sections\n"
+          "                 (docs/spec/facts_listing.md); a DEBUG listing\n"
           "  --trace        emit an INSTRUMENTED matcher that prints every\n"
           "                 resume-frame push/pop and capture write to stderr\n"
           "                 as it runs. A generation axis: never the default,\n"
@@ -392,6 +401,9 @@ typedef struct {
     int         list_schema;
     int         count_groups;
     int         emit_ir;
+    /* [PATFACTS] `--emit-facts[=ENC,...]`: "" for the bare flag (the
+     * compile's own `-e`), else the comma-separated encoding list. */
+    const char *emit_facts;
     /* [DD-13b.W23.3] the `--pattern` VALUE is the `.rxt` format's
      * quoted-escape form, decoded by pcrec's one decoder (§2.19). */
     int         pattern_esc;
@@ -459,6 +471,12 @@ typedef struct {
  * (measured live: `--probe-ask claim --emit-ir -- '\d'` answers the probe
  * and exits 0) — not built here.
  *
+ * [PATFACTS] `--emit-facts` joins as a FOURTEENTH mode, and adds only
+ * refusals: its own mask (`CLI_MODES_VS_EMIT_FACTS`) refuses every other
+ * query, and its bit rides `CLI_MODES_VS_PATTERN_QUERY` so the blocks that
+ * run before it refuse it rather than answering and ignoring it. No pair of
+ * the thirteen changed acceptance.
+ *
  * THE SUMMED-COUNT RELATION AT THE SEVEN-QUERY SITE IS NOT FOLDED IN, and
  * that is also ruled. "Is some OTHER mode active" and "is at most one of
  * these co-equal flags set" are two different relations over one set; one
@@ -475,6 +493,7 @@ typedef struct {
     X(EXPLAIN,          explain,          PTR, "--explain")              \
     X(COUNT_GROUPS,     count_groups,     INT, "--count-groups")         \
     X(EMIT_IR,          emit_ir,          INT, "--emit-ir")              \
+    X(EMIT_FACTS,       emit_facts,       PTR, "--emit-facts")           \
     X(PROBE_ASK,        probe_want,       PTR, "--probe-ask")            \
     X(LIST_SOURCE,      list_source,      PTR, "--list-source")          \
     X(FILES,            nfiles,           INT, "a file operand")
@@ -544,7 +563,18 @@ static int cli_modes_count(unsigned modes)
 /* `--probe-ask` and `--emit-ir` additionally refuse `--count-groups` — the
  * other pattern-bearing query — but not each other, which is block order
  * doing the work and is preserved exactly as it stands. */
-#define CLI_MODES_VS_PATTERN_QUERY (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS))
+#define CLI_MODES_VS_PATTERN_QUERY \
+    (CLI_MODES_REGISTRY_QUERY | CMB(COUNT_GROUPS) | CMB(EMIT_FACTS))
+
+/* [PATFACTS] `--emit-facts` is a pattern-bearing query that composes with
+ * NONE of the others — `--emit-ir` and `--probe-ask` included, unlike that
+ * pair's own block-order arrangement — so it refuses the pattern-query set
+ * (minus itself) plus both. `CLI_MODES_VS_PATTERN_QUERY` carries its bit so
+ * the `--probe-ask`/`--emit-ir` blocks, which run first, refuse it too
+ * rather than silently answering and ignoring it. */
+#define CLI_MODES_VS_EMIT_FACTS                                           \
+    ((CLI_MODES_VS_PATTERN_QUERY & ~CMB(EMIT_FACTS)) | CMB(EMIT_IR) |     \
+     CMB(PROBE_ASK) | CMB(LIST_SOURCE) | CMB(FILES))
 
 /* `--list-source` READS a `.rxt` file: it refuses every query above plus the
  * other two pattern-bearing ones and compiling from a FILE OPERAND.
@@ -783,6 +813,11 @@ static int cli_parse(int argc, char **argv, CliState *st, const char *where)
         else if (!strcmp(a, "--trace"))
             opt.flags |= PCREC_TRACE;
         else if (!strcmp(a, "--emit-ir")) st->emit_ir = 1;
+        /* [PATFACTS] a MODE with an optional `=value`, `--engine=`'s shape:
+         * the value is a comma-separated encoding list, validated where it is
+         * used so the diagnostic names the one bad name. */
+        else if (!strcmp(a, "--emit-facts")) st->emit_facts = "";
+        else if (!strncmp(a, "--emit-facts=", 13)) st->emit_facts = a + 13;
         else if (!strcmp(a, "--pattern-esc"))
             st->pattern_esc = 1;
         /* [REL-1.10] `--pattern 'X'` (D118 item 2): THE LITERAL PATTERN,
@@ -1630,6 +1665,7 @@ int main(int argc, char **argv)
     const int list_schema    = st.list_schema;
     const int count_groups   = st.count_groups;
     const int emit_ir        = st.emit_ir;
+    const char *emit_facts   = st.emit_facts;
     const char *explain      = st.explain;
     const char *flavour      = st.flavour;
     const char *probe_want   = st.probe_want;
@@ -1835,6 +1871,67 @@ int main(int argc, char **argv)
         {
             pcrec_error err;
             char *text = pcrec_emit_ir(pattern, &opt, &err);
+            if (!text) {
+                cli_err("%s (pattern offset %zu)",
+                        err.msg, err.pos);
+                return 1;
+            }
+            fputs(text, stdout);
+            free(text);
+            return 0;
+        }
+    }
+
+    /* [PATFACTS] the pattern-facts record's listing (docs/spec/
+     * facts_listing.md). Shaped like --emit-ir: it runs the REAL pipeline —
+     * one ordinary compile per listed encoding — and prints, taking no -o
+     * and writing no C. A pattern pcrec refuses is refused here with
+     * pcrec_compile's exact diagnostic. */
+    if (emit_facts) {
+        int encs[8], nenc = 0;
+        if (modes & CLI_MODES_VS_EMIT_FACTS) {
+            cli_err("--emit-facts is a separate query; use one");
+            return 1;
+        }
+        if (flavour && !(modes & CLI_MODES_FLAVOUR_APPLIES)) {
+            cli_err("--flavour applies to --list-syntax and "
+                            "--explain only");
+            return 1;
+        }
+        if (outpath) {
+            cli_err("--emit-facts takes no -o (it prints the "
+                            "listing, not C)");
+            return 1;
+        }
+        if (!pattern) {
+            cli_err("--emit-facts needs a pattern");
+            return 1;
+        }
+        for (const char *p = emit_facts; *emit_facts; ) {
+            const char *q = strchr(p, ',');
+            size_t n = q ? (size_t)(q - p) : strlen(p);
+            char name[64];
+            pcrec_options t = opt;
+            if (n == 0 || n >= sizeof name) {
+                cli_err("--emit-facts=: an empty or overlong encoding "
+                                "name in '%s'", emit_facts);
+                return 1;
+            }
+            if (nenc == (int)(sizeof encs / sizeof encs[0])) {
+                cli_err("--emit-facts=: at most %d encodings",
+                        (int)(sizeof encs / sizeof encs[0]));
+                return 1;
+            }
+            memcpy(name, p, n);
+            name[n] = 0;
+            if (set_encoding(&t, name) != 0) return 1;
+            encs[nenc++] = t.encoding;
+            if (!q) break;
+            p = q + 1;
+        }
+        {
+            pcrec_error err;
+            char *text = pcrec_emit_facts(pattern, &opt, encs, nenc, &err);
             if (!text) {
                 cli_err("%s (pattern offset %zu)",
                         err.msg, err.pos);

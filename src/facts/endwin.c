@@ -159,7 +159,7 @@ static void ew_see_gstart(void *ud, const Ast *a)
  * it once and this derivation never reads `cx->opt->encoding`. Its
  * structural fields (`start_cls`, `max_cp`) are the only encoding facts a
  * fact derivation sees. */
-long long pcrec_end_window(const PcrecEnc *e, const Ast *root)
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why)
 {
     bool gstart = false;
     long long w;
@@ -168,16 +168,21 @@ long long pcrec_end_window(const PcrecEnc *e, const Ast *root)
     /* (2) — one test, two obligations: no non-boundary positions, and
      * therefore one byte per character, which is what lets `pcrec_cwmax`'s
      * CHARACTER count below stand as a BYTE count. */
+    *why = PF_WHY_ENC_MULTIBYTE;
     if (!e || e->start_cls || e->max_cp > 0xFFu) return -1;
 
+    *why = PF_WHY_NOT_END_ANCHORED;
     view = ew_walk(root);
     if (view == EW_NONE) return -1;                       /* not end-anchored */
 
+    *why = PF_WHY_GSTART;
     pcrec_ast_visit(root, ew_see_gstart, &gstart);
     if (gstart) return -1;                                /* (3) */
 
+    *why = PF_WHY_UNBOUNDED;
     w = pcrec_cwmax(root);
     if (w >= PCREC_W_UNBOUNDED) return -1;                /* (1) */
 
+    *why = PF_WHY_NONE;
     return w + (view == EW_Z ? 0 : EW_EOL_SLACK);
 }

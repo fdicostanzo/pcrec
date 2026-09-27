@@ -30,8 +30,11 @@ int pcrec_start_anchor(const Ast *root);             /* src/facts/startanch.c */
  * four structural declines are in src/facts/endwin.c's own header, which also
  * carries the soundness argument every emitter site rests on). BYTES, and
  * the encoding decline is what makes that true. `e`, the encoding
- * DESCRIPTOR, is a declared input (design §4.2.2 carve-out (d)). */
-long long pcrec_end_window(const PcrecEnc *e, const Ast *root);
+ * DESCRIPTOR, is a declared input (design §4.2.2 carve-out (d)). `*why`
+ * receives which decline answered (`PF_WHY_ENC_MULTIBYTE` and the three
+ * structural ones), or `PF_WHY_NONE` with a window — the reason is the
+ * derivation's to report, never the listing's to infer from `-1`. */
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root, PfWhyCode *why);
                                                      /* src/facts/endwin.c */
 
 /* ---- [OPT-REQBYTE] + [OPT-REQPOS] tier 2b: the necessary set and run ------
@@ -79,9 +82,13 @@ void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
  * `pcrec_req_pick` answers the byte the emitted `memchr` tests. `cx` is read
  * for the ENCODING alone, the prior being a fact about a corpus under one —
  * a RATE READER's decision, which [FINDINGS] B1 moves into the findings
- * accessor (design §6.2). */
-void pcrec_req_window(Ctx *cx, ReqRun *run);          /* src/opt/reqbyte.c */
-int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run);
+ * accessor (design §6.2). `*why` receives the rate rule that answered —
+ * `PF_WHY_RATE_BUILTIN` (the shipped prior) or `PF_WHY_RATE_NONE` (its NONE
+ * answer, the rightmost member) — or `PF_WHY_NONE` where no member was
+ * chosen (no window; an empty set). */
+void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why);
                                                       /* src/opt/reqbyte.c */
+int  pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
+                    PfWhyCode *why);                  /* src/opt/reqbyte.c */
 
 #endif /* PCREC_FACTS_DERIVE_H */

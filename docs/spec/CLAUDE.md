@@ -231,6 +231,18 @@ spec and a design doc disagree, the spec is what the tool promises.
   and the first whose sections carry different column counts; `--trace`
   remains out of scope.
 
+- `facts_listing.md` — **[PATFACTS] step 3.0, 2026-09-26 (D126, ruled Q8).**
+  `--emit-facts`' output format: its two `#section` blocks (`facts`,
+  `decisions`) and their columns, the CLOSED `status` (`derived`/`denied`/
+  `declined`/`absent`) and `used` vocabularies, the `why` token grammar
+  (`deny:<flag>`/`decline:<reason>`/`rate:<source>`), the three guarantees
+  (never refuses a compile that succeeded; never changes the compile; one
+  spelling per value, shared with the fact-valued stamps), and what is NOT
+  promised (fact names, reason names, prose). A DEBUG listing with
+  `ir_listing.md`'s status — no `abi` number. The per-flag "Facts emptied"
+  lines it points at live in `tuning.md` §2.25-§2.28 and are what
+  `tests/codegen/run_facts_checks.sh` checks the listing against.
+
 - `ir_listing.md` — **[DD-8], 2026-09-19.** `--emit-ir`'s output format:
   its nine `#section` blocks (`summary`, `slots`, `rungs`, `strategies`,
   `pruning`, `program`, `choicepoints`, `islands`, `callouts`) and their

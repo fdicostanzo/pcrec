@@ -43,7 +43,20 @@ defect traced to that edge (design §4.2.1, §10).
 - `facts.c` — the RECORD: every accessor's four steps (epoch guard, memo,
   deny, derive — `pf_enter` is the first three, so no accessor can skip
   one), the E2 seal, and the `used` bit (set by a PASS asking, never by a
-  derived fact's own derivation).
+  derived fact's own derivation). A derivation reads other facts only
+  through `pf_ask`, along `facts.def`'s DEPENDS-ON edges. Also: each fact's
+  ONE RENDERER (`pcrec_fact_render`, a no-default switch) which the
+  fact-valued stamps call through `pcrec_fact_stamp` and `--emit-facts`
+  prints (design §11.5, ruled Q9); the `why` a derivation REPORTS (a
+  decline reason, the rate rule a pick answered by) stored with the value,
+  never inferred from it; and `--emit-facts`' FORCE LOOP
+  (`pcrec_facts_force_all`/`pcrec_facts_force_failed`), which asks the
+  unasked facts only after the artifact is complete and, through the one
+  `setjmp`'s first arm in `compile_driver`, turns a forced ask that fails
+  into that fact's `absent` row rather than a refused compile (ruled Q10,
+  r1 A11). No failing forced ask is reachable today (no E2 derivation
+  allocates); the guard was verified with a temporary plant (lane pf30's
+  report).
 - `facts_derive.h` — the FACTS-PRIVATE header: every derivation's
   declaration. Only this directory's files and the OWNER files `facts.def`
   names may include it; `tests/codegen/run_facts_checks.sh` checks that from

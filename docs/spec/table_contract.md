@@ -26,6 +26,7 @@ Every pcrec command whose output is a DATA TABLE:
 | `--list-source` | the `.rxt` SOURCE file, as written ([DD-13b.W1.1], `docs/spec/rxt_format.md`) | conforming producer today; gained the Sections mechanism at [DD-13b.W23.4] (`provenance`/`variants`/`cases`/`aux`, emitted unconditionally when non-empty, always after the main table) |
 | `--list-schema` | the `.rxt` FORMAT's own schema ([DD-13b.W23.1], `docs/spec/rxt_format.md`) | conforming producer today, and the FIRST to use the Sections mechanism below |
 | `--emit-ir` | the VM program listing ([DD-8], `docs/spec/ir_listing.md`) | conforming producer since 2026-09-19; the mechanism's THIRD producer and the first whose every table is a named section |
+| `--emit-facts` | the pattern-facts record listing ([PATFACTS] step 3.0, `docs/spec/facts_listing.md`) | conforming producer AT BIRTH (2026-09-26): two named sections, `facts` and `decisions`, no anonymous table |
 
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.

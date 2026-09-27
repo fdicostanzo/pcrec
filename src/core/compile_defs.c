@@ -45,5 +45,5 @@ int pcrec_compile_defs(const char *pattern, const pcrec_options *opt,
                        pcrec_error *err)
 {
     return pcrec_compile_driver(pattern, opt, out, err, NULL, defs,
-                                pcrec_rxt_compose);
+                                pcrec_rxt_compose, NULL, NULL);
 }

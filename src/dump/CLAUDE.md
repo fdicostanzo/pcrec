@@ -212,6 +212,22 @@ one.
   which is the denominator a check iterating the dump's rows cannot get
   from the rows themselves.
 
+- `facts_dump.c` — [PATFACTS] step 3.0 (D126): `--emit-facts`, the
+  pattern-facts record as a `docs/spec/table_contract.md` listing
+  (`docs/spec/facts_listing.md`), two sections: `facts` (one row per
+  `src/facts/facts.def` row per encoding — value by the fact's ONE renderer,
+  status/why/used exactly as the accessor stored them) and `decisions` (the
+  artifact's own value `#define`s, read off the final attempt's finished `.c`
+  text). It is NOT a `--list-*` registry table — it needs a pattern and runs
+  real compiles, one per listed encoding — but it lives here for the same
+  layering reason: it RENDERS what a lower tier built. The driver reaches it
+  only through the `PcrecFactsHook` it is handed (the composer hook's shape),
+  so no symbol here is named below the dump tier. It includes `facts.h` and
+  `facts.def` (the table) and never `facts_derive.h`, which
+  `tests/codegen/run_facts_checks.sh` enforces; its three listing checks
+  (completeness, why-truthfulness against `tuning.md`, decisions=stamps)
+  live in that script, with sabotage rows S297-S299.
+
 ## Conventions
 
 - A new `--list-*` table surface is a new file HERE, not in the tier that
