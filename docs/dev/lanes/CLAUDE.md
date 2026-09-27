@@ -3315,3 +3315,15 @@ never edited afterwards.
   accessors and the two `EngineFit` copies deleted, five re-anchored rows.
   Per-commit A/B (zero movers), the validation verdicts, the no-`CALL`-bit
   deviation, and S303's second detector (K50's machine self-check).
+- **s2a_report.md** — lane `s2a` (opus, 2026-09-27): [OPT-LITSCAN] S2a, the
+  VM's exact literal run as ONE P4 compare, abi 40 -> 41. `pcrec_lit_run`
+  (the one node-grain fact, three readers), the island's single-child chains
+  as P4 compares at their depth, P4 made extern, the D51/D49 budget sentence,
+  `-fno-lit-run` + `<PREFIX>_VM_LIT_RUNS` (added pending a ruling; recursion
+  identity (A)'s third region-moving excuse), S304/S305 DETECTED, movers =
+  exactly the 1,081 run-compare artifacts + one acceptance mover, the bench
+  predictions, and the detached chain's STATE AT HANDOFF. Its TRIAGE section
+  (lane s2afix, 2026-09-27) records the chain's reds: all were instrument
+  defects or a stale witness. Among them, gcc's inlined `memcmp` is invisible
+  to ASan, and a necessary run is shielded from its own edge. It also adds
+  §7.1 (factoring × lit-run 2×2) and §7.2 (the L-sweep).

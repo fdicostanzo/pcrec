@@ -311,9 +311,13 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # lines for tests/offsetskip/run_pinned.rxt (the run-pinned rows' witness
 # corpus, litscan_s1.md §3.4). Not under tests/known_fail/, so RUNSH_* move
 # by the same +1/+10/+55: 220 / 4016 / 29224.
-CENSUS_FILES=220
-CENSUS_BLOCKS=4016
-CENSUS_LINES=29224
+# 2026-09-27 (lane s2a, [OPT-LITSCAN] S2a) — +1 file / +19 blocks / +87
+# lines for tests/litscan/litrun.rxt (the VM literal-run corpus, 19 patterns,
+# 87 oracle-generated cases). Not under tests/known_fail/, so RUNSH_* move by
+# the same +1/+19/+87: 221 / 4035 / 29311.
+CENSUS_FILES=221
+CENSUS_BLOCKS=4035
+CENSUS_LINES=29311
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -378,9 +382,11 @@ CENSUS_LINES=29224
 # above (tests/base/k66_precheck_whole_run.rxt is not under known_fail/).
 # 2026-09-25 (lane s1build, [OPT-LITSCAN] S1) — +1/+10/+55, the SAME delta
 # as CENSUS_* above (tests/offsetskip/run_pinned.rxt).
-RUNSH_FILES=220
-RUNSH_BLOCKS=4016
-RUNSH_LINES=29224
+# 2026-09-27 (lane s2a, [OPT-LITSCAN] S2a) — +1/+19/+87, the SAME delta as
+# CENSUS_* above (tests/litscan/litrun.rxt).
+RUNSH_FILES=221
+RUNSH_BLOCKS=4035
+RUNSH_LINES=29311
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail

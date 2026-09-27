@@ -655,6 +655,12 @@ that cycle's analysis lands.
   twin generator and the counted find-all driver with its transcript. See
   its own `CLAUDE.md`.
 
+## `[OPT-LITSCAN]` S2a's movers instrument (lane `s2a`, 2026-09-27)
+
+- `s2a/` — `s2a_movers.py`, the mover biconditional over
+  `s1/s1_identity.py`'s records (moved IFF the VM program writes a run
+  compare). See its own `CLAUDE.md`.
+
 ## `[OPT-REQRUN-ENC]`'s D77 census (lane `reqrunenc`, 2026-09-26)
 
 - `reqrunenc_census.md` — **the D77 census for the RUN path's `!bytekey`

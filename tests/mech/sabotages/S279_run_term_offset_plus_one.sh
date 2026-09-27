@@ -23,8 +23,11 @@ SAB_REACH_EXPECT="REACH-RUN-TERM-EMITTED"
 # are now written by this same chain (their run term is at offset 0), so the
 # plant ALSO shifts every run pre-check's compare one byte late, turning each
 # into a false NOMATCH: the row deletes more and isolates the same site.
+# [OPT-LITSCAN] S2a re-anchor (lane s2a, 2026-09-27): P4 became extern as
+# `pcrec_emit_exact_compare` (the VM's literal runs are its second caller);
+# the call site's name is the only change, plant and intent unchanged.
 SAB_COUNT=1
-SAB_BEFORE='            emit_exact_compare(c, t->run_o == 0
+SAB_BEFORE='            pcrec_emit_exact_compare(c, t->run_o == 0
                                   ? "subject + cand"
                                   : dfa_fragf(cx, "subject + cand + %d", t->run_o),'
-SAB_AFTER='            emit_exact_compare(c, dfa_fragf(cx, "subject + cand + %d", t->run_o + 1),   /* SABOTAGE S279 */'
+SAB_AFTER='            pcrec_emit_exact_compare(c, dfa_fragf(cx, "subject + cand + %d", t->run_o + 1),   /* SABOTAGE S279 */'

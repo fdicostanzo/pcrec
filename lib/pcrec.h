@@ -909,6 +909,17 @@ enum {
  * `uint64_t` before it landed. */
 #define PCREC_NO_RUN_PREFILTER PCREC_BIT(32)
 
+/* [OPT-LITSCAN] S2a the VM's LITERAL RUN compare (docs/spec/tuning.md
+ * §2.31). A VM program consumes two or more consecutive one-byte literals,
+ * and an alternation island's single-child trie chain, as ONE bounds check
+ * and one constant-length `memcmp`. Denied, every literal is its own per-byte
+ * compare, the program this compiler emitted before abi 41. It accepts
+ * exactly the same bytes either way, so it changes no answer and is masked
+ * out of `rx_info.flags`; `<PREFIX>_VM_LIT_RUNS` counts what the emitter
+ * did. Deny-only (D122 addendum 2: every form choice of the literal-compare
+ * kit is a row with its own deny flag). A `#define` for bit 32's reason. */
+#define PCREC_NO_LIT_RUN PCREC_BIT(33)
+
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
  * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
  * held strictly by D47's ADDENDUM). ONE per-artifact constant: every

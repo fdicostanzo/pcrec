@@ -280,7 +280,10 @@ typedef enum {
      * a call and a return are things that EXECUTE. */
     VE_CALL,     /* a: the callee region's entry label id,
                   *    b: the return label id                       */
-    VE_RETURN    /* a: the callee region's entry label id           */
+    VE_RETURN,   /* a: the callee region's entry label id           */
+    /* [OPT-LITSCAN] S2a one P4 compare consuming a literal run: a: its
+     * length, b: next label, text: the run's bytes as the listing shows them */
+    VE_LIT
 } VEKind;
 
 /* [D46] the S2.5 rung ladder's own small named value set, ONE PER
@@ -485,6 +488,12 @@ typedef struct {
                            * NOT the pre-pass's npush, whose counter-rung
                            * unbounded arm once went negative and omitted the
                            * dispatch from a program with ten live pushes. */
+    long long nlitrun;    /* [OPT-LITSCAN] S2a literal-run compares written,
+                           * counted by the two sites that write one (`vm_lit`,
+                           * the island's run arm) in the same call, so
+                           * `<PREFIX>_VM_LIT_RUNS` and the prologue's
+                           * `<string.h>` cannot drift from the program text
+                           * (emitted_push's discipline). */
     bool emitted_set;     /* [CC-DIFF] STEP 2 — set by vm_set, the ONE
                            * primitive that writes an `<PREFIX>_SET`, in the
                            * same call that writes the bytes (emitted_push's
@@ -2133,6 +2142,36 @@ static int vm_alt_flatten(Ctx *cx, const Ast *a, const Ast ***out)
     return nbr;
 }
 
+/* Flattens a left-nested `A_CAT` spine into an element array in written
+ * order, `(*out)[0]` the leftmost — the one flattening the concatenation's
+ * three readers (`vm_cat`'s emission, `vm_cost_cat`, `vm_count_slots`) share,
+ * so `pcrec_lit_run` sees the same element array at all three. Walked
+ * iteratively (D10): a spine is as long as the pattern. */
+static int vm_cat_flatten(Ctx *cx, const Ast *a, const Ast ***out)
+{
+    int n = 1;
+    for (const Ast *t = a; t->k == A_CAT; t = t->l) n++;
+    const Ast **el = pcrec_arena_alloc(&cx->arena, (size_t)n * sizeof(Ast *));
+    int i = n;
+    const Ast *t = a;
+    while (t->k == A_CAT) { el[--i] = t->r; t = t->l; }
+    el[0] = t;
+    *out = el;
+    return n;
+}
+
+/* The literal run at element `j` of a flattened concatenation as THIS
+ * program emits it: `pcrec_lit_run`'s length, or 0 under `-fno-lit-run`
+ * (`PCREC_NO_LIT_RUN`, docs/spec/tuning.md §2.31). The one question
+ * `vm_cat`, `vm_cost_cat` and `vm_count_slots` ask, so the deny reaches all
+ * three readers at once. */
+static int vm_lit_run(Vm *v, const Ast *const *el, int n, int j,
+                      unsigned char *out)
+{
+    if (v->cx->opt->flags & PCREC_NO_LIT_RUN) return 0;
+    return pcrec_lit_run(el, n, j, out);
+}
+
 /* Computes the frame/trail/step Cost of one `A_REP` quantifier -- the cost dispatcher's `A_REP` arm.
  *
  * [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
@@ -2456,12 +2495,17 @@ static Cost vm_cost_cap(Vm *v, const Ast *a)
 static Cost vm_cost_cat(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
-    const Ast *t = a;
-    while (t->k == A_CAT) {
-        cost_add(&c, vm_cost(v, t->r, false));
-        t = t->l;
+    const Ast **el;
+    int n = vm_cat_flatten(v->cx, a, &el);
+    for (int j = 0; j < n; ) {
+        /* [OPT-LITSCAN] S2a a literal run is ONE compare, the run `vm_cat`
+         * emits: no frame, no slot, no trail entry, which is each of its
+         * bytes' own `A_CLASS` cost, once. */
+        int len = vm_lit_run(v, el, n, j, NULL);
+        if (len) { j += len; continue; }
+        cost_add(&c, vm_cost(v, el[j], false));
+        j++;
     }
-    cost_add(&c, vm_cost(v, t, false));
     return c;
 }
 
@@ -3157,10 +3201,19 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         vm_count_slots(v, a, repl, false);
         return;
     }
-    case A_CAT:
-        while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
-        vm_count_slots(v, a, repl, false);
+    case A_CAT: {
+        /* [OPT-LITSCAN] S2a the elements `vm_cat` emits, a literal run as the
+         * one compare it is: it allocates no slot and pushes nothing. */
+        const Ast **el;
+        int n = vm_cat_flatten(v->cx, a, &el);
+        for (int j = 0; j < n; ) {
+            int len = vm_lit_run(v, el, n, j, NULL);
+            if (len) { j += len; continue; }
+            vm_count_slots(v, el[j], repl, false);
+            j++;
+        }
         return;
+    }
     case A_REP: vm_count_slots_rep(v, a, repl, under_atomic); return;
     }
 }
@@ -4162,7 +4215,16 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
      * The ROOT takes the caller's `entry` — the island IS the alternation's
      * entry point, not a region reached from one. */
     t->nd[0].lbl = entry;
-    for (int x = 1; x < t->nnd; x++) t->nd[x].lbl = vm_label(v);
+    /* [OPT-LITSCAN] S2a a node INSIDE a literal run — no accept, one child,
+     * and a one-child parent — is compared by its parent's run compare and
+     * is never emitted, so it takes no label. */
+    bool *inrun = pcrec_arena_alloc(&v->cx->arena, (size_t)t->nnd * sizeof *inrun);
+    const bool runs = !(v->cx->opt->flags & PCREC_NO_LIT_RUN);
+    for (int x = 1; x < t->nnd; x++)
+        inrun[x] = runs && t->nd[x].nacc == 0 && t->nd[x].nkids == 1
+                && t->nd[t->nd[x].parent].nkids == 1;
+    for (int x = 1; x < t->nnd; x++)
+        if (!inrun[x]) t->nd[x].lbl = vm_label(v);
     for (int x = 0; x < t->nnd; x++)
         if (t->nd[x].nacc) t->nd[x].chainlbl = vm_label(v);
 
@@ -4217,7 +4279,39 @@ static void vm_isl_emit(Vm *v, VmIsl *t, int entry, int next)
                           n->nacc, n->nacc == 1 ? "" : "s", n->depth)
                : NULL);
 
-        if (n->nkids == 1) {
+        if (n->nkids == 1 && inrun[n->child]) {
+            /* [OPT-LITSCAN] S2a THE ISLAND'S OWN RECOGNIZER, sharing only P4
+             * (patfacts design §8.2 item 3): the trie's single-child chain
+             * from here to the first node that branches or accepts is one
+             * literal run, compared at this node's depth in one bounds check
+             * and one constant-length `memcmp`. Its nodes charge the node
+             * budget each, as the per-node compares did. A mismatch dies at
+             * THIS node, which charges the work budget this node's depth:
+             * the run is one compare, charged as one (docs/spec/limits.md
+             * §3.1), and a run node has no accept, so this node's candidate
+             * chain is every run node's. */
+            int len = 0, c = n->child;
+            while (inrun[c]) { len++; c = t->nd[c].child; }
+            len++;
+            unsigned char *run = pcrec_arena_alloc(&v->cx->arena, (size_t)len);
+            for (int i = 0, y = n->child; i < len; i++, y = t->nd[y].child) {
+                run[i] = t->nd[y].byte;
+                if (i + 1 < len) vm_charge(v);
+            }
+            pcrec_sb_printf(b, "    if (scan_position + %d <= subject_length && ",
+                            n->depth + len);
+            pcrec_emit_exact_compare(b, n->depth
+                                        ? pcrec_sb_fragf(&v->cx->arena, "subject + scan_position + %d", n->depth)
+                                        : "subject + scan_position",
+                                     run, len);
+            v->nlitrun++;
+            pcrec_sb_printf(b, ") goto %s_L%d;\n", v->p, t->nd[c].lbl);
+            vm_ev(v, VE_GOTO, t->nd[c].lbl, 0,
+                  vm_rolef(v, "island: %d-byte literal run compare", len));
+            vm_isl_die(v, t, x);
+            stk[sp++] = c;
+            continue;
+        } else if (n->nkids == 1) {
             int c = n->child;
             pcrec_sb_printf(b, "    if (scan_position + %d < subject_length && "
                          "subject[scan_position + %d] == %d) goto %s_L%d;\n",
@@ -8324,6 +8418,51 @@ static void vm_var(Vm *v, int entry, const Ast *a, int next)
     vm_ev(v, VE_GOTO, next, 0, NULL);
 }
 
+/* Renders a literal run for the `--emit-ir` listing: the bytes in single
+ * quotes, printable ASCII as itself and anything else (with `\\` and `'`) as
+ * `\\xNN` — `vm_cls_describe`'s one-byte spelling, applied per byte. */
+static const char *vm_lit_describe(Vm *v, const unsigned char *run, int len)
+{
+    /* Arena text sized exactly, never a function-local StrBuf: a ladder
+     * trial longjmps out of the emission, and a live local buffer would leak
+     * (Job's scr_desc comment has the LeakSanitizer finding). */
+    char *q = pcrec_arena_alloc(&v->cx->arena, (size_t)len * 4 + 1);
+    char *w = q;
+    for (int i = 0; i < len; i++) {
+        int ch = run[i];
+        if (ch >= 32 && ch < 127 && ch != '\\' && ch != '\'')
+            *w++ = (char)ch;
+        else
+            w += snprintf(w, 5, "\\x%02x", ch);
+    }
+    *w = 0;
+    return vm_rolef(v, "'%s' (%d bytes)", q, len);
+}
+
+/* Emits a literal run at label `entry` as ONE P4 exact compare, continuing at
+ * `next`: `pos + len <= n`, then a constant-length `memcmp`, so the run reads
+ * exactly its own bytes and never past the subject's end (P8, compare_stack.md
+ * §4). [OPT-LITSCAN] S2a, patfacts design §8.2; the bytes come from
+ * `pcrec_lit_run`, the fact `vm_cost_cat` and `vm_count_slots` read too.
+ *
+ * WHAT IT CHARGES IS WHAT THE PER-BYTE CHAIN CHARGED. The node budget pays
+ * one node per byte, so `PCREC_MAX_VM_NODES` refuses the same patterns it did.
+ * The step budget meters backtracks, and a mismatch anywhere in the run enters
+ * the fail label once, as the chain did at whichever byte mismatched; forward
+ * progress is free under D51 either way (docs/spec/limits.md §3.1). */
+static void vm_lit(Vm *v, int entry, const unsigned char *run, int len, int next)
+{
+    for (int i = 0; i < len; i++) vm_charge(v);
+    vm_lbl(v, entry, NULL);
+    vm_ev(v, VE_LIT, len, next, vm_lit_describe(v, run, len));
+    pcrec_sb_printf(v->b, "    if (scan_position + %d <= subject_length && ", len);
+    pcrec_emit_exact_compare(v->b, "subject + scan_position", run, len);
+    v->nlitrun++;
+    pcrec_sb_printf(v->b, ") { scan_position += %d; goto %s_L%d; }\n",
+                    len, v->p, next);
+    vm_fail(v);
+}
+
 /* A CONCATENATION: the left-leaning spine flattened iteratively, then each
  * element emitted with its own follow-min.
  *
@@ -8334,36 +8473,39 @@ static void vm_cat(Vm *v, int entry, const Ast *a, int next)
     /* flatten the left-leaning spine iteratively (nfa.c's R-2 hardening,
      * for the same reason: a flat concatenation of any length must not
      * overflow the C stack of pcrec's OWN emitter) */
-    int nsp = 0;
-    const Ast *t = a;
-    while (t->k == A_CAT) { nsp++; t = t->l; }
-    const Ast **rs = pcrec_arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
-    int i = nsp;
-    t = a;
-    while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+    const Ast **el;
+    int n = vm_cat_flatten(v->cx, a, &el);
     /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
      * element at index j is followed by everything after it plus this
      * concatenation's own follow. Computed as a SUFFIX SUM in one backward
      * pass — `minw` per element rather than per element-pair — so the
      * threading costs one walk over the spine and not one per position.
      *
-     * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
-     * concatenation's own, i.e. what the caller set. The leftmost element
-     * (`t`, which the flattening loop peeled off the bottom of the spine)
-     * takes `sfx[0]`. */
-    long long *sfx = pcrec_arena_alloc(&v->cx->arena,
-                                 (size_t)(nsp + 1) * sizeof(long long));
-    sfx[nsp] = v->fmin;
-    for (int j = nsp - 1; j >= 0; j--)
-        sfx[j] = pcrec_vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
+     * `fol[j]` is the follow-min of element j; `fol[n - 1]` is the whole
+     * concatenation's own, i.e. what the caller set. */
+    long long *fol = pcrec_arena_alloc(&v->cx->arena,
+                                 (size_t)n * sizeof(long long));
+    fol[n - 1] = v->fmin;
+    for (int j = n - 2; j >= 0; j--)
+        fol[j] = pcrec_vm_fadd(pcrec_minw(el[j + 1]), fol[j + 1]);
+    /* Each element's `next` label is taken just before it is emitted, the
+     * order the listing and every label-numbered check read. A literal run
+     * (`pcrec_lit_run`, the fact `vm_cost_cat` and `vm_count_slots` also
+     * read) is ONE element here: one label, one compare. */
     int cur = entry;
-    int nx = vm_label(v);
-    vm_emit_f(v, cur, t, nx, sfx[0]);
-    cur = nx;
-    for (int j = 0; j < nsp; j++) {
-        int after = (j + 1 == nsp) ? next : vm_label(v);
-        vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
+    for (int j = 0; j < n; ) {
+        int len = vm_lit_run(v, el, n, j, NULL);
+        int span = len ? len : 1;
+        int after = (j + span == n) ? next : vm_label(v);
+        if (len) {
+            unsigned char *run = pcrec_arena_alloc(&v->cx->arena, (size_t)len);
+            vm_lit_run(v, el, n, j, run);
+            vm_lit(v, cur, run, len, after);
+        } else {
+            vm_emit_f(v, cur, el[j], after, fol[j]);
+        }
         cur = after;
+        j += span;
     }
 }
 
@@ -9342,6 +9484,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                     vm_rolef(v, "L%d", e->b), NULL);
             break;
         }
+        case VE_LIT:
+            vm_prow(o, NULL, "compare", e->role, vm_rolef(v, "L%d", e->b), NULL);
+            break;
         case VE_ASSERT:
             vm_prow(o, NULL, "assert", e->role ? e->role : "?",
                     vm_rolef(v, "L%d", e->a), NULL);
@@ -10914,6 +11059,14 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
      * NO `rx_info` MIRROR, on `RX_DFA_TABLE`'s precedent and for its reason:
      * no consumer reads the fact at RUN time today (D77). */
     pcrec_sb_stampf(c, v->up, "VM_CLS_FOLDS", "%d", vm_cls_fold_count(v));
+    /* [OPT-LITSCAN] S2a THE LITERAL-RUN STAMP, §6.3 family (b), VM route
+     * only, UNCONDITIONAL on every VM artifact including a hybrid, `0`
+     * spelled as readily as any other value — the two stamps above, for
+     * their reasons: an ACTIVITY COUNT of run compares written (spine runs
+     * and island chains), counted by the sites that write them, so it cannot
+     * report a compare the program does not contain; no `rx_info` mirror
+     * (D77). `-fno-lit-run` holds it at 0. */
+    pcrec_sb_stampf(c, v->up, "VM_LIT_RUNS", "%lld", v->nlitrun);
     /* [CC-DIFF] STEP 2 — THE ENTRY-SHAPE STAMPS, §6.3 family (b), and there
      * are TWO because a selection and the number it was made on are two
      * facts. `<PREFIX>_VM_ENTRY_SHAPE` names the rung the emitter TOOK — a
@@ -13265,7 +13418,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     vm_plan(&v, root, &pl);
     vm_plan_entry(&v, &pl, &en);
 
-    pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs);
+    pcrec_emit_prologue(cx, &g, v.ncaps, &pl.bufs, v.nlitrun > 0);
     vm_emit_stamps(&v, &pl, &en);
     vm_emit_storage(&v, &pl);
     vm_emit_search_body(&v, &g, &pl, &en);

@@ -421,11 +421,15 @@ fi
 # entry-chain statics, which is what the rungs above `plain` actually spell;
 # `RX_VM_ENTRY_SHAPE` is NOT read, for §3's standing reason.
 #
-# THE WITNESS STRADDLES THE TERM: `(abc|def)(ghi|jkl)(mno)` emits a 4,244-byte
-# VM program, just above the middle's 4,096 and below `+1`'s 8,192, so the
-# term's raise is the ONLY thing that can move it.
+# THE WITNESS STRADDLES THE TERM: `(abc|def)(ghi|jkl)(mno|pqr)(stu|vwx)` emits
+# a 5,727-byte VM program (6,965 under `-fno-lit-run`), above the middle's
+# 4,096 and below `+1`'s 8,192, so the term's raise is the ONLY thing that can
+# move it. RE-WITNESSED at [OPT-LITSCAN] S2a (abi 41): the old witness
+# `(abc|def)(ghi|jkl)(mno)` was 4,244 bytes of per-byte chains and fell to
+# 3,325 once its literals became run compares. Chosen mid-band so the next
+# program-shrinking change does not strand it at the knee again.
 echo "-- §3c: the --vm-entry-shape term"
-ENTRY_WITNESS='(abc|def)(ghi|jkl)(mno)'
+ENTRY_WITNESS='(abc|def)(ghi|jkl)(mno|pqr)(stu|vwx)'
 s3c_bad=0
 declare -a ent_ai
 for pos in $POSITIONS; do

@@ -310,6 +310,41 @@ int pcrec_cls_single(const Ast *a)
     return (int)a->u.cls.iv[0].lo;
 }
 
+/* The one-byte literal at spine element `a`: its byte, or -1 where `a` is not
+ * an `A_CLASS` or not a singleton byte. The kind guard is part of the fact,
+ * because `pcrec_cls_single` reads `a->u.cls` unconditionally and that is a
+ * union read on any other kind (patfacts design §8.2, r1 F5). */
+static int lit_byte(const Ast *a)
+{
+    return a->k == A_CLASS ? pcrec_cls_single(a) : -1;
+}
+
+/* Returns the length of the EMISSION-CONTIGUOUS LITERAL RUN that begins at
+ * spine element `j` of the flattened concatenation `el[0..n)`, and writes its
+ * bytes to `out` when `out` is not NULL (room for the returned length).
+ * Returns 0 where fewer than two consecutive elements from `j` on are
+ * one-byte literals, so a lone byte is never a run.
+ *
+ * [OPT-LITSCAN] S2a, docs/design/patfacts/design.md §8.2: ONE node-grain fact
+ * (§4.3) read by the VM emitter's chain emission, its cost walk and its slot
+ * walk, so the three cannot disagree about where a run ends. It reads the
+ * spine's OWN children only. An `A_CAP`, `A_ATOMIC`, `A_LOOK` or `A_REP`
+ * between two bytes is a capture write or a choice point in the emitted
+ * program, so it ends the run whatever the subject would say. That is what
+ * separates this fact from `rb_walk`'s necessary run, which is
+ * subject-contiguous across `A_CAP` (two questions, two facts, one singleton
+ * primitive). EXACT only: a caseless letter is a two-member class, so it
+ * ends the run ([OPT-LITSCAN] S4 owns the mask form). */
+int pcrec_lit_run(const Ast *const *el, int n, int j, unsigned char *out)
+{
+    int len = 0;
+    while (j + len < n && lit_byte(el[j + len]) >= 0) len++;
+    if (len < 2) return 0;
+    if (out)
+        for (int i = 0; i < len; i++) out[i] = (unsigned char)lit_byte(el[j + i]);
+    return len;
+}
+
 /* Membership test directly on a class node's own interval array (post-lowering
  * `Ast.u.cls`) -- the same linear scan as pcrec_cpset_has, over a list already
  * published into a node rather than wrapped in a PcrecCpSet. */

@@ -645,6 +645,14 @@ fi
 # three-line trailing comment (+274) in the ABI block. Diffed at the same
 # `-o` basename against main bd8d1075 (lane report §4.2); no other stamp in
 # this census moved.
+#
+# RE-RECORDED A FOURTEENTH TIME, 2026-09-27, lane s2a ([OPT-LITSCAN] S2a,
+# abi 40 -> 41), FIVE ROWS, EMITTED_BYTES only — the five VM artifacts in
+# the sample. Four move exactly +25, the new `#define RX_VM_LIT_RUNS 0` line.
+# `(?<=foo)bar` moves -569: +25 for its stamp (`RX_VM_LIT_RUNS 2`), and its
+# two literal runs (`foo` in the lookbehind body, `bar`) each collapse from
+# three per-byte label blocks to one P4 compare. Diffed at the same `-o`
+# basename against main b0b9f0fa; no other stamp in this census moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

@@ -69,7 +69,9 @@ in a specific way.
   the design lane's own probe could not express a lazy row, so half the
   question left its differential without a word in the output.
 - **`possdiff_driver.c`** — links the possessified and denied artifacts under
-  two prefixes into one TU. That is itself a real property being exercised:
+  two prefixes into one TU. (`-DDIFF_EXACT_SUBJECT`, [OPT-LITSCAN] S2a: each
+  subject is handed over in a block of exactly its length, `(NULL, 0)` for
+  the empty one, so AddressSanitizer sees a one-byte over-read.) That is itself a real property being exercised:
   the fixed ABI types are emitted under a prefix-INDEPENDENT include guard so
   differently-prefixed headers can share a TU (D44/A-2).
 

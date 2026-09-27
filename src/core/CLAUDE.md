@@ -415,6 +415,14 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   share one list (`revdet.c`'s copy constructor copies the pointer).
   `tests/codegen/run_cpset_structure.sh` is the standing check.
 
+  **[OPT-LITSCAN] S2a (2026-09-27): `pcrec_lit_run`**, the node-grain fact
+  "the EMISSION-contiguous literal run at element j of a flattened
+  concatenation" (patfacts design §8.2, §4.3), lives beside
+  `pcrec_cls_single` because it IS a run of that singleton — its `A_CLASS`
+  kind guard (`lit_byte`) is part of the definition, since `pcrec_cls_single`
+  reads `u.cls` unconditionally. Pure, no memo; the VM emitter's chain
+  emission, cost walk and slot walk all ask it.
+
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
   calls `pcrec_ctx_nomem()` instead of `abort()`. That one pointer is K7's worst

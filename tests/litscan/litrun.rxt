@@ -1,0 +1,157 @@
+# tests/litscan/litrun.rxt -- [OPT-LITSCAN] S2a: the VM's EXACT literal run
+# (docs/design/patfacts/design.md §8.2; pcrec_lit_run in src/core/cpset.c).
+#
+# Every expectation below was produced by python3 `re` (the base-tier oracle)
+# from the pattern text by this lane's generator, never hand-written. The
+# shapes are the ones the mechanism has to get right: a run ending exactly at
+# the subject's end and one byte short of it (P8's bounds check), bytes the
+# emitted C string literal must escape (quote, backslash, '?', NUL, control
+# and high bytes, an octal escape before a digit), a run beside a capture, a
+# choice point, a star, a repeat and a lookahead, and the island's
+# single-child chains. The harness runs every file on both engines, so the
+# VM side is what reads the converted compare.
+
+# a run that is the whole pattern: the bounds check at the subject's END (P8) -- one byte short never matches
+pattern abcdef
+m "abcdef" 0 6
+n "abcde"
+m "xxabcdef" 2 8
+n "abcdeX"
+n ""
+m "abcabcdef" 3 9
+m "xabcdefx" 1 7
+n "bcdef"
+
+# runs on either side of a capture: the A_CAP ends the first run and starts the second
+pattern x(abc)defg
+m "xabcdefg" 0 8
+n "xabcdef"
+n "xabdefg"
+m "zzxabcdefgzz" 2 10
+m "xabcdefgh" 0 8
+
+# a run immediately followed by a choice point: the element after the run carries a resume frame
+pattern xy(a|ab)c
+m "xyac" 0 4
+m "xyabc" 0 5
+n "xyab"
+n "xyc"
+m "qxyabcq" 1 6
+
+# the shortest run, two bytes
+pattern ab
+m "ab" 0 2
+n "a"
+n "b"
+n "ba"
+m "xxab" 2 4
+
+# bytes the C string literal must escape: a quote, a backslash and a question mark
+pattern a\x22b\\c\?d
+m "a\x22b\\c?d" 0 7
+n "a\x22b\\cd"
+m "xa\x22b\\c?dx" 1 8
+
+# '??=' would be a trigraph if written raw
+pattern a\?\?=b
+m "a??=b" 0 5
+n "a??b"
+n "a?=b"
+
+# control and high bytes, written as octal escapes
+pattern \x01\x7f\x80\xfe
+m "\x01\x7f\x80\xfe" 0 4
+n "\x01\x7f\x80"
+m "z\x01\x7f\x80\xfez" 1 5
+
+# a NUL inside the run: the compare length is a literal, never a string length
+pattern a\x00b
+m "a\x00b" 0 3
+n "ab"
+n "a\x00"
+m "xa\x00bx" 1 4
+
+# an octal escape followed by a digit byte
+pattern \x001
+m "\x001" 0 2
+n "\x00"
+n "1"
+
+# a run after a star: every backtrack re-enters the compare
+pattern a*bcd
+m "aaabcd" 0 6
+n "aaabc"
+m "bcd" 0 3
+n "bc"
+m "xbcdx" 1 4
+
+# an anchored run between two assertions
+pattern ^abc$
+m "abc" 0 3
+n "abcd"
+n "xabc"
+m "abc\x0a" 0 3
+
+# a run inside a repeated body
+pattern (?:abc)+d
+m "abcd" 0 4
+m "abcabcd" 0 7
+n "abcab"
+n "abd"
+m "xabcabcdx" 1 8
+
+# a run inside a counted, replicated group
+pattern (abc){2}x
+m "abcabcx" 0 7
+n "abcx"
+m "abcabcabcx" 3 10
+n "abcabx"
+
+# an alternation island whose single-child trie chains are runs compared at their node's depth
+pattern foo(?:username|password|passphrase)bar
+m "foousernamebar" 0 14
+m "foopasswordbar" 0 14
+m "foopassphrasebar" 0 16
+n "foopassbar"
+n "foousernambar"
+m "xfoopassphrasebarx" 1 17
+n "foopasswor"
+
+# an island with a shared-prefix run and alternatives that end inside it
+pattern (?:alpha|alps|alp)x
+m "alphax" 0 6
+m "alpsx" 0 5
+m "alpx" 0 4
+n "alphx"
+n "alx"
+m "zalpx" 1 5
+
+# four-byte alternatives that share a first byte: runs of three below the fan-out
+pattern AKIA|AGPA|AIDA|AROA
+m "AKIA" 0 4
+m "AGPA" 0 4
+m "xAROAx" 1 5
+n "AKI"
+n "AROB"
+m "AIDAAKIA" 0 4
+
+# caseless: every letter is a two-member class, so there is no exact run (S4 owns it)
+pattern (?i)abc
+m "abc" 0 3
+m "ABC" 0 3
+m "aBc" 0 3
+n "ab"
+
+# a class ends a run, so 'de' alone is one
+pattern a[bc]de
+m "abde" 0 4
+m "acde" 0 4
+n "ade"
+n "abdx"
+
+# a run before a lookahead
+pattern abc(?=def)
+features lookaround
+m "abcdef" 0 3
+n "abcde"
+n "abcxdef"

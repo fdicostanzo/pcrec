@@ -48,7 +48,7 @@
  * abi ritual fires next, bump this ONE constant; grep for its old value
  * finds both emission sites plus every out-of-tree reader the ritual's own
  * site list already enumerates. */
-#define PCREC_ARTIFACT_ABI 40
+#define PCREC_ARTIFACT_ABI 41
 
 /* Renders one byte of pattern-derived text safely into a C block comment, escaping whatever would close or falsely open the comment.
  *
@@ -760,11 +760,12 @@ void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
  * form gcc lowers to one word load and one compare (the reasons the run
  * pre-check below chose it are in its own header). `base` is an emitted C
  * pointer expression the caller has already bounds-checked; `bytes` go
- * through `pcrec_sb_cstr`, never raw. Caller: the offset-skip block's run
+ * through `pcrec_sb_cstr`, never raw. Callers: the offset-skip block's run
  * term, which since S1 step 6 is also the run pre-check's compare
- * (litscan_s1.md §1.6). */
-static void emit_exact_compare(StrBuf *c, const char *base,
-                               const unsigned char *bytes, int n)
+ * (litscan_s1.md §1.6), and since S2a the VM's literal runs and island
+ * single-child chains (`src/gen/emit_vm.c`, patfacts design §8.2). */
+void pcrec_emit_exact_compare(StrBuf *c, const char *base,
+                              const unsigned char *bytes, int n)
 {
     pcrec_sb_printf(c, "!memcmp(%s, \"", base);
     pcrec_sb_cstr(c, bytes, (size_t)n);
@@ -2495,6 +2496,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * where what the emitter DID is
                                            * recorded. */
                                           PCREC_NO_CLS_FOLD |
+                                          /* [OPT-LITSCAN] S2a the VM's
+                                           * literal-run compare: the same
+                                           * bytes accepted as the per-byte
+                                           * chain, so no answer moves, and
+                                           * masked so an artifact with no run
+                                           * is byte-identical under the flag.
+                                           * `<PREFIX>_VM_LIT_RUNS` is where
+                                           * what the emitter DID is recorded. */
+                                          PCREC_NO_LIT_RUN |
                                           /* [EMIT-VERB] the emitted-comment
                                            * axis (D112), and it joins the
                                            * mask for the mask's own reason
@@ -5532,7 +5542,7 @@ static void ofsk_emit_verify(Ctx *cx, StrBuf *c, const char *p, const OfsTest *t
         first = false;
         if (!k) {
             /* THE RUN TERM, P4: the whole pinned run in one compare. */
-            emit_exact_compare(c, t->run_o == 0
+            pcrec_emit_exact_compare(c, t->run_o == 0
                                   ? "subject + cand"
                                   : dfa_fragf(cx, "subject + cand + %d", t->run_o),
                                t->run_bytes, t->run_len);
@@ -8501,7 +8511,7 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
  * `bs` is the frame-buffer sizing surface; `pcrec_bufsurface_inert()` on a
  * DFA artifact, computed by the VM emitter otherwise. */
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
-                         const BufSurface *bs)
+                         const BufSurface *bs, bool body_memcmp)
 {
     StrBuf *c = &cx->job->csb;
     /* [M6.2 wave C] ENG_ATTEMPT joins the list of bodies that can call
@@ -8532,6 +8542,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * test cannot, and the length is the contract this artifact already knows
      * (variables_common.md §3.2). */
     if (cx->n_var_exps > 0) need_string_h = true;
+    /* [OPT-LITSCAN] S2a A FOURTH: the VM body's literal-run compares, read
+     * off the flag the one primitive that writes them sets. */
+    if (body_memcmp) need_string_h = true;
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
@@ -9102,7 +9115,7 @@ void pcrec_emit_dfa(Ctx *cx)
          * four sizing facts are 0 and the three `_in` entries below accept a
          * descriptor and ignore it. */
         BufSurface bs = pcrec_bufsurface_inert();
-        pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx), &bs);
+        pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx), &bs, false);
     }
     /* [DD-13] The selection stamps, in the SAME PLACE the VM writes its own —
      * immediately after the shared prologue and before the engine body — so

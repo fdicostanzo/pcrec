@@ -3220,7 +3220,18 @@ that was already cheaper, or on top of a pass the artifact was already running.
   comment, the OFFSETS stamp and G1 all read it, and it holds no `Dfa` so a
   later non-DFA consumer can fill one ([OPT-VMSEED]). `emit_exact_compare`
   is P4, the one spelling of a constant-length literal compare, shared by
-  the run pre-check's loop and the run term.
+  the run pre-check's loop and the run term. **[OPT-LITSCAN] S2a
+  (2026-09-27, abi 41) made it extern as `pcrec_emit_exact_compare`**: the
+  VM's second caller. In `emit_vm.c`, `vm_cat` emits a literal run
+  (`pcrec_lit_run`, `src/core/cpset.c`, through the VM wrapper `vm_lit_run`
+  that `vm_cost_cat` and `vm_count_slots` also ask, over the one flattening
+  `vm_cat_flatten`) as `vm_lit`'s one bounds check + P4, and `vm_isl_emit`
+  compresses a trie's single-child chain into one P4 compare at its node's
+  depth (its own recognizer, sharing only P4). `Vm.nlitrun` counts both and
+  feeds `<PREFIX>_VM_LIT_RUNS` and the prologue's `<string.h>` (a new
+  `pcrec_emit_prologue` parameter). `-fno-lit-run` denies both
+  (docs/spec/tuning.md §2.31). The node and step budgets charge what the
+  per-byte chain charged; the island's size-rule estimates are unchanged.
 - **THE THREE STAMPS SPLIT ALONG ANALYSIS vs EMISSION.**
   `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` keep naming what the analysis found;
   `<PREFIX>_REQ_WHY` names whether the artifact acted on it. Folding the

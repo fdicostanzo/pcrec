@@ -1537,6 +1537,10 @@ void pcrec_cls_bits(Ctx *cx, const Ast *a, uint8_t out[32]);
 void pcrec_cls_bits_widen(const Ast *a, uint8_t out[32]);
 /* "Exactly one code point, and it is a byte?" — the code point, or -1. */
 int  pcrec_cls_single(const Ast *a);
+/* [OPT-LITSCAN] S2a: the emission-contiguous literal run at element `j` of a
+ * flattened concatenation — its length (0 below two bytes), bytes to `out`
+ * when non-NULL. The one definition every VM reader of a run asks. */
+int  pcrec_lit_run(const Ast *const *el, int n, int j, unsigned char *out);
 bool pcrec_cls_has(const Ast *a, unsigned c);
 
 /* ---- NFA (priority Thompson) ---- */
@@ -5661,6 +5665,12 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
  * search-entry emitter that calls `pcrec_emit_req_byte_check` calls this at
  * file scope above the entry; it emits nothing where no run pre-check is. */
 void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c);
+/* [OPT-LITSCAN] P4, the exact compare: writes `!memcmp(<base>, "<bytes>", n)`
+ * with a literal `n`, the ONE emitted spelling of a constant-length literal
+ * compare (src/gen/emit_dfa.c). `base` is already bounds-checked by the
+ * caller for `n` bytes. */
+void pcrec_emit_exact_compare(StrBuf *c, const char *base,
+                              const unsigned char *bytes, int n);
 void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar);
@@ -6252,8 +6262,10 @@ typedef struct {
     int       align;              /* bytes; the alignment BOTH regions need */
 } BufSurface;
 
+/* `body_memcmp`: the engine body calls `memcmp` ([OPT-LITSCAN] S2a's VM
+ * literal runs), so the prologue includes `<string.h>`; false on a DFA body. */
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
-                         const BufSurface *bs);
+                         const BufSurface *bs, bool body_memcmp);
 
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
 

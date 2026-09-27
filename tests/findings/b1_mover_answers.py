@@ -15,6 +15,14 @@ repetitions), and seeded random strings over those bytes plus UTF-8 lead and
 continuation bytes. The population and the cell count are printed, and an
 empty population is a failure (K35).
 
+[OPT-LITSCAN] S2a (lane s2a) REUSES it for its movers and adds two knobs:
+`CFLAGS` replaces the driver build's flags (default `-O1 -std=gnu11 -w`), so
+the same sweep runs under `-fsanitize=address,undefined` with
+`-DDIFF_EXACT_SUBJECT` (the driver then hands each subject over in a block of
+exactly its length); and `PREFIXES=1` adds every prefix of every own subject
+and of every literal word in the pattern, the subjects that end INSIDE a
+literal run, which is where a subject-end guard is exercised.
+
 Not part of `make test`: it needs the pre-change compiler. Usage:
   BASE=<pcrec> NEW=<pcrec> EXTRA="-e utf8" python3 b1_mover_answers.py \\
       s1_identity.json [s1_identity.json ...]
@@ -25,6 +33,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 BASE, NEW = os.environ["BASE"], os.environ["NEW"]
 EXTRA = os.environ.get("EXTRA", "").split()
 CC = os.environ.get("CC", "gcc-16")
+CFLAGS = os.environ.get("CFLAGS", "-O1 -std=gnu11 -w").split()
+PREFIXES = os.environ.get("PREFIXES") == "1"
 DRIVER = os.path.join(ROOT, "tests/possessify/possdiff_driver.c")
 CFG = {"auto": ["--features", "all"], "vm": ["--features", "all", "--engine=vm"],
        "auto-caps": ["--features", "all"],
@@ -37,6 +47,20 @@ BENCH = "/Users/fdicostanzo/pcrec-bench/bench/capability/patterns"
 def esc(b):
     return "".join(chr(c) if 0x21 <= c < 0x7f and c not in (0x5c, 0x22) else "\\x%02x" % c
                    for c in b)
+
+
+def unesc(t):
+    """An `.rxt`/driver-escaped subject back to its bytes (`\\ \\t \\n \\r \\xNN`)."""
+    out, i, raw = bytearray(), 0, t.encode("latin-1", "surrogateescape")
+    while i < len(raw):
+        c = raw[i]
+        if c == 0x5c and i + 1 < len(raw):
+            n = raw[i + 1]
+            if n == ord("x") and i + 3 < len(raw):
+                out.append(int(raw[i + 2:i + 4], 16)); i += 4; continue
+            out.append({ord("t"): 9, ord("n"): 10, ord("r"): 13}.get(n, n)); i += 2; continue
+        out.append(c); i += 1
+    return bytes(out)
 
 
 def corpus_subjects():
@@ -58,6 +82,14 @@ def subjects(pat, own):
     b = pat.encode("utf-8", "surrogateescape")
     alpha = sorted(set(c for c in b if c not in b"\\^$.|?*+(){}[],-"))[:24] or list(b"ab")
     s = set(own) | {"", "q"}
+    if PREFIXES:
+        for o in sorted(own)[:64]:
+            raw = unesc(o)
+            for k in range(len(raw)):
+                s.add(esc(raw[:k]))
+        for w in re.findall(rb"[A-Za-z0-9_]{2,}", b):
+            for k in range(1, len(w) + 1):
+                s.add(esc(w[:k]))
     for c in alpha:
         for n in (1, 2, 3, 8):
             s.add(esc(bytes([c]) * n))
@@ -92,7 +124,15 @@ def main():
                 skipped += 1
                 print(f"SKIP {pop} {cfg} {key[:60]!r}: a side did not compile")
                 continue
-            cc = subprocess.run([CC, "-O1", "-std=gnu11", "-w", "-I", d,
+            # possdiff_driver binds no `${name}`: a var-bearing artifact's
+            # entries take the binding and the driver cannot call them (lane
+            # s2afix found it as 4 "driver did not build" FAILs). Named, never
+            # silently dropped; tests/vars/ answers these on the corpus.
+            if b"_NVARS " in open(f"{d}/pb.h", "rb").read():
+                skipped += 1
+                print(f"SKIP {pop} {cfg} {key[:60]!r}: carries ${{...}} variables, which the driver cannot bind")
+                continue
+            cc = subprocess.run([CC] + CFLAGS + ["-I", d,
                                  '-DDIFF_A_LABEL="base"', '-DDIFF_B_LABEL="b1"',
                                  "-o", f"{d}/t", DRIVER, f"{d}/pa.c", f"{d}/pb.c"],
                                 capture_output=True, timeout=600)
