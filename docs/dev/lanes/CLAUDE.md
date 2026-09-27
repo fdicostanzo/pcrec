@@ -3322,4 +3322,8 @@ never edited afterwards.
   `-fno-lit-run` + `<PREFIX>_VM_LIT_RUNS` (added pending a ruling; recursion
   identity (A)'s third region-moving excuse), S304/S305 DETECTED, movers =
   exactly the 1,081 run-compare artifacts + one acceptance mover, the bench
-  predictions, and the detached chain's STATE AT HANDOFF.
+  predictions, and the detached chain's STATE AT HANDOFF. Its TRIAGE section
+  (lane s2afix, 2026-09-27) records the chain's reds: all were instrument
+  defects or a stale witness. Among them, gcc's inlined `memcmp` is invisible
+  to ASan, and a necessary run is shielded from its own edge. It also adds
+  §7.1 (factoring × lit-run 2×2) and §7.2 (the L-sweep).

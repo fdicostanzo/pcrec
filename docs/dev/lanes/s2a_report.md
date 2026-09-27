@@ -220,13 +220,149 @@ Not measured here. These are the cells and the direction expected:
   the three wild-waf, semdiv): not in the auto ledger. Informational.
 - **Null expectation**: every DFA-routed cell. S2a writes no DFA byte.
 
+### 7.1 FACTORING × LIT-RUN, the 2×2 (added by lane s2afix for the manager)
+
+Four configs per cell: {default, `-fno-altcls-factor`} × {default,
+`-fno-lit-run`}. Factoring decides what S2a's runs ARE, so a lit-run gain
+measured at one factoring setting does not transfer to the other. Stamps
+measured on the lane compiler (islands / runs / program bytes):
+
+| cell | default | `-fno-altcls-factor` | `-fno-lit-run` | both denied |
+|---|---|---|---|---|
+| (a) `foo.x\|foobar\|foo.` (`tests/base/alternation_trie.rxt`), `--engine=vm` | 0 / 2 / 1,357 | 0 / 3 / 1,537 | 0 / 0 / 1,955 | 0 / 0 / 2,915 |
+| (a′) `wild-secrets-aws-access-key-id` (bench), auto (hybrid) and `--engine=vm` | 1 / 7 / 5,475 | 0 / 9 / 4,519 | 1 / 0 / 7,403 | 0 / 0 / 8,465 |
+| (b) `wild-semdiv-dollar-trailing-newline-pcre2` = `abc$`, `--engine=vm` | 0 / 1 / 434 | 0 / 1 / 434 | 0 / 0 / 728 | 0 / 0 / 728 |
+| (b′) `wild-secrets-github-pat` (bench), auto (hybrid) | 0 / 1 / 1,770 | 0 / 1 / 1,770 | 0 / 0 / 3,330 | 0 / 0 / 3,330 |
+
+- **(a)**: the tails are not all literal (`.`), so no island takes it.
+  Factoring pulls out `foo`, which leaves the runs `foo` + `bar`; unfactored,
+  each branch carries its own `foo`/`foobar` run. Expect lit-run to gain
+  MORE with factoring denied (3 runs, longer, each re-compared per branch
+  retry) than with it on (2 runs, the shared `foo` compared once). Expect
+  factoring to gain LESS with lit-run on than off: S2a already collapses the
+  per-branch chains factoring used to save.
+- **(a′)**: factoring does not shorten runs here. It exposes the shared `A`
+  and an island takes the alternation (1 island, 7 single-child-chain
+  compares). Unfactored, `vm_alt`'s chain carries nine 4-byte branch runs.
+  Denying factoring gives a SMALLER program (4,519 against 5,475), so this
+  cell may show factoring losing under lit-run: nine one-load 4-byte
+  compares against an island's first-byte dispatch plus 3-byte tails.
+  This is the cell most likely to flip the sign of `-fno-altcls-factor`.
+- **(b)/(b′)** are the controls: no alternation, so `-fno-altcls-factor` is
+  byte-identical (the stamps confirm it) and must read null. Only the
+  lit-run column moves. (b′) is the 11-byte `github_pat_` run behind an
+  exact hybrid window: one verify per match, so expect a small gain at most
+  (as §7 says).
+
+### 7.2 L-SWEEP, forced VM, each length against `-fno-lit-run` (added by lane s2afix)
+
+The purpose is to catch a PER-CALL CONSTANT in P4's compare (LITSCAN F1):
+the P8 guard and a whole-piece load are paid on every call, where the chain
+exits at the first mismatching byte.
+
+- **Cells**: `--engine=vm` on the plain literal of length L = 2, 3, 4, 7, 8,
+  10, 16, 31 and 40 (for example the first L bytes of `a..zA..Z`). Each cell
+  is measured against the same pattern under `-fno-lit-run`.
+- **Subjects**, `rx_match` and search, each of length L:
+  - the literal itself (matching);
+  - byte 0 flipped (first-byte mismatch);
+  - byte L−1 flipped (last-byte mismatch);
+  - plus one of length L−1 (P8's guard fails).
+- **Pre-checks must be denied for the failing subjects**: build with
+  `-fno-req-run -fno-req-byte` as well. Under default flags, a NECESSARY run's
+  failing subject is answered by the whole-window pre-check (itself a P4
+  memcmp, measured: `rx_reqrun` + `memchr` present at every L) and never
+  reaches the VM compare. So the default-flags row measures the pre-check,
+  not S2a. Measure both rows and label them.
+- **Expectations**, with the lowering facts from `docs/dev/memcmp_lowering_study.md`
+  (merged on main): gcc splits a non-power-of-two L into a greedy msb-first
+  chain of power-of-two pieces, each with its own load, compare and branch.
+  - **Matching and last-byte mismatch**: faster from L=4 up, growing with L.
+    L one-byte compares become ⌈pieces⌉ loads: L=7 is 3 pieces, L=10 is 2,
+    L=16 is 2 (or one NEON), L=40 is 32+8.
+  - **First-byte mismatch**: flat. The first piece fails, which is one load
+    against the chain's one byte. **A small REGRESSION is plausible at L=2
+    and L=3** (a halfword load and the P8 test against one byte compare),
+    and that is the per-call constant this sweep exists to catch.
+  - **L=31 is a named watch cell**: gcc -O1/-O2/-O3 calls `memcmp()` out of
+    line there, and at no other length from 1 to 64. Expect a REGRESSION
+    against `-fno-lit-run` on every subject kind, largest on first-byte
+    mismatch. It is a gcc lowering cliff, not a P4 property (clang inlines
+    it). If the bench confirms it, the remedy is to split a 31-byte run
+    (16+15), not to bound P4.
+  - **L−1 subject**: both forms fail on one bounds test. Expect null.
+
+## TRIAGE (lane s2afix, 2026-09-27): the detached chain's reds
+
+The chain's logs are in `worktrees/s2a-scratch/chain/`. **The brief's premise
+about rcs was partly wrong.** `answers` and `asan` exited rc=1, not rc=0.
+`asan-control` exited rc=0, and that is itself a RED: the control must fail.
+Every finding is below, with the fix commit and the re-run verdict.
+
+| stage | read as | cause | fix | re-run verdict |
+|---|---|---|---|---|
+| `answers` rc=1 | `movers 1081: identical 1077, diverged 4, skipped 0; cells compared 1119219` | INSTRUMENT: all 4 are `driver did not build`. `^${v:-}-x$` and `^a(?=${v})bc$` (auto+vm) carry `${name}`, and `possdiff_driver.c` binds no variables | `88a27f25`: the tool SKIPs a var-bearing artifact by name (`_NVARS` in the header) | 5-record probe: `movers 5: identical 1, diverged 0, skipped 4`. The two patterns answer through `tests/harness/run.sh tests/vars/{unset,basic}.rxt`: **58 passed / 0 failed** at default and under `RXTFLAGS=--engine=vm`. Net: **1,077 of 1,077 bindable movers identical, 0 real divergences** |
+| `asan` rc=1 | `movers 211: identical 209, diverged 2` | the same vars instrument defect (2 records), AND the stage was BLIND (next row) | `88a27f25`, `a5a29403` | re-run with the interceptor: **`movers 214: identical 212, diverged 0, skipped 2; cells compared 861503`**, rc=0. The 2 skips are the vars records |
+| `asan-control` rc=0 | `movers 6: identical 6, diverged 0` — **RED**: the plant was applied (no `PLANT-DID-NOT-APPLY`) and the sweep did not see it | INSTRUMENT, two causes. (1) gcc expands a constant-length `memcmp` inline with **no ASan instrumentation on its loads**, as `ldr` with no `__asan_load` (measured in the `-S` output). (2) Every control witness's run is NECESSARY, so `rx_reqrun` plus the attempt bound keep every attempt away from a subject ending inside the run. The plant is unreachable there even with a working detector | `a5a29403`: `-fno-builtin-memcmp` in both ASan stages (the call goes through ASan's strict interceptor, which checks all L bytes); the control reads the whole asan sample plus three non-necessary-run witnesses (`(?:abcdef\|x+)y`, `(?:abcd\|x+)(?:efgh\|y+)z`, `(?:abc\|x+)y`) | witnesses alone: plant **3/3 `AddressSanitizer: heap-buffer-overflow`**, lane compiler **3/3 identical**. Full re-run: control **RED as required**, `movers 214: identical 154, diverged 58, skipped 2`, and all 58 are ASan reports (55 sampled movers + the 3 witnesses) |
+| `accept` rc=1 | `pattern too large: 1332799 bytes … (limit 1000000)` | INSTRUMENT: the reference was the auto artifact, and auto REFUSES the caps config on main and on the lane alike (the capability view's "never had a real auto-caps number") | `ee8ebf88`: the reference is the abi-40 VM program itself, `BASE --engine=vm --max-emit-code-bytes=1000000` (a raise-only cap refuses and never reshapes), plus auto on `--no-captures` | **3 pairs × 5,355 cells, 0 diverged**: vm40/vm41 caps, vm40/vm41 nocaps, auto(dfa)/vm41 nocaps |
+| `axes` rc=0 | `all axes answer-identical to default (documented refusal populations excepted)`, 1906 s | — | — | GREEN as read |
+| `mech-S267` rc=0 | `COMPLETE: 1 rows (… undetected: 0 …)`, `corpus:1513fail/27798pass,prechecks:18fail/283pass` DETECTED | — | — | GREEN as read |
+| `mech-S279` rc=0 | `COMPLETE: 1 rows (… undetected: 0 …)`, `corpus:29fail/26pass,offsetskip:3fail/23pass` DETECTED | — | — | GREEN as read |
+| `maketest` rc=2 | `sections ran: 44/44`. The only `*** [...] Error` lines are `test-codegen` and `test-tune-dial` | `test-codegen`: only the accepted `nm could not read arm_a.o`. **`test-registry` is GREEN**, so the 135→138 axes-coverage pin holds. `test-tune-dial`: STALE WITNESS. §3c's `(abc\|def)(ghi\|jkl)(mno)` was 4,244 program bytes of per-byte chains, just above `VM_INLINE_CHAIN_MAX_BYTES` = 4,096, and S2a's runs shrank it to 3,325. The arm said so itself ("VACUOUS and needs a new witness") | `bfd71516`: witness `(abc\|def)(ghi\|jkl)(mno\|pqr)(stu\|vwx)`, 5,727 bytes (6,965 under `-fno-lit-run`), chosen mid-band; +1 moves the entry chain 0 → 8 `always_inline` | `bash tests/codegen/run_tune_dial.sh` alone: **checks passed: 17, checks failed: 0** |
+
+**No engine regression was found.** Every red was an instrument defect or a
+stale witness. No manifest drift appeared, so there was nothing to classify
+against §2.
+
+**Two findings worth carrying forward:**
+- **An inlined `memcmp` is invisible to ASan under gcc.** Any read-safety
+  sweep over a P4 compare must build with `-fno-builtin-memcmp`, or its green
+  certifies nothing. The positive control is what exposed this: it read green
+  on a plant known to over-read.
+- **A necessary run is SHIELDED from its own edge.** The whole-window
+  pre-check and the attempt bound keep every attempt away from `pos + L > n`
+  on a lone necessary run. That is why all four original control witnesses
+  (`abcdef`, `x(abc)defg`, `xy(a|ab)c`, `a*bcd`) could not reach the plant.
+  The real population is not all shielded: with the interceptor, the plant
+  reaches **55 of the 211 sampled movers**. These are runs inside
+  lookarounds, alternation branches and islands (`z(?!abc)`, `a|bc`,
+  `(log|login|logout)$`, `foo(?:username|password|passphrase)bar`, ...).
+  The lane compiler is clean on every one of them.
+
+`answers` §5 expected `skipped` to be "only the 2 acceptance-mover records".
+Those records are `refusal-mismatch`, not `changed`, so they were never in the
+population. `skipped` is now exactly the 4 vars records.
+
 ## STATE AT HANDOFF
 
-Branch `lane/s2a`, last commit = the report commit, **not merged**. The last
-`src/` commit is `f97c26a6`, and recursion identity (B) is pinned to it. **The
-manager re-pins (B) to the MERGE**, as its precedent says.
+**Updated by lane s2afix, 2026-09-27.** The chain below RAN TO COMPLETION
+(`CHAIN COMPLETE 2026-09-27 15:17:55`), and every red is triaged in the
+section above. Branch `lane/s2a` is **not merged**. The s2afix commits are
+`bfd71516`, `ee8ebf88`, `88a27f25` and `a5a29403`, plus this report.
+**s2afix touched nothing under `src/`**, so `f97c26a6` is still the last `src/`
+commit and recursion identity (B) is still pinned to it. **The manager re-pins
+(B) to the MERGE**, as its precedent says.
 
-One detached chain runs every remaining heavy stage serially:
+No full `make test` re-run is owed. The only `make test` input s2afix changed
+is `tests/codegen/run_tune_dial.sh`, re-run alone at 17/0. The rest of the
+44/44 run stands, its only other red being the accepted `nm` probe. The
+merge battery is the manager's.
+
+The corrected ASan stages were re-run by s2afix and are COMPLETE. The log is
+`worktrees/s2a-scratch/fix/asan2.log` (`ASAN2 COMPLETE 2026-09-27 15:37:31`).
+- `fix/asan.log`: `movers 214: identical 212, diverged 0, skipped 2; cells
+  compared 861503`.
+- `fix/asan-control.log`: `movers 214: identical 154, diverged 58`, all 58
+  from ASan, so RED as required.
+
+The triage table above carries both results.
+
+The table below is the ORIGINAL verdict spec. s2afix's amendments:
+- `answers`' `skipped` is the 4 vars records, not "2 acceptance-mover records";
+- `accept` now expects THREE `identical` lines;
+- the ASan stages build with `-fno-builtin-memcmp`.
+
+One detached chain ran every remaining heavy stage serially:
 `docs/dev/optloop/s2a/s2a_chain.sh`. It was launched with:
 - `BASE=worktrees/s2a-scratch/base/build/pcrec` (main `b0b9f0fa`);
 - `NEW=worktrees/s2a/build/pcrec`;
