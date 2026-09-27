@@ -7847,7 +7847,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     bool anchored = a_bot && a_gst;
 
     /* [OPT-ANCHOR-VM] THE AGREEMENT ASSERTION, and it runs in ONE DIRECTION
-     * BY DESIGN. the `start_anchor` fact (src/opt/startanch.c) is the AST-level
+     * BY DESIGN. The `start_anchor` fact (src/facts/startanch.c) is the AST-level
      * answer to the question the two lines above answer from the machine.
      * Since [OPTLOOP.1] batch 1 there is one predicate and the VM reads it;
      * this route keeps its own derivation because the subset construction

@@ -78,7 +78,7 @@ enum { EW_NONE = 0, EW_EOL, EW_Z };
  * The `A_CAT` spine is walked ITERATIVELY down `->r` for `src/opt/mrl.c`'s
  * reason. A left-leaning concatenation puts the long spine on `->l`, so this
  * walk's iteration is the CHEAP direction and its recursion the expensive
- * one — the mirror image of `src/opt/startanch.c`'s, which is why the two are
+ * one — the mirror image of `src/facts/startanch.c`'s, which is why the two are
  * separate functions rather than one with a direction parameter. */
 static int ew_walk(const Ast *a)
 {
@@ -132,7 +132,7 @@ static int ew_walk(const Ast *a)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
-        /* The two deliberate declines, `src/opt/startanch.c`'s for the same
+        /* The two deliberate declines, `src/facts/startanch.c`'s for the same
          * reasons: a backreference's width is the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. */
         case A_BREF:

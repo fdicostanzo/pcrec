@@ -2227,7 +2227,7 @@ that on `bracket-array-define` at 1 MiB is 52,122× the fastest engine in the
 roster (`docs/dev/optloop/cycle1_analysis.md` M2).
 
 **Where the fact comes from.** ONE predicate, `pcrec_start_anchor`
-(`src/opt/startanch.c`), walked over the LOWERED AST above either engine —
+(`src/facts/startanch.c`), walked over the LOWERED AST above either engine —
 above, because a VM-routed pattern has no DFA to ask, which is the whole
 reason the three rows with no rescue at all (`bracket-array-define`,
 `evil-alt-nested`, `trim-nested-star`) are VM rows. The DFA route keeps its

@@ -354,7 +354,7 @@ done <<< "$anchored"
 #     change and would move the `$` position set with it. A limits.def row
 #     would invite `--eol-slack=`, which is not a knob this tree can offer.
 #   A SIXTH KIND — BIT POSITIONS IN A FILE-PRIVATE SET:
-#     SA_BOT / SA_GSTART (src/opt/startanch.c, [OPT-ANCHOR-VM]). The start
+#     SA_BOT / SA_GSTART (src/facts/startanch.c, [OPT-ANCHOR-VM]). The start
 #     analysis learns TWO independent facts (`^`/`\A` and `\G`) that are not
 #     ordered — a pattern can carry both and neither refines the other — so
 #     the walk returns them as a set and these are which bit is which. They

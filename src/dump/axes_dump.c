@@ -607,7 +607,7 @@ static void emit_predicate_axes(StrBuf *sb)
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
      * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is
      * a closed TOKEN, so `stamp_value` is spelled on every row — and the
-     * three tokens are `src/opt/startanch.c`'s own, through
+     * three tokens are `src/facts/startanch.c`'s own, through
      * `pcrec_start_anchor_name`, so this registry surface and the emitted
      * `<PREFIX>_VM_START` cannot name different sets.
      *

@@ -12736,7 +12736,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
     }
 
     /* [OPT-ANCHOR-VM] THE ATTEMPT LOOP'S START BOUND, the DFA's `start_max`
-     * arriving on this engine. the `start_anchor` fact (src/opt/startanch.c) is
+     * arriving on this engine. The `start_anchor` fact (src/facts/startanch.c) is
      * the SHARED predicate — an AST-level fact, because a VM-routed pattern
      * has no DFA to ask — and both non-`unanchored` values give the same
      * bound: run the attempt this search already began and stop.

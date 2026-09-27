@@ -22,7 +22,7 @@
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
  * `PCREC_SANCH_*` and the renderer `pcrec_start_anchor_name` stay with the
  * consumers in `core/internal.h`. */
-int pcrec_start_anchor(const Ast *root);             /* src/opt/startanch.c */
+int pcrec_start_anchor(const Ast *root);             /* src/facts/startanch.c */
 
 /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
  * last `W` bytes of the subject, or `-1` where the analysis declines (the

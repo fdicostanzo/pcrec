@@ -487,7 +487,7 @@ static RbVal rb_walk(const Ast *a)
         case A_GSTART:
         case A_KRESET:
         case A_LOOK:
-        /* The two deliberate declines, `src/opt/startanch.c`'s for the same
+        /* The two deliberate declines, `src/facts/startanch.c`'s for the same
          * reasons: a backreference's bytes are the subject's business and a
          * linked call's body is `callgraph.c`'s cycle problem. Both are the
          * empty set, which disables the check — always sound. */

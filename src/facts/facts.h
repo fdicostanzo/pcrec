@@ -85,7 +85,7 @@ typedef struct {
 } ReqSet;
 
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
- * ONE predicate, read by both emitters (src/opt/startanch.c's header carries
+ * ONE predicate, read by both emitters (src/facts/startanch.c's header carries
  * the whole account, including why the DFA's own `dfa_interior_dead` pair
  * becomes a CONFIRMATION of this answer rather than a second source of it,
  * and why the implication runs in only one direction). `_NONE` is the safe
@@ -97,7 +97,7 @@ enum {
 };
 /* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
  * and `--list-axes`' own row cannot drift from the enum. */
-const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
+const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
 
 /* ---- the record --------------------------------------------------------- */
 
