@@ -49,7 +49,10 @@ Two halves, both run by `make test-findings`, which is part of `make test`
   `make test` (it needs the pre-change compiler): for every artifact an A/B
   mover manifest names, the pre- and post-change artifacts linked into
   `tests/possessify/possdiff_driver.c` and compared on span, every capture
-  slot and the give-up surface at every start position.
+  slot and the give-up surface at every start position. [OPT-LITSCAN] S2a
+  reuses it and added `CFLAGS` (the driver build's flags, e.g. ASan+UBSan
+  with `-DDIFF_EXACT_SUBJECT`) and `PREFIXES=1` (every prefix of every own
+  subject and of every literal word: subjects ending INSIDE a literal run).
 - `manifests/` — [B1] the named mover manifests (design §11.3):
   `b1_byte_movers.txt` and `b1_utf8_movers.txt`, one row per moved
   ARTIFACT naming every stamp that moved on it.
