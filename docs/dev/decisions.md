@@ -8629,3 +8629,48 @@ a time under the identity gates (step 3). This is a reorder INSIDE phase 2
 (a chartered prerequisite of two active rows), not new scope. The
 [OPTLOOP] cycle close stays bench-paced and proceeds in parallel. The
 phase-1 tails ([OPT-REQRUN-ENC], K68) finish first as already running.
+
+## D126 — [PATFACTS] step-2 design RULED: Q1-Q11 all yes, including the `src/facts/` analysis layer (Frank, 2026-09-26, eighty-first session)
+
+**Context.** The design is `docs/design/patfacts/design.md` revision 2
+(lane pfdesign + lane pfrev, merged 2026-09-26). The D6 panel is
+`docs/dev/reviews/2026-09-26-r1-patfacts-design.md` (three critics; every
+FIX applied in revision 2). Frank asked mid-panel whether keeping each
+analysis in its first consumer's pass file "cause[s] crazy
+interdependencies when area A writes the analysis but it's used by
+unrelated area B or even C". The architecture critic's verdict was ADOPT
+WITH CARVE-OUTS, and revision 2 made the layer the proposed layout (Q11).
+
+**Decision (Frank: "Yes to all").**
+- Q1: three sealed epochs, E1 eager at its seal.
+- Q2: lazy memoized accessors.
+- Q3: fact denies are fact-level ("nothing to find" for every consumer),
+  with per-flag consumer lists in the spec.
+- Q4: the prior's NONE answer spelled once per question kind. This
+  amends `findings/design.md` §6.1-6.3 before B1.
+- Q5: the record excludes route/emission decisions (D124).
+- Q6: S2a now. S2b is deferred to its bench trigger.
+- Q7: file the row deriving `strategy_denials` from the axes definitions
+  (`[AXES-DENY-MASK]`).
+- Q8: `--emit-facts` is a DEBUG LISTING with a spec page.
+- Q9: fact-valued stamps render from the facts renderers; decision
+  stamps are captured.
+- Q10: unasked facts are forced only after the artifact is complete,
+  never refusing a successful compile.
+- Q11: the `src/facts/` analysis layer, with carve-outs (a)-(e):
+  - (a) `internal.h` split first (step 3.0a);
+  - (b) rate readers join B1's primitives;
+  - (c) decisions stay in their passes;
+  - (d) the encoding descriptor is a declared input;
+  - (e) one relocation per commit under the zero-movers gate.
+  An include-graph + link-symbol check replaces the name grep.
+
+**Manager ruling alongside (panel finding A10).** The dump's
+non-perturbation check (§11.6-1) is HELD, not shipped. Lane pfrev measured
+no pattern on which it can fail (REQ_BYTE is asked on every route probed),
+and a check with no failing witness is theatre. It is built when a fact
+exists whose early force could change a stamp (D77).
+
+**Consequence.** Step 3 opens with 3.0a (the `internal.h` split), then
+3.0 (the skeleton, the facts dump, the first relocations). [FINDINGS] B1
+follows as the machinery's first customer; 3.0 is a hard prerequisite.
