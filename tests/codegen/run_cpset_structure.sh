@@ -637,6 +637,14 @@ fi
 # other lines are the two same-length abi digits. It is in step 6's mover
 # population by construction (docs/dev/optloop/s1/s1step6_movers.py: every
 # run-pre-check artifact moves and no other); no other sample row moved.
+#
+# RE-RECORDED A THIRTEENTH TIME, 2026-09-27, lane findb1 ([FINDINGS] B1, abi
+# 39 -> 40), EVERY ROW, EMITTED_BYTES only, each exactly +385: the
+# `<PREFIX>_FINDINGS` line (+55) and the rx_info `.findings` initializer
+# (+56) in the `.c`, and the struct's appended `findings` member with its
+# three-line trailing comment (+274) in the ABI block. Diffed at the same
+# `-o` basename against main bd8d1075 (lane report §4.2); no other stamp in
+# this census moved.
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then
