@@ -1271,6 +1271,31 @@ if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--vm-entry-shape'; then
 fi
 
 # ============================================================================
+# [FINDINGS] B2 THE FINDINGS AXIS (docs/design/findings/design.md §11.1,
+# [r2 S-F1]): the corpus under EACH adversarial analysis in
+# tests/findings/adversarial/ — shapes built to be wrong (uniform, inverted,
+# one-hot, random) and one `fire-<reader>` per rate reader, each the table
+# that moves that reader's choice most. A rate may change SPEED and never an
+# answer or a give-up (§6.2a), so `lost_ok` is 0 and GIVEUP1 carries NO
+# allowance for any of them: a transition is a failure, counted as its own
+# population. RXTFLAGS carries `-I DIR --analysis=NAME`, which every compile
+# the harness makes (a `--pattern` compile, or a file operand) resolves.
+# Selected by `--analysis` in AXES (every bundle) or `--analysis=NAME` (one).
+# ============================================================================
+FINDINGS_ADV="$ROOT_DIR/tests/findings/adversarial"
+if [ -z "$AXES" ] || printf '%s' "$AXES" | grep -q -- '--analysis'; then
+    for _b in "$FINDINGS_ADV"/*.rxt; do
+        _n="$(basename "$_b" .rxt)"
+        if [ -n "$AXES" ] && ! printf ' %s ' "$AXES" | grep -q -- ' --analysis '; then
+            case " $AXES " in (*" --analysis=$_n "*) ;; (*) continue ;; esac
+        fi
+        job_label+=("--analysis=$_n (FINDINGS axis, findings design §11.1)")
+        job_flags+=("-I $FINDINGS_ADV --analysis=$_n")
+        job_lost_ok+=("0")
+    done
+fi
+
+# ============================================================================
 # [OPT-DIAL] THE DIAL, AS A FIFTH KIND OF AXIS (docs/design/opt_dial_design.md
 # §6.1; docs/spec/tuning.md §5.5). Four non-default positions join the job
 # list the identical mechanical way `--engine=`/`--vm-entry-shape=` do:

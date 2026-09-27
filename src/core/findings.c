@@ -6,14 +6,17 @@
  * THE DATA TIER. A byte-rate is DATA about a subject corpus under an
  * encoding, declared by the data (D123-4): a bundle's `freq` block says
  * `serves byte-rate when <encodings> via unigram`, and the accessor's whole
- * selection rule is "use what the data declares" (§2.4). At B1 the chain is
- * the built-in `default` alone (S3, the embedded store: every
- * `src/findings/<name>.rxt`, compiled in as its TEXT by scripts/embed_text.sh
- * and as that text PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
- * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3)). The default
- * declares `byte` only,
- * so under `-e utf8` the answer is NONE. Resolution beyond it (S1/S2,
- * `--analysis`) is B2's.
+ * selection rule is "use what the data declares" (§2.4): the first block
+ * along this compile's CHAIN serving the query under its encoding
+ * (`pcrec_find_chain_answer`). The chain is resolved per attempt by
+ * src/parse/rxt_find.c ([FINDINGS] B2: the compiling file, `-I DIR/<name>.rxt`,
+ * the store) and always ends in the built-in `default`, found here by
+ * identity: S3, the embedded store, is every `src/findings/<name>.rxt`
+ * compiled in as its TEXT by scripts/embed_text.sh and as that text
+ * PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
+ * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3). The default
+ * declares `byte` only, so with no analysis named the answer under
+ * `-e utf8` is NONE.
  *
  * WHAT A RATE READER IS. Every member of a necessary set and every window of
  * a necessary run is SOUND for the emitted pre-check (`src/facts/req.c`

@@ -77,7 +77,7 @@ def main(d):
     # #8 a name defined twice in the compiling file.
     w(os.path.join(d, "dup.rxt"), bundle("dup", rows(24)) + bundle("dup", rows(25)))
     # #10/#11 an explicit include <default>, serving utf8 only.
-    w(os.path.join(a, "withdef.rxt"),
+    w(os.path.join(b, "withdef.rxt"),
       bundle("withdef", rows(26), encs="utf8", include="default"))
     # the no-query note: a byte-only bundle on a utf8 compile.
     w(os.path.join(a, "byteonly.rxt"), bundle("byteonly", rows(27), encs="byte"))
@@ -105,6 +105,18 @@ def main(d):
       "config c\n    analysis mine\n"
       "target t_cfg = p with c\n"
       "target t_fill = p\n\npattern abc\nname p\n")
+    # #22 two targets in ONE invocation, the second asking nothing: its
+    # stamp must be "" — the consumption record is per compile (and per
+    # attempt), never carried from the target before it (F-9).
+    w(os.path.join(d, "multi.rxt"),
+      "config q\n    pcrec -fno-req-byte\n"
+      "target t_asks = p1\n"
+      "target t_quiet = p2 with q\n\n"
+      "pattern abc\nname p1\n\npattern ^abc\nname p2\n")
+    # §11 the table contract's escaping: a question carrying a TAB.
+    w(os.path.join(a, "tabq.rxt"),
+      bundle("tabq", rows(32)).replace("question fixture 'tabq'",
+                                       "question has\ta tab"))
     # F-12's witnesses: K65's repro under two bundles, one making `Z` the
     # rarest necessary member, one making `@` rarest (the pick moves, the
     # answer and the give-up must not).

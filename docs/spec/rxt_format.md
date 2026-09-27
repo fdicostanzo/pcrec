@@ -68,8 +68,12 @@ A `config` body holds indented `pcrec` (raw pcrec flags), `flags`,
 the same productions a pattern block's own directives use, so the two
 cannot disagree about what `budget frames=` means. **`analysis <name>`
 names ONE analysis (a bundle)** — at most one per config body, in the
-bundle-name grammar; its name is not resolved in this build ([FINDINGS]
-B2 resolves it). **The `pcrec` line may not carry `--analysis`** (refused
+bundle-name grammar. **[FINDINGS] B2: it is RESOLVED** — through this file's
+own bundles, then each `-I DIR/<name>.rxt`, then the analyses built into
+pcrec (`docs/spec/findings.md` §7) — and composes across `from`/`with` by
+LATER-WINS, `engine`'s rule: one name, never a list. A name no stop defines
+refuses the target's compile. The CLI's `--analysis` only FILLS a target
+whose configs name none (`cli.md` §1.1). **The `pcrec` line may not carry `--analysis`** (refused
 at parse): a config names its analysis with its own `analysis` line, so
 the choice is visible in the file. **[REL-1.10]/D118 addendum (iv)**: the `pcrec`
 line's raw text is re-parsed by the CLI's own option parser
@@ -862,9 +866,11 @@ Every field is at-most-one within the record.
 is a file-level BUNDLE: the named analysis a `config`'s `analysis` line
 selects. It holds **at most one data block per KIND**, an optional
 `include <other>`, and an optional `description`. It is a HEAD
-declaration, so it sits above the first `pattern` line. Nothing in this
-build CONSUMES a bundle: B0 is the format, parsed and reported; the
-compiler's reading of it arrives with [FINDINGS] B1/B2.
+declaration, so it sits above the first `pattern` line. **[FINDINGS] B2:
+a bundle is CONSUMED** when a target's config (or `--analysis`) names it:
+the compiling file's own bundles are the FIRST stop the name is looked up at
+(`docs/spec/findings.md` §7), and a bundle in a file found through `-I` is
+read the same way.
 
 - **The name** is LOWERCASE ONLY, `[a-z][a-z0-9_-]*`, and unique in the
   file (a second `analysis` with the same name is refused naming the
@@ -881,7 +887,7 @@ compiler's reading of it arrives with [FINDINGS] B1/B2.
 
 | bundle line | cardinality | value |
 |---|---|---|
-| `include <other>` | at most one | another analysis, in C's SEARCH spelling `<name>` (the bundle-name grammar). A quoted path is refused: this is not the head's `include "path"` splice. `<other>` may name the bundle's own name (resolution, B2, gives that `#include_next` meaning) |
+| `include <other>` | at most one | another analysis, in C's SEARCH spelling `<name>` (the bundle-name grammar). A quoted path is refused: this is not the head's `include "path"` splice. **Resolved** (B2, `findings.md` §7) through the same stops as a config's name; `<other>` may name the bundle's OWN name, which resolves starting at the stop AFTER the one this bundle was found at (`#include_next`: the way to extend a shipped analysis under its own name). Any other repeat is an include cycle and refused |
 | `description <text>` | at most one | prose; takes the block-scalar form |
 | `freq` | at most one | a DATA block (below), takes no value: a kind block is named by its bundle |
 

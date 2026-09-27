@@ -596,8 +596,24 @@ the order given is the search order, after each source file's own
 directory — the one flag in this CLI that accumulates rather than
 replacing, because a single-valued form would make two libraries an
 either/or. A `lib <store-name>` reference (the other spelling the grammar
-has) is refused as not in this build. Both spellings apply to a file
-operand alone.
+has) is refused as not in this build.
+
+**[FINDINGS] B2: `-I` IS ALSO THE ANALYSIS SEARCH PATH** (`findings.md` §7,
+stop S2): an analysis name `N` is looked up as the file `DIR/N.rxt` in each
+`-I` directory in order. So `-I` is legal wherever a bundle is RESOLVED — a
+file operand, a plain `--pattern` compile (where it serves the analysis
+lookup alone, there being no `lib` line), and `--list-analysis` — and is
+still refused with every other query (`--list-syntax`, `--count-groups`,
+`--emit-ir`, …), where nothing would read it.
+
+**`--analysis NAME`** (or `--analysis=NAME`) — [FINDINGS] B2
+(`docs/spec/findings.md` §7): the analysis a compile reads its
+subject-aware rates from. It names the analysis of a `--pattern` compile,
+and of each target of a file operand whose configs name none — it is
+FILL-ONLY (below). Legal with a compile and with `--list-analysis FILE`;
+refused elsewhere. Names are lowercase (`[a-z][a-z0-9_-]*`); an unknown name
+refuses the compile, naming the stops searched. An analysis moves SPEED and
+never an answer; the artifact records it in `<PREFIX>_FINDINGS`.
 
 **[DD-13b.W1.3] A `lib` FILE IS NOW READ, AND ITS DEFINITIONS ARE IN
 SCOPE.** Until this step a `lib` reference was resolved only far enough to
@@ -672,7 +688,8 @@ machinery exists to tell the two apart, on the ruling's own terms: the
 substance is that an explicit NON-DEFAULT CLI choice is never silently
 overridden, and `auto` is the default. This exception applies to `engine`
 alone; every other axis `target`/`config` can set (`flags`, `encoding`,
-`budget`, `tune`) still follows the file-wins rule stated above unchanged.
+`budget`, `tune`, `analysis`) still follows the file-wins rule stated above
+unchanged.
 
 **`tune` IS NOT A SECOND EXCEPTION** (D93 addendum, Frank's ruling
 2026-09-16 — `docs/spec/tuning.md` §5.1 states the option in full). The
@@ -701,6 +718,23 @@ D93's own revisit-when names the shape such an override would take (an
 explicit loud flag, never a silent precedence flip), which this document
 does not promise today.
 
+**`--analysis` IS NOT AN EXCEPTION EITHER, AND IT ONLY FILLS** ([FINDINGS]
+B2, D123-8 item 2). A target whose configs name an `analysis` gets that one;
+`--analysis` names the analysis only of targets whose configs name none. A
+disagreement is reported in `tune`'s shape, with the FILE winning:
+
+```
+pcrec: FILE:LINE: target 'PREFIX': CLI --analysis X and this file's
+analysis Y disagree; using the file's value (--analysis is fill-only)
+```
+
+An experiment with another analysis is a config VARIANT in the file —
+`config exp from base` carrying `analysis x`, and a target built `with exp`
+— which `--list-source` can show and a reader of the file can see, never an
+invisible command-line override. **`--analysis` inside a config's `pcrec`
+line is refused** when the file is read: a config names its analysis with
+its own `analysis` line.
+
 **A `config` block's `pcrec <raw>` is re-parsed by this CLI's own option
 parser**, so a flag cannot mean one thing on the command line and another in
 a config block. It may set COMPILE OPTIONS only: an output path, `--pattern`,
@@ -718,11 +752,13 @@ target, then `pcrec`'s own pattern offset.
 
 ## 2. Listing surfaces
 
-**EIGHT** TSV dumps, each a query taking no pattern and no `-o` (mixing
+**TEN** TSV dumps, each a query taking no pattern and no `-o` (mixing
 either in is refused). Seven answer from what THIS BUILD of pcrec knows —
 six about pattern SYNTAX and its machinery, and `--list-schema` about the
 `.rxt` FILE FORMAT — while the eighth, `--list-source`, reads a FILE named
-by its own value. ([DD-13b.W23.1] moved this count; `docs/spec/registry.md`
+by its own value, and the ninth and tenth ([FINDINGS] B2) list the
+ANALYSES: `--list-analyses` the ones built in, `--list-analysis` what one
+name, or each target of one file, resolves to. ([DD-13b.W23.1] moved this count; `docs/spec/registry.md`
 §10 is the reconciled numbering every document here agrees with.) The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
@@ -881,9 +917,25 @@ the construct.
 `--list-source --resolved` — the file with its `config` composition and
 `with`/`from` cascades APPLIED — is named here and is not built.
 
+### `--list-analyses`
+
+[FINDINGS] B2. One row per analysis BUILT INTO this library — `-I`
+directories are never enumerated. Columns and meaning:
+`docs/spec/findings.md` §8. Takes no `-I`.
+
+### `--list-analysis NAME` / `--list-analysis FILE`
+
+[FINDINGS] B2. With an analysis NAME: the chain this invocation resolves
+(honouring `-I`), what each (query, encoding) answers from with the exact
+digest a stamp would carry, and the named bundle's rows, declarations and
+provenance. With a `.rxt` FILE (any value that is not an analysis name): the
+per-target view — each target's analysis after config joins and the
+fill-only `--analysis`, its chain and its resolution. Sections and columns:
+`docs/spec/findings.md` §8.
+
 ### `--emit-ir` — the VM program listing ([DD-8])
 
-A QUERY, like the eight dumps above and unlike a compile: it takes a
+A QUERY, like the ten dumps above and unlike a compile: it takes a
 PATTERN, takes no `-o`, and emits no C. It prints the VM program listing —
 labels, every instruction with its branch target, choice points with their
 preference order, capture-slot assignments, island boundaries, callout sites
@@ -1088,6 +1140,15 @@ Stated plainly rather than left for a stranger to discover by trial:
   either — see §1.
 
 ## Revision history
+
+- 2026-09-27 ([FINDINGS] B2, D123-8): §1 gains `--analysis NAME` (FILL-ONLY,
+  not a file-wins exception) and the `-I` lift (legal with `--pattern` and
+  `--list-analysis`, the analysis search path); the file-wins section names
+  `analysis` among the axes that follow it and states the fill-only rule and
+  its note; §2 counts TEN listings and gains `--list-analyses` and
+  `--list-analysis`. The `--lib-path` refusal outside a file operand now reads
+  "applies to a compile (a file operand or --pattern) or to --list-analysis
+  only".
 
 - 2026-09-26 ([PATFACTS] step 3.0, D126): §2 gains a `--emit-facts` entry,
   a new pattern-bearing query pointing at the new

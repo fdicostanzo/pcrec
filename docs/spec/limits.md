@@ -424,7 +424,7 @@ caller never meets either at match time.
 Neither number is movable by a flag; both are `--list-limits` rows like
 every other number in this document.
 
-### 3.7 Findings data: a count's ceiling and the rate floor ([FINDINGS] B1)
+### 3.7 Findings data: a count's ceiling, the rate floor, and resolution's bounds ([FINDINGS] B1, B2)
 
 An analysis's data blocks store COUNTS, which the compiler turns into rates
 (`docs/spec/findings.md` §2–§3). Two numbers bound that arithmetic:
@@ -438,9 +438,18 @@ An analysis's data blocks store COUNTS, which the compiler turns into rates
   this floor, so no rate reader ever treats a byte as impossible. It is the
   shipped default's own floor, which is why the default normalizes to itself.
 
-Neither number is movable by a flag. The remaining findings limits (chain
-length, bundle and store size, `cpfreq` rows, run length) arrive with the
-steps that read them.
+[FINDINGS] B2 adds two bounds on RESOLUTION (`docs/spec/findings.md` §7):
+
+- **An analysis chain holds at most `PCREC_MAX_FIND_CHAIN` = 8 links** before
+  its built-in `default` terminal — the selected bundle and each `include` it
+  follows. A longer chain is refused, naming this limit; nothing is cut.
+- **An analysis is read from a text of at most `PCREC_MAX_FIND_BUNDLE_BYTES`
+  = 1,048,576 bytes** — an `-I DIR/<name>.rxt` file, or a library caller's
+  `analysis_source`. A larger one is refused by this name before it is
+  parsed, never truncated.
+
+None of these numbers is movable by a flag. The remaining findings limits
+(store size, `cpfreq` rows, run length) arrive with the steps that read them.
 
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 
