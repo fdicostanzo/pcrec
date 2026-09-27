@@ -70,8 +70,8 @@ stage accept bash docs/dev/optloop/s2a/accept_mover.sh
 # 4. the new axis, answer-identical over the whole corpus
 stage axes env AXES="-fno-lit-run" timeout 14400 bash tests/axes/run_axes.sh
 
-# 5. the sabotage rows: the two new ones and the two P4 rows S2a widened
-for s in S304 S305 S267 S279; do
+# 5. the two P4 rows S2a widened (S304/S305 were measured by the lane)
+for s in S267 S279; do
     stage "mech-$s" timeout 3600 bash tests/mech/run_sabotage_matrix.sh "$s"
 done
 

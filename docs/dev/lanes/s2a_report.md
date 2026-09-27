@@ -54,7 +54,7 @@ Lane `s2a` (opus, engine code), 2026-09-27. Branch `lane/s2a` from main
 | `f9df48ab` | abi 40 -> 41, `ABI_EXPECT`, spec hunks (limits §3.1, tuning §2.31, ir_listing `compare` op, match_api §6), `tests/litscan/` corpus, S304/S305 |
 | `f97c26a6` | `-fno-lit-run` + `<PREFIX>_VM_LIT_RUNS` (last `src/` commit), recursion-identity (A) third deny axis |
 | `7b8873d2` | CLAUDE.md for every directory whose roles changed; `docs/dev/optloop/s2a/s2a_movers.py` |
-| (next) | ir-listing baselines re-captured; (B) re-pinned to `f97c26a6`; pins below |
+| (after) | ir-listing baselines re-captured; recursion identity (B) re-pinned to `f97c26a6`; axes coverage, rxtsource census and cpset manifest re-pinned (§4); mech verdicts; chain + report |
 
 ## 2. Movers manifest (what moves, and why)
 
@@ -120,7 +120,11 @@ artifact, and the PROGRAM movers stay exactly the 1,081 above.
 - There is no cost-walk twin: a run costs nothing, and the element after it
   was not seen to move any stamp on the witnesses tried. This is recorded in
   S305's header.
-- Measured verdicts: OWED (§7, the chain's `mech` stage).
+- **MEASURED, single-row mech at `b04e7ab3`: both DETECTED and REACHED.**
+  - S304: `reach:ok(1/1)`, `corpus:4fail/83pass`.
+  - S305: `reach:ok(1/1)`, `irlist:2fail/153pass`.
+- S267 (P4's sense inverted) and S279 (P4's offset) now also plant into the
+  VM's compares. Re-running them is OWED in the chain.
 
 ## 4. Suites that count (D94), run by the lane
 
@@ -138,7 +142,24 @@ artifact, and the PROGRAM movers stay exactly the 1,081 above.
   - Each change is a consume chain -> one `compare` row, plus the label
     renumbering and one island die's work-charge note that a swallowed node no
     longer writes.
-- The remaining D94 suites: see §7 (filled at handoff).
+- `make test-codegen`: **all green except the one accepted red** ("FAIL: nm
+  could not read arm_a.o"). This includes `run_codegen_tests.sh` (the abi pin
+  at 41, with its narrative extended), `run_size_term.sh` (the cap-rescue
+  reference did not need to move) and `run_facts_checks.sh`.
+- `make test-registry`: red on ONE pin, `axes_registry_check` coverage
+  135 -> 138. That is `-fno-lit-run`'s (macro, bit, flag) triple, verified
+  line by line. Re-pinned; the verdict is owed in `make test`.
+- `make test-rxtsource`: the census moved by exactly the new corpus file,
+  +1 file / +19 blocks / +87 lines. Re-pinned (CENSUS_* and RUNSH_*), then
+  re-run: **0 failed**.
+- `make test-resource`: **green**. The `a{5,25000}` rescue pin did not move,
+  because the pattern is DFA-routed.
+- `make test-cpset-structure`: the manifest drifted on 5 VM rows, and each was
+  reviewed by a same-basename diff against main:
+  - 4 moved +25, which is the `RX_VM_LIT_RUNS 0` line;
+  - `(?<=foo)bar` moved -569, from its stamp plus `foo`/`bar` collapsing to
+    two compares.
+  - Re-recorded, then **28/0**.
 
 ## 5. Answer/give-up identity and read safety
 
@@ -201,4 +222,34 @@ Not measured here. These are the cells and the direction expected:
 
 ## STATE AT HANDOFF
 
-(filled at handoff)
+Branch `lane/s2a`, last commit = the report commit, **not merged**. The last
+`src/` commit is `f97c26a6`, and recursion identity (B) is pinned to it. **The
+manager re-pins (B) to the MERGE**, as its precedent says.
+
+One detached chain runs every remaining heavy stage serially:
+`docs/dev/optloop/s2a/s2a_chain.sh`. It was launched with:
+- `BASE=worktrees/s2a-scratch/base/build/pcrec` (main `b0b9f0fa`);
+- `NEW=worktrees/s2a/build/pcrec`;
+- `JSON=worktrees/s2a-scratch/id/s1_identity.json`;
+- `OUT=worktrees/s2a-scratch/chain`.
+
+It is `nohup … & disown`, so it outlives the lane. `worktrees/s2a-scratch/`
+is gitignored scratch inside the repo.
+
+**The chain's own progress log is `worktrees/s2a-scratch/chain/chain.log`.** It
+writes one `STAGE <name> rc=<n> <time>` line per stage, and **`CHAIN COMPLETE`**
+is its final line. Each stage's verdict is in `…/chain/<stage>.log`:
+
+| stage | owes | verdict is |
+|---|---|---|
+| `answers` | every one of the 1,081 movers answer- AND give-up-identical against main, all startpos (`b1_mover_answers.py`) | last line `movers N: identical N, diverged 0, skipped S; cells compared C`. Any `diverged` > 0 or a `FAIL` line is red. `skipped` must be only the 2 acceptance-mover records (base refuses) |
+| `asan` | read safety: 200 sampled movers + the named run witnesses, under ASan+UBSan, exact-length subjects, every prefix | the same last line with `diverged 0`. A sanitizer report makes the driver exit non-zero, and that shows as `FAIL … ERROR: AddressSanitizer`/`runtime error` |
+| `asan-control-build`, `asan-control` | the sweep's POSITIVE control: P8's guard planted one byte short | `asan-control` MUST be RED (`diverged` > 0 with an AddressSanitizer read past the subject). A green control means the sweep cannot see an over-read, and then the `asan` verdict certifies nothing. `PLANT-DID-NOT-APPLY` in chain.log is also a failure |
+| `accept` | `wild-datetime-datefinder-alternation` `--engine=vm` (now compiling) agrees with the auto artifact | two `ACCEPT-MOVER [...]: identical` lines |
+| `axes` | `-fno-lit-run` answer-identical over the whole corpus | `tests/axes/run_axes.sh`'s own verdict lines for `-fno-lit-run` (0 disagree) |
+| `mech-S267`, `mech-S279` | the two P4 rows still detect, now that their plant also reaches the VM | each log's `== mech run COMPLETE: … undetected: 0 …` line |
+| `maketest` | full `make test CC=gcc-16` | **make's `*** [test-X] Error` lines**, and only those. The one accepted red is "FAIL: nm could not read arm_a.o (no rx_search symbol)", inside `test-codegen`. Anything else is a real red, including `test-registry` if the 138 pin is wrong |
+
+Owed beyond the chain:
+- the D77 bench pass on S2a's own cells, with predictions in §7 for relay;
+- **the manager's ruling on `-fno-lit-run`** (§6).

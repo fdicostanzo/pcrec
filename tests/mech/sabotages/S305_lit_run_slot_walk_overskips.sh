@@ -21,7 +21,7 @@ SAB_ID="S305-lit-run-slot-walk-overskips"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="irlisting"
 SAB_DESC="vm_count_slots skips the spine element after every literal run, so the slot/resume-point pre-pass under-counts what vm_cat emits after a run: xy(a|ab)c's pre-pass counts 0 resume points against 1 emitted RX_PUSH"
-SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED: see docs/dev/lanes/s2a_report.md. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
+SAB_DOC_FIGURE="PREDICTED (lane s2a, 2026-09-27): DETECTED by run_ir_listing.sh's resume-points under-count check on xy(a|ab)c. MEASURED 2026-09-27 (lane s2a, single-row mech at b04e7ab3): DETECTED -- reach:ok(1/1), irlist:2fail/153pass (the resume-points under-count on xy(a|ab)c). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S305."
 # [MECH-REACH] the witness takes the run arm and pushes after it.
 SAB_REACH='"$PCREC" --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "xy(a|ab)c" && grep -qF "!memcmp(subject + scan_position, \"xy\", 2)" "$REACH_TMP/o.c" && grep -q "RX_PUSH(" "$REACH_TMP/o.c" && echo REACH-RUN-THEN-PUSH'
 SAB_REACH_EXPECT="REACH-RUN-THEN-PUSH"
