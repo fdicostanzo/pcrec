@@ -12,6 +12,23 @@ addenda (especially 2 and 4), D124, D77, and the general-mechanisms rule.
 
 Read §0, then §1's table. Everything after §1 argues a row of that table.
 
+**Revision log.**
+- Revision 1, 2026-09-26 (lane pfdesign): the design as panelled.
+- **Revision 2, 2026-09-26: D6 panel r1 + Frank's relocation question**
+  (lane pfrev; `docs/dev/reviews/2026-09-26-r1-patfacts-design.md`). Every
+  FIX row is applied, and each carries its finding ID inline as `[r1 ID]`.
+  The largest change answers Frank's question ("does keeping each analysis in
+  its first consumer's pass file cause crazy interdependencies?"). The
+  PROPOSED layout is now an ANALYSIS LAYER, `src/facts/` (§4.2, ADOPT WITH
+  CARVE-OUTS (a)-(e), for Frank as §12 Q11). The one-caller grep check is
+  replaced by an include-graph and link check (§4.2.3). Also changed: E1 is
+  forced eagerly at its seal and drops the root character widths (§3). E3 is
+  sealed per branch (§3). Step 3.4 is flagged as a possible mover (§9). §9
+  gains a mover-classification procedure and its per-family relocations.
+  §8.1's "B1 first" fallback is deleted. S2a is now stated to exercise none
+  of the pattern-grain machinery (§0, §8.2, Q6). Two of §11.6's checks take
+  independent oracles, and §11.6's non-perturbation check is born with B1.
+
 ---
 
 ## 0. Decisions first
@@ -23,12 +40,18 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
    the retry ladder resets it for free).
 2. **Facts are SEALED BY EPOCH, and there are three epochs, not one** (§3).
    E1 (structural) is sealed after `pcrec_callgraph_build`
-   (`compile.c:1397`). E2 (lowered) is sealed after `pcrec_lower_enc`
-   (`:1488`). E3 (machine) is sealed after the forward NFA is final
-   (`pcrec_nfa_wrap_unanchored`, `:1654`). The charter's "after
-   `pcrec_lower_enc`" is E2. E1 exists because `select_engine` asks
-   nullability and kind-presence BEFORE lowering (`select_engine.c:568,
-   611, 658, 686`). E3 exists because the run pin is an NFA fact. A fact is
+   (`compile.c:1397`), and its facts are FORCED EAGERLY at that seal, because
+   `pcrec_lower_enc` rewrites the tree in place (`:1488`) and a lazy E1 answer
+   would depend on when it was asked [r1 A1]. E2 (lowered) is sealed after
+   `pcrec_lower_enc` (`:1488`). E3 (machine) is sealed PER BRANCH, and only
+   on the branch that wraps the forward NFA (`pcrec_nfa_wrap_unanchored`,
+   `:1654`, inside `:1651`'s `ENG_UNANCH` arm). The `ENG_ATTEMPT` arm
+   (`:1685-1686`) builds a forward NFA (`:1539`) but never wraps it. Its E3
+   facts DECLINE with their own token and are never forced [r1 A3]. The
+   charter's "after `pcrec_lower_enc`" is E2. E1 exists because
+   `select_engine` asks nullability and kind-presence BEFORE lowering
+   (`select_engine.c:568, 611, 658, 686`). E3 exists because the run pin is
+   an NFA fact. A fact is
    published only once nothing can revoke it, so the step-1 "revocable
    fact" problem (`revbody`) cannot arise inside the record. The
    `revbody` case is a REWRITE correcting a rewrite, and the record does
@@ -37,18 +60,29 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
    contract into a checked one.
 3. **Core vs derived is a field-level split, and the delta already shows
    it** (§4). CORE facts come from a walk: the necessary SET, the WHOLE
-   run, the anchors, the widths, the kind mask, and the k-set walk. DERIVED
+   run, the anchors, the root byte width and nullability, the kind mask, and
+   the k-set walk. A core fact reads no prior, which is why the k-set walk's
+   per-offset `ppm` moves into the selection half (§4.2, [r1 A2]). DERIVED
    facts are functions of core facts plus a prior or a second core fact:
    the pick, the run's scan member and window, and the pin. A derived fact
    never re-walks a tree. The one cross-derivation dependency that must
    survive migration unchanged is S1's pin, which is over the DERIVED
    window (`litscan_s1.md` R3-2), not the whole run.
-4. **ONE owner per derivation, and it stays where it lives today**
-   (`reqbyte.c`, `startanch.c`, `endwin.c`, `mrl.c`, `atomic.c`,
-   `prefix_k.c`). The record module (`src/opt/facts.c`, NEW) holds only
-   the memo, the epoch guard and the DENY application. Consumers call
-   accessors, and a structural grep check forbids calling an owner's
-   derivation from anywhere else (§5). That cures R1/R2/R14 by construction.
+4. **ONE owner per derivation, in an ANALYSIS LAYER, `src/facts/`**
+   (§4.2; revision 2, answering Frank's relocation question; for ruling as
+   §12 Q11). The layer has one file per fact family: `req.c` (the necessary
+   set/run walk lifted out of `reqbyte.c`), `kset.c` (the k-set walk and the
+   pin, lifted out of `prefix_k.c`), `startanch.c`, `endwin.c`, `kinds.c`
+   and `widths.c`. Beside them sit `facts.c` (memo, epoch guard, deny, the
+   listing's force loop) and `facts.def` (the table). A derivation depends
+   only on the IR/NFA and the node-grain primitives over it. It reaches other
+   facts only through the dependency DAG declared in `facts.def`, and its one
+   encoding input is the encoding DESCRIPTOR, which is declared. DECISIONS
+   stay in their passes (G1's `req_byte_dominated_by`, the offset-k
+   selection). Consumers include only `facts.h`. The derivations are declared
+   in a facts-private header, and an include-graph plus link check enforces
+   that (§4.2.3). That cures R1/R2/R14 by construction and removes the
+   "first consumer's file owns the analysis" shape R13 grew in.
 5. **Encoding is one rule in two parts** (§6).
    (a) A FACT derivation never reads `cx->opt->encoding`. The lowered tree
    and NFA are already in the encoding's units, and the only
@@ -92,22 +126,33 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
    shared with the gate move (D123-2). **S2a** (`[OPT-VMLIT]` exact) reads
    ONE node-grain fact, the emission-contiguous literal run of an `A_CAT`
    spine, built from `pcrec_cls_single`. It reads nothing pattern-grain.
-   **S2b** (D122(3)'s carried facts) is specified here and NOT built: its
-   trigger is named.
-10. **Migration** (§9): the skeleton first, byte-identical (3.0). Then B1,
-    the abi event. Then one existing analysis at a time, each
-    byte-identical under a named gate. **A migration step that moves an
-    emitted byte is not a migration; it is a FINDING** (two copies
-    disagreed). The step stops and files a K-row. It must not be absorbed
-    into an abi bump.
+   **So S2a exercises none of the pattern-grain machinery: no memo, no
+   epoch, no deny.** Its fact is a node-grain pure function (§4.3). Beyond
+   the migration itself, the machinery's customers are step 3.0 (the E2
+   req/anchor/window accessors and their denies) and B1 (the deny's effect on
+   the consumption record, and the rate accessor) [r1 A6]. Whether S2a is
+   built now or waits for S2b as the machinery's real outside customer is
+   §12 Q6. **S2b** (D122(3)'s carried facts) is specified here and NOT built:
+   its trigger is named.
+10. **Migration** (§9): the internal.h split and the skeleton first,
+    byte-identical (3.0). Then B1, the abi event. Then one existing analysis
+    at a time, each byte-identical under a named gate, each family's
+    relocation into `src/facts/` riding its own step, one relocation per
+    commit. **A migration step that moves an emitted byte is classified
+    before anything else happens** (§9.1, [r1 C1]). A SEMANTIC mover (a
+    value, a stamp or a code path differs) is a FINDING: two copies
+    disagreed. The step stops and files a K-row, and the mover must not be
+    absorbed into an abi bump. A SCAFFOLDING mover (text, comment or layout
+    only) is the ordinary D76 ritual, with the diff attached to justify the
+    class.
 
 11. **The record is INSPECTABLE** (§11, scope addition from Frank,
     2026-09-26). A query `pcrec --emit-facts --pattern P` (spelling: the
     manager's, `--emit-ir`'s query precedent) prints every fact, its status
     and WHY, per encoding. ONE printer renders every row from the record's
     memo, which is the same object the passes read. The fact-valued stamps
-    (`REQ_BYTE`, `REQ_RUN`, `VM_START`) render through the same per-fact
-    renderer, so a stamp and the dump cannot disagree. It is a DEBUG
+    (`REQ_BYTE`, `REQ_RUN`, `VM_START`, `END_WINDOW`) render through the
+    same per-fact renderer, so a stamp and the dump cannot disagree. It is a DEBUG
     LISTING under a spec page (`ir_listing.md`'s status): a format contract
     with advisory rows, not ABI.
 
@@ -117,26 +162,38 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
 
 Epoch: E1 structural, E2 lowered, E3 machine (NFA). "Deny" means the
 fact-level deny applied inside the accessor (§7). Grain: P = pattern
-(memoized), N = node (pure function).
+(memoized), N = node (pure function). The owner column gives the PROPOSED
+home under `src/facts/` (§4.2) and today's site. A consumer is a site that
+asks the PATTERN fact at the root. A node-grain call on a subtree is not a
+consumer of a pattern fact [r1 A8, F2].
 
-| fact | grain | kind | epoch | owner (derivation, today's site) | deny → empty value | consumers (each with its hat, §4.5) |
+| fact | grain | kind | epoch | owner: proposed file ← today's site | deny → empty value | consumers (each with its hat, §4.5) |
 |---|---|---|---|---|---|---|
-| kind mask `{BREF, CALL, LINKED_CALL, VAR, ATOMIC, LOOK, LIVE_CAPTURE, COLLAPSIBLE_REP}` | P | core | E1 | `atomic.c` predicates (`:59/149/221/565/807/919/954`), `pcrec_has_var` | — | `select_engine` (`:611/658/686`, forcing and prefilter), `emit_vm.c:13191/13208` (the `--emit-ir` listing, R1), `mod_lookaround` (`has_call`), `emit_vm.c:9980` (`mrl_win`) |
-| language nullable | P | core | E1 | `pcrec_minw(root) == 0` (`mrl.c:120`), asked today at `select_engine.c:568` | — | `fit.lang_nullable`, `pcrec_startgate_needed` (`nfa.c:1150`), `[OPT-4.1]` gate |
-| char widths `cwmin`/`cwmax` (root) | P | core | E1 | `mrl.c:305/444` | — | `endwin.c:88/172`, `startanch.c:78` |
-| byte min width (root) | P | core | E2 | `pcrec_minw` | — | `startanch.c:80`, the VM's root checks |
-| start anchor | P | core | E2 | `pcrec_start_anchor` (`startanch.c:143`) | `-fno-vm-anchor-bound` → `NONE` | VM attempt bound; DFA's one-directional assertion (`emit_dfa.c:7427`); **G2** (`:5885`, delta D.2) |
-| end window | P | core | E2 | `pcrec_end_window` (`endwin.c:154`) | `-fno-end-window` → `-1` | both emitters' window clamp |
-| necessary SET | P | core | E2 | `rb_walk` (`reqbyte.c:380`) | `-fno-req-byte` → ∅ | K65 set-rest (no-DFA-scan VM only); the pick (below) |
-| necessary WHOLE run | P | core | E2 | `rb_walk`'s `runs.best` | `-fno-req-byte`, `-fno-req-run` → len 0 | K66 whole-run compare (no-DFA-scan VM only); the window (below) |
-| necessary byte (pick) | P | derived | E2 | `rb_pick` ← set + byte-rate | as the set | `REQ_BYTE`, the one-byte pre-check, G1 |
-| run scan member + window | P | derived | E2 | `rn_scan_index`/`rn_window_start` ← whole run + byte-rate | as the run | `REQ_RUN`, the run pre-check, **S1's pin** |
-| k-set walk `k[0..nwalk)` | P | core | E3 | `pcrec_prefix_ksets` walk half (`prefix_k.c:409`) | — (it is a walk over the NFA; each USE has a row deny) | offset-k selection, the pin |
-| run PIN `(run_o)` | P | derived | E3 | `prefix_k.c:479-491` ← k-set walk ∩ window | inherits the run's deny (`len 0` → unpinned) | `dfa_pfs[]` run rows, `OfsTest`, G1 (`run_verified`); S2b (not built) |
+| kind mask `{BREF, CALL, LINKED_CALL, VAR, ATOMIC, LOOK, LIVE_CAPTURE, COLLAPSIBLE_REP}` | P | core | E1 (eager) | `src/facts/kinds.c` ← the root calls of the `atomic.c` predicates (`:59/149/221/565/807/919/954`) and `pcrec_has_var` (`mod_vars.c:273`); the node predicates stay node-grain (§4.2.1) | — | `select_engine` (`:571/611/658/686`, forcing and prefilter), `fit.prefilter_has_collapsible_rep`'s reader `compile.c:1585` (the copy migrates, [r1 A7]), `emit_vm.c:13191/13208` (the `--emit-ir` listing, R1), `emit_vm.c:9980` (`mrl_win`) |
+| language nullable | P | core | E1 (eager) | `src/facts/widths.c` ← `pcrec_minw(root) == 0` (`mrl.c:120`), asked today at `select_engine.c:568` | — | `fit.lang_nullable`'s readers (`compile.c:1620`, `select_engine.c:837`; the copy migrates, [r1 A7]), `pcrec_startgate_needed` (`nfa.c:1150`), `[OPT-4.1]` gate |
+| byte min width (root) | P | core | E2 | `src/facts/widths.c` ← `pcrec_minw(root)` | — | the VM's root checks |
+| start anchor | P | core | E2 | `src/facts/startanch.c` ← `pcrec_start_anchor` (`startanch.c:143`) | `-fno-vm-anchor-bound` → `NONE` | VM attempt bound; DFA's one-directional assertion (`emit_dfa.c:7860-7867`, [r1 F3]); **G2** (`:5883-5890`, delta D.2) |
+| end window | P | core | E2 | `src/facts/endwin.c` ← `pcrec_end_window` (`endwin.c:154`). Declared input: the encoding DESCRIPTOR (§4.2.2 (d)). Its root `pcrec_cwmax` call (`:172`) is internal to this derivation and gated to single-byte encodings (`:164`) | `-fno-end-window` → `-1` | both emitters' window clamp; `END_WINDOW` (`emit_dfa.c:8567-8571`) |
+| necessary SET | P | core | E2 | `src/facts/req.c` ← `rb_walk` and its lattice (`reqbyte.c:164-498`) | `-fno-req-byte` → ∅ | K65 set-rest (no-DFA-scan VM only); the pick (below) |
+| necessary WHOLE run | P | core | E2 | `src/facts/req.c` ← `rb_walk`'s `runs.best` | `-fno-req-byte`, `-fno-req-run` → len 0 | K66 whole-run compare (no-DFA-scan VM only); the window (below) |
+| necessary byte (pick) | P | derived | E2 | beside B1's rate primitives (§4.2.2 (b)) ← `rb_pick` (`reqbyte.c:517`), from set + byte-rate | as the set | `REQ_BYTE`, the one-byte pre-check, G1 |
+| run scan member + window | P | derived | E2 | beside B1's rate primitives ← `rn_scan_index`/`rn_window_start` (`reqbyte.c:539/559`), from whole run + byte-rate | as the run | `REQ_RUN`, the run pre-check, **S1's pin** |
+| k-set walk `k[0..nwalk)` | P | core | E3 (UNANCH branch only) | `src/facts/kset.c` ← `pcrec_prefix_ksets`' walk half (`prefix_k.c:185-248`, `:409-477`), WITHOUT its per-offset `ppm` (`:443`, `:475`), which moves to the selection [r1 A2] | — (it is a walk over the NFA; each USE has a row deny) | offset-k selection (stays in `prefix_k.c`, §4.2.2 (c)), the pin |
+| run PIN `(run_o)` | P | derived | E3 (UNANCH branch only) | `src/facts/kset.c` ← `prefix_k.c:484-491`, from k-set walk ∩ window. A pure NFA+window fact: today's call is gated on the prefilter kind (`emit_dfa.c:3719`), the fact is not | inherits the run's deny (`len 0` → unpinned) | `dfa_pfs[]` run rows, `OfsTest`, G1 (`run_verified`); S2b (not built). **Consumer obligation on every row: the kind gate** (`pf_run_applies_common`'s `u->kind == DFA_PF_NONE` test, `emit_dfa.c:5294`) [r1 A2] |
 | byte-rate | P (per compile) | DATA | — | findings accessor (B1), `Ctx`-memoized | — (the data declares; NONE = not declared) | the three rate primitives only |
-| `minw(node)`, nullable(node) | N | core | E2 | `pcrec_minw`, `vm_nullable` (R4: two copies, §9 step 3.5) | — | the VM emitter (≥9 sites), `callgraph.c` |
-| singleton byte | N | core | E2 | `pcrec_cls_single` (R12) | — | `rb_walk`, `altcls`, `emit_vm.c:3659`, **S2a** |
+| `minw(node)`, `cwmin`/`cwmax(node)`, nullable(node) | N | core | E2 (widths: any) | `pcrec_minw`, `pcrec_cwmin`/`pcrec_cwmax` (`mrl.c`), `vm_nullable` (R4: two copies, §9 step 3.5) | — | the VM emitter (≥9 sites), `callgraph.c`, `startanch.c:84`, `endwin.c:93`, `mod_lookaround.c` (`la_widths`) |
+| singleton byte | N | core | E2 | `pcrec_cls_single` (`cpset.c:305`, R12) | — | `rb_walk`, `altcls`, `emit_vm.c:3659`, **S2a** |
 | emission-contiguous literal run | N | core | E2 | **NEW with S2a**, over `pcrec_cls_single` | — | S2a (VM chain emit, `vm_cost`, `vm_count_slots`: one function, three readers) |
+
+**Root character widths are NOT a record fact** [r1 A1, A8]. Revision 1
+listed `cwmin`/`cwmax` (root) at E1. Its only root reader is
+`endwin.c:172`, which runs at E2, inside the end-window derivation, gated to
+single-byte encodings. `startanch.c:84` and `endwin.c:93` ask subtrees, and
+`startanch.c:80` is prose about a rejected alternative. A pattern fact with no
+pattern-grain consumer is built ahead of need (D77). It would also carry
+A1's hazard: a lazy root `cwmax` asked after `pcrec_lower_enc` computes BYTES
+on the lowered tree (`é` gives 2) while labelled characters. So the widths stay
+node-grain pure functions.
 
 NOT in the record (§4.4): `fit`/engine/`engine_sel`; `DFA_SELECT`
 choices; `req_admit`; `OfsTest`/`CandScan`; `vm_frameless`/`has_push`;
