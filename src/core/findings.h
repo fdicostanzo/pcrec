@@ -82,4 +82,8 @@ int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
 int pcrec_find_run_window_start(const uint32_t *rate,
                                 const unsigned char *bytes, int n, int idx);
 
+/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): MASS
+ * over `set` (`set[b]` nonzero for a member), in ppm, capped at 1,000,000. */
+unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256]);
+
 #endif /* PCREC_FINDINGS_H */

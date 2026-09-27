@@ -320,15 +320,6 @@ static int frontier_union(const Walk *w, uint8_t set[256])
 #define MATERIAL_NUM 2u
 #define MATERIAL_DEN 1u
 
-/* Sums pcrec_byte_freq_ppm over every set byte in `set`, capped at 1,000,000
- * (the whole alphabet's own total). */
-static unsigned set_ppm(const uint8_t set[256])
-{
-    unsigned t = 0;
-    for (int b = 0; b < 256; b++) if (set[b]) t += byte_freq_ppm_tbl[b];
-    return t > 1000000u ? 1000000u : t;
-}
-
 /* One verify's cost per CANDIDATE, in hundredths of a cycle: the probe plus
  * what its branch costs a predictor that has to guess an outcome of
  * probability `ppm`. */
@@ -415,7 +406,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     /* THE BASELINE'S mass is the DFA set's — role A, what ships today. */
     int k0count = 0;
     for (int b = 0; b < 256; b++) if (k0[b]) k0count++;
-    o->base_ppm = set_ppm(k0);
+    o->base_ppm = pcrec_find_set_ppm(cx, k0);
 
     if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
         return;
@@ -440,7 +431,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     o->k[0].count = frontier_union(&w, o->k[0].set);
     if (o->k[0].count == 0 || o->k[0].count >= 256) return;
     for (int b = 0; b < 256; b++) if (o->k[0].set[b]) o->k[0].byte = b;
-    o->k[0].ppm = set_ppm(o->k[0].set);
+    o->k[0].ppm = pcrec_find_set_ppm(cx, o->k[0].set);
     o->nwalk = 1;
 
     for (int j = 1; j < PCREC_PREFIX_K_MAX; j++) {
@@ -472,7 +463,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
         memcpy(pk->set, set, 256);
         pk->count = count;
         pk->byte = byte;
-        pk->ppm = set_ppm(set);
+        pk->ppm = pcrec_find_set_ppm(cx, set);
         o->nwalk++;
     }
 

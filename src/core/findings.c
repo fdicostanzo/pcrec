@@ -161,3 +161,14 @@ int pcrec_find_run_window_start(const uint32_t *rate,
     }
     return best;
 }
+
+/* The offset-k selection's per-set cost input (src/opt/prefix_k.c): the
+ * prior summed over every member of `set`, capped at 1,000,000 (the whole
+ * alphabet's own total). */
+unsigned pcrec_find_set_ppm(Ctx *cx, const uint8_t set[256])
+{
+    unsigned t = 0;
+    (void)cx;
+    for (int b = 0; b < 256; b++) if (set[b]) t += pcrec_byte_freq_ppm(b);
+    return t > 1000000u ? 1000000u : t;
+}
