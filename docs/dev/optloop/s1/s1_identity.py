@@ -20,9 +20,10 @@ are read off (RX_DFA_PREFILTER, _OFFSETS, RX_REQ_WHY, RX_REQ_RUN) on BOTH
 sides, so the mover list can be joined against census_b.tsv by key.
 
 [FINDINGS] B1 (lane findb1) adds §7's NAMED-LINES gate: with
-`DROP_FINDINGS=1` the `<P>_FINDINGS` line and the `.findings =` rx_info
-initializer are DELETED from both sides before the comparison, by name and
-nothing else, so a fourth line moving is still a `changed` artifact. Every
+`DROP_FINDINGS=1` the `<P>_FINDINGS` line, the `.findings =` rx_info
+initializer and the struct's appended `findings` member declaration are
+DELETED from both sides before the comparison, by name and nothing else, so
+any other line moving is still a `changed` artifact. Every
 `changed` record also names the `#define RX_*` stamps whose VALUES moved
 (`moved`, plus `program` when a non-stamp line moved too), which is the
 per-ARTIFACT manifest form findings §11.3 asks for; and `findings` counts
@@ -59,10 +60,14 @@ def stamp(text, name):
 
 
 def drop_named(text):
-    """§7's named lines, deleted by name: the stamp and its rx_info mirror."""
+    """§7's named lines, deleted by name: the stamp, its rx_info initializer,
+    and — the one §7 did not list, found by this gate — the rx_info struct's
+    APPENDED `findings` member declaration (with its comment lines)."""
     if not DROP_FINDINGS:
         return text
     text = re.sub(r'^#define RX_FINDINGS .*\n', '', text, flags=re.M)
+    text = re.sub(r'^    const char +\*findings; +/\*(?:.*\n)*?.*\*/\n', '',
+                  text, count=1, flags=re.M)
     return re.sub(r'^    \.findings = .*\n', '', text, flags=re.M)
 
 
