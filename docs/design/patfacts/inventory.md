@@ -619,3 +619,123 @@ tabled in full.
 - Two "requested but not yet needed" customers ([OPT-LITSCAN], [VAR]) with
   enumerated fact lists above, and one genuinely undesigned customer
   ([FINDINGS]) that STEP 2 should not wait on.
+
+---
+
+## Delta 2026-09-26 (lane pfdesign, [PATFACTS] step 2's refresh)
+
+**Scope.** `git log b5c1423b..e060f2e0 -- src/opt src/ir src/gen src/core
+lib`: K64 (`ce658cb7`), K65 + K66 (`27a63314`), `[OPT-LITSCAN]` S1 steps
+1-5 (`0bb87eda`), S1 step 6 (`42ee828f`), `[OPT-REQRUN-ENC]` stage 1
+(`ec79d98c`, census only, no `src/`), `[FINDINGS]` B0 (`54bb1159`, schema
+rows only). Plus `[OPT-REQRUN-ENC]` stage 2 on the UNMERGED `lane/reqrunenc2`
+(`86c6ed5e`..`2e6641b3`, abi 37 -> 38), read there. Line numbers below are
+at `e060f2e0`. They supersede the step-1 tables' numbers for the same
+symbols. Nothing above this section was edited, because it is the step-1
+record.
+
+### D.1 New facts and moved fields
+
+| # | fact | owner (derivation) | stored in | readers | epoch | encoding |
+|---|---|---|---|---|---|---|
+| N1 | **the whole necessary SET** (K65) | `rb_walk` (`reqbyte.c:380`), the same walk as `req_byte`, published by `pcrec_req_byte` (`:589`) | `Job.req_set` (`ReqSet`, `internal.h:2458`, field `:2618`) | `emit_req_set_rest` (`emit_dfa.c:919`), on the no-DFA-scan VM route only | lowered | none: a set of bytes |
+| N2 | **the whole necessary RUN** (K66) beside its emitted window | `pcrec_req_byte` (`reqbyte.c:589`): `whole`/`whole_len`/`at`, with `bytes == whole + at` | `Job.req_run` (`ReqRun`, `internal.h:2444`) | `req_run_tests` `t[1]` (`emit_dfa.c:798`), `emit_req_set_rest`'s already-tested marks. **S1's pin reads the WINDOW (`bytes`/`len`), not `whole`** (litscan_s1.md R3-2) | lowered | none: the run. The WINDOW is a prior-chosen derivation |
+| N3 | **`vm_frameless`** (K64): the VM program never pushes a frame | `vm_plan_entry` (`emit_vm.c:10425`), `!Vm.has_push` | `Job.vm_frameless` (`internal.h:2578`) | `req_route_one_attempt` (`emit_dfa.c:5883`) → `req_admit` G2 → the prologue's three `REQ_*` stamps and the pre-check emission | **a new epoch the step-1 pipeline lacks: VM-plan**, published by the VM emitter BEFORE `pcrec_emit_prologue` runs. It is an emission byproduct feeding an admission decision in another file | none |
+| N4 | **the run PIN** (S1): the window is at fixed offset `run_o` of every match | `pcrec_prefix_ksets` (`prefix_k.c:409`, pin at `:479-491`), computed before any `k0`-dependent return: the coincidence of the k-set walk and `Job.req_run` | `PrefixKSets.run_pinned`/`run_o` (`internal.h:1691`), inside `UnanchStart.ofsk` (emitter-local) | `pf_run_applies_common` (`emit_dfa.c:5289`, the `dfa_pfs[]` row pair), `ofs_test_of` (`:5339`), `ofs_test_verifies_run` (`:5411`) → `dfa_cand_scan`'s `run_verified` → G1 | machine (needs `Job.nfa`) | none. It is true of the language `Job.nfa` accepts, which is the superset on a count-collapsed prefilter (litscan_s1.md §1.1 inv. 3) |
+| N5 | **`OfsTest`**, the ONE candidate-test derivation (S1 steps 3 and 6) | `ofs_test_of`/`ofs_test_model`/`ofs_test_run` (`emit_dfa.c:5339`, `:5324`, `:777`) | emitter-local value | the block and its verify chain, its tables, its comment, the OFFSETS stamp, G1, and since step 6 the RUN PRE-CHECK (`req_run_tests`, `:798`) | machine | none |
+| N6 | **`CandScan`** replaces `dfa_cand_scan_byte` (S1 step 5a): `{byte, memchr_form, run_verified}` | `dfa_cand_scan` (`emit_dfa.c:5821`) | emitter-local | `req_byte_dominated_by` (`:5917`, three conjuncts) ← `req_admit` (`:5940`) | machine | the density conjunct is gated `encoding != PCREC_ENC_BYTE` at `:5925` (was `:5499`) |
+| N7 | **the deny word is 64 bits** (S1 step 1) and bit 32 exists | `PcrecAxisCand.deny`, `DfaSel` deny, `pfc_flags` (`compile.c:1578`) | — | `-fno-run-prefilter` = `PCREC_NO_RUN_PREFILTER` (`pcrec.h`, bit 32); the run rows carry it AND `PCREC_NO_OFFSET_SKIP` | — | — |
+| N8 | **the run pick's non-byte decline is now RIGHTMOST** (`lane/reqrunenc2`, unmerged) | `rn_scan_index` (`reqbyte.c:539`): `if (!bytekey) return r->n - 1;` (was `return 0;`) | `Job.req_run.idx` | the run pre-check's `memchr`, `<PREFIX>_REQ_RUN`'s `@offset`, S1's pin row (via the scan member) | lowered | this IS the encoding decline (D.3) |
+| N9 | `[FINDINGS]` B0's DATA-scope schema (`serves`/`encoding`/bundle collision) | `rxt_schema.def`, `rxt_source.c` | parse only | **no analysis reads it yet** | — | declares applicability, consumed at B1 |
+
+### D.2 New consumers of old facts
+
+- **`Job.start_anchor` has a THIRD consumer**: `req_route_one_attempt`
+  (G2) reads it for the VM arm (`emit_dfa.c:5885`), beside the VM's attempt
+  bound and the DFA's assertion. Measured on this lane's build:
+  `--engine=vm '^ab[cd]@'` stamps `REQ_WHY "one-attempt"`, and with
+  `-fno-vm-anchor-bound` it stamps `"emitted"`. So the VM-named deny moves the
+  pre-check's admission too (§ D.4).
+- **`Job.req_run`'s window has a SECOND consumer**, S1's pin (N4). Measured:
+  `'/user|/users'` stamps `RX_DFA_PREFILTER "run-pinned"` / `REQ_WHY
+  "dominated"` by default. `-fno-req-byte` gives `"memchr"`/`"none"`,
+  `-fno-req-run` gives `"memchr"`/`"dominated"` (identity), and
+  `-fno-run-prefilter` gives `"memchr"`/`"emitted"`.
+- **`fit.prefilter_collapsed`** is read by G2 (`emit_dfa.c:5886`): an exact
+  hybrid is a linear no-match proof, and a collapsed one is not.
+- **`pcrec_artifact_has_dfa_scan`** (`emit_dfa.c:356`) is now read by the
+  K65/K66 route split (`emit_req_set_rest`, `req_run_tests`) and by
+  `dfa_cand_scan`'s guard, which must stay first (R3-1). Its body restates
+  `compile.c`'s build condition "VERBATIM AND ON PURPOSE". That is a
+  documented second spelling of one route fact, one line long.
+
+### D.3 New redundancies
+
+- **R13 — THE `[OPT-REQRUN-ENC]` INCIDENT, a D120-class redundancy (two
+  copies of one decision that disagreed).** The rule "the byte-frequency
+  prior does not apply to this encoding, so pick PCRE2's positional
+  rightmost member" was written twice. `rb_pick` (`reqbyte.c:521`) returned
+  the walk's threaded rightmost `s->pick`. `rn_scan_index` (`:543`)
+  returned `0`, the LEFTMOST, and `reqpos_2b.md` §2.3 ratified that as
+  "costs nothing measurable". Under `-e utf8` a run's leftmost member is a
+  UTF-8 lead byte whenever the run opens mid-character. That was 12.0% of
+  corpus / 20.7% of bench run-path artifacts (`reqrunenc_census.md` §0),
+  and pcrec-bench O-60 found it on throughput. Stage 2 makes the two
+  copies AGREE (N8). It does not make them ONE: there are still three
+  `!bytekey` branches in `reqbyte.c` (`:521`, `:543`, `:567`), one
+  `encoding != PCREC_ENC_BYTE` test in `emit_dfa.c:5925`, and no test in
+  `prefix_k.c`'s `set_ppm` (`:325`, R9, still ungated). Each fallback
+  spells its own NONE answer, and agreement holds by convention. This is
+  D120 incident (2) recurring in its sharpest form: the prior's readers
+  restate the gate, and here two restatements diverged into a shipped
+  throughput defect. (The reqrunenc2 amendment to `reqpos_2b.md` §2.3 also
+  says the single-byte pick "keeps its own leftmost fallback via
+  `rb_pick`" in one sentence and calls `rb_pick`'s fallback rightmost in
+  the next. `rb_pick`'s is rightmost, `reqbyte.c:521`.)
+- **R14 — the k-set walk is now re-run per ADMISSION ASK.** `req_admit`
+  (`emit_dfa.c:5940`) calls `dfa_cand_scan` → `unanch_start`
+  (`:3600`), which calls `pcrec_prefix_ksets` (`:3720`), and then
+  `dfa_pf_of`. `req_admit` is asked by `req_run_tests` (`:801`, itself
+  called by both `pcrec_emit_req_run_blocks` and `emit_req_run_check`),
+  `pcrec_emit_req_byte_check` (`:998`) and the prologue (`:8481`). That is
+  at least four NFA walks plus row selections per compile for one answer,
+  beside the seven other `unanch_start` call sites (R8's shape, widened by
+  S1). It is pure and deterministic, so it cannot disagree today. Its
+  compile-time cost is unmeasured.
+- **R15 — one deny flag, several consumers, one name.** Three analysis-level
+  denies each zero a fact that now has two or more consumers:
+  `-fno-req-byte`/`-fno-req-run` (the pre-check AND S1's pin),
+  `-fno-vm-anchor-bound` (the VM attempt bound, the DFA assertion AND G2),
+  and `-fno-end-window` (both emitters). The house rule ("a denied build
+  must be indistinguishable from a pattern with nothing to find",
+  `compile.c:1497-1500`) makes each of these sound. Each flag's name and
+  spec text still describe ONE consumer. K68 (bits 28/29/30 unmasked in
+  `rx_info.flags`) is this class's second instance after the bit-19 fix:
+  a fact-level deny that nothing classified as answer-neutral by
+  construction.
+
+### D.4 Positive precedents added (the shape step 2 generalizes)
+
+`OfsTest` (N5: one derivation, seven readers, and a consumer without a
+DFA fills it from its own facts); `req_run_tests` (one derivation read by
+the blocks and by their call site, so a block cannot be written without
+its call); `Job.vm_frameless` (published, not re-derived, by the one owner
+that knows it); `ReqRun.whole`/`bytes` and `Job.req_set`/`req_byte`
+(the core fact and the derived choice published together by one call, so
+they cannot describe two different runs or sets).
+
+### D.5 What the delta changes for step 2
+
+1. The core-vs-derived split is already visible in the data.
+   `whole`/`req_set` are core, while the window, the pick and the pin are
+   derived (from the core facts plus a prior or a walk). The pin reads the
+   DERIVED window, and that is the one dependency a migration must not
+   silently change.
+2. A fourth epoch exists, VM-plan (N3). It feeds an admission decision, so
+   the record's boundary must say that route and plan facts are not
+   pattern facts.
+3. R13 fixes the encoding requirement: ONE place decides "the prior
+   applies", and ONE place spells each NONE answer. Otherwise the next
+   reader re-introduces the incident.
+4. R15 fixes the deny requirement. Deny is applied where the fact is
+   derived, and every consumer is listed.
