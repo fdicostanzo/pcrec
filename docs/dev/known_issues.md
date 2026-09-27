@@ -11,7 +11,7 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K68 — FILED 2026-09-26 (D125: filed, not scheduled) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
+## K68 — SCHEDULED 2026-09-26 (Frank: "agree k68" — a D125 phase-1 tail of [OPT-ANCHOR-VM]/[OPT-ENDWIN]/[OPT-REQBYTE]; fixed on top of [OPT-REQRUN-ENC] stage 2 so the bench re-pins ONCE, abi 39, as I-112) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
 
 A reflection-surface defect, not an answer defect. `docs/spec/match_api.md`
 §6.3's rule is that `flags` records the REQUEST "with the testing/tuning
