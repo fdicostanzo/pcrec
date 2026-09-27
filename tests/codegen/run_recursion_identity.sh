@@ -198,10 +198,11 @@ FOLD_PATTERNS='(?i)(?>abc)
 # the third region-moving axis (-fno-lit-run): corpus patterns
 # (tests/litscan/litrun.rxt) that MUST stamp `RX_VM_LIT_RUNS > 0` wherever
 # they are VM-routed — runs on both sides of a capture, a run before a push,
-# and an island whose single-child chains are runs.
+# and an island whose single-child chains are runs. (`(abc){2}x` is NOT one:
+# a fixed-length repeat body takes the cursor rung, whose own `&&` chain S2a
+# leaves alone — tuning.md §2.31. Measured, when it was first listed here.)
 LIT_PATTERNS='x(abc)defg
 xy(a|ab)c
-(abc){2}x
 foo(?:username|password|passphrase)bar'
 #
 # [recidfix->varland] A FOURTH NAMED EXCEPTION EXISTS, `bref_rename_rewrite()`
@@ -1079,7 +1080,17 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # byte-frequency prior became data that normalizes to the same table, so under
 # the `byte` encoding this gate's population is compiled at, nothing else
 # moves. Both new lines sit OUTSIDE `prog_region()`, so (A) is untouched.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-93e80da7}"   # [FINDINGS] B1, abi 39->40: (B) re-pinned to 93e80da7 on lane/findb1 (D76, 2026-09-27). Prior pin: b255027f ([K68], abi 38->39).
+# **(B) RE-PINNED AGAIN — [OPT-LITSCAN] S2a, 2026-09-27: abi 40 -> 41, to
+# `f97c26a6`, the `lane/s2a` commit that is its last `src/` change.** A VM
+# literal run is one P4 compare (`tuning.md` §2.31) and every VM artifact gains
+# the `<PREFIX>_VM_LIT_RUNS` stamp. THIS ONE MOVES (A) ON PURPOSE, the THIRD
+# change in this file's history to do so after the island and the fold, and it
+# gets their machinery: the axis's deny `-fno-lit-run` restores the abi-40
+# program, so a moved region is excused IFF the deny set (built from the
+# stamps, `-fno-lit-run` always in it — see the excuse) restores the pin;
+# both converse directions are asserted; `LIT_PATTERNS` is the manifest.
+# THE MANAGER RE-PINS TO THE MERGE, the precedent above.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-f97c26a6}"   # [OPT-LITSCAN] S2a, abi 40->41: (B) re-pinned to f97c26a6 on lane/s2a (D76, 2026-09-27). Prior pin: 93e80da7 ([FINDINGS] B1, abi 39->40).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -1739,7 +1750,14 @@ sweep() { # sweep <label> <extra pcrec args>
                 deny=""
                 [ "${isl_a:-0}" -gt 0 ] && deny="$deny -fno-alt-island"
                 [ "${fold_a:-0}" -gt 0 ] && deny="$deny -fno-cls-fold"
-                [ "${lit_a:-0}" -gt 0 ] && deny="$deny -fno-lit-run"
+                # -fno-lit-run joins EVERY excuse build, stamped or not: a
+                # denied island is emitted as vm_alt's chain, whose literal
+                # branches then become runs that the ISLAND artifact never
+                # had (`(?!ab|cd)z`, measured) — so an unstamped lit-run can
+                # appear only under another axis's deny. Denying it where it
+                # fires nowhere is a byte no-op, which the converse arm below
+                # asserts on every VM artifact.
+                deny="$deny -fno-lit-run"
                 rn="$(printf '%s\n' "$(gen_deny "$pat" "$args" "$deny")" | stamp_strip | prog_region)"
                 if [ "$rn" = "$rb_bref" ]; then
                     [ "${isl_a:-0}" -gt 0 ] && risland=$((risland + 1))
