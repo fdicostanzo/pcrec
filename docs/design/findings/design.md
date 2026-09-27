@@ -952,16 +952,66 @@ not) — orthogonal axes of one conjunct.
 
 ### 6.3 What changes at each of today's sites (B1)
 
-| site | today | after |
-|---|---|---|
-| `reqbyte.c:585` | `bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE` | `const uint32_t *rate = pcrec_find_byte_rate(cx)`. `rb_pick`/`rn_*` take `rate` and treat `rate == NULL` exactly as they treat `!bytekey` today |
-| `emit_dfa.c:5498` | `if (cx->opt->encoding != PCREC_ENC_BYTE) return false;` then two `pcrec_byte_freq_ppm` reads | `rate = pcrec_find_byte_rate(cx); if (!rate) return false;` then `rate[p] <= rate[q]` |
-| `prefix_k.c:302` `set_ppm` | reads `byte_freq_ppm_tbl` ungated | `pcrec_find_set_mass(pcrec_find_byte_rate(cx), set)`: NULL gives cardinality |
-| `prefix_k.c:89-137` | the table + `pcrec_byte_freq_total_ppm` | deleted. `run_offset_skip.sh` §1's sum assertion moves to `tests/findings/` over the NORMALIZED default (§11.4) |
+**[D126 Q4] Rewritten 2026-09-27 against main `acc9e990` and PATFACTS rev
+2's B1 (step 3.1).** The r2 table had each reader keep a `rate == NULL`
+branch, which Q4 forbids. B1 rebases onto PATFACTS step 3.0, a hard
+prerequisite (PATFACTS §8.1, [r1 A5]). Step 3.0 lifts `rb_walk` into
+`src/facts/req.c` and moves the `compile.c:1510-1520` deny ternaries into
+`facts.c`, but it leaves the three pick functions in `reqbyte.c`. The
+lines below are today's; a B1 lane re-greps them on 3.0's tree. Each move
+is its own commit (carve-out (e)): the moves are byte-identical, and B1's
+only movers come from the primitives' NONE answers, in separate commits.
 
-Under `-e byte` with no analysis named, all four read the default's
-normalized table. §0.7 makes it equal to today's table entry for entry, so
-the program region is byte-identical.
+| site (today) | today | after B1 |
+|---|---|---|
+| `reqbyte.c:613`, in `pcrec_req_byte` | `bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;`, threaded to the three readers at `:626-627` and `:638` | gone with the file. The derived req accessor in `facts.c` calls `pcrec_find_byte_rate(cx)` ONCE, at its top, before the run/set branch, so the ask does not depend on which reader runs (§6.4 rule 1). It hands `rate` to the moved readers |
+| `reqbyte.c:517-532`, `rb_pick` (C1) | `if (!bytekey \|\| s->pick < 0) return s->pick;`, then a 255→0 argmin over `pcrec_byte_freq_ppm` (`:522-527`) and the pick-among-minima clause (`:530`) | moved beside the primitives. `pick < 0` returns -1 (the empty set). Otherwise it builds `[pick, members 255→0 except pick]` and returns `cand[pcrec_find_pick(rate, cand, n, 0)]`. Ties to the earliest candidate reproduce both of today's clauses (PATFACTS §6.3's argument) |
+| `reqbyte.c:560-571`, `rn_scan_index` (C2a) | `if (!bytekey) return r->n - 1;` (`:564`), then argmin, ties to the leftmost | moved: `return pcrec_find_pick(rate, r->bytes, r->n, r->n - 1);` |
+| `reqbyte.c:580-597`, `rn_window_start` (C2b) | `if (!bytekey) return best;` (`:588`, `best = lo_s`), then Σ `pcrec_byte_freq_ppm` per window, ties to the leftmost | moved. The `:588` line is deleted, and each window's Σ becomes `pcrec_find_seq_mass(rate, r->bytes + s, PCREC_MAX_REQ_RUN_EMIT)`. The loop's strict `<` keeps ties leftmost, so under NONE (every window equal) it returns `lo_s` |
+| `emit_dfa.c:5941-5942`, in `req_byte_dominated_by` (C3; the function stays, a decision) | `if (cx->opt->encoding != PCREC_ENC_BYTE) return false;` then `pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q)` | `return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);`. The header paragraph "THE ENCODING RULE IS `src/opt/reqbyte.c`'s" (`:5923-5929`) is rewritten to cite the COMPARE primitive. G1 runs only on `q = Job.req_byte`, which C1's unconditional ask produced, so its own ask adds nothing to the consumption record |
+| `prefix_k.c:325-330`, `set_ppm` (C4) | reads `byte_freq_ppm_tbl` ungated (`:328`) | moved beside the primitives, taking `cx`; the body is `pcrec_find_set_mass(pcrec_find_byte_rate(cx), set)`. The callers `:418` (the unconditional first read of `pcrec_prefix_ksets`, `:409`), `:443` and `:475` pass `cx`. At PATFACTS step 3.4 the latter two move into the selection |
+| `prefix_k.c:67-162`, `internal.h:1700-1701` | the prior's header comment (`:67-111`), the table (`:112-145`), `pcrec_byte_freq_ppm` (`:148`), `pcrec_byte_freq_total_ppm` (`:158`), and their declarations | deleted. The comment's provenance argument moves to `src/findings/default.rxt`'s own header (§0.7). `run_offset_skip.sh` §1's sum assertion (`:143-152`, which links both deleted functions) moves to `tests/findings/` over the NORMALIZED default (§11.4) |
+
+**The other readers of the moved and deleted names, found by grep** (`grep
+-rnE 'byte_freq|bytekey|set_ppm|rb_pick|rn_scan_index|rn_window_start|PCREC_ENC_BYTE\) return false'
+src tests tools docs/spec`), each owed in B1's change:
+- **S266** (`tests/mech/sabotages/S266_freqpick_argmax.sh`) anchors
+  `rb_pick`'s argmin line (`reqbyte.c:526`). It re-anchors onto
+  `pcrec_find_pick`'s argmin; its detector, `run_prechecks.sh` §3.7, is
+  unchanged.
+- **S294** (`S294_reqrun_enc_decline_leftmost.sh`) anchors `rn_scan_index`'s
+  own NONE line (`reqbyte.c:564`), a per-reader NONE rule that Q4 deletes.
+  It re-anchors onto the PICK primitive's NONE line, and it then reaches
+  BOTH PICK readers (C1 and C2a) through one site. Its detectors
+  (`run_prechecks.sh` §3.6/§3.6r/§4.9/§4.9b) are unchanged, and its
+  `SAB_DESC` is reworded from "the run's decline" to "the PICK kind's NONE
+  answer". It re-anchors from `git show HEAD:` per BOILERPLATE.
+- **S288** (`S288_density_memchr_guard_dropped.sh`) carries the C3
+  encoding line (`emit_dfa.c:5941`) inside its `SAB_BEFORE`/`SAB_AFTER`
+  context. That line is deleted, so S288 re-anchors on the COMPARE call.
+  S270 and S286 anchor lines B1 keeps, and S265 anchors the emitter, so
+  none of the three moves.
+- Prose citing the old names: `run_prechecks.sh` (`:348`, `:531-541`,
+  `:594`, `:803-804`, `:874-875`, `:913`), `run_recursion_identity.sh:1044-1050`,
+  `tests/codegen/CLAUDE.md:588`, `tests/mech/CLAUDE.md:2777`.
+  `tools/review/out/`'s censuses regenerate.
+
+**The structural check [D126 Q4].** No function other than the
+primitives' own bodies tests a rate pointer: no `rate == NULL`, `!rate`,
+`bytekey` or `PCREC_ENC_BYTE` in any function that calls a `pcrec_find_*`.
+This widens §11.7's first bullet (PATFACTS §6.3), and it carries a
+sabotage row that plants a `!rate` branch in a moved reader.
+
+**Byte identity.** Under `-e byte` with no analysis named, every reader
+reads the default's normalized table. §0.7 makes it equal to today's
+table entry for entry, and each reader's candidate order reproduces its
+tie rule, so the program region is byte-identical (`b1_byte_movers`
+EMPTY, §11.3). **Under `-e utf8` with the default** (NONE), PICK and
+COMPARE answer exactly as today (the rightmost member; no density
+elision), and so does C2b's window (`lo_s`). Only MASS moves: offset-k
+goes from the ungated prior to cardinality. That is §11.3's per-artifact
+`b1_utf8_movers` manifest, plus any G1 fallout on the same artifact, and
+it is B1's one abi event.
 
 ### 6.4 The consumption record
 
