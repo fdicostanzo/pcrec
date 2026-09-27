@@ -1315,6 +1315,34 @@ construction (src/ir) and emission (src/gen).
   A run longer than `PCREC_MAX_REQ_RUN_EMIT` is truncated to the
   lowest-prior window containing the scan member, never split in two.
 
+  **[OPT-REQRUN-ENC] (2026-09-26, abi 37 -> 38): `rn_scan_index`'s
+  `!bytekey` FALLBACK IS RIGHTMOST, NOT LEFTMOST.** The scan member under
+  `byte` is the argmin of `pcrec_byte_freq_ppm` as above; under any encoding
+  the table is not keyed to (today, `-e utf8` alone) the fallback used to be
+  the run's leftmost member and is now its RIGHTMOST — `rb_pick`'s own
+  `!bytekey` fallback, one mechanism at two call sites rather than a second
+  byte-range rule. The D77 census
+  (`docs/dev/optloop/reqrunenc_census.md`) re-measured the OLD fallback
+  against pcrec-bench's O-60 finding: a `-e utf8` run is complete lowered
+  UTF-8 code-unit sequences, so its LEFTMOST byte is a UTF-8 LEAD BYTE
+  whenever the run opens mid-character — shared by every character in that
+  script block, so the emitted `memchr` stopped on nearly every byte of a
+  non-Latin subject instead of the rare one the literal needs. A run's
+  RIGHTMOST byte is a lead byte only if the run itself is truncated
+  mid-character (an alternation's common suffix stopping between a lead
+  byte and its continuation), measured in ZERO of 912 real `-e utf8` runs
+  (bench+corpus); a byte-range-aware "skip lead bytes" candidate was
+  byte-IDENTICAL to the rightmost one on that whole population, so it is
+  not built (D77). `rn_window_start`'s own `!bytekey` fallback (leftmost of
+  the admissible truncation-window range) is UNCHANGED, but for a member at
+  the run's own last index the admissible range collapses to one candidate
+  — the run's own last `PCREC_MAX_REQ_RUN_EMIT` bytes — so "leftmost of the
+  range" and "the run's own tail" coincide rather than compete. No new
+  stamp, no new declaration, no `rx_info` layout move: the bump moves the
+  emitted `memchr`/`memcmp` target byte and `<PREFIX>_REQ_RUN`'s `@offset`
+  VALUE on movers (236/1,167 bench, 763/10,818 corpus artifact-configs
+  under `-e utf8`); `byte`-encoding artifacts are untouched by construction.
+
   **TWO THINGS DIFFER FROM PCRE2's OWN FACT, both deliberately.** The whole
   window counts, not "other than at its start" — PCRE2 excludes the first
   unit because its consumer is a per-attempt check, and this one runs once
@@ -1332,18 +1360,27 @@ construction (src/ir) and emission (src/gen).
   `memchr`'s own argument AND, separately, to its SENSE; the caseless-fold
   decline; the NULL-subject obligation in both emitted shapes; both engines,
   with the prefilter-declined VM witness named; population floors for the byte
-  and for the run), §3.7 (the pick rule's own both-directions witness set, with
-  every expected byte a hand-derived LITERAL and the encoding decline asserted
-  rather than trusted) and §4 (the run's emitted scan loop, its window guard's
-  two forms with the positive control an absence assertion needs, the
-  truncation window computed by hand from the prior, the `-fno-req-run`
-  fallback's byte identity, both engines, the declines one witness each, and a
-  population floor); failing-direction controls
+  and for the run), §3.6 (the run's multi-byte `-e utf8` shape, including the
+  rightmost-fallback witnesses `é`/`a\x{1F600}b`/`é@`), §3.7 (the pick rule's
+  own both-directions witness set, with every expected byte a hand-derived
+  LITERAL and the encoding decline asserted rather than trusted), §4 (the
+  run's emitted scan loop, its window guard's two forms with the positive
+  control an absence assertion needs, the truncation window computed by hand
+  from the prior, the `-fno-req-run` fallback's byte identity, both engines,
+  the declines one witness each, and a population floor), and §4.9
+  ([OPT-REQRUN-ENC]'s own acceptance: `é@` stamps the byte `'@'` and not the
+  shared UTF-8 lead byte, `Москва`'s picked byte is asserted OUT OF the
+  0xC2-0xF4 lead-byte range by a range test rather than a hand-picked
+  literal, and the `byte`-encoding control still prefers the rare byte over
+  the common one); failing-direction controls
   `tests/mech/sabotages/S265` (the byte check's sense), `S266` (the pick's
   argmin inverted — structural detector only, since every member is sound),
-  `S267` (the run compare's sense) and `S268` (an alternation's head claimed
+  `S267` (the run compare's sense), `S268` (an alternation's head claimed
   from one branch, the answer-detectable form of "a run longer than the
-  analysis proved").
+  analysis proved") and `S294` ([OPT-REQRUN-ENC]'s own row: `rn_scan_index`'s
+  `!bytekey` return reverted to `0` — structural detector only, since every
+  run member is equally sound and the plant costs only which byte the
+  `-e utf8` `memchr`/`memcmp` targets).
 
 ## Conventions
 

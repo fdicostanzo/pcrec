@@ -3262,3 +3262,21 @@ never edited afterwards.
   epochs, core vs derived, one owner per derivation, the prior's NONE once
   per question kind, fact vs row denies, B1/S2a first customers, the
   step-3 migration order, the `--emit-facts` inspection listing, ten questions for Frank). D6 panel next.
+- `reqrunenc2_report.md` — `[OPT-REQRUN-ENC]` stage 2 (2026-09-26, lane
+  reqrunenc2): builds the manager's ruling on the stage 1 census —
+  candidate R, `rn_scan_index`'s `!bytekey` branch returns `r->n - 1`
+  (rightmost, matching `rb_pick`'s own fallback) — WITH an abi bump
+  (37 -> 38, overruling the census's own "no abi bump", k64fix's
+  stamp-VALUE-and-emitted-text precedent). Full D76/D94 ritual (match_api.md
+  §6, a dated reqpos_2b.md §2.3 amendment, the tuning.md §2.28 spec hunk,
+  src/opt/CLAUDE.md's design entry, (B) re-pinned to `fe5a0bbc` — this
+  lane's own last `src/` commit, per the k66fix/s1build/s1step6
+  self-pin convention); a new structural check (`run_prechecks.sh` §4.9:
+  `é@` stamps the byte `'@'` not the shared UTF-8 lead byte 195,
+  `Москва`'s picked byte is asserted outside the `0xC2-0xF4` lead-byte
+  range by a range test, and the `byte`-encoding control is unaffected);
+  sabotage S294 (structural detector only, S266's precedent one call site
+  over). `make strict`/`run_codegen_tests.sh`/`run_prechecks.sh` all
+  green; the recursion-identity re-pin and the mech/full-suite runs are
+  OWED at hand-off (log paths in the report). PARKED on `lane/reqrunenc2`,
+  not merged.

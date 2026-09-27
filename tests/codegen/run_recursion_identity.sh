@@ -1039,7 +1039,18 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # emitter: exactly the artifacts that emit a run pre-check move
 # (`docs/dev/optloop/s1/s1step6_movers.py`). (A) is untouched: the blocks and
 # the calls sit outside `prog_region()`.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c9dec3e4}"   # [OPT-LITSCAN] S1 step 6, abi 36->37: (B) re-pinned to c9dec3e4 on lane/s1step6 (D76, 2026-09-26). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: 6d92764d ([OPT-LITSCAN] S1, abi 35->36).
+# **(B) RE-PINNED AGAIN — [OPT-REQRUN-ENC], 2026-09-26: abi 37 -> 38, to
+# `fe5a0bbc`, the `lane/reqrunenc2` commit carrying the bump (the last
+# `src/` change).** `rn_scan_index`'s `!bytekey` fallback moves from the
+# run's leftmost member to its rightmost (`docs/dev/optloop/
+# reqrunenc_census.md`, pcrec-bench's O-60 finding): the emitted
+# `memchr`/`memcmp` target byte and `<PREFIX>_REQ_RUN`'s `@offset` VALUE move
+# on `-e utf8` artifact-configs only (236 of 1,167 bench, 763 of 10,818
+# corpus) — `byte`-encoding artifacts are untouched by construction. (A) is
+# untouched: `rn_scan_index` sits in the ANALYSIS (`src/opt/reqbyte.c`), not
+# `prog_region()`, and this gate's call-free-corpus population is compiled
+# at the default (`byte`) encoding.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fe5a0bbc}"   # [OPT-REQRUN-ENC], abi 37->38: (B) re-pinned to fe5a0bbc on lane/reqrunenc2 (D76, 2026-09-26). Post-D118, so the reference speaks --pattern — see the grammar probe below. Prior pin: c9dec3e4 ([OPT-LITSCAN] S1 step 6, abi 36->37).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

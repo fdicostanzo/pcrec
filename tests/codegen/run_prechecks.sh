@@ -518,25 +518,36 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/alternation.rxt" \
 # §3.6 — THE MULTI-BYTE SHAPE, UNDER ITS OWN ENCODING. Every §3.1 witness
 # compiles under the BYTE encoding, so the derived byte's LEAD-vs-TRAILING
 # choice and the caseless fold's INTERSECTION rule are exercised only by the
-# identity sweep — never by this file — until now. `é` is one code point
-# encoded as two bytes (0xC3 0xA9); a run of one, the analysis must still
-# pick a byte, and it picks the RIGHTMOST (D23's rule for a run, unmodified,
-# with no run in sight). `(?i)é` folds to {é, É} — 0xC3 0xA9 / 0xC3 0x89 —
-# whose two-byte encodings share only their LEAD byte, so the derived byte is
-# the INTERSECTION 0xC3 (195), not either trailing byte: an analysis that
-# read pattern text instead of the lowered per-byte contribution set would
-# answer "none" here, §3.1's own `(?i)abc` lesson one encoding over.
+# identity sweep — never by this file — until now. `(?i)é` folds to {é, É} —
+# 0xC3 0xA9 / 0xC3 0x89 — whose two-byte encodings share only their LEAD
+# byte, so the derived byte (no run in sight, `rb_pick`'s own path) is the
+# INTERSECTION 0xC3 (195), not either trailing byte: an analysis that read
+# pattern text instead of the lowered per-byte contribution set would answer
+# "none" here, §3.1's own `(?i)abc` lesson one encoding over.
 # THE VALUES MOVED AT [OPTLOOP.2] BATCH 2 AND THE REASON IS THE WHOLE POINT OF
 # THE ENCODING RULE. The frequency prior is a fact about a corpus under ONE
 # encoding and the shipped table is keyed to `byte` — its entire 0x80-0xFF half
 # sits at the 2 ppm floor — so under `-e utf8` the pick DECLINES and falls back
-# to the rightmost member, which is byte for byte the pre-[OPT-FREQPICK]
-# answer. That is why `(?i)é` still reads 195 here and `-fno-req-run`
-# reproduces the old value on every row: see §3.7b, which asserts it directly.
-# What DOES move under `-e utf8` is the RUN, because a run of bytes is a run of
-# bytes under either encoding (only the choice of which member to scan for is
-# encoding-gated) — so `é` reports a two-byte run and its scan byte is the
-# LEFTMOST member, 0xC3.
+# to `rb_pick`'s own `!bytekey` fallback (rightmost), which is byte for byte
+# the pre-[OPT-FREQPICK] answer. That is why `(?i)é` still reads 195 here and
+# `-fno-req-run` reproduces the old value on every row: see §3.7b, which
+# asserts it directly.
+# [OPT-REQRUN-ENC] THE RUN'S OWN `!bytekey` FALLBACK MOVED, 2026-09-26 (the
+# census, docs/dev/optloop/reqrunenc_census.md; the same defect O-60 named):
+# a run's LEFTMOST member is a UTF-8 LEAD BYTE whenever the run opens
+# mid-character, and a lead byte is shared by every character in its script
+# block, so a `memchr` scanning for it stops on nearly every byte of a
+# non-Latin subject instead of the rare one the literal needs. `rn_scan_index`
+# now returns `r->n - 1` (the RIGHTMOST member) under `!bytekey`, matching
+# `rb_pick`'s own fallback exactly — one mechanism, two call sites. A run's
+# LAST byte can only be a lead byte if the run itself is truncated
+# mid-character (an alternation's common suffix stopping between a lead byte
+# and its continuation), which the census measured in ZERO of 912 real
+# `-e utf8` runs; `x(é|è)y` below is exactly that synthetic edge case, kept
+# on the record as the census's own named (never observed) exception rather
+# than silently fixed. `é` and `a\x{1F600}b` show the ordinary case: the
+# rightmost member is a continuation byte (`0x80-0xBF`), never a lead one,
+# so the scan no longer stops on a byte every character in the block shares.
 while IFS='%' read -r pat _sep want wantrun; do
     [ -n "$pat" ] || continue
     a="$WORKDIR/s3u_$RANDOM$RANDOM.c"
@@ -570,12 +581,12 @@ while IFS='%' read -r pat _sep want wantrun; do
             || bad "[3.6b] -e utf8: $pat: stamps \"$got\" but no memchr for that byte is emitted"
     fi
 done <<'ROWS'
-é%%195%c3a9@0
+é%%169%c3a9@1
 (?i)é%%195%none
-x(é|è)y%%120%78c3@0
-a\x{1F600}b%%97%61f09f988062@0
+x(é|è)y%%195%78c3@1
+a\x{1F600}b%%98%61f09f988062@5
 (?i)k%%none%none
-é@%%195%c3a940@0
+é@%%64%c3a940@2
 ROWS
 
 # §3.7 — [OPT-FREQPICK]: WHICH member of the necessary set the check tests.
@@ -788,14 +799,19 @@ if emit "$WORKDIR/s45.c" 'github_pat_[A-Za-z0-9]{4}' -fno-offset-skip; then   # 
         && ok "[4.5b] the emitted compare carries the truncated 8-byte window and no more" \
         || bad "[4.5b] the emitted compare does not carry the truncated window"
 fi
-# …and under an encoding the prior is not keyed to, the LEFTMOST window
-# containing the member, which for a leftmost-chosen member is the run's own
-# first eight bytes.
+# …and under an encoding the prior is not keyed to, the window still holds
+# the rightmost-scanned member (`rb_pick`'s own `!bytekey` fallback,
+# [OPT-REQRUN-ENC]) — and `rn_window_start`'s own `!bytekey` fallback is
+# LEFTMOST-of-the-admissible-range, which for a member at the run's own last
+# index (`idx == r->n - 1`) is FORCED to the run's LAST eight bytes: the
+# admissible window range collapses to one candidate (`lo_s == hi_s ==
+# r->n - 8`), so "leftmost of the range" and "rightmost eight bytes of the
+# run" are the same window here, not two competing rules.
 if emit "$WORKDIR/s45u.c" 'github_pat_[A-Za-z0-9]{4}' -e utf8; then
     got="$(stamp "$WORKDIR/s45u.c" REQ_RUN)"
-    [ "$got" = "6769746875625f70@0" ] \
-        && ok "[4.5c] -e utf8: the truncation falls back to the leftmost window containing the member (github_p @0)" \
-        || bad "[4.5c] -e utf8: RX_REQ_RUN is \"${got:-<absent>}\", expected 6769746875625f70@0 — the prior is being read under an encoding it is not keyed to"
+    [ "$got" = "6875625f7061745f@7" ] \
+        && ok "[4.5c] -e utf8: the truncation window is the run's own last eight bytes, scanned at its rightmost byte (hub_pat_ @7)" \
+        || bad "[4.5c] -e utf8: RX_REQ_RUN is \"${got:-<absent>}\", expected 6875625f7061745f@7 — the prior is being read under an encoding it is not keyed to"
 fi
 
 # §4.6 — BOTH ENGINES, from the one emitted text. A backreference declines the
@@ -854,6 +870,63 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
 [ "$s4_run" -ge "$S4_FLOOR" ] \
     && ok "[4.8] $s4_run of $s4_tot corpus patterns carry a required run (floor $S4_FLOOR)" \
     || bad "[4.8] only $s4_run corpus patterns carry a required run, floor is $S4_FLOOR — §4.1 may be vacuous"
+
+# §4.9 — [OPT-REQRUN-ENC]: THE `!bytekey` DECLINE IS RIGHTMOST, NOT LEFTMOST
+# (docs/dev/optloop/reqrunenc_census.md, O-60). `rn_scan_index`'s `!bytekey`
+# branch went from an unconditional `return 0` (leftmost) to `return r->n - 1`
+# (rightmost, `rb_pick`'s own fallback). §3.6/§3.6r already carry `é@` as a
+# multi-byte witness; this section restates its headline number directly
+# (RX_REQ_BYTE "64", the byte '@', not the shared UTF-8 lead byte 0xC3=195)
+# so the mechanism this ruling is about has one un-missable assertion, and
+# adds the population half no single witness can: a whole WORD's run must
+# never scan its own lead byte, checked as a RANGE rather than a literal, and
+# the `byte`-encoding CONTROL — the same two-byte-tie population the utf8
+# rule reaches — must still prefer the RARE byte over the common one rather
+# than degrading to "always rightmost" by accident.
+if emit "$WORKDIR/s49a.c" 'é@' -e utf8; then
+    got="$(stamp "$WORKDIR/s49a.c" REQ_BYTE)"
+    [ "$got" = "64" ] \
+        && ok "[4.9] -e utf8: é@ -> RX_REQ_BYTE \"64\" ('@'), not the shared lead byte 195" \
+        || bad "[4.9] -e utf8: é@: RX_REQ_BYTE is \"${got:-<absent>}\", expected \"64\""
+else
+    bad "[4.9] -e utf8: é@: refused"
+fi
+# `Москва` (Cyrillic, six two-byte characters, no ASCII at all): the whole
+# literal is one 12-byte run and the scanned member must be the LAST byte of
+# its last character — a CONTINUATION byte (0x80-0xBF) — never a LEAD byte
+# (0xC2-0xF4, the range every character in a Cyrillic run shares). Read as a
+# numeric RANGE test, not a literal equality, so the assertion is the general
+# claim the census makes rather than one more hardcoded byte.
+if emit "$WORKDIR/s49b.c" 'Москва' -e utf8; then
+    got="$(stamp "$WORKDIR/s49b.c" REQ_BYTE)"
+    if [ -n "$got" ] && [ "$got" -ge 194 ] 2>/dev/null && [ "$got" -le 244 ] 2>/dev/null; then
+        bad "[4.9b] -e utf8: Москва: RX_REQ_BYTE \"$got\" IS a UTF-8 lead byte (0xC2-0xF4) — the O-60 defect"
+    elif [ -n "$got" ]; then
+        ok "[4.9b] -e utf8: Москва -> RX_REQ_BYTE \"$got\", not a lead byte"
+    else
+        bad "[4.9b] -e utf8: Москва: no RX_REQ_BYTE stamp — refused or absent"
+    fi
+else
+    bad "[4.9b] -e utf8: Москва: refused"
+fi
+# THE BYTE-ENCODING CONTROL: the identical two-byte-tie population under
+# `byte` (where "lead byte" is not even a meaningful concept, and `bytekey`
+# is unconditionally true — `rn_scan_index`'s changed line never runs). If
+# the byte path degraded to "rightmost" too, this witness would read "64"
+# (the rightmost byte, '@') instead of the RARE byte the frequency argmin
+# actually prefers — 0xC3/0xA9 both sit at the shipped table's 2 ppm floor,
+# strictly rarer than the ordinary ASCII byte '@', and the argmin's own
+# strict-less-than tie rule keeps the LEFTMOST of the tied minima (0xC3),
+# unrelated to and unmoved by this change.
+if emit "$WORKDIR/s49c.c" 'é@'; then   # default encoding: byte
+    got="$(stamp "$WORKDIR/s49c.c" REQ_BYTE)"
+    gotrun="$(stamp "$WORKDIR/s49c.c" REQ_RUN)"
+    [ "$got" = "195" ] && [ "$gotrun" = "c3a940@0" ] \
+        && ok "[4.9c] byte encoding: é@ -> RX_REQ_BYTE \"195\" (the frequency argmin, still) — the mechanism is untouched" \
+        || bad "[4.9c] byte encoding: é@: RX_REQ_BYTE \"${got:-<absent>}\" / RX_REQ_RUN \"${gotrun:-<absent>}\", expected \"195\" / \"c3a940@0\" — the !bytekey branch may have leaked into the byte path"
+else
+    bad "[4.9c] byte encoding: é@: refused"
+fi
 
 # =========================================================================
 # SECTION 5 — [OPT-PRECHECK-ADMIT]: <PREFIX>_REQ_WHY and the text it explains

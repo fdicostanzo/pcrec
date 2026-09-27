@@ -868,6 +868,20 @@ decides whether to perform it — and then run the row through
     asserted (§4.1c); §4.3's window guard is the block's `pos + L-1 < n` /
     `cand + L-1 >= n` pair; §3.4b asserts the block's first statement is its
     loop guard (the empty-window arm it replaced).
+  - **§4.9 ([OPT-REQRUN-ENC], 2026-09-26, abi 37 -> 38)** is the ruling's own
+    acceptance criteria for the RUN's `!bytekey` fallback moving from
+    leftmost to rightmost: `é@` under `-e utf8` must stamp `RX_REQ_BYTE
+    "64"` (the byte `'@'`), never the shared UTF-8 lead byte `195`;
+    `Москва`'s picked byte must fall OUTSIDE the `0xC2-0xF4` lead-byte
+    range, asserted as a RANGE TEST rather than a hand-picked literal, so
+    the claim is the census's general one; and a `byte`-encoding control on
+    the identical two-byte-tie population (`é@` with no `-e` flag) must
+    still read the frequency argmin's own answer (`195`, tied-minima
+    leftmost) rather than degrade to "always rightmost" — proving the
+    `!bytekey` gate scopes the whole change to non-`byte` encodings. §3.6's
+    own utf8 multi-byte witnesses (`é`, `x(é|è)y`, `a\x{1F600}b`, `é@`) and
+    §4.5c's truncation-window witness moved to their new rightmost-fallback
+    values in the same change (`docs/dev/optloop/reqrunenc_census.md`).
   - **WHY IT IS A STRUCTURAL GATE AT ALL.** Three of the five mechanisms it
     now guards have NO answer-level detector anywhere in the tree:
     [OPT-ANCHOR-VM]'s bound, [OPT-REQBYTE]'s pre-check and

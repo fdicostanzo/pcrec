@@ -2704,6 +2704,7 @@ three rows below extend batch 1's asymmetry rather than repeat it:
 | S266 | [OPT-FREQPICK] | the set pick's `argmin` inverted to `argmax` | expected `0fail` | EVERY member of the necessary set is a byte every match must contain, so the `memchr` is sound for any of them — the choice moves a SPEED and nothing a caller can observe |
 | S267 | [OPT-REQPOS] | the run compare's `!memcmp` sense inverted | red | S265's plant one grain over, and answer-detectable for S265's reason |
 | S268 | [OPT-REQPOS] | an alternation's head run taken from ONE branch | red | the analysis claims a run beyond what every match guarantees, so every match of the other branch is deleted |
+| S294 | [OPT-REQRUN-ENC] | the run's `!bytekey` decline reverted to leftmost | expected `0fail` | EVERY member of a necessary run is a byte every match must contain, so the `memchr`/`memcmp` pair is sound for whichever member is scanned — the choice moves a SPEED (and, under `-e utf8`, whether the scanned byte is a shared UTF-8 lead byte) and nothing a caller can observe |
 
 **S266 is the SECOND row in this directory whose only detector is one
 structural arm**, and its reason is different from S263's in a way worth

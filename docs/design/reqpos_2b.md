@@ -249,6 +249,31 @@ findings value like any other and is keyed by encoding the same way — one
 `DATA`-scope row, `[DD-13b]`'s to write, spelled out at
 `reqbyte_freq_pick.md` §3.4.
 
+**AMENDMENT, 2026-09-26 ([OPT-REQRUN-ENC], `lane/reqrunenc2`): the fallback
+above is RIGHTMOST, not leftmost, and this paragraph's "costs nothing
+measurable" is FALSIFIED.** The stage-1 D77 census
+(`docs/dev/optloop/reqrunenc_census.md`) re-measured this decline against
+pcrec-bench's O-60 finding: on the RUN path specifically (as opposed to the
+single-byte pick above, which is unaffected and keeps its own RIGHTMOST
+fallback via `rb_pick` [corrected 2026-09-26 by the manager: the amendment
+first said "leftmost" here, found by lane pfdesign]), a `-e utf8` run's LEFTMOST member is a UTF-8 LEAD
+BYTE whenever the run opens mid-character, and a lead byte is shared by
+every character in its script block — so a `memchr` scanning for it stops on
+nearly every byte of a non-Latin subject instead of the rare one the literal
+needs. Measured: the RUN path fires on 12.0%/28.3% of the corpus/bench under
+`-e utf8`, and today's (pre-amendment) leftmost pick was a UTF-8 lead byte on
+12.0%/20.7% of those. The manager's ruling on the census: `rn_scan_index`'s
+`!bytekey` branch returns `r->n - 1` (rightmost), matching `rb_pick`'s own
+`!bytekey` fallback exactly — one mechanism, two call sites — rather than a
+new byte-range-aware rule, since a rightmost-vs-lead-byte-skipping candidate
+(`S` in the census) was measured byte-IDENTICAL to the rightmost one (`R`)
+on the entire real `-e utf8` population (912/912 runs); WITH an `abi` bump
+(37 -> 38), since the emitted `memchr`/`memcmp` target and the `<PREFIX>_
+REQ_RUN` stamp's `@offset` move on movers, the tree's own precedent for a
+stamp-VALUE-and-emitted-text move (K64fix, `1e6a90b0`). See
+`docs/dev/lanes/reqrunenc2_report.md` and `src/opt/CLAUDE.md`'s `reqbyte.c`
+entry for the landing.
+
 ### 2.4 What the mechanism declines, stated as a list
 
 1. **Any pattern with no run of length ≥ 2** — 81.4% of the corpus. It keeps

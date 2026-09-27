@@ -532,15 +532,36 @@ static int rb_pick(const RbSet *s, bool bytekey)
 }
 
 /* Which member of the RUN the emitted `memchr` tests: the rarest under the
- * prior, ties to the LEFTMOST — and the leftmost outright where the prior
- * does not apply (reqpos_2b.md §2.3). The per-candidate cost of the whole run
- * check is the number of occurrences of THIS byte in the window, which is why
- * the choice is not cosmetic. */
+ * prior, ties to the LEFTMOST — and `rb_pick`'s own `!bytekey` fallback
+ * (rightmost — `cat`/`alt`'s threaded convention) where the prior does not
+ * apply. The per-candidate cost of the whole run check is the number of
+ * occurrences of THIS byte in the window, which is why the choice is not
+ * cosmetic.
+ *
+ * [OPT-REQRUN-ENC] `!bytekey` WAS the leftmost fallback (reqpos_2b.md §2.3's
+ * ratified "costs nothing measurable"), and pcrec-bench's O-60 finding
+ * falsified that under `-e utf8`: a `-e utf8` run is complete lowered UTF-8
+ * code-unit sequences, so its LEFTMOST member is a lead byte whenever the
+ * run opens mid-character — shared by every character in that script block,
+ * so the emitted `memchr` stops on nearly every byte of a non-Latin subject
+ * rather than the rare one the literal needs (measured: 12.0%/20.7% of the
+ * corpus/bench RUN-path artifacts under `-e utf8`,
+ * docs/dev/optloop/reqrunenc_census.md §0/§2.1). The rightmost member is
+ * never this defect on a REAL run — a run's last byte can only be a lead
+ * byte if the run is truncated mid-character (an alternation's common
+ * suffix stopping between a lead byte and its continuation), which the
+ * census's D77 measurement found in ZERO of 912 real `-e utf8` runs
+ * (bench+corpus) — so `rb_pick`'s own fallback closes this with no new
+ * byte-range logic: one mechanism, two call sites, general-mechanism rule.
+ * A byte-range-aware "skip lead bytes" candidate (S in the census) was
+ * measured byte-IDENTICAL to this one on the whole real population and is
+ * not built (D77's "wait for a measured need" — the one case where it
+ * would differ has never been observed). */
 static int rn_scan_index(const RbRun *r, bool bytekey)
 {
     int i, best = 0;
     unsigned lo;
-    if (!bytekey) return 0;
+    if (!bytekey) return r->n - 1;
     lo = pcrec_byte_freq_ppm(r->bytes[0]);
     for (i = 1; i < r->n; i++) {
         unsigned p = pcrec_byte_freq_ppm(r->bytes[i]);
