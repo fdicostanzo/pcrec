@@ -124,6 +124,14 @@ def main():
                 skipped += 1
                 print(f"SKIP {pop} {cfg} {key[:60]!r}: a side did not compile")
                 continue
+            # possdiff_driver binds no `${name}`: a var-bearing artifact's
+            # entries take the binding and the driver cannot call them (lane
+            # s2afix found it as 4 "driver did not build" FAILs). Named, never
+            # silently dropped; tests/vars/ answers these on the corpus.
+            if b"_NVARS " in open(f"{d}/pb.h", "rb").read():
+                skipped += 1
+                print(f"SKIP {pop} {cfg} {key[:60]!r}: carries ${{...}} variables, which the driver cannot bind")
+                continue
             cc = subprocess.run([CC] + CFLAGS + ["-I", d,
                                  '-DDIFF_A_LABEL="base"', '-DDIFF_B_LABEL="b1"',
                                  "-o", f"{d}/t", DRIVER, f"{d}/pa.c", f"{d}/pb.c"],
