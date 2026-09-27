@@ -84,16 +84,26 @@ Result: **12,876 artifact-configs.** 11,494 are identical, 1,382 are refused on 
 
 ## 5. STATE AT HANDOFF
 
-- `lane/findb2` is committed, with this report as the last commit.
-- A detached chain is running, if the manager granted the box. Its log is `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb2/scratchpad/chain.log`, and its completion line is `FINDB2 CHAIN DONE`. Stages, in order:
-  1. `make test-registry`
-  2. `make test-rxtsource`
-  3. `make test-codegen`
-  4. mech S308-S317 (`bash tests/mech/run_sabotage_matrix.sh S308 … S317`)
-  5. `make test-axes AXES=--analysis` (the full FINDINGS axis)
-  6. `make test CC=gcc-16`
-- Each stage writes `STAGE <name> rc=N`. The verdict is make's `*** [test-X] Error` lines.
-- Expected red: test-codegen's accepted `nm arm_a.o` line, as at B1.
+- `lane/findb2` is committed. The report and the CLAUDE.md entries are the last commits.
+- **A detached chain is running**, launched with `nohup … & disown`.
+  - Script: `/private/tmp/claude-501/-Users-fdicostanzo-pcrec/findb2/scratchpad/chain.sh`
+  - Log: `…/findb2/scratchpad/chain.log`
+- **The chain's first step is a WAIT**, which the manager ruled. It polls every 120 s until `PF35 CHAIN: ALL DONE` appears in pf35's `chain.log` (`/private/tmp/claude-501/-Users-fdicostanzo-pcrec/pf35/scratchpad/chain.log`). When the wait ends it logs `FINDB2 WAIT FOR PF35 ENDED`.
+- **Then these stages run serially:**
+  1. build
+  2. `make test-registry`
+  3. `make test-rxtsource`
+  4. `make test-codegen`
+  5. mech S308 … S317, one row at a time (`bash tests/mech/run_sabotage_matrix.sh <id>`)
+  6. `AXES=--analysis make test-axes`, the full FINDINGS axis
+  7. `make test CC=gcc-16`
+- Each stage logs `STAGE <name> rc=N`. The chain ends with the completion line `FINDB2 CHAIN DONE`.
+- **Reading the verdicts:**
+  - Use make's `*** [test-X] Error` lines.
+  - Expected red: test-codegen's accepted `nm arm_a.o` line, as at B1.
+  - For mech, each row's line must end `DETECTED`.
+  - For the axes stage, every `--analysis=<b>` job must read `giveup1-unallowed=0` with no mismatches.
+- A light `make test-registry` was also still running outside the chain when I handed back. Its log is `…/findb2/scratchpad/reg.log`. The chain re-runs that suite anyway.
 
 ## 6. Deviations and open items for the manager
 
