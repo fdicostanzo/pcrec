@@ -2774,7 +2774,7 @@ Re-pointed `SAB_REACH` to `a.?b`: its necessary byte (98, `'b'`) carries no
 contiguous required RUN (`.?` is optional), so `pcrec_emit_req_byte_check`
 takes the one-byte branch, and G1 does not dominate it — the artifact's own
 candidate scan is a plain `memchr` on `'a'` (97, not `'b'`, so identity
-fails) and `pcrec_byte_freq_ppm(97) > pcrec_byte_freq_ppm(98)` (density
+fails) and `pcrec_byte_freq_ppm(97) > pcrec_byte_freq_ppm(98)` (today the default byte-rate's `rate[97] > rate[98]`; density
 fails too, under `-e byte`) — `RX_REQ_WHY "emitted"`. Verified by hand
 (field validation, a direct reach-probe run against the built binary, and a
 scratch `git archive` tree with the sabotage applied and rebuilt: the
@@ -3018,3 +3018,24 @@ plant then made a wild call and SEGFAULTED rather than planting the defect.
 A plant that quotes a signature is a reader of that signature; it was
 re-spelled to the current one in the listing commit and re-verified.
 
+### [FINDINGS] B1 — the `findings` arm, S301, and three re-anchored rows
+
+**The `findings` arm** runs `tests/findings/run_findings_tests.sh` (the
+findings seam's values, store, pre-parse agreement, stamp and structural
+rule). Registered before its first row, per R31 C11. **S301** plants a
+reader-local NONE branch (`if (!rate) return rightmost;`) in
+`pcrec_find_set_pick` — behaviourally NEUTRAL by construction, since it
+returns what the PICK primitive's own NONE answer returns for that reader's
+candidate order, so the structural check (S1) is its only detector and
+`corpus:0fail` beside a red `findings` arm is the row working.
+
+**Re-anchored at B1**, each copied from the tree it anchors: **S266** from
+`rb_pick`'s argmin loop onto the PICK primitive's argmin line
+(`pcrec_find_pick`, `src/core/findings.c`) — the set pick now asks it, and
+the plant reaches the run's scan member too; **S294** from `rn_scan_index`'s
+own `!bytekey` line (a per-reader NONE rule D126 Q4 deleted) onto the PICK
+primitive's NONE line, which reaches BOTH PICK readers through one site (for
+the set pick, whose rightmost candidate is index 0, the plant is a no-op; for
+the run it is the old leftmost defect, which `run_prechecks.sh` §3.6/§4.9
+catch); **S288** onto the COMPARE call, because its context line (G1's
+density encoding test) was deleted.

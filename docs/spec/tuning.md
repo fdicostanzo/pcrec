@@ -878,8 +878,7 @@ optimization and the build its identity comparison uses as its control.
 
 **The selection, and it is not this flag.** Whether an artifact gets an
 offset-k form is decided at generation time, per artifact, by a cost
-model over a static byte-frequency prior
-(`docs/design/offset_k_skip.md` §4): the form is adopted only when it is
+model over a byte-rate (`docs/design/offset_k_skip.md` §4): the form is adopted only when it is
 predicted at least **2×** cheaper than the offset-0 filter, and the
 scan offset must be a single byte value unless it is offset 0. Offset 0
 is always a member of the set. Neither the k-set cap (**4**) nor the
@@ -2340,7 +2339,7 @@ route, where the hybrid prefilter is declined outright for a backreference or
 a linked call and where three of those five rows live.
 
 **How the byte is derived.** A bottom-up walk of the LOWERED AST
-(`src/opt/reqbyte.c`) producing a SET: concatenation unions, alternation
+(`src/facts/req.c`) producing a SET: concatenation unions, alternation
 INTERSECTS, a quantifier admitting zero iterations contributes nothing, a
 one-byte class is a singleton, and a backreference, a linked call or any
 assertion contributes the empty set — which disables the check and is always
@@ -2350,9 +2349,9 @@ entirely.
 
 **Which member of the set the check tests, and it is no longer PCRE2's
 choice** ([OPT-FREQPICK], `docs/design/reqbyte_freq_pick.md`, ratified
-2026-09-22). The emitted byte is the member with the LOWEST value in pcrec's
-shipped static byte-frequency prior (`pcrec_byte_freq_ppm`, the table
-`-fno-offset-skip`'s own selection already reads), because the member that
+2026-09-22). The emitted byte is the member with the LOWEST byte-rate — the
+rate the compile's analysis declares, the rate `-fno-offset-skip`'s own
+selection also reads (`docs/spec/findings.md`) — because the member that
 pays is the one a subject is least likely to contain. PCRE2's RIGHTMOST rule
 survives as the TIEBREAK — today's `pick` where it is among the minima, the
 largest such byte otherwise — so the property the rightmost rule was chosen
@@ -2364,18 +2363,19 @@ corpus moves its emitted byte, and no new axis bit is spent — which member is
 tested is a VALUE under this one, the shape `--unroll=K` and
 `--vm-entry-shape=N` already have.
 
-**The prior is read only under the `byte` encoding.** A byte-frequency table
-is a fact about a subject corpus UNDER an encoding, and the shipped table is
-keyed to `byte` by its own contents: its whole 0x80–0xFF half sits at the
-table's 2 ppm floor, so under `-e utf8` it calls the bytes a Latin corpus
-uses MOST the rarest bytes there are. Under every encoding but `byte` the
-pick therefore falls back to the rightmost member — byte for byte the answer
-before this change — so the fallback can never regress anything. A later
-findings-file value (D83) carries its own encoding key and is read only when
-that key matches the compile's `-e`; a value whose key disagrees is never
-silently applied and draws a non-fatal stderr diagnostic naming both sources.
-Note that §2.28's RUN is NOT encoding-gated (a run of bytes is a run of bytes
-under either encoding) — only the choice of which member of it to scan for.
+**The rates are whatever the resolved analysis declares; the default
+declares `byte` only** ([FINDINGS] B1, `docs/spec/findings.md` §2). A
+byte-frequency table is a fact about a subject corpus UNDER an encoding, and
+the shipped default is keyed to `byte` by its own contents: its whole
+0x80–0xFF half sits at the 2 ppm floor, so under `-e utf8` it would call the
+bytes a Latin corpus uses MOST the rarest bytes there are. Its data therefore
+says `serves byte-rate when byte`, and under every other encoding the
+`byte-rate` answer is NONE and the pick takes the PICK kind's NONE answer,
+the rightmost member — byte for byte the answer before [OPT-FREQPICK]. The
+NONE answer is spelled once per question KIND (`findings.md` §4), never per
+reader. Note that §2.28's RUN is NOT encoding-gated (a run of bytes is a run
+of bytes under either encoding) — only the choice of which member of it to
+scan for.
 
 **Unlike PCRE2's fact, the whole window counts.** `LASTCODEUNIT` excludes the
 match's first unit because its consumer is a per-attempt check; this one runs
@@ -2433,7 +2433,7 @@ present in the throughput subject and whose RUN is absent
 (`docs/design/reqpos_2b.md` §1).
 
 **How the run is derived.** The SAME bottom-up walk of the lowered AST as
-§2.27, with a second accumulator (`src/opt/reqbyte.c`). A concatenation joins
+§2.27, with a second accumulator (`src/facts/req.c`). A concatenation joins
 the left factor's guaranteed literal SUFFIX to the right factor's guaranteed
 literal PREFIX; a singleton byte class is a one-byte run; an alternation keeps
 only its branches' longest common prefix and common suffix; and everything
@@ -2451,23 +2451,25 @@ own, each of which is a missed opportunity and never an unsound claim:
   non-common interior, so `(?:xabcy|zabcw)` reports no run at all.
 
 **Which member the scan tests, and how a long run is truncated.** The member
-with the lowest value in the same static prior §2.27 describes, ties to the
-LEFTMOST, and the RIGHTMOST member outright under any encoding the prior is
-not keyed to (`[OPT-REQRUN-ENC]`, 2026-09-26, amending this paragraph's
+with the lowest value in the same byte-rate §2.27 describes, ties to the
+LEFTMOST, and the RIGHTMOST member outright where no byte-rate applies — the
+PICK kind's NONE answer, the same one §2.27's pick takes (`findings.md` §4;
+`[OPT-REQRUN-ENC]`, 2026-09-26, amending this paragraph's
 former "leftmost outright" rule — `docs/dev/optloop/reqrunenc_census.md`).
 Under `-e utf8` a run's LEFTMOST member is a UTF-8 lead byte whenever the run
 opens mid-character, and a lead byte is shared by every character in its
 script block, so a scan for it stops on nearly every byte of a non-Latin
 subject rather than the rare one the literal needs — the exact defect
-pcrec-bench's O-60 measured. The rightmost member is `rb_pick`'s own
-`!bytekey` fallback, reused rather than re-derived: a run's LAST byte can
+pcrec-bench's O-60 measured. The rightmost member is the set pick's own
+NONE answer, shared rather than re-derived: a run's LAST byte can
 only be a lead byte if the run itself is truncated mid-character (an
 alternation's common suffix stopping between a lead byte and its
 continuation), measured in ZERO of 912 real `-e utf8` runs. A run longer than
 `PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a `--list-limits` row) is TRUNCATED and
 never split into two compares: to the 8-byte window containing the scan
-member whose bytes sum to the lowest prior, ties leftmost, and to the
-LEFTMOST-of-the-admissible-range such window where the prior does not apply —
+member whose bytes sum to the lowest byte-rate mass, ties leftmost, and so to
+the LEFTMOST-of-the-admissible-range such window where no byte-rate applies
+(every window's mass is then the uniform one) —
 which, for a member at the run's own last index, collapses to the run's own
 last eight bytes (the admissible range has exactly one candidate). 8 is
 where gcc lowers a constant-length `memcmp` to one word load and one compare
@@ -2616,8 +2618,9 @@ pre-check stays.) The pre-check on `q` declines where:
   its scan byte does, so a byte scan alone never dominates it. A test that
   verifies the run but scans a DIFFERENT member of it keeps the pre-check.
 - **density**, for the ONE-BYTE pre-check under a `memchr`-form prefilter
-  only: `q` is not STRICTLY rarer than `p` by `pcrec_byte_freq_ppm`, read
-  only under `byte`, §2.27's own encoding rule and for its reason.
+  only: `q` is not STRICTLY rarer than `p` by the byte-rate — the COMPARE
+  kind's question, whose NONE answer is "no density claim", so where no
+  byte-rate applies (§2.27) only identity elides.
 
 Measured: 4 ledger cells, all `wild-codegrammar-json-array-begin`, whose
 artifact ran `memchr(…, 91, …)` twice per call; and S1's own population

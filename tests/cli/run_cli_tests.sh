@@ -1898,7 +1898,7 @@ case15() {
 
     # (a) the step budget. `(a*)*b`'s O(n^2) resumption count burns a
     # --step-budget=50 well inside 20 bytes of 'a' with no 'b' to end it.
-    # -fno-req-byte: [OPT-REQBYTE] (src/opt/reqbyte.c) stamps a whole-window
+    # -fno-req-byte: [OPT-REQBYTE] (src/facts/req.c) stamps a whole-window
     # memchr for the pattern's one required byte ('b'), which is ABSENT from
     # this witness subject by design — with the axis on, that pre-check
     # answers nomatch before the VM ever runs, so the give-up contract this

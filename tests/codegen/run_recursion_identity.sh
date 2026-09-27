@@ -1047,7 +1047,8 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `memchr`/`memcmp` target byte and `<PREFIX>_REQ_RUN`'s `@offset` VALUE move
 # on `-e utf8` artifact-configs only (236 of 1,167 bench, 763 of 10,818
 # corpus) — `byte`-encoding artifacts are untouched by construction. (A) is
-# untouched: `rn_scan_index` sits in the ANALYSIS (`src/opt/reqbyte.c`), not
+# untouched: `rn_scan_index` sits in the ANALYSIS (`src/opt/reqbyte.c`; since
+# [FINDINGS] B1 `pcrec_find_run_scan_index` in `src/core/findings.c`), not
 # `prog_region()`, and this gate's call-free-corpus population is compiled
 # at the default (`byte`) encoding.
 # **(B) RE-PINNED AGAIN — [K68], 2026-09-26: abi 38 -> 39, to `b255027f`,
@@ -1061,7 +1062,14 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # REFLECTION-SURFACE property of `rx_info.flags`, which sits ABOVE
 # `prog_region()`'s `goto <p>_L0;` start, so (A) is untouched. No answer
 # moves on any artifact.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-b255027f}"   # [K68], abi 38->39: (B) re-pinned to b255027f on lane/k68fix (D76, 2026-09-26). Prior pin: fe5a0bbc ([OPT-REQRUN-ENC], abi 37->38).
+# **(B) RE-PINNED AGAIN — [FINDINGS] B1, 2026-09-27: abi 39 -> 40, to
+# `8001f347`, the `lane/findb1` commit that is its last `src/` change.** Every
+# artifact gains the `<PREFIX>_FINDINGS` stamp line beside the `rx_info`
+# definition and an APPENDED `rx_info.findings` member and initializer; the
+# byte-frequency prior became data that normalizes to the same table, so under
+# the `byte` encoding this gate's population is compiled at, nothing else
+# moves. Both new lines sit OUTSIDE `prog_region()`, so (A) is untouched.
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8001f347}"   # [FINDINGS] B1, abi 39->40: (B) re-pinned to 8001f347 on lane/findb1 (D76, 2026-09-27). Prior pin: b255027f ([K68], abi 38->39).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

@@ -86,6 +86,13 @@ directory, never here.
   the build's base.
 - `s1_identity.py` — the per-commit identity gate (distinct-pattern
   populations, auto + `--engine=vm`), with the abi-digit normalization.
+  REUSED by [PATFACTS] 3.0 and [FINDINGS] B1 as THE A/B emit-diff
+  instrument; B1 added `DROP_FINDINGS=1` (findings design §7's named-lines
+  gate: the `<PREFIX>_FINDINGS` line, the `.findings` initializer and the
+  struct's appended member are deleted by name before comparing), a per
+  mover `moved` field naming every `RX_*` stamp that changed (plus
+  `program`), and a `findings` REACH count. It compares the `.c` only, never
+  the paired `.h` `-o` also writes.
 - `s1_movers.py` — the mechanism's movers BY ID against `census_b.tsv`, over
   census_b.py's own populations; `EXPECT` names the classes predicted to
   move, `EXTRA`/`BOTH` add a deny flag to one or both sides.

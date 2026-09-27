@@ -404,6 +404,24 @@ caller never meets either at match time.
 Neither number is movable by a flag; both are `--list-limits` rows like
 every other number in this document.
 
+### 3.7 Findings data: a count's ceiling and the rate floor ([FINDINGS] B1)
+
+An analysis's data blocks store COUNTS, which the compiler turns into rates
+(`docs/spec/findings.md` §2–§3). Two numbers bound that arithmetic:
+
+- **A `row` count is at most `PCREC_MAX_FIND_COUNT` = 1,099,511,627,776
+  (2^40).** A larger count is refused at parse, naming this limit; nothing
+  truncates. It keeps the normalization's product (count × 10^6 ≤ 2^60)
+  inside 64-bit integers, so the rates are bit-identical on every box.
+- **Every byte's rate is at least `PCREC_FIND_FLOOR_PPM` = 2 parts per
+  million.** A byte a block never counted (or counted too rarely) is given
+  this floor, so no rate reader ever treats a byte as impossible. It is the
+  shipped default's own floor, which is why the default normalizes to itself.
+
+Neither number is movable by a flag. The remaining findings limits (chain
+length, bundle and store size, `cpfreq` rows, run length) arrive with the
+steps that read them.
+
 ## 4. Worked example: `^(a(?1)?b)$`, re-measured
 
 This is D73's own example, re-measured against this worktree's build

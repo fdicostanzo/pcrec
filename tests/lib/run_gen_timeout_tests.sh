@@ -282,7 +282,7 @@ fi
 # on RSS — the 122 path's positive control lives in scripts/test_watchdog.sh
 # (case 5), and gen_run adds only the budget selection this section covers.
 #
-# -fno-req-byte: [OPT-REQBYTE] (src/opt/reqbyte.c) stamps a whole-window
+# -fno-req-byte: [OPT-REQBYTE] (src/facts/req.c) stamps a whole-window
 # memchr for this pattern's one required byte ('b'), which the 200-'a'
 # subject deliberately never carries — with the axis on, that pre-check
 # answers nomatch in microseconds and the artifact never reaches the ~5s

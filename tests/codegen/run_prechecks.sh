@@ -345,7 +345,8 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/assertions/end_window.rxt")
 #
 # THE EXPECTED VALUES ARE LITERALS, hand-derived from the shipped prior and
 # from the walk's stated arms, NEVER recomputed here from
-# `pcrec_byte_freq_ppm` — a check that recomputed the rule from the table
+# the byte-rate (`pcrec_byte_freq_ppm` until [FINDINGS] B1; the shipped
+# default's normalized table since) — a check that recomputed the rule from the table
 # would share a source with what it controls (docs/dev/learnings.md §3) and
 # would pass under any table at all.
 #
@@ -591,7 +592,8 @@ ROWS
 
 # §3.7 — [OPT-FREQPICK]: WHICH member of the necessary set the check tests.
 #
-# The rule is "the member with the lowest `pcrec_byte_freq_ppm`, ties broken by
+# The rule is "the member with the lowest byte-rate (the shipped default's
+# table, `pcrec_byte_freq_ppm` before [FINDINGS] B1), ties broken by
 # the rightmost member when it is among the minima and by the largest such byte
 # otherwise" (docs/spec/tuning.md §2.27). EVERY EXPECTED BYTE BELOW IS A
 # LITERAL DERIVED BY HAND from the shipped table and quoted with its ppm, never
@@ -872,6 +874,8 @@ done < <(sed -n 's/^pattern //p' "$ROOT_DIR/tests/base/literals.rxt" \
     || bad "[4.8] only $s4_run corpus patterns carry a required run, floor is $S4_FLOOR — §4.1 may be vacuous"
 
 # §4.9 — [OPT-REQRUN-ENC]: THE `!bytekey` DECLINE IS RIGHTMOST, NOT LEFTMOST
+# ([FINDINGS] B1: that decline is now the PICK kind's NONE answer, spelled once
+# in `pcrec_find_pick`, src/core/findings.c; the names below are the history)
 # (docs/dev/optloop/reqrunenc_census.md, O-60). `rn_scan_index`'s `!bytekey`
 # branch went from an unconditional `return 0` (leftmost) to `return r->n - 1`
 # (rightmost, `rb_pick`'s own fallback). §3.6/§3.6r already carry `é@` as a
@@ -1060,7 +1064,9 @@ ROWS
 # must EMIT. A compiler that compared the two densities backwards, or that
 # declined on the mere PRESENCE of a memchr prefilter, fails one of the pair.
 #
-# THE ENCODING RULE. `pcrec_byte_freq_ppm` is keyed to `byte` by its own
+# THE ENCODING RULE. The shipped byte-rate (`pcrec_byte_freq_ppm` before
+# [FINDINGS] B1, `src/findings/default.rxt` since, which says so in its own
+# `serves ... when byte` line) is keyed to `byte` by its own
 # contents (docs/design/reqbyte_freq_pick.md §3), so under any other encoding
 # the comparison is IDENTITY ONLY. `Q[0-9]+x` is the discriminating witness a
 # second time: under `-e utf8` the pick reverts to the RIGHTMOST member (`x`,

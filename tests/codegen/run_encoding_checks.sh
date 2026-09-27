@@ -500,7 +500,7 @@ ENDWIN_STAMP_RE = re.compile(r'^(#define RX_END_WINDOW ")(?:none|\d+)(")$')
 #
 # (ii) [OPT-FREQPICK]'s scan-member pick. `pcrec_req_byte` reads its
 # byte-frequency prior only under `byte` (the shipped table is keyed to that
-# encoding — reqbyte.c's header) and takes the leftmost run position
+# encoding — then src/opt/reqbyte.c's header, src/core/findings.c's since [FINDINGS] B1) and takes the leftmost run position
 # elsewhere, so `abc\z` scans for `b` at offset 1 under byte and `a` at offset
 # 0 under utf8. WHICH MEMBER is scanned is therefore normalized, and NOTHING
 # ELSE about the pre-check: the scanned byte (`memchr(..., B, ...)` in the run

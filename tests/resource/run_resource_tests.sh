@@ -651,10 +651,19 @@ if [ "$rc" -eq 0 ] && printf '%s' "$log" | grep -q 'dropped the premultiplied DF
     #           subject_length - search_from)) return 0;`)
     #   = 762270
     sz=$(wc -c <"$out" | tr -d ' ')
-    if [ "$sz" -eq 762270 ]; then
-        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762270 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check) — the cap still works, this witness no longer reaches it"
+    #
+    # RE-PINNED AGAIN 762270 -> 762381, 2026-09-27 ([FINDINGS] B1, abi 39 ->
+    # 40): every artifact gains the `<PREFIX>_FINDINGS` stamp line and its
+    # APPENDED `rx_info.findings` initializer line, and this cell is a byte
+    # reader of both. VERIFIED BY DIFFING the two artifacts at the SAME `-o`
+    # basename: four changed lines -- the two abi digits (same length) and
+    #   +55     `#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"`
+    #   +56     `    .findings = "byte-rate=default:1822fb973b95a4da",`
+    #   = 762381
+    if [ "$sz" -eq 762381 ]; then
+        ok "'a{5,25000}' -fno-scan-edge -fno-start-pinned is rescued by [K59-PREMUL]'s drop ladder at 762270 bytes (was 1104674 before the rung existed; 769835 before emitted comments went off by default; 762105 before the abi joined the generated-by line; 762114 before the version joined it; 762125 before [OPTLOOP.1] batch 1's two stamps and its memchr pre-check; 762312 before [OPTLOOP.2] batch 2's REQ_RUN stamp; 762338 before [OPT-PRECHECK-ADMIT]'s REQ_WHY stamp; 762367 before [VAR]'s two rx_info members; 762401 before [OPT-LITSCAN] S1's G1 conjunct elided this witness's own require-byte pre-check; 762270 before [FINDINGS] B1's stamp and rx_info mirror) — the cap still works, this witness no longer reaches it"
     else
-        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762270 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
+        bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned rescued at $sz bytes, pinned 762381 — the rung's own byte count moved; re-measure and re-pin in the same commit if intended"
     fi
 else
     bad "'a{5,25000}' -fno-scan-edge -fno-start-pinned expected the [K59-PREMUL] rescue (rc 0, dropped-premultiplied-table note); got rc=$rc: $log"

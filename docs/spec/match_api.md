@@ -1664,8 +1664,27 @@ struct rx_info {
                                             guard is "the DFA emitter wrote
                                             _match". NULL only on a plain
                                             VM artifact (§6.3) */
+    const char *const    *vars;         /* [VAR] the variable NAMES this
+                                            pattern mentions, first-mention
+                                            order; NULL when none */
+    int                   nvars;        /* entries in vars[] */
+    const char           *findings;     /* [FINDINGS] B1 mirror of
+                                            <PREFIX>_FINDINGS: which
+                                            findings each query this compile
+                                            asked was answered from (§6.3,
+                                            docs/spec/findings.md §5).
+                                            NEVER NULL: "" when the compile
+                                            asked nothing */
 };
 ```
+
+**[FINDINGS] B1, 2026-09-27 — `findings`.** Appended after `nvars` on
+[DD-13c]'s terms: no existing member's offset moves, and `abi` bumps 39 → 40
+with the `<PREFIX>_FINDINGS` stamp it mirrors (§6.3). D43 makes `rx_info` the
+canonical machine-readable record, so the macro alone would be invisible to a
+linked binary. The value names the analysis a byte-rate came from **in plain
+text**, so a shipped binary discloses the analysis name it was built under
+(`docs/spec/findings.md` §5 states it; name bundles neutrally).
 
 **[DD-13b.W1.2], 2026-08-31 — `name` and `nentries`.** Appended after
 `match_form` on [DD-13c]'s terms: no existing member's offset moves, and
@@ -2008,13 +2027,38 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `39` while the three narrative copies
+which is why it is gap-free from `2` to `40` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `39` on every artifact today (`[K68]` bumped it from 38,
+- **`rx_info.abi` is `40` on every artifact today (`[FINDINGS]` B1 bumped it
+  from 39, 2026-09-27: THE BYTE-RATE IS DATA, EVERY ARTIFACT STAMPS WHERE ITS
+  FINDINGS CAME FROM, AND OFFSET-k'S RATE READ TAKES THE GATE).** One D123-2
+  abi event for three things. (1) Every artifact of both engines gains ONE
+  stamp line, `<PREFIX>_FINDINGS` (§6.3), written beside the `rx_info`
+  definition, and `rx_info` gains ONE APPENDED member, `findings` (§6), with
+  its initializer line — no existing member's offset moves. (2) The
+  byte-frequency prior the necessary-byte pick, the run's scan member and
+  window, G1's density rule and the offset-k selection read is DATA now
+  (`src/findings/default.rxt`, `docs/spec/findings.md`): the shipped default
+  normalizes to the old table exactly, so under `-e byte` no other emitted
+  byte moves — MEASURED ZERO movers under the named-lines gate over pcrec-bench's
+  capability patterns and every corpus pattern, `-e byte` × {default,
+  `-fno-req-byte`, `-fno-req-run`, `-fno-offset-skip`}. (3) The offset-k
+  selection's rate read had NO encoding gate; it now takes the one the data
+  declares, so under `-e utf8` (where the default declares nothing) it ranks
+  offset sets by CARDINALITY, the MASS kind's NONE answer: the
+  `<PREFIX>_DFA_PREFILTER_OFFSETS` stamp, sometimes `<PREFIX>_DFA_PREFILTER`'s
+  form, and on some of those artifacts G1's `<PREFIX>_REQ_WHY`
+  (`emitted`↔`dominated`) move, with the program text they name — the named
+  per-artifact manifest `tests/findings/manifests/b1_utf8_movers.txt`. NO
+  ANSWER AND NO GIVE-UP MOVES on any artifact: every set the offset-k
+  selection ranks is necessary, so the rate chooses cost only (findings design
+  §6.2a), and the utf8 movers were measured answer- and give-up-identical
+  against the previous build.
+- **`rx_info.abi` was `39` (`[K68]` bumped it from 38,
   2026-09-26: THE THREE BATCH-1 WHOLE-WINDOW PRE-CHECK BITS ARE MASKED OUT OF
   `rx_info.flags` LIKE EVERY OTHER TESTING/TUNING DENIAL.** `[OPTLOOP.1.impl]`
   BATCH 1 landed `PCREC_NO_VM_ANCHOR_BOUND`/`PCREC_NO_END_WINDOW`/
@@ -2916,10 +2960,11 @@ engine-scoped.**
   A string with a `"none"` member for `<PREFIX>_END_WINDOW`'s reason: `0` is
   a legal byte value, so no number is free to mean "declined". The value is
   the member of the necessary set a subject is least likely to contain, by
-  pcrec's shipped static byte-frequency prior, with PCRE2's own RIGHTMOST rule
-  surviving as the tiebreak and as the whole answer under every encoding that
-  prior is not keyed to (`[OPT-FREQPICK]`, `tuning.md` §2.27, which carries
-  the derivation and its declines). Where §2.28's RUN shipped it is the run's
+  the resolved analysis's `byte-rate` answer, with the rightmost rule as
+  tiebreak and as the whole answer where the answer is NONE
+  (`[OPT-FREQPICK]`, `tuning.md` §2.27, which carries the derivation and its
+  declines; `docs/spec/findings.md` §4 for which analysis answers — today
+  the shipped default, which declares `byte` only). Where §2.28's RUN shipped it is the run's
   own scan member.
 
   A consumer may conclude that a non-`"none"` artifact rejects a whole
@@ -2973,6 +3018,28 @@ engine-scoped.**
   a subject in one pass" reads THIS stamp and then its siblings for the value,
   never the siblings alone. `tuning.md` §2.29 carries both rules and their
   measured populations. No `rx_info` mirror, its siblings' reason.
+
+  **[FINDINGS] B1, 2026-09-27: `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS
+  ARTIFACT WAS BUILT FROM.** Family (a): on EVERY artifact, both engines.
+
+  ```c
+  #define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"
+  #define RX_FINDINGS "byte-rate=none"   /* asked; nothing answered (-e utf8) */
+  #define RX_FINDINGS ""                 /* nothing asked */
+  ```
+
+  One `query=bundle:digest` item per findings query the compile ASKED, in the
+  fixed query order, `;`-joined; `query=none` where the analysis declares
+  nothing for this compile's encoding; the empty string when no reader asked
+  (`docs/spec/findings.md` §5 is the grammar and the digest's byte layout).
+  `bundle` is the analysis whose block ANSWERED, and the digest covers exactly
+  what the readers consumed, so two artifacts built from the same rates carry
+  the same stamp. It is written after every reader has run — beside the
+  `rx_info` definition, not with its prologue siblings — so an ask made while
+  the engine body is emitted is recorded. It HAS an `rx_info` mirror,
+  `rx_info.findings`, which equals it byte for byte. **The bundle name is
+  plain text in the artifact**: a binary built under a user's analysis
+  discloses its name.
 
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,

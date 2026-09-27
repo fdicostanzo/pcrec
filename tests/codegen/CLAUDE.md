@@ -584,10 +584,10 @@ decides whether to perform it — and then run the row through
     BOTH the `RX_DFA_PREFILTER_OFFSETS` stamp AND the emitted `rx_ofsskip`
     helper are compared against it. `dfa_prefilter_offsets` writes the macro,
     `pf_block_ofs` writes the helper, a human wrote the table — so any two of
-    them drifting is red. §1 asks the SHIPPED ARRAY through the shipped
-    library (`pcrec_byte_freq_total_ppm`) rather than re-summing the source
-    literals, which would be a second transcription agreeing with any typo it
-    shared.
+    them drifting is red. §1 (the prior sums to 1,000,000) MOVED at
+    [FINDINGS] B1 to `tests/findings/run_findings_tests.sh` §1 with the prior
+    itself, which is data now (`src/findings/default.rxt`); it still asks the
+    shipped library, through the one normalization.
   - **IT IS PAIRED WITH `tests/offsetskip/offset_skip.rxt` AND BOTH FILES SAY
     SO.** That corpus owns the emitted skip's ARITHMETIC and would pass on a
     compiler that had stopped emitting the skip; this file owns the

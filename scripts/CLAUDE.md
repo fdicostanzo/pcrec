@@ -333,6 +333,15 @@ pcrec (the Makefile owns that).
   byte-neutrality sweep" section and `docs/dev/lanes/bsweep_report.md` for
   the validation transcript and the five-lane reconciliation.
 
+- **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
+  a BUILD-facing script like `pcrec_analyze.py` below, run by the Makefile to
+  embed every `src/findings/<name>.rxt` as a C array plus a name index in
+  `build/gen/findings_store.inc` (never committed). POSIX sh and `od` only, so
+  a clone without python still builds; the `LC_ALL=C od -An -v -tx1`
+  invocation is PINNED [r2 A-8] (the same hex pairs under BSD and GNU `od`)
+  and only the hex pairs are consumed. `tests/findings/` reads each bundle
+  back through the library and compares it with its file.
+
 - **pcrec_analyze.py** — an exception to this directory's own "process
   tooling" framing above, kept here because `docs/design/findings/
   design.md` §10.1 names this exact path: the `[FINDINGS]` exemplar

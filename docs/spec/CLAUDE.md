@@ -397,6 +397,15 @@ spec and a design doc disagree, the spec is what the tool promises.
   column also gained a sixth value, `bare`, at the manager's `RK_BARE`
   ruling, 2026-08-29).
 
+- `findings.md` — **[FINDINGS] B1, 2026-09-27 (D122/D123/D126).** The
+  findings contract: the terms, the `freq` kind and its row grammar, the
+  closed query/derivation vocabularies, the `unigram` normalization with its
+  test vectors, the per-question-KIND NONE answers and each reader's kind and
+  guarantee, the `<PREFIX>_FINDINGS` stamp grammar with the digest's byte
+  layout and the name-disclosure statement, and the shipped default and store.
+  It grows by step (resolution and the CLI at B2, the analyzer at B3/B6,
+  `run-rarity` at B4, `cpfreq` at B5), and says at each section what is not
+  built yet.
 - `vars.md` — **module `vars`' caller-observable contract** ([VAR], 2026-09-23):
   `${name}` in a pattern, whose bytes the caller supplies per call. The
   spelling and its five bash-shaped operators, the `rx_var` type and the

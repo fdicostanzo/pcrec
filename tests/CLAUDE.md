@@ -684,17 +684,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   than promoted to their recorded oracle, a known stage-4 gap, not a
   finding. See its own CLAUDE.md and `docs/dev/lanes/utfprom_report.md`.
 
-- **findings/** — `[FINDINGS]`'s step B3: the exemplar analyzer PROTOTYPE's
-  own checks (`scripts/pcrec_analyze.py`, `docs/design/findings/design.md`
-  §10/§13). Deliberately NOT part of `make test`/`TEST_SECTIONS` yet — B0
-  (the `.rxt` schema), B1 (the accessor) and B2 (resolution + CLI) have not
-  landed, so there is no compiler-side answer identity for a heavier suite
-  to check against. `make test-findings` (python3-only, no `all`
-  dependency) covers what B3 alone can: determinism, sharding/merging
-  (order-independent, [r2 A-1]'s k=1 exception and [r2 A-2]'s cpfreq
-  lead-byte seam), `--check`, R26, and the freq/cpfreq collision-free split
-  ([r2 M-B1]). See its own CLAUDE.md for the OWED items (R27a; python≡C,
-  owed to B6) and `docs/dev/lanes/findb3_report.md`.
+- **findings/** — `[FINDINGS]`: since step B1 (lane `findb1`) a `make test`
+  section (`make test-findings`, in `TEST_SECTIONS`). B1's
+  `run_findings_tests.sh` holds the findings seam's data, store, stamp and
+  structure to sources the compiler does not share — the shipped default
+  against RUNEST's pinned dump and an independent python normalization, the
+  embedded text against its file, the build-time pre-parse against the
+  library reader, the `<PREFIX>_FINDINGS` digest against an independent FNV,
+  and the rule that no reader tests a rate. B3's `run_analyzer_tests.py`
+  checks the exemplar analyzer prototype (`scripts/pcrec_analyze.py`).
+  `manifests/` holds B1's named mover manifests. See its own CLAUDE.md.
 
 ## Conventions
 
