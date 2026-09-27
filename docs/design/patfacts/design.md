@@ -1221,12 +1221,24 @@ parallel-renderer version of R13.
    fact whose asking has a visible side effect: the derived pick asks the
    rate, and the rate's consumption is recorded in `<P>_FINDINGS`. The
    sabotage row is "force before stamps": move §11.4's force loop ahead of
-   stamp rendering, and choose a pattern where the pick was NOT asked by the
-   compile (a DFA-only artifact). Forcing the pick then records a rate
-   consumption the ordinary compile did not make, the `<P>_FINDINGS` line
-   moves, and the check must fail. The row's REACH line counts the corpus
-   artifacts where the pick is unasked, so an empty population reads as
-   UNREACHED rather than green.
+   stamp rendering, on a pattern where some rate-asking fact is UNASKED by
+   the ordinary compile. Forcing it early then records a rate consumption the
+   ordinary compile did not make, the `<P>_FINDINGS` line moves, and the
+   check must fail.
+
+   **The witness population, measured for this revision: EMPTY on today's
+   fact set.** `REQ_BYTE` is stamped on every route probed (`ab+c` on the DFA
+   and `--engine=vm`; `^abc`; `a|b`; `(a)b` under `--engine=vm`; `éx+` under
+   `-e utf8`; stamp site `emit_dfa.c:8596-8599`). So the pick is asked on
+   every compile, and forcing it early moves nothing. The window's
+   `seq_mass` ask rides the same `REQ_RUN` stamp. So the sabotage row ships
+   declared `UNREACHED` ([MECH-REACH]), with its REACH line counting corpus
+   artifacts that leave a rate-asking fact unasked. It becomes reachable at
+   the first fact whose asking is route-dependent AND rate-reading. The
+   check itself still lands with B1, because B1 is where forcing first CAN
+   have a side effect. The alternative is to hold the check until a
+   reachable witness exists (D77). That is a manager's call, recorded here
+   rather than decided.
 2. **Completeness:** the listing has exactly one `facts` row per `facts.def`
    row, per encoding. **The expected count comes from a plain-text scan of
    `facts.def`'s row markers** (one per `PF_FACT(` line), never through the
