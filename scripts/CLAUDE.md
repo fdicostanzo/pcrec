@@ -336,11 +336,21 @@ pcrec (the Makefile owns that).
 - **embed_text.sh** — [FINDINGS] B1 (`docs/design/findings/design.md` §8.1):
   a BUILD-facing script like `pcrec_analyze.py` below, run by the Makefile to
   embed every `src/findings/<name>.rxt` as a C array plus a name index in
-  `build/gen/findings_store.inc` (never committed). POSIX sh and `od` only, so
+  `src/core/findings_store.inc` (committed; `make gen-findings`). POSIX sh and `od` only, so
   a clone without python still builds; the `LC_ALL=C od -An -v -tx1`
   invocation is PINNED [r2 A-8] (the same hex pairs under BSD and GNU `od`)
   and only the hex pairs are consumed. `tests/findings/` reads each bundle
   back through the library and compares it with its file.
+
+- **findgen.c** — [FINDINGS] B1: the findings store's PRE-PARSE generator
+  (`make gen-findings`): runs the one `.rxt` reader over each
+  `src/findings/<name>.rxt` in its no-filesystem buffer mode and writes every
+  data block as a C table, `src/core/findings_table.inc` (committed), so a
+  compile reads a table instead of parsing (per-compile parsing measured at
+  ~20% of a minimal compile). Links a STAGE-0 `libpcrec` whose `findings.o`
+  is built with `PCREC_FIND_STAGE0`. C, and outside `src/`, because every
+  `src/**/*.c` is compiled into the test suites' reference compilers and a
+  second `main` would break them. `tests/findings/` §3 is its drift check.
 
 - **pcrec_analyze.py** — an exception to this directory's own "process
   tooling" framing above, kept here because `docs/design/findings/

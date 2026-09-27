@@ -9,8 +9,8 @@
  * selection rule is "use what the data declares" (§2.4). At B1 the chain is
  * the built-in `default` alone (S3, the embedded store: every
  * `src/findings/<name>.rxt`, compiled in as its TEXT by scripts/embed_text.sh
- * and as that text PRE-PARSED at build time by the ONE `.rxt` reader in its
- * no-filesystem mode, src/findings/findgen.c — §8, §13 B1 (3)). The default
+ * and as that text PRE-PARSED (`make gen-findings`) by the ONE `.rxt` reader in its
+ * no-filesystem mode, scripts/findgen.c — §8, §13 B1 (3)). The default
  * declares `byte` only,
  * so under `-e utf8` the answer is NONE. Resolution beyond it (S1/S2,
  * `--analysis`) is B2's.
@@ -49,12 +49,12 @@ typedef struct {
     size_t      len;
 } PcrecFindStoreEntry;
 
-/* `pcrec_find_store[]`: the store's TEXT, embedded at build time by
- * scripts/embed_text.sh (never committed). */
+/* `pcrec_find_store[]`: the store's TEXT, embedded (`make gen-findings`) by
+ * scripts/embed_text.sh (committed; `make gen-findings`). */
 #include "findings_store.inc"
 
-/* `pcrec_find_tbl[]`: the same text PRE-PARSED at build time by the one
- * reader (src/findings/findgen.c). The generator itself links a stage-0
+/* `pcrec_find_tbl[]`: the same text PRE-PARSED (`make gen-findings`) by the one
+ * reader (scripts/findgen.c). The generator itself links a stage-0
  * library built with PCREC_FIND_STAGE0, whose table is empty: it parses and
  * never compiles, so it never reads one. */
 #ifdef PCREC_FIND_STAGE0

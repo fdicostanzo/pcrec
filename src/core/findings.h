@@ -34,8 +34,9 @@ typedef struct {
 
 /* One DATA block of a store bundle, PRE-PARSED at build time (design §13 B1
  * (3)): what the one `.rxt` reader returns for the embedded text, generated
- * from that text by `src/findings/findgen.c` into
- * `build/gen/findings_table.inc`, so a compile reads a table and never parses.
+ * from that text by `scripts/findgen.c` into
+ * `src/core/findings_table.inc` (committed; `make gen-findings`), so a
+ * compile reads a table and never parses.
  * `tests/findings/` parses the embedded text through the library and checks
  * it agrees with this, block for block. */
 typedef struct {

@@ -643,18 +643,22 @@ fi
 # just finished naming — caught here rather than by the D94 grep, exactly
 # as predicted. Read from a run (29), not predicted, per this guard's own
 # standing rule.
+#
+# 29 -> 31 ([FINDINGS] B1, 2026-09-27): two more anchored rows,
+# PCREC_MAX_FIND_COUNT and PCREC_FIND_FLOOR_PPM (limits.md §3.7) — the FIFTH
+# reader of this shape; caught by running the section, read from the run (31).
 limitsn="$(grep -c '^PASS: ' "$LIMITSOUT" || true)"
-if [ "$limitsn" -ne 29 ]; then
+if [ "$limitsn" -ne 31 ]; then
     if grep -q "^checks failed: 0" "$LIMITSOUT"; then
-        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 29." >&2
+        echo "registry: limits_check COVERAGE CHANGED — $limitsn passing checks, expected 31." >&2
         echo "registry:   if you added/removed a limits.def row, an anchor or a part-3 arm" >&2
         echo "registry:   on purpose, update this number in the same commit; if not," >&2
         echo "registry:   coverage was removed" >&2
     else
         limitsnf="$(sed -n 's/^checks failed: //p' "$LIMITSOUT" | tail -1)"
-        echo "registry: limits_check shows $limitsn passing checks (29 expected; ${limitsnf:-?} failed," >&2
+        echo "registry: limits_check shows $limitsn passing checks (31 expected; ${limitsnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 29 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 31 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

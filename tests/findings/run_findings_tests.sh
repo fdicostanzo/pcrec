@@ -27,6 +27,7 @@
 # Verdict: this script's own `checks failed: 0` line, and under make, the
 # absence of `*** [test-findings] Error` (BOILERPLATE, r2 S-F13).
 set -u
+export LC_ALL=C   # [K35] every sort below compares structured names
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
