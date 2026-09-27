@@ -345,7 +345,7 @@ done <<< "$anchored"
 #     non-ordinal), and TRIE_ENABLED (a 0/1 BUILD SWITCH, not a magnitude).
 #     These are numbers nothing can be measured against by construction.
 #   A FIFTH KIND — A SEMANTIC WIDTH OF THE NEWLINE CONVENTION:
-#     EW_EOL_SLACK (src/opt/endwin.c, [OPT-ENDWIN]). It is how many bytes
+#     EW_EOL_SLACK (src/facts/endwin.c, [OPT-ENDWIN]). It is how many bytes
 #     `$`/`\Z` may hold BEFORE the subject's end, which is the width of the
 #     shipped newline convention and not a bound on anything: no pattern and
 #     no subject can be measured against it, it can never be raised or

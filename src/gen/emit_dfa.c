@@ -692,7 +692,7 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
  * makes the second test's subtraction well-defined, which is why the two are
  * one `&&` and not two statements.
  *
- * SOUNDNESS is `src/opt/endwin.c`'s header: every match ends at
+ * SOUNDNESS is `src/facts/endwin.c`'s header: every match ends at
  * `subject_length - eps` or later and spans at most `maxw`, so none begins
  * before `subject_length - W`. Raising the scan's start to that position
  * therefore finds the same LEFTMOST match and skips no earlier one. */
@@ -8552,7 +8552,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
     /* [OPT-ENDWIN] `<PREFIX>_END_WINDOW` — HOW FAR FROM THE SUBJECT'S END A
      * MATCH MAY BEGIN. A §6.3 family-(a) SELECTION FACT: unconditional, on
      * every artifact of BOTH engines, riding the SHARED prologue because the
-     * analysis is neither engine's — `src/opt/endwin.c` walks the tree above
+     * analysis is neither engine's — `src/facts/endwin.c` walks the tree above
      * both, and both search entries emit the same clamp from it.
      *
      * A STRING WITH A `"none"` MEMBER, `<PREFIX>_DFA_TABLE`'s shape, rather

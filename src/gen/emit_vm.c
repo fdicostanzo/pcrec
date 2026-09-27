@@ -12528,7 +12528,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
      * change the claim.
      *
      * The two mechanisms DECLINE DISJOINTLY on the one construct where they
-     * would interact — `src/opt/endwin.c`'s decline (3) refuses any pattern
+     * would interact — `src/facts/endwin.c`'s decline (3) refuses any pattern
      * containing `\G`, precisely because `\G` is the assertion that reads
      * this parameter by name. */
     pcrec_emit_end_window_clamp(v->cx, c, "    ", "search_from", "subject_length");

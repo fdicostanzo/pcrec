@@ -18,6 +18,7 @@
 #define PCREC_FACTS_DERIVE_H
 
 #include "core/internal.h"
+#include "enc/enc.h"
 
 /* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
  * `PCREC_SANCH_*` and the renderer `pcrec_start_anchor_name` stay with the
@@ -26,10 +27,12 @@ int pcrec_start_anchor(const Ast *root);             /* src/facts/startanch.c */
 
 /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW — a match may begin only in the
  * last `W` bytes of the subject, or `-1` where the analysis declines (the
- * four structural declines are in src/opt/endwin.c's own header, which also
+ * four structural declines are in src/facts/endwin.c's own header, which also
  * carries the soundness argument every emitter site rests on). BYTES, and
- * the encoding decline is what makes that true. */
-long long pcrec_end_window(Ctx *cx, const Ast *root);   /* src/opt/endwin.c */
+ * the encoding decline is what makes that true. `e`, the encoding
+ * DESCRIPTOR, is a declared input (design §4.2.2 carve-out (d)). */
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root);
+                                                     /* src/facts/endwin.c */
 
 /* [OPT-REQBYTE] + [OPT-REQPOS] tier 2b — THE NECESSARY BYTE AND THE NECESSARY
  * LITERAL RUN, from ONE walk over the lowered tree. Returns the byte every

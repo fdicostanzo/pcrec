@@ -2278,7 +2278,7 @@ already recognises a `\z`/`$` view and uses it to choose the `-bounded`
 prefilter candidates, i.e. to shape the scan's ACCEPT test. This gives the
 same recognised view the scan's START BOUND.
 
-**Where the fact comes from.** `pcrec_end_window` (`src/opt/endwin.c`), one
+**Where the fact comes from.** `pcrec_end_window` (`src/facts/endwin.c`), one
 walk over the LOWERED AST above either engine; both search entries emit the
 same clamp from the same `Job` field, through one emitter.
 

@@ -152,10 +152,15 @@ static void ew_see_gstart(void *ud, const Ast *a)
 /* The artifact-level answer: the window `W` in BYTES — a match may begin only
  * in `[subject_length - W, subject_length]` — or `-1` where the mechanism
  * declines. See the header for the four structural declines and for why
- * clamping to `subject_length - W` cannot miss a match. */
-long long pcrec_end_window(Ctx *cx, const Ast *root)
+ * clamping to `subject_length - W` cannot miss a match.
+ *
+ * `e` is the compile's encoding DESCRIPTOR, a DECLARED INPUT ([PATFACTS]
+ * carve-out (d), docs/design/patfacts/design.md §4.2.2): the record resolves
+ * it once and this derivation never reads `cx->opt->encoding`. Its
+ * structural fields (`start_cls`, `max_cp`) are the only encoding facts a
+ * fact derivation sees. */
+long long pcrec_end_window(const PcrecEnc *e, const Ast *root)
 {
-    const PcrecEnc *e = pcrec_enc_by_id(cx->opt->encoding);
     bool gstart = false;
     long long w;
     int view;

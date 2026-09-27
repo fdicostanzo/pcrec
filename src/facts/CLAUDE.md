@@ -78,6 +78,41 @@ defect traced to that edge (design §4.2.1, §10).
   bound, in both directions, with a population floor); failing-direction
   control `tests/mech/sabotages/S263`.
 
+- **endwin.c** — [OPT-ENDWIN], `[OPTLOOP.1]` batch 1 (D119): THE END-ANCHOR
+  START WINDOW. `pcrec_end_window` answers *how far from the subject's END
+  can a match BEGIN* as a byte count, or `-1` where it declines, read by both
+  emitters through the record's `pcrec_fact_end_window` accessor ([PATFACTS]
+  step 3.0 moved the file here from `src/opt/`; the encoding DESCRIPTOR is now
+  a declared parameter, `pcrec_end_window(const PcrecEnc *, const Ast *)`,
+  resolved once by `facts.c` — the derivation never reads
+  `cx->opt->encoding`, design §4.2.2 carve-out (d)).
+
+  **IT IS THE POSITION VIEW'S SECOND CONSUMER, not a second derivation.**
+  `--list-axes`' `view` axis already recognises a `\z`/`$` view and uses it to
+  pick the `-bounded` prefilter candidates — the scan's ACCEPT test. This adds
+  the consumer D77 named and deferred: the scan's START BOUND, which is the
+  larger of the two by the measurement D77 asked for (`abc$` on 1 MiB, 1,401x
+  rust, collapsing to a flat 30 ns under the hand-twin).
+
+  **FOUR STRUCTURAL DECLINES, each recorded in the file's own header with its
+  reason**: an unbounded `pcrec_cwmax`; a multi-byte encoding (the clamp
+  computes a byte offset and a mid-character start is a wrong ANSWER, K49/K50
+  — tested as `PcrecEnc.start_cls != NULL`, the same field
+  `<PREFIX>_STARTPOS_GUARD` reads, which is also what makes `pcrec_cwmax`'s
+  CHARACTER count a BYTE count here); a `\G` anywhere in the pattern, since
+  `\G` is the one assertion whose truth is a function of the `search_from`
+  the clamp moves; and a multiline `$` (D62 control 3).
+
+  **UNLIKE ITS TWO BATCH SIBLINGS IT CAN LOSE A MATCH IF IT IS WRONG**, which
+  is why it has an answer-level net and they do not: it moves the position a
+  search starts at rather than removing work that would have failed.
+
+  Tests: `tests/assertions/end_window.rxt` (66 oracle-verified cases, every
+  claim at a subject length that leaves the clamp inert AND at one that makes
+  it fire); `tests/codegen/run_prechecks.sh` §2 (the stamp held to the emitted
+  clamp's own literal, the four declines, both engines, a population floor);
+  failing-direction control `tests/mech/sabotages/S264`.
+
 ## What the check cannot catch
 
 A HAND RE-SPELLING: a consumer that writes its own walk calls no

@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "enc/enc.h"
 #include "facts/facts_derive.h"
 
 /* The table's deny, epoch and name columns, indexed by `PfFactId`. */
@@ -157,7 +158,11 @@ long long pcrec_fact_end_window(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
     if (pf_enter(cx, PF_END_WINDOW, true)) {
-        pf->end_window = pcrec_end_window(cx, pf->root);
+        /* The descriptor is resolved HERE, once, and handed in: the
+         * derivation's one encoding input is declared, never looked up
+         * (design §4.2.2 carve-out (d)). */
+        pf->end_window = pcrec_end_window(pcrec_enc_by_id(cx->opt->encoding),
+                                          pf->root);
         pf_done(pf, PF_END_WINDOW);
     }
     return pf->end_window;

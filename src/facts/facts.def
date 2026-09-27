@@ -32,7 +32,7 @@
  * ROW ORDER IS THE LISTING'S ROW ORDER. Keep one row per line: the check's
  * plain-text scan counts `PF_FACT(` line markers. */
 PF_FACT(START_ANCHOR,  "start_anchor",  2, PF_CORE,    PCREC_NO_VM_ANCHOR_BOUND,            "src/facts/startanch.c", "")
-PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,                 "src/opt/endwin.c",    "")
+PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,                 "src/facts/endwin.c",  "")
 PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,                   "src/opt/reqbyte.c",   "")
 PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/opt/reqbyte.c",   "")
 PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/opt/reqbyte.c",   "req_whole_run")
