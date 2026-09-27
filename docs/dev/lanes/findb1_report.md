@@ -65,12 +65,53 @@ auto-nocaps, × 4 deny sets).
   same on both sides.
 - **The gap.** This is the byte-count reader class that §7's named-lines list
   does not name. **Acceptance item (1) ("EMPTY") is therefore not met literally.**
-- **Recommendation: RULE it an accepted named row.** It is scaffolding (a size
-  quote), not two copies of one fact disagreeing. I do not recommend widening
-  the gate to normalize self-quoted sizes, which is a filter by value.
+- It is scaffolding (a size quote), not two copies of one fact disagreeing.
 - **REACH.** byte-rate was consumed by 5,938/5,938 artifact-configs under
   default, `-fno-req-run` and `-fno-offset-skip`, and by 1,944/5,938 under
   `-fno-req-byte` (the pick is denied, so only offset-k asks).
+
+**RULED (manager, 2026-09-27): ACCEPTED as a named manifest row; the named-lines
+gate is NOT widened.** The row, stated in full:
+- pattern: `wild-logparse-syslogbase-expanded` (pcrec-bench capability);
+- configs: `auto-caps` and `auto-nocaps`, under every deny set;
+- the one line: `RX_VM_PREFILTER_LANG_WHY`;
+- counts: `size cap retry, exact 1464304 > 1000000` (main) becomes `size cap
+  retry, exact 1464689 > 1000000` (B1), +385 bytes;
+- cause: the failed exact-prefilter attempt carries B1's new scaffolding (the
+  stamp line, the `rx_info` initializer and the struct member with its
+  comment), and the stamp quotes that attempt's own size;
+- evidence the decision is unchanged:
+  - `RX_VM_PREFILTER_LANG` (`count-collapsed`), `RX_ENGINE_SEL`
+    (`size-cap-retry`) and `RX_ENGINE` are identical on both sides. The
+    per-artifact `moved` list names `LANG_WHY` and nothing else.
+  - The attempt is 464,304 / 464,689 bytes over its cap, far past any flip.
+  - The artifacts are answer-identical (2,620 cells, 0 diverged).
+
+**The general residual this exposes.** Any abi event that adds stamp bytes to
+every artifact can move a SIZE-LADDER decision, for any pattern that sits
+within that many bytes of a cap: a K rung, a prefilter collapse, an
+anchored/premul drop, or a refusal. B1's growth is +385 bytes per artifact as
+the size model counts them. `run_size_term.sh`'s reference build is exactly
+that case: its K=4 rung moved from 30,683 to 31,068 against a 31,000 cap
+(re-calibrated to 31,500, §3).
+
+**Margins measured on the natural population (cheap sweep,
+`scratchpad/capmargin.py`).** The sweep is B1's compiler over 13,064
+artifact-configs: bench and corpus × byte/utf8 × auto/`--engine=vm`, at the
+default caps (1,000,000 total, 500,000 code).
+
+| cap | nearest pattern | encoding / engine | distance |
+|---|---|---|---|
+| total bytes | `wild-secrets-username-password-pair` (bench) | utf8, auto | 7,623 under |
+| code bytes | `\P{Lo}` (corpus) | utf8, `--engine=vm` | 20,089 under |
+| code bytes, refusal side | `\p{L}` (corpus) | utf8, `--engine=vm` | refused 64,908 over |
+| quoted retry size | `wild-logparse-syslogbase-expanded` | — | 464,679 from its cap |
+
+**No artifact is within 385 bytes of any cap.** The sweep does NOT see the
+size term's internal ladder trials (the per-K rung sizes against
+`PCREC_SIZE_TERM_THRESHOLD`) or the retry ladder's intermediate attempts. That
+margin on the natural population is **OWED**. A future scaffolding bump should
+re-run this sweep and add a trial-size readout.
 
 **`b1_utf8_movers.txt`: 491 rows.**
 - **What they are.** 161 per deny set are the offset-k cardinality fallback.
@@ -273,9 +314,9 @@ so these remain:
 ## 7. For a fresh agent resuming
 
 Read `make_test_final.log` for `FINDB1 MAKE TEST rc=` and the `***` lines. If
-the result is green apart from the accepted red, delivery is complete. The
-manager then rules on:
-- §2's non-empty byte manifest;
+the result is green apart from the accepted red, delivery is complete. §2's byte
+manifest is RULED accepted, and the pre-parsed table is RULED correct per §13 (3).
+The manager still rules on:
 - §4.1's committed `.inc` deviation;
 - deviation 1.
 

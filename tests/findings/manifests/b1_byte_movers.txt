@@ -25,7 +25,13 @@
 # 1000000" -> "... 1464689 > 1000000"): that attempt's artifact carried the
 # new stamp lines too, and the stamp QUOTES ITS OWN BYTE COUNT. No program
 # byte, no other stamp, the same retry either way. It is the one byte-count
-# reader §7's named-lines list did not name (findb1_report.md §2). Answer- and
+# reader §7's named-lines list did not name (findb1_report.md §2).
+# RULED (manager, 2026-09-27): ACCEPTED as a named row; the gate is NOT
+# widened. The DECISION is unchanged: RX_VM_PREFILTER_LANG (count-collapsed),
+# RX_ENGINE_SEL (size-cap-retry) and RX_ENGINE are identical on both sides —
+# the per-artifact `moved` list names LANG_WHY alone — and the failed exact
+# attempt sits 464,304 -> 464,689 bytes OVER its 1,000,000 cap either way.
+# Answer- and
 # give-up-identical: tests/findings/b1_mover_answers.py, 2 movers x 4 deny
 # sets, 2,620 cells each, 0 diverged.
 #
