@@ -202,6 +202,57 @@ GEN_TABLES / `fold_tables.inc` precedent:
 committed text is checked against its source, so it is not an unchecked
 second source.
 
+**RULED (manager): the committed `.inc` files are ACCEPTED** (the house
+pattern). `docs/design/findings/design.md` §8.2 carries a `[B1]` revision
+marker stating the deviation and its reason.
+
+**Should `gen-findings` join `make gen-tables` / GEN_TABLES?** Yes, at B5,
+not now:
+- B5's `third_party/<src>/generate.py` writes a derived
+  `src/findings/<name>.rxt`, after which the store's embed and pre-parse must
+  be regenerated from it. `gen-tables` should therefore run `gen-findings`
+  after its generator loop.
+- `FIND_INCS` should join the GEN_TABLES prerequisite list, which design §13's
+  B5 row already asks for.
+- It is not done at B1 because no generator produces a bundle yet (the one
+  bundle is hand-authored), and because `gen-findings` is heavier than the
+  python generators: it builds a stage-0 library. That cost should be judged
+  when a generator exists (D77).
+
+### 4.2 The +385 code bytes, line by line (manager's question)
+
+One small artifact (`abc`, default options) was emitted at main `bd8d1075` and
+at the tip, with the same `-o` basename, and diffed. Every non-comment line
+that changed:
+
+| file | line | bytes |
+|---|---|---|
+| `.c` | `#define RX_FINDINGS "byte-rate=default:1822fb973b95a4da"` (new) | 55 |
+| `.c` | `    .findings = "byte-rate=default:1822fb973b95a4da",` (new) | 56 |
+| `.c` / `.h` | the generated-by line's `abi 39` -> `abi 40` | 0 |
+| `.c` | `.abi = 39` -> `40` | 0 |
+| `.h` (the ABI-types block) | `    const char *findings;    /* <PREFIX>_FINDINGS: the` plus THREE aligned continuation lines of the member's trailing comment | 274 |
+
+That makes 111 + 274 = 385. The 274 counts as CODE because of the size
+classifier, `emit_size_measure` (`src/core/compile.c`):
+- It classifies a line as prose only when the line STARTS with `/*` or `//`.
+- A TRAILING comment that opens after code on a line, and its continuation
+  lines, are counted as code. Only 36 of the 274 bytes are the declaration.
+
+This classifier behaviour is pre-existing. Every earlier `rx_info` member with
+a multi-line trailing comment (`vars`, `search_form`, …) is charged the same
+way.
+
+**The member's comment is avoidable scaffolding cost.** A one-line trailing
+comment, or the comment moved above the member as a leading `/* … */` (which
+the classifier counts as prose), would cut B1's code growth to about 150
+bytes. It is NOT fixed here, although the edit is small: it changes emitted
+bytes again, so it needs a new (B) re-pin, and it would re-invalidate the
+`make test` already running on this tree. A follow-up could take it together
+with teaching the classifier about trailing comments. The classifier half is
+the general fix, but it moves every size-term decision, so it is its own abi
+event.
+
 ## 5. Validation verdicts (Mac, gcc-16)
 
 ### 5.1 Targeted suites
