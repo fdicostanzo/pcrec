@@ -123,6 +123,18 @@ typedef struct {
     PrefixK  k[PCREC_PREFIX_K_MAX];
 } KsetWalk;
 
+/* [OPT-LITSCAN] S1 THE RUN PIN (fact `run_pin`, E3 derived): the necessary
+ * run's window (`req_run`'s `bytes`) sits at offset `o` of EVERY match — the
+ * walk's `k[o + i]` is the singleton `bytes[i]` for every i. A pure
+ * NFA+window fact: it may be true where the forward scan carries no offset-0
+ * prefilter, so EVERY READER OWES THE KIND GATE (design §4.5) — read it only
+ * where the prefilter kind is not `DFA_PF_NONE`. `pinned == false` is the
+ * empty value (no run, a denied run, no pin, an unsealed route). */
+typedef struct {
+    bool     pinned;
+    int      o;          /* meaningful only when pinned */
+} RunPin;
+
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
  * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
@@ -233,6 +245,9 @@ typedef struct {
      * selection (src/opt/prefix_k.c) reads it; no deny — each USE has its
      * row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
     KsetWalk  kset_walk;
+    /* [OPT-LITSCAN] S1 E3 derived: the run's window pinned on the walk. No
+     * deny of its own; a denied run (`len == 0`) pins nothing. */
+    RunPin    run_pin;
     PfWhy     why[PF_NFACTS];
     /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
      * asks the facts no pass asked, after the artifact is complete, and
@@ -281,6 +296,7 @@ const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
 const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
+const RunPin   *pcrec_fact_run_pin(Ctx *cx);     /* E3; its reader owes the kind gate */
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *

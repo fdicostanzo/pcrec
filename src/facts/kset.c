@@ -1,6 +1,7 @@
 /* [PATFACTS] step 3.4 — THE K-SET WALK (fact `kset_walk`, E3): which bytes
  * every match must carry at each offset from its OWN start, as the pattern's
- * NFA proves them, reading no prior and no decision (docs/design/patfacts/
+ * NFA proves them, reading no prior and no decision — and the necessary run's
+ * PIN on it (fact `run_pin`, below) (docs/design/patfacts/
  * design.md §1, §4.2.1). Lifted out of `src/opt/prefix_k.c`, whose offset-k
  * SELECTION reads this fact through `pcrec_fact_kset_walk` and stays there
  * (carve-out (c)); the selection's per-offset rates, which the walk used to
@@ -39,7 +40,31 @@
  * bounded repeat that lets the frontier fan out — makes some `S_j` bigger,
  * and a bigger set only ever makes a consumer test less. There is no
  * direction in which this walk can refuse a start the scan would have
- * accepted. */
+ * accepted.
+ *
+ * [OPT-LITSCAN] S1 — THE PIN (fact `run_pin`, docs/design/litscan_s1.md
+ * §1.1): whether the necessary run the `req_run` fact carries sits at a
+ * fixed offset from every match's start — the smallest `o` at which the
+ * walk's own singletons spell the run byte for byte. It is the coincidence of
+ * two facts the record already owns, not a second analysis, and it depends
+ * on `(the walk, the req_run fact)` alone: never on the DFA, the cost model
+ * or the offset-k selection. Invariants a reader relies on:
+ *   - it reads THE SAME `req_run` window the pre-check emits (`bytes`/`len`,
+ *     not `whole`), so the pin and the pre-check it may dominate cannot
+ *     describe two different runs — a later fix to the run pre-check must
+ *     not fork this field (litscan_s1.md R3-2). That is also why it is a
+ *     DERIVED fact: the window is a speed choice (design §4.1);
+ *   - a denied run (`-fno-req-run`/`-fno-req-byte`) has `len == 0`, so
+ *     nothing is pinned;
+ *   - on a count-collapsed prefilter `Job.nfa` is the superset language, and
+ *     a pin true of every superset match is true of every exact one;
+ *   - IT IS A PURE NFA+WINDOW FACT, and so it is TRUE on some artifacts whose
+ *     forward scan carries no offset-0 prefilter at all (`DFA_PF_NONE`) —
+ *     until [PATFACTS] step 3.4 it was computed only inside the offset-k
+ *     selection, which runs only where there is one, and read 0 there by
+ *     accident of call order. Every reader therefore owes the KIND GATE
+ *     (design §4.5): src/gen/emit_dfa.c reads it through `us_run_pin`,
+ *     which applies it. */
 
 #include <string.h>
 
@@ -206,5 +231,22 @@ void pcrec_kset_walk(Ctx *cx, const Nfa *nfa, KsetWalk *o)
         pk->count = count;
         pk->byte = byte;
         o->nwalk++;
+    }
+}
+
+/* Fills `*pin` from the walk `o` and the run window `r`: the SMALLEST offset
+ * at which the walk's singletons spell the run. Any satisfying offset is a
+ * true statement; the smallest is deterministic, and a later one would only
+ * ever be a lost opportunity for the run rows, never a wrong answer. */
+void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, RunPin *pin)
+{
+    pin->pinned = false;
+    pin->o = 0;
+    for (int ro = 0; r->len >= 2 && !pin->pinned && ro + r->len <= o->nwalk; ro++) {
+        int i = 0;
+        while (i < r->len && o->k[ro + i].count == 1 &&
+               o->k[ro + i].byte == r->bytes[i])
+            i++;
+        if (i == r->len) { pin->pinned = true; pin->o = ro; }
     }
 }

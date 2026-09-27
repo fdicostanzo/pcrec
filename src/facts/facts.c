@@ -81,6 +81,7 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
     case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
+    case PF_RUN_PIN:      pf->run_pin = (RunPin){ false, 0 }; break;
     case PF_NFACTS:       break;
     }
 }
@@ -219,6 +220,11 @@ static void pf_derive(Ctx *cx, PfFactId f)
         /* The machine E3 sealed: `Job.nfa`, wrapped, never rebuilt after. */
         pcrec_kset_walk(cx, &cx->job->nfa, &pf->kset_walk);
         break;
+    case PF_RUN_PIN:
+        pf_ask(cx, PF_KSET_WALK, false);
+        pf_ask(cx, PF_REQ_RUN, false);
+        pcrec_run_pin(&pf->kset_walk, &pf->req_run, &pf->run_pin);
+        break;
     case PF_NFACTS:
         return;
     }
@@ -336,6 +342,12 @@ const KsetWalk *pcrec_fact_kset_walk(Ctx *cx)
     return &cx->job->pf.kset_walk;
 }
 
+const RunPin *pcrec_fact_run_pin(Ctx *cx)
+{
+    pf_ask(cx, PF_RUN_PIN, true);
+    return &cx->job->pf.run_pin;
+}
+
 void pcrec_facts_force_all(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
@@ -451,6 +463,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         pcrec_sb_free(&sb);
         return t;
     }
+    case PF_RUN_PIN:
+        if (!pf->run_pin.pinned) return "none";
+        return pcrec_sb_fragf(&cx->arena, "%d", pf->run_pin.o);
     case PF_NFACTS:
         break;
     }
