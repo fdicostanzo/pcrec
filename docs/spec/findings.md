@@ -131,11 +131,12 @@ artifact that consumed it, which is how such a change becomes visible.
 `src/findings/default.rxt` is the one authored analysis: a `freq` block
 whose counts are the static byte-frequency prior pcrec shipped before B1
 (its header carries where the numbers come from), declaring `byte` only. The
-store is every `src/findings/<name>.rxt`, compiled into `libpcrec` at build
-time, parsed by the same `.rxt` reader as any user file in a no-filesystem
-mode (an `include "…"` or `lib` line is refused there). A compile does not
-parse it: the build pre-parses the same text into a table, and
-`tests/findings/` checks the two agree.
+store is every `src/findings/<name>.rxt`, compiled into `libpcrec` as its
+text, and parsed by the same `.rxt` reader as any user file in a
+no-filesystem mode (an `include "…"` or `lib` line is refused there). A
+compile does not parse it: `make gen-findings` pre-parses the same text into
+a committed table, and `tests/findings/` checks the table, the embedded text
+and the source file all agree.
 
 Not built at B1 (B2): naming an analysis (`analysis <name>` in a config,
 `--analysis`), the `-I` search path, a user's bundle, `--list-analyses` /
