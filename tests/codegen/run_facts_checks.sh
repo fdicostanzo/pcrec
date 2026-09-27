@@ -60,9 +60,15 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# [K37] every compiler call below is bounded by `$TIMEOUT_BIN`.
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
-OBJ_DIR="$(cd "$(dirname "$PCREC")" && pwd)/obj"
-TREE="$(cd "$(dirname "$PCREC")/.." && pwd)"
+# The build directory the binary was linked in (a path computation, not an
+# invocation): its `obj/` is what the link assertion reads, and its parent is
+# the tree whose facts.def and spec the checks read.
+BIN_DIR="${PCREC%/*}"
+OBJ_DIR="$(cd "$BIN_DIR" && pwd)/obj"
+TREE="$(cd "$BIN_DIR/.." && pwd)"
 
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
@@ -158,7 +164,7 @@ col() { # col <name> : from stdin "k=v<TAB>..." rows, print field <name>
 }
 
 LISTPAT='/user|/users'
-if ! "$PCREC" --emit-facts=byte,utf8 --pattern "$LISTPAT" > "$WORKDIR/l2" 2> "$WORKDIR/l2.err"; then
+if ! "$TIMEOUT_BIN" 120 "$PCREC" --emit-facts=byte,utf8 --pattern "$LISTPAT" > "$WORKDIR/l2" 2> "$WORKDIR/l2.err"; then
     bad "[facts-complete] --emit-facts=byte,utf8 refused '$LISTPAT': $(cat "$WORKDIR/l2.err")"
 else
     sect "$WORKDIR/l2" facts > "$WORKDIR/l2.facts"
@@ -188,7 +194,7 @@ while read -r flag; do
             line = $0; sub(/^.*\): */, "", line); gsub(/[`.,]/, " ", line); print line }' "$TUNING" |
         tr ' ' '\n' | grep -v '^$' | LC_ALL=C sort -u | tr '\n' ' ')"
     [ -n "$want" ] && nclaim=$((nclaim + 1))
-    if ! "$PCREC" --emit-facts "$flag" --pattern "$LISTPAT" > "$WORKDIR/lw" 2> "$WORKDIR/lw.err"; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --emit-facts "$flag" --pattern "$LISTPAT" > "$WORKDIR/lw" 2> "$WORKDIR/lw.err"; then
         wbad="$wbad $flag: refused ($(head -1 "$WORKDIR/lw.err"));"
         continue
     fi
@@ -213,8 +219,8 @@ nstamp=0; dbad=""
 for spec in "dfa|/user|/users|" "hybrid|(a|b)+c|" "vm|(a|b)+\\1c|--features all --engine=vm"; do
     what="${spec%%|*}"; rest="${spec#*|}"; pat="${rest%|*}"; extra="${rest##*|}"
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p rx -o - $extra --pattern "$pat" > "$WORKDIR/d.c" 2>/dev/null ||
-       ! "$PCREC" $extra --emit-facts --pattern "$pat" > "$WORKDIR/d.l" 2>/dev/null; then
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" -p rx -o - $extra --pattern "$pat" > "$WORKDIR/d.c" 2>/dev/null ||
+       ! "$TIMEOUT_BIN" 120 "$PCREC" $extra --emit-facts --pattern "$pat" > "$WORKDIR/d.l" 2>/dev/null; then
         dbad="$dbad $what: '$pat' did not compile;"; continue
     fi
     grep -E '^#define (RX_|PCREC_FEATURE_)[A-Za-z0-9_]+' "$WORKDIR/d.c" |
@@ -249,10 +255,13 @@ fi
 cbad=""
 refuse() { # refuse <label> <args...>
     local label="$1"; shift
-    if "$PCREC" "$@" > "$WORKDIR/c.out" 2> "$WORKDIR/c.err"; then
+    local rc
+    "$TIMEOUT_BIN" 60 "$PCREC" "$@" > "$WORKDIR/c.out" 2> "$WORKDIR/c.err"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
         cbad="$cbad $label: accepted;"
-    elif [ -s "$WORKDIR/c.out" ] || [ ! -s "$WORKDIR/c.err" ]; then
-        cbad="$cbad $label: refused without a lone diagnostic;"
+    elif [ "$rc" -ne 1 ] || [ -s "$WORKDIR/c.out" ] || [ ! -s "$WORKDIR/c.err" ]; then
+        cbad="$cbad $label: rc $rc, not a lone diagnostic with exit 1;"
     fi
 }
 refuse "-o" --emit-facts -o "$WORKDIR/x.c" --pattern abc
