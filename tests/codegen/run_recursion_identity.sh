@@ -1063,13 +1063,13 @@ REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 # `prog_region()`'s `goto <p>_L0;` start, so (A) is untouched. No answer
 # moves on any artifact.
 # **(B) RE-PINNED AGAIN — [FINDINGS] B1, 2026-09-27: abi 39 -> 40, to
-# `8001f347`, the `lane/findb1` commit that is its last `src/` change.** Every
+# `93e80da7`, the `lane/findb1` commit that is its last `src/` change.** Every
 # artifact gains the `<PREFIX>_FINDINGS` stamp line beside the `rx_info`
 # definition and an APPENDED `rx_info.findings` member and initializer; the
 # byte-frequency prior became data that normalizes to the same table, so under
 # the `byte` encoding this gate's population is compiled at, nothing else
 # moves. Both new lines sit OUTSIDE `prog_region()`, so (A) is untouched.
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8001f347}"   # [FINDINGS] B1, abi 39->40: (B) re-pinned to 8001f347 on lane/findb1 (D76, 2026-09-27). Prior pin: b255027f ([K68], abi 38->39).
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-93e80da7}"   # [FINDINGS] B1, abi 39->40: (B) re-pinned to 93e80da7 on lane/findb1 (D76, 2026-09-27). Prior pin: b255027f ([K68], abi 38->39).
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
