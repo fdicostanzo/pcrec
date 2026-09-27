@@ -11,6 +11,34 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K68 — FILED 2026-09-26 (D125: filed, not scheduled) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
+
+A reflection-surface defect, not an answer defect. `docs/spec/match_api.md`
+§6.3's rule is that `flags` records the REQUEST "with the testing/tuning
+denials masked OUT, because an axis that changes no answer must not make two
+identically-behaving artifacts differ in their reflection surface". Three
+deny bits from [OPTLOOP.1] batch 1 are not masked: `-fno-vm-anchor-bound`
+(bit 28), `-fno-end-window` (bit 29), `-fno-req-byte` (bit 30).
+`strategy_denials` (src/gen/emit_dfa.c:2354) omits them, and the comment
+at ~:2510 records the omission as the bit-19 defect class, deferred "to
+their own delivery", which never came.
+
+Repro at ec79d98c: router-prefix-order (`/user|/users`) has baseline
+`.flags = 2`. With `-fno-req-byte` it is 1073741826, with `-fno-end-window`
+536870914, and with `-fno-vm-anchor-bound` 268435458. Every other deny axis
+sampled reads 2. The flags still move on floor-byte and uuid-grok, whose
+pre-check is already `REQ_WHY "dominated"`, so the axis cannot act there.
+
+Fix shape: add the three bits to `strategy_denials`, the same shape as the
+bit-19 fix. This is an abi event (emitted `.flags` bytes move on every
+denied artifact). Re-derive the pins in these axes' own checks that assert
+the current unmasked value (run_prechecks.sh, the end-window and
+vm-anchor checks). Riding along: a sentence in tuning.md §2.27
+cross-referencing §2.30. Denying bit 30 also removes S1's run-pin input,
+by design (litscan_s1.md §1.1 invariant 2), but §2.27 alone never says so.
+
+---
+
 ## K67 — DEFERRED into [CLS-TREE] — compile TIME: `\p{L}+` under `-e utf8` takes ~77 s in pcrec itself (found by pcrec-bench, utf8@0.1 rehearsal, prp-l, 2026-09-25; diagnosed by lane plplus the same night)
 
 **Status: deferred** (Frank, 2026-09-25: "hit everything class related at the same time like the class tree work... finish [the open queue] before taking this on"). Answers are correct; this is compile time only.
