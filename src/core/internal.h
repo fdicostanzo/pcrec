@@ -5287,6 +5287,11 @@ typedef struct {
     const char *block_name;    /* that block's own `name`, or NULL           */
     const char *source, *url, *ref, *retrieved, *license, *license_note,
                *fidelity, *adaptation, *attribution, *bytes, *sha256;
+    /* [FINDINGS] B2: for an analysis DATA block's provenance, that block's
+     * kind and line (the `block_*` fields above name its bundle); NULL/0
+     * for a pattern block's. */
+    const char *data_kind;
+    size_t      data_line;
 } RxtProv;
 
 typedef struct {
@@ -5366,6 +5371,9 @@ typedef struct {
     RxtServe           *serves;
     size_t              nserves, servecap;
     unsigned long long *counts;
+    /* [FINDINGS] B2: the block's declarations as written (NULL where
+     * absent), for `--list-analysis`; read by no compile. */
+    const char         *encoding, *question, *reader, *analyzer;
 } RxtFindBlock;
 
 typedef struct RxtSource RxtSource;
@@ -6405,6 +6413,20 @@ char *pcrec_syntax_verbs(void);
  * depend on that (the reject table probes every row's own `syntax`), so the
  * grouping gets its own view rather than collapsing theirs. Caller frees. */
 char *pcrec_syntax_families(void);
+
+/* [FINDINGS] B2 `src/dump/findings_dump.c` — the analysis listings
+ * (docs/spec/findings.md §6, table_contract.md at birth). `--list-analyses`:
+ * one row per bundle built into the library. `--list-analysis NAME`: the
+ * chain this invocation resolves (S2 = `dirs`, NULL-terminated or NULL),
+ * each (query, encoding)'s answer and the named bundle's own data.
+ * `--list-analysis FILE`: the per-target view, `fill` being the CLI's
+ * fill-only `--analysis` (or NULL). NULL with `err` filled on a refusal;
+ * caller frees. */
+char *pcrec_find_list_names(void);
+char *pcrec_find_list_name(const char *name, const char *const *dirs,
+                           pcrec_error *err);
+char *pcrec_find_list_file(const char *path, const char *const *dirs,
+                           const char *fill, pcrec_error *err);
 
 /* `src/dump/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as

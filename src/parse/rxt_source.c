@@ -234,6 +234,11 @@ typedef struct {
     /* [FINDINGS] B1 — DATA-frame-only: this block's index in
      * `RxtSource.fblocks`, where its `serves` lines and counts are kept. */
     size_t          fbi;
+    /* [FINDINGS] B2 — PROVENANCE-frame-only: when the parent frame is a
+     * DATA block, that block's kind and line, so a data block's provenance
+     * record names ITS block (the frame's `row` is the bundle's). */
+    const char     *data_kind;
+    size_t          data_line;
     int             have_key;
     unsigned long   last_key;
     size_t          last_key_line;
@@ -1865,8 +1870,9 @@ static const char *frame_field(const RxtFrame *f, const RxtSchemaRow *rowbase,
 /* [DD-13b.W23.4] a closing PROVENANCE or VARIANT frame becomes ONE
  * `#section` row — called from `RXT_CLOSE_FRAME` after `frame_constraints`
  * has already passed, so a record missing a `required` field never reaches
- * here at all. A no-op for every other scope (CONFIG/DATA/FILE frames close
- * through the same macro and carry nothing to report). */
+ * here at all. [FINDINGS] B2: a DATA frame's declarations are kept on its
+ * block. A no-op for every other scope (CONFIG/FILE frames close through
+ * the same macro and carry nothing to report). */
 static void close_section_frame(Arena *a, RxtSource *src,
                                 const RxtSchemaRow *rowbase, size_t nrows,
                                 const RxtFrame *f)
@@ -1887,6 +1893,16 @@ static void close_section_frame(Arena *a, RxtSource *src,
         r->attribution   = frame_field(f, rowbase, nrows, "attribution");
         r->bytes         = frame_field(f, rowbase, nrows, "bytes");
         r->sha256        = frame_field(f, rowbase, nrows, "sha256");
+        r->data_kind     = f->data_kind;
+        r->data_line     = f->data_line;
+    } else if (f->scope == RXT_SCOPE_DATA) {
+        /* [FINDINGS] B2: a data block's DECLARATIONS, for
+         * `--list-analysis`'s `declarations` section (design §5.2). */
+        RxtFindBlock *fb = &src->fblocks[f->fbi];
+        fb->encoding = frame_field(f, rowbase, nrows, "encoding");
+        fb->question = frame_field(f, rowbase, nrows, "question");
+        fb->reader   = frame_field(f, rowbase, nrows, "reader");
+        fb->analyzer = frame_field(f, rowbase, nrows, "analyzer");
     } else if (f->scope == RXT_SCOPE_VARIANT) {
         RxtVariant *r = variant_push(a, src);
         r->line = f->open_line;
@@ -2810,6 +2826,10 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
                                                      last_row_line,
                                                      last_rxtrow,
                                                      last_row->kind);
+                if (ndepth >= 2 && st[ndepth - 2].scope == RXT_SCOPE_DATA) {
+                    st[ndepth - 1].data_kind = st[ndepth - 2].open_kind;
+                    st[ndepth - 1].data_line = st[ndepth - 2].open_line;
+                }
             }
         } else {
             while (ndepth > 1 && indent < st[ndepth - 1].indent) {
