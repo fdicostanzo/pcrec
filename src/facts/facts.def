@@ -29,6 +29,11 @@
  *   depends  the facts this one's derivation asks, space-separated — the
  *            dependency DAG, written once (design §4.2.2 item 2).
  *
+ * EACH ROW'S RENDERER is `pcrec_fact_render`'s arm for it in `facts.c` — a
+ * switch with no `default:`, so a row without one does not compile — and the
+ * artifact's fact-valued stamps call the same arm (`pcrec_fact_stamp`), so a
+ * stamp and the listing share one spelling (design §11.5).
+ *
  * ROW ORDER IS THE LISTING'S ROW ORDER. Keep one row per line: the check's
  * plain-text scan counts `PF_FACT(` line markers. */
 PF_FACT(START_ANCHOR,  "start_anchor",  2, PF_CORE,    PCREC_NO_VM_ANCHOR_BOUND,            "src/facts/startanch.c", "")

@@ -189,4 +189,18 @@ const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
 
+/* ---- the renderers (design §11.3 item 4, §11.5; ruled Q9) -------------
+ *
+ * Fact `f`'s value as TEXT, through its ONE renderer — the spelling the
+ * artifact's fact-valued stamps (`<PREFIX>_REQ_BYTE`, `_REQ_RUN`,
+ * `_END_WINDOW`, `_VM_START`) carry and `--emit-facts` prints, so a stamp and
+ * the listing cannot disagree: there is one spelling of each value. Arena
+ * text, valid for the compile.
+ *
+ * `pcrec_fact_stamp` ASKS `f` as a pass and renders it — the stamp sites'
+ * one call. `pcrec_fact_render` reads the memo only and asks nothing: it is
+ * the listing's, which must never change what the passes asked. */
+const char *pcrec_fact_stamp(Ctx *cx, PfFactId f);
+const char *pcrec_fact_render(Ctx *cx, PfFactId f);
+
 #endif /* PCREC_FACTS_H */

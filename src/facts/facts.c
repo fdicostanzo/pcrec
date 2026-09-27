@@ -219,3 +219,64 @@ int pcrec_fact_req_byte(Ctx *cx)
     pf_ask(cx, PF_REQ_BYTE, true);
     return cx->job->pf.req_byte;
 }
+
+/* `n` bytes as lowercase hex, then `@idx` when `idx >= 0`: the `REQ_RUN`
+ * spelling (hex because a run is arbitrary bytes inside a `#define`'s string
+ * body — one spelling for all 256 values), arena text. */
+static const char *pf_hex(Ctx *cx, const unsigned char *b, int n, int idx)
+{
+    StrBuf sb = { 0 };
+    const char *t;
+    sb.cx = cx;
+    for (int k = 0; k < n; k++) pcrec_sb_printf(&sb, "%02x", b[k]);
+    if (idx >= 0) pcrec_sb_printf(&sb, "@%d", idx);
+    t = pcrec_sb_fragf(&cx->arena, "%s", sb.p ? sb.p : "");
+    pcrec_sb_free(&sb);
+    return t;
+}
+
+/* Fact `f`'s ONE renderer. Every fact with no answer to give renders
+ * `"none"` — the stamps' own member for "declined", because 0 is a legal
+ * byte and a legal window and no number is free to mean it. The switch has
+ * no `default:`, so a `facts.def` row with no renderer does not compile. */
+const char *pcrec_fact_render(Ctx *cx, PfFactId f)
+{
+    const PatFacts *pf = &cx->job->pf;
+    switch (f) {
+    case PF_START_ANCHOR:
+        return pcrec_start_anchor_name(pf->start_anchor);
+    case PF_END_WINDOW:
+        if (pf->end_window < 0) return "none";
+        return pcrec_sb_fragf(&cx->arena, "%lld", pf->end_window);
+    case PF_REQ_SET: {
+        StrBuf sb = { 0 };
+        const char *t;
+        int n = 0;
+        sb.cx = cx;
+        for (int b = 0; b < 256; b++)
+            if ((pf->req_set.bits[b >> 3] >> (b & 7)) & 1)
+                pcrec_sb_printf(&sb, "%s%d", n++ ? "," : "", b);
+        t = n ? pcrec_sb_fragf(&cx->arena, "%s", sb.p) : "none";
+        pcrec_sb_free(&sb);
+        return t;
+    }
+    case PF_REQ_WHOLE_RUN:
+        if (pf->req_run.whole_len < 2) return "none";
+        return pf_hex(cx, pf->req_run.whole, pf->req_run.whole_len, -1);
+    case PF_REQ_RUN:
+        if (pf->req_run.len < 2) return "none";
+        return pf_hex(cx, pf->req_run.bytes, pf->req_run.len, pf->req_run.idx);
+    case PF_REQ_BYTE:
+        if (pf->req_byte < 0) return "none";
+        return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
+    case PF_NFACTS:
+        break;
+    }
+    return "";
+}
+
+const char *pcrec_fact_stamp(Ctx *cx, PfFactId f)
+{
+    pf_ask(cx, f, true);
+    return pcrec_fact_render(cx, f);
+}

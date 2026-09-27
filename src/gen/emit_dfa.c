@@ -8566,15 +8566,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * this tree has twice had to remove a check reading a fact off a macro's
      * absence, and absence here would mean "declined" and "built by a pcrec
      * too old to have the analysis" identically. */
-    {
-        char ewbuf[32];
-        if (pcrec_fact_end_window(cx) < 0) {
-            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", "none");
-        } else {
-            snprintf(ewbuf, sizeof ewbuf, "%lld", pcrec_fact_end_window(cx));
-            pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", ewbuf);
-        }
-    }
+    /* [PATFACTS] the value is the `end_window` fact's ONE renderer
+     * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
+    pcrec_sb_stamp_str(c, g->upper, "END_WINDOW",
+                       pcrec_fact_stamp(cx, PF_END_WINDOW));
     /* [OPT-REQBYTE] `<PREFIX>_REQ_BYTE` — THE BYTE EVERY MATCH MUST CONTAIN.
      * A §6.3 family-(a) SELECTION FACT for `<PREFIX>_END_WINDOW`'s reason,
      * in the same place and the same shape: a string with a `"none"` member,
@@ -8582,7 +8577,6 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * "declined". The value is the decimal the emitted `memchr` carries, read
      * from the same field three lines apart. */
     {
-        char rbbuf[32];
         /* [OPT-PRECHECK-ADMIT] THIS STAMP KEEPS NAMING THE ANALYSIS, NOT THE
          * EMISSION, and the choice is the difference between a gate that can
          * see the derivation and one that cannot. The heading above is the
@@ -8596,13 +8590,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * (tests/codegen/run_prechecks.sh §3.7) would go silently vacuous on
          * every artifact G1 declines, and a compiler that stopped deriving
          * bytes altogether would read identical to one that derived them and
-         * declined. Two facts, two stamps, each checkable on its own. */
-        if (pcrec_fact_req_byte(cx) < 0) {
-            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
-        } else {
-            snprintf(rbbuf, sizeof rbbuf, "%d", pcrec_fact_req_byte(cx));
-            pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", rbbuf);
-        }
+         * declined. Two facts, two stamps, each checkable on its own.
+         *
+         * [PATFACTS] the value is the `req_byte` fact's ONE renderer
+         * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
+        pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE",
+                           pcrec_fact_stamp(cx, PF_REQ_BYTE));
     }
     /* [OPT-REQPOS] tier 2b `<PREFIX>_REQ_RUN` — THE NECESSARY LITERAL RUN,
      * beside `<PREFIX>_REQ_BYTE` and in the same family-(a) shape for the same
@@ -8623,24 +8616,12 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * D108's: an absent population is a ROW with empty cells, never an absent
      * row, because a check cannot distinguish "no run" from "the stamp stopped
      * being emitted". */
-    {
-        char rrbuf[2 * PCREC_MAX_REQ_RUN_EMIT + 16];
-        const ReqRun *rr = pcrec_fact_req_run(cx);
-        /* [OPT-PRECHECK-ADMIT] unchanged by the admission, for
-         * `<PREFIX>_REQ_BYTE`'s reason one stamp up: this names the run the
-         * analysis found, and `<PREFIX>_REQ_WHY` names whether it was
-         * emitted. */
-        if (rr->len < 2) {
-            pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", "none");
-        } else {
-            size_t o = 0;
-            int k;
-            for (k = 0; k < rr->len; k++)
-                o += (size_t)snprintf(rrbuf + o, sizeof rrbuf - o, "%02x", rr->bytes[k]);
-            snprintf(rrbuf + o, sizeof rrbuf - o, "@%d", rr->idx);
-            pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", rrbuf);
-        }
-    }
+    /* [OPT-PRECHECK-ADMIT] unchanged by the admission, for
+     * `<PREFIX>_REQ_BYTE`'s reason one stamp up: this names the run the
+     * analysis found, and `<PREFIX>_REQ_WHY` names whether it was emitted.
+     * [PATFACTS] the value is the `req_run` fact's ONE renderer
+     * (src/facts/facts.c), the spelling `--emit-facts` prints too. */
+    pcrec_sb_stamp_str(c, g->upper, "REQ_RUN", pcrec_fact_stamp(cx, PF_REQ_RUN));
     /* [OPT-PRECHECK-ADMIT] `<PREFIX>_REQ_WHY` — WHY THIS ARTIFACT DOES OR DOES
      * NOT CARRY A WHOLE-WINDOW PRE-CHECK. A §6.3 family-(a) SELECTION FACT for
      * its two siblings' reason, in the same place: unconditional, on every

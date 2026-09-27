@@ -10961,7 +10961,7 @@ static void vm_emit_stamps(Vm *v, const VmPlan *pl, const VmEntry *en)
      * plant that emits the unbounded form. The stamp and the emitted bound
      * come from one variable three lines apart for exactly that reason. */
     pcrec_sb_stamp_str(c, v->up, "VM_START",
-                       pcrec_start_anchor_name(pcrec_fact_start_anchor(v->cx)));
+                       pcrec_fact_stamp(v->cx, PF_START_ANCHOR));
     pcrec_sb_stamp_str(c, v->up, "VM_ENTRY_SHAPE", pcrec_vm_entry_shape_name(en->shape));
     pcrec_sb_stampf(c, v->up, "VM_PROGRAM_BYTES", "%lluULL",
               (unsigned long long)pcrec_sb_len_uncut(&job->vmsb));
