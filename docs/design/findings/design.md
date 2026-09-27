@@ -182,9 +182,9 @@ lane from assuming the wrong thing.
    - Once the gate lives in the accessor (D122-2(3)), a `-e utf8` compile
      under the default gets NONE. Offset-k selection needs *some* per-byte
      cost.
-   - **Decided (§6.3): set CARDINALITY (a uniform rate) is this reader's
-     NONE fallback.** It is the no-information prior for choosing among
-     SETS.
+   - **Decided (§6.1): set CARDINALITY (a uniform rate) is the MASS
+     kind's NONE answer, which this reader inherits [D126 Q4].** It is the
+     no-information prior for choosing among SETS.
    - This is what "offset-k selections move under utf8" (D122-2(3), cost
      accepted) concretely means. R37's zero-movers control becomes "zero
      movers except this named manifest".
