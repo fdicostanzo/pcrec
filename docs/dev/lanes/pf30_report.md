@@ -15,13 +15,13 @@ detached chain behind the K68 lane's box hold, logs below.**
 | commit | what | gate (A/B emit diff vs main `d978a604`) |
 |---|---|---|
 | `02c4be29` | **3.0a** — `src/facts/` with `facts.h` (empty) and `facts_derive.h`; `pcrec_start_anchor`/`pcrec_end_window`/`pcrec_req_byte` declarations leave `core/internal.h`; owners + `compile.c` include it; Makefile (`LIBSRCS`, header prereqs), `include_graph.py` layer `facts` between `ir` and `opt`, CLAUDE.md files | 0 movers |
-| `38585d8d` | **3.0 skeleton** — `facts.def` (6 rows), `facts.h` (ReqRun/ReqSet/`PCREC_SANCH_*` moved in, `PatFacts`), `facts.c` (epoch guard, memo, fact deny, derivation); `compile.c`'s three deny ternaries become `pcrec_facts_seal_e2`; `Job.start_anchor/end_window/req_byte/req_run/req_set` become `Job.pf` and every reader moves to its accessor in the same commit; the include-graph + link-symbol check (`tests/codegen/run_facts_checks.sh`, in `test-codegen`) with S295/S296 and mech arm `facts`; S269/S274/S276/S286/S288 re-anchored | 0 movers |
+| `38585d8d` | **3.0 skeleton** — `facts.def` (6 rows), `facts.h` (ReqRun/ReqSet/`PCREC_SANCH_*` moved in, `PatFacts`), `facts.c` (epoch guard, memo, fact deny, derivation); `compile.c`'s three deny ternaries become `pcrec_facts_seal_e2`; `Job.start_anchor/end_window/req_byte/req_run/req_set` become `Job.pf` and every reader moves to its accessor in the same commit; the include-graph + link-symbol check (`tests/codegen/run_facts_checks.sh`, in `test-codegen`) with S296/S297 and mech arm `facts`; S269/S274/S276/S286/S288 re-anchored | 0 movers |
 | `6f8b8a28` | check skips a STALE object whose source moved (test-only) | n/a |
 | `40fdb182` | **relocation** `git mv src/opt/startanch.c src/facts/` | 0 movers |
 | `dfe5bde2` | **relocation** `git mv src/opt/endwin.c src/facts/` + carve-out (d): `pcrec_end_window(const PcrecEnc *, const Ast *)`, descriptor resolved once in `facts.c` | 0 movers |
 | `3a58818c` | **relocation** `rb_walk` + lattice lifted into `src/facts/req.c` (core facts `req_set`, `req_whole_run`); picks stay in `reqbyte.c` verbatim behind `pcrec_req_window`/`pcrec_req_pick` (derived facts) until B1; `ReqSet.rightmost`; S268 re-pointed | 0 movers |
 | `5cbf819f` | fact-valued stamps (`REQ_BYTE`, `REQ_RUN`, `END_WINDOW`, `VM_START`) render through the facts' one renderer (Q9) | 0 movers |
-| `3a9fe7a9` | **`--emit-facts`** (`src/dump/facts_dump.c`, CLI mode, `PcrecFactsHook`), the guarded force loop (Q10/A11), derivations report their `why`, decision capture (Q9), spec (`facts_listing.md` new, `cli.md` §2 + history, `table_contract.md` scope, `tuning.md` §2.25-§2.28 consumer lists + "Facts emptied" lines), checks 3-6, S297-S299 | see §2 (OWED at hand-off) |
+| `3a9fe7a9` | **`--emit-facts`** (`src/dump/facts_dump.c`, CLI mode, `PcrecFactsHook`), the guarded force loop (Q10/A11), derivations report their `why`, decision capture (Q9), spec (`facts_listing.md` new, `cli.md` §2 + history, `table_contract.md` scope, `tuning.md` §2.25-§2.28 consumer lists + "Facts emptied" lines), checks 3-6, S298-S300 | see §2 (OWED at hand-off) |
 | `f721e1fe` | `run_facts_checks.sh` bounds every compiler call ([K37] guard found 7 sites) | n/a (test-only) |
 
 One relocation per commit (carve-out (e)): each of `startanch.c`, `endwin.c`
@@ -71,14 +71,14 @@ failure:
 
 | check | oracle it does not share | sabotage | hand-verified failing direction |
 |---|---|---|---|
-| [facts-include] includers of `facts_derive.h` == owner list generated from `facts.def` (plain text) | the include lines vs the table's text | **S295** consumer includes the private header | facts 1 fail (this check only) |
-| [facts-link] no non-owner object references an owner-defined, `facts.h`-undeclared symbol (`nm`) | the objects vs `nm` | **S296** hand `extern` + call | facts 1 fail (this check only) |
-| [facts-complete] one `facts` row per `facts.def` row per encoding | the table's plain-text row count | **S297** printer skips `req_set` | facts 2 fail (+ why, see row) |
-| [facts-why] every `axes.def` deny flag lists `deny:<flag>` on exactly the facts `tuning.md`'s "Facts emptied" line names | the hand-written spec (D80), not `facts.def`'s deny column | **S298** `req_run`'s deny bit flipped | facts 1 fail |
-| [facts-decisions] `decisions` == the emitted file's value `#define`s (DFA, hybrid, VM witnesses; 134 stamps) | a second parser (machinery excluded by NAME here, by `(` in the printer) | **S299** `REQ_WHY` rows dropped | facts 1 fail |
+| [facts-include] includers of `facts_derive.h` == owner list generated from `facts.def` (plain text) | the include lines vs the table's text | **S296** consumer includes the private header | facts 1 fail (this check only) |
+| [facts-link] no non-owner object references an owner-defined, `facts.h`-undeclared symbol (`nm`) | the objects vs `nm` | **S297** hand `extern` + call | facts 1 fail (this check only) |
+| [facts-complete] one `facts` row per `facts.def` row per encoding | the table's plain-text row count | **S298** printer skips `req_set` | facts 2 fail (+ why, see row) |
+| [facts-why] every `axes.def` deny flag lists `deny:<flag>` on exactly the facts `tuning.md`'s "Facts emptied" line names | the hand-written spec (D80), not `facts.def`'s deny column | **S299** `req_run`'s deny bit flipped | facts 1 fail |
+| [facts-decisions] `decisions` == the emitted file's value `#define`s (DFA, hybrid, VM witnesses; 134 stamps) | a second parser (machinery excluded by NAME here, by `(` in the printer) | **S300** `REQ_WHY` rows dropped | facts 1 fail |
 | [facts-cli] 8 refusals (-o, no pattern, bad/empty encoding, other modes, refused pattern) | — | — | — |
 
-The solo mech runs of S295-S299 (and of the six re-anchored/re-pointed rows)
+The solo mech runs of S296-S300 (and of the six re-anchored/re-pointed rows)
 are OWED in the chain (§5). The hand verification applied each row's own
 `SAB_BEFORE`/`SAB_AFTER` through `tests/mech/lib/replace.py`, rebuilt, ran
 the check, and reverted.
@@ -95,7 +95,7 @@ reverted before commit.
 ## 4. Findings
 
 1. **A sabotage plant that spells a signature is a reader of that
-   signature.** S296 (committed with the skeleton) hand-declared
+   signature.** S297 (committed with the skeleton) hand-declared
    `pcrec_end_window(Ctx *, const Ast *)`; the endwin relocation two commits
    later changed the signature (carve-out (d)), and the committed plant became
    a wild call that SEGFAULTED the compiler on VM routes rather than planting
@@ -104,7 +104,7 @@ reverted before commit.
    Recorded in `tests/mech/CLAUDE.md`.
 2. **My own plant harness raced make's 1-second mtime.** A plant applied in
    the same second as the previous revert's rebuild was not recompiled, and
-   S299 first read UNDETECTED. Fixed in the (scratch) harness with a `sleep 1`
+   S300 first read UNDETECTED. Fixed in the (scratch) harness with a `sleep 1`
    on both sides; re-verified all five rows. The mech driver builds a fresh
    tree per row and is not exposed to this.
 3. **The [K37] bare-compiler-call guard fired on the new check's first run**
@@ -131,7 +131,7 @@ reverted before commit.
    CLI acceptance instrument; `--emit-facts` adds refusals only (its own mask,
    and its bit in `CLI_MODES_VS_PATTERN_QUERY`), and `--help`'s text grew by
    the new entry, which moves every usage-printing diagnostic's stderr.
-8. **Sabotage ids S295-S299** were numbered from main's highest (S294) at
+8. **Sabotage ids S296-S300** were numbered from main's highest (S294) at
    lane start; the K68 lane may also be numbering — check for a collision at
    merge.
 
@@ -148,7 +148,7 @@ One script, `/tmp/pf30_scratch/chain.sh`, launched `nohup … & disown`, log
 | `make test-codegen` | `/tmp/pf30_test_codegen.log` | `PF30 CHAIN: test-codegen rc=` |
 | `make test` (timeout 9000) | `/tmp/pf30_make_test.log` | `PF30 CHAIN: make test rc=` — verdict is make's `*** [test-X] Error` lines |
 | `make test-recursion-identity` (timeout 3600) | `/tmp/pf30_recid.log` | `PF30 CHAIN: test-recursion-identity rc=`; the (B) pin must NOT move (a re-pin is disqualifying) |
-| mech solo: S295-S299, S268, S269, S274, S276, S286, S288 | `/tmp/pf30_mech_S<id>.log` | one `PF30 CHAIN: mech S<id>` line each |
+| mech solo: S296-S300, S268, S269, S274, S276, S286, S288 | `/tmp/pf30_mech_S<id>.log` | one `PF30 CHAIN: mech S<id>` line each |
 | — | — | `PF30 CHAIN: ALL DONE` |
 
 Plus the listing commit's gate, `/tmp/pf30_gate_30list.log`

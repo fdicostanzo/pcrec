@@ -2985,15 +2985,15 @@ AFTERs, so neither's scratch build touches the other's row.
 
 ## [PATFACTS] step 3.0 — `facts`, and two rows no answer can see (lane pf30, 2026-09-26)
 
-**`facts` is a new suite word** (registered before S295, R31 C11): it runs
+**`facts` is a new suite word** (registered before S296, R31 C11): it runs
 `tests/codegen/run_facts_checks.sh` against the sabotaged tree's own build,
 objects included (the link assertion reads `$tree/build/obj`). Every row on
 it scores `corpus:0fail` BY DESIGN — what it guards is the pattern-facts
 record's STRUCTURE (who may reach a derivation) and its inspection surface,
 none of which can move an answer — so the arm is each row's whole detector.
-**S295** plants `#include "facts/facts_derive.h"` into `src/gen/emit_vm.c`
+**S296** plants `#include "facts/facts_derive.h"` into `src/gen/emit_vm.c`
 and nothing else (no function name re-inserted, so the row shares no string
-with the check); **S296** plants a block-scope hand `extern` of
+with the check); **S297** plants a block-scope hand `extern` of
 `pcrec_end_window` plus one discarded call there, without the include. Each
 is caught by exactly one of the check's two assertions, and each was
 verified in the failing direction by hand before the solo mech run (lane
@@ -3003,14 +3003,14 @@ and S288 quoted `cx->job->start_anchor`/`cx->job->req_run.len`, which step
 `pcrec_fact_req_run(cx)->len`); only the read spelling moved, the plants'
 intent is unchanged.
 
-**The listing's three rows** (same arm, same lane): **S297** makes the
+**The listing's three rows** (same arm, same lane): **S298** makes the
 `--emit-facts` printer skip the `req_set` row (completeness fails; the
 why-truthfulness check fails too, since the skipped fact's deny can no longer
-be read off the listing); **S298** drops `PCREC_NO_REQ_RUN` from `facts.def`'s
+be read off the listing); **S299** drops `PCREC_NO_REQ_RUN` from `facts.def`'s
 `req_run` row (why-truthfulness fails against `tuning.md`'s hand-written
 "Facts emptied" line — no emitted byte moves, the window is empty either way);
-**S299** drops every `REQ_WHY` row from the `decisions` section
-(decisions=stamps fails on all three witnesses). **A lesson from S296, kept
+**S300** drops every `REQ_WHY` row from the `decisions` section
+(decisions=stamps fails on all three witnesses). **A lesson from S297, kept
 here because it will recur:** its plant is a hand `extern` of a derivation
 with that derivation's SIGNATURE spelled out, and the endwin relocation
 changed the signature (the descriptor became a parameter) — the committed

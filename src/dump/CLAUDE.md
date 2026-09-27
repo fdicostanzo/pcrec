@@ -226,7 +226,7 @@ one.
   `facts.def` (the table) and never `facts_derive.h`, which
   `tests/codegen/run_facts_checks.sh` enforces; its three listing checks
   (completeness, why-truthfulness against `tuning.md`, decisions=stamps)
-  live in that script, with sabotage rows S297-S299.
+  live in that script, with sabotage rows S298-S300.
 
 ## Conventions
 

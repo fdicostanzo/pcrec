@@ -3286,9 +3286,9 @@ never edited afterwards.
   `facts.c`, `Job.pf` with the E2 accessors, the start-anchor/end-window/
   necessary-set-run relocations one per commit, the descriptor as a declared
   input), the include-graph + link-symbol check, the shared fact renderers,
-  and `--emit-facts` with its spec page and checks (S295-S299). Zero movers
+  and `--emit-facts` with its spec page and checks (S296-S300). Zero movers
   on every gated commit (s1_identity.py over byte/utf8 x six deny configs).
-  Read §4 for the S296 signature trap. Heavy validation OWED in a detached
+  Read §4 for the S297 signature trap. Heavy validation OWED in a detached
   chain, logs in §5.
 
 - `q4amend_report.md` — D126 Q4 (2026-09-27, lane q4amend, opus, design

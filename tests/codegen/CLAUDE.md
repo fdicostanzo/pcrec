@@ -797,8 +797,8 @@ decides whether to perform it — and then run the row through
   list; objects are read from `$(dirname $PCREC)/obj`, and the Mach-O `_`
   prefix is stripped on darwin. REACH lines print the row, owner, symbol and
   object counts and an empty population FAILS rather than passing
-  vacuously. Sabotage S295 (a consumer includes the private header, caught
-  by (1) alone) and S296 (a hand extern plus call, caught by (2) alone), mech
+  vacuously. Sabotage S296 (a consumer includes the private header, caught
+  by (1) alone) and S297 (a hand extern plus call, caught by (2) alone), mech
   arm `facts`. What it cannot see — a hand RE-SPELLING of a walk — is named
   in `src/facts/CLAUDE.md`. Plus the `--emit-facts` listing's checks
   (design §11.6 2-4), each against an oracle the listing does not share:
@@ -810,8 +810,8 @@ decides whether to perform it — and then run the row through
   STAMPS, the `decisions` section equal to the value `#define`s this script
   parses out of the emitted C on a DFA, a hybrid and a VM artifact (the
   machinery macros excluded by NAME here, by `(` in the printer). And
-  (6) `[facts-cli]`, the query's refusals. Sabotage S297 (a row skipped),
-  S298 (a deny bit flipped in facts.def), S299 (a stamp dropped from
+  (6) `[facts-cli]`, the query's refusals. Sabotage S298 (a row skipped),
+  S299 (a deny bit flipped in facts.def), S300 (a stamp dropped from
   decisions). Every section resolves columns by header name within its
   named section.
 - **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE

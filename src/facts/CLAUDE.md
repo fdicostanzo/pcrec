@@ -61,7 +61,7 @@ defect traced to that edge (design §4.2.1, §10).
   declaration. Only this directory's files and the OWNER files `facts.def`
   names may include it; `tests/codegen/run_facts_checks.sh` checks that from
   the include graph AND the link symbols (`tests/codegen/run_facts_checks.sh`,
-  sabotage rows S295/S296).
+  sabotage rows S296/S297).
 
 - **startanch.c** — [OPT-ANCHOR-VM], `[OPTLOOP.1]` batch 1 (D119): THE START
   ANCHOR. One AST-level predicate, `pcrec_start_anchor`, answering *at which
