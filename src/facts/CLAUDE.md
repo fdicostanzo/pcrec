@@ -130,12 +130,21 @@ defect traced to that edge (design §4.2.1, §10).
   NECESSARY LITERAL RUN, the two CORE facts from one walk of the lowered tree
   (`pcrec_req_walk`): the whole set with its threaded rightmost member (the
   tiebreak the pick falls back on) and the longest guaranteed contiguous run.
-  LIFTED out of `src/opt/reqbyte.c` at [PATFACTS] step 3.0 with its lattice
+  LIFTED out of `src/opt/reqbyte.c` (deleted at B1) at [PATFACTS] step 3.0 with its lattice
   (`rb_union`/`rb_intersect`, the seven run operations, `rr_cat`/`rr_alt`),
   every helper `static` here; the walk's output types (`RbSet`, `RbRun`,
-  `rb_has`) are in `facts_derive.h`, shared with the pick readers that stayed
-  in `src/opt/reqbyte.c` (the DERIVED facts `req_run`/`req_byte`) until
-  [FINDINGS] B1. Reads no prior and no option: a core fact (design §4.1).
+  `rb_has`) are in `facts_derive.h`. The walk reads no prior and no option: a
+  core fact (design §4.1). **Since [FINDINGS] B1 (= step 3.1) this file also
+  OWNS the two DERIVED facts `req_run`/`req_byte`** (`pcrec_req_window`,
+  `pcrec_req_pick`, `facts.def`'s owner column): each asks the byte-rate
+  accessor FIRST, before any branch (findings design §6.4 rule 1), and hands
+  the answer untested to the rate readers in `src/core/findings.c`, which
+  take plain byte arrays so the findings layer needs no facts type. The
+  readers live beside the primitives (carve-out (b)); the compositions that
+  turn their answers into the facts live here, with the walk, because a
+  `src/core/` file including `facts_derive.h` would point the include graph
+  the wrong way (the findings design named `src/core/findings.c` as the
+  owner; B1 recorded why it is this file instead).
   Its header carries the whole analysis account (why the whole window, why a
   SET and a RUN, the declines, why a lookaround's body is a correctness
   decline). Sabotage S268 (`rr_alt`'s common head) is anchored here.

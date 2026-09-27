@@ -298,9 +298,12 @@ construction (src/ir) and emission (src/gen).
 
   **THE SELECTION IS A COST MODEL, AND THE MODEL WAS MEASURED WRONG ONCE.**
   Five constants, four of them measured off this box
-  (`docs/dev/opt3_dfa_scan_measurement.md`), over a static byte-frequency
-  prior that is D83's FALLBACK — the findings-file hook is `pcrec_byte_freq_ppm`
-  and is named, not built (D77). The prior is deliberately NOT derived from
+  (`docs/dev/opt3_dfa_scan_measurement.md`), over a byte-rate the compile's
+  analysis declares — [FINDINGS] B1 built the hook this paragraph once named:
+  the table left this file for `src/findings/default.rxt` (the shipped
+  default, D83's FALLBACK) and the selection reads a set's MASS through
+  `pcrec_find_set_ppm` (`src/core/findings.c`), which under an encoding the
+  data does not serve is the set's CARDINALITY. The prior is deliberately NOT derived from
   the comparative bench's own log text: that would be a control sharing a
   source with what it controls (learnings.md §3), and every measurement in the
   note would then be a measurement of a table fitted to its own subjects.
@@ -1203,14 +1206,16 @@ construction (src/ir) and emission (src/gen).
   where the encoding DESCRIPTOR became a declared parameter (carve-out (d)).
   Its entry lives in `src/facts/CLAUDE.md` now.
 
-- **reqbyte.c** — **SPLIT at [PATFACTS] step 3.0 (D126): the WALK and its
-  set/run lattice moved to `src/facts/req.c` (the CORE facts `req_set` and
-  `req_whole_run`); this file keeps only the PICKS (`rb_pick`,
-  `rn_scan_index`, `rn_window_start`, bodies verbatim) behind two derived-fact
-  entries, `pcrec_req_window` and `pcrec_req_pick`, until [FINDINGS] B1 moves
-  them beside the rate primitives and deletes the file (design §4.2.2
-  carve-out (b)). `pcrec_req_byte` no longer exists; the history below is
-  kept as written.** [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
+- **reqbyte.c** — **DELETED at [FINDINGS] B1 = [PATFACTS] step 3.1 (D126).
+  Step 3.0 moved the WALK to `src/facts/req.c`; B1 moved the three PICKS
+  (`rb_pick`, `rn_scan_index`, `rn_window_start`) beside the rate primitives
+  in `src/core/findings.c` (as `pcrec_find_set_pick`,
+  `pcrec_find_run_scan_index`, `pcrec_find_run_window_start`, each "build the
+  candidate order, ask one primitive") and the two derived-fact compositions
+  (`pcrec_req_window`/`pcrec_req_pick`) into `src/facts/req.c` (design
+  §4.2.2 carve-out (b)). The history below is kept as written; its
+  `bytekey`/`pcrec_byte_freq_ppm` are now the byte-rate accessor and the
+  PICK/MASS primitives' NONE answers.** [OPT-REQBYTE], `[OPTLOOP.1]` batch 1 (D119): THE NECESSARY
   BYTE. `pcrec_req_byte` answered *which byte does every match of this pattern
   contain* — PCRE2's `PCRE2_INFO_LASTCODETYPE`/`LASTCODEUNIT`, which pcrec
   computed nowhere and which is the largest single weighted gap

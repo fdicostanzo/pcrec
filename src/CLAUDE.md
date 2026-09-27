@@ -51,6 +51,11 @@ reads 0. A clean `include_backedges.tsv` is a statement about includes.
   up into `gen` for something that is not emission. See enc/CLAUDE.md for
   the third-encoding recipe
 - **parse/** — base-tier PCRE parser with module lookup hooks
+- **findings/** — [FINDINGS] B1: the SHIPPED ANALYSES as `.rxt` text
+  (`default.rxt`, the built-in terminal of every analysis chain) and
+  `findgen.c`, the build-time generator that pre-parses them. Not library
+  source: compiled into `libpcrec` by `src/core/findings.c` through two
+  generated `.inc` files. See findings/CLAUDE.md
 - **ir/** — NFA construction and priority subset construction (DFA)
 - **facts/** — [PATFACTS] (D120/D126) the pattern-facts ANALYSIS LAYER:
   one derivation per pattern fact, behind a consumer header (`facts.h`) and

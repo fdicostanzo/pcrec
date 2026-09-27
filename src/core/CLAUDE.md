@@ -4,6 +4,29 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
+- **findings.c** / **findings.h** — [FINDINGS] B1 = [PATFACTS] step 3.1
+  (2026-09-27, D122/D123/D126; `docs/design/findings/design.md` §6,
+  `docs/spec/findings.md`): THE FINDINGS SEAM. The byte-rate accessor
+  (`pcrec_find_byte_rate`, memoized per ATTEMPT in `Job.find`, which is also
+  the consumption record the `<PREFIX>_FINDINGS` stamp reads), the four rate
+  PRIMITIVES — PICK, COMPARE, MASS (set and sequence) — each spelling its
+  question kind's NONE answer ONCE (D126 Q4), and every rate READER beside
+  them (the set pick, the run's scan member and window, the offset-k set
+  mass), each "build a candidate order, ask one primitive". Also §2.5's ONE
+  normalization (`pcrec_find_normalize`), the FNV-1a-64 digest and the stamp
+  renderer (`pcrec_find_stamp`), and the embedded store: the TEXT of every
+  `src/findings/<name>.rxt` (`build/gen/findings_store.inc`) and its
+  build-time PRE-PARSE by the one `.rxt` reader (`build/gen/findings_table.inc`,
+  `src/findings/findgen.c`) — B1 measured parsing the text per compile at
+  ~20% of a minimal compile, so a compile reads the table (design §13 B1 (3)).
+  **The gate lives here and nowhere else**: which encodings a rate serves is
+  what the data declares, and no function outside the primitives tests a
+  rate pointer or the encoding (`tests/findings/structural_check.py`).
+  `PCREC_FIND_STAGE0` builds the stage-0 object `findgen` links (an empty
+  table). Layer note: it sits in `src/core/` by the design's naming but reads
+  nothing above `core`/`enc` at compile time; the facts layer calls it, never
+  the reverse (its readers take plain byte arrays).
+
 - **varexp.c** — [VAR] M1 (2026-09-23): THE EXPANSION GRAMMAR,
   `${ [!] selector [operator word] }`, parsed ONCE and shared by both
   consumers — a variable inside a PATTERN (module `vars`,

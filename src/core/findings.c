@@ -7,9 +7,11 @@
  * encoding, declared by the data (D123-4): a bundle's `freq` block says
  * `serves byte-rate when <encodings> via unigram`, and the accessor's whole
  * selection rule is "use what the data declares" (§2.4). At B1 the chain is
- * the built-in `default` alone (S3, the embedded store: `src/findings/<name>.rxt`
- * compiled in as text by scripts/embed_text.sh and parsed by the ONE `.rxt`
- * reader in its no-filesystem mode, §8). The default declares `byte` only,
+ * the built-in `default` alone (S3, the embedded store: every
+ * `src/findings/<name>.rxt`, compiled in as its TEXT by scripts/embed_text.sh
+ * and as that text PRE-PARSED at build time by the ONE `.rxt` reader in its
+ * no-filesystem mode, src/findings/findgen.c — §8, §13 B1 (3)). The default
+ * declares `byte` only,
  * so under `-e utf8` the answer is NONE. Resolution beyond it (S1/S2,
  * `--analysis`) is B2's.
  *

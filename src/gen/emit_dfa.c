@@ -843,7 +843,7 @@ void pcrec_emit_req_run_blocks(Ctx *cx, StrBuf *c)
 
 /* Writes the run pre-check at the search entry: a call of each block
  * `pcrec_emit_req_run_blocks` wrote, NOMATCH when one finds no run. [K66]
- * The window is cut from the run by a frequency prior (`rn_window_start`), so
+ * The window is cut from the run by the byte-rate (`pcrec_find_run_window_start`), so
  * with only the window compared, a subject holding the window but not another
  * slice of the run got no linear no-match proof on a route with no DFA scan
  * in front, and could give up on the step budget according to the prior
@@ -1004,7 +1004,7 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
      * check subsumes this one, so where a run shipped it is the only
      * pre-check emitted — and the `req_byte` fact is then the run's own scan
-     * member, chosen with the run at one site (src/opt/reqbyte.c's single
+     * member, chosen with the run at one site (src/facts/req.c's single
      * return) so the stamp and the emitted `memchr` cannot disagree. The
      * one-byte text below is left at its own indent, un-nested, because
      * sabotage row S265's anchor is in it. */
@@ -5802,7 +5802,7 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
 /* ---- [OPT-PRECHECK-ADMIT] ADMITTING THE WHOLE-WINDOW PRE-CHECK ----------
  *
  * THE MECHANISM AND ITS MEASUREMENT. [OPTLOOP.1]'s batch 1 emitted
- * `pcrec_emit_req_byte_check` unconditionally wherever `src/opt/reqbyte.c`
+ * `pcrec_emit_req_byte_check` unconditionally wherever `src/facts/req.c`
  * found a necessary byte, and the bench's after-ledger
  * (docs/dev/optloop/cycle1_ledger_reading.md §6) attributes 33 regressing
  * cells to exactly two shapes of that: a pass the artifact ALREADY RUNS on an
