@@ -759,3 +759,9 @@ change.
   flatness IS F3 (the forced tail window `сква` passes, then memchr 0xD0);
   main's NONE rules keep the pre-check and move the DFA scan to the
   literal's second byte by a cost-model tie.
+- `utf8_attrib_twin/` — [OPT-HYB-RESEED] packaged for the bench (2026-09-27,
+  lane reseedtwin, packaging + verification only, nothing under `src/`/
+  `tests/`): `I-114.md` is a self-contained inbox item (pin, compile
+  commands, the three hand-twin diffs, a subject generator, a find-all
+  driver, and Mac scratch numbers) for a bench dev with no access to
+  pcrec's tree. Own CLAUDE.md.
