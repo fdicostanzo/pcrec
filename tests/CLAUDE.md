@@ -52,6 +52,10 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   passed on the tree BEFORE PARSE-1 existed and is a forward-pointing
   regression net, not evidence the feature is there
 - **registry/** — the SR-1 syntax construct table checked TWICE: against the parser in both directions (including a 255-byte sweep of each of the four doorways, which catches a construct added to parse.c with no registry row, D24), and — since PC-3 — against **libpcre2**, which is the first check in this repo that is not pcrec reading pcrec. Since Q2/SR-9 the `(?` doorway has three generated differentials of its own — a byte sweep, an option-run sweep and per-prefix tail sweeps — so it is no longer the case that only `(*` is name-checked. Plus compliance_section.py, which holds docs/pcre2_compliance.md to the dump (SR-4)
+- **litscan/** — [OPT-LITSCAN]'s answer-level corpus (rides `test-corpus`):
+  `litrun.rxt`, S2a's VM literal run as one `memcmp` (subject-end boundary,
+  C-literal escapes, runs beside captures/choice points/islands), generated
+  from python3 `re` by `gen_litrun.py`. See litscan/CLAUDE.md.
 - **island/** — [ENG-ISL] STEP 1, the VM's ALTERNATION ISLAND (`make
   test-island`; `docs/spec/tuning.md` §2.20). Two `.rxt` files that ride
   `test-corpus` and are BLIND to the island by construction — the axis is

@@ -72,6 +72,26 @@ so the numbers below have somewhere to attach.
   defaults land in `rx_info.step_budget`/`work_budget` (§6,
   `docs/spec/match_api.md`) as `-1` when disabled, a real count
   otherwise.
+- **A literal run is charged as ONE compare, which is what the per-byte
+  chain it replaced was charged** (`[OPT-LITSCAN]` S2a, abi 41). A VM
+  program compares a run of two or more consecutive literal bytes as one
+  constant-length `memcmp` (`tuning.md` §2.31). The STEP budget counts
+  backtrack resumptions, and forward progress is free (D51): a run that
+  mismatches at ANY of its bytes enters the fail label once, as the
+  per-byte chain did at whichever byte mismatched, so the step count of
+  every match attempt is unchanged. Charging it as `n` would make the step
+  budget count forward bytes, which it has never done. The WORK budget is
+  unchanged on a run in a concatenation, which charged nothing before and
+  charges nothing now. In an alternation island a walk that dies charges
+  the trie bytes proved before the compare that failed; a run compare at
+  depth `d` that fails charges `d`, the bytes proved before it, and never
+  the up-to-`n` bytes the one compare examined. So an island's work charge
+  is at most what the per-byte walk charged and a `PCREC_ERR_WORK` give-up
+  can only move LATER, never earlier. At the default budgets no corpus or
+  bench artifact's answer or give-up moves (measured, `docs/dev/lanes/
+  s2a_report.md`). The compile-time node budget (`PCREC_MAX_VM_NODES`)
+  still pays one node per literal byte, so it refuses exactly the patterns
+  it refused before.
 
 ### 3.2 Frame and trail capacities (D73)
 

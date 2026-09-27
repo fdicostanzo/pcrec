@@ -171,6 +171,7 @@ label control reaches; `note` is the role text the walk recorded.
 |---|---|---|---|
 | `label` | the label (`L7`, or `accept` / `fail` for the two terminals) | — | — |
 | `consume` | — | the class/character description | the next label |
+| `compare` | — | a literal run, `'<bytes>' (N bytes)` — printable ASCII as itself, anything else (and `\` and `'`) as `\xNN` ([OPT-LITSCAN] S2a, `tuning.md` §2.31) | the next label |
 | `assert` | — | the assertion's description | the next label |
 | `push` | — | — | the RESUME label |
 | `set` | — | `slot_values[N] <- scan_position` | — |

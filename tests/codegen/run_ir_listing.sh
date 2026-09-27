@@ -155,6 +155,7 @@ PATTERNS=(
     '^(a)\1$'
     '((a)|ab){0,12}?c'
     '(?:a|ab){2,3}+'
+    'xy(a|ab)c'
 )
 
 # POSITIONALLY PARALLEL to PATTERNS: the `--features` value each row needs, ''
@@ -173,6 +174,10 @@ PATTERNS=(
 #   ^(a)\1$                              tests/backrefs/gated.rxt
 #   ((a)|ab){0,12}?c                     tests/counterk/counterk.rxt
 #   (?:a|ab){2,3}+                       tests/atomic_groups/possessive.rxt
+#   xy(a|ab)c                            tests/litscan/litrun.rxt ([OPT-LITSCAN]
+#                                        S2a: a literal run, then a push -- the
+#                                        resume-points check below is what sees
+#                                        the slot walk disagree with emission, S305)
 PATTERN_FEATURES=(
     '' '' '' '' '' '' '' '' '' '' ''
     'lookaround'
@@ -180,6 +185,7 @@ PATTERN_FEATURES=(
     'backrefs'
     ''
     'atomic-groups'
+    ''
 )
 
 if [ "${#PATTERNS[@]}" -ne "${#PATTERN_FEATURES[@]}" ]; then

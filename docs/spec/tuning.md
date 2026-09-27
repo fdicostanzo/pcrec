@@ -2696,6 +2696,45 @@ and has no axis. `--list-axes` renders the pair `|`-joined
 (`strategy_denials`) for the mask's own reason. `-fno-req-run` and
 `-fno-req-byte` remove the run itself, so nothing is pinned under either.
 
+### 2.31 The VM's literal run: ONE exact compare, and no axis bit
+
+**`[OPT-LITSCAN]` S2a, `abi` 41 (`docs/design/patfacts/design.md` §8.2).
+NOT an axis: there is no flag and no bit, and no stamp names it.** It is how
+a VM program spells a literal it has to consume, stated here because the
+emitted text is caller-observable.
+
+**What it is.** In a concatenation, two or more CONSECUTIVE elements that are
+each one exact byte form a RUN, and the run is consumed by one bounds check
+and one constant-length compare:
+`if (scan_position + L <= subject_length && !memcmp(subject + scan_position, "<run>", L))`,
+under ONE label where the per-byte chain wrote `L`. In an alternation island
+(§2.20) a trie node's single-child chain, down to the first node that
+branches or where an alternative ends, is the same compare at that node's
+depth. The compare is the literal-compare kit's one emitter (P4), the same
+text the run-pinned prefilter rows (§2.30) and the run pre-check use; gcc
+lowers a constant-length `memcmp` to word loads with no call, and it does not
+fuse a per-byte chain on its own (`docs/dev/optloop/vmlit_trigger_read.md`
+§1). The artifact gains `#include <string.h>` if nothing else in it needed
+one.
+
+**What ends a run.** Any element that is not one exact byte: a class of two
+or more bytes (so every letter under `(?i)` — the caseless mask compare is
+`[OPT-LITSCAN]` S4's, not this), a capture's open or close, a repeat, an
+atomic group, a lookaround, an assertion. A capture or a choice point
+between two bytes is program the matcher has to execute there, whatever the
+subject contains, which is why this run is NOT the necessary run §2.28
+names (that one is contiguous in the SUBJECT, across captures).
+
+**What it costs, and what it does not move.** No answer and no give-up
+moves: the compare accepts exactly the bytes the chain accepted, it reads
+exactly `L` bytes after one `pos + L <= n` test (never past the subject's
+end), and the step, work and node budgets charge what the chain charged
+(`limits.md` §3.1). `<PREFIX>_VM_PROGRAM_BYTES` and the label count move
+with the program text; the island size rule's estimates (§2.20) do not, so
+no island is taken or declined differently. The backward walk (lookbehind
+bodies, the reverse-deterministic rung) and the cursor rung's fixed-length
+body keep their own per-byte compares.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
