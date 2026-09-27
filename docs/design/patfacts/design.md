@@ -926,29 +926,73 @@ MOVERS. Build it by generalizing the S1 census instrument
 (learnings §3), with a REACH line: how many artifacts ASKED the migrated
 accessor, so "0 movers" is not vacuous.
 
-| step | what moves | gate that proves it | abi |
+Revision 2 puts each fact family's RELOCATION into `src/facts/` (§4.2.1)
+inside the migration step that puts that family behind its accessor, and
+splits `core/internal.h` first (carve-out (a)). Inside a step, **one
+relocation per commit** (carve-out (e)). The A/B diff runs per commit
+wherever a commit moves code, so a mover is attributed to one relocation.
+
+| step | what moves (one bullet ≈ one commit) | gate that proves it | abi |
 |---|---|---|---|
-| **3.0 skeleton + E2 req/anchor/window + `--emit-facts`** | `Job.pf`, `PfEpoch`, `facts.c`, `facts.def`; the §11 listing with its four checks; `REQ_*`/`VM_START` render through the shared renderers. The start anchor, end window, set, whole run, pick and window move behind accessors. The `compile.c:1501-1520` deny ternaries move into the accessors. The structural grep check plus its sabotage row | A/B diff ZERO over byte+utf8 × {default, `-fno-req-byte`, `-fno-req-run`, `-fno-end-window`, `-fno-vm-anchor-bound`, `-fno-run-prefilter`, `--engine=vm`}; `run_recursion_identity.sh` (B) with its pin UNMOVED (a re-pin is disqualifying); `run_prechecks.sh`; `make test-codegen`/`make strict` | **no** |
-| **3.1 = [FINDINGS] B1** | the data tier; the §6.3 primitives; C1-C4 migrated | findings §11.3 manifests (`byte` EMPTY with REACH; `utf8` named per artifact); findings §13 B1's acceptance list | **YES**: the one D123-2 event |
-| **3.2 E1: kinds, nullable, cwidth** | `select_engine`'s locals, the `emit_vm.c:13191/13208` listing re-walk (R1), `emit_vm.c:9980` read the accessors. The E1 invariance cross-check plus its sabotage row | A/B diff ZERO; `run_ir_listing.sh` (the listing is output, not artifact, and must be unchanged); `run_vm_identity.sh` | no |
-| **3.3 = S2a** | the node-grain literal-run function; the VM chain | S2a's own gate (its movers are its design, not a migration) plus: cost/slot/emit agreement on every corpus pattern, the R5 check | **YES**, S2a's own |
-| **3.4 E3: the k-set walk memo + pin** | `pcrec_prefix_ksets` splits into walk (fact) and selection (decision). The pin moves into the E3 accessor. `unanch_start` reads the memo (R14) | A/B diff ZERO; `run_offset_skip.sh`; the S1 census re-run, identical to `census_b_main.tsv` | no |
+| **3.0a `internal.h` split** (3.0's first commit, before anything moves) | • `src/facts/` created with `facts.h` (consumer: types and accessors, empty of accessors yet) and `facts_derive.h` (private: derivations). The E2 derivation declarations leave `core/internal.h` for `facts_derive.h`: `pcrec_start_anchor`, `pcrec_end_window`, `pcrec_req_byte`. Their owners and their one caller today (`compile.c:1501-1520`) include it. `pcrec_prefix_ksets` (`internal.h:1698`) does NOT move yet: it is walk plus selection until 3.4 splits it, and its selection half is a pass function that stays declared in `internal.h` | A/B diff ZERO (a declaration move cannot change emitted text, and the diff proves it); `make strict` | **no** |
+| **3.0 skeleton + E2 req/anchor/window + `--emit-facts`** | • `Job.pf`, `PfEpoch`, `facts.c`, `facts.def`; the E2 accessors; the `compile.c:1501-1520` deny ternaries move into the accessors, so `compile.c` stops including `facts_derive.h`. The include-graph and link check (§4.2.3) is born in this commit with its two sabotage rows, its target list generated from the new `facts.def`, so every later relocation moves under it. • `git mv src/opt/startanch.c src/facts/`. • `git mv src/opt/endwin.c src/facts/`, the descriptor becoming a parameter (carve-out (d)). • `rb_walk` and its lattice lifted from `reqbyte.c` into `src/facts/req.c` (`rb_pick`/`rn_*` stay in `reqbyte.c` until 3.1). • The §11 listing with its checks 2-4; `REQ_*`/`VM_START`/`END_WINDOW` render through the shared renderers | A/B diff ZERO **per commit** over byte+utf8 × {default, `-fno-req-byte`, `-fno-req-run`, `-fno-end-window`, `-fno-vm-anchor-bound`, `-fno-run-prefilter`, `--engine=vm`}; `run_recursion_identity.sh` (B) with its pin UNMOVED (a re-pin is disqualifying); `run_prechecks.sh`; `make test-codegen`/`make strict` | **no** |
+| **3.1 = [FINDINGS] B1** | • the data tier; the §6.3 primitives. • `rb_pick`, `rn_scan_index`, `rn_window_start` move beside the primitives (carve-out (b)); `reqbyte.c` deleted. • `set_ppm` moves beside them. • C1-C4 call the primitives. • §11.6 check 1 (non-perturbation) born, with its sabotage row [r1 A10] | the moves: A/B diff ZERO per commit. The primitives: findings §11.3 manifests (`byte` EMPTY with REACH; `utf8` named per artifact); findings §13 B1's acceptance list | **YES**: the one D123-2 event |
+| **3.2 E1: kinds, nullable** (revision 1's "cwidth" is dropped, §1) | • `src/facts/kinds.c` and `src/facts/widths.c` (NEW, composing the node primitives at the root); `pcrec_facts_seal_e1` forces both at `compile.c:1397` [r1 A1]. • `select_engine`'s locals, the `emit_vm.c:13191/13208` listing re-walk (R1) and `emit_vm.c:9980` read the accessors. • `fit.lang_nullable` and `fit.prefilter_has_collapsible_rep` deleted; readers read the accessors [r1 A7]. • The E1 invariance cross-check with its TWO sabotage rows (kind mask, nullability; §3, [r1 C6]) | A/B diff ZERO; `run_ir_listing.sh` (the listing is output, not artifact, and must be unchanged); `run_vm_identity.sh` | no |
+| **3.3 = S2a** | the node-grain literal-run function; the VM chain. No `src/facts/` move: its fact is node-grain (§4.3) | S2a's own gate (its movers are its design, not a migration) plus: cost/slot/emit agreement on every corpus pattern, the R5 check | **YES**, S2a's own |
+| **3.4 E3: the k-set walk + pin** — **FLAGGED: a POSSIBLE MOVER** [r1 A2] | • the walk half and the pin lifted from `prefix_k.c` into `src/facts/kset.c`; the per-offset `ppm` (`prefix_k.c:443`, `:475`) moves into the selection, which stays in `prefix_k.c` (carve-out (c)). • The E3 seal written inside the `ENG_UNANCH` arm only, and the two decline tokens (§3, [r1 A3]). • `unanch_start` reads the memo (R14). • The pin becomes a pure NFA+window fact, and its kind gate becomes each consumer's obligation (§4.5) | A/B diff ZERO; `run_offset_skip.sh`; the S1 census re-run, identical to `census_b_main.tsv`. Before the lane starts: a grep of every reader of `run_pinned`/`run_o`, each confirmed to carry the kind gate, attached to the lane's report | no |
 | **3.5 node nullable (R4)** | `vm_nullable` becomes the one node-nullable function (with the `A_CALL` arm kept) | A/B diff ZERO; `run_vm_identity.sh`. **A mover here is a found disagreement between the two copies. Stop and file a K-row** | no |
 | 3.6 (anytime) R3 | `mrl.c`/`callgraph.c` saturating arithmetic unified | A/B diff ZERO | no |
 
-**Order rationale.** 3.0 first because B1 and every later step edit
-through it. It is also the smallest step that retires a real hazard: the
-deny application lives in one file. B1 (3.1) next, because it is the
-chartered first customer and the only other abi event. 3.2 before 3.4:
-E1 has four-plus readers and a debug-listing re-walk, while E3 has one
-owner and a cost that is unmeasured. S2a (3.3) is placed where its own
-gates allow. It depends only on 3.0's `internal.h` declarations, and it
-may land before 3.2 without harm. Each step is one lane. Every
-byte-identical step runs its A/B diff as the lane's LAST act (BOILERPLATE
-do-then-finish), because the diff is a multi-config corpus run.
+**Why 3.4 is flagged** [r1 A2]. It is the step likeliest to move a byte,
+for two reasons revision 1 missed.
+- **(i) The pin's domain widens.** Today the pin is computed only when the
+  prefilter kind is not `DFA_PF_NONE` (`emit_dfa.c:3719-3720`), so on a
+  `DFA_PF_NONE` artifact `run_pinned` is 0. A pure NFA+window pin is TRUE on
+  some of those artifacts. No byte moves only if every consumer carries the
+  kind gate. `pf_run_applies_common` does (`emit_dfa.c:5294`), and the
+  pre-lane grep above confirms the rest. A consumer that lacks it is a
+  semantic mover (§9.1): it would have read 0 by accident of call order.
+- **(ii) The walk reads the prior today.** `set_ppm` is called inside the
+  walk loop (`prefix_k.c:443`, `:475`). Moving it into the selection must
+  reproduce each offset's `ppm` exactly. The values are the same function
+  of the same sets, so any mover is an ordering defect in the move.
+Being flagged changes nothing about the gate. It means the lane does its
+pre-lane grep, runs the A/B diff over the widest deny set in the table, and
+expects to classify a mover rather than to see none.
+
+### 9.1 Classifying a mover [r1 C1]
+
+Revision 1 said "a mover in a no-abi step is a FINDING, never an abi bump".
+That rule had no answer for a genuinely COSMETIC move (a relocated file's
+emitted `// from src/opt/...` provenance comment, say), which D76 treats as
+an ordinary abi event. So a nonzero A/B diff is CLASSIFIED before anything
+else happens:
+
+| class | test (from the diff itself) | what the lane does |
+|---|---|---|
+| **SEMANTIC** | any mover where a VALUE differs (a stamp's value, a table entry, a constant, a bound), or where a CODE PATH differs (a statement, branch or call present on one side only) | STOP. It found two copies of one fact that disagree (R13's class). File a K-row with the movers, and the step does not land. Never absorbed into an abi bump |
+| **SCAFFOLDING** | every differing line is comment text, whitespace, declaration order or layout, and the compiled object's executed bytes and exported symbols are identical (`m6read_samples/check_neutrality.sh`'s definition of "neutral") | the ordinary D76/D94 ritual: an abi bump, identity re-pins, readers found by grep, in the same change. The lane attaches the classified diff to the commit so a reviewer can check the class |
+
+When in doubt the class is SEMANTIC. A mover that is part scaffolding and
+part value is semantic. The object-code test is required because the
+scaffolding class claims no behaviour moved, and the source diff alone cannot
+show that.
+
+**Order rationale.** 3.0a first, because every relocation after it is
+checkable only once the private header exists (carve-out (a)). 3.0 next,
+because B1 and every later step edit through it, and it retires a real
+hazard: the deny application lives in one file. **3.0 is a hard prerequisite
+of B1** (§8.1, [r1 A5]). B1 (3.1) next, because it is the chartered first
+customer and the only other abi event. 3.2 before 3.4: E1 has four-plus
+readers and a debug-listing re-walk, while E3 has one owner, a cost that is
+unmeasured and the mover risk above. S2a (3.3) is placed where its own gates
+allow. It depends on nothing in the record (§8.2) and may land before 3.2
+without harm. Each step is one lane. Every byte-identical step runs its A/B
+diff as the lane's LAST act (BOILERPLATE do-then-finish), because the diff
+is a multi-config corpus run.
 
 **Stop rule, repeated because it is the whole discipline:** a
-byte-identical step with a nonzero A/B diff has found two copies of one
+byte-identical step with a SEMANTIC mover (§9.1) has found two copies of one
 fact that disagree. That is R13's class. The lane reports the movers and
 files a K-row, and the step does not land as an abi event.
 
