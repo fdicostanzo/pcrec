@@ -62,4 +62,25 @@ Maintenance: update this file when files are added or removed.
   cycle-3 row for the run-form dominance rule, and I-102/I-103/I-104
   to the bench. Cites `docs/dev/optloop/cycle2_batch2_reading.md` for
   every derivation.
+- `2026-09-27-utf8-bench-exec-summary.md` — pcrec-bench's NEW `bench/utf8@0.1`
+  set, first sample at pin `ce658cb7` (abi 33, 2026-09-26): pcrec answers
+  every row correctly on all four `-e utf8` configs (0 wrong of ~33K rows,
+  matched only by `pcre2-utf-interp`/`-jit`); every other engine's wrong
+  answer is a documented Script-vs-Script_Extensions/case-folding/`\B`
+  semantics difference (U8-U10). Compile time is dominated by `\p{L}+`/
+  `\P{L}+`'s emitted-size retry ladder (70-106 s, already
+  `[OPT-RETRY-REUSE]`'s cited evidence). The one real throughput gap — seven
+  literal patterns losing ×4.4-×16 to rust on `large-subject-throughput`
+  subjects — is one mechanism (the necessary-run scan byte was the UTF-8
+  LEAD byte, the densest byte of the subject's own script) already found
+  and fixed same-day as `[OPT-REQRUN-ENC]` (abi 38, merged) — but AFTER this
+  sample was taken, so the fix's effect is not yet measured; a re-measure
+  (I-112) is owed once K68 (abi 39) also merges. U11 (libpcre2's own
+  Cyrillic-vs-ASCII UTF-8-validation cost) and `alt-cyr-64`'s compile-time
+  cliff (settled as a branch-count, not encoding, effect against
+  `altwide`'s own ladder) are read as non-actionable/non-defects. Cites
+  pcrec-bench's `docs/dev/ledgers/2026-09-26-utf8-0.1-first-ce658cb7.md`
+  and its two addenda, the `alt-cyr-64` control read, and pcrec's own
+  `docs/dev/plan.md` `[OPT-REQRUN-ENC]`/`[OPT-LITSCAN]`/`[OPT-RETRY-REUSE]`
+  rows for every derivation.
 
