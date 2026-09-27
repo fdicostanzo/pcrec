@@ -65,7 +65,7 @@ else
 fi
 
 # 3. the acceptance mover (refused at abi 40, compiles at 41 under --engine=vm)
-stage accept bash docs/dev/optloop/s2a/accept_mover.sh
+stage accept env BASE="$BASE" bash docs/dev/optloop/s2a/accept_mover.sh
 
 # 4. the new axis, answer-identical over the whole corpus
 stage axes env AXES="-fno-lit-run" timeout 14400 bash tests/axes/run_axes.sh
