@@ -97,6 +97,10 @@ else
     nobj=0; leaks=""
     while read -r o; do
         rel="src/${o#"$OBJ_DIR"/}"; rel="${rel%.o}.c"
+        # A STALE object (its source moved or was deleted since the build
+        # dir last saw it) is not linked into anything; skip it rather than
+        # judge a file that no longer exists.
+        [ -f "$TREE/$rel" ] || continue
         grep -qxF "$rel" "$WORKDIR/owners" && continue
         nobj=$((nobj + 1))
         hit="$(nm -u "$o" 2>/dev/null | sed "s/^$under//" | LC_ALL=C sort -u |
