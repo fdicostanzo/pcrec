@@ -22,9 +22,12 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S28
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[ab]\x80[0-9]{3}\x81" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-DENSITY-PRECHECK-NOT-DOMINATED'
 SAB_REACH_EXPECT="REACH-DENSITY-PRECHECK-NOT-DOMINATED"
 SAB_COUNT=1
+# [FINDINGS] B1: the anchor's context line was the density conjunct's own
+# encoding test, which B1 deleted (the gate lives in the byte-rate accessor
+# now); it re-anchors on the COMPARE call that replaced it.
 SAB_BEFORE='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
     if (!cs->memchr_form) return false;
-    if (cx->opt->encoding != PCREC_ENC_BYTE) return false;'
+    return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);'
 SAB_AFTER='    if (pcrec_fact_req_run(cx)->len >= 2) return false;
     /* SABOTAGE S288: memchr-form guard dropped */
-    if (cx->opt->encoding != PCREC_ENC_BYTE) return false;'
+    return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);'

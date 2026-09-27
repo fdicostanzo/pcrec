@@ -5925,13 +5925,15 @@ static bool req_route_one_attempt(Ctx *cx)
  * form alone, EXPLICITLY: an offset row's `p` is now non-negative too, and
  * this guard is what keeps the density comparison off it.
  *
- * THE ENCODING RULE IS `src/opt/reqbyte.c`'s, FOR ITS REASON
- * (docs/design/reqbyte_freq_pick.md §3): `pcrec_byte_freq_ppm` is a table
- * about a subject corpus UNDER the `byte` encoding — its whole 0x80-0xFF half
- * is the floor — so under any other encoding it would call a UTF-8 lead byte
- * the rarest thing there is. IDENTITY needs no table and is sound under every
- * encoding: the same byte scanned twice dismisses exactly the same windows,
- * which is the shape `wild-codegrammar-json-array-begin` measured at +32.6%.
+ * DENSITY IS THE COMPARE KIND's QUESTION (src/core/findings.c,
+ * `pcrec_find_no_commoner`), and whether a byte-rate applies to this compile
+ * is the accessor's, not this function's: where it answers NONE (today, any
+ * encoding but `byte` under the default analysis, whose 0x80-0xFF half is
+ * the floor and would call a UTF-8 lead byte the rarest thing there is —
+ * docs/design/reqbyte_freq_pick.md §3) the primitive answers `false` and only
+ * IDENTITY elides. Identity needs no rate and is sound under every encoding:
+ * the same byte scanned twice dismisses exactly the same windows, which is
+ * the shape `wild-codegrammar-json-array-begin` measured at +32.6%.
  *
  * `<=` AND NOT `<`: the rule admits the pre-check only where its byte is
  * STRICTLY rarer, so an equally rare byte is a second pass buying nothing. */
@@ -5943,8 +5945,7 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
     if (p == q) return true;
     if (pcrec_fact_req_run(cx)->len >= 2) return false;
     if (!cs->memchr_form) return false;
-    if (cx->opt->encoding != PCREC_ENC_BYTE) return false;
-    return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
+    return pcrec_find_no_commoner(pcrec_find_byte_rate(cx), p, q);
 }
 
 /* Decides whether this artifact emits a whole-window pre-check at all, and
