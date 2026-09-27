@@ -442,8 +442,8 @@ A derivation in `src/facts/` depends on exactly:
 
 The carve-outs:
 - **(a) Split `core/internal.h` FIRST.** `internal.h` is 6,561 lines and
-  is included by 54 of the tree's source files, i.e. by everything outside
-  `src/enc/`. A rule "consumers include only `facts.h`" would pass
+  is `#include`d by 54 files (52 of them `.c`): every translation unit under
+  `src/` except `src/enc/`'s three, plus the CLI. A rule "consumers include only `facts.h`" would pass
   vacuously while the derivations' declarations stay there
   (`pcrec_prefix_ksets`, `internal.h:1698`; the E2 derivations beside
   `Job`, `:2580-2603`). So step 3.0's FIRST commit (3.0a, §9) moves every
@@ -546,7 +546,7 @@ for it.
 | lens | the `src/facts/` layer | derivations stay in their first consumer's file (revision 1) |
 |---|---|---|
 | specific vs general | one home for "what the pattern has". A new fact is a `facts.def` row plus one file or function in the layer | the owner is whoever needed the fact first, which is an accident of history (R13) |
-| core vs derived | a core fact's file holds only its walk. Derived readers sit with the rate primitives (b), and decisions stay in passes (c). The layer boundary IS the core/derived/decision boundary | walk, pick and selection share a file (`reqbyte.c`, `prefix_k.c`). The pin sits inside a selection routine (`prefix_k.c:484`) |
+| core vs derived | a core fact's file holds only its walk. Derived readers sit with the rate primitives (b), and decisions stay in passes (c). The layer boundary IS the core/derived/decision boundary | walk, pick and selection share a file (`reqbyte.c`, `prefix_k.c`). The pin sits inside a selection routine (`prefix_k.c:477-491`) |
 | applicable vs assumption-changing | applicable. Every core walk already reads only the IR (pfcrit-arch). The pin's kind gate becomes a consumer obligation the one consumer already carries | applicable, but the pin stays coupled to `unanch_start` |
 | fits the architecture vs a refactor | a directory move in five one-file commits under a zero-movers gate. `src/` already layers by directory (`include_graph.py`'s matrix) | no move at all |
 | D124 shared question / engine hat | a fact both emitters ask lives in neither emitter's neighbourhood. Consumers in `emit_dfa.c` and `emit_vm.c` are hats on one accessor | the VM asks a fact whose owner sits beside a DFA pass |
@@ -564,12 +564,19 @@ profile shows repeated node walks cost material time (D77, §10). R4's
 `A_CALL` arm difference is deliberate (`inventory.md` R4). The unified
 function keeps it as that one arm.
 
+Node-grain functions do NOT move into `src/facts/` (§4.2.1). They answer node
+questions for node-grain callers, several of them before any seal (the
+discharge pass, `atomic.c:534`; module `lookaround`'s width rule,
+`mod_lookaround.c:534`). The layer composes them at the root. What a pattern
+fact adds is the seal, the deny and the memo, and none of those means anything
+for a subtree.
+
 ### 4.4 What the record is not, and why (D124)
 
 | thing | why not a record fact | where it stays |
 |---|---|---|
 | rewrites/annotations (`possessive`, `revbody`, discharge, `call.link`) | they are the RESULT of a rewrite and are emission material. "Revocable" (`lower_enc` clearing `revbody`) is a rewrite correcting a rewrite, and an epoch-sealed fact cannot be revoked | the AST |
-| route decisions (`fit`, engine, `engine_sel`, `pcrec_artifact_has_dfa_scan`) | a decision about the ARTIFACT, made by `select_engine`, depending on options and caps as well as the pattern | `Job.fit` (already one derivation) |
+| route decisions (`fit`, engine, `engine_sel`, `pcrec_artifact_has_dfa_scan`) | a decision about the ARTIFACT, made by `select_engine`, depending on options and caps as well as the pattern | `Job.fit` (already one derivation). Two `fit` members are NOT decisions but copies of E1 facts: `fit.lang_nullable` (`select_engine.c:568`) and `fit.prefilter_has_collapsible_rep` (`:571`). A copy beside its accessor is the dual home §5.4 forbids, so both are deleted in step 3.2 and their readers (`compile.c:1585`, `:1620`; `select_engine.c:837`, `:856`) read the E1 accessors [r1 A7] |
 | emission decisions (`DFA_SELECT`, `req_admit`, `OfsTest`, `CandScan`) | depend on the machine, the deny ROWS and the selection order: L4 ("which check runs where"), a different question from "what the pattern has" | `emit_dfa.c`, one derivation each (`OfsTest`, `req_admit`), re-derived per ask. Memoized there when a reader in ANOTHER file needs one (S2b is that trigger, §8.3) |
 | emitter byproducts (`vm_frameless`/`has_push`) | a fact about the emitted PROGRAM, the VM-plan epoch (delta N3) | `Job.vm_frameless`, published by its one owner, as now |
 | machine structure (`clsmap`, states, views) | construction, not analysis | `Dfa` |
@@ -591,23 +598,30 @@ more than one consumer:
 | | G2 | a one-attempt route | G2 adds its own LINEARITY conjunct (K64: exact hybrid or frameless). The fact does not promise linearity |
 | pin | `dfa_pfs[]` run rows | every match has the window at `run_o` (true of the superset NFA on a collapsed prefilter, hence of every exact match) | the row checks its own identity clause (scan byte = run member at `run_o + idx`) |
 | | G1 | the same | `run_verified` is the SELECTED row's test, never the pin alone |
-| nullable | `select_engine`, K50 start gate | lowering-invariant | none |
+| | EVERY pin consumer | the pin is a pure NFA+window fact (§4.2); it may be set where today's prefilter kind is `DFA_PF_NONE` | **the kind gate**: read the pin only where the prefilter kind is not `DFA_PF_NONE`, as `pf_run_applies_common` does (`emit_dfa.c:5294`) [r1 A2] |
+| nullable | `select_engine`, K50 start gate | lowering-invariant, and forced at the E1 seal (§2) | none |
 
 ---
 
 ## 5. How consumers read (no consumer re-walks)
 
 1. A consumer reads a pattern fact ONLY through its `pcrec_fact_*`
-   accessor. The structural check (§4.2) makes a direct derivation call
-   outside the owner or `facts.c` a test failure.
+   accessor, declared in `src/facts/facts.h`. The include-graph and link
+   check (§4.2.3) makes including the facts-private header, or referencing a
+   derivation symbol, outside the generated owner list a test failure. A
+   hand re-spelling is the stated residual (§4.2.3).
 2. A consumer never reads a fact's DENY bit. The accessor already returned
    the empty value. Today's `compile.c:1501-1520` ternaries move into
    `facts.c` (step 3.0). After that, `compile.c` no longer computes any
-   fact eagerly. Its only record duties are advancing the epoch at the
-   three seals and allocating `Job` as now.
+   fact inline. Its only record duties are calling the seals (E1 forces
+   its two facts, §2; E2 advances the epoch; E3 is set inside the
+   `ENG_UNANCH` arm only, §3) and allocating `Job` as now.
 3. A consumer never reads `cx->opt->encoding` to decide a fact or a
    ranking (§6). The findings §11.7 grep check (planned) is widened to
-   cover `reqbyte.c`, `prefix_k.c` and `emit_dfa.c`'s G1.
+   cover `src/facts/`, the rate readers beside B1's primitives, `prefix_k.c`
+   and `emit_dfa.c`'s G1. Inside `src/facts/` the rule is structural: the one
+   derivation that needs encoding structure takes the descriptor as a
+   parameter (§4.2.2 (d)).
 4. `Job.req_byte`, `Job.req_run`, `Job.req_set`, `Job.start_anchor` and
    `Job.end_window` stop being written by `compile.c`. They become
    `Job.pf`'s members, and every reader moves to the accessor in the same
