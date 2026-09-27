@@ -25896,3 +25896,40 @@ reach-only sweep over all rows is cheap and found them.
   (/tmp/pf30_chain.log; strict and test-codegen done, only the nm probe
   red; make test → recid → 11 mech rows). The bench's I-112 re-pin lane
   b104repin and window are on Linux.
+
+## 2026-09-27 — eighty-second session (manager), stage record
+
+**Merged to main (all pushed at a32bc86e):**
+- D126 Q4 amendment (lane q4amend): findings/design.md §6.1-6.3 spell the NONE answer once per question
+  kind (PICK→rightmost, COMPARE→false, MASS→uniform cardinality, set and sequence); PATFACTS §6.3 aligned
+  (manager ruling on seq-mass NONE).
+- [PATFACTS] 3.0a + 3.0 (lane pf30, landed by pf30land): src/facts/, --emit-facts; pf30's S295-S299
+  renumbered S296-S300 (K68 owns S295). Merge conflicts were 2 docs, both kept.
+- [FINDINGS] B1 = PATFACTS 3.1 (lane findb1), abi 39→40: byte-rate accessor + primitives in
+  src/core/findings.c, reqbyte.c deleted, default.rxt + committed pre-parsed .inc (parse cost 47 µs ≈ 20% of
+  a minimal compile → 0.77 µs), S301. One named byte mover (syslogbase's LANG_WHY count, +385 B scaffolding;
+  ruled a manifest row, gate not widened). +385 code B/artifact → filed [SIZE-CMT-CLASS].
+- PATFACTS 3.2 (lane pf32): E1 kinds/widths, fit.lang_nullable & prefilter_has_collapsible_rep deleted,
+  zero movers on 14 A/B runs, S302/S303 (S303 also caught by K50 — per-detector attribution unavailable in
+  the mech arm; S302 + S303's backref witness carry the new check's liveness).
+- [OPT-LITSCAN] S2a (lane s2a + triage s2afix), abi 40→41: pcrec_lit_run + P4 extern
+  (pcrec_emit_exact_compare) at the VM chain and island tails; -fno-lit-run (bit 33, manager ruling per D122
+  addendum 2 (4)); 1,081 movers answer-identical; datefinder --engine=vm now compiles. Triage found the
+  ASan sweep BLIND (gcc inlines constant memcmp with no ASan checks) — fixed with -fno-builtin-memcmp and
+  non-necessary-run control witnesses (control now RED 58/214).
+- memcmp lowering study (lane memcmpstudy, Frank's ask): gcc-16 inlines L=1-64 except L=31; -Os only
+  {1,2,4,8}; gcc splits odd L into branchy power-of-two pieces, clang overlaps branchless; hot loop: hand
+  overlap beats gcc memcmp 5.6-7.6%, wide masked over-read 57-107% slower (CLOSED), overlapping masked
+  loads the S4 shape. Disposition on [OPT-LITSCAN]: no P4 change now; S4 moves the exact arm onto its
+  overlapping emitter in S4's own abi event.
+
+**Bench:** window [B104] 01:49-14:11 on Linux at 751b9c6d (24/24 cells); read lane pending (outbox). I-113
+sent (bench 02bc0af) with S2a's predictions incl. the factoring×lit-run 2×2 and an L-sweep.
+
+**Rulings/lessons (Frank):** lanes never idle-wait on long runs — launch the chain detached, write STATE AT
+HANDOFF, END; my briefs' "LAST act: make test, record its verdict" wording invited idling (memory updated).
+Push main at each unit completion (memory). Lesson (memcmp study): instruction counts mispredicted the winner
+three times; cost arguments must model early exit and per-call constants (F1's class).
+
+**Next:** PATFACTS 3.4 (flagged mover; pre-lane grep of run_pinned/run_o readers), then 3.5; [UTF8-ATTRIB]
+after the bench's read lands; LITSCAN F1/F2/F3 in phase 2.
