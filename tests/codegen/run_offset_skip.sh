@@ -51,12 +51,14 @@
 #         emitter prints; the offsets are arithmetic inside a helper. §2 reads
 #         BOTH against a THIRD source (the literal table below) so neither can
 #         be checked against the other alone.
-#   (iv)  THE PRIOR STOPS SUMMING TO ONE. The cost model reads
-#         `pcrec_byte_freq_ppm` as a probability; a table that summed to 1.13
-#         (which the first draft's did) makes "the whole alphabet" cost
-#         something other than one candidate per byte and silently re-ranks
-#         every offset. No artifact shows it. §1 links the shipped library and
-#         asks the shipped array.
+#   (iv)  THE PRIOR STOPS SUMMING TO ONE. The cost model reads the byte-rate
+#         as a probability; a table that summed to 1.13 (which the first
+#         draft's did) makes "the whole alphabet" cost something other than
+#         one candidate per byte and silently re-ranks every offset. No
+#         artifact shows it. [FINDINGS] B1 moved the rate into
+#         src/findings/default.rxt and this check with it: §1 is now
+#         tests/findings/run_findings_tests.sh §1, which asks the shipped
+#         library's ONE normalization over the embedded default.
 #   (v)   THE DENIAL LEAVES A TRACE. `-fno-offset-skip` must put the artifact
 #         back to the four older forms; §4 asserts the helper is gone and the
 #         stamp says so.
@@ -135,43 +137,12 @@ stamp() { grep -m1 "^#define RX_DFA_PREFILTER \"" "$1" | awk '{print $3}' | tr -
 offs()  { grep -m1 "^#define RX_DFA_PREFILTER_OFFSETS \"" "$1" | awk '{print $3}' | tr -d '"'; }
 
 # =========================================================================
-# §1 THE PRIOR SUMS TO EXACTLY 1,000,000
+# §1 (MOVED) THE PRIOR SUMS TO EXACTLY 1,000,000
 # =========================================================================
-# Asked of the SHIPPED ARRAY through the SHIPPED LIBRARY, not of the source
-# text: a python re-implementation summing the literals in prefix_k.c would be
-# a second transcription of the table and would agree with any typo it shared.
-# `pcrec_byte_freq_total_ppm` walks the same array the selection reads.
-cat > "$WORKDIR/prior.c" <<'EOF'
-#include <stdio.h>
-#include "core/internal.h"
-int main(void)
-{
-    unsigned t = pcrec_byte_freq_total_ppm();
-    unsigned zero = 0, b;
-    for (b = 0; b < 256; b++) if (pcrec_byte_freq_ppm((int)b) == 0) zero++;
-    printf("%u %u\n", t, zero);
-    return 0;
-}
-EOF
-if gen_cc "offset-skip prior probe" "$CC" -O0 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
-        -o "$WORKDIR/prior" "$WORKDIR/prior.c" "$ROOT_DIR/build/libpcrec.a" 2>"$WORKDIR/prior.log"; then
-    read -r ptotal pzero < <("$WORKDIR/prior")
-    if [ "$ptotal" = "1000000" ]; then
-        ok "§1 the byte-frequency prior sums to exactly 1,000,000 ppm"
-    else
-        bad "§1 the byte-frequency prior sums to $ptotal ppm, not 1,000,000 — the cost model reads it as a probability, so every offset's rank is computed against the wrong denominator (src/opt/prefix_k.c, docs/design/offset_k_skip.md §4.1)"
-    fi
-    # THE FLOOR IS PART OF THE CONTRACT, not tidiness: a zero would let the
-    # model believe a byte is IMPOSSIBLE and choose a skip on a certainty it
-    # does not have.
-    if [ "$pzero" = "0" ]; then
-        ok "§1 no byte in the prior has zero mass (the floor holds on all 256)"
-    else
-        bad "§1 $pzero bytes have ZERO mass in the prior — the model would treat them as impossible, which is a certainty the static table does not have (docs/design/offset_k_skip.md §4.1)"
-    fi
-else
-    bad "§1 could not build the prior probe against build/libpcrec.a: $(head -3 "$WORKDIR/prior.log")"
-fi
+# [FINDINGS] B1: the prior is data now (src/findings/default.rxt), read
+# through the byte-rate accessor's one normalization, and the sum/floor check
+# moved WITH it to tests/findings/run_findings_tests.sh §1 rather than being
+# left here reading a deleted table (findings design §12).
 
 # =========================================================================
 # §2 THE WITNESSES: the form is SELECTED, and its arithmetic is what it says

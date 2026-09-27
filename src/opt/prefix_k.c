@@ -64,103 +64,19 @@
 
 #include <string.h>
 
-/* ---- THE BYTE-FREQUENCY PRIOR -------------------------------------------
+/* ---- THE BYTE RATE -------------------------------------------------------
  *
- * D83's ruling, applied: the REAL prior is a file-general findings file
- * measured off the deployment's own exemplar, and this static table is the
- * FALLBACK for every compile that is not given one. The selection code below
- * reads `pcrec_byte_freq_ppm` and nothing else, so adopting a findings file
- * is a second implementation of THIS ONE FUNCTION and touches nothing else in
- * the row. **THAT HOOK IS NAMED AND NOT BUILT** (D77): no measured need has
- * asked for it yet, and the note's §4.4 states what measurement would.
+ * The selection below reads a per-set cost through `pcrec_find_set_ppm`
+ * (src/core/findings.c) and nothing else. That is the MASS of the set under
+ * the byte-rate the compile's analysis declares — the shipped default's
+ * static prior (src/findings/default.rxt, which carries the argument for its
+ * numbers) under `-e byte`, and under an encoding no block serves, the
+ * uniform rate's mass: the set's CARDINALITY, the no-information prior for
+ * choosing among sets ([FINDINGS] B1, findings design §0.8).
  *
- * WHERE THE NUMBERS COME FROM, AND WHY NOT FROM THE BENCH. The obvious source
- * for a log-text prior is the comparative bench's own log lines — and using
- * them would be the exact failure `docs/dev/learnings.md` §3 catalogues: a
- * control that shares a source with the thing it controls. The table would
- * then be fitted to the subjects the optimization is measured on, and a good
- * measurement would prove nothing. So the mass is assigned from two
- * INDEPENDENT, citable priors and rounded to two significant figures:
- *
- *   - letters: the classical English letter-frequency ordering
- *     (etaoin shrdlu), scaled to 52% of the mass for lower case with upper
- *     case at a tenth of its lower-case twin;
- *   - space at 15% and newline at 1.2%, the usual whitespace share of prose;
- *   - digits at 0.9% EACH (9% together) and the structural punctuation of
- *     machine-written lines — `.` `:` `-` `/` `=` `"` `,` `_` and the
- *     brackets — raised well above their prose frequencies, because the
- *     population this prior is FOR is log lines and not novels;
- *   - every remaining byte, the whole 0x80-0xff half included, gets a floor
- *     of 2 ppm rather than zero: a zero would let the model believe a byte is
- *     IMPOSSIBLE and select a skip on a certainty it does not have.
- *
- * The units are parts per million. The assignment above was made in round
- * numbers and then NORMALISED to sum to exactly 1,000,000 — the residue of
- * the rounding is added to `' '`, the largest entry, so that the sum is a
- * checkable fact rather than an approximate one: `pcrec_byte_freq_total_ppm`
- * returns it and tests/codegen/run_offset_skip.sh §1 asserts 1000000. A
- * table that did not sum to one would make "the whole alphabet" cost
- * something other than one candidate per byte, which is the one place the
- * model's arithmetic assumes a probability. Integers, not doubles: the
- * selection must be bit-reproducible across boxes, which is the same reason
- * nothing else in this compiler computes in floating point.
- *
- * THE TABLE IS A PRIOR AND NOT A PROMISE. It orders bytes; it does not
- * predict any particular subject. Everything downstream of it is an
- * ANSWER-IDENTITY-preserving choice, so a badly-fitted prior costs speed on
+ * THE RATE IS A PRIOR AND NOT A PROMISE. Everything downstream of it is an
+ * ANSWER-IDENTITY-preserving choice, so a badly-fitted rate costs speed on
  * some input and can never cost a match. */
-static const unsigned byte_freq_ppm_tbl[256] = {
-    /* 00  . . . . . . . . . \t \n . . \r . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,   2492,   9969,      2,      2,    831,      2,      2,
-    /* 10  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* 20  SP ! " # $ % & ' ( ) * + , - . / */
-    124561,    249,   3323,    498,    249,    415,    332,   1246,   1661,   1661,    332,    665,   6646,   4984,   9969,   4154,
-    /* 30  0 1 2 3 4 5 6 7 8 9 : ; < = > ? */
-      7476,   7476,   7476,   7476,   7476,   7476,   7476,   7476,   7476,   7476,   6646,    665,    332,   3323,    332,    415,
-    /* 40  @ A B C D E F G H I J K L M N O */
-       665,   5416,    989,   1844,   2816,   8423,   1479,   1337,   4037,   4610,    108,    515,   2667,   1595,   4478,   4993,
-    /* 50  P Q R S T U V W X Y Z [ \ ] ^ _ */
-      1279,     66,   3971,   4203,   6006,   1836,    648,   1562,    100,   1313,     50,   1661,    498,   1661,     83,   2492,
-    /* 60  ` a b c d e f g h i j k l m n o */
-        83,  54163,   9886,  18442,  28161,  84235,  14787,  13375,  40373,  46105,   1080,   5150,  26666,  15950,  44776,  49926,
-    /* 70  p q r s t u v w x y z { | } ~ . */
-     12793,    665,  39708,  42034,  60061,  18359,   6480,  15618,    997,  13125,    498,    831,    332,    831,     83,      2,
-    /* 80  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* 90  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* a0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* b0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* c0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* d0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* e0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-    /* f0  . . . . . . . . . . . . . . . . */
-         2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,      2,
-};
-
-/* The static English-text byte-frequency table's ppm value for byte `b`. */
-unsigned pcrec_byte_freq_ppm(int b)
-{
-    return byte_freq_ppm_tbl[(unsigned char)b];
-}
-
-/* The residue the table's rounding leaves, published rather than hidden: the
- * cost model reads `pcrec_byte_freq_ppm` as a probability in ppm, so a table
- * that did not sum to 1e6 would make "the whole alphabet" cost something
- * other than one byte per byte. tests/codegen/run_offset_skip.sh §1 asserts
- * this returns 1000000. */
-unsigned pcrec_byte_freq_total_ppm(void)
-{
-    unsigned t = 0;
-    for (int b = 0; b < 256; b++) t += byte_freq_ppm_tbl[b];
-    return t;
-}
 
 /* ---- THE WALK ------------------------------------------------------------
  *

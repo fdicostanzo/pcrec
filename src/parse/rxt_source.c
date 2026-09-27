@@ -231,6 +231,9 @@ typedef struct {
      * `serves` derivations; and the last `row` key read, for the
      * strictly-ascending rule (`have_key` false before the first). */
     const char     *open_kind;
+    /* [FINDINGS] B1 — DATA-frame-only: this block's index in
+     * `RxtSource.fblocks`, where its `serves` lines and counts are kept. */
+    size_t          fbi;
     int             have_key;
     unsigned long   last_key;
     size_t          last_key_line;
@@ -277,6 +280,12 @@ typedef struct {
     RxtVocab   *vocab;
     const RxtChain *chain;       /* NULL for an entry file */
     int            *frag_refused; /* set when the fragment rule refused */
+    /* [FINDINGS] B1: BUFFER MODE (design §8.2, r2 M-S12). Non-NULL `buf`
+     * means the text is `buf[0..buflen)` and no file is read — and nothing
+     * else may be opened either: a `lib` or `include "…"` line is refused,
+     * because a buffer opens nothing. The embedded store is parsed this way. */
+    const char     *buf;
+    size_t          buflen;
 } RxtP;
 
 /* Every diagnostic from this file goes through here, so every one of them
@@ -568,7 +577,7 @@ static int word_is(const char *w, size_t n, const char *lit)
  * registry (`pcrec_enc_by_name`), so a third backend is legal here with no
  * edit. A duplicate encoding on one line is the same collision. */
 static int serves_check(RxtP *p, size_t line, const char *kind,
-                        RxtFrame *bf, const char *v)
+                        RxtFrame *bf, RxtFindBlock *fb, const char *v)
 {
     const char *s = v, *q, *w1, *e, *w2, *d;
     size_t qn, w1n, en, w2n, dn, extra_n;
@@ -609,6 +618,19 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
                         rxt_find_derivations[di].query, (int)qn, q);
 
     const char *qs = arena_strndup(p->arena, q, qn);
+    /* [FINDINGS] B1: the block KEEPS the line — (query, encodings, via) —
+     * so a reader can ask which block serves a (query, encoding) without a
+     * second parse of the value. */
+    if (fb->nserves == fb->servecap) {
+        size_t nc = fb->servecap ? fb->servecap * 2 : 2;
+        RxtServe *nv = pcrec_arena_alloc(p->arena, nc * sizeof *nv);
+        if (fb->nserves) memcpy(nv, fb->serves, fb->nserves * sizeof *nv);
+        fb->serves = nv;
+        fb->servecap = nc;
+    }
+    fb->serves[fb->nserves++] = (RxtServe){
+        qs, arena_strndup(p->arena, e, en),
+        rxt_find_derivations[di].derivation };
     const char *ep = e, *eend = e + en;
     while (ep <= eend) {
         const char *c = ep;
@@ -656,7 +678,8 @@ static int serves_check(RxtP *p, size_t line, const char *kind,
  * across the block, and the count a canonical decimal — no leading zero,
  * and never 0 itself, because an absent row IS a zero count. The count's
  * upper limit (`PCREC_MAX_FIND_COUNT`) is B1's, with the limit row. */
-static int row_check(RxtP *p, size_t line, RxtFrame *f, const char *v)
+static int row_check(RxtP *p, size_t line, RxtFrame *f, RxtFindBlock *fb,
+                     const char *v)
 {
     int nkeys = 0;
     for (size_t i = 0; i < sizeof rxt_find_row_keys / sizeof *rxt_find_row_keys; i++)
@@ -707,6 +730,19 @@ static int row_check(RxtP *p, size_t line, RxtFrame *f, const char *v)
         return rxt_fail(p, RXTD_SCHEMA_CONSTRAINT, line,
                         "'row' keys are strictly ascending, and this key does "
                         "not follow line %zu's", f->last_key_line);
+    /* [FINDINGS] B1: the count's ceiling, by the limit's name (design §9),
+     * checked digit by digit so no overflow can hide one. It keeps every
+     * derivation's arithmetic inside `uint64_t` (§2.5). */
+    unsigned long long c = 0;
+    for (size_t j = 0; j < n; j++) {
+        c = c * 10 + (unsigned long long)(w[j] - '0');
+        if (c > PCREC_MAX_FIND_COUNT)
+            return rxt_fail(p, RXTD_VALUE_SHAPE, line,
+                            "'row' count '%.*s' exceeds PCREC_MAX_FIND_COUNT "
+                            "(%llu)", (int)n, w,
+                            (unsigned long long)PCREC_MAX_FIND_COUNT);
+    }
+    fb->counts[key] = c;
     f->have_key = 1;
     f->last_key = key;
     f->last_key_line = line;
@@ -827,6 +863,8 @@ static const char *rtrim_ws(Arena *a, const char *s)
  * must not make every value end in an invisible byte. */
 typedef struct { char **v; size_t n; } RxtLines;
 
+static int split_lines(RxtP *p, char *buf, size_t got, RxtLines *out);
+
 /* Reads the whole `.rxt` file into an arena buffer and splits it into a
  * NUL-terminated line array (\r\n trimmed to \n), so every production can look
  * ahead a line for indentation continuation. Refuses BY NAME rather than
@@ -836,6 +874,18 @@ typedef struct { char **v; size_t n; } RxtLines;
  * stat/open/seek/read failure. Reads/writes through `p->arena`. */
 static int slurp_lines(RxtP *p, RxtLines *out)
 {
+    char *buf;
+    size_t got;
+    if (p->buf) {
+        /* [FINDINGS] B1: BUFFER MODE — the same bytes a file would give,
+         * copied so the split below may write its NULs. */
+        buf = pcrec_arena_alloc(p->arena, p->buflen + 2);
+        memcpy(buf, p->buf, p->buflen);
+        got = p->buflen;
+        buf[got] = 0;
+        return split_lines(p, buf, got, out);
+    }
+
     /* [DD-13b.W1.1 r46sem finding 23] A DIRECTORY MUST BE REFUSED BY
      * NAME, not silently read as an empty file. On Linux `fopen(dir,
      * "rb")` SUCCEEDS and `fseek`/`ftell` succeed too (a directory has a
@@ -863,11 +913,19 @@ static int slurp_lines(RxtP *p, RxtLines *out)
     long sz = ftell(f);
     if (sz < 0) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "cannot size .rxt source file"); }
     rewind(f);
-    char *buf = pcrec_arena_alloc(p->arena, (size_t)sz + 2);
-    size_t got = fread(buf, 1, (size_t)sz, f);
+    buf = pcrec_arena_alloc(p->arena, (size_t)sz + 2);
+    got = fread(buf, 1, (size_t)sz, f);
     if (ferror(f)) { fclose(f); return rxt_fail(p, RXTD_VALUE_SHAPE, 0, "error reading .rxt source file"); }
     fclose(f);
     buf[got] = 0;
+    return split_lines(p, buf, got, out);
+}
+
+/* Refuses an embedded NUL by name, then splits `buf[0..got)` (NUL at
+ * `buf[got]`) into NUL-terminated lines with `\r\n` trimmed — the half of
+ * `slurp_lines` a file and a buffer share. */
+static int split_lines(RxtP *p, char *buf, size_t got, RxtLines *out)
+{
 
     /* [RXTNUL] A NUL BYTE ANYWHERE IN THE FILE IS REFUSED BY NAME, BEFORE
      * THE FILE IS SPLIT INTO LINES. Below this point every production
@@ -918,6 +976,28 @@ static int slurp_lines(RxtP *p, RxtLines *out)
 }
 
 /* ------------------------------------------------------- the productions */
+
+/* [FINDINGS] B1: opens one DATA block of the bundle `owner` (the
+ * `analysis` row its frame attaches under) at `line`, with a zeroed 256-entry
+ * count table, and returns its index in `src->fblocks`. */
+static size_t fblock_push(Arena *a, RxtSource *src, size_t line,
+                          const RxtRow *owner, const char *kind)
+{
+    if (src->nfblocks == src->fblockcap) {
+        size_t nc = src->fblockcap ? src->fblockcap * 2 : 4;
+        RxtFindBlock *nv = pcrec_arena_alloc(a, nc * sizeof *nv);
+        if (src->nfblocks) memcpy(nv, src->fblocks, src->nfblocks * sizeof *nv);
+        src->fblocks = nv;
+        src->fblockcap = nc;
+    }
+    RxtFindBlock *fb = &src->fblocks[src->nfblocks];
+    memset(fb, 0, sizeof *fb);
+    fb->line = line;
+    fb->bundle = owner ? owner->name : NULL;
+    fb->kind = kind;
+    fb->counts = pcrec_arena_alloc(a, 256 * sizeof *fb->counts);
+    return src->nfblocks++;
+}
 
 /* Appends a zero-initialized row of `kind` at `line` to `src->rows`, growing
  * the arena-backed array (doubling from 16) as needed;
@@ -2469,6 +2549,16 @@ static char *join_path(Arena *a, const char *dir, const char *rest);
 static RxtSource *parse_file(const char *path, pcrec_error *err,
                              const RxtChain *chain, int *frag_refused);
 
+/* [FINDINGS] B1: a BUFFER to parse in place of a file (see `RxtP.buf`). */
+typedef struct {
+    const char  *text;
+    size_t       len;
+} RxtBufIn;
+
+static RxtSource *parse_src(const char *path, pcrec_error *err,
+                            const RxtChain *chain, int *frag_refused,
+                            const RxtBufIn *bin);
+
 /* [FINDINGS] B0 (r2 M-B3): reads the fragment an `include` line names —
  * `cand` as the author spelled it, `rp` its real path — in FRAGMENT mode,
  * so a head line anywhere in the include closure is refused at
@@ -2507,12 +2597,28 @@ RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err)
     return parse_file(path, err, NULL, &frag_refused);
 }
 
+RxtSource *pcrec_rxt_source_parse_buf(const char *name, const char *text,
+                                      size_t len, pcrec_error *err)
+{
+    int frag_refused = 0;
+    RxtBufIn bin = { text, len };
+    return parse_src(name, err, NULL, &frag_refused, &bin);
+}
+
+static RxtSource *parse_file(const char *path, pcrec_error *err,
+                             const RxtChain *chain, int *frag_refused)
+{
+    return parse_src(path, err, chain, frag_refused, NULL);
+}
+
 /* The parse proper; `chain` is non-NULL when `path` is being read as an
  * `include` fragment of the files on it ([FINDINGS] B0), and
  * `*frag_refused` is set when the fragment rule (no file-level line but
- * `include`) refused, here or deeper. */
-static RxtSource *parse_file(const char *path, pcrec_error *err,
-                             const RxtChain *chain, int *frag_refused)
+ * `include`) refused, here or deeper. `bin` non-NULL is BUFFER MODE
+ * ([FINDINGS] B1): `path` is then only the name diagnostics cite. */
+static RxtSource *parse_src(const char *path, pcrec_error *err,
+                            const RxtChain *chain, int *frag_refused,
+                            const RxtBufIn *bin)
 {
     if (err) { err->msg[0] = 0; err->pos = 0; }
     pcrec_error local;
@@ -2523,7 +2629,8 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
     src->arena.cx = NULL;
 
     RxtP p = { .path = path, .arena = &src->arena, .err = err, .failed = 0,
-               .chain = chain, .frag_refused = frag_refused };
+               .chain = chain, .frag_refused = frag_refused,
+               .buf = bin ? bin->text : NULL, .buflen = bin ? bin->len : 0 };
     RxtLines L = { 0 };
     if (slurp_lines(&p, &L) != 0) { pcrec_rxt_source_free(src); return NULL; }
     src->path = arena_strdup(&src->arena, path);
@@ -2707,6 +2814,11 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
                 st[ndepth - 1].open_line = last_row_line;
                 st[ndepth - 1].open_value = last_row_value;
                 st[ndepth - 1].open_kind = last_row->kind;
+                if (cs == RXT_SCOPE_DATA)
+                    st[ndepth - 1].fbi = fblock_push(&src->arena, src,
+                                                     last_row_line,
+                                                     last_rxtrow,
+                                                     last_row->kind);
             }
         } else {
             while (ndepth > 1 && indent < st[ndepth - 1].indent) {
@@ -2927,6 +3039,15 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
             if (tok_is(tok, "target")) {
                 if (parse_target(&p, src, &L, &i) != 0) goto fail;
                 continue;
+            }
+            if (p.buf && (tok_is(tok, "lib") || tok_is(tok, "include"))) {
+                /* [FINDINGS] B1 (design §8.2, r2 M-S12): a buffer opens
+                 * nothing, so neither head line that names a file may
+                 * appear in one. */
+                rxt_fail(&p, RXTD_STRUCTURE, line,
+                         "'%.*s' in a buffer-parsed source: a buffer opens "
+                         "nothing", (int)tlen, tok);
+                goto fail;
             }
             if (tok_is(tok, "lib")) {
                 const char *v = value_trimmed(&p, tok);
@@ -3217,12 +3338,13 @@ static RxtSource *parse_file(const char *path, pcrec_error *err,
                 goto fail;
             }
             if (serves_check(&p, line, f->open_kind, &st[ndepth - 2],
-                             last_row_value) != 0)
+                             &src->fblocks[f->fbi], last_row_value) != 0)
                 goto fail;
             continue;
         }
         if (f->scope == RXT_SCOPE_DATA && tok_is(tok, "row")) {
-            if (row_check(&p, line, f, last_row_value) != 0) goto fail;
+            if (row_check(&p, line, f, &src->fblocks[f->fbi],
+                          last_row_value) != 0) goto fail;
             continue;
         }
 

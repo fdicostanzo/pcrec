@@ -1,0 +1,319 @@
+# src/findings/default.rxt — THE SHIPPED DEFAULT ANALYSIS ([FINDINGS] B1,
+# docs/design/findings/design.md §2.7, §8.1; D123-5). The built-in terminal of
+# every analysis chain, embedded into libpcrec at BUILD time as this file's
+# own text (scripts/embed_text.sh -> build/gen/findings_store.inc) and parsed
+# by the one `.rxt` reader in its no-filesystem mode. Hand-authored: the one
+# bundle with no generator. `tests/findings/` checks that the embed equals
+# this file byte for byte and that it normalizes to
+# tests/findings/default_ppm.tsv, the table it replaced.
+#
+# D83's ruling, applied: the REAL prior is a findings file measured off the
+# deployment's own exemplar, and this static table is the FALLBACK for every
+# compile that is not given one.
+#
+# WHERE THE NUMBERS COME FROM, AND WHY NOT FROM THE BENCH. The obvious source
+# for a log-text prior is the comparative bench's own log lines — and using
+# them would be the exact failure docs/dev/learnings.md §3 catalogues: a
+# control that shares a source with the thing it controls. The table would
+# then be fitted to the subjects the optimization is measured on, and a good
+# measurement would prove nothing. So the mass is assigned from two
+# INDEPENDENT, citable priors and rounded to two significant figures:
+#
+#   - letters: the classical English letter-frequency ordering (etaoin
+#     shrdlu), scaled to 52% of the mass for lower case with upper case at a
+#     tenth of its lower-case twin;
+#   - space at 15% and newline at 1.2%, the usual whitespace share of prose;
+#   - digits at 0.9% EACH (9% together) and the structural punctuation of
+#     machine-written lines — . : - / = " , _ and the brackets — raised well
+#     above their prose frequencies, because the population this prior is FOR
+#     is log lines and not novels;
+#   - every remaining byte, the whole 0x80-0xff half included, gets a floor of
+#     2 rather than zero: a zero would let the model believe a byte is
+#     IMPOSSIBLE and select a skip on a certainty it does not have.
+#
+# The counts are parts per million, assigned in round numbers and then
+# normalised to sum to exactly 1,000,000 (the rounding's residue went to the
+# space, the largest entry). Read as COUNTS through the byte-rate
+# normalization (design §2.5) that gives N = 1,000,000, no zeros, a scale of 1
+# and a residue of 0, so every rate equals its count exactly: the default is
+# byte-identical to the table it replaced by the arithmetic, not by a test
+# alone (§0.7).
+#
+# `serves byte-rate when byte`, and only `byte`, IS the restriction D123-4
+# required to be written into the data: the flat 0x80-0xff half is not usable
+# outside `byte`, where it would call a UTF-8 lead byte the rarest thing there
+# is. Under `-e utf8` this analysis answers NONE and each rate question takes
+# its kind's NONE answer (design §6.2).
+#
+# THE TABLE IS A PRIOR AND NOT A PROMISE. It orders bytes; it does not predict
+# any particular subject. Every reader of it makes an ANSWER-identity- and
+# give-up-identity-preserving choice (design §6.2a), so a badly-fitted prior
+# costs speed on some input and can never cost a match.
+analysis default
+    description The shipped static prior: prefix_k.c's hand-assigned byte table, byte-identical (D123-5)
+    freq
+        question How often does each byte occur in machine-written line-oriented text?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer authored: two-significant-figure citable priors, normalised to 1,000,000 (prefix_k.c header, 2026-08-28)
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 00 2
+        row 01 2
+        row 02 2
+        row 03 2
+        row 04 2
+        row 05 2
+        row 06 2
+        row 07 2
+        row 08 2
+        row 09 2492
+        row 0a 9969
+        row 0b 2
+        row 0c 2
+        row 0d 831
+        row 0e 2
+        row 0f 2
+        row 10 2
+        row 11 2
+        row 12 2
+        row 13 2
+        row 14 2
+        row 15 2
+        row 16 2
+        row 17 2
+        row 18 2
+        row 19 2
+        row 1a 2
+        row 1b 2
+        row 1c 2
+        row 1d 2
+        row 1e 2
+        row 1f 2
+        row 20 124561
+        row 21 249
+        row 22 3323
+        row 23 498
+        row 24 249
+        row 25 415
+        row 26 332
+        row 27 1246
+        row 28 1661
+        row 29 1661
+        row 2a 332
+        row 2b 665
+        row 2c 6646
+        row 2d 4984
+        row 2e 9969
+        row 2f 4154
+        row 30 7476
+        row 31 7476
+        row 32 7476
+        row 33 7476
+        row 34 7476
+        row 35 7476
+        row 36 7476
+        row 37 7476
+        row 38 7476
+        row 39 7476
+        row 3a 6646
+        row 3b 665
+        row 3c 332
+        row 3d 3323
+        row 3e 332
+        row 3f 415
+        row 40 665
+        row 41 5416
+        row 42 989
+        row 43 1844
+        row 44 2816
+        row 45 8423
+        row 46 1479
+        row 47 1337
+        row 48 4037
+        row 49 4610
+        row 4a 108
+        row 4b 515
+        row 4c 2667
+        row 4d 1595
+        row 4e 4478
+        row 4f 4993
+        row 50 1279
+        row 51 66
+        row 52 3971
+        row 53 4203
+        row 54 6006
+        row 55 1836
+        row 56 648
+        row 57 1562
+        row 58 100
+        row 59 1313
+        row 5a 50
+        row 5b 1661
+        row 5c 498
+        row 5d 1661
+        row 5e 83
+        row 5f 2492
+        row 60 83
+        row 61 54163
+        row 62 9886
+        row 63 18442
+        row 64 28161
+        row 65 84235
+        row 66 14787
+        row 67 13375
+        row 68 40373
+        row 69 46105
+        row 6a 1080
+        row 6b 5150
+        row 6c 26666
+        row 6d 15950
+        row 6e 44776
+        row 6f 49926
+        row 70 12793
+        row 71 665
+        row 72 39708
+        row 73 42034
+        row 74 60061
+        row 75 18359
+        row 76 6480
+        row 77 15618
+        row 78 997
+        row 79 13125
+        row 7a 498
+        row 7b 831
+        row 7c 332
+        row 7d 831
+        row 7e 83
+        row 7f 2
+        row 80 2
+        row 81 2
+        row 82 2
+        row 83 2
+        row 84 2
+        row 85 2
+        row 86 2
+        row 87 2
+        row 88 2
+        row 89 2
+        row 8a 2
+        row 8b 2
+        row 8c 2
+        row 8d 2
+        row 8e 2
+        row 8f 2
+        row 90 2
+        row 91 2
+        row 92 2
+        row 93 2
+        row 94 2
+        row 95 2
+        row 96 2
+        row 97 2
+        row 98 2
+        row 99 2
+        row 9a 2
+        row 9b 2
+        row 9c 2
+        row 9d 2
+        row 9e 2
+        row 9f 2
+        row a0 2
+        row a1 2
+        row a2 2
+        row a3 2
+        row a4 2
+        row a5 2
+        row a6 2
+        row a7 2
+        row a8 2
+        row a9 2
+        row aa 2
+        row ab 2
+        row ac 2
+        row ad 2
+        row ae 2
+        row af 2
+        row b0 2
+        row b1 2
+        row b2 2
+        row b3 2
+        row b4 2
+        row b5 2
+        row b6 2
+        row b7 2
+        row b8 2
+        row b9 2
+        row ba 2
+        row bb 2
+        row bc 2
+        row bd 2
+        row be 2
+        row bf 2
+        row c0 2
+        row c1 2
+        row c2 2
+        row c3 2
+        row c4 2
+        row c5 2
+        row c6 2
+        row c7 2
+        row c8 2
+        row c9 2
+        row ca 2
+        row cb 2
+        row cc 2
+        row cd 2
+        row ce 2
+        row cf 2
+        row d0 2
+        row d1 2
+        row d2 2
+        row d3 2
+        row d4 2
+        row d5 2
+        row d6 2
+        row d7 2
+        row d8 2
+        row d9 2
+        row da 2
+        row db 2
+        row dc 2
+        row dd 2
+        row de 2
+        row df 2
+        row e0 2
+        row e1 2
+        row e2 2
+        row e3 2
+        row e4 2
+        row e5 2
+        row e6 2
+        row e7 2
+        row e8 2
+        row e9 2
+        row ea 2
+        row eb 2
+        row ec 2
+        row ed 2
+        row ee 2
+        row ef 2
+        row f0 2
+        row f1 2
+        row f2 2
+        row f3 2
+        row f4 2
+        row f5 2
+        row f6 2
+        row f7 2
+        row f8 2
+        row f9 2
+        row fa 2
+        row fb 2
+        row fc 2
+        row fd 2
+        row fe 2
+        row ff 2
+        provenance
+            source authored
+            retrieved 2026-08-28
+            attribution etaoin-shrdlu letter ordering; prose whitespace share; machine-line punctuation raised

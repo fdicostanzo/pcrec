@@ -19,10 +19,48 @@ typedef struct Ctx Ctx;
  * with every other per-attempt field and the stamp (§7) reads the FINAL
  * attempt's record. */
 typedef struct {
-    bool     byte_rate_asked;   /* `pcrec_find_byte_rate` was called */
-    bool     byte_rate_have;    /* ... and a block answered (else NONE) */
-    uint32_t byte_rate[256];    /* the answer: ppm, sum 1,000,000 */
+    bool        byte_rate_asked;  /* `pcrec_find_byte_rate` was called */
+    bool        byte_rate_have;   /* ... and a block answered (else NONE) */
+    const char *byte_rate_bundle; /* the bundle whose block answered */
+    uint32_t    byte_rate[256];   /* the answer: ppm, sum 1,000,000 */
 } PcrecFindRec;
+
+/* One `serves` line of a pre-parsed store block (the same three fields the
+ * reader's `RxtServe` keeps). */
+typedef struct {
+    const char *query, *encs, *via;
+} PcrecFindServe;
+
+/* One DATA block of a store bundle, PRE-PARSED at build time (design §13 B1
+ * (3)): what the one `.rxt` reader returns for the embedded text, generated
+ * from that text by `src/findings/findgen.c` into
+ * `build/gen/findings_table.inc`, so a compile reads a table and never parses.
+ * `tests/findings/` parses the embedded text through the library and checks
+ * it agrees with this, block for block. */
+typedef struct {
+    const char               *bundle;   /* the owning bundle's name */
+    const char               *kind;     /* "freq" */
+    size_t                    line;     /* the kind keyword's line */
+    const PcrecFindServe     *serves;
+    size_t                    nserves;
+    const unsigned long long *counts;   /* 256 entries */
+} PcrecFindTblBlock;
+
+/* The embedded store's `.rxt` text for bundle `name` and its length, or NULL
+ * when the store has no such bundle (design §8.1). */
+const char *pcrec_find_store_text(const char *name, size_t *len);
+
+/* The pre-parsed store: every block of every bundle, in store order. */
+const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n);
+
+/* §2.5's NORMALIZATION, the ONE function turning 256 counts into a byte-rate:
+ * each count scaled into the mass the floors leave, every byte at least
+ * `PCREC_FIND_FLOOR_PPM`, the residue on the largest entry (ties to the
+ * lowest byte), so `ppm` sums to exactly 1,000,000. -1 when every count is
+ * zero; -2 if a postcondition (the sum, the floor) fails, which no input
+ * within the limits reaches. Counts are <= PCREC_MAX_FIND_COUNT, so the
+ * arithmetic fits uint64. */
+int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256]);
 
 /* ---- THE ACCESSOR AND THE PRIMITIVES (design §6.1) -----------------------
  *

@@ -1705,8 +1705,6 @@ typedef struct {
  * it. See docs/design/offset_k_skip.md §3. */
 void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
                         PrefixKSets *o);
-unsigned pcrec_byte_freq_ppm(int b);
-unsigned pcrec_byte_freq_total_ppm(void);
 
 /* ---- DFA (priority subset construction) ---- */
 
@@ -5422,6 +5420,26 @@ typedef struct {
     size_t      parent_line;   /* 0 for the depth-0 opener row itself        */
 } RxtAux;
 
+/* [FINDINGS] B1: one `serves <query> when <encs> via <derivation>` line of
+ * a data block, as validated (docs/design/findings/design.md §2.4). `encs`
+ * is the `when` list as written, comma-joined. */
+typedef struct {
+    const char *query, *encs, *via;
+} RxtServe;
+
+/* [FINDINGS] B1: one DATA block of an `analysis` bundle — its kind, the
+ * bundle it belongs to, its `serves` lines and its counts. `counts` holds
+ * 256 entries, zero where the block has no row (a `freq` block's key is a
+ * byte); every count is <= PCREC_MAX_FIND_COUNT, checked at the row. */
+typedef struct {
+    size_t              line;      /* the kind keyword's own line */
+    const char         *bundle;    /* the owning bundle's name */
+    const char         *kind;      /* "freq" */
+    RxtServe           *serves;
+    size_t              nserves, servecap;
+    unsigned long long *counts;
+} RxtFindBlock;
+
 typedef struct RxtSource RxtSource;
 struct RxtSource {
     const char *path;
@@ -5433,6 +5451,8 @@ struct RxtSource {
     RxtVariant *variants; size_t nvariants, variantcap;
     RxtCase    *cases;    size_t ncases,    casecap;
     RxtAux     *auxes;    size_t nauxes,    auxcap;
+    /* [FINDINGS] B1: every data block of every bundle, in file order. */
+    RxtFindBlock *fblocks; size_t nfblocks, fblockcap;
     /* THE SEAM'S ONE NUMBER: the 1-based line of the FIRST `pattern` row,
      * which is where the head ends and run.sh starts its own per-line
      * loop. 0 means the file has no pattern block at all — a legal shape
@@ -5477,6 +5497,11 @@ int pcrec_rxt_decode_escaped(const char *v, Arena *a, const char **out,
 /* Parses `path`. NULL on failure with `err` filled — every diagnostic
  * names the FILE, the LINE and the CONSTRUCT. Free with the call below. */
 RxtSource *pcrec_rxt_source_parse(const char *path, pcrec_error *err);
+/* [FINDINGS] B1: the same parse over `text[0..len)` in NO-FILESYSTEM mode
+ * (a `lib` or `include "…"` line is refused: a buffer opens nothing) — the
+ * embedded findings store's reader. `name` is what diagnostics cite. */
+RxtSource *pcrec_rxt_source_parse_buf(const char *name, const char *text,
+                                      size_t len, pcrec_error *err);
 void       pcrec_rxt_source_free(RxtSource *src);
 /* `--list-source`: the file AS WRITTEN, one row per declaration and per
  * block, in file order, under docs/spec/table_contract.md. Caller frees. */

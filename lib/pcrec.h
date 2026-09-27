@@ -801,9 +801,10 @@ enum {
      *
      * [OPT-FREQPICK] (2026-09-22) WHICH member of the necessary set the check
      * tests is a VALUE under this bit and not a second axis: the rarest under
-     * the shipped byte-frequency prior (`pcrec_byte_freq_ppm`), with PCRE2's
-     * rightmost rule surviving as the tiebreak and as the whole answer under
-     * every encoding the prior is not keyed to. Every member is a byte every
+     * the byte-rate the compile's analysis declares (the shipped default's
+     * static prior, `-e byte` only; [FINDINGS] B1), with PCRE2's rightmost
+     * rule surviving as the tiebreak and as the whole answer where no byte-rate
+     * applies. Every member is a byte every
      * match must contain, so the choice moves a speed and can never move an
      * answer; `--unroll=K` and `--vm-entry-shape=N` are the same shape, a
      * value parameter with no deny bit of its own.

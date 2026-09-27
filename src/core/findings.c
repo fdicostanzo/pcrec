@@ -1,53 +1,181 @@
-/* src/core/findings.c — THE FINDINGS SEAM: the byte-rate readers, beside the
- * rate they read ([FINDINGS] B1 = [PATFACTS] step 3.1;
- * docs/design/findings/design.md §6, docs/design/patfacts/design.md §4.2.2
- * carve-out (b), D122/D126).
+/* src/core/findings.c — THE FINDINGS SEAM: the byte-rate a compile reads,
+ * the rate primitives, and every reader of a rate, in one file ([FINDINGS]
+ * B1 = [PATFACTS] step 3.1; docs/design/findings/design.md §2.5, §6, §8,
+ * docs/design/patfacts/design.md §4.2.2 carve-out (b), D122/D123/D126).
+ *
+ * THE DATA TIER. A byte-rate is DATA about a subject corpus under an
+ * encoding, declared by the data (D123-4): a bundle's `freq` block says
+ * `serves byte-rate when <encodings> via unigram`, and the accessor's whole
+ * selection rule is "use what the data declares" (§2.4). At B1 the chain is
+ * the built-in `default` alone (S3, the embedded store: `src/findings/<name>.rxt`
+ * compiled in as text by scripts/embed_text.sh and parsed by the ONE `.rxt`
+ * reader in its no-filesystem mode, §8). The default declares `byte` only,
+ * so under `-e utf8` the answer is NONE. Resolution beyond it (S1/S2,
+ * `--analysis`) is B2's.
  *
  * WHAT A RATE READER IS. Every member of a necessary set and every window of
  * a necessary run is SOUND for the emitted pre-check (`src/facts/req.c`
- * proves them), so which one is scanned moves a SPEED and nothing else. The
- * one that pays is the one a subject is least likely to contain, and a
- * byte-frequency prior orders bytes by exactly that ([OPT-FREQPICK],
- * docs/design/reqbyte_freq_pick.md). PCRE2's rightmost rule survives as the
- * TIEBREAK, and as the whole answer where the prior does not apply.
+ * proves them), and every offset set the offset-k selection ranks is
+ * necessary too, so a rate moves a SPEED and never an answer or a give-up
+ * (§6.2a). The member that pays is the one a subject is least likely to
+ * contain ([OPT-FREQPICK], docs/design/reqbyte_freq_pick.md), with PCRE2's
+ * rightmost rule as the TIEBREAK.
  *
- * THE PRIOR IS READ ONLY UNDER THE `byte` ENCODING. The shipped table is
- * keyed to `byte` by its own contents: its 0x80-0xFF half sits at the 2 ppm
- * floor, so under `-e utf8` an argmin over it would prefer a shared UTF-8
- * lead byte (`é@` lowers to {0xC3, 0xA9, 0x40} and the argmin would take
- * 0xC3 over a genuinely rare `@`). Under every other encoding the readers
- * answer the rightmost member and the leftmost window — byte for byte the
- * answer before [OPT-FREQPICK] (reqbyte_freq_pick.md §3, Frank's ruling
- * 2026-09-22), and since [OPT-REQRUN-ENC] the run's scan member too.
+ * THE NONE ANSWER IS SPELLED ONCE PER QUESTION KIND [D126 Q4], inside the
+ * primitive that answers it: PICK -> the reader's positional rightmost,
+ * COMPARE -> false, MASS -> the uniform rate's mass (cardinality). A reader
+ * hands the accessor's result to a primitive and never tests it, which is
+ * what stops two readers of one question spelling two NONE answers (R13:
+ * rightmost against leftmost).
  *
  * A RUN LONGER THAN `PCREC_MAX_REQ_RUN_EMIT` IS TRUNCATED, NEVER SPLIT into
  * two compares (Frank's ruling of 2026-09-22): to the window of that length
- * containing the scan member whose bytes sum to the lowest prior, ties
- * leftmost. A second compare would be a second mechanism with its own cost
- * question and no measured need (D77).
- *
- * These moved here from `src/opt/reqbyte.c` (deleted) so that the rate and
- * every reader of it sit in one file. */
+ * containing the scan member with the lowest mass, ties leftmost. A second
+ * compare would be a second mechanism with its own cost question and no
+ * measured need (D77). */
+
+#include <string.h>
 
 #include "core/internal.h"
 #include "core/findings.h"
+#include "enc/enc.h"
+
+/* One bundle of the embedded store: its name and its `.rxt` text. */
+typedef struct {
+    const char *name;
+    const char *text;
+    size_t      len;
+} PcrecFindStoreEntry;
+
+/* `pcrec_find_store[]`: the store's TEXT, embedded at build time by
+ * scripts/embed_text.sh (never committed). */
+#include "findings_store.inc"
+
+/* `pcrec_find_tbl[]`: the same text PRE-PARSED at build time by the one
+ * reader (src/findings/findgen.c). The generator itself links a stage-0
+ * library built with PCREC_FIND_STAGE0, whose table is empty: it parses and
+ * never compiles, so it never reads one. */
+#ifdef PCREC_FIND_STAGE0
+static const PcrecFindTblBlock pcrec_find_tbl[1];
+enum { PCREC_FIND_NTBL = 0 };
+#else
+#include "findings_table.inc"
+enum { PCREC_FIND_NTBL = sizeof pcrec_find_tbl / sizeof *pcrec_find_tbl };
+#endif
+
+/* ---- THE STORE (design §8) ------------------------------------------------ */
+
+const char *pcrec_find_store_text(const char *name, size_t *len)
+{
+    for (size_t i = 0; i < sizeof pcrec_find_store / sizeof *pcrec_find_store; i++)
+        if (!strcmp(pcrec_find_store[i].name, name)) {
+            *len = pcrec_find_store[i].len;
+            return pcrec_find_store[i].text;
+        }
+    return NULL;
+}
+
+const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n)
+{
+    *n = PCREC_FIND_NTBL;
+    return pcrec_find_tbl;
+}
+
+/* ---- NORMALIZATION: counts -> byte-rate ppm (design §2.5, ONE function) ---- */
+
+int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256])
+{
+    unsigned long long n = 0, m;
+    long long r;
+    int z = 0, big = 0;
+    for (int b = 0; b < 256; b++) { n += c[b]; if (!c[b]) z++; }
+    if (n == 0) return -1;
+    m = 1000000ull - (unsigned long long)PCREC_FIND_FLOOR_PPM * (unsigned)z;
+    r = 1000000;
+    for (int b = 0; b < 256; b++) {
+        unsigned long long v = c[b] ? c[b] * m / n : 0;
+        if (v < PCREC_FIND_FLOOR_PPM) v = PCREC_FIND_FLOOR_PPM;
+        ppm[b] = (uint32_t)v;
+        r -= (long long)v;
+        if (ppm[b] > ppm[big]) big = b;
+    }
+    /* The residue (which may be negative) goes to the LARGEST entry, ties to
+     * the lowest byte: the strict `>` above keeps the first maximum. */
+    ppm[big] = (uint32_t)((long long)ppm[big] + r);
+    /* The two postconditions, checked rather than assumed (§2.5 step 5). */
+    {
+        unsigned long long t = 0;
+        for (int b = 0; b < 256; b++) {
+            if (ppm[b] < PCREC_FIND_FLOOR_PPM) return -2;
+            t += ppm[b];
+        }
+        if (t != 1000000ull) return -2;
+    }
+    return 0;
+}
+
+/* Is `enc` one of the comma-joined encoding names in `encs`? */
+static bool encs_list(const char *encs, const char *enc)
+{
+    size_t n = strlen(enc);
+    for (const char *s = encs; *s; ) {
+        const char *e = strchr(s, ',');
+        size_t k = e ? (size_t)(e - s) : strlen(s);
+        if (k == n && !strncmp(s, enc, n)) return true;
+        if (!e) break;
+        s = e + 1;
+    }
+    return false;
+}
+
+/* The byte-rate the built-in `default` declares for this compile's
+ * encoding, into `fr`: the ONE block of that bundle whose `serves byte-rate
+ * when …` line lists the encoding (§2.4, §4.4), derived `via unigram`. No
+ * such block -> NONE (`byte_rate_have` stays false). At B1 the chain is the
+ * default alone (S3); B2 walks a resolved chain here. */
+static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
+{
+    const char *enc = pcrec_enc_by_id(cx->opt->encoding)->name;
+    size_t n;
+    const PcrecFindTblBlock *tbl = pcrec_find_store_blocks(&n);
+    for (size_t i = 0; i < n; i++) {
+        const PcrecFindTblBlock *fb = &tbl[i];
+        if (strcmp(fb->bundle, "default") != 0) continue;
+        for (size_t j = 0; j < fb->nserves; j++) {
+            int nr;
+            if (strcmp(fb->serves[j].query, "byte-rate") != 0 ||
+                !encs_list(fb->serves[j].encs, enc))
+                continue;
+            nr = pcrec_find_normalize(fb->counts, fr->byte_rate);
+            if (nr == -1)
+                pcrec_ctx_fail(cx, 0, "analysis '%s': its '%s' block at line "
+                               "%zu counts nothing, so it has no byte-rate",
+                               fb->bundle, fb->kind, fb->line);
+            if (nr != 0)
+                pcrec_ctx_fail(cx, 0, "internal error: analysis '%s': its "
+                               "'%s' block at line %zu normalizes to a "
+                               "byte-rate that breaks its own postcondition",
+                               fb->bundle, fb->kind, fb->line);
+            fr->byte_rate_have = true;
+            fr->byte_rate_bundle = fb->bundle;
+            return;
+        }
+    }
+}
 
 /* ---- THE ACCESSOR ---------------------------------------------------------
  *
  * THE GATE LIVES HERE AND NOWHERE ELSE (D122 addendum 2 (3)): whether a rate
- * applies to this compile is decided once, by this function, and every reader
- * receives either a table or NULL and hands it to a primitive untested. */
+ * applies to this compile is what the data declares, decided once, by this
+ * function; every reader receives a table or NULL and hands it to a
+ * primitive untested. */
 
 const uint32_t *pcrec_find_byte_rate(Ctx *cx)
 {
     PcrecFindRec *fr = &cx->job->find;
     if (!fr->byte_rate_asked) {
         fr->byte_rate_asked = true;
-        if (cx->opt->encoding == PCREC_ENC_BYTE) {
-            for (int b = 0; b < 256; b++)
-                fr->byte_rate[b] = pcrec_byte_freq_ppm(b);
-            fr->byte_rate_have = true;
-        }
+        find_derive_byte_rate(cx, fr);
     }
     return fr->byte_rate_have ? fr->byte_rate : NULL;
 }

@@ -14,7 +14,7 @@ CC := gcc
 endif
 CFLAGS  ?= -O2 -g
 WARN     = -Wall -Wextra
-ALLFLAGS = $(CFLAGS) $(WARN) -std=gnu11 -Ilib -Isrc
+ALLFLAGS = $(CFLAGS) $(WARN) -std=gnu11 -Ilib -Isrc -I$(BUILD_DIR)/gen
 
 # BUILD_DIR (SAN-1): parameterizes every build output location so the
 # sanitizer targets below can build a SEPARATE tree (build-ubsan/,
@@ -198,6 +198,42 @@ gen-tables:
 	    echo "  gen-tables: $$g"; \
 	    python3 "$$g" || exit 1; \
 	done
+
+# [FINDINGS] B1 THE EMBEDDED FINDINGS STORE (docs/design/findings/design.md
+# §8.1-§8.2, §13 B1 (3)): every src/findings/<name>.rxt, compiled in TWICE
+# from the one committed text, and neither form is ever committed (each is a
+# build product, like an object file):
+#   - its TEXT, by scripts/embed_text.sh (findings_store.inc) — what a later
+#     listing shows and what tests/findings/ reads back and compares with the
+#     source byte for byte;
+#   - its PRE-PARSE, by src/findings/findgen.c running the one `.rxt` reader
+#     over that text (findings_table.inc) — what a compile reads. B1 measured
+#     parsing the text on every compile at ~20% of a minimal compile, so the
+#     design's rule applied: a table generated from the same text at build
+#     time, with an agreement check (tests/findings/), not a second source.
+# findgen links a STAGE-0 library whose findings.o is built with
+# PCREC_FIND_STAGE0 (an empty table), because the real findings.o includes
+# findgen's output. Both .inc files are prerequisites of findings.o, so
+# editing a bundle rebuilds the store.
+FIND_STORE_SRCS := $(sort $(wildcard src/findings/*.rxt))
+FIND_STORE_INC  := $(BUILD_DIR)/gen/findings_store.inc
+FIND_TABLE_INC  := $(BUILD_DIR)/gen/findings_table.inc
+FIND_STAGE0     := $(BUILD_DIR)/gen/stage0
+$(FIND_STORE_INC): scripts/embed_text.sh $(FIND_STORE_SRCS)
+	@mkdir -p $(dir $@)
+	sh scripts/embed_text.sh $@ $(FIND_STORE_SRCS)
+$(FIND_STAGE0)/findings.o: src/core/findings.c src/core/internal.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h $(FIND_STORE_INC)
+	@mkdir -p $(dir $@)
+	$(CC) $(ALLFLAGS) -DPCREC_FIND_STAGE0 -c -o $@ $<
+$(FIND_STAGE0)/libpcrec.a: $(filter-out $(BUILD_DIR)/obj/core/findings.o,$(LIBOBJS)) $(FIND_STAGE0)/findings.o
+	@rm -f $@
+	ar rcs $@ $^
+$(BUILD_DIR)/gen/findgen: src/findings/findgen.c $(FIND_STAGE0)/libpcrec.a
+	$(CC) $(ALLFLAGS) -o $@ $< $(FIND_STAGE0)/libpcrec.a
+$(FIND_TABLE_INC): $(BUILD_DIR)/gen/findgen $(FIND_STORE_SRCS)
+	$(BUILD_DIR)/gen/findgen $@.tmp $(FIND_STORE_SRCS)
+	@mv $@.tmp $@
+$(BUILD_DIR)/obj/core/findings.o: $(FIND_STORE_INC) $(FIND_TABLE_INC)
 
 $(BUILD_DIR)/libpcrec.a: $(LIBOBJS)
 	ar rcs $@ $^
@@ -1262,9 +1298,18 @@ smoke: all
 # The tree was measured clean under it before it was added (0 warnings across
 # every source plus cli/main.c), so this costs nothing today and refuses the
 # next one.
+# [FINDINGS] B1: the embedded store's TEXT .inc is generated into a private
+# temp dir first on the include path, so this target still writes nothing
+# under build/; findings.c is compiled in its PCREC_FIND_STAGE0 form, whose
+# only difference is that it does not include the PRE-PARSED table (a
+# generated file the ordinary build compiles), and src/findings/findgen.c,
+# the build-time generator, is checked beside the library.
 strict:
-	@set -e; for f in $(LIBSRCS) cli/main.c; do \
-	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
+	@set -e; gd="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-strict-gen.XXXXXX")"; \
+	trap 'rm -rf "$$gd"' EXIT; \
+	sh scripts/embed_text.sh "$$gd/findings_store.inc" $(FIND_STORE_SRCS); \
+	for f in $(LIBSRCS) src/findings/findgen.c cli/main.c; do \
+	    $(CC) -I"$$gd" -DPCREC_FIND_STAGE0 $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
 	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
 
@@ -1454,8 +1499,11 @@ san:
 lint:
 	@echo "== lint: gcc -fanalyzer =="
 	@if $(CC) -fanalyzer -fsyntax-only -x c -std=gnu11 - < /dev/null >/dev/null 2>&1; then \
-	    set -e; for f in $(LIBSRCS) cli/main.c; do \
-	        $(CC) $(ALLFLAGS) -fanalyzer -c -o /dev/null $$f; \
+	    set -e; gd="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-lint-gen.XXXXXX")"; \
+	    trap 'rm -rf "$$gd"' EXIT; \
+	    sh scripts/embed_text.sh "$$gd/findings_store.inc" $(FIND_STORE_SRCS); \
+	    for f in $(LIBSRCS) src/findings/findgen.c cli/main.c; do \
+	        $(CC) -I"$$gd" -DPCREC_FIND_STAGE0 $(ALLFLAGS) -fanalyzer -c -o /dev/null $$f; \
 	    done; \
 	    echo "lint: gcc -fanalyzer: whole tree analyzed clean ($(words $(LIBSRCS)) + 1 files)"; \
 	else \
