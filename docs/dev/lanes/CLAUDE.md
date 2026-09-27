@@ -3315,3 +3315,11 @@ never edited afterwards.
   accessors and the two `EngineFit` copies deleted, five re-anchored rows.
   Per-commit A/B (zero movers), the validation verdicts, the no-`CALL`-bit
   deviation, and S303's second detector (K50's machine self-check).
+- **s2a_report.md** — lane `s2a` (opus, 2026-09-27): [OPT-LITSCAN] S2a, the
+  VM's exact literal run as ONE P4 compare, abi 40 -> 41. `pcrec_lit_run`
+  (the one node-grain fact, three readers), the island's single-child chains
+  as P4 compares at their depth, P4 made extern, the D51/D49 budget sentence,
+  `-fno-lit-run` + `<PREFIX>_VM_LIT_RUNS` (added pending a ruling; recursion
+  identity (A)'s third region-moving excuse), S304/S305 DETECTED, movers =
+  exactly the 1,081 run-compare artifacts + one acceptance mover, the bench
+  predictions, and the detached chain's STATE AT HANDOFF.
