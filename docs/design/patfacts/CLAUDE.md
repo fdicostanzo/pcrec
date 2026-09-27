@@ -40,7 +40,7 @@ per step.
   tier; `[OPT-LITSCAN]` S2a = one node-grain literal-run fact; S2b
   carried facts specified, not built); the step-3 migration order with
   the gate and abi status of each step; §10 not-built with triggers;
-  §11 seven questions for Frank.
+  §11 the inspection surface `--emit-facts` (a debug listing under a spec page, one printer reading the memo, fact stamps sharing its renderers — Frank's 2026-09-26 scope addition); §12 ten questions for Frank.
 
 STEP 3 (implement-then-replace, migrating existing analyses one at a
 time under the identity gates) is a later plan-row step, sequenced by

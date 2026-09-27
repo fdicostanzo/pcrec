@@ -3261,4 +3261,4 @@ never edited afterwards.
   `docs/design/patfacts/design.md` (lazy memoized accessors, three sealed
   epochs, core vs derived, one owner per derivation, the prior's NONE once
   per question kind, fact vs row denies, B1/S2a first customers, the
-  step-3 migration order, seven questions for Frank). D6 panel next.
+  step-3 migration order, the `--emit-facts` inspection listing, ten questions for Frank). D6 panel next.

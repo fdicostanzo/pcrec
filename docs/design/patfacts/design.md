@@ -101,6 +101,16 @@ Read §0, then §1's table. Everything after §1 argues a row of that table.
     disagreed). The step stops and files a K-row. It must not be absorbed
     into an abi bump.
 
+11. **The record is INSPECTABLE** (§11, scope addition from Frank,
+    2026-09-26). A query `pcrec --emit-facts --pattern P` (spelling: the
+    manager's, `--emit-ir`'s query precedent) prints every fact, its status
+    and WHY, per encoding. ONE printer renders every row from the record's
+    memo, which is the same object the passes read. The fact-valued stamps
+    (`REQ_BYTE`, `REQ_RUN`, `VM_START`) render through the same per-fact
+    renderer, so a stamp and the dump cannot disagree. It is a DEBUG
+    LISTING under a spec page (`ir_listing.md`'s status): a format contract
+    with advisory rows, not ABI.
+
 ---
 
 ## 1. The record in one table
@@ -397,7 +407,7 @@ Candidate order `[pick, 255..0 \ pick]` with ties-to-earliest gives the
 same answer in both cases. **Under `-e utf8`:** PICK and COMPARE answer
 exactly as today after reqrunenc2. MASS moves offset-k from the ungated
 prior to cardinality. That is findings B1's named per-artifact `utf8`
-manifest (§11.3) and its abi event.
+manifest (findings §11.3) and its abi event.
 
 ---
 
@@ -460,7 +470,7 @@ builds already covers it. §6.4 rule 1's "C1/C2 are the named exception"
 becomes "every fact-deny's derived facts are the named exception", the
 same class stated once.
 
-### 7.5 The K68 class (recommendation, §11 Q7)
+### 7.5 The K68 class (recommendation, §12 Q7)
 
 Every FACT deny and every ROW deny is answer-neutral by its contract, so
 each belongs in `rx_info.flags`' `strategy_denials` mask by construction.
@@ -595,7 +605,7 @@ accessor, so "0 movers" is not vacuous.
 
 | step | what moves | gate that proves it | abi |
 |---|---|---|---|
-| **3.0 skeleton + E2 req/anchor/window** | `Job.pf`, `PfEpoch`, `facts.c`. The start anchor, end window, set, whole run, pick and window move behind accessors. The `compile.c:1501-1520` deny ternaries move into the accessors. The structural grep check plus its sabotage row | A/B diff ZERO over byte+utf8 × {default, `-fno-req-byte`, `-fno-req-run`, `-fno-end-window`, `-fno-vm-anchor-bound`, `-fno-run-prefilter`, `--engine=vm`}; `run_recursion_identity.sh` (B) with its pin UNMOVED (a re-pin is disqualifying); `run_prechecks.sh`; `make test-codegen`/`make strict` | **no** |
+| **3.0 skeleton + E2 req/anchor/window + `--emit-facts`** | `Job.pf`, `PfEpoch`, `facts.c`, `facts.def`; the §11 listing with its four checks; `REQ_*`/`VM_START` render through the shared renderers. The start anchor, end window, set, whole run, pick and window move behind accessors. The `compile.c:1501-1520` deny ternaries move into the accessors. The structural grep check plus its sabotage row | A/B diff ZERO over byte+utf8 × {default, `-fno-req-byte`, `-fno-req-run`, `-fno-end-window`, `-fno-vm-anchor-bound`, `-fno-run-prefilter`, `--engine=vm`}; `run_recursion_identity.sh` (B) with its pin UNMOVED (a re-pin is disqualifying); `run_prechecks.sh`; `make test-codegen`/`make strict` | **no** |
 | **3.1 = [FINDINGS] B1** | the data tier; the §6.3 primitives; C1-C4 migrated | findings §11.3 manifests (`byte` EMPTY with REACH; `utf8` named per artifact); findings §13 B1's acceptance list | **YES**: the one D123-2 event |
 | **3.2 E1: kinds, nullable, cwidth** | `select_engine`'s locals, the `emit_vm.c:13191/13208` listing re-walk (R1), `emit_vm.c:9980` read the accessors. The E1 invariance cross-check plus its sabotage row | A/B diff ZERO; `run_ir_listing.sh` (the listing is output, not artifact, and must be unchanged); `run_vm_identity.sh` | no |
 | **3.3 = S2a** | the node-grain literal-run function; the VM chain | S2a's own gate (its movers are its design, not a migration) plus: cost/slot/emit agreement on every corpus pattern, the R5 check | **YES**, S2a's own |
@@ -635,13 +645,211 @@ files a K-row, and the step does not land as an abi event.
 | an `[OPT-VMSEED]` offset-bound fact (AST-level, for the no-NFA route) | VMSEED's own population census (its plan row's D77 step) |
 | [ENG-TACTICS] precondition facts | its tactic census (its plan row) |
 | E1/E2 reuse across retry-ladder rungs | `[OPT-RETRY-REUSE]`'s design (K67 is its witness). Sealed E1/E2 facts are rung-invariant, and the record makes them carryable |
-| an `--emit-ir` dump of the record | the first debugging or attribution need that the existing per-fact stamps (`REQ_*`, `VM_START`, `DFA_PREFILTER`) cannot answer |
+| ~~an `--emit-ir` dump of the record~~ | **TRIGGER FIRED 2026-09-26** (two lanes reverse-engineered facts from `#define`s): now §11's `--emit-facts`, landing with step 3.0 |
 | the byte cube `cube_of` (P2) | its first customer (S4 / `[CLS-TREE]`), in `src/core/` (D122-2(2)). It is a pure function of a class, not a record entry |
-| the `strategy_denials` classification column (§7.5) | filed as its own row after K68 merges (§11 Q7) |
+| the `strategy_denials` classification column (§7.5) | filed as its own row after K68 merges (§12 Q7) |
 
 ---
 
-## 11. Open questions for Frank
+## 11. The inspection surface: `--emit-facts` (scope addition, Frank 2026-09-26)
+
+**Measured need (D77).** On 2026-09-26 two fact-finding lanes, `utf8reqbyte`
+and `bit30`, recovered pcrec's conclusions about a pattern by compiling it
+and reverse-engineering the emitted `#define`s. The stamps say WHAT was
+emitted. They do not say which analysis ran, which was denied or declined
+and why, or which facts nobody asked for. This section also retires §10's
+row "an `--emit-ir` dump of the record": its trigger has fired.
+
+### 11.1 The query
+
+`pcrec --emit-facts [compile options] --pattern P` (or on an `.rxt` target).
+It is a QUERY, exactly like `--emit-ir` (`docs/spec/cli.md` §2): it takes a
+pattern, takes no `-o`, runs the ordinary compile to completion in memory,
+prints the listing and exits. Every compile option (`-e`, every `-f`/`-fno-`,
+`--engine`, `--analysis` once B2 lands) applies unchanged, so the listing
+describes the compile the user would have got.
+
+**Per encoding.** Every row carries an `encoding` column. The flag accepts an
+encoding LIST (proposed `--emit-facts=byte,utf8`; the bare flag means the
+compile's own `-e`). The CLI runs one complete compile per listed encoding and
+concatenates the rows. That is the comparison the two lanes did by hand, and
+each compile is an ordinary compile with its own record. There is no
+"multi-encoding record". A record is per compile (§6.1).
+
+It is **not VM-only.** Facts are engine-neutral (D124), so the listing works
+on a DFA, hybrid or VM artifact. On a route that never reaches an epoch, the
+rows say so (below). They are never missing.
+
+### 11.2 What it prints (table contract at birth; three named sections)
+
+`docs/spec/table_contract.md`'s scope rule makes conformance mandatory: "a
+new table command that does not conform is a defect". So the output is TSV
+with named `#section`s, the Sections mechanism `--emit-ir` and
+`--list-schema` already use.
+
+**`#section facts`**: one row per record fact, in the record's table order.
+
+| column | content |
+|---|---|
+| `encoding` | the compile's encoding |
+| `fact` | the fact's name (from `facts.def`, §11.3) |
+| `grain` | `pattern` (node-grain facts are not listed; the row gives the root value where one exists, e.g. `minw`) |
+| `epoch` | `E1`/`E2`/`E3` |
+| `status` | CLOSED vocabulary: `derived` / `denied` / `declined` / `absent` (§11.4) |
+| `used` | `yes` if a pass asked for the fact before emission finished, `no` if only the listing asked (§11.4) |
+| `value` | rendered by the fact's ONE renderer: the byte as decimal, the run as hex plus `@idx` (the `REQ_RUN` spelling), a set as a sorted byte list, the anchor by `pcrec_start_anchor_name` |
+| `why` | CLOSED token + detail: `deny:<flag>` with the flag's spelling from `axes.def` (e.g. `deny:-fno-req-byte`); `decline:<reason>` (e.g. `decline:enc-multibyte` for `end_window` under `utf8`, `endwin.c:164`; `decline:no-forward-nfa` for E3 on a no-DFA VM route); for a derived pick, `rate:<source>` or `rate:none(<encoding>)->rightmost` (the §6.3 NONE rule that answered); empty for a plain derivation |
+| `note` | prose, no promise of wording (`ir_listing.md` `note` precedent, D26) |
+
+**`#section rate`**: one row per rate QUERY the compile consumed (§6.3). It
+gives the query, the source (bundle name and digest, or `none` with the
+undeclared encoding) and the NONE rule applied. The tokens are the ones
+`<P>_FINDINGS` stamps (`findings/design.md` §7). Values are NOT repeated:
+`--list-analysis NAME` (D123 addendum, B2) prints them, so there is one
+printer per datum.
+
+**`#section decisions`**: the emission DECISIONS that read the record
+(§4.4). This covers `REQ_WHY`, `DFA_PREFILTER` (+ `OFFSETS`), `ENGINE`/
+`ENGINE_WHY`/`ENGINE_SEL`, `VM_PREFILTER`, the search form and every other
+stamp the prologue writes, as `(stamp, value)` rows. **These rows are
+RECORDED AS THE STAMPS ARE WRITTEN**: the prologue's stamp emitter appends
+each `(name, value)` to a per-attempt list in the same call that writes the
+`#define`. The listing prints that list. This is `--emit-ir`'s own rule (a
+byproduct of the emitter's walk, D106/D108) applied to stamps. The
+decisions section therefore IS the artifact's stamp block, and nothing
+re-asks `req_admit` or `DFA_SELECT` to fill it. Decisions stay out of the
+record (§4.4); they are inspectable anyway.
+
+### 11.3 One printer, never a recomputation
+
+1. **One table defines the facts:** `src/opt/facts.def`, an X-macro
+   (`src/core/axes.def`'s precedent) with one row per fact giving name,
+   epoch, deny bit, empty value and renderer. From it the build generates the
+   `PatFacts` members' accessor declarations, the deny application in
+   `facts.c` (§7.1) AND the listing's row order. A fact that exists has a
+   row, by construction. The "populations nobody counts" failure (K35) cannot
+   hide a fact from the dump.
+2. **The printer reads the memo.** `src/dump/facts_dump.c` (NEW, beside
+   `axes_dump.c`) iterates `facts.def` and, for each row, reads
+   `Job.pf`'s value, status, why and asked bit. It never calls an owner's
+   derivation. The §4.2 grep check allows `facts.c` and the owners only, and
+   `facts_dump.c` is NOT allowed.
+3. **Status and why are STORED, not reconstructed.** The accessor records
+   `status`/`why` when it stores the value (§2's four steps). A deny writes
+   `deny:<bit>`. A derivation that declines returns a `PfWhy` code with its
+   empty value (for example `pcrec_end_window` returns `-1` +
+   `PF_WHY_ENC_MULTIBYTE`). The derived pick stores which §6.3 NONE rule
+   answered. The listing prints what the pass saw. It never infers "the
+   value is -1, so it must have been declined".
+4. **The renderer is shared with the stamps.** Each `facts.def` row names a
+   renderer, and the prologue's fact-valued stamps call the SAME renderer
+   (§11.5). One spelling of each value exists.
+
+### 11.4 Unasked facts, absent epochs, and not perturbing the artifact
+
+The record is lazy (§2), so a compile may finish without asking some facts.
+For example, a DFA artifact never asks the VM's facts. The listing must
+still show every fact. **After the artifact is complete** (after emission
+and after the stamp and findings consumption record are rendered),
+`--emit-facts` asks every unasked accessor once. That is the SAME accessor
+and the SAME derivation, not a recomputation beside it. Each such row reads
+`used no`.
+
+This keeps both halves honest:
+- `used` says exactly which facts the passes consumed.
+- The listing is complete.
+- Because the extra asks happen after the artifact bytes and every stamp
+  exist, they cannot move the artifact or the `<P>_FINDINGS` consumption
+  record. That one ordering fact is load-bearing, and it has a check (§11.6).
+
+An accessor whose epoch was never reached on this route (E3 on a no-DFA VM
+route) is not forced. Forcing it would build an NFA the compile never built.
+It lists as `status absent`, `why decline:no-forward-nfa`. Only the FINAL
+compile attempt's record is listed (the retry ladder, `findings/design.md`
+§6.4's rule). One listing row per attempt would be a different feature
+(D77: not asked for).
+
+### 11.5 Should the existing stamps derive from the same record? YES for facts, CAPTURED for decisions
+
+| stamp | kind | after this design | abi |
+|---|---|---|---|
+| `REQ_BYTE`, `REQ_RUN` | record FACTS (derived pick, window) | the prologue reads the accessor and renders with the fact's `facts.def` renderer, the same one the listing uses. Lands with step 3.0 (§9), which already moves these fields into `Job.pf` | no: byte-identical, and the renderer is today's text moved |
+| `VM_START` | record FACT (start anchor) | same, via `pcrec_start_anchor_name` (already the one spelling, `startanch.c:153`) as the fact's renderer | no |
+| `REQ_WHY`, `DFA_PREFILTER`, `DFA_PREFILTER_OFFSETS`, `ENGINE*`, `VM_PREFILTER`, `DFA_START` | DECISIONS (§4.4) | unchanged derivation, one owner each (`req_why_name`, `dfa_prefilter_name`, …). Their stamp writes are CAPTURED into §11.2's decisions list | no |
+| `<P>_FINDINGS` | the findings consumption record | unchanged (findings §7). The `rate` section reuses its tokens | — (B1's own event) |
+
+**Why not move decisions into the record to derive their stamps from it:**
+§4.4's boundary (D124: "which check runs where" is a different question from
+"what the pattern has"). Capturing the stamp as it is written gives the same
+guarantee, "the listing cannot disagree with the artifact", without
+widening the record. **Why facts' stamps must move:** otherwise
+`REQ_RUN`'s hex@idx spelling exists twice (prologue and dump). That is the
+parallel-renderer version of R13.
+
+### 11.6 Checks (each born with a sabotage row, learnings §3)
+
+1. **Non-perturbation:** for every corpus pattern × {byte, utf8}, the
+   artifact from an ordinary compile is byte-identical to the artifact a
+   `--emit-facts` compile would have emitted. The query builds the artifact
+   in memory, so a test hook writes it. Sabotage: move §11.4's force-all
+   pass before stamp rendering. The `<P>_FINDINGS` line then moves (after
+   B1) or `used` flips, and the check must fail.
+2. **Completeness:** the listing has exactly one `facts` row per `facts.def`
+   row, per encoding. Its population is counted against the table and not
+   against a literal. Sabotage: a `facts.def` row whose printer arm is
+   skipped.
+3. **Why-truthfulness against an INDEPENDENT source:** for each fact-deny
+   flag in `axes.def`, compiling with that flag lists `deny:<that flag>` on
+   exactly the facts `facts.def` says it empties, and on no other.
+   Comparing listing against listing would share a source (learnings §3).
+   The control is the deny sweep's own flag list, which the listing does not
+   produce.
+4. **Decisions = stamps:** the `decisions` section equals the artifact's
+   `#define` block, parsed from the emitted C. Those are two renderings, one
+   of which is the artifact itself.
+
+### 11.7 Contract or debug surface: a DEBUG LISTING with a spec page (recommended)
+
+| option | for | against |
+|---|---|---|
+| (a) a stable CONTRACT (rows and values promised, D76-style) | tools could key on fact names | every migration step (§9) adds or renames rows. A promised row set would make step 3 an abi-like ritual per step and freeze internal fact names that §9 still has to move. The facts are internal (D80 covers what a CALLER can observe) |
+| (b) explicitly unstable, no spec | free to change | it is a CLI flag, and a caller CAN observe it. D80 then requires a spec hunk anyway. Unspecified output also violates the table contract's at-birth rule |
+| **(c) `--emit-ir`'s status (RECOMMENDED)** | `docs/spec/ir_listing.md` is the ruled precedent (D106 addendum 2): "a DEBUG listing", with a spec page stating what IS and IS NOT promised | — |
+
+Under (c), a new `docs/spec/facts_listing.md` promises:
+- the table-contract framing;
+- the three section names and their COLUMNS (append-only);
+- the CLOSED `status` and `used` vocabularies and the `why` token grammar
+  (`deny:<axes.def spelling>` / `decline:<reason>` / `rate:...`);
+- the non-perturbation guarantee (§11.6 item 1).
+
+It does NOT promise the row set (fact names), value spellings beyond those
+shared with a stamp (and those are `match_api.md` §6.3's), `why` reason
+names, or `note` text. It is not part of the artifact, so there is no `abi`
+number. `docs/spec/cli.md` §2 gains the flag's entry (D80), in the same
+change that lands it.
+
+**Alignment with [FINDINGS]' D123 inspection.** D123's addendum puts bundle
+inspection on `--list-analyses`/`--list-analysis`. Those are the `--list-*`
+family: pattern-free REGISTRY tables, table contract at birth.
+`--emit-facts` is the `--emit-*` family: a per-compile BYPRODUCT that needs
+a pattern, like `--emit-ir`. The two do not overlap. The `rate` section
+names the analysis with `<P>_FINDINGS`'s tokens, and `--list-analysis`
+prints its values. Each datum has one printer.
+
+### 11.8 When it lands, and what it does not do
+
+It lands WITH step 3.0 (§9). 3.0 creates `facts.def` and `Job.pf` for the
+E2 req/anchor/window facts and moves `REQ_*`/`VM_START` to the shared
+renderers. The listing's row population then grows with each migration step
+for free (§11.3 item 1). B1 adds the `rate` section. It is not an abi event
+(§11.5). It does NOT:
+- list node-grain facts (per-node output is `--emit-ir`'s territory for the
+  VM program; a node-fact listing waits on a named need);
+- keep facts from rejected compile attempts;
+- print rate VALUES.
+
+## 12. Open questions for Frank
 
 Each is a genuine ruling. Spellings, file names and step sizing are the
 manager's.
@@ -681,9 +889,25 @@ manager's.
    K68 merges. The bit-19 fix and K68 are this class's two incidents.
    Under D125 it is filed, not scheduled. **Recommend: file it.**
 
+8. **`--emit-facts`' status: a DEBUG LISTING with a spec page**
+   (`ir_listing.md`'s precedent: format and vocabularies promised; row set,
+   value spellings and reasons advisory; no `abi`), rather than a stable
+   contract or an unspecified debug flag (§11.7). **Recommend: (c).**
+9. **Fact-valued stamps (`REQ_BYTE`, `REQ_RUN`, `VM_START`) render from
+   the record through the listing's renderers. Decision stamps stay with
+   their owners and are CAPTURED as written** (§11.5), rather than moving
+   decisions into the record. It is byte-identical, with no `abi`.
+   **Recommend: yes.**
+10. **The listing forces unasked facts AFTER the artifact is complete**
+    and marks them `used no`, rather than printing `unasked` rows with no
+    value (§11.4). The trade-off is completeness for a debugger versus the
+    listing computing something the compile did not. The derivation is the
+    same one, and non-perturbation is checked. **Recommend: force, after
+    emission.**
+
 ---
 
-## 12. Pointers
+## 13. Pointers
 
 D120 (`decisions.md:8153`), D122 + addenda (`:8288`), D123 + addenda
 (`:8369`), D124 (`:8504`), D125 addendum 1 (`:8573ff`); `inventory.md` +

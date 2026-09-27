@@ -45,8 +45,9 @@ manager owns it).
      built, with a trigger.
    - §9: the migration order, with a gate and abi status per step.
    - §10: not built, each with its trigger.
-   - §11: seven questions for Frank.
-3. **Step C:** `design.md` §11, seven open questions, each with a
+   - §11: the inspection surface `--emit-facts` (scope addition, Frank 2026-09-26), below.
+   - §12: ten questions for Frank.
+3. **Step C:** `design.md` §12, ten open questions, each with a
    recommendation.
 4. The CLAUDE.md files are updated: `docs/design/patfacts/CLAUDE.md` and
    `docs/design/CLAUDE.md`.
@@ -74,3 +75,31 @@ launched (box rule).
   edit before B1 opens. Its C2 row's "leftmost" NONE is already stale
   after reqrunenc2.
 - APPROACH.md's D124 amendment is due after this step (§12).
+
+## Round 2: the scope addition (Frank, 2026-09-26): an accessible record
+
+New `design.md` §11 (the questions moved to §12, pointers to §13).
+- **`--emit-facts`** is a query in `--emit-ir`'s style. It takes an
+  encoding list, runs one compile per encoding, and prints three
+  table-contract sections:
+  - `facts`: every `facts.def` fact with epoch, status
+    (derived/denied/declined/absent), used yes/no, the value, and a
+    why token (`deny:<flag>` / `decline:<reason>` / `rate:...`);
+  - `rate`: the `<P>_FINDINGS` tokens only;
+  - `decisions`: the stamp block, CAPTURED as the prologue writes it.
+- **One printer:** `src/dump/facts_dump.c` reads the memo, including the
+  status and why stored by the accessor. It never calls a derivation (the
+  grep check excludes it).
+- **Unasked facts** are forced through the same accessors AFTER the
+  artifact and stamps are complete, and marked `used no`.
+- **Four checks:** non-perturbation, completeness, why-truthfulness
+  against the deny sweep's own flag list, and decisions = the emitted
+  `#define`s.
+- **Contract recommendation:** a debug listing under a spec page
+  (`docs/spec/facts_listing.md`, the `ir_listing.md` precedent: format
+  and vocabularies promised, rows advisory, no abi).
+- **Stamps:** `REQ_BYTE`/`REQ_RUN`/`VM_START` render through the fact's
+  shared renderer (byte-identical, lands with step 3.0). Decision stamps
+  stay with their owners and are captured.
+- §10's "dump of the record" row is marked TRIGGER FIRED.
+- New questions Q8-Q10.
