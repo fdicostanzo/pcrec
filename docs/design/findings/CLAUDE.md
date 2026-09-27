@@ -33,8 +33,10 @@ ONE accessor. Sequence (Frank): (1) think lane → requirements + questions,
   (`serves <query> when <enc> via <derivation>`), counts-not-ppm storage,
   the integer normalization and `markov1` run-rarity arithmetic, Route I
   resolution (own FILE → `-I DIR/<name>.rxt` → embedded store) with the
-  built-in `default` as the chain's terminal by identity, the three-call
-  accessor and its C1–C11 map, the `<P>_FINDINGS` stamp + FNV digest over
+  built-in `default` as the chain's terminal by identity, the accessor
+  and its per-QUESTION-KIND rate primitives (PICK, COMPARE, MASS, each
+  spelling its NONE answer once: §6.1-§6.3 amended by D126 Q4, lane
+  q4amend, 2026-09-27) with its C1–C11 map, the `<P>_FINDINGS` stamp + FNV digest over
   consumed values (ONE abi bump with the gate move — the next number at
   landing, not a literal: main is at 33 after K64), the text-embedded store,
   the analyzer contract, the test/oracle/sabotage/census plan, the

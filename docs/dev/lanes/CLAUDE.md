@@ -3280,3 +3280,10 @@ never edited afterwards.
   green; the recursion-identity re-pin and the mech/full-suite runs are
   OWED at hand-off (log paths in the report). PARKED on `lane/reqrunenc2`,
   not merged.
+- `q4amend_report.md` — D126 Q4 (2026-09-27, lane q4amend, opus, design
+  only): `docs/design/findings/design.md` §6.1-§6.3 amended so the prior's
+  NONE answer is spelled ONCE PER QUESTION KIND (PICK / COMPARE / MASS)
+  inside its primitive, never at a reader; §6.3 re-cited against main and
+  PATFACTS rev 2's B1 (readers moved beside the primitives, `reqbyte.c`
+  deleted, S266/S288/S294 re-anchors named). The report lists each NONE rule
+  as spelled, six open items and the stale spots left unfixed outside §6.
