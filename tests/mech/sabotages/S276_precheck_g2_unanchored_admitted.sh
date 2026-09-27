@@ -43,7 +43,7 @@ SAB_COUNT=1
 SAB_BEFORE='static bool req_route_one_attempt(Ctx *cx)
 {
     if (cx->job->fit.chosen == ENGM_VM)
-        return cx->job->start_anchor != PCREC_SANCH_NONE &&
+        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&

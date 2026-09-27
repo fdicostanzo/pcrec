@@ -12,10 +12,6 @@
 
 #include "core/internal.h"
 #include "enc/enc.h"
-/* [PATFACTS] step 3.0a: the E2 derivations' one caller until step 3.0 moves
- * their calls into the record's accessors (docs/design/patfacts/design.md
- * §9). */
-#include "facts/facts_derive.h"
 
 /* Formats the printf-style refusal into `cx->err` (position plus the PATTERN
  * input tag) when a caller supplied one, then longjmps to `cx->jb` -- the one
@@ -1491,37 +1487,21 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * the invariant instead of the position. */
         root = pcrec_lower_enc(&cx, root);
 
-        /* [OPTLOOP.1] THE WHOLE-WINDOW PRE-CHECK FACTS, derived HERE and
-         * nowhere else: after the encoding lowering, so every `A_CLASS` this
-         * walk sees is a BYTE class and the answers are in the artifact's own
-         * units, and before either emitter, so both read one derivation
-         * rather than two. `Job` is the carrier because `pcrec_emit_dfa` takes
-         * no root — the DFA emitter is handed a machine, not a tree.
+        /* [PATFACTS] THE E2 SEAL: the pattern-facts record may now answer the
+         * whole-window pre-check facts (the start anchor, the end window, the
+         * necessary set/run/byte). After the encoding lowering, so every
+         * `A_CLASS` a derivation sees is a BYTE class and the answers are in
+         * the artifact's own units, and before either emitter, so both read
+         * one derivation rather than two. The record is the carrier because
+         * `pcrec_emit_dfa` takes no root — the DFA emitter is handed a
+         * machine, not a tree.
          *
-         * THE DENIAL IS APPLIED HERE, at the analysis, not at the emission
-         * site: a denied build must be indistinguishable from a pattern with
-         * nothing to find, which is `src/opt/possessify.c`'s no-trace rule and
-         * what makes `-fno-` sweeps answer-identical by construction. */
-        cx.job->start_anchor =
-            (defo.flags & PCREC_NO_VM_ANCHOR_BOUND) ? PCREC_SANCH_NONE
-                                                    : pcrec_start_anchor(root);
-        cx.job->end_window =
-            (defo.flags & PCREC_NO_END_WINDOW) ? -1
-                                               : pcrec_end_window(&cx, root);
-        /* [OPT-REQBYTE] + [OPT-REQPOS] are ONE call because they are one walk
-         * and, more importantly, one emitted `memchr`: with a run the byte
-         * the artifact scans for is the run's own scan member, without one it
-         * is the whole necessary set's pick, and choosing them in two places
-         * is how they would come to disagree. `-fno-req-byte` denies both —
-         * there is no run check without a byte to `memchr` — and
-         * `-fno-req-run` leaves the one-byte check standing. */
-        cx.job->req_run = (ReqRun){ { 0 }, 0, 0, { 0 }, 0, 0 };
-        cx.job->req_set = (ReqSet){ { 0 } };
-        cx.job->req_byte = -1;
-        if (!(defo.flags & PCREC_NO_REQ_BYTE))
-            cx.job->req_byte = pcrec_req_byte(
-                &cx, root, !(defo.flags & PCREC_NO_REQ_RUN), &cx.job->req_run,
-                &cx.job->req_set);
+         * NOTHING IS COMPUTED HERE any more: each fact is derived on its first
+         * ask, and a fact deny is applied INSIDE the fact's accessor
+         * (src/facts/facts.c), where a denied build is indistinguishable from
+         * a pattern with nothing to find — `src/opt/possessify.c`'s no-trace
+         * rule, which this site applied inline until [PATFACTS] step 3.0. */
+        pcrec_facts_seal_e2(&cx, root);
 
         /* The DFA pair is built when the DFA IS the engine, and also when the VM
          * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the

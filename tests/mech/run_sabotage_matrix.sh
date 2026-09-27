@@ -2440,6 +2440,31 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/limits.log" | grep -oE '[0-9]+')"
                 score_arm "$work/limits.log" "$f" "limits:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            facts)
+                # [PATFACTS] step 3.0 (D126) tests/codegen/run_facts_checks.sh —
+                # the pattern-facts record's own checks: WHO may reach a
+                # derivation (the include graph against the owner list
+                # generated from src/facts/facts.def, and the link-symbol join
+                # that catches a hand `extern`), and the `--emit-facts`
+                # listing's completeness, why-truthfulness and decisions=stamps
+                # checks (design §11.6). ITS OWN ARM: what it guards is the
+                # record's STRUCTURE and its inspection surface, and none of it
+                # can move an answer, so a row on this arm scores
+                # `corpus:0fail` BY DESIGN and this arm is its whole detector.
+                #
+                # It reads the sabotaged tree's own OBJECTS (`$tree/build/obj`,
+                # through PCREC's directory) — the link assertion is about what
+                # the plant compiled into.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE rather than "not detected".
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_facts_checks.sh" \
+                    > "$work/facts.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/facts.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/facts.log" | grep -oE '[0-9]+')"
+                score_arm "$work/facts.log" "$f" "facts:${f:-ERR}fail/${p:-?}pass"
+                ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit
                 # tier for a helper that belongs to no single feature. Its

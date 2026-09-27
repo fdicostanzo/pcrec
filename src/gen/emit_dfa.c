@@ -301,7 +301,7 @@ static bool dfa_search_is_pinned(Ctx *cx);
  * `memchr` at all). The derivation itself is far below, beside the two
  * prefilter derivations it reads. */
 typedef enum {
-    REQ_ADMIT_EMITTED = 0,  /* a pre-check is emitted, on `Job.req_byte` */
+    REQ_ADMIT_EMITTED = 0,  /* a pre-check is emitted, on the `req_byte` fact */
     REQ_ADMIT_NONE,         /* there is no necessary byte to check */
     REQ_ADMIT_ONE_ATTEMPT,  /* G2: the route answers in ONE attempt */
     REQ_ADMIT_DOMINATED     /* G1: an equally rare byte is already scanned */
@@ -332,7 +332,7 @@ typedef struct {
     int nterm;
     struct { const PrefixK *k; } term[PCREC_OFSK_MAX_SET]; /* k == NULL: the run */
     int run_o, run_len;               /* run_len == 0: no run term */
-    const unsigned char *run_bytes;   /* Job.req_run.bytes or .whole, never a copy */
+    const unsigned char *run_bytes;   /* the req_run fact's bytes or whole, never a copy */
     int maxk;                         /* the loop guard: the largest tested offset */
     int noffsets;                     /* distinct offsets tested */
 } OfsTest;
@@ -681,7 +681,7 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
  * `<prefix>_search_run` in emit_vm.c) — one text, so the two routes cannot
  * take the bound in two different shapes.
  *
- * Emits NOTHING when `Job.end_window` declines, which is what keeps every
+ * Emits NOTHING when the `end_window` fact declines, which is what keeps every
  * artifact outside the mechanism's population byte-identical to the shape
  * before it and makes `-fno-end-window`'s own sweep a control.
  *
@@ -699,7 +699,7 @@ void pcrec_emit_startpos_guard(Ctx *cx, StrBuf *c, const char *indent,
 void pcrec_emit_end_window_clamp(Ctx *cx, StrBuf *c, const char *indent,
                                  const char *posvar, const char *lenvar)
 {
-    long long w = cx->job->end_window;
+    long long w = pcrec_fact_end_window(cx);
     if (w < 0) return;
     pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
     pcrec_sb_printf(c,
@@ -789,18 +789,20 @@ static void ofs_test_run(OfsTest *t, const unsigned char *run, int n, int i)
 /* The run pre-check's tests, the ONE derivation its file-scope blocks
  * (`pcrec_emit_req_run_blocks`) and its call site (`emit_req_run_check`) both
  * read, so a block cannot be written without its call or called unwritten:
- * `t[0]` the window `Job.req_run.bytes` on every route that emits the run
- * pre-check, and `t[1]` [K66]'s whole run `Job.req_run.whole` where the route
+ * `t[0]` the window the `req_run` fact's `bytes` on every route that emits the run
+ * pre-check, and `t[1]` [K66]'s whole run the `req_run` fact's `whole` where the route
  * has no DFA scan in front and the run is longer than its window. Returns how
- * many, 0 where no run pre-check is emitted. Both read the one `Job.req_run`
+ * many, 0 where no run pre-check is emitted. Both read the one the `req_run` fact
  * field S1's pin reads (R3-2): `bytes == whole + at`, so the whole run's scan
  * member is the window's, at `at + idx`. */
 static int req_run_tests(Ctx *cx, OfsTest t[2])
 {
-    const ReqRun *r = &cx->job->req_run;
-    if (cx->job->req_byte < 0 || r->len < 2 || req_admit(cx) != REQ_ADMIT_EMITTED)
+    const ReqRun *r = pcrec_fact_req_run(cx);
+    if (pcrec_fact_req_byte(cx) < 0 || r->len < 2 ||
+        req_admit(cx) != REQ_ADMIT_EMITTED)
         return 0;
     ofs_test_run(&t[0], r->bytes, r->len, r->idx);
+    r = pcrec_fact_req_whole_run(cx);   /* the same struct's core half */
     if (pcrec_artifact_has_dfa_scan(cx) || r->whole_len <= r->len) return 1;
     ofs_test_run(&t[1], r->whole, r->whole_len, r->at + r->idx);
     return 2;
@@ -853,7 +855,7 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
                               const char *posvar, const char *subjvar,
                               const char *lenvar)
 {
-    const ReqRun *r = &cx->job->req_run;
+    const ReqRun *r = pcrec_fact_req_run(cx);
     OfsTest t[2];
     int n = req_run_tests(cx, t), prev = 0, k;
     for (int i = 0; i < n; i++) {
@@ -905,7 +907,7 @@ static void emit_req_run_check(Ctx *cx, StrBuf *c, const char *indent,
  * A DFA-scanning artifact needs none of this: its scan is already linear in
  * the window whatever the pre-check tests.
  *
- * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: `Job.req_byte`
+ * WHAT COUNTS AS ALREADY TESTED is the first half's own bytes: the `req_byte` fact
  * for the one-byte form, every byte of the WHOLE run for the run form (on
  * this route `emit_req_run_check` has compared all of it, and a window holding
  * the run holds each of its bytes). Members go out in ascending byte
@@ -920,13 +922,16 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
                               const char *posvar, const char *subjvar,
                               const char *lenvar)
 {
-    const ReqSet *set = &cx->job->req_set;
-    const ReqRun *r = &cx->job->req_run;
+    const ReqSet *set;
+    const ReqRun *r = pcrec_fact_req_whole_run(cx);
     bool done[256] = { false };
     int b, k, n = 0;
     if (pcrec_artifact_has_dfa_scan(cx)) return;
     if (r->len >= 2) for (k = 0; k < r->whole_len; k++) done[r->whole[k]] = true;
-    else done[cx->job->req_byte] = true;
+    else done[pcrec_fact_req_byte(cx)] = true;
+    /* Asked only on the one route that reads it, so `--emit-facts` can say
+     * which artifacts consumed the whole set. */
+    set = pcrec_fact_req_set(cx);
     for (b = 0; b < 256; b++)
         if (((set->bits[b >> 3] >> (b & 7)) & 1) && !done[b]) n++;
     if (n == 0) return;
@@ -956,7 +961,7 @@ static void emit_req_set_rest(Ctx *cx, StrBuf *c, const char *indent,
 
 /* [OPT-REQBYTE] THE NECESSARY-BYTE PRE-CHECK, written ONCE and emitted by
  * BOTH engines' search entries — one text, so the two routes cannot test the
- * byte in two different shapes. Emits nothing where `Job.req_byte` declined,
+ * byte in two different shapes. Emits nothing where the `req_byte` fact declined,
  * which keeps every artifact outside the mechanism's population
  * byte-identical to the shape before it.
  *
@@ -988,7 +993,7 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
                                const char *posvar, const char *subjvar,
                                const char *lenvar)
 {
-    int b = cx->job->req_byte;
+    int b = pcrec_fact_req_byte(cx);
     if (b < 0) return;
     /* [OPT-PRECHECK-ADMIT] THE ADMISSION, and it is asked HERE rather than at
      * the three call sites for the reason this file states everywhere else: a
@@ -998,12 +1003,12 @@ void pcrec_emit_req_byte_check(Ctx *cx, StrBuf *c, const char *indent,
     if (req_admit(cx) != REQ_ADMIT_EMITTED) return;
     /* [OPT-REQPOS] tier 2b: the RUN is the same fact at word grain and its
      * check subsumes this one, so where a run shipped it is the only
-     * pre-check emitted — and `Job.req_byte` is then the run's own scan
+     * pre-check emitted — and the `req_byte` fact is then the run's own scan
      * member, chosen with the run at one site (src/opt/reqbyte.c's single
      * return) so the stamp and the emitted `memchr` cannot disagree. The
      * one-byte text below is left at its own indent, un-nested, because
      * sabotage row S265's anchor is in it. */
-    if (cx->job->req_run.len >= 2) {
+    if (pcrec_fact_req_run(cx)->len >= 2) {
         emit_req_run_check(cx, c, indent, posvar, subjvar, lenvar);
         emit_req_set_rest(cx, c, indent, posvar, subjvar, lenvar);
         return;
@@ -5289,7 +5294,7 @@ static void ofs_test_model(const UnanchStart *us, OfsTest *t);
 static bool pf_run_applies_common(const DfaSel *s)
 {
     const UnanchStart *u = s->us;
-    const ReqRun *r = &s->cx->job->req_run;
+    const ReqRun *r = pcrec_fact_req_run(s->cx);
     const PrefixKSets *o = &u->ofsk;
     if (!s->forward || u->kind == DFA_PF_NONE) return false;
     if (r->len < 2) return false;
@@ -5340,7 +5345,7 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
                         OfsTest *t)
 {
     const PrefixKSets *o = &us->ofsk;
-    const ReqRun *r = &cx->job->req_run;
+    const ReqRun *r = pcrec_fact_req_run(cx);
     memset(t, 0, sizeof *t);
     if (pf->emit_block == NULL) return false;
     if (!pf->run_term) { ofs_test_model(us, t); return true; }
@@ -5406,11 +5411,11 @@ static bool ofs_test_at(const OfsTest *t, int o, const PrefixK **kp, int *bytep)
 
 /* Does `t` refuse every candidate whose window lacks the necessary run at its
  * pin — does it test each offset `run_o + i` with exactly the byte
- * `Job.req_run.bytes[i]`, as its scan, as a singleton term, or inside its run
+ * the `req_run` fact's `bytes[i]`, as its scan, as a singleton term, or inside its run
  * term? False where the run is not pinned (litscan_s1.md §1.4 `verifies`). */
 static bool ofs_test_verifies_run(Ctx *cx, const OfsTest *t, const PrefixKSets *o)
 {
-    const ReqRun *r = &cx->job->req_run;
+    const ReqRun *r = pcrec_fact_req_run(cx);
     if (r->len < 2 || !o->run_pinned) return false;
     for (int i = 0; i < r->len; i++) {
         const PrefixK *k;
@@ -5788,7 +5793,7 @@ static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
  * one-attempt artifacts read `<PREFIX>_DFA_PREFILTER "none"`. The pre-check is
  * emitted one level above, and did not inherit the decline. It does now, from
  * the same two predicates each route's own bound is written from
- * (`dfa_interior_dead(d->s1u)` on the DFA route, `Job.start_anchor` on the
+ * (`dfa_interior_dead(d->s1u)` on the DFA route, the `start_anchor` fact on the
  * VM's), never a third statement of either. */
 
 /* What the artifact's candidate-start scan already proves, for G1: the byte
@@ -5859,12 +5864,12 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
  * `^`-anchored row gives the literal 0 and the `\G`-anchored row gives
  * `search_from`; both are one iteration at most), and `attempt_cand` declines
  * the prefilter on that same predicate. The VM's `emit_vm` writes
- * `attempt_max = search_from` under `Job.start_anchor != PCREC_SANCH_NONE`,
+ * `attempt_max = search_from` under a `start_anchor` fact other than `PCREC_SANCH_NONE`,
  * which is the `RX_VM_START "anchored"`/`"gstart"` pair.
  *
  * THE DFA'S ANSWER IS THE TIGHTER ONE and is deliberately not replaced by the
  * AST's: the subset construction has already pruned unsatisfiable branches, so
- * `dfa_interior_dead` can hold where `Job.start_anchor` could not prove it.
+ * `dfa_interior_dead` can hold where the `start_anchor` fact could not prove it.
  * `emit_attempt` asserts the other direction (an AST-proved anchor with a live
  * interior start state is a miscompile) at the one site that holds both.
  *
@@ -5883,7 +5888,7 @@ static void dfa_cand_scan(Ctx *cx, CandScan *cs)
 static bool req_route_one_attempt(Ctx *cx)
 {
     if (cx->job->fit.chosen == ENGM_VM)
-        return cx->job->start_anchor != PCREC_SANCH_NONE &&
+        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);
     return cx->job->engine == PCREC_ENG_ATTEMPT &&
@@ -5918,9 +5923,9 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
 {
     int p = cs->byte;
     if (p < 0) return false;
-    if (cx->job->req_run.len >= 2 && !cs->run_verified) return false;
+    if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
     if (p == q) return true;
-    if (cx->job->req_run.len >= 2) return false;
+    if (pcrec_fact_req_run(cx)->len >= 2) return false;
     if (!cs->memchr_form) return false;
     if (cx->opt->encoding != PCREC_ENC_BYTE) return false;
     return pcrec_byte_freq_ppm(p) <= pcrec_byte_freq_ppm(q);
@@ -5933,17 +5938,17 @@ static bool req_byte_dominated_by(Ctx *cx, const CandScan *cs, int q)
  * ORDER IS PART OF THE ANSWER. "No necessary byte" comes first because the
  * other two are claims ABOUT a byte; G2 comes before G1 because it is a
  * property of the route and holds whatever the artifact scans, while G1 has to
- * ask what that is. A declined artifact keeps `Job.req_byte` and its
+ * ask what that is. A declined artifact keeps the `req_byte` fact and its
  * `<PREFIX>_REQ_BYTE`/`<PREFIX>_REQ_RUN` stamps unchanged — the analysis ran
  * and its answer is still true of the pattern — so this enum is a statement
  * about EMISSION alone, and it is the only thing that moves. */
 static ReqAdmit req_admit(Ctx *cx)
 {
     CandScan cs;
-    if (cx->job->req_byte < 0) return REQ_ADMIT_NONE;
+    if (pcrec_fact_req_byte(cx) < 0) return REQ_ADMIT_NONE;
     if (req_route_one_attempt(cx)) return REQ_ADMIT_ONE_ATTEMPT;
     dfa_cand_scan(cx, &cs);
-    if (req_byte_dominated_by(cx, &cs, cx->job->req_byte))
+    if (req_byte_dominated_by(cx, &cs, pcrec_fact_req_byte(cx)))
         return REQ_ADMIT_DOMINATED;
     return REQ_ADMIT_EMITTED;
 }
@@ -7842,7 +7847,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     bool anchored = a_bot && a_gst;
 
     /* [OPT-ANCHOR-VM] THE AGREEMENT ASSERTION, and it runs in ONE DIRECTION
-     * BY DESIGN. `Job.start_anchor` (src/opt/startanch.c) is the AST-level
+     * BY DESIGN. the `start_anchor` fact (src/opt/startanch.c) is the AST-level
      * answer to the question the two lines above answer from the machine.
      * Since [OPTLOOP.1] batch 1 there is one predicate and the VM reads it;
      * this route keeps its own derivation because the subset construction
@@ -7857,11 +7862,11 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * at the one site that holds both answers, rather than left to a check
      * with no witness. Verified silent over the whole shipped corpus and
      * every axis of `make test-axes` at the landing. */
-    if (cx->job->start_anchor == PCREC_SANCH_BOT && !anchored)
+    if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_BOT && !anchored)
         pcrec_ctx_fail(cx, 0,
             "internal error: the pattern's AST proves every match begins at "
             "offset 0, but this machine has a live interior start state");
-    if (cx->job->start_anchor == PCREC_SANCH_GSTART && !a_bot)
+    if (pcrec_fact_start_anchor(cx) == PCREC_SANCH_GSTART && !a_bot)
         pcrec_ctx_fail(cx, 0,
             "internal error: the pattern's AST proves every match begins at "
             "the caller's startpos, but this machine has a live interior "
@@ -8475,7 +8480,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * is exactly the population the mechanism exists for. The condition is
      * `pcrec_emit_req_byte_check`'s OWN, through the shared admission
      * ([OPT-PRECHECK-ADMIT]) rather than a restatement of when that function
-     * emits: reading `Job.req_byte` alone would declare `<string.h>` for an
+     * emits: reading the `req_byte` fact alone would declare `<string.h>` for an
      * artifact whose pre-check was admitted out and whose body then calls no
      * `memchr` at all. */
     ReqAdmit admit = req_admit(cx);
@@ -8563,10 +8568,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * too old to have the analysis" identically. */
     {
         char ewbuf[32];
-        if (cx->job->end_window < 0) {
+        if (pcrec_fact_end_window(cx) < 0) {
             pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", "none");
         } else {
-            snprintf(ewbuf, sizeof ewbuf, "%lld", cx->job->end_window);
+            snprintf(ewbuf, sizeof ewbuf, "%lld", pcrec_fact_end_window(cx));
             pcrec_sb_stamp_str(c, g->upper, "END_WINDOW", ewbuf);
         }
     }
@@ -8592,10 +8597,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
          * every artifact G1 declines, and a compiler that stopped deriving
          * bytes altogether would read identical to one that derived them and
          * declined. Two facts, two stamps, each checkable on its own. */
-        if (cx->job->req_byte < 0) {
+        if (pcrec_fact_req_byte(cx) < 0) {
             pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", "none");
         } else {
-            snprintf(rbbuf, sizeof rbbuf, "%d", cx->job->req_byte);
+            snprintf(rbbuf, sizeof rbbuf, "%d", pcrec_fact_req_byte(cx));
             pcrec_sb_stamp_str(c, g->upper, "REQ_BYTE", rbbuf);
         }
     }
@@ -8620,7 +8625,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
      * being emitted". */
     {
         char rrbuf[2 * PCREC_MAX_REQ_RUN_EMIT + 16];
-        const ReqRun *rr = &cx->job->req_run;
+        const ReqRun *rr = pcrec_fact_req_run(cx);
         /* [OPT-PRECHECK-ADMIT] unchanged by the admission, for
          * `<PREFIX>_REQ_BYTE`'s reason one stamp up: this names the run the
          * analysis found, and `<PREFIX>_REQ_WHY` names whether it was

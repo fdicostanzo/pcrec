@@ -23,7 +23,7 @@ SAB_DOC_FIGURE="Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S28
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "q[a-z]*qu" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && echo REACH-RUN-PRECHECK-NOT-DOMINATED'
 SAB_REACH_EXPECT="REACH-RUN-PRECHECK-NOT-DOMINATED"
 SAB_COUNT=1
-SAB_BEFORE='    if (cx->job->req_run.len >= 2 && !cs->run_verified) return false;
+SAB_BEFORE='    if (pcrec_fact_req_run(cx)->len >= 2 && !cs->run_verified) return false;
     if (p == q) return true;'
 SAB_AFTER='    /* SABOTAGE S286: run_verified conjunct dropped */
     if (p == q) return true;'

@@ -31,12 +31,24 @@ defect traced to that edge (design §4.2.1, §10).
 
 ## Files
 
-- `facts.h` — the CONSUMER header: types, accessors and renderers. No
-  derivation. `core/internal.h` includes it so `Job` can carry the record.
+- `facts.def` — THE TABLE, one `PF_FACT(ID, name, epoch, kind, deny, owner,
+  depends)` row per fact (design §11.3 item 1). The accessor ids, the deny
+  application, the epoch guard and the `--emit-facts` row order are
+  generated from it; the OWNER column, read as PLAIN TEXT by the check, is
+  the list of files allowed to include `facts_derive.h`. One row per line.
+- `facts.h` — the CONSUMER header: the facts' value types (`ReqRun`,
+  `ReqSet`, `PCREC_SANCH_*`), `PatFacts` (`Job.pf`), the seals, the
+  accessors and the renderers. No derivation. Self-contained;
+  `core/internal.h` includes it so `Job` can carry the record.
+- `facts.c` — the RECORD: every accessor's four steps (epoch guard, memo,
+  deny, derive — `pf_enter` is the first three, so no accessor can skip
+  one), the E2 seal, and the `used` bit (set by a PASS asking, never by a
+  derived fact's own derivation).
 - `facts_derive.h` — the FACTS-PRIVATE header: every derivation's
   declaration. Only this directory's files and the OWNER files `facts.def`
   names may include it; `tests/codegen/run_facts_checks.sh` checks that from
-  the include graph AND the link symbols.
+  the include graph AND the link symbols (`tests/codegen/run_facts_checks.sh`,
+  sabotage rows S295/S296).
 
 ## What the check cannot catch
 

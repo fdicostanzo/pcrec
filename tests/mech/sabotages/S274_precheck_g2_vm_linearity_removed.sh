@@ -25,7 +25,7 @@ SAB_DOC_FIGURE="tests/base/k64_precheck_forced_vm.rxt is the answer-level detect
 SAB_REACH='"$PCREC" --features all --engine=vm -p rx -o "$REACH_TMP/o.c" --pattern "^([a-zA-Z0-9._%+-]+)+@" && grep -q "^#define RX_VM_FRAMELESS 0" "$REACH_TMP/o.c" && grep -q "^#define RX_VM_PREFILTER \"none\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_WHY \"emitted\"" "$REACH_TMP/o.c" && grep -q "memchr(subject + search_from," "$REACH_TMP/o.c" && echo REACH-K64-FRAMED-VM-KEEPS-PRECHECK'
 SAB_REACH_EXPECT="REACH-K64-FRAMED-VM-KEEPS-PRECHECK"
 SAB_COUNT=1
-SAB_BEFORE='        return cx->job->start_anchor != PCREC_SANCH_NONE &&
+SAB_BEFORE='        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE &&
                ((cx->job->fit.prefilter && !cx->job->fit.prefilter_collapsed) ||
                 cx->job->vm_frameless);'
-SAB_AFTER='        return cx->job->start_anchor != PCREC_SANCH_NONE;   /* SABOTAGE S274: K64 linearity conjunct removed */'
+SAB_AFTER='        return pcrec_fact_start_anchor(cx) != PCREC_SANCH_NONE;   /* SABOTAGE S274: K64 linearity conjunct removed */'

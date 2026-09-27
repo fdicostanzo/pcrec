@@ -77,7 +77,7 @@
  *
  * WHICH MEMBER OF THE RUN THE `memchr` SCANS FOR is the same argmin under the
  * same prior over a smaller set, ties to the LEFTMOST — and when a run ships,
- * `Job.req_byte` becomes that member rather than the whole set's own pick,
+ * the `req_byte` fact becomes that member rather than the whole set's own pick,
  * because there is ONE emitted `memchr` and the stamp reports what it tests.
  * The two are therefore chosen at one site, at this file's single return.
  *
@@ -123,8 +123,10 @@
  * why the alarm is worth more than the default — a new kind that really does
  * carry a necessary byte would silently never contribute one.
  *
- * Called from `src/core/compile.c` after `pcrec_lower_enc` and before either
- * emitter, into `Job.req_byte` and `Job.req_run`. */
+ * Called by the pattern-facts record (`src/facts/facts.c`) on the first ask
+ * of any of the four necessary-byte facts (`req_set`, `req_whole_run`,
+ * `req_run`, `req_byte`), over the LOWERED tree the E2 seal recorded after
+ * `pcrec_lower_enc`. */
 
 #include <string.h>
 

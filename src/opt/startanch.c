@@ -46,8 +46,9 @@
  * An analysis that pattern-matches `case A_BOL:` and does not read that field
  * reproduces `src/opt/possessify.c`'s own recorded miscompile one file over.
  *
- * WHERE IT IS CALLED: `src/core/compile.c`, after `pcrec_lower_enc` and before
- * either emitter runs, into `Job.start_anchor`. Diagnosis and measurement:
+ * WHERE IT IS CALLED: by the pattern-facts record (`src/facts/facts.c`), on
+ * the `start_anchor` fact's first ask, over the LOWERED tree the E2 seal
+ * recorded after `pcrec_lower_enc`. Diagnosis and measurement:
  * `docs/dev/optloop/cycle1_analysis.md` M2, `cycle1_profile.md` M2. */
 
 #include "core/internal.h"

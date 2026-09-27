@@ -1683,7 +1683,7 @@ typedef struct {
     unsigned rate_ppm;                /* predicted candidate rate, selected */
     unsigned base_ppm;                /* ... and under the offset-0 filter alone */
     /* [OPT-LITSCAN] S1 — THE NECESSARY RUN'S PIN, an analysis fact and not a
-     * selection: true iff `Job.req_run` (len >= 2) sits at offset `run_o` of
+     * selection: true iff the `req_run` fact (len >= 2) sits at offset `run_o` of
      * EVERY match — k[run_o + i] is the singleton req_run.bytes[i] for every
      * i. Read by dfa_pfs[]'s run rows and by G1; decided by neither here.
      * A `bool` and not a `run_o == -1` sentinel: every early return above the
@@ -2415,51 +2415,9 @@ enum {
  * accessors, never a derivation (docs/design/patfacts/design.md §4.2.1). */
 #include "facts/facts.h"
 
-/* [OPT-REQPOS] tier 2b — THE NECESSARY LITERAL RUN, in the bounded form the
- * emitted compare needs: `len` contiguous bytes every match of the pattern
- * must contain, and the INDEX within them of the one the emitted `memchr`
- * scans for.
- *
- * `len == 0` is the decline and is the safe direction, exactly as
- * `Job.req_byte`'s -1 is: no run, no compare, the artifact is the shape it
- * was before this mechanism. `len` is never 1 — a one-byte run is
- * `[OPT-REQBYTE]`'s own `L = 1` case and is carried by `Job.req_byte`
- * alone, so the two facts never describe the same emitted text.
- *
- * `idx` is a position INSIDE the run and nothing else. It is not an offset
- * from the match start, not a `dmin`/`dmax`, and the mechanism reads no such
- * thing — a run is a statement about its own members' RELATIVE positions
- * (docs/design/reqpos_2b.md §0 finding 1).
- *
- * [K66] `whole` is the run the WINDOW `bytes` was cut from, as the analysis
- * stored it (at most `PCREC_MAX_REQ_RUN_SCAN` bytes), and `bytes` is exactly
- * `whole + at` for `len` bytes — one derivation, both halves published by it.
- * The window is the speed choice every route compares; the whole run is what
- * a VM route with no DFA scan in front ALSO compares, because there the
- * pre-check is the only linear no-match proof and a proof resting on one
- * window made NOMATCH-vs-give-up follow the prior's window pick. */
-typedef struct {
-    unsigned char bytes[PCREC_MAX_REQ_RUN_EMIT];
-    int len;   /* 0 = declined; otherwise 2..PCREC_MAX_REQ_RUN_EMIT */
-    int idx;   /* 0..len-1: which member the emitted memchr tests */
-    unsigned char whole[PCREC_MAX_REQ_RUN_SCAN];
-    int whole_len;   /* 0 exactly when `len` is; otherwise len..SCAN */
-    int at;          /* where the window starts inside `whole` */
-} ReqRun;
-
-/* [K65] THE WHOLE NECESSARY SET, as a 256-bit membership table: every byte
- * every match of the pattern must contain, of which `Job.req_byte` is the one
- * member the pick chose. Empty exactly when `Job.req_byte` is -1.
- *
- * It is carried past the analysis because one route needs more than the pick.
- * On a VM artifact with no DFA scan in front, the pre-check is the only
- * linear NO-MATCH PROOF the call has, and a proof resting on one member makes
- * the answer on a hostile subject (NOMATCH or a step give-up) depend on which
- * member a SPEED rule chose (K65). Testing every member makes it depend on the
- * set alone, which is a fact about the pattern. */
-typedef struct {
-    unsigned char bits[32];
-} ReqSet;
+/* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
+ * types — live in src/facts/facts.h with the record that carries them
+ * ([PATFACTS] step 3.0). */
 
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
@@ -2580,46 +2538,12 @@ typedef struct {
      * backtrack, so its one attempt is linear. Meaningless on a DFA artifact
      * and never read there. */
     bool vm_frameless;
-    /* [OPT-ANCHOR-VM] THE START ANCHOR, derived ONCE per attempt from the
-     * LOWERED tree by `pcrec_start_anchor` (src/opt/startanch.c) and read by
-     * both emitters: the VM bounds its attempt loop on it and the DFA asserts
-     * its own, independently derived answer agrees in the sound direction.
-     * `PCREC_SANCH_NONE` under `-fno-vm-anchor-bound`, deliberately
-     * indistinguishable from "nothing to bound" — possessify's own no-trace
-     * rule for a denied axis, one file over. */
-    int    start_anchor;
-    /* [OPT-ENDWIN] THE END-ANCHOR START WINDOW in BYTES, or -1 where the
-     * analysis declines — derived ONCE per attempt from the LOWERED tree by
-     * `pcrec_end_window` (src/opt/endwin.c) beside `start_anchor` above, and
-     * read by both emitters. `-1` under `-fno-end-window`, deliberately
-     * indistinguishable from "nothing to prove". */
-    long long end_window;
-    /* [OPT-REQBYTE] THE NECESSARY BYTE (0..255), or -1 — derived ONCE per
-     * attempt from the LOWERED tree by `pcrec_req_byte` (src/opt/reqbyte.c)
-     * beside the two fields above, and read by both emitters' search entries.
-     * -1 under `-fno-req-byte`, deliberately indistinguishable from "no byte
-     * is necessary".
-     *
-     * [OPT-REQPOS] WIDENED: when `req_run` below carries a run, this byte is
-     * the run's own scan member (`req_run.bytes[req_run.idx]`) rather than
-     * the argmin over the whole necessary SET, because the emitted `memchr`
-     * is the run loop's and the stamp reports what that `memchr` tests. The
-     * two are chosen at ONE site (`pcrec_req_byte`) so they cannot disagree. */
-    int    req_byte;
-    /* [OPT-REQPOS] tier 2b THE NECESSARY LITERAL RUN — derived by the SAME
-     * walk as `req_byte` above, as a second accumulator, and read by the same
-     * one emitted pre-check. `len == 0` under `-fno-req-run` (and under
-     * `-fno-req-byte`, which denies the run with it — there is no run check
-     * without a byte to `memchr`), deliberately indistinguishable from "no
-     * run of two or more bytes is necessary". [K66] It also carries the
-     * WHOLE run its window was cut from (`ReqRun.whole`), which the no-DFA-
-     * scan route's pre-check compares; one field, one derivation. */
-    ReqRun req_run;
-    /* [K65] THE WHOLE NECESSARY SET `req_byte` was picked from — the SAME
-     * walk's set, published by the same call. Empty under `-fno-req-byte`,
-     * as `req_byte` is -1 there. Read by one emitter site only
-     * (`pcrec_emit_req_byte_check`, on a VM route with no DFA scan). */
-    ReqSet req_set;
+    /* [PATFACTS] THE PATTERN-FACTS RECORD (src/facts/facts.h): the start
+     * anchor, the end window and the necessary set/run/byte, each derived
+     * ONCE per attempt on its first ask, behind one accessor per fact. Zeroed
+     * with the `Job` (one `calloc` per attempt), so the retry ladder resets
+     * it for free. Read ONLY through `pcrec_fact_*` — never a member. */
+    PatFacts pf;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
@@ -5751,7 +5675,7 @@ static inline bool pcrec_startgate_needed(const Ctx *cx)
  * called from BOTH emitters — one derivation, four call sites. Emits nothing
  * under an encoding that restricts no position, and nothing under
  * `-fno-startpos-guard`. See the function's own comment. */
-/* [OPT-ENDWIN] Raises `posvar` to `lenvar - Job.end_window` where the
+/* [OPT-ENDWIN] Raises `posvar` to `lenvar - end_window` where the
  * analysis proved every match must begin there or later; emits nothing where
  * it declined. ONE text for both engines' search entries — src/gen/emit_dfa.c
  * carries the underflow guard's argument and the soundness sentence. */
@@ -6184,22 +6108,8 @@ long long pcrec_cwmin(const Ast *a);                 /* src/opt/mrl.c */
 
 long long pcrec_cwmax(const Ast *a);                 /* src/opt/mrl.c */
 
-/* [OPT-ANCHOR-VM] THE START ANCHOR — at which positions can a match BEGIN?
- * ONE predicate, read by both emitters (src/opt/startanch.c's header carries
- * the whole account, including why the DFA's own `dfa_interior_dead` pair
- * becomes a CONFIRMATION of this answer rather than a second source of it,
- * and why the implication runs in only one direction). `_NONE` is the safe
- * answer and every undecidable arm gives it. */
-enum {
-    PCREC_SANCH_NONE = 0,   /* a match may begin anywhere */
-    PCREC_SANCH_GSTART,     /* every match begins at the caller's startpos */
-    PCREC_SANCH_BOT         /* every match begins at absolute offset 0 */
-};
-/* `pcrec_start_anchor` itself — the DERIVATION — is declared in
- * src/facts/facts_derive.h ([PATFACTS] step 3.0a). */
-/* The stamp/emitted-token spelling of the three values, so `<PREFIX>_VM_START`
- * and `--list-axes`' own row cannot drift from the enum. */
-const char *pcrec_start_anchor_name(int sanch);      /* src/opt/startanch.c */
+/* [OPT-ANCHOR-VM] `PCREC_SANCH_*` and its renderer `pcrec_start_anchor_name`
+ * are the start-anchor FACT's value vocabulary: src/facts/facts.h. */
 
 /* [OPT-ENDWIN] `pcrec_end_window` and [OPT-REQBYTE]/[OPT-REQPOS]'s
  * `pcrec_req_byte` are pattern-fact DERIVATIONS: declared in

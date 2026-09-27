@@ -2971,3 +2971,24 @@ give-up. **MEASURED post-re-anchor, tree `4106b318`: DETECTED,
 (`prechecks:2fail/260pass, corpus:4fail/5pass`, DETECTED)** — the two rows
 share their anchor text (both target the same function) but plant disjoint
 AFTERs, so neither's scratch build touches the other's row.
+
+## [PATFACTS] step 3.0 — `facts`, and two rows no answer can see (lane pf30, 2026-09-26)
+
+**`facts` is a new suite word** (registered before S295, R31 C11): it runs
+`tests/codegen/run_facts_checks.sh` against the sabotaged tree's own build,
+objects included (the link assertion reads `$tree/build/obj`). Every row on
+it scores `corpus:0fail` BY DESIGN — what it guards is the pattern-facts
+record's STRUCTURE (who may reach a derivation) and its inspection surface,
+none of which can move an answer — so the arm is each row's whole detector.
+**S295** plants `#include "facts/facts_derive.h"` into `src/gen/emit_vm.c`
+and nothing else (no function name re-inserted, so the row shares no string
+with the check); **S296** plants a block-scope hand `extern` of
+`pcrec_end_window` plus one discarded call there, without the include. Each
+is caught by exactly one of the check's two assertions, and each was
+verified in the failing direction by hand before the solo mech run (lane
+pf30's report). **Re-anchored in the same change:** S269, S274, S276, S286
+and S288 quoted `cx->job->start_anchor`/`cx->job->req_run.len`, which step
+3.0 respells through the accessors (`pcrec_fact_start_anchor(cx)`,
+`pcrec_fact_req_run(cx)->len`); only the read spelling moved, the plants'
+intent is unchanged.
+

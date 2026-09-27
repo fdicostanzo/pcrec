@@ -785,6 +785,22 @@ decides whether to perform it — and then run the row through
   - Landing figures: 14 witnesses × 5 shapes, rungs realised
     plain/shared/forward/inline, 0 differences, every witness matching.
 
+- **run_facts_checks.sh** — [PATFACTS] step 3.0 (D126, 2026-09-26): the
+  pattern-facts record's own checks (`docs/design/patfacts/design.md`
+  §4.2.3). (1) INCLUDE GRAPH: the includers of `src/facts/facts_derive.h`
+  EQUAL the owner list generated from `src/facts/facts.def` as plain text
+  (every `.c` under `src/facts/` plus each row's owner field) — equality,
+  not subset, so an owner that stops owning is a failure too. (2) LINK
+  SYMBOLS: no object outside the owner list references (`nm -u`) a symbol an
+  owner object defines (`nm -g`) and `facts.h` does not declare — the escape
+  (1) cannot see, a hand `extern`. The symbol set is `nm`'s, never a name
+  list; objects are read from `$(dirname $PCREC)/obj`, and the Mach-O `_`
+  prefix is stripped on darwin. REACH lines print the row, owner, symbol and
+  object counts and an empty population FAILS rather than passing
+  vacuously. Sabotage S295 (a consumer includes the private header, caught
+  by (1) alone) and S296 (a hand extern plus call, caught by (2) alone), mech
+  arm `facts`. What it cannot see — a hand RE-SPELLING of a walk — is named
+  in `src/facts/CLAUDE.md`.
 - **run_prechecks.sh** — [OPTLOOP.1] batch 1 (D119, 2026-09-22): THE
   WHOLE-WINDOW PRE-CHECKS' structural gate, `make test-prechecks`, its own
   section for `run_vm_frameless.sh`'s reason. Three independent sections,

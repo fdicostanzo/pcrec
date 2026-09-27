@@ -53,8 +53,9 @@
  *
  * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM, `src/opt/mrl.c:38-46`'s rule.
  *
- * Called from `src/core/compile.c` after `pcrec_lower_enc` and before either
- * emitter, into `Job.end_window`. */
+ * Called by the pattern-facts record (`src/facts/facts.c`) on the
+ * `end_window` fact's first ask, over the LOWERED tree the E2 seal recorded
+ * after `pcrec_lower_enc`. */
 
 #include "core/internal.h"
 #include "enc/enc.h"

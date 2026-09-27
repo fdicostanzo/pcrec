@@ -162,10 +162,11 @@ all: $(BUILD_DIR)/pcrec $(BUILD_DIR)/libpcrec.a
 # advertise a spelling the parser no longer accepts. It is NOT in GEN_TABLES,
 # for rxt_schema.def's reason: hand-authored design, not a vendored source.
 # src/facts/facts.h and src/facts/facts_derive.h joined at [PATFACTS] step
-# 3.0a WITH the files, the class above forestalled a sixth time: facts.h is
+# 3.0a WITH the files, the class above forestalled a sixth time (facts.def,
+# the X-macro table, joined at 3.0 with the file): facts.h is
 # included by core/internal.h (so by every translation unit), and
 # facts_derive.h by the fact owners.
-FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h
+FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def
 GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
@@ -415,6 +416,9 @@ test-examples: all
 # and it is the only check in the tree that compares a `-fno-comments`
 # artifact against anything -- which is the population every existing
 # byte-identity gate is blind to by construction.
+# [PATFACTS] run_facts_checks.sh joins at step 3.0 (design §4.2.3): an
+# include scan and an `nm` join over the built objects, well under a second --
+# the pattern-facts record's structural check, born with the record.
 test-codegen: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
@@ -428,7 +432,8 @@ test-codegen: all
 	    'bash tests/codegen/run_n1_budget.sh' \
 	    'bash tests/codegen/run_comment_escape.sh' \
 	    'bash tests/codegen/run_comments_axis.sh' \
-	    'bash tests/codegen/run_cls_fold_agreement.sh'
+	    'bash tests/codegen/run_cls_fold_agreement.sh' \
+	    'bash tests/codegen/run_facts_checks.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
 # (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a

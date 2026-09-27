@@ -1,0 +1,40 @@
+/* src/facts/facts.def — THE PATTERN-FACTS TABLE ([PATFACTS], D120/D126;
+ * docs/design/patfacts/design.md §1, §11.3 item 1). ONE ROW PER FACT, and a
+ * fact that exists has a row by construction: the accessor ids, the deny
+ * application in `facts.c`, the epoch guard and the `--emit-facts` row order
+ * are all generated from here.
+ *
+ *   PF_FACT(ID, name, epoch, kind, deny, owner, depends)
+ *
+ *   ID       `PF_<ID>`, the fact's index in `PatFacts.why[]` and its memo bit.
+ *   name     the listing's `fact` column. ADVISORY (facts_listing.md): a
+ *            migration step may rename a fact.
+ *   epoch    1/2/3: the seal the fact may be asked after (design §3). Asking
+ *            before it is an internal-error refusal.
+ *   kind     PF_CORE — a walk of the sealed IR, reading no prior and no other
+ *            fact's choice; PF_DERIVED — a function of core facts (and, from
+ *            [FINDINGS] B1, the byte-rate). Design §4.1.
+ *   deny     the `lib/pcrec.h` bit(s) that make this a FACT DENY: the fact's
+ *            empty value, stored without deriving, for EVERY consumer
+ *            (design §7.1). `0` for none. `docs/spec/tuning.md`'s entry for
+ *            each flag names the facts it empties, and
+ *            `tests/codegen/run_facts_checks.sh` checks the listing against
+ *            THAT text, never against this column.
+ *   owner    the file whose derivation computes the fact. The set of owners
+ *            plus every `.c` file under `src/facts/` IS the list of files allowed to include
+ *            `facts_derive.h`; the check reads it off this table as PLAIN
+ *            TEXT (one `PF_FACT(` line, the sixth field), never through the
+ *            X-macro (design §4.2.3: a preprocessor defect must not hide a row
+ *            from the check that polices it).
+ *   depends  the facts this one's derivation asks, space-separated — the
+ *            dependency DAG, written once (design §4.2.2 item 2).
+ *
+ * ROW ORDER IS THE LISTING'S ROW ORDER. Keep one row per line: the check's
+ * plain-text scan counts `PF_FACT(` line markers. */
+PF_FACT(START_ANCHOR,  "start_anchor",  2, PF_CORE,    PCREC_NO_VM_ANCHOR_BOUND,            "src/opt/startanch.c", "")
+PF_FACT(END_WINDOW,    "end_window",    2, PF_CORE,    PCREC_NO_END_WINDOW,                 "src/opt/endwin.c",    "")
+PF_FACT(REQ_SET,       "req_set",       2, PF_CORE,    PCREC_NO_REQ_BYTE,                   "src/opt/reqbyte.c",   "")
+PF_FACT(REQ_WHOLE_RUN, "req_whole_run", 2, PF_CORE,    PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/opt/reqbyte.c",   "")
+PF_FACT(REQ_RUN,       "req_run",       2, PF_DERIVED, PCREC_NO_REQ_BYTE | PCREC_NO_REQ_RUN, "src/opt/reqbyte.c",   "req_whole_run")
+PF_FACT(REQ_BYTE,      "req_byte",      2, PF_DERIVED, PCREC_NO_REQ_BYTE,                   "src/opt/reqbyte.c",   "req_set req_run")
+#undef PF_FACT

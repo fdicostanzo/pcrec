@@ -605,7 +605,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      0, 0, "", "always (fallback) — the class keeps its singleton/range/bitmap shape");
     }
     /* [OPT-ANCHOR-VM] vm-anchor-bound — §2.25. The VM's attempt-loop start
-     * bound, from `Job.start_anchor`'s one AST-level derivation. Its stamp is
+     * bound, from the `start_anchor` fact's one AST-level derivation. Its stamp is
      * a closed TOKEN, so `stamp_value` is spelled on every row — and the
      * three tokens are `src/opt/startanch.c`'s own, through
      * `pcrec_start_anchor_name`, so this registry surface and the emitted
@@ -632,7 +632,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — nothing was proved about where a match begins, or the deny flag; the loop runs to subject_length as it always has");
     }
     /* [OPT-ENDWIN] end-window — §2.26. The END-ANCHOR START WINDOW, from
-     * `Job.end_window`'s one AST-level derivation, on BOTH engines.
+     * the `end_window` fact's one AST-level derivation, on BOTH engines.
      *
      * `stamp_value` IS SPELLED ON THE FALLBACK ROW AND EMPTY ON THE OTHER,
      * which no other axis in this dump does, and the asymmetry is the stamp's
@@ -650,7 +650,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — the pattern is not end-anchored, its width is unbounded, it contains \\G (which reads the parameter the clamp would move), the encoding has non-boundary positions, or the deny flag");
     }
     /* [OPT-REQBYTE] req-byte — §2.27. The NECESSARY-BYTE whole-window
-     * pre-check, from `Job.req_byte`'s one AST-level derivation, on BOTH
+     * pre-check, from the `req_byte` fact's one AST-level derivation, on BOTH
      * engines' search entries. `stamp_value` is spelled on the fallback row
      * and empty on the other, `end-window`'s asymmetry one axis up and for
      * its reason: the stamp carries a NUMBER where the analysis found a byte
@@ -665,7 +665,7 @@ static void emit_predicate_axes(StrBuf *sb)
                      "always (fallback) — no byte is necessary on every path (an alternation with no common literal, a caselessly folded literal, a nullable quantifier), or the deny flag");
     }
     /* [OPT-REQPOS] tier 2b req-run — §2.28. The NECESSARY literal RUN, the
-     * same fact at word grain, from `Job.req_run`'s second accumulator on the
+     * same fact at word grain, from the `req_run` fact's second accumulator on the
      * same walk. `req-byte` above is its `L = 1` case, which is why the two
      * rows read as one mechanism at two grains and why the run's own stamp
      * carries the scan member's INDEX as well as the bytes. */
