@@ -577,17 +577,21 @@ fi
 # it moved anyway; verified against the script's own live output (12 lines,
 # 6 per candidate, `bit 16`/`bit 32` interleaved) rather than assumed from
 # the bit count.
+#
+# 135 -> 138 at `[OPT-LITSCAN]` S2a (2026-09-27): `-fno-lit-run`
+# (`PCREC_NO_LIT_RUN`, bit 33) is one single-bit axis self-registering the
+# (macro, bit, flag) triple — 3 lines, `req-run`'s shape.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 135 ]; then
+if [ "$axesn" -ne 138 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 135." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 138." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (135 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (138 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 135 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 138 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
