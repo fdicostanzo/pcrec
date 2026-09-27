@@ -3298,3 +3298,13 @@ never edited afterwards.
   PATFACTS rev 2's B1 (readers moved beside the primitives, `reqbyte.c`
   deleted, S266/S288/S294 re-anchors named). The report lists each NONE rule
   as spelled, six open items and the stale spots left unfixed outside §6.
+- **findb1_report.md** — lane `findb1` (opus, 2026-09-27): [FINDINGS] B1 =
+  [PATFACTS] step 3.1, abi 39 -> 40. The byte-rate accessor and four rate
+  primitives (NONE spelled once per kind), the rate readers moved into
+  `src/core/findings.c` (`reqbyte.c` deleted), `src/findings/default.rxt`
+  with its committed embed + build-tool pre-parse (per-compile parse measured
+  ~20% of a minimal compile), `<P>_FINDINGS` + `rx_info.findings`,
+  `tests/findings/run_findings_tests.sh`, S301. Per-commit A/B results, the
+  two mover manifests (the byte one holds one quoted-size bench row — a
+  ruling owed), the abi and byte-count readers, deviations (committed `.inc`,
+  owner column, stamp position) and the open list.
