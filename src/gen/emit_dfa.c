@@ -1629,6 +1629,14 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                           mentions, in first-mention\n"
         "                                           order; NULL when none */\n"
         "    int                   nvars;       /* entries in vars[] */\n"
+        /* [FINDINGS] B1 THE FINDINGS STAMP'S MIRROR, APPENDED at the end on
+         * `vars`' own model (no existing member's offset moves). D43 makes
+         * `rx_info` the canonical machine-readable record, so the macro alone
+         * would be invisible to a linked binary (findings design §7). */
+        "    const char           *findings;    /* <PREFIX>_FINDINGS: the\n"
+        "                                           findings each query this\n"
+        "                                           compile asked was answered\n"
+        "                                           from; \"\" when none asked */\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -2257,6 +2265,18 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         pcrec_sb_puts(c, "};\n");
     }
 
+    /* [FINDINGS] B1 `<PREFIX>_FINDINGS` — WHICH FINDINGS THIS ARTIFACT WAS
+     * BUILT FROM: one `query=bundle:digest` item per query the compile asked,
+     * `query=none` where the analysis declared nothing for this encoding, ""
+     * where nothing asked (findings design §7). It is written HERE, beside
+     * its `rx_info` mirror and after every emitter has run, and not in the
+     * prologue with `<PREFIX>_REQ_BYTE`'s family, because the stamp must read
+     * the record after the LAST reader (§6.4 rule 2): the offset-k selection
+     * asks while the DFA body is being written, which is after the prologue
+     * on a build where the necessary-byte analysis was denied. The value is
+     * the final attempt's record, since `Job` is per attempt. */
+    const char *findings = pcrec_find_stamp(cx);
+    pcrec_sb_stamp_str(c, upper, "FINDINGS", findings);
     pcrec_sb_printf(c, "const struct rx_info %s = {\n", infoname);
     /* THE `abi` NUMBER, and where its change log lives.
      *
@@ -2685,6 +2705,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                         cx->opt->prefix, cx->n_vars);
     else
         pcrec_sb_puts(c, "    .vars = NULL,\n    .nvars = 0,\n");
+    pcrec_sb_puts(c, "    .findings = ");
+    emit_c_string_literal(c, findings, strlen(findings));
+    pcrec_sb_puts(c, ",\n");
     pcrec_sb_puts(c,   "};\n");
 }
 

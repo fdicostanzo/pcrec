@@ -75,6 +75,12 @@ const char *pcrec_find_store_text(const char *name, size_t *len)
     return NULL;
 }
 
+const char *pcrec_find_store_name(size_t i)
+{
+    return i < sizeof pcrec_find_store / sizeof *pcrec_find_store
+         ? pcrec_find_store[i].name : NULL;
+}
+
 const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n)
 {
     *n = PCREC_FIND_NTBL;
@@ -158,9 +164,48 @@ static void find_derive_byte_rate(Ctx *cx, PcrecFindRec *fr)
                                fb->bundle, fb->kind, fb->line);
             fr->byte_rate_have = true;
             fr->byte_rate_bundle = fb->bundle;
+            fr->byte_rate_digest = pcrec_find_byte_rate_digest(fr->byte_rate);
             return;
         }
     }
+}
+
+/* ---- THE STAMP AND THE DIGEST (design §7) -------------------------------- */
+
+/* One FNV-1a-64 step over `n` bytes. FNV and not SHA-256: this is identity
+ * against accidental change, not an adversarial setting, and it keeps
+ * libpcrec dependency-free (design §7). */
+static uint64_t fnv1a(uint64_t h, const unsigned char *p, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        h ^= p[i];
+        h *= 0x100000001b3ull;
+    }
+    return h;
+}
+
+uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256])
+{
+    const unsigned char tag[] = "pcrec-find-1\0byte-rate";
+    uint64_t h = fnv1a(0xcbf29ce484222325ull, tag, sizeof tag);
+    for (int b = 0; b < 256; b++) {
+        unsigned char le[4] = { (unsigned char)ppm[b],
+                                (unsigned char)(ppm[b] >> 8),
+                                (unsigned char)(ppm[b] >> 16),
+                                (unsigned char)(ppm[b] >> 24) };
+        h = fnv1a(h, le, 4);
+    }
+    return h;
+}
+
+const char *pcrec_find_stamp(Ctx *cx)
+{
+    const PcrecFindRec *fr = &cx->job->find;
+    if (!fr->byte_rate_asked) return "";
+    if (!fr->byte_rate_have) return "byte-rate=none";
+    return pcrec_sb_fragf(&cx->arena, "byte-rate=%s:%016llx",
+                          fr->byte_rate_bundle,
+                          (unsigned long long)fr->byte_rate_digest);
 }
 
 /* ---- THE ACCESSOR ---------------------------------------------------------

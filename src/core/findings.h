@@ -22,6 +22,7 @@ typedef struct {
     bool        byte_rate_asked;  /* `pcrec_find_byte_rate` was called */
     bool        byte_rate_have;   /* ... and a block answered (else NONE) */
     const char *byte_rate_bundle; /* the bundle whose block answered */
+    uint64_t    byte_rate_digest; /* what it consumed (design §7) */
     uint32_t    byte_rate[256];   /* the answer: ppm, sum 1,000,000 */
 } PcrecFindRec;
 
@@ -50,6 +51,9 @@ typedef struct {
  * when the store has no such bundle (design §8.1). */
 const char *pcrec_find_store_text(const char *name, size_t *len);
 
+/* The store's `i`th bundle name, or NULL past the last. */
+const char *pcrec_find_store_name(size_t i);
+
 /* The pre-parsed store: every block of every bundle, in store order. */
 const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n);
 
@@ -61,6 +65,21 @@ const PcrecFindTblBlock *pcrec_find_store_blocks(size_t *n);
  * within the limits reaches. Counts are <= PCREC_MAX_FIND_COUNT, so the
  * arithmetic fits uint64. */
 int pcrec_find_normalize(const unsigned long long c[256], uint32_t ppm[256]);
+
+/* ---- THE STAMP (design §7) ----------------------------------------------- */
+
+/* The `<PREFIX>_FINDINGS` / `rx_info.findings` value for this attempt's
+ * record: one `query=bundle:digest` item per query the compile ASKED
+ * (`query=none` where nothing answered it), in the fixed query order,
+ * `;`-joined; the empty string when nothing was asked. Arena text. Read
+ * after the last reader has run (§6.4 rule 2). */
+const char *pcrec_find_stamp(Ctx *cx);
+
+/* The digest of a byte-rate, as the stamp spells it: FNV-1a-64 over the tag
+ * `pcrec-find-1\0byte-rate\0` and the 256 derived ppm values, uint32
+ * little-endian, in byte order (design §7) — no kind, no `via`, so the same
+ * values from any block give the same digest. */
+uint64_t pcrec_find_byte_rate_digest(const uint32_t ppm[256]);
 
 /* ---- THE ACCESSOR AND THE PRIMITIVES (design §6.1) -----------------------
  *

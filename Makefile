@@ -268,7 +268,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-tune-dial test-prechecks \
       test-prefilter-collapse test-rxtsource test-definitions \
       test-entry-shape-identity test-cpset-structure test-startbnd \
-      test-uprops test-core test-vars test-examples
+      test-uprops test-core test-vars test-examples test-findings
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -1215,17 +1215,19 @@ test-capturediff: all
 test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
-# [FINDINGS] step B3 (docs/design/findings/design.md §13's B3 row, lane
-# `findb3`, 2026-09-26): the analyzer PROTOTYPE's own checks
-# (scripts/pcrec_analyze.py). DELIBERATELY LIGHT and NOT in TEST_SECTIONS:
-# python3-only, no `all` dependency (the tool needs no built pcrec/libpcrec
-# at all — it never touches this repo's C), and B0/B1/B2 have not landed
-# yet, so there is no `.rxt` schema, accessor or `--list-analysis` CLI for
-# a heavier suite to exercise. B1's own lane is expected to fold this
-# section into `TEST_SECTIONS` once the accessor exists to check answer
-# identity against (see docs/dev/lanes/findb3_report.md's manager-review
-# items). Verdict per BOILERPLATE/[r2 S-F13]: `*** [test-findings] Error`.
-test-findings:
+# [FINDINGS] the findings seam's own checks. Step B3 (lane `findb3`) built the
+# analyzer prototype's (scripts/pcrec_analyze.py, python3-only); step B1 (lane
+# `findb1`) adds the compiler side — tests/findings/run_findings_tests.sh: the
+# embedded default's values against RUNEST's pinned dump and an independent
+# python normalization, the store's text against its source, the pre-parsed
+# table against the library reader's own parse, the `<PREFIX>_FINDINGS` stamp
+# and its rx_info mirror, and the structural rule that no reader tests a rate
+# (design §8.1, §11.4, §11.6, §11.7). With a compiler-side suite in it, the
+# section joins TEST_SECTIONS as B3's report asked B1 to do, and depends on
+# `all`. Verdict per BOILERPLATE/[r2 S-F13]: `*** [test-findings] Error`.
+test-findings: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-findings.ran"; fi
+	bash tests/findings/run_findings_tests.sh
 	python3 tests/findings/run_analyzer_tests.py
 
 # [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md

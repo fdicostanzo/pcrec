@@ -2465,6 +2465,28 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/facts.log" | grep -oE '[0-9]+')"
                 score_arm "$work/facts.log" "$f" "facts:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            findings)
+                # [FINDINGS] B1 tests/findings/run_findings_tests.sh — the
+                # findings seam's own checks: the embedded default's VALUES
+                # against RUNEST's pinned dump and an independent python
+                # normalization, the store's TEXT against its committed source,
+                # the PRE-PARSED table against the library reader's own parse,
+                # the `<PREFIX>_FINDINGS` stamp and its rx_info mirror, and the
+                # STRUCTURAL rule that no reader tests a rate (design §6.3,
+                # §11.7). ITS OWN ARM: a reader-local NONE branch that spells
+                # the primitive's own answer moves nothing a corpus can see, so
+                # a row on this arm scores `corpus:0fail` BY DESIGN.
+                #
+                # REGISTERED BEFORE THE ROWS THAT NAME IT (R31 C11): this
+                # vocabulary is CLOSED, and a row naming a word that does not
+                # exist yet scores UNKNOWN-SUITE rather than "not detected".
+                PCREC="$pcrec" LIBPCREC="$(dirname "$pcrec")/libpcrec.a" \
+                    bash "$tree/tests/findings/run_findings_tests.sh" \
+                    > "$work/findings.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/findings.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/findings.log" | grep -oE '[0-9]+')"
+                score_arm "$work/findings.log" "$f" "findings:${f:-ERR}fail/${p:-?}pass"
+                ;;
             core)
                 # [REVW.U L5-R0/R2] tests/core/run_core_tests.sh — the unit
                 # tier for a helper that belongs to no single feature. Its
