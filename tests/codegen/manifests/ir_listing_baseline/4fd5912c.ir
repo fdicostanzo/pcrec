@@ -25,8 +25,8 @@ step-budget	500000000	backtrack resumptions
 resume-frames	25	
 trail-entries	51	
 subject-ceiling		exact: no subject ceiling
-labels	132	
-events	391	
+labels	120	
+events	355	
 resume-points	24	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	12	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
@@ -91,292 +91,291 @@ L16	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
 	goto		L11	
 L13	label			
-	consume	'a'	L17	
-	fail			backtrack
-L17	label			
-	consume	'b'	L11	
+	compare	'ab' (2 bytes)	L11	
 	fail			backtrack
 L11	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L8	
 L8	label			counter iteration (lazy): leaving preferred
 	note			MRL: no room for another iteration and the follow
-	push		L19	lazy: taking another iteration is the resume
+	push		L18	lazy: taking another iteration is the resume
 	goto		L6	
-L19	label			group 1 opens
+L18	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L20	
-L20	label			alternation entry (2 branches)
-	push		L24	branch 1 of 2 preferred; resume tries branch 2
-	goto		L22	
-L24	label			alternation resume: try branch 2 of 2
-	goto		L23	
-L22	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L25	
-L25	label			
-	consume	'a'	L26	
-	fail			backtrack
-L26	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L19	
+L19	label			alternation entry (2 branches)
+	push		L23	branch 1 of 2 preferred; resume tries branch 2
 	goto		L21	
-L23	label			
-	consume	'a'	L27	
-	fail			backtrack
-L27	label			
-	consume	'b'	L21	
-	fail			backtrack
-L21	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L18	
-L18	label			counter iteration (lazy): leaving preferred
-	note			MRL: no room for another iteration and the follow
-	push		L29	lazy: taking another iteration is the resume
-	goto		L6	
-L29	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L30	
-L30	label			alternation entry (2 branches)
-	push		L34	branch 1 of 2 preferred; resume tries branch 2
-	goto		L32	
-L34	label			alternation resume: try branch 2 of 2
-	goto		L33	
-L32	label			group 2 opens
+L23	label			alternation resume: try branch 2 of 2
+	goto		L22	
+L21	label			group 2 opens
 	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L35	
-L35	label			
-	consume	'a'	L36	
+	goto		L24	
+L24	label			
+	consume	'a'	L25	
 	fail			backtrack
-L36	label			group 2 closes
+L25	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L31	
-L33	label			
-	consume	'a'	L37	
+	goto		L20	
+L22	label			
+	compare	'ab' (2 bytes)	L20	
 	fail			backtrack
-L37	label			
-	consume	'b'	L31	
-	fail			backtrack
-L31	label			group 1 closes
+L20	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L17	
+L17	label			counter iteration (lazy): leaving preferred
+	note			MRL: no room for another iteration and the follow
+	push		L27	lazy: taking another iteration is the resume
+	goto		L6	
+L27	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
 	goto		L28	
-L28	label			counter iteration (lazy): leaving preferred
+L28	label			alternation entry (2 branches)
+	push		L32	branch 1 of 2 preferred; resume tries branch 2
+	goto		L30	
+L32	label			alternation resume: try branch 2 of 2
+	goto		L31	
+L30	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L33	
+L33	label			
+	consume	'a'	L34	
+	fail			backtrack
+L34	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L29	
+L31	label			
+	compare	'ab' (2 bytes)	L29	
+	fail			backtrack
+L29	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L26	
+L26	label			counter iteration (lazy): leaving preferred
 	note			MRL: no room for another iteration and the follow
-	push		L39	lazy: taking another iteration is the resume
+	push		L36	lazy: taking another iteration is the resume
 	goto		L6	
-L39	label			group 1 opens
+L36	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L37	
+L37	label			alternation entry (2 branches)
+	push		L41	branch 1 of 2 preferred; resume tries branch 2
+	goto		L39	
+L41	label			alternation resume: try branch 2 of 2
 	goto		L40	
-L40	label			alternation entry (2 branches)
-	push		L44	branch 1 of 2 preferred; resume tries branch 2
+L39	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
 	goto		L42	
-L44	label			alternation resume: try branch 2 of 2
-	goto		L43	
-L42	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L45	
-L45	label			
-	consume	'a'	L46	
+L42	label			
+	consume	'a'	L43	
 	fail			backtrack
-L46	label			group 2 closes
+L43	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L41	
-L43	label			
-	consume	'a'	L47	
-	fail			backtrack
-L47	label			
-	consume	'b'	L41	
-	fail			backtrack
-L41	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L38	
-L38	label			counter iteration (lazy): leaving preferred
-	note			MRL: no room for another iteration and the follow
-	push		L49	lazy: taking another iteration is the resume
-	goto		L6	
-L49	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L50	
-L50	label			alternation entry (2 branches)
-	push		L54	branch 1 of 2 preferred; resume tries branch 2
-	goto		L52	
-L54	label			alternation resume: try branch 2 of 2
-	goto		L53	
-L52	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L55	
-L55	label			
-	consume	'a'	L56	
+L40	label			
+	compare	'ab' (2 bytes)	L38	
 	fail			backtrack
-L56	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L51	
-L53	label			
-	consume	'a'	L57	
-	fail			backtrack
-L57	label			
-	consume	'b'	L51	
-	fail			backtrack
-L51	label			group 1 closes
+L38	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L35	
+L35	label			counter iteration (lazy): leaving preferred
+	note			MRL: no room for another iteration and the follow
+	push		L45	lazy: taking another iteration is the resume
+	goto		L6	
+L45	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L46	
+L46	label			alternation entry (2 branches)
+	push		L50	branch 1 of 2 preferred; resume tries branch 2
 	goto		L48	
-L48	label			counter iteration (lazy): leaving preferred
-	note			MRL: no room for another iteration and the follow
-	push		L59	lazy: taking another iteration is the resume
-	goto		L6	
-L59	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L60	
-L60	label			alternation entry (2 branches)
-	push		L64	branch 1 of 2 preferred; resume tries branch 2
-	goto		L62	
-L64	label			alternation resume: try branch 2 of 2
-	goto		L63	
-L62	label			group 2 opens
+L50	label			alternation resume: try branch 2 of 2
+	goto		L49	
+L48	label			group 2 opens
 	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L65	
-L65	label			
-	consume	'a'	L66	
+	goto		L51	
+L51	label			
+	consume	'a'	L52	
 	fail			backtrack
-L66	label			group 2 closes
+L52	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L61	
-L63	label			
-	consume	'a'	L67	
+	goto		L47	
+L49	label			
+	compare	'ab' (2 bytes)	L47	
 	fail			backtrack
-L67	label			
-	consume	'b'	L61	
-	fail			backtrack
-L61	label			group 1 closes
+L47	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L44	
+L44	label			counter iteration (lazy): leaving preferred
+	note			MRL: no room for another iteration and the follow
+	push		L54	lazy: taking another iteration is the resume
+	goto		L6	
+L54	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L55	
+L55	label			alternation entry (2 branches)
+	push		L59	branch 1 of 2 preferred; resume tries branch 2
+	goto		L57	
+L59	label			alternation resume: try branch 2 of 2
 	goto		L58	
-L58	label			counter iteration (lazy): leaving preferred
+L57	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L60	
+L60	label			
+	consume	'a'	L61	
+	fail			backtrack
+L61	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L56	
+L58	label			
+	compare	'ab' (2 bytes)	L56	
+	fail			backtrack
+L56	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L53	
+L53	label			counter iteration (lazy): leaving preferred
 	note			MRL: no room for another iteration and the follow
-	push		L69	lazy: taking another iteration is the resume
+	push		L63	lazy: taking another iteration is the resume
 	goto		L6	
-L69	label			group 1 opens
+L63	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L70	
-L70	label			alternation entry (2 branches)
-	push		L74	branch 1 of 2 preferred; resume tries branch 2
-	goto		L72	
-L74	label			alternation resume: try branch 2 of 2
+	goto		L64	
+L64	label			alternation entry (2 branches)
+	push		L68	branch 1 of 2 preferred; resume tries branch 2
+	goto		L66	
+L68	label			alternation resume: try branch 2 of 2
+	goto		L67	
+L66	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L69	
+L69	label			
+	consume	'a'	L70	
+	fail			backtrack
+L70	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L65	
+L67	label			
+	compare	'ab' (2 bytes)	L65	
+	fail			backtrack
+L65	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L62	
+L62	label			counter iteration (lazy): leaving preferred
+	note			MRL: no room for another iteration and the follow
+	push		L72	lazy: taking another iteration is the resume
+	goto		L6	
+L72	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
 	goto		L73	
-L72	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+L73	label			alternation entry (2 branches)
+	push		L77	branch 1 of 2 preferred; resume tries branch 2
 	goto		L75	
-L75	label			
-	consume	'a'	L76	
-	fail			backtrack
-L76	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L71	
-L73	label			
-	consume	'a'	L77	
-	fail			backtrack
-L77	label			
-	consume	'b'	L71	
-	fail			backtrack
-L71	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L68	
-L68	label			counter iteration (lazy): leaving preferred
-	note			MRL: no room for another iteration and the follow
-	push		L79	lazy: taking another iteration is the resume
-	goto		L6	
-L79	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L80	
-L80	label			alternation entry (2 branches)
-	push		L84	branch 1 of 2 preferred; resume tries branch 2
-	goto		L82	
-L84	label			alternation resume: try branch 2 of 2
-	goto		L83	
-L82	label			group 2 opens
+L77	label			alternation resume: try branch 2 of 2
+	goto		L76	
+L75	label			group 2 opens
 	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L85	
-L85	label			
-	consume	'a'	L86	
-	fail			backtrack
-L86	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L81	
-L83	label			
-	consume	'a'	L87	
-	fail			backtrack
-L87	label			
-	consume	'b'	L81	
-	fail			backtrack
-L81	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L78	
-L78	label			counter trip complete: charge K and go round
+L78	label			
+	consume	'a'	L79	
+	fail			backtrack
+L79	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L74	
+L76	label			
+	compare	'ab' (2 bytes)	L74	
+	fail			backtrack
+L74	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L71	
+L71	label			counter trip complete: charge K and go round
 	set	slot_values[6] <- scan_position		counter rung: += K, once per TRIP
 	goto		L4	
 L5	label			optional copy (4 remaining), lazy
 	note			MRL: no room for another iteration and the follow -- take the skip, push nothing
-	push		L89	skip preferred; resume TAKES this copy
+	push		L81	skip preferred; resume TAKES this copy
 	goto		L2	
-L89	label			optional copy: the body
+L81	label			optional copy: the body
+	goto		L80	
+L80	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L83	
+L83	label			alternation entry (2 branches)
+	push		L87	branch 1 of 2 preferred; resume tries branch 2
+	goto		L85	
+L87	label			alternation resume: try branch 2 of 2
+	goto		L86	
+L85	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
 	goto		L88	
-L88	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L91	
-L91	label			alternation entry (2 branches)
-	push		L95	branch 1 of 2 preferred; resume tries branch 2
-	goto		L93	
-L95	label			alternation resume: try branch 2 of 2
-	goto		L94	
-L93	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L96	
-L96	label			
-	consume	'a'	L97	
+L88	label			
+	consume	'a'	L89	
 	fail			backtrack
-L97	label			group 2 closes
+L89	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L92	
-L94	label			
-	consume	'a'	L98	
+	goto		L84	
+L86	label			
+	compare	'ab' (2 bytes)	L84	
 	fail			backtrack
-L98	label			
-	consume	'b'	L92	
-	fail			backtrack
-L92	label			group 1 closes
+L84	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L90	
-L90	label			optional copy (3 remaining), lazy
+	goto		L82	
+L82	label			optional copy (3 remaining), lazy
 	note			MRL: no room for another iteration and the follow -- take the skip, push nothing
-	push		L100	skip preferred; resume TAKES this copy
+	push		L91	skip preferred; resume TAKES this copy
 	goto		L2	
-L100	label			optional copy: the body
-	goto		L99	
-L99	label			group 1 opens
+L91	label			optional copy: the body
+	goto		L90	
+L90	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L102	
-L102	label			alternation entry (2 branches)
-	push		L106	branch 1 of 2 preferred; resume tries branch 2
-	goto		L104	
-L106	label			alternation resume: try branch 2 of 2
-	goto		L105	
-L104	label			group 2 opens
+	goto		L93	
+L93	label			alternation entry (2 branches)
+	push		L97	branch 1 of 2 preferred; resume tries branch 2
+	goto		L95	
+L97	label			alternation resume: try branch 2 of 2
+	goto		L96	
+L95	label			group 2 opens
 	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L107	
-L107	label			
-	consume	'a'	L108	
+	goto		L98	
+L98	label			
+	consume	'a'	L99	
 	fail			backtrack
-L108	label			group 2 closes
+L99	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L94	
+L96	label			
+	compare	'ab' (2 bytes)	L94	
+	fail			backtrack
+L94	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
+	goto		L92	
+L92	label			optional copy (2 remaining), lazy
+	note			MRL: no room for another iteration and the follow -- take the skip, push nothing
+	push		L101	skip preferred; resume TAKES this copy
+	goto		L2	
+L101	label			optional copy: the body
+	goto		L100	
+L100	label			group 1 opens
+	set	slot_values[2] <- scan_position		group 1 open, written on traverse
 	goto		L103	
-L105	label			
+L103	label			alternation entry (2 branches)
+	push		L107	branch 1 of 2 preferred; resume tries branch 2
+	goto		L105	
+L107	label			alternation resume: try branch 2 of 2
+	goto		L106	
+L105	label			group 2 opens
+	set	slot_values[4] <- scan_position		group 2 open, written on traverse
+	goto		L108	
+L108	label			
 	consume	'a'	L109	
 	fail			backtrack
-L109	label			
-	consume	'b'	L103	
+L109	label			group 2 closes
+	set	slot_values[5] <- scan_position		group 2 close, written on traverse
+	goto		L104	
+L106	label			
+	compare	'ab' (2 bytes)	L104	
 	fail			backtrack
-L103	label			group 1 closes
+L104	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L101	
-L101	label			optional copy (2 remaining), lazy
+	goto		L102	
+L102	label			optional copy (1 remaining), lazy
 	note			MRL: no room for another iteration and the follow -- take the skip, push nothing
 	push		L111	skip preferred; resume TAKES this copy
 	goto		L2	
@@ -400,47 +399,12 @@ L119	label			group 2 closes
 	set	slot_values[5] <- scan_position		group 2 close, written on traverse
 	goto		L114	
 L116	label			
-	consume	'a'	L120	
-	fail			backtrack
-L120	label			
-	consume	'b'	L114	
+	compare	'ab' (2 bytes)	L114	
 	fail			backtrack
 L114	label			group 1 closes
 	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L112	
-L112	label			optional copy (1 remaining), lazy
-	note			MRL: no room for another iteration and the follow -- take the skip, push nothing
-	push		L122	skip preferred; resume TAKES this copy
-	goto		L2	
-L122	label			optional copy: the body
-	goto		L121	
-L121	label			group 1 opens
-	set	slot_values[2] <- scan_position		group 1 open, written on traverse
-	goto		L124	
-L124	label			alternation entry (2 branches)
-	push		L128	branch 1 of 2 preferred; resume tries branch 2
-	goto		L126	
-L128	label			alternation resume: try branch 2 of 2
-	goto		L127	
-L126	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L129	
-L129	label			
-	consume	'a'	L130	
-	fail			backtrack
-L130	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L125	
-L127	label			
-	consume	'a'	L131	
-	fail			backtrack
-L131	label			
-	consume	'b'	L125	
-	fail			backtrack
-L125	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L123	
-L123	label			bounded repeat: all optional copies exhausted
+L112	label			bounded repeat: all optional copies exhausted
 	goto		L2	
 L6	label			counter: the loop is done, take the continuation
 	goto		L2	
@@ -456,28 +420,28 @@ fail	label			the ONLY backtracker and the only indirect jump; one step charged h
 #label	resume	note
 L7	L9	lazy: taking another iteration is the resume
 L10	L14	branch 1 of 2 preferred; resume tries branch 2
-L8	L19	lazy: taking another iteration is the resume
-L20	L24	branch 1 of 2 preferred; resume tries branch 2
-L18	L29	lazy: taking another iteration is the resume
-L30	L34	branch 1 of 2 preferred; resume tries branch 2
-L28	L39	lazy: taking another iteration is the resume
-L40	L44	branch 1 of 2 preferred; resume tries branch 2
-L38	L49	lazy: taking another iteration is the resume
-L50	L54	branch 1 of 2 preferred; resume tries branch 2
-L48	L59	lazy: taking another iteration is the resume
-L60	L64	branch 1 of 2 preferred; resume tries branch 2
-L58	L69	lazy: taking another iteration is the resume
-L70	L74	branch 1 of 2 preferred; resume tries branch 2
-L68	L79	lazy: taking another iteration is the resume
-L80	L84	branch 1 of 2 preferred; resume tries branch 2
-L5	L89	skip preferred; resume TAKES this copy
-L91	L95	branch 1 of 2 preferred; resume tries branch 2
-L90	L100	skip preferred; resume TAKES this copy
-L102	L106	branch 1 of 2 preferred; resume tries branch 2
-L101	L111	skip preferred; resume TAKES this copy
+L8	L18	lazy: taking another iteration is the resume
+L19	L23	branch 1 of 2 preferred; resume tries branch 2
+L17	L27	lazy: taking another iteration is the resume
+L28	L32	branch 1 of 2 preferred; resume tries branch 2
+L26	L36	lazy: taking another iteration is the resume
+L37	L41	branch 1 of 2 preferred; resume tries branch 2
+L35	L45	lazy: taking another iteration is the resume
+L46	L50	branch 1 of 2 preferred; resume tries branch 2
+L44	L54	lazy: taking another iteration is the resume
+L55	L59	branch 1 of 2 preferred; resume tries branch 2
+L53	L63	lazy: taking another iteration is the resume
+L64	L68	branch 1 of 2 preferred; resume tries branch 2
+L62	L72	lazy: taking another iteration is the resume
+L73	L77	branch 1 of 2 preferred; resume tries branch 2
+L5	L81	skip preferred; resume TAKES this copy
+L83	L87	branch 1 of 2 preferred; resume tries branch 2
+L82	L91	skip preferred; resume TAKES this copy
+L93	L97	branch 1 of 2 preferred; resume tries branch 2
+L92	L101	skip preferred; resume TAKES this copy
+L103	L107	branch 1 of 2 preferred; resume tries branch 2
+L102	L111	skip preferred; resume TAKES this copy
 L113	L117	branch 1 of 2 preferred; resume tries branch 2
-L112	L122	skip preferred; resume TAKES this copy
-L124	L128	branch 1 of 2 preferred; resume tries branch 2
 
 #section islands
 #label	width	note

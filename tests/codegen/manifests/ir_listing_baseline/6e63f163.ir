@@ -14,32 +14,31 @@
 
 #section summary
 #fact	value	note
-pattern	(a|ab)(c|bcd)	
-engine	vm	forced by: capture group at pattern offset 0
+pattern	xy(a|ab)c	
+engine	vm	forced by: capture group at pattern offset 2
 prefilter	no-engine-vm	--engine=vm -- the VM scans from search_from itself (R21 E-6)
 rungs	none	comma-joined; the rungs section below says which quantifier took which
 strategies	none	comma-joined; the strategies section below says which quantifier took which
 possessify	0/0	marked/total SOURCE quantifiers possessified (eng_brep_design.md S2)
-caps	3	RX_NCAPS; 2 capturing groups in the pattern text
+caps	2	RX_NCAPS; 1 capturing group in the pattern text
 step-budget	500000000	backtrack resumptions
 resume-frames	2	
-trail-entries	5	
+trail-entries	3	
 subject-ceiling		exact: no subject ceiling
-labels	16	
-events	46	
+labels	10	
+events	27	
 resume-points	1	the PRE-PASS count the resume-point cap is checked against, never a recount of the event stream
 max-replicas	0	limit 64, checked before emission
 prune-ceiling	subject-end	the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end: the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6), or the prefilter was built from the COUNT-COLLAPSED superset (prefilter_count_independence.md 2 H3, K39/[OPT-4]) -- the prefilter row above says which
 prune-bound-sites	0	
 prune-retreats	0	
-islands	1	
+islands	0	
 callout-sites	0	
 
 #section slots
 #family	slot	holds	note
 group	0,1	$0 whole match	written by the ENTRY, not the VM (S3.4)
 group	2,3	group 1	written on traverse, trailed
-group	4,5	group 2	written on traverse, trailed
 guard			no empty-iteration guard slots: no nullable unbounded quantifier on the frames rung
 low			no span-loop low-water slots: no cursor rung in this program
 mark			
@@ -61,49 +60,31 @@ lookpos
 
 #section program
 #label	op	args	target	note
-L0	label			group 1 opens
+L0	label			
+	compare	'xy' (2 bytes)	L2	
+	fail			backtrack
+L2	label			group 1 opens
 	set	slot_values[2] <- scan_position		group 1 open, written on traverse
+	goto		L4	
+L4	label			
+	consume	'a'	L6	
+	fail			backtrack
+L6	label			alternation entry (2 branches)
+	push		L9	branch 1 of 2 preferred; resume tries branch 2
+	goto		L7	
+L9	label			alternation resume: try branch 2 of 2
+	goto		L8	
+L7	label			empty
+	goto		L5	
+L8	label			
+	consume	'b'	L5	
+	fail			backtrack
+L5	label			group 1 closes
+	set	slot_values[3] <- scan_position		group 1 close, written on traverse
 	goto		L3	
 L3	label			
-	consume	'a'	L5	
+	consume	'c'	L1	
 	fail			backtrack
-L5	label			alternation entry (2 branches)
-	push		L8	branch 1 of 2 preferred; resume tries branch 2
-	goto		L6	
-L8	label			alternation resume: try branch 2 of 2
-	goto		L7	
-L6	label			empty
-	goto		L4	
-L7	label			
-	consume	'b'	L4	
-	fail			backtrack
-L4	label			group 1 closes
-	set	slot_values[3] <- scan_position		group 1 close, written on traverse
-	goto		L2	
-L2	label			group 2 opens
-	set	slot_values[4] <- scan_position		group 2 open, written on traverse
-	goto		L9	
-L9	label			alternation island: trie dispatch over 2 literal alternatives
-	goto		L12	
-	goto		L11	
-	fail			backtrack
-L11	label			island: 1 alternative end here (depth 1)
-	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-	goto		L14	
-L12	label			
-	goto		L13	
-	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-	fail			backtrack
-L13	label			island: 1 alternative end here (depth 3)
-	note			work charge: alternation-island trie bytes examined on this path, which the fail label never sees
-	goto		L15	
-L14	label			island: branch 1 of 2 matched here (1 byte); the last candidate on this path
-	goto		L10	
-L15	label			island: branch 2 of 2 matched here (3 bytes); the last candidate on this path
-	goto		L10	
-L10	label			group 2 closes
-	set	slot_values[5] <- scan_position		group 2 close, written on traverse
-	goto		L1	
 L1	label			the pattern is complete
 	accept			
 accept	label			return scan_position - ctx->pos; the capture slots at this instant ARE the answer (S3.1)
@@ -111,11 +92,11 @@ fail	label			the ONLY backtracker and the only indirect jump; one step charged h
 
 #section choicepoints
 #label	resume	note
-L5	L8	branch 1 of 2 preferred; resume tries branch 2
+L6	L9	branch 1 of 2 preferred; resume tries branch 2
 
 #section islands
 #label	width	note
-L9	2	alternation island: 2 literal alternatives, 5 trie nodes, depth 3, 2 try sites, 0 resume points; size est 1260 B vs the chain's 686 B
+		none: no flat alternation in this program has a finite literal language, so src/gen/emit_vm.c's alternation island declined every one -- docs/spec/tuning.md S2.20
 
 #section callouts
 #label	note
