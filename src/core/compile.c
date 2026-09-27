@@ -1344,6 +1344,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                                  "name enables it)", enc->name);
         }
 
+        /* [FINDINGS] B2 THE ANALYSIS CHAIN, resolved here — before the
+         * parse, so a bad analysis name refuses even a pattern that would
+         * never ask a query (design §4.3's "eager"), and after the encoding
+         * gate, whose name the no-query note quotes. Per attempt because the
+         * chain lives in this attempt's arena; its notes print on the first
+         * attempt only, since every attempt resolves the same inputs to the
+         * same chain. */
+        pcrec_find_resolve(&cx, attempt == 0);
+
         Ast *root = pcrec_parse(&cx);
 
         /* [OPT-ALTCLS] runs FIRST, immediately after parse and before every other

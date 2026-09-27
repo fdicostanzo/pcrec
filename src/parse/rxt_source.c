@@ -487,18 +487,9 @@ static int defname_ok(const char *s)
  * (r2 M-S6). A bundle name becomes a `-I DIR/<name>.rxt` directory entry
  * matched byte for byte, so `Log` and `log` must never both be spellable:
  * on a case-insensitive filesystem they would name one file. Narrower than
- * `defname_ok` on purpose (no uppercase, no `.`), and a separate function
- * because the two grammars answer different questions. */
-static int analysis_name_ok_n(const char *s, size_t n)
-{
-    if (!n || !(s[0] >= 'a' && s[0] <= 'z')) return 0;
-    for (size_t i = 1; i < n; i++)
-        if (!((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= '0' && s[i] <= '9') ||
-              s[i] == '_' || s[i] == '-'))
-            return 0;
-    return 1;
-}
-
+ * `defname_ok` on purpose (no uppercase, no `.`). [FINDINGS] B2: the rule's
+ * one home is `pcrec_find_name_ok` (src/core/findings.c), which the resolver
+ * and the CLI's `--analysis` ask too. */
 /* Refuses a malformed analysis name on `line`, naming WHICH rule failed —
  * an uppercase letter gets the lowercase rule by name, since that is the
  * one an author coming from `defname` will trip over. `what` is the line
@@ -506,7 +497,7 @@ static int analysis_name_ok_n(const char *s, size_t n)
 static int analysis_name_check(RxtP *p, size_t line, const char *what,
                                const char *v, size_t n)
 {
-    if (analysis_name_ok_n(v, n)) return 0;
+    if (pcrec_find_name_ok(v, n)) return 0;
     for (size_t i = 0; i < n; i++)
         if (v[i] >= 'A' && v[i] <= 'Z')
             return rxt_fail(p, RXTD_VALUE_SHAPE, line,
@@ -3263,12 +3254,14 @@ static RxtSource *parse_src(const char *path, pcrec_error *err,
 
         if (f->scope == RXT_SCOPE_CONFIG) {
             if (tok_is(tok, "analysis")) {
-                /* [FINDINGS] B0: names ONE analysis (a bundle). Resolving
-                 * the name is B2's; the name GRAMMAR is checked here. */
+                /* [FINDINGS] B0: names ONE analysis (a bundle); the name
+                 * GRAMMAR is checked here. B2: kept on the config row, and
+                 * composed later-wins by `cfg_merge` like `engine`. */
                 const char *v = value_trimmed(&p, tok);
                 if (analysis_name_check(&p, line, "analysis", v,
                                         strlen(v)) != 0)
                     goto fail;
+                if (f->row) f->row->analysis = v;
                 continue;
             }
             RxtRow *cr = f->row;
@@ -3762,6 +3755,8 @@ typedef struct {
     int         features_only;
     long        budget_steps, budget_frames;
     const char *pcrec_raw;
+    const char *analysis;       /* [FINDINGS] B2: later-wins, one scalar */
+    size_t      analysis_line;  /* the config row that supplied it */
 } RxtSet;
 
 /* Zero-fills `s` and sets budget_steps/budget_frames to -1 (unset) -- RxtSet's
@@ -3788,6 +3783,10 @@ static void cfg_merge(Arena *a, RxtSet *dst, const RxtSet *add)
     if (add->encoding)  dst->encoding = add->encoding;
     if (add->engine)    dst->engine = add->engine;
     if (add->tune)      dst->tune = add->tune;
+    if (add->analysis) {
+        dst->analysis = add->analysis;
+        dst->analysis_line = add->analysis_line;
+    }
     if (add->budget_steps  >= 0) dst->budget_steps  = add->budget_steps;
     if (add->budget_frames >= 0) dst->budget_frames = add->budget_frames;
     if (add->pcrec_raw) {
@@ -3815,6 +3814,8 @@ static void set_from_row(RxtSet *s, const RxtRow *r)
     s->budget_steps = r->budget_steps;
     s->budget_frames = r->budget_frames;
     s->pcrec_raw = r->pcrec_raw;
+    s->analysis = r->analysis;
+    s->analysis_line = r->analysis ? r->line : 0;
 }
 
 /* A config MATERIALISES ONCE, and `seen` is what makes that true rather
@@ -4227,6 +4228,7 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         if (closure_walk(&cl, src, src->path) != 0) return -1;
         defs->v = cl.defs;
         defs->n = cl.ndefs;
+        defs->file = src;
     }
 
     /* (2) WHICH ARTIFACTS. */
@@ -4355,6 +4357,8 @@ int pcrec_rxt_source_resolve(RxtSource *src,
         t->block_line = blk->line;
         t->pcrec_raw = s.pcrec_raw;
         t->defs = defs;
+        t->analysis = s.analysis;
+        t->analysis_line = s.analysis_line;
 
         /* THE PER-KIND TABLE (§1.5), applied exactly once. */
         t->features_only = blk->features_only;
