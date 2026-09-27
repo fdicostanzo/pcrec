@@ -1,5 +1,7 @@
 # S266 — [OPT-FREQPICK] THE NECESSARY-SET PICK IS THE ARGMAX WHERE THE RULE
-# SAYS ARGMIN (src/opt/reqbyte.c, `rb_pick`): the emitted `memchr` tests the
+# SAYS ARGMIN (src/core/findings.c, the PICK primitive `pcrec_find_pick`,
+# re-anchored at [FINDINGS] B1 from `rb_pick`'s own loop, which now asks it):
+# the emitted `memchr` tests the
 # COMMONEST member of the necessary set under the shipped byte-frequency prior
 # instead of the rarest, so a pre-check built to answer a whole call in one
 # pass falls through on nearly every subject instead.
@@ -45,5 +47,5 @@ SAB_DOC_FIGURE="tests/codegen/run_prechecks.sh §3.7 is the whole detector: the 
 SAB_REACH='"$PCREC" --features all -p rx -o "$REACH_TMP/o.c" --pattern "[0-9]+x[0-9]+e[0-9]+" && grep -q "^#define RX_REQ_BYTE \"120\"" "$REACH_TMP/o.c" && grep -q "^#define RX_REQ_RUN \"none\"" "$REACH_TMP/o.c" && echo REACH-FREQPICK-SET-ARGMIN'
 SAB_REACH_EXPECT="REACH-FREQPICK-SET-ARGMIN"
 SAB_COUNT=1
-SAB_BEFORE='        if (best < 0 || p < lo) { lo = p; best = b; }'
-SAB_AFTER='        if (best < 0 || p > lo) { lo = p; best = b; }   /* SABOTAGE S266: the argmin inverted */'
+SAB_BEFORE='        if (rate[cand[i]] < rate[cand[best]]) best = i;'
+SAB_AFTER='        if (rate[cand[i]] > rate[cand[best]]) best = i;   /* SABOTAGE S266: the argmin inverted */'

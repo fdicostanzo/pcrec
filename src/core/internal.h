@@ -2422,6 +2422,7 @@ enum {
 /* [PATFACTS] the pattern-facts record's CONSUMER header: types and
  * accessors, never a derivation (docs/design/patfacts/design.md §4.2.1). */
 #include "facts/facts.h"
+#include "core/findings.h"
 
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
  * types — live in src/facts/facts.h with the record that carries them
@@ -2552,6 +2553,10 @@ typedef struct {
      * with the `Job` (one `calloc` per attempt), so the retry ladder resets
      * it for free. Read ONLY through `pcrec_fact_*` — never a member. */
     PatFacts pf;
+    /* [FINDINGS] B1: this attempt's findings consumption record and memo
+     * (src/core/findings.h; design §6.4). Per ATTEMPT, like every field
+     * here, so the stamp reports what the final attempt asked. */
+    PcrecFindRec find;
 } Job;
 
 /* [M6.3] module `named-groups` — see Ctx.named_groups below for the full

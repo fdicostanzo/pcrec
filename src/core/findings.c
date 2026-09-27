@@ -32,80 +32,131 @@
 #include "core/internal.h"
 #include "core/findings.h"
 
-/* Which member of the necessary SET the emitted `memchr` tests: the rarest
- * under the prior, ties broken by the threaded rightmost member when it is
- * among the minima and by the largest such byte otherwise.
+/* ---- THE ACCESSOR ---------------------------------------------------------
  *
- * The tiebreak's second clause exists because `rightmost` is not always
- * among the minima, and a rule that silently fell back to "whichever bit a
- * loop found first" is what `rb_intersect` already refuses. */
-int pcrec_find_set_pick(const unsigned char bits[32], int rightmost,
-                        bool bytekey)
+ * THE GATE LIVES HERE AND NOWHERE ELSE (D122 addendum 2 (3)): whether a rate
+ * applies to this compile is decided once, by this function, and every reader
+ * receives either a table or NULL and hands it to a primitive untested. */
+
+const uint32_t *pcrec_find_byte_rate(Ctx *cx)
 {
-    int b, best = -1;
-    unsigned lo = 0;
-    if (!bytekey || rightmost < 0) return rightmost;
-    for (b = 255; b >= 0; b--) {
-        unsigned p;
-        if (!(bits[b >> 3] & (unsigned char)(1u << (b & 7)))) continue;
-        p = pcrec_byte_freq_ppm(b);
-        if (best < 0 || p < lo) { lo = p; best = b; }
+    PcrecFindRec *fr = &cx->job->find;
+    if (!fr->byte_rate_asked) {
+        fr->byte_rate_asked = true;
+        if (cx->opt->encoding == PCREC_ENC_BYTE) {
+            for (int b = 0; b < 256; b++)
+                fr->byte_rate[b] = pcrec_byte_freq_ppm(b);
+            fr->byte_rate_have = true;
+        }
     }
-    /* Scanning DOWN above already leaves `best` as the LARGEST of the minima,
-     * so only the "the rightmost member is among them" clause needs stating. */
-    if (pcrec_byte_freq_ppm(rightmost) == lo) return rightmost;
+    return fr->byte_rate_have ? fr->byte_rate : NULL;
+}
+
+/* ---- THE PRIMITIVES: one per rate QUESTION KIND, its NONE answer inside ----
+ *
+ * [D126 Q4] A uniform table substituted for NONE would be right for MASS
+ * only: for PICK it answers `cand[0]`, which is the set pick's rightmost but
+ * the run's LEFTMOST (R13's defect again), and for COMPARE it answers `true`
+ * for every pair, a density claim no data supports. So each kind states its
+ * own, once, here (design §6.1). */
+
+/* The uniform rate's mass for `k` bytes: floor(k * 10^6 / 256). */
+static uint32_t uniform_mass(int k)
+{
+    return (uint32_t)((unsigned long long)k * 1000000u / 256u);
+}
+
+int pcrec_find_pick(const uint32_t *rate, const unsigned char *cand, int n,
+                    int rightmost)
+{
+    int i, best = 0;
+    if (!rate) return rightmost;
+    for (i = 1; i < n; i++)
+        if (rate[cand[i]] < rate[cand[best]]) best = i;
     return best;
 }
 
-/* Which member of the RUN the emitted `memchr` tests: the rarest under the
- * prior, ties to the LEFTMOST — and the set pick's own fallback (rightmost)
- * where the prior does not apply. The per-candidate cost of the whole run
- * check is the number of occurrences of THIS byte in the window, which is
- * why the choice is not cosmetic.
- *
- * [OPT-REQRUN-ENC] The fallback WAS leftmost, and pcrec-bench's O-60 finding
- * falsified it under `-e utf8`: a run's LEFTMOST member is a lead byte
- * whenever the run opens mid-character, shared by every character in that
- * script block (measured: 12.0%/20.7% of the corpus/bench RUN-path artifacts,
- * docs/dev/optloop/reqrunenc_census.md). A run's last byte can be a lead byte
- * only if the run is truncated mid-character, which the census found in ZERO
- * of 912 real `-e utf8` runs, so the rightmost rule closes it with no
- * byte-range logic (D77). */
-int pcrec_find_run_scan_index(const unsigned char *bytes, int n, bool bytekey)
+bool pcrec_find_no_commoner(const uint32_t *rate, int p, int q)
 {
-    int i, best = 0;
-    unsigned lo;
-    if (!bytekey) return n - 1;
-    lo = pcrec_byte_freq_ppm(bytes[0]);
-    for (i = 1; i < n; i++) {
-        unsigned p = pcrec_byte_freq_ppm(bytes[i]);
-        if (p < lo) { lo = p; best = i; }
-    }
-    return best;
+    if (!rate) return false;
+    return rate[p] <= rate[q];
+}
+
+uint32_t pcrec_find_set_mass(const uint32_t *rate, const uint8_t set[256])
+{
+    unsigned long long t = 0;
+    int k = 0;
+    for (int b = 0; b < 256; b++) if (set[b]) { k++; if (rate) t += rate[b]; }
+    if (!rate) t = uniform_mass(k);
+    return t > 1000000u ? 1000000u : (uint32_t)t;
+}
+
+uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
+                             int n)
+{
+    unsigned long long t = 0;
+    if (!rate) return uniform_mass(n);
+    for (int i = 0; i < n; i++) t += rate[bytes[i]];
+    return (uint32_t)t;
+}
+
+/* ---- THE RATE READERS: each builds a candidate order and asks one primitive */
+
+/* Which member of the necessary SET the emitted `memchr` tests. The order
+ * `[rightmost, the other members 255..0]` IS the tie rule: ties go to the
+ * threaded rightmost member when it is among the minima, and to the largest
+ * such byte otherwise — the rule a loop that silently took "whichever bit it
+ * found first" would break, and that `rb_intersect` already refuses. */
+int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
+                        int rightmost)
+{
+    unsigned char cand[256];
+    int n = 0;
+    if (rightmost < 0) return -1;
+    cand[n++] = (unsigned char)rightmost;
+    for (int b = 255; b >= 0; b--)
+        if (b != rightmost && (bits[b >> 3] & (unsigned char)(1u << (b & 7))))
+            cand[n++] = (unsigned char)b;
+    return cand[pcrec_find_pick(rate, cand, n, 0)];
+}
+
+/* Which member of the RUN the emitted `memchr` tests: the run in order, so
+ * ties go to the LEFTMOST, and the positional rightmost is the NONE answer.
+ * The per-candidate cost of the whole run check is the number of occurrences
+ * of THIS byte in the window, which is why the choice is not cosmetic.
+ *
+ * [OPT-REQRUN-ENC] The NONE answer WAS the leftmost, and pcrec-bench's O-60
+ * finding falsified it under `-e utf8`: a run's LEFTMOST member is a lead
+ * byte whenever the run opens mid-character, shared by every character in
+ * that script block (measured: 12.0%/20.7% of the corpus/bench RUN-path
+ * artifacts, docs/dev/optloop/reqrunenc_census.md). A run's last byte can be
+ * a lead byte only if the run is truncated mid-character, which the census
+ * found in ZERO of 912 real `-e utf8` runs, so the rightmost rule closes it
+ * with no byte-range logic (D77). */
+int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
+                              int n)
+{
+    return pcrec_find_pick(rate, bytes, n, n - 1);
 }
 
 /* Where a run longer than `PCREC_MAX_REQ_RUN_EMIT` is TRUNCATED to: the start
- * of the window of that length containing `idx` whose bytes sum to the lowest
- * prior, ties to the leftmost, and the leftmost such window where the prior
- * does not apply.
+ * of the window of that length containing `idx` with the lowest mass, ties
+ * to the leftmost by the strict `<` — so under NONE, where every window's
+ * mass is equal, the leftmost.
  *
  * The scan member is in every candidate window by construction, so its own
- * ppm is a constant of the comparison and no term has to be excluded. */
-int pcrec_find_run_window_start(const unsigned char *bytes, int n, int idx,
-                                bool bytekey)
+ * rate is a constant of the comparison and no term has to be excluded. */
+int pcrec_find_run_window_start(const uint32_t *rate,
+                                const unsigned char *bytes, int n, int idx)
 {
     int lo_s = idx - (PCREC_MAX_REQ_RUN_EMIT - 1), hi_s = idx;
     int s, best;
-    unsigned long long lo = 0;
+    uint32_t lo = 0;
     if (lo_s < 0) lo_s = 0;
     if (hi_s > n - PCREC_MAX_REQ_RUN_EMIT) hi_s = n - PCREC_MAX_REQ_RUN_EMIT;
     best = lo_s;
-    if (!bytekey) return best;
     for (s = lo_s; s <= hi_s; s++) {
-        unsigned long long t = 0;
-        int k;
-        for (k = 0; k < PCREC_MAX_REQ_RUN_EMIT; k++)
-            t += pcrec_byte_freq_ppm(bytes[s + k]);
+        uint32_t t = pcrec_find_seq_mass(rate, bytes + s, PCREC_MAX_REQ_RUN_EMIT);
         if (s == lo_s || t < lo) { lo = t; best = s; }
     }
     return best;

@@ -81,10 +81,9 @@ void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run);
  * says why each member choice is the argmin of a frequency prior under the
  * `byte` encoding and the rightmost elsewhere). `pcrec_req_window` fills
  * `run`'s window (`bytes`/`len`/`idx`/`at`) from its whole run;
- * `pcrec_req_pick` answers the byte the emitted `memchr` tests. `cx` is read
- * for the ENCODING alone, the prior being a fact about a corpus under one —
- * a RATE READER's decision, which [FINDINGS] B1 moves into the findings
- * accessor (design §6.2). `*why` receives the rate rule that answered —
+ * `pcrec_req_pick` answers the byte the emitted `memchr` tests. Each asks
+ * the byte-rate accessor (`pcrec_find_byte_rate`) once, first, and hands its
+ * answer to the readers untested. `*why` receives the rate rule that answered —
  * `PF_WHY_RATE_BUILTIN` (the shipped prior) or `PF_WHY_RATE_NONE` (its NONE
  * answer, the rightmost member) — or `PF_WHY_NONE` where no member was
  * chosen (no window; an empty set). */

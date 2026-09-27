@@ -464,16 +464,28 @@ void pcrec_req_walk(const Ast *root, RbSet *set, RbRun *run)
     *run = v.runs.best;
 }
 
+/* The rate rule a derived pick answered by, for `--emit-facts`' `why`
+ * column: the byte-rate the compile consumed, or its NONE answer. Read off
+ * the consumption record, not off the rate pointer, so no reader here tests
+ * a rate (findings design §6.3's structural rule). */
+static PfWhyCode req_rate_why(Ctx *cx)
+{
+    return cx->job->find.byte_rate_have ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+}
+
 /* THE WINDOW, the `req_run` fact's derived half, cut from the whole run the
  * core `req_whole_run` fact holds (`run->whole`/`whole_len`): which member of
  * the run the emitted `memchr` scans for (`idx`), and where a run longer than
  * `PCREC_MAX_REQ_RUN_EMIT` is truncated to (`at`, with `bytes` exactly
  * `whole + at` for `len` bytes). A whole run shorter than two bytes has no
  * window (`len == 0`). The two choices are the rate readers'
- * (`src/core/findings.c`); this composes them into the fact. */
+ * (`src/core/findings.c`); this composes them into the fact.
+ *
+ * The byte-rate is asked FIRST, before any branch, so whether the compile
+ * consumed it does not depend on the pattern (findings design §6.4 rule 1). */
 void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
 {
-    bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
+    const uint32_t *rate = pcrec_find_byte_rate(cx);
     int n = run->whole_len;
 
     memset(run->bytes, 0, sizeof run->bytes);
@@ -482,11 +494,11 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
     run->at = 0;
     *why = PF_WHY_NONE;
     if (n < 2) return;
-    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+    *why = req_rate_why(cx);
     {
-        int i = pcrec_find_run_scan_index(run->whole, n, bytekey);
+        int i = pcrec_find_run_scan_index(rate, run->whole, n);
         int s = n > PCREC_MAX_REQ_RUN_EMIT
-              ? pcrec_find_run_window_start(run->whole, n, i, bytekey) : 0;
+              ? pcrec_find_run_window_start(rate, run->whole, n, i) : 0;
         int len = n - s;
         if (len > PCREC_MAX_REQ_RUN_EMIT) len = PCREC_MAX_REQ_RUN_EMIT;
         memcpy(run->bytes, run->whole + s, (size_t)len);
@@ -499,13 +511,14 @@ void pcrec_req_window(Ctx *cx, ReqRun *run, PfWhyCode *why)
 /* THE BYTE the emitted `memchr` tests — the `req_byte` fact — at ONE return:
  * the run's own scan member where a run window shipped (there is one emitted
  * `memchr`, and `<PREFIX>_REQ_BYTE` reports what it tests), and otherwise the
- * set's pick (`src/core/findings.c`). -1 exactly when the set is empty. */
+ * set's pick (`src/core/findings.c`). -1 exactly when the set is empty. The
+ * byte-rate is asked first, as the window's is. */
 int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
                    PfWhyCode *why)
 {
-    bool bytekey = cx->opt->encoding == PCREC_ENC_BYTE;
-    *why = bytekey ? PF_WHY_RATE_BUILTIN : PF_WHY_RATE_NONE;
+    const uint32_t *rate = pcrec_find_byte_rate(cx);
+    *why = req_rate_why(cx);
     if (run->len >= 2) return run->bytes[run->idx];
     if (set->rightmost < 0) *why = PF_WHY_NONE;
-    return pcrec_find_set_pick(set->bits, set->rightmost, bytekey);
+    return pcrec_find_set_pick(rate, set->bits, set->rightmost);
 }
