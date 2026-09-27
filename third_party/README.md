@@ -11,8 +11,27 @@ source is the only source there will ever be.**
 | source | what it is | what derives from it |
 |---|---|---|
 | `ucd-16.0.0/` | the Unicode Character Database at 16.0.0 | `src/parse/uprops_tables.inc` — module `unicode-props`' interval tables (the general categories, and since [M5.0] stage 5 the 171 SCRIPT values in three namespaces); `src/core/fold_tables.inc` and `src/enc/utf8_fold_pairs.inc` — DD-1's simple case-fold relation, in its compiler form and its EMITTED form (the one derived artifact that reaches a user's matcher; see `ucd-16.0.0/PROVENANCE.md`) |
+| `elastic-examples-apache-logs-bc53b584/` | a 1,000,000-byte, pinned-commit sample of `elastic/examples`' Apache combined-log traffic (Apache-2.0), `[FINDINGS]` B5's `weblog` source | `src/findings/weblog.rxt` **(owed — B5's build half; today only a `generated_preview.rxt` scratch check exists here)** — module `findings`' `weblog` bundle (`freq`+`cpfreq`) |
+| `synth-log-lines-v1/` | a `fidelity synthesized` (D123-8 item 6) HDFS/Hadoop-DataNode-shaped log corpus — no licensable real source was found (see its `PROVENANCE.md`), so this directory's "source" is its own committed generator + a fixed seed rather than vendored data | `src/findings/log.rxt` **(owed — B5's build half; today only a `generated_preview.rxt` scratch check exists here)** — module `findings`' `log` bundle (`freq`+`cpfreq`), which `weblog` `include`s |
 
 One row per source. Add a row in the same change that adds a directory.
+
+**`synth-log-lines-v1/` bends this directory's own opening sentence** ("data
+files this project did not author"): D123-8 item 6 rules that a `log`-class
+exemplar with no licensable real source is a `fidelity synthesized` corpus,
+generator and seed committed — the closest fit to this directory's shape
+(one directory per source, `PROVENANCE.md` + `generate.py` beside the data)
+even though the "source" here is this project's own generator rather than
+an outside origin. See that directory's `PROVENANCE.md` for the reasoning
+and the sourcing attempt that preceded it.
+
+**Both `[FINDINGS]` B5 rows above are SOURCING-HALF ONLY** (lane
+`findb5src`, 2026-09-27): each `generate.py` here is a stub that runs the
+real analyzer and writes a committed `generated_preview.rxt` SCRATCH check
+beside itself, never `src/findings/{weblog,log}.rxt` — so neither is wired
+into `GEN_TABLES` yet, and "Adding a source" step 4 below is deliberately
+NOT done for either. A later BUILD-HALF lane retargets each `generate.py`,
+adds its `--check` mode against the real shipped file, and does step 4.
 
 ## The rule this directory exists to make general
 

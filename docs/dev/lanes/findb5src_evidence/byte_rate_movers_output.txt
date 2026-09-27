@@ -1,0 +1,65 @@
+=== §2.5 sanity: default identity (N=1e6, z=0 => ppm == count) ===
+  default sum(ppm) = 1000000 (want 1000000)
+
+=== ppm('-') = 0x2d across tables (requirements.md C4's named mover: iso-ts gains '-'@7 under log-measured frequencies) ===
+  default  ppm(0x2d '-') =    4984   rank among 256 (1=rarest) = 215
+  weblog   ppm(0x2d '-') =   18614   rank among 256 (1=rarest) = 240
+  log      ppm(0x2d '-') =    4782   rank among 256 (1=rarest) = 214
+
+=== reqpos_census.tsv: 1960 rows with a necessary-byte SET of size >= 2 (the only rows a table swap CAN move) ===
+
+--- default vs weblog: 104 of 1960 rows move the argmin pick ---
+    bench/capability/codegrammar-flat	set={22,3a}	default picks 22 (") -> weblog picks 3a (:)
+    bench/capability/codegrammar-xflag	set={22,3a}	default picks 22 (") -> weblog picks 3a (:)
+    bench/capability/file-ext-order	set={2e,61,72,74}	default picks 2e (.) -> weblog picks 72 (r)
+    bench/capability/router-prefix-order	set={2f,65,72,73,75}	default picks 2f (/) -> weblog picks 75 (u)
+    bench/capability/wild-secrets-slack-webhook-url	set={2f,3a}	default picks 2f (/) -> weblog picks 3a (:)
+    bench/loglines/iso-ts	set={2d,3a}	default picks 2d (-) -> weblog picks 3a (:)
+    bench/syntax/cls-v	set={64,65,69,6d,6e,6f,74}	default picks 6d (m) -> weblog picks 64 (d)
+    bench/syntax/esc-octal-0	set={20,64,65,69,6d,6e,6f,74}	default picks 6d (m) -> weblog picks 64 (d)
+    bench/syntax/mod-s	set={64,65,69,6d,6e,6f,74}	default picks 6d (m) -> weblog picks 64 (d)
+    bench/syntax/qnt-quest	set={63,6c,6f,72}	default picks 63 (c) -> weblog picks 72 (r)
+    corpus/tests/assertions/d27/composition.rxt:20	set={61,63,64,67,6f,74}	default picks 67 (g) -> weblog picks 64 (d)
+    corpus/tests/assertions/kreset.rxt:285	set={61,62,64}	default picks 62 (b) -> weblog picks 64 (d)
+    corpus/tests/atomic_groups/atomic_ceiling.rxt:82	set={62,64}	default picks 62 (b) -> weblog picks 64 (d)
+    corpus/tests/backrefs/d27/octal.rxt:72	set={61,62,63,64,65,66,67,68}	default picks 62 (b) -> weblog picks 66 (f)
+    corpus/tests/backrefs/d27/octal.rxt:78	set={61,62,63,64,65,66,67,68,69}	default picks 62 (b) -> weblog picks 66 (f)
+    corpus/tests/backrefs/d27/octal.rxt:111	set={0a,33}	default picks 33 (3) -> weblog picks 0a (?)
+    corpus/tests/backrefs/octal.rxt:81	set={61,62,63,64,65,66,67,68}	default picks 62 (b) -> weblog picks 66 (f)
+    corpus/tests/base/class_brackets.rxt:77	set={5d,78}	default picks 78 (x) -> weblog picks 5d (])
+    corpus/tests/base/class_brackets.rxt:94	set={3d,5d,78}	default picks 78 (x) -> weblog picks 3d (=)
+    corpus/tests/base/class_brackets.rxt:154	set={5d,78}	default picks 78 (x) -> weblog picks 5d (])
+    corpus/tests/base/comment_escape.rxt:16	set={21,2a,2f,61,62}	default picks 21 (!) -> weblog picks 2a (*)
+    corpus/tests/base/groups.rxt:17	set={61,62,63,64}	default picks 62 (b) -> weblog picks 64 (d)
+    corpus/tests/base/literals.rxt:16	set={20,64,65,68,6c,6f,72,77}	default picks 77 (w) -> weblog picks 64 (d)
+    corpus/tests/base/syntax_errors.rxt:231	set={0b,31,61,7b,7d}	default picks 0b (?) -> weblog picks 7d (})
+    corpus/tests/base/syntax_errors.rxt:234	set={0c,31,61,7b,7d}	default picks 0c (?) -> weblog picks 7d (})
+    ... and 79 more
+
+--- default vs log: 262 of 1960 rows move the argmin pick ---
+    bench/capability/dup-param-detect	set={26,3d}	default picks 26 (&) -> log picks 3d (=)
+    bench/capability/file-ext-order	set={2e,61,72,74}	default picks 2e (.) -> log picks 61 (a)
+    bench/capability/keyword-prefix-order	set={69,6e}	default picks 6e (n) -> log picks 69 (i)
+    bench/capability/router-prefix-order	set={2f,65,72,73,75}	default picks 2f (/) -> log picks 75 (u)
+    bench/capability/wild-secrets-github-pat	set={5f,61,62,67,68,69,70,74,75}	default picks 5f (_) -> log picks 62 (b)
+    bench/loglines/http-5xx	set={20,22,2e,2f,31,35,48,50,54}	default picks 50 (P) -> log picks 54 (T)
+    bench/syntax/asr-nwb	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/asr-wb	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/cls-dot	set={63,74}	default picks 63 (c) -> log picks 74 (t)
+    bench/syntax/cls-fold-pair	set={63,74}	default picks 63 (c) -> log picks 74 (t)
+    bench/syntax/cls-mixed-case	set={63,74}	default picks 63 (c) -> log picks 74 (t)
+    bench/syntax/cls-negset	set={63,74}	default picks 63 (c) -> log picks 74 (t)
+    bench/syntax/cls-pair-ctl	set={63,74}	default picks 63 (c) -> log picks 74 (t)
+    bench/syntax/cls-s-lc	set={61,63,73,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/esc-hex	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/esc-nl	set={0a,64,65,69,6d,6e,6f,74}	default picks 0a (?) -> log picks 6d (m)
+    bench/syntax/esc-quote	set={28,29,66,78}	default picks 78 (x) -> log picks 29 ())
+    bench/syntax/grp-atomic-alt	set={61,63}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/grp-cap	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/grp-named-quote	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/grp-named	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/lit-cat	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/mod-n	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/mod-x	set={61,63,74}	default picks 63 (c) -> log picks 61 (a)
+    bench/syntax/qnt-quest	set={63,6c,6f,72}	default picks 63 (c) -> log picks 6c (l)
+    ... and 237 more

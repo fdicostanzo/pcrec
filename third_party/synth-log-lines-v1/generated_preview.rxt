@@ -1,0 +1,160 @@
+# ==========================================================================
+# generated_preview.rxt -- [FINDINGS] B5 SOURCING-HALF SCRATCH CHECK.
+# NOT src/findings/log.rxt. Produced by third_party/synth-log-lines-v1/
+# generate.py running scripts/pcrec_analyze.py over the SYNTHESIZED
+# exemplar synthetic_log_lines.txt (fidelity synthesized, D123-8 item 6;
+# see PROVENANCE.md and gen_corpus.py). Proves the analyzer pipeline runs
+# end to end on this source; the build half retargets this generator to
+# write the real src/findings/log.rxt and wires it into GEN_TABLES.
+# ==========================================================================
+analysis log
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 0a 7859
+        row 20 81241
+        row 24 5346
+        row 2a 265
+        row 2d 4784
+        row 2e 22796
+        row 2f 14468
+        row 30 53112
+        row 31 48353
+        row 32 52529
+        row 33 31150
+        row 34 35311
+        row 35 35935
+        row 36 37087
+        row 37 27801
+        row 38 28038
+        row 39 34821
+        row 3a 15066
+        row 41 5597
+        row 42 2963
+        row 43 3317
+        row 44 1527
+        row 45 333
+        row 46 7520
+        row 47 339
+        row 48 5258
+        row 49 7520
+        row 4b 2963
+        row 4c 458
+        row 4d 285
+        row 4e 9430
+        row 4f 7554
+        row 50 265
+        row 52 8037
+        row 53 3489
+        row 56 414
+        row 57 339
+        row 5f 10410
+        row 61 13555
+        row 62 1598
+        row 63 42719
+        row 64 15302
+        row 65 53618
+        row 66 7513
+        row 67 7930
+        row 68 19796
+        row 69 22768
+        row 6a 53
+        row 6b 27843
+        row 6c 12183
+        row 6d 5719
+        row 6e 28187
+        row 6f 17197
+        row 70 4402
+        row 72 32261
+        row 73 18893
+        row 74 22479
+        row 75 13960
+        row 76 13807
+        row 77 339
+        row 78 373
+        row 79 2090
+        row 7a 1395
+        provenance
+            source synth-log-lines-v1
+            retrieved 2026-09-27
+            bytes 999960
+            sha256 a91f736b7e118a4cb004e36dbd172fc27b3bbc44f098d84eece027a6352b0617
+            license MIT (this repository; the exemplar is SYNTHESIZED, not vendored -- see PROVENANCE.md)
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when utf8 via encode-utf8
+        row U+000A 7859
+        row U+0020 81241
+        row U+0024 5346
+        row U+002A 265
+        row U+002D 4784
+        row U+002E 22796
+        row U+002F 14468
+        row U+0030 53112
+        row U+0031 48353
+        row U+0032 52529
+        row U+0033 31150
+        row U+0034 35311
+        row U+0035 35935
+        row U+0036 37087
+        row U+0037 27801
+        row U+0038 28038
+        row U+0039 34821
+        row U+003A 15066
+        row U+0041 5597
+        row U+0042 2963
+        row U+0043 3317
+        row U+0044 1527
+        row U+0045 333
+        row U+0046 7520
+        row U+0047 339
+        row U+0048 5258
+        row U+0049 7520
+        row U+004B 2963
+        row U+004C 458
+        row U+004D 285
+        row U+004E 9430
+        row U+004F 7554
+        row U+0050 265
+        row U+0052 8037
+        row U+0053 3489
+        row U+0056 414
+        row U+0057 339
+        row U+005F 10410
+        row U+0061 13555
+        row U+0062 1598
+        row U+0063 42719
+        row U+0064 15302
+        row U+0065 53618
+        row U+0066 7513
+        row U+0067 7930
+        row U+0068 19796
+        row U+0069 22768
+        row U+006A 53
+        row U+006B 27843
+        row U+006C 12183
+        row U+006D 5719
+        row U+006E 28187
+        row U+006F 17197
+        row U+0070 4402
+        row U+0072 32261
+        row U+0073 18893
+        row U+0074 22479
+        row U+0075 13960
+        row U+0076 13807
+        row U+0077 339
+        row U+0078 373
+        row U+0079 2090
+        row U+007A 1395
+        provenance
+            source synth-log-lines-v1
+            retrieved 2026-09-27
+            bytes 999960
+            sha256 a91f736b7e118a4cb004e36dbd172fc27b3bbc44f098d84eece027a6352b0617
+            license MIT (this repository; the exemplar is SYNTHESIZED, not vendored -- see PROVENANCE.md)

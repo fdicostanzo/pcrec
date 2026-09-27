@@ -43,6 +43,25 @@ the row.
   one more file in the same directory, one more row in `PROVENANCE.md`, no
   change to `make gen-tables` — which is exactly what §3.3.2's
   "name the derivation generically" ruling was for.
+- `elastic-examples-apache-logs-bc53b584/` — `[FINDINGS]` B5's `weblog`
+  source (lane `findb5src`, 2026-09-27, sourcing half only): a 1,000,000-byte
+  prefix of `elastic/examples`' Apache combined-log traffic (`Common Data
+  Formats/apache_logs/apache_logs`), Apache-2.0, pinned at commit
+  `bc53b584` (superseding an earlier committed copy of the same bytes that
+  cited the moving `master` branch, `docs/dev/findings_measure/manifest.tsv`).
+  Holds `PROVENANCE.md`, `apache_logs.txt`, `LICENSE` and a `generate.py`
+  STUB that runs `scripts/pcrec_analyze.py` and writes `generated_preview.rxt`
+  (a committed scratch check) — NOT `src/findings/weblog.rxt` and NOT yet in
+  `GEN_TABLES`; that wiring is B5's build half.
+- `synth-log-lines-v1/` — `[FINDINGS]` B5's `log` source (lane `findb5src`,
+  2026-09-27, sourcing half only): a `fidelity synthesized` (D123-8 item 6)
+  HDFS/Hadoop-DataNode-shaped corpus, generated deterministically by
+  `gen_corpus.py` from a fixed seed, after one bounded sourcing-lane attempt
+  found no licensable real `log_lines`-class source (loghub's HDFS_2k.log is
+  research/academic-only; see `PROVENANCE.md` for the full attempt and the
+  fidelity gap it discloses against `requirements.md`'s own C4 `iso-ts`
+  finding). Same stub shape as the row above: `generate.py` writes a
+  `generated_preview.rxt` scratch check, not `src/findings/log.rxt`.
 
 ## Adding a source
 

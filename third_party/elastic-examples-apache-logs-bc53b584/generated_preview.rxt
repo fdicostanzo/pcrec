@@ -1,0 +1,212 @@
+# ==========================================================================
+# generated_preview.rxt -- [FINDINGS] B5 SOURCING-HALF SCRATCH CHECK.
+# NOT src/findings/weblog.rxt. Produced by
+# third_party/elastic-examples-apache-logs-bc53b584/generate.py running
+# scripts/pcrec_analyze.py over the vendored apache_logs.txt exemplar
+# (see PROVENANCE.md). Proves the analyzer pipeline runs end to end on
+# this source; the build half retargets this generator to write the
+# real src/findings/weblog.rxt (which `include <log>`, per design.md
+# §13 B5 / tests/rxtsource/fixtures/analysis_bundle_accept.rxtin) and
+# wires it into GEN_TABLES.
+# ==========================================================================
+analysis weblog
+    freq
+        question How often does each byte occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when byte via unigram
+        row 0a 4313
+        row 20 79229
+        row 21 37
+        row 22 25878
+        row 23 10
+        row 25 1406
+        row 26 1589
+        row 28 5696
+        row 29 5696
+        row 2a 1
+        row 2b 6072
+        row 2c 1622
+        row 2d 18621
+        row 2e 47158
+        row 2f 51772
+        row 30 61276
+        row 31 48208
+        row 32 28280
+        row 33 16948
+        row 34 10761
+        row 35 24561
+        row 36 14066
+        row 37 14644
+        row 38 10959
+        row 39 7048
+        row 3a 17746
+        row 3b 7100
+        row 3d 2562
+        row 3f 876
+        row 40 91
+        row 41 2713
+        row 42 707
+        row 43 2517
+        row 44 323
+        row 45 5521
+        row 46 2656
+        row 47 7514
+        row 48 6073
+        row 49 1033
+        row 4a 305
+        row 4b 3201
+        row 4c 3003
+        row 4d 11302
+        row 4e 1910
+        row 4f 2053
+        row 50 5450
+        row 51 472
+        row 52 579
+        row 53 3491
+        row 54 16633
+        row 55 1183
+        row 56 535
+        row 57 4504
+        row 58 1750
+        row 59 238
+        row 5a 113
+        row 5b 4314
+        row 5d 4313
+        row 5f 3048
+        row 61 26870
+        row 62 8502
+        row 63 18370
+        row 64 7506
+        row 65 41092
+        row 66 6392
+        row 67 11027
+        row 68 12106
+        row 69 27081
+        row 6a 1841
+        row 6b 5861
+        row 6c 25973
+        row 6d 16231
+        row 6e 14726
+        row 6f 36287
+        row 70 18964
+        row 71 321
+        row 72 17974
+        row 73 25306
+        row 74 30009
+        row 75 5409
+        row 76 3951
+        row 77 10284
+        row 78 5649
+        row 79 6728
+        row 7a 3851
+        row 7e 9
+        provenance
+            source elastic-examples-apache-logs-bc53b584
+            retrieved 2026-09-27
+            bytes 1000000
+            sha256 43cfdc461a4ccecd3e93bbe0e30fd022a416e6fbe0ad2e613b1a13b85bee0e47
+            url https://github.com/elastic/examples/blob/bc53b584c0f9f574d4373193334bf03541a54936/Common%20Data%20Formats/apache_logs/apache_logs
+            ref bc53b584c0f9f574d4373193334bf03541a54936
+            license Apache-2.0
+    cpfreq
+        question How often does each Unicode code point occur in this exemplar?
+        reader byte-rate (docs/spec/findings.md §4)
+        analyzer pcrec-analyze 0.1 --scan freq,cpfreq
+        encoding ascii
+        serves byte-rate when utf8 via encode-utf8
+        row U+000A 4313
+        row U+0020 79229
+        row U+0021 37
+        row U+0022 25878
+        row U+0023 10
+        row U+0025 1406
+        row U+0026 1589
+        row U+0028 5696
+        row U+0029 5696
+        row U+002A 1
+        row U+002B 6072
+        row U+002C 1622
+        row U+002D 18621
+        row U+002E 47158
+        row U+002F 51772
+        row U+0030 61276
+        row U+0031 48208
+        row U+0032 28280
+        row U+0033 16948
+        row U+0034 10761
+        row U+0035 24561
+        row U+0036 14066
+        row U+0037 14644
+        row U+0038 10959
+        row U+0039 7048
+        row U+003A 17746
+        row U+003B 7100
+        row U+003D 2562
+        row U+003F 876
+        row U+0040 91
+        row U+0041 2713
+        row U+0042 707
+        row U+0043 2517
+        row U+0044 323
+        row U+0045 5521
+        row U+0046 2656
+        row U+0047 7514
+        row U+0048 6073
+        row U+0049 1033
+        row U+004A 305
+        row U+004B 3201
+        row U+004C 3003
+        row U+004D 11302
+        row U+004E 1910
+        row U+004F 2053
+        row U+0050 5450
+        row U+0051 472
+        row U+0052 579
+        row U+0053 3491
+        row U+0054 16633
+        row U+0055 1183
+        row U+0056 535
+        row U+0057 4504
+        row U+0058 1750
+        row U+0059 238
+        row U+005A 113
+        row U+005B 4314
+        row U+005D 4313
+        row U+005F 3048
+        row U+0061 26870
+        row U+0062 8502
+        row U+0063 18370
+        row U+0064 7506
+        row U+0065 41092
+        row U+0066 6392
+        row U+0067 11027
+        row U+0068 12106
+        row U+0069 27081
+        row U+006A 1841
+        row U+006B 5861
+        row U+006C 25973
+        row U+006D 16231
+        row U+006E 14726
+        row U+006F 36287
+        row U+0070 18964
+        row U+0071 321
+        row U+0072 17974
+        row U+0073 25306
+        row U+0074 30009
+        row U+0075 5409
+        row U+0076 3951
+        row U+0077 10284
+        row U+0078 5649
+        row U+0079 6728
+        row U+007A 3851
+        row U+007E 9
+        provenance
+            source elastic-examples-apache-logs-bc53b584
+            retrieved 2026-09-27
+            bytes 1000000
+            sha256 43cfdc461a4ccecd3e93bbe0e30fd022a416e6fbe0ad2e613b1a13b85bee0e47
+            url https://github.com/elastic/examples/blob/bc53b584c0f9f574d4373193334bf03541a54936/Common%20Data%20Formats/apache_logs/apache_logs
+            ref bc53b584c0f9f574d4373193334bf03541a54936
+            license Apache-2.0
