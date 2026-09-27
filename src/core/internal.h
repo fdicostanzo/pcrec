@@ -1642,7 +1642,8 @@ typedef struct {
     int     anch_start;
 } Nfa;
 
-/* ---- [OPT-K] the offset-k prefix analysis (src/opt/prefix_k.c) ---- */
+/* ---- [OPT-K] the offset-k walk and selection bounds (src/facts/kset.c,
+ *      src/opt/prefix_k.c) ---- */
 
 /* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
  * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and
@@ -1674,41 +1675,6 @@ typedef struct {
  * fix, not a second numeric source. PCREC_W_UNBOUNDED (below) is unaffected
  * by construction — it is already only ever a macro alias of this name. */
 #define PCREC_MINW_MAX ((long long)PCREC_MINW_MAX)
-
-typedef struct {
-    int      k;          /* the offset, in bytes from the candidate start */
-    uint8_t  set[256];   /* the bytes a match may carry there */
-    int      count;      /* how many */
-    int      byte;       /* the single value when count == 1 */
-} PrefixK;
-
-typedef struct {
-    int      nwalk;                   /* offsets proved: k[0..nwalk-1] */
-    PrefixK  k[PCREC_PREFIX_K_MAX];
-    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on k[j].set, ppm */
-    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
-     * keeps exactly the offset-0 filter it had before this row. */
-    int      nsel;
-    int      sel[PCREC_OFSK_MAX_SET]; /* indices into k[], ASCENDING by offset */
-    int      scan;                    /* index into sel[]: the memchr offset */
-    int      maxk;                    /* k[sel[nsel-1]].k */
-    unsigned rate_ppm;                /* predicted candidate rate, selected */
-    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
-    /* [OPT-LITSCAN] S1 — THE NECESSARY RUN'S PIN, an analysis fact and not a
-     * selection: true iff the `req_run` fact (len >= 2) sits at offset `run_o` of
-     * EVERY match — k[run_o + i] is the singleton req_run.bytes[i] for every
-     * i. Read by dfa_pfs[]'s run rows and by G1; decided by neither here.
-     * A `bool` and not a `run_o == -1` sentinel: every early return above the
-     * walk leaves the struct zeroed, and zero must mean "not pinned". */
-    bool     run_pinned;
-    int      run_o;                   /* meaningful only when run_pinned */
-} PrefixKSets;
-
-/* `k0` is the offset-0 byte set the DFA derivation already owns
- * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
- * it. See docs/design/offset_k_skip.md §3. */
-void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
-                        PrefixKSets *o);
 
 /* ---- DFA (priority subset construction) ---- */
 
@@ -2360,6 +2326,37 @@ enum {
 /* `ReqRun` and `ReqSet` — the necessary-run and necessary-set facts' value
  * types — live in src/facts/facts.h with the record that carries them
  * ([PATFACTS] step 3.0). */
+
+/* ---- [OPT-K] the offset-k SELECTION (src/opt/prefix_k.c) ----
+ *
+ * The walk it selects from is the `kset_walk` fact (`KsetWalk`,
+ * src/facts/facts.h; derived in src/facts/kset.c, [PATFACTS] step 3.4). */
+
+typedef struct {
+    const KsetWalk *walk;             /* the fact the selection read */
+    unsigned ppm[PCREC_PREFIX_K_MAX]; /* the prior's mass on walk->k[j].set */
+    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
+     * keeps exactly the offset-0 filter it had before this row. */
+    int      nsel;
+    int      sel[PCREC_OFSK_MAX_SET]; /* indices into walk->k[], ASCENDING by offset */
+    int      scan;                    /* index into sel[]: the memchr offset */
+    int      maxk;                    /* walk->k[sel[nsel-1]].k */
+    unsigned rate_ppm;                /* predicted candidate rate, selected */
+    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
+    /* [OPT-LITSCAN] S1 — THE NECESSARY RUN'S PIN, an analysis fact and not a
+     * selection: true iff the `req_run` fact (len >= 2) sits at offset `run_o` of
+     * EVERY match — walk->k[run_o + i] is the singleton req_run.bytes[i] for
+     * every i. Read by dfa_pfs[]'s run rows and by G1; decided by neither here.
+     * A `bool` and not a `run_o == -1` sentinel: zero must mean "not pinned". */
+    bool     run_pinned;
+    int      run_o;                   /* meaningful only when run_pinned */
+} PrefixKSets;
+
+/* `k0` is the offset-0 byte set the DFA derivation already owns
+ * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
+ * it. See docs/design/offset_k_skip.md §3. Asked only on the `ENG_UNANCH`
+ * branch, after the E3 seal: the walk is an E3 fact. */
+void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o);
 
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */

@@ -1664,6 +1664,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 /* D7 fast path: O(n) unanchored forward + reverse machines */
                 cx.job->engine = PCREC_ENG_UNANCH;
                 pcrec_nfa_wrap_unanchored(&cx, &cx.job->nfa);
+                /* [PATFACTS] E3: the wrapped forward NFA is final here and
+                 * nowhere else (design §3) — the ENG_ATTEMPT arm below never
+                 * seals it. The first E3 ask is scanedge's, just below. */
+                pcrec_facts_seal_e3(&cx);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_TABLE,

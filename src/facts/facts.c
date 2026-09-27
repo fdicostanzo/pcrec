@@ -80,12 +80,21 @@ static void pf_store_empty(PatFacts *pf, PfFactId f)
         pf->req_run.at = 0;
         break;
     case PF_REQ_BYTE:     pf->req_byte = -1; break;
+    case PF_KSET_WALK:    memset(&pf->kset_walk, 0, sizeof pf->kset_walk); break;
     case PF_NFACTS:       break;
     }
 }
 
+/* True where `f` is an E3 fact and this route sealed E2 but never E3: the
+ * one epoch gap that is a route's DECLINE rather than an asker's error. */
+static bool pf_route_unsealed(const PatFacts *pf, PfFactId f)
+{
+    return pf_epoch[f] == PF_E3_MACHINE && pf->epoch == PF_E2_LOWERED;
+}
+
 /* Steps 1-3. Returns true when the caller must DERIVE `f` (step 4): it is
- * sealed, uncached and not denied. `pass` is true on a public accessor. A
+ * sealed, uncached and not denied. An E3 fact on a route that never sealed
+ * E3 is answered here, `absent`, and never derived. `pass` is true on a public accessor. A
  * denied fact is cached with its empty value and the LOWEST denying bit, so
  * `-fno-req-byte -fno-req-run` names the byte flag on the whole run, the
  * order `--list-axes` prints a two-bit deny in. */
@@ -94,6 +103,18 @@ static bool pf_enter(Ctx *cx, PfFactId f, bool pass)
     PatFacts *pf = &cx->job->pf;
     uint64_t d;
     if (pass) pf->used |= pf_bit(f);
+    if (pf_route_unsealed(pf, f)) {
+        /* E3 IS PER BRANCH (design §3, r1 A3): not an internal error but the
+         * route's decline. A forward NFA that exists here was never wrapped
+         * (`ENG_ATTEMPT`); none at all means no DFA scan was built. The
+         * reason is the machine's state, stored with the empty value. */
+        pf->have |= pf_bit(f);
+        pf_store_empty(pf, f);
+        pf->why[f] = (PfWhy){ PF_ST_ABSENT,
+                              cx->job->nfa.n > 0 ? PF_WHY_ATTEMPT_UNWRAPPED
+                                                 : PF_WHY_NO_FORWARD_NFA, 0 };
+        return false;
+    }
     if ((int)pf->epoch < (int)pf_epoch[f])
         pcrec_ctx_fail(cx, 0, "internal error: pattern fact '%s' asked before "
                        "its epoch (E%d) was sealed", pf_name[f], pf_epoch[f]);
@@ -194,6 +215,10 @@ static void pf_derive(Ctx *cx, PfFactId f)
         pf_ask(cx, PF_REQ_RUN, false);
         pf->req_byte = pcrec_req_pick(cx, &pf->req_set, &pf->req_run, &why);
         break;
+    case PF_KSET_WALK:
+        /* The machine E3 sealed: `Job.nfa`, wrapped, never rebuilt after. */
+        pcrec_kset_walk(cx, &cx->job->nfa, &pf->kset_walk);
+        break;
     case PF_NFACTS:
         return;
     }
@@ -249,6 +274,14 @@ void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root)
     cx->job->pf.epoch = PF_E2_LOWERED;
 }
 
+void pcrec_facts_seal_e3(Ctx *cx)
+{
+    if (cx->job->pf.epoch != PF_E2_LOWERED)
+        pcrec_ctx_fail(cx, 0, "internal error: [PATFACTS] E3 sealed on an "
+                       "attempt that never sealed E2");
+    cx->job->pf.epoch = PF_E3_MACHINE;
+}
+
 unsigned pcrec_fact_kinds(Ctx *cx)
 {
     pf_ask(cx, PF_KINDS, true);
@@ -297,18 +330,25 @@ int pcrec_fact_req_byte(Ctx *cx)
     return cx->job->pf.req_byte;
 }
 
+const KsetWalk *pcrec_fact_kset_walk(Ctx *cx)
+{
+    pf_ask(cx, PF_KSET_WALK, true);
+    return &cx->job->pf.kset_walk;
+}
+
 void pcrec_facts_force_all(Ctx *cx)
 {
     PatFacts *pf = &cx->job->pf;
     pf->forcing = true;
     for (; pf->force_next < PF_NFACTS; pf->force_next++) {
         PfFactId f = (PfFactId)pf->force_next;
-        /* Never past a seal this route did not write: an unsealed epoch is
-         * a DECLINE of the route, not a failure, and forcing it would build a
-         * machine the compile never built (design §3, §11.4). Every fact is
-         * E1 or E2 today and every successful compile seals both, so no row
-         * takes this arm yet; the E3 facts arrive with step 3.4. */
-        if ((int)pf->epoch < (int)pf_epoch[f]) continue;
+        /* Never past a seal this route did not write: forcing it would walk
+         * a machine the compile never built, or one whose meaning is not the
+         * fact's (design §3, §11.4). An E3 fact on a route that sealed E2 is
+         * still ASKED — `pf_enter` answers it `absent` with the route's
+         * decline without deriving — so its row names the reason. */
+        if ((int)pf->epoch < (int)pf_epoch[f] && !pf_route_unsealed(pf, f))
+            continue;
         pf_ask(cx, f, false);
     }
     pf->forcing = false;
@@ -396,6 +436,21 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     case PF_REQ_BYTE:
         if (pf->req_byte < 0) return "none";
         return pcrec_sb_fragf(&cx->arena, "%d", pf->req_byte);
+    case PF_KSET_WALK: {
+        /* One item per offset, offset order: a singleton as its byte in
+         * decimal, a wider set as `[N]`, its member count. */
+        StrBuf sb = { 0 };
+        const char *t;
+        sb.cx = cx;
+        for (int j = 0; j < pf->kset_walk.nwalk; j++) {
+            const PrefixK *k = &pf->kset_walk.k[j];
+            if (k->count == 1) pcrec_sb_printf(&sb, "%s%d", j ? "," : "", k->byte);
+            else pcrec_sb_printf(&sb, "%s[%d]", j ? "," : "", k->count);
+        }
+        t = sb.len ? pcrec_sb_fragf(&cx->arena, "%s", sb.p) : "none";
+        pcrec_sb_free(&sb);
+        return t;
+    }
     case PF_NFACTS:
         break;
     }

@@ -1,40 +1,17 @@
-/* [OPT-K] THE OFFSET-k PREFIX ANALYSIS — which bytes every match must carry,
- * at which offsets from its own start, and which of those offsets are worth
- * testing before the transition loop is entered.
+/* [OPT-K] THE OFFSET-k SELECTION — which of the offsets every match must
+ * carry are worth testing before the transition loop is entered.
  *
  * docs/design/offset_k_skip.md is the note; read §3 (the derivation's domain)
  * and §4 (the cost model) before changing anything here.
  *
- * THE ONE FACT THAT DECIDES WHERE THIS FILE LIVES AND WHAT IT WALKS. The
- * candidate-start filter pcrec shipped before this row derives its byte set
- * from the forward DFA's START STATE (`cand_from_escapes` in
- * src/gen/emit_dfa.c): the bytes on which the start state does not stay put.
- * That is exact at offset 0 and USELESS past it, because an ENG_UNANCH DFA
- * state is the merge of the threads from EVERY subject position — after four
- * bytes of `\d{4}-`, the state carries threads at 4, 3, 2, 1 and 0 digits, so
- * "a byte that does not return the machine to the start state" at offset 4 is
- * `[0-9-]`, not `-`, and the selectivity the row is after is gone.
- *
- * The thread whose bytes we want to constrain is the one from the CANDIDATE
- * START ALONE, and the only place it exists on its own is the pattern's own
- * NFA, walked from `Nfa.anch_start` — the state `pcrec_nfa_wrap_unanchored` puts
- * the self-loop in FRONT of, and which it deliberately leaves pointing at the
- * pattern (src/ir/nfa.c). So: offsets >= 1 come from this walk, offset 0
- * keeps coming from the DFA derivation that already owns it, and no fact has
- * two sources.
- *
- * WHY IT IS SOUND. A match beginning at subject position p runs a thread from
- * `anch_start`; after j consumed bytes that thread sits in some NFA state of
- * `frontier[j]` (this walk's set, closed over epsilon and over every
- * assertion — an assertion is passed as though it held, which can only make a
- * set LARGER); its next byte is consumed by an N_CLASS state of that set; so
- * `s[p+j]` is in `S_j`, the union of those states' classes. The walk stops the
- * moment N_ACCEPT enters the frontier, because from there the match may be
- * over and `s[p+j]` need not exist at all. Every failure mode of the analysis
- * — an assertion it cannot evaluate, an alternation of unequal widths, a
- * bounded repeat that lets the frontier fan out — makes some `S_j` bigger and
- * the selection below decline it. There is no direction in which this file
- * can refuse a start the scan would have accepted.
+ * THE WALK IS A FACT AND LIVES IN src/facts/kset.c ([PATFACTS] step 3.4).
+ * The offsets and their byte sets — which bytes a match carries at offset j
+ * from its own start — are the pattern's `kset_walk` fact, a pure function of
+ * the wrapped NFA, read here through `pcrec_fact_kset_walk`. This file is the
+ * DECISION over it (design §4.2.2 carve-out (c)): each offset's rate under
+ * the compile's byte-rate, the cost model, and the scan offset and verifies
+ * it picks. Offset 0's DFA escape set `k0` stays the baseline's, from the DFA
+ * derivation that already owns it, so no set has two sources.
  *
  * [OPT-LITSCAN] S1 — THE PIN, A FACT THIS FILE PUBLISHES AND DOES NOT ACT ON
  * (docs/design/litscan_s1.md §1.1). Once the walk has run, `run_pinned`/
@@ -77,101 +54,6 @@
  * THE RATE IS A PRIOR AND NOT A PROMISE. Everything downstream of it is an
  * ANSWER-IDENTITY-preserving choice, so a badly-fitted rate costs speed on
  * some input and can never cost a match. */
-
-/* ---- THE WALK ------------------------------------------------------------
- *
- * `frontier[j]` is the set of NFA states a thread from the candidate start
- * can occupy after consuming exactly j bytes, closed over epsilon. The
- * closure passes every assertion node UNCONDITIONALLY: `\b` at offset 0 is
- * true on some subjects and false on others, and a set that assumes it true
- * is the superset, hence the sound direction. */
-
-typedef struct {
-    const Nfa *nfa;
-    uint8_t   *seen;      /* one byte per NFA state, generation-stamped */
-    unsigned char gen;
-    int       *stack;
-    int        nstack;
-    int       *cur, ncur; /* the closed frontier: N_CLASS states only */
-    bool       accept;    /* N_ACCEPT is in the closure */
-} Walk;
-
-/* Pushes NFA state `s` onto the frontier walk's stack if in range and not
- * already seen this generation. */
-static void wpush(Walk *w, int s)
-{
-    if (s < 0 || s >= w->nfa->n) return;
-    if (w->seen[s] == w->gen) return;
-    w->seen[s] = w->gen;
-    w->stack[w->nstack++] = s;
-}
-
-/* Close `seeds` over epsilon and assertions, leaving the N_CLASS members in
- * `w->cur` and setting `w->accept` if the match may already be over. */
-static void wclose(Walk *w, const int *seeds, int nseeds)
-{
-    w->gen++;
-    w->nstack = 0;
-    w->ncur = 0;
-    w->accept = false;
-    for (int i = 0; i < nseeds; i++) wpush(w, seeds[i]);
-    while (w->nstack > 0) {
-        int s = w->stack[--w->nstack];
-        const NState *st = &w->nfa->st[s];
-        switch (st->k) {
-        case N_CLASS:
-            w->cur[w->ncur++] = s;
-            break;
-        case N_ACCEPT:
-            w->accept = true;
-            break;
-        case N_SPLIT:
-            wpush(w, st->t1);
-            wpush(w, st->t2);
-            break;
-        /* EVERY ASSERTION IS PASSED. Listing them one by one rather than
-         * writing `default:` is deliberate: a new NKind must come here and be
-         * classified, and the compiler says so. A new CONSUMING kind treated
-         * as an assertion would be the one unsound direction this file has,
-         * so the absent `default` is the check that prevents it. */
-        case N_EPS:
-        case N_BOT:
-        case N_EOL:
-        case N_END:
-        case N_BOT_M:
-        case N_EOL_M:
-        case N_WORDB:
-        case N_NWORDB:
-        case N_GSTART:
-        /* [K50] The character-boundary gate is an assertion like the rest, and
-         * PASSING it is the sound direction here for this file's own reason: a
-         * passed assertion widens the frontier, and a wider frontier skips
-         * less. It is also UNREACHABLE from this walk's root — the walk starts
-         * at `Nfa.anch_start`, the pattern's own first state, and
-         * `pcrec_nfa_wrap_unanchored` builds the gate on the SELF-LOOP's split,
-         * which `anch_start` deliberately does not name. The arm is here
-         * because the absent `default:` above requires every kind to be
-         * classified, and an unreachable kind still has a right answer. */
-        case N_CSTART:
-            wpush(w, st->t1);
-            break;
-        }
-    }
-}
-
-/* The union of the classes the frontier's consuming states read — i.e. the
- * bytes a thread from the candidate start may consume next. Returns how many. */
-static int frontier_union(const Walk *w, uint8_t set[256])
-{
-    int count = 0;
-    memset(set, 0, 256);
-    for (int i = 0; i < w->ncur; i++) {
-        const uint8_t *cls = w->nfa->st[w->cur[i]].cls;
-        for (int b = 0; b < 256; b++) if (cls_has(cls, (unsigned)b)) set[b] = 1;
-    }
-    for (int b = 0; b < 256; b++) if (set[b]) count++;
-    return count;
-}
 
 /* ---- THE COST MODEL ------------------------------------------------------
  *
@@ -305,16 +187,15 @@ static unsigned long long model_cost(unsigned scan_cost, unsigned scan_ppm,
  * artifact costs today and today it filters on `k0`. */
 /* Selects the offset-skip k-sets for this NFA's candidate-start scan: `k0`
  * (the DFA start state's own escape set) is always the ROLE-A scan baseline,
- * and this walk additionally computes ROLE-B verify sets from the closure's
- * own frontier[j] at each candidate offset k* -- never reusing a single
+ * and the walk (the `kset_walk` fact) supplies ROLE-B verify sets from the
+ * closure's own frontier[j] at each candidate offset k* -- never reusing a single
  * state's set at a position that state does not describe, which is the
  * miscompile this function exists to not repeat (see the comment above).
  * Selects a k* > 0 only when the model predicts it at least
  * MATERIAL_NUM/MATERIAL_DEN times cheaper than the offset-0 baseline, so an
  * artifact never moves for a gain nobody could measure. Fills `*o` with the
  * chosen sets and their predicted costs. */
-void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
-                        PrefixKSets *o)
+void pcrec_prefix_ksets(Ctx *cx, const uint8_t k0[256], PrefixKSets *o)
 {
     memset(o, 0, sizeof *o);
     o->nsel = 0;
@@ -324,62 +205,9 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     for (int b = 0; b < 256; b++) if (k0[b]) k0count++;
     o->base_ppm = pcrec_find_set_ppm(cx, k0);
 
-    if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
-        return;
-
-    Walk w;
-    w.nfa = nfa;
-    w.gen = 0;
-    w.seen  = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n);
-    w.stack = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    w.cur   = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-    int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
-
-    int seed = nfa->anch_start;
-    wclose(&w, &seed, 1);
-
-    /* ROLE B's set, and the walk's own offset 0. `w.accept` here would mean
-     * the pattern matches empty, which `unanch_start` has already excluded
-     * (`start_acc`) before calling us — checked rather than assumed, because
-     * a zero-length match makes every offset test vacuous. */
-    if (w.accept || w.ncur == 0) return;
-    o->k[0].k = 0;
-    o->k[0].count = frontier_union(&w, o->k[0].set);
-    if (o->k[0].count == 0 || o->k[0].count >= 256) return;
-    for (int b = 0; b < 256; b++) if (o->k[0].set[b]) o->k[0].byte = b;
-    o->nwalk = 1;
-
-    for (int j = 1; j < PCREC_PREFIX_K_MAX; j++) {
-        /* THE STOP CONDITIONS, in the order they must be asked.
-         *
-         * (a) the match may already be over, so `s[p+j]` need not exist;
-         * (b) the frontier is empty (nothing consumes) — the same thing;
-         * (c) the walk got wide enough that the union is the alphabet, at
-         *     which point every further offset is at least as wide and the
-         *     walk has nothing left to say. */
-        if (w.accept || w.ncur == 0) break;
-        int nnext = 0;
-        for (int i = 0; i < w.ncur; i++) next[nnext++] = w.nfa->st[w.cur[i]].t1;
-        wclose(&w, next, nnext);
-        if (w.accept || w.ncur == 0) break;
-
-        uint8_t set[256];
-        memset(set, 0, sizeof set);
-        for (int i = 0; i < w.ncur; i++) {
-            const uint8_t *cls = w.nfa->st[w.cur[i]].cls;
-            for (int b = 0; b < 256; b++) if (cls_has(cls, (unsigned)b)) set[b] = 1;
-        }
-        int count = 0, byte = 0;
-        for (int b = 0; b < 256; b++) if (set[b]) { count++; byte = b; }
-        if (count == 0 || count == 256) break;
-
-        PrefixK *pk = &o->k[o->nwalk];
-        pk->k = j;
-        memcpy(pk->set, set, 256);
-        pk->count = count;
-        pk->byte = byte;
-        o->nwalk++;
-    }
+    /* THE WALK, the pattern's own fact (src/facts/kset.c): role B's offset-0
+     * set and every later offset, memoized for the attempt. */
+    o->walk = pcrec_fact_kset_walk(cx);
 
     /* [OPT-LITSCAN] S1 the pin (this file's header): the SMALLEST offset at
      * which the walk's singletons spell the run. Any satisfying offset is a
@@ -387,10 +215,10 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
      * only ever be a lost opportunity for the run rows, never a wrong answer. */
     {
         const ReqRun *r = pcrec_fact_req_run(cx);
-        for (int ro = 0; r->len >= 2 && !o->run_pinned && ro + r->len <= o->nwalk; ro++) {
+        for (int ro = 0; r->len >= 2 && !o->run_pinned && ro + r->len <= o->walk->nwalk; ro++) {
             int i = 0;
-            while (i < r->len && o->k[ro + i].count == 1 &&
-                   o->k[ro + i].byte == r->bytes[i])
+            while (i < r->len && o->walk->k[ro + i].count == 1 &&
+                   o->walk->k[ro + i].byte == r->bytes[i])
                 i++;
             if (i == r->len) { o->run_pinned = true; o->run_o = ro; }
         }
@@ -403,7 +231,8 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     /* THE SELECTION'S OWN RATES: each walked offset's set weighed by the MASS
      * primitive. They are the selection's, not the walk's — the walk reads no
      * prior ([PATFACTS] design §4.2.1, r1 A2). */
-    for (int j = 0; j < o->nwalk; j++) o->ppm[j] = pcrec_find_set_ppm(cx, o->k[j].set);
+    for (int j = 0; j < o->walk->nwalk; j++)
+        o->ppm[j] = pcrec_find_set_ppm(cx, o->walk->k[j].set);
 
     /* THE BASELINE IS ROLE A's: the offset-0 filter this artifact ships with. */
     unsigned base_scan = k0count == 1 ? C_MEMCHR : C_BITMAP;
@@ -414,7 +243,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     int best_scan = -1, best_sel[PCREC_OFSK_MAX_SET], best_n = 0;
     unsigned long long best_rate = base;
 
-    for (int si = 1; si < o->nwalk; si++) {
+    for (int si = 1; si < o->walk->nwalk; si++) {
         /* THE SCAN STARTS AT si = 1, WHICH IS TWO RULES IN ONE INDEX.
          *
          * (a) The scan offset must MOVE off 0 — the measured rule below, and
@@ -425,9 +254,9 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
          *     offset — emitted code no measured pattern reaches, since a set
          *     wide enough to need one is never selective enough to be chosen.
          *
-         * Together they also mean `o->k[0]` is ALWAYS role B here and never
+         * Together they also mean `o->walk->k[0]` is ALWAYS role B here and never
          * the scan, so the two sets cannot be confused at this site. */
-        if (o->k[si].count != 1) continue;
+        if (o->walk->k[si].count != 1) continue;
         unsigned scan_cost = C_MEMCHR;
 
         /* Greedy over the remaining offsets, most selective first. Greedy is
@@ -436,7 +265,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
          * best offsets are the k with the lowest ppm and no exchange can
          * improve a set of that size. */
         int order[PCREC_PREFIX_K_MAX], no = 0;
-        for (int j = 1; j < o->nwalk; j++) if (j != si) order[no++] = j;
+        for (int j = 1; j < o->walk->nwalk; j++) if (j != si) order[no++] = j;
         for (int a = 0; a < no; a++)
             for (int b = a + 1; b < no; b++)
                 if (o->ppm[order[b]] < o->ppm[order[a]]) {
@@ -510,7 +339,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
      *
      * The loop above starts at `si = 1`, so this is UNREACHABLE and is kept as
      * an assertion of the rule rather than as a second gate. */
-    if (o->k[best_scan].k == 0) return;
+    if (o->walk->k[best_scan].k == 0) return;
 
     /* Publish, offsets ASCENDING — the emitted verify chain reads left to
      * right and a reader of the artifact should see the pattern's own order. */
@@ -519,13 +348,13 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     for (int i = 0; i < best_n; i++) all[n++] = best_sel[i];
     for (int a = 0; a < n; a++)
         for (int b = a + 1; b < n; b++)
-            if (o->k[all[b]].k < o->k[all[a]].k) { int t = all[a]; all[a] = all[b]; all[b] = t; }
+            if (o->walk->k[all[b]].k < o->walk->k[all[a]].k) { int t = all[a]; all[a] = all[b]; all[b] = t; }
 
     o->nsel = n;
     for (int i = 0; i < n; i++) {
         o->sel[i] = all[i];
         if (all[i] == best_scan) o->scan = i;
     }
-    o->maxk = o->k[all[n - 1]].k;
+    o->maxk = o->walk->k[all[n - 1]].k;
     o->rate_ppm = (unsigned)(best_rate > 1000000ull ? 1000000ull : best_rate);
 }

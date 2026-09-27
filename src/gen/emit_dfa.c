@@ -3771,7 +3771,7 @@ static void unanch_start(Ctx *cx, UnanchStart *o)
      * an argument this function already makes — the fork D63's header
      * forbids. */
     if (o->kind != DFA_PF_NONE)
-        pcrec_prefix_ksets(cx, &cx->job->nfa, o->cand.set, &o->ofsk);
+        pcrec_prefix_ksets(cx, o->cand.set, &o->ofsk);
 #ifdef OPTK_DEBUG
     { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
 #endif
@@ -5350,7 +5350,7 @@ static bool pf_run_applies_common(const DfaSel *s)
     if (!o->run_pinned) return false;
     int sp = o->run_o + r->idx;
     if (o->nsel > 0) {
-        if (o->k[o->sel[o->scan]].k != sp) return false;
+        if (o->walk->k[o->sel[o->scan]].k != sp) return false;
     } else if (!(sp == 0 && u->kind == DFA_PF_MEMCHR &&
                  u->cand.byte == r->bytes[r->idx])) {
         return false;
@@ -5379,11 +5379,11 @@ static void ofs_test_model(const UnanchStart *us, OfsTest *t)
 {
     const PrefixKSets *o = &us->ofsk;
     memset(t, 0, sizeof *t);
-    const PrefixK *sc = &o->k[o->sel[o->scan]];
+    const PrefixK *sc = &o->walk->k[o->sel[o->scan]];
     t->scan_k    = sc->k;
     t->scan_byte = sc->count == 1 ? sc->byte : -1;
     for (int i = 0; i < o->nsel; i++)
-        if (i != o->scan) t->term[t->nterm++].k = &o->k[o->sel[i]];
+        if (i != o->scan) t->term[t->nterm++].k = &o->walk->k[o->sel[i]];
     t->maxk     = o->maxk;
     t->noffsets = o->nsel;
 }
@@ -5416,14 +5416,14 @@ static bool ofs_test_of(Ctx *cx, const UnanchStart *us, const DfaPf *pf,
     if (!o->run_pinned)
         pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row on "
                                "an unpinned run");
-    if (o->nsel > 0 ? o->k[o->sel[o->scan]].k != sp
-                    : (sp != 0 || o->k[0].count != 1 || o->k[0].byte != t->scan_byte ||
+    if (o->nsel > 0 ? o->walk->k[o->sel[o->scan]].k != sp
+                    : (sp != 0 || o->walk->k[0].count != 1 || o->walk->k[0].byte != t->scan_byte ||
                        us->cand.byte != t->scan_byte))
         pcrec_ctx_fail(cx, 0, "internal error: a run-pinned prefilter row whose "
                                "scan is not the run's scan member at offset %d", sp);
     bool placed = false;
     for (int i = 0; i < o->nsel; i++) {
-        const PrefixK *k = &o->k[o->sel[i]];
+        const PrefixK *k = &o->walk->k[o->sel[i]];
         if (k->k >= ro && k->k < ro + rl) continue;
         if (!placed && k->k > ro) { t->term[t->nterm++].k = NULL; placed = true; }
         t->term[t->nterm++].k = k;

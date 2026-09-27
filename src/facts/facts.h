@@ -105,6 +105,24 @@ enum {
  * and `--list-axes`' own row cannot drift from the enum. */
 const char *pcrec_start_anchor_name(int sanch);      /* src/facts/startanch.c */
 
+/* [OPT-K] ONE OFFSET OF THE K-SET WALK: the bytes every match carries `k`
+ * bytes after its own start, as the pattern's NFA proves them
+ * (src/facts/kset.c's header carries the soundness argument). */
+typedef struct {
+    int      k;          /* the offset, in bytes from the candidate start */
+    uint8_t  set[256];   /* the bytes a match may carry there */
+    int      count;      /* how many */
+    int      byte;       /* the single value when count == 1 */
+} PrefixK;
+
+/* THE K-SET WALK (fact `kset_walk`, E3): offsets 0..nwalk-1, consecutive
+ * from 0, each a proper subset of the alphabet. `nwalk == 0` is the empty
+ * value — no offset says anything — and is what an unsealed route reads. */
+typedef struct {
+    int      nwalk;
+    PrefixK  k[PCREC_PREFIX_K_MAX];
+} KsetWalk;
+
 /* THE KIND MASK's bits (fact `kinds`, E1): which construct kinds the pattern
  * contains, each the root answer of the node predicate named beside it
  * (src/facts/kinds.c). A bit exists only where a pass asks it at the root. */
@@ -125,8 +143,7 @@ enum {
  * STRUCTURAL tree, and its facts are FORCED there rather than derived on
  * first ask, because `pcrec_lower_enc` later rewrites that tree in place. E2
  * is sealed right after `pcrec_lower_enc`, the last tree rewrite. E3 (the
- * wrapped NFA, sealed per branch) arrives with its facts in a later
- * migration step. */
+ * wrapped NFA) is sealed per BRANCH, on `ENG_UNANCH` alone. */
 typedef enum { PF_E0 = 0, PF_E1_STRUCT, PF_E2_LOWERED, PF_E3_MACHINE } PfEpoch;
 
 /* `facts.def`'s `kind` column (design §4.1): a CORE fact is a walk of the
@@ -169,7 +186,12 @@ typedef enum {
      * under an encoding it is not keyed to. */
     PF_WHY_RATE_BUILTIN,
     PF_WHY_RATE_NONE,
-    PF_WHY_FORCE_FAILED      /* the listing's forced ask failed (§11.4) */
+    PF_WHY_FORCE_FAILED,     /* the listing's forced ask failed (§11.4) */
+    /* An E3 fact on a route that never sealed E3 (design §3, r1 A3): a
+     * forward NFA exists but `ENG_ATTEMPT` never wraps it, or no forward NFA
+     * was built at all (a VM route with no DFA scan). Status `absent`. */
+    PF_WHY_ATTEMPT_UNWRAPPED,
+    PF_WHY_NO_FORWARD_NFA
 } PfWhyCode;
 
 typedef struct {
@@ -206,6 +228,11 @@ typedef struct {
      * run's scan member where a run shipped, the set's pick otherwise), or
      * -1; -1 under `-fno-req-byte`. */
     int       req_byte;
+    /* [OPT-K] E3 core, sealed on the `ENG_UNANCH` branch only: the k-set walk
+     * over the wrapped forward NFA from its anchored start. The offset-k
+     * selection (src/opt/prefix_k.c) reads it; no deny — each USE has its
+     * row deny (`-fno-offset-skip`, `-fno-run-prefilter`). */
+    KsetWalk  kset_walk;
     PfWhy     why[PF_NFACTS];
     /* `--emit-facts`' FORCE LOOP (design §11.4, ruled Q10): true while it
      * asks the facts no pass asked, after the artifact is complete, and
@@ -232,6 +259,14 @@ void pcrec_facts_seal_e1(Ctx *cx, const struct Ast *root);
  * `compile_driver`, after `pcrec_lower_enc`. */
 void pcrec_facts_seal_e2(Ctx *cx, const struct Ast *root);
 
+/* Seals E3 — the WRAPPED forward NFA, `Job.nfa` — and nothing else. Called
+ * by `compile_driver` inside the `ENG_UNANCH` arm only, right after
+ * `pcrec_nfa_wrap_unanchored` (design §3): the count-collapse ladder may
+ * rebuild the machine before that point, and `ENG_ATTEMPT` never wraps it.
+ * On every other route an E3 fact is not an error: its accessor returns the
+ * empty value, status `absent`, with the route's decline reason. */
+void pcrec_facts_seal_e3(Ctx *cx);
+
 /* ---- the accessors ------------------------------------------------------ */
 
 unsigned       pcrec_fact_kinds(Ctx *cx);        /* E1: the PF_KIND_* mask */
@@ -245,6 +280,7 @@ const ReqSet  *pcrec_fact_req_set(Ctx *cx);
 const ReqRun  *pcrec_fact_req_whole_run(Ctx *cx);
 const ReqRun  *pcrec_fact_req_run(Ctx *cx);
 int            pcrec_fact_req_byte(Ctx *cx);
+const KsetWalk *pcrec_fact_kset_walk(Ctx *cx);   /* E3 */
 
 /* ---- the listing's force loop (design §11.4, ruled Q10) ----------------
  *
