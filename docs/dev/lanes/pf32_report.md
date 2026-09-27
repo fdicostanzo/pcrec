@@ -89,6 +89,29 @@ with no witness (7 of 7 today). Clean run: `checks passed: 7`, `checks failed: 0
 | **S302** kind mask | `lower_walk`'s splice wraps each rewritten class in an `A_ATOMIC` (answer-neutral: an atomic around one character's byte alternation cuts nothing) | `facts:1fail/6pass`: every rewritten witness is refused with `internal error: [PATFACTS] the kind mask sealed at E1 (0x0) disagrees with the lowered tree's (0x8)` | With the cross-check's call removed, [facts-e1] is **GREEN**: only the cross-check sees this plant |
 | **S303** nullability | `lower_class_utf8` returns `A_EMPTY` for a non-empty class | `facts:1fail/6pass`: `\x{3b1}`, `[\x{3b1}-\x{3c9}]` and the others are refused with `nullability sealed at E1 (no) disagrees with the lowered tree's (yes)` | With the cross-check's call removed, the same witnesses are **still refused**, now by [K50-NULLGATE]'s `cstart_check_omission` ("omitted the character-boundary gate on a pattern that can ACCEPT without consuming"). That is a second, independent, machine-level detector (DFA-unanchored route only). The cross-check fires first and covers every route. This is recorded in the row, not claimed away |
 
+**Which checks fire under S303, per witness** (the manager asked for this
+record, 2026-09-27; measured on a scratch tree, not the worktree build):
+
+| witness (utf8) | route | cross-check present | cross-check removed |
+|---|---|---|---|
+| `\x{3b1}` | DFA | refused: `[PATFACTS] nullability sealed at E1 (no) disagrees with the lowered tree's (yes)` | refused: `[K50-NULLGATE] omitted the character-boundary gate ...` |
+| `[\x{3b1}-\x{3c9}]` | DFA | same [PATFACTS] refusal | same [K50-NULLGATE] refusal |
+| `\x{3b1}{2,5}` | DFA | same [PATFACTS] refusal | same [K50-NULLGATE] refusal |
+| `(\x{3b1})\1` | VM (bref) | same [PATFACTS] refusal | **passes**: no start gate is built on a VM route, so K50's self-check never runs, and the listing shows the sealed E1 value |
+
+**The mech matrix cannot attribute detection per check, and I did not build
+attribution** (per the ruling). The `facts` arm scores
+`run_facts_checks.sh`'s failed-CHECK count. [facts-e1] is one check, and it
+is red under either detector. So if someone removed the cross-check, S303
+would still read DETECTED (`facts:1fail/6pass`) through K50 on the three DFA
+witnesses. What does show that the new check is live: S302 (answer-neutral,
+and GREEN with the cross-check removed), plus this table's backreference
+row, which only the cross-check refuses. The same table is recorded in
+S303's header. The cheapest attribution, if it is ever wanted, is a
+[facts-e1] sub-check that fails only when a refusal carries the
+`[PATFACTS]` tag. I did not build it (D77: no measured need beyond this
+record).
+
 For the S302 plant I chose `A_ATOMIC` rather than the design's suggested
 `A_BREF`. An `A_BREF` in the lowered tree also trips `nfa.c`'s "bad AST node"
 on every DFA route, so a row planting it would be DETECTED even with the

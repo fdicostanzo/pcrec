@@ -18,7 +18,16 @@
 # the E1 answer "not nullable" and the lowered machine accepts without
 # consuming. That is two independent derivations meeting, as that check's
 # header says; it covers the DFA-unanchored route only, where the E2
-# cross-check covers every route and fires first. The listing alone cannot
+# cross-check covers every route and fires first. MEASURED PER WITNESS
+# (lane pf32, scratch tree): with the cross-check, four witnesses are refused
+# by '[PATFACTS] nullability sealed at E1 (no) disagrees...' —
+# `\x{3b1}`, `[\x{3b1}-\x{3c9}]`, `(\x{3b1})\1`, `\x{3b1}{2,5}`; with it
+# removed, THREE are refused by [K50-NULLGATE] and `(\x{3b1})\1` (a VM route,
+# where no start gate is built) PASSES. So the backreference witness is the
+# one only the cross-check sees. THE MATRIX CANNOT ATTRIBUTE: the `facts` arm
+# scores run_facts_checks.sh's failed-CHECK count and [facts-e1] is one check,
+# red under either detector — a removed cross-check would still read
+# DETECTED here. The attribution lives in this header and the lane report. The listing alone cannot
 # see the drift: every E1 reader keeps the value sealed before the lowering.
 # (The plant is not answer-neutral — the class stops consuming — so the
 # corpus would also go red on patterns neither check refuses.)
