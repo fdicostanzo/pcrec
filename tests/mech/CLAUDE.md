@@ -3061,6 +3061,16 @@ place the two sets meet (the row's header says so); **S281** and **S289**
 follow the emitter's new spellings (`ofs_test_verifies_run(..., u)`,
 `o->walk->k[...]`), columns kept.
 
+
+### [PATFACTS] step 3.5 — five rows follow `vm_nullable` into `src/opt/mrl.c`
+
+Lane pf35, 2026-09-27. `vm_nullable` moved verbatim out of
+`src/gen/emit_vm.c` and became `pcrec_nullable`, the one node-nullability
+function. **S107**, **S127** and **S156** plant into its arms and are
+re-anchored by `SAB_FILE` only (same lines, same columns); **S56** (its
+`SAB_AFTER` calls the function) and **S100** (its anchor is the `vm_lifts`
+caller) follow the new spelling. No plant or intent changed and no row is
+born. Each row's header carries a one-line note.
 ### [PATFACTS] step 3.2 — the E1 cross-check's rows S302/S303, five re-anchored rows
 
 Both on the existing `facts` arm (lane pf32, 2026-09-27). The E1 facts (the

@@ -11,6 +11,70 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
+## K69 — OPEN, awaiting a ruling — the two node-nullability definitions DISAGREE on `A_CALL` (found by lane pf35, [PATFACTS] step 3.5's stop rule, 2026-09-27)
+
+**Status: OPEN. Blocks [PATFACTS] 3.5's second half** (the E1 fact composing
+`pcrec_nullable` at the root). Not an answer defect today: each copy is sound
+for its own readers. It is a mover-in-waiting that the step's own gate
+exists to catch, and design §9.1 classes it SEMANTIC. So it is filed, not
+absorbed.
+
+**The two copies.** `pcrec_nullable` (born `vm_nullable`, the emitter's;
+`src/opt/mrl.c` since 3.5 c1) and `pcrec_minw(a) == 0` (the E1 fact,
+`src/facts/widths.c`). They agree on every `AKind` but `A_CALL`, where each
+reads its own call-graph fixpoint off the node. Those two fixpoints differ in
+two independent ways:
+
+- **(M1) greatest vs least.** `u.call.minw` is iterated from infinity DOWN
+  (`callgraph.c`), which is the least fixpoint of the language and exact.
+  `u.call.nonnullable` starts at `false` ("nullable") and only rises
+  (`emit_vm.c` `vm_resolve_nonnull`), which is the GREATEST fixpoint of
+  nullability. So a cycle whose only escape is through the call stays
+  "nullable".
+- **(M2) when.** `u.call.minw` is published by `pcrec_callgraph_build`,
+  before the E1 seal. `u.call.nonnullable` is published inside
+  `pcrec_emit_vm`, so at the seal every call reads the arena zero,
+  "nullable".
+
+**Minimal witnesses** (main `65482b45` = lane base; `--features all -p rx`):
+
+| pattern | `pcrec_minw == 0` (E1 `nullable`) | `pcrec_nullable` | mechanism |
+|---|---|---|---|
+| `(a\|(?1))*` | body minw 1 | body NULLABLE: `RX_SLOT_EMPTY_GUARD0` emitted (control `(a(?1)?)*`, `(a\|b(?1))*`: none) | M1, live today in the emitter |
+| `(a\|(?1))` | `no` | `yes` after the swap | M1 (+M2) |
+| `(a)?(?1)`, `(?:(a)\|)(?1)` | `no` | `yes` after the swap | M2 |
+| `(?(DEFINE)(?<g>a))(?&g)` | `no` | `yes` after the swap; **artifact moves** under `-e utf8` (the DFA gains the [K50] start gate: 32 diff lines) | M2 |
+
+"After the swap" means a scratch build of 3.5 c1 with `widths.c` returning
+`pcrec_nullable(root)`. On it, `(a)?(?1)` and `(?:(a)|)(?1)` also move
+130-140 artifact lines on both encodings. The corpus mover count is in
+`docs/dev/lanes/pf35_report.md` §5 (the chain's informational `gate_swap`
+stage).
+
+Ground truth for M1: `(a|(?1))`'s group 1 is `{a}`. PCRE2 10.48 (local,
+light probe) matches `a` on `^(a|(?1))$` and fails `b` with error -52
+("nested recursion at the same subject position"). It never matches empty.
+So `pcrec_minw` is exact and `pcrec_nullable` over-approximates: the safe
+direction for the guard (one slot and one test, never an answer), and also
+safe for E1's readers (a kept start gate or a declined rescue).
+
+**Dispositions for the ruling** (the lane recommends (a)):
+- **(a)** Make the `nonnullable` fixpoint the LEAST one and move it into
+  `pcrec_callgraph_build` beside `minw`'s. It is exact, it runs before the
+  seal, and then `pcrec_nullable` composes at the root. The arena zero still
+  reads nullable for an un-run walk, since only the published result
+  changes. Emitted movers: the redundant guards on left-recursive callees
+  (M1) disappear. That is a deliberate abi event and needs its own gate.
+- **(b)** Replace the `A_CALL` arm with `a->u.call.minw == 0`. It has the
+  same safe arena zero and deletes the `nonnullable` field and the emitter
+  fixpoint. The movers are (a)'s. The design wants the arm KEPT
+  (§4.3), so this needs a design amendment.
+- **(c)** Keep the arm and the fixpoint as they are, and keep E1 on
+  `pcrec_minw(root) == 0` permanently. R4 then stays two definitions, with
+  the `A_CALL` difference documented rather than removed. No movers.
+
+---
+
 ## K68 — FIXED 2026-09-27 (merged; lane k68fix, on top of `lane/reqrunenc2`, abi 38 -> 39, as I-112) — `rx_info.flags` keeps deny bits 28/29/30 set (found by pcrec-bench re-pinning I-111; fact-found by lane bit30)
 
 **Status: FIXED, merged 2026-09-27** (lane `k68fix`, branch `lane/k68fix`,

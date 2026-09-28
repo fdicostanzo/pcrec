@@ -3322,6 +3322,14 @@ never edited afterwards.
   and its two decline tokens, the selection's own rates, `us_run_pin`,
   `run_facts_checks.sh` [facts-e3] with S306/S307, four re-anchored rows,
   the per-commit A/B gates, the census re-run and the widened-domain count.
+- **pf35_report.md** — lane `pf35` (opus, 2026-09-27): [PATFACTS] step 3.5,
+  node nullable (R4), no abi event. §1 is the grep census of every
+  node-nullability spelling (two definitions: `vm_nullable` and the E1 fact's
+  `pcrec_minw(root) == 0`). §2 is the pre-edit finding that stopped the step:
+  the two DISAGREE on `A_CALL` (greatest vs least fixpoint; emitter-time vs
+  seal-time), K69. What landed is c1 only: `vm_nullable` exported as
+  `src/opt/mrl.c`'s `pcrec_nullable`, under the zero-mover gate. The E1
+  migration waits on K69's ruling.
 - **s2a_report.md** — lane `s2a` (opus, 2026-09-27): [OPT-LITSCAN] S2a, the
   VM's exact literal run as ONE P4 compare, abi 40 -> 41. `pcrec_lit_run`
   (the one node-grain fact, three readers), the island's single-child chains

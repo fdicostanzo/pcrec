@@ -584,7 +584,7 @@ typedef enum {
      * kind existed ("Lookaround, backreferences and `(*ATOMIC)` have no
      * producers today; when they gain one, each contributes 0 here until
      * someone measures otherwise"). A referenced group can publish an EMPTY
-     * capture, so 0 is exact rather than conservative — and `vm_nullable` must
+     * capture, so 0 is exact rather than conservative — and `pcrec_nullable` must
      * answer TRUE for the same reason, or a nullable quantifier body loses its
      * empty-iteration guard and the artifact hangs (design §3.2 property 5).
      *
@@ -626,7 +626,7 @@ typedef enum {
      * inspects bytes ahead of the cursor and consumes none; a LOOKBEHIND's
      * bytes are BEHIND the cursor, and `pcrec_minw` (bytes) and the character
      * pair `pcrec_cwmin`/`pcrec_cwmax` all count what is still to be
-     * CONSUMED. `vm_nullable` must answer TRUE for the same fact,
+     * CONSUMED. `pcrec_nullable` must answer TRUE for the same fact,
      * or a quantified lookaround loses its empty-iteration guard — and design
      * §2.6 measured that quantified lookaround SHIPS (all fourteen forms
      * compile in both oracles, and the empty-iteration cells terminate).
@@ -687,9 +687,10 @@ typedef enum {
      * recursion: design §4.4b's Kleene iteration from infinity downward over
      * the SCC condensation, with `minw == infinity` meaning "this callee
      * matches nothing", which is a LEGAL compile (`^(a(?1)b)$` compiles on
-     * 10.46 and matches nothing). `vm_nullable` is the same shape with cycle
-     * bottom `false` (§2.6), and both live in `callgraph.c` because a bare
-     * `const Ast *` signature cannot express a fixpoint.
+     * 10.46 and matches nothing). `pcrec_nullable`'s `A_CALL` arm reads a
+     * fixpoint of the same shape (§2.6), run by the emitter rather than by
+     * `callgraph.c` (K69), because a bare `const Ast *` signature cannot
+     * express a fixpoint.
      *
      * A CALL TARGET MUST JOIN THE MARKED SET (design §4.3): a call names a
      * group exactly as a reference does, so `pcrec_bref_mark` marks
@@ -738,7 +739,7 @@ typedef enum {
      * ITS MINIMUM WIDTH IS 0 AND ITS MAXIMUM IS UNBOUNDED. 0 is EXACT, not
      * conservative: a caller may supply an EMPTY value (`variables_common.md`
      * §2.2's EMPTY state, `p != NULL && len == 0`), so `${v}` genuinely
-     * matches the empty string then — and `vm_nullable` must answer TRUE for
+     * matches the empty string then — and `pcrec_nullable` must answer TRUE for
      * the same reason, or a nullable quantifier body loses its
      * empty-iteration guard and the artifact hangs. Unbounded is exact too:
      * the value's length is a MATCH-time quantity, which is the identical
@@ -1287,7 +1288,7 @@ struct Ast {
              * (§4.1(c)): four independent derivations of "which subtree does
              * this call run" would be four chances to disagree.
              * WRITTEN by the same end-of-parse pass as `target` (wave B+C).
-             * READ by `callgraph.c`, `vm_nullable`, `vm_cost`,
+             * READ by `callgraph.c`, `pcrec_nullable`, `vm_cost`,
              * `vm_count_slots`, `vm_emit` and — ONLY once
              * `lookaround_design.md` §11 wave A has built it, P13 measured it
              * has not — the character width pair. */
@@ -1377,8 +1378,8 @@ struct Ast {
              * WALKER CANNOT COMPUTE, cached ON THE NODE rather than in a memo
              * the walker would need a context to reach.
              *
-             * WHY ON THE NODE. `pcrec_minw` (src/opt/mrl.c) and `vm_nullable`
-             * (src/gen/emit_vm.c) are bare `const Ast *` walkers with no `Ctx`
+             * WHY ON THE NODE. `pcrec_minw` and `pcrec_nullable` (both
+             * src/opt/mrl.c) are bare `const Ast *` walkers with no `Ctx`
              * parameter, so "read callgraph.c's memo" has exactly two
              * spellings: change every call site's signature, or put the memo
              * in a FILE-STATIC — and a file-static is a mutable global, which
@@ -1398,7 +1399,7 @@ struct Ast {
              *                 pruning and never a match.
              *   `nonnullable` false — i.e. "assume NULLABLE". The polarity is
              *                 INVERTED for exactly this reason, and it is the
-             *                 whole content of the field's name: `vm_nullable`
+             *                 whole content of the field's name: `pcrec_nullable`
              *                 answering true is what EMITS the empty-iteration
              *                 guard, so `false` keeps the guard and a wrong
              *                 answer costs a redundant guard, while the other
@@ -1451,8 +1452,8 @@ struct Ast {
              *
              * WRITTEN by `src/opt/callgraph.c`'s three fixpoints (`minw` —
              * BYTES, the MRL prune's; `cwmin`; `cwmax`/`cwmax_known`) and by
-             * `src/gen/emit_vm.c` (`nonnullable`, whose recurrence is
-             * `vm_nullable` and lives there; `save`/`nsave`, whose SLOT
+             * `src/gen/emit_vm.c` (`nonnullable`, whose fixpoint runs
+             * there over `pcrec_nullable`; `save`/`nsave`, whose SLOT
              * INDICES are the emitter's own layout and exist nowhere else).
              * `minw` (bytes) and the character pair are TWO FACTS for TWO
              * consumers, numerically equal under `byte` — see mrl.c's header
@@ -4666,8 +4667,8 @@ Ast *pcrec_lower_enc(Ctx *cx, Ast *root);
 unsigned pcrec_pat_char(Ctx *cx, size_t at, int *len);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
- * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,
- * and a second copy would be a second answer to "can this match empty") and
+ * the emitter runs — `nonnullable`'s (over `pcrec_nullable`, src/opt/mrl.c
+ * since [PATFACTS] 3.5; where it runs is K69's second half) and
  * `W`'s (a set of SLOT INDICES, which exist nowhere but the emitter's own
  * layout). Targets are ASCENDING and `0` means THE ROOT. */
 int         pcrec_callgraph_ntargets(const struct CallGraph *cg);
@@ -6012,6 +6013,13 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
  * and why its switch has no live default arm. */
 long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
 
+/* True iff the empty string is in `a`'s language: the ONE node-nullability
+ * function ([PATFACTS] 3.5, design §4.3). Its `A_CALL` arm reads
+ * `u.call.nonnullable`, whose arena zero answers NULLABLE (safe) until the
+ * emitter's fixpoint runs; see K69 for where it and `pcrec_minw(a) == 0`
+ * disagree. */
+bool pcrec_nullable(const Ast *a);                   /* src/opt/mrl.c */
+
 /* [REVW.U L5-R2] THE SIX SATURATING-ARITHMETIC HELPERS, DECLARED SO
  * tests/core/sat_arith_check.c CAN REACH THEM.
  *
@@ -6179,8 +6187,8 @@ long long pcrec_vm_fmul(long long a, long long b);         /* src/gen/emit_vm.c 
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
  * says so, the VM itself, and the four entry points). */
 /* [DD-14 wave B+C] `root` LOST ITS `const`, and the reason is one field.
- * `Ast.u.call.nonnullable` is the graph fixpoint whose RECURRENCE
- * (`vm_nullable`) is `static` to the emitter — see src/opt/callgraph.c's
+ * `Ast.u.call.nonnullable` is the graph fixpoint over `pcrec_nullable`
+ * (src/opt/mrl.c), run by the emitter — see src/opt/callgraph.c's
  * header for why the two fixpoints split across two files — so the emitter is
  * the pass that WRITES it, and `save`/`nsave` are written there too because
  * their values are SLOT INDICES that exist nowhere else. Dropping the

@@ -35,8 +35,10 @@
 # `src/opt/possessify.c`, which is S157, and the two are separate rows because
 # they defend different lines against different failures (a budget give-up
 # here, a HANG there).
+# [PATFACTS] 3.5 (lane pf35): `vm_nullable` moved verbatim to src/opt/mrl.c as
+# `pcrec_nullable`; SAB_FILE re-anchored, the planted arm and its intent unchanged.
 SAB_ID="S156-call-not-nullable"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/quantified.rxt"
 SAB_DESC="vm_nullable's A_CALL arm answers FALSE unconditionally, so a quantifier over a NULLABLE callee loses its empty-iteration guard and the loop re-enters at zero width until the step budget ends the search"

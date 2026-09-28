@@ -21,6 +21,8 @@
 # is also why §8.1 spells the nullable cells at {0,12} rather than §5's {0,4}:
 # below K no counter is emitted and the cell would be checking replication's
 # termination, which E-2 already settled.
+# [PATFACTS] 3.5 (lane pf35): `vm_nullable` is now `pcrec_nullable` (src/opt/mrl.c);
+# the anchor spelling follows, the plant and its intent unchanged.
 SAB_ID="S56-counter-empty-guard"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="counterkdiff"
@@ -31,5 +33,5 @@ SAB_BEFORE='        vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");'
 SAB_AFTER='        vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
-        if (optional && vm_nullable(a->l))   /* SABOTAGE S56 */
+        if (optional && pcrec_nullable(a->l))   /* SABOTAGE S56 */
             pcrec_sb_printf(b, "    if (stv[%d] > 0) goto %s_L%d;\n", ctr, v->p, next);'

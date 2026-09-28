@@ -259,7 +259,7 @@ static First first_of(const Ast *a)
      * consumes exactly what its callee consumes, which may well be positive;
      * claiming nullable makes the enclosing concatenation's FIRST set include
      * whatever FOLLOWS the call as well, which widens further in the same safe
-     * direction. `vm_nullable`'s own arm is the SCC fixpoint (§2.6) and is a
+     * direction. `pcrec_nullable`'s own arm is the SCC fixpoint (§2.6) and is a
      * different question asked for a different consumer — the empty-iteration
      * guard — so the two are allowed to disagree, and this comment is the
      * record that the disagreement is deliberate.

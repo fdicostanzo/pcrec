@@ -29,8 +29,10 @@
 # this row, every expansion is a ZERO-WIDTH construct, which is exactly what
 # `vm_nullable`'s A_LOOK arm is asked about; the artifacts burn their step
 # budget and the driver scores a `giveup` as a disagreement, not a match.
+# [PATFACTS] 3.5 (lane pf35): `vm_nullable` moved verbatim to src/opt/mrl.c as
+# `pcrec_nullable`; SAB_FILE re-anchored, the planted arm and its intent unchanged.
 SAB_ID="S127-look-not-nullable"
-SAB_FILE="src/gen/emit_vm.c"
+SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround/quantified.rxt"
 SAB_DESC="vm_nullable's A_LOOK arm answers false, so a quantifier above a lookaround loses its empty-iteration guard and the unbounded loop burns the artifact's step budget instead of terminating"
