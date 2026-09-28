@@ -125,7 +125,7 @@ candidates, which is its tie rule, and never tests the rate itself (D126 Q4).
 | reader | kind | what the rate chooses | why no answer or give-up can move |
 |---|---|---|---|
 | the necessary byte's pick (`<PREFIX>_REQ_BYTE`) | PICK: the threaded rightmost member, then the rest 255→0 | which member of the necessary set the pre-check scans | every member is necessary, so its absence proves NOMATCH; on a VM route with no DFA in front every member is pre-checked (K65) |
-| the necessary run's scan member (`<PREFIX>_REQ_RUN`'s `@idx`) | PICK: the run in order | which member of the run the `memchr` scans | the run is compared whole at each hit |
+| the necessary run's scan member (`<PREFIX>_REQ_RUN`'s `@idx`) | PICK: the run in REVERSE order (rightmost first) [FIND-TIE] | which member of the run the `memchr` scans | the run is compared whole at each hit |
 | the necessary run's window | MASS over each 8-byte window (ties leftmost) | which window of a longer run is emitted | any window is necessary; on a VM route with no DFA in front the whole run is also compared (K66) |
 | G1, the pre-check's domination rule (`<PREFIX>_REQ_WHY`) | COMPARE | whether a pre-check dominated by the candidate scan is elided | only in front of a linear DFA scan whose language already requires the byte |
 | the offset-k selection (`<PREFIX>_DFA_PREFILTER_OFFSETS`) | MASS over each offset's byte set | which necessary offset sets the skip scans and verifies | every tested (offset, set) is necessary for every match |

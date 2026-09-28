@@ -250,9 +250,11 @@ uint32_t pcrec_find_seq_mass(const uint32_t *rate, const unsigned char *bytes,
 int pcrec_find_set_pick(const uint32_t *rate, const unsigned char bits[32],
                         int rightmost);
 
-/* Which member of a necessary RUN (`bytes[0..n)`, n >= 2) the emitted
- * `memchr` tests. PICK over the run in order: the rarest, ties to the
- * leftmost; its positional rightmost member is the NONE answer. */
+/* Which member of a necessary RUN (`bytes[0..n)`, n >= 2,
+ * n <= PCREC_MAX_REQ_RUN_SCAN) the emitted `memchr` tests. PICK over
+ * `[n-1, n-2, ..., 0]` (`pcrec_find_set_pick`'s own `[rightmost, ...]`
+ * shape): the rarest, ties to the RIGHTMOST — its own positional rightmost
+ * member, which is also the NONE answer [FIND-TIE]. */
 int pcrec_find_run_scan_index(const uint32_t *rate, const unsigned char *bytes,
                               int n);
 

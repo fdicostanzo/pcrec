@@ -274,6 +274,24 @@ stamp-VALUE-and-emitted-text move (K64fix, `1e6a90b0`). See
 `docs/dev/lanes/reqrunenc2_report.md` and `src/opt/CLAUDE.md`'s `reqbyte.c`
 entry for the landing.
 
+**SECOND AMENDMENT, 2026-09-28 ([FIND-TIE], `lane/findtie`): the DATA tie
+(a real byte-rate, two or more run members sharing the argmin) was STILL
+leftmost, and that was the one inconsistent PICK spelling left in
+`src/core/findings.c` — the 2026-09-26 amendment above fixed only the
+`!bytekey`/NONE fallback.** `pcrec_find_set_pick`'s own candidate order
+(`[rightmost, 255..0]`) already made a data tie answer `rightmost`; the run
+reader's left-to-right order did not. Found on the shipped ASCII-only
+`weblog`/`log` bundles (`[FINDINGS]` B5) under `-e utf8`, where every
+byte >= 0x80 ties at the 2 ppm floor: naming an analysis re-created the
+O-60 lead-byte defect through the DATA arm rather than the NONE one
+(`кириллица+` scanned 0xD0, `[a-z]+@é` scanned 0xC3, both under `weblog`/
+`log`). Fixed the same way, general over both arms: `pcrec_find_run_scan_index`
+now offers its candidates `[n-1, n-2, ..., 0]`, so `pcrec_find_pick`'s own
+earliest-candidate tie rule lands on the rightmost tied member whether or
+not a rate applies. `abi` 43 -> 44 (a stamp-VALUE-and-emitted-text move,
+`docs/spec/match_api.md` §6's precedent for this shape). See
+`docs/dev/lanes/findtie_report.md`.
+
 ### 2.4 What the mechanism declines, stated as a list
 
 1. **Any pattern with no run of length ≥ 2** — 81.4% of the corpus. It keeps

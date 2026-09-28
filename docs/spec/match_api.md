@@ -2033,7 +2033,41 @@ suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `43` on every artifact today ([OPT-LITSCAN] F5 bumped it
+- **`rx_info.abi` is `44` on every artifact today ([FIND-TIE] bumped it from
+  43, 2026-09-28: A PICK'S DATA TIE FOLLOWS ITS NONE ORDER, IN THE RUN
+  READER).** The necessary RUN's scan-member pick (`pcrec_find_run_scan_index`,
+  `src/core/findings.c`) built its candidate order in the run's own
+  left-to-right byte order, so a DATA tie (two or more run bytes sharing the
+  argmin) went to the LEFTMOST of them while the reader's own NONE answer
+  (`[OPT-REQRUN-ENC]`, abi 38, below) is the RIGHTMOST — the one reader in
+  this file whose data-tie arm disagreed with its own NONE arm, matching
+  `pcrec_find_set_pick`'s already-consistent `[rightmost, 255..0]` order
+  instead (D126 Q4: a tie carries no information, so its answer should equal
+  the question's NONE answer). Ties to the rightmost now: the candidate order
+  is `[n-1, n-2, ..., 0]`, so `pcrec_find_pick`'s own earliest-candidate tie
+  rule lands on the run's positional rightmost tied member. Found on the
+  shipped ASCII-only `weblog`/`log` bundles under `-e utf8`, where every byte
+  >= 0x80 ties at the 2 ppm floor: naming an analysis re-created
+  [OPT-REQRUN-ENC]'s lead-byte defect one call down (`кириллица+` scanned
+  0xD0, `[a-z]+@é` scanned 0xC3 — both fixed). **MOVES ON THE DEFAULT PATH
+  TOO**, under BOTH encodings: the built-in `default` analysis declares
+  `byte`-rate data, so a compile naming no analysis at all can also hit a
+  data tie whenever the shipped table's own counts tie (every zero-count
+  byte sits at the same 2 ppm floor) — `é@` under `byte` with no analysis
+  moves `RX_REQ_BYTE` "195" -> "169" and `RX_REQ_RUN` "c3a940@0" ->
+  "c3a940@1" (measured; the corpus-wide default-path mover count is owed,
+  see this row's plan.md entry). `<PREFIX>_REQ_RUN`'s `@idx` and, on some
+  artifacts, its WINDOW OFFSET both move with the pick (the truncation
+  window is re-derived around whichever member the pick names — the window
+  MASS rule itself, `pcrec_find_run_window_start`, is untouched and still
+  ties leftmost, matching its own NONE). No struct offset moves and no
+  `rx_info` member is added or changed; the bump moves the emitted
+  `memchr`/`memcmp` TARGET BYTE and the `<PREFIX>_REQ_RUN` stamp's `@idx`
+  VALUE, the same stamp-VALUE-and-emitted-text shape `[OPT-REQRUN-ENC]`
+  bumped for (abi 37 -> 38, below). NO ANSWER MOVES: every byte of a
+  necessary run or set is necessary regardless of which member is scanned,
+  so the choice can only move a speed.
+- **`rx_info.abi` was `43` ([OPT-LITSCAN] F5 bumped it
   from 42, 2026-09-28, D127: A TWO-BYTE VM LITERAL RUN KEEPS THE BYTE
   CHAIN).** S2a's one-compare form (abi 41) applied to every VM literal run
   of two or more consecutive one-byte literals; the `[B108]` read

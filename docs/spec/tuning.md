@@ -2452,20 +2452,27 @@ own, each of which is a missed opportunity and never an unsound claim:
 
 **Which member the scan tests, and how a long run is truncated.** The member
 with the lowest value in the same byte-rate §2.27 describes, ties to the
-LEFTMOST, and the RIGHTMOST member outright where no byte-rate applies — the
-PICK kind's NONE answer, the same one §2.27's pick takes (`findings.md` §4;
-`[OPT-REQRUN-ENC]`, 2026-09-26, amending this paragraph's
-former "leftmost outright" rule — `docs/dev/optloop/reqrunenc_census.md`).
-Under `-e utf8` a run's LEFTMOST member is a UTF-8 lead byte whenever the run
-opens mid-character, and a lead byte is shared by every character in its
-script block, so a scan for it stops on nearly every byte of a non-Latin
-subject rather than the rare one the literal needs — the exact defect
-pcrec-bench's O-60 measured. The rightmost member is the set pick's own
-NONE answer, shared rather than re-derived: a run's LAST byte can
-only be a lead byte if the run itself is truncated mid-character (an
-alternation's common suffix stopping between a lead byte and its
-continuation), measured in ZERO of 912 real `-e utf8` runs. A run longer than
-`PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a `--list-limits` row) is TRUNCATED and
+RIGHTMOST — the PICK kind's own NONE answer, the same one §2.27's pick takes
+(`findings.md` §4). Both arms of the pick have named the rightmost member
+since `[FIND-TIE]` (2026-09-28, `docs/dev/plan.md`'s row): a tie carries no
+information, so a DATA tie should answer exactly what the question's NONE
+answer would — the run reader was the one PICK in `findings.c` whose data-tie
+order disagreed with its own NONE order (`[OPT-REQRUN-ENC]`, 2026-09-26, had
+already fixed the NONE arm alone, amending this paragraph's former "leftmost
+outright" rule for the no-byte-rate case only — `docs/dev/optloop/
+reqrunenc_census.md`). Under `-e utf8` a run's LEFTMOST member is a UTF-8
+lead byte whenever the run opens mid-character, and a lead byte is shared by
+every character in its script block, so a scan for it stops on nearly every
+byte of a non-Latin subject rather than the rare one the literal needs — the
+exact defect pcrec-bench's O-60 measured, and [FIND-TIE] found it recurring
+one call down: the shipped ASCII-only `log`/`weblog` bundles tie EVERY
+non-ASCII byte at the 2 ppm floor, so naming an analysis reached the same
+lead-byte pick through the DATA arm's leftmost tie rather than through NONE.
+A run's LAST byte can only be a lead byte if the run itself is truncated
+mid-character (an alternation's common suffix stopping between a lead byte
+and its continuation), measured in ZERO of 912 real `-e utf8` runs, so the
+rightmost rule closes both arms with no byte-range logic either way. A run
+longer than `PCREC_MAX_REQ_RUN_EMIT` (8 bytes, a `--list-limits` row) is TRUNCATED and
 never split into two compares: to the 8-byte window containing the scan
 member whose bytes sum to the lowest byte-rate mass, ties leftmost, and so to
 the LEFTMOST-of-the-admissible-range such window where no byte-rate applies
