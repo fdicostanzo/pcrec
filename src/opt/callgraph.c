@@ -58,25 +58,24 @@
  * WHAT THIS FILE DOES *NOT* COMPUTE, AND WHY EACH LIVES ELSEWHERE
  * ================================================================
  *
- * The `nonnullable` fixpoint and `W` are both in `src/gen/emit_vm.c`, which is a
- * deviation from design §4.4b's "one mechanism, and this is the only list of
- * its consumers" and is the wave's largest amendment to the design. When it
- * was made, both had the same reason: the RECURRENCE lived there.
+ * `W` is in `src/gen/emit_vm.c`, which is a deviation from design §4.4b's
+ * "one mechanism, and this is the only list of its consumers" and is the
+ * wave's largest amendment to the design. The `nonnullable` fixpoint was
+ * there too, for the reason that its recurrence (`vm_nullable`) was `static`
+ * to the emitter; [PATFACTS] 3.5 exported the recurrence as `pcrec_nullable`
+ * and K69 (known_issues.md) brought the field HERE, read off `minw`'s own
+ * fixpoint (`cg_minw_publish`) rather than iterated a second time — a second
+ * iteration would be a second answer to "can this match empty", which is the
+ * failure mode `vm_marked`, `vm_cuts` and `vm_cursor_fits` are each ONE
+ * predicate to avoid. So what stays in the emitter is:
  *
- *   - the nullability recurrence was `vm_nullable`, `static` to the emitter.
- *     Since [PATFACTS] 3.5 it is `pcrec_nullable` (src/opt/mrl.c), the one
- *     node-nullability function, so that reason is gone; whether the fixpoint
- *     joins `minw`'s here is K69's second half (known_issues.md), open. A
- *     copy of the recurrence here would still be a second answer to "can this
- *     match empty", which is the failure mode `vm_marked`, `vm_cuts` and
- *     `vm_cursor_fits` are each ONE predicate to avoid.
- *   - `W` is a set of SLOT INDICES, and slot indices are assigned by
+ *   - `W`, a set of SLOT INDICES, and slot indices are assigned by
  *     `vm_count_slots`' own walk over the emitter's own rung decisions. They
  *     do not exist outside `emit_vm.c` and cannot be predicted from here
  *     without a second slot census — which `src/gen/CLAUDE.md` names as the
  *     standing hazard for exactly this family.
  *
- * What this file DOES own is the GRAPH those two fixpoints iterate over, and
+ * What this file DOES own is the GRAPH `W`'s fixpoint iterates over, and
  * it exports it (`pcrec_callgraph_targets`, `_body`, `_calls`) rather than
  * letting the emitter re-derive "which groups are called and what does each
  * one reach" — that half genuinely is one mechanism with three consumers. */
@@ -243,13 +242,30 @@ static void cg_bind(void *ud, const Ast *a)
 typedef struct { const struct CallGraph *cg; const long long *val; } CgMinw;
 
 /* pcrec_ast_visit callback: publishes the minw fixpoint's resolved value for a
- * call's target onto that A_CALL node (0 for a target outside `cg`). */
+ * call's target onto that A_CALL node (0 for a target outside `cg`), and the
+ * call's NULLABILITY read off it.
+ *
+ * [K69] `nonnullable` IS `minw != 0`, AND THAT IS THE LEAST FIXPOINT. A
+ * callee's language is the least fixpoint of its equations (a match is a
+ * finite derivation), and `minw`'s iteration from infinity down computes
+ * exactly its least width, so "the empty string is in it" is `minw == 0` —
+ * `(a|(?1))`'s group is `{a}`, and 10.46 never matches it empty. The field
+ * used to be the emitter's own fixpoint over `pcrec_nullable`, iterated from
+ * "nullable" UP, i.e. the GREATEST one: a cycle whose only escape runs
+ * through the call stayed nullable and got a redundant empty-iteration
+ * guard. It also ran after the E1 seal, so the pattern-facts record could not
+ * compose `pcrec_nullable` at the root. Publishing it here, beside the value
+ * it is read off, fixes both; `pcrec_minw` never reads the field, so the
+ * values written by the iteration's intermediate rounds are dead until the
+ * final publish overwrites them. A target outside `cg` reads 0, "nullable",
+ * the arena zero's own safe answer. */
 static void cg_minw_publish(void *ud, const Ast *a)
 {
     CgMinw *m = ud;
     if (a->k != A_CALL) return;
     int i = cg_index(m->cg, a->u.call.target);
     ((Ast *)a)->u.call.minw = i >= 0 ? m->val[i] : 0;
+    ((Ast *)a)->u.call.nonnullable = a->u.call.minw != 0;
 }
 
 /* ---- the cwmax fixpoint ([DD-14.LB]; CHARACTERS since [M5.0] stage 2) ----
@@ -672,9 +688,11 @@ static void cg_force_deliver_splice(void *ud, const Ast *a)
  * such a compile byte-identical to one built with no call graph at all):
  * finds every called group, binds `Ast.u.call.body` to each call's target
  * over the FINAL tree (this pass's own reason for its placement — see the
- * file header), then runs the minw/nonnullable/maxw fixpoints and
- * `cg_eligibility`'s splice/link decision. Must run after every pass that
- * REBUILDS a node and before engine selection, which reads the linkage. */
+ * file header), then runs the minw (and `nonnullable`, read off it), cwmin
+ * and cwmax fixpoints and `cg_eligibility`'s splice/link decision. Must run
+ * after every pass that REBUILDS a node and before engine selection, which
+ * reads the linkage, and before the E1 seal, which reads `nonnullable`
+ * through `pcrec_nullable`. */
 void pcrec_callgraph_build(Ctx *cx, Ast *root)
 {
     const int ncap = (int)cx->ncap;

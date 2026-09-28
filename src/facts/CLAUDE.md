@@ -96,7 +96,11 @@ defect traced to that edge (design §4.2.1, §10).
   `pcrec_has_call` (any call) has no bit: it has no root-grain reader (D77).
 
 - **widths.c** — [PATFACTS] step 3.2: THE ROOT NULLABILITY
-  (`pcrec_pattern_nullable`, `pcrec_minw(root) == 0`), E1. Replaced
+  (`pcrec_pattern_nullable`), E1. Since K69 / step 3.5 it composes
+  `pcrec_nullable(root)` — the one node-nullability function
+  (`src/opt/mrl.c`) — where it composed `pcrec_minw(root) == 0` until the
+  call graph published a call's nullability as the LEAST fixpoint
+  (`minw != 0`) before this seal; the two agree on every kind now. Replaced
   `EngineFit.lang_nullable`, the copy the fit site wrote; readers: the two
   prefilter declines, `compile.c`'s collapse gate, the [K50-NULLGATE] start
   gate (`pcrec_startgate_needed`). Its header carries why `pcrec_minw` is the

@@ -73,7 +73,7 @@ SAB_COUNT=1
 # nullability declines go dead and neither twin can fire. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    return pcrec_minw(root) == 0;'
+SAB_BEFORE='    return pcrec_nullable(root);'
 SAB_AFTER='    (void)root; return false;   /* SABOTAGE S206 */'
 # [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
 # the nullability predicate left `EngineFit.lang_nullable` for the
@@ -82,3 +82,8 @@ SAB_AFTER='    (void)root; return false;   /* SABOTAGE S206 */'
 # compile.c's collapse gate, the K50 start gate) reads the one answer, as they
 # read the one field before; the E2 cross-check calls the same derivation, so
 # it agrees with the plant and stays silent.
+# K69 / [PATFACTS] step 3.5 (lane k69fix, 2026-09-27) RE-ANCHORED, INTENT
+# RE-VERIFIED: the E1 `nullable` derivation in src/facts/widths.c is now
+# `pcrec_nullable(root)` (the one node-nullability function, which agrees with
+# `pcrec_minw(root) == 0` on every kind since K69 moved the call fixpoint).
+# Same line, same one derivation every reader consults; the plant still pins it false.

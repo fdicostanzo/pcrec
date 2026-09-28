@@ -13,7 +13,9 @@
  * A FOURTH joined at [PATFACTS] 3.5: `pcrec_nullable`, the one node-
  * nullability function (born `vm_nullable` in src/gen/emit_vm.c), beside
  * `pcrec_minw` because `minw == 0` is the same question asked through widths
- * (patfacts design §4.3; K69 is where the two disagree).
+ * (patfacts design §4.3). They agree on EVERY kind: K69 was the `A_CALL` arm,
+ * where they read two different call-graph fixpoints until the nullability
+ * one was re-derived from `minw`'s (src/opt/callgraph.c).
  *
  * WHY TWO UNITS ARE TWO FUNCTIONS AND NOT A PARAMETER (§5.6.5): an exhaustive
  * switch per analysis is the alarm that fires when a node kind is added, and
@@ -270,10 +272,12 @@ long long pcrec_minw(const Ast *a)
  * question, so there is one exported answer to "can this match empty".
  *
  * READS ONE THING THAT IS NOT THE SUBTREE: `u.call.nonnullable`, published
- * by the emitter's `vm_resolve_nonnull`. Until it runs, the arena zero reads
- * NULLABLE — the safe direction for every guard. `pcrec_minw(a) == 0` is
- * the same question through the width recurrence and agrees on every kind
- * but `A_CALL` (known_issues.md K69). */
+ * by `pcrec_callgraph_build` before the E1 seal. Until it runs, the arena
+ * zero reads NULLABLE — the safe direction for every guard.
+ * `pcrec_minw(a) == 0` is the same question through the width recurrence and
+ * agrees on every kind, `A_CALL` included since K69 (the published field is
+ * `minw != 0`), so the E1 `nullable` fact composes THIS function at the root
+ * (src/facts/widths.c). */
 bool pcrec_nullable(const Ast *a)
 {
     /* A_CAT and A_ALT spines are walked ITERATIVELY, not recursed on. That is
@@ -388,9 +392,17 @@ bool pcrec_nullable(const Ast *a)
          * would DROP the guard on a nullable callee and hang the emitted
          * matcher, which is the direction wave A2's `return true` placeholder
          * was chosen to avoid and the reason the field is not simply
-         * `nullable`. `pcrec_emit_vm` runs the fixpoint before the first
+         * `nullable`. `pcrec_callgraph_build` publishes it before the first
          * consumer; the polarity is what makes that ordering a performance
          * property rather than a correctness one.
+         *
+         * [K69] THE FIXPOINT IS THE LEAST ONE: the field is `u.call.minw !=
+         * 0`, read off `minw`'s iteration from infinity down. The emitter's
+         * own fixpoint, which this arm read until K69, started at "nullable"
+         * and only rose, i.e. the GREATEST one, so `(a|(?1))`'s group
+         * (language `{a}`) read nullable and `(a|(?1))*` got a guard it never
+         * needed. "Cycle bottom `false` iterated UP" above is the least
+         * fixpoint's own description; the code now matches it.
          *
          * DESIGN §2.6's FURTHER RULING RIDES ON THIS ARM and is NOT discharged
          * by it: `vm_poss_star` emits no empty-iteration guard and fires no

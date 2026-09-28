@@ -278,6 +278,17 @@ re-measuring it.
   the inlined `(cat)xcat` (call-free, prefilterABLE today) beside its call
   form `(cat)x(?1)` — is the control that says the two differ by the CALL and
   by nothing else, and is where a wave-G splice regression lands first.
+- **`k69.rxt`** — K69 (lane k69fix, 2026-09-27): a call's nullability is
+  the LEAST call-graph fixpoint. **HAND-WRITTEN, NOT GENERATED** — one
+  fix's regression, `framebuffer.rxt`'s precedent — with every expectation
+  read off libpcre2 10.46 first (a light probe through `sr_oracle.py`,
+  transcript in `docs/dev/lanes/k69fix_report.md`). The witnesses are LAZY
+  or COUNTED quantifiers over a left-recursive callee whose language lacks
+  the empty string (`(a|(?1))*?b`, a DEFINE'd direct and indirect cycle),
+  which lost the empty-iteration guard at K69; a GREEDY one runs into the
+  left recursion at the end of every run, where libpcre2 answers rc -52 and
+  no expectation can be written (pcrec's answer there is unchanged by K69). The controls keep it: nullable callees,
+  directly and through a second call. Sabotage S319's harness target.
 - **`nocaptures.rxt`** — design §4.3's marked-set cells (one-hop, two-hop),
   written on the ORDINARY (captures-on) axis. **Does not and cannot today
   assert the `--no-captures` axis itself** — see "What could not be

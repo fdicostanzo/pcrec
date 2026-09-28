@@ -84,6 +84,12 @@ construction (src/ir) and emission (src/gen).
   identity. Wave A2 named both passes; only the one that REBUILDS the node
   matters. Sabotage row S166.
 
+  **[K69] IT PUBLISHES `nonnullable` TOO, READ OFF `minw`** (`cg_minw_publish`:
+  `nonnullable = minw != 0`), before the E1 seal. That is the LEAST fixpoint
+  and exact; the emitter's own iteration, removed, started at "nullable" and
+  only rose (the GREATEST one), so `(a|(?1))*` carried a guard its body can
+  never need. The paragraph below is the wave B+C record, kept for `W`.
+
   **IT COMPUTES `minw` AND NOT `nullable` OR `W`, WHICH IS A DEVIATION FROM
   §4.4b's "one mechanism"** and is the wave's largest amendment to the design.
   Both exceptions are the same reason — the RECURRENCE lives in the emitter
@@ -862,9 +868,10 @@ construction (src/ir) and emission (src/gen).
   verbatim from `src/gen/emit_vm.c`'s `static vm_nullable`, `A_CALL` arm
   (`!u.call.nonnullable`) kept. A node-grain pure function, no memo, beside
   `pcrec_minw` because `minw == 0` asks the same question through widths.
-  The two DISAGREE on `A_CALL` (K69: the `nonnullable` fixpoint is the
-  greatest one and runs in the emitter, after the E1 seal), which is why the
-  E1 fact (`src/facts/widths.c`) still composes `pcrec_minw(root) == 0`.
+  The two disagreed on `A_CALL` until K69 (lane k69fix) made `nonnullable`
+  the least fixpoint, published by `callgraph.c` before the E1 seal; they
+  agree on every kind now, and the E1 fact (`src/facts/widths.c`) composes
+  `pcrec_nullable(root)` — step 3.5 closed, one owner, one definition.
 
   **[M5.0] STAGE 2 RE-AIMED THE MAX-WIDTH CHAIN INTO CHARACTERS, so this file
   now holds THREE functions in TWO units.** `pcrec_minw` is unchanged (BYTES,
@@ -1410,7 +1417,7 @@ Maintenance: update this file when passes are added/removed.
 ## [OPT-4.1] the nullability predicate — ONE derivation, THREE readers
 
 The pattern-facts record's E1 `nullable` fact (`src/facts/widths.c`,
-`pcrec_minw(root) == 0`; until [PATFACTS] step 3.2 it was the copy
+`pcrec_nullable(root)` since K69, `pcrec_minw(root) == 0` before it; until [PATFACTS] step 3.2 it was the copy
 `EngineFit.lang_nullable`, which the fit site wrote) is the one derivation of
 that fact in the tree. Three sites read it: the `fit.prefilter` clause in this file (a collapse RUNG's
 rescue is DECLINED, and what stands in its place is no prefilter at all — on a

@@ -7054,17 +7054,6 @@ static void vm_walk_calls(Vm *v, Ast *a,
     }
 }
 
-/* Publish one round of the nullability fixpoint onto the `A_CALL` nodes. Same
- * shape as `src/opt/callgraph.c`'s `minw` publisher and for the same reason:
- * the walkers that READ the answer are bare `const Ast *` descents with no
- * context, so the node is the only place both sides can meet. */
-static void vm_publish_nonnull(Vm *v, Ast *a, void *u)
-{
-    const bool *nn = u;
-    int i = pcrec_callgraph_index(v->cg, a->u.call.target);
-    a->u.call.nonnullable = i >= 0 ? nn[i] : false;
-}
-
 /* Publish `W` onto every `A_CALL` node: `u.call.save`/`nsave`, read by
  * `vm_call`'s save emission, by `vm_region`'s restore emission and by
  * `vm_cost`'s `2 * |W|` trail charge. Three readers, one write. */
@@ -7078,59 +7067,6 @@ static void vm_publish_saves(Vm *v, Ast *a, void *u)
                  a->u.call.target);
     a->u.call.save  = v->rgn_w[i];
     a->u.call.nsave = v->rgn_nw[i];
-}
-
-/* Computes, over the whole callgraph, which subroutine targets are nullable (`a->u.call.nonnullable`), by fixpoint iteration.
- *
- * [EP2-P1] THE CALL-TARGET NULLABILITY FIXPOINT, lifted out of
- * `pcrec_emit_vm` verbatim.
- *
- * PRODUCES: `a->u.call.nonnullable` on every `A_CALL` node under `root` —
- * this pass MUTATES THE AST, and `vm_publish_nonnull` is the only writer.
- * READS: `v->nregion` and `v->cg` (which must already be set), and the
- * callgraph's per-target bodies.
- * THE INVARIANT A CALLER MUST NOT BREAK: it runs BEFORE every other walk.
- * `pcrec_nullable`'s `A_CALL` arm reads the field this writes, and `vm_cost`,
- * `vm_count_slots`, `vm_lifts` and the emitter all consult `pcrec_nullable`.
- *
- * `nonnullable` starts at `false` — "nullable", the arena's safe zero — and a
- * round that finds a body non-nullable raises it (§2.6). That is the GREATEST
- * fixpoint of nullability, not the least: on a cycle whose only escape runs
- * through the call (`(a|(?1))`, language `{a}`) the target stays "nullable",
- * where `minw`'s fixpoint (iterated from infinity down, the least one) is
- * exact. The over-approximation costs a guard, never an answer; K69 records
- * it as the one place `pcrec_nullable` and `pcrec_minw(a) == 0` disagree.
- * `nt` rounds suffice (each
- * settles at least one more target) and the EXTRA round is ASSERTED to change
- * nothing rather than assumed to: the `pcrec_ctx_fail` below IS that assertion, and
- * an extraction that returned early on the settle round instead would delete
- * it silently.
- *
- * The home question was ruled (EP2 §3.1 A1) when its recurrence was the
- * emitter's `static vm_nullable`; since [PATFACTS] 3.5 the recurrence is
- * `pcrec_nullable` (src/opt/mrl.c) and the fixpoint's placement is open
- * under K69 — it runs here, after the E1 seal, so the pattern-facts record
- * cannot compose `pcrec_nullable` at the root. */
-static void vm_resolve_nonnull(Vm *v, Ast *root)
-{
-    Ctx *cx = v->cx;
-    const int nt = v->nregion;
-    bool *nn = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
-    for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
-    for (int round = 0; round <= nt; round++) {
-        bool changed = false;
-        vm_walk_calls(v, root, vm_publish_nonnull, nn);
-        for (int i = 0; i < nt; i++)
-            if (!nn[i] && !pcrec_nullable(pcrec_callgraph_body(v->cg, i))) {
-                nn[i] = true;
-                changed = true;
-            }
-        if (!changed) break;
-        if (round == nt)
-            pcrec_ctx_fail(cx, 0, "internal error: the subroutine nullability "
-                            "fixpoint did not settle in %d rounds", nt);
-    }
-    vm_walk_calls(v, root, vm_publish_nonnull, nn);
 }
 
 /* Marks slots `[lo, hi)` as members of the save set `w`, clipping to the
@@ -7339,7 +7275,7 @@ static void vm_build_region_saves(Vm *v, Ast *root, int nstate,
  *
  * PRODUCES: `v->rgn_cost[i]` for every target.
  * READS: `v->cg`, `v->nregion`, and — through `vm_cost` — everything the
- * layout and `vm_resolve_nonnull` have already settled.
+ * layout and the call graph's `nonnullable` have already settled.
  * THE INVARIANT A CALLER MUST NOT BREAK: `vm_plan_regions` runs first (this
  * reads nothing of `rgn_grp` directly, but `vm_cost`'s call arm charges
  * `2 * |W|` of trail, so `vm_build_region_saves` must have published `W`).
@@ -9992,28 +9928,23 @@ static void vm_init(Vm *v, Ctx *cx, Ast *root, GenNames *g)
      * '(a)\1'` must still MATCH "aa" and must deliver no group offsets). */
     v->ncaps = cx->want_caps ? v->ngroups + 1 : 1;
 
-    /* [DD-14 wave B+C] THE CALL GRAPH, AND THE NULLABILITY FIXPOINT THAT MUST
-     * PRECEDE EVERY OTHER WALK.
+    /* [DD-14 wave B+C] THE CALL GRAPH.
      *
      * `cx->callgraph` is NULL for a call-free pattern, so `has_calls` is the
      * ONE flag every byte this module adds to an artifact is gated on — the
      * frame's two fields, `RX_PUSH`'s extra line, `RX_CALL`, the fail label's
      * line and the two resets. §9.1's identity claim is therefore structural.
      *
-     * THE NULLABLE FIXPOINT RUNS FIRST because `pcrec_nullable` is consulted by
-     * `vm_cost`, `vm_count_slots`, `vm_lifts` and the emitter itself, and its
-     * `A_CALL` arm reads `u.call.nonnullable`. The polarity makes running late
-     * a PERFORMANCE fault rather than a correctness one (an unset field reads
-     * "nullable", which emits a guard that is never wrong), but running it
-     * here makes the answer the real one. `vm_resolve_nonnull`'s own header
-     * carries the fixpoint's direction, its round bound and why the extra
-     * round is asserted rather than assumed. */
+     * `pcrec_nullable`, which `vm_cost`, `vm_count_slots`, `vm_lifts` and the
+     * emitter all consult, reads `u.call.nonnullable` for a call. The emitter
+     * used to run that fixpoint here, first; since K69 it is published by
+     * `pcrec_callgraph_build` (`cg_minw_publish`, read off `minw`), before the
+     * E1 seal, so every walk below reads the settled answer. */
     v->cg = cx->callgraph;
     v->has_calls = v->cg != NULL;
     v->nregion = pcrec_callgraph_ntargets(v->cg);
     if (v->has_calls) {
         const int nt = v->nregion;
-        vm_resolve_nonnull(v, root);
 
         v->rgn_lbl  = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_lbl);
         v->rgn_exit = pcrec_arena_alloc(&cx->arena, (size_t)nt * sizeof *v->rgn_exit);

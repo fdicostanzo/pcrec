@@ -568,14 +568,14 @@ sequential. **Slots 0 and 1 are NEVER members**: `\K` writes slot 0 and §3.4(b)
 MEASURED that a `\K` in a callee is NOT restored by a return. Rows S148-S153,
 one per family.
 
-**`W` IS BUILT HERE AND NOT IN `callgraph.c`, AND SO IS THE NULLABILITY
-FIXPOINT** — a deviation from §4.4b's "one mechanism, and this is the only
-list of its consumers". Both for the same reason: `W` is a set of SLOT
-INDICES, which are assigned by `vm_count_slots`' own walk over this emitter's
-rung decisions and exist nowhere else, and `vm_nullable` was `static` here and
-was the emitter's own definition of the property the empty-iteration guard is
-emitted on (since [PATFACTS] 3.5 it is `src/opt/mrl.c`'s `pcrec_nullable`; the
-fixpoint still runs here, K69). `callgraph.c` owns the GRAPH both iterate over. The set is
+**`W` IS BUILT HERE AND NOT IN `callgraph.c`** — a deviation from §4.4b's
+"one mechanism, and this is the only list of its consumers": `W` is a set of
+SLOT INDICES, which are assigned by `vm_count_slots`' own walk over this
+emitter's rung decisions and exist nowhere else. (The call-target nullability
+fixpoint was here too, because `vm_nullable` was `static` here; [PATFACTS]
+3.5 exported it as `src/opt/mrl.c`'s `pcrec_nullable` and K69 moved the
+fixpoint into `callgraph.c`, read off `minw`'s least one.) `callgraph.c` owns
+the GRAPH `W` iterates over. The set is
 assembled from the COUNTER RANGES each region's own `vm_count_slots` pass
 consumed — five of the seven families replicate PER EMITTED COPY
 (`^((?>a)){3}$` has ONE lexical atomic group and FOUR cut marks), so a walk
@@ -1053,16 +1053,14 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     were four. **They are TWO on purpose**: `A_CALL` is a STOP-LEAF for the
     capture pair and an ACT-LEAF for the publishing pair, and the constness
     differs with it. The traversal merged; the verdicts stayed callbacks.
-  - `vm_resolve_nonnull`, `vm_plan_regions`, `vm_build_region_saves`,
-    `vm_memo_region_costs`, `vm_plan_capacities` — the five non-emitting
-    passes, in that RUN ORDER, each header naming what it produces, what it
-    reads that is not a parameter, and the ordering invariant a caller must
-    not break. They stay HERE and not in `src/opt/` for the reason
-    `src/core/internal.h`'s `Ast.u.call.nonnullable` comment and
-    `src/opt/CLAUDE.md` already rule: moving a pass out would mean exporting
-    `Vm` (the other reason, the recurrence `vm_nullable` being `static` here,
-    lapsed at [PATFACTS] 3.5, when it became `src/opt/mrl.c`'s
-    `pcrec_nullable`).
+  - `vm_plan_regions`, `vm_build_region_saves`, `vm_memo_region_costs`,
+    `vm_plan_capacities` — the four non-emitting passes, in that RUN ORDER,
+    each header naming what it produces, what it reads that is not a
+    parameter, and the ordering invariant a caller must not break. They stay
+    HERE and not in `src/opt/` because moving a pass out would mean exporting
+    `Vm`. (There were five: `vm_resolve_nonnull`, the call-target nullability
+    fixpoint, left at K69 — `nonnullable` is now `src/opt/callgraph.c`'s,
+    read off `minw`'s least fixpoint before the E1 seal.)
     `vm_build_region_saves` takes the per-region counter SNAPSHOTS as
     parameters — they are produced by the counting pass INTERLEAVED between
     `vm_plan_regions` and it, and are the only place a region's own per-copy
@@ -1179,7 +1177,8 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   catch an eligibility rule admitting a cycle; a LINKED site adds nothing here
   because the callee's region is counted once at its own emission. And
   `vm_nullable` now reads the published fixpoint (`!a->u.call.nonnullable`,
-  :1167) rather than the sound bottom.
+  :1167) rather than the sound bottom (since K69 the fixpoint is
+  `callgraph.c`'s, and `vm_nullable` is `src/opt/mrl.c`'s `pcrec_nullable`).
 
   - **THE NON-ATOMIC `(?*` ARM IS THE ATOMIC SHAPE MINUS THE CUT**, and it
     allocates no mark slot, which is how a reader tells the two atomicities
