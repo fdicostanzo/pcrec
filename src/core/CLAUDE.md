@@ -721,7 +721,10 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   content: `vm_nullable` answering true is what EMITS the empty-iteration
   guard, so a zero reading "nullable" keeps the guard and costs a redundant
   test, while the other polarity's zero would DROP it and hang the matcher on
-  `(?&g)*` with a nullable callee.
+  `(?&g)*` with a nullable callee. **Since K69 `nonnullable` is `minw != 0`**,
+  published by `callgraph.c`'s `cg_minw_publish` beside `minw` (the LEAST
+  fixpoint; the emitter's own greatest-fixpoint iteration is gone), and
+  `vm_nullable` is `src/opt/mrl.c`'s `pcrec_nullable`.
 
   **[DD-14.LB] `maxw` ARRIVED, AS A PAIR, AND THE PAIR IS WHY IT WAS ABSENT.**
   Wave B+C's entry here read *"`maxw` IS DELIBERATELY ABSENT, and the asymmetry

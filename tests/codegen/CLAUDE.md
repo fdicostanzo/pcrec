@@ -820,7 +820,9 @@ decides whether to perform it — and then run the row through
   re-derives a different kind mask or nullability. REACH counts the
   witnesses on a utf8 tree the lowering rewrites, and every `PF_KIND_*` bit
   `facts.h` declares must have a witness. Sabotage S302 (kind mask) and
-  S303 (nullability). (8) `[facts-e3]` ([PATFACTS] step 3.4): the E3 facts
+  S303 (nullability). K69 (lane k69fix) added six CALL rows — nullability
+  that runs through a call, both sides of the least fixpoint — the detector
+  of S318 (every call nullable). (8) `[facts-e3]` ([PATFACTS] step 3.4): the E3 facts
   (`kset_walk`, `run_pin`) are sealed on the unanchored route alone; each
   witness's ROUTE is read out of its emitted `.c` (`RX_DFA_SCAN`
   `unanchored`/`attempt`/absent — the artifact, never the record) and also

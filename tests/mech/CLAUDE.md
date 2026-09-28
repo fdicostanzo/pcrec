@@ -3071,6 +3071,24 @@ re-anchored by `SAB_FILE` only (same lines, same columns); **S56** (its
 `SAB_AFTER` calls the function) and **S100** (its anchor is the `vm_lifts`
 caller) follow the new spelling. No plant or intent changed and no row is
 born. Each row's header carries a one-line note.
+
+### K69 / [PATFACTS] step 3.5 closed — rows S318/S319, two re-anchored rows
+
+Lane k69fix, 2026-09-27 (abi 41 -> 42). A call's nullability
+(`u.call.nonnullable`) is now `minw != 0`, published by `src/opt/callgraph.c`'s
+`cg_minw_publish` before the E1 seal (the least fixpoint), and the E1
+`nullable` fact composes `pcrec_nullable(root)`. Both rows plant the one new
+line. **S318** (`facts` arm) publishes every call NULLABLE — the pre-K69
+greatest fixpoint's answer on K69's population, ANSWER-NEUTRAL (the safe
+direction for every reader), so only [facts-e1]'s four `no` call rows see it.
+**S319** (`harness` arm, `tests/recursion/k69.rxt`) publishes every call
+NON-nullable — the unsafe direction, S156's signal one site upstream: the
+nullable-callee controls lose their empty-iteration guard and give up on the
+step budget. Both carry `SAB_REACH` probes read off the clean artifact's guard.
+
+**Re-anchored**: **S206/S207** onto `src/facts/widths.c`'s new body
+`return pcrec_nullable(root);` (same line, same one derivation; S207's
+inversion is `!pcrec_nullable(root)`), each with a dated note.
 ### [PATFACTS] step 3.2 — the E1 cross-check's rows S302/S303, five re-anchored rows
 
 Both on the existing `facts` arm (lane pf32, 2026-09-27). The E1 facts (the

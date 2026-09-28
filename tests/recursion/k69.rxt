@@ -26,8 +26,10 @@
 # THE WITNESSES ARE LAZY OR COUNTED ON PURPOSE. Under a greedy quantifier the
 # loop always tries one more iteration at the end of the run, `a` fails there
 # and the left recursion `(?1)` re-enters at the same position: libpcre2
-# answers rc -52 ("nested recursion at the same subject position") and pcrec
-# gives up on its frames -- agreed in kind, and blind to the guard. A lazy
+# answers rc -52 ("nested recursion at the same subject position"), so no
+# oracle expectation exists (`^(a|(?1))*$` on "" / "a" / "aa", measured). pcrec
+# answers those cells identically before and after K69 (a match on "aa":
+# the d27 corpus's finding-4 class, tests/recursion/CLAUDE.md). A lazy
 # quantifier reaches its follow first, so the cells below are real matches.
 
 # ====================================================================

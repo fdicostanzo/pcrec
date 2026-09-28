@@ -2027,13 +2027,35 @@ against them:
 **THIS PARAGRAPH IS THE `abi` CHANGE LOG, and it is the only one** (D76
 addendum, [REVW.A1], 2026-09-19). Every bump's own D76/D94 ritual carries a
 `docs/spec/` hunk, so the ritual maintains this narrative by construction —
-which is why it is gap-free from `2` to `41` while the three narrative copies
+which is why it is gap-free from `2` to `42` while the three narrative copies
 that lived in `src/gen/emit_dfa.c`, `src/gen/CLAUDE.md` and the codegen
 suite's failure message had each drifted. Those are now a pointer, a pointer,
 and a check's message copied FROM here. **A bump updates this paragraph, in
 the bump's own commit.**
 
-- **`rx_info.abi` is `41` on every artifact today (`[OPT-LITSCAN]` S2a
+- **`rx_info.abi` is `42` on every artifact today (K69 bumped it from 41,
+  2026-09-27: A CALL'S NULLABILITY IS THE LEAST FIXPOINT).** A subroutine
+  call is nullable iff its callee's minimum width is 0 (`u.call.minw`'s own
+  least fixpoint, published by the call graph before the pattern-facts E1
+  seal); the emitter used to iterate a GREATEST fixpoint of its own, which
+  read a callee whose cycle escapes only through the call as nullable
+  (`(a|(?1))`, whose group matches exactly `a`). A quantifier over such a
+  callee (`(a|(?1))*?b`, `(?(DEFINE)(?<g>a|(?&g)))x(?&g)*?y`) no longer
+  carries the empty-iteration guard it could never need: one slot, its
+  `RX_SET` and its compare leave the VM program, so on exactly those
+  artifacts the slot legend and `<PREFIX>_NSLOTS` lose the
+  `<PREFIX>_SLOT_EMPTY_GUARD<n>` entry and `<PREFIX>_VM_PROGRAM_BYTES`,
+  `<PREFIX>_FAST_TRAIL`/`<PREFIX>_FAST_FRAMES` and `rx_info.subject_ceiling`
+  move with the program. A callee that really is nullable — directly, or
+  through another call — keeps its guard. No stamp, declaration or `rx_info`
+  member is added, no struct offset moves, the E1 `nullable` fact
+  (`--emit-facts`) reads what it read, and NO ANSWER AND NO GIVE-UP MOVES:
+  the guard only ever stopped an empty iteration, which a non-nullable
+  callee cannot perform. MEASURED over pcrec-bench's capability patterns ×
+  4 configs and every corpus pattern × {auto, `--engine=vm`}, under `byte`
+  and `utf8` and eight deny sets: the movers are exactly the quantified
+  left-recursive calls of `tests/recursion/k69.rxt`, and nothing else.
+- **`rx_info.abi` was `41` (`[OPT-LITSCAN]` S2a
   bumped it from 40, 2026-09-27: A VM LITERAL RUN IS ONE EXACT COMPARE).**
   In a VM program, two or more consecutive one-byte literals on one
   concatenation are consumed under ONE label by one bounds check and one

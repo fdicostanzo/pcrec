@@ -54,10 +54,15 @@ SAB_COUNT=1
 # fire on exactly the complementary population. Re-applied through tests/mech/lib/replace.py on a scratch copy at the
 # landed tree: 1 occurrence, and the result compiles under -Wall -Wextra
 # -Werror.
-SAB_BEFORE='    return pcrec_minw(root) == 0;'
-SAB_AFTER='    return pcrec_minw(root) != 0;   /* SABOTAGE S207 */'
+SAB_BEFORE='    return pcrec_nullable(root);'
+SAB_AFTER='    return !pcrec_nullable(root);   /* SABOTAGE S207 */'
 # [PATFACTS] step 3.2 (lane pf32, 2026-09-27) RE-AIMED, INTENT RE-VERIFIED:
 # the nullability predicate left `EngineFit.lang_nullable` for the
 # pattern-facts record's E1 `nullable` fact, derived once in src/facts/widths.c.
 # The plant inverts that derivation for every reader, as it inverted the one
 # field before; the E2 cross-check calls the same derivation and stays silent.
+# K69 / [PATFACTS] step 3.5 (lane k69fix, 2026-09-27) RE-ANCHORED, INTENT
+# RE-VERIFIED: the E1 `nullable` derivation in src/facts/widths.c is now
+# `pcrec_nullable(root)` (the one node-nullability function, which agrees with
+# `pcrec_minw(root) == 0` on every kind since K69 moved the call fixpoint).
+# Same line, same one derivation every reader consults; the plant still inverts it.
