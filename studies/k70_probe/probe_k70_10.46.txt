@@ -1,0 +1,27 @@
+#version 10.46 2025-08-27
+-        b'(?i)a'                     b'A'                   byte (?no-r): fold 'a' vs 'A'                    match (0,1)
+-        b'(?i)(?r)a'                 b'A'                   byte (?r): fold 'a' vs 'A'                       match (0,1)
+-        b'(?i)z'                     b'Z'                   byte (?no-r): fold 'z' vs 'Z'                    match (0,1)
+-        b'(?i)(?r)z'                 b'Z'                   byte (?r): fold 'z' vs 'Z'                       match (0,1)
+-        b'(?i)m'                     b'M'                   byte (?no-r): fold 'm' vs 'M'                    match (0,1)
+-        b'(?i)(?r)m'                 b'M'                   byte (?r): fold 'm' vs 'M'                       match (0,1)
+-        b'(?i)\xe9'                  b'\xc9'                byte (?no-r): 0xE9 vs 0xC9 (Latin-1 e-acute, no UTF) nomatch
+-        b'(?i)\xe9'                  b'\xe9'                byte (?no-r): 0xE9 vs 0xE9 (self, sanity)        match (0,1)
+-        b'(?i)(?r)\xe9'              b'\xc9'                byte (?r): 0xE9 vs 0xC9 (Latin-1 e-acute, no UTF) nomatch
+-        b'(?i)(?r)\xe9'              b'\xe9'                byte (?r): 0xE9 vs 0xE9 (self, sanity)           match (0,1)
+-        b'(?i)[\xc0-\xde]'           b'\xe9'                byte (?no-r): [0xC0-0xDE] class vs 0xE9          nomatch
+-        b'(?i)(?r)[\xc0-\xde]'       b'\xe9'                byte (?r): [0xC0-0xDE] class vs 0xE9             nomatch
+UTF      b'\\d'                       b'\xd9\xa3'            UTF no-UCP, no (?aD): baseline                   nomatch
+UTF      b'(?aD)\\d'                  b'\xd9\xa3'            UTF no-UCP, (?aD)                                nomatch
+UTF      b'\\w'                       b'\xc3\xa9'            UTF no-UCP, no (?aW): baseline                   nomatch
+UTF      b'(?aW)\\w'                  b'\xc3\xa9'            UTF no-UCP, (?aW)                                nomatch
+UTF      b'\\s'                       b'\xc2\xa0'            UTF no-UCP, no (?aS): baseline                   nomatch
+UTF      b'(?aS)\\s'                  b'\xc2\xa0'            UTF no-UCP, (?aS)                                nomatch
+UTF      b'[[:alpha:]]'               b'\xc3\xa9'            UTF no-UCP, no (?aP): baseline                   nomatch
+UTF      b'(?aP)[[:alpha:]]'          b'\xc3\xa9'            UTF no-UCP, (?aP)                                nomatch
+UTF      b'[[:digit:]]'               b'\xd9\xa3'            UTF no-UCP, no (?aT): baseline                   nomatch
+UTF      b'(?aT)[[:digit:]]'          b'\xd9\xa3'            UTF no-UCP, (?aT)                                nomatch
+UTF      b'x\\b'                      b'x\xc3\xa9'           UTF no-UCP, no (?aW): x\b                        match (0,1)
+UTF      b'(?aW)x\\b'                 b'x\xc3\xa9'           UTF no-UCP, (?aW): x\b                           match (0,1)
+UTF      b'\\w'                       b'\xc3\xa9'            UTF no-UCP, no (?a): baseline                    nomatch
+UTF      b'(?a)\\w'                   b'\xc3\xa9'            UTF no-UCP, (?a): all restrictions               nomatch

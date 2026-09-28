@@ -241,5 +241,12 @@ re-measure before load-bearing use.
   algorithm disagreeing where neither was self-inconsistent, and a Pareto
   point dominated on BOTH axes, which is a modelling error and not a
   result. Study code, never imported into `src/`.
+- `k70_probe/` — K70's oracle evidence (lane k70fix, 2026-09-28): a light
+  probe against the 10.46 reference over the tailnet, extending lane
+  ucpthink's `ucp_study/probe_misc.py` with two rows that lane did not
+  cover — `(?r)` under BYTE across the whole Latin-1 range (not just
+  ASCII letters), and the `(?aD)`/`(?aP)`/`(?aS)`/`(?aT)`/`(?aW)`
+  sub-letters under `-e utf8` WITHOUT UCP. Both confirmed true no-ops;
+  see `docs/dev/known_issues.md` K70.
 
 Maintenance: update this file when studies are added/removed.

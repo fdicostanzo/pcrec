@@ -1029,7 +1029,8 @@ survey). Pure lexing, `PLANNED`-trivial.
 | `(?U)` ungreedy | `OK` | — |
 | `(?n)` no-auto-capture | `OK` | — |
 | `(?J)` dup names | `OK-GATED` | — |
-| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — |
+| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` | `OK` | — |
+| `(?r)` — CAPABILITY limit: correct (a true no-op) under `byte`; refuses under `-e utf8`, where the ASCII/non-ASCII caseless-fold restriction it names is not built (K70) | `OK-LIMITED` | — |
 | `(?^)` reset options | `OK` | — |
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — |
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — |
@@ -1156,16 +1157,45 @@ doorway's own row refuses first, naming `modifiers` — two refusal sites for
 one construct, both pinned. Pins: tests/reject/, tests/cli case11,
 tests/backrefs/dupnames.rxt.
 
-**`(?a)`**
+**`(?a)`** (2026-09-28)
 
 MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0
 diff cells over 256x256; all four a-sub pairs census-identical) —
 accepted and applied as nothing, which is exactly PCRE2's observable
-behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own
-that day (DD-12). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37
-`std1` set); `--features none` still refuses with the module name.
-This annotation is keyed to `(?a)` and covers the bundled prose row
-`(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)`.
+behaviour in this mode. **CORRECTED (K70, lane k70fix, 2026-09-28): "they
+become real under UTF/UCP" was true of `(?r)` alone and FALSE of the
+`(?a)` sub-letters, which this annotation had bundled with it.** pcrec
+has no UCP support at all, so `\d`/`\w`/`\s` are already ASCII-only under
+EVERY encoding it compiles — a sub-letter that restricts them to ASCII
+has nothing to restrict. MEASURED against libpcre2 10.46 under UTF alone
+(no UCP, which pcrec cannot ask for) for all five sub-letters plus the
+bare `(?a)`: identical answers with and without the letter, every case
+(`studies/k70_probe/probe_k70.py`). Default-on since [STD1b] (`ab7592d`,
+2026-08-13, D37 `std1` set); `--features none` still refuses with the
+module name. This annotation is keyed to `(?a)` and covers the bundled
+prose row `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` — `(?r)` was
+SPLIT OUT of this row at K70 (see its own annotation below): its
+UTF-vs-byte behaviour is not this row's, and bundling them together is
+what let the wrong claim survive undetected for both.
+
+**`(?r)`** (2026-09-28)
+
+**SPLIT OUT of the `(?a)` bundled row at K70** (lane k70fix, 2026-09-28,
+`docs/dev/known_issues.md` K70; found by lane ucpthink,
+`docs/dev/ucp_study.md` §G.1) — this row used to read `OK` under the
+`(?a)` annotation's blanket claim, which was a tier-1 miscompile under
+`-e utf8`: pcrec's fold machinery folds PER CONTRIBUTION with no
+ASCII/non-ASCII boundary test anywhere (`fold.c`), so `(?i)(?r)k` matched
+U+212A where libpcre2 10.46 answers nomatch (four measured divergent
+cells). **`OK-LIMITED`, a CAPABILITY limit**: correct (a TRUE no-op,
+MEASURED across the whole ASCII alphabet and the Latin-1 range, not
+merely the letters) under `byte`, where the fold never crosses the
+boundary `(?r)` names to begin with — refuses cleanly under `-e utf8`,
+where the restriction is a real, unbuilt capability
+(`src/enc/enc.h`'s `PcrecEnc.restrict_ok`, asked of the encoding per
+DD-12 (7) rather than branched on its identity). Pins:
+`tests/utf8/restrict.rxt`, `tests/cli/run_cli_tests.sh`'s K70 block (the
+exact refusal wording), sabotage row S332.
 
 **`(?^)`**
 

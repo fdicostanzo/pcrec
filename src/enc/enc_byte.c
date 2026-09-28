@@ -312,5 +312,9 @@ const PcrecEnc pcrec_enc_backend_byte = {
      * caseless compare below folds exactly the 52 ASCII letters, and one
      * artifact carries one definition of caselessness. */
     PCREC_ENC_BYTE, "byte", 0xFFu, &pcrec_fold_ascii, entries_byte, advance_byte,
-    NULL, NULL   /* [K50] start_cls / start_guard: every position is a start */
+    NULL, NULL,  /* [K50] start_cls / start_guard: every position is a start */
+    /* [K70] `(?r)` IS a true no-op here — `pcrec_fold_ascii` never crosses
+     * the ASCII boundary, MEASURED against libpcre2 10.46 (enc.h's field
+     * comment). */
+    true
 };

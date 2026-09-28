@@ -2234,6 +2234,58 @@ else
     fail "--warn-emit-bytes=1000 did not warn on a small artifact (rc $wrc) — a lowered warning must still fire, and must still compile" "$werr"
 fi
 
+# ---------------------------------------------------------------------------
+# [K70] `(?r)` (caseless-restrict): a REFUSAL under `-e utf8`, a true no-op
+# under `byte` — docs/dev/known_issues.md K70, found by lane ucpthink
+# (`docs/dev/ucp_study.md` §G.1). Four rows, the reject-table shape
+# (exact-message pin) this construct needs because its refusal is
+# ENCODING-gated rather than FEATURES-gated, which tests/reject/'s
+# `reject`/`reject_gated` (default encoding only) cannot express.
+K70_MSG="inline option 'r' (caseless-restrict) is not implemented under encoding 'utf8'"
+
+# (1) `byte` (the default, no `-e`): `(?r)` compiles — MEASURED true no-op
+# (K70's probe, `studies/k70_probe/`), unaffected by this fix.
+rm -f "$WORKDIR/k70a.c"
+werr="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/k70a.c" --pattern '(?i)(?r)k' 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && [ -s "$WORKDIR/k70a.c" ]; then
+    pass "K70: (?i)(?r)k compiles under byte (default encoding) — true no-op"
+else
+    fail "K70: (?i)(?r)k did not compile under byte (rc $wrc)" "$werr"
+fi
+
+# (2) `-e utf8`: `(?r)` REFUSES BY NAME, exit 1, no artifact written — the
+# fix itself.
+rm -f "$WORKDIR/k70b.c"
+werr="$(pcrec_run "$PCREC" -p rx -e utf8 -o "$WORKDIR/k70b.c" --pattern '(?i)(?r)k' 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 1 ] && [ ! -e "$WORKDIR/k70b.c" ] && printf '%s' "$werr" | grep -qF "$K70_MSG"; then
+    pass "K70: (?i)(?r)k under -e utf8 refuses by name, writes nothing"
+else
+    fail "K70: (?i)(?r)k under -e utf8 did not refuse with the expected message (rc $wrc)" "$werr"
+fi
+
+# (3) `-e utf8`, `(?-r)` alone (never preceded by a successful `(?r)` at this
+# encoding): the UNSET form is untouched — nothing ever persists an `r`
+# state, so this must still compile.
+rm -f "$WORKDIR/k70c.c"
+werr="$(pcrec_run "$PCREC" -p rx -e utf8 -o "$WORKDIR/k70c.c" --pattern '(?-r)k' 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && [ -s "$WORKDIR/k70c.c" ]; then
+    pass "K70: (?-r)k under -e utf8 still compiles — the unset form has nothing to refuse"
+else
+    fail "K70: (?-r)k under -e utf8 did not compile (rc $wrc)" "$werr"
+fi
+
+# (4) `-e utf8`, `(?aD)`: the neighbouring ASCII-restrict sub-letter STAYS a
+# no-op (K70's probe measured this against 10.46 under UTF alone, no UCP —
+# pcrec implements no UCP, so `\d` is already ASCII-only regardless of
+# encoding). Control for (2): this construct compiles where `(?r)` refuses.
+rm -f "$WORKDIR/k70d.c"
+werr="$(pcrec_run "$PCREC" -p rx -e utf8 --features all -o "$WORKDIR/k70d.c" --pattern '(?aD)\d' 2>&1 >/dev/null)"; wrc=$?
+if [ "$wrc" -eq 0 ] && [ -s "$WORKDIR/k70d.c" ]; then
+    pass "K70: (?aD)\\d under -e utf8 still compiles — the sub-letter has nothing to restrict"
+else
+    fail "K70: (?aD)\\d under -e utf8 did not compile (rc $wrc)" "$werr"
+fi
+
 echo "cases failed: $total_fail"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then

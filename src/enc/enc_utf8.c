@@ -504,5 +504,12 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
      * compare below folds through the SAME data, generated in the same run. */
     PCREC_ENC_UTF8, "utf8", 0x10FFFFu, &pcrec_fold_ucd_simple,
     entries_utf8, advance_utf8,
-    start_cls_utf8, start_guard_utf8
+    start_cls_utf8, start_guard_utf8,
+    /* [K70] `false`: `pcrec_fold_ucd_simple` DOES cross the ASCII boundary
+     * (`k`/`K`/U+212A is one fold class) and pcrec's fold machinery folds
+     * per contribution with no boundary test, so `(?r)` is not yet a real
+     * capability here — `mod_modifiers.c` refuses it by name rather than
+     * silently mismatching libpcre2 on four measured cells (enc.h's field
+     * comment). */
+    false
 };

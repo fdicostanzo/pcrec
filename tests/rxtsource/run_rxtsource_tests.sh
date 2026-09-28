@@ -346,9 +346,19 @@ record() { checks_recorded=$((checks_recorded + 1)); echo "RECORD: $*"; }
 # bundle, no `pattern` block), the exact shape findb2's own +16/+0/+0
 # entry above already measured, confirmed here by the same awk census run
 # per-file over tests/findings/golden/: 246/4052/29385.
-CENSUS_FILES=246
-CENSUS_BLOCKS=4052
-CENSUS_LINES=29385
+# 2026-09-28 (lane k70fix, K70) — +1 file / +9 blocks / +13 lines for
+# tests/utf8/restrict.rxt (the `(?r)` caseless-restrict regression: two
+# byte-mode no-op control blocks, five utf8 `perr` refusal blocks, two
+# utf8 accept blocks for the unset form and the `(?aD)` sub-letter — every
+# `(?r)`/`(?aD)`-bearing block `# pcre2-only`, libpcre2 10.46-verified,
+# `studies/k70_probe/`). Measured by the file's own awk census, not
+# derived: found 239/4061/29398 against the prior pin. Not under
+# tests/known_fail/, so RUNSH_* moves by the same +1/+9/+13 below.
+# COMBINED at merge (manager, 2026-09-28): tri86 (+8/+0/+0) and k70fix (+1/+9/+13) are
+# independent deltas from 238/4052/29385 -> 247/4061/29398.
+CENSUS_FILES=247
+CENSUS_BLOCKS=4061
+CENSUS_LINES=29398
 # 2026-09-23 (lane rxtfix, K34 closure via lane b2fix's [OPTLOOP.1.impl]
 # batch 2 — docs/dev/known_issues.md K34) — -1 file, -3 blocks, +0 lines.
 # tests/known_fail/k34_leftrec_giveup.rxt (1 file, 3 blocks, 11 lines) was
@@ -439,9 +449,13 @@ CENSUS_LINES=29385
 # declaration-based P-C2 exemption this same triage added nor an
 # unexempted P-C2 floor could score them sanely. Census now counts them
 # (246); run.sh's own population still does not (222).
-RUNSH_FILES=222
-RUNSH_BLOCKS=4052
-RUNSH_LINES=29385
+# 2026-09-28 (lane k70fix, K70) — +1/+9/+13, the SAME delta as CENSUS_*
+# above (tests/utf8/restrict.rxt is not under tests/known_fail/).
+# COMBINED at merge (manager, 2026-09-28): tri86 +0/+0/+0 (golden excluded from run.sh) and
+# k70fix +1/+9/+13 -> 223/4061/29398 (restrict.rxt is a run.sh file; the 8 golden bundles are not).
+RUNSH_FILES=223
+RUNSH_BLOCKS=4061
+RUNSH_LINES=29398
 # 2026-09-23 (lane rxtfix, K34 closure, same event as CENSUS_* above) —
 # +0/+0/+11 where CENSUS_* moved -1/-3/+0. tests/known_fail/ is now EMPTY
 # (kf_files=kf_blocks=kf_lines=0 at run time — `find tests/known_fail

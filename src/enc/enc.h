@@ -318,6 +318,26 @@ typedef struct {
      * begin at. Substitution is `advance`'s, minus the indentation rule: this
      * is ONE EXPRESSION, spliced into an `if`, never a statement list. */
     const char *start_guard;
+    /* [K70] WHETHER `(?r)` (PCRE2's caseless-restrict: an ASCII character and
+     * a non-ASCII character must never match each other caselessly) IS SAFE
+     * TO ACCEPT AS A NO-OP UNDER THIS ENCODING'S OWN `fold` — the ONE
+     * question that reads it is `mod_modifiers.c`'s `(?r)` port, which must
+     * REFUSE rather than silently accept a construct whose semantics this
+     * backend's fold does not honour.
+     *
+     * `byte`'s fold (`pcrec_fold_ascii`) never crosses the boundary at all —
+     * the 52 ASCII letters fold only among themselves and no byte >= 0x80
+     * folds to anything (fold.c, D23) — so `(?r)` is a TRUE no-op there,
+     * MEASURED against libpcre2 10.46 across the whole ASCII alphabet and
+     * the Latin-1 range (K70, `studies/k70_probe/probe_k70.py`). `utf8`'s
+     * fold (`pcrec_fold_ucd_simple`) DOES cross it — `k`/`K`/U+212A is one
+     * fold class — and pcrec's fold machinery (`cls_casefold`,
+     * `$_span_match_caseless`) folds PER CONTRIBUTION with no boundary test
+     * anywhere, so accepting `(?r)` there would silently keep folding across
+     * the boundary it is supposed to forbid (four oracle-divergent cells,
+     * K70). `false` names exactly that: a real capability gap, not a
+     * decoration — D58's revisit clause, one boolean over. */
+    bool restrict_ok;
 } PcrecEnc;
 
 /* The registry. Lookup is total over the namespace and returns NULL for a

@@ -474,6 +474,46 @@ caseless entry there is no cross-entry dependency and no customer, so both are
 gone (D77). `pcrec_enc_has_entry` survives, because the validity entry still
 asks a question about the table.
 
+## [K70] `PcrecEnc` GAINED A FIFTH SCALAR — `restrict_ok` — AND IT IS A D58 SEAM EVENT
+
+Found by lane `ucpthink` (`docs/dev/ucp_study.md` §G.1): `(?r)` (PCRE2's
+caseless-restrict — an ASCII character and a non-ASCII character must never
+match each other caselessly) was accepted everywhere and treated as a
+"measured no-op at options=0" — TRUE only while `byte` was the only
+encoding. Under `-e utf8` it is a silent MISCOMPILE: `(?i)(?r)k` matches
+U+212A on pcrec where libpcre2 10.46 answers nomatch, and three more cells
+diverge the same way.
+
+**THE FIX ASKS THE ENCODING, NOT THE CONSTRUCT'S FOLD OBJECT.** The natural
+first instinct — read `fold == &pcrec_fold_ascii` — is testing the SAME
+backend identity DD-12 (7) forbids testing by name, one indirection later.
+`restrict_ok` states the fact directly, on `fold`'s own precedent: `byte`
+answers `true` because `pcrec_fold_ascii` never crosses the ASCII boundary
+to begin with (MEASURED against libpcre2 10.46 across the whole ASCII
+alphabet and the Latin-1 range, `studies/k70_probe/probe_k70.py`) — `(?r)`
+genuinely has nothing to restrict there. `utf8` answers `false` because
+`pcrec_fold_ucd_simple` DOES cross it (`k`/`K`/U+212A is one fold class) and
+pcrec's fold machinery (`cls_casefold`, `$_span_match_caseless`) folds PER
+CONTRIBUTION with no boundary test anywhere — a real capability gap, not a
+decoration. `mod_modifiers.c`'s `(?r)` port reads the field and REFUSES by
+name under `utf8` rather than silently mismatching the oracle, per the
+house rule that an unsupported construct fails clean rather than
+miscompiles.
+
+**THE ENTRIES TABLE IS AGAIN UNTOUCHED** — no `PcrecEncEntry` field, no
+signature change, `pcrec_enc_ready` untouched, both emit functions
+untouched — and the third-encoding recipe below grows by one line: a
+backend now also states whether `(?r)` is safe to leave alone. A future
+backend whose fold crosses the ASCII boundary (a hypothetical `latin1`
+would not, by the same argument as `byte`; a hypothetical multi-script
+codepage might) states `false` and inherits the refusal with no edit to
+`mod_modifiers.c` — the third-encoding recipe's own promise, one boolean
+over. The `(?aD)`/`(?aP)`/`(?aS)`/`(?aT)`/`(?aW)` sub-letters were checked
+by the SAME lane and stay true no-ops under `-e utf8` WITHOUT UCP (pcrec
+implements no UCP at all, so `\d`/`\w`/`\s` are already ASCII-only
+regardless of encoding) — no field needed there, since there is nothing an
+encoding could disagree about.
+
 
 Maintenance: update this file when files are added/removed or their roles
 change.
