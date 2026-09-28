@@ -318,6 +318,17 @@ fi
 # 7. the E1 facts. One witness per line, TAB-separated (a pattern holds `|`):
 # E1W, encoding, pattern, kinds, nullable. `kinds` is the listing's
 # comma-joined member list in bit order, or `none`.
+#
+# [K69] THE CALL ROWS (the last six) are nullability that runs THROUGH A
+# CALL, so they read `pcrec_nullable`'s `A_CALL` arm, i.e. the call graph's
+# published `nonnullable`. The four `no` rows are the fixpoint's LEAST side:
+# `(a|(?1))`'s group is `{a}` (a greatest fixpoint reads it nullable), and the
+# other three are non-nullable only through a call whose answer must exist
+# at the E1 seal (lane pf35's M2). The two `yes` rows are the other side: a
+# nullable callee, directly and through a second call (g -> h = b?). By
+# hand from the patterns; the answers are libpcre2 10.46's
+# (tests/recursion/k69.rxt). Sabotage S318 (every call nullable) and S319
+# (no call nullable) each turn one side red.
 printf '%s\n' \
     'E1W	byte	abc	none	no' \
     'E1W	byte	a?(?=b)	lookaround	yes' \
@@ -330,7 +341,13 @@ printf '%s\n' \
     'E1W	utf8	x${v}\x{3b1}	var	no' \
     'E1W	utf8	(?>\x{3b1}|\x{3b1}b)c	atomic	no' \
     'E1W	utf8	(?=\x{3b1})a*	lookaround	yes' \
-    'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no' > "$WORKDIR/e1w"
+    'E1W	utf8	\x{3b1}{2,5}	collapsible_rep	no' \
+    'E1W	byte	(a|(?1))	linked_call,live_capture	no' \
+    'E1W	byte	(a)?(?1)	live_capture	no' \
+    'E1W	byte	(?:(a)|)(?1)	live_capture	no' \
+    'E1W	utf8	(?(DEFINE)(?<g>a))(?&g)	none	no' \
+    'E1W	byte	(?(DEFINE)(?<g>a?))(?&g)	none	yes' \
+    'E1W	utf8	(?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)	none	yes' > "$WORKDIR/e1w"
 nwit=0; nlow=0; ebad=""
 : > "$WORKDIR/e1kinds"
 while IFS=$'\t' read -r _ enc pat wkinds wnull; do

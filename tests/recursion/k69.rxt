@@ -1,0 +1,188 @@
+# tests/recursion/k69.rxt -- K69 (docs/dev/known_issues.md), [PATFACTS] step
+# 3.5: a call's NULLABILITY is the LEAST call-graph fixpoint.
+#
+# HAND-WRITTEN, NOT GENERATED, and every expectation below was read off
+# libpcre2 10.46 BEFORE it was written: a light probe on the reference box
+# through the committed ctypes binding
+# (docs/design/subroutines_measurements/probes/sr_oracle.py, `search` from
+# offset 0), transcript in docs/dev/lanes/k69fix_report.md §3. pcrec was not
+# asked. Like the rest of this directory there is no python arm (python's
+# `re` has no subroutine call). It is not in gen_corpus.py because that
+# generator's cells are its own lane's record and re-running it re-measures
+# all of them; this file is one fix's regression.
+#
+# WHAT MOVED. `u.call.nonnullable` used to be the emitter's own fixpoint,
+# iterated from "nullable" UP -- the GREATEST fixpoint -- so a callee in a
+# cycle whose only escape runs through the call read nullable, and a
+# quantifier over it got an empty-iteration guard it can never need
+# (`(a|(?1))`'s group is `{a}`). It is now `minw != 0`, published by
+# src/opt/callgraph.c before the E1 seal: exact. The guard costs a slot and a
+# test, never an answer, so this file's job is the converse: the guard's
+# REMOVAL must not change an answer, and the guard must STAY where the callee
+# really is nullable. The compile-time half -- the nullability itself, read
+# through the one function the guard and the E1 fact both ask -- is
+# tests/codegen/run_facts_checks.sh [facts-e1]'s call rows.
+#
+# THE WITNESSES ARE LAZY OR COUNTED ON PURPOSE. Under a greedy quantifier the
+# loop always tries one more iteration at the end of the run, `a` fails there
+# and the left recursion `(?1)` re-enters at the same position: libpcre2
+# answers rc -52 ("nested recursion at the same subject position") and pcrec
+# gives up on its frames -- agreed in kind, and blind to the guard. A lazy
+# quantifier reaches its follow first, so the cells below are real matches.
+
+# ====================================================================
+# THE WITNESSES: a quantifier over a left-recursive callee whose language
+# does not contain the empty string. Each lost its guard at K69.
+# ====================================================================
+
+pattern (a|(?1))*?b
+features recursion
+engine vm
+m "aab" 0 3
+g 1 1 2
+m "b" 0 1
+g 1 -1 -1
+
+pattern (a|(?1))+?b
+features recursion
+engine vm
+m "ab" 0 2
+g 1 0 1
+m "aaab" 0 4
+g 1 2 3
+
+pattern (a|(?1)){2,}?c
+features recursion
+engine vm
+m "aac" 0 3
+g 1 1 2
+m "aaac" 0 4
+g 1 2 3
+
+# two calls in the recursive branch: still no base case through them.
+pattern (a|(?1)(?1))*?b
+features recursion
+engine vm
+m "aaab" 0 4
+g 1 2 3
+m "b" 0 1
+g 1 -1 -1
+
+# the same shape reached through a DEFINE, direct and indirect (g -> h -> g).
+pattern (?(DEFINE)(?<g>a|(?&g)))x(?&g)*?y
+features recursion,named-groups
+engine vm
+m "xaay" 0 4
+g 1 -1 -1
+m "xy" 0 2
+g 1 -1 -1
+
+pattern (?(DEFINE)(?<g>a|(?&h))(?<h>(?&g)))x(?&g)*?y
+features recursion,named-groups
+engine vm
+m "xaay" 0 4
+g 1 -1 -1
+g 2 -1 -1
+m "xy" 0 2
+g 1 -1 -1
+g 2 -1 -1
+
+# ground truth for "the language is {a}": the group matches `a`, never empty.
+pattern ^(a|(?1))$
+features recursion
+engine vm
+m "a" 0 1
+g 1 0 1
+
+# ====================================================================
+# THE CONTROLS. The guard must STAY on a callee that is really nullable,
+# including one whose nullability runs through a cycle.
+# ====================================================================
+
+pattern (?(DEFINE)(?<g>a?))(?&g)*
+features recursion,named-groups
+engine vm
+m "aaa" 0 3
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+
+# g is nullable only through h (h = b?): the least fixpoint still finds it.
+pattern (?(DEFINE)(?<g>(?&h)|a)(?<h>b?))(?&g)*
+features recursion,named-groups
+engine vm
+m "bba" 0 2
+g 1 -1 -1
+g 2 -1 -1
+m "a" 0 0
+g 1 -1 -1
+g 2 -1 -1
+
+pattern ^(a?)(?1)*$
+features recursion
+engine vm
+m "aaa" 0 3
+g 1 0 1
+m "" 0 0
+g 1 0 0
+
+# lane pf35's controls: a call that is not the cycle's only escape, never
+# guarded before or after.
+pattern (a(?1)?)*
+features recursion
+engine vm
+m "aaa" 0 3
+g 1 0 3
+m "" 0 0
+g 1 -1 -1
+
+pattern (a|b(?1))*
+features recursion
+engine vm
+m "abba" 0 4
+g 1 1 4
+m "c" 0 0
+g 1 -1 -1
+
+# ====================================================================
+# THE E1 WITNESSES (pf35's M2): a pattern whose non-nullability comes through
+# a call. At K69's swap build the E1 fact read these as nullable; the fix
+# publishes the call's answer before the seal, so it reads "no" and the
+# answers are the ordinary ones. The DEFINE cell also runs under utf8, where a
+# wrong "yes" would have added the [K50] start gate.
+# ====================================================================
+
+pattern (a)?(?1)
+features recursion
+engine vm
+m "aa" 0 2
+g 1 0 1
+m "a" 0 1
+g 1 -1 -1
+n "b"
+
+pattern (?:(a)|)(?1)
+features recursion
+engine vm
+m "aa" 0 2
+g 1 0 1
+m "a" 0 1
+g 1 -1 -1
+n "b"
+
+pattern (?(DEFINE)(?<g>a))(?&g)
+features recursion,named-groups
+m "a" 0 1
+g 1 -1 -1
+m "ba" 1 2
+g 1 -1 -1
+n "b"
+
+pattern (?(DEFINE)(?<g>a))(?&g)
+features recursion,named-groups
+encoding utf8
+m "a" 0 1
+g 1 -1 -1
+m "ba" 1 2
+g 1 -1 -1
+n "b"
